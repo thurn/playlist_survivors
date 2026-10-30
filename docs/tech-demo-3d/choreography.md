@@ -321,6 +321,13 @@ the normal timelines' dump hashes for demo3d and demo2d.
 | `refillMinPerBeat`, `refillDivisor` | 24, 6 | A beat's refill spawns at most max(min, the wanted total / divisor). |
 | `releaseLeadS` | 2.5 | Releases add this many seconds of the expected deaths, to cover the walk in from the spawn band. |
 | `loads` | none | The script's own load presets by name (`deathsPerN`, `hitsPerDeath`, `spells`), alongside `light`, `demo` and `heavy`. |
+| `soundGain` | `{ "base": 0.35, "perDoubling": 0.15, "max": 1 }` | The aggregated sounds' gain for a beat's n requests of a category: min(max, (base + perDoubling × log2 n) × (0.7 + 0.3 × strongest)). Overdrive's lower curve leaves a 60-kill beat clearly louder than a 5-kill one, with headroom. |
+| `heavyBlowKills` | 0 (off) | A hero blow that kills at least this many also asks for the ring's heavy impact, at a strength growing to 1 at twice as many, so a mass kill lands as one layered boom. |
+
+**The client's feel.** An overlay's `feel` object is the client's, not the
+sim's: it scales the game's own response to each of the hero's blows by its
+kills, and a normal run, with no overlay, has none. Its fields are in
+[Camera and Sound, Blow weight](camera-and-sound.md#blow-weight).
 
 **The carnage table.** `TimelineReport` prints a second table after the
 section table, with the numbers an intensity is tuned by. For each section it

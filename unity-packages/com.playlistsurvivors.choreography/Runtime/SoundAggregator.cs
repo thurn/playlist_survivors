@@ -6,16 +6,21 @@ namespace PS.Choreography
     /// <summary>
     /// Sound aggregation (camera-and-sound.md, "Sound"): per beat and per sound category, at most
     /// 3 voices play; their gain grows with log2 of the number of hits, and variants are chosen by
-    /// seed. The voices go to the times with the most requests (ties to the earliest).
+    /// seed. The voices go to the times with the most requests (ties to the earliest). The gain's
+    /// curve is the level script's (<see cref="SimTuning.SoundGainBase"/>); the default is the one above.
     /// </summary>
     static class SoundAggregator
     {
         public const int MaxVoices = 3;
 
-        public static float Gain(int requests, float strongest) =>
-            (float)Math.Min(1.0, (0.35 + 0.15 * Math.Log(requests, 2)) * (0.7 + 0.3 * strongest));
+        public static float Gain(int requests, float strongest, SimTuning tuning = null)
+        {
+            tuning ??= SimTuning.Default;
+            return (float)Math.Min(tuning.SoundGainMax,
+                (tuning.SoundGainBase + tuning.SoundGainPerDoubling * Math.Log(requests, 2)) * (0.7 + 0.3 * strongest));
+        }
 
-        public static SoundEvent[] Aggregate(List<SoundRequest> reqs, SongMap map, uint seed)
+        public static SoundEvent[] Aggregate(List<SoundRequest> reqs, SongMap map, uint seed, SimTuning tuning = null)
         {
             int n = reqs.Count;
             var bucket = new int[n];
@@ -55,7 +60,7 @@ namespace PS.Choreography
                     h++;
                 }
                 int total = h - g;
-                float gain = Gain(total, strongest);
+                float gain = Gain(total, strongest, tuning);
                 // Pick up to MaxVoices times by request count, ties to the earliest; play them in time order.
                 int voices = Math.Min(MaxVoices, times.Count);
                 var chosen = new bool[times.Count];

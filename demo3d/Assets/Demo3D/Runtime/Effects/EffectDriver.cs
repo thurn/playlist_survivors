@@ -15,6 +15,8 @@ namespace Demo3D.Runtime.Effects
     /// placed at their entity's position at the event time (they don't follow it afterwards).
     /// Crystal deaths (<see cref="SetShatters"/>) swap their death burst for the selection's
     /// client.crystalShatter effect on the beat their shards release, tinted by the type's gem.
+    /// With an intensity's blow feel (<see cref="Blows"/>), the hero's trails and shocks and the sparks
+    /// of its blows grow with the blow's weight, and death bursts by the feel's own factor.
     /// </summary>
     public sealed class EffectDriver
     {
@@ -33,7 +35,7 @@ namespace Demo3D.Runtime.Effects
         double _now;
         readonly Mapping[] _map;
         readonly int _projectile, _dust, _crystal;
-        readonly int _deathBurstEvent; // the timeline's death-burst effect name, -1 if it has none
+        readonly int _deathBurstEvent, _hitSparkEvent; // the timeline's death-burst and hit-spark effect names, -1 if it has none
         readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
         readonly int[] _actionsByTime;
@@ -55,6 +57,8 @@ namespace Demo3D.Runtime.Effects
             public Color Tint;
         }
         public bool Ambient = true;
+        /// <summary>The blows' weights and the feel's sizes (an intensity's BlowFeel); null: every event at its own scale.</summary>
+        public Playback.BlowFeel Blows;
         /// <summary>Only the ambient particles: no timeline events, bolts or dust (TD15's empty beauty shots).</summary>
         public bool OnlyAmbient;
         /// <summary>The runtime spike: every timeline event spawns this one effect, and the client adds nothing.</summary>
@@ -96,6 +100,7 @@ namespace Demo3D.Runtime.Effects
             _dust = Index(lib, client["monsterAttack"].AsString());
             _crystal = Index(lib, client["crystalShatter"].AsString());
             _deathBurstEvent = Array.IndexOf(tl.EffectNames, "death-burst");
+            _hitSparkEvent = Array.IndexOf(tl.EffectNames, "hit-spark");
             _ambient = new AmbientEffects(lib, fx);
             _eliteType = new bool[tl.TypeNames.Length];
             for (int t = 0; t < _eliteType.Length; t++) _eliteType[t] = isEliteType != null && isEliteType(t);
@@ -220,8 +225,26 @@ namespace Demo3D.Runtime.Effects
                 yawRate = (float)(2 * Math.PI / bar);
                 duration = (float)bar;
             }
-            Add(fx, pos, yaw, ev.Scale, ev.Seed, ev.Time, Vector3.zero, yawRate, duration);
-            foreach (int w in m.With) Add(w, pos, yaw, ev.Scale, ev.Seed ^ 0x5bd1e995u, ev.Time, Vector3.zero, 0, 0);
+            float scale = ev.Scale * FeelScale(ev);
+            Add(fx, pos, yaw, scale, ev.Seed, ev.Time, Vector3.zero, yawRate, duration);
+            foreach (int w in m.With) Add(w, pos, yaw, scale, ev.Seed ^ 0x5bd1e995u, ev.Time, Vector3.zero, 0, 0);
+        }
+
+        /// <summary>
+        /// The blow feel's factor on an event's scale: the hero's trail or shock, and the hit sparks, of a
+        /// blow grow by 1 + trail × its weight (the sparks from the feel's spark size); death bursts by the
+        /// feel's own factor; anything else, and everything without a feel, keeps its scale.
+        /// </summary>
+        float FeelScale(in EffectEvent ev)
+        {
+            if (Blows == null) return 1f;
+            var feel = Blows.Feel;
+            if (ev.Effect == _deathBurstEvent) return feel.DeathBurst;
+            bool spark = ev.Effect == _hitSparkEvent;
+            if (!spark && ev.AttachTo != 0) return 1f;
+            float w = Blows.WeightAt(ev.Time);
+            float grow = 1f + feel.Trail * Mathf.Max(0f, w);
+            return spark ? feel.Spark * grow : w >= 0 ? grow : 1f;
         }
 
         double BarSeconds(double t)

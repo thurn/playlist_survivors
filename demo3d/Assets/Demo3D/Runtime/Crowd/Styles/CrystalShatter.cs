@@ -59,6 +59,16 @@ namespace Demo3D.Runtime.Crowd
         /// </summary>
         public float OutwardSpeed = 2.4f, BlowSpeed = 3.0f, UpSpeed = 3.0f, SpinRadPerS = 10f;
 
+        /// <summary>
+        /// Above 0, at most this many deaths hold or fly shards at once (an intensity's blow feel, epic ps-5pd
+        /// Decision 7): <see cref="Releases"/> gives them to deaths in the view, in time order, while fewer are
+        /// live, counting each from a beat before its release to its sinking's end. The rest, and every death
+        /// out of view, break by the Crystal shader's own shatter, with the stock death burst and sound.
+        /// 0, the default: every crystal death shatters. Set it before <see cref="Releases"/>.
+        /// </summary>
+        public int Cap;
+        readonly HashSet<int> _unshattered = new HashSet<int>(); // deaths past the cap: the shader's shatter
+
         /// <summary>`--shatter-log`: a line per hold and release, to find deaths for filmstrips.</summary>
         readonly bool _log = Args.Has("--shatter-log");
 
@@ -225,7 +235,28 @@ namespace Demo3D.Runtime.Crowd
                 });
             }
             list.Sort((x, y) => { int c = x.Time.CompareTo(y.Time); return c != 0 ? c : x.Entity.CompareTo(y.Entity); });
+            _unshattered.Clear();
+            if (Cap > 0) list = Capped(list);
             return list.ToArray();
+        }
+
+        /// <summary>The releases <see cref="Cap"/> keeps (see there); the others go to <see cref="_unshattered"/>.</summary>
+        List<ReleaseEvent> Capped(List<ReleaseEvent> releases)
+        {
+            var kept = new List<ReleaseEvent>(releases.Count);
+            var ends = new List<double>(); // live sets' ends (any order)
+            foreach (var r in releases)
+            {
+                double beat = BeatLength(r.Time);
+                ends.RemoveAll(e => e <= r.Time - beat);
+                var f = _tl.FramingAt(r.Time);
+                bool inView = new ViewGeometry(f.ViewWidth).Contains(f.Focus, new System.Numerics.Vector2(r.Centre.x, r.Centre.z), 1f);
+                if (!inView || ends.Count >= Cap) { _unshattered.Add(r.Entity); continue; }
+                ends.Add(r.Time + HitStopSeconds + LingerSeconds + SinkSeconds + 0.5);
+                kept.Add(r);
+            }
+            Debug.Log($"CrystalShatter: cap {Cap} live sets keeps {kept.Count} of {releases.Count} releases");
+            return kept;
         }
 
         /// <summary>
@@ -302,7 +333,7 @@ namespace Demo3D.Runtime.Crowd
         /// </summary>
         public bool Dying(int entity, int type, in MonsterInstance inst, uint seed)
         {
-            if (_sets[type] == null) return false;
+            if (_sets[type] == null || _unshattered.Contains(entity)) return false;
             if (_played.Contains(entity)) return true;
             if (!_byEntity.TryGetValue(entity, out var grp))
             {

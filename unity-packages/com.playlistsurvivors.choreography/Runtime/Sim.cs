@@ -1572,6 +1572,8 @@ namespace PS.Choreography
                     if (plan.Clear) ClearStrike(t, o, im.Strength);
                     else Strike(t, o, n, im.Strength, true);
                     int swingKills = totalKills - killsBefore;
+                    if (tuning.HeavyBlowKills > 0 && swingKills >= tuning.HeavyBlowKills)
+                        Sound(Catalog.Sound("ring"), t, Math.Min(1f, swingKills / (2f * tuning.HeavyBlowKills)));
                     stats[curSection].HeroSwings++;
                     stats[curSection].HeroKills += swingKills;
                     stats[curSection].MaxSwingKills = Math.Max(stats[curSection].MaxSwingKills, swingKills);
@@ -2180,7 +2182,7 @@ namespace PS.Choreography
             tl.Effects = new EffectEvent[effects.Count];
             for (int i = 0; i < effIdx.Length; i++) tl.Effects[i] = effects[effIdx[i]];
 
-            tl.Sounds = SoundAggregator.Aggregate(sounds, map, seed);
+            tl.Sounds = SoundAggregator.Aggregate(sounds, map, seed, tuning);
             tl.Framing = framing;
 
             tl.TypeNames = new string[roster.Monsters.Length];

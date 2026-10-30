@@ -20,6 +20,23 @@
   "refillMinPerBeat": 150,
   "refillDivisor": 3,
   "releaseLeadS": 5,
+  "soundGain": { "base": 0.22, "perDoubling": 0.1, "max": 0.8 },
+  "heavyBlowKills": 40,
+  "feel": {
+    "note": "The client's response to a blow's kills (camera-and-sound.md, Blow weight; tuned by ps-5pd.3, demo3d/evidence/overdrive/feel/README.md). A blow's weight runs from 0 at 8 kills to 1 at 60, on a log scale.",
+    "crispKills": 8,
+    "heavyKills": 60,
+    "punch": 0.05,
+    "shake": 0.3,
+    "shakeCap": 0.5,
+    "hitStop": 0.06,
+    "hitStopCatchUp": 0.12,
+    "trail": 0.6,
+    "spark": 1.4,
+    "deathBurst": 0.8,
+    "lightKnee": 10,
+    "shardCap": 240
+  },
   "loads": {
     "overdrive": {
       "deathsPerN": 0.08,

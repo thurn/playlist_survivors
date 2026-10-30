@@ -36,6 +36,7 @@ namespace Demo3D.Runtime.Playback
         double _fxLast = double.NaN;
         SongRunCheck _songCheck;
         CameraFeel _feel;
+        BlowFeel _blows; // an intensity's blow weights and feel (null: normal)
         PostFeel _postFeel;
         MonsterStyle _style;
         StyleBeat _styleBeat;
@@ -205,7 +206,16 @@ namespace Demo3D.Runtime.Playback
                 clickClip = ClickTrack.Build(_tl.Map);
             }
             _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
-            _feel = _tl.Map != null ? new CameraFeel(_tl) : null;
+            var blowFeel = BlowFeel.Amounts.FromOverlay(data.Overlay(intensity));
+            _blows = blowFeel != null && _tl.Map != null && stress == null && !_flags.NoFeel ? new BlowFeel(_tl, blowFeel) : null;
+            if (_blows != null)
+            {
+                if (_fxDriver != null) _fxDriver.Blows = _blows;
+                if (_fx != null) _fx.Lights.Knee = _blows.Feel.LightKnee;
+                if (_shatter != null) _shatter.Cap = _blows.Feel.ShardCap;
+                Debug.Log($"DemoMain: {intensity.Name}'s blow feel over {_blows.Count} blows");
+            }
+            _feel = _tl.Map != null ? new CameraFeel(_tl, _blows) : null;
             _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
             // A crystal death's burst, light and sound play on its release beat, known from the timeline.
             var releases = _shatter?.Releases(_eval.Schedule, InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.ReleaseEvent>();
@@ -432,6 +442,8 @@ namespace Demo3D.Runtime.Playback
             _shatter?.Frame(t);
             _shatterWatch.Stop();
             _evalWatch.Start();
+            // The horde and the hero pose on the world's time: it holds through a heavy blow's hit-stop (BlowFeel).
+            double world = _blows?.WorldTime(t) ?? t;
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
             // palette and LOD state follow the slot); a freed slot is written Hidden first.
             _slots.Begin();
@@ -446,7 +458,7 @@ namespace Demo3D.Runtime.Playback
                 for (int k = 0; k < list.Count; k++)
                 {
                     int e = list[k];
-                    var st = _eval.Evaluate(e, t, _walkStride[type], _walkLength[type], _hover[type]);
+                    var st = _eval.Evaluate(e, world, _walkStride[type], _walkLength[type], _hover[type]);
                     var mi = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
                     // A crystal monster's hold and dissolve are its shards (CrystalShatter).
                     if (st.Held && _shatter != null && _shatter.Dying(e, type, mi, _tl.Entities[e].Seed)) mi.Flags |= (uint)CrowdFlags.Hidden;
@@ -462,7 +474,7 @@ namespace Demo3D.Runtime.Playback
             _crowd.Draw(_rig.Camera);
             _drawWatch.Stop();
 
-            var heroState = _eval.Evaluate(0, t, _heroStride, _hero.clips[_heroWalk].length, 0);
+            var heroState = _eval.Evaluate(0, world, _heroStride, _hero.clips[_heroWalk].length, 0);
             var heroInst = _heroRenderer.Instances(0, 1);
             heroInst[0] = ToInstance(heroState, _hero, -1, 0);
             if (!_maskOn) _heroRenderer.Draw(_rig.Camera);

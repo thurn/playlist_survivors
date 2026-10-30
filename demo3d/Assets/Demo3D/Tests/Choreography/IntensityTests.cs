@@ -63,6 +63,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(t.RefillDivisor, Is.EqualTo(6f));
             Assert.That(t.ReleaseLeadS, Is.EqualTo(2.5f));
             Assert.That(t.YieldToAccents, Is.False);
+            Assert.That((t.SoundGainBase, t.SoundGainPerDoubling, t.SoundGainMax, t.HeavyBlowKills), Is.EqualTo((0.35, 0.15, 1.0, 0)));
 
             SimTuning set = LevelScript.Parse(Script("\"comboMaxSpeed\": 2.5, \"maxShapeScale\": 8, \"hitsShapeScale\": 6, \"maxShapeViewFraction\": 0.4, "
                 + "\"hitPointScale\": { \"fodder\": 0, \"elite\": 0.5, \"boss\": 2 }, \"refillMinPerBeat\": 90, \"refillDivisor\": 3, \"releaseLeadS\": 3, \"yieldToAccents\": true,")).Tuning;
@@ -77,7 +78,10 @@ namespace Demo3D.Choreography.Tests
             Assert.That(set.RefillDivisor, Is.EqualTo(3f));
             Assert.That(set.ReleaseLeadS, Is.EqualTo(3f));
             Assert.That(set.YieldToAccents, Is.True);
+            SimTuning sound = LevelScript.Parse(Script("\"soundGain\": { \"base\": 0.2, \"perDoubling\": 0.1, \"max\": 0.8 }, \"heavyBlowKills\": 40,")).Tuning;
+            Assert.That((sound.SoundGainBase, sound.SoundGainPerDoubling, sound.SoundGainMax, sound.HeavyBlowKills), Is.EqualTo((0.2, 0.1, 0.8, 40)));
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"comboMaxSpeed\": 0.5,")));
+            Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"heavyBlowKills\": -1,")));
         }
 
         /// <summary>A script's own load presets sit beside the built-in ones; an unknown one fails.</summary>
@@ -201,6 +205,45 @@ namespace Demo3D.Choreography.Tests
                 }
             }
             Assert.That(between, Is.GreaterThan(50), "no flurries between the beats");
+        }
+
+        /// <summary>
+        /// Overdrive's sound (soundGain, heavyBlowKills): every blow that kills heavyBlowKills or more also booms with the
+        /// ring's heavy impact on its impact, a beat's death sounds grow louder with its kills up to the cap,
+        /// and no aggregated sound goes over it, so a mass kill is one big layered hit with headroom left.
+        /// </summary>
+        [Test]
+        public void OverdriveMassKillsLandAsOneHeavyLayeredHit()
+        {
+            Timeline tl = Fixtures.OverdriveTimeline;
+            SimTuning tuning = Fixtures.OverdriveLevel.Tuning;
+            int ring = Array.IndexOf(Catalog.SoundCategories, "ring");
+            var deaths = new Dictionary<double, int>();
+            foreach (ActionEvent a in tl.Actions)
+                if (a.Kind == ActionKind.Death) deaths[a.Impact] = deaths.TryGetValue(a.Impact, out int n) ? n + 1 : 1;
+            var booms = new HashSet<double>();
+            float quiet = float.MaxValue, loud = 0;
+            foreach (SoundEvent s in tl.Sounds)
+            {
+                Assert.That(s.Gain, Is.LessThanOrEqualTo(tuning.SoundGainMax + 1e-3), "a sound over the cap at " + s.Time);
+                int cat = s.Sound / Catalog.Variants;
+                if (cat == ring) booms.Add(s.Time);
+                if (cat != Catalog.DeathSound || !deaths.TryGetValue(s.Time, out int k)) continue;
+                if (k <= 4) quiet = Math.Min(quiet, s.Gain);
+                if (k >= 60) loud = Math.Max(loud, s.Gain);
+            }
+            // A beat's deaths can include a few the blow didn't make (a spell's on the same impact), so a
+            // blow near the threshold may be just under it.
+            int heavy = 0, boomed = 0;
+            foreach (ActionEvent a in tl.ActionsOf(0))
+            {
+                if (a.Kind != ActionKind.Attack || !deaths.TryGetValue(a.Impact, out int k) || k < tuning.HeavyBlowKills) continue;
+                heavy++;
+                if (booms.Contains(a.Impact)) boomed++;
+            }
+            Assert.That(heavy, Is.GreaterThanOrEqualTo(10));
+            Assert.That(boomed, Is.GreaterThanOrEqualTo(0.9 * heavy), boomed + " of " + heavy + " heavy blows boom");
+            Assert.That(loud, Is.GreaterThan(quiet + 0.2f), "a 60-kill beat's death sound is barely louder than a 4-kill one's");
         }
 
         /// <summary>With yieldToAccents the hero holds back a blow to leave room for a phrase's slam; without it, the slam never fits between back-to-back blows.</summary>

@@ -27,6 +27,32 @@ amplitude = min(0.25, 0.08 × strongestImpact + 0.02 × log2(1 + hitsThisBeat))
 
 Here `strongestImpact` is the beat's largest action strength, from 0 to 1.
 
+### Blow weight
+
+An intensity overlay's `feel` object (overdrive's, epic ps-5pd) makes the
+game's own feel scale with how many each of the hero's blows kills, so a
+60-kill slam lands like a hammer and a 5-kill slash stays crisp. A normal run
+has no `feel` and is unchanged. `BlowFeel` gives each blow a weight from its
+kills, the deaths on its impact:
+
+```
+weight = clamp01((ln(1 + kills) − ln(1 + crispKills)) / (ln(1 + heavyKills) − ln(1 + crispKills)))
+```
+
+| Field | Overdrive | What it does |
+|---|---|---|
+| `crispKills`, `heavyKills` | 8, 60 | Weight 0 at or below the first, 1 at or above the second. |
+| `punch` | 0.05 | Every weighted blow punches like an accent, zooming in by 2% + punch × weight. A zoom-in only hides more of the spawn band. |
+| `shake`, `shakeCap` | 0.3, 0.5 m | The beat's heaviest blow adds shake × weight to the shake above, under this cap instead of 0.25 m, well inside the 2 m spawn margin. |
+| `hitStop`, `hitStopCatchUp` | 0.06, 0.12 s | The hit-stop: from a blow's impact, the horde and the hero hold for hitStop × weight, then catch up over the next hitStopCatchUp (at most 2x speed). The impact lands on time and the world is back on song time 0.18 s later, before the next eighth at 155 BPM. The music, camera, effects and lights keep song time, so the punch, sparks and light play over the frozen blow. |
+| `trail` | 0.6 | The hero's trails and shocks, and the hit sparks of its blows, grow by 1 + trail × weight. |
+| `spark`, `deathBurst` | 1.4, 0.8 | Hit sparks' and death bursts' size factors, so sparks read through a packed crowd and hundreds of bursts don't mush together. |
+| `lightKnee` | 10 | Each effect light's intensity saturates toward this knee as knee × (1 − e^(−I / knee)), so dozens of bursts summed in one cell are one wave of light, not a white-out. |
+| `shardCap` | 240 | The crystal shatter's cap on live shard sets: deaths in view take shards in time order while fewer are live, and the rest break by the Crystal shader's own shatter with the stock burst and sound. |
+
+The tuning and its frame sequences are in
+[overdrive/feel](../../demo3d/evidence/overdrive/feel/README.md).
+
 The camera's distance and height follow from the view width at 16:9:
 
 ```
@@ -70,7 +96,9 @@ right. It must stay as punchy at 100 hits a beat as at one.
   `SoundEvent`s are final: the live client plays them, and the video's offline
   mix renders the same list. Per beat and per sound category, at most 3
   voices play. Their gain grows with log2 of the number of hits, and
-  variants are chosen by seed.
+  variants are chosen by seed. An intensity may lower the gain's curve and layer the ring's
+  heavy impact under a mass kill (choreography.md, Tuning fields: `soundGain`,
+  `heavyBlowKills`).
 - **The crystal shatter's sounds** (epic ps-2iq) are the client's own, worked out from the
   timeline when the run starts (`ShatterSounds`), so the live scheduler, `--dump-sounds` and
   the offline mix share them. Each crystal death's release beat gets three layers: a crunching

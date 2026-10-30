@@ -198,6 +198,16 @@ namespace PS.Choreography
         /// such a spin or slam moves later, as any positioned combo that can't fit does.
         /// </summary>
         public bool YieldToAccents;
+        /// <summary>
+        /// The aggregated sounds' gain for a beat's <c>n</c> requests of a category (its <c>soundGain</c> object:
+        /// <c>base</c>, <c>perDoubling</c> and <c>max</c>): min(max, (base + perDoubling × log2 n) × (0.7 + 0.3 × strongest)).
+        /// </summary>
+        public double SoundGainBase = 0.35, SoundGainPerDoubling = 0.15, SoundGainMax = 1.0;
+        /// <summary>
+        /// A hero blow that kills at least this many also asks for the ring's heavy impact (its <c>heavyBlowKills</c>),
+        /// at a strength growing to 1 at twice as many, so a mass kill lands as one layered boom. 0, the default: none.
+        /// </summary>
+        public int HeavyBlowKills;
 
         public static readonly SimTuning Default = new SimTuning();
 
@@ -207,7 +217,7 @@ namespace PS.Choreography
         public static SimTuning Parse(JsonValue root)
         {
             var d = Default;
-            JsonValue hp = root["hitPointScale"];
+            JsonValue hp = root["hitPointScale"], gain = root["soundGain"];
             var t = new SimTuning
             {
                 ComboMaxSpeed = root["comboMaxSpeed"].AsFloat(d.ComboMaxSpeed),
@@ -223,11 +233,17 @@ namespace PS.Choreography
                 ReleaseLeadS = root["releaseLeadS"].AsFloat(d.ReleaseLeadS),
                 TravelScaledReach = root["travelScaledReach"].AsBool(d.TravelScaledReach),
                 YieldToAccents = root["yieldToAccents"].AsBool(d.YieldToAccents),
+                SoundGainBase = gain["base"].AsDouble(d.SoundGainBase),
+                SoundGainPerDoubling = gain["perDoubling"].AsDouble(d.SoundGainPerDoubling),
+                SoundGainMax = gain["max"].AsDouble(d.SoundGainMax),
+                HeavyBlowKills = root["heavyBlowKills"].AsInt(d.HeavyBlowKills),
             };
             if (!(t.ComboMinSpeed >= ClipLibrary.MinSpeed) || !(t.ComboMaxSpeed >= t.ComboMinSpeed))
                 throw new FormatException("hero combo speeds " + t.ComboMinSpeed + " to " + t.ComboMaxSpeed + " are out of order or below the clips' minimum");
             if (!(t.MaxShapeScale > 0) || !(t.HitsShapeScale > 0) || !(t.MaxShapeViewFraction > 0)) throw new FormatException("hit shape caps must be positive");
             if (!(t.RefillDivisor > 0) || t.RefillMinPerBeat < 0 || !(t.ReleaseLeadS >= 0)) throw new FormatException("refill and release tuning out of range");
+            if (!(t.SoundGainBase >= 0) || !(t.SoundGainPerDoubling >= 0) || !(t.SoundGainMax > 0) || t.HeavyBlowKills < 0)
+                throw new FormatException("soundGain and heavyBlowKills must not be negative");
             if (!(t.FodderHitPointScale >= 0) || !(t.EliteHitPointScale >= 0) || !(t.BossHitPointScale >= 0)) throw new FormatException("hitPointScale must not be negative");
             return t;
         }

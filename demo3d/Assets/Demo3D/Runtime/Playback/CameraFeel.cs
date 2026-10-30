@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PS.Choreography;
 using UnityEngine;
 
@@ -9,21 +10,29 @@ namespace Demo3D.Runtime.Playback
     /// - punch: a 2% zoom-in over a sixteenth note on each accent, released over a beat;
     /// - shake: per beat, amplitude = min(0.25, 0.08 × strongest + 0.02 × log2(1 + hits)) metres,
     ///   so a hundred hits on one beat never shake a hundred times harder, decaying over the beat.
+    /// With an intensity's <see cref="BlowFeel"/>, each of the hero's blows punches too, by its weight,
+    /// and the beat's heaviest blow adds to the shake, under the feel's raised cap.
     /// Both are functions of song time, so seeks and fixed-time captures reproduce them.
     /// </summary>
     public sealed class CameraFeel
     {
         public const float PunchAmount = 0.02f, ShakeCap = 0.25f;
         readonly SongMap _map;
-        readonly double[] _accents;
+        readonly double[] _punchAt;    // punches: accents and weighted blows, sorted
+        readonly float[] _depth;       // per punch: its zoom-in
         readonly float[] _shake;       // per beat index: amplitude in metres
 
-        public CameraFeel(Timeline tl)
+        public CameraFeel(Timeline tl, BlowFeel blows = null)
         {
             _map = tl.Map;
-            _accents = new double[_map.Accents.Length];
-            for (int i = 0; i < _accents.Length; i++) _accents[i] = _map.Accents[i].Time;
-            Array.Sort(_accents);
+            var punches = new List<(double t, float depth)>();
+            foreach (var a in _map.Accents) punches.Add((a.Time, PunchAmount));
+            if (blows != null)
+                for (int i = 0; i < blows.Count; i++)
+                    if (blows.WeightOf(i) > 0) punches.Add((blows.Time(i), PunchAmount + blows.Feel.Punch * blows.WeightOf(i)));
+            punches.Sort((x, y) => x.t.CompareTo(y.t));
+            _punchAt = punches.ConvertAll(p => p.t).ToArray();
+            _depth = punches.ConvertAll(p => p.depth).ToArray();
             int beats = _map.Beats.Length + 1;
             var hits = new int[beats];
             var strongest = new float[beats];
@@ -35,9 +44,17 @@ namespace Demo3D.Runtime.Playback
                 if (a.Kind != ActionKind.Attack) hits[b]++;
                 strongest[b] = Math.Max(strongest[b], a.Strength);
             }
+            var heaviest = new float[beats];
+            if (blows != null)
+                for (int i = 0; i < blows.Count; i++)
+                {
+                    int b = BeatOf(blows.Time(i));
+                    if (b >= 0 && b < beats) heaviest[b] = Math.Max(heaviest[b], blows.WeightOf(i));
+                }
+            float cap = blows?.Feel.ShakeCap ?? ShakeCap, extra = blows?.Feel.Shake ?? 0f;
             _shake = new float[beats];
             for (int b = 0; b < beats; b++)
-                _shake[b] = Mathf.Min(ShakeCap, 0.08f * strongest[b] + 0.02f * Mathf.Log(1 + hits[b], 2));
+                _shake[b] = Mathf.Min(cap, 0.08f * strongest[b] + 0.02f * Mathf.Log(1 + hits[b], 2) + extra * heaviest[b]);
         }
 
         int BeatOf(double t) => (int)Math.Floor(_map.BeatIndexAt(t) + 1e-6);
@@ -45,19 +62,19 @@ namespace Demo3D.Runtime.Playback
         /// <summary>The view width's multiplier at t (below 1 is a zoom-in).</summary>
         public float Punch(double t)
         {
-            int i = Array.BinarySearch(_accents, t);
+            int i = Array.BinarySearch(_punchAt, t);
             if (i < 0) i = ~i - 1;
             float factor = 1f;
             // Accents closer than a punch's length overlap: take the deepest, so a new accent
             // never snaps the zoom back out (the demo systems' review).
-            for (; i >= 0 && t - _accents[i] < 2.0; i--)
+            for (; i >= 0 && t - _punchAt[i] < 2.0; i--)
             {
-                double u = t - _accents[i];
-                double beat = BeatLength(_accents[i]);
+                double u = t - _punchAt[i];
+                double beat = BeatLength(_punchAt[i]);
                 double sixteenth = beat / 4;
                 float f = 1f;
-                if (u < sixteenth) f = 1f - PunchAmount * (float)(u / sixteenth);
-                else if (u < sixteenth + beat) f = 1f - PunchAmount * (float)(1 - (u - sixteenth) / beat);
+                if (u < sixteenth) f = 1f - _depth[i] * (float)(u / sixteenth);
+                else if (u < sixteenth + beat) f = 1f - _depth[i] * (float)(1 - (u - sixteenth) / beat);
                 factor = Math.Min(factor, f);
             }
             return factor;

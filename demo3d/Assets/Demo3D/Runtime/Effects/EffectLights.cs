@@ -64,6 +64,12 @@ namespace Demo3D.Runtime.Effects
         public double DropShare { get; private set; }
         /// <summary>Global multiplier on cue intensities (URP's point light units).</summary>
         public float IntensityScale = 1f;
+        /// <summary>
+        /// Above 0, a light's intensity saturates toward this knee, as knee × (1 − e^(−I / knee)): a cluster of
+        /// one cue stays near its own, but dozens of death bursts summed in one cell stop short of a white-out
+        /// (an intensity's blow feel, BlowFeel.Amounts.LightKnee). 0, the default: the cluster's sum.
+        /// </summary>
+        public float Knee;
 
         public EffectLights(int poolSize)
         {
@@ -173,7 +179,7 @@ namespace Demo3D.Runtime.Effects
                 var col = cl.Color / Mathf.Max(1e-5f, cl.Intensity);
                 l.transform.position = cl.Position;
                 l.color = new Color(col.x, col.y, col.z);
-                l.intensity = cl.Intensity;
+                l.intensity = Knee > 0 ? Knee * (1f - Mathf.Exp(-cl.Intensity / Knee)) : cl.Intensity;
                 l.range = cl.Range;
                 if (!l.enabled) l.enabled = true;
             }
