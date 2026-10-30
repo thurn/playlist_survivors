@@ -20,8 +20,9 @@ namespace Demo3D.Runtime.Crowd
 
         /// <summary>
         /// `--style-tune key=value,...`: overrides the tuned values for a run, to judge a change
-        /// without a rebuild. Keys: gain and peak (every type's <see cref="Gain"/> and <see cref="Peak"/>) and the post look's
-        /// exposure, contrast, saturation, bloom, threshold, chroma, vignette and neutral (0 or 1).
+        /// without a rebuild. Keys: gain and peak (every type's <see cref="Gain"/> and
+        /// <see cref="Peak"/>) and the post look's exposure, contrast, saturation, bloom,
+        /// threshold, chroma, vignette and neutral (0 or 1).
         /// </summary>
         public const string TuneFlag = "--style-tune";
 
@@ -143,7 +144,8 @@ namespace Demo3D.Runtime.Crowd
         /// <summary>
         /// The soft limit on a type's luminance after the gain (the shaders' _Peak,
         /// SL_Grade): it keeps the effects the brightest values on screen over the self-lit
-        /// treatments. From the same tuning pass; 1000 is no limit.
+        /// treatments. From the same tuning pass. The hit flash is graded too, so it is capped
+        /// with the rest; the shaders' default, 1000, is in effect no limit.
         /// </summary>
         public float Peak(string typeId)
         {

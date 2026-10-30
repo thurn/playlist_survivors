@@ -98,6 +98,10 @@ stills with L* < 10.
 
 ## Not done here
 
+- **The hit flash is graded with the body**, so under a low peak (fire 0.15, hologram 0.1) a
+  hit's white flash is capped near the horde's own brightness. The stills cannot show whether
+  hits still read; that is part of the operator's check.
+
 - **The hero keeps its own shader.** The lab paints its knight under every non-baseline style,
   but demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'
   skinning does not apply to it. The bead left this optional.
