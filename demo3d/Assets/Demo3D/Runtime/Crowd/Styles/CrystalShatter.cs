@@ -17,13 +17,22 @@ namespace Demo3D.Runtime.Crowd
     ///   swap doesn't show; until the release the shadow is cast by the shadow proxy's mesh at that pose
     ///   (CrowdShards.Set.HoldShadow), as the crowd's was. (The instance's tint is not drawn by Crystal,
     ///   so the shards ignore it too.) They follow the instance until the release.
-    /// - On the next beat (where the dissolve used to start: State.Dissolve leaves 0) they become
-    ///   PhysX rigidbodies, with an outward kick from the body's centre plus the killing blow's
-    ///   direction (the hero to the monster at the blow), and their inside faces show (_ShardOpen).
-    ///   A monster's own shards ignore each other for <see cref="SelfIgnoreSeconds"/>, as their convex
-    ///   hulls overlap while assembled; other shards and the floor collide from the start.
-    /// - They land on the floor (a box under y = 0), settle, and after <see cref="LingerSeconds"/> sink
-    ///   into it over <see cref="SinkSeconds"/>, then go back to the pool.
+    /// - Over the hold, glowing cracks spread along the cuts between shards from where the blow landed
+    ///   (on the body, facing the hero), covering it by <see cref="CrackSpread"/> of the hold; from
+    ///   <see cref="SwellFrom"/> the shards swell apart a little and tremble, harder toward the beat.
+    /// - On the next beat (where the dissolve used to start: State.Dissolve leaves 0) the shards pop a
+    ///   few millimetres apart, their inside faces show (_ShardOpen) and the cracks flare, and they
+    ///   hold there for <see cref="HitStopSeconds"/> (hit-stop on the dying monster only; the world
+    ///   keeps moving). Then they become PhysX rigidbodies, kicked outward from the hit point and
+    ///   along the killing blow (the hero to the monster at the blow), with wide variance: some slump
+    ///   where they stand, most scatter, a few fly far, small ones spinning fastest. The cracks' heat
+    ///   cools over the first half second of flight. A monster's own shards ignore each other for
+    ///   <see cref="SelfIgnoreSeconds"/>, as their convex hulls overlap while assembled; other shards
+    ///   and the floor collide from the start.
+    /// - Gravity is <see cref="GravityScale"/> times Earth's, so they clack down rather than float;
+    ///   they bounce once or twice, skitter on the floor's friction (a box under y = 0) and settle into
+    ///   a pile, and after <see cref="LingerSeconds"/> sink into it over <see cref="SinkSeconds"/>, then
+    ///   go back to the pool.
     /// - Physics runs in script mode on the song clock, in fixed steps of <see cref="Step"/>, so a
     ///   `--fixed-time` run gives the same shards every time; a seek backwards clears every shard, and
     ///   deaths before a `--start-at` point are not reconstructed (their instance stays hidden).
@@ -32,15 +41,23 @@ namespace Demo3D.Runtime.Crowd
     {
         public const float Step = 1f / 120f;
         public const int MaxStepsPerFrame = 12; // a long hitch drops time rather than stalling
-        public const float LingerSeconds = 2.5f, SinkSeconds = 1f;
+        public const float LingerSeconds = 5f, SinkSeconds = 1.2f;
         public const float SelfIgnoreSeconds = 0.35f;
         public const float Density = 2600f; // kg/m³, glass
+        public const float GravityScale = 2.2f;
+        /// <summary>The hold's share in which the cracks cover the body, and the share from which the shards swell and tremble.</summary>
+        public const float CrackSpread = 0.8f, SwellFrom = 0.55f;
+        /// <summary>The release's hit-stop: the popped shards hold still for 4 frames at 60 fps before they fly.</summary>
+        public const float HitStopSeconds = 4f / 60f;
+        /// <summary>The cracks' heat: at the hold's start and end, at the release's flare, and how fast it cools in flight (s).</summary>
+        public const float HeatFrom = 0.6f, HeatTo = 1.6f, HeatFlare = 2.5f, HeatCooling = 0.18f;
 
         /// <summary>
-        /// The release's kick in m/s for a 1.8 m monster (scaled by the square root of its height): outward
-        /// from the body's centre, along the blow, and up; and its spin.
+        /// The release's kick in m/s for a 1.8 m monster (scaled by the square root of its height):
+        /// outward from the hit point, along the blow, and up; and its spin. Each shard's share of it
+        /// varies widely (see Launch).
         /// </summary>
-        public float OutwardSpeed = 1.0f, BlowSpeed = 1.3f, UpSpeed = 1.6f, SpinRadPerS = 7f;
+        public float OutwardSpeed = 2.4f, BlowSpeed = 3.0f, UpSpeed = 3.0f, SpinRadPerS = 10f;
 
         /// <summary>`--shatter-log`: a line per hold and release, to find deaths for filmstrips.</summary>
         readonly bool _log = Args.Has("--shatter-log");
@@ -49,18 +66,23 @@ namespace Demo3D.Runtime.Crowd
         public Camera View;
 
         static readonly int IdShardOpen = Shader.PropertyToID("_ShardOpen");
+        static readonly int IdCrack = Shader.PropertyToID("_Crack");
+        static readonly int IdCrackHeat = Shader.PropertyToID("_CrackHeat");
 
         readonly Timeline _tl;
         readonly CrowdShards.Set[] _sets;    // per crowd type, null where the type doesn't shatter
         readonly Material[] _materials;      // per crowd type: the crystal look
         readonly Material _motion;           // the opaque-queue twin that writes motion vectors (CrystalShard.shader)
-        readonly float[] _centerY, _height;  // per crowd type: the body's centre height (the kick's origin) and its height
+        readonly float[] _centerY, _height;  // per crowd type: the standing body's centre height (for logs) and its height
+        readonly Vector3[] _poseCentre;      // per crowd type: the held pose's centre (root space): shards' centres by volume
+        readonly Vector3[] _poseExtent;      // per crowd type: the held pose's half extents about it (root space)
         readonly List<Group>[] _free;
         readonly List<Group> _live = new List<Group>();
         readonly Dictionary<int, Group> _byEntity = new Dictionary<int, Group>();
         readonly HashSet<int> _played = new HashSet<int>(); // entities whose shards have come and gone
         readonly GameObject _root;
         readonly PhysicsMaterial _physics;
+        readonly Vector3 _gravity; // the project's, restored on Dispose
         double _t0 = double.NaN, _last = double.NaN;
         long _steps, _frame;
 
@@ -81,10 +103,13 @@ namespace Demo3D.Runtime.Crowd
             public Renderer[] Renderers;
             public MaterialPropertyBlock Block;
             public float[] SinkFrom, SinkDepth;
-            public bool Released, Sinking, SelfCollides;
-            public double ReleasedAt;
+            public bool Released, Flying, Sinking, SelfCollides, Hot;
+            public double HeldAt, Beat;    // the hold's first frame and its length (one beat)
+            public double ReleasedAt;      // the pop (the beat); it flies after the hit-stop
+            public double FlewAt;          // physics time it began to fly
             public long Seen; // the last frame Dying placed it
-            public Vector3 Position;
+            public Vector3 Position, Hit;  // the instance's position; where the blow landed (world)
+            public Vector3 Blow;           // the killing blow's direction on the ground
             public float Yaw, Scale;
             public uint Seed;
         }
@@ -98,6 +123,8 @@ namespace Demo3D.Runtime.Crowd
             _materials = new Material[types.Length];
             _centerY = new float[types.Length];
             _height = new float[types.Length];
+            _poseCentre = new Vector3[types.Length];
+            _poseExtent = new Vector3[types.Length];
             _free = new List<Group>[types.Length];
             for (int i = 0; i < types.Length; i++)
             {
@@ -110,6 +137,20 @@ namespace Demo3D.Runtime.Crowd
                 _materials[i].CopyMatchingPropertiesFromMaterial(crowd);
                 _centerY[i] = types[i].CenterY;
                 _height[i] = types[i].HeightM;
+                // Most death poses lie on the floor, so the swell, the hit point and the kick work from
+                // the pose's own centre, not the standing body's.
+                float vol = 0;
+                var lo = Vector3.positiveInfinity;
+                var hi = Vector3.negativeInfinity;
+                foreach (var sh in _sets[i].Shards)
+                {
+                    _poseCentre[i] += sh.Center * sh.Volume;
+                    vol += sh.Volume;
+                    lo = Vector3.Min(lo, sh.Center);
+                    hi = Vector3.Max(hi, sh.Center);
+                }
+                _poseCentre[i] /= Mathf.Max(vol, 1e-9f);
+                _poseExtent[i] = Vector3.Max(hi - _poseCentre[i], _poseCentre[i] - lo);
                 foreach (var s in _sets[i].Shards) Physics.BakeMesh(s.Hull.GetEntityId(), true); // cook the hulls now, not at the first death
             }
             _motion = new Material(shader) { name = "shard_motion", renderQueue = (int)RenderQueue.GeometryLast, enableInstancing = false };
@@ -117,10 +158,12 @@ namespace Demo3D.Runtime.Crowd
             _motion.SetShaderPassEnabled("ShadowCaster", false);
             _physics = new PhysicsMaterial("shard")
             {
-                bounciness = 0.25f, dynamicFriction = 0.55f, staticFriction = 0.7f,
+                bounciness = 0.35f, dynamicFriction = 0.4f, staticFriction = 0.7f,
                 bounceCombine = PhysicsMaterialCombine.Average, frictionCombine = PhysicsMaterialCombine.Average,
             };
             Physics.simulationMode = SimulationMode.Script;
+            _gravity = Physics.gravity;
+            Physics.gravity = new Vector3(0, -9.81f * GravityScale, 0);
             _root = new GameObject("CrystalShatter");
             var floor = new GameObject("ShardFloor");
             floor.transform.SetParent(_root.transform, false);
@@ -156,6 +199,9 @@ namespace Demo3D.Runtime.Crowd
             }
             _last = t;
             _frame++;
+            // Popped shards whose hit-stop is over fly from this frame's steps.
+            foreach (var grp in _live)
+                if (grp.Released && !grp.Flying && t >= grp.ReleasedAt + HitStopSeconds - 1e-4) Launch(grp);
             long target = (long)Math.Floor((t - _t0) / Step + 1e-6);
             int n = 0;
             while (_steps < target)
@@ -176,7 +222,16 @@ namespace Demo3D.Runtime.Crowd
                     if (grp.Seen < _frame - 1) Release(grp);
                     continue;
                 }
-                double age = now - grp.ReleasedAt;
+                if (!grp.Flying) continue;
+                double age = now - grp.FlewAt;
+                if (grp.Hot)
+                {
+                    float heat = HeatFlare * Mathf.Exp(-(float)age / HeatCooling);
+                    if (heat < 0.01f) heat = 0;
+                    grp.Hot = heat > 0;
+                    grp.Block.SetFloat(IdCrackHeat, heat);
+                    foreach (var r in grp.Renderers) r.SetPropertyBlock(grp.Block);
+                }
                 if (!grp.SelfCollides && age >= SelfIgnoreSeconds) SelfCollide(grp, true);
                 if (age < LingerSeconds) continue;
                 if (!grp.Sinking) StartSinking(grp);
@@ -211,6 +266,9 @@ namespace Demo3D.Runtime.Crowd
                 grp = Take(type);
                 grp.Entity = entity;
                 grp.Seed = seed;
+                grp.HeldAt = _last;
+                grp.Beat = BeatLength(_last);
+                grp.Blow = BlowOf(entity);
                 _byEntity[entity] = grp;
                 _live.Add(grp);
                 if (_log) Log("hold", grp, inst.Position);
@@ -218,7 +276,7 @@ namespace Demo3D.Runtime.Crowd
             grp.Seen = _frame;
             if (!grp.Released)
             {
-                Place(grp, inst);
+                Place(grp, inst, (float)Math.Min(1.0, (_last - grp.HeldAt) / grp.Beat));
                 if (inst.Dissolve > 0)
                 {
                     Release(grp);
@@ -247,9 +305,10 @@ namespace Demo3D.Runtime.Crowd
                 free.RemoveAt(free.Count - 1);
             }
             else grp = Create(type);
-            grp.Released = grp.Sinking = false;
-            grp.SelfCollides = true;
+            grp.Released = grp.Flying = grp.Sinking = false;
+            grp.SelfCollides = grp.Hot = true;
             grp.Block.SetFloat(IdShardOpen, 0);
+            grp.Block.SetFloat(IdCrackHeat, 0);
             for (int i = 0; i < grp.Objects.Length; i++)
             {
                 grp.Bodies[i].isKinematic = true;
@@ -318,22 +377,63 @@ namespace Demo3D.Runtime.Crowd
             return grp;
         }
 
-        /// <summary>The assembled shards at the instance: the crowd's placement (SkinVertex) of the root-space pose.</summary>
-        void Place(Group grp, in MonsterInstance inst)
+        /// <summary>
+        /// The assembled shards at the instance (the crowd's placement, SkinVertex, of the root-space
+        /// pose) at <paramref name="hold"/> (0..1) through the hold: the cracks spread from the hit
+        /// point, and toward the beat the shards swell apart and tremble.
+        /// </summary>
+        void Place(Group grp, in MonsterInstance inst, float hold)
         {
             grp.Position = inst.Position;
             grp.Yaw = inst.Yaw;
             grp.Scale = inst.Scale;
             var set = _sets[grp.Type];
-            var (_, rot) = Placement(Vector3.zero, inst);
+            var (centre, rot) = Placement(_poseCentre[grp.Type], inst);
+            // Where the blow landed: on the pose toward the hero (its extent that way), on its top.
+            float h = _height[grp.Type] * inst.Scale;
+            var ext = _poseExtent[grp.Type] * inst.Scale;
+            var local = Quaternion.Inverse(rot) * grp.Blow;
+            grp.Hit = centre - rot * Vector3.Scale(local, new Vector3(ext.x, 0, ext.z)) * 0.8f + Vector3.up * ext.y * 0.5f;
             grp.Shadow.transform.SetPositionAndRotation(inst.Position, rot);
             grp.Shadow.transform.localScale = Vector3.one * inst.Scale;
+            float swell = Mathf.SmoothStep(0, 1, Mathf.InverseLerp(SwellFrom, 1, hold));
+            float tremble = 0.012f * h * swell * swell;
+            float phase = (float)(_last * 2 * Math.PI);
             for (int i = 0; i < grp.Objects.Length; i++)
             {
                 var (pos, _) = Placement(set.Shards[i].Center, inst);
+                if (swell > 0)
+                {
+                    float a = Hash(grp.Seed, i) * 6.283f, b = Hash(grp.Seed, i + 977) * 6.283f;
+                    pos += Outward(pos - centre) * (0.03f * swell)
+                           + new Vector3(Mathf.Sin(phase * 23 + a), 0.5f * Mathf.Sin(phase * 29 + b), Mathf.Sin(phase * 31 + a + b)) * tremble;
+                }
                 grp.Transforms[i].SetPositionAndRotation(pos, rot);
                 grp.Transforms[i].localScale = Vector3.one * inst.Scale;
             }
+            // The cracks race out at a steady pace, so the spread reads through the hold; their heat builds to the beat.
+            float spread = Mathf.Clamp01(hold / CrackSpread);
+            grp.Block.SetVector(IdCrack, new Vector4(grp.Hit.x, grp.Hit.y, grp.Hit.z, spread * 1.2f * h));
+            grp.Block.SetFloat(IdCrackHeat, Mathf.Lerp(HeatFrom, HeatTo, hold * hold));
+            foreach (var r in grp.Renderers) r.SetPropertyBlock(grp.Block);
+        }
+
+        /// <summary>An offset from the pose's centre that never points into the floor.</summary>
+        static Vector3 Outward(Vector3 v) => new Vector3(v.x, Mathf.Max(0, v.y), v.z);
+
+        /// <summary>A shard's random number in [0, 1) for a death.</summary>
+        static float Hash(uint seed, int i)
+        {
+            uint x = seed * 747796405u + (uint)i * 2891336453u;
+            x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+            return (x & 0xffffff) / 16777216f;
+        }
+
+        /// <summary>The length of the beat at song time t.</summary>
+        double BeatLength(double t)
+        {
+            double i = Math.Floor(_tl.Map.BeatIndexAt(t));
+            return Math.Max(0.05, _tl.Map.TimeOfBeatIndex(i + 1) - _tl.Map.TimeOfBeatIndex(i));
         }
 
         /// <summary>
@@ -347,31 +447,70 @@ namespace Demo3D.Runtime.Crowd
             return (inst.Position + rot * (center * inst.Scale), rot);
         }
 
+        /// <summary>
+        /// The beat: the shards pop apart around the hit point and their inside faces show, the cracks
+        /// flare, and the instance's hold shadow gives way to the shards' own; they hold still until
+        /// the hit-stop ends (<see cref="Launch"/>).
+        /// </summary>
         void Release(Group grp)
         {
             grp.Released = true;
-            grp.ReleasedAt = _t0 + _steps * Step;
+            grp.ReleasedAt = _last;
             grp.Block.SetFloat(IdShardOpen, 1);
-            var blow = BlowOf(grp.Entity);
+            grp.Block.SetVector(IdCrack, new Vector4(grp.Hit.x, grp.Hit.y, grp.Hit.z, 1000f));
+            grp.Block.SetFloat(IdCrackHeat, HeatFlare);
+            var (centre, _) = Placement(_poseCentre[grp.Type], new MonsterInstance { Position = grp.Position, Yaw = grp.Yaw, Scale = grp.Scale });
+            float h = _height[grp.Type] * grp.Scale;
+            grp.Shadow.SetActive(false);
+            for (int i = 0; i < grp.Objects.Length; i++)
+            {
+                var tr = grp.Transforms[i];
+                var p = tr.position;
+                var away = p - grp.Hit;
+                float near = 1f - Mathf.Clamp01(away.magnitude / h);
+                tr.position = p + Outward(p - centre) * 0.04f + Outward(away.normalized) * (0.012f * h * near);
+                grp.Renderers[i].SetPropertyBlock(grp.Block);
+                grp.Renderers[i].shadowCastingMode = ShadowCastingMode.On;
+            }
+        }
+
+        /// <summary>
+        /// The burst after the hit-stop: each shard becomes a rigidbody, kicked outward from the hit point
+        /// (harder near it), along the blow and up. Its share of the kick varies widely: one in four
+        /// slump where they stand, one in eight flies far; the largest chunks get about half the
+        /// smallest's share, as heavy pieces don't fly. Small shards spin faster.
+        /// </summary>
+        void Launch(Group grp)
+        {
+            grp.Flying = true;
+            grp.FlewAt = _t0 + _steps * Step;
             var rng = new System.Random((int)(grp.Seed * 2654435761u) ^ grp.Entity);
             var set = _sets[grp.Type];
-            var centre = grp.Position + Vector3.up * _centerY[grp.Type] * grp.Scale;
+            float h = _height[grp.Type] * grp.Scale;
+            float size = Mathf.Sqrt(grp.Scale * Mathf.Max(0.3f, _height[grp.Type] / 1.8f));
+            float largest = 1e-4f;
+            foreach (var sh in set.Shards) largest = Mathf.Max(largest, sh.Size);
             Physics.SyncTransforms(); // the kinematic placement, before the bodies wake
             SelfCollide(grp, false);
-            grp.Shadow.SetActive(false);
             for (int i = 0; i < grp.Objects.Length; i++)
             {
                 var rb = grp.Bodies[i];
                 rb.isKinematic = false;
-                grp.Renderers[i].SetPropertyBlock(grp.Block);
-                grp.Renderers[i].shadowCastingMode = ShadowCastingMode.On;
-                var away = grp.Transforms[i].position - centre;
+                float s = grp.Scale;
+                rb.mass = Mathf.Max(0.02f, set.Shards[i].Volume * s * s * s * Density);
+                var away = grp.Transforms[i].position - grp.Hit;
+                float near = 1f - Mathf.Clamp01(away.magnitude / h);
                 away = away.sqrMagnitude > 1e-6f ? away.normalized : Vector3.up;
-                float jitter = 0.6f + 0.8f * (float)rng.NextDouble();
-                var v = (away * OutwardSpeed + blow * BlowSpeed * (0.5f + (float)rng.NextDouble()) + Vector3.up * UpSpeed) * jitter
-                        * Mathf.Sqrt(grp.Scale * Mathf.Max(0.3f, _height[grp.Type] / 1.8f));
+                away.y = Mathf.Max(away.y, -0.2f); // a lying body's shards go out and up, not into the floor
+                double u = rng.NextDouble();
+                float share = u < 0.25 ? 0.1f + 0.25f * (float)rng.NextDouble()     // slumps
+                            : u > 0.875 ? 1.8f + 0.9f * (float)rng.NextDouble()   // flies far
+                            : 0.55f + 0.6f * (float)rng.NextDouble();
+                share *= (0.6f + 0.8f * near) * Mathf.Lerp(1.2f, 0.55f, set.Shards[i].Size / largest);
+                var v = (away * OutwardSpeed + grp.Blow * BlowSpeed * (0.5f + (float)rng.NextDouble()) + Vector3.up * UpSpeed) * share * size;
                 rb.linearVelocity = v;
-                rb.angularVelocity = RandomUnit(rng) * SpinRadPerS * (0.4f + (float)rng.NextDouble());
+                float small = Mathf.Clamp(0.12f / Mathf.Max(0.01f, set.Shards[i].Size * s), 0.6f, 2.2f);
+                rb.angularVelocity = RandomUnit(rng) * SpinRadPerS * (0.3f + 0.7f * Mathf.Min(2f, share)) * small * (0.6f + 0.8f * (float)rng.NextDouble());
             }
         }
 
@@ -447,6 +586,7 @@ namespace Demo3D.Runtime.Crowd
             foreach (var m in _materials) if (m != null) UnityEngine.Object.Destroy(m);
             if (_motion != null) UnityEngine.Object.Destroy(_motion);
             if (_physics != null) UnityEngine.Object.Destroy(_physics);
+            Physics.gravity = _gravity;
             _live.Clear();
             _byEntity.Clear();
         }

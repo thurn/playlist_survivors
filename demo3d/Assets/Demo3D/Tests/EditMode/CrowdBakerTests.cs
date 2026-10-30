@@ -326,7 +326,8 @@ namespace Demo3D.Tests
         /// <summary>
         /// The crystal shatter's shard bake (CrowdShardBaker) on one type: the style mesh at the held
         /// death pose cut into 20 to 40 closed chunks of varied size, whose skin is exactly that posed
-        /// mesh (every triangle once) and whose inside faces alone carry the flag.
+        /// mesh (every triangle once) and whose inside faces alone carry the flag; the skin marks the
+        /// cuts between chunks as crack seams.
         /// </summary>
         [Test]
         public void TheShardBakeCutsTheHeldDeathPoseIntoClosedVariedChunks()
@@ -368,7 +369,7 @@ namespace Demo3D.Tests
                                 if (grid.TryGetValue(c + new Vector3Int(x, y, z), out var l) && l.Any(p => (p - v).sqrMagnitude < 1e-10f)) return true;
                     return false;
                 }
-                int skinTriangles = 0, offPose = 0, open = 0;
+                int skinTriangles = 0, offPose = 0, open = 0, seamed = 0;
                 double skinArea = 0, poseArea = 0;
                 for (int t = 0; t < posed.Triangles; t++)
                     poseArea += 0.5 * Vector3.Cross(posed.Position[3 * t + 1] - posed.Position[3 * t], posed.Position[3 * t + 2] - posed.Position[3 * t]).magnitude;
@@ -377,7 +378,9 @@ namespace Demo3D.Tests
                 {
                     var v = s.Mesh.vertices;
                     var flags = new List<Vector2>(); s.Mesh.GetUVs(1, flags);
+                    var seams = new List<Vector4>(); s.Mesh.GetUVs(2, seams);
                     var tris = s.Mesh.triangles;
+                    bool anySeam = false;
                     var edges = new Dictionary<(Vector3, Vector3), int>();
                     for (int t = 0; t < tris.Length; t += 3)
                     {
@@ -388,7 +391,10 @@ namespace Demo3D.Tests
                             skinTriangles++;
                             for (int k = 0; k < 3; k++) if (!OnPose(v[tris[t + k]] + s.Center)) offPose++;
                             skinArea += 0.5 * Vector3.Cross(v[tris[t + 1]] - v[tris[t]], v[tris[t + 2]] - v[tris[t]]).magnitude;
+                            var sm = seams[tris[t]];
+                            anySeam |= Mathf.Max(sm.x, Mathf.Max(sm.y, sm.z)) == 1f; // a cut (hairlines inside a chunk are 0.3)
                         }
+                        else Assert.That(seams[tris[t]], Is.EqualTo(Vector4.zero), "only the skin has crack seams");
                         for (int k = 0; k < 3; k++)
                         {
                             var a = v[tris[t + k]];
@@ -402,7 +408,9 @@ namespace Demo3D.Tests
                     Assert.That(s.Volume, Is.GreaterThan(0f), "a chunk has thickness");
                     Assert.That(s.Hull.vertexCount, Is.InRange(4, 42), "the convex collider's points");
                     volumes.Add(s.Volume);
+                    if (anySeam) seamed++;
                 }
+                Assert.That(seamed, Is.GreaterThan(set.Shards.Length * 3 / 4), "the cuts between chunks are crack seams on their skins");
                 Assert.That(skinTriangles, Is.EqualTo(posed.Triangles), "the skins hold every triangle of the style mesh");
                 Assert.That(skinArea, Is.EqualTo(poseArea).Within(poseArea * 1e-4), "and each once");
                 Assert.That(offPose, Is.Zero, "skin corners on the posed style mesh");

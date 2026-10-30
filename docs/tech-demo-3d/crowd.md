@@ -222,11 +222,24 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     `CrystalShard.shader` with Crystal's surface (`CrystalCommon.hlsl`), so the frame doesn't
     change; only the shadow does, by a few pixels, since the crowd casts from the LOD2 shadow
     proxy.
-  - **The release.** On the next beat (where the dissolve used to start) the shards become PhysX
-    rigidbodies with an outward kick plus the killing blow's direction (the hero to the monster),
-    their inside faces show (brighter and more saturated), and they land on a floor collider under
-    y = 0, settle, and sink after 2.5 s. Physics steps on the song clock in script mode at 120 Hz,
-    so `--fixed-time` runs repeat exactly; deaths before `--start-at` are not reconstructed.
+  - **Cracks over the hold.** Glowing seams spread across the assembled shards from where the blow
+    landed (the pose's edge toward the hero), at a steady pace that covers the body by 80% of the
+    hold: the cuts between chunks (the skin's edges on a cut, marked in the bake's UV2) and, at a
+    third of the brightness, hairline cracks on a fifth of the edges inside each chunk. They are
+    thin at the front and wider behind it, and their heat builds to the beat; from 55% of the hold
+    the shards swell apart (3%) and tremble, harder toward the beat (`CrystalShard.shader`'s
+    CrackGlow, `CrystalShatter.Place`).
+  - **The release.** On the next beat (where the dissolve used to start) the shards pop a few
+    millimetres apart, their inside faces show (brighter and more saturated) and the cracks flare;
+    they hold there for 4 frames (hit-stop on the dying monster only), then become PhysX
+    rigidbodies, kicked outward from the hit point (harder near it), along the killing blow (the
+    hero to the monster) and up. Each shard's share varies widely: a quarter slump where they
+    stand, one in eight flies far, and the largest chunks get about half the smallest's share.
+    Small shards spin fastest, and the heat cools over the first half second of flight. Gravity is
+    2.2 times Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on
+    a floor collider under y = 0, and sink after 5 s. Physics steps on the song clock in script
+    mode at 120 Hz, so `--fixed-time` runs repeat exactly; deaths before `--start-at` are not
+    reconstructed. Tuning and filmstrips: [shatter/motion](../../demo3d/evidence/shatter/motion/README.md).
   - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque
     queue with only its MotionVectors pass enabled, so under `--aa taa` the shards reproject with
     their own motion (the crowd's crystal monsters still smear, as below).

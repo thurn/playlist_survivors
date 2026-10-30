@@ -4,6 +4,12 @@
 // inside faces (UV1.x 1) are brighter and more saturated, and are drawn only once the shards are
 // released (_ShardOpen, per renderer), so nothing pokes out of the assembled body.
 //
+// Cracks (CrackGlow): over the death hold, glowing seams spread along the cuts between shards (the
+// skin's edges marked in UV2.xyz: 1 on a cut, 0.3 on a hairline crack inside a chunk) from where the
+// blow landed (_Crack, per renderer), thin at the front and wider behind it; _CrackHeat builds them
+// through the hold, flares on the release and cools as the shards fly, while the fresh inside faces
+// glow with the same heat.
+//
 // The material draws in Crystal's queue, which gets no motion vectors from URP, so moving shards
 // would smear under TAA. CrystalShatter gives every shard a second material on this shader in the
 // last opaque queue (2499) with only its MotionVectors pass enabled: URP draws that pass for opaque
@@ -36,8 +42,11 @@ Shader "Demo3D/Styles/CrystalShard"
         CBUFFER_END
 
         // Per renderer (a MaterialPropertyBlock): 1 once the shards are released, which shows the
-        // inside faces.
+        // inside faces; the cracks' origin (xyz, world: where the blow landed) and how far they have
+        // spread from it (w, m); and their heat (0 draws none).
         float _ShardOpen;
+        float4 _Crack;
+        float _CrackHeat;
 
         #include "StyleCommon.hlsl"
 
@@ -46,6 +55,7 @@ Shader "Demo3D/Styles/CrystalShard"
             float3 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float2 inside : TEXCOORD1; // x 1 on an inside face
+            float4 seam : TEXCOORD2;   // xyz: the edge facing that barycentric's corner: 1 a cut, 0.3 a hairline, 0 none
             float4 bary : TEXCOORD3;   // the style mesh's barycentrics and value per triangle
         };
 
@@ -74,6 +84,7 @@ Shader "Demo3D/Styles/CrystalShard"
                 float4 bary : TEXCOORD2;
                 float inside : TEXCOORD3;
                 float fogFactor : TEXCOORD4;
+                float3 seam : TEXCOORD5;
             };
 
             Varyings vert(ShardAttributes v)
@@ -85,14 +96,36 @@ Shader "Demo3D/Styles/CrystalShard"
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.bary = v.bary;
                 o.inside = v.inside.x;
+                o.seam = v.seam.xyz;
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
                 return o;
+            }
+
+            // The cracks' light at a fragment (HDR, added after the grade so the bloom catches it).
+            half3 CrackGlow(Varyings i)
+            {
+                // Derivatives first, outside any per-triangle branch.
+                float px = max(length(ddx(i.positionWS)), length(ddy(i.positionWS))); // metres per pixel
+                float3 edgePx = i.bary.xyz / max(fwidth(i.bary.xyz), 1e-5);          // pixels to each edge
+                half3 hot = lerp(_Tint.rgb, half3(1, 1, 1), 0.4);
+                if (i.inside > 0.5) return hot * (_CrackHeat * 0.3 * _ShardOpen);
+                // The front: a sphere from the blow, ragged per triangle (its value, bary.w).
+                float d = distance(i.positionWS, _Crack.xyz) + i.bary.w * 0.15;
+                float behind = saturate((_Crack.w - d) / 0.3); // 0 at the front, 1 0.3 m behind it
+                float widthPx = lerp(0.002, 0.008, behind) / max(px, 1e-5);
+                float3 core = i.seam * (1.0 - smoothstep(widthPx - 0.75, widthPx + 0.75, edgePx));
+                float3 halo = i.seam * exp(-edgePx * px / 0.025);
+                float line_ = max(core.x, max(core.y, core.z));
+                float glow = max(halo.x, max(halo.y, halo.z));
+                return hot * (step(0.001, behind) * _CrackHeat * (line_ * (2.5 + 2.0 * (1.0 - behind)) + glow * 0.35));
             }
 
             half4 frag(Varyings i) : SV_Target
             {
                 if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1); // TD15's ID render, as the crowd's
-                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, 0, 0, i.inside, i.fogFactor);
+                half4 c = CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, 0, 0, i.inside, i.fogFactor);
+                if (_CrackHeat > 0) c.rgb += CrackGlow(i);
+                return c;
             }
             ENDHLSL
         }

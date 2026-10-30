@@ -134,8 +134,10 @@ namespace Demo3D.EditorTools.Crowd
             var pieces = Cut(posed, ShardCount(b.HeightM), new System.Random(seed));
             var rng = new System.Random(seed ^ 0x5eed);
             var ids = WeldIds(posed);
+            var uses = EdgeUses(posed, ids);
+            var near = NearOtherPiece(posed, pieces);
             var shards = new CrowdShards.Shard[pieces.Count];
-            for (int i = 0; i < pieces.Count; i++) shards[i] = Build(posed, ids, pieces[i], $"{b.Type.id}_shard{i}", rng);
+            for (int i = 0; i < pieces.Count; i++) shards[i] = Build(posed, ids, uses, near, pieces[i], $"{b.Type.id}_shard{i}", rng);
             return new CrowdShards.Set { Id = b.Type.id, HoldTime = hold, Shards = shards, HoldShadow = Mesh(shadow, $"{b.Type.id}_hold_shadow") };
         }
 
@@ -337,6 +339,53 @@ namespace Demo3D.EditorTools.Crowd
         static (long, long, long) Key(Vector3 v) =>
             ((long)Math.Round(v.x * 1e4), (long)Math.Round(v.y * 1e4), (long)Math.Round(v.z * 1e4));
 
+        /// <summary>
+        /// For each corner, whether a corner of another piece lies within 1.5 cm: where separate shells
+        /// (armour on a body) were cut apart without sharing an edge.
+        /// </summary>
+        static bool[] NearOtherPiece(Posed p, List<List<int>> pieces)
+        {
+            const float near = 0.015f;
+            var pieceOf = new int[p.Triangles];
+            for (int i = 0; i < pieces.Count; i++) foreach (int t in pieces[i]) pieceOf[t] = i;
+            var grid = new Dictionary<(int, int, int), List<int>>();
+            (int, int, int) Cell(Vector3 v) => (Mathf.FloorToInt(v.x / near), Mathf.FloorToInt(v.y / near), Mathf.FloorToInt(v.z / near));
+            for (int k = 0; k < p.Position.Length; k++)
+            {
+                var c = Cell(p.Position[k]);
+                if (!grid.TryGetValue(c, out var list)) grid[c] = list = new List<int>();
+                list.Add(k);
+            }
+            var result = new bool[p.Position.Length];
+            for (int k = 0; k < p.Position.Length; k++)
+            {
+                var (cx, cy, cz) = Cell(p.Position[k]);
+                int own = pieceOf[k / 3];
+                for (int x = -1; x <= 1 && !result[k]; x++)
+                    for (int y = -1; y <= 1 && !result[k]; y++)
+                        for (int z = -1; z <= 1 && !result[k]; z++)
+                            if (grid.TryGetValue((cx + x, cy + y, cz + z), out var list))
+                                foreach (int o in list)
+                                    if (pieceOf[o / 3] != own && (p.Position[o] - p.Position[k]).sqrMagnitude < near * near) { result[k] = true; break; }
+            }
+            return result;
+        }
+
+        /// <summary>How many triangles use each welded edge (an undirected pair of weld ids).</summary>
+        static Dictionary<(int, int), int> EdgeUses(Posed p, int[] ids)
+        {
+            var uses = new Dictionary<(int, int), int>();
+            for (int t = 0; t < p.Triangles; t++)
+                for (int k = 0; k < 3; k++)
+                {
+                    int a = ids[3 * t + k], b = ids[3 * t + (k + 1) % 3];
+                    if (a == b) continue;
+                    var key = a < b ? (a, b) : (b, a);
+                    uses[key] = uses.TryGetValue(key, out int n) ? n + 1 : 1;
+                }
+            return uses;
+        }
+
         /// <summary>Each triangle's neighbours across a shared (welded) edge.</summary>
         static List<int>[] Adjacency(Posed p)
         {
@@ -377,7 +426,7 @@ namespace Demo3D.EditorTools.Crowd
         // ---------------------------------------------------------------------------------
         // Closing a piece into a chunk.
 
-        static CrowdShards.Shard Build(Posed p, int[] ids, List<int> tris, string name, System.Random rng)
+        static CrowdShards.Shard Build(Posed p, int[] ids, Dictionary<(int, int), int> uses, bool[] nearOther, List<int> tris, string name, System.Random rng)
         {
             // The patch: its area-weighted centre and mean normal (short where it wraps round a limb).
             Vector3 c = Vector3.zero, nbar = Vector3.zero;
@@ -412,27 +461,56 @@ namespace Demo3D.EditorTools.Crowd
             var normals = new List<Vector3>();
             var bary = new List<Vector4>();
             var inside = new List<Vector2>();
+            var seams = new List<Vector4>();
             var indices = new List<int>();
-            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag)
+            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag, Vector4 seam)
             {
                 indices.Add(vertices.Count);
                 vertices.Add(pos - pivot);
                 normals.Add(nor);
                 bary.Add(bc);
                 inside.Add(new Vector2(flag, 0));
+                seams.Add(seam);
             }
-            // The skin: the style mesh's own corners.
             var directed = new Dictionary<(int, int), int>(); // boundary edges: welded (from, to), with a corner index
             foreach (int t in tris)
                 for (int k = 0; k < 3; k++)
                 {
                     int at = 3 * t + k;
-                    Corner(p.Position[at], p.Normal[at], p.Bary[at], 0);
                     int a = ids[at], b = ids[3 * t + (k + 1) % 3];
                     if (a == b) continue;
                     if (directed.ContainsKey((b, a))) directed.Remove((b, a)); // shared inside the piece
                     else directed[(a, b)] = at;
                 }
+            // The skin: the style mesh's own corners. Its seams (UV2.xyz) mark the triangle's edges that
+            // are cuts: on the piece's boundary and shared with a triangle of another piece, or an
+            // open edge whose both ends are within 1.5 cm of another piece (a shell cut from the one
+            // beneath it), but not a free open edge of the mesh (a cape's hem). Component i is the
+            // edge facing the corner whose barycentric (UV3) is i, so the shard shader finds a
+            // fragment's distance to the cut from UV3 alone. A cut is 1; a fifth of the edges inside
+            // the piece (by a hash of the welded edge, so both its triangles agree) are hairline
+            // cracks at 0.3, so the crazing runs across the chunks too.
+            foreach (int t in tris)
+            {
+                var seam = Vector4.zero;
+                for (int k = 0; k < 3; k++)
+                {
+                    int a = ids[3 * t + k], b = ids[3 * t + (k + 1) % 3];
+                    if (a == b) continue;
+                    float value;
+                    if (directed.TryGetValue((a, b), out int at) && at == 3 * t + k)
+                    {
+                        if (uses[a < b ? (a, b) : (b, a)] < 2 && !(nearOther[3 * t + k] && nearOther[3 * t + (k + 1) % 3])) continue;
+                        value = 1;
+                    }
+                    else if (!directed.ContainsKey((a, b)) && Hairline(Math.Min(a, b), Math.Max(a, b))) value = 0.3f;
+                    else continue;
+                    var facing = p.Bary[3 * t + (k + 2) % 3];
+                    int axis = facing.x >= facing.y && facing.x >= facing.z ? 0 : facing.y >= facing.z ? 1 : 2;
+                    seam[axis] = Mathf.Max(seam[axis], value);
+                }
+                for (int k = 0; k < 3; k++) Corner(p.Position[3 * t + k], p.Normal[3 * t + k], p.Bary[3 * t + k], 0, seam);
+            }
             // Inside faces: each boundary edge a→b, turned round (b, a, apex) to face out of the solid.
             double volume = 0;
             foreach (int t in tris)
@@ -450,9 +528,9 @@ namespace Demo3D.EditorTools.Crowd
                 var face = Vector3.Cross(a - b, apex - b);
                 var nor = face.sqrMagnitude > 0 ? face.normalized : -inward;
                 float r = (float)rng.NextDouble();
-                Corner(b, nor, new Vector4(1, 0, 0, r), 1);
-                Corner(a, nor, new Vector4(0, 1, 0, r), 1);
-                Corner(apex, nor, new Vector4(0, 0, 1, r), 1);
+                Corner(b, nor, new Vector4(1, 0, 0, r), 1, Vector4.zero);
+                Corner(a, nor, new Vector4(0, 1, 0, r), 1, Vector4.zero);
+                Corner(apex, nor, new Vector4(0, 0, 1, r), 1, Vector4.zero);
             }
 
             var mesh = new Mesh { name = name };
@@ -460,6 +538,7 @@ namespace Demo3D.EditorTools.Crowd
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             mesh.SetUVs(1, inside);
+            mesh.SetUVs(2, seams);
             mesh.SetUVs(3, bary);
             mesh.SetTriangles(indices, 0, true);
             return new CrowdShards.Shard
@@ -467,6 +546,14 @@ namespace Demo3D.EditorTools.Crowd
                 Mesh = mesh, Hull = Hull(vertices, name + "_hull"), Center = pivot,
                 Volume = (float)Math.Abs(volume), Size = (vertices.Max(v => v.magnitude)),
             };
+        }
+
+        /// <summary>Whether a welded edge inside a piece is a hairline crack: a fifth of them, by hash.</summary>
+        static bool Hairline(int a, int b)
+        {
+            uint x = (uint)a * 73856093u ^ (uint)b * 19349663u;
+            x ^= x >> 13; x *= 0x5bd1e995u; x ^= x >> 15;
+            return x % 5 == 0;
         }
 
         /// <summary>The distance along a ray to the posed mesh (infinity if it hits nothing).</summary>
