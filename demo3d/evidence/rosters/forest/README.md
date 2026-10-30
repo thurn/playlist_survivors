@@ -53,6 +53,20 @@ monsters are much smaller than they are in the song.
   head and front paws, the golem's and mushroom's palms, the spider's front
   legs, the dragon's head and jaw).
 
+## The final look (ps-f8a.4)
+
+The look set here (look.md, the stills, contact-sheet.jpg) was re-rendered
+with the set's own look: arena-layout.json's `rosters.forest` (saturation 14,
+contrast 22, bloom threshold 1.8 at 0.8), the wolf's, treant's, golem's and
+dragon's glow held under 1 by the roster's `glow`, ps-f8a.3's set radii and
+load-time slots, and corpses that sink into the ground (crowd.md, Roster
+sets). The song stills' mean chroma fell by 3-7 (song-145: 37.7 to 33.1);
+the effects are still the brightest pixels in every still, and every beauty
+shot passes readability (|dL*| 41-44). [gpu-probe-final.json](gpu-probe-final.json):
+the windowless probe at 60, 100, 145 and 175 s, medians 4.5-6.5 ms, the
+slowest frame 9.7 ms, with the Mac under other sessions' load (load average
+about 28). The sections below are ps-f8a.2's.
+
 ## Frame rate on the Mac
 
 Agents stay windowless, and a batch-mode player draws no frames (drawing

@@ -90,6 +90,25 @@ the whole song (0.9-199.0 s), runs of about 84,000-92,000 frames.
   The peak was 115-130 alive on screen against the final peak's target of
   158.
 
+## The final look (ps-f8a.4)
+
+`look/` and `close-*.jpg` were re-rendered with the set's own look:
+arena-layout.json's `rosters.heroic` (a cooler moon, 0.86, 0.9, 1.0 at 1.15;
+exposure 0.65, saturation 14, contrast 32, temperature -10) and corpses
+that sink into the ground (crowd.md, Roster sets). The warm grade had
+turned the browns of leather, bone and fur toward the ground's orange; the
+cooler, less saturated grade keeps them apart, and the normal and AO
+detail reads in the close stills. The song stills' mean chroma fell by
+about 6-13 (song-100: 42.1 to 30.2) while every beauty shot still passes
+readability (|dL*| 39-45) and the effects stay the brightest pixels.
+Windowless probe at 60, 100, 145 and 175 s, twice
+([gpu-probe-final.json](gpu-probe-final.json), [2](gpu-probe-final-2.json)):
+medians 3.9-12.6 ms, the slowest 20.5 ms at 175 s on the second run. The
+probe times CPU submission and GPU in series and the Mac was under other
+sessions' load (load average about 28), so it is an upper bound; the grade
+changes no pass. The windowed song check above stands, and the operator's
+row asks for a windowed check.
+
 ## Stills
 
 - `look/`: `demo3d look rosters-heroic --baseline final --player-args

@@ -1,0 +1,12 @@
+{
+  "graphicsDeviceName": "Apple M5 Max",
+  "size": [1920, 1080],
+  "msaa": 4,
+  "args": "-batchmode -force-metal -logFile /Users/dthurn/playlist_survivors/.worktrees/ps-f8a.4/captures/rosters/probe/heroic2.log --roster heroic --fixed-time --gpu-probe-at 60,100,145,175 --gpu-probe-out /Users/dthurn/playlist_survivors/.worktrees/ps-f8a.4/captures/rosters/probe/heroic2.json --seconds 180",
+  "points": [
+    {"at": 60.00, "alive": 46, "medianMs": 6.22, "maxMs": 8.73, "ms": [4.95, 6.22, 8.73]},
+    {"at": 100.00, "alive": 50, "medianMs": 3.89, "maxMs": 3.97, "ms": [3.74, 3.89, 3.97]},
+    {"at": 145.00, "alive": 55, "medianMs": 4.73, "maxMs": 9.09, "ms": [4.51, 4.73, 9.09]},
+    {"at": 175.00, "alive": 81, "medianMs": 11.42, "maxMs": 20.48, "ms": [10.57, 11.42, 20.48]}
+  ]
+}
