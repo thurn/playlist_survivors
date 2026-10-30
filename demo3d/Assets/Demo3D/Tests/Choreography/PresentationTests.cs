@@ -7,10 +7,11 @@ namespace Demo3D.Choreography.Tests
     /// <summary>TD10's checks on the song's timeline: slams on the ending's accents, ticks without knockback, one-hit kills.</summary>
     public class PresentationTests
     {
-        [Test]
-        public void EveryAccentOfTheEndingGetsAHeroSlam()
+        [TestCase("song")]
+        [TestCase("song-overdrive")]
+        public void EveryAccentOfTheEndingGetsAHeroSlam(string name)
         {
-            Timeline tl = Fixtures.SongTimeline;
+            Timeline tl = Fixtures.Named(name);
             SongMap map = tl.Map;
             SongSection ending = map.Sections[map.Sections.Length - 1];
             int slam = Fixtures.Data.Clips.Require("hero slam");
@@ -25,6 +26,31 @@ namespace Demo3D.Choreography.Tests
                 Assert.That(slammed, Is.True, "no hero slam on the ending's accent at " + a.Time.ToString("F3"));
             }
             Assert.That(accents, Is.GreaterThan(0));
+        }
+
+        /// <summary>
+        /// ps-442: the hero winds up for the ending's first slam only when it must, so it keeps fighting through
+        /// the outro instead of standing frozen for seconds with the windup booked: its last blow before the slam
+        /// lands within a bar of the slam's windup.
+        /// </summary>
+        [TestCase("song")]
+        [TestCase("song-overdrive")]
+        public void TheHeroFightsUpToTheEndingsFirstSlam(string name)
+        {
+            Timeline tl = Fixtures.Named(name);
+            SongMap map = tl.Map;
+            SongSection ending = map.Sections[map.Sections.Length - 1];
+            double bar = 4 * (map.Beats[1] - map.Beats[0]);
+            ActionEvent prev = default, slam = default;
+            foreach (ActionEvent e in tl.ActionsOf(0))
+            {
+                if (e.Kind != ActionKind.Attack) continue;
+                if (e.Impact >= ending.Start) { slam = e; break; }
+                prev = e;
+            }
+            Assert.That(slam.Kind, Is.EqualTo(ActionKind.Attack), "the ending has a slam");
+            Assert.That(slam.ClipStart - prev.Impact, Is.LessThan(bar),
+                "the hero stands from its blow at " + prev.Impact.ToString("F2") + " to the slam's windup at " + slam.ClipStart.ToString("F2"));
         }
 
         /// <summary>TD13: the ending's last accent slam leaves no monster alive on screen, to the song's end.</summary>

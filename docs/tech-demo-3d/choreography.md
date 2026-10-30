@@ -88,8 +88,8 @@ public readonly struct FramingSample { public readonly Vector2 Focus;
 
 A `Tick` is a repeat hit from a lingering effect, such as the laser's sweep
 or a ring's afterburn. The client plays it as a shader flash only, with no
-clip, knockback or effect event. Under [one-hit kills](#one-hit-kills) there
-are none: the sweep kills.
+clip, knockback or effect event. Under [one-hit kills](#one-hit-kills) the
+sweep kills, so only the boss takes ticks.
 
 The **beat grid** is the song map's beats and their halves and quarters.
 Accents are the song map's curated accent list; a beat counts as an accent
@@ -350,14 +350,18 @@ second for 1.6 deaths. demo2d and the stress scripts keep the budget.
 
 - **Every monster struck dies,** by a hero blow, a ring, a bolt, lightning
   or the laser's sweep, whatever its hit points. The boss is the exception:
-  it keeps taking hits until its section's last bar, as before.
+  it keeps taking hits until its section's last bar, as before, and the
+  laser's sweep only ticks it, never knocking it back.
 - **The load preset steers how far the blows reach,** not who survives
   them. The bar feedback grows the hit shapes while deaths run behind the
   preset's rate and shrinks them otherwise, ignoring `hitsPerDeath`, since
   no hits come.
 - **Spells top up.** A spell holds back while the section's deaths are
-  within a quarter second's worth of the rate, so the hero's blows do most
-  of the reaping and a ring's lump of kills doesn't overshoot the rate.
+  within a quarter second's worth of the rate, so a ring's lump of kills
+  doesn't overshoot the rate. The hero's blows reap most in the quiet
+  sections and under overdrive, but in the normal drops the rings and
+  lightning empty the hero's reach: spells take 85-95% of their kills and the
+  hero swings 0.5-0.9 times a second (1.25 before one-hit kills).
 - **Sections kill what walks in.** The hero can't kill slower than the horde
   arrives. Quiet sections often run above their rate, as do the free breaks
   (which fill with the next drop's horde) and the sections after a bigger one
@@ -367,6 +371,8 @@ second for 1.6 deaths. demo2d and the stress scripts keep the budget.
 - **The hero always has a slam ready for the ending.** Under one-hit kills
   the outro empties, so when nothing is in reach before a clearing section,
   the hero winds up for its first accent slam instead of striding past it.
+  It commits only at the last decision before that windup, so it keeps
+  striding and striking until then rather than standing for seconds.
 
 demo3d's loads are `swarm-light` (0.075 deaths/s per monster on screen, 3x
 `light`), `swarm` (0.15, 3x `demo`) and `swarm-build` (0.11). The build

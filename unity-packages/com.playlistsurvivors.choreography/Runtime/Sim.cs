@@ -734,11 +734,12 @@ namespace PS.Choreography
             }
             if (heroLastEnd > tb + 1e-9) return;
             // With nothing in reach just before a clearing section (an outro the hero has emptied), the hero winds
-            // up for its first slam rather than striding past the beat its windup has to start on.
+            // up for its first slam rather than striding past the beat its windup has to start on. It commits only
+            // at the last decision before that windup, so until then it still strides and strikes what walks in.
             int next = curSection + 1;
             if (canAct && next < plans.Length && plans[next].Clear && plans[next].HeroAttacks)
             {
-                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), map.Sections[next].Start);
+                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), map.Sections[next].Start, tnext);
                 if (heroPendingImpact > tb + 1e-9) return;
             }
             Stride(tb, tnext, h);
@@ -759,7 +760,11 @@ namespace PS.Choreography
             return false;
         }
 
-        void ScheduleHeroAction(double tb, double availFrom, double firstPoint = double.NegativeInfinity)
+        /// <summary>
+        /// Schedule the hero's next combo on the first grid point within 4 s (from <paramref name="firstPoint"/> on)
+        /// whose clip fits from <paramref name="availFrom"/>, unless its clip would start after <paramref name="startBefore"/>.
+        /// </summary>
+        void ScheduleHeroAction(double tb, double availFrom, double firstPoint = double.NegativeInfinity, double startBefore = double.PositiveInfinity)
         {
             for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0; gi++)
             {
@@ -773,6 +778,7 @@ namespace PS.Choreography
                 if (windup > 0 ? !ClipLibrary.FitWindup(clip, availFrom, p.Time, windup, out double start, out double end, out float speed)
                     : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)) continue;
                 if (start < tb - 1e-9) continue;
+                if (start >= startBefore) return;
                 // Across a section change a positioned combo owns its slot: skip a plain one whose
                 // recovery would leave no room for the windup of the next section's positioned one
                 // (the ending's accent slams after the outro, TD10). Within a section a positioned
@@ -1657,7 +1663,16 @@ namespace PS.Choreography
                     int n = QueryLine(o, im.Yaw, Reaching(im.Move.Length), Scaled(im.Move.Width), t);
                     if (tuning.OneHitKills)
                     {
-                        Strike(t, o, n, im.Strength, false);
+                        // The sweep kills all it strikes but the boss, which it only flashes: a knockback a tick
+                        // would shove it back on every one of the sweep's many ticks.
+                        int k = 0;
+                        for (int i = 0; i < n; i++)
+                        {
+                            if (roster.Monsters[etype[strike[i]]].Rank != MonsterRank.Boss) { strike[k++] = strike[i]; continue; }
+                            actions.Add(new ActionEvent(strike[i], ActionKind.Tick, t, -1, -1, im.Strength));
+                            stats[curSection].Ticks++;
+                        }
+                        Strike(t, o, k, im.Strength, false);
                         stats[curSection].SpellKills += totalKills - killsBefore;
                         break;
                     }
