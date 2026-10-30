@@ -324,79 +324,58 @@ namespace Demo3D.Tests
         }
 
         /// <summary>
-        /// The crystal shatter's shard bake (CrowdShardBaker) on one type: the style mesh at the held
-        /// death pose cut into 20 to 40 closed chunks of varied size, whose skin is exactly that posed
-        /// mesh (every triangle once) and whose inside faces alone carry the flag; the skin marks the
-        /// cuts between chunks as crack seams.
+        /// The crystal shatter's shard bake (CrowdShardBaker) on one type: the style mesh on its rest
+        /// pose cut into 20 to 40 closed chunks of varied size, whose skin is exactly the style mesh's
+        /// corners (every triangle once, each with its own bones and weights) and whose inside faces
+        /// alone carry the flag, every corner with weights that sum to 1.
         /// </summary>
         [Test]
-        public void TheShardBakeCutsTheHeldDeathPoseIntoClosedVariedChunks()
+        public void TheShardBakeCutsTheRestPoseIntoClosedVariedChunksThatKeepTheirSkinWeights()
         {
             using var b = Bake("slime");
             var welded = b.BuildMesh("slime_test");
-            var lods = CrowdBaker.BuildLods(welded, "slime_test");
             var style = CrowdBaker.Unweld(welded, 7);
-            var style2 = CrowdBaker.Unweld(lods[1], 8);
             CrowdShards.Set set = null;
             try
             {
-                set = CrowdShardBaker.Bake(b, style, style2, 11);
-                var death = b.Clips.Single(c => c.Role == "death");
-                Assert.That(set.HoldTime, Is.EqualTo(Mathf.Min(death.Length, Mathf.Max(death.End, death.Impact))).Within(1e-6f),
-                    "the pose TimelineEvaluator holds a death at");
+                set = CrowdShardBaker.Bake(b, style, 11);
                 Assert.That(set.Shards.Length, Is.InRange(CrowdShardBaker.MinShards, CrowdShardBaker.MaxShards));
-
-                // The pose is the 30 Hz texture's (the default cuts'); the 60 Hz texture at the same time agrees.
-                var posed = CrowdShardBaker.Pose(style, CrowdShardBaker.HeldPose(b, out _));
-                var at60 = CrowdShardBaker.Pose(style, Enumerable.Range(0, b.Entries.Count).Select(e => Sampled(b, death, e, set.HoldTime)).ToArray());
-                float poseError = posed.Position.Zip(at60.Position, (x, y) => (x - y).magnitude).Max();
-                Assert.That(poseError, Is.LessThan(0.01f), "the held pose from the 30 Hz rows matches the 60 Hz rows");
-
-                // Every skin corner sits on the posed mesh, and together the skins hold every triangle once.
-                var grid = new Dictionary<Vector3Int, List<Vector3>>();
-                Vector3Int Cell(Vector3 v) => Vector3Int.FloorToInt(v * 1000f);
-                foreach (var v in posed.Position)
-                {
-                    if (!grid.TryGetValue(Cell(v), out var l)) grid[Cell(v)] = l = new List<Vector3>();
-                    l.Add(v);
-                }
-                bool OnPose(Vector3 v)
-                {
-                    var c = Cell(v);
-                    for (int x = -1; x <= 1; x++)
-                        for (int y = -1; y <= 1; y++)
-                            for (int z = -1; z <= 1; z++)
-                                if (grid.TryGetValue(c + new Vector3Int(x, y, z), out var l) && l.Any(p => (p - v).sqrMagnitude < 1e-10f)) return true;
-                    return false;
-                }
-                int skinTriangles = 0, offPose = 0, open = 0, seamed = 0;
-                double skinArea = 0, poseArea = 0;
-                for (int t = 0; t < posed.Triangles; t++)
-                    poseArea += 0.5 * Vector3.Cross(posed.Position[3 * t + 1] - posed.Position[3 * t], posed.Position[3 * t + 2] - posed.Position[3 * t]).magnitude;
+                var rest = CrowdShardBaker.Rest(style);
+                // Every style corner, keyed by its position, bones and weights.
+                var corners = new HashSet<(Vector3, Vector4, Vector4)>();
+                for (int k = 0; k < rest.Position.Length; k++) corners.Add((rest.Position[k], rest.Bones[k], rest.Weights[k]));
+                int skinTriangles = 0, offRest = 0, open = 0, badWeights = 0, badBone = 0;
+                double skinArea = 0, restArea = 0;
+                for (int t = 0; t < rest.Triangles; t++)
+                    restArea += 0.5 * Vector3.Cross(rest.Position[3 * t + 1] - rest.Position[3 * t], rest.Position[3 * t + 2] - rest.Position[3 * t]).magnitude;
                 var volumes = new List<float>();
                 foreach (var s in set.Shards)
                 {
                     var v = s.Mesh.vertices;
                     var flags = new List<Vector2>(); s.Mesh.GetUVs(1, flags);
-                    var seams = new List<Vector4>(); s.Mesh.GetUVs(2, seams);
+                    var bones = new List<Vector4>(); s.Mesh.GetUVs(4, bones);
+                    var weights = new List<Vector4>(); s.Mesh.GetUVs(5, weights);
+                    Assert.That(bones.Count, Is.EqualTo(v.Length), "every corner has bones");
+                    Assert.That(weights.Count, Is.EqualTo(v.Length), "and weights");
                     var tris = s.Mesh.triangles;
-                    bool anySeam = false;
                     var edges = new Dictionary<(Vector3, Vector3), int>();
+                    bool insideSeen = false;
                     for (int t = 0; t < tris.Length; t += 3)
                     {
                         float f = flags[tris[t]].x;
                         Assert.That(flags[tris[t + 1]].x == f && flags[tris[t + 2]].x == f, "a triangle is skin or inside, not both");
                         if (f == 0)
                         {
+                            Assert.That(insideSeen, Is.False, "the skin comes first, then the inside faces");
                             skinTriangles++;
-                            for (int k = 0; k < 3; k++) if (!OnPose(v[tris[t + k]] + s.Center)) offPose++;
+                            for (int k = 0; k < 3; k++) if (!corners.Contains((v[tris[t + k]], bones[tris[t + k]], weights[tris[t + k]]))) offRest++;
                             skinArea += 0.5 * Vector3.Cross(v[tris[t + 1]] - v[tris[t]], v[tris[t + 2]] - v[tris[t]]).magnitude;
-                            var sm = seams[tris[t]];
-                            anySeam |= Mathf.Max(sm.x, Mathf.Max(sm.y, sm.z)) == 1f; // a cut (hairlines inside a chunk are 0.3)
                         }
-                        else Assert.That(seams[tris[t]], Is.EqualTo(Vector4.zero), "only the skin has crack seams");
+                        else insideSeen = true;
                         for (int k = 0; k < 3; k++)
                         {
+                            var w = weights[tris[t + k]];
+                            if (Mathf.Abs(w.x + w.y + w.z + w.w - 1f) > 1e-4f || w.x <= 0) badWeights++;
                             var a = v[tris[t + k]];
                             var c = v[tris[t + (k + 1) % 3]];
                             if (a == c) continue;
@@ -405,33 +384,150 @@ namespace Demo3D.Tests
                         }
                     }
                     open += edges.Values.Count(n => n % 2 == 1);
+                    if (s.Bone < 0 || s.Bone >= b.Entries.Count) badBone++;
                     Assert.That(s.Volume, Is.GreaterThan(0f), "a chunk has thickness");
-                    Assert.That(s.Hull.vertexCount, Is.InRange(4, 42), "the convex collider's points");
+                    Assert.That(s.Size, Is.GreaterThan(0f));
                     volumes.Add(s.Volume);
-                    if (anySeam) seamed++;
                 }
-                Assert.That(seamed, Is.GreaterThan(set.Shards.Length * 3 / 4), "the cuts between chunks are crack seams on their skins");
-                Assert.That(skinTriangles, Is.EqualTo(posed.Triangles), "the skins hold every triangle of the style mesh");
-                Assert.That(skinArea, Is.EqualTo(poseArea).Within(poseArea * 1e-4), "and each once");
-                Assert.That(offPose, Is.Zero, "skin corners on the posed style mesh");
+                Assert.That(skinTriangles, Is.EqualTo(rest.Triangles), "the skins hold every triangle of the style mesh");
+                Assert.That(skinArea, Is.EqualTo(restArea).Within(restArea * 1e-4), "and each once");
+                Assert.That(offRest, Is.Zero, "skin corners are the style mesh's corners, with their own bones and weights");
+                Assert.That(badWeights, Is.Zero, "every corner's weights sum to 1, the first the largest");
+                Assert.That(badBone, Is.Zero, "each chunk's box bone is a bone of the type");
                 Assert.That(open, Is.Zero, "every chunk is closed (every edge shared by an even number of its triangles)");
                 volumes.Sort();
                 Assert.That(volumes[volumes.Count - 1], Is.GreaterThan(4 * volumes[volumes.Count / 2]), "a few large chunks among many small ones");
-                // The hold's shadow is the shadow proxy's mesh (LOD2) at the same pose.
-                var shadowPose = CrowdShardBaker.Pose(style2, CrowdShardBaker.HeldPose(b, out _));
-                Assert.That(set.HoldShadow.vertices, Is.EqualTo(shadowPose.Position));
             }
             finally
             {
-                if (set != null)
-                {
-                    foreach (var s in set.Shards) { Object.DestroyImmediate(s.Mesh); Object.DestroyImmediate(s.Hull); }
-                    Object.DestroyImmediate(set.HoldShadow);
-                }
-                foreach (var l in lods) Object.DestroyImmediate(l);
-                Object.DestroyImmediate(style2);
+                if (set != null) foreach (var s in set.Shards) Object.DestroyImmediate(s.Mesh);
                 Object.DestroyImmediate(style);
                 Object.DestroyImmediate(welded);
+            }
+        }
+
+        /// <summary>
+        /// The crystal shatter's swap at a live pose (CrowdPose, CrystalShatter): for monsters
+        /// mid-walk, mid-attack and crossfading, the CPU's bone matrices match the crowd's GPU palette
+        /// pass, and a shard corner skinned and placed on the CPU lands where the crowd's SkinVertex
+        /// puts the same style mesh corner, with the palette's matrices, at the instance's position,
+        /// yaw and scale.
+        /// </summary>
+        [Test]
+        public void TheShatterPosesItsChunksWhereTheCrowdDrawsTheMonster()
+        {
+            using var b = Bake("skeleton");
+            int walk = b.Clips.FindIndex(c => c.Role == "walk"), attack = b.Clips.FindIndex(c => c.Role == "attack"),
+                hit = b.Clips.FindIndex(c => c.Role == "hit");
+            var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true) { filterMode = FilterMode.Point };
+            tex.SetPixelData(b.Texels, 0);
+            tex.Apply(false, false);
+            var mesh = b.BuildMesh("pose-test");
+            var style = CrowdBaker.Unweld(mesh, 5);
+            var set = CrowdShardBaker.Bake(b, style, 13);
+            var lib = ScriptableObject.CreateInstance<CrowdLibrary>();
+            lib.CullShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(CrowdBaker.CullPath);
+            lib.PaletteShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(CrowdBaker.PalettePath);
+            var material = new Material(AssetDatabase.LoadAssetAtPath<Shader>(CrowdBaker.ShaderPath));
+            var type = new CrowdType { Id = "skeleton", Mesh = mesh, Materials = new[] { material }, Bones = tex, BoneCount = b.Entries.Count, Clips = b.Clips.ToArray() };
+            lib.Types = new[] { type };
+            var cases = new[]
+            {
+                new MonsterInstance { Position = new Vector3(-2, 0, 0), Yaw = 0.7f, Scale = 1.08f, ClipA = (uint)walk, TimeA = 0.6123f, ClipB = (uint)walk, TimeB = 0, Blend = 1 },
+                new MonsterInstance { Position = new Vector3(0, 0, 1), Yaw = -2.4f, Scale = 0.93f, ClipA = (uint)attack, TimeA = 0.3871f, ClipB = (uint)walk, TimeB = 0.2f, Blend = 0.55f },
+                new MonsterInstance { Position = new Vector3(2, 0, -1), Yaw = 3.1f, Scale = 1f, ClipA = (uint)(hit >= 0 ? hit : attack), TimeA = 0.071f, ClipB = (uint)attack, TimeB = 0.5f, Blend = 0.2f },
+            };
+            var camGo = new GameObject("TestCamera");
+            var cam = camGo.AddComponent<Camera>();
+            var rt = new RenderTexture(640, 360, 24);
+            var crowd = new BoneTextureCrowd(lib);
+            try
+            {
+                cam.targetTexture = rt;
+                cam.fieldOfView = 30;
+                var rot = Quaternion.Euler(55, 0, 0);
+                cam.transform.SetPositionAndRotation(-(rot * Vector3.forward) * 30, rot);
+                crowd.Initialize(new[] { "skeleton" }, 64);
+                var inst = crowd.Instances(0, cases.Length);
+                for (int i = 0; i < cases.Length; i++)
+                {
+                    var m = cases[i];
+                    m.Flags = (uint)CrowdFlags.Alive;
+                    inst[i] = m;
+                }
+                crowd.Draw(cam);
+                var palette = crowd.DebugLastPalette(0);
+                Assert.That(palette, Is.Not.Null, "the palette pass ran");
+                var rows = new Vector4[palette.count];
+                palette.GetData(rows);
+                var pose = new CrowdPose(type, clips30: false);
+                var cpu = new Matrix4x4[b.Entries.Count];
+                var gpu = new Matrix4x4[b.Entries.Count];
+                var restStyle = CrowdShardBaker.Rest(style);
+                float worstBone = 0, worstCorner = 0;
+                for (int i = 0; i < cases.Length; i++)
+                {
+                    var m = cases[i];
+                    pose.Bones(m, cpu);
+                    for (int bone = 0; bone < cpu.Length; bone++)
+                    {
+                        var g = Matrix4x4.identity;
+                        for (int r = 0; r < 3; r++)
+                        {
+                            g.SetRow(r, rows[(i * cpu.Length + bone) * 3 + r]);
+                            worstBone = Mathf.Max(worstBone, (g.GetRow(r) - cpu[bone].GetRow(r)).magnitude);
+                        }
+                        gpu[bone] = g;
+                    }
+                    // The crowd's SkinVertex, written out here, on every style corner with the GPU's matrices.
+                    var drawn = new HashSet<Vector3Int>();
+                    Vector3Int Key(Vector3 v) => Vector3Int.RoundToInt(v * 2e4f); // 0.05 mm cells
+                    for (int k = 0; k < restStyle.Position.Length; k++)
+                    {
+                        var bi = restStyle.Bones[k];
+                        var bw = restStyle.Weights[k];
+                        var skin = new Matrix4x4();
+                        for (int j = 0; j < 4; j++)
+                            for (int e = 0; e < 12; e++) skin[e % 3, e / 3] += gpu[(int)bi[j]][e % 3, e / 3] * bw[j];
+                        var p = skin.MultiplyPoint3x4(restStyle.Position[k]) * m.Scale;
+                        float sy = Mathf.Sin(m.Yaw), cy = Mathf.Cos(m.Yaw);
+                        var w = m.Position + new Vector3(p.x * cy + p.z * sy, p.y, -p.x * sy + p.z * cy);
+                        foreach (var dx in new[] { -1, 0, 1 }) foreach (var dy in new[] { -1, 0, 1 }) foreach (var dz in new[] { -1, 0, 1 })
+                            drawn.Add(Key(w) + new Vector3Int(dx, dy, dz));
+                    }
+                    // Every shard's skin corners, posed by the shatter's CPU skinning.
+                    int off = 0, total = 0;
+                    foreach (var s in set.Shards)
+                    {
+                        var v = s.Mesh.vertices;
+                        var flags = new List<Vector2>(); s.Mesh.GetUVs(1, flags);
+                        var bones = new List<Vector4>(); s.Mesh.GetUVs(4, bones);
+                        var weights = new List<Vector4>(); s.Mesh.GetUVs(5, weights);
+                        for (int k = 0; k < v.Length; k++)
+                        {
+                            if (flags[k].x > 0.5f) continue;
+                            var at = CrowdPose.Place(CrowdPose.Blend(cpu, bones[k], weights[k]), v[k], m);
+                            total++;
+                            if (!drawn.Contains(Key(at))) off++;
+                        }
+                    }
+                    Assert.That(total, Is.EqualTo(restStyle.Position.Length), "every style corner is a shard's skin corner");
+                    Assert.That(off, Is.Zero, $"case {i}: shard corners off the drawn monster");
+                }
+                Assert.That(worstBone, Is.LessThan(1e-5f), $"worst bone row error {worstBone}");
+            }
+            finally
+            {
+                crowd.Dispose();
+                cam.targetTexture = null;
+                rt.Release();
+                Object.DestroyImmediate(camGo);
+                Object.DestroyImmediate(material);
+                foreach (var s in set.Shards) Object.DestroyImmediate(s.Mesh);
+                Object.DestroyImmediate(style);
+                Object.DestroyImmediate(mesh);
+                Object.DestroyImmediate(tex);
+                Object.DestroyImmediate(lib);
             }
         }
 
@@ -450,8 +546,7 @@ namespace Demo3D.Tests
             var shards = AssetDatabase.LoadAssetAtPath<CrowdShards>(CrowdBaker.ShardsPath);
             Assert.That(shards, Is.Not.Null, "re-run BakeCrowd");
             Assert.That(shards.Types.Select(e => e.Id), Is.EqualTo(drawn));
-            Assert.That(shards.Types.SelectMany(e => e.Shards).All(s => s.Mesh != null && s.Hull != null), "every shard's meshes are saved");
-            Assert.That(shards.Types.All(e => e.HoldShadow != null), "every set's hold shadow is saved");
+            Assert.That(shards.Types.SelectMany(e => e.Shards).All(s => s.Mesh != null), "every shard's mesh is saved");
             Assert.That(AssetDatabase.GetDependencies(CrowdBaker.LibraryPath, true).Where(p => p.Contains("_style")), Is.Empty,
                 "the library, which every run loads, doesn't pull in the style meshes");
             foreach (var t in lib.Types)
@@ -468,6 +563,7 @@ namespace Demo3D.Tests
                 }
                 Assert.That(t.Bones.width, Is.EqualTo(t.BoneCount * 3), t.Id);
                 Assert.That(t.Bones.format, Is.EqualTo(TextureFormat.RGBAFloat), t.Id);
+                Assert.That(t.Bones.isReadable && t.Bones30.isReadable, $"{t.Id}: the crystal shatter reads its bones on the CPU (CrowdPose)");
                 Assert.That(t.Bones.height, Is.EqualTo(t.Clips.Sum(c => c.Frames)), t.Id);
                 Assert.That(t.StockPrefab.GetComponentsInChildren<SkinnedMeshRenderer>().Length, Is.EqualTo(1), t.Id);
                 Assert.That(t.Clip("walk"), Is.GreaterThanOrEqualTo(0), t.Id);

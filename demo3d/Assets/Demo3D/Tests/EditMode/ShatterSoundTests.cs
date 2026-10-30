@@ -7,11 +7,11 @@ using PS.Choreography;
 
 namespace Demo3D.Tests
 {
-    /// <summary>The crystal shatter's sounds (epic ps-2iq): layered on each release beat, aggregated so a crowded beat stays a few voices.</summary>
+    /// <summary>The crystal shatter's sounds (epic ps-2iq): layered on each killing blow, aggregated so a crowded beat stays a few voices.</summary>
     public class ShatterSoundTests
     {
-        static CrystalShatter.ReleaseEvent R(double t, int entity, int type, float height) =>
-            new CrystalShatter.ReleaseEvent { Time = t, Entity = entity, Type = type, Height = height, Seed = (uint)(entity * 7919) };
+        static CrystalShatter.BreakEvent R(double t, int entity, int type, float height) =>
+            new CrystalShatter.BreakEvent { Time = t, Entity = entity, Type = type, Height = height, Seed = (uint)(entity * 7919) };
 
         [Test]
         public void ALoneDeathLayersABreakASprayAndALaterTinkle()
@@ -28,12 +28,12 @@ namespace Demo3D.Tests
         [Test]
         public void ACrowdedBeatPlaysAFewVoicesOfItsDistinctTypesLouder()
         {
-            var releases = new List<CrystalShatter.ReleaseEvent>();
-            for (int i = 0; i < 20; i++) releases.Add(R(10.0, 10 + i, 0, 1.8f)); // skeletons
-            releases.Add(R(10.0, 40, 1, 3.2f));                                     // a troll
-            releases.Add(R(10.0, 41, 2, 0.7f));                                     // a slime
-            releases.Add(R(10.5, 50, 0, 1.8f));                                     // the next beat
-            var cues = ShatterSounds.For(releases.OrderBy(r => r.Time).ToList(), SongMap.Synthetic(120, 20));
+            var breaks = new List<CrystalShatter.BreakEvent>();
+            for (int i = 0; i < 20; i++) breaks.Add(R(10.0, 10 + i, 0, 1.8f)); // skeletons
+            breaks.Add(R(10.0, 40, 1, 3.2f));                                     // a troll
+            breaks.Add(R(10.0, 41, 2, 0.7f));                                     // a slime
+            breaks.Add(R(10.5, 50, 0, 1.8f));                                     // the next beat
+            var cues = ShatterSounds.For(breaks.OrderBy(r => r.Time).ToList(), SongMap.Synthetic(120, 20));
             var beat = cues.Where(c => c.Time < 10.5 && c.Name.StartsWith("shatter-body")).ToList();
             Assert.That(beat.Count, Is.EqualTo(ShatterSounds.MaxVoices));
             Assert.That(beat.Select(c => c.Pitch).Distinct().Count(), Is.EqualTo(3), "the troll, the skeleton and the slime each ring at their own pitch");

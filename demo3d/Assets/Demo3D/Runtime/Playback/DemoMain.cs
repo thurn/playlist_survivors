@@ -217,13 +217,15 @@ namespace Demo3D.Runtime.Playback
             }
             _feel = _tl.Map != null ? new CameraFeel(_tl, _blows) : null;
             _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
-            // A crystal death's burst, light and sound play on its release beat, known from the timeline.
-            var releases = _shatter?.Releases(_eval.Schedule, InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.ReleaseEvent>();
-            _fxDriver?.SetShatters(Array.ConvertAll(releases, r => new EffectDriver.Shatter
+            // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
+            // and sound play at the blow, known from the timeline.
+            var breaks = _shatter?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.BreakEvent>();
+            _eval.BreaksAtImpact = breaks.Length > 0 ? new HashSet<int>(Array.ConvertAll(breaks, b => b.Entity)) : null;
+            _fxDriver?.SetShatters(Array.ConvertAll(breaks, b => new EffectDriver.Shatter
             {
-                Time = r.Time, Entity = r.Entity, Position = r.Centre, Scale = r.Height / 1.8f, Seed = r.Seed, Tint = r.Gem,
+                Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
             }));
-            _soundCues = SoundScheduler.Cues(_tl, releases.Length > 0 ? ShatterSounds.For(releases, _tl.Map) : null);
+            _soundCues = SoundScheduler.Cues(_tl, breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null);
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
             if (!_flags.FixedTime && _flags.Scene == "song")
                 _sounds = new SoundScheduler(_soundCues, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
@@ -460,8 +462,13 @@ namespace Demo3D.Runtime.Playback
                     int e = list[k];
                     var st = _eval.Evaluate(e, world, _walkStride[type], _walkLength[type], _hover[type]);
                     var mi = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
-                    // A crystal monster's hold and dissolve are its shards (CrystalShatter).
-                    if (st.Held && _shatter != null && _shatter.Dying(e, type, mi, _tl.Entities[e].Seed)) mi.Flags |= (uint)CrowdFlags.Hidden;
+                    // From its killing blow a crystal monster is its shards (CrystalShatter).
+                    if (st.Broken && _shatter != null)
+                    {
+                        _shatterWatch.Start(); // posing the chunks is the shatter's cost too
+                        if (_shatter.Breaking(e, type, mi)) mi.Flags |= (uint)CrowdFlags.Hidden;
+                        _shatterWatch.Stop();
+                    }
                     inst[_slots.Assign(type, e)] = mi;
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {

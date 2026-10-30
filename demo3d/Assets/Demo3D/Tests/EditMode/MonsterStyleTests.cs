@@ -139,26 +139,6 @@ namespace Demo3D.Tests
             }
         }
 
-        /// <summary>
-        /// The crystal shatter's swap (CrystalShatter): a shard's corner, placed on the instance, lands
-        /// where the crowd's SkinVertex puts the same root-space point (scale, then yaw, then the position).
-        /// </summary>
-        [Test]
-        public void AssembledShardsSitWhereTheCrowdSkinsTheirCorners()
-        {
-            var inst = new MonsterInstance { Position = new Vector3(3.5f, 0.4f, -7.25f), Yaw = 2.3f, Scale = 1.07f };
-            var center = new Vector3(0.2f, 0.9f, -0.15f);
-            var (pos, rot) = CrystalShatter.Placement(center, inst);
-            float sy = Mathf.Sin(inst.Yaw), cy = Mathf.Cos(inst.Yaw);
-            foreach (var p in new[] { new Vector3(0.31f, 1.2f, 0.05f), new Vector3(-0.4f, 0.02f, 0.6f), center })
-            {
-                var q = p * inst.Scale;
-                var crowd = inst.Position + new Vector3(q.x * cy + q.z * sy, q.y, -q.x * sy + q.z * cy);
-                var shard = pos + rot * ((p - center) * inst.Scale); // the shard's vertex is relative to its pivot
-                Assert.That((shard - crowd).magnitude, Is.LessThan(1e-5f), p.ToString());
-            }
-        }
-
         [Test]
         public void PaintedGivesEveryTypeItsOwnMaterialsAndBaselineTheBakedOnes()
         {

@@ -127,8 +127,12 @@ namespace PS.Choreography
             return false;
         }
 
-        /// <summary>The clip action playing at t (index into Actions), or -1 for walking; since: when it, or the walk, began.</summary>
-        public int ActiveAction(int e, double t, out double since)
+        /// <summary>
+        /// The clip action playing at t (index into Actions), or -1 for walking; since: when it, or the walk, began.
+        /// With <paramref name="skipDeath"/>, as if the entity's death played no clip: what it was doing
+        /// carries on (demo3d's crystal shatter breaks a monster at the blow from whatever pose it is in).
+        /// </summary>
+        public int ActiveAction(int e, double t, out double since, bool skipDeath = false)
         {
             var acts = _clipActions[e];
             int lo = 0, hi = acts.Length - 1, found = -1;
@@ -137,6 +141,7 @@ namespace PS.Choreography
                 int mid = (lo + hi) >> 1;
                 if (_start[acts[mid]] <= t) { found = mid; lo = mid + 1; } else hi = mid - 1;
             }
+            while (skipDeath && found >= 0 && _tl.Actions[acts[found]].Kind == ActionKind.Death) found--;
             if (found >= 0)
             {
                 int i = acts[found];
@@ -185,8 +190,7 @@ namespace PS.Choreography
 
         /// <summary>
         /// When a death's fade begins (<paramref name="action"/> indexes <see cref="Timeline.Actions"/>):
-        /// a beat after its clip comes to rest on its last pose. The crowd's dissolve starts here, and
-        /// the crystal shatter releases its shards.
+        /// a beat after its clip comes to rest on its last pose. The crowd's dissolve starts here.
         /// </summary>
         public double FadeStart(int action)
         {

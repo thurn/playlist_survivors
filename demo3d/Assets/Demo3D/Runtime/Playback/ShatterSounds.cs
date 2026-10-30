@@ -8,14 +8,14 @@ namespace Demo3D.Runtime.Playback
 {
     /// <summary>
     /// The crystal shatter's sounds (camera-and-sound.md, Sound; epic ps-2iq): every crystal death's
-    /// release beat gets a layered glass break, a crunching ice break under a bright glass spray, and
-    /// a quieter tinkle as the shards land. They come from the timeline's releases
-    /// (<see cref="CrystalShatter.Releases"/>), so the live scheduler and the offline mix play the same
-    /// list, aggregated as the choreography aggregates its own sounds: per beat and layer at most
-    /// <see cref="MaxVoices"/> voices, their gain growing with log2 of the deaths on that beat. The
-    /// voices go to the beat's largest distinct types first, each pitched by its type's size (small
-    /// monsters ring higher) with a little variance by seed, so a crowded beat doesn't sound like one
-    /// sample.
+    /// killing blow gets a layered glass break, a crunching ice break under a bright glass spray, on
+    /// top of the creature's death cry at the same blow, and a quieter tinkle as the shards land. They
+    /// come from the timeline's breaks (<see cref="CrystalShatter.Breaks"/>), so the live scheduler
+    /// and the offline mix play the same list, aggregated as the choreography aggregates its own
+    /// sounds: per beat and layer at most <see cref="MaxVoices"/> voices, their gain growing with log2
+    /// of the deaths on that beat. The voices go to the beat's largest distinct types first, each
+    /// pitched by its type's size (small monsters ring higher) with a little variance by seed, so a
+    /// crowded beat doesn't sound like one sample.
     /// </summary>
     public static class ShatterSounds
     {
@@ -23,7 +23,7 @@ namespace Demo3D.Runtime.Playback
         /// <summary>The layers, each with <see cref="Variants"/> clips in the sound bank (`layer/variant`), and each one's level.</summary>
         public static readonly string[] Layers = { "shatter-body", "shatter-glass", "shatter-tinkle" };
         static readonly float[] Level = { 0.55f, 0.45f, 0.22f };
-        /// <summary>When the shards land, after the release, for a 1.8 m monster: their flight under 2.2 g (CrystalShatter).</summary>
+        /// <summary>When the shards land, after the break, for a 1.8 m monster: their fall from a standing body under 2.2 g (CrystalShatter).</summary>
         public const float LandSeconds = 0.38f;
 
         /// <summary>Every layer's sound names, for the bank.</summary>
@@ -35,24 +35,24 @@ namespace Demo3D.Runtime.Playback
             return names;
         }
 
-        /// <summary>A beat's gain for <paramref name="deaths"/> releases, as SoundAggregator's at full strength.</summary>
+        /// <summary>A beat's gain for <paramref name="deaths"/> breaks, as SoundAggregator's at full strength.</summary>
         public static float Gain(int deaths) => (float)Math.Min(1.0, 0.35 + 0.15 * Math.Log(Math.Max(1, deaths), 2));
 
         /// <summary>A type's pitch (playback rate): (1.8 m / its height)^0.3, within 0.8 to 1.3.</summary>
         public static float Pitch(float heightM) => Mathf.Clamp(Mathf.Pow(1.8f / Mathf.Max(0.1f, heightM), 0.3f), 0.8f, 1.3f);
 
-        /// <summary>The sounds for <paramref name="releases"/> (sorted by time), sorted by time.</summary>
-        public static List<SoundScheduler.Cue> For(IReadOnlyList<CrystalShatter.ReleaseEvent> releases, SongMap map)
+        /// <summary>The sounds for <paramref name="breaks"/> (sorted by time), sorted by time.</summary>
+        public static List<SoundScheduler.Cue> For(IReadOnlyList<CrystalShatter.BreakEvent> breaks, SongMap map)
         {
             var cues = new List<SoundScheduler.Cue>();
-            var beat = new List<CrystalShatter.ReleaseEvent>();
-            var chosen = new List<CrystalShatter.ReleaseEvent>();
+            var beat = new List<CrystalShatter.BreakEvent>();
+            var chosen = new List<CrystalShatter.BreakEvent>();
             int i = 0;
-            while (i < releases.Count)
+            while (i < breaks.Count)
             {
-                long bucket = Bucket(map, releases[i].Time);
+                long bucket = Bucket(map, breaks[i].Time);
                 beat.Clear();
-                while (i < releases.Count && Bucket(map, releases[i].Time) == bucket) beat.Add(releases[i++]);
+                while (i < breaks.Count && Bucket(map, breaks[i].Time) == bucket) beat.Add(breaks[i++]);
                 // The largest distinct types first, then the rest of the beat's deaths by size.
                 beat.Sort((a, b) => { int c = b.Height.CompareTo(a.Height); return c != 0 ? c : a.Entity.CompareTo(b.Entity); });
                 chosen.Clear();

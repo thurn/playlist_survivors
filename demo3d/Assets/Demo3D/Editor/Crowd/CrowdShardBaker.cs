@@ -8,8 +8,15 @@ using UnityEngine.Rendering;
 namespace Demo3D.EditorTools.Crowd
 {
     /// <summary>
-    /// The crystal shatter's shard sets (crowd.md, Monster styles; epic ps-2iq, Decision 3): each
-    /// type's LOD0 style mesh, posed as the crowd holds its death, cut into 20 to 40 thick chunks.
+    /// The crystal shatter's shard sets (crowd.md, Monster styles; epic ps-2iq): each type's LOD0 style
+    /// mesh on its rest pose, cut into 20 to 40 thick chunks that keep the mesh's skin weights, so the
+    /// shatter can pose them to whatever pose a monster is in when the blow lands (CrystalShatter).
+    ///
+    /// Why the rest pose: a monster breaks at the blow, walking, attacking or flinching, so no single
+    /// baked pose matches it. The rest pose is the one every pose is skinned from: cut there and
+    /// carry each corner's bones and weights, and the runtime skins the chunks' corners exactly as the
+    /// crowd's shader skins the same corners (CrowdPose), so the swap doesn't show in any pose. It is
+    /// also the best pose to cut: the limbs stand apart, so a chunk rarely spans two of them.
     ///
     /// The method is surface patches closed to a point, not Voronoi slicing of a solid. The vendor
     /// meshes are rarely closed: weapons, capes, wings and eyes are open sheets or loose pieces, and
@@ -27,15 +34,11 @@ namespace Demo3D.EditorTools.Crowd
     ///   patch's radius, but no deeper than 0.45 of the body's thickness there (a ray to the far side),
     ///   so it stays inside a limb; on an open sheet (no far side) it is 0.35 of the radius. A patch
     ///   that wraps round a limb has a short mean normal, and its apex stays near its centre.
-    /// - Inside faces carry UV1.x 1 so the shard shader draws them brighter (and only once the
-    ///   chunk is released: where an apex pokes past a thin part the assembled shards still match the
-    ///   crowd exactly). The skin keeps the style mesh's triangles, normals and UV3 unchanged.
-    /// - The collider is convex: its points are the chunk's support points in 42 directions, so
-    ///   PhysX cooks a hull of at most 42 points.
-    ///
-    /// The pose is the one the crowd draws at the hold: the death clip at max(end, impact)
-    /// (TimelineEvaluator), interpolated between the 30 Hz bone texture's frames as CrowdSkinning's
-    /// ClipRows does under the default cuts (clips30), and skinned as SkinVertex does.
+    /// - Inside faces carry UV1.x 1 so the shard shader draws them brighter. The skin keeps the style
+    ///   mesh's triangles, normals and UV3 unchanged.
+    /// - Every corner carries bones (UV4) and weights (UV5): a skin corner and an inside face's corner
+    ///   on the skin its style mesh corner's, the apex the patch's area-weighted blend of them, cut to
+    ///   its four largest, so it moves with the patch.
     /// </summary>
     public static class CrowdShardBaker
     {
@@ -44,57 +47,16 @@ namespace Demo3D.EditorTools.Crowd
         /// <summary>Chunks a type is cut into: more for a taller monster.</summary>
         public static int ShardCount(float heightM) => Mathf.Clamp(24 + (int)(heightM * 4f), MinShards, MaxShards);
 
-        /// <summary>The death clip's held time: where TimelineEvaluator rests a death.</summary>
-        public static float HoldTime(CrowdClip death) => Mathf.Clamp(Mathf.Max(death.End, death.Impact), 0, death.Length);
-
-        /// <summary>
-        /// Every bone's skinning matrix at the hold, from the 30 Hz texture (the default cuts'),
-        /// interpolated as CrowdSkinning.hlsl's ClipRows and BlendBone do.
-        /// </summary>
-        public static Matrix4x4[] HeldPose(CrowdBaker.TypeBake b, out float holdTime)
-        {
-            int ci = b.Clips.FindIndex(c => c.Role == "death");
-            if (ci < 0) throw new Exception($"CrowdShardBaker: {b.Type.id} has no death clip");
-            var clip = b.Clips[ci];
-            holdTime = HoldTime(clip);
-            const float rate = CrowdLibrary.CutClipRate;
-            float t = holdTime;
-            int f0 = Math.Min((int)(t * rate), clip.Frames30 - 2);
-            float t0 = f0 / rate, t1 = Mathf.Min((f0 + 1) / rate, clip.Length);
-            float u = Mathf.Clamp01((t - t0) / Mathf.Max(t1 - t0, 1e-5f));
-            var mats = new Matrix4x4[b.Entries.Count];
-            for (int e = 0; e < mats.Length; e++)
-            {
-                var a = Matrix30(b, e, clip.FirstRow30 + f0);
-                var c = Matrix30(b, e, clip.FirstRow30 + f0 + 1);
-                var m = Matrix4x4.identity;
-                for (int i = 0; i < 12; i++) m[i % 3, i / 3] = a[i % 3, i / 3] + (c[i % 3, i / 3] - a[i % 3, i / 3]) * u;
-                mats[e] = m;
-            }
-            return mats;
-        }
-
-        static Matrix4x4 Matrix30(CrowdBaker.TypeBake b, int bone, int row)
-        {
-            var m = Matrix4x4.identity;
-            for (int r = 0; r < 3; r++)
-            {
-                int at = ((row * b.Width) + bone * 3 + r) * 4;
-                m.SetRow(r, new Vector4(b.Texels30[at], b.Texels30[at + 1], b.Texels30[at + 2], b.Texels30[at + 3]));
-            }
-            return m;
-        }
-
-        /// <summary>The style mesh's triangles at a pose: three corners each, with their normals and UV3.</summary>
+        /// <summary>The style mesh's triangles on its rest pose: three corners each, with their normals, UV3, bones and weights.</summary>
         public sealed class Posed
         {
             public Vector3[] Position, Normal;
-            public Vector4[] Bary;
+            public Vector4[] Bary, Bones, Weights;
             public int Triangles => Position.Length / 3;
         }
 
-        /// <summary>The style mesh skinned with <paramref name="mats"/> (SkinVertex: weighted matrices, then the point).</summary>
-        public static Posed Pose(Mesh style, Matrix4x4[] mats)
+        /// <summary>The style mesh's corners as its triangles list them, on the rest pose (root space, scale 1).</summary>
+        public static Posed Rest(Mesh style)
         {
             var pos = style.vertices;
             var nor = style.normals;
@@ -103,53 +65,33 @@ namespace Demo3D.EditorTools.Crowd
             var bary = new List<Vector4>(); style.GetUVs(3, bary);
             var tris = new List<int>();
             for (int sm = 0; sm < style.subMeshCount; sm++) tris.AddRange(style.GetIndices(sm));
-            var o = new Posed { Position = new Vector3[tris.Count], Normal = new Vector3[tris.Count], Bary = new Vector4[tris.Count] };
+            var o = new Posed
+            {
+                Position = new Vector3[tris.Count], Normal = new Vector3[tris.Count], Bary = new Vector4[tris.Count],
+                Bones = new Vector4[tris.Count], Weights = new Vector4[tris.Count],
+            };
             for (int k = 0; k < tris.Count; k++)
             {
                 int v = tris[k];
-                var bi = bones[v];
-                var bw = weights[v];
-                var skin = new Matrix4x4();
-                for (int j = 0; j < 4; j++)
-                {
-                    if (j > 0 && bw[j] <= 0) continue;
-                    var m = mats[(int)bi[j]];
-                    for (int i = 0; i < 12; i++) skin[i % 3, i / 3] += m[i % 3, i / 3] * bw[j];
-                }
-                skin[3, 3] = 1;
-                o.Position[k] = skin.MultiplyPoint3x4(pos[v]);
-                var n = skin.MultiplyVector(nor[v]);
-                o.Normal[k] = n.sqrMagnitude > 0 ? n.normalized : nor[v];
+                o.Position[k] = pos[v];
+                o.Normal[k] = nor[v];
                 o.Bary[k] = bary[v];
+                o.Bones[k] = bones[v];
+                o.Weights[k] = weights[v];
             }
             return o;
         }
 
-        /// <summary>A type's shard set: its style mesh at the held death pose, cut into chunks.</summary>
-        public static CrowdShards.Set Bake(CrowdBaker.TypeBake b, Mesh styleLod0, Mesh styleLod2, int seed)
+        /// <summary>A type's shard set: its style mesh on the rest pose, cut into chunks.</summary>
+        public static CrowdShards.Set Bake(CrowdBaker.TypeBake b, Mesh styleLod0, int seed)
         {
-            var mats = HeldPose(b, out float hold);
-            var posed = Pose(styleLod0, mats);
-            var shadow = Pose(styleLod2, mats);
-            var pieces = Cut(posed, ShardCount(b.HeightM), new System.Random(seed));
+            var rest = Rest(styleLod0);
+            var pieces = Cut(rest, ShardCount(b.HeightM), new System.Random(seed));
             var rng = new System.Random(seed ^ 0x5eed);
-            var ids = WeldIds(posed);
-            var uses = EdgeUses(posed, ids);
-            var near = NearOtherPiece(posed, pieces);
+            var ids = WeldIds(rest);
             var shards = new CrowdShards.Shard[pieces.Count];
-            for (int i = 0; i < pieces.Count; i++) shards[i] = Build(posed, ids, uses, near, pieces[i], $"{b.Type.id}_shard{i}", rng);
-            return new CrowdShards.Set { Id = b.Type.id, HoldTime = hold, Shards = shards, HoldShadow = Mesh(shadow, $"{b.Type.id}_hold_shadow") };
-        }
-
-        /// <summary>Posed triangles as a mesh (positions and normals, root space).</summary>
-        static Mesh Mesh(Posed p, string name)
-        {
-            var m = new Mesh { name = name };
-            if (p.Position.Length > 65535) m.indexFormat = IndexFormat.UInt32;
-            m.SetVertices(p.Position);
-            m.SetNormals(p.Normal);
-            m.SetTriangles(Enumerable.Range(0, p.Position.Length).ToArray(), 0, true);
-            return m;
+            for (int i = 0; i < pieces.Count; i++) shards[i] = Build(rest, ids, pieces[i], $"{b.Type.id}_shard{i}", rng);
+            return new CrowdShards.Set { Id = b.Type.id, Shards = shards };
         }
 
         // ---------------------------------------------------------------------------------
@@ -339,53 +281,6 @@ namespace Demo3D.EditorTools.Crowd
         static (long, long, long) Key(Vector3 v) =>
             ((long)Math.Round(v.x * 1e4), (long)Math.Round(v.y * 1e4), (long)Math.Round(v.z * 1e4));
 
-        /// <summary>
-        /// For each corner, whether a corner of another piece lies within 1.5 cm: where separate shells
-        /// (armour on a body) were cut apart without sharing an edge.
-        /// </summary>
-        static bool[] NearOtherPiece(Posed p, List<List<int>> pieces)
-        {
-            const float near = 0.015f;
-            var pieceOf = new int[p.Triangles];
-            for (int i = 0; i < pieces.Count; i++) foreach (int t in pieces[i]) pieceOf[t] = i;
-            var grid = new Dictionary<(int, int, int), List<int>>();
-            (int, int, int) Cell(Vector3 v) => (Mathf.FloorToInt(v.x / near), Mathf.FloorToInt(v.y / near), Mathf.FloorToInt(v.z / near));
-            for (int k = 0; k < p.Position.Length; k++)
-            {
-                var c = Cell(p.Position[k]);
-                if (!grid.TryGetValue(c, out var list)) grid[c] = list = new List<int>();
-                list.Add(k);
-            }
-            var result = new bool[p.Position.Length];
-            for (int k = 0; k < p.Position.Length; k++)
-            {
-                var (cx, cy, cz) = Cell(p.Position[k]);
-                int own = pieceOf[k / 3];
-                for (int x = -1; x <= 1 && !result[k]; x++)
-                    for (int y = -1; y <= 1 && !result[k]; y++)
-                        for (int z = -1; z <= 1 && !result[k]; z++)
-                            if (grid.TryGetValue((cx + x, cy + y, cz + z), out var list))
-                                foreach (int o in list)
-                                    if (pieceOf[o / 3] != own && (p.Position[o] - p.Position[k]).sqrMagnitude < near * near) { result[k] = true; break; }
-            }
-            return result;
-        }
-
-        /// <summary>How many triangles use each welded edge (an undirected pair of weld ids).</summary>
-        static Dictionary<(int, int), int> EdgeUses(Posed p, int[] ids)
-        {
-            var uses = new Dictionary<(int, int), int>();
-            for (int t = 0; t < p.Triangles; t++)
-                for (int k = 0; k < 3; k++)
-                {
-                    int a = ids[3 * t + k], b = ids[3 * t + (k + 1) % 3];
-                    if (a == b) continue;
-                    var key = a < b ? (a, b) : (b, a);
-                    uses[key] = uses.TryGetValue(key, out int n) ? n + 1 : 1;
-                }
-            return uses;
-        }
-
         /// <summary>Each triangle's neighbours across a shared (welded) edge.</summary>
         static List<int>[] Adjacency(Posed p)
         {
@@ -426,11 +321,12 @@ namespace Demo3D.EditorTools.Crowd
         // ---------------------------------------------------------------------------------
         // Closing a piece into a chunk.
 
-        static CrowdShards.Shard Build(Posed p, int[] ids, Dictionary<(int, int), int> uses, bool[] nearOther, List<int> tris, string name, System.Random rng)
+        static CrowdShards.Shard Build(Posed p, int[] ids, List<int> tris, string name, System.Random rng)
         {
-            // The patch: its area-weighted centre and mean normal (short where it wraps round a limb).
+            // The patch: its area-weighted centre, mean normal (short where it wraps round a limb) and skin weights.
             Vector3 c = Vector3.zero, nbar = Vector3.zero;
             float areaSum = 0;
+            var boneWeight = new Dictionary<int, float>();
             foreach (int t in tris)
             {
                 var a = p.Position[3 * t];
@@ -441,6 +337,14 @@ namespace Demo3D.EditorTools.Crowd
                 c += (a + b + d) / 3f * ar;
                 nbar += cross * 0.5f;
                 areaSum += ar;
+                for (int k = 0; k < 3; k++)
+                    for (int j = 0; j < 4; j++)
+                    {
+                        float w = p.Weights[3 * t + k][j];
+                        if (w <= 0) continue;
+                        int bone = (int)p.Bones[3 * t + k][j];
+                        boneWeight[bone] = (boneWeight.TryGetValue(bone, out float x) ? x : 0) + w * Mathf.Max(ar, 1e-9f);
+                    }
             }
             if (areaSum > 0) { c /= areaSum; nbar /= areaSum; }
             else c = p.Position[3 * tris[0]];
@@ -448,29 +352,40 @@ namespace Demo3D.EditorTools.Crowd
             foreach (int t in tris)
                 for (int k = 0; k < 3; k++) radius = Mathf.Max(radius, (p.Position[3 * t + k] - c).magnitude);
             radius = Mathf.Max(radius, 1e-3f);
+            // The apex's weights: the patch's four heaviest bones, renormalized.
+            var top = boneWeight.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).Take(4).ToList();
+            float topSum = top.Sum(kv => kv.Value);
+            Vector4 apexBones = Vector4.zero, apexWeights = Vector4.zero;
+            for (int j = 0; j < top.Count; j++)
+            {
+                apexBones[j] = top[j].Key;
+                apexWeights[j] = top[j].Value / topSum;
+            }
 
             // The apex: under the centre, inside the body (a ray to its far side bounds the depth).
             var inward = nbar.sqrMagnitude > 1e-12f ? -nbar.normalized : Vector3.down;
             float far = Thickness(p, c - inward * 0.002f, inward);
             float depth = float.IsInfinity(far) ? 0.35f * radius : Mathf.Min(0.6f * radius, 0.45f * far);
             var apex = c + inward * depth * Mathf.Clamp01(nbar.magnitude);
-            if ((apex - c).magnitude < 0.08f * radius) apex = c + inward * 0.08f * radius; // never flat: PhysX needs a volume
+            if ((apex - c).magnitude < 0.08f * radius) apex = c + inward * 0.08f * radius; // never flat: it has a volume
             var pivot = Vector3.Lerp(c, apex, 0.25f); // a pyramid's centroid sits a quarter of the way to its apex
 
             var vertices = new List<Vector3>();
             var normals = new List<Vector3>();
             var bary = new List<Vector4>();
             var inside = new List<Vector2>();
-            var seams = new List<Vector4>();
+            var bones = new List<Vector4>();
+            var weights = new List<Vector4>();
             var indices = new List<int>();
-            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag, Vector4 seam)
+            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag, Vector4 bi, Vector4 bw)
             {
                 indices.Add(vertices.Count);
-                vertices.Add(pos - pivot);
+                vertices.Add(pos);
                 normals.Add(nor);
                 bary.Add(bc);
                 inside.Add(new Vector2(flag, 0));
-                seams.Add(seam);
+                bones.Add(bi);
+                weights.Add(bw);
             }
             var directed = new Dictionary<(int, int), int>(); // boundary edges: welded (from, to), with a corner index
             foreach (int t in tris)
@@ -482,35 +397,13 @@ namespace Demo3D.EditorTools.Crowd
                     if (directed.ContainsKey((b, a))) directed.Remove((b, a)); // shared inside the piece
                     else directed[(a, b)] = at;
                 }
-            // The skin: the style mesh's own corners. Its seams (UV2.xyz) mark the triangle's edges that
-            // are cuts: on the piece's boundary and shared with a triangle of another piece, or an
-            // open edge whose both ends are within 1.5 cm of another piece (a shell cut from the one
-            // beneath it), but not a free open edge of the mesh (a cape's hem). Component i is the
-            // edge facing the corner whose barycentric (UV3) is i, so the shard shader finds a
-            // fragment's distance to the cut from UV3 alone. A cut is 1; a fifth of the edges inside
-            // the piece (by a hash of the welded edge, so both its triangles agree) are hairline
-            // cracks at 0.3, so the crazing runs across the chunks too.
+            // The skin: the style mesh's own corners.
             foreach (int t in tris)
-            {
-                var seam = Vector4.zero;
                 for (int k = 0; k < 3; k++)
                 {
-                    int a = ids[3 * t + k], b = ids[3 * t + (k + 1) % 3];
-                    if (a == b) continue;
-                    float value;
-                    if (directed.TryGetValue((a, b), out int at) && at == 3 * t + k)
-                    {
-                        if (uses[a < b ? (a, b) : (b, a)] < 2 && !(nearOther[3 * t + k] && nearOther[3 * t + (k + 1) % 3])) continue;
-                        value = 1;
-                    }
-                    else if (!directed.ContainsKey((a, b)) && Hairline(Math.Min(a, b), Math.Max(a, b))) value = 0.3f;
-                    else continue;
-                    var facing = p.Bary[3 * t + (k + 2) % 3];
-                    int axis = facing.x >= facing.y && facing.x >= facing.z ? 0 : facing.y >= facing.z ? 1 : 2;
-                    seam[axis] = Mathf.Max(seam[axis], value);
+                    int at = 3 * t + k;
+                    Corner(p.Position[at], p.Normal[at], p.Bary[at], 0, p.Bones[at], p.Weights[at]);
                 }
-                for (int k = 0; k < 3; k++) Corner(p.Position[3 * t + k], p.Normal[3 * t + k], p.Bary[3 * t + k], 0, seam);
-            }
             // Inside faces: each boundary edge a→b, turned round (b, a, apex) to face out of the solid.
             double volume = 0;
             foreach (int t in tris)
@@ -523,14 +416,15 @@ namespace Demo3D.EditorTools.Crowd
             foreach (var kv in directed.OrderBy(kv => kv.Value))
             {
                 int at = kv.Value, t = at / 3, k = at % 3;
+                int bt = 3 * t + (k + 1) % 3;
                 var a = p.Position[at];
-                var b = p.Position[3 * t + (k + 1) % 3];
+                var b = p.Position[bt];
                 var face = Vector3.Cross(a - b, apex - b);
                 var nor = face.sqrMagnitude > 0 ? face.normalized : -inward;
                 float r = (float)rng.NextDouble();
-                Corner(b, nor, new Vector4(1, 0, 0, r), 1, Vector4.zero);
-                Corner(a, nor, new Vector4(0, 1, 0, r), 1, Vector4.zero);
-                Corner(apex, nor, new Vector4(0, 0, 1, r), 1, Vector4.zero);
+                Corner(b, nor, new Vector4(1, 0, 0, r), 1, p.Bones[bt], p.Weights[bt]);
+                Corner(a, nor, new Vector4(0, 1, 0, r), 1, p.Bones[at], p.Weights[at]);
+                Corner(apex, nor, new Vector4(0, 0, 1, r), 1, apexBones, apexWeights);
             }
 
             var mesh = new Mesh { name = name };
@@ -538,22 +432,15 @@ namespace Demo3D.EditorTools.Crowd
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
             mesh.SetUVs(1, inside);
-            mesh.SetUVs(2, seams);
             mesh.SetUVs(3, bary);
+            mesh.SetUVs(4, bones);
+            mesh.SetUVs(5, weights);
             mesh.SetTriangles(indices, 0, true);
             return new CrowdShards.Shard
             {
-                Mesh = mesh, Hull = Hull(vertices, name + "_hull"), Center = pivot,
-                Volume = (float)Math.Abs(volume), Size = (vertices.Max(v => v.magnitude)),
+                Mesh = mesh, Volume = (float)Math.Abs(volume), Size = vertices.Max(v => (v - pivot).magnitude),
+                Bone = top.Count > 0 ? top[0].Key : 0,
             };
-        }
-
-        /// <summary>Whether a welded edge inside a piece is a hairline crack: a fifth of them, by hash.</summary>
-        static bool Hairline(int a, int b)
-        {
-            uint x = (uint)a * 73856093u ^ (uint)b * 19349663u;
-            x ^= x >> 13; x *= 0x5bd1e995u; x ^= x >> 15;
-            return x % 5 == 0;
         }
 
         /// <summary>The distance along a ray to the posed mesh (infinity if it hits nothing).</summary>
@@ -585,59 +472,6 @@ namespace Demo3D.EditorTools.Crowd
             if (v < 0 || u + v > 1) return false;
             t = Vector3.Dot(e2, q) * inv;
             return true;
-        }
-
-        /// <summary>
-        /// A convex collider's points: the chunk's support points in the 42 directions of a once
-        /// subdivided icosahedron. MeshCollider (convex) hulls a mesh's points, so the triangles are
-        /// only a valid fan over them.
-        /// </summary>
-        static Mesh Hull(List<Vector3> points, string name)
-        {
-            var hull = new List<Vector3>();
-            foreach (var dir in Directions)
-            {
-                var best = points[0];
-                float bd = Vector3.Dot(best, dir);
-                foreach (var v in points)
-                {
-                    float d = Vector3.Dot(v, dir);
-                    if (d > bd) { bd = d; best = v; }
-                }
-                if (!hull.Any(h => (h - best).sqrMagnitude < 1e-10f)) hull.Add(best);
-            }
-            var fan = new List<int>();
-            for (int i = 1; i + 1 < hull.Count; i++) fan.AddRange(new[] { 0, i, i + 1 });
-            var m = new Mesh { name = name };
-            m.SetVertices(hull);
-            m.SetTriangles(fan, 0, true);
-            return m;
-        }
-
-        static readonly Vector3[] Directions = IcosphereDirections();
-
-        static Vector3[] IcosphereDirections()
-        {
-            float g = (1f + Mathf.Sqrt(5f)) / 2f;
-            var v = new List<Vector3>
-            {
-                new(-1, g, 0), new(1, g, 0), new(-1, -g, 0), new(1, -g, 0),
-                new(0, -1, g), new(0, 1, g), new(0, -1, -g), new(0, 1, -g),
-                new(g, 0, -1), new(g, 0, 1), new(-g, 0, -1), new(-g, 0, 1),
-            };
-            int[] f =
-            {
-                0, 11, 5, 0, 5, 1, 0, 1, 7, 0, 7, 10, 0, 10, 11, 1, 5, 9, 5, 11, 4, 11, 10, 2, 10, 7, 6, 7, 1, 8,
-                3, 9, 4, 3, 4, 2, 3, 2, 6, 3, 6, 8, 3, 8, 9, 4, 9, 5, 2, 4, 11, 6, 2, 10, 8, 6, 7, 9, 8, 1,
-            };
-            var dirs = v.Select(x => x.normalized).ToList();
-            for (int i = 0; i < f.Length; i += 3)
-                for (int k = 0; k < 3; k++)
-                {
-                    var mid = (v[f[i + k]] + v[f[i + (k + 1) % 3]]).normalized;
-                    if (!dirs.Any(d => (d - mid).sqrMagnitude < 1e-6f)) dirs.Add(mid);
-                }
-            return dirs.ToArray();
         }
     }
 }

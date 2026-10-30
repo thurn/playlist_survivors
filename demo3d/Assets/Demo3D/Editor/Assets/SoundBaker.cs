@@ -28,7 +28,7 @@ namespace Demo3D.EditorTools.Assets
             ["bolt"] = new[] { "RPG3_FireMagicBall_Projectile01", "RPG3_FireMagicBall_Projectile02", "RPG3_Magic2_HeavyImpact01" },
             ["lightning"] = new[] { "RPG3_ElectricMagicEpic_LightningStrikeImpact01", "RPG3_ElectricMagicEpic_LightningStrikeImpact02", "Thunder 1" },
             ["laser"] = new[] { "RPG3_FireMagicFlameThrower_Shoot01", "RPG3_FireMagicFlameThrower_Shoot02", "RPG3_FireMagicFlameThrower_Shoot03" },
-            // The crystal shatter's layers (evidence/shatter/burst/README.md): a crunching ice break with
+            // The crystal shatter's layers (evidence/shatter/impact/README.md): a crunching ice break with
             // weight under 300 Hz, a bright glass spray over it, and short fragment tinkles as shards land.
             ["shatter-body"] = new[] { "RPG3_IceMagic2_IceBreak01", "RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03" },
             ["shatter-glass"] = new[] { "SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono" },

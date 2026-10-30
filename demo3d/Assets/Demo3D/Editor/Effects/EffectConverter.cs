@@ -198,8 +198,11 @@ namespace Demo3D.EditorTools.Effects
         /// them. <c>sparks</c> (one, or a list of layers): count, speed [min, max] m/s, life [min,
         /// max] s, size m, gravity, radius m, upward (0 a sphere, 1 a cone straight up), stretch
         /// (length per m/s), hdr (colour scale), heightM, limit (m/s; the top speed by default) and
-        /// dampen (the share of the speed above the limit lost: high for dust that bursts out and then
-        /// floats), twinkle (the brightness flickers over the life: glints catching the light).
+        /// dampen (the share of the speed above the limit lost each frame: drag, high for dust that
+        /// bursts out and then floats); pitch (degrees above the ground: a cone thrown forward along
+        /// the spawn's yaw, its +z, instead of upward) with spread (that cone's half-angle, degrees);
+        /// shrink (the share of its size a particle loses by the end of its life), and fade (where
+        /// through its life it starts fading out, linearly to 0 at its end: 0.6 by default).
         /// </summary>
         public static GameObject SparkBurst(JObject o, int index = 0)
         {
@@ -229,7 +232,14 @@ namespace Demo3D.EditorTools.Effects
             em.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
             var shape = ps.shape;
             float up = F("upward", 0.4f);
-            if (up > 0)
+            if (o["pitch"] != null)
+            {
+                // Thrown forward: a cone along +z (the spawn's yaw turns it), tilted up by the pitch.
+                shape.shapeType = ParticleSystemShapeType.Cone;
+                shape.angle = F("spread", 35f);
+                shape.rotation = new Vector3(-F("pitch", 20f), 0, 0);
+            }
+            else if (up > 0)
             {
                 shape.shapeType = ParticleSystemShapeType.Cone;
                 shape.angle = Mathf.Lerp(89f, 25f, up);
@@ -240,22 +250,18 @@ namespace Demo3D.EditorTools.Effects
             var col = ps.colorOverLifetime;
             col.enabled = true;
             var g = new UnityEngine.Gradient();
-            if ((bool?)o["twinkle"] ?? false)
-            {
-                // Glints: full heat, then flickering between bright and dim as the facet turns, fading out.
-                var c = new Color(0.12f, 0.12f, 0.12f);
-                g.SetKeys(new[]
-                    {
-                        new GradientColorKey(Color.white, 0), new GradientColorKey(c, 0.14f), new GradientColorKey(Color.white, 0.26f),
-                        new GradientColorKey(c, 0.4f), new GradientColorKey(new Color(0.8f, 0.8f, 0.8f), 0.55f),
-                        new GradientColorKey(c, 0.7f), new GradientColorKey(new Color(0.6f, 0.6f, 0.6f), 0.84f), new GradientColorKey(c, 1),
-                    },
-                    new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, 0.75f), new GradientAlphaKey(0, 1) });
-            }
-            // Fade from full heat to a dim ember: the heat ramp turns that into white, yellow, red.
-            else g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 1) },
-                new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, 0.6f), new GradientAlphaKey(0, 1) });
+            // Fade from full heat to a dim ember: the heat ramp turns that into white, yellow, red
+            // (or the gem's colours on a tinted spawn); the alpha holds, then fades out.
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 1) },
+                new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, F("fade", 0.6f)), new GradientAlphaKey(0, 1) });
             col.color = g;
+            float shrink = F("shrink", 0f);
+            if (shrink > 0)
+            {
+                var sol = ps.sizeOverLifetime;
+                sol.enabled = true;
+                sol.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1, 1, 1 - shrink));
+            }
             var limit = ps.limitVelocityOverLifetime;
             limit.enabled = true;
             limit.limit = F("limit", speedMax);

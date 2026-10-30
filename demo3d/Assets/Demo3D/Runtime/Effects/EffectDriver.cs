@@ -14,7 +14,8 @@ namespace Demo3D.Runtime.Effects
     /// on each monster attack, and the ambient particles over the view (AmbientEffects). Attached events are
     /// placed at their entity's position at the event time (they don't follow it afterwards).
     /// Crystal deaths (<see cref="SetShatters"/>) swap their death burst for the selection's
-    /// client.crystalShatter effect on the beat their shards release, tinted by the type's gem.
+    /// client.crystalShatter effect at the killing blow, where their shards break, sprayed along the
+    /// blow and tinted by the type's gem.
     /// With an intensity's blow feel (<see cref="Blows"/>), the hero's trails and shocks and the sparks
     /// of its blows grow with the blow's weight, and death bursts by the feel's own factor.
     /// </summary>
@@ -43,15 +44,17 @@ namespace Demo3D.Runtime.Effects
         double _last = double.NaN;
         int _nextAction, _nextProj, _nextShatter;
         Shatter[] _shatters = Array.Empty<Shatter>();
-        float[] _shatterLight = Array.Empty<float>(); // each release's light gain: 1/sqrt(the releases on its beat)
+        float[] _shatterLight = Array.Empty<float>(); // each break's light gain: 1/sqrt(the breaks at its moment)
         readonly HashSet<int> _shattered = new HashSet<int>();
 
-        /// <summary>A crystal death's burst on its release beat (CrystalShatter.Releases), in place of its death burst.</summary>
+        /// <summary>A crystal death's burst at its killing blow (CrystalShatter.Breaks), in place of its death burst.</summary>
         public struct Shatter
         {
             public double Time;
             public int Entity;
             public Vector3 Position;
+            /// <summary>The blow's direction on the ground: the burst's yaw (the effect sprays along its +z). Zero keeps yaw 0.</summary>
+            public Vector3 Blow;
             public float Scale;
             public uint Seed;
             public Color Tint;
@@ -121,10 +124,10 @@ namespace Demo3D.Runtime.Effects
 
         /// <summary>
         /// The crystal deaths, sorted by time: each one's death-burst event is skipped and the
-        /// client.crystalShatter effect spawns at its release instead (nothing changes if the
-        /// selection names no such effect). The releases on one beat share their flash: each one's
-        /// light is 1/sqrt(n) of n, so a crowded beat is brighter than a lone death without its
-        /// lights summing into a wash over the whole view.
+        /// client.crystalShatter effect spawns at its break instead, turned to spray along the blow
+        /// (nothing changes if the selection names no such effect). The breaks at one moment (one
+        /// blow's kills) share their flash: each one's light is 1/sqrt(n) of n, so a mass kill is
+        /// brighter than a lone death without its lights summing into a wash over the whole view.
         /// </summary>
         public void SetShatters(Shatter[] shatters)
         {
@@ -139,6 +142,9 @@ namespace Demo3D.Runtime.Effects
             }
             _last = double.NaN; // the next frame starts afresh
         }
+
+        /// <summary>The yaw that turns an effect's +z to <paramref name="blow"/> (the runtime's RotateY; Easing.Dir); 0 for no direction.</summary>
+        public static float ShatterYaw(Vector3 blow) => blow.sqrMagnitude > 1e-8f ? Mathf.Atan2(blow.x, blow.z) : 0f;
 
         static int Index(EffectLibrary lib, string name) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name);
 
@@ -297,13 +303,13 @@ namespace Demo3D.Runtime.Effects
                     var b = new Vector3(s.To.X, 1.2f, s.To.Y);
                     Add(_projectile, a, s.FacingFrom, 1f, _tl.Entities[e].Seed, s.T0, (b - a) / dur, 0, dur);
                 }
-            // A crystal death's burst on the beat its shards release.
+            // A crystal death's burst at the blow that breaks it, along the blow.
             while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= now)
             {
                 float light = _shatterLight[_nextShatter];
                 var s = _shatters[_nextShatter++];
                 if (s.Time <= from) continue;
-                Add(_crystal, s.Position, 0, s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint, light);
+                Add(_crystal, s.Position, ShatterYaw(s.Blow), s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint, light);
             }
             // A dust puff at each monster's attack.
             while (_nextAction < _actionsByTime.Length)

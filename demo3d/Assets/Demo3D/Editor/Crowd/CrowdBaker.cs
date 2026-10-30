@@ -27,7 +27,8 @@ namespace Demo3D.EditorTools.Crowd
     ///   treatments that need one, listed in their own CrowdStyleMeshes asset so the default path
     ///   never loads them;
     /// - the crystal shatter's shard set of each type (<see cref="CrowdShardBaker"/>), its style mesh
-    ///   at the held death pose cut into chunks, in their own CrowdShards asset for the same reason;
+    ///   on its rest pose cut into chunks that keep its skin weights, in their own CrowdShards asset
+    ///   for the same reason;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
@@ -508,14 +509,7 @@ namespace Demo3D.EditorTools.Crowd
             shards.Types = sets.ToArray();
             Replace(shards, ShardsPath);
             foreach (var set in sets)
-            {
-                AssetDatabase.AddObjectToAsset(set.HoldShadow, shards);
-                foreach (var s in set.Shards)
-                {
-                    AssetDatabase.AddObjectToAsset(s.Mesh, shards);
-                    AssetDatabase.AddObjectToAsset(s.Hull, shards);
-                }
-            }
+                foreach (var s in set.Shards) AssetDatabase.AddObjectToAsset(s.Mesh, shards);
             EditorUtility.SetDirty(shards);
         }
 
@@ -535,9 +529,9 @@ namespace Demo3D.EditorTools.Crowd
             Replace(style[2], $"{TypeDir(id)}/{id}_style_lod2.mesh");
             styleMeshes.Add(new CrowdStyleMeshes.Entry { Id = id, Lod0 = style[0], Lod1 = style[1], Lod2 = style[2] });
             var shardsStarted = DateTime.UtcNow;
-            var set = CrowdShardBaker.Bake(b, style[0], style[2], seed + 3);
+            var set = CrowdShardBaker.Bake(b, style[0], seed + 3);
             shardSets.Add(set);
-            Debug.Log($"CrowdBaker: {id}: {set.Shards.Length} shards at death time {set.HoldTime:F3} s, volumes " +
+            Debug.Log($"CrowdBaker: {id}: {set.Shards.Length} shards, volumes " +
                       $"{set.Shards.Min(x => x.Volume) * 1e6:F0} to {set.Shards.Max(x => x.Volume) * 1e6:F0} cm³ " +
                       $"(median {set.Shards.Select(x => x.Volume).OrderBy(v => v).ElementAt(set.Shards.Length / 2) * 1e6:F0}), " +
                       $"in {(DateTime.UtcNow - shardsStarted).TotalSeconds:F1} s");
@@ -547,7 +541,7 @@ namespace Demo3D.EditorTools.Crowd
                 name = id + "_bones", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, anisoLevel = 0,
             };
             tex.SetPixelData(b.Texels, 0);
-            tex.Apply(false, false);
+            tex.Apply(false, false); // kept readable: the crystal shatter poses its chunks on the CPU (CrowdPose)
             Replace(tex, $"{TypeDir(id)}/{id}_bones.asset");
             var tex30 = new Texture2D(b.Width, b.Height30, TextureFormat.RGBAFloat, false, true)
             {

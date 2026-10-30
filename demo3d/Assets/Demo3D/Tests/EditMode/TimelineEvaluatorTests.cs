@@ -77,32 +77,49 @@ namespace Demo3D.Tests
         }
 
         /// <summary>
-        /// The crystal shatter swaps a death to its baked pose (CrystalShatter): from the hold's start
-        /// through the dissolve a death is Held, on its clip's last pose, which is all the bake samples.
+        /// The crystal shatter breaks a monster at its killing blow (TimelineEvaluator.BreaksAtImpact):
+        /// its death plays no clip, so up to the blow it shows what it was doing, exactly as if it
+        /// weren't dying, and from the blow's frame on it is Broken. Other deaths are untouched.
         /// </summary>
         [Test]
-        public void DeathsAreHeldOnTheirLastPoseThroughTheHoldAndDissolve()
+        public void DeathsThatBreakAtTheBlowPlayNoDeathClipAndBreakOnItsFrame()
         {
-            int checkedDeaths = 0;
+            var plain = new TimelineEvaluator(_tl, _data.Clips);
+            var breaking = new TimelineEvaluator(_tl, _data.Clips) { BreaksAtImpact = new System.Collections.Generic.HashSet<int>() };
+            var deaths = new System.Collections.Generic.List<ActionEvent>();
             foreach (var a in _tl.Actions)
+                if (a.Kind == ActionKind.Death && a.Clip >= 0 && _data.Clips[a.Clip].Impact > 0.02f && deaths.Count < 40) deaths.Add(a);
+            Assume.That(deaths.Count, Is.GreaterThan(10));
+            foreach (var a in deaths) breaking.BreaksAtImpact.Add(a.Entity);
+            int other = -1;
+            foreach (var a in _tl.Actions)
+                if (a.Kind == ActionKind.Death && !breaking.BreaksAtImpact.Contains(a.Entity)) { other = a.Entity; break; }
+            foreach (var a in deaths)
             {
-                if (a.Kind != ActionKind.Death || a.Clip < 0) continue;
-                Assert.That(_eval.Evaluate(a.Entity, a.Impact + 0.01, 1f, 1f, 0f).Held, Is.False, "the death clip is still playing");
-                var ann = _data.Clips[a.Clip];
-                double end = System.Math.Min(_tl.Entities[a.Entity].Despawn, a.Impact + 10);
-                for (double t = a.Impact; t < end; t += 1.0 / 60)
-                {
-                    var st = _eval.Evaluate(a.Entity, t, 1f, 1f, 0f);
-                    if (st.Dissolve > 0) Assert.That(st.Held, Is.True, "the dissolve is held");
-                    if (!st.Held) continue;
-                    Assert.That(st.Dying, Is.True);
-                    Assert.That(st.A.Clip, Is.EqualTo(a.Clip));
-                    Assert.That(st.A.Time, Is.EqualTo(System.Math.Max(ann.End, ann.Impact)), "the clip's held time");
-                    Assert.That(st.Blend, Is.EqualTo(1f));
-                }
-                if (++checkedDeaths == 40) break;
+                double start = a.HasClipTiming ? a.ClipStart : a.Impact - _data.Clips[a.Clip].Impact;
+                // Before the blow the death clip already plays for a plain death, never for a breaking one.
+                double before = a.Impact - 1.0 / 120;
+                if (before <= start) continue;
+                Assert.That(plain.Evaluate(a.Entity, before, 1f, 1f, 0f).A.Clip, Is.EqualTo(a.Clip), "a plain death's clip starts before its blow");
+                var st = breaking.Evaluate(a.Entity, before, 1f, 1f, 0f);
+                Assert.That(st.A.Clip, Is.Not.EqualTo(a.Clip), "no death clip before the blow");
+                Assert.That(st.B.Clip, Is.Not.EqualTo(a.Clip));
+                Assert.That(st.Broken, Is.False);
+                Assert.That(st.Dying, Is.False);
+                // From the blow's frame on it is broken, still in the pose it was in.
+                var at = breaking.Evaluate(a.Entity, a.Impact, 1f, 1f, 0f);
+                Assert.That(at.Broken, Is.True, "broken on the blow's frame");
+                Assert.That(at.A.Clip, Is.Not.EqualTo(a.Clip));
+                Assert.That(breaking.Evaluate(a.Entity, a.Impact + 0.5, 1f, 1f, 0f).Broken, Is.True);
+                Assert.That(plain.Evaluate(a.Entity, a.Impact, 1f, 1f, 0f).Broken, Is.False, "deaths not listed never break");
             }
-            Assert.That(checkedDeaths, Is.GreaterThan(10));
+            if (other >= 0)
+                for (double t = 0; t < _tl.Duration; t += 0.25)
+                {
+                    var x = plain.Evaluate(other, t, 1f, 1f, 0f);
+                    var y = breaking.Evaluate(other, t, 1f, 1f, 0f);
+                    Assert.That(y.A.Clip == x.A.Clip && y.A.Time == x.A.Time && y.Blend == x.Blend && !y.Broken, Is.True, "an unlisted death is unchanged");
+                }
         }
 
         [Test]

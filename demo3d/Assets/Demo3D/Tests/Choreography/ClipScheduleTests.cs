@@ -58,6 +58,17 @@ namespace Demo3D.Choreography.Tests
             Assert.That(s.FeedbackAt(Monster, fade + 0.01).Fade, Is.GreaterThan(0f), "the dissolve begins there");
         }
 
+        /// <summary>A death that plays no clip (demo3d's crystal shatter): what the monster was doing carries on through its blow.</summary>
+        [Test]
+        public void SkippingTheDeathLeavesWhatWasPlaying()
+        {
+            var s = Schedule();
+            Assert.That(s.ActiveAction(Monster, 3.95, out _), Is.EqualTo(Death), "the death clip starts before its blow");
+            Assert.That(s.ActiveAction(Monster, 3.95, out double since, skipDeath: true), Is.EqualTo(-1), "walking, as before the death");
+            Assert.That(since, Is.EqualTo(s.Start(Flinch) + 0.4).Within(1e-6), "since the flinch ended");
+            Assert.That(s.ActiveAction(Monster, 2.1, out _, skipDeath: true), Is.EqualTo(Flinch), "earlier clips are unchanged");
+        }
+
         [Test]
         public void HitStopHoldsThenCatchesUpWithoutAJump([Values(0f, 0.6f)] float rate)
         {

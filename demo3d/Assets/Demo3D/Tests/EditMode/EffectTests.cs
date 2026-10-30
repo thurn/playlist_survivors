@@ -80,7 +80,7 @@ namespace Demo3D.Tests
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
-        /// <summary>The crystal shatter's burst (epic ps-2iq): a built-in entry of spark layers, glints that twinkle and slow dust.</summary>
+        /// <summary>The crystal shatter's burst (epic ps-2iq): a built-in entry of spark layers, chips thrown forward along the spawn's yaw and dust slowed by drag.</summary>
         [Test]
         public void AnEntryWithoutAPrefabIsBuiltFromItsSparkLayers()
         {
@@ -88,7 +88,7 @@ namespace Demo3D.Tests
             try
             {
                 var e = EffectConverter.ConvertOne(go, @"{ ""light"": { ""color"": [0.5, 0.9, 1], ""range"": 5, ""intensity"": 5, ""duration"": 0.35 },
-                    ""sparks"": [ { ""count"": 30, ""twinkle"": true }, { ""count"": 50, ""stretch"": 0, ""limit"": 0.8, ""dampen"": 0.4,
+                    ""sparks"": [ { ""count"": 30, ""pitch"": 20, ""spread"": 35, ""shrink"": 0.6 }, { ""count"": 50, ""stretch"": 0, ""limit"": 0.8, ""dampen"": 0.4,
                                     ""heat"": { ""edge"": [0, 0, 1], ""mid"": [0, 1, 1], ""gain"": 0.5 } } ] }",
                     out var em, out var emission, out var errors);
                 Assert.That(errors, Is.Empty);
@@ -97,6 +97,12 @@ namespace Demo3D.Tests
                 Assert.That(emission[1].Bursts[0].CountMax, Is.EqualTo(50));
                 Assert.That(em[Slots.Stride + Slots.Heat1], Is.EqualTo(new Vector4(0, 1, 1, 0.5f)), "each layer's own heat");
                 Assert.That(em[Slots.Stride + Slots.RotMax].w, Is.EqualTo(0.4f).Within(1e-6f), "the dust's dampen");
+                Assert.That(em[Slots.Shape0].x, Is.EqualTo((float)Slots.ShapeType.Cone), "the chips leave in a cone");
+                Assert.That(em[Slots.Shape0].w, Is.EqualTo(35f * Mathf.Deg2Rad).Within(1e-5f), "of the spread's half-angle");
+                var q = em[Slots.ShapeRot];
+                var axis = new Quaternion(q.x, q.y, q.z, q.w) * Vector3.forward;
+                Assert.That((axis - new Vector3(0, Mathf.Sin(20f * Mathf.Deg2Rad), Mathf.Cos(20f * Mathf.Deg2Rad))).magnitude, Is.LessThan(1e-4f),
+                    "along +z (the spawn's yaw), pitched 20 degrees up");
                 Assert.That(e.Light.Active && e.Light.Range == 5, Is.True);
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
@@ -104,11 +110,11 @@ namespace Demo3D.Tests
 
         /// <summary>
         /// A crystal death's burst replaces its death burst: it spawns the selection's client.crystalShatter
-        /// on the release beat, in the gem's tint; other deaths keep their death burst. Releases on one
-        /// beat share their flash (1/sqrt(n) each).
+        /// at the killing blow, where the blow landed, turned along the blow and in the gem's tint; other
+        /// deaths keep their death burst. Breaks at one moment share their flash (1/sqrt(n) each).
         /// </summary>
         [Test]
-        public void CrystalDeathsSwapTheirDeathBurstForTheShatterOnTheRelease()
+        public void CrystalDeathsSwapTheirDeathBurstForTheShatterAtTheBlow()
         {
             var lib = ScriptableObject.CreateInstance<EffectLibrary>();
             try
@@ -146,7 +152,7 @@ namespace Demo3D.Tests
                 var gem = new Color(0.2f, 0.9f, 1f, 1f);
                 driver.SetShatters(new[]
                 {
-                    new EffectDriver.Shatter { Time = 2.25, Entity = 1, Position = new Vector3(2, 0.3f, 0), Scale = 1, Seed = 2, Tint = gem },
+                    new EffectDriver.Shatter { Time = 2.25, Entity = 1, Position = new Vector3(2, 0.3f, 0), Blow = new Vector3(1, 0, 0), Scale = 1, Seed = 2, Tint = gem },
                     new EffectDriver.Shatter { Time = 2.25, Entity = 5, Position = new Vector3(4, 0.3f, 0), Scale = 1, Seed = 5, Tint = gem },
                     new EffectDriver.Shatter { Time = 2.75, Entity = 6, Position = new Vector3(6, 0.3f, 0), Scale = 1, Seed = 6, Tint = gem },
                 });
@@ -158,8 +164,10 @@ namespace Demo3D.Tests
                 Assert.That(sink.Spawns[1].Time, Is.EqualTo(2.25).Within(1e-9));
                 Assert.That(sink.Spawns[1].Position, Is.EqualTo(new Vector3(2, 0.3f, 0)));
                 Assert.That(sink.Spawns[1].Tint, Is.EqualTo(gem));
-                Assert.That(sink.Spawns[1].LightGain, Is.EqualTo(1 / Mathf.Sqrt(2)).Within(1e-6f), "two releases on the beat share the flash");
-                Assert.That(sink.Spawns[3].LightGain, Is.EqualTo(1f), "a lone release keeps the cue as authored");
+                Assert.That(sink.Spawns[1].Yaw, Is.EqualTo(Mathf.PI / 2).Within(1e-6f), "+z turned to the blow, +x");
+                Assert.That(sink.Spawns[2].Yaw, Is.Zero, "no blow, no turn");
+                Assert.That(sink.Spawns[1].LightGain, Is.EqualTo(1 / Mathf.Sqrt(2)).Within(1e-6f), "two breaks at once share the flash");
+                Assert.That(sink.Spawns[3].LightGain, Is.EqualTo(1f), "a lone break keeps the cue as authored");
             }
             finally { UnityEngine.Object.DestroyImmediate(lib); }
         }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PS.Choreography;
 using UnityEngine;
 
@@ -17,6 +18,9 @@ namespace Demo3D.Runtime.Playback
     ///   over 0.12 s.
     /// - A death rests on its clip's last pose; the schedule's flash and fade become the hit
     ///   flash and the dissolve.
+    /// - A death that breaks at its blow (<see cref="BreaksAtImpact"/>: the crystal shatter) plays no
+    ///   clip: the monster keeps walking, attacking or flinching until the blow, and from the blow on
+    ///   it is <see cref="State.Broken"/>.
     /// </summary>
     public sealed class TimelineEvaluator
     {
@@ -31,6 +35,12 @@ namespace Demo3D.Runtime.Playback
 
         public Timeline Timeline => _tl;
         public ClipSchedule Schedule => _schedule;
+
+        /// <summary>
+        /// Entities whose death plays no clip: they break at the blow (CrystalShatter, crowd.md's
+        /// crystal shatter), so they keep their pose up to it. Null: every death plays its clip.
+        /// </summary>
+        public HashSet<int> BreaksAtImpact;
 
         public TimelineEvaluator(Timeline timeline, ClipLibrary clips)
         {
@@ -66,8 +76,8 @@ namespace Demo3D.Runtime.Playback
             public float Blend;  // weight of A
             public float HitFlash, Dissolve;
             public bool Dying;
-            /// <summary>A death resting on its clip's last pose: the hold and the dissolve (the crystal shatter's swap, CrystalShatter).</summary>
-            public bool Held;
+            /// <summary>A death that breaks at its blow (<see cref="BreaksAtImpact"/>), from the blow on: the crystal shatter's shards stand in for it.</summary>
+            public bool Broken;
         }
 
         Slot SlotFor(int action, int e, double t, float walkStride, float walkLength)
@@ -95,18 +105,14 @@ namespace Demo3D.Runtime.Playback
             st.Position = new Vector3(p.X, hover, p.Y);
             st.Yaw = facing;
 
-            int act = _schedule.ActiveAction(e, t, out double since);
+            bool breaks = BreaksAtImpact != null && BreaksAtImpact.Contains(e);
+            int act = _schedule.ActiveAction(e, t, out double since, breaks);
             st.A = SlotFor(act, e, t, walkStride, walkLength);
-            if (act >= 0 && _tl.Actions[act].Kind == ActionKind.Death)
-            {
-                var ann = _clips[_tl.Actions[act].Clip];
-                st.Held = st.A.Time >= Mathf.Max(ann.End, ann.Impact);
-            }
             st.Blend = 1f;
             st.B = st.A;
             if (t - since < Crossfade && !double.IsInfinity(since))
             {
-                int prev = _schedule.ActiveAction(e, since - 1e-4, out _);
+                int prev = _schedule.ActiveAction(e, since - 1e-4, out _, breaks);
                 if (prev != act)
                 {
                     st.B = SlotFor(prev, e, t, walkStride, walkLength);
@@ -118,6 +124,7 @@ namespace Demo3D.Runtime.Playback
             st.HitFlash = fb.Flash;
             st.Dissolve = fb.Fade;
             st.Dying = fb.Dying;
+            st.Broken = breaks && fb.Dying;
             return st;
         }
     }

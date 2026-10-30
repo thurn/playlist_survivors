@@ -4,7 +4,7 @@
 // this style only) with a little dispersion, tinted by the type's gem colour. Facet edges catch
 // the light, a few facets glint as the beat wave passes, and the core glows on the beat (the surface
 // is CrystalCommon.hlsl's, shared with the shards). Its own death flies the triangles apart, in every
-// pass; in the demo CrystalShatter hides a dying monster at its hold and its baked shards break
+// pass; in the demo CrystalShatter hides a monster at its killing blow and its baked shards break
 // instead. In the transparent queue URP runs none of its depth or motion passes, so under TAA a
 // moving crystal smears (crowd.md, Monster styles).
 Shader "Demo3D/Styles/Crystal"
