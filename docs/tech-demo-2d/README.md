@@ -1,13 +1,11 @@
 # 2D Pixel Demo
 
-The design for a Unity 2D pixel-art demo: the 3D tech demo's fight, redrawn
-as a pixel-art Vampire Survivors-style battle, to *Action*. It is split into
-two documents:
-
-- **This page:** the goal, the decisions, what the viewer sees, and how it is
-  built.
-- [Implementation Plan](plan.md): the tasks PX0 to PX10, their order, status
-  and notes, and what is pending on the operator.
+A Unity 2D pixel-art demo, `demo2d/`: the 3D tech demo's fight, redrawn as
+a pixel-art Vampire Survivors-style battle, to *Action*. This page has the
+goal, the decisions, what the viewer sees, how it is built and run, and the
+checks [pending on the operator](#pending-on-the-operator). Each task's
+measurements and stills are in `demo2d/evidence/<key>/` (`px0` to `px10`,
+then `rework`), one README per task.
 
 ## Introduction
 
@@ -33,9 +31,9 @@ to ship.
 
 ### Decisions
 
-Settled with the operator on 2026-10-29 in a design interview. Agents treat
-them as fixed; every other choice is the implementing agent's, recorded with
-its reasons in the task's notes.
+Settled with the operator on 2026-10-29 in a design interview. The choices
+made while building the demo, and their reasons, are on this page and in the
+evidence READMEs.
 
 1. **A showcase, built and checked on the Mac.** No sweeps, no frontier, no
    Cygnus. The bar is that it looks great and holds 60 fps at 1080p on the
@@ -73,17 +71,13 @@ its reasons in the task's notes.
    to about 1.35× for the final energy peak. It has its own level script,
    derived from demo3d's `action-level.json`.
 10. **Effects draw in the pixel grid.** CFXR effects draw into the 960×540
-    target with the sprites. Bloom, screen distortion and the grade run at
-    1080p after the upscale. An effect may opt into a full-resolution layer
-    when pixelation ruins it, with the reason recorded.
+    target with the sprites. Bloom and the grade run at 1080p after the
+    upscale. No effect needed a full-resolution layer, so there is none.
 11. **No HUD,** like the 3D demo: the scene only.
 12. **No video capture.** Stills are the evidence; the operator watches the
     app.
 13. **The song is *Action*,** with demo3d's song map (`songs/action/`) and
     the same local audio rules.
-14. **The plan is markdown,** with plan keys `PX0` to `PX10`, evidence in
-    `demo2d/evidence/<key>/`, landing through Enact with no beads, as the 3D
-    demo now does.
 
 ## Related Information
 
@@ -144,12 +138,64 @@ The app's development flags, for the command line inside the bundle
 - `"$APP" --start-at 160`: from the climax. `--click` adds a click on every
   beat, `--overlay` the song time and on-screen counts.
 - `--no-sound`, `--no-effects`, `--no-night`, `--no-post`, `--no-feel`: drop
-  one layer, to compare.
+  one layer, to compare. `--empty` draws the hero alone in the arena's night.
+- `--seconds <n>` stops after n seconds of song; `--fixed-time` steps exactly
+  1/60 s a frame; `--freeze-at <s>` holds one moment; `--zoom soft` swaps the
+  sharp upscale for a soft one; `--test-card` draws the empty test scene.
 - Windowless, for agents: `"$APP" -batchmode -force-metal --capture-stills
-  "$PWD/out" --stills-at 6,30,176` writes tagged stills, and `--measure
+  "$PWD/out" --stills-at 6,30,176` writes tagged stills (`--effect-stills`
+  instead writes one per effect kind as it fires), `--dump-sounds
+  "$PWD/sounds.json"` the timeline's sound events, and `--measure
   "$PWD/song.json"` runs the song check: every frame of the song drawn at
-  1080p and timed, passing when the 99th percentile is under 16.7 ms and no
-  second has a frame over 25 ms (PX10).
+  1080p and timed to a one-pixel readback (the CPU's and the GPU's work back
+  to back), passing when the 99th percentile is under 16.7 ms and no second
+  has a frame over 25 ms. It passes at about 8.8 ms p99 with a 10 ms worst
+  frame, about 383 monsters, 104 effects and 28 effect lights at the peak.
+  FrameTimingManager's GPU times are recorded but kept out of the verdict: a
+  batch-mode player reports them on about 3% of frames, spanning idle time.
+  `SongPlayback.Prewarm` fills every effect pool and draws the first frame
+  at load, since first uses of a pool or shader stalled 40 ms or more.
+
+## Working on the Demo
+
+- **The tools:** `demo2d` is a second entry point over `demo3d/tools`
+  (setup, guard, check, unity, test, build, library, sync, manifest). It
+  shares the machine's cache, `roots.json` and sync record with `demo3d`.
+  demo2d has no warm editor: every Unity step runs cold, in the worktree's
+  own project.
+- **Tests:**
+  - `dotnet test demo2d/dotnet/Demo2D.Choreography.Tests` runs the
+    engine-free code (the sim on demo2d's data, the arena generator, the
+    effect library, `SpriteEvaluator`) and the core's shared
+    `TimelineChecks`; `scripts/check-fast` runs it when that code, the
+    package or the song map changes.
+  - `demo2d test` runs the EditMode tests (asset checks, the seek test, the
+    impact frames, presentation); the seek test needs `demo2d unity
+    BakePlayback` first. `--no-skips` fails on any skipped test, as slow CI
+    (`scripts/ci-full demo2d`, machine needs in SETUP.md) runs it.
+  - `demo2d check --player` runs the guard, dotnet, EditMode and a build.
+- **Editor tasks** (`demo2d unity <Task> [-out <dir>]`, in
+  `Demo2D.EditorTools.Tasks`): `Configure` (writes the project's settings
+  and scene), `BakeSprites`, `AnnotateClips` (rewrites
+  `clip-annotations.json`; a test fails if the file drifts from a fresh
+  annotation), `BakePlayback`, and the stills `AssetStills`,
+  `SpriteStills`, `ArenaStills`, `EffectLibraryStills`, `ReferenceStills`
+  and `Readability` (fails unless every type is distinct by colour or
+  silhouette and the hero is findable).
+- **Opening the project rewrites two ProjectSettings files**
+  (`GraphicsSettings`' light flags, `InputManager`'s debug buttons). These
+  are Unity's own changes: discard them, as slow CI does.
+- **Timelines are deterministic per runtime only:** the IL2CPP player's
+  differs slightly from the Mono editor's, so compare stills within one
+  build.
+- **The packs' frames run at 15 fps** (not their `.anim`s' 30), and clip
+  times are frame starts: an impact is `impactFrame / 15`. The art faces
+  right; left is a flip.
+- **Lights only settle in LateUpdate.** A `Light2D` refreshes its culling
+  bounds there, so stills are drawn in `DemoMain`'s LateUpdate, and
+  EditMode tests (no LateUpdate) can't check lighting: use the player's
+  stills. A SpriteRenderer made at runtime gets the unlit sprite material
+  unless it names URP's `Sprite-Lit-Default`.
 
 ## What the Viewer Sees
 
@@ -191,8 +237,11 @@ should feel like watching an expert play a finished pixel-art game.
   so the level script's distances carry over.
 - **Occlusion.** Trees in front of the fight fade where they cover the hero
   or the horde, as demo3d's canopy does.
-- **Reactions.** Hit flash, knockback, hit-stop on the hero's big blows,
-  and camera punch and shake on accents, all driven by the timeline.
+- **Reactions.** A struck monster lights warm (its own colours brightened,
+  not whitened) and hops back over its shadow; the hero's parries gleam
+  cool. Spins and slams hold their impact frame for a 50 ms hit-stop.
+  Camera punch and shake land on accents. All of it is driven by the
+  timeline.
 
 ## System Overview
 
@@ -265,8 +314,11 @@ Character frames are baked, not imported as is:
   widest view), so the climax keeps the grid's density: PX5 chose this over
   a fixed 960×540 target drawing the wider view at fewer texels per metre,
   which drops and doubles the art's pixels (its paired stills).
-- Bloom, screen distortion (CFXR's distortion prefabs, if kept) and the
-  colour grade run on the 1080p image.
+- The present pass is a second camera drawing one quad (layer 31) offset by
+  the world camera's sub-texel remainder, so the scroll is smooth. Bloom and
+  the colour grade run on it, over the 1080p image. There is no screen
+  distortion: the 2D renderer gives CFXR's distortion prefabs no opaque
+  texture, so they draw a grey blur.
 
 ### The arena
 
@@ -315,7 +367,10 @@ Character frames are baked, not imported as is:
   CFXR prefab, a scale, a tint, a layer (over the crowd or on the ground) and
   a light cue (colour, radius, intensity curve) for a pooled `Light2D`. CFXR
   has no beam, so the laser's sweep is a drawn line with CFXR's crackle at the
-  hero's hand.
+  hero's hand. CFXR's own scripts are stripped from pooled instances (their
+  clear behaviour destroys the instance, and their lights and shake are
+  3D). Every effect draws in the pixel grid; the library rejects an entry
+  asking for a full-resolution layer, since none exists.
 - **Night lighting** (`Data/night-lighting.json`). A global `Light2D` at low,
   cool intensity; freeform lights for moonlight shafts; point lights for
   fireflies and glowing plants; capped light pools for effects, fireflies and
@@ -325,10 +380,15 @@ Character frames are baked, not imported as is:
 
 ### Sound
 
-Unchanged from the 3D demo: the song as streamed audio started with
-`PlayScheduled`, effect sounds aggregated in the core (at most 3 voices per
-beat and category, gain growing with log2 of the hits), scheduled at DSP
-time within 150 ms.
+As in the 3D demo: the song as streamed audio started with `PlayScheduled`,
+effect sounds aggregated in the core (at most 3 voices per beat and
+category, gain growing with log2 of the hits), scheduled at DSP time within
+150 ms, with demo3d's clip choices. The player mixes as demo3d's offline mix
+does: the music at 0.8, effects at 0.45 of their gain, and a soft limiter
+(`MixLimiter`) on the final mix, which otherwise clips at the climax.
+`SoundScheduler`, `SongClock`, `ClickTrack` and `CameraFeel` are copies of
+demo3d's: they need Unity, so the engine-free package can't hold them, and
+demo2d can't reference demo3d's runtime assembly.
 
 ## Vendor Assets
 
@@ -336,10 +396,9 @@ The 3D demo's rules apply in full ([Vendor Assets](../tech-demo-3d/vendor-assets
 no vendor file, derived file (baked atlases, generated tilemaps and scenes,
 edited prefabs), build or song audio ever reaches git. This demo adds:
 
-- **A new source root, `pixel_assets`,** for `~/unity_assets/Assets` (the
-  2D packs). It is separate from `unity_assets` (`~/unity_assets/UnityAssets`),
-  so the sync record must cover it. Until it does, the guard can't recognize
-  those files by hash or GUID.
+- **A source root, `pixel_assets`,** for `~/unity_assets/Assets` (the 2D
+  packs), separate from `unity_assets` (`~/unity_assets/UnityAssets`); the
+  sync record covers both.
 - **Gitignored folders:** `demo2d/Assets/Vendor/`, `demo2d/Assets/Baked/`,
   `demo2d/Library/`, `Builds/`, `Logs/`, `Temp/`, `UserSettings/`, and the
   generated project files, mirroring demo3d's `.gitignore` lines.
@@ -351,13 +410,15 @@ edited prefabs), build or song audio ever reaches git. This demo adds:
 - **A manifest,** `demo2d/manifest.json`, lists every vendor asset the demo
   uses, synced by the same tool.
 
-Any change to the guard gets its own cold review (PX1).
+Any change to the guard gets its own cold review, because a leak can't be
+undone. Agents never force-add an ignored path or bypass the guard.
 
 ## Verifying the Assets
 
-Before anything is built on them, PX2 proves that each pack works in
-`demo2d`, under URP's 2D renderer on Metal, and that none of it can reach
-git:
+`Demo2D.Tests.AssetTests` (in `demo2d test`), `demo2d unity AssetStills` and
+the guard drill (`demo2d/evidence/px2/guard-drill.sh`, run in a scratch
+clone) prove that each pack works in `demo2d`, under URP's 2D renderer on
+Metal, and that none of it can reach git:
 
 - every roster type's and the hero's clips import with complete frame
   sequences and play at their frame rate (a contact sheet per type, and a
@@ -370,3 +431,18 @@ git:
   automatically and by a gallery still;
 - the vendor guard drill: force-staging a synced file, a baked atlas and a
   `.meta` from each pack fails the guard, in a scratch clone.
+
+## Pending on the operator
+
+Checks only the operator can make, none of them answered yet. Each runs the
+bundled app after `demo2d build`, from a worktree's root, with `APP` as in
+[Running the Demo](#running-the-demo). An answer that needs a change
+becomes a bead; then remove its row.
+
+| What | How |
+|---|---|
+| **The watch.** Does the whole demo hold up? The arc (a handful of skeletons, waves following the song's energy with room to breathe, about 400 at the final peak with the camera eased out, the horde cleared on the ending's accents), every moment reading as a finished game's, no hitch, pop or stutter, and the sound in balance with the song. | `open demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app`: it plays the song once and quits. Note any second that looks wrong, stalls or sounds wrong, and why. |
+| **The native game's feel.** The knight in a cleared ring rather than surrounded; a quick step and hop on each beat, then a stand (no floating); swings snapping to the beat, one per beat in a fight. | `"$APP"` and `"$APP" --click --start-at 100`, side by side with the native game if useful. Note any second where the knight floats, swings late or is buried. |
+| **On the click, and the sound.** Every step, blow, flinch, death, parry and spell on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. In the first minute and the climax (160 to 199 s): sounds not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the crowd's warm hit light and the hero's cool parry gleam; the boss walking in from the great clearing at about 164 s, its hellfire parried, and its fall on the last slam. | `"$APP" --click --overlay` and `"$APP" --click --start-at 160`, then once without `--click` for the mix. `--no-sound` drops the effect sounds, `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. |
+| **The beauty shots.** Does each pass the checklist: one focal point, the hero readable, effects carrying light, no flat or muddy ground, no tiling repetition visible? This also covers readability (each type recognizable at game size, the hero findable in a crowd) and the night (too dark, too blue, the shafts too geometric, the downbeat rings too strong?). | Look over the stills in `demo2d/evidence/px10/` (PX9's six moments and the last slam) with `demo2d/evidence/px9/README.md`'s table and `readability.txt`; or watch `"$APP"`, with `--no-night`, `--no-post` or `--no-effects` to compare. The values are in `night-lighting.json`, `effects.json` and `forest-tiles.json`. |
+| **The clip annotations.** Each attack's and slash's impact on the blow, each hit's and death's end where it settles, the slam's on the landing, and the walks' strides plausible for their gait (the lava beast's and the boss's are fallbacks: they have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change one, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame. |

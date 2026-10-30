@@ -75,5 +75,5 @@ lit sprites ([400](frame-timing-batch-400.json), [4,000](frame-timing-batch-4000
 - **Memory stays flat** over 9,168 hand-drawn frames with the 2D renderer, unlike demo3d's
   URP 17.6 3D renderer, which grew about 90 MB a frame (demo3d's TD4). A whole-song
   batch-mode run (about 12,000 frames at 60 fps) is feasible.
-- **A windowed comparison** (does a presenting player report GPU times every frame?) is the
-  operator's to run, in the plan's Pending on the operator table.
+- **A windowed comparison** (does a presenting player report GPU times every frame?) was the
+  operator's to run; PX10 deleted the spike, and the question with it.

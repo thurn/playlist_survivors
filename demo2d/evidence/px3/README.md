@@ -83,7 +83,7 @@ pulls the ghoul, zombie warrior, ice skull and blood mage toward the same dark t
 silhouettes still differ. The hero is findable in the crowd only because he stands in the
 centre under a warm light: at 60 px he was hardly taller than the grunts, so he is now 66 px. His
 purple and steel blend with the horde's palette, so PX7/PX9 should mark him with light (a rim
-or a carried light) rather than size. This judgement is in the plan's Pending on the operator.
+or a carried light) rather than size. The operator's judgement is in docs/tech-demo-2d/README.md, Pending on the operator.
 
 ## Tests
 

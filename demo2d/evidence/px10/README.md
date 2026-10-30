@@ -90,7 +90,7 @@ pixels (mean difference 0.02 to 0.35 of 255), in small local spots.
 
 The last slam is new: the ending's final accent, the struck horde lit gold round the knight
 and the boss falling at his right. PX9's checklist judgement holds for the six (its README).
-The operator's judgement is pending (plan.md).
+The operator's judgement is pending (docs/tech-demo-2d/README.md, Pending on the operator).
 
 ## Review (Warden, ps-tfn.5.2)
 

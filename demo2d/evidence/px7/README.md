@@ -45,7 +45,7 @@ and for nothing else, and every prefab it names is in the manifest.
 - What to look for: the moon's cool fill (0.24), the warm pool on the hero, soft moonlight shafts on
   the clearings, the umbrella plants' teal glow, fireflies by the trees, and in the song the effects
   carrying the light (each kind's cue on a pooled `Light2D`), bloom on the HDR effects and the grade.
-  The operator's judgement is in the plan's Pending on the operator.
+  The operator's judgement is in docs/tech-demo-2d/README.md, Pending on the operator.
 
 ## Cost at the climax
 

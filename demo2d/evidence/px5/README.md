@@ -73,5 +73,4 @@ and death in the song at its impact time: each shows its clip's impact frame (th
 flinch's or the fall's onset), except where a later clip of the same entity has already cut in
 (under 5%), and a killing blow shows the death rather than the flinch. Steps land on beats in the
 timeline itself (the core's gait segments start on the beat grid); the walk's frames follow the
-distance walked. Whether it all *feels* on the click is the operator's check (plan.md, Pending
-on the operator).
+distance walked. Whether it all *feels* on the click is the operator's check (docs/tech-demo-2d/README.md, Pending on the operator).

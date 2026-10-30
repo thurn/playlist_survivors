@@ -23,7 +23,7 @@ uv run --project demo3d/tools demo2d unity Readability -out "$PWD/demo2d/evidenc
 ## The six beauty shots
 
 The checklist: one focal point, the hero readable, effects carrying light, no flat or muddy ground,
-no tiling repetition visible. Each is the agent's judgement; the operator's is pending (plan.md).
+no tiling repetition visible. Each is the agent's judgement; the operator's is pending (docs/tech-demo-2d/README.md, Pending on the operator).
 
 | Shot | Time | Focal point | Hero | Effects carrying light | Ground |
 |---|---|---|---|---|---|

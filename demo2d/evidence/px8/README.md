@@ -40,4 +40,4 @@ player's where they differ.
 `--dump-sounds` on the player: 2,933 events over the song, every one with a baked clip (24 sound
 names from demo3d's packs): 876 deaths, 780 parries, 526 hits, 347 bolts, 182 swings, 121 rings,
 99 lightning strikes, 2 laser sweeps. They play scheduled on the mixer's clock in live play; the
-listening check is the operator's (plan.md, Pending on the operator).
+listening check is the operator's (docs/tech-demo-2d/README.md, Pending on the operator).

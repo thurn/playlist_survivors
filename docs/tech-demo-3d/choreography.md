@@ -5,8 +5,8 @@
 The choreography layer stands in for a game's simulation. It is plain C#
 (netstandard2.1, `System.Numerics` for vectors, no Unity types), compiled by
 Unity through an assembly definition with `noEngineReferences: true`, and also
-built and tested by `dotnet test` outside Unity. Since the 2D demo's PX0 it is
-a local Unity package both demos share,
+built and tested by `dotnet test` outside Unity. It is a local Unity package
+both demos share,
 `unity-packages/com.playlistsurvivors.choreography/` (namespace
 `PS.Choreography`); demo3d's data and the code that loads it from a checkout
 stay in `demo3d/Assets/Demo3D/Choreography/`.
@@ -182,7 +182,9 @@ What the simulation does on each grid step:
     native game's hero steps) covers each stride in that long from the beat,
     eased out, then stands until the next beat, instead of gliding over the
     whole beat. A combo without root motion holds the hero through its windup
-    and steps its advance from the impact, so the hero steps with the blow.
+    and steps its advance (the combo's `advanceM`, the least the hero moves
+    toward an unreached goal over the clip) from the impact, so the hero
+    steps with the blow and still travels while fighting.
 - **The hero heads for the section's goal.** Each section names a goal area
   from the layout parameters. Until the hero reaches it, each stride is one
   gait step along a flow field toward the goal, built once per section at
@@ -235,10 +237,11 @@ What the simulation does on each grid step:
   points. The climax adds the boss, the laser and denser spells on top.
 - **The boss enters outside the view** at its section's start. By default it
   waits there to be released like any other monster, which a full climax
-  never does. A level script's `bossFrom` (PX8) names a layout goal: the boss
+  never does. A level script's `bossFrom` names a layout goal: the boss
   enters in that goal's direction from the hero and always walks in. Both
   demos set it: demo3d's boss comes from the `opening`, to the hero's
-  north-east (ps-tfn.9).
+  north-east. `bossFallsLast` (demo2d's) spares the boss from a clearing
+  section's blows until its last, so it falls to the final slam.
 - **Spawns refill toward the section's target count.** They come in on beats,
   a few at a time, at a ring 2 m beyond the view's edge, on open cells the
   flow field can reach. While the hero heads for a goal, spawns are weighted
@@ -415,7 +418,8 @@ start = impact - annotatedImpact / speed
     plays no clip.
   - **Clips that start together play in action order** (a stable sort).
   - **The hero's heavy blows slow to 0.6×** only when the client asks for it
-    (demo3d does; demo2d's PX8 will).
+    (demo3d does). demo2d's 15 fps frames can't show a slowdown, so it holds
+    the impact frame through the hit-stop and catches up over 0.15 s.
 
 ## Time and Synchronization
 
