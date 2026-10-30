@@ -6,8 +6,7 @@ namespace Demo2D.Runtime
     /// <summary>
     /// PX1's empty scene content, all generated (no vendor art): a 30×17 m checkered ground at 32
     /// grid pixels per metre, a few 56 px figures sorted by their feet, and three point lights
-    /// under the moon's global light. `--spike-sprites N` adds N figures walking in circles, the
-    /// timing spike's load.
+    /// under the moon's global light.
     /// </summary>
     public sealed class TestCard : MonoBehaviour
     {
@@ -18,9 +17,6 @@ namespace Demo2D.Runtime
         public const int PixelsPerMetre = 32;
         public const float BaseViewHeightM = 540f / PixelsPerMetre;
         const int GroundW = 960, GroundH = 544;
-
-        Transform[] _walkers;
-        Vector2[] _centres;
 
         void Awake()
         {
@@ -38,29 +34,9 @@ namespace Demo2D.Runtime
             Light(new Vector2(-5, 1), new Color(1f, 0.6f, 0.25f), 6f, 1.4f);   // a fire
             Light(new Vector2(3, -2), new Color(0.4f, 1f, 0.9f), 4f, 1.2f);    // a glowing plant
             Light(new Vector2(9, 3), new Color(0.9f, 0.4f, 1f), 5f, 1.0f);     // a spell
-
-            int n = Args.GetInt("--spike-sprites", 0);
-            _walkers = new Transform[n];
-            _centres = new Vector2[n];
-            var rng = new System.Random(1);
-            for (int i = 0; i < n; i++)
-            {
-                _centres[i] = new Vector2((float)(rng.NextDouble() * 28 - 14), (float)(rng.NextDouble() * 15 - 7.5));
-                _walkers[i] = Figure(figure, _centres[i], i % 3).transform;
-            }
         }
 
-        void Update()
-        {
-            float t = Time.time;
-            for (int i = 0; i < _walkers.Length; i++)
-            {
-                float a = t * 0.8f + i;
-                _walkers[i].localPosition = _centres[i] + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 1.5f;
-            }
-        }
-
-        SpriteRenderer Figure(Sprite sprite, Vector2 at, int tint)
+        void Figure(Sprite sprite, Vector2 at, int tint)
         {
             var r = new GameObject("Figure").AddComponent<SpriteRenderer>();
             r.transform.SetParent(transform, false);
@@ -68,7 +44,6 @@ namespace Demo2D.Runtime
             r.sprite = sprite;
             r.sharedMaterial = litMaterial;
             r.color = tint == 0 ? Color.white : tint == 1 ? new Color(0.8f, 0.9f, 1f) : new Color(1f, 0.85f, 0.8f);
-            return r;
         }
 
         void Light(Vector2 at, Color color, float radius, float intensity)

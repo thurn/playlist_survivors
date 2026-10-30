@@ -153,6 +153,18 @@ namespace Demo2D.Runtime.Playback
             }
         }
 
+        /// <summary>
+        /// Draws song time t into <paramref name="target"/> with every effect kind shown at the
+        /// camera's focus (EffectLayer.Prewarm), so the song's own frames never stall on a first draw.
+        /// </summary>
+        public void Prewarm(double t, RenderTexture target)
+        {
+            Frame(t, target.width, target.height, true);
+            var focus = Timeline.FramingAt(Math.Max(0, t)).Focus;
+            Effects.Prewarm(new Vector2(focus.X, focus.Y));
+            Pipeline.Render(target);
+        }
+
         bool IsDying(int e, double t)
         {
             var acts = Timeline.ActionsOf(e);

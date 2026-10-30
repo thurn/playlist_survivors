@@ -114,6 +114,43 @@ its reasons in the task's notes.
   (Magic Spells SFX Bundle, RPG Magic Sound Effects Pack 3, Universal Sound
   FX).
 
+## Running the Demo
+
+On the operator's Mac, from a worktree's root. The tools need `uv`, Unity
+6000.6.7f1 with Mac IL2CPP support, and `~/unity_assets` (the vendor packs,
+never committed). The player resolves relative paths against the folder
+holding the `.app`, so pass absolute ones.
+
+```sh
+# Setup: vendor files, the song's audio, a warm Library, the guard hook.
+uv run --project demo3d/tools demo2d setup
+
+# Bake: the character atlases (BakeSprites) and PlaybackData (the song, the
+# data, the arena's tiles, the effects and sounds). The build runs both
+# itself when they're missing or stale; these force them.
+uv run --project demo3d/tools demo2d unity BakeSprites
+uv run --project demo3d/tools demo2d unity BakePlayback
+
+# Build: demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app.
+uv run --project demo3d/tools demo2d build
+
+# Watch: the full song at 1920×1080, with its music and sounds.
+open demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app
+```
+
+The app's development flags, for the command line inside the bundle
+(`APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"`):
+
+- `"$APP" --start-at 160`: from the climax. `--click` adds a click on every
+  beat, `--overlay` the song time and on-screen counts.
+- `--no-sound`, `--no-effects`, `--no-night`, `--no-post`, `--no-feel`: drop
+  one layer, to compare.
+- Windowless, for agents: `"$APP" -batchmode -force-metal --capture-stills
+  "$PWD/out" --stills-at 6,30,176` writes tagged stills, and `--measure
+  "$PWD/song.json"` runs the song check: every frame of the song drawn at
+  1080p and timed, passing when the 99th percentile is under 16.7 ms and no
+  second has a frame over 25 ms (PX10).
+
 ## What the Viewer Sees
 
 A single 3:19 shot of one battle, top-down, with no input and no HUD. It

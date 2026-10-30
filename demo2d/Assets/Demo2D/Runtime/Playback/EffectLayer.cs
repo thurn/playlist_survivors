@@ -62,7 +62,7 @@ namespace Demo2D.Runtime.Playback
         readonly Dictionary<LiveEffect, Instance> _live = new Dictionary<LiveEffect, Instance>(), _kept = new Dictionary<LiveEffect, Instance>();
         readonly List<LiveEffect> _wants = new List<LiveEffect>();
         static readonly Comparison<LiveEffect> ByOrder = (a, b) => a.Order.CompareTo(b.Order);
-        readonly List<Instance> _made = new List<Instance>();
+        readonly List<Instance> _made = new List<Instance>(), _warm = new List<Instance>();
         double _lastT = double.NaN;
 
         public readonly LightPool Lights;
@@ -97,6 +97,8 @@ namespace Demo2D.Runtime.Playback
         /// </summary>
         public void Frame(double t, Rect view, List<int> active, bool still)
         {
+            foreach (var inst in _warm) Release(inst);
+            _warm.Clear();
             bool exact = still || !Application.isPlaying || double.IsNaN(_lastT) || t < _lastT || t - _lastT > JumpS;
             _lastT = t;
             _wants.Clear();
@@ -125,6 +127,28 @@ namespace Demo2D.Runtime.Playback
                     if (inst.Paused) { foreach (var r in inst.Roots) r.Play(true); inst.Paused = false; }
             Rank();
             Lights.Commit();
+        }
+
+        /// <summary>
+        /// Makes every kind's whole pool (its cap) now and shows one instance of each at
+        /// <paramref name="at"/>, a moment into its play, until the next <see cref="Frame"/>, so a
+        /// draw in between compiles their shaders. Otherwise a kind's first instance or a pool's
+        /// growth stalls a frame in the song (PX10's song check: 45 ms on the first frame, 43 ms at
+        /// 176 s).
+        /// </summary>
+        public void Prewarm(Vector2 at)
+        {
+            foreach (var kind in _kinds.Values)
+            {
+                var spare = new List<Instance>();
+                for (int i = 1; i < kind.Spec.Max; i++) spare.Add(Acquire(kind));
+                foreach (var inst in spare) Release(inst);
+                var shown = Acquire(kind);
+                shown.T.localPosition = new Vector3(at.x, at.y, 0);
+                SimulateTo(shown, 1, 0.1);
+                if (shown.Beam != null) DrawBeam(shown, kind.Spec, at, 0, 2, 1, 1, 0);
+                _warm.Add(shown);
+            }
         }
 
         /// <summary>

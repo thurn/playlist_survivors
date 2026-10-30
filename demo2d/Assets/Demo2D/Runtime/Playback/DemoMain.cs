@@ -12,7 +12,7 @@ namespace Demo2D.Runtime.Playback
     /// <summary>
     /// The demo player (PX5): plays the song's timeline (SongPlayback) at the song clock's time,
     /// with the music and the development flags (DevFlags). It starts itself in a player unless
-    /// the timing spike (`--frame-timing`) or the test card (`--test-card`) owns the run.
+    /// the test card (`--test-card`) owns the run.
     ///
     /// Stills (`--capture-stills &lt;dir&gt; --stills-at s,...`, fixed time) are drawn by hand
     /// through the same pipeline at 1920×1080 (a batch-mode player draws no frames of its own),
@@ -23,8 +23,7 @@ namespace Demo2D.Runtime.Playback
     ///
     /// `--effect-stills` (PX7) adds a still of each effect kind as it fires, near the camera's
     /// focus, and lists them in `effect-stills.txt`. `--measure &lt;json&gt;` draws every
-    /// fixed-time frame by hand at 1080p and times it through a one-pixel readback (the main
-    /// thread then waits for the GPU's work too, PX1's spike), with the effect and light counts.
+    /// fixed-time frame by hand at 1080p and times it (Measurement: PX10's song check).
     ///
     /// Effect sounds (PX8) are scheduled on the mixer's clock (SoundScheduler) in live play, not in
     /// fixed time; `--dump-sounds &lt;json&gt;` writes the timeline's sound list with each event's clip.
@@ -48,7 +47,7 @@ namespace Demo2D.Runtime.Playback
 
         public double SongTime { get; private set; }
 
-        public static bool Runs => !Application.isEditor && !Args.Has("--frame-timing") && !Args.Has("--test-card");
+        public static bool Runs => !Application.isEditor && !Args.Has("--test-card");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoStart()
@@ -88,6 +87,9 @@ namespace Demo2D.Runtime.Playback
             if (_flags.CaptureStills != null || _flags.Measure != null)
                 _still = new RenderTexture(StillW, StillH, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { name = "Still" };
             if (_flags.Measure != null) _measure = new Measurement(_flags);
+            var warm = _still != null ? _still : new RenderTexture(StillW, StillH, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { name = "Prewarm" };
+            _playback.Prewarm(_flags.StartAt, warm);
+            if (warm != _still) warm.Release();
 
             _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
             var music = gameObject.AddComponent<AudioSource>();
@@ -234,15 +236,27 @@ namespace Demo2D.Runtime.Playback
             Debug.Log($"DemoMain: wrote {tl.Sounds.Length} sound events to {path} ({data.soundNames?.Length ?? 0} sounds baked)");
         }
 
-        /// <summary>`--measure`: each frame's time through a one-pixel readback, and what it drew.</summary>
+        /// <summary>
+        /// `--measure`: each frame's time through a one-pixel readback (the main thread waits for the
+        /// GPU's work too, so this is the whole frame, conservatively), FrameTimingManager's CPU and
+        /// GPU times where it reports them (a batch-mode player gets a GPU time on few frames, PX1, which
+        /// seem to span the idle time between frames: PX10's evidence),
+        /// the worst frame in each second of song, and what it drew. PX10's song check passes when
+        /// the 99th percentile is under 16.7 ms and no second has a frame over 25 ms.
+        /// </summary>
         sealed class Measurement
         {
+            public const double P99Limit = 16.7, SecondLimit = 25;
+
             readonly DevFlags _flags;
             readonly Texture2D _pixel = new Texture2D(1, 1, TextureFormat.RGBA32, false);
-            readonly List<double> _ms = new List<double>();
-            readonly List<string> _rows = new List<string>();
+            readonly FrameTiming[] _timing = new FrameTiming[1];
+            readonly List<double> _ms = new List<double>(), _cpu = new List<double>(), _gpu = new List<double>();
+            readonly SortedDictionary<int, (double worst, int frames, int onScreen, int effects, int effectLights)> _seconds =
+                new SortedDictionary<int, (double, int, int, int, int)>();
+            readonly List<string> _rows = new List<string>(), _slow = new List<string>();
             long _start;
-            int _maxLive, _maxParticles, _maxEffectLights, _maxOffered;
+            int _maxLive, _maxParticles, _maxEffectLights, _maxOnScreen;
 
             public Measurement(DevFlags flags) { _flags = flags; }
 
@@ -256,9 +270,22 @@ namespace Demo2D.Runtime.Playback
                 RenderTexture.active = previous;
                 double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - _start) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
                 _ms.Add(ms);
+                if (ms > SecondLimit) _slow.Add(string.Format(CultureInfo.InvariantCulture, "[{0:F3}, {1:F2}]", t, ms));
+                // The latest timings are an earlier frame's; across the song that changes nothing.
+                FrameTimingManager.CaptureFrameTimings();
+                if (FrameTimingManager.GetLatestTimings(1, _timing) > 0)
+                {
+                    if (_timing[0].cpuFrameTime > 0) _cpu.Add(_timing[0].cpuFrameTime);
+                    if (_timing[0].gpuFrameTime > 0) _gpu.Add(_timing[0].gpuFrameTime);
+                }
                 var fx = playback.Effects;
                 _maxLive = Math.Max(_maxLive, fx.Live);
                 _maxEffectLights = Math.Max(_maxEffectLights, fx.Lights.Lit);
+                _maxOnScreen = Math.Max(_maxOnScreen, playback.OnScreenAlive);
+                int second = (int)Math.Floor(t);
+                _seconds.TryGetValue(second, out var s);
+                _seconds[second] = (Math.Max(s.worst, ms), s.frames + 1, Math.Max(s.onScreen, playback.OnScreenAlive),
+                    Math.Max(s.effects, fx.Live), Math.Max(s.effectLights, fx.Lights.Lit));
                 if (_ms.Count % 15 == 0)
                 {
                     int particles = fx.ParticleCount();
@@ -268,30 +295,64 @@ namespace Demo2D.Runtime.Playback
                 }
             }
 
-            public void Write()
+            static (double mean, double p50, double p95, double p99, double max) Stats(List<double> values)
             {
-                if (_ms.Count == 0) return;
-                var sorted = new List<double>(_ms);
+                if (values.Count == 0) return (0, 0, 0, 0, 0);
+                var sorted = new List<double>(values);
                 sorted.Sort();
                 double P(double q) => sorted[Math.Min(sorted.Count - 1, (int)Math.Floor(q * sorted.Count))];
                 double mean = 0;
-                foreach (var m in _ms) mean += m;
-                mean /= _ms.Count;
+                foreach (var m in sorted) mean += m;
+                return (mean / sorted.Count, P(0.5), P(0.95), P(0.99), sorted[sorted.Count - 1]);
+            }
+
+            static string StatsJson(List<double> values)
+            {
+                var s = Stats(values);
+                // (A closing brace straight after a format item would read as part of its format.)
+                return string.Format(CultureInfo.InvariantCulture, "{{\"n\": {0}, \"mean\": {1:F2}, \"p50\": {2:F2}, \"p95\": {3:F2}, \"p99\": {4:F2}, \"max\": {5:F2}",
+                    values.Count, s.mean, s.p50, s.p95, s.p99, s.max) + "}";
+            }
+
+            public void Write()
+            {
+                if (_ms.Count == 0) return;
+                var ms = Stats(_ms);
+                int over = 0;
+                var worst = (second: 0, ms: 0.0);
+                foreach (var kv in _seconds)
+                {
+                    if (kv.Value.worst > SecondLimit) over++;
+                    if (kv.Value.worst > worst.ms) worst = (kv.Key, kv.Value.worst);
+                }
+                bool pass = ms.p99 < P99Limit && over == 0;
                 var sb = new StringBuilder();
                 sb.Append("{\n");
                 sb.AppendFormat(CultureInfo.InvariantCulture, "  \"startAt\": {0}, \"seconds\": {1}, \"effects\": {2}, \"night\": {3}, \"post\": {4}, \"frames\": {5},\n",
                     _flags.StartAt, _flags.Seconds, Json(!_flags.NoEffects), Json(!_flags.NoNight), Json(!_flags.NoPost), _ms.Count);
-                // (A closing brace straight after a format item would read as part of its format.)
-                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"ms\": {{\"mean\": {0:F2}, \"p50\": {1:F2}, \"p95\": {2:F2}, \"p99\": {3:F2}, \"max\": {4:F2}",
-                    mean, P(0.5), P(0.95), P(0.99), sorted[sorted.Count - 1]).Append("},\n");
-                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"most\": {{\"effects\": {0}, \"particles\": {1}, \"effectLights\": {2}", _maxLive, _maxParticles, _maxEffectLights).Append("},\n");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"device\": \"{0}\", \"size\": [{1}, {2}],\n", SystemInfo.graphicsDeviceName, StillW, StillH);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"pass\": {0}, \"p99Limit\": {1}, \"secondLimit\": {2}, \"secondsOverLimit\": {3}, \"worstSecond\": [{4}, {5:F2}],\n",
+                    Json(pass), P99Limit, SecondLimit, over, worst.second, worst.ms);
+                sb.Append("  \"ms\": ").Append(StatsJson(_ms)).Append(",\n");
+                sb.Append("  \"ftmCpuMs\": ").Append(StatsJson(_cpu)).Append(",\n");
+                sb.Append("  \"ftmGpuMs\": ").Append(StatsJson(_gpu)).Append(",\n");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  \"most\": {{\"onScreen\": {0}, \"effects\": {1}, \"particles\": {2}, \"effectLights\": {3}",
+                    _maxOnScreen, _maxLive, _maxParticles, _maxEffectLights).Append("},\n");
+                sb.Append("  \"framesOverSecondLimit\": [").Append(string.Join(", ", _slow)).Append("],\n");
+                sb.Append("  \"secondColumns\": [\"second\", \"worstMs\", \"frames\", \"onScreen\", \"effects\", \"effectLights\"],\n");
+                var seconds = new List<string>();
+                foreach (var kv in _seconds)
+                    seconds.Add(string.Format(CultureInfo.InvariantCulture, "[{0}, {1:F2}, {2}, {3}, {4}, {5}]",
+                        kv.Key, kv.Value.worst, kv.Value.frames, kv.Value.onScreen, kv.Value.effects, kv.Value.effectLights));
+                sb.Append("  \"perSecond\": [\n    ").Append(string.Join(",\n    ", seconds)).Append("\n  ],\n");
                 sb.Append("  \"columns\": [\"t\", \"ms\", \"onScreen\", \"effects\", \"particles\", \"effectLights\", \"fireflyLights\", \"plantLights\"],\n");
                 sb.Append("  \"every15thFrame\": [\n    ").Append(string.Join(",\n    ", _rows)).Append("\n  ]\n}\n");
                 var dir = Path.GetDirectoryName(_flags.Measure);
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                 File.WriteAllText(_flags.Measure, sb.ToString());
-                Debug.Log(string.Format(CultureInfo.InvariantCulture, "DemoMain: measured {0} frames: mean {1:F2} ms, p99 {2:F2} ms, max {3:F2} ms -> {4}",
-                    _ms.Count, mean, P(0.99), sorted[sorted.Count - 1], _flags.Measure));
+                Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                    "DemoMain: measured {0} frames: mean {1:F2} ms, p99 {2:F2} ms, max {3:F2} ms, {4} seconds over {5} ms: {6} -> {7}",
+                    _ms.Count, ms.mean, ms.p99, ms.max, over, SecondLimit, pass ? "pass" : "FAIL", _flags.Measure));
             }
 
             static string Json(bool b) => b ? "true" : "false";

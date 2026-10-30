@@ -26,9 +26,8 @@ namespace Demo2D.Runtime
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
         {
-            // The timing spike (`--frame-timing`) keeps its own clock and quits itself; the song's
-            // player (Playback.DemoMain) captures its own stills.
-            if (Playback.DemoMain.Runs || Args.Has("--frame-timing")) return;
+            // The song's player (Playback.DemoMain) captures its own stills.
+            if (Playback.DemoMain.Runs) return;
             if (!Args.Has("--capture-stills") && !Args.Has("--seconds")) return;
             var go = new GameObject("StillCapture");
             DontDestroyOnLoad(go);
