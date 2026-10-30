@@ -123,6 +123,7 @@ namespace PS.Choreography
         // Hero.
         readonly List<int> heroSegs = new List<int>();
         double heroPendingImpact = -1, heroLastEnd;
+        bool heroFlurry;   // the pending impact falls between beats (an eighth's combo entry)
         int comboCycle;
         GoalArea goal;
         bool goalReached;
@@ -720,7 +721,7 @@ namespace PS.Choreography
                 ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd));
                 // A flurry (an eighth's combo entry) can strike before the next beat: the hero then
                 // goes on to that beat's action, so the flurry adds a blow instead of shifting one.
-                while (heroPendingImpact > tb + 1e-9 && heroPendingImpact < tnext - 1e-9)
+                while (heroFlurry && heroPendingImpact > tb + 1e-9 && heroPendingImpact < tnext - 1e-9)
                 {
                     double after = heroPendingImpact;
                     ScheduleHeroAction(after, roster.HeroWindupS > 0 ? after : heroLastEnd);
@@ -795,6 +796,7 @@ namespace PS.Choreography
                     Yaw = Easing.Yaw(dir), Strength = Math.Max(mv.Strength, p.AccentStrength), ClipStart = start, ClipSpeed = speed,
                 });
                 heroPendingImpact = p.Time;
+                heroFlurry = (p.Flags & GridFlags.Beat) == 0;
                 heroLastEnd = end;
                 if (plain) comboCycle++;
                 stats[curSection].HeroActions++;
