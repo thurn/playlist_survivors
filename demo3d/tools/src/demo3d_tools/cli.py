@@ -27,6 +27,8 @@ Commands:
   report DIR          regenerate a sweep folder's report.md from its rows
   look SLUG           the look pass's set on the Mac, windowless: song stills, TD15's beauty shots,
                       their stats and |dL*| readability (--baseline SLUG for a contact sheet)
+  filmstrip SLUG      consecutive windowless frames from --at: a JPEG strip and an mp4 (--baseline
+                      SLUG for a before/after strip, --check SLUG to compare two runs' frames)
   pix SPEC            a PIX GPU capture at one point (--point n=..,viewWidthM=..,load=..,aa=..) and
                       its per-pass GPU summary
 """
@@ -360,6 +362,10 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     lk.add_argument("--trial", action="store_true", help="print the tables, write nothing to evidence")
     lk.add_argument("--player-args", default="", help="extra player flags, e.g. '--crowd-fill 1.5'")
     lk.set_defaults(func=cmd_look)
+
+    from . import filmstrip
+
+    filmstrip.add_parser(sub)
 
     ls = sub.add_parser("look-sheet", help="one contact sheet across committed look sets")
     ls.add_argument("out", help="the JPEG, under demo3d/evidence/look/ (e.g. ../styles/all/song.jpg)")

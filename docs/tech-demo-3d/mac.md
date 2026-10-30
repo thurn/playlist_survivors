@@ -150,6 +150,29 @@ night's. Render one as a look set with the player args:
 uv run --project demo3d/tools demo3d look palette-snow --player-args "--palette snow" --trial
 ```
 
+## Filmstrips
+
+Motion is judged without a window from consecutive fixed-time frames (epic ps-2iq, Decision 7):
+
+```
+uv run --project demo3d/tools demo3d filmstrip <slug> --at 41.2 --frames 64 --every 2 \
+  --player-args "--monster-style crystal --envelope 24 --view-width 12 --no-effects" --crop 600,40,640,540
+```
+
+It renders `--frames` stills from song time `--at`, every `--every`th 1/60 s frame, with the
+batch-mode player, `--chunk` frames (12) per player and 4 players at a time, every player starting
+`--warmup` (4 s) before `--at` so they run the same frames. The PNGs, `strip.jpg` (a grid of the
+frames, `--crop`ped, labelled with song times) and an mp4 at `--fps` (15, a quarter speed) go to
+`captures/filmstrip/<slug>/`; `--evidence DIR` also writes a tagged strip to `demo3d/evidence/DIR/`.
+`--baseline <slug>` adds `versus.jpg`, a kept run's frames above this one's, and `--check <slug>`
+exits 1 unless every frame matches a kept run's pixel for pixel. `--app` runs another build (a
+saved copy, for a before strip), and `--measure-only` reassembles kept frames with new options.
+
+Two runs with the same options match exactly. Runs split into different chunks differ by a few
+levels (up to about 20 of 255) for about half a second after a chunk's first frame, in the
+baseline too: something in the frame converges over the frames a player draws. Keep `--chunk` the
+same when comparing runs.
+
 ## Limits on the Mac
 
 - **Sweeps, the song check's verdict and PIX.** The bench player refuses to
