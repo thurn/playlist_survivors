@@ -55,6 +55,13 @@ namespace Demo3D.EditorTools.Assets
                             // passes and properties with the shared static-shadow lighting.
                             if (t.kind == "hero" && asset.shader != null && asset.shader.name == "Universal Render Pipeline/Lit")
                                 asset.shader = Shader.Find("Demo3D/LitStaticShadow") ?? asset.shader;
+                            // A set's glow maps: URP keeps _EMISSION on save only for a material
+                            // flagged emissive, and the converted copies are flagged None.
+                            if (!rosterSet.IsDefault && asset.HasProperty("_EmissionMap") && asset.GetTexture("_EmissionMap") != null)
+                            {
+                                asset.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                                asset.EnableKeyword("_EMISSION");
+                            }
                             var path = AssetDatabase.GenerateUniqueAssetPath($"{materialDir}/{Safe(m.name)}.mat");
                             AssetDatabase.CreateAsset(asset, path);
                             saved[m] = asset;

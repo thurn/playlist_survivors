@@ -27,6 +27,7 @@ namespace Demo3D.Runtime.Playback
         GameCameraRig _rig;
         SongClock _clock;
         CaptureTool _capture;
+        BatchGpuProbe _gpuProbe; // --gpu-probe-at: windowless frame times at a few song times
         RosterAssets _roster;
         DemoOverlay _overlay;
         Demo3D.Runtime.Arena.ArenaRuntime _arena;
@@ -181,6 +182,7 @@ namespace Demo3D.Runtime.Playback
             _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
             if (_flags.CaptureStills != null || _flags.CaptureVideo != null)
                 _capture = new CaptureTool(_rig.Camera, _flags.CaptureStills, _flags.StillsAt, _flags.CaptureVideo);
+            _gpuProbe = BatchGpuProbe.FromArgs(_rig.Camera);
             var music = gameObject.AddComponent<AudioSource>();
             AudioSource click = null;
             AudioClip clickClip = null;
@@ -446,6 +448,7 @@ namespace Demo3D.Runtime.Playback
             // owes (windowless checks on the Mac). Only those frames: URP's hand-drawn frames hold
             // their pooled targets until a frame the player loop draws (CaptureTool).
             if (Application.isBatchMode && _capture != null && _capture.StillDue(t)) _rig.Camera.Render();
+            else _gpuProbe?.Frame(t, _rig.Camera, OnScreenAlive);
             WriteStats(t);
             if (_flags.SongCheck != null)
                 (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);
@@ -574,6 +577,8 @@ namespace Demo3D.Runtime.Playback
             _songCheck = null;
             _capture?.Dispose();
             _capture = null;
+            _gpuProbe?.Dispose();
+            _gpuProbe = null;
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
                       (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : ""));
             enabled = false;

@@ -32,6 +32,8 @@ namespace Demo3D.EditorTools.Assets
         {
             public string guid;
             public string clip;
+            /// <summary>For the clip annotator: the impact is the peak of these bones (comma-separated names), not of the fastest end bone.</summary>
+            public string impactBone;
         }
 
         public sealed class WeaponRef

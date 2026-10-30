@@ -74,6 +74,14 @@ so it draws the camera by hand for each still it owes.
   --fixed-time --capture-stills captures/mac --stills-at 45,170,196 --seconds 200
 ```
 
+Windowless frame times, for agents' checks: `--gpu-probe-at 60,175`
+(with `--gpu-probe-out <json>`) hand-draws three timed frames after a warm-up
+at each song time, into a 1080p target, and times each through GPU
+completion: CPU submission and GPU in series, an upper bound on a windowed
+frame. Keep it to a handful of times, since hand-drawn frames hold URP's
+pooled targets. `--stats <csv>` in real time gives every half second's CPU
+frame (no drawing) through the song. `--frame-probe` needs a windowed player.
+
 ## The look set
 
 The look pass (epic ps-e8r) compares every change with stills and numbers.

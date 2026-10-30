@@ -3,6 +3,230 @@
   "assets": [
     {
       "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@Die.FBX",
+      "sourceSha256": "db8a8cc6f4d4d7dcfef090dc73f2d37f4548cadde6f5cb3db540bd632146ad80",
+      "guid": "c46873a6f73c78848b439ade03ad8737",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@HeadAttack.FBX",
+      "sourceSha256": "f0a351bf24f73a77a19bf36af8c3fa4f4720236ae58c290ff7c3f7a78a3a5ccf",
+      "guid": "4b5958f3716c2b04383d3c8bcf1e7c18",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@Idle.FBX",
+      "sourceSha256": "347c8d19d20bba0fe90bf11bf8a87f3e4b3663853db2b3726aaa75fd769f7cd3",
+      "guid": "d70053b28a3ba1f46a02c555e921f435",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@ProjectileAttack.FBX",
+      "sourceSha256": "7783024a129460b786e69a29a2fd7f3406c620a67ec781d95f55f0748ce5707d",
+      "guid": "fa4b161749e359f4aa71d0537cae7ab6",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@TakeDamage.FBX",
+      "sourceSha256": "23d3e9065b644915b7e931e3bbf4e967ffe999c8b06e0dacac2ec9d91291f89e",
+      "guid": "fb8650d3477db7c4184ee62c17ca0186",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/FBX/Dark Treant@Walk Forward In Place.FBX",
+      "sourceSha256": "fed9efeb56c5dcb3fffad526af5d7da4272c68395bd3288df17eae9e9f66e51f",
+      "guid": "ac0ba24b46ebba245a39b5266fc899c8",
+      "use": "forest: bigork clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Dark Treant/Prefabs/Dark Treant Purple.prefab",
+      "sourceSha256": "3c6b17443bea7cc13919e16ac362a19daea4065e14160f431e14063283d4ca5e",
+      "guid": "67743d6606afeb34c9d0b19f92f09a19",
+      "use": "forest: bigork (Dark Treant, purple)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@BiteAttack.FBX",
+      "sourceSha256": "645e2e8f77bcd0efa1c6d729beea968d9b9e42fbd7a705a3f026e0d9d3013689",
+      "guid": "acfcbcaccfa9642429fa4a242108229e",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@ClawAttack.FBX",
+      "sourceSha256": "76eb0cd0db2def6b6107875385b07b6abe5781891c7a5ce34cac14b1c9e051ef",
+      "guid": "e691e89c5e188a646a75147e170fe5ec",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@Die.FBX",
+      "sourceSha256": "8a29eb78202ba8e101df8538174fed68dda06439edf039e9e5406b2bc15d9fb1",
+      "guid": "252f4f942424ac14481dfc3ee95e4599",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@Idle.FBX",
+      "sourceSha256": "0b49da11031723bb911a5bc0309dcf70c27c95893b97f707470a202ac0f0da3f",
+      "guid": "01464bda40f79d84db4e3176777eeeaf",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@Run Forward In Place.FBX",
+      "sourceSha256": "de1994da5cc0163100e64e34925055b1042f9cd8442033c5bf1a30822b3ca110",
+      "guid": "35cca74bfe0cfff47a92d227044cd5b5",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/FBX/Demon Wolf@TakeDamage.FBX",
+      "sourceSha256": "36be17122766c8c02a58986f3a8bb969bc297c462fbcb2057cf691cc6bb8e438",
+      "guid": "9078c79022fc7fc4a8cad5255c641db7",
+      "use": "forest: demon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Demon Wolf/Prefabs/Demon Wolf-Yellow.prefab",
+      "sourceSha256": "c7e44abbde4e7db3f96702eef21ee0a0b662ff09be75d157ecc4a54173385b9e",
+      "guid": "128a16c0d23aebd42bcdcc649ebcd6a2",
+      "use": "forest: demon (Demon Wolf, yellow)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@BiteAttack.FBX",
+      "sourceSha256": "00d2fb3b30026db06ff29cbfd865689c8ea72c4093cb1be4902323c95f653137",
+      "guid": "e81d4d7f061464544b745efbad10193f",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@ClawAttack.FBX",
+      "sourceSha256": "738fbbb1d0cca2b71af95d9f369d1630acf83d0ecf3ada9a3c47864a7ac0639b",
+      "guid": "9591fee13aa260646bcb3088dd5b6da2",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@Die.FBX",
+      "sourceSha256": "d994beeadae72fd95ae456a81a801741125726a71fecca0b06a320f1bde3f40c",
+      "guid": "065f8cf71cdc0c747908aff114391f7b",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@Idle.FBX",
+      "sourceSha256": "4f6ae90eb36b94d0cb5d047b73fa0e0f81eb6cd359cda5a4021458beff0fa6ac",
+      "guid": "466d2a265b6b3784ea47f0a453903d15",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@TakeDamage.FBX",
+      "sourceSha256": "58370ba55d131e5833a23e66f50df0539d03b9b2e4e879c183e011e6cf36bf8b",
+      "guid": "62636d04eb71c3b48980a5e6414914a0",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/FBX/Spiderling Venom@Walk Forward In Place.FBX",
+      "sourceSha256": "ba8f359a03f1c3260c1c8569147aab20e14aadbf35751e3bd53719090e82a26f",
+      "guid": "76289d4e87ee8f54f83351099da8dd0d",
+      "use": "forest: slime clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Spiderling Venom/Prefabs/Spiderling Venom-Blue.prefab",
+      "sourceSha256": "2796a9c7ea917e1695ac7787df8bbd8253c6368933f3ca8e34e60f084e78387c",
+      "guid": "b85694974d0a53e4a9e89e26232c252a",
+      "use": "forest: slime (Spiderling Venom, blue)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@Attack01.FBX",
+      "sourceSha256": "027ea3d41caf5007f4b54e478d5616e197ff355243c2cf2d83a7a41fad1dfaa8",
+      "guid": "0538e411946ced14da80b1fc64dd0774",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@Attack02.FBX",
+      "sourceSha256": "bf2927cfec40b68691c1a672ae5e88193ee87a79005cf347bf1710597bb11433",
+      "guid": "094aaa285d64fee41bc387cd356cb3ee",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@Die.FBX",
+      "sourceSha256": "3e6f663c042bed415767f066bfe0ed5684c46dc89f474282a5fa30dcf1ca9228",
+      "guid": "6cda08924d1893449bf2d8cbe97ebde5",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@Idle.FBX",
+      "sourceSha256": "53377793b0d69588845f918aa476b0f0217f89d0584ef87e5ded93f867fde4ce",
+      "guid": "99207c91eb1287144be839c6f9c9e34f",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@TakeDamage.FBX",
+      "sourceSha256": "cb11031c56c7cddf25462b1b3df7256049ae93cf5515e2e7dc06ec27326a09c0",
+      "guid": "598b1433ef023c4439f8f63175cca7a3",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/FBX/Wererat Soldier@Walk Forward In Place.FBX",
+      "sourceSha256": "6b0de977d2d434e803077189fa6134e5793825f06c58f7c5192b76e8c2aad2ad",
+      "guid": "caeea38115ebd8c4884b274e96a3b7c1",
+      "use": "forest: skeleton clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Dark Creatures Pack/Wererat Soldier/Prefabs/Wererat Soldier-Green.prefab",
+      "sourceSha256": "5c2b7a57e025c3ec4a808a90eba7dd42b2d2cd0e28a1bcdc96464ce188068c75",
+      "guid": "ee995908a48e3b3479cc0a282206f74e",
+      "use": "forest: skeleton (Wererat Soldier, green)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
       "path": "Assets/Forest Creatures Pack/Evil Mushroom/FBX/Evil Mushroom@BreathAttack.FBX",
       "sourceSha256": "3e29f809fe74557650e2d213a762da732fd20655d5cd22a32bf75c76ecc1b7c3",
       "guid": "78283c15d6df236469bffcc8407f3c09",
@@ -55,6 +279,230 @@
       "sourceSha256": "5eb402d41c44725f49835a3375b1004d06851ffc919f45738915797cbc68dd3e",
       "guid": "d5315294978a47d4cabac6f8bfd9e0fe",
       "use": "forest: mushroom (Evil Mushroom, red)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Ground Bite Attack.FBX",
+      "sourceSha256": "353f759661e17fdcf112757ff9f541025248b9a996b0914b24fa7f211e575662",
+      "guid": "bea4c88597f33e44689b78fb64c7f75d",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Ground Die.FBX",
+      "sourceSha256": "bfdfb85b7b72b5d8a127ffbea1d0322736d297500a767a02761d453fe7ced76e",
+      "guid": "1cf12d587b9c8204ebd46da698d42fb1",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Ground Idle.FBX",
+      "sourceSha256": "6ac667c95b9c6166b277f889cf4aabf198ae134e6b1dd3a31a156e09682382ce",
+      "guid": "eeeec51ceaef7604b94412028e180bd9",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Ground Projectile Attack.FBX",
+      "sourceSha256": "e309934f85ceb09cb6d74434b9370f5c2ef7207a6d1c5eb7fee488a9757f8da8",
+      "guid": "b68975faf899b184e83beb326f42830e",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Ground Take Damage.FBX",
+      "sourceSha256": "34d2b7580be921f744b27a08dc052abe835396fc1943384222a65b61885fc490",
+      "guid": "35fd6f9adde020847954d28e5e87cbb4",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/FBX/Fantasy Dragon@Walk Forward In Place.FBX",
+      "sourceSha256": "d0653ba618211ef734e96ee4948fd6cb6858139cf4ca6ceedcd74e1d4b205219",
+      "guid": "ba3b9823b84c0904ea431cdd9e96b32d",
+      "use": "forest: dragon clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Fantasy Dragon/Prefabs/Fantasy Dragon-Red.prefab",
+      "sourceSha256": "d52f759cd01533f4fb54b0a47745054508fe4ec5aed6abb02fad483360c2821f",
+      "guid": "62a9d50ffa206f7459b0f83134de38db",
+      "use": "forest: dragon (Fantasy Dragon, red)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@attackbite.FBX",
+      "sourceSha256": "e5ab02f73123f75c26ef337827857d22ccc97e1f5076503d179555b1d6505ea5",
+      "guid": "3de6dd43b5537544e91ad267a9d42982",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@attacksoundwave.FBX",
+      "sourceSha256": "3676b07adda36b65d00cbb74f4e46fdec085327fbdde08d78ae5e79b517bdd02",
+      "guid": "dbec5c850cf247f4d9f2818f02b4e8ab",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@die.FBX",
+      "sourceSha256": "a516759c3f20fffad245cbdc0177ca907f1434ba85b07b92190c23f395adfca0",
+      "guid": "40e367903c0c7394d9bdf873a8b9db25",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@flyforward.FBX",
+      "sourceSha256": "60c6581d6887462515359ce63caaf932d18cd175f0d00876dbe917b2c4268d9f",
+      "guid": "7c4324bf5b5f2f241bcb93799191287c",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@idle.FBX",
+      "sourceSha256": "c763d6b305f161b277e6269194868399a70762e2579372206db4126a20d4cb3e",
+      "guid": "ecb88fea87937104db46e916b877bcb5",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/FBX/Forest Bat@takedamage.FBX",
+      "sourceSha256": "19f017cbc1b93e128c2433fae972745ac63866bc2b4f25b388fbbb3fd735a573",
+      "guid": "8ecc7bc173701824bb849d40c0ec9911",
+      "use": "forest: bat clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Bat/Prefabs/Forest Bat-Red.prefab",
+      "sourceSha256": "f340ed07106ef95a6b2d23c60a70e7defea183bdd64c3cc3d76c609ce28fdfab",
+      "guid": "1e9b16b2210a5cb42b8786c93610f717",
+      "use": "forest: bat (Forest Bat, red)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@Die.FBX",
+      "sourceSha256": "1da41552202372b79b7c5a4f5b288e7f7d37475769b68c295b237326c074d9c0",
+      "guid": "49c3fa6626263b543a10fd7cf58811de",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@DoublePunch.FBX",
+      "sourceSha256": "f12e9a9712d444991993361f566c7753eb8010fb57e00f2e867bd347a56d606f",
+      "guid": "7289bbc416ea49e448759fdcf6820df6",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@Idle.FBX",
+      "sourceSha256": "2d55aeee067110961e1b4b9c8a720a64f8ce2f91c0f95d2c4cb73bb9d26e0b2d",
+      "guid": "960235d99bf423241967d02ce69cf80c",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@Punch.FBX",
+      "sourceSha256": "e9a756f30f1d22b321ffbc34159c77a385ec398510c6e8853a5e96550c671a95",
+      "guid": "9f53f0d55eb093f429c883c8d5218d57",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@TakeDamage.FBX",
+      "sourceSha256": "2e978a5f0e77d90a5422f700c9525bf625f90b0d9162c8054a5318d55376f473",
+      "guid": "96c2a2eb4f8601947a2ccc349eb870d9",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/FBX/Forest Golem@Walk Forward WO Root.FBX",
+      "sourceSha256": "150cc8dd2c04456a65d9523d07f1a01da8599396c82c4fd645cdde929923aaae",
+      "guid": "8574bced1e2a09a41aa74c537f763dcb",
+      "use": "forest: troll clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Forest Golem/Prefabs/Forest Golem-Blue.prefab",
+      "sourceSha256": "249b023075f46011d776760d5b86f4c00cb7327a57a18620c1ae79c12a6b1c72",
+      "guid": "aac924d42bf3aa94dba177267f0bcf29",
+      "use": "forest: troll (Forest Golem, blue)",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Die.FBX",
+      "sourceSha256": "c018369c07d782c34f1b396cc71edfec647d28c339f372f285292cfcf02f4080",
+      "guid": "3a6df8120ce7cfd45987a26b868bbfcb",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Idle.FBX",
+      "sourceSha256": "193a06f20ecd39e53f9b7a9af25ee2e1c61d9f5264b8fc40a3ca72868a343086",
+      "guid": "dfeae248a692f7445afe0ccf9fc86fd0",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@SliceAttack.FBX",
+      "sourceSha256": "0062e61cddadf2f394c07d65c54f4726d597083af89d17f09fb90fc184c56802",
+      "guid": "2d7458da46a181e4cb57111dc384584a",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@StabAttack.FBX",
+      "sourceSha256": "850b1f802697b82d0090a346bb8071d517cd36dc3adfe4427f44dc54653300df",
+      "guid": "9b71eba0b54aa6a41b0cbad4ab5f153d",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@TakeDamage.FBX",
+      "sourceSha256": "e1b8925d73e47eb5e69b82557d0f9bb6b42b92dd7d5c02fb03c20381ae5e373f",
+      "guid": "d445eb4ba61ab134aabb887595dfa534",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Walk Forward In Place.FBX",
+      "sourceSha256": "c839edde8d72bfc2441877e4a91069d9bb76a7b5530324fde657a99f4da851f6",
+      "guid": "314ad2f70304c6147920f4c7c0cd2121",
+      "use": "forest: goblin clips",
+      "roster": "forest"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/Prefabs/Treasure Goblin - Green.prefab",
+      "sourceSha256": "43edc4caa41434d0f095c067ae1acf17e140706c7972096101bbdcb947323682",
+      "guid": "18e367dc908f89f4ab51f35e5baed61e",
+      "use": "forest: goblin (Treasure Goblin, green)",
       "roster": "forest"
     },
     {

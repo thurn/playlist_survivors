@@ -303,8 +303,15 @@ the flag through `--player-args`. Without it, the demo is unchanged.
   same texture, tint and blend; the default roster's are untouched.
 - **What ps-f8a.1 proved:** one creature per set, Evil Mushroom (forest's
   mushroom) and the heroic Goblin with sword and shield (heroic's goblin).
-  Their clips still use the default slot's annotations (impact and end
-  times) until the set beads annotate them.
+- **Forest fills all nine slots** (ps-f8a.2): Wererat Soldier, Treasure
+  Goblin, Spiderling Venom, Forest Bat, Evil Mushroom and Demon Wolf, the
+  Dark Treant and Forest Golem as elites and the Fantasy Dragon (on the
+  ground) as the boss, each in one pack colourway, with their glow maps
+  (a set's bake flags its converted materials emissive, or URP drops
+  `_EMISSION` on save). The roster's `impactBone` names a clip's striking
+  bones for the annotator where the fastest is a tail. Its level keeps 150
+  on screen at 18 m, measured windowless at about 3x under the 60 fps
+  budget ([evidence](../../demo3d/evidence/rosters/forest/README.md)).
 
 ## The Hero
 

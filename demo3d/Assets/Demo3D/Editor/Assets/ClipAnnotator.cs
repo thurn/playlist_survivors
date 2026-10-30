@@ -208,6 +208,11 @@ namespace Demo3D.EditorTools.Assets
             var head = animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.Head)
                 : endBones.FirstOrDefault(b => b.name.ToLowerInvariant().Contains("head"));
 
+            var impactHint = t.clips.TryGetValue(role, out var hinted) && hinted.impactBone != null
+                ? hinted.impactBone.Split(',').Select(x => x.Trim()).ToList() : null;
+            if (impactHint != null)
+                endBones.AddRange(go.GetComponentsInChildren<Transform>(true)
+                    .Where(x => impactHint.Contains(x.name) && !endBones.Contains(x)));
             var tracks = Sample(go, animator, clip, endBones.Concat(feet).Distinct().ToList(), out var rootTravel);
             int n0 = tracks.Count > 0 ? tracks[0].Speed.Count : 0;
 
@@ -245,7 +250,10 @@ namespace Demo3D.EditorTools.Assets
                 int bestFrame = 0;
                 float bestSpeed = 0;
                 int lo = (int)(0.08f * n0), hi = Math.Max(lo + 1, (int)(0.92f * n0));
-                foreach (var k in tracks.Where(k => endBones.Any(b => b.name == k.Name)))
+                // A roster hint names the striking bone where the fastest is another (a quadruped's tail).
+                var candidates = impactHint == null ? tracks.Where(k => endBones.Any(b => b.name == k.Name))
+                    : tracks.Where(k => impactHint.Contains(k.Name));
+                foreach (var k in candidates)
                     for (int i = lo; i < hi && i < k.Speed.Count; i++)
                         if (k.Speed[i] > bestSpeed) { bestSpeed = k.Speed[i]; best = k; bestFrame = i; }
                 if (best != null)

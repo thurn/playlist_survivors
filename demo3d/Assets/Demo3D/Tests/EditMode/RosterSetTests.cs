@@ -86,5 +86,20 @@ namespace Demo3D.Tests
             Assert.That(clips[1].Impact, Is.EqualTo(0.4f));
             Assert.That(clips[0].Clip, Is.EqualTo("Walk"));
         }
+
+        [Test]
+        public void TheForestSetFillsEverySlotAndAnnotatesEachRole()
+        {
+            var forest = Roster.Load("forest").Where(t => t.kind != "hero" && t.kind != "rejected-boss").ToList();
+            var own = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(Roster.SetPath("forest")))["types"].Select(t => (string)t["id"]).ToList();
+            Assert.That(forest.Select(t => t.id), Is.EquivalentTo(own), "the set file lists every monster slot");
+            var clips = ClipLibrary.Parse(RosterSet.Parse("forest").Annotations(File.ReadAllText(ClipAnnotator.OutPath)));
+            foreach (var t in forest)
+                foreach (var kv in t.clips)
+                {
+                    var use = (t.kind == "boss" ? "boss" : t.id) + " " + kv.Key;
+                    Assert.That(clips[clips.Require(use)].Guid, Is.EqualTo(kv.Value.guid), use + " is the set's own clip");
+                }
+        }
     }
 }
