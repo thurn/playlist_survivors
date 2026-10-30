@@ -40,7 +40,7 @@ C                  next camera shot: Gameplay, Close, Low, Orbit
 O                  the painted look's ink lines on or off
 A                  auto-cycle: the next treatment every 8 bars
 H                  hide the label
-M                  mute
+M                  mute or unmute
 Esc                quit
 ```
 
@@ -54,7 +54,8 @@ the binary inside the bundle:
   drop). The song loops back there at its end.
 - `--count N`: how many fodder monsters (default 260), plus 3 orks, 3 trolls
   and the dragon.
-- `--no-sound`.
+- `--sound`: a built player starts muted (`just stylelab` passes it; M toggles
+  it). `--no-sound` skips the song and its effects entirely.
 - For agents, windowless: `"$APP" -batchmode --stills DIR [--shots 1,2,3]
   [--treatments 1,...,9]` writes one tagged JPEG per shot and treatment,
   each drawn mid-beat (after the blows' hit flashes fade), then quits. All
@@ -147,7 +148,7 @@ the Mac:
 
 ```sh
 open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args \
-  -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --monster-style mix
+  -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --sound --monster-style mix
 ```
 
 The look harness takes it through `--player-args "--monster-style fire"`.

@@ -147,4 +147,4 @@ _play project app *args:
         exit 1
     fi
     echo "playing $player"
-    open -n "$player" --args -screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} "$@"
+    open -n "$player" --args -screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} --sound "$@"

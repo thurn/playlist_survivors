@@ -137,6 +137,8 @@ The app's development flags, for the command line inside the bundle
 
 - `"$APP" --start-at 160`: from the climax. `--click` adds a click on every
   beat, `--overlay` the song time and on-screen counts.
+- A built player starts muted; `--sound` (which `just demo2d` passes) plays
+  the song and its effects. Add it to the operator's `"$APP"` runs below.
 - `--no-sound`, `--no-effects`, `--no-night`, `--no-post`, `--no-feel`: drop
   one layer, to compare. `--empty` draws the hero alone in the arena's night.
 - `--seconds <n>` stops after n seconds of song; `--fixed-time` steps exactly

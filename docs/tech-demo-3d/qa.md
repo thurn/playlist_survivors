@@ -10,6 +10,7 @@ here, since the demo itself takes no input:
 --overlay           on-screen counts, frame times against the pass lines
 --click             mix a click track: every beat, louder on downbeats
 --start-at <s>      seek the song; --seconds <n> to exit after n seconds
+--sound             play sound (a built player starts muted; `just demo3d` passes it)
 --fixed-time        deterministic 1/60 s frames, sound muted
 --scene <S0..S6|song> --n <count> --view-width <m> --load <preset> --aa <mode>
 --freeze-at <s>     hold one frame for inspection

@@ -50,7 +50,7 @@ To watch the demo, windowed at 1080p with sound (the operator's view; agents
 stay windowless):
 
 ```
-open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --overlay
+open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --sound --overlay
 ```
 
 The player takes the same flags as on Cygnus ([Manual QA](qa.md#manual-qa)),

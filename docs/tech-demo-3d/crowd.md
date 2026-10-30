@@ -433,7 +433,7 @@ the flag through `--player-args`. Without it, the demo is unchanged.
   uv run --project demo3d/tools demo3d unity BakeRoster -roster forest
   uv run --project demo3d/tools demo3d unity BakeRoster -roster heroic
   uv run --project demo3d/tools demo3d build
-  open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --roster forest
+  open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --sound --roster forest
   ```
 
   Name both sets in one `setup`: it syncs only the sets it is given. The
