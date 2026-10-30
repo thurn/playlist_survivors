@@ -80,7 +80,8 @@ at each song time, into a 1080p target, and times each through GPU
 completion: CPU submission and GPU in series, an upper bound on a windowed
 frame. Keep it to a handful of times, since hand-drawn frames hold URP's
 pooled targets. `--stats <csv>` in real time gives every half second's CPU
-frame (no drawing) through the song. `--frame-probe` needs a windowed player.
+frame (no drawing) through the song; under crystal its `shards` and `shatterMs` columns are
+the live shards and the shatter's share of the frame. `--frame-probe` needs a windowed player.
 
 ## The look set
 

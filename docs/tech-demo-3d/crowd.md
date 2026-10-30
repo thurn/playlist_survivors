@@ -41,7 +41,8 @@ implementations, not features.
   target's early depth rejection.
 - **Lighting.** Forward+ shading with the sun, ambient and every effect light.
 - **Reactions.** Hit flash, knockback, death clip, then a 1-beat hold and a
-  1-beat dissolve with an emissive edge.
+  1-beat dissolve with an emissive edge. A monster drawn by Crystal instead cracks over the hold
+  and shatters into physical shards on the next beat ([The crystal shatter](#monster-styles)).
 - **Variation.** Per-instance tint from the type's own color sets, plus small
   scale jitter.
 - **Weapons.** Weapons ride their hand bone rigidly.
@@ -247,6 +248,31 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque
     queue with only its MotionVectors pass enabled, so under `--aa taa` the shards reproject with
     their own motion (the crowd's crystal monsters still smear, as below).
+  - **Cost** (measured on the Mac's M5 Max, 2026-10-30, ps-2iq.4: the starting point for the
+    scale-up). Beauty came first, so nothing is optimized. Each shard is a pooled GameObject with
+    a PhysX rigidbody and convex collider and two materials (the surface and its motion-vector
+    twin), and physics steps at 120 Hz. At the song's own density under `--monster-style crystal`
+    (windowless, fixed time, `--stats`, whose `shards` and `shatterMs` columns are the live shards
+    and `CrystalShatter.Frame`'s time):
+
+    | song time | on screen | live shards (mean) | CPU frame, crystal (mean / max ms) | of it the shatter | CPU frame, no flag | GPU probe, crystal (median ms) | GPU probe, crystal before the shards |
+    |---|---:|---:|---:|---:|---:|---:|---:|
+    | 60 | 128 | 1,700 | 3.7 / 4.6 | 2.8 | 0.35 | 13.8 | 5.4 |
+    | 113 | 141 | 2,100 | 4.8 / 5.3 | 3.8 | 0.59 | 21.7 | 6.6 |
+    | 145 | 258 | 3,490 | 17.7 / 82 | 16.5 | 0.59 | 26.4 | 6.0 |
+    | 175 | 362 | 4,820 | 13.1 / 21 | 11.6 | 0.78 | 73.5 | 15.3 |
+    | 197 | 137 | 3,440 (8,950 at 198) | 8.5 / 25 | 7.0 | 0.72 | 31.6 | 11.6 |
+
+    The CPU numbers are the mean and max over the 4 s around each time (a sample every 0.5 s),
+    with no frames drawn. The GPU probe (`--gpu-probe-at`) is one hand-drawn 1080p frame, MSAA
+    4x, CPU submission and GPU in series. "Before the shards" is the same probe in a build of
+    97a17230, whose crystal style still flew its triangles apart. The peak is 12,051 shards live
+    at the song's end. The whole song takes 91 s of wall time windowless, against 10 s before the
+    shards. The CPU spikes, up to 126 ms (around 165 s), are almost all `CrystalShatter.Frame`
+    (the PhysX steps and shard updates), on beats that release many monsters among thousands of
+    shards still lying on the floor (5 s linger). The draw cost grows with the live shards:
+    about 2,000 to 5,000 GameObjects with two materials each. Evidence:
+    [shatter/final](../../demo3d/evidence/shatter/final/README.md).
   - `--shatter-log` logs each hold and release with its song time and place in the view, to find
     deaths for filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
   - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque

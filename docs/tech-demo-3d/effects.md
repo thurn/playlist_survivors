@@ -139,7 +139,10 @@ Each spawn carries a **tint**, the type's gem colour, so one definition serves e
 tinted spawn's heat ramp runs from the gem squared, through the gem, to a white core, and its
 light cue takes the gem's colour: a 0.3 s flash of range 4.5 m, set 1.2 m above the burst (a
 cue's `height`) so it washes the floor and the neighbours rather than burning a hot spot under a
-body lying on the floor.
+body lying on the floor. The releases on one beat share their flash: each spawn's light is
+1/√n of the n releases on its beat (the spawn's `LightGain`), so seven goblins breaking together
+flash about 2.6 times as hard as one, not seven, which washed the view lime
+([final pass](../../demo3d/evidence/shatter/final/README.md)).
 
 The horde's hit flash (CrowdSkinned, `lighting.crowd.flash` in the layout)
 is an ember rather than white: at the final peak, flashing bodies alone made
