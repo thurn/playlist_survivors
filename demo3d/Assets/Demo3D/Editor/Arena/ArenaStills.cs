@@ -72,6 +72,7 @@ namespace Demo3D.EditorTools.Arena
                         foreach (var at in spots) placed.Add((GameObject)Object.Instantiate(hero, at, Quaternion.Euler(0, 160, 0)));
                     }
                     if (heroes) CanopyFade.SetHero(focus); else CanopyFade.Clear();
+                    arena.FollowHero(focus);
                     Frame(cam, focus, shot.ViewWidthM);
                     var file = Path.Combine(outDir, $"arena-{rung}-{density:0.###}x{tag}-{shot.Name}.jpg");
                     Render(cam, file, width, $"{label} {options.Label()} {shot.Name}", crop);

@@ -86,7 +86,7 @@ namespace Demo3D.EditorTools.Arena
                         RenderSettings.sun = moon;
                         NightLook.ApplyRenderSettings(lighting);
                         NightLook.ApplyCamera(cam0, lighting);
-                        var post = NightLook.CreateVolume(null);
+                        var post = NightLook.CreateVolume(null, lighting);
                         ArenaStills.Render(cam0, Path.Combine(outDir, stem + "-night.jpg"), width, $"TD15 reference still {name} our night {view:0} m ({seen} pieces)");
                         Object.DestroyImmediate(post.gameObject);
                         Object.DestroyImmediate(moon.gameObject);

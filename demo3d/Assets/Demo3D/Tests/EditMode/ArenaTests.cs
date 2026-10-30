@@ -83,6 +83,23 @@ namespace Demo3D.Tests
         }
 
         /// <summary>
+        /// ps-e8r.5's lit stage: a warm light over the hero whose pool covers the 6 m around it and ends
+        /// inside the song's widest frame (30 m wide), so the frame's edges stay dark; the vignette,
+        /// tinted cool, darkens them further.
+        /// </summary>
+        [Test]
+        public void TheHeroLightsAWarmStageThatFadesBeforeTheFramesEdge()
+        {
+            var l = ArenaLighting.Parse(LayoutJson);
+            Assert.That(l.HeroIntensity, Is.GreaterThan(0f));
+            Assert.That(l.HeroColor.r, Is.GreaterThan(l.HeroColor.b), "a warm stage (epic ps-e8r, Decision 1)");
+            float reach = Mathf.Sqrt(Mathf.Max(0, l.HeroRangeM * l.HeroRangeM - l.HeroHeightM * l.HeroHeightM));
+            Assert.That(reach, Is.InRange(6f, 30f / 2), "the pool's reach on the ground, in metres");
+            Assert.That(l.VignetteIntensity, Is.GreaterThan(0.26f), "stronger than before the stage");
+            Assert.That(l.VignetteColor.b, Is.GreaterThan(l.VignetteColor.r), "the edges lean cool");
+        }
+
+        /// <summary>
         /// The fog leaves the fighting ground clear: at the frame's centre it is at most 5% at every song
         /// view width (22.5-30 m) and every beauty shot's, by camera-and-sound.md's geometry (55° pitch,
         /// 30° vertical field of view at 16:9), and the top of the song's widest frame still fades.

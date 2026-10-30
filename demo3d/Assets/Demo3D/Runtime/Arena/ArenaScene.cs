@@ -74,7 +74,9 @@ namespace Demo3D.Runtime.Arena
             _t = t;
             if (_shots == null || _shots.Length == 0) return;
             int i = (int)(t / _holdS) % _shots.Length;
-            FollowFocus(_ctx.Camera, new Vector3(_shots[i].At.X, 0, _shots[i].At.Y));
+            var focus = new Vector3(_shots[i].At.X, 0, _shots[i].At.Y);
+            FollowFocus(_ctx.Camera, focus);
+            _arena.FollowHero(focus); // the hero's light stands where a hero would, so S0 measures its cost
             TickAmbient(t);
         }
 

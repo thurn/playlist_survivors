@@ -41,6 +41,16 @@ namespace Demo3D.Runtime.Arena
         public float CrowdRimPower = 3f;
         /// <summary>The moon's intensity on the horde, as a multiple of its intensity on the set: the horde's key light.</summary>
         public float CrowdKey = 1f;
+        /// <summary>
+        /// The hero's light (ps-e8r.5): one unshadowed realtime point light <see cref="HeroHeightM"/>
+        /// above the hero's feet, lighting the set and the horde in a warm pool that fades out by
+        /// <see cref="HeroRangeM"/>, so the frame's centre is a lit stage. Intensity 0 leaves it out.
+        /// </summary>
+        public float HeroHeightM = 4f, HeroRangeM = 12f, HeroIntensity;
+        public Color HeroColor = new Color(1f, 0.78f, 0.55f);
+        /// <summary>The post stack's vignette (NightLook.CreateProfile): intensity, smoothness and its tint.</summary>
+        public float VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
+        public Color VignetteColor = new Color(0.01f, 0.015f, 0.04f);
         public int MaxFlameLights = 8;
         /// <summary>Flickering flame lights (realtime, at most <see cref="MaxFlameLights"/>), in priority order.</summary>
         public readonly List<PropLight> Flames = new List<PropLight>();
@@ -74,6 +84,15 @@ namespace Demo3D.Runtime.Arena
             l.CrowdRim = Col(crowd["rim"], Color.black);
             l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
             l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
+            JsonValue hero = root["hero"];
+            l.HeroHeightM = hero["heightM"].AsFloat(l.HeroHeightM);
+            l.HeroRangeM = hero["rangeM"].AsFloat(l.HeroRangeM);
+            l.HeroIntensity = hero["intensity"].AsFloat(l.HeroIntensity);
+            l.HeroColor = Col(hero["color"], l.HeroColor);
+            JsonValue vignette = root["vignette"];
+            l.VignetteIntensity = vignette["intensity"].AsFloat(l.VignetteIntensity);
+            l.VignetteSmoothness = vignette["smoothness"].AsFloat(l.VignetteSmoothness);
+            l.VignetteColor = Col(vignette["color"], l.VignetteColor);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, true);

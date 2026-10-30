@@ -40,6 +40,8 @@ namespace Demo3D.Runtime.Arena
         public readonly List<Renderer> Static = new List<Renderer>();
         public readonly List<Light> Lights = new List<Light>();
         public StaticShadowMap ShadowMap { get; private set; }
+        /// <summary>The hero's light (<see cref="ArenaLighting.HeroIntensity"/>), or null without one; <see cref="FollowHero"/> moves it.</summary>
+        public Light HeroLight { get; private set; }
         public Bounds ArenaBounds { get; private set; }
         public event Action<ArenaRuntime> OnReady;
         GameObject _post;
@@ -148,7 +150,8 @@ namespace Demo3D.Runtime.Arena
             if (Moon != null) RenderSettings.sun = Moon;
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
-            _post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root).gameObject;
+            _post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting).gameObject;
+            if (Lighting.HeroIntensity > 0) CreateHeroLight(root);
 
             if (Rung == ArenaIndex.E2)
             {
@@ -167,6 +170,39 @@ namespace Demo3D.Runtime.Arena
             Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, {Options.Label()}");
             OnReady?.Invoke(this);
         }
+
+        /// <summary>
+        /// The lit stage around the hero (ps-e8r.5): one unshadowed realtime point light, outside the
+        /// flame lights and the effect-light pool. Forward+ lights the set (over its lightmaps) and the
+        /// horde with it, so it adds no pass and no shader work beyond one light in the cluster loop.
+        /// </summary>
+        void CreateHeroLight(Transform root)
+        {
+            var go = new GameObject("HeroLight");
+            go.transform.SetParent(root, false);
+            HeroLight = go.AddComponent<Light>();
+            HeroLight.type = LightType.Point;
+            HeroLight.shadows = LightShadows.None;
+            HeroLight.renderMode = LightRenderMode.ForcePixel;
+            // `--hero-light i`, `--hero-height m`, `--hero-range m` and `--hero-color r,g,b` override them in a
+            // player, for tuning against the look set (intensity 0 turns it off).
+            _heroHeightM = Args.GetFloat("--hero-height", Lighting.HeroHeightM);
+            HeroLight.range = Args.GetFloat("--hero-range", Lighting.HeroRangeM);
+            HeroLight.color = Lighting.HeroColor;
+            if (Args.Get("--hero-color") is string c && c.Split(',') is var v && v.Length == 3)
+                HeroLight.color = new Color(float.Parse(v[0], CultureInfo.InvariantCulture), float.Parse(v[1], CultureInfo.InvariantCulture),
+                    float.Parse(v[2], CultureInfo.InvariantCulture));
+            HeroLight.intensity = Args.GetFloat("--hero-light", Lighting.HeroIntensity);
+            HeroLight.enabled = HeroLight.intensity > 0;
+        }
+
+        /// <summary>Keeps the hero's light above the hero's feet; the demo calls it every frame.</summary>
+        public void FollowHero(Vector3 feet)
+        {
+            if (HeroLight != null) HeroLight.transform.position = feet + Vector3.up * _heroHeightM;
+        }
+
+        float _heroHeightM;
 
         /// <summary>
         /// E6: the static set out of the depth-normals prepass. Its materials are copied with their

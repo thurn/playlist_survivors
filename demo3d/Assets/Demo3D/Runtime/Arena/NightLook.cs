@@ -89,18 +89,18 @@ namespace Demo3D.Runtime.Arena
         }
 
         /// <summary>A global volume with the night's post stack, under <paramref name="parent"/>.</summary>
-        public static Volume CreateVolume(Transform parent)
+        public static Volume CreateVolume(Transform parent, ArenaLighting l)
         {
             var go = new GameObject("NightPost");
             go.transform.SetParent(parent, false);
             var volume = go.AddComponent<Volume>();
             volume.isGlobal = true;
             volume.priority = 10;
-            volume.sharedProfile = CreateProfile();
+            volume.sharedProfile = CreateProfile(l);
             return volume;
         }
 
-        public static VolumeProfile CreateProfile()
+        public static VolumeProfile CreateProfile(ArenaLighting l)
         {
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.name = "NightPost";
@@ -119,9 +119,10 @@ namespace Demo3D.Runtime.Arena
             lookup.texture.Override(Lut());
             lookup.contribution.Override(1f);
             var vignette = profile.Add<Vignette>(true);
-            vignette.intensity.Override(0.26f);
-            vignette.smoothness.Override(0.45f);
-            vignette.color.Override(new Color(0.01f, 0.015f, 0.04f));
+            // ps-e8r.5: with the hero's light, the vignette darkens the frame's edges around the lit stage.
+            vignette.intensity.Override(Args.GetFloat("--vignette", l.VignetteIntensity));
+            vignette.smoothness.Override(l.VignetteSmoothness);
+            vignette.color.Override(l.VignetteColor);
             return profile;
         }
 

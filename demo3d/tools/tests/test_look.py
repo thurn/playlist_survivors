@@ -85,3 +85,40 @@ def test_effect_stats_count_only_the_pixels_effects_change() -> None:
     assert e["share"] == pytest.approx(0.25)
     assert e["p50"] == pytest.approx(100) and e["clipped"] == 1
     assert look.effect_stats(measured, measured)["share"] == 0
+
+
+def view_looking_down(hero=(3.0, 0.0, -2.0), height=20.0, back=15.0, fov_deg=40.0, aspect=16 / 9) -> dict:
+    """An OpenGL view-projection (Unity's camera.projectionMatrix * worldToCameraMatrix) aimed at the hero."""
+    eye = np.array(hero) + np.array([0.0, height, -back])
+    fwd = np.array(hero) - eye
+    fwd /= np.linalg.norm(fwd)
+    right = np.cross([0.0, 1.0, 0.0], fwd)
+    right /= np.linalg.norm(right)
+    up = np.cross(fwd, right)
+    view = np.eye(4)
+    view[:3, :3] = np.stack([right, up, -fwd])  # camera space looks down -z
+    view[:3, 3] = -view[:3, :3] @ eye
+    f, n, fa = 1 / np.tan(np.radians(fov_deg) / 2), 0.3, 500.0
+    proj = np.array([[f / aspect, 0, 0, 0], [0, f, 0, 0],
+                     [0, 0, (fa + n) / (n - fa), 2 * fa * n / (n - fa)], [0, 0, -1, 0]])
+    return {"viewProj": (proj @ view).flatten().tolist(), "hero": list(hero)}
+
+
+def test_the_ground_distance_is_zero_at_the_hero_and_grows_toward_the_top() -> None:
+    v = view_looking_down()
+    d = look.ground_distance(v, 160, 90)
+    assert d[45, 80] == pytest.approx(0, abs=0.4)  # the camera aims at the hero's feet
+    assert d[0, 80] > d[89, 80] > d[45, 80]  # the top of the frame is the far ground
+
+
+def test_the_stage_compares_the_ground_near_the_hero_with_the_border() -> None:
+    v = view_looking_down()
+    d = look.ground_distance(v, 160, 90)
+    img = np.repeat(np.where(d <= 6, GREY_50, GREY_DARK).astype(np.uint8)[..., None], 3, axis=-1)
+    st = look.stage(img, v, None)
+    assert st["lGround"] == pytest.approx(50.0, abs=0.1)
+    assert st["lBorder"] == pytest.approx(5.9, abs=0.1)
+    assert st["pass"]
+    monsters = d <= 6  # a horde over all of it leaves no ground to measure
+    assert "error" in look.stage(img, v, monsters)
+    assert not look.stage(frame(GREY_50, 90, 160), v, None)["pass"]  # an evenly lit frame has no stage

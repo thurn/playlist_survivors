@@ -266,7 +266,28 @@ namespace Demo3D.Runtime.Playback
             int before = _capture.StillsWritten;
             _capture.Capture(_captureAt);
             _captureAt = double.NaN;
-            if (_captureMask && !_maskOn && _capture.StillsWritten > before) _maskAt = _capture.LastStillAt;
+            if (_maskOn || _capture.StillsWritten == before) return;
+            if (_captureMask) _maskAt = _capture.LastStillAt;
+            WriteView(camera, _capture.LastStillAt);
+        }
+
+        Vector3 _heroFeet;
+
+        /// <summary>
+        /// Beside each still, view-&lt;t&gt;.json: the camera's view-projection (OpenGL clip space, row-major)
+        /// and the hero's feet, so the look harness finds the ground around the hero (ps-e8r.5's lit stage).
+        /// </summary>
+        void WriteView(Camera camera, double at)
+        {
+            if (_flags.CaptureStills == null) return;
+            var m = camera.projectionMatrix * camera.worldToCameraMatrix;
+            var sb = new System.Text.StringBuilder("{\"viewProj\": [");
+            for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                sb.Append(string.Format(CultureInfo.InvariantCulture, "{0}{1:R}", r + c == 0 ? "" : ", ", m[r, c]));
+            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}]}}\n", _heroFeet.x, _heroFeet.y, _heroFeet.z));
+            System.IO.File.WriteAllText(System.IO.Path.Combine(_flags.CaptureStills,
+                string.Format(CultureInfo.InvariantCulture, "view-{0:000.000}.json", at)), sb.ToString());
         }
 
         /// <summary>
@@ -384,6 +405,8 @@ namespace Demo3D.Runtime.Playback
             heroInst[0] = ToInstance(heroState, _hero, -1, 0);
             if (!_maskOn) _heroRenderer.Draw(_rig.Camera);
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
+            _arena?.FollowHero(heroState.Position);
+            _heroFeet = heroState.Position;
 
             _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
             // A batch-mode player draws no frames, so it draws the camera by hand for each still it
