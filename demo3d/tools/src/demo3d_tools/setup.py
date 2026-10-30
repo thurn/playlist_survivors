@@ -42,7 +42,8 @@ def synced_rosters(wt: paths.Worktree) -> tuple[str, ...]:
 
 def manifest_key(wt: paths.Worktree, rosters: tuple[str, ...] | None = None) -> str:
     """The vendor cache's key: the manifest, the sync tool's version, and the roster sets synced
-    with it (default: the vendor folder's), so a set's Library never warms a default worktree."""
+    with it (default: the vendor folder's), so a set's vendor folder and Library are never a
+    default worktree's exact entry (a set's Library may still be its nearest, as any may)."""
     from . import sync
 
     manifest = wt.project / "manifest.json"

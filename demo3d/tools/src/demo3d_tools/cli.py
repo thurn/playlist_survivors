@@ -300,8 +300,6 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     y = sub.add_parser("sync")
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
-    y.add_argument("--roster", action="append", choices=paths.ROSTERS,
-                   help="also sync a roster set's packs (needs the more_assets root)")
     y.set_defaults(func=cmd_sync)
     if project != "demo3d":
         return p

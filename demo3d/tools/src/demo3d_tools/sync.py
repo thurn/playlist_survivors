@@ -13,7 +13,7 @@ Curation and sync):
 - From `unity_assets`, `pixel_assets` and `more_assets` (asset folders: the 3D packs, the 2D
   demo's packs, and the roster sets' packs), files are copied with their `.meta`.
 - An entry with a `roster` (forest or heroic, demo3d's `--roster` sets) syncs only when that set
-  is asked for (`--roster`); `more_assets` entries must name one, so the default sync never
+  is asked for (`demo3d setup --roster`); `more_assets` entries must name one, so the default sync never
   needs that root, which only the Mac maps.
 - `sourceSha256` is the package's hash for Synty, and the file's own hash for an asset folder. A
   source whose hash differs is refused, so both machines sync from identical files.
@@ -485,7 +485,7 @@ def main(a: argparse.Namespace) -> int:
     started = time.monotonic()
     try:
         unresolved: dict[str, str] = {}
-        items = resolve(manifest, sources, unresolved, tuple(a.roster or ()))
+        items = resolve(manifest, sources, unresolved)
         report_unresolved(unresolved, cache)
         if not a.record_only:
             out = Path(a.out) if a.out else wt.vendor

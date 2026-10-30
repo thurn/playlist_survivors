@@ -209,18 +209,20 @@ fourth root:
   it gains the Mac's default.
 - **Its manifest entries sync only on request.** Each one names its set
   (`"roster": "forest"` or `"heroic"`), and a `more_assets` entry without
-  one is refused. `demo3d setup --roster <set>` (or `demo3d sync --roster
-  <set>`) syncs them beside the default's; without the flag they are
+  one is refused. `demo3d setup --roster <set>` syncs them beside the
+  default's; without the flag they are
   skipped, so CI and a clean checkout never need the root. Asking for a set
   where the root is not mapped fails with that message. Add entries with
   `demo3d manifest add more_assets <glob> --roster <set>`.
 - **The vendor cache keys by the sets too,** so a set's vendor folder and
-  its Library never warm a default worktree. The worktree's vendor folder
-  records its sets in `Assets/Vendor/.rosters`.
+  Library are never a default worktree's exact cache entry (a set's Library
+  can still be the nearest one a new worktree starts from, costing only a
+  reimport). The worktree's vendor folder records its sets in
+  `Assets/Vendor/.rosters`.
 - **The guard covers it where it is.** The record lists every file under
   the root, as for the other asset folders, and its packs must be in the
-  record. Where the root is absent, its manifest entries are not needed in
-  the record. A record built without the root (by a checkout older than
+  record. Its manifest entries are never required in the record, so a
+  record from a machine without the root still passes. A record built without the root (by a checkout older than
   ps-f8a.1) fails as stale until `demo3d sync --record-only` (or a setup)
   rebuilds it.
 - **Derived files** go to `demo3d/Assets/Baked/Rosters/<set>/`, gitignored

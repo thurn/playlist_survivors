@@ -207,13 +207,11 @@ def test_more_assets_entries_must_name_a_roster(roots, tmp_path: Path) -> None:
     assert json.loads(manifest.read_text())["assets"][0]["roster"] == "forest"
 
 
-def test_the_guard_needs_roster_entries_only_where_more_assets_is(tmp_path: Path) -> None:
+def test_the_guard_never_needs_roster_entries_in_the_record(tmp_path: Path) -> None:
     (tmp_path / "demo3d").mkdir()
     (tmp_path / "demo3d" / "manifest.json").write_text(json.dumps({"assets": [
         {"source": "unity_assets", "path": "Assets/A.prefab", "guid": "a" * 32},
         {"source": "more_assets", "path": "Assets/B.prefab", "guid": "b" * 32, "roster": "forest"},
     ]}))
-    assert set(guard.manifest_guids(tmp_path)) == {"a" * 32, "b" * 32}
-    assert set(guard.manifest_guids(tmp_path, {"more_assets"})) == {"a" * 32}
-    # Only opt-in roots drop out: an absent unity_assets still leaves its entries required.
-    assert set(guard.manifest_guids(tmp_path, {"unity_assets"})) == {"a" * 32, "b" * 32}
+    # A record from a machine without more_assets (Cygnus's) can never hold them.
+    assert set(guard.manifest_guids(tmp_path)) == {"a" * 32}

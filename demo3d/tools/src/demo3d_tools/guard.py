@@ -20,8 +20,8 @@ one of the machine's asset folders (a top-level folder of `unity_assets`, `pixel
 `more_assets` whose `.meta` GUID it lacks, such as a pack copied in, or a root added, since the
 last sync). A record that lacks a demo's manifest GUIDs because one of that demo's source roots is
 absent from the machine is not stale but partial: that demo's files are treated as under a
-missing record. The roster sets' entries (`more_assets`, synced only on request) are not needed
-at all where that root is absent.
+missing record. The roster sets' entries (`more_assets`, synced only on request) are never
+required in it; where that root is mapped, its packs must be.
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
@@ -435,13 +435,13 @@ def pre_push_entries(repo: Path, remote: str, lines: Iterable[str]) -> list[tupl
     return sorted(entries)
 
 
-def manifest_guids(repo: Path, absent: Iterable[str] = ()) -> dict[str, tuple[str, str]]:
+def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
     """Every GUID the demos' tracked manifests list: guid -> (demo, path).
 
-    Entries from an opt-in root in `absent` (`more_assets` on a machine without MoreAssets) are
-    left out: they sync only on request, so the record never needs them there.
+    Entries from an opt-in root (`more_assets`) are left out: they sync only on request, so a
+    record from a machine without that root never has them, and where the root is mapped the
+    packs check already fails a record that lacks its files.
     """
-    skip = set(absent) & set(paths.OPT_IN_ROOTS)
     guids: dict[str, tuple[str, str]] = {}
     for demo in paths.PROJECTS:
         manifest = repo / demo / "manifest.json"
@@ -449,7 +449,7 @@ def manifest_guids(repo: Path, absent: Iterable[str] = ()) -> dict[str, tuple[st
             continue
         data = json.loads(manifest.read_text(encoding="utf-8"))
         for a in data.get("assets", []):
-            if a.get("guid") and a.get("source", "").split(":")[0] not in skip:
+            if a.get("guid") and a.get("source", "").split(":")[0] not in paths.OPT_IN_ROOTS:
                 guids[a["guid"].lower()] = (demo, a.get("path", "?"))
     return guids
 
@@ -538,7 +538,7 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
             if vetted is not None:
                 changed = {p for p, s in entries if (p, s) not in vetted}
         res = check_blobs(read_blobs(repo, entries), record, record_at, changed)
-        manifest = manifest_guids(repo, missing_roots(paths.load_roots())) if record is not None else {}
+        manifest = manifest_guids(repo) if record is not None else {}
         uncovered: dict[str, list[str]] = {}
         if record is not None and record_file is None:  # the machine's own record and roots
             uncovered = uncovered_demos(paths.load_roots(), record, manifest)
