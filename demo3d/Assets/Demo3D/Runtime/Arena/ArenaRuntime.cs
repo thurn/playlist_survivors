@@ -83,7 +83,8 @@ namespace Demo3D.Runtime.Arena
                                                (o.Merged ? " merged" : "") + $" (have: {Describe()})");
             var layout = PlaybackData.Load().Layout("arena") ?? throw new InvalidOperationException("ArenaRuntime: no arena layout in PlaybackData");
             ArenaPipeline.Apply(o);
-            var a = new ArenaRuntime(o, entry.scene, ArenaLighting.Parse(layout.text), camera, volumeParent);
+            // `--palette name` swaps the environment's colours for one of the layout's palettes (ps-ocd).
+            var a = new ArenaRuntime(o, entry.scene, ArenaLighting.Parse(layout.text, Args.Get("--palette")), camera, volumeParent);
             SceneManager.sceneLoaded += a.Loaded;
             SceneManager.LoadScene(entry.scene, LoadSceneMode.Additive);
             return a;
@@ -149,6 +150,7 @@ namespace Demo3D.Runtime.Arena
             ArenaBounds = b;
 
             if (Moon != null) RenderSettings.sun = Moon;
+            if (Lighting.Palette != null) ApplyPalette(root);
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
             Post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting);
@@ -170,6 +172,26 @@ namespace Demo3D.Runtime.Arena
             Ready = true;
             Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, {Options.Label()}");
             OnReady?.Invoke(this);
+        }
+
+        /// <summary>
+        /// A palette's colours on the loaded scene (ps-ocd): the moon's realtime light (mixed, so its
+        /// direct light on the set and the horde follows; the baked bounce keeps the night's), the
+        /// ground's tint and the mist's colour. Ambient, fog, vignette and the hero's light read
+        /// <see cref="Lighting"/> as the night does.
+        /// </summary>
+        void ApplyPalette(Transform root)
+        {
+            if (Moon != null)
+            {
+                Moon.color = Lighting.MoonColor;
+                Moon.intensity = Lighting.MoonIntensity;
+            }
+            if (Ground != null) Ground.material.SetColor("_BaseColor", Lighting.GroundTint);
+            var mist = root.Find("Mist");
+            if (Lighting.MistColor.a > 0 && mist != null && mist.TryGetComponent<Renderer>(out var r))
+                r.material.SetColor("_MistColor", Lighting.MistColor);
+            Debug.Log("ArenaRuntime: palette " + Lighting.Palette);
         }
 
         /// <summary>

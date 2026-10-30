@@ -34,6 +34,32 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void APaletteRecoloursTheNightAndKeepsWhatItLeavesOut()
+        {
+            var night = ArenaLighting.Parse(LayoutJson);
+            Assert.That(night.Palette, Is.Null);
+            Assert.That(night.GroundTint, Is.EqualTo(Color.white), "the authored night leaves the ground as baked");
+            var names = ArenaLighting.Palettes(LayoutJson);
+            Assert.That(names, Is.SupersetOf(new[] { "snow", "desert", "lava", "neon", "blossom", "crypt" }));
+            foreach (var name in names)
+            {
+                var p = ArenaLighting.Parse(LayoutJson, name);
+                Assert.That(p.Palette, Is.EqualTo(name));
+                Assert.That(p.FogColor, Is.Not.EqualTo(night.FogColor), name + " recolours the fog and clear colour");
+                Assert.That(p.GroundTint, Is.Not.EqualTo(Color.white), name + " tints the ground");
+                Assert.That(p.MoonElevationDeg, Is.EqualTo(night.MoonElevationDeg), name + " keeps the baked moon's direction");
+                Assert.That(p.CrowdKey, Is.EqualTo(night.CrowdKey), name + " keeps the horde's lighting");
+                Assert.That(p.PostFeel.BeatBloom, Is.EqualTo(night.PostFeel.BeatBloom), name + " keeps the post feel");
+                Assert.That(p.Flames.Count, Is.EqualTo(night.Flames.Count), name + " keeps the flames");
+            }
+            var crypt = ArenaLighting.Parse(LayoutJson, "crypt");
+            Assert.That(crypt.HeroIntensity, Is.EqualTo(night.HeroIntensity), "a key a palette leaves out keeps its value");
+            Assert.That(crypt.HeroColor, Is.EqualTo(Color.white));
+            var e = Assert.Throws<ArgumentException>(() => ArenaLighting.Parse(LayoutJson, "nope"));
+            StringAssert.Contains("snow", e.Message, "an unknown palette lists the known ones");
+        }
+
+        [Test]
         public void TheNightLutIsAStripThatWarmsTheStageWithoutLiftingBlacks()
         {
             var lut = NightLook.Lut();

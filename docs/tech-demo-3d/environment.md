@@ -128,6 +128,11 @@ wall the monsters walk around.
   [Engine and Rendering Setup](performance.md#engine-and-rendering-setup).
   The post stack follows the music: a pulse on every beat, flashes on
   accents, and a grade per section (cooler breakdowns, hotter drops).
+- **Palette swaps.** The player's `--palette <name>` recolours the runtime's
+  share of this (moon, ambient, fog, vignette, the hero's light, a ground
+  tint, the mist) from arena-layout.json's `palettes`, to try the type
+  colours against other backgrounds
+  ([Running on the Mac](mac.md#palettes)).
 
 ### Environment rendering
 

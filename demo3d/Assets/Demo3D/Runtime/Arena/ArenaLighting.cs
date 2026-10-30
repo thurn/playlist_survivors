@@ -67,13 +67,52 @@ namespace Demo3D.Runtime.Arena
         /// <summary>Static glow (glowing trees, crystals): baked in the lit scene, realtime at rung E0.</summary>
         public readonly List<PropLight> Glow = new List<PropLight>();
 
+        /// <summary>
+        /// The palette swap (ps-ocd): the named entry of the layout's <c>palettes</c> applied over
+        /// <c>lighting</c>, or null for the night as authored. A palette is a partial
+        /// <c>lighting</c> object, so the keys it leaves out keep their values, plus two keys of its
+        /// own, below. It recolours what the runtime sets (the moon's realtime light, ambient, fog and
+        /// clear colour, vignette, the hero's light, the ground and the mist), never the baked kit.
+        /// </summary>
+        public string Palette;
+        /// <summary>A palette's <c>groundTint</c> (linear rgb, may pass 1): the ground material's base colour, over its generated albedo.</summary>
+        public Color GroundTint = Color.white;
+        /// <summary>A palette's <c>mist</c> (linear rgb): the mist cards' colour; clear keeps the baked one.</summary>
+        public Color MistColor = Color.clear;
+
         public Quaternion MoonRotation => Quaternion.Euler(MoonElevationDeg, MoonYawDeg, 0);
 
-        public static ArenaLighting Parse(string layoutJson)
+        /// <summary>The layout's palette names, in order.</summary>
+        public static List<string> Palettes(string layoutJson)
+        {
+            var names = new List<string>();
+            JsonValue palettes = JsonValue.Parse(layoutJson)["palettes"];
+            if (palettes.Type == JsonType.Object)
+                foreach (var kv in palettes.Members) names.Add(kv.Key);
+            return names;
+        }
+
+        /// <summary>The lighting of <paramref name="layoutJson"/>, with <paramref name="palette"/> over it unless it is null or empty.</summary>
+        public static ArenaLighting Parse(string layoutJson, string palette = null)
         {
             var l = new ArenaLighting();
-            JsonValue root = JsonValue.Parse(layoutJson)["lighting"];
-            if (root.Type != JsonType.Object) return l;
+            JsonValue layout = JsonValue.Parse(layoutJson);
+            Read(layout["lighting"], l);
+            if (string.IsNullOrEmpty(palette)) return l;
+            JsonValue p = layout["palettes"][palette];
+            if (p.Type != JsonType.Object)
+                throw new System.ArgumentException($"ArenaLighting: no palette {palette} (have: {string.Join(", ", Palettes(layoutJson))})");
+            Read(p, l);
+            l.Palette = palette;
+            l.GroundTint = Col(p["groundTint"], l.GroundTint);
+            l.MistColor = Col(p["mist"], l.MistColor);
+            return l;
+        }
+
+        /// <summary>Reads a <c>lighting</c> object over <paramref name="l"/>: what it leaves out keeps its value.</summary>
+        static void Read(JsonValue root, ArenaLighting l)
+        {
+            if (root.Type != JsonType.Object) return;
             JsonValue moon = root["moon"];
             l.MoonElevationDeg = moon["elevationDeg"].AsFloat(l.MoonElevationDeg);
             l.MoonYawDeg = moon["yawDeg"].AsFloat(l.MoonYawDeg);
@@ -90,12 +129,12 @@ namespace Demo3D.Runtime.Arena
             l.FogStartAtFocus = fog["startAtFocus"].AsFloat(l.FogStartAtFocus);
             l.FogEndAtFocus = fog["endAtFocus"].AsFloat(l.FogEndAtFocus);
             JsonValue crowd = root["crowd"];
-            l.CrowdFill = crowd["fill"].AsFloat(0f);
-            l.CrowdRim = Col(crowd["rim"], Color.black);
+            l.CrowdFill = crowd["fill"].AsFloat(l.CrowdFill);
+            l.CrowdRim = Col(crowd["rim"], l.CrowdRim);
             l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
             l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
-            l.CrowdFlash = Col(crowd["flash"], Color.clear);
-            l.CrowdShoulder = crowd["shoulder"].AsFloat(0f);
+            l.CrowdFlash = Col(crowd["flash"], l.CrowdFlash);
+            l.CrowdShoulder = crowd["shoulder"].AsFloat(l.CrowdShoulder);
             JsonValue hero = root["hero"];
             l.HeroHeightM = hero["heightM"].AsFloat(l.HeroHeightM);
             l.HeroRangeM = hero["rangeM"].AsFloat(l.HeroRangeM);
@@ -105,17 +144,17 @@ namespace Demo3D.Runtime.Arena
             l.VignetteIntensity = vignette["intensity"].AsFloat(l.VignetteIntensity);
             l.VignetteSmoothness = vignette["smoothness"].AsFloat(l.VignetteSmoothness);
             l.VignetteColor = Col(vignette["color"], l.VignetteColor);
-            l.PostFeel = Playback.PostFeel.Amounts.Parse(root["postFeel"]);
+            if (root["postFeel"].Type == JsonType.Object) l.PostFeel = Playback.PostFeel.Amounts.Parse(root["postFeel"]);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, true);
             Lights(root["glow"], l.Glow, false);
-            return l;
         }
 
         static void Lights(JsonValue v, List<PropLight> into, bool flicker)
         {
             if (v.Type != JsonType.Object) return;
+            into.Clear();
             foreach (var kv in v.Members)
                 into.Add(new PropLight
                 {

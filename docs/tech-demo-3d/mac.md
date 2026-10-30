@@ -131,6 +131,22 @@ evidence; `--player-args` passes flags to every capture. To tell effects apart i
 still, a player's `--only-effects a,b` spawns only those library effects. The baseline set is
 [evidence/look/baseline](../../demo3d/evidence/look/baseline/README.md).
 
+### Palettes
+
+`--palette <name>` (ps-ocd) swaps the environment's colours for one of
+arena-layout.json's `palettes`, to see how the type colours and the effects
+read against other backgrounds without building new environments: `snow`
+(light, cool), `desert` (light, warm), `lava` (dark, warm), `neon` (dark,
+cool), `blossom` (mid-value pink) and `crypt` (neutral grey, the control).
+A palette recolours what the runtime sets: the moon's realtime light,
+ambient, fog and clear colour, vignette, the hero's light, a tint on the
+ground and the mist. The baked kit, its bounce light and the flames keep the
+night's. Render one as a look set with the player args:
+
+```
+uv run --project demo3d/tools demo3d look palette-snow --player-args "--palette snow" --trial
+```
+
 ## Limits on the Mac
 
 - **Sweeps, the song check's verdict and PIX.** The bench player refuses to
