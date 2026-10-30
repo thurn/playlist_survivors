@@ -1,9 +1,9 @@
 """The vendor guard: no vendor file, derived file or NCS audio may leave the machine.
 
 It checks blobs as git stores them, so it sees exactly what a push or a commit would carry.
-It covers both demos' Unity projects, demo3d/ and demo2d/, alike. A file fails when it:
+It covers every demo Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/) alike. A file fails when it:
 
-- is inside either demo's vendor or baked folders;
+- is inside any demo's vendor or baked folders;
 - is binary (by extension or a NUL byte) under a demo's folder or the Unity package they share
   (unity-packages/, code only), unless it is a PNG or JPEG under that demo's evidence/ that
   carries the `ps-render` text tag;
@@ -196,7 +196,7 @@ def is_song_audio_path(lower: str) -> bool:
 
 
 def demo_of(lower: str) -> str | None:
-    """The demo whose folder holds the path (demo3d or demo2d), if any."""
+    """The demo whose folder holds the path (one of paths.PROJECTS), if any."""
     head = lower.split("/", 1)[0]
     return head if head in paths.PROJECTS and "/" in lower else None
 

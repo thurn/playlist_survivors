@@ -1,0 +1,453 @@
+{
+  "version": 1,
+  "note": "The demo's roster: vendor assets by GUID (paths are hints), with each type's height in the demo (the prefab is scaled to it) and its separation radius. TD2 chose these; TD4 and TD5 read them.",
+  "types": [
+    {
+      "id": "skeleton",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "6e3f218b742294893ad834f61c027945",
+        "path": "Skeleton Warrior/_Prefabs/SkeletonWarriorLP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Walk"
+        },
+        "attack": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Attack 1"
+        },
+        "attack2": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Attack 2"
+        },
+        "hit": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Got Hit"
+        },
+        "death": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Death"
+        },
+        "idle": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Idle"
+        }
+      },
+      "heightM": 1.8
+    },
+    {
+      "id": "goblin",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "2d5e83b858ed8424291e890a090902db",
+        "path": "Goblin/_Prefabs/Goblins LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "da8c9ca50ca4e4ab5b4f5b27efb389d0",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "737c1f0a1861943258251a79e1729de0",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "3ed1a5ac07e0e46f2ba828703bfbdeb5",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "5399d5151847d4e3681776932651afe6",
+          "clip": ""
+        },
+        "death": {
+          "guid": "5f170624cb4f045769503a05a205076f",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "907a74ad4197d4f268e118a17c5aa22e",
+          "clip": ""
+        }
+      },
+      "heightM": 1.5
+    },
+    {
+      "id": "slime",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "fe5eb242a632a47529d5bfc2a09bccda",
+        "path": "Slime/_Prefabs/Slime_LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Walk Cycle"
+        },
+        "attack": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Stab Attack"
+        },
+        "attack2": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Cannonball Attack"
+        },
+        "hit": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Been Hit"
+        },
+        "death": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Die"
+        },
+        "idle": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Idle Cycle"
+        }
+      },
+      "heightM": 0.9
+    },
+    {
+      "id": "bat",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "4f9257d4aec394d59be5f34d00fa97e8",
+        "path": "Bats/_Prefabs/Bats LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Fly Forward"
+        },
+        "attack": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Attack 1"
+        },
+        "attack2": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Attack 2"
+        },
+        "hit": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Got Hit"
+        },
+        "death": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Death 1"
+        },
+        "idle": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Fly Idle"
+        }
+      },
+      "heightM": 0.3,
+      "hoverM": 1.3
+    },
+    {
+      "id": "mushroom",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "be803e2df48344dafbabe4dce2b5b5c4",
+        "path": "Mushroom Monster/_Prefabs/Mushroom_LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushWalk"
+        },
+        "attack": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushAttack01"
+        },
+        "attack2": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushAttack02"
+        },
+        "hit": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushHit"
+        },
+        "death": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushDeath"
+        },
+        "idle": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushIdle"
+        }
+      },
+      "heightM": 1.3
+    },
+    {
+      "id": "demon",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "97be6194801464926b2c78020bf4eb32",
+        "path": "Demons/_Prefabs/Demons_LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "clips": {
+        "walk": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "walk"
+        },
+        "attack": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "attack1"
+        },
+        "attack2": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "attack2"
+        },
+        "hit": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "hit reaction"
+        },
+        "death": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "death"
+        },
+        "idle": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "idle"
+        }
+      },
+      "heightM": 1.9
+    },
+    {
+      "id": "bigork",
+      "kind": "elite",
+      "prefab": {
+        "guid": "0d42bc61d684259409d481c6f5dd5d5c",
+        "path": "Characters/Character_BR_BigOrk_01.prefab"
+      },
+      "rig": "humanoid",
+      "radius": 0.7,
+      "clips": {
+        "walk": {
+          "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "f3800f1bd189abc469fcc7c374371a91",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "b963d0c4e093a9c4ea792b8095e51ba2",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "adc1feaf8563f6247989bffd0737b6ad",
+          "clip": ""
+        },
+        "death": {
+          "guid": "90f98101f7a4c2c4bbbf30f76e7b91c7",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "b94969b4c36c3c94284f72888ad9289d",
+          "clip": ""
+        }
+      },
+      "weapons": [
+        {
+          "guid": "404a923dea987c14498264bf7d13d458",
+          "path": "Weapons/SM_Wep_Slayer_01.prefab",
+          "bone": "RightHand"
+        }
+      ],
+      "heightM": 2.9
+    },
+    {
+      "id": "troll",
+      "kind": "elite",
+      "prefab": {
+        "guid": "2250a4a4fc528684c85ba955eb992ec6",
+        "path": "Characters/Character_BR_Troll_01.prefab"
+      },
+      "rig": "humanoid",
+      "radius": 0.7,
+      "clips": {
+        "walk": {
+          "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "94770028b07a9ce44b555d283c113a86",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "2511e6dc0955bde4395e6b369d7d8707",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "202a1ac9f04ce2a419bc2bdd6b148b2a",
+          "clip": ""
+        },
+        "death": {
+          "guid": "a0b8f6f252ea03c46b36b357f5ea81e5",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "b94969b4c36c3c94284f72888ad9289d",
+          "clip": ""
+        }
+      },
+      "weapons": [
+        {
+          "guid": "39e0fb4b243ffb645a622d1945004ee5",
+          "path": "Weapons/SM_Wep_Troll_01.prefab",
+          "bone": "RightHand"
+        }
+      ],
+      "heightM": 2.9
+    },
+    {
+      "id": "dragon",
+      "kind": "boss",
+      "prefab": {
+        "guid": "a1e28cc5277b74ff0ad8566e5e54bee5",
+        "path": "Dragons/_Prefabs/Dragon_LP.prefab"
+      },
+      "rig": "generic",
+      "radius": 1.6,
+      "clips": {
+        "walk": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Walk"
+        },
+        "attack": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Attack 1"
+        },
+        "attack2": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Tail Whip L"
+        },
+        "hit": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Got Hit 1"
+        },
+        "death": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Death"
+        },
+        "idle": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Idle"
+        }
+      },
+      "heightM": 4.5
+    },
+    {
+      "id": "hero",
+      "kind": "hero",
+      "prefab": {
+        "guid": "360c73b9bf9a34d4c84bc0581d0499eb",
+        "path": "Characters/Character_Knight_01_Orange.prefab"
+      },
+      "rig": "humanoid",
+      "radius": 0.5,
+      "clips": {
+        "walk": {
+          "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+          "clip": ""
+        },
+        "run": {
+          "guid": "6c670ea8c84cf324980a21b4b9b927a0",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "b94969b4c36c3c94284f72888ad9289d",
+          "clip": ""
+        },
+        "slashL": {
+          "guid": "9f773338b2a96174ebe9b63870034ca3",
+          "clip": ""
+        },
+        "slashR": {
+          "guid": "95697c3218923dd43aa160c110bfbc79",
+          "clip": ""
+        },
+        "slash3": {
+          "guid": "c9e0b6900401fcb42980df96b84db76c",
+          "clip": ""
+        },
+        "thrust": {
+          "guid": "b963d0c4e093a9c4ea792b8095e51ba2",
+          "clip": ""
+        },
+        "spin": {
+          "guid": "b48c7e37f2264c3418122c894c6f98af",
+          "clip": ""
+        },
+        "slam": {
+          "guid": "72f114cf4075d3b4db5ce63cb994a704",
+          "clip": ""
+        },
+        "parry": {
+          "guid": "7966ebc17e0dc2a4b8faaf62594fb9b2",
+          "clip": ""
+        }
+      },
+      "weapons": [
+        {
+          "guid": "f61def225eac3e247985f6679965a655",
+          "path": "SM_Wep_Broadsword_01.prefab",
+          "bone": "RightHand"
+        },
+        {
+          "guid": "a7b97d24ba2370040ba159577de7b931",
+          "path": "SM_Wep_Shield_01.prefab",
+          "bone": "LeftHand"
+        }
+      ],
+      "rootMotionClips": {
+        "slashL": {
+          "guid": "e6a21f89bfbdef241b09f0f0bfefd522",
+          "clip": ""
+        },
+        "slashR": {
+          "guid": "09bfbb429e3e8ab45ae69ab30d1ecaee",
+          "clip": ""
+        },
+        "slash3": {
+          "guid": "cd2b62e55d0d92e4ba0b7656c67819a6",
+          "clip": ""
+        },
+        "thrust": {
+          "guid": "11a2f3f6a3035f94dbac2f8355f33c36",
+          "clip": ""
+        },
+        "spin": {
+          "guid": "673ce1a7a02a07a4195366197dd832c4",
+          "clip": ""
+        },
+        "slam": {
+          "guid": "a54195297d6a64448a8236512ffecc63",
+          "clip": ""
+        },
+        "walk": {
+          "guid": "478462c18c5fec84da94ea6ea124f43e",
+          "clip": ""
+        },
+        "run": {
+          "guid": "8b45cba6e566e0847aa0b9eee86847b9",
+          "clip": ""
+        }
+      },
+      "heightM": 1.85
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 """Where things live: the worktree, the Unity project and the per-machine cache.
 
-One tool serves both demos' Unity projects, `demo3d/` and `demo2d/` (the `demo3d` and `demo2d`
-commands). They share the per-machine cache, its roots and its sync record, so one guard knows
+One tool serves the demos' Unity projects, `demo3d/`, `demo2d/` and the style prototype
+`stylelab/` (the `demo3d`, `demo2d` and `stylelab` commands). They share the per-machine cache, its roots and its sync record, so one guard knows
 every vendor file on the machine.
 
 The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
@@ -20,13 +20,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 UNITY_VERSION = "6000.6.7f1"
-PROJECTS = ("demo3d", "demo2d")
+PROJECTS = ("demo3d", "demo2d", "stylelab")
 # The source roots each project's setup needs (the song from the `song` root, the rest synced):
-# demo2d syncs the 2D packs and reuses demo3d's sounds.
+# demo2d syncs the 2D packs and reuses demo3d's sounds; stylelab reuses demo3d's roster.
 PROJECT_ROOTS = {
     "demo3d": ("synty", "unity_assets", "song"),
     "demo2d": ("pixel_assets", "unity_assets", "song"),
+    "stylelab": ("synty", "unity_assets", "song"),
 }
+# Each project's C# namespace prefix.
+NAMESPACES = {"demo3d": "Demo3D", "demo2d": "Demo2D", "stylelab": "StyleLab"}
 # The roots that are asset folders (an `Assets/` folder of packs, files beside their `.meta`).
 ASSET_FOLDERS = ("unity_assets", "pixel_assets")
 SONG_FILE = "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
@@ -101,7 +104,7 @@ def unity_exe() -> Path:
 @dataclass(frozen=True)
 class Worktree:
     root: Path
-    name: str = "demo3d"  # the Unity project: demo3d or demo2d
+    name: str = "demo3d"  # the Unity project: demo3d, demo2d or stylelab
 
     @property
     def project(self) -> Path:
@@ -109,8 +112,8 @@ class Worktree:
 
     @property
     def namespace(self) -> str:
-        """The project's C# namespace prefix: Demo3D or Demo2D."""
-        return "Demo" + self.name.removeprefix("demo").upper()
+        """The project's C# namespace prefix: Demo3D, Demo2D or StyleLab."""
+        return NAMESPACES[self.name]
 
     @property
     def vendor(self) -> Path:

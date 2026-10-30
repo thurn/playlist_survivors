@@ -8,6 +8,7 @@ dependencies = ["flip-evaluator", "numpy", "pillow"]
 [project.scripts]
 demo3d = "demo3d_tools.cli:main"
 demo2d = "demo3d_tools.cli:main2d"
+stylelab = "demo3d_tools.cli:main_stylelab"
 
 [build-system]
 requires = ["setuptools>=68"]

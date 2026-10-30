@@ -13,6 +13,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 - `tools/baker/`, `assets-src/`, `public/assets/`: the asset baker and its inputs and outputs.
 - `demo3d/`: the Unity 3D tech demo (docs/tech-demo-3d/).
 - `demo2d/`: the Unity 2D pixel-art demo (docs/tech-demo-2d/README.md), on the same tools (`uv run --project demo3d/tools demo2d`).
+- `stylelab/`: the Unity shader style lab, demo3d's horde in cyclable stylized treatments (docs/tech-demo-3d/stylelab.md), on the same tools (`uv run --project demo3d/tools stylelab`).
 - `unity-packages/com.playlistsurvivors.choreography/`: the engine-free choreography core both demos share (docs/tech-demo-3d/choreography.md).
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - SETUP.md covers installing, building and playing.

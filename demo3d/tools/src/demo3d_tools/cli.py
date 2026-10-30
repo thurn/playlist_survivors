@@ -2,7 +2,8 @@
 
 `demo2d <command>` (`uv run --project demo3d/tools demo2d`) runs the same tools on the 2D demo's
 project, `demo2d/`: setup, guard, check, unity, test, build, library, sync and manifest. The
-guard is the same either way; it checks the whole repository.
+guard is the same either way; it checks the whole repository. `stylelab <command>` does the same
+for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md).
 
 Commands:
   setup               prepare this worktree (vendor, baked, warm Library, guard hook, license)
@@ -68,6 +69,9 @@ def cmd_guard(a: argparse.Namespace) -> int:
 
 def dotnet_test(wt: paths.Worktree) -> bool:
     proj = wt.project / "dotnet" / f"{wt.namespace}.Choreography.Tests"
+    if not proj.exists():
+        print(f"check: dotnet test skipped ({wt.name} has no engine-free tests)")
+        return True
     started = time.monotonic()
     code = subprocess.run(["dotnet", "test", str(proj), "--nologo", "-v", "q"], check=False).returncode
     print(f"check: dotnet test {'passed' if code == 0 else 'FAILED'} in {time.monotonic() - started:.1f} s")
@@ -357,3 +361,8 @@ def main(argv: list[str] | None = None, project: str = "demo3d") -> None:
 def main2d() -> None:
     """`demo2d <command>`: the same tools on the 2D demo's project."""
     main(project="demo2d")
+
+
+def main_stylelab() -> None:
+    """`stylelab <command>`: the same tools on the shader style prototype's project."""
+    main(project="stylelab")

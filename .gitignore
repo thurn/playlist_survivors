@@ -67,3 +67,17 @@ reactive-local/
 .beads-credential-key
 .beads/proxieddb/
 /.beads/interactions.jsonl
+# The shader style prototype (docs/tech-demo-3d/stylelab.md), under the same rules.
+/stylelab/Assets/Vendor/
+/stylelab/Assets/Vendor.meta
+/stylelab/Assets/Baked/
+/stylelab/Assets/Baked.meta
+/stylelab/[Ll]ibrary/
+/stylelab/[Tt]emp/
+/stylelab/[Oo]bj/
+/stylelab/[Bb]uilds/
+/stylelab/[Ll]ogs/
+/stylelab/[Uu]ser[Ss]ettings/
+/stylelab/*.csproj
+/stylelab/*.sln
+/stylelab/*.slnx

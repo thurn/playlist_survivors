@@ -69,3 +69,11 @@ def test_setups_import_only_save_clears_the_built_marker(wt) -> None:
 def test_demo2d_has_no_unity_bakers(tmp_path: Path) -> None:
     assert setup.baked(paths.Worktree(tmp_path, "demo2d"))
     assert not setup.baked(paths.Worktree(tmp_path, "demo3d"))
+
+
+def test_stylelab_is_a_project_of_its_own(tmp_path: Path) -> None:
+    wt = paths.Worktree(tmp_path, "stylelab")
+    assert wt.project == tmp_path / "stylelab"
+    assert wt.namespace == "StyleLab"
+    assert setup.baked(wt)  # its bake runs inside every build
+    assert paths.Worktree(tmp_path, "demo2d").namespace == "Demo2D"
