@@ -30,7 +30,9 @@ build at staging `96c46047` plus this bead:
   slimes' hues: the dragon (+150, green to magenta) and the big orc (+60,
   green to cyan-teal, its orange stripes to magenta).
 - **Player flags for tuning:** `--type-dye d`, `--type-saturation s` and
-  `--hue-rotate-<id> deg` override the roster.
+  `--hue-rotate-<id> deg` override the roster. `--classic-monster-colors`
+  turns the dye and the hue rotation off, for the palette before this pass
+  (`--type-dye 0` alone still turns the dragon and the big orc).
 - **The crowd bench's `--scene roster`** lines up every drawn type under the
   arena layout's night look. In batch mode the bench now renders offscreen,
   so its stills need no window:

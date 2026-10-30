@@ -86,13 +86,19 @@ namespace Demo3D.Runtime.Crowd
         public GameObject StockPrefab;
 
         /// <summary>
+        /// `--classic-monster-colors`: the monsters' colours before the signature colours (ps-e8r.8),
+        /// the packs' own albedo with no dye and no hue rotation, for comparing the two palettes.
+        /// </summary>
+        public static bool ClassicColors => Args.Has("--classic-monster-colors");
+
+        /// <summary>
         /// The signature colour for CrowdSkinned's <c>_Demo3DTypeColor</c>: linear rgb at full value,
-        /// alpha the dye; all zero for a type without one. `--type-dye d` and `--type-saturation s`
-        /// override the roster's, for tuning in a player.
+        /// alpha the dye; all zero for a type without one or under <see cref="ClassicColors"/>.
+        /// `--type-dye d` and `--type-saturation s` override the roster's, for tuning in a player.
         /// </summary>
         public Vector4 SignatureColor()
         {
-            if (Hue < 0) return Vector4.zero;
+            if (Hue < 0 || ClassicColors) return Vector4.zero;
             float s = Args.GetFloat("--type-saturation", HueSaturation);
             var c = Color.HSVToRGB(Mathf.Repeat(Hue / 360f, 1f), Mathf.Clamp01(s), 1f).linear;
             return new Vector4(c.r, c.g, c.b, Mathf.Clamp01(Args.GetFloat("--type-dye", Dye)));
@@ -101,6 +107,7 @@ namespace Demo3D.Runtime.Crowd
         /// <summary>CrowdSkinned's <c>_Demo3DTypeRotate</c>: (cos, sin) of <see cref="HueRotate"/> (`--hue-rotate-ID` overrides it).</summary>
         public Vector4 HueRotation()
         {
+            if (ClassicColors) return new Vector4(1, 0, 0, 0);
             float r = Args.GetFloat("--hue-rotate-" + Id, HueRotate) * Mathf.Deg2Rad;
             return new Vector4(Mathf.Cos(r), Mathf.Sin(r), 0, 0);
         }

@@ -35,7 +35,7 @@ namespace Demo3D.Runtime.Crowd.Bench
     ///
     /// `--scene roster --stills DIR` is the look pass's roster still (ps-e8r.8): every drawn type
     /// in a row, standing, under the game's night look, to show each type's signature colour
-    /// (`--type-dye 0` for the undyed roster). In batch mode the stills render offscreen.
+    /// (`--classic-monster-colors` for the roster before them). In batch mode the stills render offscreen.
     /// </summary>
     public sealed class CrowdBench : MonoBehaviour
     {
@@ -549,7 +549,7 @@ namespace Demo3D.Runtime.Crowd.Bench
                 var small = Downscale(shot, Args.GetInt("--still-width", 1280));
                 var tag = Args.Get("--ablate", "");
                 var dye = Args.Get("--type-dye");
-                var name = $"crowd-{_arm}-{_scene}-{w:0}m{(dye != null ? "-dye" + dye : "")}{(tag.Length > 0 ? "-no" + tag : "")}{(_lights.Count > 0 ? "-lights" : "")}{(_pipeline.msaaSampleCount == 1 ? "-taa" : "")}{(Args.Has("--show-motion") ? "-motion" : Args.Has("--show-normals") ? "-normals" : "")}.jpg";
+                var name = $"crowd-{_arm}-{_scene}-{w:0}m{(CrowdType.ClassicColors ? "-classic" : dye != null ? "-dye" + dye : "")}{(tag.Length > 0 ? "-no" + tag : "")}{(_lights.Count > 0 ? "-lights" : "")}{(_pipeline.msaaSampleCount == 1 ? "-taa" : "")}{(Args.Has("--show-motion") ? "-motion" : Args.Has("--show-normals") ? "-normals" : "")}.jpg";
                 RenderTag.Save(small, Path.Combine(dir, name), $"td5 crowd bench still: {_arm} {_scene} {w} m, n {n}, t {at}", 82);
                 if (Args.Has("--crop"))
                 {
