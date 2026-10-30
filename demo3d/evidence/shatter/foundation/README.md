@@ -33,7 +33,8 @@ in view at it, from `--shatter-log`:
 | [goblin.jpg](goblin.jpg) | a goblin at the preset | `goblin --at 106.85 --frames 48 --every 2 --scale 0.5 --crop 250,60,640,540 --player-args "<preset>"` |
 | [bigork.jpg](bigork.jpg) | an elite at the song's density | `bigork --at 113.2 --frames 48 --every 2 --scale 0.5 --crop 715,150,640,540 --player-args "--monster-style crystal"` |
 
-The mp4s (15 fps, a quarter speed) are in the gitignored `captures/filmstrip/<slug>/`.
+Each strip is one player's frames. The mp4s (15 fps of every 2nd frame: half speed) are in the
+gitignored `captures/filmstrip/<slug>/`.
 
 ## Findings
 
@@ -43,8 +44,8 @@ The mp4s (15 fps, a quarter speed) are in the gitignored `captures/filmstrip/<sl
   (`CrowdShards.Set.HoldShadow`, the LOD2 shadow proxy at the pose) the shards cast their own LOD0
   shadow and about 2,600 px of shadow edge moved by up to 41 levels.
 - **Deterministic.** `skeleton-repeat ... --check skeleton`: 64 of 64 frames match pixel for
-  pixel. (Runs split into different `--chunk`s differ by up to about 20 levels for half a second
-  after a chunk starts, in the old build too: see mac.md.)
+  pixel. (A run split over several players with `--chunk` differs a little from one player's,
+  in the old build too: some pixels depend on how many frames the player has drawn. See mac.md.)
 - **The baseline is unchanged.** `demo3d look` without the flag against
   [look/final](../../look/final/look.md): every song still's and beauty shot's L* p2/p50/p98,
   RMS contrast and mean chroma within 0.11.
