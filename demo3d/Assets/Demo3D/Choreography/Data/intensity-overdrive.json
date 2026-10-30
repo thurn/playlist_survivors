@@ -1,6 +1,6 @@
 {
   "name": "overdrive",
-  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks. ps-5pd.1's first cut, tuned by the timeline's numbers only (TimelineReport's carnage table; the tuning bead owns it from here). Three times the envelope's horde and 1.5 times its reserve, under the rhythmic sections' views 1.25x wider (and the envelope's), since at today's widths the screen packs out at about 60% of the tripled count; the quiet sections keep theirs, where a wider view overfills; the hero's combos play at 1.8x to 2.5x, so their follow-through clears the next beat, and a travelling hero carves its way with its scaled shapes; fodder dies fewest-hit-points-first as one-hit monsters. The rhythmic sections take the overdrive load (deaths/s = 0.06 of the on-screen target, against demo's 0.05, at three times the count) with wider hit shapes to reach it (only while the kill budget runs behind: the hits cap stays 2.5, since more knockbacks in the quiet sections overlap the dense horde), and the ring on the phrase and bolts on accents, so the hero's blows take the kills; the build, short and travelling, keeps its lightning on accents to reach it. Quiet sections keep their loads at the tripled count (the intro its old one), so the drops hit harder by contrast.",
+  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks. ps-5pd.1's first cut, tuned by the timeline's numbers only (TimelineReport's carnage table; the tuning bead owns it from here). Three times the envelope's horde and 1.5 times its reserve, under the rhythmic sections' views 1.25x wider (and the envelope's), since at today's widths the screen packs out at about 60% of the tripled count; the quiet sections keep theirs, where a wider view overfills; the hero's combos play at 1.8x to 2.5x, so their follow-through clears the next beat, and the rhythmic sections drop the thrust, whose windup takes two beats even at 2.5x, so the hero swings on nearly every beat (spins and slams keep their accents and phrases); and a travelling hero carves its way with its scaled shapes; fodder dies fewest-hit-points-first as one-hit monsters. The rhythmic sections take the overdrive load (deaths/s = 0.06 of the on-screen target, against demo's 0.05, at three times the count) with wider hit shapes to reach it (only while the kill budget runs behind: the hits cap stays 2.5, since more knockbacks in the quiet sections overlap the dense horde), and the ring on the phrase and bolts on accents, so the hero's blows take the kills; the build, short and travelling, can't reach its rate with the hero's blows alone (about 90%, too close to the check's 10% under Mono), so its lightning strikes every second beat and takes most of its kills. Quiet sections keep their loads at the tripled count (the intro its old one): the drops still hit harder by their load and swing rate, and at half that count the quiet sections leave too few for the next drop to fill from (the final peak fell to 76% of its target).",
   "multiply": {
     "envelope.onScreen": 3,
     "envelope.viewWidthM": 1.25,
@@ -35,6 +35,12 @@
       "multiply": {
         "viewWidthM": 1.25
       },
+      "combo": [
+        "slashL",
+        "slashR",
+        "spin@accent",
+        "slam@phrase"
+      ],
       "spells": [
         "ring@phrase",
         "bolt@accent",
@@ -46,6 +52,12 @@
       "multiply": {
         "viewWidthM": 1.25
       },
+      "combo": [
+        "slashL",
+        "slashR",
+        "spin@accent",
+        "slam@phrase"
+      ],
       "spells": [
         "ring@phrase",
         "bolt@accent",
@@ -57,10 +69,16 @@
       "multiply": {
         "viewWidthM": 1.25
       },
+      "combo": [
+        "slashL",
+        "slashR",
+        "spin@accent",
+        "slam@phrase"
+      ],
       "spells": [
         "ring@phrase",
         "bolt@beat",
-        "lightning@accent"
+        "lightning@beat/2"
       ]
     },
     "drop-2": {
@@ -68,6 +86,12 @@
       "multiply": {
         "viewWidthM": 1.25
       },
+      "combo": [
+        "slashL",
+        "slashR",
+        "spin@accent",
+        "slam@phrase"
+      ],
       "spells": [
         "ring@phrase",
         "bolt@accent",
@@ -79,6 +103,12 @@
       "multiply": {
         "viewWidthM": 1.25
       },
+      "combo": [
+        "slashL",
+        "slashR",
+        "spin@accent",
+        "slam@phrase"
+      ],
       "spells": [
         "ring@phrase",
         "bolt@accent",
