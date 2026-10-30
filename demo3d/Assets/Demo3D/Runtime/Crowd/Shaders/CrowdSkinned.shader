@@ -127,6 +127,9 @@ Shader "Demo3D/CrowdSkinned"
             float4 _Demo3DCrowdRim;
             float _Demo3DCrowdFill;
             float _Demo3DCrowdKeyBoost;
+            // The hit flash's colour (rgb, linear HDR; w 1 when set), from the layout's crowd.flash
+            // (ps-e8r.7): hot rather than a white that clips whole bodies at a climax.
+            float4 _Demo3DCrowdFlash;
             #define DEMO3D_MAIN_LIGHT_SCALE (1 + _Demo3DCrowdKeyBoost)
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
@@ -156,7 +159,7 @@ Shader "Demo3D/CrowdSkinned"
                 s.occlusion = 1;
                 s.alpha = 1;
                 s.emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).rgb * _EmissionColor.rgb
-                    + _FlashColor.rgb * i.fx.x + _DissolveEdgeColor.rgb * edge;
+                    + (_Demo3DCrowdFlash.w > 0 ? _Demo3DCrowdFlash.rgb : _FlashColor.rgb) * i.fx.x + _DissolveEdgeColor.rgb * edge;
                 half rim = 1 - saturate(dot(inputData.normalWS, inputData.viewDirectionWS));
                 s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4;
 

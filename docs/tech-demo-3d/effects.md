@@ -100,6 +100,37 @@ About twenty effects cover the demo, chosen by TD8 from the vendor packs:
   wave, since its sunburst core sat over the hero on every downbeat. The
   bolt's muzzle flash fires from the hero's edge at 0.6 size.
 
+### The look
+
+The look pass (epic ps-e8r, [evidence](../../demo3d/evidence/look/effects/README.md))
+retunes the converted effects toward Deep Rock Galactic: Survivor's: brief,
+shaped, white-hot at the core and saturated at the edge, never a flat clipped
+blob. All of it is selection data in `effects.json`, applied by the converter
+and our own draw shader; no vendor file changes. Per effect:
+
+- **`heat`** `{ edge, mid, gain, mix }`: a colour ramp in the draw shader.
+  Each fragment's own luminance times `gain` picks its hue, from `edge`
+  (default deep red) through `mid` (default orange) to white, keeping the
+  luminance. So a sprite's bright centre reads white and its falloff yellow
+  to red, whatever the vendor texture's tint. Hero fire and impacts use a red
+  edge, the ring a gold one, lightning violet (off the runes' cyan).
+- **`hdr`**: a scale on the emitters' HDR colour, for large-area layers that
+  stacked into a clipped blob.
+- **`life`**: a lifetime scale. It plays the same motion and curves faster,
+  as the simulation speed would, so circles flash and go.
+- **`tune`** `{ child: { size, hdr, life, heat } }`: the same per child;
+  `"heat": false` keeps smoke out of the ramp.
+- **`sparks`** `{ count, speed, life, size, gravity, radius, upward, stretch,
+  hdr, heightM, heat }`: our own stretched spark burst, built by the
+  converter and added to the effect, for effects whose prefab throws none
+  (the ring and lightning).
+- **Light cues** take the effect's heat colour: a white cue on every hit
+  washed the ground and the horde yellow-white at a climax.
+
+The horde's hit flash (CrowdSkinned, `lighting.crowd.flash` in the layout)
+is an ember rather than white: at the final peak, flashing bodies alone made
+a clipped blob 2.6% of the frame.
+
 ### The converter
 
 The converter is an editor script that reads each chosen prefab through

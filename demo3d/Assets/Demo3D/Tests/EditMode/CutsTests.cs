@@ -95,7 +95,7 @@ namespace Demo3D.Tests
             var lib = Library();
             var glows = lib.Effects.Where(e => Enumerable.Range(e.FirstEmitter, e.EmitterCount).Any(i => lib.Emission[i].Glow))
                 .Select(e => e.Name).ToArray();
-            Assert.That(glows, Is.EquivalentTo(new[] { "hit-spark-b", "death-burst", "death-burst-large", "slam-shock", "bolt" }));
+            Assert.That(glows, Is.EquivalentTo(new[] { "death-burst", "death-burst-large", "slam-shock", "bolt" })); // hit-spark-b skips its glow (ps-e8r.7)
             // Every effect keeps something to draw without its glow.
             foreach (var e in lib.Effects)
                 Assert.That(Enumerable.Range(e.FirstEmitter, e.EmitterCount).Any(i => !lib.Emission[i].Glow), e.Name);

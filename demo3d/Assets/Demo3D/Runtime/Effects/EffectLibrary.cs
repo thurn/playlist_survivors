@@ -134,10 +134,11 @@ namespace Demo3D.Runtime.Effects
     /// </summary>
     public static class EmitterSlots
     {
-        public const int Stride = 26, LutRows = 14, LutWidth = 64;
+        public const int Stride = 28, LutRows = 14, LutWidth = 64;
         public const int Time = 0, Life = 1, SizeMin = 2, SizeMax = 3, RotMin = 4, RotMax = 5, ColA = 6, ColB = 7,
             Shape0 = 8, Shape1 = 9, Shape2 = 10, ShapePos = 11, ShapeRot = 12, ChildPos = 13, ChildRot = 14, ChildScale = 15,
-            Noise = 16, Render0 = 17, Render1 = 18, Tex = 19, Mat0 = 20, Mat1 = 21, Mat2 = 22, Mod = 23, ShapeScale = 24, Orbital = 25;
+            Noise = 16, Render0 = 17, Render1 = 18, Tex = 19, Mat0 = 20, Mat1 = 21, Mat2 = 22, Mod = 23, ShapeScale = 24, Orbital = 25,
+            Heat0 = 26, Heat1 = 27; // the selection's heat ramp: (edge rgb, mix), (mid rgb, gain); mix 0 is off
 
         // LUT rows, relative to the emitter's first row (ChildScale.w).
         public const int RowColor = 0, RowColor2 = 1, RowSize = 2, RowSize2 = 3, RowVel = 4, RowVel2 = 5,

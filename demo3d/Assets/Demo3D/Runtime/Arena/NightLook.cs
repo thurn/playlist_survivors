@@ -32,7 +32,7 @@ namespace Demo3D.Runtime.Arena
             RenderPipelineManager.beginCameraRendering -= FitFogToCamera;
             if (l.FogMode == FogMode.Linear) RenderPipelineManager.beginCameraRendering += FitFogToCamera;
             RenderSettings.skybox = null;
-            // `--crowd-fill f`, `--crowd-key k` and `--crowd-rim r,g,b` override them in a player, for tuning against the readability measure.
+            // `--crowd-fill f`, `--crowd-key k`, `--crowd-rim r,g,b` and `--crowd-flash r,g,b` override them in a player, for tuning against the readability measure.
             float fill = Args.GetFloat("--crowd-fill", l.CrowdFill);
             var rim = new Vector4(l.CrowdRim.r, l.CrowdRim.g, l.CrowdRim.b, l.CrowdRimPower);
             var rimArg = Args.Get("--crowd-rim");
@@ -45,6 +45,15 @@ namespace Demo3D.Runtime.Arena
             Shader.SetGlobalFloat("_Demo3DCrowdFill", fill);
             Shader.SetGlobalFloat("_Demo3DCrowdKeyBoost", Args.GetFloat("--crowd-key", l.CrowdKey) - 1);
             Shader.SetGlobalVector("_Demo3DCrowdRim", rim);
+            var flash = l.CrowdFlash;
+            var flashArg = Args.Get("--crowd-flash");
+            if (!string.IsNullOrEmpty(flashArg))
+            {
+                var v = flashArg.Split(',');
+                flash = new Color(float.Parse(v[0], System.Globalization.CultureInfo.InvariantCulture), float.Parse(v[1], System.Globalization.CultureInfo.InvariantCulture),
+                    float.Parse(v[2], System.Globalization.CultureInfo.InvariantCulture), 1);
+            }
+            Shader.SetGlobalVector("_Demo3DCrowdFlash", flash);
         }
 
         /// <summary>The focus distance of the song's widest view (30 m; camera-and-sound.md), for cameras that look at no ground.</summary>

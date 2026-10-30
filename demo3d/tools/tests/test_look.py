@@ -41,6 +41,20 @@ def test_chroma_is_the_frames_mean_and_clipping_needs_every_channel() -> None:
     assert s["contrast"] == pytest.approx(abs(53.2 - 50.0) / 2, abs=0.1)
 
 
+def test_the_clipped_blob_is_the_largest_connected_region() -> None:
+    img = frame(GREY_50, 100, 100)
+    img[10:20, 10:20] = 255  # 100 px
+    img[50:60, 50:55] = 255  # 50 px, joined diagonally to the next
+    img[60:70, 55:60] = 255  # 50 px
+    img[::7, 90] = 255  # scattered hot pixels
+    s = look.still_stats(img)
+    assert s["clippedBlob"] == pytest.approx(100 / 10_000)
+    assert look.largest_region(np.zeros((5, 5), dtype=bool)) == 0
+    u = np.zeros((6, 7), dtype=bool)
+    u[0:5, 0] = u[0:5, 6] = u[5, :] = True  # a U whose arms join only at the bottom row
+    assert look.largest_region(u) == 5 + 5 + 7
+
+
 def test_dilate_is_a_square() -> None:
     m = np.zeros((21, 21), dtype=bool)
     m[10, 10] = True

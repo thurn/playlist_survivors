@@ -101,7 +101,8 @@ It runs one batch-mode player per still, four at a time, in fixed time:
 Full PNGs go to the gitignored `captures/look/<slug>/`. Tagged 960 px JPEGs,
 `look.md`, `look.json` and, with `--baseline`, `contact-sheet.jpg` go to
 `demo3d/evidence/look/<slug>/`. `look.md` has each still's L* p2/p50/p98, RMS
-contrast, mean chroma, near-black and clipped shares; for the beauty shots,
+contrast, mean chroma, near-black and clipped shares, and the largest
+connected clipped region (a blown-out blob); for the beauty shots,
 the monsters' L* p10/p90, the effects' pixels and readability, whose floor is
 |dL*| >= 17. The command exits 1 if a shot is below the floor. Every still
 also gets the stage (ps-e8r.5): the median L* of the ground within 6 m of the
@@ -109,7 +110,8 @@ hero against the frame's outer 15% border, from the `view-<t>.json` the
 player writes beside each still (its camera's view-projection and the hero's
 feet).
 `--measure-only` re-measures kept captures; `--trial` writes nothing to
-evidence; `--player-args` passes flags to every capture. The baseline set is
+evidence; `--player-args` passes flags to every capture. To tell effects apart in a
+still, a player's `--only-effects a,b` spawns only those library effects. The baseline set is
 [evidence/look/baseline](../../demo3d/evidence/look/baseline/README.md).
 
 ## Limits on the Mac

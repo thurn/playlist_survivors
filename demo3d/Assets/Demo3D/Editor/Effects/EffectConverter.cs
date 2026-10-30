@@ -176,6 +176,75 @@ namespace Demo3D.EditorTools.Effects
             return go;
         }
 
+        public const string SparkName = "Sparks (look)";
+
+        /// <summary>
+        /// The selection's spark burst (effects.md, The look): our own short-lived stretched sparks
+        /// thrown from where an effect hits, white-hot, through the heat ramp the selection gives
+        /// them. <c>sparks</c>: count, speed [min, max] m/s, life [min, max] s, size m, gravity,
+        /// radius m, upward (0 a sphere, 1 a cone straight up), stretch (length per m/s), hdr
+        /// (colour scale), heightM.
+        /// </summary>
+        public static GameObject SparkBurst(JObject o)
+        {
+            float F(string k, float d) => (float?)o[k] ?? d;
+            (float, float) Range(string k, float a, float b) => o[k] is JArray r ? ((float)r[0], (float)r[1]) : (a, b);
+            var go = new GameObject(SparkName);
+            go.transform.position = new Vector3(0, F("heightM", 0.3f), 0);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = ps.main;
+            var (lifeMin, lifeMax) = Range("life", 0.15f, 0.4f);
+            var (speedMin, speedMax) = Range("speed", 6f, 14f);
+            main.duration = 0.1f;
+            main.loop = false;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(lifeMin, lifeMax);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(speedMin, speedMax);
+            float size = F("size", 0.06f);
+            main.startSize = new ParticleSystem.MinMaxCurve(size * 0.6f, size);
+            float hdr = F("hdr", 4f);
+            main.startColor = new Color(1f, 1f, 1f, 1f);
+            main.gravityModifier = F("gravity", 1.5f);
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            int count = (int)F("count", 24);
+            main.maxParticles = count;
+            var em = ps.emission;
+            em.rateOverTime = 0;
+            em.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
+            var shape = ps.shape;
+            float up = F("upward", 0.4f);
+            if (up > 0)
+            {
+                shape.shapeType = ParticleSystemShapeType.Cone;
+                shape.angle = Mathf.Lerp(89f, 25f, up);
+                shape.rotation = new Vector3(-90, 0, 0);
+            }
+            else shape.shapeType = ParticleSystemShapeType.Sphere;
+            shape.radius = F("radius", 0.2f);
+            var col = ps.colorOverLifetime;
+            col.enabled = true;
+            var g = new UnityEngine.Gradient();
+            // Fade from full heat to a dim ember: the heat ramp turns that into white, yellow, red.
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 1) },
+                new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, 0.6f), new GradientAlphaKey(0, 1) });
+            col.color = g;
+            var limit = ps.limitVelocityOverLifetime;
+            limit.enabled = true;
+            limit.limit = speedMax;
+            limit.dampen = 0.15f;
+            var r = go.GetComponent<ParticleSystemRenderer>();
+            r.renderMode = ParticleSystemRenderMode.Stretch;
+            r.lengthScale = 1f;
+            r.velocityScale = F("stretch", 0.04f);
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = "LookSparks" };
+            mat.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
+            mat.SetColor("_BaseColor", new Color(hdr, hdr, hdr, 1f).gamma);
+            mat.SetFloat("_SrcBlend", 5);
+            mat.SetFloat("_DstBlend", 1);
+            r.sharedMaterial = mat;
+            return go;
+        }
+
         static Dictionary<string, string> ManifestGuids()
         {
             var manifest = JObject.Parse(File.ReadAllText("manifest.json"));
@@ -194,6 +263,10 @@ namespace Demo3D.EditorTools.Effects
             public readonly JObject Light;
             public readonly string Notes;
             public readonly bool NoLight;
+            /// <summary>The look (effects.md, The look): HDR colour and lifetime scales, the heat ramp, per-child tuning and our own spark burst.</summary>
+            public readonly float Hdr, Life;
+            public readonly JObject Heat, Sparks;
+            public readonly Dictionary<string, JObject> Tune;
 
             public Options(JObject o)
             {
@@ -212,6 +285,26 @@ namespace Demo3D.EditorTools.Effects
                 Light = o["light"] as JObject;
                 NoLight = (bool?)o["noLight"] ?? false;
                 Notes = (string)o["notes"];
+                Hdr = (float?)o["hdr"] ?? 1f;
+                Life = (float?)o["life"] ?? 1f;
+                Heat = o["heat"] as JObject;
+                Sparks = o["sparks"] as JObject;
+                Tune = new Dictionary<string, JObject>();
+                if (o["tune"] is JObject t)
+                    foreach (var kv in t) Tune[kv.Key] = (JObject)kv.Value;
+                Duration *= Life;
+            }
+
+            /// <summary>A child's tuning value (its <c>tune</c> entry's, else 1).</summary>
+            public float TuneOf(string child, string key) =>
+                Tune.TryGetValue(child, out var t) ? (float?)t[key] ?? 1f : 1f;
+
+            /// <summary>A child's heat ramp: its own <c>tune</c> entry's (false for none), else the effect's.</summary>
+            public JObject HeatOf(string child)
+            {
+                if (child == SparkName) return Sparks?["heat"] != null ? Sparks["heat"] as JObject : Heat ?? new JObject(); // white-hot to red by default
+                if (Tune.TryGetValue(child, out var t) && t["heat"] != null) return t["heat"] as JObject;
+                return Heat;
             }
         }
 
@@ -254,10 +347,15 @@ namespace Demo3D.EditorTools.Effects
                 }
                 float lifetime = 0, duration = 0;
                 LightCue cue = default;
-                foreach (var ps in prefab.GetComponentsInChildren<ParticleSystem>(true))
+                // Our own spark burst (the selection's sparks): built here and converted with the
+                // prefab's children, so it isn't vendor-derived.
+                GameObject sparks = o.Sparks != null ? SparkBurst(o.Sparks) : null;
+                var systems = prefab.GetComponentsInChildren<ParticleSystem>(true).Select(ps => (ps, root, rootM)).ToList();
+                if (sparks != null) systems.Add((sparks.GetComponent<ParticleSystem>(), sparks.transform, Matrix4x4.identity));
+                foreach (var (ps, psRoot, psRootM) in systems)
                 {
                     string child = ps.gameObject.name;
-                    if (!ActiveIn(ps.transform, root)) continue;
+                    if (!ActiveIn(ps.transform, psRoot)) continue;
                     if (o.Skip.Contains(child)) { Notes.Add($"{name}: skipped child '{child}' (selection)"); continue; }
                     if (subTargets.Contains(ps))
                     {
@@ -271,7 +369,7 @@ namespace Demo3D.EditorTools.Effects
                     if (ps.lights.enabled && !cue.Active && !o.NoLight) cue = CueFromModule(ps);
                     if (r == null || !r.enabled) continue;
                     if (errs.Count > before) continue;
-                    var m = rootM * ps.transform.localToWorldMatrix;
+                    var m = psRootM * ps.transform.localToWorldMatrix;
                     bool trail = ps.trails.enabled && o.Approximate.Contains("trails") && r.trailMaterial != null;
                     if (r.renderMode == ParticleSystemRenderMode.None && !trail) continue;
                     int head = Emission.Count;
@@ -302,6 +400,7 @@ namespace Demo3D.EditorTools.Effects
                         Notes.Add($"{name}/{child}: trails approximated by stretched billboards (selection)");
                     }
                 }
+                if (sparks != null) UnityEngine.Object.DestroyImmediate(sparks);
                 foreach (var lr in prefab.GetComponentsInChildren<LineRenderer>(true))
                 {
                     if (!ActiveIn(lr.transform, root) || (!lr.enabled && !o.Lines)) continue;
@@ -433,7 +532,10 @@ namespace Demo3D.EditorTools.Effects
                 lifetime = duration = 0;
                 bool trail = seedEmitter >= 0;
                 var main = ps.main;
-                float sp = Mathf.Max(1e-3f, main.simulationSpeed); // time runs sp times faster
+                string child = ps.gameObject.name;
+                // Time runs sp times faster: the simulation speed, and the selection's life scale
+                // (a shorter life plays the same motion and curves faster).
+                float sp = Mathf.Max(1e-3f, main.simulationSpeed) / Mathf.Max(1e-3f, o.Life * o.TuneOf(child, "life"));
                 var flags = (Slots.Flags)0;
                 var v = new Vector4[Slots.Stride];
                 int row = LutRows.Count;
@@ -453,7 +555,7 @@ namespace Demo3D.EditorTools.Effects
                 Vector3 pos = m.GetColumn(3);
                 Vector3 scl = new Vector3(m.GetColumn(0).magnitude, m.GetColumn(1).magnitude, m.GetColumn(2).magnitude);
                 var rot = Quaternion.LookRotation(m.GetColumn(2) / Mathf.Max(1e-6f, scl.z), m.GetColumn(1) / Mathf.Max(1e-6f, scl.y));
-                float sizeK = o.SizeScale * (main.scalingMode == ParticleSystemScalingMode.Shape ? 1f : Mathf.Max(scl.x, Mathf.Max(scl.y, scl.z)));
+                float sizeK = o.SizeScale * o.TuneOf(child, "size") * (main.scalingMode == ParticleSystemScalingMode.Shape ? 1f : Mathf.Max(scl.x, Mathf.Max(scl.y, scl.z)));
                 if (main.startSize3D)
                 {
                     flags |= Slots.Flags.Size3D;
@@ -662,6 +764,7 @@ namespace Demo3D.EditorTools.Effects
                 }
                 v[Slots.Render1] = new Vector4(r.minParticleSize, r.maxParticleSize, r.sortingFudge * 0.01f, mesh);
                 if (!Material(trail ? r.trailMaterial : r.sharedMaterial, v, ref flags, fxName + "/" + ps.name + (trail ? " (trail)" : ""))) return false;
+                Look(v, o, child, fxName);
 
                 v[Slots.Time].w = BitConverter.Int32BitsToSingle((int)(uint)flags);
                 Emitters.AddRange(v);
@@ -725,6 +828,7 @@ namespace Demo3D.EditorTools.Effects
                 v[Slots.Render1] = new Vector4(0, 1e4f, 0, 0);
                 v[Slots.Tex] = new Vector4(0, 1, 1, 1);
                 if (!Material(lr.sharedMaterial, v, ref flags, fxName + "/" + lr.name)) return false;
+                Look(v, o, lr.name, fxName);
                 v[Slots.Time].w = BitConverter.Int32BitsToSingle((int)(uint)flags);
                 Emitters.AddRange(v);
                 var rows = new Vector4[Slots.LutRows][];
@@ -738,6 +842,26 @@ namespace Demo3D.EditorTools.Effects
                 Emission.Add(new EmitterEmission { Duration = 1, Loop = false, Bursts = new[] { new Burst { Time = 0, CountMin = 1, CountMax = 1, Cycles = 1, Probability = 1 } }, MaxParticles = 1, LifeMax = 1, SeedEmitter = Emission.Count });
                 Notes.Add($"{fxName}: LineRenderer '{lr.name}' converted to a beam ({len:F2} m, width {w:F2} m); its scripts' scrolling isn't reproduced");
                 return true;
+            }
+
+            /// <summary>The selection's look on one emitter: its HDR colour scale and its heat ramp.</summary>
+            void Look(Vector4[] v, Options o, string child, string fxName)
+            {
+                float hdr = o.Hdr * o.TuneOf(child, "hdr");
+                var m0 = v[Slots.Mat0];
+                v[Slots.Mat0] = new Vector4(m0.x * hdr, m0.y * hdr, m0.z * hdr, m0.w);
+                var heat = o.HeatOf(child);
+                float gain = (float?)heat?["gain"] ?? 1f;
+                if (hdr != 1f || heat != null) Notes.Add($"{fxName}/{child}: look: hdr {hdr:F2}, heat " + (heat != null ? $"gain {gain:F2}" : "off"));
+                if (heat == null) return;
+                Vector4 Rgb(string key, Color fallback) =>
+                    heat[key] is JArray c ? new Vector4((float)c[0], (float)c[1], (float)c[2], 0) : (Vector4)fallback;
+                var edge = Rgb("edge", new Color(1f, 0.08f, 0.02f));
+                var mid = Rgb("mid", new Color(1f, 0.55f, 0.12f));
+                edge.w = (float?)heat["mix"] ?? 1f;
+                mid.w = gain;
+                v[Slots.Heat0] = edge;
+                v[Slots.Heat1] = mid;
             }
 
             /// <summary>The material's observed behaviour: blend, texture, HDR tint, opacity, noise mask and its scrolling, soft particles.</summary>

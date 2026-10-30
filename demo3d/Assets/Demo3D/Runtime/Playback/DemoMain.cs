@@ -181,7 +181,8 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// TD8's effects on the GPU runtime, unless `--no-effects` or the library isn't baked:
-        /// `--effect-pool N` particles, `--light-pool N` pooled lights (EffectLights.DefaultPool).
+        /// `--effect-pool N` particles, `--light-pool N` pooled lights (EffectLights.DefaultPool),
+        /// `--only-effects a,b` to spawn only those library effects.
         /// </summary>
         void StartEffects()
         {
@@ -195,6 +196,7 @@ namespace Demo3D.Runtime.Playback
             _fx.AddCamera(_rig.Camera);
             _fxDriver = new EffectDriver(_tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
             _fxDriver.OnlyAmbient = _beautyEmpty;
+            _fxDriver.OnlyEffects(Args.Get("--only-effects"));
         }
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>

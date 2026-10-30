@@ -52,6 +52,34 @@ namespace Demo3D.Tests
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
+        [Test]
+        public void TheLookScalesAChildTintsItsHeatAndAddsSparks()
+        {
+            var go = EffectConverter.SpikeBurst();
+            try
+            {
+                EffectConverter.ConvertOne(go, "{}", out var stock, out _, out _);
+                var e = EffectConverter.ConvertOne(go, @"{ ""hdr"": 0.5, ""life"": 0.5,
+                    ""heat"": { ""edge"": [1, 0, 0], ""mid"": [1, 0.5, 0], ""gain"": 2 },
+                    ""tune"": { ""spike-burst"": { ""size"": 0.25, ""hdr"": 0.5 } },
+                    ""sparks"": { ""count"": 12, ""heat"": false } }", out var em, out var emission, out var errors);
+                Assert.That(errors, Is.Empty);
+                Assert.That(e.EmitterCount, Is.EqualTo(2), "the prefab's emitter and our spark burst");
+                Assert.That(em[Slots.Mat0].x, Is.EqualTo(stock[Slots.Mat0].x * 0.25f).Within(1e-5f), "effect hdr times child hdr");
+                Assert.That(em[Slots.SizeMax].x, Is.EqualTo(stock[Slots.SizeMax].x * 0.25f).Within(1e-5f));
+                Assert.That(em[Slots.Life].y, Is.EqualTo(stock[Slots.Life].y * 0.5f).Within(1e-5f), "half the life");
+                Assert.That(em[Slots.Life].w, Is.EqualTo(stock[Slots.Life].w * 2f).Within(1e-4f), "the same motion, twice as fast");
+                Assert.That(em[Slots.Heat0], Is.EqualTo(new Vector4(1, 0, 0, 1)));
+                Assert.That(em[Slots.Heat1], Is.EqualTo(new Vector4(1, 0.5f, 0, 2)));
+                var spark = Slots.Stride;
+                Assert.That(em[spark + Slots.Render0].x, Is.EqualTo((float)Slots.RenderMode.Stretch));
+                Assert.That(emission[1].Bursts[0].CountMax, Is.EqualTo(12));
+                Assert.That(em[spark + Slots.Heat0].w, Is.Zero, "the sparks' own heat: false turns the ramp off");
+                Assert.That(stock[Slots.Heat0].w, Is.Zero, "no heat unless the selection asks");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
         static EffectEntry Entry(float duration = 1) => new EffectEntry { Name = "t", ScaleRef = 1, Duration = duration };
 
         [Test]

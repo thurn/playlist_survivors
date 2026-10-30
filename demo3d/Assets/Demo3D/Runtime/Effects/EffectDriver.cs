@@ -44,6 +44,8 @@ namespace Demo3D.Runtime.Effects
         public int OverrideAll = -1;
         /// <summary>The spike: copies of each event (jittered within half a metre), to reach its spawns per beat frame.</summary>
         public int OverrideCopies = 1;
+        /// <summary>When set, only these effects spawn (`--only-effects a,b`: telling effects apart in a still).</summary>
+        public bool[] Only;
         /// <summary>Effects and spawns this frame (timeline events, plus the client's own).</summary>
         public int EventsThisFrame { get; private set; }
 
@@ -83,6 +85,14 @@ namespace Demo3D.Runtime.Effects
             for (int e = 0; e < tl.EntityCount; e++) if (tl.Entities[e].Kind == EntityKind.Projectile) proj.Add(e);
             proj.Sort((a, b) => tl.Entities[a].Spawn.CompareTo(tl.Entities[b].Spawn));
             _projBySpawn = proj.ToArray();
+        }
+
+        /// <summary>Restricts spawning to the named effects (comma-separated library names); empty for all.</summary>
+        public void OnlyEffects(string names)
+        {
+            if (string.IsNullOrEmpty(names)) { Only = null; return; }
+            Only = new bool[_lib.Effects.Length];
+            foreach (var n in names.Split(',')) { int i = _lib.IndexOf(n.Trim()); if (i >= 0) Only[i] = true; }
         }
 
         static int Index(EffectLibrary lib, string name) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name);
@@ -183,6 +193,7 @@ namespace Demo3D.Runtime.Effects
         void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration)
         {
             // After a seek or loop wrap, the look-back re-spawns only effects still alive now.
+            if (Only != null && (fx < 0 || fx >= Only.Length || !Only[fx])) return;
             if (_resetFrame && fx >= 0 && fx < _lib.Effects.Length && !StillAlive(_lib.Effects[fx], time, duration, _now)) return;
             _fx.Add(new EffectSystem.Spawn
             {

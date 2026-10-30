@@ -172,6 +172,19 @@ Shader "Demo3D/EffectParticles"
         Varyings Vert(uint vid : SV_VertexID, uint iid : SV_InstanceID) { return Expand(vid, iid, false); }
         Varyings VertOverdraw(uint vid : SV_VertexID, uint iid : SV_InstanceID) { return Expand(vid, iid, true); }
 
+        // The selection's heat ramp (effects.md, The look): the fragment's own luminance, times the
+        // gain, picks its hue from the saturated edge colour through the mid colour to a white-hot
+        // core; the luminance is kept, so only the hue changes. Bright centres read white, falloffs
+        // yellow to red (or white to cyan to blue), whatever the vendor texture's tint.
+        float3 Heat(float3 rgb, float3 edge, float4 mid)
+        {
+            const float3 lum = float3(0.2126, 0.7152, 0.0722);
+            float l = dot(rgb, lum);
+            float t = saturate(l * mid.w);
+            float3 hue = t < 0.45 ? lerp(edge, mid.rgb, t / 0.45) : lerp(mid.rgb, 1, (t - 0.45) / 0.55);
+            return hue * (l / max(dot(hue, lum), 1e-4));
+        }
+
         float4 Frag(Varyings i) : SV_Target
         {
             uint e = i.info.x;
@@ -196,6 +209,8 @@ Shader "Demo3D/EffectParticles"
             uint blend = (uint)EM(e, S_MAT1).x;
             // Premultiplied materials (One, OneMinusSrcAlpha) carry alpha in their colour already.
             float3 rgb = i.extra.z > 0.5 ? c.rgb * i.color.a : c.rgb * c.a;
+            float4 h0 = EM(e, S_HEAT0);
+            if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, EM(e, S_HEAT1)), h0.w);
             return float4(rgb, blend == 0 ? 0 : c.a);
         }
 

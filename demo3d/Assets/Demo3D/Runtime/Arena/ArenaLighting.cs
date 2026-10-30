@@ -41,6 +41,8 @@ namespace Demo3D.Runtime.Arena
         public float CrowdRimPower = 3f;
         /// <summary>The moon's intensity on the horde, as a multiple of its intensity on the set: the horde's key light.</summary>
         public float CrowdKey = 1f;
+        /// <summary>The horde's hit flash (linear HDR rgb, added as emission at full flash); clear keeps the material's.</summary>
+        public Color CrowdFlash = Color.clear;
         /// <summary>
         /// The hero's light (ps-e8r.5): one unshadowed realtime point light <see cref="HeroHeightM"/>
         /// above the hero's feet, lighting the set and the horde in a warm pool that fades out by
@@ -84,6 +86,7 @@ namespace Demo3D.Runtime.Arena
             l.CrowdRim = Col(crowd["rim"], Color.black);
             l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
             l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
+            l.CrowdFlash = Col(crowd["flash"], Color.clear);
             JsonValue hero = root["hero"];
             l.HeroHeightM = hero["heightM"].AsFloat(l.HeroHeightM);
             l.HeroRangeM = hero["rangeM"].AsFloat(l.HeroRangeM);

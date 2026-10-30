@@ -4,7 +4,7 @@
 #ifndef DEMO3D_EFFECT_COMMON
 #define DEMO3D_EFFECT_COMMON
 
-#define EMITTER_STRIDE 26
+#define EMITTER_STRIDE 28
 #define LUT_ROWS 14
 #define LUT_WIDTH 64
 
@@ -34,6 +34,8 @@
 #define S_MOD 23
 #define S_SHAPESCALE 24
 #define S_ORBITAL 25
+#define S_HEAT0 26
+#define S_HEAT1 27
 
 #define R_COLOR 0
 #define R_COLOR2 1
