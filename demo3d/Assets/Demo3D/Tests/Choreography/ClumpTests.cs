@@ -36,9 +36,9 @@ namespace Demo3D.Choreography.Tests
         }
 
         /// <summary>
-        /// Each section's spawns per type hold its mix: every type's share of the section's spawns is within 5
-        /// points of its weight's share. (The random picks only hold the mix on average: a few dozen spawns of
-        /// a type stray from it by more than that, so they are logged beside the clumped ones, not compared.)
+        /// Each section's spawns per type hold its mix: every type's count is within 5% (or one monster) of its
+        /// weight's share of the section's spawns. (The random picks only hold the mix on average: a few dozen
+        /// spawns of a type stray from it by more than that, so they are logged beside the clumped ones, not compared.)
         /// </summary>
         [Test]
         public void EachSectionsCountPerTypeHoldsItsMix()
@@ -61,7 +61,8 @@ namespace Demo3D.Choreography.Tests
                     string line = tl.Sections[s].Label + " " + e.Type + ": mix " + mix.ToString("P1") + ", clumped " + share.ToString("P1") + " (" + clumped[s, t]
                         + " of " + total + "), random " + (random[s, t] / (double)totalRandom).ToString("P1") + " (" + random[s, t] + " of " + totalRandom + ")";
                     TestContext.WriteLine(line);
-                    if (Math.Abs(share - mix) > 0.05) failures.Add(line);
+                    double expected = total * mix;
+                    if (Math.Abs(clumped[s, t] - expected) > Math.Max(0.05 * expected, 1)) failures.Add(line);
                 }
             }
             Assert.That(failures, Is.Empty);

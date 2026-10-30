@@ -77,6 +77,7 @@ namespace PS.Choreography
         readonly float[] clumpArc, clumpStart;   // per roster type, its arc's length and start in the current section's pattern, in m
         readonly double[] clumpOwed;     // per roster type, the share of refills dealt to it so far minus those it got
         readonly List<int> clumpRetry = new List<int>();   // types whose refills found no room, owed first
+        int clumpRetryNow;               // retries the current refill may take: those owed when it began, so one that fails again waits a beat
         float clumpPattern;              // the pattern's length: the arcs of the section's types end to end
 
         // Entities, indexed by id.
@@ -1826,6 +1827,7 @@ namespace PS.Choreography
                 if (d.LengthSquared() > 1e-6f) travel = Vector2.Normalize(d);
                 if (nav != null && travel != Vector2.Zero) travel = GoalHeading(HeroRest, out _);
             }
+            clumpRetryNow = clumpRetry.Count;
             for (int i = 0; i < need; i++)
             {
                 int type = clumpSize > 0 ? ClumpType() : PickType(plan.Mix, false);
@@ -1891,8 +1893,9 @@ namespace PS.Choreography
         /// <summary>The next refill's type: a retried one, or else the type the mix most owes (smooth weighted round-robin).</summary>
         int ClumpType()
         {
-            if (clumpRetry.Count > 0)
+            if (clumpRetryNow > 0)
             {
+                clumpRetryNow--;
                 int retry = clumpRetry[0];
                 clumpRetry.RemoveAt(0);
                 return retry;
