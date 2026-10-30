@@ -34,15 +34,18 @@ if [ "$section" = all ]; then
   lane parity parity
   lane survivors survivors
   lane tools baker analysis demo3d demo2d
+  passed=""
   failed=""
   for entry in $lanes; do
-    if wait "${entry%%:*}"; then result=passed; else result=FAILED; failed="$failed ${entry#*:}"; fi
-    echo "=== ci-full ${entry#*:}: $result"
-    cat "$logs/${entry#*:}.log"
+    if wait "${entry%%:*}"; then passed="$passed ${entry#*:}"; else failed="$failed ${entry#*:}"; fi
   done
+  # Failed lanes print last, so a log tail (Enact's Steward bead keeps the last 60 lines) shows
+  # the failure rather than a passing lane's output.
+  for name in $passed; do echo "=== ci-full $name: passed"; cat "$logs/$name.log"; done
+  for name in $failed; do echo "=== ci-full $name: FAILED"; cat "$logs/$name.log"; done
   rm -rf "$logs"
   if [ -n "$failed" ]; then
-    echo "ci-full: failed:$failed" >&2
+    echo "ci-full: failed:$failed"
     exit 1
   fi
   exit 0
