@@ -28,7 +28,7 @@ From a worktree's root:
 
 ```
 uv run --project demo3d/tools demo3d setup        # vendor files, the song, a warm Library
-uv run --project demo3d/tools demo3d unity BakeAll
+uv run --project demo3d/tools demo3d unity BakeAll    # build runs it if this worktree hasn't
 uv run --project demo3d/tools demo3d build        # Builds/mac/il2cpp/PlaylistSurvivors3D.app
 uv run --project demo3d/tools demo3d test         # EditMode tests
 ```
@@ -36,6 +36,13 @@ uv run --project demo3d/tools demo3d test         # EditMode tests
 The first setup imported the project in about a minute, and saved the
 `Library` to the cache for the next worktree. `BakeAll` took 2.5 minutes, both
 in batch mode ([evidence](../../demo3d/evidence/mac/README.md)).
+
+That saved `Library` holds only the import. The first full player build compiles
+every shader variant the baked scenes use, over 20 minutes cold (ps-e8r.9), so
+`build` saves the `Library` again after its first success for each set of
+packages and vendor files, and later worktrees start with its shader cache. A
+player started before `BakeAll` logs the missing asset and, in batch mode, quits
+with exit 1.
 
 To watch the demo, windowed at 1080p with sound (the operator's view; agents
 stay windowless):

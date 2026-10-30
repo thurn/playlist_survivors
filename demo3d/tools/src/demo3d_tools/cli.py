@@ -114,7 +114,19 @@ def cmd_build(a: argparse.Namespace) -> int:
         args.append("-development")
     for s in a.scene or []:
         args += ["-scene", s]
-    return unity.run_method(paths.worktree(name=a.project), "BuildPlayer", args, cold=a.cold)
+    wt = paths.worktree(name=a.project)
+    # A player built before BakeAll starts, but hangs on its first missing baked asset.
+    if not setup.baked(wt):
+        print("build: this worktree isn't baked; running BakeAll first")
+        code = unity.run_method(wt, "BakeAll", [], cold=a.cold)
+        if code != 0:
+            return code
+    code = unity.run_method(wt, "BuildPlayer", args, cold=a.cold)
+    if code == 0 and not a.scene and not unity.warm_server(wt):
+        dest = setup.save_built_library(wt)
+        if dest:
+            print(f"build: saved the Library, with its shader cache, to {dest}")
+    return code
 
 
 def cmd_editor(a: argparse.Namespace) -> int:

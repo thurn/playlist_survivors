@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace Demo3D.EditorTools
@@ -35,6 +36,16 @@ namespace Demo3D.EditorTools
                 ran++;
             }
             Debug.Log($"Bakers: ran {ran} of {Registry.Count}");
+            // `demo3d build` runs BakeAll first in a worktree without this stamp (a dotfile, so
+            // the importer skips it).
+            if (only.Count == 0)
+            {
+                Directory.CreateDirectory(BakedRoot);
+                File.WriteAllText(Path.Combine(BakedRoot, StampName), DateTime.UtcNow.ToString("o") + "\n");
+            }
         }
+
+        public const string BakedRoot = "Assets/Baked";
+        public const string StampName = ".bakeall";
     }
 }

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -191,12 +192,41 @@ def library_candidates(cache: Path, lib_key: str, vendor_key: str) -> list[Path]
 def save_library(wt: paths.Worktree) -> Path:
     cache = paths.cache_root()
     dest = cache / "library" / library_key(wt) / manifest_key(wt)
-    tmp = dest.with_name(dest.name + ".tmp")
+    tmp = dest.with_name(f"{dest.name}.{os.getpid()}.tmp")
     clone.clone_tree(wt.library, tmp)
     clone.remove_tree(tmp / f"{wt.namespace}Warm")
     clone.remove_tree(dest)
     tmp.rename(dest)
+    built_marker(dest).unlink(missing_ok=True)
     return dest
+
+
+def built_marker(entry: Path) -> Path:
+    """Beside a cached Library: present once the entry holds a player build's shader cache."""
+    return entry.with_name(entry.name + ".built")
+
+
+def save_built_library(wt: paths.Worktree) -> Path | None:
+    """After a player build, saves the Library once per packages and vendor files.
+
+    The Library setup saves holds only the import; the first player build compiles every shader
+    variant the baked scenes use (20+ minutes on the Mac, ps-e8r.9), and its ShaderCache then
+    warms every later worktree. Returns where it saved, or None if the cache already has it.
+    """
+    entry = paths.cache_root() / "library" / library_key(wt) / manifest_key(wt)
+    if built_marker(entry).exists():
+        return None
+    dest = save_library(wt)
+    built_marker(dest).write_text(time.strftime("%Y-%m-%dT%H:%M:%S") + "\n", encoding="utf-8")
+    return dest
+
+
+BAKED_STAMP = ".bakeall"  # Bakers.RunStale writes it into Assets/Baked/ after a full BakeAll
+
+
+def baked(wt: paths.Worktree) -> bool:
+    """Whether a full `unity BakeAll` has run in this worktree (demo2d has no Unity bakers)."""
+    return wt.name != "demo3d" or (wt.baked / BAKED_STAMP).exists()
 
 
 def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,

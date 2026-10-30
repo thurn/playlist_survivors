@@ -72,6 +72,23 @@ namespace Demo3D.Runtime.Playback
 
         void Start()
         {
+            try { StartDemo(); }
+            catch (Exception e)
+            {
+                // A batch-mode player would otherwise sit with no demo until something kills it
+                // (an unbaked worktree cost ps-e8r.9 15 minutes of timeouts).
+                Debug.LogException(e);
+                enabled = false;
+                if (Application.isBatchMode)
+                {
+                    Debug.LogError("DemoMain: start-up failed; quitting with exit 1");
+                    Application.Quit(1);
+                }
+            }
+        }
+
+        void StartDemo()
+        {
             if (Shader.Find("Universal Render Pipeline/Lit") == null) Debug.LogError("DemoMain: URP Lit is missing from the build");
             if (Application.isBatchMode && Args.Has("--capture-video"))
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
