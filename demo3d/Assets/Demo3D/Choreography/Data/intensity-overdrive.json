@@ -1,6 +1,6 @@
 {
   "name": "overdrive",
-  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks; tuned by ps-5pd.2 on the timeline's numbers (demo3d/evidence/overdrive/tuning/README.md). It sets its counts and views outright, not as multiples, so every roster set plays the same overdrive: forest's and heroic's 150 at 18 m are real-time cuts, and overdrive is recorded offline (at three times their own they miss the song's on-screen check, as they do at normal). The envelope is three times action-level.json's 425 under a 45 m view (1.5x), since the horde can only walk into the hero's kill zone so fast: at 37.5 m the final peak held 70-85% of its target at its kill rate, at 45 m about 90-100%. The rhythmic sections are where it turns up: the hero's combos play at 2x to 3x, and drop-1, groove-2 and the build add slashR flurries on the eighths between beats (a flurry never costs a beat its blow), about 3 to 3.5 blows a second; drop-2 and the final peak swing once a beat (2.45-2.5 a second) with heavier blows instead, since the final peak's supply caps deaths near 120 a second, and flurries there split that into about 30 a blow instead of 40+. yieldToAccents holds back a blow to leave room for a phrase's slam, which otherwise never fits between back-to-back blows. Fodder dies in one blow. Loads: deaths/s per monster on screen 0.08 in drop-1 and groove-2, 0.1 in drop-2 and 0.09 in the final peak (the most its supply holds with margin; 0.1 there fell 10-20% short on some seeds), and 0.035 in the build with two hits a death: the build travels to the courtyard, and its hero alone tops out near 28 deaths/s, so it builds tension at a lower rate with wide shapes that keep the hero striking instead of striding. Spells stay on the phrase and accents (ring, bolt, lightning, and the final peak's laser), so the hero takes 90-98% of the kills. Refills spawn up to max(150, wanted/3) a beat and releases lead by 5 s of deaths, so the horde floods back as fast as it dies; bigger bursts overlapped monsters in the free break before drop-2, whose views are widened (build 41 m, break-2 45 m) so drop-2's horde has room as it fills in. Quiet sections keep their loads and views at the tripled count (groove at 0.17 so its walk-in doesn't overfill, drop-1 at 0.43 for the same reason), so the drops hit harder by load, swing rate and width.",
+  "note": "--intensity overdrive (choreography.md, Intensity overlays): the trailer's turned-up-to-11 horde, merged over whichever level script the roster picks; tuned by ps-5pd.2 on the timeline's numbers (demo3d/evidence/overdrive/tuning/README.md). It sets its counts and views outright, not as multiples, so every roster set plays the same overdrive: forest's and heroic's 150 at 18 m are real-time cuts, and overdrive is recorded offline (at three times their own they miss the song's on-screen check, as they do at normal). The envelope is three times action-level.json's 425 under a 45 m view (1.5x), since the horde can only walk into the hero's kill zone so fast: at 37.5 m the final peak held 70-85% of its target at its kill rate, at 45 m about 90-100%. The rhythmic sections are where it turns up: the hero's combos play at 2x to 3x, and drop-1, groove-2 and the build add slashR flurries on the eighths between beats (a flurry never costs a beat its blow), about 3 to 3.5 blows a second; drop-2 and the final peak swing once a beat (2.45-2.5 a second) with heavier blows instead, since the final peak's supply caps deaths near 120 a second, and flurries there split that into about 30 a blow instead of 40+. yieldToAccents holds back a blow to leave room for a phrase's slam, which otherwise never fits between back-to-back blows. Fodder dies in one blow. Loads: deaths/s per monster on screen 0.08 in drop-1 and groove-2, 0.09 in drop-2 and the final peak (the most they hold with margin: at 0.1 the final peak fell 10-20% short on some seeds, and drop-2 13% short under Unity's Mono), and 0.035 in the build with two hits a death: the build travels to the courtyard, and its hero alone tops out near 28 deaths/s, so it builds tension at a lower rate with wide shapes that keep the hero striking instead of striding. Spells stay on the phrase and accents (ring, bolt, lightning, and the final peak's laser), so the hero takes 90-98% of the kills. Refills spawn up to max(150, wanted/3) a beat and releases lead by 5 s of deaths, so the horde floods back as fast as it dies; bigger bursts overlapped monsters in the free break before drop-2, whose views are widened (build 41 m, break-2 45 m) so drop-2's horde has room as it fills in. Quiet sections keep their loads and views at the tripled count (groove at 0.17 so its walk-in doesn't overfill, drop-1 at 0.43 for the same reason), so the drops hit harder by load, swing rate and width.",
   "multiply": {
     "reserve": 1.5
   },
@@ -27,11 +27,6 @@
       "spells": []
     },
     "overdrive-peak": {
-      "deathsPerN": 0.1,
-      "hitsPerDeath": 0.25,
-      "spells": []
-    },
-    "overdrive-final": {
       "deathsPerN": 0.09,
       "hitsPerDeath": 0.25,
       "spells": []
@@ -127,7 +122,7 @@
     },
     "final-peak": {
       "viewWidthM": 45.0,
-      "load": "overdrive-final",
+      "load": "overdrive-peak",
       "combo": [
         "slashL",
         "slashR",
