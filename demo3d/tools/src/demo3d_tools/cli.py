@@ -133,9 +133,11 @@ def cmd_build(a: argparse.Namespace) -> int:
             return code
     code = unity.run_method(wt, "BuildPlayer", args, cold=a.cold)
     if code == 0 and not a.scene and not unity.warm_server(wt):
-        dest = setup.save_built_library(wt)
+        compiled = setup.compiled_variants(wt.logs / "BuildPlayer.log")
+        dest = setup.save_built_library(wt, compiled)
         if dest:
-            print(f"build: saved the Library, with its shader cache, to {dest}")
+            print(f"build: compiled {compiled} shader variants; saved the Library, with its "
+                  f"shader cache, to {dest}")
     return code
 
 

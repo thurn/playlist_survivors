@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -179,13 +180,14 @@ def _cached(cache_dir: Path, build: Callable[[Path], None]) -> tuple[Path, bool]
 
 
 def library_candidates(cache: Path, lib_key: str, vendor_key: str) -> list[Path]:
-    """The exact Library for these packages and vendor files, else the newest for the packages."""
+    """The exact Library for these packages and vendor files, else the packages' others: those
+    holding a build's shader cache first, newest first."""
     base = cache / "library" / lib_key
     exact = base / vendor_key
     if exact.exists():
         return [exact]
     others = sorted((p for p in base.glob("*") if p.is_dir() and not p.name.endswith(".tmp")),
-                    key=lambda p: p.stat().st_mtime, reverse=True)
+                    key=lambda p: (built_marker(p).exists(), p.stat().st_mtime), reverse=True)
     return others
 
 
@@ -206,15 +208,29 @@ def built_marker(entry: Path) -> Path:
     return entry.with_name(entry.name + ".built")
 
 
-def save_built_library(wt: paths.Worktree) -> Path | None:
+# A build that compiles more variants than this (new keywords, such as a post effect turned on)
+# refreshes the saved Library, so later worktrees don't compile them again.
+REFRESH_VARIANTS = 100
+
+
+def compiled_variants(log: Path) -> int:
+    """The shader variants a build's log says it compiled (cache misses), 0 without a log."""
+    if not log.exists():
+        return 0
+    text = log.read_text(encoding="utf-8", errors="replace")
+    return sum(int(n) for n in re.findall(r"compiled (\d+) variants", text))
+
+
+def save_built_library(wt: paths.Worktree, compiled: int = 0) -> Path | None:
     """After a player build, saves the Library once per packages and vendor files.
 
     The Library setup saves holds only the import; the first player build compiles every shader
     variant the baked scenes use (20+ minutes on the Mac, ps-e8r.9), and its ShaderCache then
-    warms every later worktree. Returns where it saved, or None if the cache already has it.
+    warms every later worktree. A later build that compiled more than REFRESH_VARIANTS saves it
+    again. Returns where it saved, or None if the cache already has it.
     """
     entry = paths.cache_root() / "library" / library_key(wt) / manifest_key(wt)
-    if built_marker(entry).exists():
+    if built_marker(entry).exists() and compiled <= REFRESH_VARIANTS:
         return None
     dest = save_library(wt)
     built_marker(dest).write_text(time.strftime("%Y-%m-%dT%H:%M:%S") + "\n", encoding="utf-8")

@@ -83,6 +83,11 @@ instead of `native/target`; use an absolute target path if overriding it.
 
 ### Launch options
 
+The repository's `justfile` wraps the game, its checks and the Unity demos' tools for the
+current checkout, passing extra arguments through: `just native --file <path>`,
+`just demo3d-build --backend mono`, `just demo3d-play --start-at 160`. Run `just` to list them
+([install just](https://just.systems/man/en/packages.html), or `brew install just`).
+
 From `native/`, run `cargo run --locked --release -p app -- <flags>`:
 
 | Flags | What |

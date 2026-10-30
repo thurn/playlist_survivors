@@ -58,6 +58,22 @@ def test_the_first_build_saves_the_library_once(monkeypatch, wt) -> None:
     assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"compiled"
 
 
+def test_a_build_that_compiles_many_variants_refreshes_the_library(monkeypatch, wt) -> None:
+    build(monkeypatch)
+    entry = paths.cache_root() / "library" / setup.library_key(wt) / setup.manifest_key(wt)
+    (wt.library / "ShaderCache" / "variant.bin").write_bytes(b"recompiled")
+    wt.logs.mkdir(parents=True, exist_ok=True)
+    log = wt.logs / "BuildPlayer.log"
+    pass_line = "  Pass Bloom (fp, metal) finished in 0.5 seconds. Local cache hits 1, compiled {} variants"
+    log.write_text("\n".join(pass_line.format(n) for n in (60, 40)) + "\n")
+    build(monkeypatch)  # 100 variants: not enough to save again
+    assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"compiled"
+    log.write_text(log.read_text() + pass_line.format(1) + "\n")
+    build(monkeypatch)
+    assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"recompiled"
+    assert setup.built_marker(entry).exists()
+
+
 def test_setups_import_only_save_clears_the_built_marker(wt) -> None:
     entry = setup.save_built_library(wt)
     assert entry and setup.built_marker(entry).exists()
@@ -77,3 +93,13 @@ def test_stylelab_is_a_project_of_its_own(tmp_path: Path) -> None:
     assert wt.namespace == "StyleLab"
     assert setup.baked(wt)  # its bake runs inside every build
     assert paths.Worktree(tmp_path, "demo2d").namespace == "Demo2D"
+
+
+def test_setup_prefers_a_built_library_when_none_is_exact(tmp_path: Path) -> None:
+    base = tmp_path / "library" / "pkgs"
+    built, newer = base / "a", base / "b"
+    for p in (built, newer):
+        p.mkdir(parents=True)
+    setup.built_marker(built).write_text("then\n")
+    assert setup.library_candidates(tmp_path, "pkgs", "c") == [built, newer]
+    assert setup.library_candidates(tmp_path, "pkgs", "b") == [newer]

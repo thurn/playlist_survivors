@@ -40,7 +40,9 @@ in batch mode ([evidence](../../demo3d/evidence/mac/README.md)).
 That saved `Library` holds only the import. The first full player build compiles
 every shader variant the baked scenes use, over 20 minutes cold (ps-e8r.9), so
 `build` saves the `Library` again after its first success for each set of
-packages and vendor files, and later worktrees start with its shader cache. A
+packages and vendor files, and later worktrees start with its shader cache.
+A later build that compiles over 100 variants (new keywords, such as a post
+effect turned on) saves it again, so the next worktree doesn't repeat them. A
 player started before `BakeAll` logs the missing asset and, in batch mode, quits
 with exit 1.
 
