@@ -1,0 +1,379 @@
+{
+  "session": "logs/sessions/1793392222",
+  "level": "levels/action-showcase.yaml",
+  "runStartSongS": 6.97,
+  "sections": [
+    {
+      "section": "intro",
+      "songS": 0.0098,
+      "level": 1,
+      "levelUps": 0,
+      "chests": 0,
+      "frozenS": 0.0,
+      "gained": [
+        "SWORD SPIN 1"
+      ],
+      "arsenal": [
+        "SWORD SPIN 1"
+      ],
+      "still": false
+    },
+    {
+      "section": "groove",
+      "songS": 12.3969,
+      "level": 5,
+      "levelUps": 4,
+      "chests": 1,
+      "frozenS": 8.425000000000162,
+      "gained": [
+        "SWORD SPIN 4",
+        "MAGIC WAND 3",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1"
+      ],
+      "arsenal": [
+        "SWORD SPIN 4",
+        "MAGIC WAND 3",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1"
+      ],
+      "still": false
+    },
+    {
+      "section": "break-1",
+      "songS": 34.0743,
+      "level": 5,
+      "levelUps": 0,
+      "chests": 0,
+      "frozenS": 0.0,
+      "gained": [],
+      "arsenal": [
+        "SWORD SPIN 4",
+        "MAGIC WAND 3",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1"
+      ],
+      "still": false
+    },
+    {
+      "section": "drop-1",
+      "songS": 37.1711,
+      "level": 10,
+      "levelUps": 5,
+      "chests": 0,
+      "frozenS": 8.15833333333351,
+      "gained": [
+        "SWORD SPIN 8",
+        "GARLIC 1"
+      ],
+      "arsenal": [
+        "SWORD SPIN 8",
+        "MAGIC WAND 3",
+        "GARLIC 1",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1"
+      ],
+      "still": true
+    },
+    {
+      "section": "breakdown",
+      "songS": 74.3324,
+      "level": 15,
+      "levelUps": 5,
+      "chests": 0,
+      "frozenS": 6.108333333333427,
+      "gained": [
+        "GARLIC 4",
+        "PUMMAROLA 1"
+      ],
+      "arsenal": [
+        "SWORD SPIN 8",
+        "MAGIC WAND 3",
+        "GARLIC 4",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1",
+        "PUMMAROLA 1"
+      ],
+      "still": false
+    },
+    {
+      "section": "groove-2",
+      "songS": 86.7195,
+      "level": 18,
+      "levelUps": 3,
+      "chests": 1,
+      "frozenS": 8.200000000000175,
+      "gained": [
+        "BLOODY TEAR 1",
+        "MAGIC WAND 7",
+        "GARLIC 8"
+      ],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "MAGIC WAND 7",
+        "GARLIC 8",
+        "EMPTY TOME 1",
+        "SPINACH 1",
+        "HOLLOW HEART 1",
+        "PUMMAROLA 1"
+      ],
+      "still": true
+    },
+    {
+      "section": "build",
+      "songS": 111.4937,
+      "level": 20,
+      "levelUps": 2,
+      "chests": 1,
+      "frozenS": 4.8916666666666995,
+      "gained": [
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 2",
+        "PUMMAROLA 2"
+      ],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 2",
+        "PUMMAROLA 2"
+      ],
+      "still": false
+    },
+    {
+      "section": "break-2",
+      "songS": 120.784,
+      "level": 21,
+      "levelUps": 1,
+      "chests": 0,
+      "frozenS": 1.5166666666666637,
+      "gained": [
+        "HOLLOW HEART 3"
+      ],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ],
+      "still": false
+    },
+    {
+      "section": "drop-2",
+      "songS": 123.8808,
+      "level": 26,
+      "levelUps": 5,
+      "chests": 0,
+      "frozenS": 8.716666666666812,
+      "gained": [
+        "KING BIBLE 3",
+        "LIGHTNING RING 2"
+      ],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ],
+      "still": true
+    },
+    {
+      "section": "final-peak",
+      "songS": 161.0421,
+      "level": 26,
+      "levelUps": 0,
+      "chests": 0,
+      "frozenS": 0.0,
+      "gained": [],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ],
+      "still": true
+    },
+    {
+      "section": "outro",
+      "songS": 185.8163,
+      "level": 26,
+      "levelUps": 0,
+      "chests": 0,
+      "frozenS": 0.0,
+      "gained": [],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ],
+      "still": false
+    },
+    {
+      "section": "ending",
+      "songS": 195.1066,
+      "level": 26,
+      "levelUps": 0,
+      "chests": 0,
+      "frozenS": 0.0,
+      "gained": [],
+      "arsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ],
+      "still": false
+    }
+  ],
+  "seeds": [
+    {
+      "seed": 1,
+      "levelUps": 25,
+      "chests": 3,
+      "chestsOpenedAtSongS": [
+        27.5,
+        102.2,
+        118.1
+      ],
+      "frozenS": 46.016666666667454,
+      "finalPeakLevel": 26,
+      "finalPeakArsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ]
+    },
+    {
+      "seed": 2,
+      "levelUps": 25,
+      "chests": 3,
+      "chestsOpenedAtSongS": [
+        27.5,
+        102.2,
+        118.1
+      ],
+      "frozenS": 46.016666666667454,
+      "finalPeakLevel": 26,
+      "finalPeakArsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ]
+    },
+    {
+      "seed": 3,
+      "levelUps": 25,
+      "chests": 3,
+      "chestsOpenedAtSongS": [
+        19.4,
+        98.0,
+        104.5
+      ],
+      "frozenS": 45.39166666666737,
+      "finalPeakLevel": 26,
+      "finalPeakArsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ]
+    },
+    {
+      "seed": 4,
+      "levelUps": 24,
+      "chests": 3,
+      "chestsOpenedAtSongS": [
+        27.1,
+        95.3,
+        121.7
+      ],
+      "frozenS": 45.88333333333406,
+      "finalPeakLevel": 25,
+      "finalPeakArsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 2",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ]
+    },
+    {
+      "seed": 5,
+      "levelUps": 25,
+      "chests": 3,
+      "chestsOpenedAtSongS": [
+        27.5,
+        102.2,
+        118.1
+      ],
+      "frozenS": 46.016666666667454,
+      "finalPeakLevel": 26,
+      "finalPeakArsenal": [
+        "BLOODY TEAR 1",
+        "HOLY WAND 1",
+        "SOUL EATER 1",
+        "KING BIBLE 3",
+        "LIGHTNING RING 2",
+        "EMPTY TOME 2",
+        "SPINACH 2",
+        "HOLLOW HEART 3",
+        "PUMMAROLA 2"
+      ]
+    }
+  ]
+}
