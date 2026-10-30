@@ -69,7 +69,7 @@ def repitch(clip, pitch: float):
 
     if abs(pitch - 1.0) < 1e-4:
         return clip
-    n = max(1, int(round(len(clip) / pitch)))
+    n = max(1, round(len(clip) / pitch))
     src = np.arange(n) * pitch
     idx = np.arange(len(clip))
     return np.stack([np.interp(src, idx, clip[:, c]) for c in range(clip.shape[1])], axis=1).astype(np.float32)
