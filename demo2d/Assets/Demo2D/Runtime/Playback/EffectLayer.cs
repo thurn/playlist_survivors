@@ -20,9 +20,8 @@ namespace Demo2D.Runtime.Playback
     /// which costs nothing on the main thread; the song clock runs in real time there, so the two
     /// agree. In the editor (the tests) nothing plays: only stills simulate.
     ///
-    /// Everything draws in the world camera's pixel grid (README, Decision 10): the library may
-    /// opt an entry out with a reason (<see cref="EffectSpec.FullRes"/>), and none does, so this
-    /// draws no full-resolution layer.
+    /// Everything draws in the world camera's pixel grid (README, Decision 10). No entry needs a
+    /// full-resolution layer, so there is none, and the library rejects an entry asking for one.
     /// </summary>
     public sealed class EffectLayer : IDisposable
     {

@@ -98,8 +98,6 @@ namespace Demo2D.Choreography
         public float ReachM;
         /// <summary>The beam: it sweeps a full turn over its spell's bars from the event's yaw.</summary>
         public bool Sweep;
-        /// <summary>Why the effect draws at full resolution instead of in the pixel grid, or null (it draws in the grid).</summary>
-        public string FullRes;
         public LightCue Light;
         /// <summary>A line drawn with the prefab (the beam), or null.</summary>
         public BeamSpec Beam;
@@ -156,11 +154,13 @@ namespace Demo2D.Choreography
                     : throw new FormatException(name + ": aim is 'none', 'side' or 'yaw', not " + aim),
                 ReachM = v["reachM"].AsFloat(0),
                 Sweep = v["sweep"].AsBool(),
-                FullRes = v["fullRes"].AsString(),
                 Light = LightCue.Parse(v["light"], name),
                 Beam = BeamSpec.Parse(v["beam"], name),
             };
             if (s.Max <= 0) throw new FormatException(name + ": max must be at least 1");
+            // Decision 10 lets an effect opt out of the pixel grid, but no full-resolution layer is drawn
+            // yet: an opted-out entry would silently draw in the grid anyway.
+            if (v.Has("fullRes")) throw new FormatException(name + ": 'fullRes' needs a full-resolution effect layer, which EffectLayer doesn't draw yet");
             return s;
         }
 

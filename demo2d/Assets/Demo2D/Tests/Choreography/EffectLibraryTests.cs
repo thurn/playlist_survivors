@@ -47,13 +47,6 @@ namespace Demo2D.Choreography.Tests
         }
 
         [Test]
-        public void EveryEntryDrawsInThePixelGridOrSaysWhyNot()
-        {
-            foreach (var s in Library.All())
-                Assert.That(s.FullRes == null || s.FullRes.Trim().Length > 0, s.Name + " opts out of the pixel grid without a reason");
-        }
-
-        [Test]
         public void ALightCueRisesThenDecaysToNothing()
         {
             var cue = new LightCue { Intensity = 2, AttackS = 0.1f, DecayS = 0.4f };

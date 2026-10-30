@@ -908,6 +908,21 @@ the bead). dotnet 38 of 38, 1 of them PX9's; `demo2d test` 95 of 95. [Evidence](
   camera are the choreography's; the shafts are faint rather than reshaped; colour separation between grunts at
   night (silhouette carries them, and tinting types would fight the packs' art).
 - **The scene milestone's review** (PX6, PX7, PX9) is the Warden bead ps-tfn.3.5.
+- **Review** (Warden, ps-tfn.3.5, PX6 to PX9: the scene milestone and PX8): the code, tests, evidence
+  and each task's Done-when were checked against the README. Fixed: the effect library's `fullRes`
+  was parsed but nothing drew a full-resolution layer, so an entry setting it would still have drawn
+  in the grid without a word; the library now rejects it until that layer exists, and the test that
+  only checked its reason wasn't blank is gone. Dismissed, as deliberate and documented: the hero's
+  1.8 m lead drawing him over a prop just in front of him; Readability's colour ΔE taken before the
+  grade (relative, which is how it is used: silhouette carries the verdict); the client's beam sweep
+  re-deriving the sim's duration from the roster JSON (it matches the sim's formula, and carrying it
+  in the timeline would change demo3d's dump); SoundScheduler and CameraFeel copied from demo3d
+  (they need Unity, which the engine-free package can't hold). The core's two opt-in changes
+  (`advanceM`, `bossFrom`) leave demo3d's dump unchanged, re-run per commit; but PX8's note quoting
+  `09945e3b…` is stale: `ea51af02` (demo3d's clear ring round the hero, outside this run) moved the
+  dump to `71d7b6c7…` before PX8 landed, and PX8 kept that. Unity's EditMode tests still run only by
+  hand (`demo2d test`, and the seek test only after `demo2d unity BakePlayback`); slow CI covering
+  them is ps-tfn.8.
 - **Self-review:** re-read the diff against `origin/staging`. No core change (demo3d untouched); demo2d's
   runtime gains the hero's rim and rank, its arena generator the detail tiles, its editor the two tasks; data
   edits are values and the ledge's pieces. New tracked files are our code, the shader, `.meta`s Unity wrote,
