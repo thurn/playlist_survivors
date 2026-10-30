@@ -1,7 +1,48 @@
 {
   "version": 1,
-  "note": "The heroic roster set (`--roster heroic`, crowd.md, Roster sets): HeroicFantasyCreaturesFullPackVol1 monsters from the more_assets root, drawn by the stock crowd with their own URP Lit materials (no typeColors dye). Each type keeps one of the nine slot ids, so the choreography needs no change; a slot this file leaves out keeps the default roster's type (Data/roster.json), and so does the hero. `hide` names prefab children the baker removes (the goblin's prefab carries its sword and shield, daggers and slingshot at once). ps-f8a.1 proved the plumbing with the goblin slot; the set beads fill in the rest.",
+  "note": "The heroic roster set (`--roster heroic`, crowd.md, Roster sets): HeroicFantasyCreaturesFullPackVol1 monsters from the more_assets root, drawn by the stock crowd with their own URP Lit materials (no typeColors dye). Each type keeps one of the nine slot ids, so the choreography needs no change; a slot this file leaves out keeps the default roster's type (Data/roster.json), and so does the hero. `hide` names prefab children the baker removes (the goblin's prefab carries its sword and shield, daggers and slingshot at once). ps-f8a.3 filled all nine slots (evidence/rosters/heroic/README.md has the choices). `strideM` gives a flyer's walk stride (its feet don't step), a clip's `impact` corrects an annotator impact that fell in the wind-up, and `rootMotionClips` measures a walk's stride from its root-motion twin without playing it. Radii replace the choreography's under the set.",
   "types": [
+    {
+      "id": "skeleton",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "24482ef7632aa6042b45735370df80ec",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Skeleton Knight/Prefabs/SkeletonKnight.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "heightM": 1.8,
+      "hide": [
+        "SM_2HandedSword"
+      ],
+      "clips": {
+        "walk": {
+          "guid": "b382f435d0b832f4fb03e434324e1e48",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "910cb645d11cd234997299977e671fc2",
+          "clip": "",
+          "impact": 0.22
+        },
+        "attack2": {
+          "guid": "8d88a0edd367a5a498e76cbf2ff2129d",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "a3c32c64871eed847a9710fc621cb1ab",
+          "clip": ""
+        },
+        "death": {
+          "guid": "d1f556ef84da9314eb437fafa88ec051",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "7802b8d421e81ab44ad028e8683f14ed",
+          "clip": ""
+        }
+      }
+    },
     {
       "id": "goblin",
       "kind": "fodder",
@@ -41,6 +82,272 @@
         },
         "idle": {
           "guid": "c5fb14a9a8ee85c439efc113375c7f04",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "slime",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "8458f50765dd8064d89a1b7a3ab6a21d",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Fantasy Animals Pack/Giant Rat/Prefabs/GiantRat.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.6,
+      "heightM": 0.7,
+      "clips": {
+        "walk": {
+          "guid": "5c434291c1e8c59469d2fd9dc2929897",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "d5fe25ed1af167241882d4e02f9989e6",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "abe6c393b4217d84e90b30e1c53ff5cc",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "be1100ffd78d6c44d843966ab33cd26f",
+          "clip": ""
+        },
+        "death": {
+          "guid": "e697baac3ae557a4da1f86b6a27e08a8",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "6d6267d0b95611a4b92d8129c72664ae",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "bat",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "874b050f6ccc96e488ecf0f00db2a53c",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/Prefabs/HarpyBreastsCovered.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.6,
+      "heightM": 1.25,
+      "clips": {
+        "walk": {
+          "guid": "0b98ee3541fd1af49b1cfffd1bd44aef",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "4104b57a70c4a9a4eb6c8e69d16d9b52",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "7238b256e7dacb3449113e027e6185b1",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "bce312d6d16e41043b08013d761b2d75",
+          "clip": ""
+        },
+        "death": {
+          "guid": "5e242dca57d01b143901bfac16896123",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "0b98ee3541fd1af49b1cfffd1bd44aef",
+          "clip": ""
+        }
+      },
+      "strideM": 2.2
+    },
+    {
+      "id": "mushroom",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "90d641864f25fd14bbb9c882b2d00fc0",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/Prefabs/Kobold.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "heightM": 1.4,
+      "clips": {
+        "walk": {
+          "guid": "10a2cc973585f454fa189751bc2451be",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "b05f72412c8495149af8a599ef0a9fba",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "121b2e51c689ae8479e24538d9516f4e",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "9d9685aeca1bffa4ea928a8b109d5f2d",
+          "clip": ""
+        },
+        "death": {
+          "guid": "22b5d82abc7d1da439ddda84bcc82bd5",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "12c733e6a5eff3448acfcd147ad2a0fd",
+          "clip": ""
+        }
+      },
+      "rootMotionClips": {
+        "walk": {
+          "guid": "6f936b30b13a3c74a8075e7ece10057f",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "demon",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "09efc08a66079d1489a0aee5d107d882",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Ghoul/Prefabs/Ghoul.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.45,
+      "heightM": 1.7,
+      "clips": {
+        "walk": {
+          "guid": "c9b4d175e82478443966b1e0e0a37ebe",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "af84d9698cdb86449a1d16ea9e082ddf",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "9af4fb5e5b0b03841b03dcfca3193997",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "9664c11bd1ec0e349a853e0015d02f89",
+          "clip": ""
+        },
+        "death": {
+          "guid": "697b469632c14b644b03a8f1453169cc",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "d370a8b163bf70246a304719e9c0b81d",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "bigork",
+      "kind": "elite",
+      "prefab": {
+        "guid": "e040fed9364558541bb6583b064025c2",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/Prefabs/FatOgre.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.9,
+      "heightM": 2.9,
+      "clips": {
+        "walk": {
+          "guid": "950067766357002429f0616dae6b2207",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "c6c60bc28d145e341afa22a0cc166250",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "ce6e8484c21fc4b4b86347ffad099cb9",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "cdd3e2fbf61484c409c420669720c247",
+          "clip": ""
+        },
+        "death": {
+          "guid": "f8fda3699676d2e47a8a056e972152b9",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "6b5e201a6a4432d4180d70e7d9d9d93e",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "troll",
+      "kind": "elite",
+      "prefab": {
+        "guid": "1e337205febf0bb4384ee08cc2e75c1d",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Troll/Prefabs/Troll.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.9,
+      "heightM": 3.1,
+      "clips": {
+        "walk": {
+          "guid": "762dc6b4a5477604a9cbc7bf4c0ea4a1",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "43b9fea932ce7e9409b39b9af96e34df",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "42d067e0c3d56b34baac11b2b11a494b",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "03b8c5d3c61cc1c4b9ccf48c8ce3e093",
+          "clip": ""
+        },
+        "death": {
+          "guid": "aa6bb6dae756c034f8701999f532a813",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "05d9c50c768275e4f9437cb9da19e768",
+          "clip": ""
+        }
+      }
+    },
+    {
+      "id": "dragon",
+      "kind": "boss",
+      "prefab": {
+        "guid": "c68c3760a7f483e4a8a945fca9ee9b5a",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/Prefabs/MountainDragon.prefab"
+      },
+      "rig": "generic",
+      "radius": 1.8,
+      "heightM": 4.5,
+      "clips": {
+        "walk": {
+          "guid": "1443a3ed6b583ba4bb2a73fa4e69932d",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "caa38537e74bb374da11d9ad1561846d",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "28343beef93d8584f8c6ede79d4b671b",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "8620b0d36bcb4f04b9a02eaf685fa452",
+          "clip": ""
+        },
+        "death": {
+          "guid": "aa7c274edaa07da4982cb0ad2d84ef05",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "24d806b00695be940854a55947eeb615",
           "clip": ""
         }
       }

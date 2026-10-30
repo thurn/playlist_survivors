@@ -35,6 +35,8 @@ namespace Demo3D.EditorTools.Assets
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var saved = new Dictionary<Material, Material>();
             var types = new List<RosterAssets.TypeAssets>();
+            var own = rosterSet.IsDefault ? new HashSet<string>() : new HashSet<string>(Roster.SetIds(set));
+            var ownMaterials = new HashSet<Material>(); // the set's own monsters', for its texture memory
             foreach (var t in Roster.Load(set).Where(t => t.kind != "rejected-boss"))
             {
                 var go = Roster.Spawn(t, Vector3.zero, 0);
@@ -69,6 +71,7 @@ namespace Demo3D.EditorTools.Assets
                         mats[i] = asset;
                     }
                     r.sharedMaterials = mats;
+                    if (own.Contains(t.id)) ownMaterials.UnionWith(mats.Where(m => m != null));
                 }
                 foreach (var tr in go.GetComponentsInChildren<Transform>(true))
                     GameObjectUtility.RemoveMonoBehavioursWithMissingScript(tr.gameObject);
@@ -98,6 +101,24 @@ namespace Demo3D.EditorTools.Assets
             AssetDatabase.CreateAsset(index, indexPath);
             AssetDatabase.SaveAssets();
             Debug.Log($"RosterBaker: baked {types.Count} types and {saved.Count} URP materials into {dir}");
+            if (!rosterSet.IsDefault) LogTextureMemory(set, ownMaterials);
+        }
+
+        /// <summary>The set's texture memory, for its evidence README: every map its own monsters' materials use.</summary>
+        static void LogTextureMemory(string set, IEnumerable<Material> materials)
+        {
+            var textures = new HashSet<Texture>();
+            foreach (var m in materials)
+                foreach (var name in m.GetTexturePropertyNames())
+                    if (m.GetTexture(name) is Texture t) textures.Add(t);
+            long bytes = 0;
+            foreach (var t in textures.OrderByDescending(UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong))
+            {
+                long b = UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(t);
+                bytes += b;
+                Debug.Log($"RosterBaker: {set} texture {t.name} {t.width}x{t.height} {b / 1048576f:F1} MB");
+            }
+            Debug.Log($"RosterBaker: {set} texture memory {bytes / 1048576f:F0} MB in {textures.Count} textures");
         }
 
         static string Safe(string name) => string.Concat(name.Select(c => char.IsLetterOrDigit(c) || c == '_' ? c : '_'));

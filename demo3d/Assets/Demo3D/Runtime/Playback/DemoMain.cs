@@ -140,7 +140,7 @@ namespace Demo3D.Runtime.Playback
             string layoutName = (stress != null ? stress.Layout : level.Layout) ?? "arena";
             var layout = data.Layout(layoutName) ?? data.Layout("arena");
             // The timeline navigates the density the arena scene is drawn at (TD15; the cold review's item 3).
-            var choreo = ChoreographyData.FromJson(data.Annotations(rosterSet), data.roster.text, layout.text, data.footprints.text,
+            var choreo = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout.text, data.footprints.text,
                 _arena != null ? _arena.Density : 0);
             var started = Time.realtimeSinceStartupAsDouble;
             _tl = stress == null

@@ -34,6 +34,8 @@ namespace Demo3D.EditorTools.Assets
             public string clip;
             /// <summary>For the clip annotator: the impact is the peak of these bones (comma-separated names), not of the fastest end bone.</summary>
             public string impactBone;
+            /// <summary>An attack's impact in seconds, read off its contact sheet where the annotator's peak speed is a wind-up.</summary>
+            public float? impact;
         }
 
         public sealed class WeaponRef
@@ -51,6 +53,8 @@ namespace Demo3D.EditorTools.Assets
             public float radius;
             public float heightM;
             public float hoverM;
+            /// <summary>The walk's stride, where neither feet nor root travel give one (a flyer's flap loop).</summary>
+            public float? strideM;
             /// <summary>The type's signature hue in HSV degrees (ps-e8r.8); null for the hero.</summary>
             public float? hue;
             /// <summary>Turns the type's whole albedo round the luma axis first, in degrees (ps-e8r.8).</summary>

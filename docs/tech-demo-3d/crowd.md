@@ -298,6 +298,19 @@ the flag through `--player-args`. Without it, the demo is unchanged.
   player puts each in place of the default entry with the same use (so clip
   indices and roles are unchanged), and a slot the set hasn't annotated
   keeps the default's. A default run of the annotator keeps the sets'.
+- **A set's radii separate its monsters.** Under `--roster <set>` the
+  choreography takes each slot's radius from the set's baked roster in place
+  of `Choreography/Data/roster.json`'s (a harpy's wingspan, a rat's length);
+  the default's are unchanged.
+- **Annotation overrides.** A set's type can give `strideM` (a flyer whose
+  feet don't step), a clip can give `impact` in seconds (read off its
+  contact sheet where the peak speed falls in the wind-up), and
+  `rootMotionClips` measures a walk's stride from its root-motion twin
+  without playing it.
+- **Heavy prefabs are made at load.** With a set, the stock crowd makes each
+  type's slots at load (48 per fodder type, 8 per elite, 2 for the boss),
+  since making a section's worth of several-mesh prefabs in one frame
+  hitched by 25-40 ms on the Mac.
 - **Pack particles are converted.** A set's bake swaps its prefabs' built-in
   particle materials (auras, trails) for URP Particles/Unlit copies with the
   same texture, tint and blend; the default roster's are untouched.

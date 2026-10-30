@@ -100,7 +100,7 @@ namespace Demo3D.EditorTools.Assets
                 foreach (var kv in t.clips)
                 {
                     var clip = Roster.LoadClip(kv.Value);
-                    var a = Annotate(go, animator, t, kv.Key, clip);
+                    var a = Annotate(go, animator, t, kv.Key, clip, kv.Value.impact);
                     a.guid = kv.Value.guid;
                     a.clip = clip.name;
                     a.vendorHit = Roster.VendorHitTime(kv.Value) is float vh ? Round(vh) : (float?)null;
@@ -172,7 +172,7 @@ namespace Demo3D.EditorTools.Assets
             public List<float> Speed = new List<float>();
         }
 
-        static Annotation Annotate(GameObject go, Animator animator, Roster.Type t, string role, AnimationClip clip)
+        static Annotation Annotate(GameObject go, Animator animator, Roster.Type t, string role, AnimationClip clip, float? givenImpact = null)
         {
             var a = new Annotation
             {
@@ -218,7 +218,12 @@ namespace Demo3D.EditorTools.Assets
 
             if (IsLocomotion(role))
             {
-                if (rootTravel > 0.05f)
+                if (t.strideM is float given)
+                {
+                    a.strideM = given;
+                    a.method = "stride from the roster (a flyer's feet don't step)";
+                }
+                else if (rootTravel > 0.05f)
                 {
                     a.strideM = Round(rootTravel);
                     a.method = "stride from root travel over one cycle";
@@ -250,6 +255,12 @@ namespace Demo3D.EditorTools.Assets
                 int bestFrame = 0;
                 float bestSpeed = 0;
                 int lo = (int)(0.08f * n0), hi = Math.Max(lo + 1, (int)(0.92f * n0));
+                if (givenImpact is float given)
+                {
+                    // The roster's impact (read off the contact sheet): the fastest end bone there.
+                    lo = Mathf.Clamp(Mathf.RoundToInt(given * Rate), 0, Math.Max(0, n0 - 1));
+                    hi = lo + 1;
+                }
                 // A roster hint names the striking bone where the fastest is another (a quadruped's tail).
                 var candidates = impactHint == null ? tracks.Where(k => endBones.Any(b => b.name == k.Name))
                     : tracks.Where(k => impactHint.Contains(k.Name));
@@ -261,7 +272,9 @@ namespace Demo3D.EditorTools.Assets
                     a.impact = Round(bestFrame / Rate);
                     a.end = Round(Settle(best.Speed, bestFrame, bestSpeed, 0.2f) / Rate);
                     a.impactBone = best.Name;
-                    a.method = $"impact at the peak speed of {best.Name} ({bestSpeed:F2} m/s)";
+                    a.method = givenImpact != null
+                        ? $"impact from the roster (its contact sheet; the peak speed came in the wind-up), end where {best.Name} settles"
+                        : $"impact at the peak speed of {best.Name} ({bestSpeed:F2} m/s)";
                 }
                 return a;
             }

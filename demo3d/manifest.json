@@ -603,14 +603,6 @@
     },
     {
       "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@SpitFireBall.FBX",
-      "sourceSha256": "553afb4e4231168cbe6f5129430043e4ceb13b923f27106d89c96a75dcb4de56",
-      "guid": "acb56b2d00e9f3340b44e315c4bed68c",
-      "use": "heroic: dragon clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
       "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Fantasy Lizards Pack/Mountain Dragon/FBX Files/MountainDragon@Walk.FBX",
       "sourceSha256": "866e3c5a2ce2e400ef580460d6792a6cbb563791c6b493da5dc742cf313e90eb",
       "guid": "1443a3ed6b583ba4bb2a73fa4e69932d",
@@ -795,17 +787,17 @@
     },
     {
       "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack1.FBX",
-      "sourceSha256": "f370091e411f3883dc1058823966d46af348d3b3b425ab71cd3b1e8d636369e1",
-      "guid": "59f8756d3c10f2f4e96443f243aa5019",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack2.FBX",
+      "sourceSha256": "e7abac6a33bca2828c36668cd3452223d2bce1dfdf87d47e97177c03876d3c02",
+      "guid": "b05f72412c8495149af8a599ef0a9fba",
       "use": "heroic: mushroom clips",
       "roster": "heroic"
     },
     {
       "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack2.FBX",
-      "sourceSha256": "e7abac6a33bca2828c36668cd3452223d2bce1dfdf87d47e97177c03876d3c02",
-      "guid": "b05f72412c8495149af8a599ef0a9fba",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@Attack3.FBX",
+      "sourceSha256": "33bf0f3c3d51c58bd6bdd18482597bf54d681ef8473beb561ab18888189a265e",
+      "guid": "121b2e51c689ae8479e24538d9516f4e",
       "use": "heroic: mushroom clips",
       "roster": "heroic"
     },
@@ -835,10 +827,18 @@
     },
     {
       "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@WalkForwardCombat.FBX",
-      "sourceSha256": "96656bb93dd340307c46d3148066fde4a3e9901729cbf9cecc5b877cfbe24c2c",
-      "guid": "697970c906c5b774889a45ff96952c88",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@WalkNormal.FBX",
+      "sourceSha256": "0d9a87550572c23d1d3b562108c577fbff17e204a20afac50bd8e84b7d65de53",
+      "guid": "10a2cc973585f454fa189751bc2451be",
       "use": "heroic: mushroom clips",
+      "roster": "heroic"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Kobold/FBX Files/Kobold@WalkNormal_RM.FBX",
+      "sourceSha256": "b5492a751c93d1de9d84e540e75231bcbbeb9ef36496849f926590929c5226ed",
+      "guid": "6f936b30b13a3c74a8075e7ece10057f",
+      "use": "heroic: mushroom walk's root-motion twin (stride only)",
       "roster": "heroic"
     },
     {
@@ -979,25 +979,9 @@
     },
     {
       "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Attack3.FBX",
-      "sourceSha256": "d8f68185e9aa90e0000871daba50175b2a2027232ecb3b7ade1c3bb19c5607bc",
-      "guid": "56d7d66682400a24cbef49c60b31aa55",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
       "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Death.FBX",
       "sourceSha256": "c0a0686ce2c7a4b1b9b6ecdda5f3219af4c52e8d481806cfd8a3b1a6da425782",
       "guid": "5e242dca57d01b143901bfac16896123",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@DeathHitTheGround.FBX",
-      "sourceSha256": "906e17050a1fe23a08eff0581cc6fa5ee6446303a681800364cd09fe7b9d3f07",
-      "guid": "810784fc6efc84648b7a0b10bee69ae2",
       "use": "heroic: bat clips",
       "roster": "heroic"
     },
@@ -1014,46 +998,6 @@
       "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@FlyGetHit.FBX",
       "sourceSha256": "13631d75724b7da81306cb74de1222adae3471817532bfb2ed4dad72104b28dc",
       "guid": "bce312d6d16e41043b08013d761b2d75",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@GetHit1.FBX",
-      "sourceSha256": "6686971c45077820cf93a0ca1d52d2e5733534f8dbb33ee1ecff981ec7762545",
-      "guid": "5dd5e98359ab2ed43bd7084bd2bea5ab",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Glide.FBX",
-      "sourceSha256": "dbaebce1159791a2f69cac2c53c7faa59bb8b3f6d51d53111a75e7ad62470429",
-      "guid": "bb89fcc91c8a18942ac82d87e053da43",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Idle.FBX",
-      "sourceSha256": "5fbda9c4fab51013edcd681cbfb0b93c59e6bd98ee99e50683243c2ec6b785da",
-      "guid": "eaf74aecfd04d5548a903f24c36175cd",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@JumpClawsAttack.FBX",
-      "sourceSha256": "a8577d955176dd5442c779b8357d397e5aa4189682ceaea3a95884b9a82a01c3",
-      "guid": "02aa6490a0225e9468b6f915fcb8cdc7",
-      "use": "heroic: bat clips",
-      "roster": "heroic"
-    },
-    {
-      "source": "more_assets",
-      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Harpy/FBX Files/Harpy@Swoop.FBX",
-      "sourceSha256": "9558e93fe05d08de818fecd850fefd695a207e01a7430bdc918c53fac31aa094",
-      "guid": "71663847ab1792d48b66683be0a53b50",
       "use": "heroic: bat clips",
       "roster": "heroic"
     },

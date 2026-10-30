@@ -65,6 +65,24 @@ namespace Demo3D.Runtime.Crowd
                     Assets = roster.Find(typeIds[i]) ?? throw new System.ArgumentException("StockCrowd: no type " + typeIds[i]),
                     Instances = new NativeArray<MonsterInstance>(capacityPerType, Allocator.Persistent),
                 };
+                if (_vendorMaterials) Prewarm(_types[i]);
+            }
+        }
+
+        /// <summary>
+        /// A roster set's prefabs are heavy (several skinned meshes each), so making the slots a
+        /// section's jump in count needs, all in one frame, hitched by 25-40 ms on the Mac
+        /// (ps-f8a.3). The set's slots are made at load instead, hidden, enough for a type's
+        /// share of the final peak; a busier moment still makes more on demand.
+        /// </summary>
+        void Prewarm(TypeState t)
+        {
+            int n = t.Assets.kind == "boss" ? 2 : t.Assets.kind == "elite" ? 8 : 48;
+            while (t.Slots.Count < n)
+            {
+                var s = Create(t);
+                s.Go.SetActive(false);
+                t.Slots.Add(s);
             }
         }
 

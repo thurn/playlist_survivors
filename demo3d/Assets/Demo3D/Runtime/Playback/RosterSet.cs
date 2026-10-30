@@ -84,6 +84,29 @@ namespace Demo3D.Runtime.Playback
             return root.ToString(Formatting.None);
         }
 
+        /// <summary>
+        /// The choreography roster the set's timeline separates its monsters with: roster.json's,
+        /// with each monster's radius taken from the set's own type in that slot where
+        /// <paramref name="radiusOf"/> gives one (the set's baked RosterAssets), since the sets'
+        /// creatures are sized differently from the default's (a harpy's wingspan, a rat's length).
+        /// The default's is unchanged.
+        /// </summary>
+        public string Choreography(string rosterJson, Func<string, float> radiusOf)
+        {
+            if (IsDefault) return rosterJson;
+            var root = JObject.Parse(rosterJson);
+            foreach (var m in (JArray)root["monsters"])
+            {
+                float r = radiusOf((string)m["name"]);
+                if (r > 0) m["radius"] = r;
+            }
+            return root.ToString(Formatting.None);
+        }
+
+        /// <summary><see cref="Choreography(string, Func{string, float})"/> with the set's baked radii (the choreography's "boss" is the boss-kind type).</summary>
+        public string Choreography(string rosterJson, RosterAssets assets) =>
+            Choreography(rosterJson, id => (assets.Find(id) ?? (id == "boss" ? Array.Find(assets.types, t => t.kind == "boss") : null))?.radius ?? 0);
+
         static RosterSet _active;
 
         /// <summary>The player's set, from its command line (an editor's is the default).</summary>

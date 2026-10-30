@@ -101,5 +101,23 @@ namespace Demo3D.Tests
                     Assert.That(clips[clips.Require(use)].Guid, Is.EqualTo(kv.Value.guid), use + " is the set's own clip");
                 }
         }
+
+        [Test]
+        public void ASetsRadiiReplaceTheChoreographysWhereItGivesOne()
+        {
+            const string json = @"{""monsters"": [{""name"": ""bat"", ""radius"": 0.35}, {""name"": ""boss"", ""radius"": 1.5}]}";
+            Assert.That(RosterSet.Default.Choreography(json, id => 9), Is.EqualTo(json), "the default reads the file as it is");
+            var root = Newtonsoft.Json.Linq.JObject.Parse(RosterSet.Parse("heroic").Choreography(json, id => id == "bat" ? 0.6f : 0));
+            Assert.That((float)root["monsters"][0]["radius"], Is.EqualTo(0.6f));
+            Assert.That((float)root["monsters"][1]["radius"], Is.EqualTo(1.5f), "no radius keeps the choreography's");
+        }
+
+        [Test]
+        public void TheHeroicSetSizesEverySlotItself()
+        {
+            var types = Roster.Load("heroic").Where(t => t.kind != "hero" && t.kind != "rejected-boss").ToList();
+            Assert.That(Roster.SetIds("heroic").Count(), Is.EqualTo(9), "heroic fills all nine slots");
+            Assert.That(types, Has.All.Matches<Roster.Type>(t => t.radius > 0 && t.heightM > 0));
+        }
     }
 }
