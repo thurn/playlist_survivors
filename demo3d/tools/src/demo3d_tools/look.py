@@ -581,6 +581,10 @@ def cmd_look_sheet(a: argparse.Namespace) -> int:
         return 2
     dst = root / a.out
     dst.parent.mkdir(parents=True, exist_ok=True)
-    contact_sheet(a.stills.split(","), sets, dst, [Path(s).name for s in a.sets], a.scale)
+    labels = a.labels.split(",") if a.labels else [Path(s).name for s in a.sets]
+    if len(labels) != len(sets):
+        print(f"look-sheet: {len(labels)} labels for {len(sets)} sets", file=sys.stderr)
+        return 2
+    contact_sheet(a.stills.split(","), sets, dst, labels, a.scale)
     print(f"look-sheet: {dst}")
     return 0

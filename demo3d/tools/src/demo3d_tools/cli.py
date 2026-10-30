@@ -366,6 +366,7 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     ls.add_argument("sets", nargs="+", help="look set slugs, one column each")
     ls.add_argument("--stills", required=True, help="comma-separated still names, one row each")
     ls.add_argument("--scale", type=int, default=4, help="each still at 1/scale of the 960 px JPEGs")
+    ls.add_argument("--labels", help="comma-separated column labels (default: each set's folder name)")
     ls.set_defaults(func=cmd_look_sheet)
     return p
 

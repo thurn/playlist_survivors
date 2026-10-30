@@ -8,6 +8,8 @@
     "goal {at, radius}: makes a named area a goal the level script (or a stress script's hold) can name. shots (TD15's beauty shots; environment.md, Making it look good): the game camera's ground focus (at) and view width; with the horde, S3 at demo load holds the hero at the same point (beauty.py), n monsters requested (capped by the view's packing), kept at stress time t.",
     "lighting (TD9; environment.md, Lighting the night): the moon (Unity Euler angles: elevationDeg above the horizon, yawDeg the direction its light travels; linear colour; intensity), the trilight ambient and the fog (sRGB colours; mode exponential with density, or linear in view depth from startAtFocus to endAtFocus times the camera's focus distance, so the frame's centre stays clear at every view width and its far edge fades into the clear colour), flames (realtime flickering point lights on these pieces, in placement order, at most maxLights; heightM above the piece's base, scaled with it) and glow (point lights on glowing pieces: baked in the lit scenes, realtime at rung E0; pool {radiusM, intensity}, on a glow or flame entry: TD15's soft additive light pool on the ground under each such piece, Demo3D/GroundGlow). crowd (TD15): the horde's extra ambient fill (added to 1) and cool rim light (linear rgb; rimPower narrows it to the silhouette) key (the moon's intensity on the horde as a multiple of the set's) and flash (the hit flash's linear HDR emission: an ember, not a white that clips whole bodies; ps-e8r.7) and shoulder (ps-e8r.10: the knee, linear, above which the lit colour rolls off toward twice it, hue kept; 0 is off) in CrowdSkinned, so the horde reads in mid to high values and the effects stay the brightest (environment.md, Value structure). kitValue (TD15): RGB scales for the converted kit materials whose vendor name starts with the key (the packs' pale stone outshone the horde). ArenaLighting reads it; ArenaBaker places the lights.",
     "palettes (ps-ocd): named colour swaps for the player's --palette flag, to see the horde's type colours and the effects against other backgrounds without new environments. Each is a partial lighting object over lighting (keys it leaves out keep their values), plus groundTint (linear rgb, may pass 1: the ground material's base colour over its generated albedo) and mist (the mist cards' colour). The runtime applies them: the moon's realtime light, ambient, fog and clear colour, vignette, the hero's light, the ground and the mist; the baked kit, its bounce light and the flames keep the night's. snow: light and cool. desert: light and warm. lava: dark and warm. neon: dark and cool, magenta and cyan. blossom: mid-value pink. crypt: neutral grey, the control.",
+    "post (ps-f8a.4): the post stack's base values, under the post feel's offsets: colour adjustments' exposure, contrast and saturation, white balance's temperature, the tonemapper (neutral or aces) and bloom {threshold, intensity, scatter}. NightLook.CreateProfile builds the volume from them.",
+    "rosters (ps-f8a.4): each --roster set's own look, a partial lighting object over lighting (keys it leaves out keep their values), applied before any palette and only by the runtime (the moon's realtime light, the hero's light, ambient, fog, vignette and post), so the baked kit is the night's. The sets draw the packs' own materials, which take none of crowd's CrowdSkinned terms, so their look is the grade and the lights. forest: painted albedo with glow maps, so less saturation (the night's 30 made the packs' already saturated paint scream) and bloom held to the glow and the effects. heroic: PBR, so a cooler moon and a cooler, less saturated, more contrasted grade, keeping its leather, bone and metal from sinking into the warm ground's browns.",
     "atmosphere (TD15; environment.md, Atmosphere): mist, the low mist cards in hollows: colour (sRGB), heightM above the ground, noiseScale (1/m) and softM (the depth fade) for all; cards {at, size [x, y] m, yawDeg, opacity}. ArenaDressing merges them into one mesh with Demo3D/MistCard. runes: glowing rune circles on the ground (our own additive Demo3D/RuneCircle, one mesh): circles {at, radiusM, color (linear), intensity}, turning turnsPerS. The fireflies are effects (effects.json, client.ambient)."
   ],
   "name": "arena",
@@ -24,6 +26,7 @@
     "crowd": { "fill": 0.5, "key": 3.0, "rim": [0.22, 0.26, 0.36], "rimPower": 5, "flash": [1.3, 0.65, 0.2], "shoulder": 0.35 },
     "hero": { "heightM": 6, "rangeM": 15, "intensity": 40, "color": [1.0, 0.86, 0.76] },
     "vignette": { "intensity": 0.29, "smoothness": 0.5, "color": [0.02, 0.025, 0.07] },
+    "post": { "exposure": 0.8, "contrast": 25, "saturation": 30, "temperature": 0, "tonemap": "neutral", "bloom": { "threshold": 1.5, "intensity": 1.0, "scatter": 0.65 } },
     "postFeel": {
       "beat": { "exposure": 0.12, "bloom": 0.35, "vignette": -0.03 },
       "flash": { "exposure": 0.7, "chromatic": 0.5, "saturation": 25 },
@@ -47,6 +50,13 @@
       "darkfantasy/SM_Prop_Candle_03": { "heightM": 0.5, "rangeM": 4, "intensity": 2.0, "color": [1.0, 0.62, 0.32], "pool": { "radiusM": 1.8, "intensity": 0.22 } } } },
     "glow": {
       "elven/SM_Env_Tree_Glowing_01": { "heightM": 2.5, "rangeM": 18, "intensity": 10, "color": [0.35, 0.85, 1.0], "pool": { "radiusM": 7.5, "intensity": 0.32 } } }
+  },
+  "rosters": {
+    "forest": {
+      "post": { "saturation": 14, "contrast": 22, "bloom": { "threshold": 1.8, "intensity": 0.8 } } },
+    "heroic": {
+      "moon": { "color": [0.86, 0.9, 1.0], "intensity": 1.15 },
+      "post": { "exposure": 0.65, "saturation": 14, "contrast": 32, "temperature": -10 } }
   },
   "palettes": {
     "snow": {

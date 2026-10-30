@@ -34,6 +34,28 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void ARosterSetsLookChangesThePostBasesAndAPaletteStillAppliesOverIt()
+        {
+            var night = ArenaLighting.Parse(LayoutJson);
+            Assert.That(night.RosterLook, Is.Null);
+            Assert.That(ArenaLighting.Parse(LayoutJson, null, "default").RosterLook, Is.Null, "the default roster keeps the night");
+            var profile = NightLook.CreateProfile(night);
+            Assert.That(profile.TryGet(out UnityEngine.Rendering.Universal.ColorAdjustments color), Is.True);
+            Assert.That(color.saturation.value, Is.EqualTo(night.PostSaturation), "the profile's bases are the lighting's post");
+            foreach (var set in new[] { "forest", "heroic" })
+            {
+                var l = ArenaLighting.Parse(LayoutJson, null, set);
+                Assert.That(l.RosterLook, Is.EqualTo(set));
+                Assert.That(l.PostSaturation, Is.LessThan(night.PostSaturation), set + " grades its own materials less saturated than the dyed horde");
+                Assert.That(l.PostFeel.BeatBloom, Is.EqualTo(night.PostFeel.BeatBloom), set + " keeps the post feel riding on top");
+                Assert.That(l.MoonElevationDeg, Is.EqualTo(night.MoonElevationDeg), set + " keeps the baked moon's direction");
+                var both = ArenaLighting.Parse(LayoutJson, "snow", set);
+                Assert.That(both.Palette, Is.EqualTo("snow"));
+                Assert.That(both.PostSaturation, Is.EqualTo(l.PostSaturation), "a palette leaves the set's grade");
+            }
+        }
+
+        [Test]
         public void APaletteRecoloursTheNightAndKeepsWhatItLeavesOut()
         {
             var night = ArenaLighting.Parse(LayoutJson);

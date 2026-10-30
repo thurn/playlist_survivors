@@ -18,6 +18,7 @@ namespace Demo3D.Runtime.Crowd
     /// a dissolving monster scales away instead. With <c>vendorMaterials</c> (a `--roster` set)
     /// the prefabs' materials draw as they are: no tint overrides their base colour, and the
     /// flash sets emission only while it lasts, so a pack's glow map shows the rest of the time.
+    /// A set's corpse sinks into the ground instead of scaling (crowd.md, Roster sets: deaths).
     /// </summary>
     public sealed class StockCrowd : ICrowdRenderer
     {
@@ -29,6 +30,7 @@ namespace Demo3D.Runtime.Crowd
             public AnimationClipPlayable[] Clips;
             public Renderer[] Renderers;
             public Vector3 BaseScale;
+            public float SinkM;
             public uint LastA = uint.MaxValue, LastB = uint.MaxValue;
             public bool Fresh = true;
         }
@@ -102,7 +104,7 @@ namespace Demo3D.Runtime.Crowd
         {
             var go = Object.Instantiate(t.Assets.prefab, _root);
             var animator = go.GetComponentInChildren<Animator>();
-            var slot = new Slot { Go = go, Renderers = go.GetComponentsInChildren<Renderer>(), BaseScale = go.transform.localScale };
+            var slot = new Slot { Go = go, Renderers = go.GetComponentsInChildren<Renderer>(), BaseScale = go.transform.localScale, SinkM = t.Assets.heightM };
             foreach (var r in slot.Renderers)
                 if (r is SkinnedMeshRenderer smr) { smr.skinnedMotionVectors = true; smr.updateWhenOffscreen = false; }
             slot.Graph = PlayableGraph.Create("stock");
@@ -161,9 +163,13 @@ namespace Demo3D.Runtime.Crowd
         void Apply(Slot s, in MonsterInstance m)
         {
             var tr = s.Go.transform;
-            float dissolveShrink = 1f - Mathf.Clamp01(m.Dissolve);
-            tr.SetPositionAndRotation(m.Position, Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0));
-            tr.localScale = s.BaseScale * (m.Scale <= 0 ? 1f : m.Scale) * dissolveShrink;
+            float dissolve = Mathf.Clamp01(m.Dissolve), scale = m.Scale <= 0 ? 1f : m.Scale;
+            var position = m.Position;
+            // A set's corpse, lying where its death clip left it, sinks its whole height below the
+            // ground over the dissolve, easing in, with its own materials untouched.
+            if (_vendorMaterials) position.y -= dissolve * dissolve * s.SinkM * scale;
+            tr.SetPositionAndRotation(position, Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0));
+            tr.localScale = s.BaseScale * scale * (_vendorMaterials ? 1f : 1f - dissolve);
             int n = s.Clips.Length;
             uint a = m.ClipA < n ? m.ClipA : 0, b = m.ClipB < n ? m.ClipB : a;
             if (a != s.LastA || b != s.LastB)

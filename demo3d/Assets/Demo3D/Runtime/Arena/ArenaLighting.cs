@@ -59,6 +59,14 @@ namespace Demo3D.Runtime.Arena
         /// <summary>The post stack's vignette (NightLook.CreateProfile): intensity, smoothness and its tint.</summary>
         public float VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
         public Color VignetteColor = new Color(0.01f, 0.015f, 0.04f);
+        /// <summary>
+        /// The post stack's base values (NightLook.CreateProfile; ps-f8a.4): colour adjustments' exposure,
+        /// contrast and saturation, white balance's temperature, bloom, and the tonemapper (neutral or
+        /// aces). The post feel's offsets ride on top of them.
+        /// </summary>
+        public float PostExposure = 0.8f, PostContrast = 25f, PostSaturation = 30f, PostTemperature;
+        public float BloomThreshold = 1.5f, BloomIntensity = 1f, BloomScatter = 0.65f;
+        public string Tonemap = "neutral";
         /// <summary>The post feel's amounts (ps-e8r.18): offsets on the post stack that follow the music.</summary>
         public Playback.PostFeel.Amounts PostFeel = new Playback.PostFeel.Amounts();
         public int MaxFlameLights = 8;
@@ -79,6 +87,12 @@ namespace Demo3D.Runtime.Arena
         public Color GroundTint = Color.white;
         /// <summary>A palette's <c>mist</c> (linear rgb): the mist cards' colour; clear keeps the baked one.</summary>
         public Color MistColor = Color.clear;
+        /// <summary>
+        /// The `--roster` set's look (ps-f8a.4): the layout's <c>rosters</c> entry for a set, applied
+        /// over <c>lighting</c> before any palette, or null for the default roster. Like a palette it
+        /// is a partial <c>lighting</c> object, read by the runtime only, so the baked kit is the night's.
+        /// </summary>
+        public string RosterLook;
 
         public Quaternion MoonRotation => Quaternion.Euler(MoonElevationDeg, MoonYawDeg, 0);
 
@@ -92,12 +106,22 @@ namespace Demo3D.Runtime.Arena
             return names;
         }
 
-        /// <summary>The lighting of <paramref name="layoutJson"/>, with <paramref name="palette"/> over it unless it is null or empty.</summary>
-        public static ArenaLighting Parse(string layoutJson, string palette = null)
+        /// <summary>
+        /// The lighting of <paramref name="layoutJson"/>, with the <paramref name="roster"/> set's look
+        /// over it (none for null or default, or a set the layout gives none), then
+        /// <paramref name="palette"/> over that unless it is null or empty.
+        /// </summary>
+        public static ArenaLighting Parse(string layoutJson, string palette = null, string roster = null)
         {
             var l = new ArenaLighting();
             JsonValue layout = JsonValue.Parse(layoutJson);
             Read(layout["lighting"], l);
+            JsonValue look = layout["rosters"][roster ?? ""];
+            if (look.Type == JsonType.Object)
+            {
+                Read(look, l);
+                l.RosterLook = roster;
+            }
             if (string.IsNullOrEmpty(palette)) return l;
             JsonValue p = layout["palettes"][palette];
             if (p.Type != JsonType.Object)
@@ -144,6 +168,16 @@ namespace Demo3D.Runtime.Arena
             l.VignetteIntensity = vignette["intensity"].AsFloat(l.VignetteIntensity);
             l.VignetteSmoothness = vignette["smoothness"].AsFloat(l.VignetteSmoothness);
             l.VignetteColor = Col(vignette["color"], l.VignetteColor);
+            JsonValue post = root["post"];
+            l.PostExposure = post["exposure"].AsFloat(l.PostExposure);
+            l.PostContrast = post["contrast"].AsFloat(l.PostContrast);
+            l.PostSaturation = post["saturation"].AsFloat(l.PostSaturation);
+            l.PostTemperature = post["temperature"].AsFloat(l.PostTemperature);
+            l.Tonemap = post["tonemap"].AsString(l.Tonemap);
+            JsonValue bloom = post["bloom"];
+            l.BloomThreshold = bloom["threshold"].AsFloat(l.BloomThreshold);
+            l.BloomIntensity = bloom["intensity"].AsFloat(l.BloomIntensity);
+            l.BloomScatter = bloom["scatter"].AsFloat(l.BloomScatter);
             if (root["postFeel"].Type == JsonType.Object) l.PostFeel = Playback.PostFeel.Amounts.Parse(root["postFeel"]);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);

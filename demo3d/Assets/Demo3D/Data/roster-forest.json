@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "The forest roster set (`--roster forest`, crowd.md, Roster sets): Dark and Forest Creatures Pack monsters from the more_assets root in all nine slots, drawn by the stock crowd with their own materials (Standard converted to URP Lit with their glow maps; no typeColors dye), each in one pack colourway so the types tell apart by the pack's own colours. Each type keeps a slot id, so the choreography needs no change; the hero stays the default's. Heights fit the slot's choreography radius (roster.json in Choreography/Data), which a set doesn't change: the wolf and spider are long or wide for theirs and overlap a little. `hide` names prefab children the baker removes (the Wererat carries all three weapons; it keeps the sword). `impactBone` names the bones whose speed peak is the impact, for the clip annotator (`demo3d unity AnnotateClips -roster forest`), where the fastest end bone is another (a tail). The Demon Wolf has no walk, so its walk role is its in-place run.",
+  "note": "The forest roster set (`--roster forest`, crowd.md, Roster sets): Dark and Forest Creatures Pack monsters from the more_assets root in all nine slots, drawn by the stock crowd with their own materials (Standard converted to URP Lit with their glow maps; no typeColors dye), each in one pack colourway so the types tell apart by the pack's own colours. Each type keeps a slot id, so the choreography needs no change; the hero stays the default's. Heights fit the slot's choreography radius (roster.json in Choreography/Data), which a set doesn't change: the wolf and spider are long or wide for theirs and overlap a little. `hide` names prefab children the baker removes (the Wererat carries all three weapons; it keeps the sword). `impactBone` names the bones whose speed peak is the impact, for the clip annotator (`demo3d unity AnnotateClips -roster forest`), where the fastest end bone is another (a tail). The Demon Wolf has no walk, so its walk role is its in-place run. `glow` scales a type's glow-map emission at bake (ps-f8a.4): the wolf's spikes, the treant's, golem's and dragon's large glowing areas competed with the effects, so they are held under 1 while the small eyes keep the pack's 1.1.",
   "types": [
     {
       "id": "skeleton",
@@ -208,6 +208,7 @@
       "rig": "generic",
       "radius": 0.45,
       "heightM": 1.2,
+      "glow": 0.5,
       "clips": {
         "walk": {
           "guid": "35cca74bfe0cfff47a92d227044cd5b5",
@@ -247,6 +248,7 @@
       "rig": "generic",
       "radius": 0.8,
       "heightM": 3.0,
+      "glow": 0.6,
       "clips": {
         "walk": {
           "guid": "ac0ba24b46ebba245a39b5266fc899c8",
@@ -286,6 +288,7 @@
       "rig": "generic",
       "radius": 0.9,
       "heightM": 2.9,
+      "glow": 0.7,
       "clips": {
         "walk": {
           "guid": "8574bced1e2a09a41aa74c537f763dcb",
@@ -325,6 +328,7 @@
       "rig": "generic",
       "radius": 1.6,
       "heightM": 4.5,
+      "glow": 0.6,
       "clips": {
         "walk": {
           "guid": "ba3b9823b84c0904ea431cdd9e96b32d",

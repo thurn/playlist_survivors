@@ -63,6 +63,11 @@ namespace Demo3D.EditorTools.Assets
                             {
                                 asset.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
                                 asset.EnableKeyword("_EMISSION");
+                                if (t.glow is float glow)
+                                {
+                                    var e = asset.GetColor("_EmissionColor");
+                                    asset.SetColor("_EmissionColor", new Color(e.r * glow, e.g * glow, e.b * glow, e.a));
+                                }
                             }
                             var path = AssetDatabase.GenerateUniqueAssetPath($"{materialDir}/{Safe(m.name)}.mat");
                             AssetDatabase.CreateAsset(asset, path);

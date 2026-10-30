@@ -116,16 +116,17 @@ namespace Demo3D.Runtime.Arena
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.name = "NightPost";
             var bloom = profile.Add<Bloom>(true);
-            // `--post-exposure`, `--post-contrast`, `--post-saturation`, `--bloom-threshold` and
-            // `--tonemap neutral|aces` override the grade in a player, for tuning against the look set.
-            bloom.threshold.Override(Args.GetFloat("--bloom-threshold", 1.5f));
-            bloom.intensity.Override(1.0f);
-            bloom.scatter.Override(0.65f);
-            profile.Add<Tonemapping>(true).mode.Override(Args.Get("--tonemap", "neutral") == "aces" ? TonemappingMode.ACES : TonemappingMode.Neutral);
+            // The bases are the lighting's post (a roster set's look may change them); `--post-exposure`,
+            // `--post-contrast`, `--post-saturation`, `--bloom-threshold` and `--tonemap neutral|aces`
+            // override them in a player, for tuning against the look set.
+            bloom.threshold.Override(Args.GetFloat("--bloom-threshold", l.BloomThreshold));
+            bloom.intensity.Override(l.BloomIntensity);
+            bloom.scatter.Override(l.BloomScatter);
+            profile.Add<Tonemapping>(true).mode.Override(Args.Get("--tonemap", l.Tonemap) == "aces" ? TonemappingMode.ACES : TonemappingMode.Neutral);
             var color = profile.Add<ColorAdjustments>(true);
-            color.postExposure.Override(Args.GetFloat("--post-exposure", 0.8f));
-            color.contrast.Override(Args.GetFloat("--post-contrast", 25f));
-            color.saturation.Override(Args.GetFloat("--post-saturation", 30f));
+            color.postExposure.Override(Args.GetFloat("--post-exposure", l.PostExposure));
+            color.contrast.Override(Args.GetFloat("--post-contrast", l.PostContrast));
+            color.saturation.Override(Args.GetFloat("--post-saturation", l.PostSaturation));
             var lookup = profile.Add<ColorLookup>(true);
             lookup.texture.Override(Lut());
             lookup.contribution.Override(1f);
@@ -134,8 +135,9 @@ namespace Demo3D.Runtime.Arena
             vignette.intensity.Override(Args.GetFloat("--vignette", l.VignetteIntensity));
             vignette.smoothness.Override(l.VignetteSmoothness);
             vignette.color.Override(l.VignetteColor);
-            // Inert at these bases: the post feel (ps-e8r.18) adds its white-balance and aberration offsets to them.
-            profile.Add<WhiteBalance>(true).temperature.Override(0f);
+            // The post feel (ps-e8r.18) adds its white-balance and aberration offsets to these bases
+            // (the night's temperature is 0, inert; a roster set's look may cool it).
+            profile.Add<WhiteBalance>(true).temperature.Override(l.PostTemperature);
             profile.Add<ChromaticAberration>(true).intensity.Override(0f);
             return profile;
         }

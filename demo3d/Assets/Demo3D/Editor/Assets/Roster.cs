@@ -63,6 +63,8 @@ namespace Demo3D.EditorTools.Assets
             public Dictionary<string, ClipRef> clips = new Dictionary<string, ClipRef>();
             public Dictionary<string, ClipRef> rootMotionClips = new Dictionary<string, ClipRef>();
             public List<WeaponRef> weapons = new List<WeaponRef>();
+            /// <summary>A set's scale on its glow maps' emission (ps-f8a.4), so a pack's glow stays below the effects.</summary>
+            public float? glow;
             /// <summary>Prefab children Spawn removes (a pack prefab carrying every weapon at once).</summary>
             public List<string> hide = new List<string>();
 
