@@ -1041,4 +1041,7 @@ this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../dem
   has none); its song dump hash is the same before and after (FNV-1a `8b9387cc84d560ef`).
 - **Checks:** demo2d's 40 and demo3d's 132 choreography tests pass. `AttacksCarryTheirFit` takes a
   hero speed bound (4× for demo2d), and the big-blow test samples the hit-stop at 45 ms.
+- **Stills** (`demo2d/evidence/rework/`, the IL2CPP player windowless): at 60.2 s the knight swings in a
+  lit clearing of dirt with the first wave held round it; at 176 s the climax's crowd still presses
+  close, the ring's gap narrower among elites, whose 90 px sprites reach further than their footprints.
 - **Pending:** the watch, a row in [Pending on the operator](#pending-on-the-operator).
