@@ -7,7 +7,9 @@ namespace Demo2D.Choreography
     /// <summary>
     /// The arena's Tilemaps (PX6), composed from the <see cref="ForestArena"/> and the MainLev sheet's
     /// catalogue (Data/forest-tiles.json): a layer of base grass, one corner-autotiled overlay per
-    /// ground material, the cliffs and water channels, then the bridges over them. Each layer holds a
+    /// ground material, the cliffs and water channels, then the bridges over them. A tile wholly of
+    /// one ground takes one of its plain variants, or, in seeded patches, one of its detail tiles
+    /// (twigs, pebbles, stones: PX9), so no single tile repeats across a clearing. Each layer holds a
     /// sheet tile (column, row from the sheet's top-left) per arena tile, or none. A pure function of
     /// the JSON, built at load like the sim's placements, so what is drawn is never staler than what is
     /// navigated.
@@ -52,15 +54,19 @@ namespace Demo2D.Choreography
             names.Add("bridges");
             var t = new ArenaTiles(arena.TilesW, arena.TilesH, names.ToArray());
 
+            uint seed = arena.Layout.Seed;
+            var basePlain = sheet.BaseSet != null ? sheet.CornerTiles(sheet.BaseSet)[0] : new List<(int, int)> { sheet.Base };
+            var baseDetails = sheet.DetailsOf(sheet.BaseSet);
             for (int y = 0; y < t.H; y++)
             for (int x = 0; x < t.W; x++)
-                t.Set(0, x, y, sheet.Base);
+                t.Set(0, x, y, Whole(seed, x, y, 0x6A5E, basePlain, baseDetails));
 
             byte[] corners = arena.GroundCorners();
             int cw = t.W + 1;
             for (int k = 0; k < arena.Materials.Length; k++)
             {
                 var tiles = sheet.CornerTiles(arena.Materials[k].set);
+                var details = sheet.DetailsOf(arena.Materials[k].set);
                 byte mat = (byte)(k + 1);
                 for (int y = 0; y < t.H; y++)
                 for (int x = 0; x < t.W; x++)
@@ -71,6 +77,11 @@ namespace Demo2D.Choreography
                               (Clear(x, y) ? TileSheet.BL : 0) | (Clear(x + 1, y) ? TileSheet.BR : 0);
                     if (key == 15) continue;
                     if (Array.IndexOf(TileSheet.Diagonals, key) >= 0) key = 0;   // no diagonal tiles: fill
+                    if (key == 0)
+                    {
+                        t.Set(1 + k, x, y, Whole(seed, x, y, 0x711E + (uint)k, tiles[0], details));
+                        continue;
+                    }
                     var options = tiles[key];
                     t.Set(1 + k, x, y, options[(int)(Rng.Hash(arena.Layout.Seed, (uint)(y * t.W + x), 0x711E + (uint)k) % (uint)options.Count)]);
                 }
@@ -80,8 +91,12 @@ namespace Demo2D.Choreography
             foreach (Cliff c in arena.Cliffs)
             {
                 var b = sheet.Plateau;
+                // The plateau's top inside its rims is the base grass (the block's own is that tile), so it
+                // varies as the ground does instead of repeating the block's 3×3.
                 Stamp(t, arena, terrain, c.Rect, (cx, ry, w, h) =>
-                    (b.col + Slice(cx, w, 1, 3, 1), b.row + (ry < h - 3 ? Slice(ry, h - 3, 1, 3, 0) : 4 + ry - (h - 3))));
+                    cx > 0 && cx < w - 1 && ry > 0 && ry < h - 3
+                        ? Whole(seed, c.Rect.X0 + cx - arena.OriginX, c.Rect.Y1 - 1 - ry - arena.OriginY, 0x6A5E, basePlain, baseDetails)
+                        : (b.col + Slice(cx, w, 1, 3, 1), b.row + (ry < h - 3 ? Slice(ry, h - 3, 1, 3, 0) : 4 + ry - (h - 3))));
             }
             foreach (WaterChannel s in arena.Streams)
             {
@@ -99,6 +114,26 @@ namespace Demo2D.Choreography
             }
             return t;
         }
+
+        /// <summary>
+        /// A tile wholly of one ground: one of its <paramref name="plain"/> variants, or in patches (value
+        /// noise on a 5 m lattice, up to <see cref="DetailShare"/> of the tiles where it peaks) a tile of
+        /// one of its 3×3 <paramref name="details"/> blocks, the block chosen by a broader noise so each
+        /// patch keeps to one kind of detail.
+        /// </summary>
+        static (int col, int row) Whole(uint seed, int x, int y, uint salt, List<(int col, int row)> plain, List<(int col, int row)> details)
+        {
+            uint h = Rng.Hash(seed, (uint)(y * 4096 + x), salt);
+            float share = Math.Min(Math.Max((ForestArena.ValueNoise(seed, x, y, 5, salt + 1) - 0.45f) * 2.4f, 0), DetailShare);
+            if (details.Count > 0 && (h & 0xFFFF) / 65536f < share)
+            {
+                int b = Math.Min((int)(ForestArena.ValueNoise(seed, x, y, 11, salt + 2) * details.Count), details.Count - 1);
+                return (details[b].col + (int)(h >> 16) % 3, details[b].row + (int)(h >> 24) % 3);
+            }
+            return plain[(int)((h >> 16) % (uint)plain.Count)];
+        }
+
+        const float DetailShare = 0.7f;
 
         /// <summary>
         /// A block's column (or row) for position i of n: its first edge, then its middle repeated, then
@@ -128,8 +163,15 @@ namespace Demo2D.Choreography
         public static readonly int[] Diagonals = { TL | BR, TR | BL };
 
         public (int col, int row) Base;
+        /// <summary>The transition set whose outer terrain is the base grass: its plain tiles vary the base (null: <see cref="Base"/> alone).</summary>
+        public string BaseSet;
         public (int col, int row) Plateau, Channel, Bridge;
         public readonly Dictionary<string, (int col, int row)> Transitions = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
+        /// <summary>Per transition set, its outer terrain's 3×3 detail blocks (their top-left cells).</summary>
+        public readonly Dictionary<string, List<(int col, int row)>> Details = new Dictionary<string, List<(int, int)>>(StringComparer.Ordinal);
+
+        public List<(int col, int row)> DetailsOf(string set) =>
+            set != null && Details.TryGetValue(set, out var d) ? d : new List<(int, int)>();
 
         public static TileSheet Parse(string json)
         {
@@ -137,6 +179,15 @@ namespace Demo2D.Choreography
             (int, int) Cell(JsonValue v) => (v["col"].AsInt(), v["row"].AsInt());
             var s = new TileSheet { Base = Cell(j["base"]) };
             foreach (JsonValue t in j["transitions"].Items) s.Transitions[t["name"].AsString()] = Cell(t);
+            if (j.Has("baseSet")) s.BaseSet = j["baseSet"].AsString();
+            if (j.Has("details"))
+                foreach (var (set, blocks) in j["details"].Members)
+                {
+                    if (!s.Transitions.ContainsKey(set)) throw new FormatException("forest tiles: details for unknown set '" + set + "'");
+                    var list = new List<(int, int)>();
+                    foreach (JsonValue block in blocks.Items) list.Add(Cell(block));
+                    s.Details[set] = list;
+                }
             JsonValue b = j["blocks"];
             s.Plateau = Cell(b["plateau"]);
             s.Channel = Cell(b["channel"]);

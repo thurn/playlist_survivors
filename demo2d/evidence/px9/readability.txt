@@ -1,0 +1,21 @@
+PX9 readability at the climax's zoom: per type, the walk's first frame lit by the night (night-lighting.json).
+Distinct: nearest colour ΔE ≥ 8 or largest shape overlap ≤ 0.7. Hero findable: distinct, and his rim ΔE ≥ 25 from the ground and every type.
+
+type             px   L*moon  ΔE ground  ΔE nearest (moon / near hero)       overlap (with)            distinct
+knight            66    13.7       30.4    5.3 (cyclops) /   6.7 (cyclops)   0.42 (ghoul)  yes
+skeleton          56    20.0       15.2    6.7 (skeleton-mage) /   7.7 (skeleton-mage)   0.38 (blood-mage)  yes
+ghoul             54    18.6       26.2    7.1 (cyclops) /   9.9 (zombie-warrior)   0.53 (mask)  yes
+zombie-warrior    58    14.7       19.1    6.9 (cyclops) /   9.0 (cyclops)   0.35 (skeleton)  yes
+flame-imp         48    11.9       31.8    9.2 (knight) /  13.3 (werewolf)   0.53 (ice-skull)  yes
+ice-skull         56    23.0       20.8    7.7 (ghoul) /  10.5 (ghoul)   0.53 (flame-imp)  yes
+mask              56    28.7       30.2   11.1 (ghoul) /  13.9 (skeleton-mage)   0.53 (ghoul)  yes
+skeleton-mage     56    20.5       21.8    6.7 (skeleton) /   7.7 (skeleton)   0.38 (flame-imp)  yes
+blood-mage        56    10.4       25.4    4.5 (cyclops) /   6.5 (cyclops)   0.52 (flame-imp)  yes
+ogre              90    28.8       20.7    9.5 (skeleton) /  14.1 (skeleton)   0.59 (cyclops)  yes
+cyclops           92    14.8       25.2    4.5 (blood-mage) /   6.5 (blood-mage)   0.59 (werewolf)  yes
+werewolf          88    14.2       22.3    6.3 (cyclops) /   8.9 (cyclops)   0.59 (cyclops)  yes
+lava-beast        90    13.6       25.0   14.8 (werewolf) /  20.1 (flame-imp)   0.57 (cyclops)  yes
+boss-devil       168     7.7       25.9    5.6 (blood-mage) /   8.3 (blood-mage)   0.06 (cyclops)  yes
+
+hero rim: ΔE 63.9 from the ground, 52.1 from the nearest type (ogre); drawn over any grunt in front of him: findable
+PASS

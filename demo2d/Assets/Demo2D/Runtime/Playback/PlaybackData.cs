@@ -22,6 +22,8 @@ namespace Demo2D.Runtime.Playback
         public TextAsset[] atlasJson;
 
         public Shader spriteFlash, upscale;
+        /// <summary>PX9's flat-colour sprite shader, for the hero's outline.</summary>
+        public Shader silhouette;
         public Material spriteLit, spriteUnlit;
 
         /// <summary>

@@ -24,6 +24,11 @@ namespace Demo2D.Runtime.Playback
     /// breaks such ties by its own registration order, which pooling changes, so a seek and a
     /// run from the start would otherwise overlap a crowd differently. The arena's props (PX6) join
     /// the same ranking, so a monster walking behind a tree is drawn behind it.
+    ///
+    /// The hero stays findable in any crowd (PX9): he ranks as if his feet stood
+    /// <see cref="HeroLeadM"/> further south, so the grunts pressing on him from the front draw behind
+    /// him (an elite's taller body still covers him, and so does a prop more than that far in front),
+    /// and a one-texel warm outline rims his sprite.
     /// </summary>
     public sealed class SpriteCrowd : IDisposable
     {
@@ -34,6 +39,11 @@ namespace Demo2D.Runtime.Playback
         static readonly Color MonsterFlash = new Color(1.6f, 1.38f, 1.12f), HeroFlash = new Color(1.1f, 1.35f, 1.75f);
         /// <summary>A projectile flies this high over its ground position.</summary>
         public const float ProjectileHeightM = 1f;
+        /// <summary>How far south of his feet the hero ranks: a grunt's height, so no grunt in front covers him.</summary>
+        public const float HeroLeadM = 1.8f;
+        /// <summary>The hero's outline, HDR: a warm rim just under the bloom's threshold.</summary>
+        static readonly Color HeroOutline = new Color(1.15f, 0.92f, 0.55f, 1f);
+        static readonly Vector2Int[] OutlineOffsets = { new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1) };
         const float ShadowAlpha = 0.42f, ShadowRimAlpha = 0.22f;
 
         readonly SpriteEvaluator _eval;
@@ -42,7 +52,8 @@ namespace Demo2D.Runtime.Playback
         readonly Sprite[] _shadowOf;         // per timeline type, then the hero's last
         readonly Sprite _bolt, _boltShadow;
         readonly Material[] _flash, _heroFlash;
-        readonly Material _unlit;
+        readonly Material _unlit, _outline;
+        readonly SpriteRenderer[] _heroOutline = new SpriteRenderer[4];
         readonly GameObject _root;
         readonly List<SpriteRenderer> _bodies = new List<SpriteRenderer>(), _shadows = new List<SpriteRenderer>();
         readonly List<Texture2D> _made = new List<Texture2D>();
@@ -56,7 +67,7 @@ namespace Demo2D.Runtime.Playback
 
         /// <param name="clipSprites">Each annotation's frames.</param>
         /// <param name="heroRadiusM">The hero's footprint (the timeline's radii are the roster types').</param>
-        public SpriteCrowd(SpriteEvaluator eval, Sprite[][] clipSprites, Shader flash, Material unlit, float heroRadiusM, Transform parent)
+        public SpriteCrowd(SpriteEvaluator eval, Sprite[][] clipSprites, Shader flash, Shader silhouette, Material unlit, float heroRadiusM, Transform parent)
         {
             _eval = eval;
             _tl = eval.Timeline;
@@ -66,6 +77,15 @@ namespace Demo2D.Runtime.Playback
             _heroFlash = FlashMaterials(flash, HeroFlash, "Hero Flash ");
             _root = new GameObject("Sprite Crowd");
             _root.transform.SetParent(parent, false);
+            _outline = new Material(silhouette) { name = "Hero Outline" };
+            _outline.SetColor("_Color", HeroOutline);
+            for (int k = 0; k < _heroOutline.Length; k++)
+            {
+                _heroOutline[k] = new GameObject("Hero Outline").AddComponent<SpriteRenderer>();
+                _heroOutline[k].transform.SetParent(_root.transform, false);
+                _heroOutline[k].sharedMaterial = _outline;
+                _heroOutline[k].enabled = false;
+            }
             int types = _tl.TypeNames.Length;
             _shadowOf = new Sprite[types + 1];
             for (int i = 0; i < types; i++) _shadowOf[i] = Shadow(_tl.TypeRadii[i]);
@@ -78,6 +98,7 @@ namespace Demo2D.Runtime.Playback
         public void Draw(List<int> entities, double t, ArenaProps props = null)
         {
             _used = 0;
+            int heroSlot = -1;
             foreach (int e in entities)
             {
                 var info = _tl.Entities[e];
@@ -93,7 +114,8 @@ namespace Demo2D.Runtime.Playback
                     Array.Resize(ref _sortIndex, i * 2);
                 }
                 // Back to front: higher rows first, then by entity (ids are below 2^19; props rank above them).
-                _sortKeys[i] = -(long)Mathf.RoundToInt(feet.y * CharacterAtlas.PixelsPerMetre) << 20 | (long)e;
+                float rankY = info.Kind == EntityKind.Hero ? feet.y - HeroLeadM : feet.y;
+                _sortKeys[i] = -(long)Mathf.RoundToInt(rankY * CharacterAtlas.PixelsPerMetre) << 20 | (long)e;
                 _sortIndex[i] = i;
                 body.gameObject.SetActive(true);
                 shadow.gameObject.SetActive(true);
@@ -119,6 +141,7 @@ namespace Demo2D.Runtime.Playback
                 body.transform.localPosition = Snap(new Vector2(st.Position.X, st.Position.Y + st.Lift));
                 shadow.sprite = _shadowOf[info.Kind == EntityKind.Hero ? _shadowOf.Length - 1 : info.Type];
                 shadow.color = new Color(1, 1, 1, st.Alpha);
+                if (info.Kind == EntityKind.Hero) heroSlot = i;
             }
             // Props rank among the bodies by their feet's row too (after any body on the same row).
             int ranked = _used + (props?.Visible.Count ?? 0);
@@ -134,11 +157,24 @@ namespace Demo2D.Runtime.Playback
                 _sortIndex[j] = j;
             }
             Array.Sort(_sortKeys, _sortIndex, 0, ranked);
+            // Orders step by two, so the hero's outline fits between him and whatever is behind him.
             for (int rank = 0; rank < ranked; rank++)
             {
                 int k = _sortIndex[rank];
-                if (k < _used) _bodies[k].sortingOrder = rank;
-                else props.Renderer(props.Visible[k - _used]).sortingOrder = rank;
+                if (k < _used) _bodies[k].sortingOrder = 2 * rank + 1;
+                else props.Renderer(props.Visible[k - _used]).sortingOrder = 2 * rank + 1;
+            }
+            for (int k = 0; k < _heroOutline.Length; k++)
+            {
+                var o = _heroOutline[k];
+                o.enabled = heroSlot >= 0;
+                if (heroSlot < 0) continue;
+                var body = _bodies[heroSlot];
+                o.sprite = body.sprite;
+                o.flipX = body.flipX;
+                o.color = new Color(1, 1, 1, body.color.a);
+                o.sortingOrder = body.sortingOrder - 1;
+                o.transform.localPosition = body.transform.localPosition + (Vector3)(Vector2)OutlineOffsets[k] / CharacterAtlas.PixelsPerMetre;
             }
             for (int i = _used; i < _bodies.Count; i++)
             {
@@ -221,6 +257,7 @@ namespace Demo2D.Runtime.Playback
             SongPlayback.Destroy(_root);
             foreach (var m in _flash) SongPlayback.Destroy(m);
             foreach (var m in _heroFlash) SongPlayback.Destroy(m);
+            SongPlayback.Destroy(_outline);
             foreach (var t in _made) SongPlayback.Destroy(t);
         }
     }

@@ -311,15 +311,16 @@ namespace Demo2D.Choreography
         }
 
         /// <summary>Value noise on a 3 m lattice, in [-WobbleM, WobbleM], different per area.</summary>
-        float Wobble(int x, int y, uint area)
+        float Wobble(int x, int y, uint area) => (ValueNoise(Layout.Seed, x, y, 3, 0xA2E0 + area) * 2 - 1) * WobbleM;
+
+        /// <summary>Smoothed value noise in [0, 1] over whole-metre (x, y) ≥ 0, on a lattice of <paramref name="lattice"/> metres.</summary>
+        public static float ValueNoise(uint seed, int x, int y, int lattice, uint salt)
         {
-            const int lattice = 3;
             int x0 = Math.DivRem(x, lattice, out int rx), y0 = Math.DivRem(y, lattice, out int ry);
             float fx = rx / (float)lattice, fy = ry / (float)lattice;
             fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
-            float N(int i, int j) => (Rng.Hash(Layout.Seed, (uint)i * 0x9E3779B1u ^ (uint)j, 0xA2E0 + area) >> 8) * (1f / (1 << 24));
-            float n = (N(x0, y0) * (1 - fx) + N(x0 + 1, y0) * fx) * (1 - fy) + (N(x0, y0 + 1) * (1 - fx) + N(x0 + 1, y0 + 1) * fx) * fy;
-            return (n * 2 - 1) * WobbleM;
+            float N(int i, int j) => (Rng.Hash(seed, (uint)i * 0x9E3779B1u ^ (uint)j, salt) >> 8) * (1f / (1 << 24));
+            return (N(x0, y0) * (1 - fx) + N(x0 + 1, y0) * fx) * (1 - fy) + (N(x0, y0 + 1) * (1 - fx) + N(x0 + 1, y0 + 1) * fx) * fy;
         }
     }
 }

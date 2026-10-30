@@ -73,6 +73,44 @@ namespace Demo2D.Choreography.Tests
             Assert.That(problems, Is.Empty, Report(problems));
         }
 
+        /// <summary>
+        /// No tile repeats across the ground (PX9): the base grass draws no tile on more than a fifth of
+        /// the arena, and every large ground with detail blocks shows some of them on its whole tiles, but mostly plain ones.
+        /// </summary>
+        [Test]
+        public void TheGroundVariesWithoutRepeatingOneTile()
+        {
+            TileSheet sheet = ChoreographyFiles.LoadTileSheet(Fixtures.Root);
+            ArenaTiles tiles = ArenaTiles.Compose(Arena, sheet);
+            bool IsDetail(string set, (int col, int row) c) =>
+                sheet.DetailsOf(set).Exists(b => c.col >= b.col && c.col < b.col + 3 && c.row >= b.row && c.row < b.row + 3);
+            var counts = new Dictionary<int, int>();
+            foreach (int t in tiles.Layers[0]) counts[t] = counts.TryGetValue(t, out int n) ? n + 1 : 1;
+            int most = 0;
+            foreach (int n in counts.Values) most = Math.Max(most, n);
+            Assert.That(most, Is.LessThan(tiles.Layers[0].Length / 5), "one base tile covers too much");
+
+            var sets = new List<string> { sheet.BaseSet };
+            foreach (var m in Arena.Materials) sets.Add(m.set);
+            for (int layer = 0; layer < sets.Count; layer++)
+            {
+                if (sheet.DetailsOf(sets[layer]).Count == 0) continue;
+                var plain = sheet.CornerTiles(sets[layer])[0];
+                int details = 0, whole = 0;
+                foreach (int t in tiles.Layers[layer])
+                {
+                    if (t == ArenaTiles.None) continue;
+                    bool detail = IsDetail(sets[layer], tiles.Cells[t]);
+                    if (detail) details++;
+                    if (detail || plain.Contains(tiles.Cells[t])) whole++;
+                }
+                TestContext.WriteLine(tiles.LayerNames[layer] + ": " + details + " detail tiles of " + whole + " whole ones");
+                if (whole < 200) continue; // a small clearing is mostly edge: too few tiles to judge
+                Assert.That(details, Is.GreaterThan(whole / 20), tiles.LayerNames[layer] + " shows too few details");
+                Assert.That(details, Is.LessThan(whole / 2), tiles.LayerNames[layer] + " is mostly detail");
+            }
+        }
+
         /// <summary>The cliff and the stream block, the bridge's deck lets the hero through, and the tiles draw them where they block.</summary>
         [Test]
         public void TerrainBlocksWhereItIsDrawn()

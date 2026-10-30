@@ -9,7 +9,7 @@
     },
     "death-burst": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Misc/CFXR Smoke Poof.prefab",
-      "scale": 0.5, "tint": [0.55, 0.62, 0.8, 0.75], "layer": "over", "durationS": 1.0, "max": 40,
+      "scale": 0.3, "tint": [0.5, 0.56, 0.72, 0.4], "layer": "over", "durationS": 0.7, "max": 16,
       "light": { "color": [0.6, 0.75, 1.0], "radiusM": 1.4, "intensity": 0.5, "attackS": 0.03, "decayS": 0.35 }
     },
     "parry-spark": {
@@ -39,8 +39,8 @@
     },
     "ring": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fire Ring (Blue).prefab",
-      "scale": 2.57, "eventScaleUnit": 4.5, "layer": "over", "durationS": 1.0, "max": 6,
-      "light": { "color": [0.4, 0.6, 1.0], "radiusM": 6.0, "intensity": 1.1, "attackS": 0.04, "decayS": 0.6 }
+      "scale": 2.57, "eventScaleUnit": 4.5, "tint": [0.45, 0.55, 0.75, 0.6], "layer": "over", "durationS": 0.8, "max": 4,
+      "light": { "color": [0.4, 0.6, 1.0], "radiusM": 6.0, "intensity": 0.8, "attackS": 0.04, "decayS": 0.5 }
     },
     "bolt-launch": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Impacts/CFXR Hit C.prefab",
@@ -67,18 +67,18 @@
   "flights": {
     "bolt": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fireball + Fire Trail.prefab",
-      "scale": 0.6, "layer": "over", "max": 24,
-      "light": { "color": [1.0, 0.6, 0.3], "radiusM": 1.8, "intensity": 0.9 }
+      "scale": 0.75, "layer": "over", "max": 24,
+      "light": { "color": [1.0, 0.6, 0.3], "radiusM": 2.0, "intensity": 1.1 }
     },
     "bone-bolt": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab",
-      "scale": 0.7, "tint": [0.55, 1.0, 0.75, 1.0], "layer": "over", "max": 24,
-      "light": { "color": [0.5, 1.0, 0.7], "radiusM": 1.4, "intensity": 0.7 }
+      "scale": 0.9, "tint": [0.55, 1.0, 0.75, 1.0], "layer": "over", "max": 24,
+      "light": { "color": [0.5, 1.0, 0.7], "radiusM": 1.8, "intensity": 0.9 }
     },
     "blood-bolt": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab",
-      "scale": 0.7, "tint": [1.0, 0.3, 0.35, 1.0], "layer": "over", "max": 24,
-      "light": { "color": [1.0, 0.3, 0.3], "radiusM": 1.4, "intensity": 0.7 }
+      "scale": 0.9, "tint": [1.0, 0.3, 0.35, 1.0], "layer": "over", "max": 24,
+      "light": { "color": [1.0, 0.3, 0.3], "radiusM": 1.8, "intensity": 0.9 }
     },
     "hellfire": {
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fireball.prefab",

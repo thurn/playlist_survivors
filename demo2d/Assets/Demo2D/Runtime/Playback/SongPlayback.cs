@@ -80,7 +80,7 @@ namespace Demo2D.Runtime.Playback
             Evaluator = new SpriteEvaluator(Timeline, clips, frames, FrameRate(atlases), walk, clips.Require("hero walk"), clips.Find("hero idle"));
 
             float heroRadius = JsonValue.Parse(data.roster.text)["hero"]["radius"].AsFloat(0.5f);
-            _crowd = new SpriteCrowd(Evaluator, sprites, data.spriteFlash, data.spriteUnlit, heroRadius, _root.transform);
+            _crowd = new SpriteCrowd(Evaluator, sprites, data.spriteFlash, data.silhouette, data.spriteUnlit, heroRadius, _root.transform);
             var boss = Array.Find(level.Sections, s => s.Boss != null)?.Boss;
             _feel = new CameraFeel(Timeline, boss != null ? Array.IndexOf(Timeline.TypeNames, boss) : -1);
             float widest = 0;

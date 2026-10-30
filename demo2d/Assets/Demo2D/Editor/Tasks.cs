@@ -62,6 +62,20 @@ namespace Demo2D.EditorTools
             Assets.ArenaStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px6")));
         }
 
+        /// <summary>PX9: the reference stills from AncientForest's demo scene into `-out &lt;dir&gt;` (default evidence/px9).</summary>
+        public static void ReferenceStills() =>
+            Assets.ReferenceStills.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px9")));
+
+        /// <summary>
+        /// PX9: the readability measure (Readability) into `-out &lt;dir&gt;/readability.txt` (default
+        /// evidence/px9); fails when the hero isn't findable or a type isn't distinct.
+        /// </summary>
+        public static void Readability()
+        {
+            if (!Assets.Readability.Write(TaskArgs.Get("-out", Path.Combine("evidence", "px9"))))
+                throw new Exception("Tasks.Readability: not every type is distinct and the hero findable (readability.txt)");
+        }
+
         // URP's build preprocessing rewrites these tracked assets for the build's target (the
         // pipeline's shader prefilters, the global settings' runtime list). BuildPlayer puts them
         // back, so a build leaves the checkout clean.

@@ -25,6 +25,7 @@ namespace Demo2D.EditorTools.Assets
         public const string SpriteFlashPath = "Assets/Demo2D/Runtime/Shaders/Sprite-Lit-Flash.shader";
         public const string UpscalePath = "Assets/Demo2D/Runtime/Shaders/SharpUpscale.shader";
         public const string GlowPath = "Assets/Demo2D/Runtime/Shaders/Glow.shader";
+        public const string SilhouettePath = "Assets/Demo2D/Runtime/Shaders/Silhouette.shader";
         const string SpriteBakerSource = "Assets/Demo2D/Editor/Assets/SpriteBaker.cs";
         public const string SpriteUnlitPath ="Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
         const string ForestDir = "Assets/Vendor/RPGW_AncientForest";
@@ -74,6 +75,7 @@ namespace Demo2D.EditorTools.Assets
 
             data.spriteFlash = Load<Shader>(SpriteFlashPath);
             data.upscale = Load<Shader>(UpscalePath);
+            data.silhouette = Load<Shader>(SilhouettePath);
             data.spriteLit = Load<Material>(ProjectSetup.SpriteLitPath);
             data.spriteUnlit = Load<Material>(SpriteUnlitPath);
             BakeArena(data);

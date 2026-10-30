@@ -197,7 +197,11 @@ Character frames are baked, not imported as is:
   tint per sprite, drawn back to front by the feet's row, over a pixel-blob
   shadow. PX5 chose these over hand-instanced quads: the 2D renderer lights
   them with its `Light2D`s and draws across every type's atlas in one order
-  (an instanced draw per atlas couldn't interleave types by y).
+  (an instanced draw per atlas couldn't interleave types by y). The hero
+  ranks as if he stood 1.8 m further south, so the grunts pressing on him
+  from the front draw behind him, and a one-texel warm outline rims his
+  sprite (PX9: in the climax's crowd he was otherwise found only by his
+  light).
 - **Retiming.** As in demo3d: the client starts each attack clip so its
   impact frame lands on the timeline's impact time, and scales walk cycles to
   match the beat-step gait.
@@ -236,7 +240,11 @@ Character frames are baked, not imported as is:
   (PX6 chose this; only the vendor textures and the sheet's tiles are baked
   into PlaybackData). It writes a base grass layer, one corner-autotiled
   overlay per ground material (the `clear-on-*` sets, whose transparent edges
-  layer), the cliffs and the channel from their blocks, and the bridges. It
+  layer), the cliffs and the channel from their blocks, and the bridges. A
+  tile wholly of one ground takes one of its plain variants, or in seeded
+  patches one of the sheet's matching 3×3 detail blocks (twigs, pebbles,
+  stones; PX9), so no single tile repeats across a clearing; the plateau's
+  top varies the same way. It
   scatters the kit by the layout's rules, drops scatter in water or on a
   cliff, and adds each cliff and each stretch of channel between bridges to
   the placement list as a blocking polygon.

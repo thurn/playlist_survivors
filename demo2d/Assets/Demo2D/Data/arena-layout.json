@@ -4,7 +4,7 @@
     "ground: the tile ground. base names the sheet's plain grass (forest-tiles.json's base), drawn everywhere; materials, in drawing order, name a forest-tiles.json transition set whose outer terrain is the material and inner is clear, so each draws as a corner-autotiled overlay with transparent edges. An area's ground (a material, or base) paints its shape, later areas over earlier ones, every edge pushed in or out by up to wobbleM of seeded noise; the forest fill's ground is the default under all of them. Water keeps base ground within a tile of it, matching the channel's own banks.",
     "cliffs: raised rock ledges, rect [x0, y0, x1, y1] in whole metres (at least 2 wide and 4 tall), drawn from the sheet's plateau block with its rock face on the facing side (south only: the sheet draws no other face). The whole rect blocks.",
     "water: streams in a sunken channel, rect [x0, y0, x1, y1] (at least 4 tall), drawn with the channel block: a two-tile rock bank on the north, water, a rim on the south, caps at both ends. bridges: each bridge's deck, 2 m wide from x, crosses the channel north to south. The channel blocks apart from its decks; scatter never lands in water or on a cliff.",
-    "The goals are the level script's (PX4's open-ground names): the hero walks camp glade, old stump, moss clearing, over the stone bridge, to the cliff ledge's foot and into the great clearing for the climax."
+    "The goals are the level script's (PX4's open-ground names): the hero walks camp glade, old stump, moss clearing, over the stone bridge, to the cliff ledge's foot and into the great clearing for the climax. The ledge-top landmark (PX9) dresses the plateau's top with plants, which never block: scatter skips terrain, and in the climax's view the bare top read as flat ground."
   ],
   "name": "arena",
   "seed": 11,
@@ -77,7 +77,13 @@
     { "type": "landmark", "name": "stone-bridge", "at": [4, -11], "goal": { "at": [4, -11], "radius": 3.5 }, "clearM": 0 },
     { "type": "landmark", "name": "cliff-ledge", "at": [5, -5], "goal": { "at": [5, -5], "radius": 3 }, "clearM": 0 },
     { "type": "landmark", "name": "great-clearing", "at": [-7, 7], "goal": { "at": [-7, 7], "radius": 8 }, "clearM": 0 },
-    { "type": "forest", "fill": true, "ground": "dark-grass" }
+    { "type": "forest", "fill": true, "ground": "dark-grass" },
+    { "type": "landmark", "name": "ledge-top", "at": [15, 2], "clearM": 0, "pieces": [
+      { "prop": "forest/umbrella-3", "at": [-5, 1.2] }, { "prop": "forest/leafy-2", "at": [-3.6, 0.2] }, { "prop": "forest/grass-4", "at": [-2.2, 1.5] },
+      { "prop": "forest/clump-7", "at": [-1.1, 0.4] }, { "prop": "forest/flowers-3", "at": [0.4, 1.1] }, { "prop": "forest/umbrella-11", "at": [1.6, -0.2] },
+      { "prop": "forest/grass-9", "at": [2.8, 1.4] }, { "prop": "forest/leafy-6", "at": [4.1, 0.5] }, { "prop": "forest/clump-15", "at": [5.2, 1.6] },
+      { "prop": "forest/flowers-8", "at": [-4.3, -0.6] }, { "prop": "forest/grass-12", "at": [3.3, -0.7] }, { "prop": "forest/clump-22", "at": [-0.2, -0.8] }
+    ] }
   ],
   "cliffs": [
     { "name": "ledge", "rect": [9, -3, 21, 4], "facing": "south" }

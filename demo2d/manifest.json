@@ -18042,6 +18042,13 @@
     },
     {
       "source": "pixel_assets",
+      "path": "Assets/RPGW_AncientForest/Scenes/Demo.unity",
+      "sourceSha256": "cea808bd4803b4b54e1b83449cef7b26cf401b2cee7b06695eee0ecddbeeccce",
+      "guid": "15a32305ef8203049a0559e46b5738c1",
+      "use": "reference: AncientForest's demo scene (PX9's reference stills)"
+    },
+    {
+      "source": "pixel_assets",
       "path": "Assets/RPGW_AncientForest/Sliced/Decorative.png",
       "sourceSha256": "6ab815bc88d1e2c95e2ad53e1c8c3e5300d321e8ccf6636e7bef6f892eb97a17",
       "guid": "090f31176a604e54abd2b39895cb40dd",
