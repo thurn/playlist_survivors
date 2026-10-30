@@ -49,6 +49,7 @@ weight = clamp01((ln(1 + kills) − ln(1 + crispKills)) / (ln(1 + heavyKills) �
 | `spark`, `deathBurst` | 1.4, 0.8 | Hit sparks' and death bursts' size factors, so sparks read through a packed crowd and hundreds of bursts don't mush together. |
 | `lightKnee` | 10 | Each effect light's intensity saturates toward this knee as knee × (1 − e^(−I / knee)), so dozens of bursts summed in one cell are one wave of light, not a white-out. |
 | `shardCap` | 240 | The crystal shatter's cap on live shard sets: deaths in view take shards in time order while fewer are live, and the rest break by the Crystal shader's own shatter with the stock burst and sound. |
+| `heroScale` | 1.7 | The hero's drawn size (default 1), so the protagonist reads at overdrive's 45 m views instead of vanishing into the crowd. Its walk's stride stretches with it, so its feet still plant. The sim's reach and radius don't change. |
 
 The tuning and its frame sequences are in
 [overdrive/feel](../../demo3d/evidence/overdrive/feel/README.md).

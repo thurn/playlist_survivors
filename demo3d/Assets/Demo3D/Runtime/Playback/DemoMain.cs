@@ -481,9 +481,12 @@ namespace Demo3D.Runtime.Playback
             _crowd.Draw(_rig.Camera);
             _drawWatch.Stop();
 
-            var heroState = _eval.Evaluate(0, world, _heroStride, _hero.clips[_heroWalk].length, 0);
+            float heroScale = _blows?.Feel.HeroScale ?? 1f;
+            var heroState = _eval.Evaluate(0, world, _heroStride * heroScale, _hero.clips[_heroWalk].length, 0);
             var heroInst = _heroRenderer.Instances(0, 1);
-            heroInst[0] = ToInstance(heroState, _hero, -1, 0);
+            var heroMi = ToInstance(heroState, _hero, -1, 0);
+            heroMi.Scale *= heroScale;
+            heroInst[0] = heroMi;
             if (!_maskOn) _heroRenderer.Draw(_rig.Camera);
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
             _arena?.FollowHero(heroState.Position);

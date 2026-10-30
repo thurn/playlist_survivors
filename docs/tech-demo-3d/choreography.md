@@ -263,7 +263,8 @@ how it knows which monsters are on screen and where the view's edge is.
 The view's shape follows the level script's `viewPitchDeg`: demo3d's 55°
 trapezoid by default, or, at 90°, demo2d's top-down 16:9 rectangle. The
 client adds punch (at most 2% of the view width) and shake (at most 0.25 m)
-on top, which the 2 m spawn margin covers.
+on top, which the 2 m spawn margin covers. An overlay's `feel` may raise both
+(overdrive: up to 7% and 0.5 m; [Blow weight](camera-and-sound.md#blow-weight)).
 
 ### Intensity overlays
 

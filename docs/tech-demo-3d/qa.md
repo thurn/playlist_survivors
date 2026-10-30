@@ -16,6 +16,9 @@ here, since the demo itself takes no input:
 --freeze-at <s>     hold one frame for inspection
 --show-lod          tint monsters by LOD; --overdraw for a heat map
 --show-nav          draw the flow field and blocked cells over the ground
+--intensity <normal|overdrive>
+                    the choreography's intensity: overdrive is the trailer's
+                    horde (choreography.md, Intensity overlays)
 ```
 
 ### First assembled check
