@@ -37,6 +37,8 @@ namespace Demo3D.EditorTools.Crowd
         public const string ShaderPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdSkinned.shader";
         public const string CullPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdCull.compute";
         public const string PalettePath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdPalette.compute";
+        /// <summary>The `--monster-style` shaders (crowd.md, Monster styles), every one in the library so a build has them.</summary>
+        public const string StylesDir = "Assets/Demo3D/Runtime/Crowd/Shaders/Styles";
         const string AnnotationsPath = "Assets/Demo3D/Data/clip-annotations.json";
         const float Rate = CrowdLibrary.ClipRate;
 
@@ -158,6 +160,8 @@ namespace Demo3D.EditorTools.Crowd
             lib.PaletteShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(PalettePath);
             lib.Ground = SaveGround();
             lib.BufferDebug = Shader.Find("Hidden/Demo3D/BufferDebug");
+            lib.StyleShaders = AssetDatabase.FindAssets("t:Shader", new[] { StylesDir })
+                .Select(g => AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
             AssetDatabase.DeleteAsset(LibraryPath);
             AssetDatabase.CreateAsset(lib, LibraryPath);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
@@ -511,10 +515,12 @@ namespace Demo3D.EditorTools.Crowd
 
             var crowdMats = new Material[b.Submeshes.Count];
             var stockMats = new Material[b.Submeshes.Count];
+            var values = new List<float>();
             for (int i = 0; i < b.Submeshes.Count; i++)
             {
                 var src = b.Submeshes[i].Source;
                 var look = Look.Of(src, $"{TypeDir(id)}/{id}_albedo{i}.asset");
+                SampleValues(b, b.Submeshes[i], look, values);
                 crowdMats[i] = look.Apply(new Material(shader) { name = $"{id}_crowd{i}" });
                 crowdMats[i].enableInstancing = false;
                 Replace(crowdMats[i], $"{TypeDir(id)}/{id}_crowd{i}.mat");
@@ -543,6 +549,7 @@ namespace Demo3D.EditorTools.Crowd
                 CenterY = b.CenterY,
                 Radius = b.Radius,
                 HeightM = b.HeightM,
+                ValueRange = ValueRange(values),
                 RadiusM = b.Type.radius,
                 HoverM = b.Type.hoverM,
                 Vertices = b.Positions.Count,
@@ -720,6 +727,41 @@ namespace Demo3D.EditorTools.Crowd
             tex.Apply(false, false);
             Replace(tex, path);
             return tex;
+        }
+
+        /// <summary>
+        /// The linear luminance of the albedo (texture times base colour) under each of a submesh's
+        /// vertices, for <see cref="ValueRange"/>.
+        /// </summary>
+        static void SampleValues(TypeBake b, SubmeshSource sub, Look look, List<float> values)
+        {
+            var tex = look.Albedo as Texture2D;
+            var px = tex != null ? ReadPixels(tex) : null;
+            foreach (int v in sub.Indices.Distinct())
+            {
+                var c = look.BaseColor.linear;
+                if (px != null)
+                {
+                    var uv = b.Uv[v];
+                    int x = Mathf.Clamp((int)((uv.x - Mathf.Floor(uv.x)) * tex.width), 0, tex.width - 1);
+                    int y = Mathf.Clamp((int)((uv.y - Mathf.Floor(uv.y)) * tex.height), 0, tex.height - 1);
+                    c *= px[y * tex.width + x].linear;
+                }
+                values.Add(0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b);
+            }
+        }
+
+        /// <summary>
+        /// The albedo's value range (the 4th and 97th percentiles, at least 0.05 wide): the painted
+        /// style stretches it over its colour strip (stylelab's Baker measures the same).
+        /// </summary>
+        public static Vector2 ValueRange(List<float> values)
+        {
+            if (values.Count == 0) return new Vector2(0, 1);
+            values.Sort();
+            var r = new Vector2(values[(int)(values.Count * 0.04f)], values[(int)(values.Count * 0.97f)]);
+            if (r.y - r.x < 0.05f) r.y = r.x + 0.05f;
+            return r;
         }
 
         static Color[] ReadPixels(Texture2D src)

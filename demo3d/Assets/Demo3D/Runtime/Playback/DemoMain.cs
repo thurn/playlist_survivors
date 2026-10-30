@@ -36,6 +36,8 @@ namespace Demo3D.Runtime.Playback
         SongRunCheck _songCheck;
         CameraFeel _feel;
         PostFeel _postFeel;
+        MonsterStyle _style;
+        StyleBeat _styleBeat;
         SoundScheduler _sounds;
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
         // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
@@ -94,6 +96,7 @@ namespace Demo3D.Runtime.Playback
             if (Application.isBatchMode && Args.Has("--capture-video"))
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
+            _style = MonsterStyle.FromCommandLine();
             Cuts.Active = Cuts.FromCommandLine();
             Debug.Log($"DemoMain: effective {Cuts.Active.Describe()} (--cuts; TD11)");
             // The song check measures uncapped, as the harness does: at the display rate the GPU clocks down and its times inflate.
@@ -108,7 +111,10 @@ namespace Demo3D.Runtime.Playback
             // TD14's rung switches (--grd, --merged, --tex-cap, --prepass) default to the ladder's final rung.
             var arena = _flags.ArenaOptions;
             if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
+            {
                 _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(arena, _rig.Camera, transform);
+                if (_arena.Post != null) _style.Post?.ApplyTo(_arena.Post.sharedProfile); // PostFeel's base values under the style
+            }
             else
             {
                 if (arena.Rung != "off")
@@ -146,9 +152,16 @@ namespace Demo3D.Runtime.Playback
             _endAt = _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
 
             _crowd = CrowdFactory.Create(_flags.Crowd);
+            if (_crowd is BoneTextureCrowd bone)
+            {
+                bone.Style = _style;
+                bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
+            }
+            else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
+            if (!_style.IsBaseline) _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
+            Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}");
             _crowd.Initialize(Array.ConvertAll(_typeAssets, t => t.id), 16384); // instances per type; the bone path sizes small buffers by it
             _slots = new CrowdSlots(_typeAssets.Length, 16384);
-            if (_crowd is BoneTextureCrowd bone) bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
@@ -412,6 +425,7 @@ namespace Demo3D.Runtime.Playback
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
             _arena?.FollowHero(heroState.Position);
             _heroFeet = heroState.Position;
+            _styleBeat?.Publish(feelT, _heroFeet); // the beat as heard, as the post feel
 
             _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
             // A batch-mode player draws no frames, so it draws the camera by hand for each still it
@@ -558,6 +572,7 @@ namespace Demo3D.Runtime.Playback
             _songCheck?.Dispose();
             _fx?.Dispose();
             _crowd?.Dispose();
+            _style?.Dispose();
             _heroRenderer?.Dispose();
             _arena?.Dispose();
         }

@@ -22,11 +22,17 @@ namespace Demo3D.Runtime.Crowd
         public ComputeShader PaletteShader;
         public Material Ground;
         public Shader BufferDebug;
+        /// <summary>The `--monster-style` shaders (Shaders/Styles/), by their names (<see cref="StyleShader"/>).</summary>
+        public Shader[] StyleShaders = Array.Empty<Shader>();
 
         public static CrowdLibrary Load() =>
             Resources.Load<CrowdLibrary>(ResourcePath)
             ?? throw new InvalidOperationException(
                 "CrowdLibrary: Assets/Baked/Crowd/Resources/CrowdLibrary.asset is missing (run `demo3d unity BakeCrowd`)");
+
+        public Shader StyleShader(string name) =>
+            Array.Find(StyleShaders, s => s != null && s.name == name)
+            ?? throw new InvalidOperationException($"CrowdLibrary: no style shader {name} (re-run `demo3d unity BakeCrowd`)");
 
         public int IndexOf(string id)
         {
@@ -60,6 +66,11 @@ namespace Demo3D.Runtime.Crowd
         public CrowdClip[] Clips;
         /// <summary>Yaw-invariant bounds at instance scale 1: a sphere around (0, CenterY, 0).</summary>
         public float CenterY, Radius, HeightM;
+        /// <summary>
+        /// The albedo's linear luminance under the mesh's vertices, its 4th to 97th percentile: the
+        /// painted style stretches it over the type's colour strip (MonsterStyle).
+        /// </summary>
+        public Vector2 ValueRange = new Vector2(0, 1);
         public float RadiusM; // separation radius from the roster
         public float HoverM;  // the client adds it to Position.y (bats)
         /// <summary>

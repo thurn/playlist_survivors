@@ -96,6 +96,9 @@ namespace Demo3D.Runtime.Crowd
         /// </summary>
         public Func<float> Clock = () => Time.time;
 
+        /// <summary>The horde's `--monster-style`, set before Initialize: it picks each type's materials (baseline: the baked ones).</summary>
+        public MonsterStyle Style;
+
         public CrowdCounters Counters => _counters;
 
         /// <summary>The latest on-screen counts read back from the GPU (a frame or two late).</summary>
@@ -239,7 +242,7 @@ namespace Demo3D.Runtime.Crowd
             s.ClipBounds = new GraphicsBuffer(GraphicsBuffer.Target.Structured, spheres.Length, 16) { name = t.Id + "_clipBounds" };
             s.ClipBounds.SetData(spheres);
 
-            s.Materials = t.Materials;
+            s.Materials = Style != null ? Style.Materials(_lib, t) : t.Materials;
             s.Main = new MaterialPropertyBlock[lods];
             for (int l = 0; l < lods; l++) s.Main[l] = new MaterialPropertyBlock();
             s.Shadow = new MaterialPropertyBlock();

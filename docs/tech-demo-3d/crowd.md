@@ -142,6 +142,63 @@ flat and helps the target's GPU.
   cascade). Each call holds its 8 depth-bin commands. That makes a few
   hundred GPU draws in all, whatever the number of monsters.
 
+### Monster styles
+
+`--monster-style <name>` draws the horde in one of the
+[style lab's](stylelab.md) treatments, so they can be judged in the real
+demo (epic ps-a54). The names are baseline, painted, fire, crystal,
+spectrum, hologram, chrome, void and mix. An unknown name, or one not yet
+ported, stops the player at start-up. baseline is the default, and it is
+the demo exactly as it was: the baked CrowdSkinned materials, the night's
+post, and no beat globals. The look harness passes the flag through
+`--player-args`. Performance is not a goal under the flag, and it is not
+benchmarked.
+
+Every style uses the pattern the painted treatment set (ps-a54.1):
+
+- **Shaders live in `Runtime/Crowd/Shaders/Styles/`.** Each one is a copy of
+  the lab's shader. Its fragment code is ported almost as it is.
+  `StyleCommon.hlsl` is the lab's `StyleLabCommon.hlsl` on the crowd's
+  skinning:
+  - `SLAttributes` is the crowd's welded mesh, with bone data in
+    TEXCOORD1/2. A style mesh's extras take TEXCOORD3 and later.
+  - `SL_Skin` skins the vertex. It also gives the lab's per-monster values
+    from the instance: hit and death (`hitFlash`, `dissolve`), a seed from
+    the slot, and the centre (the feet). Read them in the fragment with
+    `SL_HIT`, `SL_DEATH` and `SL_SEED`.
+  - `SL_FRAGMENT_BEGIN` handles the LOD dither, the death clip and TD15's
+    ID render.
+  - The main light combines the realtime shadow with the arena's static
+    shadow map, as the baseline's does.
+  - The lab's beat ring (`_SL_RingGain`) is always 0 here, since demo3d's
+    ground has none.
+- **Passes are shared.** A style writes only its forward pass. It takes
+  ShadowCaster, DepthOnly, DepthNormals and MotionVectors from CrowdSkinned
+  with `UsePass`, so they are skinned and LOD-faded as the baseline's are.
+  Its death is CrowdSkinned's dissolve (`SL_Dissolve` calls
+  `CrowdDissolve`), so every pass clips the same pixels. A style that
+  displaces vertices (shatter, flames, melt) writes its own passes with the
+  same displacement.
+- **Materials are made per style and type.** `MonsterStyle.Materials` makes
+  one material per type and submesh, which `BoneTextureCrowd` draws in place
+  of the baked ones. It copies the baked albedo and base colour, sets the
+  type's `_HeightM`, and sets the type's palette from `StyleLook` (the lab's
+  Looks.cs, keyed by roster id). A shader is found by name in the
+  library's `StyleShaders`: CrowdBaker adds every shader in `Styles/`, so a
+  new style needs `BakeCrowd`. The baker also records each type's albedo
+  value range (`CrowdType.ValueRange`) for painted's colour strip.
+- **The beat comes from `StyleBeat`.** It sets `_SL_Time`, `_SL_Beat`,
+  `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy` (the song map's value per beat),
+  `_SL_HeroPos` and `_SL_WaveSpeed` every frame, from the song as heard.
+- **Post comes from `MonsterStyle.Post`.** It is the lab's `PostLook`
+  (tonemapper, exposure, contrast, saturation, bloom, chroma, vignette),
+  written over the night volume before PostFeel reads its base values, so
+  the beat and section offsets still ride on top. The night's LUT, vignette
+  shape and white balance stay as they are. The look pass's crowd-only
+  knobs (type dye, `crowd.shoulder`, key boost, crowd rim, flash) apply only
+  to the baseline shader.
+- **The hero keeps its own shader** under every style.
+
 ## The Hero
 
 The hero is one character, so stock Unity animation is fine for them, but
