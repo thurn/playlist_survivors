@@ -172,13 +172,17 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     shadow map, as the baseline's does.
   - The lab's beat ring (`_SL_RingGain`) is always 0 here, since demo3d's
     ground has none.
-- **Passes are shared.** A style writes only its forward pass. It takes
-  ShadowCaster, DepthOnly, DepthNormals and MotionVectors from CrowdSkinned
-  with `UsePass`, so they are skinned and LOD-faded as the baseline's are.
-  Its death is CrowdSkinned's dissolve (`SL_Dissolve` calls
-  `CrowdDissolve`), so every pass clips the same pixels. A style that
-  displaces vertices (shatter, flames, melt) writes its own passes with the
-  same displacement.
+- **Passes are shared.** A style writes its forward pass. It gets
+  ShadowCaster, DepthOnly, DepthNormals and MotionVectors by including
+  `StylePasses.hlsl` in four short pass blocks (copy Painted's). Those
+  passes are CrowdSkinned's, ported onto `SL_Skin`. Each style's CBUFFER and
+  `StyleCommon.hlsl` sit in the SubShader's HLSLINCLUDE, so every pass sees
+  the same skinning, death clip and LOD dither. A style that moves vertices
+  (shatter, flames, melt) defines `SL_DISPLACE` before StyleCommon.
+  Shadows, depth and motion vectors then follow the moved mesh, and the
+  previous frame's pose is moved the same way. Death is the baseline's
+  dissolve (`SL_Dissolve` calls `CrowdDissolve`). CrowdSkinned itself is
+  untouched, so the default path stays as fast as it was.
 - **Materials are made per style and type.** `MonsterStyle.Materials` makes
   one material per type and submesh, which `BoneTextureCrowd` draws in place
   of the baked ones. It copies the baked albedo and base colour, sets the

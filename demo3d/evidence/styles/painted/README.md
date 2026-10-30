@@ -19,19 +19,24 @@ The `../styles/` slug puts the set here rather than under `evidence/look/`.
 
 The same command without the flag (slug `ps-a54.1-noflag`, not committed) matched
 `look/final` within 0.11 L* on p2, p50 and p98 in all 11 stills, with contrast and chroma within
-0.06. So the default path is unchanged.
+0.06 (checked again after the review fixes). So the default path is unchanged.
 
 ## What the numbers say
 
-- **Readability passes in every beauty shot.** The monsters' |dL*| is 30 to 34 against
-  final's 20 to 24, above the floor of 17.
-- **The horde is less saturated than final.** Mean C*ab is 3 to 11 lower. The look's
-  saturation is +15 against the night's +30, and its chroma lives in the colour strips
-  and rims, not the vendor albedo.
-- **The effects are not always the brightest values.** In 6 of 11 stills, the
-  effects' L* p98 is below the rest of the frame's. The rims, sheen and glow spots
-  reach the top of the range under ACES. The epic leaves this to its tuning bead
-  (Decision 5).
+The lab's grade (ACES, exposure +0.25, contrast +12, saturation +15) replaces the night's
+(neutral, +0.8, +25, +30) under the flag, as epic Decision 5 asks. That grade was set for the
+lab's brighter arena, so here it is dark. Every player log says
+`DemoMain: --monster-style painted's post look on the night volume`.
+
+- **Readability passes in every beauty shot.** The monsters' |dL*| is 23 to 26, against
+  final's 20 to 24 and a floor of 17.
+- **The frame is dark.** Near-black is 25 to 50% of the song stills, against final's 3 to
+  17%.
+- **The horde is half final's chroma.** Monster C*ab is about 28 against 55.
+- **The effects are not always the brightest values.** In 6 of 11 stills, the effects'
+  L* p98 is below the rest of the frame's.
+
+The epic's tuning bead owns all of this.
 
 ## The beat wave
 
@@ -46,4 +51,4 @@ the arena has loaded.
 
 The right column shows each still's difference from the first, ×4. Only the rims and glow
 spots change. The brightest change sits farther from the hero in each still: about 140,
-220, 340 and 500 px. That is the wave sweeping out through the horde.
+180, 340 and 500 px. That is the wave sweeping out through the horde.

@@ -83,6 +83,29 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void EveryStyleShaderHasTheCrowdsSkinnedPasses()
+        {
+            var guids = AssetDatabase.FindAssets("t:Shader", new[] { CrowdBaker.StylesDir });
+            Assert.That(guids, Is.Not.Empty);
+            foreach (var guid in guids)
+            {
+                var shader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(guid));
+                Assert.That(ShaderUtil.ShaderHasError(shader), Is.False, shader.name);
+                var m = new Material(shader);
+                try
+                {
+                    // A missing pass would silently drop the style's shadows, depth (SSAO) or motion vectors (TAA).
+                    foreach (var pass in new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" })
+                        Assert.That(m.FindPass(pass), Is.GreaterThanOrEqualTo(0), $"{shader.name} has no {pass} pass");
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(m);
+                }
+            }
+        }
+
+        [Test]
         public void PaintedGivesEveryTypeItsOwnMaterialsAndBaselineTheBakedOnes()
         {
             var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);

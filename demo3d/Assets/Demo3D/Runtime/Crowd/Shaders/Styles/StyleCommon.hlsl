@@ -3,8 +3,8 @@
 // front end and per-monster values from the instance buffer, noise, the beat wave, lighting
 // helpers and death. A style shader declares its UnityPerMaterial CBUFFER (ending with the type's
 // `float _HeightM`, CrowdType.HeightM: its height at instance scale 1) before including this, as
-// CrowdSkinned does before CrowdCommon.hlsl. Its depth, shadow and
-// motion-vector passes are CrowdSkinned's own (UsePass), so this file's dissolve matches theirs.
+// CrowdSkinned does before CrowdCommon.hlsl, in the SubShader's HLSLINCLUDE so its shadow,
+// depth and motion passes (StylePasses.hlsl) see the same displacement and death.
 #ifndef DEMO3D_STYLE_COMMON_INCLUDED
 #define DEMO3D_STYLE_COMMON_INCLUDED
 
@@ -48,6 +48,13 @@ struct SLVertex
     float4 center;  // xyz the feet, w the seed (0..1)
 };
 
+// A style that moves vertices (shatter, flames, melt) defines SL_DISPLACE(v, m, slot, positionWS,
+// normalWS) before including this: every pass then skins through it, so shadows, depth and motion
+// vectors follow the displaced mesh. m is the instance (the previous frame's, for motion vectors).
+#ifndef SL_DISPLACE
+#define SL_DISPLACE(v, m, slot, positionWS, normalWS)
+#endif
+
 SLVertex SL_Skin(SLAttributes v)
 {
     SLVertex o;
@@ -56,6 +63,7 @@ SLVertex SL_Skin(SLAttributes v)
     SkinVertex(o.m, o.slot, false, v.positionOS, v.normalOS, v.boneIndex, v.boneWeight, o.positionWS, o.normalWS);
     o.fx = float4(o.m.hitFlash, o.m.dissolve, CrowdLodFade(o.slot));
     o.center = float4(o.m.position, frac(o.slot * 0.6180339887 + 0.137));
+    SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
     return o;
 }
 
@@ -214,9 +222,8 @@ float SL_Shatter(inout float3 positionWS, float3 faceNormalWS, float triRand, fl
     return t;
 }
 
-// Burns away through noise on the rest position: the crowd's own dissolve (CrowdDissolve), so
-// the colour pass clips exactly what CrowdSkinned's depth, shadow and motion passes clip.
-// Returns the hot edge (0..1).
+// Burns away through noise on the rest position: the baseline's own dissolve (CrowdDissolve).
+// Every pass clips with it (StylePasses.hlsl). Returns the hot edge (0..1).
 float SL_Dissolve(float3 rest, float death)
 {
     return CrowdDissolve(death, rest);

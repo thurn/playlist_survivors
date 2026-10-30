@@ -3,7 +3,7 @@
 // and only its light and dark kept, looked up in a colour strip per type. Shadows turn a deeper,
 // saturated hue instead of grey; a hard highlight and a lacquered sheen (an analytic matcap)
 // make the shell glossy; a complementary rim lifts the silhouette off the ground; glowing spots
-// pulse as the beat wave passes. Depth, shadows and motion vectors are CrowdSkinned's passes.
+// pulse as the beat wave passes. Its other passes are the styles' shared ones (StylePasses.hlsl).
 Shader "Demo3D/Styles/Painted"
 {
     Properties
@@ -26,6 +26,21 @@ Shader "Demo3D/Styles/Painted"
     SubShader
     {
         Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry" }
+
+        HLSLINCLUDE
+        #pragma target 4.5
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+        CBUFFER_START(UnityPerMaterial)
+            float4 _BaseMap_ST; half4 _BaseColor;
+            float4 _LumRange; half4 _ShadowColor; half4 _RimColor; half4 _SpecColor; half _Gloss;
+            half _Sheen; half4 _SpotColor; half _SpotScale; half _SpotAmount; half _Ambient;
+            float _HeightM;
+        CBUFFER_END
+
+        #include "StyleCommon.hlsl"
+        ENDHLSL
+
         Pass
         {
             Name "ForwardLit"
@@ -34,20 +49,9 @@ Shader "Demo3D/Styles/Painted"
             ZWrite On
 
             HLSLPROGRAM
-            #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
             #include_with_pragmas "StylePragmas.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-
-            CBUFFER_START(UnityPerMaterial)
-                float4 _BaseMap_ST; half4 _BaseColor;
-                float4 _LumRange; half4 _ShadowColor; half4 _RimColor; half4 _SpecColor; half _Gloss;
-                half _Sheen; half4 _SpotColor; half _SpotScale; half _SpotAmount; half _Ambient;
-                float _HeightM;
-            CBUFFER_END
-
-            #include "StyleCommon.hlsl"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_Ramp); SAMPLER(sampler_Ramp);
@@ -115,9 +119,67 @@ Shader "Demo3D/Styles/Painted"
             }
             ENDHLSL
         }
-        UsePass "Demo3D/CrowdSkinned/SHADOWCASTER"
-        UsePass "Demo3D/CrowdSkinned/DEPTHONLY"
-        UsePass "Demo3D/CrowdSkinned/DEPTHNORMALS"
-        UsePass "Demo3D/CrowdSkinned/MOTIONVECTORS"
+
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull Back
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #define SL_PASS_SHADOWCASTER
+            #include "StylePasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+            ZWrite On
+            ColorMask R
+            Cull Back
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #define SL_PASS_DEPTHONLY
+            #include "StylePasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+            ZWrite On
+            Cull Back
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+            #define SL_PASS_DEPTHNORMALS
+            #include "StylePasses.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "MotionVectors"
+            Tags { "LightMode" = "MotionVectors" }
+            ZWrite On
+            ColorMask RG
+            Cull Back
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #define SL_PASS_MOTIONVECTORS
+            #include "StylePasses.hlsl"
+            ENDHLSL
+        }
     }
 }

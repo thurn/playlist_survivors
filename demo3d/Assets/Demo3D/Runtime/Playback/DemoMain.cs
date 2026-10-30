@@ -38,6 +38,7 @@ namespace Demo3D.Runtime.Playback
         PostFeel _postFeel;
         MonsterStyle _style;
         StyleBeat _styleBeat;
+        bool _stylePosted;
         SoundScheduler _sounds;
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
         // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
@@ -111,10 +112,7 @@ namespace Demo3D.Runtime.Playback
             // TD14's rung switches (--grd, --merged, --tex-cap, --prepass) default to the ladder's final rung.
             var arena = _flags.ArenaOptions;
             if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
-            {
                 _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(arena, _rig.Camera, transform);
-                if (_arena.Post != null) _style.Post?.ApplyTo(_arena.Post.sharedProfile); // PostFeel's base values under the style
-            }
             else
             {
                 if (arena.Rung != "off")
@@ -373,6 +371,17 @@ namespace Demo3D.Runtime.Playback
             float punch = _feel != null && !_flags.NoFeel ? _feel.Punch(feelT) : 1f;
             _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth * punch, viewWidth);
             if (_feel != null && !_flags.NoFeel) _rig.Camera.transform.position += _feel.Shake(feelT);
+            if (!_stylePosted && _arena?.Post != null)
+            {
+                // The arena's volume exists once its scene has loaded; the style's grade goes on it before
+                // PostFeel first binds, so it becomes PostFeel's base.
+                _stylePosted = true;
+                if (_style.Post is PostLook look)
+                {
+                    look.ApplyTo(_arena.Post.sharedProfile);
+                    Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}'s post look on the night volume");
+                }
+            }
             _postFeel?.Apply(_arena.Post, feelT);
             _sounds?.Update(t);
             foreach (var e in _active)
