@@ -92,7 +92,7 @@ namespace Demo2D.Runtime.Playback
             var library = EffectLibrary.Parse(data.effects.text);
             var prefabs = new Dictionary<string, GameObject>(StringComparer.Ordinal);
             for (int i = 0; i < data.effectPaths.Length; i++) prefabs[data.effectPaths[i]] = data.effectPrefabs[i];
-            Effects = new EffectLayer(Timeline, library, prefabs, data.roster.text, data.glow, _root.transform);
+            Effects = new EffectLayer(Timeline, library, choreo.Roster, prefabs, data.glow, _root.transform);
             Night = new NightLighting(data.night.text, Arena, data.glow, _root.transform);
 
             _bySpawn = new int[Timeline.EntityCount];

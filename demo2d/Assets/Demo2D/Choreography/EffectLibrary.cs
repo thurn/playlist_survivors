@@ -194,16 +194,5 @@ namespace Demo2D.Choreography
             }
             return problems;
         }
-
-        /// <summary>The beam's sweep: the duration of the line spell with this effect, at song time t (the sim's: its bars of the beat there).</summary>
-        public static double SweepSeconds(SongMap map, string rosterJson, string effect, double t)
-        {
-            int bars = 1;
-            foreach (var kv in JsonValue.Parse(rosterJson)["spells"].Members)
-                if (kv.Value["effect"].AsString() == effect && kv.Value["shape"].AsString() == "line") bars = kv.Value["bars"].AsInt(1);
-            double b = Math.Floor(map.BeatIndexAt(t) + 1e-6);
-            double beat = map.TimeOfBeatIndex(b + 1) - map.TimeOfBeatIndex(b);
-            return bars * map.BeatsPerBarAt(1) * beat;
-        }
     }
 }

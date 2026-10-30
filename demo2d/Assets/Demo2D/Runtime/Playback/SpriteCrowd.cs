@@ -37,8 +37,6 @@ namespace Demo2D.Runtime.Playback
         public const float FlashPeak = 0.85f;
         /// <summary>The flash's light, HDR (its brightest pixels bloom a little): warm on monsters, cool on the hero.</summary>
         static readonly Color MonsterFlash = new Color(1.6f, 1.38f, 1.12f), HeroFlash = new Color(1.1f, 1.35f, 1.75f);
-        /// <summary>A projectile flies this high over its ground position.</summary>
-        public const float ProjectileHeightM = 1f;
         /// <summary>How far south of his feet the hero ranks: a grunt's height, so no grunt in front covers him.</summary>
         public const float HeroLeadM = 1.8f;
         /// <summary>The hero's outline, HDR: a warm rim just under the bloom's threshold.</summary>
@@ -228,7 +226,7 @@ namespace Demo2D.Runtime.Playback
                 float d = Mathf.Max(Mathf.Abs(x - 3), Mathf.Abs(y - 3)) + 0.5f * Mathf.Min(Mathf.Abs(x - 3), Mathf.Abs(y - 3));
                 px[y * s + x] = d < 1.2f ? new Color32(255, 250, 220, 255) : d < 2.4f ? new Color32(255, 170, 60, 255) : d < 3.2f ? new Color32(220, 80, 30, 160) : new Color32(0, 0, 0, 0);
             }
-            return Make(px, s, s, new Vector2(3f / s, -ProjectileHeightM * CharacterAtlas.PixelsPerMetre / s), "Bolt");
+            return Make(px, s, s, new Vector2(3f / s, -EffectSchedule.ProjectileHeightM * CharacterAtlas.PixelsPerMetre / s), "Bolt");
         }
 
         Sprite Make(Color32[] px, int w, int h, Vector2 pivot, string name)

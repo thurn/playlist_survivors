@@ -11,10 +11,9 @@ namespace Demo2D.Runtime.Playback
     /// one per projectile in flight), each placed, turned and scaled by the effect library
     /// (Data/effects.json), with its light cue offered to a pooled Light2D.
     ///
-    /// Which instances live is a function of the song time: the events whose lifetime covers it,
-    /// inside the view, at most each kind's <c>max</c> (the newest win). How they look is too, on a
-    /// still: every live instance is re-seeded with its event's seed and simulated from its event
-    /// to the still's time in 1/30 s steps, following its anchor (a monster, the hero, a
+    /// Which instances live, and where, is the engine-free <see cref="EffectSchedule"/>'s: a
+    /// function of the song time. How they look is too, on a still: every live instance is
+    /// re-seeded with its event's seed and simulated from its event to the still's time in 1/30 s steps, following its anchor (a monster, the hero, a
     /// projectile), so a seek draws the same particles as a run from the start. In live play a new
     /// instance is simulated up to its age once and then plays on Unity's own particle update,
     /// which costs nothing on the main thread; the song clock runs in real time there, so the two
@@ -29,8 +28,6 @@ namespace Demo2D.Runtime.Playback
         public const int OverOrder = 30000, GroundOrder = -900;
         /// <summary>A still's simulation step.</summary>
         const double StepS = 1.0 / 30;
-        /// <summary>Effects this far beyond the view (plus their scale) still live, so they don't pop in at the edges.</summary>
-        const float MarginM = 3f;
         /// <summary>A live frame further than this from the last re-simulates everything, as a still does.</summary>
         const double JumpS = 0.25;
 
@@ -39,7 +36,6 @@ namespace Demo2D.Runtime.Playback
             public EffectSpec Spec;
             public GameObject Prefab;
             public readonly Stack<Instance> Free = new Stack<Instance>();
-            public int Count;
         }
 
         /// <summary>A prefab's instance, set up to be driven by hand (<see cref="Make"/>).</summary>
@@ -60,55 +56,37 @@ namespace Demo2D.Runtime.Playback
             internal bool Paused;
         }
 
-        struct Want
-        {
-            public long Key;          // the event's index, or -(entity + 1) for a flight
-            public Kind Kind;
-            public int Event, Entity; // -1 when not one
-            public double Born;
-            public uint Seed;
-        }
-
-        readonly Timeline _tl;
-        readonly Kind[] _byEffect, _byProjectile;
-        readonly double _maxDuration;
-        readonly Dictionary<int, double> _sweeps = new Dictionary<int, double>();
-        readonly string _rosterJson;
+        readonly Dictionary<EffectSpec, Kind> _kinds = new Dictionary<EffectSpec, Kind>();
         readonly Shader _glow;
         readonly GameObject _root, _holder;
-        readonly Dictionary<long, Instance> _live = new Dictionary<long, Instance>(), _kept = new Dictionary<long, Instance>();
-        readonly List<Want> _wants = new List<Want>();
-        readonly List<long> _order = new List<long>();
+        readonly Dictionary<LiveEffect, Instance> _live = new Dictionary<LiveEffect, Instance>(), _kept = new Dictionary<LiveEffect, Instance>();
+        readonly List<LiveEffect> _wants = new List<LiveEffect>();
+        static readonly Comparison<LiveEffect> ByOrder = (a, b) => a.Order.CompareTo(b.Order);
         readonly List<Instance> _made = new List<Instance>();
         double _lastT = double.NaN;
 
         public readonly LightPool Lights;
         public readonly EffectLibrary Library;
+        public readonly EffectSchedule Schedule;
         public bool Enabled = true;
         /// <summary>Instances live after the last frame.</summary>
         public int Live => _live.Count;
 
         /// <param name="prefabs">The library's prefabs, by its paths (<see cref="EffectLibrary.Prefabs"/>).</param>
         /// <param name="glow">The beam's line shader (Glow.shader).</param>
-        public EffectLayer(Timeline tl, EffectLibrary library, IReadOnlyDictionary<string, GameObject> prefabs, string rosterJson, Shader glow, Transform parent)
+        public EffectLayer(Timeline tl, EffectLibrary library, Roster roster, IReadOnlyDictionary<string, GameObject> prefabs, Shader glow, Transform parent)
         {
-            _tl = tl;
             _glow = glow;
             Library = library;
-            _rosterJson = rosterJson;
-            var problems = library.Problems(tl.EffectNames, tl.ProjectileNames);
-            if (problems.Count > 0) throw new InvalidOperationException("EffectLayer: " + string.Join("; ", problems));
+            Schedule = new EffectSchedule(tl, library, roster);
             _root = new GameObject("Effects");
             _root.transform.SetParent(parent, false);
             // New instances are made under an inactive holder, so their vendor scripts never wake (below).
             _holder = new GameObject("Effect Holder");
             _holder.transform.SetParent(_root.transform, false);
             _holder.SetActive(false);
-            Kind Make(EffectSpec s) =>
-                new Kind { Spec = s, Prefab = prefabs.TryGetValue(s.Prefab, out var p) && p != null ? p : throw new InvalidOperationException("EffectLayer: no prefab " + s.Prefab + " (run demo2d unity BakePlayback)") };
-            _byEffect = Array.ConvertAll(tl.EffectNames, n => Make(library.Kinds[n]));
-            _byProjectile = Array.ConvertAll(tl.ProjectileNames, n => Make(library.Flights[n]));
-            foreach (var k in _byEffect) _maxDuration = Math.Max(_maxDuration, k.Spec.DurationS);
+            foreach (var s in library.All())
+                _kinds[s] = new Kind { Spec = s, Prefab = prefabs.TryGetValue(s.Prefab, out var p) && p != null ? p : throw new InvalidOperationException("EffectLayer: no prefab " + s.Prefab + " (run demo2d unity BakePlayback)") };
             Lights = new LightPool("Effect Lights", library.LightPool, _root.transform);
         }
 
@@ -122,29 +100,24 @@ namespace Demo2D.Runtime.Playback
             bool exact = still || !Application.isPlaying || double.IsNaN(_lastT) || t < _lastT || t - _lastT > JumpS;
             _lastT = t;
             _wants.Clear();
-            if (Enabled) Gather(t, view, active);
+            if (Enabled) Schedule.Live(t, new Box2(view.xMin, view.yMin, view.xMax, view.yMax), active, _wants);
 
             // Release what's no longer wanted, keep the rest, make the new.
             _kept.Clear();
-            foreach (var w in _wants)
-                if (_live.TryGetValue(w.Key, out var inst) && inst.Kind == w.Kind) { _kept[w.Key] = inst; _live.Remove(w.Key); }
+            foreach (var fx in _wants)
+                if (_live.TryGetValue(fx, out var inst)) { _kept[fx] = inst; _live.Remove(fx); }
             foreach (var inst in _live.Values) Release(inst);
             _live.Clear();
-            _order.Clear();
-            foreach (var w in _wants)
+            foreach (var fx in _wants)
             {
-                bool fresh = !_kept.TryGetValue(w.Key, out var inst);
-                if (fresh) inst = Acquire(w.Kind);
-                _live[w.Key] = inst;
-                _order.Add(w.Key);
-                if (fresh || exact) Simulate(inst, w, t);
-                else Place(inst, w, t);
-                if (w.Kind.Spec.Light != null)
-                {
-                    var s = w.Kind.Spec;
-                    float scale = w.Event >= 0 ? _tl.Effects[w.Event].Scale : 1f;
-                    Lights.Offer(inst.T.localPosition, new Color(s.Light.R, s.Light.G, s.Light.B), s.LightRadiusFor(scale), s.Light.At(t - w.Born), w.Key);
-                }
+                bool fresh = !_kept.TryGetValue(fx, out var inst);
+                if (fresh) inst = Acquire(_kinds[fx.Spec]);
+                _live[fx] = inst;
+                if (fresh || exact) Simulate(inst, fx, t);
+                else Place(inst, fx, t);
+                var light = fx.Spec.Light;
+                if (light != null)
+                    Lights.Offer(inst.T.localPosition, new Color(light.R, light.G, light.B), fx.LightRadius, Schedule.LightIntensity(fx, t), fx.Order);
             }
             // Live play carries on with Unity's particle update; a still (and the editor) stays where it simulated to.
             if (Application.isPlaying && !still)
@@ -152,84 +125,6 @@ namespace Demo2D.Runtime.Playback
                     if (inst.Paused) { foreach (var r in inst.Roots) r.Play(true); inst.Paused = false; }
             Rank();
             Lights.Commit();
-        }
-
-        void Gather(double t, Rect view, List<int> active)
-        {
-            foreach (var k in _byEffect) k.Count = 0;
-            foreach (var k in _byProjectile) k.Count = 0;
-            int first = _tl.FirstEffectAt(t - _maxDuration);
-            int end = first;
-            while (end < _tl.Effects.Length && _tl.Effects[end].Time <= t) end++;
-            // Newest first, so each kind keeps its newest max; then back into event order.
-            for (int i = end - 1; i >= first; i--)
-            {
-                var ev = _tl.Effects[i];
-                var kind = _byEffect[ev.Effect];
-                if (t - ev.Time >= kind.Spec.DurationS || kind.Count >= kind.Spec.Max) continue;
-                var w = new Want { Key = i, Kind = kind, Event = i, Entity = -1, Born = ev.Time, Seed = ev.Seed };
-                if (!InView(view, Position(w, t), kind.Spec.ScaleFor(ev.Scale))) continue;
-                kind.Count++;
-                _wants.Add(w);
-            }
-            _wants.Reverse();
-            for (int j = active.Count - 1; j >= 0; j--)
-            {
-                int e = active[j];
-                var info = _tl.Entities[e];
-                if (info.Kind != EntityKind.Projectile) continue;
-                var kind = _byProjectile[info.Type];
-                if (kind.Count >= kind.Spec.Max) continue;
-                var w = new Want { Key = -(e + 1L), Kind = kind, Event = -1, Entity = e, Born = info.Spawn, Seed = info.Seed };
-                if (!InView(view, Position(w, t), kind.Spec.Scale)) continue;
-                kind.Count++;
-                _wants.Add(w);
-            }
-        }
-
-        static bool InView(Rect view, Vector2 p, float scale)
-        {
-            float m = MarginM + 2 * scale;
-            return p.x > view.xMin - m && p.x < view.xMax + m && p.y > view.yMin - m && p.y < view.yMax + m;
-        }
-
-        /// <summary>Where a wanted effect is at song time τ: its anchor (a projectile 1 m up, an entity plus the event's offset, or the event's point), moved along its yaw.</summary>
-        Vector2 Position(in Want w, double tau)
-        {
-            if (w.Entity >= 0)
-            {
-                var p = _tl.PositionAt(w.Entity, tau);
-                return new Vector2(p.X, p.Y + SpriteCrowd.ProjectileHeightM);
-            }
-            var ev = _tl.Effects[w.Event];
-            // The sim's 3D offsets: x and z on the ground, y up, which the side view draws as up the screen.
-            var at = new Vector2(ev.Position.X, ev.Position.Z + ev.Position.Y);
-            if (ev.AttachTo >= 0)
-            {
-                var p = _tl.PositionAt(ev.AttachTo, tau);
-                at += new Vector2(p.X, p.Y);
-            }
-            var spec = w.Kind.Spec;
-            if (spec.ReachM > 0)
-            {
-                var d = Easing.Dir(Yaw(w, tau));
-                at += new Vector2(d.X, d.Y) * (spec.ReachM * spec.ScaleFor(ev.Scale) / spec.Scale);
-            }
-            return at;
-        }
-
-        float Yaw(in Want w, double tau)
-        {
-            var ev = _tl.Effects[w.Event];
-            if (!w.Kind.Spec.Sweep) return ev.Yaw;
-            return ev.Yaw + (float)(2 * Math.PI * (tau - ev.Time) / SweepOf(w.Event));
-        }
-
-        double SweepOf(int e)
-        {
-            if (!_sweeps.TryGetValue(e, out var dur))
-                _sweeps[e] = dur = EffectLibrary.SweepSeconds(_tl.Map, _rosterJson, _tl.EffectNames[_tl.Effects[e].Effect], _tl.Effects[e].Time);
-            return dur;
         }
 
         /// <summary>
@@ -263,35 +158,30 @@ namespace Demo2D.Runtime.Playback
             core.startColor = core.endColor = white;
         }
 
-        void Place(Instance inst, in Want w, double tau)
+        void Place(Instance inst, LiveEffect fx, double tau)
         {
-            var p = Position(w, tau);
-            inst.T.localPosition = new Vector3(p.x, p.y, 0);
-            var spec = w.Kind.Spec;
-            float scale = w.Event >= 0 ? spec.ScaleFor(_tl.Effects[w.Event].Scale) : spec.Scale;
-            inst.T.localScale = inst.AuthoredScale * scale;
+            var p = Schedule.Position(fx, tau);
+            inst.T.localPosition = new Vector3(p.X, p.Y, 0);
+            var spec = fx.Spec;
+            inst.T.localScale = inst.AuthoredScale * fx.Scale;
+            var ev = fx as EventEffect;
             var aim = Quaternion.identity;
-            if (spec.Aim != EffectAim.None && w.Event >= 0)
+            if (spec.Aim != EffectAim.None && ev != null)
             {
-                var d = Easing.Dir(Yaw(w, tau));
+                var d = Easing.Dir(Schedule.Yaw(ev, tau));
                 aim = spec.Aim == EffectAim.Side
                     ? (d.X < 0 ? Quaternion.Euler(0, 180, 0) : Quaternion.identity)   // the side view mirrors a blow to the left
                     : Quaternion.Euler(0, 0, Mathf.Atan2(d.Y, d.X) * Mathf.Rad2Deg - 90); // the beam: its +y axis along the yaw
             }
             inst.T.localRotation = aim * inst.AuthoredRotation;
             if (inst.Beam != null)
-            {
-                var ev = _tl.Effects[w.Event];
-                double age = tau - ev.Time, sweep = SweepOf(w.Event);
-                float alpha = age < sweep ? 1f : Mathf.Clamp01(1f - (float)((age - sweep) / spec.Beam.FadeS));
-                DrawBeam(inst, spec, p, Yaw(w, tau), spec.BeamLengthFor(ev.Scale), alpha, ev.Seed, tau);
-            }
+                DrawBeam(inst, spec, new Vector2(p.X, p.Y), Schedule.Yaw(ev, tau), spec.BeamLengthFor(ev.Data.Scale), Schedule.BeamAlpha(ev, tau), ev.Seed, tau);
         }
 
         /// <summary>Re-seeds the instance and plays it from its event to t in fixed steps, following its anchor; it stays paused there.</summary>
-        void Simulate(Instance inst, Want w, double t)
+        void Simulate(Instance inst, LiveEffect fx, double t)
         {
-            SimulateTo(inst, w.Seed, Math.Max(0, t - w.Born), tau => Place(inst, w, w.Born + tau));
+            SimulateTo(inst, fx.Seed, Math.Max(0, t - fx.Born), tau => Place(inst, fx, fx.Born + tau));
             inst.Paused = true;
         }
 
@@ -317,12 +207,11 @@ namespace Demo2D.Runtime.Playback
         /// <summary>Draw order: ground effects, then the rest over the crowd, each in event order, keeping a prefab's own order among its parts.</summary>
         void Rank()
         {
-            _order.Sort();
+            _wants.Sort(ByOrder);
             int over = 0, ground = 0;
-            foreach (var key in _order)
+            foreach (var fx in _wants)
             {
-                // Flights (negative keys) sort first; events by index after.
-                var inst = _live[key];
+                var inst = _live[fx];
                 int base_ = inst.Kind.Spec.Ground ? GroundOrder + 8 * ground++ : OverOrder + 8 * over++;
                 for (int r = 0; r < inst.Renderers.Length; r++) inst.Renderers[r].sortingOrder = base_ + inst.AuthoredOrder[r];
                 if (inst.Beam != null) { inst.Beam[0].sortingOrder = base_ + 6; inst.Beam[1].sortingOrder = base_ + 7; }
