@@ -2,17 +2,18 @@
 
 Agents never open a player window, so motion is judged from frame sequences: `--frames` consecutive
 fixed-time stills (1/60 s apart, or every `--every`th frame) from song time T, rendered by the
-batch-mode player (mac.md). A batch-mode player draws by hand only the frames that keep a still,
-and URP holds each hand-drawn frame's pooled targets until the player quits, so the frames are split
-over several players (`--chunk` each, `--workers` at a time). Every player starts at the same
-`--start-at` (T less `--warmup`) and runs the same fixed-time frames, so the chunks join into one
-continuous run (the crystal shatter's physics is deterministic, ps-2iq.1).
+batch-mode player (mac.md), which draws by hand only the frames that keep a still. One player
+draws them all by default (96 frames held about 1 GB). A longer run can be split over several
+players (`--chunk` frames each, `--workers` at a time), each starting at the same `--start-at` (T
+less `--warmup`), so they simulate the same frames (the crystal shatter's physics is deterministic,
+ps-2iq.1); but some of a frame's pixels depend on how many frames its player has drawn (by up to
+about 20 of 255, in the build before this tool too), so a split run has small seams.
 
 Outputs, all under the gitignored captures/filmstrip/SLUG/:
 - the full PNG of every frame (frame-NNN.png, in each chunk's folder too);
 - strip.jpg: the frames in a grid, `--columns` wide, each `--crop`ped (1080p pixels from the top
   left) and labelled with its song time;
-- SLUG.mp4 at `--fps` (60 is real time; 15 is a quarter speed), cropped the same way.
+- SLUG.mp4 at `--fps` (60 / `--every` is real time), cropped the same way.
 `--evidence DIR` also copies strip.jpg, with the ps-render tag the vendor guard accepts, to
 demo3d/evidence/DIR/SLUG.jpg. `--baseline SLUG2` builds versus.jpg: SLUG2's frames over this run's,
 row by row (before above after), for the same times. `--check SLUG2` compares every frame with
@@ -237,8 +238,8 @@ def add_parser(sub) -> None:
     fs.add_argument("--crop", help="x,y,w,h in 1080p pixels from the top left, for the strip and the mp4")
     fs.add_argument("--columns", type=int, default=8)
     fs.add_argument("--scale", type=float, default=1.0, help="tile width as a multiple of 480 px")
-    fs.add_argument("--fps", type=int, default=15, help="the mp4's rate (60: real time)")
-    fs.add_argument("--chunk", type=int, default=12, help="frames per player")
+    fs.add_argument("--fps", type=int, default=15, help="the mp4's rate (60 / --every: real time)")
+    fs.add_argument("--chunk", type=int, default=240, help="frames per player (split runs have small seams)")
     fs.add_argument("--workers", type=int, default=4, help="players at a time")
     fs.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
     fs.add_argument("--app", help="another player's executable (e.g. a saved build, for a before strip)")

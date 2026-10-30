@@ -159,19 +159,19 @@ uv run --project demo3d/tools demo3d filmstrip <slug> --at 41.2 --frames 64 --ev
   --player-args "--monster-style crystal --envelope 24 --view-width 12 --no-effects" --crop 600,40,640,540
 ```
 
-It renders `--frames` stills from song time `--at`, every `--every`th 1/60 s frame, with the
-batch-mode player, `--chunk` frames (12) per player and 4 players at a time, every player starting
-`--warmup` (4 s) before `--at` so they run the same frames. The PNGs, `strip.jpg` (a grid of the
-frames, `--crop`ped, labelled with song times) and an mp4 at `--fps` (15, a quarter speed) go to
-`captures/filmstrip/<slug>/`; `--evidence DIR` also writes a tagged strip to `demo3d/evidence/DIR/`.
-`--baseline <slug>` adds `versus.jpg`, a kept run's frames above this one's, and `--check <slug>`
-exits 1 unless every frame matches a kept run's pixel for pixel. `--app` runs another build (a
-saved copy, for a before strip), and `--measure-only` reassembles kept frames with new options.
+It renders `--frames` stills from song time `--at`, every `--every`th 1/60 s frame, with one
+batch-mode player that starts `--warmup` (4 s) before `--at` (96 hand-drawn frames held about
+1 GB). The PNGs, `strip.jpg` (a grid of the frames, `--crop`ped, labelled with song times) and an
+mp4 at `--fps` (15; real time is 60 / `--every`) go to `captures/filmstrip/<slug>/`;
+`--evidence DIR` also writes a tagged strip to `demo3d/evidence/DIR/`. `--baseline <slug>` adds
+`versus.jpg`, a kept run's frames above this one's, and `--check <slug>` exits 1 unless every frame
+matches a kept run's pixel for pixel. `--app` runs another build (a saved copy, for a before strip),
+and `--measure-only` reassembles kept frames with new options.
 
-Two runs with the same options match exactly. Runs split into different chunks differ by a few
-levels (up to about 20 of 255) for about half a second after a chunk's first frame, in the
-baseline too: something in the frame converges over the frames a player draws. Keep `--chunk` the
-same when comparing runs.
+Two runs with the same options match exactly. `--chunk N` splits a long run over players of N
+frames (`--workers` at a time), but some pixels of a frame depend on how many frames its player
+has drawn (a few dozen by up to about 20 of 255, and many by 1 or 2, in the build before the tool
+too), so a split run has small seams, and runs compare only with the same `--chunk`.
 
 ## Limits on the Mac
 
