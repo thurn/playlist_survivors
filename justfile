@@ -9,6 +9,8 @@ tools := "uv run --project demo3d/tools"
 # The demos' player backend: `just backend=mono demo3d` builds faster (Mono's simulation
 # diverges from IL2CPP's, so never compare their look sets).
 backend := "il2cpp"
+# The demos' players open fullscreen at 1080p; `just fullscreen=0 demo3d` plays in a window.
+fullscreen := "1"
 unity_app := "/Applications/Unity/Hub/Editor/6000.6.7f1/Unity.app"
 
 default:
@@ -52,7 +54,7 @@ ci *args:
 # Build the 3D demo (setting up first if needed) and play it at 1080p, with player flags (--start-at 160, --click)
 [group('demo3d')]
 demo3d *args: demo3d-build
-    @just backend={{backend}} _play demo3d PlaylistSurvivors3D "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play demo3d PlaylistSurvivors3D "$@"
 
 # Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('demo3d')]
@@ -62,7 +64,7 @@ demo3d-build *args: (_setup "demo3d")
 # Play the last build without rebuilding
 [group('demo3d')]
 demo3d-play *args:
-    @just backend={{backend}} _play demo3d PlaylistSurvivors3D "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play demo3d PlaylistSurvivors3D "$@"
 
 # The tools themselves: `just demo3d-tool look <slug>`, `just demo3d-tool unity BakeAll`
 [group('demo3d')]
@@ -72,7 +74,7 @@ demo3d-tool *args:
 # Build the 2D demo (setting up first if needed) and play it at 1080p, with player flags
 [group('demo2d')]
 demo2d *args: demo2d-build
-    @just backend={{backend}} _play demo2d PlaylistSurvivors2D "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play demo2d PlaylistSurvivors2D "$@"
 
 # Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('demo2d')]
@@ -82,7 +84,7 @@ demo2d-build *args: (_setup "demo2d")
 # Play the last build without rebuilding
 [group('demo2d')]
 demo2d-play *args:
-    @just backend={{backend}} _play demo2d PlaylistSurvivors2D "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play demo2d PlaylistSurvivors2D "$@"
 
 # The tools themselves: `just demo2d-tool test`, `just demo2d-tool setup`
 [group('demo2d')]
@@ -92,7 +94,7 @@ demo2d-tool *args:
 # Build the style lab (setting up first if needed) and play it at 1080p, with player flags
 [group('stylelab')]
 stylelab *args: stylelab-build
-    @just backend={{backend}} _play stylelab StyleLab "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play stylelab StyleLab "$@"
 
 # Set up if needed, then build the player (build flags: --development, --scene ...)
 [group('stylelab')]
@@ -102,7 +104,7 @@ stylelab-build *args: (_setup "stylelab")
 # Play the last build without rebuilding
 [group('stylelab')]
 stylelab-play *args:
-    @just backend={{backend}} _play stylelab StyleLab "$@"
+    @just backend={{backend}} fullscreen={{fullscreen}} _play stylelab StyleLab "$@"
 
 # The tools themselves: `just stylelab-tool test`, `just stylelab-tool setup`
 [group('stylelab')]
@@ -131,4 +133,4 @@ _play project app *args:
         exit 1
     fi
     echo "playing $player"
-    open -n "$player" --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 "$@"
+    open -n "$player" --args -screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} "$@"
