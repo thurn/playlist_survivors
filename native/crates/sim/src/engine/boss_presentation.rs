@@ -16,7 +16,8 @@ impl Sim {
                 !row.bosses.is_empty() && !self.st.boss_presentation.warned.contains(&row.minute)
             })
             .map(|row| {
-                let raw = row.minute as f64 * 60.0 + self.st.freeze.total_s;
+                // A song-clock row's boss is due on the song, not at its run minute.
+                let raw = row.start(self.st.freeze.total_s);
                 let (land, mut period) = boss_bar(raw, self.st.s, beats);
                 if !beats.iter().any(|b| b.known_at <= self.st.s + 1e-9) {
                     period = self.env.rule.free_period_s;

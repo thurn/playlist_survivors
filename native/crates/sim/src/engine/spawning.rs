@@ -469,6 +469,38 @@ mod tests {
         assert_eq!(s.st.boss_presentation.landed_run, Some(60.0));
     }
     #[test]
+    fn a_song_clock_rows_boss_is_announced_on_the_song_before_it_lands() {
+        let mut s = sim_on("levels/action-showcase.yaml");
+        s.log = Rc::new(StreamLog {
+            beats: (0..500)
+                .map(|i| stream::Beat {
+                    t: f64::from(i) * 0.5,
+                    known_at: (f64::from(i) * 0.5 - 0.5).max(0.0),
+                    period: 0.5,
+                    evidence: 1.0,
+                })
+                .collect(),
+            ..Default::default()
+        });
+        s.st.ingested.beats = s.log.beats.len();
+        let rows = s.env.input.level.survivor_schedule.clone();
+        let peak = rows.iter().position(|r| r.minute == 9).unwrap();
+        assert!(!rows[peak].bosses.is_empty());
+        let at = rows[peak].song_s.unwrap();
+        // The earlier rows' bosses were announced; freezes hold the run clock far behind the song.
+        s.st.boss_presentation.warned = (0..peak).collect();
+        (s.st.s, s.st.w, s.st.run_s, s.st.freeze.total_s) = (at - 5.0, at - 5.0, 30.0, at - 35.0);
+        let notice = s.boss_notice_stop();
+        assert!(
+            notice > at - 5.0 && notice < at,
+            "notice at {notice}, row at {at}"
+        );
+        (s.st.s, s.st.w, s.st.run_s) = (notice, notice, notice - s.st.freeze.total_s);
+        s.tick_boss_notice();
+        assert_eq!(s.st.boss_presentation.warned.last(), Some(&peak));
+        assert_eq!(s.st.boss_presentation.pending, rows[peak].bosses.len());
+    }
+    #[test]
     fn boss_admission_reclaims_ordinary_space_and_finishes_the_notice_once() {
         let mut s = sim();
         Rc::get_mut(&mut s.env)

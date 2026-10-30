@@ -62,7 +62,7 @@ pub struct SpawnMinute {
 }
 impl SpawnMinute {
     /// The row's start on the song clock, given the run clock's offset (song = run + offset).
-    fn start(&self, offset: f64) -> f64 {
+    pub fn start(&self, offset: f64) -> f64 {
         self.song_s.unwrap_or(self.minute as f64 * 60.0 + offset)
     }
     /// Whether the row has begun at run time `run` and song time `song`.

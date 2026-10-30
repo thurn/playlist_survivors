@@ -381,6 +381,15 @@ fn song_clock_schedules_and_caps_are_validated() {
         // songS on some rows only, or not rising.
         (edit(&showcase, "\"songS\":5.4,", ""), "songS"),
         (edit(&showcase, "\"songS\":5.4,", "\"songS\":0,"), "songS"),
+        // Events keep run-clock minutes.
+        (
+            edit(
+                &showcase,
+                "\"minimum\":60,\"frequency\":250,\"enemies\":[\"vs-skeleton\",\"vs-skeleton\",\"vs-skeleton\",\"vs-bat3\",\"vs-skeleton\",\"vs-zombie\",\"vs-zombie\",\"vs-zombie\"],\"bosses\":[],\"events\":[]",
+                "\"minimum\":60,\"frequency\":250,\"enemies\":[\"vs-skeleton\"],\"bosses\":[],\"events\":[{\"kind\":\"BAT_SWARM\",\"delayMs\":0,\"extraRepeats\":0,\"durationMs\":1000,\"count\":5}]",
+            ),
+            "events need run-clock rows",
+        ),
         // widen without song-clock rows.
         (
             edit(&survivors, "{\"minute\":0,", "{\"minute\":0,\"widen\":1.2,"),

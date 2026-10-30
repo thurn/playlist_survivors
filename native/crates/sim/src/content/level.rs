@@ -1189,6 +1189,18 @@ pub fn load_level(
                     "songS must be on every row or none, rising".into(),
                 )),
             }
+            // (Events keep the run clock's minute windows: they would fire minutes off a
+            // song-clock row.)
+            if song_clock
+                && minute["events"]
+                    .as_array()
+                    .is_some_and(|events| !events.is_empty())
+            {
+                issues.push(at(
+                    "survivors.schedule",
+                    "events need run-clock rows".into(),
+                ));
+            }
             if !song_clock && minute.get("widen").is_some() {
                 issues.push(at("survivors.schedule", "widen needs songS rows".into()));
             }
