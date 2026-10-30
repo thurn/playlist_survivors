@@ -91,7 +91,14 @@ About twenty effects cover the demo, chosen by TD8 from the vendor packs:
 - **KriptoFX:** death bursts and explosions, where they read better than
   Hovl's.
 - **Ambient:** embers and drifting wisps over the arena.
-- **Monsters:** a small dust puff on each attack.
+- **Monsters:** a small dust puff on each attack. The song's clear ring
+  (choreography.md) keeps monsters from attacking, so it shows only in the
+  stress scenes.
+- **The hero stays in sight.** Effects centred on the hero leave out their
+  smoke and fire children: the slash, spin and slam lose their smoke (the
+  slash its fire too), and the ring spell keeps only its expanding ground
+  wave, since its sunburst core sat over the hero on every downbeat. The
+  bolt's muzzle flash fires from the hero's edge at 0.6 size.
 
 ### The converter
 
