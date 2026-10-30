@@ -526,6 +526,59 @@ def test_a_record_missing_a_pack_on_disk_is_stale(repo: Path, tmp_path: Path,
     assert guard.run("index", repo, None, None, None).ok
 
 
+def uncovered_cache(repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                    pixels: bool) -> Path:
+    """A machine record lacking demo2d's manifest GUIDs, with or without its pixel_assets root."""
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    roots = no_vendor_roots(tmp_path)
+    for name in ("unity_assets", "pixel_assets") if pixels else ("unity_assets",):
+        (Path(roots[name]) / "Assets").mkdir(parents=True)
+    (cache / "roots.json").write_text(json.dumps(roots))
+    (cache / "sync-record.json").write_text(json.dumps({"version": 1, "files": []}))
+    monkeypatch.setenv("DEMO3D_CACHE", str(cache))
+    add(repo, "demo2d/manifest.json", json.dumps({"version": 1, "assets": [
+        {"source": "pixel_assets", "path": "Assets/Skeleton/Skeleton.prefab", "guid": "a" * 32},
+    ]}).encode())
+    add(repo, "demo2d/Code.cs", b"class E {}\n")
+    git(repo, "commit", "-qm", "demo2d")
+    git(repo, "update-ref", "refs/remotes/origin/master", "HEAD")
+    return cache
+
+
+def test_a_record_without_a_demos_missing_root_passes_its_unchanged_files(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The Mac's record covers the 3D packs, but the 2D packs live on Cygnus."""
+    uncovered_cache(repo, tmp_path, monkeypatch, pixels=False)
+    for mode, rev in (("index", None), ("tree", "HEAD")):
+        res = guard.run(mode, repo, rev, None, None)
+        assert res.ok, (mode, res.failures)
+        assert any("lacks demo2d's packs (pixel_assets missing here)" in w for w in res.warnings)
+
+
+def test_a_record_without_a_demos_missing_root_fails_its_changes(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    uncovered_cache(repo, tmp_path, monkeypatch, pixels=False)
+    add(repo, "demo2d/More.cs", b"class F {}\n")
+    fails = guard.run("index", repo, None, None, None).failures
+    assert [p for p, _ in fails] == ["(sync record)"] and "demo2d/More.cs" in fails[0][1]
+    add(repo, "demo2d/Assets/Fx/x.png", png(tag=False))
+    git(repo, "commit", "-qm", "change")
+    res = guard.run("range", repo, "origin/master..HEAD", None, None)
+    assert set(failures(res)) == {"(sync record)", "demo2d/Assets/Fx/x.png"}
+    add(repo, "demo3d/Change.cs", b"class G {}\n")  # demo3d is still covered by the record
+    git(repo, "commit", "-qm", "demo3d")
+    res = guard.run("range", repo, "HEAD~1..HEAD", None, None)
+    assert res.ok, res.failures
+
+
+def test_a_record_lacking_a_demo_whose_roots_are_here_is_still_stale(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    uncovered_cache(repo, tmp_path, monkeypatch, pixels=True)
+    fails = guard.run("index", repo, None, None, None).failures
+    assert [p for p, _ in fails] == ["(sync record)"] and "run `demo2d sync`" in fails[0][1]
+
+
 def test_derived_files_are_recorded_and_caught_elsewhere(repo: Path, tmp_path: Path,
                                                          monkeypatch: pytest.MonkeyPatch) -> None:
     from demo3d_tools import derived

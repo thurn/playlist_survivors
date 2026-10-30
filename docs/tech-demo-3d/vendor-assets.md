@@ -123,6 +123,13 @@ More rules:
   contents through. The guard's own code, `demo3d/tools/`, only warns without
   a record, as `docs/` does, so the Mac can still change the guard; its
   vendor-path, binary and audio checks still apply there.
+- **A partial record counts as missing for its demo.** A record that lacks a
+  demo's manifest GUIDs while one of that demo's source roots is absent from
+  the machine (the Mac's record covers the 3D packs, but `pixel_assets`, with
+  the 2D packs, lives on Cygnus) cannot be fixed by a sync there. The guard
+  then treats that demo's files as under a missing record, by the rule above,
+  and only warns for its unchanged files; the other demo keeps the record's
+  full checks. With all of the demo's roots present, the record is stale.
 - **The guard has its own tests,** with synthetic fixtures: a fake record, a
   fake vendor file, a tagged render. TD1 proves every failure case with them
   before any vendor file exists.

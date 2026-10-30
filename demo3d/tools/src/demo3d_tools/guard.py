@@ -17,7 +17,9 @@ A missing sync record fails any change under a demo's folder and only warns else
 (vendor-assets.md, The vendor guard). An unreadable or malformed record fails everything, and so
 does a stale record: one that lacks a GUID either demo's tracked manifest lists, or a pack in
 one of the machine's asset folders (a top-level folder of `unity_assets` or `pixel_assets` whose
-`.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync).
+`.meta` GUID it lacks, such as a pack copied in, or a root added, since the last sync). A record
+that lacks a demo's manifest GUIDs because one of that demo's source roots is absent from the
+machine is not stale but partial: that demo's files are treated as under a missing record.
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
@@ -466,6 +468,36 @@ def unrecorded_packs(roots: dict[str, str], record: Record) -> list[tuple[str, s
     return missing
 
 
+def missing_roots(roots: dict[str, str]) -> set[str]:
+    """The synced source roots absent from this machine (an asset folder without Assets/)."""
+    missing = set()
+    for name in ("synty", *paths.ASSET_FOLDERS):
+        root = Path(roots[name]) if roots.get(name) else None
+        present = root is not None and (root / "Assets" if name in paths.ASSET_FOLDERS
+                                        else root).is_dir()
+        if not present:
+            missing.add(name)
+    return missing
+
+
+def uncovered_demos(roots: dict[str, str], record: Record,
+                    manifest: dict[str, tuple[str, str]]) -> dict[str, list[str]]:
+    """The demos the record cannot cover on this machine: demo -> its missing source roots.
+
+    A demo is uncovered when the record lacks one of its manifest GUIDs and one of its synced
+    roots is absent here, so no sync on this machine could fill the record in (the Mac, whose
+    2D packs live on Cygnus). Its files are then treated as under a missing record.
+    """
+    absent = missing_roots(roots)
+    lacking = {demo for guid, (demo, _) in manifest.items() if guid not in record.guids}
+    out = {}
+    for demo in sorted(lacking):
+        gone = [r for r in paths.PROJECT_ROOTS.get(demo, ()) if r in absent]
+        if gone:
+            out[demo] = gone
+    return out
+
+
 def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file: Path | None,
         stdin_lines: Iterable[str] = (), derived_file: Path | None = None, refresh: bool = True) -> Result:
     """Checks what `mode` selects: a tree, the index, a commit range, or a push."""
@@ -499,14 +531,32 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
             if vetted is not None:
                 changed = {p for p, s in entries if (p, s) not in vetted}
         res = check_blobs(read_blobs(repo, entries), record, record_at, changed)
+        manifest = manifest_guids(repo) if record is not None else {}
+        uncovered: dict[str, list[str]] = {}
+        if record is not None and record_file is None:  # the machine's own record and roots
+            uncovered = uncovered_demos(paths.load_roots(), record, manifest)
+        if uncovered:
+            vetted = vetted_entries(repo, remote or "origin")
+            for demo, gone in uncovered.items():
+                touched = [p for p, s in entries
+                           if demo_of(p.lower()) == demo and not p.lower().startswith(OWN_TOOLS)
+                           and (vetted is None or (p, s) not in vetted)]
+                msg = (f"sync record lacks {demo}'s packs ({', '.join(gone)} missing here); "
+                       f"the GUID and hash checks did not cover {demo}/")
+                if touched:
+                    shown = ", ".join(touched[:3]) + (", ..." if len(touched) > 3 else "")
+                    res.failures.append(("(sync record)", (f"{msg}, so its changes fail ({shown}); "
+                                         f"make them on a machine with those packs")))
+                else:
+                    res.warnings.append(msg)
     except (RecordError, PushError, subprocess.CalledProcessError, ValueError) as e:
         detail = e.stderr.decode(errors="replace").strip() if isinstance(
             e, subprocess.CalledProcessError) and e.stderr else str(e)
         res.failures.append(("(guard)", f"could not check: {detail}"))
         return res
     if record is not None:
-        for guid, (demo, path) in manifest_guids(repo).items():
-            if guid not in record.guids:
+        for guid, (demo, path) in manifest.items():
+            if guid not in record.guids and demo not in uncovered:
                 res.failures.append(("(sync record)", (f"stale: {demo}'s manifest's {path} "
                                      f"({guid}) is not in it; run `{demo} sync`")))
         if record_file is None:  # the machine's own record, so its own roots
