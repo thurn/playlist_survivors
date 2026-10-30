@@ -227,3 +227,20 @@ fourth root:
   rebuilds it.
 - **Derived files** go to `demo3d/Assets/Baked/Rosters/<set>/`, gitignored
   with the rest of `Assets/Baked/`.
+
+### Kit packs a machine lacks
+
+The environments (environment.md) brought Synty packs Cygnus doesn't have
+(Ancient Egypt, Ancient Empire and Western Frontier for the desert, Vikings
+for the snow, Dungeon Realms for the lava). A Synty package missing from the
+`synty` root whose manifest entries are all arena kit pieces (`use` starting
+`kit:`) doesn't fail the sync: setup and `demo3d sync` name it and skip its
+entries, and `BakeArena` (so BakeAll) skips any environment other than the
+forest whose kit pieces are missing, with a warning. Such a machine builds
+and plays every other environment; naming a skipped one (`BakeArena
+-environment desert`, or `--environment desert` in the player) fails. A
+missing package with any non-kit entry (a roster's characters, an animation)
+still fails the sync, as does a missing forest kit piece in the bake. The
+vendor cache keys by the skipped packages, so once a pack arrives the next
+`demo3d setup` syncs a fresh vendor folder (`just demo3d` sets up only a
+checkout without one, so run it by hand there).

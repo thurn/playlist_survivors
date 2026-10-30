@@ -66,7 +66,8 @@ namespace Demo3D.EditorTools.Arena
         public static void Bake()
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var names = TaskArgs.Get("-environment")?.Split(',') ?? ArenaEnvironment.Names().ToArray();
+            var named = TaskArgs.Get("-environment")?.Split(',');
+            var names = named ?? ArenaEnvironment.Names().ToArray();
             var environments = names.Select(ArenaEnvironment.Load).ToList(); // an unknown name fails before anything bakes
             bool lightmaps = !TaskArgs.Has("-noLightmaps");
             Directory.CreateDirectory(Dir + "/Resources");
@@ -95,6 +96,15 @@ namespace Demo3D.EditorTools.Arena
                 var e0 = Floats(TaskArgs.Get("-e0")) ?? authored ?? E0Densities;
                 var lit = Floats(TaskArgs.Get("-lit")) ?? authored ?? LitDensities;
                 var merged = Floats(TaskArgs.Get("-merged")) ?? (env.IsDefault ? MergedDensities : new float[0]);
+                // Setup skips the kit packs a machine lacks (sync.absent_kits: Cygnus has no
+                // desert, snow or lava packs), so baking them all skips another environment whose
+                // kit is missing; a named one, or the forest, still fails on its first missing piece.
+                if (named == null && !env.IsDefault && MissingKit(layout, table, e0.Concat(lit)) is { Count: > 0 } missing)
+                {
+                    Debug.LogWarning($"ArenaBaker: skipped the {env.Name} environment: {missing.Count} kit pieces are missing " +
+                                     $"(the first: {missing[0]}); their packs are absent on this machine");
+                    continue;
+                }
                 foreach (var d in e0) Put(Generate(env, ArenaIndex.E0, d, false, layout, table, lighting, converter, ground, groundMesh, false));
                 foreach (var d in lit) Put(Generate(env, ArenaIndex.E2, d, false, layout, table, lighting, converter, ground, groundMesh, lightmaps));
                 foreach (var d in merged)
@@ -122,6 +132,12 @@ namespace Demo3D.EditorTools.Arena
             Debug.Log($"ArenaBaker: {entries.Count} scenes ({string.Join(", ", entries.Select(e => $"{e.scene}: {e.renderers} renderers, {e.triangles} tris"))}), " +
                       $"{materials} materials, in {sw.Elapsed.TotalSeconds:F0} s");
         }
+
+        /// <summary>The ids of the kit pieces the layout places at any of <paramref name="densities"/> that aren't in the project.</summary>
+        static List<string> MissingKit(ArenaLayout layout, FootprintTable table, IEnumerable<float> densities) =>
+            densities.Distinct().SelectMany(d => layout.WithDensity(d).Generate(table).Props)
+                .Where(p => AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(p.Guid)) == null)
+                .Select(p => p.Id).Distinct().ToList();
 
         static float[] Floats(string s) =>
             string.IsNullOrEmpty(s) ? null : s.Split(',').Select(x => float.Parse(x, CultureInfo.InvariantCulture)).ToArray();

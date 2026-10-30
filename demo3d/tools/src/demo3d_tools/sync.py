@@ -15,6 +15,10 @@ Curation and sync):
 - An entry with a `roster` (forest or heroic, demo3d's `--roster` sets) syncs only when that set
   is asked for (`demo3d setup --roster`); `more_assets` entries must name one, so the default sync never
   needs that root, which only the Mac maps.
+- A Synty package this machine lacks whose entries are all arena kit pieces (`use` "kit: ...")
+  is skipped with a warning (`absent_kits`), so a machine without one environment's packs
+  (Cygnus has no desert, snow or lava packs) still syncs; the arena bake then skips the
+  environments that need them. Any other missing package fails the sync.
 - `sourceSha256` is the package's hash for Synty, and the file's own hash for an asset folder. A
   source whose hash differs is refused, so both machines sync from identical files.
 - `guid:` references in the copied YAML and `.meta` files are followed within the same root
@@ -267,14 +271,38 @@ def manifest_entries(manifest: dict, rosters: tuple[str, ...] = ()) -> list[dict
     return out
 
 
+def absent_kits(manifest: dict, roots: dict[str, str], rosters: tuple[str, ...] = ()) -> tuple[str, ...]:
+    """The manifest's Synty packages missing from this machine whose entries are all arena kit
+    pieces (`use` "kit: ..."), sorted: the sync skips them rather than failing."""
+    uses: dict[str, list[str]] = {}
+    for entry in manifest_entries(manifest, rosters):
+        if entry["source"].startswith("synty:"):
+            uses.setdefault(entry["source"], []).append(entry.get("use", ""))
+    synty = Path(roots.get("synty") or "")
+    return tuple(sorted(
+        name for name, us in uses.items()
+        if not (roots.get("synty") and (synty / name.split(":", 1)[1]).exists())
+        and all(u.startswith("kit:") for u in us)))
+
+
+def warn_absent(absent: tuple[str, ...]) -> None:
+    if absent:
+        print(f"sync: skipped the kit pieces of {len(absent)} Synty package(s) missing on this machine "
+              f"(the arena bake skips the environments that need them):\n  "
+              + "\n  ".join(a.split(":", 1)[1] for a in absent), file=sys.stderr)
+
+
 def resolve(manifest: dict, sources: Sources, unresolved: dict[str, str] | None = None,
-            rosters: tuple[str, ...] = ()) -> list[tuple[Source, Item, str]]:
-    """Every item to sync: the manifest's entries (those of `rosters` too) and their dependency
-    closure. References no loaded source provides (package assets such as URP's shaders, or
-    something missing) go into `unresolved` (GUID -> the first asset referring to it)."""
+            rosters: tuple[str, ...] = (), skip: tuple[str, ...] = ()) -> list[tuple[Source, Item, str]]:
+    """Every item to sync: the manifest's entries (those of `rosters` too, less those of the
+    `skip` sources) and their dependency closure. References no loaded source provides (package
+    assets such as URP's shaders, or something missing) go into `unresolved` (GUID -> the first
+    asset referring to it)."""
     chosen: dict[str, tuple[Source, Item, str]] = {}
     queue: list[tuple[Source, Item, str]] = []
     for entry in manifest_entries(manifest, rosters):
+        if entry["source"] in skip:
+            continue
         src = sources.get(entry["source"])
         if src.sha256 is not None and entry.get("sourceSha256") != src.sha256:
             raise SyncError(f"{entry['source']}: SHA-256 {src.sha256} differs from the "
@@ -424,7 +452,9 @@ def sync(manifest: dict, roots: dict[str, str], out: Path, record_path: Path,
     sources = Sources(roots, cache, HashCache(cache / "source-hashes.json"))
     try:
         unresolved: dict[str, str] = {}
-        items = resolve(manifest, sources, unresolved, rosters)
+        absent = absent_kits(manifest, roots, rosters)
+        warn_absent(absent)
+        items = resolve(manifest, sources, unresolved, rosters, absent)
         report_unresolved(unresolved, cache)
         n = copy_items(items, out)
         build_record(sources, record_path)
@@ -485,7 +515,9 @@ def main(a: argparse.Namespace) -> int:
     started = time.monotonic()
     try:
         unresolved: dict[str, str] = {}
-        items = resolve(manifest, sources, unresolved)
+        absent = absent_kits(manifest, roots)
+        warn_absent(absent)
+        items = resolve(manifest, sources, unresolved, skip=absent)
         report_unresolved(unresolved, cache)
         if not a.record_only:
             out = Path(a.out) if a.out else wt.vendor

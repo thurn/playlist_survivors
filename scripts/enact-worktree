@@ -63,7 +63,7 @@ case "${1:-}" in
     platform
     if [ -d "$path/native/target" ]; then
       prune="$(dirname "$0")/prune-cargo-target"
-      if [ -f "$prune" ] && ! python3 "$prune" "$path/native"; then
+      if [ -f "$prune" ] && ! uv run --no-project python "$prune" "$path/native"; then
         echo "enact-worktree: pruning $path/native/target failed; seeding it unpruned" >&2
       fi
       # Swap by rename, so a create cloning the seed meanwhile reads a whole directory.

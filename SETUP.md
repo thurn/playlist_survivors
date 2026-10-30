@@ -87,7 +87,8 @@ The repository's `justfile` wraps the game, its checks and the Unity demos' tool
 current checkout, passing extra arguments through. `just native --file <path>` and
 `just demo3d --start-at 160` (or `demo2d`, `stylelab`) build what changed and run it;
 `just backend=mono demo3d` builds a faster Mono player. The `-build`, `-play` and `-tool`
-recipes are the single steps. Run `just` to list them
+recipes are the single steps. On Windows (Cygnus, under Git for Windows' bash) `just demo3d`
+builds and plays the Windows player; demo2d and stylelab build Mac players only. Run `just` to list them
 ([install just](https://just.systems/man/en/packages.html), or `brew install just`).
 
 From `native/`, run `cargo run --locked --release -p app -- <flags>`:

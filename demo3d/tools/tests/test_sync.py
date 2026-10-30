@@ -207,6 +207,22 @@ def test_more_assets_entries_must_name_a_roster(roots, tmp_path: Path) -> None:
     assert json.loads(manifest.read_text())["assets"][0]["roster"] == "forest"
 
 
+def test_a_missing_kit_package_is_skipped_but_any_other_missing_package_fails(roots, tmp_path: Path) -> None:
+    gone = "synty:POLYGON_Gone_Unity_2021_3_v1_0_0.unitypackage.gz"
+    kit = [entry(roots, source=gone, use="kit: desert rocks"), entry(roots, source=gone, use="kit: desert palms")]
+    manifest = {"assets": [entry(roots, use="kit: trees"), *kit]}
+    absent = sync.absent_kits(manifest, roots)
+    assert absent == (gone,)
+    paths_synced = [i.path for _s, i, _u in sync.resolve(manifest, sources(roots, tmp_path), skip=absent)]
+    assert paths_synced == ["Assets/Pack/Materials/Thing.mat", "Assets/Pack/Prefabs/Thing.prefab",
+                            "Assets/Pack/Textures/Thing.png"]
+    # A package with a non-kit entry (a roster's characters, an animation) is never skipped.
+    manifest["assets"].append(entry(roots, source=gone, use="elites"))
+    assert sync.absent_kits(manifest, roots) == ()
+    with pytest.raises(sync.SyncError, match="missing source"):
+        sync.resolve(manifest, sources(roots, tmp_path), skip=sync.absent_kits(manifest, roots))
+
+
 def test_the_guard_never_needs_roster_entries_in_the_record(tmp_path: Path) -> None:
     (tmp_path / "demo3d").mkdir()
     (tmp_path / "demo3d" / "manifest.json").write_text(json.dumps({"assets": [

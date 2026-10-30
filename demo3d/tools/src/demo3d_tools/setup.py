@@ -43,12 +43,15 @@ def synced_rosters(wt: paths.Worktree) -> tuple[str, ...]:
 def manifest_key(wt: paths.Worktree, rosters: tuple[str, ...] | None = None) -> str:
     """The vendor cache's key: the manifest, the sync tool's version, and the roster sets synced
     with it (default: the vendor folder's), so a set's vendor folder and Library are never a
-    default worktree's exact entry (a set's Library may still be its nearest, as any may)."""
+    default worktree's exact entry (a set's Library may still be its nearest, as any may). The
+    kit packages missing on this machine (sync.absent_kits) count too, so a pack that arrives
+    later syncs a new folder."""
     from . import sync
 
     manifest = wt.project / "manifest.json"
     sets = tuple(sorted(rosters)) if rosters is not None else synced_rosters(wt)
-    extra = "".join(f"+{r}" for r in sets)
+    absent = sync.absent_kits(json.loads(manifest.read_text(encoding="utf-8")), paths.load_roots(), sets)
+    extra = "".join(f"+{r}" for r in sets) + "".join(f"-{a}" for a in absent)
     return hashlib.sha256((file_hash(wt.root, manifest) + sync.SYNC_VERSION + extra).encode()).hexdigest()[:16]
 
 

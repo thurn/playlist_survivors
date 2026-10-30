@@ -21,7 +21,8 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 
 ## Enact
 
-`enact` below means `python3 ~/enact/scripts/enact.py`.
+`enact` below means `python3 ~/enact/scripts/enact.py` (`py ~/enact/scripts/enact.py` on
+Windows, where `python3` is the Microsoft Store stub).
 
 - **Every change goes through a worktree and CI**, whether it is made by a
   human, an ad hoc agent session or an Enact run:

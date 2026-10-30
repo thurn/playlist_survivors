@@ -12,6 +12,7 @@ backend := "il2cpp"
 # The demos' players open fullscreen at 1080p; `just fullscreen=0 demo3d` plays in a window.
 fullscreen := "1"
 unity_app := "/Applications/Unity/Hub/Editor/6000.6.7f1/Unity.app"
+unity_exe := "C:/Program Files/Unity/Hub/Editor/6000.6.7f1/Editor/Unity.exe"
 
 default:
     @just --list --unsorted
@@ -114,7 +115,13 @@ stylelab-tool *args:
 # Open a Unity project (demo3d, demo2d or stylelab) in the editor
 [group('unity')]
 editor project:
-    open -na "{{unity_app}}" --args -projectPath "{{justfile_directory()}}/{{project}}"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ "{{os()}}" = windows ]; then
+        "{{unity_exe}}" -projectPath "{{justfile_directory()}}/{{project}}" >/dev/null 2>&1 &
+    else
+        open -na "{{unity_app}}" --args -projectPath "{{justfile_directory()}}/{{project}}"
+    fi
 
 # A fresh checkout gets its vendor files and the cached warm Library (with the last build's
 # shader cache) from setup, rather than importing and compiling every shader from scratch.
@@ -136,15 +143,22 @@ _setup project:
     fi
     cp "{{project}}/manifest.json" "$stamp"
 
+# The Mac's players are apps under Builds/mac/; Windows' (only demo3d builds one) are exes under
+# Builds/, started in the background as `open -n` starts an app.
 [private]
 _play project app *args:
     #!/usr/bin/env bash
     set -euo pipefail
     shift 2
-    player="{{project}}/Builds/mac/{{backend}}/{{app}}.app"
-    if [ ! -d "$player" ]; then
-        echo "no {{backend}} {{project}} player yet; run just {{project}}" >&2
-        exit 1
+    flags=(-screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} --sound "$@")
+    if [ "{{os()}}" = windows ]; then
+        player="{{project}}/Builds/{{backend}}/{{app}}.exe"
+        [ -f "$player" ] || { echo "no {{backend}} {{project}} player yet; run just {{project}}" >&2; exit 1; }
+        echo "playing $player"
+        "$player" "${flags[@]}" >/dev/null 2>&1 &
+    else
+        player="{{project}}/Builds/mac/{{backend}}/{{app}}.app"
+        [ -d "$player" ] || { echo "no {{backend}} {{project}} player yet; run just {{project}}" >&2; exit 1; }
+        echo "playing $player"
+        open -n "$player" --args "${flags[@]}"
     fi
-    echo "playing $player"
-    open -n "$player" --args -screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} --sound "$@"
