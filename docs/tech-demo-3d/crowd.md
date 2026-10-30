@@ -257,6 +257,46 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'
   skinning does not apply to it.
 
+### Roster sets
+
+`--roster <set>` swaps the horde for one of two MoreAssets monster sets,
+so the demo's feel can be judged with other monsters (epic ps-f8a). The
+names are default (today's roster, the default), forest (the Dark and
+Forest Creatures packs, cartoon) and heroic (HeroicFantasyCreaturesFullPackVol1,
+realistic). An unknown name stops the player at start-up, and so does a
+set beside a `--monster-style` other than baseline. The look harness passes
+the flag through `--player-args`. Without it, the demo is unchanged.
+
+- **Slots stay fixed.** A set keeps the nine roster ids (skeleton, goblin,
+  slime, bat, mushroom, demon, bigork, troll, dragon) and points each at
+  its own prefab and clips, so the choreography, the stress files and the
+  timeline evaluator are the same. The set's file,
+  `Data/roster-<set>.json` beside `Data/roster.json`, lists only the slots
+  it replaces, with their own heights and radii; every other slot, and the
+  hero (the Synty knight), stays the default's. `hide` names prefab
+  children the baker removes, for a pack prefab that carries every weapon
+  at once.
+- **The level has a variant.** `Choreography/Data/action-level-<set>.json`
+  is the song's script under a closer camera and fewer monsters: 150 on
+  screen at 18 m to start, each section's width scaled to match.
+- **The stock crowd draws it.** A set forces sceneOptions `crowd: stock`
+  (`--crowd stock`; another renderer fails), with the prefabs' own
+  materials: no `typeColors` dye, no hue rotation, no tint over their base
+  colour, and the hit flash sets emission only while it lasts. URP Lit
+  packs (heroic) keep their vendor materials; the Standard packs (forest)
+  get URP Lit copies with their albedo and glow maps.
+- **It bakes on request.** `demo3d setup --roster <set>` syncs the set's
+  packs from the `more_assets` root (only the Mac maps it,
+  [vendor-assets.md](vendor-assets.md#the-roster-sets)), and
+  `demo3d unity BakeRoster -roster <set>` bakes its prefabs, converted
+  materials and RosterAssets index into `Assets/Baked/Rosters/<set>/`.
+  BakeAll, the default build and the checks never touch them; a player
+  built without a set's bake stops at start-up with the commands to run.
+- **What ps-f8a.1 proved:** one creature per set, Evil Mushroom (forest's
+  mushroom) and the heroic Goblin with sword and shield (heroic's goblin).
+  Their clips still use the default slot's annotations (impact and end
+  times) until the set beads annotate them.
+
 ## The Hero
 
 The hero is one character, so stock Unity animation is fine for them, but

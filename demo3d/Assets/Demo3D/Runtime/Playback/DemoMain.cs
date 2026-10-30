@@ -98,6 +98,8 @@ namespace Demo3D.Runtime.Playback
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
             _style = MonsterStyle.FromCommandLine();
+            var rosterSet = RosterSet.Active; // fails here on an unknown set or a style beside one
+            Debug.Log($"DemoMain: {RosterSet.Flag} {rosterSet.Name}");
             Cuts.Active = Cuts.FromCommandLine();
             Debug.Log($"DemoMain: effective {Cuts.Active.Describe()} (--cuts; TD11)");
             // The song check measures uncapped, as the harness does: at the display rate the GPU clocks down and its times inflate.
@@ -121,7 +123,7 @@ namespace Demo3D.Runtime.Playback
             }
             _roster = RosterAssets.Load();
             var data = PlaybackData.Load();
-            var level = LevelScript.Parse(data.level.text);
+            var level = LevelScript.Parse(data.Level(rosterSet).text);
             if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
             if (_flags.ViewWidth > 0 && _flags.Scene == "song") level.ScaleViewWidth(_flags.ViewWidth);
             StressScript stress = _flags.Scene == "song" ? null

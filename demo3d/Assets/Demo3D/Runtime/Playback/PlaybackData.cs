@@ -13,6 +13,8 @@ namespace Demo3D.Runtime.Playback
         public TextAsset songMap;
         public AudioClip music;
         public TextAsset level;
+        /// <summary>The `--roster` sets' level variants (action-level-NAME.json).</summary>
+        public TextAsset[] levels;
         public TextAsset annotations;
         public TextAsset roster;
         public TextAsset footprints;
@@ -22,6 +24,11 @@ namespace Demo3D.Runtime.Playback
         public static PlaybackData Load() =>
             Resources.Load<PlaybackData>(ResourcePath)
             ?? throw new System.InvalidOperationException("PlaybackData: not baked (run demo3d unity BakeAll)");
+
+        /// <summary>The level script for a `--roster` set: action-level.json, or the set's variant.</summary>
+        public TextAsset Level(RosterSet set) => set.IsDefault ? level
+            : System.Array.Find(levels ?? new TextAsset[0], l => l.name == set.LevelName)
+              ?? throw new System.InvalidOperationException($"PlaybackData: no {set.LevelName}.json baked (run demo3d unity BakeAll)");
 
         public TextAsset Layout(string name) => System.Array.Find(layouts, l => l.name == name + "-layout");
 

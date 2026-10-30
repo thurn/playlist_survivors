@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "note": "The heroic roster set (`--roster heroic`, crowd.md, Roster sets): HeroicFantasyCreaturesFullPackVol1 monsters from the more_assets root, drawn by the stock crowd with their own URP Lit materials (no typeColors dye). Each type keeps one of the nine slot ids, so the choreography needs no change; a slot this file leaves out keeps the default roster's type (Data/roster.json), and so does the hero. `hide` names prefab children the baker removes (the goblin's prefab carries its sword and shield, daggers and slingshot at once). ps-f8a.1 proved the plumbing with the goblin slot; the set beads fill in the rest.",
+  "types": [
+    {
+      "id": "goblin",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "5f0706883a962914493653ef8cb5bc61",
+        "path": "HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Goblin/Prefabs/Goblin.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "heightM": 1.5,
+      "hide": [
+        "SM_DaggerLeft",
+        "SM_DaggerRight",
+        "SK_Slingshot",
+        "SM_Stone"
+      ],
+      "clips": {
+        "walk": {
+          "guid": "6d7616f4d612f74478c53b90b5535030",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "eaa055f25dc10e740861bfe96437ef06",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "558f95389b0200e46af5ab85373e4077",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "f1b38bfb8b647ea4abac6df05e771fb2",
+          "clip": ""
+        },
+        "death": {
+          "guid": "2e08a1ff694c0d94d8f958be7138fd58",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "c5fb14a9a8ee85c439efc113375c7f04",
+          "clip": ""
+        }
+      }
+    }
+  ]
+}

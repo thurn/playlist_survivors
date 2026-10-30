@@ -11,11 +11,16 @@ namespace Demo3D.EditorTools.Assets
     /// <summary>
     /// The roster (Assets/Demo3D/Data/roster.json): each monster type, the boss candidates and the
     /// hero, with their vendor prefab and clips by GUID. A clip name of "" means the first clip in
-    /// that file (Synty's animation packs hold one clip per FBX).
+    /// that file (Synty's animation packs hold one clip per FBX). A `--roster` set's file
+    /// (Data/roster-NAME.json) replaces the types it lists, by slot id; the rest, the hero among
+    /// them, stay the default's.
     /// </summary>
     public static class Roster
     {
         public const string DataPath = "Assets/Demo3D/Data/roster.json";
+
+        /// <summary>A `--roster` set's own file: Data/roster-NAME.json (the default's is DataPath).</summary>
+        public static string SetPath(string set) => $"Assets/Demo3D/Data/roster-{set}.json";
 
         public sealed class Ref
         {
@@ -52,6 +57,8 @@ namespace Demo3D.EditorTools.Assets
             public Dictionary<string, ClipRef> clips = new Dictionary<string, ClipRef>();
             public Dictionary<string, ClipRef> rootMotionClips = new Dictionary<string, ClipRef>();
             public List<WeaponRef> weapons = new List<WeaponRef>();
+            /// <summary>Prefab children Spawn removes (a pack prefab carrying every weapon at once).</summary>
+            public List<string> hide = new List<string>();
 
             public bool Humanoid => rig == "humanoid";
         }
@@ -70,14 +77,29 @@ namespace Demo3D.EditorTools.Assets
             public List<Type> types;
         }
 
-        static File Read()
+        static File Read(string path = DataPath)
         {
-            var file = JsonConvert.DeserializeObject<File>(System.IO.File.ReadAllText(DataPath));
-            if (file == null || file.version != 1) throw new Exception("Roster: unknown version");
+            var file = JsonConvert.DeserializeObject<File>(System.IO.File.ReadAllText(path));
+            if (file == null || file.version != 1) throw new Exception($"Roster: unknown version in {path}");
             return file;
         }
 
         public static List<Type> Load() => Read().types;
+
+        /// <summary>A `--roster` set's types: the default's, with the set file's in their slots.</summary>
+        public static List<Type> Load(string set)
+        {
+            var types = Load();
+            if (set == "default") return types;
+            foreach (var t in Read(SetPath(set)).types)
+            {
+                int slot = types.FindIndex(d => d.id == t.id);
+                if (slot < 0 || t.id == "hero")
+                    throw new Exception($"Roster: {SetPath(set)} lists '{t.id}', not one of the default roster's monster slots");
+                types[slot] = t;
+            }
+            return types;
+        }
 
         public static TypeColorSettings TypeColors() =>
             Read().typeColors ?? throw new Exception("Roster: no typeColors");
@@ -127,6 +149,12 @@ namespace Demo3D.EditorTools.Assets
             var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
             go.transform.SetPositionAndRotation(at, Quaternion.Euler(0, yawDeg, 0));
+            foreach (var name in t.hide)
+            {
+                var child = go.GetComponentsInChildren<Transform>(true).FirstOrDefault(x => x.name == name)
+                    ?? throw new Exception($"Roster: {t.prefab.path} has no child '{name}' to hide");
+                UnityEngine.Object.DestroyImmediate(child.gameObject);
+            }
             var animator = go.GetComponentInChildren<Animator>();
             if (animator != null)
             {

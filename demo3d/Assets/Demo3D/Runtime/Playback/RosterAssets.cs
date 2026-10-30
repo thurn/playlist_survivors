@@ -6,7 +6,8 @@ namespace Demo3D.Runtime.Playback
     /// <summary>
     /// What the player needs of the roster at runtime, baked by the editor (RosterBaker) into
     /// the gitignored Assets/Baked/Roster/: each type's ready prefab (scaled to its demo height,
-    /// URP materials, weapons attached, no vendor scripts) and its clips in roster order.
+    /// URP materials, weapons attached, no vendor scripts) and its clips in roster order. A
+    /// `--roster` set's index lives under Assets/Baked/Rosters/NAME/ (<see cref="RosterSet"/>).
     /// </summary>
     [CreateAssetMenu(menuName = "Demo3D/Roster Assets")]
     public sealed class RosterAssets : ScriptableObject
@@ -32,8 +33,14 @@ namespace Demo3D.Runtime.Playback
 
         public TypeAssets Find(string id) => Array.Find(types, t => t.id == id);
 
-        public static RosterAssets Load() =>
-            Resources.Load<RosterAssets>(ResourcePath)
-            ?? throw new InvalidOperationException("RosterAssets: not baked (run demo3d unity BakeAll)");
+        /// <summary>The active `--roster` set's index.</summary>
+        public static RosterAssets Load()
+        {
+            var set = RosterSet.Active;
+            return Resources.Load<RosterAssets>(set.AssetsResource)
+                ?? throw new InvalidOperationException(set.IsDefault
+                    ? "RosterAssets: not baked (run demo3d unity BakeAll)"
+                    : $"RosterAssets: --roster {set.Name} is not baked (run demo3d setup --roster {set.Name}, then demo3d unity BakeRoster -roster {set.Name})");
+        }
     }
 }

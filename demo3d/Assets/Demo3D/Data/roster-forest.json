@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "note": "The forest roster set (`--roster forest`, crowd.md, Roster sets): Dark and Forest Creatures Pack monsters from the more_assets root, drawn by the stock crowd with their own materials (no typeColors dye). Each type keeps one of the nine slot ids, so the choreography needs no change; a slot this file leaves out keeps the default roster's type (Data/roster.json), and so does the hero. `hide` names prefab children the baker removes (a pack prefab that carries every weapon). ps-f8a.1 proved the plumbing with the mushroom slot; the set beads fill in the rest.",
+  "types": [
+    {
+      "id": "mushroom",
+      "kind": "fodder",
+      "prefab": {
+        "guid": "d5315294978a47d4cabac6f8bfd9e0fe",
+        "path": "Forest Creatures Pack/Evil Mushroom/Prefabs/Evil Mushroom-Red.prefab"
+      },
+      "rig": "generic",
+      "radius": 0.4,
+      "heightM": 1.3,
+      "clips": {
+        "walk": {
+          "guid": "af1c01844d8b3db4e8ccc072b1d43c7a",
+          "clip": ""
+        },
+        "attack": {
+          "guid": "b284455c57240324fa57bf50fa728e18",
+          "clip": ""
+        },
+        "attack2": {
+          "guid": "78283c15d6df236469bffcc8407f3c09",
+          "clip": ""
+        },
+        "hit": {
+          "guid": "6f108c46ccb6a4343b633c6f66c0df13",
+          "clip": ""
+        },
+        "death": {
+          "guid": "faed0fb32da81bd4ba84d011fb141765",
+          "clip": ""
+        },
+        "idle": {
+          "guid": "1e12c7298eaf9ed4fb6409f628d80e95",
+          "clip": ""
+        }
+      }
+    }
+  ]
+}

@@ -15,7 +15,9 @@ namespace Demo3D.Runtime.Crowd
     /// animation update evaluates them (on its worker threads) at the timeline's times. That
     /// replaces CrossFade calls, which advance on game time and would drift from the song.
     /// Hit flash and tint go through a MaterialPropertyBlock; stock URP Lit has no dissolve, so
-    /// a dissolving monster scales away instead.
+    /// a dissolving monster scales away instead. With <c>vendorMaterials</c> (a `--roster` set)
+    /// the prefabs' materials draw as they are: no tint overrides their base colour, and the
+    /// flash sets emission only while it lasts, so a pack's glow map shows the rest of the time.
     /// </summary>
     public sealed class StockCrowd : ICrowdRenderer
     {
@@ -42,11 +44,14 @@ namespace Demo3D.Runtime.Crowd
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int Emission = Shader.PropertyToID("_EmissionColor");
         readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
+        readonly bool _vendorMaterials;
         TypeState[] _types;
         Transform _root;
         CrowdCounters _counters;
 
         public CrowdCounters Counters => _counters;
+
+        public StockCrowd(bool vendorMaterials = false) { _vendorMaterials = vendorMaterials; }
 
         public void Initialize(string[] typeIds, int capacityPerType)
         {
@@ -156,8 +161,15 @@ namespace Demo3D.Runtime.Crowd
             s.Clips[a].SetTime(m.TimeA);
             if (b != a) s.Clips[b].SetTime(m.TimeB);
 
-            var tint = m.Tint == 0 ? Color.white : UnpackRgba(m.Tint);
             float flash = Mathf.Clamp01(m.HitFlash);
+            if (_vendorMaterials)
+            {
+                _block.Clear();
+                if (flash > 0) _block.SetColor(Emission, new Color(flash, flash, flash) * 2f);
+                foreach (var r in s.Renderers) r.SetPropertyBlock(flash > 0 ? _block : null);
+                return;
+            }
+            var tint = m.Tint == 0 ? Color.white : UnpackRgba(m.Tint);
             _block.Clear();
             _block.SetColor(BaseColor, tint);
             _block.SetColor(Emission, new Color(flash, flash, flash) * 2f);

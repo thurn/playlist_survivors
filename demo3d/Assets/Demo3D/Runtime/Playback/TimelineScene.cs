@@ -378,13 +378,14 @@ namespace Demo3D.Runtime.Playback
     /// Chooses a crowd renderer by name: "bone" (TD5's bone-texture path, the default), "stock"
     /// (TD4's stock crowd: vendor prefabs, playables at the timeline's exact clip times) or
     /// "baseline" (TD5's stock arm: the combined mesh, Animator CrossFade, as crowd.md describes;
-    /// the frontier's stock comparison).
+    /// the frontier's stock comparison). A `--roster` set always draws the stock crowd, with the
+    /// prefabs' own materials (<see cref="RosterSet"/>).
     /// </summary>
     public static class CrowdFactory
     {
         static readonly Dictionary<string, Func<ICrowdRenderer>> Renderers = new Dictionary<string, Func<ICrowdRenderer>>
         {
-            ["stock"] = () => new StockCrowd(),
+            ["stock"] = () => new StockCrowd(vendorMaterials: !RosterSet.Active.IsDefault),
             ["bone"] = () => new BoneTextureCrowd(CrowdLibrary.Load()),
             ["baseline"] = () => new BaselineCrowd(CrowdLibrary.Load()), // owns and destroys its root
         };
@@ -399,6 +400,12 @@ namespace Demo3D.Runtime.Playback
 
         public static ICrowdRenderer Create(string name)
         {
+            if (!RosterSet.Active.IsDefault)
+            {
+                if (!string.IsNullOrEmpty(name) && name != "auto" && name != "stock")
+                    throw new ArgumentException($"{RosterSet.Flag} {RosterSet.Active.Name} draws the stock crowd, not --crowd {name}");
+                name = "stock";
+            }
             if (string.IsNullOrEmpty(name) || name == "auto") name = Default;
             return Renderers.TryGetValue(name, out var f) ? f() : throw new ArgumentException("no crowd renderer " + name);
         }

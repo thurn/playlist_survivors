@@ -10,24 +10,32 @@ namespace Demo3D.EditorTools.Assets
 {
     /// <summary>
     /// Bakes the roster for the player into Assets/Baked/Roster/ (derived from vendor prefabs, so
-    /// gitignored): a ready prefab per type and the RosterAssets index the player loads.
+    /// gitignored): a ready prefab per type and the RosterAssets index the player loads. A
+    /// `--roster` set bakes only when asked for (`demo3d unity BakeRoster -roster NAME`), into its
+    /// own Assets/Baked/Rosters/NAME/, so BakeAll never needs its packs.
     /// </summary>
     public static class RosterBaker
     {
         public const string Dir = "Assets/Baked/Roster";
-        const string MaterialDir = "Assets/Baked/Roster/Materials";
+        public const string SetsDir = "Assets/Baked/Rosters";
 
         [InitializeOnLoadMethod]
         static void Register() => Bakers.Register("Roster", Bake);
 
-        public static void Bake()
+        public static void Bake() => Bake("default");
+
+        public static void Bake(string set)
         {
-            Directory.CreateDirectory(MaterialDir);
-            Directory.CreateDirectory(Dir + "/Resources");
+            var rosterSet = RosterSet.Parse(set);
+            var dir = rosterSet.IsDefault ? Dir : $"{SetsDir}/{set}";
+            var materialDir = dir + "/Materials";
+            if (!rosterSet.IsDefault) AssetDatabase.DeleteAsset(dir); // a rebake leaves no stale materials
+            Directory.CreateDirectory(materialDir);
+            Directory.CreateDirectory(dir + "/Resources");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var saved = new Dictionary<Material, Material>();
             var types = new List<RosterAssets.TypeAssets>();
-            foreach (var t in Roster.Load().Where(t => t.kind != "rejected-boss"))
+            foreach (var t in Roster.Load(set).Where(t => t.kind != "rejected-boss"))
             {
                 var go = Roster.Spawn(t, Vector3.zero, 0);
                 go.transform.position = Vector3.zero; // hover is applied per instance
@@ -46,7 +54,7 @@ namespace Demo3D.EditorTools.Assets
                             // passes and properties with the shared static-shadow lighting.
                             if (t.kind == "hero" && asset.shader != null && asset.shader.name == "Universal Render Pipeline/Lit")
                                 asset.shader = Shader.Find("Demo3D/LitStaticShadow") ?? asset.shader;
-                            var path = AssetDatabase.GenerateUniqueAssetPath($"{MaterialDir}/{Safe(m.name)}.mat");
+                            var path = AssetDatabase.GenerateUniqueAssetPath($"{materialDir}/{Safe(m.name)}.mat");
                             AssetDatabase.CreateAsset(asset, path);
                             saved[m] = asset;
                         }
@@ -65,7 +73,7 @@ namespace Demo3D.EditorTools.Assets
                     animator.applyRootMotion = false;
                     animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 }
-                var prefab = PrefabUtility.SaveAsPrefabAsset(go, $"{Dir}/{t.id}.prefab");
+                var prefab = PrefabUtility.SaveAsPrefabAsset(go, $"{dir}/{t.id}.prefab");
                 Object.DestroyImmediate(go);
                 var roles = t.clips.Keys.ToArray();
                 types.Add(new RosterAssets.TypeAssets
@@ -77,11 +85,11 @@ namespace Demo3D.EditorTools.Assets
             }
             var index = ScriptableObject.CreateInstance<RosterAssets>();
             index.types = types.ToArray();
-            var indexPath = $"{Dir}/Resources/{RosterAssets.ResourcePath}.asset";
+            var indexPath = $"{dir}/Resources/{rosterSet.AssetsResource}.asset";
             AssetDatabase.DeleteAsset(indexPath);
             AssetDatabase.CreateAsset(index, indexPath);
             AssetDatabase.SaveAssets();
-            Debug.Log($"RosterBaker: baked {types.Count} types and {saved.Count} URP materials into {Dir}");
+            Debug.Log($"RosterBaker: baked {types.Count} types and {saved.Count} URP materials into {dir}");
         }
 
         static string Safe(string name) => string.Concat(name.Select(c => char.IsLetterOrDigit(c) || c == '_' ? c : '_'));

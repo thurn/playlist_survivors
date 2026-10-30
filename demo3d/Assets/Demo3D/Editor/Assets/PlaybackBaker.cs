@@ -40,6 +40,7 @@ namespace Demo3D.EditorTools.Assets
             data.songMap = Text("Assets/Baked/Audio/action.songmap.json");
             data.music = music;
             data.level = Text(ChoreographyData + "/action-level.json");
+            data.levels = files.Where(f => Path.GetFileName(f).StartsWith("action-level-")).Select(Text).ToArray();
             data.annotations = Text("Assets/Demo3D/Data/clip-annotations.json");
             data.roster = Text(ChoreographyData + "/roster.json");
             data.footprints = Text(ChoreographyData + "/footprints.json");
@@ -49,7 +50,7 @@ namespace Demo3D.EditorTools.Assets
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(data, path);
             AssetDatabase.SaveAssets();
-            Debug.Log($"PlaybackBaker: {data.layouts.Length} layouts, {data.stressScripts.Length} stress scripts, music {(music != null ? "yes" : "MISSING")}");
+            Debug.Log($"PlaybackBaker: {data.levels.Length} level variants, {data.layouts.Length} layouts, {data.stressScripts.Length} stress scripts, music {(music != null ? "yes" : "MISSING")}");
         }
     }
 }

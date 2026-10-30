@@ -30,6 +30,12 @@ namespace Demo3D.EditorTools
         /// <summary>Runs every registered baker (TD5: "crowd").</summary>
         public static void BakeAll() => Bakers.RunStale(TaskArgs.All("-only"));
 
+        /// <summary>
+        /// Bakes a `--roster` set (`-roster forest|heroic`; default: today's roster, as BakeAll does)
+        /// into Assets/Baked/Rosters/NAME/. Run `demo3d setup --roster NAME` first to sync its packs.
+        /// </summary>
+        public static void BakeRoster() => Assets.RosterBaker.Bake(TaskArgs.Get("-roster", "default"));
+
         /// <summary>Bakes the bone-texture crowd and the stock baseline prefabs into Assets/Baked/Crowd/ (TD5).</summary>
         public static void BakeCrowd() => Crowd.CrowdBaker.Bake();
 
