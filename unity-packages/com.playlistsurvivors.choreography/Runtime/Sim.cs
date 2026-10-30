@@ -52,6 +52,7 @@ namespace PS.Choreography
         const float AheadCos = 0.2588f;          // cos 75°
         const float MaxShapeScale = 4f, HitsShapeScale = 2.5f, MaxShapeViewFraction = 0.25f;
         const float OffscreenStride = 1.3f;     // culled monsters walking in take longer steps
+        const float ClumpDriftMps = 0.5f;       // the clumps' arcs slide along the view's edge this fast, so masses arrive from every side
 
         readonly SongMap map;
         readonly BeatGrid grid;
@@ -68,6 +69,15 @@ namespace PS.Choreography
         readonly int[][] spellCount;
 
         Rng spawnRng, spellRng, cooldownRng;
+
+        // Clumps (the level script's): each type refills from its own arcs of the view's edge, so it arrives as a mass.
+        // Types are dealt in the mix's proportions rather than drawn, and a refill that finds no room in its type's
+        // arcs is retried as that type, so crowded arcs do not thin their type out of the section's count.
+        readonly int clumpSize;          // the heaviest type's clump; 0: every type anywhere on the edge, drawn at random
+        readonly float[] clumpArc, clumpStart;   // per roster type, its arc's length and start in the current section's pattern, in m
+        readonly double[] clumpOwed;     // per roster type, the share of refills dealt to it so far minus those it got
+        readonly List<int> clumpRetry = new List<int>();   // types whose refills found no room, owed first
+        float clumpPattern;              // the pattern's length: the arcs of the section's types end to end
 
         // Entities, indexed by id.
         int entityCount;
@@ -154,7 +164,7 @@ namespace PS.Choreography
         int flowRebuilds, flowSlices, sliceBudget;
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
-            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0)
+            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0)
         {
             this.viewPitchDeg = viewPitchDeg;
             this.clearRadius = clearRadius;
@@ -170,6 +180,13 @@ namespace PS.Choreography
             spawnRng = new Rng(seed, 1);
             spellRng = new Rng(seed, 2);
             cooldownRng = new Rng(seed, 3);
+            this.clumpSize = clumpSize;
+            if (clumpSize > 0)
+            {
+                clumpArc = new float[roster.Monsters.Length];
+                clumpStart = new float[roster.Monsters.Length];
+                clumpOwed = new double[roster.Monsters.Length];
+            }
             barOfBeat = new int[map.Beats.Length];
             for (int bar = 1; ; bar++)
             {
@@ -512,6 +529,7 @@ namespace PS.Choreography
             if (goalReached && plan.Goal != null) stats[s].GoalReachedAt = t;
             barStart = t;
             barStruck = 0;
+            if (clumpSize > 0) ClumpPattern();
             if (plan.Boss >= 0 && !first)
             {
                 var view = View(Math.Max(viewWidth, plan.ViewWidth));
@@ -1810,11 +1828,12 @@ namespace PS.Choreography
             }
             for (int i = 0; i < need; i++)
             {
-                int type = PickType(plan.Mix, false);
+                int type = clumpSize > 0 ? ClumpType() : PickType(plan.Mix, false);
                 float r = roster.Monsters[type].Radius;
-                for (int attempt = 0, attempts = nav == null ? 6 : 12; attempt < attempts; attempt++)
+                bool placed = false;
+                for (int attempt = 0, attempts = nav == null ? 6 : 12; attempt < attempts && !placed; attempt++)
                 {
-                    float u = spawnRng.NextFloat();
+                    float u = clumpSize > 0 ? ClumpU(type, view, tb) : spawnRng.NextFloat();
                     float margin = SpawnMargin + r + spawnRng.Range(0, SpawnBand);
                     Vector2 p = view.EdgePoint(focus, u, margin, out Vector2 normal);
                     if (travel != Vector2.Zero)
@@ -1824,9 +1843,88 @@ namespace PS.Choreography
                     }
                     if (SpawnBlocked(p, r)) continue;
                     beatSpawns.Add(Spawn(type, p, tb, false));
-                    break;
+                    placed = true;
                 }
+                if (!placed && clumpSize > 0) clumpRetry.Add(type);
             }
+        }
+
+        /// <summary>
+        /// Lays the section's types' arcs end to end, in roster order: the pattern that repeats round the view's
+        /// edge. Each arc is its type's share of the ground the section's refills cover (weight × diameter²), so
+        /// every arc fills alike, and the pattern is as long as makes the heaviest type's arc hold
+        /// <see cref="clumpSize"/> packed square across the spawn band. The section deals its types afresh.
+        /// </summary>
+        void ClumpPattern()
+        {
+            double ground = 0;
+            int heaviest = -1;
+            for (int t = 0; t < clumpArc.Length; t++)
+            {
+                int w = MixWeight(t);
+                if (w <= 0) continue;
+                float d = 2 * roster.Monsters[t].Radius;
+                ground += w * d * d;
+                if (heaviest < 0 || w > MixWeight(heaviest)) heaviest = t;
+            }
+            clumpPattern = 0;
+            if (heaviest >= 0)
+            {
+                float dh = 2 * roster.Monsters[heaviest].Radius;
+                clumpPattern = (float)(clumpSize * dh * dh / SpawnBand * ground / (MixWeight(heaviest) * dh * dh));
+            }
+            float start = 0;
+            for (int t = 0; t < clumpArc.Length; t++)
+            {
+                int w = MixWeight(t);
+                float d = 2 * roster.Monsters[t].Radius;
+                clumpStart[t] = start;
+                clumpArc[t] = w > 0 ? (float)(clumpPattern * w * d * d / ground) : 0;
+                start += clumpArc[t];
+            }
+            Array.Clear(clumpOwed, 0, clumpOwed.Length);
+            clumpRetry.Clear();
+        }
+
+        int MixWeight(int type) => roster.Monsters[type].Rank == MonsterRank.Boss ? 0 : plan.Mix[type] - (type > 0 ? plan.Mix[type - 1] : 0);
+
+        /// <summary>The next refill's type: a retried one, or else the type the mix most owes (smooth weighted round-robin).</summary>
+        int ClumpType()
+        {
+            if (clumpRetry.Count > 0)
+            {
+                int retry = clumpRetry[0];
+                clumpRetry.RemoveAt(0);
+                return retry;
+            }
+            int total = 0;
+            for (int t = 0; t < clumpOwed.Length; t++) total += MixWeight(t);
+            int best = -1;
+            for (int t = 0; t < clumpOwed.Length; t++)
+            {
+                int w = MixWeight(t);
+                if (w <= 0) continue;
+                clumpOwed[t] += w / (double)total;
+                if (best < 0 || clumpOwed[t] > clumpOwed[best]) best = t;
+            }
+            if (best < 0) return PickType(plan.Mix, false);   // a mix of bosses only: PickType's fodder fallback
+            clumpOwed[best] -= 1;
+            return best;
+        }
+
+        /// <summary>
+        /// A perimeter fraction for <see cref="ViewGeometry.EdgePoint"/> in one of <paramref name="type"/>'s arcs:
+        /// the section's pattern repeats round the edge as many whole times as fit, stretched to close the loop,
+        /// and drifts along it with time.
+        /// </summary>
+        float ClumpU(int type, ViewGeometry view, double t)
+        {
+            if (clumpPattern <= 0) return spawnRng.NextFloat();
+            float perimeter = view.Perimeter;
+            int reps = Math.Max(1, (int)(perimeter / clumpPattern));
+            float scale = perimeter / (reps * clumpPattern);
+            float along = (spawnRng.Next(reps) * clumpPattern + clumpStart[type] + spawnRng.NextFloat() * clumpArc[type]) * scale;
+            return (along + (float)(t * ClumpDriftMps % perimeter)) / perimeter;
         }
 
         bool SpawnBlocked(Vector2 p, float r)

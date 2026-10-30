@@ -162,6 +162,13 @@ namespace PS.Choreography
         /// horde survivor game instead of buried in melee. 0, the default, lets them close to contact.
         /// </summary>
         public float ClearRadiusM;
+        /// <summary>
+        /// Opt-in (demo3d's look pass): refills arrive in same-type clumps (its <c>clumpSize</c>, the section's
+        /// heaviest type's; lighter types' clumps scale with their weights), so the horde forms masses of colour
+        /// instead of a random mix. Each section's count per type still follows its mix. 0, the default, picks
+        /// every monster's type at random.
+        /// </summary>
+        public int ClumpSize;
         public LevelSection[] Sections;
 
         public LevelSection For(string sectionLabel)
@@ -199,6 +206,7 @@ namespace PS.Choreography
                 ReserveFactor = root["reserve"].AsFloat(0.5f),
                 ViewPitchDeg = root["viewPitchDeg"].AsDouble(ViewGeometry.PitchDeg),
                 ClearRadiusM = root["clearRadiusM"].AsFloat(0f),
+                ClumpSize = Math.Max(0, root["clumpSize"].AsInt(0)),
             };
             JsonValue secs = root["sections"];
             ls.Sections = new LevelSection[secs.Count];

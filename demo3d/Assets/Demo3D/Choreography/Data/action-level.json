@@ -5,6 +5,7 @@
   "seed": 1,
   "reserve": 1.5,
   "clearRadiusM": 2.0,
+  "clumpSize": 80,
   "envelope": { "onScreen": 425, "viewWidthM": 30 },
   "sections": [
     { "section": "intro", "onScreen": 0.006, "viewWidthM": 22.5, "load": "light", "goal": "camp",

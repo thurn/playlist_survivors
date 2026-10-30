@@ -41,6 +41,9 @@ namespace PS.Choreography
         /// <summary>Visible ground in m².</summary>
         public float Area => (NearHalf + FarHalf) * (Near + Far);
 
+        /// <summary>The visible ground's perimeter in m, the length <see cref="EdgePoint"/>'s fraction runs along.</summary>
+        public float Perimeter => 2 * (NearHalf + FarHalf) + 2 * (float)Math.Sqrt((FarHalf - NearHalf) * (FarHalf - NearHalf) + (Near + Far) * (Near + Far));
+
         /// <summary>The farthest visible ground from the focus.</summary>
         public float Radius => (float)Math.Max(Math.Sqrt(Far * Far + FarHalf * FarHalf), Math.Sqrt(Near * Near + NearHalf * NearHalf));
 
