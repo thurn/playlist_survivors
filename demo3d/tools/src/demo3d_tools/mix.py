@@ -8,8 +8,9 @@ with a fixed-time video capture. The events are the same aggregated list the liv
                [--song MP3] [--start S] [--seconds N] [--sounds-dir demo3d/Assets/Vendor]
 
 The song comes from the machine's roots.json unless --song names it. Audio is decoded with
-ffmpeg to 48 kHz stereo float. Effects are mixed at their event gain under the music, and a soft
-limiter keeps dense beats from clipping. Nothing here is committed: the inputs are the NCS song and
+ffmpeg to 48 kHz stereo float. Effects are mixed at their event gain (and pitch, a playback rate,
+when an event has one: the crystal shatter's) under the music, and a soft limiter keeps dense beats
+from clipping; the summary line gives the peak before it and the share of samples it touched. Nothing here is committed: the inputs are the NCS song and
 vendor sounds, and the output goes to the gitignored captures/.
 """
 
@@ -62,22 +63,41 @@ def soft_limit(x):
     return y
 
 
-def render(events: list[dict], song, start: float, clips: dict[str, object]):
-    """The music plus every event from `start`, at the events' song times."""
+def repitch(clip, pitch: float):
+    """A clip played at `pitch` times its rate (shorter and higher above 1), by linear interpolation."""
+    import numpy as np
+
+    if abs(pitch - 1.0) < 1e-4:
+        return clip
+    n = max(1, int(round(len(clip) / pitch)))
+    src = np.arange(n) * pitch
+    idx = np.arange(len(clip))
+    return np.stack([np.interp(src, idx, clip[:, c]) for c in range(clip.shape[1])], axis=1).astype(np.float32)
+
+
+def render(events: list[dict], song, start: float, clips: dict[str, object], limit: bool = True):
+    """The music plus every event from `start`, at the events' song times (unlimited if not `limit`)."""
 
     out = song * MUSIC_LEVEL
     n = len(out)
+    pitched: dict[tuple[str, float], object] = {}
     for e in events:
         clip = clips.get(e["clip"])
         if clip is None:
             continue
+        pitch = round(float(e.get("pitch", 1.0)), 4)
+        if pitch != 1.0:
+            key = (e["clip"], pitch)
+            if key not in pitched:
+                pitched[key] = repitch(clip, pitch)
+            clip = pitched[key]
         at = round((e["time"] - start) * RATE)
         if at >= n or at + len(clip) <= 0:
             continue
         a0, c0 = max(0, at), max(0, -at)
         length = min(n - a0, len(clip) - c0)
         out[a0:a0 + length] += clip[c0:c0 + length] * (EFFECTS_LEVEL * float(e["gain"]))
-    return soft_limit(out)
+    return soft_limit(out) if limit else out
 
 
 def write_wav(path: Path, samples) -> None:
@@ -122,7 +142,8 @@ def main(argv: list[str]) -> int:
     clips = {name: decode(path) for name, path in files.items()}
     seconds = a.seconds if a.seconds is not None else video_seconds(a.video)
     song = decode(song_path, a.start, seconds)
-    mixed = render(events, song, a.start, clips)
+    raw = render(events, song, a.start, clips, limit=False)
+    mixed = soft_limit(raw)
     with tempfile.TemporaryDirectory() as tmp:
         wav = Path(tmp) / "mix.wav"
         write_wav(wav, mixed)
@@ -131,5 +152,10 @@ def main(argv: list[str]) -> int:
                         "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-shortest",
                         "-metadata", "comment=ps-render offline mix", a.out], check=True)
     used = sum(1 for e in events if e["clip"] in clips and a.start <= e["time"] <= a.start + len(song) / RATE)
-    print(f"mix: {used} sound events over {len(song) / RATE:.1f} s of the song -> {a.out}")
+    import numpy as np
+
+    peak = float(np.abs(raw).max()) if len(raw) else 0.0
+    limited = float((np.abs(raw) > 0.8).mean()) if len(raw) else 0.0
+    print(f"mix: {used} sound events over {len(song) / RATE:.1f} s of the song -> {a.out}; "
+          f"peak {peak:.2f} before the limiter, {limited:.2%} of samples over its knee, out peak {float(np.abs(mixed).max()):.3f}")
     return 0

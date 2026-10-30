@@ -42,6 +42,7 @@ namespace Demo3D.Runtime.Playback
         CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         bool _stylePosted;
         SoundScheduler _sounds;
+        SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the crystal shatter's
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
         // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
         // (after each still, the same frame again as an ID render of the monsters: mask-<t>.png).
@@ -206,9 +207,16 @@ namespace Demo3D.Runtime.Playback
             _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
             _feel = _tl.Map != null ? new CameraFeel(_tl) : null;
             _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
+            // A crystal death's burst, light and sound play on its release beat, known from the timeline.
+            var releases = _shatter?.Releases(_eval.Schedule, InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.ReleaseEvent>();
+            _fxDriver?.SetShatters(Array.ConvertAll(releases, r => new EffectDriver.Shatter
+            {
+                Time = r.Time, Entity = r.Entity, Position = r.Centre, Scale = r.Height / 1.8f, Seed = r.Seed, Tint = r.Gem,
+            }));
+            _soundCues = SoundScheduler.Cues(_tl, releases.Length > 0 ? ShatterSounds.For(releases, _tl.Map) : null);
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
             if (!_flags.FixedTime && _flags.Scene == "song")
-                _sounds = new SoundScheduler(_tl, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
+                _sounds = new SoundScheduler(_soundCues, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
         }
 
         /// <summary>
@@ -486,13 +494,16 @@ namespace Demo3D.Runtime.Playback
                 ClipA = a, TimeA = Pose(st.A.Time),
                 ClipB = b, TimeB = Pose(st.B.Time),
                 Blend = st.Blend,
-                Scale = 0.92f + 0.16f * ClipSchedule.Jitter(seed, 1),
+                Scale = InstanceScale(seed),
                 HitFlash = st.HitFlash,
                 Dissolve = st.Dissolve,
                 Tint = 0,
                 Flags = (uint)(st.Dying ? CrowdFlags.Dying : CrowdFlags.Alive),
             };
         }
+
+        /// <summary>A monster's drawn scale, from its seed.</summary>
+        static float InstanceScale(uint seed) => 0.92f + 0.16f * ClipSchedule.Jitter(seed, 1);
 
         uint RosterClip(TimelineEvaluator.Slot s, RosterAssets.TypeAssets asset)
         {
@@ -562,26 +573,25 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The timeline's sound events with each one's clip name, for TD13's offline mix (the same
-        /// list the live scheduler plays).
+        /// The sounds with each one's clip name, gain and pitch, for TD13's offline mix (the same
+        /// list the live scheduler plays: the timeline's events and the crystal shatter's).
         /// </summary>
         void DumpSounds(string path)
         {
             var bank = SoundBank.Load();
             var sb = new System.Text.StringBuilder("{\"sounds\": [\n");
-            for (int i = 0; i < _tl.Sounds.Length; i++)
+            for (int i = 0; i < _soundCues.Length; i++)
             {
-                var s = _tl.Sounds[i];
-                var name = _tl.SoundNames[s.Sound];
-                var clip = bank != null ? bank.Find(name) : null;
+                var s = _soundCues[i];
+                var clip = bank != null && s.Name != null ? bank.Find(s.Name) : null;
                 // (A "}}" right after a format spec would be read into the spec, so the closing
                 // brace is its own argument.)
-                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"time\": {0:F6}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F4}{4}{5}\n",
-                    s.Time, name, clip != null ? clip.name : "", s.Gain, "}", i + 1 < _tl.Sounds.Length ? "," : "");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"time\": {0:F6}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F4}, \"pitch\": {4:F4}{5}{6}\n",
+                    s.Time, s.Name, clip != null ? clip.name : "", s.Gain, s.Pitch, "}", i + 1 < _soundCues.Length ? "," : "");
             }
             sb.Append("]}\n");
             System.IO.File.WriteAllText(path, sb.ToString());
-            Debug.Log($"DemoMain: wrote {_tl.Sounds.Length} sound events to {path} (sound bank {(bank != null ? bank.names.Length + " names" : "missing")})");
+            Debug.Log($"DemoMain: wrote {_soundCues.Length} sound events to {path} (sound bank {(bank != null ? bank.names.Length + " names" : "missing")})");
         }
 
         void Quit(int code = 0)

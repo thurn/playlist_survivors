@@ -3181,6 +3181,27 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak01.wav",
+      "sourceSha256": "8f0a45aa8d7612cba212e5eeaf58d5f0c66592f76ca1de70dcf8c6a8a85914de",
+      "guid": "07121959d141245fdb59a0f76ddfd68c",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak02.wav",
+      "sourceSha256": "28db0592a7a36bdfb9ebc16e2953d0afa5b8b2e1b15b1b84d528396a852e65cf",
+      "guid": "d2c7d1053b14a4eea9752fa2b8ed9e18",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak03.wav",
+      "sourceSha256": "9a4964c8d3e06ae7f0e5e147ead500b5fb7bb3484b3e061505574f033ae60af4",
+      "guid": "178c7e977140a49ffa008796ed052174",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Blade_Chop_mono.wav",
       "sourceSha256": "4a3203011e74a0f54e897194030ecd3762e46ca0e43bffe8744b9529c45ff2f7",
       "guid": "5de35d095a26a5042a71af599850b917",
@@ -3297,6 +3318,48 @@
       "sourceSha256": "4ca272a266ededa631e6b45418bb0fc91a711b131f80db3094dff2033d239f7d",
       "guid": "9747c0ff71f51ee4a81d0a6007ecd793",
       "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR1_mono.wav",
+      "sourceSha256": "590b388f6aa2c8621e2cd83a46429fa66d4c311cf18ea900a163277aaa1d9d43",
+      "guid": "03f23d0405c383c49a96f0eaa5eca358",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR4_mono.wav",
+      "sourceSha256": "0c596d90ad4cb4a523fe31faf49ccd2ed2c93b8520eb1b4eb8e6de56f6e30c2a",
+      "guid": "c87cb6bc22baef84287f38b148cb56ba",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR7_mono.wav",
+      "sourceSha256": "c305f3ee3665a77894980670065bd6e1c6f84ce60bbc629c3057b69a25508044",
+      "guid": "e9752ff5710883a47ac147508f95c110",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_02_mono.wav",
+      "sourceSha256": "b311bdba806cb7c54f19896b116b76f554ff4db5a74fa99c50508c46500e71d6",
+      "guid": "e219f4ba613916242bc11dd9df5a7448",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_04_mono.wav",
+      "sourceSha256": "a4001ec0bebf42fe26c389a6eabda152f058ff2fa07b1f5ad6feb3ccd84489d3",
+      "guid": "4d320ffab649e654c87018d582222bbf",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_05_mono.wav",
+      "sourceSha256": "9b732be9a57e20d8d49455f0a8263b755efaef5d40f9a0f355ac96e2cd568a67",
+      "guid": "2c3b8339e0255e446924fc5e36396f53",
+      "use": "sound: crystal shatter"
     },
     {
       "source": "unity_assets",

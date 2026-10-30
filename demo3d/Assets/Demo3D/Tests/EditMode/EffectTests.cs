@@ -80,6 +80,82 @@ namespace Demo3D.Tests
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
 
+        /// <summary>The crystal shatter's burst (epic ps-2iq): a built-in entry of spark layers, glints that twinkle and slow dust.</summary>
+        [Test]
+        public void AnEntryWithoutAPrefabIsBuiltFromItsSparkLayers()
+        {
+            var go = new GameObject("crystal-burst");
+            try
+            {
+                var e = EffectConverter.ConvertOne(go, @"{ ""light"": { ""color"": [0.5, 0.9, 1], ""range"": 5, ""intensity"": 5, ""duration"": 0.35 },
+                    ""sparks"": [ { ""count"": 30, ""twinkle"": true }, { ""count"": 50, ""stretch"": 0, ""limit"": 0.8, ""dampen"": 0.4,
+                                    ""heat"": { ""edge"": [0, 0, 1], ""mid"": [0, 1, 1], ""gain"": 0.5 } } ] }",
+                    out var em, out var emission, out var errors);
+                Assert.That(errors, Is.Empty);
+                Assert.That(e.EmitterCount, Is.EqualTo(2), "one emitter per layer");
+                Assert.That(emission[0].Bursts[0].CountMax, Is.EqualTo(30));
+                Assert.That(emission[1].Bursts[0].CountMax, Is.EqualTo(50));
+                Assert.That(em[Slots.Stride + Slots.Heat1], Is.EqualTo(new Vector4(0, 1, 1, 0.5f)), "each layer's own heat");
+                Assert.That(em[Slots.Stride + Slots.RotMax].w, Is.EqualTo(0.4f).Within(1e-6f), "the dust's dampen");
+                Assert.That(e.Light.Active && e.Light.Range == 5, Is.True);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
+
+        /// <summary>
+        /// A crystal death's burst replaces its death burst: it spawns the selection's client.crystalShatter
+        /// on the release beat, in the gem's tint; other deaths keep their death burst.
+        /// </summary>
+        [Test]
+        public void CrystalDeathsSwapTheirDeathBurstForTheShatterOnTheRelease()
+        {
+            var lib = ScriptableObject.CreateInstance<EffectLibrary>();
+            try
+            {
+                lib.Effects = new[] { new EffectEntry { Name = "death-burst", Lifetime = 1 }, new EffectEntry { Name = "crystal-burst", Lifetime = 1.5f } };
+                lib.Selection = "{\"catalog\": {\"death-burst\": {\"effects\": [\"death-burst\"]}}, \"client\": {\"crystalShatter\": \"crystal-burst\"}}";
+                var tl = new PS.Choreography.Timeline
+                {
+                    Map = PS.Choreography.SongMap.Synthetic(120, 10),
+                    EffectNames = PS.Choreography.Catalog.Effects,
+                    TypeNames = new[] { "skeleton" },
+                    Entities = new[]
+                    {
+                        new PS.Choreography.EntityInfo(0, -1, PS.Choreography.EntityKind.Hero, 0, 10, 1),
+                        new PS.Choreography.EntityInfo(1, 0, PS.Choreography.EntityKind.Monster, 0, 6, 2),
+                        new PS.Choreography.EntityInfo(2, 0, PS.Choreography.EntityKind.Monster, 0, 6, 3),
+                    },
+                    Segments = new[]
+                    {
+                        new PS.Choreography.MotionSegment(0, 0, 10, System.Numerics.Vector2.Zero, System.Numerics.Vector2.Zero, 0, 0, PS.Choreography.Ease.Linear),
+                        new PS.Choreography.MotionSegment(1, 0, 10, new System.Numerics.Vector2(2, 0), new System.Numerics.Vector2(2, 0), 0, 0, PS.Choreography.Ease.Linear),
+                        new PS.Choreography.MotionSegment(2, 0, 10, new System.Numerics.Vector2(-2, 0), new System.Numerics.Vector2(-2, 0), 0, 0, PS.Choreography.Ease.Linear),
+                    },
+                    SegmentStart = new[] { 0, 1, 2, 3 },
+                    Actions = new PS.Choreography.ActionEvent[0],
+                    ActionStart = new[] { 0, 0, 0, 0 },
+                    Effects = new[]
+                    {
+                        new PS.Choreography.EffectEvent(PS.Choreography.Catalog.DeathBurst, 1, 11, 1.0, new System.Numerics.Vector3(0, 0.6f, 0), 0, 1),
+                        new PS.Choreography.EffectEvent(PS.Choreography.Catalog.DeathBurst, 2, 12, 1.0, new System.Numerics.Vector3(0, 0.6f, 0), 0, 1),
+                    },
+                };
+                var sink = new Collect();
+                var driver = new EffectDriver(tl, lib, sink) { Ambient = false };
+                var gem = new Color(0.2f, 0.9f, 1f, 1f);
+                driver.SetShatters(new[] { new EffectDriver.Shatter { Time = 2.25, Entity = 1, Position = new Vector3(2, 0.3f, 0), Scale = 1, Seed = 2, Tint = gem } });
+                for (int f = 0; f <= 180; f++) driver.Frame(f / 60.0);
+                Assert.That(sink.Spawns.Count, Is.EqualTo(2));
+                Assert.That(sink.Spawns[0].Effect, Is.EqualTo(0), "the other monster's death burst");
+                Assert.That(sink.Spawns[0].Position.x, Is.EqualTo(-2f).Within(1e-5f));
+                Assert.That(sink.Spawns[1].Effect, Is.EqualTo(1), "the crystal death's shatter, not its death burst");
+                Assert.That(sink.Spawns[1].Time, Is.EqualTo(2.25).Within(1e-9));
+                Assert.That(sink.Spawns[1].Position, Is.EqualTo(new Vector3(2, 0.3f, 0)));
+                Assert.That(sink.Spawns[1].Tint, Is.EqualTo(gem));
+            }
+            finally { UnityEngine.Object.DestroyImmediate(lib); }
+        }
+
         static EffectEntry Entry(float duration = 1) => new EffectEntry { Name = "t", ScaleRef = 1, Duration = duration };
 
         [Test]

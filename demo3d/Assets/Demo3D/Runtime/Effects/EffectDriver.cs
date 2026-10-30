@@ -13,6 +13,8 @@ namespace Demo3D.Runtime.Effects
     /// what the timeline leaves to it: a projectile effect along each bolt's flight, a dust puff
     /// on each monster attack, and the ambient particles over the view (AmbientEffects). Attached events are
     /// placed at their entity's position at the event time (they don't follow it afterwards).
+    /// Crystal deaths (<see cref="SetShatters"/>) swap their death burst for the selection's
+    /// client.crystalShatter effect on the beat their shards release, tinted by the type's gem.
     /// </summary>
     public sealed class EffectDriver
     {
@@ -30,13 +32,27 @@ namespace Demo3D.Runtime.Effects
         bool _resetFrame;
         double _now;
         readonly Mapping[] _map;
-        readonly int _projectile, _dust;
+        readonly int _projectile, _dust, _crystal;
+        readonly int _deathBurstEvent; // the timeline's death-burst effect name, -1 if it has none
         readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
         readonly int[] _actionsByTime;
         readonly int[] _projBySpawn;
         double _last = double.NaN;
-        int _nextAction, _nextProj;
+        int _nextAction, _nextProj, _nextShatter;
+        Shatter[] _shatters = Array.Empty<Shatter>();
+        readonly HashSet<int> _shattered = new HashSet<int>();
+
+        /// <summary>A crystal death's burst on its release beat (CrystalShatter.Releases), in place of its death burst.</summary>
+        public struct Shatter
+        {
+            public double Time;
+            public int Entity;
+            public Vector3 Position;
+            public float Scale;
+            public uint Seed;
+            public Color Tint;
+        }
         public bool Ambient = true;
         /// <summary>Only the ambient particles: no timeline events, bolts or dust (TD15's empty beauty shots).</summary>
         public bool OnlyAmbient;
@@ -77,6 +93,8 @@ namespace Demo3D.Runtime.Effects
             var client = root["client"];
             _projectile = Index(lib, client["projectile"].AsString());
             _dust = Index(lib, client["monsterAttack"].AsString());
+            _crystal = Index(lib, client["crystalShatter"].AsString());
+            _deathBurstEvent = Array.IndexOf(tl.EffectNames, "death-burst");
             _ambient = new AmbientEffects(lib, fx);
             _eliteType = new bool[tl.TypeNames.Length];
             for (int t = 0; t < _eliteType.Length; t++) _eliteType[t] = isEliteType != null && isEliteType(t);
@@ -93,6 +111,19 @@ namespace Demo3D.Runtime.Effects
             if (string.IsNullOrEmpty(names)) { Only = null; return; }
             Only = new bool[_lib.Effects.Length];
             foreach (var n in names.Split(',')) { int i = _lib.IndexOf(n.Trim()); if (i >= 0) Only[i] = true; }
+        }
+
+        /// <summary>
+        /// The crystal deaths, sorted by time: each one's death-burst event is skipped and the
+        /// client.crystalShatter effect spawns at its release instead (nothing changes if the
+        /// selection names no such effect).
+        /// </summary>
+        public void SetShatters(Shatter[] shatters)
+        {
+            _shattered.Clear();
+            _shatters = _crystal >= 0 && shatters != null ? shatters : Array.Empty<Shatter>();
+            foreach (var s in _shatters) _shattered.Add(s.Entity);
+            _last = double.NaN; // the next frame starts afresh
         }
 
         static int Index(EffectLibrary lib, string name) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name);
@@ -120,6 +151,8 @@ namespace Demo3D.Runtime.Effects
                 _nextAction = LowerBoundAction(from);
                 _nextProj = 0;
                 while (_nextProj < _projBySpawn.Length && _tl.Entities[_projBySpawn[_nextProj]].Spawn <= from) _nextProj++;
+                _nextShatter = 0;
+                while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= from) _nextShatter++;
                 _ambient.Reset(from);
             }
             _last = now;
@@ -143,6 +176,7 @@ namespace Demo3D.Runtime.Effects
         void SpawnEvent(in EffectEvent ev)
         {
             if (ev.Effect < 0 || ev.Effect >= _map.Length) return;
+            if (ev.Effect == _deathBurstEvent && ev.AttachTo >= 0 && _shattered.Contains(ev.AttachTo) && OverrideAll < 0) return; // its burst is the shatter's
             var m = _map[ev.Effect];
             if (m.Variants.Length == 0 && OverrideAll < 0) return;
             Vector3 pos;
@@ -190,7 +224,7 @@ namespace Demo3D.Runtime.Effects
             return (beats[i] - beats[i - 1]) * _tl.Map.BeatsPerBarAt(1);
         }
 
-        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration)
+        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration, Color tint = default)
         {
             // After a seek or loop wrap, the look-back re-spawns only effects still alive now.
             if (Only != null && (fx < 0 || fx >= Only.Length || !Only[fx])) return;
@@ -198,7 +232,7 @@ namespace Demo3D.Runtime.Effects
             _fx.Add(new EffectSystem.Spawn
             {
                 Effect = fx, Position = pos, Yaw = yaw, Scale = scale, Seed = seed, Time = time, Velocity = vel,
-                YawRate = yawRate, Duration = duration,
+                YawRate = yawRate, Duration = duration, Tint = tint,
             });
             EventsThisFrame++;
         }
@@ -231,6 +265,13 @@ namespace Demo3D.Runtime.Effects
                     var b = new Vector3(s.To.X, 1.2f, s.To.Y);
                     Add(_projectile, a, s.FacingFrom, 1f, _tl.Entities[e].Seed, s.T0, (b - a) / dur, 0, dur);
                 }
+            // A crystal death's burst on the beat its shards release.
+            while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= now)
+            {
+                var s = _shatters[_nextShatter++];
+                if (s.Time <= from) continue;
+                Add(_crystal, s.Position, 0, s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint);
+            }
             // A dust puff at each monster's attack.
             while (_nextAction < _actionsByTime.Length)
             {

@@ -76,6 +76,7 @@ namespace Demo3D.Runtime.Crowd
         readonly float[] _centerY, _height;  // per crowd type: the standing body's centre height (for logs) and its height
         readonly Vector3[] _poseCentre;      // per crowd type: the held pose's centre (root space): shards' centres by volume
         readonly Vector3[] _poseExtent;      // per crowd type: the held pose's half extents about it (root space)
+        readonly Color[] _gem;               // per crowd type: its gem colour (linear), for the burst and its light
         readonly List<Group>[] _free;
         readonly List<Group> _live = new List<Group>();
         readonly Dictionary<int, Group> _byEntity = new Dictionary<int, Group>();
@@ -125,6 +126,7 @@ namespace Demo3D.Runtime.Crowd
             _height = new float[types.Length];
             _poseCentre = new Vector3[types.Length];
             _poseExtent = new Vector3[types.Length];
+            _gem = new Color[types.Length];
             _free = new List<Group>[types.Length];
             for (int i = 0; i < types.Length; i++)
             {
@@ -137,6 +139,7 @@ namespace Demo3D.Runtime.Crowd
                 _materials[i].CopyMatchingPropertiesFromMaterial(crowd);
                 _centerY[i] = types[i].CenterY;
                 _height[i] = types[i].HeightM;
+                _gem[i] = StyleLook.Of(types[i].Id).gem;
                 // Most death poses lie on the floor, so the swell, the hit point and the kick work from
                 // the pose's own centre, not the standing body's.
                 float vol = 0;
@@ -183,6 +186,47 @@ namespace Demo3D.Runtime.Crowd
         }
 
         public bool Shatters(int type) => _sets[type] != null;
+
+        /// <summary>One crystal death's release, known from the timeline ahead of time: its burst, light and sound.</summary>
+        public struct ReleaseEvent
+        {
+            public double Time;     // the beat the shards pop (the crowd's dissolve start)
+            public int Entity, Type;
+            public Vector3 Centre;  // the held pose's centre at the instance (world)
+            public float Scale;     // the instance's scale
+            public float Height;    // the type's standing height in metres, times the scale
+            public Color Gem;       // the type's gem colour (linear)
+            public uint Seed;
+        }
+
+        /// <summary>
+        /// Every crystal death's release in the timeline, by time: where <see cref="Dying"/> will release
+        /// its shards (the first frame of the dissolve, ClipSchedule.FadeStart), with the instance's
+        /// placement there. <paramref name="scaleOf"/> is the client's instance scale for an entity's seed,
+        /// <paramref name="hoverOf"/> a type's height above the ground (bats).
+        /// </summary>
+        public ReleaseEvent[] Releases(ClipSchedule schedule, Func<uint, float> scaleOf, Func<int, float> hoverOf)
+        {
+            var list = new List<ReleaseEvent>();
+            for (int i = 0; i < _tl.Actions.Length; i++)
+            {
+                var a = _tl.Actions[i];
+                if (a.Kind != ActionKind.Death) continue;
+                var info = _tl.Entities[a.Entity];
+                if (info.Kind != EntityKind.Monster || info.Type < 0 || info.Type >= _sets.Length || _sets[info.Type] == null) continue;
+                double t = schedule.FadeStart(i);
+                var p = _tl.PositionAt(a.Entity, t, out float yaw);
+                float scale = scaleOf(info.Seed);
+                var (centre, _) = Placement(_poseCentre[info.Type], new MonsterInstance { Position = new Vector3(p.X, hoverOf(info.Type), p.Y), Yaw = yaw, Scale = scale });
+                list.Add(new ReleaseEvent
+                {
+                    Time = t, Entity = a.Entity, Type = info.Type, Centre = centre, Scale = scale,
+                    Height = _height[info.Type] * scale, Gem = _gem[info.Type], Seed = info.Seed,
+                });
+            }
+            list.Sort((x, y) => { int c = x.Time.CompareTo(y.Time); return c != 0 ? c : x.Entity.CompareTo(y.Entity); });
+            return list.ToArray();
+        }
 
         /// <summary>
         /// Brings the shards to song time t: a seek backwards clears them; forward, physics steps on

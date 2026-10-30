@@ -34,6 +34,7 @@ Shader "Demo3D/EffectParticles"
             float4 uv : TEXCOORD0;      // main uv, noise uv
             nointerpolation uint4 info : TEXCOORD1; // emitter, slice, noise slice, flags
             float4 extra : TEXCOORD2;   // eye depth, softness, premultiplied, custom.x
+            nointerpolation float4 tint : TEXCOORD3; // the spawn's own heat colour and its weight (Instance.tint)
         };
 
         float3 ParticleWorld(Particle p, uint e, uint flags, out Frame f)
@@ -166,6 +167,7 @@ Shader "Demo3D/EffectParticles"
             o.uv = float4(uv, noiseUv);
             o.info = uint4(e, (uint)tex.x, (uint)m1.z, flags);
             o.extra = float4(-TransformWorldToView(world).z, (flags & F_SOFT) ? m1.y : 0, m1.x > 1.5 ? 1 : 0, custom);
+            o.tint = _Instances[asuint(p.rotInst.w)].tint;
             return o;
         }
 
@@ -209,8 +211,16 @@ Shader "Demo3D/EffectParticles"
             uint blend = (uint)EM(e, S_MAT1).x;
             // Premultiplied materials (One, OneMinusSrcAlpha) carry alpha in their colour already.
             float3 rgb = i.extra.z > 0.5 ? c.rgb * i.color.a : c.rgb * c.a;
-            float4 h0 = EM(e, S_HEAT0);
-            if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, EM(e, S_HEAT1)), h0.w);
+            float4 h0 = EM(e, S_HEAT0), h1 = EM(e, S_HEAT1);
+            // A tinted spawn (a crystal death's gem) takes the ramp in its own colour: the edge the
+            // gem deepened (squared), the mid the gem, the core still white-hot, at the emitter's gain.
+            if (i.tint.a > 0)
+            {
+                float3 edge = i.tint.rgb * i.tint.rgb;
+                float4 mid = float4(i.tint.rgb, h0.w > 0 ? h1.w : 1);
+                rgb = lerp(h0.w > 0 ? lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w) : rgb, Heat(rgb, edge, mid), i.tint.a);
+            }
+            else if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w);
             return float4(rgb, blend == 0 ? 0 : c.a);
         }
 

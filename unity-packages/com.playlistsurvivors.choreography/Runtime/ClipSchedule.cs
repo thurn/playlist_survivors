@@ -183,6 +183,19 @@ namespace PS.Choreography
             return _tl.Map.TimeOfBeatIndex(i + 1) - _tl.Map.TimeOfBeatIndex(i);
         }
 
+        /// <summary>
+        /// When a death's fade begins (<paramref name="action"/> indexes <see cref="Timeline.Actions"/>):
+        /// a beat after its clip comes to rest on its last pose. The crowd's dissolve starts here, and
+        /// the crystal shatter releases its shards.
+        /// </summary>
+        public double FadeStart(int action)
+        {
+            var a = _tl.Actions[action];
+            var ann = _clips[a.Clip >= 0 ? a.Clip : 0];
+            double clipEnd = _start[action] + Math.Max(ann.End, ann.Impact) / Math.Max(0.01f, _speed[action]);
+            return clipEnd + BeatLength(a.Impact);
+        }
+
         /// <summary>An entity's flash on its latest hit, tick or parry, and its fade after a death, at t.</summary>
         public Feedback FeedbackAt(int e, double t)
         {
@@ -206,11 +219,7 @@ namespace PS.Choreography
                 {
                     fb.Dying = true;
                     fb.Flash = Math.Max(fb.Flash, 1f - (float)((t - a.Impact) / FlashSeconds));
-                    var ann = _clips[a.Clip >= 0 ? a.Clip : 0];
-                    int i = acts.Offset + k;
-                    double clipEnd = _start[i] + Math.Max(ann.End, ann.Impact) / Math.Max(0.01f, _speed[i]);
-                    double beat = BeatLength(a.Impact);
-                    fb.Fade = Math.Clamp((float)((t - clipEnd - beat) / beat), 0f, 1f);
+                    fb.Fade = Math.Clamp((float)((t - FadeStart(acts.Offset + k)) / BeatLength(a.Impact)), 0f, 1f);
                     break;
                 }
             }

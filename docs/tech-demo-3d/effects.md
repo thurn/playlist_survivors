@@ -127,6 +127,20 @@ and our own draw shader; no vendor file changes. Per effect:
 - **Light cues** take the effect's heat colour: a white cue on every hit
   washed the ground and the horde yellow-white at a climax.
 
+**The crystal shatter's burst** (epic ps-2iq,
+[evidence](../../demo3d/evidence/shatter/burst/README.md)): wherever Crystal draws a type, its
+deaths skip their death burst. On the beat its shards release, `crystal-burst` spawns at the
+held pose's centre instead: the selection's `client.crystalShatter`, scaled by the monster's
+height. It is built in, with no prefab: an entry without one is built from its `sparks`, which
+may be a list of layers. It has two layers, both twinkling (their brightness flickers over the
+life, like facets catching the light): fine stretched glints thrown out fast, and slow crystal
+dust that bursts out, stops and floats down. It has no glow quad, so the shards stay in sight.
+Each spawn carries a **tint**, the type's gem colour, so one definition serves every type. A
+tinted spawn's heat ramp runs from the gem squared, through the gem, to a white core, and its
+light cue takes the gem's colour: a 0.3 s flash of range 4.5 m, set 1.2 m above the burst (a
+cue's `height`) so it washes the floor and the neighbours rather than burning a hot spot under a
+body lying on the floor.
+
 The horde's hit flash (CrowdSkinned, `lighting.crowd.flash` in the layout)
 is an ember rather than white: at the final peak, flashing bodies alone made
 a clipped blob 2.6% of the frame.

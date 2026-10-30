@@ -41,10 +41,21 @@ namespace Demo3D.EditorTools.Effects
             {
                 var name = (string)fx["name"];
                 var src = (string)fx["prefab"];
+                var opts = new Options(fx);
+                if (src == null)
+                {
+                    // Built only from our own parts (its sparks): no vendor prefab, nothing derived.
+                    var empty = new GameObject(name);
+                    var built = b.Convert(name, "built in", empty, opts, errors);
+                    UnityEngine.Object.DestroyImmediate(empty);
+                    if (built == null) continue;
+                    entries.Add(built);
+                    stock.Add(null);
+                    continue;
+                }
                 if (!guids.TryGetValue(src, out var guid)) { errors.AppendLine($"error: {name}: {src} is not in manifest.json"); continue; }
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
                 if (prefab == null) { errors.AppendLine($"error: {name}: {src} is not imported (run setup)"); continue; }
-                var opts = new Options(fx);
                 var entry = b.Convert(name, src, prefab, opts, errors);
                 if (entry == null) continue;
                 entries.Add(entry);
@@ -178,18 +189,23 @@ namespace Demo3D.EditorTools.Effects
 
         public const string SparkName = "Sparks (look)";
 
+        /// <summary>The child name of a selection's <paramref name="index"/>th spark burst.</summary>
+        public static string SparkChild(int index) => index == 0 ? SparkName : $"{SparkName} {index + 1}";
+
         /// <summary>
         /// The selection's spark burst (effects.md, The look): our own short-lived stretched sparks
         /// thrown from where an effect hits, white-hot, through the heat ramp the selection gives
-        /// them. <c>sparks</c>: count, speed [min, max] m/s, life [min, max] s, size m, gravity,
-        /// radius m, upward (0 a sphere, 1 a cone straight up), stretch (length per m/s), hdr
-        /// (colour scale), heightM.
+        /// them. <c>sparks</c> (one, or a list of layers): count, speed [min, max] m/s, life [min,
+        /// max] s, size m, gravity, radius m, upward (0 a sphere, 1 a cone straight up), stretch
+        /// (length per m/s), hdr (colour scale), heightM, limit (m/s; the top speed by default) and
+        /// dampen (the share of the speed above the limit lost: high for dust that bursts out and then
+        /// floats), twinkle (the brightness flickers over the life: glints catching the light).
         /// </summary>
-        public static GameObject SparkBurst(JObject o)
+        public static GameObject SparkBurst(JObject o, int index = 0)
         {
             float F(string k, float d) => (float?)o[k] ?? d;
             (float, float) Range(string k, float a, float b) => o[k] is JArray r ? ((float)r[0], (float)r[1]) : (a, b);
-            var go = new GameObject(SparkName);
+            var go = new GameObject(SparkChild(index));
             go.transform.position = new Vector3(0, F("heightM", 0.3f), 0);
             var ps = go.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -224,14 +240,26 @@ namespace Demo3D.EditorTools.Effects
             var col = ps.colorOverLifetime;
             col.enabled = true;
             var g = new UnityEngine.Gradient();
+            if ((bool?)o["twinkle"] ?? false)
+            {
+                // Glints: full heat, then flickering between bright and dim as the facet turns, fading out.
+                var c = new Color(0.12f, 0.12f, 0.12f);
+                g.SetKeys(new[]
+                    {
+                        new GradientColorKey(Color.white, 0), new GradientColorKey(c, 0.14f), new GradientColorKey(Color.white, 0.26f),
+                        new GradientColorKey(c, 0.4f), new GradientColorKey(new Color(0.8f, 0.8f, 0.8f), 0.55f),
+                        new GradientColorKey(c, 0.7f), new GradientColorKey(new Color(0.6f, 0.6f, 0.6f), 0.84f), new GradientColorKey(c, 1),
+                    },
+                    new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, 0.75f), new GradientAlphaKey(0, 1) });
+            }
             // Fade from full heat to a dim ember: the heat ramp turns that into white, yellow, red.
-            g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 1) },
+            else g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(new Color(0.25f, 0.25f, 0.25f), 1) },
                 new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, 0.6f), new GradientAlphaKey(0, 1) });
             col.color = g;
             var limit = ps.limitVelocityOverLifetime;
             limit.enabled = true;
-            limit.limit = speedMax;
-            limit.dampen = 0.15f;
+            limit.limit = F("limit", speedMax);
+            limit.dampen = F("dampen", 0.15f);
             var r = go.GetComponent<ParticleSystemRenderer>();
             r.renderMode = ParticleSystemRenderMode.Stretch;
             r.lengthScale = 1f;
@@ -265,7 +293,9 @@ namespace Demo3D.EditorTools.Effects
             public readonly bool NoLight;
             /// <summary>The look (effects.md, The look): HDR colour and lifetime scales, the heat ramp, per-child tuning and our own spark burst.</summary>
             public readonly float Hdr, Life;
-            public readonly JObject Heat, Sparks;
+            public readonly JObject Heat;
+            /// <summary>The selection's spark bursts: <c>sparks</c> as one object, or a list of layers.</summary>
+            public readonly List<JObject> Sparks = new List<JObject>();
             public readonly Dictionary<string, JObject> Tune;
 
             public Options(JObject o)
@@ -288,7 +318,8 @@ namespace Demo3D.EditorTools.Effects
                 Hdr = (float?)o["hdr"] ?? 1f;
                 Life = (float?)o["life"] ?? 1f;
                 Heat = o["heat"] as JObject;
-                Sparks = o["sparks"] as JObject;
+                if (o["sparks"] is JObject one) Sparks.Add(one);
+                else if (o["sparks"] is JArray layers) Sparks.AddRange(layers.Cast<JObject>());
                 Tune = new Dictionary<string, JObject>();
                 if (o["tune"] is JObject t)
                     foreach (var kv in t) Tune[kv.Key] = (JObject)kv.Value;
@@ -302,7 +333,8 @@ namespace Demo3D.EditorTools.Effects
             /// <summary>A child's heat ramp: its own <c>tune</c> entry's (false for none), else the effect's.</summary>
             public JObject HeatOf(string child)
             {
-                if (child == SparkName) return Sparks?["heat"] != null ? Sparks["heat"] as JObject : Heat ?? new JObject(); // white-hot to red by default
+                for (int i = 0; i < Sparks.Count; i++)
+                    if (child == SparkChild(i)) return Sparks[i]["heat"] != null ? Sparks[i]["heat"] as JObject : Heat ?? new JObject(); // white-hot to red by default
                 if (Tune.TryGetValue(child, out var t) && t["heat"] != null) return t["heat"] as JObject;
                 return Heat;
             }
@@ -349,9 +381,9 @@ namespace Demo3D.EditorTools.Effects
                 LightCue cue = default;
                 // Our own spark burst (the selection's sparks): built here and converted with the
                 // prefab's children, so it isn't vendor-derived.
-                GameObject sparks = o.Sparks != null ? SparkBurst(o.Sparks) : null;
+                var sparks = o.Sparks.Select((sp, i) => SparkBurst(sp, i)).ToList();
                 var systems = prefab.GetComponentsInChildren<ParticleSystem>(true).Select(ps => (ps, root, rootM)).ToList();
-                if (sparks != null) systems.Add((sparks.GetComponent<ParticleSystem>(), sparks.transform, Matrix4x4.identity));
+                foreach (var sp in sparks) systems.Add((sp.GetComponent<ParticleSystem>(), sp.transform, Matrix4x4.identity));
                 foreach (var (ps, psRoot, psRootM) in systems)
                 {
                     string child = ps.gameObject.name;
@@ -400,7 +432,7 @@ namespace Demo3D.EditorTools.Effects
                         Notes.Add($"{name}/{child}: trails approximated by stretched billboards (selection)");
                     }
                 }
-                if (sparks != null) UnityEngine.Object.DestroyImmediate(sparks);
+                foreach (var sp in sparks) UnityEngine.Object.DestroyImmediate(sp);
                 foreach (var lr in prefab.GetComponentsInChildren<LineRenderer>(true))
                 {
                     if (!ActiveIn(lr.transform, root) || (!lr.enabled && !o.Lines)) continue;
@@ -979,6 +1011,7 @@ namespace Demo3D.EditorTools.Effects
                 if (o["range"] != null) cue.Range = (float)o["range"];
                 if (o["intensity"] != null) cue.Intensity = (float)o["intensity"];
                 if (o["duration"] != null) cue.Duration = (float)o["duration"];
+                if (o["height"] != null) cue.Height = (float)o["height"];
                 return cue;
             }
 

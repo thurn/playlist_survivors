@@ -81,6 +81,8 @@ namespace Demo3D.Runtime.Effects
     {
         public Color Color;
         public float Range, Intensity, Duration;
+        /// <summary>How far above the spawn the light sits, in metres at scale 1: a burst near the floor lights a wide pool, not a hot spot.</summary>
+        public float Height;
         public float[] Curve;
 
         public bool Active => Intensity > 0 && Range > 0 && Duration > 0;

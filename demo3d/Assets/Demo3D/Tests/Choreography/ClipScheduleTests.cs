@@ -49,6 +49,16 @@ namespace Demo3D.Choreography.Tests
         static ClipSchedule Schedule(bool slowHeavyBlows = true) => new ClipSchedule(Build(), Clips, slowHeavyBlows);
 
         [Test]
+        public void ADeathsFadeStartsABeatAfterItsClipComesToRest()
+        {
+            var s = Schedule();
+            double fade = s.FadeStart(Death);
+            Assert.That(fade, Is.EqualTo(s.Start(Death) + 0.6 + 0.5).Within(1e-6), "the clip's end, then a beat at 120 bpm");
+            Assert.That(s.FeedbackAt(Monster, fade).Fade, Is.Zero);
+            Assert.That(s.FeedbackAt(Monster, fade + 0.01).Fade, Is.GreaterThan(0f), "the dissolve begins there");
+        }
+
+        [Test]
         public void HitStopHoldsThenCatchesUpWithoutAJump([Values(0f, 0.6f)] float rate)
         {
             const double impact = 10.0;

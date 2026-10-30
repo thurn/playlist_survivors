@@ -237,7 +237,11 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     stand, one in eight flies far, and the largest chunks get about half the smallest's share.
     Small shards spin fastest, and the heat cools over the first half second of flight. Gravity is
     2.2 times Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on
-    a floor collider under y = 0, and sink after 5 s. Physics steps on the song clock in script
+    a floor collider under y = 0, and sink after 5 s. The pop also brings the burst: gem-tinted
+    glints and crystal dust with a flash of light in place of the death burst
+    ([effects.md](effects.md#the-look)), and a layered glass break pitched by the type's size
+    ([camera-and-sound.md](camera-and-sound.md#sound)). Both are worked out from the timeline
+    ahead of time (`CrystalShatter.Releases`, at `ClipSchedule.FadeStart`). Physics steps on the song clock in script
     mode at 120 Hz, so `--fixed-time` runs repeat exactly; deaths before `--start-at` are not
     reconstructed. Tuning and filmstrips: [shatter/motion](../../demo3d/evidence/shatter/motion/README.md).
   - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque

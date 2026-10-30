@@ -10,7 +10,8 @@ namespace Demo3D.EditorTools.Assets
 {
     /// <summary>
     /// Bakes the SoundBank (into Assets/Baked/Sounds/Resources/, since it references vendor
-    /// clips): each timeline sound name, `category/variant`, gets one clip from TD2's chosen packs.
+    /// clips): each timeline sound name, `category/variant`, gets one clip from TD2's chosen packs,
+    /// and so does each of the crystal shatter's (ShatterSounds, epic ps-2iq).
     /// </summary>
     public static class SoundBaker
     {
@@ -27,6 +28,11 @@ namespace Demo3D.EditorTools.Assets
             ["bolt"] = new[] { "RPG3_FireMagicBall_Projectile01", "RPG3_FireMagicBall_Projectile02", "RPG3_Magic2_HeavyImpact01" },
             ["lightning"] = new[] { "RPG3_ElectricMagicEpic_LightningStrikeImpact01", "RPG3_ElectricMagicEpic_LightningStrikeImpact02", "Thunder 1" },
             ["laser"] = new[] { "RPG3_FireMagicFlameThrower_Shoot01", "RPG3_FireMagicFlameThrower_Shoot02", "RPG3_FireMagicFlameThrower_Shoot03" },
+            // The crystal shatter's layers (evidence/shatter/burst/README.md): a crunching ice break with
+            // weight under 300 Hz, a bright glass spray over it, and short fragment tinkles as shards land.
+            ["shatter-body"] = new[] { "RPG3_IceMagic2_IceBreak01", "RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03" },
+            ["shatter-glass"] = new[] { "SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono" },
+            ["shatter-tinkle"] = new[] { "SHATTER_Glass_Fragment_RR1_mono", "SHATTER_Glass_Fragment_RR4_mono", "SHATTER_Glass_Fragment_RR7_mono" },
         };
 
         [InitializeOnLoadMethod]
@@ -38,7 +44,7 @@ namespace Demo3D.EditorTools.Assets
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .GroupBy(p => Path.GetFileNameWithoutExtension(p))
                 .ToDictionary(g => g.Key, g => g.First());
-            var names = Catalog.SoundNames();
+            var names = Catalog.SoundNames().Concat(ShatterSounds.Names()).ToArray();
             var clips = new AudioClip[names.Length];
             for (int i = 0; i < names.Length; i++)
             {

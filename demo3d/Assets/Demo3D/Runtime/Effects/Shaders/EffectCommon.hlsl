@@ -127,6 +127,7 @@ struct Instance
     float4 timing;   // spawn time, yaw rate, emitter (asfloat), seed (asfloat)
     float4 seg[4];   // emission segments: first particle, particles per step, first birth, step seconds
     float4 alloc;    // count (asfloat), merged density (TD11's merge cut; 1 or more), allocation offset (asfloat; ~0 rejected), duration
+    float4 tint;     // the spawn's own heat colour, at weight a (0: the emitter's ramp); a crystal death's gem
 };
 
 StructuredBuffer<float4> _Emitters;

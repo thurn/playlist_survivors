@@ -22,3 +22,12 @@ def test_the_limiter_never_passes_one_and_leaves_quiet_audio_alone() -> None:
     y = mix.soft_limit(x)
     assert np.allclose(y[0], x[0])
     assert np.all(np.abs(y) <= mix.CEILING + 1e-6)
+
+
+def test_a_pitched_event_plays_faster_and_shorter() -> None:
+    song = np.zeros((1000, 2), dtype=np.float32)
+    ramp = np.stack([np.linspace(0, 1, 100, dtype=np.float32)] * 2, axis=1)
+    out = mix.render([{"time": 0.0, "clip": "r", "gain": 1.0, "pitch": 2.0}], song, 0.0, {"r": ramp}, limit=False)
+    hits = np.nonzero(out[:, 0])[0]
+    assert hits.max() == 49  # half as long
+    assert np.isclose(out[10, 0], mix.EFFECTS_LEVEL * ramp[20, 0], atol=1e-6)

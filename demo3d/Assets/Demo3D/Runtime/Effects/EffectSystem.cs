@@ -18,7 +18,7 @@ namespace Demo3D.Runtime.Effects
     public sealed class EffectSystem : ISpawnSink
     {
         public const int DefaultPool = 1 << 18, InstanceRing = 1 << 16, MaxPerInstance = 8192;
-        const int InstanceFloat4s = 8, ParticleStride = 112;
+        const int InstanceFloat4s = 9, ParticleStride = 112;
 
         /// <summary>One spawn: an effect at a world transform and time.</summary>
         public struct Spawn
@@ -28,6 +28,8 @@ namespace Demo3D.Runtime.Effects
             public float Yaw, Scale, YawRate, Duration; // Duration <= 0: the effect's own
             public uint Seed;
             public double Time;
+            /// <summary>Alpha above 0: the spawn's own colour for the heat ramp (its edge and mid) and its light cue, at that weight (a crystal death's gem colour).</summary>
+            public Color Tint;
         }
 
         public readonly EffectLibrary Library;
@@ -41,8 +43,8 @@ namespace Demo3D.Runtime.Effects
         readonly MaterialPropertyBlock[] _blocks;
         readonly CommandBuffer _cmd = new CommandBuffer { name = "Demo3D effects" };
         readonly EffectPass _pass;
-        /// <summary>The GPU's Instance record (EffectCommon.hlsl), 128 bytes.</summary>
-        struct InstanceData { public Vector4 PosYaw, VelScale, Timing, Seg0, Seg1, Seg2, Seg3, Alloc; }
+        /// <summary>The GPU's Instance record (EffectCommon.hlsl), 144 bytes.</summary>
+        struct InstanceData { public Vector4 PosYaw, VelScale, Timing, Seg0, Seg1, Seg2, Seg3, Alloc, Tint; }
         struct FrameInst { public uint Ring, First, Count, Pad; }
         const int MaxFrameInstances = 1 << 14;
         readonly InstanceData[] _instData = new InstanceData[InstanceRing];
@@ -198,7 +200,12 @@ namespace Demo3D.Runtime.Effects
             SpawnsTotal++;
             float scale = s.Scale / Mathf.Max(1e-4f, fx.ScaleRef);
             // Lights take every spawn: their clustering already merges coincident cues.
-            if (fx.Light.Active) Lights.Add(s.Position, fx.Light, s.Time, scale, s.Velocity);
+            if (fx.Light.Active)
+            {
+                var cue = fx.Light;
+                if (s.Tint.a > 0) cue.Color = Color.Lerp(cue.Color, new Color(s.Tint.r, s.Tint.g, s.Tint.b), s.Tint.a);
+                Lights.Add(s.Position + Vector3.up * (cue.Height * scale), cue, s.Time, scale, s.Velocity);
+            }
             if (_cuts.On(Cuts.Merge)) _queued.Add(s); // merged against the camera in Update
             else Expand(s, 1);
             return true;
@@ -231,6 +238,7 @@ namespace Demo3D.Runtime.Effects
                     Timing = new Vector4((float)(s.Time - _origin), s.YawRate, BitConverter.Int32BitsToSingle(e), BitConverter.Int32BitsToSingle((int)seed)),
                     Seg0 = _seg[0], Seg1 = _seg[1], Seg2 = _seg[2], Seg3 = _seg[3],
                     Alloc = new Vector4(BitConverter.Int32BitsToSingle(count), density, 0, s.Duration > 0 ? s.Duration : fx.Duration),
+                    Tint = s.Tint,
                 };
                 _frameData[_frameCount++] = new FrameInst { Ring = (uint)ring, First = (uint)_frameNewParticles, Count = (uint)count };
                 _frameNewParticles += count;
@@ -260,7 +268,7 @@ namespace Demo3D.Runtime.Effects
                     {
                         var m = _merged[i];
                         if (m.Spawn.Effect != s.Effect || m.Screen.x < -1e8f) continue;
-                        if (Mathf.Abs(m.Spawn.Scale - s.Scale) > 1e-3f * Mathf.Max(1f, s.Scale) || m.Spawn.Duration != s.Duration
+                        if (Mathf.Abs(m.Spawn.Scale - s.Scale) > 1e-3f * Mathf.Max(1f, s.Scale) || m.Spawn.Duration != s.Duration || m.Spawn.Tint != s.Tint
                             || (m.Spawn.Velocity - s.Velocity).sqrMagnitude > 1e-4f || m.Spawn.YawRate != s.YawRate) continue;
                         if (((Vector2)sp - m.Screen).sqrMagnitude <= r2) { into = i; break; }
                     }
