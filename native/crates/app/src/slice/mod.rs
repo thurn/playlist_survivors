@@ -33,6 +33,8 @@
 //!                                     # to end by the virtual player on levels/action-showcase.yaml, in Delayed
 //!                                     # listening; quits once the run is over
 //!     playlist-survivors --showcase-stills <session>  # a recorded showcase replayed offscreen: three stills
+//!     playlist-survivors --showcase-density <session> [--level <yaml>]  # its music on the showcase
+//!                                     # level, autoplayed offscreen: crowds per section, stills, frame work
 
 mod apps;
 mod bible;
@@ -189,6 +191,9 @@ struct Options {
     showcase: bool,
     /// Stills of a recorded showcase session (`showcase::stills`).
     showcase_stills: Option<PathBuf>,
+    /// A recorded showcase's music replayed on the showcase level, its crowds measured
+    /// (`showcase::density`).
+    showcase_density: Option<PathBuf>,
     file: Option<PathBuf>,
     level: Option<PathBuf>,
     still: Option<PathBuf>,
@@ -267,6 +272,7 @@ fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
         showcase: false,
         showcase_stills: None,
+        showcase_density: None,
         file: None,
         level: None,
         still: None,
@@ -330,6 +336,13 @@ fn options(args: &[String]) -> Result<Options, String> {
                 o.showcase_stills = Some(
                     it.next()
                         .ok_or("--showcase-stills needs a session directory")?
+                        .into(),
+                );
+            }
+            "--showcase-density" => {
+                o.showcase_density = Some(
+                    it.next()
+                        .ok_or("--showcase-density needs a session directory")?
                         .into(),
                 );
             }
@@ -806,6 +819,13 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.showcase_stills {
         return showcase::stills(dir);
+    }
+    if let Some(dir) = &opts.showcase_density {
+        let level = opts
+            .level
+            .clone()
+            .unwrap_or_else(|| live::resource("levels", "../../../levels").join(SHOWCASE_LEVEL));
+        return showcase::density(dir, &level);
     }
     if let Some(dir) = &opts.passives_check {
         return cards::passives_check::run(dir);
