@@ -937,7 +937,10 @@ targets, and they guide the offer table, but no bead fails on them:
 - **The release stage:** the sweep, as `ci-full`'s `survivors` step: four
   30-minute positioning runs in parallel, about 3 minutes, in a lane beside
   the native tests.
-  - **Budget:** 20 minutes, a hang's bound.
+  - **Budget:** 20 minutes for the simulations and replay, a hang's bound.
+    Cache preparation (per-track and continuous analysis) runs first under
+    its own 45-minute bound: cold, its cost swings with the machine's other
+    load (ps-vno).
   - **QoS:** utility, like the corpus parity step (AGENTS.md: the background
     class keeps to the efficiency cores and is too slow for a release step).
   - It's skipped while its inputs (the sim, content, levels and the playlist)

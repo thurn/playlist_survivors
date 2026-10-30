@@ -105,12 +105,19 @@ def summary(case: Case, data: dict) -> dict:
     }
 
 
+# Cold analysis is bounded work whose cost swings with the machine's other load (a cold
+# continuous source took 14 minutes alone and over 20 beside Unity; ps-vno), so preparation
+# has its own bound and the 20-minute hang bound covers only the simulations and replay.
+PREPARE_BUDGET = 45 * 60
+RUN_BUDGET = 20 * 60
+
+
 def checked(
     command: list[str], deadline: float, **kwargs
 ) -> subprocess.CompletedProcess:
     remaining = deadline - time.monotonic()
     if remaining <= 0:
-        raise TimeoutError("survivors sweep exhausted its 20-minute budget")
+        raise TimeoutError("survivors sweep exhausted its time budget")
     capture = not ("stdout" in kwargs or "stderr" in kwargs)
     return subprocess.run(
         command,
@@ -164,7 +171,9 @@ def run_case(
     record: str | None = None,
     soak: bool = False,
     jobs: int = 1,
+    name: str | None = None,
 ) -> dict:
+    name = name or case.name
     command = [
         str(binary),
         "survive",
@@ -185,9 +194,9 @@ def run_case(
         command.append("--runner-soak")
     if record:
         command += ["--record", str(out / record)]
-    (out / f"{case.name}.command.json").write_text(json.dumps(command) + "\n")
-    output = out / f"{case.name}.json"
-    with output.open("w") as stdout, (out / f"{case.name}.stderr").open("w") as stderr:
+    (out / f"{name}.command.json").write_text(json.dumps(command) + "\n")
+    output = out / f"{name}.json"
+    with output.open("w") as stdout, (out / f"{name}.stderr").open("w") as stderr:
         checked(command, deadline, cwd=ROOT / "native", stdout=stdout, stderr=stderr)
     data = json.loads(output.read_text())
     if (
@@ -198,9 +207,9 @@ def run_case(
         or data["streamMode"]
         != ("concatenated" if case.mode == "continuous" else "cached-tracks")
     ):
-        raise ValueError(f"wrong actor/seed/damage mode in {case.name}")
+        raise ValueError(f"wrong actor/seed/damage mode in {name}")
     print(
-        f"{case.name}: {data['report']['survivalS']:.3f}s, HP {data['report']['lowestHpShare']:.3f}, "
+        f"{name}: {data['report']['survivalS']:.3f}s, HP {data['report']['lowestHpShare']:.3f}, "
         f"level {data['report']['level']}, survival gate {verdict(data)}",
         flush=True,
     )
@@ -239,7 +248,7 @@ def replay_session(binary: Path, session: Path, data: dict, deadline: float) -> 
 def run(args: argparse.Namespace) -> None:
     enter_qos(args.release)
     start = time.monotonic()
-    deadline = start + 20 * 60
+    deadline = start + PREPARE_BUDGET
     selected = cases()
     if args.only is not None:
         selected = selected[: args.only]
@@ -248,7 +257,9 @@ def run(args: argparse.Namespace) -> None:
         raise ValueError("survival assertions require the complete 30-minute matrix")
     key = input_key(args.assert_survival) if full else None
     # scripts/lib/platform.sh exports PS_CACHE under ci-full.
-    home_cache = Path(os.environ.get("PS_CACHE") or Path.home() / "Library/Caches/playlist-survivors")
+    home_cache = Path(
+        os.environ.get("PS_CACHE") or Path.home() / "Library/Caches/playlist-survivors"
+    )
     stamp = home_cache / "ci-stamps" / f"survivors-{key}"
     if (
         key
@@ -277,25 +288,47 @@ def run(args: argparse.Namespace) -> None:
     continuous = next((case for case in selected if case.mode == "continuous"), None)
     cached = [case for case in selected if case.mode == "cached"]
     normal = Case("cached", "original", "positioning", 1)
-    # The continuous run's full-source analysis starts alongside cache preparation.
+    # Preparation: the per-track caches (a short warmup run) and, alongside them, the
+    # continuous source's full analysis (a short continuous run). Warm, both are cache reads.
     replay = None
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        pending = {}
+        prepared = None
         if continuous and args.jobs > 1:
-            future = pool.submit(
-                run_case, binary, continuous, out, args.minutes, deadline
+            prepared = pool.submit(
+                run_case,
+                binary,
+                continuous,
+                out,
+                0.01,
+                deadline,
+                name=f"{continuous.name}-prepare",
             )
-            pending[future] = continuous
         warmup = run_case(
             binary,
             Case("cached", "original", "afk", 0),
             out,
             0.01,
             deadline,
-            jobs=max(1, args.jobs - bool(continuous)),
+            jobs=max(1, args.jobs - bool(prepared)),
         )
         (out / "warmup.json").write_text(json.dumps(warmup, indent=2) + "\n")
-        if continuous and args.jobs == 1:
+        if prepared:
+            prepared.result()
+        elif continuous:
+            run_case(
+                binary,
+                continuous,
+                out,
+                0.01,
+                deadline,
+                name=f"{continuous.name}-prepare",
+            )
+        print(
+            f"survivors sweep: prepared in {time.monotonic() - start:.3f}s", flush=True
+        )
+        deadline = time.monotonic() + RUN_BUDGET
+        pending = {}
+        if continuous:
             future = pool.submit(
                 run_case, binary, continuous, out, args.minutes, deadline
             )

@@ -177,6 +177,60 @@ class Workers(unittest.TestCase):
     def test_worker_failure_is_reraised_after_other_workers_join(self):
         self.exercise(jobs=2, fail=True)
 
+    def test_preparation_finishes_before_the_run_budget_starts(self):
+        events = []
+        lock = threading.Lock()
+
+        def fake_case(binary, case, out, minutes, deadline, *args, **kwargs):
+            with lock:
+                events.append(("start", case.mode, minutes, deadline))
+            time.sleep(0.01)
+            with lock:
+                events.append(("end", case.mode, minutes, deadline))
+            result = deepcopy(data(case.bot))
+            result["requestedMinutes"] = minutes
+            return result
+
+        selected = [
+            sweep.Case("cached", "original", "positioning", 1),
+            sweep.Case("continuous", "original", "positioning", 1),
+        ]
+        with tempfile.TemporaryDirectory() as folder:
+            args = Namespace(
+                jobs=3,
+                only=len(selected),
+                minutes=3,
+                assert_survival=False,
+                release=False,
+                force=True,
+                out=Path(folder) / "reports",
+            )
+            with (
+                patch.object(sweep, "enter_qos"),
+                patch.object(sweep, "cases", return_value=selected),
+                patch.object(sweep, "run_case", fake_case),
+                patch.object(
+                    sweep,
+                    "checked",
+                    return_value=subprocess.CompletedProcess([], 0, "", ""),
+                ),
+                redirect_stdout(io.StringIO()),
+            ):
+                sweep.run(args)
+        prepare = [e for e in events if e[2] == 0.01]
+        runs = [e for e in events if e[2] == 3]
+        self.assertEqual(
+            {e[1] for e in prepare}, {"cached", "continuous"}, "both caches warm"
+        )
+        self.assertEqual(len(runs), 4)
+        last_prepared = max(events.index(e) for e in prepare if e[0] == "end")
+        first_run = min(events.index(e) for e in runs)
+        self.assertLess(last_prepared, first_run)
+        # The runs get a fresh 20-minute deadline, not what preparation's bound left.
+        self.assertTrue(all(e[3] == runs[0][3] for e in runs))
+        self.assertLessEqual(runs[0][3], time.monotonic() + sweep.RUN_BUDGET)
+        self.assertLess(runs[0][3], min(e[3] for e in prepare))
+
 
 class FullReplay(unittest.TestCase):
     def test_completion_is_structural_not_a_pacing_or_balance_threshold(self):

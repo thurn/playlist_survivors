@@ -149,7 +149,8 @@ fi
 
 # SF9's own release step: utility QoS, four 30-minute positioning runs (one seed in each playlist
 # order, and the continuously analysed source) and the exact replay of the base order's recorded
-# session, source-keyed skip, 20-minute budget. Survival asserts; pacing remains report-only.
+# session, source-keyed skip, 20-minute budget after a separately bounded cache preparation.
+# Survival asserts; pacing remains report-only.
 if [ "$section" = survivors ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
   uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
