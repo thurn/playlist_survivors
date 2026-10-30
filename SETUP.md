@@ -134,6 +134,13 @@ Each worktree uses its own `native/target` by default. Never point two developme
 one Cargo target directory. Enact's slow CI, serialized by its lock, keeps a persistent cache
 under `$HOME/Library/Caches/playlist-survivors/`.
 
+`scripts/ci-full demo2d` also runs the 2D demo's Unity EditMode tests, windowless, so the
+machine running slow CI needs what `demo2d setup` needs ([2D demo](docs/tech-demo-2d/README.md)):
+Unity 6000.6.7f1 at its Hub path (or `UNITY_EXE`) with an activated licence, the vendor packs
+in `~/unity_assets` and the Action MP3 in `~/Downloads` (or the paths in
+`~/Library/Caches/playlist-survivors/demo3d/roots.json`). Without them the step fails, naming
+what is missing.
+
 ## Python analysis tool
 
 Skip this section unless changing the analysis tool, regenerating streams/models, or running

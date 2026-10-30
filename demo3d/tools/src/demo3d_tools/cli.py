@@ -10,7 +10,8 @@ Commands:
   check               every check before a push: guard, dotnet test, cold Unity compile and
                       EditMode tests, and with --player an IL2CPP player build
   unity METHOD ...    run a batch-mode task method (warm editor if running, else cold)
-  test                EditMode tests (warm editor if running, else cold)
+  test                EditMode tests (warm editor if running, else cold; --no-skips fails on
+                      a skipped test, as CI does)
   build               build the player (--platform windows|mac, --backend il2cpp|mono, --out DIR)
   editor start|stop|status
                       the warm editor for this worktree
@@ -102,6 +103,9 @@ def cmd_unity(a: argparse.Namespace) -> int:
 def cmd_test(a: argparse.Namespace) -> int:
     s = unity.run_tests(paths.worktree(name=a.project), a.assembly or [], cold=a.cold)
     print(f"tests: {s.passed}/{s.total} passed, {s.failed} failed, {s.skipped} skipped\n{s.failures}")
+    if a.no_skips and s.skipped:
+        print(f"tests: FAILED, since --no-skips and these were skipped:\n{s.skips}")
+        return 1
     return 0 if s.ok else 1
 
 
@@ -244,6 +248,8 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     t = sub.add_parser("test")
     t.add_argument("--assembly", action="append")
     t.add_argument("--cold", action="store_true")
+    t.add_argument("--no-skips", action="store_true",
+                   help="fail if any test is skipped (a missing setup step or bake, in CI)")
     t.set_defaults(func=cmd_test)
 
     b = sub.add_parser("build")

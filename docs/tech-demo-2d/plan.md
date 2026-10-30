@@ -214,6 +214,10 @@ PX10        after PX9
 - **Windowless.** Agents drive Unity in batch mode in their own worktree's
   project, and check the player with `-batchmode -force-metal` and
   `--capture-stills`. Only the operator opens the app's window.
+- **Slow CI runs the EditMode tests.** `scripts/ci-full demo2d` runs
+  `demo2d setup`, `demo2d unity BakePlayback` and `demo2d test --no-skips`
+  (a test skipped for a missing setup or bake fails it), so its machine
+  needs Unity, its licence, the vendor packs and the song (SETUP.md).
 - **Commit SHAs.** Each task records its commits in its notes.
 - **No approval pauses.** Checks only the operator can make go to
   [Pending on the operator](#pending-on-the-operator).
@@ -920,9 +924,9 @@ the bead). dotnet 38 of 38, 1 of them PX9's; `demo2d test` 95 of 95. [Evidence](
   (they need Unity, which the engine-free package can't hold). The core's two opt-in changes
   (`advanceM`, `bossFrom`) leave demo3d's dump unchanged, re-run per commit; but PX8's note quoting
   `09945e3b…` is stale: `ea51af02` (demo3d's clear ring round the hero, outside this run) moved the
-  dump to `71d7b6c7…` before PX8 landed, and PX8 kept that. Unity's EditMode tests still run only by
-  hand (`demo2d test`, and the seek test only after `demo2d unity BakePlayback`); slow CI covering
-  them is ps-tfn.8.
+  dump to `71d7b6c7…` before PX8 landed, and PX8 kept that. Unity's EditMode tests then ran only by
+  hand (`demo2d test`, and the seek test only after `demo2d unity BakePlayback`); since ps-tfn.8,
+  slow CI runs them, bake included (Working rules).
 - **Self-review:** re-read the diff against `origin/staging`. No core change (demo3d untouched); demo2d's
   runtime gains the hero's rim and rank, its arena generator the detail tiles, its editor the two tasks; data
   edits are values and the ledge's pieces. New tracked files are our code, the shader, `.meta`s Unity wrote,

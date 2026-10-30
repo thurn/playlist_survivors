@@ -156,7 +156,15 @@ if [ "$section" = demo3d ]; then
   dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
 fi
 
-# The 2D demo (docs/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet.
+# The 2D demo (docs/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet;
+# then, windowless in batch mode, the project set up from this machine's vendor packs and cache
+# (it fails, naming what is missing, without the packs, the song, Unity or its licence), the
+# song's playback baked, and Unity's EditMode tests, where a skip (a test missing its setup or
+# bake) fails too. About 2 minutes with a warm Library. demo3d's EditMode tests stay out: they
+# need its full BakeAll and the Synty packs.
 if [ "$section" = demo2d ]; then
   dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
+  uv run --quiet --project demo3d/tools demo2d setup
+  uv run --quiet --project demo3d/tools demo2d unity BakePlayback
+  uv run --quiet --project demo3d/tools demo2d test --no-skips
 fi

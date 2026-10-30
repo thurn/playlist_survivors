@@ -42,3 +42,29 @@ def test_a_lingering_package_manager_does_not_hold_the_run(
     while unity.pid_alive(upm) and time.monotonic() < deadline:
         time.sleep(0.05)
     assert not unity.pid_alive(upm)
+
+
+# Unity's NUnit results, trimmed: one pass, one failure and one Assert.Ignore.
+RESULTS = """\
+<test-run total="3" passed="1" failed="1" skipped="1">
+  <test-suite type="TestFixture" fullname="Demo2D.Tests.PlaybackTests" result="Failed">
+    <test-case fullname="Demo2D.Tests.PlaybackTests.Passes" result="Passed" />
+    <test-case fullname="Demo2D.Tests.PlaybackTests.Fails" result="Failed">
+      <failure><message><![CDATA[expected 1 but was 2]]></message></failure>
+    </test-case>
+    <test-case fullname="Demo2D.Tests.PlaybackTests.ASeek" result="Skipped" label="Ignored">
+      <reason><message><![CDATA[PlaybackData isn't baked: run demo2d unity BakePlayback]]></message></reason>
+    </test-case>
+  </test-suite>
+</test-run>
+"""
+
+
+def test_results_name_each_failure_and_skip_with_its_reason(tmp_path: Path) -> None:
+    xml = tmp_path / "results.xml"
+    xml.write_text(RESULTS)
+    s = unity.parse_nunit(xml)
+    assert (s.total, s.passed, s.failed, s.skipped) == (3, 1, 1, 1)
+    assert s.failures == "Demo2D.Tests.PlaybackTests.Fails: expected 1 but was 2"
+    assert s.skips == ("Demo2D.Tests.PlaybackTests.ASeek: "
+                       "PlaybackData isn't baked: run demo2d unity BakePlayback")

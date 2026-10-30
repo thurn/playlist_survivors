@@ -238,6 +238,7 @@ class TestSummary:
     failed: int
     skipped: int
     failures: str
+    skips: str = ""  # each skipped test and its reason (Assert.Ignore names the missing setup step)
 
     @property
     def ok(self) -> bool:
@@ -247,13 +248,17 @@ class TestSummary:
 def parse_nunit(xml_path: Path) -> TestSummary:
     root = ET.parse(xml_path).getroot()
     failures = []
+    skips = []
     for case in root.iter("test-case"):
         if case.get("result") == "Failed":
             msg = case.findtext("failure/message") or ""
             failures.append(f"{case.get('fullname')}: {msg.strip()}")
+        elif case.get("result") == "Skipped":
+            msg = case.findtext("reason/message") or ""
+            skips.append(f"{case.get('fullname')}: {msg.strip()}")
     return TestSummary(
         int(root.get("total", 0)), int(root.get("passed", 0)), int(root.get("failed", 0)),
-        int(root.get("skipped", 0)), "\n".join(failures),
+        int(root.get("skipped", 0)), "\n".join(failures), "\n".join(skips),
     )
 
 
