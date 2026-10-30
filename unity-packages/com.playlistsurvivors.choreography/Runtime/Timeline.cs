@@ -17,6 +17,8 @@ namespace PS.Choreography
         public int MaxOnScreen;
         public double GoalReachedAt = -1;    // song seconds, -1 if never
         public float FinalShapeScale;
+        // The carnage (TimelineReport.CarnageTable): the hero's blows and their kills, and the spells' kills. Not in the dump.
+        public int HeroSwings, HeroKills, MaxSwingKills, SpellKills;
 
         public double Duration => End - Start;
         public double DeathsPerSecond => Duration > 0 ? Deaths / Duration : 0;

@@ -7,7 +7,7 @@ using PS.Choreography;
 namespace Demo3D.Choreography.Cli
 {
     /// <summary>
-    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring]
+    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring]
     ///                                                                        stress S3 [--n N] [--view W] [--load L] [--seconds S] [--out dump.json]
     ///                                                                       usage: song | stress <S1..S6> | placements | timing [--out timing.md]
     /// </summary>
@@ -24,9 +24,10 @@ namespace Demo3D.Choreography.Cli
                 case "song":
                 {
                     string seed = Opt(args, "--seed");
-                    Timeline tl = ChoreographyFiles.BuildSong(root, seed == null ? (uint?)null : uint.Parse(seed, CultureInfo.InvariantCulture));
+                    string level = Opt(args, "--level") ?? ChoreographyFiles.LevelFile;
+                    Timeline tl = ChoreographyFiles.BuildSong(root, seed == null ? (uint?)null : uint.Parse(seed, CultureInfo.InvariantCulture), level, Opt(args, "--intensity"));
                     Console.Write(TimelineReport.Summary(tl));
-                    Snapshot(tl, ChoreographyFiles.LoadData(root, ChoreographyFiles.LoadLevel(root).Layout ?? ChoreographyFiles.DefaultLayout), args);
+                    Snapshot(tl, ChoreographyFiles.LoadData(root, ChoreographyFiles.LoadLevel(root, level).Layout ?? ChoreographyFiles.DefaultLayout), args);
                     if (Has(args, "--hero"))
                         for (double ht = 0; ht < tl.Duration; ht += 5)
                         {

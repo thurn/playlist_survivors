@@ -73,16 +73,49 @@ namespace Demo3D.Choreography
         public static SongMap LoadSong(string root, string song) =>
             SongMap.Parse(File.ReadAllText(Path.Combine(root, "songs", song, "songmap.json")));
 
-        public static LevelScript LoadLevel(string root, string file = LevelFile) => LevelScript.Parse(File.ReadAllText(DataPath(root, file)));
+        /// <summary>The intensity that applies no overlay (`--intensity normal`, the default).</summary>
+        public const string NormalIntensity = "normal";
+
+        /// <summary>An intensity's overlay file (intensity-NAME.json beside the level scripts).</summary>
+        public static string IntensityFile(string intensity) => "intensity-" + intensity + ".json";
+
+        /// <summary>Every intensity the checkout has: normal and one per overlay file.</summary>
+        public static string[] Intensities(string root)
+        {
+            string[] files = Directory.GetFiles(Path.Combine(root, DataDir), IntensityFile("*"));
+            var names = new string[files.Length + 1];
+            names[0] = NormalIntensity;
+            for (int i = 0; i < files.Length; i++)
+            {
+                string f = Path.GetFileNameWithoutExtension(files[i]);
+                names[i + 1] = f.Substring("intensity-".Length);
+            }
+            Array.Sort(names, 1, files.Length, StringComparer.Ordinal);
+            return names;
+        }
+
+        /// <summary>
+        /// A level script, with an intensity's overlay merged over it (<see cref="IntensityOverlay"/>; null or
+        /// normal: none). An unknown intensity fails, listing the known ones.
+        /// </summary>
+        public static LevelScript LoadLevel(string root, string file = LevelFile, string intensity = null)
+        {
+            string json = File.ReadAllText(DataPath(root, file));
+            if (intensity == null || intensity == NormalIntensity) return LevelScript.Parse(json);
+            string overlay = DataPath(root, IntensityFile(intensity));
+            if (!File.Exists(overlay))
+                throw new ArgumentException("--intensity: unknown intensity '" + intensity + "' (one of " + string.Join(", ", Intensities(root)) + ")");
+            return LevelScript.Parse(json, File.ReadAllText(overlay));
+        }
 
         /// <summary>A stress scene's script, "S1" to "S6" (stress-s1.json and so on).</summary>
         public static StressScript LoadStress(string root, string scene) =>
             StressScript.Parse(File.ReadAllText(DataPath(root, "stress-" + scene.ToLowerInvariant() + ".json")));
 
-        /// <summary>The song's timeline from the tracked level script.</summary>
-        public static Timeline BuildSong(string root, uint? seed = null)
+        /// <summary>The song's timeline from a tracked level script (by default action-level.json), at an intensity.</summary>
+        public static Timeline BuildSong(string root, uint? seed = null, string file = LevelFile, string intensity = null)
         {
-            LevelScript level = LoadLevel(root);
+            LevelScript level = LoadLevel(root, file, intensity);
             return Choreographer.Run(LoadSong(root, level.Song), level, LoadData(root, level.Layout ?? DefaultLayout), seed);
         }
     }

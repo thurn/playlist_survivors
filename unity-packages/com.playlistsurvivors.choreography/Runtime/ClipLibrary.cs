@@ -70,19 +70,22 @@ namespace PS.Choreography
         }
 
         /// <summary>
-        /// Retiming (choreography.md): speed = clamp(impact / timeAvailable, 0.75, 1.33), start =
-        /// impact time − annotated impact / speed. <paramref name="availableFrom"/> is when the
-        /// entity is free to start. False if the impact would need a speed above 1.33.
+        /// Retiming (choreography.md): speed = clamp(impact / timeAvailable, <paramref name="minSpeed"/>, <paramref name="maxSpeed"/>),
+        /// start = impact time − annotated impact / speed. <paramref name="availableFrom"/> is when the
+        /// entity is free to start. False if the impact would need a speed above the cap (1.33, or the
+        /// level script's <see cref="SimTuning.ComboMaxSpeed"/> for the hero's combos, whose floor is its
+        /// <see cref="SimTuning.ComboMinSpeed"/>).
         /// </summary>
-        public static bool Fit(ClipAnnotation clip, double availableFrom, double impactTime, out double start, out double end, out float speed)
+        public static bool Fit(ClipAnnotation clip, double availableFrom, double impactTime, out double start, out double end, out float speed,
+            float maxSpeed = MaxSpeed, float minSpeed = MinSpeed)
         {
             double avail = impactTime - availableFrom;
             start = end = 0;
             speed = 1;
             if (avail <= 0 && clip.Impact > 0) return false;
             double s = clip.Impact <= 0 ? 1.0 : clip.Impact / avail;
-            if (s > MaxSpeed + 1e-9) return false;
-            if (s < MinSpeed) s = MinSpeed;
+            if (s > maxSpeed + 1e-9) return false;
+            if (s < minSpeed) s = minSpeed;
             speed = (float)s;
             start = impactTime - clip.Impact / s;
             end = start + clip.End / s;

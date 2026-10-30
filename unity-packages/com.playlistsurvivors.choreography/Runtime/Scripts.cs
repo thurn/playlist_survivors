@@ -107,6 +107,16 @@ namespace PS.Choreography
             }
         }
 
+        /// <summary>A level script's own preset (its <c>loads</c>): <c>deathsPerN</c>, <c>hitsPerDeath</c> and <c>spells</c>.</summary>
+        public static LoadPreset Parse(string name, JsonValue o)
+        {
+            JsonValue spells = o["spells"];
+            var p = new LoadPreset { Name = name, DeathsPerN = o["deathsPerN"].AsFloat(), HitsPerDeath = o["hitsPerDeath"].AsFloat(), Spells = new string[spells.Count] };
+            for (int i = 0; i < spells.Count; i++) p.Spells[i] = spells[i].AsString();
+            if (!(p.DeathsPerN >= 0) || !(p.HitsPerDeath >= 0)) throw new FormatException("load preset '" + name + "': negative rate");
+            return p;
+        }
+
         public float DeathsPerSecond(int n) => n * DeathsPerN;
         public float HitsPerSecond(int n) => n * DeathsPerN * HitsPerDeath;
     }
@@ -146,6 +156,73 @@ namespace PS.Choreography
         public bool Clear;              // the hero's combos clear the screen: no releases or refills (the ending, TD13)
     }
 
+    /// <summary>
+    /// The sim's tuning knobs a level script (or an intensity overlay over one) may set; each defaults
+    /// to the value the sim had before it became a field, so a script without them runs as before.
+    /// </summary>
+    public sealed class SimTuning
+    {
+        /// <summary>The hero's combo clips speed up at most this much to land on their grid point (its <c>comboMaxSpeed</c>; monsters keep <see cref="ClipLibrary.MaxSpeed"/>).</summary>
+        public float ComboMaxSpeed = ClipLibrary.MaxSpeed;
+        /// <summary>
+        /// ... and play at least this fast (its <c>comboMinSpeed</c>): the fit plays a clip as slowly as still
+        /// lands it, so a slow follow-through can run past the next beat; a higher floor frees the hero for it.
+        /// </summary>
+        public float ComboMinSpeed = ClipLibrary.MinSpeed;
+        /// <summary>The kill-rate feedback's caps on the hit shapes' scale: while the kill budget runs behind (<c>maxShapeScale</c>), and otherwise (<c>hitsShapeScale</c>).</summary>
+        public float MaxShapeScale = 4f, HitsShapeScale = 2.5f;
+        /// <summary>A scaled hit shape is at most this fraction of the view's width (its <c>maxShapeViewFraction</c>).</summary>
+        public float MaxShapeViewFraction = 0.25f;
+        /// <summary>
+        /// Per rank, a multiplier on the roster's hit points (its <c>hitPointScale</c>, an object keyed by rank:
+        /// <c>{ "fodder": 0 }</c> makes every fodder a one-hit kill). Struck monsters die fewest hit points first.
+        /// </summary>
+        public float FodderHitPointScale = 1f, EliteHitPointScale = 1f, BossHitPointScale = 1f;
+        /// <summary>A beat's refill spawns at most max(<c>refillMinPerBeat</c>, the wanted total / <c>refillDivisor</c>).</summary>
+        public int RefillMinPerBeat = 24;
+        public float RefillDivisor = 6f;
+        /// <summary>Releases add this many seconds of the expected deaths, for the walk in from the spawn band (its <c>releaseLeadS</c>).</summary>
+        public float ReleaseLeadS = 2.5f;
+        /// <summary>
+        /// A hero on its way to a goal attacks whatever its scaled hit shapes reach, as it does holding ground
+        /// (its <c>travelScaledReach</c>), so it carves its way instead of striding between blows. False, the
+        /// default: travelling, it attacks only what is within its unscaled reach.
+        /// </summary>
+        public bool TravelScaledReach;
+
+        public static readonly SimTuning Default = new SimTuning();
+
+        public float HitPointScale(MonsterRank rank) =>
+            rank == MonsterRank.Fodder ? FodderHitPointScale : rank == MonsterRank.Elite ? EliteHitPointScale : BossHitPointScale;
+
+        public static SimTuning Parse(JsonValue root)
+        {
+            var d = Default;
+            JsonValue hp = root["hitPointScale"];
+            var t = new SimTuning
+            {
+                ComboMaxSpeed = root["comboMaxSpeed"].AsFloat(d.ComboMaxSpeed),
+                ComboMinSpeed = root["comboMinSpeed"].AsFloat(d.ComboMinSpeed),
+                MaxShapeScale = root["maxShapeScale"].AsFloat(d.MaxShapeScale),
+                HitsShapeScale = root["hitsShapeScale"].AsFloat(d.HitsShapeScale),
+                MaxShapeViewFraction = root["maxShapeViewFraction"].AsFloat(d.MaxShapeViewFraction),
+                FodderHitPointScale = hp["fodder"].AsFloat(d.FodderHitPointScale),
+                EliteHitPointScale = hp["elite"].AsFloat(d.EliteHitPointScale),
+                BossHitPointScale = hp["boss"].AsFloat(d.BossHitPointScale),
+                RefillMinPerBeat = root["refillMinPerBeat"].AsInt(d.RefillMinPerBeat),
+                RefillDivisor = root["refillDivisor"].AsFloat(d.RefillDivisor),
+                ReleaseLeadS = root["releaseLeadS"].AsFloat(d.ReleaseLeadS),
+                TravelScaledReach = root["travelScaledReach"].AsBool(d.TravelScaledReach),
+            };
+            if (!(t.ComboMinSpeed >= ClipLibrary.MinSpeed) || !(t.ComboMaxSpeed >= t.ComboMinSpeed))
+                throw new FormatException("hero combo speeds " + t.ComboMinSpeed + " to " + t.ComboMaxSpeed + " are out of order or below the clips' minimum");
+            if (!(t.MaxShapeScale > 0) || !(t.HitsShapeScale > 0) || !(t.MaxShapeViewFraction > 0)) throw new FormatException("hit shape caps must be positive");
+            if (!(t.RefillDivisor > 0) || t.RefillMinPerBeat < 0 || !(t.ReleaseLeadS >= 0)) throw new FormatException("refill and release tuning out of range");
+            if (!(t.FodderHitPointScale >= 0) || !(t.EliteHitPointScale >= 0) || !(t.BossHitPointScale >= 0)) throw new FormatException("hitPointScale must not be negative");
+            return t;
+        }
+    }
+
     /// <summary>The level script (choreography.md, "The choreographer"): per song-map section, its targets.</summary>
     public sealed class LevelScript
     {
@@ -181,7 +258,16 @@ namespace PS.Choreography
         /// however near, so the boss falls to the song's final blow. False, the default, kills nearest first.
         /// </summary>
         public bool BossFallsLast;
+        /// <summary>The sim's tuning knobs (<see cref="SimTuning"/>), from the script's top-level fields.</summary>
+        public SimTuning Tuning = SimTuning.Default;
+        /// <summary>The script's own load presets (its <c>loads</c>, by name), beside the built-in ones; a section's <c>load</c> may name either.</summary>
+        public Dictionary<string, LoadPreset> Loads = new Dictionary<string, LoadPreset>();
+        /// <summary>The intensity overlay merged over the script (<see cref="IntensityOverlay"/>), or null.</summary>
+        public string Intensity;
         public LevelSection[] Sections;
+
+        /// <summary>A section's load preset: the script's own by that name, else a built-in one.</summary>
+        public LoadPreset Preset(string name) => name != null && Loads.TryGetValue(name, out LoadPreset p) ? p : LoadPreset.Get(name);
 
         public LevelSection For(string sectionLabel)
         {
@@ -205,9 +291,17 @@ namespace PS.Choreography
             EnvelopeViewWidthM = widestM;
         }
 
-        public static LevelScript Parse(string json)
+        /// <summary>The script from its JSON, with an intensity overlay's JSON (<see cref="IntensityOverlay"/>) merged over it first, if given.</summary>
+        public static LevelScript Parse(string json, string overlayJson = null)
         {
             JsonValue root = JsonValue.Parse(json);
+            string intensity = null;
+            if (overlayJson != null)
+            {
+                var overlay = IntensityOverlay.Parse(overlayJson);
+                root = overlay.Apply(root);
+                intensity = overlay.Name;
+            }
             var ls = new LevelScript
             {
                 Song = root["song"].AsString(),
@@ -221,7 +315,11 @@ namespace PS.Choreography
                 ClumpSize = Math.Max(0, root["clumpSize"].AsInt(0)),
                 StrandedS = Math.Max(0f, root["strandedS"].AsFloat(0f)),
                 BossFallsLast = root["bossFallsLast"].AsBool(false),
+                Tuning = SimTuning.Parse(root),
+                Intensity = intensity,
             };
+            foreach (KeyValuePair<string, JsonValue> kv in root["loads"].Type == JsonType.Object ? root["loads"].Members : new List<KeyValuePair<string, JsonValue>>())
+                ls.Loads[kv.Key] = LoadPreset.Parse(kv.Key, kv.Value);
             JsonValue secs = root["sections"];
             ls.Sections = new LevelSection[secs.Count];
             for (int i = 0; i < secs.Count; i++)
@@ -241,7 +339,7 @@ namespace PS.Choreography
                     BossFrom = s["bossFrom"].AsString(),
                     Clear = s["clear"].AsBool(false),
                 };
-                LoadPreset.Get(ls.Sections[i].Load);
+                ls.Preset(ls.Sections[i].Load);
             }
             return ls;
         }

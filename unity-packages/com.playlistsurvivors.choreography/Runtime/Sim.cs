@@ -47,10 +47,8 @@ namespace PS.Choreography
         const float SpawnMargin = 2f, SpawnBand = 4f;
         const float FarDespawn = 30f;
         const float MaxStepReach = 1.4f;         // the longest step a neighbour takes in a beat (0.95 m × 1.3 off screen), plus margin
-        const float ReleaseLeadSeconds = 2.5f;
         const double SectionLeadSeconds = 4;   // releases look ahead to a fuller next section this far (TD13)
         const float AheadCos = 0.2588f;          // cos 75°
-        const float MaxShapeScale = 4f, HitsShapeScale = 2.5f, MaxShapeViewFraction = 0.25f;
         const float OffscreenStride = 1.3f;     // culled monsters walking in take longer steps
         const float ClumpDriftMps = 0.5f;       // the clumps' arcs slide along the view's edge this fast, so masses arrive from every side
 
@@ -65,6 +63,7 @@ namespace PS.Choreography
         readonly Vector2 heroStart;
         readonly double viewPitchDeg;
         readonly float clearRadius;   // the level script's clear ring: monsters' bodies keep this far from the hero (0: contact)
+        readonly SimTuning tuning;    // the level script's tuning knobs (SimTuning)
         readonly int[] barOfBeat;
         readonly int[][] spellCount;
 
@@ -167,8 +166,10 @@ namespace PS.Choreography
         int flowRebuilds, flowSlices, sliceBudget;
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
-            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false)
+            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false,
+            SimTuning tuning = null)
         {
+            this.tuning = tuning ?? SimTuning.Default;
             this.strandedS = strandedS;
             this.bossFallsLast = bossFallsLast;
             this.viewPitchDeg = viewPitchDeg;
@@ -365,7 +366,7 @@ namespace PS.Choreography
             MonsterType mt = roster.Monsters[type];
             int m = NewEntity(EntityKind.Monster, type, t);
             state[m] = Alive;
-            hp[m] = Math.Max(1, mt.HitPoints);
+            hp[m] = Math.Max(1, (int)Math.Round(mt.HitPoints * tuning.HitPointScale(mt.Rank)));
             radius[m] = mt.Radius;
             pos[m] = p;
             busyUntil[m] = 0;
@@ -577,9 +578,9 @@ namespace PS.Choreography
                 double ratio = target / Math.Max(1, barStruck);
                 float k = (float)Math.Max(0.85, Math.Min(1.2, Math.Sqrt(ratio)));
                 if (behind) k = Math.Max(k, 1.1f);
-                float cap = behind ? MaxShapeScale : HitsShapeScale;
-                shapeScale = Math.Max(0.5f, Math.Min(Math.Max(cap, Math.Min(shapeScale, MaxShapeScale) * 0.95f), shapeScale * k));
-                if (!behind && shapeScale > HitsShapeScale) shapeScale = Math.Max(HitsShapeScale, shapeScale * 0.95f);
+                float cap = behind ? tuning.MaxShapeScale : tuning.HitsShapeScale;
+                shapeScale = Math.Max(0.5f, Math.Min(Math.Max(cap, Math.Min(shapeScale, tuning.MaxShapeScale) * 0.95f), shapeScale * k));
+                if (!behind && shapeScale > tuning.HitsShapeScale) shapeScale = Math.Max(tuning.HitsShapeScale, shapeScale * 0.95f);
             }
             barStart = tb;
             barStruck = 0;
@@ -668,7 +669,7 @@ namespace PS.Choreography
             offscreenAlive = offN;
             // Release the deficit plus the deaths expected while a released monster walks in from the
             // spawn band (about 3 s), nearest the view's edge first.
-            int deficit = TargetAhead(tb, out _) - onScreenCount + (int)Math.Round(deathRate * ReleaseLeadSeconds);
+            int deficit = TargetAhead(tb, out _) - onScreenCount + (int)Math.Round(deathRate * tuning.ReleaseLeadS);
             if (deficit <= 0 || offN == 0 || plan.Clear) return;   // a clearing section lets no more in
             Array.Sort(offKeys, offIds, 0, offN);
             for (int i = 0; i < offN && i < deficit; i++) { released[offIds[i]] = true; lastWanted[offIds[i]] = tb; }
@@ -709,8 +710,10 @@ namespace PS.Choreography
             Vector2 ahead = goalReached ? Vector2.Zero : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
             // Holding ground (a reached goal), the hero attacks whatever its hit shapes reach as the feedback
             // scales them (TD6: walls slow the horde, and a hero idling inside its own kill zone starves the
-            // kill budget); travelling, only what is within its unscaled reach.
-            float reach = goalReached && nav != null ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
+            // kill budget); travelling, only what is within its unscaled reach, unless the level script's
+            // travelScaledReach lets it carve its way with its scaled shapes too.
+            bool scaled = (goalReached || tuning.TravelScaledReach) && nav != null;
+            float reach = scaled ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
             if (canAct && (plan.Clear || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
             {
                 // With a fixed windup the next combo's windup cuts into the last one's follow-through.
@@ -748,7 +751,7 @@ namespace PS.Choreography
                 ClipAnnotation clip = clips[mv.Clip];
                 float windup = roster.WindupOf(mv);
                 if (windup > 0 ? !ClipLibrary.FitWindup(clip, availFrom, p.Time, windup, out double start, out double end, out float speed)
-                    : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed)) continue;
+                    : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)) continue;
                 if (start < tb - 1e-9) continue;
                 // Across a section change a positioned combo owns its slot: skip a plain one whose
                 // recovery would leave no room for the windup of the next section's positioned one
@@ -803,7 +806,7 @@ namespace PS.Choreography
                 Move next = roster.Combo(e.Name);
                 ClipAnnotation c = clips[next.Clip];
                 float windup = roster.WindupOf(next);
-                return end > q.Time - (windup > 0 ? Math.Min(windup, c.Impact) : c.Impact / ClipLibrary.MaxSpeed);
+                return end > q.Time - (windup > 0 ? Math.Min(windup, c.Impact) : c.Impact / tuning.ComboMaxSpeed);
             }
             return false;
         }
@@ -1494,6 +1497,7 @@ namespace PS.Choreography
             // An impact on a section's first downbeat belongs to that section's budget.
             int sec = map.SectionIndexAt(t);
             if (sec > curSection) EnterSection(sec, t);
+            int killsBefore = totalKills;
             switch (im.Kind)
             {
                 case ImpactKind.HeroCombo:
@@ -1513,6 +1517,10 @@ namespace PS.Choreography
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
                     if (plan.Clear) ClearStrike(t, o, im.Strength);
                     else Strike(t, o, n, im.Strength, true);
+                    int swingKills = totalKills - killsBefore;
+                    stats[curSection].HeroSwings++;
+                    stats[curSection].HeroKills += swingKills;
+                    stats[curSection].MaxSwingKills = Math.Max(stats[curSection].MaxSwingKills, swingKills);
                     break;
                 }
                 case ImpactKind.Ring:
@@ -1524,6 +1532,7 @@ namespace PS.Choreography
                         effects.Add(new EffectEvent(im.Move.Effect, -1, Rng.Hash(seed, (uint)effects.Count, 0x7106), t, new Vector3(o.X, 0.1f, o.Y), 0, r));
                     if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
                     Strike(t, o, n, im.Strength, false);
+                    stats[curSection].SpellKills += totalKills - killsBefore;
                     break;
                 }
                 case ImpactKind.Bolt:
@@ -1544,6 +1553,7 @@ namespace PS.Choreography
                     effects.Add(new EffectEvent(Catalog.BoltImpact, -1, eseed[im.Entity], t, new Vector3(im.Point.X, 1f, im.Point.Y), 0, 1f));
                     if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
                     Strike(t, im.Point, n, im.Strength, false);
+                    stats[curSection].SpellKills += totalKills - killsBefore;
                     break;
                 }
                 case ImpactKind.Circle:
@@ -1554,6 +1564,7 @@ namespace PS.Choreography
                         effects.Add(new EffectEvent(im.Move.Effect, -1, Rng.Hash(seed, (uint)effects.Count, 0x119E), t, new Vector3(im.Point.X, 0, im.Point.Y), 0, r));
                     if (im.Move.Sound >= 0) Sound(im.Move.Sound, t, im.Strength);
                     Strike(t, im.Point, n, im.Strength, false);
+                    stats[curSection].SpellKills += totalKills - killsBefore;
                     break;
                 }
                 case ImpactKind.LaserTick:
@@ -1606,7 +1617,7 @@ namespace PS.Choreography
         }
 
         /// <summary>A hit shape's size after the kill-rate feedback, kept within a quarter of the view's width.</summary>
-        float Scaled(float size) => Math.Min(size * shapeScale, MaxShapeViewFraction * viewWidth);
+        float Scaled(float size) => Math.Min(size * shapeScale, tuning.MaxShapeViewFraction * viewWidth);
 
         /// <summary>
         /// The reach of a shape centred on the hero, after the feedback: with a clear ring, never short
@@ -1869,7 +1880,7 @@ namespace PS.Choreography
             int want = TargetAhead(tb, out int reserve) + reserve;
             int need = want - total;
             if (need <= 0 || plan.Clear) return;
-            need = Math.Min(need, Math.Max(24, want / 6));
+            need = Math.Min(need, Math.Max(tuning.RefillMinPerBeat, (int)(want / tuning.RefillDivisor)));
             var view = View(Math.Max(current.Width, plan.ViewWidth));
             Vector2 travel = Vector2.Zero;
             if (!goalReached)

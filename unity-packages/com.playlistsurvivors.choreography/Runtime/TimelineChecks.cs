@@ -109,7 +109,7 @@ namespace PS.Choreography
             {
                 LevelSection ls = level.For(sec.Label);
                 int n = (int)Math.Round(ls.OnScreen * level.EnvelopeOnScreen);
-                double target = LoadPreset.Get(ls.Load).DeathsPerSecond(n);
+                double target = level.Preset(ls.Load).DeathsPerSecond(n);
                 double rate = CountDeaths(tl, sec.Start, sec.End) / (sec.End - sec.Start);
                 log?.Invoke(sec.Label + ": " + rate.ToString("F2") + " deaths/s against " + target.ToString("F2"));
                 if (target <= 0 || ls.Clear) continue;

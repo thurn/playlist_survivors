@@ -167,6 +167,22 @@ namespace Demo2D.Choreography.Tests
         }
 
         /// <summary>
+        /// The song's dump is byte-identical to its dump before the level script's tuning fields
+        /// (ps-5pd.1), whose defaults are the sim's old constants. The hash was recorded under .NET on
+        /// Apple silicon (Mono and other platforms round differently); a change that alters the song on
+        /// purpose records the new one here.
+        /// </summary>
+        [Test]
+        public void SongDumpIsByteIdenticalToBeforeTheTuningFields()
+        {
+            if (Fixtures.OnMono || System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture != System.Runtime.InteropServices.Architecture.Arm64
+                || !System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+                Assert.Ignore("the hash was recorded under .NET on Apple silicon");
+            ulong h = TimelineJson.Hash(Song, out long chars);
+            Assert.That(chars + " " + h.ToString("x16"), Is.EqualTo("19407912 43ef4283bee188b3"));
+        }
+
+        /// <summary>
         /// The song's timeline builds in under 3 s (the best of two builds, so the JIT's first
         /// compile is not counted twice). Unity's editor runs Mono, which only gets a looser
         /// sanity bound; the 3 s budget is measured under .NET.

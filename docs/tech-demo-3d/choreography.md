@@ -195,8 +195,9 @@ What the simulation does on each grid step:
 - **Combo impacts land on the grid** given by the section's combo pattern:
   slashes on beats, spins on accents, slams on phrase-opening downbeats.
 - **An action that cannot fit moves later.** If the next eligible grid
-  position would need a retiming speed above 1.33, the action moves to the
-  following eligible position. At fast tempos the hero therefore acts on
+  position would need a retiming speed above 1.33 (for the hero's combos, the
+  level script's `comboMaxSpeed`; see [Intensity overlays](#intensity-overlays)),
+  the action moves to the following eligible position. At fast tempos the hero therefore acts on
   every second beat or less often, and every windup fits.
 - **Spells fire from the section's spell set** at their grid positions.
   - **Projectiles** launch so they arrive on the grid: launch time is the
@@ -259,6 +260,65 @@ The view's shape follows the level script's `viewPitchDeg`: demo3d's 55°
 trapezoid by default, or, at 90°, demo2d's top-down 16:9 rectangle. The
 client adds punch (at most 2% of the view width) and shake (at most 0.25 m)
 on top, which the 2 m spawn margin covers.
+
+### Intensity overlays
+
+`--intensity <name>` (demo3d's player, and the dotnet CLI's `song`) plays the
+song at another intensity without forking its level scripts. `normal`, the
+default, plays the roster's level script as it is. Any other name merges
+`Choreography/Data/intensity-NAME.json` over whichever level script the
+roster picks before the choreographer runs. An unknown name fails, listing
+the known ones. Only the choreography changes, so every `--palette`,
+`--monster-style` and `--roster` works with every intensity.
+
+The trailer's `overdrive` (ps-5pd) is the only overlay so far. Its file's
+`note` gives its reasons, and `song --intensity overdrive` prints its numbers.
+
+An overlay has three parts:
+
+```json
+{ "name": "overdrive",
+  "multiply": { "envelope.onScreen": 3, "reserve": 1.5 },
+  "comboMaxSpeed": 2.5,
+  "loads": { "overdrive": { "deathsPerN": 0.06, "hitsPerDeath": 0.25, "spells": [] } },
+  "sections": {
+    "*": { "multiply": { "viewWidthM": 1.25 } },
+    "drop-1": { "load": "overdrive", "spells": ["ring@phrase", "bolt@accent"] } } }
+```
+
+- **`multiply`** scales the base script's numbers, by dotted path. The number
+  must be in the script, since the defaults live in the code.
+- **Every other top-level field** is a global setting, merged over the
+  script's. Objects merge member by member; anything else is replaced.
+- **`sections`** overrides sections by label in the same way, with its own
+  `multiply`. `"*"` applies to every section first. A label the script
+  doesn't have fails.
+
+At each level, the multipliers apply first, so a field that is both scaled
+and set takes the set value.
+
+**Tuning fields.** A level script (and so an overlay) may set these
+top-level knobs. Each defaults to the constant the sim used before it
+became a field, so a script without them runs exactly as before. Tests pin
+the normal timelines' dump hashes for demo3d and demo2d.
+
+| Field | Default | What it does |
+|---|---|---|
+| `comboMaxSpeed` | 1.33 | The hero's combo clips speed up at most this much to land on their grid point. Monsters keep 1.33. |
+| `comboMinSpeed` | 0.75 | The hero's combo clips play at least this fast. The fit plays a clip as slowly as still lands it, so a slow follow-through can run past the next beat; raising this floor frees the hero for that beat. |
+| `travelScaledReach` | false | A hero heading for a goal attacks whatever its scaled hit shapes reach, as it does when holding ground, instead of only what is within its unscaled reach. |
+| `maxShapeScale`, `hitsShapeScale` | 4, 2.5 | The kill-rate feedback's caps on the hit shapes' scale: while the kill budget runs behind, and otherwise. |
+| `maxShapeViewFraction` | 0.25 | A scaled hit shape is at most this fraction of the view's width. |
+| `hitPointScale` | 1 per rank | Multiplies the roster's hit points by rank, for example `{ "fodder": 0 }`. Every monster keeps at least 1. Struck monsters die fewest hit points first, while the load preset's kill budget decides how many die. |
+| `refillMinPerBeat`, `refillDivisor` | 24, 6 | A beat's refill spawns at most max(min, the wanted total / divisor). |
+| `releaseLeadS` | 2.5 | Releases add this many seconds of the expected deaths, to cover the walk in from the spawn band. |
+| `loads` | none | The script's own load presets by name (`deathsPerN`, `hitsPerDeath`, `spells`), alongside `light`, `demo` and `heavy`. |
+
+**The carnage table.** `TimelineReport` prints a second table after the
+section table, with the numbers an intensity is tuned by. For each section it
+gives the hero's swings per second, kills per swing (mean and peak), hero
+kills, spell kills and their share, other kills (trampling and worst beats),
+and the mean on screen against the target.
 
 ### Free sections
 

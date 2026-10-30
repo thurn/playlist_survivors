@@ -74,7 +74,7 @@ namespace PS.Choreography
                     TargetOnScreen = target,
                     Reserve = (int)Math.Round(script.ReserveFactor * target),
                     ViewWidth = ls.ViewWidthM,
-                    Preset = LoadPreset.Get(ls.Load),
+                    Preset = script.Preset(ls.Load),
                     Goal = goal,
                     Mix = data.Roster.ResolveMix(ls.Mix),
                     Combo = ls.Combo,
@@ -89,7 +89,8 @@ namespace PS.Choreography
                 if (ls.BossFrom != null && plans[i].BossFrom == null) throw new FormatException("level script: section '" + sec.Label + "' names unknown bossFrom goal '" + ls.BossFrom + "'");
             }
             var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, viewPitchDeg: script.ViewPitchDeg,
-                clearRadius: script.ClearRadiusM, clumpSize: script.ClumpSize, strandedS: script.StrandedS, bossFallsLast: script.BossFallsLast);
+                clearRadius: script.ClearRadiusM, clumpSize: script.ClumpSize, strandedS: script.StrandedS, bossFallsLast: script.BossFallsLast,
+                tuning: script.Tuning);
             Timeline tl = sim.Run("song:" + map.Song);
             tl.BuildSeconds = (Stopwatch.GetTimestamp() - t0) / (double)Stopwatch.Frequency;
             return tl;

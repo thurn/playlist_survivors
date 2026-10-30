@@ -30,6 +30,10 @@ namespace PS.Choreography
         JsonValue(List<JsonValue> items) { Type = JsonType.Array; Items = items; }
         JsonValue(List<KeyValuePair<string, JsonValue>> members) { Type = JsonType.Object; Members = members; }
 
+        internal static JsonValue OfNumber(double n) => new JsonValue(n);
+        internal static JsonValue OfMembers(List<KeyValuePair<string, JsonValue>> members) => new JsonValue(members);
+        internal static JsonValue OfItems(List<JsonValue> items) => new JsonValue(items);
+
         public bool IsNull => Type == JsonType.Null;
         public int Count => Type == JsonType.Array ? Items.Count : Type == JsonType.Object ? Members.Count : 0;
         public JsonValue this[int i] => Items[i];

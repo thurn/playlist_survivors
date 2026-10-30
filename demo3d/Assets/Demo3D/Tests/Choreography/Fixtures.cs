@@ -17,6 +17,8 @@ namespace Demo3D.Choreography.Tests
         static LevelScript level;
         static SongMap song;
         static Timeline songTimeline;
+        static LevelScript overdriveLevel;
+        static Timeline overdriveTimeline;
         static readonly Dictionary<string, Timeline> stress = new Dictionary<string, Timeline>();
 
         public static readonly string[] StressScenes = { "S1", "S2", "S3", "S4", "S5", "S6" };
@@ -41,6 +43,12 @@ namespace Demo3D.Choreography.Tests
         }
 
         public static Timeline BuildSong() => Choreographer.Run(Song, Level, Data);
+
+        /// <summary>The level script under `--intensity overdrive` (intensity-overdrive.json over action-level.json).</summary>
+        public static LevelScript OverdriveLevel => overdriveLevel ?? (overdriveLevel = ChoreographyFiles.LoadLevel(Root, ChoreographyFiles.LevelFile, "overdrive"));
+
+        /// <summary>The song's timeline under `--intensity overdrive`.</summary>
+        public static Timeline OverdriveTimeline => overdriveTimeline ?? (overdriveTimeline = Choreographer.Run(Song, OverdriveLevel, Data));
 
         public static StressScript StressScript(string scene) => ChoreographyFiles.LoadStress(Root, scene);
 
@@ -73,12 +81,13 @@ namespace Demo3D.Choreography.Tests
             + " \"viewWidthM\": 40, \"n\": 500, \"openingInnerM\": 9, \"load\": \"none\", \"heroAttacks\": false,"
             + " \"mix\": { \"skeleton\": 3, \"goblin\": 3, \"slime\": 2, \"bat\": 2, \"demon\": 1, \"bigork\": 0.3 } }"), CourtyardData));
 
-        /// <summary>The timeline a test case names: "song" or a stress scene.</summary>
-        public static Timeline Named(string name) => name == "song" ? SongTimeline : Stress(name);
+        /// <summary>The timeline a test case names: "song", "song-overdrive" or a stress scene.</summary>
+        public static Timeline Named(string name) => name == "song" ? SongTimeline : name == "song-overdrive" ? OverdriveTimeline : Stress(name);
 
         public static IEnumerable<string> AllTimelines()
         {
             yield return "song";
+            yield return "song-overdrive";
             foreach (string s in StressScenes) yield return s;
         }
 
