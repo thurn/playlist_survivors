@@ -163,6 +163,9 @@ namespace Demo3D.Runtime.Playback
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
+            if (_style.NeedsOpaqueTexture)
+                UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(_rig.Camera).requiresColorOption =
+                    UnityEngine.Rendering.Universal.CameraOverrideOption.On;
             StartEffects();
             _overlay = _flags.Overlay ? gameObject.AddComponent<DemoOverlay>() : null;
             if (_overlay != null) _overlay.Main = this;

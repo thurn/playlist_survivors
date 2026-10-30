@@ -173,14 +173,18 @@ namespace Demo3D.Runtime.Crowd
         TypeState Create(CrowdType t)
         {
             var cuts = Cuts ?? Cuts.Active;
-            bool lods3 = cuts.On(Cuts.Lod) && t.Lod1 != null && t.Lod2 != null;
+            // LOD0 to LOD2: the welded meshes, or the unwelded style meshes for a style that needs them.
+            bool styleMesh = Style != null && Style.UsesStyleMesh;
+            var meshes = styleMesh ? new[] { t.StyleMesh, t.StyleLod1, t.StyleLod2 } : new[] { t.Mesh, t.Lod1, t.Lod2 };
+            if (styleMesh && meshes[0] == null) throw new InvalidOperationException($"BoneTextureCrowd: {t.Id} has no style mesh for {MonsterStyle.Flag} {Style.Name} (re-run BakeCrowd)");
+            bool lods3 = cuts.On(Cuts.Lod) && meshes[1] != null && meshes[2] != null;
             bool clips30 = cuts.On(Cuts.Clips30) && t.Bones30 != null;
             if (cuts.On(Cuts.Lod) && !lods3) Debug.LogWarning($"BoneTextureCrowd: {t.Id} has no LOD1/LOD2 (re-run BakeCrowd); LOD0 only");
             var s = new TypeState
             {
                 Type = t,
-                Lods = lods3 ? new[] { t.Mesh, t.Lod1, t.Lod2 } : new[] { t.Mesh },
-                ShadowMesh = ShadowLod == 2 && t.Lod2 != null ? t.Lod2 : ShadowLod == 1 && t.Lod1 != null ? t.Lod1 : t.Mesh,
+                Lods = lods3 ? meshes : new[] { meshes[0] },
+                ShadowMesh = ShadowLod == 2 && meshes[2] != null ? meshes[2] : ShadowLod == 1 && meshes[1] != null ? meshes[1] : meshes[0],
                 Bones = clips30 ? t.Bones30 : t.Bones,
                 ClipRate = clips30 ? CrowdLibrary.CutClipRate : CrowdLibrary.ClipRate,
             };

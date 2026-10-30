@@ -56,6 +56,13 @@ namespace Demo3D.Runtime.Crowd
         /// </summary>
         public Mesh Lod1, Lod2;
         public int Lod1Triangles, Lod2Triangles;
+        /// <summary>
+        /// The style mesh of <see cref="Mesh"/>, <see cref="Lod1"/> and <see cref="Lod2"/>
+        /// (CrowdBaker.Unweld): unwelded, with the face normal in the tangent and barycentrics plus
+        /// a value per triangle in UV3. Only the `--monster-style` treatments that need it draw it
+        /// (<see cref="MonsterStyle.UsesStyleMesh"/>).
+        /// </summary>
+        public Mesh StyleMesh, StyleLod1, StyleLod2;
         /// <summary>One material per submesh (one per albedo texture).</summary>
         public Material[] Materials;
         /// <summary>Skinning matrices: bone b's row r of frame f is texel (3b + r, f).</summary>

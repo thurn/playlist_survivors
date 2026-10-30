@@ -23,8 +23,9 @@ float4 _SL_HeroPos;  // the hero's feet, world space
 float _SL_WaveSpeed; // how far the beat wave travels in one beat, metres
 float _SL_RingGain;  // the lab's beat ring on the ground: always 0 here (demo3d's ground has none)
 
-// The crowd's welded mesh (CrowdAttributes): bone data in TEXCOORD1/2. The unwelded style mesh's
-// extras (face normal, barycentrics, a value per triangle) take TEXCOORD3 and later.
+// The crowd's welded mesh (CrowdAttributes): bone data in TEXCOORD1/2. A style that draws the
+// unwelded style mesh (CrowdBaker.Unweld, MonsterStyle.UsesStyleMesh) defines SL_STYLE_MESH before
+// including this, and gets its extras: the face normal (SL_SkinFace) and barycentrics.
 struct SLAttributes
 {
     float3 positionOS : POSITION;  // root space at instance scale 1, metres: also the rest position
@@ -32,8 +33,24 @@ struct SLAttributes
     float2 uv : TEXCOORD0;
     float4 boneIndex : TEXCOORD1;
     float4 boneWeight : TEXCOORD2;
+#if defined(SL_STYLE_MESH)
+    float4 tangentOS : TANGENT;  // the triangle's face normal
+    float4 bary : TEXCOORD3;     // barycentric xyz, and a random value per triangle in w
+#endif
     uint instanceID : SV_InstanceID;
 };
+
+#if defined(SL_STYLE_MESH)
+// The style mesh's face normal in world space, turned by the vertex's bones and the instance's yaw
+// as its normal is (this frame's bones, also for the previous pose: one frame's turn of a flying
+// shard's direction doesn't show).
+float3 SL_SkinFace(SLAttributes v, MonsterInstance m, uint slot)
+{
+    float3 p, n;
+    SkinVertex(m, slot, false, v.positionOS, v.tangentOS.xyz, v.boneIndex, v.boneWeight, p, n);
+    return n;
+}
+#endif
 
 // ---------------------------------------------------------------------------------------------
 // Noise.
@@ -180,11 +197,14 @@ void SL_AdditionalLights(float3 positionWS, float4 positionCS, float3 N, float3 
 // ---------------------------------------------------------------------------------------------
 // Death.
 
+// How far through its flight a shattering triangle is (SL_Shatter's value, also in a fragment).
+float SL_ShatterT(float death, float triRand) { return saturate(death * 1.6 - triRand * 0.6); }
+
 // Triangles fly off along their face normals and fall, staggered by their random value.
 // Returns how far through its flight the triangle is (1: gone).
 float SL_Shatter(inout float3 positionWS, float3 faceNormalWS, float triRand, float death, float strength)
 {
-    float t = saturate(death * 1.6 - triRand * 0.6);
+    float t = SL_ShatterT(death, triRand);
     float3 dir = normalize(faceNormalWS + float3(0, 0.9, 0) + (SL_Hash3(triRand * 37.0) - 0.5));
     positionWS += dir * t * strength * (0.7 + triRand) + float3(0, -3.0, 0) * t * t * strength * 0.5;
     return t;
@@ -203,6 +223,17 @@ float SL_Dissolve(float3 rest, float death)
 // this file). The forward pass (SL_FRAGMENT_BEGIN) and every other pass clip with it.
 #ifndef SL_DISSOLVE
 #define SL_DISSOLVE(rest, death) SL_Dissolve(rest, death)
+#endif
+
+#if defined(SL_STYLE_MESH)
+// SL_Shatter for SL_DISPLACE: a dying monster's triangles fly apart. One that has flown its course
+// collapses to a point, so no pass draws it, and such a style defines SL_DISSOLVE as 0.0.
+void SL_ShatterDisplace(SLAttributes v, MonsterInstance m, uint slot, inout float3 positionWS, float strength)
+{
+    UNITY_BRANCH if (m.dissolve <= 0.0) return;
+    if (SL_Shatter(positionWS, SL_SkinFace(v, m, slot), v.bary.w, m.dissolve, strength) >= 0.98)
+        positionWS = m.position;
+}
 #endif
 
 // ---------------------------------------------------------------------------------------------
@@ -258,6 +289,9 @@ struct SLVaryings
     nointerpolation float4 center : TEXCOORD5;  // SLVertex.center
     float fogFactor : TEXCOORD6;
     float4 extra : TEXCOORD7;  // a shader's own per-vertex values
+#if defined(SL_STYLE_MESH)
+    float4 bary : TEXCOORD8;   // SLAttributes.bary
+#endif
 };
 
 SLVaryings SL_Finish(SLAttributes v, SLVertex c, float3 positionWS, float3 normalWS)
@@ -272,12 +306,23 @@ SLVaryings SL_Finish(SLAttributes v, SLVertex c, float3 positionWS, float3 norma
     o.center = c.center;
     o.fogFactor = ComputeFogFactor(o.positionCS.z);
     o.extra = 0;
+#if defined(SL_STYLE_MESH)
+    o.bary = v.bary;
+#endif
     return o;
 }
 
 #define SL_HIT(i) ((i).fx.x)
 #define SL_DEATH(i) ((i).fx.y)
 #define SL_SEED(i) ((i).center.w)
+
+// A thin line along every triangle edge of the style mesh, about `pixels` wide.
+float SL_Wire(float3 bary, float pixels)
+{
+    float e = min(bary.x, min(bary.y, bary.z));
+    float w = fwidth(e) * pixels;
+    return 1.0 - smoothstep(w * 0.5, w, e);
+}
 
 // Every style fragment starts here: the LOD crossfade's dither, the death's clip (returning its
 // hot edge) and TD15's ID render, which draws the crowd flat white (DemoMain.MaskMode).

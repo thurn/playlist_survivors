@@ -23,6 +23,8 @@ namespace Demo3D.EditorTools.Crowd
     ///   second texture at 30 Hz for TD11's clips30 cut;
     /// - LOD1 and LOD2 (TD11): the combined mesh decimated to about a half and a quarter of its
     ///   triangles by Unity's MeshLodUtility, each its own mesh over the same vertices;
+    /// - the style mesh of each of those three (<see cref="Unweld"/>), for the `--monster-style`
+    ///   treatments that need one; the default path never loads it;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
@@ -497,6 +499,11 @@ namespace Demo3D.EditorTools.Crowd
             var lods = BuildLods(mesh, id);
             Replace(lods[0], $"{TypeDir(id)}/{id}_lod1.mesh");
             Replace(lods[1], $"{TypeDir(id)}/{id}_lod2.mesh");
+            int seed = StableSeed(id);
+            var style = new[] { Unweld(mesh, seed), Unweld(lods[0], seed + 1), Unweld(lods[1], seed + 2) };
+            Replace(style[0], $"{TypeDir(id)}/{id}_style.mesh");
+            Replace(style[1], $"{TypeDir(id)}/{id}_style_lod1.mesh");
+            Replace(style[2], $"{TypeDir(id)}/{id}_style_lod2.mesh");
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {
@@ -541,6 +548,9 @@ namespace Demo3D.EditorTools.Crowd
                 Lod2 = lods[1],
                 Lod1Triangles = Triangles(lods[0]),
                 Lod2Triangles = Triangles(lods[1]),
+                StyleMesh = style[0],
+                StyleLod1 = style[1],
+                StyleLod2 = style[2],
                 Materials = crowdMats,
                 Bones = tex,
                 Bones30 = tex30,
@@ -599,6 +609,82 @@ namespace Demo3D.EditorTools.Crowd
             {
                 UnityEngine.Object.DestroyImmediate(work);
             }
+        }
+
+        /// <summary>
+        /// A crowd mesh unwelded into the `--monster-style` style mesh (stylelab's StyleMesh, crowd.md,
+        /// Monster styles): every triangle gets its own three vertices, so a style can move or colour
+        /// each one alone (shatter, facets, wireframe). It keeps every stream of the welded mesh (bone
+        /// data in UV1/UV2, positions that are already the rest pose in metres) and adds the face
+        /// normal in the tangent, which StyleCommon skins like a normal, and barycentric coordinates
+        /// plus a random value per triangle in UV3. Submeshes and triangle order are kept.
+        /// </summary>
+        public static Mesh Unweld(Mesh src, int seed)
+        {
+            var pos = src.vertices;
+            var nor = src.normals;
+            var uv0 = new List<Vector2>(); src.GetUVs(0, uv0);
+            var bones = new List<Vector4>(); src.GetUVs(1, bones);
+            var weights = new List<Vector4>(); src.GetUVs(2, weights);
+            int n = 0;
+            for (int sm = 0; sm < src.subMeshCount; sm++) n += (int)src.GetIndexCount(sm);
+            var oPos = new List<Vector3>(n);
+            var oNor = new List<Vector3>(n);
+            var oTan = new List<Vector4>(n);
+            var oUv0 = new List<Vector2>(n);
+            var oBones = new List<Vector4>(n);
+            var oWeights = new List<Vector4>(n);
+            var oBary = new List<Vector4>(n);
+            var subs = new List<int[]>();
+            var rng = new System.Random(seed);
+            for (int sm = 0; sm < src.subMeshCount; sm++)
+            {
+                var tris = src.GetIndices(sm); // with the submesh's base vertex applied
+                var outTris = new int[tris.Length];
+                for (int t = 0; t + 2 < tris.Length; t += 3)
+                {
+                    // Normalized by hand: Vector3.normalized zeroes a tiny triangle's normal, which the
+                    // shader would turn into NaN. A degenerate one takes its first vertex's normal.
+                    var cross = Vector3.Cross(pos[tris[t + 1]] - pos[tris[t]], pos[tris[t + 2]] - pos[tris[t]]);
+                    float len = cross.magnitude;
+                    var face = len > 0 ? cross / len : nor[tris[t]];
+                    float r = (float)rng.NextDouble();
+                    for (int k = 0; k < 3; k++)
+                    {
+                        int v = tris[t + k];
+                        outTris[t + k] = oPos.Count;
+                        oPos.Add(pos[v]);
+                        oNor.Add(nor[v]);
+                        oTan.Add(new Vector4(face.x, face.y, face.z, 1));
+                        oUv0.Add(uv0[v]);
+                        oBones.Add(bones[v]);
+                        oWeights.Add(weights[v]);
+                        oBary.Add(new Vector4(k == 0 ? 1 : 0, k == 1 ? 1 : 0, k == 2 ? 1 : 0, r));
+                    }
+                }
+                subs.Add(outTris);
+            }
+            var m = new Mesh { name = src.name + "_style" };
+            if (oPos.Count > 65535) m.indexFormat = IndexFormat.UInt32;
+            m.SetVertices(oPos);
+            m.SetNormals(oNor);
+            m.SetTangents(oTan);
+            m.SetUVs(0, oUv0);
+            m.SetUVs(1, oBones);
+            m.SetUVs(2, oWeights);
+            m.SetUVs(3, oBary);
+            m.subMeshCount = subs.Count;
+            for (int sm = 0; sm < subs.Count; sm++) m.SetTriangles(subs[sm], sm, false);
+            m.bounds = src.bounds;
+            return m;
+        }
+
+        /// <summary>A seed from a type id that is the same in every run (string.GetHashCode needn't be).</summary>
+        static int StableSeed(string id)
+        {
+            int h = 17;
+            foreach (char c in id) h = unchecked(h * 31 + c);
+            return h;
         }
 
         /// <summary>One LOD level's indices of a submesh, relative to the submesh's base vertex.</summary>

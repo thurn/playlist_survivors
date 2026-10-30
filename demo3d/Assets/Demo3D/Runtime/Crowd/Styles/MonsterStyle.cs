@@ -24,6 +24,19 @@ namespace Demo3D.Runtime.Crowd
         public readonly string Name;
         public bool IsBaseline => Name == "baseline";
 
+        /// <summary>
+        /// Whether the style draws the unwelded style mesh (CrowdType.StyleMesh) rather than the
+        /// welded one: its triangles move alone (shatter), or it reads each one's barycentrics
+        /// (facets, wireframe).
+        /// </summary>
+        public bool UsesStyleMesh => Name == "crystal" || Name == "spectrum" || Name == "hologram";
+
+        /// <summary>
+        /// Whether the style reads the camera's opaque texture (crystal's refraction). URP's asset
+        /// leaves it off, so only this style's camera pays for the copy (DemoMain).
+        /// </summary>
+        public bool NeedsOpaqueTexture => Name == "crystal";
+
         readonly List<UnityEngine.Object> _owned = new List<UnityEngine.Object>();
         readonly Dictionary<string, Texture2D> _ramps = new Dictionary<string, Texture2D>();
 
@@ -70,6 +83,9 @@ namespace Demo3D.Runtime.Crowd
                     case "fire": return PostLook.Stylized(1.0f);
                     case "chrome": return PostLook.Stylized(1.0f);
                     case "void": return PostLook.Stylized(1.3f);
+                    case "crystal": return PostLook.Stylized(1.0f);
+                    case "spectrum": return PostLook.Stylized(1.2f, 0.12f);
+                    case "hologram": return PostLook.Stylized(1.35f, 0.35f);
                     default: throw NotPorted();
                 }
             }
@@ -109,6 +125,15 @@ namespace Demo3D.Runtime.Crowd
                         m.SetVector("_RimColor", look.voidRim);
                         m.SetVector("_NebulaA", look.nebulaA);
                         m.SetVector("_NebulaB", look.nebulaB);
+                        break;
+                    case "crystal":
+                        m.SetVector("_Tint", look.gem);
+                        break;
+                    case "spectrum":
+                        m.SetFloat("_Hue", look.synthHue);
+                        break;
+                    case "hologram":
+                        m.SetVector("_Color", look.holo);
                         break;
                 }
                 _owned.Add(m);
@@ -163,6 +188,9 @@ namespace Demo3D.Runtime.Crowd
                 case "fire": return "Demo3D/Styles/FireBody";
                 case "chrome": return "Demo3D/Styles/Chrome";
                 case "void": return "Demo3D/Styles/Void";
+                case "crystal": return "Demo3D/Styles/Crystal";
+                case "spectrum": return "Demo3D/Styles/Spectrum";
+                case "hologram": return "Demo3D/Styles/Hologram";
                 default: throw NotPorted();
             }
         }

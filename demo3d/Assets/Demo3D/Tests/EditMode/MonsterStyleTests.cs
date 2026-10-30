@@ -99,7 +99,9 @@ namespace Demo3D.Tests
                     // vectors, while an additive one (the flames) has only its colour pass.
                     string[] passes;
                     if (!shader.name.StartsWith("Demo3D/Styles/Shells/", StringComparison.Ordinal))
-                        passes = new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };
+                        passes = shader.name == "Demo3D/Styles/Hologram" // a projection of light casts no shadow
+                            ? new[] { "ForwardLit", "DepthOnly", "DepthNormals", "MotionVectors" }
+                            : new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };
                     else if (m.renderQueue < (int)RenderQueue.Transparent)
                         passes = new[] { "DepthOnly", "DepthNormals", "MotionVectors" };
                     else passes = new string[0];
@@ -134,7 +136,7 @@ namespace Demo3D.Tests
                 }
                 Assert.That(t.ValueRange.y - t.ValueRange.x, Is.GreaterThanOrEqualTo(0.05f - 1e-5f), t.Id);
             }
-            Assert.Throws<NotSupportedException>(() => MonsterStyle.Parse("crystal").Materials(lib, lib.Types[0]), "unported styles fail loudly");
+            Assert.Throws<NotSupportedException>(() => MonsterStyle.Parse("mix").Materials(lib, lib.Types[0]), "unported styles fail loudly");
         }
 
         [Test]
@@ -167,6 +169,41 @@ namespace Demo3D.Tests
             plain.Outlines = false;
             Assert.That(plain.Shell(lib, lib.Types[0]), Is.Null, "the ink line can be turned off");
             Assert.That(MonsterStyle.Parse("baseline").Shell(lib, lib.Types[0]), Is.Null);
+        }
+
+        [Test]
+        public void CrystalSpectrumAndHologramDrawTheStyleMeshInTheirOwnQueues()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);
+            if (lib == null) Assert.Ignore("no baked library: run `demo3d unity BakeCrowd`");
+            Assert.That(MonsterStyle.Baseline().UsesStyleMesh || MonsterStyle.Parse("painted").UsesStyleMesh, Is.False,
+                "the default path keeps the welded mesh");
+            Assert.That(MonsterStyle.Baseline().NeedsOpaqueTexture, Is.False);
+            var expected = new[]
+            {
+                ("crystal", "_Tint", (int)RenderQueue.Transparent - 10),
+                ("spectrum", "_Hue", (int)RenderQueue.Geometry),
+                ("hologram", "_Color", (int)RenderQueue.Transparent),
+            };
+            foreach (var (name, property, queue) in expected)
+            {
+                using var style = MonsterStyle.Parse(name);
+                Assert.That(style.UsesStyleMesh, name);
+                Assert.That(style.NeedsOpaqueTexture, Is.EqualTo(name == "crystal"), name);
+                Assert.That(style.Post, Is.Not.Null, name);
+                foreach (var t in lib.Types)
+                {
+                    Assert.That(t.StyleMesh, Is.Not.Null, $"{t.Id}: re-run BakeCrowd");
+                    foreach (var m in style.Materials(lib, t))
+                    {
+                        Assert.That(m.renderQueue, Is.EqualTo(queue), $"{name} {t.Id}");
+                        Assert.That(m.HasProperty(property), $"{name} {t.Id}");
+                        Assert.That(m.GetFloat("_HeightM"), Is.EqualTo(t.HeightM), $"{name} {t.Id}");
+                    }
+                }
+            }
+            Assert.That(MonsterStyle.Parse("spectrum").Post.Value.chroma, Is.GreaterThan(0f));
+            Assert.That(MonsterStyle.Parse("hologram").Post.Value.chroma, Is.GreaterThan(MonsterStyle.Parse("spectrum").Post.Value.chroma));
         }
     }
 }

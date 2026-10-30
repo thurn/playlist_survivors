@@ -191,6 +191,23 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   library's `StyleShaders`: CrowdBaker adds every shader in `Styles/`, so a
   new style needs `BakeCrowd`. The baker also records each type's albedo
   value range (`CrowdType.ValueRange`) for painted's colour strip.
+- **Some styles draw the style mesh.** CrowdBaker also writes each type's three
+  LODs unwelded (`CrowdBaker.Unweld`, stylelab's StyleMesh), as `CrowdType.StyleMesh`,
+  `StyleLod1` and `StyleLod2`, so every triangle has its own vertices. Bone data stays in
+  UV1/UV2 and the position is already the rest pose in metres. The face normal is in the
+  tangent, and barycentrics plus a random value per triangle are in UV3. Only a style whose
+  `MonsterStyle.UsesStyleMesh` is true (crystal, spectrum, hologram) loads it: its shader defines
+  `SL_STYLE_MESH`, which adds those streams to `SLAttributes` and `bary` to the varyings, and
+  `SL_SkinFace` turns the face normal with the bones. The welded meshes and the default path are
+  unchanged.
+  - **Shatter** (crystal, spectrum) is `SL_ShatterDisplace` in `SL_DISPLACE`, so every pass
+    moves the shards. A shard that has finished its flight collapses to a point, and such a
+    style sets `SL_DISSOLVE` to `0.0` (no clip). Hologram's scan-out is its own `SL_DISSOLVE`.
+  - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
+    texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
+    on for the game camera only under crystal (DemoMain): one half-resolution copy of the
+    colour target per frame. Hologram is additive in Transparent, so it needs no sort. It has
+    no ShadowCaster, and URP skips the depth and motion passes in the transparent queue.
 - **The beat comes from `StyleBeat`.** It sets `_SL_Time`, `_SL_Beat`,
   `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy` (the song map's value per beat),
   `_SL_HeroPos` and `_SL_WaveSpeed` every frame, from the song as heard.
@@ -217,7 +234,8 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   implodes to a point with no clip. `SL_DISPLACE` expands after
   StyleCommon's helpers, so it may use the noise, `SL_SeedOf(slot)`, the
   beat globals and the material's CBUFFER.
-- **Ported so far:** painted (with its ink line), fire, chrome and void.
+- **Ported so far:** painted (with its ink line), fire, chrome, void, crystal, spectrum and
+  hologram.
 - **The hero keeps its own shader** under every style.
 
 ## The Hero
