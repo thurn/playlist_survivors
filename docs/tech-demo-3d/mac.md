@@ -91,11 +91,14 @@ One command renders the whole set windowless, from a fresh worktree:
 uv run --project demo3d/tools demo3d setup && uv run --project demo3d/tools demo3d look <slug> --baseline baseline
 ```
 
-`look` builds the IL2CPP player if the worktree has none (and runs `BakeAll`
-first if it isn't baked): about 4.5 minutes in a fresh worktree with the
-saved Library, then about 25 s per set. After a change, pass `--build` (or
-run `build`, and `BakeAll` if a baker reads the change) so the stills show
-it. `--backend mono` uses a Mono player, whose simulation diverges from
+`look` builds the IL2CPP player if the worktree has none: about 4.5 minutes
+in a fresh worktree with the saved Library, then about 25 s per set. After a
+change, pass `--build` (or run `build`) so the stills show it. Every build
+runs `BakeAll` first when the worktree isn't baked or anything the bakers
+read has changed since its last full bake: Assets/Demo3D apart from its
+tests and the runtime C# no asset serializes, the choreography package, the
+vendor manifest and the song map. A `BakeAll` run in the editor leaves no
+record, so the next build bakes once more. `--backend mono` uses a Mono player, whose simulation diverges from
 IL2CPP's, so never compare sets made by different players
 ([baseline README](../../demo3d/evidence/look/baseline/README.md#build-path-and-timings)).
 

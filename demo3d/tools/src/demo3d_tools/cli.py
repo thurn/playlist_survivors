@@ -103,7 +103,11 @@ def cmd_check(a: argparse.Namespace) -> int:
 
 
 def cmd_unity(a: argparse.Namespace) -> int:
-    return unity.run_method(paths.worktree(name=a.project), a.method, a.args, cold=a.cold)
+    wt = paths.worktree(name=a.project)
+    code = unity.run_method(wt, a.method, a.args, cold=a.cold)
+    if code == 0 and a.method == "BakeAll" and not a.args and wt.name == "demo3d":
+        setup.record_baked(wt)
+    return code
 
 
 def cmd_test(a: argparse.Namespace) -> int:
@@ -125,12 +129,14 @@ def cmd_build(a: argparse.Namespace) -> int:
     for s in a.scene or []:
         args += ["-scene", s]
     wt = paths.worktree(name=a.project)
-    # A player built before BakeAll starts, but hangs on its first missing baked asset.
+    # A player built before BakeAll starts, but hangs on its first missing baked asset; one built
+    # on a stale bake throws on the first field the bake predates.
     if not setup.baked(wt):
-        print("build: this worktree isn't baked; running BakeAll first")
+        print("build: this worktree isn't baked, or its bakers' inputs changed; running BakeAll first")
         code = unity.run_method(wt, "BakeAll", [], cold=a.cold)
         if code != 0:
             return code
+        setup.record_baked(wt)
     code = unity.run_method(wt, "BuildPlayer", args, cold=a.cold)
     if code == 0 and not a.scene and not unity.warm_server(wt):
         compiled = setup.compiled_variants(wt.logs / "BuildPlayer.log")

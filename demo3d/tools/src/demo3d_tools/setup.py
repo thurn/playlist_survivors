@@ -255,11 +255,49 @@ def save_built_library(wt: paths.Worktree, compiled: int = 0) -> Path | None:
 
 
 BAKED_STAMP = ".bakeall"  # Bakers.RunStale writes it into Assets/Baked/ after a full BakeAll
+BAKED_INPUTS = ".bakeall-inputs"  # bake_inputs_key at the last full BakeAll the tools ran
+
+# Runtime C# that an asset can serialize: a baked asset made before such a type changed lacks
+# its new fields (a CrowdLibrary baked before StyleShaders existed has none).
+_SERIALIZED = re.compile(rb"ScriptableObject|\[Serializable\]|\[System\.Serializable\]")
+
+
+def bake_inputs(wt: paths.Worktree) -> list[Path]:
+    """What demo3d's Unity bakers read from git: everything under Assets/Demo3D (their code,
+    data, shaders and settings) except the tests and runtime C# no asset serializes, the shared
+    choreography package, the vendor manifest and the song map."""
+    files: list[Path] = []
+    demo = wt.project / "Assets" / "Demo3D"
+    package = wt.root / "unity-packages" / "com.playlistsurvivors.choreography"
+    for root in (demo, package):
+        for f in sorted(root.rglob("*")):
+            if not f.is_file() or "Tests" in f.relative_to(root).parts:
+                continue
+            if (root == demo and f.suffix == ".cs" and f.relative_to(demo).parts[0] == "Runtime"
+                    and not _SERIALIZED.search(f.read_bytes())):
+                continue
+            files.append(f)
+    return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
+
+
+def bake_inputs_key(wt: paths.Worktree) -> str:
+    return file_hash(wt.root, *bake_inputs(wt))
 
 
 def baked(wt: paths.Worktree) -> bool:
-    """Whether a full `unity BakeAll` has run in this worktree (demo2d has no Unity bakers)."""
-    return wt.name != "demo3d" or (wt.baked / BAKED_STAMP).exists()
+    """Whether a full `unity BakeAll` has run in this worktree since its bakers' inputs last
+    changed (demo2d has no Unity bakers). A BakeAll run outside the tools leaves no key, so the
+    next build bakes once more."""
+    if wt.name != "demo3d":
+        return True
+    stamp, key = wt.baked / BAKED_STAMP, wt.baked / BAKED_INPUTS
+    return (stamp.exists() and key.exists()
+            and key.read_text(encoding="utf-8").strip() == bake_inputs_key(wt))
+
+
+def record_baked(wt: paths.Worktree) -> None:
+    """After a successful full BakeAll: the inputs it baked from."""
+    (wt.baked / BAKED_INPUTS).write_text(bake_inputs_key(wt) + "\n", encoding="utf-8")
 
 
 def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,

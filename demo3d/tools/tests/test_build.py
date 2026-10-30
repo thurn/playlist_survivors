@@ -48,6 +48,44 @@ def test_an_unbaked_worktree_bakes_before_it_builds(monkeypatch, wt) -> None:
     assert build(monkeypatch) == (0, ["BuildPlayer"])  # the stamp stays
 
 
+def test_a_build_rebakes_when_the_bakers_inputs_change(monkeypatch, wt) -> None:
+    shaders = wt.project / "Assets" / "Demo3D" / "Runtime" / "Crowd" / "Shaders"
+    shaders.mkdir(parents=True)
+    (shaders / "CrowdSkinned.shader").write_text("v1\n")
+    assert build(monkeypatch) == (0, ["BakeAll", "BuildPlayer"])
+    assert build(monkeypatch) == (0, ["BuildPlayer"])
+    (shaders / "Styles").mkdir()
+    (shaders / "Styles" / "FireBody.shader").write_text("new\n")  # a shader the crowd library lists
+    assert build(monkeypatch) == (0, ["BakeAll", "BuildPlayer"])
+    assert build(monkeypatch) == (0, ["BuildPlayer"])
+
+
+def test_only_runtime_code_that_assets_serialize_is_a_bake_input(wt) -> None:
+    runtime = wt.project / "Assets" / "Demo3D" / "Runtime"
+    tests = wt.project / "Assets" / "Demo3D" / "Tests"
+    for d in (runtime, tests):
+        d.mkdir(parents=True)
+    (runtime / "CrowdLibrary.cs").write_text("class CrowdLibrary : ScriptableObject {}\n")
+    (runtime / "DemoMain.cs").write_text("class DemoMain : MonoBehaviour {}\n")
+    (tests / "SomeTests.cs").write_text("class SomeTests {}\n")
+    names = {f.name for f in setup.bake_inputs(wt)}
+    assert "CrowdLibrary.cs" in names
+    assert not names & {"DemoMain.cs", "SomeTests.cs"}
+
+
+def test_a_bakeall_through_the_tools_records_its_inputs(monkeypatch, wt) -> None:
+    def run_method(wt, name, args, cold=False):
+        wt.baked.mkdir(parents=True, exist_ok=True)
+        (wt.baked / setup.BAKED_STAMP).write_text("now\n")
+        return 0
+
+    monkeypatch.setattr(unity, "run_method", run_method)
+    assert not setup.baked(wt)
+    a = cli.build_parser().parse_args(["unity", "BakeAll"])
+    assert a.func(a) == 0
+    assert setup.baked(wt)
+
+
 def test_the_first_build_saves_the_library_once(monkeypatch, wt) -> None:
     build(monkeypatch)
     entry = paths.cache_root() / "library" / setup.library_key(wt) / setup.manifest_key(wt)

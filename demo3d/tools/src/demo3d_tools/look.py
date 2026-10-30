@@ -1,8 +1,8 @@
 """`demo3d look SLUG [--baseline SLUG]`: the look pass's stills and numbers on the Mac (ps-e8r.1).
 
 Renders the look set with the windowless batch-mode player (mac.md), in fixed time, one player
-process per capture, a few at a time. It builds the player first (BakeAll too if the worktree isn't
-baked) when there is none, or with --build after a change:
+process per capture, a few at a time. It builds the player first (BakeAll too if the bake is missing or
+stale) when there is none, or with --build after a change:
 - song stills at SONG_TIMES (one each in groove, drop-1, groove-2, drop-2 and the final peak),
   each from WARMUP_S before it, and the same frame with `--no-effects` (song-<t>-measure);
 - TD15's six beauty shots (arena-layout.json's `shots`), three captures each as in
