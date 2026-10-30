@@ -1,13 +1,17 @@
 # Monster style: fire (ps-a54.2)
 
+> **Tuned since (ps-a54.4).** The stills, look.md, look.json and contact sheet here are now
+> the tuned set: the night's tonemapper and exposure, and the horde graded at gain 1, peak 0.15
+> ([all/README.md](../all/README.md) has the values, the numbers and why). The notes below
+> describe the untuned set they were written for.
+
 `--monster-style fire`: stylelab's "Living flame", drawn through the bone-texture crowd's
 indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
 The body (FireBody) is charcoal split by live cracks, with a molten rim and a heat shimmer. The
 flames (FireShell) are the type's shell draw: the same instances drawn again, pushed out and
 licking up, additive. Each species has its own fire colours from the lab's palettes, and the
 dragon (the boss) burns at 0.45 intensity rather than 0.7. Death burns from the feet up. The post
-look is the lab's stylized grade with bloom 1.0. Nothing is tuned yet; ps-a54.4 tunes each
-treatment. Embers are left out, since demo3d's effects already throw sparks.
+look is the lab's stylized grade with bloom 1.0. ps-a54.4 has since tuned it. Embers are left out, since demo3d's effects already throw sparks.
 
 How the set was made, on the Mac, windowless, IL2CPP player:
 

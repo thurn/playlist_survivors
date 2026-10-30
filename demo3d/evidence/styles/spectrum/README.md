@@ -1,5 +1,10 @@
 # Monster style: spectrum (ps-a54.3)
 
+> **Tuned since (ps-a54.4).** The stills, look.md, look.json and contact sheet here are now
+> the tuned set: the night's tonemapper and exposure, and the horde graded at gain 1, peak 0.3
+> ([all/README.md](../all/README.md) has the values, the numbers and why). The notes below
+> describe the untuned set they were written for.
+
 `--monster-style spectrum`: stylelab's "Spectrum" (Synth.shader) treatment, drawn through the bone-texture
 crowd's indirect draws on the unwelded style mesh
 ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
@@ -10,7 +15,7 @@ rainbow shards. The swell and the shards are in `SL_DISPLACE`, so shadows, depth
 vectors follow them.
 
 It uses the lab's palette per type and the lab's post look as PostFeel's base: ACES, exposure +0.25, contrast +12, saturation +15, bloom 1.2, chromatic aberration 0.12.
-Nothing is tuned yet; the epic's last bead tunes each treatment.
+ps-a54.4 has since tuned it.
 
 How the set was made, on the Mac, windowless, IL2CPP player:
 

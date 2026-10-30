@@ -137,6 +137,28 @@ test.
   the fodder looks like pastel flat shading, dark bronze or outlines.
   That's why the mix gives these looks to the elites.
 
+## In demo3d
+
+The treatments also run in the real demo, with its arena, effects, camera
+and song (epic ps-a54): `--monster-style <name>` on demo3d's player, with
+the names baseline (the default: demo3d as it is), painted, fire, crystal,
+spectrum, hologram, chrome, void and mix (the showcase mix). For example, on
+the Mac:
+
+```sh
+open -n demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app --args \
+  -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --monster-style mix
+```
+
+The look harness takes it through `--player-args "--monster-style fire"`.
+demo3d has its own copies of the shaders and palettes, drawn through the
+crowd's batched indirect draws; neither project depends on the other.
+demo3d tunes each treatment's post look and brightness for its own darker
+arena and hot effects, and `--style-tune` tries other values for a run.
+[crowd.md, Monster styles](crowd.md#monster-styles) has how it is built, and
+[demo3d/evidence/styles/](../../demo3d/evidence/styles/) has a still set per
+treatment and a contact sheet across all of them (`all/`).
+
 ## How It Is Built
 
 - **Separate project, shared tools.** `stylelab` is a third entry point over

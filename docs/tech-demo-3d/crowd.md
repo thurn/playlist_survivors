@@ -147,8 +147,8 @@ flat and helps the target's GPU.
 `--monster-style <name>` draws the horde in one of the
 [style lab's](stylelab.md) treatments, so they can be judged in the real
 demo (epic ps-a54). The names are baseline, painted, fire, crystal,
-spectrum, hologram, chrome, void and mix. An unknown name, or one not yet
-ported, stops the player at start-up. baseline is the default, and it is
+spectrum, hologram, chrome, void and mix. An unknown name stops the player
+at start-up. baseline is the default, and it is
 the demo exactly as it was: the baked CrowdSkinned materials, the night's
 post, and no beat globals. The look harness passes the flag through
 `--player-args`. Performance is not a goal under the flag, and it is not
@@ -197,7 +197,8 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   The face normal is in the tangent, and barycentrics plus a random value per triangle are in
   UV3. They are listed in their own asset, `CrowdStyleMeshes`, not in the library: the library
   loads on every run and would load every mesh it referenced. Only a style whose
-  `MonsterStyle.UsesStyleMesh` is true (crystal, spectrum, hologram) loads it: its shader defines
+  `MonsterStyle.UsesStyleMesh` is true for some type (crystal, spectrum, hologram, and the mix's
+  slimes and bats) loads it: its shader defines
   `SL_STYLE_MESH`, which adds those streams to `SLAttributes` and `bary` to the varyings, and
   `SL_SkinFace` turns the face normal with the bones. The welded meshes and the default path are
   unchanged.
@@ -206,7 +207,7 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     style sets `SL_DISSOLVE` to `0.0` (no clip). Hologram's scan-out is its own `SL_DISSOLVE`.
   - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
     texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
-    on for the game camera only under crystal (DemoMain): one half-resolution copy of the
+    on for the game camera only under crystal and mix (DemoMain): one half-resolution copy of the
     colour target per frame. Hologram is additive in Transparent, so it needs no sort. It has
     no ShadowCaster, so BoneTextureCrowd skips its shadow draws.
   - **No depth or motion passes run for them.** URP draws DepthOnly, DepthNormals and
@@ -239,9 +240,22 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   implodes to a point with no clip. `SL_DISPLACE` expands after
   StyleCommon's helpers, so it may use the noise, `SL_SeedOf(slot)`, the
   beat globals and the material's CBUFFER.
-- **Ported so far:** painted (with its ink line), fire, chrome, void, crystal, spectrum and
-  hologram.
-- **The hero keeps its own shader** under every style.
+- **mix is a style per type**, the lab's showcase mix (`Treatments.StyleFor`):
+  `MonsterStyle.StyleOf` gives painted skeletons, goblins and mushrooms; crystal slimes,
+  spectrum bats and fire demons; chrome orks, void trolls and a fire dragon. Materials,
+  shells and the style mesh follow each type's style; the post look is the mix's own.
+- **Tuning.** Each style shader grades its forward colour with `SL_Grade`: a gain, then a
+  soft limit on luminance (`MonsterStyle.Gain` and `Peak`, per type's style), which keeps the
+  effects the brightest values over the self-lit treatments. `MonsterStyle.Post` is tuned for
+  demo3d's arena rather than the lab's (the night's tonemapper, exposure and bloom threshold).
+  The values and why are in
+  [evidence/styles/all/README.md](../../demo3d/evidence/styles/all/README.md).
+  `--style-tune key=value,...` overrides them for a run without a rebuild (keys: gain, peak,
+  exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral), so a
+  treatment can be judged with other values; it fails under baseline.
+- **The hero keeps its own shader** under every style. The lab paints its knight, but
+  demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'
+  skinning does not apply to it.
 
 ## The Hero
 

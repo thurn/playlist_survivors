@@ -1,9 +1,13 @@
 # Monster style: painted (ps-a54.1, ink line ps-a54.2)
 
+> **Tuned since (ps-a54.4).** The stills, look.md, look.json and contact sheet here are now
+> the tuned set: the night's tonemapper and exposure, and the horde graded at gain 2, peak 0.4
+> ([all/README.md](../all/README.md) has the values, the numbers and why). The notes below
+> describe the untuned set they were written for.
+
 `--monster-style painted`: stylelab's "Polished painted" treatment, drawn through the
 bone-texture crowd's indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
-It uses the lab's palettes and its stylized post look as PostFeel's base. Nothing is tuned
-yet; the epic's last bead tunes each treatment.
+It uses the lab's palettes and its stylized post look as PostFeel's base. ps-a54.4 has since tuned it.
 
 How the set was made, on the Mac, windowless, IL2CPP player:
 
