@@ -220,6 +220,8 @@ fourth root:
 - **The guard covers it where it is.** The record lists every file under
   the root, as for the other asset folders, and its packs must be in the
   record. Where the root is absent, its manifest entries are not needed in
-  the record.
+  the record. A record built without the root (by a checkout older than
+  ps-f8a.1) fails as stale until `demo3d sync --record-only` (or a setup)
+  rebuilds it.
 - **Derived files** go to `demo3d/Assets/Baked/Rosters/<set>/`, gitignored
   with the rest of `Assets/Baked/`.

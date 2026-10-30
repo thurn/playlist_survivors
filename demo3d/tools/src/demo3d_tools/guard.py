@@ -572,6 +572,7 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
                 missing.setdefault(root, []).append(pack)
             for root, packs in missing.items():
                 shown = ", ".join(repr(p) for p in packs[:3]) + (", ..." if len(packs) > 3 else "")
+                demo = "demo2d" if root == "pixel_assets" else "demo3d"
                 res.failures.append(("(sync record)", (f"stale: {len(packs)} of {root}'s packs "
-                                     f"({shown}) are not in it; run `demo2d sync --record-only`")))
+                                     f"({shown}) are not in it; run `{demo} sync --record-only`")))
     return res
