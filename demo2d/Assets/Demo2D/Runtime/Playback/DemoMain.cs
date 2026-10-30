@@ -89,10 +89,13 @@ namespace Demo2D.Runtime.Playback
             if (_flags.Measure != null) _measure = new Measurement(_flags);
             var warm = _still != null ? _still : new RenderTexture(StillW, StillH, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB) { name = "Prewarm" };
             _playback.Prewarm(_flags.StartAt, warm);
-            if (warm != _still) warm.Release();
+            _measure?.Prewarm(warm);
+            if (warm != _still) Destroy(warm);
 
             _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
             var music = gameObject.AddComponent<AudioSource>();
+            music.volume = MixLimiter.MusicLevel;
+            _playback.Pipeline.Present.gameObject.AddComponent<MixLimiter>();
             AudioSource click = null;
             AudioClip clickClip = null;
             if (_flags.Click)
@@ -262,12 +265,20 @@ namespace Demo2D.Runtime.Playback
 
             public void Begin() => _start = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            public void End(RenderTexture rt, double t, SongPlayback playback)
+            /// <summary>An untimed first readback, so the song's first frame doesn't pay for the timer's own setup.</summary>
+            public void Prewarm(RenderTexture rt) => ReadPixel(rt);
+
+            void ReadPixel(RenderTexture rt)
             {
                 var previous = RenderTexture.active;
                 RenderTexture.active = rt;
                 _pixel.ReadPixels(new Rect(0, 0, 1, 1), 0, 0, false);
                 RenderTexture.active = previous;
+            }
+
+            public void End(RenderTexture rt, double t, SongPlayback playback)
+            {
+                ReadPixel(rt);
                 double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - _start) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
                 _ms.Add(ms);
                 if (ms > SecondLimit) _slow.Add(string.Format(CultureInfo.InvariantCulture, "[{0:F3}, {1:F2}]", t, ms));

@@ -982,6 +982,23 @@ this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../dem
   are still unanswered. They now say that an answer needing a change becomes a bead, since no task
   follows PX10.
 - **The demo milestone's review** (PX8 and PX10) is the Warden bead ps-tfn.5.2.
+- **Review** (Warden, ps-tfn.5.2, PX10 and how PX8 holds up over the whole song): the code, the
+  evidence and the Done-when were checked against the README, on a fresh build. Fixed, with details
+  in the [evidence](../../demo2d/evidence/px10/README.md#review-warden-ps-tfn52):
+  - The song check's first frame (15 to 25 ms, once 0.26 ms under the limit) was the measurement's
+    own first readback, not the game's. `--measure` now makes one untimed readback after the
+    prewarm. The whole song's worst frame is 10.32 ms (`song-review.json`: p99 8.82, pass).
+  - PX8's sound clipped in the live app: the music at 1.0 and each effect at its full event gain,
+    with no limiter, went past full scale in 187 of 198 seconds (peak 3.25, offline from
+    `--dump-sounds`). The player now mixes as demo3d's offline mix does: the music at 0.8, the
+    effects at 0.45 of their gain, and a soft limiter on the final mix (`MixLimiter`, with an
+    EditMode test). The viewing row's balance check now hears this mix.
+  - The prewarm's spare render target is destroyed, not only released.
+
+  Dismissed: the camera shake lands on about half the beats of the back half (0.1 m or more, mean
+  0.11 m from 90 s on). It is the shared camera spec's formula, capped at 0.25 m, and the viewing
+  check judges it. FrameTimingManager's batch-mode GPU times are rightly kept out of the verdict.
+  PX5's stale `--test-card` note is history. `demo2d test` 98 of 98.
 - **Self-review:** I re-read the diff against `origin/staging`. It touches only demo2d's runtime (the
   measurement, the prewarm, the spike's removal), the evidence, the README's run section and this
   plan. No core, data or demo3d change. New tracked files are our JSON and tagged stills. The guard

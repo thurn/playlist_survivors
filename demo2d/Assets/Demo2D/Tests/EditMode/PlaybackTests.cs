@@ -28,6 +28,26 @@ namespace Demo2D.Tests
         }
 
         /// <summary>
+        /// The live mix's limiter (PX10's review): the song's quiet passages pass untouched, and a
+        /// dense beat, several times full scale, comes out under full scale with its loudness order kept.
+        /// </summary>
+        [Test]
+        public void TheLimiterKeepsTheMixUnderFullScale()
+        {
+            Assert.That(MixLimiter.Limit(0.5f), Is.EqualTo(0.5f));
+            Assert.That(MixLimiter.Limit(-0.5f), Is.EqualTo(-0.5f));
+            float previous = -1;
+            for (float x = 0; x <= 4f; x += 0.01f)
+            {
+                float y = MixLimiter.Limit(x);
+                Assert.That(y, Is.LessThan(1f), $"Limit({x})");
+                Assert.That(y, Is.GreaterThanOrEqualTo(previous), $"Limit({x}) is quieter than a quieter input's");
+                Assert.That(MixLimiter.Limit(-x), Is.EqualTo(-y), $"Limit(-{x})");
+                previous = y;
+            }
+        }
+
+        /// <summary>
         /// A seek shows the same horde as a run from the start: a still at a song time is the same
         /// image whether the playback ran every 1/60 s frame up to it, jumped straight to it, or
         /// jumped back to it, effects and night included (PX7: each effect re-simulated from its

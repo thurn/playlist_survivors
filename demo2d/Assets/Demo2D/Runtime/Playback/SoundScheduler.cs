@@ -9,7 +9,8 @@ namespace Demo2D.Runtime.Playback
     /// PlayScheduled at its DSP time once it comes within 150 ms, using the timeline's lookahead,
     /// on a pool of 32 voices (the oldest is reused). The events are already aggregated by the
     /// choreography layer (at most 3 voices per beat and category). demo3d's SoundScheduler (in
-    /// demo3d's own runtime assembly), with its clips from PlaybackData instead of a SoundBank (PX8).
+    /// demo3d's own runtime assembly), with its clips from PlaybackData instead of a SoundBank (PX8),
+    /// at the offline mix's effects level under the music (MixLimiter).
     /// </summary>
     public sealed class SoundScheduler
     {
@@ -53,7 +54,7 @@ namespace Demo2D.Runtime.Playback
                 var src = _voices[v];
                 src.Stop();
                 src.clip = clip;
-                src.volume = Mathf.Clamp01(s.Gain);
+                src.volume = MixLimiter.EffectsLevel * Mathf.Clamp01(s.Gain);
                 src.PlayScheduled(_clock.DspAt(s.Time));
                 _voiceStart[v] = s.Time;
                 Scheduled++;

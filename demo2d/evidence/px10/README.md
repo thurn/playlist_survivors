@@ -91,3 +91,20 @@ pixels (mean difference 0.02 to 0.35 of 255), in small local spots.
 The last slam is new: the ending's final accent, the struck horde lit gold round the knight
 and the boss falling at his right. PX9's checklist judgement holds for the six (its README).
 The operator's judgement is pending (plan.md).
+
+## Review (Warden, ps-tfn.5.2)
+
+- **The first frame's stall was the timer's.** With the prewarm, the song's first frame still took
+  13 to 17 ms in short runs (and 24.74 ms in [song-run1.json](song-run1.json), 0.26 ms under the
+  limit), against about 2 ms for the frames after it with the same 3 on screen. It was the
+  measurement's own first one-pixel readback. `--measure` now makes one untimed readback after
+  the prewarm. The first second's worst frame is now 5.5 to 8.4 ms. In
+  [song-review.json](song-review.json) the worst frame of the whole song is 10.32 ms (at 100 s),
+  with mean 6.75 and p99 8.82.
+- **The live mix clipped.** Mixed offline from `--dump-sounds` at the player's levels (the music at
+  1.0, every effect sound at its full event gain, no limiter), the song went past full scale in 187
+  of its 198 seconds, peaking at 3.25. The densest beats stack 9 sounds, 3 of them hits at gain 1.0.
+  demo3d's offline mix (`demo3d mix`) sets the music at 0.8 and the effects at 0.45, with a soft
+  limiter. The player now uses the same levels and limiter (`MixLimiter`, on the listener's object).
+  Offline at those levels, the limiter's knee touches 4.5% of sample frames, and nothing passes 0.95.
+
