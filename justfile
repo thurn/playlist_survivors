@@ -118,9 +118,23 @@ editor project:
 
 # A fresh checkout gets its vendor files and the cached warm Library (with the last build's
 # shader cache) from setup, rather than importing and compiling every shader from scratch.
+# A set-up checkout re-syncs its vendor files whenever the manifest differs from the one it last
+# synced (kept in Library/), so a pull that adds vendor assets doesn't break the bake.
 [private]
 _setup project:
-    @[ -d "{{project}}/Library" ] && [ -d "{{project}}/Assets/Vendor" ] || {{tools}} {{project}} setup
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd "{{justfile_directory()}}"
+    stamp="{{project}}/Library/vendor-manifest.json"
+    if [ ! -d "{{project}}/Library" ] || [ ! -d "{{project}}/Assets/Vendor" ]; then
+        {{tools}} {{project}} setup
+    elif ! cmp -s "{{project}}/manifest.json" "$stamp"; then
+        echo "{{project}}: manifest changed since the last sync; syncing vendor files"
+        {{tools}} {{project}} sync
+    else
+        exit 0
+    fi
+    cp "{{project}}/manifest.json" "$stamp"
 
 [private]
 _play project app *args:
