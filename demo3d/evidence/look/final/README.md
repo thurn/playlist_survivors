@@ -90,7 +90,8 @@ Tried and dropped:
 | criterion | result |
 |---|---|
 | song stills: mean chroma above the baseline's | +30.0 to +39.7 C*ab in every still |
-| song stills: RMS contrast above the baseline's | +4.5 to +9.5 in four stills; **song-175: 24.3 against 31.5, not met** (below) |
+| song stills: RMS contrast above the baseline's | +4.5 to +9.5 in four stills; song-175 replaced by ruling (below) |
+| song-175, as ruled: clipped region < 1.5%, effects brightest, chroma and near-black beat the baseline, RMS contrast >= 24.0 | 0.0%, brightest, both met, 24.3 |
 | song stills: near-black share below the baseline's | -11.6 to -31.2 points in every still |
 | effects' p98 L* above the other pixels' | every song still and beauty shot, by 2.6-23.2 L* (start of this bead: 7 of 11 failed) |
 | cool hues at most 15% of a song still | 0.1-1.0% |
@@ -116,8 +117,16 @@ has 0.0% clipped. To find how far the frame can go, from this set's still:
 Even with every effect pixel white, a clipped region of about 11% of the
 frame, the still stays under 31.5. Meeting this criterion means bringing the
 blob back, which ps-e8r.7's bar forbids, or crushing the frame past the
-baseline's near-black share. So this bead leaves it open: filed as its own
-bead for a ruling, with this evidence.
+baseline's near-black share. So this bead left it open: filed as its own
+bead (ps-e8r.19) for a ruling, with this evidence.
+
+**Ruling** (Justiciar, incident ps-8r9, 2026-10-30, recorded on ps-e8r.19
+and ps-e8r): for song-175 the RMS contrast criterion is replaced, not kept.
+The final peak now needs a largest clipped region under 1.5%, effects' p98
+L* above the other pixels', mean chroma above and near-black below the
+baseline, and RMS contrast of at least 24.0 so it cannot regress. All are met
+here. The other four song stills keep RMS contrast above the baseline,
+|dL*| >= 17 still holds in every beauty shot, and ps-e8r.7's bar stays.
 
 ## Cost
 
