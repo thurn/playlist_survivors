@@ -386,10 +386,13 @@ namespace Demo3D.Tests
             l.CrowdKeyColor = Color.white;
             var k = NightLook.KeyColorScale(l);
             Assert.That(k.w, Is.EqualTo(1f));
-            var onHorde = new Vector3(l.MoonColor.r * k.x, l.MoonColor.g * k.y, l.MoonColor.b * k.z);
+            // The shader's main light is the moon's colour linearised (linear colour space, linear intensity).
+            var moon = l.MoonColor.linear;
+            var onHorde = new Vector3(moon.r * k.x, moon.g * k.y, moon.b * k.z);
             Assert.That(onHorde.x, Is.EqualTo(onHorde.z).Within(1e-4f), "neutral on the horde");
+            Assert.That(onHorde.x, Is.EqualTo(onHorde.y).Within(1e-4f), "neutral on the horde");
             float Luma(Vector3 v) => 0.2126f * v.x + 0.7152f * v.y + 0.0722f * v.z;
-            Assert.That(Luma(onHorde), Is.EqualTo(Luma(new Vector3(1f, 0.5f, 0.25f))).Within(1e-4f), "at the moon's luminance");
+            Assert.That(Luma(onHorde), Is.EqualTo(Luma(new Vector3(moon.r, moon.g, moon.b))).Within(1e-4f), "at the moon's luminance");
 
             var crypt = ArenaLighting.Parse(ArenaEnvironment.Load("crypt").Json);
             var grey = NightLook.Grade(new Color(0.45f, 0.45f, 0.45f), crypt);

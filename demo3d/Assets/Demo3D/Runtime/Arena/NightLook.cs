@@ -63,13 +63,14 @@ namespace Demo3D.Runtime.Arena
 
         /// <summary>
         /// The horde's key colour (<see cref="ArenaLighting.CrowdKeyColor"/>) as per-channel scales on the
-        /// moon's light (w 1 when set): the key colour at the moon's luminance over the moon's colour.
+        /// moon's light (w 1 when set): the key colour at the moon's luminance over the moon's colour,
+        /// both as the shader gets them: Unity takes a light's colour as sRGB and linearises it.
         /// </summary>
         public static Vector4 KeyColorScale(ArenaLighting l)
         {
             var k = l.CrowdKeyColor;
             if (k.a <= 0) return Vector4.zero;
-            var m = l.MoonColor;
+            var m = l.MoonColor.linear;
             float lum = Luma(m.r, m.g, m.b) / Mathf.Max(Luma(k.r, k.g, k.b), 1e-4f);
             return new Vector4(k.r * lum / Mathf.Max(m.r, 1e-3f), k.g * lum / Mathf.Max(m.g, 1e-3f), k.b * lum / Mathf.Max(m.b, 1e-3f), 1);
         }
