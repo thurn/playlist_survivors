@@ -228,10 +228,12 @@ that consumes the result removes the row.
 | What | How | Added by | Consumed by |
 |---|---|---|---|
 | Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
-| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX8 (PX5 plays them as annotated; still unanswered) |
+| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX10 (PX5 and PX8 play them as annotated; still unanswered) |
 | Is every type recognizable at its game size, and the hero findable in a crowd? PX3 found each type distinct, but the hero findable only from his place and a warm light, and the ghoul, zombie warrior, ice skull and blood mage close in colour at night. | Look at `demo2d/evidence/px3/lineup.png` and `crowd.png` (2×, as at 1080p). | PX3 | PX9 |
-| Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX8 |
+| Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX10 (still unanswered at PX8; PX8's listening check below covers the same run with sound) |
 | Does the night look right? The moon's cool fill, the hero's warm pool, the moonlight shafts, the glowing umbrella plants and the fireflies (PX7 found them faint, small dots by the trunks), and in the fight the effects carrying the light, with bloom and the grade. Too dark, too blue, the shafts too geometric, the downbeat rings too strong? | Compare `demo2d/evidence/px7/night-empty/` with `night/` (the same five times), and the per-kind stills in `effects/` and `library/`; or watch: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo"` (`--empty` for the arena alone, `--no-night`, `--no-post` or `--no-effects` to compare). The values are in `demo2d/Assets/Demo2D/Data/night-lighting.json` and `effects.json`. | PX7 | PX9 |
+
+| Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the right at about 165 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | PX10 |
 
 ## Task Notes
 
@@ -790,7 +792,68 @@ the bead). `demo2d test` 89 of 89; dotnet 32 of 32, 5 of them PX7's. [Evidence](
 
 ### PX8
 
-Not started.
+Done (bead ps-tfn.3.3). Commits: the presentation commit `feat(px8): …` and this notes commit (SHAs on
+the bead). dotnet 37 of 37, 5 of them PX8's; demo3d's dotnet 129 of 129 and its song dump still
+`09945e3b…`; `demo2d test` 94 of 94. [Evidence](../../demo2d/evidence/px8/README.md).
+
+- **Run:** from a worktree's root (the player's paths absolute):
+
+  ```
+  uv run --project demo3d/tools demo2d setup
+  uv run --project demo3d/tools demo2d build     # PlaybackData now bakes the sound bank
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" --click                                 # the song with its sounds and a click
+  "$APP" --start-at 160                          # the climax: the boss, the beam, the ending's slams
+  "$APP" -batchmode -force-metal --capture-stills "$PWD/demo2d/evidence/px8" --stills-at 10,30,37.125,50,166,170,176,180,185,195.928,197.476
+  ```
+
+  New flags: `--no-sound` (no effect sounds; the music and click stay) and `--dump-sounds <json>` (the
+  timeline's sound events with each one's clip and gain, demo3d's format).
+- **What was already there** (PX4 to PX7 on the core): the combos on the grid (slashes on beats,
+  spins on accents, slams on phrase downbeats, the shield bash), the spells (rings, bolts, lightning,
+  the beam sweep), the sim's knockback slides, the beam's ticks (no knockback, a half flash), the
+  ending's slams on every accent, monster hit-stop, punch and shake, and the death bursts. PX8
+  checked them on the song and added what the 2D client lacked.
+- **The boss never appeared** (in demo3d too): it entered off screen at the final peak and stood
+  there all section, since the sim moves an off-screen monster only when it releases it to fill the
+  view's deficit, nearest the edge first, and a full climax never reached it. The core gains an
+  opt-in level-script field, `bossFrom` (a layout goal: the boss enters in its direction from the
+  hero and always walks in; choreography.md); demo3d doesn't set it, so its dump is unchanged, and
+  its own boss is filed as ps-tfn.9. demo2d's final peak sets `cliff-ledge`, the hero's own path in:
+  north put the 5 m-tall boss's head out of frame where the crowd stopped it, and south was forest and
+  stream. The boss is now a caster (reach 7.5 m, the `hellfire` projectile at 14 m/s, CFXR's large
+  Fireball tinted magenta): a melee boss can't reach the hero through 400 monsters. It is in view
+  from 164 s, casts on beats from 174.6 s (11 times, each parried where it lands), takes a lightning
+  strike, and falls to the ending's last slam with the horde. Its attacks shake the camera as a
+  full-strength blow.
+- **The flash lights the sprite instead of whitening it** (PX7's concern): `Sprite-Lit-Flash` lerps
+  toward the sprite's own colours times an HDR flash light, up to 0.85; warm (1.6, 1.38, 1.12) on
+  monsters, a cool gleam (1.1, 1.35, 1.75) on the hero's parries. A spin's ring of struck skeletons
+  reads as lit gold with every figure distinct, not a white mass; the brightest bone pixels bloom a
+  little.
+- **Hit-stop on the hero's big blows:** spins and slams (strength 0.8 and up) hold their impact
+  frame for the core's 50 ms hit-stop and catch up over 0.15 s. demo3d slows its clip to 0.6×
+  instead, which 15 fps frames can't show.
+- **Knockback hops:** while the sim slides a struck monster back, its sprite lifts over its shadow
+  in a 0.16 s arc, 0.16 m for grunts and a third of that for elites and the boss. Ticks don't hop.
+- **Sound:** demo3d's SoundScheduler, copied (its assembly isn't demo2d's), with its clips from
+  PlaybackData: demo3d's SoundBaker choices, one vendor clip per timeline sound name (24, all found
+  in demo2d's manifest). 2,933 events over the song in the IL2CPP player.
+- **Tests** (`PresentationTests`): the beam's 144 ticks flash at most half and push nothing; hits hop;
+  the ending's accents are each a slam; the boss walks in within the section's first third, attacks
+  at least 5 times with hellfire, and dies on the last accent; big blows hold their impact frame
+  (5) where slashes move on (176). The casters' test counts the boss's hellfire.
+  PX5's impact-frame test allowed 1 in 20 blows cut in by a later clip; the song already sat at
+  4.98% under .NET, and Unity's Mono timeline crossed 5% once the boss walked in, so it allows 1 in
+  16.
+- **Left alone:** the hero's spin still reuses `skill_1` (knight_male has no spin clip; the blue spin
+  trail carries it). The death bursts' smoke is dense at the climax; PX9 or PX10 may thin it.
+- **Pending:** the listening check, with the first minute's and the climax's click, in
+  [Pending on the operator](#pending-on-the-operator); PX5's click row and PX3's annotation row move
+  to PX10, unanswered.
+- **Self-review:** re-read the diff against `origin/staging`. The core change is opt-in (`bossFrom`)
+  and demo3d's dump is byte-identical. Everything else is demo2d's client, data, tests and evidence;
+  new tracked files are our code, `.meta`s Unity wrote and tagged stills; no ProjectSettings rewrite.
 
 ### PX9
 
