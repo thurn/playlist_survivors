@@ -15,6 +15,8 @@ namespace Demo3D.Runtime.Playback
         public TextAsset level;
         /// <summary>The `--roster` sets' level variants (action-level-NAME.json).</summary>
         public TextAsset[] levels;
+        /// <summary>The `--intensity` overlays (intensity-NAME.json).</summary>
+        public TextAsset[] intensities;
         public TextAsset annotations;
         public TextAsset roster;
         public TextAsset footprints;
@@ -31,6 +33,11 @@ namespace Demo3D.Runtime.Playback
         public TextAsset Level(RosterSet set) => set.IsDefault ? level
             : System.Array.Find(levels ?? new TextAsset[0], l => l.name == set.LevelName)
               ?? throw new System.InvalidOperationException($"PlaybackData: no {set.LevelName}.json baked (run demo3d unity BakeAll)");
+
+        /// <summary>The overlay JSON for an `--intensity` (null for normal), merged over the level script by <see cref="PS.Choreography.LevelScript.Parse"/>.</summary>
+        public string Overlay(Intensity intensity) => intensity.IsNormal ? null
+            : (System.Array.Find(intensities ?? new TextAsset[0], i => i.name == intensity.OverlayName)
+               ?? throw new System.InvalidOperationException($"PlaybackData: no {intensity.OverlayName}.json baked (run demo3d unity BakeAll)")).text;
 
         /// <summary>The clip annotations for a `--roster` set (<see cref="RosterSet.Annotations"/>).</summary>
         public string Annotations(RosterSet set) => set.Annotations(annotations.text);
