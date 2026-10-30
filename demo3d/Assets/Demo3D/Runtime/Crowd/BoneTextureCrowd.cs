@@ -57,6 +57,8 @@ namespace Demo3D.Runtime.Crowd
         static readonly int IdLodThresholds = Shader.PropertyToID("_LodThresholds");
         static readonly int IdLodCount = Shader.PropertyToID("_LodCount");
         static readonly int IdShadowLod = Shader.PropertyToID("_ShadowLod");
+        static readonly int IdTypeColor = Shader.PropertyToID("_Demo3DTypeColor");
+        static readonly int IdTypeRotate = Shader.PropertyToID("_Demo3DTypeRotate");
         static readonly int IdCount = Shader.PropertyToID("_Count");
         static readonly int IdCapacity = Shader.PropertyToID("_Capacity");
         static readonly int IdCommands = Shader.PropertyToID("_Commands");
@@ -254,6 +256,8 @@ namespace Demo3D.Runtime.Crowd
                 s.Main[l].SetBuffer(IdVisibleList, s.VisibleList);
                 s.Main[l].SetFloat(IdLodDither, 1);
                 s.Main[l].SetFloat(IdLodIndex, l);
+                s.Main[l].SetVector(IdTypeColor, t.SignatureColor());
+                s.Main[l].SetVector(IdTypeRotate, t.HueRotation());
             }
             s.Shadow.SetBuffer(IdVisibleList, s.ShadowList);
             s.Shadow.SetFloat(IdLodDither, 0);

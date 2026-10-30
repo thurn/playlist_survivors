@@ -1,10 +1,16 @@
 {
   "version": 1,
   "note": "The demo's roster: vendor assets by GUID (paths are hints), with each type's height in the demo (the prefab is scaled to it) and its separation radius. TD2 chose these; TD4 and TD5 read them.",
+  "typeColors": {
+    "note": "Each monster type's signature colour (ps-e8r.8): its `hue` (HSV degrees) at this saturation, full value. CrowdSkinned dyes a type's grey and low-saturation albedo (steel, bone, cloth) toward it at the albedo's own luminance, by `dye`; saturated swatches (skin, eyes) and bright highlights keep theirs. Fodder runs the warm half and the rare elites and the boss the cool and hot hues that stand out on the warm stage; types that share a section are at least 35 degrees apart (the final peak holds nine, so every type has its own 40-degree slot). The hero has none. `hueRotate` (degrees) first turns a whole type's albedo round the luma axis, for a type whose own saturated hide sits on another type's hue (the dragon's and the big orc's green).",
+    "saturation": 0.8,
+    "dye": 0.85
+  },
   "types": [
     {
       "id": "skeleton",
       "kind": "fodder",
+      "hue": 20,
       "prefab": {
         "guid": "6e3f218b742294893ad834f61c027945",
         "path": "Skeleton Warrior/_Prefabs/SkeletonWarriorLP.prefab"
@@ -42,6 +48,7 @@
     {
       "id": "goblin",
       "kind": "fodder",
+      "hue": 100,
       "prefab": {
         "guid": "2d5e83b858ed8424291e890a090902db",
         "path": "Goblin/_Prefabs/Goblins LP.prefab"
@@ -79,6 +86,7 @@
     {
       "id": "slime",
       "kind": "fodder",
+      "hue": 140,
       "prefab": {
         "guid": "fe5eb242a632a47529d5bfc2a09bccda",
         "path": "Slime/_Prefabs/Slime_LP.prefab"
@@ -116,6 +124,7 @@
     {
       "id": "bat",
       "kind": "fodder",
+      "hue": 260,
       "prefab": {
         "guid": "4f9257d4aec394d59be5f34d00fa97e8",
         "path": "Bats/_Prefabs/Bats LP.prefab"
@@ -154,6 +163,7 @@
     {
       "id": "mushroom",
       "kind": "fodder",
+      "hue": 60,
       "prefab": {
         "guid": "be803e2df48344dafbabe4dce2b5b5c4",
         "path": "Mushroom Monster/_Prefabs/Mushroom_LP.prefab"
@@ -191,6 +201,7 @@
     {
       "id": "demon",
       "kind": "fodder",
+      "hue": 340,
       "prefab": {
         "guid": "97be6194801464926b2c78020bf4eb32",
         "path": "Demons/_Prefabs/Demons_LP.prefab"
@@ -228,6 +239,8 @@
     {
       "id": "bigork",
       "kind": "elite",
+      "hue": 180,
+      "hueRotate": 60,
       "prefab": {
         "guid": "0d42bc61d684259409d481c6f5dd5d5c",
         "path": "Characters/Character_BR_BigOrk_01.prefab"
@@ -272,6 +285,7 @@
     {
       "id": "troll",
       "kind": "elite",
+      "hue": 220,
       "prefab": {
         "guid": "2250a4a4fc528684c85ba955eb992ec6",
         "path": "Characters/Character_BR_Troll_01.prefab"
@@ -316,6 +330,7 @@
     {
       "id": "evilgod",
       "kind": "rejected-boss",
+      "hue": 300,
       "prefab": {
         "guid": "fc469b2d4ae90f6408eedaaa707d812f",
         "path": "Characters/Character_EvilGod_01.prefab"
@@ -360,6 +375,8 @@
     {
       "id": "dragon",
       "kind": "boss",
+      "hue": 300,
+      "hueRotate": 150,
       "prefab": {
         "guid": "a1e28cc5277b74ff0ad8566e5e54bee5",
         "path": "Dragons/_Prefabs/Dragon_LP.prefab"

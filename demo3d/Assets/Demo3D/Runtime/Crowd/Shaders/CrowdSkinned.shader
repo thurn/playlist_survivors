@@ -130,9 +130,39 @@ Shader "Demo3D/CrowdSkinned"
             // The hit flash's colour (rgb, linear HDR; w 1 when set), from the layout's crowd.flash
             // (ps-e8r.7): hot rather than a white that clips whole bodies at a climax.
             float4 _Demo3DCrowdFlash;
+            // The type's signature colour (ps-e8r.8; CrowdType.SignatureColor, per type): rgb its hue at
+            // full value (linear), w the dye. Zero for the hero.
+            float4 _Demo3DTypeColor;
+            // (cos, sin) of the angle that first turns the type's whole albedo round the luma axis (YIQ):
+            // a saturated hide sitting on another type's hue. (1, 0) or unset: none.
+            float4 _Demo3DTypeRotate;
             #define DEMO3D_MAIN_LIGHT_SCALE (1 + _Demo3DCrowdKeyBoost)
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
+
+            // Dyes Synty's grey swatches (steel, bone, cloth) toward the type's hue at their own luminance,
+            // so a type reads as one colour mass; saturated swatches (skin, eyes) and the brightest
+            // highlights keep most of theirs, so metal and faces stay readable. No texture lookup.
+            half3 TypeDyed(half3 albedo)
+            {
+                if (_Demo3DTypeRotate.y != 0)
+                {
+                    half y = dot(albedo, half3(0.299, 0.587, 0.114));
+                    half i = dot(albedo, half3(0.596, -0.274, -0.322));
+                    half q = dot(albedo, half3(0.211, -0.523, 0.312));
+                    half2 iq = half2(i * _Demo3DTypeRotate.x - q * _Demo3DTypeRotate.y, i * _Demo3DTypeRotate.y + q * _Demo3DTypeRotate.x);
+                    albedo = saturate(half3(y + 0.956 * iq.x + 0.621 * iq.y, y - 0.272 * iq.x - 0.647 * iq.y, y - 1.106 * iq.x + 1.703 * iq.y));
+                }
+                if (_Demo3DTypeColor.w <= 0) return albedo;
+                half hi = max(albedo.r, max(albedo.g, albedo.b));
+                half lo = min(albedo.r, min(albedo.g, albedo.b));
+                half saturation = (hi - lo) / max(hi, 1e-4);
+                half luma = dot(albedo, half3(0.2126, 0.7152, 0.0722));
+                half3 hue = _Demo3DTypeColor.rgb;
+                half3 dyed = min(hue * (luma / max(dot(hue, half3(0.2126, 0.7152, 0.0722)), 1e-3)), 1);
+                half w = _Demo3DTypeColor.w * (1 - smoothstep(0.4, 0.8, saturation)) * (1 - 0.4 * smoothstep(0.75, 1.0, luma));
+                return lerp(albedo, dyed, w);
+            }
 
             half4 frag(Varyings i) : SV_Target
             {
@@ -140,6 +170,7 @@ Shader "Demo3D/CrowdSkinned"
                 float edge = CrowdDissolve(i.fx.y, i.restPosition);
                 if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1);
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor * i.tint;
+                albedo.rgb = TypeDyed(albedo.rgb);
 
                 InputData inputData = (InputData)0;
                 inputData.positionWS = i.positionWS;

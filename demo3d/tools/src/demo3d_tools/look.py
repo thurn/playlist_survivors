@@ -17,7 +17,7 @@ and, given --baseline, a before/after contact sheet go to demo3d/evidence/look/S
 look.md has, for every still: CIE L* p2/p50/p98, the RMS contrast (the standard deviation of L*),
 the mean chroma C*ab, the near-black share (L* < 10), the clipped share (every channel >= 250) and
 the largest connected clipped region's share (a blown-out blob, not scattered hot pixels).
-For beauty shots it adds the monster pixels' L* p10/p90, the effects (the pixels whose L* the
+For beauty shots it adds the monster pixels' L* p10/p90 and mean chroma, the effects (the pixels whose L* the
 effects move by more than EFFECT_DL, horde still against measured still) and readability.
 
 Readability is TD15's measure, made absolute (the look epic's Decision 3): in the measured still,
@@ -159,7 +159,7 @@ def readability(measured: np.ndarray, mask: np.ndarray, empty: np.ndarray) -> di
     p10, p90 = np.percentile(lh[mask], [10, 90])
     return {"monsterPx": n, "monsterShare": n / mask.size, "lMonster": lm, "lRing": lg,
             "dL": lm - lg, "dLbg": lm - float(np.median(lstar(empty)[mask])),
-            "dC": float(np.median(ch[mask])) - float(np.median(ch[ring])),
+            "dC": float(np.median(ch[mask])) - float(np.median(ch[ring])), "cMonster": float(ch[mask].mean()),
             "monsterP10": float(p10), "monsterP90": float(p90),
             "pass": abs(lm - lg) >= FLOOR_DL}
 
@@ -374,17 +374,18 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
               "In the measured still (the horde without effects): the monster pixels (the ID render, depth-tested",
               "against the set) against the ground in a ring 3-10 px around them. dL*: median monster L* less median",
               "ring L*; dL*bg: against the same pixels of the empty still; dC*: median chroma, monsters less ring;",
+              "monster C*ab: the monster pixels' mean chroma (ps-e8r.8's type colours);",
               f"monster p10/p90: the monster pixels' L*. Floor: |dL*| >= {FLOOR_DL:g} in every shot (epic ps-e8r,",
               "Decision 3).", "",
-              "| shot | monster px (share) | L* monster | L* ring | dL* | dL*bg | dC* | monster p10 | p90 | floor |",
-              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
+              "| shot | monster px (share) | L* monster | L* ring | dL* | dL*bg | dC* | monster C*ab | monster p10 | p90 | floor |",
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
     for n, s in shots.items():
         r = s["read"]
         if "error" in r:
-            lines.append(f"| {n} | {r['monsterPx']} | | | | | | | | {r['error']} |")
+            lines.append(f"| {n} | {r['monsterPx']} | | | | | | | | | {r['error']} |")
             continue
         lines.append(f"| {n} | {r['monsterPx']:,} ({_pct(r['monsterShare'])}) | {r['lMonster']:.1f} | "
-                     f"{r['lRing']:.1f} | {r['dL']:.1f} | {r['dLbg']:.1f} | {r['dC']:.1f} | "
+                     f"{r['lRing']:.1f} | {r['dL']:.1f} | {r['dLbg']:.1f} | {r['dC']:.1f} | {r['cMonster']:.1f} | "
                      f"{r['monsterP10']:.1f} | {r['monsterP90']:.1f} | {'pass' if r['pass'] else 'FAIL'} |")
     lines += ["", "## Effects", "",
               f"The pixels whose L* the effects move by more than {EFFECT_DL:g} (the horde still against the",
@@ -437,6 +438,13 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
             lines.append(f"| {n} | {s['chroma']:.1f} | {s['chroma'] - b['chroma']:+.1f} | {s['contrast']:.1f} | "
                          f"{s['contrast'] - b['contrast']:+.1f} | {_pct(s['nearBlack'])} | "
                          f"{(s['nearBlack'] - b['nearBlack']) * 100:+.1f} | {dl_cells} |")
+        if (bc := baseline.get("monsterChroma")) and any(n in bc for n in shots):
+            lines += ["", "The monster pixels' mean chroma in the measured stills:", "",
+                      "| shot | monster C*ab | baseline | ratio |", "|---|---:|---:|---:|"]
+            for n, s in shots.items():
+                c, b = s["read"].get("cMonster"), bc.get(n)
+                if c is not None and b:
+                    lines.append(f"| {n} | {c:.1f} | {b:.1f} | {c / b:.2f}x |")
         lines += ["", "[contact-sheet.jpg](contact-sheet.jpg): the baseline left, this set right."]
     return "\n".join(lines) + "\n"
 
@@ -513,6 +521,7 @@ def cmd_look(a: argparse.Namespace) -> int:
         small_jpeg(still(n), evidence / f"{n}.jpg", n)
     numbers = {"slug": slug, "stats": {**song, **{n: s["horde"] for n, s in shot_rows.items()}},
                "dL": {n: s["read"].get("dL") for n, s in shot_rows.items()},
+               "monsterChroma": {n: s["read"].get("cMonster") for n, s in shot_rows.items()},
                "stage": {n: st.get("dL") for n, st in stages.items()}, "ground": grounds}
     (evidence / "look.json").write_text(json.dumps(numbers, indent=1) + "\n", encoding="utf-8")
     base = None

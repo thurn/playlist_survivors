@@ -62,9 +62,37 @@ namespace Demo3D.Runtime.Crowd
         public float CenterY, Radius, HeightM;
         public float RadiusM; // separation radius from the roster
         public float HoverM;  // the client adds it to Position.y (bats)
+        /// <summary>
+        /// The type's signature colour (ps-e8r.8, roster.json): its hue in HSV degrees (negative for
+        /// none, as the hero), its saturation, and how far the shader dyes its low-saturation albedo
+        /// toward it (0..1).
+        /// </summary>
+        public float Hue = -1, HueSaturation, Dye;
+        /// <summary>Degrees the shader first turns the whole albedo round the luma axis (a saturated hide on another type's hue).</summary>
+        public float HueRotate;
         public int Vertices, Triangles;
         /// <summary>The stock baseline's prefab: one SkinnedMeshRenderer and an Animator.</summary>
         public GameObject StockPrefab;
+
+        /// <summary>
+        /// The signature colour for CrowdSkinned's <c>_Demo3DTypeColor</c>: linear rgb at full value,
+        /// alpha the dye; all zero for a type without one. `--type-dye d` and `--type-saturation s`
+        /// override the roster's, for tuning in a player.
+        /// </summary>
+        public Vector4 SignatureColor()
+        {
+            if (Hue < 0) return Vector4.zero;
+            float s = Args.GetFloat("--type-saturation", HueSaturation);
+            var c = Color.HSVToRGB(Mathf.Repeat(Hue / 360f, 1f), Mathf.Clamp01(s), 1f).linear;
+            return new Vector4(c.r, c.g, c.b, Mathf.Clamp01(Args.GetFloat("--type-dye", Dye)));
+        }
+
+        /// <summary>CrowdSkinned's <c>_Demo3DTypeRotate</c>: (cos, sin) of <see cref="HueRotate"/> (`--hue-rotate-ID` overrides it).</summary>
+        public Vector4 HueRotation()
+        {
+            float r = Args.GetFloat("--hue-rotate-" + Id, HueRotate) * Mathf.Deg2Rad;
+            return new Vector4(Mathf.Cos(r), Mathf.Sin(r), 0, 0);
+        }
 
         public int Clip(string role)
         {

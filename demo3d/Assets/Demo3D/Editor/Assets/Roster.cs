@@ -44,6 +44,10 @@ namespace Demo3D.EditorTools.Assets
             public float radius;
             public float heightM;
             public float hoverM;
+            /// <summary>The type's signature hue in HSV degrees (ps-e8r.8); null for the hero.</summary>
+            public float? hue;
+            /// <summary>Turns the type's whole albedo round the luma axis first, in degrees (ps-e8r.8).</summary>
+            public float hueRotate;
             public Ref prefab;
             public Dictionary<string, ClipRef> clips = new Dictionary<string, ClipRef>();
             public Dictionary<string, ClipRef> rootMotionClips = new Dictionary<string, ClipRef>();
@@ -52,18 +56,31 @@ namespace Demo3D.EditorTools.Assets
             public bool Humanoid => rig == "humanoid";
         }
 
+        /// <summary>How the crowd shader dyes a type toward its hue (roster.json's <c>typeColors</c>).</summary>
+        public sealed class TypeColorSettings
+        {
+            public float saturation;
+            public float dye;
+        }
+
         sealed class File
         {
             public int version;
+            public TypeColorSettings typeColors;
             public List<Type> types;
         }
 
-        public static List<Type> Load()
+        static File Read()
         {
             var file = JsonConvert.DeserializeObject<File>(System.IO.File.ReadAllText(DataPath));
             if (file == null || file.version != 1) throw new Exception("Roster: unknown version");
-            return file.types;
+            return file;
         }
+
+        public static List<Type> Load() => Read().types;
+
+        public static TypeColorSettings TypeColors() =>
+            Read().typeColors ?? throw new Exception("Roster: no typeColors");
 
         public static string PathOf(string guid)
         {

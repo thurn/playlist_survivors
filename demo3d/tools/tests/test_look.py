@@ -85,6 +85,12 @@ def test_readability_is_absolute() -> None:
     assert not look.readability(close, mask, close)["pass"]
 
 
+def test_monster_chroma_is_the_monsters_mean() -> None:
+    img, mask = horde_on_ground(GREY_50, GREY_DARK)
+    img[40:50, 40:60] = [255, 0, 0]  # half the horde sRGB red (C*ab 104.6), half grey
+    assert look.readability(img, mask, frame(GREY_DARK, 100, 100))["cMonster"] == pytest.approx(104.6 / 2, abs=0.3)
+
+
 def test_readability_without_monsters() -> None:
     img = frame(GREY_50)
     assert "error" in look.readability(img, np.zeros(img.shape[:2], dtype=bool), img)

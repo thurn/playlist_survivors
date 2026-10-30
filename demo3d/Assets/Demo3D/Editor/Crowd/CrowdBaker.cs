@@ -132,12 +132,17 @@ namespace Demo3D.EditorTools.Crowd
             Directory.CreateDirectory(OutDir + "/Stock");
             var types = new List<CrowdType>();
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath) ?? throw new Exception("CrowdBaker: no " + ShaderPath);
+            var colors = Roster.TypeColors();
             foreach (var t in Roster.Load().Where(Drawn))
             {
                 var started = DateTime.UtcNow;
                 using var bake = BakeType(t, annotations);
                 int height = bake.Height, width = bake.Width, subs = bake.Submeshes.Count;
                 var ct = Save(bake, shader);
+                ct.Hue = t.hue ?? -1;
+                ct.HueSaturation = colors.saturation;
+                ct.Dye = colors.dye;
+                ct.HueRotate = t.hueRotate;
                 types.Add(ct);
                 Debug.Log($"CrowdBaker: {t.id}: {ct.Vertices} vertices, {ct.Triangles} triangles (LOD1 {ct.Lod1Triangles}, LOD2 {ct.Lod2Triangles}), {ct.BoneCount} bones, " +
                           $"{height} frames ({width}x{height} texels, {width * height * 16 / 1024} KiB), " +

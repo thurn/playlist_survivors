@@ -8,6 +8,8 @@ using System.Text;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Jobs.LowLevel.Unsafe;
+using Demo3D.Runtime.Arena;
+using Demo3D.Runtime.Playback;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -30,6 +32,10 @@ namespace Demo3D.Runtime.Crowd.Bench
     /// Each run writes one result row (JSON line): FrameTimingManager's p50/p99/max GPU,
     /// main-thread and render-thread times after the warm-up (zero GPU readings excluded), the
     /// on-screen counts, and the pass rule (performance.md, Performance Budget).
+    ///
+    /// `--scene roster --stills DIR` is the look pass's roster still (ps-e8r.8): every drawn type
+    /// in a row, standing, under the game's night look, to show each type's signature colour
+    /// (`--type-dye 0` for the undyed roster). In batch mode the stills render offscreen.
     /// </summary>
     public sealed class CrowdBench : MonoBehaviour
     {
@@ -87,7 +93,10 @@ namespace Demo3D.Runtime.Crowd.Bench
             _viewWidth = Args.GetFloat("--view-width", 40);
             _out = Args.Get("--out", Path.Combine(Application.persistentDataPath, "crowd-bench.jsonl"));
             BuildRig();
+            if (_scene == "roster") NightRig();
             SetAntiAliasing(Args.Get("--aa", "msaa4"));
+            if (Application.isBatchMode)
+                _camera.targetTexture = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32) { antiAliasing = Mathf.Max(1, _pipeline.msaaSampleCount), name = "BenchStill" };
             SetViewWidth(_viewWidth);
             AddLights(Args.GetInt("--lights", 0));
             _crowd = CreateArm(_arm);
@@ -174,6 +183,19 @@ namespace Demo3D.Runtime.Crowd.Bench
             vol.sharedProfile = profile;
         }
 
+        /// <summary>The roster still's light: the song's night look (the arena layout's moon, ambient, fog and grade).</summary>
+        void NightRig()
+        {
+            var l = ArenaLighting.Parse(PlaybackData.Load().Layout("arena").text);
+            NightLook.ApplyRenderSettings(l);
+            NightLook.ApplyCamera(_camera, l);
+            _sun.transform.rotation = l.MoonRotation;
+            _sun.color = l.MoonColor;
+            _sun.intensity = l.MoonIntensity;
+            Destroy(FindAnyObjectByType<Volume>().gameObject);
+            NightLook.CreateVolume(transform, l);
+        }
+
         void SetViewWidth(float viewWidth)
         {
             _viewWidth = viewWidth;
@@ -234,6 +256,11 @@ namespace Demo3D.Runtime.Crowd.Bench
         {
             _n = n;
             foreach (var s in _slots) if (s.IsCreated) s.Dispose();
+            if (_scene == "roster")
+            {
+                RosterRow();
+                return;
+            }
             _counts = CrowdScenario.Mix(_lib, n);
             _motion = _lib.Types.Select(CrowdScenario.MotionOf).ToArray();
             var footprint = CrowdScenario.Footprint(_camera);
@@ -249,6 +276,38 @@ namespace Demo3D.Runtime.Crowd.Bench
                 for (int k = 0; k < _counts[i]; k++) list.Add(all[onAt++]);
                 for (int k = 0; k < offCounts[i] && offAt < all.Length; k++) list.Add(all[offAt++]);
                 _slots[i] = new NativeArray<CrowdScenario.Slot>(list.ToArray(), Allocator.Persistent);
+            }
+            _t0 = Time.time;
+            _framesAtRebuild = _frames;
+        }
+
+        /// <summary>
+        /// The roster scene: each type a column of three (the boss one), left to right in roster
+        /// order, facing the camera; with time held at 0 each stands at its slot's walk phase.
+        /// </summary>
+        void RosterRow()
+        {
+            _counts = new int[_lib.Types.Length];
+            _motion = _lib.Types.Select(CrowdScenario.MotionOf).ToArray();
+            _slots = new NativeArray<CrowdScenario.Slot>[_lib.Types.Length];
+            var widths = _lib.Types.Select(t => Mathf.Max(1.3f, 2.6f * t.RadiusM)).ToArray();
+            float x = -widths.Sum() / 2;
+            const float FarRadius = 1000f; // a walk circle so large the slot is a straight line; at time 0 it stands at Center + (R, 0)
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                var t = _lib.Types[i];
+                int k = t.Kind == "boss" ? 1 : 3;
+                var list = new CrowdScenario.Slot[k];
+                for (int j = 0; j < k; j++)
+                    list[j] = new CrowdScenario.Slot
+                    {
+                        Center = new Unity.Mathematics.float2(x + widths[i] / 2 - FarRadius, (1 - j) * widths[i] - 1f),
+                        Radius = FarRadius, Direction = -1, Theta0 = 0, Phase = 0.37f * (i + j), Scale = 1, Tint = 0,
+                        Seed = (uint)(i * 7 + j),
+                    };
+                _counts[i] = k;
+                _slots[i] = new NativeArray<CrowdScenario.Slot>(list, Allocator.Persistent);
+                x += widths[i];
             }
             _t0 = Time.time;
             _framesAtRebuild = _frames;
@@ -274,6 +333,7 @@ namespace Demo3D.Runtime.Crowd.Bench
             JobHandle.CompleteAll(handles);
             handles.Dispose();
             _crowd.Draw(_camera);
+            if (_camera.targetTexture != null) _camera.Render(); // batch mode renders no frames of its own
 
             FrameTimingManager.CaptureFrameTimings();
             if (!_measuring) return;
@@ -469,7 +529,7 @@ namespace Demo3D.Runtime.Crowd.Bench
             foreach (var w in widths)
             {
                 SetViewWidth(w);
-                int n = Mathf.RoundToInt(CrowdScenario.Area(CrowdScenario.Footprint(_camera)) * density);
+                int n = _scene == "roster" ? 0 : Mathf.RoundToInt(CrowdScenario.Area(CrowdScenario.Footprint(_camera)) * density);
                 Rebuild(n);
                 _timeOverride = null;
                 if (Args.Has("--live"))
@@ -485,10 +545,11 @@ namespace Demo3D.Runtime.Crowd.Bench
                     for (int i = 0; i < 4; i++) yield return null;
                 }
                 yield return new WaitForEndOfFrame();
-                var shot = ScreenCapture.CaptureScreenshotAsTexture();
+                var shot = Grab();
                 var small = Downscale(shot, Args.GetInt("--still-width", 1280));
                 var tag = Args.Get("--ablate", "");
-                var name = $"crowd-{_arm}-{_scene}-{w:0}m{(tag.Length > 0 ? "-no" + tag : "")}{(_lights.Count > 0 ? "-lights" : "")}{(_pipeline.msaaSampleCount == 1 ? "-taa" : "")}{(Args.Has("--show-motion") ? "-motion" : Args.Has("--show-normals") ? "-normals" : "")}.jpg";
+                var dye = Args.Get("--type-dye");
+                var name = $"crowd-{_arm}-{_scene}-{w:0}m{(dye != null ? "-dye" + dye : "")}{(tag.Length > 0 ? "-no" + tag : "")}{(_lights.Count > 0 ? "-lights" : "")}{(_pipeline.msaaSampleCount == 1 ? "-taa" : "")}{(Args.Has("--show-motion") ? "-motion" : Args.Has("--show-normals") ? "-normals" : "")}.jpg";
                 RenderTag.Save(small, Path.Combine(dir, name), $"td5 crowd bench still: {_arm} {_scene} {w} m, n {n}, t {at}", 82);
                 if (Args.Has("--crop"))
                 {
@@ -505,6 +566,26 @@ namespace Demo3D.Runtime.Crowd.Bench
                 Destroy(small);
             }
             _timeOverride = null;
+        }
+
+        /// <summary>
+        /// The frame just rendered: the screen, or in batch mode (no window) the camera's offscreen
+        /// target, which <see cref="Start"/> gives it there and <see cref="Update"/> renders into.
+        /// </summary>
+        Texture2D Grab()
+        {
+            var target = _camera.targetTexture;
+            if (target == null) return ScreenCapture.CaptureScreenshotAsTexture();
+            var resolved = RenderTexture.GetTemporary(target.width, target.height, 0, RenderTextureFormat.ARGB32);
+            Graphics.Blit(target, resolved);
+            var prev = RenderTexture.active;
+            RenderTexture.active = resolved;
+            var tex = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+            tex.Apply();
+            RenderTexture.active = prev;
+            RenderTexture.ReleaseTemporary(resolved);
+            return tex;
         }
 
         static Texture2D Downscale(Texture2D src, int width)
