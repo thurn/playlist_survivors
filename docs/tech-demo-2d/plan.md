@@ -227,11 +227,11 @@ that consumes the result removes the row.
 
 | What | How | Added by | Consumed by |
 |---|---|---|---|
-| Does a windowed player report a GPU frame time every frame? (A batch-mode one reports it on 3% of frames.) | After `demo2d build`, from the worktree's root: `open -n demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app --args -screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --frame-timing "$PWD/captures/px1-timing/windowed-400.json" --spike-sprites 400 --seconds 10`; the window closes itself after 12 s. In the JSON, compare `ftm.gpuFrameTimeMs`'s `nonzero` with `frames`. | PX1 | PX10 |
-| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX10 (PX5 and PX8 play them as annotated; still unanswered) |
-| Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX10 (still unanswered at PX8; PX8's listening check below covers the same run with sound) |
-| Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the right at about 165 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | PX10 |
-| Do PX9's beauty shots pass the checklist (one focal point, the hero readable, effects carrying light, no flat or muddy ground, no tiling repetition visible)? This also answers PX3's readability question (each type recognizable at game size, the hero findable in a crowd) and PX7's night question (too dark, too blue, the shafts too geometric, the downbeat rings too strong?), whose rows it replaces. | Look over the six stills in `demo2d/evidence/px9/` with its README's table (`before/` has PX8's look at three of the same moments), and `readability.txt`; or watch: `"$APP"` (`APP` as in PX8's notes; `--start-at 160` for the climax, `--no-night`, `--no-post` or `--no-effects` to compare). Note any shot that fails a point, and why. The values are in `night-lighting.json`, `effects.json` and `forest-tiles.json`. | PX9 | PX10 |
+| Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | none: after PX10, an answer that needs a change becomes a bead |
+| Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | none: after PX10 (PX8's listening check below covers the same run with sound) |
+| Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the right at about 165 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | none: after PX10, an answer that needs a change becomes a bead |
+| Do PX9's beauty shots pass the checklist (one focal point, the hero readable, effects carrying light, no flat or muddy ground, no tiling repetition visible)? This also answers PX3's readability question (each type recognizable at game size, the hero findable in a crowd) and PX7's night question (too dark, too blue, the shafts too geometric, the downbeat rings too strong?), whose rows it replaces. | Look over the six stills in `demo2d/evidence/px9/` with its README's table (`before/` has PX8's look at three of the same moments), and `readability.txt`; or watch: `"$APP"` (`APP` as in PX8's notes; `--start-at 160` for the climax, `--no-night`, `--no-post` or `--no-effects` to compare). Note any shot that fails a point, and why. The values are in `night-lighting.json`, `effects.json` and `forest-tiles.json`. | PX9 | none: after PX10, an answer that needs a change becomes a bead |
+| Does the whole demo hold up as a watch? The bundled app, start to end, once: the arc (a handful of skeletons, waves following the song's energy with room to breathe, about 400 at the final peak with the camera eased out, the horde cleared on the ending's accents), every moment reading as a finished game's, no hitch, pop or stutter (the song check found none above 25 ms windowless), and the sound in balance with the song. | After `demo2d build` (or the README's [Running the Demo](README.md#running-the-demo) commands), from the worktree's root: `open demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app`; it plays the song once at 1920×1080 and quits. Note any second that looks wrong, stalls or sounds wrong, and why. | PX10 | none: an answer that needs a change becomes a bead |
 
 ## Task Notes
 
@@ -931,4 +931,58 @@ the bead). dotnet 38 of 38, 1 of them PX9's; `demo2d test` 95 of 95. [Evidence](
 
 ### PX10
 
-Not started.
+Done (bead ps-tfn.5.1). Commits: `53d4cf85` (the song check, the prewarm, the run commands) and
+this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../demo2d/evidence/px10/README.md).
+
+- **Run:** the README's [Running the Demo](README.md#running-the-demo) (setup, bake, build, watch).
+  The checks, from a worktree's root:
+
+  ```
+  uv run --project demo3d/tools demo2d build
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" -batchmode -force-metal --measure "$PWD/demo2d/evidence/px10/song.json"     # the song check
+  "$APP" -batchmode -force-metal --capture-stills "$PWD/demo2d/evidence/px10" --stills-at 6,30,89.35,119.7,166,176,195.928
+  open demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app                              # the operator: watch
+  ```
+
+- **The song check passes.** All 11,940 frames are drawn at 1080p and timed to a one-pixel readback.
+  Four runs of the final code: p99 8.8 to 9.0 ms (the limit is 16.7), worst frame 15 to 25 ms, always on
+  the first frame, and no second over 25 ms. The peak has 383 on screen, 104 effects, about 3,030
+  particles and 28 effect lights. The worst second after the first is 10 to 15 ms, in the final peak.
+- **What failed first: stalls, not load.** The first whole-song run failed on two frames: 45 ms on the
+  first frame and 43 ms at 176 s, in the final peak. Its p99 was already 8.9 ms. Both were first uses,
+  a pool growing or a shader drawn for the first time. `SongPlayback.Prewarm` now runs at load:
+  `EffectLayer.Prewarm` makes every kind's whole pool and shows one of each at the focus, and the
+  start frame is drawn once. Without it, the same build session's runs still failed on the first frame
+  (52 to 60 ms). The 176 s stall didn't recur in later runs, prewarmed or not; Metal keeps its compiled
+  shaders between runs, so the prewarm is what a fresh machine needs. The prewarm costs nothing per
+  frame: means of 7.0 to 7.1 ms with it and without it. The first run's lower 5.4 ms mean was the
+  machine's state.
+- **Nothing thinned.** At half the p99 limit, the spells, effect lights, level script and horde stay as
+  PX9 left them. The effect schedule's dotnet counts weren't needed, since no cap changed.
+- **One measurement path** (the Mason's M2 audit, on the bead): `--measure` gains FrameTimingManager's
+  CPU and GPU times, each second's worst frame and peak counts, every frame over 25 ms and the verdict.
+  `FrameTimingSpike`, its `--frame-timing` gate in `DemoMain.Runs` and `StillCapture`, and the test
+  card's `--spike-sprites` walkers are deleted. PX5's note about `--test-card` serving the spike is now
+  stale; the test card stays for the empty scene.
+- **The GPU times.** FrameTimingManager reports a GPU time on 373 frames in batch mode (3%, as PX1
+  found). Their p99 is about 20 ms, but that can't be one frame's GPU work: every frame waits for its
+  own readback and finishes in about 7 ms on average. They seem to span the idle time between frames
+  of a player that presents nothing. So the verdict uses the readback-timed frame, the CPU's and the
+  GPU's work back to back, which is conservative. PX1's row asking whether a windowed player reports
+  GPU time every frame is removed: it ran the deleted spike, and nothing depends on its answer now.
+  The viewing check covers the windowed app.
+- **Beauty stills:** PX9's six moments plus the last slam (195.928 s: the struck horde lit gold, the
+  boss falling), from the final build. PX10 changed nothing that draws. Against PX9's stills, the intro
+  is identical and the others differ in under 1% of their pixels.
+- **The bundle:** `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app` (IL2CPP, Metal), built by
+  `demo2d build`. Builds stay out of git.
+- **Pending:** the viewing check, a new row in [Pending on the operator](#pending-on-the-operator).
+  The rows PX10 was to consume (PX3's annotations, PX5's click, PX8's listening, PX9's beauty shots)
+  are still unanswered. They now say that an answer needing a change becomes a bead, since no task
+  follows PX10.
+- **The demo milestone's review** (PX8 and PX10) is the Warden bead ps-tfn.5.2.
+- **Self-review:** I re-read the diff against `origin/staging`. It touches only demo2d's runtime (the
+  measurement, the prewarm, the spike's removal), the evidence, the README's run section and this
+  plan. No core, data or demo3d change. New tracked files are our JSON and tagged stills. The guard
+  passes the index. Unity's ProjectSettings rewrites were discarded.
