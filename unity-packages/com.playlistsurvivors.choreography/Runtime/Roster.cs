@@ -29,6 +29,7 @@ namespace PS.Choreography
         public int Projectile = -1;   // spells that fly
         public int Clip = -1;         // hero combos
         public float AdvanceM;        // hero combos: the least the hero moves over the clip (its root motion when larger)
+        public float WindupS;         // hero combos: the clip's start to its impact, overriding the hero's windupS (0: the hero's)
         public int Effect = -1, Sound = -1;
     }
 
@@ -45,6 +46,19 @@ namespace PS.Choreography
     public sealed class Roster
     {
         public float HeroRadius, HeroStrideM, HeroReachM, HeroSenseM;
+        /// <summary>
+        /// The hero's step (its <c>stepS</c>): a stride covers its ground in this long from the beat, then
+        /// the hero stands until the next, as the native game's hero steps. 0, the default, glides the
+        /// stride over the whole beat.
+        /// </summary>
+        public float HeroStepS;
+        /// <summary>
+        /// The hero's windup (its <c>windupS</c>): each combo's clip starts this long before its impact and
+        /// plays at the speed that lands its impact frame there, as the native game's sword swings do, and
+        /// the next combo's windup may cut into its follow-through. 0, the default, fits clips within
+        /// <see cref="ClipLibrary.MinSpeed"/> and <see cref="ClipLibrary.MaxSpeed"/> and plays them out.
+        /// </summary>
+        public float HeroWindupS;
         public int HeroWalkClip;
         public MonsterType[] Monsters;
         public ProjectileType[] Projectiles;
@@ -63,6 +77,9 @@ namespace PS.Choreography
         }
 
         public Move Combo(string name) => FindMove(Combos, name);
+
+        /// <summary>A combo's windup: its own, else the hero's (0: fitted by the clip library's speed limits).</summary>
+        public float WindupOf(Move combo) => combo.WindupS > 0 ? combo.WindupS : HeroWindupS;
         public Move Spell(string name) => FindMove(Spells, name);
 
         static Move FindMove(Move[] moves, string name)
@@ -91,6 +108,8 @@ namespace PS.Choreography
                 HeroStrideM = hero["strideM"].AsFloat(0.9f),
                 HeroReachM = hero["reachM"].AsFloat(2.4f),
                 HeroSenseM = hero["senseM"].AsFloat(8f),
+                HeroStepS = hero["stepS"].AsFloat(0f),
+                HeroWindupS = hero["windupS"].AsFloat(0f),
                 HeroWalkClip = clips.Find("hero walk"),
             };
             JsonValue mons = root["monsters"];
@@ -152,6 +171,7 @@ namespace PS.Choreography
                     RangeM = m["rangeM"].AsFloat(10f),
                     Bars = m["bars"].AsFloat(1f),
                     AdvanceM = m["advanceM"].AsFloat(0f),
+                    WindupS = m["windupS"].AsFloat(0f),
                     Effect = Catalog.Effect(m["effect"].AsString()),
                     Sound = Catalog.Sound(m["sound"].AsString()),
                 };

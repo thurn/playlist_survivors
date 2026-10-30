@@ -69,7 +69,8 @@ namespace Demo2D.Choreography.Tests
         [Test]
         public void EveryAttackCarriesItsFittedClipTiming()
         {
-            Pass(TimelineChecks.AttacksCarryTheirFit(Song, Fixtures.Data.Clips, out int n));
+            // The hero's combos land their impact frames after its 190 ms windup: the slashes at about 2.5x.
+            Pass(TimelineChecks.AttacksCarryTheirFit(Song, Fixtures.Data.Clips, out int n, heroMaxSpeed: 4f));
             Assert.That(n, Is.GreaterThan(100));
         }
 

@@ -169,6 +169,18 @@ namespace PS.Choreography
         /// every monster's type at random.
         /// </summary>
         public int ClumpSize;
+        /// <summary>
+        /// Opt-in (demo2d): a monster left off screen and unreleased this long (its <c>strandedS</c>) leaves
+        /// the song, so the horde a travelling hero leaves behind (beyond demo2d's stream, which it crosses
+        /// only by its bridges) stops filling the reserve that refills on the hero's side would. 0, the
+        /// default, keeps it until it is past the far despawn.
+        /// </summary>
+        public float StrandedS;
+        /// <summary>
+        /// Opt-in (demo2d, its <c>bossFallsLast</c>): a clearing section's blows spare the boss until its last,
+        /// however near, so the boss falls to the song's final blow. False, the default, kills nearest first.
+        /// </summary>
+        public bool BossFallsLast;
         public LevelSection[] Sections;
 
         public LevelSection For(string sectionLabel)
@@ -207,6 +219,8 @@ namespace PS.Choreography
                 ViewPitchDeg = root["viewPitchDeg"].AsDouble(ViewGeometry.PitchDeg),
                 ClearRadiusM = root["clearRadiusM"].AsFloat(0f),
                 ClumpSize = Math.Max(0, root["clumpSize"].AsInt(0)),
+                StrandedS = Math.Max(0f, root["strandedS"].AsFloat(0f)),
+                BossFallsLast = root["bossFallsLast"].AsBool(false),
             };
             JsonValue secs = root["sections"];
             ls.Sections = new LevelSection[secs.Count];

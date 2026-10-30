@@ -88,5 +88,18 @@ namespace PS.Choreography
             end = start + clip.End / s;
             return true;
         }
+
+        /// <summary>
+        /// Fixed-windup retiming (the hero's <c>windupS</c>): start = impact time − windup, speed =
+        /// annotated impact / windup (at least 1, so a clip that strikes at once isn't slowed), so the
+        /// impact frame lands on the impact time. False if the entity isn't free by the start.
+        /// </summary>
+        public static bool FitWindup(ClipAnnotation clip, double availableFrom, double impactTime, float windup, out double start, out double end, out float speed)
+        {
+            speed = (float)Math.Max(1.0, clip.Impact / windup);
+            start = impactTime - clip.Impact / speed;
+            end = start + clip.End / speed;
+            return start >= availableFrom - 1e-9;
+        }
     }
 }

@@ -1,14 +1,14 @@
 {
-  "note": "demo2d's catalog (PX4): the hero's moves, the 13 roster types, their projectiles and the spells, in the core's roster format. One tile (32 grid pixels) is one metre. Radii are the sim's footprints in metres; gait steps are per beat; reach is beyond contact (casters stand off at theirs and fire a projectile that lands on an eighth note); hit points are before the kill-rate feedback. 'pack' and 'clipPrefix' name each type's Pixel Cattle Games pack in ~/unity_assets/Assets and its frame names, and 'gameHeightPx' its height on the 960x540 grid (grunts about 56 px, elites about 1.6x, the boss about 3x), for PX3's baker, which may revise them from its lineup still. The sim ignores those three fields. A combo's advanceM (PX6) is the least the hero moves toward an unreached goal over its clip: knight_male's slashes and bash swing in place (PX3 measured no root motion), so without it a hero in reach of the horde never travels; PX6 chose them a little above PX4's placeholder root motions (0.2, 0.2, 0.5), so the hero reaches the great clearing for the climax.",
+  "note": "demo2d's catalog (PX4): the hero's moves, the 13 roster types, their projectiles and the spells, in the core's roster format. One tile (32 grid pixels) is one metre. Radii are the sim's footprints in metres; gait steps are per beat; reach is beyond contact (casters stand off at theirs and fire a projectile that lands on an eighth note); hit points are before the kill-rate feedback. 'pack' and 'clipPrefix' name each type's Pixel Cattle Games pack in ~/unity_assets/Assets and its frame names, and 'gameHeightPx' its height on the 960x540 grid (grunts about 56 px, elites about 1.6x, the boss about 3x), for PX3's baker, which may revise them from its lineup still. The sim ignores those three fields. A combo's advanceM (PX6) is the least the hero moves toward an unreached goal over its clip: knight_male's slashes and bash swing in place (PX3 measured no root motion), so without it a hero in reach of the horde never travels; PX6 chose them a little above PX4's placeholder root motions (0.2, 0.2, 0.5), so the hero reaches the great clearing for the climax. The hero moves and swings as the native game's does: stepS, its 110 ms step from each beat (then it stands until the next), and windupS, its sword swings' 190 ms from clip start to impact (the slam's jump takes 0.3 s), each clip played at the speed that lands its impact frame on the beat, the next windup cutting into the last follow-through. The boss's reach is 10 m so it casts its hellfire from behind the climax's crowd, which the clear ring holds out.",
   "hero": {
     "pack": "knight_male", "clipPrefix": "knight_male", "gameHeightPx": 66,
-    "radius": 0.5, "strideM": 0.9, "reachM": 2.4, "senseM": 8.0,
+    "radius": 0.5, "strideM": 0.9, "reachM": 2.4, "senseM": 8.0, "stepS": 0.11, "windupS": 0.19,
     "combos": {
-      "slashL": { "advanceM": 0.5, "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
-      "slashR": { "advanceM": 0.5, "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
-      "bash": { "advanceM": 0.8, "shape": "line", "length": 2.6, "width": 1.6, "strength": 0.6, "effect": "thrust-trail", "sound": "swing" },
+      "slashL": { "advanceM": 0.25, "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "slashR": { "advanceM": 0.25, "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
+      "bash": { "advanceM": 0.4, "shape": "line", "length": 2.6, "width": 1.6, "strength": 0.6, "effect": "thrust-trail", "sound": "swing" },
       "spin": { "shape": "ring", "radius": 2.8, "strength": 0.8, "effect": "spin-trail", "sound": "swing" },
-      "slam": { "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" }
+      "slam": { "windupS": 0.3, "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" }
     }
   },
   "monsters": [
@@ -37,7 +37,7 @@
     { "name": "lava-beast", "pack": "Lava Beast", "clipPrefix": "lava_beast", "gameHeightPx": 90,
       "rank": "elite", "radius": 0.8, "stepM": 0.6, "reachM": 0.9, "hitPoints": 8 },
     { "name": "boss-devil", "pack": "Boss Devil Man", "clipPrefix": "boss_devil_man", "gameHeightPx": 168,
-      "rank": "boss", "radius": 1.4, "stepM": 0.6, "reachM": 7.5, "hitPoints": 60, "projectile": "hellfire" }
+      "rank": "boss", "radius": 1.4, "stepM": 0.6, "reachM": 10, "hitPoints": 60, "projectile": "hellfire" }
   ],
   "projectiles": [
     { "name": "bolt", "speedMps": 30 },

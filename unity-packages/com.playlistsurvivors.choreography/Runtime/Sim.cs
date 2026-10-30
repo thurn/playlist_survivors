@@ -73,6 +73,8 @@ namespace PS.Choreography
         // Clumps (the level script's): each type refills from its own arcs of the view's edge, so it arrives as a mass.
         // Types are dealt in the mix's proportions rather than drawn, and a refill that finds no room in its type's
         // arcs is retried as that type, so crowded arcs do not thin their type out of the section's count.
+        readonly float strandedS;
+        readonly bool bossFallsLast;     // a clearing section's blows spare the boss until its last        // a monster off screen and unreleased this long leaves the song (0: never)
         readonly int clumpSize;          // the heaviest type's clump; 0: every type anywhere on the edge, drawn at random
         readonly float[] clumpArc, clumpStart;   // per roster type, its arc's length and start in the current section's pattern, in m
         readonly double[] clumpOwed;     // per roster type, the share of refills dealt to it so far minus those it got
@@ -92,7 +94,7 @@ namespace PS.Choreography
         int[] hp = new int[0], planSerial = new int[0];
         float[] facing = new float[0], radius = new float[0];
         byte[] state = new byte[0];   // 0 none, 1 alive, 2 dying, 3 gone
-        double[] busyUntil = new double[0], lastActionEnd = new double[0], bossDeathAfter = new double[0];
+        double[] busyUntil = new double[0], lastActionEnd = new double[0], bossDeathAfter = new double[0], lastWanted = new double[0];
         bool bossWalksIn;   // the boss entered from a level script's bossFrom side
         bool[] onScreen = new bool[0], released = new bool[0];
         sbyte[] sideMem = new sbyte[0];   // with walls: the side of each monster's last sidestep (0 none yet)
@@ -165,8 +167,10 @@ namespace PS.Choreography
         int flowRebuilds, flowSlices, sliceBudget;
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
-            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0)
+            Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false)
         {
+            this.strandedS = strandedS;
+            this.bossFallsLast = bossFallsLast;
             this.viewPitchDeg = viewPitchDeg;
             this.clearRadius = clearRadius;
             this.map = map;
@@ -301,7 +305,7 @@ namespace PS.Choreography
             Array.Resize(ref eseed, n); Array.Resize(ref pos, n); Array.Resize(ref rest, n); Array.Resize(ref planFrom, n);
             Array.Resize(ref cur, n); Array.Resize(ref hp, n); Array.Resize(ref planSerial, n); Array.Resize(ref facing, n);
             Array.Resize(ref radius, n); Array.Resize(ref state, n); Array.Resize(ref busyUntil, n); Array.Resize(ref lastActionEnd, n);
-            Array.Resize(ref bossDeathAfter, n); Array.Resize(ref onScreen, n); Array.Resize(ref released, n);
+            Array.Resize(ref bossDeathAfter, n); Array.Resize(ref onScreen, n); Array.Resize(ref released, n); Array.Resize(ref lastWanted, n);
             Array.Resize(ref sideMem, n);
         }
 
@@ -367,6 +371,7 @@ namespace PS.Choreography
             busyUntil[m] = 0;
             lastActionEnd[m] = 0;
             bossDeathAfter[m] = double.PositiveInfinity;
+            lastWanted[m] = t;
             planSerial[m] = -1;
             float yaw = Easing.Yaw(HeroRest - p);
             SetMonsterSeg(m, new MotionSegment(m, t, t, p, p, yaw, yaw, Ease.Linear));
@@ -644,11 +649,12 @@ namespace PS.Choreography
                 released[m] = false;
                 bool on = view.Contains(focus, pos[m]);
                 onScreen[m] = on;
-                if (on) { onScreenCount++; continue; }
+                if (on) { onScreenCount++; lastWanted[m] = tb; continue; }
                 if (state[m] != Alive) continue;
                 float d = Vector2.Distance(pos[m], focus);
                 float outside = view.OutsideDistance(focus, pos[m]);
-                if (d > far && busyUntil[m] <= tb)
+                bool stranded = strandedS > 0 && tb - lastWanted[m] > strandedS && roster.Monsters[etype[m]].Rank != MonsterRank.Boss;
+                if ((d > far || stranded) && busyUntil[m] <= tb)
                 {
                     state[m] = Gone;
                     despawnT[m] = tb;
@@ -665,7 +671,7 @@ namespace PS.Choreography
             int deficit = TargetAhead(tb, out _) - onScreenCount + (int)Math.Round(deathRate * ReleaseLeadSeconds);
             if (deficit <= 0 || offN == 0 || plan.Clear) return;   // a clearing section lets no more in
             Array.Sort(offKeys, offIds, 0, offN);
-            for (int i = 0; i < offN && i < deficit; i++) released[offIds[i]] = true;
+            for (int i = 0; i < offN && i < deficit; i++) { released[offIds[i]] = true; lastWanted[offIds[i]] = tb; }
         }
 
         /// <summary>
@@ -707,7 +713,8 @@ namespace PS.Choreography
             float reach = goalReached && nav != null ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
             if (canAct && (plan.Clear || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
             {
-                ScheduleHeroAction(tb, Math.Max(tb, heroLastEnd));
+                // With a fixed windup the next combo's windup cuts into the last one's follow-through.
+                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd));
                 return;
             }
             if (heroLastEnd > tb + 1e-9) return;
@@ -739,13 +746,15 @@ namespace PS.Choreography
                 if (e == null) continue;
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
-                if (!ClipLibrary.Fit(clip, availFrom, p.Time, out double start, out double end, out float speed)) continue;
+                float windup = roster.WindupOf(mv);
+                if (windup > 0 ? !ClipLibrary.FitWindup(clip, availFrom, p.Time, windup, out double start, out double end, out float speed)
+                    : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed)) continue;
                 if (start < tb - 1e-9) continue;
                 // Across a section change a positioned combo owns its slot: skip a plain one whose
                 // recovery would leave no room for the windup of the next section's positioned one
                 // (the ending's accent slams after the outro, TD10). Within a section a positioned
                 // combo that can't fit moves later, as before.
-                if (plain && BlocksPositioned(gi, end)) continue;
+                if (plain && BlocksPositioned(gi, windup > 0 ? p.Time : end)) continue;
 
                 Vector2 from = HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
@@ -756,7 +765,14 @@ namespace PS.Choreography
                 if (nav != null) to = WallStep(from, to, roster.HeroRadius);
                 to = HeroPath(from, to);
                 if (goalReached) to = ClampToGoal(to);
-                AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(dir)), Ease.Linear));
+                float fTo = Easing.Unwrap(fFrom, Easing.Yaw(dir));
+                // A stepping hero without root motion steps with the blow, on its beat; otherwise it moves over the clip.
+                if (roster.HeroStepS > 0 && clip.RootMotionM <= 0)
+                {
+                    AddHeroSeg(new MotionSegment(0, start, p.Time, from, from, fFrom, fTo, Ease.Linear));
+                    AddHeroSeg(new MotionSegment(0, p.Time, p.Time + roster.HeroStepS, from, to, fTo, fTo, Ease.Pulse));
+                }
+                else AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, fTo, Ease.Linear));
                 Push(new Impact
                 {
                     Time = p.Time, Kind = ImpactKind.HeroCombo, Entity = 0, Target = -1, Clip = mv.Clip, Move = mv,
@@ -773,7 +789,8 @@ namespace PS.Choreography
         /// <summary>
         /// Whether an action ending at <paramref name="end"/> would make the next positioned combo
         /// after grid point <paramref name="gi"/> (within 4 s), if it lies in a later section whose
-        /// combos are all positioned (its only actions), unable to fit at full speed.
+        /// combos are all positioned (its only actions), unable to fit at full speed (or, with a
+        /// windup, an action whose impact is <paramref name="end"/> leaving no room for its windup).
         /// </summary>
         bool BlocksPositioned(int gi, double end)
         {
@@ -783,8 +800,10 @@ namespace PS.Choreography
                 GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out bool plainNext);
                 if (e == null || plainNext) continue;
                 if (q.Section == grid.Points[gi].Section || !AllPositioned(plans[q.Section].Combo)) return false;
-                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
-                return end > q.Time - c.Impact / ClipLibrary.MaxSpeed;
+                Move next = roster.Combo(e.Name);
+                ClipAnnotation c = clips[next.Clip];
+                float windup = roster.WindupOf(next);
+                return end > q.Time - (windup > 0 ? Math.Min(windup, c.Impact) : c.Impact / ClipLibrary.MaxSpeed);
             }
             return false;
         }
@@ -842,7 +861,8 @@ namespace PS.Choreography
             to = HeroPath(h, to);
             if (Vector2.Distance(h, to) < 0.05f) return;
             float fFrom = Easing.Wrap(HeroFacing);
-            AddHeroSeg(new MotionSegment(0, tb, tnext, h, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(to - h)), Ease.Pulse));
+            double t1 = roster.HeroStepS > 0 ? Math.Min(tnext, tb + roster.HeroStepS) : tnext;
+            AddHeroSeg(new MotionSegment(0, tb, t1, h, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(to - h)), Ease.Pulse));
             stats[curSection].HeroStrides++;
         }
 
@@ -975,7 +995,8 @@ namespace PS.Choreography
                     BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease);
                     continue;
                 }
-                if (plan.MonsterAttacks && clearRadius <= 0 && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
+                // Casters still fire from their reach, which lies beyond the ring: their bolts never crowd the hero.
+                if (plan.MonsterAttacks && (clearRadius <= 0 || mt.Projectile >= 0) && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
                 {
                     TryScheduleAttack(m, mt, tb, toHero);
                     continue;
@@ -1707,8 +1728,15 @@ namespace PS.Choreography
             }
             Array.Sort(keys, order, 0, c);
             int kills = (c + left) / (left + 1);
-            for (int i = 0; i < kills; i++) Kill(order[i], t, strength);
-            barStruck += kills;
+            // With bossFallsLast the boss falls to the last blow, however near: an earlier one takes the next nearest.
+            int killed = 0;
+            for (int i = 0; i < c && killed < kills; i++)
+            {
+                if (bossFallsLast && left > 0 && roster.Monsters[etype[order[i]]].Rank == MonsterRank.Boss) continue;
+                Kill(order[i], t, strength);
+                killed++;
+            }
+            barStruck += killed;
             effects.Add(new EffectEvent(Catalog.Effect("ring"), -1, Rng.Hash(seed, (uint)effects.Count, 0xC1EA), t, new Vector3(o.X, 0.1f, o.Y), 0, viewWidth / 2));
         }
 

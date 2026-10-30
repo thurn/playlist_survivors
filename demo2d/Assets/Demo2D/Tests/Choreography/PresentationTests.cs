@@ -128,16 +128,18 @@ namespace Demo2D.Choreography.Tests
                 if (a.Entity != 0 || a.Kind != ActionKind.Attack || eval.Schedule.Interrupted(i)) continue;
                 int impactFrame = (int)Math.Round(Clips[a.Clip].Impact * rate);
                 if ((Clips[a.Clip].End - Clips[a.Clip].Impact) * rate < 2) continue;
-                SpriteEvaluator.State st = eval.Evaluate(0, a.Impact + 0.09);
+                // Inside the hit-stop for a big blow; a slash at the windup's speed has moved on by 90 ms.
+                bool big = a.Strength >= ClipSchedule.HeavyStrength;
+                SpriteEvaluator.State st = eval.Evaluate(0, a.Impact + (big ? ClipSchedule.HitStop * 0.9 : 0.09));
                 if (st.Clip != a.Clip) continue;
-                if (a.Strength >= ClipSchedule.HeavyStrength)
+                if (big)
                 {
                     Assert.That(st.Frame, Is.EqualTo(impactFrame), $"{Song.ClipNames[a.Clip]} at {a.Impact:F3} holds");
                     heavy++;
                 }
                 else if (Math.Abs(eval.Schedule.LocalTime(i, a.Impact) - Clips[a.Clip].Impact) < 1e-3)
                 {
-                    Assert.That(st.Frame, Is.EqualTo(impactFrame + 1), $"{Song.ClipNames[a.Clip]} at {a.Impact:F3} moves on");
+                    Assert.That(st.Frame, Is.GreaterThan(impactFrame), $"{Song.ClipNames[a.Clip]} at {a.Impact:F3} moves on");
                     light++;
                 }
             }

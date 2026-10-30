@@ -17,9 +17,12 @@ namespace Demo2D.Choreography
     ///   <see cref="ClipSchedule.HeavyStrength"/>) holds its impact frame for the schedule's 50 ms
     ///   hit-stop, then catches up, as a struck monster does. A flipbook can't show demo3d's 0.6×
     ///   slowdown (15 fps frames), so it holds.
-    /// - Between actions the entity walks, the walk's frame following the distance travelled (a
-    ///   cycle per stride), so feet don't slide; standing still freezes it. The hero idles once
-    ///   it hasn't moved for a beat.
+    /// - Between actions a monster walks, the walk's frame following the distance travelled (a
+    ///   cycle per stride), so feet don't slide; standing still freezes it.
+    /// - The hero steps as the native game's does: each step (a Pulse segment, the roster's 110 ms
+    ///   from the beat) flicks through half its walk cycle, the halves alternating step by step,
+    ///   and lifts it over its shadow in an arc <see cref="HeroHopM"/> high; between steps and
+    ///   swings it idles.
     /// - A hit's knockback hops (PX8): while the sim slides a struck monster back, its sprite lifts
     ///   over its shadow in an arc of <see cref="HopSeconds"/>, <see cref="HopM"/> high for grunts
     ///   and a third of that for elites and the boss. Ticks (the beam's) knock nothing back and
@@ -34,6 +37,8 @@ namespace Demo2D.Choreography
         public const float FlipHysteresis = 0.25f;
         /// <summary>A knockback's hop: how long, and how high for a grunt (metres; elites a third).</summary>
         public const float HopSeconds = 0.16f, HopM = 0.16f;
+        /// <summary>The hero's hop on each step (metres): the native game's 5 px on its 48 px hero, scaled to the knight.</summary>
+        public const float HeroHopM = 0.18f;
         /// <summary>Types wider than this hop a third as high: elites and the boss.</summary>
         const float GruntRadius = 0.5f;
         /// <summary>Snaps a clip time onto its frame: annotation times are rounded to the ms.</summary>
@@ -145,6 +150,15 @@ namespace Demo2D.Choreography
             int seg = SegmentAt(e, t);
             st.FlipX = seg >= 0 && _left[seg];
 
+            // The hero's step: its progress through a Pulse segment, or -1 standing.
+            float step = -1f;
+            if (hero && seg >= 0)
+            {
+                var sg = _tl.Segments[seg];
+                if (sg.Ease == Ease.Pulse && t >= sg.T0 && t < sg.T1 && sg.To != sg.From) step = (float)((t - sg.T0) / (sg.T1 - sg.T0));
+                if (step >= 0) st.Lift = HeroHopM * (float)Math.Sin(Math.PI * step);
+            }
+
             int act = _schedule.ActiveAction(e, t, out _);
             if (act >= 0)
             {
@@ -157,7 +171,12 @@ namespace Demo2D.Choreography
                 if (hero && a.Kind == ActionKind.Attack && _clips[a.Clip].RootMotionM > 0)
                     p = _tl.PositionAt(e, _schedule.Start(act));
             }
-            else if (hero && _heroIdle >= 0 && _schedule.DistanceAt(e, t) - _schedule.DistanceAt(e, t - _schedule.BeatLength(t)) < 0.05f)
+            else if (hero && step >= 0)
+            {
+                st.Clip = _heroWalk;
+                st.Frame = CycleFrame(_heroWalk, ((seg - _tl.SegmentStart[e]) & 1) * 0.5 + step * 0.5);
+            }
+            else if (hero && _heroIdle >= 0)
             {
                 st.Clip = _heroIdle;
                 st.Frame = CycleFrame(_heroIdle, t * _rate / Math.Max(1, _frames[_heroIdle] - 1));

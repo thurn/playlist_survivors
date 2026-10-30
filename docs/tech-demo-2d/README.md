@@ -160,8 +160,12 @@ should feel like watching an expert play a finished pixel-art game.
   through dense woods, a cliff ledge, a stream with a stone bridge, old
   stumps and fallen logs. Trees sway. Fireflies and shafts of moonlight
   glow; effect light carries the fight.
-- **The hero.** The knight strides on beats from clearing to clearing and
-  carves through the horde with sword combos whose blows land on beats.
+- **The hero.** The knight moves as the native game's hero does: a quick
+  110 ms step with a small hop on each beat, from clearing to clearing, then
+  a stand until the next. Sword combos wind up in 190 ms and land their blows
+  on beats, a swing on every beat while the horde is in reach. The horde
+  holds off a 2 m clear ring round the knight, as in a horde survivor game,
+  so it is never buried in melee; casters still fire from beyond it.
   Spells fire on the musical grid: rings on downbeats, bolts on eighth notes,
   lightning on accents, and a beam sweep in the climax.
 - **The horde.** Skeletons and ghouls first, then imps, ice skulls, masks and
@@ -241,7 +245,11 @@ Character frames are baked, not imported as is:
   light).
 - **Retiming.** As in demo3d: the client starts each attack clip so its
   impact frame lands on the timeline's impact time, and scales walk cycles to
-  match the beat-step gait.
+  match the beat-step gait. The hero's combos play from 190 ms before their
+  impact (the roster's `windupS`; the slam's jump 0.3 s), the slashes at about
+  2.5× their art's rate, as the native game times its sword. Each hero step
+  flicks through half the walk cycle, the halves alternating, with a 0.18 m
+  hop; between steps and swings the hero idles.
 
 ### The pixel pipeline
 

@@ -233,9 +233,10 @@ that consumes the result removes the row.
 |---|---|---|---|
 | Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | none: after PX10, an answer that needs a change becomes a bead |
 | Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | none: after PX10 (PX8's listening check below covers the same run with sound) |
-| Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the right at about 165 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | none: after PX10, an answer that needs a change becomes a bead |
+| Does the fight sound right, and does every blow land on its click? In the first minute (0 to 60 s) and the climax (160 to 199 s): swings, hits, deaths, parries and spells on the beat and not too loud against the song; the spins' and slams' hit-stop and the knockback hops reading as weight; the struck crowd's warm flash (PX7's white flash is gone) and the hero's cool parry gleam; the boss entering from the great clearing's west side at about 164 s, its hellfire parried, and its fall on the last slam. | After `demo2d build`, from the worktree's root: `"$APP" --click` and `"$APP" --click --start-at 160` (`APP` as in PX8's notes), then once without `--click` for the mix. `--no-sound` drops the effect sounds; `--no-feel` the punch and shake. Note any second that drifts or a sound that is wrong. | PX8 | none: after PX10, an answer that needs a change becomes a bead |
 | Do PX9's beauty shots pass the checklist (one focal point, the hero readable, effects carrying light, no flat or muddy ground, no tiling repetition visible)? This also answers PX3's readability question (each type recognizable at game size, the hero findable in a crowd) and PX7's night question (too dark, too blue, the shafts too geometric, the downbeat rings too strong?), whose rows it replaces. | Look over the six stills in `demo2d/evidence/px9/` with its README's table (`before/` has PX8's look at three of the same moments), and `readability.txt`; or watch: `"$APP"` (`APP` as in PX8's notes; `--start-at 160` for the climax, `--no-night`, `--no-post` or `--no-effects` to compare). Note any shot that fails a point, and why. The values are in `night-lighting.json`, `effects.json` and `forest-tiles.json`. | PX9 | none: after PX10, an answer that needs a change becomes a bead |
 | Does the whole demo hold up as a watch? The bundled app, start to end, once: the arc (a handful of skeletons, waves following the song's energy with room to breathe, about 400 at the final peak with the camera eased out, the horde cleared on the ending's accents), every moment reading as a finished game's, no hitch, pop or stutter (the song check found none above 25 ms windowless), and the sound in balance with the song. | After `demo2d build` (or the README's [Running the Demo](README.md#running-the-demo) commands), from the worktree's root: `open demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app`; it plays the song once at 1920×1080 and quits. Note any second that looks wrong, stalls or sounds wrong, and why. | PX10 | none: an answer that needs a change becomes a bead |
+| Does the rework read as the native game? The knight in a cleared ring rather than surrounded; a quick step and hop on each beat, then a stand (no floating); swings snapping to the beat, one per beat in a fight. | `"$APP"` and `"$APP" --click --start-at 100` (`APP` as in PX8's notes), side by side with the native game if useful. Note any second where the knight floats, swings late, or is buried. | Rework | none: an answer that needs a change becomes a bead |
 
 ## Task Notes
 
@@ -1007,3 +1008,34 @@ this notes commit. dotnet 40 of 40; `demo2d test` 97 of 97. [Evidence](../../dem
   measurement, the prewarm, the spike's removal), the evidence, the README's run section and this
   plan. No core, data or demo3d change. New tracked files are our JSON and tagged stills. The guard
   passes the index. Unity's ProjectSettings rewrites were discarded.
+
+### Rework: the native game's feel
+
+- **Status:** done 2026-10-29, after the operator's review of PX10: the hero was buried in the horde,
+  swung slowly and off the music, and floated. The fix copies the native (Rust) game.
+- **The clear ring:** `clearRadiusM` 2 m in the level script, demo3d's ring. Casters still fire from
+  beyond it (a core change: the ring had stopped every monster attack, so no bolt or hellfire flew).
+- **Swings** (`windupS` 0.19 in the roster, the native `swings.windupMs`): each combo's clip starts
+  190 ms before its impact at `max(1, impact / windup)` speed, the native sword's
+  `fps = impactFrame / windup`. The slashes, which took 0.47 s to their blow at the art's 15 fps, now
+  play at about 2.5×; the slam's jump takes 0.3 s (its own `windupS`). The next windup cuts into the
+  last follow-through, so the knight swings on every beat in a fight instead of every other.
+- **Steps** (`stepS` 0.11, the native `stride.durationMs`): a stride covers its 0.9 m in 110 ms from
+  the beat with the native cubic ease-out, then the knight stands; a combo holds through its windup
+  and steps its advance from the impact. The client flicks half the walk cycle per step (the halves
+  alternating), hops 0.18 m (the native 5 px on its 48 px hero, scaled), and idles otherwise.
+  `advanceM` is halved (slashes 0.25, bash 0.4), since combos now come twice as often.
+- **What the faster hero exposed:** reaching the stone bridge sooner, the knight left about 350
+  monsters south of the stream, unreleased and standing for up to 100 s while they held the reserve,
+  so the build section fell to 101 on screen against 200. `strandedS` 16 (a new opt-in level-script
+  knob) drops a monster left off screen and unreleased that long; build now holds 181. Releasing by
+  path distance and adding two bridges were tried first and barely helped (122 to 129).
+- **The boss:** entering toward the cliff ledge it stalled at the stream's east end, and toward the
+  great tree in the forest's trunks (1.4 m radius); `bossFrom` is now the great clearing (in view at
+  163.9 s), its reach 10 m so it casts from behind the climax's crowd, and `bossFallsLast` (opt-in)
+  spares it from the ending's earlier clearing slams so it still falls to the last.
+- **demo3d is unchanged:** every core change is opt-in or touches only casters under a ring (demo3d
+  has none); its song dump hash is the same before and after (FNV-1a `8b9387cc84d560ef`).
+- **Checks:** demo2d's 40 and demo3d's 132 choreography tests pass. `AttacksCarryTheirFit` takes a
+  hero speed bound (4× for demo2d), and the big-blow test samples the hit-stop at 45 ms.
+- **Pending:** the watch, a row in [Pending on the operator](#pending-on-the-operator).

@@ -89,7 +89,7 @@ namespace PS.Choreography
                 if (ls.BossFrom != null && plans[i].BossFrom == null) throw new FormatException("level script: section '" + sec.Label + "' names unknown bossFrom goal '" + ls.BossFrom + "'");
             }
             var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, viewPitchDeg: script.ViewPitchDeg,
-                clearRadius: script.ClearRadiusM, clumpSize: script.ClumpSize);
+                clearRadius: script.ClearRadiusM, clumpSize: script.ClumpSize, strandedS: script.StrandedS, bossFallsLast: script.BossFallsLast);
             Timeline tl = sim.Run("song:" + map.Song);
             tl.BuildSeconds = (Stopwatch.GetTimestamp() - t0) / (double)Stopwatch.Frequency;
             return tl;

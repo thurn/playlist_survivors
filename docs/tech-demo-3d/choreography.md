@@ -178,6 +178,11 @@ What the simulation does on each grid step:
   monsters are within reach, and otherwise stride. During an attack the
   hero's motion follows the combo clip's own root motion instead. Walls push
   the hero out like any monster.
+  - **A stepping hero** (the roster hero's `stepS`, demo2d's 110 ms, as the
+    native game's hero steps) covers each stride in that long from the beat,
+    eased out, then stands until the next beat, instead of gliding over the
+    whole beat. A combo without root motion holds the hero through its windup
+    and steps its advance from the impact, so the hero steps with the blow.
 - **The hero heads for the section's goal.** Each section names a goal area
   from the layout parameters. Until the hero reaches it, each stride is one
   gait step along a flow field toward the goal, built once per section at
@@ -210,7 +215,8 @@ What the simulation does on each grid step:
   attacks, parries or attack dust puffs crowd the hero, who stays in plain
   sight. The hero stops short of the edge (by 0.75 of the ring holding
   ground, 0.25 cutting a way toward a goal), hero-centred hit shapes never
-  shrink below the edge, and monsters inside the ring die first. Without it
+  shrink below the edge, and monsters inside the ring die first. Casters
+  still fire from their reach beyond the ring. Without it
   (0, the default, as in the stress scripts) monsters close to contact:
 - **A monster within reach attacks.** It schedules an impact on the next beat
   its windup fits. The hero parries any blow that would land, with a parry
@@ -332,7 +338,10 @@ A stress script fixes:
   [Performance Budget](performance.md#performance-budget)).
 - an **off-screen reserve** of 0.5 × N more monsters, walking in from beyond
   the view, as a real game keeps. The client culls them, so they cost almost
-  nothing to draw, but the sim moves them every tick;
+  nothing to draw, but the sim moves them every tick. A level script's
+  `strandedS` (demo2d's 16 s) drops a monster left off screen and unreleased
+  that long, so a horde the hero walked away from (in demo2d, beyond the
+  stream it crosses only by its bridge) stops holding the reserve;
 - the **view width**, held fixed;
 - the **hero's ground,** with no goal: the hero holds the bench scene's
   centre (in S6, the courtyard) and fights in place;
@@ -385,6 +394,12 @@ start = impact - annotatedImpact / speed
 
 - **`timeAvailable`** runs from when the entity's previous action reaches its
   annotated `end` (at its own speed) to the new impact.
+- **A hero with a windup** (the roster hero's `windupS`, demo2d's 190 ms, the
+  native game's sword swing; a combo's own `windupS` overrides it) plays each
+  combo from that long before its impact instead:
+  `speed = max(1, annotatedImpact / windup)`, so the swing is quick and its
+  blow lands on the beat. The next combo's windup may cut into the last one's
+  follow-through, so the hero can swing on every beat.
 - **The choreographer only schedules impacts that fit** within the speed
   limits, because it knows every clip's annotation.
 - **Two animation slots** play per monster: the current clip and the one it

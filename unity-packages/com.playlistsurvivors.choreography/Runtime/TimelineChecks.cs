@@ -298,9 +298,10 @@ namespace PS.Choreography
 
         /// <summary>
         /// Every attack carries the clip start and speed the sim fitted, within the speed limits, and
-        /// its blow lands on its impact: start + annotated impact / speed = impact.
+        /// its blow lands on its impact: start + annotated impact / speed = impact. A hero with a
+        /// windup (its roster's <c>windupS</c>) plays its combos faster, up to <paramref name="heroMaxSpeed"/>.
         /// </summary>
-        public static List<string> AttacksCarryTheirFit(Timeline tl, ClipLibrary clips, out int attacks)
+        public static List<string> AttacksCarryTheirFit(Timeline tl, ClipLibrary clips, out int attacks, float heroMaxSpeed = ClipLibrary.MaxSpeed)
         {
             var problems = new List<string>();
             attacks = 0;
@@ -309,7 +310,8 @@ namespace PS.Choreography
                 if (a.Kind != ActionKind.Attack) continue;
                 attacks++;
                 if (!a.HasClipTiming) { problems.Add("attack at " + a.Impact + " has no clip timing"); continue; }
-                if (a.ClipSpeed < ClipLibrary.MinSpeed - 1e-6f || a.ClipSpeed > ClipLibrary.MaxSpeed + 1e-6f)
+                float max = a.Entity == 0 ? heroMaxSpeed : ClipLibrary.MaxSpeed;
+                if (a.ClipSpeed < ClipLibrary.MinSpeed - 1e-6f || a.ClipSpeed > max + 1e-6f)
                     problems.Add("attack at " + a.Impact + " plays at " + a.ClipSpeed);
                 double landed = a.ClipStart + clips[a.Clip].Impact / a.ClipSpeed;
                 if (Math.Abs(landed - a.Impact) > 1e-6) problems.Add("attack at " + a.Impact + " lands at " + landed);
