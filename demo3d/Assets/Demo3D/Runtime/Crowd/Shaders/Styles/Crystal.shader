@@ -3,7 +3,8 @@
 // facet refracts what is behind it (the camera's opaque texture, which MonsterStyle turns on for
 // this style only) with a little dispersion, tinted by the type's gem colour. Facet edges catch
 // the light, a few facets glint as the beat wave passes, and the core glows on the beat. Death
-// shatters it, in every pass.
+// shatters it, in every pass. In the transparent queue URP runs none of its depth or motion passes,
+// so under TAA a moving crystal smears (crowd.md, Monster styles).
 Shader "Demo3D/Styles/Crystal"
 {
     Properties

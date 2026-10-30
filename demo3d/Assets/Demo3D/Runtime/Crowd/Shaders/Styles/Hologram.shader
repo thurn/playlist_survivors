@@ -3,7 +3,7 @@
 // fresnel edge, fine scanlines, a bright band rolling up the body, a dim wireframe, red and cyan
 // fringes on opposite edges, flicker, and horizontal glitch slices on the off-beats. Death scans
 // it out from the top down. A projection of light casts no shadow, so it has no ShadowCaster;
-// its depth and motion passes, kept like every style's, are skipped in the transparent queue.
+// its depth and motion passes, kept like every style's, don't run in the transparent queue.
 Shader "Demo3D/Styles/Hologram"
 {
     Properties

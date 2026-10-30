@@ -24,7 +24,8 @@ namespace Demo3D.EditorTools.Crowd
     /// - LOD1 and LOD2 (TD11): the combined mesh decimated to about a half and a quarter of its
     ///   triangles by Unity's MeshLodUtility, each its own mesh over the same vertices;
     /// - the style mesh of each of those three (<see cref="Unweld"/>), for the `--monster-style`
-    ///   treatments that need one; the default path never loads it;
+    ///   treatments that need one, listed in their own CrowdStyleMeshes asset so the default path
+    ///   never loads them;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
@@ -36,6 +37,7 @@ namespace Demo3D.EditorTools.Crowd
     {
         public const string OutDir = "Assets/Baked/Crowd";
         public const string LibraryPath = OutDir + "/Resources/CrowdLibrary.asset";
+        public const string StyleMeshesPath = OutDir + "/Resources/CrowdStyleMeshes.asset";
         public const string ShaderPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdSkinned.shader";
         public const string CullPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdCull.compute";
         public const string PalettePath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdPalette.compute";
@@ -135,6 +137,7 @@ namespace Demo3D.EditorTools.Crowd
             Directory.CreateDirectory(OutDir + "/Resources");
             Directory.CreateDirectory(OutDir + "/Stock");
             var types = new List<CrowdType>();
+            var styleMeshes = new List<CrowdStyleMeshes.Entry>();
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath) ?? throw new Exception("CrowdBaker: no " + ShaderPath);
             var colors = Roster.TypeColors();
             foreach (var t in Roster.Load().Where(Drawn))
@@ -142,7 +145,7 @@ namespace Demo3D.EditorTools.Crowd
                 var started = DateTime.UtcNow;
                 using var bake = BakeType(t, annotations);
                 int height = bake.Height, width = bake.Width, subs = bake.Submeshes.Count;
-                var ct = Save(bake, shader);
+                var ct = Save(bake, shader, styleMeshes);
                 ct.Hue = t.hue ?? -1;
                 ct.HueSaturation = colors.saturation;
                 ct.Dye = colors.dye;
@@ -166,6 +169,9 @@ namespace Demo3D.EditorTools.Crowd
                 .Select(g => AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(g))).ToArray();
             AssetDatabase.DeleteAsset(LibraryPath);
             AssetDatabase.CreateAsset(lib, LibraryPath);
+            var style = ScriptableObject.CreateInstance<CrowdStyleMeshes>();
+            style.Types = styleMeshes.ToArray();
+            Replace(style, StyleMeshesPath);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             AssetDatabase.SaveAssets();
             Debug.Log($"CrowdBaker: wrote {types.Count} types to {LibraryPath}");
@@ -490,7 +496,7 @@ namespace Demo3D.EditorTools.Crowd
 
         static string TypeDir(string id) => $"{OutDir}/{id}";
 
-        static CrowdType Save(TypeBake b, Shader shader)
+        static CrowdType Save(TypeBake b, Shader shader, List<CrowdStyleMeshes.Entry> styleMeshes)
         {
             var id = b.Type.id;
             Directory.CreateDirectory(TypeDir(id));
@@ -504,6 +510,7 @@ namespace Demo3D.EditorTools.Crowd
             Replace(style[0], $"{TypeDir(id)}/{id}_style.mesh");
             Replace(style[1], $"{TypeDir(id)}/{id}_style_lod1.mesh");
             Replace(style[2], $"{TypeDir(id)}/{id}_style_lod2.mesh");
+            styleMeshes.Add(new CrowdStyleMeshes.Entry { Id = id, Lod0 = style[0], Lod1 = style[1], Lod2 = style[2] });
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {
@@ -548,9 +555,6 @@ namespace Demo3D.EditorTools.Crowd
                 Lod2 = lods[1],
                 Lod1Triangles = Triangles(lods[0]),
                 Lod2Triangles = Triangles(lods[1]),
-                StyleMesh = style[0],
-                StyleLod1 = style[1],
-                StyleLod2 = style[2],
                 Materials = crowdMats,
                 Bones = tex,
                 Bones30 = tex30,

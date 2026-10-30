@@ -193,7 +193,6 @@ namespace Demo3D.Tests
                 Assert.That(style.Post, Is.Not.Null, name);
                 foreach (var t in lib.Types)
                 {
-                    Assert.That(t.StyleMesh, Is.Not.Null, $"{t.Id}: re-run BakeCrowd");
                     foreach (var m in style.Materials(lib, t))
                     {
                         Assert.That(m.renderQueue, Is.EqualTo(queue), $"{name} {t.Id}");

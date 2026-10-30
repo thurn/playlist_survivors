@@ -192,10 +192,11 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   new style needs `BakeCrowd`. The baker also records each type's albedo
   value range (`CrowdType.ValueRange`) for painted's colour strip.
 - **Some styles draw the style mesh.** CrowdBaker also writes each type's three
-  LODs unwelded (`CrowdBaker.Unweld`, stylelab's StyleMesh), as `CrowdType.StyleMesh`,
-  `StyleLod1` and `StyleLod2`, so every triangle has its own vertices. Bone data stays in
-  UV1/UV2 and the position is already the rest pose in metres. The face normal is in the
-  tangent, and barycentrics plus a random value per triangle are in UV3. Only a style whose
+  LODs unwelded (`CrowdBaker.Unweld`, stylelab's StyleMesh), so every triangle has its own
+  vertices. Bone data stays in UV1/UV2 and the position is already the rest pose in metres.
+  The face normal is in the tangent, and barycentrics plus a random value per triangle are in
+  UV3. They are listed in their own asset, `CrowdStyleMeshes`, not in the library: the library
+  loads on every run and would load every mesh it referenced. Only a style whose
   `MonsterStyle.UsesStyleMesh` is true (crystal, spectrum, hologram) loads it: its shader defines
   `SL_STYLE_MESH`, which adds those streams to `SLAttributes` and `bary` to the varyings, and
   `SL_SkinFace` turns the face normal with the bones. The welded meshes and the default path are
@@ -207,7 +208,11 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
     on for the game camera only under crystal (DemoMain): one half-resolution copy of the
     colour target per frame. Hologram is additive in Transparent, so it needs no sort. It has
-    no ShadowCaster, and URP skips the depth and motion passes in the transparent queue.
+    no ShadowCaster, so BoneTextureCrowd skips its shadow draws.
+  - **No depth or motion passes run for them.** URP draws DepthOnly, DepthNormals and
+    MotionVectors for the opaque queue only. Crystal writes depth in its forward pass, but its
+    monsters are missing from the depth texture (SSAO) and get the camera's motion only. Under
+    `--aa taa` (not the default) moving crystal monsters smear.
 - **The beat comes from `StyleBeat`.** It sets `_SL_Time`, `_SL_Beat`,
   `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy` (the song map's value per beat),
   `_SL_HeroPos` and `_SL_WaveSpeed` every frame, from the song as heard.

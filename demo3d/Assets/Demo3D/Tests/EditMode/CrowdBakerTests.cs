@@ -275,30 +275,37 @@ namespace Demo3D.Tests
                         Assert.That(style.GetVertexAttributeDimension(VertexAttribute.TexCoord2), Is.EqualTo(4), "and weights in UV2");
 
                         var srcPos = src.vertices;
+                        var srcUv = new List<Vector2>(); src.GetUVs(0, srcUv);
                         var srcBones = new List<Vector4>(); src.GetUVs(1, srcBones);
+                        var srcWeights = new List<Vector4>(); src.GetUVs(2, srcWeights);
                         var pos = style.vertices;
                         var tan = style.tangents;
+                        var uv = new List<Vector2>(); style.GetUVs(0, uv);
                         var bones = new List<Vector4>(); style.GetUVs(1, bones);
+                        var weights = new List<Vector4>(); style.GetUVs(2, weights);
                         var bary = new List<Vector4>(); style.GetUVs(3, bary);
-                        var srcTris = src.GetIndices(0);
-                        var tris = style.GetIndices(0);
                         int moved = 0, unbound = 0, badBary = 0, splitTri = 0, badFace = 0;
-                        for (int t = 0; t < tris.Length; t += 3)
+                        for (int sm = 0; sm < src.subMeshCount; sm++)
                         {
-                            for (int k = 0; k < 3; k++)
+                            var srcTris = src.GetIndices(sm);
+                            var tris = style.GetIndices(sm);
+                            for (int t = 0; t < tris.Length; t += 3)
                             {
-                                int v = tris[t + k], w = srcTris[t + k];
-                                if (pos[v] != srcPos[w]) moved++;
-                                if (bones[v] != srcBones[w]) unbound++;
-                                if (bary[v][k] != 1f || bary[v].x + bary[v].y + bary[v].z != 1f) badBary++;
-                                if (bary[v].w != bary[tris[t]].w || tan[v] != tan[tris[t]]) splitTri++;
+                                for (int k = 0; k < 3; k++)
+                                {
+                                    int v = tris[t + k], w = srcTris[t + k];
+                                    if (pos[v] != srcPos[w] || uv[v] != srcUv[w]) moved++;
+                                    if (bones[v] != srcBones[w] || weights[v] != srcWeights[w]) unbound++;
+                                    if (bary[v][k] != 1f || bary[v].x + bary[v].y + bary[v].z != 1f) badBary++;
+                                    if (bary[v].w != bary[tris[t]].w || tan[v] != tan[tris[t]]) splitTri++;
+                                }
+                                var face = Vector3.Cross(srcPos[srcTris[t + 1]] - srcPos[srcTris[t]], srcPos[srcTris[t + 2]] - srcPos[srcTris[t]]);
+                                if (face != Vector3.zero && Vector3.Dot(tan[tris[t]], face / face.magnitude) < 0.999f) badFace++;
+                                if (Mathf.Abs(((Vector3)tan[tris[t]]).magnitude - 1f) > 1e-3f) badFace++;
                             }
-                            var face = Vector3.Cross(srcPos[srcTris[t + 1]] - srcPos[srcTris[t]], srcPos[srcTris[t + 2]] - srcPos[srcTris[t]]);
-                            if (face != Vector3.zero && Vector3.Dot(tan[tris[t]], face / face.magnitude) < 0.999f) badFace++;
-                            if (Mathf.Abs(((Vector3)tan[tris[t]]).magnitude - 1f) > 1e-3f) badFace++;
                         }
-                        Assert.That(moved, Is.Zero, "the rest position is the welded vertex's");
-                        Assert.That(unbound, Is.Zero, "the welded vertex's bones");
+                        Assert.That(moved, Is.Zero, "the rest position and UV are the welded vertex's");
+                        Assert.That(unbound, Is.Zero, "the welded vertex's bones and weights");
                         Assert.That(badBary, Is.Zero, "corner k is barycentric axis k");
                         Assert.That(splitTri, Is.Zero, "one random value and one face normal per triangle");
                         Assert.That(badFace, Is.Zero, "the tangent is the unit face normal");
@@ -325,14 +332,22 @@ namespace Demo3D.Tests
             Assert.That(lib.Types.Select(t => t.Id), Is.EqualTo(drawn));
             Assert.That(lib.CullShader, Is.Not.Null);
             Assert.That(lib.PaletteShader, Is.Not.Null);
+            var styleMeshes = AssetDatabase.LoadAssetAtPath<CrowdStyleMeshes>(CrowdBaker.StyleMeshesPath);
+            Assert.That(styleMeshes, Is.Not.Null, "re-run BakeCrowd");
+            Assert.That(styleMeshes.Types.Select(e => e.Id), Is.EqualTo(drawn));
+            Assert.That(AssetDatabase.GetDependencies(CrowdBaker.LibraryPath, true).Where(p => p.Contains("_style")), Is.Empty,
+                "the library, which every run loads, doesn't pull in the style meshes");
             foreach (var t in lib.Types)
             {
                 Assert.That(t.Materials.Length, Is.EqualTo(t.Mesh.subMeshCount), t.Id);
-                foreach (var (style, welded) in new[] { (t.StyleMesh, t.Mesh), (t.StyleLod1, t.Lod1), (t.StyleLod2, t.Lod2) })
+                var e = styleMeshes.Of(t.Id);
+                foreach (var (style, welded) in new[] { (e.Lod0, t.Mesh), (e.Lod1, t.Lod1), (e.Lod2, t.Lod2) })
                 {
                     Assert.That(style, Is.Not.Null, t.Id);
                     for (int sm = 0; sm < welded.subMeshCount; sm++)
                         Assert.That(style.GetIndexCount(sm), Is.EqualTo(welded.GetIndexCount(sm)), $"{style.name} keeps every triangle");
+                    Assert.That(style.GetVertexAttributeDimension(VertexAttribute.TexCoord3), Is.EqualTo(4), style.name);
+                    Assert.That(style.GetVertexAttributeDimension(VertexAttribute.Tangent), Is.EqualTo(4), style.name);
                 }
                 Assert.That(t.Bones.width, Is.EqualTo(t.BoneCount * 3), t.Id);
                 Assert.That(t.Bones.format, Is.EqualTo(TextureFormat.RGBAFloat), t.Id);

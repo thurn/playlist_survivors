@@ -25,7 +25,7 @@ namespace Demo3D.Runtime.Crowd
         public bool IsBaseline => Name == "baseline";
 
         /// <summary>
-        /// Whether the style draws the unwelded style mesh (CrowdType.StyleMesh) rather than the
+        /// Whether the style draws the unwelded style mesh (CrowdStyleMeshes) rather than the
         /// welded one: its triangles move alone (shatter), or it reads each one's barycentrics
         /// (facets, wireframe).
         /// </summary>

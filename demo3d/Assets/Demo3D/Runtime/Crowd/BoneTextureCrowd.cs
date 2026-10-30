@@ -107,6 +107,7 @@ namespace Demo3D.Runtime.Crowd
         public int ShadowOnly { get; private set; }
 
         readonly CrowdLibrary _lib;
+        CrowdStyleMeshes _styleMeshes; // loaded only for a style that draws the style mesh
         readonly ComputeShader _cull, _palette;
         readonly int _kClear, _kCull, _kCopy, _kBlend;
         readonly int[] _kernels;
@@ -128,6 +129,8 @@ namespace Demo3D.Runtime.Crowd
             public float ClipRate;
             public Material[] Materials;
             public Material Shell; // the style's shell (fire's flames, painted's ink line), else null
+            public int Vertices;      // LOD0's, for the skinned-vertex counter (the style mesh has its own)
+            public bool CastsShadows; // false for a style without a ShadowCaster (hologram)
             public GraphicsBuffer[] Instances; // a ring: the CPU never writes one the GPU may still read
             public GraphicsBuffer VisibleList, ShadowList, LodState, VisibleFlags, Counters, Args, ShadowArgs, ClipTable, ClipBounds;
             public readonly GraphicsBuffer[] Palette = new GraphicsBuffer[2];
@@ -174,9 +177,14 @@ namespace Demo3D.Runtime.Crowd
         {
             var cuts = Cuts ?? Cuts.Active;
             // LOD0 to LOD2: the welded meshes, or the unwelded style meshes for a style that needs them.
-            bool styleMesh = Style != null && Style.UsesStyleMesh;
-            var meshes = styleMesh ? new[] { t.StyleMesh, t.StyleLod1, t.StyleLod2 } : new[] { t.Mesh, t.Lod1, t.Lod2 };
-            if (styleMesh && meshes[0] == null) throw new InvalidOperationException($"BoneTextureCrowd: {t.Id} has no style mesh for {MonsterStyle.Flag} {Style.Name} (re-run BakeCrowd)");
+            Mesh[] meshes;
+            if (Style != null && Style.UsesStyleMesh)
+            {
+                _styleMeshes ??= CrowdStyleMeshes.Load();
+                var e = _styleMeshes.Of(t.Id);
+                meshes = new[] { e.Lod0, e.Lod1, e.Lod2 };
+            }
+            else meshes = new[] { t.Mesh, t.Lod1, t.Lod2 };
             bool lods3 = cuts.On(Cuts.Lod) && meshes[1] != null && meshes[2] != null;
             bool clips30 = cuts.On(Cuts.Clips30) && t.Bones30 != null;
             if (cuts.On(Cuts.Lod) && !lods3) Debug.LogWarning($"BoneTextureCrowd: {t.Id} has no LOD1/LOD2 (re-run BakeCrowd); LOD0 only");
@@ -184,6 +192,7 @@ namespace Demo3D.Runtime.Crowd
             {
                 Type = t,
                 Lods = lods3 ? meshes : new[] { meshes[0] },
+                Vertices = meshes[0].vertexCount,
                 ShadowMesh = ShadowLod == 2 && meshes[2] != null ? meshes[2] : ShadowLod == 1 && meshes[1] != null ? meshes[1] : meshes[0],
                 Bones = clips30 ? t.Bones30 : t.Bones,
                 ClipRate = clips30 ? CrowdLibrary.CutClipRate : CrowdLibrary.ClipRate,
@@ -249,6 +258,7 @@ namespace Demo3D.Runtime.Crowd
 
             s.Materials = Style != null ? Style.Materials(_lib, t) : t.Materials;
             s.Shell = Style?.Shell(_lib, t);
+            s.CastsShadows = Array.TrueForAll(s.Materials, m => m.FindPass("ShadowCaster") >= 0);
             s.Main = new MaterialPropertyBlock[lods];
             for (int l = 0; l < lods; l++) s.Main[l] = new MaterialPropertyBlock();
             s.Shadow = new MaterialPropertyBlock();
@@ -388,7 +398,7 @@ namespace Demo3D.Runtime.Crowd
                             Graphics.RenderMeshIndirect(rp, s.Lods[l], s.Args, Bins, (sm * lods + l) * Bins);
                             draws++;
                         }
-                        if (!DrawShadows) continue;
+                        if (!DrawShadows || !s.CastsShadows) continue;
                         var srp = new RenderParams(s.Materials[sm])
                         {
                             worldBounds = bounds,
@@ -416,8 +426,8 @@ namespace Demo3D.Runtime.Crowd
                 alive += s.Readback[0];
                 dying += s.Readback[1];
                 shadowOnly += s.Readback[2];
-                casters += s.Readback[3];
-                skinned += (long)(s.Readback[0] + s.Readback[1]) * s.Type.Vertices;
+                if (s.CastsShadows) casters += s.Readback[3];
+                skinned += (long)(s.Readback[0] + s.Readback[1]) * s.Vertices;
             }
             OnScreenAlive = alive;
             OnScreenDying = dying;
