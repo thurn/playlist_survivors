@@ -133,8 +133,16 @@ impl Sim {
     }
 
     /// The stream keeps arriving during a freeze. Only known ticks can establish silence.
+    /// A level that ends with its song never stops for the music: its silence is the finale's.
     pub(super) fn plan_freeze(&mut self) {
-        if self.env.input.level.survivors.is_none() || self.st.blasting {
+        if self
+            .env
+            .input
+            .level
+            .survivors
+            .is_none_or(|run| run.ends_with_song)
+            || self.st.blasting
+        {
             return;
         }
         let end = self.st.ingested.ticks;

@@ -120,6 +120,7 @@ dependencies = [
  "objc2-core-audio-types",
  "objc2-core-foundation",
  "objc2-foundation 0.3.2",
+ "players",
  "pollster",
  "render",
  "rtrb",

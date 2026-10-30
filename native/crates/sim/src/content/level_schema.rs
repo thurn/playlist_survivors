@@ -387,6 +387,8 @@ pub fn level_script() -> Schema {
                 def("bruteChickenChance", min_max(0.0, 1.0), json!(0.05)),
                 def("bossChickens", int_min(0.0), json!(1)),
                 def("maxedHeal", min(0.0), json!(30)),
+                opt("endsWithSong", bool()),
+                opt("heroStands", bool()),
                 def(
                     "schedule",
                     array(object(vec![

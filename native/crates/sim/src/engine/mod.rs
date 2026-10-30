@@ -2334,6 +2334,8 @@ mod tests {
                 brute_chicken_chance: 0.05,
                 boss_chickens: 1.0,
                 maxed_heal: 30.0,
+                ends_with_song: false,
+                hero_stands: false,
             });
         sim.st.run_s = 1.9;
         let hp = sim.st.health;
@@ -2343,6 +2345,30 @@ mod tests {
         sim.st.run_s = 2.0;
         sim.hurt(hp, "contact", "slime");
         assert_eq!(sim.st.health, hp - 1.0);
+    }
+
+    #[test]
+    fn a_standing_hero_takes_hits_but_keeps_a_tenth_of_its_health() {
+        let mut sim = sim(&stream());
+        Rc::get_mut(&mut sim.env).unwrap().input.level.survivors =
+            Some(crate::content::level::Survivors {
+                duration_s: 30.0,
+                contact_damage: 0.5,
+                brute_chicken_chance: 0.05,
+                boss_chickens: 1.0,
+                maxed_heal: 30.0,
+                ends_with_song: false,
+                hero_stands: true,
+            });
+        let hp = sim.st.health;
+        let floor = sim.health_max() * 0.1;
+        sim.hurt(1.0, "contact", "slime");
+        assert_eq!(sim.st.health, hp - 1.0);
+        for _ in 0..3 {
+            sim.st.invuln_until = 0.0;
+            sim.hurt(hp, "contact", "slime");
+            assert_eq!(sim.st.health, floor);
+        }
     }
 
     #[test]
@@ -2358,6 +2384,8 @@ mod tests {
                 brute_chicken_chance: 0.05,
                 boss_chickens: 1.0,
                 maxed_heal: 30.0,
+                ends_with_song: false,
+                hero_stands: false,
             });
         let rec = Rc::new(RefCell::new(LogRecorder::default()));
         sim.rec = Box::new(Rc::clone(&rec));

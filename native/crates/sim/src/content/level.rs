@@ -245,6 +245,14 @@ pub struct Survivors {
     pub brute_chicken_chance: f64,
     pub boss_chickens: f64,
     pub maxed_heal: f64,
+    /// The finale follows the song's confirmed end, as a reactive level's does, not the run
+    /// clock's deadline (the showcase: one song, start to end).
+    #[serde(default)]
+    pub ends_with_song: bool,
+    /// The hero is never brought below a tenth of its health: hits land and show, but it never
+    /// falls (the showcase, which nobody plays).
+    #[serde(default)]
+    pub hero_stands: bool,
 }
 
 /// The loaded level script.

@@ -12,10 +12,13 @@ use std::{cell::RefCell, rc::Rc};
 use stream::{Beat, StreamLog};
 
 fn start(log: &StreamLog, duration: f64) -> (Rc<RefCell<LogRecorder>>, Sim) {
+    start_with(log, &format!("durationS: {duration}"))
+}
+
+/// The survivors level with its `durationS: 1800` line replaced by `survivors` lines.
+fn start_with(log: &StreamLog, survivors: &str) -> (Rc<RefCell<LogRecorder>>, Sim) {
     let mut src = common::source("levels/survivors.yaml");
-    src.text = src
-        .text
-        .replace("durationS: 1800", &format!("durationS: {duration}"));
+    src.text = src.text.replace("durationS: 1800", survivors);
     let mut lib = common::library().clone();
     for formation in lib.formations.values_mut() {
         formation.count = 0.0;
@@ -66,6 +69,26 @@ fn survivors_ignores_a_confirmed_song_end() {
     );
     assert!(rec.borrow().formations.is_empty());
     assert!(rec.borrow().boss.is_none());
+}
+
+#[test]
+fn a_survivors_level_that_ends_with_its_song_plays_the_finale_at_the_confirmed_end() {
+    let file = common::stream_file("causality-mix");
+    let log = common::with_silent_tail(file.log, 10.0);
+    let (_, mut sim) = start_with(&log, "durationS: 1800\n  endsWithSong: true");
+    let until = file.audio.duration + 8.0;
+    sim.advance_to(until);
+    assert!(sim.done());
+    let end = sim.end_s();
+    assert!(
+        end > file.audio.duration && end < until,
+        "the finale's epilogue ends at {end}, after the song's {}",
+        file.audio.duration
+    );
+    assert_ne!(
+        sim.run_state().frozen,
+        Some(sim::survivors::FreezeReason::MusicStopped)
+    );
 }
 
 #[test]

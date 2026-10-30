@@ -771,7 +771,19 @@ impl Sim {
             self.st.invuln_until = self.st.w + hero.health.invulnerable_ms / 1000.0;
             amount
         };
-        self.st.health = max(0.0, self.st.health - amount);
+        // (A level whose hero stands keeps a tenth of its health: the hit still lands and shows.)
+        let floor = if self
+            .env
+            .input
+            .level
+            .survivors
+            .is_some_and(|run| run.hero_stands)
+        {
+            min(self.st.health, self.health_max() * 0.1)
+        } else {
+            0.0
+        };
+        self.st.health = max(floor, self.st.health - amount);
         let frac = self.st.health / self.health_max();
         self.rec.health(self.st.s, frac);
         self.rec.bite(BiteRecord {

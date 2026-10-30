@@ -29,6 +29,10 @@
 //!     playlist-survivors --still <png> [--still-track <id> --still-at <s>] [--classic]  # 20 s of the house
 //!                                     # track (or a track to a time) through the engine, offscreen
 //!     playlist-survivors --bench [--check]  # the frame's work (sim, evaluate, encode) over 60 s of it, offscreen
+//!     playlist-survivors --showcase [--headless]  # demo2d's song (or --file) played start
+//!                                     # to end by the virtual player on levels/action-showcase.yaml, in Delayed
+//!                                     # listening; quits once the run is over
+//!     playlist-survivors --showcase-stills <session>  # a recorded showcase replayed offscreen: three stills
 
 mod apps;
 mod bible;
@@ -69,6 +73,7 @@ mod pickups;
 mod recap;
 mod scene;
 mod session;
+mod showcase;
 mod signature;
 mod sounds;
 mod swarm_check;
@@ -179,6 +184,11 @@ enum BenchMode {
 }
 #[allow(clippy::struct_excessive_bools)]
 struct Options {
+    /// The showcase: demo2d's song (or `--file`), start to end, on its own level, with the
+    /// virtual player at the keys; the app quits once its run is over.
+    showcase: bool,
+    /// Stills of a recorded showcase session (`showcase::stills`).
+    showcase_stills: Option<PathBuf>,
     file: Option<PathBuf>,
     level: Option<PathBuf>,
     still: Option<PathBuf>,
@@ -255,6 +265,8 @@ struct Options {
 
 fn options(args: &[String]) -> Result<Options, String> {
     let mut o = Options {
+        showcase: false,
+        showcase_stills: None,
         file: None,
         level: None,
         still: None,
@@ -313,6 +325,14 @@ fn options(args: &[String]) -> Result<Options, String> {
     while let Some(a) = it.next() {
         match a.as_str() {
             "--file" => o.file = Some(it.next().ok_or("--file needs a path")?.into()),
+            "--showcase" => o.showcase = true,
+            "--showcase-stills" => {
+                o.showcase_stills = Some(
+                    it.next()
+                        .ok_or("--showcase-stills needs a session directory")?
+                        .into(),
+                );
+            }
             "--playlist" => {
                 playlist = Some(PathBuf::from(it.next().ok_or("--playlist needs a path")?));
             }
@@ -592,7 +612,44 @@ fn options(args: &[String]) -> Result<Options, String> {
     if o.spawn_smoke && (!o.headless || o.press_beats) {
         return Err("--spawn-smoke needs --headless and cannot combine with --press-beats".into());
     }
+    if o.showcase {
+        if o.press_beats || o.pick_first || o.spawn_smoke {
+            return Err(
+                "--showcase plays itself: drop --press-beats, --pick-first and --spawn-smoke"
+                    .into(),
+            );
+        }
+        o.file = Some(showcase_audio(
+            o.file.take(),
+            &live::resource("action.wav", SHOWCASE_AUDIO),
+        )?);
+        o.level.get_or_insert_with(|| {
+            live::resource("levels", "../../../levels").join(SHOWCASE_LEVEL)
+        });
+        // (Delayed listening: nobody plays, so hearing the music 3 s late costs nothing, and its
+        // hindsight beats and far fewer rollbacks play better; ps-8sb.1's notes.)
+        o.delayed = true;
+    }
     Ok(o)
+}
+
+/// The showcase's song, demo2d's bake of *Action* (never committed), relative to this crate;
+/// `PS_ACTION_WAV` overrides it.
+const SHOWCASE_AUDIO: &str = "../../../demo2d/Assets/Baked/Audio/action.wav";
+const SHOWCASE_LEVEL: &str = "action-showcase.yaml";
+
+/// The showcase's music: `file` if given, else demo2d's song at `default`; either must exist.
+fn showcase_audio(file: Option<PathBuf>, default: &Path) -> Result<PathBuf, String> {
+    match file {
+        Some(f) if f.exists() => Ok(f),
+        Some(f) => Err(format!("--showcase: no file at {}", f.display())),
+        None if default.exists() => Ok(default.to_path_buf()),
+        None => Err(format!(
+            "--showcase needs demo2d's song at {}: bake it with \
+             `uv run --project demo3d/tools demo2d setup`, or pass --file",
+            default.display()
+        )),
+    }
 }
 
 /// The game's content: the library, the reactive level, and each enemy kind's look.
@@ -600,6 +657,8 @@ struct World {
     lib: ContentLibrary,
     level: SourceFile,
     survivors: bool,
+    /// The level's finale follows the song's end, not a survivors deadline.
+    ends_with_song: bool,
     looks: HashMap<String, Look>,
 }
 
@@ -642,19 +701,19 @@ impl World {
             .values()
             .map(|d| (d.id.clone(), roster::look(d)))
             .collect();
-        let survivors = sim::content::level::load_level(
+        let run = sim::content::level::load_level(
             &level,
             &lib,
             &sim::schedule::reactive_song_map(f64::INFINITY),
             None,
         )
         .map_err(|e| format!("level: {e:?}"))?
-        .survivors
-        .is_some();
+        .survivors;
         Ok(World {
             lib,
             level,
-            survivors,
+            survivors: run.is_some(),
+            ends_with_song: run.is_some_and(|r| r.ends_with_song),
             looks,
         })
     }
@@ -744,6 +803,9 @@ pub fn run(args: &[String]) -> Result<(), String> {
         } else {
             Err("the heard delay wasn't within 2 ms of M every minute".into())
         };
+    }
+    if let Some(dir) = &opts.showcase_stills {
+        return showcase::stills(dir);
     }
     if let Some(dir) = &opts.passives_check {
         return cards::passives_check::run(dir);
@@ -980,6 +1042,8 @@ pub fn run(args: &[String]) -> Result<(), String> {
         exit_at: opts.seconds.map_or(f64::INFINITY, |s| now_s() + s),
         switch_at: opts.switch_at.map_or(f64::INFINITY, |s| now_s() + s),
         press_beats: opts.press_beats,
+        showcase: opts.showcase,
+        bot: None,
         spawn_smoke: opts.spawn_smoke,
         pick_first: opts.pick_first,
         picked_offer: None,
@@ -2181,6 +2245,10 @@ struct App {
     switch_at: f64,
     /// The stand-in player (`--press-beats`): the last beat it pressed on (song s).
     press_beats: bool,
+    /// The showcase: runs start on their own, the virtual player (`bot`, each run's own) plays
+    /// them, and the app quits once the run is over.
+    showcase: bool,
+    bot: Option<players::SurvivorBot>,
     /// Headless spawn-only smoke: hold Right with hero damage disabled; never a survival result.
     spawn_smoke: bool,
     /// Headless input helper: choose the first card after its third reveal.
@@ -2347,6 +2415,17 @@ impl App {
             }
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
+            // (The virtual player sees the game where the simulation has run to and presses
+            // there, as eval's runs drive it: its keys need no rollback. Pressing at the time heard
+            // instead, a beat's fraction late, it was hit far more and levelled far less.)
+            if let Some(bot) = self.bot.as_mut()
+                && !self.engine.sim.done()
+            {
+                use sim::player::{KeyEventKind, Player};
+                for k in bot.decide(&self.engine.sim.observe()) {
+                    self.engine.key(k.s, k.key, k.kind == KeyEventKind::Press);
+                }
+            }
             self.record_keys();
             let run = self.engine.view.borrow().run;
             if self.pick_first {
@@ -2426,7 +2505,7 @@ impl App {
             let end = if self.engine.fallen() {
                 Some(End::Fell)
             } else if self.engine.done() {
-                Some(if self.world.survivors() {
+                Some(if self.world.survivors() && !self.world.ends_with_song {
                     End::Victory
                 } else {
                     End::Song
@@ -2478,7 +2557,7 @@ impl App {
         // Listening, headless (no keys to press): the next run starts on its own once the music is
         // clear (after the end card), unless a calibration screen shows. With a window, the
         // player starts each run.
-        if self.headless
+        if (self.headless || self.showcase)
             && !self.running
             && self.screen.is_none()
             && self.watch.is_none()
@@ -3124,6 +3203,10 @@ impl App {
         self.log(serde_json::json!({"k": "end", "s": self.run_start + seconds, "why": format!("{end:?}")}));
         self.end_summary = recap::Summary::from_view(&self.engine.view.borrow());
         self.over = Some((now, end, seconds));
+        if self.showcase {
+            // (Nobody is there to start another: the end card shows, then the app quits.)
+            self.exit_at = self.exit_at.min(now + END_CARD_S);
+        }
         self.run_kills = self.engine.view.borrow().kills;
         self.running = false;
         self.scene.cards = cards::Screen::default();
@@ -3521,6 +3604,9 @@ impl App {
         self.pending_start = None;
         self.last_freeze = None;
         self.picked_offer = None;
+        self.bot = self
+            .showcase
+            .then(|| players::SurvivorBot::new(players::SurvivorBotKind::Positioning, 1));
         self.scene = Scene::default();
         let _ = self.audio.out.commands.push(Command::CancelAll);
         if let Some(s) = self.sounds.as_mut() {
@@ -3876,6 +3962,41 @@ impl ApplicationHandler for App {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_showcase_plays_its_song_on_its_level_and_says_how_to_get_the_song() {
+        let args = |a: &[&str]| a.iter().map(ToString::to_string).collect::<Vec<_>>();
+        let song = std::env::current_exe().unwrap();
+        let o = options(&args(&["--showcase", "--file", song.to_str().unwrap()])).unwrap();
+        assert!(o.showcase && o.delayed);
+        assert_eq!(o.file.as_deref(), Some(song.as_path()));
+        assert!(
+            o.level
+                .is_some_and(|l| l.ends_with("levels/action-showcase.yaml") && l.exists())
+        );
+        let plain = options(&args(&["--file", song.to_str().unwrap()])).unwrap();
+        assert!(!plain.showcase && !plain.delayed && plain.level.is_none());
+        assert!(options(&args(&["--showcase", "--file", "/no/such.wav"])).is_err());
+        let e = options(&args(&[
+            "--showcase",
+            "--press-beats",
+            "--file",
+            song.to_str().unwrap(),
+        ]));
+        assert!(e.is_err_and(|e| e.contains("plays itself")));
+
+        let missing = Path::new("/no/demo2d/action.wav");
+        let e = showcase_audio(None, missing).unwrap_err();
+        assert!(
+            e.contains("/no/demo2d/action.wav") && e.contains("demo2d setup"),
+            "{e}"
+        );
+        assert_eq!(
+            showcase_audio(None, &song).unwrap(),
+            song,
+            "the baked song, when there"
+        );
+    }
+
     #[test]
     fn watch_labels_follow_only_the_rebased_recorded_beats() {
         let mut watch = Watch {

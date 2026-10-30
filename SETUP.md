@@ -101,6 +101,7 @@ From `native/`, run `cargo run --locked --release -p app -- <flags>`:
 | `--delayed [--app <name>]` | Delayed listening: the music heard 3 s late, beats from hindsight; in System mode the named app is tapped, muted while tapped, and played late |
 | `--mute`, `--volume <0-1>` | everything runs, the device gets silence or less |
 | `--headless --seconds <n> [--press-beats] [--watch]` | no window, no Dock icon, muted, on a timer, for checks |
+| `--showcase [--file <path>]` | demo2d's song (`uv run --project demo3d/tools demo2d setup` bakes it) played start to end by the virtual player on `levels/action-showcase.yaml`, in Delayed listening; quits once the run is over |
 | `--still <png> [--still-track <id> --still-at <s>]` | a still of a bundled track at a time, offscreen |
 | `--bench [--check]` | the frame's work over 60 s, offscreen |
 

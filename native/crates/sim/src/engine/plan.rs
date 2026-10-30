@@ -595,7 +595,13 @@ impl Sim {
             return;
         };
         let mut free_finale = false;
-        let s = if let Some(run) = self.env.input.level.survivors {
+        let s = if let Some(run) = self
+            .env
+            .input
+            .level
+            .survivors
+            .filter(|run| !run.ends_with_song)
+        {
             // Read only committed beats already ingested at their knownAt. The deadline is
             // expressed through the run clock so a later freeze can hold it independently.
             let due = self.st.s + (run.duration_s - self.st.run_s).max(0.0);
