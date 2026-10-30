@@ -1,0 +1,83 @@
+{
+  "note": [
+    "The crypt environment (ps-bop: the control, neutral grey), minimal: the arena's area plan with a stone ground, grey neutral lighting and a neutral grade, from kit pieces already synced (Dark Fantasy's dead trees, ruins, tombs and statues, Fantasy Kingdom's rocks). The crypt bead dresses it fully. Format: arena-layout.json's note, Environments."
+  ],
+  "extends": "arena",
+  "ground": {"forest": [0.10, 0.10, 0.10], "edge": [0.21, 0.21, 0.20], "clearing": [0.46, 0.46, 0.45], "path": [0.51, 0.50, 0.49]},
+  "lighting": {
+    "moon": {"color": [0.92, 0.92, 0.92], "intensity": 1.0},
+    "ambient": {"sky": [0.07, 0.07, 0.075], "equator": [0.045, 0.045, 0.048], "ground": [0.022, 0.022, 0.022]},
+    "fog": {"color": [0.05, 0.05, 0.055]},
+    "crowd": {"rim": [0.26, 0.26, 0.28], "keyColor": [1.0, 1.0, 1.0]},
+    "hero": {"color": [1.0, 0.97, 0.94]},
+    "vignette": {"color": [0.025, 0.025, 0.03]},
+    "post": {"grade": {"shadow": [1.0, 1.0, 1.0], "mid": [1.0, 1.0, 1.0], "high": [1.0, 1.0, 1.0]}},
+    "glow": null
+  },
+  "atmosphere": {
+    "mist": {"color": [0.36, 0.36, 0.37]}
+  },
+  "props": {
+    "forest-trees": {
+      "darkfantasy/SM_Env_Tree_Dead_01": 1,
+      "darkfantasy/SM_Env_Tree_Dead_02": 1.5,
+      "darkfantasy/SM_Env_Tree_Dead_03": 0.6,
+      "kingdom/SM_Env_Tree_Dead_01": 1.5,
+      "kingdom/SM_Env_Tree_Dead_02": 1.5,
+      "darkfantasy/SM_Bld_Ruin_01": 0.3,
+      "darkfantasy/SM_Bld_Ruin_05": 0.3,
+      "darkfantasy/SM_Prop_Statue_01": 0.2,
+      "darkfantasy/SM_Prop_Statue_02": 0.2
+    },
+    "forest-rocks": {
+      "kingdom/SM_Env_Rock_Chunk_02": 1,
+      "kingdom/SM_Env_Rock_Chunk_03": 1,
+      "darkfantasy/SM_Prop_Tomb_01": 0.6,
+      "darkfantasy/SM_Prop_Tomb_02": 0.6
+    },
+    "edge-plants": {
+      "darkfantasy/SM_Prop_Tomb_Stone_01": 3,
+      "darkfantasy/SM_Prop_Tomb_01": 0.8,
+      "darkfantasy/SM_Prop_Tomb_02": 0.8,
+      "darkfantasy/SM_Prop_Gargoyle_Statue_01": 0.4,
+      "darkfantasy/SM_Bld_Wall_Ruin_End_02": 0.4,
+      "kingdom/SM_Env_Rock_Chunk_01": 1.5,
+      "kingdom/SM_Env_Rock_Chunk_02": 0.8
+    },
+    "edge-soft": {
+      "darkfantasy/SM_Env_Moss_01": 2,
+      "darkfantasy/SM_Env_Moss_02": 2,
+      "darkfantasy/SM_Prop_Skull_Pile_01": 0.5,
+      "kingdom/SM_Generic_Small_Rocks_01": 2,
+      "kingdom/SM_Generic_Small_Rocks_02": 2
+    },
+    "clutter": {
+      "kingdom/SM_Env_Rock_01": 1,
+      "kingdom/SM_Env_Rock_02": 1,
+      "kingdom/SM_Env_Rock_03": 1,
+      "kingdom/SM_Env_Rock_04": 1,
+      "kingdom/SM_Generic_Small_Rocks_01": 1.5,
+      "kingdom/SM_Generic_Small_Rocks_02": 1.5,
+      "darkfantasy/SM_Prop_Skull_Pile_01": 0.3
+    },
+    "ground-dressing": {
+      "darkfantasy/SM_Env_Moss_01": 1,
+      "darkfantasy/SM_Env_Moss_02": 1,
+      "darkfantasy/SM_Env_Moss_03": 1,
+      "elven/SM_Env_Pebbles_01": 1,
+      "elven/SM_Env_Pebbles_02": 1,
+      "elven/SM_Env_Pebbles_03": 1
+    }
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "darkfantasy/SM_Prop_Statue_01", "at": [0, 0], "yawDeg": 30, "scale": 1.4},
+      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [1.6, 0.4], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [-1.2, 1.3], "yawDeg": 40},
+      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [0.3, -1.7], "yawDeg": 80}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "darkfantasy/SM_Prop_Skull_Pile_01", "at": [0, 0], "yawDeg": 0}
+    ]
+  }
+}

@@ -127,6 +127,9 @@ Shader "Demo3D/CrowdSkinned"
             float4 _Demo3DCrowdRim;
             float _Demo3DCrowdFill;
             float _Demo3DCrowdKeyBoost;
+            // The horde's key colour (ps-bop): per-channel scales on the moon's light (rgb; w 1 when set),
+            // so a coloured moon on an environment's set leaves the type hues alone (NightLook.KeyColorScale).
+            float4 _Demo3DCrowdKeyColor;
             // The hit flash's colour (rgb, linear HDR; w 1 when set), from the layout's crowd.flash
             // (ps-e8r.7): hot rather than a white that clips whole bodies at a climax.
             float4 _Demo3DCrowdFlash;
@@ -139,7 +142,7 @@ Shader "Demo3D/CrowdSkinned"
             // (cos, sin) of the angle that first turns the type's whole albedo round the luma axis (YIQ):
             // a saturated hide sitting on another type's hue. (1, 0) or unset: none.
             float4 _Demo3DTypeRotate;
-            #define DEMO3D_MAIN_LIGHT_SCALE (1 + _Demo3DCrowdKeyBoost)
+            #define DEMO3D_MAIN_LIGHT_SCALE ((1 + _Demo3DCrowdKeyBoost) * (_Demo3DCrowdKeyColor.w > 0 ? _Demo3DCrowdKeyColor.rgb : float3(1, 1, 1)))
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
 

@@ -132,7 +132,54 @@ wall the monsters walk around.
   share of this (moon, ambient, fog, vignette, the hero's light, a ground
   tint, the mist) from arena-layout.json's `palettes`, to try the type
   colours against other backgrounds
-  ([Running on the Mac](mac.md#palettes)).
+  ([Running on the Mac](mac.md#palettes)). A recolour is not an environment (the kit keeps
+  its night albedo), so [Environments](#environments) replace them for that test.
+
+### Environments
+
+The moonlit forest is the default environment. Others (epic ps-bop) keep its
+area plan and change everything the eye reads as the place: the kit, the
+ground, the lighting, the atmosphere and the grade. So the level script, the
+stress scenes and the beauty shots work unchanged in each, and look sets
+compare shot for shot.
+
+- **One area plan.** An environment is
+  `Choreography/Data/environment-<name>.json`, which `extends` the arena
+  (arena-layout.json). The plan's keys come from the arena only: `name`,
+  `size`, `decorationDensity`, `edgeWidthM`, `heroStart`, `areas` (with their
+  goals) and `shots`. An environment that sets one fails to load.
+- **Overrides merge.** Every other key merges over the arena's
+  (`LayoutEnvironment.Resolve`, in the choreography package): objects key by
+  key at any depth, arrays and values replace, and `null` removes a key. So a
+  partial `lighting` keeps the arena's moon direction, the horde's lighting
+  and the post feel. A prop group under `props` replaces whole.
+  `pieces {area name: [pieces]}` replaces a landmark's or structure's own
+  pieces at the same anchor.
+- **The ground's colours** are the layout's `ground` (forest, edge,
+  clearing, path, in sRGB); the baker generates the albedo from them.
+- **The horde is never recoloured.** `lighting.crowd.keyColor` gives the
+  horde its own key colour at the moon's luminance, so a coloured moon on the
+  set leaves the type hues alone. `lighting.post.grade` sets the grade's
+  shadow, midtone and highlight tints (the night warms the midtones).
+- **Its own placement list.** The player and the stress scenes resolve the
+  environment's layout before building the timeline, so monsters walk round
+  its own blocking pieces.
+- **Its own bake.** `BakeArena` (and `BakeAll`) bakes every environment:
+  the forest's full ladder in `Assets/Baked/Arena/`, and each other
+  environment at the authored density only (E0 and E2, not merged) in
+  `Assets/Baked/Arena/<name>/`, as `Arena-<name>-E2-2x`. Each has its own
+  converted materials, since `kitValue` may differ.
+  `BakeArena -environment crypt` bakes just one.
+- **Loading one.** The player's `--environment <name>` (or a sweep's
+  `environment` sceneOptions key) loads its scene and lighting. An unknown
+  name fails and lists the known ones. A known one that isn't baked fails too,
+  where the forest would fall back to flat ground.
+
+To add an environment, write `environment-<name>.json` from kit pieces that
+are already synced and measured (footprints.json), then bake and render it
+([Running on the Mac](mac.md#environments)). `crypt` is the minimal example:
+Dark Fantasy's dead trees, ruins, tombs and statues and Fantasy Kingdom's
+rocks on a grey stone ground, under a neutral moon and grade.
 
 ### Environment rendering
 

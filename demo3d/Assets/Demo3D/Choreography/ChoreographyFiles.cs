@@ -52,6 +52,11 @@ namespace Demo3D.Choreography
                 File.ReadAllText(DataPath(root, FootprintsFile)));
         }
 
+        /// <summary>An environment's whole layout (ps-bop): Data/environment-&lt;name&gt;.json resolved over the layout it extends.</summary>
+        public static string EnvironmentLayout(string root, string environment) =>
+            LayoutEnvironment.Resolve(File.ReadAllText(DataPath(root, "environment-" + environment + ".json")),
+                layout => File.Exists(DataPath(root, layout + "-layout.json")) ? File.ReadAllText(DataPath(root, layout + "-layout.json")) : null, environment);
+
         public static FootprintTable LoadFootprints(string root) => FootprintTable.Parse(File.ReadAllText(DataPath(root, FootprintsFile)));
 
         /// <summary>A layout's parameters (Data/&lt;layout&gt;-layout.json); <paramref name="density"/> overrides its decoration density.</summary>

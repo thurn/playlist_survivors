@@ -13,7 +13,9 @@ namespace Demo3D.Runtime.Arena
     public static class NightLook
     {
         public const int LutSize = 32;
-        static Texture2D _lut;
+        static readonly ArenaLighting Night = new ArenaLighting();
+        static readonly System.Collections.Generic.Dictionary<(Vector3, Vector3, Vector3), Texture2D> Luts =
+            new System.Collections.Generic.Dictionary<(Vector3, Vector3, Vector3), Texture2D>();
 
         public static void ApplyRenderSettings(ArenaLighting l)
         {
@@ -44,6 +46,7 @@ namespace Demo3D.Runtime.Arena
             }
             Shader.SetGlobalFloat("_Demo3DCrowdFill", fill);
             Shader.SetGlobalFloat("_Demo3DCrowdKeyBoost", Args.GetFloat("--crowd-key", l.CrowdKey) - 1);
+            Shader.SetGlobalVector("_Demo3DCrowdKeyColor", KeyColorScale(l));
             Shader.SetGlobalVector("_Demo3DCrowdRim", rim);
             var flash = l.CrowdFlash;
             var flashArg = Args.Get("--crowd-flash");
@@ -56,6 +59,19 @@ namespace Demo3D.Runtime.Arena
             Shader.SetGlobalVector("_Demo3DCrowdFlash", flash);
             // `--crowd-shoulder k` overrides it, as the other crowd terms.
             Shader.SetGlobalFloat("_Demo3DCrowdShoulder", Args.GetFloat("--crowd-shoulder", l.CrowdShoulder));
+        }
+
+        /// <summary>
+        /// The horde's key colour (<see cref="ArenaLighting.CrowdKeyColor"/>) as per-channel scales on the
+        /// moon's light (w 1 when set): the key colour at the moon's luminance over the moon's colour.
+        /// </summary>
+        public static Vector4 KeyColorScale(ArenaLighting l)
+        {
+            var k = l.CrowdKeyColor;
+            if (k.a <= 0) return Vector4.zero;
+            var m = l.MoonColor;
+            float lum = Luma(m.r, m.g, m.b) / Mathf.Max(Luma(k.r, k.g, k.b), 1e-4f);
+            return new Vector4(k.r * lum / Mathf.Max(m.r, 1e-3f), k.g * lum / Mathf.Max(m.g, 1e-3f), k.b * lum / Mathf.Max(m.b, 1e-3f), 1);
         }
 
         /// <summary>The focus distance of the song's widest view (30 m; camera-and-sound.md), for cameras that look at no ground.</summary>
@@ -128,7 +144,7 @@ namespace Demo3D.Runtime.Arena
             color.contrast.Override(Args.GetFloat("--post-contrast", l.PostContrast));
             color.saturation.Override(Args.GetFloat("--post-saturation", l.PostSaturation));
             var lookup = profile.Add<ColorLookup>(true);
-            lookup.texture.Override(Lut());
+            lookup.texture.Override(Lut(l));
             lookup.contribution.Override(1f);
             var vignette = profile.Add<Vignette>(true);
             // ps-e8r.5: with the hero's light, the vignette darkens the frame's edges around the lit stage.
@@ -142,10 +158,12 @@ namespace Demo3D.Runtime.Arena
             return profile;
         }
 
-        /// <summary>The night LUT as URP's 2D strip (size² × size, linear texture).</summary>
-        public static Texture2D Lut()
+        /// <summary>The grade's LUT for <paramref name="l"/>'s tints (the night's by default) as URP's 2D strip (size² × size, linear texture).</summary>
+        public static Texture2D Lut(ArenaLighting l = null)
         {
-            if (_lut != null) return _lut;
+            l = l ?? Night;
+            var tints = (l.GradeShadow, l.GradeMid, l.GradeHigh);
+            if (Luts.TryGetValue(tints, out var lut) && lut != null) return lut;
             int n = LutSize;
             var tex = new Texture2D(n * n, n, TextureFormat.RGBAHalf, false, true)
             {
@@ -156,10 +174,10 @@ namespace Demo3D.Runtime.Arena
             for (int b = 0; b < n; b++)
             for (int g = 0; g < n; g++)
             for (int r = 0; r < n; r++)
-                px[g * n * n + b * n + r] = Grade(new Color(r / (n - 1f), g / (n - 1f), b / (n - 1f)));
+                px[g * n * n + b * n + r] = Grade(new Color(r / (n - 1f), g / (n - 1f), b / (n - 1f)), l);
             tex.SetPixels(px);
             tex.Apply(false, false);
-            _lut = tex;
+            Luts[tints] = tex;
             return tex;
         }
 
@@ -169,16 +187,18 @@ namespace Demo3D.Runtime.Arena
         /// cool, with no lift; midtones warmed, so the lit ground and the horde read warm; highlights near
         /// neutral. Saturated colours (effects, magic, hit flashes) keep their own hue: the tint fades out
         /// as saturation rises. Then an S-curve on luminance, scaling the channels together so it adds
-        /// contrast without turning hues.
+        /// contrast without turning hues. An environment's <c>post.grade</c> sets its own tints
+        /// (<see cref="ArenaLighting.GradeShadow"/>); <paramref name="lighting"/> null is the night's.
         /// </summary>
-        public static Color Grade(Color c)
+        public static Color Grade(Color c, ArenaLighting lighting = null)
         {
+            lighting = lighting ?? Night;
             float lum = Luma(c.r, c.g, c.b);
             float w = Smooth(0.05f, 0.85f, lum);                 // 0 in shadows, 1 in highlights
             float mid = 4 * w * (1 - w);                         // 1 in the midtones
-            var shadowTint = new Vector3(0.97f, 0.99f, 1.05f);
-            var midTint = new Vector3(1.06f, 1.0f, 0.90f);
-            var highTint = new Vector3(1.02f, 1.0f, 0.97f);
+            var shadowTint = lighting.GradeShadow;
+            var midTint = lighting.GradeMid;
+            var highTint = lighting.GradeHigh;
             var tint = Vector3.Lerp(Vector3.Lerp(shadowTint, highTint, w), midTint, mid);
             float max = Mathf.Max(c.r, Mathf.Max(c.g, c.b)), min = Mathf.Min(c.r, Mathf.Min(c.g, c.b));
             float sat = max > 1e-4f ? (max - min) / max : 0;

@@ -6,7 +6,8 @@ namespace Demo3D.Runtime.Arena
 {
     /// <summary>
     /// The night's lighting parameters (environment.md, Lighting the night), from the
-    /// <c>lighting</c> object of the arena's layout parameters (arena-layout.json). The scene
+    /// <c>lighting</c> object of the arena's layout parameters (arena-layout.json, or an
+    /// environment's resolved over it: LayoutEnvironment). The scene
     /// generator (ArenaBaker) places the moon and the lights from them, and the runtime applies the
     /// ambient, fog and grading from them, so the look has one tracked source.
     /// </summary>
@@ -41,6 +42,12 @@ namespace Demo3D.Runtime.Arena
         public float CrowdRimPower = 3f;
         /// <summary>The moon's intensity on the horde, as a multiple of its intensity on the set: the horde's key light.</summary>
         public float CrowdKey = 1f;
+        /// <summary>
+        /// The horde's key colour (ps-bop, epic decision 4; linear rgb): the moon's light on the horde
+        /// takes this colour at the moon's luminance, so a coloured moon on the set leaves the type
+        /// hues alone. Clear: the moon's own colour.
+        /// </summary>
+        public Color CrowdKeyColor = Color.clear;
         /// <summary>The horde's hit flash (linear HDR rgb, added as emission at full flash); clear keeps the material's.</summary>
         public Color CrowdFlash = Color.clear;
         /// <summary>
@@ -67,6 +74,13 @@ namespace Demo3D.Runtime.Arena
         public float PostExposure = 0.8f, PostContrast = 25f, PostSaturation = 30f, PostTemperature;
         public float BloomThreshold = 1.5f, BloomIntensity = 1f, BloomScatter = 0.65f;
         public string Tonemap = "neutral";
+        /// <summary>
+        /// The grade's tints (ps-bop, epic decision 5; NightLook.Grade): the display-referred colour's
+        /// multipliers in the shadows, midtones and highlights. The night's warm the midtones; an
+        /// environment may set its own (all 1: no tint, the S-curve only).
+        /// </summary>
+        public Vector3 GradeShadow = new Vector3(0.97f, 0.99f, 1.05f), GradeMid = new Vector3(1.06f, 1.0f, 0.90f),
+            GradeHigh = new Vector3(1.02f, 1.0f, 0.97f);
         /// <summary>The post feel's amounts (ps-e8r.18): offsets on the post stack that follow the music.</summary>
         public Playback.PostFeel.Amounts PostFeel = new Playback.PostFeel.Amounts();
         public int MaxFlameLights = 8;
@@ -157,6 +171,7 @@ namespace Demo3D.Runtime.Arena
             l.CrowdRim = Col(crowd["rim"], l.CrowdRim);
             l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
             l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
+            l.CrowdKeyColor = Col(crowd["keyColor"], l.CrowdKeyColor);
             l.CrowdFlash = Col(crowd["flash"], l.CrowdFlash);
             l.CrowdShoulder = crowd["shoulder"].AsFloat(l.CrowdShoulder);
             JsonValue hero = root["hero"];
@@ -174,6 +189,10 @@ namespace Demo3D.Runtime.Arena
             l.PostSaturation = post["saturation"].AsFloat(l.PostSaturation);
             l.PostTemperature = post["temperature"].AsFloat(l.PostTemperature);
             l.Tonemap = post["tonemap"].AsString(l.Tonemap);
+            JsonValue grade = post["grade"];
+            l.GradeShadow = Vec(grade["shadow"], l.GradeShadow);
+            l.GradeMid = Vec(grade["mid"], l.GradeMid);
+            l.GradeHigh = Vec(grade["high"], l.GradeHigh);
             JsonValue bloom = post["bloom"];
             l.BloomThreshold = bloom["threshold"].AsFloat(l.BloomThreshold);
             l.BloomIntensity = bloom["intensity"].AsFloat(l.BloomIntensity);
@@ -200,6 +219,9 @@ namespace Demo3D.Runtime.Arena
                     Flicker = flicker,
                 });
         }
+
+        static Vector3 Vec(JsonValue v, Vector3 fallback) =>
+            v.Count >= 3 ? new Vector3(v[0].AsFloat(), v[1].AsFloat(), v[2].AsFloat()) : fallback;
 
         static Color Col(JsonValue v, Color fallback) =>
             v.Count >= 3 ? new Color(v[0].AsFloat(), v[1].AsFloat(), v[2].AsFloat()) : fallback;

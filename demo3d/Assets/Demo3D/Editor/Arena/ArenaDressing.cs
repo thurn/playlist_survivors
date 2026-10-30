@@ -14,37 +14,30 @@ namespace Demo3D.EditorTools.Arena
     ///   dither out pixels between the camera and the hero (E0 stays stock);
     /// - the mist: the layout's <c>atmosphere.mist</c> cards, merged into one mesh with our
     ///   Demo3D/MistCard material (no shadows, not part of the static set).
-    /// Everything it writes goes to the gitignored Assets/Baked/Arena/.
+    /// Everything it writes goes to the environment's directory under the gitignored Assets/Baked/Arena/.
     /// </summary>
     public static class ArenaDressing
     {
-        public const string MistMaterialPath = ArenaBaker.MaterialDir + "/Mist.mat";
-        public const string MistMeshPath = ArenaBaker.Dir + "/Mist.asset";
-        public const string RuneMaterialPath = ArenaBaker.MaterialDir + "/Runes.mat";
-        public const string RuneMeshPath = ArenaBaker.Dir + "/Runes.asset";
-        public const string PoolMaterialPath = ArenaBaker.MaterialDir + "/GlowPools.mat";
-        public const string PoolMeshPath = ArenaBaker.Dir + "/GlowPools.asset";
-
-        public static void Dress(Transform root, Transform stat, bool lit)
+        public static void Dress(ArenaEnvironment env, Transform root, Transform stat, bool lit)
         {
             Twins.Clear(); // each scene refreshes its twins from the converted materials (a warm editor keeps statics)
-            var json = JsonValue.Parse(File.ReadAllText(ArenaBaker.LayoutPath));
-            int trees = lit ? Canopies(stat) : 0;
-            int cards = Mist(root, json["atmosphere"]["mist"]);
-            int runes = Runes(root, json["atmosphere"]["runes"]);
-            int pools = Pools(root, stat, json["lighting"]["glow"], json["lighting"]["flames"]["props"]);
+            var json = env.Root;
+            int trees = lit ? Canopies(env, stat) : 0;
+            int cards = Mist(env, root, json["atmosphere"]["mist"]);
+            int runes = Runes(env, root, json["atmosphere"]["runes"]);
+            int pools = Pools(env, root, stat, json["lighting"]["glow"], json["lighting"]["flames"]["props"]);
             Debug.Log($"ArenaDressing: {trees} tree renderers fade near the hero, {cards} mist cards, {runes} rune circles, {pools} glow pools");
         }
 
         /// <summary>
-        /// A converted kit material's base colour with the layout's <c>lighting.kitValue</c> applied
-        /// (environment.md, Value structure): the first entry whose key starts the vendor material's
-        /// name scales its RGB (alpha, and so alpha clipping, untouched). The packs' pale stone and
-        /// lilac atlases otherwise outshine the horde under the moon; emission is left as it is.
+        /// A converted kit material's base colour with the layout's <c>lighting.kitValue</c>
+        /// (<paramref name="values"/>) applied (environment.md, Value structure): the first entry whose
+        /// key starts the vendor material's name scales its RGB (alpha, and so alpha clipping,
+        /// untouched). The packs' pale stone and lilac atlases otherwise outshine the horde under the
+        /// moon; emission is left as it is.
         /// </summary>
-        public static Color KitValue(Color c, string materialName)
+        public static Color KitValue(JsonValue values, Color c, string materialName)
         {
-            var values = JsonValue.Parse(File.ReadAllText(ArenaBaker.LayoutPath))["lighting"]["kitValue"];
             if (values.Type != JsonType.Object) return c;
             foreach (var kv in values.Members)
                 if (materialName.StartsWith(kv.Key, System.StringComparison.Ordinal))
@@ -61,7 +54,7 @@ namespace Demo3D.EditorTools.Arena
 
         static readonly Dictionary<Material, Material> Twins = new Dictionary<Material, Material>();
 
-        static int Canopies(Transform stat)
+        static int Canopies(ArenaEnvironment env, Transform stat)
         {
             var shader = Shader.Find("Demo3D/LitCanopy") ?? throw new System.Exception("ArenaDressing: no Demo3D/LitCanopy");
             int n = 0;
@@ -76,7 +69,7 @@ namespace Demo3D.EditorTools.Arena
                     for (int i = 0; i < mats.Length; i++)
                     {
                         if (mats[i] == null || mats[i].shader == null || mats[i].shader.name != "Demo3D/LitStaticShadow") continue;
-                        mats[i] = Twin(mats[i], shader);
+                        mats[i] = Twin(env, mats[i], shader);
                         changed = true;
                     }
                     if (changed) { r.sharedMaterials = mats; n++; }
@@ -85,10 +78,10 @@ namespace Demo3D.EditorTools.Arena
             return n;
         }
 
-        static Material Twin(Material m, Shader shader)
+        static Material Twin(ArenaEnvironment env, Material m, Shader shader)
         {
             if (Twins.TryGetValue(m, out var t) && t != null) return t; // already refreshed for this scene
-            var path = $"{ArenaBaker.MaterialDir}/{Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(m))}_Canopy.mat";
+            var path = $"{env.MaterialDir}/{Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(m))}_Canopy.mat";
             t = AssetDatabase.LoadAssetAtPath<Material>(path);
             bool create = t == null;
             if (create) t = new Material(m) { name = m.name + " canopy" };
@@ -107,11 +100,11 @@ namespace Demo3D.EditorTools.Arena
         /// The mist cards, one merged mesh: each card a horizontal quad at its height, its uv the
         /// card's own 0..1 (the shader's elliptical edge), its vertex alpha its opacity.
         /// </summary>
-        static int Mist(Transform root, JsonValue mist)
+        static int Mist(ArenaEnvironment env, Transform root, JsonValue mist)
         {
             var cards = Items(mist["cards"]);
             float height = mist["heightM"].AsFloat(0.45f);
-            return Cards(root, "Mist", cards, "Demo3D/MistCard", MistMaterialPath, MistMeshPath, c =>
+            return Cards(env, root, "Mist", cards, "Demo3D/MistCard", c =>
                 (new Vector3(c["at"][0].AsFloat(), c["heightM"].AsFloat(height), c["at"][1].AsFloat()),
                  new Vector2(c["size"][0].AsFloat(10), c["size"][1].AsFloat(6)), c["yawDeg"].AsFloat(0),
                  new Color(1, 1, 1, c["opacity"].AsFloat(0.6f))),
@@ -128,10 +121,10 @@ namespace Demo3D.EditorTools.Arena
         /// The rune circles, one merged mesh of ground quads (Demo3D/RuneCircle): the vertex colour is
         /// the circle's linear tint, its alpha the intensity.
         /// </summary>
-        static int Runes(Transform root, JsonValue runes)
+        static int Runes(ArenaEnvironment env, Transform root, JsonValue runes)
         {
             var cards = Items(runes["circles"]);
-            return Cards(root, "Runes", cards, "Demo3D/RuneCircle", RuneMaterialPath, RuneMeshPath, c =>
+            return Cards(env, root, "Runes", cards, "Demo3D/RuneCircle", c =>
                 {
                     float d = 2 * c["radiusM"].AsFloat(6);
                     var col = c["color"];
@@ -145,7 +138,7 @@ namespace Demo3D.EditorTools.Arena
         /// A pool under each placed glowing or flaming piece (found by name in the static set): the
         /// glow or flame entry's colour (linear) and <c>pool {radiusM, intensity}</c>, centred under it.
         /// </summary>
-        static int Pools(Transform root, Transform stat, params JsonValue[] sources)
+        static int Pools(ArenaEnvironment env, Transform root, Transform stat, params JsonValue[] sources)
         {
             var list = new List<(Vector3 at, float radius, Color color)>();
             foreach (var glow in sources)
@@ -161,11 +154,10 @@ namespace Demo3D.EditorTools.Arena
                     foreach (Transform t in group)
                         if (t.name == piece) list.Add((new Vector3(t.position.x, 0.03f, t.position.z), pool["radiusM"].AsFloat(4f) * t.localScale.x, color));
                 }
-            return Cards(root, "GlowPools", list, "Demo3D/GroundGlow", PoolMaterialPath, PoolMeshPath,
+            return Cards(env, root, "GlowPools", list, "Demo3D/GroundGlow",
                 p => (p.at, new Vector2(2 * p.radius, 2 * p.radius), 0f, p.color), mat => { });
         }
 
-        /// <summary>Horizontal quads from a JSON list, merged into one mesh and drawn with one material of our own shader.</summary>
         static List<JsonValue> Items(JsonValue array)
         {
             var list = new List<JsonValue>();
@@ -173,10 +165,15 @@ namespace Demo3D.EditorTools.Arena
             return list;
         }
 
-        static int Cards<T>(Transform root, string name, List<T> cards, string shaderName, string matPath, string meshPath,
+        /// <summary>
+        /// Horizontal quads, merged into one mesh (the environment's NAME.asset) and drawn with one
+        /// material of our own shader (its Materials/NAME.mat).
+        /// </summary>
+        static int Cards<T>(ArenaEnvironment env, Transform root, string name, List<T> cards, string shaderName,
             System.Func<T, (Vector3 at, Vector2 size, float yawDeg, Color color)> card, System.Action<Material> configure)
         {
             if (cards.Count == 0) return 0;
+            string meshPath = $"{env.Dir}/{name}.asset", matPath = $"{env.MaterialDir}/{name}.mat";
             var v = new List<Vector3>();
             var uv = new List<Vector2>();
             var col = new List<Color>();

@@ -311,13 +311,102 @@ namespace Demo3D.Tests
             }
         }
 
+        /// <summary>
+        /// ps-bop: the crypt is the arena's plan with its own kit, ground and light: the area plan
+        /// comes from arena-layout.json, the overrides apply and what it leaves out is the forest's.
+        /// </summary>
+        [Test]
+        public void AnEnvironmentInheritsTheArenasPlanAndAppliesItsOverrides()
+        {
+            var forest = ArenaEnvironment.Load(LayoutEnvironment.Default);
+            var crypt = ArenaEnvironment.Load("crypt");
+            Assert.That(crypt.Dir, Is.EqualTo(ArenaBaker.Dir + "/crypt"), "its derived files beside the forest's");
+            Assert.That(forest.Json, Is.EqualTo(LayoutJson), "the forest is the arena's layout itself");
+            ArenaLayout a = ArenaLayout.Parse(forest.Json), c = ArenaLayout.Parse(crypt.Json);
+            Assert.That(c.Name, Is.EqualTo(a.Name));
+            Assert.That(c.Size, Is.EqualTo(a.Size));
+            Assert.That(c.HeroStart, Is.EqualTo(a.HeroStart));
+            Assert.That(c.DecorationDensity, Is.EqualTo(a.DecorationDensity));
+            Assert.That(c.Areas.Select(x => (x.Type, x.Name, x.Center, x.Radius, x.Width)), Is.EqualTo(a.Areas.Select(x => (x.Type, x.Name, x.Center, x.Radius, x.Width))));
+            Assert.That(c.Shots.Select(x => (x.Name, x.At, x.ViewWidthM)), Is.EqualTo(a.Shots.Select(x => (x.Name, x.At, x.ViewWidthM))));
+            Assert.That(c.Area("glowing-tree").Pieces.Select(p => p.Prop), Does.Not.Contain("elven/SM_Env_Tree_Glowing_01"), "its pieces replace the landmark's");
+            Assert.That(c.Area("graveyard").Pieces.Select(p => p.Prop), Is.EqualTo(a.Area("graveyard").Pieces.Select(p => p.Prop)), "a landmark it leaves alone");
+            Assert.That(c.Groups["forest-trees"].Props, Has.None.StartsWith("adventure/"), "a prop group replaces whole");
+
+            var fl = ArenaLighting.Parse(forest.Json);
+            var cl = ArenaLighting.Parse(crypt.Json);
+            Assert.That(cl.MoonColor.r, Is.EqualTo(cl.MoonColor.b).Within(1e-4f), "a neutral moon");
+            Assert.That(cl.MoonElevationDeg, Is.EqualTo(fl.MoonElevationDeg), "the moon's direction is the arena's");
+            Assert.That(cl.CrowdKey, Is.EqualTo(fl.CrowdKey), "the horde's lighting is the arena's");
+            Assert.That(cl.PostFeel.BeatBloom, Is.EqualTo(fl.PostFeel.BeatBloom), "the post feel rides on top");
+            Assert.That(cl.Flames.Count, Is.EqualTo(fl.Flames.Count), "the candles, braziers and pyres keep their flames");
+            Assert.That(cl.Glow, Is.Empty, "null removes the glowing tree's light");
+            Assert.That(cl.GradeMid, Is.EqualTo(Vector3.one), "its own grade");
+            var fg = ArenaBaker.GroundColors.Parse(forest.Root["ground"]);
+            var cg = ArenaBaker.GroundColors.Parse(crypt.Root["ground"]);
+            Assert.That(cg.Clearing, Is.Not.EqualTo(fg.Clearing), "its own ground");
+            Assert.That(crypt.Root["lighting"]["kitValue"]["PolygonDarkFantasy"].AsFloat(), Is.EqualTo(0.7f), "the kit's value scales are inherited");
+            var fp = FootprintTable.Parse(File.ReadAllText(ArenaBaker.FootprintsPath));
+            foreach (var g in c.Groups.Values) foreach (var prop in g.Props) Assert.That(fp[prop], Is.Not.Null, prop + " is a measured kit piece");
+
+            var e = Assert.Throws<ArgumentException>(() => ArenaEnvironment.Load("nope"));
+            StringAssert.Contains("forest, crypt", e.Message, "an unknown environment lists the known ones");
+        }
+
+        /// <summary>The player's path (PlaybackData.EnvironmentLayout) resolves an environment as the bakers do, and fails on an unknown one.</summary>
+        [Test]
+        public void ThePlayerResolvesAnEnvironmentAsTheBakersDo()
+        {
+            var data = ScriptableObject.CreateInstance<Demo3D.Runtime.Playback.PlaybackData>();
+            try
+            {
+                data.layouts = new[] { new TextAsset(LayoutJson) { name = "arena-layout" } };
+                data.environments = new[] { new TextAsset(File.ReadAllText(ArenaBaker.DataDir + "/environment-crypt.json")) { name = "environment-crypt" } };
+                Assert.That(data.EnvironmentNames(), Is.EqualTo(new[] { "forest", "crypt" }));
+                Assert.That(data.EnvironmentLayout("crypt"), Is.EqualTo(ArenaEnvironment.Load("crypt").Json));
+                Assert.That(data.EnvironmentLayout("forest"), Is.EqualTo(LayoutJson));
+                var e = Assert.Throws<ArgumentException>(() => data.EnvironmentLayout("lava"));
+                StringAssert.Contains("forest, crypt", e.Message);
+            }
+            finally
+            {
+                foreach (var t in data.layouts.Concat(data.environments)) UnityEngine.Object.DestroyImmediate(t);
+                UnityEngine.Object.DestroyImmediate(data);
+            }
+        }
+
+        /// <summary>Epic ps-bop's decisions 4 and 5: the horde keeps a neutral key under a coloured moon, and an environment grades its own way.</summary>
+        [Test]
+        public void TheHordesKeyStaysNeutralUnderAColouredMoonAndAGradeIsTheEnvironments()
+        {
+            var night = ArenaLighting.Parse(LayoutJson);
+            Assert.That(NightLook.KeyColorScale(night).w, Is.EqualTo(0f), "the forest's horde takes the moon's own colour");
+            var l = ArenaLighting.Parse(LayoutJson);
+            l.MoonColor = new Color(1f, 0.5f, 0.25f);
+            l.CrowdKeyColor = Color.white;
+            var k = NightLook.KeyColorScale(l);
+            Assert.That(k.w, Is.EqualTo(1f));
+            var onHorde = new Vector3(l.MoonColor.r * k.x, l.MoonColor.g * k.y, l.MoonColor.b * k.z);
+            Assert.That(onHorde.x, Is.EqualTo(onHorde.z).Within(1e-4f), "neutral on the horde");
+            float Luma(Vector3 v) => 0.2126f * v.x + 0.7152f * v.y + 0.0722f * v.z;
+            Assert.That(Luma(onHorde), Is.EqualTo(Luma(new Vector3(1f, 0.5f, 0.25f))).Within(1e-4f), "at the moon's luminance");
+
+            var crypt = ArenaLighting.Parse(ArenaEnvironment.Load("crypt").Json);
+            var grey = NightLook.Grade(new Color(0.45f, 0.45f, 0.45f), crypt);
+            Assert.That(grey.r, Is.EqualTo(grey.b).Within(1e-4f), "the crypt's grade leaves greys grey");
+            var warm = NightLook.Grade(new Color(0.45f, 0.45f, 0.45f));
+            Assert.That(warm.r, Is.GreaterThan(warm.b), "the night's still warms them");
+            Assert.That(NightLook.Lut(crypt), Is.Not.SameAs(NightLook.Lut()), "one LUT per grade");
+        }
+
         [Test]
         public void TheGroundIsDarkerInTheForestThanOnFightingGround()
         {
             var layout = ArenaLayout.Parse(LayoutJson);
             var opening = layout.Area("opening");
-            Color32 clearing = ArenaBaker.GroundColor(layout, opening.Center.X, opening.Center.Y);
-            Color32 forest = ArenaBaker.GroundColor(layout, -70, 70);
+            var colors = ArenaBaker.GroundColors.Parse(JsonValue.Parse(LayoutJson)["ground"]);
+            Color32 clearing = ArenaBaker.GroundColor(layout, colors, opening.Center.X, opening.Center.Y);
+            Color32 forest = ArenaBaker.GroundColor(layout, colors, -70, 70);
             Assert.That(clearing.g, Is.GreaterThan(forest.g));
         }
 
@@ -342,28 +431,38 @@ namespace Demo3D.Tests
         [Test]
         public void KitValueDarkensThePaleAtlasesButKeepsAlpha()
         {
-            var c = ArenaDressing.KitValue(new Color(1f, 0.8f, 0.6f, 0.5f), "PolygonElven_Mat_01_A");
+            var values = JsonValue.Parse(LayoutJson)["lighting"]["kitValue"];
+            var c = ArenaDressing.KitValue(values, new Color(1f, 0.8f, 0.6f, 0.5f), "PolygonElven_Mat_01_A");
             Assert.That(c.r, Is.LessThan(1f));
             Assert.That(c.g / c.r, Is.EqualTo(0.8f).Within(1e-4f));
             Assert.That(c.a, Is.EqualTo(0.5f));
-            Assert.That(ArenaDressing.KitValue(Color.white, "SomeOtherPack_Mat"), Is.EqualTo(Color.white));
+            Assert.That(ArenaDressing.KitValue(values, Color.white, "SomeOtherPack_Mat"), Is.EqualTo(Color.white));
             Assert.That(ArenaDressing.IsTree("SM_Env_Tree_Round_01"), Is.True);
             Assert.That(ArenaDressing.IsTree("SM_Env_TreeLog_01"), Is.False);
         }
 
         [Test]
-        public void EveryDensityIsBakedForTheBaseline()
+        public void EveryDensityIsBakedForTheBaselineAndEachEnvironmentAtTheAuthoredOne()
         {
             var index = Index;
+            const string forest = LayoutEnvironment.Default;
             foreach (var d in ArenaBaker.E0Densities)
-                Assert.That(index.Find(ArenaIndex.E0, d), Is.Not.Null, $"E0 at {d}x");
-            Assert.That(index.Find(ArenaIndex.E2, 1f), Is.Not.Null, "E2 at 1x (the demo's)");
+                Assert.That(index.Find(forest, ArenaIndex.E0, d), Is.Not.Null, $"E0 at {d}x");
+            Assert.That(index.Find(forest, ArenaIndex.E2, 1f), Is.Not.Null, "E2 at 1x (the demo's)");
             foreach (var d in ArenaBaker.LitDensities)
-                Assert.That(index.Find(ArenaIndex.E2, d), Is.Not.Null, $"E2 at {d}x (TD14's density sweep)");
+                Assert.That(index.Find(forest, ArenaIndex.E2, d), Is.Not.Null, $"E2 at {d}x (TD14's density sweep)");
             foreach (var d in ArenaBaker.MergedDensities)
             {
-                Assert.That(index.Find(ArenaIndex.E0, d, true), Is.Not.Null, $"E0 merged at {d}x");
-                Assert.That(index.Find(ArenaIndex.E2, d, true), Is.Not.Null, $"E2 merged at {d}x");
+                Assert.That(index.Find(forest, ArenaIndex.E0, d, true), Is.Not.Null, $"E0 merged at {d}x");
+                Assert.That(index.Find(forest, ArenaIndex.E2, d, true), Is.Not.Null, $"E2 merged at {d}x");
+            }
+            float authored = ArenaLayout.Parse(LayoutJson).DecorationDensity;
+            foreach (var name in ArenaEnvironment.Names().Where(n => n != forest))
+            {
+                var e = index.Find(name, ArenaIndex.E2, authored);
+                Assert.That(e, Is.Not.Null, $"{name}: E2 at the authored {authored}x (the player's default)");
+                Assert.That(e.scene, Is.EqualTo($"Arena-{name}-E2-{authored}x"));
+                Assert.That(index.Find(name, ArenaIndex.E0, authored), Is.Not.Null, $"{name}: E0 at {authored}x (S0's stock rung)");
             }
         }
 
@@ -391,6 +490,10 @@ namespace Demo3D.Tests
             Assert.That(ArenaOptions.FromBench(new Dictionary<string, object> { ["without"] = "forest" }, "rung", ArenaOptions.Stock()).Label(),
                 Is.EqualTo("e0 1x without:forest"));
             Assert.Throws<ArgumentException>(() => ArenaOptions.FromBench(new Dictionary<string, object> { ["without"] = "trees" }, "rung", ArenaOptions.Stock()));
+            var crypt = ArenaOptions.FromBench(new Dictionary<string, object> { ["environment"] = "Crypt" }, "arena", ArenaOptions.Final());
+            Assert.That(crypt.Environment, Is.EqualTo("crypt"));
+            Assert.That(crypt.Label(), Does.StartWith("crypt e2 "), "a sweep's label names a non-default environment");
+            Assert.That(ArenaOptions.Final().Environment, Is.EqualTo(LayoutEnvironment.Default));
         }
 
         [Test]
@@ -409,16 +512,18 @@ namespace Demo3D.Tests
         public void TheBakedScenesHoldThePlacementList()
         {
             var index = Index;
-            var layout = ArenaLayout.Parse(LayoutJson);
             var table = FootprintTable.Parse(File.ReadAllText(ArenaBaker.FootprintsPath));
-            var lighting = ArenaLighting.Parse(LayoutJson);
             try
             {
                 foreach (var e in index.entries)
                 {
+                    // Each environment's scenes hold its own placement list (ps-bop), with its own materials.
+                    var env = ArenaEnvironment.Load(ArenaIndex.EnvironmentOf(e));
+                    var layout = ArenaLayout.Parse(env.Json);
+                    var lighting = ArenaLighting.Parse(env.Json);
                     var list = layout.WithDensity(e.density).Generate(table);
                     Assert.That(e.placements, Is.EqualTo(list.Items.Length), e.scene + " placements against the list");
-                    var scene = EditorSceneManager.OpenScene($"{ArenaBaker.Dir}/{e.scene}.unity", OpenSceneMode.Single);
+                    var scene = EditorSceneManager.OpenScene($"{env.Dir}/{e.scene}.unity", OpenSceneMode.Single);
                     var root = scene.GetRootGameObjects().Single(g => g.name == "Arena").transform;
                     var stat = root.Find("Static");
                     int pieces = stat.Cast<Transform>().Where(g => g.name != "Merged").Sum(g => g.childCount);
@@ -442,7 +547,7 @@ namespace Demo3D.Tests
                     foreach (var m in r.sharedMaterials)
                     {
                         Assert.That(m, Is.Not.Null, r.name);
-                        Assert.That(AssetDatabase.GetAssetPath(m), Does.StartWith(ArenaBaker.MaterialDir), r.name + " uses a converted material");
+                        Assert.That(AssetDatabase.GetAssetPath(m), Does.StartWith(env.MaterialDir + "/"), r.name + " uses its environment's converted material");
                         // At E2 the trees take TD15's canopy fade (Demo3D/LitCanopy, its keyword on); the rock is TD14's triplanar port.
                         bool canopy = e.rung == ArenaIndex.E2 && ArenaDressing.IsTree(PieceOf(r.transform, stat).name);
                         string expect = m.name.StartsWith("RockTriplanar") ? "Demo3D/RockTriplanar"

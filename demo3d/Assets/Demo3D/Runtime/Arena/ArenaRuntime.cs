@@ -21,6 +21,7 @@ namespace Demo3D.Runtime.Arena
     /// texture cap (<see cref="ArenaPipeline"/>, before the scene loads), the merged scene variant,
     /// and the static set out of the depth-normals prepass (its materials' DepthNormals and
     /// DepthOnly passes switched off on copies).
+    /// The options' environment (ps-bop) picks the baked scene and the layout its lighting comes from.
     /// The scene finishes loading on the next frame; <see cref="Ready"/> says when.
     /// </summary>
     public sealed class ArenaRuntime : IDisposable
@@ -48,14 +49,12 @@ namespace Demo3D.Runtime.Arena
         public Volume Post { get; private set; }
         readonly List<Material> _copies = new List<Material>();
 
-        /// <summary>True if the arena scene for this rung and density is baked into the build.</summary>
-        public static bool Available(string rung, float density, bool merged = false)
+        /// <summary>True if the arena scene for this environment, rung and density is baked into the build.</summary>
+        public static bool Available(ArenaOptions o)
         {
             var index = ArenaIndex.Load();
-            return index != null && index.Find(rung, density, merged) != null;
+            return index != null && index.Find(o.Environment, o.Rung, o.Density, o.Merged) != null;
         }
-
-        public static bool Available(ArenaOptions o) => Available(o.Rung, o.Density, o.Merged);
 
         public static string Describe()
         {
@@ -78,14 +77,14 @@ namespace Demo3D.Runtime.Arena
             o = o.Clone();
             if (o.Density <= 0) o.Density = ArenaOptions.AuthoredDensity;
             var index = ArenaIndex.Load() ?? throw new InvalidOperationException("ArenaRuntime: no arena baked (run demo3d unity BakeArena)");
-            var entry = index.Find(o.Rung, o.Density, o.Merged)
-                ?? throw new ArgumentException($"ArenaRuntime: no arena scene for rung {o.Rung} at density {o.Density.ToString(CultureInfo.InvariantCulture)}" +
+            var entry = index.Find(o.Environment, o.Rung, o.Density, o.Merged)
+                ?? throw new ArgumentException($"ArenaRuntime: no {o.Environment} arena scene for rung {o.Rung} at density {o.Density.ToString(CultureInfo.InvariantCulture)}" +
                                                (o.Merged ? " merged" : "") + $" (have: {Describe()})");
-            var layout = PlaybackData.Load().Layout("arena") ?? throw new InvalidOperationException("ArenaRuntime: no arena layout in PlaybackData");
+            var layout = PlaybackData.Load().EnvironmentLayout(o.Environment);
             ArenaPipeline.Apply(o);
             // `--palette name` swaps the environment's colours for one of the layout's palettes (ps-ocd),
             // over the `--roster` set's own look (ps-f8a.4).
-            var lighting = ArenaLighting.Parse(layout.text, Args.Get("--palette"), RosterSet.Active.Name);
+            var lighting = ArenaLighting.Parse(layout, Args.Get("--palette"), RosterSet.Active.Name);
             var a = new ArenaRuntime(o, entry.scene, lighting, camera, volumeParent);
             SceneManager.sceneLoaded += a.Loaded;
             SceneManager.LoadScene(entry.scene, LoadSceneMode.Additive);

@@ -18,11 +18,14 @@ namespace Demo3D.Runtime.Arena
     /// - <see cref="Without"/> (the bounds of E3 and E4, bench only): "small" hides the small props
     ///   (E3's decimated LODs can save at most what they cost), "forest" the forest's interior
     ///   (E4's impostors likewise). Neither is a look anyone ships.
+    /// And beside the rungs, <see cref="Environment"/> (ps-bop): which environment's scenes, "forest"
+    /// (the default) or another's environment-NAME.json (environment.md, Environments).
     /// </summary>
     public sealed class ArenaOptions
     {
         public const string GrdOff = "off", GrdOn = "on", GrdOcclusion = "occlusion";
 
+        public string Environment = PS.Choreography.LayoutEnvironment.Default;
         public string Rung = ArenaIndex.E2;
         public float Density = 1f;
         public string Grd = GrdOff;
@@ -72,7 +75,7 @@ namespace Demo3D.Runtime.Arena
         /// <summary>
         /// Reads sceneOptions over <paramref name="defaults"/>: <paramref name="rungKey"/> ("rung" for
         /// S0, "arena" for S1–S6), <c>density</c>, <c>grd</c>, <c>merged</c>, <c>texCap</c>, <c>prepass</c>
-        /// ("in" or "out", or a bool).
+        /// ("in" or "out", or a bool), <c>environment</c>.
         /// </summary>
         public static ArenaOptions FromBench(IReadOnlyDictionary<string, object> o, string rungKey, ArenaOptions defaults)
         {
@@ -87,13 +90,15 @@ namespace Demo3D.Runtime.Arena
             if (o.TryGetValue("prepass", out var p))
                 a.Prepass = p is bool pb ? pb : ParsePrepass(p as string);
             if (o.TryGetValue("without", out var w) && w is string ws) a.Without = ws.ToLowerInvariant();
+            if (o.TryGetValue("environment", out var env) && env is string es) a.Environment = es.ToLowerInvariant();
             a.Validate();
             return a;
         }
 
         /// <summary>
         /// The demo's flags over <paramref name="defaults"/>: <c>--arena</c>, <c>--density</c>, <c>--grd
-        /// off|on|occlusion</c>, <c>--merged</c> / <c>--no-merged</c>, <c>--tex-cap N</c>, <c>--prepass in|out</c>.
+        /// off|on|occlusion</c>, <c>--merged</c> / <c>--no-merged</c>, <c>--tex-cap N</c>, <c>--prepass in|out</c>,
+        /// <c>--environment NAME</c>.
         /// </summary>
         public static ArenaOptions FromCommandLine(ArenaOptions defaults)
         {
@@ -108,6 +113,7 @@ namespace Demo3D.Runtime.Arena
             var p = Args.Get("--prepass");
             if (p != null) a.Prepass = ParsePrepass(p);
             a.Without = Args.Get("--without", a.Without).ToLowerInvariant();
+            a.Environment = Args.Get("--environment", a.Environment).ToLowerInvariant();
             if (a.Rung != "off") a.Validate();
             return a;
         }
@@ -138,10 +144,12 @@ namespace Demo3D.Runtime.Arena
                 throw new ArgumentException($"ArenaOptions: without must be small or forest, not {Without}");
         }
 
-        /// <summary>A short label: "e2 grd:on merged tex:1024 prepass:out" (defaults left out).</summary>
+        /// <summary>A short label: "crypt e2 grd:on merged tex:1024 prepass:out" (defaults, the forest among them, left out).</summary>
         public string Label()
         {
-            var parts = new List<string> { Rung + " " + Density.ToString("0.###", CultureInfo.InvariantCulture) + "x" };
+            var parts = new List<string>();
+            if (Environment != PS.Choreography.LayoutEnvironment.Default) parts.Add(Environment);
+            parts.Add(Rung + " " + Density.ToString("0.###", CultureInfo.InvariantCulture) + "x");
             if (Grd != GrdOff) parts.Add("grd:" + Grd);
             if (Merged) parts.Add("merged");
             if (TexCap > 0) parts.Add("tex:" + TexCap);

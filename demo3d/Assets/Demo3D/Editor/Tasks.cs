@@ -41,7 +41,7 @@ namespace Demo3D.EditorTools
 
         /// <summary>
         /// Generates the arena's scenes, materials, ground and lightmaps into Assets/Baked/Arena/
-        /// (TD9): `[-e0 0.5,1,2,4] [-lit 1,2] [-noLightmaps]`.
+        /// (TD9), every environment's or `-environment a,b`'s (ps-bop): `[-e0 0.5,1,2,4] [-lit 1,2] [-noLightmaps]`.
         /// </summary>
         public static void BakeArena() => Arena.ArenaBaker.Bake();
 
@@ -94,10 +94,10 @@ namespace Demo3D.EditorTools
             if (scenes.Count == 0)
             {
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToList();
-                // The baked arena's scenes (TD9), loaded by name at runtime. They live in the
-                // gitignored Baked/, so they join the build here, not in the tracked build settings.
+                // The baked arena's scenes (TD9), every environment's (ps-bop), loaded by name at runtime. They live in
+                // the gitignored Baked/, so they join the build here, not in the tracked build settings.
                 if (Directory.Exists(Arena.ArenaBaker.Dir))
-                    scenes.AddRange(Directory.GetFiles(Arena.ArenaBaker.Dir, "*.unity").Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p));
+                    scenes.AddRange(Directory.GetFiles(Arena.ArenaBaker.Dir, "*.unity", SearchOption.AllDirectories).Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p));
             }
             if (scenes.Count == 0) throw new Exception("Tasks.BuildPlayer: no scenes to build");
 

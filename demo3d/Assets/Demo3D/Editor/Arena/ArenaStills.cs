@@ -16,7 +16,7 @@ namespace Demo3D.EditorTools.Arena
     /// (TD9's look checks; TD15 owns the beauty shots themselves): the night look, the rung's
     /// lighting, and a few heroes standing at each shot (their shader takes the static shadow map
     /// at E2, the realtime cascades at E0, so the pair checks the map's alignment). Tagged JPEGs.
-    /// `demo3d unity Demo3D.EditorTools.Arena.ArenaStills.Run [-rung e2] [-density 1] [-out evidence/td9]
+    /// `demo3d unity Demo3D.EditorTools.Arena.ArenaStills.Run [-environment forest] [-rung e2] [-density 1] [-out evidence/td9]
     /// [-width 960] [-shots opening,courtyard] [-heroes]`; TD14's rung switches that change the look:
     /// `[-merged] [-texCap 1024] [-prepassOut] [-crop x,y,w,h,scale] [-task td14]`.
     /// </summary>
@@ -30,18 +30,19 @@ namespace Demo3D.EditorTools.Arena
             int width = int.Parse(TaskArgs.Get("-width", "960"));
             var only = TaskArgs.Get("-shots");
             bool heroes = TaskArgs.Has("-heroes");
+            var env = ArenaEnvironment.Load(TaskArgs.Get("-environment"));
             var options = new ArenaOptions
             {
-                Rung = rung, Density = density, Merged = TaskArgs.Has("-merged"),
+                Environment = env.Name, Rung = rung, Density = density, Merged = TaskArgs.Has("-merged"),
                 TexCap = int.Parse(TaskArgs.Get("-texCap", "0")), Prepass = !TaskArgs.Has("-prepassOut"),
             };
             string task = TaskArgs.Get("-task", "TD9");
             string label = TaskArgs.Get("-label", task + " arena still");
             var crop = TaskArgs.Get("-crop");
             string tag = (options.Merged ? "-merged" : "") + (options.TexCap > 0 ? "-tex" + options.TexCap : "") + (options.Prepass ? "" : "-prepassout");
-            var path = ArenaBaker.ScenePath(rung, density, options.Merged);
+            var path = env.ScenePath(rung, density, options.Merged);
             if (!File.Exists(path)) throw new System.Exception("ArenaStills: no scene " + path + " (run demo3d unity BakeArena)");
-            var layoutJson = File.ReadAllText(ArenaBaker.LayoutPath);
+            var layoutJson = env.Json;
             var layout = ArenaLayout.Parse(layoutJson);
             var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
             var cam = GameCamera();
@@ -74,7 +75,7 @@ namespace Demo3D.EditorTools.Arena
                     if (heroes) CanopyFade.SetHero(focus); else CanopyFade.Clear();
                     arena.FollowHero(focus);
                     Frame(cam, focus, shot.ViewWidthM);
-                    var file = Path.Combine(outDir, $"arena-{rung}-{density:0.###}x{tag}-{shot.Name}.jpg");
+                    var file = Path.Combine(outDir, $"arena-{(env.IsDefault ? "" : env.Name + "-")}{rung}-{density:0.###}x{tag}-{shot.Name}.jpg");
                     Render(cam, file, width, $"{label} {options.Label()} {shot.Name}", crop);
                     foreach (var h in placed) Object.DestroyImmediate(h);
                     placed.Clear();

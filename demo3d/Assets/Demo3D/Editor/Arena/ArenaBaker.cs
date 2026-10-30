@@ -29,7 +29,11 @@ namespace Demo3D.EditorTools.Arena
     ///   (TD14, measured within rung E1): the same scenes with the small props (under
     ///   <see cref="MergeMaxM"/>, outside landmarks and structures) merged into one mesh per
     ///   <see cref="MergeCellM"/> cell, material and shadow mode, saved under Baked/Arena/Merged/.
-    /// `demo3d unity BakeArena [-e0 0.5,1,2,4] [-lit 0.5,1,2,4] [-merged 1,2] [-noLightmaps]`; also the "Arena" baker.
+    /// Each other environment (ps-bop; <see cref="ArenaEnvironment"/>) gets its own scenes, materials
+    /// and ground under Baked/Arena/NAME/ ("Arena-NAME-E2-2x"), by default at the authored density
+    /// only (<see cref="EnvironmentDensities"/>): E0 and E2, not merged.
+    /// `demo3d unity BakeArena [-environment forest,crypt] [-e0 0.5,1,2,4] [-lit 0.5,1,2,4] [-merged 1,2] [-noLightmaps]`
+    /// (densities given apply to every environment baked); also the "Arena" baker, which bakes them all.
     /// </summary>
     public static class ArenaBaker
     {
@@ -41,7 +45,12 @@ namespace Demo3D.EditorTools.Arena
         public static readonly float[] E0Densities = { 0.5f, 1f, 2f, 4f };
         public static readonly float[] LitDensities = { 0.5f, 1f, 2f, 4f };
         public static readonly float[] MergedDensities = { 1f, 2f };
-        public const string MergedDir = Dir + "/Merged";
+        /// <summary>
+        /// The densities another environment bakes at by default: the authored one (the layout's
+        /// decorationDensity, which the player loads and the timeline navigates). The forest's
+        /// full set took most of the bake's time; each environment adds its look, not a ladder.
+        /// </summary>
+        public static float[] EnvironmentDensities(ArenaLayout layout) => new[] { layout.DecorationDensity };
         /// <summary>Props whose bounds' largest side is under this merge (TD14, E1): bushes, rocks, plants, logs, candles; trees stay instances.</summary>
         public const float MergeMaxM = ArenaOptions.SmallPropM;
         /// <summary>The merged meshes' cell: two probe spacings, so a merged mesh's one probe sample stays local.</summary>
@@ -57,20 +66,14 @@ namespace Demo3D.EditorTools.Arena
         public static void Bake()
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var e0 = Floats(TaskArgs.Get("-e0")) ?? E0Densities;
-            var lit = Floats(TaskArgs.Get("-lit")) ?? LitDensities;
-            var merged = Floats(TaskArgs.Get("-merged")) ?? MergedDensities;
+            var names = TaskArgs.Get("-environment")?.Split(',') ?? ArenaEnvironment.Names().ToArray();
+            var environments = names.Select(ArenaEnvironment.Load).ToList(); // an unknown name fails before anything bakes
             bool lightmaps = !TaskArgs.Has("-noLightmaps");
-            Directory.CreateDirectory(MaterialDir);
-            Directory.CreateDirectory(MergedDir);
             Directory.CreateDirectory(Dir + "/Resources");
-            var layoutJson = File.ReadAllText(LayoutPath);
-            var layout = ArenaLayout.Parse(layoutJson);
             var table = FootprintTable.Parse(File.ReadAllText(FootprintsPath));
-            var lighting = ArenaLighting.Parse(layoutJson);
-            var converter = new MaterialConverter(MaterialDir);
-            var ground = GroundMaterial(layout);
             var groundMesh = GroundMesh();
+            var detail = DetailAlbedo();
+            int materials = 0;
 
             var indexPath = $"{Dir}/Resources/{ArenaIndex.ResourcePath}.asset";
             var old = AssetDatabase.LoadAssetAtPath<ArenaIndex>(indexPath);
@@ -80,16 +83,35 @@ namespace Demo3D.EditorTools.Arena
                 entries.RemoveAll(x => x.scene == e.scene);
                 entries.Add(e);
             }
-            foreach (var d in e0) Put(Generate(ArenaIndex.E0, d, false, layout, table, lighting, converter, ground, groundMesh, false));
-            foreach (var d in lit) Put(Generate(ArenaIndex.E2, d, false, layout, table, lighting, converter, ground, groundMesh, lightmaps));
-            foreach (var d in merged)
+            foreach (var env in environments)
             {
-                Put(Generate(ArenaIndex.E0, d, true, layout, table, lighting, converter, ground, groundMesh, false));
-                Put(Generate(ArenaIndex.E2, d, true, layout, table, lighting, converter, ground, groundMesh, lightmaps));
+                Directory.CreateDirectory(env.MaterialDir);
+                Directory.CreateDirectory(env.MergedDir);
+                var layout = ArenaLayout.Parse(env.Json);
+                var lighting = ArenaLighting.Parse(env.Json);
+                var converter = new MaterialConverter(env.MaterialDir, env.Root["lighting"]["kitValue"]);
+                var ground = GroundMaterial(env, layout, detail);
+                var authored = env.IsDefault ? null : EnvironmentDensities(layout);
+                var e0 = Floats(TaskArgs.Get("-e0")) ?? authored ?? E0Densities;
+                var lit = Floats(TaskArgs.Get("-lit")) ?? authored ?? LitDensities;
+                var merged = Floats(TaskArgs.Get("-merged")) ?? (env.IsDefault ? MergedDensities : new float[0]);
+                foreach (var d in e0) Put(Generate(env, ArenaIndex.E0, d, false, layout, table, lighting, converter, ground, groundMesh, false));
+                foreach (var d in lit) Put(Generate(env, ArenaIndex.E2, d, false, layout, table, lighting, converter, ground, groundMesh, lightmaps));
+                foreach (var d in merged)
+                {
+                    Put(Generate(env, ArenaIndex.E0, d, true, layout, table, lighting, converter, ground, groundMesh, false));
+                    Put(Generate(env, ArenaIndex.E2, d, true, layout, table, lighting, converter, ground, groundMesh, lightmaps));
+                }
+                materials += converter.Count;
             }
-            entries.RemoveAll(e => !File.Exists($"{Dir}/{e.scene}.unity"));
-            entries.Sort((a, b) => string.CompareOrdinal(a.rung, b.rung) != 0 ? string.CompareOrdinal(a.rung, b.rung)
-                : a.merged != b.merged ? a.merged.CompareTo(b.merged) : a.density.CompareTo(b.density));
+            entries.RemoveAll(e => !File.Exists($"{ArenaEnvironment.DirOf(e.environment)}/{e.scene}.unity"));
+            entries.Sort((a, b) =>
+            {
+                string ea = ArenaIndex.EnvironmentOf(a), eb = ArenaIndex.EnvironmentOf(b);
+                if (ea != eb) return ea == LayoutEnvironment.Default ? -1 : eb == LayoutEnvironment.Default ? 1 : string.CompareOrdinal(ea, eb);
+                return string.CompareOrdinal(a.rung, b.rung) != 0 ? string.CompareOrdinal(a.rung, b.rung)
+                    : a.merged != b.merged ? a.merged.CompareTo(b.merged) : a.density.CompareTo(b.density);
+            });
 
             var index = ScriptableObject.CreateInstance<ArenaIndex>();
             index.entries = entries.ToArray();
@@ -98,20 +120,18 @@ namespace Demo3D.EditorTools.Arena
             AssetDatabase.SaveAssets();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             Debug.Log($"ArenaBaker: {entries.Count} scenes ({string.Join(", ", entries.Select(e => $"{e.scene}: {e.renderers} renderers, {e.triangles} tris"))}), " +
-                      $"{converter.Count} materials, in {sw.Elapsed.TotalSeconds:F0} s");
+                      $"{materials} materials, in {sw.Elapsed.TotalSeconds:F0} s");
         }
 
         static float[] Floats(string s) =>
             string.IsNullOrEmpty(s) ? null : s.Split(',').Select(x => float.Parse(x, CultureInfo.InvariantCulture)).ToArray();
 
-        public static string ScenePath(string rung, float density, bool merged = false) => $"{Dir}/{ArenaIndex.SceneName(rung, density, merged)}.unity";
-
-        static ArenaIndex.Entry Generate(string rung, float density, bool merge, ArenaLayout layout, FootprintTable table, ArenaLighting lighting,
+        static ArenaIndex.Entry Generate(ArenaEnvironment env, string rung, float density, bool merge, ArenaLayout layout, FootprintTable table, ArenaLighting lighting,
             MaterialConverter converter, Material groundMat, Mesh groundMesh, bool bakeLightmaps)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             bool lit = rung == ArenaIndex.E2;
-            string name = ArenaIndex.SceneName(rung, density, merge);
+            string name = ArenaIndex.SceneName(env.Name, rung, density, merge);
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var list = layout.WithDensity(density).Generate(table);
             var root = new GameObject("Arena");
@@ -208,23 +228,23 @@ namespace Demo3D.EditorTools.Arena
                 }
             }
 
-            ArenaDressing.Dress(root.transform, stat, lit); // TD15: canopy fade, mist
+            ArenaDressing.Dress(env, root.transform, stat, lit); // TD15: canopy fade, mist
             int renderers = stat.GetComponentsInChildren<Renderer>(true).Count(r => !(r is ParticleSystemRenderer));
             int mergedRenderers = 0;
             if (merge)
             {
-                mergedRenderers = Merge(stat, name, lit);
+                mergedRenderers = Merge(env, stat, name, lit);
                 renderers = stat.GetComponentsInChildren<Renderer>(true).Count(r => !(r is ParticleSystemRenderer));
             }
-            var path2 = ScenePath(rung, density, merge);
+            var path2 = env.ScenePath(rung, density, merge);
             if (lit) LightProbes(root.transform, layout);
             EditorSceneManager.SaveScene(scene, path2);
-            if (lit && bakeLightmaps) BakeLightmaps(scene, name);
+            if (lit && bakeLightmaps) BakeLightmaps(env, scene, name);
             Debug.Log($"ArenaBaker: {name}: {list.Items.Length} placements, {renderers} renderers, {tris} triangles, {lights} realtime lights " +
                       $"({flames} flames), stripped {string.Join(", ", stripped.Select(kv => kv.Key + " ×" + kv.Value))}, {sw.Elapsed.TotalSeconds:F1} s");
             return new ArenaIndex.Entry
             {
-                scene = name, rung = rung, density = density, placements = list.Items.Length, renderers = renderers,
+                scene = name, environment = env.Name, rung = rung, density = density, placements = list.Items.Length, renderers = renderers,
                 lights = lights, triangles = tris, merged = merge, mergedRenderers = mergedRenderers,
             };
         }
@@ -235,7 +255,7 @@ namespace Demo3D.EditorTools.Arena
         /// shadow mode and probe use, in world space, under Static/Merged. The pieces keep their
         /// transforms (and any particles); their mesh renderers go. Returns the merged renderers.
         /// </summary>
-        static int Merge(Transform stat, string sceneName, bool lit)
+        static int Merge(ArenaEnvironment env, Transform stat, string sceneName, bool lit)
         {
             var groups = new Dictionary<(int, int, Material, ShadowCastingMode, LightProbeUsage), List<CombineInstance>>();
             var sources = new List<MeshRenderer>();
@@ -259,7 +279,7 @@ namespace Demo3D.EditorTools.Arena
                     sources.Add(r);
                 }
             }
-            var assetPath = $"{MergedDir}/{sceneName}.asset";
+            var assetPath = $"{env.MergedDir}/{sceneName}.asset";
             AssetDatabase.DeleteAsset(assetPath);
             var root = new GameObject("Merged").transform;
             root.SetParent(stat, false);
@@ -368,10 +388,10 @@ namespace Demo3D.EditorTools.Arena
             group.probePositions = pts.ToArray();
         }
 
-        static void BakeLightmaps(Scene scene, string name)
+        static void BakeLightmaps(ArenaEnvironment env, Scene scene, string name)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
-            var settingsPath = $"{Dir}/{name}.lighting";
+            var settingsPath = $"{env.Dir}/{name}.lighting";
             AssetDatabase.DeleteAsset(settingsPath);
             var ls = new LightingSettings { name = name };
             ls.bakedGI = true;
@@ -444,15 +464,30 @@ namespace Demo3D.EditorTools.Arena
         }
 
         /// <summary>
-        /// The ground's colours by type (sRGB): dark forest floor, a darker edge band, and warm,
-        /// mid-value earth on the fighting ground (the look epic ps-e8r: a lit stage, darkness at the edges).
+        /// The ground's colours by type (sRGB), from the layout's <c>ground</c> (ps-bop): the forest's
+        /// are a dark forest floor, a darker edge band, and warm, mid-value earth on the fighting
+        /// ground (the look epic ps-e8r: a lit stage, darkness at the edges).
         /// </summary>
-        static readonly Color Forest = new Color(0.12f, 0.11f, 0.08f), Edge = new Color(0.25f, 0.22f, 0.16f),
-            Clearing = new Color(0.49f, 0.45f, 0.40f), PathDirt = new Color(0.54f, 0.48f, 0.41f);
-
-        static Material GroundMaterial(ArenaLayout layout)
+        public struct GroundColors
         {
-            const string texPath = Dir + "/GroundAlbedo.png";
+            public Color Forest, Edge, Clearing, Path;
+
+            public static GroundColors Parse(JsonValue ground)
+            {
+                Color C(string key)
+                {
+                    var v = ground[key];
+                    if (v.Count < 3) throw new FormatException($"ArenaBaker: the layout's ground needs {key} [r, g, b]");
+                    return new Color(v[0].AsFloat(), v[1].AsFloat(), v[2].AsFloat());
+                }
+                return new GroundColors { Forest = C("forest"), Edge = C("edge"), Clearing = C("clearing"), Path = C("path") };
+            }
+        }
+
+        static Material GroundMaterial(ArenaEnvironment env, ArenaLayout layout, Texture2D detail)
+        {
+            var colors = GroundColors.Parse(env.Root["ground"]);
+            string texPath = env.Dir + "/GroundAlbedo.png";
             const int size = 1024;
             var tex = new Texture2D(size, size, TextureFormat.RGB24, false);
             var px = new Color32[size * size];
@@ -461,7 +496,7 @@ namespace Demo3D.EditorTools.Arena
             for (int i = 0; i < size; i++)
             {
                 float x = -GroundHalfM + (i + 0.5f) * m, z = -GroundHalfM + (j + 0.5f) * m;
-                px[j * size + i] = GroundColor(layout, x, z);
+                px[j * size + i] = GroundColor(layout, colors, x, z);
             }
             tex.SetPixels32(px);
             tex.Apply();
@@ -477,7 +512,7 @@ namespace Demo3D.EditorTools.Arena
             imp.SaveAndReimport();
             var albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
 
-            const string matPath = Dir + "/Ground.mat";
+            string matPath = env.Dir + "/Ground.mat";
             var mat = AssetDatabase.LoadAssetAtPath<Material>(matPath);
             if (mat == null)
             {
@@ -492,7 +527,7 @@ namespace Demo3D.EditorTools.Arena
             // Our generated cracks and stones as a detail albedo every DetailM, with the kit's own
             // ground normals (Elven Realm's, already synced for its rock shader) as its detail
             // normal map at the same tiling, so the moon and the hero's light catch the ground.
-            mat.SetTexture("_DetailAlbedoMap", DetailAlbedo());
+            mat.SetTexture("_DetailAlbedoMap", detail);
             mat.SetFloat("_DetailAlbedoMapScale", 1f);
             mat.SetTextureScale("_DetailAlbedoMap", new UnityEngine.Vector2(2 * GroundHalfM / DetailM, 2 * GroundHalfM / DetailM));
             var normals = FindVendorTexture("Ground_Normals_01");
@@ -609,16 +644,16 @@ namespace Demo3D.EditorTools.Arena
         }
 
         /// <summary>The ground's colour at (x, z): by distance to fighting ground and its type, with three octaves of noise.</summary>
-        public static Color32 GroundColor(ArenaLayout layout, float x, float z)
+        public static Color32 GroundColor(ArenaLayout layout, GroundColors colors, float x, float z)
         {
             var p = new Vector2(x, z);
             float d = layout.FightingDistance(p, out AreaType type);
-            Color fight = type == AreaType.Path ? PathDirt : Clearing;
+            Color fight = type == AreaType.Path ? colors.Path : colors.Clearing;
             // Inside fighting ground, worn paths mix into clearings near their axis.
             Color c;
-            if (d <= 0) c = Color.Lerp(fight, Clearing, Mathf.Clamp01(-d / 6f) * (type == AreaType.Path ? 0.3f : 0f));
-            else if (d < 5) c = Color.Lerp(fight, Edge, Smooth(0, 5, d));
-            else c = Color.Lerp(Edge, Forest, Smooth(5, 12, d));
+            if (d <= 0) c = Color.Lerp(fight, colors.Clearing, Mathf.Clamp01(-d / 6f) * (type == AreaType.Path ? 0.3f : 0f));
+            else if (d < 5) c = Color.Lerp(fight, colors.Edge, Smooth(0, 5, d));
+            else c = Color.Lerp(colors.Edge, colors.Forest, Smooth(5, 12, d));
             float n = 0.6f * Mathf.PerlinNoise(x * 0.11f + 31.7f, z * 0.11f + 17.3f) + 0.4f * Mathf.PerlinNoise(x * 0.47f + 5.1f, z * 0.47f + 9.9f);
             // Patches about 30 m across, so the detail layer's 6 m tile doesn't show as a grid.
             float k = (0.72f + 0.56f * n) * (0.75f + 0.5f * Mathf.PerlinNoise(x * 0.033f + 47.2f, z * 0.033f + 61.8f));
@@ -644,11 +679,17 @@ namespace Demo3D.EditorTools.Arena
     public sealed class MaterialConverter
     {
         readonly string _dir;
+        readonly JsonValue _kitValue;
         readonly Dictionary<Material, Material> _done = new Dictionary<Material, Material>();
         readonly Dictionary<Material, Material> _static = new Dictionary<Material, Material>();
         public int Count => _done.Count + _static.Count;
 
-        public MaterialConverter(string dir) { _dir = dir; }
+        /// <summary>Converts into <paramref name="dir"/>, scaling base colours by the environment's <c>lighting.kitValue</c>.</summary>
+        public MaterialConverter(string dir, JsonValue kitValue)
+        {
+            _dir = dir;
+            _kitValue = kitValue;
+        }
 
         /// <summary>
         /// Converts every material on <paramref name="go"/>. With <paramref name="staticShadow"/>
@@ -678,7 +719,7 @@ namespace Demo3D.EditorTools.Arena
             if (_done.TryGetValue(m, out var c)) return c;
             var path = $"{_dir}/{Safe(m.name)}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            c = Build(m, existing);
+            c = Build(m, existing, _kitValue);
             if (existing == null) AssetDatabase.CreateAsset(c, path);
             else EditorUtility.SetDirty(c);
             _done[m] = c;
@@ -711,16 +752,16 @@ namespace Demo3D.EditorTools.Arena
             return twin;
         }
 
-        static Material Build(Material m, Material into)
+        static Material Build(Material m, Material into, JsonValue kitValue)
         {
             string shader = m.shader != null ? m.shader.name : "";
             if (shader.StartsWith("Particles/")) return Particle(m, into);
-            if (shader == "SyntyStudios_RockTriplanar") return Triplanar(m, into);
+            if (shader == "SyntyStudios_RockTriplanar") return Triplanar(m, into, kitValue);
             var lit = Target(into, "Universal Render Pipeline/Lit", m.name);
             var tex = m.HasProperty("_MainTex") ? m.GetTexture("_MainTex") : null;
             lit.SetTexture("_BaseMap", tex);
             lit.SetTextureScale("_BaseMap", m.HasProperty("_MainTex") ? m.GetTextureScale("_MainTex") : UnityEngine.Vector2.one);
-            lit.SetColor("_BaseColor", ArenaDressing.KitValue(m.HasProperty("_Color") ? m.GetColor("_Color") : Color.white, m.name)); // TD15: the kit's value
+            lit.SetColor("_BaseColor", ArenaDressing.KitValue(kitValue, m.HasProperty("_Color") ? m.GetColor("_Color") : Color.white, m.name)); // TD15: the kit's value
             float gloss = m.HasProperty("_Glossiness") ? m.GetFloat("_Glossiness") : 0.5f;
             var mg = m.HasProperty("_MetallicGlossMap") ? m.GetTexture("_MetallicGlossMap") : null;
             if (mg != null && m.IsKeywordEnabled("_METALLICGLOSSMAP"))
@@ -768,7 +809,7 @@ namespace Demo3D.EditorTools.Arena
         /// Elven Realm's triplanar rock to Demo3D/RockTriplanar (TD14), its properties mapped onto
         /// URP Lit's names as the shader's header lists.
         /// </summary>
-        static Material Triplanar(Material m, Material into)
+        static Material Triplanar(Material m, Material into, JsonValue kitValue)
         {
             var t = Target(into, "Demo3D/RockTriplanar", m.name);
             Texture Tex(string p) => m.HasProperty(p) ? m.GetTexture(p) : null;
@@ -785,8 +826,8 @@ namespace Demo3D.EditorTools.Arena
             t.SetFloat("_DetailNormalMapScale", 1f);
             var bc = C("_BottomColourShift");
             var tc = C("_TopColourShift");
-            t.SetColor("_BaseColor", ArenaDressing.KitValue(new Color(bc.r, bc.g, bc.b, 1), m.name)); // TD15: the kit's value
-            t.SetColor("_SpecColor", ArenaDressing.KitValue(new Color(tc.r, tc.g, tc.b, 1), m.name));
+            t.SetColor("_BaseColor", ArenaDressing.KitValue(kitValue, new Color(bc.r, bc.g, bc.b, 1), m.name)); // TD15: the kit's value
+            t.SetColor("_SpecColor", ArenaDressing.KitValue(kitValue, new Color(tc.r, tc.g, tc.b, 1), m.name));
             t.SetFloat("_ClearCoatMask", F("_CoverageAmount", 0f));
             t.SetFloat("_ClearCoatSmoothness", F("_CoverageFalloff", 0.5f));
             t.SetFloat("_Metallic", F("_Metallic", 0.02f));

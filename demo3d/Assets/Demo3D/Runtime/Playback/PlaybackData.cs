@@ -19,6 +19,8 @@ namespace Demo3D.Runtime.Playback
         public TextAsset roster;
         public TextAsset footprints;
         public TextAsset[] layouts;
+        /// <summary>ps-bop: the environments beside the arena (environment-NAME.json), each extending its layout.</summary>
+        public TextAsset[] environments;
         public TextAsset[] stressScripts;
 
         public static PlaybackData Load() =>
@@ -34,6 +36,28 @@ namespace Demo3D.Runtime.Playback
         public string Annotations(RosterSet set) => set.Annotations(annotations.text);
 
         public TextAsset Layout(string name) => System.Array.Find(layouts, l => l.name == name + "-layout");
+
+        /// <summary>The environments' names: the forest (the arena's own layout) first.</summary>
+        public string[] EnvironmentNames()
+        {
+            var names = new System.Collections.Generic.List<string> { PS.Choreography.LayoutEnvironment.Default };
+            foreach (var e in environments ?? new TextAsset[0]) names.Add(e.name.Substring(EnvironmentPrefix.Length));
+            return names.ToArray();
+        }
+
+        public const string EnvironmentPrefix = "environment-";
+
+        /// <summary>
+        /// An environment's whole layout (ps-bop): the arena's for the forest (or null), else
+        /// environment-NAME.json resolved over the layout it extends. An unknown name fails, listing the known ones.
+        /// </summary>
+        public string EnvironmentLayout(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name == PS.Choreography.LayoutEnvironment.Default) return Layout("arena").text;
+            var file = System.Array.Find(environments ?? new TextAsset[0], e => e.name == EnvironmentPrefix + name)
+                ?? throw new System.ArgumentException($"--environment: unknown environment '{name}' (one of {string.Join(", ", EnvironmentNames())})");
+            return PS.Choreography.LayoutEnvironment.Resolve(file.text, n => Layout(n)?.text, name);
+        }
 
         public TextAsset Stress(string scene) => System.Array.Find(stressScripts, s => s.name == "stress-" + scene.ToLowerInvariant());
     }

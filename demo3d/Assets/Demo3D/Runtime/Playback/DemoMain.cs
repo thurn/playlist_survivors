@@ -115,10 +115,15 @@ namespace Demo3D.Runtime.Playback
             // The arena (TD9) when it is baked into the build, else TD4's flat bench ground.
             // TD14's rung switches (--grd, --merged, --tex-cap, --prepass) default to the ladder's final rung.
             var arena = _flags.ArenaOptions;
+            // `--environment NAME` (ps-bop): its whole layout, which the timeline navigates; fails here on an unknown one.
+            var environmentLayout = PlaybackData.Load().EnvironmentLayout(arena.Environment);
             if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
                 _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(arena, _rig.Camera, transform);
             else
             {
+                if (arena.Rung != "off" && arena.Environment != PS.Choreography.LayoutEnvironment.Default)
+                    throw new InvalidOperationException($"DemoMain: no arena for {arena.Label()} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); " +
+                                                        $"run demo3d unity BakeArena -environment {arena.Environment}");
                 if (arena.Rung != "off")
                     Debug.LogWarning($"DemoMain: no arena for {arena.Label()} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
                 BenchEnvironment.Build();
@@ -139,9 +144,10 @@ namespace Demo3D.Runtime.Playback
             _beautyEmpty = Args.Has("--beauty-empty");
             _captureMask = Args.Has("--capture-mask") && !_beautyEmpty && _flags.CaptureVideo == null; // a mask frame would land in the video
             string layoutName = (stress != null ? stress.Layout : level.Layout) ?? "arena";
-            var layout = data.Layout(layoutName) ?? data.Layout("arena");
+            // The arena's layout is the environment's (its own placement list); a test layout is its own.
+            var layout = layoutName != "arena" && data.Layout(layoutName) is TextAsset other ? other.text : environmentLayout;
             // The timeline navigates the density the arena scene is drawn at (TD15; the cold review's item 3).
-            var choreo = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout.text, data.footprints.text,
+            var choreo = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout, data.footprints.text,
                 _arena != null ? _arena.Density : 0);
             var started = Time.realtimeSinceStartupAsDouble;
             _tl = stress == null

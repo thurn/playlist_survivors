@@ -84,10 +84,12 @@ namespace Demo3D.Runtime.Playback
             _data = PlaybackData.Load();
             _roster = RosterAssets.Load();
             _script = StressScript.Parse(_data.Stress(_scene).text);
-            var layout = _data.Layout(_script.Layout ?? "arena") ?? _data.Layout("arena");
+            var arena = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final());
+            // The arena's layout is its environment's (sceneOptions environment; ps-bop); a test layout is its own.
+            var layoutName = _script.Layout ?? "arena";
+            var layout = layoutName != "arena" && _data.Layout(layoutName) is TextAsset other ? other.text : _data.EnvironmentLayout(arena.Environment);
             // The timeline navigates the density of the arena it draws (TD15; the cold review's item 3).
-            var arenaDensity = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final()).Density;
-            _choreo = ChoreographyData.FromJson(_data.Annotations(RosterSet.Active), RosterSet.Active.Choreography(_data.roster.text, _roster), layout.text, _data.footprints.text, arenaDensity);
+            _choreo = ChoreographyData.FromJson(_data.Annotations(RosterSet.Active), RosterSet.Active.Choreography(_data.roster.text, _roster), layout, _data.footprints.text, arena.Density);
             _drawCrowd = _script.Draw.Length == 0 || Array.IndexOf(_script.Draw, "crowd") >= 0;
             _drawEffects = Array.IndexOf(_script.Draw, "effects") >= 0;
             _drawLights = Array.IndexOf(_script.Draw, "lights") >= 0;
@@ -103,8 +105,7 @@ namespace Demo3D.Runtime.Playback
                     _fx.AddCamera(ctx.Camera);
                 }
             }
-            var arena = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final());
-            if (arena.Rung != "off" && (_script.Layout ?? "arena") == "arena")
+            if (arena.Rung != "off" && layoutName == "arena")
             {
                 if (!Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
                     throw new InvalidOperationException($"TimelineScene: no arena for {arena.Label()} (baked: " +

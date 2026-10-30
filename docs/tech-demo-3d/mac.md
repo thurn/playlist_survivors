@@ -150,6 +150,27 @@ night's. Render one as a look set with the player args:
 uv run --project demo3d/tools demo3d look palette-snow --player-args "--palette snow" --trial
 ```
 
+### Environments
+
+`--environment <name>` (ps-bop) plays the song in another environment
+([Environments](environment.md#environments)): `crypt`, or any other
+`environment-<name>.json`. `just demo3d --environment crypt` builds what
+changed (baking every environment) and plays it. Render one as a look set
+against the forest's:
+
+```
+uv run --project demo3d/tools demo3d look crypt --baseline final --player-args "--environment crypt"
+```
+
+The shots, the song stills and the ground's areas are the forest's, since an
+environment keeps the arena's plan. A windowless smoke check:
+
+```
+"demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo" \
+  -batchmode -force-metal -logFile demo3d/Logs/crypt.log \
+  --environment crypt --fixed-time --capture-stills captures/crypt --stills-at 20 --seconds 25
+```
+
 ## Filmstrips
 
 Motion is judged without a window from consecutive fixed-time frames (epic ps-2iq, Decision 7):
