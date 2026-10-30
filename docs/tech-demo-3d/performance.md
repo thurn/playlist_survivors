@@ -200,6 +200,27 @@ headline combination `--intensity overdrive --palette neon --monster-style cryst
   real-time run then shatters fewer deaths (about 3,000 to 4,500). Watch it windowed for the
   feel, but record the trailer at fixed time.
 
+### Resident environments' cost
+
+The trailer holds crypt, desert, snow and forest resident in one player
+([Environments in one player](trailer.md#environments-in-one-player), bead ps-hgs.1). Measured
+on the Mac (Apple M5 Max) with the IL2CPP player, `--resident crypt,desert,snow,forest`
+([evidence](../../demo3d/evidence/trailer/residency/README.md)):
+
+- **A switch** costs 0.10 to 0.13 ms of CPU: two scenes' realtime lights and post volumes, the
+  camera's culling mask and the new scene's globals. The first version deactivated and
+  activated the scenes' roots, about 2,500 renderers each, for 1.1 to 1.9 ms.
+- **Frames at a switch** draw no slower than their neighbours: over 12 switches in three
+  windowless `--gpu-probe-at` runs at drop-2, the switch frame was at most 1.25 ms over its
+  neighbours' mean (draw and switch together), and below it in 10 of 12. Those frames took 3.9
+  to 7.6 ms; a single-environment run at the same times, 4.0 to 10.1 ms.
+- **Loading** three more environments adds about 0.1 s to a windowless start (3.1 s against
+  3.0 s): each sets up as it would alone, its 4096² static shadow map in 4 to 8 ms, then the
+  four warm-up frames draw each once off-screen.
+- **Memory:** four scenes, four lightmap sets and four 64 MiB static shadow maps, accepted for
+  the trailer's powerful machine. Hidden scenes' particle systems and flame flickers still
+  update, a small CPU cost a frame.
+
 ## Engine and Rendering Setup
 
 The project uses Unity 6.6 (6000.6.7f1, installed on Cygnus during

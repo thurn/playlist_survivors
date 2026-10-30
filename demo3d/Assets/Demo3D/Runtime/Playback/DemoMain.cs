@@ -30,7 +30,13 @@ namespace Demo3D.Runtime.Playback
         BatchGpuProbe _gpuProbe; // --gpu-probe-at: windowless frame times at a few song times
         RosterAssets _roster;
         DemoOverlay _overlay;
-        Demo3D.Runtime.Arena.ArenaRuntime _arena;
+        Demo3D.Runtime.Arena.ArenaRuntime _arena; // the drawn arena (--resident: the set's active one)
+        Demo3D.Runtime.Arena.ArenaSet _arenas;    // --resident: several environments in one player (trailer.md)
+        PostFeel[] _postFeels;                    // --resident: each arena's post feel, on its own volume
+        int _warmed;                              // --resident: environments drawn off-screen before the first frame (Warm)
+        bool _arenasWarm;
+        RenderTexture _warmTarget, _liveTarget; // the warm frames' target, and the camera's own (the capture's) meanwhile
+        Action _startClock;
         EffectSystem _fx;
         EffectDriver _fxDriver;
         double _fxLast = double.NaN;
@@ -121,7 +127,14 @@ namespace Demo3D.Runtime.Playback
             var arena = _flags.ArenaOptions;
             // `--environment NAME` (ps-bop): its whole layout, which the timeline navigates; fails here on an unknown one.
             var environmentLayout = PlaybackData.Load().EnvironmentLayout(arena.Environment);
-            if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
+            if (_flags.SwitchEvery > 0 && _flags.Resident == null) throw new InvalidOperationException("DemoMain: --switch-every needs --resident");
+            if (_flags.Resident != null)
+            {
+                // Fails here on an environment that isn't baked; --environment's is active first and its layout the timeline's.
+                _arenas = Demo3D.Runtime.Arena.ArenaSet.Load(arena, ResidentEnvironments(arena.Environment, _flags.Resident), _rig.Camera, transform);
+                _arena = _arenas[0];
+            }
+            else if (arena.Rung != "off" && Demo3D.Runtime.Arena.ArenaRuntime.Available(arena))
                 _arena = Demo3D.Runtime.Arena.ArenaRuntime.Load(arena, _rig.Camera, transform);
             else
             {
@@ -205,7 +218,9 @@ namespace Demo3D.Runtime.Playback
                 click = gameObject.AddComponent<AudioSource>();
                 clickClip = ClickTrack.Build(_tl.Map);
             }
-            _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
+            // --resident: the music starts once every environment is loaded and drawn (Warm).
+            _startClock = () => _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
+            if (_arenas == null) _startClock();
             var blowFeel = BlowFeel.Amounts.FromOverlay(data.Overlay(intensity));
             _blows = blowFeel != null && _tl.Map != null && stress == null && !_flags.NoFeel ? new BlowFeel(_tl, blowFeel) : null;
             if (_blows != null)
@@ -217,6 +232,12 @@ namespace Demo3D.Runtime.Playback
             }
             _feel = _tl.Map != null ? new CameraFeel(_tl, _blows) : null;
             _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
+            if (_postFeel != null && _arenas != null)
+            {
+                _postFeels = new PostFeel[_arenas.Count];
+                _postFeels[0] = _postFeel;
+                for (int i = 1; i < _postFeels.Length; i++) _postFeels[i] = new PostFeel(_tl, _arenas[i].Lighting.PostFeel, _postFeel.Enabled);
+            }
             // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
             // and sound play at the blow, known from the timeline.
             var breaks = _shatter?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.BreakEvent>();
@@ -249,6 +270,79 @@ namespace Demo3D.Runtime.Playback
             _fxDriver = new EffectDriver(_tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
             _fxDriver.OnlyAmbient = _beautyEmpty;
             _fxDriver.OnlyEffects(Args.Get("--only-effects"));
+        }
+
+        /// <summary>`--resident a,b,...`: the environment the timeline plays first, then the others, each once.</summary>
+        static List<string> ResidentEnvironments(string first, string resident)
+        {
+            var envs = new List<string> { first };
+            foreach (var s in resident.Split(','))
+            {
+                var e = s.Trim().ToLowerInvariant();
+                if (e != "" && !envs.Contains(e)) envs.Add(e);
+            }
+            return envs;
+        }
+
+        /// <summary>
+        /// `--resident`: once every environment is set up, one frame per environment draws it
+        /// off-screen at the first frame's time, with the horde, the hero and the effects live then,
+        /// so no shader or pipeline state compiles after the first frame (trailer.md, Environments
+        /// in one player); then the music starts. Returns true once that is done.
+        /// </summary>
+        bool Warm()
+        {
+            if (_arenasWarm) return true;
+            if (!_arenas.Poll()) return false;
+            if (_warmed == 0)
+            {
+                // Each volume takes the style's grade before its post feel first binds, as the single arena's does.
+                for (int i = 0; i < _arenas.Count; i++) PostStyle(_arenas[i]);
+                _stylePosted = true;
+                _warmTarget = BatchGpuProbe.Target(_rig.Camera, "ArenaWarm");
+                _liveTarget = _rig.Camera.targetTexture;
+                _rig.Camera.targetTexture = _warmTarget; // a windowed player's own draw goes there too
+            }
+            if (_warmed < _arenas.Count)
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                SwitchArena(_warmed);
+                Draw((_flags.FreezeAt >= 0 ? _flags.FreezeAt : _clock.Now()) + _flags.TimeOffset);
+                if (Application.isBatchMode) _rig.Camera.Render();
+                Debug.Log($"DemoMain: warmed {_arena.Options.Environment} off-screen ({watch.Elapsed.TotalMilliseconds:F0} ms to submit)");
+                _warmed++;
+                return false;
+            }
+            _rig.Camera.targetTexture = _liveTarget;
+            _warmTarget.Release();
+            Destroy(_warmTarget);
+            _warmTarget = null;
+            _arenasWarm = true;
+            _startClock();
+            return true;
+        }
+
+        /// <summary>`--switch-every s`: the drawn environment cycles through the set every s song seconds from --start-at.</summary>
+        int ArenaIndexAt(double t)
+        {
+            if (_flags.SwitchEvery <= 0) return 0;
+            long k = (long)Math.Floor((t - _flags.StartAt) / _flags.SwitchEvery + 1e-6);
+            int n = _arenas.Count;
+            return (int)((k % n + n) % n);
+        }
+
+        void SwitchArena(int i)
+        {
+            _arena = _arenas.Switch(i);
+            if (_postFeels != null) _postFeel = _postFeels[i];
+        }
+
+        /// <summary>A monster style's grade on an arena's night volume, before its post feel first binds (it becomes PostFeel's base).</summary>
+        void PostStyle(Demo3D.Runtime.Arena.ArenaRuntime arena)
+        {
+            if (!(_style.Post is PostLook look)) return;
+            look.ApplyTo(arena.Post.sharedProfile);
+            Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}'s post look on the night volume" + (_arenas != null ? " of " + arena.Options.Environment : ""));
         }
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
@@ -384,6 +478,7 @@ namespace Demo3D.Runtime.Playback
         void Frame()
         {
             if (_quitNext) { Quit(); return; }
+            if (_arenas != null && !Warm()) return;
             _evalWatch.Reset();
             _drawWatch.Reset();
             _shatterWatch.Reset();
@@ -396,6 +491,35 @@ namespace Demo3D.Runtime.Playback
                 MaskMode(true);
                 _capture.ForceStill(t, "mask");
             }
+            double switchMs = 0;
+            if (_arenas != null)
+            {
+                SwitchArena(ArenaIndexAt(t));
+                switchMs = _arenas.LastSwitchMs;
+                if (switchMs > 0) Debug.Log($"DemoMain: {_arena.Options.Environment} at {t.ToString("F3", CultureInfo.InvariantCulture)} s, switched in {switchMs:F2} ms");
+            }
+            _sounds?.Update(t);
+            Draw(t);
+
+            _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
+            // A batch-mode player draws no frames, so it draws the camera by hand for each still it
+            // owes (windowless checks on the Mac). Only those frames: URP's hand-drawn frames hold
+            // their pooled targets until a frame the player loop draws (CaptureTool).
+            if (Application.isBatchMode && _capture != null && _capture.StillDue(t)) _rig.Camera.Render();
+            else _gpuProbe?.Frame(t, _rig.Camera, OnScreenAlive, switchMs);
+            WriteStats(t);
+            if (_flags.SongCheck != null)
+                (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);
+            _lastWall = Time.realtimeSinceStartupAsDouble;
+            _clock.EndFrame();
+            // Quit on the next frame, so this frame is drawn (and captured) first.
+            if (t >= _endAt || (_capture != null && _capture.Done && _flags.CaptureVideo == null && double.IsNaN(_maskAt) && !_maskOn))
+                _quitNext = true;
+        }
+
+        /// <summary>Poses and submits everything at song time t: the camera, post, effects, the horde and the hero.</summary>
+        void Draw(double t)
+        {
             SongTime = t;
             Activate(t);
 
@@ -417,14 +541,9 @@ namespace Demo3D.Runtime.Playback
                 // The arena's volume exists once its scene has loaded; the style's grade goes on it before
                 // PostFeel first binds, so it becomes PostFeel's base.
                 _stylePosted = true;
-                if (_style.Post is PostLook look)
-                {
-                    look.ApplyTo(_arena.Post.sharedProfile);
-                    Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}'s post look on the night volume");
-                }
+                PostStyle(_arena);
             }
             _postFeel?.Apply(_arena.Post, feelT);
-            _sounds?.Update(t);
             foreach (var e in _active)
             {
                 var info = _tl.Entities[e];
@@ -492,21 +611,6 @@ namespace Demo3D.Runtime.Playback
             _arena?.FollowHero(heroState.Position);
             _heroFeet = heroState.Position;
             _styleBeat?.Publish(feelT, _heroFeet); // the beat as heard, as the post feel
-
-            _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
-            // A batch-mode player draws no frames, so it draws the camera by hand for each still it
-            // owes (windowless checks on the Mac). Only those frames: URP's hand-drawn frames hold
-            // their pooled targets until a frame the player loop draws (CaptureTool).
-            if (Application.isBatchMode && _capture != null && _capture.StillDue(t)) _rig.Camera.Render();
-            else _gpuProbe?.Frame(t, _rig.Camera, OnScreenAlive);
-            WriteStats(t);
-            if (_flags.SongCheck != null)
-                (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);
-            _lastWall = Time.realtimeSinceStartupAsDouble;
-            _clock.EndFrame();
-            // Quit on the next frame, so this frame is drawn (and captured) first.
-            if (t >= _endAt || (_capture != null && _capture.Done && _flags.CaptureVideo == null && double.IsNaN(_maskAt) && !_maskOn))
-                _quitNext = true;
         }
 
         MonsterInstance ToInstance(in TimelineEvaluator.State st, RosterAssets.TypeAssets asset, int type, uint seed)
@@ -648,7 +752,9 @@ namespace Demo3D.Runtime.Playback
             _shatter?.Dispose();
             _style?.Dispose();
             _heroRenderer?.Dispose();
-            _arena?.Dispose();
+            if (_arenas != null) _arenas.Dispose();
+            else _arena?.Dispose();
+            if (_warmTarget != null) _warmTarget.Release();
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Demo3D.Runtime.Playback
         const int Frames = 4;
 
         readonly List<double> _at = new List<double>();
-        readonly List<(double at, double t, int alive, double ms)> _samples = new List<(double, double, int, double)>();
+        readonly List<(double at, double t, int alive, double ms, double switchMs)> _samples = new List<(double, double, int, double, double)>();
         readonly string _out;
         readonly RenderTexture _target;
         int _next, _left;
@@ -35,10 +35,17 @@ namespace Demo3D.Runtime.Playback
                 if (double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var t)) _at.Add(t);
             _at.Sort();
             _out = outPath;
+            _target = Target(camera, "GpuProbe");
+        }
+
+        /// <summary>A 1080p target for hand-drawn frames of <paramref name="camera"/>, with the pipeline's MSAA.</summary>
+        public static RenderTexture Target(Camera camera, string name)
+        {
             int msaa = GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset urp
                        && camera.allowMSAA ? Math.Max(1, urp.msaaSampleCount) : 1;
-            _target = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32) { antiAliasing = msaa, name = "GpuProbe" };
-            _target.Create();
+            var target = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32) { antiAliasing = msaa, name = name };
+            target.Create();
+            return target;
         }
 
         /// <summary>The probe the command line asks for, or null (also outside batch mode, where frames are drawn anyway).</summary>
@@ -54,8 +61,11 @@ namespace Demo3D.Runtime.Playback
             return new BatchGpuProbe(at, Args.Get("--gpu-probe-out", Path.Combine(Application.persistentDataPath, "gpu-probe.json")), camera);
         }
 
-        /// <summary>After the frame's crowd and effects are updated; draws and times the camera when a probe is due.</summary>
-        public void Frame(double t, Camera camera, int alive)
+        /// <summary>
+        /// After the frame's crowd and effects are updated; draws and times the camera when a probe is due.
+        /// <paramref name="switchMs"/> is the frame's environment switch (--resident), recorded beside its draw.
+        /// </summary>
+        public void Frame(double t, Camera camera, int alive, double switchMs = 0)
         {
             if (_next >= _at.Count) return;
             if (_left == 0)
@@ -70,7 +80,7 @@ namespace Demo3D.Runtime.Playback
             AsyncGPUReadback.Request(_target, 0, 0, 1, 0, 1, 0, 1).WaitForCompletion();
             watch.Stop();
             camera.targetTexture = previous;
-            if (_left < Frames) _samples.Add((_at[_next], t, alive, watch.Elapsed.TotalMilliseconds));
+            if (_left < Frames) _samples.Add((_at[_next], t, alive, watch.Elapsed.TotalMilliseconds, switchMs));
             if (--_left == 0)
             {
                 _next++;
@@ -88,9 +98,12 @@ namespace Demo3D.Runtime.Playback
             for (int i = 0; i < points.Count; i++)
             {
                 var ms = points[i].Select(s => s.ms).OrderBy(x => x).ToList();
-                sb.AppendFormat(ci, "    {{\"at\": {0:F2}, \"alive\": {1}, \"medianMs\": {2:F2}, \"maxMs\": {3:F2}, \"ms\": [{4}]}}{5}\n",
+                // frames: each counted frame in order, [song time, draw ms, switch ms].
+                sb.AppendFormat(ci, "    {{\"at\": {0:F2}, \"alive\": {1}, \"medianMs\": {2:F2}, \"maxMs\": {3:F2}, \"ms\": [{4}], \"frames\": [{5}]}}{6}\n",
                     points[i].Key, points[i].Max(s => s.alive), ms[ms.Count / 2], ms[ms.Count - 1],
-                    string.Join(", ", ms.Select(x => x.ToString("F2", ci))), i + 1 < points.Count ? "," : "");
+                    string.Join(", ", ms.Select(x => x.ToString("F2", ci))),
+                    string.Join(", ", points[i].Select(s => string.Format(ci, "[{0:F4}, {1:F2}, {2:F2}]", s.t, s.ms, s.switchMs))),
+                    i + 1 < points.Count ? "," : "");
             }
             sb.Append("  ]\n}\n");
             File.WriteAllText(_out, sb.ToString());

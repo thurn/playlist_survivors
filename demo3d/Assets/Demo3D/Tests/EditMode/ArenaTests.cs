@@ -434,6 +434,56 @@ namespace Demo3D.Tests
             Assert.Throws<FormatException>(() => ArenaBaker.GroundLava.Parse(JsonValue.Parse("{ \"fromM\": -1 }")));
         }
 
+        [Test]
+        public void ResidentArenasSwitchEveryGlobalTheirSetUpWrote()
+        {
+            var envs = new[] { LayoutEnvironment.Default, "crypt" };
+            var entries = envs.Select(n => Index.Find(n, ArenaIndex.E2, ArenaOptions.AuthoredDensity)).ToArray();
+            if (entries.Any(e => e == null)) Assert.Ignore("the forest's and the crypt's E2 scenes aren't baked");
+            Camera camera = null;
+            ArenaSet set = null;
+            // Disposing an arena puts back the kit's texture cap, which the editor would save into the tracked QualitySettings.
+            var texCap = QualitySettings.GetTextureMipmapLimitSettings(ArenaPipeline.KitTextureGroup);
+            try
+            {
+                var loaded = envs.Select(ArenaEnvironment.Load).ToArray();
+                var scenes = loaded.Select((env, i) => EditorSceneManager.OpenScene(env.ScenePath(ArenaIndex.E2, entries[i].density),
+                    i == 0 ? OpenSceneMode.Single : OpenSceneMode.Additive)).ToArray();
+                camera = new GameObject("Camera").AddComponent<Camera>();
+                var arenas = loaded.Select((env, i) => ArenaRuntime.Attach(scenes[i],
+                    new ArenaOptions { Environment = env.Name, Rung = ArenaIndex.E2, Density = entries[i].density }, ArenaLighting.Parse(env.Json), camera)).ToArray();
+                set = new ArenaSet(arenas, camera);
+                Assert.That(set.Poll(), Is.True, "both scenes are set up");
+                for (int k = 0; k < 3; k++)
+                {
+                    int on = k % 2;
+                    var active = set.Switch(on);
+                    var off = arenas[1 - on];
+                    Assert.That(active, Is.SameAs(arenas[on]));
+                    Assert.That(camera.cullingMask & (1 << active.Layer), Is.Not.Zero, envs[on] + "'s renderers are drawn");
+                    Assert.That(camera.cullingMask & (1 << off.Layer), Is.Zero, envs[1 - on] + "'s renderers are skipped");
+                    Assert.That(active.Ground.gameObject.layer, Is.EqualTo(active.Layer));
+                    Assert.That(active.Moon.enabled && !off.Moon.enabled, Is.True, "one moon");
+                    Assert.That(active.Lights.All(l => l.enabled) && off.Lights.All(l => !l.enabled), Is.True, "one set of flames");
+                    Assert.That(active.Post.gameObject.activeSelf && !off.Post.gameObject.activeSelf, Is.True, "one post volume");
+                    Assert.That(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name, Is.EqualTo(active.SceneName), "its render settings");
+                    Assert.That(RenderSettings.sun, Is.SameAs(active.Moon));
+                    Assert.That(RenderSettings.fogColor, Is.EqualTo(active.Lighting.FogColor));
+                    Assert.That(camera.backgroundColor, Is.EqualTo(active.Lighting.FogColor));
+                    Assert.That(Shader.GetGlobalTexture("_Demo3DStaticShadowMap"), Is.SameAs(active.ShadowMap.Texture), "its static shadow map");
+                    var probes = LightProbes.GetSharedLightProbesForScene(UnityEngine.SceneManagement.SceneManager.GetSceneByName(active.SceneName));
+                    Assert.That(LightmapSettings.lightProbes, Is.SameAs(probes), "its own light probes");
+                }
+            }
+            finally
+            {
+                set?.Dispose();
+                QualitySettings.SetTextureMipmapLimitSettings(ArenaPipeline.KitTextureGroup, texCap);
+                if (camera != null) UnityEngine.Object.DestroyImmediate(camera.gameObject);
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
+        }
+
         static ArenaIndex Index
         {
             get

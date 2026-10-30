@@ -19,6 +19,11 @@ here, since the demo itself takes no input:
 --intensity <normal|overdrive>
                     the choreography's intensity: overdrive is the trailer's
                     horde (choreography.md, Intensity overlays)
+--resident <env,...> load these environments too, resident beside
+                    --environment's, which plays first (trailer.md,
+                    Environments in one player)
+--switch-every <s>  with --resident, cycle the drawn environment every s song
+                    seconds from --start-at
 ```
 
 ### First assembled check

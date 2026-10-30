@@ -786,6 +786,36 @@ The scenes are arranged by this decision and its test:
 - **Fallback.** If overlapping light probes or lightmaps fail the test, the
   environments are placed far apart in world space. Shot simulations keep
   local coordinates, and the client adds each environment's offset.
+- **Outcome (ps-hgs.1): they overlap.** Every environment's stills, taken on
+  the very frame that switches back to it, match its single-environment run
+  within 0.02 L*, in all 28 look-set stills of each
+  ([evidence](../../demo3d/evidence/trailer/residency/README.md)). No offset
+  exists, and shot simulations use world coordinates as they are.
+
+How it works (`ArenaSet`, `ArenaRuntime.Resident`, `Show` and `Apply`):
+
+- **Lightmaps** need nothing: every loaded scene's lightmaps join one list,
+  and each renderer indexes its own.
+- **Light probes** are swapped. Unity keeps one scene's probes after
+  additive loads (each scene's 882, never all four), so a switch sets
+  `LightmapSettings.lightProbes` to the new scene's own
+  (`LightProbes.GetSharedLightProbesForScene`).
+- **Visibility** is a layer per scene (8 upwards) and the camera's culling
+  mask, so a switch touches no renderer. Only the scenes' realtime lights
+  (the moon, the flames, the hero's light) and post volumes are switched off
+  and on. Deactivating the roots instead cost over 1 ms a switch.
+- **Globals** are put back on a switch: the active scene, which holds each
+  scene's render settings, then the sun, ambient, fog and its fitting hook,
+  the crowd's lighting globals, the camera's clear colour, the shadowmask
+  mode and the static shadow map.
+- **The post feel** runs one instance per environment, each bound to its own
+  volume, and a monster style's grade goes on every volume before any binds.
+- **The warm-up** draws each environment off-screen once, on its own frame,
+  at the first frame's time, with the horde, hero and effects live. The music
+  starts after it.
+- **The development flags** `--resident <env,...>` (beside `--environment`'s,
+  whose layout the timeline plays) and `--switch-every <s>` (cycle every s
+  song seconds from `--start-at`) exercise it until trailer playback exists.
 
 The memory cost is accepted: roughly four scenes, four lightmap sets and four
 64 MiB shadow maps. The trailer runs on a powerful machine.

@@ -23,6 +23,8 @@ namespace Demo3D.Runtime.Arena
     /// DepthOnly passes switched off on copies).
     /// The options' environment (ps-bop) picks the baked scene and the layout its lighting comes from.
     /// The scene finishes loading on the next frame; <see cref="Ready"/> says when.
+    /// Several can be resident at once (<see cref="ArenaSet"/>): <see cref="Show"/> and <see cref="Apply"/>
+    /// make one the drawn one.
     /// </summary>
     public sealed class ArenaRuntime : IDisposable
     {
@@ -35,7 +37,11 @@ namespace Demo3D.Runtime.Arena
         readonly Camera _camera;
         readonly Transform _volumeParent;
         Scene _scene;
+        GameObject[] _roots = new GameObject[0];
+        LightProbes _probes; // the scene's own light probes, not every loaded scene's
         public bool Ready { get; private set; }
+        /// <summary>Why the loaded scene failed to set up, or null.</summary>
+        public Exception Failure { get; private set; }
         public Light Moon { get; private set; }
         public Renderer Ground { get; private set; }
         public readonly List<Renderer> Static = new List<Renderer>();
@@ -118,15 +124,22 @@ namespace Demo3D.Runtime.Arena
         {
             if (scene.name != SceneName) return;
             SceneManager.sceneLoaded -= Loaded;
-            Setup(scene);
+            try { Setup(scene); }
+            catch (Exception e)
+            {
+                Failure = e;
+                throw;
+            }
         }
 
         void Setup(Scene scene)
         {
             _scene = scene;
+            _roots = scene.GetRootGameObjects();
+            _probes = LightProbes.GetSharedLightProbesForScene(scene);
             SceneManager.SetActiveScene(scene);
             Transform root = null;
-            foreach (var go in scene.GetRootGameObjects())
+            foreach (var go in _roots)
                 if (go.name == "Arena") root = go.transform;
             if (root == null) throw new InvalidOperationException("ArenaRuntime: scene " + SceneName + " has no Arena root");
             if (root.GetComponent<ArenaClock>() == null) root.gameObject.AddComponent<ArenaClock>();
@@ -171,8 +184,59 @@ namespace Demo3D.Runtime.Arena
             else StaticShadowMap.Disable();
             if (Options.Without != "") Hide(root.Find("Static"));
             Ready = true;
-            Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, {Options.Label()}");
+            Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, " +
+                      $"{_probes?.count ?? 0} light probes ({LightmapSettings.lightProbes?.count ?? 0} loaded), {Options.Label()}");
             OnReady?.Invoke(this);
+        }
+
+        /// <summary>The layer the scene's objects are on (<see cref="Resident"/>), or -1 if left as baked.</summary>
+        public int Layer { get; private set; } = -1;
+        readonly List<Light> _shown = new List<Light>();
+
+        /// <summary>
+        /// Makes the scene one of several resident (<see cref="ArenaSet"/>): every object moves to
+        /// <paramref name="layer"/>, so the camera's culling mask draws or skips its renderers (and
+        /// their shadows) without touching them, and <see cref="Show"/> switches only its realtime
+        /// lights and post volume. Toggling thousands of renderers' objects cost over 1 ms a switch.
+        /// </summary>
+        public void Resident(int layer)
+        {
+            Layer = layer;
+            foreach (var go in _roots)
+            foreach (var t in go.GetComponentsInChildren<Transform>(true))
+                t.gameObject.layer = layer;
+            foreach (var go in _roots)
+            foreach (var l in go.GetComponentsInChildren<Light>(true))
+                if (l.enabled && !(l.bakingOutput.isBaked && l.bakingOutput.lightmapBakeType == LightmapBakeType.Baked)) _shown.Add(l);
+        }
+
+        /// <summary>Turns a resident scene's realtime lights and post volume on or off (its renderers follow the camera's culling mask).</summary>
+        public void Show(bool on)
+        {
+            foreach (var l in _shown) l.enabled = on;
+            if (Post != null) Post.gameObject.SetActive(on);
+        }
+
+        /// <summary>
+        /// Puts back every global its set-up wrote, making it the drawn arena among several resident
+        /// (<see cref="ArenaSet"/>): the active scene (whose render settings hold its ambient, fog and
+        /// sun), the night look's fog fitting and the crowd's lighting globals, the camera's clear
+        /// colour, the shadowmask mode, the static shadow map and the scene's own light probes. Each
+        /// scene's lightmaps stay in the merged set, indexed by its own renderers.
+        /// </summary>
+        public void Apply()
+        {
+            SceneManager.SetActiveScene(_scene);
+            if (Moon != null) RenderSettings.sun = Moon;
+            NightLook.ApplyRenderSettings(Lighting);
+            if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
+            if (ShadowMap != null)
+            {
+                QualitySettings.shadowmaskMode = ShadowmaskMode.Shadowmask;
+                ShadowMap.Publish();
+            }
+            else StaticShadowMap.Disable();
+            if (_probes != null) LightmapSettings.lightProbes = _probes;
         }
 
         /// <summary>

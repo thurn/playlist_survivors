@@ -34,6 +34,8 @@ namespace Demo3D.Runtime.Playback
         public string SongCheck;      // --song-check <file.json>: TD13's full-song verdict (SongRunCheck), uncapped
         public string Arena = "e2";   // --arena <e0|e2|off>: the arena's rung (TD9), or TD4's flat bench ground
         public float Density = 1f;    // --density <0.5|1|2|4>: the arena's decoration density
+        public string Resident;       // --resident <env,env,...>: those environments resident beside --environment's (trailer.md, Environments in one player)
+        public float SwitchEvery;     // --switch-every <s>: with --resident, the drawn environment cycles through them every s song seconds from --start-at
         public Demo3D.Runtime.Arena.ArenaOptions ArenaOptions; // --arena, --density and TD14's --grd, --merged, --tex-cap, --prepass
         // --cuts default|none|all|name,-name (TD11's cuts; Demo3D.Runtime.Cuts reads it), --lod-px, --light-cell, --merge-px
 
@@ -69,6 +71,8 @@ namespace Demo3D.Runtime.Playback
                 Density = Args.GetFloat("--density", 1f),
                 TimeOffset = Args.GetFloat("--time-offset", 0f),
                 PoseRate = Args.GetFloat("--pose-rate", 0f),
+                Resident = Args.Get("--resident"),
+                SwitchEvery = Args.GetFloat("--switch-every", 0f),
             };
             f.ArenaOptions = Demo3D.Runtime.Arena.ArenaOptions.FromCommandLine(Demo3D.Runtime.Arena.ArenaOptions.Final());
             f.Arena = f.ArenaOptions.Rung;
