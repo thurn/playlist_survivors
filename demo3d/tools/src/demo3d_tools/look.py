@@ -147,7 +147,7 @@ def stage(rgb: np.ndarray, view: dict, monsters: np.ndarray | None) -> dict:
     if monsters is not None:
         ground &= ~dilate(monsters, 2)
     border = np.ones((h, w), dtype=bool)
-    bh, bw = int(round(h * STAGE_BORDER)), int(round(w * STAGE_BORDER))
+    bh, bw = round(h * STAGE_BORDER), round(w * STAGE_BORDER)
     border[bh:h - bh, bw:w - bw] = False
     if not ground.any():
         return {"groundPx": 0, "error": "no ground near the hero"}
