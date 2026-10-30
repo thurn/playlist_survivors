@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Demo3D.Runtime;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -24,7 +25,9 @@ namespace Demo3D.EditorTools.Assets
     ///   it, else the feet's fore-aft travel);
     /// - combos: the root-motion distance, from each clip's root-motion twin.
     /// It writes Assets/Demo3D/Data/clip-annotations.json and contact sheets, one row per clip,
-    /// with the impact frame framed in red, to demo3d/evidence/td2/.
+    /// with the impact frame framed in red, to demo3d/evidence/td2/. For a `--roster` set
+    /// (`-roster NAME`) it annotates only the slots the set's file lists and writes them to the
+    /// file's <c>rosters.NAME</c>, which the player puts in place of the default's (RosterSet).
     /// </summary>
     public static class ClipAnnotator
     {
@@ -69,24 +72,26 @@ namespace Demo3D.EditorTools.Assets
         static readonly string[] EndBoneWords = { "hand", "wrist", "weapon", "sword", "head", "jaw", "mouth", "tail", "claw", "finger" };
         static readonly string[] FootWords = { "foot", "toe", "ankle" };
 
-        public static void Run(string evidenceDir)
+        public static void Run(string evidenceDir, string set = "default")
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             AnimationMode.StartAnimationMode();
-            try { RunInMode(evidenceDir); }
+            try { RunInMode(evidenceDir, set); }
             finally { AnimationMode.StopAnimationMode(); }
         }
 
-        static void RunInMode(string evidenceDir)
+        static void RunInMode(string evidenceDir, string set)
         {
+            var own = set == "default" ? null : new HashSet<string>(Roster.SetIds(set));
             var outFile = new OutFile
             {
                 note = "Proposed by the clip annotator (TD2) from each clip sampled on its rig at 60 Hz; " +
                        "times in seconds from the clip's start. Our measurements, keyed by vendor GUID and clip name.",
             };
             var stage = new SheetStage();
-            foreach (var t in Roster.Load())
+            foreach (var t in Roster.Load(set))
             {
+                if (own != null && !own.Contains(t.id)) continue;
                 var go = Roster.Spawn(t, Vector3.zero, 0);
                 var animator = go.GetComponentInChildren<Animator>();
                 if (animator == null) throw new Exception($"ClipAnnotator: {t.id} has no Animator");
@@ -115,10 +120,29 @@ namespace Demo3D.EditorTools.Assets
                 UnityEngine.Object.DestroyImmediate(go);
             }
             stage.Dispose();
-            File.WriteAllText(OutPath, JsonConvert.SerializeObject(outFile, Formatting.Indented,
-                new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Culture = CultureInfo.InvariantCulture }) + "\n");
+            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore, Culture = CultureInfo.InvariantCulture };
+            var existing = File.Exists(OutPath) ? JObject.Parse(File.ReadAllText(OutPath)) : null;
+            string text;
+            if (own == null)
+            {
+                text = JsonConvert.SerializeObject(outFile, Formatting.Indented, settings);
+                if (existing?["rosters"] is JToken rosters) // the sets' own annotations survive a default run
+                {
+                    var root = JObject.Parse(text);
+                    root["rosters"] = rosters;
+                    text = root.ToString(Formatting.Indented);
+                }
+            }
+            else
+            {
+                var root = existing ?? throw new Exception($"ClipAnnotator: annotate the default roster before {set}");
+                if (!(root["rosters"] is JObject rosters)) root["rosters"] = rosters = new JObject();
+                rosters[set] = JObject.FromObject(new { outFile.types, outFile.annotations }, JsonSerializer.Create(settings));
+                text = root.ToString(Formatting.Indented);
+            }
+            File.WriteAllText(OutPath, text + "\n");
             AssetDatabase.ImportAsset(OutPath);
-            Debug.Log($"ClipAnnotator: wrote {outFile.annotations.Count} annotations to {OutPath}");
+            Debug.Log($"ClipAnnotator: wrote {outFile.annotations.Count} {set} annotations to {OutPath}");
         }
 
         static bool IsLocomotion(string role) => role == "walk" || role == "run";

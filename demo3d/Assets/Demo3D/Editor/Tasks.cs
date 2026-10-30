@@ -47,7 +47,7 @@ namespace Demo3D.EditorTools
 
         /// <summary>Proposes clip annotations and writes contact sheets (TD2).</summary>
         public static void AnnotateClips() =>
-            Assets.ClipAnnotator.Run(TaskArgs.Get("-evidence", "evidence/td2"));
+            Assets.ClipAnnotator.Run(TaskArgs.Get("-evidence", "evidence/td2"), TaskArgs.Get("-roster", "default"));
 
         /// <summary>Renders TD2's style stills (roster and kit at night, boss candidates).</summary>
         public static void StyleStills() =>

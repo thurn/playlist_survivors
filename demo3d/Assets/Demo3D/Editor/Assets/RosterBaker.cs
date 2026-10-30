@@ -40,6 +40,7 @@ namespace Demo3D.EditorTools.Assets
                 var go = Roster.Spawn(t, Vector3.zero, 0);
                 go.transform.position = Vector3.zero; // hover is applied per instance
                 go.name = t.id;
+                if (!rosterSet.IsDefault) UrpMaterials.ConvertParticles(go); // a pack's auras and trails
                 foreach (var r in go.GetComponentsInChildren<Renderer>(true))
                 {
                     var mats = r.sharedMaterials;

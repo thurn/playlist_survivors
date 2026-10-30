@@ -292,6 +292,15 @@ the flag through `--player-args`. Without it, the demo is unchanged.
   materials and RosterAssets index into `Assets/Baked/Rosters/<set>/`.
   BakeAll, the default build and the checks never touch them; a player
   built without a set's bake stops at start-up with the commands to run.
+- **Its clips are annotated per set.** `demo3d unity AnnotateClips -roster
+  <set>` measures the slots the set's file lists and writes them to
+  `clip-annotations.json`'s `rosters.<set>`; under `--roster <set>` the
+  player puts each in place of the default entry with the same use (so clip
+  indices and roles are unchanged), and a slot the set hasn't annotated
+  keeps the default's. A default run of the annotator keeps the sets'.
+- **Pack particles are converted.** A set's bake swaps its prefabs' built-in
+  particle materials (auras, trails) for URP Particles/Unlit copies with the
+  same texture, tint and blend; the default roster's are untouched.
 - **What ps-f8a.1 proved:** one creature per set, Evil Mushroom (forest's
   mushroom) and the heroic Goblin with sword and shield (heroic's goblin).
   Their clips still use the default slot's annotations (impact and end

@@ -68,5 +68,23 @@ namespace Demo3D.Tests
                 Assert.That(variant.Sections.Select(s => s.Section), Is.EqualTo(level.Sections.Select(s => s.Section)), set + " keeps the song's sections");
             }
         }
+
+        [Test]
+        public void ASetsAnnotationsReplaceTheDefaultsByUseKeepingTheirIndices()
+        {
+            const string json = @"{""annotations"": [
+                {""use"": ""skeleton walk"", ""clip"": ""Walk"", ""strideM"": 1.2},
+                {""use"": ""skeleton attack"", ""clip"": ""Attack 1"", ""impact"": 0.75, ""end"": 1.5}],
+              ""rosters"": {""forest"": {""annotations"": [
+                {""use"": ""skeleton attack"", ""clip"": ""Attack01"", ""impact"": 0.4, ""end"": 0.9}]}}}";
+            Assert.That(RosterSet.Default.Annotations(json), Is.EqualTo(json), "the default reads the file as it is");
+            Assert.That(RosterSet.Parse("heroic").Annotations(json), Is.EqualTo(json), "a set with no annotations keeps the default's");
+            var clips = ClipLibrary.Parse(RosterSet.Parse("forest").Annotations(json));
+            Assert.That(clips.Count, Is.EqualTo(2));
+            Assert.That(clips.Require("skeleton attack"), Is.EqualTo(1));
+            Assert.That(clips[1].Clip, Is.EqualTo("Attack01"));
+            Assert.That(clips[1].Impact, Is.EqualTo(0.4f));
+            Assert.That(clips[0].Clip, Is.EqualTo("Walk"));
+        }
     }
 }

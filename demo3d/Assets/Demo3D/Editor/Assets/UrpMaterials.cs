@@ -31,6 +31,53 @@ namespace Demo3D.EditorTools.Assets
             }
         }
 
+        /// <summary>
+        /// Swaps a prefab's built-in particle materials (the forest packs' auras, glitter and
+        /// trails) for URP Particles/Unlit copies with the same texture, tint and blend, so they
+        /// draw instead of coming out magenta. Only `--roster` sets call it; the default roster's
+        /// particles are untouched.
+        /// </summary>
+        public static void ConvertParticles(GameObject root)
+        {
+            foreach (var r in root.GetComponentsInChildren<ParticleSystemRenderer>(true))
+            {
+                var mats = r.sharedMaterials;
+                bool changed = false;
+                for (int i = 0; i < mats.Length; i++)
+                {
+                    var m = mats[i];
+                    if (m == null || IsUrp(m.shader)) continue;
+                    mats[i] = ToParticle(m);
+                    changed = true;
+                }
+                if (changed) r.sharedMaterials = mats;
+            }
+        }
+
+        static Material ToParticle(Material m)
+        {
+            if (Cache.TryGetValue(m, out var p) && p != null) return p;
+            p = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = m.name + " (URP)" };
+            if (m.HasProperty("_MainTex")) p.SetTexture("_BaseMap", m.GetTexture("_MainTex"));
+            // Legacy particle shaders double _TintColor (0.5 grey is white).
+            var tint = m.HasProperty("_TintColor") ? m.GetColor("_TintColor") * 2f
+                : m.HasProperty("_Color") ? m.GetColor("_Color") : Color.white;
+            p.SetColor("_BaseColor", tint);
+            bool additive = m.shader != null && m.shader.name.IndexOf("Add", System.StringComparison.OrdinalIgnoreCase) >= 0;
+            p.SetFloat("_Surface", 1f);
+            p.SetFloat("_Blend", additive ? 2f : 0f); // URP's Additive, else Alpha
+            p.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            p.SetFloat("_DstBlend", (float)(additive ? BlendMode.One : BlendMode.OneMinusSrcAlpha));
+            p.SetFloat("_SrcBlendAlpha", (float)(additive ? BlendMode.Zero : BlendMode.One));
+            p.SetFloat("_DstBlendAlpha", (float)(additive ? BlendMode.One : BlendMode.OneMinusSrcAlpha));
+            p.SetFloat("_ZWrite", 0f);
+            p.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            p.SetOverrideTag("RenderType", "Transparent");
+            p.renderQueue = (int)RenderQueue.Transparent;
+            Cache[m] = p;
+            return p;
+        }
+
         static bool IsUrp(Shader s)
         {
             if (s == null) return false;

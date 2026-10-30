@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Demo3D.Runtime.Playback
 {
@@ -56,6 +58,30 @@ namespace Demo3D.Runtime.Playback
             if (!set.IsDefault && style != null && style != "baseline")
                 throw new ArgumentException($"{Flag} {set.Name} draws through the stock crowd, so it can't take {StyleFlag} {style} (only baseline)");
             return set;
+        }
+
+        /// <summary>
+        /// The clip annotations the set's timeline schedules with: clip-annotations.json's, with
+        /// each of the set's own (its <c>rosters.NAME.annotations</c>, from `demo3d unity
+        /// AnnotateClips -roster NAME`) in place of the default entry with the same use, so clip
+        /// indices and roles are unchanged. A slot the set hasn't annotated keeps the default's.
+        /// </summary>
+        public string Annotations(string json)
+        {
+            if (IsDefault) return json;
+            var root = JObject.Parse(json);
+            if (!(root["rosters"]?[Name]?["annotations"] is JArray own)) return json;
+            var all = (JArray)root["annotations"];
+            foreach (var a in own)
+            {
+                string use = (string)a["use"];
+                int i = 0;
+                while (i < all.Count && (string)all[i]["use"] != use) i++;
+                if (i < all.Count) all[i] = a.DeepClone();
+                else all.Add(a.DeepClone());
+            }
+            root.Remove("rosters");
+            return root.ToString(Formatting.None);
         }
 
         static RosterSet _active;

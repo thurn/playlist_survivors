@@ -30,6 +30,9 @@ namespace Demo3D.Runtime.Playback
             : System.Array.Find(levels ?? new TextAsset[0], l => l.name == set.LevelName)
               ?? throw new System.InvalidOperationException($"PlaybackData: no {set.LevelName}.json baked (run demo3d unity BakeAll)");
 
+        /// <summary>The clip annotations for a `--roster` set (<see cref="RosterSet.Annotations"/>).</summary>
+        public string Annotations(RosterSet set) => set.Annotations(annotations.text);
+
         public TextAsset Layout(string name) => System.Array.Find(layouts, l => l.name == name + "-layout");
 
         public TextAsset Stress(string scene) => System.Array.Find(stressScripts, s => s.name == "stress-" + scene.ToLowerInvariant());

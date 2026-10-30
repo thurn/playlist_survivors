@@ -87,7 +87,7 @@ namespace Demo3D.Runtime.Playback
             var layout = _data.Layout(_script.Layout ?? "arena") ?? _data.Layout("arena");
             // The timeline navigates the density of the arena it draws (TD15; the cold review's item 3).
             var arenaDensity = Demo3D.Runtime.Arena.ArenaOptions.FromBench(ctx.Options, "arena", Demo3D.Runtime.Arena.ArenaOptions.Final()).Density;
-            _choreo = ChoreographyData.FromJson(_data.annotations.text, _data.roster.text, layout.text, _data.footprints.text, arenaDensity);
+            _choreo = ChoreographyData.FromJson(_data.Annotations(RosterSet.Active), _data.roster.text, layout.text, _data.footprints.text, arenaDensity);
             _drawCrowd = _script.Draw.Length == 0 || Array.IndexOf(_script.Draw, "crowd") >= 0;
             _drawEffects = Array.IndexOf(_script.Draw, "effects") >= 0;
             _drawLights = Array.IndexOf(_script.Draw, "lights") >= 0;

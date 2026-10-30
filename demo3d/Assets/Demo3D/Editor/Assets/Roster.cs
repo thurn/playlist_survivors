@@ -101,6 +101,9 @@ namespace Demo3D.EditorTools.Assets
             return types;
         }
 
+        /// <summary>The slot ids a `--roster` set's own file lists.</summary>
+        public static IEnumerable<string> SetIds(string set) => Read(SetPath(set)).types.Select(t => t.id);
+
         public static TypeColorSettings TypeColors() =>
             Read().typeColors ?? throw new Exception("Roster: no typeColors");
 
