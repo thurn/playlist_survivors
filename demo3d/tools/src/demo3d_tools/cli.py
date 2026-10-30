@@ -24,6 +24,8 @@ Commands:
                       report: takes the machine lock first; --out DIR, --backend, --build,
                       --screen WxH and --workers N (to test refusals), --no-lock
   report DIR          regenerate a sweep folder's report.md from its rows
+  look SLUG           the look pass's set on the Mac, windowless: song stills, TD15's beauty shots,
+                      their stats and |dL*| readability (--baseline SLUG for a contact sheet)
   pix SPEC            a PIX GPU capture at one point (--point n=..,viewWidthM=..,load=..,aa=..) and
                       its per-pass GPU summary
 """
@@ -201,6 +203,12 @@ def cmd_pix(a: argparse.Namespace) -> int:
     return pix.cmd_pix(a)
 
 
+def cmd_look(a: argparse.Namespace) -> int:
+    from . import look
+
+    return look.cmd_look(a)
+
+
 def cmd_mix(a: argparse.Namespace) -> int:
     from . import mix
 
@@ -317,6 +325,18 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     fl = sub.add_parser("flip", help="FLIP scores of A/B capture pairs (or calibrate the thresholds)")
     fl.add_argument("args", nargs=argparse.REMAINDER)
     fl.set_defaults(func=cmd_flip)
+
+    lk = sub.add_parser("look", help="the look pass's stills, stats and readability (Mac, windowless)")
+    lk.add_argument("slug", help="the set's name: captures/look/SLUG and demo3d/evidence/look/SLUG")
+    lk.add_argument("--baseline", help="a committed set to compare against (contact sheet, deltas)")
+    lk.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
+    lk.add_argument("--workers", type=int, default=4, help="player processes at a time")
+    lk.add_argument("--measure-only", action="store_true", help="re-measure the kept captures")
+    lk.add_argument("--song-only", action="store_true")
+    lk.add_argument("--beauty-only", action="store_true")
+    lk.add_argument("--trial", action="store_true", help="print the tables, write nothing to evidence")
+    lk.add_argument("--player-args", default="", help="extra player flags, e.g. '--crowd-fill 1.5'")
+    lk.set_defaults(func=cmd_look)
     return p
 
 

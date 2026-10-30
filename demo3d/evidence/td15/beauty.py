@@ -18,7 +18,9 @@ L*, so positive means the horde is brighter than its ground. dL*bg compares the 
 the same pixels of the empty still (the set they cover, without the fight's light), and dC* the
 median chroma (C*ab) likewise against the ring. The ID render draws the set and the hero black with
 their depth (the cold review's item 1), so a monster behind a canopy or wall isn't a monster pixel;
-the ground, mist, runes, pools and particles are hidden in it. The floor is on dL*.
+the ground, mist, runes, pools and particles are hidden in it. The floor is on |dL*| (the look
+pass's Decision 3, ps-e8r): a dark horde on a light ground reads as well as the reverse. The Mac's
+windowless version of these shots, with whole-frame look stats, is `demo3d look` (look.py).
 """
 
 from __future__ import annotations
@@ -36,6 +38,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "demo3d" / "tools" / "src"))
 from demo3d_tools import sweep  # noqa: E402
+from demo3d_tools.look import FLOOR_DL, chroma, dilate, lstar  # noqa: E402
 
 EXE = ROOT / "demo3d" / "Builds" / "il2cpp" / "PlaylistSurvivors3D.exe"
 LAYOUT = ROOT / "demo3d" / "Assets" / "Demo3D" / "Choreography" / "Data" / "arena-layout.json"
@@ -43,10 +46,9 @@ CAPTURES = ROOT / "captures" / "td15"
 EVIDENCE = ROOT / "demo3d" / "evidence" / "td15" / "shots"
 TABLE = ROOT / "demo3d" / "evidence" / "td15" / "readability.md"
 WARMUP_S = 3.0  # fixed-time frames before the still: effects, the clock and the ambient particles settle
-# The floor on dL*: from the authored layout (2x, the cold review's depth-tested ID render, no effects in the
-# measured still), its lowest shot less a margin (TD15's notes; it was 12 under the first, undepth-tested measure):
-# later changes must not take any shot below it.
-FLOOR_DL = 17.0
+# The floor, |dL*| >= 17 (look.FLOOR_DL): from the authored layout (2x, the cold review's depth-tested ID render,
+# no effects in the measured still), its lowest shot less a margin (TD15's notes; it was 12 under the first,
+# undepth-tested measure); later changes must not take any shot below it.
 
 
 def shots() -> list[dict]:
@@ -74,38 +76,6 @@ def capture(shot: dict, root: Path, extra: list[str]) -> None:
     run(shot["name"] + " horde", common + extra, root / shot["name"] / "horde")
     run(shot["name"] + " measure", common + extra + ["--no-effects", "--capture-mask"], root / shot["name"] / "measure")
     run(shot["name"] + " empty", common + extra + ["--beauty-empty"], root / shot["name"] / "empty")
-
-
-def lstar(rgb: np.ndarray) -> np.ndarray:
-    """CIE L* of 8-bit sRGB pixels."""
-    c = rgb.astype(np.float64) / 255.0
-    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-    y = lin @ np.array([0.2126, 0.7152, 0.0722])
-    return np.where(y > 216 / 24389, 116 * np.cbrt(y) - 16, y * 24389 / 27)
-
-
-def chroma(rgb: np.ndarray) -> np.ndarray:
-    """C*ab of 8-bit sRGB pixels (D65)."""
-    c = rgb.astype(np.float64) / 255.0
-    lin = np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-    m = np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]])
-    xyz = lin @ m.T / np.array([0.95047, 1.0, 1.08883])
-    f = np.where(xyz > 216 / 24389, np.cbrt(xyz), (24389 / 27 * xyz + 16) / 116)
-    a = 500 * (f[..., 0] - f[..., 1])
-    b = 200 * (f[..., 1] - f[..., 2])
-    return np.hypot(a, b)
-
-
-def dilate(mask: np.ndarray, r: int) -> np.ndarray:
-    """A square dilation by r pixels."""
-    out = mask.copy()
-    h, w = mask.shape
-    for dy in range(-r, r + 1):
-        for dx in range(-r, r + 1):
-            ys, yd = (slice(dy, h), slice(0, h - dy)) if dy >= 0 else (slice(0, h + dy), slice(-dy, h))
-            xs, xd = (slice(dx, w), slice(0, w - dx)) if dx >= 0 else (slice(0, w + dx), slice(-dx, w))
-            out[yd, xd] |= mask[ys, xs]
-    return out
 
 
 def measure(shot: dict, root: Path) -> dict:
@@ -162,7 +132,7 @@ def main() -> int:
              "ring's 75th percentile. The ID render is depth-tested against the set; the measured still has no",
              "effects. Horde: S3 at demo load, n requested (capped by the view's packing), at the shot's t;",
              "1920x1080, MSAA 4x, rung E2 at the authored density.",
-             f"Floor: dL* >= {FLOOR_DL:g} in every shot (re-derived after the review: the lowest shot, less a margin).", "",
+             f"Floor: |dL*| >= {FLOOR_DL:g} in every shot (re-derived after the review: the lowest shot, less a margin).", "",
              "| shot | monster px (share) | L* monster | L* ring | dL* | dL*bg | dC* | brighter | floor |",
              "|---|---:|---:|---:|---:|---:|---:|---:|---|"]
     ok = True
@@ -171,7 +141,7 @@ def main() -> int:
             lines.append(f"| {r['name']} | {r['monsterPx']} | | | | | | | {r['error']} |")
             ok = False
             continue
-        passed = r["dL"] >= FLOOR_DL
+        passed = abs(r["dL"]) >= FLOOR_DL
         ok &= passed
         lines.append(f"| {r['name']} | {r['monsterPx']:,} ({r['monsterShare'] * 100:.1f}%) | {r['lMonster']:.1f} | "
                      f"{r['lRing']:.1f} | {r['dL']:.1f} | {r['dLbg']:.1f} | {r['dC']:.1f} | "
