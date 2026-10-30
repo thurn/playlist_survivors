@@ -238,7 +238,10 @@ What the simulation does on each grid step:
 - **The boss enters outside the view** at its section's start. By default it
   waits there to be released like any other monster, which a full climax
   never does. A level script's `bossFrom` names a layout goal: the boss
-  enters in that goal's direction from the hero and always walks in. Both
+  enters in that goal's direction from the hero and always walks in,
+  trampling the small fry in its way until it is in view (a full climax packs
+  the whole view and would hold it at the edge), and casts only once in view,
+  however long its reach. Both
   demos set it: demo3d's boss comes from the `opening`, to the hero's
   north-east. `bossFallsLast` (demo2d's) spares the boss from a clearing
   section's blows until its last, so it falls to the final slam.

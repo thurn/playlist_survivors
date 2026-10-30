@@ -982,6 +982,7 @@ namespace PS.Choreography
             for (int oi = 0; oi < n; oi++)
             {
                 int m = order[oi];
+                if (state[m] != Alive) continue;   // trampled by a walking-in boss this beat
                 MonsterType mt = roster.Monsters[etype[m]];
                 Vector2 a = rest[m];
                 float contact = roster.HeroRadius + mt.Radius + 0.15f;
@@ -996,14 +997,17 @@ namespace PS.Choreography
                     continue;
                 }
                 // Casters still fire from their reach, which lies beyond the ring: their bolts never crowd the hero.
-                if (plan.MonsterAttacks && (clearRadius <= 0 || mt.Projectile >= 0) && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt)))
+                // A walking-in boss casts only once in view, however long its reach: its entrance is the show.
+                bool walkingBoss = mt.Rank == MonsterRank.Boss && bossWalksIn;
+                if (plan.MonsterAttacks && (clearRadius <= 0 || mt.Projectile >= 0) && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt))
+                    && (onScreen[m] || !walkingBoss))
                 {
                     TryScheduleAttack(m, mt, tb, toHero);
                     continue;
                 }
                 // A boss with a side to enter from always walks in: it enters beyond the band the deficit
                 // releases nearest first, so a full climax would otherwise hold it out of view (PX8).
-                if (!onScreen[m] && !released[m] && !(mt.Rank == MonsterRank.Boss && bossWalksIn)) continue;
+                if (!onScreen[m] && !released[m] && !walkingBoss) continue;
                 Vector2 dir = d > 1e-4f ? toHero / d : Easing.Dir(facing[m]);
                 float left = d;
                 if (nav != null) dir = MonsterHeading(a, heroAt, mt.Radius, dir, ref left);
@@ -1015,6 +1019,7 @@ namespace PS.Choreography
                 {
                     Vector2 b = a + dir * step;
                     if (nav != null) b = WallStep(a, b, mt.Radius);
+                    if (walkingBoss && !onScreen[m] && !free) Trample(m, a, b, tb);
                     GatherCandidates(m, a, Math.Max(step, 0.8f * mt.StepM));
                     float f = SepFraction(m, a, b);
                     best = Vector2.Lerp(a, b, f);
@@ -1066,6 +1071,24 @@ namespace PS.Choreography
                 beatMaxStep = Math.Max(beatMaxStep, Vector2.Distance(a, best));
                 planSerial[m] = beatSerial;
                 planFrom[m] = a;
+            }
+        }
+
+        /// <summary>
+        /// A walking-in boss tramples the small fry in its step's way: a full climax's horde packs the whole
+        /// view, and would otherwise hold the boss at its edge, out of sight. The dying never block.
+        /// </summary>
+        void Trample(int m, Vector2 a, Vector2 b, double tb)
+        {
+            float step = Vector2.Distance(a, b);
+            int n = Near().Gather(a, radius[m] + SmallRadius + step + Math.Max(beatMaxStep, 0.5f) + 0.05f, ref buf);
+            for (int i = 0; i < n; i++)
+            {
+                int j = buf[i];
+                if (j == m || state[j] != Alive || radius[j] > SmallRadius) continue;
+                float reach = radius[m] + radius[j];
+                bool planned = planSerial[j] == beatSerial;
+                if (ArenaLayout.SegmentDistance(rest[j], a, b) < reach || (planned && ArenaLayout.SegmentDistance(planFrom[j], a, b) < reach)) Kill(j, tb, 1f);
             }
         }
 

@@ -98,6 +98,7 @@ namespace Demo2D.Choreography.Tests
                 if (Song.View(f.ViewWidth).Contains(f.Focus, Song.PositionAt(boss.Id, t))) { inView = t; break; }
             }
             TestContext.WriteLine("boss in view at " + inView.ToString("F1") + " s");
+            Assert.That(double.IsNaN(inView), Is.False, "in view at all");
             Assert.That(inView, Is.LessThan(peak.Start + (peak.End - peak.Start) / 3), "in view in the section's first third");
 
             var attacks = Song.ActionsOf(boss.Id).Where(a => a.Kind == ActionKind.Attack).ToList();
