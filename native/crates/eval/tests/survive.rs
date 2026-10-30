@@ -208,3 +208,92 @@ fn all_survivor_bots_replay_their_real_keys_and_only_see_known_input() {
         );
     }
 }
+
+/// The app's showcase (ps-8sb.4): Delayed listening's arrivals (most 3 s before they are known,
+/// beats committed late as they are known), frames at a display's uneven times drawn 45 ms ahead
+/// of the time heard, the simulation run 0.2 s ahead of that, and the virtual player pressing
+/// where the simulation has run to. `replay_run` (120 Hz, no lead, the keys fed at their times)
+/// must settle the same records. It once did not: a key at the simulation's very stop, the clock
+/// moved between stops to where a frame or a snapshot asked, and an arrival heard before the drawn
+/// frame's settled time each made the two differ.
+#[test]
+fn a_virtual_player_pressing_at_the_frontier_replays_under_delayed_arrivals() {
+    use eval::session::{Entry, known_floor, rebase_append};
+    use players::{SurvivorBot, SurvivorBotKind};
+    let end = 60.0;
+    let mut arrivals: Vec<Arrival> = fixture()
+        .iter()
+        .map(|a| Arrival {
+            arrived: a.entry.known_at()
+                - if matches!(a.entry, Entry::Beat(_)) {
+                    0.0
+                } else {
+                    3.0
+                },
+            entry: a.entry.clone(),
+        })
+        .filter(|a| a.arrived <= end)
+        .collect();
+    arrivals.sort_by(|a, b| a.arrived.total_cmp(&b.arrived));
+    let mut heard = Vec::new();
+    let mut t = 0.0;
+    for i in 0..u32::MAX {
+        t += (0.6 + 0.8 * (f64::from(i) * 12.9898).sin().abs()) / 120.0;
+        if t > end {
+            break;
+        }
+        heard.push(t);
+    }
+    let mut e = engine();
+    e.key_log = Some(Vec::new());
+    let mut bot = SurvivorBot::new(SurvivorBotKind::Positioning, 1);
+    let mut next = 0;
+    for &heard in &heard {
+        // (Stamped as the app stamps them: never before the run's settled time.)
+        let n = arrivals[next..]
+            .iter()
+            .take_while(|a| a.arrived <= heard)
+            .count();
+        let floor = known_floor(e.settled_s(), 0.0);
+        for a in &mut arrivals[next..next + n] {
+            a.entry = a.entry.clone().stamped(floor);
+        }
+        e.feed(|log| {
+            for a in &arrivals[next..next + n] {
+                rebase_append(log, &a.entry, 0.0);
+            }
+        });
+        next += n;
+        e.frame(heard + 0.045, 0.2);
+        for k in bot.decide(&e.sim.observe()) {
+            e.key(k.s, k.key, k.kind == KeyEventKind::Press);
+        }
+    }
+    let keys: Vec<_> = e
+        .key_log
+        .as_ref()
+        .unwrap()
+        .iter()
+        .map(|k| AppliedKey {
+            run: 0,
+            s: k.s,
+            key: format!("{:?}", k.key),
+            pressed: k.kind == KeyEventKind::Press,
+        })
+        .collect();
+    assert!(keys.len() > 20, "{} keys", keys.len());
+    let run = RecordedRun {
+        index: 0,
+        s0: 0.0,
+        end,
+        hash: e.settled_hash,
+        records: e.settled_count,
+    };
+    let replay = replay_run(&mut engine(), &arrivals, &keys, &run, 20.0).unwrap();
+    assert_eq!(
+        replay.hash,
+        Some(run.hash),
+        "{} records settled live",
+        run.records
+    );
+}

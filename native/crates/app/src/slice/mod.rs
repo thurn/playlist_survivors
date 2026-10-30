@@ -2328,7 +2328,18 @@ impl App {
                     if let Some((g, t)) = content_time(&e) {
                         self.log(serde_json::json!({"k": "arr", "s": arrived, "g": g, "lag": arrived - t}));
                     }
-                    let entry = eval::session::from_analyzer(&e).stamped(arrived);
+                    // (Known no earlier than the run's settled time, as the engine takes it: drawn
+                    // ahead of the time heard by the display's offset, it can settle past an
+                    // arrival, and the session keeps what the run saw.)
+                    let known = if self.running {
+                        arrived.max(eval::session::known_floor(
+                            self.engine.settled_s(),
+                            self.run_start,
+                        ))
+                    } else {
+                        arrived
+                    };
+                    let entry = eval::session::from_analyzer(&e).stamped(known);
                     if self.running {
                         let start = self.run_start;
                         self.engine
@@ -2452,8 +2463,9 @@ impl App {
             let lead = 0.2f64.max(self.audio.l_out + self.ahead.max(0.0) + 0.02);
             self.engine.frame(s - self.run_start, lead);
             // (The virtual player sees the game where the simulation has run to and presses
-            // there, as eval's runs drive it: its keys need no rollback. Pressing at the time heard
-            // instead, a beat's fraction late, it was hit far more and levelled far less.)
+            // there: its keys roll back only to the snapshot before that stop. Pressing at the
+            // time heard instead, a beat's fraction late, it was hit far more and levelled far
+            // less.)
             if let Some(bot) = self.bot.as_mut()
                 && !self.engine.sim.done()
             {

@@ -141,6 +141,18 @@ pub fn from_analyzer(e: &analysis::analyzer::Entry) -> Entry {
     }
 }
 
+/// The earliest session time an arrival can be known at in the run from `s0` whose records are
+/// final before run time `settled` ([`crate::live::Engine::feed`] takes one known earlier as known
+/// then): the least time whose rebase is not before `settled`. Stamping arrivals with it keeps in
+/// the session what the run saw, so a replay, which settles behind its arrivals, sees the same.
+pub fn known_floor(settled: f64, s0: f64) -> f64 {
+    let mut t = settled + s0;
+    while t - s0 < settled {
+        t = t.next_up();
+    }
+    t
+}
+
 /// Appends `e` (in session time) to the log of a run that began at session time `s0`.
 pub fn rebase_append(log: &mut StreamLog, e: &Entry, s0: f64) {
     let at = |t: f64| t - s0;

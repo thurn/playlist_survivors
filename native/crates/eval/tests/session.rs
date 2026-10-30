@@ -158,3 +158,29 @@ fn prefix_hash_matches_the_kept_records_without_enabling_retention() {
         assert_eq!(got.settled, records.len());
     }
 }
+
+/// An arrival heard before the settled time of a frame drawn ahead of it (the display's offset)
+/// is stamped at the run's known floor, so the engine is fed what the session records: a replay,
+/// which settles behind its arrivals, then sees the same entry (ps-8sb.4).
+#[test]
+fn an_arrival_stamped_at_the_known_floor_is_fed_as_the_session_records_it() {
+    use eval::session::{Entry, known_floor, rebase_append};
+    let s0 = 6.97;
+    let mut e = engine();
+    e.frame(1.045, 0.2);
+    let floor = known_floor(e.settled_s(), s0);
+    assert!(floor > 1.0 + s0, "the frame settled past the arrival");
+    let entry = Entry::Beat(stream::Beat {
+        t: s0 + 1.3,
+        known_at: s0 + 1.0,
+        period: 0.5,
+        evidence: 1.0,
+    })
+    .stamped(floor);
+    let mut recorded = stream::StreamLog::default();
+    rebase_append(&mut recorded, &entry, s0);
+    e.feed(|log| rebase_append(log, &entry, s0));
+    let fed = e.stream().beats.last().unwrap().known_at;
+    assert_eq!(fed, recorded.beats[0].known_at);
+    assert!(fed >= e.settled_s());
+}

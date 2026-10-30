@@ -449,11 +449,19 @@ already speculated past `a`.
 
 - **Rule:** the runner treats arrivals exactly like late keys. All arrivals and
   keys drained in one frame cause one rollback, to the newest snapshot before
-  the earliest of their times. Then it re-simulates ahead.
+  the earliest of their times. Then it re-simulates ahead. A key at the
+  frontier itself is late too: the stop the sim stands on ran without it.
+- **The clock rests on the sim's own stops.** The runner runs every stop
+  before `now + lead` and snapshots at the last stop before each mark of a
+  1/30 s grid; it never moves the clock to a frame's or a snapshot's time,
+  where samples and late-knowledge checks would depend on how the run was cut
+  up. So a run at any frames settles as `ps replay`'s 120 Hz one (ps-8sb.4).
 - **Too late to roll back:** the runner keeps snapshots only back to its
   settled time (`now - SETTLE_S`, 0.04 s). An arrival stamped before that (a
   main-thread stall) is re-stamped to the settled time, as TS does with very
-  late keys, and the effective stamp is what the session records.
+  late keys, and the effective stamp is what the session records (the app
+  stamps arrivals no earlier than the settled time: drawn ahead of the time
+  heard by the display offset, a frame can settle past an arrival).
 - **The lead covers the output latency.** A sound heard at `s` must reach the
   mixer by `s - L`, so the sim must have run to at least `now + L + margin`.
   The lead is `max(0.2 s, L + mixer margin)`. On built-in speakers that stays

@@ -53,7 +53,6 @@ Hindsight beats also put the beat grid right from the first bar.
 - `--seconds 200` (the bead's acceptance) stops 3 s before the end: the song is 199 s long, a
   confirmed end needs 3 s of quiet after it, and Delayed listening hears everything 3 s late.
   Without `--seconds` the showcase quits on its own; `--seconds 220` is a safe cap.
-- A Delayed showcase session replays with the same record count but a different settled hash
-  (`ps replay` says DIFFERENT); Direct showcase sessions and Delayed sessions without the bot replay
-  exactly. The stills are then a near replay, and the tool says so. Follow-up bead filed.
+- Fixed in ps-8sb.4: a Delayed showcase session replayed with a different settled hash. Showcase
+  sessions now replay exactly (`ps replay` says the same), and `--showcase-stills` fails if not.
 - The finale still shows native's "BOSS APPROACHING" banner over the blast.

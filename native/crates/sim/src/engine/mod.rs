@@ -1255,6 +1255,23 @@ impl Sim {
         Rc::make_mut(&mut self.log)
     }
 
+    /// Runs the game rules up to song time t as [`Sim::advance_to`] does, but leaves the clock at
+    /// the last stop before t: a run cut up anywhere then passes through the same states, since a
+    /// move between stops takes samples and decides what late knowledge has missed from where it
+    /// stands.
+    pub fn run_stops_before(&mut self, t: f64) {
+        if t >= self.st.end_s {
+            self.run_to_end();
+            return;
+        }
+        while self.st.s < self.st.end_s && self.next_stop() < t - CLOCK_EPS {
+            self.step();
+        }
+        if t >= self.st.end_s {
+            self.run_to_end();
+        }
+    }
+
     /// Runs the game rules up to song time t: every event before t happens, and the clock moves to t.
     pub fn advance_to(&mut self, t: f64) {
         if t >= self.st.end_s {

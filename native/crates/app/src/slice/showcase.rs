@@ -1,5 +1,5 @@
 //! A recorded showcase replayed offscreen (epic ps-8sb). `--showcase-stills <session>` replays the
-//! session's run (it reports whether its settled records match the live run's) for three stills:
+//! session's run (failing unless its settled records are the live run's) for three stills:
 //! the first level-up's cards, the biggest crowd, and the finale's blast. `--showcase-density
 //! <session>` plays the session's music again on the showcase level as it is now, with the virtual
 //! player at the keys, and measures each song section's crowd on screen, a still of each, and the
@@ -112,14 +112,12 @@ fn replay(
         let work = (super::thread_cpu_s() - t0) * 1e3;
         each(engine, now, work)?;
     }
-    // (A Delayed showcase's replay can settle differently from the live run, ps-8sb.1's notes:
-    // the stills are then a near replay, and say so.)
     let hash = format!("{:016x}", engine.settled_hash);
     if bot.is_none() && (hash != rec.hash || engine.settled_count < rec.records) {
-        eprintln!(
+        return Err(format!(
             "showcase: not exact: the replay settled {hash}/{}, the live run {}/{}",
             engine.settled_count, rec.hash, rec.records
-        );
+        ));
     }
     Ok(())
 }

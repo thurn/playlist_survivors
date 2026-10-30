@@ -1370,6 +1370,9 @@ impl Recorder for LiveRecorder {
 pub const SETTLE_S: f64 = 0.04;
 /// Snapshot spacing along the simulation's run (song s).
 pub const SNAP_DT: f64 = 1.0 / 30.0;
+/// Times this close are one moment to the simulation (its stop takes every event due within 1e-12,
+/// in kind order), with a margin: a snapshot taken at a stop is after anything due there.
+const TOGETHER_S: f64 = 1e-9;
 
 /// A point the runner can roll back to: the simulation's state, the journal's mark, and how many
 /// keys had been applied.
@@ -1584,6 +1587,12 @@ impl Engine {
         }
     }
 
+    /// The song time before which the state is final: [`Engine::feed`] takes an arrival known
+    /// earlier as known then.
+    pub fn settled_s(&self) -> f64 {
+        self.settled
+    }
+
     /// The stream as it has arrived.
     pub fn stream(&mut self) -> &StreamLog {
         self.sim.log_mut()
@@ -1630,19 +1639,20 @@ impl Engine {
         let mut keys = std::mem::take(&mut self.pending);
         keys.sort_by(|a, b| a.s.total_cmp(&b.s));
         let first_key = keys.first().map(|k| k.s);
-        let earliest = first_key
-            .into_iter()
-            .chain(self.arrival.take())
-            .reduce(f64::min);
+        let arrival = self.arrival.take();
+        let s = self.sim.s();
         let mut resim_to = None;
-        if let Some(t) = earliest
-            && t < self.sim.s() - 1e-12
-        {
-            resim_to = Some(self.sim.s());
+        // (A key at the simulation's very time has been passed too: the stop it stands on ran
+        // without it, and a run fed the key in time takes it in at that stop, as `replay_run`
+        // does. A virtual player observing at the frontier presses exactly there.)
+        let passed =
+            first_key.is_some_and(|k| k < s + TOGETHER_S) || arrival.is_some_and(|a| a < s - 1e-12);
+        if passed && let Some(t) = first_key.into_iter().chain(arrival).reduce(f64::min) {
+            resim_to = Some(s);
             if first_key == Some(t) {
                 self.stats.key_rollbacks += 1;
             }
-            self.stats.deepest_s = self.stats.deepest_s.max(self.sim.s() - t);
+            self.stats.deepest_s = self.stats.deepest_s.max(s - t);
             self.roll_back(t.max(self.settled));
         }
         for mut k in keys {
@@ -1672,7 +1682,7 @@ impl Engine {
         let k = self
             .snaps
             .iter()
-            .rposition(|sn| sn.s <= self.settled)
+            .rposition(|sn| sn.s < self.settled - TOGETHER_S)
             .unwrap_or(0);
         if k > 0 {
             self.snaps.drain(..k);
@@ -1710,39 +1720,43 @@ impl Engine {
         self.prefix_hash
     }
 
-    /// Runs the simulation to song time `t`, snapshotting on the way.
+    /// Runs the simulation through its stops before song time `t`, snapshotting on the way: at the
+    /// last stop before each mark of a `SNAP_DT` grid. The clock stays on the simulation's own
+    /// stops (never moved to where a frame or a snapshot asked), so a run fed its keys and arrivals
+    /// in time at other frames passes through the same states, and snapshots where it does once a
+    /// rollback is behind.
     fn run(&mut self, t: f64) {
-        while self.sim.s() < t - 1e-9 && !self.sim.done() {
-            let last = self.snaps.last().map_or(f64::NEG_INFINITY, |sn| sn.s);
-            let next = t.min(last + SNAP_DT);
-            let before = self.sim.s();
-            self.sim.advance_to(next);
-            if self.sim.s() <= before {
-                // (One of the simulation's own stops sits right at `next`, and its clock waits just
-                // short of it: step through it, unless `next` is where this run ends.)
-                if next >= t {
-                    break;
-                }
-                self.sim.advance_to(t.min(next + 1e-6));
-                if self.sim.s() <= before {
-                    break;
-                }
+        while !self.sim.done() {
+            let last = self.snaps.last().map_or(0.0, |sn| sn.s);
+            // (The last snapshot is the last stop before its mark, the one after the grid line
+            // below it: the next is the mark after that.)
+            let next = t.min(((last / SNAP_DT).floor() + 2.0) * SNAP_DT);
+            self.sim.run_stops_before(next);
+            if next >= t {
+                break;
             }
-            if self.sim.s() >= last + SNAP_DT - 1e-6 {
-                let snap = Snap {
-                    s: self.sim.s(),
-                    sim: self.sim.snapshot(),
-                    mark: self.journal.borrow().mark(),
-                    keys: self.applied.len(),
-                };
-                self.snaps.push(snap);
+            if self.sim.s() <= last {
+                // (No stop since the last snapshot: none to take.)
+                self.sim.run_stops_before(t);
+                break;
             }
+            let snap = Snap {
+                s: self.sim.s(),
+                sim: self.sim.snapshot(),
+                mark: self.journal.borrow().mark(),
+                keys: self.applied.len(),
+            };
+            self.snaps.push(snap);
         }
     }
 
     /// Restores the newest snapshot before song time `t` and rewinds the journal to it.
     fn roll_back(&mut self, t: f64) {
-        let i = self.snaps.iter().rposition(|sn| sn.s < t).unwrap_or(0);
+        let i = self
+            .snaps
+            .iter()
+            .rposition(|sn| sn.s < t - TOGETHER_S)
+            .unwrap_or(0);
         let snap = &self.snaps[i];
         debug_assert!(
             self.settled_idx <= snap.mark.len,
