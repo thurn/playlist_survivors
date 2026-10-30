@@ -25,10 +25,22 @@ namespace Demo3D.Runtime.Arena
         public Color AmbientSky = new Color(0.10f, 0.13f, 0.22f), AmbientEquator = new Color(0.06f, 0.08f, 0.12f),
             AmbientGround = new Color(0.03f, 0.03f, 0.04f);
         public Color FogColor = new Color(0.04f, 0.06f, 0.10f);
+        /// <summary>
+        /// The fog's mode: exponential (<see cref="FogDensity"/>) or linear in view depth, starting and
+        /// ending at multiples of the camera's focus distance (its view axis to the ground), so the
+        /// fighting ground at the frame's centre stays clear at every view width and only the far
+        /// edge of the frame fades into the clear colour.
+        /// </summary>
+        public FogMode FogMode = FogMode.Exponential;
         public float FogDensity = 0.012f;
+        public float FogStartAtFocus = 1.1f, FogEndAtFocus = 2.4f;
         /// <summary>TD15: the horde's extra ambient fill (added to 1) and its rim light (linear rgb), CrowdSkinned's globals.</summary>
         public float CrowdFill;
         public Color CrowdRim = Color.black;
+        /// <summary>The rim's falloff exponent on 1 - N·V: higher keeps it to the silhouette's edge.</summary>
+        public float CrowdRimPower = 3f;
+        /// <summary>The moon's intensity on the horde, as a multiple of its intensity on the set: the horde's key light.</summary>
+        public float CrowdKey = 1f;
         public int MaxFlameLights = 8;
         /// <summary>Flickering flame lights (realtime, at most <see cref="MaxFlameLights"/>), in priority order.</summary>
         public readonly List<PropLight> Flames = new List<PropLight>();
@@ -53,10 +65,15 @@ namespace Demo3D.Runtime.Arena
             l.AmbientGround = Col(amb["ground"], l.AmbientGround);
             JsonValue fog = root["fog"];
             l.FogColor = Col(fog["color"], l.FogColor);
+            l.FogMode = fog["mode"].AsString("exponential") == "linear" ? FogMode.Linear : FogMode.Exponential;
             l.FogDensity = fog["density"].AsFloat(l.FogDensity);
+            l.FogStartAtFocus = fog["startAtFocus"].AsFloat(l.FogStartAtFocus);
+            l.FogEndAtFocus = fog["endAtFocus"].AsFloat(l.FogEndAtFocus);
             JsonValue crowd = root["crowd"];
             l.CrowdFill = crowd["fill"].AsFloat(0f);
             l.CrowdRim = Col(crowd["rim"], Color.black);
+            l.CrowdRimPower = crowd["rimPower"].AsFloat(l.CrowdRimPower);
+            l.CrowdKey = crowd["key"].AsFloat(l.CrowdKey);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, true);

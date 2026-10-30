@@ -28,6 +28,11 @@ half Demo3DStaticShadow(float3 positionWS)
     return lerp(1, s * 0.25, _Demo3DStaticShadowParams.z);
 }
 
+// The main light's scale: 1, or a shader's own before the include (the crowd's key light, CrowdSkinned).
+#ifndef DEMO3D_MAIN_LIGHT_SCALE
+#define DEMO3D_MAIN_LIGHT_SCALE 1
+#endif
+
 // URP's UniversalFragmentPBR without clear coat, light layers or debug views, with the main
 // light's realtime shadow combined with the static shadow map. The two never double: at rung E0
 // the static set is in the cascades and the map is off; at E2 the cascades hold only dynamic
@@ -40,6 +45,7 @@ half3 Demo3DLightingPBR(InputData inputData, SurfaceData surfaceData)
     AmbientOcclusionFactor aoFactor = CreateAmbientOcclusionFactor(inputData, surfaceData);
     Light mainLight = GetMainLight(inputData, shadowMask, aoFactor);
     mainLight.shadowAttenuation = min(mainLight.shadowAttenuation, Demo3DStaticShadow(inputData.positionWS));
+    mainLight.color *= DEMO3D_MAIN_LIGHT_SCALE;
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI);
     LightingData lightingData = CreateLightingData(inputData, surfaceData);
     lightingData.giColor = GlobalIllumination(brdfData, brdfData, 0, inputData.bakedGI,

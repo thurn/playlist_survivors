@@ -119,13 +119,17 @@ Shader "Demo3D/CrowdSkinned"
 
             // The main light's shadow takes TD9's static shadow map of the arena's static set
             // (environment.md, Lighting the night); the lighting is shared with the hero's shader.
-            #include "../../Arena/Shaders/StaticShadow.hlsl"
-            #define CrowdLighting Demo3DLightingPBR
             // TD15 (environment.md, Value structure): the night's extra fill on the horde's ambient (x, added
-            // to 1) and a cool rim light on its silhouettes (rgb, linear), so monsters stay the brightest
-            // values against the dark ground. NightLook sets them from the layout's lighting; 0 is TD9's look.
+            // to 1) and a cool rim light on its silhouettes (rgb, linear; w its falloff exponent), so monsters
+            // separate from the ground and each other. The key boost (added to 1) scales the moon on the horde
+            // alone, so it reads with a lit and a shaded side above the dimmer set (ps-e8r.2). NightLook sets
+            // them from the layout's lighting; 0 is TD9's look.
             float4 _Demo3DCrowdRim;
             float _Demo3DCrowdFill;
+            float _Demo3DCrowdKeyBoost;
+            #define DEMO3D_MAIN_LIGHT_SCALE (1 + _Demo3DCrowdKeyBoost)
+            #include "../../Arena/Shaders/StaticShadow.hlsl"
+            #define CrowdLighting Demo3DLightingPBR
 
             half4 frag(Varyings i) : SV_Target
             {
@@ -154,7 +158,7 @@ Shader "Demo3D/CrowdSkinned"
                 s.emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).rgb * _EmissionColor.rgb
                     + _FlashColor.rgb * i.fx.x + _DissolveEdgeColor.rgb * edge;
                 half rim = 1 - saturate(dot(inputData.normalWS, inputData.viewDirectionWS));
-                s.emission += _Demo3DCrowdRim.rgb * (rim * rim * rim) * albedo.rgb * 4;
+                s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4;
 
                 half3 color = CrowdLighting(inputData, s);
                 color = MixFog(color, inputData.fogCoord);

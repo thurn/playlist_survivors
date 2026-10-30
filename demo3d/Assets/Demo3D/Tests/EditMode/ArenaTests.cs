@@ -20,11 +20,13 @@ namespace Demo3D.Tests
         static string LayoutJson => File.ReadAllText(ArenaBaker.LayoutPath);
 
         [Test]
-        public void TheMoonIsCoolAndLowAndFlamesAreCapped()
+        public void TheKeyLightIsWarmAndKeysTheHordeAndFlamesAreCapped()
         {
             var l = ArenaLighting.Parse(LayoutJson);
-            Assert.That(l.MoonElevationDeg, Is.InRange(25f, 35f), "environment.md: the moon at 25 to 35 degrees");
-            Assert.That(l.MoonColor.b, Is.GreaterThan(l.MoonColor.r), "cool blue moonlight");
+            Assert.That(l.MoonElevationDeg, Is.InRange(30f, 55f), "a key light high enough to shade the horde, low enough to model it");
+            Assert.That(l.MoonColor.r, Is.GreaterThanOrEqualTo(l.MoonColor.b), "a warm-neutral key (epic ps-e8r, Decision 1)");
+            Assert.That(l.CrowdKey, Is.GreaterThan(1f), "the horde is keyed above the set");
+            Assert.That(l.CrowdFill, Is.LessThan(1f), "flat fill no longer outweighs the key");
             Assert.That(l.MaxFlameLights, Is.InRange(1, 8), "at most 8 flickering flame lights");
             Assert.That(l.Flames, Is.Not.Empty);
             var fp = FootprintTable.Parse(File.ReadAllText(ArenaBaker.FootprintsPath));
@@ -32,20 +34,20 @@ namespace Demo3D.Tests
         }
 
         [Test]
-        public void TheNightLutIsAStripThatCoolsShadowsAndKeepsWarmHighlights()
+        public void TheNightLutIsAStripThatWarmsTheStageWithoutLiftingBlacks()
         {
             var lut = NightLook.Lut();
             Assert.That(lut.width, Is.EqualTo(NightLook.LutSize * NightLook.LutSize));
             Assert.That(lut.height, Is.EqualTo(NightLook.LutSize));
-            var dark = NightLook.Grade(new Color(0.1f, 0.1f, 0.1f));
-            Assert.That(dark.b, Is.GreaterThan(dark.r), "shadows lean blue");
+            var black = NightLook.Grade(Color.black);
+            Assert.That(Mathf.Max(black.r, Mathf.Max(black.g, black.b)), Is.LessThan(0.002f), "no shadow lift");
+            var mid = NightLook.Grade(new Color(0.45f, 0.45f, 0.45f));
+            Assert.That(mid.r, Is.GreaterThan(mid.b), "warm midtones: the lit stage");
             var white = NightLook.Grade(Color.white);
             Assert.That(white.r, Is.GreaterThan(0.95f));
             Assert.That(white.g, Is.GreaterThan(0.95f));
-            var spark = NightLook.Grade(new Color(1f, 0.55f, 0.15f));
-            Assert.That(spark.r, Is.GreaterThan(spark.g));
-            Assert.That(spark.g, Is.GreaterThan(spark.b), "warm effects stay warm");
-            // Monotonic in each channel along the grey axis.
+            // Monotonic in luminance along the grey axis, and darker shadows: the S-curve adds contrast.
+            Assert.That(NightLook.Grade(new Color(0.1f, 0.1f, 0.1f)).g, Is.LessThan(0.1f));
             float last = -1;
             for (int i = 0; i <= 20; i++)
             {
@@ -54,6 +56,58 @@ namespace Demo3D.Tests
                 Assert.That(lum, Is.GreaterThanOrEqualTo(last));
                 last = lum;
             }
+        }
+
+        /// <summary>Saturated primaries and the effects' colours keep their own hue through the grade (within 10°).</summary>
+        [Test]
+        public void TheGradeKeepsSaturatedHues()
+        {
+            var colours = new Dictionary<string, Color>
+            {
+                ["red"] = new Color(1, 0, 0), ["green"] = new Color(0, 1, 0), ["blue"] = new Color(0, 0, 1),
+                ["cyan"] = new Color(0, 1, 1), ["magenta"] = new Color(1, 0, 1), ["yellow"] = new Color(1, 1, 0),
+                ["dim red"] = new Color(0.4f, 0, 0), ["dim cyan"] = new Color(0, 0.3f, 0.35f),
+                ["spark"] = new Color(1f, 0.55f, 0.15f), ["ember"] = new Color(0.9f, 0.3f, 0.1f),
+                ["flame light"] = new Color(1f, 0.52f, 0.22f), ["glowing tree"] = new Color(0.35f, 0.85f, 1f),
+                ["rune"] = new Color(0.5f, 0.42f, 1f), ["hit flash"] = new Color(1f, 0.96f, 0.88f),
+            };
+            foreach (var kv in colours)
+            {
+                var c = kv.Value;
+                Color.RGBToHSV(c, out float h0, out float s0, out _);
+                Color.RGBToHSV(NightLook.Grade(c), out float h1, out _, out _);
+                if (s0 < 0.3f) continue; // near-white: no hue to keep
+                float dh = Mathf.Abs(Mathf.DeltaAngle(h0 * 360, h1 * 360));
+                Assert.That(dh, Is.LessThanOrEqualTo(10f), $"{kv.Key}'s hue moved {dh:F1} degrees");
+            }
+        }
+
+        /// <summary>
+        /// The fog leaves the fighting ground clear: at the frame's centre it is at most 5% at every song
+        /// view width (22.5-30 m) and every beauty shot's, by camera-and-sound.md's geometry (55° pitch,
+        /// 30° vertical field of view at 16:9), and the top of the song's widest frame still fades.
+        /// </summary>
+        [Test]
+        public void TheFogClearsTheFrameCentreAndFadesItsFarEdge()
+        {
+            var l = ArenaLighting.Parse(LayoutJson);
+            const float pitch = 55f, halfVfov = 15f;
+            float halfHfov = Mathf.Atan(Mathf.Tan(halfVfov * Mathf.Deg2Rad) * 16f / 9f);
+            var widths = new List<float> { 22.5f, 25f, 27.5f, 30f };
+            foreach (var shot in JsonValue.Parse(LayoutJson)["shots"].Items) widths.Add(shot["viewWidthM"].AsFloat());
+            Assert.That(widths.Count, Is.GreaterThan(4), "the beauty shots");
+            foreach (float w in widths)
+            {
+                float focus = w / (2 * Mathf.Tan(halfHfov));
+                float centre = NightLook.FogWeight(l, focus, focus);
+                Assert.That(centre, Is.LessThanOrEqualTo(0.05f), $"fog at the centre of a {w} m view");
+            }
+            // The top edge of the frame: the ray 15° above the axis meets the ground at this view depth.
+            float widest = 30f / (2 * Mathf.Tan(halfHfov));
+            float height = widest * Mathf.Sin(pitch * Mathf.Deg2Rad);
+            float topDepth = height / Mathf.Sin((pitch - halfVfov) * Mathf.Deg2Rad) * Mathf.Cos(halfVfov * Mathf.Deg2Rad);
+            Assert.That(NightLook.FogWeight(l, widest, topDepth), Is.GreaterThanOrEqualTo(0.08f), "the far edge fades");
+            Assert.That(NightLook.FogWeight(l, widest, NightLook.FogRange(l, widest).y), Is.EqualTo(1f), "and ends in the clear colour");
         }
 
         [Test]
