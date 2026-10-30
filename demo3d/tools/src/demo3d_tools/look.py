@@ -7,7 +7,9 @@ baked) when there is none, or with --build after a change:
   each from WARMUP_S before it;
 - TD15's six beauty shots (arena-layout.json's `shots`), three captures each as in
   evidence/td15/beauty.py: the horde; the same frame with `--no-effects --capture-mask` (the
-  measured still and its ID render of the monsters); and `--beauty-empty`.
+  measured still and its ID render of the monsters); and `--beauty-empty`. All three run with
+  `--no-post-feel`, the post stack at its steady state (ps-e8r.18), so a beat's pulse or an
+  accent's flash never moves the readability measure or the effect and stage numbers between beads.
 
 Full PNGs go to the gitignored captures/look/SLUG/. Small ps-render-tagged JPEGs (960 px), look.md
 and, given --baseline, a before/after contact sheet go to demo3d/evidence/look/SLUG/.
@@ -284,7 +286,7 @@ def plan(root: Path, shots: list[dict], song: bool = True, beauty: bool = True) 
             t = float(s.get("t", 20.0))
             common = ["--scene", "S3", "--load", s.get("load", "demo"), "--n", str(s.get("n", 2000)),
                       "--view-width", str(s["viewWidthM"]), "--hold-at", f"{x},{y}",
-                      "--start-at", f"{t - SHOT_WARMUP_S:.3f}", "--stills-at", f"{t:.3f}"]
+                      "--start-at", f"{t - SHOT_WARMUP_S:.3f}", "--stills-at", f"{t:.3f}", "--no-post-feel"]
             caps.append(Capture(f"{s['name']}-horde", common))
             caps.append(Capture(f"{s['name']}-measure", common + ["--no-effects", "--capture-mask"]))
             caps.append(Capture(f"{s['name']}-empty", common + ["--beauty-empty"]))

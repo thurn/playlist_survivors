@@ -132,6 +132,9 @@ namespace Demo3D.Runtime.Arena
             vignette.intensity.Override(Args.GetFloat("--vignette", l.VignetteIntensity));
             vignette.smoothness.Override(l.VignetteSmoothness);
             vignette.color.Override(l.VignetteColor);
+            // Inert at these bases: the post feel (ps-e8r.18) adds its white-balance and aberration offsets to them.
+            profile.Add<WhiteBalance>(true).temperature.Override(0f);
+            profile.Add<ChromaticAberration>(true).intensity.Override(0f);
             return profile;
         }
 

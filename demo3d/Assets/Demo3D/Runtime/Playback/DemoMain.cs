@@ -35,6 +35,7 @@ namespace Demo3D.Runtime.Playback
         double _fxLast = double.NaN;
         SongRunCheck _songCheck;
         CameraFeel _feel;
+        PostFeel _postFeel;
         SoundScheduler _sounds;
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
         // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
@@ -174,6 +175,7 @@ namespace Demo3D.Runtime.Playback
             }
             _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
             _feel = _tl.Map != null ? new CameraFeel(_tl) : null;
+            _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
             if (!_flags.FixedTime && _flags.Scene == "song")
                 _sounds = new SoundScheduler(_tl, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
@@ -358,6 +360,7 @@ namespace Demo3D.Runtime.Playback
             float punch = _feel != null && !_flags.NoFeel ? _feel.Punch(feelT) : 1f;
             _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth * punch, viewWidth);
             if (_feel != null && !_flags.NoFeel) _rig.Camera.transform.position += _feel.Shake(feelT);
+            _postFeel?.Apply(_arena.Post, feelT);
             _sounds?.Update(t);
             foreach (var e in _active)
             {

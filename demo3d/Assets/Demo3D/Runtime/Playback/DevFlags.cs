@@ -27,7 +27,8 @@ namespace Demo3D.Runtime.Playback
         public double TimeOffset;     // --time-offset <s>: shift song time (TD11's invisible anchor: 0.001)
         public float PoseRate;        // --pose-rate <hz>: round pose times down (TD11's visible anchor: 15)
         public string DumpSounds;     // --dump-sounds <file.json>: the timeline's sound events, for the offline mix
-        public bool NoFeel;           // --no-feel: no punch or shake (A/B captures may use it)
+        public bool NoFeel;           // --no-feel: no punch, shake or post feel (A/B captures may use it)
+        public bool NoPostFeel;       // --no-post-feel: the post stack at its steady state (the look harness's beauty shots)
         public int Envelope;          // --envelope <count>: override the level script's envelope count
         public string Stats;          // --stats <file.csv>: on-screen counts against targets, twice a second
         public string SongCheck;      // --song-check <file.json>: TD13's full-song verdict (SongRunCheck), uncapped
@@ -62,6 +63,7 @@ namespace Demo3D.Runtime.Playback
                 SongCheck = Args.Get("--song-check"),
                 Envelope = Args.GetInt("--envelope", 0),
                 NoFeel = Args.Has("--no-feel"),
+                NoPostFeel = Args.Has("--no-post-feel"),
                 DumpSounds = Args.Get("--dump-sounds"),
                 Arena = Args.Get("--arena", "e2"),
                 Density = Args.GetFloat("--density", 1f),

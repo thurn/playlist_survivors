@@ -44,7 +44,8 @@ namespace Demo3D.Runtime.Arena
         public Light HeroLight { get; private set; }
         public Bounds ArenaBounds { get; private set; }
         public event Action<ArenaRuntime> OnReady;
-        GameObject _post;
+        /// <summary>The night's post volume (NightLook), once the scene is set up.</summary>
+        public Volume Post { get; private set; }
         readonly List<Material> _copies = new List<Material>();
 
         /// <summary>True if the arena scene for this rung and density is baked into the build.</summary>
@@ -150,7 +151,7 @@ namespace Demo3D.Runtime.Arena
             if (Moon != null) RenderSettings.sun = Moon;
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
-            _post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting).gameObject;
+            Post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting);
             if (Lighting.HeroIntensity > 0) CreateHeroLight(root);
 
             if (Rung == ArenaIndex.E2)
@@ -330,10 +331,11 @@ namespace Demo3D.Runtime.Arena
             }
             _copies.Clear();
             ArenaPipeline.Restore();
-            if (_post != null)
+            if (Post != null)
             {
-                if (Application.isPlaying) UnityEngine.Object.Destroy(_post);
-                else UnityEngine.Object.DestroyImmediate(_post);
+                if (Application.isPlaying) UnityEngine.Object.Destroy(Post.gameObject);
+                else UnityEngine.Object.DestroyImmediate(Post.gameObject);
+                Post = null;
             }
             if (Application.isPlaying && _scene.IsValid() && _scene.isLoaded && SceneManager.sceneCount > 1) SceneManager.UnloadSceneAsync(_scene);
             Ready = false;

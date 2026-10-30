@@ -53,6 +53,8 @@ namespace Demo3D.Runtime.Arena
         /// <summary>The post stack's vignette (NightLook.CreateProfile): intensity, smoothness and its tint.</summary>
         public float VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
         public Color VignetteColor = new Color(0.01f, 0.015f, 0.04f);
+        /// <summary>The post feel's amounts (ps-e8r.18): offsets on the post stack that follow the music.</summary>
+        public Playback.PostFeel.Amounts PostFeel = new Playback.PostFeel.Amounts();
         public int MaxFlameLights = 8;
         /// <summary>Flickering flame lights (realtime, at most <see cref="MaxFlameLights"/>), in priority order.</summary>
         public readonly List<PropLight> Flames = new List<PropLight>();
@@ -96,6 +98,7 @@ namespace Demo3D.Runtime.Arena
             l.VignetteIntensity = vignette["intensity"].AsFloat(l.VignetteIntensity);
             l.VignetteSmoothness = vignette["smoothness"].AsFloat(l.VignetteSmoothness);
             l.VignetteColor = Col(vignette["color"], l.VignetteColor);
+            l.PostFeel = Playback.PostFeel.Amounts.Parse(root["postFeel"]);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, true);
