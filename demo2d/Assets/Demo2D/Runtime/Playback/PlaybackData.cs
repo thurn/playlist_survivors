@@ -44,6 +44,19 @@ namespace Demo2D.Runtime.Playback
         public GameObject[] effectPrefabs;
         public Shader glow;
 
+        /// <summary>
+        /// PX8's sound bank: each timeline sound name (`category/variant`, the core's
+        /// Catalog.SoundNames) and its clip from the reused packs (vendor), as demo3d's SoundBank.
+        /// </summary>
+        public string[] soundNames;
+        public AudioClip[] soundClips;
+
+        public AudioClip Sound(string name)
+        {
+            int i = soundNames == null ? -1 : Array.IndexOf(soundNames, name);
+            return i >= 0 ? soundClips[i] : null;
+        }
+
         public static PlaybackData Load() =>
             Resources.Load<PlaybackData>(ResourcePath)
             ?? throw new InvalidOperationException("PlaybackData: not baked (run demo2d unity BakeSprites, then BakePlayback)");

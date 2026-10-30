@@ -137,6 +137,12 @@ namespace PS.Choreography
         public GridEntry[] Combo = new GridEntry[0];
         public GridEntry[] Spells = new GridEntry[0];
         public string Boss;             // a roster type that enters at the section's start
+        /// <summary>
+        /// Opt-in (demo2d, PX8): a goal in the layout the boss enters from (outside the view, in its
+        /// direction from the hero), and it always walks in rather than waiting off screen to be
+        /// released. Null keeps the original entry: toward the hero's goal, released like any other.
+        /// </summary>
+        public string BossFrom;
         public bool Clear;              // the hero's combos clear the screen: no releases or refills (the ending, TD13)
     }
 
@@ -210,6 +216,7 @@ namespace PS.Choreography
                     Combo = GridEntry.ParseList(s["combo"]),
                     Spells = GridEntry.ParseList(s["spells"]),
                     Boss = s["boss"].AsString(),
+                    BossFrom = s["bossFrom"].AsString(),
                     Clear = s["clear"].AsBool(false),
                 };
                 LoadPreset.Get(ls.Sections[i].Load);

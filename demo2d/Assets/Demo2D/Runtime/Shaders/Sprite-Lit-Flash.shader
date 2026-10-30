@@ -1,5 +1,7 @@
-// URP 17.6's Sprite-Lit-Default with a hit flash (PX5): _Flash lerps the lit colour toward
-// white. The crowd keeps one material per flash level, so sprites still batch.
+// URP 17.6's Sprite-Lit-Default with a hit flash (PX5): _Flash lerps the lit colour toward the
+// sprite's own colours lit by the blow (its albedo times _FlashColor, HDR), so a struck sprite
+// keeps its detail and colour instead of turning a white silhouette under the night (PX8). The
+// crowd keeps one material per flash level and colour, so sprites still batch.
 Shader "Demo2D/Sprite-Lit-Flash"
 {
     Properties
@@ -9,6 +11,7 @@ Shader "Demo2D/Sprite-Lit-Flash"
         _NormalMap("Normal Map", 2D) = "bump" {}
         [MaterialToggle] _ZWrite("ZWrite", Float) = 0
         _Flash("Flash", Range(0, 1)) = 0
+        _FlashColor("Flash Colour", Color) = (1, 1, 1, 1)
 
         // Legacy properties. They're here so that materials using this shader can gracefully fallback to the legacy sprite shader.
         [HideInInspector] _Color("Tint", Color) = (1,1,1,1)
@@ -61,6 +64,7 @@ Shader "Demo2D/Sprite-Lit-Flash"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
                 half _Flash;
+                half4 _FlashColor;
             CBUFFER_END
 
             Varyings LitVertex(Attributes input)
@@ -78,7 +82,8 @@ Shader "Demo2D/Sprite-Lit-Flash"
             half4 LitFragment(Varyings input) : SV_Target
             {
                 half4 c = CommonLitFragment(input, input.color);
-                c.rgb = lerp(c.rgb, half3(1, 1, 1), _Flash);
+                half3 albedo = input.color.rgb * SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).rgb;
+                c.rgb = lerp(c.rgb, albedo * _FlashColor.rgb, _Flash);
                 return c;
             }
             ENDHLSL
@@ -117,6 +122,7 @@ Shader "Demo2D/Sprite-Lit-Flash"
             CBUFFER_START( UnityPerMaterial )
                 half4 _Color;
                 half _Flash;
+                half4 _FlashColor;
             CBUFFER_END
 
             Varyings NormalsRenderingVertex(Attributes input)
@@ -174,6 +180,7 @@ Shader "Demo2D/Sprite-Lit-Flash"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
                 half _Flash;
+                half4 _FlashColor;
             CBUFFER_END
 
             Varyings UnlitVertex(Attributes input)
@@ -190,7 +197,7 @@ Shader "Demo2D/Sprite-Lit-Flash"
             half4 UnlitFragment(Varyings input) : SV_Target
             {
                 half4 c = CommonUnlitFragment(input, input.color);
-                c.rgb = lerp(c.rgb, half3(1, 1, 1), _Flash);
+                c.rgb = lerp(c.rgb, c.rgb * _FlashColor.rgb, _Flash);
                 return c;
             }
             ENDHLSL

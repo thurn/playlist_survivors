@@ -13,9 +13,17 @@ namespace Demo2D.Choreography
     ///   motion, the sprite holds at the clip's start (the frames move it; PX3's notes).
     /// - Each clip action shows the frame at its schedule's local time. Frames are frame starts
     ///   (frame = ⌊time × rate⌋), so the impact frame shows from the impact.
+    /// - Hit-stop on the hero's big blows (PX8): a spin or slam (strength from
+    ///   <see cref="ClipSchedule.HeavyStrength"/>) holds its impact frame for the schedule's 50 ms
+    ///   hit-stop, then catches up, as a struck monster does. A flipbook can't show demo3d's 0.6×
+    ///   slowdown (15 fps frames), so it holds.
     /// - Between actions the entity walks, the walk's frame following the distance travelled (a
     ///   cycle per stride), so feet don't slide; standing still freezes it. The hero idles once
     ///   it hasn't moved for a beat.
+    /// - A hit's knockback hops (PX8): while the sim slides a struck monster back, its sprite lifts
+    ///   over its shadow in an arc of <see cref="HopSeconds"/>, <see cref="HopM"/> high for grunts
+    ///   and a third of that for elites and the boss. Ticks (the beam's) knock nothing back and
+    ///   don't hop.
     /// - Sprites can't crossfade, so a new clip simply replaces the old.
     /// - Facing is the art's right or a horizontal flip, chosen per segment from its yaw with
     ///   hysteresis (a walk straight up or down keeps its side), precomputed so seeks agree.
@@ -24,6 +32,10 @@ namespace Demo2D.Choreography
     {
         /// <summary>A facing turns to the other side only past this much sideways (sin of the yaw).</summary>
         public const float FlipHysteresis = 0.25f;
+        /// <summary>A knockback's hop: how long, and how high for a grunt (metres; elites a third).</summary>
+        public const float HopSeconds = 0.16f, HopM = 0.16f;
+        /// <summary>Types wider than this hop a third as high: elites and the boss.</summary>
+        const float GruntRadius = 0.5f;
         /// <summary>Snaps a clip time onto its frame: annotation times are rounded to the ms.</summary>
         const double FrameEpsilon = 0.02;
 
@@ -45,9 +57,10 @@ namespace Demo2D.Choreography
             public int Clip;             // annotation index
             public int Frame;
             public bool FlipX;
-            public float Flash;          // 0..1 toward white
+            public float Flash;          // 0..1, the hit flash's strength
             public float Alpha;          // 1 until a death's fade
             public bool Dying;
+            public float Lift;           // the sprite's hop over its feet, metres
         }
 
         /// <param name="frames">Each annotation's frame count (its atlas clip's).</param>
@@ -101,6 +114,22 @@ namespace Demo2D.Choreography
             return (int)Math.Floor((phase - Math.Floor(phase)) * cycle + 1e-6) % cycle;
         }
 
+        /// <summary>The hop of an entity's latest hit at t: a parabola over <see cref="HopSeconds"/>.</summary>
+        float Hop(int e, double t, float height)
+        {
+            var acts = _tl.ActionsOf(e);
+            for (int k = acts.Count - 1; k >= 0; k--)
+            {
+                var a = acts.Array[acts.Offset + k];
+                if (a.Impact > t) continue;
+                if (t - a.Impact >= HopSeconds) return 0;
+                if (a.Kind != ActionKind.Hit) continue;
+                float u = (float)((t - a.Impact) / HopSeconds);
+                return 4 * height * u * (1 - u);
+            }
+            return 0;
+        }
+
         public State Evaluate(int e, double t)
         {
             var info = _tl.Entities[e];
@@ -121,7 +150,10 @@ namespace Demo2D.Choreography
             {
                 var a = _tl.Actions[act];
                 st.Clip = a.Clip;
-                st.Frame = FrameAt(a.Clip, _schedule.LocalTime(act, t));
+                double local = hero && a.Kind == ActionKind.Attack && a.Strength >= ClipSchedule.HeavyStrength
+                    ? _schedule.LocalTime(act, ClipSchedule.HoldThenCatchUp(t, a.Impact, 0f))
+                    : _schedule.LocalTime(act, t);
+                st.Frame = FrameAt(a.Clip, local);
                 if (hero && a.Kind == ActionKind.Attack && _clips[a.Clip].RootMotionM > 0)
                     p = _tl.PositionAt(e, _schedule.Start(act));
             }
@@ -143,6 +175,7 @@ namespace Demo2D.Choreography
             st.Flash = fb.Flash;
             st.Alpha = 1f - fb.Fade;
             st.Dying = fb.Dying;
+            if (info.Kind == EntityKind.Monster) st.Lift = Hop(e, t, _tl.TypeRadii[info.Type] > GruntRadius ? HopM / 3 : HopM);
             return st;
         }
     }

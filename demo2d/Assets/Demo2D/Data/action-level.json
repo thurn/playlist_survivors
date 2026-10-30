@@ -30,7 +30,7 @@
       "mix": { "skeleton": 4, "ghoul": 3, "flame-imp": 2, "ice-skull": 1, "zombie-warrior": 2, "skeleton-mage": 0.4, "blood-mage": 0.3, "ogre": 0.3, "werewolf": 0.2 },
       "combo": ["slashL", "slashR", "bash", "spin@accent", "slam@phrase"],
       "spells": ["ring@downbeat", "bolt@beat", "lightning@beat/3"] },
-    { "section": "final-peak", "onScreen": 0.96, "viewWidthM": 40.5, "load": "demo", "goal": null, "boss": "boss-devil",
+    { "section": "final-peak", "onScreen": 0.96, "viewWidthM": 40.5, "load": "demo", "goal": null, "boss": "boss-devil", "bossFrom": "cliff-ledge",
       "mix": { "skeleton": 4, "ghoul": 3, "flame-imp": 2, "ice-skull": 1, "mask": 1, "zombie-warrior": 2, "skeleton-mage": 0.4, "blood-mage": 0.4,
                "ogre": 0.3, "cyclops": 0.3, "werewolf": 0.2, "lava-beast": 0.2 },
       "combo": ["slashL", "slashR", "bash", "spin@accent", "slam@phrase"],

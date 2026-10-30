@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Demo2D.Runtime.Playback;
@@ -12,7 +13,8 @@ namespace Demo2D.EditorTools.Assets
     /// baked song and music, demo2d's choreography data, PX3's atlases, the shaders and materials
     /// the client creates at runtime (so the build keeps them), and the arena's vendor textures and
     /// tiles (PX6; the client composes the arena from its JSON at load, so no bake of it goes stale),
-    /// and the effect library's data and CFXR prefabs and the night's data (PX7).
+    /// the effect library's data and CFXR prefabs and the night's data (PX7), and the sound bank
+    /// (PX8: demo3d's choices from the reused packs, one clip per timeline sound name).
     /// Needs `demo2d setup` (the song); bakes the atlases (SpriteBaker) when they're missing.
     /// Every build runs it.
     /// </summary>
@@ -76,13 +78,14 @@ namespace Demo2D.EditorTools.Assets
             data.spriteUnlit = Load<Material>(SpriteUnlitPath);
             BakeArena(data);
             BakeEffects(data);
+            BakeSounds(data);
 
             var path = Dir + "/" + PlaybackData.ResourcePath + ".asset";
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(data, path);
             AssetDatabase.SaveAssets();
             Debug.Log($"PlaybackBaker: {data.atlases.Length} atlases, {data.layouts.Length} layouts, " +
-                      $"{data.propSheets.Length} prop sheets, {data.sheetSprites.Length} sheet tiles, music {(music != null ? "yes" : "MISSING")}");
+                      $"{data.propSheets.Length} prop sheets, {data.sheetSprites.Length} sheet tiles, {data.soundClips.Length} sounds, music {(music != null ? "yes" : "MISSING")}");
         }
 
         static T Load<T>(string path) where T : UnityEngine.Object =>
@@ -97,6 +100,39 @@ namespace Demo2D.EditorTools.Assets
             var library = Demo2D.Choreography.EffectLibrary.Parse(data.effects.text);
             data.effectPaths = library.Prefabs().ToArray();
             data.effectPrefabs = data.effectPaths.Select(p => Load<GameObject>(EffectGallery.VendorPath(p))).ToArray();
+        }
+
+        // Per sound category, the clips' file names in the vendor folder, one per variant: demo3d's
+        // SoundBaker's choices (camera-and-sound.md), so the two demos sound alike.
+        static readonly Dictionary<string, string[]> SoundChoices = new Dictionary<string, string[]>
+        {
+            ["swing"] = new[] { "SWORD_Whoosh_Hit_Armor_Hard_RR1_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR3_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR5_mono" },
+            ["hit"] = new[] { "GORE_Blade_Chop_mono", "SWORD_Swing_Stab_Body_Gore_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR6_mono" },
+            ["death"] = new[] { "CREATURE_Squeel_01_mono", "CREATURE_Squeel_03_mono", "CREATURE_Squeel_05_mono" },
+            ["parry"] = new[] { "SWORD_Hit_Sword_Cling_01_RR1_mono", "SWORD_Hit_Sword_Cling_01_RR2_mono", "SWORD_Hit_Sword_Cling_01_RR3_mono" },
+            ["ring"] = new[] { "RPG3_FireMagicBall_HeavyImpact01", "RPG3_FireMagicEpic_Impact01", "RPG3_FireMagicBall_HeavyImpact03" },
+            ["bolt"] = new[] { "RPG3_FireMagicBall_Projectile01", "RPG3_FireMagicBall_Projectile02", "RPG3_Magic2_HeavyImpact01" },
+            ["lightning"] = new[] { "RPG3_ElectricMagicEpic_LightningStrikeImpact01", "RPG3_ElectricMagicEpic_LightningStrikeImpact02", "Thunder 1" },
+            ["laser"] = new[] { "RPG3_FireMagicFlameThrower_Shoot01", "RPG3_FireMagicFlameThrower_Shoot02", "RPG3_FireMagicFlameThrower_Shoot03" },
+        };
+
+        /// <summary>The sound bank: a vendor clip for every timeline sound name.</summary>
+        static void BakeSounds(PlaybackData data)
+        {
+            var byName = AssetDatabase.FindAssets("t:AudioClip", new[] { "Assets/Vendor" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .GroupBy(p => Path.GetFileNameWithoutExtension(p))
+                .ToDictionary(g => g.Key, g => g.First());
+            data.soundNames = PS.Choreography.Catalog.SoundNames();
+            data.soundClips = data.soundNames.Select(name =>
+            {
+                var parts = name.Split('/');
+                var choices = SoundChoices[parts[0]];
+                var file = choices[int.Parse(parts[1]) % choices.Length];
+                if (!byName.TryGetValue(file, out var path))
+                    throw new Exception($"PlaybackBaker: no vendor clip {file} for {name} (is it in the manifest?)");
+                return Load<AudioClip>(path);
+            }).ToArray();
         }
 
         /// <summary>The arena's inputs: the 2D kit, the sheet's catalogue and tiles, and the props' textures.</summary>

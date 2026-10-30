@@ -80,11 +80,13 @@ namespace PS.Choreography
                     Combo = ls.Combo,
                     Spells = ls.Spells,
                     Boss = ls.Boss == null ? -1 : data.Roster.MonsterIndex(ls.Boss),
+                    BossFrom = ls.BossFrom == null ? null : data.Layout.Goal(ls.BossFrom),
                     HeroAttacks = true,
                     MonsterAttacks = true,
                     Clear = ls.Clear,
                 };
                 if (ls.Boss != null && plans[i].Boss < 0) throw new FormatException("level script: unknown boss type '" + ls.Boss + "'");
+                if (ls.BossFrom != null && plans[i].BossFrom == null) throw new FormatException("level script: section '" + sec.Label + "' names unknown bossFrom goal '" + ls.BossFrom + "'");
             }
             var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, viewPitchDeg: script.ViewPitchDeg,
                 clearRadius: script.ClearRadiusM);
@@ -143,6 +145,7 @@ namespace PS.Choreography
         public int[] Mix;               // cumulative weights ×1000 per roster type
         public GridEntry[] Combo, Spells;
         public int Boss;
+        public GoalArea BossFrom;       // see LevelSection.BossFrom
         public bool HeroAttacks, MonsterAttacks;
         public bool Clear;              // see LevelSection.Clear
     }

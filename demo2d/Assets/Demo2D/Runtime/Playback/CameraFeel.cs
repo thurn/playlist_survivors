@@ -10,16 +10,18 @@ namespace Demo2D.Runtime.Playback
     /// - shake: per beat, amplitude = min(0.25, 0.08 × strongest + 0.02 × log2(1 + hits)) metres,
     ///   so a hundred hits on one beat never shake a hundred times harder, decaying over the beat.
     /// Both are functions of song time, so seeks and fixed-time captures reproduce them. demo3d's
-    /// CameraFeel (in demo3d's own runtime assembly), with the shake on the 2D ground plane.
+    /// CameraFeel (in demo3d's own runtime assembly), with the shake on the 2D ground plane, and the
+    /// boss's attacks shaking it as a blow of <see cref="BossAttackStrength"/> (PX8).
     /// </summary>
     public sealed class CameraFeel
     {
-        public const float PunchAmount = 0.02f, ShakeCap = 0.25f;
+        public const float PunchAmount = 0.02f, ShakeCap = 0.25f, BossAttackStrength = 1f;
         readonly SongMap _map;
         readonly double[] _accents;
         readonly float[] _shake;       // per beat index: amplitude in metres
 
-        public CameraFeel(Timeline tl)
+        /// <param name="bossType">The boss's timeline type, or -1 for none.</param>
+        public CameraFeel(Timeline tl, int bossType = -1)
         {
             _map = tl.Map;
             _accents = new double[_map.Accents.Length];
@@ -30,6 +32,12 @@ namespace Demo2D.Runtime.Playback
             var strongest = new float[beats];
             foreach (var a in tl.Actions)
             {
+                if (bossType >= 0 && a.Kind == ActionKind.Attack && tl.Entities[a.Entity].Type == bossType && tl.Entities[a.Entity].Kind == EntityKind.Monster)
+                {
+                    int bb = BeatOf(a.Impact);
+                    if (bb >= 0 && bb < beats) strongest[bb] = Math.Max(strongest[bb], BossAttackStrength);
+                    continue;
+                }
                 if (a.Kind != ActionKind.Hit && a.Kind != ActionKind.Death && !(a.Kind == ActionKind.Attack && a.Entity == 0)) continue;
                 int b = BeatOf(a.Impact);
                 if (b < 0 || b >= beats) continue;

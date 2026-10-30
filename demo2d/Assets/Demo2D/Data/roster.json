@@ -37,12 +37,13 @@
     { "name": "lava-beast", "pack": "Lava Beast", "clipPrefix": "lava_beast", "gameHeightPx": 90,
       "rank": "elite", "radius": 0.8, "stepM": 0.6, "reachM": 0.9, "hitPoints": 8 },
     { "name": "boss-devil", "pack": "Boss Devil Man", "clipPrefix": "boss_devil_man", "gameHeightPx": 168,
-      "rank": "boss", "radius": 1.4, "stepM": 0.6, "reachM": 1.2, "hitPoints": 60 }
+      "rank": "boss", "radius": 1.4, "stepM": 0.6, "reachM": 7.5, "hitPoints": 60, "projectile": "hellfire" }
   ],
   "projectiles": [
     { "name": "bolt", "speedMps": 30 },
     { "name": "bone-bolt", "speedMps": 12 },
-    { "name": "blood-bolt", "speedMps": 10 }
+    { "name": "blood-bolt", "speedMps": 10 },
+    { "name": "hellfire", "speedMps": 14 }
   ],
   "spells": {
     "ring": { "shape": "ring", "radius": 4.5, "strength": 0.6, "effect": "ring", "sound": "ring" },

@@ -14,6 +14,9 @@ namespace Demo2D.Runtime.Playback
     /// draws them across every type's atlas and lights them with its Light2Ds, and 400 of them
     /// batch into a few draws per atlas. The flash is one shared material per level
     /// (<see cref="FlashLevels"/> steps, a pixel-art flash), so no renderer needs its own block.
+    /// It lights the sprite's own colours rather than whitening it (PX8: under the night a white
+    /// flash turned a spin's or slam's crowd into one white mass): monsters by a warm light up to
+    /// <see cref="FlashPeak"/>, the hero's parries by a cool gleam off the shield.
     /// Positions snap to whole texels, so the art never lands between grid pixels.
     ///
     /// The draw order is explicit: each frame ranks the sprites by their feet's texel row, then
@@ -25,6 +28,10 @@ namespace Demo2D.Runtime.Playback
     public sealed class SpriteCrowd : IDisposable
     {
         public const int FlashLevels = 4;
+        /// <summary>A full hit's flash: how far the lit colour goes toward the flash light.</summary>
+        public const float FlashPeak = 0.85f;
+        /// <summary>The flash's light, HDR (its brightest pixels bloom a little): warm on monsters, cool on the hero.</summary>
+        static readonly Color MonsterFlash = new Color(1.6f, 1.38f, 1.12f), HeroFlash = new Color(1.1f, 1.35f, 1.75f);
         /// <summary>A projectile flies this high over its ground position.</summary>
         public const float ProjectileHeightM = 1f;
         const float ShadowAlpha = 0.42f, ShadowRimAlpha = 0.22f;
@@ -34,7 +41,7 @@ namespace Demo2D.Runtime.Playback
         readonly Sprite[][] _clipSprites;    // per annotation
         readonly Sprite[] _shadowOf;         // per timeline type, then the hero's last
         readonly Sprite _bolt, _boltShadow;
-        readonly Material[] _flash;
+        readonly Material[] _flash, _heroFlash;
         readonly Material _unlit;
         readonly GameObject _root;
         readonly List<SpriteRenderer> _bodies = new List<SpriteRenderer>(), _shadows = new List<SpriteRenderer>();
@@ -55,12 +62,8 @@ namespace Demo2D.Runtime.Playback
             _tl = eval.Timeline;
             _clipSprites = clipSprites;
             _unlit = unlit;
-            _flash = new Material[FlashLevels + 1];
-            for (int k = 0; k <= FlashLevels; k++)
-            {
-                _flash[k] = new Material(flash) { name = "Sprite Flash " + k };
-                _flash[k].SetFloat("_Flash", (float)k / FlashLevels);
-            }
+            _flash = FlashMaterials(flash, MonsterFlash, "Sprite Flash ");
+            _heroFlash = FlashMaterials(flash, HeroFlash, "Hero Flash ");
             _root = new GameObject("Sprite Crowd");
             _root.transform.SetParent(parent, false);
             int types = _tl.TypeNames.Length;
@@ -111,8 +114,9 @@ namespace Demo2D.Runtime.Playback
                 body.flipX = st.FlipX;
                 float tint = info.Kind == EntityKind.Hero ? 1f : 0.88f + 0.12f * ClipSchedule.Jitter(info.Seed, 2);
                 body.color = new Color(tint, tint, tint, st.Alpha);
-                body.sharedMaterial = _flash[NoFlash ? 0 : Mathf.Clamp(Mathf.RoundToInt(st.Flash * FlashLevels), 0, FlashLevels)];
-                body.transform.localPosition = feet;
+                var flashes = info.Kind == EntityKind.Hero ? _heroFlash : _flash;
+                body.sharedMaterial = flashes[NoFlash ? 0 : Mathf.Clamp(Mathf.RoundToInt(st.Flash * FlashLevels), 0, FlashLevels)];
+                body.transform.localPosition = Snap(new Vector2(st.Position.X, st.Position.Y + st.Lift));
                 shadow.sprite = _shadowOf[info.Kind == EntityKind.Hero ? _shadowOf.Length - 1 : info.Type];
                 shadow.color = new Color(1, 1, 1, st.Alpha);
             }
@@ -200,10 +204,23 @@ namespace Demo2D.Runtime.Playback
             return Sprite.Create(tex, new Rect(0, 0, w, h), pivot, CharacterAtlas.PixelsPerMetre, 0, SpriteMeshType.FullRect);
         }
 
+        static Material[] FlashMaterials(Shader shader, Color light, string name)
+        {
+            var levels = new Material[FlashLevels + 1];
+            for (int k = 0; k <= FlashLevels; k++)
+            {
+                levels[k] = new Material(shader) { name = name + k };
+                levels[k].SetFloat("_Flash", FlashPeak * k / FlashLevels);
+                levels[k].SetColor("_FlashColor", light);
+            }
+            return levels;
+        }
+
         public void Dispose()
         {
             SongPlayback.Destroy(_root);
             foreach (var m in _flash) SongPlayback.Destroy(m);
+            foreach (var m in _heroFlash) SongPlayback.Destroy(m);
             foreach (var t in _made) SongPlayback.Destroy(t);
         }
     }

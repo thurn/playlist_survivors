@@ -12,12 +12,13 @@ namespace Demo2D.Choreography.Tests
     {
         static SpriteEvaluator evaluator;
         static int frameRate;
+        internal static int FrameRate => frameRate;
 
         static Timeline Timeline => Fixtures.SongTimeline;
         static ClipLibrary Clips => Fixtures.Data.Clips;
 
         /// <summary>The song's sprite evaluation, with each clip's frame count from the tracked annotations (no bake needed).</summary>
-        static SpriteEvaluator Evaluator()
+        internal static SpriteEvaluator Evaluator()
         {
             if (evaluator != null) return evaluator;
             var json = JsonValue.Parse(File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.MeasuredAnnotationsFile)));
@@ -58,7 +59,10 @@ namespace Demo2D.Choreography.Tests
                 else if (wrong.Count < 10) wrong.Add($"{a.Kind} of {a.Entity} at {a.Impact:F3}: clip {st.Clip} frame {st.Frame}, want {a.Clip} frame {impactFrame}");
             }
             Assert.That(wrong, Is.Empty);
-            Assert.That(landed, Is.GreaterThan(19 * cut), $"{landed} landed, {cut} cut in by a later clip");
+            // About 5% are cut in (a flinch interrupting a windup, a death a flinch): the song sat at
+            // 4.98% under .NET when PX8 started, and its Mono timeline crossed 5% once the boss walked
+            // in, so the bound allows one in sixteen.
+            Assert.That(landed, Is.GreaterThan(15 * cut), $"{landed} landed, {cut} cut in by a later clip");
             Assert.That(landed, Is.GreaterThan(1000));
             Assert.Pass($"{landed} landed, {cut} cut in, {killing} killing blows");
         }

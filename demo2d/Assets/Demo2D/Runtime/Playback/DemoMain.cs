@@ -25,6 +25,9 @@ namespace Demo2D.Runtime.Playback
     /// focus, and lists them in `effect-stills.txt`. `--measure &lt;json&gt;` draws every
     /// fixed-time frame by hand at 1080p and times it through a one-pixel readback (the main
     /// thread then waits for the GPU's work too, PX1's spike), with the effect and light counts.
+    ///
+    /// Effect sounds (PX8) are scheduled on the mixer's clock (SoundScheduler) in live play, not in
+    /// fixed time; `--dump-sounds &lt;json&gt;` writes the timeline's sound list with each event's clip.
     /// </summary>
     [DefaultExecutionOrder(10000)]
     public sealed class DemoMain : MonoBehaviour
@@ -34,6 +37,7 @@ namespace Demo2D.Runtime.Playback
         DevFlags _flags;
         SongPlayback _playback;
         SongClock _clock;
+        SoundScheduler _sounds;
         RenderTexture _still;
         readonly List<double> _stillsAt = new List<double>();
         double _endAt;
@@ -96,6 +100,8 @@ namespace Demo2D.Runtime.Playback
             }
             if (data.music == null && !_flags.FixedTime) Debug.LogWarning("DemoMain: no music baked (run demo2d setup); playing silent");
             _clock.Start(music, data.music, 0.5, click, clickClip);
+            if (_flags.DumpSounds != null) DumpSounds(data, _flags.DumpSounds);
+            if (!_flags.FixedTime && !_flags.NoSound) _sounds = new SoundScheduler(tl, _clock, data, gameObject, _flags.StartAt);
         }
 
         void Update()
@@ -122,6 +128,7 @@ namespace Demo2D.Runtime.Playback
             bool screen = !Application.isBatchMode && !_stillNow && _measure == null;
             _measure?.Begin();
             _playback.Frame(t, screen ? Screen.width : StillW, screen ? Screen.height : StillH, _stillNow);
+            _sounds?.Update(t);
             _clock.EndFrame();
             _frames++;
         }
@@ -205,6 +212,26 @@ namespace Demo2D.Runtime.Playback
             }
             Directory.CreateDirectory(_flags.CaptureStills);
             File.WriteAllLines(Path.Combine(_flags.CaptureStills, "effect-stills.txt"), _effectStills);
+        }
+
+        /// <summary>`--dump-sounds`: every sound event with its name, clip and gain (demo3d's format).</summary>
+        void DumpSounds(PlaybackData data, string path)
+        {
+            var tl = _playback.Timeline;
+            var sb = new StringBuilder("[\n");
+            for (int i = 0; i < tl.Sounds.Length; i++)
+            {
+                var s = tl.Sounds[i];
+                var name = tl.SoundNames[s.Sound];
+                var clip = data.Sound(name);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"t\": {0:F4}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F3}{4}{5}\n",
+                    s.Time, name, clip != null ? clip.name : "", s.Gain, "}", i + 1 < tl.Sounds.Length ? "," : "");
+            }
+            sb.Append("]\n");
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(path, sb.ToString());
+            Debug.Log($"DemoMain: wrote {tl.Sounds.Length} sound events to {path} ({data.soundNames?.Length ?? 0} sounds baked)");
         }
 
         /// <summary>`--measure`: each frame's time through a one-pixel readback, and what it drew.</summary>

@@ -81,7 +81,8 @@ namespace Demo2D.Runtime.Playback
 
             float heroRadius = JsonValue.Parse(data.roster.text)["hero"]["radius"].AsFloat(0.5f);
             _crowd = new SpriteCrowd(Evaluator, sprites, data.spriteFlash, data.spriteUnlit, heroRadius, _root.transform);
-            _feel = new CameraFeel(Timeline);
+            var boss = Array.Find(level.Sections, s => s.Boss != null)?.Boss;
+            _feel = new CameraFeel(Timeline, boss != null ? Array.IndexOf(Timeline.TypeNames, boss) : -1);
             float widest = 0;
             foreach (var f in Timeline.Framing) widest = Mathf.Max(widest, f.ViewWidth);
             Pipeline = new PixelPipeline(data.upscale, widest, zoom, _root.transform);

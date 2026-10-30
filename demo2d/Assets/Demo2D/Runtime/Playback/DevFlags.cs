@@ -22,6 +22,8 @@ namespace Demo2D.Runtime.Playback
         public bool Empty;            // --empty: the arena with the hero alone (no horde, projectiles or effects), for the night's look
         public bool EffectStills;     // --effect-stills: with --capture-stills, a still of each effect kind as it fires (PX7)
         public string Measure;        // --measure <json>: fixed-time frames drawn by hand at 1080p, each timed through a one-pixel readback
+        public bool NoSound;          // --no-sound: no effect sounds (the music and click stay; PX8)
+        public string DumpSounds;     // --dump-sounds <json>: write the timeline's sound events and their clips, then play on
 
         public static DevFlags FromCommandLine()
         {
@@ -43,6 +45,8 @@ namespace Demo2D.Runtime.Playback
                 Empty = Args.Has("--empty"),
                 EffectStills = Args.Has("--effect-stills"),
                 Measure = Args.Get("--measure"),
+                NoSound = Args.Has("--no-sound"),
+                DumpSounds = Args.Get("--dump-sounds"),
             };
             if (f.CaptureStills != null || f.Measure != null) f.FixedTime = true;
             return f;

@@ -82,6 +82,7 @@ namespace PS.Choreography
         float[] facing = new float[0], radius = new float[0];
         byte[] state = new byte[0];   // 0 none, 1 alive, 2 dying, 3 gone
         double[] busyUntil = new double[0], lastActionEnd = new double[0], bossDeathAfter = new double[0];
+        bool bossWalksIn;   // the boss entered from a level script's bossFrom side
         bool[] onScreen = new bool[0], released = new bool[0];
         sbyte[] sideMem = new sbyte[0];   // with walls: the side of each monster's last sidestep (0 none yet)
 
@@ -514,7 +515,8 @@ namespace PS.Choreography
             if (plan.Boss >= 0 && !first)
             {
                 var view = View(Math.Max(viewWidth, plan.ViewWidth));
-                Vector2 dir = goalReached ? new Vector2(0, 1) : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
+                Vector2 dir = plan.BossFrom != null ? Vector2.Normalize(plan.BossFrom.Center - h)
+                    : goalReached ? new Vector2(0, 1) : nav != null ? GoalHeading(h, out _) : Vector2.Normalize(goal.Center - h);
                 float br = roster.Monsters[plan.Boss].Radius;
                 Vector2 p;
                 if (nav == null)
@@ -526,6 +528,7 @@ namespace PS.Choreography
                 else p = BossEntry(view, dir, br);
                 int m = Spawn(plan.Boss, p, t, false);
                 beatSpawns.Add(m);
+                bossWalksIn = plan.BossFrom != null;
                 double bar = map.TimeOfBeatIndex(sec.EndBeat) - map.TimeOfBeatIndex(sec.EndBeat - map.BeatsPerBarAt(sec.LastBar));
                 bossDeathAfter[m] = secEnd - bar;
             }
@@ -958,7 +961,9 @@ namespace PS.Choreography
                     TryScheduleAttack(m, mt, tb, toHero);
                     continue;
                 }
-                if (!onScreen[m] && !released[m]) continue;
+                // A boss with a side to enter from always walks in: it enters beyond the band the deficit
+                // releases nearest first, so a full climax would otherwise hold it out of view (PX8).
+                if (!onScreen[m] && !released[m] && !(mt.Rank == MonsterRank.Boss && bossWalksIn)) continue;
                 Vector2 dir = d > 1e-4f ? toHero / d : Easing.Dir(facing[m]);
                 float left = d;
                 if (nav != null) dir = MonsterHeading(a, heroAt, mt.Radius, dir, ref left);

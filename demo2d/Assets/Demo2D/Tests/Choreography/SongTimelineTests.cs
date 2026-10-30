@@ -122,8 +122,8 @@ namespace Demo2D.Choreography.Tests
         }
 
         /// <summary>
-        /// A caster's bolt leaves it on its attack's beat and lands on an eighth note, where the hero
-        /// parries it.
+        /// A caster's bolt (the mages', and the boss's hellfire since PX8) leaves it on its attack's
+        /// beat and lands on an eighth note, where the hero parries it.
         /// </summary>
         [Test]
         public void CastersBoltsLandOnEighthsAndAreParried()
@@ -131,7 +131,7 @@ namespace Demo2D.Choreography.Tests
             Roster roster = Fixtures.Data.Roster;
             var casterBolts = new HashSet<int>();
             foreach (MonsterType mt in roster.Monsters) if (mt.Projectile >= 0) casterBolts.Add(mt.Projectile);
-            Assert.That(casterBolts.Count, Is.EqualTo(2));
+            Assert.That(casterBolts.Count, Is.EqualTo(3));
             var parries = new List<double>();
             foreach (ActionEvent a in Song.ActionsOf(0)) if (a.Kind == ActionKind.Parry) parries.Add(a.Impact);
             var attacks = new List<double>();

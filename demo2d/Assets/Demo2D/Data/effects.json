@@ -79,6 +79,11 @@
       "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/Variants/CFXR Fireball Plain.prefab",
       "scale": 0.7, "tint": [1.0, 0.3, 0.35, 1.0], "layer": "over", "max": 24,
       "light": { "color": [1.0, 0.3, 0.3], "radiusM": 1.4, "intensity": 0.7 }
+    },
+    "hellfire": {
+      "prefab": "Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/Fire/CFXR Fireball.prefab",
+      "scale": 1.1, "tint": [1.0, 0.45, 0.85, 1.0], "layer": "over", "max": 4,
+      "light": { "color": [1.0, 0.35, 0.6], "radiusM": 3.0, "intensity": 1.4 }
     }
   }
 }
