@@ -26,6 +26,8 @@ namespace Demo3D.EditorTools.Crowd
     /// - the style mesh of each of those three (<see cref="Unweld"/>), for the `--monster-style`
     ///   treatments that need one, listed in their own CrowdStyleMeshes asset so the default path
     ///   never loads them;
+    /// - the crystal shatter's shard set of each type (<see cref="CrowdShardBaker"/>), its style mesh
+    ///   at the held death pose cut into chunks, in their own CrowdShards asset for the same reason;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
@@ -38,6 +40,7 @@ namespace Demo3D.EditorTools.Crowd
         public const string OutDir = "Assets/Baked/Crowd";
         public const string LibraryPath = OutDir + "/Resources/CrowdLibrary.asset";
         public const string StyleMeshesPath = OutDir + "/Resources/CrowdStyleMeshes.asset";
+        public const string ShardsPath = OutDir + "/Resources/CrowdShards.asset";
         public const string ShaderPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdSkinned.shader";
         public const string CullPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdCull.compute";
         public const string PalettePath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdPalette.compute";
@@ -138,6 +141,7 @@ namespace Demo3D.EditorTools.Crowd
             Directory.CreateDirectory(OutDir + "/Stock");
             var types = new List<CrowdType>();
             var styleMeshes = new List<CrowdStyleMeshes.Entry>();
+            var shardSets = new List<CrowdShards.Set>();
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath) ?? throw new Exception("CrowdBaker: no " + ShaderPath);
             var colors = Roster.TypeColors();
             foreach (var t in Roster.Load().Where(Drawn))
@@ -145,7 +149,7 @@ namespace Demo3D.EditorTools.Crowd
                 var started = DateTime.UtcNow;
                 using var bake = BakeType(t, annotations);
                 int height = bake.Height, width = bake.Width, subs = bake.Submeshes.Count;
-                var ct = Save(bake, shader, styleMeshes);
+                var ct = Save(bake, shader, styleMeshes, shardSets);
                 ct.Hue = t.hue ?? -1;
                 ct.HueSaturation = colors.saturation;
                 ct.Dye = colors.dye;
@@ -172,6 +176,7 @@ namespace Demo3D.EditorTools.Crowd
             var style = ScriptableObject.CreateInstance<CrowdStyleMeshes>();
             style.Types = styleMeshes.ToArray();
             Replace(style, StyleMeshesPath);
+            SaveShards(shardSets);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             AssetDatabase.SaveAssets();
             Debug.Log($"CrowdBaker: wrote {types.Count} types to {LibraryPath}");
@@ -496,7 +501,25 @@ namespace Demo3D.EditorTools.Crowd
 
         static string TypeDir(string id) => $"{OutDir}/{id}";
 
-        static CrowdType Save(TypeBake b, Shader shader, List<CrowdStyleMeshes.Entry> styleMeshes)
+        /// <summary>The shard sets in one asset, every mesh a sub-asset of it.</summary>
+        static void SaveShards(List<CrowdShards.Set> sets)
+        {
+            var shards = ScriptableObject.CreateInstance<CrowdShards>();
+            shards.Types = sets.ToArray();
+            Replace(shards, ShardsPath);
+            foreach (var set in sets)
+            {
+                AssetDatabase.AddObjectToAsset(set.HoldShadow, shards);
+                foreach (var s in set.Shards)
+                {
+                    AssetDatabase.AddObjectToAsset(s.Mesh, shards);
+                    AssetDatabase.AddObjectToAsset(s.Hull, shards);
+                }
+            }
+            EditorUtility.SetDirty(shards);
+        }
+
+        static CrowdType Save(TypeBake b, Shader shader, List<CrowdStyleMeshes.Entry> styleMeshes, List<CrowdShards.Set> shardSets)
         {
             var id = b.Type.id;
             Directory.CreateDirectory(TypeDir(id));
@@ -511,6 +534,13 @@ namespace Demo3D.EditorTools.Crowd
             Replace(style[1], $"{TypeDir(id)}/{id}_style_lod1.mesh");
             Replace(style[2], $"{TypeDir(id)}/{id}_style_lod2.mesh");
             styleMeshes.Add(new CrowdStyleMeshes.Entry { Id = id, Lod0 = style[0], Lod1 = style[1], Lod2 = style[2] });
+            var shardsStarted = DateTime.UtcNow;
+            var set = CrowdShardBaker.Bake(b, style[0], style[2], seed + 3);
+            shardSets.Add(set);
+            Debug.Log($"CrowdBaker: {id}: {set.Shards.Length} shards at death time {set.HoldTime:F3} s, volumes " +
+                      $"{set.Shards.Min(x => x.Volume) * 1e6:F0} to {set.Shards.Max(x => x.Volume) * 1e6:F0} cm³ " +
+                      $"(median {set.Shards.Select(x => x.Volume).OrderBy(v => v).ElementAt(set.Shards.Length / 2) * 1e6:F0}), " +
+                      $"in {(DateTime.UtcNow - shardsStarted).TotalSeconds:F1} s");
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {

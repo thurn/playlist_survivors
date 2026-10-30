@@ -323,6 +323,110 @@ namespace Demo3D.Tests
             }
         }
 
+        /// <summary>
+        /// The crystal shatter's shard bake (CrowdShardBaker) on one type: the style mesh at the held
+        /// death pose cut into 20 to 40 closed chunks of varied size, whose skin is exactly that posed
+        /// mesh (every triangle once) and whose inside faces alone carry the flag.
+        /// </summary>
+        [Test]
+        public void TheShardBakeCutsTheHeldDeathPoseIntoClosedVariedChunks()
+        {
+            using var b = Bake("slime");
+            var welded = b.BuildMesh("slime_test");
+            var lods = CrowdBaker.BuildLods(welded, "slime_test");
+            var style = CrowdBaker.Unweld(welded, 7);
+            var style2 = CrowdBaker.Unweld(lods[1], 8);
+            CrowdShards.Set set = null;
+            try
+            {
+                set = CrowdShardBaker.Bake(b, style, style2, 11);
+                var death = b.Clips.Single(c => c.Role == "death");
+                Assert.That(set.HoldTime, Is.EqualTo(Mathf.Min(death.Length, Mathf.Max(death.End, death.Impact))).Within(1e-6f),
+                    "the pose TimelineEvaluator holds a death at");
+                Assert.That(set.Shards.Length, Is.InRange(CrowdShardBaker.MinShards, CrowdShardBaker.MaxShards));
+
+                // The pose is the 30 Hz texture's (the default cuts'); the 60 Hz texture at the same time agrees.
+                var posed = CrowdShardBaker.Pose(style, CrowdShardBaker.HeldPose(b, out _));
+                var at60 = CrowdShardBaker.Pose(style, Enumerable.Range(0, b.Entries.Count).Select(e => Sampled(b, death, e, set.HoldTime)).ToArray());
+                float poseError = posed.Position.Zip(at60.Position, (x, y) => (x - y).magnitude).Max();
+                Assert.That(poseError, Is.LessThan(0.01f), "the held pose from the 30 Hz rows matches the 60 Hz rows");
+
+                // Every skin corner sits on the posed mesh, and together the skins hold every triangle once.
+                var grid = new Dictionary<Vector3Int, List<Vector3>>();
+                Vector3Int Cell(Vector3 v) => Vector3Int.FloorToInt(v * 1000f);
+                foreach (var v in posed.Position)
+                {
+                    if (!grid.TryGetValue(Cell(v), out var l)) grid[Cell(v)] = l = new List<Vector3>();
+                    l.Add(v);
+                }
+                bool OnPose(Vector3 v)
+                {
+                    var c = Cell(v);
+                    for (int x = -1; x <= 1; x++)
+                        for (int y = -1; y <= 1; y++)
+                            for (int z = -1; z <= 1; z++)
+                                if (grid.TryGetValue(c + new Vector3Int(x, y, z), out var l) && l.Any(p => (p - v).sqrMagnitude < 1e-10f)) return true;
+                    return false;
+                }
+                int skinTriangles = 0, offPose = 0, open = 0;
+                double skinArea = 0, poseArea = 0;
+                for (int t = 0; t < posed.Triangles; t++)
+                    poseArea += 0.5 * Vector3.Cross(posed.Position[3 * t + 1] - posed.Position[3 * t], posed.Position[3 * t + 2] - posed.Position[3 * t]).magnitude;
+                var volumes = new List<float>();
+                foreach (var s in set.Shards)
+                {
+                    var v = s.Mesh.vertices;
+                    var flags = new List<Vector2>(); s.Mesh.GetUVs(1, flags);
+                    var tris = s.Mesh.triangles;
+                    var edges = new Dictionary<(Vector3, Vector3), int>();
+                    for (int t = 0; t < tris.Length; t += 3)
+                    {
+                        float f = flags[tris[t]].x;
+                        Assert.That(flags[tris[t + 1]].x == f && flags[tris[t + 2]].x == f, "a triangle is skin or inside, not both");
+                        if (f == 0)
+                        {
+                            skinTriangles++;
+                            for (int k = 0; k < 3; k++) if (!OnPose(v[tris[t + k]] + s.Center)) offPose++;
+                            skinArea += 0.5 * Vector3.Cross(v[tris[t + 1]] - v[tris[t]], v[tris[t + 2]] - v[tris[t]]).magnitude;
+                        }
+                        for (int k = 0; k < 3; k++)
+                        {
+                            var a = v[tris[t + k]];
+                            var c = v[tris[t + (k + 1) % 3]];
+                            if (a == c) continue;
+                            var key = a.x < c.x || (a.x == c.x && (a.y < c.y || (a.y == c.y && a.z < c.z))) ? (a, c) : (c, a);
+                            edges[key] = edges.TryGetValue(key, out int n) ? n + 1 : 1;
+                        }
+                    }
+                    open += edges.Values.Count(n => n % 2 == 1);
+                    Assert.That(s.Volume, Is.GreaterThan(0f), "a chunk has thickness");
+                    Assert.That(s.Hull.vertexCount, Is.InRange(4, 42), "the convex collider's points");
+                    volumes.Add(s.Volume);
+                }
+                Assert.That(skinTriangles, Is.EqualTo(posed.Triangles), "the skins hold every triangle of the style mesh");
+                Assert.That(skinArea, Is.EqualTo(poseArea).Within(poseArea * 1e-4), "and each once");
+                Assert.That(offPose, Is.Zero, "skin corners on the posed style mesh");
+                Assert.That(open, Is.Zero, "every chunk is closed (every edge shared by an even number of its triangles)");
+                volumes.Sort();
+                Assert.That(volumes[volumes.Count - 1], Is.GreaterThan(4 * volumes[volumes.Count / 2]), "a few large chunks among many small ones");
+                // The hold's shadow is the shadow proxy's mesh (LOD2) at the same pose.
+                var shadowPose = CrowdShardBaker.Pose(style2, CrowdShardBaker.HeldPose(b, out _));
+                Assert.That(set.HoldShadow.vertices, Is.EqualTo(shadowPose.Position));
+            }
+            finally
+            {
+                if (set != null)
+                {
+                    foreach (var s in set.Shards) { Object.DestroyImmediate(s.Mesh); Object.DestroyImmediate(s.Hull); }
+                    Object.DestroyImmediate(set.HoldShadow);
+                }
+                foreach (var l in lods) Object.DestroyImmediate(l);
+                Object.DestroyImmediate(style2);
+                Object.DestroyImmediate(style);
+                Object.DestroyImmediate(welded);
+            }
+        }
+
         [Test]
         public void TheBakedLibraryIsComplete()
         {
@@ -335,6 +439,11 @@ namespace Demo3D.Tests
             var styleMeshes = AssetDatabase.LoadAssetAtPath<CrowdStyleMeshes>(CrowdBaker.StyleMeshesPath);
             Assert.That(styleMeshes, Is.Not.Null, "re-run BakeCrowd");
             Assert.That(styleMeshes.Types.Select(e => e.Id), Is.EqualTo(drawn));
+            var shards = AssetDatabase.LoadAssetAtPath<CrowdShards>(CrowdBaker.ShardsPath);
+            Assert.That(shards, Is.Not.Null, "re-run BakeCrowd");
+            Assert.That(shards.Types.Select(e => e.Id), Is.EqualTo(drawn));
+            Assert.That(shards.Types.SelectMany(e => e.Shards).All(s => s.Mesh != null && s.Hull != null), "every shard's meshes are saved");
+            Assert.That(shards.Types.All(e => e.HoldShadow != null), "every set's hold shadow is saved");
             Assert.That(AssetDatabase.GetDependencies(CrowdBaker.LibraryPath, true).Where(p => p.Contains("_style")), Is.Empty,
                 "the library, which every run loads, doesn't pull in the style meshes");
             foreach (var t in lib.Types)
