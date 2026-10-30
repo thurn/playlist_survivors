@@ -35,38 +35,6 @@ struct SLAttributes
     uint instanceID : SV_InstanceID;
 };
 
-// The lab's per-monster MaterialPropertyBlock values, from the instance: hit flash and death
-// (MonsterInstance.hitFlash, dissolve), a seed from the slot (stable while the monster lives),
-// the centre (its feet) and the height (scaled).
-struct SLVertex
-{
-    MonsterInstance m;
-    uint slot;
-    float3 positionWS;
-    float3 normalWS;
-    float4 fx;      // x hit, y death, zw the LOD fade (CrowdLodFade)
-    float4 center;  // xyz the feet, w the seed (0..1)
-};
-
-// A style that moves vertices (shatter, flames, melt) defines SL_DISPLACE(v, m, slot, positionWS,
-// normalWS) before including this: every pass then skins through it, so shadows, depth and motion
-// vectors follow the displaced mesh. m is the instance (the previous frame's, for motion vectors).
-#ifndef SL_DISPLACE
-#define SL_DISPLACE(v, m, slot, positionWS, normalWS)
-#endif
-
-SLVertex SL_Skin(SLAttributes v)
-{
-    SLVertex o;
-    o.slot = CrowdSlot(v.instanceID);
-    o.m = _Instances[o.slot];
-    SkinVertex(o.m, o.slot, false, v.positionOS, v.normalOS, v.boneIndex, v.boneWeight, o.positionWS, o.normalWS);
-    o.fx = float4(o.m.hitFlash, o.m.dissolve, CrowdLodFade(o.slot));
-    o.center = float4(o.m.position, frac(o.slot * 0.6180339887 + 0.137));
-    SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
-    return o;
-}
-
 // ---------------------------------------------------------------------------------------------
 // Noise.
 
@@ -229,6 +197,53 @@ float SL_Dissolve(float3 rest, float death)
     return CrowdDissolve(death, rest);
 }
 
+// A style whose death is not the baseline's dissolve (fire burns from the feet, chrome melts)
+// defines SL_DISSOLVE(rest, death) before including this, returning the hot edge (0..1) and
+// clipping as it likes; its function must be declared before the passes (the HLSLINCLUDE, after
+// this file). The forward pass (SL_FRAGMENT_BEGIN) and every other pass clip with it.
+#ifndef SL_DISSOLVE
+#define SL_DISSOLVE(rest, death) SL_Dissolve(rest, death)
+#endif
+
+// ---------------------------------------------------------------------------------------------
+// Skinning.
+
+// The lab's per-monster MaterialPropertyBlock values, from the instance: hit flash and death
+// (MonsterInstance.hitFlash, dissolve), a seed from the slot (stable while the monster lives),
+// the centre (its feet) and the height (scaled).
+struct SLVertex
+{
+    MonsterInstance m;
+    uint slot;
+    float3 positionWS;
+    float3 normalWS;
+    float4 fx;      // x hit, y death, zw the LOD fade (CrowdLodFade)
+    float4 center;  // xyz the feet, w the seed (0..1)
+};
+
+// A style that moves vertices (shatter, flames, melt) defines SL_DISPLACE(v, m, slot, positionWS,
+// normalWS) before including this: every pass then skins through it, so shadows, depth and motion
+// vectors follow the displaced mesh. m is the instance (the previous frame's, for motion vectors).
+// It expands here, after the helpers above, so it may use them, the beat globals and the CBUFFER.
+#ifndef SL_DISPLACE
+#define SL_DISPLACE(v, m, slot, positionWS, normalWS)
+#endif
+
+// A monster's seed (0..1), from its slot: stable while it lives.
+float SL_SeedOf(uint slot) { return frac(slot * 0.6180339887 + 0.137); }
+
+SLVertex SL_Skin(SLAttributes v)
+{
+    SLVertex o;
+    o.slot = CrowdSlot(v.instanceID);
+    o.m = _Instances[o.slot];
+    SkinVertex(o.m, o.slot, false, v.positionOS, v.normalOS, v.boneIndex, v.boneWeight, o.positionWS, o.normalWS);
+    o.fx = float4(o.m.hitFlash, o.m.dissolve, CrowdLodFade(o.slot));
+    o.center = float4(o.m.position, SL_SeedOf(o.slot));
+    SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
+    return o;
+}
+
 // ---------------------------------------------------------------------------------------------
 // The varyings most shaders pass on: a vertex shader displaces positionWS, then finishes here.
 
@@ -268,7 +283,7 @@ SLVaryings SL_Finish(SLAttributes v, SLVertex c, float3 positionWS, float3 norma
 // hot edge) and TD15's ID render, which draws the crowd flat white (DemoMain.MaskMode).
 #define SL_FRAGMENT_BEGIN(i, edge) \
     CrowdLodClip((i).fx.zw, (i).positionCS); \
-    float edge = SL_Dissolve((i).rest, SL_DEATH(i)); \
+    float edge = SL_DISSOLVE((i).rest, SL_DEATH(i)); \
     if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1);
 
 #endif

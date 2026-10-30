@@ -67,6 +67,9 @@ namespace Demo3D.Runtime.Crowd
                 {
                     case "baseline": return null;
                     case "painted": return PostLook.Stylized();
+                    case "fire": return PostLook.Stylized(1.0f);
+                    case "chrome": return PostLook.Stylized(1.0f);
+                    case "void": return PostLook.Stylized(1.3f);
                     default: throw NotPorted();
                 }
             }
@@ -96,6 +99,17 @@ namespace Demo3D.Runtime.Crowd
                         m.SetFloat("_SpotAmount", look.spotAmount);
                         m.SetFloat("_Gloss", 48f);
                         break;
+                    case "fire":
+                        SetFire(m, look);
+                        break;
+                    case "chrome":
+                        m.SetVector("_Tint", look.chrome);
+                        break;
+                    case "void":
+                        m.SetVector("_RimColor", look.voidRim);
+                        m.SetVector("_NebulaA", look.nebulaA);
+                        m.SetVector("_NebulaB", look.nebulaB);
+                        break;
                 }
                 _owned.Add(m);
                 mats[k] = m;
@@ -103,11 +117,52 @@ namespace Demo3D.Runtime.Crowd
             return mats;
         }
 
+        /// <summary>Whether painted draws its ink line (on by default, as in the lab).</summary>
+        public bool Outlines = true;
+
+        /// <summary>
+        /// A type's shell material (fire's flames, painted's ink line), else null: BoneTextureCrowd
+        /// draws it as a second indirect draw per submesh and LOD, on the same instances and args.
+        /// </summary>
+        public Material Shell(CrowdLibrary lib, CrowdType type)
+        {
+            if (Name != "fire" && !(Name == "painted" && Outlines)) return null;
+            var look = StyleLook.Of(type.Id);
+            Material m;
+            if (Name == "fire")
+            {
+                m = new Material(lib.StyleShader("Demo3D/Styles/Shells/FireShell")) { name = $"{type.Id}_fireShell", enableInstancing = false };
+                SetFire(m, look);
+                m.SetFloat("_Thickness", Mathf.Clamp(0.05f * type.HeightM, 0.04f, 0.12f));
+                m.SetFloat("_Lick", Mathf.Clamp(0.32f * type.HeightM, 0.18f, 0.7f));
+                if (type.Kind == "boss") m.SetFloat("_Intensity", 0.45f); // the dragon's wings are acres of flame
+            }
+            else
+            {
+                m = new Material(lib.StyleShader("Demo3D/Styles/Shells/Outline")) { name = $"{type.Id}_outline", enableInstancing = false };
+                m.SetVector("_OutlineColor", look.ramp[0] * 0.35f);
+                m.SetFloat("_Width", 0.022f);
+            }
+            m.SetFloat("_HeightM", type.HeightM);
+            _owned.Add(m);
+            return m;
+        }
+
+        static void SetFire(Material m, StyleLook look)
+        {
+            m.SetVector("_Ember", look.ember);
+            m.SetVector("_Flame", look.flame);
+            m.SetVector("_Core", look.core);
+        }
+
         string ShaderOf(string name)
         {
             switch (name)
             {
                 case "painted": return "Demo3D/Styles/Painted";
+                case "fire": return "Demo3D/Styles/FireBody";
+                case "chrome": return "Demo3D/Styles/Chrome";
+                case "void": return "Demo3D/Styles/Void";
                 default: throw NotPorted();
             }
         }

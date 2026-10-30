@@ -1,7 +1,7 @@
 // The skinned passes every style shader shares besides its forward pass: ShadowCaster,
 // DepthOnly, DepthNormals and MotionVectors, CrowdSkinned's own (crowd.md, Drawing the crowd) on
 // StyleCommon's front end. They skin through SL_Skin, so they take the style's SL_DISPLACE and
-// clip with its SL_Dissolve and the LOD dither, as its forward pass does. A pass defines one of
+// clip with its SL_DISSOLVE and the LOD dither, as its forward pass does. A pass defines one of
 // SL_PASS_SHADOWCASTER, SL_PASS_DEPTHONLY, SL_PASS_DEPTHNORMALS or SL_PASS_MOTIONVECTORS and
 // includes this after StyleCommon.hlsl (the SubShader's HLSLINCLUDE); its render state is in the
 // shader (see Painted.shader).
@@ -22,7 +22,7 @@ struct SLPassVaryings
 void SL_PassClip(SLPassVaryings i)
 {
     CrowdLodClip(i.fx.zw, i.positionCS);
-    SL_Dissolve(i.rest, i.fx.y);
+    SL_DISSOLVE(i.rest, i.fx.y);
 }
 
 #if defined(SL_PASS_SHADOWCASTER)

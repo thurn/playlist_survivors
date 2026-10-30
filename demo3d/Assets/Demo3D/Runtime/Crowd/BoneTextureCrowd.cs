@@ -16,7 +16,7 @@ namespace Demo3D.Runtime.Crowd
     /// in stable slots; Draw unlocks them, runs the culling pass (frustum plus the sun's shadow
     /// extension, 8 depth bins, LOD by projected height) and the palette pass (each visible
     /// monster's bones blended once; TD5 measured and deleted a per-vertex variant), then issues a flat set of RenderMeshIndirect calls: per type, one per
-    /// submesh and LOD for the main draw (no shadows) and one per submesh for the shadow proxy.
+    /// submesh and LOD for the main draw (no shadows), the same again for a `--monster-style` shell, and one per submesh for the shadow proxy.
     /// The instance buffers are double-buffered, so the previous frame's copy feeds motion vectors.
     /// </summary>
     public sealed class BoneTextureCrowd : ICrowdRenderer
@@ -127,6 +127,7 @@ namespace Demo3D.Runtime.Crowd
             public Texture2D Bones;  // 60 Hz, or 30 Hz under the clips30 cut
             public float ClipRate;
             public Material[] Materials;
+            public Material Shell; // the style's shell (fire's flames, painted's ink line), else null
             public GraphicsBuffer[] Instances; // a ring: the CPU never writes one the GPU may still read
             public GraphicsBuffer VisibleList, ShadowList, LodState, VisibleFlags, Counters, Args, ShadowArgs, ClipTable, ClipBounds;
             public readonly GraphicsBuffer[] Palette = new GraphicsBuffer[2];
@@ -243,6 +244,7 @@ namespace Demo3D.Runtime.Crowd
             s.ClipBounds.SetData(spheres);
 
             s.Materials = Style != null ? Style.Materials(_lib, t) : t.Materials;
+            s.Shell = Style?.Shell(_lib, t);
             s.Main = new MaterialPropertyBlock[lods];
             for (int l = 0; l < lods; l++) s.Main[l] = new MaterialPropertyBlock();
             s.Shadow = new MaterialPropertyBlock();
@@ -374,6 +376,11 @@ namespace Demo3D.Runtime.Crowd
                                 camera = camera,
                                 layer = 0,
                             };
+                            Graphics.RenderMeshIndirect(rp, s.Lods[l], s.Args, Bins, (sm * lods + l) * Bins);
+                            draws++;
+                            if (s.Shell == null) continue;
+                            // The shell: the same mesh, instances, LOD block and args, its own material.
+                            rp.material = s.Shell;
                             Graphics.RenderMeshIndirect(rp, s.Lods[l], s.Args, Bins, (sm * lods + l) * Bins);
                             draws++;
                         }

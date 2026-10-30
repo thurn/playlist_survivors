@@ -201,6 +201,23 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   shape and white balance stay as they are. The look pass's crowd-only
   knobs (type dye, `crowd.shoulder`, key boost, crowd rim, flash) apply only
   to the baseline shader.
+- **Shells are a second draw.** A style with a shell (fire's flames,
+  painted's ink line) returns its material from `MonsterStyle.Shell`, one
+  per type. `BoneTextureCrowd` draws it right after each submesh and LOD's
+  main draw, with the same mesh, instance buffer, LOD block and args, so it
+  costs no culling. Shell shaders are named `Demo3D/Styles/Shells/...`. They
+  cast no shadow (the body does). The ink line is opaque, with its own depth
+  and motion passes on its outward push (`SL_DISPLACE`). The flames are
+  additive in the transparent queue, with no depth or motion vectors, so
+  under TAA they reproject with whatever is behind them.
+- **A style can change death.** The default is the baseline's dissolve. A
+  style may define `SL_DISSOLVE(rest, death)` before StyleCommon, and every
+  pass then clips with it: fire burns from the feet up, chrome melts into a
+  puddle (its `SL_DISPLACE`) that dissolves in the last third, and void
+  implodes to a point with no clip. `SL_DISPLACE` expands after
+  StyleCommon's helpers, so it may use the noise, `SL_SeedOf(slot)`, the
+  beat globals and the material's CBUFFER.
+- **Ported so far:** painted (with its ink line), fire, chrome and void.
 - **The hero keeps its own shader** under every style.
 
 ## The Hero

@@ -95,8 +95,17 @@ namespace Demo3D.Tests
                 try
                 {
                     // A missing pass would silently drop the style's shadows, depth (SSAO) or motion vectors (TAA).
-                    foreach (var pass in new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" })
+                    // Shells cast no shadow (the body does); an opaque shell still needs depth and motion
+                    // vectors, while an additive one (the flames) has only its colour pass.
+                    string[] passes;
+                    if (!shader.name.StartsWith("Demo3D/Styles/Shells/", StringComparison.Ordinal))
+                        passes = new[] { "ForwardLit", "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };
+                    else if (m.renderQueue < (int)RenderQueue.Transparent)
+                        passes = new[] { "DepthOnly", "DepthNormals", "MotionVectors" };
+                    else passes = new string[0];
+                    foreach (var pass in passes)
                         Assert.That(m.FindPass(pass), Is.GreaterThanOrEqualTo(0), $"{shader.name} has no {pass} pass");
+                    Assert.That(m.passCount, Is.GreaterThan(0), shader.name);
                 }
                 finally
                 {
@@ -125,7 +134,39 @@ namespace Demo3D.Tests
                 }
                 Assert.That(t.ValueRange.y - t.ValueRange.x, Is.GreaterThanOrEqualTo(0.05f - 1e-5f), t.Id);
             }
-            Assert.Throws<NotSupportedException>(() => MonsterStyle.Parse("fire").Materials(lib, lib.Types[0]), "unported styles fail loudly");
+            Assert.Throws<NotSupportedException>(() => MonsterStyle.Parse("crystal").Materials(lib, lib.Types[0]), "unported styles fail loudly");
+        }
+
+        [Test]
+        public void FireAndPaintedDrawAShellAndChromeAndVoidDoNot()
+        {
+            var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);
+            if (lib == null) Assert.Ignore("no baked library: run `demo3d unity BakeCrowd`");
+            var shells = new[] { ("painted", "Demo3D/Styles/Shells/Outline"), ("fire", "Demo3D/Styles/Shells/FireShell"), ("chrome", null), ("void", null) };
+            var bodies = new[] { "Demo3D/Styles/Painted", "Demo3D/Styles/FireBody", "Demo3D/Styles/Chrome", "Demo3D/Styles/Void" };
+            for (int i = 0; i < shells.Length; i++)
+            {
+                using var style = MonsterStyle.Parse(shells[i].Item1);
+                Assert.That(style.Post, Is.Not.Null, style.Name);
+                foreach (var t in lib.Types)
+                {
+                    foreach (var m in style.Materials(lib, t)) Assert.That(m.shader.name, Is.EqualTo(bodies[i]), t.Id);
+                    var shell = style.Shell(lib, t);
+                    if (shells[i].Item2 == null) Assert.That(shell, Is.Null, $"{style.Name} {t.Id}");
+                    else
+                    {
+                        Assert.That(shell.shader.name, Is.EqualTo(shells[i].Item2), t.Id);
+                        Assert.That(shell.GetFloat("_HeightM"), Is.EqualTo(t.HeightM), t.Id);
+                    }
+                }
+            }
+            using var fire = MonsterStyle.Parse("fire");
+            foreach (var t in lib.Types)
+                Assert.That(fire.Shell(lib, t).GetFloat("_Intensity"), Is.EqualTo(t.Kind == "boss" ? 0.45f : 0.7f).Within(1e-5f), $"{t.Id}: the dragon burns lower");
+            using var plain = MonsterStyle.Parse("painted");
+            plain.Outlines = false;
+            Assert.That(plain.Shell(lib, lib.Types[0]), Is.Null, "the ink line can be turned off");
+            Assert.That(MonsterStyle.Parse("baseline").Shell(lib, lib.Types[0]), Is.Null);
         }
     }
 }
