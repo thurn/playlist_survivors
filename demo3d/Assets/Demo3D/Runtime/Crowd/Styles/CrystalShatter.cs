@@ -62,7 +62,7 @@ namespace Demo3D.Runtime.Crowd
         readonly GameObject _root;
         readonly PhysicsMaterial _physics;
         double _t0 = double.NaN, _last = double.NaN;
-        long _steps;
+        long _steps, _frame;
 
         /// <summary>Live shard groups and shards, deaths shattered so far and the most shards live at once, for logs.</summary>
         public int Groups => _live.Count;
@@ -83,6 +83,7 @@ namespace Demo3D.Runtime.Crowd
             public float[] SinkFrom, SinkDepth;
             public bool Released, Sinking, SelfCollides;
             public double ReleasedAt;
+            public long Seen; // the last frame Dying placed it
             public Vector3 Position;
             public float Yaw, Scale;
             public uint Seed;
@@ -154,6 +155,7 @@ namespace Demo3D.Runtime.Crowd
                 _steps = 0;
             }
             _last = t;
+            _frame++;
             long target = (long)Math.Floor((t - _t0) / Step + 1e-6);
             int n = 0;
             while (_steps < target)
@@ -166,7 +168,14 @@ namespace Demo3D.Runtime.Crowd
             for (int g = _live.Count - 1; g >= 0; g--)
             {
                 var grp = _live[g];
-                if (!grp.Released) continue;
+                if (!grp.Released)
+                {
+                    // Its monster left the timeline before a frame saw its dissolve begin (a hitch, or a
+                    // beat longer than the time from the release to the despawn): release it now
+                    // rather than leave a statue.
+                    if (grp.Seen < _frame - 1) Release(grp);
+                    continue;
+                }
                 double age = now - grp.ReleasedAt;
                 if (!grp.SelfCollides && age >= SelfIgnoreSeconds) SelfCollide(grp, true);
                 if (age < LingerSeconds) continue;
@@ -206,6 +215,7 @@ namespace Demo3D.Runtime.Crowd
                 _live.Add(grp);
                 if (_log) Log("hold", grp, inst.Position);
             }
+            grp.Seen = _frame;
             if (!grp.Released)
             {
                 Place(grp, inst);
@@ -314,16 +324,27 @@ namespace Demo3D.Runtime.Crowd
             grp.Position = inst.Position;
             grp.Yaw = inst.Yaw;
             grp.Scale = inst.Scale;
-            var rot = Quaternion.Euler(0, inst.Yaw * Mathf.Rad2Deg, 0);
             var set = _sets[grp.Type];
+            var (_, rot) = Placement(Vector3.zero, inst);
             grp.Shadow.transform.SetPositionAndRotation(inst.Position, rot);
             grp.Shadow.transform.localScale = Vector3.one * inst.Scale;
             for (int i = 0; i < grp.Objects.Length; i++)
             {
-                var tr = grp.Transforms[i];
-                tr.SetPositionAndRotation(inst.Position + rot * (set.Shards[i].Center * inst.Scale), rot);
-                tr.localScale = Vector3.one * inst.Scale;
+                var (pos, _) = Placement(set.Shards[i].Center, inst);
+                grp.Transforms[i].SetPositionAndRotation(pos, rot);
+                grp.Transforms[i].localScale = Vector3.one * inst.Scale;
             }
+        }
+
+        /// <summary>
+        /// Where a shard whose pivot is <paramref name="center"/> (root space, scale 1) sits, assembled,
+        /// on an instance: its position and rotation, with the instance's scale as its uniform scale.
+        /// This is SkinVertex's placement of a root-space point (scale, then yaw, then the position).
+        /// </summary>
+        internal static (Vector3, Quaternion) Placement(Vector3 center, in MonsterInstance inst)
+        {
+            var rot = Quaternion.Euler(0, inst.Yaw * Mathf.Rad2Deg, 0);
+            return (inst.Position + rot * (center * inst.Scale), rot);
         }
 
         void Release(Group grp)
