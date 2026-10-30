@@ -1,0 +1,43 @@
+song:action: built in 1.923 s; 12877 entities, 430499 segments, 27100 actions, 14164 effects, 2188 sounds, 11940 framing samples
+sim ticks after 5 s: 11640 ticks, p50 0.023 ms, p99 3.400 ms, max 23.436 ms, mean 0.155 ms; flow-field rebuilds 171 in 4003 slices
+| section | feel | s | load | target N | mean on screen | max | deaths/s target | deaths/s | ratio | hits/s | spawns | attacks | strides | goal reached |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| intro | pulsed | 0.0–12.4 | light | 3 | 31 | 210 | 0.08 | 0.08 | 1.076 | 2.5 | 559 | 0 | 2 | 0.0 s |
+| groove | pulsed | 12.4–34.1 | light | 217 | 256 | 288 | 5.43 | 5.44 | 1.003 | 23.4 | 242 | 0 | 0 | 20.5 s |
+| break-1 | free | 34.1–37.2 | light | 217 | 280 | 377 | 5.43 | 5.49 | 1.012 | 31.6 | 440 | 0 | 0 | – |
+| drop-1 | pulsed | 37.2–74.3 | overdrive | 548 | 606 | 697 | 43.84 | 43.76 | 0.998 | 15.9 | 2189 | 0 | 2 | 43.8 s |
+| breakdown | pulsed | 74.3–86.7 | light | 382 | 472 | 639 | 9.55 | 9.53 | 0.997 | 54.3 | 424 | 0 | 0 | – |
+| groove-2 | pulsed | 86.7–111.5 | overdrive-groove | 638 | 572 | 805 | 47.85 | 47.83 | 1.000 | 7.6 | 1361 | 0 | 1 | 96.0 s |
+| build | pulsed | 111.5–120.8 | overdrive-build | 638 | 682 | 745 | 22.33 | 21.64 | 0.969 | 11.9 | 328 | 0 | 2 | 120.4 s |
+| break-2 | free | 120.8–123.9 | light | 510 | 615 | 840 | 12.75 | 12.59 | 0.988 | 59.4 | 1078 | 0 | 1 | – |
+| drop-2 | pulsed | 123.9–161.0 | overdrive-peak | 1020 | 1081 | 1239 | 71.40 | 69.86 | 0.978 | 22.6 | 3996 | 0 | 0 | 136.3 s |
+| final-peak | pulsed | 161.0–185.8 | overdrive-peak | 1339 | 1291 | 1408 | 93.73 | 89.17 | 0.951 | 30.3 | 2234 | 0 | 0 | – |
+| outro | pulsed | 185.8–195.1 | light | 638 | 648 | 1206 | 15.95 | 15.93 | 0.999 | 55.3 | 0 | 0 | 2 | – |
+| ending | free | 195.1–199.0 | light | 319 | 467 | 560 | 7.97 | 204.60 | 25.655 | 0.0 | 0 | 0 | 0 | – |
+
+| section | s | swings/s | kills/swing | peak kills/swing | hero kills | spell kills | spell share | other kills | target N | mean on screen | on screen/target |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| intro | 0.0–12.4 | 2.34 | 0.0 | 1 | 1 | 0 | 0.00 | 0 | 3 | 31 | 10.41 |
+| groove | 12.4–34.1 | 2.40 | 1.7 | 5 | 87 | 31 | 0.26 | 0 | 217 | 256 | 1.18 |
+| break-1 | 34.1–37.2 | 0.97 | 3.0 | 5 | 9 | 8 | 0.47 | 0 | 217 | 280 | 1.29 |
+| drop-1 | 37.2–74.3 | 3.53 | 11.6 | 125 | 1523 | 103 | 0.06 | 0 | 548 | 606 | 1.11 |
+| breakdown | 74.3–86.7 | 2.50 | 2.9 | 4 | 90 | 28 | 0.24 | 0 | 382 | 472 | 1.24 |
+| groove-2 | 86.7–111.5 | 3.39 | 13.6 | 113 | 1144 | 41 | 0.03 | 0 | 638 | 572 | 0.90 |
+| build | 111.5–120.8 | 2.58 | 8.2 | 21 | 197 | 4 | 0.02 | 0 | 638 | 682 | 1.07 |
+| break-2 | 120.8–123.9 | 0.65 | 7.5 | 10 | 15 | 24 | 0.62 | 0 | 510 | 615 | 1.21 |
+| drop-2 | 123.9–161.0 | 2.34 | 28.7 | 209 | 2497 | 99 | 0.04 | 0 | 1020 | 1081 | 1.06 |
+| final-peak | 161.0–185.8 | 2.50 | 34.0 | 129 | 2106 | 54 | 0.02 | 49 | 1339 | 1291 | 0.96 |
+| outro | 185.8–195.1 | 2.05 | 2.9 | 6 | 55 | 93 | 0.63 | 0 | 638 | 648 | 1.02 |
+| ending | 195.1–199.0 | 0.52 | 395.0 | 514 | 790 | 0 | 0.00 | 0 | 319 | 467 | 1.46 |
+check entities and order: ok
+check impacts on the grid: ok
+check gait steps on beats: ok
+check free sections move smoothly: ok
+check section death rates: ok
+check sections hold their targets: ok
+check overlaps: ok
+check hits and deaths have clip and effect: ok
+check spawns outside the view: ok
+check sounds aggregated: ok
+check attacks carry their fit: ok
+check framing eases the zoom: ok
