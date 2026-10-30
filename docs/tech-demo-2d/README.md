@@ -250,17 +250,24 @@ Character frames are baked, not imported as is:
 ### Effects and lights
 
 - **CFXR prefabs run as stock Shuriken particle systems** under URP's 2D
-  renderer, with CFXR's URP shader variants. At about 400 monsters and a
-  bounded rate of effects per beat, stock particles are cheap on the Mac;
-  PX7 measures it and pools instances.
-- **An effect list** (tracked JSON) maps each timeline effect kind (slash
-  arc, hit spark, death burst, ring, bolt, lightning, beam, boss slam) to a
-  CFXR prefab, a scale, a tint, a sorting layer and a light cue (colour,
-  radius, intensity curve) for a pooled `Light2D`.
-- **Night lighting.** A global `Light2D` at low, cool intensity; freeform
-  lights for moonlight shafts; point lights for fireflies and glowing plants;
-  the light pool for effects. Characters and tiles are lit; effects are
-  additive and unlit.
+  renderer, with CFXR's URP shader variants, pooled and driven by the
+  timeline's effect events (`EffectLayer`). The live set is a function of the
+  song time; a still re-simulates each instance from its event's seed, so a
+  seek draws the same particles, while live play lets Unity update them. At
+  the climax effects cost about 0.1 ms a frame on the Mac (PX7's numbers).
+- **The effect library** (`Data/effects.json`) maps each timeline effect kind
+  (hit, parry and death sparks, the combo trails and the slam's shock, ring,
+  bolt launch and impact, lightning, laser) and each projectile in flight to a
+  CFXR prefab, a scale, a tint, a layer (over the crowd or on the ground) and
+  a light cue (colour, radius, intensity curve) for a pooled `Light2D`. CFXR
+  has no beam, so the laser's sweep is a drawn line with CFXR's crackle at the
+  hero's hand.
+- **Night lighting** (`Data/night-lighting.json`). A global `Light2D` at low,
+  cool intensity; freeform lights for moonlight shafts; point lights for
+  fireflies and glowing plants; capped light pools for effects, fireflies and
+  plants, placed in view. Characters and tiles are lit; effects are unlit.
+  The pixel target is HDR, so effects brighter than white bloom after the
+  upscale.
 
 ### Sound
 

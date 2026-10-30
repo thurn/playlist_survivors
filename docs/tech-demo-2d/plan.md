@@ -231,6 +231,7 @@ that consumes the result removes the row.
 | Are PX3's clip annotations right? Each attack's and slash's impact on the blow, each hit's and death's end where it settles or rests, the slam's on the landing, and the walks' strides plausible for their gait (two are fallbacks: the lava beast and the boss have no planted foot). | Look over `demo2d/evidence/px3/annotations-*.jpg` (impact framed red, end blue); the numbers and methods are in `demo2d/Assets/Demo2D/Data/clip-annotations.json`. To change a clip or a proposal, edit the entry's `clip` and re-run `demo2d unity AnnotateClips`, or note the frame here. | PX3 | PX8 (PX5 plays them as annotated; still unanswered) |
 | Is every type recognizable at its game size, and the hero findable in a crowd? PX3 found each type distinct, but the hero findable only from his place and a warm light, and the ghoul, zombie warrior, ice skull and blood mage close in colour at night. | Look at `demo2d/evidence/px3/lineup.png` and `crowd.png` (2×, as at 1080p). | PX3 | PX9 |
 | Does the song play on the click? Every step, blow, flinch and death landing on the beat, with no sprite popping, sliding or flickering between facings, and the scroll and zoom smooth. | After `demo2d build`, from the worktree's root: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo" --click --overlay` (add `--start-at 160` for the climax). Note any section or second that drifts. | PX5 | PX8 |
+| Does the night look right? The moon's cool fill, the hero's warm pool, the moonlight shafts, the glowing umbrella plants and the fireflies (PX7 found them faint, small dots by the trunks), and in the fight the effects carrying the light, with bloom and the grade. Too dark, too blue, the shafts too geometric, the downbeat rings too strong? | Compare `demo2d/evidence/px7/night-empty/` with `night/` (the same five times), and the per-kind stills in `effects/` and `library/`; or watch: `demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/"Playlist Survivors 2D Demo"` (`--empty` for the arena alone, `--no-night`, `--no-post` or `--no-effects` to compare). The values are in `demo2d/Assets/Demo2D/Data/night-lighting.json` and `effects.json`. | PX7 | PX9 |
 
 ## Task Notes
 
@@ -711,7 +712,81 @@ the bead). `demo2d test` 84 of 84; dotnet 27 of 27, 6 of them PX6's. [Evidence](
 
 ### PX7
 
-Not started.
+Done (bead ps-tfn.3.2). Commits: the effects commit `feat(px7): …` and this notes commit (SHAs on
+the bead). `demo2d test` 89 of 89; dotnet 32 of 32, 5 of them PX7's. [Evidence](../../demo2d/evidence/px7/README.md).
+
+- **Run:** from a worktree's root (the player's paths absolute):
+
+  ```
+  uv run --project demo3d/tools demo2d setup
+  uv run --project demo3d/tools demo2d build     # PlaybackData now bakes the effect library, its prefabs and the night
+  APP="$PWD/demo2d/Builds/mac/il2cpp/PlaylistSurvivors2D.app/Contents/MacOS/Playlist Survivors 2D Demo"
+  "$APP" --click --overlay                       # the song with effects and the night
+  "$APP" -batchmode -force-metal --capture-stills "$PWD/demo2d/evidence/px7/effects" --effect-stills
+  uv run --project demo3d/tools demo2d unity EffectLibraryStills -out "$PWD/demo2d/evidence/px7/library"
+  ```
+
+  New flags: `--no-effects`, `--no-night` (no shafts, fireflies or plant lights), `--no-post`, `--empty`
+  (the hero alone, unflashed: the arena's night), `--effect-stills` (with `--capture-stills`: a still per
+  kind as it fires, listed in `effect-stills.txt`) and `--measure <json>` (fixed-time frames drawn at 1080p,
+  each timed through a one-pixel readback, with the effect, particle and light counts).
+- **The data:** `Data/effects.json`, the effect library: one CFXR prefab per timeline effect kind (all 12 of
+  the core's `Catalog.Effects`, not only PX2's 8: hit, parry and death sparks, the five combo trails and
+  shocks, ring, bolt launch and impact, lightning, laser) and one per projectile in flight (bolt, bone-bolt,
+  blood-bolt), each with a scale (in proportion to the event's scale: rings and lightning carry their radius,
+  combos the sim's shape scale, deaths the monster's radius), a tint, a layer (over the crowd, or on the
+  ground), a lifetime and cap, an aim and a light cue. `Data/night-lighting.json`: the moon, the hero's light,
+  nine shafts, the fireflies, the plants and the grade.
+- **The code:** `EffectLibrary` (engine-free, `Demo2D.Choreography`, with its tests), `EffectLayer` (the pool),
+  `LightPool`, `NightLighting`, `Glow.shader` (unlit additive HDR, for fireflies and the beam), and
+  `EffectLibraryStills` (`demo2d unity EffectLibraryStills`). `SongPlayback.Frame` takes `still`; the world's
+  pixel target is HDR and the present camera runs the post-processing.
+- **Choices:**
+  - **Effects follow the song time, exactly on stills.** The live set is a function of t (events whose
+    lifetime covers it, in view, each kind's newest `max`). On a still every live instance is re-seeded from
+    its event's seed and simulated from the event in 1/30 s steps following its anchor, so a seek draws the
+    same particles (the seek test, now with effects, passes to the pixel). In live play a new instance is
+    simulated to its age once and then plays on Unity's own particle update, which is free on the main
+    thread; in the editor nothing plays.
+  - **CFXR's scripts are stripped** from pooled instances (made under an inactive holder so they never wake):
+    their clear behaviour destroys the instance and their lights and camera shake are 3D. Systems are set to
+    hierarchy scaling, no play on awake and no stop action; the tint multiplies their start colour.
+  - **Prefabs keep their own rotation.** Mesh particles lie in it (the fire ring is authored turned to face
+    the camera); the first version reset it and drew the ring edge-on, i.e. not at all.
+  - **The laser is a drawn beam.** CFXR has no beam, and its Electric Barrier, scaled to the 14 m sweep, drew
+    short thick strokes at random angles. The beam is a jagged line (a hot core in a blue glow, re-jagged from
+    the seed every 1/30 s) from the hero along the sweep, which turns once over the spell's bar (the sim's
+    `bars × beats per bar × beat`); the barrier stays small as the crackle at his hand.
+  - **Every effect draws in the pixel grid;** none opts out (`fullRes` is supported in the data, as a
+    documented reason, but no full-resolution layer is drawn).
+  - **Sorting:** effects over the crowd from order 30000 (fireflies at 29000), ground effects (the slam's
+    shock) at -900, above the tiles (-1100) and under the shadows (-1); within a layer in event order.
+  - **Lights:** each kind's cue (colour, radius, a linear attack and quadratic decay) goes to a pool that
+    lights the brightest 28; fireflies and plants have pools of 24, placed only in view. The moon is
+    `NightLighting`'s; the player removes the boot scene's.
+  - **Bloom and grade on the present camera,** over an HDR pixel target: bloom threshold 1.25 (at 0.95 the
+    hit flash's whites bloomed into one blob), a neutral tonemap, contrast, a cool white balance, a blue
+    shadows lift and a vignette. The volume profile is made at runtime (URP's post-processing variants are
+    not stripped).
+  - **Fireflies** hover by the trunks of trees drawn by seed (a 3-texel cross with a small light, blinking),
+    the plants that glow are the umbrella plants, and the shafts are freeform parallelograms on the clearings.
+- **Measured** at the climax (160 to 176 s, everything on): mean 7.9 ms, p99 9.0 ms per 1080p frame
+  including the GPU's work; effects add about 0.1 ms (0.2 ms at p99) with at most 110 instances, 3,540
+  particles and 28 effect lights, the grade about 0.15 ms, the night's extras nothing measurable. The caps
+  hold it there; PX10 measures the whole song.
+- **For PX8 onward:**
+  - **The hit flash dominates at night.** At its peak (the first 0.12 s after a blow) every struck monster is
+    a white silhouette; a spin, a slam or the ending's clear turns the crowd into one white mass, and the
+    hero turns white on every parry. PX8 owns the reactions (comment on its bead).
+  - Rings fire on most downbeats and now read strongly (cyan, 9 m across); PX9 or PX10 may thin or soften
+    them. Spin and slam are rare (5 and 3 in the song).
+  - Effect stills: `--effect-stills` takes each kind's event nearest the focus; PX9's beauty shots should pick
+    their own moments.
+- **Self-review:** re-read the diff against `origin/staging`. Outside demo2d's runtime, editor code, data,
+  tests and evidence: none (no core change; demo3d untouched). PlaybackData gains the effect data, prefabs
+  and glow shader; `SpriteCrowd` gains `NoFlash` (only `--empty` sets it). New tracked files are our code,
+  JSON, `.meta`s Unity wrote and tagged stills; the CFXR prefabs stay vendor (synced, referenced by the
+  baked PlaybackData, never tracked). Unity's ProjectSettings rewrites were discarded.
 
 ### PX8
 
