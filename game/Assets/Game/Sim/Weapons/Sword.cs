@@ -90,6 +90,7 @@ namespace PS.Game.Sim
         readonly SimState state;
         readonly Horde horde;
         readonly Structures structures;
+        readonly Zones zones;
         readonly EnemyRole[] roles;
         readonly double[] aimWeight;
         readonly WeaponDef weapon;
@@ -103,8 +104,6 @@ namespace PS.Game.Sim
         double lastImpact = double.NegativeInfinity;
         double lastPulse = double.NegativeInfinity;
         int slashes;
-        int changesSeen;
-        int slamBeats;
         int onsetFrom, forecastFrom;
 
         readonly Wave[] waves = new Wave[WaveCapacity];
@@ -114,7 +113,7 @@ namespace PS.Game.Sim
         // Aim scratch, one slot per enemy.
         readonly double[] aimAngle, aimDist;
 
-        public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde, Structures structures)
+        public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde, Structures structures, Zones zones)
         {
             if (config.Content == null) throw new ArgumentException("the sword needs content");
             weapon = config.Content.Weapon(config.Weapon);
@@ -125,6 +124,7 @@ namespace PS.Game.Sim
             this.state = state;
             this.horde = horde;
             this.structures = structures;
+            this.zones = zones;
             windup = config.WindupS;
             rank = config.Rank;
             stats = config.Stats ?? config.Content.Progression.Hero.Stats;
@@ -313,27 +313,11 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// Does the main strike on beat <paramref name="beat"/> slam: the first downbeat at or after a
-        /// revealed structure change? Bars are two beats, so a change waits two beats at most; with no
-        /// bars (no lock), it lapses.
+        /// Does the main strike on beat <paramref name="beat"/> slam: is it the first downbeat after a
+        /// section change, the zone change's own downbeat when that is known at the wind-up
+        /// (<see cref="Zones.Slams"/>)?
         /// </summary>
-        bool Slams(int beat, double impact)
-        {
-            var changes = log.Revealed(EntryKind.Change);
-            while (changesSeen < changes.Length && changes[changesSeen].T <= impact + 1e-9)
-            {
-                changesSeen++;
-                slamBeats = 2;
-            }
-            if (slamBeats == 0) return false;
-            if (clock.IsDownbeat(beat))
-            {
-                slamBeats = 0;
-                return true;
-            }
-            slamBeats--;
-            return false;
-        }
+        bool Slams(int beat, double impact) => clock.IsDownbeat(beat) && zones != null && zones.Slams(impact);
 
         /// <summary>
         /// The swing's direction (native's aim.rs): of 16 directions, the one whose arc holds the

@@ -424,23 +424,26 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TheFirstDownbeatAfterASectionChangeSlams()
         {
-            var known = Plain(120, 30);
-            var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
-            // A change between beats, known in time, and one known two seconds after it.
-            known.Add(new KnownEntry(StreamEntry.Change(beats[20] + 0.1, 0, 0.8), beats[20] - 1));
-            known.Add(new KnownEntry(StreamEntry.Change(beats[40], 0, 0.8), beats[40] + 2));
+            // The downbeats of the plain song, to place a change revealed just inside a downbeat's wind-up.
+            var plain = Start(Config(), Plain(120, 40));
+            plain.StepTo(40);
+            var downbeats = Drive.Events(plain, SimEventKind.Beat).Select(e => e.AsBeat).Where(b => b.Downbeat).Select(b => b.T).ToList();
+            double late = downbeats.First(t => t > 28);
+
+            var known = Plain(120, 40);
+            // A loud jump known ahead; a change 5 s after it, too soon for a zone change; and a change
+            // known 0.1 s before a downbeat, after that downbeat's strike wound up.
+            known.Add(new KnownEntry(StreamEntry.Jump(10.1, 0, 7), 9));
+            known.Add(new KnownEntry(StreamEntry.Change(15.1, 0, 0.8), 14));
+            known.Add(new KnownEntry(StreamEntry.Change(25.3, 0, 0.8), late - 0.1));
             var sim = Start(Config(), known);
-            sim.StepTo(30);
-            var revealed = BeatTimes(sim);
-            var attacks = HeroAttacks(sim);
-            var slams = attacks.Where(a => a.Kind == (int)HeroAttackKind.Slam).Select(a => a.Impact).ToList();
-            // The first main strike on a downbeat at or after the change, wound up once the change was known.
-            double First(double t, double knownAt) =>
-                attacks.First(a => a.Kind != (int)HeroAttackKind.FollowUp && a.Impact >= t && a.WindupStart >= knownAt - 1e-9
-                    && sim.Beats.IsDownbeat(Array.IndexOf(revealed, a.Impact))).Impact;
-            Assert.AreEqual(2, slams.Count);
-            Assert.AreEqual(First(beats[20] + 0.1, beats[20] - 1), slams[0]);
-            Assert.AreEqual(First(beats[40], beats[40] + 2), slams[1]);
+            sim.StepTo(40);
+            var zones = Drive.Events(sim, SimEventKind.ZoneChange).Select(e => e.AsZoneChange).ToList();
+            var slams = HeroAttacks(sim).Where(a => a.Kind == (int)HeroAttackKind.Slam).Select(a => a.Impact).ToList();
+            CollectionAssert.AreEqual(new[] { ZoneCause.Jump, ZoneCause.Change }, zones.Select(z => z.Cause));
+            Assert.AreEqual(late, zones[1].T, "the late change still lands on its downbeat");
+            CollectionAssert.AreEqual(new[] { zones[0].T, downbeats.First(t => t > late) }, slams,
+                "the slam shares the zone change's downbeat, or takes the next when the change came after its wind-up");
         }
 
         [Test]

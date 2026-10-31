@@ -46,6 +46,8 @@ namespace PS.Game.Sim
         ZoneCause waitingCause;
         double waitingT, waitingKnownAt;
         double last, lastRun;
+        // Detected zone changes landed, and how many of them a slam has claimed.
+        int detected, slammed;
 
         public Zones(ZoneRules rules, BeliefLog log, SimState state, Structures structures, double start)
         {
@@ -73,6 +75,26 @@ namespace PS.Game.Sim
             }
             double due = Due;
             if (t >= due - 1e-9) Change(sim, t, ZoneCause.Fallback, due, due);
+        }
+
+        /// <summary>
+        /// Does the hero's strike on the downbeat at <paramref name="downbeat"/>, winding up now,
+        /// slam (unity-game.md, The Sword: the first downbeat after a section change)? It does when
+        /// the detected change waiting now lands on that downbeat, so the slam and the zone change
+        /// share it, or when one landed since the last slam (revealed after its downbeat's wind-up
+        /// began), a bar late. Each detected change claims one slam; the fallback claims none.
+        /// </summary>
+        internal bool Slams(double downbeat)
+        {
+            Take();
+            if (waiting && downbeat >= Math.Max(waitingT, waitingKnownAt) - 1e-9)
+            {
+                slammed = detected + 1;
+                return true;
+            }
+            if (slammed >= detected) return false;
+            slammed = detected;
+            return true;
         }
 
         /// <summary>The per-tick check, at the tick's end: a fallback no downbeat took.</summary>
@@ -114,6 +136,7 @@ namespace PS.Game.Sim
             last = t;
             lastRun = state.RunClock;
             any = true;
+            if (cause != ZoneCause.Fallback) detected++;
             sim.Emit(SimEvent.ZoneChange(t, state.Zone, previous, cause, causeT, knownAt));
             structures.ZoneChanged();
         }

@@ -65,7 +65,7 @@ namespace PS.Game.Sim
             Health = new HeroHealth(State.Hero, config, content);
             Structures = new Structures(arena, Arena, State, Horde);
             if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures, State.Now);
-            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde, Structures);
+            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde, Structures, Zones);
         }
 
         public SimState State { get; }

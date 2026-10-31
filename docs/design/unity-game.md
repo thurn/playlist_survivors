@@ -1015,8 +1015,11 @@ on by `SimConfig.Sword` (weapon, rank, stats, wind-up). As built:
 - A heavy strike's cleave wave (`SimEventKind.Cleave`) rings from 9.15 m to
   15.07 m in seven 0.93 m bands, the first on the next eighth and then one
   a sixteenth, each enemy hit once at the strike's power.
-- The slam goes to the first downbeat at or after a revealed structure
-  change, within two beats.
+- The slam goes to the zone change's downbeat (Music-Driven Events, Zones:
+  a structure change or loud jump at least 8 s after the previous zone
+  change), when the change is known at that strike's wind-up, else to the
+  next downbeat. Each detected zone change gets one slam; the fallback gets
+  none.
 - Hero health (`HeroHealth`): a landed lunge takes
   `max(1, power * (0.5 on Easy) - armor)`, then 0.12 s of lockout (hits in
   it show with 0 damage). At none the hero falls (a death with enemy -1);
