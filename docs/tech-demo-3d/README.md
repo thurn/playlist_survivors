@@ -201,7 +201,8 @@ should feel like watching an expert play a finished game.
 - **The arena.** A moonlit enchanted forest: open glades ringed by trees,
   glowing elven trees and crystals, ruins, a graveyard and braziers, under
   cool blue moonlight. Effect light carries the fighting.
-- **The hero.** A Synty knight with sword and shield. They stride on beats from
+- **The hero.** A Synty knight with a glowing white crystal blade and a shield
+  ([crowd.md](crowd.md#the-hero)). They stride on beats from
   clearing to clearing and carve through the horde with sword combos whose
   blows land on beats, spinning on accents and slamming on the downbeats that
   open phrases. Spells fire on the musical grid: rings on downbeats, bolts on

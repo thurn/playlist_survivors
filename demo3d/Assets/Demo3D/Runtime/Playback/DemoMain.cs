@@ -25,6 +25,7 @@ namespace Demo3D.Runtime.Playback
         ICrowdRenderer _crowd;
         CrowdSlots _slots;
         StockCrowd _heroRenderer;
+        HeroBlade _heroBlade;
         GameCameraRig _rig;
         SongClock _clock;
         CaptureTool _capture;
@@ -219,7 +220,8 @@ namespace Demo3D.Runtime.Playback
                 bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
             }
             else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
-            if (!_style.IsBaseline || !_structures.IsBaseline) _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
+            // Every run publishes the style beat: the hero's blade (HeroBlade) throbs on it under any style.
+            _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
             if (_crowd is BoneTextureCrowd)
                 _shatter = CrystalShatter.Create(_tl, _style, CrowdLibrary.Load(), Array.ConvertAll(_typeAssets, t => t.id));
             if (_shatter != null) _shatter.View = _rig.Camera;
@@ -228,10 +230,13 @@ namespace Demo3D.Runtime.Playback
             _slots = new CrowdSlots(_typeAssets.Length, 16384);
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
+            // The hero's crystal blade (HeroBlade), under every style: it refracts the camera's opaque
+            // texture, so that is on in every run.
+            _heroBlade = new HeroBlade(CrowdLibrary.Load());
+            _heroRenderer.Created = _heroBlade.Attach;
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
-            if (_style.NeedsOpaqueTexture || _structures.NeedsOpaqueTexture)
-                UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(_rig.Camera).requiresColorOption =
-                    UnityEngine.Rendering.Universal.CameraOverrideOption.On;
+            UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(_rig.Camera).requiresColorOption =
+                UnityEngine.Rendering.Universal.CameraOverrideOption.On;
             StartEffects();
             _overlay = _flags.Overlay ? gameObject.AddComponent<DemoOverlay>() : null;
             if (_overlay != null) _overlay.Main = this;
@@ -669,6 +674,7 @@ namespace Demo3D.Runtime.Playback
             var heroMi = ToInstance(heroState, _hero, -1, 0);
             heroMi.Scale *= heroScale;
             heroInst[0] = heroMi;
+            _heroBlade.Pose(_tl, world);
             if (!_maskOn) _heroRenderer.Draw(_rig.Camera);
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
             _arena?.FollowHero(heroState.Position);
@@ -818,6 +824,7 @@ namespace Demo3D.Runtime.Playback
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();
+            _heroBlade?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();
             if (_warmTarget != null) _warmTarget.Release();

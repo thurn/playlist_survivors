@@ -53,6 +53,10 @@ namespace Demo3D.Runtime.Crowd
 
         public CrowdCounters Counters => _counters;
 
+        /// <summary>Called with each new monster's GameObject, after its renderers are listed, so what it
+        /// adds keeps its own material properties (the hero's blade, HeroBlade).</summary>
+        public System.Action<GameObject> Created;
+
         public StockCrowd(bool vendorMaterials = false) { _vendorMaterials = vendorMaterials; }
 
         public void Initialize(string[] typeIds, int capacityPerType)
@@ -123,6 +127,7 @@ namespace Demo3D.Runtime.Crowd
             }
             output.SetSourcePlayable(slot.Mixer);
             slot.Graph.Play();
+            Created?.Invoke(go);
             return slot;
         }
 

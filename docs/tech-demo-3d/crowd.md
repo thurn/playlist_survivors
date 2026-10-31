@@ -458,6 +458,41 @@ their clip timing still comes from the timeline.
 - **Model.** A Synty knight with sword and shield, from POLYGON Knights or
   Fantasy Characters, animated with Synty's Sword Combat, Base Locomotion and
   Idles packs.
+- **The crystal blade.** The knight's broadsword is replaced by a big
+  white crystal blade (`HeroBlade`), under every `--monster-style`: a
+  1.45 m diamond-section blade with a spine, a crossguard of crystal
+  points, shards growing from its root and a pommel gem. Its mesh is made
+  at start-up, so it is no vendor asset. It sits where the broadsword's
+  mesh lies in the hand: the broadsword's longest side is the blade's axis
+  and its next the crossguard's, so the edges stay in the swing's plane.
+  The broadsword's renderer is turned off. (The broadsword itself drew
+  about 1 cm long, as `HeroBlade`'s log measures it: the roster attaches
+  weapons to the hand bone with no correction for the bone's scale, so it
+  was never visible. The blade undoes the hand's scale, so its mesh is in
+  metres.)
+  - **The look** is Crystal's (`CrystalCommon.hlsl`, in
+    `Demo3D/Styles/CrystalBlade`): faceted gem refracting the scene, banded
+    reflections, lit facet edges and glints, in white. A light inside,
+    brightest along the spine, throbs on the style beat and flares on each
+    blow (the timeline's slash, thrust, spin and slam effects, over
+    0.22 s), past the bloom's threshold, so the blade glows.
+  - **Every run** therefore turns on the camera's opaque texture (one
+    half-resolution copy a frame) and publishes the style beat
+    (`StyleBeat`), which only the style shaders read.
+  - It casts a shadow, draws black in TD15's ID render, as the hero does,
+    and has a motion-vector twin material, as the crystal shards do.
+  - **The cut.** An eight-sided section (edges, a spine down each flat and
+    a bevel either side) in 14 rings, every corner but the spine's nudged
+    its own way, so each triangle tilts on its own and the blade reads as a
+    mosaic of facets, as the crowd's crystal does. A plain diamond section
+    showed two flat faces from above and read as a white bar.
+  - **Tuning.** The blade passes a fifth of the scene behind it
+    (`_Behind`, against a crystal monster's whole), so the hero's bright
+    light pool doesn't wash its facets out, and its gem is a grey white
+    that the light inside lifts to white. `--blade-tune key=value,...`
+    overrides the material for a run (behind, glow, flare, gain, peak,
+    refraction, facets, and the gem's r, g, b). Stills:
+    [evidence/blade](../../demo3d/evidence/blade/README.md).
 - **Animation.** A `PlayableGraph` driven by song time plays the hero's clips,
   with no Animator state machine. Each combo clip starts as its retiming
   dictates, and locomotion phase follows distance.

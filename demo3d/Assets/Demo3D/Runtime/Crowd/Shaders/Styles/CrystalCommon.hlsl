@@ -42,6 +42,9 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
 #if defined(SL_STATIC)
     behind *= 0.5; // a structure is thicker, darker gem: it doesn't uncover the lighter ground behind the horde beside it
 #endif
+#if defined(CRYSTAL_BEHIND)
+    behind *= CRYSTAL_BEHIND; // the hero's blade (CrystalBlade.shader): a denser white gem, lit from inside
+#endif
     float3 color = behind * lerp(float3(1, 1, 1), tint, lerp(0.85, 1.0, inside)) * 1.2 + tint * lerp(0.08, 0.45, inside);
     // Light trapped inside: each facet its own brightness, like a cut stone, and a core
     // that throbs on the beat.

@@ -118,7 +118,7 @@ grid position:
 
 ### The hero's moves
 
-The hero is a knight with sword and shield. These are their moves:
+The hero is a knight with a crystal sword and a shield. These are their moves:
 
 - **Combos:** `slashL` and `slashR` (arcs), `thrust` (a line), `spin` (a ring
   around the hero) and `slam` (a larger ring and a shockwave).
