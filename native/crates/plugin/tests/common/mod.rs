@@ -37,6 +37,7 @@ pub fn open(path: &Path, rate: f64, record: Option<&Path>) -> Result<*mut Sessio
         path: path.as_ptr(),
         models: std::ptr::null(),
         session_dir: record.as_ref().map_or(std::ptr::null(), |r| r.as_ptr()),
+        hindsight_jobs: 0,
     };
     let mut s = std::ptr::null_mut();
     match unsafe { ps_plugin::ps_open(&raw const config, &raw mut s) } {
@@ -279,6 +280,7 @@ pub fn open_source(source: Source, rate: f64, record: Option<&Path>) -> *mut Ses
         output_rate: rate,
         models: native().join("models/madmom.bin"),
         session_dir: record.map(Path::to_path_buf),
+        hindsight_jobs: 1,
     };
     Box::into_raw(Box::new(Session::open(config).unwrap()))
 }

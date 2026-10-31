@@ -60,6 +60,8 @@ pub struct Config {
     pub output_rate: f64,
     pub models: PathBuf,
     pub session_dir: Option<PathBuf>,
+    /// How many of a hindsight window's models decode at once (1 live).
+    pub hindsight_jobs: usize,
 }
 
 /// Where the music comes from.
@@ -330,7 +332,7 @@ impl Session {
             listening: Listening::Delayed(delayed),
             ..Params::default()
         };
-        let analyzer = Analyzer::with_hindsight_worker(&models, params)
+        let analyzer = Analyzer::with_hindsight_worker_jobs(&models, params, config.hindsight_jobs)
             .map_err(|e| Error::new(PS_ERR_MODELS, e.to_string()))?;
         let recorder = config
             .session_dir

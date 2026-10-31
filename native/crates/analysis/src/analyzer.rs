@@ -16,8 +16,9 @@
 //!
 //! The hindsight decode runs inline (`Analyzer::new`), or on a worker thread
 //! (`Analyzer::with_hindsight_worker`, the app's) that the analyzer waits for when an entry is
-//! due before its decode is done, counting the stall: either way the entries are a function of
-//! the samples alone.
+//! due before its decode is done, counting the stall; either may run a window's models in
+//! parallel (`with_hindsight_jobs`, `with_hindsight_worker_jobs`). Every way, the entries are a
+//! function of the samples alone.
 
 use std::collections::VecDeque;
 use std::sync::mpsc;
@@ -395,7 +396,19 @@ impl Analyzer {
 
     /// The analyzer, decoding hindsight windows on a worker thread (the app's live analysis).
     pub fn with_hindsight_worker(models: &Tensors, params: Params) -> Result<Self, TensorError> {
-        let mut decoder = HindsightDecoder::new(models, params.beats.fps, SAMPLE_RATE as usize)?;
+        Self::with_hindsight_worker_jobs(models, params, 1)
+    }
+
+    /// The analyzer, decoding hindsight windows on a worker thread that runs up to `jobs` of a
+    /// window's models at once (an analysis driven faster than real time, which waits on each
+    /// window's decode). Results retain model order.
+    pub fn with_hindsight_worker_jobs(
+        models: &Tensors,
+        params: Params,
+        jobs: usize,
+    ) -> Result<Self, TensorError> {
+        let mut decoder = HindsightDecoder::new(models, params.beats.fps, SAMPLE_RATE as usize)?
+            .with_model_jobs(jobs);
         let (requests, rx) = mpsc::channel::<Vec<f32>>();
         let (tx, results) = mpsc::channel();
         let handle = thread::Builder::new()

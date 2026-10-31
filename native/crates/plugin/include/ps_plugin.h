@@ -4,8 +4,9 @@
  * two in step (crates/plugin/tests/header.rs checks the layouts against the Rust side).
  *
  * One session plays one source M seconds late through Unity's output and analyses it ahead of
- * that. Threads: ps_render_music on Unity's audio thread; every other call on one other thread
- * (the main thread). Times are seconds; song time is the position in the source's music (System:
+ * that. Threads: ps_render_music on Unity's audio thread, or on the main thread when its frames
+ * drive the music (a File or Replay source rendered as fast as frames compute, its output
+ * dropped); every other call on one other thread (the main thread). Times are seconds; song time is the position in the source's music (System:
  * the time since the app was first tapped).
  *
  * The main thread's heartbeat: each ps_poll and ps_status call. A System source's watchdog
@@ -46,6 +47,9 @@ typedef struct {
     const char *path;        /* File: the audio file or .m3u; Replay: the session folder (UTF-8) */
     const char *models;      /* the analyzer's madmom.bin; NULL: $PS_MODELS, else the checkout's */
     const char *session_dir; /* the folder to record the session in (created); NULL: none */
+    int32_t hindsight_jobs;  /* how many of a hindsight window's models decode at once: 0 or 1
+                              * live; more (at most 8, the ensemble's) when frames drive a File
+                              * source faster than real time and wait on the analysis */
 } ps_config;
 
 /* An app producing audio now (System listening): the process responsible for its audio. */

@@ -163,45 +163,27 @@ impl OfflineFrontEnd {
 
     /// The features of a window of samples: `ceil(len / 441)` frames, row-major.
     pub fn process(&self, y: &[f32]) -> (usize, Vec<f32>) {
+        self.process_with_jobs(y, 1)
+    }
+
+    /// [`process`](Self::process) with each resolution's frames split among up to `jobs`
+    /// scoped threads. Each frame is computed alone, so the features are the same.
+    pub fn process_with_jobs(&self, y: &[f32], jobs: usize) -> (usize, Vec<f32>) {
         let frames = y.len().div_ceil(HOP);
         let width = self.width();
         let mut out = vec![0.0f32; frames * width];
         let mut col = 0;
         for r in &self.res {
-            let mut fft_in = r.fft.make_input_vec();
-            let mut fft_out: Vec<Complex<f64>> = r.fft.make_output_vec();
-            let mut scratch = r.fft.make_scratch_vec();
-            let mut acc = vec![0.0f64; r.bands];
             let mut specs = vec![0.0f32; frames * r.bands];
-            let half = r.size / 2;
-            for f in 0..frames {
-                // (Centred: frame f starts at f * 441 - size / 2, zeros outside the window.)
-                let start = (f * HOP) as isize - half as isize;
-                for (i, v) in fft_in.iter_mut().enumerate() {
-                    let at = start + i as isize;
-                    let s = if at < 0 || at as usize >= y.len() {
-                        0.0
-                    } else {
-                        y[at as usize]
-                    };
-                    *v = f64::from(s) * r.window[i];
-                }
-                r.fft
-                    .process_with_scratch(&mut fft_in, &mut fft_out, &mut scratch)
-                    .expect("FFT buffers are sized by the plan");
-                acc.fill(0.0);
-                for (row, c) in r.filterbank.iter().zip(&fft_out) {
-                    if row.is_empty() {
-                        continue;
+            let per = frames.div_ceil(jobs.max(1)).max(1);
+            if per >= frames {
+                r.spectrogram(y, 0, &mut specs);
+            } else {
+                std::thread::scope(|scope| {
+                    for (k, chunk) in specs.chunks_mut(per * r.bands).enumerate() {
+                        scope.spawn(move || r.spectrogram(y, k * per, chunk));
                     }
-                    let mag = (c.re as f32).hypot(c.im as f32);
-                    for &(band, w) in row {
-                        acc[band] += f64::from(mag * w);
-                    }
-                }
-                for (s, a) in specs[f * r.bands..(f + 1) * r.bands].iter_mut().zip(&acc) {
-                    *s = (*a as f32 + 1.0).log10();
-                }
+                });
             }
             for f in 0..frames {
                 let row = &mut out[f * width + col..f * width + col + 2 * r.bands];
@@ -216,6 +198,47 @@ impl OfflineFrontEnd {
             col += 2 * r.bands;
         }
         (frames, out)
+    }
+}
+
+impl Resolution {
+    /// The log filterbank spectrogram's frames from `first` on into `specs`, a row of `bands`
+    /// per frame.
+    fn spectrogram(&self, y: &[f32], first: usize, specs: &mut [f32]) {
+        let mut fft_in = self.fft.make_input_vec();
+        let mut fft_out: Vec<Complex<f64>> = self.fft.make_output_vec();
+        let mut scratch = self.fft.make_scratch_vec();
+        let mut acc = vec![0.0f64; self.bands];
+        let half = self.size / 2;
+        for (k, spec) in specs.chunks_exact_mut(self.bands).enumerate() {
+            // (Centred: frame f starts at f * 441 - size / 2, zeros outside the window.)
+            let start = ((first + k) * HOP) as isize - half as isize;
+            for (i, v) in fft_in.iter_mut().enumerate() {
+                let at = start + i as isize;
+                let s = if at < 0 || at as usize >= y.len() {
+                    0.0
+                } else {
+                    y[at as usize]
+                };
+                *v = f64::from(s) * self.window[i];
+            }
+            self.fft
+                .process_with_scratch(&mut fft_in, &mut fft_out, &mut scratch)
+                .expect("FFT buffers are sized by the plan");
+            acc.fill(0.0);
+            for (row, c) in self.filterbank.iter().zip(&fft_out) {
+                if row.is_empty() {
+                    continue;
+                }
+                let mag = (c.re as f32).hypot(c.im as f32);
+                for &(band, w) in row {
+                    acc[band] += f64::from(mag * w);
+                }
+            }
+            for (s, a) in spec.iter_mut().zip(&acc) {
+                *s = (*a as f32 + 1.0).log10();
+            }
+        }
     }
 }
 
@@ -524,7 +547,8 @@ impl HindsightDecoder {
         })
     }
 
-    /// Bound offline ensemble parallelism for batch preparation; live callers keep one job.
+    /// Bound the offline front end's and ensemble's parallelism for batch preparation or an
+    /// analysis driven faster than real time; live callers keep one job.
     #[must_use]
     pub fn with_model_jobs(mut self, jobs: usize) -> Self {
         self.model_jobs = jobs.clamp(1, self.nn.nets.len());
@@ -537,7 +561,7 @@ impl HindsightDecoder {
         if window.len() < self.sample_rate {
             return Vec::new();
         }
-        let (frames, features) = self.fe.process(window);
+        let (frames, features) = self.fe.process_with_jobs(window, self.model_jobs);
         let acts = self
             .nn
             .activations_with_jobs(&features, frames, self.model_jobs);

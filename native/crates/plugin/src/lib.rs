@@ -57,6 +57,7 @@ pub struct Config {
     pub path: *const c_char,
     pub models: *const c_char,
     pub session_dir: *const c_char,
+    pub hindsight_jobs: i32,
 }
 
 /// `ps_app`.
@@ -205,6 +206,7 @@ pub unsafe extern "C" fn ps_open(config: *const Config, out: *mut *mut Session) 
             output_rate: c.output_rate,
             models: unsafe { path(c.models, "the models' path") }?.unwrap_or_else(default_models),
             session_dir: unsafe { path(c.session_dir, "the session folder") }?,
+            hindsight_jobs: usize::try_from(c.hindsight_jobs).unwrap_or(0).max(1),
         };
         let session = Session::open(config)?;
         unsafe { *out = Box::into_raw(Box::new(session)) };

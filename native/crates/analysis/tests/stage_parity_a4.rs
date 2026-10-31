@@ -176,6 +176,21 @@ fn parallel_models_smoke() {
 }
 
 #[test]
+fn parallel_front_end_gives_the_same_features() {
+    let models = models();
+    let mut dec = HindsightDecoder::new(&models, 100.0, SR).unwrap();
+    let (fe, _, _) = dec.stages();
+    let pcm = golden("house-128").f32("pcm").unwrap();
+    let inline = fe.process(&pcm);
+    for jobs in [0, 3, 8] {
+        assert_eq!(fe.process_with_jobs(&pcm, jobs), inline, "{jobs} jobs");
+    }
+    // (More jobs than frames: a window of three hops.)
+    assert_eq!(fe.process_with_jobs(&pcm[..1000], 8), fe.process(&pcm[..1000]));
+    assert_eq!(fe.process_with_jobs(&[], 4), (0, Vec::new()));
+}
+
+#[test]
 fn the_phase_check_commits_pythons_beats() {
     // Python's activations and hindsight entries into the commit rule with D = 0.
     let models = models();
@@ -201,7 +216,9 @@ fn the_phase_check_commits_pythons_beats() {
     assert!(shifted > 0, "the excerpt exercises the phase check");
 }
 
-fn analyze(models: &Tensors, pcm: &[f32], worker: bool, delay_s: f64) -> Vec<Entry> {
+/// The analyzer's entries, its hindsight decoded inline, or on a worker running `Some(jobs)`
+/// models at once.
+fn analyze(models: &Tensors, pcm: &[f32], worker: Option<usize>, delay_s: f64) -> Vec<Entry> {
     let params = Params {
         hindsight: HindsightParams {
             delay_s,
@@ -209,10 +226,9 @@ fn analyze(models: &Tensors, pcm: &[f32], worker: bool, delay_s: f64) -> Vec<Ent
         },
         ..Params::default()
     };
-    let mut an = if worker {
-        Analyzer::with_hindsight_worker(models, params)
-    } else {
-        Analyzer::new(models, params)
+    let mut an = match worker {
+        Some(jobs) => Analyzer::with_hindsight_worker_jobs(models, params, jobs),
+        None => Analyzer::new(models, params),
     }
     .unwrap();
     let mut out = Vec::new();
@@ -266,15 +282,15 @@ fn phased_commits(models: &Tensors, g: &Tensors, delay_s: f64) -> (Vec<Commit>, 
 }
 
 #[test]
-#[ignore = "release: the whole analyzer on the 30 s Galop, twice (scripts/ci-full native-tests runs it)"]
+#[ignore = "release: the whole analyzer on the 30 s Galop, three times (scripts/ci-full native-tests runs it)"]
 fn the_worker_gives_the_inline_results() {
     let models = models();
     let pcm = golden("orpheus-galop-hindsight").f32("pcm").unwrap();
     let d = HindsightParams::live().delay_s;
-    assert_eq!(
-        analyze(&models, &pcm, true, d),
-        analyze(&models, &pcm, false, d)
-    );
+    let inline = analyze(&models, &pcm, None, d);
+    assert_eq!(analyze(&models, &pcm, Some(1), d), inline);
+    // (A run driven faster than real time decodes a window's models in parallel.)
+    assert_eq!(analyze(&models, &pcm, Some(8), d), inline);
 }
 
 #[test]

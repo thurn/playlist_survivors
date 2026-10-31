@@ -22,7 +22,7 @@ int main(void) {
     FIELD(ps_entry, v);
     SIZE(ps_config); FIELD(ps_config, source); FIELD(ps_config, pid); FIELD(ps_config, m);
     FIELD(ps_config, output_rate); FIELD(ps_config, path); FIELD(ps_config, models);
-    FIELD(ps_config, session_dir);
+    FIELD(ps_config, session_dir); FIELD(ps_config, hindsight_jobs);
     SIZE(ps_app); FIELD(ps_app, pid); FIELD(ps_app, name);
     SIZE(ps_device); FIELD(ps_device, uid); FIELD(ps_device, name); FIELD(ps_device, latency);
     FIELD(ps_device, bluetooth);
@@ -85,6 +85,10 @@ fn the_header_matches_the_library() {
         (
             "ps_config.session_dir",
             offset_of!(Config, session_dir) as i64,
+        ),
+        (
+            "ps_config.hindsight_jobs",
+            offset_of!(Config, hindsight_jobs) as i64,
         ),
         ("ps_app", size_of::<App>() as i64),
         ("ps_app.pid", offset_of!(App, pid) as i64),

@@ -201,6 +201,7 @@ fn failures_return_codes_that_ps_last_error_describes() {
         path: path.as_ptr(),
         models: std::ptr::null(),
         session_dir: std::ptr::null(),
+        hindsight_jobs: 0,
     };
     let mut s = std::ptr::null_mut();
     assert_eq!(
