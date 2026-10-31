@@ -12,7 +12,9 @@ namespace Game.Client.Music
     /// - `--headless`: the output is silenced after the in-process capture (run it with -batchmode,
     ///   which opens no window), and frames are paced at 60 per second as a display would;
     /// - `--spike-out DIR`: keeps Unity's final mix (mix.wav) and the clicks, buffers and frames
-    ///   (spike.json) for `game spike` to measure.
+    ///   (spike.json) for `game spike` to measure;
+    /// - `--click-lead S`: schedules each click at most S seconds (plus a frame) before the mixer
+    ///   reaches it, instead of 0.25 s, to measure the headroom PlayScheduled needs.
     /// It quits with exit code 1 if the plugin fails or Unity's mixer doesn't run, and when the
     /// music ends.
     /// </summary>
@@ -74,7 +76,7 @@ namespace Game.Client.Music
             // A filter's callback serves one source or listener, so the clicks' voices live apart.
             var clicksHost = new GameObject("Clicks");
             clicksHost.transform.SetParent(musicHost.transform);
-            spike._clicks = new BeatClicks(clicksHost);
+            spike._clicks = new BeatClicks(clicksHost, Args.GetFloat("--click-lead", -1));
             spike._startReal = Time.realtimeSinceStartupAsDouble;
             spike._startDsp = AudioSettings.dspTime;
             spike._music.Play(Args.Path(file));

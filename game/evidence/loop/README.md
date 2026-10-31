@@ -49,7 +49,19 @@ look/loop/.
   max 76.6 to 78.0, against an output latency of 38.0 ms (the device's 16.6 plus 4 x 256 frames)
   and a margin of 38.7 (two 60 Hz frames plus one 5.3 ms buffer). frameSong never ran backwards
   and was never held, no frame showed the frontier's state, all 4020 entries reached the sim, and
-  a sim step took 3 µs at the median (0.43 ms at most).
+  a sim step took 3 µs at the median (0.43 ms at most). The lead is the margin plus the output
+  latency by construction; the run shows it stays there (the frame term never widened).
+- **The margin grew to keep every settled event schedulable** (the Warden, ps-msz.3.17). The
+  sound hook first refused sounds within Unity's whole DSP buffering (4 buffers) of the DSP
+  clock, more than the margin left, so about 40% of the events a frame settled (all of them at
+  512-frame buffers or 120 fps) could not be scheduled. The spike's `--click-lead` runs showed a
+  sound needs only one buffer past the DSP clock's reading
+  ([spike, Scheduling headroom](../spike/README.md#scheduling-headroom)); the margin now also
+  covers the reading's buffer-sized step and the sim's tick, `2 frames + 1 tick + 2 buffers`
+  (LoopTests' EveryEventAFrameSettlesCanStillBeScheduled checks it at 60 and 120 fps and 256 to
+  1024 frames). Re-run on a Mono player (30 s live, two 15 s fixed-time runs): lead median
+  90.3 ms, p5 to p95 90.3 to 90.4, max 91.6 (output latency 38.0 + margin 52.3); the fixed-time
+  CSVs were again byte-identical.
 - **Fixed time is frame-exact.** The two 30 s runs wrote byte-identical CSVs: 1801 frames, each at
   song time n/60, with the same frontier and the same sim hash at every frame (0 entries known
   late, event hash 6D36261061AFC33C). The frames waited for the plugin's analysis whenever they

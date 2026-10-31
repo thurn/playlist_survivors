@@ -619,13 +619,20 @@ runs ahead of the DSP write position by a margin, and so ahead of what the
 player hears by the output latency plus that margin.
 
 ```text
-frontier = songAtDsp(dspNow) + margin    // margin: 2 frames + 1 DSP buffer
+frontier = songAtDsp(dspNow) + margin    // margin: 2 frames + 1 tick + 2 DSP buffers
 lead     = frontier - heardSong(now)     // = outputLatency + margin
 ```
 
-- The margin covers the frame interval, because the sim steps once per
-  frame: about 40 ms at 60 fps.
-- On built-in speakers the lead is about 55–65 ms. On Bluetooth headphones
+- The margin keeps every event a frame settles schedulable. A frame settles
+  the events after the previous frame's frontier, which is a frame older
+  and up to a tick (1/120 s) short of its frontier, since the sim steps
+  whole ticks. The DSP clock's reading runs up to a buffer ahead of the
+  mixer's position, and PlayScheduled needs one buffer past the reading
+  (the sync spike's scheduling headroom: the buffers Unity keeps queued
+  are behind the mixer, in the output latency). The second frame is slack
+  for frame jitter. That is about 52 ms at 60 fps and 256-frame buffers.
+- On built-in speakers the lead is about 90 ms (38 ms of output latency,
+  game/evidence/loop). On Bluetooth headphones
   (150–300 ms of output latency) it grows to about 0.2–0.35 s, and more
   presses become late steps. `B` (0.5 s) stays larger than the lead in both
   cases.

@@ -47,6 +47,33 @@ namespace Game.Client.Music
         public bool Playing => Open && Status.State == Plugin.Playing;
         public bool Ended => Open && Status.State == Plugin.Ended;
 
+        /// <summary>One of Unity's DSP buffers, in seconds.</summary>
+        public static double DspBuffer
+        {
+            get
+            {
+                AudioSettings.GetDSPBufferSize(out int length, out _);
+                return (double)length / AudioSettings.outputSampleRate;
+            }
+        }
+
+        /// <summary>
+        /// How far past the DSP clock's reading a sound must be scheduled to start on its sample: one
+        /// buffer. The buffers Unity keeps queued are behind the mixer, in the output latency, not
+        /// ahead of the reading (game/evidence/spike, Scheduling headroom).
+        /// </summary>
+        public static double ScheduleHeadroom => DspBuffer;
+
+        /// <summary>One display refresh; 60 Hz without a display.</summary>
+        public static double Refresh
+        {
+            get
+            {
+                double hz = Screen.currentResolution.refreshRateRatio.value;
+                return hz > 1 ? 1.0 / hz : 1.0 / 60.0;
+            }
+        }
+
         /// <summary>Unity's DSP buffering: its buffer length times its buffer count, in seconds.</summary>
         public static double DspBuffering
         {
@@ -90,7 +117,7 @@ namespace Game.Client.Music
                 Free(config.Models);
                 Free(config.SessionDir);
             }
-            Clock.DisplayLatency = DisplayLatency();
+            Clock.DisplayLatency = Refresh; // one refresh, as the 3D demo assumes (vsync's queued frame)
             _source = GetComponent<AudioSource>();
             _source.playOnAwake = false;
             _source.spatialBlend = 0;
@@ -101,13 +128,6 @@ namespace Game.Client.Music
         static void Free(IntPtr p)
         {
             if (p != IntPtr.Zero) Marshal.FreeHGlobal(p);
-        }
-
-        /// <summary>One refresh, as the 3D demo assumes (vsync's queued frame); 60 Hz without a display.</summary>
-        static double DisplayLatency()
-        {
-            double hz = Screen.currentResolution.refreshRateRatio.value;
-            return hz > 1 ? 1.0 / hz : 1.0 / 60.0;
         }
 
         void Update()

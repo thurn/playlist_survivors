@@ -18,6 +18,8 @@ uv run --project demo3d/tools game spike buffer-512 --file public/reactive/house
 uv run --project demo3d/tools game spike buffer-1024 --file public/reactive/house-128/house-128.ogg --seconds 65 --player-args "--dsp-buffer 1024"
 uv run --project demo3d/tools game spike house-128-mono --file public/reactive/house-128/house-128.ogg --repeat 3 --seconds 200 --backend mono --build
 uv run --project demo3d/tools game spike dnb-174-mono --file public/reactive/dnb-174/dnb-174.ogg --repeat 3 --seconds 200 --backend mono --build
+uv run --project demo3d/tools game spike headroom-256 --file public/reactive/house-128/house-128.ogg --seconds 45 --backend mono --build --player-args "--click-lead 0.005334"
+uv run --project demo3d/tools game spike headroom-1024 --file public/reactive/house-128/house-128.ogg --seconds 45 --backend mono --player-args "--dsp-buffer 1024 --click-lead 0.021334"
 ```
 
 `game spike` runs the player as
@@ -54,6 +56,8 @@ All at 48 kHz on the Mac's built-in speakers; every set's `ok` is true.
 | [buffer-512](buffer-512.json) | il2cpp | 512 x 4 | 63 s | 134/134 | +0.000, -0.021..+0.000, -0.021..+0.000 | -0.0009 | 0, 0 | +5.3, -1.7..+11.7 | -0.06, -0.55..+0.48 |
 | [buffer-1024](buffer-1024.json) | il2cpp | 1024 x 4 | 63 s | 134/134 | +0.000, -0.021..+0.000, -0.021..+0.000 | -0.0053 | 0, 0 | +5.3, -1.7..+11.7 | -0.09, -1.04..+0.89 |
 | [house-128-fixed-time](house-128-fixed-time.json) | il2cpp | 256 x 4 | 63 s | 134/134 | +0.000, -0.021..+0.000, -0.021..+0.000 | +0.0020 | 0, 0 | +5.3, -1.7..+11.7 | +0.06, -0.25..+0.42 |
+| [headroom-256](headroom-256.json) | mono | 256 x 4 | 45 s | 91/91 | +0.000, -0.021..+0.000, -0.021..+0.000 | -0.0001 | 0, 0 | +5.7, -1.3..+12.2 | +0.07, -0.20..+0.35 |
+| [headroom-1024](headroom-1024.json) | mono | 1024 x 4 | 45 s | 75/75 | +0.000, -0.021..+0.000, -0.021..+0.000 | -0.0065 | 0, 0 | +5.3, -0.5..+12.1 | -0.09, -0.58..+0.50 |
 
 ## What it found
 
@@ -89,6 +93,23 @@ All at 48 kHz on the Mac's built-in speakers; every set's `ok` is true.
 - **Output latency**: the clock's 38.0 ms is the device's 16.6 ms (macOS's report) plus Unity's
   4 x 256 frames (21.3 ms). Whether Unity really keeps 4 buffers queued is part of the operator's
   check.
+
+## Scheduling headroom
+
+How close to the mixer can a sound be scheduled and still start on its sample? The headroom
+sets ran with `--click-lead L`: each click is scheduled on the latest frame that is still at
+least L ahead of the DSP clock's reading (`AudioSettings.dspTime`), so between L and L plus a
+frame ahead, instead of 0.25 s ahead (ps-msz.3.17, the Warden of the client's clocks).
+
+- **One buffer past the reading is enough.** With L one buffer (5.3 ms at 256 frames, 21.3 ms
+  at 1024), all 91 and 75 clicks started on their scheduled sample. The clicks dropped are the
+  ones no frame caught inside the window, not late ones.
+- **No headroom is not quite enough.** Unrecorded runs at L = 0 put 41/41 clicks on their sample
+  at 256 frames, but at 1024 frames one of 35 started 0.98 ms late. At L = 5 s every click was
+  dropped, which confirmed the flag reached the player.
+- So the buffers Unity keeps queued (4 here) are behind the mixer, in the output latency, not
+  ahead of the DSP clock's reading, and `MusicPlayer.ScheduleHeadroom` is one buffer. The frame
+  loop's margin is sized from it ([loop](../loop/README.md), The Sim Lead in the design).
 
 Slow CI runs the same measurement for 15 s on a Mono player (`game spike ci ... --no-evidence`, in
 scripts/ci-full's game section), and fails if the clicks' median or 5th to 95th percentile is

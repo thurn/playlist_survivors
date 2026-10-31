@@ -81,9 +81,8 @@ namespace Game.Client.Loop
                 _music.Play(Args.Path(file));
                 if (!_fixed)
                 {
-                    AudioSettings.GetDSPBufferSize(out int length, out _);
-                    clock = _musicTimes = new MusicTimes(_music.Clock, _music.Clock.DisplayLatency,
-                        (double)length / AudioSettings.outputSampleRate, MusicPlayer.DspBuffering);
+                    clock = _musicTimes = new MusicTimes(_music.Clock, MusicPlayer.Refresh,
+                        MusicPlayer.ScheduleHeadroom, () => AudioSettings.dspTime);
                 }
             }
             var config = new SimConfig { Seed = (ulong)Math.Max(0, Args.GetInt("--seed", 1)) };
@@ -121,7 +120,6 @@ namespace Game.Client.Loop
             var now = new ClockReadings
             {
                 Real = Time.realtimeSinceStartupAsDouble,
-                Dsp = AudioSettings.dspTime,
                 Frame = Time.timeSinceLevelLoadAsDouble,
             };
             if (Driver.Step(now)) Keep();

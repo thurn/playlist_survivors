@@ -8,7 +8,10 @@ namespace Game.Client.Music
     /// A click on every committed beat (the sync spike, unity-game.md, Sound Timing): each beat the
     /// plugin commits is scheduled with PlayScheduled at the DSP time of its song time once it comes
     /// within <see cref="Horizon"/>. Beats are committed seconds ahead (the lookahead), so a click
-    /// is never late; one whose time has already reached the mixer is dropped, never started late.
+    /// is never late; one whose time is already within <see cref="MusicPlayer.ScheduleHeadroom"/>
+    /// of the mixer is dropped, never started late. With a `lead`, each click is instead scheduled
+    /// on the latest frame that is at least `lead` ahead of the DSP clock's reading, which measures
+    /// how little headroom PlayScheduled needs (the spike's `--click-lead`).
     /// Every scheduled or dropped click is kept in <see cref="Log"/> for the spike's measurement.
     /// </summary>
     public sealed class BeatClicks
@@ -35,8 +38,12 @@ namespace Game.Client.Music
         public ArraySegment<Click> Log => new ArraySegment<Click>(_log, 0, Count);
         public AudioClip Clip { get; }
 
-        public BeatClicks(GameObject host)
+        readonly double _lead;
+
+        /// <param name="lead">Seconds past the DSP clock's reading to schedule each click at the latest, or negative to schedule it <see cref="Horizon"/> ahead.</param>
+        public BeatClicks(GameObject host, double lead = -1)
         {
+            _lead = lead;
             Clip = MakeClip(AudioSettings.outputSampleRate);
             for (int i = 0; i < Voices; i++)
             {
@@ -76,12 +83,13 @@ namespace Game.Client.Music
             }
             if (!music.Clock.Anchored) return;
             double now = AudioSettings.dspTime;
-            double earliest = now + MusicPlayer.DspBuffering; // the mixer may already be past `now`
+            double earliest = now + (_lead >= 0 ? _lead : MusicPlayer.ScheduleHeadroom);
+            double horizon = _lead >= 0 ? _lead + Time.unscaledDeltaTime : Horizon;
             while (_pendingCount > 0)
             {
                 double song = _pending[_pendingHead];
                 double dsp = music.Clock.DspAtSong(song);
-                if (dsp > now + Horizon) break;
+                if (dsp > now + horizon) break;
                 _pendingHead = (_pendingHead + 1) % Capacity;
                 _pendingCount--;
                 if (dsp < earliest)

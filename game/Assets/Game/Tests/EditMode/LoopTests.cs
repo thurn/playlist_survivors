@@ -32,21 +32,21 @@ namespace Game.Tests
         {
             const double buffer = 256 / 48000.0;
             var clock = Sampled(3);
-            var times = new MusicTimes(clock, frame: 1 / Fps, dspBuffer: buffer, dspBuffering: 4 * buffer);
-            var t = times.Frame(new ClockReadings { Real = 3.0, Dsp = 8.0 });
+            var times = new MusicTimes(clock, frame: 1 / Fps, dspBuffer: buffer, dspNow: () => 8.0);
+            var t = times.Frame(new ClockReadings { Real = 3.0 });
 
             Assert.That(t.Song, Is.EqualTo(3.0).Within(1e-9)); // songAtDsp(dspAt(now))
             Assert.That(t.Heard, Is.EqualTo(3.0 - 0.038).Within(1e-9));
-            Assert.That(times.Margin, Is.EqualTo(2 / Fps + buffer).Within(1e-12));
+            Assert.That(times.Margin, Is.EqualTo(2 / Fps + Simulation.TickSeconds + 2 * buffer).Within(1e-12));
             Assert.That(t.Frontier, Is.EqualTo(t.Song + times.Margin).Within(1e-12));
-            Assert.That(t.Lead, Is.EqualTo(0.038 + 2 / Fps + buffer).Within(1e-9));
+            Assert.That(t.Lead, Is.EqualTo(0.038 + times.Margin).Within(1e-9));
             Assert.That(t.FrameSong, Is.EqualTo(clock.HeardSong(3.0 + 1 / Fps)).Within(1e-12));
 
             // Frames longer than a refresh widen the margin to two of them.
             for (int i = 0; i < 200; i++) times.Measure(1 / 30.0);
-            Assert.That(times.Margin, Is.EqualTo(2 / 30.0 + buffer).Within(1e-6));
+            Assert.That(times.Margin, Is.EqualTo(2 / 30.0 + Simulation.TickSeconds + 2 * buffer).Within(1e-6));
             times.Measure(2.0); // a hitch is not a frame rate
-            Assert.That(times.Margin, Is.EqualTo(2 / 30.0 + buffer).Within(1e-6));
+            Assert.That(times.Margin, Is.EqualTo(2 / 30.0 + Simulation.TickSeconds + 2 * buffer).Within(1e-6));
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace Game.Tests
         {
             var clock = Sampled(3);
             clock.InputCalibration = 0.012;
-            var times = new MusicTimes(clock, 1 / Fps, 0.005, 0.02);
+            var times = new MusicTimes(clock, 1 / Fps, 0.005, () => 8.0);
             Assert.That(times.KeySong(2.5), Is.EqualTo(clock.HeardSong(2.5) - 0.012).Within(1e-12));
             Assert.That(times.KeySong(2.5), Is.EqualTo(2.5 - 0.038 - 0.012).Within(1e-9));
         }
@@ -63,12 +63,49 @@ namespace Game.Tests
         public void SoundsAreScheduledAtTheirSongTimesDspTimeAndDroppedOnceTheMixerIsPast()
         {
             var clock = Sampled(3);
-            var times = new MusicTimes(clock, 1 / Fps, 0.005, dspBuffering: 0.02);
-            times.Frame(new ClockReadings { Real = 3.0, Dsp = 8.0 });
+            double dspNow = 8.0;
+            var times = new MusicTimes(clock, 1 / Fps, dspBuffer: 0.005, () => dspNow);
             Assert.That(times.TryDspAt(3.1, out double dsp), Is.True);
             Assert.That(dsp, Is.EqualTo(8.1).Within(1e-12));
-            Assert.That(times.TryDspAt(3.01, out _), Is.False, "the mixer may already have mixed 8.0 to 8.02");
+            Assert.That(times.TryDspAt(3.004, out _), Is.False, "a sound needs a buffer past the DSP clock's reading");
+            Assert.That(times.TryDspAt(3.006, out _), Is.True);
+            dspNow = 8.01; // the reading when the sound is scheduled counts, not the frame's
+            Assert.That(times.TryDspAt(3.006, out _), Is.False);
             Assert.That(new FrameClock().TryDspAt(3.1, out _), Is.False, "no music plays in time with fixed frames");
+        }
+
+        /// <summary>
+        /// The lead's purpose (unity-game.md, The Sim Lead): the sim settles every event before the
+        /// mixer needs it, so each event a frame dispatches can still be scheduled on its sample.
+        /// Frames jitter by ±2 ms; the DSP clock reads the end of the buffer being mixed, stepping a
+        /// buffer at a time, and MusicPlayer samples it half a buffer back.
+        /// </summary>
+        [Test]
+        public void EveryEventAFrameSettlesCanStillBeScheduled(
+            [Values(60.0, 120.0)] double fps, [Values(256, 512, 1024)] int bufferFrames)
+        {
+            double buffer = bufferFrames / 48000.0;
+            var random = new System.Random(bufferFrames + (int)fps);
+            var clock = new MusicClock { OutputLatency = 0.017 + 4 * buffer, DisplayLatency = 1 / fps };
+            clock.SetAnchor(dsp: 5.0, song: 0.0);
+            double dspNow = 0;
+            var times = new MusicTimes(clock, 1 / fps, buffer, () => dspNow);
+            var driver = new SimDriver(new SimConfig(), times);
+            int unschedulable = 0, frames = 0;
+            for (int i = 0; i < 8 * fps; i++)
+            {
+                double real = i / fps + (random.NextDouble() - 0.5) * 0.004;
+                dspNow = Math.Ceiling((5.0 + real) / buffer) * buffer;
+                clock.Sample(real, dspNow - buffer / 2);
+                times.Measure(1 / fps);
+                double settledAfter = driver.Sim.Now;
+                driver.Step(new ClockReadings { Real = real });
+                if (i < 2 * fps) continue; // the fit's first 2 s
+                frames++;
+                // The earliest event this frame can settle is just past the previous frontier.
+                if (!times.TryDspAt(settledAfter + 1e-9, out _)) unschedulable++;
+            }
+            Assert.That(unschedulable, Is.Zero, $"of {frames} frames, the earliest settled event was already too late to schedule");
         }
 
         [Test]
