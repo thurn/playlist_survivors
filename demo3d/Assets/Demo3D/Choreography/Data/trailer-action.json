@@ -60,13 +60,18 @@
       "combo": ["cleaveR@cut", "cleaveL", "cleaveR"],
       "spells": ["lightning@strong"],
       "grade": { "exposure": 0.05, "contrast": 12, "saturation": 0 } },
-    { "cut": "113.1", "environment": "forest", "viewWidthM": 52, "viewWidthToM": 65,
-      "path": { "via": [[14, 10], [50, 50], [70, 26]], "stepM": 1.9 },
-      "formation": { "kind": "converge", "streams": 6, "onScreen": 1300,
+    { "cut": "113.1", "environment": "forest", "viewWidthM": 36, "viewWidthToM": 44,
+      "path": { "via": [[38.1, 36.1], [36.5, 40], [38.1, 43.9], [42, 45.5], [45.9, 43.9], [47.5, 40], [45.9, 36.1], [42, 34.5]],
+                "stepM": 1.9, "loop": true },
+      "formation": { "kind": "vortex", "onScreen": 500,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2, "bigork": 0.4, "troll": 0.3 } },
-      "boss": "ahead", "shapeScale": 2.0, "densityCap": 1.8,
+      "boss": "ahead",
+      "bossFight": { "at": [42, 40], "attacks": [
+        { "kind": "breath", "windup": "113.2", "impact": "114.1" },
+        { "kind": "sweep", "windup": "114.4", "impact": "115.3" },
+        { "kind": "breath", "windup": "116.1", "impact": "116.3" } ] },
+      "shapeScale": 2.0, "densityCap": 1.8,
       "combo": ["slam@cut", "cleaveL", "cleaveR", "spin@114.3", "slam@final"],
-      "spells": ["ring@114.1", "laser@115.1", "laser@116.1"],
       "grade": { "contrast": 6, "saturation": 8 } }
   ]
 }

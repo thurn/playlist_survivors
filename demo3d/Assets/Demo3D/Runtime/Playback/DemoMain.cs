@@ -52,6 +52,8 @@ namespace Demo3D.Runtime.Playback
         StyleBeat _styleBeat;
         CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         Demo3D.Runtime.Arena.StructureShatter _breaks; // --structure-breaks: the struck pieces' shards (null without breaks)
+        BossTelegraphs _fight; // a trailer shot's boss fight zones (null without one)
+        int _heroRunAnn = -1;  // the hero's run clip's annotation: its dodge's pose
         bool _stylePosted;
         float _supersample = 1f;  // --supersample (Supersampling)
         TrailerLook _look;        // a trailer's grain, dirt and lens hits (null outside a trailer and with --no-trailer-look)
@@ -490,6 +492,7 @@ namespace Demo3D.Runtime.Playback
             _hero = _roster.Find("hero");
             _heroWalk = _hero.ClipIndex("walk");
             int heroWalkAnn = choreo.Clips.Find("hero walk");
+            _heroRunAnn = choreo.Clips.Find("hero run");
             if (heroWalkAnn >= 0 && choreo.Clips[heroWalkAnn].StrideM > 0) _heroStride = choreo.Clips[heroWalkAnn].StrideM;
             _clipToRoster = new int[choreo.Clips.Count];
             for (int c = 0; c < choreo.Clips.Count; c++)
@@ -684,6 +687,7 @@ namespace Demo3D.Runtime.Playback
             _shatter?.Frame(t);
             _breaks?.Frame(t);
             _shatterWatch.Stop();
+            _fight?.Frame(t);
             _evalWatch.Start();
             // The horde and the hero pose on the world's time: it holds through a heavy blow's hit-stop (BlowFeel).
             double world = Math.Max(_blows?.WorldTime(t) ?? t, _worldFrom);
@@ -723,6 +727,7 @@ namespace Demo3D.Runtime.Playback
             _drawWatch.Stop();
 
             var heroState = _eval.Evaluate(0, world, _heroStride, _hero.clips[_heroWalk].length, 0);
+            if (_fight != null && _heroRunAnn >= 0 && _fight.Dodge(world, out double dodgeFrom)) Dodging(ref heroState, world - dodgeFrom);
             var heroInst = _heroRenderer.Instances(0, 1);
             heroInst[0] = ToInstance(heroState, _hero, -1, 0);
             _heroBlade.Pose(_tl, world);
@@ -731,6 +736,20 @@ namespace Demo3D.Runtime.Playback
             _arena?.FollowHero(heroState.Position);
             _heroFeet = heroState.Position;
             _styleBeat?.Publish(feelT, _heroFeet); // the beat as heard, as the post feel
+        }
+
+        /// <summary>
+        /// The hero's dodge out of a boss attack's zone (trailer.md, "The boss fight") plays its run clip, a sprint from its
+        /// first footfall at 1.6x, blended in over 60 ms from whatever it was doing: <paramref name="since"/> seconds in.
+        /// </summary>
+        void Dodging(ref TimelineEvaluator.State st, double since)
+        {
+            int run = _clipToRoster[_heroRunAnn];
+            if (run < 0) return;
+            float length = _hero.clips[run].length;
+            st.B = st.A;
+            st.A = new TimelineEvaluator.Slot { Clip = _heroRunAnn, Time = Mathf.Repeat(0.1f * length + (float)since * 1.6f, length) };
+            st.Blend = Mathf.Clamp01((float)(since / 0.06));
         }
 
         MonsterInstance ToInstance(in TimelineEvaluator.State st, RosterAssets.TypeAssets asset, int type, uint seed)
@@ -887,7 +906,7 @@ namespace Demo3D.Runtime.Playback
             _crowd?.Dispose();
             _shatter?.Dispose();
             if (_shots == null) _breaks?.Dispose();
-            else foreach (var s in _shots) s.Structures?.Dispose(); // a trailer's _breaks is its current shot's
+            else foreach (var s in _shots) { s.Structures?.Dispose(); s.Fight?.Dispose(); } // a trailer's _breaks is its current shot's
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();

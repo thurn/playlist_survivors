@@ -422,6 +422,45 @@ namespace PS.Choreography
         }
     }
 
+    /// <summary>
+    /// A trailer shot's boss fight (trailer.md, "The boss fight"): the ground the boss holds (<see cref="At"/>) and its
+    /// telegraphed attacks, each a kind (<c>breath</c> or <c>sweep</c>) winding up on one beat and landing on a later one.
+    /// </summary>
+    public sealed class BossFightScript
+    {
+        public LayoutPoint At;
+        public BossAttackScript[] Attacks = new BossAttackScript[0];
+
+        public static BossFightScript Parse(JsonValue o, string what)
+        {
+            if (o.Type != JsonType.Object || !o.Has("at")) throw new FormatException(what + ": expected { \"at\": [x, y] or an area, \"attacks\": [...] }");
+            foreach (KeyValuePair<string, JsonValue> kv in o.Members)
+                if (kv.Key != "at" && kv.Key != "attacks") throw new FormatException(what + ": unknown field '" + kv.Key + "'");
+            var f = new BossFightScript { At = LayoutPoint.Parse(o["at"], what), Attacks = new BossAttackScript[o["attacks"].Count] };
+            for (int i = 0; i < f.Attacks.Length; i++) f.Attacks[i] = BossAttackScript.Parse(o["attacks"][i], what + " attack " + (i + 1));
+            return f;
+        }
+    }
+
+    /// <summary>One of a boss fight's attacks: its kind and the bar.beats its windup starts and its blow lands on.</summary>
+    public sealed class BossAttackScript
+    {
+        public string Kind, Windup, Impact;
+
+        public BossAttackKind AttackKind => Kind == "sweep" ? BossAttackKind.Sweep : BossAttackKind.Breath;
+
+        public static BossAttackScript Parse(JsonValue o, string what)
+        {
+            if (o.Type != JsonType.Object) throw new FormatException(what + ": expected { \"kind\", \"windup\", \"impact\" }");
+            foreach (KeyValuePair<string, JsonValue> kv in o.Members)
+                if (kv.Key != "kind" && kv.Key != "windup" && kv.Key != "impact") throw new FormatException(what + ": unknown field '" + kv.Key + "'");
+            var a = new BossAttackScript { Kind = o["kind"].AsString(), Windup = o["windup"].AsString(), Impact = o["impact"].AsString() };
+            if (a.Kind != "breath" && a.Kind != "sweep") throw new FormatException(what + ": unknown kind '" + a.Kind + "' (breath or sweep)");
+            if (a.Windup == null || a.Impact == null) throw new FormatException(what + ": needs a windup and an impact bar.beat");
+            return a;
+        }
+    }
+
     /// <summary>The level script (choreography.md, "The choreographer"): per song-map section, its targets.</summary>
     public sealed class LevelScript
     {
@@ -520,6 +559,12 @@ namespace PS.Choreography
         /// horde until a hero blow's hit shape reaches it, which smashes it and opens the ground. Empty, the default: none.
         /// </summary>
         public CrystalFormation[] Crystals = new CrystalFormation[0];
+        /// <summary>
+        /// A boss fight (its <c>bossFight</c>, trailer.md "The boss fight"; needs the boss rule): the boss holds the ground at
+        /// its <c>at</c> from the span's start, the hero's blows that reach it land as hits it survives, and its telegraphed
+        /// attacks wind up on the hero, who dodges out of each zone just before the blow. Null, the default: none.
+        /// </summary>
+        public BossFightScript BossFight;
 
         public const float DefaultDensityCap = 1.2f;
         static readonly string[] FormationKinds = { "charge", "vortex", "converge" };
@@ -607,7 +652,9 @@ namespace PS.Choreography
                 FormationStreams = root["formation"]["streams"].AsInt(0),
                 DensityCap = root["densityCap"].AsFloat(DefaultDensityCap),
                 Crystals = CrystalFormation.ParseList(root["crystals"], "level script"),
+                BossFight = root.Has("bossFight") ? BossFightScript.Parse(root["bossFight"], "level script bossFight") : null,
             };
+            if (ls.BossFight != null && ls.Boss == null) throw new FormatException("level script: a bossFight needs the boss rule (boss)");
             if (root.Has("comboOn"))
             {
                 GridEntry on = GridEntry.Parse("comboOn@" + root["comboOn"].AsString());

@@ -86,6 +86,13 @@ namespace Demo3D.Runtime.Playback
             foreach (var b in tl.Breaks)
                 if (b.Time >= from && b.Time < to && breaks.Add(b.Time))
                     raw.Add(new Hit { Time = b.Time, End = to, Position = new Vector3(b.Point.X, BreakMoments.BoltHeightM, b.Point.Y), Strength = 1f });
+            // A boss attack landing (trailer.md, "The boss fight") hits at full strength, centred on its zone.
+            foreach (var b in tl.BossAttacks)
+            {
+                if (b.Impact < from || b.Impact >= to) continue;
+                var c = b.Kind == BossAttackKind.Breath ? b.Origin + b.Direction * (0.45f * b.RadiusM) : b.Origin;
+                raw.Add(new Hit { Time = b.Impact, End = to, Position = new Vector3(c.X, 1f, c.Y), Strength = 1f });
+            }
             foreach (var a in tl.Actions)
             {
                 if (a.Kind != ActionKind.Attack || a.Entity != 0 || a.Impact < from || a.Impact >= to || breaks.Contains(a.Impact)) continue;

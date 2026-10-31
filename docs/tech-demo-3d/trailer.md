@@ -28,7 +28,9 @@ staged for it:
 - **Plausible survivors play.** The hero is never surrounded: they keep an
   open lane behind them and kite, as a player who is surrounded would be
   dead.
-- **Every monster dies to one blow.**
+- **Every monster dies to one blow,** except the dragon. The climax is a
+  boss fight: the dragon telegraphs attacks the hero dodges, takes the hero's
+  blows, and dies to the final slam.
 
 The trailer's job is to make a viewer want to play. That sets its goals:
 
@@ -42,7 +44,8 @@ The trailer's job is to make a viewer want to play. That sets its goals:
   horde's steps all land on the song's beat grid. Blows land on its major
   beats, each with its full windup and follow-through.
 - **Rising intensity.** Density, view width, cut pace and the hero's moves all
-  escalate to a climax that ends in a screen-clearing slam.
+  escalate to a climax: a fight with the dragon that ends in a
+  screen-clearing slam.
 - **No dead air.** Every shot opens on a blow. Between blows the hero runs,
   and the horde steps on every beat.
 
@@ -247,10 +250,15 @@ The trailer runs 60.5 s from first frame to silence:
 - **39.64 s: the final peak.** The cuts quicken: four bars of a charge down
   a wet neon street, then two bars of a vortex in the snow and two of
   converging streams in the crypt, lightning on the strong beats.
-- **52.03 s: the climax.** In the night forest, monsters flood in from six
-  directions, a dragon storms in, and lasers sweep the field on every eighth
-  note for the last two bars. The final slam, on the downbeat of bar 117 at
-  58.22 s, kills everything on screen.
+- **52.03 s: the climax, a dragon fight.** A flash cuts to the night forest,
+  where a dragon holds a clearing ringed by the horde. The hero's slam lands on
+  it, and for four bars they fight: the dragon winds up three attacks on the
+  beat, each a glowing zone on the ground under the hero (a cone of fire
+  breath, a tail sweep round it), and each time the hero dashes clear on the
+  beat before it lands and the blow misses, burning down the horde in the
+  zone instead. Between attacks the hero closes in and cuts at it, and it
+  flinches. The final slam, on the downbeat of bar 117 at 58.22 s, kills it
+  and everything on screen.
 - **58.22–59.00 s: the aftermath.** Two beats as the whole horde falls, with
   the shockwave and the embers. By the cut the field lies dead.
 - **59.00–60.50 s: black.** The picture cuts to black, and the music fades out
@@ -357,7 +365,7 @@ No shot is shorter than 2 bars.
 | 5 | 39.642–45.836 | 105–108 | neon | Charge | ~420 | 40 m | −90° |
 | 6 | 45.836–48.933 | 109–110 | snow | Vortex | ~450 | 40 m | 45° |
 | 7 | 48.933–52.029 | 111–112 | crypt | Converge, 3 streams | ~550 | 45 m | 180° |
-| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
+| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | The boss fight, the horde in a vortex round its arena | ~500 | 36→44 m | 0° |
 
 The columns:
 
@@ -378,11 +386,13 @@ The shot list escalates on four tracks at once:
 
 - **Moves.** Single blows in the duel; slams, cleaves and spins after the
   drop; lightning in the lava; spins and rings in the blossom vortex; then
-  lightning on the strong beats, and finally the lasers and the final slam.
-- **Density.** 3 monsters, then 420–760, then 1,300 at the climax.
+  lightning on the strong beats, and finally the dragon fight and the final
+  slam.
+- **Density.** 3 monsters, then 420–760. The climax holds its horde of about
+  500 back at the edge of the fight's arena, so the fight reads.
 - **View.** Tight for the duel and wide for the long shots. Final-peak
-  opens tighter at 40 m and widens shot by shot into the climax, the widest
-  of all.
+  opens tighter at 40 m and widens shot by shot, and the climax closes in
+  again to 36 m on the fight, easing out to 44 m by the final slam.
 - **Pace.** 8-bar shots through drop-2, then 4, 2 and 2 bars, until the
   climax plays unbroken.
 
@@ -439,24 +449,31 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
 7. **Crypt streams (crypt, converge, 2 bars).** Seen from the crypt's far
    side (heading 180°), three streams meet the hero; lightning strikes on
    the strong beats while they cleave at the meeting point.
-8. **Climax (forest, bar 113).** A white flash covers the cut, and the hero's
-   slam lands on 113.1 as monsters pour in from six directions.
-   - The boss enters at the cut from ahead of the hero, storming through the
-     horde. The path turns right at bar 116, so the boss stays in view on the
-     hero's flank rather than meeting them.
-   - Cleaves on the strong beats, a ring on 114.1 and a spin on 114.3.
-   - A laser fires on 115.1 and again on 116.1. Each lasts a bar, sweeping
-     the field and hitting everything in its line on every eighth note,
-     while the view widens from 52 to 65 m across the shot.
-   - Refill holds the flood at about 1,300 despite the lasers.
-   - The final slam on 117.1 kills every monster in view, the boss included.
-     The aftermath's two beats show the horde falling: its death clips play
-     faster where they must, so every body is down by three quarters of the
-     aftermath. Refill stops at the final slam, and the hero plays out the
-     slam's recovery.
+8. **Climax: the boss fight (forest, bar 113).** A white flash covers the cut
+   and the hero's slam lands on 113.1, on the dragon itself, in a clearing
+   the horde rings (see [The boss fight](#the-boss-fight)).
+   - The dragon holds the clearing's middle. The hero circles it on a loop
+     5.5 m out, and the horde, a vortex of about 500, presses at the arena's
+     edge 10 m out.
+   - Three telegraphed attacks: a fire breath (113.2 to 114.1), a tail sweep
+     (114.4 to 115.3) and a second breath (116.1 to 116.3). In the crystal
+     cut the sweep comes first. Each zone glows under the hero from its
+     windup; the hero dashes out of it on the beat before it lands, and the
+     blow misses, burning down the monsters in it.
+   - Between the attacks the hero's blows land on the dragon: the slam on
+     the cut, cleaves on the strong beats and a spin on 114.3, five hits in
+     all. No blow falls on an attack's impact, so each miss reads alone.
+   - The view closes in to 36 m on the fight and eases out to 44 m.
+   - The final slam on 117.1 kills every monster in view, the dragon
+     included. The aftermath's two beats show the horde falling: its death
+     clips play faster where they must, so every body is down by three
+     quarters of the aftermath. Refill stops at the final slam, and the hero
+     plays out the slam's recovery.
 
 **Outcome (ps-7mx.3).** The re-cut as shipped, from `trailer --checks`
-(the same for every roster set). Evidence is in
+(the same for every roster set). Its climax row is the converge and lasers
+that ps-b5z.5 replaced with the boss fight (see
+[The boss fight](#the-boss-fight) for its numbers). Evidence is in
 [demo3d/evidence/trailer/recut](../../demo3d/evidence/trailer/recut/README.md).
 
 | # | Bars | Environment | Formation | On screen / target | View | `shapeScale` | Swings/s | Kills per swing (mean, peak) | Kite | Blocks | Lane |
@@ -578,10 +595,11 @@ Nothing on screen ever stands around. These are the **liveness** rules:
 
 ### Kills
 
-Every monster dies to one blow:
+Every monster dies to one blow, but the boss fights:
 
 - **One hit kills every rank.** Fodder, elites and the boss all have one hit
-  point.
+  point. The fight's boss takes the hero's blows as hits it survives (see
+  [The boss fight](#the-boss-fight)).
 - **Every monster a blow touches dies.** The kill budget is off, so no death
   is held back.
 - **Trampling kills too.** Small monsters the boss tramples die, as they do
@@ -590,6 +608,8 @@ Every monster dies to one blow:
   the blow lands, with no build-up. Under `--monster-style crystal`, dying
   monsters break into glass shards, and the shatter starts on that frame too.
 - **The boss dies once, to the final slam** (see [The boss](#the-boss)).
+- **The boss's attacks kill what they land on.** Every monster in a boss
+  attack's zone dies on its impact; the hero has dodged out of it.
 
 ### Picture
 
@@ -660,14 +680,19 @@ climax:
       "hero": { "at": "camp", "holdGround": true },
       "duel": { "bigork": 2, "troll": 1 },
       "combo": ["slashR@anchor", "spin@anchor", "slashL@anchor"] },
-    { "cut": "113.1", "environment": "forest", "viewWidthM": 52, "viewWidthToM": 65,
-      "path": { "via": [[14, 10], [50, 50], [70, 26]], "stepM": 1.9 },
-      "formation": { "kind": "converge", "streams": 6, "onScreen": 1300,
+    { "cut": "113.1", "environment": "forest", "viewWidthM": 36, "viewWidthToM": 44,
+      "path": { "via": [[38.1, 36.1], [36.5, 40], [38.1, 43.9], [42, 45.5],
+                        [45.9, 43.9], [47.5, 40], [45.9, 36.1], [42, 34.5]], "stepM": 1.9, "loop": true },
+      "formation": { "kind": "vortex", "onScreen": 500,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
-      "boss": "ahead", "shapeScale": 2.0, "densityCap": 1.8, "grade": { "contrast": 6, "saturation": 8 },
-      "combo": ["slam@cut", "cleaveL", "cleaveR", "spin@114.3", "slam@final"],
-      "spells": ["ring@114.1", "laser@115.1", "laser@116.1"] } ] }
+      "boss": "ahead",
+      "bossFight": { "at": [42, 40], "attacks": [
+        { "kind": "breath", "windup": "113.2", "impact": "114.1" },
+        { "kind": "sweep", "windup": "114.4", "impact": "115.3" },
+        { "kind": "breath", "windup": "116.1", "impact": "116.3" } ] },
+      "shapeScale": 2.0, "densityCap": 1.8, "grade": { "contrast": 6, "saturation": 8 },
+      "combo": ["slam@cut", "cleaveL", "cleaveR", "spin@114.3", "slam@final"] } ] }
 ```
 
 Top-level fields:
@@ -719,6 +744,12 @@ Per-shot fields:
 - **`boss`**: the direction the boss enters from: `ahead`, `behind`, `left`,
   `right`, or a named area. Directions are relative to the hero's direction
   of travel at the cut.
+- **`bossFight`**: the climax's boss fight (needs `boss` and a final slam):
+  `at`, the ground the dragon holds (metres or a named area), and `attacks`,
+  each `{ "kind": "breath" | "sweep", "windup": bar.beat, "impact": bar.beat }`.
+  A windup is a beat from the cut on; its impact lands on a strong beat or an
+  accent at least two beats later, before the final slam and after the
+  attack before has landed. See [The boss fight](#the-boss-fight).
 - **`grade`**: the shot's colour-grade offsets (see [Look](#look)).
 - **`prerollBeats`**: how many beats the shot simulates before its cut
   (default 16).
@@ -825,7 +856,8 @@ today:
   of 0. It rotates with `yawDeg`, so spawns stay outside the rotated view and
   on-screen counts stay right.
 - **A screen-wide final slam.** The `final` slam's ring covers the whole view.
-- **The boss rule** (see [The boss](#the-boss)).
+- **The boss rule** (see [The boss](#the-boss)), and its fight
+  (`bossFight`, see [The boss fight](#the-boss-fight)).
 
 **Normal runs must not change.** Without these fields, demo3d's and demo2d's
 timelines stay byte-identical to today's. The existing tests that pin each
@@ -1007,26 +1039,96 @@ own numbers; the re-cut's shots are in [The Shot List](#the-shot-list)):
 
 ### The boss
 
-The boss, a dragon in every roster set, appears only in the climax. Its job
-is to make the final slam bigger. These rules are part of the shot simulation:
+The boss, a dragon in every roster set, appears only in the climax. With
+the boss rule (a shot's `boss`), it takes no spell and dies only to the
+final slam:
 
-- **It enters from the shot's `boss` direction.** It appears outside the view
-  on the climax's cut and storms in through the horde, trampling small
-  monsters in its way. The level script's existing `bossFrom` setting, which
-  walks the boss in from a named direction, already moves it this way.
-- **No blow reaches it early.** It never comes closer to the hero than the
-  shot's largest hit shape, plus 1 m. With the climax's `shapeScale` of 2.0,
-  the slam's 3.6 m ring reaches 7.2 m, so the boss keeps at least 8.2 m away.
-  No blow passes through it.
-- **It never stands.** Backing off from the hero with the horde packed
-  behind it, it prowls round the hero instead, on along the hero's travel
-  (ps-7mx.3: the climax's four bars bring it to its keep-out beats before
-  the final slam, where it stood boxed in).
-- **Spells skip it.** The laser, rings and lightning ignore it until the final
-  slam.
-- **The final slam kills it.** Nothing else fires on that beat, so the slam is
-  the first and only hit it takes. It dies on 117.1 with everything else in
-  view.
+- **The final slam kills it.** Nothing else fires on that beat. It dies on
+  117.1 with everything else in view.
+- **Spells skip it.** The rings, lightning and lasers ignore it.
+- **It never stands.** It walks, prowls or plays a clip on every beat.
+
+Both cuts' climaxes fight it (`bossFight`, below). A boss rule without a
+fight, which no checked-in cut uses now, keeps the first cut's prowling
+boss: it enters outside the view on the cut from the shot's `boss` side
+(relative to the hero's travel), storms in trampling the small fry, keeps
+beyond the shot's largest hit shape plus 1 m so no blow reaches it, prowls
+round the hero when the horde packs behind it (ps-7mx.3), and the final
+slam is the only hit it takes.
+
+### The boss fight
+
+The climax ends each cut on an obvious fight with the dragon, where
+positioning matters (ps-b5z.5, the operator's note: "maybe the boss gets
+off some attacks the player dodges"). The shot's `bossFight` makes it part
+of the shot simulation: every attack, zone and dodge is a timeline event,
+and the client only draws them.
+
+- **The dragon holds its ground.** It stands at the fight's `at` from the
+  pre-roll's start, so the cut reveals it there. Between attacks it steps
+  toward the hero, up to 2.5 m from its ground and never onto the hero,
+  faces them, and tramples whatever it steps through. On its mark it prowls
+  round with the hero.
+- **The hero circles it.** The climax's kite path is a loop 5.5 m round
+  the dragon's ground, so the hero's cleaves (4.8 m at `shapeScale` 2.0)
+  reach it.
+- **The horde holds back at the arena's edge.** In a fight, formation
+  monsters keep out of a 10 m circle round the dragon's ground: one inside
+  walks out, and a step that would cross the edge ends on it, or prowls
+  round it on the hero's side. The fight reads in a clear arena ringed by a
+  vortex of about 500, and the hero's blows still cut the front rank.
+- **Telegraphed attacks on the music.** Each attack winds up on a beat and
+  lands on a later strong beat or accent, at least two beats on. On the
+  windup the sim places its zone where the hero will be through the windup,
+  plants the dragon and turns it to the zone:
+  - a **breath** is a cone from the dragon's head, 15 m long and 26–40°
+    either side, aimed at the middle of the hero's strafe, drawn with the
+    dragon's first attack clip (its head strike);
+  - a **sweep** is a disc round the dragon, at least 6.5 m and 1.5 m past the
+    hero, drawn with its second attack clip (its tail whip).
+  - The clip is fitted to land on the impact, slowed to at most half speed
+    to fill the windup. The dragon stays planted until a beat after the
+    blow, then steps on as the clip plays out.
+- **Positioning matters.** While an attack winds up, the hero strafes at
+  55% of its stride, so it stays in the zone. On the last beat before the
+  blow it dodges: a dash that ends 0.06 s before the impact, sideways out of
+  a breath's cone (on along the path's side first) or straight out of a
+  sweep's disc, its body 1.4 m clear of the edge, to whichever landing the
+  fewest monsters crowd. The blow lands on the empty zone, killing every
+  monster it holds, which also clears ground for the fight. No hero blow
+  falls on an attack's impact, so each miss reads alone.
+- **The hero fights back.** Every hero blow that reaches the dragon is a hit
+  it survives: a heavy spark and a flinch (its hit clip) and a half-metre
+  recoil between attacks, a flash with no clip while it is mid-attack, so
+  the attack plays on. The final slam kills it.
+- **Payoffs on the impact frame.** Each attack's fire (bursts down the cone,
+  growing with it) or sweep (a giant slash round the dragon, shocks round
+  the disc's edge), its sound, the heaviest flash and shake a break gets,
+  and a full-strength lens hit all land on the impact.
+
+The client (`BossTelegraphs`) draws each zone on the ground from its windup
+to its impact in the Demo3D/BossTelegraph shader: a bright rim, a dim fill
+charging outward from the dragon to reach the rim on the impact, hazard
+bands streaming outward, a throb on each beat, and a white-hot flash as the
+blow lands. A breath's zone burns orange, a sweep's blood red. The hero's
+dodge plays its run clip at 1.6× and kicks up dust where it starts and
+lands.
+
+**Outcome (ps-b5z.5).** Both cuts' climaxes as shipped, from
+`trailer --checks` (the dodges are the hero's distance from the dodge's start
+to the impact):
+
+| Cut | Ground | Attacks (windup to impact) | Dodges | Hits on screen | On screen / target |
+|---|---|---|---|---|---|
+| action | (42, 40) | breath 113.2–114.1, sweep 114.4–115.3, breath 116.1–116.3 | DODGES_ACTION | HITS_ACTION | ONSCREEN_ACTION / 500 |
+| crystal | (36, 30) | sweep 113.2–114.1, breath 114.4–115.3, breath 116.1–116.3 | DODGES_CRYSTAL | HITS_CRYSTAL | ONSCREEN_CRYSTAL / 500 |
+
+- Evidence is in
+  [demo3d/evidence/trailer/fight](../../demo3d/evidence/trailer/fight/README.md):
+  each attack's telegraph, dodge and impact in both cuts.
+- The lasers, the ring and the six converging streams of the first cut's
+  climax are gone: the fight replaces them, and the horde is held back
+  rather than flooding the frame.
 
 ### Environments in one player
 
@@ -1420,8 +1522,10 @@ just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
   wins (`DemoMain.UseTrailerStyle`).
 - **Shattering is the centrepiece.** Fifteen formations burst over seven of
   the eight shots, one every three to five seconds from the drop to the
-  climax, each to the hero's blow on a strong beat (see
-  [Crystal formations](#crystal-formations)).
+  climax, each to the hero's blow on a strong beat, but the climax's two,
+  which the dragon's breaths smash as they miss the hero (see
+  [Crystal formations](#crystal-formations) and
+  [The boss fight](#the-boss-fight)).
 
 | # | Trailer s | Bars | Environment | Formation | Crystals smashed (trailer s, bar.beat) |
 |---|---|---|---|---|---|
@@ -1432,7 +1536,7 @@ just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
 | 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams (400) | 41.19 (106.1), 44.29 (108.1) |
 | 6 | 45.836–48.932 | 109–110 | crypt | Vortex | 47.38 (110.1) |
 | 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | 50.48 (112.1) |
-| 8 | 52.029–59.0 | 113–117.2 | forest | Converge, 6 streams, plus the boss | 54.35 (114.3), 56.67 (116.1) |
+| 8 | 52.029–59.0 | 113–117.2 | forest | The boss fight, a vortex round its arena | 55.90 (115.3), 57.45 (116.3), both by the dragon's breath |
 
 ### The crystal look
 
@@ -1502,6 +1606,11 @@ A shot's `crystals` field places them:
   past its edge) breaks it on that blow's impact: a strong beat, the
   fight's own beat. Its break event has no projectile, from where the hero
   stands to the formation's nearest point (`Sim.SmashCrystals`).
+- **So do the dragon's attacks.** In a boss fight, an attack whose zone
+  reaches a formation smashes it on its impact, from the zone's origin (the
+  dragon's head or body): the crystal cut's climax stands two in the horde
+  ring, 14.5 m out from the dragon's ground and beyond the hero's reach,
+  where its two breaths reach them.
 - **The ground opens.** Its footprint leaves the obstacle map as a structure
   break's does, and the fields rebuild over the next beat, so the horde pours
   through where it stood.
@@ -1546,8 +1655,8 @@ at 120 m/s, harder and higher than stone
 **The checks** (see [Checks and Evidence](#checks-and-evidence)):
 
 - `breaks on screen`: each formation stands wholly in view (its footprint
-  inside the frame) when it breaks, and falls to a hero blow landing on that
-  instant.
+  inside the frame) when it breaks, and falls to a hero blow or a boss attack
+  landing on that instant.
 - `every crystal breaks on screen`: every formation of a shot breaks from its
   cut to its end, none unseen in the pre-roll, none left standing.
 
@@ -1753,12 +1862,24 @@ These checks fail the run, naming the shot, the time and the monster:
 - **An open lane.** On every beat of the visible span, up to any final slam,
   the bodies of the monsters within 6 m of the hero leave a gap round them
   at least 60° wide.
-- **One hit kills.** No monster takes a hit and survives.
-- **The boss.** It takes exactly one hit, from the final slam on 117.1.
+- **One hit kills.** No monster takes a hit and survives, but the fight's
+  boss.
+- **The boss.** It dies to the final slam on 117.1 and to nothing before.
+  Without a fight that is the only hit it takes; in a fight it takes at
+  least three of the hero's blows on screen first, and no spell's tick.
+- **The boss fight.** In a shot with a `bossFight` the dragon lands every
+  attack, at least two, each telegraphed and dodged: its windup on a beat
+  and its blow, the dragon's attack clip, on a strong beat or an accent at
+  least two beats later; the hero inside the zone as it winds up and still
+  as the dodge begins; the dodge ending at most 0.15 s before the blow; the
+  hero's body out of the zone as it lands; the hero, the dragon and the
+  zone's origin on screen then. The dragon is on screen on every beat from
+  the cut to the final slam. A shot without a fight has no attacks.
 - **The final slam.** It kills every monster in view (one that left the run
   off screen before it isn't there to survive it).
 - **Breaks on screen.** Every structure break strikes in view; every crystal
-  formation stands wholly in view as the hero's blow smashes it.
+  formation stands wholly in view as the hero's blow (or the dragon's
+  attack) smashes it.
 - **Every crystal breaks on screen.** Each shot's formations all break from
   its cut to its end (see [Crystal formations](#crystal-formations)).
 - **No visible spawns.** Every spawn lies outside the rotated view.

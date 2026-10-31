@@ -52,6 +52,8 @@ namespace PS.Choreography
         /// <summary>The grid position the combo's plain entries land on (the level script's <c>comboOn</c>): the major beats by default.</summary>
         public string BlowsOn = Trailer.DefaultBlowsOn;
         public string Boss;
+        /// <summary>The climax's boss fight (trailer.md, "The boss fight"): the ground the boss holds and its telegraphed attacks. Null: none.</summary>
+        public BossFightScript BossFight;
         public float ShapeScale = 1f, DensityCap = Trailer.DefaultDensityCap;
         public TrailerGrade Grade = new TrailerGrade();
         public int PrerollBeats = Trailer.DefaultPrerollBeats;
@@ -96,6 +98,8 @@ namespace PS.Choreography
         /// </summary>
         public const string DefaultBlowsOn = "strong";
         public const float ComboMinSpeed = 0.8f, ComboMaxSpeed = 1.5f;
+        /// <summary>A boss attack's telegraph lasts at least this many beats, from its windup to its impact (trailer.md, "The boss fight").</summary>
+        public const int MinTelegraphBeats = 2;
         static readonly string[] Formations = { "charge", "vortex", "converge" };
         static readonly string[] BossSides = { "ahead", "behind", "left", "right" };
 
@@ -177,6 +181,7 @@ namespace PS.Choreography
                 s.SpanFrom = Math.Max(0, map.TimeOfBeatIndex(map.BeatIndexAt(s.Cut) - s.PrerollBeats));
                 ValidateEntries(s, tr, map, grid);
                 ValidateBreaks(s, map, grid);
+                ValidateFight(s, tr, map, grid);
             }
             return tr;
         }
@@ -185,7 +190,7 @@ namespace PS.Choreography
         {
             string what = "shot " + n;
             CheckKeys(o, what, "cut", "environment", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
-                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "crystals", "note");
+                "boss", "bossFight", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "crystals", "note");
             var s = new TrailerShot
             {
                 Number = n,
@@ -235,6 +240,12 @@ namespace PS.Choreography
             s.HeroAt?.Resolve(layout, what + " hero");
             if (s.Path != null) for (int i = 0; i < s.Path.Via.Length; i++) s.Path.Via[i].Resolve(layout, what + " path waypoint " + (i + 1));
             if (s.Boss != null && Array.IndexOf(BossSides, s.Boss) < 0) new LayoutPoint { Area = s.Boss }.Resolve(layout, what + " boss");
+            if (o.Has("bossFight"))
+            {
+                s.BossFight = BossFightScript.Parse(o["bossFight"], what + " bossFight");
+                if (s.Boss == null) throw new FormatException(what + ": a bossFight needs the boss (boss)");
+                s.BossFight.At.Resolve(layout, what + " bossFight");
+            }
             if (o.Has("formation"))
             {
                 JsonValue f = o["formation"];
@@ -344,6 +355,34 @@ namespace PS.Choreography
             }
         }
 
+        /// <summary>
+        /// A shot's boss fight: each attack winds up on a beat from the cut on and lands on a strong beat or an accent at
+        /// least <see cref="MinTelegraphBeats"/> beats later, before the final slam, after the attack before it has landed.
+        /// </summary>
+        static void ValidateFight(TrailerShot s, Trailer tr, SongMap map, BeatGrid grid)
+        {
+            if (s.BossFight == null) return;
+            string what = "shot " + s.Number + " bossFight";
+            if (!s.HasFinal) throw new FormatException(what + ": the boss dies to the final slam, which the shot lacks");
+            double final = FinalTime(tr, map, grid), last = double.NegativeInfinity;
+            for (int i = 0; i < s.BossFight.Attacks.Length; i++)
+            {
+                BossAttackScript a = s.BossFight.Attacks[i];
+                string at = what + " attack " + (i + 1);
+                double w, t;
+                try { w = map.TimeOfBarBeat(a.Windup, grid); t = map.TimeOfBarBeat(a.Impact, grid); }
+                catch (FormatException ex) { throw new FormatException(at + ": " + ex.Message); }
+                GridPoint pw = grid.Points[grid.Nearest(w)], pt = grid.Points[grid.Nearest(t)];
+                if (!pw.Has(GridFlags.Beat)) throw new FormatException(at + ": its windup " + a.Windup + " is not on a beat");
+                if ((pt.Flags & (GridFlags.Strong | GridFlags.Accent)) == 0) throw new FormatException(at + ": its impact " + a.Impact + " is not on a strong beat or an accent");
+                if (w < s.Cut - 1e-9 || t >= final - 1e-9) throw new FormatException(at + ": it must wind up from the cut on and land before the final slam");
+                if (map.BeatIndexAt(t) - map.BeatIndexAt(w) < MinTelegraphBeats - 1e-6)
+                    throw new FormatException(at + ": its telegraph (" + a.Windup + " to " + a.Impact + ") is shorter than " + MinTelegraphBeats + " beats");
+                if (w < last - 1e-9) throw new FormatException(at + ": it winds up before the attack before it lands");
+                last = t;
+            }
+        }
+
         /// <summary>The final slam's position: the downbeat of the cut to black's bar.</summary>
         static string FinalPos(Trailer tr)
         {
@@ -396,6 +435,13 @@ namespace PS.Choreography
                 set.Add(Pair("heroPath", Object(Pair("via", JsonValue.OfItems(via)), Pair("stepM", JsonValue.OfNumber(s.Path.StepM)), Pair("loop", JsonValue.OfBool(s.Path.Loop)))));
             }
             if (s.Boss != null) set.Add(Pair("boss", JsonValue.OfString(s.Boss)));
+            if (s.BossFight != null)
+            {
+                var attacks = new List<JsonValue>();
+                foreach (BossAttackScript a in s.BossFight.Attacks)
+                    attacks.Add(Object(Pair("kind", JsonValue.OfString(a.Kind)), Pair("windup", JsonValue.OfString(a.Windup)), Pair("impact", JsonValue.OfString(a.Impact))));
+                set.Add(Pair("bossFight", Object(Pair("at", Point(s.BossFight.At)), Pair("attacks", JsonValue.OfItems(attacks)))));
+            }
             if (s.Duel != null) set.Add(Pair("duel", Mix(s.Duel)));
             if (s.Crystals.Length > 0)
             {

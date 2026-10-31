@@ -91,6 +91,13 @@ public readonly struct BreakEvent {    // the dump's "breaks", only when any
     public readonly string Target;     // "courtyard/south-west"
     public readonly int Projectile;    // the bolt's entity
     public readonly Vector2 Origin, Point; }  // where it flew from and struck
+public readonly struct BossAttack {    // the dump's "bossAttacks", only in a boss fight
+    public readonly BossAttackKind Kind;          // Breath (a cone) or Sweep (a disc)
+    public readonly int Boss;
+    public readonly double Windup, Impact;        // the telegraph, on the grid
+    public readonly double DodgeFrom, DodgeTo;    // the hero's dodge, just before the impact
+    public readonly Vector2 Origin, Direction;    // the cone's apex and axis, or the disc's centre
+    public readonly float RadiusM, HalfAngle; }   // length or radius; half-angle (π for a disc)
 ```
 
 A `Tick` is a repeat hit from a lingering effect, such as the laser's sweep
@@ -552,12 +559,13 @@ included).
 | `shapeScale` | the feedback | A fixed scale for the hero's and spells' hit shapes, with the kill-rate feedback off. |
 | `yawDeg` | 0 | The camera's heading, clockwise seen from above. `ViewGeometry` turns its trapezoid by it, so spawns stay outside the turned view and the counts match it. The timeline carries it as `ViewYawDeg` (not in the dump). |
 | `viewWidthToM` | none | The zoom eases from the section's width at the cut (or the span's start) to this at the span's end. |
-| `boss` | none | The boss rule: `ahead`, `behind`, `left`, `right` (relative to the hero's travel at the cut) or a named area. The roster's boss enters there outside the view on the cut and walks in, trampling. It keeps beyond the shot's largest scaled hit shape plus 1 m, backing off when the hero closes in. No blow or spell touches it until the final slam, which kills it. Needs `final`. |
+| `boss` | none | The boss rule: `ahead`, `behind`, `left`, `right` (relative to the hero's travel at the cut) or a named area. The roster's boss enters there outside the view on the cut and walks in, trampling. It keeps beyond the shot's largest scaled hit shape plus 1 m, backing off when the hero closes in. No blow or spell touches it until the final slam, which kills it. Needs `final`. With `bossFight` it fights instead (below). |
 | `duel` | none | A fixed cast by type and count, with no refill and no opening horde. Its k-th member meets the k-th fixed combo entry: it starts a third of a turn from the last, as far out as it walks by that blow, so it arrives just inside its reach then. |
 | `formation` | none | `{ "kind": "charge" \| "vortex" \| "converge", "streams": 2-6 }`, with a `heroPath`: the horde's opening placement, refill and never-jam steering (below). |
 | `densityCap` | 1.2 | A formation's refill spawns only where fewer than this many monsters stand per m² within 2 m. |
 | `comboOn` | `beat` | The grid position plain combo entries play on, such as `strong` (the trailer's blows on the major beats); positioned entries keep their own. |
 | `crystals` | none | Crystal formations, `[{ "at": [x, y] or an area, "radiusM": 2.2, "heightM": 10 }]` ([Trailer Mode](trailer.md), "Crystal formations"). The run's layout is the arena's with a round blocking footprint for each after its own placements (`GroundLayout.WithCrystals`), so the hero's path and the horde route round them. The first hero blow whose hit shape reaches one (a ring's or arc's reach past its edge, a line's length and width) smashes it: a break event with no projectile on the blow's impact, and its footprint leaves the map as a structure break's does. The timeline carries them as `Crystals`. One in a structure or off the ground fails. |
+| `bossFight` | none | The boss fight ([Trailer Mode](trailer.md), "The boss fight"), `{ "at": [x, y] or an area, "attacks": [{ "kind": "breath" or "sweep", "windup": bar.beat, "impact": bar.beat }] }`. Needs `boss`. The boss stands at `at` from the span's start and steps toward the hero from there; formation monsters keep 10 m clear of it. On each windup the sim places the attack's zone (a breath's cone from the boss's head toward the hero's strafe, a sweep's disc round the boss past the hero) and fits the boss's attack clip (`attack`, or `attack2` for a sweep) to land on the impact; the hero strafes at 55% of its stride through the windup and dodges out on the beat before the impact, ending 0.06 s before it; the impact kills every monster in the zone. The hero's blows that reach the boss are hits it survives (a hit clip between attacks, a flash mid-attack). The timeline carries the attacks as `BossAttacks`, each with its zone and the dodge's times. |
 
 The combo and spell grid gains the trailer's positions: `cut`, `final`,
 `anchor` (the next unused anchor of a free section, from the cut on, or the

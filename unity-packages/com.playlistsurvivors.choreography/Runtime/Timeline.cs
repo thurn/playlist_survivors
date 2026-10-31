@@ -58,6 +58,8 @@ namespace PS.Choreography
         public BreakEvent[] Breaks = new BreakEvent[0];
         /// <summary>A trailer shot's crystal formations (<see cref="CrystalPiece"/>), in its file's order; empty elsewhere.</summary>
         public CrystalPiece[] Crystals = new CrystalPiece[0];
+        /// <summary>A trailer shot's boss fight attacks (<see cref="BossAttack"/>), sorted by impact; empty elsewhere.</summary>
+        public BossAttack[] BossAttacks = new BossAttack[0];
 
         public string[] TypeNames, ProjectileNames, ClipNames, EffectNames, SoundNames;
         public float[] TypeRadii;

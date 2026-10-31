@@ -116,6 +116,20 @@ namespace PS.Choreography
                 o.EndArray().Newline();
             }
 
+            if (tl.BossAttacks.Length > 0)   // only in a trailer shot with a boss fight
+            {
+                o.Key("bossAttacks").BeginArray().Newline();
+                foreach (BossAttack b in tl.BossAttacks)
+                {
+                    o.BeginObject().Field("kind", b.Kind == BossAttackKind.Breath ? "breath" : "sweep").Field("boss", b.Boss)
+                        .Field("windup", b.Windup, T).Field("impact", b.Impact, T).Field("dodgeFrom", b.DodgeFrom, T).Field("dodgeTo", b.DodgeTo, T);
+                    o.Key("origin").BeginArray().Value(b.Origin.X, P).Value(b.Origin.Y, P).EndArray();
+                    o.Key("direction").BeginArray().Value(b.Direction.X, P).Value(b.Direction.Y, P).EndArray();
+                    o.Field("radiusM", b.RadiusM, P).Field("halfAngle", b.HalfAngle, A).EndObject().Newline();
+                }
+                o.EndArray().Newline();
+            }
+
             o.Key("framing").BeginArray().Newline();
             for (int i = 0; i < tl.Framing.Length; i++)
             {

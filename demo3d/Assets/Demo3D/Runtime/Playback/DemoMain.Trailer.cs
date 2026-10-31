@@ -55,6 +55,7 @@ namespace Demo3D.Runtime.Playback
             public CrystalShatter.BreakEvent[] Breaks = Array.Empty<CrystalShatter.BreakEvent>();
             public BreakMoments Moments = BreakMoments.None;         // its structure breaks (its breaks field)
             public Demo3D.Runtime.Arena.StructureShatter Structures; // their shards on screen (null without breaks)
+            public BossTelegraphs Fight;      // its boss fight's zones (null without one)
             public double From;               // its first visible song time: the cut, or with --from-preroll its pre-roll's start
             public int Liveness = -1;         // --overlay: its liveness violations (TrailerChecks)
         }
@@ -210,12 +211,18 @@ namespace Demo3D.Runtime.Playback
                     s.Moments = BreakMoments.Of(tl, layout);
                     s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name, tl.Crystals, CrowdLibrary.Load());
                 }
-                s.Feel = new CameraFeel(tl, s.Blows, s.Moments.Count > 0 ? s.Moments.Shakes() : null);
+                // The shot's boss fight (trailer.md, "The boss fight"): its zones, and its blows' flashes, shakes and dust.
+                if (tl.BossAttacks.Length > 0) s.Fight = new BossTelegraphs(tl, transform);
+                var shakes = new List<(double, float)>(s.Moments.Shakes());
+                if (s.Fight != null) shakes.AddRange(s.Fight.Shakes());
+                s.Feel = new CameraFeel(tl, s.Blows, shakes.Count > 0 ? shakes : null);
                 if (_fx != null)
                 {
                     s.Effects = NewEffectDriver(tl);
                     s.Effects.Blows = s.Blows;
-                    if (s.Moments.Count > 0) s.Effects.SetBursts(s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem, Demo3D.Runtime.Arena.CrystalFormations.Gem));
+                    var bursts = s.Moments.Count > 0 ? s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem, Demo3D.Runtime.Arena.CrystalFormations.Gem) : new List<BreakMoments.Burst>();
+                    if (s.Fight != null) bursts.AddRange(s.Fight.Bursts());
+                    if (bursts.Count > 0) s.Effects.SetBursts(bursts);
                 }
                 if (_shatter != null)
                 {
@@ -264,6 +271,7 @@ namespace Demo3D.Runtime.Playback
                     {
                         flashes.AddRange(PostFeel.HitFlashes(s.Timeline, amounts, s.From, s.Info.End));
                         breakFlashes.AddRange(s.Moments.Flashes());
+                        if (s.Fight != null) breakFlashes.AddRange(s.Fight.Flashes());
                     }
                 _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, breakFlashes, cutFlashes, grades);
             }
@@ -306,6 +314,9 @@ namespace Demo3D.Runtime.Playback
             _shatter?.Retarget(s.Timeline, s.Breaks); // its shards so far go
             _breaks?.Rewind(); // the shot before's broken structures stand again: each shot's simulation starts whole
             _breaks = s.Structures;
+            _fight?.Show(false);
+            _fight = s.Fight;
+            _fight?.Show(true);
             _worldFrom = s.From;  // no hit-stop from before the shot
             _slotBase = i << 20;
             _rig.YawDeg = s.Info.YawDeg; // the camera jumps to the shot's framing (Draw reads its framing track)

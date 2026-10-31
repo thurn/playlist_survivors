@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace PS.Choreography
 {
-    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing, MonsterBolt, Break }
+    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing, MonsterBolt, Break, BossAttack }
 
     struct Impact
     {
@@ -206,6 +206,15 @@ namespace PS.Choreography
         int goalBudget, openLines;            // a rebuild's slices: cells per tick, and the open field's lines per tick
         int tickNavCells, maxTickNavCells, goalFieldRebuilds;   // SimTickTiming's counts of the rebuilds' work
 
+        // The boss fight (the shot's bossFight, trailer.md "The boss fight"): null without one, and the run is as before.
+        readonly FightAttack[] fight;
+        readonly BossAttack[] fightZones;     // each attack's zone, placed on its windup
+        readonly bool[] fightPlaced;
+        readonly double[] fightDodgeFrom, fightDodgeTo, fightClipStart, fightClipEnd;
+        readonly int bossAttack2Clip = -1;    // the boss's second attack clip (its tail), else its first
+        int fightBoss = -1;                   // the boss's entity, once in
+        readonly List<BossAttack> bossAttacks = new List<BossAttack>();
+
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
             Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false,
             SimTuning tuning = null, ShotRules shot = null)
@@ -292,6 +301,15 @@ namespace PS.Choreography
                 }
             }
             if (this.shot.Path != null) pathNext = this.shot.HeroStart == this.shot.Path[0] && this.shot.Path.Length > 1 ? 1 : 0;
+            if (this.shot.Fight != null)
+            {
+                fight = this.shot.Fight;
+                int n = fight.Length;
+                fightZones = new BossAttack[n];
+                fightPlaced = new bool[n];
+                fightDodgeFrom = new double[n]; fightDodgeTo = new double[n]; fightClipStart = new double[n]; fightClipEnd = new double[n];
+                if (this.shot.BossType >= 0) bossAttack2Clip = clips.Find(roster.Monsters[this.shot.BossType].Name + " attack2");
+            }
             stats = new SectionStats[map.Sections.Length];
             statTicks = new int[map.Sections.Length];
             for (int i = 0; i < stats.Length; i++)
@@ -601,7 +619,7 @@ namespace PS.Choreography
             if (bi >= 0 && grid.IsDownbeat[bi] && tb > barStart + 1e-6) BarFeedback(tb);
             if (nav != null) FlowBeat(tb, tnext);
             if (!populated) { InitialPopulation(tb); populated = true; }
-            if (shot.BossType >= 0 && !bossEntered && (double.IsNaN(shot.Cut) || tb >= shot.Cut - 1e-9)) BossRuleEnter(tb);
+            if (shot.BossType >= 0 && !bossEntered && (fight != null || double.IsNaN(shot.Cut) || tb >= shot.Cut - 1e-9)) BossRuleEnter(tb);
             beatSerial++;
             bool free = map.Sections[s].Feel == SectionFeel.Free;
             var view = View(viewWidth > 0 ? viewWidth : plan.ViewWidth);
@@ -611,6 +629,7 @@ namespace PS.Choreography
             if (bi >= 0)   // the pre-roll before the first beat only places the opening horde
             {
                 HeroDecide(tb, tnext);
+                if (fight != null) FightDecide(tb);
                 MonsterDecide(tb, tnext, HeroPosAt(tnext), free);
             }
             Spells(tb, tnext);
@@ -812,6 +831,14 @@ namespace PS.Choreography
             }
             var view = View(Math.Max(viewWidth, plan.ViewWidth));
             float br = roster.Monsters[shot.BossType].Radius;
+            if (fight != null)
+            {
+                // A boss fight's boss holds its ground from the span's start, unseen until the cut reveals it there.
+                fightBoss = Spawn(shot.BossType, nav != null ? OpenNear(shot.FightAt, br) : shot.FightAt, tb, false);
+                beatSpawns.Add(fightBoss);
+                bossDeathAfter[fightBoss] = shot.Final;
+                return;
+            }
             Vector2 p;
             if (nav == null)
             {
@@ -903,7 +930,7 @@ namespace PS.Choreography
         void HeroDecide(double tb, double tnext)
         {
             // A kiting hero strides along its path on every beat, whether it strikes or not: its blows are moving strikes.
-            if (shot.Path != null && !(tb >= shot.Final - 1e-9)) ShotStride(tb, tnext, HeroRest);
+            if (shot.Path != null && !(tb >= shot.Final - 1e-9) && !(fight != null && FightHeroStep(tb, tnext))) ShotStride(tb, tnext, HeroRest);
             Vector2 h = HeroPosAt(tb);
             if (!goalReached && Vector2.Distance(h, goal.Center) <= goal.Radius)
             {
@@ -986,6 +1013,7 @@ namespace PS.Choreography
                 GridEntry[] combo = plans[p.Section].Combo;
                 GridEntry e = PickCombo(combo, p, out bool plain);
                 if (e == null || (waiting && e.Fixed == FixedPosition.None)) continue;
+                if (fight != null && e.Fixed == FixedPosition.None && FightImpactAt(p.Time)) continue;   // the boss's blow lands alone
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
                 float windup = roster.WindupOf(mv);
@@ -1221,10 +1249,10 @@ namespace PS.Choreography
         /// A shot's stride: along the kite path, a beat's stride; holding ground (the duel), a short step sideways
         /// to the nearest monster, to and fro across the hero's start.
         /// </summary>
-        void ShotStride(double tb, double tnext, Vector2 h)
+        void ShotStride(double tb, double tnext, Vector2 h, float stride = 0)
         {
             Vector2 to;
-            if (shot.Path != null) to = PathStep(h);
+            if (shot.Path != null) to = PathStep(h, stride > 0 ? stride : shot.PathStepM);
             else
             {
                 // Holding ground: to and fro across its spot, sideways to the nearest monster, so the brutes' walk-ins
@@ -1281,10 +1309,10 @@ namespace PS.Choreography
         }
 
         /// <summary>A beat's stride along the kite path from <paramref name="h"/>, sliding along walls.</summary>
-        Vector2 PathStep(Vector2 h)
+        Vector2 PathStep(Vector2 h, float stride)
         {
             AdvancePath(h);
-            Vector2 to = h + PathHeading(h) * shot.PathStepM;
+            Vector2 to = h + PathHeading(h) * stride;
             return nav != null ? WallStep(h, to, roster.HeroRadius) : to;
         }
 
@@ -1407,7 +1435,7 @@ namespace PS.Choreography
             for (int i = 0; i < liveCount; i++)
             {
                 int m = live[i];
-                if (state[m] != Alive || busyUntil[m] > tb + 1e-9) continue;
+                if (state[m] != Alive || busyUntil[m] > tb + 1e-9 || m == fightBoss) continue;
                 if (n == keys.Length) { Array.Resize(ref keys, n * 2); Array.Resize(ref order, n * 2); }
                 // Nearest the hero first, by the way there: with walls, the front of a queue at a gap
                 // plans before those pressed against the wall beside it, so the queue moves up.
@@ -1420,6 +1448,7 @@ namespace PS.Choreography
             Array.Sort(keys, order, 0, n);
             beatMaxStep = 0;
             Ease ease = free ? Ease.Linear : Ease.Pulse;
+            if (fightBoss >= 0 && state[fightBoss] == Alive) FightStep(fightBoss, tb, tnext, heroAt, ease);
             // A formation's monster wedged among neighbours yet to plan waits for them: it plans again once they have
             // moved, up to UnjamPasses times, then shoves, waiting once more if even that fails, before it marks time.
             if (Formed && order.Length < (UnjamPasses + 2) * n) Array.Resize(ref order, (UnjamPasses + 2) * n);
@@ -1483,6 +1512,7 @@ namespace PS.Choreography
                     Vector2 kept = KeepClear(a, heroAt, laneBack, trailBack, dir, stepM, contact, mt.Radius);
                     if (kept != dir) { dir = kept; step = Vector2.Distance(a + dir * stepM, heroAt) >= hold ? stepM : step; }
                 }
+                if (fight != null && Formed) FightArenaStep(a, heroAt, mt.Radius, stepM, ref dir, ref step);
                 Vector2 best = a;
                 float bestProg = 0;
                 if (step > 1e-3f)
@@ -1562,7 +1592,7 @@ namespace PS.Choreography
         {
             float step = Vector2.Distance(a, b);
             int n = Near().Gather(a, radius[m] + SmallRadius + step + Math.Max(beatMaxStep, 0.5f) + 0.05f, ref buf);
-            int bigs = bossTramplesInView ? bigCount : 0;
+            int bigs = bossTramplesInView || m == fightBoss ? bigCount : 0;
             for (int i = 0; i < n + bigs; i++)
             {
                 int j = i < n ? buf[i] : big[i - n];
@@ -1895,6 +1925,323 @@ namespace PS.Choreography
                 return true;
             }
             return false;
+        }
+
+        // ------------------------------------------------------------------ the boss fight
+
+        const float FightStrafe = 0.55f;       // while an attack winds up the hero strafes at this share of its stride, in its zone
+        const double DodgeLeadS = 0.06;        // the hero's dodge ends this long before the blow lands
+        const float DodgeClearM = 1.4f;        // ... its body this far clear of the zone's edge
+        const float BreathLengthM = 15f;       // the breath's cone: this long from the dragon's head
+        const float BreathHalfAngle = 0.45f;   // ... at least this wide either side (26°), wide enough to hold the strafing hero
+        const float BreathMaxHalfAngle = 0.7f; // ... and at most this (40°)
+        const float SweepRadiusM = 6.5f;        // the tail sweep's disc, at least this wide round the dragon, past the hero by 1.5 m
+        const float FightLeashM = 2.5f;        // the boss strays at most this far from its ground toward the hero
+        const float FightKeepM = 1.5f;         // ... keeping this clear of the hero's body
+        const float FightStride = 1.5f;        // ... at up to this many of its gait steps a beat
+        const float MinBossClipSpeed = 0.5f;   // an attack's clip slows to at most half speed to fill its windup
+        const float BossRecoilM = 0.5f;        // a blow knocks the boss back this far
+        const float FightArenaM = 10f;         // the horde holds back this far from the boss's ground: the fight's arena
+
+        /// <summary>
+        /// A boss fight's horde holds back at the arena's edge (<see cref="FightArenaM"/> round the boss's ground), so the
+        /// fight reads: a monster inside walks out, and a step that would cross the edge ends on it instead, or, with no way
+        /// on along it toward the hero, prowls round it on the hero's side.
+        /// </summary>
+        void FightArenaStep(Vector2 a, Vector2 heroAt, float r, float stepM, ref Vector2 dir, ref float step)
+        {
+            float edge = FightArenaM + r;
+            Vector2 fromC = a - shot.FightAt;
+            float dc = fromC.Length();
+            if (dc < edge - 0.05f)
+            {
+                dir = dc > 1e-3f ? fromC / dc : -dir;
+                step = Math.Min(stepM, edge - dc);
+                return;
+            }
+            Vector2 bc = a + dir * step - shot.FightAt;
+            if (bc.Length() >= edge) return;
+            Vector2 q = shot.FightAt + (bc.LengthSquared() > 1e-6f ? Vector2.Normalize(bc) : fromC / dc) * edge;
+            Vector2 w = q - a;
+            if (w.Length() < 0.3f * stepM)
+            {
+                var round = new Vector2(-fromC.Y, fromC.X) / dc;
+                Vector2 toHero = heroAt - shot.FightAt;
+                if (round.X * toHero.X + round.Y * toHero.Y < 0) round = -round;
+                w = shot.FightAt + Vector2.Normalize(fromC + round * (0.6f * stepM)) * edge - a;
+            }
+            float wl = w.Length();
+            if (wl < 1e-3f) { step = 0; return; }
+            dir = w / wl;
+            step = Math.Min(wl, stepM);
+        }
+
+        /// <summary>Does a boss attack land at <paramref name="t"/>?</summary>
+        bool FightImpactAt(double t)
+        {
+            foreach (FightAttack a in fight) if (Math.Abs(a.Impact - t) <= 1e-6) return true;
+            return false;
+        }
+
+        /// <summary>Is the boss mid-attack (from its windup to its clip's end) at <paramref name="t"/>?</summary>
+        bool FightAttacking(double t)
+        {
+            for (int i = 0; i < fight.Length; i++)
+                if (fightPlaced[i] && t >= fight[i].Windup - 1e-6 && t < fightClipEnd[i]) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// The hero's beat in a boss fight (trailer.md, "The boss fight"): while an attack winds up, a short strafe along the
+        /// path that keeps it in the zone; on the last beat before the blow, the dodge out of it. False on other beats.
+        /// </summary>
+        bool FightHeroStep(double tb, double tnext)
+        {
+            for (int i = 0; i < fight.Length; i++)
+            {
+                FightAttack a = fight[i];
+                if (tb < a.Windup - 1e-6 || tb >= a.Impact - 1e-6) continue;
+                if (tnext >= a.Impact - 1e-6)
+                {
+                    if (!fightPlaced[i]) return false;
+                    FightDodge(i, tb);
+                    return true;
+                }
+                ShotStride(tb, tnext, HeroRest, FightStrafe * shot.PathStepM);
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// The hero's dodge out of attack <paramref name="i"/>'s zone, from the beat <paramref name="tb"/> to just before its
+        /// blow: a dash sideways out of a breath's cone (on along the path's side first), or straight out of a sweep's disc,
+        /// to where the fewest monsters stand.
+        /// </summary>
+        void FightDodge(int i, double tb)
+        {
+            BossAttack z = fightZones[i];
+            Vector2 h = HeroRest;
+            Vector2 travel = PathHeading(h);
+            float margin = roster.HeroRadius + DodgeClearM;
+            var cands = new List<Vector2>(5);
+            if (z.Kind == BossAttackKind.Breath)
+            {
+                var perp = new Vector2(-z.Direction.Y, z.Direction.X);
+                Vector2 d = h - z.Origin;
+                float along = Math.Max(0f, Vector2.Dot(d, z.Direction)), lat = Vector2.Dot(d, perp);
+                float need = along * (float)Math.Tan(z.HalfAngle) + margin / (float)Math.Cos(z.HalfAngle);
+                int first = Vector2.Dot(perp, travel) >= 0 ? 1 : -1;
+                cands.Add(h + perp * (first * need - lat));
+                cands.Add(h + perp * (-first * need - lat));
+            }
+            else
+            {
+                Vector2 p = h - z.Origin;
+                Vector2 away = p.LengthSquared() > 1e-6f ? Vector2.Normalize(p) : -travel;
+                foreach (float turn in new[] { 0f, 0.35f, -0.35f, 0.7f, -0.7f })
+                {
+                    Vector2 dir = Rotate(away, turn);
+                    float pd = Vector2.Dot(p, dir), r = z.RadiusM + margin;
+                    float s = -pd + (float)Math.Sqrt(Math.Max(0f, pd * pd - (p.LengthSquared() - r * r)));
+                    cands.Add(h + dir * s);
+                }
+            }
+            Vector2 to = cands[0];
+            int best = int.MaxValue;
+            foreach (Vector2 c in cands)
+            {
+                Vector2 q = nav != null ? WallStep(h, c, roster.HeroRadius) : c;
+                if (z.Contains(q, roster.HeroRadius + 0.2f)) continue;
+                int crowd = 0, n = Near().Gather(q, 1.5f + SmallRadius, ref buf);
+                for (int k = 0; k < n; k++) if (state[buf[k]] == Alive && Vector2.Distance(pos[buf[k]], q) < 1.5f + radius[buf[k]]) crowd++;
+                if (crowd < best) { best = crowd; to = q; }
+            }
+            double end = fight[i].Impact - DodgeLeadS;
+            float fFrom = Easing.Wrap(HeroFacing);
+            AddHeroSeg(new MotionSegment(0, tb, end, h, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(to - h)), Ease.Pulse));
+            fightDodgeFrom[i] = tb;
+            fightDodgeTo[i] = end;
+            stats[curSection].HeroStrides++;
+        }
+
+        /// <summary>
+        /// The boss's attacks winding up on beat <paramref name="tb"/>: each zone placed where the hero strafes through its
+        /// windup (a breath's cone aimed at the middle of it, a sweep's disc round the dragon past the hero), the dragon
+        /// planted and turned to it, its clip fitted to land on the impact and slowed to fill the windup.
+        /// </summary>
+        void FightDecide(double tb)
+        {
+            for (int i = 0; i < fight.Length; i++)
+            {
+                FightAttack a = fight[i];
+                if (fightPlaced[i] || Math.Abs(a.Windup - tb) > 1e-6 || fightBoss < 0 || state[fightBoss] != Alive) continue;
+                fightPlaced[i] = true;
+                int m = fightBoss;
+                Vector2 b = StopAt(m, tb, false);
+                Vector2 h0 = HeroPosAt(tb), h1 = HeroRest;
+                int strafes = (int)Math.Round(map.BeatIndexAt(a.Impact) - map.BeatIndexAt(a.Windup)) - 1;
+                if (strafes > 1) h1 += PathHeading(h1) * (FightStrafe * shot.PathStepM * (strafes - 1));
+                Vector2 aim = (h0 + h1) * 0.5f - b;
+                Vector2 dir = aim.LengthSquared() > 1e-6f ? Vector2.Normalize(aim) : Easing.Dir(facing[m]);
+                if (a.Kind == BossAttackKind.Breath)
+                {
+                    Vector2 apex = b + dir * (radius[m] * 0.6f);
+                    float half = BreathHalfAngle;
+                    foreach (Vector2 p in new[] { h0, h1 })
+                    {
+                        Vector2 d = p - apex;
+                        float along = Vector2.Dot(d, dir), lat = Math.Abs(d.X * dir.Y - d.Y * dir.X);
+                        if (along > 0.5f) half = Math.Max(half, (float)Math.Atan2(lat + roster.HeroRadius, along));
+                    }
+                    fightZones[i] = new BossAttack(a.Kind, m, a.Windup, a.Impact, double.NaN, double.NaN, apex, dir, BreathLengthM, Math.Min(half, BreathMaxHalfAngle));
+                }
+                else
+                {
+                    float r = Math.Max(SweepRadiusM, Math.Max(Vector2.Distance(h0, b), Vector2.Distance(h1, b)) + 1.5f);
+                    fightZones[i] = new BossAttack(a.Kind, m, a.Windup, a.Impact, double.NaN, double.NaN, b, dir, r, (float)Math.PI);
+                }
+                int clip = a.Kind == BossAttackKind.Sweep && bossAttack2Clip >= 0 ? bossAttack2Clip : roster.Monsters[etype[m]].AttackClip;
+                ClipAnnotation ann = clips[clip];
+                float speed = (float)Math.Max(MinBossClipSpeed, ann.Impact / (a.Impact - a.Windup));
+                fightClipStart[i] = a.Impact - ann.Impact / speed;
+                fightClipEnd[i] = fightClipStart[i] + ann.End / speed;
+                lastActionEnd[m] = fightClipEnd[i];
+                float fFrom = Easing.Wrap(facing[m]);
+                SetMonsterSeg(m, new MotionSegment(m, tb, tb + 0.15, b, b, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(dir)), Ease.Linear));
+                planSerial[m] = beatSerial;
+                planFrom[m] = b;
+                Push(new Impact { Time = a.Impact, Kind = ImpactKind.BossAttack, Entity = m, Target = i, Clip = clip, ClipStart = fightClipStart[i], ClipSpeed = speed });
+            }
+        }
+
+        /// <summary>
+        /// The fight's boss on a beat: planted through an attack (creeping on until its clip begins), recoiling from a blow,
+        /// else stepping toward the hero from its ground (at most <see cref="FightLeashM"/> out, never onto the hero), or
+        /// prowling round with the hero when it is on its mark. It tramples whatever it steps through and faces the hero.
+        /// </summary>
+        void FightStep(int m, double tb, double tnext, Vector2 heroAt, Ease ease)
+        {
+            MonsterType mt = roster.Monsters[etype[m]];
+            if (busyUntil[m] > tb + 1e-9) return;   // recoiling from a blow
+            Vector2 a = rest[m];
+            float fFrom = Easing.Wrap(facing[m]);
+            for (int i = 0; i < fight.Length; i++)
+            {
+                // Planted from its windup until a beat after its blow, when it steps on as its clip plays out.
+                if (!fightPlaced[i] || tb < fight[i].Windup - 1e-6 || tb >= Math.Min(fightClipEnd[i], fight[i].Impact + (tnext - tb)) - 1e-6) continue;
+                if (fightClipStart[i] >= tnext - 1e-6)
+                {
+                    Vector2 fwd = fightZones[i].Kind == BossAttackKind.Breath ? fightZones[i].Direction : Easing.Dir(fFrom);
+                    SetMonsterSeg(m, new MotionSegment(m, tb, tnext, a, a + fwd * (0.3f * mt.StepM), fFrom, fFrom, ease));
+                    planSerial[m] = beatSerial;
+                    planFrom[m] = a;
+                }
+                return;
+            }
+            float keep = mt.Radius + roster.HeroRadius + FightKeepM;
+            Vector2 fromAt = heroAt - shot.FightAt;
+            float dAt = fromAt.Length();
+            Vector2 goal = dAt > 1e-3f ? shot.FightAt + fromAt / dAt * Math.Min(FightLeashM, Math.Max(0f, dAt - keep)) : shot.FightAt;
+            Vector2 way = goal - a;
+            float maxStep = mt.StepM * FightStride;
+            Vector2 b = way.Length() > maxStep ? a + Vector2.Normalize(way) * maxStep : goal;
+            if (Vector2.Distance(a, b) < 0.3f * mt.StepM)
+            {
+                Vector2 toHero = heroAt - a;
+                toHero = toHero.LengthSquared() > 1e-6f ? Vector2.Normalize(toHero) : Easing.Dir(fFrom);
+                var round = new Vector2(-toHero.Y, toHero.X);
+                if (shot.Path != null && Vector2.Dot(round, PathHeading(heroAt)) < 0) round = -round;
+                b = a + round * (0.5f * mt.StepM);
+            }
+            if (Vector2.Distance(b, heroAt) < keep)
+            {
+                Vector2 off = b - heroAt;
+                b = off.LengthSquared() > 1e-6f ? heroAt + Vector2.Normalize(off) * keep : a;
+            }
+            if (nav != null) b = WallStep(a, b, mt.Radius);
+            Trample(m, a, b, tb);
+            SetMonsterSeg(m, new MotionSegment(m, tb, tnext, a, b, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(heroAt - b)), ease));
+            beatMaxStep = Math.Max(beatMaxStep, Vector2.Distance(a, b));
+            planSerial[m] = beatSerial;
+            planFrom[m] = a;
+        }
+
+        /// <summary>
+        /// The hero's blow landing on the fight's boss: a hit it survives (only the final slam kills it), with a heavy spark.
+        /// Between attacks it flinches and recoils; mid-attack it takes the blow planted, a flash and no clip.
+        /// </summary>
+        void BossHit(int m, double t, float strength)
+        {
+            MonsterType mt = roster.Monsters[etype[m]];
+            bool planted = FightAttacking(t);
+            actions.Add(new ActionEvent(m, ActionKind.Hit, t, planted ? -1 : mt.HitClip, -1, strength));
+            effects.Add(new EffectEvent(Catalog.HitSpark, m, Rng.Hash(eseed[m], (uint)(t * 1000), 1), t, new Vector3(0, 1.6f, 0), 0, 2.5f));
+            Sound(Catalog.HitSound, t, 1f);
+            stats[curSection].Hits++;
+            if (planted) return;
+            Vector2 p = StopAt(m, t, false);
+            Vector2 away = p - HeroPosAt(t);
+            away = away.LengthSquared() > 1e-6f ? Vector2.Normalize(away) : -Easing.Dir(facing[m]);
+            Vector2 to = p + away * BossRecoilM;
+            if (nav != null) to = WallStep(p, to, radius[m]);
+            float f = Easing.Wrap(facing[m]);
+            SetMonsterSeg(m, new MotionSegment(m, t, t + 0.2, p, to, f, f, Ease.Linear));
+            busyUntil[m] = t + 0.2;
+            planSerial[m] = -1;
+        }
+
+        /// <summary>
+        /// A boss attack landing (trailer.md, "The boss fight"): the dragon's clip strikes, every monster the zone holds dies
+        /// to it, and its fire (a breath: bursts down the cone, growing with it) or its sweep (a giant slash round the dragon
+        /// and shocks round the disc's edge) and its sound land on the impact. The hero dodged out of it on the beat before.
+        /// </summary>
+        void BossAttackLands(Impact im)
+        {
+            int m = im.Entity, i = im.Target;
+            double t = im.Time;
+            if (state[m] != Alive) return;
+            BossAttack z0 = fightZones[i];
+            var z = new BossAttack(z0.Kind, m, z0.Windup, z0.Impact, fightDodgeFrom[i], fightDodgeTo[i], z0.Origin, z0.Direction, z0.RadiusM, z0.HalfAngle);
+            bossAttacks.Add(z);
+            actions.Add(new ActionEvent(m, ActionKind.Attack, t, im.Clip, -1, 1f, im.ClipStart, im.ClipSpeed));
+            stats[curSection].Attacks++;
+            for (int k = 0; k < liveCount; k++)
+            {
+                int j = live[k];
+                if (j != m && state[j] == Alive && z.Contains(MonsterPosAt(j, t))) Kill(j, t, 1f);
+            }
+            // A crystal formation the zone reaches bursts too: the dragon's blow smashes it, from its own origin.
+            for (int k = 0; k < shot.Crystals.Length; k++)
+            {
+                CrystalPiece c = shot.Crystals[k];
+                if (!nav.Blocks(c.Placement) || !z.Contains(c.Position, c.RadiusM)) continue;
+                breakEvents.Add(new BreakEvent(t, c.Placement, CrystalPiece.Target(k), -1, z.Origin, nav.NearestPoint(c.Placement, z.Origin)));
+                OpenMap(new[] { c.Placement }, t);
+            }
+            uint s0 = Rng.Hash(seed, (uint)i, 0xB055);
+            if (z.Kind == BossAttackKind.Breath)
+            {
+                for (int k = 1; k <= 5; k++)
+                {
+                    float u = k / 5f;
+                    Vector2 p = z.Origin + z.Direction * (z.RadiusM * 0.92f * u);
+                    effects.Add(new EffectEvent(Catalog.BoltImpact, -1, Rng.Hash(s0, (uint)k, 1), t, new Vector3(p.X, 0.8f, p.Y), Easing.Yaw(z.Direction), 1.2f + 2.4f * u));
+                }
+                Sound(Catalog.Sound("laser"), t, 1f);
+                Sound(Catalog.Sound("bolt"), t, 1f);
+            }
+            else
+            {
+                effects.Add(new EffectEvent(Catalog.Effect("spin-trail"), -1, s0, t, new Vector3(z.Origin.X, 1f, z.Origin.Y), Easing.Yaw(z.Direction), z.RadiusM / 2.8f));
+                for (int k = 0; k < 8; k++)
+                {
+                    Vector2 p = z.Origin + Easing.Dir((float)(k * Math.PI / 4)) * (z.RadiusM * 0.85f);
+                    effects.Add(new EffectEvent(Catalog.Effect("slam-shock"), -1, Rng.Hash(s0, (uint)k, 2), t, new Vector3(p.X, 0.1f, p.Y), 0, 1.2f));
+                }
+                Sound(Catalog.Sound("ring"), t, 1f);
+                Sound(Catalog.SwingSound, t, 1f);
+            }
         }
 
         // ------------------------------------------------------------------ structure breaks
@@ -2485,6 +2832,9 @@ namespace PS.Choreography
                 case ImpactKind.Break:
                     Break(breaks[im.Target], t);
                     break;
+                case ImpactKind.BossAttack:
+                    BossAttackLands(im);
+                    break;
                 case ImpactKind.WorstRing:
                 {
                     Vector2 o = HeroPosAt(t);
@@ -2622,7 +2972,11 @@ namespace PS.Choreography
                 int m = order[i];
                 if (roster.Monsters[etype[m]].Rank == MonsterRank.Boss)
                 {
-                    if (shot.BossType >= 0) continue;   // the boss rule: only the final slam touches it
+                    if (shot.BossType >= 0)   // the boss rule: only the final slam kills it; in a fight the hero's blows hit it
+                    {
+                        if (fight != null && heroCombo) BossHit(m, t, strength);
+                        continue;
+                    }
                     if (heroCombo && t >= bossDeathAfter[m]) Kill(m, t, 1f);
                     else Hit(m, t, origin, strength);
                 }
@@ -2985,7 +3339,7 @@ namespace PS.Choreography
             int next = pathNext;
             bool done = pathDone;
             Vector2 on = runOn;
-            for (int i = 0; i < strides; i++) h = PathStep(h);
+            for (int i = 0; i < strides; i++) h = PathStep(h, shot.PathStepM);
             AdvancePath(h);
             travel = PathHeading(h);
             pathNext = next;
@@ -3434,6 +3788,8 @@ namespace PS.Choreography
             tl.Framing = framing;
             tl.Breaks = breakEvents.ToArray();   // in time order, as they struck
             tl.Crystals = shot.Crystals;
+            bossAttacks.Sort((x, y) => x.Impact.CompareTo(y.Impact));
+            tl.BossAttacks = bossAttacks.ToArray();
 
             tl.TypeNames = new string[roster.Monsters.Length];
             tl.TypeRadii = new float[roster.Monsters.Length];

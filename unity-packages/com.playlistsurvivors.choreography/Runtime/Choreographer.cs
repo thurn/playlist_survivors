@@ -186,6 +186,8 @@ namespace PS.Choreography
         public float DensityCap;                                    // a formation's refill spawns where fewer stand per m²
         public GridFlags ComboOn = GridFlags.Beat;                  // plain combo entries play on this position
         public CrystalPiece[] Crystals = new CrystalPiece[0];       // the crystal formations a hero blow smashes; none by default
+        public System.Numerics.Vector2 FightAt;                     // the boss fight's ground (with Fight)
+        public FightAttack[] Fight;                                 // the boss fight's attacks, by impact; null: none
 
         public static readonly ShotRules Default = new ShotRules();
 
@@ -225,6 +227,18 @@ namespace PS.Choreography
                 if (r.BossFrom != "ahead" && r.BossFrom != "behind" && r.BossFrom != "left" && r.BossFrom != "right")
                     r.BossArea = new LayoutPoint { Area = r.BossFrom }.Resolve(data.Layout, "boss");
             }
+            if (script.BossFight != null)
+            {
+                r.FightAt = script.BossFight.At.Resolve(data.Layout, "bossFight");
+                r.Fight = new FightAttack[script.BossFight.Attacks.Length];
+                for (int i = 0; i < r.Fight.Length; i++)
+                {
+                    BossAttackScript a = script.BossFight.Attacks[i];
+                    r.Fight[i] = new FightAttack { Kind = a.AttackKind, Windup = map.TimeOfBarBeat(a.Windup, grid), Impact = map.TimeOfBarBeat(a.Impact, grid) };
+                    if (!(r.Fight[i].Impact > r.Fight[i].Windup)) throw new FormatException("bossFight attack " + (i + 1) + ": its impact " + a.Impact + " is not after its windup " + a.Windup);
+                    if (i > 0 && r.Fight[i].Windup < r.Fight[i - 1].Impact - 1e-9) throw new FormatException("bossFight attack " + (i + 1) + ": winds up before attack " + i + " lands");
+                }
+            }
             if (r.Formation != FormationKind.None && r.Path == null) throw new FormatException("level script: a formation kites, so it needs a heroPath");
             if (script.Duel != null)
             {
@@ -247,6 +261,13 @@ namespace PS.Choreography
             }
             return r;
         }
+    }
+
+    /// <summary>One of a boss fight's attacks, resolved: its kind, and the song times its windup starts and its blow lands.</summary>
+    sealed class FightAttack
+    {
+        public BossAttackKind Kind;
+        public double Windup, Impact;
     }
 
     /// <summary>A trailer shot's formation (trailer.md, "Kiting and formations").</summary>

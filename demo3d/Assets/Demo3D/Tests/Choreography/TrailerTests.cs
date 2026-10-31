@@ -127,7 +127,10 @@ namespace Demo3D.Choreography.Tests
             Assert.That(new[] { ls.Tuning.FodderHitPointScale, ls.Tuning.EliteHitPointScale, ls.Tuning.BossHitPointScale }, Is.All.EqualTo(0f));
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((s.ShapeScale, s.YawDeg, s.ViewWidthToM)));
             Assert.That(ls.EnvelopeOnScreen, Is.EqualTo(s.TargetOnScreen));
-            Assert.That((ls.Formation, ls.FormationStreams, ls.DensityCap), Is.EqualTo(("converge", 6, s.DensityCap)));
+            Assert.That((ls.Formation, ls.DensityCap), Is.EqualTo(("vortex", s.DensityCap)));
+            Assert.That(ls.BossFight.At.At, Is.EqualTo(s.BossFight.At.At));
+            Assert.That(Array.ConvertAll(ls.BossFight.Attacks, a => a.Kind + "@" + a.Windup + ">" + a.Impact),
+                Is.EqualTo(Array.ConvertAll(s.BossFight.Attacks, a => a.Kind + "@" + a.Windup + ">" + a.Impact)));
             Assert.That(ls.EnvelopeViewWidthM, Is.EqualTo(s.ViewWidthToM));
             foreach (LevelSection sec in ls.Sections)
             {
@@ -307,7 +310,7 @@ namespace Demo3D.Choreography.Tests
                 float speed = a.HasClipTiming ? a.ClipSpeed : 1f;
                 Assert.That(start + clips[a.Clip].End / speed, Is.LessThan(Fixtures.Trailer.BlackAt), "entity " + a.Entity);
             }
-            Assert.That(dead, Is.GreaterThan(1000));
+            Assert.That(dead, Is.GreaterThan(300), "the fight's horde, the dragon among them");
         }
 
         [Test]
@@ -411,7 +414,10 @@ namespace Demo3D.Choreography.Tests
             Assert.That(problems[0], Does.Contain("monster " + a.Entity));
         }
 
-        /// <summary>The boss must take exactly one hit, the final slam's; a blow before it fails, and so does a shot with no boss rule but a boss.</summary>
+        /// <summary>
+        /// The boss dies only to the final slam: in the climax's fight it takes the hero's blows, but a death before the final
+        /// slam fails; without a fight every hit before it fails; and a boss in a shot without the boss rule fails.
+        /// </summary>
         [Test]
         public void ABossHitBeforeTheFinalSlamFails()
         {
@@ -419,15 +425,112 @@ namespace Demo3D.Choreography.Tests
             Timeline tl = Clone(Fixtures.Shot(Climax));
             Roster roster = Fixtures.ShotData(Climax).Roster;
             Assert.That(TrailerChecks.Boss(t, t.Shots[Climax], tl, roster), Is.Empty);
-            int boss = -1;
-            for (int e = 1; e < tl.EntityCount; e++) if (tl.Entities[e].Kind == EntityKind.Monster && roster.Monsters[tl.Entities[e].Type].Rank == MonsterRank.Boss) boss = e;
-            int i = FirstAction(tl, boss, ActionKind.Spawn);
+            int boss = Boss(tl, roster);
+            int hits = 0;
+            foreach (ActionEvent h in tl.ActionsOf(boss)) if (h.Kind == ActionKind.Hit) hits++;
+            Assert.That(hits, Is.GreaterThan(0));
+            TrailerShot noFight = Copy(Climax);
+            Assert.That(TrailerChecks.Boss(t, noFight, tl, roster), Has.Count.EqualTo(hits), "without a fight, each hit fails");
+            int i = FirstAction(tl, boss, ActionKind.Hit);
             ActionEvent a = tl.Actions[i];
-            tl.Actions[i] = new ActionEvent(boss, ActionKind.Hit, a.Impact, -1, -1, 1f);
-            Assert.That(TrailerChecks.Boss(t, t.Shots[Climax], tl, roster), Has.Count.EqualTo(1));
+            tl.Actions[i] = new ActionEvent(boss, ActionKind.Death, a.Impact, -1, -1, 1f);
+            List<string> problems = TrailerChecks.Boss(t, t.Shots[Climax], tl, roster);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("takes a death before the final slam"));
             TrailerShot noRule = Copy(Climax);
             noRule.Boss = null;
             Assert.That(TrailerChecks.Boss(t, noRule, Fixtures.Shot(Climax), roster), Has.Count.EqualTo(1));
+        }
+
+        /// <summary>
+        /// Both cuts end on a boss fight (trailer.md, "The boss fight"): the dragon lands both kinds of attack, each
+        /// telegraphed on the hero, who dashes out of its zone on the beat before it lands; everything else the zone holds
+        /// dies to it; the hero's blows land on the dragon between attacks; and it dies to the final slam.
+        /// </summary>
+        [Test]
+        public void BothCutsEndOnABossFightTheHeroDodges()
+        {
+            foreach (Trailer t in new[] { Fixtures.Trailer, Fixtures.CrystalCut })
+            {
+                int last = t.Shots.Length - 1;
+                Timeline tl = t == Fixtures.Trailer ? Fixtures.Shot(last) : Fixtures.CrystalShot(last);
+                ChoreographyData data = t == Fixtures.Trailer ? Fixtures.ShotData(last) : Fixtures.CrystalShotData(last);
+                string cut = t.Name + " ";
+                var problems = new List<string>();
+                problems.AddRange(TrailerChecks.BossFight(t, t.Shots[last], tl, data.Roster));
+                problems.AddRange(TrailerChecks.Boss(t, t.Shots[last], tl, data.Roster));
+                Assert.That(problems, Is.Empty, cut + Report(problems));
+                Assert.That(tl.BossAttacks.Length, Is.GreaterThanOrEqualTo(TrailerChecks.MinBossAttacks), cut);
+                Assert.That(Array.Exists(tl.BossAttacks, a => a.Kind == BossAttackKind.Breath) && Array.Exists(tl.BossAttacks, a => a.Kind == BossAttackKind.Sweep), cut + "both kinds");
+                double[] death = new double[tl.EntityCount];
+                for (int e = 0; e < death.Length; e++)
+                {
+                    death[e] = double.PositiveInfinity;
+                    foreach (ActionEvent d in tl.ActionsOf(e)) if (d.Kind == ActionKind.Death) { death[e] = d.Impact; break; }
+                }
+                foreach (BossAttack a in tl.BossAttacks)
+                {
+                    Vector2 from = tl.PositionAt(0, a.DodgeFrom), to = tl.PositionAt(0, a.Impact);
+                    Assert.That(Vector2.Distance(from, to), Is.GreaterThan(2f), cut + "a dash, not a stroll, at " + a.Impact);
+                    Assert.That(a.Contains(from) && !a.Contains(to, data.Roster.HeroRadius), cut + "out of the zone it stood in, at " + a.Impact);
+                    int killed = 0;
+                    for (int e = 1; e < tl.EntityCount; e++)
+                    {
+                        if (e == a.Boss || tl.Entities[e].Kind != EntityKind.Monster || !tl.Exists(e, a.Impact) || death[e] < a.Impact - 1e-6) continue;
+                        if (!a.Contains(tl.PositionAt(e, a.Impact))) continue;
+                        Assert.That(death[e], Is.EqualTo(a.Impact).Within(1e-6), cut + "monster " + e + " in the zone survives the attack at " + a.Impact);
+                        killed++;
+                    }
+                    TestContext.WriteLine(cut + a.Kind + " at " + a.Impact.ToString("F3") + ": dodged " + Vector2.Distance(from, to).ToString("F1") + " m, " + killed + " killed");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The fight check fails an attack that lands on the hero, one telegraphed for a single beat, one dodged long before
+        /// it lands, and a boss that takes fewer than <see cref="TrailerChecks.MinBossHits"/> of the hero's blows.
+        /// </summary>
+        [Test]
+        public void ABossAttackThatHitsTheHeroOrIsBarelyTelegraphedFails()
+        {
+            Trailer t = Fixtures.Trailer;
+            Roster roster = Fixtures.ShotData(Climax).Roster;
+            TrailerShot s = t.Shots[Climax];
+            Timeline tl = Clone(Fixtures.Shot(Climax));
+            Assert.That(TrailerChecks.BossFight(t, s, tl, roster), Is.Empty);
+            BossAttack a = tl.BossAttacks[0];
+            double beat = tl.Map.Beats[1] - tl.Map.Beats[0];
+            var onHero = new BossAttack(BossAttackKind.Sweep, a.Boss, a.Windup, a.Impact, a.DodgeFrom, a.DodgeTo, tl.PositionAt(0, a.Impact), a.Direction, 3f, (float)Math.PI);
+            var brief = new BossAttack(a.Kind, a.Boss, a.Impact - beat, a.Impact, a.DodgeFrom, a.DodgeTo, a.Origin, a.Direction, a.RadiusM, a.HalfAngle);
+            var early = new BossAttack(a.Kind, a.Boss, a.Windup, a.Impact, a.DodgeFrom, a.Impact - 0.5, a.Origin, a.Direction, a.RadiusM, a.HalfAngle);
+            foreach (var (attack, message) in new[] { (onHero, "lands on the hero"), (brief, "telegraphed for 1.0 beats"), (early, "is dodged") })
+            {
+                tl.BossAttacks = (BossAttack[])Fixtures.Shot(Climax).BossAttacks.Clone();
+                tl.BossAttacks[0] = attack;
+                List<string> problems = TrailerChecks.BossFight(t, s, tl, roster);
+                Assert.That(problems, Has.Some.Contains(message), Report(problems));
+            }
+            tl.BossAttacks = Fixtures.Shot(Climax).BossAttacks;
+            int boss = Boss(tl, roster);
+            for (int i = tl.ActionStart[boss]; i < tl.ActionStart[boss + 1]; i++)
+                if (tl.Actions[i].Kind == ActionKind.Hit) tl.Actions[i] = new ActionEvent(boss, ActionKind.Spawn, tl.Actions[i].Impact, -1, -1, 0);
+            Assert.That(TrailerChecks.Boss(t, s, tl, roster), Has.Some.Contains("takes 0 of the hero's blows"));
+        }
+
+        /// <summary>A boss fight's attacks: on the grid, telegraphed long enough, landing on a major beat before the final slam, with the boss rule; anything else fails naming it.</summary>
+        [TestCase("\"bossFight\": { \"at\": [40, 40], \"attacks\": [{ \"kind\": \"breath\", \"windup\": \"81.2\", \"impact\": \"81.3\" }] }", "shorter than 2 beats")]
+        [TestCase("\"bossFight\": { \"at\": [40, 40], \"attacks\": [{ \"kind\": \"breath\", \"windup\": \"81.1\", \"impact\": \"81.4\" }] }", "not on a strong beat or an accent")]
+        [TestCase("\"bossFight\": { \"at\": [40, 40], \"attacks\": [{ \"kind\": \"sweep\", \"windup\": \"81.2\", \"impact\": \"82.1\" }] }", "land before the final slam")]
+        [TestCase("\"bossFight\": { \"at\": [40, 40], \"attacks\": [{ \"kind\": \"bite\", \"windup\": \"81.1\", \"impact\": \"81.3\" }] }", "unknown kind 'bite'")]
+        [TestCase("\"bossFight\": { \"at\": [40, 40], \"lair\": true }", "unknown field 'lair'")]
+        [TestCase("\"bossFight\": { \"at\": \"moat\" }", "unknown area 'moat'")]
+        public void ABadBossFightFailsNamingIt(string field, string message)
+        {
+            const string fight = "\"boss\": \"ahead\", \"combo\": [\"slam@cut\", \"slashL\", \"slam@final\"], ";
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2(fight + field)));
+            Assert.That(ex.Message, Does.Contain(message));
+            ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2("\"bossFight\": { \"at\": [40, 40], \"attacks\": [] }")));
+            Assert.That(ex.Message, Does.Contain("needs the boss"));
         }
 
         [Test]
@@ -605,7 +708,7 @@ namespace Demo3D.Choreography.Tests
         /// <summary>
         /// The crystal cut (trailer.md, "The Crystal Cut"): every shot passes the trailer's checks, its crystal formations'
         /// among them, and its formations burst as a recurring centrepiece: at least five break moments over at least four
-        /// shots, each on screen, each the hero's blow (no bolt), every formation broken.
+        /// shots, each on screen, each the hero's blow or the dragon's (no bolt), every formation broken.
         /// </summary>
         [Test]
         public void TheCrystalCutPassesTheTrailersChecksAndSmashesItsCrystals()
@@ -801,7 +904,14 @@ namespace Demo3D.Choreography.Tests
         /// <summary>The checked-in trailer's last shot, the climax.</summary>
         static int Climax => Fixtures.Trailer.Shots.Length - 1;
 
-        /// <summary>A copy of a checked-in shot, to break.</summary>
+        /// <summary>The boss's entity in <paramref name="tl"/>.</summary>
+        static int Boss(Timeline tl, Roster roster)
+        {
+            for (int e = 1; e < tl.EntityCount; e++) if (tl.Entities[e].Kind == EntityKind.Monster && roster.Monsters[tl.Entities[e].Type].Rank == MonsterRank.Boss) return e;
+            throw new InvalidOperationException("no boss");
+        }
+
+        /// <summary>A copy of a checked-in shot, to break (without its boss fight).</summary>
         static TrailerShot Copy(int index)
         {
             TrailerShot s = Fixtures.Trailer.Shots[index];

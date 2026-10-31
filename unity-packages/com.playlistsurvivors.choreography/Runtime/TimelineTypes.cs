@@ -179,6 +179,47 @@ namespace PS.Choreography
         public static string Target(int index) => "crystal-" + (index + 1);
     }
 
+    /// <summary>The boss fight's attacks (trailer.md, "The boss fight"): the dragon's fire breath (a cone) and its tail sweep (a ring round it).</summary>
+    public enum BossAttackKind { Breath, Sweep }
+
+    /// <summary>
+    /// One of the boss fight's telegraphed attacks (trailer.md, "The boss fight"): from <see cref="Windup"/> (a beat) its zone
+    /// glows on the ground, the hero inside it; the hero dodges out of it from <see cref="DodgeFrom"/> to
+    /// <see cref="DodgeTo"/>, just before <see cref="Impact"/> (a strong beat), when the boss's attack lands on the zone and
+    /// kills the monsters in it. A breath's zone is a cone from <see cref="Origin"/> (the dragon's head) along
+    /// <see cref="Direction"/>, <see cref="RadiusM"/> long and <see cref="HalfAngle"/> either side; a sweep's, a disc of
+    /// <see cref="RadiusM"/> round <see cref="Origin"/> (the dragon).
+    /// </summary>
+    public readonly struct BossAttack
+    {
+        public readonly BossAttackKind Kind;
+        public readonly int Boss;                   // the boss's entity
+        public readonly double Windup, Impact;      // song seconds, on the grid
+        public readonly double DodgeFrom, DodgeTo;  // the hero's dodge (song seconds)
+        public readonly Vector2 Origin, Direction;
+        public readonly float RadiusM, HalfAngle;   // HalfAngle in radians (π for a sweep's disc)
+
+        public BossAttack(BossAttackKind kind, int boss, double windup, double impact, double dodgeFrom, double dodgeTo,
+            Vector2 origin, Vector2 direction, float radiusM, float halfAngle)
+        {
+            Kind = kind; Boss = boss; Windup = windup; Impact = impact; DodgeFrom = dodgeFrom; DodgeTo = dodgeTo;
+            Origin = origin; Direction = direction; RadiusM = radiusM; HalfAngle = halfAngle;
+        }
+
+        /// <summary>Does the zone, grown by <paramref name="margin"/> (a body's radius), hold <paramref name="p"/>?</summary>
+        public bool Contains(Vector2 p, float margin = 0)
+        {
+            Vector2 d = p - Origin;
+            float l = d.Length();
+            if (l > RadiusM + margin) return false;
+            if (Kind == BossAttackKind.Sweep) return true;
+            float along = Vector2.Dot(d, Direction);
+            float lateral = Math.Abs(d.X * Direction.Y - d.Y * Direction.X);
+            if (along < -margin) return false;
+            return lateral <= Math.Max(0f, along) * (float)Math.Tan(HalfAngle) + margin / (float)Math.Cos(HalfAngle);
+        }
+    }
+
     public readonly struct FramingSample
     {
         public readonly Vector2 Focus;

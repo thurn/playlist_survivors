@@ -55,6 +55,12 @@ namespace PS.Choreography
         public const float EncircleRadiusM = 6f;
         /// <summary>... and wants a gap round the hero free of their bodies at least this wide, on every beat: an escape lane.</summary>
         public const double MinOpenLaneDeg = 60;
+        /// <summary>A boss fight's boss lands at least this many telegraphed attacks (trailer.md, "The boss fight") ...</summary>
+        public const int MinBossAttacks = 2;
+        /// <summary>... and takes at least this many of the hero's blows from the cut before it dies to the final slam.</summary>
+        public const int MinBossHits = 3;
+        /// <summary>The hero's dodge ends at most this long before the blow it dodges lands: just before it.</summary>
+        public const double MaxDodgeLeadS = 0.15;
 
         /// <summary>Every check, by name, on one shot's timeline (<paramref name="data"/>: the shot's roster and clips).</summary>
         public static List<KeyValuePair<string, List<string>>> All(Trailer trailer, int index, Timeline tl, ChoreographyData data)
@@ -72,8 +78,9 @@ namespace PS.Choreography
                 Check("type blocks", TypeBlocks(trailer, s, tl)),
                 Check("blows on the major beats", BlowsOnMajorBeats(trailer, s, tl)),
                 Check("an open lane", OpenLane(trailer, s, tl, roster)),
-                Check("one hit kills", OneHitKills(s, tl)),
+                Check("one hit kills", OneHitKills(s, tl, roster)),
                 Check("the boss", Boss(trailer, s, tl, roster)),
+                Check("the boss fight", BossFight(trailer, s, tl, roster)),
                 Check("the final slam", FinalSlam(trailer, s, tl)),
                 Check("no visible spawns", NoVisibleSpawns(s, tl)),
                 Check("density", Density(trailer, s, tl)),
@@ -352,7 +359,7 @@ namespace PS.Choreography
         /// Every structure break of the shot strikes where the camera has it (trailer.md, "Structure breaks in a shot"):
         /// the point its bolt strikes is in view, and the bolt is short enough to read as the hero's. A crystal formation's
         /// (trailer.md, "Crystal formations") stands wholly in view, its footprint and its tallest spire's top inside the
-        /// frame, and falls to a hero blow landing on that instant.
+        /// frame, and falls to a hero blow or a boss attack (trailer.md, "The boss fight") landing on that instant.
         /// </summary>
         public static List<string> BreaksOnScreen(TrailerShot s, Timeline tl)
         {
@@ -369,7 +376,8 @@ namespace PS.Choreography
                     CrystalPiece c = tl.Crystals[crystal];
                     if (!view.Contains(f.Focus, c.Position, -c.RadiusM) || !view.Contains(f.Focus, view.Raised(f.Focus, c.Position, c.HeightM)))
                         problems.Add(Where(s, b.Time) + b.Target + " breaks partly out of view");
-                    else if (!HeroBlowAt(tl, b.Time)) problems.Add(Where(s, b.Time) + b.Target + " breaks without a hero blow landing");
+                    else if (!HeroBlowAt(tl, b.Time) && !Array.Exists(tl.BossAttacks, a => Math.Abs(a.Impact - b.Time) <= Eps))
+                        problems.Add(Where(s, b.Time) + b.Target + " breaks without a hero blow or the boss's attack landing");
                     continue;
                 }
                 float bolt = System.Numerics.Vector2.Distance(b.Origin, b.Point);
@@ -403,19 +411,23 @@ namespace PS.Choreography
             return false;
         }
 
-        /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills.</summary>
-        public static List<string> OneHitKills(TrailerShot s, Timeline tl)
+        /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills. A boss fight's boss (<paramref name="roster"/>'s) is the exception.</summary>
+        public static List<string> OneHitKills(TrailerShot s, Timeline tl, Roster roster = null)
         {
             var problems = new List<string>();
             foreach (ActionEvent a in tl.Actions)
             {
                 if (a.Kind != ActionKind.Hit && a.Kind != ActionKind.Tick) continue;
+                if (s.BossFight != null && roster != null && IsBoss(tl, roster, a.Entity)) continue;
                 if (problems.Count < 20) problems.Add(Where(s, a.Impact) + "monster " + a.Entity + " (" + TypeOf(tl, a.Entity) + ") takes a " + a.Kind.ToString().ToLowerInvariant() + " and survives");
             }
             return problems;
         }
 
-        /// <summary>A shot with the boss rule: the boss takes exactly one hit, the final slam's, which kills it. Others have no boss.</summary>
+        /// <summary>
+        /// A shot with the boss rule: the boss takes exactly one hit, the final slam's, which kills it; in a boss fight it takes
+        /// at least <see cref="MinBossHits"/> of the hero's blows from the cut first, and no spell's tick. Others have no boss.
+        /// </summary>
         public static List<string> Boss(Trailer trailer, TrailerShot s, Timeline tl, Roster roster)
         {
             var problems = new List<string>();
@@ -431,15 +443,79 @@ namespace PS.Choreography
             double final = trailer.FinalSlamTime(tl.Map);
             int boss = bosses[0];
             bool died = false;
+            int hits = 0;
             foreach (ActionEvent a in tl.ActionsOf(boss))
             {
                 if (a.Kind == ActionKind.Death && Math.Abs(a.Impact - final) <= Eps) { died = true; continue; }
+                if (a.Kind == ActionKind.Hit && s.BossFight != null)
+                {
+                    if (a.Impact >= s.Cut - Eps && a.Impact < final - Eps) hits++;
+                    continue;
+                }
                 if (a.Kind == ActionKind.Death || a.Kind == ActionKind.Hit || a.Kind == ActionKind.Tick)
                     problems.Add(Where(s, a.Impact) + "boss " + boss + " takes a " + a.Kind.ToString().ToLowerInvariant() + " before the final slam");
             }
             if (!died) problems.Add(Where(s, final) + "boss " + boss + " doesn't die to the final slam");
+            if (s.BossFight != null && hits < MinBossHits) problems.Add(Where(s, final) + "boss " + boss + " takes " + hits + " of the hero's blows on screen before the final slam, under " + MinBossHits);
             return problems;
         }
+
+        /// <summary>
+        /// A shot's boss fight (trailer.md, "The boss fight"): the boss lands every attack of the fight, at least
+        /// <see cref="MinBossAttacks"/>, and each one is telegraphed on the grid and visibly dodged: its windup on a beat and
+        /// its blow, the boss's attack clip, on a strong beat or an accent at least <see cref="Trailer.MinTelegraphBeats"/>
+        /// beats later; the hero inside its zone as it winds up and still as the dodge begins; the dodge ending at most
+        /// <see cref="MaxDodgeLeadS"/> before the blow; the hero's body out of the zone as it lands; and the hero, the boss and
+        /// the zone's origin on screen then. The boss stays on screen on every beat from the cut to the final slam. A shot
+        /// without a fight has no attacks.
+        /// </summary>
+        public static List<string> BossFight(Trailer trailer, TrailerShot s, Timeline tl, Roster roster)
+        {
+            var problems = new List<string>();
+            if (s.BossFight == null)
+            {
+                if (tl.BossAttacks.Length > 0) problems.Add(Where(s, tl.BossAttacks[0].Impact) + "a boss attack in a shot without a boss fight");
+                return problems;
+            }
+            int want = Math.Max(MinBossAttacks, s.BossFight.Attacks.Length);
+            if (tl.BossAttacks.Length < want) problems.Add(Where(s, s.Cut) + "the boss lands " + tl.BossAttacks.Length + " attacks, wants " + want);
+            float hr = roster.HeroRadius;
+            foreach (BossAttack a in tl.BossAttacks)
+            {
+                string at = Where(s, a.Impact) + "the boss's " + (a.Kind == BossAttackKind.Breath ? "breath" : "sweep") + " ";
+                double beats = tl.Map.BeatIndexAt(a.Impact) - tl.Map.BeatIndexAt(a.Windup);
+                if (beats < Trailer.MinTelegraphBeats - 1e-3) problems.Add(at + "is telegraphed for " + beats.ToString("F1", CultureInfo.InvariantCulture) + " beats, under " + Trailer.MinTelegraphBeats);
+                GridPoint pw = tl.Grid.Points[tl.Grid.Nearest(a.Windup)], pi = tl.Grid.Points[tl.Grid.Nearest(a.Impact)];
+                if (Math.Abs(pw.Time - a.Windup) > Eps || !pw.Has(GridFlags.Beat)) problems.Add(at + "winds up off the beat");
+                if (Math.Abs(pi.Time - a.Impact) > Eps || (pi.Flags & (GridFlags.Strong | GridFlags.Accent)) == 0) problems.Add(at + "lands off the strong beats and accents");
+                bool clip = false;
+                foreach (ActionEvent e in tl.ActionsOf(a.Boss)) if (e.Kind == ActionKind.Attack && Math.Abs(e.Impact - a.Impact) <= Eps) clip = true;
+                if (!clip) problems.Add(at + "lands without the boss's attack");
+                if (!a.Contains(tl.PositionAt(0, a.Windup))) problems.Add(at + "winds up with the hero outside its zone");
+                else if (!a.Contains(tl.PositionAt(0, a.DodgeFrom))) problems.Add(at + "lets the hero walk out of its zone before the dodge");
+                double lead = a.Impact - a.DodgeTo;
+                if (!(lead > 0 && lead <= MaxDodgeLeadS + Eps)) problems.Add(at + "is dodged " + lead.ToString("F3", CultureInfo.InvariantCulture) + " s before it lands, not just before");
+                if (a.Contains(tl.PositionAt(0, a.Impact), hr)) problems.Add(at + "lands on the hero");
+                FramingSample f = tl.FramingAt(a.Impact);
+                ViewGeometry view = tl.View(f.ViewWidth);
+                if (!view.Contains(f.Focus, tl.PositionAt(0, a.Impact)) || !view.Contains(f.Focus, tl.PositionAt(a.Boss, a.Impact)) || !view.Contains(f.Focus, a.Origin))
+                    problems.Add(at + "lands off screen");
+            }
+            int boss = -1;
+            for (int e = 1; e < tl.EntityCount && boss < 0; e++) if (IsBoss(tl, roster, e)) boss = e;
+            double final = trailer.FinalSlamTime(tl.Map);
+            if (boss >= 0)
+                foreach (double t in tl.Map.Beats)
+                {
+                    if (t < s.Cut - Eps || t > final + Eps) continue;
+                    FramingSample f = tl.FramingAt(t);
+                    if (!tl.View(f.ViewWidth).Contains(f.Focus, tl.PositionAt(boss, t)) && problems.Count < 20) problems.Add(Where(s, t) + "the boss is off screen");
+                }
+            return problems;
+        }
+
+        static bool IsBoss(Timeline tl, Roster roster, int e) =>
+            tl.Entities[e].Kind == EntityKind.Monster && roster.Monsters[tl.Entities[e].Type].Rank == MonsterRank.Boss;
 
         /// <summary>A shot with the final slam: every monster alive in view then dies on it.</summary>
         public static List<string> FinalSlam(Trailer trailer, TrailerShot s, Timeline tl)
