@@ -51,6 +51,7 @@ namespace PS.Choreography
                     case GridFlags.Phrase: return 5;
                     case GridFlags.Downbeat: return 4;
                     case GridFlags.Accent: return 3;
+                    case GridFlags.Strong:
                     case GridFlags.Beat: return BeatPriority;
                     case GridFlags.Eighth: return 1;
                     default: return 0;
@@ -81,6 +82,7 @@ namespace PS.Choreography
                 case "eighth": e.Position = GridFlags.Eighth; break;
                 case "sixteenth": e.Position = GridFlags.Sixteenth; break;
                 case "downbeat": e.Position = GridFlags.Downbeat; break;
+                case "strong": e.Position = GridFlags.Strong; break;
                 case "phrase": e.Position = GridFlags.Phrase; break;
                 case "accent": e.Position = GridFlags.Accent; break;
                 case "cut": e.Fixed = FixedPosition.Cut; break;
@@ -476,6 +478,11 @@ namespace PS.Choreography
         public int FormationStreams;
         /// <summary>The most monsters per square metre a formation's refill spawns into (its <c>densityCap</c>).</summary>
         public float DensityCap = DefaultDensityCap;
+        /// <summary>
+        /// The grid position plain combo entries play on (its <c>comboOn</c>, a position name such as <c>strong</c>: the
+        /// trailer's blows on the major beats). <see cref="GridFlags.Beat"/>, the default: every beat.
+        /// </summary>
+        public GridFlags ComboOn = GridFlags.Beat;
 
         public const float DefaultDensityCap = 1.2f;
         static readonly string[] FormationKinds = { "charge", "vortex", "converge" };
@@ -563,6 +570,12 @@ namespace PS.Choreography
                 FormationStreams = root["formation"]["streams"].AsInt(0),
                 DensityCap = root["densityCap"].AsFloat(DefaultDensityCap),
             };
+            if (root.Has("comboOn"))
+            {
+                GridEntry on = GridEntry.Parse("comboOn@" + root["comboOn"].AsString());
+                if (on.Fixed != FixedPosition.None || on.Every > 1) throw new FormatException("level script: comboOn must be a grid position such as 'strong', not '" + root["comboOn"].AsString() + "'");
+                ls.ComboOn = on.Position;
+            }
             if (root.Has("formation") && Array.IndexOf(FormationKinds, ls.Formation) < 0) throw new FormatException("level script: unknown formation '" + ls.Formation + "'");
             if (ls.Formation == "converge" && (ls.FormationStreams < 2 || ls.FormationStreams > 6)) throw new FormatException("level script: converge needs 2 to 6 streams");
             if (!(ls.DensityCap > 0)) throw new FormatException("level script: densityCap must be positive");

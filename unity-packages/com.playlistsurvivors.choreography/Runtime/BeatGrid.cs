@@ -15,6 +15,7 @@ namespace PS.Choreography
         Phrase = 16,   // the downbeat that opens a phrase
         Accent = 32,
         Free = 64,     // a point of a free section's grid (its accents and anchors)
+        Strong = 128,  // a strong beat: the downbeat, or the beat that halves an even bar (4/4's beat 3)
     }
 
     public readonly struct GridPoint
@@ -45,20 +46,24 @@ namespace PS.Choreography
         public readonly SongMap Map;
         public readonly GridPoint[] Points;
         readonly double[] times;
-        /// <summary>Per beat index: is it a downbeat, and does it open a phrase.</summary>
-        public readonly bool[] IsDownbeat, IsPhraseStart;
+        /// <summary>Per beat index: is it a downbeat, a strong beat (a downbeat or an even bar's middle beat), and does it open a phrase.</summary>
+        public readonly bool[] IsDownbeat, IsStrong, IsPhraseStart;
 
         public BeatGrid(SongMap map)
         {
             Map = map;
             int n = map.Beats.Length;
             IsDownbeat = new bool[n];
+            IsStrong = new bool[n];
             IsPhraseStart = new bool[n];
             for (int bar = 1; ; bar++)
             {
                 int b = map.DownbeatIndexOfBar(bar);
                 if (b >= n) break;
-                if (b >= 0) IsDownbeat[b] = true;
+                if (b < 0) continue;
+                IsDownbeat[b] = IsStrong[b] = true;
+                int bpb = map.BeatsPerBarAt(bar);
+                if (bpb % 2 == 0 && b + bpb / 2 < n) IsStrong[b + bpb / 2] = true;
             }
             foreach (int[] ph in map.Phrases)
             {
@@ -90,6 +95,7 @@ namespace PS.Choreography
                 double q = (next - t) / 4;
                 GridFlags f = GridFlags.Beat | GridFlags.Eighth | GridFlags.Sixteenth;
                 if (IsDownbeat[b]) f |= GridFlags.Downbeat;
+                if (IsStrong[b]) f |= GridFlags.Strong;
                 if (IsPhraseStart[b]) f |= GridFlags.Phrase;
                 float acc = AccentNear(map, t);
                 if (acc > 0) f |= GridFlags.Accent;

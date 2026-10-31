@@ -52,6 +52,7 @@ namespace PS.Choreography
         const float SimOverlap = 0.1f;           // the sim keeps overlaps within 10% of the smaller radius (the test allows 25%; transients add up to ~0.1)
         const float FormedOverlap = 0.2f;        // a formation's crowd packs a little closer, so its press keeps moving
         const float ShoveOverlap = 0.4f;         // ... and a monster boxed in on every side shoves this far into its neighbours
+        const float DeepShoveOverlap = 0.7f;     // ... and on its last try, rather than mark time, this far
         const float KnockbackSeconds = 0.12f;
         const float CorpseLinger = 1.0f;
         const double FinalFallShare = 0.75;      // the final slam's dead are down by this share of the aftermath
@@ -1172,9 +1173,10 @@ namespace PS.Choreography
                 if (!e.Matches(p)) continue;
                 if (best == null || e.Priority > best.Priority) best = e;
             }
-            // A plain entry plays on the beat, so on a beat it outranks an eighth's or a sixteenth's.
-            if (best != null && (best.Priority >= GridEntry.BeatPriority || plainCount == 0 || (flags & GridFlags.Beat) == 0)) return best;
-            if (plainCount == 0 || (flags & GridFlags.Beat) == 0) return null;
+            // A plain entry plays on the beat (or the level script's comboOn), so there it outranks an eighth's or a sixteenth's.
+            bool plainPlays = (flags & shot.ComboOn) == shot.ComboOn;
+            if (best != null && (best.Priority >= GridEntry.BeatPriority || plainCount == 0 || !plainPlays)) return best;
+            if (plainCount == 0 || !plainPlays) return null;
             int want = comboCycle % plainCount;
             foreach (GridEntry e in combo)
             {
@@ -1421,6 +1423,15 @@ namespace PS.Choreography
             // A formation's monster wedged among neighbours yet to plan waits for them: it plans again once they have
             // moved, up to UnjamPasses times, then shoves, waiting once more if even that fails, before it marks time.
             if (Formed && order.Length < (UnjamPasses + 2) * n) Array.Resize(ref order, (UnjamPasses + 2) * n);
+            // A kiting hero's escape lane lies behind it: against its travel, and back along its last strides, so round a
+            // corner it holds both ways until the trail has turned too.
+            Vector2 laneBack = Vector2.Zero, trailBack = Vector2.Zero;
+            if (Formed && shot.Path != null)
+            {
+                laneBack = -PathHeading(heroAt);
+                Vector2 trail = HeroPosAt(tb - (tnext - tb)) - heroAt;
+                trailBack = trail.Length() > 0.5f * shot.PathStepM ? Vector2.Normalize(trail) : laneBack;
+            }
             int end = n, passEnd = n, pass = 0;
             for (int oi = 0; oi < end; oi++)
             {
@@ -1446,8 +1457,11 @@ namespace PS.Choreography
                 // Casters still fire from their reach, which lies beyond the ring: their bolts never crowd the hero.
                 // A walking-in boss casts only once in view, however long its reach: its entrance is the show.
                 bool walkingBoss = mt.Rank == MonsterRank.Boss && bossWalksIn;
+                // A kiting hero runs on through where it stands, so a monster in its way steps aside rather than planting a
+                // blow, unless the hero's own blow lands by the next beat and cuts it down mid-windup.
+                bool inWay = laneBack != Vector2.Zero && InHerosWay(a, heroAt, laneBack, contact) && !(heroPendingImpact > tb + 1e-9 && heroPendingImpact <= tnext + 1e-9);
                 if (plan.MonsterAttacks && (clearRadius <= 0 || mt.Projectile >= 0) && d <= contact + mt.ReachM && (nav == null || nav.LineClear(a, heroAt))
-                    && (onScreen[m] || !walkingBoss))
+                    && (onScreen[m] || !walkingBoss) && !inWay)
                 {
                     // In a formation, a monster whose blow fits no beat yet walks on rather than standing.
                     if (TryScheduleAttack(m, mt, tb, toHero) || !Formed) continue;
@@ -1462,6 +1476,13 @@ namespace PS.Choreography
                 if (Formed) dir = Spread(m, a, dir);
                 float stepM = onScreen[m] ? mt.StepM : mt.StepM * OffscreenStride;
                 float step = Math.Min(stepM, Math.Max(0, left - hold));
+                Vector2 chase = dir;
+                if (laneBack != Vector2.Zero)
+                {
+                    // A step out of the hero's way or its lane leads away from the hero, so the hold doesn't shorten it.
+                    Vector2 kept = KeepClear(a, heroAt, laneBack, trailBack, dir, stepM, contact, mt.Radius);
+                    if (kept != dir) { dir = kept; step = Vector2.Distance(a + dir * stepM, heroAt) >= hold ? stepM : step; }
+                }
                 Vector2 best = a;
                 float bestProg = 0;
                 if (step > 1e-3f)
@@ -1512,7 +1533,11 @@ namespace PS.Choreography
                 if (Formed && Vector2.Distance(best, a) < UnjamStep * mt.StepM)
                 {
                     best = Unjam(m, mt, a, dir, heroAt, hold, best, pass);
+                    // Turned out of the hero's way into a crowd, it presses on as it chased instead.
+                    if (Vector2.Distance(best, a) < UnjamStep * mt.StepM && chase != dir) best = Unjam(m, mt, a, chase, heroAt, hold, best, pass);
                     if (Vector2.Distance(best, a) < UnjamStep * mt.StepM && pass <= UnjamPasses) { order[end++] = m; continue; }
+                    // Cornered with the hero in reach, it swings: the hero's blow usually cuts it down first.
+                    if (Vector2.Distance(best, a) < UnjamStep * mt.StepM && plan.MonsterAttacks && d <= contact + mt.ReachM && TryScheduleAttack(m, mt, tb, toHero)) continue;
                 }
                 if (Vector2.Distance(best, a) < 0.2f * mt.StepM)
                 {
@@ -1571,6 +1596,55 @@ namespace PS.Choreography
 
         const float SpreadReachM = 1.6f, SpreadGain = 2.0f;
 
+        const float LaneReachM = 8f;                 // the escape lane reaches this far behind a kiting hero
+        const float LaneHalf = (float)(Math.PI / 4);  // ... and spreads 45° either side of straight behind, bodies kept wholly out
+        const float LaneForward = 0.6f;              // a monster turned out of it also presses on along the hero's travel
+        const int WayStrides = 2;                    // the hero's way is the ground its next strides sweep
+
+        /// <summary>
+        /// Keeping out of a kiting hero's way (trailer.md, "Motion"): a survivors player who is surrounded is dead, and
+        /// one who walks through monsters is no player. So no formation monster steps into:
+        /// <list type="bullet">
+        /// <item>the escape lane, the wedge behind the hero (<paramref name="back"/>, <see cref="LaneHalf"/> either side)
+        /// within <see cref="LaneReachM"/>: a monster whose body reaches into it, or whose step would take it there, turns
+        /// out of it to the nearer side and on along the hero's travel;</item>
+        /// <item>the hero's way, the ground its next <see cref="WayStrides"/> strides sweep (<see cref="InHerosWay"/>):
+        /// a monster there sidesteps out of it to the nearer side, and plants no blow there.</item>
+        /// </list>
+        /// The horde closes from the front and the flanks and trails behind in a wake, still walking every beat.
+        /// </summary>
+        Vector2 KeepClear(Vector2 a, Vector2 heroAt, Vector2 back, Vector2 trail, Vector2 dir, float step, float contact, float r)
+        {
+            Vector2 b = a + dir * step, side = new Vector2(back.Y, -back.X);
+            if (Vector2.Dot(a - heroAt, side) < 0) side = -side;
+            if (InHerosWay(a, heroAt, back, contact) || InHerosWay(b, heroAt, back, contact)) return side;
+            Vector2 lane = InLane(a, heroAt, back, r) || InLane(b, heroAt, back, r) ? back
+                : InLane(a, heroAt, trail, r) || InLane(b, heroAt, trail, r) ? trail : Vector2.Zero;
+            if (lane == Vector2.Zero) return dir;
+            Vector2 away = new Vector2(lane.Y, -lane.X);
+            if (Vector2.Dot(a - heroAt, away) < 0) away = -away;
+            return Vector2.Normalize(away - LaneForward * lane);
+        }
+
+        /// <summary>Does a body of radius <paramref name="r"/> at <paramref name="p"/> reach into the escape lane behind the hero at <paramref name="heroAt"/>?</summary>
+        static bool InLane(Vector2 p, Vector2 heroAt, Vector2 back, float r)
+        {
+            Vector2 d = p - heroAt;
+            float l = d.Length();
+            if (l >= LaneReachM + r) return false;
+            if (l <= r) return true;
+            double off = Math.Acos(Math.Max(-1f, Math.Min(1f, Vector2.Dot(d, back) / l)));
+            return off < LaneHalf + Math.Asin(r / l);
+        }
+
+        /// <summary>Is <paramref name="p"/> within <paramref name="contact"/> of the ground the hero's next strides sweep ahead of <paramref name="heroAt"/>?</summary>
+        bool InHerosWay(Vector2 p, Vector2 heroAt, Vector2 back, float contact)
+        {
+            Vector2 d = p - heroAt;
+            float ahead = -Vector2.Dot(d, back);
+            return ahead > -contact && ahead < WayStrides * shot.PathStepM + contact && Math.Abs(Vector2.Dot(d, new Vector2(back.Y, -back.X))) < contact;
+        }
+
         /// <summary>
         /// A formation's heading bends away from the neighbours pressing on a monster (within <see cref="SpreadReachM"/> of
         /// touching), so a horde chasing one point fans out instead of packing into a block that cannot move.
@@ -1598,6 +1672,7 @@ namespace PS.Choreography
         /// <summary>A formation's monster moves at least this fraction of its gait step each beat (the liveness check wants a quarter).</summary>
         const float UnjamStep = 0.3f;
         const int UnjamPasses = 2;
+        static readonly float[] Shoves = { ShoveOverlap }, DeepShoves = { ShoveOverlap, DeepShoveOverlap };
         static readonly float[] UnjamTurns = { 0.4f, 0.8f, 1.2f, 1.6f, 2.0f, 2.4f, 2.8f, (float)Math.PI }, UnjamLengths = { 0.8f, 0.5f, 0.32f };
 
         /// <summary>
@@ -1643,20 +1718,22 @@ namespace PS.Choreography
                         sideMem[m] = (sbyte)s;
                         return c;
                     }
-            // Boxed in on every side, it shoves: a step just long enough, pressing a little into its neighbours.
+            // Boxed in on every side, it shoves: a step just long enough, pressing a little into its neighbours, and on its
+            // last try, rather than mark time, pressing deeper.
             if (longest < least && pass >= UnjamPasses)
-                foreach (float turn in UnjamTurns)
-                    for (int k = 0; k < 2; k++)
-                    {
-                        int s = k == 0 ? side : -side;
-                        Vector2 b = a + Rotate(dir, s * turn) * least;
-                        if (Vector2.Distance(b, heroAt) < hold || (nav != null && !SegmentClear(a, b, mt.Radius))) continue;
-                        bool ok = true;
-                        for (int q = 0; q < nc && ok; q++) ok = PairOk(m, cand[q], radius[m], a, b, 1f, ShoveOverlap);
-                        if (!ok) continue;
-                        sideMem[m] = (sbyte)s;
-                        return b;
-                    }
+                foreach (float overlap in pass > UnjamPasses ? DeepShoves : Shoves)
+                    foreach (float turn in UnjamTurns)
+                        for (int k = 0; k < 2; k++)
+                        {
+                            int s = k == 0 ? side : -side;
+                            Vector2 b = a + Rotate(dir, s * turn) * least;
+                            if (Vector2.Distance(b, heroAt) < hold || (nav != null && !SegmentClear(a, b, mt.Radius))) continue;
+                            bool ok = true;
+                            for (int q = 0; q < nc && ok; q++) ok = PairOk(m, cand[q], radius[m], a, b, 1f, overlap);
+                            if (!ok) continue;
+                            sideMem[m] = (sbyte)s;
+                            return b;
+                        }
             return best;
         }
 
@@ -2684,7 +2761,8 @@ namespace PS.Choreography
         // Opening placements.
         const int LeadBeats = 4;                // a charge's wave meets the hero this long before the cut
         const float ChargeDensity = 1.55f;      // ... at this many times the shot's density (its target over the view's area)
-        const float VortexOpening = 1f;         // a vortex's disk holds this share of the target
+        const float VortexOpening = 1f;         // a vortex's ring holds this share of the target
+        const float VortexRingM = 8f;           // ... out to this far past the loop's corners
         const float StreamOpening = 0.5f;       // a converge's opening columns hold this share of the target between them
         const float StreamDensityCap = 0.8f;    // ... at this share of the density cap
         // Streams.
@@ -2702,7 +2780,11 @@ namespace PS.Choreography
         const float RefillGain = 0.1f;          // the shortfall on screen builds up the refill by this much a beat, the excess draws it down
         const float BiasBand = 0.25f;           // ... only within this share of the target
         const float CrowdRadiusM = 2f;          // the density cap counts within this radius
+        const int RefillAttempts = 64;          // a refill tries this many spots per monster (a charge's ahead, by its blocks' counts)
         const float FormationClearM = 1f;       // formations place monsters this far from structures, never in a crevice
+        // Type blocks.
+        const float BlockShare = 0.3f;          // a type's block of ground is this share of the view's width across
+        const uint BlockSalt = 0xB10C;          // ... dealt from the seed and this, apart from the other streams
         float refillBias;                       // the shortfall built up so far
         bool refillShort;                       // the last refill placed fewer than it asked for
 
@@ -2712,7 +2794,7 @@ namespace PS.Choreography
         /// <list type="bullet">
         /// <item>a charge, a wave across the hero's path, set back by the ground it walks, so its front meets the hero
         /// <see cref="LeadBeats"/> before the cut;</item>
-        /// <item>a vortex, a disk round the loop's centre;</item>
+        /// <item>a vortex, a ring round the loop, outside its corners;</item>
         /// <item>a converge, a column per stream, just outside the view.</item>
         /// </list>
         /// </summary>
@@ -2743,11 +2825,13 @@ namespace PS.Choreography
                 {
                     Vector2 c = Vector2.Zero;
                     foreach (Vector2 w in shot.Path) c += w / shot.Path.Length;
-                    float r = 0;
-                    foreach (Vector2 w in shot.Path) r = Math.Max(r, Vector2.Distance(w, c));
-                    r += 8f;
-                    float disk = VortexOpening * plan.TargetOnScreen / (float)(Math.PI * r * r);
-                    Fill(t, h, c - new Vector2(r, r), c + new Vector2(r, r), p => Vector2.Distance(p, c) <= r ? disk : 0f);
+                    // A ring round the loop, from its corners out: the horde starts outside and spirals in after the hero
+                    // rather than filling the loop round them.
+                    float inner = 0;
+                    foreach (Vector2 w in shot.Path) inner = Math.Max(inner, Vector2.Distance(w, c));
+                    float r = inner + VortexRingM;
+                    float ring = VortexOpening * plan.TargetOnScreen / (float)(Math.PI * (r * r - inner * inner));
+                    Fill(t, h, c - new Vector2(r, r), c + new Vector2(r, r), p => Vector2.Distance(p, c) <= r && Vector2.Distance(p, c) >= inner ? ring : 0f);
                     break;
                 }
                 default:
@@ -2836,8 +2920,9 @@ namespace PS.Choreography
         /// <summary>
         /// Places monsters on a hexagonal lattice over [<paramref name="min"/>, <paramref name="max"/>], each point kept
         /// with the chance <paramref name="density"/> gives over the lattice's, on open ground the hero's path reaches and
-        /// clear of the hero at <paramref name="h"/>. A big monster that would touch one already placed gives way to fodder,
-        /// and fodder that still would leaves the point empty.
+        /// clear of the hero at <paramref name="h"/>. Each takes its block's type (<see cref="BlockType"/>), kept by its
+        /// block's count density (<see cref="BlockCount"/>), and one that would touch a monster already placed leaves its
+        /// point empty.
         /// </summary>
         void Fill(double t, Vector2 h, Vector2 min, Vector2 max, Func<Vector2, float> density)
         {
@@ -2865,10 +2950,10 @@ namespace PS.Choreography
                 {
                     Vector2 p = At(ci = i, cj = j);
                     float d = density(p);
-                    if (d <= 0 || spawnRng.NextFloat() >= d * perPoint) continue;
-                    int type = PickType(plan.Mix, false);
+                    if (d <= 0) continue;
+                    int type = BlockType(p);
+                    if (spawnRng.NextFloat() >= d * perPoint * BlockCount(type)) continue;
                     if (Vector2.Distance(p, h) < initialInnerRadius) continue;
-                    if (Touches(roster.Monsters[type].Radius)) type = PickType(plan.Mix, true);
                     float r = roster.Monsters[type].Radius;
                     if (Touches(r)) continue;
                     if (nav != null && (nav.Distance(p) < r + FormationClearM || !pathFields[0].Reached(p))) continue;
@@ -2884,7 +2969,8 @@ namespace PS.Choreography
         /// </summary>
         void FormationRefill(double tb, ViewGeometry current)
         {
-            if (shot.Formation == FormationKind.Charge && tb < shot.Cut - 1e-6) return;
+            // A charge's wave is its whole horde until it meets the hero, LeadBeats before the cut.
+            if (shot.Formation == FormationKind.Charge && tb < shot.Cut - LeadBeats * (map.Beats[1] - map.Beats[0]) - 1e-6) return;
             var view = View(Math.Max(current.Width, plan.ViewWidth));
             Vector2 travel = PathHeading(HeroRest);
             double beat = map.Beats[1] - map.Beats[0];
@@ -2924,33 +3010,87 @@ namespace PS.Choreography
                     edge[k] = EdgeDistance(view, focus, source[k]);
                 }
             }
+            // A big monster's block refills sparser (BlockCount), so the refills keep the mix's count; the commonest keep every spot.
+            float blockKeep = float.MaxValue;
+            for (int t = 0; t < roster.Monsters.Length; t++) if (MixWeight(t) > 0) blockKeep = Math.Min(blockKeep, 1f / BlockCount(t));
             for (int i = 0; i < need; i++)
             {
-                int type = PickType(plan.Mix, false);
-                float r = roster.Monsters[type].Radius;
-                for (int attempt = 0; attempt < 24; attempt++)
+                for (int attempt = 0; attempt < RefillAttempts; attempt++)
                 {
-                    float margin = SpawnMargin + r + spawnRng.Range(0, shot.Formation == FormationKind.Converge ? StreamBandM : FlowSpawnBand);
-                    Vector2 p;
+                    // The spot is drawn first and takes its block's type, whose radius then sets it back from the view's edge.
+                    float band = spawnRng.Range(0, shot.Formation == FormationKind.Converge ? StreamBandM : FlowSpawnBand);
+                    Func<float, Vector2> at;
                     if (shot.Formation == FormationKind.Converge)
                     {
                         int k = streamNext++ % streamDirs.Length;
                         Vector2 d = source[k];
-                        float w = StreamWidth(view);
-                        p = focus + d * (edge[k] + margin) + new Vector2(d.Y, -d.X) * spawnRng.Range(-w / 2, w / 2);
-                        if (view.OutsideDistance(focus, p) < SpawnMargin + r) continue;
+                        float w = StreamWidth(view), across = spawnRng.Range(-w / 2, w / 2);
+                        at = margin => focus + d * (edge[k] + margin) + new Vector2(d.Y, -d.X) * across;
                     }
                     else
                     {
-                        p = view.EdgePoint(focus, spawnRng.NextFloat(), margin, out _);
-                        if (shot.Formation == FormationKind.Charge && Vector2.Dot(Vector2.Normalize(p - focus), travel) < AheadConeCos) continue;
+                        float u = spawnRng.NextFloat();
+                        at = margin => view.EdgePoint(focus, u, margin, out _);
                     }
+                    int type = BlockType(at(SpawnMargin + band));
+                    if (spawnRng.NextFloat() >= BlockCount(type) * blockKeep) continue;
+                    float r = roster.Monsters[type].Radius;
+                    Vector2 p = at(SpawnMargin + r + band);
+                    if (shot.Formation == FormationKind.Converge ? view.OutsideDistance(focus, p) < SpawnMargin + r
+                        : shot.Formation == FormationKind.Charge && Vector2.Dot(Vector2.Normalize(p - focus), travel) < AheadConeCos) continue;
                     if (SpawnBlocked(p, r) || (nav != null && nav.Distance(p) < r + FormationClearM) || Crowded(p)) continue;
                     beatSpawns.Add(Spawn(type, p, tb, false));
                     break;
                 }
             }
             refillShort = beatSpawns.Count - placedBefore < need;
+        }
+
+        /// <summary>
+        /// The type that owns ground <paramref name="p"/> (trailer.md, "Kiting and formations"): the ground is cut into
+        /// square blocks <see cref="BlockShare"/> of the view wide, each dealt one of the mix's types from the block and the
+        /// seed, weighted by the ground its share of the count covers (weight × diameter², as the song's clump arcs are).
+        /// A formation places and refills every monster by its spot's block, so the horde walks in as coloured masses.
+        /// </summary>
+        int BlockType(Vector2 p)
+        {
+            float size = BlockShare * plan.ViewWidth;
+            uint h = Rng.Hash(seed ^ BlockSalt, (uint)(int)Math.Floor(p.X / size), (uint)(int)Math.Floor(p.Y / size));
+            double total = 0;
+            int last = -1;
+            for (int t = 0; t < roster.Monsters.Length; t++)
+            {
+                float d = 2 * roster.Monsters[t].Radius;
+                total += MixWeight(t) * d * d;
+                if (MixWeight(t) > 0) last = t;
+            }
+            if (last < 0) return PickType(plan.Mix, false);   // a mix of bosses only: PickType's fodder fallback
+            double u = h / 4294967296.0 * total;
+            for (int t = 0; t < roster.Monsters.Length; t++)
+            {
+                float d = 2 * roster.Monsters[t].Radius;
+                u -= MixWeight(t) * d * d;
+                if (u < 0 && MixWeight(t) > 0) return t;
+            }
+            return last;
+        }
+
+        /// <summary>
+        /// How densely <paramref name="type"/>'s blocks fill, by count, against the mix's mean (<see cref="BlockType"/>
+        /// deals blocks by ground): the mix's mean footprint (diameter²) over the type's, so a block of trolls holds as
+        /// much ground as a block of bats but fewer bodies, and the horde keeps the mix's proportions by count.
+        /// </summary>
+        float BlockCount(int type)
+        {
+            double w = 0, ground = 0;
+            for (int t = 0; t < roster.Monsters.Length; t++)
+            {
+                float dt = 2 * roster.Monsters[t].Radius;
+                w += MixWeight(t);
+                ground += MixWeight(t) * dt * dt;
+            }
+            float d = 2 * roster.Monsters[type].Radius;
+            return w > 0 ? (float)(ground / w / (d * d)) : 1f;
         }
 
         /// <summary>

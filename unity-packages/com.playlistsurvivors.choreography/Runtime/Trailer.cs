@@ -34,6 +34,8 @@ namespace PS.Choreography
         public TrailerFormation Formation;
         public MixEntry[] Duel;
         public string[] Combo = new string[0], Spells = new string[0];
+        /// <summary>The grid position the combo's plain entries land on (the level script's <c>comboOn</c>): the major beats by default.</summary>
+        public string BlowsOn = Trailer.DefaultBlowsOn;
         public string Boss;
         public float ShapeScale = 1f, DensityCap = Trailer.DefaultDensityCap;
         public TrailerGrade Grade = new TrailerGrade();
@@ -73,6 +75,12 @@ namespace PS.Choreography
         public const string StartCut = "start";
         public const float DefaultHeroStepS = 0.14f, DefaultDensityCap = LevelScript.DefaultDensityCap;
         public const int DefaultPrerollBeats = 16;
+        /// <summary>
+        /// The hero's blows land on the strong beats (trailer.md, "The hero's moves"), each clip played near its natural
+        /// rate: overdrive's 2-3x swings read as flailing, so a shot's script replaces its combo speed limits with these.
+        /// </summary>
+        public const string DefaultBlowsOn = "strong";
+        public const float ComboMinSpeed = 0.8f, ComboMaxSpeed = 1.5f;
         static readonly string[] Formations = { "charge", "vortex", "converge" };
         static readonly string[] BossSides = { "ahead", "behind", "left", "right" };
 
@@ -149,7 +157,7 @@ namespace PS.Choreography
         {
             string what = "shot " + n;
             CheckKeys(o, what, "cut", "environment", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
-                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "note");
+                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "note");
             var s = new TrailerShot
             {
                 Number = n,
@@ -162,6 +170,7 @@ namespace PS.Choreography
                 ShapeScale = o["shapeScale"].AsFloat(1f),
                 DensityCap = o["densityCap"].AsFloat(DefaultDensityCap),
                 PrerollBeats = o["prerollBeats"].AsInt(DefaultPrerollBeats),
+                BlowsOn = o["blowsOn"].AsString() ?? DefaultBlowsOn,
             };
             if (s.CutAt == null) throw new FormatException(what + ": needs a cut");
             if (n == 1)
@@ -214,6 +223,10 @@ namespace PS.Choreography
             }
             if ((s.Formation == null) == (s.Duel == null)) throw new FormatException(what + ": needs exactly one of a formation and a duel");
             if (s.Formation != null && s.Path == null) throw new FormatException(what + ": a formation's hero kites, so it needs a path");
+            GridEntry on;
+            try { on = GridEntry.Parse("blowsOn@" + s.BlowsOn); }
+            catch (FormatException ex) { throw new FormatException(what + ": blowsOn: " + ex.Message); }
+            if (on.Fixed != FixedPosition.None || on.Every > 1) throw new FormatException(what + ": blowsOn must be a grid position such as 'strong', not '" + s.BlowsOn + "'");
             s.Combo = Strings(o["combo"]);
             s.Spells = Strings(o["spells"]);
             JsonValue g = o["grade"];
@@ -309,6 +322,9 @@ namespace PS.Choreography
                 Pair("shapeScale", JsonValue.OfNumber(s.ShapeScale)),
                 Pair("yawDeg", JsonValue.OfNumber(s.YawDeg)),
                 Pair("holdGround", JsonValue.OfBool(s.HoldGround)),
+                Pair("comboOn", JsonValue.OfString(s.BlowsOn)),
+                Pair("comboMinSpeed", JsonValue.OfNumber(ComboMinSpeed)),
+                Pair("comboMaxSpeed", JsonValue.OfNumber(ComboMaxSpeed)),
             };
             if (s.Number > 1) set.Add(Pair("cut", JsonValue.OfString(s.CutAt)));
             if (s.HasFinal) set.Add(Pair("final", JsonValue.OfString(FinalPos(this))));

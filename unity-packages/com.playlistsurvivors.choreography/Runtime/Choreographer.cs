@@ -182,6 +182,7 @@ namespace PS.Choreography
         public FormationKind Formation;                             // None: the song's opening horde, releases and refill
         public int Streams;                                         // a converge's
         public float DensityCap;                                    // a formation's refill spawns where fewer stand per m²
+        public GridFlags ComboOn = GridFlags.Beat;                  // plain combo entries play on this position
 
         public static readonly ShotRules Default = new ShotRules();
 
@@ -198,7 +199,7 @@ namespace PS.Choreography
                 ShapeScale = script.ShapeScale, YawDeg = script.YawDeg, ViewWidthTo = script.ViewWidthToM, BossFrom = script.Boss,
                 Formation = script.Formation == "charge" ? FormationKind.Charge : script.Formation == "vortex" ? FormationKind.Vortex
                     : script.Formation == "converge" ? FormationKind.Converge : FormationKind.None,
-                Streams = script.FormationStreams, DensityCap = script.DensityCap,
+                Streams = script.FormationStreams, DensityCap = script.DensityCap, ComboOn = script.ComboOn,
             };
             var grid = new BeatGrid(map);
             if (script.Cut != null) r.Cut = map.TimeOfBarBeat(script.Cut, grid);

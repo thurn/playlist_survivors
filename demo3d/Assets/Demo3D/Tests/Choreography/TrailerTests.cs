@@ -116,7 +116,10 @@ namespace Demo3D.Choreography.Tests
                 File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.IntensityFile("overdrive"))));
             TrailerShot s = t.Shots[9];
             Assert.That(ls.Intensity, Is.EqualTo("overdrive"));
-            Assert.That(ls.Tuning.ComboMaxSpeed, Is.EqualTo(3.0f), "overdrive's global combo speed");
+            Assert.That((ls.Tuning.ComboMinSpeed, ls.Tuning.ComboMaxSpeed), Is.EqualTo((PS.Choreography.Trailer.ComboMinSpeed, PS.Choreography.Trailer.ComboMaxSpeed)),
+                "the trailer's natural-rate blows, over overdrive's 2-3x");
+            Assert.That(ls.Tuning.SoundGainBase, Is.EqualTo(0.22).Within(1e-9), "overdrive's global sound gain");
+            Assert.That(ls.ComboOn, Is.EqualTo(GridFlags.Strong), "blows on the strong beats by default");
             Assert.That(ls.Seed, Is.EqualTo(t.Seed + 10));
             Assert.That((ls.SpanFromS, ls.SpanToS), Is.EqualTo((s.SpanFrom, s.End)));
             Assert.That((ls.Cut, ls.Final, ls.Boss), Is.EqualTo(("97.1", "99.1", "ahead")));
@@ -153,6 +156,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ls.KillBudget, Is.True);
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((0f, 0f, 0f)));
             Assert.That(ls.Formation, Is.Null, "the song's opening horde, releases and refill");
+            Assert.That(ls.ComboOn, Is.EqualTo(GridFlags.Beat), "plain combo entries on every beat");
             foreach (string pos in new[] { "beat", "eighth", "downbeat", "phrase", "accent" })
                 Assert.That(GridEntry.Parse("slashL@" + pos).Fixed, Is.EqualTo(FixedPosition.None), pos);
         }
@@ -177,6 +181,8 @@ namespace Demo3D.Choreography.Tests
             Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"formation\": { \"kind\": \"spiral\" },"))).Message, Does.Contain("unknown formation 'spiral'"));
             Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"formation\": { \"kind\": \"converge\", \"streams\": 1 },"))).Message, Does.Contain("2 to 6 streams"));
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"spanS\": [110, 100],")));
+            Assert.That(LevelScript.Parse(Script("\"comboOn\": \"downbeat\",")).ComboOn, Is.EqualTo(GridFlags.Downbeat));
+            Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"comboOn\": \"cut\","))).Message, Does.Contain("comboOn must be a grid position"));
             Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"viewWidthToM\": 65,"))).Message, Does.Contain("needs spanS"));
         }
 
@@ -189,6 +195,21 @@ namespace Demo3D.Choreography.Tests
                 Assert.That(GridEntry.Parse(order[i - 1]).Priority, Is.GreaterThan(GridEntry.Parse(order[i]).Priority), order[i - 1] + " over " + order[i]);
             GridEntry e = GridEntry.Parse("spin@82.3");
             Assert.That((e.Fixed, e.Bar, e.Beat, e.ToString()), Is.EqualTo((FixedPosition.BarBeat, 82, 3, "spin@82.3")));
+        }
+
+        /// <summary>The strong beats are each bar's first and third (4/4's halves), and <c>strong</c> names them in a combo or <c>blowsOn</c>.</summary>
+        [Test]
+        public void StrongBeatsAreTheDownbeatAndTheMiddleOfTheBar()
+        {
+            var grid = new BeatGrid(Fixtures.Song);
+            for (int beat = 1; beat <= 4; beat++)
+            {
+                GridPoint p = grid.Points[grid.Nearest(Fixtures.Song.TimeOfBarBeat("85." + beat))];
+                Assert.That(p.Has(GridFlags.Strong), Is.EqualTo(beat == 1 || beat == 3), "85." + beat);
+            }
+            Assert.That(GridEntry.Parse("slam@strong").Position, Is.EqualTo(GridFlags.Strong));
+            Assert.That(Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2("\"blowsOn\": \"82.1\""))).Message, Does.Contain("blowsOn must be a grid position"));
+            Assert.That(Parse(Shot1(), Shot2("\"blowsOn\": \"downbeat\"")).Shots[1].BlowsOn, Is.EqualTo("downbeat"));
         }
 
         /// <summary>A heading turns the view: a point just past the far edge is in view of a camera turned a quarter, and the counted area is the same.</summary>
@@ -455,6 +476,75 @@ namespace Demo3D.Choreography.Tests
             List<string> problems = TrailerChecks.Density(Fixtures.Trailer, s, Fixtures.Shot(1));
             Assert.That(problems, Has.Count.EqualTo(4), Report(problems));   // each of its four bars
             Assert.That(TrailerChecks.Density(Fixtures.Trailer, Fixtures.Trailer.Shots[0], Fixtures.Shot(0)), Is.Empty, "the duel is exempt");
+        }
+
+        /// <summary>A horde whose types are dealt at random, as the trailer's first cut drew them, fails the type blocks.</summary>
+        [Test]
+        public void AConfettiHordeFailsTheTypeBlocks()
+        {
+            Timeline tl = Clone(Fixtures.Shot(1));
+            TrailerShot s = Fixtures.Trailer.Shots[1];
+            Assert.That(TrailerChecks.TypeBlocks(Fixtures.Trailer, s, tl), Is.Empty, "before dealing");
+            Roster roster = Fixtures.ShotData(1).Roster;
+            var types = new List<int>();
+            foreach (MixEntry e in s.Formation.Mix)
+                for (int k = 0; k < Math.Round(e.Weight); k++) types.Add(roster.MonsterIndex(e.Type));
+            var rng = new Rng(3);
+            tl.Entities = (EntityInfo[])tl.Entities.Clone();
+            for (int e = 1; e < tl.EntityCount; e++)
+            {
+                EntityInfo info = tl.Entities[e];
+                if (info.Kind == EntityKind.Monster) tl.Entities[e] = new EntityInfo(info.Id, types[rng.Next(types.Count)], info.Kind, info.Spawn, info.Despawn, info.Seed);
+            }
+            List<string> problems = TrailerChecks.TypeBlocks(Fixtures.Trailer, s, tl);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("shot 2").And.Contain("share its type"));
+        }
+
+        /// <summary>A blow moved onto a weak beat fails twice: off the major beats, and a beat after the last.</summary>
+        [Test]
+        public void ABlowOffTheMajorBeatsFails()
+        {
+            Timeline tl = Clone(Fixtures.Shot(1));
+            TrailerShot s = Fixtures.Trailer.Shots[1];
+            Assert.That(TrailerChecks.BlowsOnMajorBeats(Fixtures.Trailer, s, tl), Is.Empty, "before moving");
+            int i = FirstAction(tl, 0, ActionKind.Attack);
+            while (tl.Actions[i].Impact < s.Cut - 1e-6) i++;   // the cut's blow
+            ActionEvent a = tl.Actions[i + 1];
+            double weak = Fixtures.Song.Beats[(int)Math.Round(Fixtures.Song.BeatIndexAt(s.Cut)) + 1];   // 81.2
+            tl.Actions[i + 1] = new ActionEvent(a.Entity, a.Kind, weak, a.Clip, a.Target, a.Strength, a.ClipStart, a.ClipSpeed);
+            List<string> problems = TrailerChecks.BlowsOnMajorBeats(Fixtures.Trailer, s, tl);
+            Assert.That(problems, Has.Count.EqualTo(2), Report(problems));   // off the beats, and a beat after the cut's
+            Assert.That(problems[0], Does.Contain("off the major beats"));
+            Assert.That(problems[1], Does.Contain("1.0 beats after the last"));
+        }
+
+        /// <summary>A ring of monsters closed round the hero on a beat fails the open lane on that beat.</summary>
+        [Test]
+        public void AHeroHemmedInFails()
+        {
+            Timeline tl = Clone(Fixtures.Shot(1));
+            TrailerShot s = Fixtures.Trailer.Shots[1];
+            Roster roster = Fixtures.ShotData(1).Roster;
+            Assert.That(TrailerChecks.OpenLane(Fixtures.Trailer, s, tl, roster), Is.Empty, "before closing in");
+            double t = Fixtures.Song.TimeOfBarBeat("83.2");
+            Vector2 h = tl.PositionAt(0, t);
+            // Twenty monsters alive then, each stood on a 2 m ring round the hero for the beat.
+            int placed = 0;
+            for (int e = 1; e < tl.EntityCount && placed < 20; e++)
+            {
+                if (tl.Entities[e].Kind != EntityKind.Monster || !tl.Exists(e, t + 0.5) || tl.PositionAt(e, t) == tl.PositionAt(e, t + 0.5)) continue;
+                double angle = 2 * Math.PI * placed++ / 20;
+                Vector2 spot = h + 2f * new Vector2((float)Math.Cos(angle), (float)Math.Sin(angle));
+                for (int k = tl.SegmentStart[e]; k < tl.SegmentStart[e + 1]; k++)
+                {
+                    MotionSegment g = tl.Segments[k];
+                    if (g.T0 <= t + 1e-6 && g.T1 > t + 1e-6) tl.Segments[k] = new MotionSegment(e, g.T0, g.T1, spot, spot, g.FacingFrom, g.FacingTo, g.Ease);
+                }
+            }
+            List<string> problems = TrailerChecks.OpenLane(Fixtures.Trailer, s, tl, roster);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain(t.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)).And.Contain("hemmed in"));
         }
 
         // ------------------------------------------------------------------ helpers

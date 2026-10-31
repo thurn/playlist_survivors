@@ -22,6 +22,10 @@ namespace PS.Choreography
         public double KiteRatio;
         /// <summary>Monster liveness violations: monster beat intervals in view without a move or a clip.</summary>
         public int LivenessViolations;
+        /// <summary>The mean share of a visible monster's neighbours of its own type (NaN with none): 1 is pure blocks.</summary>
+        public double TypeCoherence;
+        /// <summary>The narrowest the hero's open lane gets, in degrees: the least, over the beats, of the widest gap round them (360 with no monster near).</summary>
+        public double OpenLaneDeg;
     }
 
     /// <summary>
@@ -39,6 +43,16 @@ namespace PS.Choreography
         public const float LiveStepFraction = 0.25f;
         /// <summary>The liveness check's view grows by this margin, where monsters spawn.</summary>
         public const float LiveMarginM = 2f;
+        /// <summary>A visible monster's neighbours are the visible monsters within this radius.</summary>
+        public const float NeighbourRadiusM = 3f;
+        /// <summary>A horde shot's monsters' neighbours are of their own type at least this share of the time, on average (a random mix of the shots' scores about 0.25).</summary>
+        public const double MinTypeCoherence = 0.6;
+        /// <summary>In a pulsed section, the hero's blows land at least this many beats apart.</summary>
+        public const double MinBlowGapBeats = 2;
+        /// <summary>The encirclement check looks at the monsters within this radius of the hero.</summary>
+        public const float EncircleRadiusM = 6f;
+        /// <summary>... and wants a gap round the hero free of their bodies at least this wide, on every beat: an escape lane.</summary>
+        public const double MinOpenLaneDeg = 60;
 
         /// <summary>Every check, by name, on one shot's timeline (<paramref name="data"/>: the shot's roster and clips).</summary>
         public static List<KeyValuePair<string, List<string>>> All(Trailer trailer, int index, Timeline tl, ChoreographyData data)
@@ -53,6 +67,9 @@ namespace PS.Choreography
                 Check("impacts on the grid", ImpactsOnTheGrid(s, tl)),
                 Check("the hero acts every beat", HeroActsEveryBeat(trailer, s, tl)),
                 Check("monster liveness", MonstersLive(s, tl, data)),
+                Check("type blocks", TypeBlocks(trailer, s, tl)),
+                Check("blows on the major beats", BlowsOnMajorBeats(trailer, s, tl)),
+                Check("an open lane", OpenLane(trailer, s, tl, roster)),
                 Check("one hit kills", OneHitKills(s, tl)),
                 Check("the boss", Boss(trailer, s, tl, roster)),
                 Check("the final slam", FinalSlam(trailer, s, tl)),
@@ -186,6 +203,142 @@ namespace PS.Choreography
             return false;
         }
 
+        /// <summary>
+        /// In a horde shot, waves come in blocks of one type (trailer.md, "Kiting and formations"): on every beat of the
+        /// visible span up to any final slam, each live monster in view scores the share of the visible monsters within
+        /// <see cref="NeighbourRadiusM"/> that share its type, and the mean over the shot is at least
+        /// <see cref="MinTypeCoherence"/>.
+        /// </summary>
+        public static List<string> TypeBlocks(Trailer trailer, TrailerShot s, Timeline tl) => Coherence(trailer, s, tl, out _);
+
+        static List<string> Coherence(Trailer trailer, TrailerShot s, Timeline tl, out double mean)
+        {
+            var problems = new List<string>();
+            mean = double.NaN;
+            if (s.Duel != null) return problems;
+            double[] death = DeathTimes(tl);
+            double end = s.HasFinal ? trailer.FinalSlamTime(tl.Map) : s.End, sum = 0;
+            int n = 0;
+            var visible = new List<int>();
+            float r2 = NeighbourRadiusM * NeighbourRadiusM;
+            foreach (double t in tl.Map.Beats)
+            {
+                if (t < s.Cut - Eps || t >= end - Eps) continue;
+                FramingSample f = tl.FramingAt(t);
+                ViewGeometry view = tl.View(f.ViewWidth);
+                visible.Clear();
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind == EntityKind.Monster && t >= info.Spawn && t < info.Despawn && t < death[e] && view.Contains(f.Focus, tl.PositionAt(e, t))) visible.Add(e);
+                }
+                var at = new Vector2[visible.Count];
+                for (int i = 0; i < at.Length; i++) at[i] = tl.PositionAt(visible[i], t);
+                for (int i = 0; i < at.Length; i++)
+                {
+                    int same = 0, all = 0;
+                    for (int j = 0; j < at.Length; j++)
+                    {
+                        if (i == j || Vector2.DistanceSquared(at[i], at[j]) > r2) continue;
+                        all++;
+                        if (tl.Entities[visible[j]].Type == tl.Entities[visible[i]].Type) same++;
+                    }
+                    if (all == 0) continue;
+                    sum += same / (double)all;
+                    n++;
+                }
+            }
+            if (n == 0) return problems;
+            mean = sum / n;
+            if (mean < MinTypeCoherence)
+                problems.Add("shot " + s.Number + ": a monster's neighbours share its type " + mean.ToString("P0", CultureInfo.InvariantCulture) + " of the time, under " + MinTypeCoherence.ToString("P0", CultureInfo.InvariantCulture));
+            return problems;
+        }
+
+        /// <summary>
+        /// The hero's blows land on the major beats (trailer.md, "The hero's moves"): every impact of the visible span is on
+        /// a strong beat (4/4's beats 1 and 3), an accent, the shot's cut or a free section's anchor, and in a pulsed section
+        /// each lands at least <see cref="MinBlowGapBeats"/> beats after the one before, so a blow gets its windup and
+        /// follow-through at a natural rate.
+        /// </summary>
+        public static List<string> BlowsOnMajorBeats(Trailer trailer, TrailerShot s, Timeline tl)
+        {
+            var problems = new List<string>();
+            double last = double.NaN;
+            foreach (ActionEvent a in tl.ActionsOf(0))
+            {
+                if (a.Kind != ActionKind.Attack || a.Impact < s.Cut - Eps || a.Impact >= s.End - Eps) continue;
+                GridPoint p = tl.Grid.Points[tl.Grid.Nearest(a.Impact)];
+                bool free = p.Has(GridFlags.Free);
+                bool major = Math.Abs(p.Time - a.Impact) <= Eps && (free || Math.Abs(a.Impact - s.Cut) <= Eps || (p.Flags & (GridFlags.Strong | GridFlags.Accent)) != 0);
+                if (!major && problems.Count < 20) problems.Add(Where(s, a.Impact) + "a hero blow off the major beats");
+                double gap = tl.Map.BeatIndexAt(a.Impact) - tl.Map.BeatIndexAt(last);
+                if (!free && !double.IsNaN(last) && gap < MinBlowGapBeats - 1e-3 && problems.Count < 20)
+                    problems.Add(Where(s, a.Impact) + "a hero blow " + gap.ToString("F1", CultureInfo.InvariantCulture) + " beats after the last");
+                last = a.Impact;
+            }
+            return problems;
+        }
+
+        /// <summary>
+        /// The hero is never surrounded (trailer.md, "Motion"): on every beat of the visible span up to any final slam, the
+        /// bodies of the live monsters within <see cref="EncircleRadiusM"/> of the hero leave a gap round them at least
+        /// <see cref="MinOpenLaneDeg"/> wide.
+        /// </summary>
+        public static List<string> OpenLane(Trailer trailer, TrailerShot s, Timeline tl, Roster roster) => Lanes(trailer, s, tl, roster, out _);
+
+        static List<string> Lanes(Trailer trailer, TrailerShot s, Timeline tl, Roster roster, out double narrowest)
+        {
+            var problems = new List<string>();
+            narrowest = 360;
+            double[] death = DeathTimes(tl);
+            double end = s.HasFinal ? trailer.FinalSlamTime(tl.Map) : s.End;
+            var arcs = new List<KeyValuePair<double, double>>();
+            foreach (double t in tl.Map.Beats)
+            {
+                if (t < s.Cut - Eps || t >= end - Eps) continue;
+                Vector2 h = tl.PositionAt(0, t);
+                arcs.Clear();
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind != EntityKind.Monster || t < info.Spawn || t >= info.Despawn || t >= death[e]) continue;
+                    Vector2 d = tl.PositionAt(e, t) - h;
+                    float l = d.Length(), r = roster.Monsters[info.Type].Radius;
+                    if (l > EncircleRadiusM + r) continue;
+                    double half = l <= r ? Math.PI : Math.Asin(r / l), mid = Math.Atan2(d.Y, d.X);
+                    arcs.Add(new KeyValuePair<double, double>(mid - half, mid + half));
+                }
+                double gap = WidestGap(arcs) * 180 / Math.PI;
+                narrowest = Math.Min(narrowest, gap);
+                if (gap < MinOpenLaneDeg && problems.Count < 20)
+                    problems.Add(Where(s, t) + "the hero is hemmed in: the widest gap round them is " + gap.ToString("F0", CultureInfo.InvariantCulture) + " degrees");
+            }
+            return problems;
+        }
+
+        /// <summary>The widest angle (radians) the arcs leave uncovered round the circle; 2π with none.</summary>
+        static double WidestGap(List<KeyValuePair<double, double>> arcs)
+        {
+            if (arcs.Count == 0) return 2 * Math.PI;
+            var list = new List<KeyValuePair<double, double>>();
+            foreach (KeyValuePair<double, double> a in arcs)
+            {
+                if (a.Value - a.Key >= 2 * Math.PI) return 0;
+                double lo = a.Key - 2 * Math.PI * Math.Floor(a.Key / (2 * Math.PI)), hi = lo + (a.Value - a.Key);
+                list.Add(new KeyValuePair<double, double>(lo, hi));
+            }
+            list.Sort((x, y) => x.Key.CompareTo(y.Key));
+            double best = 0, reach = list[0].Value;
+            for (int i = 1; i < list.Count; i++)
+            {
+                best = Math.Max(best, list[i].Key - reach);
+                reach = Math.Max(reach, list[i].Value);
+            }
+            // Round the circle, from the furthest any arc reaches back to the first arc's start.
+            return Math.Max(best, list[0].Key + 2 * Math.PI - reach);
+        }
+
         /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills.</summary>
         public static List<string> OneHitKills(TrailerShot s, Timeline tl)
         {
@@ -308,6 +461,8 @@ namespace PS.Choreography
             DensitySamples(trailer, s, tl, out r.OnScreen);
             HeroIntervals(trailer, s, tl, out r.ActedShare);
             LivenessViolations(s, tl, data, out r.LivenessViolations);
+            Coherence(trailer, s, tl, out r.TypeCoherence);
+            Lanes(trailer, s, tl, roster, out r.OpenLaneDeg);
             double dur = s.End - s.Cut;
             var deaths = new Dictionary<double, int>();
             foreach (ActionEvent a in tl.Actions)
@@ -353,12 +508,12 @@ namespace PS.Choreography
         public static string Table(IList<ShotReport> rows)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness");
+            sb.AppendLine("shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness  blocks  lane");
             foreach (ShotReport r in rows)
-                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,4}  {1,-11}  {2,9} / {3,-6}  {4,8:F2}  {5,11:F1}, {6,-12}  {7,9:P0}  {8,4}  {9,8}",
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,4}  {1,-11}  {2,9} / {3,-6}  {4,8:F2}  {5,11:F1}, {6,-12}  {7,9:P0}  {8,4}  {9,8}  {10,6}  {11,4:F0}",
                     r.Number, r.Environment, double.IsNaN(r.OnScreen) ? "-" : r.OnScreen.ToString("F0", CultureInfo.InvariantCulture), r.Target, r.SwingsPerSecond,
                     r.MeanKillsPerSwing, r.PeakKillsPerSwing, r.ActedShare, double.IsNaN(r.KiteRatio) ? "-" : r.KiteRatio.ToString("F1", CultureInfo.InvariantCulture),
-                    r.LivenessViolations));
+                    r.LivenessViolations, double.IsNaN(r.TypeCoherence) ? "-" : r.TypeCoherence.ToString("P0", CultureInfo.InvariantCulture), r.OpenLaneDeg));
             return sb.ToString();
         }
 
