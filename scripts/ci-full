@@ -32,15 +32,24 @@ case "$section" in
 esac
 
 # All: the native section first, alone, since its benches are timed and it builds what the others
-# run; then the rest in parallel lanes, each lane's output printed once it is done.
+# run; then the rest in parallel lanes, each lane's output printed once it is done, and last one
+# line of each lane's seconds, so a log's tail shows which lane is the long pole.
 if [ "$section" = all ]; then
+  started=$(date +%s)
   scripts/ci-full native
+  times="native $(( $(date +%s) - started )) s"
   logs=$(mktemp -d)
   lanes=""
   lane() {
     name=$1
     shift
-    (for s in "$@"; do scripts/ci-full "$s" || exit 1; done) > "$logs/$name.log" 2>&1 &
+    (
+      lane_started=$(date +%s)
+      status=0
+      for s in "$@"; do scripts/ci-full "$s" || { status=1; break; }; done
+      echo $(( $(date +%s) - lane_started )) > "$logs/$name.seconds"
+      exit $status
+    ) > "$logs/$name.log" 2>&1 &
     lanes="$lanes $!:$name"
   }
   lane native-tests native-tests
@@ -51,17 +60,18 @@ if [ "$section" = all ]; then
   passed=""
   failed=""
   for entry in $lanes; do
-    if wait "${entry%%:*}"; then passed="$passed ${entry#*:}"; else failed="$failed ${entry#*:}"; fi
+    name=${entry#*:}
+    if wait "${entry%%:*}"; then passed="$passed $name"; else failed="$failed $name"; fi
+    times="$times, $name $(cat "$logs/$name.seconds" 2>/dev/null || echo ?) s"
   done
   # Failed lanes print last, so a log tail (Enact's Steward bead keeps the last 60 lines) shows
-  # the failure rather than a passing lane's output.
+  # the failure rather than a passing lane's output; then the times, kept to one line.
   for name in $passed; do echo "=== ci-full $name: passed"; cat "$logs/$name.log"; done
   for name in $failed; do echo "=== ci-full $name: FAILED"; cat "$logs/$name.log"; done
   rm -rf "$logs"
-  if [ -n "$failed" ]; then
-    echo "ci-full: failed:$failed"
-    exit 1
-  fi
+  [ -z "$failed" ] || echo "ci-full: failed:$failed"
+  echo "ci-full: lanes $times; all $(( $(date +%s) - started )) s"
+  [ -z "$failed" ] || exit 1
   exit 0
 fi
 
