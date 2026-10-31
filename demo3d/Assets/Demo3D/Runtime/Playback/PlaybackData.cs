@@ -17,6 +17,8 @@ namespace Demo3D.Runtime.Playback
         public TextAsset[] levels;
         /// <summary>The `--intensity` overlays (intensity-NAME.json).</summary>
         public TextAsset[] intensities;
+        /// <summary>The `--structure-breaks` schedules (structure-breaks-NAME.json).</summary>
+        public TextAsset[] structureBreaks;
         public TextAsset annotations;
         public TextAsset roster;
         public TextAsset footprints;
@@ -38,6 +40,11 @@ namespace Demo3D.Runtime.Playback
         public string Overlay(Intensity intensity) => intensity.IsNormal ? null
             : (System.Array.Find(intensities ?? new TextAsset[0], i => i.name == intensity.OverlayName)
                ?? throw new System.InvalidOperationException($"PlaybackData: no {intensity.OverlayName}.json baked (run demo3d unity BakeAll)")).text;
+
+        /// <summary>The overlay JSON for a `--structure-breaks` schedule (null for none), merged over the level script after the intensity's.</summary>
+        public string Overlay(BreakSchedule schedule) => schedule.IsNone ? null
+            : (System.Array.Find(structureBreaks ?? new TextAsset[0], s => s.name == schedule.OverlayName)
+               ?? throw new System.InvalidOperationException($"PlaybackData: no {schedule.OverlayName}.json baked (run demo3d unity BakeAll)")).text;
 
         /// <summary>The clip annotations for a `--roster` set (<see cref="RosterSet.Annotations"/>).</summary>
         public string Annotations(RosterSet set) => set.Annotations(annotations.text);

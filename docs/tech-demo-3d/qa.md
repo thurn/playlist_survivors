@@ -27,6 +27,10 @@ here, since the demo itself takes no input:
 --structure-style <name>
                     the arena's structures in a monster style's treatment
                     (environment.md, Structure styles)
+--structure-breaks <walls>
+                    the hero's bolts break walls on the beat, and the horde
+                    paths through the openings (choreography.md, Structure
+                    breaks)
 ```
 
 ### First assembled check
@@ -144,6 +148,21 @@ baseline crowd handles a few hundred monsters, which is enough.
   beats.
 - **Expect** an unknown name to stop the player at start-up, listing the known
   ones.
+
+### Structure breaks
+
+- Run the song with `--structure-breaks walls --start-at 108 --seconds 35`,
+  and again with `--intensity overdrive` and with `--environment crypt`.
+- **Expect** a bolt from the hero to each wall it breaks, striking on the
+  build's first downbeat (the ruins gate's two wall runs, the hero in its
+  gap), on drop-2's first downbeat (the courtyard's south walls) and on
+  drop-2's second phrase (its east walls), every one in view.
+- **Expect** the horde to walk through the openings after each break, and
+  never through a wall still standing.
+- **Expect** an unknown schedule to stop the player at start-up, listing the
+  known ones.
+- The pieces themselves shatter with the break on screen (ps-suy.3); before
+  it, they are still drawn after their break.
 
 ### A/B review
 
