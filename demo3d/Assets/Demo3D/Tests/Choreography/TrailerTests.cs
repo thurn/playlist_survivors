@@ -19,16 +19,16 @@ namespace Demo3D.Choreography.Tests
 
         // ------------------------------------------------------------------ the trailer file
 
-        /// <summary>The checked-in trailer: ten shots on the song's grid, from the trailer's start to the cut to black.</summary>
+        /// <summary>The checked-in trailer: eight shots on the song's grid, from the trailer's start to the cut to black.</summary>
         [Test]
         public void TheTrailerFileParses()
         {
             Trailer t = Fixtures.Trailer;
-            Assert.That(t.Shots.Length, Is.EqualTo(10));
+            Assert.That(t.Shots.Length, Is.EqualTo(8));
             Assert.That(t.Base, Is.EqualTo("overdrive"));
             Assert.That(t.Shots[0].Cut, Is.EqualTo(121.40).Within(1e-9));
-            Assert.That(t.BlackAt, Is.EqualTo(Fixtures.Song.TimeOfBarBeat("99.3")));
-            Assert.That(t.EndS - t.Shots[0].Cut, Is.EqualTo(32.6).Within(0.05));
+            Assert.That(t.BlackAt, Is.EqualTo(Fixtures.Song.TimeOfBarBeat("117.3")));
+            Assert.That(t.EndS - t.Shots[0].Cut, Is.EqualTo(60.5).Within(0.05));
             for (int i = 0; i < t.Shots.Length; i++)
             {
                 TrailerShot s = t.Shots[i];
@@ -112,17 +112,17 @@ namespace Demo3D.Choreography.Tests
         public void AShotScriptTakesTheBasesGlobalsAndTheShotsFields()
         {
             Trailer t = Fixtures.Trailer;
-            LevelScript ls = t.ShotScript(9, File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.LevelFile)),
+            LevelScript ls = t.ShotScript(Climax, File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.LevelFile)),
                 File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.IntensityFile("overdrive"))));
-            TrailerShot s = t.Shots[9];
+            TrailerShot s = t.Shots[Climax];
             Assert.That(ls.Intensity, Is.EqualTo("overdrive"));
             Assert.That((ls.Tuning.ComboMinSpeed, ls.Tuning.ComboMaxSpeed), Is.EqualTo((PS.Choreography.Trailer.ComboMinSpeed, PS.Choreography.Trailer.ComboMaxSpeed)),
                 "the trailer's natural-rate blows, over overdrive's 2-3x");
             Assert.That(ls.Tuning.SoundGainBase, Is.EqualTo(0.22).Within(1e-9), "overdrive's global sound gain");
             Assert.That(ls.ComboOn, Is.EqualTo(GridFlags.Strong), "blows on the strong beats by default");
-            Assert.That(ls.Seed, Is.EqualTo(t.Seed + 10));
+            Assert.That(ls.Seed, Is.EqualTo(t.Seed + Climax + 1));
             Assert.That((ls.SpanFromS, ls.SpanToS), Is.EqualTo((s.SpanFrom, s.End)));
-            Assert.That((ls.Cut, ls.Final, ls.Boss), Is.EqualTo(("97.1", "99.1", "ahead")));
+            Assert.That((ls.Cut, ls.Final, ls.Boss), Is.EqualTo(("113.1", "117.1", "ahead")));
             Assert.That((ls.KillBudget, ls.ClearRadiusM, ls.HeroStepS), Is.EqualTo((false, 0f, PS.Choreography.Trailer.DefaultHeroStepS)));
             Assert.That(new[] { ls.Tuning.FodderHitPointScale, ls.Tuning.EliteHitPointScale, ls.Tuning.BossHitPointScale }, Is.All.EqualTo(0f));
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((s.ShapeScale, s.YawDeg, s.ViewWidthToM)));
@@ -367,7 +367,7 @@ namespace Demo3D.Choreography.Tests
                 if (a.Kind == ActionKind.Attack) tl.Actions[i] = new ActionEvent(0, ActionKind.Parry, a.Impact, -1, -1, a.Strength);
             }
             List<string> problems = TrailerChecks.HeroActsEveryBeat(Fixtures.Trailer, Fixtures.Trailer.Shots[1], tl);
-            Assert.That(problems, Has.Count.EqualTo(16), Report(problems));   // four bars of beats
+            Assert.That(problems, Has.Count.EqualTo(20), Report(problems));   // eight bars of beats, reported up to 20
             Assert.That(problems[0], Does.Contain("neither strides nor attacks"));
         }
 
@@ -416,25 +416,25 @@ namespace Demo3D.Choreography.Tests
         public void ABossHitBeforeTheFinalSlamFails()
         {
             Trailer t = Fixtures.Trailer;
-            Timeline tl = Clone(Fixtures.Shot(9));
-            Roster roster = Fixtures.ShotData(9).Roster;
-            Assert.That(TrailerChecks.Boss(t, t.Shots[9], tl, roster), Is.Empty);
+            Timeline tl = Clone(Fixtures.Shot(Climax));
+            Roster roster = Fixtures.ShotData(Climax).Roster;
+            Assert.That(TrailerChecks.Boss(t, t.Shots[Climax], tl, roster), Is.Empty);
             int boss = -1;
             for (int e = 1; e < tl.EntityCount; e++) if (tl.Entities[e].Kind == EntityKind.Monster && roster.Monsters[tl.Entities[e].Type].Rank == MonsterRank.Boss) boss = e;
             int i = FirstAction(tl, boss, ActionKind.Spawn);
             ActionEvent a = tl.Actions[i];
             tl.Actions[i] = new ActionEvent(boss, ActionKind.Hit, a.Impact, -1, -1, 1f);
-            Assert.That(TrailerChecks.Boss(t, t.Shots[9], tl, roster), Has.Count.EqualTo(1));
-            TrailerShot noRule = Copy(9);
+            Assert.That(TrailerChecks.Boss(t, t.Shots[Climax], tl, roster), Has.Count.EqualTo(1));
+            TrailerShot noRule = Copy(Climax);
             noRule.Boss = null;
-            Assert.That(TrailerChecks.Boss(t, noRule, Fixtures.Shot(9), roster), Has.Count.EqualTo(1));
+            Assert.That(TrailerChecks.Boss(t, noRule, Fixtures.Shot(Climax), roster), Has.Count.EqualTo(1));
         }
 
         [Test]
         public void AMonsterInViewSurvivingTheFinalSlamFails()
         {
             Trailer t = Fixtures.Trailer;
-            Timeline tl = Clone(Fixtures.Shot(9));
+            Timeline tl = Clone(Fixtures.Shot(Climax));
             double final = t.FinalSlamTime(tl.Map);
             FramingSample f = tl.FramingAt(final);
             int i = -1;
@@ -445,7 +445,7 @@ namespace Demo3D.Choreography.Tests
             }
             ActionEvent a = tl.Actions[i];
             tl.Actions[i] = new ActionEvent(a.Entity, ActionKind.Spawn, a.Impact, -1, -1, 0);   // no death at all
-            List<string> problems = TrailerChecks.FinalSlam(t, t.Shots[9], tl);
+            List<string> problems = TrailerChecks.FinalSlam(t, t.Shots[Climax], tl);
             Assert.That(problems, Has.Count.EqualTo(1));
             Assert.That(problems[0], Does.Contain("monster " + a.Entity));
         }
@@ -474,7 +474,7 @@ namespace Demo3D.Choreography.Tests
             TrailerShot s = Copy(1);
             s.Formation = new TrailerFormation { Kind = "charge", OnScreen = 2 * s.Formation.OnScreen, Mix = s.Formation.Mix };
             List<string> problems = TrailerChecks.Density(Fixtures.Trailer, s, Fixtures.Shot(1));
-            Assert.That(problems, Has.Count.EqualTo(4), Report(problems));   // each of its four bars
+            Assert.That(problems, Has.Count.EqualTo(8), Report(problems));   // each of its eight bars
             Assert.That(TrailerChecks.Density(Fixtures.Trailer, Fixtures.Trailer.Shots[0], Fixtures.Shot(0)), Is.Empty, "the duel is exempt");
         }
 
@@ -599,6 +599,9 @@ namespace Demo3D.Choreography.Tests
         static string Script(string fields) =>
             "{ \"song\": \"action\", \"layout\": \"arena\", " + fields + " \"envelope\": { \"onScreen\": 100, \"viewWidthM\": 30 }, \"sections\": ["
             + " { \"section\": \"quiet\", \"onScreen\": 0.1, \"load\": \"light\", \"combo\": [\"slashL\"], \"spells\": [] } ] }";
+
+        /// <summary>The checked-in trailer's last shot, the climax.</summary>
+        static int Climax => Fixtures.Trailer.Shots.Length - 1;
 
         /// <summary>A copy of a checked-in shot, to break.</summary>
         static TrailerShot Copy(int index)

@@ -1451,7 +1451,7 @@ namespace PS.Choreography
                 if (keepOut) hold = Math.Max(hold, bossKeep);
                 if ((clearRadius > 0 || keepOut) && d < hold - 0.1f)
                 {
-                    BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease, keepOut ? 2 * mt.StepM : mt.StepM);
+                    BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease, keepOut ? 2 * mt.StepM : mt.StepM, keepOut, laneBack);
                     continue;
                 }
                 // Casters still fire from their reach, which lies beyond the ring: their bolts never crowd the hero.
@@ -1476,6 +1476,8 @@ namespace PS.Choreography
                 if (Formed) dir = Spread(m, a, dir);
                 float stepM = onScreen[m] ? mt.StepM : mt.StepM * OffscreenStride;
                 float step = Math.Min(stepM, Math.Max(0, left - hold));
+                // Held at its keep-out, the boss rule's boss prowls round the hero rather than standing.
+                if (keepOut && step < 0.2f * mt.StepM && d > 1e-4f) { dir = Prowl(toHero / d, laneBack); step = 0.5f * stepM; }
                 Vector2 chase = dir;
                 if (laneBack != Vector2.Zero)
                 {
@@ -1577,21 +1579,44 @@ namespace PS.Choreography
         /// A monster inside the clear ring (the hero closed in on it) steps back out toward the ring's
         /// edge, still facing the hero, as far as its neighbours and the walls let it.
         /// </summary>
-        void BackOff(int m, MonsterType mt, Vector2 a, Vector2 heroAt, Vector2 toHero, float d, float hold, double tb, double tnext, Ease ease, float maxStep)
+        void BackOff(int m, MonsterType mt, Vector2 a, Vector2 heroAt, Vector2 toHero, float d, float hold, double tb, double tnext, Ease ease, float maxStep,
+            bool prowl = false, Vector2 laneBack = default)
         {
             Vector2 away = d > 1e-4f ? -toHero / d : -Easing.Dir(facing[m]);
             float step = Math.Min(maxStep, hold - d);
-            Vector2 b = a + away * step;
-            if (nav != null) b = WallStep(a, b, mt.Radius);
-            GatherCandidates(m, a, step);
-            Vector2 best = Vector2.Lerp(a, b, SepFraction(m, a, b));
-            if (nav != null && best != a) best = WallKeep(m, a, best, mt.Radius);
+            Vector2 best = BackOffStep(m, mt, a, away * step);
+            // The boss rule's boss, boxed in behind by the horde, prowls round the hero instead: it never stands.
+            if (prowl && Vector2.Distance(best, a) < 0.2f * mt.StepM)
+            {
+                Vector2 round = Prowl(-away, laneBack);
+                step = Math.Max(step, 0.5f * mt.StepM);
+                foreach (Vector2 dir in new[] { Vector2.Normalize(round + away), round, -round })
+                    if (Vector2.Distance(best, a) < 0.2f * mt.StepM) best = BackOffStep(m, mt, a, dir * step);
+            }
             float fFrom = Easing.Wrap(facing[m]);
             float fTo = Easing.Unwrap(fFrom, Easing.Yaw(toHero));
             SetMonsterSeg(m, new MotionSegment(m, tb, tnext, a, best, fFrom, fTo, ease));
             beatMaxStep = Math.Max(beatMaxStep, Vector2.Distance(a, best));
             planSerial[m] = beatSerial;
             planFrom[m] = a;
+        }
+
+        /// <summary>Where a step of <paramref name="by"/> from <paramref name="a"/> gets, short of walls and neighbours.</summary>
+        Vector2 BackOffStep(int m, MonsterType mt, Vector2 a, Vector2 by)
+        {
+            Vector2 b = a + by;
+            if (nav != null) b = WallStep(a, b, mt.Radius);
+            GatherCandidates(m, a, by.Length());
+            Vector2 best = Vector2.Lerp(a, b, SepFraction(m, a, b));
+            if (nav != null && best != a) best = WallKeep(m, a, best, mt.Radius);
+            return best;
+        }
+
+        /// <summary>Round the hero from <paramref name="toHero"/> (unit), on along the hero's travel (away from <paramref name="laneBack"/>).</summary>
+        static Vector2 Prowl(Vector2 toHero, Vector2 laneBack)
+        {
+            var round = new Vector2(-toHero.Y, toHero.X);
+            return laneBack != Vector2.Zero && Vector2.Dot(round, laneBack) > 0 ? -round : round;
         }
 
         const float SpreadReachM = 1.6f, SpreadGain = 2.0f;

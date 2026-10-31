@@ -7,11 +7,11 @@ overview](README.md)). Today it plays the whole 3:19 song as one continuous
 battle.
 
 This document specifies **trailer mode**, a `--trailer` flag on the same
-player. It turns the demo into a gameplay sizzle reel of about 30 seconds:
-31.1 s of gameplay, then a 1.5 s fade on black.
+player. It turns the demo into a gameplay sizzle reel of about a minute:
+59.0 s of gameplay, then a 1.5 s fade on black.
 
-- **Ten shots,** cut on the beat across seven environments, set to bars 79–99
-  of *Action*.
+- **Eight shots,** cut on the beat across seven environments, set to bars
+  79–117 of *Action*.
 - **No text and no UI.**
 - **Live and captured.** It plays live in the normal build with sound. Through
   the existing video capture (`--capture-video`), it also renders a
@@ -33,7 +33,9 @@ staged for it:
 The trailer's job is to make a viewer want to play. That sets its goals:
 
 - **Hook within three seconds.** The song's heaviest drop lands 2.48 s in,
-  and the first cut blows a crater in a 600-strong horde on it.
+  and the first cut blows a crater in a charging horde of hundreds on it.
+- **Room to breathe.** After the hook, three long shots let each place and
+  horde play out, before the cuts quicken into the climax.
 - **Feeling over explanation.** Impact, speed, power, chaos and satisfaction,
   with nothing that explains mechanics.
 - **Everything on the music.** Blows, kills, spells, cuts, flashes and the
@@ -211,33 +213,43 @@ unless this document changes it.
 
 ## What the Viewer Sees
 
-The trailer runs 32.6 s from first frame to silence:
+The trailer runs 60.5 s from first frame to silence:
 
 - **0 s: the cold open.** It opens already in motion, on a hero facing three
   giant brutes in a torchlit crypt. One falls on each of the music's stabs.
 - **2.48 s: the drop.** The drop lands with a white flash, and the picture
   cuts to a golden-hour desert. There, the hero's slam blows a crater in a
-  charging wall of monsters.
-- **The middle.** Shots alternate between snow, the night forest, the crypt
-  and the desert. The hero runs fast across each one, carving through a horde
-  of coloured blocks that streams after them, spirals in after them or pours
-  in from ahead and the flanks, always leaving them a lane to run.
-  The cuts come faster and faster.
-- **The climax.** In the night forest, monsters flood in from all sides, a
-  dragon storms in, and a laser sweeps the field on every eighth note. The
-  final slam, on the downbeat of bar 99 at 30.35 s, kills everything on
-  screen.
-- **30.35–31.13 s: the aftermath.** Two beats as the whole horde falls, with
+  charging wall of monsters, and for eight bars the hero runs through it,
+  turns back through the wave chasing them and turns again.
+- **14.87 s: the lava fields.** On the song's re-entry, a flash cuts to a
+  basalt hellscape lit by lava. Four streams of monsters, Big Orks and
+  Trolls in their own masses among them, pour in from ahead and the flanks
+  while lightning strikes on every downbeat. Another eight bars.
+- **27.26 s: the blossom garden.** On the hottest phrase of the drop, a
+  flash cuts to pale stone under blossom trees. The hero runs a wide loop and
+  the horde spirals in after them, carved by spins and rings. Eight bars
+  again.
+- **39.64 s: the final peak.** The cuts quicken: four bars of a charge down
+  a wet neon street, then two bars of a vortex in the snow and two of
+  converging streams in the crypt, lightning on the strong beats.
+- **52.03 s: the climax.** In the night forest, monsters flood in from six
+  directions, a dragon storms in, and lasers sweep the field on every eighth
+  note for the last two bars. The final slam, on the downbeat of bar 117 at
+  58.22 s, kills everything on screen.
+- **58.22–59.00 s: the aftermath.** Two beats as the whole horde falls, with
   the shockwave and the embers. By the cut the field lies dead.
-- **31.13–32.63 s: black.** The picture cuts to black, and the music fades out
+- **59.00–60.50 s: black.** The picture cuts to black, and the music fades out
   over 1.5 s.
 
-There is no title, text, logo, HUD or letterboxing.
+Throughout, the horde moves in coloured blocks of one monster type, the hero
+runs on every beat and swings on the strong ones, and the horde always
+leaves them a lane to run. There is no title, text, logo, HUD or
+letterboxing.
 
 ## The Music Window
 
-The trailer plays the song from song second 121.40 to 154.026. The picture
-ends at 152.526, the cut to black, and the music fades out over the last
+The trailer plays the song from song second 121.40 to 181.897. The picture
+ends at 180.397, the cut to black, and the music fades out over the last
 1.5 s. **Trailer time** is song time minus 121.40.
 
 *Action* has a constant 155 BPM grid in 4/4. Beat 0 falls at 0.00982 s, and a
@@ -247,7 +259,8 @@ beat lasts 0.387097 s. Bar `n`, beat `b` (written `n.b`) falls at:
 songTime(n, b) = 0.00982 + ((n - 1) * 4 + (b - 1)) * 0.387097
 ```
 
-The window covers two kinds of section:
+The window covers three kinds of section (the song's form is in
+[songs/action/form.md](../../songs/action/form.md)):
 
 - **Break-2, bars 79–80.** A **free section**: the song map marks it as
   having no audible beat, because the kick and sub-bass drop out. The grid's
@@ -255,7 +268,12 @@ The window covers two kinds of section:
   silent. What the music does mark are three **anchors**, curated stab times.
   In a free section, monsters move smoothly instead of stepping on beats (see
   [Free sections](choreography.md#free-sections)).
-- **Drop-2, from bar 81.** A pulsed section with a steady, audible beat.
+- **Drop-2, bars 81–104.** A pulsed section with a steady, audible beat, in
+  three 8-bar phrases: a light lead-in (81–88), then the full arrangement
+  (89–96) and the hottest phrase (97–104).
+- **Final-peak, bars 105–120.** The song's highest-energy section, the main
+  drop's arrangement with hats on top. The trailer ends inside it, on 117.1,
+  before bar 120's fill, the outro and the free ending.
 
 The window's musical events:
 
@@ -272,14 +290,20 @@ The window's musical events:
 | 13.707 | 135.107 | 88.2 | The sub-bass cuts out for beats 2–4 |
 | 14.868 | 136.268 | 89.1 | Re-entry into the full arrangement |
 | 26.481 | 147.881 | 96.3 | The sub-bass cuts out for beats 3–4 |
-| 27.255 | 148.655 | 97.1 | Re-entry into the song's hottest phrase |
-| 30.352 | 151.752 | 99.1 | The final slam |
-| 31.126 | 152.526 | 99.3 | The cut to black; the fade begins |
-| 32.626 | 154.026 | | Silence; the trailer ends |
+| 27.255 | 148.655 | 97.1 | Re-entry into drop-2's hottest phrase |
+| 33.736 | 155.136 | 101.2 | A stutter stop, then an off-beat stab |
+| 38.868 | 160.268 | 104.3 | The sub-bass cuts out for beats 3–4 |
+| 39.642 | 161.042 | 105.1 | Re-entry: final-peak, hats on top |
+| 52.029 | 173.429 | 113.1 | Final-peak's second phrase |
+| 58.223 | 179.623 | 117.1 | The final slam |
+| 58.997 | 180.397 | 117.3 | The cut to black; the fade begins |
+| 60.497 | 181.897 | | Silence; the trailer ends |
 
 Some notes on the table:
 
-- **Accents.** The song map marks 1.753, 2.481, 14.868 and 27.255 as accents.
+- **Accents.** The song map marks 1.753, 2.481, 14.868, 27.255, 33.736,
+  39.642 and 52.029 as accents. The stab at 33.736 falls 100 ms ahead of
+  101.2's beat, so nothing is placed on it.
 - **The extra hits.** The table gives the beat times; the hits themselves land
   31–33 ms earlier. They are not accents. The grid stays on the beat, so
   blows placed there land on the beat itself.
@@ -288,34 +312,37 @@ Some notes on the table:
 
 ## The Shot List
 
-The trailer has ten shots. A **shot** is a continuous stretch of picture
+The trailer has eight shots. A **shot** is a continuous stretch of picture
 between two cuts, made by its own short simulation in its own environment.
 
-Every cut lands on a beat, and every shot that follows a cut (shots 2–10)
+Every cut lands on a beat, and every shot that follows a cut (shots 2–8)
 opens on the hero's blow landing on its cut beat. Shot 1 starts the trailer
 rather than following a cut. It opens 0.18 s before its first blow, on the
 first anchor.
 
-After the duel, the shot length halves, group by group:
+The cuts fall on the song's phrase boundaries: the drop (81) and the
+re-entries (89, 97, 105, 113), with two more inside final-peak's first
+phrase. The opening has the most room to breathe, and the pace tightens
+toward the climax:
 
 - one 2.5 s duel;
-- two 4-bar shots (6.2 s each);
+- three 8-bar shots (12.4 s each), one per phrase of drop-2;
+- one 4-bar shot (6.2 s) on final-peak's re-entry;
 - two 2-bar shots (3.1 s);
-- four 1-bar shots (1.55 s), as a burst;
-- one unbroken climax.
+- one unbroken climax of 4 bars and the aftermath's 2 beats (7.0 s).
+
+No shot is shorter than 2 bars.
 
 | # | Trailer s | Bars | Environment | Formation | On screen | View | Heading |
 |---|---|---|---|---|---|---|---|
 | 1 | 0.000–2.481 | 79–80 | crypt | Duel: 3 elites | 3 | 20 m | 0° |
-| 2 | 2.481–8.674 | 81–84 | desert | Charge | ~600 | 45 m | 0° |
-| 3 | 8.674–14.868 | 85–88 | snow | Vortex | ~700 | 50 m | 45° |
-| 4 | 14.868–17.965 | 89–90 | forest | Converge, 4 streams | ~500 | 40 m | 0° |
-| 5 | 17.965–21.062 | 91–92 | lava | Charge with elites | ~420 | 40 m | 135° |
-| 6 | 21.062–22.610 | 93 | blossom | Vortex | ~400 | 35 m | −45° |
-| 7 | 22.610–24.158 | 94 | neon | Charge | ~420 | 35 m | 90° |
-| 8 | 24.158–25.707 | 95 | crypt | Converge, 3 streams | ~500 | 40 m | 180° |
-| 9 | 25.707–27.255 | 96 | desert | Converge, 4 streams | ~600 | 45 m | −90° |
-| 10 | 27.255–31.126 | 97–98, plus 99.1–99.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
+| 2 | 2.481–14.868 | 81–88 | desert | Charge | ~560 | 45 m | 0° |
+| 3 | 14.868–27.255 | 89–96 | lava | Converge, 4 streams, with elites | ~440 | 45→50 m | 135° |
+| 4 | 27.255–39.642 | 97–104 | blossom | Vortex | ~760 | 50 m | −45° |
+| 5 | 39.642–45.836 | 105–108 | neon | Charge | ~420 | 40 m | −90° |
+| 6 | 45.836–48.933 | 109–110 | snow | Vortex | ~450 | 40 m | 45° |
+| 7 | 48.933–52.029 | 111–112 | crypt | Converge, 3 streams | ~550 | 45 m | 180° |
+| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
 
 The columns:
 
@@ -327,23 +354,32 @@ The columns:
 - **Formation:** the horde's opening layout (see
   [Kiting and formations](#kiting-and-formations)).
 
+Every one of the seven resident environments appears: the original four
+(crypt twice, for the duel and a horde seen from the far side) and the three
+newer ones, which carry the long middle of the trailer (lava and blossom) and
+final-peak's re-entry (neon).
+
 The shot list escalates on four tracks at once:
 
-- **Moves.** Single blows in the duel, then slams, spins and rings, then
-  lightning, and finally the laser and the final slam.
-- **Density.** 3 monsters, then 400–700, then 1,300 at the climax.
-- **View.** Tight for the duel and wide for the hordes. The burst opens tight
-  at 35 m and widens shot by shot into the climax, the widest of all.
-- **Pace.** The shot lengths halve, group by group, until the climax plays
-  unbroken.
+- **Moves.** Single blows in the duel; slams, cleaves and spins after the
+  drop; lightning in the lava; spins and rings in the blossom vortex; then
+  lightning on the strong beats, and finally the lasers and the final slam.
+- **Density.** 3 monsters, then 420–760, then 1,300 at the climax.
+- **View.** Tight for the duel and wide for the long shots. Final-peak
+  opens tighter at 40 m and widens shot by shot into the climax, the widest
+  of all.
+- **Pace.** 8-bar shots through drop-2, then 4, 2 and 2 bars, until the
+  climax plays unbroken.
 
 The table's counts, views and headings are starting points. Implementers tune
-counts, widths, headings, paths and moves against frame sequences, but they
-keep each shot's bars, environment, formation and role.
+counts, widths, headings, paths and moves against the checks and frame
+sequences, but they keep each shot's bars, environment, formation and role.
 
 ### Shot by shot
 
-Each shot is built around particular moves, listed here in order.
+Each shot is built around particular moves, listed here in order. Plain
+combo entries land on the strong beats (each bar's beats 1 and 3, see
+[The hero's moves](#the-heros-moves)); the hero runs on every beat between.
 
 1. **Duel (crypt, break-2).** Two Big Orks and a Troll close in from three
    sides, walking smoothly and winding up their swings. The hero holds ground,
@@ -355,100 +391,106 @@ Each shot is built around particular moves, listed here in order.
      take short repositioning steps. Shot 1's pre-roll is just the brutes
      walking in.
    - Big monsters falling to single blows is the hook before the hook.
-2. **The drop (desert, charge).** A white flash covers the cut, and the
-   hero's slam lands on 81.1. It blows a crater in a charging wall of fodder.
-   - The hero runs straight through the wave: cleaves on the strong beats,
-     and spins on 82.3 and 84.3.
-   - The wave turns and streams after them. In bar 83 the hero turns back and
-     carves through the chasing wave, so the shot's second half never runs
-     out of monsters to hit.
-3. **Vortex (snow).** The hero runs a wide loop, and the horde spirals in
-   after them.
-   - Spins on 86.3 and rings on the downbeats carve the spiral.
-   - In bar 88's sub-bass cut, the hero strides on beats 2–4 as the spiral
-     tightens. The cut comes on the release.
-4. **Converge (forest, bar 89).** A white flash covers the cut. A ring lands
-   on 89.1 as four streams meet the hero.
-   - The hero cuts across the streams, cleaving on the strong beats.
-5. **Elite charge (lava).** Big Orks and Trolls in the charging wave fall to
-   single cleaves, so their size sells each blow. Lightning strikes on
-   downbeats.
-6. **Burst 1: the heavy cleave (blossom, vortex).** The heavy cleave on the
-   cut, then a cleave on beat 3, as the hero circles inside the spiral
-   closing on them.
-7. **Burst 2: the slam (neon, charge).** A slam on the cut flattens the
-   oncoming wave's front rank, then a cleave on beat 3.
-8. **Burst 3: lightning (crypt, converge).** Lightning strikes on the strong
-   beats while the hero cleaves at the meeting point.
-9. **Burst 4: the wind-up (desert, converge).** A cleave on the cut. Then,
-   through the sub-bass cut, the hero winds up a slam (`slam@97.1`) as the
-   streams close in.
-   - The picture cuts at 97.1, before the impact.
-   - Shot 10 opens on its own slam landing on 97.1, so the wind-up and the
-     impact read as one move across the cut.
-10. **Climax (forest, bar 97).** A white flash covers the cut, and the hero's
-    slam lands on 97.1 as monsters pour in from six directions.
-    - The boss enters view during bar 97, storming through the horde from
-      ahead of the hero.
-    - A laser fires on 97.1 and again on 98.1. Each lasts a bar, sweeping
-      the field and hitting everything in its line on every eighth note,
-      while the view widens from 52 to 65 m. A ring joins the second laser
-      on 98.1.
-    - Refill holds the flood at about 1,300 despite the laser.
-    - The final slam on 99.1 kills every monster in view, the boss included.
-      The aftermath's two beats show the horde falling: its death clips play
-      faster where they must, so every body is down by three quarters of the
-      aftermath. Refill stops at the final slam, and the hero plays out the
-      slam's recovery.
+2. **The drop (desert, charge, 8 bars).** A white flash covers the cut, and
+   the hero's slam lands on 81.1. It blows a crater in a charging wall of
+   fodder, a patchwork of coloured blocks.
+   - The hero runs straight through the wave, cleaving on the strong beats,
+     with spins on drop-2's extra hits (82.3, 84.3 and 86.3).
+   - The wave turns and streams after them. The path turns back through the
+     chasing wave late in bar 83, and turns again on 87.1, so the long shot
+     never runs out of monsters to hit.
+   - Through bar 88's sub-bass cut, the hero strides into the release.
+3. **The lava fields (lava, converge with elites, 8 bars).** A white flash
+   covers the cut and the hero's cleave lands on 89.1 as four streams meet
+   them.
+   - The hero cuts across the streams, turning once just before 90.1,
+     cleaving on the strong beats. Big Orks and Trolls in their own blocks
+     fall to single cleaves, so their size sells each blow.
+   - Lightning strikes on every downbeat. The view widens from 45 to 50 m
+     across the shot.
+4. **The blossom vortex (blossom, vortex, 8 bars).** A white flash covers
+   the cut, and the hero's slam lands on 97.1, drop-2's hottest phrase.
+   - The hero runs a wide loop, entered mid-side so the cut falls between
+     corners, and the horde spirals in after them.
+   - Spins on 98.3, 100.3 and 102.3 and rings on the downbeats carve the
+     spiral.
+5. **Final peak (neon, charge, 4 bars).** A white flash covers the cut, and
+   the hero's slam on 105.1 flattens the oncoming wave's front rank. The hero
+   runs down the street through the wave, cleaving on the strong beats, with
+   lightning on the downbeats.
+6. **The snow vortex (snow, vortex, 2 bars).** The heavy cleave on the cut,
+   then cleaves as the hero circles inside the spiral closing on them, rings
+   on the downbeats.
+7. **Crypt streams (crypt, converge, 2 bars).** Seen from the crypt's far
+   side (heading 180°), three streams meet the hero; lightning strikes on
+   the strong beats while they cleave at the meeting point.
+8. **Climax (forest, bar 113).** A white flash covers the cut, and the hero's
+   slam lands on 113.1 as monsters pour in from six directions.
+   - The boss enters at the cut from ahead of the hero, storming through the
+     horde. The path turns right at bar 116, so the boss stays in view on the
+     hero's flank rather than meeting them.
+   - Cleaves on the strong beats, a ring on 114.1 and a spin on 114.3.
+   - A laser fires on 115.1 and again on 116.1. Each lasts a bar, sweeping
+     the field and hitting everything in its line on every eighth note,
+     while the view widens from 52 to 65 m across the shot.
+   - Refill holds the flood at about 1,300 despite the lasers.
+   - The final slam on 117.1 kills every monster in view, the boss included.
+     The aftermath's two beats show the horde falling: its death clips play
+     faster where they must, so every body is down by three quarters of the
+     aftermath. Refill stops at the final slam, and the hero plays out the
+     slam's recovery.
 
-**Outcome (ps-hgs.7).** The shot list as shipped, from `trailer --checks`
-(the same for every roster set). The choreography pass (ps-7mx.1) has since
-changed the shots' moves and some tuning (see [Kiting and
-formations](#kiting-and-formations), "Outcome (ps-7mx.1)"); its numbers are in
-[demo3d/evidence/trailer/choreography](../../demo3d/evidence/trailer/choreography/README.md).
-This was the first cut's table:
+**Outcome (ps-7mx.3).** The re-cut as shipped, from `trailer --checks`
+(the same for every roster set). Evidence is in
+[demo3d/evidence/trailer/recut](../../demo3d/evidence/trailer/recut/README.md).
 
-| # | Bars | Environment | Formation | On screen / target | View | Heading | `shapeScale` | Swings/s | Kills per swing (mean, peak) | Kite |
-|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | 79–80 | crypt | Duel: 3 elites | 3 | 20 m | 0° | 1 | 1.21 | 1, 1 | – |
-| 2 | 81–84 | desert | Charge | 609 / 600 | 45 m | 0° | 2.0 | 3.55 | 24.8, 198 | 2.4 |
-| 3 | 85–88 | snow | Vortex | 710 / 700 | 50 m | 45° | 2.0 | 2.42 | 47.8, 160 | 2.4 |
-| 4 | 89–90 | forest | Converge, 4 streams | 501 / 500 | 40 m | 0° | 2.0 | 2.58 | 20.8, 111 | 2.3 |
-| 5 | 91–92 | crypt | Charge with elites | 535 / 540 | 40 m | 135° | 1.8 | 2.58 | 26.2, 94 | 2.4 |
-| 6 | 93 | desert | Vortex | 389 / 400 | 35 m | −45° | 1.6 | 1.29 | 38.5, 43 | 2.3 |
-| 7 | 94 | snow | Charge | 471 / 500 | 35 m | 90° | 2.0 | 1.94 | 78.0, 164 | 2.5 |
-| 8 | 95 | crypt | Converge, 3 streams | 453 / 500 | 40 m | 180° | 1.3 | 2.58 | 18.0, 26 | 2.3 |
-| 9 | 96 | desert | Converge, 4 streams | 605 / 600 | 45 m | −90° | 2.4 | 1.94 | 17.3, 20 | 2.4 |
-| 10 | 97–99.2 | forest | Converge, 6 streams, plus the boss | 1,287 / 1,300 | 52→65 m | 0° | 2.0 | 2.84 | 171.7, 1,532 | 2.3 |
+| # | Bars | Environment | Formation | On screen / target | View | `shapeScale` | Swings/s | Kills per swing (mean, peak) | Kite | Blocks | Lane |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 79–80 | crypt | Duel: 3 elites | 3 | 20 m | 1 | 1.21 | 1, 1 | – | – | 103° |
+| 2 | 81–88 | desert | Charge | 545 / 560 | 45 m | 2.4 | 1.05 | 67.5, 238 | 2.4 | 83% | 86° |
+| 3 | 89–96 | lava | Converge, 4 streams, with elites | 431 / 440 | 45→50 m | 1.8 | 1.29 | 29.5, 77 | 2.4 | 81% | 87° |
+| 4 | 97–104 | blossom | Vortex | 768 / 760 | 50 m | 2.1 | 1.05 | 73.9, 215 | 2.3 | 78% | 143° |
+| 5 | 105–108 | neon | Charge | 410 / 420 | 40 m | 2.0 | 1.29 | 62.5, 213 | 2.5 | 81% | 88° |
+| 6 | 109–110 | snow | Vortex | 450 / 450 | 40 m | 1.6 | 1.29 | 41.5, 82 | 2.4 | 78% | 105° |
+| 7 | 111–112 | crypt | Converge, 3 streams | 526 / 550 | 45 m | 1.4 | 1.29 | 31.0, 38 | 2.3 | 77% | 73° |
+| 8 | 113–117.2 | forest | Converge, 6 streams, plus the boss | 1,266 / 1,300 | 52→65 m | 2.0 | 1.00 | 238.7, 1,427 | 2.3 | 83% | 99° |
 
-- **Two simulator fixes, trailer shots only:**
-  - **Fixed entries land.** A flurry's blow that waited for the next
-    decision used to end the hero's scheduling. A fixed spin whose windup had
-    to start before that decision then never fit: shot 2's 82.3 and 84.3
-    never fired. A shot's fixed entry is now scheduled past such a point.
-  - **The dead fall in time.** The final slam's deaths play their clips
-    faster where they would outlast three quarters of the aftermath (1.4–3.5×).
-    The field then lies dead at 99.3, not mid-fall.
-- **Tuning against runtimes.** Every bar's density was tuned across trailer
-  seeds 3, 7, 11, 21 and 42, not seed 7 alone. The simulation is chaotic,
-  and Mono and IL2CPP differ from .NET in the last bits of floating point.
-  Under Mono, shot 5's bar 92 sat 7 points below .NET's, at the 15% line.
-  Each bar now holds within about 10% on every seed, and Unity's Mono run
-  passes.
-- **The changes:**
-  - shot 2's path turns back through its chasing wave in bar 83;
-  - shot 5 looks along 135° at `shapeScale` 1.8, so bar 92 no longer drains;
-  - shot 9 swings at 2.4;
-  - the climax opens at 52 m with a 1.8 `densityCap`, and rings only on 98.1,
-    so the cut's slam and laser alone open bar 97.
-- **Spins.** A spin needs 0.48 s of windup at overdrive's 3× speed cap and
-  0.55 s in all. Shot 6's spins therefore land every other beat, with the
-  windup filling the beat between.
-- **Lens hits.** The default trailer has 27, a little over one a bar. The
-  shot list keeps `TrailerLook.MassKillWeight` at 0.5.
-- **Evidence.** The stills, the cut and final-slam sequences, the spot-check
-  grid of every flag combination and the per-bar margins are in
-  [demo3d/evidence/trailer/showcase](../../demo3d/evidence/trailer/showcase/README.md).
+- **Every check passes,** with zero liveness violations, on the default
+  seed and roster, and for `--roster forest` and `--roster heroic`.
+- **Seeds.** Trailer seeds 3, 5, 7, 9, 11, 13 and 21 pass every check. Seed
+  42 misses two bars' density by a few points (shot 2's bar 87 at 468 of
+  560, shot 4's bar 97 at 628 of 760).
+- **Pinned environments.** Pinned to desert, snow, forest, lava or blossom
+  every check passes; pinned to crypt or neon, shot 3's last bar holds 371
+  and 366 of 440, just under the 15% line. The 8-bar converge drains a
+  little in its last bar on some seeds; the view's widening to 50 m keeps it
+  up on the default.
+- **Tuning against the long shots.** The 8-bar shots were the hard part:
+  over 32 beats a formation's refill drifts, so every bar was tuned across
+  seeds 3–42 and all seven pinned environments, not seed 7 alone:
+  - the paths are long enough for 48 beats of 1.9 m strides (91 m for an
+    8-bar shot, pre-roll included) and keep the view on open ground: shot 3
+    runs east from the courtyard field so its stream sources stay on the
+    arena, and shot 5 runs west down the street, away from the arena's edge;
+  - shot 2's charge aims at 560 and shot 3's elite converge at 440, as the
+    long shots drained below their first targets of 600 and 500;
+  - shot 4's vortex aims at 760 at `shapeScale` 2.1, since at 700 its
+    spiral piled up past the target in bar 103;
+  - shot 5 swings cleaves at `shapeScale` 2.0 without a spin, since a spin's
+    windup in bar 106 let the wave close the lane;
+  - shot 3 dropped a slam wound up across its cut (`slam@97.1`, as the first
+    cut's shot 9 did), which hemmed the hero in during bar 96 on some seeds;
+  - the climax rings on 114.1 only, and its path turns at bar 116, so the
+    boss stays in view on the hero's flank rather than meeting them.
+- **The boss prowls.** Over the climax's four bars the boss reaches its
+  keep-out with beats to spare, where the horde packed behind it held it
+  still; it now prowls round the hero instead (see [The boss](#the-boss)).
+- **Carried over from the first cut (ps-hgs.7):** a shot's fixed entry is
+  scheduled past a flurry's pending decision, so explicit-beat spins land
+  (every `@bar.beat` entry lands, checked); and the final slam's deaths play
+  their clips faster where they would outlast three quarters of the
+  aftermath (1.4–3.5×), so the field lies dead at the cut to black. Lens
+  hits keep `TrailerLook.MassKillWeight` at 0.5.
 
 ## Rules for Every Frame
 
@@ -544,8 +586,8 @@ Trailer mode reuses the song player's architecture: a simulation decides
 everything at load, and the client draws it at the current time. Two things
 change:
 
-- **Ten simulations.** There are ten short simulations, one per shot, instead
-  of one long one.
+- **Eight simulations.** There are eight short simulations, one per shot,
+  instead of one long one.
 - **Seven environments.** Seven environments are loaded in one player,
   instead of one.
 
@@ -590,20 +632,20 @@ climax:
 
 ```json
 { "name": "action", "song": "action", "base": "overdrive",
-  "startS": 121.40, "blackAt": "99.3", "fadeOutS": 1.5, "seed": 7,
+  "startS": 121.40, "blackAt": "117.3", "fadeOutS": 1.5, "seed": 7,
   "shots": [
     { "cut": "start", "environment": "crypt", "viewWidthM": 20,
       "hero": { "at": "camp", "holdGround": true },
       "duel": { "bigork": 2, "troll": 1 },
       "combo": ["slashR@anchor", "spin@anchor", "slashL@anchor"] },
-    { "cut": "97.1", "environment": "forest", "viewWidthM": 52, "viewWidthToM": 65,
-      "path": { "via": ["courtyard", "glowing-tree", "crystal-ring"], "stepM": 1.9 },
+    { "cut": "113.1", "environment": "forest", "viewWidthM": 52, "viewWidthToM": 65,
+      "path": { "via": [[14, 10], [50, 50], [70, 26]], "stepM": 1.9 },
       "formation": { "kind": "converge", "streams": 6, "onScreen": 1300,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
       "boss": "ahead", "shapeScale": 2.0, "densityCap": 1.8, "grade": { "contrast": 6, "saturation": 8 },
-      "combo": ["slam@cut", "cleaveL", "cleaveR", "slam@final"],
-      "spells": ["laser@downbeat", "ring@98.1"] } ] }
+      "combo": ["slam@cut", "cleaveL", "cleaveR", "spin@114.3", "slam@final"],
+      "spells": ["ring@114.1", "laser@115.1", "laser@116.1"] } ] }
 ```
 
 Top-level fields:
@@ -871,7 +913,9 @@ Never jam, in a formation's shot:
   until the death takes over, as "the hero's blow usually kills it first"
   describes. Windups still under way when the shot ends are kept too.
 
-The liveness check holds: zero violations in all ten shots, for the
+The liveness check held: zero violations in all ten shots of the first
+cut (bars 79–99; the shot numbers in this outcome and the next are its own,
+the re-cut's are in [The Shot List](#the-shot-list)), for the
 default roster and the forest and heroic sets. The density check passes
 too, and both hold across other trailer seeds: seeds 3, 5, 9, 10, 11, 13,
 17, 21, 27, 28, 29 and 42 pass every check.
@@ -944,17 +988,21 @@ The boss, a dragon in every roster set, appears only in the climax. Its job
 is to make the final slam bigger. These rules are part of the shot simulation:
 
 - **It enters from the shot's `boss` direction.** It appears outside the view
-  during bar 97 and storms in through the horde, trampling small monsters in
-  its way. The level script's existing `bossFrom` setting, which walks the
-  boss in from a named direction, already moves it this way.
+  on the climax's cut and storms in through the horde, trampling small
+  monsters in its way. The level script's existing `bossFrom` setting, which
+  walks the boss in from a named direction, already moves it this way.
 - **No blow reaches it early.** It never comes closer to the hero than the
   shot's largest hit shape, plus 1 m. With the climax's `shapeScale` of 2.0,
   the slam's 3.6 m ring reaches 7.2 m, so the boss keeps at least 8.2 m away.
   No blow passes through it.
+- **It never stands.** Held at that keep-out, or boxed in by the horde
+  behind it as it backs off, it prowls round the hero, on along the hero's
+  travel (ps-7mx.3: the climax's four bars bring it there beats before the
+  final slam, where it stood).
 - **Spells skip it.** The laser, rings and lightning ignore it until the final
   slam.
 - **The final slam kills it.** Nothing else fires on that beat, so the slam is
-  the first and only hit it takes. It dies on 99.1 with everything else in
+  the first and only hit it takes. It dies on 117.1 with everything else in
   view.
 
 ### Environments in one player
@@ -1085,8 +1133,9 @@ the current time. When the active shot changes, the player makes the cut. A
    pre-roll like any other motion, so the camera is already settled. The
    client replays nothing.
 
-**Flash cuts.** Three cuts land on the trailer's big musical steps: 81.1 (the
-drop), 89.1 and 97.1. These cut under a white flash.
+**Flash cuts.** Five cuts land on the trailer's big musical steps: 81.1 (the
+drop) and the re-entries 89.1, 97.1, 105.1 and 113.1. These cut under a
+white flash.
 
 - The flash is the **post feel**'s hit flash. The post feel is the client part
   that pulses exposure, bloom and vignette on beats, and flashes on accents
@@ -1103,7 +1152,7 @@ The trailer's start and end:
 - **The first frame.** The screen stays black while the player loads,
   simulates and warms. Then the music and shot 1 start together, 0.18 s
   before the first kill.
-- **The end.** On 99.3 the picture cuts to black, and the music and sounds
+- **The end.** On 117.3 the picture cuts to black, and the music and sounds
   fade to silence over `fadeOutS`.
 - **Exit.** The live player then exits. A capture ends with the fade.
 
@@ -1114,7 +1163,8 @@ violations live.
 **Outcome (ps-hgs.6).** `--trailer` is DemoMain's trailer mode
 (`DemoMain.Trailer.cs`). Some details of what shipped:
 
-- **Load.** The ten shot simulations take about 0.6 s in the IL2CPP player.
+- **Load.** The first cut's ten shot simulations took about 0.6 s in the
+  IL2CPP player.
   A global black volume (a colour filter of black, priority 1000) covers the
   screen until the warm-up ends and the clock starts, and again from the cut
   to black.
@@ -1128,11 +1178,11 @@ violations live.
   the new shot's live effects re-spawn
   ([evidence](../../demo3d/evidence/trailer/playback/README.md)).
 - **Which cuts flash.** A cut flashes when it lands on one of the song map's
-  accents, within 10 ms. In *Action* those are exactly 81.1, 89.1 and 97.1,
-  so the trailer file needs no field for it. The flash is +5 stops, −70
-  saturation and +4 bloom on the cut frame, decaying quadratically over an
-  eighth note, with one post feel per environment holding every shot's big
-  hits and the flash cuts. With `--shot`, only that shot's own cut and hits
+  accents, within 10 ms. In *Action*'s window those are 81.1, 89.1, 97.1,
+  105.1 and 113.1, so the trailer file needs no field for it. The flash is
+  +5 stops, −70 saturation and +4 bloom on the cut frame, decaying
+  quadratically over an eighth note, with one post feel per environment
+  holding every shot's big hits and the flash cuts. With `--shot`, only that shot's own cut and hits
   flash.
 - **Sound.** One scheduler plays every shot's cues within its visible span.
   Its gain envelope fades a cue from before a cut over 60 ms from the cut, and
@@ -1343,7 +1393,7 @@ These change meaning in trailer mode:
 
 - **`--environment <name>`:** pins every shot to one environment, for checks.
 - **`--start-at`, `--stills-at` and `--seconds`:** take trailer seconds (0 to
-  32.6), not song seconds. Still times round to the next 60 fps frame.
+  60.5), not song seconds. Still times round to the next 60 fps frame.
 - **`--shot <n>`:** plays only shot `n`, from its cut to its end, with the
   music from the cut.
 - **`--from-preroll`:** with `--shot`, plays the shot from the start of its
@@ -1469,7 +1519,7 @@ These checks fail the run, naming the shot, the time and the monster:
   the bodies of the monsters within 6 m of the hero leave a gap round them
   at least 60° wide.
 - **One hit kills.** No monster takes a hit and survives.
-- **The boss.** It takes exactly one hit, from the final slam on 99.1.
+- **The boss.** It takes exactly one hit, from the final slam on 117.1.
 - **The final slam.** It kills every monster in view.
 - **No visible spawns.** Every spawn lies outside the rotated view.
 - **Density.** In each shot from its second beat, the on-screen count is
@@ -1545,8 +1595,12 @@ just demo3d --trailer --sound
 Expect:
 
 - **The opening.** Gameplay on the first frame, and the drop at 2.5 s.
-- **The cuts.** Ten shots, every cut on the beat and every shot opening on a
-  blow.
+- **The cuts.** Eight shots, every cut on the beat and every shot opening on
+  a blow, five of them under a flash.
+- **Pacing.** The three 8-bar shots after the drop should breathe, not drag:
+  judge whether 12.4 s of one place and horde holds the eye, especially the
+  lava converge, and whether final-peak's 4, 2 and 2-bar shots then build
+  into the climax. Judge too whether about a minute is the right length.
 - **Motion.** No monster frozen anywhere, the hero acting on every beat, and
   the horde chasing and streaming.
 - **The horde in blocks.** Waves of one monster type arrive together as
@@ -1562,19 +1616,19 @@ Expect:
   trails behind in a wake; the hero always has an open lane and never walks
   through a monster. Judge whether the monsters stepping aside from the
   hero's path reads as natural, not as a force field.
-- **The new environments.** Shots 5, 6 and 7 cut to lava, blossom and neon.
-  Judge whether their grades (warm and contrasty on the lava, soft on the
-  blossom's pale stone, saturated and cool in the neon city) sit well beside
-  the original four, and whether the horde's blocks read against the lava's
+- **The new environments.** Shots 3, 4 and 5 are lava, blossom and neon,
+  two of them the trailer's long middle. Judge whether their grades (warm
+  and contrasty on the lava, soft on the blossom's pale stone, saturated and
+  cool in the neon city) sit well beside the original four, and whether the horde's blocks read against the lava's
   glowing cracks and the neon's signs.
 - **The end.** The final slam clears the screen, then two beats of aftermath,
   black and a 1.5 s fade.
 - **Picture.** No text and no UI at any point.
 - **Smoothness.** No hitch at any cut.
 
-**Flags.** Run the live trailer, or windowless stills at 4.0 (desert), 11.0
-(snow), 16.0 (forest) and 29.5 (the climax, before the final slam), with
-each of these:
+**Flags.** Run the live trailer, or windowless stills at 4.0 (desert), 20.0
+(lava), 33.0 (blossom), 42.0 (neon), 47.0 (snow), 50.5 (crypt) and 57.5 (the
+climax, before the final slam), with each of these:
 
 - every `--palette`;
 - `--monster-style crystal`, `mix` and `painted`;
@@ -1590,9 +1644,10 @@ should keep their own exposure under a non-baseline style.
 - **`--intensity overdrive`.** Fails at start and names the conflict.
 - **`--roster heroic --monster-style crystal`.** Fails at start, as in a
   normal run.
-- **`--start-at 27.3`.** Opens just after the climax's cut, with the horde
+- **`--start-at 52.1`.** Opens just after the climax's cut, with the horde
   already pouring in.
-- **`--shot 3 --from-preroll`.** Shows the vortex forming before its cut.
+- **`--shot 4 --from-preroll`.** Shows the blossom vortex forming before its
+  cut.
 - **`--overlay`.** Live mode shows the shot number and zero liveness
   violations. A capture with it warns and leaves it out.
 - **A trailer file naming an unknown environment.** Fails at load and names
@@ -1604,7 +1659,7 @@ should keep their own exposure under a non-baseline style.
 just trailer
 ```
 
-Expect a 32.6 s, 1920×1080, 60 fps video with mixed audio. It should match
+Expect a 60.5 s, 1920×1080, 60 fps video with mixed audio. It should match
 the live run: the same shots, cuts and sounds, with no dropped frames.
 
 **Debug surfaces.**
