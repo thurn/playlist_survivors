@@ -13,7 +13,7 @@ namespace Game.Client.Loop
     /// gives them at song times instead, for headless runs and stills: each when the sim first
     /// reaches its time at a frame's start, so a fixed-time rerun gives it on the same tick. The
     /// music-driven events and the finale have names only: stampede, kick, wedge, ring, bats, ghosts, flowers, minotaur
-    /// and finale.
+    /// and finale; so does chest, a tier-3 chest at the hero's feet.
     /// </summary>
     public sealed class DebugCommands
     {
@@ -24,6 +24,7 @@ namespace Game.Client.Loop
             ("stampede", DebugCommand.Stampede), ("kick", DebugCommand.KickLine), ("wedge", DebugCommand.Wedge),
             ("ring", DebugCommand.Ring), ("bats", DebugCommand.BatSwarm), ("ghosts", DebugCommand.GhostSwarm),
             ("flowers", DebugCommand.FlowerWall), ("minotaur", DebugCommand.Minotaur), ("finale", DebugCommand.Finale),
+            ("chest", DebugCommand.Chest),
         };
 
         readonly List<(double at, DebugCommand command)> _scheduled;

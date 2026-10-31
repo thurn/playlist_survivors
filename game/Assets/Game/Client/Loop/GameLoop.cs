@@ -125,6 +125,8 @@ namespace Game.Client.Loop
         GemView _gems;
         WandView _wand;
         BibleView _bible;
+        ChestView _chests;
+        EvolutionLayers _evolutions;
         LightningView _lightning;
         HudPresenter _hud;
         StreamWriter _out, _structuresOut;
@@ -296,6 +298,11 @@ namespace Game.Client.Loop
                     Driver.Events.Subscribe(_wand);
                     _bible = new BibleView(camera, weapons, _effects, _soundPresenter);
                     Driver.Events.Subscribe(_bible);
+                    // The bosses' chests and their roulette, and the evolutions' own layers.
+                    _chests = new ChestView(camera, Driver.Sim, content, weapons, _effects, _soundPresenter);
+                    Driver.Events.Subscribe(_chests);
+                    _evolutions = new EvolutionLayers(camera, Driver.Sim, content, weapons, _effects, _soundPresenter);
+                    Driver.Events.Subscribe(_evolutions);
                 }
             }
             if (_shatter != null) _shatter.Erupted += Erupted;
@@ -671,6 +678,8 @@ namespace Game.Client.Loop
             _fireTrail?.Dispose();
             _wand?.Dispose();
             _bible?.Dispose();
+            _chests?.Dispose();
+            _evolutions?.Dispose();
             _lightning?.Dispose();
             _hud?.Dispose();
             _out?.Dispose();

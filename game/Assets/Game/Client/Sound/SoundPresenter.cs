@@ -124,10 +124,13 @@ namespace Game.Client.Sound
         /// <summary>A body's pitch (playback rate) by its size: (1 / size)^0.3, within 0.8 to 1.3 (ShatterSounds.Pitch).</summary>
         public static float Pitch(float size) => Math.Min(1.3f, Math.Max(0.8f, (float)Math.Pow(1f / Math.Max(0.05f, size), 0.3)));
 
-        /// <summary>A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through the beat's aggregation.</summary>
-        public void Request(SoundKind kind, double t, float gain, float pitch, float strength)
+        /// <summary>
+        /// A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through the beat's aggregation;
+        /// a <paramref name="note"/> (MIDI, above 0) pitches a category with a root note to it instead.
+        /// </summary>
+        public void Request(SoundKind kind, double t, float gain, float pitch, float strength, float note = 0)
         {
-            var cue = new SoundCue { Kind = kind, Song = t, Gain = gain, Pitch = pitch };
+            var cue = new SoundCue { Kind = kind, Song = t, Gain = gain, Pitch = pitch, Note = note };
             _aggregator.Request(cue, MusicalGrid.Bucket(_sim.Stream.Beats, t), strength);
         }
 

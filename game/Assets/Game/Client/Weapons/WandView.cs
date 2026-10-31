@@ -20,12 +20,14 @@ namespace Game.Client.Weapons
     ///   a lead ahead of frameSong, so the bolt bends onto its enemy as it closes in; until then it
     ///   flies at its aim.
     /// - Effects spawn on the first frame that reaches their song time (<see cref="EffectCues"/>).
+    /// - Holy Wand, its evolution, is a stream of prism bolts: gold crystals whose longer streak of
+    ///   afterimages runs through a prism's hues (<see cref="WeaponLooks.Prism"/>).
     /// </summary>
     public sealed class WandView : IPresenter, IDisposable
     {
         public const float ChestM = 1.05f, LengthM = 1.5f;
         /// <summary>The afterimages: how many, how far apart in song time, and how much each shrinks.</summary>
-        const int Afterimages = 7;
+        const int Afterimages = 7, PrismAfterimages = 12;
         const double AfterimageS = 0.018;
         const float AfterimageShrink = 0.82f;
         /// <summary>A bolt shrinks away this long after it ends.</summary>
@@ -46,6 +48,7 @@ namespace Game.Client.Weapons
             public double End = double.PositiveInfinity;
             public float Radius;
             public int Seed;
+            public bool Evolved;
         }
 
         readonly WeaponLooks _looks;
@@ -53,7 +56,8 @@ namespace Game.Client.Weapons
         readonly SoundPresenter _sound;
         readonly Camera _camera;
         readonly Mesh _mesh;
-        readonly CrystalBatch _batch;
+        readonly CrystalBatch _batch, _holy;
+        readonly CrystalBatch[] _prism;
         readonly int _cast, _hit;
         readonly Dictionary<long, Bolt> _bolts = new Dictionary<long, Bolt>();
         readonly List<long> _done = new List<long>();
@@ -70,6 +74,9 @@ namespace Game.Client.Weapons
                 if (looks.Of(w) == WeaponLooks.Family.Wand) sound?.VoiceHitsElsewhere(w);
             _mesh = CrystalBatch.Build("wand-bolt", 6, 0.45f, 0.45f, 0.62f, 0.38f);
             _batch = new CrystalBatch(_mesh, WeaponLooks.Wand, "wand");
+            _holy = new CrystalBatch(_mesh, WeaponLooks.Holy, "holy-wand");
+            _prism = new CrystalBatch[WeaponLooks.Prism.Length];
+            for (int k = 0; k < _prism.Length; k++) _prism[k] = new CrystalBatch(_mesh, WeaponLooks.Prism[k], "holy-wand-prism-" + k, 0.6f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }
@@ -89,7 +96,7 @@ namespace Game.Client.Weapons
                     if (!_bolts.TryGetValue(key, out var bolt))
                     {
                         if (p.Phase != ProjectilePhase.Launch) break;
-                        _bolts[key] = bolt = new Bolt { Radius = (float)p.Radius, Seed = p.Projectile * 7919 };
+                        _bolts[key] = bolt = new Bolt { Radius = (float)p.Radius, Seed = p.Projectile * 7919, Evolved = _looks.Evolved(p.Weapon) };
                     }
                     if (p.Phase == ProjectilePhase.End) bolt.End = p.T;
                     bolt.Legs.Add(new Leg { T = p.T, FromX = p.FromX, FromY = p.FromY, ToX = p.ToX, ToY = p.ToY, Arrive = p.Arrive });
@@ -138,21 +145,25 @@ namespace Game.Client.Weapons
                 if (!At(bolt, t, out var at, out var heading)) continue;
                 var spin = Quaternion.AngleAxis((float)(t * SpinDegPerS) + bolt.Seed % 360, Vector3.forward);
                 var turn = Quaternion.LookRotation(heading, Vector3.up) * spin;
-                _batch.Crystal(Matrix4x4.TRS(at, turn, new Vector3(size, size, size * LengthM)));
+                (bolt.Evolved ? _holy : _batch).Crystal(Matrix4x4.TRS(at, turn, new Vector3(size, size, size * LengthM)));
                 float scale = size;
-                for (int k = 1; k <= Afterimages; k++)
+                int afterimages = bolt.Evolved ? PrismAfterimages : Afterimages;
+                for (int k = 1; k <= afterimages; k++)
                 {
                     double back = t - k * AfterimageS;
                     if (back < bolt.Legs[0].T) break;
-                    scale *= AfterimageShrink;
+                    scale *= bolt.Evolved ? 0.9f : AfterimageShrink;
                     if (!At(bolt, back, out var past, out var pastHeading)) break;
-                    _batch.Afterimage(Matrix4x4.TRS(past, Quaternion.LookRotation(pastHeading, Vector3.up) * spin,
+                    (bolt.Evolved ? _prism[(k + bolt.Seed) % _prism.Length] : _batch).Afterimage(Matrix4x4.TRS(past, Quaternion.LookRotation(pastHeading, Vector3.up) * spin,
                         new Vector3(scale, scale, size * LengthM * 1.3f)));
                 }
             }
             foreach (long key in _done) _bolts.Remove(key);
             frame.State.Hero.PositionAt(t, out double hx, out double hy);
-            _batch.Draw(_camera, new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM));
+            var bounds = new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM);
+            _batch.Draw(_camera, bounds);
+            _holy.Draw(_camera, bounds);
+            foreach (var prism in _prism) prism.Draw(_camera, bounds);
         }
 
         /// <summary>Where a bolt is at song time <paramref name="t"/>, and its heading; false before it leaves or once it is gone.</summary>
@@ -193,6 +204,8 @@ namespace Game.Client.Weapons
         public void Dispose()
         {
             _batch.Dispose();
+            _holy.Dispose();
+            foreach (var prism in _prism) prism.Dispose();
             CrystalBatch.Destroy(_mesh);
         }
     }

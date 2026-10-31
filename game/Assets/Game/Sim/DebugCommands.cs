@@ -28,6 +28,8 @@ namespace PS.Game.Sim
         Minotaur = 11,
         /// <summary>The finale now, whatever the run clock: its blast lands on the next downbeat and the victory card follows (<see cref="RunRules.ForceFinale"/>).</summary>
         Finale = 12,
+        /// <summary>A tier-3 chest of the last evolving minute's treasure at the hero's feet, taken once it is clear of the crowd (<see cref="Chests"/>).</summary>
+        Chest = 13,
     }
 
     /// <summary>A debug command as the sim recorded it: a replay gives it at <see cref="Effective"/>.</summary>

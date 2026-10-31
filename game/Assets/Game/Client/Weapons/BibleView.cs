@@ -17,7 +17,8 @@ namespace Game.Client.Weapons
     ///
     /// A blade's place is the sim's: angle <c>omega (t - born) + 2 pi i / n</c> around the hero's
     /// ground position at frameSong, its size growing in and shrinking away as the sim's body does.
-    /// A ring cut short (a freeze) arrives again with its new end.
+    /// A ring cut short (a freeze) arrives again with its new end. Unholy Vespers' shards are its
+    /// violet (<see cref="WeaponLooks.Vespers"/>), on a ring with no end until the next takes over.
     /// </summary>
     public sealed class BibleView : IPresenter, IDisposable
     {
@@ -36,6 +37,7 @@ namespace Game.Client.Weapons
         {
             public int Blades;
             public double Born, End, Omega, Radius, Blade;
+            public bool Evolved;
         }
 
         readonly WeaponLooks _looks;
@@ -43,7 +45,7 @@ namespace Game.Client.Weapons
         readonly SoundPresenter _sound;
         readonly Camera _camera;
         readonly Mesh _mesh;
-        readonly CrystalBatch _batch;
+        readonly CrystalBatch _batch, _vespers;
         readonly int _cast, _hit;
         readonly Dictionary<long, Ring> _rings = new Dictionary<long, Ring>();
         readonly List<long> _done = new List<long>();
@@ -62,6 +64,7 @@ namespace Game.Client.Weapons
                 if (looks.Of(w) == WeaponLooks.Family.Bible) sound?.VoiceHitsElsewhere(w);
             _mesh = CrystalBatch.Build("bible-shard", 4, 1f, 0.35f, 0.6f, 0.4f);
             _batch = new CrystalBatch(_mesh, WeaponLooks.Bible, "bible", 0.35f);
+            _vespers = new CrystalBatch(_mesh, WeaponLooks.Vespers, "unholy-vespers", 0.45f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }
@@ -78,7 +81,11 @@ namespace Game.Client.Weapons
                     if (_looks.Of(o.Weapon) != WeaponLooks.Family.Bible) break;
                     long key = ((long)o.Weapon << 32) | (uint)o.Ring;
                     bool fresh = !_rings.ContainsKey(key);
-                    _rings[key] = new Ring { Blades = o.Blades, Born = o.Born, End = o.End, Omega = o.Omega, Radius = o.Radius, Blade = o.Blade };
+                    _rings[key] = new Ring
+                    {
+                        Blades = o.Blades, Born = o.Born, End = o.End, Omega = o.Omega, Radius = o.Radius, Blade = o.Blade,
+                        Evolved = _looks.Evolved(o.Weapon),
+                    };
                     if (!fresh) break;
                     _pendingCasts.Add((key, o.Born));
                     _sound?.Request(SoundKind.BibleFire, o.Born, 1f, 1f, 1f);
@@ -132,11 +139,12 @@ namespace Game.Client.Weapons
                 float body = (float)ring.Blade * grow * fade;
                 if (body <= 1e-4f) continue;
                 float sign = ring.Omega >= 0 ? 1 : -1;
+                var batch = ring.Evolved ? _vespers : _batch;
                 for (int k = 0; k < ring.Blades; k++)
                 {
                     double a = ring.Omega * (t - ring.Born) + 2 * Math.PI * k / ring.Blades;
                     float tumble = (float)(t * TumbleDegPerS) + k * 90;
-                    _batch.Crystal(Pose(hx, hy, ring.Radius, a, sign, tumble, body, 1));
+                    batch.Crystal(Pose(hx, hy, ring.Radius, a, sign, tumble, body, 1));
                     float scale = 1;
                     for (int j = 1; j <= Afterimages; j++)
                     {
@@ -144,12 +152,14 @@ namespace Game.Client.Weapons
                         // Not behind where the blade started.
                         if (Math.Abs(ring.Omega) * (t - ring.Born) < j * AfterimageRad) break;
                         scale *= AfterimageShrink;
-                        _batch.Afterimage(Pose(hx, hy, ring.Radius, back, sign, tumble, body, scale));
+                        batch.Afterimage(Pose(hx, hy, ring.Radius, back, sign, tumble, body, scale));
                     }
                 }
             }
             foreach (long key in _done) _rings.Remove(key);
-            _batch.Draw(_camera, new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM));
+            var bounds = new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM);
+            _batch.Draw(_camera, bounds);
+            _vespers.Draw(_camera, bounds);
         }
 
         /// <summary>A shard at angle <paramref name="a"/> on the ring: pointing along its way round, leaning in, tumbling about its length.</summary>
@@ -166,6 +176,7 @@ namespace Game.Client.Weapons
         public void Dispose()
         {
             _batch.Dispose();
+            _vespers.Dispose();
             CrystalBatch.Destroy(_mesh);
         }
     }

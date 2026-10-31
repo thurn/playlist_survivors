@@ -202,6 +202,18 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void TheDebugChestIsATierThreeChestOfTheLastEvolvingMinuteAtTheHerosFeet()
+        {
+            var sim = Start(new[] { ("magic-wand", 1) });
+            sim.StepTo(1);
+            sim.Command(DebugCommand.Chest);
+            sim.StepTo(1.1);
+            var open = Chests(sim, ChestPhase.Open).Single();
+            Assert.AreEqual((3, 25), (open.Tier, open.Minute), "schedule.json's last evolving minute");
+            Assert.AreEqual((sim.State.Hero.X, sim.State.Hero.Y), (open.X, open.Y));
+        }
+
+        [Test]
         public void LevelsReachedBeforeALandingOpenTheirCardsAtIt()
         {
             var config = HordeFixture.Config(minimum: 0, roster: new string[0], heroStands: true);

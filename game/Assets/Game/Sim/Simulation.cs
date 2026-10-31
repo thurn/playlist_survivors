@@ -202,6 +202,9 @@ namespace PS.Game.Sim
                 case DebugCommand.Finale:
                     Run.ForceFinale(Now);
                     break;
+                case DebugCommand.Chest:
+                    Chests?.DropAtHero(this, Now);
+                    break;
                 default:
                     Horde?.Music.Force(command, Now);
                     break;

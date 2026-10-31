@@ -372,5 +372,46 @@ namespace Game.Tests
             waves.Present(3.25 + 6 * 0.125 + CrystalWaves.FadeSeconds + 0.01);
             Assert.That(waves.Active, Is.EqualTo(0), "gone once faded");
         }
+
+        [Test]
+        public void AChestSoundsAsItIsTakenOnEachEighthAndAtItsLandingAndAnEvolutionOnceALanding()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            var looks = new WeaponLooks(content.Weapons);
+            var sim = Beats();
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var sound = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
+            using var chests = new Game.Client.Pickups.ChestView(null, sim, content, looks, null, sound);
+            using var evolutions = new EvolutionLayers(null, sim, content, looks, null, sound);
+            int soul = content.WeaponIndex("soul-eater"), holy = content.WeaponIndex("holy-wand"), wand = content.WeaponIndex("magic-wand");
+            int Card(int weapon, int before) => (1 + weapon) | (before << 6);
+            var events = new List<SimEvent>
+            {
+                SimEvent.Chest(2.0, 0, 1, 1, 3, 25),
+                SimEvent.Chest(2.5, 0, ChestPhase.Open, 3, 25, 1, 1),
+            };
+            for (int k = 0; k < 8; k++) events.Add(SimEvent.Chest(3.0 + 0.25 * k, 0, ChestPhase.Tick, 3, k, 1, 1));
+            events.Add(SimEvent.Chest(5.0, 0, ChestPhase.Land, 3, 3, 1, 1));
+            events.Add(SimEvent.Chest(5.0, 0, ChestPhase.Reward, 3, Card(soul, 0), 1, 1));
+            events.Add(SimEvent.Chest(5.0, 0, ChestPhase.Reward, 3, Card(holy, 0) | (1 << 10), 1, 1));
+            events.Add(SimEvent.Chest(5.0, 0, ChestPhase.Reward, 3, Card(wand, 3) | (2 << 10), 1, 1));
+            foreach (var e in events)
+            {
+                sound.OnEvent(e);
+                chests.OnEvent(e);
+                evolutions.OnEvent(e);
+            }
+            var categories = _host.GetComponents<AudioSource>().Where(a => a.clip != null).Select(a => a.clip.name.Split('/')[0]).ToList();
+            Assert.That(categories.Count(c => c == "chest-open"), Is.EqualTo(1));
+            Assert.That(categories.Count(c => c == "chest-tick"), Is.EqualTo(8), "two eighths a beat, under the aggregation's three");
+            Assert.That(categories.Count(c => c == "chest-land"), Is.EqualTo(1));
+            Assert.That(categories.Count(c => c == "evolve"), Is.EqualTo(1), "one transformation for the landing's two evolutions");
+            var songs = s.Log.Select(e => Math.Round(e.Song, 6)).ToList();
+            Assert.That(songs, Is.EquivalentTo(new[] { 2.5, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.0 }));
+            Assert.That(chests.Count, Is.EqualTo(1));
+            Assert.That(evolutions.Count, Is.EqualTo(6), "three arrival rings for each evolution");
+            Assert.That(evolutions.Tint(soul), Is.EqualTo(GarlicAura.SoulEater));
+            Assert.That(evolutions.Tint(holy), Is.EqualTo(WeaponLooks.Holy));
+        }
     }
 }

@@ -1456,6 +1456,34 @@ and to, the radius it hits) followed by its hits (`WeaponHit.Bolt`); each shot i
   chain's spacing with no beat is the lightning's anchored sixteenth, not native's plain quarter
   free period; shape `jumpBeats` is loaded but unread.
 
+**Shipped (ps-msz.6.8).** The five evolutions, each its base weapon's class with its own numbers,
+rules and layer (`Client/Weapons/EvolutionLayers.cs`, colours from native's slice/evolution.rs):
+
+- **Holy Wand**: the wand's rules at its numbers (twice the shots, twice the speed). Its bolts are
+  gold crystals streaming twelve prism afterimages through six hues.
+- **Unholy Vespers**: its newest ring has no end (`End` infinity in its `Orbit` event) until the next
+  shot starts one, which ends it at that shot or at its own duration if later: a permanent ring, as
+  native's bridges each cycle into the next. A freeze still cuts it, as King Bible's. Its shards are
+  violet, over a violet ring of light on the ground that kicks on the beat.
+- **Thunder Loop**: the ring's double strikes (ps-msz.6.6) in magenta; each strike and return also
+  throws a magenta shock ring along the ground.
+- **Soul Eater**: Garlic's aura, larger by its numbers, draining health (native's combat.rs): each
+  hit heals the hero 1 + Recovery, and a shot's power grows by a point for every 600 health healed
+  since the evolution, by any means (`HeroHealth.Healed`), up to 6. Each hit draws a teal soul out of
+  its enemy, arcing into the hero's chest, and the hero glows teal as they arrive.
+- **Bloody Tear**: the sword at its numbers, its blows critical at its crit chance times Luck
+  (drawn from the run's generator only for a rank with crits), for its crit multiple
+  (`HitEvent.Critical`); a critical blow heals the hero 8, at most once a second of run clock. A
+  crimson ring flashes at the blade's reach on each impact, and each hit bursts crimson, larger
+  when critical.
+- **The arrival**: a reward that evolves sweeps three rings in its colour out from the hero at the
+  landing, with six rays of sparks.
+- **Structure breaks** (Crystal Structures): an evolution's hit within 50 ms of an accented beat
+  (`Accents`, shared with the sword's heavy strikes) breaks the structures it reaches
+  (`Weapon.BreakOnAccent`, `StructureHit.EvolvedAccent`): Holy Wand's bolt, Unholy Vespers' blades,
+  Thunder Loop's strikes, Soul Eater's pulse and Bloody Tear's strike. All of one accent's evolved
+  hits count as one breaking hit on a structure, as a heavy strike and its wave do.
+
 ### Enemies
 
 Enemies keep native's roles, stats and spawn schedule, with continuous
@@ -1791,6 +1819,40 @@ Pickups and progression are native's.
   walking a square through its kills reaches level 33 by 5:00 of run clock, far faster
   than native's run (about level 10). The run's schedule (ps-msz.6.2) is what that
   should be measured against.
+
+**Shipped (ps-msz.6.8).** The bosses' chests (`Sim/Arsenal/Chests.cs`; native's survivors/chests.rs and
+engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
+
+- **The drop**: a boss carrying treasure drops its chest on the centre of the nearest open tile where
+  it dies (`Drop` of `ItemKind.Chest`; `SimState.FieldChests`).
+- **Clear of the crowd**: at a tick's end, while the world plays and the hero stands, the hero takes
+  a chest within 0.81 m (native's 22 px) when no live enemy's body is within 2 m (`Chests.ClearM`).
+  Native's engine has no such rule (its showcase's bot waits for a gap); the game makes it the sim's,
+  so the roulette never freezes the world mid-brawl. In a 30-minute .NET run on the survivors
+  playlist, a hero put on each chest as it fell took all 15, after 0.01 to 3.1 s.
+- **The roulette** (`SimState.Chest`, `SimEventKind.Chest`: Open, Tick, Land, Reward): taking it
+  freezes the world (`FreezeReason.Chest`); it ticks on eight eighths from the next downbeat (two of
+  the beat clock's two-beat bars) and lands on the downbeat after them. Its times are points of the
+  revealed beats' grid, carried on through the latest beat's continuation; with no beat known it ticks
+  half a free period apart. A pause or the music stopping holds it, and it goes on from the next point
+  after. It fires before the beat at one time, so play resumes on the landing's own beat, and levels
+  reached meanwhile open their cards there (an offer never opens over a spinning roulette).
+- **Rewards** (native's chest_item): the tier's 1, 3 or 5 items in turn, never one not owned: an
+  evolution when the minute's treasure evolves (schedule.json's minutes 10, 15, 20 and 25), in
+  progression.json's evolution order, of a weapon at its top rank whose partner passive is owned
+  (`Arsenal.EvolutionOf`, `Arsenal.Evolve`: the evolution takes its slot at rank 1, ready on the run
+  clock now); else a rank of the lowest-ranked owned weapon, then passive; else the heal. In the
+  .NET run the hero evolved Bloody Tear at 15:00, Soul Eater at 20:00 and Holy Wand at 25:00.
+- **The look**: on the field, a gold crystal reliquary hovers over its tile, turning and throbbing on
+  the beat, a shard for each of its items circling it, under a faint gold column with a glow on the
+  ground; it pops in with a gold burst. Taken, it rises over the hero's head; on each eighth it
+  flashes and kicks and its shards take the next weapons' colours, as the HUD's cards cycle. At the
+  landing it bursts in gold and each shard, in its reward's colour, flies into the hero's chest under
+  a sweeping ring of light. Sounds (native's palette): coins as it is taken and as it lands, a glass
+  ping on each eighth climbing the major pentatonic, one transformation for a landing that evolves.
+  The HUD (ps-msz.6.9) draws the cards from `SimState.Chest` and the chest events.
+- **Debug**: `--debug chest@S` (`DebugCommand.Chest`) drops a tier-3 chest of the last evolving
+  minute's treasure at the hero's feet. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
 
 ## Presentation
 

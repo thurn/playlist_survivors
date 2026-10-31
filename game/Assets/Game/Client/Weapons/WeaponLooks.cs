@@ -7,7 +7,11 @@ namespace Game.Client.Weapons
     /// Each weapon's look by its content index (unity-game.md, The Other Weapons and Weapon and
     /// Ability Effects): which family draws and sounds it, its crystal's colour (abilities carry their
     /// own colours, white at the core; the sword's is white), and whether it is an evolution, whose
-    /// distinct layer goes on top of its family's (the chests bead's).
+    /// distinct layer goes on top of its family's in its own colour (native's slice/evolution.rs):
+    /// Holy Wand's gold bolts stream prism afterimages through <see cref="Prism"/>; Unholy Vespers'
+    /// violet shards ride a glowing ring on the ground; Thunder Loop's magenta strikes ring the ground
+    /// where they land; Soul Eater's teal aura draws souls out of what it hits into the hero; Bloody
+    /// Tear's slashes and critical blows run crimson.
     /// </summary>
     public sealed class WeaponLooks
     {
@@ -19,6 +23,14 @@ namespace Game.Client.Weapons
         public static readonly Color Bible = new Color(1f, 0.6f, 0.12f);
         /// <summary>Lightning Ring's electric blue (native's), Thunder Loop's magenta (native's) and Chain Lightning's lemon yellow.</summary>
         public static readonly Color Ring = new Color(0.4f, 0.65f, 1f), Thunder = new Color(1f, 0.4f, 0.85f), Chain = new Color(1f, 0.95f, 0.35f);
+        /// <summary>The evolutions' colours (native's evolution.rs): Holy Wand's gold, Unholy Vespers' violet, Bloody Tear's crimson; Soul Eater's teal is <see cref="GarlicAura.SoulEater"/>.</summary>
+        public static readonly Color Holy = new Color(1f, 0.82f, 0.3f), Vespers = new Color(0.78f, 0.35f, 1f), Tear = new Color(1f, 0.12f, 0.25f);
+        /// <summary>A prism's six hues, for Holy Wand's streams of light.</summary>
+        public static readonly Color[] Prism =
+        {
+            new Color(1f, 0.25f, 0.3f), new Color(1f, 0.7f, 0.2f), new Color(0.95f, 1f, 0.3f),
+            new Color(0.3f, 1f, 0.5f), new Color(0.3f, 0.6f, 1f), new Color(0.75f, 0.35f, 1f),
+        };
 
         readonly Family[] _family;
         readonly bool[] _evolved;
@@ -53,11 +65,13 @@ namespace Game.Client.Weapons
 
         public Color Colour(int weapon)
         {
+            bool evolved = Evolved(weapon);
             switch (Of(weapon))
             {
-                case Family.Wand: return Wand;
-                case Family.Bible: return Bible;
-                case Family.Ring: return Evolved(weapon) ? Thunder : Ring;
+                case Family.Sword: return evolved ? Tear : Color.white;
+                case Family.Wand: return evolved ? Holy : Wand;
+                case Family.Bible: return evolved ? Vespers : Bible;
+                case Family.Ring: return evolved ? Thunder : Ring;
                 case Family.Chain: return Chain;
                 default: return Color.white;
             }
