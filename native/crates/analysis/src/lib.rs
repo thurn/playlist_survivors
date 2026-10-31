@@ -1,4 +1,4 @@
-//! The live analyzer: front end, online RNN, DBN, commits, ticks, onsets, bands, timbre, structure, accents, hindsight (pure).
+//! The live analyzer: front end, online RNN, DBN, commits, ticks, onsets, bands, timbre, structure, accents, hindsight, and its entries as fixed-size records (pure).
 #![forbid(unsafe_code)]
 
 pub mod accents;
@@ -7,6 +7,7 @@ pub mod bands;
 pub mod beats;
 pub mod dbn;
 pub mod delayed;
+pub mod flat;
 pub mod frontend;
 pub mod hindsight;
 pub mod numeric;

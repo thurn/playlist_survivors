@@ -76,7 +76,7 @@ pub fn from_analyzer(e: &analysis::analyzer::Entry) -> Entry {
         }),
         A::Tick(t) => Entry::Tick(Tick {
             t: t.t,
-            known_at: t.t,
+            known_at: t.known_at,
             evidence: t.evidence,
             energy: t.energy,
             level: Some(match t.level {

@@ -10,6 +10,10 @@
 //! usable `D` later), the commit rule with the phase check's shift, and the accent forecasts
 //! the frame's onset and commits complete.
 //!
+//! Delayed listening stamps committed beats `M − A` before the position that committed them;
+//! with [`Stamps::EveryGroup`] every other entry is restamped the same way as it leaves `push` or
+//! `finish` (the stages read the positions).
+//!
 //! The hindsight decode runs inline (`Analyzer::new`), or on a worker thread
 //! (`Analyzer::with_hindsight_worker`, the app's) that the analyzer waits for when an entry is
 //! due before its decode is done, counting the stall: either way the entries are a function of
@@ -24,7 +28,7 @@ use crate::accents::{AccentParams, Accents, Forecast};
 use crate::bands::{Bands, Timbre};
 use crate::beats::{BeatParams, Belief, Beliefs, Commit, Committer, Evidence};
 use crate::dbn::OnlineDbn;
-use crate::delayed::{Delayed, Listening};
+use crate::delayed::{Delayed, DelayedParams, Listening, Stamps};
 use crate::frontend::{HOP, OnlineFrontEnd, SAMPLE_RATE};
 use crate::hindsight::{
     HindsightDecoder, HindsightEntry, HindsightParams, OnlineBeats, phase_shift,
@@ -47,6 +51,37 @@ pub enum Entry {
     End(End),
     Forecast(Forecast),
     Timbre(Timbre),
+}
+
+impl Entry {
+    /// When it is known: its stamp.
+    pub fn known_at(&self) -> f64 {
+        match self {
+            Entry::Beat(c) => c.known_at,
+            Entry::Tick(t) => t.known_at,
+            Entry::Onset(o) => o.known_at,
+            Entry::Hindsight(h) => h.known_at,
+            Entry::Change(c) => c.known_at,
+            Entry::Jump(j) => j.known_at,
+            Entry::End(e) => e.known_at,
+            Entry::Forecast(f) => f.known_at,
+            Entry::Timbre(t) => t.known_at,
+        }
+    }
+
+    fn known_at_mut(&mut self) -> &mut f64 {
+        match self {
+            Entry::Beat(c) => &mut c.known_at,
+            Entry::Tick(t) => &mut t.known_at,
+            Entry::Onset(o) => &mut o.known_at,
+            Entry::Hindsight(h) => &mut h.known_at,
+            Entry::Change(c) => &mut c.known_at,
+            Entry::Jump(j) => &mut j.known_at,
+            Entry::End(e) => &mut e.known_at,
+            Entry::Forecast(f) => &mut f.known_at,
+            Entry::Timbre(t) => &mut t.known_at,
+        }
+    }
 }
 
 /// The time each group took on the analysis thread (the hindsight worker's decodes aside), for
@@ -457,6 +492,7 @@ impl Analyzer {
     pub fn push(&mut self, samples: &[f32], out: &mut Vec<Entry>) {
         assert!(!self.finished, "samples pushed after the stream's end");
         let started = Instant::now();
+        let before = out.len();
         // (A hop at a time, so the energy's and hindsight's windows are still kept when read.)
         for chunk in samples.chunks(HOP) {
             self.stages.energy.push(chunk);
@@ -469,6 +505,7 @@ impl Analyzer {
                 stages.frame(frame.index, frame.features, frame.spectrum, out);
             });
         }
+        stamp(self.stages.params.listening, &mut out[before..]);
         self.stages.timings.total += started.elapsed();
     }
 
@@ -484,6 +521,7 @@ impl Analyzer {
             return;
         }
         let started = Instant::now();
+        let first = out.len();
         let s = &mut self.stages;
         let Some(belief) = s.last_belief else { return };
         let tf = s.params.beats.tick_frames;
@@ -517,6 +555,7 @@ impl Analyzer {
         s.timbre.clear();
         b.timbre(duration, &mut s.timbre);
         out.extend(s.timbre.iter().copied().map(Entry::Timbre));
+        stamp(s.params.listening, &mut out[first..]);
         s.timings.total += started.elapsed();
     }
 
@@ -524,6 +563,23 @@ impl Analyzer {
     /// done), and how long in all: the play log records them.
     pub fn hindsight_stalls(&self) -> (usize, Duration) {
         (self.stages.hindsight.stalls, self.stages.hindsight.stalled)
+    }
+}
+
+/// With [`Stamps::EveryGroup`], restamps entries just emitted (but the committed beats, stamped
+/// already) `M − A` before the positions that produced them.
+fn stamp(listening: Listening, entries: &mut [Entry]) {
+    if let Listening::Delayed(
+        p @ DelayedParams {
+            stamps: Stamps::EveryGroup,
+            ..
+        },
+    ) = listening
+    {
+        for e in entries.iter_mut().filter(|e| !matches!(e, Entry::Beat(_))) {
+            let k = e.known_at_mut();
+            *k = p.stamp(*k);
+        }
     }
 }
 
@@ -644,6 +700,7 @@ impl Stages {
         });
         out.push(Entry::Tick(Tick {
             t,
+            known_at: t,
             evidence,
             energy,
             level,
@@ -654,5 +711,105 @@ impl Stages {
         out.extend(form.change.map(Entry::Change));
         out.extend(form.jump.map(Entry::Jump));
         out.extend(form.end.map(Entry::End));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::bands::TickBands;
+    use crate::ticks::Level;
+
+    /// One entry of every group, each known at 10 s.
+    fn every_group() -> Vec<Entry> {
+        let k = 10.0;
+        vec![
+            Entry::Beat(Commit {
+                t: 11.0,
+                known_at: k,
+                period: 0.5,
+                evidence: 0.9,
+            }),
+            Entry::Tick(Tick {
+                t: k,
+                known_at: k,
+                evidence: 0.5,
+                energy: 0.4,
+                level: Level::Loud,
+                key: Some("A minor"),
+                bands: TickBands::default(),
+                brightness: 0.3,
+            }),
+            Entry::Onset(Onset {
+                t: 9.98,
+                known_at: k,
+                strength: 0.7,
+                strong: true,
+                band: "kick",
+            }),
+            Entry::Hindsight(HindsightEntry {
+                known_at: k,
+                window_end: 9.33,
+                offline: vec![9.0],
+                online: vec![9.01],
+            }),
+            Entry::Change(Change {
+                t: 8.0,
+                known_at: k,
+                strength: 0.6,
+            }),
+            Entry::Jump(Jump {
+                t: 9.9,
+                known_at: k,
+                db: 6.0,
+            }),
+            Entry::End(End {
+                t: 1.0,
+                known_at: k,
+            }),
+            Entry::Forecast(Forecast {
+                t: 12.0,
+                known_at: k,
+                cycle: 4,
+                confidence: 0.8,
+            }),
+            Entry::Timbre(Timbre {
+                t: k,
+                known_at: k,
+                brightness: 0.2,
+                flatness: 0.1,
+                percussive: 0.5,
+                density: 3.0,
+            }),
+        ]
+    }
+
+    #[test]
+    fn every_group_but_the_beats_is_restamped_only_in_its_mode() {
+        let p = DelayedParams {
+            stamps: Stamps::EveryGroup,
+            ..DelayedParams::chosen()
+        };
+        let mut got = every_group();
+        stamp(Listening::Delayed(p), &mut got);
+        for (g, w) in got.iter().zip(every_group()) {
+            let want = if matches!(w, Entry::Beat(_)) {
+                w.known_at()
+            } else {
+                p.stamp(w.known_at())
+            };
+            assert_eq!(g.known_at(), want, "{g:?}");
+            let mut g = g.clone();
+            *g.known_at_mut() = w.known_at();
+            assert_eq!(g, w, "content changed");
+        }
+        for listening in [
+            Listening::Direct,
+            Listening::Delayed(DelayedParams::chosen()),
+        ] {
+            let mut got = every_group();
+            stamp(listening, &mut got);
+            assert_eq!(got, every_group());
+        }
     }
 }

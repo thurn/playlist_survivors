@@ -324,21 +324,6 @@ struct Run {
     lags: Vec<(&'static str, f64)>,
 }
 
-/// When an entry is known: its `knownAt`, or a tick's time.
-fn known(e: &Entry) -> f64 {
-    match e {
-        Entry::Beat(c) => c.known_at,
-        Entry::Tick(t) => t.t,
-        Entry::Onset(o) => o.known_at,
-        Entry::Hindsight(h) => h.known_at,
-        Entry::Change(c) => c.known_at,
-        Entry::Jump(j) => j.known_at,
-        Entry::End(e) => e.known_at,
-        Entry::Forecast(f) => f.known_at,
-        Entry::Timbre(t) => t.known_at,
-    }
-}
-
 fn analyse(models: &Tensors, y: &[f32], hindsight: HindsightParams) -> Result<Run, String> {
     let params = Params {
         hindsight,
@@ -358,7 +343,7 @@ fn analyse(models: &Tensors, y: &[f32], hindsight: HindsightParams) -> Result<Ru
         lags.extend(
             out[before..]
                 .iter()
-                .map(|e| (group(e), (now - known(e)) * 1e3)),
+                .map(|e| (group(e), (now - e.known_at()) * 1e3)),
         );
     };
     for block in y.chunks(BLOCK) {

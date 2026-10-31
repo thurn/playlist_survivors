@@ -3,6 +3,8 @@
 //! - the streamed beats are [`delayed::replay`] of the Direct run's entries;
 //! - the lead: every committed beat is known at least `H` (at its period) before it falls;
 //! - stamps never go backwards;
+//! - stamping every group (the Unity game's mode) changes only the other groups' stamps, each
+//!   `M − A` before the analysis position that produced it;
 //! - the stream's causality by audio position: the stream of audio cut at X holds exactly the
 //!   full stream's beats committed from positions before X (`known_at + M − A`).
 #![forbid(unsafe_code)]
@@ -12,7 +14,8 @@ use std::sync::OnceLock;
 
 use analysis::analyzer::{Analyzer, Entry, Params};
 use analysis::beats::{BeatParams, Commit};
-use analysis::delayed::{self, DelayedParams, Listening};
+use analysis::delayed::{self, DelayedParams, Listening, Stamps};
+use analysis::flat::{self, Record};
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
 
@@ -67,6 +70,13 @@ fn direct() -> &'static [Entry] {
 fn delayed_run() -> &'static [Entry] {
     static D: OnceLock<Vec<Entry>> = OnceLock::new();
     D.get_or_init(|| analyse(pcm(), Listening::Delayed(chosen())))
+}
+
+fn every_group() -> DelayedParams {
+    DelayedParams {
+        stamps: Stamps::EveryGroup,
+        ..chosen()
+    }
 }
 
 fn beats(entries: &[Entry]) -> Vec<Commit> {
@@ -127,6 +137,52 @@ fn every_beat_leads_by_the_horizon_and_stamps_never_go_back() {
         got.windows(2)
             .all(|w| w[1].known_at >= w[0].known_at && w[1].t > w[0].t)
     );
+}
+
+fn records(entries: &[Entry]) -> Vec<Record> {
+    let mut out = Vec::new();
+    for e in entries {
+        flat::push(e, &mut out);
+    }
+    out
+}
+
+#[test]
+fn stamping_every_group_changes_only_stamps() {
+    let p = every_group();
+    let native = delayed_run();
+    let game = analyse(pcm(), Listening::Delayed(p));
+    assert_eq!(beats(&game), beats(native));
+    let (want, got) = (records(native), records(&game));
+    assert_eq!(got.len(), want.len());
+    let mut kinds = std::collections::BTreeSet::new();
+    for (g, w) in got.iter().zip(&want) {
+        assert_eq!((g.kind, g.t.to_bits(), g.v), (w.kind, w.t.to_bits(), w.v));
+        if g.kind == flat::BEAT {
+            continue;
+        }
+        kinds.insert(g.kind);
+        // Natively a tick and a timbre entry are known at their own time: their position.
+        if matches!(w.kind, flat::TICK | flat::TIMBRE) {
+            assert_eq!(w.known_at, w.t, "{w:?}");
+        }
+        assert_eq!(g.known_at, p.stamp(w.known_at), "{g:?} from {w:?}");
+        assert!(
+            (w.known_at - g.known_at - (p.m - p.a)).abs() < 1e-9,
+            "{g:?} from {w:?}"
+        );
+    }
+    // (The excerpt has no structure entries or accent forecasts; one rule restamps every group
+    // but the beats.)
+    for kind in [
+        flat::TICK,
+        flat::ONSET,
+        flat::HINDSIGHT,
+        flat::HINDSIGHT_BEAT,
+        flat::TIMBRE,
+    ] {
+        assert!(kinds.contains(&kind), "no entry of kind {kind}: {kinds:?}");
+    }
 }
 
 #[test]

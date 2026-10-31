@@ -63,6 +63,8 @@ impl Level {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Tick {
     pub t: f64,
+    /// Its time, or `M − A` before it when every group spends the lookahead.
+    pub known_at: f64,
     pub evidence: f64,
     pub energy: f64,
     pub level: Level,

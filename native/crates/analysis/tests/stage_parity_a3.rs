@@ -62,6 +62,7 @@ fn ticks(models: &Tensors, acts: &[f32], pcm: &[f32]) -> Vec<Tick> {
         let e = energy.at(t);
         out.push(Tick {
             t,
+            known_at: t,
             evidence: evidence.at(last, period, t),
             energy: e,
             level: levels.step(e),

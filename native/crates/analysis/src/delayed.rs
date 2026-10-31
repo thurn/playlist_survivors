@@ -20,6 +20,11 @@
 //!   (E0's earlier stamps kept them, but a stamp before the decode that chooses the beat can't be
 //!   met live).
 //!
+//! - **Stamps:** native stamps only committed beats this way, to stay equivalent to Direct
+//!   listening. [`Stamps::EveryGroup`] (the Unity game's, docs/design/unity-game.md, "Stream
+//!   entries and what the sim may know") stamps every other group by the same rule: each entry
+//!   `M − A` before the analysis position that produced it (its Direct `known_at`, a tick's time).
+//!
 //! The rule is E0's replay (`tools/analysis`, `ps_analysis/delayed.py`), streamed: Direct
 //! listening's commits for a band are all made by the time its entry is usable when
 //! `M >= every + A`, so a band never waits. [`replay`] runs it over a Direct run's entries, which
@@ -57,6 +62,16 @@ impl Grid {
     }
 }
 
+/// Which groups spend the lookahead.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Stamps {
+    /// Committed beats only; every other group is known at its analysis position (native's app).
+    #[default]
+    Beats,
+    /// Every group, by the committed beats' rule (the Unity game's plugin).
+    EveryGroup,
+}
+
 /// Delayed listening's parameters.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct DelayedParams {
@@ -65,6 +80,7 @@ pub struct DelayedParams {
     /// The capture → arrival target (s).
     pub a: f64,
     pub grid: Grid,
+    pub stamps: Stamps,
 }
 
 impl DelayedParams {
@@ -74,7 +90,13 @@ impl DelayedParams {
             m: 3.0,
             a: ARRIVAL_S,
             grid: Grid::Offline,
+            stamps: Stamps::Beats,
         }
+    }
+
+    /// The stamp of an entry produced at analysis position `position`: `M − A` before it.
+    pub fn stamp(&self, position: f64) -> f64 {
+        position - self.m + self.a
     }
 }
 
@@ -167,7 +189,7 @@ impl Delayed {
     /// A Direct forecast committed from audio position `at`.
     fn forecast(&self, c: &Commit, at: f64) -> Commit {
         Commit {
-            known_at: at - self.p.m + self.p.a,
+            known_at: self.p.stamp(at),
             ..*c
         }
     }
@@ -195,7 +217,7 @@ impl Delayed {
         while self.usable.len() > self.h.phase_persist.max(1) {
             self.usable.pop_front();
         }
-        let k = e.known_at - self.p.m + self.p.a;
+        let k = self.p.stamp(e.known_at);
         let mut beats = match self.p.grid {
             Grid::Offline => e.offline.clone(),
             Grid::Online | Grid::Phased => e.online.clone(),
@@ -320,12 +342,11 @@ mod tests {
 
     #[test]
     fn a_band_commits_its_grid_and_fills_its_gaps_with_forecasts() {
-        let p = DelayedParams {
-            m: 3.0,
-            a: ARRIVAL_S,
-            grid: Grid::Offline,
-        };
-        let mut d = Delayed::new(p, &HindsightParams::live(), &BeatParams::default());
+        let mut d = Delayed::new(
+            DelayedParams::chosen(),
+            &HindsightParams::live(),
+            &BeatParams::default(),
+        );
         // Direct's forecasts every half second, each committed 0.85 s ahead.
         for i in 0..40 {
             let t = f64::from(i) * 0.5;

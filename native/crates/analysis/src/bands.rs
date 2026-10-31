@@ -68,6 +68,9 @@ pub struct TickBands {
 /// A timbre entry.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Timbre {
+    /// The end of the span it describes (s).
+    pub t: f64,
+    /// `t`, or `M − A` before it when every group spends the lookahead.
     pub known_at: f64,
     pub brightness: f64,
     pub flatness: f64,
@@ -466,6 +469,7 @@ impl Bands {
                 .filter(|&&o| t - TIMBRE_PAST_S < o && o <= t + 1e-9)
                 .count();
             out.push(Timbre {
+                t,
                 known_at: t,
                 brightness: pairwise_sum(&bright) / count,
                 flatness: pairwise_sum(&flat) / count,

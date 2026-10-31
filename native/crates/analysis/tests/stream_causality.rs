@@ -42,21 +42,6 @@ fn stream(models: &Tensors, samples: &[f32]) -> Vec<Entry> {
     out
 }
 
-/// When an entry is known: its `knownAt`, or a tick's time.
-fn known(e: &Entry) -> f64 {
-    match e {
-        Entry::Beat(c) => c.known_at,
-        Entry::Tick(t) => t.t,
-        Entry::Onset(o) => o.known_at,
-        Entry::Hindsight(h) => h.known_at,
-        Entry::Change(c) => c.known_at,
-        Entry::Jump(j) => j.known_at,
-        Entry::End(e) => e.known_at,
-        Entry::Forecast(f) => f.known_at,
-        Entry::Timbre(t) => t.known_at,
-    }
-}
-
 fn group(e: &Entry) -> &'static str {
     match e {
         Entry::Beat(_) => "beats",
@@ -90,7 +75,7 @@ fn known_by(entries: &[Entry], x: f64, margin: f64) -> Vec<Vec<&Entry>> {
         .map(|g| {
             entries
                 .iter()
-                .filter(|e| group(e) == *g && known(e) <= x - margin + 1e-9)
+                .filter(|e| group(e) == *g && e.known_at() <= x - margin + 1e-9)
                 .collect()
         })
         .collect()
