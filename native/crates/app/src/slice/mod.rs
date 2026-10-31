@@ -1454,59 +1454,54 @@ fn thread_cpu_s() -> f64 {
     ts.tv_sec as f64 + ts.tv_nsec as f64 * 1e-9
 }
 
-/// The frame's own work, in this thread's CPU time (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
+/// This thread's CPU cycles so far, if the OS counts them: a frame's work at whatever clock ran
+/// it, so a downclocked or efficiency core, which stretches the frame's CPU time, adds few.
+fn thread_cycles() -> Option<u64> {
+    unsafe extern "C" {
+        /// libsystem_kernel's per-thread counters (undocumented): kind 1 fills
+        /// `[instructions, cycles]`.
+        fn thread_selfcounts(kind: libc::c_int, buf: *mut u64, nbytes: libc::size_t)
+        -> libc::c_int;
+    }
+    let mut counts = [0u64; 2];
+    // SAFETY: thread_selfcounts writes at most `nbytes` into the buffer it is given.
+    let r = unsafe { thread_selfcounts(1, counts.as_mut_ptr(), size_of_val(&counts)) };
+    (r == 0).then_some(counts[1])
+}
+
+/// The frame's own work, in this thread's cycles (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
 ///
-/// A loaded host runs this thread on its efficiency cores for stretches, which triples a frame's
-/// CPU time (the whole bench under `taskpolicy -c background`: p99 6.7 ms against 2.2 quiet). So
-/// a pass over the gate is measured again and each frame judged at its faster pass: both passes
-/// play the same frames, so a real regression is slow in both.
+/// The gate judges each frame's cycles at the thread's full clock, not its CPU time: a loaded
+/// host runs this thread downclocked or on its efficiency cores for stretches, which tripled
+/// slow frames' CPU time (p99 5.4 ms on a busy CI host, 4.4 under `taskpolicy -c background`,
+/// 1.4 quiet) but barely moves their cycles (p99 1.5 ms at full clock under background), and a
+/// regression costs cycles at any clock.
 fn bench(check: bool, mode: BenchMode) -> Result<(), String> {
-    let first = bench_pass(mode, true)?;
-    let p99 = first.report();
-    if !check || p99 <= FRAME_WORK_GATE_MS {
-        return Ok(());
-    }
-    println!(
-        "bench: frame work p99 {p99:.2} ms over the gate {FRAME_WORK_GATE_MS} ms; measuring again, each frame at its faster pass"
-    );
-    let p99 = first.faster(&bench_pass(mode, false)?).report();
-    if p99 > FRAME_WORK_GATE_MS {
+    let p99 = bench_pass(mode)?.report();
+    if check && p99 > FRAME_WORK_GATE_MS {
         return Err(format!(
-            "frame work p99 {p99:.2} ms over the gate {FRAME_WORK_GATE_MS} ms in both passes"
+            "frame work p99 {p99:.2} ms over the gate {FRAME_WORK_GATE_MS} ms"
         ));
     }
     Ok(())
 }
 
-/// One bench pass's CPU times (ms) per frame, in frame order, and the engine's counters.
+/// The bench's CPU times (ms) per frame, in frame order, each frame's cycles if the OS counts
+/// them, and the engine's counters.
 struct BenchTimes {
     frame: Vec<f64>,
     engine: Vec<f64>,
     scene: Vec<f64>,
     encode: Vec<f64>,
+    cycles: Option<Vec<u64>>,
     stats: eval::live::RunnerStats,
 }
 
 impl BenchTimes {
-    /// Each frame (and part) at the faster of the two passes.
-    fn faster(mut self, other: &Self) -> Self {
-        for (mine, theirs) in [
-            (&mut self.frame, &other.frame),
-            (&mut self.engine, &other.engine),
-            (&mut self.scene, &other.scene),
-            (&mut self.encode, &other.encode),
-        ] {
-            for (a, b) in mine.iter_mut().zip(theirs) {
-                *a = a.min(*b);
-            }
-        }
-        self.stats.resim_s = self.stats.resim_s.min(other.stats.resim_s);
-        self
-    }
-
-    /// Prints the parts' and the frame's percentiles; returns the frame work's p99.
+    /// Prints the parts' and the frame's percentiles; returns the frame work's p99 at full clock
+    /// (at its CPU time if the OS counts no cycles).
     fn report(&self) -> f64 {
         for (name, values) in [
             ("engine", &self.engine),
@@ -1536,12 +1531,35 @@ impl BenchTimes {
             r.rollbacks,
             r.resim_s * 1e3
         );
+        let Some(cycles) = &self.cycles else {
+            println!("bench: no per-thread cycle counts; judging frame work at its CPU time");
+            return at(0.99);
+        };
+        // The thread's full clock: the fastest frame's cycles per CPU ms (4.36 to 4.43 GHz on
+        // jarvis, loaded or not; a pass with no frame at full clock only judges more strictly).
+        let full = cycles
+            .iter()
+            .zip(&self.frame)
+            .filter(|&(_, &t)| t > 0.0)
+            .map(|(&c, t)| c as f64 / t)
+            .fold(0.0, f64::max);
+        let mut times: Vec<f64> = cycles.iter().map(|&c| c as f64 / full).collect();
+        times.sort_by(f64::total_cmp);
+        let at = |p: f64| times[((times.len() - 1) as f64 * p) as usize];
+        println!(
+            "bench: frame work at full clock ({:.0} MHz, the fastest frame's): median {:.2} ms, p95 {:.2}, p99 {:.2}, max {:.2} (gate p99 <= {FRAME_WORK_GATE_MS} ms)",
+            full / 1e3,
+            at(0.5),
+            at(0.95),
+            at(0.99),
+            at(1.0)
+        );
         at(0.99)
     }
 }
 
-/// One pass of [`bench`]'s frames; `report` prints the fixture's own checks.
-fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
+/// [`bench`]'s frames, printing the fixture's own checks.
+fn bench_pass(mode: BenchMode) -> Result<BenchTimes, String> {
     let density = mode != BenchMode::Reactive;
     let evolved = matches!(
         mode,
@@ -1585,9 +1603,11 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
     let mut engine_times = Vec::new();
     let mut scene_times = Vec::new();
     let mut encode_times = Vec::new();
+    let mut cycles = Vec::new();
     let mut jitter = 0.0f64;
     for frame in 1..=(60 * 120) {
         let s = f64::from(frame) / 120.0;
+        let c0 = thread_cycles();
         let t0 = thread_cpu_s();
         engine.feed(|log| replay.feed_to(log, s));
         jitter = (jitter * 7.3 + 0.37).fract();
@@ -1715,6 +1735,7 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
             overlay: &overlay,
         });
         let end = thread_cpu_s();
+        cycles.push(c0.zip(thread_cycles()).map(|(a, b)| b - a));
         encode_times.push((end - scene_end) * 1e3);
         times.push((end - t0) * 1e3);
     }
@@ -1730,13 +1751,11 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
                 "combat fixture missed actual death/aftermath: peak enemies{peak_enemies}, marks{peak_marks}, kills{kills}"
             ));
         }
-        if report {
-            println!(
-                "bench actual combat: peak enemies{peak_enemies}, marks{peak_marks}, kills{kills}; injected40HP/zeroXP, damage exempt"
-            );
-        }
+        println!(
+            "bench actual combat: peak enemies{peak_enemies}, marks{peak_marks}, kills{kills}; injected40HP/zeroXP, damage exempt"
+        );
     }
-    if density && report {
+    if density {
         println!(
             "bench final effects: evolved{evolved} moving{moving}, min gems{min_gems}, peak moving gem poses{peak_poses}, actual pickup moments{pickups}"
         );
@@ -1754,6 +1773,7 @@ fn bench_pass(mode: BenchMode, report: bool) -> Result<BenchTimes, String> {
     }
     Ok(BenchTimes {
         frame: times,
+        cycles: cycles.into_iter().collect(),
         engine: engine_times,
         scene: scene_times,
         encode: encode_times,
