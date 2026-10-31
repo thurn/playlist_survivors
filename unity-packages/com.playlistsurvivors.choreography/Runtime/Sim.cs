@@ -991,7 +991,7 @@ namespace PS.Choreography
                 if (start < tb - 1e-9) continue;
                 if (start >= startBefore)
                 {
-                    if (!shot.HasFixed || waiting) return;
+                    if (!shot.HasFixed || waiting || e.Fixed != FixedPosition.None) return;   // a fixed point that must wait keeps its slot
                     waiting = true;
                     continue;
                 }
@@ -2519,7 +2519,7 @@ namespace PS.Choreography
         void FinalSlam(double t, Vector2 o, float strength)
         {
             var view = View(viewWidth);
-            double fall = shot.HasSpan ? (shot.SpanTo - t) * FinalFallShare : double.PositiveInfinity;
+            double fall = shot.HasSpan && shot.SpanTo > t ? (shot.SpanTo - t) * FinalFallShare : double.PositiveInfinity;
             int killed = 0;
             for (int i = 0; i < liveCount; i++)
             {
