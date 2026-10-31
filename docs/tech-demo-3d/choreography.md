@@ -714,7 +714,10 @@ start = impact - annotatedImpact / speed
   combo from that long before its impact instead:
   `speed = max(1, annotatedImpact / windup)`, so the swing is quick and its
   blow lands on the beat. The next combo's windup may cut into the last one's
-  follow-through, so the hero can swing on every beat.
+  follow-through, so the hero can swing on every beat, and no blow's
+  follow-through costs it its fit (`yieldToAccents` and a shot's fixed
+  entries hold back blows only for the combos that wait for it). A cleave
+  cuts in from where the hero then stands, mid-move, so it never jumps.
 - **The choreographer only schedules impacts that fit** within the speed
   limits, because it knows every clip's annotation.
 - **Two animation slots** play per monster: the current clip and the one it

@@ -122,6 +122,25 @@ namespace Demo3D.Choreography.Tests
             }
         }
 
+        /// <summary>
+        /// ps-ffx: a cleave cuts into the last blow's follow-through from where the hero then stands, mid-move, so
+        /// the hero never jumps: each of its motion segments starts where it stands as that segment begins.
+        /// </summary>
+        [Test]
+        public void TheHeroNeverJumps()
+        {
+            Timeline tl = Fixtures.SongTimeline;
+            ArraySegment<MotionSegment> segs = tl.SegmentsOf(0);
+            int jumps = 0;
+            for (int i = 1; i < segs.Count; i++)
+            {
+                MotionSegment prev = segs.Array[segs.Offset + i - 1], seg = segs.Array[segs.Offset + i];
+                float jump = System.Numerics.Vector2.Distance(prev.PositionAt(seg.T0), seg.From);
+                if (jump > 0.05f && jumps++ < 5) TestContext.WriteLine("the hero jumps " + jump.ToString("F2") + " m at " + seg.T0.ToString("F3") + " s");
+            }
+            Assert.That(jumps, Is.Zero, "hero jumps over 5 cm");
+        }
+
         /// <summary>Without one-hit kills a laser tick is a flash only: it never knocks its monster back.</summary>
         [Test]
         public void TicksNeverKnockAMonsterBack()

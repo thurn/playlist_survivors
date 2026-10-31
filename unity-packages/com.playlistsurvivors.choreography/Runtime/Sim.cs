@@ -903,15 +903,14 @@ namespace PS.Choreography
             bool everyBeat = shot.ActsEveryBeat;
             if (canAct && (plan.Clear || everyBeat || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
             {
-                // With a fixed windup the next combo's windup cuts into the last one's follow-through.
-                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), startBefore: everyBeat ? tnext : double.PositiveInfinity);
+                ScheduleHeroAction(tb, startBefore: everyBeat ? tnext : double.PositiveInfinity);
                 // A flurry (an eighth's combo entry) strikes between beats: the hero goes straight on to
                 // the following beat's action, which no later decision could still schedule, so the
                 // flurry adds a blow instead of shifting one.
                 while (heroFlurry)
                 {
                     double after = heroPendingImpact;
-                    ScheduleHeroAction(after, roster.HeroWindupS > 0 ? after : heroLastEnd);
+                    ScheduleHeroAction(after);
                     if (heroPendingImpact <= after + 1e-9) break;
                 }
                 if (!everyBeat || heroPendingImpact > tb + 1e-9) return;
@@ -924,7 +923,7 @@ namespace PS.Choreography
             int next = curSection + 1;
             if (canAct && next < plans.Length && plans[next].Clear && plans[next].HeroAttacks)
             {
-                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), map.Sections[next].Start, tnext);
+                ScheduleHeroAction(tb, map.Sections[next].Start, tnext);
                 if (heroPendingImpact > tb + 1e-9) return;
             }
             Stride(tb, tnext, h);
@@ -947,10 +946,12 @@ namespace PS.Choreography
 
         /// <summary>
         /// Schedule the hero's next combo on the first grid point within 4 s (from <paramref name="firstPoint"/> on)
-        /// whose clip fits from <paramref name="availFrom"/>, unless its clip would start after <paramref name="startBefore"/>.
+        /// whose clip fits, unless its clip would start after <paramref name="startBefore"/>. A combo with a windup (the
+        /// hero's, or its own: demo3d's cleaves) cuts into the last one's follow-through; any other waits for its end.
         /// </summary>
-        void ScheduleHeroAction(double tb, double availFrom, double firstPoint = double.NegativeInfinity, double startBefore = double.PositiveInfinity)
+        void ScheduleHeroAction(double tb, double firstPoint = double.NegativeInfinity, double startBefore = double.PositiveInfinity)
         {
+            double availFrom = Math.Max(tb, heroLastEnd);
             double last = Math.Min(shot.HasSpan ? shot.SpanTo + 1e-6 : double.PositiveInfinity, double.IsNaN(shot.Final) ? double.PositiveInfinity : shot.Final + 1e-6);
             for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0 && grid.Points[gi].Time <= last; gi++)
             {
@@ -961,10 +962,7 @@ namespace PS.Choreography
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
                 float windup = roster.WindupOf(mv);
-                // A combo with its own windup (demo3d's cleaves) may cut into the last one's follow-through, as every
-                // combo does for a hero with a windup.
-                bool cutsIn = mv.WindupS > 0 && roster.HeroWindupS <= 0;
-                if (windup > 0 ? !ClipLibrary.FitWindup(clip, cutsIn ? tb : availFrom, p.Time, windup, out double start, out double end, out float speed)
+                if (windup > 0 ? !ClipLibrary.FitWindup(clip, tb, p.Time, windup, out double start, out double end, out float speed)
                     : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)) continue;
                 if (start < tb - 1e-9) continue;
                 if (start >= startBefore) return;
@@ -972,17 +970,18 @@ namespace PS.Choreography
                 // recovery would leave no room for the windup of the next section's positioned one
                 // (the ending's accent slams after the outro, TD10). Within a section a positioned
                 // combo that can't fit moves later, as before.
-                if (plain && BlocksPositioned(gi, windup > 0 ? p.Time : end)) continue;
+                if (plain && BlocksPositioned(gi, p.Time, end)) continue;
                 // A flurry's blow between beats never costs the hero the next beat's, and with the level
                 // script's yieldToAccents no beat's or flurry's blow costs the section's next accent or
-                // phrase its spin or slam (both for a hero that retimes its clips by speed, as demo3d's does).
-                if (windup <= 0 && (p.Flags & GridFlags.Beat) == 0 && FlurryTakesTheBeat(gi, availFrom, end)) continue;
-                if (windup <= 0 && tuning.YieldToAccents && e.Priority <= GridEntry.BeatPriority && TakesTheAccent(gi, availFrom, end)) continue;
+                // phrase its spin or slam (a next combo that retimes its clip by speed, as demo3d's do).
+                if ((p.Flags & GridFlags.Beat) == 0 && FlurryTakesTheBeat(gi, availFrom, end)) continue;
+                if (tuning.YieldToAccents && e.Priority <= GridEntry.BeatPriority && TakesTheAccent(gi, availFrom, end)) continue;
                 // A shot's fixed entries (its cut, final slam, anchors and bar.beats) always land: no other blow costs one its fit.
-                if (windup <= 0 && shot.HasFixed && e.Fixed == FixedPosition.None && TakesAFixedSlot(gi, availFrom, end)) continue;
+                if (shot.HasFixed && e.Fixed == FixedPosition.None && TakesAFixedSlot(gi, availFrom, end)) continue;
 
-                // One that cuts in starts where the hero then stands, mid-move, so it never pops.
-                Vector2 from = cutsIn ? HeroPosAt(start) : HeroRest;
+                // A combo with its own windup cuts in from where the hero then stands, mid-move, so it never pops (demo2d's
+                // hero, all of whose combos take its windup, starts each from where its last move ends).
+                Vector2 from = mv.WindupS > 0 && roster.HeroWindupS <= 0 ? HeroPosAt(start) : HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
                 Vector2 dir, to;
                 if (shot.Path != null)
@@ -1040,12 +1039,12 @@ namespace PS.Choreography
         }
 
         /// <summary>
-        /// Whether an action ending at <paramref name="end"/> would make the next positioned combo
-        /// after grid point <paramref name="gi"/> (within 4 s), if it lies in a later section whose
-        /// combos are all positioned (its only actions), unable to fit at full speed (or, with a
-        /// windup, an action whose impact is <paramref name="end"/> leaving no room for its windup).
+        /// Whether an action with its impact at <paramref name="impact"/> and ending at <paramref name="end"/> would
+        /// make the next positioned combo after grid point <paramref name="gi"/> (within 4 s), if it lies in a later
+        /// section whose combos are all positioned (its only actions), unable to fit at full speed (or, for one with a
+        /// windup, which cuts into the action's follow-through, leave no room for that windup after the impact).
         /// </summary>
-        bool BlocksPositioned(int gi, double end)
+        bool BlocksPositioned(int gi, double impact, double end)
         {
             for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= grid.Points[gi].Time + 4.0; k++)
             {
@@ -1056,7 +1055,7 @@ namespace PS.Choreography
                 Move next = roster.Combo(e.Name);
                 ClipAnnotation c = clips[next.Clip];
                 float windup = roster.WindupOf(next);
-                return end > q.Time - (windup > 0 ? Math.Min(windup, c.Impact) : c.Impact / tuning.ComboMaxSpeed);
+                return windup > 0 ? impact > q.Time - Math.Min(windup, c.Impact) : end > q.Time - c.Impact / tuning.ComboMaxSpeed;
             }
             return false;
         }
@@ -1073,9 +1072,7 @@ namespace PS.Choreography
             GridPoint q = grid.Points[k];
             GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
             if (e == null) return false;
-            ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
-            return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
-                && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+            return CostsItsFit(roster.Combo(e.Name), q.Time, availFrom, end);
         }
 
         /// <summary>
@@ -1091,9 +1088,7 @@ namespace PS.Choreography
                 GridPoint q = grid.Points[k];
                 GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
                 if (e == null || e.Priority <= GridEntry.BeatPriority) continue;
-                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
-                return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
-                    && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+                return CostsItsFit(roster.Combo(e.Name), q.Time, availFrom, end);
             }
             return false;
         }
@@ -1110,11 +1105,22 @@ namespace PS.Choreography
                 GridPoint q = grid.Points[k];
                 GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
                 if (e == null || e.Fixed == FixedPosition.None) continue;
-                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
-                return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
-                    && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+                return CostsItsFit(roster.Combo(e.Name), q.Time, availFrom, end);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Whether a blow ending at <paramref name="end"/> leaves combo <paramref name="next"/>, impact at
+        /// <paramref name="impact"/>, unable to fit when it could have from <paramref name="availFrom"/>. One with a
+        /// windup cuts into the blow's follow-through, so no blow costs it its fit.
+        /// </summary>
+        bool CostsItsFit(Move next, double impact, double availFrom, double end)
+        {
+            if (roster.WindupOf(next) > 0) return false;
+            ClipAnnotation c = clips[next.Clip];
+            return ClipLibrary.Fit(c, availFrom, impact, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
+                && !ClipLibrary.Fit(c, end, impact, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
         }
 
         static bool AllPositioned(GridEntry[] combo)
