@@ -48,3 +48,5 @@ what was run (the exact commands), the numbers, and what they show.
   the survivors test playlist (ps-msz.6.1).
 - [calibration](calibration/README.md): the video and input calibration screens, their per-device file, the
   CALIBRATE rows on the title screen and the pause menu over a frozen run (ps-msz.6.11).
+- [replay](replay/README.md): a headless run recorded as a session and replayed to its hash, in the IL2CPP player
+  and in .NET, and a changed record caught (ps-msz.6.10).
