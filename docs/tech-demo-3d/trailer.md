@@ -365,7 +365,7 @@ No shot is shorter than 2 bars.
 | 5 | 39.642–45.836 | 105–108 | neon | Charge | ~420 | 40 m | −90° |
 | 6 | 45.836–48.933 | 109–110 | snow | Vortex | ~450 | 40 m | 45° |
 | 7 | 48.933–52.029 | 111–112 | crypt | Converge, 3 streams | ~550 | 45 m | 180° |
-| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | The boss fight, the horde in a vortex round its arena | ~500 | 36→44 m | 0° |
+| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | The boss fight, the horde in a vortex round its arena | ~520 | 36→44 m | 0° |
 
 The columns:
 
@@ -452,8 +452,8 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
 8. **Climax: the boss fight (forest, bar 113).** A white flash covers the cut
    and the hero's slam lands on 113.1, on the dragon itself, in a clearing
    the horde rings (see [The boss fight](#the-boss-fight)).
-   - The dragon holds the clearing's middle. The hero circles it on a loop
-     5.5 m out, and the horde, a vortex of about 500, presses at the arena's
+   - The dragon holds the middle of the forest's fairy ring. The hero circles
+     it on a loop 5.5 m out, and the horde, a vortex of about 500, presses at the arena's
      edge 10 m out.
    - Three telegraphed attacks: a fire breath (113.2 to 114.1), a tail sweep
      (114.4 to 115.3) and a second breath (116.1 to 116.3). In the crystal
@@ -681,13 +681,13 @@ climax:
       "duel": { "bigork": 2, "troll": 1 },
       "combo": ["slashR@anchor", "spin@anchor", "slashL@anchor"] },
     { "cut": "113.1", "environment": "forest", "viewWidthM": 36, "viewWidthToM": 44,
-      "path": { "via": [[38.1, 36.1], [36.5, 40], [38.1, 43.9], [42, 45.5],
-                        [45.9, 43.9], [47.5, 40], [45.9, 36.1], [42, 34.5]], "stepM": 1.9, "loop": true },
+      "path": { "via": [[40.1, 36.1], [38.5, 40], [40.1, 43.9], [44, 45.5],
+                        [47.9, 43.9], [49.5, 40], [47.9, 36.1], [44, 34.5]], "stepM": 1.9, "loop": true },
       "formation": { "kind": "vortex", "onScreen": 500,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
       "boss": "ahead",
-      "bossFight": { "at": [42, 40], "attacks": [
+      "bossFight": { "at": [44, 40], "attacks": [
         { "kind": "breath", "windup": "113.2", "impact": "114.1" },
         { "kind": "sweep", "windup": "114.4", "impact": "115.3" },
         { "kind": "breath", "windup": "116.1", "impact": "116.3" } ] },
@@ -1075,8 +1075,12 @@ and the client only draws them.
 - **The horde holds back at the arena's edge.** In a fight, formation
   monsters keep out of a 10 m circle round the dragon's ground: one inside
   walks out, and a step that would cross the edge ends on it, or prowls
-  round it on the hero's side. The fight reads in a clear arena ringed by a
-  vortex of about 500, and the hero's blows still cut the front rank.
+  round it on the hero's side; one left no step at all swings at the air,
+  snarling at the hero, rather than mark time. The vortex opens outside the
+  arena with three quarters of a vortex's horde, since the edge holds the
+  horde in view instead of feeding it to the hero's blows. The fight reads
+  in a clear arena ringed by a vortex of about 500 (520 in the action cut,
+  whose bars run higher), and the hero's blows still cut the front rank.
 - **Telegraphed attacks on the music.** Each attack winds up on a beat and
   lands on a later strong beat or accent, at least two beats on. On the
   windup the sim places its zone where the hero will be through the windup,
@@ -1120,9 +1124,15 @@ to the impact):
 
 | Cut | Ground | Attacks (windup to impact) | Dodges | Hits on screen | On screen / target |
 |---|---|---|---|---|---|
-| action | (42, 40) | breath 113.2–114.1, sweep 114.4–115.3, breath 116.1–116.3 | DODGES_ACTION | HITS_ACTION | ONSCREEN_ACTION / 500 |
-| crystal | (36, 30) | sweep 113.2–114.1, breath 114.4–115.3, breath 116.1–116.3 | DODGES_CRYSTAL | HITS_CRYSTAL | ONSCREEN_CRYSTAL / 500 |
+| action | (44, 40), the fairy ring | breath 113.2–114.1, sweep 114.4–115.3, breath 116.1–116.3 | 3.1, 5.8, 3.6 m | 5 | 546 / 520 |
+| crystal | (36, 30) | sweep 113.2–114.1, breath 114.4–115.3, breath 116.1–116.3 | 4.5, 3.1, 3.6 m | 5 | 477 / 500 |
 
+- The breaths kill 96 and 84 (action) and 74 and 55 (crystal) of the horde
+  pressing at the arena's edge; the sweeps, inside it, clear the dragon's
+  ground and the hero's dodge. The crystal cut's two breaths smash its two
+  formations. Every check passes in both cuts.
+- The action cut fights in the forest's fairy ring (its candles and stones
+  ring the arena); the crystal cut on the open field south-west of it.
 - Evidence is in
   [demo3d/evidence/trailer/fight](../../demo3d/evidence/trailer/fight/README.md):
   each attack's telegraph, dodge and impact in both cuts.

@@ -1569,6 +1569,9 @@ namespace PS.Choreography
                     // Cornered with the hero in reach, it swings: the hero's blow usually cuts it down first.
                     if (Vector2.Distance(best, a) < UnjamStep * mt.StepM && plan.MonsterAttacks && d <= contact + mt.ReachM && TryScheduleAttack(m, mt, tb, toHero)) continue;
                 }
+                // A boss fight's horde, pressed at the arena's edge or round its crystals with no step left, snarls at the
+                // hero instead: a swing at the air rather than marking time.
+                if (fight != null && Formed && Vector2.Distance(best, a) < 0.3f * mt.StepM && plan.MonsterAttacks && TryScheduleAttack(m, mt, tb, toHero)) continue;
                 if (Vector2.Distance(best, a) < 0.2f * mt.StepM)
                 {
                     best = a;   // marching in place
@@ -1942,6 +1945,7 @@ namespace PS.Choreography
         const float MinBossClipSpeed = 0.5f;   // an attack's clip slows to at most half speed to fill its windup
         const float BossRecoilM = 0.5f;        // a blow knocks the boss back this far
         const float FightArenaM = 10f;         // the horde holds back this far from the boss's ground: the fight's arena
+        const float FightOpening = 0.75f;      // a fight's vortex opens with this share of a vortex's horde
 
         /// <summary>
         /// A boss fight's horde holds back at the arena's edge (<see cref="FightArenaM"/> round the boss's ground), so the
@@ -1963,12 +1967,12 @@ namespace PS.Choreography
             if (bc.Length() >= edge) return;
             Vector2 q = shot.FightAt + (bc.LengthSquared() > 1e-6f ? Vector2.Normalize(bc) : fromC / dc) * edge;
             Vector2 w = q - a;
-            if (w.Length() < 0.3f * stepM)
+            if (w.Length() < 0.5f * stepM)
             {
                 var round = new Vector2(-fromC.Y, fromC.X) / dc;
                 Vector2 toHero = heroAt - shot.FightAt;
                 if (round.X * toHero.X + round.Y * toHero.Y < 0) round = -round;
-                w = shot.FightAt + Vector2.Normalize(fromC + round * (0.6f * stepM)) * edge - a;
+                w = shot.FightAt + Vector2.Normalize(fromC + round * (0.8f * stepM)) * edge - a;
             }
             float wl = w.Length();
             if (wl < 1e-3f) { step = 0; return; }
@@ -2016,7 +2020,7 @@ namespace PS.Choreography
         /// <summary>
         /// The hero's dodge out of attack <paramref name="i"/>'s zone, from the beat <paramref name="tb"/> to just before its
         /// blow: a dash sideways out of a breath's cone (on along the path's side first), or straight out of a sweep's disc,
-        /// to where the fewest monsters stand.
+        /// to where the fewest monsters stand, inside the arena where it can.
         /// </summary>
         void FightDodge(int i, double tb)
         {
@@ -2039,7 +2043,7 @@ namespace PS.Choreography
             {
                 Vector2 p = h - z.Origin;
                 Vector2 away = p.LengthSquared() > 1e-6f ? Vector2.Normalize(p) : -travel;
-                foreach (float turn in new[] { 0f, 0.35f, -0.35f, 0.7f, -0.7f })
+                foreach (float turn in new[] { 0f, 0.35f, -0.35f, 0.7f, -0.7f, 1.05f, -1.05f })
                 {
                     Vector2 dir = Rotate(away, turn);
                     float pd = Vector2.Dot(p, dir), r = z.RadiusM + margin;
@@ -2053,7 +2057,8 @@ namespace PS.Choreography
             {
                 Vector2 q = nav != null ? WallStep(h, c, roster.HeroRadius) : c;
                 if (z.Contains(q, roster.HeroRadius + 0.2f)) continue;
-                int crowd = 0, n = Near().Gather(q, 1.5f + SmallRadius, ref buf);
+                // Inside the arena the horde holds back from, the dodge lands on open ground.
+                int crowd = Vector2.Distance(q, shot.FightAt) > FightArenaM - 1f ? 1000 : 0, n = Near().Gather(q, 1.5f + SmallRadius, ref buf);
                 for (int k = 0; k < n; k++) if (state[buf[k]] == Alive && Vector2.Distance(pos[buf[k]], q) < 1.5f + radius[buf[k]]) crowd++;
                 if (crowd < best) { best = crowd; to = q; }
             }
@@ -3260,8 +3265,10 @@ namespace PS.Choreography
                     // rather than filling the loop round them.
                     float inner = 0;
                     foreach (Vector2 w in shot.Path) inner = Math.Max(inner, Vector2.Distance(w, c));
+                    if (fight != null) inner = Math.Max(inner, Vector2.Distance(c, shot.FightAt) + FightArenaM);   // a fight's horde opens outside its arena
                     float r = inner + VortexRingM;
-                    float ring = VortexOpening * plan.TargetOnScreen / (float)(Math.PI * (r * r - inner * inner));
+                    // ... and lighter, since its edge holds the horde in view rather than feeding it to the hero's blows.
+                    float ring = (fight != null ? FightOpening : 1f) * VortexOpening * plan.TargetOnScreen / (float)(Math.PI * (r * r - inner * inner));
                     Fill(t, h, c - new Vector2(r, r), c + new Vector2(r, r), p => Vector2.Distance(p, c) <= r && Vector2.Distance(p, c) >= inner ? ring : 0f);
                     break;
                 }

@@ -24,6 +24,9 @@ frame round the hero and the formation, labelled with its trailer second.
 | `break-14` | 8 | forest | 54.352 | 114.3 | spin |
 | `break-15` | 8 | forest | 56.674 | 116.1 | cleave |
 
+The climax's two (`break-14`, `break-15`) are the cut before ps-b5z.5's boss fight, whose two
+breaths now smash the climax's formations instead (see [the fight's evidence](../fight/README.md)).
+
 What they show:
 
 - **Big and unmissable.** Each formation is a cluster of white-gold spires up to 10 m tall, the

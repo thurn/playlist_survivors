@@ -1,5 +1,5 @@
 {
-  "note": "The trailer for Action (docs/tech-demo-3d/trailer.md, The trailer file and The Shot List): bars 79-117, eight shots cut on the beat, each simulated on its own from the overdrive overlay's globals and its own fields. The re-cut (ps-7mx.3) runs on through drop-2 into final-peak, to a final slam on 117.1, about 60 s in all: after the duel, three 8-bar shots cut on the drop and the re-entries at 89 and 97, a 4-bar shot on final-peak's 105, two 2-bar shots and an unbroken climax from 113. Paths run through the arena plan's open ground (the big north-east field round the opening and the courtyard field west of it, and the camp clearing for the duel), so they work in every environment.",
+  "note": "The trailer for Action (docs/tech-demo-3d/trailer.md, The trailer file and The Shot List): bars 79-117, eight shots cut on the beat, each simulated on its own from the overdrive overlay's globals and its own fields. The re-cut (ps-7mx.3) runs on through drop-2 into final-peak, to a final slam on 117.1, about 60 s in all: after the duel, three 8-bar shots cut on the drop and the re-entries at 89 and 97, a 4-bar shot on final-peak's 105, two 2-bar shots and an unbroken climax from 113, a boss fight with the dragon in the forest's fairy ring (ps-b5z.5). Paths run through the arena plan's open ground (the big north-east field round the opening and the courtyard field west of it, and the camp clearing for the duel), so they work in every environment.",
   "name": "action",
   "song": "action",
   "base": "overdrive",
@@ -61,12 +61,12 @@
       "spells": ["lightning@strong"],
       "grade": { "exposure": 0.05, "contrast": 12, "saturation": 0 } },
     { "cut": "113.1", "environment": "forest", "viewWidthM": 36, "viewWidthToM": 44,
-      "path": { "via": [[38.1, 36.1], [36.5, 40], [38.1, 43.9], [42, 45.5], [45.9, 43.9], [47.5, 40], [45.9, 36.1], [42, 34.5]],
+      "path": { "via": [[40.1, 36.1], [38.5, 40], [40.1, 43.9], [44, 45.5], [47.9, 43.9], [49.5, 40], [47.9, 36.1], [44, 34.5]],
                 "stepM": 1.9, "loop": true },
-      "formation": { "kind": "vortex", "onScreen": 500,
+      "formation": { "kind": "vortex", "onScreen": 520,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2, "bigork": 0.4, "troll": 0.3 } },
       "boss": "ahead",
-      "bossFight": { "at": [42, 40], "attacks": [
+      "bossFight": { "at": [44, 40], "attacks": [
         { "kind": "breath", "windup": "113.2", "impact": "114.1" },
         { "kind": "sweep", "windup": "114.4", "impact": "115.3" },
         { "kind": "breath", "windup": "116.1", "impact": "116.3" } ] },

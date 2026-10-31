@@ -17,10 +17,10 @@ namespace Demo3D.Runtime.Playback
     /// </summary>
     public sealed class BossTelegraphs : IDisposable
     {
-        /// <summary>The breath's fire and the sweep's blood-red (linear, HDR: past the bloom's knee).</summary>
-        public static readonly Color BreathColor = new Color(4.0f, 0.95f, 0.12f), SweepColor = new Color(3.6f, 0.22f, 0.32f);
+        /// <summary>The breath's red and the sweep's magenta (linear, HDR: past the bloom's knee), against the warm ground and the cyan hero.</summary>
+        public static readonly Color BreathColor = new Color(3.4f, 0.14f, 0.05f), SweepColor = new Color(2.6f, 0.08f, 1.0f);
         /// <summary>How long a zone's flash lasts after its blow lands (s).</summary>
-        public const double FlashS = 0.3;
+        public const double FlashS = 0.12;
         /// <summary>The zone's height above the ground (m).</summary>
         public const float LiftM = 0.06f;
 
@@ -95,7 +95,7 @@ namespace Demo3D.Runtime.Playback
                 _block.SetColor(ColorId, a.Kind == BossAttackKind.Breath ? BreathColor : SweepColor);
                 _block.SetFloat(ProgressId, progress);
                 _block.SetFloat(PulseId, landed ? 0f : (1 - beat) * (1 - beat));
-                _block.SetFloat(FlashId, landed ? Mathf.Sqrt(flash) : 0f);
+                _block.SetFloat(FlashId, landed ? flash * flash : 0f);
                 _block.SetFloat(FadeId, fade);
                 _block.SetFloat(ConeId, a.Kind == BossAttackKind.Breath ? 1f : 0f);
                 z.Renderer.SetPropertyBlock(_block);

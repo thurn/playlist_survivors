@@ -1,7 +1,7 @@
 // A boss attack's telegraph on the ground (trailer.md, "The boss fight"): the zone the dragon's blow will land on, glowing
 // from its windup to its impact. A bright rim, a dim fill that charges outward from the origin and reaches the rim on the
-// impact, hazard bands streaming outward, a throb on each beat, and the blow's white-hot flash. Drawn additively a few
-// centimetres above the ground so the bloom takes it (BossTelegraphs; uv.x: 0 at the origin to 1 at the far edge, uv.y:
+// impact, hazard bands streaming outward, a throb on each beat, and the blow's white-hot flash. Drawn premultiplied (glowing,
+// and dimming the ground it covers so it reads on a lit floor) a few centimetres above the ground so the bloom takes it (BossTelegraphs; uv.x: 0 at the origin to 1 at the far edge, uv.y:
 // -1 to 1 across a cone, 0 on a disc). Nothing vendor-derived.
 Shader "Demo3D/BossTelegraph"
 {
@@ -23,7 +23,7 @@ Shader "Demo3D/BossTelegraph"
         {
             Name "Telegraph"
             Tags { "LightMode" = "UniversalForward" }
-            Blend One One
+            Blend One OneMinusSrcAlpha
             ZWrite Off
             Cull Off
             Offset -2, -2
@@ -64,14 +64,16 @@ Shader "Demo3D/BossTelegraph"
                 float front = saturate(1 - abs(r - _Progress) / 0.035) * (1 - step(0.995, _Progress));
                 // Hazard bands streaming outward, faster as the blow nears.
                 float bands = 0.5 + 0.5 * sin((r * 7 - _Progress * (3 + 5 * _Progress)) * 6.2831853);
-                float fill = 0.07 + 0.30 * charged * (0.55 + 0.45 * bands);
-                float m = fill + 1.4 * rim + 1.6 * front;
-                m *= 1 + 0.7 * _Pulse;
-                // The blow: the whole zone white-hot, fading.
-                m = lerp(m, 2.6, _Flash);
-                float3 c = lerp(_Color.rgb, max(_Color.rgb, (_Color.r + _Color.g + _Color.b).xxx * 0.45), _Flash) * m * _Fade;
+                float fill = 0.012 + 0.05 * charged * (0.4 + 0.6 * bands);
+                float m = fill + 1.8 * rim + 1.4 * front;
+                m *= 1 + 0.6 * _Pulse;
+                // The blow: the whole zone white-hot for a few frames, fading.
+                m = lerp(m, 1.2, _Flash);
+                float3 c = lerp(_Color.rgb, max(_Color.rgb, (_Color.r + _Color.g + _Color.b).xxx * 0.4), _Flash) * m * _Fade;
                 c = MixFogColor(c, 0, i.fogFactor);
-                return half4(c, 1);
+                // Premultiplied: the zone also dims the ground it covers, so it reads on a bright floor too.
+                float a = saturate(0.12 + 0.22 * charged + 0.5 * rim + 0.4 * front) * (1 - _Flash) * _Fade;
+                return half4(c, a);
             }
             ENDHLSL
         }
