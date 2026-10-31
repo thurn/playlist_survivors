@@ -63,15 +63,17 @@ moonlit night, a cyan hero light, and walls that shatter into physics shards.
 
 ### Decisions
 
-These were settled with the user on 2026-10-30 in a design interview.
-**Executors**, the agents or people implementing this plan, treat them as
-fixed. Every other choice in this document is a recommended default: an
-executor may change it with a recorded gameplay or measurement reason,
-without weakening a decision below.
+These were settled with the user on 2026-10-30 in a design interview, and
+decisions 1, 18 and 19 were revised the same day when the work was filed as
+beads. **Executors**, the agents or people implementing this plan, treat
+them as fixed. Every other choice in this document is a recommended
+default: an executor may change it with a recorded gameplay or measurement
+reason, without weakening a decision below.
 
 1. **Platforms: macOS (Apple Silicon) and Windows, development builds only.**
-   - Both platforms build from the start. The Mac is the main play and
-     development machine.
+   - **Windows comes last.** Everything else ships on the Mac first, which is
+     the main play and development machine. A final milestone then brings
+     the plugin, Delayed listening and the player to Windows.
    - Performance is measured on **Cygnus**, the operator's Windows desktop
      (RTX 4070 Ti), standing in for the target hardware, an RTX 4060 laptop.
      The **operator** is the developer who plays and judges the game.
@@ -130,9 +132,14 @@ without weakening a decision below.
     ratios between hero and enemies hold at every tempo. See the
     [Speeds Follow the Tempo](#speeds-follow-the-tempo) section.
 17. **The project is `game/`.**
-18. **Build order: a cinematic slice first, then the run.** See the
+18. **Build order: foundations, a cinematic slice, the run, polish, then
+    Windows.** Independent tracks run in parallel inside each milestone, and
+    Mac live capture runs alongside the slice and the run. See the
     [Build Order](#build-order) section.
-19. **This document only.** How the work is tracked is decided later.
+19. **Tracked as the Enact epic ps-msz**, under AGENTS.md's review policy:
+    a Warden per substantial bead, Mason and Sage audits after M1, M2 and
+    M3, and an Archivist at the end. M4 and M5 are broken into beads when
+    they open, and every Windows bead is pinned to Cygnus.
 
 Two standing project rules also apply:
 
@@ -449,9 +456,11 @@ A muted app must always get its sound back.
 The plugin builds per platform from native's workspace, outside Unity, and
 the game's tools copy the result into the Unity project as a plugin.
 
-- macOS: an arm64 bundle. Windows: an x86-64 DLL built on a Windows machine,
-  either Cygnus or the Windows runner of the repository's asynchronous full
-  check suite (**slow CI**).
+- macOS: an arm64 bundle. Windows (in M5): an x86-64 DLL built on a Windows
+  machine, either Cygnus or the Windows runner of the repository's
+  asynchronous full check suite (**slow CI**). Native's workspace builds
+  only on macOS today (objc2), so M5 first makes the plugin's crates build
+  on Windows.
 - Unity locks a native plugin once loaded, so rebuilding normally needs an
   editor restart. In the editor, the C# side instead loads a copy named
   after its build hash through `dlopen` or `LoadLibrary`, and resolves the
@@ -1152,7 +1161,8 @@ The game's sounds sit under the player's music and never fight it.
 The target is an RTX 4060 laptop at 12.5 ms a frame, at native's density.
 Cygnus measures it against the 3D demo's pass lines, which the demo set to
 stand for that laptop budget, with GPU headroom kept
-([performance.md](../tech-demo-3d/performance.md)).
+([performance.md](../tech-demo-3d/performance.md)). Cygnus measures in M5;
+until then M4 profiles on the Mac, and its numbers only guide the work.
 
 - On Cygnus at 1080p with MSAA 4x, at the run's peak (300 alive, evolved
   weapons, mass shatter, a structure break): GPU p99 at most 4.2 ms, and
@@ -1296,30 +1306,61 @@ Checks, by layer:
   files covers the new project.
 
 The fast checks run before every push and cover the plugin's and the sim's
-tests; slow CI adds the Unity build, the headless player run and the sweeps.
+tests. Slow CI adds the Unity EditMode tests, a short batch-mode File run
+and the four .NET sweeps. A machine without the vendor packs or a plugin
+build skips the Unity part, as demo2d's section does. The IL2CPP player
+build stays out of slow CI, which is budgeted at about 5 minutes; each
+executor builds and runs the player in its own checks.
 Each implementation task keeps its measurements and stills in an evidence
 folder with a short README, and operator-only checks go on the game's
 operator-pending list.
 
 ## Build Order
 
-The order was decided with the user: first a slice that already looks and
-syncs like the final game, then the run's breadth. The game stays playable
-after every step, and no step waits on the operator.
+The order was decided with the user. Foundations come first, then a slice
+that already looks and syncs like the final game, then the run's breadth,
+then polish. Windows comes last, once everything else has shipped on the
+Mac. The game stays playable after every milestone, and no step waits on
+the operator. Inside each milestone, independent tracks run in parallel.
 
-1. **Plugin spike**: File audio through the plugin into Unity's output on the
-   Mac, with a click on every committed beat. Measure music-to-click sync
-   with a loopback recording, and the frame-to-heard offset.
-2. **Cinematic slice** on File audio, in a bounded arena polished to the
-   final look: the grid hero, the sword on beats, a stepping crystal horde,
-   GPU shatter, a breakable and regrowing structure, the post stack, the
-   camera and the sound.
-3. **The run's systems**: the full schedule and cast, the arsenal, offers,
-   chests and evolutions, freezes, the HUD, the music-driven events, the bot
-   and sweeps.
-4. **Live capture**: Delayed listening on the Mac, then on Windows with the
-   guardian process.
-5. **Polish and performance** on Cygnus, against the targets above.
+1. **M1, foundations**: three parallel tracks that meet in a spike.
+   - Plugin: the analyzer's stamp-every-group mode with a headless entries
+     dump, then the plugin crate with the File source, the delay line and
+     the C interface.
+   - Unity: the `game/` project, its `game` tools command and recipes, and
+     the vendor guard.
+   - Sim: the .NET library's skeleton (entries and causality, ticks, events,
+     the hash, beats, bars and the stride grid), and native's content
+     converted to JSON.
+   - **The spike**: File audio through the plugin into Unity's output on
+     the Mac, with a click on every committed beat. It measures
+     music-to-click sync from Unity's own final mix, captured in process,
+     and the frame-to-heard offset. An acoustic loopback check goes on the
+     operator-pending list.
+2. **M2, the cinematic slice**, on File audio, in a bounded arena polished
+   to the final look. Two tracks run in parallel, then meet in the
+   assembled slice:
+   - The sim's rules: the grid hero and late steps, enemies, the sword,
+     structures.
+   - The client's port: its clocks and sim stepping, the arena, the night
+     look and camera, the crowd, GPU shatter, the hero, effects and sound,
+     and structure shatter.
+3. **Mac live capture**, from M2 on, in parallel with the slice and the run:
+   native's capture code moved into a shared crate, the plugin's System
+   source, and the title screen's source picker.
+4. **M3, the run's systems**: the run clock and freezes, the full schedule
+   and cast, the music-driven events, the arsenal (three weapon pairs in
+   parallel), chests and evolutions, the HUD, sessions and replay,
+   calibration, the debug surfaces, the bots and sweeps, and a full File
+   run.
+5. **M4, polish and performance on the Mac**, planned from what M1 to M3
+   measured.
+6. **M5, Windows**: the shared crates and the plugin on Windows, process
+   loopback with the guardian process, the Windows player, and performance
+   against the targets on Cygnus.
+
+Mason and Sage audits close M1, M2 and M3; M3's audit also covers live
+capture.
 
 ## Alternatives Considered
 
@@ -1374,6 +1415,12 @@ The design interview weighed these and chose otherwise.
   glance, or clashing with the 3D look.
 - **Systems first, or live capture early.** The first delays anything that
   sells the vision; the second front-loads the riskiest audio work.
+- **Live capture strictly after the run's systems.** It is Rust work that
+  touches nothing in the slice, so it would leave capacity idle.
+- **Both platforms from the start.** Windows work waits on Cygnus, and
+  doing it early slows everything else down; it comes last instead.
+- **The IL2CPP player build in slow CI.** The fullest coverage, but it
+  would break slow CI's 5-minute budget on every pass.
 - **Fixed enemy speeds, or narrowing the hero's speed range.** The first
   makes fast songs easy and slow songs hard; the second puts steps on less
   obvious subdivisions of the beat.
