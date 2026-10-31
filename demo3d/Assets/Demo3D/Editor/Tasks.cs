@@ -59,6 +59,14 @@ namespace Demo3D.EditorTools
         public static void AnnotateClips() =>
             Assets.ClipAnnotator.Run(TaskArgs.Get("-evidence", "evidence/td2"), TaskArgs.Get("-roster", "default"));
 
+        /// <summary>
+        /// Renders close-ups of the armed types' grips (crowd.md, Weapons): `-out DIR` (default
+        /// captures/grips), `-roster NAME`, `-types a,b` (default: every drawn type with roster weapons).
+        /// </summary>
+        public static void GripStills() =>
+            Assets.GripStills.Run(TaskArgs.Get("-out", "../captures/grips"), TaskArgs.Get("-roster", "default"),
+                (TaskArgs.Get("-types", "") ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries));
+
         /// <summary>Renders TD2's style stills (roster and kit at night, boss candidates).</summary>
         public static void StyleStills() =>
             Assets.StyleStill.Run(TaskArgs.Get("-evidence", "evidence/td2"));

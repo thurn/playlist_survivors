@@ -105,27 +105,13 @@ namespace Demo3D.Runtime.Crowd
             var sword = hand.GetComponentInChildren<MeshFilter>(); // the broadsword, turned off below
             float handScale = hand.lossyScale.x;
 
-            // The grip runs through the fist: across the knuckles, from the fused fingers' root to the
-            // index finger's, so the blade leaves the fist on the thumb's side, as a held sword does.
-            // Its edge faces the way the fingers point (the knuckles' side), and the handle sits a
+            // The grip runs through the fist (Fist), its edge toward the knuckles, and the handle sits a
             // little in from the knuckles toward the palm. All in the hand's space, from the bind pose.
-            Vector3 Local(Transform t) => hand.InverseTransformPoint(t.position);
-            var index = Bone(animator, hand, HumanBodyBones.RightIndexProximal, "IndexFinger_01");
-            var rest = Bone(animator, hand, HumanBodyBones.RightMiddleProximal, "Finger_01")
-                ?? Bone(animator, hand, HumanBodyBones.RightRingProximal, null);
-            var thumb = Bone(animator, hand, HumanBodyBones.RightThumbProximal, "Thumb_01");
-            if (index == null || rest == null || index.childCount == 0)
-                throw new InvalidOperationException("HeroBlade: the hero's right hand has no index and middle finger bones");
-            Vector3 a = Local(index), r = Local(rest), next = Local(index.GetChild(0));
-            var axis = (a - r).normalized;
-            var finger = next - a;
-            var edge = (finger - Vector3.Dot(finger, axis) * axis).normalized;
-            var palm = Vector3.Cross(axis, edge);
-            var knuckles = (a + r) * 0.5f;
-            if (thumb != null && Vector3.Dot(palm, Local(thumb) - knuckles) < 0) palm = -palm;
+            var fist = Fist.Of(animator, right: true);
+            Vector3 axis = fist.Axis, edge = fist.Edge, palm = fist.Palm, knuckles = fist.Knuckles;
             var grip = knuckles + (palm * _tune.PalmM - edge * _tune.BackM) / handScale;
 
-            var turn = Quaternion.LookRotation(Vector3.Cross(edge, axis), axis) * Quaternion.Euler(_tune.Pitch, _tune.Yaw, _tune.Roll);
+            var turn = fist.Turn * Quaternion.Euler(_tune.Pitch, _tune.Yaw, _tune.Roll);
             var go = new GameObject("CrystalBlade");
             go.transform.SetParent(hand, false);
             // The mesh is in metres: undo the hand's scale (the prefab's, at its scale in the demo). Its
@@ -151,15 +137,6 @@ namespace Demo3D.Runtime.Crowd
             }
             Debug.Log($"HeroBlade: a {BladeM * _tune.Length:F2} m crystal blade in {hand.name}: axis {axis:F2}, edge {edge:F2}, palm {palm:F2}, " +
                       $"grip {grip * handScale:F3} m from the wrist" + (sword != null ? $", in place of {sword.name}" : ""));
-        }
-
-        static Transform Bone(Animator animator, Transform hand, HumanBodyBones bone, string name)
-        {
-            var t = animator.GetBoneTransform(bone);
-            if (t != null || name == null) return t;
-            foreach (Transform c in hand)
-                if (c.name == name) return c;
-            return null;
         }
 
         /// <summary>Sets the blow flare for song time t in timeline tl (the world's time, as the hero is posed on).</summary>

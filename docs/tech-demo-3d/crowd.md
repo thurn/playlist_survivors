@@ -46,7 +46,29 @@ implementations, not features.
   ([The crystal shatter](#monster-styles)).
 - **Variation.** Per-instance tint from the type's own color sets, plus small
   scale jitter.
-- **Weapons.** Weapons ride their hand bone rigidly.
+- **Weapons.** Weapons ride their hand bone rigidly, baked into the
+  combined mesh, so they cost nothing at runtime. A weapon the roster
+  attaches (`weapons` in roster.json, the big orc's Slayer and the troll's
+  club) sits in the hand by its `grip` (ps-b5z.2). A Synty weapon on the
+  bare hand bone points its blade (+Y) out of the palm, 90 degrees off how
+  the combat clips hold it, so the elites swung their weapons sideways and
+  through their bodies. `Roster.Spawn` puts a gripped weapon's handle
+  through the fist instead, as the hero's blade sits (`Fist`, from the
+  hand's finger bones): +Y across the knuckles out of the thumb's side, +X
+  toward the knuckles, the pivot (Synty's grip point) at the knuckles'
+  middle. Then the grip's `palm` (metres toward the palm) and `pitch`,
+  `yaw` and `roll` (degrees in the weapon's axes, Unity's Euler order)
+  adjust it. Both elites use
+  `palm` 0.02, `yaw` 90 (the blade's width, its Z, toward the knuckles, so
+  an edge leads the swing) and `pitch` 20 (the blade tipped 20 degrees
+  toward the fingers, so a hanging arm carries it forward and down, not
+  level). The bone's scale is the character's on these rigs, so the
+  weapons keep the size Synty made them. Weapons that come in a prefab (the
+  skeleton's and goblin's swords and shields, and every set's) are placed
+  by their pack and were already held. `demo3d unity GripStills [-roster
+  NAME] [-types a,b]` renders each armed type in its idle, walk and
+  attacks from the front and the right
+  ([evidence/grips](../../demo3d/evidence/grips/README.md)).
 - **Motion vectors.** Every pass that TAA needs, including skinned motion
   vectors from the previous frame's pose.
 
@@ -514,7 +536,8 @@ their clip timing still comes from the timeline.
     long and the shield as small: the hero looked empty-handed. The blade
     undoes the hand's scale, so its mesh is in metres, and `HeroBlade`
     gives the shield (`SM_Wep_Shield_01`, on the left hand, placed as Synty
-    made it) the character's scale. The crowd's weapons are untouched.
+    made it) the character's scale. The crowd's weapons are a separate
+    fix, by the same fist ([Common requirements](#common-requirements), Weapons).
   - **The arms while walking.** The hero's walk and run are Base
     Locomotion's unarmed clips (Sword Combat has none), whose swinging
     arms carried the blade behind the back and through the legs. So

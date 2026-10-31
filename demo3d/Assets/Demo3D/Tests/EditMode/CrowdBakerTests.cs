@@ -79,6 +79,37 @@ namespace Demo3D.Tests
         }
 
         /// <summary>
+        /// The elites' weapons are held (crowd.md, Weapons): the handle runs through the fist, square
+        /// to the palm, with the weapon's pivot in the hand, not sticking out of the palm as a Synty
+        /// weapon on the bare hand bone did.
+        /// </summary>
+        [TestCase("bigork")]
+        [TestCase("troll")]
+        public void AGrippedWeaponSitsInTheFist(string id)
+        {
+            if (!VendorSynced) Assert.Ignore("the vendor folder is empty: run demo3d setup");
+            var t = Roster.Load().Single(x => x.id == id);
+            Assume.That(t.weapons.Single().grip, Is.Not.Null, $"{id}'s weapon has a grip");
+            var go = Roster.Spawn(t, Vector3.zero, 0);
+            try
+            {
+                var animator = go.GetComponentInChildren<Animator>();
+                var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                var fist = Fist.Of(animator, right: true);
+                var weapon = hand.GetComponentInChildren<MeshFilter>().transform;
+                var up = hand.InverseTransformDirection(weapon.up).normalized;
+                Assert.That(Mathf.Abs(Vector3.Dot(up, fist.Palm)), Is.LessThan(0.05f), "the handle lies across the fist, square to the palm");
+                Assert.That(Vector3.Dot(up, fist.Axis), Is.GreaterThan(0.7f), "the weapon leaves the fist on the thumb's side");
+                float metres = Vector3.Distance(weapon.position, hand.TransformPoint(fist.Knuckles)) / go.transform.lossyScale.x;
+                Assert.That(metres, Is.LessThan(0.06f), "the pivot (the grip) is at the knuckles, at the prefab's own scale");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        /// <summary>
         /// A sampled frame: the texture's matrices equal bone world × bind pose at that pose, and
         /// the combined mesh skinned by them lands where Unity's own skinning puts the source
         /// renderer's vertices (SkinnedMeshRenderer.BakeMesh), for a multi-skin MPG rig and a
