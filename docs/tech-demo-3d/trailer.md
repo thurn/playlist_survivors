@@ -976,7 +976,8 @@ stood packed round the hero. Three changes, all in a formation's shot only:
     try, rather than mark time, it shoves 70% of the smaller radius into its
     neighbours, not 40%.
 
-Fewer blows kill fewer, so the shots were retuned:
+Fewer blows kill fewer, so the first cut's ten shots were retuned (by their
+own numbers; the re-cut's shots are in [The Shot List](#the-shot-list)):
 
 - shot 2's charge swings at `shapeScale` 2.4, so each ring clears the two
   beats of ground the hero runs into between blows; shot 5's elite charge

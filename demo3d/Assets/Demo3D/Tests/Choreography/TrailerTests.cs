@@ -519,6 +519,20 @@ namespace Demo3D.Choreography.Tests
             Assert.That(problems[1], Does.Contain("1.0 beats after the last"));
         }
 
+        /// <summary>The open lane's gap counts the ground an arc across 0° covers at the circle's start.</summary>
+        [Test]
+        public void AnArcAcrossZeroCoversTheCirclesStart()
+        {
+            static KeyValuePair<double, double> Arc(double fromDeg, double toDeg) => new KeyValuePair<double, double>(fromDeg * Math.PI / 180, toDeg * Math.PI / 180);
+            static double Widest(params KeyValuePair<double, double>[] arcs) => TrailerChecks.WidestGap(new List<KeyValuePair<double, double>>(arcs)) * 180 / Math.PI;
+            Assert.That(Widest(), Is.EqualTo(360).Within(1e-9));
+            Assert.That(Widest(Arc(80, 330)), Is.EqualTo(110).Within(1e-9));
+            // A body close by at 0° covers -30..30; one far off at 5° lies inside it, so the gap is 30..80, not 8..80.
+            Assert.That(Widest(Arc(80, 330), Arc(-30, 30), Arc(2, 8)), Is.EqualTo(50).Within(1e-9));
+            Assert.That(Widest(Arc(80, 330), Arc(330, 390), Arc(2, 8)), Is.EqualTo(50).Within(1e-9));
+            Assert.That(Widest(Arc(-10, 10), Arc(170, 190)), Is.EqualTo(160).Within(1e-9));
+        }
+
         /// <summary>A ring of monsters closed round the hero on a beat fails the open lane on that beat.</summary>
         [Test]
         public void AHeroHemmedInFails()

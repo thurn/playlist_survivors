@@ -317,8 +317,8 @@ namespace PS.Choreography
             return problems;
         }
 
-        /// <summary>The widest angle (radians) the arcs leave uncovered round the circle; 2π with none.</summary>
-        static double WidestGap(List<KeyValuePair<double, double>> arcs)
+        /// <summary>The widest angle (radians) the arcs (from, to; any turn) leave uncovered round the circle; 2π with none.</summary>
+        public static double WidestGap(List<KeyValuePair<double, double>> arcs)
         {
             if (arcs.Count == 0) return 2 * Math.PI;
             var list = new List<KeyValuePair<double, double>>();
@@ -329,7 +329,9 @@ namespace PS.Choreography
                 list.Add(new KeyValuePair<double, double>(lo, hi));
             }
             list.Sort((x, y) => x.Key.CompareTo(y.Key));
+            // An arc past 2π also covers the circle's start, ahead of the first arc's end.
             double best = 0, reach = list[0].Value;
+            foreach (KeyValuePair<double, double> a in list) reach = Math.Max(reach, a.Value - 2 * Math.PI);
             for (int i = 1; i < list.Count; i++)
             {
                 best = Math.Max(best, list[i].Key - reach);
