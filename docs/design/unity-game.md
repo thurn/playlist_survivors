@@ -1630,7 +1630,10 @@ notes, and the mix's `limit`, 0.8). As built
   shatter lower; the hurt on the next sixteenth and gem pickups' chimes on the
   sixteenth grid climbing C6 to C8 (`MusicalGrid`, `PentatonicChain`, native's).
 - The voices' volume is gain times the limit times the plugin's follower
-  gain; the music's source is never touched.
+  gain; the music's source is never touched. It plays at priority 0, and the
+  project has 64 real voices, so a full pool never makes Unity virtualize
+  (silence) the music or a scheduled sound. A dropped sound leaves its
+  beat's voice to a later request.
 
 ### Performance targets
 

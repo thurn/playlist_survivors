@@ -57,13 +57,17 @@ namespace Game.Client.Sound
                 // Variants by beat and voice, so a layered instant plays different clips.
                 int variant = (int)(Hash((uint)bucket, (uint)((int)cue.Kind * 16 + g.Voices)) % 3);
                 int h = _scheduler.Play(cue, variant, cue.Gain * beat);
-                switch (g.Voices)
+                // A dropped sound (too late, or no clip) leaves its voice to a later request.
+                if (h >= 0)
                 {
-                    case 0: g.H0 = h; g.G0 = cue.Gain; break;
-                    case 1: g.H1 = h; g.G1 = cue.Gain; break;
-                    default: g.H2 = h; g.G2 = cue.Gain; break;
+                    switch (g.Voices)
+                    {
+                        case 0: g.H0 = h; g.G0 = cue.Gain; break;
+                        case 1: g.H1 = h; g.G1 = cue.Gain; break;
+                        default: g.H2 = h; g.G2 = cue.Gain; break;
+                    }
+                    g.Voices++;
                 }
-                g.Voices++;
             }
             else Folded++;
             // Every voice of the beat follows its growing gain.

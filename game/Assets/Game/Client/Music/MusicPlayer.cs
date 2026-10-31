@@ -121,6 +121,8 @@ namespace Game.Client.Music
             _source = GetComponent<AudioSource>();
             _source.playOnAwake = false;
             _source.spatialBlend = 0;
+            // Past the real voices Unity silences the least important; the music is never one of them.
+            _source.priority = 0;
             _source.clip = null;
             _source.Play();
         }

@@ -141,6 +141,27 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ADroppedSoundLeavesItsBeatsVoiceToALaterRequest()
+        {
+            var clock = new TestClock { Mixer = 3.0 };
+            var s = Scheduler(clock);
+            var agg = new SoundAggregator(s);
+            agg.Request(new SoundCue { Kind = SoundKind.Hit, Song = 2.99, Gain = 1, Pitch = 1 }, bucket: 2, strength: 1);
+            for (int i = 0; i < 3; i++)
+                agg.Request(new SoundCue { Kind = SoundKind.Hit, Song = 3.2 + 0.1 * i, Gain = 1, Pitch = 1 }, bucket: 2, strength: 1);
+            Assert.That(s.Dropped, Is.EqualTo(1));
+            Assert.That(s.Scheduled, Is.EqualTo(3), "the beat's three voices go to the sounds that can make their time");
+            Assert.That(agg.Folded, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TheVoicePoolAndTheMusicFitInUnitysRealVoices()
+        {
+            // Past its real voices Unity virtualizes (silences) the least audible: never the music or a scheduled sound.
+            Assert.That(SoundScheduler.Voices + 1, Is.LessThanOrEqualTo(AudioSettings.GetConfiguration().numRealVoices));
+        }
+
+        [Test]
         public void EventsScheduleImpactsAtTheirTimesAndSnapHurtsAndChimesToTheSixteenth()
         {
             var sim = Beats();
