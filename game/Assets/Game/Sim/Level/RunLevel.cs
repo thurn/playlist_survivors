@@ -9,6 +9,12 @@ namespace PS.Game.Sim.Level
     public static class RunLevel
     {
         /// <summary>
+        /// The game camera's footprint at 16:9 (the client's <c>CameraRig.Footprint(16 / 9)</c>, which
+        /// LookTests holds it to), for runs with no camera: the sweeps and the sim's tests.
+        /// </summary>
+        public static double[] GameFootprint => new[] { -18.31, -13.83, 18.31, -13.83, 24.93, 18.37, -24.93, 18.37 };
+
+        /// <summary>
         /// The run's config: <paramref name="footprint"/> is the camera's widest view on the ground
         /// around the hero (<see cref="HordeConfig.CameraFootprint"/>), so nothing spawns in view.
         /// </summary>

@@ -26,5 +26,24 @@ namespace Game.Tests
             Assert.AreEqual(2 * n, slots.Count(0));
             for (int s = 0; s < n; s++) Assert.IsTrue(slots.Live(0, s));
         }
+
+        [Test]
+        public void PastItsSlotsAnEntityGoesUndrawnForTheFrameAndTheCrowdGoesOn()
+        {
+            var slots = new CrowdSlots(1, 4);
+            slots.Begin();
+            for (int e = 0; e < 4; e++) Assert.That(slots.Assign(0, e), Is.GreaterThanOrEqualTo(0));
+            Assert.AreEqual(-1, slots.Assign(0, 4), "no slot left");
+            slots.End();
+            // The first four leave: their slots free at this frame's end, and the next frame the fifth takes one.
+            slots.Begin();
+            Assert.AreEqual(-1, slots.Assign(0, 4), "theirs are freed only at the frame's end");
+            slots.End();
+            slots.Begin();
+            int slot = slots.Assign(0, 4);
+            slots.End();
+            Assert.That(slot, Is.InRange(0, 3));
+            Assert.IsTrue(slots.Live(0, slot));
+        }
     }
 }

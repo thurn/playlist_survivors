@@ -40,7 +40,10 @@ namespace Game.Client.Crowd
 
         public void Begin() => _frame++;
 
-        /// <summary>The entity's slot this frame: its own, a slot freed in an earlier frame, or a new one.</summary>
+        /// <summary>
+        /// The entity's slot this frame: its own, a slot freed in an earlier frame, or a new one; -1 when
+        /// the type's slots are all taken (the entity isn't drawn this frame, and the frame goes on).
+        /// </summary>
         public int Assign(int type, int entity)
         {
             var t = _types[type];
@@ -49,7 +52,7 @@ namespace Game.Client.Crowd
                 if (t.Free.Count > 0 && t.Free.Peek().freedAt < _frame) slot = t.Free.Dequeue().slot;
                 else
                 {
-                    if (t.HighWater >= _capacity) throw new InvalidOperationException($"CrowdSlots: type {type} is over its {_capacity} slots");
+                    if (t.HighWater >= _capacity) return -1;
                     slot = t.HighWater++;
                     if (slot >= t.Owner.Length)
                     {

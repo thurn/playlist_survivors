@@ -13,15 +13,13 @@ namespace PS.Game.Sim.Tests
     /// </summary>
     public class BotTests
     {
-        static readonly double[] Footprint = { -18.31, -13.83, 18.31, -13.83, 24.93, 18.37, -24.93, 18.37 };
-
         static List<KeyRecord> Presses(Simulation sim) => sim.Keys.ToArray().Where(k => k.Down).ToList();
 
         /// <summary>The run's level on the first 20 s of house-128, played by <paramref name="kind"/> to its end.</summary>
         static BotReport Play(BotKind kind, out Simulation sim)
         {
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var config = RunLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint);
+            var config = RunLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), RunLevel.GameFootprint);
             config.Start = RunStart.AfterClearBeat;
             return BotRun.Play(config, entries, new SurvivorBot(kind, 1, HordeFixture.Content), duration, double.PositiveInfinity, out sim);
         }
@@ -153,7 +151,7 @@ namespace PS.Game.Sim.Tests
         public void ItSteersOnceAStepJustBeforeItAndStridesOnceAStep()
         {
             var entries = EntryDump.Load(EntryDump.House128, out _);
-            var config = RunLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint);
+            var config = RunLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), RunLevel.GameFootprint);
             config.Start = RunStart.AfterClearBeat;
             var sim = new Simulation(config);
             var bot = new SurvivorBot(BotKind.Positioning, 1);

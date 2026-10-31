@@ -29,6 +29,7 @@ namespace Game.Client.Crowd
         /// Each type's slots: a frame holds the last frame's slots, Hidden for a frame, beside this frame's new
         /// owners, so a whole crowd of one type replaced on one beat (a set piece making room for its members,
         /// a swarm) needs twice the living. With a quarter more, the full run's minute 25 ran out (ps-msz.6.14).
+        /// Past them a monster goes undrawn for the frame (<see cref="CrowdSlots.Assign"/>), never the crowd.
         /// </summary>
         public const int SlotsPerType = Pool;
 
@@ -45,7 +46,7 @@ namespace Game.Client.Crowd
         readonly int[] _writtenType = new int[Pool], _writtenSlot = new int[Pool];
         readonly MonsterTrack[] _writtenTrack = new MonsterTrack[Pool];
         double _lastSong = double.NegativeInfinity;
-        int _serial, _unknownRoles;
+        int _serial, _unknownRoles, _overSlots;
         double _heroX, _heroY; // the latest frame's, which a spawn faces
 
         public CrowdView(Camera camera)
@@ -163,14 +164,14 @@ namespace Game.Client.Crowd
                 if (t >= track.EndTime)
                 {
                     // A death's first frame: its body once more, posed at the death, for the shatter.
-                    if (track.Died && track.EndTime > _lastSong && track.EndTime >= track.SpawnTime)
-                        Write(track, track.EndTime, CrowdFlags.Alive | CrowdFlags.Dying, n++);
+                    if (track.Died && track.EndTime > _lastSong && track.EndTime >= track.SpawnTime
+                        && Write(track, track.EndTime, CrowdFlags.Alive | CrowdFlags.Dying, n)) n++;
                     if (_byEnemy.TryGetValue(track.Enemy, out var current) && current == track) _byEnemy.Remove(track.Enemy);
                     _live.RemoveAt(i);
                     _free.Push(track);
                     continue;
                 }
-                if (track.Visible(t)) Write(track, t, CrowdFlags.Alive, n++);
+                if (track.Visible(t) && Write(track, t, CrowdFlags.Alive, n)) n++;
             }
             _slots.End();
             for (int type = 0; type < _crowd.TypeCount; type++)
@@ -195,14 +196,23 @@ namespace Game.Client.Crowd
             _shatter.Frame(t, _camera);
         }
 
-        /// <summary>The track's pose at song time <paramref name="at"/> into the frame's instances at <paramref name="n"/>.</summary>
-        void Write(MonsterTrack track, double at, CrowdFlags flags, int n)
+        /// <summary>
+        /// The track's pose at song time <paramref name="at"/> into the frame's instances at <paramref name="n"/>;
+        /// false, and not drawn this frame, when its type has no slot free.
+        /// </summary>
+        bool Write(MonsterTrack track, double at, CrowdFlags flags, int n)
         {
             var look = _lib.Cast[track.Role];
+            int slot = _slots.Assign(look.Type, track.Serial);
+            if (slot < 0)
+            {
+                if (_overSlots++ == 0) Debug.LogWarning($"CrowdView: type {look.Type} is over its {SlotsPerType} slots; a monster is not drawn this frame");
+                return false;
+            }
             var pose = track.Sample(at);
             var type = _lib.Types[look.Type];
             _writtenType[n] = look.Type;
-            _writtenSlot[n] = _slots.Assign(look.Type, track.Serial);
+            _writtenSlot[n] = slot;
             _writtenTrack[n] = track;
             _written[n] = new MonsterInstance
             {
@@ -218,6 +228,7 @@ namespace Game.Client.Crowd
                 Tint = MonsterInstance.Pack(look.Gem),
                 Flags = (uint)flags,
             };
+            return true;
         }
 
         public void Dispose()

@@ -12,13 +12,12 @@ namespace PS.Game.Sim.Tests
     public class SliceLevelTests
     {
         /// <summary>The game camera's loud view at 16:9 with its slack (the client's CameraRig.Footprint), metres around the hero.</summary>
-        static readonly double[] GameCamera = { -18.31, -13.83, 18.31, -13.83, 24.93, 18.37, -24.93, 18.37 };
 
         [Test]
         public void TheSlicePlaysAFullHordeAgainstTheSwordOnARealDump()
         {
             var entries = EntryDump.Load("accelerando-100-140-30s.jsonl", out double duration);
-            var config = SliceLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), GameCamera);
+            var config = SliceLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), RunLevel.GameFootprint);
             var sim = new Simulation(config);
             int fewest = int.MaxValue, most = 0;
             Drive.Feed(sim, entries, duration, eachFrame: s =>

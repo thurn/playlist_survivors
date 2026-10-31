@@ -20,7 +20,7 @@ time below). The five runs go in parallel; warm, the sweep takes about 8 s.
 ps-msz.6.14 (a beatless track's thaw after a stop, and the bot's step off a telegraphed slam), every
 gate passing:
 
-| case | run clock (s) | song (s) | started (s) | end | lowest health | hits taken | level at 5:00 | level | chests (first, song s) | evolutions | frozen (s) |
+| case | run clock (s) | song (s) | started (s) | end | lowest health | hits taken | level at 5:00 | level | chests (first, run clock s) | evolutions | frozen (s) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | cached-original-positioning | 1800 | 2069.7 | 3.8 | victory | 0.860 | 1 | 17 | 65 | 11 (561) | 5 | 262 |
 | cached-reverse-positioning | 1800 | 2279.6 | 182.1 | victory | 1.000 | 0 | 15 | 64 | 15 (517) | 4 | 294 |
@@ -33,7 +33,7 @@ gate passing:
   at 2:06 of run clock, its sword alone against the first minutes' crowd. They are asserted.
 - **Pacing, reported only**: the level at minute 5 is 14 to 17 (native's sweep: 15 to 17; the
   design's 10), the final level 57 to 65 (native's 74 to 79), and 11 to 15 chests. Every chest's
-  song time is in summary.json. Bosses and level-scaled roles take the hero's level in health
+  run clock time is in summary.json. Bosses and level-scaled roles take the hero's level in health
   (since ps-msz.6.12), so they die later and the final levels sit below native's.
 - **The positioning bot is rarely touched**: one run takes no hit in 30 minutes and the others one
   each, never below 86% health, as native's own sweep keeps full health on three of its four. A

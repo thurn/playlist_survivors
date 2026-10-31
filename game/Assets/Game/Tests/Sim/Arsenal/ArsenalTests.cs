@@ -577,7 +577,7 @@ namespace PS.Game.Sim.Tests
         public void LevelPacingOnTheSlicesHordeWithAScriptedWalk()
         {
             var song = new FixtureSong(11).Beats(0, 420, 128);
-            var config = Level.SliceLevel.Config(Content, null, new double[] { -18.31, -13.83, 18.31, -13.83, 24.93, 18.37, -24.93, 18.37 });
+            var config = Level.SliceLevel.Config(Content, null, Level.RunLevel.GameFootprint);
             var sim = new Simulation(config);
             Key[] square = { Key.Right, Key.Up, Key.Left, Key.Down };
             int beat = 0;

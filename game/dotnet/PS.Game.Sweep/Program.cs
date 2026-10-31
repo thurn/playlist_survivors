@@ -22,8 +22,6 @@ using PS.Game.Sim.Level;
 static class Program
 {
     const double Rate = 44100;
-    // CameraRig.Footprint(16 / 9): the loud view's ground trapezoid around the hero with its slack.
-    static readonly double[] Footprint = { -18.31, -13.83, 18.31, -13.83, 24.93, 18.37, -24.93, 18.37 };
 
     static int Main(string[] args)
     {
@@ -60,7 +58,7 @@ static class Program
         var entries = Playlist(tracks, out double duration);
         var level = GameContent.Load(content);
         var arena = ArenaData.Parse(File.ReadAllText(Path.Combine(content, "arena.json")), "arena.json");
-        var config = RunLevel.Config(level, arena, Footprint, seed);
+        var config = RunLevel.Config(level, arena, RunLevel.GameFootprint, seed);
         config.Start = RunStart.AfterClearBeat;
         var started = Stopwatch.StartNew();
         // A whole run plays to its victory card; a shorter one stops at its minutes of run clock.

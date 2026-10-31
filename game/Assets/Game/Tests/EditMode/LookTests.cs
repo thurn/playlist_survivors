@@ -317,5 +317,14 @@ namespace Game.Tests
             double left = p[0] + (p[6] - p[0]) * t, right = p[2] + (p[4] - p[2]) * t;
             Assert.That(right - left, Is.EqualTo(CameraRig.LoudWidthM + 2 * CameraRig.FocusSlackM).Within(0.6));
         }
+
+        [Test]
+        public void TheSimsCameralessRunsUseTheGameCamerasFootprint()
+        {
+            // The sweeps and the sim's tests spawn round RunLevel.GameFootprint: a camera change must move it too.
+            var p = CameraRig.Footprint(16f / 9);
+            var pinned = PS.Game.Sim.Level.RunLevel.GameFootprint;
+            for (int i = 0; i < 8; i++) Assert.That(pinned[i], Is.EqualTo(p[i]).Within(0.01), $"coordinate {i}");
+        }
     }
 }
