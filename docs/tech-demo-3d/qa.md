@@ -54,13 +54,14 @@ here, since the demo itself takes no input:
 
 The trailer's finished video (trailer.md, Capture) comes from one tool
 command, which opens the windowed player, so the operator runs it, on the Mac
-or Cygnus, with the player built:
+or Cygnus. `just trailer` builds the player first, then captures
+(`--out` defaults to `captures/trailer.mp4`):
 
 ```
-uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4 \
-  -- --palette neon --monster-style crystal
+just trailer --out captures/trailer-neon-crystal.mp4 -- --palette neon --monster-style crystal
 ```
 
+It is `uv run --project demo3d/tools demo3d trailer`, which doesn't build.
 Player flags go after `--`. It prints the mix's checks and exits 1 if one
 fails. `--stand-in` runs the same steps windowless, with a black picture.
 

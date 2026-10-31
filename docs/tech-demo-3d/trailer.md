@@ -1267,11 +1267,12 @@ The capture renders the trailer at fixed time: 60 frames per second of song
 time, whatever each frame costs. The video is therefore frame-perfect,
 however heavy the climax gets.
 
-One tool command produces the finished, mixed video:
+One tool command produces the finished, mixed video. `just trailer` builds
+the player first and defaults `--out` to `captures/trailer.mp4`:
 
 ```
-uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4 \
-  -- --palette neon --monster-style crystal
+just trailer --out captures/trailer-neon-crystal.mp4 -- --palette neon --monster-style crystal
+uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4   # no build
 ```
 
 It runs three steps:
@@ -1458,7 +1459,7 @@ should keep their own exposure under a non-baseline style.
 **Capture.** This is an operator task:
 
 ```
-uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4
+just trailer
 ```
 
 Expect a 32.6 s, 1920×1080, 60 fps video with mixed audio. It should match

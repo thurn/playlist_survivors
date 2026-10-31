@@ -92,6 +92,19 @@ demo3d-play *args:
 demo3d-tool *args:
     {{tools}} demo3d "$@"
 
+# Build the 3D demo and capture the trailer's mixed video (default captures/trailer.mp4); player flags after `--`
+[group('demo3d')]
+trailer *args: demo3d-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    out=1
+    for a in "$@"; do
+        [ "$a" = -- ] && break
+        case "$a" in --out|--out=*) out= ;; esac
+    done
+    [ -z "$out" ] || set -- --out captures/trailer.mp4 "$@"
+    {{tools}} demo3d trailer --backend {{backend}} "$@"
+
 # Build the 2D demo (setting up first if needed) and play it at 1080p, with player flags
 [group('demo2d')]
 demo2d *args: demo2d-build
