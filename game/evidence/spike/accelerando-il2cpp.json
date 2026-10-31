@@ -1,0 +1,73 @@
+{
+  "ok": true,
+  "seconds": 75.712,
+  "output_rate": 48000,
+  "dsp_buffer": [
+    256,
+    4
+  ],
+  "output_latency_ms": 37.958,
+  "device_latency_ms": 16.625,
+  "dsp_buffering_ms": 21.333,
+  "stalls": 0,
+  "capture_gaps": 0,
+  "error": "",
+  "clicks_scheduled": 150,
+  "clicks_dropped": 0,
+  "clicks_found": 150,
+  "music_lag_frames": {
+    "anchor": 8960,
+    "median": 8960,
+    "min": 8960,
+    "max": 8960,
+    "windows": 7
+  },
+  "music_gain": 0.999815,
+  "residual_rms": 0.01649712771177292,
+  "music_to_click_ms": {
+    "n": 150,
+    "median": 0.0,
+    "mean": -0.005138888888704396,
+    "std": 0.008980646198540282,
+    "p5": -0.02083333333273707,
+    "p95": 0.0,
+    "min": -0.020833333334024928,
+    "max": 7.105427357601002e-12
+  },
+  "drift_ms_per_min": 0.0012449546577881756,
+  "click_to_schedule_ms": {
+    "n": 150,
+    "median": -4.850638409455617e-12,
+    "mean": -0.0051388888911348355,
+    "std": 0.008980646197644769,
+    "p5": -0.020833333333333332,
+    "p95": 0.0,
+    "min": -0.020833333333333332,
+    "max": 0.0
+  },
+  "beat_to_onset_ms": {
+    "n": 145,
+    "median": 7.333333333333414,
+    "mean": 7.432183908046323,
+    "std": 4.395421536051308,
+    "p5": 1.9999999999990692,
+    "p95": 13.333333333334707,
+    "min": -9.99999999999801,
+    "max": 33.66666666666668
+  },
+  "frame_to_heard_ms": {
+    "n": 4398,
+    "median": 0.029458731418685602,
+    "mean": 0.032039737296844846,
+    "std": 0.1772659230569281,
+    "p5": -0.2517913485355905,
+    "p95": 0.3153376342188706,
+    "min": -1.3833899225624142,
+    "max": 0.5763378669385588
+  },
+  "frame_song_backwards": 0,
+  "file": "public/reactive/accelerando-100-140/accelerando-100-140.ogg",
+  "repeat": 1,
+  "backend": "il2cpp",
+  "player_args": ""
+}

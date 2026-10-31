@@ -512,6 +512,12 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
     if wt.name == "game":
         n = clone.clone_tree(wt.root / FREE_SOUNDS, free_sounds(wt))
         print(f"setup: FreeSounds cloned ({n} files) from {FREE_SOUNDS.as_posix()}")
+        from . import plugin
+
+        try:
+            plugin.install(wt)
+        except plugin.PluginError as e:
+            raise SetupError(str(e)) from e
 
     t = time.monotonic()
     lkey = library_key(wt)

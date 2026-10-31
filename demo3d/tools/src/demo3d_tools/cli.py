@@ -4,8 +4,9 @@
 project, `demo2d/`: setup, guard, check, unity, test, build, library, sync and manifest. The
 guard is the same either way; it checks the whole repository. `stylelab <command>` does the same
 for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md), and `game <command>`
-for the Unity game, `game/` (docs/design/unity-game.md), which adds its own `look`: windowless
-stills of the player into game/evidence/look/SLUG.
+for the Unity game, `game/` (docs/design/unity-game.md), which adds its own `look` (windowless
+stills of the player into game/evidence/look/SLUG), `plugin` (the music plugin built and copied
+into the project; setup and build run it) and `spike` (the sync spike's measured run).
 
 Commands:
   setup               prepare this worktree (vendor, baked, warm Library, guard hook, license)
@@ -144,6 +145,14 @@ def cmd_build(a: argparse.Namespace) -> int:
     for s in a.scene or []:
         args += ["-scene", s]
     wt = paths.worktree(name=a.project)
+    if wt.name == "game":
+        from . import plugin
+
+        try:
+            plugin.install(wt)
+        except plugin.PluginError as e:
+            print(f"build: {e}", file=sys.stderr)
+            return 1
     out = setup.player_dir(wt, platform, a.backend, a.out)
     # A player built before BakeAll starts, but hangs on its first missing baked asset; one built
     # on a stale bake throws on the first field the bake predates. So the stale bakers run first,

@@ -489,6 +489,36 @@ what keeps them in sync without a calibration.
 - Unity's DSP buffer uses the lowest-latency setting that plays without
   underruns on each machine (256 frames is the starting point on the Mac).
 
+**Shipped (ps-msz.1.6, the sync spike).** The client's music is
+`game/Assets/Game/Client/Music/`: the bindings (`Plugin`), the music source
+(`MusicPlayer`), the clocks (`MusicClock`), a click on every committed beat
+(`BeatClicks`) and the measured run (`SyncSpike`, `MixCapture`). Measured
+from Unity's own final mix ([the spike's evidence](../../game/evidence/spike/README.md)):
+
+- **A source's audio callback fills the buffer that plays one buffer later
+  than the DSP time it reads.** The first run put every click exactly 256
+  frames (5.333 ms) before its beat, and 512 and 1024 at those buffer
+  sizes. So the music source passes `dspTime + frames / rate` as the
+  buffer's anchor, and the clicks now land on the music's sample (0 to −1
+  sample), with no drift over minutes.
+- **The main thread's DSP clock reads the end of the buffer being mixed**,
+  a buffer at a time, so a fit through its readings ran half a buffer ahead
+  of the audio thread's buffer times: frameSong was 2.7, 5.5 and 10.5 ms
+  ahead at 256, 512 and 1024 frames. The clock takes each reading half a
+  buffer back, and frameSong now matches the audio thread's clock to within
+  half a millisecond (p5 to p95). Where the light and the speakers actually
+  are is the operator's loopback check.
+- **Batch mode keeps Unity's mixer running.** A `-batchmode` player has no
+  window but runs its audio in real time on the default device, so the
+  windowless check is the real audio path. `--headless` silences the output
+  after the listener's in-process capture, so checks are measured, not heard.
+- Unity's DSP buffer is 256 frames x 4 (the project's setting; `--dsp-buffer
+  N` overrides it), with no underruns or stalls in any measured run. The
+  output latency the clock uses is the device's (16.6 ms on the Mac's
+  speakers) plus Unity's buffering (21.3 ms): 38 ms.
+- `--file <audio or .m3u>`, `--headless` and `--seconds N` are the player's
+  flags; `--spike-out DIR` keeps the mix for `game spike`.
+
 ### Platform capture and crash safety
 
 A muted app must always get its sound back.
@@ -536,6 +566,16 @@ the game's tools copy the result into the Unity project as a plugin.
 The plugin builds with `cargo build --release -p plugin` in `native/`
 (`native/target/release/libps_plugin.dylib`), and native's fast and slow
 checks run its tests with the workspace's.
+
+**Shipped (ps-msz.1.6).** `game plugin` (which `game setup` and `game build`
+run first) builds it with cargo and copies it to the gitignored
+`game/Assets/Plugins/macOS/`, and the analyzer's models to
+`game/Assets/StreamingAssets/ps/`, where a player passes them to `ps_open`.
+The editor's `PluginLoader` dlopens `Library/PsPlugin/libps_plugin-<hash>.dylib`
+(the first 16 hex digits of its SHA-256), copied on first use; a rebuilt plugin
+is a new hash, so the next domain reload loads it beside the old copy, which
+stays mapped until the editor quits. An EditMode test re-signs a copy and
+sees the loader pick up the new one and call it.
 
 ## Time and Sync
 

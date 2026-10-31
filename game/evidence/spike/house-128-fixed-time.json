@@ -1,0 +1,73 @@
+{
+  "ok": true,
+  "seconds": 62.661,
+  "output_rate": 48000,
+  "dsp_buffer": [
+    256,
+    4
+  ],
+  "output_latency_ms": 37.958,
+  "device_latency_ms": 16.625,
+  "dsp_buffering_ms": 21.333,
+  "stalls": 0,
+  "capture_gaps": 0,
+  "error": "",
+  "clicks_scheduled": 134,
+  "clicks_dropped": 0,
+  "clicks_found": 134,
+  "music_lag_frames": {
+    "anchor": 7168,
+    "median": 7168,
+    "min": 7168,
+    "max": 7168,
+    "windows": 5
+  },
+  "music_gain": 1.000093,
+  "residual_rms": 0.017137164250016212,
+  "music_to_click_ms": {
+    "n": 134,
+    "median": 0.0,
+    "mean": -0.0050062189056373765,
+    "std": 0.008828272432892192,
+    "p5": -0.02083333333343651,
+    "p95": 0.0,
+    "min": -0.020833333337577642,
+    "max": 7.105427357601002e-12
+  },
+  "drift_ms_per_min": 0.0019841877565619508,
+  "click_to_schedule_ms": {
+    "n": 134,
+    "median": -4.850638409455617e-12,
+    "mean": -0.005006218907270812,
+    "std": 0.008828272431331193,
+    "p5": -0.020833333333333332,
+    "p95": 0.0,
+    "min": -0.020833333333333332,
+    "max": 2.4253192047278085e-12
+  },
+  "beat_to_onset_ms": {
+    "n": 129,
+    "median": 5.333333333332746,
+    "mean": 5.108527131783759,
+    "std": 4.400916588951394,
+    "p5": -1.7333333333311882,
+    "p95": 11.733333333332926,
+    "min": -9.333333333330529,
+    "max": 16.666666666666607
+  },
+  "frame_to_heard_ms": {
+    "n": 3631,
+    "median": 0.05704997541222667,
+    "mean": 0.06804410174330804,
+    "std": 0.20870003949485272,
+    "p5": -0.24863155788423796,
+    "p95": 0.4225131863349052,
+    "min": -0.989928728498346,
+    "max": 0.7913904115171427
+  },
+  "frame_song_backwards": 0,
+  "file": "public/reactive/house-128/house-128.ogg",
+  "repeat": 1,
+  "backend": "il2cpp",
+  "player_args": "--fixed-time"
+}

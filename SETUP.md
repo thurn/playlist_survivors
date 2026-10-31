@@ -86,7 +86,10 @@ instead of `native/target`; use an absolute target path if overriding it.
 The repository's `justfile` wraps the game, its checks and the Unity demos' tools for the
 current checkout, passing extra arguments through. `just native --file <path>` and
 `just demo3d --start-at 160` (or `demo2d`, `stylelab`) build what changed and run it;
-`just backend=mono demo3d` builds a faster Mono player. The `-build`, `-play` and `-tool`
+`just backend=mono demo3d` builds a faster Mono player. `just game --file "$PWD/public/reactive/house-128/house-128.ogg"`
+plays a track through the game's music plugin with a click on every beat (the path must be
+absolute: the player starts in its app's folder); `just game-tool spike <name> --file <path>`
+measures that windowless ([the spike's evidence](game/evidence/spike/README.md)). The `-build`, `-play` and `-tool`
 recipes are the single steps. On Windows (Cygnus, under Git for Windows' bash) `just demo3d`
 builds and plays the Windows player; demo2d and stylelab build Mac players only. Run `just` to list them
 ([install just](https://just.systems/man/en/packages.html), or `brew install just`).

@@ -100,3 +100,8 @@ reactive-local/
 /game/dotnet/**/obj/
 /game/Assets/FreeSounds/
 /game/Assets/FreeSounds.meta
+# The game's build output from native (`game plugin`): the music plugin and the analyzer's models.
+/game/Assets/Plugins/
+/game/Assets/Plugins.meta
+/game/Assets/StreamingAssets/
+/game/Assets/StreamingAssets.meta

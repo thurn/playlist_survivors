@@ -23,6 +23,17 @@ namespace Game.Client
             return fallback;
         }
 
+        /// <summary>
+        /// `path` made absolute against the directory the player was launched from: a Mac player
+        /// starts in its app's folder, but the shell's PWD survives.
+        /// </summary>
+        public static string Path(string path)
+        {
+            if (System.IO.Path.IsPathRooted(path)) return path;
+            var pwd = Environment.GetEnvironmentVariable("PWD");
+            return System.IO.Path.GetFullPath(pwd != null ? System.IO.Path.Combine(pwd, path) : path);
+        }
+
         public static float GetFloat(string name, float fallback)
         {
             var s = Get(name);

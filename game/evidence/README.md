@@ -20,3 +20,5 @@ what was run (the exact commands), the numbers, and what they show.
 
 - [look/boot](look/boot/README.md): the empty boot scene, windowless, proving the build and stills
   pipeline (ps-msz.1.3).
+- [spike](spike/README.md): the sync spike, File audio through the music plugin into Unity's
+  output with a click on every beat, measured from Unity's own mix (ps-msz.1.6).

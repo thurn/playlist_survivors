@@ -9,6 +9,11 @@ game/evidence/look/SLUG/.
 
 `game content [--check]`: the one-shot conversion of native's run content into game/Content
 (content.py).
+
+`game plugin`: the music plugin built with cargo and copied into the project (plugin.py).
+
+`game spike NAME --file F`: the sync spike's headless File run, measured from Unity's own mix
+(spike.py).
 """
 
 from __future__ import annotations
@@ -37,9 +42,19 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     lk.add_argument("--player-args", default="", help="extra player flags")
     lk.set_defaults(func=cmd_look)
 
-    from . import content
+    pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
+    pl.set_defaults(func=_cmd_plugin)
+
+    from . import content, spike
 
     content.add_parser(sub)
+    spike.add_parser(sub)
+
+
+def _cmd_plugin(a: argparse.Namespace) -> int:
+    from . import plugin
+
+    return plugin.cmd_plugin(a)
 
 
 def cmd_look(a: argparse.Namespace) -> int:
