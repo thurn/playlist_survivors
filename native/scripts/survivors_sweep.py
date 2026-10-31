@@ -107,17 +107,32 @@ def summary(case: Case, data: dict) -> dict:
 
 # Cold analysis is bounded work whose cost swings with the machine's other load (a cold
 # continuous source took 14 minutes alone and over 20 beside Unity; ps-vno), so preparation
-# has its own bound and the 20-minute hang bound covers only the simulations and replay.
+# has its own bound apart from the simulations and replay.
 PREPARE_BUDGET = 45 * 60
-RUN_BUDGET = 20 * 60
+# The simulations and replay are single-threaded, so their hang bound is each process's CPU
+# time, which the machine's load does not stretch: a 30-minute run and the replay each take
+# about 80 CPU seconds. Wall time only catches a stall. Utility QoS beside slow CI's Unity
+# lanes gave each a third of a core or less, and a 20-minute wall bound tripped on a replay
+# that was only slow (ps-1tw).
+RUN_CPU_BUDGET = 10 * 60
+RUN_BUDGET = 60 * 60
 
 
 def checked(
-    command: list[str], deadline: float, **kwargs
+    command: list[str], deadline: float, cpu_seconds: int | None = None, **kwargs
 ) -> subprocess.CompletedProcess:
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         raise TimeoutError("survivors sweep exhausted its time budget")
+    if cpu_seconds is not None:
+        # RLIMIT_CPU through the shell: preexec_fn is unsafe beside the pool's threads.
+        command = [
+            "/bin/sh",
+            "-c",
+            'ulimit -t "$0" && exec "$@"',
+            str(cpu_seconds),
+            *command,
+        ]
     capture = not ("stdout" in kwargs or "stderr" in kwargs)
     return subprocess.run(
         command,
@@ -172,6 +187,7 @@ def run_case(
     soak: bool = False,
     jobs: int = 1,
     name: str | None = None,
+    cpu_seconds: int | None = None,
 ) -> dict:
     name = name or case.name
     command = [
@@ -197,7 +213,14 @@ def run_case(
     (out / f"{name}.command.json").write_text(json.dumps(command) + "\n")
     output = out / f"{name}.json"
     with output.open("w") as stdout, (out / f"{name}.stderr").open("w") as stderr:
-        checked(command, deadline, cwd=ROOT / "native", stdout=stdout, stderr=stderr)
+        checked(
+            command,
+            deadline,
+            cpu_seconds,
+            cwd=ROOT / "native",
+            stdout=stdout,
+            stderr=stderr,
+        )
     data = json.loads(output.read_text())
     if (
         data["bot"] != case.bot
@@ -229,7 +252,10 @@ def replay_session(binary: Path, session: Path, data: dict, deadline: float) -> 
         raise ValueError("recording/report settled prefixes differ")
     start = time.monotonic()
     replay = checked(
-        [str(binary), "replay", str(session)], deadline, cwd=ROOT / "native"
+        [str(binary), "replay", str(session)],
+        deadline,
+        RUN_CPU_BUDGET,
+        cwd=ROOT / "native",
     )
     (session.parent / "replay.log").write_text(replay.stdout + replay.stderr)
     print(
@@ -330,7 +356,13 @@ def run(args: argparse.Namespace) -> None:
         pending = {}
         if continuous:
             future = pool.submit(
-                run_case, binary, continuous, out, args.minutes, deadline
+                run_case,
+                binary,
+                continuous,
+                out,
+                args.minutes,
+                deadline,
+                cpu_seconds=RUN_CPU_BUDGET,
             )
             pending[future] = continuous
         for case in cached:
@@ -342,6 +374,7 @@ def run(args: argparse.Namespace) -> None:
                 args.minutes,
                 deadline,
                 "normal-session" if full and case == normal else None,
+                cpu_seconds=RUN_CPU_BUDGET,
             )
             pending[future] = case
         # Iterate rounds so the replay, submitted once its run is done, is also joined.

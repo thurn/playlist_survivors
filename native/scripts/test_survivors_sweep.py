@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import io
 import json
+import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -182,11 +184,12 @@ class Workers(unittest.TestCase):
         lock = threading.Lock()
 
         def fake_case(binary, case, out, minutes, deadline, *args, **kwargs):
+            cpu = kwargs.get("cpu_seconds")
             with lock:
-                events.append(("start", case.mode, minutes, deadline))
+                events.append(("start", case.mode, minutes, deadline, cpu))
             time.sleep(0.01)
             with lock:
-                events.append(("end", case.mode, minutes, deadline))
+                events.append(("end", case.mode, minutes, deadline, cpu))
             result = deepcopy(data(case.bot))
             result["requestedMinutes"] = minutes
             return result
@@ -216,6 +219,7 @@ class Workers(unittest.TestCase):
                 ),
                 redirect_stdout(io.StringIO()),
             ):
+                started = time.monotonic()
                 sweep.run(args)
         prepare = [e for e in events if e[2] == 0.01]
         runs = [e for e in events if e[2] == 3]
@@ -226,10 +230,30 @@ class Workers(unittest.TestCase):
         last_prepared = max(events.index(e) for e in prepare if e[0] == "end")
         first_run = min(events.index(e) for e in runs)
         self.assertLess(last_prepared, first_run)
-        # The runs get a fresh 20-minute deadline, not what preparation's bound left.
+        # The runs get a fresh deadline, not what preparation's bound left.
         self.assertTrue(all(e[3] == runs[0][3] for e in runs))
         self.assertLessEqual(runs[0][3], time.monotonic() + sweep.RUN_BUDGET)
-        self.assertLess(runs[0][3], min(e[3] for e in prepare))
+        self.assertGreaterEqual(runs[0][3], started + sweep.RUN_BUDGET)
+        # The runs' hang bound is CPU time; preparation's parallel analysis has none.
+        self.assertTrue(all(e[4] == sweep.RUN_CPU_BUDGET for e in runs))
+        self.assertTrue(all(e[4] is None for e in prepare))
+
+
+class HangBound(unittest.TestCase):
+    def test_the_cpu_bound_ends_a_spinning_process(self):
+        with self.assertRaises(subprocess.CalledProcessError) as raised:
+            sweep.checked(
+                [sys.executable, "-c", "while True: pass"], time.monotonic() + 600, 1
+            )
+        self.assertEqual(raised.exception.returncode, -signal.SIGXCPU)
+
+    def test_the_cpu_bound_spares_a_process_that_is_only_slow(self):
+        result = sweep.checked(
+            [sys.executable, "-c", "import time; time.sleep(1.5); print('done')"],
+            time.monotonic() + 600,
+            1,
+        )
+        self.assertEqual(result.stdout, "done\n")
 
 
 class FullReplay(unittest.TestCase):
