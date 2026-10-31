@@ -780,16 +780,20 @@ about 117 ms on average at 128 BPM). The operator found that wait laggy, and
 the game feel comes first (ps-msz.4.3), so a press here strides at once, as
 in native's classic mode.
 
-The sim runs ahead, so a press reaches it after the time the player heard.
-The sim can't revise what it has simulated, so it takes the stride then. The
-client draws it from the press's heard time instead, so the lead never
-delays it.
+The sim runs ahead, so a key reaches it the lead after the player heard it.
+The sim can't revise what it has simulated, so every move is judged in heard
+time and taken late. The HeroStep event is emitted when the sim takes the
+move, and carries its start in heard time, so the client draws it where it
+happened and the lead never delays the hero.
 
 ```text
 press (direction d, heard time h), processed at the sim's current time F:
   s = the latest stride step at or before h + 0.11   // one the stride would still be on is its
   if a press already strode for s:  queue d for the first step after F no press took
   else:                             stride now: the tile changes at F, drawn from h
+held keys, on a stride step t that no press took:
+  judged once every key heard before t is in: at the next key change heard after t,
+  or the latest key's lead (F - h) after t; stride with the keys held then, drawn from t
 the session records (h, F); a replay applies the press at F
 F is the previous frame's frontier: steps before F are already simulated
 ```
@@ -799,36 +803,30 @@ A worked example at 120 BPM, with stride steps at 10.00 and 10.25:
 ```text
 press heard at h = 10.02; it reaches the sim when it stands at F = 10.08
 s = 10.00 (10.25 is after 10.13): the tile changes at 10.08, drawn 10.02 to 10.13
-a press heard at 10.15 takes s = 10.25: drawn 10.15 to 10.26, nothing else strides on 10.25
+a press heard at 10.15 takes s = 10.25: drawn 10.15 to 10.26, no held stride on 10.25
+Up held, Right pressed (Up released) heard at 10.22, taken at 10.31: the sim passed 10.25
+  with Up down, but judges it at 10.31 with Right's press: no Up stride on 10.25
 ```
 
-- The HeroStep event is emitted at F and carries the drawn start and end, so
-  the hero's motion shows the stride on the key-down frame (its start is at
-  or before that frame's `frameSong`). The client's state history answers
-  with the move from the press on, too.
-- A press stride starts when the move in progress ends, if that is later,
-  and takes native's 110 ms. It is compressed to end before the next step
-  that may stride.
-- A press takes the step whose stride it would overlap. So a tap, or the
-  start of a hold, never strides twice in a row: a held key next strides on
-  the step after.
+- A press stride sets off from where the hero is drawn at h, cutting short a
+  move in progress, and takes native's 110 ms. It is compressed to end before
+  the next step that may stride.
+- A press takes the step whose stride it would overlap, so a hold's first
+  repeat is on the step after.
 - One press stride per step: a second press for the same step waits for
   the next step no press took. Mashing stays at the grid's pace, and the
   last press wins.
-- Nothing else in the sim reads the hero's tile between steps except
-  pickups and contact. They use the tile from F on and the position along
-  the drawn stride. The sword strike on an earlier step already fired from
-  the old tile.
+- A tap released before the next step is heard never strides on it, however
+  long the lead, and a turn heard before a step turns on it.
+- The hero's tile changes when the sim takes a move, up to the lead after it
+  is drawn. Pickups, contact and the enemies read the tile from then on, and
+  the position along the drawn move. The sword strike on an earlier step
+  already fired from the old tile.
 - Held keys stride on every step a press hasn't taken. The last-pressed held
   direction wins.
-- Because a held key is judged when the sim reaches the step, a tap still
-  down then strides again on it. At 128 BPM with a 90 ms lead, a 100 ms tap
-  whose next step comes 0.11 to 0.19 s after it moves two tiles, though it
-  was released before that step was heard. Judging holds in heard time would
-  need the release before the sim reaches the step, so it waits on the
-  operator's feel check (game/evidence/operator-pending.md).
-- On Bluetooth headphones, with a lead longer than a stride, a press stride
-  can be over before the sim takes it: the hero arrives at once.
+- The lead a held stride waits is the latest key's. A key change heard just
+  before a step but arriving later than that is judged without, so it lands
+  a step late: the lead's jitter, a frame at most.
 - A press made while the world is frozen never strides after it, as in
   native.
 - Space stomps (stands still) at once, as a press.
@@ -2106,7 +2104,7 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
 
 - **Presses**: tap a direction anywhere between beats. The hero steps on the
   frame the key goes down, never waiting for the next step, and a tap moves
-  one tile.
+  one tile. Hold a direction and press another: the hero turns at once.
 - **Tempo bands**: play a 100 BPM and a 140 BPM track. The hero is visibly
   faster at 140, and enemies keep the same pace relative to the hero.
 - **Band boundary**: play a track near 150 BPM. The pace stays steady

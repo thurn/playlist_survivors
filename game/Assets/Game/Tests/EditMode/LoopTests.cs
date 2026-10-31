@@ -444,7 +444,7 @@ namespace Game.Tests
             var lags = new List<int>();
             int turned = -1;
             bool right = false;
-            double along = 0;
+            double x = 0, y = 0, along = 0;
             Run(First + Every * Presses + 30, (keyboard, f) =>
             {
                 if (f == First - Every) Press(keyboard.upArrowKey);
@@ -453,11 +453,12 @@ namespace Game.Tests
                 Release(right ? keyboard.upArrowKey : keyboard.rightArrowKey);
                 Press(right ? keyboard.rightArrowKey : keyboard.upArrowKey);
                 turned = f;
+                along = right ? x : y; // the new axis, as the frame before drew it
             }, (f, pose) =>
             {
-                double now = right ? pose.X : pose.Y;
-                if (f == turned - 1 || turned < 0) along = now;
-                if (turned < 0 || f < turned || now == along) return;
+                x = pose.X;
+                y = pose.Y;
+                if (turned < 0 || (right ? x : y) == along) return;
                 lags.Add(f - turned);
                 turned = -1;
             });

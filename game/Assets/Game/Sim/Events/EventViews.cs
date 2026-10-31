@@ -248,8 +248,9 @@ namespace PS.Game.Sim
         /// <summary>The stride step it belongs to: for a press stride, the step the press took.</summary>
         public int Step => e.I0;
         /// <summary>
-        /// A press's stride, taken at once (unity-game.md, "Key Presses"): emitted when the sim took
-        /// the press (T), and drawn from when it was heard (Start), so Start may precede T.
+        /// A press's stride, taken at once, rather than a held key's on its step (unity-game.md, "Key
+        /// Presses"). Either is emitted when the sim takes it (T) and drawn from its start in heard
+        /// time (Start), which may precede T by up to the lead.
         /// </summary>
         public bool Pressed => (e.I1 & 1) != 0;
         /// <summary>The tile ahead was blocked: the hero bumped in place.</summary>
