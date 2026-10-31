@@ -80,6 +80,15 @@ namespace Demo3D.Choreography.Tests
 
         /// <summary>The first shot's anchors count from its pre-roll's start, so its pre-roll may hold none.</summary>
         [Test]
+        public void AFormationWithoutAPathFails()
+        {
+            string shot = "{ \"cut\": \"81.1\", \"environment\": \"desert\", \"viewWidthM\": 45, \"hero\": { \"at\": \"camp\" },"
+                + " \"formation\": { \"kind\": \"charge\", \"onScreen\": 600, \"mix\": { \"skeleton\": 1 } }, \"combo\": [\"slam@cut\"] }";
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), shot));
+            Assert.That(ex.Message, Does.Contain("shot 2: a formation's hero kites, so it needs a path"));
+        }
+
+        [Test]
         public void AFirstShotWhosePrerollCoversAnAnchorFails()
         {
             string json = Trailer(Shot1(), Shot2()).Replace("\"startS\": 121.40", "\"startS\": 121.70");
@@ -115,6 +124,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(new[] { ls.Tuning.FodderHitPointScale, ls.Tuning.EliteHitPointScale, ls.Tuning.BossHitPointScale }, Is.All.EqualTo(0f));
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((s.ShapeScale, s.YawDeg, s.ViewWidthToM)));
             Assert.That(ls.EnvelopeOnScreen, Is.EqualTo(s.TargetOnScreen));
+            Assert.That((ls.Formation, ls.FormationStreams, ls.DensityCap), Is.EqualTo(("converge", 6, s.DensityCap)));
             Assert.That(ls.EnvelopeViewWidthM, Is.EqualTo(s.ViewWidthToM));
             foreach (LevelSection sec in ls.Sections)
             {
@@ -142,6 +152,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ls.HeroStepS, Is.LessThan(0), "the roster's step time");
             Assert.That(ls.KillBudget, Is.True);
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((0f, 0f, 0f)));
+            Assert.That(ls.Formation, Is.Null, "the song's opening horde, releases and refill");
             foreach (string pos in new[] { "beat", "eighth", "downbeat", "phrase", "accent" })
                 Assert.That(GridEntry.Parse("slashL@" + pos).Fixed, Is.EqualTo(FixedPosition.None), pos);
         }
@@ -161,6 +172,10 @@ namespace Demo3D.Choreography.Tests
             Assert.That((ls.HoldGround, ls.HeroStepS, ls.KillBudget), Is.EqualTo((true, 0.12f, false)));
             Assert.That((ls.ShapeScale, ls.YawDeg, ls.ViewWidthToM), Is.EqualTo((2.5f, -45f, 65f)));
             Assert.That(ls.Duel[0].Type, Is.EqualTo("troll"));
+            LevelScript formed = LevelScript.Parse(Script("\"formation\": { \"kind\": \"converge\", \"streams\": 3 }, \"densityCap\": 0.9,"));
+            Assert.That((formed.Formation, formed.FormationStreams, formed.DensityCap), Is.EqualTo(("converge", 3, 0.9f)));
+            Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"formation\": { \"kind\": \"spiral\" },"))).Message, Does.Contain("unknown formation 'spiral'"));
+            Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"formation\": { \"kind\": \"converge\", \"streams\": 1 },"))).Message, Does.Contain("2 to 6 streams"));
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"spanS\": [110, 100],")));
             Assert.That(Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"viewWidthToM\": 65,"))).Message, Does.Contain("needs spanS"));
         }
@@ -196,22 +211,18 @@ namespace Demo3D.Choreography.Tests
         // ------------------------------------------------------------------ the trailer's checks
 
         /// <summary>
-        /// The checked-in trailer passes every check in every shot (`trailer --checks`). Its placeholder horde holds
-        /// the density check with little room (another seed, or another runtime's rounding, can miss a bar), so it is
-        /// checked where the hashes are recorded, under .NET on Apple silicon.
+        /// The checked-in trailer passes every check in every shot (`trailer --checks`), monster liveness and density
+        /// included. The formations hold them with room: other trailer seeds and both roster sets pass too.
         /// </summary>
         [Test]
         public void EveryShotPassesTheTrailersChecks()
         {
-            if (Fixtures.OnMono || System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture != System.Runtime.InteropServices.Architecture.Arm64
-                || !System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
-                Assert.Pass("not checked: the placeholder horde's density was tuned under .NET on Apple silicon");
             var problems = new List<string>();
             for (int i = 0; i < Fixtures.Trailer.Shots.Length; i++)
             {
-                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(Fixtures.Trailer, i, Fixtures.Shot(i), Fixtures.ShotData(i).Roster))
+                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(Fixtures.Trailer, i, Fixtures.Shot(i), Fixtures.ShotData(i)))
                     problems.AddRange(check.Value);
-                ShotReport r = TrailerChecks.Report(Fixtures.Trailer, i, Fixtures.Shot(i), Fixtures.ShotData(i).Roster);
+                ShotReport r = TrailerChecks.Report(Fixtures.Trailer, i, Fixtures.Shot(i), Fixtures.ShotData(i));
                 TestContext.WriteLine(TrailerChecks.Table(new[] { r }));
             }
             Assert.That(problems, Is.Empty, Report(problems));
@@ -294,6 +305,34 @@ namespace Demo3D.Choreography.Tests
             List<string> problems = TrailerChecks.HeroActsEveryBeat(Fixtures.Trailer, Fixtures.Trailer.Shots[1], tl);
             Assert.That(problems, Has.Count.EqualTo(16), Report(problems));   // four bars of beats
             Assert.That(problems[0], Does.Contain("neither strides nor attacks"));
+        }
+
+        /// <summary>A monster frozen in view fails in every beat interval it neither moves nor plays a clip; one spawning there passes it.</summary>
+        [Test]
+        public void AMonsterThatStandsAroundFails()
+        {
+            Timeline tl = Clone(Fixtures.Shot(1));
+            TrailerShot s = Fixtures.Trailer.Shots[1];
+            int m = -1;
+            for (int e = 1; e < tl.EntityCount && m < 0; e++)
+            {
+                // A monster on screen at the cut, alive to the end, whose only action is its spawn (no clip ever excuses it).
+                if (tl.Entities[e].Kind != EntityKind.Monster || tl.ActionsOf(e).Count != 1 || tl.Entities[e].Despawn < s.End) continue;
+                FramingSample f = tl.FramingAt(s.Cut);
+                if (tl.View(f.ViewWidth).Contains(f.Focus, tl.PositionAt(e, s.Cut), -3)) m = e;
+            }
+            Assert.That(m, Is.GreaterThan(0), "a monster to freeze");
+            Assert.That(TrailerChecks.MonstersLive(s, tl, Fixtures.ShotData(1)), Is.Empty, "before freezing");
+            Vector2 spot = tl.PositionAt(m, s.Cut);
+            for (int i = tl.SegmentStart[m]; i < tl.SegmentStart[m + 1]; i++)
+            {
+                MotionSegment g = tl.Segments[i];
+                tl.Segments[i] = new MotionSegment(m, g.T0, g.T1, spot, spot, g.FacingFrom, g.FacingTo, g.Ease);
+            }
+            List<string> problems = TrailerChecks.MonstersLive(s, tl, Fixtures.ShotData(1));
+            Assert.That(problems, Is.Not.Empty);
+            Assert.That(problems, Has.All.Contain("monster " + m + " ").And.All.Contain("neither moves nor plays a clip"), Report(problems));
+            Assert.That(problems[0], Does.Contain(s.Cut.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)), "from the cut's interval");
         }
 
         [Test]

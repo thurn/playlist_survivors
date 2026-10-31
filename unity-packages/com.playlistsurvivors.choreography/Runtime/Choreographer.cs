@@ -179,6 +179,9 @@ namespace PS.Choreography
         public System.Numerics.Vector2? BossArea;                   // a named area the boss enters from
         public int BossType = -1;
         public int[] Duel;                                          // roster types, one per cast member; null: none
+        public FormationKind Formation;                             // None: the song's opening horde, releases and refill
+        public int Streams;                                         // a converge's
+        public float DensityCap;                                    // a formation's refill spawns where fewer stand per m²
 
         public static readonly ShotRules Default = new ShotRules();
 
@@ -193,6 +196,9 @@ namespace PS.Choreography
                 SpanFrom = script.SpanFromS, SpanTo = script.SpanToS,
                 HoldGround = script.HoldGround, HeroStepS = script.HeroStepS, KillBudget = script.KillBudget,
                 ShapeScale = script.ShapeScale, YawDeg = script.YawDeg, ViewWidthTo = script.ViewWidthToM, BossFrom = script.Boss,
+                Formation = script.Formation == "charge" ? FormationKind.Charge : script.Formation == "vortex" ? FormationKind.Vortex
+                    : script.Formation == "converge" ? FormationKind.Converge : FormationKind.None,
+                Streams = script.FormationStreams, DensityCap = script.DensityCap,
             };
             var grid = new BeatGrid(map);
             if (script.Cut != null) r.Cut = map.TimeOfBarBeat(script.Cut, grid);
@@ -214,6 +220,7 @@ namespace PS.Choreography
                 if (r.BossFrom != "ahead" && r.BossFrom != "behind" && r.BossFrom != "left" && r.BossFrom != "right")
                     r.BossArea = new LayoutPoint { Area = r.BossFrom }.Resolve(data.Layout, "boss");
             }
+            if (r.Formation != FormationKind.None && r.Path == null) throw new FormatException("level script: a formation kites, so it needs a heroPath");
             if (script.Duel != null)
             {
                 var cast = new System.Collections.Generic.List<int>();
@@ -236,6 +243,9 @@ namespace PS.Choreography
             return r;
         }
     }
+
+    /// <summary>A trailer shot's formation (trailer.md, "Kiting and formations").</summary>
+    enum FormationKind { None, Charge, Vortex, Converge }
 
     static class RosterExtensions
     {

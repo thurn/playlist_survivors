@@ -291,7 +291,7 @@ After the duel, the shot length halves, group by group:
 | 2 | 2.481–8.674 | 81–84 | desert | Charge | ~600 | 45 m | 0° |
 | 3 | 8.674–14.868 | 85–88 | snow | Vortex | ~700 | 50 m | 45° |
 | 4 | 14.868–17.965 | 89–90 | forest | Converge, 4 streams | ~500 | 40 m | 0° |
-| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~600 | 40 m | 180° |
+| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~540 | 40 m | 180° |
 | 6 | 21.062–22.610 | 93 | desert | Vortex | ~400 | 35 m | −45° |
 | 7 | 22.610–24.158 | 94 | snow | Charge | ~500 | 35 m | 90° |
 | 8 | 24.158–25.707 | 95 | crypt | Converge, 3 streams | ~500 | 40 m | 180° |
@@ -689,18 +689,11 @@ writes them from the trailer file. Some details of the first cut:
   anchor, a third of a turn from the last, so it arrives just inside that
   blow's reach then: one falls on each anchor, and the spin on anchor 2
   can't reach the third. The hero steps to and fro across its spot.
-- **The horde is a placeholder.** Until the formations bead, a shot opens
-  with the song's opening horde round the hero, and the kiting refill
-  ([choreography.md](choreography.md#shot-fields)) holds the count: spawns
-  on the edges the hero runs toward, a buffer that integrates the on-screen
-  shortfall, and monsters left behind leave.
-- **Tuned to pass.** With that refill, the climax holds about 1,300 at
-  `shapeScale` 2.0 (at 2.5 it kills faster than the refill fills: bar 97
-  averages about 1,050),
-  and the paths cross the north-east field's middle, where the views find
-  the most open ground. Every roster set passes. Pinned to the forest, the
-  desert or the neon city, one shot each runs 16-18% under its target in one
-  or two bars.
+- **The horde.** The formations replaced the first cut's placeholder horde
+  (see [Kiting and formations](#kiting-and-formations), "Outcome").
+- **Tuned to pass.** The climax holds about 1,300 at `shapeScale` 2.0 (at
+  2.5 it kills faster than refill fills), and the paths cross the
+  north-east field's middle, where the views find the most open ground.
 
 ### Kiting and formations
 
@@ -729,12 +722,80 @@ where refills come from during the shot. There are three:
   the chasers spiral inward after them. Refill comes from outside the loop.
 - **`converge`**: two to six streams (`streams`) pouring in from different
   directions and meeting at the hero, who cuts across them. Refill keeps each
-  stream fed. The streams are evenly spaced around the hero, the first one
+  stream fed. The streams are evenly spaced around the hero (squeezed into
+  the arc a kiting hero can be reached from, see "Outcome"), the first one
   ahead, relative to the hero's direction of travel at the cut.
 
 Refill keeps each shot near its `onScreen` target. It spawns outside the
 view, so no monster ever appears in view. The view used is the simulation's
 recorded framing, the lagging camera itself, rotated by the shot's heading.
+
+**Outcome (ps-hgs.5).** The level script's `formation` and `densityCap`
+([shot fields](choreography.md#shot-fields)) carry a shot's formation into
+its simulation. Each formation places its opening at the pre-roll's start,
+from where the hero's path puts it, and refills from then on:
+
+- **Charge.** A wave across the path, as wide as the view's far edge and as
+  deep as the view is long plus 4 m, at 1.55 times the shot's density (its
+  target over the view's area). Its front meets the hero 4 beats before the
+  cut rather than on it, so the cut's blow lands inside the wall and blows
+  a crater out of it; met on the cut, half the screen behind the hero was
+  empty. Refill waits for the cut, then comes from within 75° of the
+  hero's travel.
+- **Vortex.** The target's worth of monsters spread over a disk round the
+  loop's centre, 8 m wider than the loop. Refill comes from the whole edge,
+  and monsters behind the hero stay, since the hero circles back.
+- **Converge.** The streams fan over the 200° a horde can reach a kiting
+  hero from, 100° either side of its travel at the cut, spaced as a circle
+  squeezed into that arc, the first one ahead. A stream from farther behind
+  could never catch a hero running 2.5 times its speed. Each stream opens as
+  a column just outside the view, holding half the target between them.
+  Refill feeds the streams from the pre-roll's start, from sources a
+  quarter of the view wide. Each source is led toward the hero's travel,
+  since the hero sweeps past it.
+
+Refill aims to have the target in view two beats on. It predicts that from
+every monster walking its gait toward where the hero will be, and from the
+view following the hero's path, at its width then. It spawns the shortfall
+plus the kills expected meanwhile, and a slowly built bias corrects the
+prediction near the target. It holds the off-screen stock that will walk
+in within 6 beats to half the target, plus the kills meanwhile, since a
+deeper stock arrives after the prediction and overshoots. Refill spawns
+only where the shot's `densityCap` is not exceeded within 2 m, and at
+least 1 m from structures.
+
+Never jam, in a formation's shot:
+
+- Every monster chases on every beat, off screen too.
+- Its heading bends away from neighbours within 1.6 m of touching, so a
+  horde chasing one point fans out instead of packing into a block.
+- A monster whose step is blocked waits for its neighbours to plan, up to
+  twice. Then it follows a touching neighbour's step, or sidesteps at ever
+  wider turns and shorter lengths.
+- Boxed in on every side, it shoves: a third of a step, pressing into its
+  neighbours by up to 40% of the smaller radius.
+- A formation's crowd packs to 20% overlap instead of 10%.
+- A windup the hero's blow cuts short is kept in the timeline. It plays
+  until the death takes over, as "the hero's blow usually kills it first"
+  describes. Windups still under way when the shot ends are kept too.
+
+The liveness check holds: zero violations in all ten shots, for the
+default roster and the forest and heroic sets. The density check passes
+too, and both hold across most other trailer seeds: seeds 3, 5, 9, 10, 11,
+13, 21, 29 and 42 pass every check, and seed 17 has one monster interval.
+Pinned to one environment, shot 2 or 5 can still miss a bar's density by
+up to 20%. Tuning changes from the first cut:
+
+- shot 4 converges at `shapeScale` 2.0, since slashes alone left its
+  streams piling up;
+- shots 6 and 8 run at 1.6 and 1.3, since spins and lightning on every beat
+  killed faster than their streams could fill;
+- shot 5's elite charge aims at 540, since its big bodies jam a 600-strong
+  wave.
+
+The kite ratio is 2.3-2.5 in every horde shot, measured up to the final
+slam. Frame sequences are in
+[demo3d/evidence/trailer/kiting](../../demo3d/evidence/trailer/kiting/README.md).
 
 ### The boss
 
@@ -1121,7 +1182,7 @@ It runs every shot's simulation and prints a table with one row per shot:
   spell landing with it counts too);
 - the share of beats the hero acted on;
 - the kite ratio, the hero's speed over the horde's;
-- liveness violations (`-` until the formations bead adds the check).
+- liveness violations: monster beat intervals that break the monster rule.
 
 These checks fail the run, naming the shot, the time and the monster:
 

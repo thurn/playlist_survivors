@@ -458,6 +458,19 @@ namespace PS.Choreography
         public string Boss;
         /// <summary>A fixed cast (its <c>duel</c>: counts by type), staged to meet the fixed combo entries in order, with no refill. Null, the default: none.</summary>
         public MixEntry[] Duel;
+        /// <summary>
+        /// The horde's formation (its <c>formation</c>: <c>{ "kind": "charge" | "vortex" | "converge", "streams": 2 to 6 }</c>,
+        /// trailer.md "Kiting and formations"): the opening placement, the refill and never-jam steering. Null, the default:
+        /// the song's opening horde, releases and refill.
+        /// </summary>
+        public string Formation;
+        /// <summary>A converge formation's streams (its <c>formation</c>'s <c>streams</c>).</summary>
+        public int FormationStreams;
+        /// <summary>The most monsters per square metre a formation's refill spawns into (its <c>densityCap</c>).</summary>
+        public float DensityCap = DefaultDensityCap;
+
+        public const float DefaultDensityCap = 1.2f;
+        static readonly string[] FormationKinds = { "charge", "vortex", "converge" };
 
         /// <summary>A section's load preset: the script's own by that name, else a built-in one.</summary>
         public LoadPreset Preset(string name) => name != null && Loads.TryGetValue(name, out LoadPreset p) ? p : LoadPreset.Get(name);
@@ -538,7 +551,13 @@ namespace PS.Choreography
                 Boss = root["boss"].AsString(),
                 Duel = root.Has("duel") ? MixEntry.ParseMix(root["duel"]) : null,
                 StructureBreaks = structureBreaks,
+                Formation = root["formation"]["kind"].AsString(),
+                FormationStreams = root["formation"]["streams"].AsInt(0),
+                DensityCap = root["densityCap"].AsFloat(DefaultDensityCap),
             };
+            if (root.Has("formation") && Array.IndexOf(FormationKinds, ls.Formation) < 0) throw new FormatException("level script: unknown formation '" + ls.Formation + "'");
+            if (ls.Formation == "converge" && (ls.FormationStreams < 2 || ls.FormationStreams > 6)) throw new FormatException("level script: converge needs 2 to 6 streams");
+            if (!(ls.DensityCap > 0)) throw new FormatException("level script: densityCap must be positive");
             JsonValue span = root["spanS"];
             if (span.Type == JsonType.Array)
             {

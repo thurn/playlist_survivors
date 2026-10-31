@@ -71,10 +71,8 @@ namespace PS.Choreography
     public sealed class Trailer
     {
         public const string StartCut = "start";
-        public const float DefaultHeroStepS = 0.14f, DefaultDensityCap = 1.2f;
+        public const float DefaultHeroStepS = 0.14f, DefaultDensityCap = LevelScript.DefaultDensityCap;
         public const int DefaultPrerollBeats = 16;
-        /// <summary>A shot's off-screen reserve, as a fraction of its target: the kiting refill's starting buffer.</summary>
-        public const double ShotReserve = 0.5;
         static readonly string[] Formations = { "charge", "vortex", "converge" };
         static readonly string[] BossSides = { "ahead", "behind", "left", "right" };
 
@@ -215,6 +213,7 @@ namespace PS.Choreography
                 if (s.Duel.Length == 0) throw new FormatException(what + ": an empty duel");
             }
             if ((s.Formation == null) == (s.Duel == null)) throw new FormatException(what + ": needs exactly one of a formation and a duel");
+            if (s.Formation != null && s.Path == null) throw new FormatException(what + ": a formation's hero kites, so it needs a path");
             s.Combo = Strings(o["combo"]);
             s.Spells = Strings(o["spells"]);
             JsonValue g = o["grade"];
@@ -288,7 +287,7 @@ namespace PS.Choreography
         /// <summary>
         /// Shot <paramref name="index"/>'s level script (trailer.md, "How a shot uses the base"): the roster's level script
         /// (<paramref name="levelJson"/>) with the base overlay's global settings merged over it (never its sections),
-        /// then the shot's fields: its combo, spells, formation and view replace every section's, and its span, path,
+        /// then the shot's fields: its combo, spells, mix and view replace every section's, and its span, path, formation,
         /// positions and rules go in as the level script's shot fields. Its seed is the trailer's plus the shot's number.
         /// </summary>
         public LevelScript ShotScript(int index, string levelJson, string baseJson)
@@ -310,7 +309,6 @@ namespace PS.Choreography
                 Pair("shapeScale", JsonValue.OfNumber(s.ShapeScale)),
                 Pair("yawDeg", JsonValue.OfNumber(s.YawDeg)),
                 Pair("holdGround", JsonValue.OfBool(s.HoldGround)),
-                Pair("reserve", JsonValue.OfNumber(ShotReserve)),
             };
             if (s.Number > 1) set.Add(Pair("cut", JsonValue.OfString(s.CutAt)));
             if (s.HasFinal) set.Add(Pair("final", JsonValue.OfString(FinalPos(this))));
@@ -324,6 +322,11 @@ namespace PS.Choreography
             }
             if (s.Boss != null) set.Add(Pair("boss", JsonValue.OfString(s.Boss)));
             if (s.Duel != null) set.Add(Pair("duel", Mix(s.Duel)));
+            if (s.Formation != null)
+            {
+                set.Add(Pair("formation", Object(Pair("kind", JsonValue.OfString(s.Formation.Kind)), Pair("streams", JsonValue.OfNumber(s.Formation.Streams)))));
+                set.Add(Pair("densityCap", JsonValue.OfNumber(s.DensityCap)));
+            }
             foreach (KeyValuePair<string, JsonValue> kv in set) root = IntensityOverlay.Set(root, kv.Key, kv.Value);
 
             // Every section plays the shot: its combo, spells, horde and view, with no goal, boss or clearing of its own.

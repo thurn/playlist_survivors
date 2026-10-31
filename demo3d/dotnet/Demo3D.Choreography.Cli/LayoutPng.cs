@@ -11,13 +11,14 @@ namespace Demo3D.Choreography.Cli
     /// A top-down map of a placement list as a PNG carrying the `ps-render` tag (TD6's evidence):
     /// forest dark, fighting ground lighter, blocking footprints by kind (walls sand, trees deep
     /// green, bushes green, rocks grey), soft pieces as specks, goals as orange rings, and
-    /// optionally a flow field's cost in 5 m bands, monsters as red dots and the hero in white.
-    /// North (+Y, where the camera looks) is up.
+    /// optionally a flow field's cost in 5 m bands, monsters as red dots (each with its last beat's track) and the hero
+    /// in white, and the camera's view as a yellow outline. North (+Y) is up.
     /// </summary>
     static class LayoutPng
     {
         public static void Write(string path, ArenaLayout layout, PlacementList list, float pxPerM,
-            FlowField field = null, Vector2[] monsters = null, Vector2? hero = null, Vector2? centre = null, float spanM = 0)
+            FlowField field = null, Vector2[] monsters = null, Vector2? hero = null, Vector2? centre = null, float spanM = 0,
+            Vector2[] tracks = null, Vector2[] outline = null)
         {
             Vector2 c = centre ?? Vector2.Zero;
             float span = spanM > 0 ? spanM : Math.Max(list.Size.X, list.Size.Y);
@@ -65,7 +66,9 @@ namespace Demo3D.Choreography.Cli
                         if (Inside(f, pl, P(px, py))) Set(img, n, px, py, col);
             }
             foreach (GoalArea g in list.Goals) Ring(img, n, x0, y1, pxPerM, g.Center, g.Radius, (255, 170, 60));
+            if (tracks != null) for (int i = 0; i < monsters.Length; i++) Line(img, n, x0, y1, pxPerM, tracks[i], monsters[i], (255, 210, 90));
             if (monsters != null) foreach (Vector2 m in monsters) Dot(img, n, P, m, x0, y1, pxPerM, 0.4f, (240, 60, 60));
+            if (outline != null) for (int i = 0; i < outline.Length; i++) Line(img, n, x0, y1, pxPerM, outline[i], outline[(i + 1) % outline.Length], (250, 220, 80));
             if (hero.HasValue) Dot(img, n, P, hero.Value, x0, y1, pxPerM, 0.6f, (255, 255, 255));
 
             File.WriteAllBytes(path, Png(img, n, n, "demo3d choreography cli (TD6 layout map)"));
@@ -103,6 +106,17 @@ namespace Demo3D.Choreography.Cli
             for (int py = cy - rp; py <= cy + rp; py++)
                 for (int px = cx - rp; px <= cx + rp; px++)
                     if (px >= 0 && py >= 0 && px < n && py < n && Vector2.Distance(P(px, py), c) <= Math.Max(r, 0.5f / pxPerM)) Set(img, n, px, py, col);
+        }
+
+        static void Line(byte[] img, int n, float x0, float y1, float pxPerM, Vector2 a, Vector2 b, (byte, byte, byte) col)
+        {
+            int steps = (int)(Vector2.Distance(a, b) * pxPerM * 2) + 1;
+            for (int i = 0; i <= steps; i++)
+            {
+                Vector2 p = Vector2.Lerp(a, b, i / (float)steps);
+                int px = (int)((p.X - x0) * pxPerM), py = (int)((y1 - p.Y) * pxPerM);
+                if (px >= 0 && py >= 0 && px < n && py < n) Set(img, n, px, py, col);
+            }
         }
 
         static void Ring(byte[] img, int n, float x0, float y1, float pxPerM, Vector2 c, float r, (byte, byte, byte) col)

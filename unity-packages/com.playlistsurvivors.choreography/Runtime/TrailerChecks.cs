@@ -18,16 +18,15 @@ namespace PS.Choreography
         public int PeakKillsPerSwing;
         /// <summary>The share of the visible span's beat intervals the hero acted in.</summary>
         public double ActedShare;
-        /// <summary>The hero's speed over the horde's (NaN for a hero holding ground).</summary>
+        /// <summary>The hero's speed over the horde's, up to any final slam (NaN for a hero holding ground).</summary>
         public double KiteRatio;
-        /// <summary>Monster liveness violations: -1 until the liveness check exists (the formations bead).</summary>
-        public int LivenessViolations = -1;
+        /// <summary>Monster liveness violations: monster beat intervals in view without a move or a clip.</summary>
+        public int LivenessViolations;
     }
 
     /// <summary>
     /// The trailer's timeline checks (trailer.md, "Checks and Evidence"), run on each shot's timeline. Each returns its
-    /// problems, naming the shot, the time and the monster; an empty list passes. Liveness for monsters is the
-    /// formations bead's; the hero's rule is here.
+    /// problems, naming the shot, the time and the monster; an empty list passes.
     /// </summary>
     public static class TrailerChecks
     {
@@ -36,11 +35,16 @@ namespace PS.Choreography
         public const double DensityTolerance = 0.15;
         /// <summary>The duel's hero, holding ground, strides at least this far in a beat without a blow.</summary>
         public const float HoldStepM = 0.3f;
+        /// <summary>A visible monster moves at least this fraction of its gait step in each beat interval, unless it plays a clip.</summary>
+        public const float LiveStepFraction = 0.25f;
+        /// <summary>The liveness check's view grows by this margin, where monsters spawn.</summary>
+        public const float LiveMarginM = 2f;
 
-        /// <summary>Every check, by name, on one shot's timeline.</summary>
-        public static List<KeyValuePair<string, List<string>>> All(Trailer trailer, int index, Timeline tl, Roster roster)
+        /// <summary>Every check, by name, on one shot's timeline (<paramref name="data"/>: the shot's roster and clips).</summary>
+        public static List<KeyValuePair<string, List<string>>> All(Trailer trailer, int index, Timeline tl, ChoreographyData data)
         {
             TrailerShot s = trailer.Shots[index];
+            Roster roster = data.Roster;
             return new List<KeyValuePair<string, List<string>>>
             {
                 Check("cuts on the grid", CutOnTheGrid(s, tl)),
@@ -48,6 +52,7 @@ namespace PS.Choreography
                 Check("the hero moves continuously", HeroMovesContinuously(s, tl)),
                 Check("impacts on the grid", ImpactsOnTheGrid(s, tl)),
                 Check("the hero acts every beat", HeroActsEveryBeat(trailer, s, tl)),
+                Check("monster liveness", MonstersLive(s, tl, data)),
                 Check("one hit kills", OneHitKills(s, tl)),
                 Check("the boss", Boss(trailer, s, tl, roster)),
                 Check("the final slam", FinalSlam(trailer, s, tl)),
@@ -131,6 +136,54 @@ namespace PS.Choreography
             }
             share = n > 0 ? acted / (double)n : double.NaN;
             return problems;
+        }
+
+        /// <summary>
+        /// In every beat interval of the visible span, every live monster in the view grown by <see cref="LiveMarginM"/> at
+        /// the interval's start moves at least <see cref="LiveStepFraction"/> of its gait step, or plays an attack, hit,
+        /// death or spawn clip. A free section's beats are silent, but its grid still steps every 0.387 s.
+        /// </summary>
+        public static List<string> MonstersLive(TrailerShot s, Timeline tl, ChoreographyData data) => LivenessViolations(s, tl, data, out _);
+
+        static List<string> LivenessViolations(TrailerShot s, Timeline tl, ChoreographyData data, out int violations)
+        {
+            var problems = new List<string>();
+            violations = 0;
+            double[] death = DeathTimes(tl);
+            List<double> bounds = Intervals(tl.Map, s.Cut, s.End);
+            for (int e = 1; e < tl.EntityCount; e++)
+            {
+                if (tl.Entities[e].Kind != EntityKind.Monster) continue;
+                float step = LiveStepFraction * data.Roster.Monsters[tl.Entities[e].Type].StepM;
+                for (int i = 0; i + 1 < bounds.Count; i++)
+                {
+                    double a = bounds[i], b = bounds[i + 1];
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Spawn > a + Eps || info.Despawn <= a + Eps || death[e] < a - Eps) continue;
+                    FramingSample f = tl.FramingAt(a);
+                    if (!tl.View(f.ViewWidth).Contains(f.Focus, tl.PositionAt(e, a), LiveMarginM)) continue;
+                    if (PlaysAClip(tl, data.Clips, e, a, b) || Moved(tl, e, a, b) >= step) continue;
+                    violations++;
+                    if (problems.Count < 20) problems.Add(Where(s, a) + "monster " + e + " (" + TypeOf(tl, e) + ") neither moves nor plays a clip until " + Fmt(b));
+                }
+            }
+            return problems;
+        }
+
+        /// <summary>Does monster <paramref name="e"/> play an attack (from its windup to its clip's end), hit, death or spawn clip between <paramref name="a"/> and <paramref name="b"/>?</summary>
+        static bool PlaysAClip(Timeline tl, ClipLibrary clips, int e, double a, double b)
+        {
+            foreach (ActionEvent act in tl.ActionsOf(e))
+            {
+                if (act.Kind == ActionKind.Attack)
+                {
+                    double c0 = act.HasClipTiming ? act.ClipStart : act.Impact;
+                    double c1 = act.HasClipTiming && act.Clip >= 0 ? act.ClipStart + clips[act.Clip].End / act.ClipSpeed : act.Impact;
+                    if (c0 < b - Eps && c1 >= a - Eps) return true;
+                }
+                else if (act.Kind != ActionKind.Parry && act.Impact >= a - Eps && act.Impact < b - Eps) return true;
+            }
+            return false;
         }
 
         /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills.</summary>
@@ -247,12 +300,14 @@ namespace PS.Choreography
         }
 
         /// <summary>The shot's row of the report.</summary>
-        public static ShotReport Report(Trailer trailer, int index, Timeline tl, Roster roster)
+        public static ShotReport Report(Trailer trailer, int index, Timeline tl, ChoreographyData data)
         {
             TrailerShot s = trailer.Shots[index];
+            Roster roster = data.Roster;
             var r = new ShotReport { Number = s.Number, Environment = s.Environment, Target = s.TargetOnScreen };
             DensitySamples(trailer, s, tl, out r.OnScreen);
             HeroIntervals(trailer, s, tl, out r.ActedShare);
+            LivenessViolations(s, tl, data, out r.LivenessViolations);
             double dur = s.End - s.Cut;
             var deaths = new Dictionary<double, int>();
             foreach (ActionEvent a in tl.Actions)
@@ -285,7 +340,8 @@ namespace PS.Choreography
                     gait += e.Weight * roster.Monsters[t].StepM;
                 }
                 double horde = w > 0 ? gait / w / beat : double.NaN;
-                List<double> bounds = Intervals(tl.Map, s.Cut, s.End);
+                // Up to the final slam: after it the hero plays out its recovery.
+                List<double> bounds = Intervals(tl.Map, s.Cut, s.HasFinal ? trailer.FinalSlamTime(tl.Map) : s.End);
                 double travelled = 0;
                 for (int i = 0; i + 1 < bounds.Count; i++) travelled += Vector2.Distance(tl.PositionAt(0, bounds[i]), tl.PositionAt(0, bounds[i + 1]));
                 r.KiteRatio = travelled / (bounds[bounds.Count - 1] - bounds[0]) / horde;
@@ -302,7 +358,7 @@ namespace PS.Choreography
                 sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,4}  {1,-11}  {2,9} / {3,-6}  {4,8:F2}  {5,11:F1}, {6,-12}  {7,9:P0}  {8,4}  {9,8}",
                     r.Number, r.Environment, double.IsNaN(r.OnScreen) ? "-" : r.OnScreen.ToString("F0", CultureInfo.InvariantCulture), r.Target, r.SwingsPerSecond,
                     r.MeanKillsPerSwing, r.PeakKillsPerSwing, r.ActedShare, double.IsNaN(r.KiteRatio) ? "-" : r.KiteRatio.ToString("F1", CultureInfo.InvariantCulture),
-                    r.LivenessViolations < 0 ? "-" : r.LivenessViolations.ToString(CultureInfo.InvariantCulture)));
+                    r.LivenessViolations));
             return sb.ToString();
         }
 

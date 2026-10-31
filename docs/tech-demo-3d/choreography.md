@@ -546,6 +546,8 @@ included).
 | `viewWidthToM` | none | The zoom eases from the section's width at the cut (or the span's start) to this at the span's end. |
 | `boss` | none | The boss rule: `ahead`, `behind`, `left`, `right` (relative to the hero's travel at the cut) or a named area. The roster's boss enters there outside the view on the cut and walks in, trampling. It keeps beyond the shot's largest scaled hit shape plus 1 m, backing off when the hero closes in. No blow or spell touches it until the final slam, which kills it. Needs `final`. |
 | `duel` | none | A fixed cast by type and count, with no refill and no opening horde. Its k-th member meets the k-th fixed combo entry: it starts a third of a turn from the last, as far out as it walks by that blow, so it arrives just inside its reach then. |
+| `formation` | none | `{ "kind": "charge" \| "vortex" \| "converge", "streams": 2-6 }`, with a `heroPath`: the horde's opening placement, refill and never-jam steering (below). |
+| `densityCap` | 1.2 | A formation's refill spawns only where fewer than this many monsters stand per m² within 2 m. |
 
 The combo and spell grid gains the trailer's positions: `cut`, `final`,
 `anchor` (the next unused anchor of a free section, from the cut on, or the
@@ -559,13 +561,15 @@ A hero with a path or holding ground acts on every beat: it swings whatever
 is in reach (without waiting for a monster), and it strides on a beat whose
 next blow would start after the next decision.
 
-**The kiting refill** (a placeholder until the formations bead): a kiting
-hero sweeps its view over whatever waits ahead, so the off-screen buffer
-sets the count on screen. Each beat, the buffer integrates the on-screen
-shortfall and leaks back toward 1.3 times the target. Refill spawns only on
-the edges the hero runs toward, in a 6 m band, with no per-beat cap, and an
-off-screen monster behind the hero past the spawn band leaves, since it never
-catches up.
+**Formations** ([Trailer Mode](trailer.md), "Kiting and formations"): a
+shot with a `formation` opens with its formation's placement and refills
+toward its target from the view's edge, predicting two beats ahead. Every
+monster chases on every beat, and its heading bends away from the
+neighbours pressing on it. A blocked monster waits for its neighbours,
+then follows one, sidesteps or, boxed in, shoves. A windup the hero's blow
+cuts short stays in the timeline. A kiting hero outruns the horde, so an
+off-screen monster behind it, past the spawn band, leaves (except round a
+vortex's loop).
 
 ### Free sections
 

@@ -127,14 +127,15 @@ namespace Demo3D.Choreography.Cli
                         TrailerShot shot = trailer.Shots[i];
                         ChoreographyData data = environments[shot.Environment];
                         Timeline tl = ChoreographyFiles.BuildShot(root, trailer, i, data, Opt(args, "--roster"));
-                        rows.Add(TrailerChecks.Report(trailer, i, tl, data.Roster));
+                        rows.Add(TrailerChecks.Report(trailer, i, tl, data));
+                        if (Opt(args, "--frames") != null) ShotFrames(tl, data, shot, Opt(args, "--frames"), DoubleOpt(args, "--every") > 0 ? DoubleOpt(args, "--every") : 1);
                         if (Opt(args, "--out-dir") != null)
                         {
                             Directory.CreateDirectory(Opt(args, "--out-dir"));
                             TimelineJson.WriteFile(tl, Path.Combine(Opt(args, "--out-dir"), "shot-" + shot.Number + ".json"), shot.SpanFrom, shot.End);
                         }
                         if (!Has(args, "--checks")) continue;
-                        foreach (var check in TrailerChecks.All(trailer, i, tl, data.Roster))
+                        foreach (var check in TrailerChecks.All(trailer, i, tl, data))
                         {
                             if (check.Value.Count == 0) continue;
                             failures += check.Value.Count;
@@ -178,6 +179,44 @@ namespace Demo3D.Choreography.Cli
             System.Numerics.Vector2 centre = Opt(args, "--cx") != null ? new System.Numerics.Vector2((float)DoubleOpt(args, "--cx"), (float)DoubleOpt(args, "--cy")) : tl.FramingAt(t).Focus;
             LayoutPng.Write(png, data.Layout.Arena, data.Layout.Placements, px, null, dots.ToArray(), hero, centre, span);
             Console.WriteLine("snapshot: " + png + " at " + t.ToString("F2", CultureInfo.InvariantCulture) + " s, " + dots.Count + " monsters");
+        }
+
+        /// <summary>
+        /// --frames DIR [--every beats]: a top-down frame of the shot every so many beats from its cut, each live monster with
+        /// its last beat's track, the hero, and the camera's view (the kiting evidence, trailer.md "Kiting and formations").
+        /// </summary>
+        static void ShotFrames(Timeline tl, ChoreographyData data, TrailerShot shot, string dir, double everyBeats)
+        {
+            Directory.CreateDirectory(dir);
+            double beat = tl.Map.Beats[1] - tl.Map.Beats[0];
+            var death = new double[tl.EntityCount];
+            for (int e = 0; e < tl.EntityCount; e++)
+            {
+                death[e] = double.PositiveInfinity;
+                foreach (ActionEvent a in tl.ActionsOf(e)) if (a.Kind == ActionKind.Death) { death[e] = a.Impact; break; }
+            }
+            int k = 0;
+            for (double t = shot.Cut; t < shot.End - 1e-6; t += everyBeats * beat, k++)
+            {
+                var dots = new System.Collections.Generic.List<System.Numerics.Vector2>();
+                var tracks = new System.Collections.Generic.List<System.Numerics.Vector2>();
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind != EntityKind.Monster || t < info.Spawn || t >= info.Despawn || t >= death[e]) continue;
+                    dots.Add(tl.PositionAt(e, t));
+                    tracks.Add(tl.PositionAt(e, Math.Max(info.Spawn, t - beat)));
+                }
+                FramingSample f = tl.FramingAt(t);
+                ViewGeometry v = tl.View(f.ViewWidth);
+                var outline = new[]
+                {
+                    f.Focus + v.ToWorld(new System.Numerics.Vector2(-v.NearHalf, -v.Near)), f.Focus + v.ToWorld(new System.Numerics.Vector2(v.NearHalf, -v.Near)),
+                    f.Focus + v.ToWorld(new System.Numerics.Vector2(v.FarHalf, v.Far)), f.Focus + v.ToWorld(new System.Numerics.Vector2(-v.FarHalf, v.Far)),
+                };
+                string png = Path.Combine(dir, "shot" + shot.Number + "-" + k.ToString("D2") + "-" + t.ToString("F3", CultureInfo.InvariantCulture) + ".png");
+                LayoutPng.Write(png, data.Layout.Arena, data.Layout.Placements, 8f, null, dots.ToArray(), tl.PositionAt(0, t), f.Focus, 2.2f * v.Radius, tracks.ToArray(), outline);
+            }
         }
 
         /// <summary>--onscreen [--from S] [--to S]: monsters on screen (alive / dying) each second, against the section's target.</summary>
