@@ -846,6 +846,15 @@ namespace Demo3D.Runtime.Playback
             Debug.Log($"DemoMain: wrote {_soundCues.Length} sound events to {path} (sound bank {(bank != null ? bank.names.Length + " names" : "missing")})");
         }
 
+        /// <summary>The most structure shards live at once: --structure-breaks', or the peak over a trailer's shots (-1 without breaks).</summary>
+        int PeakStructureShards()
+        {
+            if (_shots == null) return _breaks?.PeakShards ?? -1;
+            int peak = -1;
+            foreach (var s in _shots) if (s.Structures != null) peak = Math.Max(peak, s.Structures.PeakShards);
+            return peak;
+        }
+
         void Quit(int code = 0)
         {
             _stats?.Dispose();
@@ -858,10 +867,11 @@ namespace Demo3D.Runtime.Playback
             _capture = null;
             _gpuProbe?.Dispose();
             _gpuProbe = null;
+            int peakStructureShards = PeakStructureShards();
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
                       (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : "") +
                       (_shatter != null ? $"; crystal shatter: {_shatter.Deaths} deaths, at most {_shatter.PeakShards} shards live" : "") +
-                      (_breaks != null ? $"; structure breaks: at most {_breaks.PeakShards} shards live" : ""));
+                      (peakStructureShards >= 0 ? $"; structure breaks: at most {peakStructureShards} shards live" : ""));
             enabled = false;
             Application.Quit(code);
         }
@@ -873,8 +883,8 @@ namespace Demo3D.Runtime.Playback
             _fx?.Dispose();
             _crowd?.Dispose();
             _shatter?.Dispose();
-            _breaks?.Dispose();
-            if (_shots != null) foreach (var s in _shots) s.Structures?.Dispose();
+            if (_shots == null) _breaks?.Dispose();
+            else foreach (var s in _shots) s.Structures?.Dispose(); // a trailer's _breaks is its current shot's
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();

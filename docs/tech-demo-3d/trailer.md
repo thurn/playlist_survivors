@@ -1202,7 +1202,8 @@ violations live.
   `--gpu-probe-at` take trailer seconds. With `--shot`, the run starts at the
   shot's cut (or its pre-roll) unless `--start-at` says otherwise, and ends at
   the shot's end.
-- **Rejected too.** `--structure-breaks` (the shots break nothing),
+- **Rejected too.** `--structure-breaks` (a trailer's breaks are its shots'
+  own; see [Structure breaks in a shot](#structure-breaks-in-a-shot)),
   `--resident` and `--switch-every` (the trailer makes its own environments
   resident) fail beside the doc's list.
 

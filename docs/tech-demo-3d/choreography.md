@@ -375,7 +375,9 @@ A schedule may only add `breaks` to sections by label:
 
 - **An entry is a target, `@` and a grid position,** as combos and spells
   are. `/k` picks the position's k-th occurrence in the section, the first by
-  default. A position the section lacks fails.
+  default. A position the section lacks fails. An explicit bar.beat such as
+  `82.3` breaks on that grid point, which must be in the section (a trailer
+  shot's `breaks` use this; trailer.md, Structure breaks in a shot).
 - **A target is an area's name,** for every piece the area placed, or the
   area's name, `/` and one part of it. A courtyard's parts are its wall runs,
   named by side and end before its yaw (`south-west`, `south-east`,
