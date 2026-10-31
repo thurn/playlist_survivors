@@ -173,6 +173,12 @@ compare shot for shot.
   horde its own key colour at the moon's luminance, so a coloured moon on the
   set leaves the type hues alone. `lighting.post.grade` sets the grade's
   shadow, midtone and highlight tints (the night warms the midtones).
+- **Fighting ground is light or dark, never mid.** The horde's own shadows
+  darken the ground around it by about 15 L*, so a mid-value ground meets a
+  mid-value horde: the blossom's first pink stone (L* 55 empty) measured
+  |dL*| 0-3. Its fighting ground is pale white stone, and its pink is in the
+  canopies and edge bands
+  ([env-blossom](../../demo3d/evidence/look/env-blossom/README.md)).
 - **Its own placement list.** The player and the stress scenes resolve the
   environment's layout before building the timeline, so monsters walk round
   its own blocking pieces.

@@ -1,0 +1,276 @@
+{
+  "note": ["The blossom environment (ps-bop.3.9: a cherry-blossom temple at dusk; mid-value pink): the arena's area plan in POLYGON Samurai's temple grounds: cherry trees and bamboo groves for the forest, bushes, bamboo, stone lanterns, zen rocks and Elven Realm's white statues and lamp posts for the edge bands, flowers and stepping stones on pale white-stone fighting ground, a petal-pink floor under the trees. A great cherry tree for the glowing tree, a ring of stone lanterns, a shrine with its guardian lions for the graveyard, bamboo fences for the ruin walls and the courtyard (Elven statues on plinths at its corners), stone braziers in the brazier glade, a torii at the opening. A soft rose key on the set and a white one on the horde, a mauve skylight, warm lantern pools, rose fog and a mauve grade. Its palette and findings: demo3d/evidence/look/env-blossom/README.md. Format: arena-layout.json's note, Environments."],
+  "extends": "arena",
+  "ground": {"forest": [0.7, 0.5, 0.58], "edge": [0.82, 0.62, 0.7], "clearing": [0.86, 0.82, 0.81], "path": [0.82, 0.77, 0.76]},
+  "lighting": {
+    "moon": {"color": [1.0, 0.88, 0.86], "intensity": 0.7},
+    "ambient": {"sky": [0.7, 0.58, 0.66], "equator": [0.64, 0.5, 0.56], "ground": [0.5, 0.38, 0.42]},
+    "fog": {"color": [0.66, 0.5, 0.6]},
+    "kitValue": {"PolygonSamurai": 1.15, "PolygonElven": 0.7},
+    "crowd": {"rim": [0.32, 0.3, 0.42], "keyColor": [1.0, 1.0, 1.0], "fill": 0.15, "key": 1.5},
+    "hero": {"intensity": 6, "color": [1.0, 0.86, 0.76]},
+    "vignette": {"intensity": 0.3, "color": [0.22, 0.1, 0.18]},
+    "post": {
+      "exposure": 0.42,
+      "saturation": 22,
+      "grade": {"shadow": [1.02, 0.95, 1.05], "mid": [1.0, 1.0, 1.0], "high": [1.0, 0.98, 0.98]}
+    },
+    "flames": {
+      "props": {
+        "samurai/SM_Prop_StoneBrazier_02": {
+          "heightM": 1.0,
+          "rangeM": 9,
+          "intensity": 3.2,
+          "color": [1.0, 0.52, 0.22],
+          "pool": {"radiusM": 3.0, "intensity": 0.3}
+        }
+      }
+    },
+    "glow": {
+      "elven/SM_Env_Tree_Glowing_01": null,
+      "samurai/SM_Env_Tree_04": {
+        "heightM": 3,
+        "rangeM": 16,
+        "intensity": 6,
+        "color": [1.0, 0.55, 0.75],
+        "pool": {"radiusM": 7.0, "intensity": 0.25}
+      },
+      "samurai/SM_Prop_Stone_Lantern_02": {
+        "heightM": 1.2,
+        "rangeM": 6,
+        "intensity": 2.2,
+        "color": [1.0, 0.68, 0.38],
+        "pool": {"radiusM": 2.2, "intensity": 0.25}
+      },
+      "samurai/SM_Prop_Zen_Lantern_01": {
+        "heightM": 0.7,
+        "rangeM": 4,
+        "intensity": 1.2,
+        "color": [1.0, 0.68, 0.38],
+        "pool": {"radiusM": 1.5, "intensity": 0.22}
+      },
+      "elven/SM_Prop_Lamp_Post_02": {
+        "heightM": 4.0,
+        "rangeM": 7,
+        "intensity": 2,
+        "color": [0.82, 0.78, 1.0],
+        "pool": {"radiusM": 2.4, "intensity": 0.2}
+      },
+      "elven/SM_Prop_Lamp_Post_04": {
+        "heightM": 4.4,
+        "rangeM": 7,
+        "intensity": 2,
+        "color": [0.82, 0.78, 1.0],
+        "pool": {"radiusM": 2.4, "intensity": 0.2}
+      }
+    }
+  },
+  "atmosphere": {
+    "mist": {"color": [0.85, 0.66, 0.76]},
+    "runes": {
+      "circles": [
+        {"at": [44, 40], "radiusM": 8.6, "color": [1.0, 0.45, 0.6], "intensity": 0.06},
+        {"at": [0, 16], "radiusM": 4.6, "color": [1.0, 0.45, 0.6], "intensity": 0.06},
+        {"at": [12, -25], "radiusM": 5.4, "color": [1.0, 0.6, 0.4], "intensity": 0.06}
+      ]
+    }
+  },
+  "props": {
+    "forest-trees": {
+      "samurai/SM_Env_Tree_01": 1.0,
+      "samurai/SM_Env_Tree_02": 1.6,
+      "samurai/SM_Env_Tree_03": 2.0,
+      "samurai/SM_Env_Bamboo_Group_01": 0.1,
+      "samurai/SM_Env_Bamboo_Group_02": 0.1,
+      "samurai/SM_Env_Bamboo_Group_03": 0.1
+    },
+    "forest-rocks": {"samurai/SM_Env_Rock_Large_01": 1, "samurai/SM_Env_Rock_Large_02": 1, "samurai/SM_Env_Rock_Large_03": 1, "samurai/SM_Env_Rock_Large_04": 1},
+    "edge-plants": {
+      "samurai/SM_Env_Bush_01": 1.2,
+      "samurai/SM_Env_Bush_02": 1.5,
+      "samurai/SM_Env_Bush_03": 1.5,
+      "samurai/SM_Env_Bamboo_Tree_01": 0.4,
+      "samurai/SM_Env_Bamboo_Tree_02": 0.4,
+      "samurai/SM_Env_Bamboo_Tree_03": 0.4,
+      "samurai/SM_Env_Bamboo_Group_01": 0.3,
+      "samurai/SM_Env_Bamboo_Group_02": 0.3,
+      "samurai/SM_Prop_Stone_Lantern_01": 0.5,
+      "samurai/SM_Prop_Zen_Lantern_01": 0.4,
+      "samurai/SM_Env_Zen_Rock_01": 0.4,
+      "samurai/SM_Env_Zen_Rock_02": 0.4,
+      "samurai/SM_Env_Rock_02": 0.8,
+      "samurai/SM_Env_Rock_03": 0.8,
+      "samurai/SM_Prop_Pot_06": 0.2,
+      "samurai/SM_Prop_Pot_07": 0.2,
+      "samurai/SM_Prop_Basket_Rice_01": 0.2,
+      "samurai/SM_Prop_Bonsai_01": 0.2,
+      "samurai/SM_Prop_Fence_Bamboo_01": 0.3,
+      "samurai/SM_Prop_Statue_Lion_01": 0.1,
+      "elven/SM_Prop_Statue_03": 0.1,
+      "elven/SM_Prop_Statue_04": 0.1,
+      "elven/SM_Prop_Statue_06": 0.1,
+      "elven/SM_Prop_Lamp_Post_02": 0.2,
+      "elven/SM_Prop_Lamp_Post_04": 0.2
+    },
+    "edge-soft": {
+      "samurai/SM_Env_Flowers_01": 2,
+      "samurai/SM_Env_Flowers_02": 2,
+      "samurai/SM_Env_Tulips_01": 0.4,
+      "samurai/SM_Env_Tulips_02": 0.4,
+      "samurai/SM_Env_Plant_01": 1,
+      "samurai/SM_Env_Plant_02": 1,
+      "samurai/SM_Env_Plant_03": 1,
+      "samurai/SM_Env_Rock_01": 1
+    },
+    "clutter": {"samurai/SM_Env_Flowers_01": 1, "samurai/SM_Env_Flowers_02": 0.6, "samurai/SM_Env_SteppingStone_01": 0.3, "samurai/SM_Prop_StoneCircle_01": 0.15},
+    "ruin-walls": {"samurai/SM_Bld_Block_01": 1},
+    "ground-dressing": {"samurai/SM_Env_Flowers_01": 1, "samurai/SM_Env_Flowers_02": 0.5, "samurai/SM_Env_SteppingStone_01": 0.15}
+  },
+  "scatter": {
+    "forest": [
+      {"props": "forest-trees", "spacingM": 4.5, "scale": [0.9, 1.3]},
+      {"props": "forest-rocks", "spacingM": 14, "scale": [0.3, 0.55], "chance": 0.6}
+    ],
+    "edge": [
+      {"props": "edge-plants", "spacingM": 2.6, "scale": [0.9, 1.25]},
+      {"props": "edge-soft", "spacingM": 2.0, "scale": [0.9, 1.3]},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 2.4, "scale": [1.0, 1.5]}
+    ],
+    "path": [
+      {"props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.4], "chance": 0.25},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.2, "scale": [1.0, 1.4], "chance": 0.3}
+    ],
+    "clearing": [
+      {"props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.4], "chance": 0.25},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.6, "scale": [1.0, 1.4], "chance": 0.3}
+    ]
+  },
+  "pieces": {
+    "glowing-tree": [
+      {"prop": "samurai/SM_Env_Tree_04", "at": [0, 0], "yawDeg": 30, "scale": 0.85},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [3.4, -2.8], "yawDeg": 70, "scale": 1.2},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-3.4, 2.4], "yawDeg": 10, "scale": 1.2},
+      {"prop": "samurai/SM_Prop_Zen_Lantern_01", "at": [2.6, 2.8], "yawDeg": 210},
+      {"prop": "elven/SM_Prop_Statue_06", "at": [-2.6, -2.2], "yawDeg": 160}
+    ],
+    "glowing-tree-flowers": [
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [4.2, 0.0], "yawDeg": 0, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [2.62, 3.28], "yawDeg": 47, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-0.93, 4.09], "yawDeg": 94, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-3.78, 1.82], "yawDeg": 141, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-3.78, -1.82], "yawDeg": 188, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-0.93, -4.09], "yawDeg": 235, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [2.62, -3.28], "yawDeg": 282, "scale": 1.3}
+    ],
+    "crystal-ring": [
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [7.0, 0.0], "yawDeg": 90, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [3.5, 6.06], "yawDeg": 30, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-3.5, 6.06], "yawDeg": 330, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-7.0, 0.0], "yawDeg": 270, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-3.5, -6.06], "yawDeg": 210, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [3.5, -6.06], "yawDeg": 150, "scale": 1.5}
+    ],
+    "graveyard": [
+      {"prop": "samurai/SM_Bld_Temple_Base_Small_01", "at": [3, 1], "yawDeg": 90, "scale": 1.3},
+      {"prop": "samurai/SM_Bld_Temple_Roof_Small_02", "at": [3, 1], "yawDeg": 90, "scale": 1.3},
+      {"prop": "samurai/SM_Prop_Statue_Lion_01", "at": [-0.4, 3.4], "yawDeg": 270},
+      {"prop": "samurai/SM_Prop_Statue_Lion_01", "at": [-0.4, -1.4], "yawDeg": 270},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-1.6, 5.4], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [-1.6, -3.4], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_Pot_06", "at": [-0.2, 1.0], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_Gong_01", "at": [6.5, -4.5], "yawDeg": 40},
+      {"prop": "samurai/SM_Env_Tree_02", "at": [7.5, 5.5], "yawDeg": 200},
+      {"prop": "samurai/SM_Prop_Flag_02", "at": [1.5, 7.2], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_Flag_04", "at": [4.5, 7.2], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_Bonsai_01", "at": [6.4, 1.0], "yawDeg": 30}
+    ],
+    "ruins-gate": [
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [10.3, -1.2], "yawDeg": 0, "scale": 1.3},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [17.7, -1.2], "yawDeg": 0, "scale": 1.3},
+      {"prop": "samurai/SM_Prop_Statue_Lion_01", "at": [0.5, -2.2], "yawDeg": 190},
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [27, 1.6], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_07", "at": [27, 1.6], "yawDeg": 180, "liftM": 0.85}
+    ],
+    "courtyard": [
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [-8, -8], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_05", "at": [-8, -8], "yawDeg": 225, "liftM": 0.85},
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [8, -8], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_03", "at": [8, -8], "yawDeg": 135, "liftM": 0.85},
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [8, 8], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_05", "at": [8, 8], "yawDeg": 45, "liftM": 0.85},
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [-8, 8], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_03", "at": [-8, 8], "yawDeg": 315, "liftM": 0.85}
+    ],
+    "courtyard-circle": [
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [3.4, 0.0], "yawDeg": 0, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [2.75, 2.0], "yawDeg": 47, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [1.05, 3.23], "yawDeg": 94, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [-1.05, 3.23], "yawDeg": 141, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-2.75, 2.0], "yawDeg": 188, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [-3.4, 0.0], "yawDeg": 235, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-2.75, -2.0], "yawDeg": 282, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [-1.05, -3.23], "yawDeg": 329, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [1.05, -3.23], "yawDeg": 16, "scale": 1.1},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [2.75, -2.0], "yawDeg": 63, "scale": 1.1},
+      {"prop": "samurai/SM_Prop_StoneCircle_01", "at": [0, 0], "yawDeg": 0, "scale": 2.0}
+    ],
+    "brazier-glade": [
+      {"prop": "samurai/SM_Prop_StoneBrazier_02", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "samurai/SM_Prop_StoneBrazier_02", "at": [0, 5.5], "yawDeg": 90},
+      {"prop": "samurai/SM_Prop_StoneBrazier_02", "at": [-5.5, 0], "yawDeg": 180},
+      {"prop": "samurai/SM_Prop_StoneBrazier_02", "at": [0, -5.5], "yawDeg": 270},
+      {"prop": "samurai/SM_Prop_Gong_02", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "elven/SM_Prop_Statue_Plinth_03", "at": [6, 7], "yawDeg": 0},
+      {"prop": "elven/SM_Prop_Statue_08", "at": [6, 7], "yawDeg": 200, "liftM": 0.85}
+    ],
+    "opening-ruin": [
+      {"prop": "samurai/SM_Env_Archway_01", "at": [0, 0], "yawDeg": 215, "scale": 1.5},
+      {"prop": "samurai/SM_Prop_Statue_Lion_02", "at": [-4.2, -2.4], "yawDeg": 215},
+      {"prop": "samurai/SM_Prop_Statue_Lion_02", "at": [-1.2, -6.4], "yawDeg": 215},
+      {"prop": "samurai/SM_Prop_Stone_Lantern_02", "at": [3.5, 4.0], "yawDeg": 35, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Tree_03", "at": [6.5, -2.5], "yawDeg": 120}
+    ],
+    "fairy-ring": [
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [9.78, 2.08], "yawDeg": 47, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [9.14, 4.07], "yawDeg": 94, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [8.09, 5.88], "yawDeg": 141, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [6.69, 7.43], "yawDeg": 188, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [5.0, 8.66], "yawDeg": 235, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [3.09, 9.51], "yawDeg": 282, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [1.05, 9.95], "yawDeg": 329, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-1.05, 9.95], "yawDeg": 16, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-3.09, 9.51], "yawDeg": 63, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-5.0, 8.66], "yawDeg": 110, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-6.69, 7.43], "yawDeg": 157, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-8.09, 5.88], "yawDeg": 204, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-9.14, 4.07], "yawDeg": 251, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-9.78, 2.08], "yawDeg": 298, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-10.0, 0.0], "yawDeg": 345, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-9.78, -2.08], "yawDeg": 32, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-9.14, -4.07], "yawDeg": 79, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-8.09, -5.88], "yawDeg": 126, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-6.69, -7.43], "yawDeg": 173, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [-5.0, -8.66], "yawDeg": 220, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [-3.09, -9.51], "yawDeg": 267, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [-1.05, -9.95], "yawDeg": 314, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [1.05, -9.95], "yawDeg": 1, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [3.09, -9.51], "yawDeg": 48, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [5.0, -8.66], "yawDeg": 95, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [6.69, -7.43], "yawDeg": 142, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_02", "at": [8.09, -5.88], "yawDeg": 189, "scale": 1.3},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [9.14, -4.07], "yawDeg": 236, "scale": 1.3},
+      {"prop": "samurai/SM_Env_Flowers_01", "at": [9.78, -2.08], "yawDeg": 283, "scale": 1.3}
+    ],
+    "path-stones": [
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [0.0, 0.0], "yawDeg": 0},
+      {"prop": "samurai/SM_Env_SteppingStone_03", "at": [0.73, 1.18], "yawDeg": 37},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [1.46, 2.36], "yawDeg": 74},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [2.19, 3.54], "yawDeg": 111},
+      {"prop": "samurai/SM_Env_SteppingStone_03", "at": [2.92, 4.72], "yawDeg": 148},
+      {"prop": "samurai/SM_Env_SteppingStone_01", "at": [3.65, 5.9], "yawDeg": 185},
+      {"prop": "samurai/SM_Env_SteppingStone_02", "at": [4.38, 7.08], "yawDeg": 222},
+      {"prop": "samurai/SM_Env_SteppingStone_03", "at": [5.11, 8.26], "yawDeg": 259}
+    ]
+  }
+}

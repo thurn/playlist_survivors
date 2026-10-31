@@ -350,7 +350,8 @@ namespace Demo3D.Tests
             foreach (var g in c.Groups.Values) foreach (var prop in g.Props) Assert.That(fp[prop], Is.Not.Null, prop + " is a measured kit piece");
 
             var e = Assert.Throws<ArgumentException>(() => ArenaEnvironment.Load("nope"));
-            StringAssert.Contains("forest, crypt", e.Message, "an unknown environment lists the known ones");
+            StringAssert.Contains("one of forest, ", e.Message, "an unknown environment lists the known ones, the forest first");
+            StringAssert.Contains("crypt", e.Message);
         }
 
         /// <summary>The player's path (PlaybackData.EnvironmentLayout) resolves an environment as the bakers do, and fails on an unknown one.</summary>

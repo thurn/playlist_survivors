@@ -3566,6 +3566,20 @@
     },
     {
       "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Lamp_Post_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "0577c88f7fb81034fa86b0d9d3123503",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Lamp_Post_04.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8de288f06d874624a9a5abc531253b7a",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
       "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Lantern_01.prefab",
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
       "guid": "870704362dcf6224ba95b23f0ad2b2f7",
@@ -3591,6 +3605,55 @@
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
       "guid": "46b635a159bc5e84c8930a815e3720dc",
       "use": "kit: elven lamps, shrines and wells (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "9bd71b0348873c74d9193a02559659ba",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_04.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "a4df6b2dd66079841b29fb20f5ea9681",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_05.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8bd777b29d765a34a8257a5b450db63b",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_06.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "818d2ccb889bc474f9f7b01573f0db81",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_07.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "69d54e100b50a1d4496da3ea101f5206",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_08.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "2ac750acc98db004e8a3bbd3b390f725",
+      "use": "kit: blossom statues and lamps"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Props/SM_Prop_Statue_Plinth_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "5cec9442f6f8adf44aa3a7370c674b54",
+      "use": "kit: blossom statues and lamps"
     },
     {
       "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
@@ -3787,6 +3850,370 @@
       "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
       "guid": "a7b97d24ba2370040ba159577de7b931",
       "use": "hero: sword and shield"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Buildings/SM_Bld_Block_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "9b03bcaec6bdf4a419f2aca4afd239c9",
+      "use": "kit: blossom walls"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Buildings/SM_Bld_Temple_Base_Small_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "0f1d1fa774f34b4458bf0ee3c2476096",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Buildings/SM_Bld_Temple_Roof_Small_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "80b9c5a722593c54ba5274472cec3e9c",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Archway_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "eee7d30a1967a4b4283d35b0dbddc6d0",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Group_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "4fea5a90bb0cca941a178051e6ea4b54",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Group_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "c3f8f1a1e2a428a4caaa99166d9b94fe",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Group_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "c82b63a254bfc9e40bcf435672db5919",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Tree_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "4eccd96fd5d470a4ebcf08d6be459c23",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Tree_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "e65196b926c4fd64aabaac8bda5066a5",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bamboo_Tree_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "49e18fe0af1663a4ab219069d3080ab1",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bush_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8c701e5c327022a4ebdc63a77af08f17",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bush_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "bf927057f20014040b17e9dcc8dd8ecb",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Bush_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "7189dbbe71d3f654c9b61871602d64f2",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Flowers_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "e7b4dccb938d3a445bfc764b94a93230",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Flowers_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8264d38330b69044a8a7dff1b33b4fa7",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Plant_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "ec9fba5daf2bc864ab90c7a3e935acae",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Plant_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "5c21d3ac5e1ee174aa93596412fe09bd",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Plant_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "cf1e291b54d6c80499a660fa10ec0906",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "f8624e5be3abfc240a2fe78522a9a0d2",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "9b07d3f75bc828a419183410854772fb",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "76516cbc5c8406e4786a17be3ba845ed",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_Large_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "1113625db48b7c5488c4e88ee69bfab0",
+      "use": "kit: blossom rocks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_Large_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "9e9a29f29089ccd489eb5a42f847c637",
+      "use": "kit: blossom rocks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_Large_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8b5dd1b6a17bdea4993b38cc660e9240",
+      "use": "kit: blossom rocks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Rock_Large_04.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "a868a7c36da415147a7eaa14f3ba7577",
+      "use": "kit: blossom rocks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_SteppingStone_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "accfc68d2a56fbe4a939df14dd3999bf",
+      "use": "kit: blossom ground dressing"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_SteppingStone_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "9d442dbeb186c044cbef98f75585b818",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_SteppingStone_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "c14fb016084df564595efe3fe51fd084",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tree_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "d87f80d13c8f1ac4e8d5a2a5f23d6df8",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tree_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "e5e4bafcab767fc459df0280771e3a88",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tree_03.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "c8d48f4ada079cc42a6c3a3102ceb41b",
+      "use": "kit: blossom trees"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tree_04.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "5a4e7db6b5d138a48ac28d3c085acb34",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tulips_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "625541a65d7179346a2fac339f4d3f34",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Tulips_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "e6fad05c4d5f2224aaa5c991267146d3",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Zen_Rock_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "0ad7f7dca307ee44fb676681d485fdc1",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Environments/SM_Env_Zen_Rock_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "65324a7a5178ed74298315e8b36fa9cd",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Basket_Rice_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "d7437717dda0b51419261499e61514fc",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Bonsai_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "05e8923a74a854c4b909410b26f8df25",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Fence_Bamboo_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "fa51b0519cc3f354fb4c18210bb05785",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Flag_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "59b8e56c411d498419db54e979d49875",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Flag_04.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "f6a4c13be7c8fc4419af1757ac773720",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Gong_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "1f190ff0fa2569b4eae237b58389b2e9",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Gong_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "57bcca543177dd54d8b39d1fa8fa8aa6",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Pot_06.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "f377bf2d0bd778443b66a4a960eb1da0",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Pot_07.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "f5619f0bb223dd74aa46cc34b0ab1ec9",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Statue_Lion_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8ffef2fef90a42b4bab49414163462f1",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Statue_Lion_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "fa861eb01830e9947a3966355fb0b3e5",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Stone_Lantern_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "f352c7194638a9645bc269c1d5ffe120",
+      "use": "kit: blossom edge bands"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Stone_Lantern_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8b499951a29658b4cb6bfdb4cb51be98",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_StoneBrazier_02.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "8334f17c91a51c04094168cdf3781322",
+      "use": "kit: blossom landmarks"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_StoneCircle_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "304f789bdbef1dc4c9548e3a2ede9d97",
+      "use": "kit: blossom ground dressing"
+    },
+    {
+      "source": "synty:POLYGON_Samurai_Unity_2021_3_v1_6_1.unitypackage.gz",
+      "path": "Assets/PolygonSamurai/Prefabs/Props/SM_Prop_Zen_Lantern_01.prefab",
+      "sourceSha256": "9873fe8a47927f0ee2517e6b96e1a1a2ed2acf177f44cabf8c98af497e022359",
+      "guid": "818768066fc8dd249abcffd8f584465e",
+      "use": "kit: blossom edge bands"
     },
     {
       "source": "synty:POLYGON_SciFi_City_Unity_2021_3_v1_2_4.unitypackage.gz",
