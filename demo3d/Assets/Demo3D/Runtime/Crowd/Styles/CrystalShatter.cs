@@ -37,7 +37,7 @@ namespace Demo3D.Runtime.Crowd
     {
         public const float Step = 1f / 120f;
         public const int MaxStepsPerFrame = 12; // a long hitch drops time rather than stalling
-        public const float LingerSeconds = 5f, SinkSeconds = 1.2f;
+        public const float LingerSeconds = 1.2f, SinkSeconds = 0.6f; // short, so piles never bury the hero
         public const float SelfIgnoreSeconds = 0.35f;
         public const float Density = 2600f; // kg/m³, glass
         public const float GravityScale = 2.2f;

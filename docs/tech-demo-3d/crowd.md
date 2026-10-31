@@ -247,8 +247,9 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     where they stand (the legs fold under the body), one in eight flies far, and the largest
     chunks get about half the smallest's share. Small shards spin fastest. Gravity is 2.2 times
     Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on a floor
-    collider under y = 0, and sink after 5 s. The blow also brings the burst: a spray of bright
-    chips and crystal dust along the blow with a flash of light in place of the death burst
+    collider under y = 0, and sink after 1.2 s (over 0.6 s). They linger only that long so the
+    piles never bury the hero (at 5 s they hid the hero under neon and cost most of the frame).
+    The blow also brings the burst: a spray of bright chips and crystal dust along the blow with a flash of light in place of the death burst
     ([effects.md](effects.md#the-look)), and a layered glass break pitched by the type's size, on
     top of the death cry ([camera-and-sound.md](camera-and-sound.md#sound)). Both are worked out
     from the timeline ahead of time (`CrystalShatter.Breaks`, at each death's impact). Physics
@@ -261,27 +262,26 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   - **Cost** (the Mac's M5 Max, 2026-10-30; the starting point for the scale-up). Beauty came
     first. Each shard is a pooled GameObject with a PhysX rigidbody, a box collider and two
     materials (the surface and its motion-vector twin), and physics steps at 120 Hz. At the song's
-    own density under `--monster-style crystal` (windowless, real time, `--stats`, whose `shards`
-    and `shatterMs` columns are the live shards and the shatter's time, now including posing the
-    chunks at each break): 2,409 deaths shattered, at most
-    14,194 shards live, no errors, 203 s of wall time for the 199 s song.
+    own density under `--monster-style crystal --palette neon` (windowless, real time, `--stats`,
+    whose `shards` and `shatterMs` columns are the live shards and the shatter's time, including
+    posing the chunks at each break): 6,350 deaths shattered, no errors. With the old 5 s linger
+    and 1.2 s sink, at most 16,659 shards were live; with 1.2 s and 0.6 s, 10,919.
 
-    | song time | live shards (mean) | CPU frame (mean / max ms) | of it the shatter (mean ms) |
+    | song time | live shards (mean), 5 s → 1.2 s | CPU frame (mean / max ms) | of it the shatter (mean ms) |
     |---|---:|---:|---:|
-    | 60 | 1,650 | 1.3 / 2.8 | 0.5 |
-    | 113 | 2,020 | 2.2 / 6.5 | 1.3 |
-    | 145 | 3,310 | 1.9 / 5.2 | 0.9 |
-    | 175 | 4,300 | 76 / 367 | 74 |
-    | 197 | 5,550 | 184 / 408 | 181 |
+    | 60 | 5,220 → 1,548 | 198 / 542 → 0.6 / 1.4 | 197 → 0.1 |
+    | 113 | 5,968 → 1,560 | 33 / 93 → 0.7 / 1.7 | 31 → 0.2 |
+    | 145 | 9,029 → 2,818 | 130 / 390 → 4.7 / 27 | 128 → 3.9 |
+    | 175 | 13,981 → 4,545 | 366 / 700 → 12 / 53 | 363 → 11 |
+    | 197 | 7,012 → 4,201 | 252 / 463 → 15 / 106 | 249 → 14 |
 
     The numbers are the mean and max over the 4 s around each time (a sample every 0.5 s), with
-    no frames drawn. Quiet stretches cost about a millisecond; the spikes, up to about 400 ms, are
-    the climax's and the ending's mass kills, where tens of monsters break in one frame (posing
-    each set skins every corner of its chunks, tens of thousands, on the CPU) among thousands of
-    shards on the floor. A real-time run that falls behind also steps physics up to 12 times a
-    frame, so one slow stretch can feed the next: two runs of the same build measured a whole-song
-    shatter mean of 3.8 and 15 ms. Moving the posing and the physics off the main thread, or onto
-    the GPU, is the scale-up epic's.
+    no frames drawn; the whole song's mean CPU frame fell from 127 to 2.9 ms. With the long linger
+    the shards on the floor were most of the cost: a real-time run that falls behind steps physics
+    up to 12 times a frame, so one slow stretch fed the next and the run never caught up. What is
+    left is the climax's and the ending's mass kills, where tens of monsters break in one frame
+    (posing each set skins every corner of its chunks, tens of thousands, on the CPU). Moving the
+    posing and the physics off the main thread, or onto the GPU, is the scale-up epic's.
   - `--shatter-log` logs each break with its song time and place in the view, to find deaths for
     filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
   - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
