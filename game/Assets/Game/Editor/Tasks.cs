@@ -59,8 +59,15 @@ namespace Game.EditorTools
         public static void BakeStructureShards() => Structures.StructureShardBaker.Bake();
 
         /// <summary>
+        /// Copies the sim's content and the level data (Level.LevelBaker) into the gitignored
+        /// Assets/Baked/Level/; after the arena, which writes Content/arena.json.
+        /// </summary>
+        public static void BakeLevel() => Level.LevelBaker.Bake();
+
+        /// <summary>
         /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the crowd, the hero, the
-        /// effects, the sounds and the structures' shards (after the arena, whose sites they cut). Each
+        /// effects, the sounds, the structures' shards (after the arena, whose sites they cut) and the
+        /// level (after the arena, whose level data it copies). Each
         /// baker that finishes appends its name to Assets/Baked/.bakeall-ran, which the tools read back
         /// to record the inputs it baked from. `-only NAME` (repeatable) runs just those.
         /// </summary>
@@ -71,7 +78,7 @@ namespace Game.EditorTools
             Directory.CreateDirectory(BakedRoot);
             foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena), ("Crowd", BakeCrowd), ("Hero", BakeHero),
                          ("Effects", BakeEffects), ("Sounds", BakeSounds),
-                         ("StructureShards", BakeStructureShards) })
+                         ("StructureShards", BakeStructureShards), ("Level", BakeLevel) })
             {
                 if (only.Count > 0 && !only.Contains(name)) continue;
                 Debug.Log("Tasks.BakeAll: running " + name);

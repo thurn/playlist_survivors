@@ -12,6 +12,7 @@ using Game.Client.Music;
 using Game.Client.Sound;
 using Game.Client.Structures;
 using PS.Game.Sim;
+using PS.Game.Sim.Level;
 using UnityEngine;
 
 namespace Game.Client.Loop
@@ -19,7 +20,9 @@ namespace Game.Client.Loop
     /// <summary>
     /// The game's frame loop on the main thread (unity-game.md, Architecture): the music's
     /// entries and the keys into the sim, the sim stepped to the frontier, its events and state
-    /// to the presenters at frameSong. Player flags:
+    /// to the presenters at frameSong. The sim plays the slice's level (<see cref="SliceLevel"/>:
+    /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>.
+    /// Player flags:
     /// - `--file &lt;audio or .m3u&gt;`: plays it through the music plugin, which feeds the sim;
     ///   live, song time is the music's (<see cref="MusicTimes"/>), and the run ends with it;
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
@@ -27,11 +30,13 @@ namespace Game.Client.Loop
     ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
     ///   output is silent, since the music doesn't play in time with these frames;
     /// - `--seed N`: the sim's seed;
-    /// - `--events FILE`: a synthetic event feed beside the sim's (<see cref="ScriptedEvents"/>);
+    /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
+    ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
+    /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
     /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included;
     /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
-    /// - `--loop-out FILE`: writes each frame's times and the sim's hash, as CSV;
+    /// - `--loop-out FILE`: writes each frame's times, the sim's hash, the hero and the enemies alive, as CSV;
     /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
     ///   its bake failed), `--palette NAME` the arena's zone palette;
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
@@ -59,6 +64,8 @@ namespace Game.Client.Loop
         MusicPlayer _music;
         MusicTimes _musicTimes;
         KeyInput _keys;
+        DebugCommands _commands;
+        readonly SliceCounts _counts = new SliceCounts();
         DebugOverlay _overlay;
         LookPresenter _look;
         HeroPresenter _hero;
@@ -119,13 +126,23 @@ namespace Game.Client.Loop
                         MusicPlayer.ScheduleHeadroom, () => AudioSettings.dspTime);
                 }
             }
-            var config = new SimConfig { Seed = (ulong)Math.Max(0, Args.GetInt("--seed", 1)) };
-            Driver = new SimDriver(config, clock);
+            ulong seed = (ulong)Math.Max(0, Args.GetInt("--seed", 1));
             var events = Args.Get("--events");
+            bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
+            var level = LevelBake.Load();
+            var content = level?.Content();
+            var config = new SimConfig { Seed = seed };
+            if (level != null && events == null)
+            {
+                // The spawn ring stays out of the widest view: the loud zoom's, on a screen at least 16:9.
+                float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
+                config = SliceLevel.Config(content, arena ? level.Arena() : null, CameraRig.Footprint(aspect), seed);
+            }
+            Driver = new SimDriver(config, clock);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
             _keys = new KeyInput();
+            _commands = new DebugCommands(Args.Get("--debug"));
 
-            bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
             var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
             Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena, hero: heroBake == null));
             if (heroBake != null)
@@ -135,6 +152,7 @@ namespace Game.Client.Loop
             }
             _look = new LookPresenter(camera, Driver.Sim);
             if (_hero != null) _look.DrawnHero = _hero.Drawn; // the hero presents first, then the camera follows it
+            _look.Zones = content?.Schedule.Zones.Ids;
             Driver.Events.Subscribe(_look);
             if (arena)
             {
@@ -150,7 +168,7 @@ namespace Game.Client.Loop
                 _crowd = new CrowdView(camera);
                 Driver.Events.Subscribe(_crowd);
             }
-            var roles = new RoleLooks(null); // the slice's content arrives with its wiring (ps-msz.3.13)
+            var roles = new RoleLooks(content);
             var library = compute ? EffectLibrary.TryLoad() : null;
             if (library != null)
             {
@@ -161,12 +179,13 @@ namespace Game.Client.Loop
             if (_shatter != null) _shatter.Erupted += Erupted;
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
+            Driver.Events.Subscribe(_counts);
 
             var outPath = Args.Get("--loop-out");
             if (outPath != null)
             {
                 _out = new StreamWriter(Args.Path(outPath));
-                _out.WriteLine("frame,frame_song,frontier,lead,tick,hash,events,hero_x,hero_y");
+                _out.WriteLine("frame,frame_song,frontier,lead,tick,hash,events,hero_x,hero_y,alive");
             }
             var structuresPath = Args.Get("--structures-out");
             if (structuresPath != null && _shatter != null)
@@ -175,7 +194,8 @@ namespace Game.Client.Loop
                 _structuresOut.WriteLine("frame,frame_song,breaks,shards,flying,moved_m,steps,physics_ms,shadow_ms");
             }
             Debug.Log($"GameLoop: {(file != null ? file : "no music")}, {(_fixed ? "fixed time" : "real time")}, " +
-                      $"seed {config.Seed}, events {(events ?? "none")}, headless {headless}");
+                      $"seed {config.Seed}, {(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, " +
+                      $"headless {headless}");
         }
 
         /// <summary>
@@ -227,7 +247,11 @@ namespace Game.Client.Loop
                 else FeedLive();
             }
             // Before the music's anchor no key has a song time: they wait for it.
-            if (Driver.Clock.Ready) _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
+            if (Driver.Clock.Ready)
+            {
+                _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
+                _commands.Apply(Driver.Sim);
+            }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
             var now = new ClockReadings
             {
@@ -295,8 +319,9 @@ namespace Game.Client.Loop
             var t = Driver.Times;
             var hero = Driver.Presented.State.Hero;
             hero.PositionAt(Driver.Presented.Song, out double x, out double y);
-            _out.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2:R},{3:R},{4},{5:X16},{6},{7:R},{8:R}",
-                frame, t.FrameSong, t.Frontier, t.Lead, Driver.Sim.State.Tick, Driver.Sim.Hash, Driver.Sim.EventCount, x, y));
+            _out.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2:R},{3:R},{4},{5:X16},{6},{7:R},{8:R},{9}",
+                frame, t.FrameSong, t.Frontier, t.Lead, Driver.Sim.State.Tick, Driver.Sim.Hash, Driver.Sim.EventCount, x, y,
+                Driver.Sim.State.EnemiesAlive));
         }
 
         void OnApplicationQuit() => Finish(0, null);
@@ -371,6 +396,9 @@ namespace Game.Client.Loop
                 _music != null ? 1000 * _music.Clock.LargestHold : 0, Driver.FramesAtFrontier);
             s += string.Format(c, "; sim step (ms) median {0:F3}, p99 {1:F3}, max {2:F3}",
                 Pct(steps, 0.5), Pct(steps, 0.99), steps[n - 1]);
+            s += string.Format(c, "; enemies alive {0}, {1} killed, {2} heavy strikes, {3} structures broken, {4} regrown, {5} zone changes, " +
+                                  "{6} debug commands", Driver.Sim.State.EnemiesAlive, _counts.Kills, _counts.HeavyStrikes, _counts.Breaks,
+                _counts.Regrowths, _counts.ZoneChanges, _commands.Given);
             if (_effects != null)
                 s += string.Format(c, "; effects {0} spawned ({1} rejected)", _effects.Spawned, _effects.System.RejectedTotal);
             if (_sounds != null)
@@ -379,5 +407,25 @@ namespace Game.Client.Loop
         }
 
         static double Pct(double[] sorted, double p) => sorted[(int)Math.Round(p * (sorted.Length - 1))];
+
+        /// <summary>What the run did, for its summary.</summary>
+        sealed class SliceCounts : IPresenter
+        {
+            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges;
+
+            public void OnEvent(in SimEvent e)
+            {
+                switch (e.Kind)
+                {
+                    case SimEventKind.Death when e.AsDeath.Enemy >= 0: Kills++; break;
+                    case SimEventKind.Attack when e.AsAttack.Attacker == -1 && e.AsAttack.Heavy: HeavyStrikes++; break;
+                    case SimEventKind.StructureBreak: Breaks++; break;
+                    case SimEventKind.Regrowth: Regrowths++; break;
+                    case SimEventKind.ZoneChange: ZoneChanges++; break;
+                }
+            }
+
+            public void Present(in PresentFrame frame) { }
+        }
     }
 }

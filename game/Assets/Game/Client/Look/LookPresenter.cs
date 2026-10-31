@@ -12,7 +12,8 @@ namespace Game.Client.Look
     /// The look each frame (unity-game.md, "Post-processing and Camera"): the fast lane read at
     /// frameSong from the sim's revealed stream, the sim's heavy strikes and breaks as moments, the
     /// night volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
-    /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). Player flags:
+    /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). A zone change
+    /// eases the grade to its zone's from its downbeat (<see cref="PostFeel.SetZone"/>). Player flags:
     /// - `--hero-path`: the camera follows <see cref="SyntheticHero"/>'s square walk instead of the sim's hero;
     /// - `--view-width M`: the view this wide across the ground (close-ups for evidence) in place of the music's width;
     /// - `--camera-out FILE`: each frame's song time, focus, width, punch, shake and post offsets, as CSV.
@@ -45,6 +46,9 @@ namespace Game.Client.Look
         /// <summary>Called each frame with the hero's feet (the arena's hero light and canopy follow them).</summary>
         public Action<Vector3> FollowHero { get; set; }
 
+        /// <summary>The zones' names by the sim's zone index (schedule.json's zone ids), or null to keep the night's grade.</summary>
+        public string[] Zones { get; set; }
+
         public PostFeel Post => _post;
         public CameraRig Rig => _rig;
 
@@ -66,7 +70,13 @@ namespace Game.Client.Look
             }
         }
 
-        public void OnEvent(in SimEvent e) => _moments.OnEvent(e);
+        public void OnEvent(in SimEvent e)
+        {
+            _moments.OnEvent(e);
+            if (e.Kind != SimEventKind.ZoneChange || Zones == null) return;
+            // Bars of four beats at the latest lane's period: the ease's length needn't be exact.
+            _post.SetZone(Zones[e.AsZoneChange.Zone], e.T, 4 * Lane.Period);
+        }
 
         public void Present(in PresentFrame frame)
         {

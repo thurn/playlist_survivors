@@ -294,10 +294,12 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
     shared choreography package, the vendor manifest and the song map. The game's: its arena's
     code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime and
     clip table, the effects' converter and runtime, the sound baker and bank, their selections, the
-    structure shards' baker and asset type, and the vendor manifest."""
+    structure shards' baker and asset type, the level's baker and asset type with the sim's content
+    and level data, and the vendor manifest."""
     if wt.name == "game":
         game = [f for d in GAME_BAKER_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
-        game += [wt.project / f"{f}{m}" for f in (GAME_SOUND_RUNTIME,) + GAME_STRUCTURE_FILES for m in ("", ".meta")]
+        game += [wt.project / f"{f}{m}" for f in (GAME_SOUND_RUNTIME, GAME_LEVEL_RUNTIME) + GAME_STRUCTURE_FILES
+                 for m in ("", ".meta")]
         return game + [wt.project / "Content" / n for n in GAME_BAKER_CONTENT] + [wt.project / "manifest.json"]
     files: list[Path] = []
     demo = wt.project / "Assets" / "Demo3D"
@@ -344,8 +346,9 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
 # writes the level data, game/Content/arena.json, the crowd (CrowdBaker), whose library holds
 # the cast (cast.json, in enemies.json's role order), and the hero (HeroBaker), whose prefab's
 # materials come from the arena's MaterialConverter, the effects (EffectConverter), the sounds
-# (SoundBaker), and the structures' shards (StructureShardBaker), cut from the baked arena's sites
-# with the crowd's shard cutter.
+# (SoundBaker), the structures' shards (StructureShardBaker), cut from the baked arena's sites
+# with the crowd's shard cutter, and the level (LevelBaker): the sim's content and the arena's
+# level data, copied for the player.
 GAME_ARENA_DIRS = ("Assets/Game/Editor/Arena", "Assets/Game/Arena", "Assets/Game/Client/Arena")
 GAME_ARENA_CONTENT = ("arena-layout.json", "footprints.json")
 GAME_CROWD_DIRS = ("Assets/Game/Editor/Crowd", "Assets/Game/Client/Crowd")
@@ -360,10 +363,15 @@ GAME_SOUND_CONTENT = ("sounds.json",)
 GAME_STRUCTURE_DIRS = ("Assets/Game/Editor/Structures",)
 # The asset the shard baker writes, and the crowd's shard cutter it calls.
 GAME_STRUCTURE_FILES = ("Assets/Game/Client/Structures/StructureShards.cs", "Assets/Game/Editor/Crowd/CrowdShardBaker.cs")
+GAME_LEVEL_DIRS = ("Assets/Game/Editor/Level",)
+GAME_LEVEL_RUNTIME = "Assets/Game/Client/Loop/LevelBake.cs"  # the asset the level baker writes
+# GameContent.Files and the level data (arena.json, which the arena's bake rewrites).
+GAME_LEVEL_CONTENT = ("enemies.json", "cast.json", "weapons.json", "passives.json", "offers.json", "progression.json",
+                      "schedule.json", "arena.json")
 GAME_BAKER_DIRS = (GAME_ARENA_DIRS + GAME_CROWD_DIRS + GAME_HERO_DIRS + GAME_EFFECT_DIRS + GAME_SOUND_DIRS
-                   + GAME_STRUCTURE_DIRS)
-GAME_BAKER_CONTENT = (GAME_ARENA_CONTENT + GAME_CROWD_CONTENT + GAME_HERO_CONTENT + GAME_EFFECT_CONTENT
-                      + GAME_SOUND_CONTENT)
+                   + GAME_STRUCTURE_DIRS + GAME_LEVEL_DIRS)
+GAME_BAKER_CONTENT = tuple(dict.fromkeys(GAME_ARENA_CONTENT + GAME_CROWD_CONTENT + GAME_HERO_CONTENT + GAME_EFFECT_CONTENT
+                                         + GAME_SOUND_CONTENT + GAME_LEVEL_CONTENT))
 GAME_BAKER_ARENA = tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + tuple(f"game/Content/{n}" for n in GAME_ARENA_CONTENT)
 GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": GAME_BAKER_ARENA,
@@ -375,6 +383,8 @@ GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
               tuple(f"game/Content/{n}" for n in GAME_SOUND_CONTENT),
     "StructureShards": tuple(f"game/{d}/*" for d in GAME_STRUCTURE_DIRS) + tuple(f"game/{f}*" for f in GAME_STRUCTURE_FILES) +
                        GAME_BAKER_ARENA,
+    "Level": tuple(f"game/{d}/*" for d in GAME_LEVEL_DIRS) + (f"game/{GAME_LEVEL_RUNTIME}*",) +
+             tuple(f"game/Content/{n}" for n in GAME_LEVEL_CONTENT) + GAME_BAKER_ARENA,
 }
 
 

@@ -16,10 +16,11 @@ Boot runs the loop unless `--spike` or `--spike-out` asks for the sync spike.
 | `--file <audio or .m3u>` | the music through the plugin; live, song time is the music's and the run ends with it |
 | `--fixed-time` | song time is the frame's, n/60 at frame n; with `--file`, each frame waits until the plugin's analysis covers its frontier and entries are known exactly at stamp + B; the output is silent |
 | `--seed N` | the sim's seed |
-| `--events FILE` | a scripted event feed beside the sim's: JSON lines of `{"kind", "t", "i": [...], "d": [...]}` in SimEvent's slots ([ring-128.jsonl](ring-128.jsonl) is one) |
+| `--events FILE` | a scripted event feed in place of the slice's horde and sword (since ps-msz.3.13): JSON lines of `{"kind", "t", "i": [...], "d": [...]}` in SimEvent's slots ([ring-128.jsonl](ring-128.jsonl) is one) |
+| `--debug "change@20,accent@12,break@15,regrow@30"`, F5 to F8 | the slice's debug hooks at song times, or by key: a section change, an accent, break the structures near the hero, regrow the broken ones ([slice](../slice/README.md)) |
 | `--overlay` | starts with the debug overlay shown; F3 toggles it |
 | `--headless` | silent output, 60 frames per second. Unity's player also takes it as -nographics, so stills run under `--fixed-time` without it |
-| `--loop-out FILE` | each frame's frameSong, frontier, lead, tick, the sim's hash and event count, and the hero's position, as CSV |
+| `--loop-out FILE` | each frame's frameSong, frontier, lead, tick, the sim's hash and event count, the hero's position and the enemies alive, as CSV |
 | `--seconds N` | quits after N seconds (Boot) |
 | `--no-arena`, `--palette NAME` | the placeholder plane instead of the baked arena; the arena's zone palette |
 | `--hero-path` | the camera follows a synthetic square walk instead of the sim's hero |

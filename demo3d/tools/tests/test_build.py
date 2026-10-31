@@ -153,15 +153,15 @@ def test_the_game_bakes_its_arena_when_the_layout_changes_and_its_hero_when_the_
     assert setup.record_ran(wt) == list(setup.GAME_BAKER_INPUTS)
     assert setup.baked(wt)
     layout.write_text('{"seed": 8}')
-    # The shards are cut from the baked arena's sites, so they follow it.
-    assert setup.stale_bakers(wt) == ["Arena", "StructureShards"]
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\nStructureShards\n")
+    # The shards are cut from the baked arena's sites, and the level copies its level data, so they follow it.
+    assert setup.stale_bakers(wt) == ["Arena", "StructureShards", "Level"]
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nStructureShards\nLevel\n")
     setup.record_ran(wt)
     clips.write_text('{"heightM": 2}')
     assert setup.stale_bakers(wt) == ["Hero"]
 
 
-def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
+def test_the_game_bakes_its_crowd_and_level_when_the_cast_changes(tmp_path: Path) -> None:
     wt = paths.Worktree(tmp_path, "game")
     (wt.project / "Content").mkdir(parents=True)
     cast = wt.project / "Content" / "cast.json"
@@ -170,7 +170,7 @@ def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
     (wt.baked / setup.BAKED_RAN).write_text("".join(f"{n}\n" for n in setup.GAME_BAKER_INPUTS))
     setup.record_ran(wt)
     cast.write_text('{"cast": []}')
-    assert setup.stale_bakers(wt) == ["Crowd"]
+    assert setup.stale_bakers(wt) == ["Crowd", "Level"]  # the crowd's looks, and the sim's content in the player
 
 
 def test_a_bakeall_through_the_tools_records_what_it_ran(monkeypatch, wt) -> None:
