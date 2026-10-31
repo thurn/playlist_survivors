@@ -30,8 +30,9 @@ namespace Game.Client.Look
     /// known if that is later. From them come the drum-band envelopes, the kick's anticipation about
     /// 90 ms ahead, a drop's build-up in the 1.6 s before it, the beat's pulse, the energy and
     /// loudness, and the accents (strong onsets, as native's flashes) and drops (loudness jumps),
-    /// which it adds to the feel's moments as it learns them. Reading at a song time is a function of the revealed stream, so
-    /// fixed-time frames reproduce. Nothing is allocated per frame once its lists have grown.
+    /// which it adds to the feel's moments as it learns them. Nothing shows, or is anticipated, before
+    /// its entry's known_at: reading at a song time is a function of the entries known by then, not of
+    /// how far the frontier ran ahead, so fixed-time frames and replays reproduce. Nothing is allocated per frame once its lists have grown.
     /// </summary>
     public sealed class FastLane
     {
@@ -138,13 +139,13 @@ namespace Game.Client.Look
                 var t = ticks[k].AsTick;
                 double age = s - t.T;
                 if (age >= LevelS) break;
+                if (log.KnownAt(EntryKind.Tick, k) > s + 1e-9) continue;
                 if (age < 0)
                 {
                     double strong = (t.Kick - KickPreFloor) / (1 - KickPreFloor);
                     f.KickPre = Math.Max(f.KickPre, Pre(strong, -age));
                     continue;
                 }
-                if (log.KnownAt(EntryKind.Tick, k) > s + 1e-9) continue;
                 level += (int)t.Level;
                 levelN++;
                 if (age < EnergyS) { energy += t.Energy; energyN++; }
@@ -167,13 +168,13 @@ namespace Game.Client.Look
                 double age = s - o.T;
                 if (age >= EnvelopeWindowS) break;
                 if (age < -AnticipateS || !o.HasBand) continue;
+                // A late-known onset shows from when it became known, never back-dated or anticipated before.
+                if (log.KnownAt(EntryKind.Onset, j) > s + 1e-9) continue;
                 if (age < 0)
                 {
                     if (o.Band == DrumBand.Kick) f.KickPre = Math.Max(f.KickPre, Pre(_shares[j], -age));
                     continue;
                 }
-                // A late-known onset shows from when it became known, never back-dated.
-                if (log.KnownAt(EntryKind.Onset, j) > s + 1e-9) continue;
                 switch (o.Band)
                 {
                     case DrumBand.Kick: f.Kick = Math.Max(f.Kick, Hit(_shares[j], age, KickDecayS)); break;
@@ -183,14 +184,14 @@ namespace Game.Client.Look
             }
         }
 
-        /// <summary>The next drop already known: its build, easing in, as strong as the jump.</summary>
+        /// <summary>The next drop known by <paramref name="s"/>: its build, easing in, as strong as the jump.</summary>
         static void ReadJumps(BeliefLog log, double s, ref LaneFrame f)
         {
             var jumps = log.Revealed(EntryKind.Jump);
             for (int j = 0; j < jumps.Length; j++)
             {
                 var jump = jumps[j].AsJump;
-                if (jump.T <= s || jump.T - s >= DropRiseS || jump.Db < DropDb) continue;
+                if (jump.T <= s || jump.T - s >= DropRiseS || jump.Db < DropDb || log.KnownAt(EntryKind.Jump, j) > s + 1e-9) continue;
                 double u = 1 - (jump.T - s) / DropRiseS;
                 f.Rise = Math.Min(1, jump.Db / 12) * u * u * (3 - 2 * u);
                 break;

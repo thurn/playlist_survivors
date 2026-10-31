@@ -8,7 +8,7 @@ namespace Game.Client.Look
     /// The night post stack moving with the live stream (unity-game.md, "Post-processing and
     /// Camera"), demo3d's PostFeel with the song map replaced by the fast lane and the sim's events:
     /// - every beat: an exposure and bloom pulse and a vignette breath, decaying over the beat
-    ///   (<see cref="LaneFrame.Pulse"/>, only while the beat is reliable);
+    ///   (<see cref="LaneFrame.Pulse"/>: full on a reliable beat, softer below the gate);
     /// - accents, heavy strikes, breaks and drops (<see cref="FeelMoments"/>): an exposure flash, a
     ///   chromatic-aberration burst and a saturation spike, gone within a beat;
     /// - a drop's build-up (<see cref="LaneFrame.Rise"/>): exposure, bloom and saturation rising

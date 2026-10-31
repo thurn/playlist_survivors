@@ -1557,9 +1557,11 @@ placeholder plane); evidence in game/evidence/look/feel/.
 
 - The fast lane (`FastLane`, native's lane.rs) reads the sim's revealed
   entries, known by the frontier, so about 2.45 s before they sound, and
-  shows each at `max(t, known_at)`. The beat pulses at full on reliable
-  beats and at 0.6 on beats known ahead but below the gate (house-128's
-  evidence hovers at the gate).
+  shows each at `max(t, known_at)`; nothing is anticipated (a kick's
+  lead-in, a drop's build) before its `known_at` either, so a frame depends
+  only on the entries known by its song time, never on the lead. The beat
+  pulses at full on reliable beats and at 0.6 on beats known ahead but below
+  the gate (house-128's evidence hovers at the gate).
 - Accents are strong onsets, at most one per 0.5 s (native's flashes). A
   heavy strike is the deaths sharing an impact time, weighted 0 at 2 kills to
   1 at 24. Drops (loudness jumps of 6 dB or more) flash, punch and shake as

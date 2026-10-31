@@ -39,7 +39,7 @@ namespace Game.Client.Structures
     ///   shadows meanwhile, and light probes light both.
     /// The flash, punch and shake are the look's (FeelMoments reads the same events), and the break's
     /// burst and glass are the effects' and the sound's. Events arrive ahead of frameSong; each waits
-    /// for its frame. Nothing shows until <see cref="Attach"/> gives it the arena.
+    /// for its frame. Nothing shows until <see cref="Attach"/> gives it the arena's sites.
     /// </summary>
     public sealed class StructureShatter : IPresenter, IDisposable
     {
@@ -125,9 +125,10 @@ namespace Game.Client.Structures
 
         readonly List<Pending> _pending = new List<Pending>();
         readonly StructureShards _shards;
-        ArenaRuntime _arena;
+        Action<IReadOnlyList<Bounds>> _refreshShadows;
         Site[] _sites;
         Scene _scene;
+        bool _ownScene;
         PhysicsScene _physics;
         GameObject _root;
         PhysicsMaterial _material;
@@ -155,20 +156,29 @@ namespace Game.Client.Structures
         public double FramePhysicsMs { get; private set; }
         public double FrameShadowMs { get; private set; }
 
-        public StructureShatter()
+        public StructureShatter() : this(StructureShards.Load()) { }
+
+        /// <summary>Flies <paramref name="shards"/>' sets (null: breaks only hide).</summary>
+        public StructureShatter(StructureShards shards)
         {
-            _shards = StructureShards.Load();
+            _shards = shards;
             if (_shards == null) Debug.LogWarning("StructureShatter: no structure shards in this build (run `game unity BakeStructureShards`): breaks only hide");
         }
 
-        /// <summary>Shows the breaks on <paramref name="arena"/>, once ready and in crystal (CrystalStructures.Apply).</summary>
-        public void Attach(ArenaRuntime arena)
+        /// <summary>
+        /// Shows the breaks on the arena's <paramref name="sites"/> (<see cref="ArenaRuntime.Sites"/>, once
+        /// ready and in crystal: CrystalStructures.Apply), redrawing its static shadows where they change
+        /// with <paramref name="refreshShadows"/> (<see cref="ArenaRuntime.RefreshShadows"/>). The shards
+        /// fly in a local physics scene of their own, or in <paramref name="physicsScene"/> when given (the
+        /// editor's tests pass a preview scene: play mode alone creates scenes), which the caller then owns.
+        /// </summary>
+        public void Attach(IReadOnlyList<Renderer[]> sites, Action<IReadOnlyList<Bounds>> refreshShadows, Scene? physicsScene = null)
         {
-            _arena = arena;
-            _sites = new Site[arena.Sites.Count];
+            _refreshShadows = refreshShadows;
+            _sites = new Site[sites.Count];
             for (int i = 0; i < _sites.Length; i++)
             {
-                var rs = arena.Sites[i];
+                var rs = sites[i];
                 var site = new Site { Renderers = rs, Blocks = new MaterialPropertyBlock[rs.Length] };
                 for (int k = 0; k < rs.Length; k++)
                 {
@@ -179,7 +189,8 @@ namespace Game.Client.Structures
                 }
                 _sites[i] = site;
             }
-            _scene = SceneManager.CreateScene("StructureShatter", new CreateSceneParameters(LocalPhysicsMode.Physics3D));
+            _ownScene = physicsScene == null;
+            _scene = physicsScene ?? SceneManager.CreateScene("StructureShatter", new CreateSceneParameters(LocalPhysicsMode.Physics3D));
             _physics = _scene.GetPhysicsScene();
             _root = new GameObject("StructureShatter");
             SceneManager.MoveGameObjectToScene(_root, _scene);
@@ -274,7 +285,7 @@ namespace Game.Client.Structures
             if (_shadowsDirty.Count > 0)
             {
                 _watch.Restart();
-                _arena.RefreshShadows(_shadowsDirty);
+                _refreshShadows(_shadowsDirty);
                 FrameShadowMs = _watch.Elapsed.TotalMilliseconds;
                 _shadowsDirty.Clear();
             }
@@ -623,9 +634,16 @@ namespace Game.Client.Structures
 
         public void Dispose()
         {
-            if (_root != null) UnityEngine.Object.Destroy(_root);
-            if (_material != null) UnityEngine.Object.Destroy(_material);
-            if (_scene.IsValid() && _scene.isLoaded) SceneManager.UnloadSceneAsync(_scene);
+            Destroy(_root);
+            Destroy(_material);
+            if (_ownScene && _scene.IsValid() && _scene.isLoaded) SceneManager.UnloadSceneAsync(_scene);
+        }
+
+        static void Destroy(UnityEngine.Object o)
+        {
+            if (o == null) return;
+            if (Application.isPlaying) UnityEngine.Object.Destroy(o);
+            else UnityEngine.Object.DestroyImmediate(o);
         }
     }
 }

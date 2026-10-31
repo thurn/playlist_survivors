@@ -105,6 +105,17 @@ namespace Game.Tests
             Assert.That(ReadAt(sim, lane, 3.0, moments).Kick, Is.EqualTo(0)); // revealed (the frontier passed 3.05) but not yet known
             Assert.That(moments.Flash(3.0, Period), Is.EqualTo(0));
             Assert.That(moments.Flash(3.05, Period), Is.EqualTo(1).Within(1e-6));
+
+            // Nor anticipated before it is known: a kick and a drop known late, inside their lead-ins,
+            // with the frontier already past their known_at.
+            sim.AddKnown(StreamEntry.Onset(5.0, 0, 1, strong: true, band: (int)DrumBand.Kick), 4.95);
+            sim.AddKnown(StreamEntry.Jump(8.0, 0, db: 12), 7.0);
+            sim.StepTo(5.0);
+            Assert.That(ReadAt(sim, lane, 4.94).KickPre, Is.EqualTo(0));
+            Assert.That(ReadAt(sim, lane, 4.96).KickPre, Is.GreaterThan(0));
+            sim.StepTo(7.2);
+            Assert.That(ReadAt(sim, lane, 6.9).Rise, Is.EqualTo(0));
+            Assert.That(ReadAt(sim, lane, 7.1).Rise, Is.GreaterThan(0));
         }
 
         [Test]

@@ -211,7 +211,7 @@ namespace Game.Client.Loop
             {
                 _crystal = new CrystalStructures();
                 _crystal.Apply(a, camera);
-                _shatter.Attach(a);
+                _shatter.Attach(a.Sites, a.RefreshShadows);
                 _look.Volume = a.Post;
                 _look.FollowHero = a.FollowHero;
             };
