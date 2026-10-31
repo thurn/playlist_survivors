@@ -6,7 +6,7 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// A stand-in view until the presenters land: a plane, the hero as a white capsule that pulses
-    /// on each beat, and enemies as red capsules from Spawn, EnemyStep and Death events (the sim's
+    /// on each beat, and enemies as red capsules from Spawn, EnemyStep, EnemyKnock and Death events (the sim's
     /// or a scripted feed's). The camera follows the hero from above and behind. Sim ground (x, y)
     /// is Unity's (x, 0, y). A primitive's default material doesn't draw in URP players, so they
     /// all use a URP Lit material from Resources.
@@ -89,14 +89,15 @@ namespace Game.Client.Loop
                     break;
                 }
                 case SimEventKind.EnemyStep:
+                case SimEventKind.EnemyKnock:
                 {
-                    var s = e.AsEnemyStep;
-                    var enemy = EnemyAt(s.Enemy);
+                    // Both carry from (D0, D1), to (D2, D3) and the move's start and end (D4, D5).
+                    var enemy = EnemyAt(e.I0);
                     enemy.Previous = enemy.Latest;
                     enemy.Latest = new Move
                     {
-                        FromX = (float)s.FromX, FromY = (float)s.FromY, ToX = (float)s.ToX, ToY = (float)s.ToY,
-                        Start = s.MoveStart, End = s.Footplant,
+                        FromX = (float)e.D0, FromY = (float)e.D1, ToX = (float)e.D2, ToY = (float)e.D3,
+                        Start = e.D4, End = e.D5,
                     };
                     break;
                 }
