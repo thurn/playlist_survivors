@@ -403,4 +403,24 @@ mod tests {
             [77, 117, 115, 105, 99, 0].map(|b| b as c_char)
         );
     }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn the_system_source_is_unsupported_off_the_mac() {
+        let config = Config {
+            source: PS_SOURCE_SYSTEM,
+            pid: 1,
+            m: 3.0,
+            output_rate: 48_000.0,
+            path: std::ptr::null(),
+            models: std::ptr::null(),
+            session_dir: std::ptr::null(),
+        };
+        let mut session = std::ptr::null_mut();
+        assert_eq!(
+            unsafe { ps_open(&raw const config, &raw mut session) },
+            PS_ERR_UNSUPPORTED
+        );
+        assert!(session.is_null());
+    }
 }

@@ -16,7 +16,6 @@ use analysis::tensors::Tensors;
 use audio::follow::Follower;
 
 use crate::Meta;
-use crate::clock::host_s;
 
 const SR: f64 = 44100.0;
 
@@ -112,7 +111,7 @@ fn host_of(metas: &VecDeque<Meta>, rate: f64, i: f64) -> Option<f64> {
         .rev()
         .find(|m| (m.first as f64) <= i)
         .or_else(|| metas.front())?;
-    Some(host_s(m.input_host) + (i - m.first as f64) / rate)
+    Some(m.input_host.secs() + (i - m.first as f64) / rate)
 }
 
 /// Starts the analysis thread on `source`, with the analyzer's `models`, until `stop`. It sends
@@ -152,7 +151,7 @@ pub fn spawn(
                 for m in &new_metas {
                     let _ = tx.send(Msg::Level {
                         peak: m.peak,
-                        heard: host_s(m.input_host)
+                        heard: m.input_host.secs()
                             + f64::from_bits(heard_after.load(Ordering::Relaxed)),
                     });
                 }

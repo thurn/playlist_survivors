@@ -13,6 +13,7 @@
 //! It waits on what the session reports, never on a clock: other audio on the machine (slow CI's
 //! Unity lanes) can stall the capture for 0.5 s, and the watchdog then releases the app and the
 //! source taps it again, as it should; that only adds releases.
+#![cfg(target_os = "macos")]
 
 mod common;
 

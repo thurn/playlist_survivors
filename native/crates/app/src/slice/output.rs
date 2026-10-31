@@ -12,7 +12,7 @@ use objc2_core_audio_types::*;
 use audio::mixer::{Command, Mixer, Report};
 
 use capture::Meta;
-use capture::clock;
+use capture::clock::HostTime;
 use capture::coreaudio::{self, check};
 
 /// What the render callback did, for the log.
@@ -33,7 +33,6 @@ struct Ctx {
     music_meta: Option<rtrb::Producer<Meta>>,
     /// Everything runs, but the device gets silence.
     muted: bool,
-    tick_s: f64,
 }
 
 pub struct Output {
@@ -58,9 +57,9 @@ unsafe extern "C-unwind" fn render(
     data: *mut AudioBufferList,
 ) -> i32 {
     let ctx = unsafe { &mut *(client.as_ptr() as *mut UnsafeCell<Ctx>) }.get_mut();
-    let host_ticks = unsafe { ts.as_ref() }.mHostTime;
-    let host = host_ticks as f64 * ctx.tick_s;
-    let now = unsafe { libc::mach_absolute_time() } as f64 * ctx.tick_s;
+    let host_time = HostTime(unsafe { ts.as_ref() }.mHostTime);
+    let host = host_time.secs();
+    let now = HostTime::now().secs();
     let _ = ctx.events.push(Event::Buffer { host, frames, now });
     let list = unsafe { &mut *data };
     let bufs = unsafe {
@@ -84,8 +83,8 @@ unsafe extern "C-unwind" fn render(
         let _ = meta.push(Meta {
             first,
             frames,
-            input_host: host_ticks,
-            now_host: unsafe { libc::mach_absolute_time() },
+            input_host: host_time,
+            now_host: HostTime::now(),
             peak,
             dropped: 0,
         });
@@ -174,7 +173,6 @@ impl Output {
             events: ep,
             music_meta: meta_tx,
             muted,
-            tick_s: clock::tick_s(),
         }));
         let cb = AURenderCallbackStruct {
             inputProc: Some(render),

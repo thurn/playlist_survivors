@@ -97,7 +97,8 @@ if [ "$section" = analysis ]; then
 fi
 
 # The native workspace: every crate's clippy, the pure crates' purity, unused dependencies, the
-# tests' build, a release build of the app and the CLI, and the live engine's cost against its
+# tests' build, capture and the plugin's Windows build (native/scripts/check-windows), a release
+# build of the app and the CLI, and the live engine's cost against its
 # gates (G5, docs/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
 # engine's time per frame, then the whole frame's work (sim, evaluate, encode) offscreen.
 # `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory, which it prunes after
@@ -112,6 +113,7 @@ if [ "$section" = native ]; then
     cargo clippy --locked --workspace --all-targets -- -D warnings
     cargo machete
     cargo test --locked --workspace --no-run
+    scripts/check-windows
     cargo build --locked --release -p app -p cli
     cargo run --locked --release -p cli -- runner-bench --check
     cargo run --locked --release -p app -- --bench --check

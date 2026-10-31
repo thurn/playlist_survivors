@@ -557,6 +557,12 @@ A muted app must always get its sound back.
   app muted until it resumes or exits. On the Mac a suspended source app is
   no capture stall: its tap goes on capturing silence on the device's clock,
   so the app stays muted and the run hears a song gap (measured, ps-msz.5.5).
+- **What M5's backend reuses** (ps-msz.7.3): a platform's capture callback
+  hands each buffer to `capture::sink` (the mono mixdown, the delay line's
+  first two channels, `Meta`, dropped frames, the watchdog's heartbeat), and
+  its live handles go in a `capture::teardown::Teardown`, dropped once, in
+  field order, under a lock the watchdog shares. `capture` and the plugin
+  build for Windows in the checks (`native/scripts/check-windows`).
 - **After the watchdog fires**, the world freezes as "music stopped". The
   plugin taps the app again once it produces audio, and the run resumes as
   any music-stopped freeze does (see [The Run](#the-run)). The run ends

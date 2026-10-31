@@ -5,12 +5,13 @@
 //! muted for more than about 2 s. (On the Mac, destroying the aggregate and tap mid-stall works
 //! from another thread: ES, hv-t8o8.36.)
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering};
+use std::sync::{Arc, Weak};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
 use crate::clock::now_s;
+use crate::teardown::Teardown;
 
 /// The capture may stop this long, and the main thread go this long without a heartbeat (s).
 pub const CAPTURE_STALL_S: f64 = 0.5;
@@ -40,12 +41,11 @@ pub struct Watchdog {
 
 impl Watchdog {
     /// Watches a tap whose capture stores each buffer's host time in `alive` (an f64's bits, 0
-    /// before the first), calling `release` (which sets `released`) when it stalls, unless
-    /// `released` is set first.
-    pub fn start(
-        released: Arc<AtomicBool>,
+    /// before the first), releasing its `teardown` when it stalls, unless it is released (or
+    /// gone) first.
+    pub fn start<L: Send + 'static>(
+        teardown: Weak<Teardown<L>>,
         alive: Arc<AtomicU64>,
-        release: impl FnOnce() + Send + 'static,
     ) -> Watchdog {
         let started = now_s();
         let shared = Arc::new(Shared {
@@ -58,7 +58,10 @@ impl Watchdog {
         let handle = std::thread::Builder::new()
             .name("watchdog".into())
             .spawn(move || {
-                while !s.stop.load(Ordering::Relaxed) && !released.load(Ordering::SeqCst) {
+                while !s.stop.load(Ordering::Relaxed) {
+                    let Some(held) = teardown.upgrade().filter(|t| t.live()) else {
+                        break;
+                    };
                     let now = now_s();
                     let why = trip(
                         now,
@@ -67,7 +70,7 @@ impl Watchdog {
                         f64::from_bits(alive.load(Ordering::Relaxed)),
                     );
                     if why != NONE {
-                        release();
+                        held.release();
                         let since = if why == MAIN {
                             f64::from_bits(s.heartbeat.load(Ordering::Relaxed))
                         } else {
@@ -77,6 +80,7 @@ impl Watchdog {
                         s.why.store(why, Ordering::SeqCst);
                         break;
                     }
+                    drop(held);
                     std::thread::sleep(Duration::from_secs_f64(POLL_S));
                 }
             })
@@ -159,20 +163,24 @@ mod tests {
         assert_eq!(trip(102.1, 100.0, 102.09, 0.0), CAPTURE);
     }
 
-    /// A watchdog whose release reports on a channel and sets `released`, as a tap's does.
-    fn watched(alive: f64) -> (Watchdog, Arc<AtomicBool>, std::sync::mpsc::Receiver<()>) {
-        let released = Arc::new(AtomicBool::new(false));
+    /// A capture's live part, reporting its release on a channel.
+    struct Live(std::sync::mpsc::Sender<()>);
+
+    impl Drop for Live {
+        fn drop(&mut self) {
+            self.0.send(()).unwrap();
+        }
+    }
+
+    /// A watchdog over a capture whose latest buffer was captured at host time `alive`.
+    fn watched(alive: f64) -> (Watchdog, Arc<Teardown<Live>>, std::sync::mpsc::Receiver<()>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        let r = Arc::clone(&released);
+        let teardown = Arc::new(Teardown::new(Live(tx)));
         let w = Watchdog::start(
-            Arc::clone(&released),
+            Arc::downgrade(&teardown),
             Arc::new(AtomicU64::new(alive.to_bits())),
-            move || {
-                r.store(true, Ordering::SeqCst);
-                tx.send(()).unwrap();
-            },
         );
-        (w, released, rx)
+        (w, teardown, rx)
     }
 
     /// Waits for `w` to say why it released the tap (it does just after releasing it).
@@ -190,16 +198,16 @@ mod tests {
     #[test]
     fn a_stalled_capture_releases_the_tap() {
         // (The latest buffer a second ago: stalled from the first look.)
-        let (w, released, rx) = watched(now_s() - 1.0);
+        let (w, teardown, rx) = watched(now_s() - 1.0);
         rx.recv_timeout(Duration::from_secs(60)).unwrap();
         assert_eq!(why(&w), "the capture stopped for 0.5 s");
-        assert!(released.load(Ordering::SeqCst));
+        assert!(!teardown.live());
     }
 
     #[test]
     fn a_stalled_main_thread_releases_the_tap() {
         // (Buffers keep arriving, as far as it can tell; the main thread last beat 3 s ago.)
-        let (w, _, rx) = watched(now_s() + 1e6);
+        let (w, _teardown, rx) = watched(now_s() + 1e6);
         w.beat(now_s() - 3.0);
         rx.recv_timeout(Duration::from_secs(60)).unwrap();
         assert_eq!(why(&w), "the main thread stalled for 2 s");

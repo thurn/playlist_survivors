@@ -1,0 +1,12 @@
+#!/bin/sh
+# capture and the plugin build for Windows (clippy, -D warnings, tests included), so M5's capture
+# backend only joins the Mac's and the off-macOS stubs keep compiling. The rustup target is
+# installed if it is missing. The native fast check runs it when either crate is affected, and slow
+# CI's native section always.
+#
+#   native/scripts/check-windows
+set -eu
+cd "$(dirname "$0")/.."
+target=x86_64-pc-windows-msvc
+rustup target list --installed | grep -qx "$target" || rustup target add "$target"
+cargo clippy --locked --target "$target" -p capture -p plugin --all-targets -- -D warnings

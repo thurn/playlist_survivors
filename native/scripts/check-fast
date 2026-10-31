@@ -10,6 +10,7 @@
 # - unused dependencies (cargo machete, a fraction of a second) whenever a crate changed: a code
 #   removal can leave one, and slow CI would otherwise be the first to fail
 #   (hv-t8o8.70);
+# - capture and the plugin's Windows build (native/scripts/check-windows) when either is affected;
 # - native/scripts/crates' own tests when that script changed.
 # Set CARGO_TARGET_DIR to build elsewhere (slow CI uses a persistent directory). Never
 # share one target directory between worktrees: cargo names a workspace crate's artifacts by its
@@ -46,12 +47,16 @@ if [ "$crates" = all ]; then
   cargo clippy --locked --workspace --all-targets -- -D warnings
   cargo test --locked --workspace --quiet
   cargo machete
+  scripts/check-windows
 elif [ -n "$crates" ]; then
   echo "native check-fast: $crates"
   for c in $crates; do set -- "$@" -p "$c"; done
   cargo clippy --locked "$@" --all-targets -- -D warnings
   cargo test --locked "$@" --quiet
   cargo machete
+  case " $crates " in
+    *" capture "* | *" plugin "*) scripts/check-windows ;;
+  esac
 else
   echo "native check-fast: no crate changed"
 fi

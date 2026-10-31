@@ -13,7 +13,8 @@
 use std::time::{Duration, Instant};
 
 use capture::Meta;
-use capture::clock::host_s;
+use capture::clock::now_s;
+use capture::sink::Stream;
 use capture::tap::{Capture, Tap};
 
 use super::output::Output;
@@ -83,13 +84,13 @@ pub fn median(mut v: Vec<f64>) -> Option<f64> {
 }
 
 /// Drains a capture into a detector.
-fn listen(c: &mut Capture, d: &mut Detector, out: &mut Vec<f64>) {
+fn listen(c: &mut Stream, d: &mut Detector, out: &mut Vec<f64>) {
     let (mut samples, mut metas) = (Vec::new(), Vec::<Meta>::new());
     c.drain(&mut samples, &mut metas);
     let mut at = 0usize;
     for m in metas {
         let n = (m.frames as usize).min(samples.len() - at);
-        d.push(host_s(m.input_host), &samples[at..at + n], out);
+        d.push(m.input_host.secs(), &samples[at..at + n], out);
         at += n;
     }
 }
@@ -149,7 +150,7 @@ pub fn run(
             listen(&mut mic, &mut mic_d, &mut heard);
         }
         // (The last clicks' echoes may still be on their way: they count next minute.)
-        let cut = src.partition_point(|&s| s < host_s(capture::clock::now_ticks()) - m - 1.0);
+        let cut = src.partition_point(|&s| s < now_s() - m - 1.0);
         let ds = delays(&src[..cut], &heard, m - 0.5, m + 0.5);
         src.drain(..cut);
         let n = ds.len();

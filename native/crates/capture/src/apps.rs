@@ -87,6 +87,10 @@ pub fn find(want: &str) -> Option<AudioApp> {
 }
 
 /// One audio process, as the platform reports it.
+#[cfg_attr(
+    not(target_os = "macos"),
+    allow(dead_code, reason = "M5's app list groups them too")
+)]
 pub(crate) struct Process {
     /// Its handle to tap, its id, and the id of the process responsible for it (its app's).
     pub handle: u32,
@@ -98,6 +102,10 @@ pub(crate) struct Process {
 
 /// The apps `processes` belong to, grouped by the process responsible for each and named by
 /// `name` (of that process's id), except our own (`me`): the playing ones first, then by name.
+#[cfg_attr(
+    not(target_os = "macos"),
+    allow(dead_code, reason = "M5's app list groups them too")
+)]
 pub(crate) fn group(
     processes: impl IntoIterator<Item = Process>,
     me: i32,

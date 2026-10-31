@@ -98,7 +98,6 @@ mod mac {
     use capture::apps::AudioApp;
     use capture::tap::Tap as CoreTap;
     use capture::watchdog::Watchdog;
-    use std::sync::atomic::Ordering;
 
     use super::{Tap, Taps};
 
@@ -168,7 +167,7 @@ mod mac {
         }
 
         fn muted(&self) -> bool {
-            !self.tap.destroyed.load(Ordering::SeqCst)
+            self.tap.live()
         }
 
         fn close(self: Box<Self>) -> Writer {
