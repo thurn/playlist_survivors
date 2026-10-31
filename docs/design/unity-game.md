@@ -2015,7 +2015,8 @@ Do this as soon as the slice exists, before any broad validation:
    accent): it regrows on a downbeat.
 
 Expected: no drift between music and sounds over several minutes, and the
-debug overlay's lead stays near 60 ms on built-in speakers.
+debug overlay's lead stays near the output latency plus the margin (90 ms on
+jarvis's built-in output: 38 ms latency plus the 52 ms margin).
 
 ### End-to-end runs
 

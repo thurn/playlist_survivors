@@ -42,10 +42,10 @@ moments' times come from a headless fixed-time run's `--events-out` CSV, which g
 |---|---|
 | [8.05 s](still-008.050.jpg) | the first heavy strike's mass kill: 34 monsters shatter in their gem colours, the horde streaming in from every side |
 | [12.25 s](still-012.250.jpg) | a heavy strike's wave with 29 kills, the post's flash on it |
-| [20 s](still-020.000.jpg) | between strikes: lanes of cyan skeletons, green goblins, pink slimes and red demons stepping in on the beat |
+| [20 s](still-020.000.jpg) | an ordinary strike's ring sweeping out through the horde, green goblins shattering in its path; lanes of cyan skeletons, goblins, pink slimes and red demons stepping in |
 | [26.3 s](still-026.300.jpg) | 27 kills on one impact, the strike's ring white-hot at its start |
 | [30.55 s](still-030.550.jpg) | the forced heavy strike's ring and cleave a frame after impact |
-| [38 s](still-038.000.jpg) | a quiet beat: the hero's cyan pool, the rune circle, the crowd held between steps |
+| [38 s](still-038.000.jpg) | a strike's ring at the rune circle's edge, the white blade raised, shards scattered around the crowd held between steps |
 | [45.1 s](still-045.100.jpg) | the slam's burst at the hero, the regrown structures in crystal |
 | [49.75 s](still-049.750.jpg) | the 37-kill impact's shards on the next frames |
 | [57.3 s](still-057.300.jpg) | a slam on a natural zone change: 49 kills, the largest shatter of the run |
@@ -90,6 +90,11 @@ The differences, and why:
   `--no-post-feel`, so they have no flash to compare with. Whether the flash reads as too strong in
   motion is the operator's beat-feel row.
 - **A sparser crowd**, as above: the reference is demo3d's stress scene.
+- **A strike's ring in every still.** The sword strikes on every beat (0.47 s at 128 BPM), and each
+  strike's ring sweeps out and fades over most of that beat, so none of the nine stills, chosen
+  between the big moments or not, catches the slice without one. The reference has no sword. The
+  ring is the brightest thing on screen most of the time; whether it reads as too insistent in motion
+  is the operator's first assembled check.
 - **Rainbow structures** where the reference's are one sapphire, by design (ps-msz.3.6).
 
 ## The slice level
@@ -136,4 +141,5 @@ which the 131 at least 60 ms from any other are measured (closer ones merge into
 130 were found, from -0.44 to +0.33 ms of their music (median 0.000). The music sat exactly where its
 anchor claimed (lag 13056 frames in every window), drift was +0.11 ms/min, and frameSong was within
 -0.30 ms (median) of the audio thread's clock. There were no stalls and no capture gaps. A player
-exception fails the run.
+exception fails the run, and so does a run with fewer than 20 sounds apart to measure (a denser
+slice whose sounds all crowd each other would otherwise pass on a handful).
