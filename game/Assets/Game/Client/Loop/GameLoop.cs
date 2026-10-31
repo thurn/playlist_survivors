@@ -121,6 +121,8 @@ namespace Game.Client.Loop
         StructureShatter _shatter;
         CrowdView _crowd;
         GemView _gems;
+        WandView _wand;
+        BibleView _bible;
         LevelUpCards _cards;
         StreamWriter _out, _structuresOut;
         bool _fixed, _done, _quitting, _interactive;
@@ -268,6 +270,7 @@ namespace Game.Client.Loop
                 Driver.Events.Subscribe(_cards);
             }
             var roles = new RoleLooks(content);
+            var weapons = new WeaponLooks(content?.Weapons);
             var library = compute ? EffectLibrary.TryLoad() : null;
             if (library != null)
             {
@@ -282,6 +285,14 @@ namespace Game.Client.Loop
                 Driver.Events.Subscribe(_garlic);
                 _fireTrail = new FireTrailView(camera, content, _effects?.System, _soundPresenter);
                 Driver.Events.Subscribe(_fireTrail);
+                if (SystemInfo.supportsInstancing)
+                {
+                    // The weapons' crystals; their casts and hits go to the effects as cues.
+                    _wand = new WandView(camera, weapons, _effects, _soundPresenter);
+                    Driver.Events.Subscribe(_wand);
+                    _bible = new BibleView(camera, weapons, _effects, _soundPresenter);
+                    Driver.Events.Subscribe(_bible);
+                }
             }
             if (_shatter != null) _shatter.Erupted += Erupted;
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
@@ -651,6 +662,8 @@ namespace Game.Client.Loop
             _gems?.Dispose();
             _garlic?.Dispose();
             _fireTrail?.Dispose();
+            _wand?.Dispose();
+            _bible?.Dispose();
             _cards?.Dispose();
             _out?.Dispose();
             _out = null;

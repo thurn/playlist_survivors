@@ -79,6 +79,8 @@ namespace PS.Game.Sim
         {
             if (config.Horde != null && (config.Arsenal == null || !Same(config.Horde.Roster, SliceLevel.Roster) || !StartsAsTheSlice(config.Arsenal)))
                 throw new NotSupportedException("a session records the slice's level or an open one");
+            if (config.Arsenal != null && !config.Arsenal.StartsAsTheRun)
+                throw new NotSupportedException("a session records the run's own starting arsenal, not a loadout");
             return new SessionRecord
             {
                 Seed = config.Seed,

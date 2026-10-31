@@ -29,7 +29,7 @@ namespace PS.Game.Sim
     /// </summary>
     internal sealed class KingBible : Weapon
     {
-        public const double GrowS = 0.5, FadeS = 0.5;
+        public const double GrowS = OrbitEvent.GrowS, FadeS = OrbitEvent.FadeS;
         /// <summary>A tick's sweep is cut into pieces of at most this angle, so a chord never cuts across the ring (native's pi / 32).</summary>
         public const double MaxStepRad = Math.PI / 32;
         /// <summary>Snapping keeps the speed within this share of its own (native's 15%).</summary>
@@ -37,16 +37,19 @@ namespace PS.Game.Sim
 
         sealed class Ring
         {
+            public bool Active;
             public int Id, Blades;
             public double Born, End, Omega, Radius, Blade, Last, ClearAt;
             public bool Snapped;
-            public bool[][] Hit;
+            /// <summary>Each blade's hit memory, by enemy slot; kept for the next ring that takes this one.</summary>
+            public bool[][] Hit = new bool[0][];
         }
 
         readonly SimState state;
         readonly BeatClock clock;
         readonly Horde horde;
         readonly EnemyRole[] roles;
+        /// <summary>The rings showing, and spent ones for the next shots to take, so stepping allocates nothing once warm.</summary>
         readonly List<Ring> rings = new List<Ring>();
         int nextId;
 
@@ -75,7 +78,16 @@ namespace PS.Game.Sim
         bool Holding => state.Frozen || state.Hero.Fallen;
 
         /// <summary>The rings still showing, for tests.</summary>
-        internal int Rings => rings.Count;
+        internal int Rings
+        {
+            get
+            {
+                int n = 0;
+                foreach (var ring in rings)
+                    if (ring.Active) n++;
+                return n;
+            }
+        }
 
         /// <summary>
         /// An orbit's angular speed for raw speed <paramref name="speed"/> (radians a second) and
@@ -114,14 +126,26 @@ namespace PS.Game.Sim
             int beat = clock.LastBeat;
             double period = beat >= 0 ? clock.PeriodOf(beat) : 0;
             double omega = OrbitSpeed(Def.Shape.RadPerS * Numbers.Speed * Stats.Speed, period, blades, out bool snapped);
-            var ring = new Ring
+            var ring = rings.Find(r => !r.Active);
+            if (ring == null) rings.Add(ring = new Ring());
+            if (ring.Hit.Length < blades)
             {
-                Id = nextId++, Blades = blades, Born = t, End = t + DurationS, Omega = omega, Radius = RingRadius,
-                Blade = BladeRadius, Last = t, ClearAt = t + Numbers.HitDelayS, Snapped = snapped, Hit = new bool[blades][],
-            };
-            int cap = state.EnemyStore.Length;
-            for (int k = 0; k < blades; k++) ring.Hit[k] = new bool[cap];
-            rings.Add(ring);
+                int cap = state.EnemyStore.Length;
+                var hit = new bool[blades][];
+                for (int k = 0; k < blades; k++) hit[k] = k < ring.Hit.Length ? ring.Hit[k] : new bool[cap];
+                ring.Hit = hit;
+            }
+            for (int k = 0; k < blades; k++) Array.Clear(ring.Hit[k], 0, ring.Hit[k].Length);
+            ring.Active = true;
+            ring.Id = nextId++;
+            ring.Blades = blades;
+            ring.Born = ring.Last = t;
+            ring.End = t + DurationS;
+            ring.Omega = omega;
+            ring.Radius = RingRadius;
+            ring.Blade = BladeRadius;
+            ring.ClearAt = t + Numbers.HitDelayS;
+            ring.Snapped = snapped;
             sim.Emit(SimEvent.HeroAttack(t, Index, Def.Shape.Kind, 0, t, t, 1, 0, false, ring.Radius + ring.Blade));
             Announce(sim, ring, t);
         }
@@ -142,12 +166,12 @@ namespace PS.Game.Sim
 
         internal override void Tick(Simulation sim, double end)
         {
-            for (int r = rings.Count - 1; r >= 0; r--)
+            foreach (var ring in rings)
             {
-                var ring = rings[r];
+                if (!ring.Active) continue;
                 if (end >= ring.End + FadeS - 1e-9)
                 {
-                    rings.RemoveAt(r);
+                    ring.Active = false;
                     continue;
                 }
                 if (end > ring.End + 1e-9 && ring.Last >= ring.End - 1e-9) continue;
@@ -173,7 +197,7 @@ namespace PS.Game.Sim
             if (horde == null || to <= from) return;
             while (to >= ring.ClearAt - 1e-9)
             {
-                foreach (var hit in ring.Hit) Array.Clear(hit, 0, hit.Length);
+                for (int k = 0; k < ring.Blades; k++) Array.Clear(ring.Hit[k], 0, ring.Hit[k].Length);
                 ring.ClearAt += Math.Max(1e-3, Numbers.HitDelayS);
             }
             int steps = Math.Max(1, (int)Math.Ceiling((to - from) * Math.Abs(ring.Omega) / MaxStepRad - 1e-9));

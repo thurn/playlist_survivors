@@ -187,5 +187,24 @@ namespace PS.Game.Sim.Tests
             }
             Assert.AreEqual(Run(), Run());
         }
+
+#if !UNITY_5_3_OR_NEWER
+        [Test]
+        public void TheWandAndTheBibleAllocateNothingWhileStepping()
+        {
+            Simulation sim = null;
+            long allocated = Drive.LeastAllocated(() =>
+            {
+                var config = HordeFixture.Config(heroStands: true);
+                config.Arsenal = new ArsenalConfig { Weapons = new[] { ("magic-wand", 8), ("king-bible", 8) }, Cards = false };
+                sim = new Simulation(config);
+                foreach (var k in Drive.Known(new FixtureSong(4).Beats(0, 60, 128).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
+                sim.StepTo(10); // warm up (JIT, the rings' pool)
+                return () => sim.StepTo(60);
+            });
+            Assert.Greater(Hits(sim).Count, 100);
+            Assert.AreEqual(0, allocated, "bytes allocated while stepping 50 s");
+        }
+#endif
     }
 }

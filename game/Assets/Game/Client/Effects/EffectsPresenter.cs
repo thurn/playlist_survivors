@@ -20,6 +20,7 @@ namespace Game.Client.Effects
     /// - **hits** that don't kill: a few white-hot chips off the body;
     /// - **structure breaks**: the larger crystal burst from the strike point
     ///   (<see cref="EffectCues.Burst"/> is the hook for a regrowth's).
+    /// - **the weapons' own**: each weapon's view asks for its casts and hits (<see cref="EffectCues.Spark"/>).
     /// The hero's position at an impact comes from the frame's state.
     /// </summary>
     public sealed class EffectsPresenter : IPresenter, IDisposable
@@ -30,6 +31,7 @@ namespace Game.Client.Effects
         readonly CrystalWaves _waves;
         readonly EffectCues _cues;
         readonly Camera _camera;
+        readonly EffectLibrary _library;
         readonly int _slash, _spin, _slam, _death, _flash, _structure;
         readonly List<EffectCues.Cue> _due = new List<EffectCues.Cue>(256);
         double _last = double.NaN;
@@ -42,6 +44,7 @@ namespace Game.Client.Effects
         public EffectsPresenter(Camera camera, EffectLibrary library, RoleLooks roles)
         {
             _camera = camera;
+            _library = library;
             _cues = new EffectCues(roles);
             _fx = new EffectSystem(library);
             _fx.AddCamera(camera);
@@ -60,6 +63,9 @@ namespace Game.Client.Effects
             if (i < 0) Debug.LogWarning($"EffectsPresenter: the effect library has no '{name}' (rebake the effects)");
             return i;
         }
+
+        /// <summary>An effect's index in the library by its name in effects.json, or -1 (warned) without it.</summary>
+        public int IndexOf(string name) => Find(_library, name);
 
         public void OnEvent(in SimEvent e) => _cues.OnEvent(e);
 
@@ -107,6 +113,9 @@ namespace Game.Client.Effects
                 }
                 case EffectCues.Kind.Burst:
                     Add(_structure, new Vector3(c.At.x, c.Reach, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
+                    break;
+                case EffectCues.Kind.Spark:
+                    Add(c.Effect, new Vector3(c.At.x, c.Reach, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
                     break;
             }
         }

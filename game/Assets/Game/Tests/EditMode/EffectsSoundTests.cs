@@ -221,7 +221,7 @@ namespace Game.Tests
         [Test]
         public void OnlyTheSwordsAttacksSlashAndSwing()
         {
-            // Content's magic wand (weapon 4, a missile) has no look or sound yet: none of the sword's stands in.
+            // A missile weapon with no look of its own (no looks given here): none of the sword's stands in.
             var wand = SimEvent.HeroAttack(2.68, 4, ShapeKind.Missile, 0, 2.68, 3.0, 1, 0, false, 0);
             var wandHit = SimEvent.EnemyHit(3.0, 4, 4, WeaponHit.Strike, 1, 2, 0, 1, 0);
             var sword = SimEvent.SwordAttack(3.18, 0, HeroAttackKind.SlashLeft, 3.18, 3.5, 1, 0, false, 7.04);
@@ -273,6 +273,53 @@ namespace Game.Tests
             var categories = _host.GetComponents<AudioSource>().Where(a => a.clip != null).Select(a => a.clip.name.Split('/')[0]).OrderBy(n => n);
             Assert.That(categories, Is.EqualTo(new[] { "fire-trail-hit", "fire-trail-pulse", "garlic-hit", "garlic-pulse" }), "no sword hit");
             Assert.That(s.Log.Select(e => e.Song), Is.EquivalentTo(new[] { 3.0, 3.0, 3.5, 3.5 }), "each at its event's song time");
+        }
+
+        [Test]
+        public void TheWandAndTheBibleSoundTheirShotsRingsAndHitsNotTheSwords()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            int wand = content.WeaponIndex("magic-wand"), bible = content.WeaponIndex("king-bible");
+            var looks = new WeaponLooks(content.Weapons);
+            var sim = Beats();
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var sound = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
+            using var bolts = new WandView(null, looks, null, sound);
+            using var rings = new BibleView(null, looks, null, sound);
+            var events = new[]
+            {
+                SimEvent.HeroAttack(3.0, wand, ShapeKind.Missile, 0, 3.0, 3.0, 1, 0, false, 0.46),
+                SimEvent.Projectile(3.0, wand, 0, ProjectilePhase.Launch, 4, 0, 0, 4, 0, 3.5, 0.46),
+                SimEvent.Projectile(3.1, wand, 1, ProjectilePhase.Launch, 4, 0, 0, 4, 0, 3.5, 0.46),
+                SimEvent.EnemyHit(3.5, 4, wand, WeaponHit.Strike, 1, 4, 0, 1, 0),
+                SimEvent.Projectile(3.5, wand, 0, ProjectilePhase.End, -1, 4, 0, 4, 0, 3.5, 0.46),
+                SimEvent.HeroAttack(3.25, bible, ShapeKind.Orbit, 0, 3.25, 3.25, 1, 0, false, 3.4),
+                SimEvent.Orbit(3.25, bible, 0, 2, true, 3.25, 6.25, 3.14, 2.86, 0.59),
+                SimEvent.EnemyHit(3.75, 5, bible, WeaponHit.Strike, 1, 2, 2, 0, 1),
+                SimEvent.Orbit(4.0, bible, 0, 2, true, 3.25, 4.0, 3.14, 2.86, 0.59),
+            };
+            foreach (var e in events)
+            {
+                sound.OnEvent(e);
+                bolts.OnEvent(e);
+                rings.OnEvent(e);
+            }
+            var categories = _host.GetComponents<AudioSource>().Where(a => a.clip != null).Select(a => a.clip.name.Split('/')[0]).OrderBy(n => n);
+            Assert.That(categories, Is.EqualTo(new[] { "bible-fire", "bible-hit", "wand-fire", "wand-hit" }), "no sword hit");
+            Assert.That(s.Log.Select(e => Math.Round(e.Song, 6)), Is.EquivalentTo(new[] { 3.0, 3.5, 3.25, 3.75 }),
+                "a shot's fire (not its burst's next bolt), a hit, a ring's birth (not its cut) and its hit, each at its time");
+            Assert.That(bolts.Count, Is.EqualTo(2));
+            Assert.That(rings.Count, Is.EqualTo(1), "a ring cut short is the same ring");
+
+            var cues = new EffectCues(new RoleLooks(null));
+            var due = new List<EffectCues.Cue>();
+            cues.Spark(3.0, 7, new Vector3(1, 1.05f, 2), Vector2.right, 0.7f, WeaponLooks.Wand);
+            cues.TakeDue(2.99, due);
+            Assert.That(due, Is.Empty);
+            cues.TakeDue(3.0, due);
+            var spark = due.Single();
+            Assert.That((spark.Kind, spark.Effect, spark.At, spark.Reach), Is.EqualTo((EffectCues.Kind.Spark, 7, new Vector2(1, 2), 1.05f)));
+            Assert.That(spark.Tint, Is.EqualTo(WeaponLooks.Wand));
         }
 
         [Test]

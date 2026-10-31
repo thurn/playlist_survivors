@@ -16,7 +16,8 @@ namespace Game.Client.Effects
     ///   (<see cref="Cue.Together"/>) so they can share their light;
     /// - a hit that doesn't kill: a flash (a killing hit's flash gives way to the death's burst);
     /// - a structure's burst, from its break or <see cref="Burst"/>;
-    /// - a boss's slam: a burst where it lands (the signature minotaur's mark), at its impact.
+    /// - a boss's slam: a burst where it lands (the signature minotaur's mark), at its impact;
+    /// - a weapon's own effects, which its view asks for (<see cref="Spark"/>).
     /// </summary>
     public sealed class EffectCues
     {
@@ -26,7 +27,7 @@ namespace Game.Client.Effects
         public const float SlamBurst = 1.5f;
         public static readonly Color SlamTint = new Color(1f, 0.45f, 0.15f);
 
-        public enum Kind { Slash, Spin, Slam, Death, Flash, Burst, Cleave }
+        public enum Kind { Slash, Spin, Slam, Death, Flash, Burst, Cleave, Spark }
 
         public struct Cue
         {
@@ -46,6 +47,8 @@ namespace Game.Client.Effects
             public float Outer;
             public int Bands;
             public double FirstBand, BandSeconds;
+            /// <summary>A spark's effect (<see cref="EffectsPresenter.IndexOf"/>).</summary>
+            public int Effect;
         }
 
         readonly RoleLooks _roles;
@@ -132,6 +135,21 @@ namespace Game.Client.Effects
             {
                 Kind = Kind.Burst, T = t, At = new Vector2(position.x, position.z), Dir = blow, Scale = scale, Tint = tint,
                 Reach = position.y, Enemy = -1,
+            });
+        }
+
+        /// <summary>
+        /// Effect <paramref name="effect"/> (<see cref="EffectsPresenter.IndexOf"/>; -1 draws nothing) at
+        /// song time <paramref name="t"/>, thrown along <paramref name="dir"/>, tinted <paramref name="tint"/>:
+        /// a weapon's cast or hit, which its view asks for.
+        /// </summary>
+        public void Spark(double t, int effect, Vector3 position, Vector2 dir, float scale, Color tint)
+        {
+            if (effect < 0) return;
+            _pending.Add(new Cue
+            {
+                Kind = Kind.Spark, T = t, At = new Vector2(position.x, position.z), Dir = dir, Scale = scale, Tint = tint,
+                Reach = position.y, Enemy = -1, Effect = effect,
             });
         }
 

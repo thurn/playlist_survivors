@@ -42,10 +42,10 @@ namespace PS.Game.Sim
         /// A weapon's ring of blades around the hero (King Bible's crystal shards) starts, or is cut short
         /// with its new end: I0 the ring, I1 its blades, I2 1 when its speed is snapped to the beat |
         /// the weapon's content index &lt;&lt; 4; D0 born, D1 its end (it stops hitting then, and its blades
-        /// shrink away over <see cref="KingBible.FadeS"/>), D2 angular speed (radians a second,
+        /// shrink away over <see cref="OrbitEvent.FadeS"/>), D2 angular speed (radians a second,
         /// counterclockwise in x, y), D3 the ring's radius, D4 a blade's body radius at full size. Blade i
         /// stands at angle <c>D2 (t - born) + 2 pi i / blades</c> from the hero, its body growing in over
-        /// <see cref="KingBible.GrowS"/>.
+        /// <see cref="OrbitEvent.GrowS"/>.
         /// </summary>
         public static SimEvent Orbit(double t, int weapon, int ring, int blades, bool snapped, double born, double end,
             double omega, double radius, double blade)
@@ -85,6 +85,9 @@ namespace PS.Game.Sim
 
     public readonly struct OrbitEvent
     {
+        /// <summary>A blade's body grows in over this from the ring's birth, and shrinks away over this after its end.</summary>
+        public const double GrowS = 0.5, FadeS = 0.5;
+
         readonly SimEvent e;
         public OrbitEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
