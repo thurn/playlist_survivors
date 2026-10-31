@@ -156,6 +156,10 @@ namespace PS.Game.Sim
         public double SongAt(double runClock) =>
             state.Phase == RunPhase.Playing && !state.Frozen ? account + (runClock - state.RunClock) : double.PositiveInfinity;
 
+        /// <summary>The run clock at song time <paramref name="t"/> inside the current tick (at or after its last account), a pure read.</summary>
+        public double ClockAt(double t) =>
+            state.Phase == RunPhase.Playing && !state.Frozen ? Math.Min(duration, state.RunClock + Math.Max(0, t - account)) : state.RunClock;
+
         /// <summary>The run clock counts the song time from the last account to <paramref name="t"/>, if the run plays unfrozen.</summary>
         void Account(double t)
         {

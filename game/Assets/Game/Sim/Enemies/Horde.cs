@@ -28,7 +28,9 @@ namespace PS.Game.Sim
     /// distance, and the enemy decides no step until it ends. A lethal hit removes the enemy at once
     /// (<see cref="Kill"/>): its death launch is presentation's, and it drops a gem, and a boss its
     /// chest. Who spawns, when and where is the <see cref="Spawner"/>'s; the bosses' telegraphs,
-    /// charges and slams are <see cref="BossMoves"/>'. At most the schedule's cap are alive.
+    /// charges and slams are <see cref="BossMoves"/>'; the swarms, set pieces and signature minotaur are
+    /// <see cref="MusicEvents"/>', whose enemies step by script (<see cref="Scripts"/>) instead of down
+    /// the flow field, unbent by separation. At most the schedule's cap are alive.
     /// </summary>
     internal sealed class Horde
     {
@@ -46,7 +48,7 @@ namespace PS.Game.Sim
         /// <summary>Flow-field cells settled per tick while a rebuild runs.</summary>
         public const int FieldBudget = 4096;
         /// <summary>How far out a push off a regrowing structure looks for open ground, in cells (the largest site is 5 tiles across).</summary>
-        const int PushCells = 16;
+        internal const int PushCells = 16;
         const double HashCellM = 2;
 
         enum Phase { Notice, Decide, Land }
@@ -119,6 +121,8 @@ namespace PS.Game.Sim
 
             spawner = new Spawner(config, content, this, log, state);
             bosses = new BossMoves(content, cap);
+            Scripts = new Scripts(cap);
+            Music = new MusicEvents(config, content, this, spawner, bosses, log, clock, state);
             // Paths around structures run longer than the straight line to the farthest enemy.
             double reach = 3 * Spawner.RecycleViews * spawner.ViewWidth;
             field = new FlowField(Nav, reach);
@@ -129,6 +133,11 @@ namespace PS.Game.Sim
 
         public NavGrid Nav { get; }
         public EnemyRole[] Roles => roles;
+        /// <summary>The music-driven events' hold on their enemies.</summary>
+        public Scripts Scripts { get; }
+        public MusicEvents Music { get; }
+        /// <summary>The main beat the horde is in (the next to land).</summary>
+        public int Beat => beat;
         /// <summary>Free enemy slots: how many more may spawn under the cap.</summary>
         public int FreeSlots => freeCount;
 
@@ -235,6 +244,13 @@ namespace PS.Game.Sim
                 baseY[i] = wantY[i] = y;
                 if (Knocked(e, t) || bosses.Busy(i, beat) || !roles[e.Role].Gait.StepsOn(beat)) continue;
                 double step = StepOf(e.Role, beat, h);
+                if (Scripts.Scripted(i))
+                {
+                    Scripts.Target(i, beat, step, hx, hy, x, y, out double sx, out double sy);
+                    if (!Scripts.Flies(i)) Nav.Clamp(x, y, ref sx, ref sy);
+                    StartStep(sim, i, beat, t, x, y, sx, sy, footplant);
+                    continue;
+                }
                 double dx = hx - x, dy = hy - y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 double contact = ContactOf(e.Role);
@@ -378,6 +394,7 @@ namespace PS.Game.Sim
             Bite(sim, t, reliable && !state.Hero.Fallen, hx, hy);
             bosses.Land(sim, this, beat, t, reliable, hx, hy);
             if (reliable) bosses.Telegraph(sim, this, beat, t, hx, hy);
+            Music.Land(sim, beat, t, reliable, hx, hy);
         }
 
         /// <summary>Steps plant, and lunges armed for this beat bite a hero in contact while the beat is <paramref name="reliable"/>.</summary>
@@ -516,11 +533,61 @@ namespace PS.Game.Sim
             e.LungeBeat = -1;
             state.EnemiesAlive--;
             free[freeCount++] = i;
+            Scripts.Clear(i);
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Arsenal?.Gems.Drop(sim, t, x, y, roles[e.Role].Xp);
             if (chestTier[i] > 0) sim.Emit(SimEvent.Chest(t, drops++, x, y, chestTier[i], chestMinute[i]));
             if (e.Boss) Chickens?.BossDied(sim, t, x, y);
             else if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);
+        }
+
+        /// <summary>
+        /// Enemy <paramref name="i"/> leaves the field alive at <paramref name="t"/>, out of sight: no death,
+        /// no drop, its slot free for a later spawn.
+        /// </summary>
+        internal void Leave(Simulation sim, int i, double t)
+        {
+            ref var e = ref enemies[i];
+            if (!e.Alive) return;
+            e.PositionAt(t, out double x, out double y);
+            e.Alive = false;
+            e.X = x;
+            e.Y = y;
+            e.Motion = EnemyMotion.Still;
+            e.LungeBeat = -1;
+            state.EnemiesAlive--;
+            free[freeCount++] = i;
+            Scripts.Clear(i);
+            sim.Emit(SimEvent.Leave(t, i, e.Role, x, y));
+        }
+
+        /// <summary>
+        /// Room under the cap for <paramref name="n"/> more at <paramref name="t"/>, besides the bosses
+        /// waiting: the ordinary enemies (no boss, in no music-driven event) farthest from the hero at
+        /// (hx, hy) leave (native's make_room). Returns how many of the n fit.
+        /// </summary>
+        internal int MakeRoom(Simulation sim, double t, int n, double hx, double hy)
+        {
+            while (freeCount - spawner.BossesWaiting < n)
+            {
+                int far = -1;
+                double farD = -1;
+                for (int i = 0; i < enemies.Length; i++)
+                {
+                    ref var e = ref enemies[i];
+                    if (!e.Alive || e.Boss || Scripts.GroupOf(i) >= 0) continue;
+                    e.PositionAt(t, out double x, out double y);
+                    double d = (x - hx) * (x - hx) + (y - hy) * (y - hy);
+                    if (d > farD)
+                    {
+                        farD = d;
+                        far = i;
+                    }
+                }
+                if (far < 0) break;
+                Leave(sim, far, t);
+            }
+            return Math.Max(0, Math.Min(n, freeCount - spawner.BossesWaiting));
         }
 
         /// <summary>
@@ -617,6 +684,7 @@ namespace PS.Game.Sim
             }
 
             HeroAt(end, out double hx, out double hy);
+            Music.Tick(sim, end, hx, hy);
             spawner.Tick(sim, end, hx, hy);
         }
 
@@ -630,9 +698,9 @@ namespace PS.Game.Sim
         /// An enemy of <paramref name="role"/> enters at (x, y) at <paramref name="t"/>, in a free
         /// slot (there must be one). A boss's health, and a level-scaled role's, is its role's
         /// times the hero's level; a boss carries a chest of <paramref name="tier"/> (0 for
-        /// none) from minute <paramref name="minute"/>'s treasure.
+        /// none) from minute <paramref name="minute"/>'s treasure. Returns its slot.
         /// </summary>
-        internal void Spawn(Simulation sim, double t, int role, double x, double y, bool boss = false,
+        internal int Spawn(Simulation sim, double t, int role, double x, double y, bool boss = false,
             int tier = 0, int minute = -1)
         {
             int i = free[--freeCount];
@@ -650,8 +718,10 @@ namespace PS.Game.Sim
             chestTier[i] = tier;
             chestMinute[i] = minute;
             bosses.Spawned(i, role, boss, beat);
+            Scripts.Clear(i);
             state.EnemiesAlive++;
             sim.Emit(SimEvent.Spawn(t, i, role, x, y, boss: boss));
+            return i;
         }
     }
 }

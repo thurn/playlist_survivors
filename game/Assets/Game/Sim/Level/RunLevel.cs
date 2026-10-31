@@ -4,7 +4,7 @@ namespace PS.Game.Sim.Level
 {
     /// <summary>
     /// The run's level (unity-game.md, Build Order step 4): the game's arena, schedule.json's
-    /// minutes and bosses, and the arsenal from the starting sword, with its gems and level-ups.
+    /// minutes and bosses, the music-driven events, and the arsenal from the starting sword, with its gems and level-ups.
     /// </summary>
     public static class RunLevel
     {
@@ -18,7 +18,7 @@ namespace PS.Game.Sim.Level
                 Seed = seed,
                 Arena = arena,
                 Content = content,
-                Horde = new HordeConfig { CameraFootprint = footprint, Schedule = true },
+                Horde = new HordeConfig { CameraFootprint = footprint, Schedule = true, MusicEvents = true },
                 Arsenal = new ArsenalConfig(),
             };
 

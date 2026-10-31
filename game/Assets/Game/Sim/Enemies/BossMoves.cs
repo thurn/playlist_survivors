@@ -23,16 +23,21 @@ namespace PS.Game.Sim
     ///   breaks).
     /// A delivery beat that comes unreliable, frozen or with the boss knocked back fizzles, and the
     /// boss walks on; it telegraphs again a cycle later.
+    ///
+    /// The signature minotaur (<see cref="Signature"/>) moves by its own numbers: it only slams, on
+    /// every <c>signature.slamBeats</c>th main beat from its landing, at the mark of where the hero
+    /// stood as it telegraphed rather than around itself, for <c>slamDamage</c> within <c>slamRadiusM</c>.
     /// </summary>
     internal sealed class BossMoves
     {
         readonly BossMoveRules rules;
         readonly bool[] moverRole;
-        // Per enemy slot: does it move, the next beat it may telegraph on, and its move in hand.
-        readonly bool[] mover;
-        readonly int[] nextBeat, deliverBeat;
+        // Per enemy slot: does it move, the next beat it may telegraph on, and its move in hand: its kind,
+        // aim and slam centre. The signature's: slams only, at the hero's mark, its own cycle, radius and damage.
+        readonly bool[] mover, marks;
+        readonly int[] nextBeat, deliverBeat, every;
         readonly EnemyAttackKind[] move;
-        readonly double[] aimX, aimY;
+        readonly double[] aimX, aimY, slamX, slamY, radius, damage;
 
         public BossMoves(GameContent content, int cap)
         {
@@ -40,18 +45,46 @@ namespace PS.Game.Sim
             moverRole = new bool[content.Roles.Length];
             foreach (string id in rules.Roles) moverRole[content.RoleIndex(id)] = true;
             mover = new bool[cap];
+            marks = new bool[cap];
             nextBeat = new int[cap];
             deliverBeat = new int[cap];
+            every = new int[cap];
             move = new EnemyAttackKind[cap];
             aimX = new double[cap];
             aimY = new double[cap];
+            slamX = new double[cap];
+            slamY = new double[cap];
+            radius = new double[cap];
+            damage = new double[cap];
         }
 
         /// <summary>Enemy <paramref name="i"/> spawned, a boss or not, on or after main beat <paramref name="beat"/>.</summary>
         public void Spawned(int i, int role, bool boss, int beat)
         {
             mover[i] = boss && moverRole[role];
+            marks[i] = false;
             nextBeat[i] = beat + rules.FirstBeats;
+            deliverBeat[i] = -1;
+            every[i] = rules.EveryBeats;
+            radius[i] = rules.SlamRadiusM;
+            damage[i] = double.NaN;
+        }
+
+        /// <summary>Enemy <paramref name="i"/>, landed on main beat <paramref name="beat"/>, is the signature minotaur: it slams on every <c>slamBeats</c>th beat from it.</summary>
+        public void Signature(int i, int beat, Signature signature)
+        {
+            mover[i] = true;
+            marks[i] = true;
+            every[i] = signature.SlamBeats;
+            nextBeat[i] = beat + signature.SlamBeats - rules.TelegraphBeats;
+            radius[i] = signature.SlamRadiusM;
+            damage[i] = signature.SlamDamage;
+        }
+
+        /// <summary>Enemy <paramref name="i"/> moves no more (the minotaur's retreat); a move in hand fizzles.</summary>
+        public void Stop(int i)
+        {
+            mover[i] = false;
             deliverBeat[i] = -1;
         }
 
@@ -76,13 +109,15 @@ namespace PS.Game.Sim
                     dx = 1;
                     d = 1;
                 }
-                move[i] = d <= rules.SlamRadiusM ? EnemyAttackKind.Slam : EnemyAttackKind.Charge;
+                move[i] = marks[i] || d <= rules.SlamRadiusM ? EnemyAttackKind.Slam : EnemyAttackKind.Charge;
                 aimX[i] = dx / d;
                 aimY[i] = dy / d;
+                slamX[i] = marks[i] ? hx : x;
+                slamY[i] = marks[i] ? hy : y;
                 deliverBeat[i] = beat + rules.TelegraphBeats;
-                nextBeat[i] = beat + rules.EveryBeats;
+                nextBeat[i] = beat + every[i];
                 e.LungeBeat = -1;
-                sim.Emit(SimEvent.EnemyAttack(t, i, move[i], t, impact, aimX[i], aimY[i]));
+                sim.Emit(SimEvent.EnemyAttack(t, i, move[i], t, impact, aimX[i], aimY[i], slamX[i], slamY[i]));
             }
         }
 
@@ -122,12 +157,12 @@ namespace PS.Game.Sim
                 if (!e.Alive || !mover[i] || deliverBeat[i] != beat) continue;
                 deliverBeat[i] = -1;
                 if (!reliable || (e.Motion == EnemyMotion.Knock && e.MoveEnd > t + 1e-9)) continue;
-                double power = roles[e.Role].Power;
+                double power = double.IsNaN(damage[i]) ? roles[e.Role].Power : damage[i];
                 if (move[i] == EnemyAttackKind.Slam)
                 {
-                    sim.Structures.Strike(sim, t, e.X, e.Y, rules.SlamRadiusM, StructureHit.BossSlam, rules.SlamForceM);
-                    double dx = hx - e.X, dy = hy - e.Y, d = Math.Sqrt(dx * dx + dy * dy);
-                    if (d <= rules.SlamRadiusM + Horde.HeroHurtRadiusM)
+                    sim.Structures.Strike(sim, t, slamX[i], slamY[i], radius[i], StructureHit.BossSlam, rules.SlamForceM);
+                    double dx = hx - slamX[i], dy = hy - slamY[i], d = Math.Sqrt(dx * dx + dy * dy);
+                    if (d <= radius[i] + Horde.HeroHurtRadiusM)
                         sim.Health.Hurt(sim, t, EnemyAttackKind.Slam, power, d > 1e-9 ? dx / d : aimX[i], d > 1e-9 ? dy / d : aimY[i]);
                 }
                 else if (e.SteppedBeat == beat &&

@@ -184,6 +184,9 @@ namespace PS.Game.Sim
                 case DebugCommand.RegrowStructures:
                     Structures.ZoneChanged();
                     break;
+                default:
+                    Horde?.Music.Force(command, Now);
+                    break;
             }
         }
 

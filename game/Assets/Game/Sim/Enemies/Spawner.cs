@@ -95,12 +95,18 @@ namespace PS.Game.Sim
             bossMinute = new int[bosses];
             footprint = (double[])config.CameraFootprint.Clone();
             if (footprint.Length < 6 || footprint.Length % 2 != 0) throw new ArgumentException("a camera footprint of three or more points");
-            double minX = double.PositiveInfinity, maxX = double.NegativeInfinity;
+            double minX = double.PositiveInfinity, maxX = double.NegativeInfinity, minY = double.PositiveInfinity, maxY = double.NegativeInfinity;
             for (int k = 0; k < footprint.Length; k += 2)
             {
                 minX = Math.Min(minX, footprint[k]);
                 maxX = Math.Max(maxX, footprint[k]);
+                minY = Math.Min(minY, footprint[k + 1]);
+                maxY = Math.Max(maxY, footprint[k + 1]);
             }
+            ViewMinX = minX;
+            ViewMaxX = maxX;
+            ViewMinY = minY;
+            ViewMaxY = maxY;
             ViewWidth = maxX - minX;
             clumpAngle = new double[roles.Length];
             clumpBorn = new double[roles.Length];
@@ -109,6 +115,21 @@ namespace PS.Game.Sim
 
         /// <summary>The footprint's width: the view the recycling distance is measured in.</summary>
         public double ViewWidth { get; }
+        /// <summary>The footprint's bounds around the hero, metres.</summary>
+        public double ViewMinX { get; }
+        public double ViewMaxX { get; }
+        public double ViewMinY { get; }
+        public double ViewMaxY { get; }
+
+        /// <summary>Scheduled bosses due and waiting to land, whose room waves and events leave free.</summary>
+        public int BossesWaiting => bossCount;
+
+        /// <summary>Is (x, y) beyond the footprint around the hero at (hx, hy), by the spawn margin?</summary>
+        public bool OutOfSight(double x, double y, double hx, double hy)
+        {
+            double dx = x - hx, dy = y - hy, d = Math.Sqrt(dx * dx + dy * dy);
+            return d > 1e-9 && d > FootprintEdge(dx / d, dy / d) + SpawnMarginM;
+        }
 
         bool Spawning => !state.Frozen && state.RunClock < durationS - 1e-9;
 
@@ -179,17 +200,7 @@ namespace PS.Game.Sim
             while (landed < bossCount && horde.FreeSlots > 0)
             {
                 int role = bossRole[landed];
-                double a = sim.Random.Range(-Math.PI, Math.PI);
-                double x = hx, y = hy;
-                for (int tries = 0; tries < SpawnTries; tries++, a = sim.Random.Range(-Math.PI, Math.PI))
-                {
-                    double c = Math.Cos(a), s = Math.Sin(a);
-                    double d = BossEdgeShare * FootprintEdge(c, s);
-                    if (!horde.Nav.Walkable(hx + c * d, hy + s * d)) continue;
-                    x = hx + c * d;
-                    y = hy + s * d;
-                    break;
-                }
+                InViewPoint(sim.Random, hx, hy, out double x, out double y);
                 int m = bossMinute[landed], tier = 0;
                 var treasure = schedule.Minutes[m].Treasure;
                 if (treasure != null && (treasureMinutes & (1L << m)) == 0)
@@ -205,6 +216,27 @@ namespace PS.Game.Sim
             Array.Copy(bossRole, landed, bossRole, 0, bossCount);
             Array.Copy(bossMinute, landed, bossMinute, 0, bossCount);
             bossDue = state.RunClock;
+        }
+
+        /// <summary>
+        /// Where a boss lands: <see cref="BossEdgeShare"/> of the way to the footprint's edge from the hero
+        /// at (hx, hy), in a random direction on walkable ground (the hero's own place if none is found),
+        /// so it is seen to arrive.
+        /// </summary>
+        public void InViewPoint(SimRandom random, double hx, double hy, out double x, out double y)
+        {
+            double a = random.Range(-Math.PI, Math.PI);
+            x = hx;
+            y = hy;
+            for (int tries = 0; tries < SpawnTries; tries++, a = random.Range(-Math.PI, Math.PI))
+            {
+                double c = Math.Cos(a), s = Math.Sin(a);
+                double d = BossEdgeShare * FootprintEdge(c, s);
+                if (!horde.Nav.Walkable(hx + c * d, hy + s * d)) continue;
+                x = hx + c * d;
+                y = hy + s * d;
+                return;
+            }
         }
 
         /// <summary>A chest's tier (native's treasure_tier): the scripted one, else tier 3, 2 and 1's chances rolled in turn; 0 for none.</summary>
@@ -264,25 +296,29 @@ namespace PS.Game.Sim
         /// blend of the levels revealed over the last <see cref="Schedule.LevelSmoothS"/>, medium
         /// before the first tick and for a tick without a level.
         /// </summary>
-        double LevelScale(double t)
+        double LevelScale(double t) => Blend(t, schedule.QuietScale, schedule.MediumScale, schedule.LoudScale);
+
+        /// <summary>The loudness level at song time <paramref name="t"/> as a number, quiet 0, medium 1 and loud 2, blended as <see cref="LevelScale"/> is (the set pieces' cue).</summary>
+        public double MeanLevel(double t) => Blend(t, 0, 1, 2);
+
+        /// <summary>The levels revealed over the last <see cref="Schedule.LevelSmoothS"/> before <paramref name="t"/>, each as its value, blended over time.</summary>
+        double Blend(double t, double quiet, double medium, double loud)
         {
             var ticks = log.Ticks;
             double window = schedule.LevelSmoothS, t0 = t - window, hi = t, sum = 0;
             int i = ticks.Length - 1;
             while (i >= 0 && ticks[i].T > t + 1e-9) i--;
-            if (i < 0) return schedule.MediumScale;
+            if (i < 0) return medium;
             for (; i >= 0 && hi > t0 + 1e-12; i--)
             {
                 double lo = Math.Max(ticks[i].T, t0);
-                sum += (hi - lo) * ScaleOf(ticks[i].AsTick.Level);
+                var level = ticks[i].AsTick.Level;
+                sum += (hi - lo) * (level == LoudnessLevel.Quiet ? quiet : level == LoudnessLevel.Loud ? loud : medium);
                 hi = lo;
             }
-            if (hi > t0 + 1e-12) sum += (hi - t0) * schedule.MediumScale;
+            if (hi > t0 + 1e-12) sum += (hi - t0) * medium;
             return sum / window;
         }
-
-        double ScaleOf(LoudnessLevel level) =>
-            level == LoudnessLevel.Quiet ? schedule.QuietScale : level == LoudnessLevel.Loud ? schedule.LoudScale : schedule.MediumScale;
 
         /// <summary>
         /// Where role <paramref name="role"/>'s clump lands: beside its point on the ring for
@@ -314,7 +350,7 @@ namespace PS.Game.Sim
             for (int i = 0; i < enemies.Length; i++)
             {
                 ref var e = ref enemies[i];
-                if (!e.Alive || e.Motion != EnemyMotion.Still) continue;
+                if (!e.Alive || e.Motion != EnemyMotion.Still || horde.Scripts.Scripted(i)) continue;
                 double dx = e.X - hx, dy = e.Y - hy;
                 if (dx * dx + dy * dy < far * far) continue;
                 if (!RingPoint(sim.Random, hx, hy, roles[e.Role].RadiusM, out double x, out double y)) continue;
@@ -348,7 +384,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>How far the ray from the hero along (c, s) runs to the footprint's edge.</summary>
-        double FootprintEdge(double c, double s)
+        public double FootprintEdge(double c, double s)
         {
             double best = 0;
             int n = footprint.Length / 2;

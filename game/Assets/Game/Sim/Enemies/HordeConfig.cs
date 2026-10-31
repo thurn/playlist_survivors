@@ -17,6 +17,9 @@ namespace PS.Game.Sim
         /// <summary>Play schedule.json's minutes, bosses and boss moves; the roster, interval and minimum below are then unused.</summary>
         public bool Schedule;
 
+        /// <summary>Play the music-driven events (<see cref="MusicEvents"/>): the minutes' swarms, the set pieces and the signature minotaur. The debug commands start them in any run.</summary>
+        public bool MusicEvents;
+
         /// <summary>The slice's roster: every <see cref="SpawnIntervalS"/> of run clock one of each spawns, and whole rosters while fewer than <see cref="Minimum"/> are alive.</summary>
         public string[] Roster = { "bat1", "zombie", "skeleton", "mudman1" };
         public double SpawnIntervalS = 1;

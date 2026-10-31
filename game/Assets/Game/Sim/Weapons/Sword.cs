@@ -379,7 +379,7 @@ namespace PS.Game.Sim
             return a;
         }
 
-        static void Facing(Direction d, out double x, out double y)
+        internal static void Facing(Direction d, out double x, out double y)
         {
             x = d == Direction.Right ? 1 : d == Direction.Left ? -1 : 0;
             y = d == Direction.Up ? 1 : d == Direction.Down ? -1 : 0;

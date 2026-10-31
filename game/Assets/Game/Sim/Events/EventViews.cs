@@ -64,6 +64,9 @@ namespace PS.Game.Sim
         public double DirY => e.D3;
         /// <summary>The hero's strike: how far around it the hit reaches, which the visible strike shows.</summary>
         public double Reach => e.D4;
+        /// <summary>An enemy's slam: where it lands, the boss's place or the signature minotaur's mark.</summary>
+        public double SlamX => !ByHero ? e.D4 : throw Not("an enemy's");
+        public double SlamY => !ByHero ? e.D5 : throw Not("an enemy's");
 
         static System.InvalidOperationException Not(string whose) => new System.InvalidOperationException($"not {whose} attack");
     }
@@ -352,5 +355,28 @@ namespace PS.Game.Sim
         public double Value => e.D2;
         /// <summary>A chest's schedule minute, whose treasure (chances, evolving) it holds.</summary>
         public int Minute => ItemKind == ItemKind.Chest ? (int)e.D3 : -1;
+    }
+
+    public readonly struct SetPieceEvent
+    {
+        readonly SimEvent e;
+        public SetPieceEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public SetPieceKind Kind => (SetPieceKind)e.I0;
+        public int Members => e.I1;
+        /// <summary>The loudness jump's song time it waited for, or the beat it started on.</summary>
+        public double CauseT => e.D0;
+        public double KnownAt => e.D1;
+    }
+
+    public readonly struct LeaveEvent
+    {
+        readonly SimEvent e;
+        public LeaveEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Enemy => e.I0;
+        public int Role => e.I1;
+        public double X => e.D0;
+        public double Y => e.D1;
     }
 }

@@ -1,8 +1,8 @@
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// The debug surfaces' commands (unity-game.md, Debug Surfaces) that the slice needs: M3's F1
-    /// menu adds the rest. Each takes effect at the sim's time when it is given, like a key.
+    /// The debug surfaces' commands (unity-game.md, Debug Surfaces) that the slice and the music-driven
+    /// events need: M3's F1 menu adds the rest. Each takes effect at the sim's time when it is given, like a key.
     /// </summary>
     public enum DebugCommand
     {
@@ -14,6 +14,18 @@ namespace PS.Game.Sim
         BreakStructures = 2,
         /// <summary>The broken structures regrow on the next downbeat, as after a zone change (the 3 m rule holds).</summary>
         RegrowStructures = 3,
+        /// <summary>The music-driven events now, whatever the music, the run clock and the gaps between them
+        /// (<see cref="MusicEvents"/>): each starts on the next main beat, a set piece in place of any in play.</summary>
+        Stampede = 4,
+        KickLine = 5,
+        Wedge = 6,
+        Ring = 7,
+        /// <summary>A bat swarm, a ghost swarm or a flower wall as the schedule's first of its kind.</summary>
+        BatSwarm = 8,
+        GhostSwarm = 9,
+        FlowerWall = 10,
+        /// <summary>The signature minotaur lands on the next reliable main beat, unless it is on the field.</summary>
+        Minotaur = 11,
     }
 
     /// <summary>A debug command as the sim recorded it: a replay gives it at <see cref="Effective"/>.</summary>

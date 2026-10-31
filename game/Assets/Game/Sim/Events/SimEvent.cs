@@ -7,7 +7,8 @@ namespace PS.Game.Sim
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
     /// zone changes, freezes, the run's start, its finale and its end, gems' flights and pickups,
-    /// level-ups and their cards; the rest are declared, with their fields,
+    /// level-ups and their cards, the music-driven events and the enemies that leave with them; the
+    /// rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
@@ -39,6 +40,8 @@ namespace PS.Game.Sim
         RunEnd,
         GemFlight,
         Card,
+        SetPiece,
+        Leave,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -127,8 +130,12 @@ namespace PS.Game.Sim
             double dirX, double dirY, bool heavy, double reach) =>
             HeroAttack(t, weapon, ShapeKind.Sword, (int)kind, windupStart, impact, dirX, dirY, heavy, reach);
 
-        /// <summary>An enemy's attack winds up: I0 enemy, I1 <see cref="EnemyAttackKind"/>; D0 wind-up start, D1 impact time, D2/D3 direction.</summary>
-        public static SimEvent EnemyAttack(double t, int enemy, EnemyAttackKind kind, double windupStart, double impact, double dirX, double dirY)
+        /// <summary>
+        /// An enemy's attack winds up: I0 enemy, I1 <see cref="EnemyAttackKind"/>; D0 wind-up start, D1 impact time,
+        /// D2/D3 direction, D4/D5 a slam's centre (where it lands: the boss, or the signature's mark).
+        /// </summary>
+        public static SimEvent EnemyAttack(double t, int enemy, EnemyAttackKind kind, double windupStart, double impact, double dirX, double dirY,
+            double x = 0, double y = 0)
         {
             var e = Of(SimEventKind.Attack, t);
             e.I0 = enemy;
@@ -137,6 +144,8 @@ namespace PS.Game.Sim
             e.D1 = impact;
             e.D2 = dirX;
             e.D3 = dirY;
+            e.D4 = x;
+            e.D5 = y;
             return e;
         }
 
@@ -431,6 +440,32 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>
+        /// A music-driven event starts (unity-game.md, Music-Driven Events): I0 <see cref="SetPieceKind"/>, I1 the
+        /// enemies it brought in; D0 its cause's song time (the loudness jump it waited for, or the beat it
+        /// started on), D1 when the cause was known.
+        /// </summary>
+        public static SimEvent SetPiece(double t, SetPieceKind kind, int members, double causeT, double knownAt)
+        {
+            var e = Of(SimEventKind.SetPiece, t);
+            e.I0 = (int)kind;
+            e.I1 = members;
+            e.D0 = causeT;
+            e.D1 = knownAt;
+            return e;
+        }
+
+        /// <summary>An enemy leaves the field alive, out of sight (a swarm or set piece done, the minotaur's retreat, room for one): I0 enemy, I1 role; D0/D1 position.</summary>
+        public static SimEvent Leave(double t, int enemy, int role, double x, double y)
+        {
+            var e = Of(SimEventKind.Leave, t);
+            e.I0 = enemy;
+            e.I1 = role;
+            e.D0 = x;
+            e.D1 = y;
+            return e;
+        }
+
         /// <summary>A sound to schedule: I0 cue, I1 variant; D0 its song time, D1 pitch (semitones), D2 gain, D3/D4 position.</summary>
         public static SimEvent SoundCue(double t, int cue, int variant, double at, double pitch, double gain, double x, double y)
         {
@@ -495,5 +530,7 @@ namespace PS.Game.Sim
         public RunEndEvent AsRunEnd { get { Expect(SimEventKind.RunEnd); return new RunEndEvent(this); } }
         public GemFlightEvent AsGemFlight { get { Expect(SimEventKind.GemFlight); return new GemFlightEvent(this); } }
         public CardEvent AsCard { get { Expect(SimEventKind.Card); return new CardEvent(this); } }
+        public SetPieceEvent AsSetPiece { get { Expect(SimEventKind.SetPiece); return new SetPieceEvent(this); } }
+        public LeaveEvent AsLeave { get { Expect(SimEventKind.Leave); return new LeaveEvent(this); } }
     }
 }
