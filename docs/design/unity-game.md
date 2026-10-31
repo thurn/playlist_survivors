@@ -1047,8 +1047,8 @@ debugged.
   that arrives in a frame that steps no tick is known at the frontier itself,
   and an earlier add would reveal it a tick sooner.
 - **`inputs.bin` is binary**: the run's inputs (`Sim/Session/RunInputs.cs`:
-  seed, start time, start minute, gate, `B`, Easy, the hero standing, the level,
-  the arena and the camera footprint), the run's end frontier, event count and
+  seed, start time, start minute, gate, `B`, Easy, the level, the arena and the
+  camera footprint, with a byte for the hero standing, which is the level's), the run's end frontier, event count and
   hash, the entries' records and the inputs, doubles as their bits, so no
   runtime's number formatting can move a replay. `run.json` repeats it for
   people, with the build, runtime, platform, source and command line.
