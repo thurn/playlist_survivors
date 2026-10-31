@@ -1,3 +1,7 @@
 # Store text with LF line endings, whatever the platform that commits it.
 # Cygnus, the Windows desktop, writes CRLF from PowerShell and .NET tools.
 * text=auto eol=lf
+
+# The game's evidence index gains one entry per bead, at its end, so parallel beads collided there
+# on nearly every rebase in M2 (ps-msz.4.2). Union keeps both sides' entries instead.
+game/evidence/README.md merge=union
