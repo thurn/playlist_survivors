@@ -25,7 +25,12 @@ namespace Game.Client.Crowd
         // Lives that ended but may still show (a death not yet reached by frameSong) need room too,
         // and a freed slot waits a frame before its next owner (CrowdSlots).
         const int Pool = Capacity * 2;
-        const int SlotsPerType = Capacity + Capacity / 4;
+        /// <summary>
+        /// Each type's slots: a frame holds the last frame's slots, Hidden for a frame, beside this frame's new
+        /// owners, so a whole crowd of one type replaced on one beat (a set piece making room for its members,
+        /// a swarm) needs twice the living. With a quarter more, the full run's minute 25 ran out (ps-msz.6.14).
+        /// </summary>
+        public const int SlotsPerType = Pool;
 
         readonly Camera _camera;
         readonly CrowdLibrary _lib;
