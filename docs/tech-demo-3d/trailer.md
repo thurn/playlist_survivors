@@ -22,8 +22,12 @@ staged for it:
 
 - **Its own short simulation.** Each shot has its own environment, horde
   formation, density and set of hero moves.
-- **Everything always moves.** The hero runs and strikes on every beat, and
-  the horde chases them.
+- **Everything always moves.** The hero runs on every beat and lands a
+  weighty blow on the song's major beats, and the horde chases them in
+  coloured blocks of one monster type.
+- **Plausible survivors play.** The hero is never surrounded: they keep an
+  open lane behind them and kite, as a player who is surrounded would be
+  dead.
 - **Every monster dies to one blow.**
 
 The trailer's job is to make a viewer want to play. That sets its goals:
@@ -33,11 +37,12 @@ The trailer's job is to make a viewer want to play. That sets its goals:
 - **Feeling over explanation.** Impact, speed, power, chaos and satisfaction,
   with nothing that explains mechanics.
 - **Everything on the music.** Blows, kills, spells, cuts, flashes and the
-  horde's steps all land on the song's beat grid.
+  horde's steps all land on the song's beat grid. Blows land on its major
+  beats, each with its full windup and follow-through.
 - **Rising intensity.** Density, view width, cut pace and the hero's moves all
   escalate to a climax that ends in a screen-clearing slam.
-- **No dead air.** Every shot opens on a blow, and no beat goes by without an
-  action.
+- **No dead air.** Every shot opens on a blow. Between blows the hero runs,
+  and the horde steps on every beat.
 
 These constraints are fixed:
 
@@ -121,7 +126,11 @@ grid position:
 The hero is a knight with a crystal sword and a shield. These are their moves:
 
 - **Combos:** `slashL` and `slashR` (arcs), `thrust` (a line), `spin` (a ring
-  around the hero) and `slam` (a larger ring and a shockwave).
+  around the hero) and `slam` (a larger ring and a shockwave). The normal
+  run's cleaves are combos too: `cleaveL` and `cleaveR` play the slashes'
+  clips with a 360° ring for a hit shape, and `cleave`, the heavy cleave,
+  plays a third slash with a wider ring. A cleave has a short windup of its
+  own (0.32 s), so it lands two beats after any other blow.
 - **Spells:**
   - `ring`: a shockwave expanding around the hero;
   - `bolt`: a projectile at one monster;
@@ -136,6 +145,15 @@ shape is tested against monster positions at the impact.
 
 A **reach** is how far an attack can strike: 2.4 m for the hero's slashes,
 and each monster type's own, from 0.4 m for a bat to 1.2 m for the boss.
+
+**When the hero strikes (ps-7mx.1).** The hero's blows land on the song's
+**major beats**: the strong beats (each bar's first and third, the `strong`
+grid position), the accents, the cut and the final slam. Each clip plays
+near its natural rate, at 0.8–1.5×, rather than overdrive's 2–3×, which
+read as flailing. The hero runs on every beat between blows. At 155 BPM a
+blow on every strong beat is 1.3 a second, about the normal run's pace. A
+spin (1.43 s to its impact at full rate) or a slam (1.1 s) therefore takes
+the place of the blow before it, so they are kept for the big moments.
 
 ### The horde
 
@@ -202,7 +220,8 @@ The trailer runs 32.6 s from first frame to silence:
   charging wall of monsters.
 - **The middle.** Shots alternate between snow, the night forest, the crypt
   and the desert. The hero runs fast across each one, carving through a horde
-  that streams after them, spirals around them or pours in from every side.
+  of coloured blocks that streams after them, spirals in after them or pours
+  in from ahead and the flanks, always leaving them a lane to run.
   The cuts come faster and faster.
 - **The climax.** In the night forest, monsters flood in from all sides, a
   dragon storms in, and a laser sweeps the field on every eighth note. The
@@ -291,9 +310,9 @@ After the duel, the shot length halves, group by group:
 | 2 | 2.481–8.674 | 81–84 | desert | Charge | ~600 | 45 m | 0° |
 | 3 | 8.674–14.868 | 85–88 | snow | Vortex | ~700 | 50 m | 45° |
 | 4 | 14.868–17.965 | 89–90 | forest | Converge, 4 streams | ~500 | 40 m | 0° |
-| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~540 | 40 m | 135° |
+| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~420 | 40 m | 135° |
 | 6 | 21.062–22.610 | 93 | desert | Vortex | ~400 | 35 m | −45° |
-| 7 | 22.610–24.158 | 94 | snow | Charge | ~500 | 35 m | 90° |
+| 7 | 22.610–24.158 | 94 | snow | Charge | ~420 | 35 m | 90° |
 | 8 | 24.158–25.707 | 95 | crypt | Converge, 3 streams | ~500 | 40 m | 180° |
 | 9 | 25.707–27.255 | 96 | desert | Converge, 4 streams | ~600 | 45 m | −90° |
 | 10 | 27.255–31.126 | 97–98, plus 99.1–99.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
@@ -338,8 +357,8 @@ Each shot is built around particular moves, listed here in order.
    - Big monsters falling to single blows is the hook before the hook.
 2. **The drop (desert, charge).** A white flash covers the cut, and the
    hero's slam lands on 81.1. It blows a crater in a charging wall of fodder.
-   - The hero runs straight through the wave: slashes on every beat, flurries
-     on the eighths, and spins on 82.3 and 84.3.
+   - The hero runs straight through the wave: cleaves on the strong beats,
+     and spins on 82.3 and 84.3.
    - The wave turns and streams after them. In bar 83 the hero turns back and
      carves through the chasing wave, so the shot's second half never runs
      out of monsters to hit.
@@ -350,20 +369,20 @@ Each shot is built around particular moves, listed here in order.
      tightens. The cut comes on the release.
 4. **Converge (forest, bar 89).** A white flash covers the cut. A ring lands
    on 89.1 as four streams meet the hero.
-   - The hero cuts across the streams, slashing on every beat.
+   - The hero cuts across the streams, cleaving on the strong beats.
 5. **Elite charge (crypt).** Big Orks and Trolls in the charging wave fall to
-   single slashes, so their size sells each blow. Lightning strikes on
+   single cleaves, so their size sells each blow. Lightning strikes on
    downbeats.
-6. **Burst 1: spins (desert, vortex).** A spin on every other beat as the
-   hero circles, the fastest the spin's clip can land at overdrive's 3× speed
-   cap. The spiral is shredded from the inside.
-7. **Burst 2: the slam (snow, charge).** Slashes into the oncoming wave on
-   beats 1–3, then a slam on beat 4 that flattens its front rank.
-8. **Burst 3: lightning (crypt, converge).** Lightning strikes on every beat,
-   one per stream, while the hero slashes at the meeting point.
-9. **Burst 4: the wind-up (desert, converge).** Slashes on beats 1 and 2.
-   Then, in the sub-bass cut, the hero winds up a slam (`slam@97.1`) through
-   beats 3 and 4 as the streams close in.
+6. **Burst 1: the heavy cleave (desert, vortex).** The heavy cleave on the
+   cut, then a cleave on beat 3, as the hero circles inside the spiral
+   closing on them.
+7. **Burst 2: the slam (snow, charge).** A slam on the cut flattens the
+   oncoming wave's front rank, then a cleave on beat 3.
+8. **Burst 3: lightning (crypt, converge).** Lightning strikes on the strong
+   beats while the hero cleaves at the meeting point.
+9. **Burst 4: the wind-up (desert, converge).** A cleave on the cut. Then,
+   through the sub-bass cut, the hero winds up a slam (`slam@97.1`) as the
+   streams close in.
    - The picture cuts at 97.1, before the impact.
    - Shot 10 opens on its own slam landing on 97.1, so the wind-up and the
      impact read as one move across the cut.
@@ -383,7 +402,11 @@ Each shot is built around particular moves, listed here in order.
       slam's recovery.
 
 **Outcome (ps-hgs.7).** The shot list as shipped, from `trailer --checks`
-(the same for every roster set):
+(the same for every roster set). The choreography pass (ps-7mx.1) has since
+changed the shots' moves and some tuning (see [Kiting and
+formations](#kiting-and-formations), "Outcome (ps-7mx.1)"); its numbers are in
+[demo3d/evidence/trailer/choreography](../../demo3d/evidence/trailer/choreography/README.md).
+This was the first cut's table:
 
 | # | Bars | Environment | Formation | On screen / target | View | Heading | `shapeScale` | Swings/s | Kills per swing (mean, peak) | Kite |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -446,7 +469,13 @@ Nothing on screen ever stands around. These are the **liveness** rules:
     least 0.3 m.
   - The rules apply from the first frame. The partial interval before 79.3
     counts as one interval.
-  - In the horde shots, eighth-note flurries fill the gaps between beats.
+  - In the horde shots the hero strides on every beat, blow or not.
+- **Blows land on the major beats, never flailing.** Every hero impact lands
+  on a strong beat (4/4's beats 1 and 3), an accent, the shot's cut, the
+  final slam or one of break-2's anchors. In a pulsed section, blows land at
+  least two beats apart, each clip played near its natural rate (see
+  [The hero's moves](#the-heros-moves)). This replaces the first cut's
+  blow on every beat with flurries on the eighths.
 - **The hero steps in snaps.** Each stride covers its distance in a burst of
   about 0.12–0.16 s from the beat, then holds until the next beat. This is the
   game's rhythm signature, not idling.
@@ -476,6 +505,12 @@ Nothing on screen ever stands around. These are the **liveness** rules:
   would land on the next beat its clip fits.
   - The hero's blow on that beat usually kills it first. A blow that would
     still land is parried.
+- **The hero is never surrounded.** As in a survivors game, a player boxed in
+  on every side would be dead. On every beat, the bodies of the monsters
+  within 6 m of the hero leave a gap round them at least 60° wide: an escape
+  lane. The horde closes from the front and the flanks and trails behind.
+  - No monster stands where the hero is about to run, so the hero never
+    walks through a body.
 
 ### Kills
 
@@ -567,7 +602,7 @@ climax:
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
       "boss": "ahead", "shapeScale": 2.0, "densityCap": 1.8, "grade": { "contrast": 6, "saturation": 8 },
-      "combo": ["slam@cut", "slashL", "slashR", "slashR@eighth", "slam@final"],
+      "combo": ["slam@cut", "cleaveL", "cleaveR", "slam@final"],
       "spells": ["laser@downbeat", "ring@98.1"] } ] }
 ```
 
@@ -603,6 +638,9 @@ Per-shot fields:
   [Kiting and formations](#kiting-and-formations)). The mix's weights are
   relative, as in the level script.
 - **`duel`**: a fixed cast with no refill, for shot 1.
+- **`blowsOn`**: the grid position the combo's plain entries land on, as the
+  level script's `comboOn` (default `strong`: each bar's beats 1 and 3, see
+  [The hero's moves](#the-heros-moves)).
 - **`combo` and `spells`**: the level script's grid syntax, with four new
   positions:
   - `cut`: the shot's first beat (not valid in shot 1);
@@ -769,7 +807,7 @@ where refills come from during the shot. There are three:
   - The hero runs into it head-on and blows a channel through it.
   - The wave turns and chases.
   - Refill comes from ahead.
-- **`vortex`**: the horde spread around a looped path. As the hero circles,
+- **`vortex`**: the horde in a ring round a looped path. As the hero circles,
   the chasers spiral inward after them. Refill comes from outside the loop.
 - **`converge`**: two to six streams (`streams`) pouring in from different
   directions and meeting at the hero, who cuts across them. Refill keeps each
@@ -791,11 +829,14 @@ from where the hero's path puts it, and refills from then on:
   target over the view's area). Its front meets the hero 4 beats before the
   cut rather than on it, so the cut's blow lands inside the wall and blows
   a crater out of it; met on the cut, half the screen behind the hero was
-  empty. Refill waits for the cut, then comes from within 75° of the
-  hero's travel.
-- **Vortex.** The target's worth of monsters spread over a disk round the
-  loop's centre, 8 m wider than the loop. Refill comes from the whole edge,
-  and monsters behind the hero stay, since the hero circles back.
+  empty. Refill waits for that meeting (ps-7mx.1; until then at the cut,
+  which left the bar after it thin once the hero's cleaves cut into the
+  wave), then comes from within 75° of the hero's travel.
+- **Vortex.** The target's worth of monsters spread over a ring round the
+  loop, from its corners to 8 m past them (ps-7mx.1; a disk over the whole
+  loop, until then, put the hero inside the horde). Refill comes from the
+  whole edge, and monsters behind the hero stay, since the hero circles
+  back.
 - **Converge.** The streams fan over the 200° a horde can reach a kiting
   hero from, 100° either side of its travel at the cut, spaced as a circle
   squeezed into that arc, the first one ahead. A stream from farther behind
@@ -846,6 +887,56 @@ passes. Tuning changes from the first cut:
 The kite ratio is 2.3-2.5 in every horde shot, measured up to the final
 slam. Frame sequences are in
 [demo3d/evidence/trailer/kiting](../../demo3d/evidence/trailer/kiting/README.md).
+
+**Outcome (ps-7mx.1): blocks, blows and the lane.** The first cut's hordes
+were confetti, its hero flailed on every beat and eighth, and monsters
+stood packed round the hero. Three changes, all in a formation's shot only:
+
+- **Type blocks.** The ground is cut into square blocks 30% of the view
+  wide, and each block is dealt one of the mix's types, from the block and
+  the seed. Blocks are dealt by the ground each type's share of the count
+  covers (its weight × its diameter²), as the song's clump arcs are. Every
+  opening monster and every refill takes its spot's block's type, so
+  waves walk in as coloured masses: a charge is a patchwork of blocks, a
+  converge's streams change colour as their sources sweep across blocks.
+  - A big monster's block fills sparser by count (the mix's mean diameter²
+    over its own), so a block of trolls covers the ground a block of bats
+    does with fewer bodies. The horde keeps the mix's proportions by count.
+  - A refill tries up to 64 spots per monster, since a charge's spots must
+    lie ahead and a big monster's block keeps fewer of them.
+- **Blows on the major beats.** A shot's plain combo entries play on its
+  `blowsOn` position, `strong` by default (the level script's `comboOn`),
+  with the combo speed limits at 0.8–1.5× (see
+  [The hero's moves](#the-heros-moves)). The shots swing cleaves, the
+  normal run's 360° slashes, so each blow clears the ground round the hero.
+- **Keeping out of the hero's way.** No formation monster steps into:
+  - **the escape lane**, a wedge 45° either side of straight behind the
+    hero, out to 8 m. The wedge is taken both against the hero's travel and
+    back along its last two strides, so round a corner it holds both ways
+    until the trail has turned too. A monster whose body reaches into it, or
+    whose step would take it there, turns out of it to the nearer side and
+    on along the hero's travel. The horde then trails behind in a wake;
+  - **the hero's way**, the ground the hero's next two strides sweep. A
+    monster there sidesteps out of it and plants no blow there, unless the
+    hero's own blow lands by the next beat and cuts it down mid-windup.
+  - A step out of the lane or the way leads away from the hero, so the
+    monster's hold distance doesn't shorten it. Boxed in, it presses on as it
+    chased instead. Cornered with the hero in reach, it swings. On its last
+    try, rather than mark time, it shoves 70% of the smaller radius into its
+    neighbours, not 40%.
+
+Fewer blows kill fewer, so the shots were retuned:
+
+- shot 2's charge swings at `shapeScale` 2.4, so each ring clears the two
+  beats of ground the hero runs into between blows; shot 5's elite charge
+  stays at 1.8, since its refill can't keep up with more;
+- shot 5's elite charge and shot 7's charge aim at 420 on screen: with the
+  lane open behind the hero, half the screen is the wake;
+- shot 6's vortex loop is entered mid-side, so its cut falls between corners.
+  It opens on the heavy cleave, since a spin's long windup cost it the blow
+  before its cut, at `shapeScale` 1.4;
+- shot 7 opens on its slam (on 94.4 it no longer fit), at `shapeScale` 1.8;
+- shot 8's lightning strikes on the strong beats, not every beat.
 
 ### The boss
 
@@ -1337,7 +1428,11 @@ It runs every shot's simulation and prints a table with one row per shot:
   spell landing with it counts too);
 - the share of beats the hero acted on;
 - the kite ratio, the hero's speed over the horde's;
-- liveness violations: monster beat intervals that break the monster rule.
+- liveness violations: monster beat intervals that break the monster rule;
+- blocks: the type blocks' coherence, the mean share of a visible monster's
+  neighbours within 3 m that share its type (a random mix of the shots'
+  scores about 25%, pure blocks 100%);
+- lane: the narrowest the hero's open lane gets, in degrees.
 
 These checks fail the run, naming the shot, the time and the monster:
 
@@ -1349,6 +1444,16 @@ These checks fail the run, naming the shot, the time and the monster:
 - **Liveness.** The monster and hero rules in [Motion](#motion) hold in every
   beat interval of every visible span. Break-2's intervals are its silent
   beats.
+- **Type blocks.** In every horde shot, up to any final slam, the blocks
+  score at least 60%: on every beat each visible monster scores the share of
+  the visible monsters within 3 m that share its type, and the shot's mean
+  holds.
+- **Blows on the major beats.** Every hero impact of the visible span lands
+  on a strong beat, an accent, the cut or an anchor, and in a pulsed section
+  at least two beats after the last.
+- **An open lane.** On every beat of the visible span, up to any final slam,
+  the bodies of the monsters within 6 m of the hero leave a gap round them
+  at least 60° wide.
 - **One hit kills.** No monster takes a hit and survives.
 - **The boss.** It takes exactly one hit, from the final slam on 99.1.
 - **The final slam.** It kills every monster in view.
@@ -1430,6 +1535,19 @@ Expect:
   blow.
 - **Motion.** No monster frozen anywhere, the hero acting on every beat, and
   the horde chasing and streaming.
+- **The horde in blocks.** Waves of one monster type arrive together as
+  coloured masses, never confetti; a charge reads as a patchwork, a
+  converge's streams change colour as they pour in. Under the default
+  palette skeletons, goblins and bats share tan tones, so judge whether the
+  blocks read enough there, and compare `--signature-monster-colors`.
+- **Blows with weight.** The hero's blows land on the music's strong beats,
+  each with a visible windup and follow-through, and the hero runs between
+  them. Nothing reads as flailing. Judge whether the pace (about one blow
+  every two beats) still feels energetic enough for a trailer.
+- **Never surrounded.** The horde closes from the front and the flanks and
+  trails behind in a wake; the hero always has an open lane and never walks
+  through a monster. Judge whether the monsters stepping aside from the
+  hero's path reads as natural, not as a force field.
 - **The end.** The final slam clears the screen, then two beats of aftermath,
   black and a 1.5 s fade.
 - **Picture.** No text and no UI at any point.

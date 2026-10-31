@@ -168,7 +168,8 @@ at its top:
 
 Combo and spell entries are a clip or spell name, optionally followed by
 `@` and a grid position: `beat` (the default), `eighth`, `downbeat`,
-`phrase` (the downbeat that opens a phrase) or `accent`.
+`strong` (a bar's strong beats: the downbeat, and an even bar's middle beat,
+4/4's beat 3), `phrase` (the downbeat that opens a phrase) or `accent`.
 
 - **Plain combo entries cycle** in order, one per action.
 - **A positioned entry preempts the cycle** on its position. When positions
@@ -553,6 +554,7 @@ included).
 | `duel` | none | A fixed cast by type and count, with no refill and no opening horde. Its k-th member meets the k-th fixed combo entry: it starts a third of a turn from the last, as far out as it walks by that blow, so it arrives just inside its reach then. |
 | `formation` | none | `{ "kind": "charge" \| "vortex" \| "converge", "streams": 2-6 }`, with a `heroPath`: the horde's opening placement, refill and never-jam steering (below). |
 | `densityCap` | 1.2 | A formation's refill spawns only where fewer than this many monsters stand per m² within 2 m. |
+| `comboOn` | `beat` | The grid position plain combo entries play on, such as `strong` (the trailer's blows on the major beats); positioned entries keep their own. |
 
 The combo and spell grid gains the trailer's positions: `cut`, `final`,
 `anchor` (the next unused anchor of a free section, from the cut on, or the
@@ -576,6 +578,17 @@ to 20% of the smaller radius's overlap, and a shove to 40%. A windup the hero's 
 cuts short stays in the timeline. A kiting hero outruns the horde, so an
 off-screen monster behind it, past the spawn band, leaves (except round a
 vortex's loop).
+
+A formation also deals its horde in **type blocks** and keeps out of a
+kiting hero's way (ps-7mx.1; [Trailer Mode](trailer.md), "Kiting and
+formations", has the details):
+
+- every monster it places or refills takes the type of its spot's block, a
+  square of ground 30% of the view wide dealt one of the mix's types by the
+  ground its share of the count covers, so waves arrive as coloured masses;
+- no monster steps into the hero's escape lane (45° either side of straight
+  behind it, to 8 m) or the ground its next two strides sweep, and none
+  plants a blow there unless the hero's blow lands first.
 
 ### Free sections
 
