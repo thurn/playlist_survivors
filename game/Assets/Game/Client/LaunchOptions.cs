@@ -178,7 +178,6 @@ namespace Game.Client
                 Start = !o.Music ? RunStart.Immediately : o.Windowed ? RunStart.OnKey : RunStart.AfterClearBeat,
                 StartMinute = level == SessionLevel.Run ? startMinute : 0,
                 Easy = a.Has("--easy"),
-                HeroStands = level == SessionLevel.Slice || level == SessionLevel.Cast,
                 Cast = level == SessionLevel.Cast ? cast.Split(',') : null,
                 Loadout = arsenal != null ? Loadout(arsenal) : null,
                 NoCards = a.Has("--no-cards"),

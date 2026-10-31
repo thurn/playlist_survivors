@@ -61,7 +61,6 @@ namespace Game.Tests
             Assert.That(run.Level, Is.EqualTo(level));
             Assert.That(run.StartMinute, Is.EqualTo(startMinute));
             Assert.That(run.Unrecordable, Is.EqualTo(unrecordable));
-            Assert.That(run.HeroStands, Is.EqualTo(level == SessionLevel.Slice || level == SessionLevel.Cast));
         }
 
         [Test]

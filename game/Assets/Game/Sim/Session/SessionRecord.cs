@@ -204,7 +204,7 @@ namespace PS.Game.Sim
                 "  \"start\": {18},\n  \"controls\": {19}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, run.Seed,
                 Quote(run.Level == SessionLevel.Slice ? "slice" : run.Level == SessionLevel.Run ? "run" : "open"), run.Arena ? "true" : "false",
-                run.Easy ? "true" : "false", run.HeroStands ? "true" : "false", run.StartTime, End, Hash, Events, Entries.Length, Keys.Length,
+                run.Easy ? "true" : "false", run.Level == SessionLevel.Slice ? "true" : "false", run.StartTime, End, Hash, Events, Entries.Length, Keys.Length,
                 Commands.Length, Quote(run.Start.ToString()), Controls.Length, run.StartMinute);
         }
 

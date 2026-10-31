@@ -43,8 +43,6 @@ namespace PS.Game.Sim
         public int StartMinute = Defaults.StartMinute;
         public double Gate = Defaults.Gate, KnownAtBudget = Defaults.KnownAtBudget;
         public bool Easy = Defaults.Easy;
-        /// <summary>The slice's and the cast's hero stands (<see cref="SliceLevel"/>, <see cref="RunLevel.Lineup"/>).</summary>
-        public bool HeroStands = Defaults.HeroStands;
 
         // Never recorded: a run on any of these sets Unrecordable.
         /// <summary>`--cast`'s roles, for the <see cref="SessionLevel.Cast"/> level.</summary>
@@ -90,7 +88,6 @@ namespace PS.Game.Sim
             config.Gate = Gate;
             config.KnownAtBudget = KnownAtBudget;
             config.Easy = Easy;
-            config.HeroStands = HeroStands;
             if (config.Arsenal != null)
             {
                 if (Loadout != null)
@@ -116,15 +113,14 @@ namespace PS.Game.Sim
             bool open = run.Level == SessionLevel.Open;
             run.Arena = !open && arena;
             run.Footprint = open ? new double[0] : (double[])footprint.Clone();
-            if (open)
-            {
-                run.StartMinute = 0;
-                run.HeroStands = false;
-            }
+            if (open) run.StartMinute = 0;
             return run;
         }
 
-        /// <summary>Writes the recorded inputs as <c>inputs.bin</c> holds them (version 2's layout).</summary>
+        /// <summary>
+        /// Writes the recorded inputs as <c>inputs.bin</c> holds them (version 2's layout, which keeps a byte for whether
+        /// the hero stands: now the level's alone, <see cref="SimConfig.HeroStands"/>).
+        /// </summary>
         public void Write(BinaryWriter w)
         {
             if (Unrecordable != null) throw new InvalidOperationException("a session can't record a run on " + Unrecordable);
@@ -134,7 +130,7 @@ namespace PS.Game.Sim
             w.Write(Gate);
             w.Write(KnownAtBudget);
             w.Write(Easy);
-            w.Write(HeroStands);
+            w.Write(Level == SessionLevel.Slice); // the hero standing, which only the slice's does of the levels recorded
             w.Write((byte)Start);
             w.Write((byte)Level);
             w.Write(Arena);
@@ -150,7 +146,7 @@ namespace PS.Game.Sim
             run.Gate = r.ReadDouble();
             run.KnownAtBudget = r.ReadDouble();
             run.Easy = r.ReadBoolean();
-            run.HeroStands = r.ReadBoolean();
+            r.ReadBoolean(); // the hero standing: the level's, as it always was
             byte start = r.ReadByte(), level = r.ReadByte();
             if (start > (byte)RunStart.AfterClearBeat) throw new FormatException($"{path}: run start {start}");
             if (level > (byte)SessionLevel.Run) throw new FormatException($"{path}: level {level}");

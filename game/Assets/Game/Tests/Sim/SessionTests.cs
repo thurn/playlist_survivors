@@ -34,7 +34,7 @@ namespace PS.Game.Sim.Tests
         /// <summary>The slice's level on the game's arena, started on a key, as a windowed run starts.</summary>
         static RunInputs Inputs(ulong seed = 3) => new RunInputs
         {
-            Seed = seed, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Start = RunStart.OnKey, HeroStands = true,
+            Seed = seed, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Start = RunStart.OnKey,
         };
 
         static SimConfig Build(RunInputs run) => run.Build(HordeFixture.Content, HordeFixture.GameArena());
@@ -245,11 +245,10 @@ namespace PS.Game.Sim.Tests
         {
             nameof(SimConfig.Seed), nameof(SimConfig.StartTime), nameof(SimConfig.StartMinute), nameof(SimConfig.Gate),
             nameof(SimConfig.KnownAtBudget), nameof(SimConfig.Arena), nameof(SimConfig.Start), nameof(SimConfig.Easy),
-            nameof(SimConfig.HeroStands),
         };
         static readonly string[] FromLevelAndContent =
         {
-            nameof(SimConfig.Content), nameof(SimConfig.Horde), nameof(SimConfig.Arsenal), nameof(SimConfig.TickCapacity),
+            nameof(SimConfig.Content), nameof(SimConfig.Horde), nameof(SimConfig.Arsenal), nameof(SimConfig.HeroStands), nameof(SimConfig.TickCapacity),
             nameof(SimConfig.BeatCapacity), nameof(SimConfig.EntryCapacity), nameof(SimConfig.EventCapacity), nameof(SimConfig.PressCapacity),
         };
 
@@ -267,13 +266,85 @@ namespace PS.Game.Sim.Tests
             var run = new RunInputs
             {
                 Seed = 11, Level = SessionLevel.Run, Arena = true, Footprint = Footprint, Start = RunStart.AfterClearBeat,
-                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, HeroStands = true,
+                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true,
             };
             var config = Build(run);
             var plain = new SimConfig();
             foreach (var name in FromInputs)
                 Assert.AreNotEqual(typeof(SimConfig).GetField(name).GetValue(plain), typeof(SimConfig).GetField(name).GetValue(config), name);
             Assert.AreSame(Footprint, config.Horde.CameraFootprint);
+        }
+
+        /// <summary>
+        /// Sessions already written read as they were: <c>inputs.bin</c>'s bytes of each version, laid out by hand
+        /// (version 1 has no start minute and no input arguments), so a change to the layout fails here, not on disk.
+        /// </summary>
+        [TestCase(1)]
+        [TestCase(2)]
+        public void SessionsAlreadyWrittenReadAsTheyWere(int version)
+        {
+            using (var w = new BinaryWriter(File.Create(Path.Combine(dir, SessionRecord.InputsFile))))
+            {
+                w.Write(new[] { (byte)'P', (byte)'S', (byte)'R', (byte)'U', (byte)'N' });
+                w.Write(version);
+                w.Write(42UL);   // seed
+                w.Write(0.5);    // start time
+                if (version >= 2) w.Write(25); // start minute
+                w.Write(0.2);    // gate
+                w.Write(0.5);    // B
+                w.Write(true);   // easy
+                w.Write(false);  // the hero standing
+                w.Write((byte)RunStart.OnKey);
+                w.Write((byte)SessionLevel.Run);
+                w.Write(true);   // arena
+                w.Write(2);
+                w.Write(-1.5);
+                w.Write(2.5);
+                w.Write(30.25);  // end
+                w.Write(1234);   // events
+                w.Write(0xABCDEF0123456789UL);
+                w.Write(1);      // entries
+                w.Write(1.0);
+                w.Write(1.5);
+                w.Write(2);      // inputs: a press, then a debug command
+                w.Write((byte)0);
+                w.Write((byte)Key.Up);
+                if (version >= 2) w.Write(0);
+                w.Write(2.0);
+                w.Write(2.1);
+                w.Write((byte)2);
+                w.Write((byte)DebugCommand.JumpClock);
+                if (version >= 2) w.Write(1620);
+                w.Write(0.0);
+                w.Write(3.0);
+            }
+            var record = SessionRecord.Read(dir);
+            var run = record.Run;
+            Assert.AreEqual(42UL, run.Seed);
+            Assert.AreEqual(0.5, run.StartTime);
+            Assert.AreEqual(version >= 2 ? 25 : 0, run.StartMinute);
+            Assert.AreEqual(0.2, run.Gate);
+            Assert.AreEqual(0.5, run.KnownAtBudget);
+            Assert.IsTrue(run.Easy);
+            Assert.AreEqual(RunStart.OnKey, run.Start);
+            Assert.AreEqual(SessionLevel.Run, run.Level);
+            Assert.IsTrue(run.Arena);
+            CollectionAssert.AreEqual(new[] { -1.5, 2.5 }, run.Footprint);
+            Assert.AreEqual(30.25, record.End);
+            Assert.AreEqual(1234, record.Events);
+            Assert.AreEqual(0xABCDEF0123456789UL, record.Hash);
+            Assert.AreEqual(new EntryRecord { Taken = 1.0, KnownAt = 1.5 }, record.Entries.Single());
+            Assert.AreEqual(Key.Up, record.Keys.Single().Key);
+            Assert.AreEqual(2.1, record.Keys.Single().Effective);
+            Assert.AreEqual(DebugCommand.JumpClock, record.Commands.Single().Command);
+            Assert.AreEqual(version >= 2 ? 1620 : 0, record.Commands.Single().Arg);
+            Assert.AreEqual(1, record.Commands.Single().Order, "in the order the sim took them");
+
+            // Written again, the same bytes (version 2's).
+            if (version != 2) return;
+            var bytes = File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile));
+            record.Write(dir);
+            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile)));
         }
 
         [Test]
