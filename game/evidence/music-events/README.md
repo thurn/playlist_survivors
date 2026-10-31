@@ -58,10 +58,15 @@ members, and its cause's time and known-at. The summary, from 2026-10-31:
 
 ```text
 song 2172.2 s, run clock 1800.0 s, phase Ended, end Victory
-set pieces: BatSwarm 14, GhostSwarm 19, FlowerWall 7, Ring 22, Signature 1
-most alive 300 (cap 300), 469 left out of sight, minotaur slams 13 (14 slam hits on the hero, its and the bosses')
+set pieces: BatSwarm 49, GhostSwarm 50, FlowerWall 9, Ring 21, Signature 1
+most alive 300 (cap 300), 4478 left out of sight, minotaur slams 13 (14 slam hits on the hero, its and the bosses')
 ```
 
+- **The swarms land with their flocks**: 47 bat swarms of 50 and two of 49, every ghost swarm's 20
+  and every flower wall's 100. Before the Warden's fix (ps-msz.6.16) the minotaur's group, once it
+  had gone, took over the next swarm to reuse it and orphaned its flock, still scripted and holding
+  cap slots for the rest of the run, so later swarms found no room: all 19 ghost swarms came as one
+  ghost, and six of seven flower walls as one flower.
 - **Never above 300**: the events make room under the cap (ordinary enemies far off leave), so the
   most alive in any frame is the cap.
 - **The swarms** land on the first reliable main beat at or after their minute's jump where it has
