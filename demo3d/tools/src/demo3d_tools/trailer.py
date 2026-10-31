@@ -21,9 +21,11 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from . import mix, paths, setup
@@ -31,6 +33,8 @@ from . import mix, paths, setup
 FPS = 60
 OWNED = ("--capture-video", "--dump-sounds")  # the command sets these itself
 SILENT = 1e-4  # a sample this small is silence (-80 dBFS; the mix is float, before the encoder)
+STALL_S = 300  # a player whose log hasn't grown in this long is stuck (start-up and a 2x frame log far more often)
+PROGRESS = re.compile(rb"CaptureTool: (\d+) frames")
 
 
 def player(wt: paths.Worktree, backend: str, app: str | None) -> Path:
@@ -60,9 +64,44 @@ def player_command(exe: Path, flags: list[str], files: dict[str, Path], stand_in
         ffmpeg = shutil.which("ffmpeg")
         if ffmpeg is None:
             raise SystemExit("trailer: ffmpeg is not on the PATH")
-        # IL2CPP's Process.Start doesn't search the PATH (mac.md), so the player gets ffmpeg's full path.
+        # The player starts ffmpeg itself and doesn't search the PATH, so it gets ffmpeg's full path.
         cmd += ["--capture-video", str(files["silent"]), "--ffmpeg", ffmpeg]
     return cmd + flags
+
+
+def run_player(cmd: list[str], cwd: Path, log: Path, stall_s: float = STALL_S) -> int:
+    """Runs the player, printing the capture's progress from its log; a player whose log stops growing for
+    `stall_s` is stuck (the first Mac capture rendered an idle frame for an hour after ffmpeg failed to start),
+    so it is killed and the run fails."""
+    proc = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    started = last_change = time.monotonic()
+    size, shown = -1, 0
+    try:
+        while proc.poll() is None:
+            time.sleep(1)
+            now = time.monotonic()
+            grown = log.stat().st_size if log.exists() else 0
+            if grown != size:
+                size, last_change = grown, now
+                found = PROGRESS.findall(log.read_bytes()[-4096:]) if grown else []
+                if found and int(found[-1]) != shown:
+                    shown = int(found[-1])
+                    elapsed = now - started
+                    print(f"\rtrailer: {shown} frames ({shown / FPS:.1f} s of video) after {elapsed / 60:.1f} min",
+                          end="", flush=True)
+            elif now - last_change > stall_s:
+                print(f"\ntrailer: the player's log hasn't grown in {stall_s:.0f} s; it is stuck, stopping it",
+                      file=sys.stderr)
+                proc.kill()
+                proc.wait()
+                return 124
+    finally:
+        if shown:
+            print()
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+    return proc.returncode
 
 
 def frames(dump: dict) -> int:
@@ -159,8 +198,7 @@ def main(argv: list[str]) -> int:
 
     cmd = player_command(exe, flags, files, a.stand_in)
     print(f"trailer: {'dumping the cues (batch mode)' if a.stand_in else 'capturing (windowed)'}: {' '.join(cmd)}", flush=True)
-    code = subprocess.run(cmd, check=False, cwd=wt.project, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                          timeout=3600).returncode
+    code = run_player(cmd, wt.project, files["log"])
     if code != 0 or not files["sounds"].exists() or not (a.stand_in or files["silent"].exists()):
         print(f"trailer: the player exited {code} without its files (see {files['log']})", file=sys.stderr)
         return 1

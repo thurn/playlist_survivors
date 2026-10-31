@@ -95,11 +95,12 @@ namespace Demo3D.Runtime.Playback
             try { StartDemo(); }
             catch (Exception e)
             {
-                // A batch-mode player would otherwise sit with no demo until something kills it
-                // (an unbaked worktree cost ps-e8r.9 15 minutes of timeouts).
+                // A batch-mode player or a capture would otherwise sit with no demo until something
+                // kills it (an unbaked worktree cost ps-e8r.9 15 minutes of timeouts, and a trailer
+                // capture whose ffmpeg didn't start an hour).
                 Debug.LogException(e);
                 enabled = false;
-                if (Application.isBatchMode)
+                if (Application.isBatchMode || Args.Has("--capture-video") || Args.Has("--capture-stills"))
                 {
                     Debug.LogError("DemoMain: start-up failed; quitting with exit 1");
                     Application.Quit(1);
@@ -513,7 +514,15 @@ namespace Demo3D.Runtime.Playback
         {
             if (_capture == null || double.IsNaN(_captureAt) || _rig == null || camera != _rig.Camera) return;
             int before = _capture.StillsWritten;
-            _capture.Capture(_captureAt);
+            try { _capture.Capture(_captureAt); }
+            catch (Exception e)
+            {
+                // A capture missing frames is worthless, and failing every frame never ends.
+                Debug.LogException(e);
+                Debug.LogError("DemoMain: the capture failed; quitting with exit 1");
+                Quit(1);
+                return;
+            }
             _captureAt = double.NaN;
             if (_maskOn || _capture.StillsWritten == before) return;
             if (_captureMask) _maskAt = _capture.LastStillAt + _timeBase;
@@ -843,6 +852,7 @@ namespace Demo3D.Runtime.Playback
             if (_songCheck != null && !_songCheck.Write(_flags.SongCheck, _tl.Duration, Environment.CommandLine) && code == 0) code = 2;
             _songCheck?.Dispose();
             _songCheck = null;
+            if (_capture != null && !_capture.Finish() && code == 0) code = 1;
             _capture?.Dispose();
             _capture = null;
             _gpuProbe?.Dispose();

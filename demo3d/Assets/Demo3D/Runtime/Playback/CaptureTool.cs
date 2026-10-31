@@ -113,6 +113,8 @@ namespace Demo3D.Runtime.Playback
                 data.CopyTo(_frame);
                 _ffmpeg.Write(_frame, 0, _frame.Length);
                 FramesWritten++;
+                // Progress, which `demo3d trailer` reads from the log (a capture takes many minutes).
+                if (FramesWritten % 60 == 0) Debug.Log($"CaptureTool: {FramesWritten} frames");
             }
             if (still)
             {
@@ -174,15 +176,21 @@ namespace Demo3D.Runtime.Playback
 
         public bool Done => !_pipe && _stillTimes.Count == 0 && _forced == null;
 
+        /// <summary>Ends the video, waiting for ffmpeg to finish encoding; false if it failed.</summary>
+        public bool Finish()
+        {
+            if (!_pipe) return true;
+            int code = _ffmpeg.CloseAndWait(300000);
+            _ffmpeg.Dispose();
+            _pipe = false;
+            if (code != 0) UnityEngine.Debug.LogError("CaptureTool: ffmpeg exited with " + code);
+            else UnityEngine.Debug.Log($"CaptureTool: video done, {FramesWritten} frames");
+            return code == 0;
+        }
+
         public void Dispose()
         {
-            if (_pipe)
-            {
-                int code = _ffmpeg.CloseAndWait(300000);
-                _ffmpeg.Dispose();
-                _pipe = false;
-                if (code != 0) UnityEngine.Debug.LogError("CaptureTool: ffmpeg exited with " + code);
-            }
+            Finish();
             _camera.targetTexture = null;
             _target.Release();
             if (_resolved != null) _resolved.Release();

@@ -214,9 +214,12 @@ too), so a split run has small seams, and runs compare only with the same `--chu
 - **Sweeps, the song check's verdict and PIX.** The bench player refuses to
   sweep off Windows, and the song check's machine samples are Windows
   counters, so a Mac verdict always says "no machine samples".
-- **Video capture** needs a windowed player (on either machine); on the Mac
-  it pipes frames into ffmpeg through `System.Diagnostics.Process`, not yet
-  run (plan.md, Pending on the operator).
+- **Video capture** needs a windowed player (on either machine). On the Mac
+  it pipes frames into ffmpeg through libc's `popen` (`PipeProcess`): IL2CPP's
+  `System.Diagnostics.Process` fails there as on Windows ("Native error=
+  Success"), which left the first trailer capture rendering an idle frame for
+  an hour. A capture that fails now quits the player with exit 1, and
+  `demo3d trailer` stops a player whose log stops growing for 5 minutes.
 - **Unity rewrites tracked settings on the Mac.** `demo3d unity Configure`
   also rewrites the URP global settings' runtime list, the quality level's
   anti-aliasing and two bench materials' colours. Commit only what a change

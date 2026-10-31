@@ -1302,6 +1302,11 @@ The picture, the cue list and the player's log stay beside the output, as
 `FILE.silent.mp4`, `FILE.sounds.json` and `FILE.player.log`, so the mix can be
 redone with `demo3d mix` alone.
 
+While the player renders, the command prints its progress from the log (the
+player logs every 60 frames). A player whose log stops growing for 5 minutes
+is stuck, so the command stops it and fails. A capture that can't start
+ffmpeg or write a frame quits the player with exit 1.
+
 The capture needs a windowed player. Agents never open player windows, so
 recording it is a task for the **operator**, the developer who runs the demo
 and reviews its evidence. Agents check the trailer with windowless stills and
