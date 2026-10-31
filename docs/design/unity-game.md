@@ -1066,7 +1066,9 @@ debugged.
   built player, headless. Each checks the hash only against a session of its
   own runtime, since runtimes may round differently: a player's session
   replayed in .NET reports a difference without failing.
-- Evidence: [game/evidence/replay](../../game/evidence/replay/README.md).
+- Evidence: [game/evidence/replay](../../game/evidence/replay/README.md). Slow CI
+  records a 10 s headless run of the Mono player, watches it at once to its hash
+  and replays its session in .NET (`game replay --record FILE`).
 - A headless replay in the same runtime must reproduce the hash.
 
 ## Gameplay Rules

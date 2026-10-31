@@ -624,7 +624,8 @@ namespace Game.Client.Loop
             _counts.Dispose();
             if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
-            if (_sessionDir != null) KeepSession();
+            // Under --watch, a session that wasn't kept leaves nothing to watch: the launch fails.
+            if (_sessionDir != null && !KeepSession() && code == 0 && Args.Has("--watch")) code = 1;
             if (error != null) Debug.LogError("GameLoop: " + error);
             if (_sessionDir != null && code == 0 && !_quitting && Args.Has("--watch"))
             {
@@ -639,8 +640,8 @@ namespace Game.Client.Loop
         /// <summary>Ends the run now, as Backspace does (Boot's `--seconds` under --watch).</summary>
         public void End(string why) => Finish(0, why);
 
-        /// <summary>The run's half of its session, beside the plugin's (closed by now): its inputs, config and hash.</summary>
-        void KeepSession()
+        /// <summary>The run's half of its session, beside the plugin's (closed by now): its inputs, config and hash. False if it wasn't kept.</summary>
+        bool KeepSession()
         {
             try
             {
@@ -656,10 +657,12 @@ namespace Game.Client.Loop
                 Debug.Log(string.Format(CultureInfo.InvariantCulture, "GameLoop: session in {0}: song {1:F3} s, {2} entries, {3} key changes, " +
                     "{4} debug commands, hash {5:X16}", _sessionDir, record.End, record.Entries.Length, record.Keys.Length,
                     record.Commands.Length, record.Hash));
+                return true;
             }
             catch (Exception e)
             {
                 Debug.LogError($"GameLoop: the session in {_sessionDir} wasn't kept: {e}");
+                return false;
             }
         }
 

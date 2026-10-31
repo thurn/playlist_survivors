@@ -27,6 +27,11 @@ Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Re
 `--player` in the built player, batch mode and `--headless`, which plays its recorded music through
 the plugin's Replay source in real time. Each exits 0 when the hash matches; .NET exits 2 for a
 player's session whose hash it rounds differently.
+
+`game replay --record F [--seconds N]`: the player's whole session path, headless (slow CI): a
+run of F recorded, watched at once in the same player (`--watch`) to its hash, then replayed in
+.NET. It exits 1 if the player fails or throws, its replay differs, or .NET can't replay the
+session (a .NET difference is only reported: Unity's runtimes may round differently).
 """
 
 from __future__ import annotations
@@ -65,8 +70,13 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     lk.set_defaults(func=cmd_look)
 
     rp = sub.add_parser("replay", help="replay a recorded session headlessly to its hash, in .NET or the player")
-    rp.add_argument("session", help="the session's folder (the player's sessions/<time>, or a --sessions DIR's)")
+    rp.add_argument("session", nargs="?", help="the session's folder (the player's sessions/<time>, or a --sessions DIR's)")
     rp.add_argument("--player", action="store_true", help="in the built player (batch mode, --headless) instead of .NET")
+    rp.add_argument("--record", metavar="FILE",
+                    help="instead, record a headless run of FILE (from the repository root) in the player, watch it at once "
+                         "to its hash and replay its session in .NET")
+    rp.add_argument("--seconds", type=float, default=10, help="--record: the run's length")
+    rp.add_argument("--player-args", default="", help="--record: extra player flags, e.g. '--debug break@5'")
     rp.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
     rp.set_defaults(func=cmd_replay)
 
@@ -87,26 +97,64 @@ def _cmd_plugin(a: argparse.Namespace) -> int:
 
 def cmd_replay(a: argparse.Namespace) -> int:
     wt = paths.worktree(name="game")
+    if a.record:
+        return _record_and_watch(wt, a)
+    if a.session is None:
+        print("replay: which session? (or --record FILE)", file=sys.stderr)
+        return 2
     session = Path(a.session).resolve()
     if not (session / "inputs.bin").is_file():
         print(f"replay: {session} isn't a recorded session (no inputs.bin)", file=sys.stderr)
         return 2
     if not a.player:
-        cmd = ["dotnet", "run", "--project", str(wt.project / "dotnet" / "PS.Game.Replay"), "-c", "Release",
-               "--", str(session), "--content", str(wt.project / "Content")]
-        return subprocess.run(cmd, check=False).returncode
-    exe = setup.player_dir(wt, "mac", a.backend) / APP_EXE
-    if not exe.exists():
-        print(f"replay: no {a.backend} player at {exe}: run `game build` first", file=sys.stderr)
-        return 2
+        return _dotnet_replay(wt, session)
     log = wt.root / "captures" / "game" / "replay" / f"{session.name}.log"
+    code, _ = _play(wt, a.backend, ["--replay", str(session), "--headless"], log)
+    return code
+
+
+def _dotnet_replay(wt: paths.Worktree, session: Path) -> int:
+    cmd = ["dotnet", "run", "--project", str(wt.project / "dotnet" / "PS.Game.Replay"), "-c", "Release",
+           "--", str(session), "--content", str(wt.project / "Content")]
+    return subprocess.run(cmd, check=False).returncode
+
+
+def _play(wt: paths.Worktree, backend: str, args: list[str], log: Path, timeout: float = 3600) -> tuple[int, list[str]]:
+    """The built player, batch mode, with `args`: its exit code (2 if there is none) and its log's Replay lines."""
+    exe = setup.player_dir(wt, "mac", backend) / APP_EXE
+    if not exe.exists():
+        print(f"replay: no {backend} player at {exe}: run `game build` first", file=sys.stderr)
+        return 2, []
     log.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [str(exe), "-batchmode", "-logFile", str(log), "--replay", str(session), "--headless"]
-    code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
+    cmd = [str(exe), "-batchmode", "-logFile", str(log), *args]
+    code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL, timeout=timeout).returncode
     lines = [ln for ln in log.read_text(errors="replace").splitlines() if ln.startswith("Replay:")]
     print("\n".join(lines) or f"replay: no Replay line in {log}")
     print(f"replay: the player exited {code} (log {log.relative_to(wt.root)})")
-    return code
+    return code, lines
+
+
+def _record_and_watch(wt: paths.Worktree, a: argparse.Namespace) -> int:
+    from .spike import exceptions
+
+    captures = wt.root / "captures" / "game" / "replay" / "record"
+    shutil.rmtree(captures, ignore_errors=True)
+    sessions = captures / "sessions"
+    sessions.mkdir(parents=True)
+    log = captures / "player.log"
+    args = ["--file", str((wt.root / a.record).resolve()), "--headless", "--seconds", f"{a.seconds:g}", "--watch",
+            "--sessions", str(sessions), *shlex.split(a.player_args)]
+    # (The run, then its replay in real time: a hang guard with ample room.)
+    code, lines = _play(wt, a.backend, args, log, timeout=10 * a.seconds + 300)
+    recorded = sorted(p for p in sessions.iterdir() if (p / "inputs.bin").is_file())
+    thrown = exceptions(log)
+    for line in thrown[:5]:
+        print(f"replay: the player threw: {line}", file=sys.stderr)
+    if code != 0 or thrown or len(recorded) != 1 or not any(ln.endswith(": matches") for ln in lines):
+        print(f"replay: the recorded run's replay failed ({len(recorded)} sessions in {sessions})", file=sys.stderr)
+        return 1
+    dotnet = _dotnet_replay(wt, recorded[0])
+    return 0 if dotnet in (0, 2) else 1
 
 
 def cmd_look(a: argparse.Namespace) -> int:

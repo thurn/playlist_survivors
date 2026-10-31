@@ -212,19 +212,22 @@ fi
 
 # The Unity game (docs/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
 # tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
-# once game/dotnet/PS.Game.Sim.Tests exists; then, windowless in batch mode, the project set up from
+# once game/dotnet/PS.Game.Sim.Tests exists, and its replay command built; then, windowless in batch mode, the project set up from
 # this machine's vendor packs and cache (setup builds the music plugin into it), Unity's EditMode
 # tests, where a skip fails too, and a short batch-mode File run of a Mono player: the cinematic
 # slice's frame loop (its horde, sword and structures on house-128) with every scheduled sound a
 # click, measured from Unity's own mix (`game spike --sounds`: the sounds on the music within 2 ms,
 # so the music's anchor matches the mix, frameSong within 1 ms of the audio thread's clock, no
-# stalls, no exception in the player's log). Unity's rewrites of ProjectSettings are discarded. A machine
+# stalls, no exception in the player's log), then a 10 s run of that player recorded and watched at
+# once to its hash (`game replay --record`), its session replayed in .NET too. Unity's rewrites of
+# ProjectSettings are discarded. A machine
 # without the packs, or off macOS (the plugin builds only there until M5, ps-msz.9), skips the
 # Unity half, saying so.
 if [ "$section" = game ]; then
   uv run --quiet --project demo3d/tools game guard --tree HEAD
   if [ -d game/dotnet/PS.Game.Sim.Tests ]; then
     dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
+    dotnet build game/dotnet/PS.Game.Replay --nologo -v q
   else
     echo "ci-full game: no sim tests yet (game/dotnet/PS.Game.Sim.Tests)"
   fi
@@ -240,5 +243,7 @@ if [ "$section" = game ]; then
     uv run --quiet --project demo3d/tools game test --no-skips
     uv run --quiet --project demo3d/tools game spike ci --file public/reactive/house-128/house-128.ogg \
       --sounds --seconds 30 --backend mono --build --no-evidence
+    uv run --quiet --project demo3d/tools game replay --record public/reactive/house-128/house-128.ogg \
+      --seconds 10 --backend mono --player-args "--debug break@5,change@7"
   ) fi
 fi

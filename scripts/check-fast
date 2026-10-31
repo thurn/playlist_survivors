@@ -12,8 +12,8 @@
 # - The vendor guard (demo3d/tools, covering every Unity project: game/, demo3d/, demo2d/ and
 #   stylelab/), always, over the commits since the base and the index; its tools' lint and tests
 #   when demo3d/tools changed, the choreography layer's tests (on each demo's data) when the
-#   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/) when
-#   the sim, its arena layout or its content (game/Content/) changed.
+#   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/), and its
+#   replay command built, when the sim, its arena layout or its content (game/Content/) changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
@@ -101,6 +101,7 @@ fi
 
 if changes_game_sim && [ -d game/dotnet/PS.Game.Sim.Tests ]; then
   dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
+  dotnet build game/dotnet/PS.Game.Replay --nologo -v q
 fi
 
 echo "check-fast: passed in $(( $(date +%s) - started )) s"

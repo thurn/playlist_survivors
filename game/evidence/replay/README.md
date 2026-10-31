@@ -70,6 +70,11 @@ tick's `known_at` instead (entry 500) changed nothing the run used, and the hash
 - `Game.Tests.LoopTests.AReplayedRunDispatchesTheSameEventsAndStopsAtItsEnd` (EditMode): the
   client's driver replays a run on frames twice as long, dispatching the same events and stepping
   no further than the run's end.
+- Slow CI (`scripts/ci-full`): `game replay --record public/reactive/house-128/house-128.ogg
+  --backend mono` records a 10 s headless run of the Mono player with two debug commands, watches
+  it at once (`--watch`) and fails unless the player exits 0 with a `Replay: ... matches` line and
+  no exception, then replays the session in .NET, failing only if it can't (a .NET difference
+  from Mono is reported, not failed).
 - `native/crates/plugin/tests/replay.rs`: the Replay source gives back every recorded record
   exactly, plays the recorded audio sample for sample from song time 0 at 44.1 kHz on both
   channels, and ends with it; a missing or malformed session fails `ps_open`.
