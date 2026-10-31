@@ -4,9 +4,11 @@
 //! - `audio.wav`: the analyzer's input, 44.1 kHz mono float, exactly as analysed;
 //! - `entries.jsonl`: every record with its stamp, one per line in `ps entries`' line format
 //!   (`analysis::flat::Line`), in the analyzer's order;
-//! - `meta.json`, written when the analysis ends or the session closes: the source, `M`, `A`,
-//!   the output rate, the duration analysed, the records, the hindsight stalls and whether the
-//!   analysis reached the source's end.
+//! - `meta.json`, written when the analysis ends or the session closes: the source (a File's path,
+//!   or `system: <app> (pid <pid>)`), `M`, `A`, the output rate, the duration analysed, the
+//!   records, the hindsight stalls, whether the analysis reached the source's end (never, for a
+//!   System source), and each time the watchdog released a System source's tap (its song time and
+//!   why; the analyzer heard silence from there until the app was tapped again).
 
 use std::fs::File;
 use std::io::{BufWriter, Seek, SeekFrom, Write};
@@ -17,14 +19,23 @@ use serde_json::json;
 
 use crate::decode::SR;
 
+/// A time the watchdog released a System source's tap: the render position then (song s), and
+/// why.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Release {
+    pub song: f64,
+    pub why: &'static str,
+}
+
 /// What `meta.json` describes beyond the records.
 pub struct Meta<'a> {
-    pub source: &'a Path,
+    pub source: &'a str,
     pub m: f64,
     pub a: f64,
     pub output_rate: f64,
     pub hindsight_stalls: usize,
     pub complete: bool,
+    pub releases: &'a [Release],
 }
 
 pub struct Recorder {
@@ -108,7 +119,7 @@ impl Recorder {
         let meta = json!({
             "format": "ps-plugin-session",
             "version": 1,
-            "source": meta.source.display().to_string(),
+            "source": meta.source,
             "m": meta.m,
             "a": meta.a,
             "stamps": "every-group",
@@ -117,6 +128,11 @@ impl Recorder {
             "records": self.records,
             "hindsightStalls": meta.hindsight_stalls,
             "complete": meta.complete,
+            "releases": meta
+                .releases
+                .iter()
+                .map(|r| json!({"song": r.song, "why": r.why}))
+                .collect::<Vec<_>>(),
         });
         let meta_path = self.dir.join("meta.json");
         std::fs::write(&meta_path, format!("{meta:#}\n")).map_err(io(&meta_path))

@@ -3,10 +3,15 @@
 
 use std::ffi::CString;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use audio::delay::{DelayLine, Writer, delay_line};
+use capture::Meta;
+use capture::apps::AudioApp;
 use ps_plugin::decode::SR;
-use ps_plugin::{Config, Entry, PS_OK, PS_SOURCE_FILE, Session, Status};
+use ps_plugin::system::{Tap, Taps};
+use ps_plugin::{Config, Entry, PS_OK, PS_SOURCE_FILE, Session, Source, Status};
 
 pub fn native() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -26,6 +31,7 @@ pub fn open(path: &Path, rate: f64, record: Option<&Path>) -> Result<*mut Sessio
     let record = record.map(|r| CString::new(r.to_str().unwrap()).unwrap());
     let config = Config {
         source: PS_SOURCE_FILE,
+        pid: 0,
         m: 3.0,
         output_rate: rate,
         path: path.as_ptr(),
@@ -100,4 +106,179 @@ pub fn write_wav(path: &Path, channels: u16, samples: &[f32]) {
         b.extend(x.to_le_bytes());
     }
     std::fs::write(path, b).unwrap();
+}
+
+/// A System source's taps for the tests, driven by hand: [`Fake::capture`] stands for the tap's
+/// IOProc and [`Fake::release`] for its watchdog.
+#[derive(Clone)]
+pub struct Fake {
+    state: Arc<Mutex<FakeState>>,
+    rate: f64,
+}
+
+#[derive(Default)]
+struct FakeState {
+    playing: bool,
+    /// The first frame of each tap so far.
+    taps: Vec<u64>,
+    live: Option<Live>,
+    heartbeat: f64,
+}
+
+/// The live tap: the line's writer, the next frame, what it has captured since the last drain,
+/// and its watchdog's verdict.
+struct Live {
+    writer: Writer,
+    next: u64,
+    samples: Vec<f32>,
+    metas: Vec<Meta>,
+    released: Option<&'static str>,
+}
+
+impl Fake {
+    /// App 42, playing, tapped at `rate`.
+    pub fn new(rate: f64) -> Fake {
+        Fake {
+            state: Arc::new(Mutex::new(FakeState {
+                playing: true,
+                ..FakeState::default()
+            })),
+            rate,
+        }
+    }
+
+    pub fn source(&self) -> Source {
+        Source::System {
+            pid: 42,
+            taps: Box::new(self.clone()),
+        }
+    }
+
+    fn state(&self) -> std::sync::MutexGuard<'_, FakeState> {
+        self.state.lock().unwrap()
+    }
+
+    /// Captures `frames` frames of `stereo` (interleaved, from the live tap's next frame); false
+    /// once no tap is live.
+    pub fn capture(&self, stereo: &[f32]) -> bool {
+        let mut st = self.state();
+        let Some(live) = st.live.as_mut() else {
+            return false;
+        };
+        let frames = stereo.len() / 2;
+        assert!(live.writer.write(live.next, frames, 0.0, |a, b| {
+            a.copy_from_slice(&stereo[..a.len()]);
+            b.copy_from_slice(&stereo[a.len()..]);
+        }));
+        live.samples
+            .extend(stereo.chunks(2).map(|f| f32::midpoint(f[0], f[1])));
+        live.metas.push(Meta {
+            first: live.next,
+            frames: frames as u32,
+            ..Meta::default()
+        });
+        live.next += frames as u64;
+        true
+    }
+
+    /// The live tap's watchdog releases it.
+    pub fn release(&self, why: &'static str) {
+        self.state().live.as_mut().unwrap().released = Some(why);
+    }
+
+    pub fn set_playing(&self, playing: bool) {
+        self.state().playing = playing;
+    }
+
+    /// The first frame of each tap so far.
+    pub fn taps(&self) -> Vec<u64> {
+        self.state().taps.clone()
+    }
+
+    /// The main thread's last heartbeat the source relayed (host s).
+    pub fn heartbeat(&self) -> f64 {
+        self.state().heartbeat
+    }
+
+    fn start(&self, writer: Writer, first: u64) -> Box<dyn Tap> {
+        let mut st = self.state();
+        st.taps.push(first);
+        st.live = Some(Live {
+            writer,
+            next: first,
+            samples: Vec::new(),
+            metas: Vec::new(),
+            released: None,
+        });
+        Box::new(self.clone())
+    }
+}
+
+impl Taps for Fake {
+    fn app(&mut self, pid: i32) -> Option<AudioApp> {
+        (pid == 42).then(|| AudioApp {
+            name: "Fake".into(),
+            pid,
+            bundle: None,
+            processes: vec![1],
+            playing: self.state().playing,
+        })
+    }
+
+    fn first(&mut self, _: &AudioApp, keep: f64) -> Result<(Box<dyn Tap>, DelayLine), String> {
+        let (writer, line) = delay_line(self.rate, 0.0, keep);
+        Ok((self.start(writer, 0), line))
+    }
+
+    fn again(
+        &mut self,
+        _: &AudioApp,
+        writer: Writer,
+        rate: f64,
+        first: u64,
+    ) -> Result<Box<dyn Tap>, (String, Writer)> {
+        assert_eq!(rate, self.rate);
+        Ok(self.start(writer, first))
+    }
+}
+
+impl Tap for Fake {
+    fn drain(&mut self, samples: &mut Vec<f32>, metas: &mut Vec<Meta>) {
+        if let Some(live) = self.state().live.as_mut() {
+            samples.append(&mut live.samples);
+            metas.append(&mut live.metas);
+        }
+    }
+
+    fn beat(&self, heartbeat: f64) {
+        self.state().heartbeat = heartbeat;
+    }
+
+    fn released(&self) -> Option<&'static str> {
+        self.state().live.as_ref().and_then(|l| l.released)
+    }
+
+    fn muted(&self) -> bool {
+        self.state()
+            .live
+            .as_ref()
+            .is_some_and(|l| l.released.is_none())
+    }
+
+    fn close(self: Box<Self>) -> Writer {
+        self.state().live.take().unwrap().writer
+    }
+}
+
+/// Opens a session on `source` at `rate`, recording to `record` if given (the C interface can't
+/// carry a test's taps).
+pub fn open_source(source: Source, rate: f64, record: Option<&Path>) -> *mut Session {
+    let config = ps_plugin::session::Config {
+        source,
+        m: 3.0,
+        output_rate: rate,
+        models: native().join("models/madmom.bin"),
+        session_dir: record.map(Path::to_path_buf),
+    };
+    Box::into_raw(Box::new(Session::open(config).unwrap()))
 }

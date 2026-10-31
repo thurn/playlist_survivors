@@ -20,14 +20,15 @@ namespace Game.Client.Music
     {
         public const int Ok = 0;
         public const int ErrFailed = -6;
-        public const int SourceFile = 0;
-        public const int Waiting = 0, Playing = 1, Ended = 2;
+        public const int SourceFile = 0, SourceSystem = 1;
+        public const int Waiting = 0, Playing = 1, Ended = 2, Stopped = 3;
 
         /// <summary>ps_config. Paths are UTF-8 strings the caller allocates (<see cref="Utf8"/>).</summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct Config
         {
             public int Source;
+            public int Pid;           // System: the app to tap (ps_list_apps' pid)
             public double M;
             public double OutputRate; // whole Hz: AudioSettings.outputSampleRate
             public IntPtr Path;
@@ -35,7 +36,7 @@ namespace Game.Client.Music
             public IntPtr SessionDir; // zero: no record
         }
 
-        /// <summary>struct ps_status: 72 bytes.</summary>
+        /// <summary>struct ps_status: 80 bytes.</summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct Status
         {
@@ -51,6 +52,8 @@ namespace Game.Client.Music
             public int AnalysisDone;
             public int Failed;
             public float FollowerGain;
+            public int Releases;      // System: times the watchdog released the app
+            public int DeviceChanged; // the default output device changed since Open (the run ends)
         }
 
         public static int Open(ref Config config, out IntPtr session) => Fns.Open(ref config, out session);

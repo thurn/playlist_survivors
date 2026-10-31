@@ -10,7 +10,7 @@ use common::{
 use ps_plugin::decode::{SR, decode};
 use ps_plugin::{
     PS_ENDED, PS_ERR_ARGUMENT, PS_ERR_FAILED, PS_ERR_SOURCE, PS_ERR_UNSUPPORTED, PS_OK, PS_PLAYING,
-    PS_SOURCE_SYSTEM, PS_WAITING, Session,
+    PS_SOURCE_REPLAY, PS_SOURCE_SYSTEM, PS_WAITING, Session,
 };
 
 /// Renders and polls until the analyzer is done and every entry is polled; returns the entries'
@@ -195,6 +195,7 @@ fn failures_return_codes_that_ps_last_error_describes() {
     let path = std::ffi::CString::new(dir.join("a.wav").to_str().unwrap()).unwrap();
     let mut system = ps_plugin::Config {
         source: PS_SOURCE_SYSTEM,
+        pid: 0,
         m: 3.0,
         output_rate: 48_000.0,
         path: path.as_ptr(),
@@ -202,6 +203,18 @@ fn failures_return_codes_that_ps_last_error_describes() {
         session_dir: std::ptr::null(),
     };
     let mut s = std::ptr::null_mut();
+    assert_eq!(
+        unsafe { ps_plugin::ps_open(&raw const system, &raw mut s) },
+        PS_ERR_ARGUMENT
+    );
+    // (Our own process is never an app to tap.)
+    system.pid = std::process::id() as i32;
+    assert_eq!(
+        unsafe { ps_plugin::ps_open(&raw const system, &raw mut s) },
+        PS_ERR_SOURCE
+    );
+    assert!(last_error().contains("no app with pid"), "{}", last_error());
+    system.source = PS_SOURCE_REPLAY;
     assert_eq!(
         unsafe { ps_plugin::ps_open(&raw const system, &raw mut s) },
         PS_ERR_UNSUPPORTED
@@ -214,6 +227,10 @@ fn failures_return_codes_that_ps_last_error_describes() {
     assert_eq!(
         unsafe { ps_plugin::ps_list_apps(std::ptr::null_mut(), 0) },
         0
+    );
+    assert_eq!(
+        unsafe { ps_plugin::ps_list_apps(std::ptr::null_mut(), 4) },
+        PS_ERR_ARGUMENT
     );
     assert_eq!(status(std::ptr::null_mut()), ps_plugin::Status::default());
     unsafe { ps_plugin::ps_close(std::ptr::null_mut()) };

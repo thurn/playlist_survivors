@@ -20,7 +20,7 @@ const PROGRAM: &str = r#"
 int main(void) {
     SIZE(ps_entry); FIELD(ps_entry, kind); FIELD(ps_entry, t); FIELD(ps_entry, known_at);
     FIELD(ps_entry, v);
-    SIZE(ps_config); FIELD(ps_config, source); FIELD(ps_config, m);
+    SIZE(ps_config); FIELD(ps_config, source); FIELD(ps_config, pid); FIELD(ps_config, m);
     FIELD(ps_config, output_rate); FIELD(ps_config, path); FIELD(ps_config, models);
     FIELD(ps_config, session_dir);
     SIZE(ps_app); FIELD(ps_app, pid); FIELD(ps_app, name);
@@ -28,11 +28,11 @@ int main(void) {
     STATUS(anchor_frames); STATUS(output_latency);
     STATUS(buffered); STATUS(analysed); STATUS(stalls);
     STATUS(state); STATUS(muted); STATUS(analysis_done);
-    STATUS(failed); STATUS(follower_gain);
+    STATUS(failed); STATUS(follower_gain); STATUS(releases); STATUS(device_changed);
     CONST(PS_OK); CONST(PS_ERR_ARGUMENT); CONST(PS_ERR_SOURCE); CONST(PS_ERR_MODELS);
     CONST(PS_ERR_UNSUPPORTED); CONST(PS_ERR_PANIC); CONST(PS_ERR_FAILED);
     CONST(PS_SOURCE_FILE); CONST(PS_SOURCE_SYSTEM); CONST(PS_SOURCE_REPLAY);
-    CONST(PS_WAITING); CONST(PS_PLAYING); CONST(PS_ENDED);
+    CONST(PS_WAITING); CONST(PS_PLAYING); CONST(PS_ENDED); CONST(PS_STOPPED);
     CONST(PS_KIND_BEAT); CONST(PS_KIND_TICK); CONST(PS_KIND_ONSET); CONST(PS_KIND_HINDSIGHT);
     CONST(PS_KIND_HINDSIGHT_BEAT); CONST(PS_KIND_CHANGE); CONST(PS_KIND_JUMP);
     CONST(PS_KIND_END); CONST(PS_KIND_FORECAST); CONST(PS_KIND_TIMBRE);
@@ -72,6 +72,7 @@ fn the_header_matches_the_library() {
         ("ps_entry.v", offset_of!(Entry, v) as i64),
         ("ps_config", size_of::<Config>() as i64),
         ("ps_config.source", offset_of!(Config, source) as i64),
+        ("ps_config.pid", offset_of!(Config, pid) as i64),
         ("ps_config.m", offset_of!(Config, m) as i64),
         (
             "ps_config.output_rate",
@@ -117,6 +118,11 @@ fn the_header_matches_the_library() {
             "ps_status.follower_gain",
             offset_of!(Status, follower_gain) as i64,
         ),
+        ("ps_status.releases", offset_of!(Status, releases) as i64),
+        (
+            "ps_status.device_changed",
+            offset_of!(Status, device_changed) as i64,
+        ),
         ("PS_OK", ps_plugin::PS_OK.into()),
         ("PS_ERR_ARGUMENT", ps_plugin::PS_ERR_ARGUMENT.into()),
         ("PS_ERR_SOURCE", ps_plugin::PS_ERR_SOURCE.into()),
@@ -130,6 +136,7 @@ fn the_header_matches_the_library() {
         ("PS_WAITING", ps_plugin::PS_WAITING.into()),
         ("PS_PLAYING", ps_plugin::PS_PLAYING.into()),
         ("PS_ENDED", ps_plugin::PS_ENDED.into()),
+        ("PS_STOPPED", ps_plugin::PS_STOPPED.into()),
         ("PS_KIND_BEAT", flat::BEAT.into()),
         ("PS_KIND_TICK", flat::TICK.into()),
         ("PS_KIND_ONSET", flat::ONSET.into()),

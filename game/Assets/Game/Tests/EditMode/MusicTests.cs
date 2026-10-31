@@ -28,9 +28,11 @@ namespace Game.Tests
         public void TheBindingsHaveTheHeadersLayout()
         {
             // ps_entry is the sim's StreamEntry: PS.Game.Sim.Tests' EntryLayoutTests checks it.
-            Assert.That(Marshal.SizeOf<Plugin.Status>(), Is.EqualTo(72));
+            Assert.That(Marshal.SizeOf<Plugin.Status>(), Is.EqualTo(80));
             Assert.That((int)Marshal.OffsetOf<Plugin.Status>(nameof(Plugin.Status.Stalls)), Is.EqualTo(48));
             Assert.That((int)Marshal.OffsetOf<Plugin.Status>(nameof(Plugin.Status.FollowerGain)), Is.EqualTo(68));
+            Assert.That((int)Marshal.OffsetOf<Plugin.Status>(nameof(Plugin.Status.DeviceChanged)), Is.EqualTo(76));
+            Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Pid)), Is.EqualTo(4));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.M)), Is.EqualTo(8));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Path)), Is.EqualTo(24));
             Assert.That(Marshal.SizeOf<Plugin.Config>(), Is.EqualTo(48));

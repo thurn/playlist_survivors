@@ -1,30 +1,29 @@
 //! One source's session (docs/design/unity-game.md, "Sources" and "The delay line and Unity's
-//! output"). A File source's threads:
+//! output"): what every source shares. A source feeds two things, each on its own timeline at its
+//! own rate: native's delay line (`audio::delay`) with the music's stereo frames, and the
+//! [`Analysis`] with the analyzer's mono samples (44.1 kHz). Song time is the position on those
+//! timelines: frame `n` of the line is song time `n / rate`.
 //!
-//! - **decoder**: decodes each track (`decode`), a track or two ahead, and hands its mono
-//!   samples (44.1 kHz) to the analyzer and its stereo frames (at the output rate) to the player.
-//!   Each track starts where the analyzer's timeline puts it, rounded to an output frame, so the
-//!   two never drift apart over a playlist.
-//! - **player**: writes the stereo frames, after each track's gap of silence, into native's
-//!   delay line (`audio::delay`), keeping it filled to `M` past the render position. A frame's
-//!   "capture time" is its song time, so the line plays song time `t` at render time `t`.
-//! - **analyzer**: feeds the mono samples to native's analyzer (with its hindsight worker) in
-//!   Delayed listening, every group stamped (`Stamps::EveryGroup`), up to `M` past the render
-//!   position: faster than real time at first, so the music starts at once with `M` of lookahead.
-//!   Its entries become `ps_entry` records (`analysis::flat`) in a ring that `ps_poll` drains, and
-//!   the session's record (`record`).
+//! - [`crate::file`]: a File source, decoded and fed up to `M` past the render position, faster
+//!   than real time at first.
+//! - [`crate::system`]: a System source, an app tapped and muted, fed in real time.
+//!
+//! The [`Analysis`] runs native's analyzer (with its hindsight worker) in Delayed listening, every
+//! group stamped (`Stamps::EveryGroup`). Its entries become `ps_entry` records (`analysis::flat`)
+//! in a ring that `ps_poll` drains, and the session's record (`record`).
 //!
 //! `ps_render_music` (Unity's audio thread) pulls the line and reads each output frame at its song
-//! time (the line runs at the output rate, so that is a frame it holds). It starts the music once the
-//! line holds [`START_S`] (or the whole source), and from then on song time advances by exactly
+//! time (interpolated when the line's rate isn't the output's). It starts the music once the line
+//! holds the source's start (or the whole source), and from then on song time advances by exactly
 //! the frames rendered: a buffer the line can't fill plays silence there and counts as a stall.
-//! It records each buffer's anchor (its DSP time, song time and frame) under a sequence lock. It
-//! takes no lock, allocates nothing and never waits for the other threads.
+//! Once the music stopped (a System source's watchdog fired) it plays silence until the line
+//! frame the music resumes at. It records each buffer's anchor (its DSP time, song time and frame)
+//! under a sequence lock. It takes no lock, allocates nothing and never waits for the other
+//! threads.
 
 use std::cell::UnsafeCell;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU32, AtomicU64, Ordering, fence};
-use std::sync::mpsc::{Receiver, sync_channel};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::Duration;
@@ -34,47 +33,53 @@ use analysis::delayed::{DelayedParams, Listening, Stamps};
 use analysis::flat::{self, Record};
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
-use audio::delay::{DelayLine, Read, Writer, delay_line};
+use audio::delay::{DelayLine, Read};
 use audio::follow::Follower;
+use capture::clock::now_s;
 
-use crate::decode::{self, SR};
-use crate::record::{Meta, Recorder};
+use crate::decode::SR;
+use crate::record::{Meta, Recorder, Release};
+use crate::system::Taps;
 use crate::{
     Error, PS_ENDED, PS_ERR_ARGUMENT, PS_ERR_FAILED, PS_ERR_MODELS, PS_ERR_SOURCE, PS_PLAYING,
-    PS_WAITING, Status,
+    PS_STOPPED, PS_WAITING, Status,
 };
 
-/// How much music the line holds before it starts playing (s), unless the source is shorter.
-pub const START_S: f64 = 0.25;
-/// The analyzer's input blocks, as `ps entries` feeds it, so the entries match its dump.
-const BLOCK: usize = 4096;
-/// The frames the player writes at a time.
-const CHUNK: usize = 1024;
 /// The records the ring holds for `ps_poll` (about a minute and a half of them).
 const RECORDS: usize = 1 << 14;
 /// How long a thread waiting for the render position or for room sleeps between looks.
-const NAP: Duration = Duration::from_millis(1);
+pub(crate) const NAP: Duration = Duration::from_millis(1);
+/// How often `ps_status` looks for a new default output device (s).
+const DEVICE_LOOK_S: f64 = 1.0;
 
 /// A session's configuration, from `ps_config`.
 pub struct Config {
-    pub source: PathBuf,
+    pub source: Source,
     pub m: f64,
     pub output_rate: f64,
     pub models: PathBuf,
     pub session_dir: Option<PathBuf>,
 }
 
+/// Where the music comes from.
+pub enum Source {
+    /// An audio file, or an M3U playlist.
+    File(PathBuf),
+    /// App `pid`'s audio, tapped by `taps` (the platform's, or a test's).
+    System { pid: i32, taps: Box<dyn Taps> },
+}
+
 /// An `f64` shared through its bits.
-struct AtomicF64(AtomicU64);
+pub(crate) struct AtomicF64(AtomicU64);
 
 impl AtomicF64 {
-    fn new(x: f64) -> AtomicF64 {
+    pub(crate) fn new(x: f64) -> AtomicF64 {
         AtomicF64(AtomicU64::new(x.to_bits()))
     }
-    fn load(&self) -> f64 {
+    pub(crate) fn load(&self) -> f64 {
         f64::from_bits(self.0.load(Ordering::Acquire))
     }
-    fn store(&self, x: f64) {
+    pub(crate) fn store(&self, x: f64) {
         self.0.store(x.to_bits(), Ordering::Release);
     }
 }
@@ -115,31 +120,83 @@ impl Anchor {
 }
 
 /// What the threads share.
-struct Shared {
-    m: f64,
-    output_rate: f64,
-    output_latency: f64,
-    stop: AtomicBool,
+pub(crate) struct Shared {
+    pub m: f64,
+    pub output_rate: f64,
+    /// The delay line's rate: the output's (File) or the tap's (System).
+    pub line_rate: f64,
+    /// How much music the line holds before it starts playing (s), unless the source is shorter.
+    pub start_s: f64,
+    pub stop: AtomicBool,
     /// The render position: the song time of the next buffer's first frame.
-    song: AtomicF64,
+    pub song: AtomicF64,
     anchor: Anchor,
     state: AtomicI32,
     stalls: AtomicU32,
     gain: AtomicU32,
-    /// The source's length in analyzer samples, once every track is decoded (`u64::MAX` until
-    /// then).
-    total: AtomicU64,
-    /// The frames the player has written into the line (at the output rate), and the samples the
+    /// The source's length in analyzer samples, once it is known (`u64::MAX` until then; always,
+    /// for a System source).
+    pub total: AtomicU64,
+    /// The frames the source has written into the line (at its rate), and the samples the
     /// analyzer has read.
-    written: AtomicU64,
-    analysed: AtomicU64,
-    analysis_done: AtomicBool,
+    pub written: AtomicU64,
+    pub analysed: AtomicU64,
+    pub analysis_done: AtomicBool,
+    /// The line frame the music resumes at after it stopped: silence before it, and the music
+    /// is stopped while the render position is before it (`u64::MAX` until the app is tapped
+    /// again). 0 while nothing stopped.
+    pub resume: AtomicU64,
+    /// The main thread's last call (host s): its heartbeat, for a System source's watchdog.
+    pub heartbeat: AtomicF64,
+    /// System: the app is muted (tapped), and how many times the watchdog released it.
+    pub muted: AtomicBool,
+    pub releases: AtomicU32,
+    /// The default output device, its latency (s), when `ps_status` last looked (host s), and
+    /// whether it has changed since the session opened.
+    device: AtomicU32,
+    output_latency: AtomicF64,
+    device_looked: AtomicF64,
+    device_changed: AtomicBool,
     /// The first failure of a thread: the source, the analysis or the record.
     error: Mutex<Option<String>>,
 }
 
 impl Shared {
-    fn fail(&self, message: String) {
+    pub(crate) fn new(m: f64, output_rate: f64, line_rate: f64, start_s: f64) -> Shared {
+        let now = now_s();
+        Shared {
+            m,
+            output_rate,
+            line_rate,
+            start_s,
+            stop: AtomicBool::new(false),
+            song: AtomicF64::new(0.0),
+            anchor: Anchor {
+                seq: AtomicU64::new(0),
+                dsp: AtomicU64::new(0),
+                song: AtomicU64::new(0),
+                frames: AtomicU64::new(0),
+            },
+            state: AtomicI32::new(PS_WAITING),
+            stalls: AtomicU32::new(0),
+            gain: AtomicU32::new(1f32.to_bits()),
+            total: AtomicU64::new(u64::MAX),
+            written: AtomicU64::new(0),
+            analysed: AtomicU64::new(0),
+            analysis_done: AtomicBool::new(false),
+            resume: AtomicU64::new(0),
+            heartbeat: AtomicF64::new(now),
+            muted: AtomicBool::new(false),
+            releases: AtomicU32::new(0),
+            device: AtomicU32::new(crate::latency::default_output()),
+            output_latency: AtomicF64::new(crate::latency::output_latency()),
+            device_looked: AtomicF64::new(now),
+            device_changed: AtomicBool::new(false),
+            error: Mutex::new(None),
+        }
+    }
+
+    pub(crate) fn fail(&self, message: String) {
         let mut e = self
             .error
             .lock()
@@ -147,20 +204,20 @@ impl Shared {
         e.get_or_insert(message);
     }
 
-    fn failed(&self) -> Option<String> {
+    pub(crate) fn failed(&self) -> Option<String> {
         self.error
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .clone()
     }
 
-    fn stopped(&self) -> bool {
+    pub(crate) fn stopped(&self) -> bool {
         self.stop.load(Ordering::Relaxed)
     }
 
     /// Waits until song position `until` (s) is at most `M` past the render position; false if
     /// the session stopped first.
-    fn wait_for_render(&self, until: f64) -> bool {
+    pub(crate) fn wait_for_render(&self, until: f64) -> bool {
         while until > self.song.load() + self.m {
             if self.stopped() {
                 return false;
@@ -168,6 +225,22 @@ impl Shared {
             std::thread::sleep(NAP);
         }
         !self.stopped()
+    }
+
+    /// The main thread checks in; at most once a second, it also looks for a new default output
+    /// device.
+    fn beat(&self) {
+        let now = now_s();
+        self.heartbeat.store(now);
+        if now - self.device_looked.load() < DEVICE_LOOK_S {
+            return;
+        }
+        self.device_looked.store(now);
+        let device = crate::latency::default_output();
+        if device != self.device.swap(device, Ordering::Relaxed) {
+            self.device_changed.store(true, Ordering::Relaxed);
+            self.output_latency.store(crate::latency::output_latency());
+        }
     }
 }
 
@@ -189,20 +262,35 @@ pub struct Session {
     threads: Vec<JoinHandle<()>>,
 }
 
-/// The output frame at analyzer sample `n`: where the music puts what the analyzer hears there.
-fn music_frame(n: u64, rate: f64) -> u64 {
+/// The line frame at analyzer sample `n`, at the line's `rate`: where the music puts what the
+/// analyzer hears there.
+pub(crate) fn music_frame(n: u64, rate: f64) -> u64 {
     (n as f64 * rate / SR).round() as u64
 }
 
-/// A track for the player: its gap and stereo frames; for the analyzer: its gap and mono samples.
-struct Part {
-    gap: usize,
-    samples: Vec<f32>,
+/// Starts a thread, or fails as the source does.
+pub(crate) fn spawn(
+    name: &str,
+    f: impl FnOnce() + Send + 'static,
+) -> Result<JoinHandle<()>, Error> {
+    std::thread::Builder::new()
+        .name(name.into())
+        .spawn(f)
+        .map_err(|e| Error::new(PS_ERR_SOURCE, format!("can't start a thread: {e}")))
+}
+
+/// Runs a thread's work, recording its error or panic as the session's failure.
+pub(crate) fn guarded(shared: &Shared, f: impl FnOnce() -> Result<(), String>) {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => shared.fail(e),
+        Err(panic) => shared.fail(crate::panic_message(&*panic)),
+    }
 }
 
 impl Session {
-    /// Opens `config`'s File source: checks it, loads the models and starts the threads.
-    pub fn open(config: &Config) -> Result<Session, Error> {
+    /// Opens `config`'s source: checks it, loads the models and starts the threads.
+    pub fn open(config: Config) -> Result<Session, Error> {
         if !(config.m.is_finite() && (1.0..=10.0).contains(&config.m)) {
             return Err(Error::new(PS_ERR_ARGUMENT, "M must be 1 to 10 s"));
         }
@@ -214,7 +302,12 @@ impl Session {
                 "the output rate must be a whole 8 to 384 kHz",
             ));
         }
-        let tracks = decode::tracks(&config.source).map_err(|e| Error::new(PS_ERR_SOURCE, e))?;
+        // (A file is checked first, its errors being the likeliest; an app is tapped, so muted,
+        // once the rest is ready.)
+        let source = match config.source {
+            Source::File(path) => Opening::File(crate::file::File::open(path)?),
+            Source::System { pid, taps } => Opening::System(pid, taps),
+        };
         let models = Tensors::load(&config.models)
             .map_err(|e| Error::new(PS_ERR_MODELS, format!("{}: {e}", config.models.display())))?;
         let delayed = DelayedParams {
@@ -235,136 +328,47 @@ impl Session {
             .map(Recorder::create)
             .transpose()
             .map_err(|e| Error::new(PS_ERR_SOURCE, e))?;
-
-        let shared = Arc::new(Shared {
-            m: config.m,
-            output_rate: config.output_rate,
-            output_latency: crate::latency::output_latency(),
-            stop: AtomicBool::new(false),
-            song: AtomicF64::new(0.0),
-            anchor: Anchor {
-                seq: AtomicU64::new(0),
-                dsp: AtomicU64::new(0),
-                song: AtomicU64::new(0),
-                frames: AtomicU64::new(0),
-            },
-            state: AtomicI32::new(PS_WAITING),
-            stalls: AtomicU32::new(0),
-            gain: AtomicU32::new(1f32.to_bits()),
-            total: AtomicU64::new(u64::MAX),
-            written: AtomicU64::new(0),
-            analysed: AtomicU64::new(0),
-            analysis_done: AtomicBool::new(false),
-            error: Mutex::new(None),
-        });
-        // (The line keeps a second more than the player writes ahead of the render position.)
-        let (writer, line) = delay_line(config.output_rate, 0.0, config.m + 1.0);
         let (entries, records) = rtrb::RingBuffer::new(RECORDS);
-        let (to_player, player_parts) = sync_channel(1);
-        let (to_analyzer, analyzer_parts) = sync_channel(1);
-
-        let spawn = |name: &str, f: Box<dyn FnOnce() + Send>| {
-            std::thread::Builder::new()
-                .name(name.into())
-                .spawn(f)
-                .map_err(|e| Error::new(PS_ERR_SOURCE, format!("can't start a thread: {e}")))
+        let analysis = |shared: &Arc<Shared>, block, paced| Analysis {
+            shared: Arc::clone(shared),
+            analyzer,
+            entries,
+            recorder,
+            delayed,
+            block: Vec::with_capacity(block),
+            size: block,
+            paced,
+            read: 0,
+            out: Vec::new(),
+            records: Vec::new(),
         };
-        let mut threads = Vec::new();
-        let s = shared.clone();
-        let rate = config.output_rate;
-        threads.push(spawn(
-            "ps-decoder",
-            Box::new(move || {
-                guarded(&s.clone(), move || {
-                    // (The analyzer's timeline, in its samples; the music's follows it.)
-                    let mut total = 0u64;
-                    for track in &tracks {
-                        if s.stopped() {
-                            return Ok(());
-                        }
-                        let decoded = decode::decode(&track.path, rate)?;
-                        let gap = decode::gap_frames(track);
-                        let start = total + gap as u64;
-                        let end = start + decoded.mono.len() as u64;
-                        let mut stereo = decoded.stereo;
-                        let frames = music_frame(end, rate) - music_frame(start, rate);
-                        stereo.resize(2 * frames as usize, 0.0);
-                        let music_gap = music_frame(start, rate) - music_frame(total, rate);
-                        total = end;
-                        let sent = to_player
-                            .send(Part {
-                                gap: music_gap as usize,
-                                samples: stereo,
-                            })
-                            .is_ok()
-                            && to_analyzer
-                                .send(Part {
-                                    gap,
-                                    samples: decoded.mono,
-                                })
-                                .is_ok();
-                        if !sent {
-                            return Ok(());
-                        }
-                    }
-                    s.total.store(total, Ordering::Release);
-                    Ok(())
-                });
-            }),
-        )?);
-        let s = shared.clone();
-        threads.push(spawn(
-            "ps-player",
-            Box::new(move || {
-                guarded(&s.clone(), move || {
-                    play(&s, player_parts, writer);
-                    Ok(())
-                });
-            }),
-        )?);
-        let s = shared.clone();
-        let source = config.source.clone();
-        threads.push(spawn(
-            "ps-analyzer",
-            Box::new(move || {
-                let mut work = Analysis {
-                    shared: s.clone(),
-                    analyzer,
-                    entries,
-                    recorder,
-                    out: Vec::new(),
-                    records: Vec::new(),
-                };
-                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    work.run(analyzer_parts)
-                }));
-                let complete = match result {
-                    Ok(Ok(complete)) => complete,
-                    Ok(Err(e)) => {
-                        s.fail(e);
-                        false
-                    }
-                    Err(panic) => {
-                        s.fail(crate::panic_message(&*panic));
-                        false
-                    }
-                };
-                if let Some(recorder) = work.recorder.take() {
-                    let meta = Meta {
-                        source: &source,
-                        m: delayed.m,
-                        a: delayed.a,
-                        output_rate: s.output_rate,
-                        hindsight_stalls: work.analyzer.hindsight_stalls().0,
-                        complete,
-                    };
-                    if let Err(e) = recorder.finish(&meta) {
-                        s.fail(e);
-                    }
-                }
-            }),
-        )?);
-
+        let (line, shared, threads) = match source {
+            Opening::File(file) => {
+                let (writer, line) = crate::file::File::line(config.m, config.output_rate);
+                let shared = Arc::new(Shared::new(
+                    config.m,
+                    config.output_rate,
+                    config.output_rate,
+                    crate::file::START_S,
+                ));
+                let a = analysis(&shared, crate::file::BLOCK, true);
+                let threads = file.start(&shared, writer, a)?;
+                (line, shared, threads)
+            }
+            Opening::System(pid, taps) => {
+                let mut system = crate::system::System::open(pid, taps, config.m)?;
+                let line = system.take_line();
+                let shared = Arc::new(Shared::new(
+                    config.m,
+                    config.output_rate,
+                    line.rate(),
+                    config.m,
+                ));
+                let a = analysis(&shared, crate::system::BLOCK, false);
+                let threads = system.start(&shared, a)?;
+                (line, shared, threads)
+            }
+        };
         Ok(Session {
             render: UnsafeCell::new(Render {
                 line,
@@ -378,8 +382,10 @@ impl Session {
         })
     }
 
-    /// Copies new records into `out`; returns how many, or the failure once none are left.
+    /// Copies new records into `out`; returns how many, or the failure once none are left. A
+    /// call is the main thread's heartbeat.
     pub fn poll(&self, out: &mut [Record]) -> Result<usize, Error> {
+        self.shared.beat();
         // SAFETY: only `ps_poll` uses the records, from one thread at a time.
         let records = unsafe { &mut *self.records.get() };
         let n = records.slots().min(out.len());
@@ -409,8 +415,7 @@ impl Session {
         let end = (total != u64::MAX).then(|| music_frame(total, rate));
         let end_s = end.map_or(f64::INFINITY, |e| e as f64 / rate);
         if !r.started {
-            let ready = r.line.fill(0.0).is_some_and(|f| f >= START_S.min(end_s));
-            if !ready {
+            if (r.line.end() as f64 / sh.line_rate) < sh.start_s.min(end_s) {
                 out.fill(0.0);
                 return;
             }
@@ -418,18 +423,25 @@ impl Session {
             sh.state.store(PS_PLAYING, Ordering::Release);
         }
         sh.anchor.write(dsp, r.frames as f64 / rate, r.frames);
+        let resume = sh.resume.load(Ordering::Acquire) as f64;
+        let step = sh.line_rate / rate;
         let mut gain = None;
         let mut stalled = false;
         for (k, frame) in out.chunks_exact_mut(channels).enumerate() {
             let n = r.frames + k as u64;
-            let (left, right) = match r.line.at(n as f64 / rate) {
-                Read::Frame(left, right) => (left, right),
-                // (The source's last frame has nothing after it to interpolate to.)
-                Read::After if end.is_none_or(|e| n + 1 < e) => {
-                    stalled = true;
-                    (0.0, 0.0)
+            let x = n as f64 * step;
+            let (left, right) = if x < resume {
+                (0.0, 0.0)
+            } else {
+                match r.line.frame(x) {
+                    Read::Frame(left, right) => (left, right),
+                    // (The source's last frame has nothing after it to interpolate to.)
+                    Read::After if end.is_none_or(|e| n + 1 < e) => {
+                        stalled = true;
+                        (0.0, 0.0)
+                    }
+                    Read::After | Read::Before => (0.0, 0.0),
                 }
-                Read::After | Read::Before => (0.0, 0.0),
             };
             if channels == 1 {
                 frame[0] = f32::midpoint(left, right);
@@ -456,23 +468,32 @@ impl Session {
         }
     }
 
+    /// The anchor, latency, progress and the rest. A call is the main thread's heartbeat.
     pub fn status(&self) -> Status {
         let sh = &*self.shared;
+        sh.beat();
         let (anchor_dsp, anchor_song, anchor_frames) = sh.anchor.read();
         let song = sh.song.load();
+        let state = match sh.state.load(Ordering::Acquire) {
+            PS_ENDED => PS_ENDED,
+            _ if sh.resume.load(Ordering::Acquire) as f64 > song * sh.line_rate => PS_STOPPED,
+            s => s,
+        };
         Status {
             anchor_dsp,
             anchor_song,
             anchor_frames: anchor_frames as i64,
-            output_latency: sh.output_latency,
-            buffered: sh.written.load(Ordering::Acquire) as f64 / sh.output_rate - song,
+            output_latency: sh.output_latency.load(),
+            buffered: sh.written.load(Ordering::Acquire) as f64 / sh.line_rate - song,
             analysed: sh.analysed.load(Ordering::Acquire) as f64 / SR,
             stalls: sh.stalls.load(Ordering::Relaxed) as i32,
-            state: sh.state.load(Ordering::Acquire),
-            muted: 0,
+            state,
+            muted: i32::from(sh.muted.load(Ordering::Acquire)),
             analysis_done: i32::from(sh.analysis_done.load(Ordering::Acquire)),
             failed: i32::from(sh.failed().is_some()),
             follower_gain: f32::from_bits(sh.gain.load(Ordering::Relaxed)),
+            releases: sh.releases.load(Ordering::Acquire) as i32,
+            device_changed: i32::from(sh.device_changed.load(Ordering::Relaxed)),
         }
     }
 }
@@ -486,91 +507,49 @@ impl Drop for Session {
     }
 }
 
-/// Runs a thread's work, recording its error or panic as the session's failure.
-fn guarded(shared: &Shared, f: impl FnOnce() -> Result<(), String>) {
-    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(f)) {
-        Ok(Ok(())) => {}
-        Ok(Err(e)) => shared.fail(e),
-        Err(panic) => shared.fail(crate::panic_message(&*panic)),
-    }
+/// A source checked (a file) or ready to tap (an app).
+enum Opening {
+    File(crate::file::File),
+    System(i32, Box<dyn Taps>),
 }
 
-/// The player: each track's gap and stereo frames into the delay line (at the output rate), at
-/// most `M` past the render position.
-fn play(sh: &Shared, parts: Receiver<Part>, mut writer: Writer) {
-    let rate = sh.output_rate;
-    let mut frame = 0u64;
-    let silence = [0.0f32; 2 * CHUNK];
-    let mut write = |samples: &[f32]| {
-        for chunk in samples.chunks(2 * CHUNK) {
-            let frames = chunk.len() / 2;
-            loop {
-                if !sh.wait_for_render((frame + frames as u64) as f64 / rate) {
-                    return false;
-                }
-                let written = writer.write(frame, frames, frame as f64 / rate, |a, b| {
-                    a.copy_from_slice(&chunk[..a.len()]);
-                    b.copy_from_slice(&chunk[a.len()..]);
-                });
-                if written {
-                    break;
-                }
-                // (The line is full until the render thread pulls it.)
-                std::thread::sleep(NAP);
-            }
-            frame += frames as u64;
-            sh.written.store(frame, Ordering::Release);
-        }
-        true
-    };
-    for part in parts {
-        let mut gap = part.gap;
-        while gap > 0 {
-            let n = gap.min(CHUNK);
-            if !write(&silence[..2 * n]) {
-                return;
-            }
-            gap -= n;
-        }
-        if !write(&part.samples) {
-            return;
-        }
-    }
-}
-
-/// The analyzer's thread.
-struct Analysis {
+/// The analysis: the source's samples (44.1 kHz) through the analyzer in blocks, its entries as
+/// records into the ring (for `ps_poll`) and the record.
+pub(crate) struct Analysis {
     shared: Arc<Shared>,
     analyzer: Analyzer,
     entries: rtrb::Producer<Record>,
     recorder: Option<Recorder>,
+    delayed: DelayedParams,
+    /// The samples waiting for a whole block, and its size.
+    block: Vec<f32>,
+    size: usize,
+    /// Each block waits until it is at most `M` past the render position (a File source, read
+    /// faster than real time); otherwise it is analysed as it arrives.
+    paced: bool,
+    /// The samples analysed.
+    read: u64,
     out: Vec<analysis::analyzer::Entry>,
     records: Vec<Record>,
 }
 
 impl Analysis {
-    /// Analyses every track in `BLOCK`s, then the stream's end; returns whether it got there
-    /// (false when the session stopped first or the source failed).
-    fn run(&mut self, parts: Receiver<Part>) -> Result<bool, String> {
-        let mut block = Vec::with_capacity(BLOCK);
-        let mut read = 0u64;
-        for part in parts {
-            let gap = std::iter::repeat_n(0.0, part.gap);
-            for x in gap.chain(part.samples.iter().copied()) {
-                block.push(x);
-                if block.len() == BLOCK {
-                    if !self.feed(&block, read)? {
-                        return Ok(false);
-                    }
-                    read += BLOCK as u64;
-                    block.clear();
-                }
+    /// Analyses `samples`, the ones after the last call's, a block at a time; false once the
+    /// session stopped.
+    pub(crate) fn push(&mut self, samples: impl IntoIterator<Item = f32>) -> Result<bool, String> {
+        for x in samples {
+            self.block.push(x);
+            if self.block.len() == self.size && !self.feed()? {
+                return Ok(false);
             }
         }
-        if self.shared.failed().is_some() || self.shared.stopped() {
-            return Ok(false);
-        }
-        if !block.is_empty() && !self.feed(&block, read)? {
+        Ok(true)
+    }
+
+    /// Analyses the last part of a block and the stream's end; false if the session stopped
+    /// first.
+    pub(crate) fn finish(&mut self) -> Result<bool, String> {
+        if !self.block.is_empty() && !self.feed()? {
             return Ok(false);
         }
         self.out.clear();
@@ -582,18 +561,20 @@ impl Analysis {
         Ok(true)
     }
 
-    /// Feeds one block (from sample `read`) once the render position allows it, and delivers
-    /// its entries; false if the session stopped.
-    fn feed(&mut self, block: &[f32], read: u64) -> Result<bool, String> {
-        let end = read + block.len() as u64;
-        if !self.shared.wait_for_render(end as f64 / SR) {
+    /// Feeds the block (once the render position allows it, when paced) and delivers its
+    /// entries; false if the session stopped.
+    fn feed(&mut self) -> Result<bool, String> {
+        let end = self.read + self.block.len() as u64;
+        if self.paced && !self.shared.wait_for_render(end as f64 / SR) {
             return Ok(false);
         }
         self.out.clear();
-        self.analyzer.push(block, &mut self.out);
+        self.analyzer.push(&self.block, &mut self.out);
         if let Some(r) = self.recorder.as_mut() {
-            r.audio(block)?;
+            r.audio(&self.block)?;
         }
+        self.read = end;
+        self.block.clear();
         self.shared.analysed.store(end, Ordering::Release);
         self.deliver()
     }
@@ -616,5 +597,41 @@ impl Analysis {
             }
         }
         Ok(true)
+    }
+
+    /// Ends the analysis: records `result` (whether it reached the source's end, or how it
+    /// failed) and finishes the record, describing the `source` and the watchdog's `releases`.
+    pub(crate) fn close(
+        mut self,
+        result: std::thread::Result<Result<bool, String>>,
+        source: &str,
+        releases: &[Release],
+    ) {
+        let sh = Arc::clone(&self.shared);
+        let complete = match result {
+            Ok(Ok(complete)) => complete,
+            Ok(Err(e)) => {
+                sh.fail(e);
+                false
+            }
+            Err(panic) => {
+                sh.fail(crate::panic_message(&*panic));
+                false
+            }
+        };
+        if let Some(recorder) = self.recorder.take() {
+            let meta = Meta {
+                source,
+                m: self.delayed.m,
+                a: self.delayed.a,
+                output_rate: sh.output_rate,
+                hindsight_stalls: self.analyzer.hindsight_stalls().0,
+                complete,
+                releases,
+            };
+            if let Err(e) = recorder.finish(&meta) {
+                sh.fail(e);
+            }
+        }
     }
 }

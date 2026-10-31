@@ -398,10 +398,11 @@ release), the analysis thread over any `analysis::Source` (a tap, or a file
 as the output plays it), the host clock (`clock`), and the one `afconvert`
 decoder (`decode`) that native's app and the plugin's File source share.
 Core Audio code is behind `cfg(target_os = "macos")`, so M5's process
-loopback goes beside it. The plugin's File analysis keeps its own loop: it
-feeds the analyzer in `ps entries`' 4096-sample blocks, paced by the render
-position, so its records stay byte-identical to the dump. `capture` is
-impure: the pure crates may not depend on it (`native/scripts/crates`).
+loopback goes beside it. The plugin has one analysis loop of its own for
+every source (ps-msz.5.2): a File source feeds it in `ps entries`' 4096-sample
+blocks, paced by the render position, so its records stay byte-identical to
+the dump; a System source feeds it as the tap captures. `capture` is impure:
+the pure crates may not depend on it (`native/scripts/crates`).
 
 ### The C interface
 
@@ -486,8 +487,7 @@ entry kind with its `v` slots (`analysis::flat`'s table). Decisions:
   44.1 kHz mono float, exact), `entries.jsonl` (`ps entries`' line format,
   without its header) and `meta.json` (the source, `M`, `A`, the output rate,
   the duration, the records, the hindsight stalls and whether it finished).
-- `ps_list_apps` returns no apps, and the System and Replay sources return
-  `PS_ERR_UNSUPPORTED`, until they land.
+- The Replay source returns `PS_ERR_UNSUPPORTED` until it lands.
 
 ### The delay line and Unity's output
 
@@ -561,6 +561,52 @@ A muted app must always get its sound back.
   own grant; File works in the editor without one.
 - **Device change**: an output device change ends the run, because the
   latency changes, as in native.
+
+**Shipped (ps-msz.5.2).** The System source is `native/crates/plugin/src/system.rs`
+beside `file.rs`; `session.rs` is what every source shares (the render path and
+anchor, the records' ring, the record and the one analysis loop). Decisions:
+
+- `ps_config.pid` (in the padding after `source`, so the struct stays 48
+  bytes) names the app: a `ps_app`'s pid, the process responsible for its
+  audio, or any one process with audio (a tool launched from a terminal is
+  grouped under the terminal). `ps_list_apps` lists the apps producing audio
+  now (`capture::apps`, playing ones only). No icons: they aren't cheap.
+- `ps_open` taps the app at once, muted, so a missing app or a failed tap is
+  its error (`PS_ERR_SOURCE`). The source's timeline is the tap's frames at
+  its rate from the first frame: song time 0. The line plays from frame 0 once
+  it holds `M`, read by frame (interpolated if Unity's rate differs), so the
+  analyzer reads `M` ahead of what is heard. The tap and Unity both run on the
+  default output device's clock, so they never drift; a device change ends
+  the run anyway.
+- One thread, `ps-system`, drains the tap's mono mixdown, lines it up with its
+  buffers (silence for frames the tap's ring dropped), resamples it to
+  44.1 kHz and feeds the analysis loop in blocks of two analyzer hops
+  (20 ms, inside `A`), so a recorded session's audio analysed in whole hops
+  gives the same entries.
+- **The heartbeat** is every `ps_poll` and `ps_status` call. The thread
+  relays it to the tap's watchdog (`capture::watchdog`), which releases the
+  tap on a 0.5 s capture stall or a 2 s heartbeat gap (2.03 s measured).
+- **After a release** the state is `PS_STOPPED`: silence plays at once (the
+  app is heard directly; the delayed copy would double it), and the analyzer
+  hears silence up to `M` past the render position, so its timeline keeps up
+  with song time. From 1 s after the release, every 0.25 s while the
+  heartbeat is alive (so a hung game never flickers the mute), the plugin
+  looks for the app playing and taps it again into the same line, numbering
+  the new tap's frames from where the analyzer's silence reached. The music
+  resumes there, `M` later, and the state returns to `PS_PLAYING` when the
+  render position reaches it. `ps_status.releases` counts releases.
+- `ps_status.device_changed` is set once the default output device differs
+  from the one at `ps_open` (looked at once a second, from `ps_status`), and
+  the reported latency follows the new device. `ps_status` is now 80 bytes.
+- The record covers System sources: `meta.json`'s `source` is
+  `system: <app> (pid <pid>)`, `complete` is false (a live source has no
+  end), and `releases` lists each release's song time and reason.
+- Tested without the grant through a hand-driven tap (`tests/system.rs`,
+  and `tests/no_alloc.rs` for the render path). `tests/system_tap.rs`
+  (ignored) taps a real `afplay` child; without the grant it captures
+  silence but mutes, releases and taps again
+  ([evidence](../../game/evidence/system-source/README.md)). Hearing the
+  delayed music needs the grant: an operator row.
 
 ### Building and loading the plugin
 

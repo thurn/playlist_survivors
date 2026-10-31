@@ -5,7 +5,12 @@
  *
  * One session plays one source M seconds late through Unity's output and analyses it ahead of
  * that. Threads: ps_render_music on Unity's audio thread; every other call on one other thread
- * (the main thread). Times are seconds; song time is the position in the source's music.
+ * (the main thread). Times are seconds; song time is the position in the source's music (System:
+ * the time since the app was first tapped).
+ *
+ * The main thread's heartbeat: each ps_poll and ps_status call. A System source's watchdog
+ * releases the tapped app (it is heard again) if the heartbeat stops for 2 s or the capture for
+ * 0.5 s; call either every frame.
  */
 #ifndef PS_PLUGIN_H
 #define PS_PLUGIN_H
@@ -20,21 +25,22 @@ extern "C" {
  * describes the failure. */
 #define PS_OK 0
 #define PS_ERR_ARGUMENT -1    /* a null pointer, an unknown source, an M or rate out of range */
-#define PS_ERR_SOURCE -2      /* the file or playlist can't be read or decoded */
+#define PS_ERR_SOURCE -2      /* the file or playlist can't be read or decoded, or the app tapped */
 #define PS_ERR_MODELS -3      /* the analyzer's models can't be loaded */
-#define PS_ERR_UNSUPPORTED -4 /* the source isn't available yet (System, Replay) */
+#define PS_ERR_UNSUPPORTED -4 /* the source isn't available yet (Replay; System off macOS) */
 #define PS_ERR_PANIC -5       /* the plugin panicked; the session should be closed */
 #define PS_ERR_FAILED -6      /* ps_poll: the session's source, analysis or record failed */
 
 /* Sources. */
 #define PS_SOURCE_FILE 0   /* an audio file, or an M3U playlist with #PS-GAP lines */
-#define PS_SOURCE_SYSTEM 1 /* an app's audio, tapped and muted (M2: not yet) */
+#define PS_SOURCE_SYSTEM 1 /* an app's audio, tapped and muted (Delayed listening; macOS) */
 #define PS_SOURCE_REPLAY 2 /* a recorded session (not yet) */
 
 typedef struct ps_session ps_session;
 
 typedef struct {
     int32_t source;          /* PS_SOURCE_* */
+    int32_t pid;             /* System: the app to tap, a ps_app's pid */
     double m;                /* the music delay M: 3.0 (1 to 10) */
     double output_rate;      /* Unity's output sample rate (whole Hz) */
     const char *path;        /* File: the audio file or .m3u (UTF-8) */
@@ -42,10 +48,10 @@ typedef struct {
     const char *session_dir; /* the folder to record the session in (created); NULL: none */
 } ps_config;
 
-/* An app producing audio now (System listening). */
+/* An app producing audio now (System listening): the process responsible for its audio. */
 typedef struct {
     int32_t pid;
-    char name[128]; /* UTF-8, NUL-terminated */
+    char name[128]; /* UTF-8, NUL-terminated (cut to fit) */
 } ps_app;
 
 /*
@@ -98,6 +104,10 @@ typedef struct {
 #define PS_WAITING 0 /* the music hasn't started: ps_render_music writes silence */
 #define PS_PLAYING 1
 #define PS_ENDED 2   /* the source has been rendered to its end */
+#define PS_STOPPED 3 /* System: the watchdog released the app, so the music stopped (silence plays,
+                      * the analyzer hears silence). Once the main thread's heartbeat is back and the
+                      * app produces audio, the plugin taps it again; the state returns to
+                      * PS_PLAYING when that music reaches the render position, M later. */
 
 /* A struct tag, not a typedef: ps_status is also the function that fills it. */
 struct ps_status {
@@ -116,22 +126,25 @@ struct ps_status {
     double analysed;
     /* Buffers that ran out of music before the source's end (capture or decode stalls). */
     int32_t stalls;
-    int32_t state;         /* PS_WAITING, PS_PLAYING or PS_ENDED */
-    int32_t muted;         /* System: the tapped app is still muted. File: 0 */
+    int32_t state;         /* PS_WAITING, PS_PLAYING, PS_ENDED or PS_STOPPED */
+    int32_t muted;         /* System: the app is muted (tapped). File: 0 */
     int32_t analysis_done; /* the analyzer has emitted its last entry */
     int32_t failed;        /* the source, analysis or record failed: ps_poll says why */
     float follower_gain;   /* the effects' gain, following the music's loudness (0.3 to 1) */
+    int32_t releases;      /* System: how many times the watchdog released the app */
+    int32_t device_changed; /* the default output device changed since ps_open (the run ends) */
 };
 
-/* Opens a session: validates the source, loads the models and starts decoding and analysis. */
+/* Opens a session: validates the source (System: taps the app, muted), loads the models and
+ * starts decoding or capture, and analysis. */
 int32_t ps_open(const ps_config *config, ps_session **out);
 
-/* Fills out with up to max apps producing audio now; returns how many. (Empty until System
- * listening lands.) */
+/* Fills out with up to max of the apps producing audio now, the ones a System source can tap;
+ * returns how many. (None off macOS.) */
 int32_t ps_list_apps(ps_app *out, int32_t max);
 
 /* Copies up to max new entries into out; returns how many, or PS_ERR_FAILED once every entry
- * before a failure has been polled. Never allocates. */
+ * before a failure has been polled. Never allocates. A heartbeat. */
 int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
 
 /* Unity's audio thread: writes `frames` frames of `channels` interleaved channels of the
@@ -141,11 +154,12 @@ int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
 int32_t ps_render_music(ps_session *s, float *out, int32_t frames, int32_t channels,
                         double dsp_time);
 
-/* The anchor, latency, stalls, mute, gain and progress. Cannot fail. */
+/* The anchor, latency, stalls, mute, gain, progress and device. Cannot fail. A heartbeat. */
 void ps_status(ps_session *s, struct ps_status *out);
 
-/* Stops the session's threads, finishes its record and frees it. NULL is a no-op. Stop the
- * audio callback first: ps_render_music must have returned for the last time. */
+/* Stops the session's threads (System: the app is heard again), finishes its record and frees
+ * it. NULL is a no-op. Stop the audio callback first: ps_render_music must have returned for the
+ * last time. */
 void ps_close(ps_session *s);
 
 /* The calling thread's last failure, until its next failing call; "" if none. The plugin owns
