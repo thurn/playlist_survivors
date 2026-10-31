@@ -23,7 +23,7 @@ namespace PS.Game.Sim
     ///   closes to <see cref="WallCloseM"/> over <see cref="WallCloseBeats"/> main beats, stopping short of
     ///   structures. Each ends after its <c>durationS</c> of run clock.
     /// - A swarm takes the stage from a set piece in play. Native draws each event's flock with an angle
-    ///   step of pi/500 in a line; the game lays it out as a block so the flock reads as a mass.
+    ///   step of pi/500 in a line; the game lays it out as a shaken block so the flock reads as a mass.
     /// </summary>
     internal sealed class Swarms
     {
@@ -202,7 +202,9 @@ namespace PS.Game.Sim
                 double spacing = FlockSpacing * m.Content.Roles[role].RadiusM;
                 for (int k = 0; k < count; k++)
                 {
-                    double across = (k % cols - (cols - 1) / 2.0) * spacing, back = (k / cols) * spacing;
+                    // A block of rows, each place shaken by up to its spacing, so the flock reads as a mass, not a grid.
+                    double across = (k % cols - (cols - 1) / 2.0 + sim.Random.Range(-0.5, 0.5)) * spacing;
+                    double back = (k / cols + sim.Random.Range(-0.5, 0.5)) * spacing;
                     int i = m.Spawn(sim, g, t, role, ex - dy * across - dx * back, ey + dx * across - dy * back, flier: true);
                     if (i >= 0) m.Horde.Scripts.Line(i, dx, dy, 1, flier: true);
                 }
