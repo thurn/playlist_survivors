@@ -50,6 +50,7 @@
     { "guid": "placeholder", "clip": "hero walk", "impact": 0.0, "end": 1.0, "rootMotionM": 0.0, "strideM": 1.8, "use": "hero walk" },
     { "guid": "placeholder", "clip": "hero slash left", "impact": 0.24, "end": 0.55, "rootMotionM": 0.2, "strideM": 0.0, "use": "hero slashL" },
     { "guid": "placeholder", "clip": "hero slash right", "impact": 0.26, "end": 0.58, "rootMotionM": 0.2, "strideM": 0.0, "use": "hero slashR" },
+    { "guid": "placeholder", "clip": "hero slash finisher", "impact": 0.42, "end": 0.47, "rootMotionM": 1.4, "strideM": 0.0, "use": "hero slash3" },
     { "guid": "placeholder", "clip": "hero thrust", "impact": 0.30, "end": 0.68, "rootMotionM": 0.5, "strideM": 0.0, "use": "hero thrust" },
     { "guid": "placeholder", "clip": "hero spin", "impact": 0.38, "end": 0.85, "rootMotionM": 0.0, "strideM": 0.0, "use": "hero spin" },
     { "guid": "placeholder", "clip": "hero overhead slam", "impact": 0.50, "end": 1.05, "rootMotionM": 0.3, "strideM": 0.0, "use": "hero slam" }

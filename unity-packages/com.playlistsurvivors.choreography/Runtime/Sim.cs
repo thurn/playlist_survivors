@@ -923,7 +923,10 @@ namespace PS.Choreography
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
                 float windup = roster.WindupOf(mv);
-                if (windup > 0 ? !ClipLibrary.FitWindup(clip, availFrom, p.Time, windup, out double start, out double end, out float speed)
+                // A combo with its own windup (demo3d's cleaves) may cut into the last one's follow-through, as every
+                // combo does for a hero with a windup.
+                bool cutsIn = mv.WindupS > 0 && roster.HeroWindupS <= 0;
+                if (windup > 0 ? !ClipLibrary.FitWindup(clip, cutsIn ? tb : availFrom, p.Time, windup, out double start, out double end, out float speed)
                     : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)) continue;
                 if (start < tb - 1e-9) continue;
                 if (start >= startBefore) return;
@@ -940,7 +943,8 @@ namespace PS.Choreography
                 // A shot's fixed entries (its cut, final slam, anchors and bar.beats) always land: no other blow costs one its fit.
                 if (windup <= 0 && shot.HasFixed && e.Fixed == FixedPosition.None && TakesAFixedSlot(gi, availFrom, end)) continue;
 
-                Vector2 from = HeroRest;
+                // One that cuts in starts where the hero then stands, mid-move, so it never pops.
+                Vector2 from = cutsIn ? HeroPosAt(start) : HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
                 Vector2 dir, to;
                 if (shot.Path != null)
@@ -1890,6 +1894,8 @@ namespace PS.Choreography
                     actions.Add(new ActionEvent(0, ActionKind.Attack, t, im.Clip, -1, im.Strength, im.ClipStart, im.ClipSpeed));
                     // The trail matches the blow's reach (the feedback's scale, or the ring's floor on it).
                     float fxScale = clearRadius > 0 && size > 0 ? reach / size : shapeScale;
+                    // A combo drawn with another's effect (the cleave's giant slash) scales it to the reach it cuts.
+                    if (mv.EffectRadius > 0) fxScale *= size / mv.EffectRadius;
                     if (mv.Effect >= 0)
                         effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, fxScale));
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);

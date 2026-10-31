@@ -7,7 +7,10 @@
       "slashR": { "shape": "arc", "radius": 2.4, "arcDeg": 160, "strength": 0.5, "effect": "slash-trail", "sound": "swing" },
       "thrust": { "shape": "line", "length": 3.5, "width": 1.2, "strength": 0.6, "effect": "thrust-trail", "sound": "swing" },
       "spin": { "shape": "ring", "radius": 2.8, "strength": 0.8, "effect": "spin-trail", "sound": "swing" },
-      "slam": { "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" }
+      "slam": { "shape": "ring", "radius": 3.6, "strength": 1.0, "effect": "slam-shock", "sound": "swing" },
+      "cleaveL": { "clip": "slashL", "windupS": 0.32, "shape": "ring", "radius": 2.4, "strength": 0.5, "effect": "spin-trail", "effectRadius": 2.8, "sound": "swing" },
+      "cleaveR": { "clip": "slashR", "windupS": 0.32, "shape": "ring", "radius": 2.4, "strength": 0.5, "effect": "spin-trail", "effectRadius": 2.8, "sound": "swing" },
+      "cleave": { "clip": "slash3", "windupS": 0.32, "shape": "ring", "radius": 4.5, "strength": 0.8, "effect": "spin-trail", "effectRadius": 2.8, "sound": "ring" }
     }
   },
   "monsters": [

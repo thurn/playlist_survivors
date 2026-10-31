@@ -358,10 +358,8 @@ second for 1.6 deaths. demo2d and the stress scripts keep the budget.
   no hits come.
 - **Spells top up.** A spell holds back while the section's deaths are
   within a quarter second's worth of the rate, so a ring's lump of kills
-  doesn't overshoot the rate. The hero's blows reap most in the quiet
-  sections and under overdrive, but in the normal drops the rings and
-  lightning empty the hero's reach: spells take 85-95% of their kills and the
-  hero swings 0.5-0.9 times a second (1.25 before one-hit kills).
+  doesn't overshoot the rate. The hero's blows reap most of every section;
+  see [The drops cleave](#the-drops-cleave).
 - **Sections kill what walks in.** The hero can't kill slower than the horde
   arrives. Quiet sections often run above their rate, as do the free breaks
   (which fill with the next drop's horde) and the sections after a bigger one
@@ -384,6 +382,41 @@ clearing blow finds fewer leftovers), and no monster but the boss takes a
 non-lethal hit. Overdrive inherits it. Its own loads drop `hitsPerDeath`,
 its build rises to 0.045 deaths/s per monster, and its groove plays
 `swarm-light` on every roster set.
+
+#### The drops cleave
+
+With one-hit kills alone, the normal song's drops let spells take 85–95% of
+their kills: the downbeat's hero-centred ring and the lightning emptied the
+hero's 160° slash, so the hero swung 0.5–0.9 times a second and mostly at
+nothing. The drops now play native's answer (ps-ffx;
+[survivors-run.md](../design/survivors-run.md)'s omnidirectional sword spin,
+with the oversize slash and shock ring on accents). The action script's drops
+cleave; forest's and heroic's keep their slashes, since every-beat cleaves
+empty their 150-monster screen faster than it refills.
+
+- **Every swing is a 360° cleave.** `cleaveL` and `cleaveR` play the light
+  combo's slashes with a ring for a hit shape, drawn with the spin's circular
+  sword slash at the reach they cut.
+- **The downbeat is the heavy cleave.** `cleave` plays the light combo's
+  finisher (`slash3`) with the ring spell's 4.5 m reach and its boom, in
+  place of that spell, so the downbeat's mass kill is the hero's: 40–60
+  monsters in the drops, about 100 at the final peak.
+- **The cleaves swing on the beat.** They have their own 0.32 s windup, so
+  each may cut into the last one's follow-through as a hero with a windup
+  does (no clip plays faster than 1.33x), and the downbeat's cleave always
+  fits.
+- **The hero carves while it travels** (`travelScaledReach`), and a cleave
+  may reach 0.35 of the view (`maxShapeViewFraction`).
+- **Spells strike away from the hero:** bolts on the beat (the peaks: the
+  eighth) and lightning on accents, topping up behind the cleaves.
+
+The drops that travel kill a little slower, as the horde reaches a moving
+hero more slowly: groove-2 plays `swarm-travel` (0.14), the build
+`swarm-build` (0.11). On seed 1 the hero takes 84–92% of each drop's kills
+and swings 1.2–1.5 times a second (the build about 0.9). Two roster fields
+make the cleaves: a combo's `clip` names another combo's clip, and its
+`effectRadius` is the reach its effect is drawn at full size, so a combo
+drawn with another's effect scales it to its own reach.
 
 ### Shot fields
 
@@ -570,7 +603,8 @@ start = impact - annotatedImpact / speed
 - **`timeAvailable`** runs from when the entity's previous action reaches its
   annotated `end` (at its own speed) to the new impact.
 - **A hero with a windup** (the roster hero's `windupS`, demo2d's 190 ms, the
-  native game's sword swing; a combo's own `windupS` overrides it) plays each
+  native game's sword swing; a combo's own `windupS` overrides it, and lets
+  that combo cut into the last one's follow-through too) plays each
   combo from that long before its impact instead:
   `speed = max(1, annotatedImpact / windup)`, so the swing is quick and its
   blow lands on the beat. The next combo's windup may cut into the last one's

@@ -105,6 +105,23 @@ namespace Demo3D.Choreography.Tests
             Assert.That(bossHits, Is.GreaterThan(0), "the boss still takes blows until its last bar");
         }
 
+        /// <summary>
+        /// ps-ffx: the hero's cleaves, not the spells, reap the song's drops, as native's sword spin does: it takes at
+        /// least half of each drop's kills, and outside the build (which travels) swings at least once a second.
+        /// </summary>
+        [Test]
+        public void TheHerosCleavesReapTheDrops()
+        {
+            foreach (SectionStats s in Fixtures.SongTimeline.Sections)
+            {
+                if (Array.IndexOf(new[] { "drop-1", "groove-2", "build", "drop-2", "final-peak" }, s.Label) < 0) continue;
+                double swings = s.HeroSwings / s.Duration, share = (double)s.HeroKills / Math.Max(1, s.HeroKills + s.SpellKills);
+                TestContext.WriteLine(s.Label + ": " + swings.ToString("F2") + " swings/s, hero's share " + share.ToString("F2"));
+                if (s.Label != "build") Assert.That(swings, Is.GreaterThanOrEqualTo(1.0), s.Label + " swings/s");
+                Assert.That(share, Is.GreaterThanOrEqualTo(0.5), s.Label + " hero's share of the kills");
+            }
+        }
+
         /// <summary>Without one-hit kills a laser tick is a flash only: it never knocks its monster back.</summary>
         [Test]
         public void TicksNeverKnockAMonsterBack()

@@ -30,6 +30,7 @@ namespace PS.Choreography
         public int Clip = -1;         // hero combos
         public float AdvanceM;        // hero combos: the least the hero moves over the clip (its root motion when larger)
         public float WindupS;         // hero combos: the clip's start to its impact, overriding the hero's windupS (0: the hero's)
+        public float EffectRadius;    // hero combos: the reach their effect is drawn at full size (0: their own size)
         public int Effect = -1, Sound = -1;
     }
 
@@ -172,12 +173,13 @@ namespace PS.Choreography
                     Bars = m["bars"].AsFloat(1f),
                     AdvanceM = m["advanceM"].AsFloat(0f),
                     WindupS = m["windupS"].AsFloat(0f),
+                    EffectRadius = m["effectRadius"].AsFloat(0f),
                     Effect = Catalog.Effect(m["effect"].AsString()),
                     Sound = Catalog.Sound(m["sound"].AsString()),
                 };
                 string proj = m["projectile"].AsString();
                 if (proj != null) move.Projectile = r.ProjectileIndex(proj, "move '" + kv.Key + "'");
-                if (combos) move.Clip = clips.Require("hero " + kv.Key);
+                if (combos) move.Clip = clips.Require("hero " + m["clip"].AsString(kv.Key));   // another combo's clip, by its name
                 list.Add(move);
             }
             return list.ToArray();
