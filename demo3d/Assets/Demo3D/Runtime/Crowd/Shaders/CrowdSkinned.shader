@@ -147,8 +147,12 @@ Shader "Demo3D/CrowdSkinned"
             // a saturated hide sitting on another type's hue. (1, 0) or unset: none.
             float4 _Demo3DTypeRotate;
             // `--crowd-gloss` (crowd.md, Surfaces): x 1 reads each type's surface map, its swatches' own
-            // metallic and smoothness (0 keeps the material's single values); y scales the metallic.
+            // metallic and smoothness (0 keeps the material's single values); y scales the metallic; z the
+            // arena's reflection.
             float4 _Demo3DCrowdGloss;
+            // The arena's reflection under `--crowd-gloss` (CrowdReflection): a cubemap of the lit arena, added as
+            // URP's environment specular term, since the night has no skybox and the global probe reflects black.
+            TEXTURECUBE(_Demo3DCrowdReflection); SAMPLER(sampler_Demo3DCrowdReflection);
             #define DEMO3D_MAIN_LIGHT_SCALE ((1 + _Demo3DCrowdKeyBoost) * (_Demo3DCrowdKeyColor.w > 0 ? _Demo3DCrowdKeyColor.rgb : float3(1, 1, 1)))
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
@@ -175,6 +179,18 @@ Shader "Demo3D/CrowdSkinned"
                 half3 dyed = min(hue * (luma / max(dot(hue, half3(0.2126, 0.7152, 0.0722)), 1e-3)), 1);
                 half w = _Demo3DTypeColor.w * (1 - smoothstep(0.4, 0.8, saturation)) * (1 - 0.4 * smoothstep(0.75, 1.0, luma));
                 return lerp(albedo, dyed, w);
+            }
+
+            half3 CrowdReflection(InputData d, SurfaceData s)
+            {
+                BRDFData brdf;
+                half alpha = 1;
+                InitializeBRDFData(s.albedo, s.metallic, half3(0, 0, 0), s.smoothness, alpha, brdf);
+                half3 r = reflect(-d.viewDirectionWS, d.normalWS);
+                half fresnel = Pow4(1 - saturate(dot(d.normalWS, d.viewDirectionWS)));
+                half mip = PerceptualRoughnessToMipmapLevel(brdf.perceptualRoughness);
+                half3 env = SAMPLE_TEXTURECUBE_LOD(_Demo3DCrowdReflection, sampler_Demo3DCrowdReflection, r, mip).rgb;
+                return EnvironmentBRDFSpecular(brdf, fresnel) * env * _Demo3DCrowdGloss.z;
             }
 
             half4 frag(Varyings i) : SV_Target
@@ -211,6 +227,7 @@ Shader "Demo3D/CrowdSkinned"
                 s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4;
 
                 half3 color = CrowdLighting(inputData, s);
+                if (_SurfaceMapOn * _Demo3DCrowdGloss.x > 0.5 && _Demo3DCrowdGloss.z > 0) color += CrowdReflection(inputData, s);
                 half peak = max(color.r, max(color.g, color.b));
                 if (_Demo3DCrowdShoulder > 0 && peak > _Demo3DCrowdShoulder)
                 {

@@ -169,6 +169,14 @@ Without the flag the horde is unchanged.
   probe), and the crowd shoulder still rolls off their highlights, so the
   effects stay the brightest pixels. The type dye still tints grey swatches,
   so a dyed type's metal shines in its colour.
+- **Metal reflects the arena.** The night has no skybox, so the global probe
+  reflects black and full metal went black. Under the flag, `CrowdReflection`
+  renders a 128 px HDR cubemap of the arena once it is ready, from its centre
+  at 1.6 m (the lit ground, the braziers, the walls). Its sky is the night's
+  ambient sky colour times `--crowd-reflect-sky` (4), since from the camera
+  above most metal faces look up. The crowd shader adds it as URP's
+  environment specular term (box-filtered mips stand in for a GGX
+  prefilter). `--crowd-reflect k` scales it; 0 turns it off.
 
 ### Monster styles
 

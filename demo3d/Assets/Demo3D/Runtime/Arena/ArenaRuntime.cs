@@ -190,6 +190,7 @@ namespace Demo3D.Runtime.Arena
             }
             else StaticShadowMap.Disable();
             if (Options.Without != "") Hide(root.Find("Static"));
+            CrowdReflection.Capture(Lighting, new Vector3(0, 1.6f, 0));
             Ready = true;
             Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, " +
                       $"{_probes?.count ?? 0} light probes ({LightmapSettings.lightProbes?.count ?? 0} loaded), {Options.Label()}");

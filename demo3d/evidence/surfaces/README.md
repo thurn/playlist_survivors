@@ -39,11 +39,32 @@ on the left and with it on the right.
   reflects, and the crowd shader reflects the global probe, which is the dark
   night sky. So the armour is black except on the facets facing a light. The
   heroic set's metal is just as dark; it reads because its normal maps scatter
-  small highlights over it. A reflection probe baked from the arena itself
-  (the lit ground, the braziers) would give the metal something warm to show,
-  still from the scene's own light.
+  small highlights over it. The arena reflection below answers this.
 - **It only matters up close.** At the song's camera the change is small, and
   at a climax the effects hide it.
+
+## The arena's reflection
+
+Under the flag the player now captures a cubemap of the lit arena at load
+(`CrowdReflection`, crowd.md, Surfaces) and the crowd shader adds it as the
+environment specular term. The log's face means at the arena's centre: the
+ground face about (0.29, 0.18, 0.11) linear, the walls and braziers 0.06-0.17,
+the sky the night's ambient sky times `--crowd-reflect-sky`.
+
+- [reflect-skeletons.jpg](reflect-skeletons.jpg),
+  [reflect-goblins.jpg](reflect-goblins.jpg): off, then gloss with no
+  reflection (`--crowd-reflect 0`, the first prototype), then the reflection
+  over a black sky (`--crowd-reflect-sky 0`), 4 (the default) and 8.
+- [reflect-zoom.jpg](reflect-zoom.jpg): the skeletons at 100 s, off, no
+  reflection, sky 4 and sky 8. The helmets turn from black with lit edges into
+  burnished metal: each facet its own value, warm where it faces the ground.
+- [reflect-song-100.jpg](reflect-song-100.jpg): the song's camera, off, sky 4
+  and sky 8. The goblins read as armoured, grey and steely where they were
+  cream; the skeletons keep more of their value than without the reflection.
+
+Sky 4 and 8 differ little: most of the gain is the ground and walls. The
+skeletons are still darker than without the flag, which costs them some of
+their tan mass at the song's camera.
 
 ## Commands
 
@@ -58,4 +79,5 @@ APP="demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Su
 ```
 
 Drop `--crowd-gloss` for the left halves; add `--crowd-gloss-metal <k>` for
-the sweep. The pairs are `magick off.jpg on.jpg +append`.
+the metal sweep, `--crowd-reflect 0` or `--crowd-reflect-sky <k>` for the
+reflection's. The pairs are `magick off.jpg on.jpg +append`.
