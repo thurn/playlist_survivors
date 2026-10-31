@@ -1689,6 +1689,30 @@ game/evidence/music-events/. As built:
   ambient, fog, clear colour, hero light, ground tint and mist to the
   zone's palette over two bars from the change's downbeat, beside the
   post's grade offset.
+- **Every zone is a night** (ps-msz.6.24). The 3D demo's blossom and snow
+  are day looks (ambient and fog about 4x neon's, ground tints of 2 to
+  3.2): every run turned pink at its first zone change and white by its
+  second, the horde at dL* +8 and -6.6. The game's arena-layout.json keeps
+  their hues at neon's darkness (the demo's palettes are unchanged); the
+  call was to keep each zone's colour in the moon, ambient, fog, mist and
+  ground tint and take only the light down:
+  - blossom, a magenta-rose night: moon (1, 0.5, 0.85) at 0.8, ambient sky
+    (0.1, 0.05, 0.13), equator (0.14, 0.04, 0.12), ground (0.05, 0.015,
+    0.045), fog (0.15, 0.04, 0.13), hero light 40 in (1, 0.65, 0.85),
+    ground tint (0.7, 0.45, 0.68), mist (0.62, 0.16, 0.45);
+  - snow, an ice-blue night: moon (0.62, 0.76, 1) at 0.8, ambient sky
+    (0.05, 0.09, 0.17), equator (0.04, 0.07, 0.12), ground (0.015, 0.025,
+    0.05), fog (0.05, 0.09, 0.16), hero light 40 in (0.7, 0.88, 1), ground
+    tint (0.52, 0.64, 0.92), mist (0.24, 0.36, 0.6);
+  - crypt keeps its grey light, its ground tint (0.55, 0.62, 0.8) and mist
+    (0.22, 0.22, 0.24) taken down from the demo's mid-grey ground (ring L*
+    57 to 28); lava already met the bar.
+  - The post's zone grades lift no exposure for blossom and snow (they had
+    +0.08 and +0.1 stops); their saturation, contrast and temperature
+    leanings stay.
+  - Settled, the horde reads at dL* +44 (blossom), +34 (snow), +47 (crypt)
+    and +65 (lava) on house-128, and +55 or more mid-ease
+    ([game/evidence/music-events](../../game/evidence/music-events/README.md)).
 - **Debug**: `DebugCommand.Stampede` to `Minotaur` (player
   `--debug "stampede@T,kick@T,wedge@T,ring@T,bats@T,ghosts@T,flowers@T,minotaur@T"`)
   start one on the next main beat in any run with enemies.
@@ -1767,9 +1791,9 @@ The look is the reference command's, held on every frame of a live run.
   each strike.
 - **Readability**: monsters stay at least 17 L* away from the ground, darker
   or lighter, the 3D demo's floor.
-- **Zones** recolour runtime lighting with the 3D demo's palettes (neon,
-  crypt, lava, blossom, snow), eased over two bars from the change's
-  downbeat.
+- **Zones** recolour runtime lighting with night versions of the 3D demo's
+  palettes (neon, blossom, snow, crypt, lava), eased over two bars from the
+  change's downbeat: each zone a night in its own hue.
 
 ### The arena
 

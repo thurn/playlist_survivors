@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace Game.Client.Arena
 {
     /// <summary>
-    /// The zones' runtime lighting (unity-game.md, "The Look": zones recolour runtime lighting with the 3D
-    /// demo's palettes, eased over two bars from the change's downbeat). A zone change eases from the
-    /// lighting at its downbeat to the zone's palette of game/Content/arena-layout.json (smoothstep, as the
+    /// The zones' runtime lighting (unity-game.md, "The Look": zones recolour runtime lighting with night
+    /// versions of the 3D demo's palettes, eased over two bars from the change's downbeat). A zone change
+    /// eases from the lighting at its downbeat to the zone's palette of game/Content/arena-layout.json (smoothstep, as the
     /// post's zone grade does), and each frame applies the lighting at frameSong through
     /// <see cref="ArenaRuntime.Relight"/>. Zone changes settle ahead of the frames, so a change arriving
     /// mid-ease starts from where that ease will be at its downbeat.

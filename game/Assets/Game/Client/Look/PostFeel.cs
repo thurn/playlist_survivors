@@ -50,7 +50,7 @@ namespace Game.Client.Look
 
         /// <summary>
         /// Each zone palette's grade (arena-layout.json's palettes): the neon night is the base; the
-        /// others lean with their palette's light. M3's zones may retune them.
+        /// others lean with their palette's light. Blossom and snow are nights too, so they lift no exposure.
         /// </summary>
         public static ZoneGrade GradeOf(string zone)
         {
@@ -58,8 +58,8 @@ namespace Game.Client.Look
             {
                 case "crypt": return new ZoneGrade { Exposure = -0.1f, Saturation = -10, Contrast = 8, Temperature = -10, Vignette = 0.05f, Pulse = 0.8f };
                 case "lava": return new ZoneGrade { Exposure = 0.05f, Saturation = 10, Contrast = 6, Temperature = 12, Vignette = 0.04f, Pulse = 1.2f };
-                case "blossom": return new ZoneGrade { Exposure = 0.08f, Saturation = 6, Temperature = 4, Pulse = 1f };
-                case "snow": return new ZoneGrade { Exposure = 0.1f, Saturation = -6, Contrast = 4, Temperature = -8, Pulse = 0.9f };
+                case "blossom": return new ZoneGrade { Saturation = 6, Temperature = 4, Pulse = 1f };
+                case "snow": return new ZoneGrade { Saturation = -6, Contrast = 4, Temperature = -8, Pulse = 0.9f };
                 default: return ZoneGrade.None;
             }
         }

@@ -18,11 +18,10 @@ uv run --project demo3d/tools game look SLUG --backend mono --at T1,...,T6 --str
 Most run in the run's level (`--run`: the schedule's minute-0 bats and the starting sword); the
 ring, stampede and minotaur run in the cast's level (`--cast bat1`: no sword, no waves), because
 the sword's heavy strikes cleave 15 m and shattered the ring and stampede as they came into view.
-The world is pink because house-128's opening jump moved the zones on to blossom by 6.6 s.
+The world is pink because house-128's opening jump moved the zones on to blossom by 6.6 s, and
+these strips predate blossom's night version (ps-msz.6.24): the zone strips below show the zones
+as they are now.
 
-- [zone-change.jpg](zone-change.jpg) (`change@8`), 8.4 to 11.4 s: the forced section change lands
-  on the downbeat at 8.9 s and the arena eases from blossom to snow over the next two bars, the
-  moon, ambient, fog, ground tint and mist with the post's grade, settled by 10.8 s.
 - [stampede.jpg](stampede.jpg) (`stampede@8`), 9 to 17 s: forty goblins in two rows charge in from
   beyond the right edge at 12 s and cross to the left by 17 s, a gap in the middle; the crystal
   structures on the right break up the rows where the walkers stop short of them.
@@ -42,6 +41,40 @@ The world is pink because house-128's opening jump moved the zones on to blossom
   blue crystal) lands just inside the view on the beat at 8.43 s, walks in, telegraphs two beats
   before its slam, and the slam lands on the 8th beat (12.18 s) at the mark under the standing
   hero: the hurt flash at 12.25 s.
+
+## The zones' lighting (ps-msz.6.24)
+
+One strip per zone change, through the five zones: house-128's opening jump moves neon on to
+blossom on the downbeat at 6.59 s, and forced section changes (`change@12,change@19,change@26,
+change@33`) move on to snow (12.22 s), crypt (19.72 s), lava (26.28 s) and back to neon
+(33.78 s). Each strip runs from 0.4 s before its downbeat to 4 s after, the two-bar ease
+(3.75 s at 128 BPM) settling by its last frame:
+
+```sh
+uv run --project demo3d/tools game look zone-neon-blossom --backend mono \
+  --at 6.19,7.09,7.79,8.59,9.59,10.59 --strip 3 --evidence music-events --player-args \
+  "--run --file public/reactive/house-128/house-128.ogg --debug change@12,change@19,change@26,change@33"
+```
+
+- [zone-neon-blossom.jpg](zone-neon-blossom.jpg): the violet night eases to blossom's magenta-rose
+  night.
+- [zone-blossom-snow.jpg](zone-blossom-snow.jpg): rose to snow's ice-blue night.
+- [zone-snow-crypt.jpg](zone-snow-crypt.jpg): ice blue to crypt's slate grey.
+- [zone-crypt-lava.jpg](zone-crypt-lava.jpg): slate to lava's ember dark.
+- [zone-lava-neon.jpg](zone-lava-neon.jpg): ember back to the violet night.
+
+Readability (`game look --readability`, the look tools' measure: the monsters' median L* less the
+ground's in a ring around them, floor |dL*| >= 17) in the same run, settled in each zone and
+mid-ease after each change:
+
+| Zone | Settled at | dL* (monsters / ring) | Before (demo3d's day palettes) | Mid-ease at | dL* |
+| --- | --- | --- | --- | --- | --- |
+| neon | 6.0 s | +19.7 (30.8 / 11.2, 148 px) | the same | 35.7 s | +61.0 |
+| blossom | 11.5 s | +43.6 (68.4 / 24.8) | +8.0 (93.2 / 85.1): fails | 8.5 s | +61.7 |
+| snow | 19.0 s | +34.3 (55.8 / 21.5) | -6.6 (92.1 / 98.7): fails | 14.1 s | +55.2 |
+| crypt | 25.5 s | +46.6 (74.5 / 28.0) | +28.5 (85.1 / 56.6) | 21.6 s | +60.7 |
+| lava | 33.0 s | +64.5 (74.2 / 9.7) | the same | 28.2 s | +66.1 |
+| neon | 38.0 s | +66.9 (84.2 / 17.3) | the same | | |
 
 ## A 30-minute run
 
