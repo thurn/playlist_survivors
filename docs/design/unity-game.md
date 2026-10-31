@@ -1594,11 +1594,13 @@ Pickups and progression are native's.
   The next level's offer opens at once; after the last, play resumes on the next beat.
   While the pause menu is up the cards take no keys.
 - **The client**: `GemView` draws the gems as instanced faceted crystals
-  (Resources/Gems/Gem.shader) in progression.json's blue, green and red, hovering and
+  (Resources/Gems: Gem.shader, and Gem.mat with instancing on, which keeps the shader's
+  instanced variant in the player) in progression.json's blue, green and red, hovering and
   throbbing on the beat, popping in at their drop, kicked out and pulled into the
   hero's chest on their flight. `LevelUpCards` (Resources/Cards) is a minimal card
   panel until the HUD (ps-msz.6.9) draws them. Headless and fixed-time runs confirm the
-  selected card through `AutoCards`, recorded Enter presses.
+  selected card through `AutoCards`, a recorded Enter half a second after the third card
+  flips in (game/evidence/arsenal).
 - **Pacing**: on the slice's horde (220 alive from the start) in an open arena, a hero
   walking a square through its kills reaches level 33 by 5:00 of run clock, far faster
   than native's run (about level 10). The run's schedule (ps-msz.6.2) is what that

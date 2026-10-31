@@ -46,6 +46,9 @@ what was run (the exact commands), the numbers, and what they show.
   the reference look, the headless File run's lead and slow CI's measured File run (ps-msz.3.13).
 - [run](run/README.md): the run's start and its music-stopped freezes and resumes on a headless File run over
   the survivors test playlist (ps-msz.6.1).
+- [arsenal](arsenal/README.md): gems, experience and the level-up's cards on a headless File run,
+  stills of the crystal gems, their flight and the cards, and the shots' throughput on the grid
+  (ps-msz.6.4).
 - [calibration](calibration/README.md): the video and input calibration screens, their per-device file, the
   CALIBRATE rows on the title screen and the pause menu over a frozen run (ps-msz.6.11).
 - [replay](replay/README.md): a headless run recorded as a session and replayed to its hash, in the IL2CPP player

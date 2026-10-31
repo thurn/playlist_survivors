@@ -252,7 +252,7 @@ namespace Game.Client.Loop
                 // Instanced crystals; a headless player draws nothing.
                 if (SystemInfo.supportsInstancing)
                 {
-                    _gems = new GemView(content.Progression.Gems);
+                    _gems = new GemView(camera, content.Progression.Gems);
                     Driver.Events.Subscribe(_gems);
                 }
                 _cards = new LevelUpCards(transform, content);

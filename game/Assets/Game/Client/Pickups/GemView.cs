@@ -10,8 +10,9 @@ namespace Game.Client.Pickups
 {
     /// <summary>
     /// The experience gems in 3D (unity-game.md, Pickups, Level-ups and Chests): small faceted
-    /// crystals (Resources/Gems/Gem.shader) in their value's colour (progression.json's blue, green
-    /// and red), hovering and turning where their enemies died, throbbing on the beat.
+    /// crystals (Resources/Gems: Gem.shader, and Gem.mat with instancing on) in their value's colour
+    /// (progression.json's blue, green and red), hovering and turning where their enemies died,
+    /// throbbing on the beat.
     ///
     /// - A <see cref="SimEventKind.Drop"/> of a gem pops it in at its time; one for a gem already
     ///   down (the field's cap) grows it to its new value.
@@ -25,14 +26,16 @@ namespace Game.Client.Pickups
     public sealed class GemView : IPresenter, IDisposable
     {
         const float HoverM = 0.45f, ChestM = 1.1f, PopS = 0.15f, TurnDegPerS = 70;
-        /// <summary>A gem's height and width at the smallest tier, metres; each tier up is a third larger.</summary>
-        const float HeightM = 0.42f, WidthM = 0.24f, TierScale = 1.33f;
+        /// <summary>A gem's height and width at the smallest tier, metres; each tier up 30% larger.</summary>
+        const float HeightM = 0.6f, WidthM = 0.34f, TierScale = 1.3f;
         /// <summary>The flight before its pickup is known: about native's attraction from the pickup radius.</summary>
         const double GuessFlightS = 0.6;
         /// <summary>The outward kick's reach, as a share of the gem's distance from the hero.</summary>
         const float Kick = 0.55f;
         const double PulseS = 0.12;
         const int Batch = 1023;
+        /// <summary>The gems' draw bounds around the hero: past the widest view's corners.</summary>
+        const float BoundsM = 120;
 
         struct Gem
         {
@@ -52,18 +55,22 @@ namespace Game.Client.Pickups
         readonly Matrix4x4[][] _matrices;
         readonly int[] _counts;
         readonly Mesh _mesh;
+        readonly Camera _camera;
         double _lastBeat = double.NegativeInfinity;
 
-        public GemView(GemRules rules)
+        /// <param name="camera">The game camera, drawn by hand for stills, so its draws name it.</param>
+        public GemView(Camera camera, GemRules rules)
         {
+            _camera = camera;
             _tierFrom = rules.ColourFrom;
-            var shader = Resources.Load<Shader>("Gems/Gem");
+            // An asset with instancing on, so the player keeps the shader's instanced variant.
+            var gem = Resources.Load<Material>("Gems/Gem");
             _materials = new Material[rules.Colours.Length];
             _matrices = new Matrix4x4[rules.Colours.Length][];
             _counts = new int[rules.Colours.Length];
             for (int i = 0; i < _materials.Length; i++)
             {
-                _materials[i] = new Material(shader) { name = "gem_" + rules.Colours[i], enableInstancing = true };
+                _materials[i] = new Material(gem) { name = "gem_" + rules.Colours[i] };
                 _materials[i].SetColor(ColorId, Colour(rules.Colours[i]));
                 _matrices[i] = new Matrix4x4[Batch];
             }
@@ -77,7 +84,7 @@ namespace Game.Client.Pickups
             {
                 case "green": return new Color(0.3f, 1.0f, 0.5f);
                 case "red": return new Color(1.0f, 0.28f, 0.36f);
-                default: return new Color(0.32f, 0.62f, 1.0f);
+                default: return new Color(0.2f, 0.48f, 1.0f);
             }
         }
 
@@ -177,7 +184,13 @@ namespace Game.Client.Pickups
             {
                 _materials[k].SetFloat(PulseId, pulse);
                 if (_counts[k] == 0) continue;
-                var rp = new RenderParams(_materials[k]) { shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false };
+                var rp = new RenderParams(_materials[k])
+                {
+                    camera = _camera,
+                    shadowCastingMode = ShadowCastingMode.Off,
+                    receiveShadows = false,
+                    worldBounds = new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM),
+                };
                 Graphics.RenderMeshInstanced(rp, _mesh, 0, _matrices[k], _counts[k]);
             }
         }

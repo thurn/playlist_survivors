@@ -7,7 +7,7 @@ Shader "Game/Gem"
     Properties
     {
         [HDR] _Color ("Gem", Color) = (0.35, 0.6, 1, 1)
-        _Glow ("Glow", Float) = 1.6
+        _Glow ("Glow", Float) = 0.75
         _Pulse ("Beat pulse (0..1)", Float) = 0
     }
     SubShader
@@ -65,8 +65,8 @@ Shader "Game/Gem"
                 float3 v = normalize(i.viewWS);
                 half rim = pow(1 - saturate(dot(n, v)), 3);
                 half facet = 0.45 + 0.55 * saturate(dot(n, normalize(float3(0.35, 1, 0.25))));
-                half glow = _Glow * (1 + 1.5 * _Pulse);
-                half3 c = _Color.rgb * facet * glow + rim * (_Color.rgb + 0.6) * (1.2 + _Pulse);
+                half glow = _Glow * (1 + 1.2 * _Pulse);
+                half3 c = _Color.rgb * (facet + rim) * glow + rim * 0.15;
                 return half4(c, 1);
             }
             ENDHLSL
