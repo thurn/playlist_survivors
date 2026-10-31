@@ -417,6 +417,7 @@ mod tests {
             path: std::ptr::null(),
             models: std::ptr::null(),
             session_dir: std::ptr::null(),
+            hindsight_jobs: 0,
         };
         let mut session = std::ptr::null_mut();
         assert_eq!(
