@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The calibration screens (CalibrationScreen.cs): video's flash, or input's tap-along. Taps and marks are added in code. -->
+    <Style src="../Title/Title.uss" />
+    <Style src="Calibration.uss" />
+    <ui:VisualElement name="calibration-root" class="root">
+        <ui:VisualElement class="facet facet--a" />
+        <ui:VisualElement class="facet facet--b" />
+        <ui:VisualElement class="facet facet--c" />
+        <ui:VisualElement class="column">
+            <ui:Label name="heading" class="heading" />
+            <ui:Label name="device" class="tagline device" />
+            <ui:VisualElement name="video" class="stage">
+                <ui:VisualElement class="flash-frame">
+                    <ui:VisualElement name="flash" class="flash" />
+                </ui:VisualElement>
+                <ui:Label name="offset" class="offset" />
+            </ui:VisualElement>
+            <ui:VisualElement name="input" class="stage">
+                <ui:VisualElement name="taps" class="taps" />
+                <ui:VisualElement name="scale" class="scale">
+                    <ui:VisualElement class="scale__line" />
+                    <ui:VisualElement class="scale__centre" />
+                    <ui:Label text="EARLY" class="scale__end scale__end--early" />
+                    <ui:Label text="LATE" class="scale__end scale__end--late" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Label name="message" class="note" />
+            <ui:Label name="hint" class="hint" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

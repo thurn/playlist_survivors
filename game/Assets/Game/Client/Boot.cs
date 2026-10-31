@@ -1,3 +1,4 @@
+using Game.Client.Calibration;
 using Game.Client.Loop;
 using Game.Client.Music;
 using Game.Client.Title;
@@ -16,7 +17,9 @@ namespace Game.Client
     /// - `--spike` or `--spike-out DIR` with `--file &lt;audio or .m3u&gt;`: the sync spike, the music
     ///   with a click on every beat (<see cref="SyncSpike"/>, which reads `--headless` too);
     /// - `--arena`: the baked arena alone in the game camera's framing (<see cref="Arena.ArenaStage"/>);
-    /// - `--shatter-bench OUT.json`: the GPU shatter's bench (<see cref="Crowd.ShatterBench"/>).
+    /// - `--shatter-bench OUT.json`: the GPU shatter's bench (<see cref="Crowd.ShatterBench"/>);
+    /// - `--calibrate video|input`: that calibration screen first (<see cref="CalibrationScreen"/>),
+    ///   then the game as below once it closes.
     /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--seed`, `--events`,
     /// `--overlay`, `--headless` and `--loop-out`) on its music:
     /// - `--file &lt;audio or .m3u&gt;`: the file;
@@ -53,6 +56,7 @@ namespace Game.Client
             if (file != null && (Args.Has("--spike") || Args.Has("--spike-out"))) SyncSpike.Begin(gameObject, _camera, file, _seconds);
             else if (Args.Has("--arena")) Arena.ArenaStage.Begin(gameObject, _camera);
             else if (Args.Has("--shatter-bench")) Crowd.ShatterBench.Begin(gameObject, _camera, Args.Get("--shatter-bench"));
+            else if (CalibrationScreen.Wanted is CalibrationScreen.Mode mode) CalibrationScreen.Begin(gameObject, mode, StartGame);
             else StartGame();
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
         }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Game.Client.Calibration;
 using Game.Client.Music;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,7 @@ namespace Game.Client.Title
     /// file or playlist, and Enter or Space starts the run on it. Up and Down choose, a click
     /// chooses and a second click starts; Cmd-V adds a copied file or playlist path. The files are
     /// the recently played ones and those in <see cref="MusicDir"/>; the apps refresh every second.
+    /// The last rows open the calibration screens (<see cref="CalibrationScreen"/>) over it.
     /// Player flags: `--title` shows it in batch mode or with --fixed-time too (for stills),
     /// `--music-dir DIR` lists DIR's files in place of <see cref="MusicDir"/>, and
     /// `--title-pick NAME` starts the first row whose name contains NAME, once per launch, for
@@ -49,16 +51,18 @@ namespace Game.Client.Title
         struct Row
         {
             public string Key, Name, Kind;
-            public MusicSource Source; // null: an empty list's note
+            public MusicSource Source;
+            public CalibrationScreen.Mode? Calibrate; // a calibration screen's row; neither: an empty list's note
             public VisualElement Element;
+            public bool Pickable => Source != null || Calibrate != null;
         }
 
         readonly List<Row> _rows = new List<Row>();
         Action<MusicSource> _start;
-        UIDocument _doc;
-        PanelSettings _settings;
-        RenderTexture _target;
-        VisualElement _apps, _files;
+        ScreenPanel _panel;
+        CalibrationScreen _calibration;
+        int _calibratedFrame = -1;
+        VisualElement _apps, _files, _calibrate;
         Label _message;
         Plugin.App[] _listed = Array.Empty<Plugin.App>();
         string _selected, _pick, _musicDir;
@@ -78,25 +82,11 @@ namespace Game.Client.Title
             _pick = _picked ? null : Args.Get("--title-pick");
             _musicDir = Args.Get("--music-dir");
             _musicDir = _musicDir != null ? Args.Path(_musicDir) : MusicDir;
-            // A copy of the editor-made asset (scaled to 1080p, the theme, and the text's ICU data,
-            // which only the editor assigns), so a target set here never touches the asset.
-            _settings = Instantiate(Resources.Load<PanelSettings>("Title/TitlePanel"));
-            if (Application.isBatchMode && SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
-            {
-                // No window to draw on: the panel draws into a target the stills keep in place of the camera's view.
-                _target = new RenderTexture(Stills.Width, Stills.Height, 24, RenderTextureFormat.ARGB32) { name = "Title" };
-                _target.Create();
-                _settings.targetTexture = _target;
-                Stills.Screen = _target;
-            }
-            var go = new GameObject("Title screen");
-            go.transform.SetParent(transform, false);
-            _doc = go.AddComponent<UIDocument>();
-            _doc.panelSettings = _settings;
-            _doc.visualTreeAsset = Resources.Load<VisualTreeAsset>("Title/Title");
-            var root = _doc.rootVisualElement;
+            _panel = new ScreenPanel(transform, "Title screen", "Title/Title");
+            var root = _panel.Root;
             _apps = root.Q("apps");
             _files = root.Q("files");
+            _calibrate = root.Q("calibrate");
             _message = root.Q<Label>("message");
             var wordmark = root.Q("wordmark");
             const string name = "PLAYLIST SURVIVORS";
@@ -115,6 +105,8 @@ namespace Game.Client.Title
 
         void Update()
         {
+            // A calibration screen has the keys, and the one that closed it is its own.
+            if (_calibration != null || Time.frameCount == _calibratedFrame) return;
             if (Time.unscaledTime >= _refreshAt)
             {
                 _refreshAt = Time.unscaledTime + AppRefresh;
@@ -173,6 +165,7 @@ namespace Game.Client.Title
             _rows.Clear();
             _apps.Clear();
             _files.Clear();
+            _calibrate.Clear();
             foreach (var app in _listed)
                 Add(_apps, new Row { Key = "app:" + app.Pid, Name = app.Name, Kind = "APP", Source = MusicSource.App(app) });
             if (_listed.Length == 0) Add(_apps, new Row { Name = "Nothing is playing. Play music in any app and it appears here." });
@@ -189,6 +182,8 @@ namespace Game.Client.Title
                 files++;
             }
             if (files == 0) Add(_files, new Row { Name = "Copy a file or playlist's path and press Cmd-V, or put music in " + _musicDir });
+            Add(_calibrate, new Row { Key = "calibrate:video", Name = "Video: line a flash up with a click", Kind = "VIDEO", Calibrate = CalibrationScreen.Mode.Video });
+            Add(_calibrate, new Row { Key = "calibrate:input", Name = "Input: tap along to clicks", Kind = "INPUT", Calibrate = CalibrationScreen.Mode.Input });
             if (Selected() < 0)
             {
                 _selected = null;
@@ -208,7 +203,7 @@ namespace Game.Client.Title
             var name = new Label(row.Name);
             name.AddToClassList("entry__name");
             e.Add(name);
-            if (row.Source == null) e.AddToClassList("entry--empty");
+            if (!row.Pickable) e.AddToClassList("entry--empty");
             else
             {
                 var kind = new Label(row.Kind);
@@ -284,7 +279,7 @@ namespace Game.Client.Title
         int Selected()
         {
             for (int i = 0; i < _rows.Count; i++)
-                if (_rows[i].Source != null && _rows[i].Key == _selected) return i;
+                if (_rows[i].Pickable && _rows[i].Key == _selected) return i;
             return -1;
         }
 
@@ -295,7 +290,7 @@ namespace Game.Client.Title
             for (int step = 1; step <= n; step++)
             {
                 int i = ((at + by * step) % n + n) % n;
-                if (_rows[i].Source == null) continue;
+                if (!_rows[i].Pickable) continue;
                 _selected = _rows[i].Key;
                 break;
             }
@@ -304,7 +299,7 @@ namespace Game.Client.Title
 
         void Show()
         {
-            foreach (var r in _rows) r.Element.EnableInClassList("entry--selected", r.Source != null && r.Key == _selected);
+            foreach (var r in _rows) r.Element.EnableInClassList("entry--selected", r.Pickable && r.Key == _selected);
         }
 
         void Say(string message)
@@ -315,6 +310,17 @@ namespace Game.Client.Title
 
         void Launch(Row row, bool remember = true)
         {
+            if (row.Calibrate is CalibrationScreen.Mode mode)
+            {
+                _panel.Visible = false;
+                _calibration = CalibrationScreen.Begin(gameObject, mode, () =>
+                {
+                    _calibration = null;
+                    _calibratedFrame = Time.frameCount;
+                    _panel.Visible = true;
+                });
+                return;
+            }
             if (remember && !row.Source.IsApp) Remember(row.Source.Path);
             Debug.Log($"TitleScreen: starting {(row.Source.IsApp ? $"app {row.Source.Tag} (pid {row.Source.Pid})" : row.Source.Path)}");
             var start = _start;
@@ -322,12 +328,6 @@ namespace Game.Client.Title
             start(row.Source);
         }
 
-        void OnDestroy()
-        {
-            if (_doc != null) Destroy(_doc.gameObject);
-            if (Stills.Screen == _target) Stills.Screen = null;
-            if (_target != null) _target.Release();
-            if (_settings != null) Destroy(_settings);
-        }
+        void OnDestroy() => _panel?.Dispose();
     }
 }

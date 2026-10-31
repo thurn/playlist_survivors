@@ -40,6 +40,7 @@ namespace Game.Client.Music
             {
                 Open = Resolve<Plugin.OpenFn>(handle, "ps_open"),
                 ListApps = Resolve<Plugin.ListAppsFn>(handle, "ps_list_apps"),
+                OutputDevice = Resolve<Plugin.OutputDeviceFn>(handle, "ps_output_device"),
                 Poll = Resolve<Plugin.PollFn>(handle, "ps_poll"),
                 Render = Resolve<Plugin.RenderFn>(handle, "ps_render_music"),
                 GetStatus = Resolve<Plugin.StatusFn>(handle, "ps_status"),

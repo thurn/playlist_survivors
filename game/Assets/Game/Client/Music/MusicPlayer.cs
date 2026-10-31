@@ -30,7 +30,8 @@ namespace Game.Client.Music
         IntPtr _session;
         int _busy, _closing;
         int _rendered; // audio callbacks that reached the plugin
-        double _rate, _halfBuffer;
+        volatile float _volume = 1;
+        double _rate;
         AudioSource _source;
         string _error;
 
@@ -51,6 +52,13 @@ namespace Game.Client.Music
         public bool Ended => Open && Status.State == Plugin.Ended;
         /// <summary>The default output device changed since the session opened: the latency did, so the run ends.</summary>
         public bool DeviceChanged => Open && Status.DeviceChanged != 0;
+
+        /// <summary>The music's level, 1 normally: a calibration screen opened in a run ducks it under its clicks.</summary>
+        public float Volume
+        {
+            get => _volume;
+            set => _volume = Mathf.Clamp01(value);
+        }
 
         /// <summary>One of Unity's DSP buffers, in seconds.</summary>
         public static double DspBuffer
@@ -98,8 +106,6 @@ namespace Game.Client.Music
             if (Open) throw new InvalidOperationException("MusicPlayer: already playing");
             Source = source;
             _rate = AudioSettings.outputSampleRate;
-            AudioSettings.GetDSPBufferSize(out int bufferLength, out _);
-            _halfBuffer = bufferLength / (2 * _rate);
             string models = Path.Combine(Application.streamingAssetsPath, "ps", "madmom.bin");
             var config = new Plugin.Config
             {
@@ -145,13 +151,19 @@ namespace Game.Client.Music
         void Update()
         {
             if (!Open) return;
-            // The main thread's DSP clock reads the end of the buffer being mixed, a whole buffer at
-            // a time, so a fit through its readings runs half a buffer ahead of the audio thread's
-            // buffer times: the sync spike measured frameSong 2.7, 5.5 and 10.5 ms ahead at 256, 512
-            // and 1024 frames (game/evidence/spike). Each reading is taken half a buffer back.
-            Clock.Sample(Time.realtimeSinceStartupAsDouble, AudioSettings.dspTime - _halfBuffer);
+            SampleDsp(Clock);
             Poll();
         }
+
+        /// <summary>
+        /// Records the DSP clock's reading in `clock`, once a frame. The main thread's DSP clock reads
+        /// the end of the buffer being mixed, a whole buffer at a time, so a fit through its readings
+        /// runs half a buffer ahead of the audio thread's buffer times: the sync spike measured
+        /// frameSong 2.7, 5.5 and 10.5 ms ahead at 256, 512 and 1024 frames (game/evidence/spike).
+        /// Each reading is taken half a buffer back.
+        /// </summary>
+        public static void SampleDsp(MusicClock clock) =>
+            clock.Sample(Time.realtimeSinceStartupAsDouble, AudioSettings.dspTime - DspBuffer / 2);
 
         /// <summary>
         /// Reads the plugin's status and anchor, then its new entries into <see cref="Entries"/>,
@@ -185,6 +197,9 @@ namespace Game.Client.Music
             {
                 int frames = data.Length / channels;
                 Plugin.RenderMusic(_session, data, frames, channels, AudioSettings.dspTime + (double)frames / _rate);
+                float volume = _volume;
+                if (volume < 1)
+                    for (int i = 0; i < data.Length; i++) data[i] *= volume;
                 Interlocked.Increment(ref _rendered);
             }
             Interlocked.Exchange(ref _busy, 0);

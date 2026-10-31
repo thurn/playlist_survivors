@@ -55,6 +55,9 @@ namespace Game.Client
         /// </summary>
         public static RenderTexture Screen;
 
+        /// <summary>A UI panel's target drawn over the camera's view while set: the pause menu over the frozen run.</summary>
+        public static RenderTexture Overlay;
+
         /// <summary>
         /// Raised before the ID render draws the frame a second time: a hand-drawn camera spends the
         /// draws queued in a frame (Graphics.RenderMesh*), so their owners queue them again.
@@ -112,7 +115,21 @@ namespace Game.Client
                 Graphics.Blit(_target, _resolved);
                 source = _resolved;
             }
-            return Read(source);
+            var tex = Read(source);
+            if (Overlay != null) Composite(tex, Overlay);
+            return tex;
+        }
+
+        /// <summary>Draws `overlay` over `tex` by its alpha.</summary>
+        static void Composite(Texture2D tex, RenderTexture overlay)
+        {
+            var top = Read(overlay);
+            var over = top.GetPixels32();
+            var under = tex.GetPixels32();
+            for (int i = 0; i < under.Length; i++) under[i] = Color32.Lerp(under[i], over[i], over[i].a / 255f);
+            UnityEngine.Object.Destroy(top);
+            tex.SetPixels32(under);
+            tex.Apply();
         }
 
         static Texture2D Read(RenderTexture source)

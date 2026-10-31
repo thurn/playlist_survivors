@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using Game.Client.Arena;
+using Game.Client.Calibration;
 using Game.Client.Crowd;
 using Game.Client.Effects;
 using Game.Client.Hero;
@@ -25,13 +26,16 @@ namespace Game.Client.Loop
     /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>.
     /// Its music is the source Boot resolved from `--file` or `--app`, or the title screen's pick
     /// (<see cref="MusicSource"/>): played through the music plugin, which feeds the sim; live,
-    /// song time is the music's (<see cref="MusicTimes"/>).
+    /// song time is the music's (<see cref="MusicTimes"/>), calibrated for the output device it
+    /// plays on (<see cref="CalibrationStore"/>).
     ///
     /// The run (unity-game.md, The Run; <see cref="RunControl"/>): with a window, Enter or Space
     /// starts it on the next beat; a headless or fixed-time run starts after 2 s of clear beat, and
-    /// a run without music at once. Esc and focus loss pause it, and Esc or a click resumes it on
-    /// the next beat. The plugin's watchdog releasing the tap stops the music. Backspace and an
-    /// output device change (the latency changes) end it, each a run control the sim records.
+    /// a run without music at once. Esc and focus loss pause it under the pause menu
+    /// (<see cref="PauseMenu"/>: resume, the calibration screens, end the run), and Esc or its
+    /// Resume resumes it on the next beat. The plugin's watchdog releasing the tap stops the
+    /// music. Backspace and an output device change (the latency changes) end it, each a run
+    /// control the sim records.
     /// The loop finishes when the run ends (after <see cref="EndCardS"/> for a victory or a fall,
     /// whose card the HUD shows), or with a file's music, and then quits, or returns to the title
     /// screen if it started there. Player flags:
@@ -41,6 +45,7 @@ namespace Game.Client.Loop
     ///   output is silent, since the music doesn't play in time with these frames;
     /// - `--seed N`: the sim's seed;
     /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
+    /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
     /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
@@ -96,6 +101,9 @@ namespace Game.Client.Loop
         StreamWriter _out, _structuresOut;
         bool _fixed, _done, _quitting, _interactive;
         bool _deviceGiven, _focusLost;
+        PauseMenu _pause;
+        CalibrationScreen _calibrating;
+        double _pauseAt;
         int _releases;
         Action<string> _ended;
         int _entries, _keyChanges;
@@ -143,6 +151,7 @@ namespace Game.Client.Loop
                 musicHost.AddComponent<AudioSource>();
                 _music = musicHost.AddComponent<MusicPlayer>();
                 _music.Play(source);
+                Calibrate();
                 if (!_fixed)
                 {
                     clock = _musicTimes = new MusicTimes(_music.Clock, MusicPlayer.Refresh,
@@ -167,6 +176,8 @@ namespace Game.Client.Loop
             Driver = new SimDriver(config, clock);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
             _keys = new KeyInput();
+            _pause = new PauseMenu(transform);
+            _pauseAt = Args.GetFloat("--pause-at", -1);
             _commands = new DebugCommands(Args.Get("--debug"));
 
             var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
@@ -225,6 +236,15 @@ namespace Game.Client.Loop
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}, " +
                       $"start {config.Start}, easy {config.Easy}");
+        }
+
+        /// <summary>The output device's saved calibration on the music's clock (a device change ends the run, so it holds for the run).</summary>
+        void Calibrate()
+        {
+            var device = CalibrationScreen.CurrentDevice();
+            var offsets = CalibrationStore.Load().For(device.Uid);
+            offsets.ApplyTo(_music.Clock);
+            Debug.Log($"GameLoop: calibrated for {(device.Uid.Length > 0 ? $"{device.Name} ({device.Uid})" : "no device")}: {offsets}");
         }
 
         /// <summary>
@@ -307,7 +327,8 @@ namespace Game.Client.Loop
                                                   || Driver.Times.FrameSong >= state.EndedAt + EndCardS))
                 Finish(0, Why(state.End));
             else if (_music != null && !_fixed && _music.Ended) Finish(0, null);
-            else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Control(RunControl.Quit);
+            else if (_calibrating == null && Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame)
+                Control(RunControl.Quit);
         }
 
         /// <summary>
@@ -338,7 +359,16 @@ namespace Game.Client.Loop
             }
             bool focusLost = _focusLost;
             _focusLost = false;
-            if (!_interactive) return;
+            if (_pauseAt >= 0 && Driver.Times.FrameSong >= _pauseAt)
+            {
+                _pauseAt = -1;
+                Driver.Sim.Control(RunControl.Pause);
+            }
+            if (!_interactive)
+            {
+                if (state.FrozenFor(FreezeReason.Pause)) _pause.Show(); // a scripted pause's menu, for stills
+                return;
+            }
             if (state.Phase == RunPhase.Waiting)
             {
                 if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame
@@ -346,11 +376,45 @@ namespace Game.Client.Loop
                     Driver.Sim.Control(RunControl.Start);
                 return;
             }
-            bool paused = state.FrozenFor(FreezeReason.Pause);
-            bool esc = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
-            bool click = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-            if (!paused && (esc || focusLost)) Driver.Sim.Control(RunControl.Pause);
-            else if (paused && (esc || click)) Driver.Sim.Control(RunControl.Resume);
+            if (_calibrating != null) return; // its screen has the keys
+            if (!state.FrozenFor(FreezeReason.Pause))
+            {
+                _pause.Hide(); // resumed, or the run ended
+                bool esc = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
+                if (esc || focusLost) Driver.Sim.Control(RunControl.Pause);
+                if (!Driver.Sim.State.FrozenFor(FreezeReason.Pause)) return;
+            }
+            _pause.Show();
+            switch (_pause.Read())
+            {
+                case PauseMenu.Choice.Resume:
+                    Driver.Sim.Control(RunControl.Resume);
+                    _pause.Hide();
+                    break;
+                case PauseMenu.Choice.CalibrateVideo:
+                    OpenCalibration(CalibrationScreen.Mode.Video);
+                    break;
+                case PauseMenu.Choice.CalibrateInput:
+                    OpenCalibration(CalibrationScreen.Mode.Input);
+                    break;
+                case PauseMenu.Choice.EndRun:
+                    _pause.Hide();
+                    Driver.Sim.Control(RunControl.Quit);
+                    break;
+            }
+        }
+
+        /// <summary>A calibration screen over the paused run, the music ducked; its new offsets take effect when it closes.</summary>
+        void OpenCalibration(CalibrationScreen.Mode mode)
+        {
+            _pause.Visible = false;
+            _calibrating = CalibrationScreen.Begin(gameObject, mode, () =>
+            {
+                _calibrating = null;
+                if (_done) return;
+                if (_music != null) Calibrate();
+                _pause.Visible = true;
+            }, _music);
         }
 
         void OnApplicationFocus(bool focus)
@@ -432,6 +496,7 @@ namespace Game.Client.Loop
 
         void OnDestroy()
         {
+            _pause?.Dispose();
             _keys?.Dispose();
             _look?.Dispose();
             _hero?.Dispose();
@@ -455,6 +520,7 @@ namespace Game.Client.Loop
         {
             if (_done) return;
             _done = true;
+            _pause?.Hide();
             string error = code != 0 ? why : null;
             Debug.Log("GameLoop: " + (why ?? "done") + "; " + Summary());
             _out?.Dispose();

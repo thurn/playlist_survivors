@@ -67,7 +67,40 @@ namespace Game.Client.Music
         /// <summary>ps_app: an int32 pid and a NUL-terminated UTF-8 name of 128 bytes.</summary>
         public const int AppBytes = 132, AppNameBytes = 128;
 
+        /// <summary>The default output device (ps_device), the key a calibration is kept under.</summary>
+        public readonly struct Device
+        {
+            /// <summary>Core Audio's device UID; empty: no device (or not reported on this platform).</summary>
+            public readonly string Uid;
+            public readonly string Name;
+            /// <summary>Its latency as <see cref="Status.OutputLatency"/> reports it (s).</summary>
+            public readonly double Latency;
+            /// <summary>Bluetooth, whose reported latency is a guess.</summary>
+            public readonly bool Bluetooth;
+            public Device(string uid, string name, double latency, bool bluetooth)
+            {
+                Uid = uid; Name = name; Latency = latency; Bluetooth = bluetooth;
+            }
+        }
+
+        /// <summary>ps_device: a 256-byte UID and a 128-byte name (NUL-terminated UTF-8), a double latency and an int32 flag.</summary>
+        public const int DeviceBytes = 400, DeviceUidBytes = 256, DeviceNameBytes = 128;
+
         public static int Open(ref Config config, out IntPtr session) => Fns.Open(ref config, out session);
+
+        /// <summary>The default output device (ps_output_device); throws on the plugin's error. It allocates.</summary>
+        public static Device OutputDevice()
+        {
+            var raw = new byte[DeviceBytes];
+            int code = Fns.OutputDevice(raw);
+            if (code != Ok) throw new InvalidOperationException($"ps_output_device {code}: {LastError()}");
+            return ReadDevice(raw);
+        }
+
+        /// <summary>A ps_device record.</summary>
+        public static Device ReadDevice(byte[] raw) =>
+            new Device(Text(raw, 0, DeviceUidBytes), Text(raw, DeviceUidBytes, DeviceNameBytes),
+                BitConverter.ToDouble(raw, DeviceUidBytes + DeviceNameBytes), BitConverter.ToInt32(raw, DeviceUidBytes + DeviceNameBytes + 8) != 0);
 
         /// <summary>
         /// The apps producing audio now (ps_list_apps), up to `max`; throws on the plugin's error.
@@ -88,12 +121,19 @@ namespace Game.Client.Music
             for (int i = 0; i < count; i++)
             {
                 int at = i * AppBytes;
-                int len = 0;
-                while (len < AppNameBytes && raw[at + 4 + len] != 0) len++;
-                apps[i] = new App(BitConverter.ToInt32(raw, at), Encoding.UTF8.GetString(raw, at + 4, len));
+                apps[i] = new App(BitConverter.ToInt32(raw, at), Text(raw, at + 4, AppNameBytes));
             }
             return apps;
         }
+
+        /// <summary>The NUL-terminated UTF-8 text of at most `max` bytes at `at` in `raw`.</summary>
+        static string Text(byte[] raw, int at, int max)
+        {
+            int len = 0;
+            while (len < max && raw[at + len] != 0) len++;
+            return Encoding.UTF8.GetString(raw, at, len);
+        }
+
         public static int Poll(IntPtr session, StreamEntry[] into) => Fns.Poll(session, into, into.Length);
         public static int RenderMusic(IntPtr session, float[] interleaved, int frames, int channels, double dspTime) =>
             Fns.Render(session, interleaved, frames, channels, dspTime);
@@ -126,6 +166,7 @@ namespace Game.Client.Music
         // The function signatures, shared by both bindings.
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int OpenFn(ref Config config, out IntPtr session);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int ListAppsFn([Out] byte[] into, int max);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int OutputDeviceFn([Out] byte[] into);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int PollFn(IntPtr session, [Out] StreamEntry[] into, int max);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int RenderFn(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void StatusFn(IntPtr session, out Status status);
@@ -137,6 +178,7 @@ namespace Game.Client.Music
         {
             public OpenFn Open;
             public ListAppsFn ListApps;
+            public OutputDeviceFn OutputDevice;
             public PollFn Poll;
             public RenderFn Render;
             public StatusFn GetStatus;
@@ -150,6 +192,7 @@ namespace Game.Client.Music
         const string Lib = "ps_plugin";
         [DllImport(Lib, EntryPoint = "ps_open")] static extern int ps_open(ref Config config, out IntPtr session);
         [DllImport(Lib, EntryPoint = "ps_list_apps")] static extern int ps_list_apps([Out] byte[] into, int max);
+        [DllImport(Lib, EntryPoint = "ps_output_device")] static extern int ps_output_device([Out] byte[] into);
         [DllImport(Lib, EntryPoint = "ps_poll")] static extern int ps_poll(IntPtr session, [Out] StreamEntry[] into, int max);
         [DllImport(Lib, EntryPoint = "ps_render_music")] static extern int ps_render_music(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [DllImport(Lib, EntryPoint = "ps_status")] static extern void ps_status(IntPtr session, out Status status);
@@ -159,7 +202,7 @@ namespace Game.Client.Music
         // IL2CPP needs static methods for DllImport; the delegates wrap them once.
         static readonly Functions Fns = new Functions
         {
-            Open = ps_open, ListApps = ps_list_apps, Poll = ps_poll, Render = ps_render_music,
+            Open = ps_open, ListApps = ps_list_apps, OutputDevice = ps_output_device, Poll = ps_poll, Render = ps_render_music,
             GetStatus = ps_status, Close = ps_close, LastError = ps_last_error,
         };
 #endif

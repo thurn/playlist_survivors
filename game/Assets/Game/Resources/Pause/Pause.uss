@@ -1,0 +1,26 @@
+/* The pause menu: the frozen run dimmed behind a narrow column of the title screen's rows (Title.uss). */
+
+.veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(4, 5, 11, 0.72);
+    align-items: center;
+    justify-content: center;
+}
+
+.pause {
+    width: 560px;
+    align-items: stretch;
+}
+
+.pause__heading {
+    font-size: 52px;
+    -unity-font-style: bold;
+    letter-spacing: 16px;
+    color: rgb(240, 246, 255);
+    -unity-text-align: middle-center;
+    margin-bottom: 36px;
+}

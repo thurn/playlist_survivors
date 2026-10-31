@@ -46,3 +46,5 @@ what was run (the exact commands), the numbers, and what they show.
   the reference look, the headless File run's lead and slow CI's measured File run (ps-msz.3.13).
 - [run](run/README.md): the run's start and its music-stopped freezes and resumes on a headless File run over
   the survivors test playlist (ps-msz.6.1).
+- [calibration](calibration/README.md): the video and input calibration screens, their per-device file, the
+  CALIBRATE rows on the title screen and the pause menu over a frozen run (ps-msz.6.11).

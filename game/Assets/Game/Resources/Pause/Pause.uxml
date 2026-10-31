@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The pause menu (PauseMenu.cs), over the frozen run. Rows are added in code. -->
+    <Style src="../Title/Title.uss" />
+    <Style src="Pause.uss" />
+    <ui:VisualElement name="pause-root" class="veil">
+        <ui:VisualElement class="pause">
+            <ui:Label text="PAUSED" class="pause__heading" />
+            <ui:VisualElement name="rows" class="list" />
+            <ui:Label class="hint" text="Up / Down choose   ·   Enter picks   ·   Esc resumes on the next beat" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

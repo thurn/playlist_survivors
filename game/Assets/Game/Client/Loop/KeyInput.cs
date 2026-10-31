@@ -82,13 +82,23 @@ namespace Game.Client.Loop
             _queue[(_head + _count++) % Capacity] = new Change { Key = key, Down = down, Real = real };
         }
 
+        /// <summary>Takes the oldest collected change, if any.</summary>
+        public bool TryTake(out Change change)
+        {
+            change = default;
+            if (_count == 0) return false;
+            change = _queue[_head];
+            _head = (_head + 1) % Capacity;
+            _count--;
+            return true;
+        }
+
         /// <summary>Presses and releases every collected change in the sim, heard at the clock's keySong.</summary>
         public int Drain(Simulation sim, IGameClock clock)
         {
-            int n = _count;
-            for (; _count > 0; _count--, _head = (_head + 1) % Capacity)
+            int n = 0;
+            for (; TryTake(out var c); n++)
             {
-                ref var c = ref _queue[_head];
                 double heard = clock.KeySong(c.Real);
                 if (c.Down) sim.Press(c.Key, heard);
                 else sim.Release(c.Key, heard);

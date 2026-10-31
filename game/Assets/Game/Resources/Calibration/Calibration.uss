@@ -1,0 +1,124 @@
+/* The calibration screens, on the title screen's dark lattice (Title.uss): one crystal flash, or the taps on a scale. */
+
+.heading {
+    font-size: 44px;
+    -unity-font-style: bold;
+    letter-spacing: 12px;
+    color: rgb(240, 246, 255);
+    -unity-text-align: middle-center;
+    margin-bottom: 4px;
+}
+
+.device {
+    margin-bottom: 30px;
+}
+
+.stage {
+    height: 420px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The flash: a crystal facet, its outline always there so the eye knows where to look. */
+.flash-frame {
+    width: 230px;
+    height: 230px;
+    rotate: 45deg;
+    border-width: 2px;
+    border-color: rgba(200, 225, 255, 0.35);
+    padding: 14px;
+}
+
+.flash {
+    flex-grow: 1;
+    background-color: rgb(255, 255, 255);
+    opacity: 0;
+}
+
+.offset {
+    font-size: 30px;
+    letter-spacing: 3px;
+    color: rgba(225, 235, 250, 0.85);
+    margin-top: 70px;
+}
+
+.taps {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 90px;
+}
+
+.taps__gem {
+    width: 30px;
+    height: 30px;
+    rotate: 45deg;
+    margin: 0 20px;
+    border-width: 2px;
+    border-color: rgba(190, 215, 255, 0.4);
+}
+
+.taps__gem--tapped {
+    border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* A quarter beat early to a quarter beat late; its width is CalibrationScreen.ScaleWidth. */
+.scale {
+    width: 640px;
+    height: 60px;
+}
+
+.scale__line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 29px;
+    height: 2px;
+    background-color: rgba(170, 200, 240, 0.25);
+}
+
+.scale__centre {
+    position: absolute;
+    left: 319px;
+    top: 8px;
+    width: 2px;
+    height: 44px;
+    background-color: rgba(240, 248, 255, 0.8);
+}
+
+.scale__end {
+    position: absolute;
+    top: 64px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: rgba(160, 190, 230, 0.5);
+}
+
+.scale__end--early {
+    left: -10px;
+}
+
+.scale__end--late {
+    right: -10px;
+}
+
+.scale__mark {
+    position: absolute;
+    top: 23px;
+    width: 14px;
+    height: 14px;
+    rotate: 45deg;
+    background-color: rgb(255, 255, 255);
+}
+
+.scale__mark--warmup {
+    background-color: rgba(200, 210, 230, 0.3);
+}
+
+.note {
+    font-size: 22px;
+    color: rgba(225, 232, 245, 0.85);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-top: 10px;
+    min-height: 34px;
+}

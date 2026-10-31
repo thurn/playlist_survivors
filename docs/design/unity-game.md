@@ -414,6 +414,7 @@ typedef struct { int32_t kind; double t, known_at; double v[12]; } ps_entry;
 
 int32_t ps_open(const ps_config *config, ps_session **out); // source, M, rate
 int32_t ps_list_apps(ps_app *out, int32_t max);             // apps playing now
+int32_t ps_output_device(ps_device *out);                   // calibration's key
 int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
 int32_t ps_render_music(ps_session *s, float *out, int32_t frames,
                         int32_t channels, double dsp_time);
@@ -881,6 +882,37 @@ native's:
   `keySong`.
 - Both are stored per output device.
 
+**Shipped (ps-msz.6.11).** game/Assets/Game/Client/Calibration/, with the
+screens' UXML and USS in Resources/Calibration/.
+
+- **The device**: `ps_output_device` reports the default output device's
+  Core Audio UID, name, latency and whether it is Bluetooth, without a
+  session, so the title screen can calibrate before any music plays.
+- **Storage**: `calibration.json` in the player's data folder
+  (`--calibration FILE` in its place), whole milliseconds per device UID, as
+  native's settings keep them. A device not calibrated yet plays with no
+  offsets. A run reads its device's offsets when its music opens; a device
+  change ends the run, so they hold for it.
+- **The screens' clock** is the game's own `MusicClock`, with song time set
+  to DSP time and the device's latency plus Unity's buffering as the output
+  latency, and the clicks scheduled on their DSP samples as the game's
+  sounds are. Each offset is therefore exactly what the game's clocks lack.
+- **Video**: a click on every beat at 120 BPM and a crystal flash drawn at
+  frameSong. Left and Right move the flash 5 ms earlier or later (up to
+  200 ms), Enter saves, Esc leaves.
+- **Input**: native's tap-along, eight clicks at 120 BPM tapped with an
+  arrow key or Space, read through the sim's own key path with each key's
+  timestamp. The median error after the first two taps, counting only taps
+  within a quarter beat of a click, is saved. Native also keeps the stomp
+  key's offset apart; the game keeps one input offset.
+- **Access**: two rows under CALIBRATE on the title screen, and the pause
+  menu (Esc in a run: resume, calibrate video, calibrate input, end run). In
+  a run the music is ducked under the clicks while a screen is open.
+- Flags: `--calibrate video|input` opens a screen at launch; under
+  `--fixed-time` its song time is the frames' and no click plays (stills);
+  `--tap-along MS,...` taps each click that late, for windowless checks.
+  Evidence: game/evidence/calibration.
+
 ## The Simulation
 
 The sim is a plain C# library with no Unity references. It builds in Unity
@@ -1054,7 +1086,7 @@ playing time.
   the cast's bosses. The hero eats one within 0.89 m while the world plays:
   it heals 30 at once (native waits for the next sixteenth) and can't be
   hurt for 0.3 s.
-- **The client**: Esc or focus loss pauses, and Esc or a click resumes.
+- **The client**: Esc or focus loss pauses under the pause menu (ps-msz.6.11), and Esc or its Resume resumes.
   The loop finishes on Backspace or a device change at once, and on a
   victory or a fall 5 s after the end, for the HUD's card. `--easy` turns
   Easy on. The bob in place during a freeze is the presenters' idle.
