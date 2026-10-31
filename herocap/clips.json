@@ -1,0 +1,20 @@
+{
+  "fps": 30,
+  "targetHeightPx": 96,
+  "supersample": 2,
+  "clips": [
+    { "name": "idle", "upper": "IdleMelee", "lower": "Stand", "lead": "upper", "loop": true },
+    { "name": "walk", "upper": "IdleMelee", "lower": "Walk", "lead": "lower", "loop": true },
+    { "name": "run", "upper": "IdleMelee", "lower": "Run", "lead": "lower", "loop": true },
+    { "name": "jump", "upper": "IdleMelee", "lower": "Jump", "lead": "lower", "loop": true },
+    { "name": "slash", "upper": "SlashMelee1H", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "jab", "upper": "JabMelee1H", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "slash2h", "upper": "SlashMelee2H", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "jab2h", "upper": "JabMelee2H", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "cast", "upper": "Cast1H", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "hurt", "upper": "Hit", "lower": "Stand", "lead": "upper", "loop": false },
+    { "name": "death-back", "upper": "IdleMelee", "lower": "DeathBack", "lead": "lower", "loop": false },
+    { "name": "death-front", "upper": "IdleMelee", "lower": "DeathFront", "lead": "lower", "loop": false },
+    { "name": "victory", "upper": "Victory", "lower": "Stand", "lead": "upper", "loop": true }
+  ]
+}

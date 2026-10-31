@@ -1,0 +1,26 @@
+{
+  "atlas": "bat",
+  "role": "small hooded wraith with a cape (flyer: native's hover), violet glow",
+  "scale": 0.7,
+  "weapon": "Melee1H",
+  "skin": "#8C9AA8FF",
+  "parts": {
+    "helmet": "FantasyHeroes.Basic.Helmet.DwellerHood [Paint]#4A3A5AFF",
+    "armor": "FantasyHeroes.Basic.Armor.AssassinArmor [Paint]#4A3A5AFF",
+    "cape": "FantasyHeroes.Basic.Cape.VampireCape [Paint]#3A2A4AFF",
+    "primary": "FantasyHeroes.Basic.MeleeWeapon1H.AssassinDagger [Paint]#9090A0FF"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#C07CFFFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}

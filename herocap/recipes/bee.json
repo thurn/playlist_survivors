@@ -1,0 +1,24 @@
+{
+  "atlas": "bee",
+  "role": "pale hooded ghost, fast, pale yellow glow",
+  "scale": 0.8,
+  "weapon": "Melee1H",
+  "skin": "#C8D0D8FF",
+  "parts": {
+    "helmet": "FantasyHeroes.Basic.Helmet.HermitHood [Paint]#E8E4D8FF",
+    "armor": "FantasyHeroes.Basic.Armor.Hermit"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#FFF3A0FF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-front",
+    "jab",
+    "victory"
+  ]
+}

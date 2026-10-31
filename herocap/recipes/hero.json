@@ -1,0 +1,30 @@
+{
+  "atlas": "hero",
+  "role": "the hero: a sword-and-shield knight, open face, short hair",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#EBC3A0FF",
+  "parts": {
+    "hair": "Common.Basic.Hair.ShortHair#6B4A2EFF",
+    "armor": "FantasyHeroes.Knights.Armor.KnightArmor",
+    "primary": "FantasyHeroes.Knights.MeleeWeapon1H.EliteKnightSword [Paint]#D8DEE8FF",
+    "shield": "FantasyHeroes.Knights.Shield.BlueKnightShield"
+  },
+  "face": {
+    "eyes": "Common.Emoji.Eyes.Blank",
+    "mouth": "Common.Expressions.Mouth.Normal",
+    "eyebrows": "Common.Expressions.Eyebrows.Bored"
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "run",
+    "jump",
+    "slash",
+    "jab",
+    "slash2h",
+    "cast",
+    "hurt",
+    "death-back"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "atlas": "orc",
+  "role": "zombie Viking in rough armour with an axe, green glow",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#8FA38AFF",
+  "parts": {
+    "hair": "Common.Basic.Hair.ZombieShabby#6A5A3AFF",
+    "beard": "Common.Basic.Beard.NorthmanBeard#6A5A3AFF",
+    "armor": "FantasyHeroes.Vikings.Armor.VikingRoughArmor1",
+    "primary": "FantasyHeroes.Vikings.MeleeWeapon1H.VikingAxe1"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#7CFF6BFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}

@@ -5,7 +5,9 @@ vendor files in Assets/Vendor/ when it imports them (demo2d's binary-serialized 
 YAML text). A copy of either elsewhere in the tree would pass the sync record's checks, since its
 bytes are new. So before every check the guard hashes every file in the demo3d/ and demo2d/
 Assets/Baked/ and Assets/Vendor/ of every worktree of this clone (a file copied from another
-worktree is caught even if no guard ran there), and the song's source MP3. The guard checks
+worktree is caught even if no guard ran there), the song's source MP3, and herocap's output in
+the cache (paths.heroeditor_cache(): HeroEditor frames and atlases, which outlive worktrees so
+the main checkout can play them). The guard checks
 against those entries directly, and adds them to the per-machine derived record, which remembers
 the files of worktrees since removed. It only ever adds.
 A file in Baked/ whose bytes are a blob tracked at its worktree's HEAD is a copy of our own file
@@ -113,6 +115,11 @@ def refresh(repo: Path, record: Path) -> list[dict]:
     song = paths.load_roots().get("song")
     if song and Path(song).is_file():
         files.append((None, Path(song), "song source"))
+    hero = paths.heroeditor_cache()
+    for dirpath, _dirs, names in os.walk(hero):
+        for n in names:
+            p = Path(dirpath) / n
+            files.append((None, p, f"heroeditor cache/{p.relative_to(hero).as_posix()}"))
 
     current: list[dict] = []
     for wt, p, origin in files:

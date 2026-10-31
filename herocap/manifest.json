@@ -1,0 +1,771 @@
+{
+  "version": 1,
+  "requires": [
+    "more_assets"
+  ],
+  "assets": [
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/AnimationEvents.cs",
+      "sourceSha256": "8efed615bc64b20566f565424dca9c60e1468c7d38b249798d6a37451eb316d3",
+      "guid": "1db3728f3e374091b4966199eb8dd2cc",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/AvatarSetup.cs",
+      "sourceSha256": "86efefa6eae54cdfdabb8c00b6d487480a7c2265a754ae37e9ccf95c3e5c9ea0",
+      "guid": "cdc8e45ff9b8fa945a8e68f39083c6c4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Character.cs",
+      "sourceSha256": "0df8900cea908eb0f55c2fbbb1282b77ff9c63e40589a41d90c60c8c644f946f",
+      "guid": "e9bab99a464f488298c9d9629a889d97",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterAnimation.cs",
+      "sourceSha256": "3359a509f43df5d2f04782fb3c98996908f3d800ef27d801e17498a502c5cfcd",
+      "guid": "de9b0489e9fc462cbcad845dbd94275c",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterAppearance.cs",
+      "sourceSha256": "52265f3b783f982b5272cfed57e29a02425eecc38f2181a99fd8c12d26348473",
+      "guid": "1e0887ac7125a804080e0c03a196b279",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterBodySculptor.cs",
+      "sourceSha256": "83dbec32d6520a7eb432d882a027df0382b7df67b1b750d55e8846601e338fca",
+      "guid": "fb76bf0bb72b4f2d9236b4a4e21bb2f4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterExtensions.cs",
+      "sourceSha256": "d662c1f01f4987f16b7248a6437f958d0cb84385419056d541f1d4cf6c172a0a",
+      "guid": "295b70d6367c480190576dc27fe58415",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterSerializer.cs",
+      "sourceSha256": "e5e21c4f9aca387c67b9407d8b01b192c75cb8d0ea024011d5d5be34f2ecd931",
+      "guid": "6043f6aaf0ff41beaa887e120fcb3674",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterSetup.cs",
+      "sourceSha256": "2a837938ba9c053719718d286e6380a29be7a0938049b7902940c0b16e22120b",
+      "guid": "cce254846cf44d458b8bda6eb94ab68e",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/CharacterState.cs",
+      "sourceSha256": "c6b18145339e063c9daa97900549fdb21097f925c3e84ad671928bd857d70e05",
+      "guid": "156f834ae596413cbe17b40e45ad9a41",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Enums/FirearmLoadType.cs",
+      "sourceSha256": "1783ab70a4534e0d67c93196b45298a4ac5cc4862c6913a98af81e9735eef23e",
+      "guid": "721a3444c9d04654a96c1cd5509ee2b4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Enums/FirearmType.cs",
+      "sourceSha256": "6ddfc7ff05356af45bc655967ed5d70fe9a14fc6dab9523672dfa2546e1c999a",
+      "guid": "091aeda35112430883ebef6c33410168",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Enums/HoldType.cs",
+      "sourceSha256": "0ff6354166f81736c3a545080ef09d77bd16c2ccc173cd6af7919dfdc643e2cc",
+      "guid": "e5d01453c5c740e5a3d2e4ef85f5fcd8",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Enums/MagazineType.cs",
+      "sourceSha256": "1b6a4b1c470da42b6b85eab2d3a1e922f8e5c9601d7cb9e27da8aa5160e62a2b",
+      "guid": "ce43907a326d4966bd0bd8c7d1d28a5b",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/FingerTrigger.cs",
+      "sourceSha256": "296cc43b10345891aa10efd6d6ade50f11745e52066f38dfc239c2a09d81a695",
+      "guid": "844ae1c8136940509fff67bb7fb55ee6",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Firearm.cs",
+      "sourceSha256": "bf9623908f5763b2ee6ec8956e04706115220398e1f4c26bf2bc4b512937252b",
+      "guid": "e0105e23e272418c94b0bbf1e7d02dee",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/FirearmFire.cs",
+      "sourceSha256": "0fc2f80e01755379e8f4cdfebd3f4b9e6aa53734e30b90415f5949da42e74f1b",
+      "guid": "fe6073c44d26430a87a351b9a430bd08",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/FirearmReload.cs",
+      "sourceSha256": "e781590b79359d3ebf645233a472c8e434d5edb9ef201148f5851d454b8da0f9",
+      "guid": "9615df837a0e43948b5e4c09b832dbed",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/Firearms/Shell.cs",
+      "sourceSha256": "cefe152431f9a6c309751e1a60e92639b44e846f2ee3280f5fe2f53fc537ffc5",
+      "guid": "9253126cde194fbc8af8107efe913615",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/CharacterScripts/LayerManager.cs",
+      "sourceSha256": "259f9d43cd41ea61047ada7a60e2e506a85e530797f5679dd9289ba42976c167",
+      "guid": "8f33505e333043a888a0224eaf767e80",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Collections/FirearmCollection.cs",
+      "sourceSha256": "b6ba193c809fcc33d70b3c007c09392d9fec4c29bcb37e17ba7dc1e5c593a945",
+      "guid": "20438ef1890f427991147f72aa955074",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Collections/IconCollection.cs",
+      "sourceSha256": "97127603244db5c9c1c98564c026486dbaea3db9f1ccc00bebd6d59b13416cd0",
+      "guid": "ba669b94ec0c484e85b7afb7407f75ba",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/Extensions.cs",
+      "sourceSha256": "c43fd485b8e7b5adb680cfde6f819b3cf9e45fb064aeeb54329c7f67ecec3da2",
+      "guid": "13a685cde27f41ccbb648d0bdfa2246b",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/Serializer.cs",
+      "sourceSha256": "0cf04fb7ab47f53d4dad4d996a50c567f3753ffab882d99de11081e2ba8ff41d",
+      "guid": "6f9bbebeca2376145bb9e0a1a430022e",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/SoloState.cs",
+      "sourceSha256": "d6783eba24406332fb2dce0de2a31f81634e5bb543db84250c6bdd59f8d0d517",
+      "guid": "d5ae2ef8fd2e4523af645c6b54ee238a",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/Springs/ScaleSpring.cs",
+      "sourceSha256": "99583dc5c295e644fe8b9dbc242efb08b92704be846f47b8630e8a24121ede14",
+      "guid": "c5f1534ff0f34017ab3cd8ed787560e4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/Springs/SpringBase.cs",
+      "sourceSha256": "f06cdf2d984fd2d7ba69d2985374f4c7ef9c94829626932473763c2aacea0134",
+      "guid": "d44432e97db24ea19a4384e63c0607eb",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/StandaloneFilePicker.cs",
+      "sourceSha256": "762fe047df7133c94f2bae198d3e8e732bf4269bd530127145de9597ca400159",
+      "guid": "439df5ecece13c44298de9f9feef8e8d",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/StateHandler.cs",
+      "sourceSha256": "91f2574c6cf7a2aa5d310b89995a9a5e45f9b55b7cf8061bc23790d30dfe7d2b",
+      "guid": "43a1db91d34842088ee3c9a4619a641c",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Common/TextureUtil.cs",
+      "sourceSha256": "d7b1604a6450ad51546d891bd0aecd293c9d945ba8299b8c801ebe53ee3090df",
+      "guid": "37759e67764f8c4449c7a1e6c5e78e92",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Data/FirearmParams.cs",
+      "sourceSha256": "ef3fd29182c0051014721626d83297724c6c4577ec8c4e12a7778689cf6d2a27",
+      "guid": "1566bd156c4047759c1666edd301797d",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Data/ItemIcon.cs",
+      "sourceSha256": "a3f8ca1c9ac2264d7ac1db7dd5c83d8d285a861da0e0e45de453cf1cd93f18ee",
+      "guid": "98da54ebf55d450c8ad0c4758cc1721a",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/FirearmCollectionEditor.cs",
+      "sourceSha256": "27fa1db73e906e5b405e2918df7ee29cb8194ce64d4ea1994d40ae96331ab160",
+      "guid": "9946342aa1744a49a30f86bd4cc68e02",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/HeroEditor.Common.Editor.dll",
+      "sourceSha256": "5246db71a85d32024b36b134cebcb76d2df290024c69db75028c1671a8c0c20e",
+      "guid": "80f50527a5a34de283f11ee485bd0ea7",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/IconCollectionEditor.cs",
+      "sourceSha256": "818094ff39d014586479e834027749eb6e814ae19c83acff4d6ae1f523d4eb77",
+      "guid": "bddb90fbd17048d19a6a531e217cd574",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/LayerManagerEditor.cs",
+      "sourceSha256": "622304a930a1694c0758e880a219b7d52d5640a5f1e114ca879deed2ca89407b",
+      "guid": "6a20dc549945409d9a3b7d40402c6d13",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/PackageFeedback.cs",
+      "sourceSha256": "5edfd6417eecbac1605ec6ef336ed03ec746df473616c5a44e909077b6c92bd5",
+      "guid": "aacb8c891a4091c4bb3bf5f2848c1222",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/PackageUpdater.cs",
+      "sourceSha256": "920f17fe79aef40bd30fa729d14891956d55518d52d67e6d1004bb1f226f0a4e",
+      "guid": "b6651144788b7df41abf611f6d9e4c1e",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/Editor/SpriteCollectionEditor.cs",
+      "sourceSha256": "bce127088c3af434bbaed659d6e1afac638f9f291abedff49b309a4d137c7abc",
+      "guid": "1e2df9e1f1464b858ad6899b268af502",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/AnimationManager.cs",
+      "sourceSha256": "3f58e85389ba3e3500cc4f52de62a233f09bb9a4b94055da6f9581dec7395a72",
+      "guid": "12e9f2aa926f4741b8fed51b449fa3fc",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/CaptureOptions.cs",
+      "sourceSha256": "c71cbb26dccf4a2452ba3dfd90f359831f71ba882529456c10f6b91479ae8859",
+      "guid": "35252e66fd0fd974d8df921709f9cf54",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/CharacterEditor.cs",
+      "sourceSha256": "77dd6cd7f0f5d66ae930438cbf0f321d31a92ae71331c917d66f778e9914ea64",
+      "guid": "e9c23b91487e4a87b5a557fee10f2ad4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/CharacterReferencesResolver.cs",
+      "sourceSha256": "87d58436b201cfd59ef2b71d12cfc228e97fd8da1487426d3a77d2bf09481578",
+      "guid": "cc5f98ef9b6644a28d9a98dff908ca86",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/HeroEditor.Common.dll",
+      "sourceSha256": "72382adacb80bca4ba67ca20c5566219c1ad4292fff2fc3ca2cd697192503843",
+      "guid": "37c5e9f1bad94b3398ad4f3c326513e9",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/NavigateButton.cs",
+      "sourceSha256": "fe4766ca56352b32c8834d4d4a094de04a89362c077395239bf98e14aacb3f6e",
+      "guid": "e01cb36ef25544de9e45ef44f9d8e13f",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/Screenshot.cs",
+      "sourceSha256": "eef4adc48b7a9ae60d3d9742b05885af10c98d37741db256a705c6f3f5240e88",
+      "guid": "681f7722e1ae4d249d00cd6cf708287a",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/ScreenshotTransparent.cs",
+      "sourceSha256": "4b931bb639f7fd78b2b0c770eade05e1090c36e8d25cf7fe11e011ab8bf84f20",
+      "guid": "7ae0bee184c141b88f34636e8e1e9c8a",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/SpriteSequenceCapture.cs",
+      "sourceSha256": "bd4be4926e951f88cda561f7c4d6e6fa74b3ce3aedd40c8624382b4ca7971cb2",
+      "guid": "df89850f0eac44aaa20344a497b73012",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/EditorScripts/SpriteSheetCapture.cs",
+      "sourceSha256": "cd8f07dc16f811ad8d5a3f382bfe2632b9964402bf4e5d0f9c544fcdbcb9b53e",
+      "guid": "e720acbc45543c24b8500ea584ce0cbc",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/AppearanceExample.cs",
+      "sourceSha256": "cb593d79b2d299a7729a18bb1c95dab1bdf8abb0db2b1b6d85ffaee019e6f8ce",
+      "guid": "f0cc7b37f6e09ea489bc61ebb5955302",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/AttackingExample.cs",
+      "sourceSha256": "9da7b3e847d0fdc6c6e016382fb42ed0dfbd79a97f37fde220081579f4063852",
+      "guid": "54fb20a22c0b4ade8ed65a122758aa30",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/BowExample.cs",
+      "sourceSha256": "0b748ff48dfb9f11356c3a955b8135d0a4674fca0a4794e199eb8e6ef71007bb",
+      "guid": "27b56af0dc484132b6371bbf4fd0d1e1",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/EquipmentExample.cs",
+      "sourceSha256": "4f91d75e6974b6173f7eb22731fca5d320c818fed76e2e1c1886976f85075170",
+      "guid": "6c58e239ee1143cfaba9e25b5ca00ada",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/InventoryExample.cs",
+      "sourceSha256": "7bfa739c01ceff29b433c23556196d186d48c5ebd95d251a84b116cd432d8dbf",
+      "guid": "42343480fc5163c4789cb29c8394e89c",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/MeleeWeapon.cs",
+      "sourceSha256": "46cac2bf1b74f95701f1f33c48b02fb78472a2e10517269366731e9a9519c7e2",
+      "guid": "67bdb88bfca3491eb2d33868fd2caa10",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/MovementExample.cs",
+      "sourceSha256": "b131cfc1156f9f08748cb6f9b7485cf1669c4a0a1831bdd372aa5d8ae2e1a661",
+      "guid": "ec104518976548468097fd1beaeebc03",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/PlayingAnimations.cs",
+      "sourceSha256": "b46a5d41b2c114fa42093042e6ffeebd023ba0bbff5b6c2100ae06ce8eadc427",
+      "guid": "ca548836d290423ebe1afc4548874982",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/Projectile.cs",
+      "sourceSha256": "f667cf7c3ddea66544c6b27d9edefe74bc49402ab38aaa7988b3d0137419aa79",
+      "guid": "1537e5da497143d0b130cd42fba93074",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/QuickStart.cs",
+      "sourceSha256": "126d5c501ad46e06f41621884031ade9ac56eaed474344d08fcd86fa8ab4f67c",
+      "guid": "063b152cf9ad47f6bcc5ddfec12c6c3a",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/RuntimeSetup.cs",
+      "sourceSha256": "f3e3dbd1390ace692096bfe3c854c1b7227b5f9cc45ea6aa34378b658cba715f",
+      "guid": "2b501cb33a8341d3ad46ea25c4a1cb8f",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/SaveLoadExample.cs",
+      "sourceSha256": "911ce219afc30c49f07e4b293fc5a76f3c13fe62dc7b92287ed43516ec363930",
+      "guid": "58154296aa9b4784a034c816f2005425",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/SortingOrderExample.cs",
+      "sourceSha256": "d383a7e085b920dbbaac93b8beb7bb2ed5f2a02eee314eb3cc57fd3af33272c7",
+      "guid": "6afabb822827475ab4caf85abdaab347",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/ExampleScripts/TestRoom.cs",
+      "sourceSha256": "18e4c87c9dd94961144394ab126f42d7521d7fd6152f6f82752d0d097da32934",
+      "guid": "94e03da1011e4bbd97d73a8acea02fbb",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/UI/Dialog.cs",
+      "sourceSha256": "7cd6e70c34497d9666742ba6c2e82302f797db6f59da84cf555903a67cd64f31",
+      "guid": "6d40f58eb87203a4d8e6494f2d983104",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/UI/Links.cs",
+      "sourceSha256": "853b84b5ecef7a2c865db7347169df34d59cca3294893ac5a8544fec2f719aa5",
+      "guid": "507ccc7e4998033438eb5d24b9df6e93",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/Scripts/UI/Popup.cs",
+      "sourceSha256": "c6b335f799edd998e50017fe5a1a42f5dda6eeef83acec72f3bfc83c451f64d7",
+      "guid": "cd54c80d2322a5c469066db976278fbf",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/ColorJoystick.cs",
+      "sourceSha256": "620c7d4a4e6bd146a2b70570b39ef9380e8be74c6c79e9b86c95d6a815a54e2b",
+      "guid": "b8fd4ee2f93949e48c09579899ce2475",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/ColorMode.cs",
+      "sourceSha256": "263f07249857649434b50e8bc085d95dd7acdb6aeabc6b61b90e33c76ac3e10a",
+      "guid": "c1eacc500bcd4fb6910c8bdd10fdcddf",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/ColorPicker.cs",
+      "sourceSha256": "720a83dfaf9fbbb3a668b1ee866f6b44a4ae12ed5eb5a586684116f13d638493",
+      "guid": "1bbcb225ce1a4b1eb530f8be08f5b22e",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/ColorSlider.cs",
+      "sourceSha256": "ec51ad9fb9ce48dfbc27175be9d04449c691cd156bc2c6025f2ceabacf39a7b7",
+      "guid": "80582d19ebfb4230bfe3e7e1d6b5e831",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/PaletteGradient.cs",
+      "sourceSha256": "5570142add6233153b250694893a2886aa8a42447395d5b2307cf2523b544477",
+      "guid": "baa3d2c4576648868b2d6ff94045b6a0",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/Common/SimpleColorPicker/Scripts/RainbowGenerator.cs",
+      "sourceSha256": "c4d9e576d818763968eca9e855920292df09eec485513841e239474bd49a2798",
+      "guid": "ffde6c519ce9446483bb0ac563ec5872",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/Prefabs/Human.prefab",
+      "sourceSha256": "f822aedf0a980a7b6777e4d5f7a9ff34160c8ce0a298b0832a125cf510204527",
+      "guid": "ff726cbf10a6436a8c11071a7641036f",
+      "use": "the character: Human.controller, its clips, materials and shaders follow"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/Resources/FirearmCollection.asset",
+      "sourceSha256": "c8951b25c615dc9687a5a412246004458df2f97245b21fe1c0e7982575d02a9e",
+      "guid": "e3cb27cd27ee6874788199f3d599158c",
+      "use": "the sprite and firearm collections: every part's sprites follow"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/Resources/SpriteCollection.asset",
+      "sourceSha256": "6eddf974a4e40c0831df9b6215db3476d15ee9d194787808a88529b567a628df",
+      "guid": "620e7b0c742440a4be6c065493edd0eb",
+      "use": "the sprite and firearm collections: every part's sprites follow"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/AnchorManager.cs",
+      "sourceSha256": "794ce5fa3076ca621d91ac7fff2f6feb10465c1f50cbe75a53eaab9905f278da",
+      "guid": "a9280177f9fd4610a3fe32d4d8231bbd",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/LayerManager.cs",
+      "sourceSha256": "28948ac34ac5b4c5a15f1355d056dda9b7863c91007346afca354d2914ddab33",
+      "guid": "91b55141edc14e008728aca07d674cf4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/Monster.cs",
+      "sourceSha256": "107099417e304007af362d6f2d5a7dca566335ff46cf7d3183fa31f79015c040",
+      "guid": "84f3f5eb221744e7a90c1f03463be8b2",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/MonsterState.cs",
+      "sourceSha256": "5a24b0614b8778b6921e3629a7fc695a9cb2e2a9478728fba6347a870b98556c",
+      "guid": "43a90b4dd1104e069b2d5f64beff439d",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/MonsterVariation.cs",
+      "sourceSha256": "08674e4f15f522237bedb85121da4408f1d87c6ed5a80fbe732cf4ddab0309d6",
+      "guid": "30c81491c13c42bbb85bc3c1916a6c7b",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/Scarecrow.cs",
+      "sourceSha256": "08ca4f75fbd241dd8f45e749ea7e704eec7f70d3118fda470b0f1b9b41a2fa39",
+      "guid": "d102a0bed4b24627b8d538131b17f724",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/SoloState.cs",
+      "sourceSha256": "0957f7ea0a86a038cbfa27889d2cc25f4db2f644ffc9e830ffd256ce4b83fa4b",
+      "guid": "845db3e4464640de9a20fd0550ea5198",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/StateHandler.cs",
+      "sourceSha256": "3dc6d0bfb0e3b4f48f6698a6f32e56550626e2489872a73f4952e37bef32b811",
+      "guid": "0ce42d81b1e0494e818a0dd25e9f4ea6",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/Tweens/ScaleSpring.cs",
+      "sourceSha256": "e076acf370c2d3f5e907ed20f64e4549cb6ac005d25a51b9018b8652ec8215ea",
+      "guid": "1edd0d5a75f54f78b468b956b709eb26",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/FantasyHeroes/TestRoom/Scripts/Tweens/TweenBase.cs",
+      "sourceSha256": "4f27b708287943fecd2161ef018ecf55a5443db752f2f7c056ffe62bd864e7d2",
+      "guid": "d00950e6bab34b82b3ac432a0b1c8a56",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Data/Item.cs",
+      "sourceSha256": "1e9de991eefa32ef954590ac511eca81bbec29d7e54e4db5d5177ae7d2e55503",
+      "guid": "962e8604fd524469a97cd479154626cb",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Data/ItemParams.cs",
+      "sourceSha256": "461cc44b9a2280606db74528767b9ff8874374246ceca818d5436e4171efbe16",
+      "guid": "2fc9144045c34e7e97fc36a34f7eeb53",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Data/LocalizedValue.cs",
+      "sourceSha256": "e427ce1ed5bd4edf502406b7ba084518c228b9d819ba48400eb60963ccefc268",
+      "guid": "b795f3e68404455da61759db7f4ed78c",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Data/Modifier.cs",
+      "sourceSha256": "0f2028362fce11a82d64a233d3562904406b1a323fae8b4c3761e4f181ad3e8e",
+      "guid": "fa95e2f7e8814442a1510ec97b630411",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Data/Property.cs",
+      "sourceSha256": "965563f64d34c68ff6ce14a8252913ae5e0561c4201d3a487716e883204960a0",
+      "guid": "4dcb7d064b76477fa88b38c24c866a50",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/Equipment.cs",
+      "sourceSha256": "55fb3f96c35169b40ec6cadbc16a80151fa67fe019306b8b47c09be8e8a0577a",
+      "guid": "86042b0291514a44b1205e99413d3d53",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/InventoryItem.cs",
+      "sourceSha256": "203d6aecc00da649223978b29523402cb05228177a412931426bb9749f0fa000",
+      "guid": "8a0d4d1a493640f68b6438b176bc7906",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ItemContainer.cs",
+      "sourceSha256": "bd334e13a85e12d1bd39fac9f3b1d09d73d5442353b67d31d2734fd8308a8ada",
+      "guid": "6e85effb28e643a8aa2aede7b9fff4eb",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ItemInfo.cs",
+      "sourceSha256": "556c98b0e25fa6ca14ccdb99919cd19a99a2dedc2ee2b76230f3bc5f831c3428",
+      "guid": "552ecf6436154b59a87c0b506b1b9ea1",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ItemSlot.cs",
+      "sourceSha256": "1f8c96005ca6cb61a78c556fa85e545c679193b7e766a95d336c2979f67cb94a",
+      "guid": "ebd1357eab6340718a51ae3768702529",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ItemWorkspace.cs",
+      "sourceSha256": "42b72d90e61a800ba6b9c8f8bbeda6b259dcfe22aabb6d5b23314a02502c162a",
+      "guid": "3e6891ad87714c0d8761d8e57149a0bf",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ScrollInventory.cs",
+      "sourceSha256": "5ada3d9b58b9f652b69f6f285cdc164f678a8172915c3992b5987e37ba4c825a",
+      "guid": "024479c794144826a146101cb03717a2",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Elements/ScrollInventoryFilter.cs",
+      "sourceSha256": "5d0f6dce10129ebf2a75647c9a02dd628bf9042f6e0efa7640b559f2db2f695d",
+      "guid": "5d9cc5e6ac6f4504ad4993dddb87d0cf",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ElementId.cs",
+      "sourceSha256": "2d200f1acc1e9931bec4f0633ed7c7285e7fa956d94d6eff9d8edd7dda59d8ca",
+      "guid": "7b53405392e14547a4af77b073d860c0",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ItemClass.cs",
+      "sourceSha256": "c4d94c81f133926b25f1ccb47e2594cc527f70b596dbbc8591b9ca3d9ba58556",
+      "guid": "ff051da281844df6a58d75fe9e68f1a7",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ItemRarity.cs",
+      "sourceSha256": "6fb41de8cbf971845115734f65205ce3061308e2af75aa6afa471f12cf12f129",
+      "guid": "c02091334f924884ade2d581de286c04",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ItemTag.cs",
+      "sourceSha256": "ae18f9c8f8efd8ccad41ecb32b9b7624a937ccd6560012b8e61f2ab6b6746c03",
+      "guid": "235c6808fede412381093195458dc29d",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ItemType.cs",
+      "sourceSha256": "0fe1caa668d4a21a5c2250d56d9347a328decac38694c695bf69e069413c17ac",
+      "guid": "9a6bdaae97c84dfeaf91b737eda1aaa2",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/ModificatorType.cs",
+      "sourceSha256": "3b383b1153b14d154b23cbb116c1396f2d92b072a777532d78a25047e74b6f8a",
+      "guid": "c9eeaee1870b421881a032b076d21a57",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Enums/PropertyId.cs",
+      "sourceSha256": "e3522522656ab20b08e93bad8695527fdb556173f66cfc20d548e22daed76c9a",
+      "guid": "c87eda812e6449a49f90f5f34a6acd40",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/Helpers/CharacterInventorySetup.cs",
+      "sourceSha256": "d2b874dea94458b8db1070f5bcc81be0e4f392478b1627b2feeb5899ef31077c",
+      "guid": "5e76d8adc6e64a609d6914e351de93ea",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/InventoryBase.cs",
+      "sourceSha256": "f91b7e88142a3d95e3540260f6a6f4f8e714a6f0ba0077ee554572a1e29a4de9",
+      "guid": "f2cc8437aa83403da77a1246af0ff841",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/ItemCollection.cs",
+      "sourceSha256": "2d358ccb46efda03b7de3f254516dc6a279b2dbc8d40d4dd61f3168be3ab2237",
+      "guid": "3ed33394c4164416a5b0f271499b4ed4",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroEditor/InventorySystem/Scripts/ShopBase.cs",
+      "sourceSha256": "2948561b9f94795b458221a433f2d1858f3533066f0286d3b1f5cd3a5f2253b6",
+      "guid": "d3bc959df80949b9ab114a153164cc69",
+      "use": "HeroEditor's code (no asmdefs: Assembly-CSharp)"
+    }
+  ]
+}

@@ -14,6 +14,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 - `tools/baker/`, `assets-src/`, `public/assets/`: the asset baker and its inputs and outputs.
 - `demo3d/`: the Unity 3D tech demo (docs/tech-demo-3d/).
 - `demo2d/`: the Unity 2D pixel-art demo (docs/tech-demo-2d/README.md), on the same tools (`uv run --project demo3d/tools demo2d`).
+- `herocap/`: a small Unity project that captures HeroEditor characters to PNG frames in the per-machine cache for native's `--art heroeditor` feel test (docs/design/heroeditor-native.md, epic ps-4c8), on the same tools (`uv run --project demo3d/tools herocap`, `just herocap`).
 - `stylelab/`: the Unity shader style lab, demo3d's horde in cyclable stylized treatments (docs/tech-demo-3d/stylelab.md), on the same tools (`uv run --project demo3d/tools stylelab`).
 - `unity-packages/com.playlistsurvivors.choreography/`: the engine-free choreography core both demos share (docs/tech-demo-3d/choreography.md).
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.

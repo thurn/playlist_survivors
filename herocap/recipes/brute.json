@@ -1,0 +1,29 @@
+{
+  "atlas": "brute",
+  "role": "big revenant knight with a two-handed hammer, red glow",
+  "scale": 1.4,
+  "weapon": "Melee2H",
+  "skin": "#8C9AA8FF",
+  "bodyScale": [
+    1.15,
+    1.05
+  ],
+  "parts": {
+    "hair": "Common.Basic.Hair.ZombieSticks#3A3A40FF",
+    "armor": "FantasyHeroes.Basic.Armor.DarkKnight",
+    "primary": "FantasyHeroes.Basic.MeleeWeapon2H.TitanHammer"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#FF3B3BFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash2h",
+    "victory"
+  ]
+}

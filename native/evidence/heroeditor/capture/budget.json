@@ -1,0 +1,88 @@
+{
+  "atlases": {
+    "bat": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 669536
+    },
+    "bee": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 702952
+    },
+    "brute": {
+      "clips": 6,
+      "frames": 126,
+      "pixels": 2841608
+    },
+    "goblin": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 942794
+    },
+    "hero": {
+      "clips": 10,
+      "frames": 186,
+      "pixels": 1901662
+    },
+    "minotaur": {
+      "clips": 7,
+      "frames": 147,
+      "pixels": 4987085
+    },
+    "orc": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1265727
+    },
+    "orc-elite": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1641548
+    },
+    "orc-ember": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1184351
+    },
+    "skeleton": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1212794
+    },
+    "slime": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 701131
+    },
+    "thorn-plant-autumn": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1427141
+    },
+    "thorn-plant-summer": {
+      "clips": 6,
+      "frames": 121,
+      "pixels": 1329300
+    }
+  },
+  "frames": 1669,
+  "pixels": 20807629,
+  "pages": 2,
+  "pagesWithFlash": 3,
+  "fps": {
+    "bat": 30.0,
+    "bee": 30.0,
+    "brute": 30.0,
+    "goblin": 30.0,
+    "hero": 30.0,
+    "minotaur": 30.0,
+    "orc": 30.0,
+    "orc-elite": 30.0,
+    "orc-ember": 30.0,
+    "skeleton": 30.0,
+    "slime": 30.0,
+    "thorn-plant-autumn": 30.0,
+    "thorn-plant-summer": 30.0
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "atlas": "orc-elite",
+  "role": "iron-helmed Viking elite with a shield, amber glow",
+  "scale": 1.05,
+  "weapon": "Melee1H",
+  "skin": "#8C9AA8FF",
+  "parts": {
+    "helmet": "FantasyHeroes.Vikings.Helmet.VikingIronHelm2",
+    "armor": "FantasyHeroes.Vikings.Armor.VikingFurArmor",
+    "primary": "FantasyHeroes.Vikings.MeleeWeapon1H.VikingSword1",
+    "shield": "FantasyHeroes.Vikings.Shield.IronShield1"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#FFB43CFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}

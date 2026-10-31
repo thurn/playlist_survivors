@@ -10,6 +10,7 @@ demo3d = "demo3d_tools.cli:main"
 demo2d = "demo3d_tools.cli:main2d"
 stylelab = "demo3d_tools.cli:main_stylelab"
 game = "demo3d_tools.cli:main_game"
+herocap = "demo3d_tools.cli:main_herocap"
 
 [build-system]
 requires = ["setuptools>=68"]

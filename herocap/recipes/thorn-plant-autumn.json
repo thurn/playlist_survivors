@@ -1,0 +1,26 @@
+{
+  "atlas": "thorn-plant-autumn",
+  "role": "rooted shaman, hooded and masked, with a staff, autumn-tinted, yellow-green glow",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#A08A5EFF",
+  "parts": {
+    "helmet": "FantasyHeroes.Basic.Helmet.DruidHat [Paint]#8A6A3AFF",
+    "armor": "FantasyHeroes.Basic.Armor.ShamanArmor",
+    "primary": "FantasyHeroes.SwampLords.MeleeWeapon1H.SwampMage2Staff",
+    "mask": "FantasyHeroes.Basic.Mask.ClothMask"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#B4FF4AFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-front",
+    "cast",
+    "victory"
+  ]
+}

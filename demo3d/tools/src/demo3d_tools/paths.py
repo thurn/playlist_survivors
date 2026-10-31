@@ -1,8 +1,8 @@
 """Where things live: the worktree, the Unity project and the per-machine cache.
 
 One tool serves the repository's Unity projects: the demos `demo3d/` and `demo2d/`, the style
-prototype `stylelab/` and the game `game/` (the `demo3d`, `demo2d`, `stylelab` and `game`
-commands). They share the per-machine cache, its roots and its sync record, so one guard knows
+prototype `stylelab/`, the game `game/` and the HeroEditor capture `herocap/` (the `demo3d`,
+`demo2d`, `stylelab`, `game` and `herocap` commands). They share the per-machine cache, its roots and its sync record, so one guard knows
 every vendor file on the machine.
 
 The cache holds what never reaches git (vendor files, baked files, a warm Library) and the
@@ -21,23 +21,27 @@ from dataclasses import dataclass
 from pathlib import Path
 
 UNITY_VERSION = "6000.6.7f1"
-PROJECTS = ("demo3d", "demo2d", "stylelab", "game")
+PROJECTS = ("demo3d", "demo2d", "stylelab", "game", "herocap")
 # The source roots each project's setup needs (the song from the `song` root, the rest synced):
 # demo2d syncs the 2D packs and reuses demo3d's sounds; stylelab reuses demo3d's roster; the game
-# takes demo3d's hero, monsters, forest kit and sounds, and plays the player's music, not the song.
+# takes demo3d's hero, monsters, forest kit and sounds, and plays the player's music, not the song;
+# herocap captures HeroEditor, which lives only in `more_assets` (docs/design/heroeditor-native.md).
 PROJECT_ROOTS = {
     "demo3d": ("synty", "unity_assets", "song"),
     "demo2d": ("pixel_assets", "unity_assets", "song"),
     "stylelab": ("synty", "unity_assets", "song"),
     "game": ("synty", "unity_assets"),
+    "herocap": ("more_assets",),
 }
 # Each project's C# namespace prefix.
-NAMESPACES = {"demo3d": "Demo3D", "demo2d": "Demo2D", "stylelab": "StyleLab", "game": "Game"}
+NAMESPACES = {"demo3d": "Demo3D", "demo2d": "Demo2D", "stylelab": "StyleLab", "game": "Game",
+              "herocap": "HeroCap"}
 # The roots that are asset folders (an `Assets/` folder of packs, files beside their `.meta`).
 ASSET_FOLDERS = ("unity_assets", "pixel_assets", "more_assets")
 # demo3d's alternate monster sets (`--roster <set>`, crowd.md, Roster sets). Their manifest
 # entries come from `more_assets`, mapped only on the Mac, and sync only when a set is asked for
-# (`demo3d setup --roster forest`), so the default sync, bake, build and checks never need it.
+# (`demo3d setup --roster forest`), so the default sync, bake, build and checks never need it. A
+# manifest that lists the root in its `requires` (herocap's) syncs its entries without a roster.
 ROSTERS = ("forest", "heroic")
 OPT_IN_ROOTS = ("more_assets",)
 SONG_FILE = "Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"
@@ -59,6 +63,12 @@ def cache_root() -> Path:
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Caches" / "playlist-survivors" / "demo3d"
     return Path.home() / ".cache" / "playlist-survivors" / "demo3d"
+
+
+def heroeditor_cache() -> Path:
+    """herocap's output: captured frames and, later, the baked atlas. Derived from HeroEditor, so
+    it never leaves the machine; the guard's derived record covers it (derived.py)."""
+    return cache_root() / "heroeditor"
 
 
 def record_path() -> Path:
@@ -114,7 +124,7 @@ def unity_exe() -> Path:
 @dataclass(frozen=True)
 class Worktree:
     root: Path
-    name: str = "demo3d"  # the Unity project: demo3d, demo2d, stylelab or game
+    name: str = "demo3d"  # the Unity project: demo3d, demo2d, stylelab, game or herocap
 
     @property
     def project(self) -> Path:
@@ -122,7 +132,7 @@ class Worktree:
 
     @property
     def namespace(self) -> str:
-        """The project's C# namespace prefix: Demo3D, Demo2D, StyleLab or Game."""
+        """The project's C# namespace prefix: Demo3D, Demo2D, StyleLab, Game or HeroCap."""
         return NAMESPACES[self.name]
 
     @property

@@ -1,7 +1,8 @@
 # Commands for this checkout. `just` lists them; extra arguments pass straight through,
 # e.g. `just native --file song.ogg --delayed` or `just demo3d --start-at 160`. Each of
 # `just native`, `just game`, `just demo3d`, `just demo2d` and `just stylelab` builds what
-# changed and runs it; the `-build`, `-play` and `-tool` recipes are the single steps.
+# changed and runs it; the `-build`, `-play` and `-tool` recipes are the single steps. `just herocap`
+# captures HeroEditor characters to frames for native (docs/design/heroeditor-native.md).
 
 set positional-arguments
 
@@ -145,7 +146,17 @@ stylelab-play *args:
 stylelab-tool *args:
     {{tools}} stylelab "$@"
 
-# Open a Unity project (game, demo3d, demo2d or stylelab) in the editor
+# Set up if needed, then capture HeroEditor's recipes to PNG frames in the machine's cache (--recipe hero, --clip walk)
+[group('herocap')]
+herocap *args: (_setup "herocap")
+    {{tools}} herocap capture "$@"
+
+# The tools themselves: `just herocap-tool evidence` (contact sheets, faces, budget), `just herocap-tool setup`
+[group('herocap')]
+herocap-tool *args:
+    {{tools}} herocap "$@"
+
+# Open a Unity project (game, demo3d, demo2d, stylelab or herocap) in the editor
 [group('unity')]
 editor project:
     #!/usr/bin/env bash

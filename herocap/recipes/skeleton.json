@@ -1,0 +1,25 @@
+{
+  "atlas": "skeleton",
+  "role": "ragged zombie militiaman with a short blade, cyan glow",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#8FA38AFF",
+  "parts": {
+    "hair": "Common.Basic.Hair.ZombieShabby#4E5440FF",
+    "armor": "FantasyHeroes.Basic.Armor.Slave",
+    "primary": "FantasyHeroes.Basic.MeleeWeapon1H.Machete [Paint]#9A8878FF"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#5FF3FFFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}

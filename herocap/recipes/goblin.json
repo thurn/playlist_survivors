@@ -1,0 +1,25 @@
+{
+  "atlas": "goblin",
+  "role": "the fallback: a zombie peasant",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#8FA38AFF",
+  "parts": {
+    "hair": "Common.Basic.Hair.ZombieShabby#5A4A3AFF",
+    "armor": "FantasyHeroes.Basic.Armor.PeasantClothing",
+    "primary": "FantasyHeroes.Basic.MeleeWeapon1H.AspenStake"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#A0FFB0FF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}

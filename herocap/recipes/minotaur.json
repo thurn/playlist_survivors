@@ -1,0 +1,30 @@
+{
+  "atlas": "minotaur",
+  "role": "the boss: a death lord in Thrones armour with a two-handed sword, crimson glow",
+  "scale": 1.6,
+  "weapon": "Melee2H",
+  "skin": "#7D8C8AFF",
+  "bodyScale": [
+    1.2,
+    1.1
+  ],
+  "parts": {
+    "hair": "Common.Basic.Hair.ZombieShabby#2A2A30FF",
+    "armor": "FantasyHeroes.Thrones.Armor.DarkMountain",
+    "primary": "FantasyHeroes.Thrones.MeleeWeapon2H.MountainSword [Paint]#9098A8FF"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#FF1A4AFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash2h",
+    "jab2h",
+    "victory"
+  ]
+}

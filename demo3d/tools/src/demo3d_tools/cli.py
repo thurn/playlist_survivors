@@ -7,6 +7,9 @@ for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md), and
 for the Unity game, `game/` (docs/design/unity-game.md), which adds its own `look` (windowless
 stills of the player into game/evidence/look/SLUG), `plugin` (the music plugin built and copied
 into the project; setup and build run it) and `spike` (the sync spike's measured run).
+`herocap <command>` does the same for the HeroEditor capture, `herocap/`
+(docs/design/heroeditor-native.md), which adds `capture` (recipes to PNG frames in the machine's
+cache) and `evidence` (contact sheets, the face lineup and the frame budget).
 
 Commands:
   setup               prepare this worktree (vendor, baked, warm Library, guard hook, license)
@@ -355,6 +358,10 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
         from . import game
 
         game.add_parsers(sub)
+    if project == "herocap":
+        from . import herocap
+
+        herocap.add_parsers(sub)
     if project != "demo3d":
         return p
 
@@ -455,3 +462,8 @@ def main_stylelab() -> None:
 def main_game() -> None:
     """`game <command>`: the same tools on the Unity game's project, plus its `look`."""
     main(project="game")
+
+
+def main_herocap() -> None:
+    """`herocap <command>`: the same tools on the HeroEditor capture's project, plus its `capture`."""
+    main(project="herocap")

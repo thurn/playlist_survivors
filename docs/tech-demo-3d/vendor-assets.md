@@ -170,6 +170,19 @@ vendor guard: FAIL
 AGENTS.md carries the rule for every agent: never commit vendor or derived
 files, never force-add an ignored path, and never bypass the guard.
 
+### The HeroEditor capture
+
+`herocap/` ([heroeditor-native.md](../design/heroeditor-native.md)) is under
+the same rules, with two additions:
+
+- **Its manifest `requires` the `more_assets` root**, where HeroEditor lives,
+  so its entries sync without a roster and the guard needs them in the record;
+  on a machine without that root its files count as uncovered.
+- **Its output lives in the per-machine cache** (`<cache>/heroeditor/`:
+  captured frames, later baked atlases), so the main checkout can play it. The
+  derived record hashes everything there, so a frame or manifest copied into
+  the tree fails the guard anywhere, not just under `herocap/`.
+
 ### The 2D demo
 
 Since PX1 the same guard and tools also cover the

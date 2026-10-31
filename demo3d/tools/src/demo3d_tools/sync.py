@@ -14,7 +14,8 @@ Curation and sync):
   demo's packs, and the roster sets' packs), files are copied with their `.meta`.
 - An entry with a `roster` (forest or heroic, demo3d's `--roster` sets) syncs only when that set
   is asked for (`demo3d setup --roster`); `more_assets` entries must name one, so the default sync never
-  needs that root, which only the Mac maps.
+  needs that root, which only the Mac maps. A manifest whose `requires` lists the root (herocap's,
+  which captures HeroEditor from it) needs it always, so its entries take no roster.
 - A Synty package this machine lacks whose entries are all arena kit pieces (`use` "kit: ...")
   is skipped with a warning (`absent_kits`), so a machine without one environment's packs
   (Cygnus has no desert, snow or lava packs) still syncs; the arena bake then skips the
@@ -223,8 +224,8 @@ class Sources:
                 if name in paths.OPT_IN_ROOTS:
                     raise SyncError(
                         f"the {name} root is not mapped on this machine ({mapped or 'no path'} has "
-                        f"no Assets/); the roster sets sync only where MoreAssets is (the Mac): "
-                        f"map it in {paths.cache_root() / 'roots.json'}, or drop --roster")
+                        f"no Assets/); the roster sets and herocap sync only where MoreAssets is "
+                        f"(the Mac): map it in {paths.cache_root() / 'roots.json'}, or drop --roster")
                 raise SyncError(f"missing source {name}: {root}")
             src = load_asset_folder(name, root)
         else:
@@ -250,17 +251,23 @@ def follow(item: Item) -> set[str]:
     return refs
 
 
+def opt_in_roots(manifest: dict) -> tuple[str, ...]:
+    """The opt-in roots whose entries need a roster in this manifest: all but its `requires`."""
+    return tuple(r for r in paths.OPT_IN_ROOTS if r not in manifest.get("requires", ()))
+
+
 def manifest_entries(manifest: dict, rosters: tuple[str, ...] = ()) -> list[dict]:
     """The manifest's entries to sync: every entry without a `roster`, plus those of `rosters`."""
     for r in rosters:
         if r not in paths.ROSTERS:
             raise SyncError(f"unknown roster {r!r} (one of {', '.join(paths.ROSTERS)})")
     out = []
+    opt_in = opt_in_roots(manifest)
     for entry in manifest.get("assets", []):
         roster = entry.get("roster")
         if roster is not None and roster not in paths.ROSTERS:
             raise SyncError(f"{entry['path']}: unknown roster {roster!r}")
-        if roster is None and entry["source"].split(":")[0] in paths.OPT_IN_ROOTS:
+        if roster is None and entry["source"].split(":")[0] in opt_in:
             raise SyncError(f"{entry['path']}: a {entry['source']} entry needs a roster, so the "
                             f"default sync never needs that root")
         if roster is None or roster in rosters:
@@ -466,15 +473,16 @@ def sync(manifest: dict, roots: dict[str, str], out: Path, record_path: Path,
 def manifest_add(manifest_path: Path, source: str, patterns: list[str], use: str,
                  sources: Sources, roster: str | None = None) -> int:
     """Adds every asset matching the glob patterns (fnmatch, case-insensitive) to the manifest,
-    as entries of `roster` when given (required for an opt-in root such as `more_assets`)."""
+    as entries of `roster` when given (required for an opt-in root such as `more_assets`, unless
+    the manifest `requires` it)."""
     import fnmatch
 
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if roster is not None and roster not in paths.ROSTERS:
         raise SyncError(f"unknown roster {roster!r} (one of {', '.join(paths.ROSTERS)})")
-    if roster is None and source.split(":")[0] in paths.OPT_IN_ROOTS:
+    if roster is None and source.split(":")[0] in opt_in_roots(manifest):
         raise SyncError(f"{source} entries need --roster ({', '.join(paths.ROSTERS)})")
     src = sources.get(source)
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assets = {(a["source"], a["path"].lower()): a for a in manifest.get("assets", [])}
     added = 0
     for pattern in patterns:

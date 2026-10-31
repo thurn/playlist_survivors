@@ -1,7 +1,7 @@
 """The vendor guard: no vendor file, derived file or NCS audio may leave the machine.
 
 It checks blobs as git stores them, so it sees exactly what a push or a commit would carry.
-It covers every Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/, game/) alike. A file fails when it:
+It covers every Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/, game/, herocap/) alike. A file fails when it:
 
 - is inside any demo's vendor or baked folders;
 - is binary (by extension or a NUL byte) under a demo's folder or the Unity package they share
@@ -21,12 +21,14 @@ one of the machine's asset folders (a top-level folder of `unity_assets`, `pixel
 last sync). A record that lacks a demo's manifest GUIDs because one of that demo's source roots is
 absent from the machine is not stale but partial: that demo's files are treated as under a
 missing record. The roster sets' entries (`more_assets`, synced only on request) are never
-required in it; where that root is mapped, its packs must be. Nor, in the machine's own record, are
+required in it, unless their manifest `requires` that root (herocap's); where that root is mapped,
+its packs must be. Nor, in the machine's own record, are
 the entries of the kit packages the machine lacks (sync.absent_kits), which its sync skips.
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
-of every worktree of this clone, now or since the record began, and of the song's source. It
+of every worktree of this clone, now or since the record began, of the song's source, and of
+herocap's HeroEditor frames and atlases in the cache. It
 refreshes the record before each check (derived.py). Derived files that are
 edited copies with fresh GUIDs and new bytes can't be recognized; the binary rule and the
 gitignored folders are the defense there.
@@ -439,18 +441,22 @@ def pre_push_entries(repo: Path, remote: str, lines: Iterable[str]) -> list[tupl
 def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
     """Every GUID the demos' tracked manifests list: guid -> (demo, path).
 
-    Entries from an opt-in root (`more_assets`) are left out: they sync only on request, so a
-    record from a machine without that root never has them, and where the root is mapped the
-    packs check already fails a record that lacks its files.
+    Entries from an opt-in root (`more_assets`) are left out unless the manifest `requires` that
+    root: they sync only on request, so a record from a machine without that root never has
+    them, and where the root is mapped the packs check already fails a record that lacks its
+    files. A project that requires the root is uncovered where it is missing.
     """
+    from . import sync
+
     guids: dict[str, tuple[str, str]] = {}
     for demo in paths.PROJECTS:
         manifest = repo / demo / "manifest.json"
         if not manifest.exists():
             continue
         data = json.loads(manifest.read_text(encoding="utf-8"))
+        opt_in = sync.opt_in_roots(data)
         for a in data.get("assets", []):
-            if a.get("guid") and a.get("source", "").split(":")[0] not in paths.OPT_IN_ROOTS:
+            if a.get("guid") and a.get("source", "").split(":")[0] not in opt_in:
                 guids[a["guid"].lower()] = (demo, a.get("path", "?"))
     return guids
 

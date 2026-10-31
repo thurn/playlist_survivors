@@ -1,4 +1,4 @@
-"""`demo3d setup` (or `demo2d`, `stylelab` or `game setup`): prepares a fresh worktree's project in one command.
+"""`demo3d setup` (or `demo2d`, `stylelab`, `game` or `herocap setup`): prepares a fresh worktree's project in one command.
 
 It checks the machine's sources, makes sure the sync record exists (empty until the sync tool
 first fills it), clones the vendor folder, the baked folders and a warm Library from the
@@ -118,8 +118,8 @@ def free_sounds(wt: paths.Worktree) -> Path:
     return wt.project / "Assets" / "FreeSounds"
 
 
-# The game plays the player's music, not the song.
-PY_BAKERS = {"game": []}
+# The game plays the player's music, not the song; herocap only captures characters.
+PY_BAKERS = {"game": [], "herocap": []}
 DEFAULT_PY_BAKERS = [PyBaker("Audio", _song_inputs, _song_build, version="4")]
 
 

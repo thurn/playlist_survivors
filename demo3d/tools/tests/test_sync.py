@@ -207,6 +207,22 @@ def test_more_assets_entries_must_name_a_roster(roots, tmp_path: Path) -> None:
     assert json.loads(manifest.read_text())["assets"][0]["roster"] == "forest"
 
 
+def test_a_manifest_that_requires_more_assets_syncs_its_entries_without_a_roster(roots, tmp_path: Path) -> None:
+    root, hero = more_assets(tmp_path)
+    del hero["roster"]
+    manifest = {"requires": ["more_assets"], "assets": [hero]}
+    paths_synced = [i.path for _s, i, _u in sync.resolve(manifest, sources({**roots, "more_assets": root}, tmp_path))]
+    assert paths_synced == ["Assets/Forest Creatures Pack/Evil Mushroom/Mushroom.mat",
+                            "Assets/Forest Creatures Pack/Evil Mushroom/Mushroom.prefab"]
+    with pytest.raises(sync.SyncError, match="more_assets root is not mapped"):
+        sync.resolve(manifest, sources(roots, tmp_path))
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps({"version": 1, "requires": ["more_assets"], "assets": []}))
+    assert sync.manifest_add(path, "more_assets", ["Assets/Forest*/*/*.prefab"], "t",
+                             sources({**roots, "more_assets": root}, tmp_path)) == 1
+    assert "roster" not in json.loads(path.read_text())["assets"][0]
+
+
 def test_a_missing_kit_package_is_skipped_but_any_other_missing_package_fails(roots, tmp_path: Path) -> None:
     gone = "synty:POLYGON_Gone_Unity_2021_3_v1_0_0.unitypackage.gz"
     kit = [entry(roots, source=gone, use="kit: desert rocks"), entry(roots, source=gone, use="kit: desert palms")]
@@ -240,3 +256,11 @@ def test_the_guard_never_needs_roster_entries_in_the_record(tmp_path: Path) -> N
     ]}))
     # A record from a machine without more_assets (Cygnus's) can never hold them.
     assert set(guard.manifest_guids(tmp_path)) == {"a" * 32}
+
+
+def test_the_guard_needs_a_required_roots_entries_in_the_record(tmp_path: Path) -> None:
+    (tmp_path / "herocap").mkdir()
+    (tmp_path / "herocap" / "manifest.json").write_text(json.dumps({"requires": ["more_assets"], "assets": [
+        {"source": "more_assets", "path": "Assets/HeroEditor/Human.prefab", "guid": "c" * 32},
+    ]}))
+    assert guard.manifest_guids(tmp_path) == {"c" * 32: ("herocap", "Assets/HeroEditor/Human.prefab")}

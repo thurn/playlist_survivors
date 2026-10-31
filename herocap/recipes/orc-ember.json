@@ -1,0 +1,25 @@
+{
+  "atlas": "orc-ember",
+  "role": "burning SandLords warrior, ember-tinted, orange glow",
+  "scale": 1.0,
+  "weapon": "Melee1H",
+  "skin": "#B07A5AFF",
+  "parts": {
+    "helmet": "FantasyHeroes.SandLords.Helmet.SandWarriorHelm1",
+    "armor": "FantasyHeroes.SandLords.Armor.SandWarrior1",
+    "primary": "FantasyHeroes.SandLords.MeleeWeapon1H.SandWarriorSword1"
+  },
+  "face": {
+    "eyes": "Common.Undead.Eyes.GlowingEyes",
+    "eyesColor": "#FF7A2AFF",
+    "mouth": ""
+  },
+  "clips": [
+    "idle",
+    "walk",
+    "hurt",
+    "death-back",
+    "slash",
+    "victory"
+  ]
+}
