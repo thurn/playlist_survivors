@@ -131,6 +131,7 @@ namespace Game.Client.Crowd
             _clips = clips;
             SpawnTime = t;
             EndTime = double.PositiveInfinity;
+            Died = false;
             _spawnX = x;
             _spawnY = y;
             _moveCount = _actionCount = _steps = 0;
@@ -139,10 +140,31 @@ namespace Game.Client.Crowd
             _idlePhase = Jitter(serial) * clips.Idle.Length;
         }
 
+        /// <summary>Whether its life ends in a death (it shatters), and the killing blow's direction on the ground and launch distance.</summary>
+        public bool Died { get; private set; }
+        public double BlowX { get; private set; }
+        public double BlowY { get; private set; }
+        public double Force { get; private set; }
+
         public bool Visible(double t) => t >= SpawnTime && t < EndTime;
 
         /// <summary>It leaves at <paramref name="t"/> (a death, or its id re-entering elsewhere).</summary>
-        public void End(double t) => EndTime = Math.Min(EndTime, t);
+        public void End(double t)
+        {
+            if (t < EndTime) Died = false;
+            EndTime = Math.Min(EndTime, t);
+        }
+
+        /// <summary>A Death at <paramref name="t"/>: it breaks there, by a blow along (dirX, dirY) that throws it <paramref name="force"/> metres.</summary>
+        public void Die(double t, double dirX, double dirY, double force)
+        {
+            if (t >= EndTime) return;
+            EndTime = t;
+            Died = true;
+            BlowX = dirX;
+            BlowY = dirY;
+            Force = force;
+        }
 
         /// <summary>An EnemyStep: from, to, the move's start and its footplant (the beat).</summary>
         public void Step(double fromX, double fromY, double toX, double toY, double start, double footplant)

@@ -132,12 +132,29 @@ namespace Game.Tests
         }
 
         [Test]
-        public void ADeathEndsItsLifeOnTheImpactFrame()
+        public void ADeathEndsItsLifeOnTheImpactFrameWithItsBlow()
         {
             var m = Spawned();
-            m.End(6.0);
+            m.Die(6.0, 0.6, 0.8, 4.63);
             Assert.That(m.Visible(5.999), Is.True);
             Assert.That(m.Visible(6.0), Is.False);
+            Assert.That(m.Died, Is.True, "it shatters");
+            Assert.That((m.BlowX, m.BlowY, m.Force), Is.EqualTo((0.6, 0.8, 4.63)));
+        }
+
+        [Test]
+        public void ARecycledReentryEndsALifeWithoutAShatter()
+        {
+            var m = Spawned();
+            m.End(5.0); // its id spawns again elsewhere
+            m.Die(6.0, 1, 0, 1.85);
+            Assert.That(m.EndTime, Is.EqualTo(5.0));
+            Assert.That(m.Died, Is.False);
+
+            var d = Spawned();
+            d.Die(6.0, 1, 0, 1.85);
+            d.End(5.5); // a re-entry before the death: it leaves whole
+            Assert.That(d.Died, Is.False);
         }
     }
 }

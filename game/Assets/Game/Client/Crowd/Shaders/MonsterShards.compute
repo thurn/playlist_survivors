@@ -1,0 +1,195 @@
+// The GPU shatter (unity-game.md, Shatter; MonsterShatter.cs), per type:
+// - SeedPalette: each death of this frame freezes its monster's palette (the crowd's palette pass
+//   blended it on this frame, CrowdFlags.Dying) into its ring slot, so its shards draw from the
+//   pose the body broke in;
+// - SeedShards: each death's chunks start at their pivots on that pose, kicked outward from where
+//   the blow landed, along the blow and up, spinning (demo3d's CrystalShatter.Launch);
+// - Integrate: every live shard to the frame's song time in steps of at most 1/120 s: gravity,
+//   tumble, ground bounce and friction, then a sink after LINGER seconds.
+// A shard's state is its pivot's place and its turn since the break; the draw shader skins its
+// corners from the frozen palette and moves them rigidly with it (MonsterShard.shader).
+#pragma kernel SeedPalette
+#pragma kernel SeedShards
+#pragma kernel Integrate
+
+#define STEP (1.0 / 120.0)
+#define MAX_STEPS 24             // a long hitch drops time rather than stalling
+#define GRAVITY (9.81 * 2.2)     // so shards clack down rather than float (demo3d's GravityScale)
+#define LINGER 1.2               // MonsterShatter.LingerSeconds
+#define SINK 0.6                 // MonsterShatter.SinkSeconds
+#define RESTITUTION 0.35
+#define SETTLE 0.6               // a bounce slower than this (m/s) stops
+#define BOUNCE_KEEP 0.6          // ground speed and spin kept through a bounce
+#define SLIDE 4.0                // ground friction, 1/s
+#define NORMAL_FORCE 1.85        // the sword's normal launch distance (m): a heavy blow kicks harder
+
+// The kick in m/s for a 1.8 m monster at the normal blow (demo3d's tuning).
+#define OUTWARD_SPEED 2.8
+#define BLOW_SPEED 5.0
+#define UP_SPEED 1.6
+#define SPIN 12.0
+
+#include "MonsterShards.hlsl"
+
+StructuredBuffer<Death> _Seeds;
+RWStructuredBuffer<Death> _Deaths;
+StructuredBuffer<float4> _Palette;      // the crowd's palette for the type, slot-major, 3 rows per bone
+RWStructuredBuffer<float4> _Frozen;     // the ring's palettes, the same layout by ring slot
+RWStructuredBuffer<Shard> _Shards;      // [ring slot][shard]
+StructuredBuffer<ShardRest> _ShardRest;
+uint _SeedCount, _BoneCount, _ShardCount;
+uint _RingStart, _RingCount, _RingCapacity;
+float _Now;
+float _HeightM;   // the type's height at scale 1
+float _Largest;   // its largest chunk's size
+
+[numthreads(64, 1, 1)]
+void SeedPalette(uint3 id : SV_DispatchThreadID)
+{
+    uint rows = _BoneCount * 3;
+    uint i = id.x / rows;
+    if (i >= _SeedCount) return;
+    uint r = id.x - i * rows;
+    Death d = _Seeds[i];
+    _Frozen[d.slot * rows + r] = _Palette[d.crowdSlot * rows + r];
+}
+
+float Hash(uint seed, uint i)
+{
+    uint x = seed * 747796405u + i * 2891336453u;
+    x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+    return (x & 0xffffff) / 16777216.0;
+}
+
+float3 RandomUnit(uint seed, uint i)
+{
+    float z = 2 * Hash(seed, i) - 1, a = 6.2831853 * Hash(seed, i + 1);
+    float r = sqrt(saturate(1 - z * z));
+    return float3(r * cos(a), z, r * sin(a));
+}
+
+float3x4 PaletteBone(uint slot, uint bone)
+{
+    uint at = (slot * _BoneCount + bone) * 3;
+    return float3x4(_Palette[at], _Palette[at + 1], _Palette[at + 2]);
+}
+
+// A root-space point on the death's pose, placed in the world as the crowd's shader places it.
+float3 Posed(Death d, float3 p, float4 bones, float4 weights)
+{
+    float3x4 skin = PaletteBone(d.crowdSlot, (uint)bones.x) * weights.x;
+    if (weights.y > 0) skin += PaletteBone(d.crowdSlot, (uint)bones.y) * weights.y;
+    if (weights.z > 0) skin += PaletteBone(d.crowdSlot, (uint)bones.z) * weights.z;
+    if (weights.w > 0) skin += PaletteBone(d.crowdSlot, (uint)bones.w) * weights.w;
+    float3 q = mul(skin, float4(p, 1)) * d.scale;
+    float sy, cy;
+    sincos(d.yaw, sy, cy);
+    return d.position + float3(q.x * cy + q.z * sy, q.y, -q.x * sy + q.z * cy);
+}
+
+// The break (demo3d's CrystalShatter.Launch): each chunk kicked outward from the hit point (harder
+// near it), along the blow and a little up. Its share varies widely: one in four slump where they
+// stand, one in eight fly far; the largest chunks get about half the smallest's share. Small ones
+// spin faster. A heavier blow (the death's force over the normal) kicks along it harder, so its
+// shards fly about as much farther as the sim throws the body.
+[numthreads(64, 1, 1)]
+void SeedShards(uint3 id : SV_DispatchThreadID)
+{
+    uint i = id.x / _ShardCount;
+    if (i >= _SeedCount) return;
+    uint s = id.x - i * _ShardCount;
+    Death d = _Seeds[i];
+    if (s == 0) _Deaths[d.slot] = d;
+    ShardRest rest = _ShardRest[s];
+    float3 pivot = Posed(d, rest.pivot, rest.bones, rest.weights);
+
+    float h = max(_HeightM * d.scale, 0.1);
+    float size = sqrt(d.scale * max(0.3, _HeightM / 1.8));
+    float power = sqrt(max(d.force, 0) / NORMAL_FORCE);
+    float3 blow = float3(d.blow.x, 0, d.blow.y);
+    float3 away = pivot - d.hit;
+    float near = 1 - saturate(length(away) / h);
+    away = dot(away, away) > 1e-6 ? normalize(away) : blow;
+    away.y = max(away.y, -0.3); // shards below the hit go out, not straight into the floor
+    uint k = s * 8;
+    float u = Hash(d.seed, k);
+    float share = u < 0.25 ? 0.1 + 0.25 * Hash(d.seed, k + 1)
+                : u > 0.875 ? 1.6 + 0.8 * Hash(d.seed, k + 1)
+                : 0.55 + 0.6 * Hash(d.seed, k + 1);
+    share *= (0.6 + 0.8 * near) * lerp(1.2, 0.55, rest.size / max(_Largest, 1e-4));
+    float3 v = (away * OUTWARD_SPEED * lerp(1, power, 0.5) + blow * BLOW_SPEED * power * (0.5 + Hash(d.seed, k + 2))
+                + float3(0, UP_SPEED, 0)) * share * size;
+    float small = clamp(0.12 / max(0.01, rest.size * d.scale), 0.6, 2.2);
+    float3 spin = RandomUnit(d.seed, k + 3) * SPIN * (0.3 + 0.7 * min(2, share)) * small * (0.6 + 0.8 * Hash(d.seed, k + 5));
+
+    Shard o;
+    o.position = pivot;
+    o.time = d.time;
+    o.rotation = float4(0, 0, 0, 1);
+    o.velocity = v;
+    o.sinkFrom = -1;
+    o.spin = spin;
+    o.radius = 0.5 * rest.size * d.scale; // chunks taper to their apex
+    o.origin = pivot;
+    o.pad = 0;
+    _Shards[d.slot * _ShardCount + s] = o;
+}
+
+float4 Turn(float4 q, float3 w, float dt)
+{
+    // dq/dt = 0.5 (w, 0) q, for a world-space angular velocity.
+    float4 dq = 0.5 * dt * float4(w * q.w + cross(w, q.xyz), -dot(w, q.xyz));
+    return normalize(q + dq);
+}
+
+[numthreads(64, 1, 1)]
+void Integrate(uint3 id : SV_DispatchThreadID)
+{
+    uint k = id.x / _ShardCount;
+    if (k >= _RingCount) return;
+    uint s = id.x - k * _ShardCount;
+    uint slot = (_RingStart + k) % _RingCapacity;
+    uint at = slot * _ShardCount + s;
+    Shard o = _Shards[at];
+    if (o.time >= _Now) return; // seeded ahead of this frame, or already there
+    float born = _Deaths[slot].time;
+    float span = _Now - o.time;
+    uint n = (uint)ceil(span / STEP - 1e-4);
+    if (n > MAX_STEPS)
+    {
+        o.time = _Now - MAX_STEPS * STEP;
+        n = MAX_STEPS;
+    }
+    float dt = (_Now - o.time) / max(n, 1);
+    for (uint i = 0; i < n; i++)
+    {
+        o.time += dt;
+        float age = o.time - born;
+        if (age >= LINGER)
+        {
+            // The sink: down by twice its size and its height, easing in, so even the largest ends under the floor.
+            if (o.sinkFrom < 0) o.sinkFrom = max(o.position.y, 0);
+            float f = saturate((age - LINGER) / SINK);
+            o.position.y = o.sinkFrom - f * f * (4 * o.radius + o.sinkFrom);
+            continue;
+        }
+        o.velocity.y -= GRAVITY * dt;
+        o.position += o.velocity * dt;
+        o.rotation = Turn(o.rotation, o.spin, dt);
+        if (o.position.y < o.radius)
+        {
+            o.position.y = o.radius;
+            if (o.velocity.y < 0)
+            {
+                float up = -o.velocity.y * RESTITUTION;
+                o.velocity.y = up < SETTLE ? 0 : up;
+                o.velocity.xz *= BOUNCE_KEEP;
+                o.spin *= BOUNCE_KEEP;
+            }
+            float slide = exp(-SLIDE * dt);
+            o.velocity.xz *= slide;
+            o.spin *= slide;
+        }
+    }
+    _Shards[at] = o;
+}

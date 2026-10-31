@@ -11,7 +11,9 @@ namespace Game.Client.Crowd
     /// events, the sim's own or a scripted feed's. A Spawn starts a monster's life
     /// (<see cref="MonsterTrack"/>) as its role's cast entry: the model, its scale and its gem
     /// colour; EnemyStep, the enemy's Attack (the lunge), Hit and EnemyKnock add to it; a Death or a
-    /// recycled re-entry ends it, and from that frame the body is gone (the GPU shatter takes over).
+    /// recycled re-entry ends it, and from that frame the body is gone. A death's first frame writes
+    /// the body once more as Dying, posed at the death's time, which the crowd blends but doesn't
+    /// draw, and the GPU shatter (<see cref="MonsterShatter"/>) breaks it into shards from that pose.
     /// Each frame every visible monster's pose at frameSong goes into its type's instance slots and
     /// the crowd draws. Sim ground (x, y) is Unity's (x, 0, y). Without a baked library (a checkout
     /// without the vendor packs) it draws nothing.
@@ -28,6 +30,7 @@ namespace Game.Client.Crowd
         readonly Camera _camera;
         readonly CrowdLibrary _lib;
         readonly BoneTextureCrowd _crowd;
+        readonly MonsterShatter _shatter;
         readonly CrowdSlots _slots;
         readonly MonsterClips[] _clips;
         readonly Stack<MonsterTrack> _free = new Stack<MonsterTrack>();
@@ -35,6 +38,8 @@ namespace Game.Client.Crowd
         readonly Dictionary<int, MonsterTrack> _byEnemy = new Dictionary<int, MonsterTrack>();
         readonly MonsterInstance[] _written = new MonsterInstance[Pool];
         readonly int[] _writtenType = new int[Pool], _writtenSlot = new int[Pool];
+        readonly MonsterTrack[] _writtenTrack = new MonsterTrack[Pool];
+        double _lastSong = double.NegativeInfinity;
         int _serial, _unknownRoles;
         double _heroX, _heroY; // the latest frame's, which a spawn faces
 
@@ -48,6 +53,7 @@ namespace Game.Client.Crowd
                 return;
             }
             _crowd = new BoneTextureCrowd(_lib, SlotsPerType);
+            _shatter = new MonsterShatter(_lib, _crowd.Palette);
             _slots = new CrowdSlots(_lib.Types.Length, SlotsPerType);
             _clips = new MonsterClips[_lib.Types.Length];
             for (int i = 0; i < _clips.Length; i++) _clips[i] = MonsterClips.Of(_lib.Types[i]);
@@ -57,8 +63,13 @@ namespace Game.Client.Crowd
 
         void Requeue()
         {
-            if (_camera != null) _crowd.Queue(_camera);
+            if (_camera == null) return;
+            _crowd.Queue(_camera);
+            _shatter.Queue(_camera);
         }
+
+        /// <summary>The GPU shatter, whose Broke event is the deaths' burst hook; null without a baked library.</summary>
+        public MonsterShatter Shatter => _shatter;
 
         /// <summary>Monsters drawn on screen, read back from the GPU (a frame or two late).</summary>
         public int OnScreen => _crowd?.OnScreen ?? 0;
@@ -101,7 +112,7 @@ namespace Game.Client.Crowd
                 case SimEventKind.Death:
                 {
                     var d = e.AsDeath;
-                    if (d.Enemy >= 0) Of(d.Enemy)?.End(d.T);
+                    if (d.Enemy >= 0) Of(d.Enemy)?.Die(d.T, d.DirX, d.DirY, d.Force);
                     break;
                 }
             }
@@ -141,32 +152,15 @@ namespace Game.Client.Crowd
                 var track = _live[i];
                 if (t >= track.EndTime)
                 {
+                    // A death's first frame: its body once more, posed at the death, for the shatter.
+                    if (track.Died && track.EndTime > _lastSong && track.EndTime >= track.SpawnTime)
+                        Write(track, track.EndTime, CrowdFlags.Alive | CrowdFlags.Dying, n++);
                     if (_byEnemy.TryGetValue(track.Enemy, out var current) && current == track) _byEnemy.Remove(track.Enemy);
                     _live.RemoveAt(i);
                     _free.Push(track);
                     continue;
                 }
-                if (!track.Visible(t)) continue;
-                var look = _lib.Cast[track.Role];
-                var pose = track.Sample(t);
-                var type = _lib.Types[look.Type];
-                _writtenType[n] = look.Type;
-                _writtenSlot[n] = _slots.Assign(look.Type, track.Serial);
-                _written[n] = new MonsterInstance
-                {
-                    Position = new Vector3((float)pose.X, type.HoverM * look.Scale, (float)pose.Y),
-                    Yaw = pose.Yaw,
-                    ClipA = pose.ClipA,
-                    TimeA = pose.TimeA,
-                    ClipB = pose.ClipB,
-                    TimeB = pose.TimeB,
-                    Blend = pose.Blend,
-                    Scale = look.Scale,
-                    HitFlash = pose.HitFlash,
-                    Tint = MonsterInstance.Pack(look.Gem),
-                    Flags = (uint)CrowdFlags.Alive,
-                };
-                n++;
+                if (track.Visible(t)) Write(track, t, CrowdFlags.Alive, n++);
             }
             _slots.End();
             for (int type = 0; type < _crowd.TypeCount; type++)
@@ -178,13 +172,49 @@ namespace Game.Client.Crowd
                 for (int k = 0; k < n; k++)
                     if (_writtenType[k] == type) instances[_writtenSlot[k]] = _written[k];
             }
+            for (int k = 0; k < n; k++)
+            {
+                if ((_written[k].Flags & (uint)CrowdFlags.Dying) == 0) continue;
+                var track = _writtenTrack[k];
+                _shatter.Break(_writtenType[k], _writtenSlot[k], _written[k], track.Role, track.Serial, track.EndTime,
+                    track.BlowX, track.BlowY, track.Force);
+            }
+            _lastSong = t;
+            // After the crowd's draw, which blends the dying palettes the shatter seeds from.
             if (_camera != null) _crowd.Draw(_camera, (float)t);
+            _shatter.Frame(t, _camera);
+        }
+
+        /// <summary>The track's pose at song time <paramref name="at"/> into the frame's instances at <paramref name="n"/>.</summary>
+        void Write(MonsterTrack track, double at, CrowdFlags flags, int n)
+        {
+            var look = _lib.Cast[track.Role];
+            var pose = track.Sample(at);
+            var type = _lib.Types[look.Type];
+            _writtenType[n] = look.Type;
+            _writtenSlot[n] = _slots.Assign(look.Type, track.Serial);
+            _writtenTrack[n] = track;
+            _written[n] = new MonsterInstance
+            {
+                Position = new Vector3((float)pose.X, type.HoverM * look.Scale, (float)pose.Y),
+                Yaw = pose.Yaw,
+                ClipA = pose.ClipA,
+                TimeA = pose.TimeA,
+                ClipB = pose.ClipB,
+                TimeB = pose.TimeB,
+                Blend = pose.Blend,
+                Scale = look.Scale,
+                HitFlash = pose.HitFlash,
+                Tint = MonsterInstance.Pack(look.Gem),
+                Flags = (uint)flags,
+            };
         }
 
         public void Dispose()
         {
             if (_crowd == null) return;
             Stills.Redrawing -= Requeue;
+            _shatter.Dispose();
             _crowd.Dispose();
         }
     }

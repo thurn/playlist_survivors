@@ -24,6 +24,7 @@ namespace Game.EditorTools.Crowd
     ///   character's root), 3 float4 rows per bone per frame, every clip sampled at 30 Hz;
     /// - the clip table (first row, frame count, loop, length and the annotations) with each
     ///   clip's bounding sphere;
+    /// - LOD0's rest pose cut into the GPU shatter's chunks (<see cref="CrowdShardBaker"/>);
     /// and the CrowdLibrary asset that lists them with the cast (game/Content/cast.json: each
     /// role's model, scale and gem colour) and the crowd's shaders.
     /// </summary>
@@ -105,6 +106,7 @@ namespace Game.EditorTools.Crowd
                 types.Add(ct);
                 Debug.Log($"CrowdBaker: {t.id}: {bake.Positions.Count} vertices, LOD triangles " +
                           string.Join("/", ct.Lods.Select(m => m.GetIndexCount(0) / 3)) + $", {ct.BoneCount} bones, " +
+                          $"{ct.Shards.Length} shards ({ct.ShardMesh.GetIndexCount(0) / 3} triangles), " +
                           $"{bake.Height} frames ({bake.Width}x{bake.Height} texels, {bake.Width * bake.Height * 16 / 1024} KiB), " +
                           $"radius {ct.Radius:F2} m, height {ct.HeightM:F2} m, in {(DateTime.UtcNow - started).TotalSeconds:F1} s");
             }
@@ -114,6 +116,8 @@ namespace Game.EditorTools.Crowd
             lib.Crystal = Load<Shader>(ShaderDir + "/MonsterCrystal.shader");
             lib.CullShader = Load<ComputeShader>(ShaderDir + "/CrowdCull.compute");
             lib.PaletteShader = Load<ComputeShader>(ShaderDir + "/CrowdPalette.compute");
+            lib.ShardShader = Load<Shader>(ShaderDir + "/MonsterShard.shader");
+            lib.ShardCompute = Load<ComputeShader>(ShaderDir + "/MonsterShards.compute");
             Replace(lib, LibraryPath);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             AssetDatabase.SaveAssets();
@@ -425,13 +429,15 @@ namespace Game.EditorTools.Crowd
             }
             UnityEngine.Object.DestroyImmediate(welded);
             foreach (var m in decimated) UnityEngine.Object.DestroyImmediate(m);
+            var (shardMesh, shards) = CrowdShardBaker.Bake(id, b.HeightM, lods[0], seed);
+            Replace(shardMesh, $"{TypeDir(id)}/{id}_shards.mesh");
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {
                 name = id + "_bones", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, anisoLevel = 0,
             };
             tex.SetPixelData(b.Texels, 0);
-            tex.Apply(false, false); // kept readable, so the GPU shatter's tests can pose shards on the CPU
+            tex.Apply(false, false); // kept readable: the asset is saved from its CPU copy
             Replace(tex, $"{TypeDir(id)}/{id}_bones.asset");
 
             return new CrowdType
@@ -445,6 +451,8 @@ namespace Game.EditorTools.Crowd
                 Radius = b.Radius,
                 HeightM = b.HeightM,
                 HoverM = b.Type.hoverM,
+                ShardMesh = shardMesh,
+                Shards = shards,
             };
         }
 

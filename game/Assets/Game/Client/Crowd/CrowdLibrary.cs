@@ -22,6 +22,9 @@ namespace Game.Client.Crowd
         public Shader Crystal;
         public ComputeShader CullShader;
         public ComputeShader PaletteShader;
+        /// <summary>The GPU shatter's (<see cref="MonsterShatter"/>).</summary>
+        public Shader ShardShader;
+        public ComputeShader ShardCompute;
 
         /// <summary>The baked library, or null when the bake is missing (a checkout without the vendor packs).</summary>
         public static CrowdLibrary Load() => Resources.Load<CrowdLibrary>(ResourcePath);
@@ -54,6 +57,13 @@ namespace Game.Client.Crowd
         public float CenterY, Radius, HeightM;
         /// <summary>A flyer's height over the ground at scale 1 (the bat), added to Position.y.</summary>
         public float HoverM;
+        /// <summary>
+        /// LOD0's rest pose cut into 20 to 40 closed chunks (CrowdShardBaker), joined: the style mesh's
+        /// own triangles (normals and UV3 kept, bones in UV1 and weights in UV2) closed by inside faces
+        /// to an apex in the body; UV4 is (inside face 0 or 1, the chunk's index into <see cref="Shards"/>).
+        /// </summary>
+        public Mesh ShardMesh;
+        public CrowdShard[] Shards = Array.Empty<CrowdShard>();
 
         public int Clip(string role)
         {
@@ -83,6 +93,21 @@ namespace Game.Client.Crowd
 
         /// <summary>The sample time of frame f (the last frame is the clip's end).</summary>
         public float FrameTime(int f) => Math.Min(Length, f / CrowdLibrary.ClipRate);
+    }
+
+    /// <summary>
+    /// One chunk of <see cref="CrowdType.ShardMesh"/>, on the rest pose at instance scale 1: its pivot
+    /// (the centroid it turns about) with the bones and weights that pose it, and its largest distance
+    /// from the pivot. 48 bytes, matching MonsterShards.hlsl's ShardRest.
+    /// </summary>
+    [Serializable]
+    public struct CrowdShard
+    {
+        public Vector3 Pivot;
+        public float Size;
+        public Vector4 Bones, Weights;
+
+        public const int Stride = 48;
     }
 
     /// <summary>A role's look (cast.json): its model, scale and gem colour.</summary>

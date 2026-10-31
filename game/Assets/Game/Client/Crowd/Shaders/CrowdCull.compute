@@ -7,6 +7,8 @@
 //   each draw runs near to far; the LOD comes from projected height, with hysteresis and a
 //   0.2 s dithered crossfade (an instance in a crossfade is listed in both LODs);
 // - camera- or shadow-visible instances go into the shadow proxy's list (one command);
+// - a dying instance (its death's frame) is drawn by neither, but flagged for the palette pass,
+//   whose pose the GPU shatter's shards start from;
 // - on-screen counts for the crowd's log.
 // Each LOD is one submesh (the crystal style mesh), so each command list is one submesh's.
 #pragma kernel ClearArgs
@@ -26,7 +28,7 @@ RWByteAddressBuffer _ShadowArgs;    // one command
 RWStructuredBuffer<uint> _VisibleListOut; // [lod][bin] ranges of _Capacity slots
 RWStructuredBuffer<uint> _ShadowListOut;
 RWStructuredBuffer<uint4> _LodStateRW;
-RWStructuredBuffer<uint> _VisibleFlags;    // 1 camera, 2 shadow
+RWStructuredBuffer<uint> _VisibleFlags;    // 1 camera, 2 shadow, 4 dying
 RWByteAddressBuffer _Counters;             // on-screen alive, on-screen dying, shadow-only, shadow casters
 
 float4 _FrustumPlanes[6];
@@ -96,6 +98,12 @@ void Cull(uint3 id : SV_DispatchThreadID)
     if ((m.flags & CROWD_HIDDEN) != 0 || m.scale <= 0)
     {
         _VisibleFlags[slot] = 0;
+        return;
+    }
+    // A death's frame: never drawn, but blended wherever it is, so its shards start from its pose.
+    if ((m.flags & CROWD_DYING) != 0)
+    {
+        _VisibleFlags[slot] = 4;
         return;
     }
     // A slot new this frame, or whose last frame was Hidden (a spawn, a refill, a slot that

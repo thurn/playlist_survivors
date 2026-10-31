@@ -14,9 +14,10 @@ namespace Game.Client.Crowd
     /// extension, 8 depth bins, LOD by projected height with a dithered crossfade) and the palette
     /// pass (each visible monster's bones blended once), then issues a flat set of
     /// RenderMeshIndirect calls: per type, one per LOD for the main draw (no shadows) and one for
-    /// the shadow proxy. The instance buffers form a ring longer than the frames in flight, so the
-    /// CPU never writes one the GPU may still read; the previous frame's copy tells the culling
-    /// pass when a slot changed owner.
+    /// the shadow proxy. A Dying instance (a death's frame) is not drawn, but its palette is blended
+    /// wherever it is, for the GPU shatter to seed its shards from. The instance buffers form a ring
+    /// longer than the frames in flight, so the CPU never writes one the GPU may still read; the
+    /// previous frame's copy tells the culling pass when a slot changed owner.
     /// </summary>
     public sealed class BoneTextureCrowd : IDisposable
     {
@@ -116,6 +117,13 @@ namespace Game.Client.Crowd
         }
 
         public int TypeCount => _types.Length;
+
+        /// <summary>
+        /// The type's palette, 3 float4 rows per bone by slot, as this frame's <see cref="Draw"/>
+        /// blends it for the camera- and shadow-visible slots and the dying ones (the GPU shatter's
+        /// seed, <see cref="MonsterShatter"/>).
+        /// </summary>
+        public GraphicsBuffer Palette(int type) => _types[type].Palette;
 
         TypeState Create(CrowdType t)
         {

@@ -1388,7 +1388,8 @@ timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
   on the impact, with a 0.4 m reach toward the hero; a hit flinches from the
   hit clip's onset and flashes white over 0.12 s. Places follow the step and
   knock events' moves, as the sim's do. A death or a recycled re-entry ends
-  the body on its frame, for the shatter to take over.
+  the body on its frame; a death's frame writes it once more as Dying, which
+  the palette pass blends but no draw shows, for the shatter to seed from.
 - **The crystal** (`Game/MonsterCrystal`) shares its surface with the
   structures (CrystalSurface.hlsl): it refracts the scene behind, tinted by
   the role's gem colour, with the beat globals' facet sparkle, graded to a
@@ -1416,6 +1417,34 @@ at scale.
   about what one does.
 - Each death also spawns one coherent crystal burst (chips and dust) and
   layered glass sounds pitched by size.
+
+**Shipped (ps-msz.3.9)**: `MonsterShatter` in game/Assets/Game/Client/Crowd/,
+evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
+
+- **The cut** is part of the crowd's bake (`CrowdShardBaker`, demo3d's): each
+  model's LOD0 in 20 to 40 chunks closed to an apex inside the body, joined
+  into one mesh per model whose corners carry their chunk and skin weights;
+  each chunk's pivot carries weights too.
+- **The seed**, on the death's first frame, after the crowd's palette pass:
+  per model, one upload of the frame's deaths and two dispatches freeze each
+  dying monster's palette into a ring slot and place its chunks' pivots on
+  that pose, kicked outward from the hit point (0.6 of its height up, toward
+  the hero), along the blow (harder for a heavy blow: the death's force over
+  the strike's 1.85 m) and up, spinning. The body is gone on that frame.
+- **The integrator** steps every live shard to the frame's song time at
+  1/120 s: 2.2 g, tumble, bounces at 0.35 restitution on the ground with
+  friction, then after 1.2 s a 0.6 s sink. Song time drives it, so fixed-time
+  runs repeat exactly; a seek backwards clears the shards.
+- **The draw** is one indirect draw per model of its live deaths' instances
+  (`Game/MonsterShard`): each corner skinned from its death's frozen palette
+  and moved rigidly with its chunk, in the crystal surface, inside faces
+  brighter, with a white flash on the break. It casts shadows and draws under
+  the stills' ID mask on the crowd's layer.
+- **The burst hook** is `MonsterShatter.Broke` (`CrowdView.Shatter`): each
+  death's time, hit point, blow, force, height, gem colour and role, raised
+  on its break frame for the effects' chips and dust.
+- **Cost**: the windowless bench (`--shatter-bench`) measures 1, 50 and 300
+  deaths at once ([its numbers](../../game/evidence/shatter/README.md)).
 
 **Structure shards keep PhysX.**
 
