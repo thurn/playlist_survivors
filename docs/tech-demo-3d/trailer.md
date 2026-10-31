@@ -1175,7 +1175,7 @@ These work as in a normal run and apply to every shot:
 - **`--roster <name>`:** picks the roster set.
 - **`--monster-style <name>`:** picks the horde's style. As today, a roster
   set can't take a style other than `baseline`.
-- **`--classic-monster-colors` and `--style-tune`.**
+- **`--signature-monster-colors` and `--style-tune`.**
 - **`--crowd`, `--aa` and `--sound`:** the crowd renderer, anti-aliasing,
   and sound (a built player starts muted).
 - **The post overrides:** `--post-exposure`, `--bloom-threshold` and the
@@ -1368,7 +1368,7 @@ each of these:
 - every `--palette`;
 - `--monster-style crystal`, `mix` and `painted`;
 - `--roster forest` and `--roster heroic`;
-- `--classic-monster-colors`.
+- `--signature-monster-colors`.
 
 Each should play the same shots in its own look. The snow and desert shots
 should keep their own exposure under a non-baseline style.

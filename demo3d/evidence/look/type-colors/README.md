@@ -33,6 +33,9 @@ build at staging `96c46047` plus this bead:
   `--hue-rotate-<id> deg` override the roster. `--classic-monster-colors`
   turns the dye and the hue rotation off, for the palette before this pass
   (`--type-dye 0` alone still turns the dragon and the big orc).
+  **Since 2026-10-30 the classic colours are the default;** this pass's
+  colours need `--signature-monster-colors`, and the tuning flags only apply
+  with it.
 - **The crowd bench's `--scene roster`** lines up every drawn type under the
   arena layout's night look. In batch mode the bench now renders offscreen,
   so its stills need no window:

@@ -95,15 +95,17 @@ namespace Demo3D.Runtime.Crowd
         public GameObject StockPrefab;
 
         /// <summary>
-        /// `--classic-monster-colors`: the monsters' colours before the signature colours (ps-e8r.8),
-        /// the packs' own albedo with no dye and no hue rotation, for comparing the two palettes.
+        /// The monsters' classic colours, the default: the packs' own albedo with no dye and no hue
+        /// rotation. `--signature-monster-colors` turns the signature colours (ps-e8r.8) back on, for
+        /// comparing the two palettes (`--classic-monster-colors` is still accepted and is a no-op).
         /// </summary>
-        public static bool ClassicColors => Args.Has("--classic-monster-colors");
+        public static bool ClassicColors => !Args.Has("--signature-monster-colors");
 
         /// <summary>
         /// The signature colour for CrowdSkinned's <c>_Demo3DTypeColor</c>: linear rgb at full value,
         /// alpha the dye; all zero for a type without one or under <see cref="ClassicColors"/>.
-        /// `--type-dye d` and `--type-saturation s` override the roster's, for tuning in a player.
+        /// `--type-dye d` and `--type-saturation s` override the roster's, for tuning in a player
+        /// (with `--signature-monster-colors`).
         /// </summary>
         public Vector4 SignatureColor()
         {

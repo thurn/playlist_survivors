@@ -23,9 +23,10 @@ and a density axis that shows what richness costs in monsters.
   against the ground by at least 17 L* either way, darker or lighter (see
   [Making it look good](#making-it-look-good)).
 - **Color plan.** Warm dominates: the ground, the key light, the hero's pool
-  and the combat effects (white, then orange, then red). Every monster type
-  has one signature hue (roster.json), spawned in same-type clumps, so the
-  horde reads as masses of colour. Cool cyan and violet are the accents, kept
+  and the combat effects (white, then orange, then red). Monsters keep their
+  packs' classic colours, spawned in same-type clumps, so the horde reads as
+  masses of colour. (Each type's signature hue in roster.json is opt-in,
+  `--signature-monster-colors`.) Cool cyan and violet are the accents, kept
   small: glowing trees, runes, magic, wisps and fireflies. The palette table,
   role by role, is in
   [evidence/look/final](../../demo3d/evidence/look/final/README.md).
