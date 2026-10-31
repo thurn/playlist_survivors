@@ -4,7 +4,7 @@ namespace PS.Game.Sim
     public enum Key { Up, Down, Left, Right, Space }
 
     /// <summary>
-    /// A key change as the sim recorded it (unity-game.md, "Key Presses and Late Steps"):
+    /// A key change as the sim recorded it (unity-game.md, "Key Presses"):
     /// <see cref="Heard"/> is the song time the player heard when pressing (<c>keySong</c>), and
     /// <see cref="Effective"/> the sim's time when it took the key, the previous frame's frontier.
     /// A session records both; a replay applies the key at <see cref="Effective"/>.

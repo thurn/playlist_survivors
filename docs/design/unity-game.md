@@ -32,9 +32,9 @@ The game mutes that app and plays its audio itself, 3 s late, so it knows
 each beat before the player hears it.
 
 - A Synty hero with a white crystal blade hops one tile of a 4-direction grid
-  per **stride step** while an arrow key is held. A stride step is a beat, or
-  a half or quarter of one for slower songs (see the
-  [Key Presses and Late Steps](#key-presses-and-late-steps) section below).
+  on the frame an arrow key goes down, then per **stride step** while it is
+  held. A stride step is a beat, or a half or quarter of one for slower songs
+  (see the [Key Presses](#key-presses) section below).
 - The blade slashes on every beat by itself, aimed at the nearest crowd, with
   heavier strikes on the music's accents.
 - Crystal monsters, each type a different gem colour, step toward the hero in
@@ -99,11 +99,11 @@ reason, without weakening a decision below.
 5. **The gameplay simulation is a new C# library**, free of Unity
    dependencies, rebuilt from native's rules rather than translated line by
    line. It diverges from native's sim over time.
-6. **No rollback: a small lead plus late steps.** The sim runs a few tens of
-   milliseconds ahead of what the player hears on speakers (more on
-   Bluetooth headphones). A key press that misses a
-   stride step the sim has already simulated is applied as a late step. See
-   the [Key Presses and Late Steps](#key-presses-and-late-steps) section.
+6. **No rollback: a small lead plus press strides.** The sim runs a few tens
+   of milliseconds ahead of what the player hears on speakers (more on
+   Bluetooth headphones). A key press strides at once when the sim takes it,
+   and is drawn from when it was heard, so the lead never delays the hero.
+   See the [Key Presses](#key-presses) section.
 7. **The run is native's 30-minute run**: run clock, schedule, **freezes**
    (the world pausing while the music plays on, for level-up cards and the
    like), chests, evolutions and victory, with at most 300 enemies alive.
@@ -726,9 +726,9 @@ lead     = frontier - heardSong(now)     // = outputLatency + margin
   for frame jitter. That is about 52 ms at 60 fps and 256-frame buffers.
 - On built-in speakers the lead is about 90 ms (38 ms of output latency,
   game/evidence/loop). On Bluetooth headphones
-  (150–300 ms of output latency) it grows to about 0.2–0.35 s, and more
-  presses become late steps. `B` (0.5 s) stays larger than the lead in both
-  cases.
+  (150–300 ms of output latency) it grows to about 0.2–0.35 s. A press is
+  drawn from when it was heard either way. `B` (0.5 s) stays larger than the
+  lead in both cases.
 - Nothing the sim has settled is ever revised. Events at or before the
   frontier are final.
 - The presentation shows the sim's recorded state at `frameSong`, which is
@@ -766,26 +766,30 @@ beats below the gate   the stride grid     the beat grid     hold
 no beat known ahead    a free 0.35 s pulse raw intervals     hold
 ```
 
-### Key presses and late steps
+### Key presses
 
-The hero moves on stride steps. A stride step is a time on native's
-**stride grid**: the committed beats, each beat halved until the period is
-at most 0.4 s (see the
+The hero moves on stride steps while a key is held. A stride step is a time
+on native's **stride grid**: the committed beats, each beat halved until the
+period is at most 0.4 s (see the
 [Speeds Follow the Tempo](#speeds-follow-the-tempo) section for how the
 halving is chosen). When no beat is known, the grid is a free 0.35 s pulse.
 
-A press waits for the next stride step, as in native. Because the sim runs
-ahead, a press made right on a step reaches the sim after it has already
-simulated that step. A **late step** applies such a press anyway, starting
-the stride at once.
+A press strides at once, on the frame the key goes down. Native's zen mode,
+its default, makes a press wait for the next stride step (0 to one period,
+about 117 ms on average at 128 BPM). The operator found that wait laggy, and
+the game feel comes first (ps-msz.4.3), so a press here strides at once, as
+in native's classic mode.
+
+The sim runs ahead, so a press reaches it after the time the player heard.
+The sim can't revise what it has simulated, so it takes the stride then. The
+client draws it from the press's heard time instead, so the lead never
+delays it.
 
 ```text
 press (direction d, heard time h), processed at the sim's current time F:
-  P = stride period at h;  g = min(0.10, 0.4 * P)
-  s = the stride step in [h - g, h] if any, else the first step after h
-  if s >= F:                 queue d for step s          // normal
-  else if no stride at s:    stride now (late), from the hero's current tile
-  else:                      queue d for the first step after F
+  s = the latest stride step at or before h + 0.11   // one the stride would still be on is its
+  if a press already strode for s:  queue d for the first step after F no press took
+  else:                             stride now: the tile changes at F, drawn from h
 the session records (h, F); a replay applies the press at F
 F is the previous frame's frontier: steps before F are already simulated
 ```
@@ -794,27 +798,40 @@ A worked example at 120 BPM, with stride steps at 10.00 and 10.25:
 
 ```text
 press heard at h = 10.02; it reaches the sim when it stands at F = 10.08
-g = min(0.10, 0.4 * 0.25) = 0.10, so s = 10.00 (within [9.92, 10.02])
-s < F and the hero didn't stride at 10.00  ->  a late stride starts at 10.08
-a press heard at 10.15 instead takes s = 10.25 (normal, queued)
+s = 10.00 (10.25 is after 10.13): the tile changes at 10.08, drawn 10.02 to 10.13
+a press heard at 10.15 takes s = 10.25: drawn 10.15 to 10.26, nothing else strides on 10.25
 ```
 
-- A late stride takes native's 110 ms, compressed to end before the next
-  stride step if needed.
+- The HeroStep event is emitted at F and carries the drawn start and end, so
+  the hero's motion shows the stride on the key-down frame (its start is at
+  or before that frame's `frameSong`). The client's state history answers
+  with the move from the press on, too.
+- A press stride starts when the move in progress ends, if that is later,
+  and takes native's 110 ms. It is compressed to end before the next step
+  that may stride.
+- A press takes the step whose stride it would overlap. So a tap, or the
+  start of a hold, never strides twice in a row: a held key next strides on
+  the step after.
+- One press stride per step: a second press for the same step waits for
+  the next step no press took. Mashing stays at the grid's pace, and the
+  last press wins.
 - Nothing else in the sim reads the hero's tile between steps except
-  pickups and contact, which react to the late position naturally. The sword
-  strike on the missed step already fired from the old tile.
-- Held keys stride on every step and never need late steps. The
-  last-pressed held direction wins.
-- Because a held key is judged when the sim reaches the step, a late tap
-  still down then strides again on it. At 128 BPM with a 60 ms lead, a
-  120 ms tap heard more than 54 ms after its step moves two tiles, though
-  it was released before the next step was heard. Judging that first
-  repeat in heard time would need a late step of its own, so it waits on
-  the operator's feel check (game/evidence/operator-pending.md).
+  pickups and contact. They use the tile from F on and the position along
+  the drawn stride. The sword strike on an earlier step already fired from
+  the old tile.
+- Held keys stride on every step a press hasn't taken. The last-pressed held
+  direction wins.
+- Because a held key is judged when the sim reaches the step, a tap still
+  down then strides again on it. At 128 BPM with a 90 ms lead, a 100 ms tap
+  whose next step comes 0.11 to 0.19 s after it moves two tiles, though it
+  was released before that step was heard. Judging holds in heard time would
+  need the release before the sim reaches the step, so it waits on the
+  operator's feel check (game/evidence/operator-pending.md).
+- On Bluetooth headphones, with a lead longer than a stride, a press stride
+  can be over before the sim takes it: the hero arrives at once.
 - A press made while the world is frozen never strides after it, as in
   native.
-- Space stomps (stands still on the step), as in native.
+- Space stomps (stands still) at once, as a press.
 - Keys come from Unity's Input System with their event timestamps, mapped by
   `keySong`.
 
@@ -1004,9 +1021,9 @@ playing time.
 The hero occupies one tile of a square grid aligned with the arena, and moves
 one tile per stride step in one of four directions.
 
-- Stride steps and presses follow the
-  [Key Presses and Late Steps](#key-presses-and-late-steps) section.
-- A stride takes 110 ms from its step's time, with a small hop.
+- Stride steps and presses follow the [Key Presses](#key-presses) section.
+- A stride takes 110 ms from its step's time (a press's: from the press),
+  with a small hop.
 - The hero faces its travel direction, and turns toward the swing's target
   for each attack.
 - A step into a structure tile or the arena's edge doesn't move: the hero
@@ -1799,7 +1816,9 @@ Changed:
 - **Movement**: 8-direction free strides at a fixed average speed become
   4-direction grid steps whose speed follows the tempo, with enemies scaled
   to match.
-- **Time**: the rollback runner becomes a small lead plus late steps.
+- **Time**: the rollback runner becomes a small lead plus press strides.
+- **Presses**: native's zen mode waits for the next stride step; here a press
+  strides at once, as native's classic mode does.
 - **Lookahead**: every stream group may use it, not only committed beats.
 - **Accents**: heavy strikes come from detected accents as well as accent
   forecasts.
@@ -1933,7 +1952,7 @@ the operator. Inside each milestone, independent tracks run in parallel.
 2. **M2, the cinematic slice**, on File audio, in a bounded arena polished
    to the final look. Two tracks run in parallel, then meet in the
    assembled slice:
-   - The sim's rules: the grid hero and late steps, enemies, the sword,
+   - The sim's rules: the grid hero and its presses, enemies, the sword,
      structures.
    - The client's port: its clocks and sim stepping, the arena, the night
      look and camera, the crowd, GPU shatter, the hero, effects and sound,
@@ -2005,8 +2024,8 @@ The design interview weighed these and chose otherwise.
   every gameplay change crosses Rust, the C interface and C#; grid movement
   and 3D timing would become modes of a shared sim.
 - **A rollback runner in C#.** Exact semantics for presses, at the cost of
-  snapshot engineering and cancellable sounds; late steps give nearly the
-  same feel.
+  snapshot engineering and cancellable sounds; press strides drawn from
+  their heard time give the same feel for the hero.
 - **Lockstep at heard time.** Simplest, but every sim-triggered sound would
   be one output latency late.
 - **One song per run, or a shorter run.** Both move away from native's run;
@@ -2085,8 +2104,9 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
 
 ### Timing and feel
 
-- **Late presses**: tap a direction just after a beat. The hero steps at
-  once (a late step) instead of waiting a whole step.
+- **Presses**: tap a direction anywhere between beats. The hero steps on the
+  frame the key goes down, never waiting for the next step, and a tap moves
+  one tile.
 - **Tempo bands**: play a 100 BPM and a 140 BPM track. The hero is visibly
   faster at 140, and enemies keep the same pace relative to the hero.
 - **Band boundary**: play a track near 150 BPM. The pace stays steady
@@ -2135,5 +2155,5 @@ The game provides these so each state above can be reached on demand:
   passive or evolution, force a section change, an accent or the finale,
   break or regrow structures, and toggle the hero's invulnerability.
 - An overlay: song time, heard time, frontier and lead; the stream's next
-  beats with their `known_at`; late steps as they happen; the flow field;
+  beats with their `known_at`; press strides as they happen; the flow field;
   frame and sim timings. F3 toggles it; stills leave it out unless asked.

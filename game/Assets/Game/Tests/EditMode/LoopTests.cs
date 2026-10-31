@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Game.Client.Hero;
 using Game.Client.Loop;
 using Game.Client.Music;
 using NUnit.Framework;
@@ -142,7 +143,7 @@ namespace Game.Tests
         }
 
         /// <summary>A driver on fixed frames, stepped frame by frame from `first`.</summary>
-        static SimDriver FixedDriver(out ClockReadings[] frames, int count, int first = 0)
+        internal static SimDriver FixedDriver(out ClockReadings[] frames, int count, int first = 0)
         {
             frames = new ClockReadings[count];
             for (int i = 0; i < count; i++) frames[i] = new ClockReadings { Frame = (first + i) / Fps };
@@ -201,7 +202,7 @@ namespace Game.Tests
             public void Present(in PresentFrame frame) => Frames.Add(frame);
         }
 
-        static List<StreamEntry> House128()
+        internal static List<StreamEntry> House128()
         {
             var entries = new List<StreamEntry>();
             foreach (var line in File.ReadLines(Path.GetFullPath("../native/fixtures/entries/house-128-20s.jsonl")))
@@ -341,9 +342,75 @@ namespace Game.Tests
         }
     }
 
-    /// <summary>Keys from the Input System into the sim, through the clock's keySong.</summary>
+    /// <summary>Keys from the Input System into the sim, through the clock's keySong, and on to the drawn hero.</summary>
     public class KeyInputTests : InputTestFixture
     {
+        /// <summary>Draws the hero as <see cref="HeroPresenter"/> does, without the knight.</summary>
+        sealed class DrawnHero : IPresenter
+        {
+            readonly HeroMotion _motion = new HeroMotion(HeroClips.Parse(File.ReadAllText(HeroClips.ContentPath)));
+            public HeroPose Pose;
+            public void OnEvent(in SimEvent e) => _motion.OnEvent(e);
+
+            public void Present(in PresentFrame frame)
+            {
+                var hero = frame.State.Hero;
+                hero.PositionAt(frame.Song, out double x, out double y);
+                Pose = _motion.Evaluate(frame.Song, x, y, hero.Facing);
+            }
+        }
+
+        /// <summary>
+        /// The hero answers an arrow key on the frame it goes down, as native's does (ps-msz.4.3): house-128
+        /// on fixed frames, the sim running its lead ahead, and taps at 24 phases across the stride
+        /// period, through the Input System, the frame loop and the hero's motion. Each moves the drawn
+        /// hero on its key-down frame or the next, and the snapshot the placeholder draws moves with it.
+        /// </summary>
+        [Test]
+        public void TheDrawnHeroMovesOnTheFrameAnArrowKeyGoesDown()
+        {
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            var entries = LoopTests.House128();
+            const int first = 5 * 60, every = 37, presses = 24, hold = 6;
+            var driver = LoopTests.FixedDriver(out var frames, first + every * presses + 30);
+            var drawn = new DrawnHero();
+            driver.Events.Subscribe(drawn);
+            var lags = new List<int>();
+            using (var keys = new KeyInput())
+            {
+                int next = 0, pressed = -1, release = -1;
+                double x0 = 0, y0 = 0;
+                for (int f = 0; f < frames.Length; f++)
+                {
+                    double needed = driver.StampNeededFor(FrameClock.FrontierAt(frames[f].Frame));
+                    while (next < entries.Count && entries[next].Stamp <= needed) driver.AddSettled(entries[next++]);
+                    // Right and left in turn, so the hero paces about the middle.
+                    var key = (f - first) / every % 2 == 0 ? keyboard.rightArrowKey : keyboard.leftArrowKey;
+                    if (f >= first && (f - first) % every == 0 && lags.Count < presses)
+                    {
+                        Press(key);
+                        pressed = f;
+                        release = f + hold;
+                        x0 = drawn.Pose.X;
+                        y0 = drawn.Pose.Y;
+                    }
+                    if (f == release) Release(key);
+                    keys.Drain(driver.Sim, driver.Clock);
+                    driver.Step(frames[f]);
+                    driver.Presented.State.Hero.PositionAt(driver.Presented.Song, out double sx, out double sy);
+                    Assert.That(sx, Is.EqualTo(drawn.Pose.X).Within(1e-9), $"frame {f}: the snapshot and the drawn hero agree");
+                    if (pressed >= 0 && (drawn.Pose.X != x0 || drawn.Pose.Y != y0))
+                    {
+                        lags.Add(f - pressed);
+                        pressed = -1;
+                    }
+                }
+            }
+            TestContext.WriteLine("frames from key-down to the drawn hero moving: " + string.Join(" ", lags));
+            Assert.That(lags.Count, Is.EqualTo(presses), "every tap moved the hero");
+            Assert.That(lags, Is.All.LessThanOrEqualTo(1));
+        }
+
         sealed class Clock : IGameClock
         {
             public bool Ready => true;

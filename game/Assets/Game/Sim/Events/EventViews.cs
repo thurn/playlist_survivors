@@ -245,10 +245,13 @@ namespace PS.Game.Sim
         readonly SimEvent e;
         public HeroStepEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
-        /// <summary>The stride step it belongs to: a late stride's is the missed step.</summary>
+        /// <summary>The stride step it belongs to: for a press stride, the step the press took.</summary>
         public int Step => e.I0;
-        /// <summary>Applied after its step was simulated, starting at once (unity-game.md, "Key Presses and Late Steps").</summary>
-        public bool Late => (e.I1 & 1) != 0;
+        /// <summary>
+        /// A press's stride, taken at once (unity-game.md, "Key Presses"): emitted when the sim took
+        /// the press (T), and drawn from when it was heard (Start), so Start may precede T.
+        /// </summary>
+        public bool Pressed => (e.I1 & 1) != 0;
         /// <summary>The tile ahead was blocked: the hero bumped in place.</summary>
         public bool Bump => (e.I1 & 2) != 0;
         public bool Stomp => (e.I1 & 4) != 0;

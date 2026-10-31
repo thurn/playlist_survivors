@@ -8,23 +8,24 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The debug overlay (unity-game.md, Debug Surfaces): song, heard and frame time, the frontier
-    /// and lead; the stream's next beats with their known_at; late steps as they happen; the
-    /// frame's and sim's timings. F3 toggles it; it starts hidden, so stills leave it out unless
+    /// and lead; the stream's next beats with their known_at; press strides as they happen (when
+    /// each was taken, and how far before that it is drawn from); the frame's and sim's timings.
+    /// F3 toggles it; it starts hidden, so stills leave it out unless
     /// `--overlay` asks for it. It is text in the camera's view, in front of everything, so the
     /// windowless stills draw it too. It builds its text only while shown.
     /// </summary>
     public sealed class DebugOverlay : IPresenter
     {
-        const int LateSteps = 4, NextBeats = 4;
+        const int PressStrides = 4, NextBeats = 4;
         const float Distance = 1f, Margin = 0.03f;
 
         readonly Camera _camera;
         readonly SimDriver _driver;
         readonly TextMesh _text;
         readonly StringBuilder _sb = new StringBuilder(1024);
-        readonly double[] _lateAt = new double[LateSteps];
-        readonly int[] _lateStep = new int[LateSteps];
-        int _lateCount;
+        readonly double[] _pressAt = new double[PressStrides];
+        readonly double[] _pressLag = new double[PressStrides];
+        int _pressCount;
 
         public DebugOverlay(Camera camera, SimDriver driver, bool shown)
         {
@@ -54,10 +55,10 @@ namespace Game.Client.Loop
 
         public void OnEvent(in SimEvent e)
         {
-            if (e.Kind != SimEventKind.HeroStep || !e.AsHeroStep.Late) return;
-            int slot = _lateCount++ % LateSteps;
-            _lateAt[slot] = e.T;
-            _lateStep[slot] = e.AsHeroStep.Step;
+            if (e.Kind != SimEventKind.HeroStep || !e.AsHeroStep.Pressed) return;
+            int slot = _pressCount++ % PressStrides;
+            _pressAt[slot] = e.T;
+            _pressLag[slot] = e.T - e.AsHeroStep.Start;
         }
 
         public void Present(in PresentFrame frame)
@@ -79,11 +80,11 @@ namespace Game.Client.Loop
             for (int i = beats.Length - 1; i >= 0 && beats[i].T > t.Heard; i--) shown++;
             for (int i = beats.Length - shown; i < beats.Length && i < beats.Length - shown + NextBeats; i++)
                 _sb.AppendFormat(c, "  {0:F3} (known {1:F3})", beats[i].T, sim.Stream.KnownAt(EntryKind.Beat, i));
-            _sb.Append("\nlate steps:");
-            for (int k = 0; k < LateSteps && k < _lateCount; k++)
+            _sb.Append("\npress strides:");
+            for (int k = 0; k < PressStrides && k < _pressCount; k++)
             {
-                int slot = (_lateCount - 1 - k) % LateSteps;
-                _sb.AppendFormat(c, "  {0:F3} (step {1})", _lateAt[slot], _lateStep[slot]);
+                int slot = (_pressCount - 1 - k) % PressStrides;
+                _sb.AppendFormat(c, "  {0:F3} (drawn {1:F0} ms before)", _pressAt[slot], 1000 * _pressLag[slot]);
             }
             _sb.AppendFormat(c, "\nframe {0:F1} ms  loop {1:F2} ms  sim {2:F3} ms  tick {3}  events {4}",
                 1000 * Time.unscaledDeltaTime, _driver.FrameMs, _driver.StepMs, sim.State.Tick, sim.EventCount);

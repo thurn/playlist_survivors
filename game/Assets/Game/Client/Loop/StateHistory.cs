@@ -76,7 +76,11 @@ namespace Game.Client.Loop
     /// A short history of the sim's snapshots, one per frame's frontier, to show frameSong, which
     /// trails the frontier by the lead (unity-game.md, The Sim Lead). <see cref="Sample"/> answers
     /// at a song time between two snapshots: continuous values are interpolated, and discrete
-    /// state is the earlier snapshot's, except a move that has started by then. Its capacity
+    /// state is the earlier snapshot's, except the hero's latest move that has started by then,
+    /// from whichever later snapshot has it (a press stride, taken at the frontier, starts at the
+    /// press, before frontiers already recorded). A snapshot holds only the latest move, so with a
+    /// lead longer than a stride a press stride and the step after it can land in one snapshot,
+    /// which then shows the step's; the drawn hero follows the events. Its capacity
     /// covers a lead of a second at 120 fps.
     /// </summary>
     public sealed class StateHistory
@@ -127,17 +131,20 @@ namespace Game.Client.Loop
                 else hi = mid - 1;
             }
             ref readonly var a = ref At(lo);
-            if (lo == _count - 1 || a.Now == t)
-            {
-                state = a;
-                return true;
-            }
-            ref readonly var b = ref At(lo + 1);
-            double f = (t - a.Now) / (b.Now - a.Now);
             state = a;
-            state.Now = t;
-            state.RunClock = a.RunClock + (b.RunClock - a.RunClock) * f;
-            if (b.Hero.MoveStart <= t) state.Hero = b.Hero;
+            if (lo < _count - 1 && a.Now < t)
+            {
+                ref readonly var b = ref At(lo + 1);
+                double f = (t - a.Now) / (b.Now - a.Now);
+                state.Now = t;
+                state.RunClock = a.RunClock + (b.RunClock - a.RunClock) * f;
+            }
+            for (int i = _count - 1; i > lo; i--)
+            {
+                if (At(i).Hero.MoveStart > t) continue;
+                state.Hero = At(i).Hero;
+                break;
+            }
             return true;
         }
 

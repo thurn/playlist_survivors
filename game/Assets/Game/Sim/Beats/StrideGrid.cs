@@ -13,7 +13,7 @@ namespace PS.Game.Sim
     }
 
     /// <summary>
-    /// The stride grid (unity-game.md, "Key Presses and Late Steps" and "Speeds Follow the Tempo"):
+    /// The stride grid (unity-game.md, "Key Presses" and "Speeds Follow the Tempo"):
     /// the times the hero may stride on.
     ///
     /// - Each beat interval is cut into 2^h equal steps. A song's first interval takes the fewest

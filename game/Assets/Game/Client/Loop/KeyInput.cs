@@ -9,7 +9,7 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, with each event's own timestamp
-    /// (unity-game.md, Key Presses and Late Steps): the arrows and WASD steer, Space stomps. An
+    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps. An
     /// event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps
     /// to the song time heard (<see cref="IGameClock.KeySong"/>). Two physical keys on one
     /// direction press it once and release it when both are up.

@@ -41,9 +41,11 @@ namespace Game.Client.Hero
     /// <summary>
     /// The hero's motion on song time (unity-game.md, The Hero; Attacks and Steps Land on the Beat): a
     /// function of the sim's HeroStep and hero Attack events and the song time, with no state machine,
-    /// so the client never guesses. Events arrive ahead of the time they show (by the sim's lead).
-    /// - **Steps**: along each step's move from its start to its end (native's 110 ms, a late stride's
-    ///   compressed), a hop: the run clip's half-cycle, one foot then the other, with a parabolic lift.
+    /// so the client never guesses. Events arrive ahead of the time they show (by the sim's lead),
+    /// except a press stride's, which arrives on the key-down frame and starts at the press.
+    /// - **Steps**: along each step's move from its start to its end (native's 110 ms, or compressed
+    ///   to end before the next step), a hop: the run clip's half-cycle, one foot then the other,
+    ///   with a parabolic lift.
     ///   A bump hops in place, lower; a stomp stands. The hero faces its travel.
     /// - **Attacks**: each clip is retimed so its impact frame lands on the attack's impact
     ///   (<see cref="HeroClips.Fit"/>), entered no earlier than the wind-up, so the swing before it

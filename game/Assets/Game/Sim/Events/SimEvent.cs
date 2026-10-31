@@ -380,15 +380,15 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// The hero moves (a stride, a bump or a stomp): I0 its stride step, I1 flags (1 late, 2 bump,
+        /// The hero moves (a stride, a bump or a stomp): I0 its stride step, I1 flags (1 a press's, 2 bump,
         /// 4 stomp), I2 facing; D0/D1 from, D2/D3 to (from again for a bump or stomp), D4 start, D5 end.
         /// </summary>
-        public static SimEvent HeroStep(double t, int step, bool late, bool bump, bool stomp, Direction facing,
+        public static SimEvent HeroStep(double t, int step, bool pressed, bool bump, bool stomp, Direction facing,
             double fromX, double fromY, double toX, double toY, double start, double end)
         {
             var e = Of(SimEventKind.HeroStep, t);
             e.I0 = step;
-            e.I1 = (late ? 1 : 0) | (bump ? 2 : 0) | (stomp ? 4 : 0);
+            e.I1 = (pressed ? 1 : 0) | (bump ? 2 : 0) | (stomp ? 4 : 0);
             e.I2 = (int)facing;
             e.D0 = fromX;
             e.D1 = fromY;

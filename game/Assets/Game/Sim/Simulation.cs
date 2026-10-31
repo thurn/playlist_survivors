@@ -27,8 +27,8 @@ namespace PS.Game.Sim
     /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
-    /// systems run. A press may move the hero at once (a late step),
-    /// at the frontier. Nothing simulated is ever revised.
+    /// systems run. A press moves the hero at once (a press stride), at the frontier, drawn from
+    /// when the press was heard. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -111,7 +111,8 @@ namespace PS.Game.Sim
 
         /// <summary>
         /// Records a key press heard at song time <paramref name="heard"/>; it takes effect now, as
-        /// a queued or late step (<see cref="Hero"/>). A replay presses at the recorded effective time.
+        /// a press stride or, at most one a step, queued (<see cref="Hero"/>). A replay presses at
+        /// the recorded effective time.
         /// </summary>
         public void Press(Key key, double heard)
         {

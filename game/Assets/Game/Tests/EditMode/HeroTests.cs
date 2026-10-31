@@ -18,8 +18,8 @@ namespace Game.Tests
         static SimEvent Attack(HeroAttackKind kind, double windupStart, double impact, bool heavy = false, double dirX = 1, double dirY = 0) =>
             SimEvent.SwordAttack(windupStart, 0, kind, windupStart, impact, dirX, dirY, heavy, 7.04);
 
-        static SimEvent Step(double start, double end, double fromX, double toX, Direction facing, bool bump = false, bool late = false) =>
-            SimEvent.HeroStep(start, 0, late, bump, false, facing, fromX, 0, toX, 0, start, end);
+        static SimEvent Step(double start, double end, double fromX, double toX, Direction facing, bool bump = false, bool pressed = false) =>
+            SimEvent.HeroStep(start, 0, pressed, bump, false, facing, fromX, 0, toX, 0, start, end);
 
         /// <summary>
         /// Every attack clip, with the time from the wind-up to the impact asking for 0.5x to 2x (past
@@ -146,7 +146,7 @@ namespace Game.Tests
             Assert.That(next.Run, Is.GreaterThan(0.05f));
             Assert.That(next.RunTime, Is.EqualTo(Clips[HeroClip.Run].length * 0.5f).Within(1e-5f));
 
-            motion.OnEvent(Step(3.0, 3.07, 3.0, 3.0, Direction.Left, bump: true, late: true));
+            motion.OnEvent(Step(3.0, 3.07, 3.0, 3.0, Direction.Left, bump: true, pressed: true));
             var bump = motion.Evaluate(3.035, 0, 0, Direction.Up);
             Assert.That(bump.X, Is.EqualTo(3.0), "a bump stays on its tile");
             Assert.That(bump.Lift, Is.EqualTo(HeroMotion.BumpHopM).Within(1e-4f));
