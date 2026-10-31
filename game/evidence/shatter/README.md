@@ -49,27 +49,29 @@ no queued crowd (the stills' existing behaviour).
   ten frames they fly out over the surviving horde, clearing a disc round the hero; by 9.9 s their
   piles have sunk.
 - **The bench** ([bench.json](bench.json)): each part's wall time with the GPU drained before and
-  after it, 30 measured trials per case (one seed each) and about 3,600 frames of integration and
-  drawing, 1080p with MSAA 4x. The 10th percentiles are the least disturbed by other work (the
-  machine ran other agents' Unity builds, load 16):
+  after it, 30 measured trials per case (one seed each), the integration and the shard draws timed
+  over each trial's first second while every shard flies (1,800 frames a case), 1080p with MSAA 4x.
+  The 10th percentiles are the least disturbed by other work (the machine ran other agents' Unity
+  builds, load 23; rerun by the ps-msz.3.19 Warden, whose fix stopped the integration frames from
+  counting each trial's shard-free tail, where the first run's p10 had landed):
 
   | Deaths at once | Shards | Seed frame (ms) | Integration frame (ms) | Shard draws (ms) | The same bodies alive (ms) |
   |---|---|---|---|---|---|
-  | 0 | 0 | | 0.195 | | |
-  | 1 | 26 | 0.342 | 0.243 | 0.10 | 0.46 |
-  | 50 | 1,547 | 0.631 | 0.272 | 1.11 | 1.80 |
-  | 300 | 9,300 | 0.550 | 0.237 | 2.01 | 2.72 |
+  | 0 | 0 | | 0.139 | | |
+  | 1 | 26 | 0.280 | 0.213 | 0.38 | 0.20 |
+  | 50 | 1,547 | 0.485 | 0.247 | 1.33 | 1.24 |
+  | 300 | 9,300 | 0.415 | 0.234 | 2.32 | 2.53 |
 
-  The seed and integration frames include the drain itself (the 0-death frame's 0.195 ms).
+  The seed and integration frames include the drain itself (the 0-death frame's 0.139 ms).
   **Fifty deaths seed in what three hundred do**: the cost is per model, not per death (one upload
   and two dispatches for each model that has deaths that frame: one model for the single death,
-  all nine for 50 or 300), about 0.4 ms over the drain at most. Integrating every live shard adds
-  under 0.08 ms. The shards' draws cost about what the same monsters' bodies did alive (they are
-  the same triangles, skinned the same way, plus inside faces). Two reruns under heavier load
-  agreed within about 0.3 ms (seed 0.27 to 0.34 / 0.57 to 0.63 / 0.55 to 0.56 ms; shard draws
-  0.08 to 0.10 / 0.80 to 1.11 / 2.0 to 2.1 ms). The Mac's Metal has no GPU recorder, so the
-  shatter's own GPU markers (MonsterShatter.SeedSampler and IntegrateSampler) read nothing here;
-  a development player on Cygnus's D3D12 records them in the same JSON.
+  all nine for 50 or 300), about 0.35 ms over the drain at most. Integrating every live shard adds
+  about 0.07 to 0.11 ms, flat from 26 shards to 9,300. The shards' draws cost about what the same
+  monsters' bodies did alive (they are the same triangles, skinned the same way, plus inside
+  faces). The first run (load 16) agreed within about 0.3 ms on the seed and draws. The Mac's
+  Metal has no GPU recorder, so the shatter's own GPU markers (MonsterShatter.SeedSampler and
+  IntegrateSampler) read nothing here; a development player on Cygnus's D3D12 records them in the
+  same JSON.
 - The EditMode tests (`ShatterTests`, on the editor's GPU, with a made-up one-bone monster cut by
   the real baker): the cut gives 20 to 40 closed chunks covering every skin triangle once; every
   chunk's pivot starts exactly on the posed body (placement, yaw and scale) and moves from the
