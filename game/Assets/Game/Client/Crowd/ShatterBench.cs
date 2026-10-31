@@ -73,6 +73,11 @@ namespace Game.Client.Crowd
 
         void Setup()
         {
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                Finish(1, "needs a GPU with compute (not a -nographics player)");
+                return;
+            }
             _lib = CrowdLibrary.Load();
             if (_lib == null)
             {
@@ -142,7 +147,7 @@ namespace Game.Client.Crowd
             if (_trial > 0) // the first trial of each case warms up
             {
                 if (breaking) s.SeedMs.Add(update);
-                else s.UpdateMs.Add(update);
+                else if (_frame <= FlightFrames) s.UpdateMs.Add(update); // shards in flight, not the empty tail
                 s.RenderMs.Add(render);
                 if (_frame > 0 && _frame <= FlightFrames) s.FlightRenderMs.Add(render);
             }

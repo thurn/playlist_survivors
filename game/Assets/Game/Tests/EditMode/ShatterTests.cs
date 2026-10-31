@@ -12,7 +12,8 @@ namespace Game.Tests
     /// <summary>
     /// The GPU monster shatter (MonsterShatter) on a made-up one-bone monster (no baked library
     /// needed): the shard baker cuts it, and the compute passes seed and move its shards on the
-    /// editor's GPU, read back.
+    /// editor's GPU, read back. Each crowd slot's palette holds a different pose (its one bone
+    /// turned and moved by the slot), so a death seeded from the wrong slot's pose shows.
     /// </summary>
     public class ShatterTests
     {
@@ -38,13 +39,11 @@ namespace Game.Tests
             _lib.Types = new[] { new CrowdType { Id = "blob", BoneCount = 1, HeightM = HeightM, ShardMesh = mesh, Shards = shards } };
             _lib.ShardCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Game/Client/Crowd/Shaders/MonsterShards.compute");
             _lib.ShardShader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Game/Client/Crowd/Shaders/MonsterShard.shader");
-            // Every slot's one bone is the rest pose: the posed body is the rest mesh, scaled and placed.
             var rows = new Vector4[CrowdSlots * 3];
             for (int i = 0; i < CrowdSlots; i++)
             {
-                rows[3 * i] = new Vector4(1, 0, 0, 0);
-                rows[3 * i + 1] = new Vector4(0, 1, 0, 0);
-                rows[3 * i + 2] = new Vector4(0, 0, 1, 0);
+                var m = Pose(i);
+                for (int r = 0; r < 3; r++) rows[3 * i + r] = m.GetRow(r);
             }
             _palette = new GraphicsBuffer(GraphicsBuffer.Target.Structured, rows.Length, 16);
             _palette.SetData(rows);
@@ -101,9 +100,13 @@ namespace Game.Tests
             Flags = (uint)(CrowdFlags.Alive | CrowdFlags.Dying),
         };
 
-        /// <summary>Where the crowd's shader puts a root-space point of a body on the rest pose.</summary>
-        static Vector3 Placed(in MonsterInstance m, Vector3 p) =>
-            m.Position + Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0) * (p * m.Scale);
+        /// <summary>Crowd slot <paramref name="slot"/>'s pose of the one bone: a turn and a lean of its own, and a shift.</summary>
+        static Matrix4x4 Pose(int slot) =>
+            Matrix4x4.TRS(new Vector3(0.05f * slot, 0.02f * slot, -0.03f * slot), Quaternion.Euler(4f * slot, 17f * slot, 0), Vector3.one);
+
+        /// <summary>Where the crowd's shader puts a root-space point of a body posed by its slot's palette.</summary>
+        static Vector3 Placed(in MonsterInstance m, int slot, Vector3 p) =>
+            m.Position + Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0) * (Pose(slot).MultiplyPoint3x4(p) * m.Scale);
 
         MonsterShatter.ShardRecord[] Death(int ring) =>
             _shatter.ReadShards(0).Skip(ring * _shards.Length).Take(_shards.Length).ToArray();
@@ -131,7 +134,7 @@ namespace Game.Tests
             var start = Death(0);
             for (int i = 0; i < _shards.Length; i++)
             {
-                var expected = Placed(body, _shards[i].Pivot);
+                var expected = Placed(body, 5, _shards[i].Pivot);
                 Assert.That(Vector3.Distance(start[i].Origin, expected), Is.LessThan(1e-4f), $"shard {i}'s pivot on the pose");
                 Assert.That(Vector3.Distance(start[i].Position, expected), Is.LessThan(1e-4f), $"shard {i} not yet moved at the break");
                 Assert.That(Quaternion.Angle(start[i].Rotation, Quaternion.identity), Is.LessThan(0.01f));
@@ -172,6 +175,9 @@ namespace Game.Tests
             Assert.That(heavy, Is.GreaterThan(1.3f * normal));
         }
 
+        /// <summary>Death i's crowd slot, unlike its ring slot (i), so the two can't be confused.</summary>
+        static int CrowdSlotOf(int i) => (7 * i + 3) % CrowdSlots;
+
         [Test]
         public void FiftyDeathsInOneFrameEachBreakFromTheirOwnBody()
         {
@@ -179,7 +185,7 @@ namespace Game.Tests
             for (int i = 0; i < bodies.Length; i++)
             {
                 bodies[i] = Body(new Vector3(i % 10 * 2.5f, 0, i / 10 * 2.5f), yaw: i * 0.4f, scale: 0.8f + i * 0.02f);
-                _shatter.Break(0, i, bodies[i], 0, i, T, 1, 1, 1.85);
+                _shatter.Break(0, CrowdSlotOf(i), bodies[i], 0, i, T, 1, 1, 1.85);
             }
             _shatter.Frame(T, null);
             Assert.That(_shatter.LiveDeaths, Is.EqualTo(50));
@@ -187,8 +193,17 @@ namespace Game.Tests
             {
                 var shards = Death(i);
                 for (int k = 0; k < _shards.Length; k += 7)
-                    Assert.That(Vector3.Distance(shards[k].Origin, Placed(bodies[i], _shards[k].Pivot)), Is.LessThan(1e-4f), $"death {i} shard {k}");
+                    Assert.That(Vector3.Distance(shards[k].Origin, Placed(bodies[i], CrowdSlotOf(i), _shards[k].Pivot)), Is.LessThan(1e-4f), $"death {i} shard {k}");
             }
+
+            // The draw skins each death from its own frozen pose, which later frames' crowd palettes
+            // (its slot reused by a new monster) leave alone.
+            _palette.SetData(new Vector4[CrowdSlots * 3]);
+            _shatter.Frame(T + 1 / 60.0, null);
+            var frozen = _shatter.ReadFrozen(0);
+            for (int i = 0; i < bodies.Length; i++)
+                for (int r = 0; r < 3; r++)
+                    Assert.That(Vector4.Distance(frozen[3 * i + r], Pose(CrowdSlotOf(i)).GetRow(r)), Is.LessThan(1e-5f), $"death {i}'s frozen pose, row {r}");
         }
 
         [Test]

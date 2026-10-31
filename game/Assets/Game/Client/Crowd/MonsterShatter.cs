@@ -353,6 +353,15 @@ namespace Game.Client.Crowd
             return o;
         }
 
+        /// <summary>The type's frozen palettes, [ring slot][bone][3 rows], read back from the GPU (for the tests).</summary>
+        internal Vector4[] ReadFrozen(int type)
+        {
+            var s = _types[type];
+            var o = new Vector4[RingCapacity * s.Bones * 3];
+            s.Frozen.GetData(o);
+            return o;
+        }
+
         void Clear()
         {
             foreach (var s in _types) s.Start = s.Count = s.PendingCount = 0;
