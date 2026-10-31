@@ -25,14 +25,22 @@ namespace Game.Client.Loop
     /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>.
     /// Its music is the source Boot resolved from `--file` or `--app`, or the title screen's pick
     /// (<see cref="MusicSource"/>): played through the music plugin, which feeds the sim; live,
-    /// song time is the music's (<see cref="MusicTimes"/>). The run ends with a file's music, when
-    /// the output device changes (the latency does) or on Backspace, and then quits, or returns to
-    /// the title screen if it started there. Player flags:
+    /// song time is the music's (<see cref="MusicTimes"/>).
+    ///
+    /// The run (unity-game.md, The Run; <see cref="RunControl"/>): with a window, Enter or Space
+    /// starts it on the next beat; a headless or fixed-time run starts after 2 s of clear beat, and
+    /// a run without music at once. Esc and focus loss pause it, and Esc or a click resumes it on
+    /// the next beat. The plugin's watchdog releasing the tap stops the music. Backspace and an
+    /// output device change (the latency changes) end it, each a run control the sim records.
+    /// The loop finishes when the run ends (after <see cref="EndCardS"/> for a victory or a fall,
+    /// whose card the HUD shows), or with a file's music, and then quits, or returns to the title
+    /// screen if it started there. Player flags:
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
     ///   so a rerun shows the same frames. With `--file`, each frame first waits until the
     ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
     ///   output is silent, since the music doesn't play in time with these frames;
     /// - `--seed N`: the sim's seed;
+    /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
     /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
@@ -63,6 +71,8 @@ namespace Game.Client.Loop
         /// </summary>
         const double StampLag = MusicPlayer.M - 0.048, BlockLag = 0.1;
         const double AnalysisTimeout = 10;
+        /// <summary>How long the victory or fall card shows before the loop finishes.</summary>
+        public const double EndCardS = 5;
         const int LeadCapacity = 1 << 17;
 
         MusicPlayer _music;
@@ -84,7 +94,9 @@ namespace Game.Client.Loop
         StructureShatter _shatter;
         CrowdView _crowd;
         StreamWriter _out, _structuresOut;
-        bool _fixed, _done, _quitting;
+        bool _fixed, _done, _quitting, _interactive;
+        bool _deviceGiven, _focusLost;
+        int _releases;
         Action<string> _ended;
         int _entries, _keyChanges;
         readonly double[] _leads = new double[LeadCapacity];
@@ -149,6 +161,9 @@ namespace Game.Client.Loop
                 float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
                 config = SliceLevel.Config(content, arena ? level.Arena() : null, CameraRig.Footprint(aspect), seed);
             }
+            _interactive = !headless && !_fixed;
+            config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
+            config.Easy = Args.Has("--easy");
             Driver = new SimDriver(config, clock);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
             _keys = new KeyInput();
@@ -208,7 +223,8 @@ namespace Game.Client.Loop
             }
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
-                      $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}");
+                      $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}, " +
+                      $"start {config.Start}, easy {config.Easy}");
         }
 
         /// <summary>
@@ -256,7 +272,11 @@ namespace Game.Client.Loop
             if (_music != null)
             {
                 if (_music.Failed) { Finish(1, _music.Error); return; }
-                if (_music.DeviceChanged) { Finish(0, "the output device changed"); return; }
+                if (_music.DeviceChanged && !_deviceGiven)
+                {
+                    _deviceGiven = true;
+                    if (!Control(RunControl.DeviceChanged)) return;
+                }
                 if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
             }
@@ -265,6 +285,7 @@ namespace Game.Client.Loop
             {
                 _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
                 _commands.Apply(Driver.Sim);
+                RunInput();
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
             var now = new ClockReadings
@@ -281,8 +302,71 @@ namespace Game.Client.Loop
                     display = _music.Clock.DisplayLatency,
                 });
             _overlay.Toggle();
-            if (_music != null && !_fixed && _music.Ended) Finish(0, null);
-            else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Finish(0, "the run was ended");
+            var state = Driver.Sim.State;
+            if (state.Phase == RunPhase.Ended && (state.End == RunEnd.Quit || state.End == RunEnd.DeviceChanged
+                                                  || Driver.Times.FrameSong >= state.EndedAt + EndCardS))
+                Finish(0, Why(state.End));
+            else if (_music != null && !_fixed && _music.Ended) Finish(0, null);
+            else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Control(RunControl.Quit);
+        }
+
+        /// <summary>
+        /// Gives the sim a run control now; before the clock is ready (no song time yet) an end
+        /// finishes the loop at once instead. False if it finished.
+        /// </summary>
+        bool Control(RunControl control)
+        {
+            if (Driver.Clock.Ready)
+            {
+                Driver.Sim.Control(control);
+                return true;
+            }
+            if (control != RunControl.Quit && control != RunControl.DeviceChanged) return true;
+            Finish(0, Why(control == RunControl.Quit ? RunEnd.Quit : RunEnd.DeviceChanged));
+            return false;
+        }
+
+        /// <summary>The run's inputs besides the keys: the start, a pause or resume, and the watchdog.</summary>
+        void RunInput()
+        {
+            var state = Driver.Sim.State;
+            var keyboard = Keyboard.current;
+            if (_music != null && _music.Status.Releases != _releases)
+            {
+                _releases = _music.Status.Releases;
+                Driver.Sim.Control(RunControl.Watchdog);
+            }
+            if (!_interactive) return;
+            if (state.Phase == RunPhase.Waiting)
+            {
+                if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame
+                                         || keyboard.spaceKey.wasPressedThisFrame))
+                    Driver.Sim.Control(RunControl.Start);
+                return;
+            }
+            bool paused = state.FrozenFor(FreezeReason.Pause);
+            bool esc = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
+            bool click = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+            if (!paused && (esc || _focusLost)) Driver.Sim.Control(RunControl.Pause);
+            else if (paused && (esc || click)) Driver.Sim.Control(RunControl.Resume);
+            _focusLost = false;
+        }
+
+        void OnApplicationFocus(bool focus)
+        {
+            if (!focus) _focusLost = true;
+        }
+
+        static string Why(RunEnd end)
+        {
+            switch (end)
+            {
+                case RunEnd.Victory: return "victory";
+                case RunEnd.Death: return "the hero fell";
+                case RunEnd.Quit: return "the run was ended";
+                case RunEnd.DeviceChanged: return "the output device changed";
+                default: return null;
+            }
         }
 
         void FeedLive()
@@ -401,9 +485,12 @@ namespace Game.Client.Loop
         {
             int n = Math.Min(Driver.Frames, LeadCapacity);
             var c = CultureInfo.InvariantCulture;
+            var run = Driver.Sim.State;
             var s = string.Format(c, "{0} frames to song {1:F3} s, {2} entries ({3} late), {4} key changes ({5} dropped), {6} events, hash {7:X16}",
                 Driver.Frames, Driver.Times.FrameSong, _entries, Driver.LateEntries, _keyChanges, _keys.Dropped,
                 Driver.Sim.EventCount, Driver.Sim.Hash);
+            s += string.Format(c, "; run {0} from song {1:F3} s, run clock {2:F3} s, {3} freezes ({4} music stopped), {5} run controls",
+                run.Phase, run.StartedAt, run.RunClock, _counts.Freezes, _counts.MusicStops, Driver.Sim.Controls.Length);
             if (n == 0) return s;
             // The first second settles the DSP fit and the frame interval; the lead is measured after it.
             int skip = Math.Min(n - 1, Boot.FixedFps);
@@ -440,7 +527,7 @@ namespace Game.Client.Loop
         /// <summary>What the run did, for its summary, and each event as CSV when asked.</summary>
         sealed class SliceCounts : IPresenter, IDisposable
         {
-            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges;
+            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges, Freezes, MusicStops;
             StreamWriter _out;
 
             public void Open(string path)
@@ -465,6 +552,10 @@ namespace Game.Client.Loop
                     case SimEventKind.StructureBreak: Breaks++; break;
                     case SimEventKind.Regrowth: Regrowths++; break;
                     case SimEventKind.ZoneChange: ZoneChanges++; break;
+                    case SimEventKind.Freeze when e.AsFreeze.Starts:
+                        Freezes++;
+                        if (e.AsFreeze.Reason == FreezeReason.MusicStopped) MusicStops++;
+                        break;
                 }
             }
 

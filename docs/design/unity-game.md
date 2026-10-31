@@ -914,6 +914,7 @@ sim.Add(StreamEntry e);         // held by the sim until its known_at
 sim.AddKnown(StreamEntry e, double knownAt); // a replay's recorded known_at
 sim.Press(Key k, double heard);  // effective time = the sim's current time
 sim.Command(DebugCommand c);     // the debug surfaces', effective now, like a key
+sim.Control(RunControl c);       // start, pause, resume, Backspace, device change, watchdog: effective now
 sim.StepTo(double songTime);
 ReadOnlySpan<SimEvent> sim.EventsSince(int cursor);
 sim.State                       // hero, enemies, items, run clock
@@ -921,7 +922,7 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
 ```
 
 - **Reads never change the run.** `Add`, `AddKnown`, `Press`, `Release`,
-  `Command`, `StepTo` and `DiscardEventsBefore` are the only mutators. Everything else
+  `Command`, `Control`, `StepTo` and `DiscardEventsBefore` are the only mutators. Everything else
   the client reaches is read-only (`{ get; internal set; }`, dense arrays as
   `ReadOnlySpan` getters) or a pure function of the revealed entries, so an
   overlay may ask about any song time, as often as it likes. The run's random
@@ -938,7 +939,8 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
   hit, death (impact direction and force), cleave (centre, radii, band
   times), drop, structure glint, break (strike point, direction, force) and
   regrowth (start, end), zone change, spawn (a recycled enemy's
-  re-entry flagged), pickup, level-up, chest, freeze, sound cue.
+  re-entry flagged), pickup, level-up, chest, freeze, sound cue, and the
+  run's start, finale blast and end.
 - **State** is the latest settled snapshot of positions and stats. The
   client keeps a short history of past states to show `frameSong`, which
   trails the frontier.
@@ -1017,6 +1019,45 @@ playing time.
   an output device change ends it.
 - **Easy**: enemy contact damage at half, and floor chickens that heal, as in
   native.
+
+**Shipped (ps-msz.6.1).** The sim's `RunRules` (game/Assets/Game/Sim/Run/):
+
+- Every input that changes the run is a recorded **run control**
+  (`sim.Control`, `sim.Controls`, effective at the sim's time like a key):
+  start, pause, resume, quit, device change and watchdog.
+- **Start**: `SimConfig.Start` is `OnKey` with a window (Enter or Space),
+  `AfterClearBeat` headless or under `--fixed-time` (the first committed beat
+  2 s after the beat turned reliable), and `Immediately` without music, and
+  for tests and bots. Before the start the world is held and the run clock
+  is 0; a `RunStart` event marks the beat.
+- **The run clock** is exact: a freeze stops it at its own song time, not at
+  a tick's end.
+- **Freezes** emit a `Freeze` event for each reason's start, and one for each
+  at the resume. A reason let go (resume, a confirmed card) resumes play on
+  the next committed beat, or on the next stride step when no beat is known
+  ahead. `State.FreezeReasons` holds the banners' reasons.
+- **Music stopped**: native's silence is a tick's energy at or below 0.01.
+  The stop needs 5 s of it, or 3 s around a confirmed end, or the watchdog
+  (the client gives `Watchdog` when the plugin's `Releases` count rises). It
+  freezes on the first stride step after that is known. The beat locks again
+  on the first reliable beat after the quiet, and play resumes on the second
+  downbeat after it: one whole bar is heard. Quiet before then restarts the
+  lock.
+- **Victory**: the run clock stops at exactly 30:00 (schedule.json's
+  `durationS`). The finale blasts on the next downbeat the world plays: 1000
+  damage to every enemy and a `FinaleBlast` to every structure within
+  33.3 m of the hero. The world then holds, and `RunEnd(Victory)` follows 3 s
+  later. A fall, Backspace and a device change each emit `RunEnd` at once,
+  and the run clock stops there.
+- **Easy's chickens**: a dying brute drops one 5% of the time (the run's
+  generator). Bosses drop `bossChickens` through `FloorChickens.Drop`, for
+  the cast's bosses. The hero eats one within 0.89 m while the world plays:
+  it heals 30 at once (native waits for the next sixteenth) and can't be
+  hurt for 0.3 s.
+- **The client**: Esc or focus loss pauses, and Esc or a click resumes.
+  The loop finishes on Backspace or a device change at once, and on a
+  victory or a fall 5 s after the end, for the HUD's card. `--easy` turns
+  Easy on. The bob in place during a freeze is the presenters' idle.
 
 ### Hero movement on the grid
 
