@@ -190,10 +190,22 @@ namespace PS.Game.Sim.Tests
             return list;
         }
 
-        public static Simulation Replay(IEnumerable<KnownEntry> known, double until, ulong seed = 1)
+        /// <summary>
+        /// Replays a session: the entries at their known-at times, and each key change at its
+        /// recorded effective time (unity-game.md, "Sessions and Replay").
+        /// </summary>
+        public static Simulation Replay(IEnumerable<KnownEntry> known, double until, ulong seed = 1,
+            IEnumerable<KeyRecord> keys = null)
         {
             var sim = new Simulation(new SimConfig { Seed = seed });
             foreach (var k in known) sim.AddKnown(k.Entry, k.KnownAt);
+            if (keys != null)
+                foreach (var k in keys)
+                {
+                    sim.StepTo(k.Effective);
+                    if (k.Down) sim.Press(k.Key, k.Heard);
+                    else sim.Release(k.Key, k.Heard);
+                }
             sim.StepTo(until);
             return sim;
         }

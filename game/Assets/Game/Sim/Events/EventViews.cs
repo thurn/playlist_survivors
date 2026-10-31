@@ -180,4 +180,25 @@ namespace PS.Game.Sim
         public double X => e.D3;
         public double Y => e.D4;
     }
+
+    public readonly struct HeroStepEvent
+    {
+        readonly SimEvent e;
+        public HeroStepEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        /// <summary>The stride step it belongs to: a late stride's is the missed step.</summary>
+        public int Step => e.I0;
+        /// <summary>Applied after its step was simulated, starting at once (unity-game.md, "Key Presses and Late Steps").</summary>
+        public bool Late => (e.I1 & 1) != 0;
+        /// <summary>The tile ahead was blocked: the hero bumped in place.</summary>
+        public bool Bump => (e.I1 & 2) != 0;
+        public bool Stomp => (e.I1 & 4) != 0;
+        public Direction Facing => (Direction)e.I2;
+        public double FromX => e.D0;
+        public double FromY => e.D1;
+        public double ToX => e.D2;
+        public double ToY => e.D3;
+        public double Start => e.D4;
+        public double End => e.D5;
+    }
 }

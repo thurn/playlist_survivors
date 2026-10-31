@@ -42,7 +42,8 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(quiet.Hash, curious.Hash);
             CollectionAssert.AreEqual(quiet.EventsSince(0).ToArray(), curious.EventsSince(0).ToArray());
             CollectionAssert.IsSupersetOf(called, new[] { "BeatClock.StateAt", "BeatClock.ClearAt", "BeatClock.Continues",
-                "BeatClock.BarOf", "StrideGrid.Recent", "BeliefLog.KnownAt", "SimState.get_Beat", "Judging.LockAtOrBefore" });
+                "BeatClock.BarOf", "StrideGrid.Recent", "BeliefLog.KnownAt", "SimState.get_Beat", "Judging.LockAtOrBefore",
+                "ArenaGrid.IsOpen", "HeroState.get_TileX" });
         }
 
         [Test]
@@ -50,7 +51,7 @@ namespace PS.Game.Sim.Tests
         {
             var surface = Surface(new Simulation(new SimConfig()));
             Assert.That(surface.ConvertAll(o => o.GetType().Name), Is.SupersetOf(new[]
-                { "Simulation", "SimState", "BeliefLog", "BeatClock", "Judging", "StrideGrid" }));
+                { "Simulation", "SimState", "BeliefLog", "BeatClock", "Judging", "StrideGrid", "ArenaGrid", "HeroState" }));
             foreach (object o in surface)
             {
                 var type = o.GetType();

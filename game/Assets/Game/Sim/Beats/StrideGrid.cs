@@ -44,7 +44,7 @@ namespace PS.Game.Sim
         public const double BandHigh = 0.45;
         public const double FreePeriod = 0.35;
         const int MaxHalvings = 8;
-        const int HistoryLength = 64;
+        internal const int HistoryLength = 64;
 
         enum PlanKind { Continue, Boundary, Enter, Carry, Free }
 

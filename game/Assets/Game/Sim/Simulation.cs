@@ -1,4 +1,5 @@
 using System;
+using PS.Game.Sim.Level;
 
 namespace PS.Game.Sim
 {
@@ -21,8 +22,9 @@ namespace PS.Game.Sim
     ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
-    /// then the beat, then the stride step. The beat's state is updated before each of those and at
-    /// the tick's end, after which the per-tick systems run. Nothing simulated is ever revised.
+    /// then the beat, then the stride step and the hero's move on it. The beat's state is updated
+    /// before each of those and at the tick's end, after which the per-tick systems run. A press
+    /// may move the hero at once (a late step), at the frontier. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -31,6 +33,7 @@ namespace PS.Game.Sim
 
         readonly StructList<KeyRecord> keys;
         readonly EventLog events;
+        readonly Hero hero;
         readonly double knownAtBudget;
         double cursor;
 
@@ -50,6 +53,8 @@ namespace PS.Game.Sim
             };
             State.Now = State.Tick * TickSeconds;
             cursor = State.Now;
+            Arena = new ArenaGrid(config.Arena ?? ArenaData.Open());
+            hero = new Hero(State.Hero, Arena, Strides);
         }
 
         public SimState State { get; }
@@ -58,6 +63,7 @@ namespace PS.Game.Sim
         public BeliefLog Stream { get; }
         public BeatClock Beats { get; }
         public StrideGrid Strides { get; }
+        public ArenaGrid Arena { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -77,13 +83,22 @@ namespace PS.Game.Sim
         /// <summary>Accepts a replayed entry with its recorded known-at time.</summary>
         public void AddKnown(in StreamEntry e, double knownAt) => Stream.AddKnown(e, knownAt, Now);
 
-        /// <summary>Records a key press heard at song time <paramref name="heard"/>; it takes effect now.</summary>
-        public void Press(Key key, double heard) =>
+        /// <summary>
+        /// Records a key press heard at song time <paramref name="heard"/>; it takes effect now, as
+        /// a queued or late step (<see cref="Hero"/>). A replay presses at the recorded effective time.
+        /// </summary>
+        public void Press(Key key, double heard)
+        {
             keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now });
+            hero.Press(this, key, heard);
+        }
 
         /// <summary>Records a key release heard at song time <paramref name="heard"/>; it takes effect now.</summary>
-        public void Release(Key key, double heard) =>
+        public void Release(Key key, double heard)
+        {
             keys.Add(new KeyRecord { Key = key, Down = false, Heard = heard, Effective = Now });
+            hero.Release(key);
+        }
 
         /// <summary>Every key change recorded, in order.</summary>
         public ReadOnlySpan<KeyRecord> Keys => keys.AsSpan();
@@ -133,6 +148,7 @@ namespace PS.Game.Sim
                 else
                 {
                     Strides.Fire(this, step);
+                    hero.Step(this, Strides.Count - 1, step, Strides.Period);
                     State.StrideStep = step;
                     State.StridePeriod = Strides.Period;
                     State.StrideHalvings = Strides.Halvings;

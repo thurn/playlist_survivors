@@ -2,7 +2,7 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"). The
-    /// skeleton holds time, the run clock and the beat; the rule beads add the hero, enemies,
+    /// skeleton holds time, the run clock, the beat and the hero; the rule beads add enemies,
     /// structures and items as dense arrays here. The client copies what it needs into its own
     /// short history to show <c>frameSong</c>, which trails the frontier.
     ///
@@ -30,5 +30,7 @@ namespace PS.Game.Sim
         public double StrideStep { get; internal set; } = double.NegativeInfinity;
         public double StridePeriod { get; internal set; } = StrideGrid.FreePeriod;
         public int StrideHalvings { get; internal set; } = -1;
+
+        public HeroState Hero { get; } = new HeroState();
     }
 }

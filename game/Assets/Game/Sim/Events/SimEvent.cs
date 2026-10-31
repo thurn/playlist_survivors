@@ -1,9 +1,9 @@
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The skeleton emits
-    /// beats, stride steps and beat-state changes; the rest are declared, with their fields, for
-    /// the rule beads to emit and the client to build against.
+    /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The sim emits beats,
+    /// stride steps, beat-state changes and the hero's steps; the rest are declared, with their
+    /// fields, for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
     {
@@ -23,6 +23,7 @@ namespace PS.Game.Sim
         Chest,
         Freeze,
         SoundCue,
+        HeroStep,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -229,6 +230,26 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>
+        /// The hero moves (a stride, a bump or a stomp): I0 its stride step, I1 flags (1 late, 2 bump,
+        /// 4 stomp), I2 facing; D0/D1 from, D2/D3 to (from again for a bump or stomp), D4 start, D5 end.
+        /// </summary>
+        public static SimEvent HeroStep(double t, int step, bool late, bool bump, bool stomp, Direction facing,
+            double fromX, double fromY, double toX, double toY, double start, double end)
+        {
+            var e = Of(SimEventKind.HeroStep, t);
+            e.I0 = step;
+            e.I1 = (late ? 1 : 0) | (bump ? 2 : 0) | (stomp ? 4 : 0);
+            e.I2 = (int)facing;
+            e.D0 = fromX;
+            e.D1 = fromY;
+            e.D2 = toX;
+            e.D3 = toY;
+            e.D4 = start;
+            e.D5 = end;
+            return e;
+        }
+
         void Expect(SimEventKind kind)
         {
             if (Kind != kind) throw new System.InvalidOperationException($"a {Kind} event read as a {kind}");
@@ -249,5 +270,6 @@ namespace PS.Game.Sim
         public ChestEvent AsChest { get { Expect(SimEventKind.Chest); return new ChestEvent(this); } }
         public FreezeEvent AsFreeze { get { Expect(SimEventKind.Freeze); return new FreezeEvent(this); } }
         public SoundCueEvent AsSoundCue { get { Expect(SimEventKind.SoundCue); return new SoundCueEvent(this); } }
+        public HeroStepEvent AsHeroStep { get { Expect(SimEventKind.HeroStep); return new HeroStepEvent(this); } }
     }
 }

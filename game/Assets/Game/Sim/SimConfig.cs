@@ -1,3 +1,5 @@
+using PS.Game.Sim.Level;
+
 namespace PS.Game.Sim
 {
     /// <summary>
@@ -17,6 +19,9 @@ namespace PS.Game.Sim
 
         /// <summary>B: the budget the game adds to the plugin's stamp (more than the sim's lead).</summary>
         public double KnownAtBudget = 0.5;
+
+        /// <summary>The level's arena; null plays an open one (<see cref="ArenaData.Open"/>).</summary>
+        public ArenaData Arena;
 
         public int TickCapacity = 40_000;
         public int BeatCapacity = 8_192;

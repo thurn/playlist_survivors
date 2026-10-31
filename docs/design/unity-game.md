@@ -1171,6 +1171,10 @@ placement list, as the 3D demo's is.
   re-rendered after a break or regrowth.
 - Structures snap to the hero's 1.5 m grid; the navigation grid is twice as
   fine (0.75 m).
+- The editor exports the arena's part of the level data as JSON for the sim
+  (`ArenaData`, game/Assets/Game/Sim/Level/Arena.cs): the tile size, the
+  origin and size in tiles, the tiles the dressing blocks, the structure
+  sites and the hero's start.
 
 ### The hero
 
