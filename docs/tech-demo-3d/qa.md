@@ -52,6 +52,18 @@ here, since the demo itself takes no input:
                     anything else to 1
 ```
 
+The trailer's finished video (trailer.md, Capture) comes from one tool
+command, which opens the windowed player, so the operator runs it, on the Mac
+or Cygnus, with the player built:
+
+```
+uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4 \
+  -- --palette neon --monster-style crystal
+```
+
+Player flags go after `--`. It prints the mix's checks and exits 1 if one
+fails. `--stand-in` runs the same steps windowless, with a black picture.
+
 ### First assembled check
 
 Run this as soon as TD4 has landed, before the GPU crowd or effects

@@ -808,20 +808,24 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// The sounds with each one's clip name, gain and pitch, for TD13's offline mix (the same
-        /// list the live scheduler plays: the timeline's events and the crystal shatter's).
+        /// list the live scheduler plays: the timeline's events and the crystal shatter's). A
+        /// trailer's also carry its cut and end fades (<see cref="TrailerSoundsHeader"/>).
         /// </summary>
         void DumpSounds(string path)
         {
             var bank = SoundBank.Load();
-            var sb = new System.Text.StringBuilder("{\"sounds\": [\n");
+            var sb = new System.Text.StringBuilder("{" + (_trailer != null ? TrailerSoundsHeader() : "") + "\"sounds\": [\n");
             for (int i = 0; i < _soundCues.Length; i++)
             {
                 var s = _soundCues[i];
                 var clip = bank != null && s.Name != null ? bank.Find(s.Name) : null;
+                double fadeAt = _trailer != null ? CutAfter(s.Time) : double.NaN;
                 // (A "}}" right after a format spec would be read into the spec, so the closing
                 // brace is its own argument.)
-                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"time\": {0:F6}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F4}, \"pitch\": {4:F4}{5}{6}\n",
-                    s.Time, s.Name, clip != null ? clip.name : "", s.Gain, s.Pitch, "}", i + 1 < _soundCues.Length ? "," : "");
+                sb.AppendFormat(CultureInfo.InvariantCulture, "  {{\"time\": {0:F6}, \"sound\": \"{1}\", \"clip\": \"{2}\", \"gain\": {3:F4}, \"pitch\": {4:F4}{5}{6}{7}\n",
+                    s.Time, s.Name, clip != null ? clip.name : "", s.Gain, s.Pitch,
+                    double.IsNaN(fadeAt) ? "" : string.Format(CultureInfo.InvariantCulture, ", \"fadeAt\": {0:F6}", fadeAt),
+                    "}", i + 1 < _soundCues.Length ? "," : "");
             }
             sb.Append("]}\n");
             System.IO.File.WriteAllText(path, sb.ToString());

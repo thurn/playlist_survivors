@@ -981,8 +981,8 @@ violations live.
   Its gain envelope fades a cue from before a cut over 60 ms from the cut, and
   every cue and the music from the cut to black. With `--shot n
   --from-preroll` the pre-roll's own sounds play too, since its whole span is
-  what that run shows. `--dump-sounds` writes the merged cue list; the cut and
-  end fades in it are the capture's (ps-hgs.4).
+  what that run shows. `--dump-sounds` writes the merged cue list with the
+  cut and end fades, for the capture's mix (see [Capture](#capture)).
 - **Time flags.** `--start-at`, `--stills-at`, `--seconds`, `--freeze-at` and
   `--gpu-probe-at` take trailer seconds. With `--shot`, the run starts at the
   shot's cut (or its pre-roll) unless `--start-at` says otherwise, and ends at
@@ -1225,20 +1225,36 @@ uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4 \
 It runs three steps:
 
 1. **Render the video.** It launches the windowed player with `--trailer`,
-   the given player flags, `--capture-video` and `--dump-sounds`. The player
-   renders each frame at 2× and downsamples it. The result is a silent
-   1920×1080 60 fps H.264 file.
+   the given player flags, `--fixed-time`, `--capture-video` and
+   `--dump-sounds` (and `--ffmpeg` with ffmpeg's full path, which IL2CPP
+   needs on the Mac). The player renders each frame at 2× and downsamples it:
+   `--supersample`'s URP render scale draws 3840×2160 into the capture's
+   1920×1080 target, a 2×2 box per pixel. The result is a silent 1920×1080
+   60 fps H.264 file.
 2. **Write the cue list.** Trailer mode's `--dump-sounds` writes exactly the
-   cues the live run would play, in song seconds. That includes the cut fades
-   and the end fade.
-3. **Mix and mux.** It mixes the song window under those cues with the
-   existing mixer (`demo3d mix`), applies the 1.5 s fade, and muxes the audio
-   into the video.
+   cues the live run would play, in song seconds, with its fades:
+   - `trailerStart`, `start` and `end`: trailer time 0, the run's first frame
+     (the video's) and its end;
+   - `cutFadeS` (0.06), and on each cue that rings into the next shot,
+     `fadeAt`, the cut it fades out from;
+   - `fadeOut`: the cut to black (`at`) and the fade's `seconds` (1.5), which
+     take the music and every sound down together.
+3. **Mix and mux.** It mixes the song window from `start` under those cues
+   with the existing mixer (`demo3d mix`), applies the fades as the live player
+   does, and muxes the audio into the video. Then it checks the mix: the peak
+   stays under the limiter's ceiling, every cue's clip was found, nothing from
+   before a cut sounds 60 ms after it, and the end fade falls to silence.
+
+The picture, the cue list and the player's log stay beside the output, as
+`FILE.silent.mp4`, `FILE.sounds.json` and `FILE.player.log`, so the mix can be
+redone with `demo3d mix` alone.
 
 The capture needs a windowed player. Agents never open player windows, so
 recording it is a task for the **operator**, the developer who runs the demo
 and reviews its evidence. Agents check the trailer with windowless stills and
-frame sequences instead.
+frame sequences instead, and the mix with `--stand-in`, which runs every step
+but the window: a batch-mode player dumps the same cues, and a black video of
+the capture's length stands in for the picture.
 
 ## Checks and Evidence
 

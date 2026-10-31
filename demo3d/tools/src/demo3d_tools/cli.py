@@ -21,6 +21,8 @@ Commands:
   sync                fill a vendor folder from the manifest (--record-only for the Mac)
   manifest find|add   list source assets by glob, or add them to the manifest
   mix                 the offline mix of a video capture (the song plus the timeline's sounds)
+  trailer --out FILE  the trailer's mixed video: windowed capture, cue list, mix and checks
+                      (-- player flags after; --stand-in: every step but the window, for agents)
   flip A B            FLIP scores of two capture folders' stills (calibrate: the A/B thresholds)
   sweep SPEC...       a benchmark sweep in the windowed player (one process per spec), then its
                       report: takes the machine lock first; --out DIR, --backend, --build,
@@ -258,6 +260,12 @@ def cmd_flip(a: argparse.Namespace) -> int:
     return flip.main(a.args)
 
 
+def cmd_trailer(a: argparse.Namespace) -> int:
+    from . import trailer
+
+    return trailer.main(a.args)
+
+
 def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     """The commands for `project`; the sweep, PIX, capture and warm-editor tools are demo3d's."""
     p = argparse.ArgumentParser(prog=project, description=__doc__,
@@ -369,6 +377,10 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     fl.add_argument("args", nargs=argparse.REMAINDER)
     fl.set_defaults(func=cmd_flip)
 
+    tr = sub.add_parser("trailer", help="the trailer's mixed video: capture, cue list, mix and checks")
+    tr.add_argument("args", nargs=argparse.REMAINDER)
+    tr.set_defaults(func=cmd_trailer)
+
     lk = sub.add_parser("look", help="the look pass's stills, stats and readability (Mac, windowless)")
     lk.add_argument("slug", help="the set's name: captures/look/SLUG and demo3d/evidence/look/SLUG")
     lk.add_argument("--baseline", help="a committed set to compare against (contact sheet, deltas): a look/ slug, "
@@ -403,10 +415,10 @@ def main(argv: list[str] | None = None, project: str = "demo3d") -> None:
         sys.exit(f"{project}: git is not on PATH")
     argv = sys.argv[1:] if argv is None else argv
     # These parse their own options (argparse's REMAINDER won't take a leading --option).
-    if project == "demo3d" and argv and argv[0] in ("mix", "flip"):
-        from . import flip, mix
+    if project == "demo3d" and argv and argv[0] in ("mix", "flip", "trailer"):
+        from . import flip, mix, trailer
 
-        sys.exit((mix if argv[0] == "mix" else flip).main(argv[1:]))
+        sys.exit({"mix": mix, "flip": flip, "trailer": trailer}[argv[0]].main(argv[1:]))
     args = build_parser(project).parse_args(argv)
     sys.exit(args.func(args))
 

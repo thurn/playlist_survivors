@@ -13,7 +13,10 @@ namespace Demo3D.Runtime.Playback
     /// - stills at chosen song times, as JPEGs with the `ps-render` tag, and
     /// - video, streamed as raw frames straight into ffmpeg's encoder (never as image files),
     ///   with `ps-render` in the file's comment metadata. Videos go to the gitignored captures/.
-    /// An A/B pair is two runs with the same times and one flag changed.
+    /// An A/B pair is two runs with the same times and one flag changed. Under `--supersample`
+    /// (a trailer capture's 2× by default) URP draws the frame at the render scale, 3840×2160 at
+    /// 2×, and its final blit downsamples it into the target, a 2×2 box at 2× (Supersampling), so
+    /// stills and video are kept and encoded at 1920×1080 either way.
     /// </summary>
     public sealed class CaptureTool : IDisposable
     {
@@ -48,6 +51,9 @@ namespace Demo3D.Runtime.Playback
                 _resolved.Create();
             }
             _camera.targetTexture = _target;
+            float scale = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset asset ? asset.renderScale : 1f;
+            Debug.Log(string.Format(CultureInfo.InvariantCulture, "CaptureTool: drawing {0}×{1}, kept at {2}×{3}",
+                Mathf.RoundToInt(Width * scale), Mathf.RoundToInt(Height * scale), Width, Height));
             _stillDir = stillDir;
             if (!string.IsNullOrEmpty(stillTimes))
                 foreach (var s in stillTimes.Split(','))

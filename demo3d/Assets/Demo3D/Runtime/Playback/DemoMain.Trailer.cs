@@ -300,14 +300,27 @@ namespace Demo3D.Runtime.Playback
         float TrailerGain(double cue, double t)
         {
             float g = EndFade(t);
-            int s = _onlyShot >= 0 ? -1 : _trailer.ShotAt(cue);
-            if (s >= 0 && s + 1 < _trailer.Shots.Length)
-            {
-                double cut = _trailer.Shots[s + 1].Cut;
-                if (t > cut) g *= (float)Math.Max(0, 1 - (t - cut) / CutFadeS);
-            }
+            double cut = CutAfter(cue);
+            if (t > cut) g *= (float)Math.Max(0, 1 - (t - cut) / CutFadeS);
             return g;
         }
+
+        /// <summary>The cut a cue fades from: the one after its shot's, or NaN (with --shot, and in the last shot).</summary>
+        double CutAfter(double cue)
+        {
+            int s = _onlyShot >= 0 ? -1 : _trailer.ShotAt(cue);
+            return s >= 0 && s + 1 < _trailer.Shots.Length ? _trailer.Shots[s + 1].Cut : double.NaN;
+        }
+
+        /// <summary>
+        /// `--dump-sounds`' trailer fields (trailer.md, "Capture"), in song seconds: the trailer's start (trailer time 0),
+        /// the run's first frame and its end, the cut fade's length and the end fade; each cue also names the cut it
+        /// fades from (<see cref="CutAfter"/>). The offline mix applies them as <see cref="TrailerGain"/> and
+        /// <see cref="EndFade"/> do live.
+        /// </summary>
+        string TrailerSoundsHeader() => string.Format(CultureInfo.InvariantCulture,
+            "\"trailerStart\": {0:F6}, \"start\": {1:F6}, \"end\": {2:F6}, \"cutFadeS\": {3:F4}, \"fadeOut\": {{\"at\": {4:F6}, \"seconds\": {5:F4}{6}, ",
+            _timeBase, _flags.StartAt, _endAt, CutFadeS, _trailer.BlackAt, _trailer.FadeOutS, "}");
 
         /// <summary>The music's and the sounds' gain at song time t: 1 until the cut to black, then down to 0 over fadeOutS.</summary>
         float EndFade(double t)
