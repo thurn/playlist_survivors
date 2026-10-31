@@ -199,6 +199,14 @@ def test_setups_import_only_save_clears_the_built_marker(wt) -> None:
     assert setup.save_built_library(wt) == entry
 
 
+def test_a_saved_library_leaves_out_the_worktrees_compile_graphs(wt) -> None:
+    (wt.library / "Bee").mkdir(parents=True)
+    (wt.library / "Bee" / "200b0aP.dag.json").write_text(str(wt.root))
+    entry = setup.save_library(wt)
+    assert not (entry / "Bee").exists()
+    assert (wt.library / "Bee").exists()
+
+
 def test_demo2d_has_no_unity_bakers(tmp_path: Path) -> None:
     assert setup.baked(paths.Worktree(tmp_path, "demo2d"))
     assert not setup.baked(paths.Worktree(tmp_path, "demo3d"))

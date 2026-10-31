@@ -225,12 +225,19 @@ def library_candidates(cache: Path, lib_key: str, vendor_key: str) -> list[Path]
     return others
 
 
+# Library/Bee, the script compiler's build graphs, holds the saving worktree's absolute paths: a
+# clone's player build ran the old graph, compiling from that worktree, and failed once it was
+# removed (ps-d8m). Without it Unity rebuilds the graphs, its compiles hitting the shared bee cache.
+PATH_BOUND = "Bee"
+
+
 def save_library(wt: paths.Worktree) -> Path:
     cache = paths.cache_root()
     dest = cache / "library" / library_key(wt) / manifest_key(wt)
     tmp = dest.with_name(f"{dest.name}.{os.getpid()}.tmp")
     clone.clone_tree(wt.library, tmp)
     clone.remove_tree(tmp / f"{wt.namespace}Warm")
+    clone.remove_tree(tmp / PATH_BOUND)
     clone.remove_tree(dest)
     tmp.rename(dest)
     built_marker(dest).unlink(missing_ok=True)
@@ -548,6 +555,7 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
         cands = library_candidates(cache, lkey, vkey)
         if cands:
             n = clone.clone_tree(cands[0], wt.library)
+            clone.remove_tree(wt.library / PATH_BOUND)  # entries saved before ps-d8m hold it
             exact = cands[0].name == vkey
             print(f"setup: Library cloned ({n} files, {'exact' if exact else 'nearest'}) "
                   f"in {time.monotonic() - t:.2f} s")
