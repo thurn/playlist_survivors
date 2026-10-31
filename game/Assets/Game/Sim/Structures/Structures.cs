@@ -36,8 +36,9 @@ namespace PS.Game.Sim
         readonly StructureState[] sites;
         // Each site's tiles' bounds, ground metres, to skip far sites quickly.
         readonly double[] minX, minY, maxX, maxY;
-        // The latest cleave wave to hit each site, so a heavy strike and its wave hit it once.
-        readonly int[] lastWave;
+        // The latest cleave wave, and the latest accent's evolved hits, to hit each site, so a heavy
+        // strike and its wave hit it once, and an accent's evolved hits once, however they interleave.
+        readonly int[] lastWave, lastAccent;
         readonly bool[] regrowDue;
         bool anyDue;
 
@@ -55,6 +56,7 @@ namespace PS.Game.Sim
             maxX = new double[n];
             maxY = new double[n];
             lastWave = new int[n];
+            lastAccent = new int[n];
             regrowDue = new bool[n];
             for (int i = 0; i < n; i++)
             {
@@ -73,7 +75,7 @@ namespace PS.Game.Sim
                     sx += arena.CentreX(t.X);
                     sy += arena.CentreY(t.Y);
                 }
-                lastWave[i] = -1;
+                lastWave[i] = lastAccent[i] = -1;
                 sites[i] = new StructureState
                 {
                     Standing = true,
@@ -93,8 +95,9 @@ namespace PS.Game.Sim
         /// <summary>
         /// A hit at <paramref name="t"/> over the disc of radius <paramref name="reach"/> around
         /// (x, y): every standing structure with a tile in it glints or takes a breaking hit.
-        /// <paramref name="wave"/> names the heavy strike's cleave wave (-1 none), so its strike and
-        /// bands hit each structure once; <paramref name="force"/> is the break's throw, metres.
+        /// <paramref name="wave"/> names the heavy strike's cleave wave, or for an
+        /// <see cref="StructureHit.EvolvedAccent"/> its accent (-1 none), so a strike and its bands, or
+        /// one accent's evolved hits, hit each structure once; <paramref name="force"/> is the break's throw, metres.
         /// </summary>
         internal void Strike(Simulation sim, double t, double x, double y, double reach, StructureHit source, double force, int wave = -1)
         {
@@ -106,8 +109,9 @@ namespace PS.Game.Sim
                 if (!Nearest(i, x, y, out double px, out double py, out double d) || d > reach) continue;
                 if (wave >= 0)
                 {
-                    if (lastWave[i] == wave) continue;
-                    lastWave[i] = wave;
+                    var last = source == StructureHit.EvolvedAccent ? lastAccent : lastWave;
+                    if (last[i] == wave) continue;
+                    last[i] = wave;
                 }
                 double dx = px - x, dy = py - y;
                 if (d < 1e-9)

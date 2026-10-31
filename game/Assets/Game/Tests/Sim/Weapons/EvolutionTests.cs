@@ -202,5 +202,29 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(3.0, broken[0].T, Eps, "on the accented beat's pulse");
             Assert.IsFalse(sim.State.Structures[0].Standing);
         }
+
+        [Test]
+        public void ALargeStructureTakesOneBreakingHitAnAccentHoweverOftenTheBladesTouchIt()
+        {
+            // Unholy Vespers' blades sweep a two-hit structure on their 5 m ring on every tick of an accent's
+            // window: the accent at 3 s counts once, and the one at 5 s breaks it.
+            var arena = ArenaData.Open(40, 40);
+            arena.Structures = new[] { new StructureSite { Tiles = new[] { new Tile(23, 19), new Tile(23, 20), new Tile(23, 21) }, Large = true } };
+            var onsets = new[] { 3.0, 5.0 }.Select(t => new KnownEntry(StreamEntry.Onset(t, 0, 300, true), 1.0));
+            var sim = Armed("unholy-vespers", arena: arena, extra: onsets);
+            Assert.AreEqual(2, sim.State.Structures[0].HitsToBreak);
+
+            sim.StepTo(4.5);
+            var glints = Drive.Events(sim, SimEventKind.Glint).Select(e => e.AsGlint).Where(g => g.Source == StructureHit.EvolvedAccent).ToList();
+            Assert.Greater(glints.Count, 0, "the blades touch it in the accent's window");
+            Assert.IsTrue(glints.All(g => g.Hits == 1), "one breaking hit for the whole accent");
+            Assert.IsTrue(glints.All(g => Math.Abs(g.T - 3.0) <= Accents.Window + 1e-9));
+            Assert.IsTrue(sim.State.Structures[0].Standing);
+
+            sim.StepTo(6);
+            var broken = Breaks(sim);
+            Assert.AreEqual(1, broken.Count);
+            Assert.AreEqual(5.0, broken[0].T, Accents.Window + 1e-9, "the second accent's hit breaks it");
+        }
     }
 }

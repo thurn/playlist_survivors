@@ -32,6 +32,7 @@ namespace Game.Client.Hud
     /// the rewards. `--chest-preview S[:TIER]` still opens a client-only preview at song time S whose
     /// ticks and landing come from the beats known then (eight eighths from the next downbeat), with
     /// the hero's own items as its rewards, for stills of the cards alone; it freezes nothing.
+    /// The landed card gives way to level-up cards opening while it shows (its layer is above theirs).
     /// </summary>
     public sealed class ChestCards
     {
@@ -108,10 +109,12 @@ namespace Game.Client.Hud
             return n;
         }
 
-        public void Present(double s, Simulation sim, in HeardBeat beat)
+        /// <param name="cardsOpen">A level-up offer's cards are open: a landed card closes for them.</param>
+        public void Present(double s, Simulation sim, in HeardBeat beat, bool cardsOpen)
         {
             if (_content == null) return;
             if (!_roulette.Open && !double.IsNaN(_previewAt) && s >= _previewAt && beat.Has) Preview(s, sim);
+            if (cardsOpen && _roulette.Open && s + 1e-9 >= _roulette.Landed) _roulette.Closes = Math.Min(_roulette.Closes, s);
             if (!_roulette.Open || s >= _roulette.Closes)
             {
                 _layer.style.display = DisplayStyle.None;

@@ -158,20 +158,44 @@ namespace Game.Tests
             var heading = layer.Q<Label>("chest-heading");
             var items = layer.Q("chest-items");
 
-            chest.Present(2.4, sim, default);
+            chest.Present(2.4, sim, default, false);
             Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.Flex));
             Assert.That(layer.style.opacity.value, Is.EqualTo(0f), "not before it opens");
-            chest.Present(4.1, sim, default);
+            chest.Present(4.1, sim, default, false);
             Assert.That(heading.text, Is.EqualTo("TREASURE"));
             Assert.That(items.childCount, Is.EqualTo(3), "a tier-2 chest's three items");
-            chest.Present(5.0, sim, default);
+            chest.Present(5.0, sim, default, false);
             Assert.That(heading.text, Is.EqualTo("TREASURE FOUND"), "it lands on the landing's frame");
             var names = items.Query<Label>(className: "reward__name").ToList().Select(l => l.text);
             Assert.That(names, Is.EqualTo(new[] { "HOLY WAND", "MAGIC WAND", "HEAL" }));
             var ranks = items.Query<Label>(className: "reward__rank").ToList().Select(l => l.text);
             Assert.That(ranks, Is.EqualTo(new[] { "NEW!", "LV 4", "" }));
-            chest.Present(5 + ChestCards.ShowAfterLandingS, sim, default);
+            chest.Present(5 + ChestCards.ShowAfterLandingS, sim, default, false);
             Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.None), "its card goes after the landing");
+        }
+
+        [Test]
+        public void ALandedChestsCardGivesWayToLevelUpCardsOpeningWhileItShows()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            var layer = new VisualElement();
+            layer.Add(new VisualElement { name = "chest-items" });
+            layer.Add(new Label { name = "chest-heading" });
+            layer.Add(new Label { name = "chest-hint" });
+            var chest = new ChestCards(layer, content, null);
+            var sim = new Simulation(new SimConfig());
+            chest.OnEvent(SimEvent.Chest(2.5, 0, ChestPhase.Open, 1, 3, 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Land, 1, 1, 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Reward, 1, 0, 0, 0));
+
+            chest.Present(4, sim, default, false);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            chest.Present(5.5, sim, default, false);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.Flex), "TREASURE FOUND shows");
+            chest.Present(6, sim, default, true);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.None), "a level-up's cards open over it");
+            chest.Present(6.5, sim, default, false);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.None), "and it stays closed once they are taken");
         }
     }
 }

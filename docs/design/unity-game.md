@@ -1851,7 +1851,7 @@ engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
   ping on each eighth climbing the major pentatonic, one transformation for a landing that evolves.
   The HUD's `ChestCards` (ps-msz.6.9) takes the chest events: its card opens with the roulette,
   its gems cycle on each tick as it comes, and TREASURE FOUND shows each reward's name and rank from
-  the landing.
+  the landing, until level-up cards opening meanwhile take the screen.
 - **Debug**: `--debug chest@S` (`DebugCommand.Chest`) drops a tier-3 chest of the last evolving
   minute's treasure two tiles ahead of the hero, for it to walk onto. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
 

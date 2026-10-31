@@ -375,7 +375,7 @@ namespace PS.Game.Sim
             if (s.Heavy || !Def.IsEvolution || !sim.Accents.NearAccentedBeat(t, out int accent))
                 structures.Strike(sim, t, hx, hy, s.Reach, s.Heavy ? StructureHit.HeavyStrike : StructureHit.Strike, launch,
                     wave >= 0 ? waves[wave].Id : -1);
-            else structures.Strike(sim, t, hx, hy, s.Reach, StructureHit.EvolvedAccent, launch, AccentGroup + accent);
+            else structures.Strike(sim, t, hx, hy, s.Reach, StructureHit.EvolvedAccent, launch, accent);
             if (horde == null) return;
             var enemies = state.EnemyStore;
             double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1);

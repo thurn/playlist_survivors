@@ -97,6 +97,24 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void AWaveAndAnAccentsEvolvedHitsEachCountOnceHoweverTheyInterleave()
+        {
+            // A heavy strike (wave 0), an evolution's hit on accent 4, the wave's band, the accent's next
+            // hit: two breaking hits on a three-hit structure, not four.
+            var sim = Start(Arena(Block(14, 12, 3, 3, large: true)), Plain(120, 5));
+            sim.StepTo(1);
+            double x = sim.Arena.CentreX(15), y = sim.Arena.CentreY(13);
+            sim.Structures.Strike(sim, sim.Now, x, y, 1, StructureHit.HeavyStrike, 1, 0);
+            sim.Structures.Strike(sim, sim.Now, x, y, 1, StructureHit.EvolvedAccent, 1, 4);
+            sim.Structures.Strike(sim, sim.Now, x, y, 1, StructureHit.Cleave, 1, 0);
+            sim.Structures.Strike(sim, sim.Now, x, y, 1, StructureHit.EvolvedAccent, 1, 4);
+            Assert.AreEqual(2, sim.State.Structures[0].Hits);
+            Assert.IsTrue(sim.State.Structures[0].Standing);
+            sim.Structures.Strike(sim, sim.Now, x, y, 1, StructureHit.EvolvedAccent, 1, 5);
+            Assert.IsFalse(sim.State.Structures[0].Standing, "the next accent's hit is the third");
+        }
+
+        [Test]
         public void TheHeavyStrikeAndItsCleaveBreakStructuresAndOtherStrikesGlint()
         {
             // A: small, 3.75 m east of the hero (in an ordinary strike's 7.04 m). B: large (two hits),

@@ -161,7 +161,7 @@ namespace Game.Client.Hud
             if (banner != null) _bannerText.text = banner;
 
             _cards.Present(s, state.Offer, _sim.State);
-            _chest.Present(s, _sim, beat);
+            _chest.Present(s, _sim, beat, state.Offer.Open);
             _end.Present(s, state, _killCount, _sim.State, _held);
 
             double hx, hy;

@@ -71,21 +71,16 @@ namespace PS.Game.Sim
             Numbers.IntervalS * Stats.Cooldown + (Numbers.IntervalDependsOnDuration ? Numbers.DurationS * Stats.Duration : 0);
 
         /// <summary>
-        /// The structure-break group of an evolution's hits on accented beat <c>b</c>: this plus b, so each
-        /// structure takes one breaking hit an accent from all the evolutions together, as a heavy
-        /// strike and its wave hit it once. Far above any cleave wave's id.
-        /// </summary>
-        internal const int AccentGroup = 1 << 24;
-
-        /// <summary>
         /// An evolution's hit at <paramref name="t"/> over the disc of <paramref name="reach"/> around
         /// (x, y) breaks crystal structures when it lands within <see cref="Accents.Window"/> of an
-        /// accented beat (unity-game.md, Crystal Structures); any other hit leaves them be.
+        /// accented beat (unity-game.md, Crystal Structures); any other hit leaves them be. The accent
+        /// groups the hits, so each structure takes one breaking hit an accent from all the evolutions
+        /// together, as a heavy strike and its wave hit it once.
         /// </summary>
         protected void BreakOnAccent(Simulation sim, double t, double x, double y, double reach)
         {
             if (!Def.IsEvolution || !sim.Accents.NearAccentedBeat(t, out int beat)) return;
-            sim.Structures.Strike(sim, t, x, y, reach, StructureHit.EvolvedAccent, Launch(1), AccentGroup + beat);
+            sim.Structures.Strike(sim, t, x, y, reach, StructureHit.EvolvedAccent, Launch(1), beat);
         }
 
         /// <summary>The weapon keeps its own cadence on the beat rather than the arsenal's shots.</summary>
