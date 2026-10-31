@@ -39,6 +39,7 @@ namespace Demo3D.Runtime.Playback
         public string Trailer;        // --trailer [name]: the trailer file trailer-NAME.json, "action" by default (trailer.md); null: the song
         public int Shot;              // --shot <n>: with --trailer, only shot n, from its cut to its end (0: every shot)
         public bool FromPreroll;      // --from-preroll: with --shot, from the start of its pre-roll
+        public bool NoTrailerLook;    // --no-trailer-look: with --trailer, no per-shot grade, grain, lens dirt or lens hits (for comparing against normal runs)
         public Demo3D.Runtime.Arena.ArenaOptions ArenaOptions; // --arena, --density and TD14's --grd, --merged, --tex-cap, --prepass
         // --cuts default|none|all|name,-name (TD11's cuts; Demo3D.Runtime.Cuts reads it), --lod-px, --light-cell, --merge-px
 
@@ -79,6 +80,7 @@ namespace Demo3D.Runtime.Playback
                 Trailer = Args.Has("--trailer") ? TrailerName(Args.Get("--trailer")) : null,
                 Shot = Args.GetInt("--shot", 0),
                 FromPreroll = Args.Has("--from-preroll"),
+                NoTrailerLook = Args.Has("--no-trailer-look"),
             };
             f.ArenaOptions = Demo3D.Runtime.Arena.ArenaOptions.FromCommandLine(Demo3D.Runtime.Arena.ArenaOptions.Final());
             f.Arena = f.ArenaOptions.Rung;

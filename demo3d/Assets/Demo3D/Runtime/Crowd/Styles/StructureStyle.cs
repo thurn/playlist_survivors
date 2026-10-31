@@ -155,11 +155,12 @@ namespace Demo3D.Runtime.Crowd
         }
 
         /// <summary>
-        /// The one post look for the night volume: the horde's if `--monster-style` sets one, else the structures' over
-        /// the night's (null: the night's own).
+        /// The one post look for the night volume: the horde's if `--monster-style` sets one (its offsets from the
+        /// forest's <paramref name="forest"/> over the night's), else the structures' over the night's (null: the
+        /// night's own).
         /// </summary>
-        public static PostLook? PostFor(MonsterStyle horde, StructureStyle structures, PostLook night) =>
-            horde?.Post ?? structures?.PostOver(night);
+        public static PostLook? PostFor(MonsterStyle horde, StructureStyle structures, PostLook night, PostLook forest) =>
+            horde?.PostOver(night, forest) ?? structures?.PostOver(night);
 
         static string ShaderOf(string name)
         {

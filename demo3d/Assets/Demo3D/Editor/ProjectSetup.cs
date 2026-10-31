@@ -86,6 +86,7 @@ namespace Demo3D.EditorTools
             renderer.postProcessData = AssetDatabase.LoadAssetAtPath<PostProcessData>(PostProcessDataPath)
                 ?? throw new InvalidOperationException("ProjectSetup: no URP post-process data at " + PostProcessDataPath);
             EnsureSsao(renderer);
+            EnsureLensHit(renderer);
             EditorUtility.SetDirty(renderer);
 
             var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(PipelinePath);
@@ -209,6 +210,36 @@ namespace Demo3D.EditorTools
             settings.FindPropertyRelative("Falloff").floatValue = 100f;
             s.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(ssao);
+        }
+
+        /// <summary>
+        /// The trailer's impact lens hits as a renderer feature (LensHitFeature; trailer.md, Look). It draws only on a
+        /// frame with a hit, so it costs a normal run nothing; its shader reaches the build through it.
+        /// </summary>
+        static void EnsureLensHit(UniversalRendererData renderer)
+        {
+            var feature = renderer.rendererFeatures.OfType<Demo3D.Runtime.Playback.LensHitFeature>().FirstOrDefault();
+            if (feature == null)
+            {
+                feature = ScriptableObject.CreateInstance<Demo3D.Runtime.Playback.LensHitFeature>();
+                feature.name = "LensHit";
+                AssetDatabase.AddObjectToAsset(feature, renderer);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out string _, out long localId);
+                var so = new SerializedObject(renderer);
+                var features = so.FindProperty("m_RendererFeatures");
+                var map = so.FindProperty("m_RendererFeatureMap");
+                features.arraySize++;
+                features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = feature;
+                map.arraySize++;
+                map.GetArrayElementAtIndex(map.arraySize - 1).longValue = localId;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            feature.SetActive(true);
+            var f = new SerializedObject(feature);
+            (f.FindProperty("shader") ?? throw new InvalidOperationException("ProjectSetup: LensHitFeature has no shader field")).objectReferenceValue =
+                Shader.Find("Hidden/Demo3D/LensHit") ?? throw new InvalidOperationException("ProjectSetup: no shader Hidden/Demo3D/LensHit");
+            f.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(feature);
         }
 
         public const string BenchDir = "Assets/Demo3D/Resources/Bench";

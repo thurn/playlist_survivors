@@ -112,6 +112,30 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void AShotsGradeAddsToItsEnvironmentsFromItsFirstFrame()
+        {
+            double cut = _map.TimeOfBarBeat("85.1");
+            var first = new TrailerGrade { Exposure = 0.1f, Contrast = 6f, Saturation = 10f, Temperature = 6f };
+            var second = new TrailerGrade { Exposure = -0.05f, Contrast = 4f, Saturation = -4f, Temperature = -8f };
+            var grades = new[] { (cut - 6.0, first), (cut, second) };
+            var plain = new PostFeel(_map, _amounts, true, new (double, float)[0]);
+            var feel = new PostFeel(_map, _amounts, true, new (double, float)[0], null, null, grades);
+            foreach (var (t, g) in new[] { (cut - 1e-3, first), (cut, second), (cut + 1.0, second) })
+            {
+                PostFeel.Offsets a = feel.At(t), b = plain.At(t);
+                Assert.That(a.Exposure - b.Exposure, Is.EqualTo(g.Exposure).Within(1e-5f), $"t = {t}");
+                Assert.That(a.Contrast - b.Contrast, Is.EqualTo(g.Contrast).Within(1e-4f), $"t = {t}");
+                Assert.That(a.Saturation - b.Saturation, Is.EqualTo(g.Saturation).Within(1e-4f), $"t = {t}");
+                Assert.That(a.Temperature - b.Temperature, Is.EqualTo(g.Temperature).Within(1e-4f), $"t = {t}");
+                Assert.That(a.Bloom, Is.EqualTo(b.Bloom), "the beat pulse and flashes ride on top");
+            }
+            Assert.That(feel.At(cut - 7.0), Is.EqualTo(plain.At(cut - 7.0)), "no grade before the first shot");
+            var off = new PostFeel(_map, _amounts, false, new (double, float)[0], null, null, grades);
+            Assert.That(off.At(cut + 1.0).Contrast, Is.EqualTo(second.Contrast), "the grade is the trailer's look, not the feel: --no-post-feel keeps it");
+            Assert.That(off.At(cut + 1.0).Bloom, Is.EqualTo(0f));
+        }
+
+        [Test]
         public void ItIsAllZeroWhenOff()
         {
             var feel = Feel(enabled: false);

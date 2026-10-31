@@ -221,6 +221,31 @@ on the Mac (Apple M5 Max) with the IL2CPP player, `--resident crypt,desert,snow,
   the trailer's powerful machine. Hidden scenes' particle systems and flame flickers still
   update, a small CPU cost a frame.
 
+### The trailer's look
+
+The trailer's supersampling and lens hits ([Look](trailer.md#look), bead ps-hgs.3), measured
+on the Mac (Apple M5 Max) with the IL2CPP player. The numbers come from windowless
+`--gpu-probe-at` runs over the climax (`--trailer --start-at 27.3`), two runs per setting.
+Each number is the median of a point's three frames, CPU submission and GPU in series: an upper
+bound on a windowed frame ([evidence](../../demo3d/evidence/trailer/look/README.md)).
+
+| trailer s | on screen | 1× | 1.5× | 2× | 2× without the trailer look |
+|---|---:|---:|---:|---:|---:|
+| 27.5 (the climax's opening) | 750 | 9.7–11.3 ms | 11.8–13.7 | 14.5–14.9 | 14.3–14.9 |
+| 28.5 | 1,020 | 11.2–11.3 | 12.9–13.9 | 13.5–14.5 | 14.6–17.4 |
+| 29.5 | 1,220 | 11.0–11.6 | 13.2–13.4 | 14.5–14.9 | 14.6–14.8 |
+| 30.37 (the final slam's lens hit) | dying | 15.5–16.0 | 19.8–20.7 | 23.1–24.3 | 22.3–22.8 |
+
+- **The live default is 1×.** It is the highest factor that holds 60 fps
+  through the climax, and even 1× is at the edge on the final slam's frames:
+  15.5–16 ms, peaking at 18. At 2× the climax holds about 14.5 ms until the
+  slam, whose frames take about 24 ms. The windowed watch may justify
+  `--supersample 2` live, since a windowed player overlaps the CPU and the GPU.
+- **The capture always renders at 2×,** where cost doesn't matter.
+- **The lens hit** costs about 0.5–1.5 ms on the frames it draws: 16 taps of
+  three channels at the render resolution. Every other frame skips its pass.
+  Grain and dirt ride in URP's uber post pass and cost nothing measurable.
+
 ## Engine and Rendering Setup
 
 The project uses Unity 6.6 (6000.6.7f1, installed on Cygnus during

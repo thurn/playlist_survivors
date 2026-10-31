@@ -80,6 +80,44 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void AStylesPostLookIsOffsetsFromTheForestsSoOtherEnvironmentsKeepTheirOwn()
+        {
+            PostLook Night(string env)
+            {
+                var profile = NightLook.CreateProfile(ArenaLighting.Parse(env == "forest" ? File.ReadAllText(ArenaBaker.LayoutPath) : ArenaEnvironment.Load(env).Json));
+                try { return PostLook.From(profile); }
+                finally { UnityEngine.Object.DestroyImmediate(profile); }
+            }
+            PostLook forest = Night("forest");
+            foreach (var name in MonsterStyle.Names)
+            {
+                var style = MonsterStyle.Parse(name);
+                if (style.IsBaseline)
+                {
+                    Assert.That(style.PostOver(forest, forest), Is.Null, "baseline keeps each night's own");
+                    continue;
+                }
+                var tuned = style.Post.Value;
+                var inForest = style.PostOver(forest, forest).Value;
+                Assert.That(inForest.exposure, Is.EqualTo(tuned.exposure).Within(1e-5f), $"{name}: the forest looks as tuned");
+                Assert.That(inForest.contrast, Is.EqualTo(tuned.contrast).Within(1e-4f), name);
+                Assert.That(inForest.saturation, Is.EqualTo(tuned.saturation).Within(1e-4f), name);
+                Assert.That(inForest.bloom, Is.EqualTo(tuned.bloom).Within(1e-5f), name);
+                Assert.That(inForest.chroma, Is.EqualTo(tuned.chroma).Within(1e-5f), name);
+                Assert.That(inForest.vignette, Is.EqualTo(tuned.vignette).Within(1e-5f), name);
+                foreach (var env in new[] { "snow", "desert" })
+                {
+                    var night = Night(env);
+                    var look = style.PostOver(night, forest).Value;
+                    Assert.That(night.exposure, Is.LessThan(forest.exposure), $"{env}'s own exposure is lower");
+                    Assert.That(look.exposure - night.exposure, Is.EqualTo(tuned.exposure - forest.exposure).Within(1e-5f), $"{name} in {env}: the style's offset");
+                    Assert.That(look.saturation - night.saturation, Is.EqualTo(tuned.saturation - forest.saturation).Within(1e-4f), $"{name} in {env}");
+                    Assert.That(look.exposure, Is.LessThan(tuned.exposure), $"{name} in {env} keeps its lower exposure");
+                }
+            }
+        }
+
+        [Test]
         public void TheBeatGlobalsPulseOnEveryBeatAndDownbeat()
         {
             var map = SongMap.Parse(File.ReadAllText("Assets/Baked/Audio/action.songmap.json"));

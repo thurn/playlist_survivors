@@ -26,7 +26,8 @@ MonoBehaviour:
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
   - {fileID: 4497944356742812870}
-  m_RendererFeatureMap: c6d420b38fe86b3el
+  - {fileID: 9120751940181341669}
+  m_RendererFeatureMap: c6d420b38fe86b3ee5b5f6d6906b937el
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3
   m_PrepassLayerMask:
@@ -80,3 +81,17 @@ MonoBehaviour:
     BlurQuality: 0
     Falloff: 100
     SampleCount: -1
+--- !u!114 &9120751940181341669
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e430faf360bcd439b8dd186255a5154e, type: 3}
+  m_Name: LensHit
+  m_EditorClassIdentifier: Demo3D.Runtime::Demo3D.Runtime.Playback.LensHitFeature
+  m_Active: 1
+  shader: {fileID: 4800000, guid: 5f305972784594c4c8e750a5f280e6b4, type: 3}

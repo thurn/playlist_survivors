@@ -52,6 +52,8 @@ namespace Demo3D.Runtime.Playback
         CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         Demo3D.Runtime.Arena.StructureShatter _breaks; // --structure-breaks: the struck pieces' shards (null without breaks)
         bool _stylePosted;
+        float _supersample = 1f;  // --supersample (Supersampling)
+        TrailerLook _look;        // a trailer's grain, dirt and lens hits (null outside a trailer and with --no-trailer-look)
         SoundScheduler _sounds;
         SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the crystal shatter's
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
@@ -235,6 +237,9 @@ namespace Demo3D.Runtime.Playback
             _heroBlade = new HeroBlade(CrowdLibrary.Load());
             _heroRenderer.Created = _heroBlade.Attach;
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
+            _supersample = Supersampling.Factor(_flags);
+            Supersampling.Apply(_supersample);
+            if (_supersample != 1f) Debug.Log($"DemoMain: {Supersampling.Flag} {_supersample.ToString(CultureInfo.InvariantCulture)}: rendering at {_supersample.ToString(CultureInfo.InvariantCulture)}x the output, downsampled");
             UnityEngine.Rendering.Universal.CameraExtensions.GetUniversalAdditionalCameraData(_rig.Camera).requiresColorOption =
                 UnityEngine.Rendering.Universal.CameraOverrideOption.On;
             StartEffects();
@@ -357,7 +362,7 @@ namespace Demo3D.Runtime.Playback
             if (_warmed == 0)
             {
                 // Each volume takes the style's grade before its post feel first binds, as the single arena's does.
-                for (int i = 0; i < _arenas.Count; i++) PostStyle(_arenas[i]);
+                for (int i = 0; i < _arenas.Count; i++) PreparePost(_arenas[i]);
                 _stylePosted = true;
                 _warmTarget = BatchGpuProbe.Target(_rig.Camera, "ArenaWarm");
                 _liveTarget = _rig.Camera.targetTexture;
@@ -398,16 +403,44 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
+        /// An arena's night volume before its post feel first binds: the style's grade, the bloom fitted to the
+        /// supersampling, and a trailer's grain and lens dirt.
+        /// </summary>
+        void PreparePost(Demo3D.Runtime.Arena.ArenaRuntime arena)
+        {
+            PostStyle(arena);
+            Supersampling.FitBloom(arena.Post.sharedProfile, _supersample);
+            _look?.Dress(arena.Post.sharedProfile);
+        }
+
+        /// <summary>
         /// The style's grade on an arena's night volume, before its post feel first binds (it becomes PostFeel's base):
-        /// one look, the monster style's, else the structure style's over the night's own (environment.md, Structure styles).
+        /// one look, the monster style's offsets from the forest's over the night's own, else the structure style's over
+        /// the night's own (environment.md, Structure styles; trailer.md, The style post fix).
         /// </summary>
         void PostStyle(Demo3D.Runtime.Arena.ArenaRuntime arena)
         {
-            if (!(StructureStyle.PostFor(_style, _structures, PostLook.From(arena.Post.sharedProfile)) is PostLook look)) return;
+            var forest = _style.IsBaseline ? default : ForestPost(); // only a monster style moves by the forest's values
+            if (!(StructureStyle.PostFor(_style, _structures, PostLook.From(arena.Post.sharedProfile), forest) is PostLook look)) return;
             look.ApplyTo(arena.Post.sharedProfile);
             string by = _style.Post != null ? $"{MonsterStyle.Flag} {_style.Name}" : $"{StructureStyle.Flag} {_structures.Name}";
             Debug.Log($"DemoMain: {by}'s post look on the night volume" + (_arenas != null ? " of " + arena.Options.Environment : ""));
         }
+
+        /// <summary>The forest's night volume values for this run's flags (its palette, roster set and post overrides): the monster styles' reference.</summary>
+        PostLook ForestPost()
+        {
+            if (_forestPost is PostLook post) return post;
+            var lighting = Demo3D.Runtime.Arena.ArenaLighting.Parse(PlaybackData.Load().EnvironmentLayout(LayoutEnvironment.Default), Args.Get("--palette"), RosterSet.Active.Name);
+            var profile = Demo3D.Runtime.Arena.NightLook.CreateProfile(lighting);
+            post = PostLook.From(profile);
+            foreach (var c in profile.components) Destroy(c);
+            Destroy(profile);
+            _forestPost = post;
+            return post;
+        }
+
+        PostLook? _forestPost;
 
         /// <summary>`--aa msaa4|taa|off` (performance.md: MSAA 4x until TD9 picks).</summary>
         public static void ApplyAntiAliasing(string mode, Camera camera)
@@ -608,9 +641,10 @@ namespace Demo3D.Runtime.Playback
                 // The arena's volume exists once its scene has loaded; the style's grade goes on it before
                 // PostFeel first binds, so it becomes PostFeel's base. One look: the horde's, else the structures'.
                 _stylePosted = true;
-                PostStyle(_arena);
+                PreparePost(_arena);
             }
             _postFeel?.Apply(_arena.Post, feelT);
+            _look?.Frame(feelT, _rig.Camera);
             foreach (var e in _active)
             {
                 var info = _tl.Entities[e];

@@ -167,10 +167,18 @@ namespace Demo3D.Runtime.Crowd
         public static MonsterStyle FromCommandLine() => FromArgs(Environment.GetCommandLineArgs());
 
         /// <summary>
-        /// The post stack the style wants as PostFeel's base (null: the night's own). From
+        /// The post stack the style wants in the forest, where it was tuned (null: the night's own). From
         /// stylelab's Treatments.cs; the crowd-only knobs of the look pass stay the baseline's.
         /// </summary>
         public PostLook? Post => IsBaseline ? (PostLook?)null : PostOf(Name).With(_tune);
+
+        /// <summary>
+        /// The style's post stack over an environment's own (<paramref name="night"/>), as PostFeel's base (null: the
+        /// night's own). The style's look is offsets from the forest's (<paramref name="forest"/>) values (trailer.md,
+        /// "The style post fix"), so the forest under a style looks as tuned and every other environment keeps its
+        /// own base: the snow and the desert their lower exposure.
+        /// </summary>
+        public PostLook? PostOver(PostLook night, PostLook forest) => Post is PostLook look ? night.Moved(forest, look) : (PostLook?)null;
 
         /// <summary>A style's own post look, before any tuning (also a structure style's, <see cref="StructureStyle.Post"/>).</summary>
         internal static PostLook PostOf(string name)
@@ -343,7 +351,8 @@ namespace Demo3D.Runtime.Crowd
 
     /// <summary>
     /// A style's post stack (stylelab's PostLook): written over the night volume's values before
-    /// PostFeel reads them, so its beat and section offsets ride on top.
+    /// PostFeel reads them, so its beat and section offsets ride on top. A monster style's is
+    /// tuned in the forest and moves another environment's values by the same offsets (<see cref="Moved"/>).
     /// </summary>
     public struct PostLook
     {
@@ -399,6 +408,23 @@ namespace Demo3D.Runtime.Crowd
             if (tune.TryGetValue("neutral", out v)) look.neutral = v > 0.5f;
             return look;
         }
+
+        /// <summary>
+        /// This look moved by <paramref name="to"/>'s offsets from <paramref name="from"/>: every value plus
+        /// (to - from), with <paramref name="to"/>'s tonemapper. Moving <paramref name="from"/> itself gives
+        /// <paramref name="to"/>.
+        /// </summary>
+        public PostLook Moved(PostLook from, PostLook to) => new PostLook
+        {
+            neutral = to.neutral,
+            exposure = exposure + (to.exposure - from.exposure),
+            contrast = contrast + (to.contrast - from.contrast),
+            saturation = saturation + (to.saturation - from.saturation),
+            bloom = Mathf.Max(0f, bloom + (to.bloom - from.bloom)),
+            bloomThreshold = Mathf.Max(0f, bloomThreshold + (to.bloomThreshold - from.bloomThreshold)),
+            chroma = Mathf.Clamp01(chroma + (to.chroma - from.chroma)),
+            vignette = Mathf.Clamp01(vignette + (to.vignette - from.vignette)),
+        };
 
         /// <summary>Overrides the profile's grade; its LUT, vignette shape and white balance stay the night's.</summary>
         public void ApplyTo(VolumeProfile profile)

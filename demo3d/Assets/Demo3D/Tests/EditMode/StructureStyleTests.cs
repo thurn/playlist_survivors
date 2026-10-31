@@ -48,15 +48,15 @@ namespace Demo3D.Tests
         public void OnePostLookReachesTheNightVolumeTheHordesFirst()
         {
             var night = new PostLook { neutral = true, exposure = 0.6f, contrast = 12f, saturation = 18f, bloom = 0.5f, bloomThreshold = 1.5f, vignette = 0.25f };
-            Assert.That(StructureStyle.PostFor(MonsterStyle.Baseline(), StructureStyle.Baseline(), night), Is.Null, "the night's own");
-            var set = StructureStyle.PostFor(MonsterStyle.Baseline(), StructureStyle.Parse("hologram"), night).Value;
+            Assert.That(StructureStyle.PostFor(MonsterStyle.Baseline(), StructureStyle.Baseline(), night, night), Is.Null, "the night's own");
+            var set = StructureStyle.PostFor(MonsterStyle.Baseline(), StructureStyle.Parse("hologram"), night, night).Value;
             Assert.That(set.contrast, Is.EqualTo(night.contrast), "the baseline horde keeps the night's grade");
             Assert.That(set.exposure, Is.EqualTo(night.exposure));
             Assert.That(set.saturation, Is.EqualTo(night.saturation));
             Assert.That(set.chroma, Is.GreaterThan(0f).And.LessThan(MonsterStyle.Parse("hologram").Post.Value.chroma), "a lighter fringe");
             Assert.That(set.bloom, Is.GreaterThan(night.bloom), "hologram's brighter bloom");
             var fire = MonsterStyle.Parse("fire");
-            Assert.That(StructureStyle.PostFor(fire, StructureStyle.Parse("hologram"), night).Value.contrast, Is.EqualTo(fire.Post.Value.contrast), "the horde's wins");
+            Assert.That(StructureStyle.PostFor(fire, StructureStyle.Parse("hologram"), night, night).Value.contrast, Is.EqualTo(fire.Post.Value.contrast), "the horde's wins");
             Assert.That(StructureStyle.Parse("crystal").NeedsOpaqueTexture);
             Assert.That(Styles.Where(n => n != "crystal").Any(n => StructureStyle.Parse(n).NeedsOpaqueTexture), Is.False);
         }

@@ -79,7 +79,8 @@ namespace Demo3D.Runtime.Playback
         {
             if (_flags.Trailer == null)
             {
-                if (_flags.Shot != 0 || _flags.FromPreroll) throw new InvalidOperationException("DemoMain: --shot and --from-preroll need --trailer");
+                if (_flags.Shot != 0 || _flags.FromPreroll || _flags.NoTrailerLook)
+                    throw new InvalidOperationException("DemoMain: --shot, --from-preroll and --no-trailer-look need --trailer");
                 return;
             }
             foreach (var (flag, why) in TrailerConflicts)
@@ -157,8 +158,9 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// What the client builds from each shot's timeline: its evaluator, effect driver, blow and camera feel and crystal
-        /// breaks; one post feel per environment with every shot's big hits and the flash cuts; the sound cues of every
-        /// shot's visible span. Then the shot at the start is the one drawn.
+        /// breaks; one post feel per environment with every shot's big hits, the flash cuts and the shots' grades; the
+        /// lens hits of every shot's visible span (TrailerLook); the sound cues of every shot's visible span. Then the
+        /// shot at the start is the one drawn.
         /// </summary>
         void PrepareShots(BlowFeel.Amounts feel, ChoreographyData clips, Dictionary<string, ChoreographyData> environments)
         {
@@ -197,16 +199,30 @@ namespace Demo3D.Runtime.Playback
             var cutFlashes = new List<double>();
             foreach (var s in _shots)
                 if (Plays(s) && s.Info.Number > 1 && Array.Exists(map.Accents, a => Math.Abs(a.Time - s.Info.Cut) < FlashCutToleranceS)) cutFlashes.Add(s.Info.Cut);
+            // The trailer's look (trailer.md, Look): each shot's grade from its first frame, and its lens hits.
+            var grades = new List<(double, TrailerGrade)>();
+            var hits = new List<TrailerLook.Hit>();
+            if (!_flags.NoTrailerLook)
+            {
+                foreach (var s in _shots)
+                {
+                    if (!Plays(s)) continue;
+                    grades.Add((s.From, s.Info.Grade));
+                    hits.AddRange(TrailerLook.HitsOf(s.Timeline, feel, s.From, s.Info.End));
+                }
+                _look = new TrailerLook(map, hits, _supersample);
+            }
             _postFeels = new PostFeel[_arenas.Count];
             for (int a = 0; a < _postFeels.Length; a++)
             {
                 var amounts = _arenas[a].Lighting.PostFeel;
                 var flashes = new List<(double, float)>();
                 foreach (var s in _shots) if (Plays(s)) flashes.AddRange(PostFeel.HitFlashes(s.Timeline, amounts, s.From, s.Info.End));
-                _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, null, cutFlashes);
+                _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, null, cutFlashes, grades);
             }
             _postFeel = _postFeels[0];
-            Debug.Log($"DemoMain: flash cuts at trailer {string.Join(", ", cutFlashes.ConvertAll(c => (c - _timeBase).ToString("F3", CultureInfo.InvariantCulture)))} s; {_soundCues.Length} sound cues");
+            Debug.Log($"DemoMain: flash cuts at trailer {string.Join(", ", cutFlashes.ConvertAll(c => (c - _timeBase).ToString("F3", CultureInfo.InvariantCulture)))} s; {_soundCues.Length} sound cues; " +
+                      (_look != null ? $"{hits.Count} lens hits at trailer {string.Join(", ", hits.ConvertAll(h => $"{h.Time - _timeBase:F3} ({h.Strength:F2})"))} s" : "no trailer look"));
             UseShot(ShotAt(_flags.StartAt));
             _black = BlackVolume();
         }
@@ -304,7 +320,11 @@ namespace Demo3D.Runtime.Playback
         bool Blackout(double t)
         {
             bool black = t >= _trailer.BlackAt - 1e-9;
-            if (black) SongTime = t; // nothing is drawn (Draw keeps it otherwise)
+            if (black)
+            {
+                SongTime = t; // nothing is drawn (Draw keeps it otherwise)
+                TrailerLook.Off();
+            }
             _black.weight = black ? 1f : 0f;
             if (_music != null) _music.volume = EndFade(t);
             return black;

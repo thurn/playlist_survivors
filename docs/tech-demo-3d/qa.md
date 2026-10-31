@@ -44,6 +44,12 @@ here, since the demo itself takes no input:
   --from-preroll    with --shot, from the start of its pre-roll
   --overlay         adds the trailer time, the shot and its liveness
                     violations (live only; a capture warns and leaves it out)
+  --no-trailer-look no per-shot grade, grain, lens dirt or lens hits, for
+                    comparing the environments against normal runs
+--supersample <1-2> render at that multiple of the output resolution and
+                    downsample (trailer.md, Look): a trailer's captures
+                    default to 2, its live run to performance.md's factor,
+                    anything else to 1
 ```
 
 ### First assembled check

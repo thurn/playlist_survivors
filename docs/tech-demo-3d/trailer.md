@@ -1109,6 +1109,52 @@ except `baseline` also brings a post-processing look.
   under a non-baseline style is the only normal-run case that looks
   different, and every timeline stays byte-identical.
 
+**Outcome (ps-hgs.3).** The look shipped as designed. Some details
+([evidence](../../demo3d/evidence/trailer/look/README.md)):
+
+- **The per-shot grade** is the post feel's (`PostFeel.ShotGrade`). Each
+  shot's grade applies from its first frame, switching with the cut, and the
+  beat pulse, section grades and flashes ride on top. It is the trailer's
+  look, not the feel, so `--no-feel` and `--no-post-feel` keep it.
+- **The style post fix** is `MonsterStyle.PostOver(night, forest)`. The forest's
+  values come from its own lighting under the run's palette, roster set and
+  post overrides, so the forest under any style gets exactly the tuned values.
+  `--style-tune`'s post keys still set the forest's values. In a normal run at
+  drop-1, snow under crystal has a p50 L* of 64.3 (its baseline: 67.2; the old
+  overwrite: 71.7), and the desert 67.3 (70.1; old: 76.1).
+- **Supersampling** is URP's render scale (`Supersampling`), downsampled
+  with linear filtering, a 2×2 box at 2×. From about 1.41× bloom starts at a
+  quarter of the render resolution instead of half, so its glow keeps its
+  size on screen. A trailer's captures, video and stills, default to 2×; its
+  live run defaults to 1× ([performance.md](performance.md#the-trailers-look));
+  a normal run renders at 1×. `--supersample` overrides any of them.
+- **Lens hits** are `TrailerLook` and the renderer's `LensHitFeature`, a pass
+  after the post stack (`Hidden/Demo3D/LensHit`). The pass draws only on frames
+  with a hit, so a run without one, every normal run, pays nothing.
+  - **What hits.** Each `slam-shock` and `ring` effect (the hero's slams, ring
+    spells and the final slam), and every hero blow of weight 0.5 or more
+    (about 22 kills under overdrive's feel).
+  - **Strength.** A slam or ring starts at 0.3 at weight 0 and rises to 1 at
+    weight 1. A mass kill gets the same mapping.
+  - **Merging.** Hits within an eighth note of an earlier one merge into it,
+    at the stronger one's place and strength.
+  - **Envelope.** Full strength holds for 1/60 s, so the frame drawn on the
+    impact always peaks. It then falls as e^(−10x)·(1 − x) to nothing at the
+    eighth: about a fifth is left two frames on.
+  - **Blur and aberration.** At strength 1, the streak reaches 3% of the
+    width and the red–blue split 0.2%. Both grow smoothly with distance from
+    the impact, to full length 0.6 of the width away. A cut clears a shot's
+    hits.
+  - **Tuning.** A first tuning (a 0.6% split, decaying as (1 − u)²) smeared
+    the climax's packed horde for most of the eighth.
+- **Grain** is URP's film grain (Thin2, response 0.8), at 0.18 times the
+  supersampling factor, since the downsample averages pixel-sized grain away.
+- **Lens dirt** is `LensDirt`, a 1024×576 texture generated from a fixed
+  seed: soft smudges gathering toward the edges, water spots, dust specks and
+  finger wipes. It goes on URP's bloom at intensity 12.
+- **`--no-trailer-look`** drops the grade, grain, dirt and lens hits, and
+  keeps the run's supersampling.
+
 ## Command Line
 
 Trailer mode is one flag on the normal player:

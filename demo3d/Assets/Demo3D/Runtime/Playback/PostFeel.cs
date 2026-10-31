@@ -15,7 +15,9 @@ namespace Demo3D.Runtime.Playback
     /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature, vignette), eased in over
     ///   <see cref="Amounts.EaseBars"/> bars from the section's first downbeat, as the camera's zoom eases.
     /// - a trailer's flash cuts (trailer.md, "Playback and cuts"): a near-white flash peaking on the cut frame and gone
-    ///   within an eighth note (<see cref="CutFlash"/>).
+    ///   within an eighth note (<see cref="CutFlash"/>);
+    /// - a trailer's per-shot grade (trailer.md, "Look"): each shot's exposure, contrast, saturation and temperature
+    ///   offsets from its cut to the next, switching with the cut (<see cref="ShotGrade"/>).
     /// It writes offsets on top of the night volume's base values (NightLook.CreateProfile, the hero pool's vignette
     /// included), read once when it first binds, and is a function of song time alone, so fixed-time stills reproduce.
     /// </summary>
@@ -94,6 +96,8 @@ namespace Demo3D.Runtime.Playback
         readonly double[] _flashAt;        // sorted
         readonly float[] _flashStrength;
         readonly double[] _cutFlashAt;     // sorted
+        readonly double[] _shotFrom;       // sorted: each shot's grade from its first frame
+        readonly TrailerGrade[] _shotGrade;
         public readonly bool Enabled;
 
         ColorAdjustments _color;
@@ -110,10 +114,12 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// A post feel over several timelines (a trailer's shots): the song map's accents and anchors, the flashes given
-        /// (each shot's <see cref="HitFlashes"/> within its span), and the flash cuts at <paramref name="cutFlashes"/>.
+        /// (each shot's <see cref="HitFlashes"/> within its span), the flash cuts at <paramref name="cutFlashes"/>, and
+        /// each shot's grade from its first frame (<paramref name="shotGrades"/>, sorted by time; none: no grade).
         /// </summary>
         public PostFeel(SongMap map, Amounts amounts, bool enabled, IEnumerable<(double time, float strength)> flashes,
-            IEnumerable<(double time, float strength)> breaks = null, IEnumerable<double> cutFlashes = null)
+            IEnumerable<(double time, float strength)> breaks = null, IEnumerable<double> cutFlashes = null,
+            IReadOnlyList<(double from, TrailerGrade grade)> shotGrades = null)
         {
             _map = map;
             _amounts = amounts;
@@ -135,6 +141,10 @@ namespace Demo3D.Runtime.Playback
             var cuts = cutFlashes != null ? new List<double>(cutFlashes) : new List<double>();
             cuts.Sort();
             _cutFlashAt = cuts.ToArray();
+            int n = shotGrades?.Count ?? 0;
+            _shotFrom = new double[n];
+            _shotGrade = new TrailerGrade[n];
+            for (int i = 0; i < n; i++) (_shotFrom[i], _shotGrade[i]) = shotGrades[i];
         }
 
         /// <summary>The hero's big hits in <paramref name="tl"/> from <paramref name="from"/> to before <paramref name="to"/>, as flashes.</summary>
@@ -184,6 +194,16 @@ namespace Demo3D.Runtime.Playback
             return k * k;
         }
 
+        /// <summary>The trailer shot's grade at t: the last shot's whose first frame is at or before t (none before the first, or outside a trailer).</summary>
+        public TrailerGrade ShotGrade(double t)
+        {
+            int i = Array.BinarySearch(_shotFrom, t);
+            if (i < 0) i = ~i - 1;
+            return i >= 0 ? _shotGrade[i] : NoGrade;
+        }
+
+        static readonly TrailerGrade NoGrade = new TrailerGrade();
+
         /// <summary>The section's grade at t, eased from the previous section's over the first bars.</summary>
         public SectionGrade Grade(double t, out float pulseScale)
         {
@@ -205,21 +225,22 @@ namespace Demo3D.Runtime.Playback
             };
         }
 
-        /// <summary>The offsets at song time t (all zero when disabled).</summary>
+        /// <summary>The offsets at song time t (when disabled, a trailer shot's grade alone: it is the trailer's look, not the feel).</summary>
         public Offsets At(double t)
         {
-            if (!Enabled) return default;
+            var shot = ShotGrade(t);
+            if (!Enabled) return new Offsets { Exposure = shot.Exposure, Saturation = shot.Saturation, Contrast = shot.Contrast, Temperature = shot.Temperature };
             var g = Grade(t, out float pulseScale);
             float pulse = Pulse(t) * pulseScale, flash = Flash(t), cut = CutFlash(t);
             var a = _amounts;
             return new Offsets
             {
-                Exposure = g.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + CutFlashExposure * cut,
+                Exposure = g.Exposure + shot.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + CutFlashExposure * cut,
                 Bloom = a.BeatBloom * pulse + CutFlashBloom * cut,
                 Vignette = g.Vignette + a.BeatVignette * pulse,
-                Saturation = g.Saturation + a.FlashSaturation * flash + CutFlashSaturation * cut,
-                Contrast = g.Contrast,
-                Temperature = g.Temperature,
+                Saturation = g.Saturation + shot.Saturation + a.FlashSaturation * flash + CutFlashSaturation * cut,
+                Contrast = g.Contrast + shot.Contrast,
+                Temperature = g.Temperature + shot.Temperature,
                 Chromatic = a.FlashChromatic * flash,
             };
         }
@@ -227,7 +248,7 @@ namespace Demo3D.Runtime.Playback
         /// <summary>Sets <paramref name="volume"/>'s parameters to its base values plus the offsets at t.</summary>
         public void Apply(Volume volume, double t)
         {
-            if (!Enabled || volume == null) return;
+            if ((!Enabled && _shotFrom.Length == 0) || volume == null) return;
             if (volume != _bound) Bind(volume);
             var o = At(t);
             if (_color != null)
