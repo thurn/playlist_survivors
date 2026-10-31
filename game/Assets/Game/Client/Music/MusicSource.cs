@@ -6,8 +6,9 @@ using System.Threading;
 namespace Game.Client.Music
 {
     /// <summary>
-    /// What the music plays (unity-game.md, Sources): a local audio file or M3U playlist, or an
-    /// app producing audio now, tapped muted and played M late (System, Delayed listening).
+    /// What the music plays (unity-game.md, Sources): a local audio file or M3U playlist, an
+    /// app producing audio now, tapped muted and played M late (System, Delayed listening), or a
+    /// recorded session's music and entries (Replay).
     /// <see cref="Tag"/> is the HUD's source tag: the app's name or the file's.
     /// </summary>
     public sealed class MusicSource
@@ -15,8 +16,8 @@ namespace Game.Client.Music
         /// <summary>How long --app waits for its app to be producing audio.</summary>
         public const double AppWait = 3;
 
-        public readonly int Kind;    // Plugin.SourceFile or Plugin.SourceSystem
-        public readonly string Path; // File: absolute
+        public readonly int Kind;    // Plugin.SourceFile, SourceSystem or SourceReplay
+        public readonly string Path; // File: absolute; Replay: the session's folder
         public readonly int Pid;     // System: the app to tap
         public readonly string Tag;
 
@@ -29,12 +30,17 @@ namespace Game.Client.Music
         }
 
         public bool IsApp => Kind == Plugin.SourceSystem;
+        public bool IsReplay => Kind == Plugin.SourceReplay;
 
         /// <summary>A File source on `path`, an absolute path to an audio file or .m3u.</summary>
         public static MusicSource File(string path) =>
             new MusicSource(Plugin.SourceFile, path, 0, System.IO.Path.GetFileName(path));
 
         public static MusicSource App(Plugin.App app) => new MusicSource(Plugin.SourceSystem, null, app.Pid, app.Name);
+
+        /// <summary>A recorded session's music and entries; `dir` is its folder, an absolute path.</summary>
+        public static MusicSource Replay(string dir) =>
+            new MusicSource(Plugin.SourceReplay, dir, 0, "replay " + System.IO.Path.GetFileName(dir));
 
         /// <summary>
         /// The app `want` names among `apps`, as native's capture::apps::pick does by name: the one

@@ -16,6 +16,7 @@ using PS.Game.Sim;
 using PS.Game.Sim.Level;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace Game.Client.Loop
 {
@@ -38,7 +39,15 @@ namespace Game.Client.Loop
     /// control the sim records.
     /// The loop finishes when the run ends (after <see cref="EndCardS"/> for a victory or a fall,
     /// whose card the HUD shows), or with a file's music, and then quits, or returns to the title
-    /// screen if it started there. Player flags:
+    /// screen if it started there.
+    ///
+    /// Each run with music is recorded (<see cref="Sessions"/>): the plugin writes its audio and
+    /// entries into the run's folder, and the run's end its <see cref="SessionRecord"/>. A Replay
+    /// source plays one again (Watch my run, `--replay DIR`): the sim takes the recorded entries,
+    /// keys, debug commands and run controls at their recorded times (<see cref="SessionReplay"/>),
+    /// no live input reaches it (Backspace stops the replay), and at the run's end the replay
+    /// compares the settled hash, logging a `Replay:` line (a headless `--replay` exits 1 when it
+    /// differs in the runtime that recorded it). Player flags:
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
     ///   so a rerun shows the same frames. With `--file`, each frame first waits until the
     ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
@@ -49,6 +58,8 @@ namespace Game.Client.Loop
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
     /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
+    /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
+    ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
     /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included;
     /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
@@ -78,6 +89,8 @@ namespace Game.Client.Loop
         const double AnalysisTimeout = 10;
         /// <summary>How long the victory or fall card shows before the loop finishes.</summary>
         public const double EndCardS = 5;
+        /// <summary>How far past the sim a replay's frame wants its entries supplied (s): more than a frame steps.</summary>
+        const double ReplayAhead = 1;
         const int LeadCapacity = 1 << 17;
 
         MusicPlayer _music;
@@ -105,6 +118,9 @@ namespace Game.Client.Loop
         CalibrationScreen _calibrating;
         double _pauseAt;
         int _releases;
+        SimConfig _config;
+        string _sessionDir;
+        SessionReplay _replay;
         Action<string> _ended;
         int _entries, _keyChanges;
         readonly double[] _leads = new double[LeadCapacity];
@@ -145,12 +161,15 @@ namespace Game.Client.Loop
             }
 
             IGameClock clock = new FrameClock();
+            SessionRecord replayed = null;
+            if (source != null && source.IsReplay) replayed = SessionRecord.Read(source.Path);
+            else if (source != null && Sessions.Recording) _sessionDir = Sessions.Begin();
             if (source != null)
             {
                 var musicHost = new GameObject("Music");
                 musicHost.AddComponent<AudioSource>();
                 _music = musicHost.AddComponent<MusicPlayer>();
-                _music.Play(source);
+                _music.Play(source, _sessionDir);
                 Calibrate();
                 if (!_fixed)
                 {
@@ -164,16 +183,30 @@ namespace Game.Client.Loop
             var level = LevelBake.Load();
             var content = level?.Content();
             var config = new SimConfig { Seed = seed };
-            if (level != null && events == null)
+            if (replayed != null)
+            {
+                // The run's own level, arena, camera footprint and seed, whatever this command line says.
+                if (level == null && (replayed.Level != SessionLevel.Open || replayed.Arena))
+                    throw new InvalidOperationException("GameLoop: a replay of the slice needs the build's level bake");
+                config = replayed.Config(content, replayed.Arena ? level.Arena() : null);
+                arena = replayed.Arena && ArenaBake.Load() != null;
+                events = null;
+            }
+            else if (level != null && events == null)
             {
                 // The spawn ring stays out of the widest view: the loud zoom's, on a screen at least 16:9.
                 float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
                 config = SliceLevel.Config(content, arena ? level.Arena() : null, CameraRig.Footprint(aspect), seed);
             }
             _interactive = !headless && !_fixed;
-            config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
-            config.Easy = Args.Has("--easy");
+            if (replayed == null)
+            {
+                config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
+                config.Easy = Args.Has("--easy");
+            }
+            _config = config;
             Driver = new SimDriver(config, clock);
+            if (replayed != null) Driver.Replay = _replay = new SessionReplay(replayed);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
             _keys = new KeyInput();
             _pause = new PauseMenu(transform);
@@ -295,13 +328,16 @@ namespace Game.Client.Loop
                 if (_music.DeviceChanged && !_deviceGiven)
                 {
                     _deviceGiven = true;
+                    // A replay's run ends as it ended: watching it just stops.
+                    if (_replay != null) { Finish(0, "the output device changed"); return; }
                     if (!Control(RunControl.DeviceChanged)) return;
                 }
-                if (_fixed) { if (!FeedSettled()) return; }
+                if (_replay != null) { if (!FeedReplay()) return; }
+                else if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
             }
-            // Before the music's anchor no key has a song time: they wait for it.
-            if (Driver.Clock.Ready)
+            // Before the music's anchor no key has a song time: they wait for it. A replay takes only its recorded keys.
+            if (Driver.Clock.Ready && _replay == null)
             {
                 _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
                 _commands.Apply(Driver.Sim);
@@ -322,6 +358,12 @@ namespace Game.Client.Loop
                     display = _music.Clock.DisplayLatency,
                 });
             _overlay.Toggle();
+            if (_replay != null)
+            {
+                if (_replay.Done(Driver.Sim) || _music.Ended) FinishReplay();
+                else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Finish(0, "the replay was stopped");
+                return;
+            }
             var state = Driver.Sim.State;
             if (state.Phase == RunPhase.Ended && (state.End == RunEnd.Quit || state.End == RunEnd.DeviceChanged
                                                   || Driver.Times.FrameSong >= state.EndedAt + EndCardS))
@@ -434,6 +476,58 @@ namespace Game.Client.Loop
             }
         }
 
+        /// <summary>
+        /// Supplies the replay with the recorded entries the plugin's Replay source delivers, which it
+        /// hands over as fast as they're polled, waiting until those the sim may take this frame are in
+        /// (or with `all`, every one). False if the replay failed.
+        /// </summary>
+        bool FeedReplay(bool all = false)
+        {
+            double started = Time.realtimeSinceStartupAsDouble;
+            while (true)
+            {
+                for (int i = 0; i < _music.EntryCount; i++) _replay.Supply(_music.Entries[i]);
+                _entries += _music.EntryCount;
+                if (_music.Failed) { Finish(1, _music.Error); return false; }
+                bool drained = _music.EntryCount < MusicPlayer.MaxEntries;
+                if (drained && (_replay.AllSupplied || (!all && _replay.NextUnsupplied > Driver.Sim.Now + ReplayAhead))) return true;
+                if (drained && _music.Status.AnalysisDone != 0)
+                {
+                    Finish(1, $"the session's record holds {_replay.Supplied} of the {_replay.Record.Entries.Length} entries its run took");
+                    return false;
+                }
+                if (Time.realtimeSinceStartupAsDouble - started > AnalysisTimeout)
+                {
+                    Finish(1, $"the Replay source delivered {_replay.Supplied} entries, then none for {AnalysisTimeout} s");
+                    return false;
+                }
+                if (drained) Thread.Sleep(1);
+                _music.Poll();
+            }
+        }
+
+        /// <summary>
+        /// The replay reached its run's end (or its music ended: the rest is stepped at once): compares
+        /// the settled hash and finishes, failing only on a difference in the runtime that recorded it.
+        /// </summary>
+        void FinishReplay()
+        {
+            var record = _replay.Record;
+            if (!_replay.Done(Driver.Sim))
+            {
+                if (!FeedReplay(all: true)) return;
+                _replay.StepTo(Driver.Sim, record.End);
+            }
+            bool matches = _replay.Matches(Driver.Sim);
+            bool sameRuntime = record.Runtime == SessionRecord.CurrentRuntime;
+            string verdict = matches ? "matches" : sameRuntime ? "DIFFERS" : $"differs (recorded in {record.Runtime})";
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "Replay: {0}: song {1:F3} s, hash {2:X16} ({3} events), recorded {4:X16} ({5} events) in {6}: {7}",
+                _music.Source.Path, Driver.Sim.Now, Driver.Sim.Hash, Driver.Sim.EventCount, record.Hash, record.Events,
+                record.Runtime, verdict));
+            Finish(matches || !sameRuntime ? 0 : 1, "the replay ended: its hash " + verdict);
+        }
+
         void FeedLive()
         {
             for (int i = 0; i < _music.EntryCount; i++) Driver.Add(_music.Entries[i]);
@@ -530,9 +624,43 @@ namespace Game.Client.Loop
             _counts.Dispose();
             if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
+            if (_sessionDir != null) KeepSession();
             if (error != null) Debug.LogError("GameLoop: " + error);
-            if (_ended != null && !_quitting) _ended(why ?? "the music ended");
+            if (_sessionDir != null && code == 0 && !_quitting && Args.Has("--watch"))
+            {
+                // Watch it at once: the boot scene again, which replays it.
+                Sessions.WatchNext = _sessionDir;
+                SceneManager.LoadScene(gameObject.scene.name, LoadSceneMode.Single);
+            }
+            else if (_ended != null && !_quitting) _ended(why ?? "the music ended");
             else Application.Quit(code);
+        }
+
+        /// <summary>Ends the run now, as Backspace does (Boot's `--seconds` under --watch).</summary>
+        public void End(string why) => Finish(0, why);
+
+        /// <summary>The run's half of its session, beside the plugin's (closed by now): its inputs, config and hash.</summary>
+        void KeepSession()
+        {
+            try
+            {
+                var record = SessionRecord.Of(_config, Driver.Sim);
+                record.Build = $"{Application.version} {Application.buildGUID}";
+                record.Platform = Application.platform.ToString();
+                record.Source = _music.Source.IsApp ? $"app {_music.Source.Tag}" : _music.Source.Path;
+                var args = Environment.GetCommandLineArgs();
+                record.Flags = new string[Math.Max(0, args.Length - 1)];
+                Array.Copy(args, 1, record.Flags, 0, record.Flags.Length);
+                record.Write(_sessionDir);
+                Sessions.Last = _sessionDir;
+                Debug.Log(string.Format(CultureInfo.InvariantCulture, "GameLoop: session in {0}: song {1:F3} s, {2} entries, {3} key changes, " +
+                    "{4} debug commands, hash {5:X16}", _sessionDir, record.End, record.Entries.Length, record.Keys.Length,
+                    record.Commands.Length, record.Hash));
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"GameLoop: the session in {_sessionDir} wasn't kept: {e}");
+            }
         }
 
         void KeepSounds(string error)

@@ -20,7 +20,7 @@ namespace Game.Client.Music
     {
         public const int Ok = 0;
         public const int ErrFailed = -6;
-        public const int SourceFile = 0, SourceSystem = 1;
+        public const int SourceFile = 0, SourceSystem = 1, SourceReplay = 2;
         public const int Waiting = 0, Playing = 1, Ended = 2, Stopped = 3;
 
         /// <summary>ps_config. Paths are UTF-8 strings the caller allocates (<see cref="Utf8"/>).</summary>

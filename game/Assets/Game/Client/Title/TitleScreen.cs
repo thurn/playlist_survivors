@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Game.Client.Calibration;
+using Game.Client.Loop;
 using Game.Client.Music;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,6 +17,8 @@ namespace Game.Client.Title
     /// chooses and a second click starts; Cmd-V adds a copied file or playlist path. The files are
     /// the recently played ones and those in <see cref="MusicDir"/>; the apps refresh every second.
     /// The last rows open the calibration screens (<see cref="CalibrationScreen"/>) over it.
+    /// After a run, W watches it again (Watch my run: <see cref="Sessions.Last"/>, replayed with its
+    /// recorded music), and returns here.
     /// Player flags: `--title` shows it in batch mode or with --fixed-time too (for stills),
     /// `--music-dir DIR` lists DIR's files in place of <see cref="MusicDir"/>, and
     /// `--title-pick NAME` starts the first row whose name contains NAME, once per launch, for
@@ -97,7 +100,8 @@ namespace Game.Client.Title
                 if (name[i] != ' ') letter.style.color = Spectrum[hue++ % Spectrum.Length];
                 wordmark.Add(letter);
             }
-            Say(LastEnd);
+            string watch = Sessions.Last != null ? "W watches the run again" : null;
+            Say(LastEnd != null && watch != null ? LastEnd + " · " + watch : LastEnd ?? watch);
             LastEnd = null;
             _listed = ListApps();
             Rebuild();
@@ -133,6 +137,14 @@ namespace Game.Client.Title
             if (k.upArrowKey.wasPressedThisFrame) Move(-1);
             if (k.downArrowKey.wasPressedThisFrame) Move(1);
             if (k.vKey.wasPressedThisFrame && (k.leftCommandKey.isPressed || k.rightCommandKey.isPressed || k.ctrlKey.isPressed)) Paste();
+            if (k.wKey.wasPressedThisFrame && Sessions.Last != null)
+            {
+                Debug.Log("TitleScreen: watching " + Sessions.Last);
+                var start = _start;
+                Destroy(this);
+                start(MusicSource.Replay(Sessions.Last));
+                return;
+            }
             if (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame || k.spaceKey.wasPressedThisFrame)
             {
                 int i = Selected();

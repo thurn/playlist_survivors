@@ -488,7 +488,8 @@ entry kind with its `v` slots (`analysis::flat`'s table). Decisions:
   44.1 kHz mono float, exact), `entries.jsonl` (`ps entries`' line format,
   without its header) and `meta.json` (the source, `M`, `A`, the output rate,
   the duration, the records, the hindsight stalls and whether it finished).
-- The Replay source returns `PS_ERR_UNSUPPORTED` until it lands.
+- The Replay source (ps-msz.6.10) takes a session folder as its path: see
+  [Sessions and Replay](#sessions-and-replay).
 
 ### The delay line and Unity's output
 
@@ -1022,6 +1023,50 @@ debugged.
 - The last 20 sessions are kept, as in native.
 - **Watch my run** (W after a run) replays the session in the player with its
   recorded music.
+
+**Shipped (ps-msz.6.10).** A session is a folder: the plugin's `audio.wav`,
+`entries.jsonl` and `meta.json`, and the client's `inputs.bin` and `run.json`
+(`Sim/Session/SessionRecord.cs`). Decisions:
+
+- **What the sim records is the record.** The sim keeps every accepted entry's
+  `EntryRecord`, the time it took the entry (the frame's starting frontier) and
+  its final `known_at` (`sim.Stream.Accepted`, in arrival order, so entry i is
+  `entries.jsonl`'s line i), beside its keys and debug commands, which now carry
+  their order among each other. A replay (`SessionReplay`) adds each entry at
+  the time it was taken with its recorded `known_at`, and gives each key and
+  command at its effective time in that order, so it steps through the live
+  run's states exactly. Adding entries any earlier changes the run: an entry
+  that arrives in a frame that steps no tick is known at the frontier itself,
+  and an earlier add would reveal it a tick sooner.
+- **`inputs.bin` is binary**: the config's inputs (seed, start time, gate,
+  `B`, Easy, the hero standing, the level, the arena and the camera footprint),
+  the run's end frontier, event count and hash, the entries' records and the
+  inputs, doubles as their bits, so no runtime's number formatting can move a
+  replay. `run.json` repeats it for people, with the build, runtime, platform,
+  source and command line. A session records the slice's level or an open one
+  (what `SessionRecord.Config` rebuilds); M3's levels extend it.
+- **The Replay source** (`native/crates/plugin/src/replay.rs`) plays
+  `audio.wav` (the analyzer's 44.1 kHz mono input, on both channels,
+  interpolated to the output rate by the render thread as a System source's
+  is) from song time 0, and hands over every recorded record as fast as
+  `ps_poll` takes them, parsed back exactly. No analyzer, no models and no
+  record. A replay's client applies each entry when its run took it, waiting
+  for the source only if it falls behind.
+- **Where**: one folder per run in the player's data folder,
+  `~/Library/Application Support/Playlist Survivors/Playlist Survivors/sessions/<time>`
+  (`Client/Loop/Sessions.cs`), the newest 20 kept. Windowless runs (checks and
+  evidence) record only with `--sessions DIR` or `--watch`; `--no-session`
+  records nothing.
+- **Replays**: `--replay DIR` plays one in the player and quits at its end,
+  with 1 if the hash differs in the runtime that recorded it; `--watch`
+  replays a run as soon as it ends (and `--seconds N` then ends the run, not
+  the launch). After a run started from the title screen, the title screen
+  offers W, which watches it and returns. `game replay DIR` replays one in
+  .NET (`game/dotnet/PS.Game.Replay`), and `game replay DIR --player` in the
+  built player, headless. Each checks the hash only against a session of its
+  own runtime, since runtimes may round differently: a player's session
+  replayed in .NET reports a difference without failing.
+- Evidence: [game/evidence/replay](../../game/evidence/replay/README.md).
 - A headless replay in the same runtime must reproduce the hash.
 
 ## Gameplay Rules
@@ -1988,7 +2033,8 @@ Checks, by layer:
   recorded streams of tracks from the repository's analysis corpus (licensed
   tracks with reference beats) in .NET. Four 30-minute runs must survive
   above 25% health; an idle bot must die before minute 10.
-- **Replay**: a recorded session replays to its hash in its runtime.
+- **Replay**: a recorded session replays to its hash in its runtime (`game replay DIR`, in .NET
+  or with `--player` in the player).
 - **Vendor guard**: the repository's check that blocks committing vendor
   files covers the new project.
 

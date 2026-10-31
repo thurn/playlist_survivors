@@ -264,6 +264,37 @@ namespace Game.Tests
         }
 
         [Test]
+        public void AReplayedRunDispatchesTheSameEventsAndStopsAtItsEnd()
+        {
+            var entries = House128();
+            const int frameCount = 10 * 60;
+            var live = FixedDriver(out var frames, frameCount);
+            var liveEvents = new Recorder();
+            live.Events.Subscribe(liveEvents);
+            int next = 0;
+            for (int f = 0; f < frameCount; f++)
+            {
+                double needed = live.StampNeededFor(FrameClock.FrontierAt(frames[f].Frame));
+                while (next < entries.Count && entries[next].Stamp <= needed) live.AddSettled(entries[next++]);
+                if (f % 90 == 30) live.Sim.Press(f % 180 == 30 ? SimKey.Right : SimKey.Up, live.Sim.Now - 0.08);
+                if (f % 90 == 50) live.Sim.Release(f % 180 == 50 ? SimKey.Right : SimKey.Up, live.Sim.Now - 0.08);
+                live.Step(frames[f]);
+            }
+            var record = SessionRecord.Of(new SimConfig(), live.Sim);
+
+            // Replayed on frames twice as long, and past the run's end, with no live entries or keys.
+            var replay = new SimDriver(record.Config(null, null), new FrameClock()) { Replay = new SessionReplay(record) };
+            foreach (var e in entries) replay.Replay.Supply(e);
+            var replayed = new Recorder();
+            replay.Events.Subscribe(replayed);
+            for (int f = 0; f < frameCount; f++) replay.Step(new ClockReadings { Frame = 2 * f / Fps });
+            Assert.That(replay.Sim.Now, Is.EqualTo(live.Sim.Now), "a replay steps no further than its run");
+            Assert.That(replay.Replay.Matches(replay.Sim), Is.True);
+            Assert.That(replayed.Events.ToArray(), Is.EqualTo(liveEvents.Events.ToArray()));
+            Assert.That(liveEvents.Events.FindAll(e => e.Kind == SimEventKind.HeroStep).Count, Is.GreaterThan(5), "the keys moved the hero");
+        }
+
+        [Test]
         public void EverySettledEventIsDispatchedOnceInOrderAndFreedFromTheSim()
         {
             var entries = House128();

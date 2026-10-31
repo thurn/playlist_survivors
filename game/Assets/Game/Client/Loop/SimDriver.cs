@@ -33,6 +33,12 @@ namespace Game.Client.Loop
         /// <summary>The synthetic event source dispatched beside the sim's, or null.</summary>
         public ScriptedEvents Scripted { get; set; }
 
+        /// <summary>
+        /// A session being replayed, or null: the sim then takes its recorded entries, keys and
+        /// commands at their recorded times as it steps, and steps no further than the run's end.
+        /// </summary>
+        public SessionReplay Replay { get; set; }
+
         /// <summary>The latest frame's times, and what it presented.</summary>
         public FrameTimes Times { get; private set; }
         public PresentFrame Presented { get; private set; }
@@ -90,7 +96,8 @@ namespace Game.Client.Loop
             Times = times;
 
             long stepStart = Stopwatch.GetTimestamp();
-            Sim.StepTo(times.Frontier);
+            if (Replay != null) Replay.StepTo(Sim, times.Frontier);
+            else Sim.StepTo(times.Frontier);
             StepMs = Ms(Stopwatch.GetTimestamp() - stepStart);
             History.Record(Sim.State);
 

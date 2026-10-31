@@ -27,9 +27,13 @@ namespace Game.Client
     ///   M late (Delayed listening; <see cref="MusicSource.Pick"/>, a number is a pid). The player
     ///   needs the System Audio Recording grant to hear it (docs/design/unity-game.md, Platform
     ///   Capture and Crash Safety); without it the app is muted and the music silent;
+    /// - `--replay DIR`: a recorded session played again, its recorded music and inputs, checking
+    ///   its hash at the end (<see cref="GameLoop"/>); it quits then, with 1 if the hash differs;
     /// - neither, in a window (or with `--title`): the title screen's pick (<see cref="TitleScreen"/>).
-    ///   That run's end returns to the title screen, which says why it ended;
+    ///   That run's end returns to the title screen, which says why it ended, and where W watches it again;
     /// - neither, windowless: no music, on frame time.
+    /// With `--watch`, a recorded run is replayed once it ends (<see cref="Sessions"/>), and `--seconds N`
+    /// ends that run rather than the launch.
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -38,6 +42,8 @@ namespace Game.Client
         [SerializeField] Camera _camera;
         Stills _stills;
         float _seconds;
+        GameLoop _loop;
+        bool _watching;
 
         void Start()
         {
@@ -63,6 +69,20 @@ namespace Game.Client
 
         void StartGame()
         {
+            if (Sessions.WatchNext != null)
+            {
+                // --watch: the run just recorded, again; the launch quits when it ends.
+                _watching = true;
+                GameLoop.Begin(gameObject, _camera, MusicSource.Replay(Sessions.WatchNext));
+                Sessions.WatchNext = null;
+                return;
+            }
+            var replay = Args.Get("--replay");
+            if (replay != null)
+            {
+                GameLoop.Begin(gameObject, _camera, MusicSource.Replay(Args.Path(replay)));
+                return;
+            }
             var app = Args.Get("--app");
             var file = Args.Get("--file");
             if (app != null)
@@ -74,9 +94,9 @@ namespace Game.Client
                     Application.Quit(1);
                     return;
                 }
-                GameLoop.Begin(gameObject, _camera, source);
+                _loop = GameLoop.Begin(gameObject, _camera, source);
             }
-            else if (file != null) GameLoop.Begin(gameObject, _camera, MusicSource.File(Args.Path(file)));
+            else if (file != null) _loop = GameLoop.Begin(gameObject, _camera, MusicSource.File(Args.Path(file)));
             else if (TitleScreen.Wanted)
                 TitleScreen.Begin(gameObject, source => GameLoop.Begin(gameObject, _camera, source, ReturnToTitle));
             else GameLoop.Begin(gameObject, _camera, null);
@@ -98,8 +118,17 @@ namespace Game.Client
                 _stills.CaptureDue(t);
                 if (_stills.Done) Quit($"stills done at t={t:F3}");
             }
-            // Since launch: a return to the title screen reloads the scene.
-            if (_seconds > 0f && Time.timeAsDouble >= _seconds) Quit($"--seconds {_seconds} reached");
+            // Since launch: a return to the title screen reloads the scene. Under --watch it ends the
+            // run, and its replay plays to its end.
+            if (_seconds > 0f && Time.timeAsDouble >= _seconds && !_watching)
+            {
+                if (_loop != null && Args.Has("--watch"))
+                {
+                    _loop.End($"--seconds {_seconds} reached");
+                    _loop = null;
+                }
+                else if (!Args.Has("--watch")) Quit($"--seconds {_seconds} reached");
+            }
         }
 
         void OnDestroy() => _stills?.Dispose();
