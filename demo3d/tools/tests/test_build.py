@@ -153,8 +153,9 @@ def test_the_game_bakes_its_arena_when_the_layout_changes_and_its_hero_when_the_
     assert setup.record_ran(wt) == list(setup.GAME_BAKER_INPUTS)
     assert setup.baked(wt)
     layout.write_text('{"seed": 8}')
-    assert setup.stale_bakers(wt) == ["Arena"]
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\n")
+    # The shards are cut from the baked arena's sites, so they follow it.
+    assert setup.stale_bakers(wt) == ["Arena", "StructureShards"]
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nStructureShards\n")
     setup.record_ran(wt)
     clips.write_text('{"heightM": 2}')
     assert setup.stale_bakers(wt) == ["Hero"]

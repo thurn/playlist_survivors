@@ -53,8 +53,14 @@ namespace Game.EditorTools
         public static void BakeSounds() => Sound.SoundBaker.Bake();
 
         /// <summary>
+        /// Cuts the baked arena's structure meshes into shards (Structures.StructureShardBaker) into the
+        /// gitignored Assets/Baked/Structures/; the arena must be baked first.
+        /// </summary>
+        public static void BakeStructureShards() => Structures.StructureShardBaker.Bake();
+
+        /// <summary>
         /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the crowd, the hero, the
-        /// effects and the sounds. Each
+        /// effects, the sounds and the structures' shards (after the arena, whose sites they cut). Each
         /// baker that finishes appends its name to Assets/Baked/.bakeall-ran, which the tools read back
         /// to record the inputs it baked from. `-only NAME` (repeatable) runs just those.
         /// </summary>
@@ -64,7 +70,8 @@ namespace Game.EditorTools
             var only = args.Where((a, i) => i > 0 && args[i - 1] == "-only").ToList();
             Directory.CreateDirectory(BakedRoot);
             foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena), ("Crowd", BakeCrowd), ("Hero", BakeHero),
-                         ("Effects", BakeEffects), ("Sounds", BakeSounds) })
+                         ("Effects", BakeEffects), ("Sounds", BakeSounds),
+                         ("StructureShards", BakeStructureShards) })
             {
                 if (only.Count > 0 && !only.Contains(name)) continue;
                 Debug.Log("Tasks.BakeAll: running " + name);

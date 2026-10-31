@@ -1456,6 +1456,45 @@ evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
   bodies in a separate local physics scene at 1/120 s.
 - Shards linger about 2.4 s and then sink.
 
+**Shipped (ps-msz.3.12)**: `StructureShatter` in game/Assets/Game/Client/Structures/,
+subscribed by the frame loop with the arena, on shards cut by `StructureShardBaker`
+(`game unity BakeStructureShards`, after the arena: every kit mesh the baked sites
+draw, 10 to 48 chunks each by surface area, with the crowd's cutter, into the
+gitignored Baked/Structures/). As built:
+
+- **The break**: on the first frame at or after the StructureBreak's time the site's
+  renderers hide and its shards take their place, in the site's crystal and gem
+  colour. There is no crack front: the quarter of the structure nearest the strike
+  launches on the strike, the farthest shard 40 ms later. The physics runs one 60 fps
+  frame ahead of the song clock, so the impact frame already shows that frame's flight
+  (house-128's evidence: 4 of 16 and 11 of 27 shards moving 10 and 21 cm on it, every
+  shard flying 50 ms later). A shard's collider waits for its launch, so the shards
+  still in the wall never block the ones flying. Shards flash and their fresh inside
+  faces glow as they launch.
+- The flight is demo3d's (outward from the strike, along the blow and up, the nearest
+  hardest), scaled by the break's force against a heavy strike's throw (4.63 m).
+  FeelMoments now takes the force the same way, so a cleave band's break flashes and
+  shakes at 0.4 of a heavy strike's.
+- **Regrowth**: from the Regrowth event's downbeat the site rises out of the ground over
+  its beat (the structure shader's `_SL_Sink`, easing out with a small overshoot; the
+  facets ride with it), flashing and glowing as it comes. A third of its shards, at
+  0.45 scale, burst up from its footprint. `StructureShatter.Erupted` hands the
+  effects their structure burst and the sound its shatter. A break's shards still
+  lying on the site sink as it comes up.
+- **Glints**: a hit that doesn't break flashes the site (`_SL_PieceFx.x`), at full for a
+  hit toward a large structure's break and at half for one that can't break it.
+- **Shadows**: `ArenaRuntime.RefreshShadows(regions)` re-renders the static shadow map
+  only where the changed sites fall on it. It clears that patch with a far-depth
+  triangle and redraws the casters overlapping it through the map's projection narrowed
+  to it: 0.3 ms instead of a full 8.7 ms redraw, identical to a full redraw in stills.
+  It runs on the break's frame and when a regrowth is whole; the shards and the growing
+  crystal cast realtime shadows meanwhile.
+- Navigation needs nothing from the client: the sim patches its grid and flow field at
+  the hit and at the regrowth (ps-msz.3.4).
+- Cost (IL2CPP, Apple M5 Max): a break's physics is about 29 ms over its 3.4 s life, at
+  most 0.9 ms in any frame; all 38 sites at once peak at 2.9 ms.
+- Evidence: [game/evidence/structures/](../../game/evidence/structures/README.md).
+
 ### Weapon and ability effects
 
 Effects use the 3D demo's compute particle runtime and its recipes, extended

@@ -24,6 +24,8 @@ namespace Game.Client.Look
         public const float BlowFlash = 0.6f, BlowShake = 0.12f, ShakeCap = 0.25f, BreakShakeCap = 0.4f;
         /// <summary>A blow's weight is 0 at or below <see cref="CrispKills"/> kills and 1 at <see cref="HeavyKills"/>, log-scaled between (BlowFeel).</summary>
         public const int CrispKills = 2, HeavyKills = 24;
+        /// <summary>A heavy strike's throw (m; the sim's launch, a break's force): a break at it flashes, punches and shakes in full, a cleave band's (1.85 m) at 0.4.</summary>
+        public const float HeavyThrowM = 4.63f;
         /// <summary>Moments older than this no longer matter (s): every effect is over within a beat of the slowest tempo.</summary>
         const double Horizon = 2.0;
         public const int Capacity = 256;
@@ -55,7 +57,7 @@ namespace Game.Client.Look
         /// <summary>
         /// A sim event: each death adds a kill to the hero's blow at its impact time (deaths land on
         /// their blow's impact), whose weight sets its flash, punch and shake; a structure break flashes,
-        /// punches and shakes by its force.
+        /// punches and shakes by its force against a heavy strike's throw.
         /// </summary>
         public void OnEvent(in SimEvent e)
         {
@@ -75,7 +77,7 @@ namespace Game.Client.Look
                 }
                 case SimEventKind.StructureBreak:
                 {
-                    float force = (float)Math.Max(0, Math.Min(1, e.AsStructureBreak.Force));
+                    float force = (float)Math.Max(0, Math.Min(1, e.AsStructureBreak.Force / HeavyThrowM));
                     Add(new Moment { T = e.T, Kind = Kind.Break, Flash = 0.5f + 0.5f * force, Punch = BreakPunch, Shake = 0.15f + 0.25f * force });
                     break;
                 }

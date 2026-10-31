@@ -12,7 +12,7 @@ namespace Game.Client.Arena
     /// over the whole arena, 4096² (about 6 to 8 cm per texel over 240 m, by axis), through each
     /// material's own ShadowCaster pass (so alpha-clipped pieces cut out as in the cascades). The
     /// kit, the structures and the crowd and hero shaders sample it (StaticShadow.hlsl). The arena
-    /// renders it at load and again after a structure breaks or regrows (ArenaRuntime.RefreshShadows).
+    /// renders it at load, and again where a structure breaks or regrows (ArenaRuntime.RefreshShadows).
     /// </summary>
     public sealed class StaticShadowMap : IDisposable
     {
@@ -27,8 +27,18 @@ namespace Game.Client.Arena
         public RenderTexture Texture { get; private set; }
         public Matrix4x4 WorldToShadow { get; private set; }
         public Vector2 TexelM { get; private set; }
+        /// <summary>The casters the full render drew, and those the last <see cref="Redraw"/> drew again.</summary>
         public int Casters { get; private set; }
+        public int RedrawnCasters { get; private set; }
+        /// <summary>The last render's or redraw's milliseconds on the main thread.</summary>
         public double RenderMs { get; private set; }
+        Matrix4x4 _view, _proj;
+        Vector3 _lightDir;
+        HashSet<Renderer> _skip;
+        Rect[] _casterRects; // each caster's bounds on the map (NDC), for Redraw's regions
+        Material _clear;
+        /// <summary>Hidden/Game/ShadowClear, which clears a region of the map's depth (Resources/Shadows).</summary>
+        public const string ClearShaderPath = "Shadows/ShadowClear";
 
         /// <summary>
         /// Renders <paramref name="casters"/> (LOD 0 only; LOD 1+ renderers are skipped) from the
@@ -39,9 +49,10 @@ namespace Game.Client.Arena
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             var map = new StaticShadowMap();
-            Compute(lightRotation, bounds, out var view, out var proj, out var texel, size);
+            Compute(lightRotation, bounds, out map._view, out map._proj, out var texel, size);
             map.TexelM = texel;
-            map.WorldToShadow = ShadowTransform(proj, view);
+            map.WorldToShadow = ShadowTransform(map._proj, map._view);
+            map._lightDir = -(lightRotation * Vector3.forward);
 
             var desc = new RenderTextureDescriptor(size, size, GraphicsFormat.None, GraphicsFormat.D32_SFloat)
             {
@@ -51,23 +62,108 @@ namespace Game.Client.Arena
             };
             map.Texture = new RenderTexture(desc) { name = "Game static shadow map", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             map.Texture.Create();
+            map._skip = Lod1Plus(casters);
+            map.Draw(casters, null);
+            map.Prepare(casters);
+            map.Publish(strength);
+            map.RenderMs = sw.Elapsed.TotalMilliseconds;
+            return map;
+        }
 
-            var skip = Lod1Plus(casters);
+        /// <summary>
+        /// Renders the map again, in the same texture, where <paramref name="regions"/> (world bounds:
+        /// structures that broke or regrew) fall on it, from <paramref name="casters"/> as they are now
+        /// (the same list as at <see cref="Render"/>, some disabled or enabled since). Each region's
+        /// texels (padded for the filter) are cleared and only the casters that overlap them drawn, through
+        /// the full map's projection narrowed to them, so the texels come out as a full render's would at
+        /// a fraction of its cost. It keeps the first render's LOD skips and its published texture and matrix.
+        /// </summary>
+        public void Redraw(IReadOnlyList<Renderer> casters, IReadOnlyList<Bounds> regions)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            RedrawnCasters = 0;
+            foreach (var region in regions) RedrawnCasters += Draw(casters, region);
+            RenderMs = sw.Elapsed.TotalMilliseconds;
+        }
+
+        /// <summary>
+        /// At load, what <see cref="Redraw"/> needs, so a break's frame pays only for its region: each
+        /// caster's place on the map, the clear material, and one redraw of the first caster's region
+        /// (which changes nothing) so the clear's first use is behind us.
+        /// </summary>
+        void Prepare(IReadOnlyList<Renderer> casters)
+        {
+            _casterRects = new Rect[casters.Count];
+            for (int i = 0; i < casters.Count; i++)
+                _casterRects[i] = casters[i] != null ? OnMap(casters[i].bounds) : Rect.zero;
+            var shader = Resources.Load<Shader>(ClearShaderPath)
+                ?? throw new InvalidOperationException("StaticShadowMap: no Resources/" + ClearShaderPath);
+            _clear = new Material(shader) { name = "Game static shadow clear" };
+            if (casters.Count > 0 && casters[0] != null) Draw(casters, casters[0].bounds);
+        }
+
+        /// <summary>World bounds on the map, in its normalized device coordinates (-1 to 1 each way).</summary>
+        Rect OnMap(Bounds b)
+        {
+            var m = _proj * _view;
+            Vector2 lo = Vector2.positiveInfinity, hi = Vector2.negativeInfinity;
+            for (int i = 0; i < 8; i++)
+            {
+                var c = m.MultiplyPoint3x4(new Vector3(i % 2 == 0 ? b.min.x : b.max.x, (i / 2) % 2 == 0 ? b.min.y : b.max.y,
+                    i / 4 == 0 ? b.min.z : b.max.z));
+                lo = Vector2.Min(lo, c);
+                hi = Vector2.Max(hi, c);
+            }
+            return Rect.MinMaxRect(lo.x, lo.y, hi.x, hi.y);
+        }
+
+        /// <summary>The whole map (<paramref name="region"/> null), or just the texels a region covers; returns the casters drawn.</summary>
+        int Draw(IReadOnlyList<Renderer> casters, Bounds? region)
+        {
             var cmd = new CommandBuffer { name = "Game static shadow map" };
-            cmd.SetRenderTarget(map.Texture);
-            cmd.ClearRenderTarget(true, false, Color.clear);
-            cmd.SetViewProjectionMatrices(view, proj);
-            Vector3 dir = -(lightRotation * Vector3.forward);
+            cmd.SetRenderTarget(Texture);
+            var proj = _proj;
+            var area = new Rect(-1, -1, 2, 2);
+            if (region.HasValue)
+            {
+                // The region's texels, padded by the soft-shadow kernel's reach, snapped to the texel grid.
+                const int pad = 4;
+                int size = Texture.width;
+                var r = OnMap(region.Value);
+                int x0 = Mathf.Clamp(Mathf.FloorToInt((r.xMin + 1) * 0.5f * size) - pad, 0, size);
+                int y0 = Mathf.Clamp(Mathf.FloorToInt((r.yMin + 1) * 0.5f * size) - pad, 0, size);
+                int x1 = Mathf.Clamp(Mathf.CeilToInt((r.xMax + 1) * 0.5f * size) + pad, 0, size);
+                int y1 = Mathf.Clamp(Mathf.CeilToInt((r.yMax + 1) * 0.5f * size) + pad, 0, size);
+                if (x1 <= x0 || y1 <= y0)
+                {
+                    cmd.Release();
+                    return 0;
+                }
+                area = Rect.MinMaxRect(2f * x0 / size - 1, 2f * y0 / size - 1, 2f * x1 / size - 1, 2f * y1 / size - 1);
+                // The full projection narrowed to the area: the area's NDC stretched to the viewport's, depth unchanged.
+                var narrow = Matrix4x4.identity;
+                narrow.m00 = 2f / area.width;
+                narrow.m03 = -(area.xMin + area.xMax) / area.width;
+                narrow.m11 = 2f / area.height;
+                narrow.m13 = -(area.yMin + area.yMax) / area.height;
+                proj = narrow * _proj;
+                cmd.SetViewport(new Rect(x0, y0, x1 - x0, y1 - y0));
+                cmd.DrawProcedural(Matrix4x4.identity, _clear, 0, MeshTopology.Triangles, 3);
+            }
+            else cmd.ClearRenderTarget(true, false, Color.clear);
+            cmd.SetViewProjectionMatrices(_view, proj);
             // URP's caster-side bias (ShadowUtils.GetShadowBias): depth and normal bias in texels,
             // scaled for a soft-shadow kernel.
-            float t = Mathf.Max(texel.x, texel.y);
+            float t = Mathf.Max(TexelM.x, TexelM.y);
             cmd.SetGlobalVector(ShadowBiasId, new Vector4(-1.0f * t * 2.5f, -1.0f * t * 2.5f, 0, 0));
-            cmd.SetGlobalVector(LightDirectionId, new Vector4(dir.x, dir.y, dir.z, 0));
+            cmd.SetGlobalVector(LightDirectionId, new Vector4(_lightDir.x, _lightDir.y, _lightDir.z, 0));
             cmd.SetGlobalVector(LightPositionId, Vector4.zero);
             int drawn = 0;
-            foreach (var r in casters)
+            for (int i = 0; i < casters.Count; i++)
             {
-                if (r == null || !r.enabled || skip.Contains(r)) continue;
+                var r = casters[i];
+                if (r == null || !r.enabled || _skip.Contains(r)) continue;
+                if (region.HasValue && !_casterRects[i].Overlaps(area)) continue;
                 var mats = r.sharedMaterials;
                 bool any = false;
                 for (int s = 0; s < mats.Length; s++)
@@ -83,10 +179,8 @@ namespace Game.Client.Arena
             }
             Graphics.ExecuteCommandBuffer(cmd);
             cmd.Release();
-            map.Casters = drawn;
-            map.Publish(strength);
-            map.RenderMs = sw.Elapsed.TotalMilliseconds;
-            return map;
+            if (!region.HasValue) Casters = drawn;
+            return drawn;
         }
 
         /// <summary>
@@ -174,6 +268,12 @@ namespace Game.Client.Arena
         public void Dispose()
         {
             Disable();
+            if (_clear != null)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_clear);
+                else UnityEngine.Object.DestroyImmediate(_clear);
+                _clear = null;
+            }
             if (Texture != null)
             {
                 Texture.Release();

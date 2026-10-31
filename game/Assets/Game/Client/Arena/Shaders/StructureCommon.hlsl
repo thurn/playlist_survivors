@@ -31,10 +31,13 @@ struct SLAttributes
 // position is where it stood in the piece (_SL_Rest, the shard's object-to-world matrix at the
 // break), so a flying shard keeps the patterns it had; w its break glow (0..1), which lifts the
 // set's grade (SL_Grade). _SL_Tint: the site's gem colour (linear; alpha 0 keeps the material's _Tint).
+// _SL_Sink: how far a regrowing piece is under the ground, in its heights (0 standing; StructureShatter's
+// eruption takes it from about 1 through a small overshoot to 0).
 float4 _SL_Piece;
 float4 _SL_PieceFx;
 float4x4 _SL_Rest;
 float4 _SL_Tint;
+float _SL_Sink;
 // Per material, from the kit material it replaces: its albedo and cutoff for alpha clip (0: none),
 // and 1 to dither out near the hero as tree canopies do (CanopyFade.hlsl).
 TEXTURE2D(_SL_ClipMap); SAMPLER(sampler_SL_ClipMap);
@@ -63,6 +66,8 @@ SLVertex SL_Skin(SLAttributes v)
     o.normalWS = TransformObjectToWorldNormal(v.normalOS);
     bool shard = _SL_PieceFx.z > 0.5;
     o.rest = (shard ? mul(_SL_Rest, float4(v.positionOS, 1)).xyz : o.positionWS) - _SL_Piece.xyz;
+    // A regrowing piece rises out of the ground, its facets with it (the rest position stays put).
+    o.positionWS.y -= _SL_Sink * _HeightM;
     o.fx = float4(_SL_PieceFx.xy, shard ? v.uv1.x : 0, 1);
     o.center = _SL_Piece;
     return o;

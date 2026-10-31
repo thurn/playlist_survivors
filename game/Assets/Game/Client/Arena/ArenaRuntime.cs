@@ -15,7 +15,7 @@ namespace Game.Client.Arena
     /// - The static kit's shadows are baked (the ground's shadowmask) and in the static shadow map,
     ///   so it leaves the realtime cascades.
     /// - The crystal structures are out of the bake: they cast realtime shadows and are in the
-    ///   static shadow map, which <see cref="RefreshShadows"/> renders again after a break or regrowth.
+    ///   static shadow map, which <see cref="RefreshShadows"/> renders again where a structure breaks or regrows.
     /// <see cref="Sites"/> lists each structure site's renderers in the level data's order
     /// (game/Content/arena.json's <c>structures</c>). The scene finishes loading on the next frame;
     /// <see cref="Ready"/> says when.
@@ -173,19 +173,21 @@ namespace Game.Client.Arena
         }
 
         /// <summary>
-        /// Renders the static shadow map again from the kit and the structures enabled now, and publishes
-        /// it: call after a structure breaks (its renderers disabled) or regrows. The kit's own baked
-        /// shadows never held a structure, so nothing else needs patching.
+        /// Renders the static shadow map again where <paramref name="regions"/> (world bounds of the
+        /// structures that changed) fall on it, from the kit and the structures enabled now: call after a
+        /// structure breaks (its renderers disabled) or regrows. The kit's own baked shadows never held a
+        /// structure, so nothing else needs patching.
         /// </summary>
-        public void RefreshShadows() => RenderShadowMap();
+        public void RefreshShadows(IReadOnlyList<Bounds> regions) => ShadowMap.Redraw(_casters, regions);
+
+        readonly List<Renderer> _casters = new List<Renderer>();
 
         void RenderShadowMap()
         {
-            ShadowMap?.Dispose();
-            var casters = new List<Renderer>(Static.Count + Structures.Count);
-            casters.AddRange(Static);
-            casters.AddRange(Structures);
-            ShadowMap = StaticShadowMap.Render(casters, Moon != null ? Moon.transform.rotation : Lighting.MoonRotation, ArenaBounds);
+            _casters.Clear();
+            _casters.AddRange(Static);
+            _casters.AddRange(Structures);
+            ShadowMap = StaticShadowMap.Render(_casters, Moon != null ? Moon.transform.rotation : Lighting.MoonRotation, ArenaBounds);
             Debug.Log($"ArenaRuntime: static shadow map {ShadowMap.Texture.width}² of {ShadowMap.Casters} casters, " +
                       $"texel {ShadowMap.TexelM.x * 100:F1}×{ShadowMap.TexelM.y * 100:F1} cm, {ShadowMap.RenderMs:F0} ms");
         }

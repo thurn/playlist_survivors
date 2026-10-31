@@ -10,6 +10,7 @@ using Game.Client.Hero;
 using Game.Client.Look;
 using Game.Client.Music;
 using Game.Client.Sound;
+using Game.Client.Structures;
 using PS.Game.Sim;
 using UnityEngine;
 
@@ -35,6 +36,8 @@ namespace Game.Client.Loop
     ///   its bake failed), `--palette NAME` the arena's zone palette;
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
     /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
+    /// - `--structures-out FILE`: each frame's structure shards and their physics and shadow costs, as CSV
+    ///   (<see cref="StructureShatter"/>; the structures' bench).
     /// - `--sound-probe`: every sound plays a click instead of its clip, at full level (<see cref="SoundScheduler.Probe"/>);
     ///   `--sound-out DIR` keeps Unity's mix and the sounds scheduled, the audio buffers and the frames, as the
     ///   sync spike does, for `game spike --sounds` to measure.
@@ -61,13 +64,15 @@ namespace Game.Client.Loop
         HeroPresenter _hero;
         EffectsPresenter _effects;
         SoundScheduler _sounds;
+        SoundPresenter _soundPresenter;
         MixCapture _capture;
         string _soundOut;
         readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
         ArenaRuntime _arena;
         CrystalStructures _crystal;
+        StructureShatter _shatter;
         CrowdView _crowd;
-        StreamWriter _out;
+        StreamWriter _out, _structuresOut;
         bool _fixed, _done;
         int _entries, _keyChanges;
         readonly double[] _leads = new double[LeadCapacity];
@@ -131,7 +136,12 @@ namespace Game.Client.Loop
             _look = new LookPresenter(camera, Driver.Sim);
             if (_hero != null) _look.DrawnHero = _hero.Drawn; // the hero presents first, then the camera follows it
             Driver.Events.Subscribe(_look);
-            if (arena) LoadArena(camera);
+            if (arena)
+            {
+                _shatter = new StructureShatter();
+                Driver.Events.Subscribe(_shatter);
+                LoadArena(camera);
+            }
             // A headless player has no graphics device, so no compute: the crowd and the effects sit it out.
             bool compute = SystemInfo.supportsComputeShaders;
             if (compute)
@@ -148,6 +158,7 @@ namespace Game.Client.Loop
                 Driver.Events.Subscribe(_effects);
             }
             SetupSound(roles);
+            if (_shatter != null) _shatter.Erupted += Erupted;
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
 
@@ -157,8 +168,24 @@ namespace Game.Client.Loop
                 _out = new StreamWriter(Args.Path(outPath));
                 _out.WriteLine("frame,frame_song,frontier,lead,tick,hash,events,hero_x,hero_y");
             }
+            var structuresPath = Args.Get("--structures-out");
+            if (structuresPath != null && _shatter != null)
+            {
+                _structuresOut = new StreamWriter(Args.Path(structuresPath));
+                _structuresOut.WriteLine("frame,frame_song,breaks,shards,flying,moved_m,steps,physics_ms,shadow_ms");
+            }
             Debug.Log($"GameLoop: {(file != null ? file : "no music")}, {(_fixed ? "fixed time" : "real time")}, " +
                       $"seed {config.Seed}, events {(events ?? "none")}, headless {headless}");
+        }
+
+        /// <summary>
+        /// A regrowth erupting: the effects' structure burst thrown up from its footprint, half its height
+        /// up, and the crystal shatter's sound, pitched by its size as a break's (2.5 small, 4 large).
+        /// </summary>
+        void Erupted(double t, int site, Vector3 centre, float sizeM, Color tint)
+        {
+            _effects?.Cues.Burst(t, centre + Vector3.up * 0.5f, Vector2.zero, Mathf.Clamp(sizeM / 3f, 0.8f, 1.5f), tint);
+            _soundPresenter?.Shatter(t, sizeM > 3.5f ? 4f : 2.5f, (uint)site * 0x9E3779B1u ^ (uint)(t * 1000));
         }
 
         /// <summary>The sounds on their own voices (a filter's callback serves one source: not the music's object).</summary>
@@ -171,7 +198,8 @@ namespace Game.Client.Loop
             if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate);
             Func<float> follower = null;
             if (_music != null) follower = () => _music.Status.FollowerGain > 0 ? _music.Status.FollowerGain : 1f;
-            Driver.Events.Subscribe(new SoundPresenter(_sounds, Driver.Sim, roles, bank != null ? bank.Limit : 1f, follower));
+            _soundPresenter = new SoundPresenter(_sounds, Driver.Sim, roles, bank != null ? bank.Limit : 1f, follower);
+            Driver.Events.Subscribe(_soundPresenter);
         }
 
         /// <summary>The baked arena, its structures in crystal; the look drives its night volume and hero light.</summary>
@@ -183,6 +211,7 @@ namespace Game.Client.Loop
             {
                 _crystal = new CrystalStructures();
                 _crystal.Apply(a, camera);
+                _shatter.Attach(a);
                 _look.Volume = a.Post;
                 _look.FollowHero = a.FollowHero;
             };
@@ -259,6 +288,9 @@ namespace Game.Client.Loop
                 _leads[frame] = Driver.Times.Lead;
                 _steps[frame] = Driver.StepMs;
             }
+            _structuresOut?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4},{5:F4},{6},{7:F4},{8:F4}",
+                frame, Driver.Times.FrameSong, _shatter.Breaks, _shatter.Shards, _shatter.Flying, _shatter.MovedM,
+                _shatter.FrameSteps, _shatter.FramePhysicsMs, _shatter.FrameShadowMs));
             if (_out == null) return;
             var t = Driver.Times;
             var hero = Driver.Presented.State.Hero;
@@ -275,11 +307,14 @@ namespace Game.Client.Loop
             _look?.Dispose();
             _hero?.Dispose();
             _effects?.Dispose();
+            _shatter?.Dispose();
             _crystal?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();
             _out?.Dispose();
             _out = null;
+            _structuresOut?.Dispose();
+            _structuresOut = null;
         }
 
         /// <summary>Logs the run's summary and quits with `code`.</summary>
@@ -290,6 +325,8 @@ namespace Game.Client.Loop
             Debug.Log("GameLoop: " + (error ?? "done") + "; " + Summary());
             _out?.Dispose();
             _out = null;
+            _structuresOut?.Dispose();
+            _structuresOut = null;
             if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
             if (error != null) Debug.LogError("GameLoop: " + error);

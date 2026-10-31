@@ -38,3 +38,5 @@ what was run (the exact commands), the numbers, and what they show.
 - [fx](fx/README.md): the sword's slashes and crystal waves, mass crystal death bursts and the
   cleave wave as filmstrips, and the scheduled sounds found on their samples in Unity's mix
   (ps-msz.3.11).
+- [structures](structures/README.md): crystal structures shattering into PhysX shards on the impact
+  frame, glinting and erupting on regrowth, with the physics and shadow bench (ps-msz.3.12).

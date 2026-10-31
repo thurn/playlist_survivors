@@ -147,6 +147,20 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ABreakFlashesAndShakesByItsThrowAgainstAHeavyStrikes()
+        {
+            // The sim's force is the hit's throw in metres: a heavy strike's 4.63 m, a cleave band's 1.85 m.
+            var heavy = new FeelMoments();
+            heavy.OnEvent(SimEvent.StructureBreak(6.0, 3, StructureHit.HeavyStrike, 0, 0, 1, 0, force: FeelMoments.HeavyThrowM));
+            var band = new FeelMoments();
+            band.OnEvent(SimEvent.StructureBreak(6.0, 3, StructureHit.Cleave, 0, 0, 1, 0, force: 1.85));
+            Assert.That(heavy.ShakeAmplitude(6.0, Period), Is.EqualTo(0.4f).Within(1e-5));
+            Assert.That(heavy.Flash(6.0, Period), Is.EqualTo(1f).Within(1e-5));
+            Assert.That(band.ShakeAmplitude(6.0, Period), Is.EqualTo(0.15f + 0.25f * 1.85f / FeelMoments.HeavyThrowM).Within(1e-5));
+            Assert.That(band.Flash(6.0, Period), Is.LessThan(0.75f));
+        }
+
+        [Test]
         public void HeavyStrikesPunchAndShakeByTheirKillsWithinBounds()
         {
             var moments = new FeelMoments();
