@@ -519,12 +519,11 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
                 lines.append(f"| {name} | {h:g} | 0 | | | | | | | |")
                 continue
             px = sum(r["px"] for r in rows.values())
-            def mean(k: str) -> float:
-                return sum(r[k] * r["px"] for r in rows.values()) / px
+            mean = {k: sum(r[k] * r["px"] for r in rows.values()) / px for k in ("share", "lType", "lRing", "dL", "hueMatch", "cType")}
             worst = min(rows, key=lambda n: abs(rows[n]["dL"]))
-            lines.append(f"| {name} | {h:g} | {len(rows)} | {_pct(mean('share'))} | {mean('lType'):.1f} | "
-                         f"{mean('lRing'):.1f} | {mean('dL'):.1f} | {rows[worst]['dL']:.1f} ({worst}) | "
-                         f"{_pct(mean('hueMatch'))} | {mean('cType'):.1f} |")
+            lines.append(f"| {name} | {h:g} | {len(rows)} | {_pct(mean['share'])} | {mean['lType']:.1f} | "
+                         f"{mean['lRing']:.1f} | {mean['dL']:.1f} | {rows[worst]['dL']:.1f} ({worst}) | "
+                         f"{_pct(mean['hueMatch'])} | {mean['cType']:.1f} |")
     lines += ["", "## Effects", "",
               f"The pixels whose L* the effects move by more than {EFFECT_DL:g} (the horde still against the",
               "measured still): their share of the frame, L* p50/p98 and mean C*ab in the horde still, and the",
