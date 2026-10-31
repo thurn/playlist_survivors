@@ -33,10 +33,10 @@ namespace PS.Game.Sim.Tests
         public void ReadingEverythingEveryFrameDoesNotChangeTheRun()
         {
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var quiet = new Simulation(HordeFixture.Config());
+            var quiet = new Simulation(HordeFixture.Config(sword: 2));
             Drive.Feed(quiet, entries, duration);
             var called = new HashSet<string>();
-            var curious = new Simulation(HordeFixture.Config());
+            var curious = new Simulation(HordeFixture.Config(sword: 2));
             Drive.Feed(curious, entries, duration, eachFrame: sim => ReadEverything(sim, called));
             Assert.Greater(Drive.Events(quiet, SimEventKind.Beat).Count, 40);
             Assert.Greater(Drive.Events(quiet, SimEventKind.EnemyStep).Count, 100);
@@ -50,7 +50,7 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TheClientCanWriteNothingAndCannotReachTheGenerator()
         {
-            var surface = Surface(new Simulation(HordeFixture.Config()));
+            var surface = Surface(new Simulation(HordeFixture.Config(sword: 2)));
             Assert.That(surface.ConvertAll(o => o.GetType().Name), Is.SupersetOf(new[]
                 { "Simulation", "SimState", "BeliefLog", "BeatClock", "Judging", "StrideGrid", "ArenaGrid", "HeroState" }));
             foreach (object o in surface)

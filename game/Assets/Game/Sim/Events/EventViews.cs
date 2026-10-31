@@ -43,11 +43,16 @@ namespace PS.Game.Sim
         public AttackEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
         public int Attacker => e.I0;
+        /// <summary>The hero's <see cref="HeroAttackKind"/>, or an enemy's <see cref="EnemyAttackKind"/>.</summary>
         public int Kind => e.I1;
+        /// <summary>A heavy strike: 2.5x damage, a wider reach and a cleave wave.</summary>
+        public bool Heavy => (e.I2 & 1) != 0;
         public double WindupStart => e.D0;
         public double Impact => e.D1;
         public double DirX => e.D2;
         public double DirY => e.D3;
+        /// <summary>The hero's strike: how far around it the hit reaches, which the visible strike shows.</summary>
+        public double Reach => e.D4;
     }
 
     public readonly struct EnemyStepEvent
@@ -216,5 +221,32 @@ namespace PS.Game.Sim
         public double ToY => e.D3;
         public double Start => e.D4;
         public double End => e.D5;
+    }
+
+    public readonly struct CleaveEvent
+    {
+        readonly SimEvent e;
+        public CleaveEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Wave => e.I0;
+        public int Bands => e.I1;
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double Inner => e.D2;
+        public double Outer => e.D3;
+        public double FirstBand => e.D4;
+        public double BandSeconds => e.D5;
+    }
+
+    public readonly struct DropEvent
+    {
+        readonly SimEvent e;
+        public DropEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Item => e.I0;
+        public ItemKind ItemKind => (ItemKind)e.I1;
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double Value => e.D2;
     }
 }

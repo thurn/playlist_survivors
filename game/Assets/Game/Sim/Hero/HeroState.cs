@@ -1,3 +1,5 @@
+using System;
+
 namespace PS.Game.Sim
 {
     /// <summary>The hero's four directions on the grid; the same values as the matching <see cref="Key"/>s.</summary>
@@ -23,5 +25,19 @@ namespace PS.Game.Sim
         public double FromY { get; internal set; }
         public double MoveStart { get; internal set; } = double.NegativeInfinity;
         public double MoveEnd { get; internal set; } = double.NegativeInfinity;
+
+        /// <summary>Health, from progression.json's maxHp; contact lunges take it (<see cref="HeroHealth"/>).</summary>
+        public double Health { get; internal set; }
+        public double MaxHealth { get; internal set; }
+        /// <summary>The hero fell ("YOU FELL"): it no longer moves, strikes or takes hits.</summary>
+        public bool Fallen { get; internal set; }
+
+        /// <summary>Where the hero is at song time <paramref name="t"/>: on its tile, or striding to it.</summary>
+        internal void PositionAt(double t, out double x, out double y)
+        {
+            double u = t >= MoveEnd || MoveEnd <= MoveStart ? 1 : Math.Max(0, (t - MoveStart) / (MoveEnd - MoveStart));
+            x = FromX + (X - FromX) * u;
+            y = FromY + (Y - FromY) * u;
+        }
     }
 }

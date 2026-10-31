@@ -26,6 +26,15 @@ namespace PS.Game.Sim
         /// <summary>The enemies' content, arena, camera footprint and schedule; null runs without enemies.</summary>
         public HordeConfig Horde;
 
+        /// <summary>The hero's sword; null runs without it.</summary>
+        public SwordConfig Sword;
+
+        /// <summary>Easy: enemy contact damage at half (unity-game.md, The Run).</summary>
+        public bool Easy;
+
+        /// <summary>The hero never falls: it keeps a tenth of its health, its hits still landing (bots and evidence runs).</summary>
+        public bool HeroStands;
+
         public int TickCapacity = 40_000;
         public int BeatCapacity = 8_192;
         public int EntryCapacity = 4_096;

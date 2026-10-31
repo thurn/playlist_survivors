@@ -12,16 +12,22 @@ namespace PS.Game.Sim.Tests
         public static GameContent Content =>
             content ??= GameContent.Load(Path.GetDirectoryName(Checkout.File("game", "Content", "enemies.json")));
 
-        public static SimConfig Config(int minimum = 120, ArenaData arena = null, string[] roster = null, ulong seed = 1)
+        /// <summary>A sim's config; <paramref name="sword"/> gives the hero its sword at that rank (0: none).</summary>
+        public static SimConfig Config(int minimum = 120, ArenaData arena = null, string[] roster = null, ulong seed = 1,
+            int sword = 0, bool heroStands = false)
         {
             var horde = new HordeConfig { Content = Content, Minimum = minimum };
             if (roster != null) horde.Roster = roster;
-            return new SimConfig { Seed = seed, Arena = arena, Horde = horde };
+            return new SimConfig
+            {
+                Seed = seed, Arena = arena, Horde = horde, HeroStands = heroStands,
+                Sword = sword > 0 ? new SwordConfig { Content = Content, Rank = sword } : null,
+            };
         }
 
         /// <summary>A sim that spawns nothing by itself, for tests that place their own enemies.</summary>
-        public static Simulation Empty(ArenaData arena = null) =>
-            new Simulation(Config(minimum: 0, arena: arena, roster: new string[0]));
+        public static Simulation Empty(ArenaData arena = null, int sword = 0, bool heroStands = false) =>
+            new Simulation(Config(minimum: 0, arena: arena, roster: new string[0], sword: sword, heroStands: heroStands));
 
         /// <summary>Places an enemy of role <paramref name="role"/> at (x, y) now.</summary>
         public static int Place(Simulation sim, string role, double x, double y)

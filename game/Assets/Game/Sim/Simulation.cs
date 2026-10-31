@@ -23,8 +23,10 @@ namespace PS.Game.Sim
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
     /// then the beat, then the stride step and the hero's move on it, then the enemies' beat phases
-    /// (<see cref="Horde"/>). The beat's state is updated before each of those and at the tick's
-    /// end, after which the per-tick systems run. A press may move the hero at once (a late step),
+    /// (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
+    /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
+    /// state is updated before each of those and at the tick's end, after which the per-tick
+    /// systems run. A press may move the hero at once (a late step),
     /// at the frontier. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
@@ -57,6 +59,8 @@ namespace PS.Game.Sim
             Arena = new ArenaGrid(config.Arena ?? ArenaData.Open());
             hero = new Hero(State.Hero, Arena, Strides);
             if (config.Horde != null) Horde = new Horde(config.Horde, Stream, Beats, Strides, Arena, State);
+            Health = new HeroHealth(State.Hero, config, config.Horde?.Content ?? config.Sword?.Content);
+            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde);
         }
 
         public SimState State { get; }
@@ -68,6 +72,9 @@ namespace PS.Game.Sim
         public ArenaGrid Arena { get; }
         /// <summary>The enemies, or null in a run without them; the client reads them through <see cref="SimState.Enemies"/>.</summary>
         internal Horde Horde { get; }
+        internal HeroHealth Health { get; }
+        /// <summary>The hero's sword, or null in a run without it.</summary>
+        internal Sword Sword { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -131,7 +138,8 @@ namespace PS.Game.Sim
                 double beat = Beats.NextTime(cursor);
                 double step = Strides.NextTime(cursor);
                 double horde = Horde?.NextTime(cursor) ?? double.PositiveInfinity;
-                double next = Math.Min(beat, Math.Min(step, horde));
+                double sword = Sword?.NextTime(cursor) ?? double.PositiveInfinity;
+                double next = Math.Min(Math.Min(beat, step), Math.Min(horde, sword));
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
@@ -142,7 +150,7 @@ namespace PS.Game.Sim
                 if (next > end) break;
                 cursor = next;
                 UpdateBeatState(next);
-                if (beat <= step && beat <= horde)
+                if (beat == next)
                 {
                     Beats.Fire(this, beat, State.Beat);
                     int i = Beats.LastBeat;
@@ -150,7 +158,7 @@ namespace PS.Game.Sim
                     State.Bar = Beats.BarOf(i, out bool downbeat);
                     State.Downbeat = downbeat;
                 }
-                else if (step <= horde)
+                else if (step == next)
                 {
                     Strides.Fire(this, step);
                     hero.Step(this, Strides.Count - 1, step, Strides.Period);
@@ -158,9 +166,13 @@ namespace PS.Game.Sim
                     State.StridePeriod = Strides.Period;
                     State.StrideHalvings = Strides.Halvings;
                 }
-                else
+                else if (horde == next)
                 {
                     Horde.Fire(this, horde);
+                }
+                else
+                {
+                    Sword.Fire(this, sword);
                 }
             }
             cursor = end;
@@ -169,6 +181,7 @@ namespace PS.Game.Sim
             UpdateBeatState(end);
             if (!State.Frozen) State.RunClock += TickSeconds;
             Horde?.Tick(this, end);
+            Sword?.Tick(end);
         }
 
         void UpdateBeatState(double t)

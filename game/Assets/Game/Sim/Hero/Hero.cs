@@ -25,6 +25,7 @@ namespace PS.Game.Sim
     /// - While the world is frozen (<see cref="SimState.Frozen"/>) the hero doesn't move: steps
     ///   spend held keys and queued presses without moving it, and presses made then are only
     ///   held (as native's, a press made during a freeze never strides after it).
+    /// - A fallen hero (<see cref="HeroState.Fallen"/>) never moves again.
     ///
     /// Each move is a <see cref="SimEventKind.HeroStep"/> event, emitted at its start.
     /// </summary>
@@ -60,7 +61,7 @@ namespace PS.Game.Sim
         {
             if (key != Key.Space) Hold((Direction)key);
             // A press made while frozen never strides, even when the world thaws before the next step.
-            if (sim.State.Frozen) return;
+            if (sim.State.Frozen || state.Fallen) return;
             int action = key == Key.Space ? Stomp : (int)key;
             int s = SimulatedStepOf(heard);
             if (s < 0 || moved[s % moved.Length])
@@ -93,7 +94,7 @@ namespace PS.Game.Sim
         {
             int action = queued != None ? queued : heldCount > 0 ? (int)held[heldCount - 1] : None;
             queued = None;
-            bool moves = action != None && !sim.State.Frozen;
+            bool moves = action != None && !sim.State.Frozen && !state.Fallen;
             moved[index % moved.Length] = moves;
             if (moves) Move(sim, action, index, t, t + Math.Min(StrideSeconds, period), false);
         }

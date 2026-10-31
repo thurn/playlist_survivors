@@ -176,7 +176,8 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void ContactLungesHitOnTheBeatWhileTheBeatIsReliable()
         {
-            var sim = HordeFixture.Empty();
+            // A standing hero, so the bites go on.
+            var sim = HordeFixture.Empty(heroStands: true);
             var song = new FixtureSong(9).Beats(0, 20, 120).Gap(20, 26);
             var entries = song.Entries();
             int fed = Drive.Feed(sim, entries, 4);

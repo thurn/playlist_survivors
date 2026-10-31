@@ -2,8 +2,9 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The sim emits beats,
-    /// stride steps, beat-state changes and the hero's steps; the rest are declared, with their
-    /// fields, for the rule beads to emit and the client to build against.
+    /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
+    /// lunges and spawns, hits, deaths, cleaves and drops; the rest are declared, with their fields,
+    /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
     {
@@ -25,6 +26,8 @@ namespace PS.Game.Sim
         SoundCue,
         HeroStep,
         EnemyKnock,
+        Cleave,
+        Drop,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -87,16 +90,23 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>An attack's wind-up starts: I0 attacker (-1 the hero), I1 attack kind (an enemy's: <see cref="EnemyAttackKind"/>); D0 wind-up start, D1 impact time, D2/D3 direction.</summary>
-        public static SimEvent Attack(double t, int attacker, int kind, double windupStart, double impact, double dirX, double dirY)
+        /// <summary>
+        /// An attack's wind-up starts: I0 attacker (-1 the hero), I1 attack kind (the hero's:
+        /// <see cref="HeroAttackKind"/>; an enemy's: <see cref="EnemyAttackKind"/>), I2 flags (1 heavy);
+        /// D0 wind-up start, D1 impact time, D2/D3 direction, D4 the hit's reach around the hero (0 for an enemy's).
+        /// </summary>
+        public static SimEvent Attack(double t, int attacker, int kind, double windupStart, double impact, double dirX, double dirY,
+            bool heavy = false, double reach = 0)
         {
             var e = Of(SimEventKind.Attack, t);
             e.I0 = attacker;
             e.I1 = kind;
+            e.I2 = heavy ? 1 : 0;
             e.D0 = windupStart;
             e.D1 = impact;
             e.D2 = dirX;
             e.D3 = dirY;
+            e.D4 = reach;
             return e;
         }
 
@@ -114,7 +124,11 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A hit: I0 target (-1 the hero), I1 source attack kind (on the hero: <see cref="EnemyAttackKind"/>); D0 damage, D1/D2 position, D3/D4 direction.</summary>
+        /// <summary>
+        /// A hit: I0 target (-1 the hero), I1 source (on the hero: <see cref="EnemyAttackKind"/>; on an
+        /// enemy: <see cref="WeaponHit"/>); D0 the damage dealt (0 on the hero while it can't be hurt),
+        /// D1/D2 the target's position, D3/D4 the direction it is struck in.
+        /// </summary>
         public static SimEvent Hit(double t, int target, int source, double damage, double x, double y, double dirX, double dirY)
         {
             var e = Of(SimEventKind.Hit, t);
@@ -128,7 +142,10 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A death: I0 enemy (-1 the hero), I1 role; D0/D1 position, D2/D3 impact direction, D4 force.</summary>
+        /// <summary>
+        /// A death: I0 enemy (-1 the hero, who fell: "YOU FELL"), I1 role (-1 the hero); D0/D1 position,
+        /// D2/D3 impact direction, D4 force: how far the death launch throws the body, in metres (0 for the hero).
+        /// </summary>
         public static SimEvent Death(double t, int enemy, int role, double x, double y, double dirX, double dirY, double force)
         {
             var e = Of(SimEventKind.Death, t);
@@ -188,6 +205,39 @@ namespace PS.Game.Sim
             e.D3 = toY;
             e.D4 = start;
             e.D5 = end;
+            return e;
+        }
+
+        /// <summary>
+        /// A heavy strike's cleave wave sets out from where the hero struck: I0 wave, I1 its bands;
+        /// D0/D1 centre, D2 inner radius (the heavy strike's reach), D3 outer radius, D4 the first
+        /// band's time, D5 the time between bands. Band k reaches <c>min(inner + (k + 1) * band, outer)</c>
+        /// at <c>D4 + k * D5</c>, hitting each enemy it passes once.
+        /// </summary>
+        public static SimEvent Cleave(double t, int wave, int bands, double x, double y, double inner, double outer,
+            double firstBand, double bandSeconds)
+        {
+            var e = Of(SimEventKind.Cleave, t);
+            e.I0 = wave;
+            e.I1 = bands;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = inner;
+            e.D3 = outer;
+            e.D4 = firstBand;
+            e.D5 = bandSeconds;
+            return e;
+        }
+
+        /// <summary>A dying enemy drops an item: I0 item, I1 item kind (<see cref="ItemKind"/>); D0/D1 position, D2 value (a gem's experience).</summary>
+        public static SimEvent Drop(double t, int item, ItemKind itemKind, double x, double y, double value)
+        {
+            var e = Of(SimEventKind.Drop, t);
+            e.I0 = item;
+            e.I1 = (int)itemKind;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = value;
             return e;
         }
 
@@ -288,5 +338,7 @@ namespace PS.Game.Sim
         public SoundCueEvent AsSoundCue { get { Expect(SimEventKind.SoundCue); return new SoundCueEvent(this); } }
         public HeroStepEvent AsHeroStep { get { Expect(SimEventKind.HeroStep); return new HeroStepEvent(this); } }
         public EnemyKnockEvent AsEnemyKnock { get { Expect(SimEventKind.EnemyKnock); return new EnemyKnockEvent(this); } }
+        public CleaveEvent AsCleave { get { Expect(SimEventKind.Cleave); return new CleaveEvent(this); } }
+        public DropEvent AsDrop { get { Expect(SimEventKind.Drop); return new DropEvent(this); } }
     }
 }

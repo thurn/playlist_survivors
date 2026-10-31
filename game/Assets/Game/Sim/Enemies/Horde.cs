@@ -18,14 +18,15 @@ namespace PS.Game.Sim
     ///   inside the step, and emits it (from, to, move start, footplant T). With the hero in reach
     ///   and nothing between them, it steps straight at the hero instead, stopping at contact.
     /// - <b>Land</b> at T: steps plant; with the beat still reliable, armed enemies in contact
-    ///   (along the whole step for one that stepped) hit the hero.
+    ///   (along the whole step for one that stepped) hit the hero (<see cref="HeroHealth"/>).
     /// A beat revealed late takes what is left of these times; one revealed after T is skipped.
     /// Without a reliable beat, or while the world is frozen, enemies hold and lunges stop; on
     /// relock or the thaw they resume on the next main beat, with no catch-up. A decided step is final, as every settled event is: it plants
     /// even if the beat's state drops inside its move window (native cancels it instead).
     ///
     /// Knockback (<see cref="Knock"/>) is the one travel between beats: immediate, a fixed
-    /// distance, and the enemy decides no step until it ends. Spawns (the slice's test schedule)
+    /// distance, and the enemy decides no step until it ends. A lethal hit removes the enemy at once
+    /// (<see cref="Kill"/>): its death launch is presentation's, and it drops a gem. Spawns (the slice's test schedule)
     /// land on a ring just outside the camera's footprint, inside the walkable arena; enemies far
     /// out of sight are recycled onto it. At most the schedule's cap are alive.
     /// </summary>
@@ -81,6 +82,7 @@ namespace PS.Game.Sim
         int beat;
         Phase phase;
         double nextSpawn;
+        int drops;
 
         public Horde(HordeConfig config, BeliefLog log, BeatClock clock, StrideGrid strides, ArenaGrid arena, SimState state)
         {
@@ -136,14 +138,7 @@ namespace PS.Game.Sim
 
         public NavGrid Nav { get; }
 
-        /// <summary>Where the hero is at song time <paramref name="t"/>: on its tile, or striding to it.</summary>
-        void HeroAt(double t, out double x, out double y)
-        {
-            var h = state.Hero;
-            double u = t >= h.MoveEnd || h.MoveEnd <= h.MoveStart ? 1 : Math.Max(0, (t - h.MoveStart) / (h.MoveEnd - h.MoveStart));
-            x = h.FromX + (h.X - h.FromX) * u;
-            y = h.FromY + (h.Y - h.FromY) * u;
-        }
+        void HeroAt(double t, out double x, out double y) => state.Hero.PositionAt(t, out x, out y);
 
         public static double MoveWindow(double period) => Math.Min(MaxMoveWindow, MoveWindowShare * period);
 
@@ -376,6 +371,8 @@ namespace PS.Game.Sim
 
         void Land(Simulation sim, double t, bool reliable)
         {
+            // A fallen hero is past biting.
+            reliable &= !state.Hero.Fallen;
             HeroAt(t, out double hx, out double hy);
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -401,7 +398,7 @@ namespace PS.Game.Sim
                     dx = 1;
                     l = 1;
                 }
-                sim.Emit(SimEvent.Hit(t, -1, (int)EnemyAttackKind.Lunge, roles[e.Role].Power, e.X, e.Y, dx / l, dy / l));
+                sim.Health.Lunge(sim, t, roles[e.Role].Power, dx / l, dy / l);
             }
         }
 
@@ -442,6 +439,28 @@ namespace PS.Game.Sim
             e.MoveStart = t;
             e.MoveEnd = t + KnockSeconds;
             sim.Emit(SimEvent.EnemyKnock(t, i, x, y, toX, toY, t, t + KnockSeconds));
+        }
+
+        /// <summary>
+        /// Enemy <paramref name="i"/> dies at <paramref name="t"/>, struck along (dirX, dirY): it
+        /// leaves the horde at once (its slot is free for a later spawn), with a death event whose
+        /// force is <paramref name="launch"/>, the launch's distance in metres, and drops a gem of
+        /// its role's experience (collecting it is the arsenal's, M3).
+        /// </summary>
+        internal void Kill(Simulation sim, int i, double t, double dirX, double dirY, double launch)
+        {
+            ref var e = ref enemies[i];
+            if (!e.Alive) return;
+            e.PositionAt(t, out double x, out double y);
+            e.Alive = false;
+            e.X = x;
+            e.Y = y;
+            e.Motion = EnemyMotion.Still;
+            e.LungeBeat = -1;
+            state.EnemiesAlive--;
+            free[freeCount++] = i;
+            sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
+            sim.Emit(SimEvent.Drop(t, drops++, ItemKind.Gem, x, y, roles[e.Role].Xp));
         }
 
         /// <summary>The per-tick system, at the tick's end: motion, the flow field's rebuild, spawns and recycling.</summary>

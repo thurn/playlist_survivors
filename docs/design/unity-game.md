@@ -368,7 +368,9 @@ kind's `v` slots), in the analyzer's emission order. Dumps are cached in
 by every analyzer input and the audio's bytes, as `ps survive` caches its
 streams. Two runs write the same bytes. For tests without the cache,
 `native/fixtures/entries/house-128-20s.jsonl` holds the first 20 s of
-house-128 (`--seconds 20`). Regenerate it when the analyzer changes.
+house-128 (`--seconds 20`), and `accelerando-100-140-30s.jsonl` the first
+30 s of accelerando-100-140, whose accent forecasts, strong onsets and
+structure changes the sword's tests read. Regenerate it when the analyzer changes.
 
 ### Shared Rust code with native
 
@@ -819,11 +821,11 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
   arrive and reveals each to its rules only when the sim reaches its
   `known_at`.
 - **Events** carry what presentation needs to anticipate and react:
-  attack (wind-up start, impact time, direction, kind), enemy step (from, to,
-  move start, footplant), enemy knock (from, to, start, end), hit, death
-  (impact direction and force), structure break and regrowth, spawn (a
-  recycled enemy's re-entry flagged), pickup, level-up, chest, freeze, sound
-  cue.
+  attack (wind-up start, impact time, direction, kind, heavy, reach), enemy
+  step (from, to, move start, footplant), enemy knock (from, to, start, end),
+  hit, death (impact direction and force), cleave (centre, radii, band
+  times), drop, structure break and regrowth, spawn (a recycled enemy's
+  re-entry flagged), pickup, level-up, chest, freeze, sound cue.
 - **State** is the latest settled snapshot of positions and stats. The
   client keeps a short history of past states to show `frameSong`, which
   trails the frontier.
@@ -984,6 +986,43 @@ strikes or projectiles.
   the first downbeat after a section change.
 - Attacks play on the upper body over the stepping legs, so moving never
   erases the strike pose.
+
+**Shipped (ps-msz.3.3).** The sim's sword is `Sim/Weapons/Sword.cs`, turned
+on by `SimConfig.Sword` (weapon, rank, stats, wind-up). As built:
+
+- `n = max(1, floor(rank amount + Amount))` strikes per committed beat, at
+  `T + k * p / n`, p the interval to the next beat when it is known at
+  planning, else the beat's period. With no beat known ahead, the same pulse
+  repeats every rank interval times Cooldown (1.35 s at rank 1), counted
+  from the latest pulse, unless a revealed beat comes within half an
+  interval.
+- A beat's strikes are planned at `T - 0.32 s`, or as soon as the beat is
+  revealed; one revealed at or after its time is missed. Each winds up at
+  `max(impact - 0.32, the previous impact)`: the attack event's time is its
+  wind-up start, always before its impact.
+- At the wind-up: heavy (a main strike, the music clear, a revealed strong
+  onset or forecast within 50 ms of the beat, decided once per beat), the
+  kind (`HeroAttackKind`: slam, spin, follow-up, or alternating slashes),
+  the direction (native's aim: 16 directions, a 150° scoring arc, bosses
+  1000 and brutes 2, nearest on ties, else the grid facing) and the reach
+  (`7.04 m * rank area * Area`, x1.3 heavy), in the event's `Reach`.
+- The impact lands after the enemies' steps and lunges on its beat. Bodies
+  whose centre is within reach plus half their radius take
+  `rank power * Might` (x2.5 heavy), then die or are knocked back by the
+  sword's knockback. A death carries its launch distance as its force
+  (`10/27 m * 5`, x2.5 heavy) and drops a gem (`SimEventKind.Drop`).
+- A heavy strike's cleave wave (`SimEventKind.Cleave`) rings from 9.15 m to
+  15.07 m in seven 0.93 m bands, the first on the next eighth and then one
+  a sixteenth, each enemy hit once at the strike's power.
+- The slam goes to the first downbeat at or after a revealed structure
+  change, within two beats.
+- Hero health (`HeroHealth`): a landed lunge takes
+  `max(1, power * (0.5 on Easy) - armor)`, then 0.12 s of lockout (hits in
+  it show with 0 damage). At none the hero falls (a death with enemy -1);
+  it then neither moves, strikes nor takes hits. `SimConfig.HeroStands`
+  keeps a tenth of its health instead.
+- Bosses are recognised by role id (`boss-*`, the minotaur) until M3 marks
+  bosses at spawn.
 
 ### The other weapons
 
