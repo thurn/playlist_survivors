@@ -23,6 +23,8 @@ namespace PS.Game.Sim
         Strike = 0,
         HeavyStrike = 1,
         Cleave = 2,
+        /// <summary>A lightning bolt: a strike from the sky or a chain's jump (<see cref="SimEventKind.Bolt"/>).</summary>
+        Bolt = 3,
     }
 
     /// <summary>What a dying enemy drops.</summary>
@@ -139,7 +141,7 @@ namespace PS.Game.Sim
         public override bool OnBeats => true;
 
         /// <summary>Strikes per beat: one, and one more per point of Amount.</summary>
-        public int StrikesPerBeat => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
+        public int StrikesPerBeat => Amount;
 
         /// <summary>A strike's damage before the heavy multiplier: the rank's power times Might, at any tempo.</summary>
         public double Reach(bool heavy) =>

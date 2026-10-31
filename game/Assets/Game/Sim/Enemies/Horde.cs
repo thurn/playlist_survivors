@@ -136,6 +136,8 @@ namespace PS.Game.Sim
         /// <summary>The music-driven events' hold on their enemies.</summary>
         public Scripts Scripts { get; }
         public MusicEvents Music { get; }
+        /// <summary>Who spawns, when and where; its footprint says what is in view.</summary>
+        public Spawner Spawner => spawner;
         /// <summary>The main beat the horde is in (the next to land).</summary>
         public int Beat => beat;
         /// <summary>Free enemy slots: how many more may spawn under the cap.</summary>

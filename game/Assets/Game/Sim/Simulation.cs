@@ -90,6 +90,8 @@ namespace PS.Game.Sim
                         ShapeKind.Trail => new FireTrail(arsenal, State, Horde, Run, def, index),
                         ShapeKind.Missile => new MagicWand(arsenal, State, def, index, content, Beats, Horde),
                         ShapeKind.Orbit => new KingBible(arsenal, State, def, index, content, Beats, Horde),
+                        ShapeKind.Strike => new LightningRing(arsenal, def, index, Beats, State, Horde),
+                        ShapeKind.Chain => new ChainLightning(arsenal, def, index, Beats, State, Horde),
                         _ => new Weapon(arsenal, State, def, index),
                     });
             }

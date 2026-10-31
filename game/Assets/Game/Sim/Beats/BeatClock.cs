@@ -175,6 +175,33 @@ namespace PS.Game.Sim
             return StartsInterval(i) ? beats[i].T + (beats[i + 1].T - beats[i].T) * f : double.NaN;
         }
 
+        /// <summary>
+        /// The first sixteenth strictly after <paramref name="s"/> among the beats revealed now
+        /// (<see cref="GridAtOrAfter"/>), or with none known, the next point of a pulse a quarter of
+        /// <see cref="StrideGrid.FreePeriod"/> apart from the latest beat at or before s (native's
+        /// <c>next_enemy_sixteenth</c>).
+        /// </summary>
+        internal double SixteenthAfter(double s)
+        {
+            double t = GridAtOrAfter(s + 1e-8, 0.25, out _);
+            if (!double.IsNaN(t)) return t;
+            const double Period = StrideGrid.FreePeriod / 4;
+            int last = LastAtOrBefore(log.Beats, s);
+            double anchor = last >= 0 ? log.Beats[last].T : 0;
+            return anchor + (Math.Floor((s - anchor) / Period + 1e-8) + 1) * Period;
+        }
+
+        /// <summary>
+        /// The first sixteenth at or after <paramref name="s"/> among the beats revealed now, or s with
+        /// none known. A time planned on a beat's continuation moves to the sixteenth a beat committed
+        /// since says (native's lightning deferral).
+        /// </summary>
+        internal double SixteenthAtOrAfter(double s)
+        {
+            double t = GridAtOrAfter(s, 0.25, out _);
+            return double.IsNaN(t) ? s : t;
+        }
+
         /// <summary>The latest of a grid's entries at or before <paramref name="s"/>, or -1.</summary>
         static int LastAtOrBefore(ReadOnlySpan<StreamEntry> grid, double s)
         {

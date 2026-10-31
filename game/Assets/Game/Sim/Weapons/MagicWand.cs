@@ -67,7 +67,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>Bolts a shot fires.</summary>
-        public int Bolts => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
+        public int Bolts => Amount;
 
         public double SpeedMps => Def.Shape.SpeedMps * Numbers.Speed * Stats.Speed;
 

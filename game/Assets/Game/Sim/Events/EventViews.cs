@@ -342,6 +342,23 @@ namespace PS.Game.Sim
         public double BandSeconds => e.D5;
     }
 
+    public readonly struct BoltEvent
+    {
+        readonly SimEvent e;
+        public BoltEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        /// <summary>The hero's weapon: its index in content's weapons.</summary>
+        public int Weapon => e.I0;
+        public BoltKind Kind => (BoltKind)e.I1;
+        /// <summary>Its place in its volley (a strike) or chain (a jump), 0 the first.</summary>
+        public int Index => e.I2;
+        public double FromX => e.D0;
+        public double FromY => e.D1;
+        public double X => e.D2;
+        public double Y => e.D3;
+        public double Radius => e.D4;
+    }
+
     public readonly struct DropEvent
     {
         readonly SimEvent e;

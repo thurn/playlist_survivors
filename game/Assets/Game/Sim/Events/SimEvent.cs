@@ -8,8 +8,8 @@ namespace PS.Game.Sim
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
     /// zone changes, freezes, the run's start, its finale and its end, gems' flights and pickups,
     /// level-ups and their cards, the music-driven events and the enemies that leave with them, the
-    /// tiles a trail weapon burns, and the weapons' projectiles and orbits (ProjectileEvents.cs); the
-    /// rest are declared, with their fields,
+    /// tiles a trail weapon burns, the weapons' projectiles and orbits (ProjectileEvents.cs), and the
+    /// lightning's bolts; the rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
@@ -46,6 +46,7 @@ namespace PS.Game.Sim
         Burn,
         Projectile,
         Orbit,
+        Bolt,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -334,6 +335,27 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>
+        /// A bolt of the hero's lightning lands: I0 the weapon's content index, I1 <see cref="BoltKind"/>,
+        /// I2 its place in its volley or chain (0 the first); D0/D1 where it comes from (a strike's own
+        /// point, from the sky; a jump's hero or enemy before), D2/D3 where it lands, D4 the radius it hits.
+        /// Its hits follow it at the same time.
+        /// </summary>
+        public static SimEvent Bolt(double t, int weapon, BoltKind kind, int index, double fromX, double fromY, double x, double y,
+            double radius)
+        {
+            var e = Of(SimEventKind.Bolt, t);
+            e.I0 = weapon;
+            e.I1 = (int)kind;
+            e.I2 = index;
+            e.D0 = fromX;
+            e.D1 = fromY;
+            e.D2 = x;
+            e.D3 = y;
+            e.D4 = radius;
+            return e;
+        }
+
         /// <summary>A dying enemy drops an item: I0 item, I1 item kind (<see cref="ItemKind"/>); D0/D1 position, D2 value (a gem's experience).</summary>
         public static SimEvent Drop(double t, int item, ItemKind itemKind, double x, double y, double value)
         {
@@ -551,5 +573,6 @@ namespace PS.Game.Sim
         public SetPieceEvent AsSetPiece { get { Expect(SimEventKind.SetPiece); return new SetPieceEvent(this); } }
         public LeaveEvent AsLeave { get { Expect(SimEventKind.Leave); return new LeaveEvent(this); } }
         public BurnEvent AsBurn { get { Expect(SimEventKind.Burn); return new BurnEvent(this); } }
+        public BoltEvent AsBolt { get { Expect(SimEventKind.Bolt); return new BoltEvent(this); } }
     }
 }

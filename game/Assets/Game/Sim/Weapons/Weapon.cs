@@ -54,6 +54,9 @@ namespace PS.Game.Sim
         /// <summary>Nothing fires while the world is frozen or the hero has fallen.</summary>
         protected bool Holding => state.Frozen || state.Hero.Fallen;
 
+        /// <summary>Its rank's amount plus the hero's, at least 1 (native's <c>amount(stats)</c>): strikes, jumps or projectiles a shot.</summary>
+        public int Amount => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
+
         /// <summary>
         /// Its interval on the run clock: the rank's times Cooldown, plus its duration times
         /// Duration for a weapon whose next shot waits for the last to end (King Bible; native's

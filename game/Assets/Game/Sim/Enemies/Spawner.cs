@@ -131,6 +131,13 @@ namespace PS.Game.Sim
             return d > 1e-9 && d > FootprintEdge(dx / d, dy / d) + SpawnMarginM;
         }
 
+        /// <summary>Is (x, y) inside the footprint around the hero at (hx, hy): in view?</summary>
+        public bool InView(double x, double y, double hx, double hy)
+        {
+            double dx = x - hx, dy = y - hy, d = Math.Sqrt(dx * dx + dy * dy);
+            return d < 1e-9 || d <= FootprintEdge(dx / d, dy / d);
+        }
+
         bool Spawning => !state.Frozen && state.RunClock < durationS - 1e-9;
 
         /// <summary>At the tick's end: the minute's bosses come due, waves spawn, bosses past the fallback land, and far enemies recycle.</summary>

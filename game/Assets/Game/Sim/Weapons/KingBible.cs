@@ -63,7 +63,7 @@ namespace PS.Game.Sim
             roles = content.Roles;
         }
 
-        public int Blades => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
+        public int Blades => Amount;
 
         public double DurationS => Numbers.DurationS * Stats.Duration;
 
