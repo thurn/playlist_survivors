@@ -11,8 +11,9 @@ use objc2_core_audio_types::*;
 
 use audio::mixer::{Command, Mixer, Report};
 
-use super::coreaudio::{self, check};
-use super::tap::Meta;
+use capture::Meta;
+use capture::clock;
+use capture::coreaudio::{self, check};
 
 /// What the render callback did, for the log.
 #[derive(Clone, Copy, Debug)]
@@ -173,7 +174,7 @@ impl Output {
             events: ep,
             music_meta: meta_tx,
             muted,
-            tick_s: coreaudio::tick_s(),
+            tick_s: clock::tick_s(),
         }));
         let cb = AURenderCallbackStruct {
             inputProc: Some(render),

@@ -12,6 +12,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 analysis = { path = "../analysis" }
 audio = { path = "../audio" }
+capture = { path = "../capture" }
 rtrb = "0.4"
 serde_json = "1"
 stream = { path = "../stream" }

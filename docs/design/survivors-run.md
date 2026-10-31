@@ -276,7 +276,7 @@ survivors mode it doesn't:
   5 s rule's evidence is known (its `knownAt`). With Delayed listening's
   lookahead that is about 2 s into the heard gap. Direct listening is about 5
   s in. Nothing already settled changes.
-- **Not a live-run hazard:** the Delayed watchdog (`app/src/slice/watchdog.rs`)
+- **Not a live-run hazard:** the Delayed watchdog (`capture/src/watchdog.rs`)
   watches capture stalls, not silence. SF3 checks that a silent gap in System
   mode doesn't trip it.
 

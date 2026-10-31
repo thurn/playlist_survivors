@@ -12,9 +12,11 @@
 
 use std::time::{Duration, Instant};
 
-use super::coreaudio::host_s;
+use capture::Meta;
+use capture::clock::host_s;
+use capture::tap::{Capture, Tap};
+
 use super::output::Output;
-use super::tap::{Capture, Meta, Tap};
 
 /// A click needs this long of quiet before it (s), and stands this far above the floor.
 const REFRACTORY_S: f64 = 0.3;
@@ -99,7 +101,7 @@ pub fn run(
     minutes: f64,
     m: f64,
     offset: f64,
-    processes: &[super::coreaudio::Id],
+    processes: &[capture::coreaudio::Id],
     go: impl FnOnce() -> Result<(), String>,
 ) -> Result<bool, String> {
     let mut mic = Capture::microphone()?;
@@ -147,7 +149,7 @@ pub fn run(
             listen(&mut mic, &mut mic_d, &mut heard);
         }
         // (The last clicks' echoes may still be on their way: they count next minute.)
-        let cut = src.partition_point(|&s| s < host_s(super::coreaudio::now_ticks()) - m - 1.0);
+        let cut = src.partition_point(|&s| s < host_s(capture::clock::now_ticks()) - m - 1.0);
         let ds = delays(&src[..cut], &heard, m - 0.5, m + 0.5);
         src.drain(..cut);
         let n = ds.len();

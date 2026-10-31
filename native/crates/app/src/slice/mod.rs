@@ -38,7 +38,6 @@
 //!     playlist-survivors --showcase-arsenal <session> [--level <yaml>]  # the same, measuring the
 //!                                     # hero's growth: level-ups, chests, time frozen, arsenal per section
 
-mod apps;
 mod bible;
 mod calibration;
 mod cards;
@@ -47,12 +46,10 @@ mod damage;
 mod density_check;
 mod lightning;
 mod roster;
-// The tap and output are the phase 0 spike's (57e846a^:native/spike), kept as they were.
+// The output is the phase 0 spike's (57e846a^:native/spike), kept as it was.
 mod aftermath;
 mod atmosphere;
 mod bosses;
-#[allow(clippy::pedantic, unused_qualifications, dead_code)]
-mod coreaudio;
 mod evolution;
 mod fx;
 mod garlic;
@@ -82,19 +79,10 @@ mod signature;
 mod sounds;
 mod swarm_check;
 mod sword;
-#[allow(
-    clippy::pedantic,
-    clippy::explicit_counter_loop,
-    unused_qualifications,
-    deprecated,
-    dead_code
-)]
-mod tap;
 mod tier;
 mod timing;
 mod treasure;
 mod wand;
-mod watchdog;
 mod weapons_check;
 
 use std::collections::{HashMap, VecDeque};
@@ -118,17 +106,18 @@ use winit::window::{Window, WindowId};
 
 use audio::mixer::{Command, Report, Source as Voiced, Voice};
 use calibration::{Calibration, Settings};
-use coreaudio::now_s;
+use capture::analysis::{FileSource, Msg};
+use capture::clock::now_s;
+use capture::watchdog::Watchdog;
+use capture::{apps, coreaudio, tap};
 use eval::session::Arrival;
 use gfx::Gfx;
 use hud::{HudState, KeyLight, PressMark};
-use live::{Msg, Source};
 use output::{Event, Output};
 use scene::{End, Look, Scene};
 use session::Session;
 use sounds::Sounds;
 use timing::Timing;
-use watchdog::Watchdog;
 
 /// The tap's timeline runs this far behind the output's render timeline (phase 0, built-in
 /// speakers); `PS_TAP_MINUS_RENDER_MS` overrides it.
@@ -1111,7 +1100,7 @@ impl Drop for App {
 /// parent taps it, muted, before telling it: it is never heard.
 fn play_child(file: &Path) -> Result<(), String> {
     use std::io::{BufRead, Write};
-    let music = Arc::<[f32]>::from(live::decode(file, Output::device_rate())?);
+    let music = Arc::<[f32]>::from(capture::decode::mono(file, Output::device_rate())?);
     let mut out = Output::start(Some(music), 0.0, 0.0, None, Vec::new(), false)?;
     println!("ready");
     std::io::stdout().flush().map_err(|e| e.to_string())?;
@@ -1314,7 +1303,10 @@ impl Audio {
         proxy: winit::event_loop::EventLoopProxy<()>,
     ) -> Result<Audio, String> {
         let music = match file {
-            Some(p) => Some(Arc::<[f32]>::from(live::decode(p, Output::device_rate())?)),
+            Some(p) => Some(Arc::<[f32]>::from(capture::decode::mono(
+                p,
+                Output::device_rate(),
+            )?)),
             None => None,
         };
         let listening = if music.is_none() && listening != Listening::Direct && app.is_none() {
@@ -1347,30 +1339,25 @@ impl Audio {
         let l_out = Output::reported_latency_s() + correction;
         let mut watchdog = None;
         #[allow(clippy::single_match_else)]
-        let (source, heard_after, mode) = match music {
+        let (source, heard_after, mode): (Box<dyn capture::analysis::Source>, _, _) = match music {
             Some(samples) => (
-                Source::File {
+                Box::new(FileSource {
                     samples,
                     metas: out.music_meta.take().ok_or("no music timing")?,
                     rate: out.rate,
-                },
+                }),
                 l_out + m,
                 "file",
             ),
             None => {
                 let tap = match delayed_tap {
                     Some(t) => {
-                        watchdog = Some(Watchdog::start(
-                            t.tap,
-                            t.aggregate,
-                            Arc::clone(&t.destroyed),
-                            Arc::clone(&t.alive),
-                        ));
+                        watchdog = Some(t.watchdog());
                         t
                     }
                     None => tap::Tap::start(true)?,
                 };
-                (Source::Tap(tap), l_out - offset + m, "system")
+                (Box::new(tap), l_out - offset + m, "system")
             }
         };
         eprintln!(

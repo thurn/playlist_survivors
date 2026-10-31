@@ -11,7 +11,7 @@
 - **purity:** the pure crates (stream, analysis, sim, eval, players) carry
   `#![forbid(unsafe_code)]` at the top of each library and binary target's root file and never depend,
   directly or transitively (normal or build dependencies, every feature enabled),
-  on audio, render or app, or on objc2, winit or wgpu.
+  on audio, capture, render or app, or on objc2, winit or wgpu.
 - **affected:** a changed file under `native/crates/<crate>/` touches that crate;
   every crate that depends on it, transitively (dev-dependencies included, since
   their tests can break), is affected too. A change to the workspace's own files
@@ -31,7 +31,7 @@ from pathlib import Path
 NATIVE = Path(__file__).resolve().parents[1]
 PURE = ("stream", "analysis", "sim", "eval", "players")
 #: Packages a pure crate must never reach: the impure crates and the platform's bindings.
-FORBIDDEN = re.compile(r"^(audio|render|app|objc2(-.*)?|winit|wgpu(-.*)?)$")
+FORBIDDEN = re.compile(r"^(audio|capture|render|app|objc2(-.*)?|winit|wgpu(-.*)?)$")
 FORBID_LINE = re.compile(r"^#!\[forbid\(unsafe_code\)\]", re.MULTILINE)
 WORKSPACE_FILES = re.compile(
     r"^native/(Cargo\.toml|Cargo\.lock|rust-toolchain\.toml|rustfmt\.toml|\.cargo/"

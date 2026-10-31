@@ -81,6 +81,11 @@ class Purity(unittest.TestCase):
         errors = crates.purity_errors(meta(g, MEMBERS), SOURCES)
         self.assertEqual(errors, ["eval: depends on render, wgpu"])
 
+    def test_depending_on_the_capture_crate_fails(self) -> None:
+        g = dict(WORKSPACE, capture=["analysis"], players=["sim", "capture"])
+        errors = crates.purity_errors(meta(g, [*MEMBERS, "capture"]), SOURCES)
+        self.assertEqual(errors, ["players: depends on capture"])
+
     def test_dev_dependencies_do_not_count(self) -> None:
         m = meta(WORKSPACE, MEMBERS, dev={"sim": ["audio"]})
         self.assertEqual(crates.purity_errors(m, SOURCES), [])

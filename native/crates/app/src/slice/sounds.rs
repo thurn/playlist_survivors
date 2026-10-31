@@ -18,7 +18,6 @@ use sim::content::types::{Sample, SoundPalette, WeaponKind};
 use sim::core::rng::{Part, Rng};
 use stream::Beat;
 
-use super::live::decode;
 mod horn;
 use horn::horn;
 mod budget;
@@ -215,7 +214,7 @@ impl Sounds {
                     .sounds
                     .get(id)
                     .ok_or_else(|| format!("no sound {id}"))?;
-                let pcm = decode(&dir.join(&entry.file), rate)?;
+                let pcm = capture::decode::mono(&dir.join(&entry.file), rate)?;
                 lengths.push(pcm.len() as f64 / rate);
                 bank.push(pcm.into());
                 samples.insert(id.to_string(), (bank.len() - 1, entry.onset_s));
@@ -1028,7 +1027,7 @@ mod survivor_tests {
             let path = root
                 .join("public/reactive")
                 .join(entry["audio"].as_str().unwrap());
-            let mut pcm = decode(&path, 8000.0).unwrap();
+            let mut pcm = capture::decode::mono(&path, 8000.0).unwrap();
             pcm.truncate(24 * 8000);
             let (mut sounds, bank) = decoded();
             let music = Arc::<[f32]>::from(pcm);

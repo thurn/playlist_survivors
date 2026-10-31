@@ -1,17 +1,16 @@
 //! Delayed listening's watchdog (docs/design/native-app.md, "Capture and mute"): a thread that
-//! destroys the tap, which unmutes the tapped app, when the capture has stopped for 0.5 s (the
-//! delay line would underrun) or the main thread hasn't checked in for 2 s. The app then falls
-//! back to Direct listening, ends the run and logs why; so a hang never leaves the app muted for
-//! more than about 2 s. (Destroying the aggregate and tap mid-stall works from another thread:
-//! ES, hv-t8o8.36.)
+//! releases the tap, which unmutes the tapped app, when the capture has stopped for 0.5 s (the
+//! delay line would underrun) or the main thread hasn't checked in for 2 s. Native's app then
+//! falls back to Direct listening, ends the run and logs why; so a hang never leaves the app
+//! muted for more than about 2 s. (On the Mac, destroying the aggregate and tap mid-stall works
+//! from another thread: ES, hv-t8o8.36.)
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering};
 use std::thread::JoinHandle;
 use std::time::Duration;
 
-use super::coreaudio::{Id, now_s};
-use super::tap;
+use crate::clock::now_s;
 
 /// The capture may stop this long, and the main thread go this long without a heartbeat (s).
 pub const CAPTURE_STALL_S: f64 = 0.5;
@@ -40,13 +39,13 @@ pub struct Watchdog {
 }
 
 impl Watchdog {
-    /// Watches the tap `tap` and its aggregate (`destroyed` set once they are gone), whose
-    /// capture stores each buffer's host time in `alive`.
+    /// Watches a tap whose capture stores each buffer's host time in `alive` (an f64's bits, 0
+    /// before the first), calling `release` (which sets `released`) when it stalls, unless
+    /// `released` is set first.
     pub fn start(
-        tap_id: Id,
-        aggregate: Id,
-        destroyed: Arc<AtomicBool>,
+        released: Arc<AtomicBool>,
         alive: Arc<AtomicU64>,
+        release: impl FnOnce() + Send + 'static,
     ) -> Watchdog {
         let started = now_s();
         let shared = Arc::new(Shared {
@@ -59,7 +58,7 @@ impl Watchdog {
         let handle = std::thread::Builder::new()
             .name("watchdog".into())
             .spawn(move || {
-                while !s.stop.load(Ordering::Relaxed) && !destroyed.load(Ordering::SeqCst) {
+                while !s.stop.load(Ordering::Relaxed) && !released.load(Ordering::SeqCst) {
                     let now = now_s();
                     let why = trip(
                         now,
@@ -68,7 +67,7 @@ impl Watchdog {
                         f64::from_bits(alive.load(Ordering::Relaxed)),
                     );
                     if why != NONE {
-                        tap::destroy(tap_id, aggregate, &destroyed);
+                        release();
                         let since = if why == MAIN {
                             f64::from_bits(s.heartbeat.load(Ordering::Relaxed))
                         } else {
@@ -95,12 +94,12 @@ impl Watchdog {
             .store(now.to_bits(), Ordering::Relaxed);
     }
 
-    /// How long after the stall began it destroyed the tap (s), once it has.
+    /// How long after the stall began it released the tap (s), once it has.
     pub fn after(&self) -> f64 {
         f64::from_bits(self.shared.after.load(Ordering::SeqCst))
     }
 
-    /// Why it destroyed the tap, once it has.
+    /// Why it released the tap, once it has.
     pub fn tripped(&self) -> Option<&'static str> {
         match self.shared.why.load(Ordering::SeqCst) {
             CAPTURE => Some("the capture stopped for 0.5 s"),
@@ -158,5 +157,52 @@ mod tests {
         // The first buffer gets 2 s.
         assert_eq!(trip(101.5, 100.0, 101.49, 0.0), NONE);
         assert_eq!(trip(102.1, 100.0, 102.09, 0.0), CAPTURE);
+    }
+
+    /// A watchdog whose release reports on a channel and sets `released`, as a tap's does.
+    fn watched(alive: f64) -> (Watchdog, Arc<AtomicBool>, std::sync::mpsc::Receiver<()>) {
+        let released = Arc::new(AtomicBool::new(false));
+        let (tx, rx) = std::sync::mpsc::channel();
+        let r = Arc::clone(&released);
+        let w = Watchdog::start(
+            Arc::clone(&released),
+            Arc::new(AtomicU64::new(alive.to_bits())),
+            move || {
+                r.store(true, Ordering::SeqCst);
+                tx.send(()).unwrap();
+            },
+        );
+        (w, released, rx)
+    }
+
+    /// Waits for `w` to say why it released the tap (it does just after releasing it).
+    fn why(w: &Watchdog) -> &'static str {
+        let deadline = std::time::Instant::now() + Duration::from_secs(60);
+        loop {
+            if let Some(why) = w.tripped() {
+                return why;
+            }
+            assert!(std::time::Instant::now() < deadline, "no reason given");
+            std::thread::yield_now();
+        }
+    }
+
+    #[test]
+    fn a_stalled_capture_releases_the_tap() {
+        // (The latest buffer a second ago: stalled from the first look.)
+        let (w, released, rx) = watched(now_s() - 1.0);
+        rx.recv_timeout(Duration::from_secs(60)).unwrap();
+        assert_eq!(why(&w), "the capture stopped for 0.5 s");
+        assert!(released.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn a_stalled_main_thread_releases_the_tap() {
+        // (Buffers keep arriving, as far as it can tell; the main thread last beat 3 s ago.)
+        let (w, _, rx) = watched(now_s() + 1e6);
+        w.beat(now_s() - 3.0);
+        rx.recv_timeout(Duration::from_secs(60)).unwrap();
+        assert_eq!(why(&w), "the main thread stalled for 2 s");
+        assert!(w.after() >= 3.0);
     }
 }

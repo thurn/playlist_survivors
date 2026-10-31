@@ -1,0 +1,24 @@
+[package]
+name = "capture"
+version = "0.0.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+analysis = { path = "../analysis" }
+audio = { path = "../audio" }
+rtrb = "0.4"
+stream = { path = "../stream" }
+
+# (Windows's process loopback joins these in M5: docs/design/unity-game.md, "Platform capture
+# and crash safety".)
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2"
+objc2 = "0.6"
+objc2-core-audio = "0.3"
+objc2-core-audio-types = "0.3"
+objc2-core-foundation = "0.3"
+objc2-foundation = { version = "0.3", features = ["NSArray", "NSValue", "NSString", "NSDictionary", "NSUUID", "NSObject"] }
+
+[lints]
+workspace = true

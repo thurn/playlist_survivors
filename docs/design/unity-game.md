@@ -391,6 +391,18 @@ of forking them.
 - A change to any shared crate keeps native's app building and its tests
   passing. Native's analyzer accuracy checks against Python still apply.
 
+**Shipped (ps-msz.5.1).** The shared crate is `native/crates/capture`: the
+process taps (`tap`, created muted for one app's processes), the apps
+producing audio (`apps`), the watchdog (`watchdog`, which calls the tap's
+release), the analysis thread over any `analysis::Source` (a tap, or a file
+as the output plays it), the host clock (`clock`), and the one `afconvert`
+decoder (`decode`) that native's app and the plugin's File source share.
+Core Audio code is behind `cfg(target_os = "macos")`, so M5's process
+loopback goes beside it. The plugin's File analysis keeps its own loop: it
+feeds the analyzer in `ps entries`' 4096-sample blocks, paced by the render
+position, so its records stay byte-identical to the dump. `capture` is
+impure: the pure crates may not depend on it (`native/scripts/crates`).
+
 ### The C interface
 
 The interface is small and plain C, so both IL2CPP and Mono call it through

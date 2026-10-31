@@ -4,7 +4,7 @@
 //!
 //! - [`session`]: one source's threads (decoding, playback feeding, analysis), the render path
 //!   and the clock anchor.
-//! - [`decode`]: a File source's tracks, decoded by macOS's `afconvert`.
+//! - [`decode`]: a File source's tracks, decoded by macOS's `afconvert` (`capture::decode`).
 //! - [`record`]: the session's record (the analyzer's input and every entry).
 //! - [`latency`]: the output device's latency as the OS reports it.
 //!

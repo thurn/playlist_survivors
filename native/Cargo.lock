@@ -110,16 +110,14 @@ dependencies = [
  "analysis",
  "audio",
  "block2 0.6.2",
+ "capture",
  "eval",
  "indexmap",
  "libc",
  "objc2 0.6.5",
  "objc2-app-kit 0.3.2",
  "objc2-audio-toolbox",
- "objc2-core-audio",
  "objc2-core-audio-types",
- "objc2-core-foundation",
- "objc2-foundation 0.3.2",
  "players",
  "pollster",
  "render",
@@ -291,6 +289,22 @@ dependencies = [
  "rustix 0.38.44",
  "wayland-backend",
  "wayland-client",
+]
+
+[[package]]
+name = "capture"
+version = "0.0.0"
+dependencies = [
+ "analysis",
+ "audio",
+ "libc",
+ "objc2 0.6.5",
+ "objc2-core-audio",
+ "objc2-core-audio-types",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.2",
+ "rtrb",
+ "stream",
 ]
 
 [[package]]
@@ -1614,6 +1628,7 @@ version = "0.0.0"
 dependencies = [
  "analysis",
  "audio",
+ "capture",
  "objc2-core-audio",
  "rtrb",
  "serde_json",

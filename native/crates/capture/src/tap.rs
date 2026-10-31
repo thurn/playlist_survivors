@@ -19,23 +19,9 @@ use objc2_core_audio_types::*;
 use objc2_core_foundation::CFDictionary;
 use objc2_foundation::{NSArray, NSDictionary, NSMutableDictionary, NSNumber, NSString};
 
-use super::coreaudio::{self, Id, check};
-
-/// One captured buffer's timing, pushed beside its samples.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct Meta {
-    /// Index (at the tap's rate) of the buffer's first frame.
-    pub first: u64,
-    pub frames: u32,
-    /// `inInputTime.mHostTime`: when the first frame was captured.
-    pub input_host: u64,
-    /// `inNow.mHostTime`: when the IOProc ran.
-    pub now_host: u64,
-    /// Peak absolute sample, to tell silence (or a missing grant) from audio.
-    pub peak: f32,
-    /// Frames dropped so far because the ring was full.
-    pub dropped: u64,
-}
+use crate::Meta;
+use crate::coreaudio::{self, Id, check};
+use crate::watchdog::Watchdog;
 
 struct Ctx {
     samples: rtrb::Producer<f32>,
@@ -116,7 +102,7 @@ impl Capture {
             received: 0,
             dropped: 0,
             delay,
-            tick_s: coreaudio::tick_s(),
+            tick_s: crate::clock::tick_s(),
             alive: Arc::new(AtomicU64::new(0)),
         }));
         let alive = Arc::clone(&unsafe { &*ctx.get() }.alive);
@@ -372,6 +358,16 @@ impl Tap {
             }
         }
     }
+
+    /// A watchdog over this tap, destroying it when its capture or the main thread stalls.
+    pub fn watchdog(&self) -> Watchdog {
+        let (tap, aggregate, destroyed) = (self.tap, self.aggregate, Arc::clone(&self.destroyed));
+        Watchdog::start(
+            Arc::clone(&self.destroyed),
+            Arc::clone(&self.alive),
+            move || destroy(tap, aggregate, &destroyed),
+        )
+    }
 }
 
 /// Destroys a tap and its aggregate, once (the app's own end or the watchdog's): the tapped app
@@ -528,6 +524,16 @@ pub fn aggregate_for(
         kAudioObjectPropertyScopeGlobal,
     )?;
     Ok((tap, aggregate, fmt))
+}
+
+impl crate::analysis::Source for Tap {
+    fn rate(&self) -> f64 {
+        self.capture.rate
+    }
+
+    fn drain(&mut self, samples: &mut Vec<f32>, metas: &mut Vec<Meta>) {
+        self.capture.drain(samples, metas);
+    }
 }
 
 impl Drop for Tap {

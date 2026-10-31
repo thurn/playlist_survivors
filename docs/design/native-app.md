@@ -671,8 +671,8 @@ stage-parity test.
 - **Purity is enforced, not hoped for.** The pure crates (`stream`,
   `analysis`, `sim`, `eval`, `players`) carry `#![forbid(unsafe_code)]`. A gate
   stage check reads `cargo metadata` and fails if any of them depends, directly
-  or transitively, on `audio`, `render` or `app`, or on `objc2`, `winit` or
-  `wgpu`.
+  or transitively, on `audio`, `capture`, `render` or `app`, or on `objc2`,
+  `winit` or `wgpu`.
 - **Unused dependencies:** `cargo-machete` runs in the gate whenever a crate changes (a fraction of a second; hv-t8o8.70), and in the release stage.
 - **Test runner:** F4 times `cargo-nextest` against `cargo test` on the
   workspace and adopts it only for the stages where it is measurably faster,
