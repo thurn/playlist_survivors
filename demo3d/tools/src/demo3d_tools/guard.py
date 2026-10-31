@@ -1,7 +1,7 @@
 """The vendor guard: no vendor file, derived file or NCS audio may leave the machine.
 
 It checks blobs as git stores them, so it sees exactly what a push or a commit would carry.
-It covers every demo Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/) alike. A file fails when it:
+It covers every Unity project (paths.PROJECTS: demo3d/, demo2d/, stylelab/, game/) alike. A file fails when it:
 
 - is inside any demo's vendor or baked folders;
 - is binary (by extension or a NUL byte) under a demo's folder or the Unity package they share
@@ -67,7 +67,7 @@ AUDIO_EXTENSIONS = frozenset(
     "wav mp3 ogg oga flac aif aiff m4a aac opus wma mp4 m4b caf wv ape mka webm".split()
 )
 IMAGE_TAG_EXTENSIONS = frozenset({"png", "jpg", "jpeg"})
-# The folders whose binaries are refused: both demos, and the Unity package they share.
+# The folders whose binaries are refused: every Unity project, and the Unity package the demos share.
 BINARY_FOLDERS = (*paths.PROJECTS, "unity-packages")
 META_GUID = re.compile(rb"^guid:\s*([0-9a-fA-F]{32})\s*$", re.MULTILINE)
 

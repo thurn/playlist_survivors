@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 section="${1:-all}"
 # Pass stamps, keyed by a check's inputs' hash (outside the slots, so they persist).
 STAMPS="${PS_CI_STAMPS:-$PS_CACHE/ci-stamps}"
-SECTIONS="baker analysis native native-tests parity survivors demo3d demo2d"
+SECTIONS="baker analysis native native-tests parity survivors demo3d demo2d game"
 
 case " all $SECTIONS " in
   *" $section "*) ;;
@@ -47,6 +47,7 @@ if [ "$section" = all ]; then
   lane parity parity
   lane survivors survivors
   lane tools baker analysis demo3d demo2d
+  lane game game
   passed=""
   failed=""
   for entry in $lanes; do
@@ -191,5 +192,29 @@ if [ "$section" = demo2d ]; then
     uv run --quiet --project demo3d/tools demo2d setup
     uv run --quiet --project demo3d/tools demo2d unity BakePlayback
     uv run --quiet --project demo3d/tools demo2d test --no-skips
+  ) fi
+fi
+
+# The Unity game (docs/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
+# tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
+# once game/dotnet/PS.Game.Sim.Tests exists; then, windowless in batch mode, the project set up from
+# this machine's vendor packs and cache and Unity's EditMode tests, where a skip fails too. Unity's
+# rewrites of ProjectSettings are discarded. A machine without the packs skips the Unity half,
+# saying so.
+if [ "$section" = game ]; then
+  uv run --quiet --project demo3d/tools game guard --tree HEAD
+  if [ -d game/dotnet/PS.Game.Sim.Tests ]; then
+    dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
+  else
+    echo "ci-full game: no sim tests yet (game/dotnet/PS.Game.Sim.Tests)"
+  fi
+  missing=$(uv run --quiet --project demo3d/tools python -c \
+    'from demo3d_tools import guard, paths; print(" ".join(sorted(set(paths.PROJECT_ROOTS["game"]) & guard.missing_roots(paths.load_roots()))))')
+  if [ -n "$missing" ]; then
+    echo "ci-full game: skipped the Unity setup and tests: no vendor packs here ($missing)"
+  else (
+    trap 'git checkout --quiet -- game/ProjectSettings' EXIT
+    uv run --quiet --project demo3d/tools game setup
+    uv run --quiet --project demo3d/tools game test --no-skips
   ) fi
 fi

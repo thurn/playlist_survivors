@@ -9,6 +9,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 ## Overview
 
 - `native/`: the game, a Rust Cargo workspace (`native/crates/`). Design in docs/design/native-app.md and docs/design/survivors-run.md.
+- `game/`: the Unity game, native's run in 3D (docs/design/unity-game.md, epic ps-msz), on the demos' tools (`uv run --project demo3d/tools game`, `just game`); evidence and its operator list in game/evidence/.
 - `tools/analysis/`: the Python music analysis tool; `songs/` holds its song maps.
 - `tools/baker/`, `assets-src/`, `public/assets/`: the asset baker and its inputs and outputs.
 - `demo3d/`: the Unity 3D tech demo (docs/tech-demo-3d/).

@@ -121,6 +121,10 @@ def test_clean_tree_passes_with_an_empty_record(repo: Path, tmp_path: Path) -> N
     "demo2d/Assets/Baked/Atlases/skeleton.json",
     "demo2d/Assets/Baked.meta",
     "Demo2D/Assets/Vendor/x.txt",  # macOS paths are case-insensitive too
+    "game/Assets/Vendor/Synty/Knight.prefab",
+    "game/Assets/Baked/BoneTextures/goblin.json",
+    "game/Assets/Baked.meta",
+    "Game/Assets/vendor/x.txt",
 ])
 def test_vendor_and_baked_paths_fail(repo: Path, record: Path, rel: str) -> None:
     add(repo, rel, b"text\n")
@@ -150,6 +154,39 @@ def test_untagged_binaries_under_demo3d_fail(repo: Path, record: Path, rel: str,
 def test_untagged_binaries_under_demo2d_fail(repo: Path, record: Path, rel: str, data: bytes) -> None:
     add(repo, rel, data)
     assert failures(check_index(repo, record))[rel] == "binary file under demo2d/"
+
+
+def test_the_games_vendor_files_fail_as_the_demos_do(repo: Path, record: Path) -> None:
+    add(repo, "game/Assets/Game/Art/Knight_Color.png", png(tag=False))
+    add(repo, "game/Assets/FreeSounds/kenney/hit.ogg", b"OggS\x00\x02")
+    add(repo, "game/Assets/Game/Fx/Slash.prefab.meta", f"fileFormatVersion: 2\nguid: {GUID}\n".encode())
+    add(repo, "game/Assets/Game/Shaders/Slash.shader", VENDOR_TEXT)
+    add(repo, "game/evidence/look/boot/still-001.000.jpg", jpeg(tag=True))
+    add(repo, "game/Assets/Game/render.jpg", jpeg(tag=True))  # tagged, but outside the evidence
+    fails = failures(check_index(repo, record))
+    assert fails["game/Assets/Game/Art/Knight_Color.png"] == "binary file under game/"
+    assert fails["game/Assets/FreeSounds/kenney/hit.ogg"] == "binary file under game/"
+    assert fails["game/Assets/Game/Fx/Slash.prefab.meta"].startswith(f"GUID {GUID} is a vendor asset")
+    assert "is a vendor file (Hovl)" in fails["game/Assets/Game/Shaders/Slash.shader"]
+    assert fails["game/Assets/Game/render.jpg"] == "binary file under game/"
+    assert "game/evidence/look/boot/still-001.000.jpg" not in fails
+
+
+def test_missing_record_fails_changes_under_game(repo: Path) -> None:
+    git(repo, "rm", "-q", "-r", "--cached", "demo3d")
+    add(repo, "game/Assets/Game/Client/Boot.cs", b"class Boot {}\n")
+    assert [p for p, _ in check_index(repo, None).failures] == ["(sync record)"]
+
+
+def test_a_record_missing_a_game_manifest_guid_is_stale(repo: Path, record: Path) -> None:
+    other = "b" * 32
+    (repo / "game").mkdir()
+    (repo / "game" / "manifest.json").write_text(json.dumps({"version": 1, "assets": [
+        {"source": "unity_assets", "path": "Assets/Monsters/Bat.prefab", "guid": other},
+    ]}))
+    fails = check_index(repo, record).failures
+    assert [p for p, _ in fails] == ["(sync record)"]
+    assert other in fails[0][1] and "game sync" in fails[0][1]
 
 
 def test_a_render_tagged_in_the_other_demos_evidence_still_needs_its_own_folder(
@@ -630,6 +667,24 @@ def test_demo2d_derived_files_are_recorded_and_caught_elsewhere(
     assert "derived: demo2d/Assets/Baked/Atlases/skeleton.json" in fails["docs/frames.json"]
     meta = reasons(guard.run("index", repo, None, None, None), "demo2d/Assets/Demo2D/Data/atlas.json.meta")
     assert any(r.startswith(f"GUID {'d' * 32}") for r in meta)
+
+
+def test_the_games_derived_files_are_recorded_and_caught_elsewhere(
+        repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from demo3d_tools import derived
+
+    cache = derived_cache(tmp_path, monkeypatch)
+    baked = repo / "game" / "Assets" / "Baked" / "Crowd"
+    baked.mkdir(parents=True)
+    (baked / "bat.bones.asset").write_text("%YAML 1.1\nbones baked from the vendor bat\n")
+    (baked / "bat.bones.asset.meta").write_text(f"fileFormatVersion: 2\nguid: {'c' * 32}\n")
+    assert len(derived.refresh(repo, cache / "derived-record.json")) == 2
+    add(repo, "docs/bat.asset", (baked / "bat.bones.asset").read_bytes())
+    add(repo, "game/Assets/Game/Data/bat.asset.meta", (baked / "bat.bones.asset.meta").read_bytes())
+    fails = failures(guard.run("index", repo, None, None, None))
+    assert "derived: game/Assets/Baked/Crowd/bat.bones.asset" in fails["docs/bat.asset"]
+    meta = reasons(guard.run("index", repo, None, None, None), "game/Assets/Game/Data/bat.asset.meta")
+    assert any(r.startswith(f"GUID {'c' * 32}") for r in meta)
 
 
 def derived_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:

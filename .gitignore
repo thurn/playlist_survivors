@@ -82,3 +82,21 @@ reactive-local/
 /stylelab/*.csproj
 /stylelab/*.sln
 /stylelab/*.slnx
+# The Unity game (docs/design/unity-game.md), under the same rules.
+/game/Assets/Vendor/
+/game/Assets/Vendor.meta
+/game/Assets/Baked/
+/game/Assets/Baked.meta
+/game/[Ll]ibrary/
+/game/[Tt]emp/
+/game/[Oo]bj/
+/game/[Bb]uilds/
+/game/[Ll]ogs/
+/game/[Uu]ser[Ss]ettings/
+/game/*.csproj
+/game/*.sln
+/game/*.slnx
+/game/dotnet/**/bin/
+/game/dotnet/**/obj/
+/game/Assets/FreeSounds/
+/game/Assets/FreeSounds.meta

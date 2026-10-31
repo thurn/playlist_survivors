@@ -1,4 +1,4 @@
-"""`demo3d setup` (or `demo2d setup`): prepares a fresh worktree's project in one command.
+"""`demo3d setup` (or `demo2d`, `stylelab` or `game setup`): prepares a fresh worktree's project in one command.
 
 It checks the machine's sources, makes sure the sync record exists (empty until the sync tool
 first fills it), clones the vendor folder, the baked folders and a warm Library from the
@@ -107,7 +107,20 @@ def _song_build(wt: paths.Worktree, roots: dict[str, str], out: Path) -> None:
     subprocess.run(cmd, check=True)
 
 
-PY_BAKERS = [PyBaker("Audio", _song_inputs, _song_build, version="4")]
+# The game's free sound packs are the repository's own CC0 and CC-BY samples
+# (assets-src/sfx-catalogue.md), cloned into a gitignored folder so game/ never tracks audio. Not
+# into Baked/: the guard may record a Baked/ file as derived (derived.py), which would then fail
+# the tracked originals.
+FREE_SOUNDS = Path("public") / "assets" / "sfx"
+
+
+def free_sounds(wt: paths.Worktree) -> Path:
+    return wt.project / "Assets" / "FreeSounds"
+
+
+# The game plays the player's music, not the song.
+PY_BAKERS = {"game": []}
+DEFAULT_PY_BAKERS = [PyBaker("Audio", _song_inputs, _song_build, version="4")]
 
 
 def _source_key(wt: paths.Worktree, inputs: list[Path], version: str) -> str:
@@ -490,12 +503,15 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
 
     t = time.monotonic()
     wt.baked.mkdir(parents=True, exist_ok=True)
-    for b in PY_BAKERS:
+    for b in PY_BAKERS.get(wt.name, DEFAULT_PY_BAKERS):
         key = _source_key(wt, b.inputs(wt, roots), b.version)
         src, built = _cached(cache / "baked" / b.name / key, lambda out, b=b: b.build(wt, roots, out))
         n = clone.clone_tree(src, wt.baked / b.name)
         print(f"setup: Baked/{b.name} {'rebaked' if built else 'cloned'} ({n} files, {key})")
     print(f"setup: Baked in {time.monotonic() - t:.2f} s")
+    if wt.name == "game":
+        n = clone.clone_tree(wt.root / FREE_SOUNDS, free_sounds(wt))
+        print(f"setup: FreeSounds cloned ({n} files) from {FREE_SOUNDS.as_posix()}")
 
     t = time.monotonic()
     lkey = library_key(wt)

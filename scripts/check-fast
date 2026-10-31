@@ -9,9 +9,11 @@
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - scripts/prune-cargo-target's tests, when it or they changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
-# - The demos' vendor guard (demo3d/tools, covering demo3d/ and demo2d/), always, over the commits
-#   since the base and the index; its tools' lint and tests when demo3d/tools changed, and the choreography layer's tests (on each demo's
-#   data) when the package or that demo's data or tests changed.
+# - The vendor guard (demo3d/tools, covering every Unity project: game/, demo3d/, demo2d/ and
+#   stylelab/), always, over the commits since the base and the index; its tools' lint and tests
+#   when demo3d/tools changed, the choreography layer's tests (on each demo's data) when the
+#   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/) when
+#   the sim changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
@@ -95,6 +97,10 @@ if changes_match '^(demo3d/(dotnet/|Assets/Demo3D/Choreography/|Assets/Demo3D/Te
 fi
 if changes_match '^(demo2d/(dotnet/|Assets/Demo2D/(Choreography|Data|Tests/Choreography)/)|unity-packages/com.playlistsurvivors.choreography/|songs/action/)'; then
   dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
+fi
+
+if changes_game_sim && [ -d game/dotnet/PS.Game.Sim.Tests ]; then
+  dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
 fi
 
 echo "check-fast: passed in $(( $(date +%s) - started )) s"

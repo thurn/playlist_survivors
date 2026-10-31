@@ -198,6 +198,29 @@ Since PX1 the same guard and tools also cover the
 - **`demo2d <command>`** (`uv run --project demo3d/tools demo2d`) runs the
   setup, sync, guard, Unity, test and build tools on `demo2d/`.
 
+### The game
+
+Since ps-msz.1.3 the same guard and tools cover the Unity game, `game/`
+([the design](../design/unity-game.md#tools-checks-and-evidence)):
+
+- **`game/` is under every rule `demo3d/` is under:** its `Assets/Vendor/`
+  and `Assets/Baked/` are gitignored and refused; binaries under it fail
+  unless they are tagged renders under `game/evidence/`; a missing record
+  fails changes under it; the derived record adds its `Assets/Baked/` and
+  `Assets/Vendor/`; and the stale-record check reads `game/manifest.json`.
+- **Its manifest is a subset of demo3d's** (the Synty knight and its
+  clips, the nine monster models, the moonlit forest's kit, and demo3d's
+  sound packs), from the `synty` and `unity_assets` roots. It never needs
+  the song.
+- **Its free sound packs are the repository's own** (`public/assets/sfx`,
+  CC0 and CC-BY): setup clones them into the gitignored
+  `game/Assets/FreeSounds/`, so `game/` tracks no audio. Not into
+  `Assets/Baked/`, whose files the derived record may list, which would
+  then fail the tracked originals.
+- **`game <command>`** (`uv run --project demo3d/tools game`) runs the
+  setup, sync, guard, Unity, test and build tools on `game/`, plus its own
+  `look`.
+
 ### The roster sets
 
 Since ps-f8a.1, demo3d's [`--roster` sets](crowd.md#roster-sets) draw on a

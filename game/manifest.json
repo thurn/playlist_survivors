@@ -1,0 +1,1636 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "6c670ea8c84cf324980a21b4b9b927a0",
+      "use": "hero and elite locomotion"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_RootMotion_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "8b45cba6e566e0847aa0b9eee86847b9",
+      "use": "hero and elite locomotion"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Walk/A_Walk_F_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+      "use": "hero and elite locomotion"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Walk/A_Walk_F_RootMotion_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "478462c18c5fec84da94ea6ea124f43e",
+      "use": "hero and elite locomotion"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01A_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "f6abbb16d29e7704a964ec75a97e8914",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01A_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "f3800f1bd189abc469fcc7c374371a91",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01B_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "dabd70714ef7a4247a87e599fc2a38e0",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01B_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "94770028b07a9ce44b555d283c113a86",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01C_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "a7dfce2a94f765041a3e4e8d0f4729f4",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01C_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "2511e6dc0955bde4395e6b369d7d8707",
+      "use": "hero combo: heavy slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "673ce1a7a02a07a4195366197dd832c4",
+      "use": "hero combo: spin"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b48c7e37f2264c3418122c894c6f98af",
+      "use": "hero combo: spin"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "11a2f3f6a3035f94dbac2f8355f33c36",
+      "use": "hero combo: thrust"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b963d0c4e093a9c4ea792b8095e51ba2",
+      "use": "hero combo: thrust"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "e6a21f89bfbdef241b09f0f0bfefd522",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "9f773338b2a96174ebe9b63870034ca3",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "09bfbb429e3e8ab45ae69ab30d1ecaee",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "95697c3218923dd43aa160c110bfbc79",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01C_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "cd2b62e55d0d92e4ba0b7656c67819a6",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01C_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "c9e0b6900401fcb42980df96b84db76c",
+      "use": "hero combo: slashes"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "a54195297d6a64448a8236512ffecc63",
+      "use": "hero combo: overhead slam"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "72f114cf4075d3b4db5ce63cb994a704",
+      "use": "hero combo: overhead slam"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Death/A_Death_B_01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "a0b8f6f252ea03c46b36b357f5ea81e5",
+      "use": "elite death"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Death/A_Death_F_01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "90f98101f7a4c2c4bbbf30f76e7b91c7",
+      "use": "elite death"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Hit/HitReact/A_Hit_F_React_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "adc1feaf8563f6247989bffd0737b6ad",
+      "use": "elite hit"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Hit/HitReact/A_Hit_L_React_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "202a1ac9f04ce2a419bc2bdd6b148b2a",
+      "use": "elite hit"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Idle/Base/A_Idle_Base_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b94969b4c36c3c94284f72888ad9289d",
+      "use": "hero idle"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_Tree_01.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "1fedb5571d445274782330b0eea48e80",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_Tree_02.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "f88e0c5504d699d4ebb950b8944bffcb",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_Tree_03.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "653c97bd88b4b084d87714542c43ee5a",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_Tree_04.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "247e09e89c199dd46b07af0a0a46b8ac",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_Tree_05.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "00ed5f0c12fd8d5499f54fb0096adab9",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_TreeLog_01.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "e0bcb36554be1124b8a89d63037350be",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_TreePine_01.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "cc890b11e6968444bbb9050c8b78e8eb",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_TreePine_02.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "7b2a3b8555d398f47ba16348aaa3b3f9",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_TreePine_03.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "6593f1a0b8ab64a47bc3038147d84d46",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Adventure_Unity_2021_3_v1_7_2.unitypackage.gz",
+      "path": "Assets/PolygonAdventure/Prefabs/Environments/SM_Env_TreeStump_01.prefab",
+      "sourceSha256": "d894b38b5c7022c2ab1e53f4406f5c966acbe7f02b2e4b0e95c901ee0ee57d3a",
+      "guid": "13af20cb32cfaab428901a23183d2ca1",
+      "use": "kit: solid-canopy trees and logs"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Fence_Cemetary_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "32defebcf751e0e478a8d613aa4d5b80",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Fence_Cemetary_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "3039ac338f0bce74cb61ca91efcf8817",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Fence_Pillar_Cemetary_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "ed3fa8df7e37ad04f8a8a0d222ae2754",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Ruin_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "0e01aaa36b804a14fa7690d3d185f80c",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Ruin_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "b0739101c727a8b4c83c580bd0083966",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Ruin_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "25583c9ba56b3e749a0c0952914a303f",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Ruin_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "a25ba7a3c7af62548874aa00a2c65d1e",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Ruin_05.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2c000cc8c3dbffe4fbf27fc6217cceb0",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "1d9dcf87351b2894c92c0dfd35da126d",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "e996804aa979f5d4b99498d54c8083da",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "5231a5211f217274b8e031e952aecab2",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_04.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4315b06852559e9409d3697f617bac70",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_05.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "a50ae2bef52773b4aa24168eb91ed017",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_06.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "4325a3cf4d420804fb71cd49ac6cb3af",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_07.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "597028e226b08324f97fd933126bb1f5",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_End_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "605a19abbc44dea4eb9a88b6e9daa693",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Building/SM_Bld_Wall_Ruin_End_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "3a0a998444d74be44a66a13243694ee9",
+      "use": "kit: ruin walls (structures, courtyard)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "c46e5eab5ae387a46b104decca3669d6",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "909e62e4de82b2944bbd2e47b1467a53",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Moss_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "2f4e14677d461564689eb2057c164d17",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Tree_Dead_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "649cfd5a63de1c14da210383152753da",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Tree_Dead_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "d46388ce1f854b24db247ac7b23e7d41",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Environment/SM_Env_Tree_Dead_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "5cb458dcaaf8d6d4d9b026ad394f0e71",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Brazier_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "887ca6f05d8eb0940be8f3d4916be6b1",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Candle_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "596492eca626c2540a7a059856cca442",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Candle_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "39df25203ca383b4e870de00d8f2e87e",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Candle_03.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "b67d289f6529f644b92960f5d29bfe6c",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Gargoyle_Statue_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "cd544784b3e98454bb8b2913ffb6a903",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "74baa431f1255b945ab42526cb6c7cf1",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Pyre_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "8df2536107259964a8170bd208c78bf4",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Skull_Pile_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "b62b2f48ae7d1a74ab01bcf36e2da6c4",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Statue_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "13b44c153cf85eb47998e4379b49e512",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Statue_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "bd7702b2232285943b914c03251d727e",
+      "use": "kit: braziers, candles, pyres, statues"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Tomb_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "bdf4e270f5d02034ab8ecb736e89b28e",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Tomb_02.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "836f8ac7b18cc2d43b39197816561a8d",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_Dark_Fantasy_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonDarkFantasy/Prefabs/Props/SM_Prop_Tomb_Stone_01.prefab",
+      "sourceSha256": "8d6bfe0f50b257b4b4ca932e4209d3773b877497ae7d30b71464a912921ec619",
+      "guid": "ae5f1db14a31b5b41bac93e3e9ee303a",
+      "use": "kit: graveyard"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Flowers_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "062edbee1c5051f4aa7cf8e72b503975",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Flowers_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "cf232f4fb60298347bcf72005ed50ea5",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Flowers_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "cb01945b9e6e3a9498f53617afd23f5c",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Flowers_04.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "c89317cdae6b12b41aeeb4c05e586ed6",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Grass_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "cf442835686f46645893e3ce8a31d57d",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Grass_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "6da8d546788040540b6a61195e278922",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Grass_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "59b24d570030c9843b172ec9232cb6dd",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "c3407d5db18ac3e44b80246efa1e5d14",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8ca7a4f5479c8ca47907b74074d7b578",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Pebbles_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "d173ed9340ea0cc4da72193d5546e781",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bush_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "86acfcdc44f21094f971b4d64c013360",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bush_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "a1e481055723b654e84a3224f7fac584",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bush_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "070fc9b46f3339046acc33bd1c17b419",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bushes_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "57c32e7b2cfe0fd4581af0a1f53dbf17",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bushes_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "4ce3bc4129d5dc74594ee39a4bf60909",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Bushes_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "e3691f159e21f8640b0435ad91d65908",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Fern_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "f4bb209e0f8a9cb4c805c01b413130bf",
+      "use": "kit: edge-band bushes, ferns, flowers"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Flowers_Clump_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "61506e0617662a44b8ecd3cbcb532dc1",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Flowers_Clump_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "75166a8e729698c46a14985a7f0469a6",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "3591fea9804d55645ae7aa0c819824d3",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "1f782decbb282824580535d85f82ef7c",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Footpath_Stone_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "8a295e89ab0aae4439843fcb4c0d2b7c",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "a182711bf83413f4dab69ee86f0b3f81",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "d68c169168c3d954ba801d9d15a957c1",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Leaves_Clump_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "984d30487d366bc45a8c727c08f4e184",
+      "use": "kit: ground dressing (leaves, pebbles, moss, stepping stones)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Rock_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "d7a0f2135a302d54baf7c358958ffd9b",
+      "use": "kit: elven rocks"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Rock_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "156fa9b524565e844a7ab79906e92f8d",
+      "use": "kit: elven rocks"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Rock_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "0abaf590fef44e541b7a40c40f0e0037",
+      "use": "kit: elven rocks"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Rock_Round_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "51a5800a2dca8894cbaef0289d2c482a",
+      "use": "kit: elven rocks"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Tree_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "5b5b3edcd6f83e64480b8c9cccab7bd6",
+      "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Tree_02.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "73ed0e95eb63dcf498661bd643ad606e",
+      "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Tree_03.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "50e119eb0ae294b4391fcf6bf578f3de",
+      "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Tree_Glowing_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "54174b38e2f4ade4cb930958ddf2e0a8",
+      "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
+      "path": "Assets/PolygonElvenRealm/Prefabs/Environment/SM_Env_Tree_Glowing_Canopy_01.prefab",
+      "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
+      "guid": "91f7280ce4074b7408a194ed006873db",
+      "use": "kit: elven and glowing trees (landmarks)"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "818fbf9ffe287c5489125f1d37e02de5",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "b932914ce87c734468a4c00f71611068",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_03.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "ab6f74f7a8b5c5b479f1f59e2734d1f4",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_04.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "a8090a92837093a49bf32f0193b8f349",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_Chunk_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "2f1cf358cb2eb1c43b8f7ecdad486700",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_Chunk_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "23e06cc63cc3eb74791ede84dc942e66",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_Chunk_03.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "3d305d053f0edaf4180ddbaf7955802a",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Dead_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "083e710e1692a3a49ab0410e22780f8a",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Dead_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "ef619b5970133f2458367dda94962cd1",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Large_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "c5fa94f9ebb29bd478295e8701712698",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Large_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "abdd014ec4473fb4f8c8584b6cef940e",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Pine_Cluster_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "5d42ad4d961622744969e55de6f5270b",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Pine_Cluster_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "b134f3b15eaeff041bc28faf7b5dc10c",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "86a6bda8f78af6b449cd7570bc4efc6f",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "47a80870cceb48b408dd661a8f1a7764",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_03.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "1ebc3d54345802648ae7650eedc41770",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_04.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "1fc2b8687d6d20349b9e8b89981a3991",
+      "use": "kit: forest trees"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Generic/SM_Generic_Small_Rocks_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "f089fdfc61cbf934f96e05119a0a693f",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Generic/SM_Generic_Small_Rocks_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "9edb4b4529dd6c84c8f026bdf091729d",
+      "use": "kit: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Characters/Character_BR_BigOrk_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "0d42bc61d684259409d481c6f5dd5d5c",
+      "use": "elite: big ork"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Characters/Character_BR_Troll_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "2250a4a4fc528684c85ba955eb992ec6",
+      "use": "elite: troll"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Weapons/SM_Wep_Slayer_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "404a923dea987c14498264bf7d13d458",
+      "use": "elite weapon: big ork"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Weapons/SM_Wep_Troll_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "39e0fb4b243ffb645a622d1945004ee5",
+      "use": "elite: troll"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Characters/Character_Knight_01_Orange.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "360c73b9bf9a34d4c84bc0581d0499eb",
+      "use": "hero: knight"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Weapons/SM_Wep_Broadsword_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "f61def225eac3e247985f6679965a655",
+      "use": "hero: sword and shield"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Weapons/SM_Wep_Shield_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "a7b97d24ba2370040ba159577de7b931",
+      "use": "hero: sword and shield"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Bats/_Prefabs/Bats LP.prefab",
+      "sourceSha256": "dcb6e090ea21acaad3efd3cf9264c2fedd7f543b5a767cecb7c5a38c6dd39611",
+      "guid": "4f9257d4aec394d59be5f34d00fa97e8",
+      "use": "fodder: bat"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Bats/Meshes/Bats LP.fbx",
+      "sourceSha256": "e06900ac2ca26a8d9a4af69398069851eb8821d6af68f3bcad4594b57e0160ec",
+      "guid": "eec0bfdad45f34788ba93083b71f06dc",
+      "use": "fodder: bat"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Demons/_Prefabs/Demons_LP.prefab",
+      "sourceSha256": "3bc3d9c5819bb19c9352f6a6bbf4e03cff20da3de84f3542582abac37d19de13",
+      "guid": "97be6194801464926b2c78020bf4eb32",
+      "use": "fodder: demon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Demons/Models/Demons_LP.fbx",
+      "sourceSha256": "e3c7dfd3827edcc7948e42e097727077e7911d8119c2568b9dfe21be97ba10dd",
+      "guid": "bebd353bcd71a47dabd72141665125c1",
+      "use": "fodder: demon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Dragons/_Prefabs/Dragon_LP.prefab",
+      "sourceSha256": "bb4269fa952bd422abdf9498f24a40ab958c52f0d78728ff64b52d7977264f52",
+      "guid": "a1e28cc5277b74ff0ad8566e5e54bee5",
+      "use": "boss candidate: dragon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Dragons/Models/Dragon_LP.fbx",
+      "sourceSha256": "daee8e51e18919ed78eb93f4a3ea8bbaa13e52837f07679d9541794ae64b7f32",
+      "guid": "367e6650649952543b0c5dc153649036",
+      "use": "boss candidate: dragon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/_Prefabs/Goblins LP.prefab",
+      "sourceSha256": "2a36906f05a8a301a13d8595bec436a6bb6f5abbfbbbd4eb3d3afe2d52c84175",
+      "guid": "2d5e83b858ed8424291e890a090902db",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack1.fbx",
+      "sourceSha256": "699e2061158c2c1b6ed5869c5d1fd785b6cd43213c5e56e7a03ac2c81ef188b3",
+      "guid": "737c1f0a1861943258251a79e1729de0",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack2.fbx",
+      "sourceSha256": "40880b6848f10e608d7c7ea44425379146744b85333cb961acd5806ed76b57a7",
+      "guid": "3ed1a5ac07e0e46f2ba828703bfbdeb5",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack3.fbx",
+      "sourceSha256": "8e76194cdad7a2f1aaf1a8929fb715fb393e4534d3625052cfba8bd49f377b67",
+      "guid": "e88bb37eac4a54b45bcec16ea05b21c1",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack4.fbx",
+      "sourceSha256": "8eb604a6d8ea09bf6017190226dc88ddc3b9708a5b1421ca323c017359120a2e",
+      "guid": "4eceb3266cb4d411fbd460ebbaf9113f",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Death.fbx",
+      "sourceSha256": "8d91950b13834b75b0beb99c5e03ea330c6cb01ea838ce6d05fa8e75ea37fa98",
+      "guid": "5f170624cb4f045769503a05a205076f",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Dodge.fbx",
+      "sourceSha256": "84f22bede793b895a206c4761044b8b39d1ee02fe7d5c6607a5311fc4469b6f2",
+      "guid": "0ff2f4b29992246ddb51c80c3eb72b57",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@GotHit.fbx",
+      "sourceSha256": "b67ac1f2a0de87d8e97d82965c7954b1d2e590961fad61bd4500c5bdc2d2ba7c",
+      "guid": "5399d5151847d4e3681776932651afe6",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Idle.fbx",
+      "sourceSha256": "95d0ec91b43fa7de2c42578f589e32ac0aa2440a38a3dbb5ee5fe9167c655e96",
+      "guid": "907a74ad4197d4f268e118a17c5aa22e",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Idle_break.fbx",
+      "sourceSha256": "eaaabec2ea95ca1b3d8aa977e4c100a637cdd097ffef1fd0b81f2479bc77b39f",
+      "guid": "87be1233021724e8d97283a232bd72e7",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Taunt.fbx",
+      "sourceSha256": "28919092217a51018f96bcb932e0bc001925bdd2b53f7b61ec43e8c17a0ff9f0",
+      "guid": "698dd11801fa748b39055da6ec0d7abf",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Taunt2.fbx",
+      "sourceSha256": "b6b653e027898f13c4dc18e76c571528c5b06ec214a6fc78e55ef06f4b7de289",
+      "guid": "031aea45fa98ffc4d9ac07879ff922c4",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Walk.fbx",
+      "sourceSha256": "cf9ba8598004f179a41ccc7d32db1e3b94d16186d1d5b04bbf944739c1525972",
+      "guid": "da8c9ca50ca4e4ab5b4f5b27efb389d0",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@WalkBack.fbx",
+      "sourceSha256": "39b9d9f2e786a6847277d6b5b736815a2411887092aec55113f4ce422753d8fb",
+      "guid": "daa8ce8771af64d1a80a7d51b6e98e6e",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Meshes/Goblins LP.fbx",
+      "sourceSha256": "a46dcba399602bc28e681dc81b003d1319c58014cb3c594f4cef1dddbf92b6b5",
+      "guid": "c5040ee8ce85c473388230d694758f1c",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Mushroom Monster/_Prefabs/Mushroom_LP.prefab",
+      "sourceSha256": "a80eb3799721fc0fe5b540f2db856c9e4d60cb5aeee6a635244387e171057bd9",
+      "guid": "be803e2df48344dafbabe4dce2b5b5c4",
+      "use": "fodder: mushroom monster"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Mushroom Monster/Models/Mushroom_LP.fbx",
+      "sourceSha256": "259710e41bf8251ebcc249d8caa1f2024acdc4e6cadf5f9e5515dfc002e33a90",
+      "guid": "119e98e7044e846bb86de248d6b7c57d",
+      "use": "fodder: mushroom monster"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Skeleton Warrior/_Prefabs/SkeletonWarriorLP.prefab",
+      "sourceSha256": "a722c1da9a55f88a871f956f53a4838bf294cb1af5298047afb2a469904f6c94",
+      "guid": "6e3f218b742294893ad834f61c027945",
+      "use": "fodder: skeleton warrior"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Skeleton Warrior/Models/SkeletonWarriorLP.fbx",
+      "sourceSha256": "de8f13673aade336a5d2ef08ed843e2966d2148d0ce00bc5138bed2198d8644a",
+      "guid": "d6688b4afa37b4b15b476037d756982c",
+      "use": "fodder: skeleton warrior"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Slime/_Prefabs/Slime_LP.prefab",
+      "sourceSha256": "b288527883abb23512cb8f31d5206d11f025527683d52b657ae63ad7bf1ac92d",
+      "guid": "fe5eb242a632a47529d5bfc2a09bccda",
+      "use": "fodder: slime"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Slime/Models/Slime_LP.fbx",
+      "sourceSha256": "41162a2653ba20e6a65565640b3c51a475df2c69387b9bb5f113c66ad4830d2e",
+      "guid": "7fec430887d724867a2483827db438a9",
+      "use": "fodder: slime"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Spells SFX Bundle/Mono/Thunder/Thunder 1.mp3",
+      "sourceSha256": "15bcfa74af34690ae73cecb469d32f88e244216cf707311d4e298232805d5559",
+      "guid": "8996068b115344046ae1b38f30513505",
+      "use": "sound: lightning"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Spells SFX Bundle/Mono/Thunder/Thunder 2.mp3",
+      "sourceSha256": "3085fc0565baa5e725b981c7ff1d71051b1f4852c03b7e66f6a38a8a65570708",
+      "guid": "51b99a499a06c3840946ba77f0e60895",
+      "use": "sound: lightning"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact01.wav",
+      "sourceSha256": "d40dacceeb52faf594145df2e8313cd02f925c38bf7269e47b552a90cfa3a7a5",
+      "guid": "d7568dee1a47844d2a1eaf636a1b6aba",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact02.wav",
+      "sourceSha256": "becbd792b7af883702b2af84eec1116d29d18bc2bef7be8bcb91e0d2e69b7383",
+      "guid": "6bb706f6eddcd46aeb5c6c1500b36026",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact03.wav",
+      "sourceSha256": "1f732e918c5aecf4cd5d8bc653441cf9d823e46fbb1fa09f908a5101ec5879a4",
+      "guid": "8c8357e8f6bec428eaf7f82c089c0b79",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact04.wav",
+      "sourceSha256": "b8d6ef615fb1c9bd0fb1af0daadce45b0a836001b8f236a68532a23f6ccdbf7f",
+      "guid": "e022b53f9fedc4ddd864d639661b3f9e",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagicEpic_LightningStrikeImpact01.wav",
+      "sourceSha256": "b1163d5a86453f9d40c898ea7677f12ac609e774076200da676701531bbcf2c6",
+      "guid": "0df2e65c0da0d447fbba8faf17143eb7",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagicEpic_LightningStrikeImpact02.wav",
+      "sourceSha256": "1b09179742ee5e7fed3b548e55683124aec2b2e09b79d573e95f25c2da2c9feb",
+      "guid": "2731bef1c93f54e03ae6fe3b61e7054f",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagicEpic_LightningStrikeImpact03.wav",
+      "sourceSha256": "3a5727fdc071844720e3d99ad60544157c96d0ce8b5fecaf8f2631e553792631",
+      "guid": "edd52c5ebe0244c788893d7cc84c6e6d",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagic_Cast01.wav",
+      "sourceSha256": "2fe7e3768c336485004de4173bc7a0357b3e13a0e4d92875fc6026214abcb94c",
+      "guid": "fc9cbca844034438381d9d70376f00e5",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagic_Cast02.wav",
+      "sourceSha256": "091d50988cd34b43a4def28a4d78049a94b8678e4a20d23168e99c65560cf509",
+      "guid": "e05c5d113fcab456280f35ddada0661e",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagic_Cast03.wav",
+      "sourceSha256": "5f57efbaa649c00e8a7670fbe307481c2af0612502b0647db188e42cc828e198",
+      "guid": "58d2455131afe487d9c6856d854a3ebc",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_HeavyImpact01.wav",
+      "sourceSha256": "241b15c24e4c279356e07f1db7f9b689bab2684c4f607142ca93995271e51ff1",
+      "guid": "bf5176b9e71d248f0a3b6b40b9cf1a2f",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_HeavyImpact02.wav",
+      "sourceSha256": "526cd569e5aab0a05ec3979b860daf80f5ef3c93306e634e218ebf6de33d1112",
+      "guid": "65f0e6018f2a44219a82b553c946ba09",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_HeavyImpact03.wav",
+      "sourceSha256": "8fbf3fe18dcec4c879d1ff0ca459e5f765ddd95a56750a6bf607466366be5825",
+      "guid": "f4b67dc7bbebc43089b4044f79d7eb79",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_HeavyImpact04.wav",
+      "sourceSha256": "416ccfc203570f24c965543cdbab4e56f3c10a5ab931952ef8d76bd98edd4401",
+      "guid": "fc44672c033004302a69f7e39614199c",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_Projectile01.wav",
+      "sourceSha256": "3667c10c0fdc7932f6fb2616a694e4a7dff76d8178020e39a457b24430561f79",
+      "guid": "93fa7e62b5d4e4202b864140863c8208",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_Projectile02.wav",
+      "sourceSha256": "a691c7590eac206e7a39412c8380dd017f8218567fb6ffebbc9b5ddede1d9d7f",
+      "guid": "298c18378b5684473939c7ea69afe8d6",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_Projectile03.wav",
+      "sourceSha256": "3d897573a26268832420588fba33277946adeb0a5cbe1231efe3cf8d7942e96f",
+      "guid": "11a27116463024555b29eda984078295",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicBall_Projectile04.wav",
+      "sourceSha256": "1f2138e57c856665b8eacd855a5510bc77b5ffa1ef0bbf1e59ee0b9459e5d066",
+      "guid": "92f2412197b534eac989a2693b10a901",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicEpic_Impact01.wav",
+      "sourceSha256": "e4250f305a88999d351df153da0458b2fb3cc27a2d3ccf15e355175bd5150244",
+      "guid": "1c81cdd2f8239461885eb33ce7d62a6a",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicEpic_Impact02.wav",
+      "sourceSha256": "3ecbb79532c741460b3b852521d052493dc08aac262acc7c60a378ba06396d24",
+      "guid": "eb04b8a632e164ed9a32edf596bcac05",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicEpic_Impact02v2_Short.wav",
+      "sourceSha256": "d1c45fcca7240556467d09b99d3386627be2aedbc72c780e1a6950d34842901a",
+      "guid": "f929423df84784a878fb2663144c721b",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_P1_Start.wav",
+      "sourceSha256": "78ceb65d5f1009519852c5cbfcc8c6236431e6caf3ed3fc877298e298bac88ed",
+      "guid": "4a40fb4818ce446b8905867548a9a79e",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_P2_Loop.wav",
+      "sourceSha256": "2fe070e0aba13e093b2ffde8219d7959e7e6e42391bde23a3bed2e31e836c251",
+      "guid": "3b61244083bcd45d58978588b32dc46e",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_P3_End01.wav",
+      "sourceSha256": "9ab832908b824c2f02eab2cd7b3ec5f173cb887e6d626c1d040b4560bca6c4ba",
+      "guid": "5fe5667ceb8a040228362fa1ff2a7502",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_P3_End02.wav",
+      "sourceSha256": "80b74fd2eeff11d6e294130fb4606390ef661723756b1de64dc21a36057b9647",
+      "guid": "66fbc5a274e2044e9b90d8cf43eeb2e3",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_Shoot01.wav",
+      "sourceSha256": "31859db1a32db5a190b97bcc9c000c747b2c90c361c61c2924e8440c6ebed460",
+      "guid": "7aeeaa9cbe59748ea8e25489f9b8b50f",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_Shoot02.wav",
+      "sourceSha256": "306e882e6bab9bca9f8d35634d4010eb40ab0645e33ede973ba610f2645211a5",
+      "guid": "515578d0e47164324aabcebc8b9c0f44",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Fire Magic/RPG3_FireMagicFlameThrower_Shoot03.wav",
+      "sourceSha256": "e5f2da0c0c289d1c12d3a9262ddf3a416a24961464f6831760cca0ac9cc80580",
+      "guid": "bd50ede98ccad4cd7a807982947147ee",
+      "use": "sound: rings, bolts and the laser"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact01.wav",
+      "sourceSha256": "bb05853dd83e0b99f6c8eebd219d52cd1c694272c04f587527d13a47b6e240ca",
+      "guid": "be419f016e79f467fafc6c84b38191e5",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact02.wav",
+      "sourceSha256": "f269fa6b14e8d2dc2295a61aa95728c19011597e88dcd9428e69201285d1bd95",
+      "guid": "9baeac61653f1437e9fe612f16393a62",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact03.wav",
+      "sourceSha256": "9ee5c78b393c0b06bd0b25fd52f17ea569c4ec7dbb253fc62f57a6f78674a47d",
+      "guid": "70b2bb3a6976a4841a533cd821a9bbaa",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact01.wav",
+      "sourceSha256": "625edd7445eb64c57eecb88bdf4bd52045bba15bc697101518ac68feb4939a63",
+      "guid": "4b299b33e511342e593d97847dcfc6c8",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact02.wav",
+      "sourceSha256": "f9ce8dcbe9302c740c0fe03c5df0a012988ad1762760f90cd61a6726a70a8947",
+      "guid": "e43876ae899bc47b1ba06f1df6d24c0e",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact03.wav",
+      "sourceSha256": "7e1d444eb34ef699c3299b17810d7087114d8acdbf86c6c86eda976872bb4121",
+      "guid": "534e7e66ce8424034990dd6ca60d299f",
+      "use": "sound: lightning and heavy impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak01.wav",
+      "sourceSha256": "8f0a45aa8d7612cba212e5eeaf58d5f0c66592f76ca1de70dcf8c6a8a85914de",
+      "guid": "07121959d141245fdb59a0f76ddfd68c",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak02.wav",
+      "sourceSha256": "28db0592a7a36bdfb9ebc16e2953d0afa5b8b2e1b15b1b84d528396a852e65cf",
+      "guid": "d2c7d1053b14a4eea9752fa2b8ed9e18",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak03.wav",
+      "sourceSha256": "9a4964c8d3e06ae7f0e5e147ead500b5fb7bb3484b3e061505574f033ae60af4",
+      "guid": "178c7e977140a49ffa008796ed052174",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Blade_Chop_mono.wav",
+      "sourceSha256": "4a3203011e74a0f54e897194030ecd3762e46ca0e43bffe8744b9529c45ff2f7",
+      "guid": "5de35d095a26a5042a71af599850b917",
+      "use": "sound: blade hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_01_mono.wav",
+      "sourceSha256": "80b53f4fa4db4268c9ba9fbdedadaf0de5d98b3413495c06e83322e206485a12",
+      "guid": "2e80eeaa8ad78e74a9a4052b5a1f5bfb",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_02_mono.wav",
+      "sourceSha256": "8452041de2d30b57bbd91881893b18459f7ab623e2dcb4474495884b65ab15ac",
+      "guid": "2e6c05f99b0327a47b2f4db0d3d0cc11",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_03_mono.wav",
+      "sourceSha256": "a566c15a0c4e49022e6de3c96cc73f5330bed1b565e5567cba57656de157742a",
+      "guid": "093c84c6ee6630347a1a910078fe142b",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_04_mono.wav",
+      "sourceSha256": "5c1277675c43fdf722ecabdf7e62d9d3a4642fd111227518c19468b0469c68b0",
+      "guid": "fa10bd324d93ffc409f6813e7d43bb77",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_05_mono.wav",
+      "sourceSha256": "f4303c75683e078f0d6d63d210f0fc7cacb6374e3c203162852cd2202bee9558",
+      "guid": "d710f4e97b09d944fabaaf26deabab02",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_06_mono.wav",
+      "sourceSha256": "5d89a5f06c5f9ec9f0daa8ef82b4662133c3e66158d724e3a423dc7ccd9942ba",
+      "guid": "bc583673a9bd96b4691d1755c8e17e13",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_07_mono.wav",
+      "sourceSha256": "607dde3a137eda90b98ebce2ad6a3eadef680bf8e972c5fcb00aeecd34d976bc",
+      "guid": "f4077baec940f1445ac8e4adf02b7624",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_08_mono.wav",
+      "sourceSha256": "1d7513f0de276f21455d56c6faf8a08531188ccc43ae2aecae5687d8bf52e616",
+      "guid": "06f21abfb85bb164aa3aafad578e0d2d",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_09_mono.wav",
+      "sourceSha256": "5426aa43d8ced318a70692accc2bf3c1296775a7cfc724a51e0e646f3508f944",
+      "guid": "3ea71665e5406ef4595f11b16316db19",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_10_mono.wav",
+      "sourceSha256": "95bf9db5603d7311d333528e75e41003608bf21002ad91a27f414836eb3f3d96",
+      "guid": "fe97bdee1f57e204c9cdcc1e0006f50f",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_11_mono.wav",
+      "sourceSha256": "9d583266ed644c3dbba7ed42ef6bd0ae37132cc9104f2370a9ad54e7f15ebfaf",
+      "guid": "1763711b91a6d694293ed555af4ea21f",
+      "use": "sound: parry and armor impacts"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/CREATURE_Squeel_01_mono.wav",
+      "sourceSha256": "d7cd27b100294f924567ab69e60745f3e72da4fb510cbfee92e0f7d1921f5070",
+      "guid": "30781832db15e094cb41f9003555db52",
+      "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/CREATURE_Squeel_02_mono.wav",
+      "sourceSha256": "b8659f20d1ab87bb23c73d6ce0e6ed3c97d17b473cf14f679ee058efd0049069",
+      "guid": "85016ebdeefa36c41a4439d7d114105e",
+      "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/CREATURE_Squeel_03_mono.wav",
+      "sourceSha256": "5470d077a9967fc79101e64a3bba96932703cac994c5d885b85b7737956b3d73",
+      "guid": "72806ae5e7cb33a458c1e1866feac8e9",
+      "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/CREATURE_Squeel_04_mono.wav",
+      "sourceSha256": "404cca7bbb43d799a0952f29db72f3607cd76b1e5cc9e7b9acf551d20a0a79aa",
+      "guid": "86f1cdd7d5e42b542a51632954c80356",
+      "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/CREATURE_Squeel_05_mono.wav",
+      "sourceSha256": "4ca272a266ededa631e6b45418bb0fc91a711b131f80db3094dff2033d239f7d",
+      "guid": "9747c0ff71f51ee4a81d0a6007ecd793",
+      "use": "sound: monster deaths"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR1_mono.wav",
+      "sourceSha256": "590b388f6aa2c8621e2cd83a46429fa66d4c311cf18ea900a163277aaa1d9d43",
+      "guid": "03f23d0405c383c49a96f0eaa5eca358",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR4_mono.wav",
+      "sourceSha256": "0c596d90ad4cb4a523fe31faf49ccd2ed2c93b8520eb1b4eb8e6de56f6e30c2a",
+      "guid": "c87cb6bc22baef84287f38b148cb56ba",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR7_mono.wav",
+      "sourceSha256": "c305f3ee3665a77894980670065bd6e1c6f84ce60bbc629c3057b69a25508044",
+      "guid": "e9752ff5710883a47ac147508f95c110",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_02_mono.wav",
+      "sourceSha256": "b311bdba806cb7c54f19896b116b76f554ff4db5a74fa99c50508c46500e71d6",
+      "guid": "e219f4ba613916242bc11dd9df5a7448",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_04_mono.wav",
+      "sourceSha256": "a4001ec0bebf42fe26c389a6eabda152f058ff2fa07b1f5ad6feb3ccd84489d3",
+      "guid": "4d320ffab649e654c87018d582222bbf",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_05_mono.wav",
+      "sourceSha256": "9b732be9a57e20d8d49455f0a8263b755efaef5d40f9a0f355ac96e2cd568a67",
+      "guid": "2c3b8339e0255e446924fc5e36396f53",
+      "use": "sound: crystal shatter"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Hit_Sword_Cling_01_RR1_mono.wav",
+      "sourceSha256": "924d1e9a4ddca35a0691d58a013c279b53f8d5f3035e32cfdb251d602abc003c",
+      "guid": "9b00fea29ae229e45852c7f6249c6971",
+      "use": "sound: parries"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Hit_Sword_Cling_01_RR2_mono.wav",
+      "sourceSha256": "3d9d03153459db58e88b8004716a26366cd2960f9ad765a5ddaa0afa1437124c",
+      "guid": "8322a11e906a24649b96c7ead8eb3c83",
+      "use": "sound: parries"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Hit_Sword_Cling_01_RR3_mono.wav",
+      "sourceSha256": "574807bf9496a7ac4346cf2b5ff26540768e373f53d17a1005d82118ec490641",
+      "guid": "12a0749b0193ac145a575216377fad7a",
+      "use": "sound: parries"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Hit_Sword_Cling_01_RR4_mono.wav",
+      "sourceSha256": "0bbe446d481b78e9db2ee6808515f147be6d2e68dfd3c3b7708b0a860b9a8b1d",
+      "guid": "92aa64ef3e1801c478beb3eef1429414",
+      "use": "sound: parries"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Swing_Stab_Body_Gore_mono.wav",
+      "sourceSha256": "5adaed418c1eb63241f256bbbed7f239a35cddd3278abc4c9362b4d2c9b389fa",
+      "guid": "e4b09e3e0e77f054fb13d43f7686ba08",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR1_mono.wav",
+      "sourceSha256": "1032196ea3810984d2d487453b2df35c3e1e77884fdc0161fa2dfd39362ba390",
+      "guid": "e9c8818791394004a983e8a998f205e9",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR2_mono.wav",
+      "sourceSha256": "dd81628711ec40c528749af747601112ebb1c183d634ab6da2bb35081bdc2acd",
+      "guid": "d70571328b9f0fa4d8bc2d0bdc7e6686",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR3_mono.wav",
+      "sourceSha256": "ca6e72a815e5b5092d40798126192e5dd3c691baeb2ceadaf786c4360a0b8d67",
+      "guid": "815a64062ed23f84abd992ad9731f491",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR4_mono.wav",
+      "sourceSha256": "dd8b04a66c4d64c64fc3c73dec1b25f428962adff878012ef5a9a661035f04d8",
+      "guid": "fe9a62345fa643946ae723ca66e095a7",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR5_mono.wav",
+      "sourceSha256": "a5636919c209080cfbc926d257cffcbfdb0dc589e2e5882a506ae5a14ec3aec9",
+      "guid": "02ac5c00f96ec2442955656da5aec566",
+      "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR6_mono.wav",
+      "sourceSha256": "11d43537ffdb4db28dc3ce7e212995f6833c94825e4fbdc33b35fe4a8d35efa5",
+      "guid": "f60812e2ac885d6469d2ddd6076c43b6",
+      "use": "sound: blade hits on monsters"
+    }
+  ]
+}

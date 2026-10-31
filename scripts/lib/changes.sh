@@ -4,9 +4,9 @@
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
 #                 sets CHANGES_UNKNOWN=1, and every section runs.
-#   changes_baker / changes_analysis / changes_friction / changes_native / changes_demo3d
-#                 succeed when that section
-#                 must run.
+#   changes_baker / changes_analysis / changes_friction / changes_native / changes_demo3d /
+#   changes_game_sim
+#                 succeed when that section must run.
 #
 # The base is where the branch left `origin/staging` (Enact bases worktrees on it), else local
 # `staging`, else `origin/master`, else the parent commit. Set CHANGES_BASE to a revision
@@ -73,6 +73,13 @@ changes_native() {
 # map it plays.
 changes_demo3d() {
   changes_match '^(demo3d/|songs/action/)'
+}
+
+# The Unity game's engine-free sim: its sources and tests, which Unity compiles under
+# game/Assets/Game/Sim/ and Tests/Sim/, and the .NET projects under game/dotnet/ that compile the
+# same files (docs/design/unity-game.md, The Simulation).
+changes_game_sim() {
+  changes_match '^game/(dotnet/|Assets/Game/Sim/|Assets/Game/Tests/Sim/)'
 }
 
 # The demo's sync record must know every GUID its manifest lists; a manifest change rebuilds it.

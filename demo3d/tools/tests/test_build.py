@@ -200,3 +200,12 @@ def test_setup_prefers_a_built_library_when_none_is_exact(tmp_path: Path) -> Non
     setup.built_marker(built).write_text("then\n")
     assert setup.library_candidates(tmp_path, "pkgs", "c") == [built, newer]
     assert setup.library_candidates(tmp_path, "pkgs", "b") == [newer]
+
+
+def test_the_game_is_a_project_of_its_own(tmp_path: Path) -> None:
+    wt = paths.Worktree(tmp_path, "game")
+    assert wt.project == tmp_path / "game"
+    assert wt.namespace == "Game"
+    assert setup.baked(wt)  # no Unity bakers yet
+    assert setup.PY_BAKERS["game"] == []  # it plays the player's music, so it never needs the song
+    assert "song" not in paths.PROJECT_ROOTS["game"]

@@ -1,0 +1,22 @@
+# The game's evidence
+
+Each implementation bead of the Unity game (epic ps-msz, [the design](../../docs/design/unity-game.md))
+keeps what it measured and saw in a folder here, `game/evidence/<slug>/`, with a short README:
+what was run (the exact commands), the numbers, and what they show.
+
+- **Stills and filmstrips**: small JPEGs (or PNGs) carrying the `ps-render` tag, which the vendor
+  guard requires of every image under `game/evidence/`
+  ([the vendor guard](../../docs/tech-demo-3d/vendor-assets.md#the-vendor-guard)). The game's
+  own tools write them tagged: `uv run --project demo3d/tools game look <slug> [--at 1,5]` renders
+  the player windowless and keeps 960 px stills in `look/<slug>/`, with the full-size ones in the
+  gitignored `captures/game/look/<slug>/`.
+- **Nothing derived from a vendor file or the player's music**: no audio, no vendor textures or
+  meshes, no crops of them. Renders of the game are our own and fine.
+- **Windowless only**: agents never open a player or editor window
+  ([Running on the Mac](../../docs/tech-demo-3d/mac.md)). Checks only the operator can make (a
+  window, speakers, a permission dialog, Bluetooth) go on [the operator's list](operator-pending.md).
+
+## Sets
+
+- [look/boot](look/boot/README.md): the empty boot scene, windowless, proving the build and stills
+  pipeline (ps-msz.1.3).

@@ -3,7 +3,9 @@
 `demo2d <command>` (`uv run --project demo3d/tools demo2d`) runs the same tools on the 2D demo's
 project, `demo2d/`: setup, guard, check, unity, test, build, library, sync and manifest. The
 guard is the same either way; it checks the whole repository. `stylelab <command>` does the same
-for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md).
+for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md), and `game <command>`
+for the Unity game, `game/` (docs/design/unity-game.md), which adds its own `look`: windowless
+stills of the player into game/evidence/look/SLUG.
 
 Commands:
   setup               prepare this worktree (vendor, baked, warm Library, guard hook, license)
@@ -72,8 +74,12 @@ def cmd_guard(a: argparse.Namespace) -> int:
     return 0 if res.ok else 1
 
 
+# Each project's engine-free tests under its dotnet/: the choreography layer's, or the game's sim.
+DOTNET_TESTS = {"game": "PS.Game.Sim.Tests"}
+
+
 def dotnet_test(wt: paths.Worktree) -> bool:
-    proj = wt.project / "dotnet" / f"{wt.namespace}.Choreography.Tests"
+    proj = wt.project / "dotnet" / DOTNET_TESTS.get(wt.name, f"{wt.namespace}.Choreography.Tests")
     if not proj.exists():
         print(f"check: dotnet test skipped ({wt.name} has no engine-free tests)")
         return True
@@ -336,6 +342,10 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
     y.set_defaults(func=cmd_sync)
+    if project == "game":
+        from . import game
+
+        game.add_parsers(sub)
     if project != "demo3d":
         return p
 
@@ -431,3 +441,8 @@ def main2d() -> None:
 def main_stylelab() -> None:
     """`stylelab <command>`: the same tools on the shader style prototype's project."""
     main(project="stylelab")
+
+
+def main_game() -> None:
+    """`game <command>`: the same tools on the Unity game's project, plus its `look`."""
+    main(project="game")

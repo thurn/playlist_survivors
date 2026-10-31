@@ -1,7 +1,7 @@
 # Commands for this checkout. `just` lists them; extra arguments pass straight through,
 # e.g. `just native --file song.ogg --delayed` or `just demo3d --start-at 160`. Each of
-# `just native`, `just demo3d`, `just demo2d` and `just stylelab` builds what changed and runs
-# it; the `-build`, `-play` and `-tool` recipes are the single steps.
+# `just native`, `just game`, `just demo3d`, `just demo2d` and `just stylelab` builds what
+# changed and runs it; the `-build`, `-play` and `-tool` recipes are the single steps.
 
 set positional-arguments
 
@@ -51,6 +51,26 @@ check *args:
 [group('checks')]
 ci *args:
     scripts/ci-full "$@"
+
+# Build the Unity game (setting up first if needed) and play it at 1080p, with player flags
+[group('game')]
+game *args: game-build
+    @just backend={{backend}} fullscreen={{fullscreen}} _play game PlaylistSurvivors "$@"
+
+# Set up if needed, then build the player (build flags: --development, --scene ...)
+[group('game')]
+game-build *args: (_setup "game")
+    {{tools}} game build --backend {{backend}} "$@"
+
+# Play the last build without rebuilding
+[group('game')]
+game-play *args:
+    @just backend={{backend}} fullscreen={{fullscreen}} _play game PlaylistSurvivors "$@"
+
+# The tools themselves: `just game-tool test`, `just game-tool look <slug>`, `just game-tool check --player`
+[group('game')]
+game-tool *args:
+    {{tools}} game "$@"
 
 # Build the 3D demo (setting up first if needed) and play it at 1080p, with player flags (--start-at 160, --click)
 [group('demo3d')]
@@ -112,7 +132,7 @@ stylelab-play *args:
 stylelab-tool *args:
     {{tools}} stylelab "$@"
 
-# Open a Unity project (demo3d, demo2d or stylelab) in the editor
+# Open a Unity project (game, demo3d, demo2d or stylelab) in the editor
 [group('unity')]
 editor project:
     #!/usr/bin/env bash
