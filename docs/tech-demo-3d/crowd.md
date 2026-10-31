@@ -144,6 +144,32 @@ flat and helps the target's GPU.
   cascade). Each call holds its 8 depth-bin commands. That makes a few
   hundred GPU draws in all, whatever the number of monsters.
 
+### Surfaces
+
+`--crowd-gloss` gives the default roster's swatches their own metal and
+gloss, so armour and blades shine beside matte cloth and hide (a prototype;
+evidence in [evidence/surfaces/](../../demo3d/evidence/surfaces/README.md)).
+Without the flag the horde is unchanged.
+
+- **The swatches are listed by colour.** `Data/crowd-surfaces.json` lists,
+  per type, albedo colours (sRGB, matched within `tolerance` per channel)
+  with a metallic and a smoothness. The low-poly packs paint each part with
+  one flat swatch, so a colour names a part.
+- **The baker writes a surface map** beside each albedo it lists colours for
+  (R metallic, G smoothness, at the albedo's size and filtering; every other
+  texel keeps the material's own 0.2 smoothness). The crowd shader reads it
+  only while `_Demo3DCrowdGloss` is set, so one build compares both.
+  `--crowd-gloss-metal k` scales the metallic for a run, to tune it without
+  a bake.
+- **`surfaces-report.md`** (beside the baked library) lists each submesh's
+  colours by share of its triangles, with the bones those triangles ride
+  (`Sword`, `Shield`, `Head`): how the file's colours were picked.
+- **Light comes from the scene.** The surfaces go through the same URP PBR
+  lighting as before (the moon, the hero's and effects' lights, the ambient
+  probe), and the crowd shoulder still rolls off their highlights, so the
+  effects stay the brightest pixels. The type dye still tints grey swatches,
+  so a dyed type's metal shines in its colour.
+
 ### Monster styles
 
 `--monster-style <name>` draws the horde in one of the

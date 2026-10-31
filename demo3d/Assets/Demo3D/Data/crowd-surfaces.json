@@ -1,0 +1,85 @@
+{
+  "note": "Per-swatch surfaces under --crowd-gloss (crowd.md, Surfaces): each type's albedo colours (sRGB, from surfaces-report.md beside the baked library) with a metallic and a smoothness. Unlisted texels keep the material's own (0.2 smoothness, not metallic). tolerance: per channel, 0-255.",
+  "tolerance": 6,
+  "types": {
+    "skeleton": [
+      { "color": "#8c8c8c", "metallic": 0.9, "smoothness": 0.6, "what": "breastplate" },
+      { "color": "#b1b2b1", "metallic": 0.9, "smoothness": 0.6, "what": "breastplate" },
+      { "color": "#7e7d7e", "metallic": 0.9, "smoothness": 0.55, "what": "breastplate, pauldron" },
+      { "color": "#6e6960", "metallic": 0.9, "smoothness": 0.55, "what": "pauldron" },
+      { "color": "#807d7b", "metallic": 0.9, "smoothness": 0.6, "what": "helmet" },
+      { "color": "#70695d", "metallic": 0.9, "smoothness": 0.55, "what": "helmet, greaves" },
+      { "color": "#6f695f", "metallic": 0.9, "smoothness": 0.55, "what": "bracers" },
+      { "color": "#97938c", "metallic": 0.9, "smoothness": 0.55, "what": "greaves" },
+      { "color": "#878279", "metallic": 0.9, "smoothness": 0.55, "what": "gauntlets" },
+      { "color": "#a8a6a2", "metallic": 0.9, "smoothness": 0.65, "what": "shield rim" },
+      { "color": "#a2a29f", "metallic": 0.9, "smoothness": 0.7, "what": "sword" },
+      { "color": "#d1a178", "metallic": 0, "smoothness": 0.35, "what": "bone" },
+      { "color": "#d9a676", "metallic": 0, "smoothness": 0.35, "what": "skull" },
+      { "color": "#d3a276", "metallic": 0, "smoothness": 0.35, "what": "bone" }
+    ],
+    "goblin": [
+      { "color": "#c7c7c7", "metallic": 0.9, "smoothness": 0.6, "what": "armour" },
+      { "color": "#d7d7d7", "metallic": 0.9, "smoothness": 0.6, "what": "helmet, pauldrons" },
+      { "color": "#717171", "metallic": 0.9, "smoothness": 0.55, "what": "greaves" },
+      { "color": "#828282", "metallic": 0.9, "smoothness": 0.55, "what": "armour" },
+      { "color": "#7a7a7a", "metallic": 0.9, "smoothness": 0.65, "what": "blade" },
+      { "color": "#8c8c8c", "metallic": 0.9, "smoothness": 0.55, "what": "gauntlets" },
+      { "color": "#e7e7e7", "metallic": 0.9, "smoothness": 0.6, "what": "elbow guards" },
+      { "color": "#919191", "metallic": 0.9, "smoothness": 0.55, "what": "armour" },
+      { "color": "#d9d9d9", "metallic": 0.9, "smoothness": 0.55, "what": "armour" },
+      { "color": "#a9a9a9", "metallic": 0.9, "smoothness": 0.55, "what": "armour" },
+      { "color": "#e9c25a", "metallic": 1, "smoothness": 0.65, "what": "gold on the weapon" },
+      { "color": "#d0a455", "metallic": 1, "smoothness": 0.6, "what": "gold buckles" },
+      { "color": "#b9894a", "metallic": 1, "smoothness": 0.6, "what": "gold belt" },
+      { "color": "#598568", "metallic": 0, "smoothness": 0.4, "what": "skin" }
+    ],
+    "slime": [
+      { "color": "#008042", "metallic": 0, "smoothness": 0.8, "what": "wet body" },
+      { "color": "#760705", "metallic": 0, "smoothness": 0.7, "what": "eye region" },
+      { "color": "#730808", "metallic": 0, "smoothness": 0.7, "what": "brain" },
+      { "color": "#c6c7c6", "metallic": 0, "smoothness": 0.85, "what": "eye" }
+    ],
+    "mushroom": [
+      { "color": "#f9fd00", "metallic": 0, "smoothness": 0.55, "what": "cap" },
+      { "color": "#e6e000", "metallic": 0, "smoothness": 0.55, "what": "cap" },
+      { "color": "#4bc600", "metallic": 0, "smoothness": 0.55, "what": "cap spots" },
+      { "color": "#f9f89e", "metallic": 0, "smoothness": 0.55, "what": "cap" }
+    ],
+    "demon": [
+      { "color": "#a50000", "metallic": 0, "smoothness": 0.45, "what": "skin" },
+      { "color": "#b22d2e", "metallic": 0, "smoothness": 0.45, "what": "skin" },
+      { "color": "#810003", "metallic": 0, "smoothness": 0.45, "what": "skin" },
+      { "color": "#181818", "metallic": 0, "smoothness": 0.7, "what": "claws, horns" },
+      { "color": "#675b5a", "metallic": 0.9, "smoothness": 0.55, "what": "bracers" }
+    ],
+    "bigork": [
+      { "color": "#424146", "metallic": 0.9, "smoothness": 0.6, "what": "blade" },
+      { "color": "#76767b", "metallic": 0.9, "smoothness": 0.65, "what": "blade edge" },
+      { "color": "#525257", "metallic": 0.9, "smoothness": 0.6, "what": "blade" },
+      { "color": "#292a29", "metallic": 0.9, "smoothness": 0.55, "what": "blade" },
+      { "color": "#63656b", "metallic": 0.9, "smoothness": 0.55, "what": "studs, plates" },
+      { "color": "#767876", "metallic": 0.9, "smoothness": 0.55, "what": "buckle" },
+      { "color": "#4e4f4e", "metallic": 0.9, "smoothness": 0.55, "what": "belt plates" },
+      { "color": "#8f8d8c", "metallic": 0.9, "smoothness": 0.55, "what": "earrings" },
+      { "color": "#91955d", "metallic": 0, "smoothness": 0.4, "what": "skin" },
+      { "color": "#76794a", "metallic": 0, "smoothness": 0.4, "what": "skin" }
+    ],
+    "troll": [
+      { "color": "#737373", "metallic": 0.9, "smoothness": 0.6, "what": "weapon" },
+      { "color": "#606060", "metallic": 0.9, "smoothness": 0.6, "what": "weapon" },
+      { "color": "#76767b", "metallic": 0.9, "smoothness": 0.55, "what": "plates" },
+      { "color": "#8f8d8c", "metallic": 0.9, "smoothness": 0.55, "what": "earrings" },
+      { "color": "#ad9873", "metallic": 0, "smoothness": 0.4, "what": "skin" }
+    ],
+    "dragon": [
+      { "color": "#293b18", "metallic": 0, "smoothness": 0.5, "what": "scales" },
+      { "color": "#31461b", "metallic": 0, "smoothness": 0.5, "what": "scales" },
+      { "color": "#1e2b10", "metallic": 0, "smoothness": 0.5, "what": "neck scales" },
+      { "color": "#6b8e47", "metallic": 0, "smoothness": 0.45, "what": "belly" },
+      { "color": "#3f5526", "metallic": 0, "smoothness": 0.45, "what": "spine" },
+      { "color": "#1e201e", "metallic": 0, "smoothness": 0.7, "what": "claws" },
+      { "color": "#d1cbc0", "metallic": 0, "smoothness": 0.65, "what": "teeth" }
+    ]
+  }
+}

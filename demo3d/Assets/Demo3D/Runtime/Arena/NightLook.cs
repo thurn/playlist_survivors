@@ -59,6 +59,9 @@ namespace Demo3D.Runtime.Arena
             Shader.SetGlobalVector("_Demo3DCrowdFlash", flash);
             // `--crowd-shoulder k` overrides it, as the other crowd terms.
             Shader.SetGlobalFloat("_Demo3DCrowdShoulder", Args.GetFloat("--crowd-shoulder", l.CrowdShoulder));
+            // `--crowd-gloss`: the swatches' own metal and gloss (crowd.md, Surfaces); `--crowd-gloss-metal k`
+            // scales their metallic.
+            Shader.SetGlobalVector("_Demo3DCrowdGloss", new Vector4(Args.Has("--crowd-gloss") ? 1 : 0, Args.GetFloat("--crowd-gloss-metal", 1), 0, 0));
         }
 
         /// <summary>

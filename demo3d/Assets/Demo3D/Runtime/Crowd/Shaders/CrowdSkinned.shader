@@ -11,6 +11,8 @@ Shader "Demo3D/CrowdSkinned"
         _BaseColor ("Color", Color) = (1, 1, 1, 1)
         _Smoothness ("Smoothness", Range(0, 1)) = 0.2
         _Metallic ("Metallic", Range(0, 1)) = 0
+        _SurfaceMap ("Surfaces (R metallic, G smoothness)", 2D) = "black" {}
+        _SurfaceMapOn ("Has Surfaces", Float) = 0
         _EmissionMap ("Emission", 2D) = "white" {}
         [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
         [HDR] _FlashColor ("Hit Flash", Color) = (2.5, 2.4, 2.2, 1)
@@ -26,6 +28,7 @@ Shader "Demo3D/CrowdSkinned"
         half4 _BaseColor;
         half _Smoothness;
         half _Metallic;
+        half _SurfaceMapOn;
         half4 _EmissionColor;
         half4 _FlashColor;
         half4 _DissolveEdgeColor;
@@ -89,6 +92,7 @@ Shader "Demo3D/CrowdSkinned"
 
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_EmissionMap); SAMPLER(sampler_EmissionMap);
+            TEXTURE2D(_SurfaceMap); SAMPLER(sampler_SurfaceMap);
 
             struct Varyings
             {
@@ -142,6 +146,9 @@ Shader "Demo3D/CrowdSkinned"
             // (cos, sin) of the angle that first turns the type's whole albedo round the luma axis (YIQ):
             // a saturated hide sitting on another type's hue. (1, 0) or unset: none.
             float4 _Demo3DTypeRotate;
+            // `--crowd-gloss` (crowd.md, Surfaces): x 1 reads each type's surface map, its swatches' own
+            // metallic and smoothness (0 keeps the material's single values); y scales the metallic.
+            float4 _Demo3DCrowdGloss;
             #define DEMO3D_MAIN_LIGHT_SCALE ((1 + _Demo3DCrowdKeyBoost) * (_Demo3DCrowdKeyColor.w > 0 ? _Demo3DCrowdKeyColor.rgb : float3(1, 1, 1)))
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
@@ -191,8 +198,11 @@ Shader "Demo3D/CrowdSkinned"
 
                 SurfaceData s = (SurfaceData)0;
                 s.albedo = albedo.rgb;
-                s.metallic = _Metallic;
-                s.smoothness = _Smoothness;
+                half2 surface = half2(_Metallic, _Smoothness);
+                if (_SurfaceMapOn * _Demo3DCrowdGloss.x > 0.5)
+                    surface = SAMPLE_TEXTURE2D(_SurfaceMap, sampler_SurfaceMap, i.uv).rg * half2(_Demo3DCrowdGloss.y, 1);
+                s.metallic = surface.x;
+                s.smoothness = surface.y;
                 s.occlusion = 1;
                 s.alpha = 1;
                 s.emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).rgb * _EmissionColor.rgb

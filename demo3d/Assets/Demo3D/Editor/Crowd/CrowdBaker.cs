@@ -146,6 +146,7 @@ namespace Demo3D.EditorTools.Crowd
             var shardSets = new List<CrowdShards.Set>();
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath) ?? throw new Exception("CrowdBaker: no " + ShaderPath);
             var colors = Roster.TypeColors();
+            CrowdSurfaces.Begin();
             foreach (var t in Roster.Load().Where(Drawn))
             {
                 var started = DateTime.UtcNow;
@@ -181,6 +182,7 @@ namespace Demo3D.EditorTools.Crowd
             style.Types = styleMeshes.ToArray();
             Replace(style, StyleMeshesPath);
             SaveShards(shardSets);
+            CrowdSurfaces.End();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             AssetDatabase.SaveAssets();
             Debug.Log($"CrowdBaker: wrote {types.Count} types to {LibraryPath}");
@@ -563,6 +565,12 @@ namespace Demo3D.EditorTools.Crowd
                 var look = Look.Of(src, $"{TypeDir(id)}/{id}_albedo{i}.asset");
                 SampleValues(b, b.Submeshes[i], look, values);
                 crowdMats[i] = look.Apply(new Material(shader) { name = $"{id}_crowd{i}" });
+                var albedo = look.Albedo as Texture2D;
+                var pixels = albedo != null ? Array.ConvertAll(ReadPixels(albedo), c => (Color32)c) : null;
+                CrowdSurfaces.Describe(b, i, albedo, pixels, look.BaseColor);
+                var surface = CrowdSurfaces.Bake(id, albedo, pixels, look.Metallic, look.Smoothness, $"{TypeDir(id)}/{id}_surface{i}.asset");
+                crowdMats[i].SetTexture("_SurfaceMap", surface);
+                crowdMats[i].SetFloat("_SurfaceMapOn", surface != null ? 1 : 0);
                 crowdMats[i].enableInstancing = false;
                 Replace(crowdMats[i], $"{TypeDir(id)}/{id}_crowd{i}.mat");
                 stockMats[i] = look.Apply(new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = $"{id}_stock{i}" });

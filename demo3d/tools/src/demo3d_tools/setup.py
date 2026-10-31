@@ -331,7 +331,7 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
                              "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
                              "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
     "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
-                   "Data/clip-annotations.json*", "Data/roster*.json*"),
+                   "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*"),
     "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),
     "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
                     "Runtime/Playback/ShatterSounds.cs*"),
