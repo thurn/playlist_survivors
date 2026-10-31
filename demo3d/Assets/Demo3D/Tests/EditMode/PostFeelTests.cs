@@ -98,6 +98,20 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void AFlashCutPeaksOnItsCutAndIsGoneWithinAnEighth()
+        {
+            double cut = _map.TimeOfBarBeat("81.1"), eighth = 0.5 * BeatLength((int)System.Math.Round(_map.BeatIndexAt(cut)));
+            var plain = Feel();
+            var feel = new PostFeel(_map, _amounts, true, new (double, float)[0], null, new[] { cut });
+            Assert.That(feel.CutFlash(cut - 1e-4), Is.EqualTo(0f), "before the cut");
+            Assert.That(feel.CutFlash(cut + 1.0 / 60), Is.GreaterThan(0.8f), "the cut's frame");
+            Assert.That(feel.At(cut + 1.0 / 60).Exposure - plain.At(cut + 1.0 / 60).Exposure, Is.GreaterThan(3f), "near-white");
+            Assert.That(feel.CutFlash(cut + 0.5 * eighth), Is.LessThan(feel.CutFlash(cut + 0.25 * eighth)), "decaying");
+            Assert.That(feel.CutFlash(cut + eighth + 1e-4), Is.EqualTo(0f), "an eighth on");
+            Assert.That(feel.At(cut + eighth + 1e-4), Is.EqualTo(plain.At(cut + eighth + 1e-4)));
+        }
+
+        [Test]
         public void ItIsAllZeroWhenOff()
         {
             var feel = Feel(enabled: false);

@@ -36,6 +36,9 @@ namespace Demo3D.Runtime.Playback
         public float Density = 1f;    // --density <0.5|1|2|4>: the arena's decoration density
         public string Resident;       // --resident <env,env,...>: those environments resident beside --environment's (trailer.md, Environments in one player)
         public float SwitchEvery;     // --switch-every <s>: with --resident, the drawn environment cycles through them every s song seconds from --start-at
+        public string Trailer;        // --trailer [name]: the trailer file trailer-NAME.json, "action" by default (trailer.md); null: the song
+        public int Shot;              // --shot <n>: with --trailer, only shot n, from its cut to its end (0: every shot)
+        public bool FromPreroll;      // --from-preroll: with --shot, from the start of its pre-roll
         public Demo3D.Runtime.Arena.ArenaOptions ArenaOptions; // --arena, --density and TD14's --grd, --merged, --tex-cap, --prepass
         // --cuts default|none|all|name,-name (TD11's cuts; Demo3D.Runtime.Cuts reads it), --lod-px, --light-cell, --merge-px
 
@@ -73,6 +76,9 @@ namespace Demo3D.Runtime.Playback
                 PoseRate = Args.GetFloat("--pose-rate", 0f),
                 Resident = Args.Get("--resident"),
                 SwitchEvery = Args.GetFloat("--switch-every", 0f),
+                Trailer = Args.Has("--trailer") ? TrailerName(Args.Get("--trailer")) : null,
+                Shot = Args.GetInt("--shot", 0),
+                FromPreroll = Args.Has("--from-preroll"),
             };
             f.ArenaOptions = Demo3D.Runtime.Arena.ArenaOptions.FromCommandLine(Demo3D.Runtime.Arena.ArenaOptions.Final());
             f.Arena = f.ArenaOptions.Rung;
@@ -80,5 +86,8 @@ namespace Demo3D.Runtime.Playback
             if (f.CaptureStills != null || f.CaptureVideo != null) f.FixedTime = true;
             return f;
         }
+
+        /// <summary>`--trailer`'s optional name: the next argument unless it is the next flag.</summary>
+        static string TrailerName(string next) => next == null || next.StartsWith("--", System.StringComparison.Ordinal) ? "action" : next;
     }
 }

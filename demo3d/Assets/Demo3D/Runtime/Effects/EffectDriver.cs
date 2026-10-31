@@ -173,6 +173,9 @@ namespace Demo3D.Runtime.Effects
             return r.ToArray();
         }
 
+        /// <summary>The next <see cref="Frame"/> seeks: it clears the pool and re-spawns what is still alive then (a trailer's cut into this driver's shot).</summary>
+        public void Seek() => _last = double.NaN;
+
         /// <summary>Spawns everything due in (last frame, <paramref name="now"/>]. A seek backwards (or the first frame) clears the pool and re-spawns what is still alive.</summary>
         public void Frame(double now)
         {

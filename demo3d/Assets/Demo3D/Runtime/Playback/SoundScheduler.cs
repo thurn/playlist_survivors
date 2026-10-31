@@ -11,6 +11,7 @@ namespace Demo3D.Runtime.Playback
     /// voices (the oldest is reused). The cues are the timeline's SoundEvents, already aggregated by
     /// the choreography layer (at most 3 voices per beat and category), plus the client's own
     /// (<see cref="ShatterSounds"/>), so the live mix matches the video's offline mix of the same list.
+    /// An <see cref="Envelope"/> (a trailer's cut and end fades) scales each voice's gain as it plays.
     /// </summary>
     public sealed class SoundScheduler
     {
@@ -30,8 +31,12 @@ namespace Demo3D.Runtime.Playback
         readonly AudioClip[] _clips;     // per cue
         readonly AudioSource[] _voices = new AudioSource[Voices];
         readonly double[] _voiceStart = new double[Voices];
+        readonly float[] _voiceGain = new float[Voices];
         int _next;
         public int Scheduled { get; private set; }
+
+        /// <summary>A cue's gain factor at a song time, from the cue's time and the song time (null: always 1).</summary>
+        public Func<double, double, float> Envelope;
 
         /// <summary>The timeline's sounds and the client's <paramref name="extra"/> ones, by time (ties keep the timeline's first).</summary>
         public static Cue[] Cues(Timeline tl, IEnumerable<Cue> extra)
@@ -74,6 +79,9 @@ namespace Demo3D.Runtime.Playback
         /// <summary>Schedules every sound due within the lookahead of song time t.</summary>
         public void Update(double t)
         {
+            if (Envelope != null)
+                for (int v = 0; v < Voices; v++)
+                    if (_voices[v].isPlaying) _voices[v].volume = _voiceGain[v] * Envelope(_voiceStart[v], t);
             while (_next < _cues.Length && _cues[_next].Time <= t + Lookahead)
             {
                 int i = _next++;
@@ -86,7 +94,8 @@ namespace Demo3D.Runtime.Playback
                 var src = _voices[v];
                 src.Stop();
                 src.clip = clip;
-                src.volume = Mathf.Clamp01(s.Gain);
+                _voiceGain[v] = Mathf.Clamp01(s.Gain);
+                src.volume = _voiceGain[v] * (Envelope?.Invoke(s.Time, s.Time) ?? 1f);
                 src.pitch = s.Pitch > 0 ? s.Pitch : 1f;
                 src.PlayScheduled(_clock.DspAt(s.Time));
                 _voiceStart[v] = s.Time;

@@ -954,6 +954,43 @@ The timeline checks run offline. The live player plays whatever the file
 produces, even if a check would fail. `--overlay` shows any liveness
 violations live.
 
+**Outcome (ps-hgs.6).** `--trailer` is DemoMain's trailer mode
+(`DemoMain.Trailer.cs`). Some details of what shipped:
+
+- **Load.** The ten shot simulations take about 0.6 s in the IL2CPP player.
+  A global black volume (a colour filter of black, priority 1000) covers the
+  screen until the warm-up ends and the clock starts, and again from the cut
+  to black.
+- **The cut.** One frame switches the environment, then swaps in the shot's
+  own timeline, evaluator, effect driver, blow and camera feel and crystal
+  breaks. The effect driver's seek clears particles and effect lights. The
+  crystal shatter is retargeted, which clears its shards. The horde never
+  poses before the shot's first frame, which clears the hit-stop. Crowd slots
+  are keyed per shot, so no slot carries a monster's state across the cut.
+  A cut costs 0.1–0.3 ms, plus up to about 1.2 ms of CPU on its frame while
+  the new shot's live effects re-spawn
+  ([evidence](../../demo3d/evidence/trailer/playback/README.md)).
+- **Which cuts flash.** A cut flashes when it lands on one of the song map's
+  accents, within 10 ms. In *Action* those are exactly 81.1, 89.1 and 97.1,
+  so the trailer file needs no field for it. The flash is +5 stops, −70
+  saturation and +4 bloom on the cut frame, decaying quadratically over an
+  eighth note, with one post feel per environment holding every shot's big
+  hits and the flash cuts. With `--shot`, only that shot's own cut and hits
+  flash.
+- **Sound.** One scheduler plays every shot's cues within its visible span.
+  Its gain envelope fades a cue from before a cut over 60 ms from the cut, and
+  every cue and the music from the cut to black. With `--shot n
+  --from-preroll` the pre-roll's own sounds play too, since its whole span is
+  what that run shows. `--dump-sounds` writes the merged cue list; the cut and
+  end fades in it are the capture's (ps-hgs.4).
+- **Time flags.** `--start-at`, `--stills-at`, `--seconds`, `--freeze-at` and
+  `--gpu-probe-at` take trailer seconds. With `--shot`, the run starts at the
+  shot's cut (or its pre-roll) unless `--start-at` says otherwise, and ends at
+  the shot's end.
+- **Rejected too.** `--structure-breaks` (the shots break nothing),
+  `--resident` and `--switch-every` (the trailer makes its own environments
+  resident) fail beside the doc's list.
+
 ### Camera
 
 Every shot uses the game camera:

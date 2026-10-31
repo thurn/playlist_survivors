@@ -26,6 +26,8 @@ namespace Demo3D.Runtime.Playback
         /// <summary>ps-bop: the environments beside the arena (environment-NAME.json), each extending its layout.</summary>
         public TextAsset[] environments;
         public TextAsset[] stressScripts;
+        /// <summary>The `--trailer` files (trailer-NAME.json, trailer.md "The trailer file").</summary>
+        public TextAsset[] trailers;
 
         public static PlaybackData Load() =>
             Resources.Load<PlaybackData>(ResourcePath)
@@ -72,6 +74,13 @@ namespace Demo3D.Runtime.Playback
                 ?? throw new System.ArgumentException($"--environment: unknown environment '{name}' (one of {string.Join(", ", EnvironmentNames())})");
             return PS.Choreography.LayoutEnvironment.Resolve(file.text, n => Layout(n)?.text, name);
         }
+
+        public const string TrailerPrefix = "trailer-";
+
+        /// <summary>A `--trailer` file by name; an unknown one fails, listing the known ones.</summary>
+        public TextAsset Trailer(string name) =>
+            System.Array.Find(trailers ?? new TextAsset[0], t => t.name == TrailerPrefix + name)
+            ?? throw new System.ArgumentException($"--trailer: unknown trailer '{name}' (one of {string.Join(", ", System.Array.ConvertAll(trailers ?? new TextAsset[0], t => t.name.Substring(TrailerPrefix.Length)))})");
 
         public TextAsset Stress(string scene) => System.Array.Find(stressScripts, s => s.name == "stress-" + scene.ToLowerInvariant());
     }

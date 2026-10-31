@@ -31,6 +31,19 @@ here, since the demo itself takes no input:
                     the hero's bolts break walls on the beat, and the horde
                     paths through the openings (choreography.md, Structure
                     breaks)
+--trailer [name]    play the trailer file trailer-NAME.json (default action):
+                    its shots cut on the beat across their environments
+                    (trailer.md). Look and cast flags apply to every shot;
+                    --intensity, --scene, --envelope, --view-width, --hold-at,
+                    --beauty-empty, --structure-breaks, --resident and
+                    --switch-every fail, naming the conflict
+  --environment <name>  pin every shot to one environment
+  --start-at, --stills-at, --seconds, --freeze-at, --gpu-probe-at
+                    take trailer seconds (song seconds less the file's startS)
+  --shot <n>        only shot n, from its cut to its end, music included
+  --from-preroll    with --shot, from the start of its pre-roll
+  --overlay         adds the trailer time, the shot and its liveness
+                    violations (live only; a capture warns and leaves it out)
 ```
 
 ### First assembled check

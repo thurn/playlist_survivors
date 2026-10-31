@@ -49,11 +49,12 @@ namespace Demo3D.EditorTools.Assets
             data.layouts = files.Where(f => f.EndsWith("-layout.json")).Select(Text).ToArray();
             data.environments = files.Where(f => Path.GetFileName(f).StartsWith(PlaybackData.EnvironmentPrefix)).Select(Text).ToArray();
             data.stressScripts = files.Where(f => Path.GetFileName(f).StartsWith("stress-")).Select(Text).ToArray();
+            data.trailers = files.Where(f => Path.GetFileName(f).StartsWith(PlaybackData.TrailerPrefix)).Select(Text).ToArray();
             var path = Dir + "/" + PlaybackData.ResourcePath + ".asset";
             AssetDatabase.DeleteAsset(path);
             AssetDatabase.CreateAsset(data, path);
             AssetDatabase.SaveAssets();
-            Debug.Log($"PlaybackBaker: {data.levels.Length} level variants, {data.intensities.Length} intensities, {data.structureBreaks.Length} structure-break schedules, {data.layouts.Length} layouts, {data.environments.Length} environments, {data.stressScripts.Length} stress scripts, music {(music != null ? "yes" : "MISSING")}");
+            Debug.Log($"PlaybackBaker: {data.levels.Length} level variants, {data.intensities.Length} intensities, {data.structureBreaks.Length} structure-break schedules, {data.layouts.Length} layouts, {data.environments.Length} environments, {data.stressScripts.Length} stress scripts, {data.trailers.Length} trailers, music {(music != null ? "yes" : "MISSING")}");
         }
     }
 }

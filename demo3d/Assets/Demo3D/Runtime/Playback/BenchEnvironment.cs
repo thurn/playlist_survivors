@@ -55,12 +55,15 @@ namespace Demo3D.Runtime.Playback
 
     /// <summary>
     /// The game camera (camera-and-sound.md): 55° pitch, 30° vertical field of view, height from
-    /// the view width at 16:9. Its framing comes from the timeline's framing track.
+    /// the view width at 16:9. Its framing comes from the timeline's framing track. A trailer shot
+    /// turns it about the vertical by its heading (<see cref="YawDeg"/>, trailer.md "Camera").
     /// </summary>
     public sealed class GameCameraRig
     {
         public const float Pitch = 55f, VerticalFov = 30f;
         public readonly Camera Camera;
+        /// <summary>The heading in degrees, clockwise seen from above: the camera looks along ground Easing.Dir(yaw), as ViewGeometry counts the view.</summary>
+        public float YawDeg;
 
         public GameCameraRig()
         {
@@ -87,7 +90,7 @@ namespace Demo3D.Runtime.Playback
         public void Frame(Vector2 focus, float viewWidth, float shadowWidth = 0)
         {
             if (shadowWidth <= 0) shadowWidth = viewWidth;
-            var rot = Quaternion.Euler(Pitch, 0, 0);
+            var rot = Quaternion.Euler(Pitch, YawDeg, 0);
             var target = new Vector3(focus.x, 0, focus.y);
             Camera.transform.SetPositionAndRotation(target - rot * Vector3.forward * Distance(viewWidth), rot);
             // Shadows reach the view's farthest ground corner, as the bench rig fits them (TD9:

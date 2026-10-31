@@ -7,7 +7,8 @@ namespace Demo3D.Runtime.Playback
     /// <summary>
     /// The `--overlay` (qa.md): song time and section, on-screen counts against the level
     /// script's target, and rolling 20 s p99 frame times against the Cygnus pass lines
-    /// (performance.md: GPU 4.2 ms, main and render threads 10.4 ms).
+    /// (performance.md: GPU 4.2 ms, main and render threads 10.4 ms). In a trailer, also the
+    /// trailer time, the shot and its liveness violations (DemoMain.TrailerStatus).
     /// </summary>
     public sealed class DemoOverlay : MonoBehaviour
     {
@@ -50,7 +51,8 @@ namespace Demo3D.Runtime.Playback
                 "p99 20 s  GPU {6:F2}/4.2  main {7:F2}/10.4  render {8:F2}/10.4 ms",
                 Main.SongTime, stats?.Label ?? tl.Name, Main.OnScreenAlive, Main.OnScreenDying,
                 Main.OnScreenAlive + Main.OnScreenDying, stats?.TargetOnScreen ?? 0, P99(gpu), P99(main), P99(render));
-            GUI.Label(new Rect(20, 20, 1200, 120), text, _style);
+            if (Main.TrailerStatus is string trailer) text += "\n" + trailer;
+            GUI.Label(new Rect(20, 20, 1200, 150), text, _style);
         }
     }
 }

@@ -14,6 +14,8 @@ namespace Demo3D.Runtime.Playback
     ///   spike), a chromatic-aberration burst and a saturation spike, scaled by their strength and gone within a beat;
     /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature, vignette), eased in over
     ///   <see cref="Amounts.EaseBars"/> bars from the section's first downbeat, as the camera's zoom eases.
+    /// - a trailer's flash cuts (trailer.md, "Playback and cuts"): a near-white flash peaking on the cut frame and gone
+    ///   within an eighth note (<see cref="CutFlash"/>).
     /// It writes offsets on top of the night volume's base values (NightLook.CreateProfile, the hero pool's vignette
     /// included), read once when it first binds, and is a function of song time alone, so fixed-time stills reproduce.
     /// </summary>
@@ -83,11 +85,15 @@ namespace Demo3D.Runtime.Playback
             public float Exposure, Bloom, Vignette, Saturation, Contrast, Temperature, Chromatic;
         }
 
+        /// <summary>A flash cut's peak: exposure (stops), saturation and bloom offsets, which wash the frame out to near white.</summary>
+        public const float CutFlashExposure = 5f, CutFlashSaturation = -70f, CutFlashBloom = 4f;
+
         readonly SongMap _map;
         readonly Amounts _amounts;
         readonly SectionGrade[] _grades;   // per map section
         readonly double[] _flashAt;        // sorted
         readonly float[] _flashStrength;
+        readonly double[] _cutFlashAt;     // sorted
         public readonly bool Enabled;
 
         ColorAdjustments _color;
@@ -100,26 +106,43 @@ namespace Demo3D.Runtime.Playback
 
         /// <param name="breaks">Structure breaks' flashes (BreakMoments.Flashes), at their strengths; none without `--structure-breaks`.</param>
         public PostFeel(Timeline tl, Amounts amounts, bool enabled = true, IEnumerable<(double time, float strength)> breaks = null)
+            : this(tl.Map, amounts, enabled, HitFlashes(tl, amounts, double.NegativeInfinity, double.PositiveInfinity), breaks) { }
+
+        /// <summary>
+        /// A post feel over several timelines (a trailer's shots): the song map's accents and anchors, the flashes given
+        /// (each shot's <see cref="HitFlashes"/> within its span), and the flash cuts at <paramref name="cutFlashes"/>.
+        /// </summary>
+        public PostFeel(SongMap map, Amounts amounts, bool enabled, IEnumerable<(double time, float strength)> flashes,
+            IEnumerable<(double time, float strength)> breaks = null, IEnumerable<double> cutFlashes = null)
         {
-            _map = tl.Map;
+            _map = map;
             _amounts = amounts;
             Enabled = enabled;
             _grades = new SectionGrade[_map.Sections.Length];
             for (int i = 0; i < _grades.Length; i++) _grades[i] = amounts.For(_map.Sections[i].Label);
 
-            var flashes = new List<(double t, float s)>();
-            foreach (var a in _map.Accents) flashes.Add((a.Time, a.Strength));
+            var all = new List<(double t, float s)>();
+            foreach (var a in _map.Accents) all.Add((a.Time, a.Strength));
             foreach (var s in _map.Sections)
                 if (s.Feel == SectionFeel.Free)
-                    foreach (var a in s.Anchors) flashes.Add((a.Time, a.Strength));
+                    foreach (var a in s.Anchors) all.Add((a.Time, a.Strength));
+            all.AddRange(flashes);
+            if (breaks != null) all.AddRange(breaks);
+            all.Sort((x, y) => x.t.CompareTo(y.t));
+            _flashAt = new double[all.Count];
+            _flashStrength = new float[all.Count];
+            for (int i = 0; i < all.Count; i++) { _flashAt[i] = all[i].t; _flashStrength[i] = all[i].s; }
+            var cuts = cutFlashes != null ? new List<double>(cutFlashes) : new List<double>();
+            cuts.Sort();
+            _cutFlashAt = cuts.ToArray();
+        }
+
+        /// <summary>The hero's big hits in <paramref name="tl"/> from <paramref name="from"/> to before <paramref name="to"/>, as flashes.</summary>
+        public static IEnumerable<(double time, float strength)> HitFlashes(Timeline tl, Amounts amounts, double from, double to)
+        {
             foreach (var a in tl.Actions)
-                if (a.Kind == ActionKind.Attack && a.Entity == 0 && a.Strength >= amounts.HitStrength)
-                    flashes.Add((a.Impact, a.Strength * amounts.HitFlash));
-            if (breaks != null) flashes.AddRange(breaks);
-            flashes.Sort((x, y) => x.t.CompareTo(y.t));
-            _flashAt = new double[flashes.Count];
-            _flashStrength = new float[flashes.Count];
-            for (int i = 0; i < flashes.Count; i++) { _flashAt[i] = flashes[i].t; _flashStrength[i] = flashes[i].s; }
+                if (a.Kind == ActionKind.Attack && a.Entity == 0 && a.Strength >= amounts.HitStrength && a.Impact >= from && a.Impact < to)
+                    yield return (a.Impact, a.Strength * amounts.HitFlash);
         }
 
         /// <summary>The beat pulse at t: 1 on a beat of a pulsed section, decaying to 0 over the beat.</summary>
@@ -149,6 +172,18 @@ namespace Demo3D.Runtime.Playback
             return flash;
         }
 
+        /// <summary>The flash cut at t: 1 on its cut, decaying quadratically to 0 over an eighth note.</summary>
+        public float CutFlash(double t)
+        {
+            int i = Array.BinarySearch(_cutFlashAt, t);
+            if (i < 0) i = ~i - 1;
+            if (i < 0) return 0f;
+            double u = (t - _cutFlashAt[i]) / (0.5 * BeatLength(_cutFlashAt[i]));
+            if (u >= 1) return 0f;
+            float k = (float)(1 - u);
+            return k * k;
+        }
+
         /// <summary>The section's grade at t, eased from the previous section's over the first bars.</summary>
         public SectionGrade Grade(double t, out float pulseScale)
         {
@@ -175,14 +210,14 @@ namespace Demo3D.Runtime.Playback
         {
             if (!Enabled) return default;
             var g = Grade(t, out float pulseScale);
-            float pulse = Pulse(t) * pulseScale, flash = Flash(t);
+            float pulse = Pulse(t) * pulseScale, flash = Flash(t), cut = CutFlash(t);
             var a = _amounts;
             return new Offsets
             {
-                Exposure = g.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash,
-                Bloom = a.BeatBloom * pulse,
+                Exposure = g.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + CutFlashExposure * cut,
+                Bloom = a.BeatBloom * pulse + CutFlashBloom * cut,
                 Vignette = g.Vignette + a.BeatVignette * pulse,
-                Saturation = g.Saturation + a.FlashSaturation * flash,
+                Saturation = g.Saturation + a.FlashSaturation * flash + CutFlashSaturation * cut,
                 Contrast = g.Contrast,
                 Temperature = g.Temperature,
                 Chromatic = a.FlashChromatic * flash,

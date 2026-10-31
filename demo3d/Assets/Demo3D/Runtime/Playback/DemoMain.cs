@@ -14,9 +14,10 @@ namespace Demo3D.Runtime.Playback
     /// The demo player (TD4): builds the song's timeline (or a stress scene's) at load, then each
     /// frame evaluates it at the song clock's time and draws the crowd, the hero, projectiles and
     /// the camera. Flags are qa.md's (DevFlags). It starts itself in a player unless the frame
-    /// probe or the benchmark harness owns the run.
+    /// probe or the benchmark harness owns the run. `--trailer` plays a trailer's shots instead
+    /// (DemoMain.Trailer.cs).
     /// </summary>
-    public sealed class DemoMain : MonoBehaviour
+    public sealed partial class DemoMain : MonoBehaviour
     {
         DevFlags _flags;
         Timeline _tl;
@@ -109,6 +110,7 @@ namespace Demo3D.Runtime.Playback
             if (Application.isBatchMode && Args.Has("--capture-video"))
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
+            CheckTrailerFlags();
             _style = MonsterStyle.FromCommandLine();
             _structures = StructureStyle.FromCommandLine(_style); // fails here on an unknown name; match follows the horde
             Debug.Log($"DemoMain: {StructureStyle.Flag} {_structures.Name}");
@@ -134,7 +136,16 @@ namespace Demo3D.Runtime.Playback
             // `--environment NAME` (ps-bop): its whole layout, which the timeline navigates; fails here on an unknown one.
             var environmentLayout = PlaybackData.Load().EnvironmentLayout(arena.Environment);
             if (_flags.SwitchEvery > 0 && _flags.Resident == null) throw new InvalidOperationException("DemoMain: --switch-every needs --resident");
-            if (_flags.Resident != null)
+            _roster = RosterAssets.Load();
+            Dictionary<string, ChoreographyData> trailerData = null;
+            if (_flags.Trailer != null)
+            {
+                // Every environment the shots use, resident; fails here on a bad trailer file or an environment that isn't baked.
+                LoadTrailer(PlaybackData.Load(), rosterSet, arena.Density, out trailerData);
+                _arenas = Demo3D.Runtime.Arena.ArenaSet.Load(arena, _trailer.Environments, _rig.Camera, transform);
+                _arena = _arenas[0];
+            }
+            else if (_flags.Resident != null)
             {
                 // Fails here on an environment that isn't baked; --environment's is active first and its layout the timeline's.
                 _arenas = Demo3D.Runtime.Arena.ArenaSet.Load(arena, ResidentEnvironments(arena.Environment, _flags.Resident), _rig.Camera, transform);
@@ -159,7 +170,6 @@ namespace Demo3D.Runtime.Playback
                 if (_arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
                 else _arena.OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
             }
-            _roster = RosterAssets.Load();
             var data = PlaybackData.Load();
             var level = LevelScript.Parse(data.Level(rosterSet).text, data.Overlay(intensity), data.Overlay(breakSchedule));
             if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
@@ -179,12 +189,15 @@ namespace Demo3D.Runtime.Playback
             // The arena's layout is the environment's (its own placement list); a test layout is its own.
             var layout = layoutName != "arena" && data.Layout(layoutName) is TextAsset other ? other.text : environmentLayout;
             // The timeline navigates the density the arena scene is drawn at (TD15; the cold review's item 3).
-            var choreo = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout, data.footprints.text,
-                _arena != null ? _arena.Density : 0);
+            var choreo = _trailer != null ? trailerData[_trailer.Shots[0].Environment]
+                : ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout, data.footprints.text,
+                    _arena != null ? _arena.Density : 0);
             var started = Time.realtimeSinceStartupAsDouble;
-            _tl = stress == null
-                ? Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo)
-                : Choreographer.RunStress(stress, choreo);
+            if (_trailer != null) BuildShots(data, rosterSet, trailerData);
+            else
+                _tl = stress == null
+                    ? Choreographer.Run(SongMap.Parse(data.songMap.text), level, choreo)
+                    : Choreographer.RunStress(stress, choreo);
             Debug.Log($"DemoMain: {_tl.Name} built in {Time.realtimeSinceStartupAsDouble - started:F2} s, " +
                       $"{_tl.EntityCount} entities; sim ticks {_tl.TickTiming?.ToJson()}");
             _eval = new TimelineEvaluator(_tl, choreo.Clips);
@@ -197,7 +210,7 @@ namespace Demo3D.Runtime.Playback
                 breakMoments = BreakMoments.Of(_tl, choreo.Layout);
                 _breaks = new Demo3D.Runtime.Arena.StructureShatter(breakMoments, _arena, choreo.Layout, _structures.Name);
             }
-            _endAt = _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
+            _endAt = _trailer != null ? TrailerEnd() : _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
 
             _crowd = CrowdFactory.Create(_flags.Crowd);
             if (_crowd is BoneTextureCrowd bone)
@@ -233,7 +246,7 @@ namespace Demo3D.Runtime.Playback
             if (_flags.CaptureStills != null || _flags.CaptureVideo != null)
                 _capture = new CaptureTool(_rig.Camera, _flags.CaptureStills, _flags.StillsAt, _flags.CaptureVideo);
             _gpuProbe = BatchGpuProbe.FromArgs(_rig.Camera);
-            var music = gameObject.AddComponent<AudioSource>();
+            var music = _music = gameObject.AddComponent<AudioSource>();
             AudioSource click = null;
             AudioClip clickClip = null;
             if (_flags.Click && _flags.Scene == "song")
@@ -244,7 +257,7 @@ namespace Demo3D.Runtime.Playback
             // --resident: the music starts once every environment is loaded and drawn (Warm).
             _startClock = () => _clock.Start(_flags.Scene == "song" ? music : null, data.music, 0.5, click, clickClip);
             if (_arenas == null) _startClock();
-            var blowFeel = BlowFeel.Amounts.FromOverlay(data.Overlay(intensity));
+            var blowFeel = BlowFeel.Amounts.FromOverlay(data.Overlay(_trailer != null ? Intensity.Parse(_trailer.Base) : intensity));
             _blows = blowFeel != null && _tl.Map != null && stress == null && !_flags.NoFeel ? new BlowFeel(_tl, blowFeel) : null;
             if (_blows != null)
             {
@@ -263,21 +276,28 @@ namespace Demo3D.Runtime.Playback
                 _postFeels[0] = _postFeel;
                 for (int i = 1; i < _postFeels.Length; i++) _postFeels[i] = new PostFeel(_tl, _arenas[i].Lighting.PostFeel, _postFeel.Enabled, breakFlashes);
             }
-            // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
-            // and sound play at the blow, known from the timeline.
-            var breaks = _shatter?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.BreakEvent>();
-            _eval.BreaksAtImpact = breaks.Length > 0 ? new HashSet<int>(Array.ConvertAll(breaks, b => b.Entity)) : null;
-            _fxDriver?.SetShatters(Array.ConvertAll(breaks, b => new EffectDriver.Shatter
+            if (_trailer != null) PrepareShots(blowFeel, choreo, trailerData);
+            else
             {
-                Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
-            }));
-            if (breakMoments.Count > 0) _fxDriver?.SetBursts(breakMoments.Bursts(_structures.Name, StructureStyle.CrystalGem));
-            var clientSounds = breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null;
-            if (breakMoments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(breakMoments.Sounds(_structures.Name, _tl.Map));
-            _soundCues = SoundScheduler.Cues(_tl, clientSounds);
+                // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
+                // and sound play at the blow, known from the timeline.
+                var breaks = _shatter?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.BreakEvent>();
+                _eval.BreaksAtImpact = breaks.Length > 0 ? new HashSet<int>(Array.ConvertAll(breaks, b => b.Entity)) : null;
+                _fxDriver?.SetShatters(Array.ConvertAll(breaks, b => new EffectDriver.Shatter
+                {
+                    Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
+                }));
+                if (breakMoments.Count > 0) _fxDriver?.SetBursts(breakMoments.Bursts(_structures.Name, StructureStyle.CrystalGem));
+                var clientSounds = breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null;
+                if (breakMoments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(breakMoments.Sounds(_structures.Name, _tl.Map));
+                _soundCues = SoundScheduler.Cues(_tl, clientSounds);
+            }
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
             if (!_flags.FixedTime && _flags.Scene == "song")
+            {
                 _sounds = new SoundScheduler(_soundCues, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
+                if (_trailer != null) _sounds.Envelope = TrailerGain;
+            }
         }
 
         /// <summary>
@@ -295,9 +315,16 @@ namespace Demo3D.Runtime.Playback
             }
             _fx = new EffectSystem(lib, Args.GetInt("--effect-pool", EffectSystem.DefaultPool), Args.GetInt("--light-pool", EffectLights.DefaultPool));
             _fx.AddCamera(_rig.Camera);
-            _fxDriver = new EffectDriver(_tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
-            _fxDriver.OnlyAmbient = _beautyEmpty;
-            _fxDriver.OnlyEffects(Args.Get("--only-effects"));
+            _fxDriver = NewEffectDriver(_tl);
+        }
+
+        /// <summary>An effect driver for a timeline on the effect runtime, its big types' heavier variants and --only-effects.</summary>
+        EffectDriver NewEffectDriver(Timeline tl)
+        {
+            var driver = new EffectDriver(tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
+            driver.OnlyAmbient = _beautyEmpty;
+            driver.OnlyEffects(Args.Get("--only-effects"));
+            return driver;
         }
 
         /// <summary>`--resident a,b,...`: the environment the timeline plays first, then the others, each once.</summary>
@@ -447,7 +474,7 @@ namespace Demo3D.Runtime.Playback
             _capture.Capture(_captureAt);
             _captureAt = double.NaN;
             if (_maskOn || _capture.StillsWritten == before) return;
-            if (_captureMask) _maskAt = _capture.LastStillAt;
+            if (_captureMask) _maskAt = _capture.LastStillAt + _timeBase;
             WriteView(camera, _capture.LastStillAt);
         }
 
@@ -521,24 +548,27 @@ namespace Demo3D.Runtime.Playback
                 t = _maskAt; // the still's frame again, as its ID render
                 _maskAt = double.NaN;
                 MaskMode(true);
-                _capture.ForceStill(t, "mask");
+                _capture.ForceStill(t - _timeBase, "mask");
             }
             double switchMs = 0;
             if (_arenas != null)
             {
-                SwitchArena(ArenaIndexAt(t));
+                if (_trailer != null) Cut(ShotAt(t), t);
+                else SwitchArena(ArenaIndexAt(t));
                 switchMs = _arenas.LastSwitchMs;
                 if (switchMs > 0) Debug.Log($"DemoMain: {_arena.Options.Environment} at {t.ToString("F3", CultureInfo.InvariantCulture)} s, switched in {switchMs:F2} ms");
             }
             _sounds?.Update(t);
-            Draw(t);
+            if (_trailer == null) Draw(t);
+            else if (!Blackout(t)) TrailerDraw(t);
 
-            _captureAt = _capture != null ? t : double.NaN; // read back once URP has drawn it
+            // Captures and probes take trailer seconds in a trailer (_timeBase), song seconds otherwise.
+            _captureAt = _capture != null ? t - _timeBase : double.NaN; // read back once URP has drawn it
             // A batch-mode player draws no frames, so it draws the camera by hand for each still it
             // owes (windowless checks on the Mac). Only those frames: URP's hand-drawn frames hold
             // their pooled targets until a frame the player loop draws (CaptureTool).
-            if (Application.isBatchMode && _capture != null && _capture.StillDue(t)) _rig.Camera.Render();
-            else _gpuProbe?.Frame(t, _rig.Camera, OnScreenAlive, switchMs);
+            if (Application.isBatchMode && _capture != null && _capture.StillDue(t - _timeBase)) _rig.Camera.Render();
+            else _gpuProbe?.Frame(t - _timeBase, _rig.Camera, OnScreenAlive, switchMs);
             WriteStats(t);
             if (_flags.SongCheck != null)
                 (_songCheck ??= new SongRunCheck()).Update(t, _fx?.TakeRejected() ?? 0, _fx?.Lights.DropShare ?? 0);
@@ -597,12 +627,12 @@ namespace Demo3D.Runtime.Playback
             _shatterWatch.Stop();
             _evalWatch.Start();
             // The horde and the hero pose on the world's time: it holds through a heavy blow's hit-stop (BlowFeel).
-            double world = _blows?.WorldTime(t) ?? t;
+            double world = Math.Max(_blows?.WorldTime(t) ?? t, _worldFrom);
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
             // palette and LOD state follow the slot); a freed slot is written Hidden first.
             _slots.Begin();
             for (int type = 0; type < _typeLists.Length; type++)
-                foreach (int e in _typeLists[type]) _slots.Assign(type, e);
+                foreach (int e in _typeLists[type]) _slots.Assign(type, _slotBase + e);
             _slots.End();
             for (int type = 0; type < _typeLists.Length; type++)
             {
@@ -621,7 +651,7 @@ namespace Demo3D.Runtime.Playback
                         if (_shatter.Breaking(e, type, mi)) mi.Flags |= (uint)CrowdFlags.Hidden;
                         _shatterWatch.Stop();
                     }
-                    inst[_slots.Assign(type, e)] = mi;
+                    inst[_slots.Assign(type, _slotBase + e)] = mi;
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {
                         if (st.Dying) OnScreenDying++; else OnScreenAlive++;

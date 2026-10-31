@@ -95,7 +95,7 @@ namespace Demo3D.Runtime.Crowd
             public float Largest;                   // the largest chunk's size
         }
 
-        readonly Timeline _tl;
+        Timeline _tl;
         readonly TypeData[] _types;          // per crowd type, null where the type doesn't shatter
         readonly Material _motion;           // the opaque-queue twin that writes motion vectors (CrystalShard.shader)
         readonly Color[] _gem;               // per crowd type: its gem colour (linear), for the burst and its light
@@ -268,6 +268,18 @@ namespace Demo3D.Runtime.Crowd
             return list.ToArray();
         }
 
+        /// <summary>
+        /// Plays another timeline from the next <see cref="Frame"/>, which clears the shards (a trailer's cut): its
+        /// breaks are <paramref name="breaks"/>, from <see cref="Breaks"/> on it, or none until Breaks is called.
+        /// </summary>
+        public void Retarget(Timeline tl, BreakEvent[] breaks = null)
+        {
+            _tl = tl;
+            _t0 = double.NaN;
+            _breaks.Clear();
+            if (breaks != null) foreach (var b in breaks) _breaks[b.Entity] = b;
+        }
+
         /// <summary>The breaks <see cref="Cap"/> keeps (see there).</summary>
         List<BreakEvent> Capped(List<BreakEvent> breaks)
         {
@@ -277,7 +289,7 @@ namespace Demo3D.Runtime.Crowd
             {
                 ends.RemoveAll(e => e <= r.Time);
                 var f = _tl.FramingAt(r.Time);
-                bool inView = new ViewGeometry(f.ViewWidth).Contains(f.Focus, new System.Numerics.Vector2(r.Hit.x, r.Hit.z), 1f);
+                bool inView = new ViewGeometry(f.ViewWidth, ViewGeometry.PitchDeg, _tl.ViewYawDeg).Contains(f.Focus, new System.Numerics.Vector2(r.Hit.x, r.Hit.z), 1f);
                 if (!inView || ends.Count >= Cap) continue;
                 ends.Add(r.Time + LingerSeconds + SinkSeconds + 0.5);
                 kept.Add(r);
