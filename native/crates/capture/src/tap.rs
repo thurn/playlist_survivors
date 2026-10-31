@@ -6,8 +6,8 @@
 use std::cell::UnsafeCell;
 use std::ffi::c_void;
 use std::ptr::NonNull;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use audio::delay::{DelayLine, Writer};
 
@@ -56,6 +56,8 @@ pub struct Tap {
     pub capture: Capture,
     /// Set once the tap and its aggregate are destroyed (here, or by the watchdog).
     pub destroyed: Arc<AtomicBool>,
+    /// Held while they are destroyed, so whichever comes second waits for the first to finish.
+    teardown: Arc<Mutex<()>>,
 }
 
 impl std::ops::Deref for Tap {
@@ -335,6 +337,7 @@ impl Tap {
             aggregate,
             capture,
             destroyed: Arc::new(AtomicBool::new(false)),
+            teardown: Arc::default(),
         })
     }
 
@@ -369,7 +372,7 @@ impl Tap {
             Err(e) => return Err((e, writer)),
         };
         if fmt.mSampleRate != rate {
-            destroy(tap, aggregate, &AtomicBool::new(false));
+            discard(tap, aggregate);
             return Err((
                 format!(
                     "the tap is at {} Hz, its line at {rate} Hz",
@@ -389,16 +392,16 @@ impl Tap {
         writer: Writer,
         first: u64,
     ) -> Result<Tap, (String, Writer)> {
-        let destroyed = Arc::new(AtomicBool::new(false));
         match Capture::start_at(aggregate, fmt, 4.0, Some(writer), first) {
             Ok(capture) => Ok(Tap {
                 tap,
                 aggregate,
                 capture,
-                destroyed,
+                destroyed: Arc::new(AtomicBool::new(false)),
+                teardown: Arc::default(),
             }),
             Err((e, writer)) => {
-                destroy(tap, aggregate, &destroyed);
+                discard(tap, aggregate);
                 Err((e, writer.expect("the writer comes back")))
             }
         }
@@ -412,26 +415,27 @@ impl Tap {
         self.capture.ctx.get_mut().delay.take()
     }
 
-    /// Stops the capture and destroys the tap and its aggregate, once.
+    /// Stops the capture and destroys the tap and its aggregate, once; if the watchdog is
+    /// destroying them, waits until it has (its IOProc is gone, so its context is ours again).
     fn stop(&mut self) {
-        // (Once the watchdog destroyed the aggregate, its IOProc went with it.)
-        if !self.destroyed.load(Ordering::SeqCst) && self.capture.proc_id.is_some() {
-            unsafe {
-                AudioDeviceStop(self.aggregate, self.capture.proc_id);
-                AudioDeviceDestroyIOProcID(self.aggregate, self.capture.proc_id);
-            }
-        }
+        destroy(
+            self.tap,
+            self.aggregate,
+            self.capture.proc_id,
+            &self.destroyed,
+            &self.teardown,
+        );
         self.capture.proc_id = None;
-        destroy(self.tap, self.aggregate, &self.destroyed);
     }
 
     /// A watchdog over this tap, destroying it when its capture or the main thread stalls.
     pub fn watchdog(&self) -> Watchdog {
-        let (tap, aggregate, destroyed) = (self.tap, self.aggregate, Arc::clone(&self.destroyed));
+        let (tap, aggregate, proc_id) = (self.tap, self.aggregate, self.capture.proc_id);
+        let (destroyed, teardown) = (Arc::clone(&self.destroyed), Arc::clone(&self.teardown));
         Watchdog::start(
             Arc::clone(&self.destroyed),
             Arc::clone(&self.alive),
-            move || destroy(tap, aggregate, &destroyed),
+            move || destroy(tap, aggregate, proc_id, &destroyed, &teardown),
         )
     }
 }
@@ -449,13 +453,42 @@ fn muted_aggregate(processes: &[Id]) -> Result<(Id, Id, AudioStreamBasicDescript
     aggregate_for(&desc)
 }
 
+/// Destroys a tap and its aggregate that no capture or watchdog ever used.
+fn discard(tap: Id, aggregate: Id) {
+    destroy(
+        tap,
+        aggregate,
+        None,
+        &AtomicBool::new(false),
+        &Mutex::new(()),
+    );
+}
+
 /// Destroys a tap and its aggregate, once (the app's own end or the watchdog's): the tapped app
-/// is heard again. Safe from any thread.
-pub fn destroy(tap: Id, aggregate: Id, destroyed: &AtomicBool) {
+/// is heard again. Safe from any thread, holding `teardown` throughout, so a second caller
+/// returns only once the first has finished.
+///
+/// The aggregate's IOProc `proc_id`, if any, is stopped and destroyed first: the aggregate's
+/// destruction is asynchronous, and its IO thread went on calling the IOProc after its context
+/// was freed (a SIGSEGV in `io_proc` once the watchdog had released a tap, ps-0e3).
+fn destroy(
+    tap: Id,
+    aggregate: Id,
+    proc_id: AudioDeviceIOProcID,
+    destroyed: &AtomicBool,
+    teardown: &Mutex<()>,
+) {
+    let _held = teardown
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if destroyed.swap(true, Ordering::SeqCst) {
         return;
     }
     unsafe {
+        if proc_id.is_some() {
+            AudioDeviceStop(aggregate, proc_id);
+            AudioDeviceDestroyIOProcID(aggregate, proc_id);
+        }
         AudioHardwareDestroyAggregateDevice(aggregate);
         AudioHardwareDestroyProcessTap(tap);
     }
