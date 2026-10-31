@@ -5,10 +5,10 @@ namespace PS.Game.Sim
     /// <summary>
     /// Replays a session (unity-game.md, "Sessions and Replay") into a fresh sim on its config
     /// (<see cref="SessionRecord.Config"/>): each entry is added when the live sim took it, with its
-    /// recorded known-at time, and each key change and debug command is given at its effective time,
-    /// in the order the sim took them, so the replay steps through exactly the states the live run
+    /// recorded known-at time, and each key change, debug command and run control is given at its
+    /// effective time, in the order the sim took them, so the replay steps through exactly the states the live run
     /// did and settles the same event log, late entries included. At one time the entries go first:
-    /// pending entries never change what a key or command does.
+    /// pending entries never change what an input does.
     ///
     /// The entries' contents come from the plugin's record: supplied in order as they are read
     /// (<see cref="Supply"/>), from <c>entries.jsonl</c> or the plugin's Replay source, which may
@@ -32,19 +32,21 @@ namespace PS.Game.Sim
         {
             public double Effective;
             public int Order;
-            public bool IsKey;
+            public byte Type; // 0 a key change, 1 a debug command, 2 a run control
             public KeyRecord Key;
             public DebugCommand Command;
+            public RunControl Control;
         }
 
         public SessionReplay(SessionRecord record)
         {
             this.record = record ?? throw new ArgumentNullException(nameof(record));
             entries = new StreamEntry[record.Entries.Length];
-            inputs = new Input[record.Keys.Length + record.Commands.Length];
+            inputs = new Input[record.Keys.Length + record.Commands.Length + record.Controls.Length];
             int n = 0;
-            foreach (var k in record.Keys) inputs[n++] = new Input { Effective = k.Effective, Order = k.Order, IsKey = true, Key = k };
-            foreach (var c in record.Commands) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Command = c.Command };
+            foreach (var k in record.Keys) inputs[n++] = new Input { Effective = k.Effective, Order = k.Order, Type = 0, Key = k };
+            foreach (var c in record.Commands) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Type = 1, Command = c.Command };
+            foreach (var c in record.Controls) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Type = 2, Control = c.Control };
             Array.Sort(inputs, (a, b) => a.Order.CompareTo(b.Order));
         }
 
@@ -94,7 +96,8 @@ namespace PS.Game.Sim
                     continue;
                 }
                 ref readonly var input = ref inputs[nextInput++];
-                if (!input.IsKey) sim.Command(input.Command);
+                if (input.Type == 2) sim.Control(input.Control);
+                else if (input.Type == 1) sim.Command(input.Command);
                 else if (input.Key.Down) sim.Press(input.Key.Key, input.Key.Heard);
                 else sim.Release(input.Key.Key, input.Key.Heard);
             }

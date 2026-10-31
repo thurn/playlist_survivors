@@ -21,7 +21,7 @@ namespace PS.Game.Sim
     {
         public DebugCommand Command;
         public double Effective;
-        /// <summary>Its place among the run's key changes and debug commands, which a replay keeps.</summary>
+        /// <summary>Its place among the run's key changes, debug commands and run controls, which a replay keeps.</summary>
         public int Order;
     }
 }

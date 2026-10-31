@@ -24,7 +24,7 @@ namespace PS.Game.Sim
     /// <item><c>inputs.bin</c>: everything a replay needs, exactly (little-endian, doubles as their bits,
     /// so no runtime's number formatting can move a replay): the config's inputs, each entry's
     /// <see cref="EntryRecord"/> in arrival order (entry i is <c>entries.jsonl</c>'s line i), every key
-    /// change and debug command in the order the sim took them, the frontier the run settled to and
+    /// change, debug command and run control in the order the sim took them, the frontier the run settled to and
     /// its hash;</item>
     /// <item><c>run.json</c>: the same run for people: the build, runtime, platform, source and flags,
     /// the seed, the level, the end, the hash and the counts.</item>
@@ -35,12 +35,13 @@ namespace PS.Game.Sim
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
         const int Version = 1;
         static readonly byte[] Magic = { (byte)'P', (byte)'S', (byte)'R', (byte)'U', (byte)'N' };
-        const byte Press = 0, Release = 1, Command = 2;
+        const byte Press = 0, Release = 1, Command = 2, Control = 3;
 
         // The config's inputs.
         public ulong Seed;
         public double StartTime, Gate, KnownAtBudget;
         public bool Easy, HeroStands;
+        public RunStart Start;
         public SessionLevel Level;
         public bool Arena;
         /// <summary>The slice's camera footprint (<see cref="HordeConfig.CameraFootprint"/>); empty for an open level.</summary>
@@ -50,6 +51,7 @@ namespace PS.Game.Sim
         public EntryRecord[] Entries = new EntryRecord[0];
         public KeyRecord[] Keys = new KeyRecord[0];
         public DebugRecord[] Commands = new DebugRecord[0];
+        public ControlRecord[] Controls = new ControlRecord[0];
         /// <summary>The frontier the run settled to, its event count and the hash of its settled event log.</summary>
         public double End;
         public int Events;
@@ -85,12 +87,14 @@ namespace PS.Game.Sim
                 KnownAtBudget = config.KnownAtBudget,
                 Easy = config.Easy,
                 HeroStands = config.HeroStands,
+                Start = config.Start,
                 Level = config.Horde != null ? SessionLevel.Slice : SessionLevel.Open,
                 Arena = config.Arena != null,
                 Footprint = config.Horde?.CameraFootprint != null ? (double[])config.Horde.CameraFootprint.Clone() : new double[0],
                 Entries = sim.Stream.Accepted.ToArray(),
                 Keys = sim.Keys.ToArray(),
                 Commands = sim.Commands.ToArray(),
+                Controls = sim.Controls.ToArray(),
                 End = sim.Now,
                 Events = sim.EventCount,
                 Hash = sim.Hash,
@@ -118,6 +122,7 @@ namespace PS.Game.Sim
             config.KnownAtBudget = KnownAtBudget;
             config.Easy = Easy;
             config.HeroStands = HeroStands;
+            config.Start = Start;
             return config;
         }
 
@@ -135,6 +140,7 @@ namespace PS.Game.Sim
                 w.Write(KnownAtBudget);
                 w.Write(Easy);
                 w.Write(HeroStands);
+                w.Write((byte)Start);
                 w.Write((byte)Level);
                 w.Write(Arena);
                 w.Write(Footprint.Length);
@@ -161,7 +167,7 @@ namespace PS.Game.Sim
             File.WriteAllText(Path.Combine(dir, RunFile), RunJson());
         }
 
-        /// <summary>A key change or debug command, as <c>inputs.bin</c> holds them.</summary>
+        /// <summary>A key change, debug command or run control, as <c>inputs.bin</c> holds them.</summary>
         struct Input
         {
             public byte Type, Code;
@@ -169,14 +175,16 @@ namespace PS.Game.Sim
             public int Order;
         }
 
-        /// <summary>The key changes and debug commands, in the order the sim took them.</summary>
+        /// <summary>The key changes, debug commands and run controls, in the order the sim took them.</summary>
         List<Input> Inputs()
         {
-            var inputs = new List<Input>(Keys.Length + Commands.Length);
+            var inputs = new List<Input>(Keys.Length + Commands.Length + Controls.Length);
             foreach (var k in Keys)
                 inputs.Add(new Input { Type = k.Down ? Press : Release, Code = (byte)k.Key, Heard = k.Heard, Effective = k.Effective, Order = k.Order });
             foreach (var c in Commands)
                 inputs.Add(new Input { Type = Command, Code = (byte)c.Command, Effective = c.Effective, Order = c.Order });
+            foreach (var c in Controls)
+                inputs.Add(new Input { Type = Control, Code = (byte)c.Control, Effective = c.Effective, Order = c.Order });
             inputs.Sort((a, b) => a.Order.CompareTo(b.Order));
             return inputs;
         }
@@ -199,6 +207,7 @@ namespace PS.Game.Sim
                 r.KnownAtBudget = reader.ReadDouble();
                 r.Easy = reader.ReadBoolean();
                 r.HeroStands = reader.ReadBoolean();
+                r.Start = (RunStart)reader.ReadByte();
                 r.Level = (SessionLevel)reader.ReadByte();
                 r.Arena = reader.ReadBoolean();
                 r.Footprint = new double[reader.ReadInt32()];
@@ -212,17 +221,20 @@ namespace PS.Game.Sim
                 int n = reader.ReadInt32();
                 var keys = new List<KeyRecord>();
                 var commands = new List<DebugRecord>();
+                var controls = new List<ControlRecord>();
                 for (int i = 0; i < n; i++)
                 {
                     byte type = reader.ReadByte(), code = reader.ReadByte();
                     double heard = reader.ReadDouble(), effective = reader.ReadDouble();
                     if (type == Command) commands.Add(new DebugRecord { Command = (DebugCommand)code, Effective = effective, Order = i });
+                    else if (type == Control) controls.Add(new ControlRecord { Control = (RunControl)code, Effective = effective, Order = i });
                     else if (type == Press || type == Release)
                         keys.Add(new KeyRecord { Key = (Key)code, Down = type == Press, Heard = heard, Effective = effective, Order = i });
                     else throw new FormatException($"{path}: input {i} of unknown type {type}");
                 }
                 r.Keys = keys.ToArray();
                 r.Commands = commands.ToArray();
+                r.Controls = controls.ToArray();
             }
             var run = Path.Combine(dir, RunFile);
             if (File.Exists(run)) r.ReadDescriptions(JsonValue.Parse(File.ReadAllText(run)));
@@ -257,10 +269,12 @@ namespace PS.Game.Sim
                 "{{\n  \"format\": \"ps-game-session\",\n  \"version\": {0},\n  \"build\": {1},\n  \"runtime\": {2},\n" +
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"level\": {7},\n" +
                 "  \"arena\": {8},\n  \"easy\": {9},\n  \"heroStands\": {10},\n  \"startTime\": {11:R},\n  \"end\": {12:R},\n" +
-                "  \"hash\": \"{13:X16}\",\n  \"events\": {14},\n  \"entries\": {15},\n  \"keys\": {16},\n  \"commands\": {17}\n}}\n",
+                "  \"hash\": \"{13:X16}\",\n  \"events\": {14},\n  \"entries\": {15},\n  \"keys\": {16},\n  \"commands\": {17},\n" +
+                "  \"start\": {18},\n  \"controls\": {19}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, Seed,
                 Quote(Level == SessionLevel.Slice ? "slice" : "open"), Arena ? "true" : "false", Easy ? "true" : "false",
-                HeroStands ? "true" : "false", StartTime, End, Hash, Events, Entries.Length, Keys.Length, Commands.Length);
+                HeroStands ? "true" : "false", StartTime, End, Hash, Events, Entries.Length, Keys.Length, Commands.Length,
+                Quote(Start.ToString()), Controls.Length);
         }
 
         static string Quote(string s)

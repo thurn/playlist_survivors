@@ -9,8 +9,8 @@ namespace PS.Game.Sim.Tests
 {
     /// <summary>
     /// Sessions and replay (unity-game.md, "Sessions and Replay"): a live run on the slice's level,
-    /// fed as the client feeds it (entries arriving a frame at a time, keys and debug commands taken
-    /// at the frontier), is written to a session folder beside the plugin's record, and replays from
+    /// fed as the client feeds it (entries arriving a frame at a time, keys, debug commands and run
+    /// controls taken at the frontier), is written to a session folder beside the plugin's record, and replays from
     /// the folder alone to the same settled hash, late entries included.
     /// </summary>
     public class SessionTests
@@ -30,8 +30,13 @@ namespace PS.Game.Sim.Tests
         [TearDown]
         public void RemoveFolder() => Directory.Delete(dir, recursive: true);
 
-        static SimConfig Config(ulong seed = 3) =>
-            SliceLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint, seed);
+        /// <summary>The slice's level, started on a key, as a windowed run starts.</summary>
+        static SimConfig Config(ulong seed = 3)
+        {
+            var config = SliceLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint, seed);
+            config.Start = RunStart.OnKey;
+            return config;
+        }
 
         /// <summary>The plugin's record of house-128's first 20 s: the dump's lines, without its header.</summary>
         void RecordEntries()
@@ -43,7 +48,8 @@ namespace PS.Game.Sim.Tests
         /// <summary>
         /// A live run as the client plays it: each frame, the entries that have arrived (stamp + 60 ms,
         /// but none during <paramref name="stall"/>, whose entries arrive together after it), the keys
-        /// heard 90 ms before the frontier and the debug commands, then a step to the frontier.
+        /// heard 90 ms before the frontier, the debug commands and the run controls (the start, a pause
+        /// and its resume), then a step to the frontier.
         /// </summary>
         static Simulation Live(SimConfig config, IReadOnlyList<StreamEntry> entries, double until, double frame,
             (double from, double to) stall = default)
@@ -61,6 +67,10 @@ namespace PS.Game.Sim.Tests
             {
                 (7.0, DebugCommand.BreakStructures), (8.0, DebugCommand.SectionChange), (13.0, DebugCommand.Accent),
             });
+            var controls = new Queue<(double at, RunControl control)>(new[]
+            {
+                (1.5, RunControl.Start), (10.0, RunControl.Pause), (11.2, RunControl.Resume),
+            });
             while (frontier < until - 1e-12)
             {
                 frontier = Math.Min(until, frontier + frame);
@@ -73,6 +83,7 @@ namespace PS.Game.Sim.Tests
                     else sim.Release(key, sim.Now - 0.09);
                 }
                 while (commands.Count > 0 && commands.Peek().at <= frontier) sim.Command(commands.Dequeue().command);
+                while (controls.Count > 0 && controls.Peek().at <= frontier) sim.Control(controls.Dequeue().control);
                 sim.StepTo(frontier);
             }
             return sim;
@@ -102,6 +113,8 @@ namespace PS.Game.Sim.Tests
             Assert.Greater(Drive.Events(live, SimEventKind.Death).Count, 20, "a run with a horde to kill");
             Assert.AreEqual(10, live.Keys.Length);
             Assert.AreEqual(3, live.Commands.Length);
+            Assert.AreEqual(3, live.Controls.Length);
+            Assert.AreEqual(RunPhase.Playing, live.State.Phase, "the run started on its key");
 
             var sim = Replay(out var replay);
             Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16} at {sim.Now}, recorded {live.Hash:X16} at {live.Now}");
@@ -110,6 +123,7 @@ namespace PS.Game.Sim.Tests
             CollectionAssert.AreEqual(live.Stream.Accepted.ToArray(), sim.Stream.Accepted.ToArray(), "the replay takes each entry as the run did");
             var record = replay.Record;
             Assert.AreEqual(SessionLevel.Slice, record.Level);
+            Assert.AreEqual(RunStart.OnKey, record.Start);
             Assert.IsTrue(record.Arena);
             CollectionAssert.AreEqual(Footprint, record.Footprint);
             CollectionAssert.AreEqual(new[] { "--file", "house-128.ogg" }, record.Flags);
@@ -143,7 +157,10 @@ namespace PS.Game.Sim.Tests
             // Known at stamp + B instead, as if there had been no stall, the run differs: the record is what keeps it.
             var unstalled = new Simulation(config);
             foreach (var e in entries) unstalled.AddKnown(e, Math.Max(unstalled.Now, e.Stamp + B));
-            var naive = new SessionReplay(new SessionRecord { Keys = replay.Record.Keys, Commands = replay.Record.Commands, End = live.Now });
+            var naive = new SessionReplay(new SessionRecord
+            {
+                Keys = replay.Record.Keys, Commands = replay.Record.Commands, Controls = replay.Record.Controls, End = live.Now,
+            });
             naive.StepTo(unstalled, double.PositiveInfinity);
             Assert.AreNotEqual(live.Hash, unstalled.Hash);
         }

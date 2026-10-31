@@ -62,5 +62,7 @@ namespace PS.Game.Sim
     {
         public RunControl Control;
         public double Effective;
+        /// <summary>Its place among the run's key changes, debug commands and run controls, which a replay keeps.</summary>
+        public int Order;
     }
 }

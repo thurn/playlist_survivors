@@ -179,7 +179,7 @@ namespace PS.Game.Sim
         /// </summary>
         public void Control(RunControl control)
         {
-            controls.Add(new ControlRecord { Control = control, Effective = Now });
+            controls.Add(new ControlRecord { Control = control, Effective = Now, Order = inputs++ });
             Run.Control(this, control, Now);
         }
 
