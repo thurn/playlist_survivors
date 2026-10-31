@@ -136,6 +136,26 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ABeatlessTrackAfterTheMusicStopsPlaysOnTheFreePulseAfterEightSeconds()
+        {
+            // The piano aria after a song's end: music again from 52, its beat not reliable until 80.
+            var song = new FixtureSong(3).Beats(0, 40, 120).Gap(40, 52, silent: true).Gap(52, 80).Beats(80, 100, 120);
+            var sim = Start(new SimConfig(), Known(song));
+            sim.StepTo(100);
+
+            var freezes = Freezes(sim);
+            Assert.AreEqual(2, freezes.Count);
+            Assert.AreEqual(FreezeReason.MusicStopped, freezes[0].Reason);
+            int tick60 = sim.Stream.Ticks.ToArray().ToList().FindIndex(t => t.T >= 52 + RunRules.BeatlessResumeS - Eps);
+            double known60 = sim.Stream.KnownAt(EntryKind.Tick, tick60);
+            double resume = freezes[1].T;
+            Assert.IsFalse(freezes[1].Starts);
+            Assert.AreEqual(StrideSteps(sim).First(t => t >= known60 - Eps), resume, Eps, "no beat ahead: the next stride step");
+            Assert.Less(resume, 61, "not held until the beat at 80");
+            Assert.AreEqual(freezes[0].T + (100 - resume), sim.State.RunClock, 1e-6);
+        }
+
+        [Test]
         public void AShortGapDoesNotStopTheMusic()
         {
             var song = new FixtureSong(3).Beats(0, 40, 120).Gap(40, 42, silent: true).Beats(42, 60, 120);

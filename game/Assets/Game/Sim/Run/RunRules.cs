@@ -21,7 +21,9 @@ namespace PS.Game.Sim
     ///   confirmed end, or on <see cref="RunControl.Watchdog"/>: the world freezes on the first
     ///   stride step after that is known. It resumes on the second downbeat after the beat locks
     ///   again: the first reliable beat after the quiet, with one whole bar to hear the tempo.
-    ///   Quiet again before then restarts the lock.
+    ///   Quiet again before then restarts the lock. Music back for <see cref="BeatlessResumeS"/>
+    ///   with no lock (a beatless track after a gap) lets go too: play resumes on the next beat, or
+    ///   the next stride step on the free pulse, as in a beatless passage mid-song.
     /// - <b>Victory</b>: when the run clock reaches the schedule's duration the run's
     ///   <see cref="RunPhase.Finale"/> begins; the finale's blast fires on the next downbeat the
     ///   world plays (every enemy and structure within its radius of the hero, a
@@ -40,6 +42,12 @@ namespace PS.Game.Sim
         public const double SilentEnergy = 0.01;
         public const double QuietS = 5;
         public const double EndQuietS = 3;
+        /// <summary>
+        /// How long the music may play after a stop with no lock before the world plays on without one:
+        /// past most tracks' lock and a bar heard, short of holding a beatless track (the piano aria's beat
+        /// turns reliable 56 s in) under MUSIC STOPPED.
+        /// </summary>
+        public const double BeatlessResumeS = 8;
         /// <summary>How far the finale's blast throws a structure's shards, metres: twice the heavy strike's.</summary>
         public const double BlastForceM = 9.26;
 
@@ -197,6 +205,8 @@ namespace PS.Game.Sim
                 {
                     quietFrom = double.NaN;
                     if (double.IsNaN(clearFrom)) clearFrom = tick.T;
+                    if (Holds(FreezeReason.MusicStopped) && lockBeat < 0 && tick.T >= Math.Max(clearFrom, musicSince) + BeatlessResumeS - 1e-9)
+                        Thaw(FreezeReason.MusicStopped);
                     continue;
                 }
                 clearFrom = double.NaN;
