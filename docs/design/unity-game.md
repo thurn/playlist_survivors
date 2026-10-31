@@ -1221,7 +1221,7 @@ strikes or projectiles.
   erases the strike pose.
 
 **Shipped (ps-msz.3.3).** The sim's sword is `Sim/Weapons/Sword.cs`, turned
-on by `SimConfig.Sword` (weapon, rank, stats, wind-up). As built:
+an arsenal slot since ps-msz.6.4 (`SimConfig.Arsenal`: its rank, the hero's stats, `SwordWindupS`). As built:
 
 - `n = max(1, floor(rank amount + Amount))` strikes per committed beat, at
   `T + k * p / n`, p the interval to the next beat when it is known at
@@ -1313,6 +1313,30 @@ the sword's today:
   `IsSword` attacks (the sword and Bloody Tear). A new weapon draws,
   sounds and animates nothing until its own bead gives it a look. A hit's
   white chips and hit sound play for any weapon.
+
+**Shipped (ps-msz.6.4).** The arsenal's core, `Sim/Arsenal/` (`SimConfig.Arsenal`,
+with `SimConfig.Content` now the one content field for the horde and the arsenal):
+
+- `Arsenal` holds six weapon and six passive slots (`State.WeaponSlots`,
+  `State.PassiveSlots`) and the hero's final stats (`State.Stats`): base, plus each
+  passive rank (Hollow Heart compounds max health 20% a rank and heals what it adds),
+  clamped to progression.json's caps. Armor and max health reach `HeroHealth` at once;
+  Recovery heals per second of run clock.
+- It is **one timed source** in `Simulation.RunTick`, its slots in slot order. A
+  weapon is a `Weapon` (Sim/Weapons/Weapon.cs). The sword keeps its beat cadence
+  (`OnBeats`) through its own `NextTime`/`Fire`/`Tick`. Every other weapon is shot by
+  the arsenal: its cooldown counts on the run clock from when it was learned,
+  interval times Cooldown at a time, never from a shot. A shot ready at s fires on the
+  first point of its grid (beats or eighths) at or after s among the beats revealed
+  then (`BeatClock.GridAtOrAfter`), the sixteenth after the slot's previous shot if
+  that one holds the point, or at s with no grid point known. A freeze unplans the
+  ready shots and the resume plans them again, so they fire on the resume beat.
+  Throughput stays within 0.2% of `600 / interval` at 70, 128 and 174 BPM.
+- A weapon whose bead hasn't landed is the base `Weapon`: ranked, timed and shot, each
+  shot an attack event naming it. 6.5 to 6.7 subclass it (override `Shoot`, or add
+  times of their own) and add their case to the factory in `Simulation`'s constructor.
+- `ArsenalConfig.Cards = false` counts levels without opening cards, for tests of
+  other systems.
 
 ### Enemies
 
@@ -1544,6 +1568,41 @@ Pickups and progression are native's.
 - **Chests**: dropped by scheduled bosses, collected only when the hero is
   clear of the crowd. The roulette ticks on eighth notes and lands on a
   downbeat. Chests may evolve weapons at minutes 10, 15, 20 and 25.
+
+**Shipped (ps-msz.6.4).** Gems, experience and the level-up (`Sim/Arsenal/`):
+
+- **Gems** (`Gems`): a death drops a gem worth `floor((r + 0.5) * xp)` from the run's
+  generator, so a weak enemy's is often worth nothing and none drops. At the field's
+  cap of 400 a drop grows the nearest gem (a `Drop` again, same item). At a tick's end
+  a gem within the pickup radius (4.44 m times Magnet) plus its body takes off
+  (`GemFlight`) and flies by native's attraction, stepped at 60 Hz of run clock: an
+  outward kick, then a pull ever faster. Collected, it arrives on the first sixteenth
+  at least 0.06 s later: the `Pickup`, which the client chimes up its pentatonic chain,
+  and the experience. Gems wait while the world is frozen.
+- **Experience** (`LevelUps`): value times Growth (plus 1 at levels 20 and 40) against
+  `factor x level²`. `State.Level`, `Experience`, `ExperienceFill` and
+  `PendingLevels`, copied with the offer into the client's `SimSnapshot`.
+- **Offers** (`Offers`): native's offer table and fallback exactly; the tests check
+  every level from 2 to 70 against native's own cards along two pick paths.
+- **The level-up**: each level opens an offer (`LevelUp`: its three cards packed, and
+  the beats they flip in on, `State.Offer`) and freezes the world (`LevelUp`). Past the
+  revealed beats the next card flips a period of the latest beat on, where native
+  waits its free period. The keys are recorded keys: Left, Up and Right select card 1,
+  2 and 3 (native's), Space or Enter (`Key.Enter`) confirms once the third is in, each
+  a `Card` event. Keys held when the cards open wait for a fresh press, and the hero
+  lets go of its held keys, so the key that picked a card never walks it afterwards.
+  The next level's offer opens at once; after the last, play resumes on the next beat.
+  While the pause menu is up the cards take no keys.
+- **The client**: `GemView` draws the gems as instanced faceted crystals
+  (Resources/Gems/Gem.shader) in progression.json's blue, green and red, hovering and
+  throbbing on the beat, popping in at their drop, kicked out and pulled into the
+  hero's chest on their flight. `LevelUpCards` (Resources/Cards) is a minimal card
+  panel until the HUD (ps-msz.6.9) draws them. Headless and fixed-time runs confirm the
+  selected card through `AutoCards`, recorded Enter presses.
+- **Pacing**: on the slice's horde (220 alive from the start) in an open arena, a hero
+  walking a square through its kills reaches level 33 by 5:00 of run clock, far faster
+  than native's run (about level 10). The run's schedule (ps-msz.6.2) is what that
+  should be measured against.
 
 ## Presentation
 

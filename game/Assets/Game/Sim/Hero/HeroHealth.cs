@@ -20,18 +20,20 @@ namespace PS.Game.Sim
         const double DefaultMaxHealth = 120;
 
         readonly HeroState hero;
-        readonly double armor;
         readonly double lockout;
         readonly double contactScale;
         readonly bool stands;
         double hurtableFrom = double.NegativeInfinity;
+
+        /// <summary>What a lunge's damage loses: progression.json's base, then the arsenal's final Armor.</summary>
+        public double Armor { get; set; }
 
         public HeroHealth(HeroState hero, SimConfig config, GameContent content)
         {
             this.hero = hero;
             var def = content?.Progression.Hero;
             hero.MaxHealth = hero.Health = def?.Stats.MaxHp ?? DefaultMaxHealth;
-            armor = def?.Stats.Armor ?? 0;
+            Armor = def?.Stats.Armor ?? 0;
             lockout = def?.InvulnerableS ?? 0;
             contactScale = config.Easy ? EasyContactScale : 1;
             stands = config.HeroStands;
@@ -50,7 +52,7 @@ namespace PS.Game.Sim
             double damage = 0;
             if (t >= hurtableFrom - 1e-9)
             {
-                damage = Math.Max(1, power * contactScale - armor);
+                damage = Math.Max(1, power * contactScale - Armor);
                 hurtableFrom = t + lockout;
                 double floor = stands ? Math.Min(hero.Health, StandingShare * hero.MaxHealth) : 0;
                 hero.Health = Math.Max(floor, hero.Health - damage);

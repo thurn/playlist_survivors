@@ -1,4 +1,5 @@
 using System;
+using PS.Game.Sim.Content;
 using PS.Game.Sim.Level;
 
 namespace PS.Game.Sim
@@ -25,8 +26,9 @@ namespace PS.Game.Sim
     /// then the run's own moments (the run clock reaching its duration, the victory card:
     /// <see cref="RunRules"/>), then the beat (the run's start, a resume or the finale's blast on it, then on a downbeat, structures a zone change marked regrow, then a zone change
     /// may land, then bosses due land: <see cref="Structures"/>, <see cref="Zones"/>, <see cref="Horde"/>), then the stride step (the music stopping on it) and the
-    /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
-    /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
+    /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the arsenal's times in slot order: the sword's impacts, cleave bands, plans and wind-ups
+    /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat, the other weapons' shots, then the gems' arrivals
+    /// (<see cref="Arsenal"/>). The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
     /// systems run, the hero's held strides first (judged in heard time, a lead after their steps:
     /// <see cref="Hero"/>). A press moves the hero at once (a press stride), at the frontier, drawn
@@ -71,13 +73,20 @@ namespace PS.Game.Sim
             var arena = config.Arena ?? ArenaData.Open();
             Arena = new ArenaGrid(arena);
             hero = new Hero(State.Hero, Arena, Strides);
-            if (config.Horde != null) Horde = new Horde(config.Horde, Stream, Beats, Strides, Arena, State);
-            var content = config.Horde?.Content ?? config.Sword?.Content;
+            var content = config.Content;
+            if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State);
             Health = new HeroHealth(State.Hero, config, content);
             Structures = new Structures(arena, Arena, State, Horde);
             if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures, State.Now);
-            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde, Structures, Zones);
             Run = new RunRules(config, content, Stream, State);
+            if (config.Arsenal != null)
+            {
+                double windup = config.Arsenal.SwordWindupS;
+                Arsenal = new Arsenal(config.Arsenal, content, State, Stream, Beats, Run, Health, (arsenal, def, index) =>
+                    def.Shape.Kind == ShapeKind.Sword
+                        ? new Sword(arsenal, def, index, windup, content, Stream, Beats, State, Horde, Structures, Zones)
+                        : new Weapon(arsenal, State, def, index));
+            }
             if (config.Easy && content != null)
             {
                 Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
@@ -96,8 +105,10 @@ namespace PS.Game.Sim
         /// <summary>The enemies, or null in a run without them; the client reads them through <see cref="SimState.Enemies"/>.</summary>
         internal Horde Horde { get; }
         internal HeroHealth Health { get; }
+        /// <summary>The hero's weapons, passives, gems and level-ups, or null in a run without them.</summary>
+        internal Arsenal Arsenal { get; }
         /// <summary>The hero's sword, or null in a run without it.</summary>
-        internal Sword Sword { get; }
+        internal Sword Sword => Arsenal?.Sword;
         /// <summary>The level's crystal structures; the client reads them through <see cref="SimState.Structures"/>.</summary>
         internal Structures Structures { get; }
         /// <summary>The zones, or null in a run without content (whose schedule holds their rules).</summary>
@@ -133,15 +144,20 @@ namespace PS.Game.Sim
         public void Press(Key key, double heard)
         {
             keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now, Order = inputs++ });
-            hero.Press(this, key, heard);
+            bool cards = Arsenal != null && Arsenal.LevelUps.Press(this, key, Now);
+            hero.Press(this, key, heard, cards);
         }
 
         /// <summary>Records a key release heard at song time <paramref name="heard"/>; it takes effect now.</summary>
         public void Release(Key key, double heard)
         {
             keys.Add(new KeyRecord { Key = key, Down = false, Heard = heard, Effective = Now, Order = inputs++ });
+            Arsenal?.LevelUps.Release(key);
             hero.Release(this, key, heard);
         }
+
+        /// <summary>The cards opened: the hero lets go of its held keys, so a key held through them never walks it after.</summary>
+        internal void LetGoOfHeldKeys() => hero.LetGo();
 
         /// <summary>Every key change recorded, in order.</summary>
         public ReadOnlySpan<KeyRecord> Keys => keys.AsSpan();
@@ -211,9 +227,9 @@ namespace PS.Game.Sim
                 double beat = Beats.NextTime(cursor);
                 double step = Strides.NextTime(cursor);
                 double horde = Horde?.NextTime(cursor) ?? double.PositiveInfinity;
-                double sword = Sword?.NextTime(cursor) ?? double.PositiveInfinity;
+                double arsenal = Arsenal?.NextTime(cursor) ?? double.PositiveInfinity;
                 double run = Run.NextTime();
-                double next = Math.Min(Math.Min(Math.Min(beat, step), Math.Min(horde, sword)), run);
+                double next = Math.Min(Math.Min(Math.Min(beat, step), Math.Min(horde, arsenal)), run);
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
@@ -259,7 +275,7 @@ namespace PS.Game.Sim
                 }
                 else
                 {
-                    Sword.Fire(this, sword);
+                    Arsenal.Fire(this, arsenal);
                 }
             }
             cursor = end;
@@ -270,7 +286,7 @@ namespace PS.Game.Sim
             Run.Tick(end);
             Chickens?.Tick(this, end);
             Horde?.Tick(this, end);
-            Sword?.Tick(end);
+            Arsenal?.Tick(this, end);
             Zones?.Tick(this, end);
         }
 

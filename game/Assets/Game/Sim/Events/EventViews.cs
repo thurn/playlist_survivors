@@ -206,6 +206,31 @@ namespace PS.Game.Sim
         public double T => e.T;
         public int Level => e.I0;
         public int Offer => e.I1;
+        /// <summary>Card <paramref name="k"/> (0 to 2): its item and ranks.</summary>
+        public OfferCard Card(int k) => OfferCard.Unpack(e.I2 >> (10 * k));
+        /// <summary>When card <paramref name="k"/> flips in; the cards are confirmed only after the third.</summary>
+        public double Reveal(int k) => k == 0 ? e.D0 : k == 1 ? e.D1 : e.D2;
+    }
+
+    public readonly struct CardEvent
+    {
+        readonly SimEvent e;
+        public CardEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Offer => e.I0;
+        public int Card => e.I1;
+        /// <summary>The card was confirmed (its pick applied), rather than selected.</summary>
+        public bool Confirmed => e.I2 != 0;
+    }
+
+    public readonly struct GemFlightEvent
+    {
+        readonly SimEvent e;
+        public GemFlightEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Gem => e.I0;
+        public double X => e.D0;
+        public double Y => e.D1;
     }
 
     public readonly struct ChestEvent

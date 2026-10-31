@@ -77,7 +77,7 @@ namespace PS.Game.Sim
         /// </summary>
         public static SessionRecord Of(SimConfig config, Simulation sim)
         {
-            if (config.Horde != null && (config.Sword == null || !Same(config.Horde.Roster, SliceLevel.Roster)))
+            if (config.Horde != null && (config.Arsenal == null || !Same(config.Horde.Roster, SliceLevel.Roster)))
                 throw new NotSupportedException("a session records the slice's level or an open one");
             return new SessionRecord
             {

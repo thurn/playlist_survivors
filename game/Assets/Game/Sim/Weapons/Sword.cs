@@ -60,7 +60,7 @@ namespace PS.Game.Sim
     /// - Nothing new winds up while the world is frozen or the hero has fallen; an attack already
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
     /// </summary>
-    internal sealed class Sword
+    internal sealed class Sword : Weapon
     {
         /// <summary>A strong onset or a forecast this close to a beat makes its strike heavy (native's FORECAST_WINDOW).</summary>
         public const double AccentWindow = 0.05;
@@ -96,11 +96,7 @@ namespace PS.Game.Sim
         readonly Structures structures;
         readonly Zones zones;
         readonly EnemyRole[] roles;
-        readonly WeaponDef weapon;
-        readonly int weaponIndex;
         readonly double windup;
-        int rank;
-        Stats stats;
 
         readonly Strike[] queue = new Strike[QueueCapacity];
         int head, count;
@@ -119,23 +115,20 @@ namespace PS.Game.Sim
         readonly int[] reached;
         readonly double[] aimAngle, aimDist;
 
-        public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde, Structures structures, Zones zones)
+        public Sword(Arsenal arsenal, WeaponDef def, int index, double windupS, GameContent content, BeliefLog log, BeatClock clock,
+            SimState state, Horde horde, Structures structures, Zones zones)
+            : base(arsenal, state, def, index)
         {
-            if (config.Content == null) throw new ArgumentException("the sword needs content");
-            weapon = config.Content.Weapon(config.Weapon);
-            weaponIndex = config.Content.WeaponIndex(config.Weapon);
-            if (weapon.Shape.Kind != ShapeKind.Sword) throw new ArgumentException(config.Weapon + " is not a sword");
-            if (!(config.WindupS > 0)) throw new ArgumentException("a positive wind-up");
+            if (def.Shape.Kind != ShapeKind.Sword) throw new ArgumentException(def.Id + " is not a sword");
+            if (!(windupS > 0)) throw new ArgumentException("a positive wind-up");
             this.log = log;
             this.clock = clock;
             this.state = state;
             this.horde = horde;
             this.structures = structures;
             this.zones = zones;
-            windup = config.WindupS;
-            rank = config.Rank;
-            stats = config.Stats ?? config.Content.Progression.Hero.Stats;
-            roles = config.Content.Roles;
+            windup = windupS;
+            roles = content.Roles;
             int cap = state.EnemyStore.Length;
             reached = new int[cap];
             aimAngle = new double[cap];
@@ -143,19 +136,16 @@ namespace PS.Game.Sim
             for (int w = 0; w < WaveCapacity; w++) waveHit[w] = new bool[cap];
         }
 
-        WeaponRank Numbers => weapon.Rank(rank);
+        public override bool OnBeats => true;
 
         /// <summary>Strikes per beat: one, and one more per point of Amount.</summary>
-        public int StrikesPerBeat => Math.Max(1, (int)Math.Floor(Numbers.Amount + stats.Amount + 1e-9));
+        public int StrikesPerBeat => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
 
         /// <summary>A strike's damage before the heavy multiplier: the rank's power times Might, at any tempo.</summary>
-        public double Power => Numbers.Power * stats.Might;
+        public double Power => Numbers.Power * Stats.Might;
 
         public double Reach(bool heavy) =>
-            weapon.Shape.RadiusM * Numbers.Area * stats.Area * (heavy ? weapon.Shape.HeavyReachScale : 1);
-
-        /// <summary>The pulse's interval with no beat known ahead.</summary>
-        public double Interval => Numbers.IntervalS * stats.Cooldown;
+            Def.Shape.RadiusM * Numbers.Area * Stats.Area * (heavy ? Def.Shape.HeavyReachScale : 1);
 
         /// <summary>A death launch's distance in metres: native's knockback distance times the weapon's, longer for a heavier hit.</summary>
         double Launch(double weight) => Horde.KnockbackM * Numbers.Knockback * weight;
@@ -168,7 +158,7 @@ namespace PS.Game.Sim
         ref Strike At(int k) => ref queue[(head + k) % QueueCapacity];
 
         /// <summary>The next of the sword's exact times at or after <paramref name="floor"/>.</summary>
-        internal double NextTime(double floor)
+        internal override double NextTime(double floor)
         {
             double t = PlanTime(floor);
             if (count > 0) t = Math.Min(t, At(0).Impact);
@@ -204,7 +194,7 @@ namespace PS.Game.Sim
         /// beat's plan or a wind-up, in that order at one time. Times compare exactly, so each
         /// happens at its own time, never at a neighbour's a rounding away.
         /// </summary>
-        internal void Fire(Simulation sim, double t)
+        internal override void Fire(Simulation sim, double t)
         {
             if (count > 0 && At(0).Impact <= t)
             {
@@ -239,7 +229,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>The per-tick system, at the tick's end: with no beat known ahead, the pulse on the sword's raw interval.</summary>
-        internal void Tick(double end)
+        internal override void Tick(double end)
         {
             if (Holding || count > 0) return;
             double interval = Interval;
@@ -293,7 +283,7 @@ namespace PS.Game.Sim
             s.Reach = Reach(heavy);
             state.Hero.PositionAt(t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
-            sim.Emit(SimEvent.SwordAttack(t, weaponIndex, kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
+            sim.Emit(SimEvent.SwordAttack(t, Index, kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
         }
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>).</summary>
@@ -400,12 +390,12 @@ namespace PS.Game.Sim
             if (s.Cancelled || !s.Wound || state.Hero.Fallen) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
             int wave = s.Heavy ? StartWave(sim, s, t, hx, hy) : -1;
-            double launch = Launch(s.Heavy ? weapon.Shape.HeavyDamage : 1);
+            double launch = Launch(s.Heavy ? Def.Shape.HeavyDamage : 1);
             structures.Strike(sim, t, hx, hy, s.Reach, s.Heavy ? StructureHit.HeavyStrike : StructureHit.Strike, launch,
                 wave >= 0 ? waves[wave].Id : -1);
             if (horde == null) return;
             var enemies = state.EnemyStore;
-            double damage = Power * (s.Heavy ? weapon.Shape.HeavyDamage : 1);
+            double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1);
             var how = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
             int n = horde.InReach(t, hx, hy, s.Reach, reached);
             for (int k = 0; k < n; k++)
@@ -415,7 +405,7 @@ namespace PS.Game.Sim
                 double dx = x - hx, dy = y - hy;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (wave >= 0) waveHit[wave][i] = true;
-                horde.Damage(sim, i, t, damage, weaponIndex, how, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY,
+                horde.Damage(sim, i, t, damage, Index, how, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY,
                     Numbers.Knockback, launch);
             }
         }
@@ -427,7 +417,7 @@ namespace PS.Game.Sim
             while (w < WaveCapacity && waves[w].Active) w++;
             // Waves last two beats and heavy strikes come a beat apart at most: a full set is never reached.
             if (w == WaveCapacity) return -1;
-            var shape = weapon.Shape;
+            var shape = Def.Shape;
             int bands = (int)Math.Ceiling(shape.WaveBeyondM / shape.WaveBandM - 1e-9);
             waves[w] = new Wave
             {
@@ -450,7 +440,7 @@ namespace PS.Game.Sim
         void Band(Simulation sim, int w, double t)
         {
             ref var wv = ref waves[w];
-            double outer = Math.Min(wv.Inner + weapon.Shape.WaveBandM * (wv.Band + 1), wv.Outer);
+            double outer = Math.Min(wv.Inner + Def.Shape.WaveBandM * (wv.Band + 1), wv.Outer);
             if (++wv.Band >= wv.Bands) wv.Active = false;
             if (state.Hero.Fallen) return;
             double launch = Launch(1);
@@ -468,7 +458,7 @@ namespace PS.Game.Sim
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (d + 0.5 * roles[enemies[i].Role].RadiusM <= wv.Inner) continue;
                 hit[i] = true;
-                horde.Damage(sim, i, t, wv.Damage, weaponIndex, WeaponHit.Cleave, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0,
+                horde.Damage(sim, i, t, wv.Damage, Index, WeaponHit.Cleave, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0,
                     Numbers.Knockback, launch);
             }
         }

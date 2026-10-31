@@ -1,3 +1,4 @@
+using PS.Game.Sim.Content;
 using PS.Game.Sim.Level;
 
 namespace PS.Game.Sim
@@ -26,11 +27,14 @@ namespace PS.Game.Sim
         /// <summary>The level's arena; null plays an open one (<see cref="ArenaData.Open"/>).</summary>
         public ArenaData Arena;
 
-        /// <summary>The enemies' content, arena, camera footprint and schedule; null runs without enemies.</summary>
+        /// <summary>The game's content (game/Content), which the horde and the arsenal need; null runs without either.</summary>
+        public GameContent Content;
+
+        /// <summary>The enemies' camera footprint and schedule; null runs without enemies.</summary>
         public HordeConfig Horde;
 
-        /// <summary>The hero's sword; null runs without it.</summary>
-        public SwordConfig Sword;
+        /// <summary>The hero's starting weapons and passives, its gems and level-ups; null runs without them.</summary>
+        public ArsenalConfig Arsenal;
 
         /// <summary>How the run starts: at once (the default, for tests and bots), on a key, or after clear beat.</summary>
         public RunStart Start;

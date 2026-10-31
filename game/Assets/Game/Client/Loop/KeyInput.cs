@@ -9,7 +9,8 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, with each event's own timestamp
-    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps. An
+    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps, and Enter (with the
+    /// arrows and Space) answers a level-up's cards. An
     /// event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps
     /// to the song time heard (<see cref="IGameClock.KeySong"/>). Two physical keys on one
     /// direction press it once and release it when both are up.
@@ -36,10 +37,11 @@ namespace Game.Client.Loop
             ("leftArrow", SimKey.Left), ("a", SimKey.Left),
             ("rightArrow", SimKey.Right), ("d", SimKey.Right),
             ("space", SimKey.Space),
+            ("enter", SimKey.Enter), ("numpadEnter", SimKey.Enter),
         };
 
         readonly bool[] _physical = new bool[Bindings.Length];
-        readonly int[] _held = new int[(int)SimKey.Space + 1];
+        readonly int[] _held = new int[(int)SimKey.Enter + 1];
         readonly Change[] _queue = new Change[Capacity];
         readonly KeyControl[] _controls = new KeyControl[Bindings.Length];
         Keyboard _keyboard;

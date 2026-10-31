@@ -16,7 +16,8 @@ namespace PS.Game.Sim.Tests
         static SimConfig Run(ulong seed = 1) => new SimConfig
         {
             Seed = seed,
-            Horde = new HordeConfig { Content = HordeFixture.Content, Schedule = true },
+            Content = HordeFixture.Content,
+            Horde = new HordeConfig { Schedule = true },
             HeroStands = true,
         };
 

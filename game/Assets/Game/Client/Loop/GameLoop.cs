@@ -10,6 +10,7 @@ using Game.Client.Effects;
 using Game.Client.Hero;
 using Game.Client.Look;
 using Game.Client.Music;
+using Game.Client.Pickups;
 using Game.Client.Sound;
 using Game.Client.Structures;
 using PS.Game.Sim;
@@ -113,6 +114,8 @@ namespace Game.Client.Loop
         CrystalStructures _crystal;
         StructureShatter _shatter;
         CrowdView _crowd;
+        GemView _gems;
+        LevelUpCards _cards;
         StreamWriter _out, _structuresOut;
         bool _fixed, _done, _quitting, _interactive;
         bool _deviceGiven, _focusLost;
@@ -243,6 +246,17 @@ namespace Game.Client.Loop
                 // After the look, whose camera rig it culls with.
                 _crowd = new CrowdView(camera);
                 Driver.Events.Subscribe(_crowd);
+            }
+            if (content != null)
+            {
+                // Instanced crystals; a headless player draws nothing.
+                if (SystemInfo.supportsInstancing)
+                {
+                    _gems = new GemView(content.Progression.Gems);
+                    Driver.Events.Subscribe(_gems);
+                }
+                _cards = new LevelUpCards(transform, content);
+                Driver.Events.Subscribe(_cards);
             }
             var roles = new RoleLooks(content);
             var library = compute ? EffectLibrary.TryLoad() : null;
@@ -415,6 +429,7 @@ namespace Game.Client.Loop
             if (!_interactive)
             {
                 if (state.FrozenFor(FreezeReason.Pause)) _pause.Show(); // a scripted pause's menu, for stills
+                AutoCards.Confirm(Driver.Sim); // nobody to choose: the selected card, once all three are in
                 return;
             }
             if (state.Phase == RunPhase.Waiting)
@@ -605,6 +620,8 @@ namespace Game.Client.Loop
             _crystal?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();
+            _gems?.Dispose();
+            _cards?.Dispose();
             _out?.Dispose();
             _out = null;
             _structuresOut?.Dispose();

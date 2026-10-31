@@ -77,27 +77,28 @@ namespace PS.Game.Sim
 
         int beat;
         Phase phase;
+        /// <summary>Counts the chests dropped: a chest's item in its drop.</summary>
         int drops;
         bool navChanged;
 
         /// <summary>Easy's floor chickens, which a dying brute may drop; null off Easy.</summary>
         internal FloorChickens Chickens;
 
-        public Horde(HordeConfig config, BeliefLog log, BeatClock clock, StrideGrid strides, ArenaGrid arena, SimState state)
+        public Horde(HordeConfig config, GameContent content, BeliefLog log, BeatClock clock, StrideGrid strides, ArenaGrid arena, SimState state)
         {
-            if (config.Content == null) throw new ArgumentException("the horde needs content");
+            if (content == null) throw new ArgumentException("the horde needs content");
             this.log = log;
             this.clock = clock;
             this.strides = strides;
             this.state = state;
-            roles = config.Content.Roles;
-            heroReferenceMps = config.Content.Progression.Hero.SpeedMps;
+            roles = content.Roles;
+            heroReferenceMps = content.Progression.Hero.SpeedMps;
             tileM = arena.TileM;
 
-            int cap = config.Content.Schedule.Cap;
+            int cap = content.Schedule.Cap;
             enemies = new EnemyState[cap];
             state.EnemyStore = enemies;
-            state.WeaponDamageStore = new double[config.Content.Weapons.Length];
+            state.WeaponDamageStore = new double[content.Weapons.Length];
             free = new int[cap];
             for (int i = 0; i < cap; i++) free[freeCount++] = cap - 1 - i;
             baseX = new double[cap];
@@ -116,8 +117,8 @@ namespace PS.Game.Sim
             hashHead = new int[hashW * hashH];
             hashStamp = new int[hashW * hashH];
 
-            spawner = new Spawner(config, this, log, state);
-            bosses = new BossMoves(config.Content, cap);
+            spawner = new Spawner(config, content, this, log, state);
+            bosses = new BossMoves(content, cap);
             // Paths around structures run longer than the straight line to the farthest enemy.
             double reach = 3 * Spawner.RecycleViews * spawner.ViewWidth;
             field = new FlowField(Nav, reach);
@@ -499,7 +500,7 @@ namespace PS.Game.Sim
         /// Enemy <paramref name="i"/> dies at <paramref name="t"/>, struck along (dirX, dirY): it
         /// leaves the horde at once (its slot is free for a later spawn), with a death event whose
         /// force is <paramref name="launch"/>, the launch's distance in metres, and drops a gem of
-        /// its role's experience (collecting it is the arsenal's, M3); a boss carrying a chest drops
+        /// its role's experience (<see cref="Gems"/>, with an arsenal); a boss carrying a chest drops
         /// it (opening it is the chests'). On Easy a boss drops its floor chickens, and a brute may
         /// drop one.
         /// </summary>
@@ -516,7 +517,7 @@ namespace PS.Game.Sim
             state.EnemiesAlive--;
             free[freeCount++] = i;
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
-            sim.Emit(SimEvent.Drop(t, drops++, ItemKind.Gem, x, y, roles[e.Role].Xp));
+            sim.Arsenal?.Gems.Drop(sim, t, x, y, roles[e.Role].Xp);
             if (chestTier[i] > 0) sim.Emit(SimEvent.Chest(t, drops++, x, y, chestTier[i], chestMinute[i]));
             if (e.Boss) Chickens?.BossDied(sim, t, x, y);
             else if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);

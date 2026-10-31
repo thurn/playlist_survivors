@@ -351,7 +351,7 @@ namespace PS.Game.Sim.Tests
             cursor = sim.EventCount;
             sim.Horde.Damage(sim, id, t, health, wand, WeaponHit.Strike, 1, 0, 2, 1.85);
             var second = sim.EventsSince(cursor).ToArray();
-            CollectionAssert.AreEqual(new[] { SimEventKind.Hit, SimEventKind.Death, SimEventKind.Drop }, second.Select(e => e.Kind));
+            CollectionAssert.AreEqual(new[] { SimEventKind.Hit, SimEventKind.Death }, second.Select(e => e.Kind), "no gem without an arsenal");
             Assert.IsTrue(second.All(e => e.T == t), "all on the hit's own time");
             Assert.AreEqual(1.85, second[1].AsDeath.Force);
             Assert.IsFalse(sim.State.Enemies[id].Alive);

@@ -1,11 +1,12 @@
 using System;
+using PS.Game.Sim.Content;
 
 namespace PS.Game.Sim
 {
     /// <summary>
     /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"): time,
-    /// the run clock, the beat, the hero, the enemies, the structures and the zone; M3 adds items
-    /// as dense arrays here. The client copies what it needs into its own
+    /// the run clock, the beat, the hero, the enemies, the structures, the zone, and the arsenal
+    /// with its experience and level-up offer. The client copies what it needs into its own
     /// short history to show <c>frameSong</c>, which trails the frontier.
     ///
     /// Only the sim writes it: every property is <c>{ get; internal set; }</c>, and dense arrays
@@ -64,5 +65,31 @@ namespace PS.Game.Sim
 
         /// <summary>The arena's zone: an index into schedule.json's zones, from 0 at the start.</summary>
         public int Zone { get; internal set; }
+
+        /// <summary>The arsenal's weapons and passives in slot order (empty without an arsenal: <see cref="Arsenal"/>).</summary>
+        public ReadOnlySpan<OwnedItem> WeaponSlots => new ReadOnlySpan<OwnedItem>(WeaponStore, 0, WeaponCount);
+        public ReadOnlySpan<OwnedItem> PassiveSlots => new ReadOnlySpan<OwnedItem>(PassiveStore, 0, PassiveCount);
+        internal OwnedItem[] WeaponStore = Array.Empty<OwnedItem>(), PassiveStore = Array.Empty<OwnedItem>();
+        internal int WeaponCount, PassiveCount;
+
+        /// <summary>The hero's final stats: progression.json's base, the passives, the caps.</summary>
+        public Stats Stats { get; internal set; }
+        /// <summary>How near a gem must lie to take off for the hero: the base radius times Magnet.</summary>
+        public double PickupRadius { get; internal set; }
+
+        /// <summary>The hero's level (1 at the start), and levels reached whose cards are still to come.</summary>
+        public int Level { get; internal set; }
+        public int PendingLevels { get; internal set; }
+        /// <summary>Experience gathered, and the totals the level started at and the next one needs.</summary>
+        public double Experience { get; internal set; }
+        public double ExperienceFloor { get; internal set; }
+        public double ExperienceNext { get; internal set; }
+
+        /// <summary>The experience bar: how far from this level's start to the next, 0 to 1.</summary>
+        public double ExperienceFill =>
+            ExperienceNext > ExperienceFloor ? Math.Max(0, Math.Min(1, (Experience - ExperienceFloor) / (ExperienceNext - ExperienceFloor))) : 0;
+
+        /// <summary>The latest level-up offer: open while its cards are shown (<see cref="LevelUps"/>).</summary>
+        public Offer Offer { get; internal set; }
     }
 }

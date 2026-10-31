@@ -64,12 +64,11 @@ namespace PS.Game.Sim
         double nextWave;
         int minute = -1;
 
-        public Spawner(HordeConfig config, Horde horde, BeliefLog log, SimState state)
+        public Spawner(HordeConfig config, GameContent content, Horde horde, BeliefLog log, SimState state)
         {
             this.horde = horde;
             this.log = log;
             this.state = state;
-            var content = config.Content;
             roles = content.Roles;
             schedule = content.Schedule;
             run = config.Schedule;

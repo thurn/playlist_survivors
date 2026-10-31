@@ -6,7 +6,8 @@ namespace PS.Game.Sim
     /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The sim emits beats,
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
-    /// zone changes, freezes, the run's start, its finale and its end; the rest are declared, with their fields,
+    /// zone changes, freezes, the run's start, its finale and its end, gems' flights and pickups,
+    /// level-ups and their cards; the rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
@@ -36,6 +37,8 @@ namespace PS.Game.Sim
         RunStart,
         Finale,
         RunEnd,
+        GemFlight,
+        Card,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -350,12 +353,40 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A level-up: I0 the new level, I1 the offer's index.</summary>
-        public static SimEvent LevelUp(double t, int level, int offer)
+        /// <summary>
+        /// A level-up's offer opens, freezing the world: I0 the level it is for, I1 the offer, I2 its
+        /// three cards packed 10 bits each (<see cref="LevelUpEvent.Card"/>); D0-D2 the song times the
+        /// cards flip in.
+        /// </summary>
+        public static SimEvent LevelUp(double t, int level, int offer, int cards, double reveal0, double reveal1, double reveal2)
         {
             var e = Of(SimEventKind.LevelUp, t);
             e.I0 = level;
             e.I1 = offer;
+            e.I2 = cards;
+            e.D0 = reveal0;
+            e.D1 = reveal1;
+            e.D2 = reveal2;
+            return e;
+        }
+
+        /// <summary>An offer's card is selected, or confirmed: I0 the offer, I1 the card (0 to 2), I2 1 when confirmed.</summary>
+        public static SimEvent Card(double t, int offer, int card, bool confirmed)
+        {
+            var e = Of(SimEventKind.Card, t);
+            e.I0 = offer;
+            e.I1 = card;
+            e.I2 = confirmed ? 1 : 0;
+            return e;
+        }
+
+        /// <summary>A gem in reach takes off for the hero: I0 the gem (its drop's item); D0/D1 where it lay. Its pickup follows.</summary>
+        public static SimEvent GemFlight(double t, int gem, double x, double y)
+        {
+            var e = Of(SimEventKind.GemFlight, t);
+            e.I0 = gem;
+            e.D0 = x;
+            e.D1 = y;
             return e;
         }
 
@@ -462,5 +493,7 @@ namespace PS.Game.Sim
         public ZoneChangeEvent AsZoneChange { get { Expect(SimEventKind.ZoneChange); return new ZoneChangeEvent(this); } }
         public FinaleEvent AsFinale { get { Expect(SimEventKind.Finale); return new FinaleEvent(this); } }
         public RunEndEvent AsRunEnd { get { Expect(SimEventKind.RunEnd); return new RunEndEvent(this); } }
+        public GemFlightEvent AsGemFlight { get { Expect(SimEventKind.GemFlight); return new GemFlightEvent(this); } }
+        public CardEvent AsCard { get { Expect(SimEventKind.Card); return new CardEvent(this); } }
     }
 }

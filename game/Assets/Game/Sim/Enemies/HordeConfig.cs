@@ -1,16 +1,12 @@
-using PS.Game.Sim.Content;
-
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// What the enemies need besides the stream and the arena (unity-game.md, Enemies): the
-    /// content, the camera's ground footprint, and either the run's schedule (schedule.json's
-    /// minutes, <see cref="Schedule"/>) or a test roster of a few roles (the slice's, and tests').
+    /// What the enemies need besides the stream, the arena and the content (unity-game.md, Enemies):
+    /// the camera's ground footprint, and either the run's schedule (schedule.json's minutes,
+    /// <see cref="Schedule"/>) or a test roster of a few roles (the slice's, and tests').
     /// </summary>
     public sealed class HordeConfig
     {
-        public GameContent Content;
-
         /// <summary>
         /// The camera's footprint on the ground relative to the hero, as a convex polygon around the
         /// origin: x0, y0, x1, y1, ... in metres. The client passes its camera's geometry; the

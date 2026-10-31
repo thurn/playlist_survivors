@@ -128,7 +128,7 @@ namespace PS.Game.Sim.Tests
             var chest = drops.Single(d => d.ItemKind == ItemKind.Chest);
             Assert.AreEqual(2, chest.Value, "its tier");
             Assert.AreEqual(10, chest.Minute);
-            Assert.AreEqual(1, drops.Count(d => d.ItemKind == ItemKind.Gem));
+            Assert.AreEqual(0, drops.Count(d => d.ItemKind == ItemKind.Gem), "no gem without an arsenal");
             Assert.AreEqual(easy ? (int)HordeFixture.Content.Schedule.Easy.BossChickens : 0, drops.Count(d => d.ItemKind == ItemKind.Chicken));
         }
     }

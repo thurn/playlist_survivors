@@ -35,7 +35,7 @@ namespace PS.Game.Sim.Tests
         static SimConfig Config(int rank = 1, Stats? stats = null, bool heroStands = true)
         {
             var config = HordeFixture.Config(minimum: 0, roster: new string[0], heroStands: heroStands);
-            config.Sword = new SwordConfig { Content = Content, Rank = rank, Stats = stats };
+            config.Arsenal = new ArsenalConfig { Weapons = new[] { ("sword", rank) }, Stats = stats, Cards = false };
             return config;
         }
 
@@ -364,7 +364,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(10.0 / 27 * 5, death.Force, 1e-9, "native's knockback distance times the sword's");
             var drop = Drive.Events(sim, SimEventKind.Drop).Single().AsDrop;
             Assert.AreEqual(ItemKind.Gem, drop.ItemKind);
-            Assert.AreEqual(Content.Role("bat1").Xp, drop.Value);
+            Assert.That(drop.Value, Is.InRange(1, 1.5 * Content.Role("bat1").Xp), "native's gem value, (r + 0.5) times the role's, floored");
             Assert.AreEqual(death.X, drop.X);
             Assert.IsFalse(sim.State.Enemies[bat].Alive);
             Assert.AreEqual(1, sim.State.EnemiesAlive);

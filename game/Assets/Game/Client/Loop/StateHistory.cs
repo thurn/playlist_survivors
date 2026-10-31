@@ -69,6 +69,10 @@ namespace Game.Client.Loop
         public double StrideStep, StridePeriod;
         public int StrideHalvings;
         public HeroSnapshot Hero;
+        /// <summary>The HUD's: the hero's level, its experience bar (0 to 1) and the level-up's cards.</summary>
+        public int Level;
+        public double ExperienceFill;
+        public Offer Offer;
 
         public static SimSnapshot Of(SimState s) => new SimSnapshot
         {
@@ -83,6 +87,9 @@ namespace Game.Client.Loop
             StridePeriod = s.StridePeriod,
             StrideHalvings = s.StrideHalvings,
             Hero = HeroSnapshot.Of(s.Hero),
+            Level = s.Level,
+            ExperienceFill = s.ExperienceFill,
+            Offer = s.Offer,
         };
     }
 

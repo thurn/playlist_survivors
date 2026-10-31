@@ -15,16 +15,19 @@ namespace PS.Game.Sim.Tests
         /// <summary>The game's arena, game/Content/arena.json: 160 x 160 tiles with 38 crystal structures.</summary>
         public static ArenaData GameArena() => ArenaData.Parse(File.ReadAllText(Checkout.File("game", "Content", "arena.json")), "arena.json");
 
-        /// <summary>A sim's config; <paramref name="sword"/> gives the hero its sword at that rank (0: none).</summary>
+        /// <summary>
+        /// A sim's config; <paramref name="sword"/> gives the hero an arsenal of its sword at that
+        /// rank (0: none), whose levels open no cards.
+        /// </summary>
         public static SimConfig Config(int minimum = 120, ArenaData arena = null, string[] roster = null, ulong seed = 1,
             int sword = 0, bool heroStands = false)
         {
-            var horde = new HordeConfig { Content = Content, Minimum = minimum };
+            var horde = new HordeConfig { Minimum = minimum };
             if (roster != null) horde.Roster = roster;
             return new SimConfig
             {
-                Seed = seed, Arena = arena, Horde = horde, HeroStands = heroStands,
-                Sword = sword > 0 ? new SwordConfig { Content = Content, Rank = sword } : null,
+                Seed = seed, Arena = arena, Content = Content, Horde = horde, HeroStands = heroStands,
+                Arsenal = sword > 0 ? new ArsenalConfig { Weapons = new[] { ("sword", sword) }, Cards = false } : null,
             };
         }
 

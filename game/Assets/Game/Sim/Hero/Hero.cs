@@ -23,7 +23,9 @@ namespace PS.Game.Sim
     ///   the sim has every key heard before it: at the next key change heard after it, or the
     ///   latest key's lead after it (<see cref="Tick"/>). So a tap released before the next step
     ///   was heard never strides on it, and a turn heard before a step the sim has passed turns on it.
-    /// - Space is a press only: it stomps (stands still).
+    /// - Space is a press only: it stomps (stands still). Enter never moves the hero.
+    /// - While a level-up's cards are open their keys are theirs: the hero holds none of them, and
+    ///   lets go of the keys it held when the cards opened (<see cref="LetGo"/>).
     /// - <b>A stride</b> takes <see cref="StrideSeconds"/> from its start, compressed to end before
     ///   the next step that may stride. A step into a blocked tile or the arena's edge bumps in
     ///   place and is spent. The hero faces the way it tried to go.
@@ -73,10 +75,15 @@ namespace PS.Game.Sim
             state.FromY = state.Y;
         }
 
-        public void Press(Simulation sim, Key key, double heard)
+        /// <summary>
+        /// A key goes down, heard at <paramref name="heard"/>; one the level-up's cards took
+        /// (<paramref name="forCards"/>) is not held. Enter is the cards' alone.
+        /// </summary>
+        public void Press(Simulation sim, Key key, double heard, bool forCards)
         {
             KeyChange(sim, heard);
-            if (key != Key.Space) Hold((Direction)key);
+            if (key == Key.Enter) return;
+            if (key != Key.Space && !forCards) Hold((Direction)key);
             // A press made while frozen never strides, even when the world thaws before the next step.
             if (sim.State.Frozen || state.Fallen) return;
             int action = key == Key.Space ? Stomp : (int)key;
@@ -98,12 +105,15 @@ namespace PS.Game.Sim
         public void Release(Simulation sim, Key key, double heard)
         {
             KeyChange(sim, heard);
-            if (key == Key.Space) return;
+            if (key == Key.Space || key == Key.Enter) return;
             int i = Array.IndexOf(held, (Direction)key, 0, heldCount);
             if (i < 0) return;
             Array.Copy(held, i + 1, held, i, heldCount - i - 1);
             heldCount--;
         }
+
+        /// <summary>Lets go of every held key: only presses after this move the hero.</summary>
+        public void LetGo() => heldCount = 0;
 
         /// <summary>Stride step <paramref name="index"/> at <paramref name="t"/>, <paramref name="period"/> before the next.</summary>
         public void Step(Simulation sim, int index, double t, double period)

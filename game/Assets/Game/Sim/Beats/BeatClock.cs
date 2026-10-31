@@ -129,6 +129,45 @@ namespace PS.Game.Sim
             return ClearAt(s) && beats[closing].V1 >= gate ? Reliability.Reliable : Reliability.BelowGate;
         }
 
+        /// <summary>
+        /// The first point of a grid <paramref name="step"/> beats apart (1 the beats, 0.5 the
+        /// eighths, 0.25 the sixteenths) at or after <paramref name="s"/>, from the beats revealed
+        /// now, with its fractional beat index in <paramref name="beat"/>; NaN when none is known
+        /// (<see cref="GridPoint"/>).
+        /// </summary>
+        internal double GridAtOrAfter(double s, double step, out double beat)
+        {
+            var beats = log.Beats;
+            for (int i = Math.Max(0, LastAtOrBefore(beats, s)); i < beats.Length; i++)
+                for (int k = 0; k * step < 1 - 1e-9; k++)
+                {
+                    beat = i + k * step;
+                    double t = GridPoint(beat);
+                    if (double.IsNaN(t))
+                    {
+                        if (i + 1 >= beats.Length) return double.NaN;
+                        break;
+                    }
+                    if (t >= s - 1e-9) return t;
+                }
+            beat = double.NaN;
+            return double.NaN;
+        }
+
+        /// <summary>
+        /// The song time of fractional beat <paramref name="beat"/>: a revealed beat's own time, or a
+        /// point inside a beat interval (<see cref="StartsInterval"/>) by its fraction; NaN otherwise.
+        /// </summary>
+        internal double GridPoint(double beat)
+        {
+            var beats = log.Beats;
+            int i = (int)Math.Floor(beat + 1e-9);
+            if (i < 0 || i >= beats.Length) return double.NaN;
+            double f = beat - i;
+            if (f < 1e-9) return beats[i].T;
+            return StartsInterval(i) ? beats[i].T + (beats[i + 1].T - beats[i].T) * f : double.NaN;
+        }
+
         /// <summary>The latest of a grid's entries at or before <paramref name="s"/>, or -1.</summary>
         static int LastAtOrBefore(ReadOnlySpan<StreamEntry> grid, double s)
         {

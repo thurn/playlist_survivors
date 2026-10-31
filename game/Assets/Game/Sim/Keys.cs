@@ -1,7 +1,10 @@
 namespace PS.Game.Sim
 {
-    /// <summary>The keys the sim takes: four directions, and Space, which stomps.</summary>
-    public enum Key { Up, Down, Left, Right, Space }
+    /// <summary>
+    /// The keys the sim takes: four directions, Space, which stomps, and Enter. During a level-up
+    /// Left, Up and Right select its cards and Space or Enter confirms (<see cref="LevelUps"/>).
+    /// </summary>
+    public enum Key { Up, Down, Left, Right, Space, Enter }
 
     /// <summary>
     /// A key change as the sim recorded it (unity-game.md, "Key Presses"):

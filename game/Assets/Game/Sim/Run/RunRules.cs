@@ -115,6 +115,7 @@ namespace PS.Game.Sim
             Account(t);
             held |= Bit(reason);
             state.FreezeReasons = held;
+            if (!state.Frozen) sim.Arsenal?.Hold();
             state.Frozen = true;
             // A reason let go but not yet resumed holds again: its freeze never ended, so it doesn't start again.
             if ((released & Bit(reason)) != 0) released &= ~Bit(reason);
@@ -137,6 +138,7 @@ namespace PS.Game.Sim
         {
             state.Frozen = false;
             account = t;
+            sim.Arsenal?.Resume(t);
             for (int r = 0; released != 0; r++)
             {
                 if ((released & (1 << r)) == 0) continue;
@@ -146,6 +148,13 @@ namespace PS.Game.Sim
         }
 
         bool ResumeDue => held == 0 && released != 0;
+
+        /// <summary>
+        /// The song time the run clock reaches <paramref name="runClock"/> while the run plays
+        /// unfrozen from now on; infinity while it doesn't.
+        /// </summary>
+        public double SongAt(double runClock) =>
+            state.Phase == RunPhase.Playing && !state.Frozen ? account + (runClock - state.RunClock) : double.PositiveInfinity;
 
         /// <summary>The run clock counts the song time from the last account to <paramref name="t"/>, if the run plays unfrozen.</summary>
         void Account(double t)

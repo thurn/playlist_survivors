@@ -4,8 +4,8 @@ namespace PS.Game.Sim.Level
 {
     /// <summary>
     /// The cinematic slice's level (unity-game.md, Build Order step 2): the game's arena, a horde
-    /// of a few roles in gem colours across the spectrum, and the starting sword. M3's run replaces
-    /// it with the full schedule, its cast and the arsenal.
+    /// of a few roles in gem colours across the spectrum, and the arsenal from the starting sword,
+    /// with its gems and level-ups. M3's run replaces it with the full schedule and its cast.
     ///
     /// The hero stands (<see cref="SimConfig.HeroStands"/>): a fall needs the run's card, which
     /// comes with M3.
@@ -34,15 +34,15 @@ namespace PS.Game.Sim.Level
             {
                 Seed = seed,
                 Arena = arena,
+                Content = content,
                 Horde = new HordeConfig
                 {
-                    Content = content,
                     CameraFootprint = footprint,
                     Roster = Roster,
                     SpawnIntervalS = SpawnIntervalS,
                     Minimum = Minimum,
                 },
-                Sword = new SwordConfig { Content = content },
+                Arsenal = new ArsenalConfig(),
                 HeroStands = true,
             };
     }
