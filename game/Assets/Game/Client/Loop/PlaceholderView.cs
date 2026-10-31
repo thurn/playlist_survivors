@@ -5,10 +5,10 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// A stand-in view until the presenters land: the hero as a white capsule that pulses on each
-    /// beat (the crowd draws the enemies), on a plane under a sun when there is no arena. The look's
-    /// camera rig frames it (LookPresenter). Sim ground (x, y) is Unity's (x, 0, y). A primitive's
-    /// default material doesn't draw in URP players, so they all use a URP Lit material from
-    /// Resources.
+    /// beat while the build has no hero bake (the crowd draws the enemies), on a plane under a sun
+    /// when there is no arena. The look's camera rig frames it (LookPresenter). Sim ground (x, y) is
+    /// Unity's (x, 0, y). A primitive's default material doesn't draw in URP players, so they all use
+    /// a URP Lit material from Resources.
     /// </summary>
     public sealed class PlaceholderView : IPresenter
     {
@@ -16,20 +16,23 @@ namespace Game.Client.Loop
         const int Beats = 16;
         const string MaterialPath = "Placeholder/PlaceholderLit";
 
-        readonly Transform _hero;
+        readonly Transform _hero; // null when the hero presenter draws the hero
         readonly Material _lit;
         readonly double[] _beats = new double[Beats];
         int _beatCount;
 
-        public PlaceholderView(Camera camera, bool ground = true)
+        public PlaceholderView(Camera camera, bool ground = true, bool hero = true)
         {
             _lit = Resources.Load<Material>(MaterialPath);
             var root = new GameObject("Placeholder").transform;
-            var hero = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            hero.name = "Hero";
-            hero.transform.SetParent(root);
-            hero.GetComponent<Renderer>().sharedMaterial = Tinted(new Color(0.95f, 0.95f, 1f));
-            _hero = hero.transform;
+            if (hero)
+            {
+                var capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                capsule.name = "Hero";
+                capsule.transform.SetParent(root);
+                capsule.GetComponent<Renderer>().sharedMaterial = Tinted(new Color(0.95f, 0.95f, 1f));
+                _hero = capsule.transform;
+            }
             if (!ground) return;
             var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             plane.name = "Ground";
@@ -57,10 +60,13 @@ namespace Game.Client.Loop
         public void Present(in PresentFrame frame)
         {
             double t = frame.Song;
-            frame.State.Hero.PositionAt(t, out double hx, out double hy);
-            float pulse = 1 + 0.25f * (float)System.Math.Exp(-SinceBeat(t) / Pulse);
-            _hero.localPosition = new Vector3((float)hx, 1, (float)hy);
-            _hero.localScale = new Vector3(pulse, 1, pulse);
+            if (_hero != null)
+            {
+                frame.State.Hero.PositionAt(t, out double hx, out double hy);
+                float pulse = 1 + 0.25f * (float)System.Math.Exp(-SinceBeat(t) / Pulse);
+                _hero.localPosition = new Vector3((float)hx, 1, (float)hy);
+                _hero.localScale = new Vector3(pulse, 1, pulse);
+            }
         }
 
         double SinceBeat(double t)

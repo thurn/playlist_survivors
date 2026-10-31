@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using Game.Client.Arena;
 using Game.Client.Crowd;
+using Game.Client.Hero;
 using Game.Client.Look;
 using Game.Client.Music;
 using PS.Game.Sim;
@@ -29,7 +30,8 @@ namespace Game.Client.Loop
     /// - `--loop-out FILE`: writes each frame's times and the sim's hash, as CSV;
     /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
     ///   its bake failed), `--palette NAME` the arena's zone palette;
-    /// - the look's `--hero-path` and `--camera-out FILE` (<see cref="LookPresenter"/>).
+    /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
+    /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
     /// It logs a summary when the run ends: the lead, frameSong's holds and the sim's timings.
     /// </summary>
     [DefaultExecutionOrder(-100)] // after the music's poll, before Boot keeps a still of the frame
@@ -48,6 +50,7 @@ namespace Game.Client.Loop
         KeyInput _keys;
         DebugOverlay _overlay;
         LookPresenter _look;
+        HeroPresenter _hero;
         ArenaRuntime _arena;
         CrystalStructures _crystal;
         CrowdView _crowd;
@@ -102,8 +105,15 @@ namespace Game.Client.Loop
             _keys = new KeyInput();
 
             bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
-            Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena));
+            var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
+            Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena, hero: heroBake == null));
+            if (heroBake != null)
+            {
+                _hero = new HeroPresenter(heroBake);
+                Driver.Events.Subscribe(_hero);
+            }
             _look = new LookPresenter(camera, Driver.Sim);
+            if (_hero != null) _look.DrawnHero = _hero.Drawn; // the hero presents first, then the camera follows it
             Driver.Events.Subscribe(_look);
             if (arena) LoadArena(camera);
             // After the look, whose camera rig it culls with.
@@ -214,6 +224,7 @@ namespace Game.Client.Loop
         {
             _keys?.Dispose();
             _look?.Dispose();
+            _hero?.Dispose();
             _crystal?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();

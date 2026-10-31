@@ -121,12 +121,12 @@ namespace Game.Client.Look
         /// <summary>
         /// Frames <paramref name="camera"/> at song time s over the focus for a view of
         /// <paramref name="aspect"/>, the width times <paramref name="punch"/>, offset by the shake of
-        /// amplitude <paramref name="shake"/> metres.
+        /// amplitude <paramref name="shake"/> metres; <paramref name="widthM"/> in place of the music's width when over 0.
         /// </summary>
-        public void Apply(Camera camera, float aspect, double s, float punch, float shake)
+        public void Apply(Camera camera, float aspect, double s, float punch, float shake, float widthM = 0)
         {
             var focus = new Vector3((float)_fx, 0, (float)_fy);
-            Frame(camera, focus, Width(s) * punch, aspect);
+            Frame(camera, focus, (widthM > 0 ? widthM : Width(s)) * punch, aspect);
             if (shake > 0) camera.transform.position += Shake(s, shake);
         }
 

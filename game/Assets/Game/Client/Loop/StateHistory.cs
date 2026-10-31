@@ -10,6 +10,8 @@ namespace Game.Client.Loop
         public double X, Y;
         public Direction Facing;
         public double FromX, FromY, MoveStart, MoveEnd;
+        public double Health, MaxHealth;
+        public bool Fallen;
 
         public static HeroSnapshot Of(HeroState h) => new HeroSnapshot
         {
@@ -22,6 +24,9 @@ namespace Game.Client.Loop
             FromY = h.FromY,
             MoveStart = h.MoveStart,
             MoveEnd = h.MoveEnd,
+            Health = h.Health,
+            MaxHealth = h.MaxHealth,
+            Fallen = h.Fallen,
         };
 
         /// <summary>Where the hero is at song time `t`: along its latest move, linearly (presenters shape the hop).</summary>

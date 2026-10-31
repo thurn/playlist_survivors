@@ -14,6 +14,7 @@ namespace Game.Client.Look
     /// night volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
     /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). Player flags:
     /// - `--hero-path`: the camera follows <see cref="SyntheticHero"/>'s square walk instead of the sim's hero;
+    /// - `--view-width M`: the view this wide across the ground (close-ups for evidence) in place of the music's width;
     /// - `--camera-out FILE`: each frame's song time, focus, width, punch, shake and post offsets, as CSV.
     /// </summary>
     public sealed class LookPresenter : IPresenter, IDisposable
@@ -25,11 +26,21 @@ namespace Game.Client.Look
         readonly PostFeel _post = new PostFeel();
         readonly CameraRig _rig = new CameraRig();
         readonly bool _synthetic, _stills;
+        readonly float _viewWidth;
         StreamWriter _out;
         double _last = double.NaN;
 
         /// <summary>The volume the beat feel drives (the arena's night post), or null for none yet.</summary>
         public Volume Volume { get; set; }
+
+        /// <summary>Where a presenter subscribed before the look drew the hero this frame.</summary>
+        public delegate void HeroAt(out double x, out double y, out Direction facing);
+
+        /// <summary>
+        /// The hero as drawn (the hero presenter's, from the sim's step events), which the camera follows in
+        /// place of the sim's snapshot: the same in a run, and a scripted feed's steps move it too. Null: the snapshot.
+        /// </summary>
+        public HeroAt DrawnHero { get; set; }
 
         /// <summary>Called each frame with the hero's feet (the arena's hero light and canopy follow them).</summary>
         public Action<Vector3> FollowHero { get; set; }
@@ -46,6 +57,7 @@ namespace Game.Client.Look
             _sim = sim;
             _synthetic = Args.Has("--hero-path");
             _stills = Args.Has("--capture-stills");
+            _viewWidth = Args.GetFloat("--view-width", 0f);
             var outPath = Args.Get("--camera-out");
             if (outPath != null)
             {
@@ -70,6 +82,7 @@ namespace Game.Client.Look
             double hx, hy;
             Direction facing;
             if (_synthetic) SyntheticHero.At(s, out hx, out hy, out facing);
+            else if (DrawnHero != null) DrawnHero(out hx, out hy, out facing);
             else
             {
                 frame.State.Hero.PositionAt(s, out hx, out hy);
@@ -79,7 +92,7 @@ namespace Game.Client.Look
             _rig.Step(s, dt, hx, hy, headX, headY, lane.Level, lane.Period);
             float punch = _moments.Punch(s, lane.Period), shake = _moments.ShakeAmplitude(s, lane.Period);
             // Stills draw into their own target, whose shape a windowless camera doesn't know yet.
-            if (_camera != null) _rig.Apply(_camera, _stills ? (float)Stills.Width / Stills.Height : _camera.aspect, s, punch, shake);
+            if (_camera != null) _rig.Apply(_camera, _stills ? (float)Stills.Width / Stills.Height : _camera.aspect, s, punch, shake, _viewWidth);
             var feet = new Vector3((float)hx, 0, (float)hy);
             BeatGlobals.Publish(s, lane, feet);
             FollowHero?.Invoke(feet);

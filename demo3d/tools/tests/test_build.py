@@ -140,18 +140,24 @@ def test_the_games_bakers_have_their_inputs_listed() -> None:
     assert registered == setup.GAME_BAKER_INPUTS.keys()
 
 
-def test_the_game_bakes_its_arena_when_the_layout_changes(tmp_path: Path) -> None:
+def test_the_game_bakes_its_arena_when_the_layout_changes_and_its_hero_when_the_clips_do(tmp_path: Path) -> None:
     wt = paths.Worktree(tmp_path, "game")
     (wt.project / "Content").mkdir(parents=True)
     layout = wt.project / "Content" / "arena-layout.json"
     layout.write_text("{}")
-    assert setup.stale_bakers(wt) == ["Arena", "Crowd"]
+    clips = wt.project / "Content" / "hero-clips.json"
+    clips.write_text("{}")
+    assert setup.stale_bakers(wt) == ["Arena", "Crowd", "Hero"]
     wt.baked.mkdir(parents=True)
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\n")
-    assert setup.record_ran(wt) == ["Arena", "Crowd"]
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\nHero\n")
+    assert setup.record_ran(wt) == ["Arena", "Crowd", "Hero"]
     assert setup.baked(wt)
     layout.write_text('{"seed": 8}')
     assert setup.stale_bakers(wt) == ["Arena"]
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\n")
+    setup.record_ran(wt)
+    clips.write_text('{"heightM": 2}')
+    assert setup.stale_bakers(wt) == ["Hero"]
 
 
 def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
@@ -160,7 +166,7 @@ def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
     cast = wt.project / "Content" / "cast.json"
     cast.write_text("{}")
     wt.baked.mkdir(parents=True)
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\n")
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\nHero\n")
     setup.record_ran(wt)
     cast.write_text('{"cast": []}')
     assert setup.stale_bakers(wt) == ["Crowd"]

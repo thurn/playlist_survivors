@@ -292,10 +292,11 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
     """What a project's Unity bakers read from git. demo3d's: everything under Assets/Demo3D (their
     code, data, shaders and settings) except the tests and runtime C# no asset serializes, the
     shared choreography package, the vendor manifest and the song map. The game's: its arena's
-    code (editor, engine-free layout and runtime), the layout's data and the vendor manifest."""
+    code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime and
+    clip table, and the vendor manifest."""
     if wt.name == "game":
-        game = [f for d in GAME_ARENA_DIRS + GAME_CROWD_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
-        return game + [wt.project / "Content" / n for n in GAME_ARENA_CONTENT + GAME_CROWD_CONTENT] + [
+        game = [f for d in GAME_ARENA_DIRS + GAME_CROWD_DIRS + GAME_HERO_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
+        return game + [wt.project / "Content" / n for n in GAME_ARENA_CONTENT + GAME_CROWD_CONTENT + GAME_HERO_CONTENT] + [
             wt.project / "manifest.json"]
     files: list[Path] = []
     demo = wt.project / "Assets" / "Demo3D"
@@ -339,15 +340,20 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
 
 
 # The game's bakers (Tasks.BakeAll's list), the same way: the arena (ArenaBaker), which also
-# writes the level data, game/Content/arena.json, and the crowd (CrowdBaker), whose library holds
-# the cast (cast.json, in enemies.json's role order).
+# writes the level data, game/Content/arena.json, the crowd (CrowdBaker), whose library holds
+# the cast (cast.json, in enemies.json's role order), and the hero (HeroBaker), whose prefab's
+# materials come from the arena's MaterialConverter.
 GAME_ARENA_DIRS = ("Assets/Game/Editor/Arena", "Assets/Game/Arena", "Assets/Game/Client/Arena")
 GAME_ARENA_CONTENT = ("arena-layout.json", "footprints.json")
 GAME_CROWD_DIRS = ("Assets/Game/Editor/Crowd", "Assets/Game/Client/Crowd")
 GAME_CROWD_CONTENT = ("cast.json", "enemies.json")
+GAME_HERO_DIRS = ("Assets/Game/Editor/Hero", "Assets/Game/Client/Hero")
+GAME_HERO_CONTENT = ("hero-clips.json",)
 GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + tuple(f"game/Content/{n}" for n in GAME_ARENA_CONTENT),
     "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
+    "Hero": tuple(f"game/{d}/*" for d in GAME_HERO_DIRS) + ("game/Assets/Game/Editor/Arena/MaterialConverter.cs*",) +
+            tuple(f"game/Content/{n}" for n in GAME_HERO_CONTENT),
 }
 
 

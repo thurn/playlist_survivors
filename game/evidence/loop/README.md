@@ -24,6 +24,8 @@ Boot runs the loop unless `--spike` or `--spike-out` asks for the sync spike.
 | `--no-arena`, `--palette NAME` | the placeholder plane instead of the baked arena; the arena's zone palette |
 | `--hero-path` | the camera follows a synthetic square walk instead of the sim's hero |
 | `--camera-out FILE` | each frame's camera focus, width, punch, shake and the post's offsets, as CSV |
+| `--view-width M` | the camera's view this wide across the ground (close-ups for evidence) |
+| `--hero-out FILE`, `--no-hero` | each frame's hero pose (position, lift, yaw, clips, weights, flare) as CSV ([hero](../hero/README.md)); the placeholder capsule instead of the knight |
 
 In the game the arrows or WASD stride and Space stomps; keys reach the sim with their event
 timestamps mapped by keySong.

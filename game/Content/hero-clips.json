@@ -1,0 +1,15 @@
+{
+  "note": "The hero (unity-game.md, The Hero): the Synty knight, its shield and its clips, keyed by vendor GUID. Each clip's impact and end (seconds from its start) are demo3d's measurements (demo3d/Assets/Demo3D/Data/clip-annotations.json: the peak speed of Hand_R, sampled at 60 Hz). The hero bake (HeroBaker) reads it; the hero's motion retimes each attack so its impact lands on the sim's.",
+  "heightM": 1.85,
+  "prefab": "360c73b9bf9a34d4c84bc0581d0499eb",
+  "shield": "a7b97d24ba2370040ba159577de7b931",
+  "clips": [
+    { "role": "idle", "guid": "b94969b4c36c3c94284f72888ad9289d", "clip": "A_Idle_Base_Sword", "length": 1.767 },
+    { "role": "run", "guid": "6c670ea8c84cf324980a21b4b9b927a0", "clip": "A_Run_F_Masc", "length": 0.7 },
+    { "role": "slashL", "guid": "9f773338b2a96174ebe9b63870034ca3", "clip": "A_Attack_LightCombo01A_Sword", "length": 0.8, "impact": 0.35, "end": 0.717 },
+    { "role": "slashR", "guid": "95697c3218923dd43aa160c110bfbc79", "clip": "A_Attack_LightCombo01B_Sword", "length": 0.667, "impact": 0.267, "end": 0.45 },
+    { "role": "slash3", "guid": "c9e0b6900401fcb42980df96b84db76c", "clip": "A_Attack_LightCombo01C_Sword", "length": 0.733, "impact": 0.417, "end": 0.467 },
+    { "role": "spin", "guid": "b48c7e37f2264c3418122c894c6f98af", "clip": "A_Attack_HeavyFlourish_Sword", "length": 2.033, "impact": 1.433, "end": 1.65 },
+    { "role": "slam", "guid": "72f114cf4075d3b4db5ce63cb994a704", "clip": "A_Attack_LightLeaping01_Sword", "length": 1.567, "impact": 1.1, "end": 1.167 }
+  ]
+}

@@ -1329,6 +1329,40 @@ The hero is the 3D demo's Synty knight, driven by sim events.
   hand's bind pose.
 - A low-health pulse beats on the hero.
 
+**Shipped (ps-msz.3.10).** game/Assets/Game/Client/Hero/, subscribed by the
+frame loop when the build has the hero bake (`HeroBaker`, `game unity
+BakeHero`: the knight with its shield, URP materials and clips from
+game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
+
+- `HeroMotion` is the motion as a function of the HeroStep and hero Attack
+  events and the song time; `HeroRig` sets its clip times on a playable graph
+  with every speed at 0 and evaluates it at once (manual update), so stills
+  show the exact frame.
+- There is no hop clip short enough in the Synty packs (their jumps run
+  about a second), so a hop is the run clip's half-cycle, alternating feet,
+  across the step's move, with a parabolic lift (14 cm, 7 cm for a bump in
+  place). A stomp stands. The hero faces its travel, and turns to the
+  swing's direction from its wind-up through its follow-through.
+- Attacks: slashes alternate left and right (Light Combo A and B), a
+  follow-up continues the combo (A, then B, then C, then B again), heavy
+  strikes spin (Heavy Flourish) and section changes slam (Light Leaping),
+  each retimed by `HeroClips.Fit` between 0.75x and 1.33x so its measured
+  impact (demo3d's annotations) lands on the event's. A clip that would need
+  more than 1.33x is entered part-way at the wind-up, crossfading from the
+  swing before, which keeps its own impact. Heavy blows hold 50 ms at 0.6x
+  after the impact, as in demo3d.
+- The legs layer blends the idle, the hop and the attack (full body when
+  standing); the upper-body layer (body, head, arms) always shows either the
+  sword idle's arms or the attack, so the unarmed run never swings the blade
+  and stepping never erases the strike pose.
+- The blade is demo3d's mesh and grip, drawn by Game/CrystalBlade on the
+  structures' shared include; it flares to 1 at each impact (1.5 heavy) and
+  fades over 0.22 s.
+- The low-health pulse: under a third of its health the knight's emission
+  beats red on each beat. The aura's hook is `HeroPresenter.AuraAnchor` (the
+  feet, unturned) and `Aura` (0.2 at the start, growing with the build).
+- Evidence: [game/evidence/hero/](../../game/evidence/hero/README.md).
+
 ### The crowd
 
 The crowd is the 3D demo's GPU-driven renderer, fed by the sim instead of a
