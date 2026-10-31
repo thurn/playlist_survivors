@@ -33,13 +33,14 @@ namespace PS.Game.Sim.Tests
         public void ReadingEverythingEveryFrameDoesNotChangeTheRun()
         {
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var quiet = new Simulation(HordeFixture.Config(sword: 2));
+            var quiet = new Simulation(HordeFixture.Config(sword: 2, arena: HordeFixture.GameArena()));
             Drive.Feed(quiet, entries, duration);
             var called = new HashSet<string>();
-            var curious = new Simulation(HordeFixture.Config(sword: 2));
+            var curious = new Simulation(HordeFixture.Config(sword: 2, arena: HordeFixture.GameArena()));
             Drive.Feed(curious, entries, duration, eachFrame: sim => ReadEverything(sim, called));
             Assert.Greater(Drive.Events(quiet, SimEventKind.Beat).Count, 40);
             Assert.Greater(Drive.Events(quiet, SimEventKind.EnemyStep).Count, 100);
+            Assert.Greater(Drive.Events(quiet, SimEventKind.Glint).Count, 0);
             Assert.AreEqual(quiet.Hash, curious.Hash);
             CollectionAssert.AreEqual(quiet.EventsSince(0).ToArray(), curious.EventsSince(0).ToArray());
             CollectionAssert.IsSupersetOf(called, new[] { "BeatClock.StateAt", "BeatClock.ClearAt", "BeatClock.Continues",
@@ -112,6 +113,7 @@ namespace PS.Game.Sim.Tests
                 e.PositionAt(sim.Now - 0.5, out double x, out double y);
                 sum += e.X + x + y;
             }
+            foreach (var s in sim.State.Structures) sum += s.CentreX + s.Hits;
             Assert.IsFalse(double.IsNaN(sum));
         }
 

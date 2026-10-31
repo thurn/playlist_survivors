@@ -178,5 +178,11 @@ namespace PS.Game.Sim.Level
         /// <summary>A tile's centre, ground-plane metres.</summary>
         public double CentreX(int x) => OriginX + (x + 0.5) * TileM;
         public double CentreY(int y) => OriginY + (y + 0.5) * TileM;
+
+        /// <summary>A structure's tiles turn impassable as it regrows, or open as it breaks.</summary>
+        internal void SetStructure(Tile[] tiles, bool standing)
+        {
+            foreach (var t in tiles) cells[t.Y * Width + t.X] = standing ? Structure : Open;
+        }
     }
 }

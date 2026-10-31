@@ -3,7 +3,8 @@ namespace PS.Game.Sim
     /// <summary>
     /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The sim emits beats,
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
-    /// lunges and spawns, hits, deaths, cleaves and drops; the rest are declared, with their fields,
+    /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
+    /// and zone changes; the rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
@@ -28,6 +29,8 @@ namespace PS.Game.Sim
         EnemyKnock,
         Cleave,
         Drop,
+        Glint,
+        ZoneChange,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -159,26 +162,67 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A structure shatters: I0 structure, I1/I2 its tile; D0/D1 impact direction, D2 force.</summary>
-        public static SimEvent StructureBreak(double t, int structure, int tileX, int tileY, double dirX, double dirY, double force)
+        /// <summary>
+        /// A structure shatters, on the hit's own frame: I0 structure (the level data's index), I1 what
+        /// broke it (<see cref="StructureHit"/>); D0/D1 the strike point (the structure's nearest point
+        /// to the hit's centre), D2/D3 the direction from the hit's centre through it, D4 force: how far
+        /// the hit throws, in metres, as a death's.
+        /// </summary>
+        public static SimEvent StructureBreak(double t, int structure, StructureHit source, double x, double y,
+            double dirX, double dirY, double force)
         {
             var e = Of(SimEventKind.StructureBreak, t);
             e.I0 = structure;
-            e.I1 = tileX;
-            e.I2 = tileY;
-            e.D0 = dirX;
-            e.D1 = dirY;
-            e.D2 = force;
+            e.I1 = (int)source;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = dirX;
+            e.D3 = dirY;
+            e.D4 = force;
             return e;
         }
 
-        /// <summary>A structure grows back: I0 structure, I1/I2 its tile.</summary>
-        public static SimEvent Regrowth(double t, int structure, int tileX, int tileY)
+        /// <summary>
+        /// A hit on a standing structure that doesn't break it: I0 structure, I1 the hit
+        /// (<see cref="StructureHit"/>), I2 the breaking hits it has taken toward its break (0 when
+        /// this hit can't break it); D0/D1 the strike point, D2/D3 the direction, as a break's.
+        /// </summary>
+        public static SimEvent Glint(double t, int structure, StructureHit source, int hits, double x, double y, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.Glint, t);
+            e.I0 = structure;
+            e.I1 = (int)source;
+            e.I2 = hits;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = dirX;
+            e.D3 = dirY;
+            return e;
+        }
+
+        /// <summary>A broken structure grows back at its site, on a downbeat: I0 structure; D0 start (it blocks its tiles from then), D1 end, a beat later.</summary>
+        public static SimEvent Regrowth(double t, int structure, double start, double end)
         {
             var e = Of(SimEventKind.Regrowth, t);
             e.I0 = structure;
-            e.I1 = tileX;
-            e.I2 = tileY;
+            e.D0 = start;
+            e.D1 = end;
+            return e;
+        }
+
+        /// <summary>
+        /// The arena moves to the next zone, on a downbeat: I0 the new zone (schedule.json's zone
+        /// index), I1 the previous, I2 the cause (<see cref="ZoneCause"/>); D0 the cause's song time
+        /// (a fallback's: when it fell due), D1 when it was known.
+        /// </summary>
+        public static SimEvent ZoneChange(double t, int zone, int previous, ZoneCause cause, double causeT, double knownAt)
+        {
+            var e = Of(SimEventKind.ZoneChange, t);
+            e.I0 = zone;
+            e.I1 = previous;
+            e.I2 = (int)cause;
+            e.D0 = causeT;
+            e.D1 = knownAt;
             return e;
         }
 
@@ -340,5 +384,7 @@ namespace PS.Game.Sim
         public EnemyKnockEvent AsEnemyKnock { get { Expect(SimEventKind.EnemyKnock); return new EnemyKnockEvent(this); } }
         public CleaveEvent AsCleave { get { Expect(SimEventKind.Cleave); return new CleaveEvent(this); } }
         public DropEvent AsDrop { get { Expect(SimEventKind.Drop); return new DropEvent(this); } }
+        public GlintEvent AsGlint { get { Expect(SimEventKind.Glint); return new GlintEvent(this); } }
+        public ZoneChangeEvent AsZoneChange { get { Expect(SimEventKind.ZoneChange); return new ZoneChangeEvent(this); } }
     }
 }

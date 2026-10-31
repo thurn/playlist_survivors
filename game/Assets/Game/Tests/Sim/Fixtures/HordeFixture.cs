@@ -12,6 +12,9 @@ namespace PS.Game.Sim.Tests
         public static GameContent Content =>
             content ??= GameContent.Load(Path.GetDirectoryName(Checkout.File("game", "Content", "enemies.json")));
 
+        /// <summary>The game's arena, game/Content/arena.json: 160 x 160 tiles with 38 crystal structures.</summary>
+        public static ArenaData GameArena() => ArenaData.Parse(File.ReadAllText(Checkout.File("game", "Content", "arena.json")), "arena.json");
+
         /// <summary>A sim's config; <paramref name="sword"/> gives the hero its sword at that rank (0: none).</summary>
         public static SimConfig Config(int minimum = 120, ArenaData arena = null, string[] roster = null, ulong seed = 1,
             int sword = 0, bool heroStands = false)

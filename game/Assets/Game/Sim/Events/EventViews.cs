@@ -102,12 +102,31 @@ namespace PS.Game.Sim
         readonly SimEvent e;
         public StructureBreakEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
+        /// <summary>The level data's structure index (<see cref="SimState.Structures"/>).</summary>
         public int Structure => e.I0;
-        public int TileX => e.I1;
-        public int TileY => e.I2;
-        public double DirX => e.D0;
-        public double DirY => e.D1;
-        public double Force => e.D2;
+        public StructureHit Source => (StructureHit)e.I1;
+        /// <summary>Where the hit met the structure: shards release outward from here.</summary>
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double DirX => e.D2;
+        public double DirY => e.D3;
+        /// <summary>How far the hit throws, in metres.</summary>
+        public double Force => e.D4;
+    }
+
+    public readonly struct GlintEvent
+    {
+        readonly SimEvent e;
+        public GlintEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Structure => e.I0;
+        public StructureHit Source => (StructureHit)e.I1;
+        /// <summary>The breaking hits a large structure has taken toward its break; 0 for a hit that can't break it.</summary>
+        public int Hits => e.I2;
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double DirX => e.D2;
+        public double DirY => e.D3;
     }
 
     public readonly struct RegrowthEvent
@@ -116,8 +135,23 @@ namespace PS.Game.Sim
         public RegrowthEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
         public int Structure => e.I0;
-        public int TileX => e.I1;
-        public int TileY => e.I2;
+        /// <summary>It erupts from the ground from <see cref="Start"/> (a downbeat, when it blocks its tiles) to <see cref="End"/>, a beat later.</summary>
+        public double Start => e.D0;
+        public double End => e.D1;
+    }
+
+    public readonly struct ZoneChangeEvent
+    {
+        readonly SimEvent e;
+        public ZoneChangeEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        /// <summary>schedule.json's zone index.</summary>
+        public int Zone => e.I0;
+        public int Previous => e.I1;
+        public ZoneCause Cause => (ZoneCause)e.I2;
+        /// <summary>The section change's or jump's song time; a fallback's due time.</summary>
+        public double CauseT => e.D0;
+        public double KnownAt => e.D1;
     }
 
     public readonly struct SpawnEvent

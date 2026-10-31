@@ -22,8 +22,9 @@ namespace PS.Game.Sim
     ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
-    /// then the beat, then the stride step and the hero's move on it, then the enemies' beat phases
-    /// (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
+    /// then the beat (on a downbeat, structures a zone change marked regrow, then a zone change
+    /// may land: <see cref="Structures"/>, <see cref="Zones"/>), then the stride step and the
+    /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
     /// systems run. A press may move the hero at once (a late step),
@@ -56,11 +57,15 @@ namespace PS.Game.Sim
             };
             State.Now = State.Tick * TickSeconds;
             cursor = State.Now;
-            Arena = new ArenaGrid(config.Arena ?? ArenaData.Open());
+            var arena = config.Arena ?? ArenaData.Open();
+            Arena = new ArenaGrid(arena);
             hero = new Hero(State.Hero, Arena, Strides);
             if (config.Horde != null) Horde = new Horde(config.Horde, Stream, Beats, Strides, Arena, State);
-            Health = new HeroHealth(State.Hero, config, config.Horde?.Content ?? config.Sword?.Content);
-            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde);
+            var content = config.Horde?.Content ?? config.Sword?.Content;
+            Health = new HeroHealth(State.Hero, config, content);
+            Structures = new Structures(arena, Arena, State, Horde);
+            if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures, State.Now);
+            if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde, Structures);
         }
 
         public SimState State { get; }
@@ -75,6 +80,10 @@ namespace PS.Game.Sim
         internal HeroHealth Health { get; }
         /// <summary>The hero's sword, or null in a run without it.</summary>
         internal Sword Sword { get; }
+        /// <summary>The level's crystal structures; the client reads them through <see cref="SimState.Structures"/>.</summary>
+        internal Structures Structures { get; }
+        /// <summary>The zones, or null in a run without content (whose schedule holds their rules).</summary>
+        internal Zones Zones { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -157,6 +166,11 @@ namespace PS.Game.Sim
                     State.LastBeat = i;
                     State.Bar = Beats.BarOf(i, out bool downbeat);
                     State.Downbeat = downbeat;
+                    if (downbeat)
+                    {
+                        Structures.Downbeat(this, beat, Beats.PeriodOf(i));
+                        Zones?.Downbeat(this, beat);
+                    }
                 }
                 else if (step == next)
                 {
@@ -182,6 +196,7 @@ namespace PS.Game.Sim
             if (!State.Frozen) State.RunClock += TickSeconds;
             Horde?.Tick(this, end);
             Sword?.Tick(end);
+            Zones?.Tick(this, end);
         }
 
         void UpdateBeatState(double t)

@@ -3,9 +3,9 @@ using System;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"). The
-    /// skeleton holds time, the run clock, the beat and the hero; the rule beads add enemies,
-    /// structures and items as dense arrays here. The client copies what it needs into its own
+    /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"): time,
+    /// the run clock, the beat, the hero, the enemies, the structures and the zone; M3 adds items
+    /// as dense arrays here. The client copies what it needs into its own
     /// short history to show <c>frameSong</c>, which trails the frontier.
     ///
     /// Only the sim writes it: every property is <c>{ get; internal set; }</c>, and dense arrays
@@ -39,5 +39,12 @@ namespace PS.Game.Sim
         public ReadOnlySpan<EnemyState> Enemies => EnemyStore;
         public int EnemiesAlive { get; internal set; }
         internal EnemyState[] EnemyStore = Array.Empty<EnemyState>();
+
+        /// <summary>Every crystal structure, standing or broken; the index is the level data's and the structure's id in events.</summary>
+        public ReadOnlySpan<StructureState> Structures => StructureStore;
+        internal StructureState[] StructureStore = Array.Empty<StructureState>();
+
+        /// <summary>The arena's zone: an index into schedule.json's zones, from 0 at the start.</summary>
+        public int Zone { get; internal set; }
     }
 }

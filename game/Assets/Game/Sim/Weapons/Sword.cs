@@ -51,7 +51,8 @@ namespace PS.Game.Sim
     ///   <c>shape radius * rank area * Area</c> around the hero (x 1.3 heavy) takes
     ///   <c>rank power * Might</c> (x 2.5 heavy), and is knocked back or dies. A heavy strike sends
     ///   out a cleave wave, its bands one sixteenth apart from the next eighth, hitting each enemy it
-    ///   passes once at the wave's damage.
+    ///   passes once at the wave's damage. Strikes and bands hit crystal structures in reach too
+    ///   (<see cref="Structures"/>): a heavy strike and its wave break them, others only glint.
     /// - Nothing new winds up while the world is frozen or the hero has fallen; an attack already
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
     /// </summary>
@@ -80,7 +81,7 @@ namespace PS.Game.Sim
         struct Wave
         {
             public bool Active;
-            public int Band, Bands;
+            public int Id, Band, Bands;
             public double X, Y, Inner, Outer, First, Every, Damage;
         }
 
@@ -88,6 +89,7 @@ namespace PS.Game.Sim
         readonly BeatClock clock;
         readonly SimState state;
         readonly Horde horde;
+        readonly Structures structures;
         readonly EnemyRole[] roles;
         readonly double[] aimWeight;
         readonly WeaponDef weapon;
@@ -112,7 +114,7 @@ namespace PS.Game.Sim
         // Aim scratch, one slot per enemy.
         readonly double[] aimAngle, aimDist;
 
-        public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde)
+        public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde, Structures structures)
         {
             if (config.Content == null) throw new ArgumentException("the sword needs content");
             weapon = config.Content.Weapon(config.Weapon);
@@ -122,6 +124,7 @@ namespace PS.Game.Sim
             this.clock = clock;
             this.state = state;
             this.horde = horde;
+            this.structures = structures;
             windup = config.WindupS;
             rank = config.Rank;
             stats = config.Stats ?? config.Content.Progression.Hero.Stats;
@@ -405,10 +408,12 @@ namespace PS.Game.Sim
             if (s.Cancelled || !s.Wound || state.Hero.Fallen) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
             int wave = s.Heavy ? StartWave(sim, s, t, hx, hy) : -1;
+            double launch = Launch(s.Heavy ? weapon.Shape.HeavyDamage : 1);
+            structures.Strike(sim, t, hx, hy, s.Reach, s.Heavy ? StructureHit.HeavyStrike : StructureHit.Strike, launch,
+                wave >= 0 ? waves[wave].Id : -1);
             if (horde == null) return;
             var enemies = state.EnemyStore;
             double damage = Power * (s.Heavy ? weapon.Shape.HeavyDamage : 1);
-            double launch = Launch(s.Heavy ? weapon.Shape.HeavyDamage : 1);
             var source = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -444,6 +449,7 @@ namespace PS.Game.Sim
             waves[w] = new Wave
             {
                 Active = true,
+                Id = waveCount,
                 Bands = bands,
                 X = hx,
                 Y = hy,
@@ -463,10 +469,12 @@ namespace PS.Game.Sim
             ref var wv = ref waves[w];
             double outer = Math.Min(wv.Inner + weapon.Shape.WaveBandM * (wv.Band + 1), wv.Outer);
             if (++wv.Band >= wv.Bands) wv.Active = false;
-            if (horde == null || state.Hero.Fallen) return;
+            if (state.Hero.Fallen) return;
+            double launch = Launch(1);
+            structures.Strike(sim, t, wv.X, wv.Y, outer, StructureHit.Cleave, launch, wv.Id);
+            if (horde == null) return;
             var enemies = state.EnemyStore;
             var hit = waveHit[w];
-            double launch = Launch(1);
             for (int i = 0; i < enemies.Length; i++)
             {
                 if (!enemies[i].Alive || hit[i]) continue;

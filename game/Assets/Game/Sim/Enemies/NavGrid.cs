@@ -43,6 +43,39 @@ namespace PS.Game.Sim
 
         public bool IsBlocked(int cell) => blocked[cell];
 
+        /// <summary>Blocks or opens the cells of hero tile (tx, ty), as a structure regrows or breaks there.</summary>
+        public void SetTile(int tx, int ty, bool isBlocked)
+        {
+            for (int dy = 0; dy < CellsPerTile; dy++)
+                for (int dx = 0; dx < CellsPerTile; dx++)
+                    blocked[(1 + ty * CellsPerTile + dy) * W + 1 + tx * CellsPerTile + dx] = isBlocked;
+        }
+
+        /// <summary>
+        /// The centre of the open cell nearest (x, y), searching rings of cells outward; false when
+        /// none lies within <paramref name="maxCells"/> cells.
+        /// </summary>
+        public bool NearestOpen(double x, double y, int maxCells, out double ox, out double oy)
+        {
+            ox = oy = 0;
+            int cx = Floor((x - MinX) / CellM), cy = Floor((y - MinY) / CellM);
+            double best = double.PositiveInfinity;
+            // A cell r rings out lies at least r - 1 cells away, so once that passes the best, stop.
+            for (int r = 0; r <= maxCells && (r - 1) * CellM < Math.Sqrt(best); r++)
+                for (int gy = cy - r; gy <= cy + r; gy++)
+                    for (int gx = cx - r; gx <= cx + r; gx++)
+                    {
+                        if (Math.Max(Math.Abs(gx - cx), Math.Abs(gy - cy)) != r || Blocked(gx, gy)) continue;
+                        int c = gy * W + gx;
+                        double dx = CenterX(c) - x, dy = CenterY(c) - y;
+                        if (dx * dx + dy * dy >= best) continue;
+                        best = dx * dx + dy * dy;
+                        ox = CenterX(c);
+                        oy = CenterY(c);
+                    }
+            return best < double.PositiveInfinity;
+        }
+
         public bool Walkable(double x, double y)
         {
             int c = CellIndex(x, y);

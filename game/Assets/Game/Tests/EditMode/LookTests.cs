@@ -160,7 +160,7 @@ namespace Game.Tests
             Assert.That(moments.Flash(5.0, Period), Is.EqualTo(FeelMoments.BlowFlash).Within(1e-6));
 
             // A break shakes past the hits' cap, but never past its own.
-            moments.OnEvent(SimEvent.StructureBreak(6.0, 3, 0, 0, 1, 0, force: 5));
+            moments.OnEvent(SimEvent.StructureBreak(6.0, 3, StructureHit.HeavyStrike, 0, 0, 1, 0, force: 5));
             Assert.That(moments.ShakeAmplitude(6.0, Period), Is.EqualTo(FeelMoments.BreakShakeCap).Within(1e-6));
             for (int k = 0; k < 600; k++)
                 Assert.That(CameraRig.Shake(6 + k / Fps, 0.4f).magnitude, Is.LessThanOrEqualTo(0.4f + 1e-5f));

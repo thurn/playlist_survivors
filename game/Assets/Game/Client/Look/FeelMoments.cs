@@ -75,7 +75,7 @@ namespace Game.Client.Look
                 }
                 case SimEventKind.StructureBreak:
                 {
-                    float force = (float)Math.Max(0, Math.Min(1, e.D2));
+                    float force = (float)Math.Max(0, Math.Min(1, e.AsStructureBreak.Force));
                     Add(new Moment { T = e.T, Kind = Kind.Break, Flash = 0.5f + 0.5f * force, Punch = BreakPunch, Shake = 0.15f + 0.25f * force });
                     break;
                 }

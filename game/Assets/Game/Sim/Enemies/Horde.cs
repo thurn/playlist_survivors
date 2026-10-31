@@ -50,6 +50,8 @@ namespace PS.Game.Sim
         const int SpawnTries = 16;
         /// <summary>Flow-field cells settled per tick while a rebuild runs.</summary>
         public const int FieldBudget = 4096;
+        /// <summary>How far out a push off a regrowing structure looks for open ground, in cells (the largest site is 5 tiles across).</summary>
+        const int PushCells = 16;
         const double HashCellM = 2;
 
         enum Phase { Notice, Decide, Land }
@@ -83,6 +85,7 @@ namespace PS.Game.Sim
         Phase phase;
         double nextSpawn;
         int drops;
+        bool navChanged;
 
         public Horde(HordeConfig config, BeliefLog log, BeatClock clock, StrideGrid strides, ArenaGrid arena, SimState state)
         {
@@ -429,6 +432,12 @@ namespace PS.Game.Sim
             double dist = KnockbackM * units;
             double toX = x + dirX / l * dist, toY = y + dirY / l * dist;
             Nav.Clamp(x, y, ref toX, ref toY);
+            StartKnock(sim, i, t, x, y, toX, toY);
+        }
+
+        void StartKnock(Simulation sim, int i, double t, double x, double y, double toX, double toY)
+        {
+            ref var e = ref enemies[i];
             e.X = x;
             e.Y = y;
             e.Motion = EnemyMotion.Knock;
@@ -463,6 +472,46 @@ namespace PS.Game.Sim
             sim.Emit(SimEvent.Drop(t, drops++, ItemKind.Gem, x, y, roles[e.Role].Xp));
         }
 
+        /// <summary>
+        /// A structure's tiles turn impassable (it regrows) or open (it breaks): the nav grid is
+        /// patched at once, and the flow field rebuilds over it, time-sliced, from the next tick.
+        /// Until it is done the old field leads, and moves never enter a blocked cell.
+        /// </summary>
+        internal void PatchNav(Tile[] tiles, bool blocked)
+        {
+            foreach (var tile in tiles) Nav.SetTile(tile.X, tile.Y, blocked);
+            navChanged = true;
+        }
+
+        /// <summary>
+        /// Enemies a regrowing structure would hold are pushed out at <paramref name="t"/>, as a
+        /// forced reaction (a knock): one standing in a blocked cell to the nearest open cell, one
+        /// moving into one stopped short of it. The push ignores the blocked cells it crosses, so
+        /// an enemy deep inside a site still leaves it.
+        /// </summary>
+        internal void PushOff(Simulation sim, double t)
+        {
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                ref var e = ref enemies[i];
+                if (!e.Alive) continue;
+                e.PositionAt(t, out double x, out double y);
+                double toX = x, toY = y;
+                if (!Nav.Walkable(x, y))
+                {
+                    if (!Nav.NearestOpen(x, y, PushCells, out toX, out toY)) continue;
+                }
+                else if (e.Motion != EnemyMotion.Still && e.MoveEnd > t + 1e-9 && !Nav.Walkable(e.ToX, e.ToY))
+                {
+                    toX = e.ToX;
+                    toY = e.ToY;
+                    Nav.Clamp(x, y, ref toX, ref toY);
+                }
+                else continue;
+                StartKnock(sim, i, t, x, y, toX, toY);
+            }
+        }
+
         /// <summary>The per-tick system, at the tick's end: motion, the flow field's rebuild, spawns and recycling.</summary>
         internal void Tick(Simulation sim, double end)
         {
@@ -476,9 +525,14 @@ namespace PS.Game.Sim
                 if (end >= e.MoveEnd - 1e-9) e.Motion = EnemyMotion.Still;
             }
 
-            // The field leads to the hero's tile: where it stands, or is striding to.
+            // The field leads to the hero's tile: where it stands, or is striding to. A structure
+            // breaking or regrowing restarts the rebuild over the patched grid.
             double tx = state.Hero.X, ty = state.Hero.Y;
-            if (!next.Building && Nav.CellIndex(tx, ty) != field.SourceCell) next.Begin(tx, ty);
+            if (navChanged || (!next.Building && Nav.CellIndex(tx, ty) != field.SourceCell))
+            {
+                next.Begin(tx, ty);
+                navChanged = false;
+            }
             if (next.Building && next.Step(FieldBudget))
             {
                 var done = next;

@@ -824,7 +824,8 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
   attack (wind-up start, impact time, direction, kind, heavy, reach), enemy
   step (from, to, move start, footplant), enemy knock (from, to, start, end),
   hit, death (impact direction and force), cleave (centre, radii, band
-  times), drop, structure break and regrowth, spawn (a recycled enemy's
+  times), drop, structure glint, break (strike point, direction, force) and
+  regrowth (start, end), zone change, spawn (a recycled enemy's
   re-entry flagged), pickup, level-up, chest, freeze, sound cue.
 - **State** is the latest settled snapshot of positions and stats. The
   client keeps a short history of past states to show `frameSong`, which
@@ -1155,6 +1156,34 @@ light, and break on big moments.
 - Structure breaks stay far rarer than deaths: structures near the hero's
   path clear early in a section and return only at the next one.
 
+**Shipped (ps-msz.3.4).** `Sim/Structures/Structures.cs`, built from the
+level data's sites in every sim, with `SimState.Structures` (standing,
+hits, grow times) for the client. As built:
+
+- A hit is a disc around a centre: every standing structure with a tile in
+  reach is hit at its nearest point. The sword's heavy strike (from the
+  hero, at its reach) and each cleave band (from the wave's centre, at the
+  band's outer radius) break; one heavy strike and its wave hit a structure
+  once. Ordinary strikes glint (`SimEventKind.Glint`). The boss slam,
+  finale blast and evolved weapon are `StructureHit` sources M3 passes to
+  `Structures.Strike`.
+- A small structure breaks in one breaking hit; a large one in two, or
+  three when it covers 9 tiles or more (3 of the arena's 8 large sites).
+  Hits short of the break glint with their count.
+- `StructureBreak` carries the strike point, the direction from the hit's
+  centre through it, and the hit's throw in metres as its force (a death's
+  launch: 4.63 m heavy, 1.85 m from the wave). The tiles open to the hero
+  at once and the nav grid is patched; the flow field restarts its
+  time-sliced rebuild on the next tick.
+- Regrowth goes to the first downbeat after the zone change, for the
+  structures broken at the change; `Regrowth` carries the start (the
+  downbeat, when its tiles block again) and the end, one beat period
+  later. Hits while it grows only glint. The 3 m test measures from the
+  hero's position and from the tile it stands on or is striding to, to the
+  site's nearest tile edge. Pushed enemies get a 0.12 s `EnemyKnock` to the
+  nearest open cell, or stop short when they were stepping into the site.
+- While the world is frozen, regrowth waits for a downbeat after the thaw.
+
 ### Music-driven events
 
 The clock decides who spawns; the music decides when things happen and how
@@ -1182,6 +1211,23 @@ they look. These hooks are native's:
 The lookahead lets these land exactly: a zone change can start on the
 downbeat where the new section is heard, and a swarm can arrive with the
 jump instead of after it.
+
+**Shipped (ps-msz.3.4): zones.** `Sim/Structures/Zones.cs`, on in any sim
+with content (schedule.json's `zones`), emits `SimEventKind.ZoneChange`
+(new and previous zone, cause, the cause's time and known-at) and keeps
+`SimState.Zone`. As built:
+
+- Changes and jumps are taken in known-at order. The 8 s gap is from the
+  previous zone change's downbeat to the candidate's `t`; the first
+  detected change keeps no gap. One kept change waits for its downbeat at
+  a time, and the next is judged against it once it lands.
+- "Known in time" reduces to the first downbeat at or after both `t` and
+  `known_at`.
+- The fallback's "first 5 minutes" reads the run clock at the previous
+  zone change. It lands on the first downbeat at or after its due time; with
+  no downbeat 4 s after that (no beat locked), at that tick's end. A
+  change waiting for its downbeat holds the fallback off.
+- Nothing lands while the world is frozen.
 
 ### Pickups, level-ups and chests
 
