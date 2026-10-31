@@ -18,6 +18,9 @@ uv run --project demo3d/tools game build
 
 The player exited 0 after 53 s: the run, then its replay in real time with its recorded music.
 
+Rebased onto ps-msz.6.11's calibration and 6.1's pause fix, rebuilt and run again the same way:
+the run settled `504348240D232E38` (11852 events, at song 24.975 s) and its replay matched.
+
 | | Run | Replay |
 |---|---|---|
 | Frames to song | 1441 to 24.904 s | 1437 to 24.905 s |
