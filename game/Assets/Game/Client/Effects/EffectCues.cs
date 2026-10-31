@@ -59,9 +59,9 @@ namespace Game.Client.Effects
                 case SimEventKind.Attack:
                 {
                     var a = e.AsAttack;
-                    if (a.Attacker != -1) break;
-                    var kind = a.Kind == (int)HeroAttackKind.Slam ? Kind.Slam : a.Kind == (int)HeroAttackKind.Spin ? Kind.Spin : Kind.Slash;
-                    float size = a.Heavy ? HeavySlash : a.Kind == (int)HeroAttackKind.FollowUp ? FollowUpSlash : 1f;
+                    if (!a.IsSword) break; // the other weapons' looks are their own
+                    var kind = a.SwordKind == HeroAttackKind.Slam ? Kind.Slam : a.SwordKind == HeroAttackKind.Spin ? Kind.Spin : Kind.Slash;
+                    float size = a.Heavy ? HeavySlash : a.SwordKind == HeroAttackKind.FollowUp ? FollowUpSlash : 1f;
                     _pending.Add(new Cue
                     {
                         Kind = kind, T = a.Impact, Dir = new Vector2((float)a.DirX, (float)a.DirY), Scale = (float)a.Reach * size,
@@ -82,7 +82,7 @@ namespace Game.Client.Effects
                 case SimEventKind.Hit:
                 {
                     var h = e.AsHit;
-                    if (h.Target < 0 || h.Damage <= 0) break;
+                    if (h.OnHero || h.Damage <= 0) break;
                     _pending.Add(new Cue
                     {
                         Kind = Kind.Flash, T = e.T, At = new Vector2((float)h.X, (float)h.Y),

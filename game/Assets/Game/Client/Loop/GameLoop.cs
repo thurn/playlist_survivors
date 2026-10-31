@@ -461,7 +461,7 @@ namespace Game.Client.Loop
                 switch (e.Kind)
                 {
                     case SimEventKind.Death when e.AsDeath.Enemy >= 0: Kills++; break;
-                    case SimEventKind.Attack when e.AsAttack.Attacker == -1 && e.AsAttack.Heavy: HeavyStrikes++; break;
+                    case SimEventKind.Attack when e.AsAttack.IsSword && e.AsAttack.Heavy: HeavyStrikes++; break;
                     case SimEventKind.StructureBreak: Breaks++; break;
                     case SimEventKind.Regrowth: Regrowths++; break;
                     case SimEventKind.ZoneChange: ZoneChanges++; break;

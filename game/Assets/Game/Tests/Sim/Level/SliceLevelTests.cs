@@ -31,7 +31,7 @@ namespace PS.Game.Sim.Tests
             var spawned = Drive.Events(sim, SimEventKind.Spawn).Select(e => content.Roles[e.AsSpawn.Role].Id).Distinct();
             CollectionAssert.AreEquivalent(SliceLevel.Roster, spawned);
             int deaths = Drive.Events(sim, SimEventKind.Death).Count;
-            int heavy = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Count(a => a.Attacker == -1 && a.Heavy);
+            int heavy = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Count(a => a.ByHero && a.Heavy);
             int breaks = Drive.Events(sim, SimEventKind.StructureBreak).Count;
             TestContext.Progress.WriteLine($"slice: alive {fewest}..{most} after 5 s, {deaths} deaths, {heavy} heavy strikes, {breaks} breaks, " +
                                            $"{Drive.Events(sim, SimEventKind.EnemyStep).Count} steps, health {sim.State.Hero.Health:F0}/{sim.State.Hero.MaxHealth:F0}");

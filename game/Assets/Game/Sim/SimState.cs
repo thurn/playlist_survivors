@@ -40,6 +40,10 @@ namespace PS.Game.Sim
         public int EnemiesAlive { get; internal set; }
         internal EnemyState[] EnemyStore = Array.Empty<EnemyState>();
 
+        /// <summary>The damage each of the hero's weapons has dealt to enemies this run, by content's weapon index (empty without a horde).</summary>
+        public ReadOnlySpan<double> WeaponDamage => WeaponDamageStore;
+        internal double[] WeaponDamageStore = Array.Empty<double>();
+
         /// <summary>Every crystal structure, standing or broken; the index is the level data's and the structure's id in events.</summary>
         public ReadOnlySpan<StructureState> Structures => StructureStore;
         internal StructureState[] StructureStore = Array.Empty<StructureState>();

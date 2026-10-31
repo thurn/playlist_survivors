@@ -100,13 +100,13 @@ namespace Game.Client.Crowd
                 case SimEventKind.Attack:
                 {
                     var a = e.AsAttack;
-                    if (a.Attacker >= 0) Of(a.Attacker)?.Lunge(a.WindupStart, a.Impact, a.DirX, a.DirY);
+                    if (!a.ByHero) Of(a.Enemy)?.Lunge(a.WindupStart, a.Impact, a.DirX, a.DirY);
                     break;
                 }
                 case SimEventKind.Hit:
                 {
                     var h = e.AsHit;
-                    if (h.Target >= 0) Of(h.Target)?.Hit(h.T);
+                    if (!h.OnHero) Of(h.Target)?.Hit(h.T);
                     break;
                 }
                 case SimEventKind.Death:

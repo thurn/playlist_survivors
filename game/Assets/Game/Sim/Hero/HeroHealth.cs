@@ -54,7 +54,7 @@ namespace PS.Game.Sim
                 double floor = stands ? Math.Min(hero.Health, StandingShare * hero.MaxHealth) : 0;
                 hero.Health = Math.Max(floor, hero.Health - damage);
             }
-            sim.Emit(SimEvent.Hit(t, -1, (int)EnemyAttackKind.Lunge, damage, hx, hy, dirX, dirY));
+            sim.Emit(SimEvent.HeroHit(t, EnemyAttackKind.Lunge, damage, hx, hy, dirX, dirY));
             if (hero.Health > 1e-9) return;
             hero.Fallen = true;
             sim.Emit(SimEvent.Death(t, -1, -1, hx, hy, dirX, dirY, 0));

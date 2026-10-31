@@ -115,6 +115,7 @@ namespace PS.Game.Sim
             int cap = config.Content.Schedule.Cap;
             enemies = new EnemyState[cap];
             state.EnemyStore = enemies;
+            state.WeaponDamageStore = new double[config.Content.Weapons.Length];
             free = new int[cap];
             for (int i = 0; i < cap; i++) free[freeCount++] = cap - 1 - i;
             baseX = new double[cap];
@@ -224,7 +225,7 @@ namespace PS.Game.Sim
                     dx = 1;
                     d = 1;
                 }
-                sim.Emit(SimEvent.Attack(t, i, (int)EnemyAttackKind.Lunge, t, impact, dx / d, dy / d));
+                sim.Emit(SimEvent.EnemyAttack(t, i, EnemyAttackKind.Lunge, t, impact, dx / d, dy / d));
             }
         }
 
@@ -448,6 +449,46 @@ namespace PS.Game.Sim
             e.MoveStart = t;
             e.MoveEnd = t + KnockSeconds;
             sim.Emit(SimEvent.EnemyKnock(t, i, x, y, toX, toY, t, t + KnockSeconds));
+        }
+
+        /// <summary>
+        /// Fills <paramref name="into"/> with the live enemies whose bodies touch the circle of radius
+        /// <paramref name="reach"/> around (x, y) at song time <paramref name="t"/>, in slot order, and
+        /// returns how many; <paramref name="into"/> holds every slot.
+        /// </summary>
+        internal int InReach(double t, double x, double y, double reach, Span<int> into)
+        {
+            int n = 0;
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                if (!enemies[i].Alive) continue;
+                enemies[i].PositionAt(t, out double ex, out double ey);
+                double dx = ex - x, dy = ey - y;
+                if (Math.Sqrt(dx * dx + dy * dy) > reach + 0.5 * roles[enemies[i].Role].RadiusM) continue;
+                into[n++] = i;
+            }
+            return n;
+        }
+
+        /// <summary>
+        /// The one way the hero's weapons hurt an enemy: enemy <paramref name="i"/> takes
+        /// <paramref name="amount"/> from <paramref name="weapon"/> (content's index) at
+        /// <paramref name="t"/>, struck along (dirX, dirY). The hit event comes first, then the enemy
+        /// dies (<see cref="Kill"/>, thrown <paramref name="launch"/> metres) or is knocked back by
+        /// <paramref name="knockback"/> (<see cref="Knock"/>). The weapon's tally
+        /// (<see cref="SimState.WeaponDamage"/>) adds the whole amount.
+        /// </summary>
+        internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
+            double dirX, double dirY, double knockback, double launch)
+        {
+            ref var e = ref enemies[i];
+            if (!e.Alive) return;
+            e.PositionAt(t, out double x, out double y);
+            e.Health -= amount;
+            state.WeaponDamageStore[weapon] += amount;
+            sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY));
+            if (e.Health <= 1e-9) Kill(sim, i, t, dirX, dirY, launch);
+            else Knock(sim, i, t, dirX, dirY, knockback);
         }
 
         /// <summary>

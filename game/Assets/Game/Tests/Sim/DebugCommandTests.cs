@@ -43,7 +43,7 @@ namespace PS.Game.Sim.Tests
             Drive.Events(sim, SimEventKind.Beat).Select(e => e.AsBeat).Where(b => b.Downbeat).Select(b => b.T).ToArray();
 
         static List<AttackEvent> HeroAttacks(Simulation sim) =>
-            Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.Attacker == -1).ToList();
+            Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.ByHero).ToList();
 
         [Test]
         public void AForcedSectionChangeLandsOnTheNextDownbeatWithASlam()
@@ -61,7 +61,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(downbeat, change.T);
             Assert.AreEqual(ZoneCause.Change, change.Cause);
             Assert.AreEqual(1, change.Zone);
-            var slams = HeroAttacks(sim).Where(a => a.Kind == (int)HeroAttackKind.Slam).ToList();
+            var slams = HeroAttacks(sim).Where(a => a.SwordKind == HeroAttackKind.Slam).ToList();
             Assert.AreEqual(1, slams.Count);
             Assert.AreEqual(downbeat, slams[0].Impact, "the slam shares the zone change's downbeat");
         }
@@ -77,9 +77,9 @@ namespace PS.Game.Sim.Tests
             var after = HeroAttacks(sim).Where(a => a.WindupStart >= 8.1).ToList();
             var heavy = after.Where(a => a.Heavy).ToList();
             Assert.AreEqual(1, heavy.Count, "one heavy strike");
-            Assert.AreEqual(after.First(a => a.Kind != (int)HeroAttackKind.FollowUp).Impact, heavy[0].Impact,
+            Assert.AreEqual(after.First(a => a.SwordKind != HeroAttackKind.FollowUp).Impact, heavy[0].Impact,
                 "the first main strike to wind up after the command");
-            Assert.AreEqual((int)HeroAttackKind.Spin, heavy[0].Kind);
+            Assert.AreEqual(HeroAttackKind.Spin, heavy[0].SwordKind);
         }
 
         [Test]

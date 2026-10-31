@@ -94,6 +94,7 @@ namespace PS.Game.Sim
         readonly EnemyRole[] roles;
         readonly double[] aimWeight;
         readonly WeaponDef weapon;
+        readonly int weaponIndex;
         readonly double windup;
         int rank;
         Stats stats;
@@ -111,13 +112,15 @@ namespace PS.Game.Sim
         readonly bool[][] waveHit = new bool[WaveCapacity][];
         int waveCount;
 
-        // Aim scratch, one slot per enemy.
+        // The enemies in a hit's reach, and the aim's distances and angles to them.
+        readonly int[] reached;
         readonly double[] aimAngle, aimDist;
 
         public Sword(SwordConfig config, BeliefLog log, BeatClock clock, SimState state, Horde horde, Structures structures, Zones zones)
         {
             if (config.Content == null) throw new ArgumentException("the sword needs content");
             weapon = config.Content.Weapon(config.Weapon);
+            weaponIndex = config.Content.WeaponIndex(config.Weapon);
             if (weapon.Shape.Kind != ShapeKind.Sword) throw new ArgumentException(config.Weapon + " is not a sword");
             if (!(config.WindupS > 0)) throw new ArgumentException("a positive wind-up");
             this.log = log;
@@ -135,6 +138,7 @@ namespace PS.Game.Sim
                 aimWeight[i] = roles[i].Id.StartsWith("boss-", StringComparison.Ordinal) || roles[i].Id == "minotaur" ? BossWeight
                     : roles[i].Brute ? BruteWeight : 1;
             int cap = state.EnemyStore.Length;
+            reached = new int[cap];
             aimAngle = new double[cap];
             aimDist = new double[cap];
             for (int w = 0; w < WaveCapacity; w++) waveHit[w] = new bool[cap];
@@ -290,7 +294,7 @@ namespace PS.Game.Sim
             s.Reach = Reach(heavy);
             state.Hero.PositionAt(t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
-            sim.Emit(SimEvent.Attack(t, -1, (int)kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
+            sim.Emit(SimEvent.SwordAttack(t, weaponIndex, kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
         }
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>).</summary>
@@ -333,21 +337,19 @@ namespace PS.Game.Sim
         void Aim(double t, double hx, double hy, double reach, out double dirX, out double dirY)
         {
             var enemies = state.EnemyStore;
+            int n = horde != null ? horde.InReach(t, hx, hy, reach, reached) : 0;
             int nearest = -1;
             double nearestD = double.PositiveInfinity;
-            for (int i = 0; i < enemies.Length; i++)
+            for (int k = 0; k < n; k++)
             {
-                aimDist[i] = double.PositiveInfinity;
-                if (!enemies[i].Alive) continue;
-                enemies[i].PositionAt(t, out double x, out double y);
+                enemies[reached[k]].PositionAt(t, out double x, out double y);
                 double d = Math.Sqrt((x - hx) * (x - hx) + (y - hy) * (y - hy));
-                if (d > reach + 0.5 * roles[enemies[i].Role].RadiusM) continue;
-                aimDist[i] = d;
-                aimAngle[i] = Math.Atan2(y - hy, x - hx);
+                aimDist[k] = d;
+                aimAngle[k] = Math.Atan2(y - hy, x - hx);
                 if (d < nearestD)
                 {
                     nearestD = d;
-                    nearest = i;
+                    nearest = k;
                 }
             }
             if (nearest < 0)
@@ -357,13 +359,13 @@ namespace PS.Game.Sim
             }
             double toNearest = aimAngle[nearest];
             double bestScore = 0, bestDir = 0, bestOff = double.PositiveInfinity;
-            for (int k = 0; k < AimDirections; k++)
+            for (int j = 0; j < AimDirections; j++)
             {
-                double dir = Wrap(2 * Math.PI * k / AimDirections);
+                double dir = Wrap(2 * Math.PI * j / AimDirections);
                 double score = 0;
-                for (int i = 0; i < enemies.Length; i++)
-                    if (aimDist[i] <= reach && Math.Abs(Wrap(aimAngle[i] - dir)) <= AimHalfAngle + 1e-12)
-                        score += aimWeight[enemies[i].Role];
+                for (int k = 0; k < n; k++)
+                    if (aimDist[k] <= reach && Math.Abs(Wrap(aimAngle[k] - dir)) <= AimHalfAngle + 1e-12)
+                        score += aimWeight[enemies[reached[k]].Role];
                 if (score <= 0) continue;
                 double off = Math.Abs(Wrap(dir - toNearest));
                 if (score > bestScore + 1e-9 || (Math.Abs(score - bestScore) <= 1e-9 && off < bestOff - 1e-9))
@@ -403,27 +405,18 @@ namespace PS.Game.Sim
             if (horde == null) return;
             var enemies = state.EnemyStore;
             double damage = Power * (s.Heavy ? weapon.Shape.HeavyDamage : 1);
-            var source = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
-            for (int i = 0; i < enemies.Length; i++)
+            var how = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
+            int n = horde.InReach(t, hx, hy, s.Reach, reached);
+            for (int k = 0; k < n; k++)
             {
-                if (!enemies[i].Alive) continue;
+                int i = reached[k];
                 enemies[i].PositionAt(t, out double x, out double y);
                 double dx = x - hx, dy = y - hy;
                 double d = Math.Sqrt(dx * dx + dy * dy);
-                if (d > s.Reach + 0.5 * roles[enemies[i].Role].RadiusM) continue;
                 if (wave >= 0) waveHit[wave][i] = true;
-                Hit(sim, i, t, damage, source, x, y, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY, launch);
+                horde.Damage(sim, i, t, damage, weaponIndex, how, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY,
+                    Numbers.Knockback, launch);
             }
-        }
-
-        /// <summary>Enemy <paramref name="i"/> at (x, y) takes a hit along (ux, uy): knocked back by the weapon's knockback, or dead.</summary>
-        void Hit(Simulation sim, int i, double t, double damage, WeaponHit source, double x, double y, double ux, double uy, double launch)
-        {
-            ref var e = ref state.EnemyStore[i];
-            e.Health -= damage;
-            sim.Emit(SimEvent.Hit(t, i, (int)source, damage, x, y, ux, uy));
-            if (e.Health <= 1e-9) horde.Kill(sim, i, t, ux, uy, launch);
-            else horde.Knock(sim, i, t, ux, uy, Numbers.Knockback);
         }
 
         /// <summary>A heavy strike's cleave wave from (hx, hy): its first band on the next eighth, then one each sixteenth.</summary>
@@ -464,16 +457,18 @@ namespace PS.Game.Sim
             if (horde == null) return;
             var enemies = state.EnemyStore;
             var hit = waveHit[w];
-            for (int i = 0; i < enemies.Length; i++)
+            int n = horde.InReach(t, wv.X, wv.Y, outer, reached);
+            for (int k = 0; k < n; k++)
             {
-                if (!enemies[i].Alive || hit[i]) continue;
+                int i = reached[k];
+                if (hit[i]) continue;
                 enemies[i].PositionAt(t, out double x, out double y);
                 double dx = x - wv.X, dy = y - wv.Y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
-                double r = 0.5 * roles[enemies[i].Role].RadiusM;
-                if (d - r > outer || d + r <= wv.Inner) continue;
+                if (d + 0.5 * roles[enemies[i].Role].RadiusM <= wv.Inner) continue;
                 hit[i] = true;
-                Hit(sim, i, t, wv.Damage, WeaponHit.Cleave, x, y, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0, launch);
+                horde.Damage(sim, i, t, wv.Damage, weaponIndex, WeaponHit.Cleave, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0,
+                    Numbers.Knockback, launch);
             }
         }
     }

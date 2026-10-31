@@ -6,6 +6,7 @@ using Game.Client.Loop;
 using Game.Client.Sound;
 using NUnit.Framework;
 using PS.Game.Sim;
+using PS.Game.Sim.Content;
 using UnityEngine;
 using Is = NUnit.Framework.Is;
 
@@ -168,10 +169,10 @@ namespace Game.Tests
             var clock = new TestClock { Mixer = 0 };
             var s = Scheduler(clock);
             var p = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
-            p.OnEvent(SimEvent.Attack(2.68, -1, (int)HeroAttackKind.SlashLeft, 2.68, 3.0, 1, 0, reach: 7.04));
-            p.OnEvent(SimEvent.Hit(3.0, 4, (int)WeaponHit.Strike, 1, 2, 0, 1, 0));
+            p.OnEvent(SimEvent.SwordAttack(2.68, 0, HeroAttackKind.SlashLeft, 2.68, 3.0, 1, 0, false, 7.04));
+            p.OnEvent(SimEvent.EnemyHit(3.0, 4, 0, WeaponHit.Strike, 1, 2, 0, 1, 0));
             p.OnEvent(SimEvent.Death(3.0, 4, 0, 2, 0, 1, 0, 1.85));
-            p.OnEvent(SimEvent.Hit(3.3, -1, (int)EnemyAttackKind.Lunge, 10, 0, 0, 1, 0));
+            p.OnEvent(SimEvent.HeroHit(3.3, EnemyAttackKind.Lunge, 10, 0, 0, 1, 0));
             p.OnEvent(SimEvent.Pickup(3.55, 0, (int)ItemKind.Gem, 0, 0, 1));
             p.OnEvent(SimEvent.Pickup(3.6, 1, (int)ItemKind.Gem, 0, 0, 1));
             var songs = s.Log.Select(e => Math.Round(e.Song, 6)).ToList();
@@ -189,14 +190,14 @@ namespace Game.Tests
             var cues = new EffectCues(new RoleLooks(null));
             var due = new List<EffectCues.Cue>();
             // The attack settles at its wind-up; its slash belongs to its impact.
-            cues.OnEvent(SimEvent.Attack(2.68, -1, (int)HeroAttackKind.Spin, 2.68, 3.0, 0, 1, heavy: true, reach: 9.152));
+            cues.OnEvent(SimEvent.SwordAttack(2.68, 0, HeroAttackKind.Spin, 2.68, 3.0, 0, 1, true, 9.152));
             for (int e = 0; e < 4; e++)
             {
-                cues.OnEvent(SimEvent.Hit(3.0, e, (int)WeaponHit.HeavyStrike, 30, e, 0, 1, 0));
+                cues.OnEvent(SimEvent.EnemyHit(3.0, e, 0, WeaponHit.HeavyStrike, 30, e, 0, 1, 0));
                 if (e < 3) cues.OnEvent(SimEvent.Death(3.0, e, 0, e, 0, 1, 0, 4.63));
             }
             cues.OnEvent(SimEvent.Cleave(3.0, 0, 7, 0, 0, 9.152, 15.07, 3.25, 0.125));
-            cues.OnEvent(SimEvent.Hit(3.375, 9, (int)WeaponHit.Cleave, 30, 11, 0, 1, 0));
+            cues.OnEvent(SimEvent.EnemyHit(3.375, 9, 0, WeaponHit.Cleave, 30, 11, 0, 1, 0));
 
             cues.TakeDue(2.99, due);
             Assert.That(due, Is.Empty, "nothing before its time");
@@ -213,6 +214,34 @@ namespace Game.Tests
             cues.TakeDue(3.4, due);
             Assert.That(due.Single().T, Is.EqualTo(3.375), "the cleave band's hit on its own frame");
             Assert.That(cues.Waiting, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void OnlyTheSwordsAttacksSlashAndSwing()
+        {
+            // Content's magic wand (weapon 4, a missile) has no look or sound yet: none of the sword's stands in.
+            var wand = SimEvent.HeroAttack(2.68, 4, ShapeKind.Missile, 0, 2.68, 3.0, 1, 0, false, 0);
+            var wandHit = SimEvent.EnemyHit(3.0, 4, 4, WeaponHit.Strike, 1, 2, 0, 1, 0);
+            var sword = SimEvent.SwordAttack(3.18, 0, HeroAttackKind.SlashLeft, 3.18, 3.5, 1, 0, false, 7.04);
+
+            var cues = new EffectCues(new RoleLooks(null));
+            var due = new List<EffectCues.Cue>();
+            cues.OnEvent(wand);
+            cues.OnEvent(wandHit);
+            cues.OnEvent(sword);
+            cues.TakeDue(3.0, due);
+            Assert.That(due.Single().Kind, Is.EqualTo(EffectCues.Kind.Flash), "the hit's chips are any weapon's; no slash");
+            cues.TakeDue(3.5, due);
+            Assert.That(due.Single().Kind, Is.EqualTo(EffectCues.Kind.Slash));
+
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var p = new SoundPresenter(s, Beats(), new RoleLooks(null), 0.8f, null);
+            p.OnEvent(wand);
+            Assert.That(s.LogCount, Is.EqualTo(0), "no swing");
+            p.OnEvent(wandHit);
+            Assert.That(s.Log.Single().Song, Is.EqualTo(3.0), "the hit's sound is any weapon's");
+            p.OnEvent(sword);
+            Assert.That(s.Log.Count(e => e.Song == 3.5), Is.EqualTo(1), "the sword's swing");
         }
 
         [Test]

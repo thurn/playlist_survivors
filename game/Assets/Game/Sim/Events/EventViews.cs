@@ -1,3 +1,5 @@
+using PS.Game.Sim.Content;
+
 namespace PS.Game.Sim
 {
     // Typed views of a SimEvent, one per kind: read-only copies naming its slots.
@@ -39,12 +41,21 @@ namespace PS.Game.Sim
 
     public readonly struct AttackEvent
     {
+        internal const int ShapeShift = 1, WeaponShift = 4;
         readonly SimEvent e;
         public AttackEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
-        public int Attacker => e.I0;
-        /// <summary>The hero's <see cref="HeroAttackKind"/>, or an enemy's <see cref="EnemyAttackKind"/>.</summary>
-        public int Kind => e.I1;
+        public bool ByHero => e.I0 < 0;
+        /// <summary>The attacking enemy; -1 for the hero's attacks.</summary>
+        public int Enemy => e.I0;
+        /// <summary>The hero's weapon: its index in content's weapons; -1 for an enemy's attack.</summary>
+        public int Weapon => ByHero ? e.I2 >> WeaponShift : -1;
+        /// <summary>The hero's weapon's shape, which says how its kind reads.</summary>
+        public ShapeKind Shape => ByHero ? (ShapeKind)((e.I2 >> ShapeShift) & 7) : throw Not("the hero's");
+        /// <summary>A sword's strike (the sword or its evolution): the only attacks <see cref="SwordKind"/> reads.</summary>
+        public bool IsSword => ByHero && Shape == ShapeKind.Sword;
+        public HeroAttackKind SwordKind => IsSword ? (HeroAttackKind)e.I1 : throw Not("a sword's");
+        public EnemyAttackKind EnemyKind => !ByHero ? (EnemyAttackKind)e.I1 : throw Not("an enemy's");
         /// <summary>A heavy strike: 2.5x damage, a wider reach and a cleave wave.</summary>
         public bool Heavy => (e.I2 & 1) != 0;
         public double WindupStart => e.D0;
@@ -53,6 +64,8 @@ namespace PS.Game.Sim
         public double DirY => e.D3;
         /// <summary>The hero's strike: how far around it the hit reaches, which the visible strike shows.</summary>
         public double Reach => e.D4;
+
+        static System.InvalidOperationException Not(string whose) => new System.InvalidOperationException($"not {whose} attack");
     }
 
     public readonly struct EnemyStepEvent
@@ -74,8 +87,13 @@ namespace PS.Game.Sim
         readonly SimEvent e;
         public HitEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
+        public bool OnHero => e.I0 < 0;
+        /// <summary>The enemy struck; -1 for the hero.</summary>
         public int Target => e.I0;
-        public int Source => e.I1;
+        /// <summary>The hero's weapon that struck an enemy: its index in content's weapons; -1 on the hero.</summary>
+        public int Weapon => OnHero ? -1 : e.I2;
+        public WeaponHit WeaponHit => !OnHero ? (WeaponHit)e.I1 : throw new System.InvalidOperationException("a hit on the hero");
+        public EnemyAttackKind EnemyKind => OnHero ? (EnemyAttackKind)e.I1 : throw new System.InvalidOperationException("a hit on an enemy");
         public double Damage => e.D0;
         public double X => e.D1;
         public double Y => e.D2;

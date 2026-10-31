@@ -107,7 +107,7 @@ namespace PS.Game.Sim.Tests
                 sim.AddKnown(StreamEntry.Forecast(beats[b], 0, 4, 0.7), beats[b] - 2);
             sim.StepTo(20);
 
-            var heavies = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.Attacker == -1 && a.Heavy)
+            var heavies = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.ByHero && a.Heavy)
                 .Select(a => a.Impact).ToList();
             CollectionAssert.AreEqual(new[] { beats[10], beats[20] }, heavies);
             var breaks = Drive.Events(sim, SimEventKind.StructureBreak).Select(e => e.AsStructureBreak).ToList();
@@ -333,7 +333,7 @@ namespace PS.Game.Sim.Tests
             var sim = new Simulation(HordeFixture.Config(heroStands: true, sword: 1, arena: HordeFixture.GameArena()));
             Drive.Feed(sim, entries, duration);
             var downbeats = Downbeats(sim);
-            var heavies = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.Attacker == -1 && a.Heavy)
+            var heavies = Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.ByHero && a.Heavy)
                 .Select(a => a.Impact).ToList();
             var bands = Drive.Events(sim, SimEventKind.Cleave).Select(e => e.AsCleave)
                 .SelectMany(c => Enumerable.Range(0, c.Bands).Select(k => c.FirstBand + k * c.BandSeconds)).ToList();

@@ -97,7 +97,7 @@ namespace Game.Client.Hero
         public void OnEvent(in SimEvent e)
         {
             if (e.Kind == SimEventKind.HeroStep) OnStep(e.AsHeroStep);
-            else if (e.Kind == SimEventKind.Attack && e.I0 < 0) OnAttack(e.AsAttack);
+            else if (e.Kind == SimEventKind.Attack && e.AsAttack.IsSword) OnAttack(e.AsAttack);
         }
 
         public void OnStep(in HeroStepEvent e)
@@ -112,7 +112,7 @@ namespace Game.Client.Hero
 
         public void OnAttack(in AttackEvent e)
         {
-            var clip = ClipFor((HeroAttackKind)e.Kind, _swingCount > 0 ? _swings[(_swingCount - 1) % Keep].Clip : (HeroClip?)null);
+            var clip = ClipFor(e.SwordKind, _swingCount > 0 ? _swings[(_swingCount - 1) % Keep].Clip : (HeroClip?)null);
             var ann = _clips[clip];
             HeroClips.Fit(ann.impact, e.WindupStart, e.Impact, out double start, out float speed);
             bool aimed = e.DirX != 0 || e.DirY != 0;

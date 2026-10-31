@@ -1156,6 +1156,25 @@ Rules for every weapon:
 - The hero has a visual aura from the start (not Garlic's damage aura),
   growing with the build.
 
+**Built ahead (ps-msz.4.4).** The sim has one damage path for every weapon,
+the sword's today:
+
+- `Horde.InReach(t, x, y, reach, into)` lists the live enemies whose
+  bodies touch a circle at t, in slot order. `Horde.Damage` applies a hit:
+  the hit event, then the death and gem drop or the knock, all at t. It
+  adds the whole amount to the weapon's tally, `SimState.WeaponDamage`,
+  indexed by content's weapon order, for the end card.
+- The hero's attacks and hits name their weapon by content index, and
+  attacks also name its shape. The views read them typed:
+  `AttackEvent.ByHero`, `Enemy`, `Weapon`, `Shape`, `IsSword`,
+  `SwordKind` and `EnemyKind`; `HitEvent.OnHero`, `Weapon`, `WeaponHit`
+  and `EnemyKind`. The sword is content's weapon 0 with shape 0, so its
+  events are bit for bit what they were.
+- The knight's clips, the slashes and the swing sounds play only for
+  `IsSword` attacks (the sword and Bloody Tear). A new weapon draws,
+  sounds and animates nothing until its own bead gives it a look. A hit's
+  white chips and hit sound play for any weapon.
+
 ### Enemies
 
 Enemies keep native's roles, stats and spawn schedule, with continuous

@@ -163,7 +163,7 @@ namespace PS.Game.Sim.Tests
                     Assert.AreEqual(1, hits.Count);
                     Assert.AreEqual(s.Footplant, hits[0].T);
                     Assert.AreEqual(HordeFixture.Content.Role("bat-swarm").Power, hits[0].AsHit.Damage);
-                    var notice = Drive.Events(sim, SimEventKind.Attack).Single(e => e.AsAttack.Attacker == bat && e.AsAttack.Impact == s.Footplant);
+                    var notice = Drive.Events(sim, SimEventKind.Attack).Single(e => e.AsAttack.Enemy == bat && e.AsAttack.Impact == s.Footplant);
                     Assert.Less(notice.T, s.MoveStart, "the notice pose comes before the step");
                 }
                 else
@@ -329,6 +329,34 @@ namespace PS.Game.Sim.Tests
             Assert.Greater(steps.Count, 2);
             Assert.GreaterOrEqual(steps[0].AsEnemyStep.MoveStart, knock.End);
             Assert.AreEqual(knock.ToX, steps[0].AsEnemyStep.FromX, 1e-9);
+        }
+
+        [Test]
+        public void DamageHitsFirstThenKnocksOrKillsAndTalliesItsWeapon()
+        {
+            var sim = HordeFixture.Empty();
+            Drive.Feed(sim, Steady(128).Entries(), 5);
+            int id = HordeFixture.Place(sim, "skeleton", 10, 0);
+            double health = sim.State.Enemies[id].Health, t = sim.Now;
+            int wand = HordeFixture.Content.WeaponIndex("magic-wand");
+            int cursor = sim.EventCount;
+            sim.Horde.Damage(sim, id, t, health / 2, wand, WeaponHit.Strike, 1, 0, 2, 1.85);
+            var first = sim.EventsSince(cursor).ToArray();
+            CollectionAssert.AreEqual(new[] { SimEventKind.Hit, SimEventKind.EnemyKnock }, first.Select(e => e.Kind));
+            var hit = first[0].AsHit;
+            Assert.AreEqual((t, id, wand, WeaponHit.Strike, health / 2), (hit.T, hit.Target, hit.Weapon, hit.WeaponHit, hit.Damage));
+            Assert.AreEqual((10.0, 0.0), (hit.X, hit.Y), "where the enemy stood");
+            Assert.AreEqual(id, first[1].AsEnemyKnock.Enemy);
+
+            cursor = sim.EventCount;
+            sim.Horde.Damage(sim, id, t, health, wand, WeaponHit.Strike, 1, 0, 2, 1.85);
+            var second = sim.EventsSince(cursor).ToArray();
+            CollectionAssert.AreEqual(new[] { SimEventKind.Hit, SimEventKind.Death, SimEventKind.Drop }, second.Select(e => e.Kind));
+            Assert.IsTrue(second.All(e => e.T == t), "all on the hit's own time");
+            Assert.AreEqual(1.85, second[1].AsDeath.Force);
+            Assert.IsFalse(sim.State.Enemies[id].Alive);
+            Assert.AreEqual(1.5 * health, sim.State.WeaponDamage[wand], 1e-12, "the whole of each hit, overkill too");
+            Assert.AreEqual(0, sim.State.WeaponDamage[HordeFixture.Content.WeaponIndex("sword")]);
         }
 
         [Test]

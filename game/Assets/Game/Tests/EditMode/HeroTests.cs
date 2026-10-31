@@ -3,6 +3,7 @@ using System.IO;
 using Game.Client.Hero;
 using NUnit.Framework;
 using PS.Game.Sim;
+using PS.Game.Sim.Content;
 using Is = NUnit.Framework.Is;
 
 namespace Game.Tests
@@ -15,7 +16,7 @@ namespace Game.Tests
         static readonly HeroClip[] Attacks = { HeroClip.SlashL, HeroClip.SlashR, HeroClip.Slash3, HeroClip.Spin, HeroClip.Slam };
 
         static SimEvent Attack(HeroAttackKind kind, double windupStart, double impact, bool heavy = false, double dirX = 1, double dirY = 0) =>
-            SimEvent.Attack(windupStart, -1, (int)kind, windupStart, impact, dirX, dirY, heavy, 7.04);
+            SimEvent.SwordAttack(windupStart, 0, kind, windupStart, impact, dirX, dirY, heavy, 7.04);
 
         static SimEvent Step(double start, double end, double fromX, double toX, Direction facing, bool bump = false, bool late = false) =>
             SimEvent.HeroStep(start, 0, late, bump, false, facing, fromX, 0, toX, 0, start, end);
@@ -166,6 +167,21 @@ namespace Game.Tests
             Assert.That(motion.Evaluate(1.0 + HeroMotion.FlareS / 2, 0, 0, Direction.Up).Flare, Is.EqualTo(0.5f).Within(1e-4f));
             Assert.That(motion.Evaluate(1.5, 0, 0, Direction.Up).Flare, Is.EqualTo(HeroMotion.HeavyFlare).Within(1e-5f), "a heavy blow flares more");
             Assert.That(motion.Evaluate(3.5, 0, 0, Direction.Up).Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5f), "back to its travel after the follow-through");
+        }
+
+        [Test]
+        public void OnlyTheSwordsAttacksSwingTheKnight()
+        {
+            var motion = new HeroMotion(Clips);
+            // Content's magic wand (weapon 4, a missile): its kind 0 is no sword strike, whatever HeroAttackKind 0 is.
+            motion.OnEvent(SimEvent.HeroAttack(0.7, 4, ShapeKind.Missile, 0, 0.7, 1.0, 1, 0, false, 0));
+            Assert.That(motion.SwingCount, Is.EqualTo(0), "another weapon plays no sword clip");
+            Assert.That(motion.Evaluate(1.0, 0, 0, Direction.Up).Attack, Is.EqualTo(0f));
+            Assert.That(motion.Evaluate(1.0, 0, 0, Direction.Up).Flare, Is.EqualTo(0f));
+            motion.OnEvent(Attack(HeroAttackKind.SlashLeft, 1.2, 1.5));
+            Assert.That(motion.SwingCount, Is.EqualTo(1));
+            Assert.That(motion.ClipTime(0, 1.5, out var clip, out _), Is.True);
+            Assert.That(clip, Is.EqualTo(HeroClip.SlashL));
         }
     }
 }

@@ -40,7 +40,7 @@ namespace PS.Game.Sim.Tests
         }
 
         static List<AttackEvent> HeroAttacks(Simulation sim) =>
-            Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.Attacker == -1).ToList();
+            Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.ByHero).ToList();
 
         static List<HitEvent> EnemyHits(Simulation sim) =>
             Drive.Events(sim, SimEventKind.Hit).Select(e => e.AsHit).Where(h => h.Target >= 0).ToList();
@@ -71,7 +71,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(0, sim.Sword.Missed, "every beat is known before its time");
             Assert.Greater(attacks.Count, n * (beats.Length - 2));
 
-            var mains = attacks.Where(a => a.Kind != (int)HeroAttackKind.FollowUp).Select(a => a.Impact).ToList();
+            var mains = attacks.Where(a => a.SwordKind != HeroAttackKind.FollowUp).Select(a => a.Impact).ToList();
             // Every beat but those still to come at the end has its one main strike, exactly on it.
             var struck = beats.Where(t => t - Windup <= sim.Now + 1e-9).ToList();
             CollectionAssert.AreEqual(struck, mains, "one main strike on each committed beat, at its time");
@@ -83,7 +83,7 @@ namespace PS.Game.Sim.Tests
                 Assert.LessOrEqual(a.Impact - a.WindupStart, Windup + 1e-9);
                 Assert.GreaterOrEqual(a.WindupStart, previous - 1e-9, "a wind-up never starts before the previous impact");
                 previous = a.Impact;
-                if (a.Kind != (int)HeroAttackKind.FollowUp) continue;
+                if (a.SwordKind != HeroAttackKind.FollowUp) continue;
                 // A follow-up is the beat's half: halfway to the next beat, or by the beat's period when the next wasn't known yet.
                 int b = Array.FindLastIndex(beats, t => t < a.Impact);
                 Assert.GreaterOrEqual(b, 0);
@@ -92,7 +92,7 @@ namespace PS.Game.Sim.Tests
                 bool byPeriod = Math.Abs(half - 0.5 * sim.Beats.PeriodOf(b)) < 1e-9;
                 Assert.IsTrue(toNext || byPeriod, $"a follow-up {half:F4} s after beat {b}");
             }
-            int followUps = attacks.Count(a => a.Kind == (int)HeroAttackKind.FollowUp);
+            int followUps = attacks.Count(a => a.SwordKind == HeroAttackKind.FollowUp);
             if (n == 1) Assert.AreEqual(0, followUps);
             else Assert.That(followUps, Is.InRange(mains.Count - 1, mains.Count), "a follow-up for each beat at Amount 2");
 
@@ -105,9 +105,9 @@ namespace PS.Game.Sim.Tests
             var announced = new HashSet<double>();
             foreach (var e in log)
             {
-                if (e.Kind == SimEventKind.Attack && e.AsAttack.Attacker == -1) announced.Add(e.AsAttack.Impact);
+                if (e.Kind == SimEventKind.Attack && e.AsAttack.ByHero) announced.Add(e.AsAttack.Impact);
                 if (e.Kind != SimEventKind.Hit || e.AsHit.Target < 0) continue;
-                if ((WeaponHit)e.AsHit.Source == WeaponHit.Cleave) Assert.IsTrue(bands.Contains(e.T), $"a cleave hit at {e.T} on no band");
+                if (e.AsHit.WeaponHit == WeaponHit.Cleave) Assert.IsTrue(bands.Contains(e.T), $"a cleave hit at {e.T} on no band");
                 else Assert.IsTrue(announced.Contains(e.T) && impacts.Contains(e.T), $"a strike hit at {e.T} announced by no attack");
             }
             Assert.Greater(EnemyHits(sim).Count, 5);
@@ -136,7 +136,7 @@ namespace PS.Game.Sim.Tests
                 double gap = b + 1 < beats.Length ? beats[b + 1] - beats[b] : sim.Beats.PeriodOf(b);
                 double k = (a.Impact - beats[b]) / (gap / n);
                 Assert.AreEqual(Math.Round(k), k, 1e-6, "on an even subdivision of the beat");
-                Assert.AreEqual(k < 0.5, a.Kind != (int)HeroAttackKind.FollowUp);
+                Assert.AreEqual(k < 0.5, a.SwordKind != HeroAttackKind.FollowUp);
             }
         }
 
@@ -194,7 +194,7 @@ namespace PS.Game.Sim.Tests
             CollectionAssert.AreEqual(new[] { beats[8], beats[14], beats[16] }, heavy);
             foreach (var a in attacks.Where(a => a.Heavy))
             {
-                Assert.AreEqual((int)HeroAttackKind.Spin, a.Kind);
+                Assert.AreEqual(HeroAttackKind.Spin, a.SwordKind);
                 Assert.AreEqual(Reach(2, heavy: true), a.Reach, 1e-9);
             }
             Assert.AreEqual(Reach(2), attacks.First(a => !a.Heavy).Reach, 1e-9);
@@ -250,7 +250,7 @@ namespace PS.Game.Sim.Tests
             int cursor = sim.EventCount;
             sim.StepTo(nextBeat - Windup + 0.005);
             return sim.EventsSince(cursor).ToArray().Select(e => e.Kind == SimEventKind.Attack ? e.AsAttack : default)
-                .Single(a => a.Impact == nextBeat && a.Attacker == -1);
+                .Single(a => a.Impact == nextBeat && a.ByHero);
         }
 
         static double AngleTo(AttackEvent a, double dx, double dy) =>
@@ -320,7 +320,7 @@ namespace PS.Game.Sim.Tests
                 sim.StepTo(next + 0.01);
                 var hit = sim.EventsSince(cursor).ToArray().Where(e => e.Kind == SimEventKind.Hit).Select(e => e.AsHit).First();
                 Assert.AreEqual(power[rank - 1] * 1.5, hit.Damage, 1e-12, $"rank {rank}");
-                Assert.AreEqual(WeaponHit.Strike, (WeaponHit)hit.Source);
+                Assert.AreEqual(WeaponHit.Strike, hit.WeaponHit);
                 var a = HeroAttacks(sim).Last(x => x.Impact == next);
                 Assert.AreEqual(190.0 / 27 * area[rank - 1] * 1.25, a.Reach, 0.001, $"rank {rank}");
             }
@@ -405,10 +405,10 @@ namespace PS.Game.Sim.Tests
 
             var hits = EnemyHits(sim);
             var nearHits = hits.Where(h => h.Target == near && h.T <= beats[9] + 1e-9).ToList();
-            Assert.AreEqual(WeaponHit.HeavyStrike, (WeaponHit)nearHits.Last().Source);
+            Assert.AreEqual(WeaponHit.HeavyStrike, nearHits.Last().WeaponHit);
             Assert.AreEqual(2.5, nearHits.Last().Damage, 1e-12);
-            Assert.IsFalse(hits.Any(h => h.Target == near && (WeaponHit)h.Source == WeaponHit.Cleave), "the strike's targets are the wave's already");
-            var wave = hits.Where(h => (WeaponHit)h.Source == WeaponHit.Cleave).ToList();
+            Assert.IsFalse(hits.Any(h => h.Target == near && h.WeaponHit == WeaponHit.Cleave), "the strike's targets are the wave's already");
+            var wave = hits.Where(h => h.WeaponHit == WeaponHit.Cleave).ToList();
             var ringHit = wave.Single(h => h.Target == ringed);
             Assert.AreEqual(1, ringHit.Damage, 1e-12, "the wave deals the strike's power");
             int band = (int)Math.Round((ringHit.T - cleave.FirstBand) / cleave.BandSeconds);
@@ -417,6 +417,21 @@ namespace PS.Game.Sim.Tests
             double outer = cleave.Inner + (band + 1) * 25.0 / 27;
             Assert.LessOrEqual(d - 0.5 * Content.Role("werewolf").RadiusM, outer + 1e-9, "inside the band that hit it");
             Assert.IsFalse(hits.Any(h => h.Target == far));
+        }
+
+        [Test]
+        public void TheSwordsTallyIsTheSumOfItsHits()
+        {
+            var entries = EntryDump.Load(Accelerando, out double duration);
+            var sim = new Simulation(HordeFixture.Config(heroStands: true, sword: 4));
+            Drive.Feed(sim, entries, duration);
+            var hits = EnemyHits(sim);
+            int sword = Content.WeaponIndex("sword");
+            Assert.Greater(hits.Count, 100);
+            Assert.IsTrue(hits.All(h => h.Weapon == sword), "every enemy hit names the sword");
+            Assert.AreEqual(hits.Sum(h => h.Damage), sim.State.WeaponDamage[sword], 1e-9);
+            Assert.AreEqual(sim.State.WeaponDamage[sword], sim.State.WeaponDamage.ToArray().Sum(), "no other weapon dealt any");
+            Assert.IsTrue(HeroAttacks(sim).All(a => a.IsSword && a.Weapon == sword && a.Shape == ShapeKind.Sword));
         }
 
         // ---------------------------------------------------------------- slams and the pulse
@@ -439,7 +454,7 @@ namespace PS.Game.Sim.Tests
             var sim = Start(Config(), known);
             sim.StepTo(40);
             var zones = Drive.Events(sim, SimEventKind.ZoneChange).Select(e => e.AsZoneChange).ToList();
-            var slams = HeroAttacks(sim).Where(a => a.Kind == (int)HeroAttackKind.Slam).Select(a => a.Impact).ToList();
+            var slams = HeroAttacks(sim).Where(a => a.SwordKind == HeroAttackKind.Slam).Select(a => a.Impact).ToList();
             CollectionAssert.AreEqual(new[] { ZoneCause.Jump, ZoneCause.Change }, zones.Select(z => z.Cause));
             Assert.AreEqual(late, zones[1].T, "the late change still lands on its downbeat");
             CollectionAssert.AreEqual(new[] { zones[0].T, downbeats.First(t => t > late) }, slams,

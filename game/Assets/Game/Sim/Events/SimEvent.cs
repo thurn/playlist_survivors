@@ -1,3 +1,5 @@
+using PS.Game.Sim.Content;
+
 namespace PS.Game.Sim
 {
     /// <summary>
@@ -94,22 +96,41 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// An attack's wind-up starts: I0 attacker (-1 the hero), I1 attack kind (the hero's:
-        /// <see cref="HeroAttackKind"/>; an enemy's: <see cref="EnemyAttackKind"/>), I2 flags (1 heavy);
-        /// D0 wind-up start, D1 impact time, D2/D3 direction, D4 the hit's reach around the hero (0 for an enemy's).
+        /// The hero's attack winds up: I0 -1, I1 the weapon's kind (the sword's: <see cref="HeroAttackKind"/>),
+        /// I2 flags: 1 heavy | the weapon's shape (<see cref="ShapeKind"/>) &lt;&lt; 1 | its content index &lt;&lt; 4;
+        /// D0 wind-up start, D1 impact time, D2/D3 direction, D4 the hit's reach around the hero.
+        /// The sword, content's weapon 0 with shape 0, keeps those bits 0.
         /// </summary>
-        public static SimEvent Attack(double t, int attacker, int kind, double windupStart, double impact, double dirX, double dirY,
-            bool heavy = false, double reach = 0)
+        public static SimEvent HeroAttack(double t, int weapon, ShapeKind shape, int kind, double windupStart, double impact,
+            double dirX, double dirY, bool heavy, double reach)
         {
             var e = Of(SimEventKind.Attack, t);
-            e.I0 = attacker;
+            e.I0 = -1;
             e.I1 = kind;
-            e.I2 = heavy ? 1 : 0;
+            e.I2 = (heavy ? 1 : 0) | ((int)shape << AttackEvent.ShapeShift) | (weapon << AttackEvent.WeaponShift);
             e.D0 = windupStart;
             e.D1 = impact;
             e.D2 = dirX;
             e.D3 = dirY;
             e.D4 = reach;
+            return e;
+        }
+
+        /// <summary>The hero's sword winds up a strike: <see cref="HeroAttack"/> with the sword's shape.</summary>
+        public static SimEvent SwordAttack(double t, int weapon, HeroAttackKind kind, double windupStart, double impact,
+            double dirX, double dirY, bool heavy, double reach) =>
+            HeroAttack(t, weapon, ShapeKind.Sword, (int)kind, windupStart, impact, dirX, dirY, heavy, reach);
+
+        /// <summary>An enemy's attack winds up: I0 enemy, I1 <see cref="EnemyAttackKind"/>; D0 wind-up start, D1 impact time, D2/D3 direction.</summary>
+        public static SimEvent EnemyAttack(double t, int enemy, EnemyAttackKind kind, double windupStart, double impact, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.Attack, t);
+            e.I0 = enemy;
+            e.I1 = (int)kind;
+            e.D0 = windupStart;
+            e.D1 = impact;
+            e.D2 = dirX;
+            e.D3 = dirY;
             return e;
         }
 
@@ -128,15 +149,33 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// A hit: I0 target (-1 the hero), I1 source (on the hero: <see cref="EnemyAttackKind"/>; on an
-        /// enemy: <see cref="WeaponHit"/>); D0 the damage dealt (0 on the hero while it can't be hurt),
-        /// D1/D2 the target's position, D3/D4 the direction it is struck in.
+        /// A hit on an enemy: I0 enemy, I1 how it landed (<see cref="WeaponHit"/>), I2 the weapon's
+        /// content index (the sword's is 0); D0 the damage dealt, D1/D2 the enemy's position, D3/D4 the
+        /// direction it is struck in.
         /// </summary>
-        public static SimEvent Hit(double t, int target, int source, double damage, double x, double y, double dirX, double dirY)
+        public static SimEvent EnemyHit(double t, int enemy, int weapon, WeaponHit how, double damage, double x, double y, double dirX, double dirY)
         {
             var e = Of(SimEventKind.Hit, t);
-            e.I0 = target;
-            e.I1 = source;
+            e.I0 = enemy;
+            e.I1 = (int)how;
+            e.I2 = weapon;
+            e.D0 = damage;
+            e.D1 = x;
+            e.D2 = y;
+            e.D3 = dirX;
+            e.D4 = dirY;
+            return e;
+        }
+
+        /// <summary>
+        /// A hit on the hero: I0 -1, I1 the enemy's attack (<see cref="EnemyAttackKind"/>); D0 the damage
+        /// dealt (0 while it can't be hurt), D1/D2 the hero's position, D3/D4 the direction it is struck in.
+        /// </summary>
+        public static SimEvent HeroHit(double t, EnemyAttackKind kind, double damage, double x, double y, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.Hit, t);
+            e.I0 = -1;
+            e.I1 = (int)kind;
             e.D0 = damage;
             e.D1 = x;
             e.D2 = y;

@@ -52,8 +52,8 @@ namespace Game.Client.Sound
                 case SimEventKind.Attack:
                 {
                     var a = e.AsAttack;
-                    if (a.Attacker != -1) break;
-                    var kind = a.Kind == (int)HeroAttackKind.Slam ? SoundKind.Slam : a.Heavy ? SoundKind.SwingHeavy : SoundKind.Swing;
+                    if (!a.IsSword) break; // the other weapons' sounds are their own
+                    var kind = a.SwordKind == HeroAttackKind.Slam ? SoundKind.Slam : a.Heavy ? SoundKind.SwingHeavy : SoundKind.Swing;
                     Request(kind, a.Impact, 1f, 1f, a.Heavy ? 1f : 0.6f);
                     break;
                 }
@@ -61,13 +61,13 @@ namespace Game.Client.Sound
                 {
                     var h = e.AsHit;
                     if (h.Damage <= 0) break;
-                    if (h.Target == -1)
+                    if (h.OnHero)
                     {
                         // The hero hurt: on the next sixteenth (native's never-late hurt).
                         Request(SoundKind.Hurt, MusicalGrid.SlotAt(_sim.Stream.Beats, e.T, MusicalGrid.Sixteenth), 1f, 1f, 1f);
                         break;
                     }
-                    bool heavy = h.Source == (int)WeaponHit.HeavyStrike;
+                    bool heavy = h.WeaponHit == WeaponHit.HeavyStrike;
                     Request(heavy ? SoundKind.HitHeavy : SoundKind.Hit, e.T, 1f, 1f, heavy ? 1f : 0.6f);
                     break;
                 }
