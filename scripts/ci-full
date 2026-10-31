@@ -212,7 +212,10 @@ fi
 
 # The Unity game (docs/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
 # tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
-# once game/dotnet/PS.Game.Sim.Tests exists, and its replay command built; then, windowless in batch mode, the project set up from
+# once game/dotnet/PS.Game.Sim.Tests exists, and its replay command built; the bots' sweep (`game sweep
+# --assert`: four 30-minute positioning runs above 25% health and the idle bot fallen before minute
+# 10, in parallel in .NET over native's cached entry dumps, about 10 s warm; skipped when its inputs'
+# hash passed before, and off macOS, where native's dumps don't build); then, windowless in batch mode, the project set up from
 # this machine's vendor packs and cache (setup builds the music plugin into it), Unity's EditMode
 # tests, where a skip fails too, and a short batch-mode File run of a Mono player: the cinematic
 # slice's frame loop (its horde, sword and structures on house-128) with every scheduled sound a
@@ -228,6 +231,7 @@ if [ "$section" = game ]; then
   if [ -d game/dotnet/PS.Game.Sim.Tests ]; then
     dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
     dotnet build game/dotnet/PS.Game.Replay --nologo -v q
+    uv run --quiet --project demo3d/tools game sweep --assert
   else
     echo "ci-full game: no sim tests yet (game/dotnet/PS.Game.Sim.Tests)"
   fi

@@ -28,6 +28,9 @@ Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Re
 the plugin's Replay source in real time. Each exits 0 when the hash matches; .NET exits 2 for a
 player's session whose hash it rounds differently.
 
+`game sweep [--assert]`: the positioning and idle bots' 30-minute runs in .NET over entry dumps of
+the survivors playlist (botsweep.py; slow CI).
+
 `game replay --record F [--seconds N]`: the player's whole session path, headless (slow CI): a
 run of F recorded, watched at once in the same player (`--watch`) to its hash, then replayed in
 .NET. It exits 1 if the player fails or throws, its replay differs, or .NET can't replay the
@@ -83,10 +86,11 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
     pl.set_defaults(func=_cmd_plugin)
 
-    from . import content, spike
+    from . import botsweep, content, spike
 
     content.add_parser(sub)
     spike.add_parser(sub)
+    botsweep.add_parser(sub)
 
 
 def _cmd_plugin(a: argparse.Namespace) -> int:

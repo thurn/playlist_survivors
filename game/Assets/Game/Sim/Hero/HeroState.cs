@@ -37,7 +37,7 @@ namespace PS.Game.Sim
         public int Level { get; internal set; } = 1;
 
         /// <summary>Where the hero is at song time <paramref name="t"/>: on its tile, or striding to it.</summary>
-        internal void PositionAt(double t, out double x, out double y)
+        public void PositionAt(double t, out double x, out double y)
         {
             double u = t >= MoveEnd || MoveEnd <= MoveStart ? 1 : Math.Max(0, (t - MoveStart) / (MoveEnd - MoveStart));
             x = FromX + (X - FromX) * u;
