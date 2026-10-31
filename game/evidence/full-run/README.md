@@ -1,8 +1,9 @@
 # The full run: a 30-minute File playlist to the victory card (ps-msz.6.14)
 
 The run from its start to the victory card, headless in the IL2CPP player on the Mac (jarvis),
-2026-10-31, with the positioning bot playing (`--bot positioning`, the sweeps' bot in place of the
-keyboard) over the survivors test playlist played twice:
+2026-10-31, built from this bead's tree on staging after ps-b3v, with the positioning bot playing
+(`--bot positioning`, the sweeps' bot in place of the keyboard) over the survivors test playlist
+played twice:
 
 ```sh
 uv run --project demo3d/tools game build --platform mac --backend il2cpp
@@ -15,56 +16,61 @@ python3 game/evidence/full-run/pacing.py events.csv > pacing.json   # the number
 Exit 0 after 35 minutes of wall clock. The player's summary:
 
 ```text
-GameLoop: victory; 125615 frames to song 2114.234 s, 132198 entries (0 late), ..., hash 5A48798D10A3D173;
-run Ended from song 3.780 s, run clock 1800.000 s, 81 freezes (16 music stopped), 0 run controls;
-lead (ms) median 90.3, p5..p95 90.3..91.7, min..max 90.3..104.7 (output latency 38.0 + margin 52.3);
-frameSong backwards 0, held 0 frames; frames at the frontier 0; sim step (ms) median 0.022, p99 0.609,
-max 2.076; enemies alive 113, 12964 killed, 158 heavy strikes, 160 structures broken, 155 regrown,
-80 zone changes, 143 set pieces; sounds 43089 scheduled, 2325 dropped
+GameLoop: victory; 125138 frames to song 2121.971 s, 132618 entries (0 late), ..., hash F3C4252CC0E9CD13;
+run Ended from song 3.780 s, run clock 1800.000 s, 83 freezes (16 music stopped), 0 run controls;
+lead (ms) median 90.8, p5..p95 90.3..91.8, min..max 90.3..97.3 (output latency 38.0 + margin 52.3);
+frameSong backwards 0, held 0 frames; frames at the frontier 0; sim step (ms) median 0.021, p99 0.351,
+max 2.495; enemies alive 116, 13991 killed, 157 heavy strikes, 111 structures broken, 104 regrown,
+80 zone changes, 133 set pieces; sounds 44072 scheduled, 2220 dropped
 ```
 
+An earlier run of the same command on this bead's tree before ps-b3v also won (song 2109 s, level 54,
+four evolutions, hash 5A48798D10A3D173, its player replay matching).
+
 ## Pacing
+
+[pacing.json](pacing.json):
 
 | | measured | the design (Manual QA, progression.json) |
 |---|---|---|
 | start | song 3.78 s (2 s of clear beat) | headless: after 2 s of clear beat |
-| level at 5:00 | 16 | about 10 |
-| level at 10, 15, 20, 25 minutes | 22, 33, 41, 43 | 15, 19, 23, 27 (`startLevels`) |
-| final level | 54 | 30 |
-| boss chests (run clock taken, its minute) | 1:59 (1), 10:44 (9, tier 2), 11:11 (5), 11:14 (10), 14:11 (14), 16:32 (15), 18:22 (18), 23:23 (22, tier 3), 24:19 (23), 25:27 (20), 25:27 (25, tier 3), 27:13 (27, tier 2) | at minutes 10, 15, 20 and 25 |
-| evolutions | Bloody Tear 11:14, Soul Eater 16:32, Holy Wand and Unholy Vespers 25:27 | evolutions |
-| peak | 300 alive (the cap), first at 7:31; 276 to 300 through minute 15 | 300 at the peak |
-| frozen | 302 s of song: cards 130, chests 33, music stopped 139 | |
-| finale | the blast at song 2106.22 s, the victory card 3 s later, at 30:00 of run clock | 30:00 |
+| level at 5:00 | 15 | about 10 |
+| level at 10, 15, 20, 25 minutes | 22, 33, 44, 45 | 15, 19, 23, 27 (`startLevels`) |
+| final level | 55 | 30 |
+| boss chests (run clock taken, its minute) | 3:32 (3, tier 2), 8:15 (7), 10:15 (5), 10:35 (10), 13:46 (12), 14:21 (14), 16:07 (15), 18:59 (18), 24:23 (22), 24:44 (23), 25:25 (20), 25:28 (25, tier 3), 27:54 (27) | at minutes 10, 15, 20 and 25 |
+| evolutions | Bloody Tear 10:35, Soul Eater 16:07, Holy Wand 25:25, Unholy Vespers and Thunder Loop 25:28: all five | evolutions |
+| peak | 300 alive (the cap), first at 11:00; 121 to 300 from minute 15 on | 300 at the peak |
+| frozen | 310 s of song: cards 145, chests 33, music stopped 132 | |
+| finale | the blast at song 2113.96 s, the victory card 3 s later, at 30:00 of run clock | 30:00 |
 
 - **Levels run ahead of the design's pacing**, as in the sweeps (game/evidence/sweeps: 14 to 17 at
   5:00): the bot gathers nearly every gem. Tuning the run is M4's (unity-game.md, Pickups,
   level-ups and chests).
 - **Every boss chest of minutes 10, 15, 20 and 25 was taken**, but late when the field was busy:
   the bot walks to a chest only when nothing is within its safety reach, and a chest opens only
-  with no enemy body within 2 m. Minute 20's waited until 25:27, beside minute 25's.
+  with no enemy body within 2 m. Minute 20's waited until 25:25, beside minute 25's.
 - **The music stopped 16 times**, at each track change (the analyzer confirms each song's end into
   the 2 s gaps), 7 to 13 s each. The piano aria's stop let go after 9.3 s (275.17 to 284.44), on
   the free pulse: before this bead's change it held 56 s, until the aria's beat turned reliable
   (unity-game.md, The Run).
-- **One pass of the playlist was enough here** (song 2109 of its 2294 s), but the sweeps' reversed
-  order needs 2268 s, so the full run plays `survivors-30-twice.m3u`.
+- **One pass of the playlist was enough here** (song 2117 of its 2294 s), but the sweeps' reversed
+  order needs 2280 s, so the full run plays `survivors-30-twice.m3u`.
 
 ## Errors and hitches
 
 - **No error or exception during the run.** The log's `ERROR: Shader ... not supported on this
-  GPU` lines (46 of them, lines 20 to 110) all come as the headless player (no graphics device)
+  GPU` lines (46 of them, before line 111) all come as the headless player (no graphics device)
   loads its shaders, before the run starts.
-- **The sim kept its lead on every frame**: 90.3 to 104.7 ms, never at the frontier, the sim's step
-  2.1 ms at most.
-- **Frame pacing** (loop.csv's frameSong): median 16.7 ms, p99 18.6 ms, p99.9 20.6 ms; 24 frames
-  over 25 ms and 5 over 33 ms in 125,615, the longest 131 ms at song 1150.8 s. None lines up with
-  a sim event or a long sim step, so they are pauses of the headless process on a shared machine
-  (the garbage collector or the OS), not the run's work. The windowed frame budget is M4's.
-- **The replay**: the session (5598 key changes) replays in .NET to the same 463634 events with a
-  different hash, as a session recorded in IL2CPP should (unity-game.md, Sessions and Replay).
-  In the IL2CPP player that recorded it (`game replay DIR --player`, 35 minutes with its recorded
-  music) it replays to the same hash, 5A48798D10A3D173: it matches.
+- **The sim kept its lead on every frame**: 90.3 to 97.3 ms, never at the frontier, the sim's step
+  2.5 ms at most.
+- **Frame pacing** (loop.csv's frameSong): median 16.8 ms, p99 18.7 ms, p99.9 21.9 ms; 32 frames
+  over 25 ms and 3 over 33 ms in 125,138, the longest 66 ms at song 1976.5 s. None lines up with a
+  long sim step, so they are pauses of the headless process on a shared machine (the garbage
+  collector or the OS), not the run's work. The windowed frame budget is M4's.
+- **The replay**: in .NET the session (6628 key changes) diverges from the IL2CPP run (322,487
+  events against 466,701), as a session replays only in the runtime that recorded it (unity-game.md,
+  Sessions and Replay). In the IL2CPP player that recorded it (`game replay DIR --player`, 35 minutes
+  with its recorded music) it replays to the same hash, F3C4252CC0E9CD13: it matches.
 
 ## The run's peak, at minute 25
 
@@ -105,8 +111,9 @@ hold twice the living (600), and `CrowdSlotsTests` replaces a whole crowd of one
 
 - **The beatless thaw** (`RunRules.BeatlessResumeS`): a music stop lets go once the music has
   played 8 s with no lock, resuming on the next beat or stride step.
-- **The bot steps off telegraphed slams** (`SurvivorBot`): without it the sweeps' rotated run fell
-  at 2:51, four of the signature minotaur's slams landing on a bot standing on a gem.
+- **The bot steps off telegraphed slams** (`SurvivorBot`): the sweeps' rotated run fell at 2:51
+  under the signature minotaur's slams, the bot standing still (for a gem out of reach, as ps-b3v,
+  landed alongside, found and fixed), and the minotaur's slam lands where the hero stood.
 - **`--bot positioning|idle`** in the player (`Client/Loop/BotInput.cs`).
 - **The crowd's slots** (`CrowdView.SlotsPerType`, 375 to 600): see the peak above.
 

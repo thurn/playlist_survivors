@@ -14,25 +14,25 @@
   "still-061.200": {
     "monsterPx": 372973,
     "monsterShare": 0.18,
-    "lMonster": 62.783,
+    "lMonster": 62.782,
     "lRing": 20.366,
     "dL": 42.417,
-    "dC": 42.511,
+    "dC": 42.51,
     "cMonster": 49.751,
-    "monsterP10": 44.78,
+    "monsterP10": 44.778,
     "monsterP90": 99.261,
     "pass": true
   },
   "still-068.450": {
-    "monsterPx": 567077,
+    "monsterPx": 567075,
     "monsterShare": 0.273,
-    "lMonster": 63.011,
+    "lMonster": 63.009,
     "lRing": 17.25,
-    "dL": 45.761,
+    "dL": 45.76,
     "dC": 34.049,
     "cMonster": 46.18,
-    "monsterP10": 40.42,
-    "monsterP90": 79.067,
+    "monsterP10": 40.418,
+    "monsterP90": 79.066,
     "pass": true
   },
   "still-068.800": {

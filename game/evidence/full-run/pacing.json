@@ -1,115 +1,125 @@
 {
  "start": 3.78,
- "end_song": 2109.22,
+ "end_song": 2116.96,
  "end_clock": 1800.0,
  "end": "1",
- "finale_song": 2106.22,
- "final_level": 54,
+ "finale_song": 2113.96,
+ "final_level": 55,
  "level_at_minute": {
-  "5": 16,
+  "5": 15,
   "10": 22,
   "15": 33,
-  "20": 41,
-  "25": 43,
-  "30": 54
+  "20": 44,
+  "25": 45,
+  "30": 55
  },
  "chests": [
   {
-   "song": 160.63,
-   "clock": 119.4,
-   "minute": 1,
-   "tier": 1
-  },
-  {
-   "song": 763.53,
-   "clock": 644.5,
-   "minute": 9,
+   "song": 267.46,
+   "clock": 212.1,
+   "minute": 3,
    "tier": 2
   },
   {
-   "song": 801.0,
-   "clock": 671.0,
+   "song": 586.96,
+   "clock": 495.1,
+   "minute": 7,
+   "tier": 1
+  },
+  {
+   "song": 732.53,
+   "clock": 615.0,
    "minute": 5,
    "tier": 1
   },
   {
-   "song": 805.83,
-   "clock": 674.5,
+   "song": 758.66,
+   "clock": 635.8,
    "minute": 10,
    "tier": 1
   },
   {
-   "song": 1015.12,
-   "clock": 851.8,
+   "song": 987.52,
+   "clock": 826.2,
+   "minute": 12,
+   "tier": 1
+  },
+  {
+   "song": 1030.08,
+   "clock": 861.9,
    "minute": 14,
    "tier": 1
   },
   {
-   "song": 1169.08,
-   "clock": 992.7,
+   "song": 1144.51,
+   "clock": 967.7,
    "minute": 15,
    "tier": 1
   },
   {
-   "song": 1307.77,
-   "clock": 1102.2,
+   "song": 1351.56,
+   "clock": 1139.7,
    "minute": 18,
    "tier": 1
   },
   {
-   "song": 1632.59,
-   "clock": 1403.7,
+   "song": 1702.99,
+   "clock": 1463.2,
    "minute": 22,
-   "tier": 3
+   "tier": 1
   },
   {
-   "song": 1695.67,
-   "clock": 1459.6,
+   "song": 1728.7,
+   "clock": 1484.8,
    "minute": 23,
    "tier": 1
   },
   {
-   "song": 1769.72,
-   "clock": 1527.8,
+   "song": 1773.0,
+   "clock": 1525.2,
    "minute": 20,
    "tier": 1
   },
   {
-   "song": 1771.84,
-   "clock": 1527.8,
+   "song": 1778.88,
+   "clock": 1528.5,
    "minute": 25,
    "tier": 3
   },
   {
-   "song": 1901.87,
-   "clock": 1633.5,
+   "song": 1960.51,
+   "clock": 1674.4,
    "minute": 27,
-   "tier": 2
+   "tier": 1
   }
  ],
  "evolutions": [
   [
    "bloody-tear",
-   674.5
+   635.8
   ],
   [
    "soul-eater",
-   992.7
+   967.7
   ],
   [
    "holy-wand",
-   1527.8
+   1525.2
   ],
   [
    "unholy-vespers",
-   1527.8
+   1528.5
+  ],
+  [
+   "thunder-loop",
+   1528.5
   ]
  ],
  "frozen_s": {
-  "level-up": 130.0,
-  "chest": 33.0,
+  "level-up": 144.6,
+  "chest": 32.8,
   "pause": 0.0,
-  "music stopped": 139.3
+  "music stopped": 132.4
  },
- "freezes": 81
+ "freezes": 82
 }

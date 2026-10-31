@@ -1,85 +1,87 @@
 {
   "asserted": true,
   "pacingReportOnly": true,
-  "wallSeconds": 5.4,
+  "wallSeconds": 6.1,
   "cases": [
     {
       "case": "cached-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2042.592,
+      "song": 2069.675,
       "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 104.45,
-        "Chest": 41.833,
+        "LevelUp": 134.367,
+        "Chest": 31.833,
         "Pause": 0,
-        "MusicStopped": 76.783,
-        "resuming": 12.683
+        "MusicStopped": 76.467,
+        "resuming": 18.883
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 1,
-      "heroHits": 0,
+      "lowestHealthShare": 0.8602,
+      "heroHits": 1,
       "levelAt5": 17,
-      "level": 51,
+      "level": 65,
       "chests": [
         560.957,
         676.312,
         799.922,
-        945.019,
-        947.927,
-        1016.63,
-        1137.311,
-        1397.475,
-        1457.642,
-        1576.869,
-        1614.365,
-        1660.348,
-        1797.426
+        937.078,
+        1038.522,
+        1149.428,
+        1340.608,
+        1402.798,
+        1459.558,
+        1552.04,
+        1650.629
       ],
       "evolutions": [
         "bloody-tear",
         "soul-eater",
         "holy-wand",
-        "unholy-vespers"
+        "unholy-vespers",
+        "thunder-loop"
       ],
       "peakEnemies": 300,
-      "kills": 13033,
-      "hash": "CB81A498086242A7",
-      "wallSeconds": 4.1
+      "kills": 14904,
+      "hash": "7C9ABA8B26C2C2FD",
+      "wallSeconds": 4.7
     },
     {
       "case": "cached-reverse-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2268.333,
+      "song": 2279.583,
       "startedAt": 182.07,
       "frozen": {
-        "LevelUp": 142.883,
-        "Chest": 32.133,
+        "LevelUp": 139.567,
+        "Chest": 43.717,
         "Pause": 0,
-        "MusicStopped": 86.05,
-        "resuming": 21.9
+        "MusicStopped": 85.133,
+        "resuming": 25.983
       },
       "victory": true,
       "fallen": false,
       "lowestHealthShare": 1,
-      "heroHits": 1,
+      "heroHits": 0,
       "levelAt5": 15,
-      "level": 61,
+      "level": 64,
       "chests": [
-        621.472,
-        639.723,
-        852.747,
-        1050.191,
-        1050.554,
-        1161.16,
-        1284.695,
-        1330.897,
-        1524.754,
-        1572.688,
-        1670.538,
-        1759.676
+        516.809,
+        610.054,
+        630.388,
+        708.786,
+        789.018,
+        857.19,
+        1029.891,
+        1057.35,
+        1130.362,
+        1380.388,
+        1527.892,
+        1531.147,
+        1575.992,
+        1658.704,
+        1794.608
       ],
       "evolutions": [
         "bloody-tear",
@@ -88,22 +90,22 @@
         "unholy-vespers"
       ],
       "peakEnemies": 300,
-      "kills": 12917,
-      "hash": "D2D3AD9D7CE67967",
-      "wallSeconds": 3.4
+      "kills": 14352,
+      "hash": "882C9D071AF256BC",
+      "wallSeconds": 4.7
     },
     {
       "case": "cached-rotate-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2059.742,
+      "song": 2065.542,
       "startedAt": 3.76,
       "frozen": {
-        "LevelUp": 125.45,
-        "Chest": 40.817,
+        "LevelUp": 126.55,
+        "Chest": 42.117,
         "Pause": 0,
-        "MusicStopped": 69.583,
-        "resuming": 17.133
+        "MusicStopped": 70.033,
+        "resuming": 18.683
       },
       "victory": true,
       "fallen": false,
@@ -120,12 +122,12 @@
         878.904,
         984.631,
         986.011,
-        1106.543,
-        1407.632,
-        1429.107,
-        1463.815,
-        1565.83,
-        1658.807
+        1102.298,
+        1375.944,
+        1380.139,
+        1474.042,
+        1581.857,
+        1646.113
       ],
       "evolutions": [
         "bloody-tear",
@@ -135,29 +137,29 @@
         "thunder-loop"
       ],
       "peakEnemies": 300,
-      "kills": 15556,
-      "hash": "DDC3B8515BABCCA2",
-      "wallSeconds": 4.1
+      "kills": 15033,
+      "hash": "7CD60909AB40250F",
+      "wallSeconds": 4.6
     },
     {
       "case": "continuous-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2091.342,
+      "song": 2123.525,
       "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 89.95,
-        "Chest": 40.683,
+        "LevelUp": 120.667,
+        "Chest": 44.517,
         "Pause": 0,
-        "MusicStopped": 137.683,
-        "resuming": 16.1
+        "MusicStopped": 130.5,
+        "resuming": 20.75
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.8679,
+      "lowestHealthShare": 0.9692,
       "heroHits": 1,
       "levelAt5": 16,
-      "level": 43,
+      "level": 57,
       "chests": [
         477.411,
         614.118,
@@ -166,11 +168,11 @@
         919.123,
         995.463,
         1125.46,
-        1402.193,
-        1410.102,
-        1460.212,
-        1517.26,
-        1636.178
+        1401.493,
+        1486.703,
+        1503.577,
+        1554.087,
+        1651.326
       ],
       "evolutions": [
         "bloody-tear",
@@ -179,9 +181,9 @@
         "unholy-vespers"
       ],
       "peakEnemies": 300,
-      "kills": 12407,
-      "hash": "7C1B620AF7754B1F",
-      "wallSeconds": 3.7
+      "kills": 13753,
+      "hash": "1DBA426D6C77FDA0",
+      "wallSeconds": 4.7
     },
     {
       "case": "cached-original-idle-1",

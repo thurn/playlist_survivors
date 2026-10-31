@@ -1,7 +1,7 @@
 #EXTM3U
 # The survivors test playlist twice (about 76 minutes), for the game's full File run: a run's freezes
 # (cards, chests, songs' ends) take 4 to 8 minutes of song, and one pass's 38 minutes can end before the
-# run clock's 30:00 (the game's sweeps needed up to 2268 s of its 2294; game/evidence/full-run).
+# run clock's 30:00 (the game's sweeps needed up to 2280 s of its 2294; game/evidence/full-run).
 ../../public/reactive/house-128/house-128.ogg
 ../../public/reactive/hiphop-92-swing/hiphop-92-swing.ogg
 #PS-GAP:8

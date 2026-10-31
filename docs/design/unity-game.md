@@ -2503,8 +2503,9 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
   no input but the cards' Enter (`AutoCards`), as a headless run does.
 - **Slams** (ps-msz.6.14): native's bosses don't telegraph. A telegraphed slam whose blow would reach
   the hero (its radius from the content, plus the hero's hurt radius and 0.25 m) is danger until its
-  impact, the escape pointing away from where it lands. Without it a bot standing on a gem took four
-  of the signature minotaur's slams, which land where the hero stood, in 7 s and fell.
+  impact, the escape pointing away from where it lands. The signature minotaur's lands where the
+  hero stood, so a bot standing still for any reason (a gem underfoot, or one out of reach before
+  ps-b3v) takes every one.
 - **In the player** (ps-msz.6.14): `--bot positioning|idle` plays the run with the bot in place of the
   keyboard (`Client/Loop/BotInput.cs`), as `BotRun` drives it; its keys are recorded like a player's.
 
@@ -2512,10 +2513,10 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
 parallel in .NET (`game/dotnet/PS.Game.Sweep`): the survivors playlist's original, reversed and
 rotated orders over per-track dumps of `ps entries`, and the original order over the whole
 playlist's dump, seed 1, plus the idle bot. Each stream is the playlist played twice, since the
-run's freezes take 240 to 290 s of song time (270 to 640 s before ps-msz.6.14's beatless thaw) and
-the reversed order starts 182 s in, needing 2268 s of one pass's 2294. A pass over committed inputs
-is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all four win, the
-lowest at 87% health; the idle bot falls at 2:06).
+run's freezes take 250 to 320 s of song time (up to 640 s before ps-msz.6.14's beatless thaw) and
+the reversed order starts 182 s in, needing 2280 s of one pass's 2294. A pass over committed inputs
+is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all four win, none
+below 86% health; the idle bot falls at 2:06).
 
 ## Build Order
 
@@ -2696,8 +2697,9 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
 **Measured (ps-msz.6.14).** The full File run, headless in the IL2CPP player
 with the positioning bot (`--bot positioning`) on `survivors-30-twice.m3u` (the
 playlist twice, since one pass can end first): victory at 30:00 of run clock,
-song 2109 s, level 16 at 5:00 and 54 at the end, the minutes 10, 15, 20 and 25
-bosses' chests taken, four evolutions, the cap of 300 alive first reached at 7:31, no error.
+song 2117 s, level 15 at 5:00 and 55 at the end, the minutes 10, 15, 20 and 25
+bosses' chests taken, all five evolutions, the cap of 300 alive first reached at 11:00, no error,
+and its session replaying to its hash in the player.
 Evidence: [game/evidence/full-run](../../game/evidence/full-run/README.md).
 
 ### Timing and feel
