@@ -10,6 +10,8 @@ namespace Demo3D.Runtime.Playback
     /// slash) to 1 (<see cref="Amounts.HeavyKills"/> or more: a hammer), on a log scale, and the weight
     /// drives the camera's punch and shake (<see cref="CameraFeel"/>), the hit-stop (<see cref="WorldTime"/>),
     /// the trail's, shock's and sparks' size (EffectDriver) and the light's knee (EffectLights).
+    /// A blow that smashes a trailer shot's crystal formation (trailer.md, "Crystal formations") weighs 1, whatever it kills:
+    /// the formation bursts under the heaviest punch, shake and hit-stop.
     /// The amounts are an intensity overlay's <c>feel</c> object; a normal run has none, and feels as before.
     /// Like the rest of the client's feel it is a function of song time, so fixed-time captures reproduce it.
     /// </summary>
@@ -86,13 +88,15 @@ namespace Demo3D.Runtime.Playback
                 else if (a.Kind == ActionKind.Attack && a.Entity == 0) blows.Add(a.Impact);
             }
             blows.Sort();
+            var smashes = new HashSet<double>();
+            foreach (var b in tl.Breaks) if (b.Projectile < 0) smashes.Add(b.Time); // a crystal formation's: the blow's own instant
             _at = blows.ToArray();
             _kills = new int[_at.Length];
             _weight = new float[_at.Length];
             for (int i = 0; i < _at.Length; i++)
             {
                 _kills[i] = deaths.TryGetValue(_at[i], out int k) ? k : 0;
-                _weight[i] = Weight(_kills[i], feel);
+                _weight[i] = smashes.Contains(_at[i]) ? 1f : Weight(_kills[i], feel);
             }
         }
 

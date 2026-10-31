@@ -1,5 +1,5 @@
 {
-  "note": "The crystal cut (trailer.md, The crystal cut): the action trailer's music window and pace, played as a showcase of the crystal horde. Only the dark environments (crypt, neon, lava and the night forest), glowing crystal monsters under a darker grade and a low bloom threshold, crystal structures, and the hero's bolt shattering the courtyard's and the ruins gate's walls on the drops and re-entries. `--trailer crystal`; its look stands in for --monster-style, --structure-style and their tunes unless the command line names them.",
+  "note": "The crystal cut (trailer.md, The Crystal Cut): the action trailer's music window and pace, played as a showcase of the crystal horde and of shattering. Only the dark environments (crypt, neon, lava and the night forest), glowing crystal monsters under a darker grade and a low bloom threshold, crystal structures, and towering white-gold crystal formations on the hero's path (each shot's crystals, trailer.md Crystal formations) that the hero's blows smash on the strong beats, fifteen over seven shots, each placed just within one blow's reach. `--trailer crystal`; its look stands in for --monster-style, --structure-style and their tunes unless the command line names them.",
   "name": "crystal",
   "song": "action",
   "base": "overdrive",
@@ -88,16 +88,32 @@
         "spin@84.3",
         "spin@86.3"
       ],
-      "breaks": [
-        "courtyard/east-south@81.3",
-        "courtyard/east-north@82.3"
-      ],
       "grade": {
         "exposure": -0.45,
         "contrast": 14,
         "saturation": 6,
         "temperature": -4
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            22.0,
+            22.4
+          ]
+        },
+        {
+          "at": [
+            30.5,
+            36.2
+          ]
+        },
+        {
+          "at": [
+            47.0,
+            42.2
+          ]
+        }
+      ]
     },
     {
       "cut": "89.1",
@@ -148,7 +164,27 @@
         "saturation": 6,
         "temperature": 4
       },
-      "yawDeg": 135
+      "yawDeg": 135,
+      "crystals": [
+        {
+          "at": [
+            31.1,
+            29.8
+          ]
+        },
+        {
+          "at": [
+            42.4,
+            43.9
+          ]
+        },
+        {
+          "at": [
+            49.8,
+            51.3
+          ]
+        }
+      ]
     },
     {
       "cut": "97.1",
@@ -208,7 +244,27 @@
         "contrast": 8,
         "saturation": 8,
         "temperature": -2
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            40.3,
+            53.3
+          ]
+        },
+        {
+          "at": [
+            26.8,
+            37.9
+          ]
+        },
+        {
+          "at": [
+            30.2,
+            25.7
+          ]
+        }
+      ]
     },
     {
       "cut": "105.1",
@@ -235,7 +291,7 @@
       "formation": {
         "kind": "converge",
         "streams": 4,
-        "onScreen": 420,
+        "onScreen": 400,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -252,16 +308,26 @@
       "spells": [
         "lightning@downbeat"
       ],
-      "breaks": [
-        "courtyard/west-north@106.1",
-        "courtyard/north-east@108.3"
-      ],
       "grade": {
         "exposure": -0.15,
         "contrast": 8,
         "saturation": 10,
         "temperature": -6
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            -19.3,
+            17.7
+          ]
+        },
+        {
+          "at": [
+            -2.9,
+            29.4
+          ]
+        }
+      ]
     },
     {
       "cut": "109.1",
@@ -319,7 +385,15 @@
         "contrast": 14,
         "saturation": 6,
         "temperature": -4
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            37.6,
+            33.4
+          ]
+        }
+      ]
     },
     {
       "cut": "111.1",
@@ -364,7 +438,15 @@
         "contrast": 10,
         "saturation": 6,
         "temperature": 4
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            34.7,
+            31.2
+          ]
+        }
+      ]
     },
     {
       "cut": "113.1",
@@ -420,15 +502,25 @@
         "laser@115.1",
         "laser@116.1"
       ],
-      "breaks": [
-        "ruins-gate/1@113.3",
-        "ruins-gate/2@113.3"
-      ],
       "grade": {
         "exposure": -0.2,
         "contrast": 8,
         "saturation": 10
-      }
+      },
+      "crystals": [
+        {
+          "at": [
+            25.5,
+            12.6
+          ]
+        },
+        {
+          "at": [
+            31.6,
+            19.2
+          ]
+        }
+      ]
     }
   ]
 }

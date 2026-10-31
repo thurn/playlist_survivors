@@ -24,6 +24,8 @@ namespace PS.Choreography
         public readonly float NearHalf, FarHalf;
         /// <summary>The camera's heading in degrees, clockwise seen from above (0: looking along ground +Y).</summary>
         public readonly float YawDeg;
+        /// <summary>The camera's height above the ground and its distance back from the focus along ground Y.</summary>
+        public readonly float CameraHeight, CameraBack;
         readonly float cos, sin;   // the heading's; unused at 0, so a view without one computes exactly as before
 
         public ViewGeometry(float width, double pitchDeg = PitchDeg, float yawDeg = 0)
@@ -38,6 +40,8 @@ namespace PS.Choreography
             double pitch = pitchDeg * deg;
             double h = distance * Math.Sin(pitch);
             double back = distance * Math.Cos(pitch);
+            CameraHeight = (float)h;
+            CameraBack = (float)back;
             double nearGround = h / Math.Tan(pitch + VerticalFovDeg / 2 * deg);
             double farGround = h / Math.Tan(pitch - VerticalFovDeg / 2 * deg);
             Near = (float)(back - nearGround);
@@ -64,6 +68,17 @@ namespace PS.Choreography
             Vector2 d = p - focus;
             if (YawDeg == 0) return d;
             return new Vector2(d.X * cos - d.Y * sin, d.X * sin + d.Y * cos);
+        }
+
+        /// <summary>
+        /// The ground point the camera sees where <paramref name="p"/> raised <paramref name="heightM"/> metres appears: a tall
+        /// thing's top on screen, so <see cref="Contains"/> can tell whether the frame cuts it off.
+        /// </summary>
+        public Vector2 Raised(Vector2 focus, Vector2 p, float heightM)
+        {
+            Vector2 d = Local(focus, p);
+            float t = CameraHeight / Math.Max(1e-3f, CameraHeight - heightM);
+            return focus + ToWorld(new Vector2(t * d.X, -CameraBack + t * (d.Y + CameraBack)));
         }
 
         /// <summary>A vector in the view's own axes (x right, y ahead) on the ground.</summary>

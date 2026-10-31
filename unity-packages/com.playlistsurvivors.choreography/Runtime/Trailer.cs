@@ -47,6 +47,8 @@ namespace PS.Choreography
         public string[] Combo = new string[0], Spells = new string[0];
         /// <summary>The structures the hero's bolt breaks in the shot: target@bar.beat entries, and each one's song section's label.</summary>
         public string[] Breaks = new string[0], BreakSections = new string[0];
+        /// <summary>The crystal formations the shot stands on its ground for the hero's blows to smash (trailer.md, "Crystal formations").</summary>
+        public CrystalFormation[] Crystals = new CrystalFormation[0];
         /// <summary>The grid position the combo's plain entries land on (the level script's <c>comboOn</c>): the major beats by default.</summary>
         public string BlowsOn = Trailer.DefaultBlowsOn;
         public string Boss;
@@ -183,7 +185,7 @@ namespace PS.Choreography
         {
             string what = "shot " + n;
             CheckKeys(o, what, "cut", "environment", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
-                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "note");
+                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "crystals", "note");
             var s = new TrailerShot
             {
                 Number = n,
@@ -261,6 +263,9 @@ namespace PS.Choreography
                 try { StructureBreaks.Resolve(layout, GridEntry.Parse(b).Name); } // fails on a target the environment lacks
                 catch (FormatException ex) { throw new FormatException(what + ": break '" + b + "': " + ex.Message); }
             }
+            s.Crystals = CrystalFormation.ParseList(o["crystals"], what);
+            if (s.Crystals.Length > 0 && s.Formation == null) throw new FormatException(what + ": crystals stand on a horde shot's ground, so they need a formation");
+            layout.ResolveCrystals(s.Crystals, what); // fails on one off the ground or in a structure
             JsonValue g = o["grade"];
             if (!g.IsNull)
             {
@@ -392,6 +397,13 @@ namespace PS.Choreography
             }
             if (s.Boss != null) set.Add(Pair("boss", JsonValue.OfString(s.Boss)));
             if (s.Duel != null) set.Add(Pair("duel", Mix(s.Duel)));
+            if (s.Crystals.Length > 0)
+            {
+                var crystals = new List<JsonValue>();
+                foreach (CrystalFormation c in s.Crystals)
+                    crystals.Add(Object(Pair("at", Point(c.At)), Pair("radiusM", JsonValue.OfNumber(c.RadiusM)), Pair("heightM", JsonValue.OfNumber(c.HeightM))));
+                set.Add(Pair("crystals", JsonValue.OfItems(crystals)));
+            }
             if (s.Formation != null)
             {
                 set.Add(Pair("formation", Object(Pair("kind", JsonValue.OfString(s.Formation.Kind)), Pair("streams", JsonValue.OfNumber(s.Formation.Streams)))));

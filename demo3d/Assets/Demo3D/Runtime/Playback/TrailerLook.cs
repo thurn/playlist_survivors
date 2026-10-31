@@ -53,7 +53,8 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// The lens hits of <paramref name="tl"/> from <paramref name="from"/> to before <paramref name="to"/>: its slam
-        /// shocks and rings (spells and final slams included), and the hero's blows of at least <see cref="MassKillWeight"/>.
+        /// shocks and rings (spells and final slams included), its structure and crystal formation breaks (at full strength),
+        /// and the hero's blows of at least <see cref="MassKillWeight"/>.
         /// Hits within an eighth note of an earlier one are one hit, at the stronger's place and strength, so an impact
         /// re-triggers at most once an eighth.
         /// </summary>
@@ -79,9 +80,15 @@ namespace Demo3D.Runtime.Playback
                 }
                 raw.Add(new Hit { Time = e.Time, End = to, Position = new Vector3(p.X, p.Y, p.Z), Strength = ImpactFloor + (1 - ImpactFloor) * WeightAt(e.Time) });
             }
+            // A structure or crystal formation bursting hits at full strength where it is struck, in place of the blow's own
+            // hit on that instant: centred on the burst, the blur leaves it sharp and streaks the rest.
+            var breaks = new HashSet<double>();
+            foreach (var b in tl.Breaks)
+                if (b.Time >= from && b.Time < to && breaks.Add(b.Time))
+                    raw.Add(new Hit { Time = b.Time, End = to, Position = new Vector3(b.Point.X, BreakMoments.BoltHeightM, b.Point.Y), Strength = 1f });
             foreach (var a in tl.Actions)
             {
-                if (a.Kind != ActionKind.Attack || a.Entity != 0 || a.Impact < from || a.Impact >= to) continue;
+                if (a.Kind != ActionKind.Attack || a.Entity != 0 || a.Impact < from || a.Impact >= to || breaks.Contains(a.Impact)) continue;
                 float w = WeightAt(a.Impact);
                 if (w < MassKillWeight) continue;
                 var g = tl.PositionAt(0, a.Impact);

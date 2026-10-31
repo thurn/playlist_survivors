@@ -557,6 +557,7 @@ included).
 | `formation` | none | `{ "kind": "charge" \| "vortex" \| "converge", "streams": 2-6 }`, with a `heroPath`: the horde's opening placement, refill and never-jam steering (below). |
 | `densityCap` | 1.2 | A formation's refill spawns only where fewer than this many monsters stand per m² within 2 m. |
 | `comboOn` | `beat` | The grid position plain combo entries play on, such as `strong` (the trailer's blows on the major beats); positioned entries keep their own. |
+| `crystals` | none | Crystal formations, `[{ "at": [x, y] or an area, "radiusM": 2.2, "heightM": 10 }]` ([Trailer Mode](trailer.md), "Crystal formations"). The run's layout is the arena's with a round blocking footprint for each after its own placements (`GroundLayout.WithCrystals`), so the hero's path and the horde route round them. The first hero blow whose hit shape reaches one (a ring's or arc's reach past its edge, a line's length and width) smashes it: a break event with no projectile on the blow's impact, and its footprint leaves the map as a structure break's does. The timeline carries them as `Crystals`. One in a structure or off the ground fails. |
 
 The combo and spell grid gains the trailer's positions: `cut`, `final`,
 `anchor` (the next unused anchor of a free section, from the cut on, or the

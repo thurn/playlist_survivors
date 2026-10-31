@@ -202,19 +202,20 @@ namespace Demo3D.Runtime.Playback
                 s.Eval = new TimelineEvaluator(tl, clips.Clips);
                 s.BySpawn = BySpawn(tl);
                 s.Blows = feel != null && !_flags.NoFeel ? new BlowFeel(tl, feel) : null;
-                if (tl.Breaks.Length > 0)
+                if (tl.Breaks.Length > 0 || tl.Crystals.Length > 0)
                 {
-                    // The shot's structure breaks (trailer.md, "Structure breaks in a shot"), on its own environment.
+                    // The shot's structure breaks (trailer.md, "Structure breaks in a shot") and crystal formations ("Crystal
+                    // formations"), on its own environment.
                     var layout = environments[s.Info.Environment].Layout;
                     s.Moments = BreakMoments.Of(tl, layout);
-                    s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name);
+                    s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name, tl.Crystals, CrowdLibrary.Load());
                 }
                 s.Feel = new CameraFeel(tl, s.Blows, s.Moments.Count > 0 ? s.Moments.Shakes() : null);
                 if (_fx != null)
                 {
                     s.Effects = NewEffectDriver(tl);
                     s.Effects.Blows = s.Blows;
-                    if (s.Moments.Count > 0) s.Effects.SetBursts(s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem));
+                    if (s.Moments.Count > 0) s.Effects.SetBursts(s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem, Demo3D.Runtime.Arena.CrystalFormations.Gem));
                 }
                 if (_shatter != null)
                 {

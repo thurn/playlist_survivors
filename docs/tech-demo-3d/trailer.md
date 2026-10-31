@@ -1398,9 +1398,10 @@ except `baseline` also brings a post-processing look.
 ## The Crystal Cut
 
 `--trailer crystal` plays an alternate cut, `trailer-crystal.json`, that
-showcases the crystal horde: glowing crystalline monsters on dark ground, and
-crystal walls that the hero's bolt shatters on screen (ps-7i4). The default
-cut, `--trailer` (`action`), is unchanged.
+showcases the crystal horde and shattering: glowing crystalline monsters on
+dark ground, and towering crystal formations that the hero's blows smash
+on screen, again and again (ps-7i4, redesigned around the formations by
+ps-b5z.4). The default cut, `--trailer` (`action`), has none.
 
 ```
 just demo3d --trailer crystal --sound
@@ -1417,17 +1418,21 @@ just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
   `--monster-style`, `--structure-style`, `--style-tune` and
   `--structure-tune` wherever the command line names none, so a flag still
   wins (`DemoMain.UseTrailerStyle`).
+- **Shattering is the centrepiece.** Fifteen formations burst over seven of
+  the eight shots, one every three to five seconds from the drop to the
+  climax, each to the hero's blow on a strong beat (see
+  [Crystal formations](#crystal-formations)).
 
-| # | Trailer s | Bars | Environment | Formation | Breaks |
+| # | Trailer s | Bars | Environment | Formation | Crystals smashed (trailer s, bar.beat) |
 |---|---|---|---|---|---|
 | 1 | 0.000–2.481 | 79–80 | neon | Duel: 3 elites | |
-| 2 | 2.481–14.868 | 81–88 | crypt | Charge | courtyard east-south (81.3), east-north (82.3) |
-| 3 | 14.868–27.255 | 89–96 | lava | Converge, 3 streams | |
-| 4 | 27.255–39.642 | 97–104 | forest | Vortex | |
-| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams | courtyard west-north (106.1), north-east (108.3) |
-| 6 | 45.836–48.932 | 109–110 | crypt | Vortex | |
-| 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | |
-| 8 | 52.029–59.0 | 113–117.2 | forest | Converge, 6 streams, plus the boss | both ruins-gate runs (113.3) |
+| 2 | 2.481–14.868 | 81–88 | crypt | Charge | 4.80 (82.3), 9.45 (85.3), 13.32 (88.1) |
+| 3 | 14.868–27.255 | 89–96 | lava | Converge, 3 streams | 17.19 (90.3), 21.06 (93.1), 22.61 (94.1) |
+| 4 | 27.255–39.642 | 97–104 | forest | Vortex | 29.58 (98.3), 34.22 (101.3), 38.09 (104.1) |
+| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams (400) | 41.19 (106.1), 44.29 (108.1) |
+| 6 | 45.836–48.932 | 109–110 | crypt | Vortex | 47.38 (110.1) |
+| 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | 50.48 (112.1) |
+| 8 | 52.029–59.0 | 113–117.2 | forest | Converge, 6 streams, plus the boss | 54.35 (114.3), 56.67 (116.1) |
 
 ### The crystal look
 
@@ -1458,14 +1463,102 @@ The file's look:
   `--hero-outline` takes it), against the cool gems, instead of overdrive's
   cyan, which vanished into the cyan blocks. `--hero-outline` still wins.
 - **Structures** are dark sapphire with a faint glow (gain 0.3, glow 0.6), so
-  a wall reads beside the horde without outshining it, and flares as it
-  breaks.
+  a wall reads beside the horde without outshining it.
+- **Formations** are their own warm white-gold (`CrystalFormations.Gem`,
+  #ffe7b0), lit from inside past the bloom's knee (gain 0.55, peak 0.35, glow
+  1.6): the horde's gems span every hue, so a formation stands out by being
+  the largest and brightest solid thing on screen, not by its hue.
+
+### Crystal formations
+
+The operator's review of the first cut (epic ps-b5z, note 1): shattering is
+"a core thing we are showing off", and it was invisible. Six low ruin-wall
+runs broke to a distant bolt into knee-high piles among a horde of the same
+blues. The cut now stages its breaks round **crystal formations**: clusters
+of glowing spires as tall as a house, generated in code, standing on the
+hero's path, that the hero's blows smash.
+
+A shot's `crystals` field places them:
+
+```json
+"crystals": [ { "at": [22.0, 22.4] }, { "at": [30.5, 36.2], "radiusM": 2.2, "heightM": 10 } ]
+```
+
+- **`at`**: a named area or metres, on the environment's open ground. One
+  standing in a structure, or off the arena, fails at load and names it.
+- **`radiusM`** (default 2.2, 0.8 to 2.5): the footprint's radius.
+- **`heightM`** (default 10, 2 to 16): its tallest spire.
+- Only a horde shot (one with a formation) takes them.
+
+**In the simulation** (the level script's `crystals`,
+[choreography.md, Shot fields](choreography.md#shot-fields)):
+
+- **They block.** The shot runs on its environment's layout with a round
+  blocking footprint for each formation after the layout's own placements
+  (`GroundLayout.WithCrystals`). The hero's path routes round them, the horde
+  parts round them, and refill never spawns on them.
+- **The hero's blow smashes them.** The first hero blow whose hit shape
+  reaches a formation (a cleave's or slam's ring at the shot's `shapeScale`,
+  past its edge) breaks it on that blow's impact: a strong beat, the
+  fight's own beat. Its break event has no projectile, from where the hero
+  stands to the formation's nearest point (`Sim.SmashCrystals`).
+- **The ground opens.** Its footprint leaves the obstacle map as a structure
+  break's does, and the fields rebuild over the next beat, so the horde pours
+  through where it stood.
+- **Placement.** Each stands 20 to 80° off the hero's line at one of its
+  blows, as far out as that blow's ring just reaches (the reach plus the
+  radius, less 0.8 m) and beyond every earlier blow's, on the side where the
+  frame holds it whole. They break 4 to 8 m from the hero, as monsters die
+  at the same reach. On the line itself the hero's path bent round them and
+  could miss its blow.
+
+**On screen** (`CrystalFormations`, `StructureShatter`):
+
+- **The formation.** A main spire of the formation's height and five to
+  seven shorter ones leaning out round it, hexagonal and tapering to off-axis
+  points, flat-shaded and sunk 0.4 m into the ground, seeded by its position.
+  Each spire is cut at build time into chunky shards: slices of its shaft
+  split round the axis into two or three wedges, and its tip, about fifty a
+  formation, their cut faces flagged as a baked shard's are. They draw in
+  crystal's structure shader, in the formations' gem, and stand from the
+  shot's first frame; a cut away hides them, and their shot's next showing
+  puts them back whole.
+- **The burst, on the impact frame.** On the blow's frame the formation is
+  its shards, flashing white, and they fly: the front crosses a formation
+  within three frames (120 m/s), each shard kicked out from the hero, away
+  along the blow and up (7.5, 6 and 6.5 m/s at full share), spinning,
+  under 1.8 g, its fresh inside faces glowing white-gold for 1.4 s as it
+  rises and rains down. After 2.4 s they sink into the ground. Nothing
+  cracks or glows before the blow.
+- **The feel.** The blow weighs 1 whatever it kills (`BlowFeel`): the full
+  hit-stop, punch and shake. The moment also takes the largest wall's post
+  flash and shake (1.1 and 0.4 m), a lens hit at full strength at the strike
+  (`TrailerLook`), crystal chips tinted the formations' gem where the blow
+  lands and up the formation's height, a ground shock at its foot, and
+  crystal's shatter sound at full gain.
+
+The crystal manner of a structure break changed with it: breaks pay off on
+the impact frame (the operator's rule), so a crystal wall's front no longer
+creeps at 22 m/s opening glowing seams a moment before the burst. It bursts
+at 120 m/s, harder and higher than stone
+([environment.md, Breaks on screen](environment.md)).
+
+**The checks** (see [Checks and Evidence](#checks-and-evidence)):
+
+- `breaks on screen`: each formation stands wholly in view (its footprint
+  inside the frame) when it breaks, and falls to a hero blow landing on that
+  instant.
+- `every crystal breaks on screen`: every formation of a shot breaks from its
+  cut to its end, none unseen in the pre-roll, none left standing.
 
 ### Structure breaks in a shot
 
 A shot's `breaks` field lists `target@bar.beat` entries, with targets named as
 in a structure-breaks schedule (choreography.md, Structure breaks): an area's
 name, or an area's part such as `courtyard/east-south` or `ruins-gate/1`.
+The hero's bolt breaks them, as a schedule's do. The first crystal cut broke
+six wall runs this way; its redesign replaced them with crystal formations,
+so no checked-in cut uses the field now.
 
 - **Parse** (`Trailer.ValidateBreaks`): every entry needs a bar.beat on the
   grid within the shot's visible span, from its cut to its end, and a target
@@ -1479,28 +1572,28 @@ name, or an area's part such as `courtyard/east-south` or `ruins-gate/1`.
   crypt breaks every courtyard and ruins-gate run, the forest every one but
   the courtyard's west-south, neon only the courtyard's south-west,
   north-east and west-north and both ruins-gate runs, and lava none.
-- **On screen.** Each shot with breaks gets its own `BreakMoments` and
-  `StructureShatter` on its own environment, with the moments' bursts,
-  sounds, shakes and flashes in the shot's effect driver, cues, camera feel
-  and post feel. A cut away from the shot rewinds its shatter
-  (`StructureShatter.Rewind`), so the walls stand again for the next shot in
-  that environment, whose simulation starts whole.
+- **On screen.** Each shot with breaks or crystal formations gets its own
+  `BreakMoments` and `StructureShatter` on its own environment, with the
+  moments' bursts, sounds, shakes and flashes in the shot's effect driver,
+  cues, camera feel and post feel. A cut away from the shot rewinds its
+  shatter (`StructureShatter.Rewind`), so the walls stand again for the next
+  shot in that environment, whose simulation starts whole.
 - **The check.** `breaks on screen` (`TrailerChecks.BreaksOnScreen`): each
-  break strikes in view, and its bolt flies at most 14 m. The cut's six bolts
-  fly 5.0–7.7 m.
+  break strikes in view, and its bolt flies at most 14 m.
 - **`--structure-breaks`** still conflicts with `--trailer`: a trailer's
   breaks are its shots' own. `--environment` pins the shots and their breaks
-  together, so pinning the crystal cut to an environment where one of its
-  walls can't break (lava, say) fails at load, naming the wall.
+  together, so pinning a cut to an environment where one of its walls can't
+  break (lava, say) fails at load, naming the wall.
 
 **Outcome.** Every shot passes every check (`trailer --name crystal
---checks`, and `TrailerTests.TheCrystalCutPassesTheTrailersChecksAndBreaksItsWalls`),
+--checks`, and `TrailerTests.TheCrystalCutPassesTheTrailersChecksAndSmashesItsCrystals`),
 and the action cut's checks are unchanged. The test must pass under both
 `dotnet test` and Unity's EditMode run (`demo3d test`): their floating point
 differs, so a shot's density can pass on one and fail on the other. Shot 3's
 lava converge is the fragile one: with four streams its last bar thinned to
 372 against 440 under Unity only, so it runs three (ps-vr7). Stills:
-[evidence/trailer/crystal](../../demo3d/evidence/trailer/crystal/README.md).
+[evidence/trailer/crystal](../../demo3d/evidence/trailer/crystal/README.md);
+the formations: [evidence/trailer/shatter](../../demo3d/evidence/trailer/shatter/README.md).
 
 ## Command Line
 
@@ -1637,7 +1730,8 @@ It runs every shot's simulation and prints a table with one row per shot:
 - blocks: the type blocks' coherence, the mean share of a visible monster's
   neighbours within 3 m that share its type (a random mix of the shots'
   scores about 25%, pure blocks 100%);
-- lane: the narrowest the hero's open lane gets, in degrees.
+- lane: the narrowest the hero's open lane gets, in degrees;
+- breaks: the structure and crystal formation breaks on screen.
 
 These checks fail the run, naming the shot, the time and the monster:
 
@@ -1661,7 +1755,12 @@ These checks fail the run, naming the shot, the time and the monster:
   at least 60° wide.
 - **One hit kills.** No monster takes a hit and survives.
 - **The boss.** It takes exactly one hit, from the final slam on 117.1.
-- **The final slam.** It kills every monster in view.
+- **The final slam.** It kills every monster in view (one that left the run
+  off screen before it isn't there to survive it).
+- **Breaks on screen.** Every structure break strikes in view; every crystal
+  formation stands wholly in view as the hero's blow smashes it.
+- **Every crystal breaks on screen.** Each shot's formations all break from
+  its cut to its end (see [Crystal formations](#crystal-formations)).
 - **No visible spawns.** Every spawn lies outside the rotated view.
 - **Density.** In each shot from its second beat, the on-screen count is
   sampled on every beat. Each bar's mean of those samples stays within 15% of
@@ -1824,7 +1923,9 @@ Judge:
 - **The glow.** The gems should read as lit from inside against dark ground,
   their facets still visible, not as flat neon silhouettes; the effects should
   stay the brightest thing on screen.
-- **The walls.** Each of the five break moments (3.25, 4.80, 41.19, 45.06 and
-  52.80 s) should read as the hero's bolt shattering a glowing wall, and the
-  horde should pour through the openings.
+- **The formations.** Each of the fifteen break moments (the shot list's
+  table) should read as the hero's blow smashing a towering white-gold
+  formation, bursting on the beat with no build-up, its shards raining down
+  and the horde pouring through where it stood. Judge whether one every
+  three to five seconds is the centrepiece without wearing thin.
 - **Darkness.** The crypt's two shots should read as dark as the others.

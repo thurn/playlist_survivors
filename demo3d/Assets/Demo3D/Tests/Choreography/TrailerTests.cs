@@ -603,29 +603,148 @@ namespace Demo3D.Choreography.Tests
         }
 
         /// <summary>
-        /// The crystal cut (trailer.md, "The crystal cut"): every shot passes the trailer's checks, its breaks among them,
-        /// and every break it schedules strikes, on screen.
+        /// The crystal cut (trailer.md, "The Crystal Cut"): every shot passes the trailer's checks, its crystal formations'
+        /// among them, and its formations burst as a recurring centrepiece: at least five break moments over at least four
+        /// shots, each on screen, each the hero's blow (no bolt), every formation broken.
         /// </summary>
         [Test]
-        public void TheCrystalCutPassesTheTrailersChecksAndBreaksItsWalls()
+        public void TheCrystalCutPassesTheTrailersChecksAndSmashesItsCrystals()
         {
-            Trailer t = ChoreographyFiles.LoadTrailer(Fixtures.Root, "crystal", out var environments);
+            Trailer t = Fixtures.CrystalCut;
             Assert.That(t.Environments, Is.EquivalentTo(new[] { "neon", "crypt", "lava", "forest" }));
             var problems = new List<string>();
-            int scheduled = 0, struck = 0;
+            int moments = 0, shots = 0;
             for (int i = 0; i < t.Shots.Length; i++)
             {
-                ChoreographyData data = environments[t.Shots[i].Environment];
-                Timeline tl = ChoreographyFiles.BuildShot(Fixtures.Root, t, i, data);
-                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(t, i, tl, data)) problems.AddRange(check.Value);
-                scheduled += t.Shots[i].Breaks.Length;
-                var moments = new HashSet<(double, string)>();
-                foreach (BreakEvent b in tl.Breaks) moments.Add((b.Time, b.Target));
-                struck += moments.Count;
+                Timeline tl = Fixtures.CrystalShot(i);
+                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(t, i, tl, Fixtures.CrystalShotData(i))) problems.AddRange(check.Value);
+                Assert.That(tl.Crystals.Length, Is.EqualTo(t.Shots[i].Crystals.Length), "shot " + (i + 1));
+                int smashed = 0;
+                foreach (BreakEvent b in tl.Breaks)
+                    if (Array.Exists(tl.Crystals, c => c.Placement == b.Placement))
+                    {
+                        Assert.That(b.Projectile, Is.EqualTo(-1), "a formation falls to the hero's blow, not a bolt");
+                        if (b.Time >= t.Shots[i].Cut && b.Time < t.Shots[i].End) smashed++;
+                    }
+                moments += smashed;
+                if (smashed > 0) shots++;
             }
             Assert.That(problems, Is.Empty, Report(problems));
-            Assert.That(scheduled, Is.GreaterThanOrEqualTo(4));
-            Assert.That(struck, Is.EqualTo(scheduled));
+            Assert.That(moments, Is.GreaterThanOrEqualTo(5));
+            Assert.That(shots, Is.GreaterThanOrEqualTo(4));
+        }
+
+        /// <summary>
+        /// A crystal formation blocks the horde until the hero's blow smashes it, and then the horde walks where it stood:
+        /// no monster's body enters its footprint before its break, and some monster's centre stands in it after.
+        /// </summary>
+        [Test]
+        public void ACrystalBlocksTheHordeUntilItsSmashedAndThenOpens()
+        {
+            Timeline tl = Fixtures.CrystalShot(1);
+            Assert.That(tl.Crystals.Length, Is.GreaterThan(0));
+            foreach (CrystalPiece c in tl.Crystals)
+            {
+                BreakEvent b = Array.Find(tl.Breaks, e => e.Placement == c.Placement);
+                bool through = false;
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind != EntityKind.Monster) continue;
+                    float r = tl.TypeRadii[info.Type];
+                    for (double t = info.Spawn; t < info.Despawn; t += 0.1)
+                    {
+                        float d = Vector2.Distance(tl.PositionAt(e, t), c.Position);
+                        if (t < b.Time - 1e-6) Assert.That(d, Is.GreaterThan(c.RadiusM + r * 0.5f), "monster " + e + " in " + CrystalPiece.Target(Array.IndexOf(tl.Crystals, c)) + " at " + t);
+                        else if (d < c.RadiusM - 0.2f) through = true;
+                    }
+                }
+                Assert.That(through, "the horde walks where " + CrystalPiece.Target(Array.IndexOf(tl.Crystals, c)) + " stood");
+            }
+        }
+
+        /// <summary>A shot's crystals: on the environment's open ground, in a horde shot, with known fields and sizes; anything else fails naming it.</summary>
+        [TestCase("\"crystals\": [{ \"at\": [40, 40], \"heightM\": 40 }]", "shot 2 crystal 1: radiusM must be")]
+        [TestCase("\"crystals\": [{ \"at\": [40, 40], \"colour\": \"red\" }]", "shot 2 crystal 1: unknown field 'colour'")]
+        [TestCase("\"crystals\": [{ \"at\": \"moat\" }]", "unknown area 'moat'")]
+        [TestCase("\"crystals\": [[40, 40]]", "shot 2 crystal 1: expected")]
+        [TestCase("\"crystals\": [{ \"at\": [79.5, 40] }]", "is off layout")]
+        public void ABadCrystalFailsNamingIt(string field, string message)
+        {
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2(field)));
+            Assert.That(ex.Message, Does.Contain(message));
+        }
+
+        /// <summary>A crystal standing in one of the environment's structures fails at load, naming it; so does one in the duel, which has no horde.</summary>
+        [Test]
+        public void ACrystalInAStructureOrTheDuelFails()
+        {
+            GroundLayout desert = Environments("desert");
+            Placement inside = Array.Find(desert.Placements.Items, p => desert.Placements.Props[p.Prop].Blocks && desert.Nav.Distance(p.Position) < -0.5f);
+            string at = "[" + inside.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture) + ", " + inside.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]";
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2("\"crystals\": [{ \"at\": " + at + " }]")));
+            Assert.That(ex.Message, Does.Contain("shot 2 crystal 1").And.Contain("stands in a structure"));
+            ex = Assert.Throws<FormatException>(() => Parse(Shot1("\"crystals\": [{ \"at\": [40, 40] }]"), Shot2()));
+            Assert.That(ex.Message, Does.Contain("shot 1: crystals").And.Contain("need a formation"));
+        }
+
+        /// <summary>A shot's crystals go into its script as the level script's crystals, sizes and all.</summary>
+        [Test]
+        public void AShotsCrystalsGoInItsScript()
+        {
+            Trailer t = Parse(Shot1(), Shot2("\"crystals\": [{ \"at\": [40, 40], \"radiusM\": 2.2, \"heightM\": 9 }, { \"at\": [44, 52] }]"));
+            LevelScript ls = t.ShotScript(1, File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.LevelFile)),
+                File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.IntensityFile("overdrive"))));
+            Assert.That(ls.Crystals.Length, Is.EqualTo(2));
+            Assert.That((ls.Crystals[0].At.At, ls.Crystals[0].RadiusM, ls.Crystals[0].HeightM), Is.EqualTo((new Vector2(40, 40), 2.2f, 9f)));
+            Assert.That((ls.Crystals[1].RadiusM, ls.Crystals[1].HeightM), Is.EqualTo((CrystalFormation.DefaultRadiusM, CrystalFormation.DefaultHeightM)));
+            Assert.That(t.ShotScript(0, File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.LevelFile)),
+                File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.IntensityFile("overdrive")))).Crystals, Is.Empty);
+        }
+
+        /// <summary>
+        /// A formation breaking with its footprint in view but its top cut off by the frame's far edge fails the check: the
+        /// camera looks down at 55°, so a 10 m spire's top shows well beyond its foot.
+        /// </summary>
+        [Test]
+        public void ACrystalWhoseTopTheFrameCutsOffFails()
+        {
+            Trailer t = Fixtures.CrystalCut;
+            Timeline tl = Clone(Fixtures.CrystalShot(1));
+            Assert.That(TrailerChecks.BreaksOnScreen(t.Shots[1], tl), Is.Empty);
+            int i = Array.FindIndex(tl.Breaks, b => b.Placement == tl.Crystals[0].Placement);
+            FramingSample f = tl.FramingAt(tl.Breaks[i].Time);
+            ViewGeometry view = tl.View(f.ViewWidth);
+            CrystalPiece c = tl.Crystals[0];
+            Vector2 farFoot = f.Focus + view.ToWorld(new Vector2(0, view.Far - c.RadiusM - 0.5f));
+            Assert.That(view.Contains(f.Focus, farFoot, -c.RadiusM), "its footprint is in view");
+            tl.Crystals = (CrystalPiece[])tl.Crystals.Clone();
+            tl.Crystals[0] = new CrystalPiece(c.Placement, farFoot, c.RadiusM, c.HeightM);
+            List<string> problems = TrailerChecks.BreaksOnScreen(t.Shots[1], tl);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("crystal-1 breaks partly out of view"));
+        }
+
+        /// <summary>The check fails a crystal that is left standing at its shot's end, or that falls unseen in the pre-roll.</summary>
+        [Test]
+        public void ACrystalLeftStandingOrSmashedBeforeTheCutFails()
+        {
+            Trailer t = Fixtures.CrystalCut;
+            Timeline tl = Clone(Fixtures.CrystalShot(1));
+            Assert.That(TrailerChecks.CrystalsBreak(t.Shots[1], tl), Is.Empty);
+            BreakEvent first = Array.Find(tl.Breaks, b => b.Placement == tl.Crystals[0].Placement);
+            tl.Breaks = Array.FindAll(tl.Breaks, b => b.Placement != tl.Crystals[0].Placement);
+            List<string> problems = TrailerChecks.CrystalsBreak(t.Shots[1], tl);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("crystal-1").And.Contain("still standing"));
+            var early = new List<BreakEvent>(tl.Breaks)
+            {
+                new BreakEvent(t.Shots[1].Cut - 1.0, first.Placement, first.Target, -1, first.Origin, first.Point),
+            };
+            tl.Breaks = early.ToArray();
+            problems = TrailerChecks.CrystalsBreak(t.Shots[1], tl);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("crystal-1").And.Contain("pre-roll"));
         }
 
         static Trailer Parse(params string[] shots) => PS.Choreography.Trailer.Parse(Trailer(shots), Fixtures.Song, Environments);

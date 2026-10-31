@@ -26,6 +26,8 @@ namespace PS.Choreography
         public double TypeCoherence;
         /// <summary>The narrowest the hero's open lane gets, in degrees: the least, over the beats, of the widest gap round them (360 with no monster near).</summary>
         public double OpenLaneDeg;
+        /// <summary>The structure and crystal breaks on screen: break moments from the cut to the shot's end.</summary>
+        public int Breaks;
     }
 
     /// <summary>
@@ -76,6 +78,7 @@ namespace PS.Choreography
                 Check("no visible spawns", NoVisibleSpawns(s, tl)),
                 Check("density", Density(trailer, s, tl)),
                 Check("breaks on screen", BreaksOnScreen(s, tl)),
+                Check("every crystal breaks on screen", CrystalsBreak(s, tl)),
             };
         }
 
@@ -347,7 +350,9 @@ namespace PS.Choreography
 
         /// <summary>
         /// Every structure break of the shot strikes where the camera has it (trailer.md, "Structure breaks in a shot"):
-        /// the point its bolt strikes is in view, and the bolt is short enough to read as the hero's.
+        /// the point its bolt strikes is in view, and the bolt is short enough to read as the hero's. A crystal formation's
+        /// (trailer.md, "Crystal formations") stands wholly in view, its footprint and its tallest spire's top inside the
+        /// frame, and falls to a hero blow landing on that instant.
         /// </summary>
         public static List<string> BreaksOnScreen(TrailerShot s, Timeline tl)
         {
@@ -357,11 +362,45 @@ namespace PS.Choreography
                 BreakEvent b = tl.Breaks[i];
                 if (i > 0 && tl.Breaks[i - 1].Time == b.Time && tl.Breaks[i - 1].Target == b.Target) continue; // its other pieces
                 FramingSample f = tl.FramingAt(b.Time);
+                ViewGeometry view = tl.View(f.ViewWidth);
+                int crystal = Array.FindIndex(tl.Crystals, c => c.Placement == b.Placement);
+                if (crystal >= 0)
+                {
+                    CrystalPiece c = tl.Crystals[crystal];
+                    if (!view.Contains(f.Focus, c.Position, -c.RadiusM) || !view.Contains(f.Focus, view.Raised(f.Focus, c.Position, c.HeightM)))
+                        problems.Add(Where(s, b.Time) + b.Target + " breaks partly out of view");
+                    else if (!HeroBlowAt(tl, b.Time)) problems.Add(Where(s, b.Time) + b.Target + " breaks without a hero blow landing");
+                    continue;
+                }
                 float bolt = System.Numerics.Vector2.Distance(b.Origin, b.Point);
-                if (!tl.View(f.ViewWidth).Contains(f.Focus, b.Point)) problems.Add(Where(s, b.Time) + b.Target + " breaks out of view");
+                if (!view.Contains(f.Focus, b.Point)) problems.Add(Where(s, b.Time) + b.Target + " breaks out of view");
                 else if (bolt > MaxBreakBoltM) problems.Add(Where(s, b.Time) + b.Target + "'s bolt flies " + bolt.ToString("F1", CultureInfo.InvariantCulture) + " m");
             }
             return problems;
+        }
+
+        /// <summary>
+        /// Every crystal formation of the shot breaks on screen (trailer.md, "Crystal formations"): from its cut to its end, so
+        /// none falls unseen in the pre-roll and none is left standing when the shot ends.
+        /// </summary>
+        public static List<string> CrystalsBreak(TrailerShot s, Timeline tl)
+        {
+            var problems = new List<string>();
+            for (int k = 0; k < tl.Crystals.Length; k++)
+            {
+                CrystalPiece c = tl.Crystals[k];
+                int i = Array.FindIndex(tl.Breaks, b => b.Placement == c.Placement);
+                string name = CrystalPiece.Target(k) + " at (" + c.Position.X.ToString("F1", CultureInfo.InvariantCulture) + ", " + c.Position.Y.ToString("F1", CultureInfo.InvariantCulture) + ")";
+                if (i < 0 || tl.Breaks[i].Time >= s.End - Eps) problems.Add(Where(s, s.End) + name + " is still standing at the shot's end");
+                else if (tl.Breaks[i].Time < s.Cut - Eps) problems.Add(Where(s, tl.Breaks[i].Time) + name + " breaks in the pre-roll, before the cut");
+            }
+            return problems;
+        }
+
+        static bool HeroBlowAt(Timeline tl, double t)
+        {
+            foreach (ActionEvent a in tl.ActionsOf(0)) if (a.Kind == ActionKind.Attack && Math.Abs(a.Impact - t) <= Eps) return true;
+            return false;
         }
 
         /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills.</summary>
@@ -414,6 +453,7 @@ namespace PS.Choreography
             for (int e = 1; e < tl.EntityCount; e++)
             {
                 if (tl.Entities[e].Kind != EntityKind.Monster || tl.Entities[e].Spawn > final + Eps || death[e] < final - Eps) continue;
+                if (tl.Entities[e].Despawn < final - Eps) continue;   // left the run off screen before it: not there to survive
                 if (!view.Contains(f.Focus, tl.PositionAt(e, final))) continue;
                 if (Math.Abs(death[e] - final) > Eps && problems.Count < 20)
                     problems.Add(Where(s, final) + "monster " + e + " (" + TypeOf(tl, e) + ") in view survives the final slam");
@@ -489,6 +529,12 @@ namespace PS.Choreography
             Coherence(trailer, s, tl, out r.TypeCoherence);
             Lanes(trailer, s, tl, roster, out r.OpenLaneDeg);
             double dur = s.End - s.Cut;
+            for (int i = 0; i < tl.Breaks.Length; i++)
+            {
+                BreakEvent b = tl.Breaks[i];
+                if (i > 0 && tl.Breaks[i - 1].Time == b.Time && tl.Breaks[i - 1].Target == b.Target) continue;
+                if (b.Time >= s.Cut - Eps && b.Time < s.End) r.Breaks++;
+            }
             var deaths = new Dictionary<double, int>();
             foreach (ActionEvent a in tl.Actions)
                 if (a.Kind == ActionKind.Death && a.Impact >= s.Cut - Eps && a.Impact < s.End)
@@ -533,12 +579,12 @@ namespace PS.Choreography
         public static string Table(IList<ShotReport> rows)
         {
             var sb = new StringBuilder();
-            sb.AppendLine("shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness  blocks  lane");
+            sb.AppendLine("shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness  blocks  lane  breaks");
             foreach (ShotReport r in rows)
-                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,4}  {1,-11}  {2,9} / {3,-6}  {4,8:F2}  {5,11:F1}, {6,-12}  {7,9:P0}  {8,4}  {9,8}  {10,6}  {11,4:F0}",
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture, "{0,4}  {1,-11}  {2,9} / {3,-6}  {4,8:F2}  {5,11:F1}, {6,-12}  {7,9:P0}  {8,4}  {9,8}  {10,6}  {11,4:F0}  {12,6}",
                     r.Number, r.Environment, double.IsNaN(r.OnScreen) ? "-" : r.OnScreen.ToString("F0", CultureInfo.InvariantCulture), r.Target, r.SwingsPerSecond,
                     r.MeanKillsPerSwing, r.PeakKillsPerSwing, r.ActedShare, double.IsNaN(r.KiteRatio) ? "-" : r.KiteRatio.ToString("F1", CultureInfo.InvariantCulture),
-                    r.LivenessViolations, double.IsNaN(r.TypeCoherence) ? "-" : r.TypeCoherence.ToString("P0", CultureInfo.InvariantCulture), r.OpenLaneDeg));
+                    r.LivenessViolations, double.IsNaN(r.TypeCoherence) ? "-" : r.TypeCoherence.ToString("P0", CultureInfo.InvariantCulture), r.OpenLaneDeg, r.Breaks));
             return sb.ToString();
         }
 

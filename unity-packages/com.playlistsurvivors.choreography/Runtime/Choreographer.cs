@@ -55,6 +55,8 @@ namespace PS.Choreography
         public static Timeline Run(SongMap map, LevelScript script, ChoreographyData data, uint? seedOverride = null)
         {
             long t0 = Stopwatch.GetTimestamp();
+            // A trailer shot's crystal formations stand on the run's own copy of the layout, its obstacle map with them.
+            if (script.Crystals.Length > 0) data = data.WithLayout(data.Layout.WithCrystals(script.Crystals, "level script"));
             var plans = new SectionPlan[map.Sections.Length];
             for (int i = 0; i < plans.Length; i++)
             {
@@ -183,6 +185,7 @@ namespace PS.Choreography
         public int Streams;                                         // a converge's
         public float DensityCap;                                    // a formation's refill spawns where fewer stand per m²
         public GridFlags ComboOn = GridFlags.Beat;                  // plain combo entries play on this position
+        public CrystalPiece[] Crystals = new CrystalPiece[0];       // the crystal formations a hero blow smashes; none by default
 
         public static readonly ShotRules Default = new ShotRules();
 
@@ -200,6 +203,7 @@ namespace PS.Choreography
                 Formation = script.Formation == "charge" ? FormationKind.Charge : script.Formation == "vortex" ? FormationKind.Vortex
                     : script.Formation == "converge" ? FormationKind.Converge : FormationKind.None,
                 Streams = script.FormationStreams, DensityCap = script.DensityCap, ComboOn = script.ComboOn,
+                Crystals = data.Layout.Crystals,
             };
             var grid = new BeatGrid(map);
             if (script.Cut != null) r.Cut = map.TimeOfBarBeat(script.Cut, grid);

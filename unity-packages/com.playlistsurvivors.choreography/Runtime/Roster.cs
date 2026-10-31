@@ -206,6 +206,8 @@ namespace PS.Choreography
         public GoalArea[] Goals = new GoalArea[0];
         public ArenaLayout Arena;          // null on open ground
         public PlacementList Placements;   // null on open ground
+        /// <summary>The crystal formations <see cref="WithCrystals"/> added after the layout's own placements; empty otherwise.</summary>
+        public CrystalPiece[] Crystals = new CrystalPiece[0];
         /// <summary>Seconds spent generating the placement list and building the obstacle map (at load, once per layout).</summary>
         public double PlacementSeconds, NavGridSeconds;
         NavGrid nav;
@@ -271,6 +273,64 @@ namespace PS.Choreography
                 Placements = list,
                 PlacementSeconds = (System.Diagnostics.Stopwatch.GetTimestamp() - t0) / (double)System.Diagnostics.Stopwatch.Frequency,
             };
+        }
+
+        /// <summary>
+        /// Where <paramref name="crystals"/> stand on this layout, as they would follow its own placements (trailer.md, "Crystal
+        /// formations"). A formation on open ground, off the arena, or standing in one of the layout's blocking pieces fails,
+        /// naming it (<paramref name="what"/>: "shot 2").
+        /// </summary>
+        public CrystalPiece[] ResolveCrystals(CrystalFormation[] crystals, string what)
+        {
+            if (crystals.Length == 0) return new CrystalPiece[0];
+            if (Placements == null) throw new FormatException(what + ": crystals need an arena layout, not open ground '" + Name + "'");
+            var pieces = new CrystalPiece[crystals.Length];
+            for (int i = 0; i < crystals.Length; i++)
+            {
+                CrystalFormation c = crystals[i];
+                string name = what + " crystal " + (i + 1);
+                System.Numerics.Vector2 p = c.At.Resolve(this, name);
+                System.Numerics.Vector2 half = Placements.Size / 2;
+                if (Math.Abs(p.X) > half.X - c.RadiusM || Math.Abs(p.Y) > half.Y - c.RadiusM)
+                    throw new FormatException(name + ": " + c.At + " is off layout '" + Name + "'");
+                float clear = Nav.Distance(p);
+                if (clear < c.RadiusM - 1e-3f)
+                    throw new FormatException(name + ": at " + c.At + " it stands in a structure of layout '" + Name + "' (" + clear.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)
+                        + " m clear, its radius is " + c.RadiusM.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + ")");
+                pieces[i] = new CrystalPiece(Placements.Items.Length + i, p, c.RadiusM, c.HeightM);
+            }
+            return pieces;
+        }
+
+        /// <summary>
+        /// This layout with <paramref name="crystals"/> standing on it (trailer.md, "Crystal formations"): its placements and a
+        /// blocking round footprint for each formation after them, so the run's obstacle map routes the hero and the horde round
+        /// them and a break can take one out (<see cref="NavGrid.Remove"/>). The map is the new layout's own.
+        /// </summary>
+        public GroundLayout WithCrystals(CrystalFormation[] crystals, string what)
+        {
+            CrystalPiece[] pieces = ResolveCrystals(crystals, what);
+            if (pieces.Length == 0) return this;
+            PlacementList list = Placements;
+            var props = new Footprint[list.Props.Length + pieces.Length];
+            Array.Copy(list.Props, props, list.Props.Length);
+            var items = new Placement[list.Items.Length + pieces.Length];
+            Array.Copy(list.Items, items, list.Items.Length);
+            for (int i = 0; i < pieces.Length; i++)
+            {
+                CrystalPiece c = pieces[i];
+                props[list.Props.Length + i] = new Footprint
+                {
+                    Id = "trailer/" + CrystalPiece.Target(i), Blocks = true, Shape = FootprintShape.Circle, Radius = c.RadiusM, HeightM = c.HeightM,
+                };
+                items[c.Placement] = new Placement(list.Props.Length + i, c.Position, 0f, 1f, -1);
+            }
+            var withCrystals = new PlacementList
+            {
+                Layout = list.Layout, Seed = list.Seed, Size = list.Size, DecorationDensity = list.DecorationDensity,
+                Props = props, Items = items, HeroStart = list.HeroStart, Goals = list.Goals,
+            };
+            return new GroundLayout { Name = Name, HeroStart = HeroStart, Goals = Goals, Arena = Arena, Placements = withCrystals, Crystals = pieces };
         }
 
         static System.Numerics.Vector2 Vec(JsonValue v) =>

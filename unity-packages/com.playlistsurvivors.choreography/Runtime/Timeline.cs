@@ -56,6 +56,8 @@ namespace PS.Choreography
         public FramingSample[] Framing;
         /// <summary>The structure breaks (<see cref="BreakEvent"/>), sorted by time; empty without a structure-breaks overlay.</summary>
         public BreakEvent[] Breaks = new BreakEvent[0];
+        /// <summary>A trailer shot's crystal formations (<see cref="CrystalPiece"/>), in its file's order; empty elsewhere.</summary>
+        public CrystalPiece[] Crystals = new CrystalPiece[0];
 
         public string[] TypeNames, ProjectileNames, ClipNames, EffectNames, SoundNames;
         public float[] TypeRadii;

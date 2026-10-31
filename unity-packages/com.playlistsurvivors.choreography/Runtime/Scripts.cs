@@ -390,6 +390,38 @@ namespace PS.Choreography
         }
     }
 
+    /// <summary>
+    /// A crystal formation a trailer shot places (trailer.md, "Crystal formations"; the level script's <c>crystals</c>):
+    /// <c>{ "at": [x, y] | "area", "radiusM": 2.2, "heightM": 10 }</c>, its footprint's radius and its tallest spire.
+    /// </summary>
+    public sealed class CrystalFormation
+    {
+        public const float DefaultRadiusM = 2.2f, DefaultHeightM = 10f;
+        public const float MinRadiusM = 0.8f, MaxRadiusM = NavGrid.MaxClearance, MinHeightM = 2f, MaxHeightM = 16f;
+
+        public LayoutPoint At;
+        public float RadiusM = DefaultRadiusM, HeightM = DefaultHeightM;
+
+        public static CrystalFormation Parse(JsonValue o, string what)
+        {
+            if (o.Type != JsonType.Object || !o.Has("at")) throw new FormatException(what + ": expected { \"at\": [x, y] or an area, \"radiusM\", \"heightM\" }");
+            foreach (KeyValuePair<string, JsonValue> kv in o.Members)
+                if (kv.Key != "at" && kv.Key != "radiusM" && kv.Key != "heightM") throw new FormatException(what + ": unknown field '" + kv.Key + "'");
+            var c = new CrystalFormation { At = LayoutPoint.Parse(o["at"], what), RadiusM = o["radiusM"].AsFloat(DefaultRadiusM), HeightM = o["heightM"].AsFloat(DefaultHeightM) };
+            if (!(c.RadiusM >= MinRadiusM && c.RadiusM <= MaxRadiusM) || !(c.HeightM >= MinHeightM && c.HeightM <= MaxHeightM))
+                throw new FormatException(what + ": radiusM must be " + MinRadiusM.ToString(CultureInfo.InvariantCulture) + " to " + MaxRadiusM.ToString(CultureInfo.InvariantCulture)
+                    + " and heightM " + MinHeightM.ToString(CultureInfo.InvariantCulture) + " to " + MaxHeightM.ToString(CultureInfo.InvariantCulture));
+            return c;
+        }
+
+        public static CrystalFormation[] ParseList(JsonValue arr, string what)
+        {
+            var list = new CrystalFormation[arr.Count];
+            for (int i = 0; i < arr.Count; i++) list[i] = Parse(arr[i], what + " crystal " + (i + 1));
+            return list;
+        }
+    }
+
     /// <summary>The level script (choreography.md, "The choreographer"): per song-map section, its targets.</summary>
     public sealed class LevelScript
     {
@@ -483,6 +515,11 @@ namespace PS.Choreography
         /// trailer's blows on the major beats). <see cref="GridFlags.Beat"/>, the default: every beat.
         /// </summary>
         public GridFlags ComboOn = GridFlags.Beat;
+        /// <summary>
+        /// Crystal formations on the ground (its <c>crystals</c>, trailer.md "Crystal formations"): each blocks the hero and the
+        /// horde until a hero blow's hit shape reaches it, which smashes it and opens the ground. Empty, the default: none.
+        /// </summary>
+        public CrystalFormation[] Crystals = new CrystalFormation[0];
 
         public const float DefaultDensityCap = 1.2f;
         static readonly string[] FormationKinds = { "charge", "vortex", "converge" };
@@ -569,6 +606,7 @@ namespace PS.Choreography
                 Formation = root["formation"]["kind"].AsString(),
                 FormationStreams = root["formation"]["streams"].AsInt(0),
                 DensityCap = root["densityCap"].AsFloat(DefaultDensityCap),
+                Crystals = CrystalFormation.ParseList(root["crystals"], "level script"),
             };
             if (root.Has("comboOn"))
             {

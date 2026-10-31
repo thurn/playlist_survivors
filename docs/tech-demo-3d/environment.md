@@ -362,10 +362,17 @@ with every other flag. Performance is not a goal under it.
   fading over 0.35 to 1.6 s by style): the glow eases the set's grade toward
   the horde's, without its channel limit, so a wall blooms at the moment it
   breaks and settles back under the horde.
-  - Crystal's front is slower (22 m/s) and its white flash faint: each shard
-    steps 8 cm out of the wall as the front passes, baring its inside faces,
-    which glow with the gem's light, so the seams open and light across the
-    wall from the strike, and 0.07 s later it flies.
+  - Crystal bursts on the impact frame (ps-b5z.4: breaks pay off on the
+    impact, with no build-up): its front runs at 120 m/s, so a whole wall is
+    flying within a few frames, each shard flashing white and kicked out
+    and up harder than stone (5 and 4 m/s against 2.8 and 2.2), its fresh
+    inside faces glowing with the gem's light for a second as it flies and
+    falls. Until ps-b5z.4 its front crept at 22 m/s and each shard stepped
+    8 cm out of the wall, seams glowing, 0.07 s before it flew, which the
+    operator's review read as a crack before the burst.
+  - A trailer shot's crystal formations ([Trailer Mode](trailer.md),
+    "Crystal formations") break the same way in their own, harder manner,
+    whatever the style.
   - Fire's wall chars and collapses: its shards slump more than they fly,
     are molten inside, and burn out from the piece's base (its death, from
     0.35 s over 1.8 s), with embers rising from the rubble.

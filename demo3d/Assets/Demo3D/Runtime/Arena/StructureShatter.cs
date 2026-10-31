@@ -12,7 +12,9 @@ namespace Demo3D.Runtime.Arena
     /// The structure breaks on screen (environment.md, Breaks on screen; epic ps-suy, Decision 8). At each moment of
     /// `--structure-breaks` (<see cref="BreakMoments"/>: the hero's bolt strikes on the grid and the pieces leave the
     /// obstacle map), the struck pieces' renderers hide and their baked shards (<see cref="StructureShards"/>) take their
-    /// place, in the piece's own materials (the kit's under baseline, the `--structure-style`'s otherwise), and fly.
+    /// place, in the piece's own materials (the kit's under baseline, the `--structure-style`'s otherwise), and fly. A
+    /// trailer shot's crystal formations (<see cref="CrystalFormations"/>, trailer.md "Crystal formations") stand with it
+    /// and break the same way when the hero's blow smashes one, into their generated shards, in their own manner.
     ///
     /// - Each shard is a PhysX rigidbody in its own physics scene, stepped in fixed steps of <see cref="Step"/> on the
     ///   song clock (so `--fixed-time` runs give the same debris, and the crystal shatter's scene steps apart from it),
@@ -20,13 +22,14 @@ namespace Demo3D.Runtime.Arena
     ///   <see cref="GravityScale"/> g they clatter down, settle, and after <see cref="LingerSeconds"/> sink into the
     ///   ground. The debris never blocks: the horde walks the opening from the moment it opens (choreography.md).
     /// - The break spreads from the strike as a crack front at <see cref="FrontSpeed"/>: the shards it reaches flash and
-    ///   fly. The strike's own shards fly on the impact frame; nothing builds up before it.
+    ///   fly. The strike's own shards fly on the impact frame; nothing builds up before it (trailer.md, ps-b5z: breaks pay
+    ///   off on the impact frame).
     /// - Per style (a structure shader's _SL_PieceFx: x the hit flash, y the death, z 1 on a shard, with its rest
-    ///   position <c>_SL_Rest</c>, so a flying shard keeps the patterns it had in the wall): crystal's front is slower
-    ///   (<see cref="CrystalFrontSpeed"/>), so its seams open and glow across the wall (each shard steps apart as the
-    ///   front passes, baring its lit inside faces) a moment before they burst; fire's wall chars and collapses, its
-    ///   shards slumping more than flying, molten inside and burning out from the base; hologram's glitch and scan out,
-    ///   drifting under light gravity. The other styles and baseline share the flash and the flight.
+    ///   position <c>_SL_Rest</c>, so a flying shard keeps the patterns it had in the wall): crystal bursts outward hard
+    ///   and high, its fresh inside faces glowing as they fly and rain down; fire's wall chars and collapses, its shards
+    ///   slumping more than flying, molten inside and burning out from the base; hologram's glitch and scan out,
+    ///   drifting under light gravity. The other styles and baseline share the flash and the flight. A crystal formation
+    ///   bursts harder still (<see cref="FormationManner"/>), whatever the style: it is the cut's centrepiece.
     /// - The ghost shadows go with the pieces (<see cref="ArenaRuntime.Break"/>), and a seek backwards puts every piece
     ///   back. Breaks before a run's first frame are not replayed: their pieces are simply gone.
     /// </summary>
@@ -37,11 +40,9 @@ namespace Demo3D.Runtime.Arena
         public const float Step = 1f / 120f;
         public const int MaxStepsPerFrame = 12;
         public const float GravityScale = 2.2f, Density = 2400f; // kg/m³, stone
-        public const float FrontSpeed = 70f, CrystalFrontSpeed = 22f; // m/s
+        public const float FrontSpeed = 70f, CrystalFrontSpeed = 120f; // m/s
         public const float LingerSeconds = 2.4f, SinkSeconds = 1f;
         public const float FlashSeconds = 0.2f;
-        /// <summary>Crystal: how far a shard steps out of the wall as the crack front passes (m), and how long it holds there.</summary>
-        public const float CrackOpenM = 0.08f, CrackHoldSeconds = 0.07f;
 
         static readonly int PieceFxId = Shader.PropertyToID("_SL_PieceFx");
         static readonly int RestId = Shader.PropertyToID("_SL_Rest");
@@ -53,14 +54,19 @@ namespace Demo3D.Runtime.Arena
             public float DeathFrom, DeathSeconds; // the structure shader's death ramp from this age (s), over this long; 0: none
             public float GlowSeconds;             // the break glow's fade (_SL_PieceFx.w: the shard blooms past the set's grade)
             public float Flash;                   // the white flash as the front passes (_SL_PieceFx.x)
-            public bool Crack;                    // crystal's crack opening before the flight
         }
+
+        /// <summary>A crystal formation's burst: from the impact frame, outward and up hard, spinning, glowing white-hot and fading as it rains down.</summary>
+        static readonly Manner FormationManner = new Manner
+        {
+            Front = CrystalFrontSpeed, Outward = 7.5f, Blow = 6f, Up = 6.5f, Spin = 9f, Gravity = 1.8f, GlowSeconds = 1.4f, Flash = 1f,
+        };
 
         static Manner MannerOf(string style)
         {
             switch (style)
             {
-                case "crystal": return new Manner { Front = CrystalFrontSpeed, Outward = 3.4f, Blow = 6.5f, Up = 2.6f, Spin = 7f, Gravity = GravityScale, Crack = true, GlowSeconds = 0.7f, Flash = 0.25f };
+                case "crystal": return new Manner { Front = CrystalFrontSpeed, Outward = 5f, Blow = 6.5f, Up = 4f, Spin = 8f, Gravity = GravityScale, GlowSeconds = 1f, Flash = 0.8f };
                 case "fire": return new Manner { Front = FrontSpeed, Outward = 1.3f, Blow = 2.4f, Up = 1.2f, Spin = 3f, Gravity = GravityScale, DeathFrom = 0.35f, DeathSeconds = 1.8f, GlowSeconds = 1.6f, Flash = 0.6f };
                 case "hologram": return new Manner { Front = FrontSpeed, Outward = 1.8f, Blow = 3.2f, Up = 1.6f, Spin = 2.5f, Gravity = 0.5f, DeathFrom = 0.05f, DeathSeconds = 0.9f, GlowSeconds = 0.6f, Flash = 1f };
                 default: return new Manner { Front = FrontSpeed, Outward = 2.8f, Blow = 5.5f, Up = 2.2f, Spin = 6f, Gravity = GravityScale, GlowSeconds = 0.35f, Flash = 1f };
@@ -75,6 +81,7 @@ namespace Demo3D.Runtime.Arena
             public Renderer[] Renderers;
             public Bounds Bounds;
             public bool Broken;
+            public bool Formation; // a crystal formation's, not a baked scene piece
             public readonly List<(MeshRenderer renderer, StructureShards.Set set)> Cut = new List<(MeshRenderer, StructureShards.Set)>();
         }
 
@@ -89,7 +96,6 @@ namespace Demo3D.Runtime.Arena
             public bool Styled;
             public float Delay;            // when the crack front reaches it, after the strike (s)
             public bool Flying, Sinking;
-            public Vector3 Rest;           // where it stood in the wall
             public Vector3 Away;           // from the strike, unit
             public Vector3 Velocity, Spin; // its launch
             public float SinkFrom, SinkDepth;
@@ -98,6 +104,7 @@ namespace Demo3D.Runtime.Arena
         sealed class Live
         {
             public int Moment;
+            public Manner Manner; // its pieces' (a crystal formation's own, or the style's)
             public double At;     // the strike's song time
             public double Start;  // physics time of the first frame it was live
             public readonly List<Shard> Shards = new List<Shard>();
@@ -107,6 +114,7 @@ namespace Demo3D.Runtime.Arena
         readonly ArenaRuntime _arena;
         readonly GroundLayout _ground;
         readonly StructureShards _shards;
+        readonly CrystalFormations _formations; // a trailer shot's crystal formations, or null
         readonly Shader _patch;
         readonly Manner _manner;
         readonly string _style;
@@ -128,9 +136,11 @@ namespace Demo3D.Runtime.Arena
         /// <summary>
         /// The breaks of <paramref name="moments"/> on <paramref name="arena"/>, whose scene places
         /// <paramref name="ground"/>'s placements (the layout the timeline ran on), in <paramref name="style"/>'s manner (the
-        /// resolved `--structure-style`).
+        /// resolved `--structure-style`), and a trailer shot's <paramref name="crystals"/> (its timeline's), which stand
+        /// from the first frame it draws and are made from <paramref name="lib"/>'s crystal structure shader.
         /// </summary>
-        public StructureShatter(BreakMoments moments, ArenaRuntime arena, GroundLayout ground, string style)
+        public StructureShatter(BreakMoments moments, ArenaRuntime arena, GroundLayout ground, string style,
+            IReadOnlyList<CrystalPiece> crystals = null, Demo3D.Runtime.Crowd.CrowdLibrary lib = null)
         {
             _moments = moments;
             _arena = arena;
@@ -156,7 +166,10 @@ namespace Demo3D.Runtime.Arena
             box.size = new Vector3(4000, 1, 4000);
             box.center = new Vector3(0, -0.5f, 0);
             box.sharedMaterial = _material;
-            Debug.Log($"StructureShatter: {moments.Count} breaks in the {style} manner");
+            if (crystals != null && crystals.Count > 0)
+                _formations = new CrystalFormations(crystals, _root.transform,
+                    lib ?? throw new ArgumentNullException(nameof(lib), "StructureShatter: crystal formations need the crowd library's crystal shader"), arena.Options.Prepass);
+            Debug.Log($"StructureShatter: {moments.Count} breaks in the {style} manner" + (_formations != null ? $", {crystals.Count} crystal formations" : ""));
         }
 
         /// <summary>
@@ -167,20 +180,26 @@ namespace Demo3D.Runtime.Arena
         void Resolve()
         {
             _resolved = true;
-            var stat = _arena.Ground != null ? _arena.Ground.transform.parent.Find("Static") : null;
-            if (stat == null) throw new InvalidOperationException("StructureShatter: the arena has no Static group");
-            var candidates = new List<Transform>();
-            foreach (var group in new[] { "Structures", "Landmarks" })
-            {
-                var g = stat.Find(group);
-                if (g != null) foreach (Transform t in g) candidates.Add(t);
-            }
+            List<Transform> candidates = null;
             var list = _ground.Placements;
             int cut = 0;
             foreach (var m in _moments.Moments)
                 foreach (var mp in m.Pieces)
                 {
                     if (_pieces.ContainsKey(mp.Placement)) continue;
+                    var formation = _formations?.Of(mp.Placement);
+                    if (formation != null)
+                    {
+                        _pieces[mp.Placement] = new Piece
+                        {
+                            Placement = mp.Placement, Root = formation.Renderer.transform, Renderers = new Renderer[] { formation.Renderer },
+                            Bounds = formation.Renderer.bounds, Formation = true,
+                        };
+                        _pieces[mp.Placement].Cut.Add((formation.Renderer, formation.Set));
+                        cut += formation.Set.Shards.Length;
+                        continue;
+                    }
+                    candidates ??= SceneCandidates();
                     var p = list.Items[mp.Placement];
                     var at = new Vector3(p.Position.X, p.Lift, p.Position.Y);
                     Transform best = null;
@@ -214,11 +233,26 @@ namespace Demo3D.Runtime.Arena
             Debug.Log($"StructureShatter: {_pieces.Count} pieces in {_arena.SceneName}, {cut} shards");
         }
 
+        /// <summary>The arena's structure and landmark pieces, where a broken placement's scene object is found.</summary>
+        List<Transform> SceneCandidates()
+        {
+            var stat = _arena.Ground != null ? _arena.Ground.transform.parent.Find("Static") : null;
+            if (stat == null) throw new InvalidOperationException("StructureShatter: the arena has no Static group");
+            var candidates = new List<Transform>();
+            foreach (var group in new[] { "Structures", "Landmarks" })
+            {
+                var g = stat.Find(group);
+                if (g != null) foreach (Transform t in g) candidates.Add(t);
+            }
+            return candidates;
+        }
+
         /// <summary>Brings the breaks to song time t; call once a frame once the arena is ready. A seek backwards puts every piece back.</summary>
         public void Frame(double t)
         {
             if (!_arena.Ready) return;
             if (!_resolved) Resolve();
+            _formations?.Show(true);
             if (double.IsNaN(_t0) || t < _last)
             {
                 Reset();
@@ -230,11 +264,15 @@ namespace Demo3D.Runtime.Arena
             while (_next < _moments.Count && _moments.Moments[_next].Time <= t)
             {
                 var m = _moments.Moments[_next];
-                foreach (var mp in m.Pieces) Hide(_pieces[mp.Placement], true);
+                foreach (var mp in m.Pieces)
+                {
+                    var piece = _pieces[mp.Placement];
+                    Hide(piece, true);
+                    changed |= !piece.Formation; // a formation has no baked shadow to lift
+                }
                 // A break before the run's first frame isn't replayed: its pieces are simply gone.
                 if (m.Time >= _t0 - 1e-6) Strike(_next);
                 _next++;
-                changed = true;
             }
             if (changed) ShadowsFollow();
 
@@ -256,6 +294,7 @@ namespace Demo3D.Runtime.Arena
         /// </summary>
         public void Rewind()
         {
+            _formations?.Show(false);
             if (!_resolved) return;
             Reset();
             _t0 = double.NaN;
@@ -265,7 +304,7 @@ namespace Demo3D.Runtime.Arena
         void ShadowsFollow()
         {
             var boxes = new List<Bounds>();
-            foreach (var p in _pieces.Values) if (p.Broken) boxes.Add(p.Bounds);
+            foreach (var p in _pieces.Values) if (p.Broken && !p.Formation) boxes.Add(p.Bounds);
             _arena.Break(boxes, _patch);
         }
 
@@ -279,7 +318,8 @@ namespace Demo3D.Runtime.Arena
         void Strike(int moment)
         {
             var m = _moments.Moments[moment];
-            var live = new Live { Moment = moment, At = m.Time, Start = _t0 + _steps * Step };
+            var manner = Array.Exists(m.Pieces, mp => _pieces[mp.Placement].Formation) ? FormationManner : _manner;
+            var live = new Live { Moment = moment, Manner = manner, At = m.Time, Start = _t0 + _steps * Step };
             var rng = new System.Random(moment * 7919 + 17);
             // The strike: on the nearest piece, at the bolt's height but inside its bounds. The front spreads from it
             // along the whole run, and the kick is hardest near it.
@@ -317,7 +357,6 @@ namespace Demo3D.Runtime.Arena
                         s.Renderer.shadowCastingMode = ShadowCastingMode.On;
                         s.Transform.SetPositionAndRotation(l2w.MultiplyPoint3x4(src.Center), rot);
                         s.Transform.localScale = scale;
-                        s.Rest = s.Transform.position;
                         s.Styled = styled;
                         s.Block.Clear();
                         if (styled)
@@ -331,7 +370,7 @@ namespace Demo3D.Runtime.Arena
                         var away = s.Transform.position - hit;
                         float dist = away.magnitude;
                         s.Away = dist > 1e-4f ? away / dist : m.Blow;
-                        s.Delay = dist / _manner.Front;
+                        s.Delay = dist / manner.Front;
                         s.Flying = s.Sinking = false;
                         s.Body.isKinematic = true;
                         s.Body.mass = Mathf.Max(0.5f, src.Volume * volumeScale * Density);
@@ -344,8 +383,8 @@ namespace Demo3D.Runtime.Arena
                         share *= 0.45f + 1.1f * near;
                         var outward = s.Away;
                         outward.y = Mathf.Max(outward.y, -0.2f);
-                        s.Velocity = (outward * _manner.Outward + m.Blow * _manner.Blow * (0.5f + (float)rng.NextDouble()) + Vector3.up * _manner.Up) * share;
-                        s.Spin = RandomUnit(rng) * _manner.Spin * (0.4f + 0.8f * (float)rng.NextDouble());
+                        s.Velocity = (outward * manner.Outward + m.Blow * manner.Blow * (0.5f + (float)rng.NextDouble()) + Vector3.up * manner.Up) * share;
+                        s.Spin = RandomUnit(rng) * manner.Spin * (0.4f + 0.8f * (float)rng.NextDouble());
                         s.Object.SetActive(true);
                         live.Shards.Add(s);
                     }
@@ -360,16 +399,15 @@ namespace Demo3D.Runtime.Arena
         /// <summary>Before each physics step at physics time <paramref name="now"/>: launches the shards the front has reached, adds gravity, starts the sinking.</summary>
         void Advance(double now)
         {
-            var g = Vector3.down * (9.81f * _manner.Gravity);
             foreach (var live in _live)
             {
+                var g = Vector3.down * (9.81f * live.Manner.Gravity);
                 double age = now - live.Start;
                 foreach (var s in live.Shards)
                 {
                     if (!s.Flying)
                     {
-                        float launch = s.Delay + (_manner.Crack ? CrackHoldSeconds : 0f);
-                        if (age < launch) continue;
+                        if (age < s.Delay) continue;
                         s.Flying = true;
                         s.Body.isKinematic = false;
                         s.Body.linearVelocity = s.Velocity;
@@ -389,7 +427,7 @@ namespace Demo3D.Runtime.Arena
             }
         }
 
-        /// <summary>The shards at song time t: crystal's crack opening, the flash and the style's death, the sinking; spent breaks go back to the pool.</summary>
+        /// <summary>The shards at song time t: the flash, the break's glow and the style's death, the sinking; spent breaks go back to the pool.</summary>
         void Present(double t)
         {
             for (int i = _live.Count - 1; i >= 0; i--)
@@ -409,17 +447,12 @@ namespace Demo3D.Runtime.Arena
                         else s.Object.SetActive(false);
                     }
                     else spent = false;
-                    if (_manner.Crack && !s.Flying && since >= 0)
-                    {
-                        // The seam opens: the shard steps out of the wall along its way from the strike, baring its lit inside faces.
-                        float open = Mathf.Clamp01(since / CrackHoldSeconds);
-                        s.Transform.position = s.Rest + s.Away * (CrackOpenM * open);
-                    }
                     if (!s.Styled) continue;
+                    var manner = live.Manner;
                     float flash = since >= 0 ? Mathf.Clamp01(1f - since / FlashSeconds) : 0f;
-                    float death = _manner.DeathSeconds > 0 ? Mathf.Clamp01((since - _manner.DeathFrom) / _manner.DeathSeconds) : 0f;
-                    float glow = since >= 0 ? Mathf.Clamp01(1f - since / _manner.GlowSeconds) : 0f;
-                    s.Block.SetVector(PieceFxId, new Vector4(flash * flash * _manner.Flash, death, 1, glow * glow));
+                    float death = manner.DeathSeconds > 0 ? Mathf.Clamp01((since - manner.DeathFrom) / manner.DeathSeconds) : 0f;
+                    float glow = since >= 0 ? Mathf.Clamp01(1f - since / manner.GlowSeconds) : 0f;
+                    s.Block.SetVector(PieceFxId, new Vector4(flash * flash * manner.Flash, death, 1, glow * glow));
                     s.Renderer.SetPropertyBlock(s.Block);
                 }
                 if (spent)
@@ -479,7 +512,7 @@ namespace Demo3D.Runtime.Arena
                 if (p.Broken)
                 {
                     Hide(p, false);
-                    any = true;
+                    any |= !p.Formation;
                 }
             if (any) ShadowsFollow();
             _next = 0;
@@ -494,6 +527,7 @@ namespace Demo3D.Runtime.Arena
 
         public void Dispose()
         {
+            _formations?.Dispose();
             if (_root != null) UnityEngine.Object.Destroy(_root);
             if (_material != null) UnityEngine.Object.Destroy(_material);
             if (_scene.IsValid() && _scene.isLoaded) SceneManager.UnloadSceneAsync(_scene);

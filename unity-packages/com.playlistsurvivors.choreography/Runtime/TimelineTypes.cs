@@ -141,7 +141,8 @@ namespace PS.Choreography
     /// One piece a structure break takes out (choreography.md, "Structure breaks"): at <see cref="Time"/>, on the
     /// grid, the hero's bolt (<see cref="Projectile"/>, from <see cref="Origin"/>) strikes the target at
     /// <see cref="Point"/>, and the placement leaves the obstacle map. A break of several pieces gives one event each,
-    /// with the same time, target, origin and point.
+    /// with the same time, target, origin and point. A crystal formation's break (<see cref="CrystalPiece"/>) is the
+    /// hero's blow itself: no projectile (-1), from where the hero stands to the formation's nearest point.
     /// </summary>
     public readonly struct BreakEvent
     {
@@ -157,6 +158,25 @@ namespace PS.Choreography
 
         /// <summary>The blow's direction on the ground, from its origin to the point it struck.</summary>
         public Vector2 Direction => Vector2.Distance(Origin, Point) > 1e-4f ? Vector2.Normalize(Point - Origin) : new Vector2(0, 1);
+    }
+
+    /// <summary>
+    /// A crystal formation a trailer shot stands on its ground (trailer.md, "Crystal formations"): a breakable set piece
+    /// with a round footprint, in the obstacle map as a structure is, until the first hero blow whose hit shape reaches
+    /// it smashes it (a <see cref="BreakEvent"/> with no projectile) and the horde pours through where it stood.
+    /// </summary>
+    public readonly struct CrystalPiece
+    {
+        public readonly int Placement;       // its index in the run's placement list, after the layout's own pieces
+        public readonly Vector2 Position;
+        public readonly float RadiusM, HeightM;
+        public CrystalPiece(int placement, Vector2 position, float radiusM, float heightM)
+        {
+            Placement = placement; Position = position; RadiusM = radiusM; HeightM = heightM;
+        }
+
+        /// <summary>A formation's break target: "crystal-1" for the shot's first.</summary>
+        public static string Target(int index) => "crystal-" + (index + 1);
     }
 
     public readonly struct FramingSample

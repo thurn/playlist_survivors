@@ -117,6 +117,27 @@ namespace Demo3D.Choreography.Tests
             return tl;
         }
 
+        static Trailer crystalCut;
+        static Dictionary<string, ChoreographyData> crystalEnvironments;
+        static readonly Dictionary<int, Timeline> crystalShots = new Dictionary<int, Timeline>();
+
+        /// <summary>The checked-in crystal cut (trailer-crystal.json, trailer.md "The Crystal Cut").</summary>
+        public static Trailer CrystalCut => crystalCut ?? (crystalCut = ChoreographyFiles.LoadTrailer(Root, "crystal", out crystalEnvironments));
+
+        /// <summary>A crystal cut shot's environment data.</summary>
+        public static ChoreographyData CrystalShotData(int index)
+        {
+            Trailer t = CrystalCut;
+            return crystalEnvironments[t.Shots[index].Environment];
+        }
+
+        /// <summary>A crystal cut shot's timeline (by index from 0), built once.</summary>
+        public static Timeline CrystalShot(int index)
+        {
+            if (!crystalShots.TryGetValue(index, out Timeline tl)) crystalShots[index] = tl = ChoreographyFiles.BuildShot(Root, CrystalCut, index, CrystalShotData(index));
+            return tl;
+        }
+
         /// <summary>The timeline a test case names: "song", "song-overdrive", "song-walls" or a stress scene.</summary>
         public static Timeline Named(string name) =>
             name == "song" ? SongTimeline : name == "song-overdrive" ? OverdriveTimeline : name == "song-walls" ? WallsTimeline : Stress(name);

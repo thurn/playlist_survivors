@@ -105,6 +105,17 @@ namespace PS.Choreography
                 o.EndArray().Newline();
             }
 
+            if (tl.Crystals.Length > 0)   // only in a trailer shot with crystal formations
+            {
+                o.Key("crystals").BeginArray().Newline();
+                foreach (CrystalPiece c in tl.Crystals)
+                {
+                    o.BeginObject().Field("placement", c.Placement).Key("at").BeginArray().Value(c.Position.X, P).Value(c.Position.Y, P).EndArray();
+                    o.Field("radiusM", c.RadiusM, P).Field("heightM", c.HeightM, P).EndObject().Newline();
+                }
+                o.EndArray().Newline();
+            }
+
             o.Key("framing").BeginArray().Newline();
             for (int i = 0; i < tl.Framing.Length; i++)
             {

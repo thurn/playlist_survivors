@@ -539,7 +539,7 @@ namespace PS.Choreography
                     heroField = done;
                 }
             }
-            if (breaks != null) NavRebuildSlice();
+            if (breaks != null || shot.Crystals.Length > 0) NavRebuildSlice();
 
             Vector2 target = HeroPosAt(t);
             float omega = 1f / FollowTimeConstant;
@@ -2004,17 +2004,58 @@ namespace PS.Choreography
             return best;
         }
 
-        /// <summary>
-        /// The bolt strikes: its pieces leave the obstacle map (their footprints at once, the capped field and the
-        /// passable cells round them), and the field toward the hero, the uncapped field and the goal fields of this
-        /// and the later sections rebuild over the new map, sliced across the ticks like any rebuild.
-        /// </summary>
+        /// <summary>The bolt strikes: its pieces leave the obstacle map (<see cref="OpenMap"/>).</summary>
         void Break(ScheduledBreak b, double t)
         {
             effects.Add(new EffectEvent(Catalog.BoltImpact, -1, eseed[b.Projectile], t, new Vector3(b.Point.X, 1f, b.Point.Y), 0, 1f));
             if (breakSpell.Sound >= 0) Sound(breakSpell.Sound, t, b.Strength);
             foreach (int piece in b.Pieces) breakEvents.Add(new BreakEvent(t, piece, b.Target, b.Projectile, b.Origin, b.Point));
-            nav.Remove(b.Pieces);   // ScheduleBreaks checked the openings' width
+            OpenMap(b.Pieces, t);   // ScheduleBreaks checked the openings' width
+        }
+
+        /// <summary>
+        /// A hero blow from <paramref name="o"/> smashes every standing crystal formation its hit shape reaches (trailer.md,
+        /// "Crystal formations"): a ring's or an arc's reach (the arc's sweep widened by the formation's own width), a line's
+        /// length and half width, past the formation's edge. The break lands on the blow's impact, from the hero to the
+        /// formation's nearest point, and opens the ground where it stood.
+        /// </summary>
+        void SmashCrystals(double t, Vector2 o, Move mv, float reach, float yaw)
+        {
+            Vector2 fwd = Easing.Dir(yaw);
+            for (int k = 0; k < shot.Crystals.Length; k++)
+            {
+                CrystalPiece c = shot.Crystals[k];
+                if (!nav.Blocks(c.Placement)) continue;
+                Vector2 d = c.Position - o;
+                float l = d.Length();
+                if (mv.Shape == HitShape.Line)
+                {
+                    float along = Vector2.Dot(d, fwd), across = Math.Abs(d.X * fwd.Y - d.Y * fwd.X);
+                    if (along < -c.RadiusM || along > reach + c.RadiusM || across > Scaled(mv.Width) / 2 + c.RadiusM) continue;
+                }
+                else
+                {
+                    if (l - c.RadiusM > reach) continue;
+                    if (mv.Shape == HitShape.Arc && l > c.RadiusM)
+                    {
+                        double off = Math.Acos(Math.Max(-1, Math.Min(1, Vector2.Dot(d / l, fwd)))) - Math.Asin(c.RadiusM / l);
+                        if (off > mv.ArcDeg * Math.PI / 360) continue;
+                    }
+                }
+                Vector2 point = nav.NearestPoint(c.Placement, o);
+                breakEvents.Add(new BreakEvent(t, c.Placement, CrystalPiece.Target(k), -1, o, point));
+                OpenMap(new[] { c.Placement }, t);
+            }
+        }
+
+        /// <summary>
+        /// A break's pieces leave the obstacle map (their footprints at once, the capped field and the passable cells round
+        /// them), and the field toward the hero, the uncapped field and the goal fields of this and the later sections rebuild
+        /// over the new map, sliced across the ticks like any rebuild.
+        /// </summary>
+        void OpenMap(int[] pieces, double t)
+        {
+            nav.Remove(pieces);
             navChanged = true;
             double bi = Math.Floor(map.BeatIndexAt(t));
             int ticks = Math.Max(1, (int)Math.Floor((map.TimeOfBeatIndex(bi + 1) - map.TimeOfBeatIndex(bi)) * Choreographer.TickRate));   // a beat's
@@ -2340,6 +2381,7 @@ namespace PS.Choreography
                     if (mv.Effect >= 0)
                         effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, fxScale));
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
+                    if (shot.Crystals.Length > 0) SmashCrystals(t, o, mv, reach, im.Yaw);
                     if (plan.Clear) ClearStrike(t, o, im.Strength);
                     else if (Math.Abs(t - shot.Final) <= 1e-6) FinalSlam(t, o, im.Strength);
                     else Strike(t, o, n, im.Strength, true);
@@ -3391,6 +3433,7 @@ namespace PS.Choreography
             tl.Sounds = SoundAggregator.Aggregate(sounds, map, seed, tuning);
             tl.Framing = framing;
             tl.Breaks = breakEvents.ToArray();   // in time order, as they struck
+            tl.Crystals = shot.Crystals;
 
             tl.TypeNames = new string[roster.Monsters.Length];
             tl.TypeRadii = new float[roster.Monsters.Length];
