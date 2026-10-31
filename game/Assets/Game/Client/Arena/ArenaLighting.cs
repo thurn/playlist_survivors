@@ -105,6 +105,39 @@ namespace Game.Client.Arena
             return l;
         }
 
+        /// <summary>
+        /// The runtime lighting <paramref name="u"/> of the way from <paramref name="a"/> to <paramref name="b"/>
+        /// (a zone's ease, ZoneLighting): the moon's colour and intensity, the ambient, the fog's colour and
+        /// depths, the hero's light, the ground tint and the mist, into <paramref name="into"/>. The fog's mode
+        /// and the palette's name switch half way; the baked parts (flames, glow) and the post stack's base
+        /// stay the loaded palette's (the post's zone grade is PostFeel's).
+        /// </summary>
+        public static ArenaLighting Lerp(ArenaLighting a, ArenaLighting b, float u, ArenaLighting into)
+        {
+            var near = u < 0.5f ? a : b;
+            into.Palette = near.Palette;
+            into.MoonElevationDeg = a.MoonElevationDeg;
+            into.MoonYawDeg = a.MoonYawDeg;
+            into.MoonIntensity = Mathf.Lerp(a.MoonIntensity, b.MoonIntensity, u);
+            into.MoonColor = Color.Lerp(a.MoonColor, b.MoonColor, u);
+            into.AmbientSky = Color.Lerp(a.AmbientSky, b.AmbientSky, u);
+            into.AmbientEquator = Color.Lerp(a.AmbientEquator, b.AmbientEquator, u);
+            into.AmbientGround = Color.Lerp(a.AmbientGround, b.AmbientGround, u);
+            into.FogColor = Color.Lerp(a.FogColor, b.FogColor, u);
+            into.FogMode = near.FogMode;
+            into.FogDensity = Mathf.Lerp(a.FogDensity, b.FogDensity, u);
+            into.FogStartAtFocus = Mathf.Lerp(a.FogStartAtFocus, b.FogStartAtFocus, u);
+            into.FogEndAtFocus = Mathf.Lerp(a.FogEndAtFocus, b.FogEndAtFocus, u);
+            into.HeroHeightM = Mathf.Lerp(a.HeroHeightM, b.HeroHeightM, u);
+            into.HeroRangeM = Mathf.Lerp(a.HeroRangeM, b.HeroRangeM, u);
+            into.HeroIntensity = Mathf.Lerp(a.HeroIntensity, b.HeroIntensity, u);
+            into.HeroColor = Color.Lerp(a.HeroColor, b.HeroColor, u);
+            into.GroundTint = Color.Lerp(a.GroundTint, b.GroundTint, u);
+            // A palette without mist keeps the baked colour: the ease holds the other's.
+            into.MistColor = a.MistColor.a <= 0 ? b.MistColor : b.MistColor.a <= 0 ? a.MistColor : Color.Lerp(a.MistColor, b.MistColor, u);
+            return into;
+        }
+
         /// <summary>Reads a <c>lighting</c> object over <paramref name="l"/>: what it leaves out keeps its value.</summary>
         static void Read(JsonValue root, ArenaLighting l)
         {

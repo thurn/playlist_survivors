@@ -11,7 +11,8 @@ namespace Game.Client.Loop
     /// forces a section change, F6 an accent, F7 breaks the structures near the hero and F8 regrows
     /// the broken ones (<see cref="DebugCommand"/>). `--debug "change@20,accent@12.5,break@15,regrow@30"`
     /// gives them at song times instead, for headless runs and stills: each when the sim first
-    /// reaches its time at a frame's start, so a fixed-time rerun gives it on the same tick.
+    /// reaches its time at a frame's start, so a fixed-time rerun gives it on the same tick. The
+    /// music-driven events have names only: stampede, kick, wedge, ring, bats, ghosts, flowers and minotaur.
     /// </summary>
     public sealed class DebugCommands
     {
@@ -19,6 +20,9 @@ namespace Game.Client.Loop
         {
             ("change", DebugCommand.SectionChange), ("accent", DebugCommand.Accent),
             ("break", DebugCommand.BreakStructures), ("regrow", DebugCommand.RegrowStructures),
+            ("stampede", DebugCommand.Stampede), ("kick", DebugCommand.KickLine), ("wedge", DebugCommand.Wedge),
+            ("ring", DebugCommand.Ring), ("bats", DebugCommand.BatSwarm), ("ghosts", DebugCommand.GhostSwarm),
+            ("flowers", DebugCommand.FlowerWall), ("minotaur", DebugCommand.Minotaur),
         };
 
         readonly List<(double at, DebugCommand command)> _scheduled;
@@ -39,7 +43,7 @@ namespace Game.Client.Loop
                 var parts = item.Trim().Split('@');
                 int i = parts.Length == 2 ? Array.FindIndex(Names, n => n.name == parts[0].Trim()) : -1;
                 if (i < 0 || !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double at))
-                    throw new ArgumentException($"--debug: '{item}' is not one of change, accent, break or regrow @ seconds");
+                    throw new ArgumentException($"--debug: '{item}' is not one of {string.Join(", ", Array.ConvertAll(Names, n => n.name))} @ seconds");
                 list.Add((at, Names[i].command));
             }
             list.Sort((a, b) => a.Item1.CompareTo(b.Item1));

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
+using Game.Client.Arena;
 using Game.Client.Loop;
 using PS.Game.Sim;
 using UnityEngine;
@@ -13,7 +14,8 @@ namespace Game.Client.Look
     /// frameSong from the sim's revealed stream, the sim's heavy strikes and breaks as moments, the
     /// night volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
     /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). A zone change
-    /// eases the grade to its zone's from its downbeat (<see cref="PostFeel.SetZone"/>). Player flags:
+    /// eases the grade and the arena's runtime lighting to its zone's over two bars from its downbeat
+    /// (<see cref="PostFeel.SetZone"/>, <see cref="ZoneLighting"/>). Player flags:
     /// - `--hero-path`: the camera follows <see cref="SyntheticHero"/>'s square walk instead of the sim's hero;
     /// - `--view-width M`: the view this wide across the ground (close-ups for evidence) in place of the music's width;
     /// - `--camera-out FILE`: each frame's song time, focus, width, punch, shake and post offsets, as CSV.
@@ -49,6 +51,9 @@ namespace Game.Client.Look
         /// <summary>The zones' names by the sim's zone index (schedule.json's zone ids), or null to keep the night's grade.</summary>
         public string[] Zones { get; set; }
 
+        /// <summary>The arena's zone lighting, or null without an arena.</summary>
+        public ZoneLighting ZoneLight { get; set; }
+
         public PostFeel Post => _post;
         public CameraRig Rig => _rig;
 
@@ -75,7 +80,10 @@ namespace Game.Client.Look
             _moments.OnEvent(e);
             if (e.Kind != SimEventKind.ZoneChange || Zones == null) return;
             // The sim's bars of two beats, as the camera's ease, at the latest lane's period.
-            _post.SetZone(Zones[e.AsZoneChange.Zone], e.T, CameraRig.BeatsPerBar * Lane.Period);
+            double bar = CameraRig.BeatsPerBar * Lane.Period;
+            string zone = Zones[e.AsZoneChange.Zone];
+            _post.SetZone(zone, e.T, bar);
+            ZoneLight?.SetZone(zone, e.T, PostFeel.EaseBars * bar);
         }
 
         public void Present(in PresentFrame frame)
@@ -88,6 +96,7 @@ namespace Game.Client.Look
             Lane = lane;
             var offsets = _post.At(s, lane, _moments);
             _post.Apply(Volume, offsets);
+            ZoneLight?.Present(s);
 
             double hx, hy;
             Direction facing;

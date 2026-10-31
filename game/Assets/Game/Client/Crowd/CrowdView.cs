@@ -10,8 +10,8 @@ namespace Game.Client.Crowd
     /// The crystal horde (unity-game.md, The Crowd): the bone-texture crowd driven by the sim's
     /// events, the sim's own or a scripted feed's. A Spawn starts a monster's life
     /// (<see cref="MonsterTrack"/>) as its role's cast entry: the model, its scale and its gem
-    /// colour; EnemyStep, the enemy's Attack (the lunge), Hit and EnemyKnock add to it; a Death or a
-    /// recycled re-entry ends it, and from that frame the body is gone. A death's first frame writes
+    /// colour; EnemyStep, the enemy's Attack (the lunge), Hit and EnemyKnock add to it; a Death, a
+    /// recycled re-entry or a Leave (out of sight) ends it, and from that frame the body is gone. A death's first frame writes
     /// the body once more as Dying, posed at the death's time, which the crowd blends but doesn't
     /// draw, and the GPU shatter (<see cref="MonsterShatter"/>) breaks it into shards from that pose.
     /// Each frame every visible monster's pose at frameSong goes into its type's instance slots and
@@ -117,6 +117,9 @@ namespace Game.Client.Crowd
                     if (d.Enemy >= 0) Of(d.Enemy)?.Die(d.T, d.DirX, d.DirY, d.Force);
                     break;
                 }
+                case SimEventKind.Leave:
+                    Of(e.AsLeave.Enemy)?.End(e.T);
+                    break;
             }
         }
 

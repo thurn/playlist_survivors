@@ -36,6 +36,8 @@ namespace Game.Client.Arena
         public Exception Failure { get; private set; }
         public Light Moon { get; private set; }
         public Renderer Ground { get; private set; }
+        /// <summary>The mist cards, or null without them.</summary>
+        public Renderer Mist { get; private set; }
         /// <summary>The static kit's renderers: everything under Static but the structures.</summary>
         public readonly List<Renderer> Static = new List<Renderer>();
         /// <summary>Each structure site's renderers, by the site's index in the level data.</summary>
@@ -107,6 +109,8 @@ namespace Game.Client.Arena
             }
             var ground = root.Find("Ground");
             Ground = ground != null ? ground.GetComponent<Renderer>() : null;
+            var mist = root.Find("Mist");
+            Mist = mist != null ? mist.GetComponent<Renderer>() : null;
             var stat = root.Find("Static") ?? throw new InvalidOperationException("ArenaRuntime: no Static group in " + SceneName);
             FindSites(stat.Find("Structures"));
             var structures = new HashSet<Renderer>(Structures);
@@ -129,7 +133,7 @@ namespace Game.Client.Arena
                 Moon.color = Lighting.MoonColor;
                 Moon.intensity = Lighting.MoonIntensity;
             }
-            if (Lighting.Palette != null) ApplyPalette(root);
+            if (Lighting.Palette != null) ApplyPalette(Lighting);
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
             Post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting);
@@ -195,13 +199,35 @@ namespace Game.Client.Arena
                       $"texel {ShadowMap.TexelM.x * 100:F1}×{ShadowMap.TexelM.y * 100:F1} cm, {ShadowMap.RenderMs:F0} ms");
         }
 
-        /// <summary>The palette's ground tint and mist colour on the loaded scene; the rest reads <see cref="Lighting"/>.</summary>
-        void ApplyPalette(Transform root)
+        /// <summary>A palette's ground tint and mist colour on the loaded scene.</summary>
+        void ApplyPalette(ArenaLighting l)
         {
-            if (Ground != null) Ground.material.SetColor("_BaseColor", Lighting.GroundTint);
-            var mist = root.Find("Mist");
-            if (Lighting.MistColor.a > 0 && mist != null && mist.TryGetComponent<Renderer>(out var r))
-                r.material.SetColor("_MistColor", Lighting.MistColor);
+            if (Ground != null) Ground.material.SetColor("_BaseColor", l.GroundTint);
+            if (l.MistColor.a > 0 && Mist != null) Mist.material.SetColor("_MistColor", l.MistColor);
+        }
+
+        /// <summary>
+        /// Lights the loaded arena by <paramref name="l"/> at run time (a zone's ease, ZoneLighting): the moon's
+        /// realtime colour and intensity, the ambient and fog, the camera's clear colour, the hero's light, the
+        /// ground tint and the mist. The bake's lightmaps keep the night they were baked in.
+        /// </summary>
+        public void Relight(ArenaLighting l)
+        {
+            if (Moon != null)
+            {
+                Moon.color = l.MoonColor;
+                Moon.intensity = l.MoonIntensity;
+            }
+            NightLook.ApplyRenderSettings(l);
+            if (_camera != null) NightLook.ApplyCamera(_camera, l);
+            if (HeroLight != null)
+            {
+                HeroLight.color = l.HeroColor;
+                HeroLight.intensity = l.HeroIntensity;
+                HeroLight.range = l.HeroRangeM;
+                _heroHeightM = l.HeroHeightM;
+            }
+            ApplyPalette(l);
         }
 
         /// <summary>

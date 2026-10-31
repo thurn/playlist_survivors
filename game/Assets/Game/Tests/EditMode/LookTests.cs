@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using Game.Client.Arena;
 using Game.Client.Look;
 using NUnit.Framework;
 using PS.Game.Sim;
@@ -155,6 +157,37 @@ namespace Game.Tests
             post.SetZone("crypt", from: 11, barS: 1);
             Assert.That(post.Grade(11).Temperature, Is.EqualTo(lava.Temperature / 2).Within(1e-4));
             Assert.That(post.Grade(13).Temperature, Is.EqualTo(PostFeel.GradeOf("crypt").Temperature));
+        }
+
+        [Test]
+        public void AZoneChangeEasesTheArenasLightingToItsPaletteFromItsDownbeat()
+        {
+            string layout = File.ReadAllText(Path.Combine(Application.dataPath, "..", "Content", "arena-layout.json"));
+            var neon = ArenaLighting.Parse(layout, "neon");
+            var lava = ArenaLighting.Parse(layout, "lava");
+            ArenaLighting applied = null;
+            var zones = new ZoneLighting(layout, neon, l => applied = l);
+            zones.SetZone("lava", from: 10, seconds: 2);
+
+            zones.Present(9);
+            Assert.That(applied.MoonColor, Is.EqualTo(neon.MoonColor), "neon until the downbeat");
+            zones.Present(11);
+            Assert.That(applied.MoonColor.r, Is.EqualTo((neon.MoonColor.r + lava.MoonColor.r) / 2).Within(1e-4), "half way at one bar");
+            Assert.That(applied.FogColor.g, Is.EqualTo((neon.FogColor.g + lava.FogColor.g) / 2).Within(1e-4));
+            zones.Present(12);
+            Assert.That(applied.AmbientSky, Is.EqualTo(lava.AmbientSky));
+            Assert.That(applied.HeroIntensity, Is.EqualTo(lava.HeroIntensity));
+            Assert.That(applied.Palette, Is.EqualTo("lava"));
+            applied = null;
+            zones.Present(13);
+            Assert.That(applied, Is.Null, "settled: nothing to apply");
+
+            // A change mid-ease starts from where the lighting is at its downbeat.
+            zones.SetZone("snow", from: 20, seconds: 2);
+            zones.SetZone("crypt", from: 21, seconds: 2);
+            var snow = ArenaLighting.Parse(layout, "snow");
+            zones.Present(21);
+            Assert.That(applied.MoonColor.b, Is.EqualTo((lava.MoonColor.b + snow.MoonColor.b) / 2).Within(1e-4));
         }
 
         [Test]

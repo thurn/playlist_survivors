@@ -15,12 +15,16 @@ namespace Game.Client.Effects
     /// - a death's crystal burst, tinted by its role's gem, with the deaths of its instant counted
     ///   (<see cref="Cue.Together"/>) so they can share their light;
     /// - a hit that doesn't kill: a flash (a killing hit's flash gives way to the death's burst);
-    /// - a structure's burst, from its break or <see cref="Burst"/>.
+    /// - a structure's burst, from its break or <see cref="Burst"/>;
+    /// - a boss's slam: a burst where it lands (the signature minotaur's mark), at its impact.
     /// </summary>
     public sealed class EffectCues
     {
         /// <summary>A heavy strike's slash beyond its 1.3x reach, and a follow-up's.</summary>
         public const float HeavySlash = 1.25f, FollowUpSlash = 0.85f;
+        /// <summary>A boss slam's burst: its scale, and its warm tint against the crystal's cold.</summary>
+        public const float SlamBurst = 1.5f;
+        public static readonly Color SlamTint = new Color(1f, 0.45f, 0.15f);
 
         public enum Kind { Slash, Spin, Slam, Death, Flash, Burst, Cleave }
 
@@ -59,6 +63,11 @@ namespace Game.Client.Effects
                 case SimEventKind.Attack:
                 {
                     var a = e.AsAttack;
+                    if (!a.ByHero && a.EnemyKind == EnemyAttackKind.Slam)
+                    {
+                        Burst(a.Impact, new Vector3((float)a.SlamX, 0.5f, (float)a.SlamY), Vector2.zero, SlamBurst, SlamTint);
+                        break;
+                    }
                     if (!a.IsSword) break; // the other weapons' looks are their own
                     var kind = a.SwordKind == HeroAttackKind.Slam ? Kind.Slam : a.SwordKind == HeroAttackKind.Spin ? Kind.Spin : Kind.Slash;
                     float size = a.Heavy ? HeavySlash : a.SwordKind == HeroAttackKind.FollowUp ? FollowUpSlash : 1f;

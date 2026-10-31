@@ -336,6 +336,7 @@ namespace Game.Client.Loop
                 _shatter.Attach(a.Sites, a.RefreshShadows);
                 _look.Volume = a.Post;
                 _look.FollowHero = a.FollowHero;
+                _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
             };
         }
 
@@ -731,8 +732,8 @@ namespace Game.Client.Loop
             s += string.Format(c, "; sim step (ms) median {0:F3}, p99 {1:F3}, max {2:F3}",
                 Pct(steps, 0.5), Pct(steps, 0.99), steps[n - 1]);
             s += string.Format(c, "; enemies alive {0}, {1} killed, {2} heavy strikes, {3} structures broken, {4} regrown, {5} zone changes, " +
-                                  "{6} debug commands", Driver.Sim.State.EnemiesAlive, _counts.Kills, _counts.HeavyStrikes, _counts.Breaks,
-                _counts.Regrowths, _counts.ZoneChanges, _commands.Given);
+                                  "{6} set pieces, {7} debug commands", Driver.Sim.State.EnemiesAlive, _counts.Kills, _counts.HeavyStrikes, _counts.Breaks,
+                _counts.Regrowths, _counts.ZoneChanges, _counts.SetPieces, _commands.Given);
             if (_effects != null)
                 s += string.Format(c, "; effects {0} spawned ({1} rejected)", _effects.Spawned, _effects.System.RejectedTotal);
             if (_sounds != null)
@@ -748,7 +749,7 @@ namespace Game.Client.Loop
         /// <summary>What the run did, for its summary, and each event as CSV when asked.</summary>
         sealed class SliceCounts : IPresenter, IDisposable
         {
-            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges, Freezes, MusicStops;
+            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges, SetPieces, Freezes, MusicStops;
             StreamWriter _out;
 
             public void Open(string path)
@@ -773,6 +774,7 @@ namespace Game.Client.Loop
                     case SimEventKind.StructureBreak: Breaks++; break;
                     case SimEventKind.Regrowth: Regrowths++; break;
                     case SimEventKind.ZoneChange: ZoneChanges++; break;
+                    case SimEventKind.SetPiece: SetPieces++; break;
                     case SimEventKind.Freeze when e.AsFreeze.Starts:
                         Freezes++;
                         if (e.AsFreeze.Reason == FreezeReason.MusicStopped) MusicStops++;

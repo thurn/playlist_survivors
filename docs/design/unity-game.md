@@ -1558,6 +1558,51 @@ with content (schedule.json's `zones`), emits `SimEventKind.ZoneChange`
   change waiting for its downbeat holds the fallback off.
 - Nothing lands while the world is frozen.
 
+**Shipped (ps-msz.6.3): swarms, set pieces, the minotaur and the zones'
+lighting.** `Sim/Enemies/MusicEvents.cs` (with `Swarms`, `Pieces`,
+`SignatureBoss` and `Scripts`), on in a run (`HordeConfig.MusicEvents`,
+`RunLevel.Config`). Each start emits `SimEventKind.SetPiece` (its
+`SetPieceKind`, members, and the cause's time and known-at); evidence in
+game/evidence/music-events/. As built:
+
+- **Within the cap**: a start makes room by sending the ordinary enemies
+  farthest from the hero away (`SimEventKind.Leave`, no death or gem). The
+  members move by script on their gait's main beats (a line, a closing ring
+  or a slot beside the hero), unbent by separation; fliers (the swarms, the
+  bees) cross structures. When an event ends, members out of sight leave
+  and those in sight join the horde's pursuit: nothing vanishes on screen
+  (native expires them all).
+- **Swarms**: a minute arms as the run clock enters it; the first revealed
+  jump of 6 dB or more that sounds in it, judged by the run clock it will
+  sound at, unlocks it, and its first attempt lands on the jump's own main
+  beat. The repeats follow every `delayS`, one per row after a gap; the
+  fallback is 10 s before the minute's end. Bats and ghosts come as a flock
+  from 0.72 view widths out and fly through; the flower wall rings the hero
+  with a 60-degree exit and closes to 9 m over 16 beats (native's closes
+  at the flowers' crawl and is never seen).
+- **Set pieces**, judged on reliable main beats, one at a time, 30 s apart,
+  none while swarm members or a boss due are about: the stampede on the
+  first beat at or after a qualifying jump; the ring and wedge on beats
+  whose index is a multiple of 16; the kick line after 16 medium beats.
+  The kick line stands across the hero's heading (native's ran along it),
+  and its dancers pose lunges in turn as their kick. A swarm or the
+  minotaur takes the stage from a piece in play.
+- **The minotaur** lands once, on the first reliable main beat at 90 s or
+  later with no boss waiting, just inside the view, as a boss without a
+  chest. Its slams (`BossMoves.Signature`) land on every 8th main beat from
+  its landing, telegraphed two beats before at a mark under the hero (the
+  attack event's `SlamX`/`SlamY`), so stepping off the mark dodges it. It
+  retreats after 90 s.
+- **Loudness zoom**: the camera reads the stream's ticks through the fast
+  lane (ps-msz.3.7); the set pieces' level is the spawner's 2 s blend.
+- **Zones' lighting**: `Client/Arena/ZoneLighting.cs` eases the moon,
+  ambient, fog, clear colour, hero light, ground tint and mist to the
+  zone's palette over two bars from the change's downbeat, beside the
+  post's grade offset.
+- **Debug**: `DebugCommand.Stampede` to `Minotaur` (player
+  `--debug "stampede@T,kick@T,wedge@T,ring@T,bats@T,ghosts@T,flowers@T,minotaur@T"`)
+  start one on the next main beat in any run with enemies.
+
 ### Pickups, level-ups and chests
 
 Pickups and progression are native's.
