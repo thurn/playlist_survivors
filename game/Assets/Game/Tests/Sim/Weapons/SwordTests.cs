@@ -237,7 +237,7 @@ namespace PS.Game.Sim.Tests
         /// <summary>A sim at 120 BPM with beats below the gate (enemies hold, the sword still strikes), stepped to just after beat 8's impact.</summary>
         static Simulation AimSim(out double nextBeat)
         {
-            var known = Plain(120, 12, evidence: 0.3);
+            var known = Plain(120, 12, evidence: 0.1);
             var sim = Start(Config(), known);
             var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
             sim.StepTo(beats[8] + 0.01);
@@ -328,7 +328,7 @@ namespace PS.Game.Sim.Tests
 
         static Simulation AimSimAt(int rank, Stats stats, out double nextBeat)
         {
-            var known = Plain(120, 12, evidence: 0.3);
+            var known = Plain(120, 12, evidence: 0.1);
             var sim = Start(Config(rank, stats), known);
             var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
             sim.StepTo(beats[8] + 0.01);

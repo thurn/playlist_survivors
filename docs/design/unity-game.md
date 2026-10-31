@@ -710,7 +710,8 @@ Several rules depend on whether the beat can be trusted, and on bars. Both
 keep native's definitions.
 
 - A **reliable beat** is a committed beat whose evidence passes the level's
-  gate, while the music is clear: the latest tick is at most 0.25 s old and
+  gate (native's, 0.2: the analyzer's `gate` in native/models/manifest.json;
+  a clear track's evidence is about 0.5), while the music is clear: the latest tick is at most 0.25 s old and
   confident (native's `enemy_reliable`). **The beat locks** when beats
   become reliable again after a gap; a **clear beat** is a reliable one.
 - **Bars** are two beats long, counted from the first committed beat after
@@ -1619,7 +1620,7 @@ placeholder plane); evidence in game/evidence/look/feel/.
   lead-in, a drop's build) before its `known_at` either, so a frame depends
   only on the entries known by its song time, never on the lead. The beat
   pulses at full on reliable beats and at 0.6 on beats known ahead but below
-  the gate (house-128's evidence hovers at the gate).
+  the gate.
 - Accents are strong onsets, at most one per 0.5 s (native's flashes). A
   heavy strike is the deaths sharing an impact time, weighted 0 at 2 kills to
   1 at 24. Drops (loudness jumps of 6 dB or more) flash, punch and shake as

@@ -216,7 +216,7 @@ namespace PS.Game.Sim.Tests
         {
             // Unclear music never locks, so no beat is a downbeat; the step still leaves the band,
             // and the grid switches on the first interval outside it.
-            var song = new FixtureSong().Beats(0, 30, 151, 110, evidence: 0.3);
+            var song = new FixtureSong().Beats(0, 30, 151, 110, evidence: 0.1);
             var sim = Run(song);
             Assert.AreEqual(0, sim.Beats.Judging.Locks.Length);
             var steps = Steps(sim);

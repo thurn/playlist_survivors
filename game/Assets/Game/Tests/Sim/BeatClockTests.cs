@@ -89,7 +89,7 @@ namespace PS.Game.Sim.Tests
         public void TheThreeStates()
         {
             var song = new FixtureSong()
-                .Beats(0, 10, 120, evidence: 0.3)
+                .Beats(0, 10, 120, evidence: 0.1)
                 .Beats(10, 20, 120)
                 .Gap(20, 30, ticks: false);
             var sim = Drive.Replay(Drive.Known(song.Entries()), 30);

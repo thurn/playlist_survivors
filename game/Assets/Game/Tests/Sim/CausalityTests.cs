@@ -13,7 +13,7 @@ namespace PS.Game.Sim.Tests
             .Beats(0, 30, 128, jitter: 0.004)
             .Gap(30, 36)
             .Beats(36, 70, 100, 150, jitter: 0.003)
-            .Beats(70, 90, 149, evidence: 0.35)
+            .Beats(70, 90, 149, evidence: 0.15)
             .Beats(90, 110, 151);
 
         static List<KnownEntry> Truncated(List<KnownEntry> known, double cut)

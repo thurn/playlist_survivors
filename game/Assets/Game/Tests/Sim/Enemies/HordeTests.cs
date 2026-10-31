@@ -105,7 +105,7 @@ namespace PS.Game.Sim.Tests
         public void EnemiesHoldWithoutAReliableBeatAndResumeWithoutCatchingUp()
         {
             // Beats below the gate, then none at all, then reliable beats again.
-            var song = new FixtureSong(3).Beats(0, 20, 120).Beats(20, 30, 120, evidence: 0.3).Gap(30, 36).Beats(36, 50, 120);
+            var song = new FixtureSong(3).Beats(0, 20, 120).Beats(20, 30, 120, evidence: 0.1).Gap(30, 36).Beats(36, 50, 120);
             var sim = Run(HordeFixture.Config(), song, 50);
             var held = new List<SimEvent>();
             foreach (var e in sim.EventsSince(0))
