@@ -134,7 +134,11 @@ player writes beside each still (its camera's view-projection and the hero's
 feet). The empty beauty shots also get the ground (ps-e8r.6): the median L*
 of fighting ground (inside the layout's clearings and paths) and of the edge
 bands and forest past them, and the fighting ground's local detail (the mean
-standard deviation of L* in 16 px windows).
+standard deviation of L* in 16 px windows). The beauty shots also get
+readability by monster type (ps-bop.4): the ID render marks every monster
+alike, so each colourful monster pixel is classed by the roster hue nearest
+its own, and each type's pixels are measured against a ring around them
+(dL*, and the ring's share in the type's own hue).
 `--measure-only` re-measures kept captures; `--trial` writes nothing to
 evidence; `--player-args` passes flags to every capture. To tell effects apart in a
 still, a player's `--only-effects a,b` spawns only those library effects. The baseline set is
@@ -144,7 +148,8 @@ still, a player's `--only-effects a,b` spawns only those library effects. The ba
 
 `--palette <name>` (ps-ocd) swaps the environment's colours for one of
 arena-layout.json's `palettes`, to see how the type colours and the effects
-read against other backgrounds without building new environments: `snow`
+read against other backgrounds without building new environments (the
+[environments](#environments) replaced them for that test): `snow`
 (light, cool), `desert` (light, warm), `lava` (dark, warm), `neon` (dark,
 cool), `blossom` (mid-value pink) and `crypt` (neutral grey, the control).
 A palette recolours what the runtime sets: the moon's realtime light,
@@ -158,15 +163,19 @@ uv run --project demo3d/tools demo3d look palette-snow --player-args "--palette 
 
 ### Environments
 
-`--environment <name>` (ps-bop) plays the song in another environment
-([Environments](environment.md#environments)): `crypt`, or any other
-`environment-<name>.json`. `just demo3d --environment crypt` builds what
+The forest is the default; `--environment <name>` (ps-bop) plays the song
+in one of the other six ([Environments](environment.md#environments)):
+`snow`, `desert`, `lava`, `neon`, `blossom` or `crypt` (any
+`environment-<name>.json`). `just demo3d --environment snow` builds what
 changed (baking every environment) and plays it. Render one as a look set
 against the forest's:
 
 ```
-uv run --project demo3d/tools demo3d look crypt --baseline final --player-args "--environment crypt"
+uv run --project demo3d/tools demo3d look env-snow --baseline final --player-args "--environment snow"
 ```
+
+[environments.md](../../demo3d/evidence/look/environments.md) compares all
+seven from one build, with the command that renders them.
 
 The shots, the song stills and the ground's areas are the forest's, since an
 environment keeps the arena's plan. A windowless smoke check:

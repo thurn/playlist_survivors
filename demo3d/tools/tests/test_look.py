@@ -226,3 +226,22 @@ def test_the_horde_against_structures_needs_enough_structure_pixels_near_it() ->
     far = np.zeros(monsters.shape, dtype=bool)
     far[:, 95:] = True
     assert "dL" not in look.structure_contrast(img, monsters, far)
+
+
+def test_type_readability_classes_monster_pixels_by_their_signature_hue() -> None:
+    img = frame(GREY_50, 100, 120)
+    img[:, 60:] = (40, 160, 40)  # the right half's ground is green: a goblin's own hue
+    mask = np.zeros(img.shape[:2], dtype=bool)
+    img[35:65, 15:45] = (200, 90, 40)  # an orange skeleton on grey
+    img[35:65, 75:105] = (60, 200, 30)  # a green goblin on green
+    img[2:12, 2:12] = (30, 30, 30)  # an unsaturated monster pixel: dark side, classed as nothing
+    mask[35:65, 15:45] = mask[35:65, 75:105] = mask[2:12, 2:12] = True
+    hues = {"skeleton": 20.0, "goblin": 100.0, "troll": 220.0}
+    t = look.type_readability(img, mask, hues)
+    assert set(t) == {"skeleton", "goblin"}  # no troll pixels: no row
+    assert t["skeleton"]["px"] == t["goblin"]["px"] == 900
+    assert t["skeleton"]["share"] == pytest.approx(900 / 1900)
+    assert t["skeleton"]["lRing"] == pytest.approx(50.0, abs=0.1)
+    assert t["skeleton"]["dL"] == pytest.approx(look.lstar(np.array([200, 90, 40], dtype=np.uint8)) - 50.0, abs=0.1)
+    assert t["skeleton"]["hueMatch"] == 0  # grey ground: nothing in its hue
+    assert t["goblin"]["hueMatch"] == 1  # green ground all round it

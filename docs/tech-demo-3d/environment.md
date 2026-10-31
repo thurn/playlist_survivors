@@ -137,11 +137,34 @@ wall the monsters walk around.
 
 ### Environments
 
-The moonlit forest is the default environment. Others (epic ps-bop) keep its
-area plan and change everything the eye reads as the place: the kit, the
+The moonlit forest is the default environment. Six others (epic ps-bop) keep
+its area plan and change everything the eye reads as the place: the kit, the
 ground, the lighting, the atmosphere and the grade. So the level script, the
 stress scenes and the beauty shots work unchanged in each, and look sets
-compare shot for shot.
+compare shot for shot. The player's `--environment <name>` loads one
+([Running on the Mac](mac.md#environments)):
+
+```
+name      the place                          kit                                       fighting ground; the horde reads
+forest    moonlit forest glade (default)     Fantasy Kingdom, Adventure, Elven Realm,  warm brown, mid; lighter
+                                             Dark Fantasy
+snow      frozen fjord at blue hour          Vikings' snow variants                    near-white snow; darker
+desert    sun-bleached ruins, golden hour    Ancient Egypt, Western Frontier,          pale bleached sand; darker
+                                             Ancient Empire
+lava      basalt hellscape lit by lava       Dungeon Realms' hell kit, Dark Fantasy    near-black basalt, lava rivers; lighter
+neon      city at night                      CyberCity, SciFi City                     near-black wet street, neon pools; lighter
+blossom   cherry-blossom temple at dusk      Samurai, Elven Realm's statues and lamps  pale white stone, pink edges; darker
+crypt     grey stone necropolis (control)    Dungeon, Knights, Dark Fantasy            grey stone at the forest's values; lighter
+```
+
+Each has a look set with its kit, palette table and findings
+(`demo3d/evidence/look/env-<name>/README.md`; the forest's is
+[final](../../demo3d/evidence/look/final/README.md)).
+[environments.md](../../demo3d/evidence/look/environments.md) compares all
+seven from one build: the roster reads above the floor everywhere but two
+blossom shots, and its value spread, not its hues, is what fails per type.
+Several environments can stay resident in one player and switch within a
+frame, for the trailer ([Trailer Mode](trailer.md)).
 
 - **One area plan.** An environment is
   `Choreography/Data/environment-<name>.json`, which `extends` the arena
@@ -173,12 +196,17 @@ compare shot for shot.
   horde its own key colour at the moon's luminance, so a coloured moon on the
   set leaves the type hues alone. `lighting.post.grade` sets the grade's
   shadow, midtone and highlight tints (the night warms the midtones).
-- **Fighting ground is light or dark, never mid.** The horde's own shadows
-  darken the ground around it by about 15 L*, so a mid-value ground meets a
-  mid-value horde: the blossom's first pink stone (L* 55 empty) measured
-  |dL*| 0-3. Its fighting ground is pale white stone, and its pink is in the
-  canopies and edge bands
+- **The ring around the horde is its own shadow, so the lighting picks the
+  ground's value.** Under a dim ambient (the forest, the crypt) the
+  monsters' shadows take a mid-value ground down to about L* 20, and the
+  horde reads lighter. Under a bright sky fill (the snow, the desert, the
+  blossom) the shadows stay pale, so the ground must be pale and the horde
+  reads darker: a mid-value ground under a bright fill meets a mid-value
+  horde, as the blossom's first pink stone (L* 55 empty) did at |dL*| 0-3.
+  Its fighting ground is pale white stone, and its pink is in the canopies
+  and edge bands
   ([env-blossom](../../demo3d/evidence/look/env-blossom/README.md)).
+  A black ground (the lava, the neon) reads under any light.
 - **Its own placement list.** The player and the stress scenes resolve the
   environment's layout before building the timeline, so monsters walk round
   its own blocking pieces.
@@ -195,11 +223,11 @@ compare shot for shot.
 
 To add an environment, write `environment-<name>.json` from kit pieces that
 are already synced and measured (footprints.json), then bake and render it
-([Running on the Mac](mac.md#environments)). Each environment's look set
-README (`demo3d/evidence/look/env-<name>/`) records its kit, palette and
-findings; `crypt` is the control, POLYGON Dungeon's grey stone at the
-forest's values with no hue
-([env-crypt](../../demo3d/evidence/look/env-crypt/README.md)).
+([Running on the Mac](mac.md#environments)), and write its look set's README
+with its kit, palette and findings. `crypt` is the control, POLYGON Dungeon's
+grey stone at the forest's values with no hue
+([env-crypt](../../demo3d/evidence/look/env-crypt/README.md)): what fails
+there is the roster's, not a ground's.
 
 - **A ruin wall's pieces are in world coordinates.** A landmark's and a
   courtyard's `pieces` are offsets from its anchor, but a ruin wall has only

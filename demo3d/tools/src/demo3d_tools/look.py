@@ -34,6 +34,12 @@ their median, reported when the ring holds at least STRUCTURE_MIN_PX structure p
 match the horde it frames. `--evidence DIR` writes a set's evidence under demo3d/evidence/DIR instead of
 look/SLUG (the structure styles' sets: structures/looks/<environment>-<style>).
 
+Readability by type (ps-bop.4, the environments' comparison): the ID render marks every monster alike, so in the
+measured still each colourful monster pixel (C*ab above TYPE_CHROMA) is classed by the roster.json signature hue
+nearest its HSV hue, and each type's pixels are measured against a ring around them as readability's are: dL*,
+and how much of that ring lies in the type's own hue (a hue collision's background). It is a colour estimate:
+a type lit or graded into a neighbour's 40-degree slot counts as the neighbour.
+
 The stage (ps-e8r.5's lit pool around the hero) is measured in every still that has the player's
 view-<t>.json (its camera's view-projection and the hero's feet): the median L* of the ground within
 STAGE_R_M of the hero (each pixel's view ray met with the ground plane at the hero's feet, less the
@@ -76,6 +82,10 @@ STAGE_FLOOR = 15.0  # ps-e8r.5: the stage's median L* above the border's
 GROUND_WINDOW = 16  # ps-e8r.6: the ground's local detail, the standard deviation of L* in 16 px windows
 COOL_HUE, COOL_CHROMA = (180.0, 280.0), 20.0  # ps-e8r.10: a cool accent pixel, HSV hue (degrees) and C*ab
 COOL_CAP = 0.15  # ps-e8r.10: cool accents cover at most this share of a song still
+TYPE_CHROMA = 20.0  # ps-bop.4: a monster pixel colourful enough to class by hue, and a ring pixel in a hue
+TYPE_RING = (3, 10)  # readability's ring, around one type's pixels
+TYPE_HUE_MATCH = 20.0  # degrees: half the roster's 40-degree slots
+TYPE_MIN_PX = 500  # fewer type (or ring) pixels in a shot: no row
 JPEG_W, JPEG_H = 960, 540
 APP = "PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo"
 
@@ -191,6 +201,45 @@ def readability(measured: np.ndarray, mask: np.ndarray, empty: np.ndarray) -> di
             "dC": float(np.median(ch[mask])) - float(np.median(ch[ring])), "cMonster": float(ch[mask].mean()),
             "monsterP10": float(p10), "monsterP90": float(p90),
             "pass": abs(lm - lg) >= FLOOR_DL}
+
+
+def roster_hues(project: Path) -> dict[str, float]:
+    """Each monster type's signature hue (roster.json's `hue`, HSV degrees), less the rejected types."""
+    roster = json.loads((project / "Assets" / "Demo3D" / "Data" / "roster.json").read_text(encoding="utf-8"))
+    hues: dict[str, float] = {}
+    for t in roster["types"]:
+        if "hue" in t and not t.get("kind", "").startswith("rejected"):
+            hues[t["id"]] = float(t["hue"])
+    return hues
+
+
+def _hue_gap(h: np.ndarray, target: float) -> np.ndarray:
+    return np.abs((h - target + 180.0) % 360.0 - 180.0)
+
+
+def type_readability(measured: np.ndarray, mask: np.ndarray, hues: dict[str, float]) -> dict[str, dict]:
+    """Readability by monster type (ps-bop.4). The ID render marks every monster alike, so a monster pixel is
+    classed by its colour: HSV hue nearest a type's signature hue, with C*ab above TYPE_CHROMA (dark sides and
+    unsaturated highlights stay unclassed). Each type's pixels against the ground TYPE_RING px around them, away
+    from every monster (as readability's ring): dL*, and the ring's share in the type's own hue (within
+    TYPE_HUE_MATCH degrees, C*ab above TYPE_CHROMA), the background a hue collision would come from."""
+    lh, ch, h = lstar(measured), chroma(measured), hue(measured)
+    names, targets = list(hues), np.array(list(hues.values()))
+    gaps = np.stack([_hue_gap(h, t) for t in targets])
+    nearest = gaps.argmin(axis=0)
+    coloured = mask & (ch > TYPE_CHROMA)
+    away = ~dilate(mask, TYPE_RING[0])
+    out: dict[str, dict] = {}
+    for i, name in enumerate(names):
+        px = coloured & (nearest == i)
+        ring = dilate(px, TYPE_RING[1]) & away
+        if px.sum() < TYPE_MIN_PX or ring.sum() < TYPE_MIN_PX:
+            continue
+        lm, lr = float(np.median(lh[px])), float(np.median(lh[ring]))
+        out[name] = {"px": int(px.sum()), "share": float(px.sum() / mask.sum()), "lType": lm, "lRing": lr,
+                     "dL": lm - lr, "cType": float(np.median(ch[px])),
+                     "hueMatch": float(((gaps[i] <= TYPE_HUE_MATCH) & (ch > TYPE_CHROMA))[ring].mean())}
+    return out
 
 
 def structure_contrast(measured: np.ndarray, monsters: np.ndarray, structures: np.ndarray) -> dict:
@@ -403,7 +452,8 @@ STATS_HEAD = ["| still | L* p2 | L* p50 | L* p98 | RMS contrast | mean C*ab | ne
 
 def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: dict | None,
            stages: dict[str, dict] | None = None, grounds: dict[str, dict] | None = None,
-           song_fx: dict[str, dict] | None = None, structures: dict[str, dict] | None = None) -> str:
+           song_fx: dict[str, dict] | None = None, structures: dict[str, dict] | None = None,
+           types: dict[str, dict[str, dict]] | None = None, hues: dict[str, float] | None = None) -> str:
     lines = [f"# Look set: {slug}", "",
              "Generated by `demo3d look` (demo3d/tools/src/demo3d_tools/look.py). Stills: 1920x1080 PNGs,",
              "windowless batch-mode player in fixed time. L* is CIE L* (0-100) of the sRGB pixels; RMS contrast",
@@ -452,6 +502,29 @@ def report(slug: str, song: dict[str, dict], shots: dict[str, dict], baseline: d
             else:
                 cells = " | | too few"
             lines.append(f"| {n} | {_pct(st['setShare'])} | {lset} | {st['ringPx']:,} | {cells} |")
+    if types and hues:
+        lines += ["", "## Types", "",
+                  "Readability by monster type (ps-bop.4), in the measured stills. The ID render marks every monster",
+                  f"alike, so a monster pixel with C*ab > {TYPE_CHROMA:g} is classed by the signature hue (roster.json) nearest",
+                  "its HSV hue; a type's lit colour drifting into a neighbour's slot is counted as the neighbour. Each",
+                  f"type's pixels against the ground {TYPE_RING[0]}-{TYPE_RING[1]} px around them and away from every monster: dL*",
+                  "is their median L* less the ring's, pixel-weighted over the shots that hold the type; worst is the",
+                  f"shot with the smallest |dL*|; ring in hue is the ring's share within {TYPE_HUE_MATCH:g} degrees of the type's hue",
+                  f"at C*ab > {TYPE_CHROMA:g} (a hue collision's background). Share: of the monster pixels.", "",
+                  "| type | hue | shots | share | L* type | L* ring | dL* | worst dL* | ring in hue | C*ab |",
+                  "|---|---:|---:|---:|---:|---:|---:|---|---:|---:|"]
+        for name, h in hues.items():
+            rows = {n: t[name] for n, t in types.items() if name in t}
+            if not rows:
+                lines.append(f"| {name} | {h:g} | 0 | | | | | | | |")
+                continue
+            px = sum(r["px"] for r in rows.values())
+            def mean(k: str) -> float:
+                return sum(r[k] * r["px"] for r in rows.values()) / px
+            worst = min(rows, key=lambda n: abs(rows[n]["dL"]))
+            lines.append(f"| {name} | {h:g} | {len(rows)} | {_pct(mean('share'))} | {mean('lType'):.1f} | "
+                         f"{mean('lRing'):.1f} | {mean('dL'):.1f} | {rows[worst]['dL']:.1f} ({worst}) | "
+                         f"{_pct(mean('hueMatch'))} | {mean('cType'):.1f} |")
     lines += ["", "## Effects", "",
               f"The pixels whose L* the effects move by more than {EFFECT_DL:g} (the horde still against the",
               "measured still): their share of the frame, L* p50/p98 and mean C*ab in the horde still, and the",
@@ -575,6 +648,8 @@ def cmd_look(a: argparse.Namespace) -> int:
     grounds: dict[str, dict] = {}
     song_fx: dict[str, dict] = {}
     structs: dict[str, dict] = {}
+    types: dict[str, dict[str, dict]] = {}
+    hues = roster_hues(wt.project)
     for c in caps:
         if c.name.startswith("song-") and not c.name.endswith("-measure"):
             horde = load_rgb(still(c.name))
@@ -588,6 +663,8 @@ def cmd_look(a: argparse.Namespace) -> int:
         monsters = mask(f"{n}-measure")
         shot_rows[n] = {"horde": still_stats(horde), "read": readability(measured, monsters, empty),
                         "fx": effect_stats(horde, measured)}
+        if monsters is not None:
+            types[n] = type_readability(measured, monsters, hues)
         if monsters is not None and (sm := structure_mask(f"{n}-measure")) is not None:
             structs[n] = structure_contrast(measured, monsters, sm)
         if (st := stage_of(f"{n}-horde", monsters)) is not None:
@@ -596,7 +673,7 @@ def cmd_look(a: argparse.Namespace) -> int:
             grounds[n] = g
 
     if a.trial:
-        print(report(slug, song, shot_rows, None, stages, grounds, song_fx, structs))
+        print(report(slug, song, shot_rows, None, stages, grounds, song_fx, structs, types, hues))
         return 0
     evidence.mkdir(parents=True, exist_ok=True)
     names = list(song) + [f"{n}-{k}" for n in shot_rows for k in ("horde", "empty")]
@@ -607,14 +684,14 @@ def cmd_look(a: argparse.Namespace) -> int:
                "monsterChroma": {n: s["read"].get("cMonster") for n, s in shot_rows.items()},
                "stage": {n: st.get("dL") for n, st in stages.items()}, "ground": grounds,
                "effects": {**song_fx, **{n: s["fx"] for n, s in shot_rows.items()}},
-               "structures": structs}
+               "structures": structs, "types": types}
     (evidence / "look.json").write_text(json.dumps(numbers, indent=1) + "\n", encoding="utf-8")
     base = None
     if a.baseline:
         bdir = wt.project / "evidence" / (a.baseline if "/" in a.baseline else f"look/{a.baseline}")  # a path: under evidence/
         base = json.loads((bdir / "look.json").read_text(encoding="utf-8"))
         contact_sheet(names, [bdir, evidence], evidence / "contact-sheet.jpg", [a.baseline, slug])
-    text = report(slug, song, shot_rows, base, stages, grounds, song_fx, structs)
+    text = report(slug, song, shot_rows, base, stages, grounds, song_fx, structs, types, hues)
     (evidence / "look.md").write_text(text, encoding="utf-8")
     print(text)
     return 0 if all(s["read"].get("pass") for s in shot_rows.values()) else 1
