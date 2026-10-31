@@ -9,7 +9,7 @@ using PS.Game.Sim.Level;
 
 // The run's music-driven events over an entry dump (native's `ps entries`), driven as the client
 // drives the sim (60 fps frames, each entry arriving once the frontier passes its stamp), on the
-// run's level (RunLevel.Config: the schedule, the events and the starting sword) in the game's
+// run's level (RunLevel.Config: the schedule, the events and the arsenal) in the game's
 // arena, the hero standing and never falling. Writes every set piece and zone change with its
 // cause, and prints a summary with the most alive.
 //

@@ -46,7 +46,7 @@ The world is pink because house-128's opening jump moved the zones on to blossom
 ## A 30-minute run
 
 [Run30](Run30/Program.cs) drives the run's level (`RunLevel.Config`: the schedule, the events and
-the starting sword) over the survivors-30 dump as the client does, in the game's arena, the hero
+the arsenal from the starting sword) over the survivors-30 dump as the client does, in the game's arena, the hero
 standing:
 
 ```sh
@@ -58,8 +58,8 @@ members, and its cause's time and known-at. The summary, from 2026-10-31:
 
 ```text
 song 2172.2 s, run clock 1800.0 s, phase Ended, end Victory
-set pieces: BatSwarm 15, GhostSwarm 17, FlowerWall 7, Ring 22, Signature 1
-most alive 300 (cap 300), 413 left out of sight, minotaur slams 13 (14 slam hits on the hero, its and the bosses')
+set pieces: BatSwarm 14, GhostSwarm 19, FlowerWall 7, Ring 22, Signature 1
+most alive 300 (cap 300), 469 left out of sight, minotaur slams 13 (14 slam hits on the hero, its and the bosses')
 ```
 
 - **Never above 300**: the events make room under the cap (ordinary enemies far off leave), so the
