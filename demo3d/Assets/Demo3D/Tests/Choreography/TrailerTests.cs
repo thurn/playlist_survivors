@@ -37,7 +37,7 @@ namespace Demo3D.Choreography.Tests
                 Assert.That(s.SpanFrom, Is.LessThan(s.Cut));
             }
             Assert.That(t.Shots[1].Cut, Is.EqualTo(Fixtures.Song.TimeOfBarBeat("81.1")));
-            Assert.That(t.Environments, Is.EquivalentTo(new[] { "crypt", "desert", "snow", "forest" }));
+            Assert.That(t.Environments, Is.EquivalentTo(new[] { "crypt", "desert", "snow", "forest", "lava", "blossom", "neon" }));
             Assert.That(t.ShotAt(t.Shots[3].Cut - 0.01), Is.EqualTo(2));
             Assert.That(t.ShotAt(t.Shots[3].Cut), Is.EqualTo(3));
         }

@@ -37,6 +37,8 @@ namespace Demo3D.Runtime.Arena
         /// <summary>A set of arenas loading or already set up (<see cref="Load"/>, or the editor's ArenaRuntime.Attach); the first is active once ready.</summary>
         public ArenaSet(ArenaRuntime[] arenas, UnityEngine.Camera camera)
         {
+            if (arenas.Length > 32 - FirstLayer)
+                throw new ArgumentException($"ArenaSet: {arenas.Length} environments, but only {32 - FirstLayer} layers from {FirstLayer} for them");
             _arenas = arenas;
             _camera = camera;
             for (int i = 0; i < arenas.Length; i++) _layers |= 1 << (FirstLayer + i);

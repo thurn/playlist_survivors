@@ -1,4 +1,4 @@
-"""ps-hgs.1's numbers: four environments resident in one player (trailer.md, Environments in one player).
+"""ps-hgs.1's and ps-7mx.2's numbers: seven environments resident in one player (trailer.md, Environments in one player).
 
 From the worktree's root, after `demo3d build` and the captures the README lists:
 

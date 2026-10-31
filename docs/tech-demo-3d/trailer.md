@@ -10,7 +10,7 @@ This document specifies **trailer mode**, a `--trailer` flag on the same
 player. It turns the demo into a gameplay sizzle reel of about 30 seconds:
 31.1 s of gameplay, then a 1.5 s fade on black.
 
-- **Ten shots,** cut on the beat across four environments, set to bars 79–99
+- **Ten shots,** cut on the beat across seven environments, set to bars 79–99
   of *Action*.
 - **No text and no UI.**
 - **Live and captured.** It plays live in the normal build with sound. Through
@@ -66,7 +66,7 @@ These constraints are fixed:
   covers intensity overlays and the tuning fields the trailer builds on.
 - [Camera and Sound](camera-and-sound.md): the game camera, the blow-weight
   feel and the sound aggregator, all reused here.
-- [Environment](environment.md): the four environments, how each is baked and
+- [Environment](environment.md): the seven environments, how each is baked and
   lit, and the arena plan they share.
 - [Crowd and Hero](crowd.md): the monster roster, monster styles and roster
   sets, which the trailer's flags select.
@@ -80,8 +80,8 @@ These constraints are fixed:
   whose tuning and feel are the trailer's starting point (see
   [Overdrive](#overdrive-the-starting-point) below). Its evidence is in
   [demo3d/evidence/overdrive/](../../demo3d/evidence/overdrive/).
-- Epic ps-bop: the environments still to come (neon city, blossom temple, a
-  crypt rework). They join the trailer as data once they exist.
+- Epic ps-bop (closed): the lava, neon and blossom environments, and the
+  crypt. They joined the trailer as data (ps-7mx.2).
 
 ## Background
 
@@ -310,9 +310,9 @@ After the duel, the shot length halves, group by group:
 | 2 | 2.481–8.674 | 81–84 | desert | Charge | ~600 | 45 m | 0° |
 | 3 | 8.674–14.868 | 85–88 | snow | Vortex | ~700 | 50 m | 45° |
 | 4 | 14.868–17.965 | 89–90 | forest | Converge, 4 streams | ~500 | 40 m | 0° |
-| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~420 | 40 m | 135° |
-| 6 | 21.062–22.610 | 93 | desert | Vortex | ~400 | 35 m | −45° |
-| 7 | 22.610–24.158 | 94 | snow | Charge | ~420 | 35 m | 90° |
+| 5 | 17.965–21.062 | 91–92 | lava | Charge with elites | ~420 | 40 m | 135° |
+| 6 | 21.062–22.610 | 93 | blossom | Vortex | ~400 | 35 m | −45° |
+| 7 | 22.610–24.158 | 94 | neon | Charge | ~420 | 35 m | 90° |
 | 8 | 24.158–25.707 | 95 | crypt | Converge, 3 streams | ~500 | 40 m | 180° |
 | 9 | 25.707–27.255 | 96 | desert | Converge, 4 streams | ~600 | 45 m | −90° |
 | 10 | 27.255–31.126 | 97–98, plus 99.1–99.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
@@ -370,13 +370,13 @@ Each shot is built around particular moves, listed here in order.
 4. **Converge (forest, bar 89).** A white flash covers the cut. A ring lands
    on 89.1 as four streams meet the hero.
    - The hero cuts across the streams, cleaving on the strong beats.
-5. **Elite charge (crypt).** Big Orks and Trolls in the charging wave fall to
+5. **Elite charge (lava).** Big Orks and Trolls in the charging wave fall to
    single cleaves, so their size sells each blow. Lightning strikes on
    downbeats.
-6. **Burst 1: the heavy cleave (desert, vortex).** The heavy cleave on the
+6. **Burst 1: the heavy cleave (blossom, vortex).** The heavy cleave on the
    cut, then a cleave on beat 3, as the hero circles inside the spiral
    closing on them.
-7. **Burst 2: the slam (snow, charge).** A slam on the cut flattens the
+7. **Burst 2: the slam (neon, charge).** A slam on the cut flattens the
    oncoming wave's front rank, then a cleave on beat 3.
 8. **Burst 3: lightning (crypt, converge).** Lightning strikes on the strong
    beats while the hero cleaves at the meeting point.
@@ -546,8 +546,8 @@ change:
 
 - **Ten simulations.** There are ten short simulations, one per shot, instead
   of one long one.
-- **Four environments.** Four environments are loaded in one player, instead
-  of one.
+- **Seven environments.** Seven environments are loaded in one player,
+  instead of one.
 
 At load, the player:
 
@@ -700,8 +700,8 @@ environment's own structures and props.
 That is why a shot's path works in any environment, and why `--environment`
 can pin every shot to one environment for checks.
 
-New environments, such as ps-bop's neon city and blossom temple, join the
-trailer by being named in the file, with no code change. An unknown
+New environments join the trailer by being named in the file, with no code
+change, as lava, neon and blossom did (ps-7mx.2). An unknown
 environment, area or grid position fails at load and names the bad value.
 
 ### Shot simulations
@@ -960,15 +960,15 @@ is to make the final slam bigger. These rules are part of the shot simulation:
 ### Environments in one player
 
 The player loads every environment the trailer uses before the first frame:
-crypt, desert, snow and forest. All four stay resident, and exactly one is
-active at a time. This is new: today a player loads one environment for its
+crypt, desert, snow, forest, lava, neon and blossom. All seven stay resident,
+and exactly one is active at a time. This is new: today a player loads one environment for its
 whole run, and loading it changes global rendering state.
 
 Each environment loads as its finished version. Its rendering is on the E2
 rung, the top of the environment's measured optimization ladder, with baked
 static lighting and a static shadow map. Its decoration is at density 2, the
-authored prop density. That is the one baked variant all four environments
-have.
+authored prop density. That is the one baked variant every environment
+has.
 
 Loading an environment captures everything it would set globally, so the
 player can switch to it at a cut. That **environment state** includes:
@@ -988,7 +988,7 @@ Requirements:
   state within one frame. No frame at a cut takes more than 2 ms longer than
   its neighbours, measured with the existing windowless GPU probe
   (`--gpu-probe-at`) at and around each cut.
-- **Each environment looks as it does alone.** With all four resident, each
+- **Each environment looks as it does alone.** With all seven resident, each
   environment's stills match a normal single-environment run of it within
   1 L*.
   - The look harness (`demo3d look`) renders a fixed set of stills and
@@ -1008,13 +1008,15 @@ The scenes are arranged by this decision and its test:
 - **First choice: overlap at the origin.** Every baked scene sits at the world
   origin, and inactive environments have their roots disabled.
 - **The test.** Each environment must pass the look requirement above while
-  all four are resident.
+  all seven are resident.
 - **Fallback.** If overlapping light probes or lightmaps fail the test, the
   environments are placed far apart in world space. Shot simulations keep
   local coordinates, and the client adds each environment's offset.
-- **Outcome (ps-hgs.1): they overlap.** Every environment's stills, taken on
-  the very frame that switches back to it, match its single-environment run
-  within 0.02 L*, in all 28 look-set stills of each
+- **Outcome (ps-hgs.1, then ps-7mx.2 for seven): they overlap.** With all
+  seven resident, every environment's stills, taken on the very frame that
+  switches back to it, match its single-environment run within 0.01 L*, in
+  all 28 look-set stills of each, lava's emission, neon's signs and wet street
+  and blossom's pale stone included
   ([evidence](../../demo3d/evidence/trailer/residency/README.md)). No offset
   exists, and shot simulations use world coordinates as they are.
 
@@ -1023,10 +1025,11 @@ How it works (`ArenaSet`, `ArenaRuntime.Resident`, `Show` and `Apply`):
 - **Lightmaps** need nothing: every loaded scene's lightmaps join one list,
   and each renderer indexes its own.
 - **Light probes** are swapped. Unity keeps one scene's probes after
-  additive loads (each scene's 882, never all four), so a switch sets
+  additive loads (each scene's 882, never all seven), so a switch sets
   `LightmapSettings.lightProbes` to the new scene's own
   (`LightProbes.GetSharedLightProbesForScene`).
-- **Visibility** is a layer per scene (8 upwards) and the camera's culling
+- **Visibility** is a layer per scene (8 upwards: 8 to 14 for seven, of the
+  24 free from 8 to 31, which `ArenaSet` checks) and the camera's culling
   mask, so a switch touches no renderer. Only the scenes' realtime lights
   (the moon, the flames, the hero's light) and post volumes are switched off
   and on. Deactivating the roots instead cost over 1 ms a switch.
@@ -1043,8 +1046,19 @@ How it works (`ArenaSet`, `ArenaRuntime.Resident`, `Show` and `Apply`):
   whose layout the timeline plays) and `--switch-every <s>` (cycle every s
   song seconds from `--start-at`) exercise it until trailer playback exists.
 
-The memory cost is accepted: roughly four scenes, four lightmap sets and four
-64 MiB shadow maps. The trailer runs on a powerful machine.
+The memory cost is accepted: seven scenes, seven lightmap sets and seven
+64 MiB shadow maps. The trailer's player peaks at about 2.8 GiB of physical
+footprint, against 1.4 GiB for a normal one-environment run and 2.3 GiB for
+four resident. The trailer runs on a powerful machine.
+
+**Outcome (ps-7mx.2).** Lava, neon and blossom joined as data: their baked
+E2/density-2 scenes load like the others, the warm-up draws them (2 to 4 ms
+to submit each), and the trailer's shots 5, 6 and 7 cut to them with grades of
+their own. A switch costs 0.12 to 0.20 ms of CPU. In six probe runs of all
+seven switches, 41 of 42 switch frames were within 2 ms of their neighbours;
+the other, at +2.22 ms, was draw noise under a load average near 20, since
+its switch took 0.13 ms and the same switch measured −0.20 to +1.54 ms in the
+other runs.
 
 ### Playback and cuts
 
@@ -1548,6 +1562,11 @@ Expect:
   trails behind in a wake; the hero always has an open lane and never walks
   through a monster. Judge whether the monsters stepping aside from the
   hero's path reads as natural, not as a force field.
+- **The new environments.** Shots 5, 6 and 7 cut to lava, blossom and neon.
+  Judge whether their grades (warm and contrasty on the lava, soft on the
+  blossom's pale stone, saturated and cool in the neon city) sit well beside
+  the original four, and whether the horde's blocks read against the lava's
+  glowing cracks and the neon's signs.
 - **The end.** The final slam clears the screen, then two beats of aftermath,
   black and a 1.5 s fade.
 - **Picture.** No text and no UI at any point.
