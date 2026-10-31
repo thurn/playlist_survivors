@@ -62,8 +62,9 @@ namespace Game.Client.Sound
 
         /// <summary>
         /// The sync probe (`--sound-probe`): every sound plays this clip instead, from its first
-        /// sample, at full level whatever the bus, so the mix capture can find each one's onset.
-        /// Every scheduled or dropped sound is then kept in <see cref="Log"/>.
+        /// sample, at full level whatever the bus and at its own rate whatever the pitch, so the mix
+        /// capture can find each one's onset (a resampled click ends in a one-sample pop, which the
+        /// onset search takes for a click). Every scheduled or dropped sound is then kept in <see cref="Log"/>.
         /// </summary>
         public AudioClip Probe { get; set; }
 
@@ -132,7 +133,8 @@ namespace Game.Client.Sound
                 root = _roots[i];
             }
             else return -1;
-            float pitch = cue.Note > 0 && root > 0 ? Mathf.Pow(2f, (cue.Note - root) / 12f) : cue.Pitch > 0 ? cue.Pitch : 1f;
+            float pitch = Probe != null ? 1f
+                : cue.Note > 0 && root > 0 ? Mathf.Pow(2f, (cue.Note - root) / 12f) : cue.Pitch > 0 ? cue.Pitch : 1f;
             // The attack lands on the cue's song time: the voice starts its onset earlier.
             double lead = onset / pitch;
             if (clip == null || !_clock.TryDspAt(cue.Song - lead, out double dsp))
