@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "The crowd's nine monster models (unity-game.md, Enemies: the cast) and the clips the crowd plays, from demo3d's roster.json and clip-annotations.json (TD2): idle, walk (a step is half its cycle), attack (the contact lunge, retimed to its impact) and hit. Prefabs and clips by vendor GUID (game/manifest.json); heightM is the model's height at cast scale 1, hoverM a flyer's height over the ground. Annotations: loop, impact and end in seconds, strideM the walk cycle's travel.",
+  "note": "The crowd's nine monster models (unity-game.md, Enemies: the cast) and the clips the crowd plays, from demo3d's roster.json and clip-annotations.json (TD2): idle, walk (a step is half its cycle), attack (the contact lunge, retimed to its impact) and hit, and for the bosses' models telegraph (the in-place pose before a charge or slam) and charge (a boss's long step). Prefabs and clips by vendor GUID (game/manifest.json); heightM is the model's height at cast scale 1, hoverM a flyer's height over the ground. Annotations: loop, impact and end in seconds, strideM the walk cycle's travel.",
   "types": [
     {
       "id": "bat",
@@ -216,6 +216,16 @@
           "loop": false,
           "impact": 0.0,
           "end": 0.617
+        },
+        "telegraph": {
+          "guid": "b48c7e37f2264c3418122c894c6f98af",
+          "clip": "A_Attack_HeavyFlourish_WindUp_Sword",
+          "loop": false
+        },
+        "charge": {
+          "guid": "6c670ea8c84cf324980a21b4b9b927a0",
+          "clip": "",
+          "loop": true
         }
       },
       "weapons": [
@@ -259,6 +269,16 @@
           "loop": false,
           "impact": 0.0,
           "end": 0.1
+        },
+        "telegraph": {
+          "guid": "b48c7e37f2264c3418122c894c6f98af",
+          "clip": "A_Attack_HeavyFlourish_WindUp_Sword",
+          "loop": false
+        },
+        "charge": {
+          "guid": "6c670ea8c84cf324980a21b4b9b927a0",
+          "clip": "",
+          "loop": true
         }
       },
       "weapons": [
@@ -302,6 +322,16 @@
           "loop": false,
           "impact": 0.0,
           "end": 0.983
+        },
+        "telegraph": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushAttack04start",
+          "loop": false
+        },
+        "charge": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushAttack04loop",
+          "loop": true
         }
       }
     },
@@ -338,6 +368,16 @@
           "loop": false,
           "impact": 0.0,
           "end": 0.817
+        },
+        "telegraph": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Fire Head 1",
+          "loop": false
+        },
+        "charge": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Run",
+          "loop": true
         }
       }
     }

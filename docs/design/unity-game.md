@@ -1129,8 +1129,8 @@ playing time.
   later. A fall, Backspace and a device change each emit `RunEnd` at once,
   and the run clock stops there.
 - **Easy's chickens**: a dying brute drops one 5% of the time (the run's
-  generator). Bosses drop `bossChickens` through `FloorChickens.Drop`, for
-  the cast's bosses. The hero eats one within 0.89 m while the world plays:
+  generator). A scheduled boss (a minute's `bosses`, native's survivor
+  boss) drops `bossChickens` (`FloorChickens.BossDied`). The hero eats one within 0.89 m while the world plays:
   it heals 30 at once (native waits for the next sixteenth) and can't be
   hurt for 0.3 s.
 - **The client**: Esc or focus loss pauses under the pause menu (ps-msz.6.11), and Esc or its Resume resumes.
@@ -1257,8 +1257,8 @@ on by `SimConfig.Sword` (weapon, rank, stats, wind-up). As built:
   it show with 0 damage). At none the hero falls (a death with enemy -1);
   it then neither moves, strikes nor takes hits. `SimConfig.HeroStands`
   keeps a tenth of its health instead.
-- Bosses are recognised by role id (`boss-*`, the minotaur) until M3 marks
-  bosses at spawn.
+- Bosses are marked at spawn (`EnemyState.Boss`: a minute's `bosses`,
+  ps-msz.6.2), and the aim weighs them by that mark.
 
 ### The other weapons
 
@@ -1382,6 +1382,53 @@ The cast maps native's roles onto the 3D demo's nine models:
 
 Each type keeps one crystal colour, from its original pack's colours, and
 spawns in same-type clumps so the horde reads as masses of colour.
+
+**Shipped (ps-msz.6.2).** The spawner is `Sim/Enemies/Spawner.cs` (split out
+of the horde), the bosses' moves `Sim/Enemies/BossMoves.cs`, turned on by
+`HordeConfig.Schedule`; the player plays them with `--run` (`RunLevel`; the
+slice stays the default until the full run, ps-msz.6.14). Evidence in
+[game/evidence/schedule](../../game/evidence/schedule/README.md) and
+[game/evidence/cast](../../game/evidence/cast/README.md). As built:
+
+- **Waves** follow native's rule on the run clock: every minute's interval,
+  one of each roster role, then whole rosters while fewer than the minimum
+  are alive. The minimum scales by loudness as native's `levelScale` (0.6
+  quiet, 1.3 loud, blended over the last 2 s; schedule.json's `run`), and a
+  quiet wave with that many alive is skipped. Waves spawn at tick ends;
+  native snaps them to the next known eighth, which the game's enemies don't
+  need, since they hold until a main beat anyway.
+- **Clumps**: a role's share of a wave lands as one clump, and a role keeps
+  landing within about 7° of a point of the ring for `run.clumpS` (3 s)
+  after choosing it, so a trickle of one a wave still gathers into one mass
+  of colour, and the masses come from all round.
+- **Bosses**: a minute's `bosses` come due at its start and land on the next
+  committed downbeat (or at a tick end 4 s of run clock later with none),
+  70% of the way to the footprint's edge, so they're seen to arrive. Waves
+  leave a slot for each boss waiting; a boss with no room waits for one.
+  A boss's health, and a level-scaled role's, is its role's times
+  `HeroState.Level`. The first boss of a minute with treasure carries its
+  chest, its tier rolled at landing as native's `treasure_tier`; its death
+  drops it (`SimEvent.Chest`: a `Drop` of `ItemKind.Chest`, value the tier,
+  `Minute` the treasure's minute), and on Easy its chickens.
+- **Boss moves** (schedule.json's `bossMoves`, for the four `boss-*`
+  roles): 4 main beats after landing and then every 8, with the beat
+  reliable and the delivery beat already committed, the boss telegraphs on
+  a footplant (an `Attack` of `EnemyAttackKind.Charge` or `Slam`, impact the
+  delivery beat 2 beats later) and holds in place, neither stepping nor
+  lunging. With the hero within 4 m it slams: on the beat, the hero within
+  reach takes the role's power and every structure within 4 m is struck
+  (`StructureHit.BossSlam`, 4.63 m throw). Otherwise it charges: the
+  delivery beat's step, a sharp step like any other, up to 9 m along the
+  line to where the hero stood at the telegraph, stopped by structures and
+  at contact, hitting the hero for its power if in contact along it. A
+  delivery beat that comes unreliable, frozen or with the boss knocked back
+  fizzles.
+- **Clips**: the bosses' models (dragon, troll, big orc, mushroom) bake a
+  telegraph and a charge clip (Editor/Crowd/roster.json). The telegraph
+  fills the warning and holds; a slam then plays the attack clip, its
+  contact on the beat; a charge's step runs the charge clip.
+- **The mushroom stays the flowers' model**: no pack has a thorn plant, and
+  in crystal at cast scale its cap and stalk read as a plant (game/evidence/cast).
 
 ### Crystal structures
 

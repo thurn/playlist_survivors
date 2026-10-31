@@ -50,3 +50,7 @@ what was run (the exact commands), the numbers, and what they show.
   CALIBRATE rows on the title screen and the pause menu over a frozen run (ps-msz.6.11).
 - [replay](replay/README.md): a headless run recorded as a session and replayed to its hash, in the IL2CPP player
   and in .NET, and a changed record caught (ps-msz.6.10).
+- [schedule](schedule/README.md): the full schedule on a 30-minute .NET run over the survivors test playlist's
+  dump: every minute's roles and all 20 bosses, never above the cap of 300, and victory at 30:00 (ps-msz.6.2).
+- [cast](cast/README.md): every role and boss in its crystal and gem colour, and bosses telegraphing, charging and
+  slamming on the beat (ps-msz.6.2).

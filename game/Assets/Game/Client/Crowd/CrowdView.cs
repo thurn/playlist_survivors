@@ -100,7 +100,9 @@ namespace Game.Client.Crowd
                 case SimEventKind.Attack:
                 {
                     var a = e.AsAttack;
-                    if (!a.ByHero) Of(a.Enemy)?.Lunge(a.WindupStart, a.Impact, a.DirX, a.DirY);
+                    if (a.ByHero) break;
+                    if (a.EnemyKind == EnemyAttackKind.Lunge) Of(a.Enemy)?.Lunge(a.WindupStart, a.Impact, a.DirX, a.DirY);
+                    else Of(a.Enemy)?.Telegraph(a.WindupStart, a.Impact, a.EnemyKind == EnemyAttackKind.Slam, a.DirX, a.DirY);
                     break;
                 }
                 case SimEventKind.Hit:

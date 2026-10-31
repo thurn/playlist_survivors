@@ -17,18 +17,28 @@ namespace Game.Client.Crowd
         }
     }
 
-    /// <summary>The four clips a monster plays: the idle bob, the walk (a step is half its cycle), the lunge's attack and the hit.</summary>
+    /// <summary>
+    /// The clips a monster plays: the idle bob, the walk (a step is half its cycle), the lunge's
+    /// attack and the hit, and a boss's telegraph and charge (its model's own where the roster
+    /// names them, else the attack and the walk).
+    /// </summary>
     public sealed class MonsterClips
     {
-        public MonsterClip Idle, Walk, Attack, Hit;
+        public MonsterClip Idle, Walk, Attack, Hit, Telegraph, Charge;
 
-        public static MonsterClips Of(CrowdType t) => new MonsterClips
+        public static MonsterClips Of(CrowdType t)
         {
-            Idle = ClipOf(t, "idle"),
-            Walk = ClipOf(t, "walk"),
-            Attack = ClipOf(t, "attack"),
-            Hit = ClipOf(t, "hit"),
-        };
+            var c = new MonsterClips
+            {
+                Idle = ClipOf(t, "idle"),
+                Walk = ClipOf(t, "walk"),
+                Attack = ClipOf(t, "attack"),
+                Hit = ClipOf(t, "hit"),
+            };
+            c.Telegraph = t.Clip("telegraph") >= 0 ? ClipOf(t, "telegraph") : c.Attack;
+            c.Charge = t.Clip("charge") >= 0 ? ClipOf(t, "charge") : c.Walk;
+            return c;
+        }
 
         static MonsterClip ClipOf(CrowdType t, string role)
         {
@@ -64,6 +74,10 @@ namespace Game.Client.Crowd
     /// - **Lunge** (the enemy's Attack): the attack clip is retimed so its annotated contact lands on
     ///   the impact (the beat), from the notice; it returns at the same speed, with a short lunge
     ///   toward the hero peaking on the contact, facing the attack's direction.
+    /// - **Telegraph** (a boss's Attack of a charge or slam): the telegraph clip, retimed to fill
+    ///   the warning and held on its last pose, turning at once to face the hero. A slam then plays the attack clip,
+    ///   its contact on the delivery beat as a lunge's; a charge's step (the one planting on that
+    ///   beat) runs the charge clip at its own speed instead of the walk, held a moment after.
     /// - **Hit**: a flinch from the hit clip's onset, cut short, and a white flash over 0.12 s.
     /// - **Knock** (EnemyKnock): its place moves from `from` to `to` between the knock's times.
     /// Each new clip fades in over a few frames from what showed before it. Ground positions are
@@ -83,10 +97,15 @@ namespace Game.Client.Crowd
         public const float LungeMinSpeed = 0.5f, LungeMaxSpeed = 4f;
         /// <summary>How far the lunge carries the body toward the hero at contact, metres at scale 1.</summary>
         public const double LungeReach = 0.4;
-        const double StepFade = 0.05, LungeFade = 0.06, HitFade = 0.03;
+        /// <summary>The telegraph's retiming bounds, the slam's attack speed, and how long a charge's run holds after its footplant.</summary>
+        public const float TelegraphMinSpeed = 0.5f, TelegraphMaxSpeed = 4f, SlamSpeed = 1.5f;
+        public const double ChargeHold = 0.25;
+        /// <summary>How fast a telegraphing boss turns to face the hero.</summary>
+        public const double TelegraphTurn = 0.2;
+        const double StepFade = 0.05, LungeFade = 0.06, HitFade = 0.03, TelegraphFade = 0.1;
         const int Moves = 4, Actions = 8;
 
-        enum Kind : byte { Step, Lunge, Hit }
+        enum Kind : byte { Step, Lunge, Hit, Telegraph, Charge }
 
         struct Move
         {
@@ -107,7 +126,7 @@ namespace Game.Client.Crowd
         int _moveCount, _actionCount, _steps;
         MonsterClips _clips;
         float _idlePhase, _yaw;
-        double _forgottenHit;
+        double _forgottenHit, _chargeAt;
         double _spawnX, _spawnY;
 
         /// <summary>The sim's enemy id (its dense slot, reused after a death).</summary>
@@ -135,7 +154,7 @@ namespace Game.Client.Crowd
             _spawnX = x;
             _spawnY = y;
             _moveCount = _actionCount = _steps = 0;
-            _forgottenHit = double.NegativeInfinity;
+            _forgottenHit = _chargeAt = double.NegativeInfinity;
             _yaw = faceX != x || faceY != y ? (float)Math.Atan2(faceX - x, faceY - y) : 0;
             _idlePhase = Jitter(serial) * clips.Idle.Length;
         }
@@ -172,12 +191,13 @@ namespace Game.Client.Crowd
             AddMove(fromX, fromY, toX, toY, start, footplant);
             float yaw = LatestYaw();
             float to = toX != fromX || toY != fromY ? (float)Math.Atan2(toX - fromX, toY - fromY) : yaw;
+            bool charge = Math.Abs(footplant - _chargeAt) < 1e-6;
             AddAction(new Action
             {
-                Kind = Kind.Step,
+                Kind = charge ? Kind.Charge : Kind.Step,
                 Start = start,
                 Impact = Math.Max(start, footplant),
-                End = Math.Max(start, footplant) + StepHold,
+                End = Math.Max(start, footplant) + (charge ? ChargeHold : StepHold),
                 Phase = (_steps++ & 1) * 0.5f * _clips.Walk.Length,
                 YawFrom = yaw,
                 YawTo = to,
@@ -207,6 +227,32 @@ namespace Game.Client.Crowd
                 YawFrom = yaw,
                 YawTo = dirX != 0 || dirY != 0 ? (float)Math.Atan2(dirX, dirY) : yaw,
             });
+        }
+
+        /// <summary>
+        /// A boss's telegraph (the enemy's Attack of a charge or slam): from <paramref name="start"/>
+        /// to the delivery beat <paramref name="impact"/>, toward (dirX, dirY).
+        /// </summary>
+        public void Telegraph(double start, double impact, bool slam, double dirX, double dirY)
+        {
+            impact = Math.Max(start, impact);
+            var a = _clips.Attack;
+            double blow = slam ? Math.Max(start, impact - a.Impact / SlamSpeed) : impact;
+            var c = _clips.Telegraph;
+            float yaw = LatestYaw();
+            float to = dirX != 0 || dirY != 0 ? (float)Math.Atan2(dirX, dirY) : yaw;
+            AddAction(new Action
+            {
+                Kind = Kind.Telegraph,
+                Start = start,
+                Impact = Math.Min(blow, start + TelegraphTurn),
+                End = blow,
+                Speed = Clamp((float)(c.End / Math.Max(blow - start, 1e-3)), TelegraphMinSpeed, TelegraphMaxSpeed),
+                YawFrom = yaw,
+                YawTo = to,
+            });
+            if (slam) Lunge(blow, impact, dirX, dirY);
+            else _chargeAt = impact;
         }
 
         /// <summary>A hit on it: the flinch and the flash.</summary>
@@ -295,6 +341,19 @@ namespace Game.Client.Crowd
                     time = Clamp(c.Impact + (float)(t - a.Impact) * a.Speed, 0, c.End);
                     return;
                 }
+                case Kind.Telegraph:
+                {
+                    var c = _clips.Telegraph;
+                    clip = c.Index;
+                    time = Clamp((float)(t - a.Start) * a.Speed, 0, c.End);
+                    return;
+                }
+                case Kind.Charge:
+                {
+                    clip = _clips.Charge.Index;
+                    time = (float)Math.Max(0, t - a.Start);
+                    return;
+                }
                 default:
                 {
                     var c = _clips.Hit;
@@ -305,7 +364,8 @@ namespace Game.Client.Crowd
             }
         }
 
-        static double FadeOf(Kind k) => k == Kind.Step ? StepFade : k == Kind.Lunge ? LungeFade : HitFade;
+        static double FadeOf(Kind k) =>
+            k == Kind.Step || k == Kind.Charge ? StepFade : k == Kind.Lunge ? LungeFade : k == Kind.Telegraph ? TelegraphFade : HitFade;
 
         /// <summary>The lunge's reach (0..1): easing out to the contact, then back by the end of its return.</summary>
         static double LungeBump(in Action a, double t)

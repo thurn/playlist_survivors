@@ -24,7 +24,9 @@ namespace Game.Client.Loop
     /// The game's frame loop on the main thread (unity-game.md, Architecture): the music's
     /// entries and the keys into the sim, the sim stepped to the frontier, its events and state
     /// to the presenters at frameSong. The sim plays the slice's level (<see cref="SliceLevel"/>:
-    /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>.
+    /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>;
+    /// `--run` plays the run's schedule instead (<see cref="RunLevel"/>), and `--cast ROLE,...`
+    /// stands those roles in a row before a swordless hero, for the cast's stills.
     /// Its music is the source Boot resolved from `--file` or `--app`, or the title screen's pick
     /// (<see cref="MusicSource"/>): played through the music plugin, which feeds the sim; live,
     /// song time is the music's (<see cref="MusicTimes"/>), calibrated for the output device it
@@ -196,7 +198,11 @@ namespace Game.Client.Loop
             {
                 // The spawn ring stays out of the widest view: the loud zoom's, on a screen at least 16:9.
                 float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
-                config = SliceLevel.Config(content, arena ? level.Arena() : null, CameraRig.Footprint(aspect), seed);
+                var footprint = CameraRig.Footprint(aspect);
+                var cast = Args.Get("--cast");
+                config = cast != null ? RunLevel.Lineup(content, arena ? level.Arena() : null, footprint, cast.Split(','), seed)
+                    : Args.Has("--run") ? RunLevel.Config(content, arena ? level.Arena() : null, footprint, seed)
+                    : SliceLevel.Config(content, arena ? level.Arena() : null, footprint, seed);
             }
             _interactive = !headless && !_fixed;
             if (replayed == null)

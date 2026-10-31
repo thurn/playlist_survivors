@@ -35,6 +35,8 @@ namespace Game.EditorTools.Crowd
         const string ShaderDir = "Assets/Game/Client/Crowd/Shaders";
         const string ContentDir = "Content";
         static readonly string[] ClipRoles = { "idle", "walk", "attack", "hit" };
+        /// <summary>The bosses' models' extra clips, baked after the four when the roster names them.</summary>
+        static readonly string[] OptionalClipRoles = { "telegraph", "charge" };
 
         /// <summary>A bone (or rigid attachment) of the combined mesh.</summary>
         sealed class Entry
@@ -291,9 +293,13 @@ namespace Game.EditorTools.Crowd
         static void SampleClips(TypeBake b)
         {
             int row = 0;
-            foreach (var role in ClipRoles)
+            foreach (var role in ClipRoles.Concat(OptionalClipRoles))
             {
-                if (!b.Type.clips.TryGetValue(role, out var r)) throw new Exception($"CrowdBaker: {b.Type.id} has no {role} clip");
+                if (!b.Type.clips.TryGetValue(role, out var r))
+                {
+                    if (Array.IndexOf(OptionalClipRoles, role) >= 0) continue;
+                    throw new Exception($"CrowdBaker: {b.Type.id} has no {role} clip");
+                }
                 var clip = Roster.LoadClip(r);
                 var c = new CrowdClip
                 {

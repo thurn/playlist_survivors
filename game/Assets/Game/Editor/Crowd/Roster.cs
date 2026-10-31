@@ -48,7 +48,7 @@ namespace Game.EditorTools.Crowd
             public float heightM;
             public float hoverM;
             public Ref prefab;
-            /// <summary>idle, walk, attack and hit, in that order in the bone texture.</summary>
+            /// <summary>idle, walk, attack and hit, in that order in the bone texture, then telegraph and charge where named.</summary>
             public Dictionary<string, ClipRef> clips = new Dictionary<string, ClipRef>();
             public List<WeaponRef> weapons = new List<WeaponRef>();
             /// <summary>Prefab children Spawn removes.</summary>

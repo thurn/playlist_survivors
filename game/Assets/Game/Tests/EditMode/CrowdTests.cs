@@ -10,8 +10,8 @@ namespace Game.Tests
     /// </summary>
     public class CrowdTests
     {
-        const uint Idle = 0, Walk = 1, Attack = 2, Hit = 3;
-        const float WalkLength = 1.0f, AttackImpact = 0.75f, AttackEnd = 1.5f, HitOnset = 0.05f;
+        const uint Idle = 0, Walk = 1, Attack = 2, Hit = 3, Telegraph = 4, Charge = 5;
+        const float WalkLength = 1.0f, AttackImpact = 0.75f, AttackEnd = 1.5f, HitOnset = 0.05f, TelegraphLength = 2.0f;
 
         static readonly MonsterClips Clips = new MonsterClips
         {
@@ -19,6 +19,8 @@ namespace Game.Tests
             Walk = new MonsterClip((int)Walk, WalkLength, -1, -1),
             Attack = new MonsterClip((int)Attack, 1.6f, AttackImpact, AttackEnd),
             Hit = new MonsterClip((int)Hit, 1.0f, HitOnset, 0.8f),
+            Telegraph = new MonsterClip((int)Telegraph, TelegraphLength, -1, -1),
+            Charge = new MonsterClip((int)Charge, 0.5f, -1, -1),
         };
 
         /// <summary>A monster spawned at (0, 0) at t = 1, facing the hero to the north.</summary>
@@ -98,6 +100,39 @@ namespace Game.Tests
             Assert.That(done.ClipA, Is.EqualTo(Idle));
             Assert.That(done.Blend, Is.EqualTo(1f));
             Assert.That(done.Y, Is.EqualTo(0.0).Within(1e-9), "back where it stood");
+        }
+
+        [Test]
+        public void ABossTelegraphsInPlaceThenItsChargeRunsOnTheDeliveryStep()
+        {
+            var m = Spawned();
+            m.Telegraph(3.0, 4.0, false, 1, 0); // two beats at 120 BPM, toward the hero to the east
+            m.Step(0, 0, 8, 0, 3.9, 4.0);       // the charge: the step planting on the delivery beat
+            m.Step(8, 0, 8.5, 0, 4.4, 4.5);     // an ordinary step after it
+
+            var mid = m.Sample(3.45);
+            Assert.That(mid.ClipA, Is.EqualTo(Telegraph));
+            Assert.That(mid.TimeA, Is.EqualTo(0.45f * TelegraphLength).Within(1e-4), "the clip fills the warning");
+            Assert.That((mid.X, mid.Y), Is.EqualTo((0.0, 0.0)), "in place");
+            Assert.That(mid.Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5), "facing the hero");
+
+            var dash = m.Sample(3.95);
+            Assert.That(dash.ClipA, Is.EqualTo(Charge), "the charge runs, not walks");
+            Assert.That(dash.X, Is.EqualTo(4.0).Within(1e-9));
+            Assert.That(m.Sample(4.0 + MonsterTrack.ChargeHold - 0.01).ClipA, Is.EqualTo(Charge), "held a moment after it lands");
+            Assert.That(m.Sample(4.45).ClipA, Is.EqualTo(Walk), "later steps walk");
+        }
+
+        [Test]
+        public void ABossSlamLandsTheAttacksContactOnTheDeliveryBeat()
+        {
+            var m = Spawned();
+            m.Telegraph(3.0, 4.0, true, 0, 1);
+            double blow = 4.0 - AttackImpact / MonsterTrack.SlamSpeed;
+            Assert.That(m.Sample(blow - 0.05).ClipA, Is.EqualTo(Telegraph));
+            var contact = m.Sample(4.0);
+            Assert.That(contact.ClipA, Is.EqualTo(Attack));
+            Assert.That(contact.TimeA, Is.EqualTo(AttackImpact).Within(1e-5), "the blow lands on the beat");
         }
 
         [Test]
