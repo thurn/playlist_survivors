@@ -41,7 +41,7 @@ struct Ctx {
 pub struct Capture {
     pub device: Id,
     proc_id: AudioDeviceIOProcID,
-    _ctx: Box<UnsafeCell<Ctx>>,
+    ctx: Box<UnsafeCell<Ctx>>,
     pub rate: f64,
     pub channels: usize,
     pub samples: rtrb::Consumer<f32>,
@@ -84,30 +84,42 @@ impl Capture {
         ring_s: f64,
         delay: Option<Writer>,
     ) -> Result<Capture, String> {
+        Capture::start_at(device, fmt, ring_s, delay, 0).map_err(|(e, _)| e)
+    }
+
+    /// As `start_with`, numbering its frames from `first` (a capture that continues another's
+    /// timeline); on failure the delay line's writer comes back with the error.
+    fn start_at(
+        device: Id,
+        fmt: AudioStreamBasicDescription,
+        ring_s: f64,
+        delay: Option<Writer>,
+        first: u64,
+    ) -> Result<Capture, (String, Option<Writer>)> {
         let channels = fmt.mChannelsPerFrame as usize;
         let interleaved = fmt.mFormatFlags & kAudioFormatFlagIsNonInterleaved == 0;
         if fmt.mFormatID != kAudioFormatLinearPCM
             || fmt.mFormatFlags & kAudioFormatFlagIsFloat == 0
             || fmt.mBitsPerChannel != 32
         {
-            return Err(format!("unexpected input format {fmt:?}"));
+            return Err((format!("unexpected input format {fmt:?}"), delay));
         }
         let (sp, sc) = rtrb::RingBuffer::new((fmt.mSampleRate * ring_s) as usize);
         let (mp, mc) = rtrb::RingBuffer::new(4096);
-        let ctx = Box::new(UnsafeCell::new(Ctx {
+        let mut ctx = Box::new(UnsafeCell::new(Ctx {
             samples: sp,
             meta: mp,
             channels,
             interleaved,
-            received: 0,
+            received: first,
             dropped: 0,
             delay,
             tick_s: crate::clock::tick_s(),
             alive: Arc::new(AtomicU64::new(0)),
         }));
-        let alive = Arc::clone(&unsafe { &*ctx.get() }.alive);
+        let alive = Arc::clone(&ctx.get_mut().alive);
         let mut proc_id: AudioDeviceIOProcID = None;
-        check(
+        let created = check(
             unsafe {
                 AudioDeviceCreateIOProcID(
                     device,
@@ -117,15 +129,21 @@ impl Capture {
                 )
             },
             "AudioDeviceCreateIOProcID",
-        )?;
-        check(
+        );
+        if let Err(e) = created {
+            return Err((e, ctx.get_mut().delay.take()));
+        }
+        if let Err(e) = check(
             unsafe { AudioDeviceStart(device, proc_id) },
             "AudioDeviceStart",
-        )?;
+        ) {
+            unsafe { AudioDeviceDestroyIOProcID(device, proc_id) };
+            return Err((e, ctx.get_mut().delay.take()));
+        }
         Ok(Capture {
             device,
             proc_id,
-            _ctx: ctx,
+            ctx,
             rate: fmt.mSampleRate,
             channels,
             samples: sc,
@@ -329,34 +347,82 @@ impl Tap {
         delay: f64,
         keep: f64,
     ) -> Result<(Tap, DelayLine), String> {
-        if processes.is_empty() {
-            return Err("no process to tap".into());
-        }
-        let ids: Vec<Retained<NSNumber>> =
-            processes.iter().map(|&p| NSNumber::new_u32(p)).collect();
-        let list = NSArray::from_retained_slice(&ids);
-        let desc = unsafe {
-            CATapDescription::initStereoMixdownOfProcesses(CATapDescription::alloc(), &list)
-        };
-        unsafe { desc.setMuteBehavior(CATapMuteBehavior::MutedWhenTapped) };
-        let (tap, aggregate, fmt) = aggregate_for(&desc)?;
-        let destroyed = Arc::new(AtomicBool::new(false));
+        let (tap, aggregate, fmt) = muted_aggregate(processes)?;
         let (writer, line) = audio::delay::delay_line(fmt.mSampleRate, delay, keep);
-        match Capture::start_with(aggregate, fmt, 4.0, Some(writer)) {
-            Ok(capture) => Ok((
-                Tap {
-                    tap,
-                    aggregate,
-                    capture,
-                    destroyed,
-                },
-                line,
-            )),
-            Err(e) => {
+        Tap::start_aggregate(tap, aggregate, fmt, writer, 0)
+            .map(|t| (t, line))
+            .map_err(|(e, _)| e)
+    }
+
+    /// Tap `processes` muted, as [`Tap::start_processes`], into an existing line's `writer` at
+    /// `rate`, numbering the frames from `first`: a tap that continues an earlier one's timeline.
+    /// On failure (or a tap at another rate) the writer comes back with the error;
+    /// [`Tap::into_writer`] hands it back once the tap is done.
+    pub fn start_processes_into(
+        processes: &[Id],
+        writer: Writer,
+        rate: f64,
+        first: u64,
+    ) -> Result<Tap, (String, Writer)> {
+        let (tap, aggregate, fmt) = match muted_aggregate(processes) {
+            Ok(t) => t,
+            Err(e) => return Err((e, writer)),
+        };
+        if fmt.mSampleRate != rate {
+            destroy(tap, aggregate, &AtomicBool::new(false));
+            return Err((
+                format!(
+                    "the tap is at {} Hz, its line at {rate} Hz",
+                    fmt.mSampleRate
+                ),
+                writer,
+            ));
+        }
+        Tap::start_aggregate(tap, aggregate, fmt, writer, first)
+    }
+
+    /// Starts capturing a muted tap's aggregate into `writer`, or destroys them.
+    fn start_aggregate(
+        tap: Id,
+        aggregate: Id,
+        fmt: AudioStreamBasicDescription,
+        writer: Writer,
+        first: u64,
+    ) -> Result<Tap, (String, Writer)> {
+        let destroyed = Arc::new(AtomicBool::new(false));
+        match Capture::start_at(aggregate, fmt, 4.0, Some(writer), first) {
+            Ok(capture) => Ok(Tap {
+                tap,
+                aggregate,
+                capture,
+                destroyed,
+            }),
+            Err((e, writer)) => {
                 destroy(tap, aggregate, &destroyed);
-                Err(e)
+                Err((e, writer.expect("the writer comes back")))
             }
         }
+    }
+
+    /// Destroys the tap (its app is heard again) and hands back the delay line's writer it
+    /// captured into, if any.
+    pub fn into_writer(mut self) -> Option<Writer> {
+        self.stop();
+        // (The IOProc is gone, so its context is ours again.)
+        self.capture.ctx.get_mut().delay.take()
+    }
+
+    /// Stops the capture and destroys the tap and its aggregate, once.
+    fn stop(&mut self) {
+        // (Once the watchdog destroyed the aggregate, its IOProc went with it.)
+        if !self.destroyed.load(Ordering::SeqCst) && self.capture.proc_id.is_some() {
+            unsafe {
+                AudioDeviceStop(self.aggregate, self.capture.proc_id);
+                AudioDeviceDestroyIOProcID(self.aggregate, self.capture.proc_id);
+            }
+        }
+        self.capture.proc_id = None;
+        destroy(self.tap, self.aggregate, &self.destroyed);
     }
 
     /// A watchdog over this tap, destroying it when its capture or the main thread stalls.
@@ -368,6 +434,19 @@ impl Tap {
             move || destroy(tap, aggregate, &destroyed),
         )
     }
+}
+
+/// A tap of `processes`, muted while tapped, and its aggregate: (tap, aggregate, format).
+fn muted_aggregate(processes: &[Id]) -> Result<(Id, Id, AudioStreamBasicDescription), String> {
+    if processes.is_empty() {
+        return Err("no process to tap".into());
+    }
+    let ids: Vec<Retained<NSNumber>> = processes.iter().map(|&p| NSNumber::new_u32(p)).collect();
+    let list = NSArray::from_retained_slice(&ids);
+    let desc =
+        unsafe { CATapDescription::initStereoMixdownOfProcesses(CATapDescription::alloc(), &list) };
+    unsafe { desc.setMuteBehavior(CATapMuteBehavior::MutedWhenTapped) };
+    aggregate_for(&desc)
 }
 
 /// Destroys a tap and its aggregate, once (the app's own end or the watchdog's): the tapped app
@@ -538,14 +617,6 @@ impl crate::analysis::Source for Tap {
 
 impl Drop for Tap {
     fn drop(&mut self) {
-        // (Once the watchdog destroyed the aggregate, its IOProc went with it.)
-        if !self.destroyed.load(Ordering::SeqCst) {
-            unsafe {
-                AudioDeviceStop(self.aggregate, self.capture.proc_id);
-                AudioDeviceDestroyIOProcID(self.aggregate, self.capture.proc_id);
-            }
-        }
-        self.capture.proc_id = None;
-        destroy(self.tap, self.aggregate, &self.destroyed);
+        self.stop();
     }
 }

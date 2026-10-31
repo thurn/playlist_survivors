@@ -144,12 +144,19 @@ impl DelayLine {
     }
 
     /// What the line holds for host time `t`.
-    #[allow(clippy::many_single_char_names)]
     pub fn at(&self, t: f64) -> Read {
         let Some(a) = self.anchor else {
             return Read::Before;
         };
-        let x = a.frame as f64 + (t - a.host) * self.rate;
+        self.frame(a.frame as f64 + (t - a.host) * self.rate)
+    }
+
+    /// What the line holds at frame `x` of the capture's timeline (fractional: interpolated).
+    #[allow(clippy::many_single_char_names)]
+    pub fn frame(&self, x: f64) -> Read {
+        if self.anchor.is_none() {
+            return Read::Before;
+        }
         let k = x.floor();
         if k < self.start as f64 {
             return Read::Before;
@@ -163,6 +170,16 @@ impl DelayLine {
         let lerp =
             |c: usize| self.ring[2 * i + c] + (self.ring[2 * j + c] - self.ring[2 * i + c]) * f;
         Read::Frame(lerp(0), lerp(1))
+    }
+
+    /// The newest frame captured, plus 1 (0 before the first).
+    pub fn end(&self) -> u64 {
+        self.end
+    }
+
+    /// The capture's rate.
+    pub fn rate(&self) -> f64 {
+        self.rate
     }
 
     /// How far ahead of host time `t`'s frame the capture is (s): the line's fill as the render
@@ -205,6 +222,20 @@ mod tests {
         assert_eq!(line.at(101.0), Read::After);
         let fill = line.fill(100.0 + 9000.0 / RATE).unwrap();
         assert!((fill - (20.0 * 512.0 - 9000.0) / RATE).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_frame_reads_by_its_index_whatever_its_capture_time() {
+        // (A second capture continuing the first's timeline at another host time.)
+        let (mut w, mut line) = delay_line(RATE, 3.0, 5.0);
+        capture(&mut w, 0, 512, 100.0);
+        capture(&mut w, 4096, 512, 500.0);
+        line.pull();
+        assert_eq!(line.frame(300.25), Read::Frame(300.25, -300.25));
+        assert_eq!(line.frame(2000.0), Read::Frame(0.0, 0.0));
+        assert_eq!(line.frame(4100.0), Read::Frame(4100.0, -4100.0));
+        assert_eq!(line.frame(4607.0), Read::After);
+        assert_eq!(line.end(), 4608);
     }
 
     #[test]

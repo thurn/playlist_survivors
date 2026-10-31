@@ -206,12 +206,18 @@ mod mac {
         )
         .ok()
         .filter(|&o| o != 0)?;
+        let playing = coreaudio::get::<u32>(
+            obj,
+            kAudioProcessPropertyIsRunningOutput,
+            kAudioObjectPropertyScopeGlobal,
+        )
+        .is_ok_and(|v| v != 0);
         Some(AudioApp {
             name: exe_path(pid).map_or_else(|| format!("process {pid}"), |p| name_of(&p)),
             pid,
             bundle: None,
             processes: vec![obj],
-            playing: true,
+            playing,
         })
     }
 }

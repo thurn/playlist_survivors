@@ -67,7 +67,7 @@ impl Source for FileSource {
 }
 
 /// Linear resampler from the source's rate to 44.1 kHz.
-struct Resampler {
+pub struct Resampler {
     ratio: f64,
     /// Input position (in input samples) of the next output sample.
     pos: f64,
@@ -77,7 +77,18 @@ struct Resampler {
 }
 
 impl Resampler {
-    fn push(&mut self, input: &[f32], out: &mut Vec<f32>) {
+    /// From `rate` to 44.1 kHz.
+    pub fn new(rate: f64) -> Resampler {
+        Resampler {
+            ratio: rate / SR,
+            pos: 0.0,
+            base: 0,
+            buf: Vec::new(),
+        }
+    }
+
+    /// Resamples `input`, the samples after the last call's, onto the end of `out`.
+    pub fn push(&mut self, input: &[f32], out: &mut Vec<f32>) {
         self.buf.extend_from_slice(input);
         loop {
             let i = (self.pos - self.base as f64).floor() as usize;
@@ -128,12 +139,7 @@ pub fn spawn(
         .name("analyzer".into())
         .spawn(move || {
             let rate = source.rate();
-            let mut rs = Resampler {
-                ratio: rate / SR,
-                pos: 0.0,
-                base: 0,
-                buf: Vec::new(),
-            };
+            let mut rs = Resampler::new(rate);
             let mut metas: VecDeque<Meta> = VecDeque::new();
             let (mut raw, mut y, mut new_metas, mut out) =
                 (Vec::new(), Vec::new(), Vec::new(), Vec::new());
@@ -189,12 +195,7 @@ mod tests {
 
     #[test]
     fn the_resampler_keeps_a_constant_and_its_rate() {
-        let mut rs = Resampler {
-            ratio: 48000.0 / SR,
-            pos: 0.0,
-            base: 0,
-            buf: Vec::new(),
-        };
+        let mut rs = Resampler::new(48000.0);
         let mut out = Vec::new();
         for _ in 0..100 {
             rs.push(&[0.5; 480], &mut out);
