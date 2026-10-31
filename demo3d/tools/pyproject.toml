@@ -3,7 +3,7 @@ name = "demo3d-tools"
 version = "0.1.0"
 description = "The Unity projects' worktree setup, vendor guard, sync tool and Unity task runner"
 requires-python = ">=3.12"
-dependencies = ["flip-evaluator", "numpy", "pillow"]
+dependencies = ["flip-evaluator", "numpy", "pillow", "pyyaml>=6"]
 
 [project.scripts]
 demo3d = "demo3d_tools.cli:main"

@@ -1,4 +1,4 @@
-"""The game's own commands (`game look`), beside the commands it shares with the demos.
+"""The game's own commands (`game look`, `game content`), beside those it shares with the demos.
 
 `game look SLUG [--at T1,T2,...]`: windowless stills of the game's player on the Mac. It runs the
 player in batch mode and fixed time (docs/tech-demo-3d/mac.md: a batch-mode player draws a camera
@@ -6,6 +6,9 @@ by hand only for the frames that keep a still), building it first when there is 
 --build after a change. The full 1920×1080 stills and the player's log stay in the gitignored
 captures/game/look/SLUG/; 960 px JPEGs with the ps-render tag the vendor guard accepts go to
 game/evidence/look/SLUG/.
+
+`game content [--check]`: the one-shot conversion of native's run content into game/Content
+(content.py).
 """
 
 from __future__ import annotations
@@ -33,6 +36,10 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     lk.add_argument("--build", action="store_true", help="rebuild the player first (after a change)")
     lk.add_argument("--player-args", default="", help="extra player flags")
     lk.set_defaults(func=cmd_look)
+
+    from . import content
+
+    content.add_parser(sub)
 
 
 def cmd_look(a: argparse.Namespace) -> int:
