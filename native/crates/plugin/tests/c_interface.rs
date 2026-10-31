@@ -4,7 +4,9 @@
 
 mod common;
 
-use common::{empty_entries, last_error, native, open, status, temp, wait_for_music, write_wav};
+use common::{
+    empty_entries, hang_guard, last_error, native, open, status, temp, wait_for_music, write_wav,
+};
 use ps_plugin::decode::{SR, decode};
 use ps_plugin::{
     PS_ENDED, PS_ERR_ARGUMENT, PS_ERR_FAILED, PS_ERR_SOURCE, PS_ERR_UNSUPPORTED, PS_OK, PS_PLAYING,
@@ -18,7 +20,9 @@ fn run_to_the_end(s: *mut Session) -> Vec<String> {
     let mut entries = empty_entries(256);
     let mut out = vec![0.0f32; 2 * 512];
     let mut dsp = 0.0;
+    let started = std::time::Instant::now();
     loop {
+        hang_guard(started, "the analysis never finished");
         let st = status(s);
         assert_eq!(st.failed, 0, "{}", last_error());
         let rendered = unsafe { ps_plugin::ps_render_music(s, out.as_mut_ptr(), 512, 2, dsp) };
@@ -45,7 +49,11 @@ fn a_file_run_yields_the_dumps_entries_and_records_the_session() {
         std::fs::read_to_string(native().join("fixtures/entries/house-128-20s.jsonl")).unwrap();
     let want: Vec<&str> = fixture.lines().skip(1).collect();
     let dir = temp("dump");
-    let audio = decode(&native().join("../public/reactive/house-128/house-128.ogg")).unwrap();
+    let audio = decode(
+        &native().join("../public/reactive/house-128/house-128.ogg"),
+        48_000.0,
+    )
+    .unwrap();
     let excerpt = &audio.mono[..(20.0 * SR) as usize];
     let wav = dir.join("house-128-20s.wav");
     write_wav(&wav, 1, excerpt);
@@ -78,12 +86,13 @@ fn a_file_run_yields_the_dumps_entries_and_records_the_session() {
     let _ = std::fs::remove_dir_all(dir);
 }
 
-/// A stereo tone (left 220 Hz, right 330 Hz) at song time `t` of a track.
+/// A stereo tone at song time `t` of a track: left 220 Hz, right 15 kHz, which only a real
+/// resampler keeps (linear interpolation to 48 kHz misses it by up to 0.3).
 fn tone(t: f64) -> (f32, f32) {
     let w = 2.0 * std::f64::consts::PI * t;
     (
         (0.5 * (220.0 * w).sin()) as f32,
-        (0.5 * (330.0 * w).sin()) as f32,
+        (0.5 * (15_000.0 * w).sin()) as f32,
     )
 }
 
@@ -145,12 +154,12 @@ fn a_playlist_plays_continuously_at_the_output_rate_and_the_anchor_follows_the_f
     assert_eq!(st.state, PS_ENDED);
     assert_eq!(st.stalls, 0);
     assert!(st.follower_gain > 0.0 && st.follower_gain <= 1.0);
-    // Every frame is the source at its song time, linearly interpolated (away from the edges
-    // of the silence, where it interpolates across them).
-    let edges = [1.0, 1.5, total];
+    // Every frame is the source at its song time, resampled (away from the edges of the
+    // silence, where the resampler's filter rings).
+    let edges = [0.0, 1.0, 1.5, total];
     for (n, frame) in played.as_chunks::<2>().0.iter().enumerate() {
         let t = n as f64 / RATE;
-        if edges.iter().any(|e| (t - e).abs() < 2.0 / SR) {
+        if edges.iter().any(|e| (t - e).abs() < 0.005) {
             continue;
         }
         let (l, r) = want(t);
@@ -213,7 +222,9 @@ fn failures_return_codes_that_ps_last_error_describes() {
     std::fs::write(dir.join("noise.ogg"), "not audio").unwrap();
     let s = open(&dir.join("noise.ogg"), 48_000.0, None).unwrap();
     let mut entries = empty_entries(16);
+    let started = std::time::Instant::now();
     let code = loop {
+        hang_guard(started, "the failure never came");
         let n = unsafe { ps_plugin::ps_poll(s, entries.as_mut_ptr(), 16) };
         if n != 0 {
             break n;

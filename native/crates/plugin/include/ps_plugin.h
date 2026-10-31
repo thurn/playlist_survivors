@@ -36,7 +36,7 @@ typedef struct ps_session ps_session;
 typedef struct {
     int32_t source;          /* PS_SOURCE_* */
     double m;                /* the music delay M: 3.0 (1 to 10) */
-    double output_rate;      /* Unity's output sample rate (Hz) */
+    double output_rate;      /* Unity's output sample rate (whole Hz) */
     const char *path;        /* File: the audio file or .m3u (UTF-8) */
     const char *models;      /* the analyzer's madmom.bin; NULL: $PS_MODELS, else the checkout's */
     const char *session_dir; /* the folder to record the session in (created); NULL: none */
@@ -135,19 +135,22 @@ int32_t ps_list_apps(ps_app *out, int32_t max);
 int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
 
 /* Unity's audio thread: writes `frames` frames of `channels` interleaved channels of the
- * delayed music (left, right, then silence; mono gets their mean), resampled to the output
- * rate, and records the anchor at dsp_time. Never blocks, allocates or logs. Returns PS_OK; on
- * a failure the buffer is silent. */
+ * delayed music (left, right, then silence; mono gets their mean) at the output rate (a File
+ * source is decoded at it), and records the anchor at dsp_time. Never blocks, allocates or
+ * logs. Returns PS_OK; on a failure the buffer is silent. */
 int32_t ps_render_music(ps_session *s, float *out, int32_t frames, int32_t channels,
                         double dsp_time);
 
 /* The anchor, latency, stalls, mute, gain and progress. Cannot fail. */
 void ps_status(ps_session *s, struct ps_status *out);
 
-/* Stops the session's threads, finishes its record and frees it. NULL is a no-op. */
+/* Stops the session's threads, finishes its record and frees it. NULL is a no-op. Stop the
+ * audio callback first: ps_render_music must have returned for the last time. */
 void ps_close(ps_session *s);
 
-/* The calling thread's last failure, until its next failing call; "" if none. */
+/* The calling thread's last failure, until its next failing call; "" if none. The plugin owns
+ * the string (C#: return an IntPtr and copy it, never a marshalled string, which would free
+ * it). */
 const char *ps_last_error(void);
 
 #ifdef __cplusplus

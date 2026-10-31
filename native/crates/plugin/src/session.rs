@@ -2,7 +2,9 @@
 //! output"). A File source's threads:
 //!
 //! - **decoder**: decodes each track (`decode`), a track or two ahead, and hands its mono
-//!   samples to the analyzer and its stereo frames to the player.
+//!   samples (44.1 kHz) to the analyzer and its stereo frames (at the output rate) to the player.
+//!   Each track starts where the analyzer's timeline puts it, rounded to an output frame, so the
+//!   two never drift apart over a playlist.
 //! - **player**: writes the stereo frames, after each track's gap of silence, into native's
 //!   delay line (`audio::delay`), keeping it filled to `M` past the render position. A frame's
 //!   "capture time" is its song time, so the line plays song time `t` at render time `t`.
@@ -13,7 +15,7 @@
 //!   the session's record (`record`).
 //!
 //! `ps_render_music` (Unity's audio thread) pulls the line and reads each output frame at its song
-//! time, linearly interpolated from 44.1 kHz to the output rate. It starts the music once the
+//! time (the line runs at the output rate, so that is a frame it holds). It starts the music once the
 //! line holds [`START_S`] (or the whole source), and from then on song time advances by exactly
 //! the frames rendered: a buffer the line can't fill plays silence there and counts as a stall.
 //! It records each buffer's anchor (its DSP time, song time and frame) under a sequence lock. It
@@ -124,9 +126,11 @@ struct Shared {
     state: AtomicI32,
     stalls: AtomicU32,
     gain: AtomicU32,
-    /// The source's length in frames, once every track is decoded (`u64::MAX` until then).
+    /// The source's length in analyzer samples, once every track is decoded (`u64::MAX` until
+    /// then).
     total: AtomicU64,
-    /// The frames the player has written into the line, and the samples the analyzer has read.
+    /// The frames the player has written into the line (at the output rate), and the samples the
+    /// analyzer has read.
     written: AtomicU64,
     analysed: AtomicU64,
     analysis_done: AtomicBool,
@@ -185,6 +189,11 @@ pub struct Session {
     threads: Vec<JoinHandle<()>>,
 }
 
+/// The output frame at analyzer sample `n`: where the music puts what the analyzer hears there.
+fn music_frame(n: u64, rate: f64) -> u64 {
+    (n as f64 * rate / SR).round() as u64
+}
+
 /// A track for the player: its gap and stereo frames; for the analyzer: its gap and mono samples.
 struct Part {
     gap: usize,
@@ -197,11 +206,12 @@ impl Session {
         if !(config.m.is_finite() && (1.0..=10.0).contains(&config.m)) {
             return Err(Error::new(PS_ERR_ARGUMENT, "M must be 1 to 10 s"));
         }
-        if !(config.output_rate.is_finite() && (8_000.0..=384_000.0).contains(&config.output_rate))
+        if !((8_000.0..=384_000.0).contains(&config.output_rate)
+            && config.output_rate.fract() == 0.0)
         {
             return Err(Error::new(
                 PS_ERR_ARGUMENT,
-                "the output rate must be 8 to 384 kHz",
+                "the output rate must be a whole 8 to 384 kHz",
             ));
         }
         let tracks = decode::tracks(&config.source).map_err(|e| Error::new(PS_ERR_SOURCE, e))?;
@@ -248,7 +258,7 @@ impl Session {
             error: Mutex::new(None),
         });
         // (The line keeps a second more than the player writes ahead of the render position.)
-        let (writer, line) = delay_line(SR, 0.0, config.m + 1.0);
+        let (writer, line) = delay_line(config.output_rate, 0.0, config.m + 1.0);
         let (entries, records) = rtrb::RingBuffer::new(RECORDS);
         let (to_player, player_parts) = sync_channel(1);
         let (to_analyzer, analyzer_parts) = sync_channel(1);
@@ -261,19 +271,30 @@ impl Session {
         };
         let mut threads = Vec::new();
         let s = shared.clone();
+        let rate = config.output_rate;
         threads.push(spawn(
             "ps-decoder",
             Box::new(move || {
                 guarded(&s.clone(), move || {
+                    // (The analyzer's timeline, in its samples; the music's follows it.)
                     let mut total = 0u64;
                     for track in &tracks {
-                        let decoded = decode::decode(&track.path)?;
+                        if s.stopped() {
+                            return Ok(());
+                        }
+                        let decoded = decode::decode(&track.path, rate)?;
                         let gap = decode::gap_frames(track);
-                        total += (gap + decoded.mono.len()) as u64;
+                        let start = total + gap as u64;
+                        let end = start + decoded.mono.len() as u64;
+                        let mut stereo = decoded.stereo;
+                        let frames = music_frame(end, rate) - music_frame(start, rate);
+                        stereo.resize(2 * frames as usize, 0.0);
+                        let music_gap = music_frame(start, rate) - music_frame(total, rate);
+                        total = end;
                         let sent = to_player
                             .send(Part {
-                                gap,
-                                samples: decoded.stereo,
+                                gap: music_gap as usize,
+                                samples: stereo,
                             })
                             .is_ok()
                             && to_analyzer
@@ -381,15 +402,14 @@ impl Session {
         // SAFETY: only `ps_render_music` uses the render state, from one thread at a time.
         let r = unsafe { &mut *self.render.get() };
         let sh = &*self.shared;
+        let rate = sh.output_rate;
         r.line.pull();
+        // (The source's end, in output frames, once it is known.)
         let total = sh.total.load(Ordering::Acquire);
-        let end = if total == u64::MAX {
-            f64::INFINITY
-        } else {
-            total as f64 / SR
-        };
+        let end = (total != u64::MAX).then(|| music_frame(total, rate));
+        let end_s = end.map_or(f64::INFINITY, |e| e as f64 / rate);
         if !r.started {
-            let ready = r.line.fill(0.0).is_some_and(|f| f >= START_S.min(end));
+            let ready = r.line.fill(0.0).is_some_and(|f| f >= START_S.min(end_s));
             if !ready {
                 out.fill(0.0);
                 return;
@@ -397,16 +417,15 @@ impl Session {
             r.started = true;
             sh.state.store(PS_PLAYING, Ordering::Release);
         }
-        let rate = sh.output_rate;
         sh.anchor.write(dsp, r.frames as f64 / rate, r.frames);
         let mut gain = None;
         let mut stalled = false;
         for (k, frame) in out.chunks_exact_mut(channels).enumerate() {
-            let t = (r.frames + k as u64) as f64 / rate;
-            let (left, right) = match r.line.at(t) {
+            let n = r.frames + k as u64;
+            let (left, right) = match r.line.at(n as f64 / rate) {
                 Read::Frame(left, right) => (left, right),
                 // (The source's last frame has nothing after it to interpolate to.)
-                Read::After if t * SR + 1.0 < total as f64 => {
+                Read::After if end.is_none_or(|e| n + 1 < e) => {
                     stalled = true;
                     (0.0, 0.0)
                 }
@@ -432,7 +451,7 @@ impl Session {
         if stalled {
             sh.stalls.fetch_add(1, Ordering::Relaxed);
         }
-        if song >= end {
+        if song >= end_s {
             sh.state.store(PS_ENDED, Ordering::Release);
         }
     }
@@ -446,7 +465,7 @@ impl Session {
             anchor_song,
             anchor_frames: anchor_frames as i64,
             output_latency: sh.output_latency,
-            buffered: sh.written.load(Ordering::Acquire) as f64 / SR - song,
+            buffered: sh.written.load(Ordering::Acquire) as f64 / sh.output_rate - song,
             analysed: sh.analysed.load(Ordering::Acquire) as f64 / SR,
             stalls: sh.stalls.load(Ordering::Relaxed) as i32,
             state: sh.state.load(Ordering::Acquire),
@@ -476,19 +495,20 @@ fn guarded(shared: &Shared, f: impl FnOnce() -> Result<(), String>) {
     }
 }
 
-/// The player: each track's gap and stereo frames into the delay line, at most `M` past the
-/// render position.
+/// The player: each track's gap and stereo frames into the delay line (at the output rate), at
+/// most `M` past the render position.
 fn play(sh: &Shared, parts: Receiver<Part>, mut writer: Writer) {
+    let rate = sh.output_rate;
     let mut frame = 0u64;
     let silence = [0.0f32; 2 * CHUNK];
     let mut write = |samples: &[f32]| {
         for chunk in samples.chunks(2 * CHUNK) {
             let frames = chunk.len() / 2;
             loop {
-                if !sh.wait_for_render((frame + frames as u64) as f64 / SR) {
+                if !sh.wait_for_render((frame + frames as u64) as f64 / rate) {
                     return false;
                 }
-                let written = writer.write(frame, frames, frame as f64 / SR, |a, b| {
+                let written = writer.write(frame, frames, frame as f64 / rate, |a, b| {
                     a.copy_from_slice(&chunk[..a.len()]);
                     b.copy_from_slice(&chunk[a.len()..]);
                 });

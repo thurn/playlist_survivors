@@ -1,14 +1,16 @@
 //! A File source's tracks: an audio file, or an M3U playlist whose `#PS-GAP` lines set the
-//! silence before each track (`stream::playlist`), decoded by macOS's `afconvert` at the
-//! analyzer's 44.1 kHz. The analyzer hears the mono decode `ps entries` uses, so the plugin's
-//! entries are its dump's; the music plays from a stereo decode of the same file.
+//! silence before each track (`stream::playlist`), decoded by macOS's `afconvert`. The analyzer
+//! hears the 44.1 kHz mono decode `ps entries` uses, so the plugin's entries are its dump's; the
+//! music plays from a stereo decode at the output rate, so it is resampled once, by macOS's
+//! resampler: the delay line's linear interpolation would dull the treble and alias it (a 15 kHz
+//! tone at 44.1 → 48 kHz loses 3 dB and gains a spur 11 dB down at 18.9 kHz).
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use stream::playlist::{Playlist, Track, is_playlist};
 
-/// The analyzer's sample rate, and the decoded music's.
+/// The analyzer's sample rate.
 pub const SR: f64 = 44_100.0;
 
 /// The tracks of `source`: a playlist's, or the file alone. Each must exist.
@@ -32,21 +34,20 @@ pub fn gap_frames(track: &Track) -> usize {
     (track.gap_before * SR).round() as usize
 }
 
-/// A track decoded: the analyzer's mono samples and the music's interleaved stereo frames, as
-/// many of each.
+/// A track decoded: the analyzer's mono samples at [`SR`], and the music's interleaved stereo
+/// frames at the output rate.
 pub struct Decoded {
     pub mono: Vec<f32>,
     pub stereo: Vec<f32>,
 }
 
-pub fn decode(path: &Path) -> Result<Decoded, String> {
-    let mono = convert(path, 1)?;
-    let mut stereo = convert(path, 2)?;
+/// Decodes `path` for the analyzer, and for the music at `rate`.
+pub fn decode(path: &Path, rate: f64) -> Result<Decoded, String> {
+    let mono = convert(path, 1, SR)?;
     if mono.is_empty() {
         return Err(format!("empty audio: {}", path.display()));
     }
-    // (One timeline for both: the stereo decode is cut or padded to the mono's length.)
-    stereo.resize(2 * mono.len(), 0.0);
+    let stereo = convert(path, 2, rate)?;
     Ok(Decoded { mono, stereo })
 }
 
@@ -77,8 +78,8 @@ impl Drop for Temp {
     }
 }
 
-/// `path` as float samples at 44.1 kHz with `channels` channels, interleaved.
-fn convert(path: &Path, channels: u32) -> Result<Vec<f32>, String> {
+/// `path` as float samples at `rate` with `channels` channels, interleaved.
+fn convert(path: &Path, channels: u32, rate: f64) -> Result<Vec<f32>, String> {
     let temp = Temp::new()?;
     let wav = temp.0.join("decoded.wav");
     let out = std::process::Command::new("/usr/bin/afconvert")
@@ -86,7 +87,7 @@ fn convert(path: &Path, channels: u32) -> Result<Vec<f32>, String> {
             "-f",
             "WAVE",
             "-d",
-            "LEF32@44100",
+            &format!("LEF32@{rate}"),
             "-c",
             &channels.to_string(),
         ])

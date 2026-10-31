@@ -3,6 +3,7 @@
 
 use std::ffi::CString;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use ps_plugin::decode::SR;
 use ps_plugin::{Config, Entry, PS_OK, PS_SOURCE_FILE, Session, Status};
@@ -47,12 +48,19 @@ pub fn status(s: *mut Session) -> Status {
 /// Waits until the player has written the music of the next buffer (`seconds` long, from song
 /// time `next`) of a source `total` s long: the tests render faster than real time.
 pub fn wait_for_music(s: *mut Session, next: f64, seconds: f64, total: f64) {
-    // (Its last frame interpolates to the source frame after it, hence a margin of two; a ulp's
-    // slack, since at the source's end the two sides of the comparison are equal.)
+    // (Its last frame interpolates to the frame after it, hence a margin of two less one of
+    // slack: at the source's end the music stops at an output frame, within one of `total`.)
     let want = (seconds + 2.0 / SR).min(total - next);
-    while status(s).buffered + 1e-9 < want {
+    let started = Instant::now();
+    while status(s).buffered + 1.0 / SR < want {
+        hang_guard(started, "the music never arrived");
         std::thread::yield_now();
     }
+}
+
+/// Fails a wait that has run far longer than any loaded machine needs (a hang, not a slow run).
+pub fn hang_guard(started: Instant, what: &str) {
+    assert!(started.elapsed() < Duration::from_secs(120), "{what}");
 }
 
 pub fn last_error() -> String {

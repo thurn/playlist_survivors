@@ -52,7 +52,7 @@ fn rendering_allocates_nothing() {
     const FRAMES: usize = 256;
     const RATE: f64 = 48_000.0;
     let song = native().join("../public/reactive/house-128/house-128.ogg");
-    let total = ps_plugin::decode::decode(&song).unwrap().mono.len() as f64 / SR;
+    let total = ps_plugin::decode::decode(&song, RATE).unwrap().mono.len() as f64 / SR;
     let s = open(&song, RATE, None).unwrap();
     let mut out = vec![0.0f32; 2 * FRAMES];
     let mut buffers = 0u64;

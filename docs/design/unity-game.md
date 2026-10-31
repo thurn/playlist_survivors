@@ -443,13 +443,20 @@ entry kind with its `v` slots (`analysis::flat`'s table). Decisions:
   stream latency, without Unity's buffering), how far the music is buffered
   and analysed, stalls, the state (waiting, playing, ended), the mute (0 for
   File), whether the analysis is done, a failure flag and the follower gain.
-- A File source's threads: a decoder (`afconvert`, at 44.1 kHz: the mono
-  decode `ps entries` uses for the analyzer, a stereo one for the music, a
-  track ahead), a player that fills native's delay line to `M` past the
-  render position, and the analyzer (with its hindsight worker), fed in
+- A File source's threads: a decoder (`afconvert`, a track ahead: the
+  44.1 kHz mono decode `ps entries` uses for the analyzer, and a stereo one
+  at the output rate for the music), a player that fills native's delay line
+  to `M` past the render position, and the analyzer (with its hindsight
+  worker), fed in
   `ps entries`' 4096-sample blocks up to `M` past the render position. So a
   File run's records are byte for byte the dump's
   (`crates/plugin/tests/c_interface.rs`).
+- The music is resampled once, by macOS's resampler as it decodes, so the
+  delay line reads whole frames. Its linear interpolation from 44.1 kHz
+  would dull the treble and alias it: a 15 kHz tone at 48 kHz loses 3 dB
+  and gains a spur 11 dB down. Each track starts where the analyzer's
+  timeline puts it, rounded to an output frame, so the music and the
+  analysis never drift apart over a playlist.
 - `ps_render_music` starts the music once 0.25 s is buffered. From then on
   song time advances by exactly the frames rendered. A buffer the line can't
   fill plays silence and counts as a stall. It takes no lock and allocates
