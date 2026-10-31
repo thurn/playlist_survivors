@@ -45,6 +45,7 @@ namespace PS.Choreography
             {
                 Check("cuts on the grid", CutOnTheGrid(s, tl)),
                 Check("opening blows", OpeningBlow(s, tl)),
+                Check("the hero moves continuously", HeroMovesContinuously(s, tl)),
                 Check("impacts on the grid", ImpactsOnTheGrid(s, tl)),
                 Check("the hero acts every beat", HeroActsEveryBeat(trailer, s, tl)),
                 Check("one hit kills", OneHitKills(s, tl)),
@@ -75,6 +76,20 @@ namespace PS.Choreography
             if (double.IsNaN(at)) { problems.Add(Where(s, s.Cut) + "no anchor for the opening blow"); return problems; }
             foreach (ActionEvent a in tl.ActionsOf(0)) if (a.Kind == ActionKind.Attack && Math.Abs(a.Impact - at) <= Eps) return problems;
             problems.Add(Where(s, at) + "no hero blow lands on the " + (s.Number > 1 ? "cut" : "first anchor"));
+            return problems;
+        }
+
+        /// <summary>The hero never jumps: each of its motion segments starts where the hero stands as it begins (within 5 cm).</summary>
+        public static List<string> HeroMovesContinuously(TrailerShot s, Timeline tl)
+        {
+            var problems = new List<string>();
+            ArraySegment<MotionSegment> segs = tl.SegmentsOf(0);
+            for (int i = 1; i < segs.Count; i++)
+            {
+                MotionSegment prev = segs.Array[segs.Offset + i - 1], seg = segs.Array[segs.Offset + i];
+                float jump = Vector2.Distance(prev.PositionAt(seg.T0), seg.From);
+                if (jump > 0.05f && problems.Count < 20) problems.Add(Where(s, seg.T0) + "the hero jumps " + jump.ToString("F2", CultureInfo.InvariantCulture) + " m");
+            }
             return problems;
         }
 

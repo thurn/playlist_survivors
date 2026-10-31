@@ -230,13 +230,21 @@ namespace PS.Choreography
         static void ValidateEntries(TrailerShot s, Trailer tr, SongMap map, BeatGrid grid)
         {
             string what = "shot " + s.Number;
-            // As the run resolves them: anchors from the cut on (the first shot's, from its pre-roll's start).
+            // As the run resolves them: anchors from the cut on (the first shot's, from its pre-roll's start, which
+            // therefore may hold none), counted afresh for the combo and for the spells.
             double anchorsFrom = s.Number > 1 ? s.Cut : s.SpanFrom;
-            int anchors = 0;
+            int inShot = 0;
             foreach (SongSection sec in map.Sections)
                 if (sec.Feel == SectionFeel.Free)
-                    foreach (TimedStrength a in sec.Anchors) if (a.Time >= anchorsFrom - 1e-9 && a.Time <= s.End + 1e-9) anchors++;
+                    foreach (TimedStrength a in sec.Anchors)
+                    {
+                        if (a.Time >= anchorsFrom - 1e-9 && a.Time <= s.End + 1e-9) inShot++;
+                        if (s.Number == 1 && a.Time >= s.SpanFrom - 1e-9 && a.Time < s.Cut - 1e-9)
+                            throw new FormatException(what + ": its pre-roll covers an anchor (at " + a.Time.ToString(System.Globalization.CultureInfo.InvariantCulture) + " s): shorten prerollBeats");
+                    }
             foreach (string[] list in new[] { s.Combo, s.Spells })
+            {
+                int anchors = inShot;
                 foreach (string text in list)
                 {
                     GridEntry e;
@@ -262,6 +270,7 @@ namespace PS.Choreography
                             break;
                     }
                 }
+            }
         }
 
         /// <summary>The final slam's position: the downbeat of the cut to black's bar.</summary>

@@ -533,6 +533,7 @@ namespace PS.Choreography
                 ls.SpanToS = span[1].AsDouble();
             }
             if (!(ls.ShapeScale >= 0) || !(ls.ViewWidthToM >= 0)) throw new FormatException("level script: shapeScale and viewWidthToM must not be negative");
+            if (ls.ViewWidthToM > 0 && double.IsNaN(ls.SpanFromS)) throw new FormatException("level script: viewWidthToM eases across a span, so it needs spanS");
             foreach (KeyValuePair<string, JsonValue> kv in root["loads"].Type == JsonType.Object ? root["loads"].Members : new List<KeyValuePair<string, JsonValue>>())
                 ls.Loads[kv.Key] = LoadPreset.Parse(kv.Key, kv.Value);
             JsonValue secs = root["sections"];

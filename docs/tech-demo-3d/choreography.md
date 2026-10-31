@@ -410,7 +410,8 @@ included).
 | `duel` | none | A fixed cast by type and count, with no refill and no opening horde. Its k-th member meets the k-th fixed combo entry: it starts a third of a turn from the last, as far out as it walks by that blow, so it arrives just inside its reach then. |
 
 The combo and spell grid gains the trailer's positions: `cut`, `final`,
-`anchor` (the next unused anchor of a free section, from the cut on) and an
+`anchor` (the next unused anchor of a free section, from the cut on, or the
+span's start without one; the combo and the spells each count afresh) and an
 explicit bar.beat such as `82.3`. Each fires on one grid point, resolved
 before the run, and outranks the song's positions: final, then cut, then a
 bar.beat, then anchor, phrase, downbeat, accent and beat. No other blow

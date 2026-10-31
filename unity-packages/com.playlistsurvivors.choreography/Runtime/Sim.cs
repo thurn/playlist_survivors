@@ -947,7 +947,7 @@ namespace PS.Choreography
                 {
                     // A moving strike: the blow faces along the path, and the beat's stride (HeroDecide's) carries the hero on.
                     dir = PathHeading(from);
-                    to = from;
+                    to = from;   // unused: a kiting hero's blows lay no motion
                 }
                 else if (shot.HoldGround)
                 {
@@ -972,14 +972,17 @@ namespace PS.Choreography
                 }
                 float fTo = Easing.Unwrap(fFrom, Easing.Yaw(dir));
                 // A stepping hero without root motion steps with the blow, on its beat; otherwise it moves over the clip.
-                if (heroStepS > 0 && clip.RootMotionM <= 0)
+                // A kiting hero's motion is its beats' strides alone (already facing along the path): a blow scheduled a
+                // decision ahead would otherwise lay a segment from before the next stride over it.
+                if (shot.Path == null)
                 {
-                    // The turn waits for a stride still under way (a kiting hero's), so the hero never jumps to its end.
-                    double turn = shot.Path != null ? Math.Min(p.Time, Math.Max(start, segs[heroSegs[heroSegs.Count - 1]].T1)) : start;
-                    AddHeroSeg(new MotionSegment(0, turn, p.Time, from, from, fFrom, fTo, Ease.Linear));
-                    AddHeroSeg(new MotionSegment(0, p.Time, p.Time + heroStepS, from, to, fTo, fTo, Ease.Pulse));
+                    if (heroStepS > 0 && clip.RootMotionM <= 0)
+                    {
+                        AddHeroSeg(new MotionSegment(0, start, p.Time, from, from, fFrom, fTo, Ease.Linear));
+                        AddHeroSeg(new MotionSegment(0, p.Time, p.Time + heroStepS, from, to, fTo, fTo, Ease.Pulse));
+                    }
+                    else AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, fTo, Ease.Linear));
                 }
-                else AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, fTo, Ease.Linear));
                 Push(new Impact
                 {
                     Time = p.Time, Kind = ImpactKind.HeroCombo, Entity = 0, Target = -1, Clip = mv.Clip, Move = mv,
@@ -1829,6 +1832,7 @@ namespace PS.Choreography
                     {
                         GridPoint g = grid.Points[gi];
                         if ((g.Flags & GridFlags.Eighth) == 0) continue;
+                        if (g.Time >= shot.Final - 1e-6 || (shot.HasSpan && g.Time > shot.SpanTo + 1e-6)) break;   // nothing else on the final slam's beat
                         float yaw = yaw0 + (float)(2 * Math.PI * (g.Time - p.Time) / dur);
                         Push(new Impact { Time = g.Time, Kind = ImpactKind.LaserTick, Entity = 0, Target = -1, Move = mv, Yaw = yaw, Strength = 0.2f });
                     }
