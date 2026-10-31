@@ -265,6 +265,24 @@ namespace PS.Game.Sim.Tests
             Assert.IsFalse(Drive.Events(sim, SimEventKind.Attack).Any(e => e.T > finale.T + Eps), "the hero holds");
         }
 
+        [Test]
+        public void TheFinaleCommandBlastsOnTheNextDownbeatAndTheVictoryCardFollows()
+        {
+            var config = HordeFixture.Config(minimum: 0, roster: new string[0], heroStands: true);
+            var sim = Start(config, Known(new FixtureSong(3).Beats(0, 60, 120)));
+            sim.StepTo(20.03);
+            double clock = sim.State.RunClock;
+            sim.Command(DebugCommand.Finale);
+            Assert.AreEqual(RunPhase.Finale, sim.State.Phase);
+            sim.StepTo(40);
+            var finale = Drive.Events(sim, SimEventKind.Finale).Single().AsFinale;
+            Assert.AreEqual(Beats(sim).First(b => b.T >= 20.03 && b.Downbeat).T, finale.T, Eps);
+            var end = Drive.Events(sim, SimEventKind.RunEnd).Single().AsRunEnd;
+            Assert.AreEqual(RunEnd.Victory, end.Why);
+            Assert.AreEqual(finale.T + HordeFixture.Content.Schedule.Finale.VictoryCardS, end.T, Eps);
+            Assert.AreEqual(clock, sim.State.RunClock, Eps, "the run clock stops where the command found it");
+        }
+
         // ---------------------------------------------------------------- ends
 
         [TestCase(RunControl.Quit, RunEnd.Quit)]

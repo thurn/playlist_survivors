@@ -26,6 +26,8 @@ namespace PS.Game.Sim
         FlowerWall = 10,
         /// <summary>The signature minotaur lands on the next reliable main beat, unless it is on the field.</summary>
         Minotaur = 11,
+        /// <summary>The finale now, whatever the run clock: its blast lands on the next downbeat and the victory card follows (<see cref="RunRules.ForceFinale"/>).</summary>
+        Finale = 12,
     }
 
     /// <summary>A debug command as the sim recorded it: a replay gives it at <see cref="Effective"/>.</summary>

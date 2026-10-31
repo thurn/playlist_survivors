@@ -235,6 +235,17 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
+        /// The finale at <paramref name="t"/> while the run plays, the run clock stopping where it
+        /// is: the blast waits for the next downbeat, as at 30:00 (the debug surfaces' finale).
+        /// </summary>
+        public void ForceFinale(double t)
+        {
+            if (state.Phase != RunPhase.Playing) return;
+            Account(t);
+            state.Phase = RunPhase.Finale;
+        }
+
+        /// <summary>
         /// Beat <paramref name="i"/> fires at <paramref name="t"/> (its bar and the beat's state
         /// already in <see cref="SimState"/>), before the systems that act on it: the start, the
         /// music's lock and resume, a resume, and the finale's blast land here.
