@@ -15,7 +15,8 @@ captures/game/spike/NAME/. Then it measures, from that mix alone:
 - **frame to heard**: each frame's frameSong against the song heard at its light, with the audio
   thread's buffer times (a centred linear fit) as the DSP clock's truth.
 
-The numbers go to game/evidence/spike/NAME.json (never audio), or game/evidence/DIR/NAME.json with
+A run whose player logs a managed exception fails, whatever it measured. The numbers go to
+game/evidence/spike/NAME.json (never audio), or game/evidence/DIR/NAME.json with
 `--evidence DIR`. The source is an audio file or an M3U playlist (`--repeat N` plays the file N
 times as one, with the playlist's 2 s gaps).
 
@@ -30,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import shlex
 import shutil
 import subprocess
@@ -48,6 +50,9 @@ STEP_S = 10.0
 SEARCH = 4096        # lag search either side of the anchor's lag (frames)
 CLICK_THRESHOLD = 0.2
 CLICK_REFRACTORY_S = 0.05
+# A scheduled click this close to another merges with it in the mix: measured only when they coincide.
+CLICK_COINCIDENT_S = 0.001
+CLICK_APART_S = 0.06
 ANALYZER_RATE = 44_100
 FRAME_TOLERANCE_MS = 1.0  # frame to heard's median
 
@@ -100,7 +105,10 @@ def cmd_spike(a: argparse.Namespace) -> int:
                               stdout=subprocess.DEVNULL).returncode
         print(f"spike: the player exited {code} after {time.monotonic() - started:.1f} s "
               f"(log {captures / 'player.log'})")
-        if code != 0 or not (captures / "spike.json").exists():
+        thrown = exceptions(captures / "player.log")
+        for line in thrown[:5]:
+            print(f"spike: the player threw: {line}", file=sys.stderr)
+        if code != 0 or thrown or not (captures / "spike.json").exists():
             return 1
     report = json.loads((captures / "spike.json").read_text())
     mix = read_wav(captures / "mix.wav")
@@ -118,6 +126,15 @@ def cmd_spike(a: argparse.Namespace) -> int:
     evidence.write_text(json.dumps(summary, indent=2) + "\n")
     print(f"spike: -> {evidence.relative_to(wt.root)}")
     return 0 if summary["ok"] else 1
+
+
+def exceptions(log: Path) -> list[str]:
+    """The managed exceptions a player's log reports (Unity logs each as `SomeException: message`)."""
+    try:
+        text = log.read_text(errors="replace")
+    except OSError:
+        return []
+    return [line.strip() for line in text.splitlines() if re.match(r"\s*[\w.]*Exception: ", line)]
 
 
 def read_wav(path: Path) -> np.ndarray:
@@ -260,9 +277,18 @@ def measure(report: dict, mix: np.ndarray, ref: np.ndarray) -> dict:
             onsets.append(int(i))
     onset = np.array(onsets, dtype=float)
 
-    # The scheduled clicks the capture holds whole (a run's last may be cut off as it quits).
-    scheduled = [(s, d) for s, d in zip(report["clickSong"], report["clickDsp"])
-                 if not math.isnan(d) and (d - start_dsp) * rate < len(mono) - 0.05 * rate]
+    # The scheduled clicks the capture holds whole (a run's last may be cut off as it quits), apart
+    # from the rest: two clicks a few ms apart are one onset in the mix, which can't say which it is.
+    # Coincident ones share their onset, so they still count.
+    held = [(s, d) for s, d in zip(report["clickSong"], report["clickDsp"])
+            if not math.isnan(d) and (d - start_dsp) * rate < len(mono) - 0.05 * rate]
+    dsps = np.sort(np.array([d for _, d in held]))
+
+    def apart(d: float) -> bool:
+        near = np.abs(dsps - d)
+        return not np.any((near > CLICK_COINCIDENT_S) & (near < CLICK_APART_S))
+
+    scheduled = [(s, d) for s, d in held if apart(d)]
     beats = np.array([s for s, _ in scheduled])
     # Each click's onset: the residual's onset nearest where its schedule puts it.
     expect = (np.array([d for _, d in scheduled]) - start_dsp) * rate
@@ -325,7 +351,8 @@ def measure(report: dict, mix: np.ndarray, ref: np.ndarray) -> dict:
         "stalls": report["stalls"],
         "capture_gaps": report["gaps"],
         "error": report["error"],
-        "clicks_scheduled": len(beats),
+        "clicks_scheduled": len(held),
+        "clicks_apart": len(beats),
         "clicks_dropped": int(sum(1 for d in report["clickDsp"] if math.isnan(d))),
         "clicks_found": len(offsets_a),
         "music_lag_frames": {"anchor": guess, "median": lag, "min": int(lag_values.min()),
@@ -355,7 +382,7 @@ def table(s: dict) -> str:
             out.append(f"| {name} | 0 | | | | | |")
     lag = s["music_lag_frames"]
     out.append(f"\n{s['seconds']:.0f} s at {s['output_rate']} Hz, DSP buffer {s['dsp_buffer'][0]} x {s['dsp_buffer'][1]}; "
-               f"clicks {s['clicks_found']}/{s['clicks_scheduled']} found ({s['clicks_dropped']} dropped); "
+               f"clicks {s['clicks_found']}/{s['clicks_apart']} apart found, of {s['clicks_scheduled']} ({s['clicks_dropped']} dropped); "
                f"drift {s['drift_ms_per_min']:+.4f} ms/min; music lag {lag['min']}..{lag['max']} over "
                f"{lag['windows']} windows (anchor {lag['anchor']}); gain {s['music_gain']:.4f}; "
                f"stalls {s['stalls']}, capture gaps {s['capture_gaps']}; output latency "

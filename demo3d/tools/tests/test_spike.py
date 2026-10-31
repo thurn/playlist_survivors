@@ -53,6 +53,28 @@ def test_clicks_on_the_beat_measure_zero_with_no_drift() -> None:
     assert s["music_lag_frames"]["min"] == s["music_lag_frames"]["max"] == 3000
 
 
+def test_clicks_a_few_ms_apart_are_left_out_and_coincident_ones_share_their_onset() -> None:
+    # The game's sounds: on every fourth beat a second sound 20 ms later, which merges with the
+    # first in the mix; on every fifth, a second on the same sample.
+    report, mix, ref = synthetic([0.0])
+    lead = report["anchorDsp"]
+    beats = list(report["clickSong"])
+    close = [b + 0.02 for b in beats[::4]]
+    for b in close:
+        at = 3000 + round(b * RATE)
+        mix[at:at + 100] += 0.6 * np.cos(2 * np.pi * 2000 * np.arange(100) / RATE)[:, None]
+    same = beats[::5]
+    report["clickSong"] = beats + close + same
+    report["clickDsp"] = [lead + b for b in report["clickSong"]]
+    s = spike.measure(report, mix, ref)
+    assert s["ok"], s
+    assert s["clicks_scheduled"] == len(beats) + len(close) + len(same)
+    apart = [b for b in beats if b not in beats[::4]]
+    assert s["clicks_apart"] == len(apart) + len([b for b in same if b in apart])
+    assert s["clicks_found"] == s["clicks_apart"]
+    assert abs(s["music_to_click_ms"]["median"]) < 0.03
+
+
 def test_late_clicks_and_a_misplaced_music_are_measured_against_the_music_itself() -> None:
     # The clicks sound 5 ms after their beats, though the report schedules them on the beats.
     report, mix, ref = synthetic([5.0, 5.0, 6.0])
@@ -83,3 +105,14 @@ def test_a_playlist_puts_each_track_where_the_analyzer_timeline_does(tmp_path: P
     on = np.nonzero(out[:, 0])[0]
     assert on[0] == 0 and out[48000, 0] == 0 and out[72000, 0] == 1 and out[96000, 0] == 0
     assert out[4 * 48000, 0] == 1 and on[-1] == 5 * 48000 - 1
+
+
+def test_a_players_exceptions_are_found_in_its_log(tmp_path: Path) -> None:
+    log = tmp_path / "player.log"
+    log.write_text("GameLoop: done\nNullReferenceException: Object reference not set\n"
+                   "  at Game.Client.Loop.GameLoop.Update ()\n"
+                   "ERROR: Shader Hidden/Universal Render Pipeline/FallbackError shader is not supported\n"
+                   "System.InvalidOperationException: the queue is empty\n")
+    assert spike.exceptions(log) == ["NullReferenceException: Object reference not set",
+                                     "System.InvalidOperationException: the queue is empty"]
+    assert spike.exceptions(tmp_path / "missing.log") == []

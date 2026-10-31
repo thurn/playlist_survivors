@@ -213,9 +213,11 @@ fi
 # tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
 # once game/dotnet/PS.Game.Sim.Tests exists; then, windowless in batch mode, the project set up from
 # this machine's vendor packs and cache (setup builds the music plugin into it), Unity's EditMode
-# tests, where a skip fails too, and a short batch-mode File run of a Mono player, measured from
-# Unity's own mix (`game spike`: clicks on the music within 2 ms, frameSong within 1 ms of the
-# audio thread's clock, no stalls). Unity's rewrites of ProjectSettings are discarded. A machine
+# tests, where a skip fails too, and a short batch-mode File run of a Mono player: the cinematic
+# slice's frame loop (its horde, sword and structures on house-128) with every scheduled sound a
+# click, measured from Unity's own mix (`game spike --sounds`: the sounds on the music within 2 ms,
+# so the music's anchor matches the mix, frameSong within 1 ms of the audio thread's clock, no
+# stalls, no exception in the player's log). Unity's rewrites of ProjectSettings are discarded. A machine
 # without the packs, or off macOS (the plugin builds only there until M5, ps-msz.9), skips the
 # Unity half, saying so.
 if [ "$section" = game ]; then
@@ -236,6 +238,6 @@ if [ "$section" = game ]; then
     uv run --quiet --project demo3d/tools game setup
     uv run --quiet --project demo3d/tools game test --no-skips
     uv run --quiet --project demo3d/tools game spike ci --file public/reactive/house-128/house-128.ogg \
-      --seconds 15 --backend mono --build --no-evidence
+      --sounds --seconds 30 --backend mono --build --no-evidence
   ) fi
 fi
