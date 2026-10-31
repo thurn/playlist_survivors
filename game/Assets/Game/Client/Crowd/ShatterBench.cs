@@ -256,7 +256,7 @@ namespace Game.Client.Crowd
                           $"GPU markers seed {Ms(Pct(s.SeedGpuMs, 0.5))} ms ({s.SeedGpuMs.Count}), integrate {Ms(Pct(s.IntegrateGpuMs, 0.5))} ms ({s.IntegrateGpuMs.Count})");
             }
             json.Append("  ]\n}\n");
-            File.WriteAllText(Args.Path(_out), json.ToString());
+            File.WriteAllText(_out, json.ToString());
         }
 
         static string Ms(double ms) => ms.ToString("F3", CultureInfo.InvariantCulture);

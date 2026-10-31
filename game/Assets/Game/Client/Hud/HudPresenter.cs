@@ -81,7 +81,7 @@ namespace Game.Client.Hud
             _slots = new SlotsView(root.Q("weapons"), root.Q("passives"), content);
             _track = new BeatTrack(root.Q("track"));
             _cards = new LevelUpCards(root.Q("cards-layer"), content);
-            _chest = new ChestCards(root.Q("chest-layer"), content, Args.Get("--chest-preview"));
+            _chest = new ChestCards(root.Q("chest-layer"), content, LaunchOptions.Current.ChestPreview);
             _end = new EndCard(root.Q("end-layer"), content);
             _numbers = new DamageNumbers(root.Q("numbers"), camera);
             _gem = new BeatGem(camera);

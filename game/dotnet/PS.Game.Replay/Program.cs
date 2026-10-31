@@ -39,8 +39,8 @@ static class Program
             return 1;
         }
         var level = GameContent.Load(content);
-        var arena = record.Arena ? ArenaData.Parse(File.ReadAllText(Path.Combine(content, "arena.json")), "arena.json") : null;
-        var sim = new Simulation(record.Config(level, arena));
+        var arena = record.Run.Arena ? ArenaData.Parse(File.ReadAllText(Path.Combine(content, "arena.json")), "arena.json") : null;
+        var sim = new Simulation(record.Run.Build(level, arena));
         replay.StepTo(sim, double.PositiveInfinity);
 
         bool matches = replay.Matches(sim);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using PS.Game.Sim.Level;
 
@@ -30,13 +31,13 @@ namespace PS.Game.Sim.Tests
         [TearDown]
         public void RemoveFolder() => Directory.Delete(dir, recursive: true);
 
-        /// <summary>The slice's level, started on a key, as a windowed run starts.</summary>
-        static SimConfig Config(ulong seed = 3)
+        /// <summary>The slice's level on the game's arena, started on a key, as a windowed run starts.</summary>
+        static RunInputs Inputs(ulong seed = 3) => new RunInputs
         {
-            var config = SliceLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint, seed);
-            config.Start = RunStart.OnKey;
-            return config;
-        }
+            Seed = seed, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Start = RunStart.OnKey, HeroStands = true,
+        };
+
+        static SimConfig Build(RunInputs run) => run.Build(HordeFixture.Content, HordeFixture.GameArena());
 
         /// <summary>The plugin's record of house-128's first 20 s: the dump's lines, without its header.</summary>
         void RecordEntries()
@@ -99,7 +100,7 @@ namespace PS.Game.Sim.Tests
             var record = SessionRecord.Read(dir);
             replay = new SessionReplay(record);
             foreach (var e in SessionRecord.LoadEntries(dir)) replay.Supply(e);
-            var sim = new Simulation(record.Config(HordeFixture.Content, HordeFixture.GameArena()));
+            var sim = new Simulation(Build(record.Run));
             Assert.IsTrue(replay.StepTo(sim, double.PositiveInfinity), "every entry supplied");
             return sim;
         }
@@ -109,9 +110,9 @@ namespace PS.Game.Sim.Tests
         {
             RecordEntries();
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var config = Config();
-            var live = Live(config, entries, duration, 1.0 / 60);
-            var written = SessionRecord.Of(config, live);
+            var run = Inputs();
+            var live = Live(Build(run), entries, duration, 1.0 / 60);
+            var written = SessionRecord.Of(run, live);
             written.Flags = new[] { "--file", "house-128.ogg" };
             written.Write(dir);
             Assert.Greater(Drive.Events(live, SimEventKind.Death).Count, 20, "a run with a horde to kill");
@@ -126,10 +127,10 @@ namespace PS.Game.Sim.Tests
             CollectionAssert.AreEqual(live.EventsSince(0).ToArray(), sim.EventsSince(0).ToArray());
             CollectionAssert.AreEqual(live.Stream.Accepted.ToArray(), sim.Stream.Accepted.ToArray(), "the replay takes each entry as the run did");
             var record = replay.Record;
-            Assert.AreEqual(SessionLevel.Slice, record.Level);
-            Assert.AreEqual(RunStart.OnKey, record.Start);
-            Assert.IsTrue(record.Arena);
-            CollectionAssert.AreEqual(Footprint, record.Footprint);
+            Assert.AreEqual(SessionLevel.Slice, record.Run.Level);
+            Assert.AreEqual(RunStart.OnKey, record.Run.Start);
+            Assert.IsTrue(record.Run.Arena);
+            CollectionAssert.AreEqual(Footprint, record.Run.Footprint);
             CollectionAssert.AreEqual(new[] { "--file", "house-128.ogg" }, record.Flags);
             Assert.AreEqual(SessionRecord.CurrentRuntime, record.Runtime);
             StringAssert.Contains($"\"hash\": \"{live.Hash:X16}\"", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
@@ -141,25 +142,26 @@ namespace PS.Game.Sim.Tests
             RecordEntries();
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
             var content = HordeFixture.Content;
-            var config = RunLevel.Config(content, HordeFixture.GameArena(), Footprint, 7);
-            config.Start = RunStart.OnKey;
-            config.StartMinute = 25;
+            var run = new RunInputs
+            {
+                Seed = 7, Level = SessionLevel.Run, Arena = true, Footprint = Footprint, Start = RunStart.OnKey, StartMinute = 25,
+            };
             var debug = new[]
             {
                 (3.0, DebugCommand.Invulnerable, 1), (4.0, DebugCommand.SpawnRole, content.RoleIndex("werewolf")),
                 (5.0, DebugCommand.GrantEvolution, content.WeaponIndex("holy-wand")), (6.0, DebugCommand.SpawnBoss, content.RoleIndex("boss-xlmummy")),
                 (9.0, DebugCommand.GrantPassive, content.PassiveIndex("spinach")), (12.0, DebugCommand.JumpClock, 1620),
             };
-            var live = Live(config, entries, duration, 1.0 / 60, debug: debug);
-            SessionRecord.Of(config, live).Write(dir);
+            var live = Live(Build(run), entries, duration, 1.0 / 60, debug: debug);
+            SessionRecord.Of(run, live).Write(dir);
             Assert.Greater(live.State.RunClock, 1620, "the jump");
             Assert.IsTrue(live.State.Hero.Invulnerable);
 
             var sim = Replay(out var replay);
             Assert.AreEqual(live.Hash, sim.Hash, "replayed to its hash");
             var record = replay.Record;
-            Assert.AreEqual(SessionLevel.Run, record.Level);
-            Assert.AreEqual(25, record.StartMinute);
+            Assert.AreEqual(SessionLevel.Run, record.Run.Level);
+            Assert.AreEqual(25, record.Run.StartMinute);
             CollectionAssert.AreEqual(debug.Select(d => (d.Item2, d.Item3)), record.Commands.Select(c => (c.Command, c.Arg)));
             StringAssert.Contains("\"startMinute\": 25", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
         }
@@ -169,11 +171,12 @@ namespace PS.Game.Sim.Tests
         {
             RecordEntries();
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var config = Config(seed: 5);
+            var run = Inputs(seed: 5);
+            var config = Build(run);
             // An analyzer stall: nothing arrives from 6 to 8 s, then the backlog at once. At 240 frames a
             // second half the frames step no tick, so some entries are known at the very time they arrive.
             var live = Live(config, entries, duration, 1.0 / 240, stall: (6, 8));
-            SessionRecord.Of(config, live).Write(dir);
+            SessionRecord.Of(run, live).Write(dir);
             var accepted = live.Stream.Accepted.ToArray();
             int late = 0, atOnce = 0;
             for (int i = 0; i < accepted.Length; i++)
@@ -188,7 +191,7 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16}, recorded {live.Hash:X16}");
 
             // Known at stamp + B instead, as if there had been no stall, the run differs: the record is what keeps it.
-            var unstalled = new Simulation(config);
+            var unstalled = new Simulation(Build(run));
             foreach (var e in entries) unstalled.AddKnown(e, Math.Max(unstalled.Now, e.Stamp + B));
             var naive = new SessionReplay(new SessionRecord
             {
@@ -203,11 +206,11 @@ namespace PS.Game.Sim.Tests
         {
             RecordEntries();
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var config = Config();
-            SessionRecord.Of(config, Live(config, entries, duration, 1.0 / 60)).Write(dir);
+            var run = Inputs();
+            SessionRecord.Of(run, Live(Build(run), entries, duration, 1.0 / 60)).Write(dir);
             var record = SessionRecord.Read(dir);
             var replay = new SessionReplay(record);
-            var sim = new Simulation(record.Config(HordeFixture.Content, HordeFixture.GameArena()));
+            var sim = new Simulation(Build(record.Run));
             var all = SessionRecord.LoadEntries(dir);
             int half = record.Entries.Length / 2;
             for (int i = 0; i < half; i++) replay.Supply(all[i]);
@@ -220,16 +223,93 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void ASessionOfAnotherLevelIsRefused()
+        public void AnUnrecordableRunIsRefused()
         {
-            var config = HordeFixture.Config(sword: 1);
-            Assert.Throws<NotSupportedException>(() => SessionRecord.Of(config, new Simulation(config)));
-            var armed = SliceLevel.Config(HordeFixture.Content, null, Footprint, 1);
-            armed.Arsenal.Weapons = new[] { ("garlic", 8) };
-            Assert.Throws<NotSupportedException>(() => SessionRecord.Of(armed, new Simulation(armed)), "a player's --arsenal");
-            var cardless = SliceLevel.Config(HordeFixture.Content, null, Footprint, 1);
-            cardless.Arsenal.Cards = false;
-            Assert.Throws<NotSupportedException>(() => SessionRecord.Of(cardless, new Simulation(cardless)), "a player's --no-cards");
+            var run = Inputs();
+            run.Loadout = new[] { ("garlic", 8) };
+            var ex = Assert.Throws<NotSupportedException>(() => SessionRecord.Of(run, new Simulation(Build(run))));
+            StringAssert.Contains("--arsenal", ex.Message);
+            Assert.IsNull(run.On(baked: false, arena: true, Footprint).Unrecordable, "an open level has no arsenal to change");
+            run.Loadout = null;
+            run.NoCards = true;
+            Assert.AreEqual("--no-cards", run.Unrecordable);
+        }
+
+        /// <summary>
+        /// Every public <see cref="SimConfig"/> field, by where a run's comes from: its <see cref="RunInputs"/>, which a
+        /// session records, or the level, the content and fixed sizes, which a replay rebuilds as they were. A new field
+        /// goes in one of them, and a field a run sets goes in <see cref="RunInputs"/>, or a replay silently plays the
+        /// default.
+        /// </summary>
+        static readonly string[] FromInputs =
+        {
+            nameof(SimConfig.Seed), nameof(SimConfig.StartTime), nameof(SimConfig.StartMinute), nameof(SimConfig.Gate),
+            nameof(SimConfig.KnownAtBudget), nameof(SimConfig.Arena), nameof(SimConfig.Start), nameof(SimConfig.Easy),
+            nameof(SimConfig.HeroStands),
+        };
+        static readonly string[] FromLevelAndContent =
+        {
+            nameof(SimConfig.Content), nameof(SimConfig.Horde), nameof(SimConfig.Arsenal), nameof(SimConfig.TickCapacity),
+            nameof(SimConfig.BeatCapacity), nameof(SimConfig.EntryCapacity), nameof(SimConfig.EventCapacity), nameof(SimConfig.PressCapacity),
+        };
+
+        [Test]
+        public void EveryConfigFieldIsARecordedInputOrTheLevels()
+        {
+            var fields = typeof(SimConfig).GetFields(BindingFlags.Public | BindingFlags.Instance).Select(f => f.Name).ToArray();
+            CollectionAssert.IsEmpty(fields.Except(FromInputs).Except(FromLevelAndContent),
+                "classify each new SimConfig field: built from RunInputs (and recorded), or the level's and content's");
+            CollectionAssert.IsEmpty(FromInputs.Intersect(FromLevelAndContent));
+            CollectionAssert.IsEmpty(FromInputs.Concat(FromLevelAndContent).Except(fields), "a field that's gone");
+            Assert.IsEmpty(typeof(SimConfig).GetProperties(BindingFlags.Public | BindingFlags.Instance));
+
+            // Each input reaches the config: inputs unlike the defaults build a config unlike the default's.
+            var run = new RunInputs
+            {
+                Seed = 11, Level = SessionLevel.Run, Arena = true, Footprint = Footprint, Start = RunStart.AfterClearBeat,
+                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, HeroStands = true,
+            };
+            var config = Build(run);
+            var plain = new SimConfig();
+            foreach (var name in FromInputs)
+                Assert.AreNotEqual(typeof(SimConfig).GetField(name).GetValue(plain), typeof(SimConfig).GetField(name).GetValue(config), name);
+            Assert.AreSame(Footprint, config.Horde.CameraFootprint);
+        }
+
+        [Test]
+        public void RunInputsRoundTripFieldForField()
+        {
+            var levels = new[]
+            {
+                new RunInputs
+                {
+                    Seed = 9, Level = SessionLevel.Run, Arena = true, Footprint = RunLevel.GameFootprint, Start = RunStart.OnKey,
+                    StartTime = 1.5, StartMinute = 25, Gate = 0.25, KnownAtBudget = 0.75, Easy = true,
+                },
+                Inputs(seed: ulong.MaxValue),
+                new RunInputs { Seed = 2, Start = RunStart.AfterClearBeat },
+            };
+            var recorded = typeof(RunInputs).GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var run in levels)
+            {
+                var bytes = new MemoryStream();
+                using (var w = new BinaryWriter(bytes, System.Text.Encoding.UTF8, leaveOpen: true)) run.Write(w);
+                bytes.Position = 0;
+                var read = RunInputs.Read(new BinaryReader(bytes), 2, "test");
+                Assert.AreEqual(bytes.Length, bytes.Position, $"{run.Level}: all of it read");
+                foreach (var f in recorded)
+                {
+                    if (f.GetValue(run) is double[] xs) CollectionAssert.AreEqual(xs, (double[])f.GetValue(read), $"{run.Level} {f.Name}");
+                    else Assert.AreEqual(f.GetValue(run), f.GetValue(read), $"{run.Level} {f.Name}");
+                }
+
+                // The same run on the inputs read back: the same hash.
+                var entries = EntryDump.Load(EntryDump.House128, out _);
+                bool open = run.Level == SessionLevel.Open;
+                var a = Live(open ? run.Build(null, null) : Build(run), entries, 6, 1.0 / 60);
+                var b = Live(open ? read.Build(null, null) : Build(read), entries, 6, 1.0 / 60);
+                Assert.AreEqual(a.Hash, b.Hash, $"{run.Level}");
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using Game.Client.Calibration;
 using Game.Client.Loop;
 using Game.Client.Music;
@@ -8,7 +9,7 @@ using UnityEngine.SceneManagement;
 namespace Game.Client
 {
     /// <summary>
-    /// The boot scene's driver. Player flags:
+    /// The boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>):
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
     ///   quitting once the last is kept, each with its ID render under `--capture-mask`;
@@ -47,21 +48,26 @@ namespace Game.Client
 
         void Start()
         {
-            if (Args.Has("--fixed-time")) Time.captureFramerate = FixedFps;
-            _seconds = Args.GetFloat("--seconds", 0f);
-            var dir = Args.Get("--capture-stills");
-            if (dir != null) _stills = new Stills(_camera, dir, Args.Get("--stills-at", "0"), Args.Has("--capture-mask"));
-            int dspBuffer = Args.GetInt("--dsp-buffer", 0);
-            if (dspBuffer > 0)
+            LaunchOptions options;
+            try { options = LaunchOptions.Current; }
+            catch (ArgumentException e)
+            {
+                Debug.LogError("Boot: " + e.Message);
+                Application.Quit(1);
+                return;
+            }
+            if (options.FixedTime) Time.captureFramerate = FixedFps;
+            _seconds = options.Seconds;
+            if (options.StillsDir != null) _stills = new Stills(_camera, options.StillsDir, options.StillsAt, options.StillsMask);
+            if (options.DspBuffer > 0)
             {
                 var audio = AudioSettings.GetConfiguration();
-                audio.dspBufferSize = dspBuffer;
+                audio.dspBufferSize = options.DspBuffer;
                 AudioSettings.Reset(audio);
             }
-            var file = Args.Get("--file");
-            if (file != null && (Args.Has("--spike") || Args.Has("--spike-out"))) SyncSpike.Begin(gameObject, _camera, file, _seconds);
-            else if (Args.Has("--arena")) Arena.ArenaStage.Begin(gameObject, _camera);
-            else if (Args.Has("--shatter-bench")) Crowd.ShatterBench.Begin(gameObject, _camera, Args.Get("--shatter-bench"));
+            if (options.File != null && options.Spike) SyncSpike.Begin(gameObject, _camera, options.File, _seconds);
+            else if (options.ArenaStage) Arena.ArenaStage.Begin(gameObject, _camera);
+            else if (options.ShatterBench != null) Crowd.ShatterBench.Begin(gameObject, _camera, options.ShatterBench);
             else if (CalibrationScreen.Wanted is CalibrationScreen.Mode mode) CalibrationScreen.Begin(gameObject, mode, StartGame);
             else StartGame();
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
@@ -77,17 +83,15 @@ namespace Game.Client
                 Sessions.WatchNext = null;
                 return;
             }
-            var replay = Args.Get("--replay");
-            if (replay != null)
+            var options = LaunchOptions.Current;
+            if (options.Replay != null)
             {
-                GameLoop.Begin(gameObject, _camera, MusicSource.Replay(Args.Path(replay)));
+                GameLoop.Begin(gameObject, _camera, MusicSource.Replay(options.Replay));
                 return;
             }
-            var app = Args.Get("--app");
-            var file = Args.Get("--file");
-            if (app != null)
+            if (options.App != null)
             {
-                var source = MusicSource.FindApp(app, out string error);
+                var source = MusicSource.FindApp(options.App, out string error);
                 if (source == null)
                 {
                     Debug.LogError("Boot: --app: " + error);
@@ -96,8 +100,8 @@ namespace Game.Client
                 }
                 _loop = GameLoop.Begin(gameObject, _camera, source);
             }
-            else if (file != null) _loop = GameLoop.Begin(gameObject, _camera, MusicSource.File(Args.Path(file)));
-            else if (TitleScreen.Wanted)
+            else if (options.File != null) _loop = GameLoop.Begin(gameObject, _camera, MusicSource.File(options.File));
+            else if (options.Title)
                 TitleScreen.Begin(gameObject, source => GameLoop.Begin(gameObject, _camera, source, ReturnToTitle));
             else GameLoop.Begin(gameObject, _camera, null);
         }
@@ -122,12 +126,12 @@ namespace Game.Client
             // run, and its replay plays to its end.
             if (_seconds > 0f && Time.timeAsDouble >= _seconds && !_watching)
             {
-                if (_loop != null && Args.Has("--watch"))
+                if (_loop != null && LaunchOptions.Current.Watch)
                 {
                     _loop.End($"--seconds {_seconds} reached");
                     _loop = null;
                 }
-                else if (!Args.Has("--watch")) Quit($"--seconds {_seconds} reached");
+                else if (!LaunchOptions.Current.Watch) Quit($"--seconds {_seconds} reached");
             }
         }
 

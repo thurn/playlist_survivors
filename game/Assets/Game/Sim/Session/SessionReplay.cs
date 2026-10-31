@@ -4,7 +4,7 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// Replays a session (unity-game.md, "Sessions and Replay") into a fresh sim on its config
-    /// (<see cref="SessionRecord.Config"/>): each entry is added when the live sim took it, with its
+    /// (<see cref="RunInputs.Build"/>): each entry is added when the live sim took it, with its
     /// recorded known-at time, and each key change, debug command and run control is given at its
     /// effective time, in the order the sim took them, so the replay steps through exactly the states the live run
     /// did and settles the same event log, late entries included. At one time the entries go first:
@@ -16,7 +16,7 @@ namespace PS.Game.Sim
     /// <code>
     /// var replay = new SessionReplay(record);
     /// foreach (var e in SessionRecord.LoadEntries(dir)) replay.Supply(e);
-    /// var sim = new Simulation(record.Config(content, arena));
+    /// var sim = new Simulation(record.Run.Build(content, arena));
     /// replay.StepTo(sim, double.PositiveInfinity);  // to the run's end
     /// replay.Matches(sim);                          // the settled hash again
     /// </code>

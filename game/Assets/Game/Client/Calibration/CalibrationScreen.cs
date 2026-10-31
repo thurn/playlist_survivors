@@ -88,7 +88,7 @@ namespace Game.Client.Calibration
         {
             get
             {
-                var flag = Args.Get("--calibrate");
+                var flag = LaunchOptions.Current.Calibrate;
                 if (flag == null) return null;
                 if (Enum.TryParse(flag, true, out Mode mode)) return mode;
                 Debug.LogError($"CalibrationScreen: --calibrate {flag}: video or input");
@@ -109,13 +109,13 @@ namespace Game.Client.Calibration
 
         void Setup()
         {
-            _fixed = Args.Has("--fixed-time");
+            _fixed = LaunchOptions.Current.FixedTime;
             _opened = Time.timeAsDouble;
             _openedFrame = Time.frameCount;
             _store = CalibrationStore.Load();
             _device = CurrentDevice();
             _offsets = _store.For(_device.Uid);
-            _synthetic = ParseTaps(Args.Get("--tap-along"));
+            _synthetic = ParseTaps(LaunchOptions.Current.TapAlong);
             _keys = new KeyInput();
             if (_ducked != null)
             {

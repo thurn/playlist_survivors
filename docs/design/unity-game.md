@@ -1046,16 +1046,24 @@ debugged.
   run's states exactly. Adding entries any earlier changes the run: an entry
   that arrives in a frame that steps no tick is known at the frontier itself,
   and an earlier add would reveal it a tick sooner.
-- **`inputs.bin` is binary**: the config's inputs (seed, start time, gate,
-  `B`, Easy, the hero standing, the level, the arena and the camera footprint),
-  the run's end frontier, event count and hash, the entries' records and the
-  inputs, doubles as their bits, so no runtime's number formatting can move a
-  replay. `run.json` repeats it for people, with the build, runtime, platform,
-  source and command line. A session records the run's level, the slice's, an
-  open one or the run's (`RunLevel.Config`; what `SessionRecord.Config` rebuilds), with the run's start minute;
-  version 2 (ps-msz.6.12) added each input's argument (a debug command's role,
-  weapon or time) and the start minute, and version 1 still reads. A `--level`
-  run isn't recorded, since its replay would play the build's own level.
+- **`inputs.bin` is binary**: the run's inputs (`Sim/Session/RunInputs.cs`:
+  seed, start time, start minute, gate, `B`, Easy, the hero standing, the level,
+  the arena and the camera footprint), the run's end frontier, event count and
+  hash, the entries' records and the inputs, doubles as their bits, so no
+  runtime's number formatting can move a replay. `run.json` repeats it for
+  people, with the build, runtime, platform, source and command line.
+  `RunInputs` is the one value a run's `SimConfig` is built from
+  (`RunInputs.Build`, live and in replay): the client parses the command line
+  once (`Client/LaunchOptions.cs`), puts its run inputs on the build (the level
+  bake, the arena, the camera's footprint) and builds the config from them,
+  and the session writes that same value; every other config field is the
+  level's, the content's or fixed (`SessionTests` holds each field to one
+  list). A session records the run's level, the slice's, an open one or the
+  run's; version 2 (ps-msz.6.12) added each input's argument (a debug command's
+  role, weapon or time) and the start minute, and version 1 still reads. A run
+  a replay couldn't rebuild (`--level`, whose files a replay doesn't have,
+  `--cast`, `--arsenal` and `--no-cards`) isn't recorded: the launch says so as
+  it starts (ps-msz.7.4), and `--watch` refuses it.
 - **The Replay source** (`native/crates/plugin/src/replay.rs`) plays
   `audio.wav` (the analyzer's 44.1 kHz mono input, on both channels,
   interpolated to the output rate by the render thread as a System source's

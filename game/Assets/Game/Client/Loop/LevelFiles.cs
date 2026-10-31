@@ -24,14 +24,13 @@ namespace Game.Client.Loop
         public ICollection<string> Replaced => _files.Keys;
 
         /// <summary>
-        /// The bake's level with `path`'s files in place of its own (null: the bake alone), or null with neither. A path
-        /// that holds none of the level's files fails.
+        /// The bake's level with the files at the absolute `path` in place of its own (null: the bake alone), or null with
+        /// neither. A path that holds none of the level's files fails.
         /// </summary>
         public static LevelFiles Load(string path)
         {
             var bake = LevelBake.Load();
             if (path == null) return bake != null ? new LevelFiles(bake) : null;
-            path = Args.Path(path);
             var level = new LevelFiles(bake);
             var names = new List<string>(GameContent.Files) { LevelBake.ArenaFile };
             if (Directory.Exists(path))

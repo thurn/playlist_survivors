@@ -13,7 +13,8 @@ namespace Game.Client.Loop
     /// own. The plugin writes its audio and entries there, and the run its <see cref="PS.Game.Sim.SessionRecord"/>.
     /// A windowed run is recorded in the player's data folder; a windowless one (batch mode,
     /// --headless or --fixed-time: checks and evidence) only when it names a folder with
-    /// `--sessions DIR`, or with `--watch`, which replays it after. `--no-session` records nothing.
+    /// `--sessions DIR`, or with `--watch`, which replays it after. `--no-session` records nothing
+    /// (<see cref="LaunchOptions.Recording"/>), nor does a run a replay couldn't rebuild (<see cref="PS.Game.Sim.RunInputs.Unrecordable"/>).
     /// </summary>
     public static class Sessions
     {
@@ -29,20 +30,7 @@ namespace Game.Client.Loop
         public static string WatchNext;
 
         /// <summary>The sessions' folder: `--sessions DIR`, else sessions/ in the player's data folder.</summary>
-        public static string Root
-        {
-            get
-            {
-                var dir = Args.Get("--sessions");
-                return dir != null ? Args.Path(dir) : Path.Combine(Application.persistentDataPath, "sessions");
-            }
-        }
-
-        /// <summary>Whether this launch records its runs.</summary>
-        public static bool Recording =>
-            !Args.Has("--no-session") &&
-            (Args.Get("--sessions") != null || Args.Has("--watch") ||
-             !(Application.isBatchMode || Args.Has("--headless") || Args.Has("--fixed-time")));
+        public static string Root => LaunchOptions.Current.SessionsDir ?? Path.Combine(Application.persistentDataPath, "sessions");
 
         /// <summary>
         /// A new run's folder (created), after removing the oldest sessions so that <see cref="Kept"/>

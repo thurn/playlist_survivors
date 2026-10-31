@@ -280,10 +280,10 @@ namespace Game.Tests
                 if (f % 90 == 50) live.Sim.Release(f % 180 == 50 ? SimKey.Right : SimKey.Up, live.Sim.Now - 0.08);
                 live.Step(frames[f]);
             }
-            var record = SessionRecord.Of(new SimConfig(), live.Sim);
+            var record = SessionRecord.Of(new RunInputs(), live.Sim);
 
             // Replayed on frames twice as long, and past the run's end, with no live entries or keys.
-            var replay = new SimDriver(record.Config(null, null), new FrameClock()) { Replay = new SessionReplay(record) };
+            var replay = new SimDriver(record.Run.Build(null, null), new FrameClock()) { Replay = new SessionReplay(record) };
             foreach (var e in entries) replay.Replay.Supply(e);
             var replayed = new Recorder();
             replay.Events.Subscribe(replayed);

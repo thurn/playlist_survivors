@@ -46,11 +46,6 @@ namespace Game.Client.Title
         public static string MusicDir =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Music", "Playlist Survivors");
 
-        /// <summary>Whether this launch opens on the title screen: a windowed run without a source, or `--title`.</summary>
-        public static bool Wanted =>
-            Args.Has("--title") ||
-            !(Application.isBatchMode || Args.Has("--headless") || Args.Has("--fixed-time") || Args.Has("--events"));
-
         struct Row
         {
             public string Key, Name, Kind;
@@ -82,9 +77,8 @@ namespace Game.Client.Title
 
         void Setup()
         {
-            _pick = _picked ? null : Args.Get("--title-pick");
-            _musicDir = Args.Get("--music-dir");
-            _musicDir = _musicDir != null ? Args.Path(_musicDir) : MusicDir;
+            _pick = _picked ? null : LaunchOptions.Current.TitlePick;
+            _musicDir = LaunchOptions.Current.MusicDir ?? MusicDir;
             _panel = new ScreenPanel(transform, "Title screen", "Title/Title");
             var root = _panel.Root;
             _apps = root.Q("apps");

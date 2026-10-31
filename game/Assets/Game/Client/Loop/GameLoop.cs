@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Threading;
 using Game.Client.Arena;
 using Game.Client.Calibration;
@@ -54,7 +52,8 @@ namespace Game.Client.Loop
     /// keys, debug commands and run controls at their recorded times (<see cref="SessionReplay"/>),
     /// no live input reaches it (Backspace stops the replay), and at the run's end the replay
     /// compares the settled hash, logging a `Replay:` line (a headless `--replay` exits 1 when it
-    /// differs in the runtime that recorded it). Player flags:
+    /// differs in the runtime that recorded it). The run's config is built once, from its <see cref="RunInputs"/> (the
+    /// flags' on the build, or the replayed session's), which its session records. Player flags (<see cref="LaunchOptions"/>):
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
     ///   so a rerun shows the same frames. With `--file`, each frame first waits until the
     ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
@@ -72,9 +71,10 @@ namespace Game.Client.Loop
     /// - `--bot positioning|idle`: the sweeps' bot plays the run and picks its cards (<see cref="BotInput"/>), for the full run;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
-    ///   a `--level` run isn't recorded, since a replay plays the build's own level;
+    ///   a run a replay couldn't rebuild (on `--level`, `--cast`, `--arsenal` or `--no-cards`: <see cref="RunInputs.Unrecordable"/>)
+    ///   isn't recorded, which it says as it starts, and --watch refuses one;
     /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included, with the enemies' flow field;
-    /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
+    /// - `--headless` (or Unity's batch mode): silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
     /// - `--loop-out FILE`: writes each frame's times, the sim's hash, the hero and the enemies alive, as CSV;
     /// - `--events-out FILE`: writes each sim event as it settles (kind, time, its first ints), as CSV;
@@ -89,7 +89,7 @@ namespace Game.Client.Loop
     ///   sync spike does, for `game spike --sounds` to measure.
     /// The crowd and the effects (<see cref="EffectsPresenter"/>) need compute, so a headless run leaves
     /// them out; the effects and the sounds (<see cref="SoundPresenter"/>) run when their bakes are in the build.
-    /// It logs a summary when the run ends: the lead, frameSong's holds and the sim's timings.
+    /// It logs a summary when the run ends (<see cref="RunTelemetry"/>): the lead, frameSong's holds and the sim's timings.
     /// </summary>
     [DefaultExecutionOrder(-100)] // after the music's poll, before Boot keeps a still of the frame
     public sealed class GameLoop : MonoBehaviour
@@ -104,7 +104,6 @@ namespace Game.Client.Loop
         public const double EndCardS = 5;
         /// <summary>How far past the sim a replay's frame wants its entries supplied (s): more than a frame steps.</summary>
         const double ReplayAhead = 1;
-        const int LeadCapacity = 1 << 17;
 
         MusicPlayer _music;
         MusicTimes _musicTimes;
@@ -113,7 +112,6 @@ namespace Game.Client.Loop
         DebugMenu _menu;
         ScriptedKeys _walk;
         BotInput _bot;
-        readonly SliceCounts _counts = new SliceCounts();
         DebugOverlay _overlay;
         LookPresenter _look;
         HeroPresenter _hero;
@@ -124,7 +122,6 @@ namespace Game.Client.Loop
         FireTrailView _fireTrail;
         MixCapture _capture;
         string _soundOut;
-        readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
         ArenaRuntime _arena;
         CrystalStructures _crystal;
         StructureShatter _shatter;
@@ -136,20 +133,18 @@ namespace Game.Client.Loop
         EvolutionLayers _evolutions;
         LightningView _lightning;
         HudPresenter _hud;
-        StreamWriter _out, _structuresOut;
+        RunTelemetry _telemetry;
         bool _fixed, _done, _quitting, _interactive;
         bool _deviceGiven, _focusLost;
         PauseMenu _pause;
         CalibrationScreen _calibrating;
         double _pauseAt;
         int _releases;
-        SimConfig _config;
+        LaunchOptions _options;
+        RunInputs _run;
         string _sessionDir;
         SessionReplay _replay;
         Action<string> _ended;
-        int _entries, _keyChanges;
-        readonly double[] _leads = new double[LeadCapacity];
-        readonly double[] _steps = new double[LeadCapacity];
 
         public SimDriver Driver { get; private set; }
 
@@ -170,25 +165,50 @@ namespace Game.Client.Loop
 
         void Setup(Camera camera, MusicSource source)
         {
-            _fixed = Args.Has("--fixed-time");
-            bool headless = Args.Has("--headless");
-            if (headless && !_fixed) Application.targetFrameRate = Boot.FixedFps;
+            var options = _options = LaunchOptions.Current;
+            _fixed = options.FixedTime;
+            bool headless = options.Headless;
+            if (headless) Application.targetFrameRate = Boot.FixedFps;
             var listenerHost = camera != null ? camera.gameObject : gameObject;
             if (listenerHost.GetComponent<AudioListener>() == null) listenerHost.AddComponent<AudioListener>();
-            _soundOut = Args.Get("--sound-out");
-            if (_soundOut != null) _soundOut = Args.Path(_soundOut);
+            _soundOut = options.Outputs.Sound;
             if (headless || _fixed || _soundOut != null)
             {
                 _capture = listenerHost.AddComponent<MixCapture>();
                 _capture.Mute = headless || _fixed;
-                float seconds = Args.GetFloat("--seconds", 0f);
+                float seconds = options.Seconds;
                 _capture.Begin(_soundOut == null ? 0 : (seconds > 0 ? seconds : 600) + 2);
             }
 
-            IGameClock clock = new FrameClock();
             SessionRecord replayed = null;
             if (source != null && source.IsReplay) replayed = SessionRecord.Read(source.Path);
-            else if (source != null && Sessions.Recording && !Args.Has("--level")) _sessionDir = Sessions.Begin();
+            // A replay plays the build's own level, on the run's own inputs whatever this command line says.
+            var level = LevelFiles.Load(replayed == null ? options.LevelPath : null);
+            var content = level?.Content();
+            bool arena = !options.NoArena && ArenaBake.Load() != null;
+            var events = replayed == null ? options.Events : null;
+            RunInputs run;
+            if (replayed != null)
+            {
+                run = replayed.Run;
+                if (level == null && (run.Level != SessionLevel.Open || run.Arena))
+                    throw new InvalidOperationException("GameLoop: a replay of the slice needs the build's level bake");
+                arena = run.Arena && ArenaBake.Load() != null;
+            }
+            else
+            {
+                // The spawn ring stays out of the widest view: the loud zoom's, on a screen at least 16:9.
+                float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
+                run = options.Run.On(level != null, arena, CameraRig.Footprint(aspect));
+                if (source != null && options.Recording)
+                {
+                    if (run.Unrecordable == null) _sessionDir = Sessions.Begin();
+                    else Debug.Log($"GameLoop: not recorded: {run.Unrecordable}, which a replay couldn't rebuild");
+                }
+            }
+            _run = run;
+
+            IGameClock clock = new FrameClock();
             if (source != null)
             {
                 var musicHost = new GameObject("Music");
@@ -202,64 +222,21 @@ namespace Game.Client.Loop
                         MusicPlayer.ScheduleHeadroom, () => AudioSettings.dspTime);
                 }
             }
-            ulong seed = (ulong)Math.Max(0, Args.GetInt("--seed", 1));
-            var events = Args.Get("--events");
-            bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
-            // A replay plays the build's own level: a --level run isn't recorded.
-            var level = LevelFiles.Load(replayed == null ? Args.Get("--level") : null);
-            var content = level?.Content();
-            int startMinute = Args.GetInt("--start-minute", 0);
-            if (startMinute < 0) throw new ArgumentException("--start-minute: a minute of the run, from 0");
-            var config = new SimConfig { Seed = seed };
-            if (replayed != null)
-            {
-                // The run's own level, arena, camera footprint and seed, whatever this command line says.
-                if (level == null && (replayed.Level != SessionLevel.Open || replayed.Arena))
-                    throw new InvalidOperationException("GameLoop: a replay of the slice needs the build's level bake");
-                config = replayed.Config(content, replayed.Arena ? level.Arena() : null);
-                arena = replayed.Arena && ArenaBake.Load() != null;
-                events = null;
-            }
-            else if (level != null && events == null)
-            {
-                // The spawn ring stays out of the widest view: the loud zoom's, on a screen at least 16:9.
-                float aspect = Mathf.Max(16f / 9, camera != null ? camera.aspect : 0);
-                var footprint = CameraRig.Footprint(aspect);
-                var cast = Args.Get("--cast");
-                config = cast != null ? RunLevel.Lineup(content, arena ? level.Arena() : null, footprint, cast.Split(','), seed)
-                    : Args.Has("--run") || Args.Has("--level") || startMinute > 0 ? RunLevel.Config(content, arena ? level.Arena() : null, footprint, seed)
-                    : SliceLevel.Config(content, arena ? level.Arena() : null, footprint, seed);
-            }
-            _interactive = !headless && !_fixed;
-            if (replayed == null)
-            {
-                config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
-                config.Easy = Args.Has("--easy");
-                if (config.Horde != null && config.Horde.Schedule) config.StartMinute = startMinute;
-                var arsenal = Args.Get("--arsenal");
-                if (arsenal != null && config.Arsenal != null)
-                {
-                    // Passives (an evolution's partner) go with the weapons: "magic-wand:8,empty-tome:1".
-                    var items = Loadout(arsenal);
-                    config.Arsenal.Weapons = Array.FindAll(items, i => content.PassiveIndex(i.Id) < 0);
-                    config.Arsenal.Passives = Array.FindAll(items, i => content.PassiveIndex(i.Id) >= 0);
-                }
-                if (Args.Has("--no-cards") && config.Arsenal != null) config.Arsenal.Cards = false;
-            }
-            _config = config;
+            _interactive = options.Windowed;
+            var config = run.Build(content, run.Arena ? level.Arena() : null);
             Driver = new SimDriver(config, clock);
             if (replayed != null) Driver.Replay = _replay = new SessionReplay(replayed);
-            if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
+            if (events != null) Driver.Scripted = ScriptedEvents.Load(events);
             _keys = new KeyInput();
             _pause = new PauseMenu(transform);
-            _pauseAt = Args.GetFloat("--pause-at", -1);
-            _commands = new DebugCommands(Args.Get("--debug"), content);
+            _pauseAt = options.Scripted.PauseAt;
+            _commands = new DebugCommands(options.Scripted.Debug, content);
             _menu = new DebugMenu(camera, content);
-            _walk = new ScriptedKeys(Args.Get("--walk"));
-            if (replayed == null) _bot = BotInput.FromArgs(config.Seed, content);
+            _walk = new ScriptedKeys(options.Scripted.Walk);
+            if (replayed == null) _bot = BotInput.For(options.Scripted.Bot, config.Seed, content);
             if (_bot != null) Driver.Events.Subscribe(_bot);
 
-            var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
+            var heroBake = options.NoHero ? null : HeroBake.Load();
             Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena, hero: heroBake == null));
             if (heroBake != null)
             {
@@ -330,39 +307,16 @@ namespace Game.Client.Loop
             _hud = new HudPresenter(transform, camera, Driver.Sim, content, source, _interactive) { Menu = _pause };
             if (_hero != null) _hud.DrawnHero = _hero.Drawn;
             Driver.Events.Subscribe(_hud);
-            _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
+            _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
-            Driver.Events.Subscribe(_counts);
-            var eventsPath = Args.Get("--events-out");
-            if (eventsPath != null) _counts.Open(Args.Path(eventsPath));
-
-            var outPath = Args.Get("--loop-out");
-            if (outPath != null)
-            {
-                _out = new StreamWriter(Args.Path(outPath));
-                _out.WriteLine("frame,frame_song,frontier,lead,tick,hash,events,hero_x,hero_y,alive");
-            }
-            var structuresPath = Args.Get("--structures-out");
-            if (structuresPath != null && _shatter != null)
-            {
-                _structuresOut = new StreamWriter(Args.Path(structuresPath));
-                _structuresOut.WriteLine("frame,frame_song,breaks,shards,flying,moved_m,steps,physics_ms,shadow_ms");
-            }
+            _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter);
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
-                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, bot {Args.Get("--bot") ?? "none"}" +
+                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, " +
+                      $"bot {options.Scripted.Bot?.ToString().ToLowerInvariant() ?? "none"}" +
                       (level != null && level.Replaced.Count > 0 ? $", --level files {string.Join(", ", level.Replaced)}" : ""));
         }
-
-        /// <summary>`--arsenal`'s weapons: `id:rank`, comma-separated, in slot order.</summary>
-        static (string Id, int Rank)[] Loadout(string list) => Array.ConvertAll(list.Split(','), item =>
-        {
-            var parts = item.Trim().Split(':');
-            if (parts.Length != 2 || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int rank) || rank < 1)
-                throw new ArgumentException($"--arsenal: '{item}' is not weapon:rank or passive:rank");
-            return (parts[0].Trim(), rank);
-        });
 
         /// <summary>The output device's saved calibration on the music's clock (a device change ends the run, so it holds for the run).</summary>
         void Calibrate()
@@ -387,7 +341,7 @@ namespace Game.Client.Loop
         void SetupSound(RoleLooks roles)
         {
             var bank = SoundBank.Load();
-            bool probe = Args.Has("--sound-probe");
+            bool probe = _options.SoundProbe;
             if (bank == null && !probe) return;
             _sounds = new SoundScheduler(bank, new GameObject("Sounds"), Driver.Clock, () => AudioSettings.dspTime, log: _soundOut != null);
             if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate);
@@ -401,7 +355,7 @@ namespace Game.Client.Loop
         void LoadArena(Camera camera)
         {
             ArenaClock.Deterministic = _fixed;
-            _arena = ArenaRuntime.Load(camera, Args.Get("--palette", ArenaLighting.DefaultPalette));
+            _arena = ArenaRuntime.Load(camera, _options.Palette);
             _arena.OnReady += a =>
             {
                 _crystal = new CrystalStructures();
@@ -433,7 +387,7 @@ namespace Game.Client.Loop
             // Before the music's anchor no key has a song time: they wait for it. A replay takes only its recorded keys.
             if (Driver.Clock.Ready && _replay == null)
             {
-                _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
+                _telemetry.KeyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
                 _commands.Apply(Driver.Sim);
                 _menu.Apply(Driver.Sim, _commands);
                 _walk.Apply(Driver.Sim);
@@ -446,14 +400,8 @@ namespace Game.Client.Loop
                 Real = Time.realtimeSinceStartupAsDouble,
                 Frame = Time.timeSinceLevelLoadAsDouble,
             };
-            if (Driver.Step(now)) Keep();
-            if (_soundOut != null && _music != null && _music.Clock.Anchored)
-                _frames.Add(new SyncSpike.FrameRow
-                {
-                    tick = MixCapture.Now,
-                    frameSong = Driver.Times.FrameSong,
-                    display = _music.Clock.DisplayLatency,
-                });
+            if (Driver.Step(now)) _telemetry.Keep();
+            if (_soundOut != null && _music != null && _music.Clock.Anchored) _telemetry.KeepFrame(_music);
             _overlay.Toggle();
             _menu.Present(Driver.Sim);
             if (_replay != null)
@@ -586,7 +534,7 @@ namespace Game.Client.Loop
             while (true)
             {
                 for (int i = 0; i < _music.EntryCount; i++) _replay.Supply(_music.Entries[i]);
-                _entries += _music.EntryCount;
+                _telemetry.Entries += _music.EntryCount;
                 if (_music.Failed) { Finish(1, _music.Error); return false; }
                 bool drained = _music.EntryCount < MusicPlayer.MaxEntries;
                 if (drained && (_replay.AllSupplied || (!all && _replay.NextUnsupplied > Driver.Sim.Now + ReplayAhead))) return true;
@@ -630,7 +578,7 @@ namespace Game.Client.Loop
         void FeedLive()
         {
             for (int i = 0; i < _music.EntryCount; i++) Driver.Add(_music.Entries[i]);
-            _entries += _music.EntryCount;
+            _telemetry.Entries += _music.EntryCount;
         }
 
         /// <summary>
@@ -645,7 +593,7 @@ namespace Game.Client.Loop
             while (true)
             {
                 for (int i = 0; i < _music.EntryCount; i++) Driver.AddSettled(_music.Entries[i]);
-                _entries += _music.EntryCount;
+                _telemetry.Entries += _music.EntryCount;
                 if (_music.Failed) { Finish(1, _music.Error); return false; }
                 // A full poll may have left entries behind; the status read before it vouches for the rest.
                 bool drained = _music.EntryCount < MusicPlayer.MaxEntries;
@@ -659,26 +607,6 @@ namespace Game.Client.Loop
                 if (drained) Thread.Sleep(1);
                 _music.Poll();
             }
-        }
-
-        void Keep()
-        {
-            int frame = Driver.Frames - 1;
-            if (frame < LeadCapacity)
-            {
-                _leads[frame] = Driver.Times.Lead;
-                _steps[frame] = Driver.StepMs;
-            }
-            _structuresOut?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4},{5:F4},{6},{7:F4},{8:F4}",
-                frame, Driver.Times.FrameSong, _shatter.Breaks, _shatter.Shards, _shatter.Flying, _shatter.MovedM,
-                _shatter.FrameSteps, _shatter.FramePhysicsMs, _shatter.FrameShadowMs));
-            if (_out == null) return;
-            var t = Driver.Times;
-            var hero = Driver.Presented.State.Hero;
-            hero.PositionAt(Driver.Presented.Song, out double x, out double y);
-            _out.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2:R},{3:R},{4},{5:X16},{6},{7:R},{8:R},{9}",
-                frame, t.FrameSong, t.Frontier, t.Lead, Driver.Sim.State.Tick, Driver.Sim.Hash, Driver.Sim.EventCount, x, y,
-                Driver.Sim.State.EnemiesAlive));
         }
 
         void OnApplicationQuit()
@@ -708,11 +636,7 @@ namespace Game.Client.Loop
             _lightning?.Dispose();
             _hud?.Dispose();
             _overlay?.Dispose();
-            _out?.Dispose();
-            _out = null;
-            _structuresOut?.Dispose();
-            _structuresOut = null;
-            _counts.Dispose();
+            _telemetry?.Dispose();
         }
 
         /// <summary>
@@ -725,18 +649,14 @@ namespace Game.Client.Loop
             _done = true;
             _pause?.Hide();
             string error = code != 0 ? why : null;
-            Debug.Log("GameLoop: " + (why ?? "done") + "; " + Summary());
-            _out?.Dispose();
-            _out = null;
-            _structuresOut?.Dispose();
-            _structuresOut = null;
-            _counts.Dispose();
-            if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
+            Debug.Log("GameLoop: " + (why ?? "done") + "; " + _telemetry.Summary(_music, _musicTimes, _keys, _commands, _effects, _sounds));
+            _telemetry.Dispose();
+            if (_soundOut != null && _music != null && _sounds != null) _telemetry.KeepSounds(_soundOut, _music, _capture, _sounds, error);
             if (_music != null) _music.Close();
             // Under --watch, a session that wasn't kept leaves nothing to watch: the launch fails.
-            if (_sessionDir != null && !KeepSession() && code == 0 && Args.Has("--watch")) code = 1;
+            if (_sessionDir != null && !KeepSession() && code == 0 && _options.Watch) code = 1;
             if (error != null) Debug.LogError("GameLoop: " + error);
-            if (_sessionDir != null && code == 0 && !_quitting && Args.Has("--watch"))
+            if (_sessionDir != null && code == 0 && !_quitting && _options.Watch)
             {
                 // Watch it at once: the boot scene again, which replays it.
                 Sessions.WatchNext = _sessionDir;
@@ -754,13 +674,11 @@ namespace Game.Client.Loop
         {
             try
             {
-                var record = SessionRecord.Of(_config, Driver.Sim);
+                var record = SessionRecord.Of(_run, Driver.Sim);
                 record.Build = $"{Application.version} {Application.buildGUID}";
                 record.Platform = Application.platform.ToString();
                 record.Source = _music.Source.IsApp ? $"app {_music.Source.Tag}" : _music.Source.Path;
-                var args = Environment.GetCommandLineArgs();
-                record.Flags = new string[Math.Max(0, args.Length - 1)];
-                Array.Copy(args, 1, record.Flags, 0, record.Flags.Length);
+                record.Flags = _options.Flags;
                 record.Write(_sessionDir);
                 Sessions.Last = _sessionDir;
                 Debug.Log(string.Format(CultureInfo.InvariantCulture, "GameLoop: session in {0}: song {1:F3} s, {2} entries, {3} key changes, " +
@@ -773,101 +691,6 @@ namespace Game.Client.Loop
                 Debug.LogError($"GameLoop: the session in {_sessionDir} wasn't kept: {e}");
                 return false;
             }
-        }
-
-        void KeepSounds(string error)
-        {
-            var log = _sounds.Log;
-            var songs = new double[log.Count];
-            var dsps = new double[log.Count];
-            for (int i = 0; i < log.Count; i++)
-            {
-                songs[i] = log.Array[i].Song;
-                dsps[i] = log.Array[i].Dsp;
-            }
-            SyncSpike.Write(_soundOut, _music, _capture, songs, dsps, _frames.ToArray(), error);
-        }
-
-        string Summary()
-        {
-            int n = Math.Min(Driver.Frames, LeadCapacity);
-            var c = CultureInfo.InvariantCulture;
-            var run = Driver.Sim.State;
-            var s = string.Format(c, "{0} frames to song {1:F3} s, {2} entries ({3} late), {4} key changes ({5} dropped), {6} events, hash {7:X16}",
-                Driver.Frames, Driver.Times.FrameSong, _entries, Driver.LateEntries, _keyChanges, _keys.Dropped,
-                Driver.Sim.EventCount, Driver.Sim.Hash);
-            s += string.Format(c, "; run {0} from song {1:F3} s, run clock {2:F3} s, {3} freezes ({4} music stopped), {5} run controls",
-                run.Phase, run.StartedAt, run.RunClock, _counts.Freezes, _counts.MusicStops, Driver.Sim.Controls.Length);
-            if (n == 0) return s;
-            // The first second settles the DSP fit and the frame interval; the lead is measured after it.
-            int skip = Math.Min(n - 1, Boot.FixedFps);
-            var leads = new double[n - skip];
-            Array.Copy(_leads, skip, leads, 0, leads.Length);
-            Array.Sort(leads);
-            var steps = new double[n];
-            Array.Copy(_steps, steps, n);
-            Array.Sort(steps);
-            s += string.Format(c, "; lead (ms) median {0:F1}, p5..p95 {1:F1}..{2:F1}, min..max {3:F1}..{4:F1}",
-                1000 * Pct(leads, 0.5), 1000 * Pct(leads, 0.05), 1000 * Pct(leads, 0.95), 1000 * leads[0], 1000 * leads[leads.Length - 1]);
-            if (_musicTimes != null)
-                s += string.Format(c, " (output latency {0:F1} + margin {1:F1})", 1000 * _music.Clock.OutputLatency, 1000 * _musicTimes.Margin);
-            s += string.Format(c, "; frameSong backwards {0}, held {1} frames (largest {2:F2} ms); frames at the frontier {3}",
-                Driver.BackwardFrames, _music != null ? _music.Clock.HeldFrames : 0,
-                _music != null ? 1000 * _music.Clock.LargestHold : 0, Driver.FramesAtFrontier);
-            s += string.Format(c, "; sim step (ms) median {0:F3}, p99 {1:F3}, max {2:F3}",
-                Pct(steps, 0.5), Pct(steps, 0.99), steps[n - 1]);
-            s += string.Format(c, "; enemies alive {0}, {1} killed, {2} heavy strikes, {3} structures broken, {4} regrown, {5} zone changes, " +
-                                  "{6} set pieces, {7} debug commands", Driver.Sim.State.EnemiesAlive, _counts.Kills, _counts.HeavyStrikes, _counts.Breaks,
-                _counts.Regrowths, _counts.ZoneChanges, _counts.SetPieces, _commands.Given);
-            if (_effects != null)
-                s += string.Format(c, "; effects {0} spawned ({1} rejected)", _effects.Spawned, _effects.System.RejectedTotal);
-            if (_sounds != null)
-                s += string.Format(c, "; sounds {0} scheduled, {1} dropped", _sounds.Scheduled, _sounds.Dropped);
-            if (_music != null && _music.Source.IsApp)
-                s += string.Format(c, "; app {0}: state {1}, muted {2}, stalls {3}, releases {4}", _music.Source.Tag,
-                    _music.Status.State, _music.Status.Muted, _music.Status.Stalls, _music.Status.Releases);
-            return s;
-        }
-
-        static double Pct(double[] sorted, double p) => sorted[(int)Math.Round(p * (sorted.Length - 1))];
-
-        /// <summary>What the run did, for its summary, and each event as CSV when asked.</summary>
-        sealed class SliceCounts : IPresenter, IDisposable
-        {
-            public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges, SetPieces, Freezes, MusicStops;
-            StreamWriter _out;
-
-            public void Open(string path)
-            {
-                _out = new StreamWriter(path);
-                _out.WriteLine("kind,t,i0,i1,i2");
-            }
-
-            public void Dispose()
-            {
-                _out?.Dispose();
-                _out = null;
-            }
-
-            public void OnEvent(in SimEvent e)
-            {
-                _out?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4}", e.Kind, e.T, e.I0, e.I1, e.I2));
-                switch (e.Kind)
-                {
-                    case SimEventKind.Death when e.AsDeath.Enemy >= 0: Kills++; break;
-                    case SimEventKind.Attack when e.AsAttack.IsSword && e.AsAttack.Heavy: HeavyStrikes++; break;
-                    case SimEventKind.StructureBreak: Breaks++; break;
-                    case SimEventKind.Regrowth: Regrowths++; break;
-                    case SimEventKind.ZoneChange: ZoneChanges++; break;
-                    case SimEventKind.SetPiece: SetPieces++; break;
-                    case SimEventKind.Freeze when e.AsFreeze.Starts:
-                        Freezes++;
-                        if (e.AsFreeze.Reason == FreezeReason.MusicStopped) MusicStops++;
-                        break;
-                }
-            }
-
-            public void Present(in PresentFrame frame) { }
         }
     }
 }

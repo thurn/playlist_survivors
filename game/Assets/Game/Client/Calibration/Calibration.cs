@@ -68,14 +68,8 @@ namespace Game.Client.Calibration
         }
 
         /// <summary>Where the player keeps its calibrations: `--calibration FILE`, else calibration.json in its data folder.</summary>
-        public static string DefaultPath
-        {
-            get
-            {
-                var flag = Args.Get("--calibration");
-                return flag != null ? Args.Path(flag) : System.IO.Path.Combine(Application.persistentDataPath, "calibration.json");
-            }
-        }
+        public static string DefaultPath =>
+            LaunchOptions.Current.CalibrationFile ?? System.IO.Path.Combine(Application.persistentDataPath, "calibration.json");
 
         /// <summary>The calibrations in `path` (<see cref="DefaultPath"/> if null); none if there is no file or it can't be read.</summary>
         public static CalibrationStore Load(string path = null)

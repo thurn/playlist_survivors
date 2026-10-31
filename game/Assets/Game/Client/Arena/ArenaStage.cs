@@ -33,8 +33,8 @@ namespace Game.Client.Arena
         {
             var stage = host.AddComponent<ArenaStage>();
             stage._camera = camera;
-            ArenaClock.Deterministic = Args.Has("--fixed-time");
-            stage._arena = ArenaRuntime.Load(camera, Args.Get("--palette", ArenaLighting.DefaultPalette));
+            ArenaClock.Deterministic = LaunchOptions.Current.FixedTime;
+            stage._arena = ArenaRuntime.Load(camera, LaunchOptions.Current.Palette);
             stage._arena.OnReady += stage.Ready;
             return stage;
         }
@@ -43,8 +43,9 @@ namespace Game.Client.Arena
         {
             _crystal = new CrystalStructures();
             _crystal.Apply(arena, _camera);
-            float width = Args.GetFloat("--view-width", ViewWidthM);
-            _holdS = Args.GetFloat("--arena-tour", 0f);
+            var options = LaunchOptions.Current;
+            float width = options.ViewWidth > 0 ? options.ViewWidth : ViewWidthM;
+            _holdS = options.ArenaTour;
             if (_holdS > 0)
             {
                 JsonValue shots = JsonValue.Parse(arena.LayoutJson)["shots"];
@@ -53,7 +54,7 @@ namespace Game.Client.Arena
             }
             if (_shots.Count == 0)
             {
-                var at = Args.Get("--arena-at");
+                var at = options.ArenaAt;
                 _shots.Add(new Shot { At = at != null ? Parse(at) : Ground(JsonValue.Parse(arena.LayoutJson)["heroStart"]), WidthM = width });
                 _holdS = 0;
             }

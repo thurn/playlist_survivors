@@ -64,10 +64,10 @@ namespace Game.Client.Hero
             _body = _rig.Knight.GetComponentsInChildren<SkinnedMeshRenderer>();
             AuraAnchor = new GameObject("Aura").transform;
             AuraAnchor.SetParent(root, false);
-            var outPath = Args.Get("--hero-out");
+            var outPath = LaunchOptions.Current.Outputs.Hero;
             if (outPath != null)
             {
-                _out = new StreamWriter(Args.Path(outPath));
+                _out = new StreamWriter(outPath);
                 _out.WriteLine("song,x,y,lift,yaw,run,run_time,attack,a_clip,a_time,b_clip,b_time,a_share,flare");
             }
         }

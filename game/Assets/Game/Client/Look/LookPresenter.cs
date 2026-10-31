@@ -64,13 +64,14 @@ namespace Game.Client.Look
         {
             _camera = camera;
             _sim = sim;
-            _synthetic = Args.Has("--hero-path");
-            _stills = Args.Has("--capture-stills");
-            _viewWidth = Args.GetFloat("--view-width", 0f);
-            var outPath = Args.Get("--camera-out");
+            var options = LaunchOptions.Current;
+            _synthetic = options.HeroPath;
+            _stills = options.StillsDir != null;
+            _viewWidth = options.ViewWidth;
+            var outPath = options.Outputs.Camera;
             if (outPath != null)
             {
-                _out = new StreamWriter(Args.Path(outPath));
+                _out = new StreamWriter(outPath);
                 _out.WriteLine("song,focus_x,focus_y,width,punch,shake,level,pulse,flash,exposure,bloom,vignette,saturation,chromatic,kick,kick_pre,rise");
             }
         }

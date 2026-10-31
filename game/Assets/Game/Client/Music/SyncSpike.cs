@@ -55,9 +55,9 @@ namespace Game.Client.Music
         public static SyncSpike Begin(GameObject host, Camera camera, string file, float seconds)
         {
             var spike = host.AddComponent<SyncSpike>();
-            var outDir = Args.Get("--spike-out");
-            spike._out = outDir != null ? Args.Path(outDir) : null;
-            bool headless = Args.Has("--headless");
+            var options = LaunchOptions.Current;
+            spike._out = options.SpikeOut;
+            bool headless = options.Headless;
             if (headless) Application.targetFrameRate = Boot.FixedFps;
 
             var listenerHost = camera != null ? camera.gameObject : host;
@@ -76,10 +76,10 @@ namespace Game.Client.Music
             // A filter's callback serves one source or listener, so the clicks' voices live apart.
             var clicksHost = new GameObject("Clicks");
             clicksHost.transform.SetParent(musicHost.transform);
-            spike._clicks = new BeatClicks(clicksHost, Args.GetFloat("--click-lead", -1));
+            spike._clicks = new BeatClicks(clicksHost, options.ClickLead);
             spike._startReal = Time.realtimeSinceStartupAsDouble;
             spike._startDsp = AudioSettings.dspTime;
-            spike._music.Play(MusicSource.File(Args.Path(file)));
+            spike._music.Play(MusicSource.File(file));
             AudioSettings.GetDSPBufferSize(out int length, out int count);
             Debug.Log($"SyncSpike: {file}, output {AudioSettings.outputSampleRate} Hz, DSP buffer {length} x {count}, " +
                       $"speaker mode {AudioSettings.speakerMode}, headless {headless}");
@@ -152,7 +152,7 @@ namespace Game.Client.Music
             AudioSettings.GetDSPBufferSize(out int length, out int count);
             var r = new Report
             {
-                file = Args.Get("--file"),
+                file = LaunchOptions.Current.File,
                 outputRate = AudioSettings.outputSampleRate,
                 dspBufferLength = length,
                 dspBuffers = count,
