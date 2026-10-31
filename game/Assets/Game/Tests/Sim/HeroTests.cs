@@ -224,6 +224,59 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(moves.TrueForAll(m => m.Facing == Direction.Up));
         }
 
+        [Test]
+        public void APressMadeWhileFrozenDoesNotStrideAfterTheThaw()
+        {
+            // A tap (or Space, a card's confirm) during a freeze that ends before the next step.
+            var sim = At120();
+            sim.State.Frozen = true;
+            sim.StepTo(10.1);
+            sim.Press(Key.Left, 10.06);
+            sim.Release(Key.Left, 10.08);
+            sim.Press(Key.Space, 10.08);
+            sim.State.Frozen = false;
+            sim.StepTo(11);
+            Assert.AreEqual(0, Moves(sim).Count);
+        }
+
+        [Test]
+        public void TwoPressesOnAMissedStepStrideLateAndThenOnTheNextStep()
+        {
+            var sim = At120();
+            sim.StepTo(10.08);
+            sim.Press(Key.Right, 10.02); // 10.00 had no stride: late
+            sim.Release(Key.Right, 10.03);
+            sim.Press(Key.Up, 10.04); // 10.00 now has one: the first step after F
+            sim.Release(Key.Up, 10.05);
+            sim.StepTo(11);
+            var moves = Moves(sim);
+            Assert.AreEqual(2, moves.Count);
+            Assert.IsTrue(moves[0].Late);
+            Assert.AreEqual(Direction.Right, moves[0].Facing);
+            Assert.IsFalse(moves[1].Late);
+            Assert.AreEqual(10.25, moves[1].T, 1e-9);
+            Assert.AreEqual(Direction.Up, moves[1].Facing);
+            Assert.AreEqual(moves[0].ToX, moves[1].FromX, 1e-9, "the second starts where the first ended");
+        }
+
+        [Test]
+        public void WithALongLeadTheFirstStepAfterThePressCanAlreadyBeMissed()
+        {
+            // Headphones: heard at 10.15, reaching the sim at 10.30. No step in [10.05, 10.15], so the
+            // press belongs to the first step after it, 10.25, which the sim has already passed.
+            var sim = At120();
+            sim.StepTo(10.3);
+            sim.Press(Key.Down, 10.15);
+            sim.Release(Key.Down, 10.2);
+            sim.StepTo(11);
+            var moves = Moves(sim);
+            Assert.AreEqual(1, moves.Count);
+            Assert.IsTrue(moves[0].Late);
+            Assert.AreEqual(StepAt(sim, 10.25).Index, moves[0].Step);
+            Assert.AreEqual(10.3, moves[0].Start, 1e-9);
+            Assert.AreEqual(10.41, moves[0].End, 1e-9);
+        }
+
         [TestCase(100.0, 1, 5.0, 0.84)]
         [TestCase(140.0, 1, 7.0, 0.84)]
         [TestCase(155.0, 0, 3.875, 0.42)]

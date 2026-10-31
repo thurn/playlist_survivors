@@ -705,6 +705,14 @@ a press heard at 10.15 instead takes s = 10.25 (normal, queued)
   strike on the missed step already fired from the old tile.
 - Held keys stride on every step and never need late steps. The
   last-pressed held direction wins.
+- Because a held key is judged when the sim reaches the step, a late tap
+  still down then strides again on it. At 128 BPM with a 60 ms lead, a
+  120 ms tap heard more than 54 ms after its step moves two tiles, though
+  it was released before the next step was heard. Judging that first
+  repeat in heard time would need a late step of its own, so it waits on
+  the operator's feel check (game/evidence/operator-pending.md).
+- A press made while the world is frozen never strides after it, as in
+  native.
 - Space stomps (stands still on the step), as in native.
 - Keys come from Unity's Input System with their event timestamps, mapped by
   `keySong`.

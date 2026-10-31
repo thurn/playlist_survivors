@@ -23,7 +23,8 @@ namespace PS.Game.Sim
     ///   compressed to end before the next step. A step into a blocked tile or the arena's edge
     ///   bumps in place and is spent. The hero faces the way it tried to go.
     /// - While the world is frozen (<see cref="SimState.Frozen"/>) the hero doesn't move: steps
-    ///   spend held keys and queued presses without moving it, and presses don't stride late.
+    ///   spend held keys and queued presses without moving it, and presses made then are only
+    ///   held (as native's, a press made during a freeze never strides after it).
     ///
     /// Each move is a <see cref="SimEventKind.HeroStep"/> event, emitted at its start.
     /// </summary>
@@ -58,9 +59,11 @@ namespace PS.Game.Sim
         public void Press(Simulation sim, Key key, double heard)
         {
             if (key != Key.Space) Hold((Direction)key);
+            // A press made while frozen never strides, even when the world thaws before the next step.
+            if (sim.State.Frozen) return;
             int action = key == Key.Space ? Stomp : (int)key;
             int s = SimulatedStepOf(heard);
-            if (s < 0 || moved[s % moved.Length] || sim.State.Frozen)
+            if (s < 0 || moved[s % moved.Length])
             {
                 queued = action;
                 return;
