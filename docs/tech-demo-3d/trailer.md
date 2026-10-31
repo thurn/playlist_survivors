@@ -204,8 +204,23 @@ blows gets a weight from 0 to 1, from how many it kills. That weight drives:
   blow;
 - the size of the blow's trails and sparks.
 
-Overdrive also draws the hero 1.7× larger (`heroScale`), so they stay readable
-at wide views.
+The hero is drawn at their true size, about as tall as a skeleton (1.85 m
+against 1.8 m), so the humanoid monsters look like a threat (ps-b5z.1).
+Overdrive drew them 1.7× larger until then (`heroScale`), which made the horde
+look small and harmless. Instead, overdrive's `heroOutline` draws a thin
+glowing line round the hero (`HeroOutline`, 3 px at 1080p), which blooms into
+a halo, so the hero is easy to find at 45–65 m views:
+
+- **The default cut** keeps the shader's cyan blue, the complement of its warm
+  desert, lava and torchlit shots and the hero's warm light pool.
+- **The crystal cut** turns it gold in its look (`"heroOutline": "3,3,1.3,0.1"`,
+  see [The crystal look](#the-crystal-look)), against a horde of cyan, green,
+  blue and red gems.
+
+White was tried first. It bloomed into the hot centre of the warm shots and
+into the cyan crystals, while the saturated complements read in every still.
+The stills, the old 1.7× captures beside them, are in
+[evidence/trailer/hero-scale](../../demo3d/evidence/trailer/hero-scale/README.md).
 
 The trailer uses overdrive as the base of every shot (see
 [The trailer file](#the-trailer-file)). Everything above stays in force
@@ -1413,7 +1428,8 @@ The file's look:
 "look": {
   "monsterStyle": "crystal", "structureStyle": "crystal",
   "styleTune": "glow=1.0,exposure=0.5,contrast=26,saturation=30,bloom=2.0,threshold=1.0,vignette=0.42,chroma=0.05",
-  "structureTune": "gain=0.3,glow=0.6"
+  "structureTune": "gain=0.3,glow=0.6",
+  "heroOutline": "3,3,1.3,0.1"
 }
 ```
 
@@ -1429,6 +1445,9 @@ The file's look:
   doesn't. The style post fix moves every environment by the same offsets.
 - **Per-shot grades** take each environment down further, the crypt's pale
   stone most (exposure −0.45).
+- **The hero's outline** is gold (`heroOutline`, `px,r,g,b` as
+  `--hero-outline` takes it), against the cool gems, instead of overdrive's
+  cyan, which vanished into the cyan blocks. `--hero-outline` still wins.
 - **Structures** are dark sapphire with a faint glow (gain 0.3, glow 0.6), so
   a wall reads beside the horde without outshining it, and flares as it
   breaks.

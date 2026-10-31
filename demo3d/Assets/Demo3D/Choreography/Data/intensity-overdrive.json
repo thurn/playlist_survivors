@@ -37,7 +37,7 @@
     "deathBurst": 0.8,
     "lightKnee": 10,
     "shardCap": 240,
-    "heroScale": 1.7
+    "heroOutline": 3
   },
   "loads": {
     "overdrive": {

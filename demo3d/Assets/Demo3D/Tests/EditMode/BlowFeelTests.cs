@@ -97,11 +97,11 @@ namespace Demo3D.Tests
             var od = BlowFeel.Amounts.FromOverlay(File.ReadAllText(Overdrive));
             Assert.That(od, Is.Not.Null);
             Assert.That(od.HeavyKills, Is.GreaterThan(od.CrispKills));
-            Assert.That(BlowFeel.Amounts.Parse(JsonValue.Parse("{}")).HeroScale, Is.EqualTo(1f));
-            Assert.That(od.HeroScale, Is.GreaterThan(1f));
+            Assert.That(BlowFeel.Amounts.Parse(JsonValue.Parse("{}")).HeroOutline, Is.EqualTo(0f));
+            Assert.That(od.HeroOutline, Is.GreaterThan(0f));
             Assert.Throws<FormatException>(() => BlowFeel.Amounts.Parse(JsonValue.Parse("{ \"crispKills\": 60, \"heavyKills\": 8 }")));
             Assert.Throws<FormatException>(() => BlowFeel.Amounts.Parse(JsonValue.Parse("{ \"hitStop\": 0.2, \"hitStopCatchUp\": 0.1 }")));
-            Assert.Throws<FormatException>(() => BlowFeel.Amounts.Parse(JsonValue.Parse("{ \"heroScale\": 0 }")));
+            Assert.Throws<FormatException>(() => BlowFeel.Amounts.Parse(JsonValue.Parse("{ \"heroOutline\": -1 }")));
         }
     }
 }

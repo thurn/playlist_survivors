@@ -592,9 +592,10 @@ namespace Demo3D.Choreography.Tests
         [Test]
         public void ATrailersLookParses()
         {
-            string look = "\"look\": { \"monsterStyle\": \"crystal\", \"structureStyle\": \"crystal\", \"styleTune\": \"glow=1\", \"structureTune\": \"gain=0.2\" }, ";
+            string look = "\"look\": { \"monsterStyle\": \"crystal\", \"structureStyle\": \"crystal\", \"styleTune\": \"glow=1\", \"structureTune\": \"gain=0.2\", \"heroOutline\": \"3,3,1.3,0.1\" }, ";
             Trailer t = PS.Choreography.Trailer.Parse(Trailer(Shot1(), Shot2()).Replace("\"shots\":", look + "\"shots\":"), Fixtures.Song, Environments);
-            Assert.That((t.Style.MonsterStyle, t.Style.StructureStyle, t.Style.StyleTune, t.Style.StructureTune), Is.EqualTo(("crystal", "crystal", "glow=1", "gain=0.2")));
+            Assert.That((t.Style.MonsterStyle, t.Style.StructureStyle, t.Style.StyleTune, t.Style.StructureTune, t.Style.HeroOutline),
+                Is.EqualTo(("crystal", "crystal", "glow=1", "gain=0.2", "3,3,1.3,0.1")));
             Assert.That(Fixtures.Trailer.Style.MonsterStyle, Is.Null);
             var ex = Assert.Throws<FormatException>(() => PS.Choreography.Trailer.Parse(
                 Trailer(Shot1(), Shot2()).Replace("\"shots\":", "\"look\": { \"palette\": \"neon\" }, \"shots\":"), Fixtures.Song, Environments));
