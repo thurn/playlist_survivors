@@ -283,7 +283,8 @@ beats from hindsight").
   line sets the silence between tracks). The plugin decodes it and feeds
   the same delay line and analyzer. The analyzer may read the file faster
   than real time, up to `M` ahead, so playback starts at once instead of
-  after 3 s of silence.
+  after 3 s of silence. Under `--fixed-time` the frames drive it, as fast as
+  they compute ([Fixed time](#fixed-time)).
 - **Replay**: a recorded session's audio and entries, for watching a run
   again and for headless replays.
 
@@ -435,7 +436,9 @@ Contract details:
   the header's `PS_KIND_*`.
 - **`ps_render_music` runs on Unity's audio thread.** It never blocks,
   allocates or logs. It writes the delayed music for one output buffer and
-  records which song sample starts that buffer.
+  records which song sample starts that buffer. (Under `--fixed-time` the
+  main thread calls it instead, one thread at a time either way: see
+  [Fixed time](#fixed-time).)
 - **`ps_status` carries the clock anchor**: the latest pair of (DSP time,
   song time) written by `ps_render_music`. The client derives song time from
   it. See the [Clocks](#clocks) section.
@@ -453,8 +456,10 @@ is the contract the C# mirrors: every struct, return code, source, state and
 entry kind with its `v` slots (`analysis::flat`'s table). Decisions:
 
 - `ps_config` holds the source, `M`, the output rate, the path (a file or an
-  M3U), the models' path (null: `$PS_MODELS`, else the checkout's) and the
-  session folder (null: no record).
+  M3U), the models' path (null: `$PS_MODELS`, else the checkout's), the
+  session folder (null: no record) and, since ps-msz.7.5, `hindsight_jobs`
+  (0 or 1 live; 8 when frames drive the analysis, [Fixed time](#fixed-time)),
+  which makes the struct 56 bytes.
 - The status is `struct ps_status`, a tag rather than a typedef, because C
   can't give a type and the function that fills it one name.
 - It reports the anchor (DSP time, song time and the frame count it came
@@ -749,6 +754,50 @@ lead     = frontier - heardSong(now)     // = outputLatency + margin
   display latency ever exceeds the lead, the frame shows the frontier's
   state instead, and the debug overlay flags it (see
   [Debug Surfaces](#debug-surfaces)).
+
+### Fixed time
+
+Checks, stills and filmstrips run on frame time instead (`--fixed-time`): frame
+`n` shows song time `n / 60` however long it takes, so a rerun shows the same
+frames. No music plays in time with those frames, so the output is silent and
+no sound is scheduled.
+
+```text
+song     = frame + 0.038                 // FrameClock: the built-in speakers' output latency
+frontier = song + margin                 // the margin at 60 fps and 256-frame buffers, 52 ms
+needed   = frontier - B                  // the latest stamp the frame may take
+```
+
+- **The frames drive the music** (ps-msz.7.5): a File or Replay source's
+  render position is not Unity's audio thread's. Each frame, the main thread
+  renders the music to the frame's `song` and drops it
+  (`MusicPlayer.RenderTo`; `ps_render_music` from the main thread, the audio
+  source never playing). The source then decodes and analyses up to `M` past
+  that, so a run takes as long as its frames and its analysis compute, not
+  its song time.
+- **Each frame waits for its entries**: it polls until the analysis covers
+  its frontier's stamps (`needed + M - A`, plus a block) and takes every
+  entry at exactly stamp + B. Rendering to the frame's `song` lets the
+  analysis read about 0.3 s past that, so the wait is for the analysis's
+  work, never for the render position. Nothing then depends on the plugin's
+  timing: a rerun's hash is the same.
+- **The analysis decodes hindsight in parallel**: the frames wait on it, and
+  each 20 s window's decode (its front end, eight networks and DBN, once a
+  second of music) is on that path. A driven session asks the plugin for 8
+  `hindsight_jobs` (`ps_config`): the window's front end and networks run on
+  8 threads, with the same entries as one (model order and each frame's
+  arithmetic are kept). Live runs keep one: the decode has 0.67 s and its
+  own thread. Measured on jarvis: the analysis reads about 4 times real time
+  with one job and 12 with eight; the full run's 35 minutes of song take
+  about 3 minutes (game/evidence/full-run).
+- **An app's music can't be driven**: it arrives in real time, so `--app`
+  under `--fixed-time` keeps the audio thread's render position.
+- **`--seconds N` counts song seconds** under `--fixed-time` (Unity's frame
+  time), so a still at 25:00 is reached in the time 25 minutes of frames and
+  analysis take.
+- Real-time runs (no `--fixed-time`: windowed, `--headless`, the sync spike,
+  `--watch` and live capture) keep Unity's audio thread as the render
+  position.
 
 ### Beats, bars and reliability
 
@@ -1082,7 +1131,8 @@ debugged.
   the launch). After a run started from the title screen, the title screen
   offers W, which watches it and returns. `game replay DIR` replays one in
   .NET (`game/dotnet/PS.Game.Replay`), and `game replay DIR --player` in the
-  built player, headless. Each checks the hash only against a session of its
+  built player, headless and at fixed time (its frames drive the recorded
+  music: a 30-minute session in minutes, [Fixed time](#fixed-time)). Each checks the hash only against a session of its
   own runtime, since runtimes may round differently: a player's session
   replayed in .NET reports a difference without failing.
 - Evidence: [game/evidence/replay](../../game/evidence/replay/README.md). Slow CI
@@ -2767,8 +2817,11 @@ The game provides these so each state above can be reached on demand:
   `--start-minute <n>`, `--level <file>` (a level's schedule and arena),
   `--fixed-time`, `--headless`, `--seconds <n>`; and for presenters' checks,
   `--events <file>` (a scripted event feed beside the sim's) and `--overlay`.
-  Under `--fixed-time` a File run waits each frame until the analysis covers
-  its frontier, so reruns show the same frames.
+  Under `--fixed-time` the frames drive a File or Replay source's music, so a
+  run takes minutes rather than its song time, and a File run waits each
+  frame until the analysis covers its frontier, so reruns show the same
+  frames; `--seconds N` counts song seconds then ([Fixed time](#fixed-time)).
+  The run's summary logs its seconds since launch.
 - An F1 debug menu: jump the run clock, spawn a role or boss, grant a weapon,
   passive or evolution, force a section change, an accent or the finale,
   break or regrow structures, and toggle the hero's invulnerability.

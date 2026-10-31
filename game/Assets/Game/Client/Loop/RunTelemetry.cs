@@ -101,9 +101,9 @@ namespace Game.Client.Loop
             int n = Math.Min(driver.Frames, LeadCapacity);
             var c = CultureInfo.InvariantCulture;
             var run = driver.Sim.State;
-            var s = string.Format(c, "{0} frames to song {1:F3} s, {2} entries ({3} late), {4} key changes ({5} dropped), {6} events, hash {7:X16}",
-                driver.Frames, driver.Times.FrameSong, Entries, driver.LateEntries, KeyChanges, keys.Dropped,
-                driver.Sim.EventCount, driver.Sim.Hash);
+            var s = string.Format(c, "{0} frames to song {1:F3} s ({8:F1} s since launch), {2} entries ({3} late), {4} key changes ({5} dropped), " +
+                "{6} events, hash {7:X16}", driver.Frames, driver.Times.FrameSong, Entries, driver.LateEntries, KeyChanges, keys.Dropped,
+                driver.Sim.EventCount, driver.Sim.Hash, UnityEngine.Time.realtimeSinceStartupAsDouble);
             s += string.Format(c, "; run {0} from song {1:F3} s, run clock {2:F3} s, {3} freezes ({4} music stopped), {5} run controls",
                 run.Phase, run.StartedAt, run.RunClock, _counts.Freezes, _counts.MusicStops, driver.Sim.Controls.Length);
             if (n == 0) return s;

@@ -13,8 +13,9 @@ namespace Game.Client.Music
     ///
     /// Every struct is blittable and every array argument pins a caller-owned buffer, so polling
     /// and rendering never allocate. ps_entry is the sim's <see cref="StreamEntry"/>: entries are
-    /// polled straight into what the sim takes. <see cref="RenderMusic"/> is Unity's audio thread's; every
-    /// other call belongs to the main thread.
+    /// polled straight into what the sim takes. <see cref="RenderMusic"/> is Unity's audio thread's, or the
+    /// main thread's when its frames drive the music (<see cref="MusicPlayer.Driven"/>); every other call
+    /// belongs to the main thread.
     /// </summary>
     public static class Plugin
     {
@@ -34,6 +35,7 @@ namespace Game.Client.Music
             public IntPtr Path;
             public IntPtr Models;     // zero: $PS_MODELS, else the plugin's checkout
             public IntPtr SessionDir; // zero: no record
+            public int HindsightJobs; // a hindsight window's models at once: 0 live, more when frames drive the analysis
         }
 
         /// <summary>struct ps_status: 80 bytes.</summary>

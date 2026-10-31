@@ -35,7 +35,8 @@ namespace Game.Tests
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Pid)), Is.EqualTo(4));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.M)), Is.EqualTo(8));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Path)), Is.EqualTo(24));
-            Assert.That(Marshal.SizeOf<Plugin.Config>(), Is.EqualTo(48));
+            Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.HindsightJobs)), Is.EqualTo(48));
+            Assert.That(Marshal.SizeOf<Plugin.Config>(), Is.EqualTo(56));
         }
 
         [Test]
@@ -224,6 +225,42 @@ namespace Game.Tests
             finally
             {
                 Plugin.Close(session);
+            }
+        }
+
+        [Test]
+        public void DrivenMusicIsRenderedByItsCallerAndAnalysedUpToMPastIt()
+        {
+            BuiltPlugin();
+            const double song = 2, block = 4096 / 44100.0; // the analyzer reads whole blocks
+            var host = new GameObject("Music", typeof(AudioSource));
+            var music = host.AddComponent<MusicPlayer>();
+            var clock = Stopwatch.StartNew();
+            try
+            {
+                music.Play(MusicSource.File(Path.GetFullPath(Song)), driven: true);
+                Assert.That(music.Failed, Is.False, music.Error);
+                // Nothing else renders it: the analysis reaches M past where this thread rendered to, and no further.
+                while (true)
+                {
+                    Assert.That(clock.Elapsed.TotalSeconds, Is.LessThan(HangGuard), $"analysed {music.Status.Analysed:F3} s");
+                    music.RenderTo(song);
+                    music.Poll();
+                    Assert.That(music.Failed, Is.False, music.Error);
+                    Assert.That(music.Status.Analysed, Is.LessThanOrEqualTo(song + MusicPlayer.M + 0.001));
+                    if (music.Status.Analysed > song + MusicPlayer.M - block) break;
+                    System.Threading.Thread.Sleep(1);
+                }
+                Assert.That(music.Status.State, Is.EqualTo(Plugin.Playing));
+                // The last buffer rendered ends at the song time asked for.
+                double rate = AudioSettings.outputSampleRate;
+                Assert.That(music.Status.AnchorSong, Is.LessThan(song).And.GreaterThanOrEqualTo(song - 1024 / rate));
+                Assert.That(music.Status.Stalls, Is.Zero);
+            }
+            finally
+            {
+                music.Close(); // (edit mode calls no OnDisable)
+                UnityEngine.Object.DestroyImmediate(host);
             }
         }
 

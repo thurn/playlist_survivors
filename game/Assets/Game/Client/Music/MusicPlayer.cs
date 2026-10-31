@@ -17,6 +17,10 @@ namespace Game.Client.Music
     /// The plugin must see the audio callback's last return before ps_close, so the callback marks
     /// itself busy before it looks at the session, and closing waits for that mark to clear.
     ///
+    /// Driven (a --fixed-time run of a File or Replay source), the frames drive the music instead:
+    /// the main thread renders it (<see cref="RenderTo"/>) and drops it, and the audio source never
+    /// plays, so the plugin decodes and analyses as fast as frames compute rather than in real time.
+    ///
     /// It updates before every other script, so a frame's readers see this frame's clock sample
     /// and entries, and none of a poll's entries is overwritten before they read it.
     /// </summary>
@@ -26,6 +30,13 @@ namespace Game.Client.Music
     {
         public const double M = 3.0;
         public const int MaxEntries = 512;
+        /// <summary>The frames a driven render asks for at a time.</summary>
+        const int DrivenChunk = 1024;
+        /// <summary>
+        /// A driven analysis decodes all eight of a hindsight window's models at once: the frames
+        /// wait on it, and one at a time it reads only about four times real time.
+        /// </summary>
+        const int DrivenHindsightJobs = 8;
 
         IntPtr _session;
         int _busy, _closing;
@@ -34,6 +45,10 @@ namespace Game.Client.Music
         double _rate;
         AudioSource _source;
         string _error;
+        volatile bool _driven;
+        float[] _dropped; // a driven render's frames
+        long _drivenFrames; // the frames a driven render has played
+        bool _drivenStarted;
 
         public readonly MusicClock Clock = new MusicClock();
         public readonly StreamEntry[] Entries = new StreamEntry[MaxEntries];
@@ -45,6 +60,8 @@ namespace Game.Client.Music
         /// <summary>How many of <see cref="Entries"/> this frame's poll filled.</summary>
         public int EntryCount { get; private set; }
         public bool Open => _session != IntPtr.Zero;
+        /// <summary>The frames drive the music (<see cref="RenderTo"/>); Unity's output plays none of it.</summary>
+        public bool Driven => _driven;
         public bool Failed => _error != null;
         public string Error => _error;
         public int Rendered => Volatile.Read(ref _rendered);
@@ -99,11 +116,14 @@ namespace Game.Client.Music
 
         /// <summary>
         /// Opens a session on `source` and starts the music: a file decoded, or an app tapped muted
-        /// at once (its sound is the plugin's from then on, M late).
+        /// at once (its sound is the plugin's from then on, M late). `driven`: the frames render it
+        /// (<see cref="RenderTo"/>), never Unity's output; not for an app, whose music comes in real time.
         /// </summary>
-        public void Play(MusicSource source, string sessionDir = null)
+        public void Play(MusicSource source, string sessionDir = null, bool driven = false)
         {
             if (Open) throw new InvalidOperationException("MusicPlayer: already playing");
+            if (driven && source.IsApp) throw new ArgumentException("MusicPlayer: an app's music can't be driven by frames");
+            _driven = driven;
             Source = source;
             _rate = AudioSettings.outputSampleRate;
             string models = Path.Combine(Application.streamingAssetsPath, "ps", "madmom.bin");
@@ -116,6 +136,7 @@ namespace Game.Client.Music
                 Path = Plugin.Utf8(source.Path),
                 Models = Plugin.Utf8(File.Exists(models) ? models : null),
                 SessionDir = Plugin.Utf8(sessionDir),
+                HindsightJobs = driven ? DrivenHindsightJobs : 0,
             };
             try
             {
@@ -134,6 +155,11 @@ namespace Game.Client.Music
                 Free(config.SessionDir);
             }
             Clock.DisplayLatency = Refresh; // one refresh, as the 3D demo assumes (vsync's queued frame)
+            if (driven)
+            {
+                _dropped = new float[2 * DrivenChunk];
+                return;
+            }
             _source = GetComponent<AudioSource>();
             _source.playOnAwake = false;
             _source.spatialBlend = 0;
@@ -186,6 +212,30 @@ namespace Game.Client.Music
             EntryCount = Math.Max(0, n);
         }
 
+        /// <summary>
+        /// Driven: renders the music on this thread, dropping it, until its render position reaches
+        /// song time `song`, so the plugin's File source decodes and analyses up to M past it (and a
+        /// Replay source reads its audio there). Nothing renders until the line holds the music's
+        /// start: call again. Each buffer's anchor is its own song time, as no DSP clock plays it.
+        /// </summary>
+        public void RenderTo(double song)
+        {
+            if (!Driven || !Open) return;
+            long target = (long)Math.Ceiling(song * _rate);
+            while (_drivenFrames < target)
+            {
+                int frames = (int)Math.Min(DrivenChunk, target - _drivenFrames);
+                Plugin.RenderMusic(_session, _dropped, frames, 2, _drivenFrames / _rate);
+                if (!_drivenStarted)
+                {
+                    Plugin.GetStatus(_session, out var status);
+                    if (status.State == Plugin.Waiting) return; // the line is still filling: silence, no time passed
+                    _drivenStarted = true;
+                }
+                _drivenFrames += frames;
+            }
+        }
+
         // A source's filter fills the buffer the mixer plays one buffer later than the DSP time it
         // reads: the sync spike measured the music exactly one buffer behind clicks scheduled at
         // that time, at 256, 512 and 1024 frames (game/evidence/spike). So the buffer's anchor is
@@ -193,7 +243,7 @@ namespace Game.Client.Music
         void OnAudioFilterRead(float[] data, int channels)
         {
             Interlocked.Exchange(ref _busy, 1);
-            if (Volatile.Read(ref _closing) == 0 && _session != IntPtr.Zero)
+            if (Volatile.Read(ref _closing) == 0 && _session != IntPtr.Zero && !_driven)
             {
                 int frames = data.Length / channels;
                 Plugin.RenderMusic(_session, data, frames, channels, AudioSettings.dspTime + (double)frames / _rate);

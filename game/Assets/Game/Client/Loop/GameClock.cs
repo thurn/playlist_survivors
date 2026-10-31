@@ -137,15 +137,18 @@ namespace Game.Client.Loop
             _frameSong = now.Frame;
             return new FrameTimes
             {
-                Song = now.Frame + OutputLatency,
+                Song = SongAt(now.Frame),
                 Heard = now.Frame,
                 FrameSong = now.Frame,
                 Frontier = FrontierAt(now.Frame),
             };
         }
 
+        /// <summary>The mixer's position at Unity frame time `frame`: where a driven music renders to (<see cref="MusicPlayer.RenderTo"/>).</summary>
+        public static double SongAt(double frame) => frame + OutputLatency;
+
         /// <summary>The frontier of the frame at Unity frame time `frame`.</summary>
-        public static double FrontierAt(double frame) => frame + OutputLatency + Margin;
+        public static double FrontierAt(double frame) => SongAt(frame) + Margin;
 
         /// <summary>A key can't be placed between frames on this clock: it was heard at the latest frame's song time.</summary>
         public double KeySong(double real) => _frameSong;

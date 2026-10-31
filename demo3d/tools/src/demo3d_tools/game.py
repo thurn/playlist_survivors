@@ -24,9 +24,10 @@ passes), into readability.json beside the stills; it exits 1 if a still fails.
 
 `game replay SESSION [--player]`: a recorded session (docs/design/unity-game.md, Sessions and
 Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Replay), or with
-`--player` in the built player, batch mode and `--headless`, which plays its recorded music through
-the plugin's Replay source in real time. Each exits 0 when the hash matches; .NET exits 2 for a
-player's session whose hash it rounds differently.
+`--player` in the built player, batch mode, `--headless` and `--fixed-time`, which plays its recorded
+music through the plugin's Replay source as fast as its frames compute (a 30-minute run in minutes).
+Each exits 0 when the hash matches; .NET exits 2 for a player's session whose hash it rounds
+differently.
 
 `game sweep [--assert]`: the positioning and idle bots' 30-minute runs in .NET over entry dumps of
 the survivors playlist (botsweep.py; slow CI).
@@ -74,7 +75,8 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
 
     rp = sub.add_parser("replay", help="replay a recorded session headlessly to its hash, in .NET or the player")
     rp.add_argument("session", nargs="?", help="the session's folder (the player's sessions/<time>, or a --sessions DIR's)")
-    rp.add_argument("--player", action="store_true", help="in the built player (batch mode, --headless) instead of .NET")
+    rp.add_argument("--player", action="store_true",
+                    help="in the built player (batch mode, --headless, --fixed-time) instead of .NET")
     rp.add_argument("--record", metavar="FILE",
                     help="instead, record a headless run of FILE (from the repository root) in the player, watch it at once "
                          "to its hash and replay its session in .NET")
@@ -113,7 +115,7 @@ def cmd_replay(a: argparse.Namespace) -> int:
     if not a.player:
         return _dotnet_replay(wt, session)
     log = wt.root / "captures" / "game" / "replay" / f"{session.name}.log"
-    code, _ = _play(wt, a.backend, ["--replay", str(session), "--headless"], log)
+    code, _ = _play(wt, a.backend, ["--replay", str(session), "--headless", "--fixed-time"], log)
     return code
 
 

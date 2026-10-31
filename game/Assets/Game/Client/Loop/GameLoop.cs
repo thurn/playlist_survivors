@@ -55,9 +55,11 @@ namespace Game.Client.Loop
     /// differs in the runtime that recorded it). The run's config is built once, from its <see cref="RunInputs"/> (the
     /// flags' on the build, or the replayed session's), which its session records. Player flags (<see cref="LaunchOptions"/>):
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
-    ///   so a rerun shows the same frames. With `--file`, each frame first waits until the
-    ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
-    ///   output is silent, since the music doesn't play in time with these frames;
+    ///   so a rerun shows the same frames. The frames drive a file's or replay's music
+    ///   (<see cref="MusicPlayer.Driven"/>): each renders it, silently, to the frame's mixer position,
+    ///   so a run takes as long as its frames compute, not its song time. With `--file`, each frame
+    ///   then waits until the plugin's analysis covers its frontier, and entries are known exactly at
+    ///   stamp + B;
     /// - `--seed N`: the sim's seed;
     /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
@@ -214,7 +216,7 @@ namespace Game.Client.Loop
                 var musicHost = new GameObject("Music");
                 musicHost.AddComponent<AudioSource>();
                 _music = musicHost.AddComponent<MusicPlayer>();
-                _music.Play(source, _sessionDir);
+                _music.Play(source, _sessionDir, driven: _fixed && !source.IsApp);
                 Calibrate();
                 if (!_fixed)
                 {
@@ -380,6 +382,8 @@ namespace Game.Client.Loop
                     if (_replay != null) { Finish(0, "the output device changed"); return; }
                     if (!Control(RunControl.DeviceChanged)) return;
                 }
+                // Fixed time: the frames drive the music, to this frame's mixer position.
+                _music.RenderTo(FrameClock.SongAt(Time.timeSinceLevelLoadAsDouble));
                 if (_replay != null) { if (!FeedReplay()) return; }
                 else if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
@@ -584,14 +588,18 @@ namespace Game.Client.Loop
         /// <summary>
         /// Feeds entries known exactly at stamp + B, polling the plugin until its analysis covers
         /// this frame's frontier (or is done), so the frame never depends on the plugin's timing.
-        /// False if the run failed.
+        /// The frame's render position lets the analysis read M past it, past that frontier's
+        /// stamps; a driven music that hasn't started yet is rendered as the wait goes. False if the
+        /// run failed.
         /// </summary>
         bool FeedSettled()
         {
-            double needed = Driver.StampNeededFor(FrameClock.FrontierAt(Time.timeSinceLevelLoadAsDouble));
+            double frame = Time.timeSinceLevelLoadAsDouble;
+            double needed = Driver.StampNeededFor(FrameClock.FrontierAt(frame));
             double started = Time.realtimeSinceStartupAsDouble;
             while (true)
             {
+                _music.RenderTo(FrameClock.SongAt(frame));
                 for (int i = 0; i < _music.EntryCount; i++) Driver.AddSettled(_music.Entries[i]);
                 _telemetry.Entries += _music.EntryCount;
                 if (_music.Failed) { Finish(1, _music.Error); return false; }
