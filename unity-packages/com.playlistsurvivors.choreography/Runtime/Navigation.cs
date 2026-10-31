@@ -219,14 +219,16 @@ namespace PS.Choreography
         /// Takes the placements' footprints out of the obstacle map (a structure break): the exact shapes at once,
         /// and the capped field and every cached passable set (so each flow field's) in the cells those shapes'
         /// reach could change. <see cref="Open"/> keeps its old lower bounds until a rebuild (<see cref="BeginOpenRebuild"/>).
-        /// Returns the largest clearance now found in the cells the footprints covered: the new opening's half width, capped.
+        /// Returns, per placement, the largest clearance now found in the cells its footprint covered (the opening's
+        /// half width there, capped; +∞ for one without a footprint or already removed).
         /// </summary>
-        public float Remove(IEnumerable<int> placements)
+        public float[] Remove(IReadOnlyList<int> placements)
         {
-            var covered = new List<int>();
-            foreach (int k in placements)
+            var covered = new List<int>[placements.Count];
+            for (int pi = 0; pi < placements.Count; pi++)
             {
-                int s = shapeOf[k];
+                covered[pi] = new List<int>();
+                int s = shapeOf[placements[pi]];
                 if (s < 0 || removed[s]) continue;
                 removed[s] = true;
                 float reach = radius[s] + MaxClearance + CellM;
@@ -236,7 +238,7 @@ namespace PS.Choreography
                     for (int x = x0; x <= x1; x++)
                     {
                         int i = y * W + x;
-                        if (ShapeDistance(s, CellCenter(x, y), out _, true) < CellM / 2) covered.Add(i);
+                        if (ShapeDistance(s, CellCenter(x, y), out _, true) < CellM / 2) covered[pi].Add(i);
                         float before = Clearance[i];
                         float d = Distance(CellCenter(x, y));
                         if (d == before) continue;
@@ -246,8 +248,12 @@ namespace PS.Choreography
                         foreach (KeyValuePair<float, bool[]> kv in passable) kv.Value[i] = d > kv.Key;
                     }
             }
-            float widest = 0;
-            foreach (int i in covered) widest = Math.Max(widest, Clearance[i]);
+            var widest = new float[placements.Count];
+            for (int pi = 0; pi < placements.Count; pi++)
+            {
+                widest[pi] = covered[pi].Count == 0 ? float.PositiveInfinity : 0;
+                foreach (int i in covered[pi]) widest[pi] = Math.Max(widest[pi], Clearance[i]);
+            }
             return widest;
         }
 

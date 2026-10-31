@@ -384,9 +384,10 @@ A schedule may only add `breaks` to sections by label:
 
 **The break is the hero's spell.** On the decision before the bolt must
 leave, the hero sends the roster's bolt (its first spell of shape `single`)
-from where it stands to the target's nearest point. The bolt flies at the
-projectile's speed and strikes on the break's grid point, like any bolt that
-lands on the grid. A spell rather than a blow, because the route rarely puts
+from where it stands to the target's nearest point. The bolt flies at about
+the projectile's speed and strikes on the break's grid point, like any bolt
+that lands on the grid. A launch the deciding beat has already passed is
+clamped to that beat, so that flight runs a little faster. A spell rather than a blow, because the route rarely puts
 the hero within a blow's reach of the wall on that exact beat, and a bolt
 reads from any side. The strike is a bolt impact effect and the bolt's sound
 at the grid point's accent strength (at least 0.8). The timeline records one
@@ -399,16 +400,21 @@ the layout's grid (`NavGrid.Clone`). At the strike:
   counting for distances and push-outs. The capped wall distance field and
   every flow field's passable cells are recomputed in the cells those shapes
   could reach, a patch of a few hundred cells.
-- **Room for every size still holds.** The widest clearance now found where
-  the footprints stood must let the largest monster through with 0.5 m to
-  spare each side, or the run fails.
+- **Room for every size still holds.** Before the run, the breaks are applied
+  in order to a scratch copy of the map. Where each piece stood, the widest
+  clearance must let the largest monster through with 0.5 m to spare each
+  side, or the run fails. That is why targets are whole wall runs: one piece
+  out of a run's middle would leave a slit.
 - **Every whole-grid rebuild is time-sliced.** The field toward the hero
   rebuilds on the next beat over the new map, as when the hero moves. The
   uncapped distance field (`Open`) rebuilds a beat's share of its columns and
   rows per tick, keeping its old values, which only grow as footprints leave
   and so stay lower bounds. The goal fields of the current and later sections
   rebuild one after another, a beat's share of the grid per tick, each
-  swapped in when done. No tick carries a whole field.
+  swapped in when done. No tick carries a whole field. `SimTickTiming`
+  counts the most cells of navigation work any one tick did, a count rather
+  than a time: about 15,000 of the grid's 102,400 in the walls run, against
+  2,000 without breaks.
 - **Debris never blocks.**
 
 **The walls schedule** (`structure-breaks-walls.json`) breaks each wall next

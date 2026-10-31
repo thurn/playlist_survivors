@@ -48,8 +48,9 @@ namespace PS.Choreography
         /// <summary>
         /// The structure breaks (choreography.md, "Structure breaks"), one row per break: when and where it struck,
         /// whether the camera saw it, how far the hero's bolt flew, and the horde through the opening in the
-        /// <paramref name="bars"/> bars after it (monsters that stepped over the broken pieces' footprints), against
-        /// the horde alive at the break and the part of it within <see cref="NearBreakM"/> of the point struck. Empty
+        /// <paramref name="bars"/> bars after it (monsters that stepped over the broken pieces' footprints, those that
+        /// spawned since included), and the shares of the horde alive at the break, and of the part of it within
+        /// <see cref="NearBreakM"/> of the point struck, that went through. Empty
         /// without breaks. <paramref name="list"/> is the run's placement list.
         /// </summary>
         public static string BreakTable(Timeline tl, PlacementList list, int bars = 4)
@@ -73,13 +74,13 @@ namespace PS.Choreography
                 double bi = tl.Map.BeatIndexAt(b.Time);
                 double end = tl.Map.TimeOfBeatIndex(bi + bars * tl.Map.BeatsPerBarAt(1));
                 FramingSample f = tl.FramingAt(b.Time);
-                int alive = 0, near = 0, through = 0, nearThrough = 0;
+                int alive = 0, near = 0, through = 0, aliveThrough = 0, nearThrough = 0;
                 for (int e = 1; e < tl.EntityCount; e++)
                 {
                     EntityInfo info = tl.Entities[e];
                     if (info.Kind != EntityKind.Monster || info.Spawn > end || info.Despawn <= b.Time) continue;
-                    bool isNear = false;
-                    if (info.Spawn <= b.Time && deathAt[e] > b.Time)
+                    bool isNear = false, isAlive = info.Spawn <= b.Time && deathAt[e] > b.Time;
+                    if (isAlive)
                     {
                         alive++;
                         isNear = System.Numerics.Vector2.Distance(tl.PositionAt(e, b.Time), b.Point) <= NearBreakM;
@@ -93,13 +94,17 @@ namespace PS.Choreography
                         int n = Math.Max(1, (int)Math.Ceiling(System.Numerics.Vector2.Distance(sg.From, sg.To) / 0.1f));
                         bool hit = false;
                         for (int k = 0; k <= n && !hit; k++) hit = Within(list, pieces, System.Numerics.Vector2.Lerp(sg.From, sg.To, k / (float)n));
-                        if (hit) { through++; if (isNear) nearThrough++; break; }
+                        if (!hit) continue;
+                        through++;
+                        if (isAlive) aliveThrough++;
+                        if (isNear) nearThrough++;
+                        break;
                     }
                 }
                 sb.Append("| ").Append(b.Target).Append(" | ").Append(F(b.Time, 2)).Append(" | ").Append(tl.Sections[tl.Map.SectionIndexAt(b.Time)].Label)
                   .Append(" | ").Append(pieces.Count).Append(" | ").Append(tl.View(f.ViewWidth).Contains(f.Focus, b.Point) ? "yes" : "no")
                   .Append(" | ").Append(F(System.Numerics.Vector2.Distance(b.Origin, b.Point), 1))
-                  .Append(" | ").Append(through).Append(" | ").Append(alive).Append(" | ").Append(alive > 0 ? F(through / (double)alive, 2) : "–")
+                  .Append(" | ").Append(through).Append(" | ").Append(alive).Append(" | ").Append(alive > 0 ? F(aliveThrough / (double)alive, 2) : "–")
                   .Append(" | ").Append(near).Append(" | ").Append(near > 0 ? F(nearThrough / (double)near, 2) : "–").Append(" |\n");
             }
             return sb.ToString();

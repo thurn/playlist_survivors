@@ -20,10 +20,19 @@ namespace PS.Choreography
         public readonly int FlowRebuildSlices;
         /// <summary>Rebuilds of the field toward the hero over the whole run, the first (built whole at load) included.</summary>
         public readonly int FlowRebuilds;
+        /// <summary>
+        /// The most navigation work one tick did, in grid cells: flow-field cells settled plus the uncapped field's
+        /// lines times their length (choreography.md, "Rebuilds are rare and spread out"). A count, not a time, so
+        /// it shows no tick carries a whole field however loaded the machine is.
+        /// </summary>
+        public readonly int MaxTickNavCells;
+        /// <summary>Goal fields rebuilt over a changed obstacle map and swapped in (structure breaks; 0 without).</summary>
+        public readonly int GoalFieldRebuilds;
 
-        public SimTickTiming(float[] tickMs, double tickRate, int flowRebuildSlices = 0, int flowRebuilds = 0)
+        public SimTickTiming(float[] tickMs, double tickRate, int flowRebuildSlices = 0, int flowRebuilds = 0, int maxTickNavCells = 0, int goalFieldRebuilds = 0)
         {
             TickMs = tickMs; TickRate = tickRate; FlowRebuildSlices = flowRebuildSlices; FlowRebuilds = flowRebuilds;
+            MaxTickNavCells = maxTickNavCells; GoalFieldRebuilds = goalFieldRebuilds;
         }
 
         public readonly struct Summary
