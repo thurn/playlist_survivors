@@ -50,6 +50,12 @@ namespace Game.Client
         public bool Done => _times.Count == 0;
 
         /// <summary>
+        /// A full-screen view kept in place of the camera's while set: the title screen's UI panel,
+        /// which a batch-mode player draws into a target of its own.
+        /// </summary>
+        public static RenderTexture Screen;
+
+        /// <summary>
         /// Raised before the ID render draws the frame a second time: a hand-drawn camera spends the
         /// draws queued in a frame (Graphics.RenderMesh*), so their owners queue them again.
         /// </summary>
@@ -95,6 +101,7 @@ namespace Game.Client
 
         Texture2D Draw()
         {
+            if (Screen != null) return Read(Screen);
             var previous = _camera.targetTexture;
             _camera.targetTexture = _target;
             try { _camera.Render(); }
@@ -105,6 +112,11 @@ namespace Game.Client
                 Graphics.Blit(_target, _resolved);
                 source = _resolved;
             }
+            return Read(source);
+        }
+
+        static Texture2D Read(RenderTexture source)
+        {
             var req = AsyncGPUReadback.Request(source, 0, TextureFormat.RGBA32);
             req.WaitForCompletion();
             if (req.hasError) throw new Exception("Stills: GPU readback failed");

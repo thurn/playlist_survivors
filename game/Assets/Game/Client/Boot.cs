@@ -1,6 +1,8 @@
 using Game.Client.Loop;
 using Game.Client.Music;
+using Game.Client.Title;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Client
 {
@@ -15,8 +17,16 @@ namespace Game.Client
     ///   with a click on every beat (<see cref="SyncSpike"/>, which reads `--headless` too);
     /// - `--arena`: the baked arena alone in the game camera's framing (<see cref="Arena.ArenaStage"/>);
     /// - `--shatter-bench OUT.json`: the GPU shatter's bench (<see cref="Crowd.ShatterBench"/>).
-    /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--file`, `--seed`,
-    /// `--events`, `--overlay`, `--headless` and `--loop-out`).
+    /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--seed`, `--events`,
+    /// `--overlay`, `--headless` and `--loop-out`) on its music:
+    /// - `--file &lt;audio or .m3u&gt;`: the file;
+    /// - `--app &lt;name&gt;`: the app producing audio now that the name picks, tapped muted and played
+    ///   M late (Delayed listening; <see cref="MusicSource.Pick"/>, a number is a pid). The player
+    ///   needs the System Audio Recording grant to hear it (docs/design/unity-game.md, Platform
+    ///   Capture and Crash Safety); without it the app is muted and the music silent;
+    /// - neither, in a window (or with `--title`): the title screen's pick (<see cref="TitleScreen"/>).
+    ///   That run's end returns to the title screen, which says why it ended;
+    /// - neither, windowless: no music, on frame time.
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -43,8 +53,37 @@ namespace Game.Client
             if (file != null && (Args.Has("--spike") || Args.Has("--spike-out"))) SyncSpike.Begin(gameObject, _camera, file, _seconds);
             else if (Args.Has("--arena")) Arena.ArenaStage.Begin(gameObject, _camera);
             else if (Args.Has("--shatter-bench")) Crowd.ShatterBench.Begin(gameObject, _camera, Args.Get("--shatter-bench"));
-            else GameLoop.Begin(gameObject, _camera);
+            else StartGame();
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
+        }
+
+        void StartGame()
+        {
+            var app = Args.Get("--app");
+            var file = Args.Get("--file");
+            if (app != null)
+            {
+                var source = MusicSource.FindApp(app, out string error);
+                if (source == null)
+                {
+                    Debug.LogError("Boot: --app: " + error);
+                    Application.Quit(1);
+                    return;
+                }
+                GameLoop.Begin(gameObject, _camera, source);
+            }
+            else if (file != null) GameLoop.Begin(gameObject, _camera, MusicSource.File(Args.Path(file)));
+            else if (TitleScreen.Wanted)
+                TitleScreen.Begin(gameObject, source => GameLoop.Begin(gameObject, _camera, source, ReturnToTitle));
+            else GameLoop.Begin(gameObject, _camera, null);
+        }
+
+        /// <summary>A run started from the title screen ended: the boot scene again, alone, on the title screen.</summary>
+        void ReturnToTitle(string why)
+        {
+            Debug.Log("Boot: back to the title screen, " + why);
+            TitleScreen.LastEnd = why;
+            SceneManager.LoadScene(gameObject.scene.name, LoadSceneMode.Single);
         }
 
         void Update()
@@ -55,7 +94,8 @@ namespace Game.Client
                 _stills.CaptureDue(t);
                 if (_stills.Done) Quit($"stills done at t={t:F3}");
             }
-            if (_seconds > 0f && t >= _seconds) Quit($"--seconds {_seconds} reached");
+            // Since launch: a return to the title screen reloads the scene.
+            if (_seconds > 0f && Time.timeAsDouble >= _seconds) Quit($"--seconds {_seconds} reached");
         }
 
         void OnDestroy() => _stills?.Dispose();

@@ -1,0 +1,19 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The title screen (TitleScreen.cs): pick the music. Rows are added in code. -->
+    <Style src="Title.uss" />
+    <ui:VisualElement name="title-root" class="root">
+        <ui:VisualElement class="facet facet--a" />
+        <ui:VisualElement class="facet facet--b" />
+        <ui:VisualElement class="facet facet--c" />
+        <ui:VisualElement class="column">
+            <ui:VisualElement name="wordmark" class="wordmark" />
+            <ui:Label text="Pick the music" class="tagline" />
+            <ui:Label text="PLAYING NOW" class="section" />
+            <ui:VisualElement name="apps" class="list" />
+            <ui:Label text="FILES AND PLAYLISTS" class="section" />
+            <ui:VisualElement name="files" class="list" />
+            <ui:Label name="message" class="message" />
+            <ui:Label class="hint" text="Up / Down choose   ·   Enter or Space starts   ·   Cmd-V adds a copied file or playlist path" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

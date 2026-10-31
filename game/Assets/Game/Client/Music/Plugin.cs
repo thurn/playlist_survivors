@@ -56,7 +56,44 @@ namespace Game.Client.Music
             public int DeviceChanged; // the default output device changed since Open (the run ends)
         }
 
+        /// <summary>An app producing audio now, a System source's choice (ps_app).</summary>
+        public readonly struct App
+        {
+            public readonly int Pid;
+            public readonly string Name;
+            public App(int pid, string name) { Pid = pid; Name = name; }
+        }
+
+        /// <summary>ps_app: an int32 pid and a NUL-terminated UTF-8 name of 128 bytes.</summary>
+        public const int AppBytes = 132, AppNameBytes = 128;
+
         public static int Open(ref Config config, out IntPtr session) => Fns.Open(ref config, out session);
+
+        /// <summary>
+        /// The apps producing audio now (ps_list_apps), up to `max`; throws on the plugin's error.
+        /// It allocates: the title screen's and --app's, never the frame loop's.
+        /// </summary>
+        public static App[] ListApps(int max = 64)
+        {
+            var raw = new byte[max * AppBytes];
+            int n = Fns.ListApps(raw, max);
+            if (n < 0) throw new InvalidOperationException($"ps_list_apps {n}: {LastError()}");
+            return ReadApps(raw, n);
+        }
+
+        /// <summary>The first `count` ps_app records in `raw`.</summary>
+        public static App[] ReadApps(byte[] raw, int count)
+        {
+            var apps = new App[count];
+            for (int i = 0; i < count; i++)
+            {
+                int at = i * AppBytes;
+                int len = 0;
+                while (len < AppNameBytes && raw[at + 4 + len] != 0) len++;
+                apps[i] = new App(BitConverter.ToInt32(raw, at), Encoding.UTF8.GetString(raw, at + 4, len));
+            }
+            return apps;
+        }
         public static int Poll(IntPtr session, StreamEntry[] into) => Fns.Poll(session, into, into.Length);
         public static int RenderMusic(IntPtr session, float[] interleaved, int frames, int channels, double dspTime) =>
             Fns.Render(session, interleaved, frames, channels, dspTime);
@@ -88,6 +125,7 @@ namespace Game.Client.Music
 
         // The function signatures, shared by both bindings.
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int OpenFn(ref Config config, out IntPtr session);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int ListAppsFn([Out] byte[] into, int max);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int PollFn(IntPtr session, [Out] StreamEntry[] into, int max);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int RenderFn(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void StatusFn(IntPtr session, out Status status);
@@ -98,6 +136,7 @@ namespace Game.Client.Music
         public sealed class Functions
         {
             public OpenFn Open;
+            public ListAppsFn ListApps;
             public PollFn Poll;
             public RenderFn Render;
             public StatusFn GetStatus;
@@ -110,6 +149,7 @@ namespace Game.Client.Music
 #else
         const string Lib = "ps_plugin";
         [DllImport(Lib, EntryPoint = "ps_open")] static extern int ps_open(ref Config config, out IntPtr session);
+        [DllImport(Lib, EntryPoint = "ps_list_apps")] static extern int ps_list_apps([Out] byte[] into, int max);
         [DllImport(Lib, EntryPoint = "ps_poll")] static extern int ps_poll(IntPtr session, [Out] StreamEntry[] into, int max);
         [DllImport(Lib, EntryPoint = "ps_render_music")] static extern int ps_render_music(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [DllImport(Lib, EntryPoint = "ps_status")] static extern void ps_status(IntPtr session, out Status status);
@@ -119,7 +159,7 @@ namespace Game.Client.Music
         // IL2CPP needs static methods for DllImport; the delegates wrap them once.
         static readonly Functions Fns = new Functions
         {
-            Open = ps_open, Poll = ps_poll, Render = ps_render_music,
+            Open = ps_open, ListApps = ps_list_apps, Poll = ps_poll, Render = ps_render_music,
             GetStatus = ps_status, Close = ps_close, LastError = ps_last_error,
         };
 #endif

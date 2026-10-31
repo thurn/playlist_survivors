@@ -39,6 +39,50 @@ namespace Game.Tests
         }
 
         [Test]
+        public void AppRecordsReadAsTheHeaderLaysThemOut()
+        {
+            // ps_app: int32 pid, then a NUL-terminated UTF-8 name of 128 bytes; a full name has no NUL.
+            var raw = new byte[2 * Plugin.AppBytes];
+            BitConverter.GetBytes(4242).CopyTo(raw, 0);
+            System.Text.Encoding.UTF8.GetBytes("Música").CopyTo(raw, 4);
+            BitConverter.GetBytes(7).CopyTo(raw, Plugin.AppBytes);
+            for (int i = 0; i < Plugin.AppNameBytes; i++) raw[Plugin.AppBytes + 4 + i] = (byte)'a';
+            var apps = Plugin.ReadApps(raw, 2);
+            Assert.That(apps[0].Pid, Is.EqualTo(4242));
+            Assert.That(apps[0].Name, Is.EqualTo("Música"));
+            Assert.That(apps[1].Pid, Is.EqualTo(7));
+            Assert.That(apps[1].Name, Is.EqualTo(new string('a', Plugin.AppNameBytes)));
+        }
+
+        [Test]
+        public void ThePluginListsTheAppsPlayingNow()
+        {
+            BuiltPlugin();
+            // Whatever is playing on this machine (often nothing): the call succeeds and names each one.
+            foreach (var app in Plugin.ListApps())
+            {
+                Assert.That(app.Pid, Is.GreaterThan(0));
+                Assert.That(app.Name, Is.Not.Empty);
+            }
+        }
+
+        [Test]
+        public void AppPicksItsNameExactlyThenByAPartThenAPid()
+        {
+            var apps = new[] { new Plugin.App(10, "Music Helper"), new Plugin.App(11, "Music"), new Plugin.App(12, "Google Chrome") };
+            Assert.That(MusicSource.Pick(apps, "music")?.Pid, Is.EqualTo(11));
+            Assert.That(MusicSource.Pick(apps, "chrome")?.Pid, Is.EqualTo(12));
+            Assert.That(MusicSource.Pick(apps, "help")?.Pid, Is.EqualTo(10));
+            Assert.That(MusicSource.Pick(apps, "Spotify"), Is.Null);
+            Assert.That(MusicSource.Pick(apps, "12")?.Name, Is.EqualTo("Google Chrome"));
+            // A pid nobody lists is any process with audio (a tool started from a terminal).
+            var other = MusicSource.Pick(apps, "999");
+            Assert.That(other?.Pid, Is.EqualTo(999));
+            Assert.That(MusicSource.App(other.Value).IsApp, Is.True);
+            Assert.That(MusicSource.File("/music/mix.m3u").Tag, Is.EqualTo("mix.m3u"));
+        }
+
+        [Test]
         public void ARebuiltPluginLoadsAsANewCopyWithoutARestart()
         {
             string dir = Path.Combine(Path.GetTempPath(), "ps-plugin-reload-" + Guid.NewGuid().ToString("N"));

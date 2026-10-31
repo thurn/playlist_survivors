@@ -14,6 +14,7 @@ using Game.Client.Structures;
 using PS.Game.Sim;
 using PS.Game.Sim.Level;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Game.Client.Loop
 {
@@ -22,9 +23,11 @@ namespace Game.Client.Loop
     /// entries and the keys into the sim, the sim stepped to the frontier, its events and state
     /// to the presenters at frameSong. The sim plays the slice's level (<see cref="SliceLevel"/>:
     /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>.
-    /// Player flags:
-    /// - `--file &lt;audio or .m3u&gt;`: plays it through the music plugin, which feeds the sim;
-    ///   live, song time is the music's (<see cref="MusicTimes"/>), and the run ends with it;
+    /// Its music is the source Boot resolved from `--file` or `--app`, or the title screen's pick
+    /// (<see cref="MusicSource"/>): played through the music plugin, which feeds the sim; live,
+    /// song time is the music's (<see cref="MusicTimes"/>). The run ends with a file's music, when
+    /// the output device changes (the latency does) or on Backspace, and then quits, or returns to
+    /// the title screen if it started there. Player flags:
     /// - `--fixed-time`: song time is the frame's, exactly n/60 at frame n (<see cref="FrameClock"/>),
     ///   so a rerun shows the same frames. With `--file`, each frame first waits until the
     ///   plugin's analysis covers its frontier, and entries are known exactly at stamp + B. The
@@ -81,22 +84,30 @@ namespace Game.Client.Loop
         StructureShatter _shatter;
         CrowdView _crowd;
         StreamWriter _out, _structuresOut;
-        bool _fixed, _done;
+        bool _fixed, _done, _quitting;
+        Action<string> _ended;
         int _entries, _keyChanges;
         readonly double[] _leads = new double[LeadCapacity];
         readonly double[] _steps = new double[LeadCapacity];
 
         public SimDriver Driver { get; private set; }
 
-        /// <summary>Starts the loop on `host`'s scene with the command line's flags.</summary>
-        public static GameLoop Begin(GameObject host, Camera camera)
+        /// <summary>What the music plays, null without music; its <see cref="MusicSource.Tag"/> is the HUD's source tag.</summary>
+        public MusicSource Source => _music != null ? _music.Source : null;
+
+        /// <summary>
+        /// Starts the loop on `host`'s scene with the command line's flags, playing `source` (null:
+        /// no music). When the run ends it calls `ended` with why, or quits if that is null.
+        /// </summary>
+        public static GameLoop Begin(GameObject host, Camera camera, MusicSource source, Action<string> ended = null)
         {
             var loop = host.AddComponent<GameLoop>();
-            loop.Setup(camera);
+            loop._ended = ended;
+            loop.Setup(camera, source);
             return loop;
         }
 
-        void Setup(Camera camera)
+        void Setup(Camera camera, MusicSource source)
         {
             _fixed = Args.Has("--fixed-time");
             bool headless = Args.Has("--headless");
@@ -113,14 +124,13 @@ namespace Game.Client.Loop
                 _capture.Begin(_soundOut == null ? 0 : (seconds > 0 ? seconds : 600) + 2);
             }
 
-            var file = Args.Get("--file");
             IGameClock clock = new FrameClock();
-            if (file != null)
+            if (source != null)
             {
                 var musicHost = new GameObject("Music");
                 musicHost.AddComponent<AudioSource>();
                 _music = musicHost.AddComponent<MusicPlayer>();
-                _music.Play(Args.Path(file));
+                _music.Play(source);
                 if (!_fixed)
                 {
                     clock = _musicTimes = new MusicTimes(_music.Clock, MusicPlayer.Refresh,
@@ -196,9 +206,9 @@ namespace Game.Client.Loop
                 _structuresOut = new StreamWriter(Args.Path(structuresPath));
                 _structuresOut.WriteLine("frame,frame_song,breaks,shards,flying,moved_m,steps,physics_ms,shadow_ms");
             }
-            Debug.Log($"GameLoop: {(file != null ? file : "no music")}, {(_fixed ? "fixed time" : "real time")}, " +
-                      $"seed {config.Seed}, {(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, " +
-                      $"headless {headless}");
+            Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
+                      $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
+                      $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}");
         }
 
         /// <summary>
@@ -246,6 +256,7 @@ namespace Game.Client.Loop
             if (_music != null)
             {
                 if (_music.Failed) { Finish(1, _music.Error); return; }
+                if (_music.DeviceChanged) { Finish(0, "the output device changed"); return; }
                 if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
             }
@@ -271,6 +282,7 @@ namespace Game.Client.Loop
                 });
             _overlay.Toggle();
             if (_music != null && !_fixed && _music.Ended) Finish(0, null);
+            else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Finish(0, "the run was ended");
         }
 
         void FeedLive()
@@ -327,7 +339,11 @@ namespace Game.Client.Loop
                 Driver.Sim.State.EnemiesAlive));
         }
 
-        void OnApplicationQuit() => Finish(0, null);
+        void OnApplicationQuit()
+        {
+            _quitting = true;
+            Finish(0, null);
+        }
 
         void OnDestroy()
         {
@@ -346,12 +362,16 @@ namespace Game.Client.Loop
             _counts.Dispose();
         }
 
-        /// <summary>Logs the run's summary and quits with `code`.</summary>
-        void Finish(int code, string error)
+        /// <summary>
+        /// Logs the run's summary with why it ended (null: its music did) and quits with `code`
+        /// (not 0: `why` is an error), or hands `why` to whoever started it.
+        /// </summary>
+        void Finish(int code, string why)
         {
             if (_done) return;
             _done = true;
-            Debug.Log("GameLoop: " + (error ?? "done") + "; " + Summary());
+            string error = code != 0 ? why : null;
+            Debug.Log("GameLoop: " + (why ?? "done") + "; " + Summary());
             _out?.Dispose();
             _out = null;
             _structuresOut?.Dispose();
@@ -360,7 +380,8 @@ namespace Game.Client.Loop
             if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
             if (error != null) Debug.LogError("GameLoop: " + error);
-            Application.Quit(code);
+            if (_ended != null && !_quitting) _ended(why ?? "the music ended");
+            else Application.Quit(code);
         }
 
         void KeepSounds(string error)
@@ -408,6 +429,9 @@ namespace Game.Client.Loop
                 s += string.Format(c, "; effects {0} spawned ({1} rejected)", _effects.Spawned, _effects.System.RejectedTotal);
             if (_sounds != null)
                 s += string.Format(c, "; sounds {0} scheduled, {1} dropped", _sounds.Scheduled, _sounds.Dropped);
+            if (_music != null && _music.Source.IsApp)
+                s += string.Format(c, "; app {0}: state {1}, muted {2}, stalls {3}, releases {4}", _music.Source.Tag,
+                    _music.Status.State, _music.Status.Muted, _music.Status.Stalls, _music.Status.Releases);
             return s;
         }
 

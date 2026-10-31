@@ -38,6 +38,9 @@ namespace Game.Client.Music
         public readonly StreamEntry[] Entries = new StreamEntry[MaxEntries];
         [NonSerialized] public Plugin.Status Status;
 
+        /// <summary>What it plays; its <see cref="MusicSource.Tag"/> is the HUD's source tag.</summary>
+        public MusicSource Source { get; private set; }
+
         /// <summary>How many of <see cref="Entries"/> this frame's poll filled.</summary>
         public int EntryCount { get; private set; }
         public bool Open => _session != IntPtr.Zero;
@@ -46,6 +49,8 @@ namespace Game.Client.Music
         public int Rendered => Volatile.Read(ref _rendered);
         public bool Playing => Open && Status.State == Plugin.Playing;
         public bool Ended => Open && Status.State == Plugin.Ended;
+        /// <summary>The default output device changed since the session opened: the latency did, so the run ends.</summary>
+        public bool DeviceChanged => Open && Status.DeviceChanged != 0;
 
         /// <summary>One of Unity's DSP buffers, in seconds.</summary>
         public static double DspBuffer
@@ -84,20 +89,25 @@ namespace Game.Client.Music
             }
         }
 
-        /// <summary>Opens a File session on `path` (an absolute path to an audio file or .m3u) and starts the music.</summary>
-        public void Play(string path, string sessionDir = null)
+        /// <summary>
+        /// Opens a session on `source` and starts the music: a file decoded, or an app tapped muted
+        /// at once (its sound is the plugin's from then on, M late).
+        /// </summary>
+        public void Play(MusicSource source, string sessionDir = null)
         {
             if (Open) throw new InvalidOperationException("MusicPlayer: already playing");
+            Source = source;
             _rate = AudioSettings.outputSampleRate;
             AudioSettings.GetDSPBufferSize(out int bufferLength, out _);
             _halfBuffer = bufferLength / (2 * _rate);
             string models = Path.Combine(Application.streamingAssetsPath, "ps", "madmom.bin");
             var config = new Plugin.Config
             {
-                Source = Plugin.SourceFile,
+                Source = source.Kind,
+                Pid = source.Pid,
                 M = M,
                 OutputRate = _rate,
-                Path = Plugin.Utf8(path),
+                Path = Plugin.Utf8(source.Path),
                 Models = Plugin.Utf8(File.Exists(models) ? models : null),
                 SessionDir = Plugin.Utf8(sessionDir),
             };

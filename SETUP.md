@@ -90,6 +90,12 @@ current checkout, passing extra arguments through. `just native --file <path>` a
 plays a track through the game's music plugin into its frame loop, with placeholder capsules for
 now (the path must be absolute: the player starts in its app's folder; the arrows or WASD stride,
 Space stomps and F3 shows the debug overlay; [the loop's flags](game/evidence/loop/README.md)).
+`just game` alone opens the title screen: pick an app that is playing music, or a recent file or
+one in `~/Music/Playlist Survivors` (Cmd-V adds a copied path), and Enter or Space starts;
+Backspace ends the run and returns there. `just game --app Music` skips it and plays that app's
+music 3 s late (Delayed listening: the app is muted while tapped). The first live run asks for
+System Audio Recording; the player is signed so macOS remembers the grant
+([the title screen and live runs](game/evidence/title/README.md)).
 Adding `--spike` plays the sync spike instead, a click on every beat, and
 `just game-tool spike <name> --file <path>` measures that windowless
 ([the spike's evidence](game/evidence/spike/README.md)). The `-build`, `-play` and `-tool`

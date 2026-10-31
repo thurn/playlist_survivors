@@ -38,6 +38,8 @@ what was run (the exact commands), the numbers, and what they show.
 - [fx](fx/README.md): the sword's slashes and crystal waves, mass crystal death bursts and the
   cleave wave as filmstrips, and the scheduled sounds found on their samples in Unity's mix
   (ps-msz.3.11).
+- [title](title/README.md): the title screen's source picker windowless, the player's signature
+  and usage description, and headless `--app` and title-to-run-to-title runs (ps-msz.5.3).
 - [structures](structures/README.md): crystal structures shattering into PhysX shards on the impact
   frame, glinting and erupting on regrowth, with the physics and shadow bench (ps-msz.3.12).
 - [slice](slice/README.md): the assembled cinematic slice on house-128, its stills and filmstrips against

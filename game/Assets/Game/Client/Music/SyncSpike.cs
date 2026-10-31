@@ -79,7 +79,7 @@ namespace Game.Client.Music
             spike._clicks = new BeatClicks(clicksHost, Args.GetFloat("--click-lead", -1));
             spike._startReal = Time.realtimeSinceStartupAsDouble;
             spike._startDsp = AudioSettings.dspTime;
-            spike._music.Play(Args.Path(file));
+            spike._music.Play(MusicSource.File(Args.Path(file)));
             AudioSettings.GetDSPBufferSize(out int length, out int count);
             Debug.Log($"SyncSpike: {file}, output {AudioSettings.outputSampleRate} Hz, DSP buffer {length} x {count}, " +
                       $"speaker mode {AudioSettings.speakerMode}, headless {headless}");

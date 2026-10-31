@@ -39,6 +39,7 @@ namespace Game.Client.Music
             var fns = new Plugin.Functions
             {
                 Open = Resolve<Plugin.OpenFn>(handle, "ps_open"),
+                ListApps = Resolve<Plugin.ListAppsFn>(handle, "ps_list_apps"),
                 Poll = Resolve<Plugin.PollFn>(handle, "ps_poll"),
                 Render = Resolve<Plugin.RenderFn>(handle, "ps_render_music"),
                 GetStatus = Resolve<Plugin.StatusFn>(handle, "ps_status"),

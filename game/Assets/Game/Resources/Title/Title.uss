@@ -1,0 +1,145 @@
+/* The title screen: dark, a faint crystal lattice behind, the wordmark in the crystal's rainbow. */
+
+.root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgb(4, 5, 11);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Big rotated squares, hairline edges: facets of a crystal far behind the menu. */
+.facet {
+    position: absolute;
+    border-width: 1px;
+    rotate: 45deg;
+}
+
+.facet--a {
+    width: 900px;
+    height: 900px;
+    left: -380px;
+    top: -260px;
+    border-color: rgba(120, 190, 255, 0.07);
+}
+
+.facet--b {
+    width: 1300px;
+    height: 1300px;
+    right: -620px;
+    bottom: -720px;
+    border-color: rgba(220, 140, 255, 0.06);
+}
+
+.facet--c {
+    width: 520px;
+    height: 520px;
+    right: 180px;
+    top: -330px;
+    border-color: rgba(140, 255, 210, 0.05);
+}
+
+.column {
+    width: 980px;
+    align-items: stretch;
+}
+
+.wordmark {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.wordmark__letter {
+    font-size: 64px;
+    -unity-font-style: bold;
+    padding: 0 7px;
+    margin: 0;
+}
+
+.tagline {
+    font-size: 22px;
+    color: rgba(200, 215, 240, 0.55);
+    -unity-text-align: middle-center;
+    letter-spacing: 6px;
+    margin-bottom: 44px;
+}
+
+.section {
+    font-size: 15px;
+    letter-spacing: 5px;
+    color: rgba(160, 190, 230, 0.5);
+    margin: 22px 0 8px 18px;
+}
+
+.list {
+    border-top-width: 1px;
+    border-color: rgba(150, 200, 255, 0.12);
+}
+
+.entry {
+    flex-direction: row;
+    align-items: center;
+    height: 52px;
+    padding: 0 18px;
+    border-width: 1px;
+    border-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(150, 200, 255, 0.08);
+}
+
+.entry--selected {
+    background-color: rgba(150, 210, 255, 0.07);
+    border-color: rgba(225, 245, 255, 0.85);
+}
+
+.entry__gem {
+    width: 11px;
+    height: 11px;
+    rotate: 45deg;
+    border-width: 1px;
+    border-color: rgba(190, 215, 255, 0.45);
+    margin-right: 22px;
+}
+
+.entry__name {
+    font-size: 24px;
+    color: rgba(225, 232, 245, 0.8);
+    flex-grow: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.entry--selected .entry__name {
+    color: rgb(255, 255, 255);
+}
+
+.entry__kind {
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: rgba(160, 190, 230, 0.45);
+}
+
+.entry--empty .entry__name {
+    font-size: 18px;
+    color: rgba(170, 185, 210, 0.45);
+}
+
+.message {
+    font-size: 18px;
+    color: rgb(255, 170, 190);
+    -unity-text-align: middle-center;
+    margin-top: 28px;
+    white-space: normal;
+}
+
+.hint {
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgba(160, 180, 210, 0.4);
+    -unity-text-align: middle-center;
+    margin-top: 30px;
+}

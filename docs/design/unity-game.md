@@ -608,6 +608,39 @@ anchor, the records' ring, the record and the one analysis loop). Decisions:
   ([evidence](../../game/evidence/system-source/README.md)). Hearing the
   delayed music needs the grant: an operator row.
 
+**Shipped (ps-msz.5.3).** The client's side of live runs: the title screen,
+`--app` and the player's permission. Decisions:
+
+- **The title screen** (`game/Assets/Game/Client/Title/`, UI Toolkit, its
+  UXML and USS in `Resources/Title/`) lists the apps producing audio now
+  (`ps_list_apps`, refreshed each second), then the recently played files and
+  those in `~/Music/Playlist Survivors` (`--music-dir` overrides). A player
+  has no file dialog, so Cmd-V adds a copied path. Up and Down choose, Enter
+  or Space starts; a click chooses and a second click starts. It opens when a
+  windowed launch names no source (`--title` forces it, for stills).
+- **A run started there returns to it** when it ends (the file's end, a
+  failure, an output device change, Backspace): the boot scene reloads and the
+  title screen says why. Runs started by flags quit as before. This is the
+  stand-in until M3's run ends (ps-msz.6.1) take over the end itself.
+- **`--app <name>`** picks as native's `capture::apps::pick` does by name
+  (exact, ignoring case, else a part); a number is a pid, listed or not, since
+  the plugin taps any process with audio. It waits up to 3 s for the app to
+  produce audio, then fails listing what is playing.
+- **An output device change ends the run** cleanly (`ps_status.device_changed`).
+- **The source tag** is `MusicSource.Tag` (the app's name, or the file's), on
+  `GameLoop.Source` and `MusicPlayer.Source`, for the HUD.
+- **Permissions**: every Mac build gets `NSAudioCaptureUsageDescription` in
+  its Info.plist and is signed again (`Editor/MacPlayerSigning.cs`), with the
+  bundle ID `ca.thurn.playlist-survivors.game`. It signs with native's
+  stable self-signed identity when the keychain has it, since TCC keys an ad
+  hoc signature's grant on its code hash and every build would ask again;
+  without the identity it signs ad hoc. A player started from a terminal
+  (`--app` in a check) gets the terminal's grant, since TCC asks of the
+  responsible app; `just game` opens it on its own.
+- **The editor** needs its own grant for System capture: allow Unity in
+  System Settings, Privacy & Security, Screen & System Audio Recording
+  (System Audio Recording Only). File runs need none.
+
 ### Building and loading the plugin
 
 The plugin builds per platform from native's workspace, outside Unity, and
