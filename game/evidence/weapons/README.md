@@ -33,7 +33,8 @@ uv run --project demo3d/tools game look fire-trail --backend mono --evidence wea
 The purple ring of dashes is the arena's rune circle at the start tile, not a weapon.
 
 On the bright blossom zone (from 6.6 s on house-128) the additive aura reads paler, nearly
-white at the rim. The run's zones are mostly night, the reference look.
+white at the rim. These strips predate blossom's night version (ps-msz.6.24): every zone is now a
+night, so the blossom ground they wash out against is gone.
 
 ## The tests
 
