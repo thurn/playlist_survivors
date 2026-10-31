@@ -208,8 +208,8 @@ The trailer runs 32.6 s from first frame to silence:
   dragon storms in, and a laser sweeps the field on every eighth note. The
   final slam, on the downbeat of bar 99 at 30.35 s, kills everything on
   screen.
-- **30.35–31.13 s: the aftermath.** Two beats on the dying horde, the
-  shockwave and the embers, all still moving.
+- **30.35–31.13 s: the aftermath.** Two beats as the whole horde falls, with
+  the shockwave and the embers. By the cut the field lies dead.
 - **31.13–32.63 s: black.** The picture cuts to black, and the music fades out
   over 1.5 s.
 
@@ -291,12 +291,12 @@ After the duel, the shot length halves, group by group:
 | 2 | 2.481–8.674 | 81–84 | desert | Charge | ~600 | 45 m | 0° |
 | 3 | 8.674–14.868 | 85–88 | snow | Vortex | ~700 | 50 m | 45° |
 | 4 | 14.868–17.965 | 89–90 | forest | Converge, 4 streams | ~500 | 40 m | 0° |
-| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~540 | 40 m | 180° |
+| 5 | 17.965–21.062 | 91–92 | crypt | Charge with elites | ~540 | 40 m | 135° |
 | 6 | 21.062–22.610 | 93 | desert | Vortex | ~400 | 35 m | −45° |
 | 7 | 22.610–24.158 | 94 | snow | Charge | ~500 | 35 m | 90° |
 | 8 | 24.158–25.707 | 95 | crypt | Converge, 3 streams | ~500 | 40 m | 180° |
 | 9 | 25.707–27.255 | 96 | desert | Converge, 4 streams | ~600 | 45 m | −90° |
-| 10 | 27.255–31.126 | 97–98, plus 99.1–99.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 50→65 m | 0° |
+| 10 | 27.255–31.126 | 97–98, plus 99.1–99.2 | forest | Converge, 6 streams, plus the boss | ~1,300 | 52→65 m | 0° |
 
 The columns:
 
@@ -340,7 +340,9 @@ Each shot is built around particular moves, listed here in order.
    hero's slam lands on 81.1. It blows a crater in a charging wall of fodder.
    - The hero runs straight through the wave: slashes on every beat, flurries
      on the eighths, and spins on 82.3 and 84.3.
-   - The wave turns and streams after them.
+   - The wave turns and streams after them. In bar 83 the hero turns back and
+     carves through the chasing wave, so the shot's second half never runs
+     out of monsters to hit.
 3. **Vortex (snow).** The hero runs a wide loop, and the horde spirals in
    after them.
    - Spins on 86.3 and rings on the downbeats carve the spiral.
@@ -352,8 +354,9 @@ Each shot is built around particular moves, listed here in order.
 5. **Elite charge (crypt).** Big Orks and Trolls in the charging wave fall to
    single slashes, so their size sells each blow. Lightning strikes on
    downbeats.
-6. **Burst 1: spins (desert, vortex).** A spin on every beat as the hero
-   circles. The spiral is shredded from the inside.
+6. **Burst 1: spins (desert, vortex).** A spin on every other beat as the
+   hero circles, the fastest the spin's clip can land at overdrive's 3× speed
+   cap. The spiral is shredded from the inside.
 7. **Burst 2: the slam (snow, charge).** Slashes into the oncoming wave on
    beats 1–3, then a slam on beat 4 that flattens its front rank.
 8. **Burst 3: lightning (crypt, converge).** Lightning strikes on every beat,
@@ -370,11 +373,59 @@ Each shot is built around particular moves, listed here in order.
       ahead of the hero.
     - A laser fires on 97.1 and again on 98.1. Each lasts a bar, sweeping
       the field and hitting everything in its line on every eighth note,
-      while the view widens from 50 to 65 m.
+      while the view widens from 52 to 65 m. A ring joins the second laser
+      on 98.1.
     - Refill holds the flood at about 1,300 despite the laser.
     - The final slam on 99.1 kills every monster in view, the boss included.
-      The aftermath's two beats show the horde breaking apart. Refill stops
-      at the final slam, and the hero plays out the slam's recovery.
+      The aftermath's two beats show the horde falling: its death clips play
+      faster where they must, so every body is down by three quarters of the
+      aftermath. Refill stops at the final slam, and the hero plays out the
+      slam's recovery.
+
+**Outcome (ps-hgs.7).** The shot list as shipped, from `trailer --checks`
+(the same for every roster set):
+
+| # | Bars | Environment | Formation | On screen / target | View | Heading | `shapeScale` | Swings/s | Kills per swing (mean, peak) | Kite |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 79–80 | crypt | Duel: 3 elites | 3 | 20 m | 0° | 1 | 1.21 | 1, 1 | – |
+| 2 | 81–84 | desert | Charge | 609 / 600 | 45 m | 0° | 2.0 | 3.55 | 24.8, 198 | 2.4 |
+| 3 | 85–88 | snow | Vortex | 710 / 700 | 50 m | 45° | 2.0 | 2.42 | 47.8, 160 | 2.4 |
+| 4 | 89–90 | forest | Converge, 4 streams | 501 / 500 | 40 m | 0° | 2.0 | 2.58 | 20.8, 111 | 2.3 |
+| 5 | 91–92 | crypt | Charge with elites | 535 / 540 | 40 m | 135° | 1.8 | 2.58 | 26.2, 94 | 2.4 |
+| 6 | 93 | desert | Vortex | 389 / 400 | 35 m | −45° | 1.6 | 1.29 | 38.5, 43 | 2.3 |
+| 7 | 94 | snow | Charge | 471 / 500 | 35 m | 90° | 2.0 | 1.94 | 78.0, 164 | 2.5 |
+| 8 | 95 | crypt | Converge, 3 streams | 453 / 500 | 40 m | 180° | 1.3 | 2.58 | 18.0, 26 | 2.3 |
+| 9 | 96 | desert | Converge, 4 streams | 605 / 600 | 45 m | −90° | 2.4 | 1.94 | 17.3, 20 | 2.4 |
+| 10 | 97–99.2 | forest | Converge, 6 streams, plus the boss | 1,287 / 1,300 | 52→65 m | 0° | 2.0 | 2.84 | 171.7, 1,532 | 2.3 |
+
+- **Two simulator fixes, trailer shots only:**
+  - **Fixed entries land.** A flurry's blow that waited for the next
+    decision used to end the hero's scheduling. A fixed spin whose windup had
+    to start before that decision then never fit: shot 2's 82.3 and 84.3
+    never fired. A shot's fixed entry is now scheduled past such a point.
+  - **The dead fall in time.** The final slam's deaths play their clips
+    faster where they would outlast three quarters of the aftermath (1.4–3.5×).
+    The field then lies dead at 99.3, not mid-fall.
+- **Tuning against runtimes.** Every bar's density was tuned across trailer
+  seeds 3, 7, 11, 21 and 42, not seed 7 alone. The simulation is chaotic,
+  and Mono and IL2CPP differ from .NET in the last bits of floating point.
+  Under Mono, shot 5's bar 92 sat 7 points below .NET's, at the 15% line.
+  Each bar now holds within about 10% on every seed, and Unity's Mono run
+  passes.
+- **The changes:**
+  - shot 2's path turns back through its chasing wave in bar 83;
+  - shot 5 looks along 135° at `shapeScale` 1.8, so bar 92 no longer drains;
+  - shot 9 swings at 2.4;
+  - the climax opens at 52 m with a 1.8 `densityCap`, and rings only on 98.1,
+    so the cut's slam and laser alone open bar 97.
+- **Spins.** A spin needs 0.48 s of windup at overdrive's 3× speed cap and
+  0.55 s in all. Shot 6's spins therefore land every other beat, with the
+  windup filling the beat between.
+- **Lens hits.** The default trailer has 27, a little over one a bar. The
+  shot list keeps `TrailerLook.MassKillWeight` at 0.5.
+- **Evidence.** The stills, the cut and final-slam sequences, the spot-check
+  grid of every flag combination and the per-bar margins are in
+  [demo3d/evidence/trailer/showcase](../../demo3d/evidence/trailer/showcase/README.md).
 
 ## Rules for Every Frame
 
@@ -510,14 +561,14 @@ climax:
       "hero": { "at": "camp", "holdGround": true },
       "duel": { "bigork": 2, "troll": 1 },
       "combo": ["slashR@anchor", "spin@anchor", "slashL@anchor"] },
-    { "cut": "97.1", "environment": "forest", "viewWidthM": 50, "viewWidthToM": 65,
+    { "cut": "97.1", "environment": "forest", "viewWidthM": 52, "viewWidthToM": 65,
       "path": { "via": ["courtyard", "glowing-tree", "crystal-ring"], "stepM": 1.9 },
       "formation": { "kind": "converge", "streams": 6, "onScreen": 1300,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
-      "boss": "ahead", "shapeScale": 2.5, "grade": { "contrast": 6, "saturation": 8 },
+      "boss": "ahead", "shapeScale": 2.0, "densityCap": 1.8, "grade": { "contrast": 6, "saturation": 8 },
       "combo": ["slam@cut", "slashL", "slashR", "slashR@eighth", "slam@final"],
-      "spells": ["laser@downbeat", "ring@downbeat"] } ] }
+      "spells": ["laser@downbeat", "ring@98.1"] } ] }
 ```
 
 Top-level fields:
@@ -783,8 +834,9 @@ The liveness check holds: zero violations in all ten shots, for the
 default roster and the forest and heroic sets. The density check passes
 too, and both hold across other trailer seeds: seeds 3, 5, 9, 10, 11, 13,
 17, 21, 27, 28, 29 and 42 pass every check.
-Pinned to one environment, shot 2 or 5 can still miss a bar's density by
-up to 20%. Tuning changes from the first cut:
+Pinned to one environment, shot 2 or 5 could still miss a bar's density by
+up to 20%; since the shot list's tuning (ps-hgs.7) every pinned environment
+passes. Tuning changes from the first cut:
 
 - shots 6 and 8 run at 1.6 and 1.3, since spins and lightning on every beat
   killed faster than their streams could fill;
@@ -805,8 +857,8 @@ is to make the final slam bigger. These rules are part of the shot simulation:
   its way. The level script's existing `bossFrom` setting, which walks the
   boss in from a named direction, already moves it this way.
 - **No blow reaches it early.** It never comes closer to the hero than the
-  shot's largest hit shape, plus 1 m. With the climax's `shapeScale` of 2.5,
-  the slam's 3.6 m ring reaches 9 m, so the boss keeps at least 10 m away.
+  shot's largest hit shape, plus 1 m. With the climax's `shapeScale` of 2.0,
+  the slam's 3.6 m ring reaches 7.2 m, so the boss keeps at least 8.2 m away.
   No blow passes through it.
 - **Spells skip it.** The laser, rings and lightning ignore it until the final
   slam.
