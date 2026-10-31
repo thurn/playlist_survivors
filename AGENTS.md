@@ -18,6 +18,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 - `unity-packages/com.playlistsurvivors.choreography/`: the engine-free choreography core both demos share (docs/tech-demo-3d/choreography.md).
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - SETUP.md covers installing, building and playing.
+- Outside the tree: caches in `~/Library/Caches/playlist-survivors/` (`$PS_CACHE`; `entries/` holds `ps entries` dumps), the game's sessions in `~/Library/Application Support/Playlist Survivors/Playlist Survivors/sessions/`, and captures in the tree's `captures/`. Never search with `find /` or `find ~`: such a crawl runs for an hour.
 - This repository is public: never commit vendor assets (Synty, `~/unity_assets`) or anything derived from them (docs/tech-demo-3d/vendor-assets.md).
 
 ## Enact
