@@ -42,8 +42,13 @@ namespace PS.Game.Sim
 
         protected WeaponRank Numbers => Def.Rank(Rank);
 
-        /// <summary>Its interval on the run clock: the rank's times Cooldown.</summary>
-        public double Interval => Numbers.IntervalS * Stats.Cooldown;
+        /// <summary>
+        /// Its interval on the run clock: the rank's times Cooldown, plus its duration times
+        /// Duration for a weapon whose next shot waits for the last to end (King Bible; native's
+        /// <c>interval_depends_on_duration</c>).
+        /// </summary>
+        public double Interval =>
+            Numbers.IntervalS * Stats.Cooldown + (Numbers.IntervalDependsOnDuration ? Numbers.DurationS * Stats.Duration : 0);
 
         /// <summary>The weapon keeps its own cadence on the beat rather than the arsenal's shots.</summary>
         public virtual bool OnBeats => false;

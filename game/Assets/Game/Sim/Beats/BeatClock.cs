@@ -133,21 +133,19 @@ namespace PS.Game.Sim
         /// The first point of a grid <paramref name="step"/> beats apart (1 the beats, 0.5 the
         /// eighths, 0.25 the sixteenths) at or after <paramref name="s"/>, from the beats revealed
         /// now, with its fractional beat index in <paramref name="beat"/>; NaN when none is known
-        /// (<see cref="GridPoint"/>).
+        /// (<see cref="GridPoint"/>): past the latest beat's continuation.
         /// </summary>
         internal double GridAtOrAfter(double s, double step, out double beat)
         {
             var beats = log.Beats;
-            for (int i = Math.Max(0, LastAtOrBefore(beats, s)); i < beats.Length; i++)
-                for (int k = 0; k * step < 1 - 1e-9; k++)
+            int last = beats.Length - 1;
+            for (int i = Math.Max(0, LastAtOrBefore(beats, s)); i <= last; i++)
+                for (int k = 0; k * step < (i == last ? TrackingGap : 1) - 1e-9; k++)
                 {
                     beat = i + k * step;
                     double t = GridPoint(beat);
-                    if (double.IsNaN(t))
-                    {
-                        if (i + 1 >= beats.Length) return double.NaN;
-                        break;
-                    }
+                    // Past the latest beat's continuation, or a tracking gap: on to its closing beat.
+                    if (double.IsNaN(t)) break;
                     if (t >= s - 1e-9) return t;
                 }
             beat = double.NaN;
@@ -155,14 +153,23 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// The song time of fractional beat <paramref name="beat"/>: a revealed beat's own time, or a
-        /// point inside a beat interval (<see cref="StartsInterval"/>) by its fraction; NaN otherwise.
+        /// The song time of fractional beat <paramref name="beat"/>: a revealed beat's own time, a
+        /// point inside a beat interval (<see cref="StartsInterval"/>) by its fraction, or, from
+        /// the latest beat revealed on, a point of its period while it continues
+        /// (<see cref="Continues"/>: the next beat is coming, as the stride grid carries its step);
+        /// NaN otherwise.
         /// </summary>
         internal double GridPoint(double beat)
         {
             var beats = log.Beats;
+            int last = beats.Length - 1;
             int i = (int)Math.Floor(beat + 1e-9);
-            if (i < 0 || i >= beats.Length) return double.NaN;
+            if (i < 0 || last < 0) return double.NaN;
+            if (i >= last)
+            {
+                double t = beats[last].T + (beat - last) * PeriodOf(last);
+                return t <= beats[last].T + TrackingGap * beats[last].V0 + 1e-9 ? t : double.NaN;
+            }
             double f = beat - i;
             if (f < 1e-9) return beats[i].T;
             return StartsInterval(i) ? beats[i].T + (beats[i + 1].T - beats[i].T) * f : double.NaN;

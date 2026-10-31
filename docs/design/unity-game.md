@@ -1329,7 +1329,11 @@ with `SimConfig.Content` now the one content field for the horde and the arsenal
   interval times Cooldown at a time, never from a shot. A shot ready at s fires on the
   first point of its grid (beats or eighths) at or after s among the beats revealed
   then (`BeatClock.GridAtOrAfter`), the sixteenth after the slot's previous shot if
-  that one holds the point, or at s with no grid point known. A freeze unplans the
+  that one holds the point, or at s with no beat known ahead. While the next beat is
+  not yet committed the latest one continues, its grid carried on at its period as the
+  stride grid carries its step, so shots stay on the grid when beats are known only just
+  ahead. An interval that depends on duration (King Bible) adds its duration times
+  Duration, as native's. A freeze unplans the
   ready shots and the resume plans them again, so they fire on the resume beat.
   Throughput stays within 0.2% of `600 / interval` at 70, 128 and 174 BPM.
 - A weapon whose bead hasn't landed is the base `Weapon`: ranked, timed and shot, each

@@ -166,6 +166,47 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ShotsStayOnTheGridWhileTheNextBeatIsNotYetCommitted()
+        {
+            // Committed beats come from hindsight, often less than a beat ahead: here each is known
+            // only 0.05 s before its own time, so the next beat is unknown for nearly every interval.
+            // The latest beat continues at its period, and shots keep landing on its sixteenths.
+            const double Seconds = 120;
+            foreach (double bpm in new[] { 70.0, 128.0 })
+            {
+                var stats = Content.Progression.Hero.Stats;
+                stats.Cooldown = 0.6;
+                var sim = new Simulation(Config(new ArsenalConfig { Weapons = new[] { ("holy-wand", 1) }, Stats = stats }));
+                var song = new FixtureSong(5).Beats(0, Seconds + 2, bpm);
+                foreach (var e in song.Entries().Where(e => e.Kind == EntryKind.Beat || e.Kind == EntryKind.Tick))
+                    sim.AddKnown(e, Math.Max(0, e.Kind == EntryKind.Beat ? e.T - 0.05 : e.T));
+                sim.StepTo(Seconds - Eps);
+                var shots = Shots(sim, "holy-wand");
+                Assert.AreEqual(Seconds / 0.3, shots.Count, 1, $"{bpm} BPM: throughput");
+                var beats = song.BeatTimes();
+                for (int k = 0; k < shots.Count; k++)
+                {
+                    if (k > 0) Assert.Greater(shots[k], shots[k - 1] + 1e-6, $"{bpm} BPM: shot {k} shares its point");
+                    int b = beats.FindLastIndex(x => x <= shots[k] + 1e-9);
+                    double phase = (shots[k] - beats[b]) / (beats[b + 1] - beats[b]) * 4;
+                    Assert.AreEqual(Math.Round(phase), phase, 1e-6, $"{bpm} BPM: shot {k} at {shots[k]} is on a sixteenth");
+                }
+            }
+        }
+
+        [Test]
+        public void KingBiblesIntervalWaitsForItsDurationTimesDuration()
+        {
+            // native's interval_depends_on_duration: 3 s x Cooldown + 3 s x Duration, on its raw interval with no beat.
+            var stats = Content.Progression.Hero.Stats;
+            stats.Cooldown = 0.5;
+            stats.Duration = 1.5;
+            var sim = new Simulation(Config(new ArsenalConfig { Weapons = new[] { ("king-bible", 1) }, Stats = stats }));
+            sim.StepTo(20);
+            Assert.AreEqual(new[] { 0, 6.0, 12.0, 18.0 }, Shots(sim, "king-bible").Select(t => Math.Round(t, 6)).ToArray());
+        }
+
+        [Test]
         public void WithNoBeatAWeaponShootsOnItsRawInterval()
         {
             var stats = Content.Progression.Hero.Stats;

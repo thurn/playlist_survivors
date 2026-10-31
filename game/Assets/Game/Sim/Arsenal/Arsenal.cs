@@ -26,8 +26,10 @@ namespace PS.Game.Sim
     ///   run clock from when the weapon was learned, its interval times Cooldown at a time, never
     ///   from when a shot fired, so snapping never loses throughput. A shot ready at song time s
     ///   fires on the first point of the weapon's grid (beats or eighths) at or after s among the
-    ///   beats revealed then; one that would share its slot's previous point moves to the sixteenth
-    ///   after it. With no grid point known it fires at s: the raw interval. A freeze unplans the
+    ///   beats revealed then, the latest one's period carrying its grid on while the next is not
+    ///   yet known (<see cref="BeatClock.GridPoint"/>); one that would share its slot's previous
+    ///   point moves to the sixteenth after it. With no beat known ahead it fires at s: the raw
+    ///   interval. A freeze unplans the
     ///   shots (the run clock stops, so no more come ready) and the resume plans them again.
     /// - Nothing shoots while the world is frozen or the hero has fallen.
     /// </summary>
