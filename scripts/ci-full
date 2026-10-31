@@ -52,10 +52,14 @@ if [ "$section" = all ]; then
     ) > "$logs/$name.log" 2>&1 &
     lanes="$lanes $!:$name"
   }
+  # The Unity and dotnet sections get a lane each: run back to back under a run's load, demo3d
+  # and demo2d took about 300 s, the long pole (ps-msz.11).
   lane native-tests native-tests
   lane parity parity
   lane survivors survivors
-  lane tools baker analysis demo3d demo2d
+  lane tools baker analysis
+  lane demo3d demo3d
+  lane demo2d demo2d
   lane game game
   passed=""
   failed=""
