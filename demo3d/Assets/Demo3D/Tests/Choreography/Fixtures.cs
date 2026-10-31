@@ -88,6 +88,27 @@ namespace Demo3D.Choreography.Tests
             + " \"viewWidthM\": 40, \"n\": 500, \"openingInnerM\": 9, \"load\": \"none\", \"heroAttacks\": false,"
             + " \"mix\": { \"skeleton\": 3, \"goblin\": 3, \"slime\": 2, \"bat\": 2, \"demon\": 1, \"bigork\": 0.3 } }"), CourtyardData));
 
+        static Trailer trailer;
+        static Dictionary<string, ChoreographyData> trailerEnvironments;
+        static readonly Dictionary<int, Timeline> shots = new Dictionary<int, Timeline>();
+
+        /// <summary>The checked-in trailer (trailer-action.json), validated against the song and the environments.</summary>
+        public static Trailer Trailer => trailer ?? (trailer = ChoreographyFiles.LoadTrailer(Root, "action", out trailerEnvironments));
+
+        /// <summary>A trailer shot's environment data.</summary>
+        public static ChoreographyData ShotData(int index)
+        {
+            Trailer t = Trailer;   // loads the environments with it
+            return trailerEnvironments[t.Shots[index].Environment];
+        }
+
+        /// <summary>A trailer shot's timeline (by index from 0), built once.</summary>
+        public static Timeline Shot(int index)
+        {
+            if (!shots.TryGetValue(index, out Timeline tl)) shots[index] = tl = ChoreographyFiles.BuildShot(Root, Trailer, index, ShotData(index));
+            return tl;
+        }
+
         /// <summary>The timeline a test case names: "song", "song-overdrive" or a stress scene.</summary>
         public static Timeline Named(string name) => name == "song" ? SongTimeline : name == "song-overdrive" ? OverdriveTimeline : Stress(name);
 

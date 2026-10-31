@@ -540,9 +540,9 @@ Per-shot fields:
 - **`viewWidthM` and `viewWidthToM`**: the view width, and optionally a width
   to ease to across the shot.
 - **`yawDeg`**: the camera's heading (default 0).
-- **`hero`**: the hero's start, as a named area or metres, and `holdGround`
-  for the duel. When it is omitted, the hero starts at the path's first
-  waypoint.
+- **`hero`**: the hero's start (`at`), as a named area or metres,
+  `holdGround` for the duel, and `stepS`, its step time (default 0.14 s).
+  When `at` is omitted, the hero starts at the path's first waypoint.
 - **`path`**: the kite path, as named areas or metre waypoints.
   - `stepM` is the hero's stride per beat.
   - `loop` closes the path into a circuit.
@@ -677,6 +677,30 @@ today:
 **Normal runs must not change.** Without these fields, demo3d's and demo2d's
 timelines stay byte-identical to today's. The existing tests that pin each
 timeline's hash prove it.
+
+**Outcome (ps-hgs.2).** The fields are the level script's
+[shot fields](choreography.md#shot-fields), and `Trailer.ShotScript`
+writes them from the trailer file. Some details of the first cut:
+
+- **The hero strides every beat.** A kiting hero's stride is separate from
+  its blows, so it keeps about 2.4 times the horde's speed even when a long
+  clip (a spin, a slam's windup) skips a beat's blow.
+- **The duel is staged.** Each brute starts as far out as it walks by its
+  anchor, a third of a turn from the last, so it arrives just inside that
+  blow's reach then: one falls on each anchor, and the spin on anchor 2
+  can't reach the third. The hero steps to and fro across its spot.
+- **The horde is a placeholder.** Until the formations bead, a shot opens
+  with the song's opening horde round the hero, and the kiting refill
+  ([choreography.md](choreography.md#shot-fields)) holds the count: spawns
+  on the edges the hero runs toward, a buffer that integrates the on-screen
+  shortfall, and monsters left behind leave.
+- **Tuned to pass.** With that refill, the climax holds about 1,300 at
+  `shapeScale` 2.0 (at 2.5 it kills faster than the refill fills: bar 97
+  averages about 1,050),
+  and the paths cross the north-east field's middle, where the views find
+  the most open ground. Every roster set passes. Pinned to the forest, the
+  desert or the neon city, one shot each runs 16-18% under its target in one
+  or two bars.
 
 ### Kiting and formations
 
@@ -1084,14 +1108,20 @@ dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- \
   trailer --checks
 ```
 
+`--roster <set>` and `--environment <name>` take the player's meanings,
+`--shot <n>` runs one shot, `--name <trailer>` reads another trailer file,
+and `--out-dir <dir>` writes each shot's timeline dump (its span only). It
+exits 1 when a check fails.
+
 It runs every shot's simulation and prints a table with one row per shot:
 
 - the on-screen count against target;
 - the hero's swings per second;
-- kills per swing, mean and peak;
+- kills per swing, mean and peak (every death on the blow's instant, so a
+  spell landing with it counts too);
 - the share of beats the hero acted on;
 - the kite ratio, the hero's speed over the horde's;
-- liveness violations.
+- liveness violations (`-` until the formations bead adds the check).
 
 These checks fail the run, naming the shot, the time and the monster:
 

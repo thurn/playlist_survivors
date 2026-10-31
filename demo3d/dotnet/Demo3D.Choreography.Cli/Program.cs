@@ -9,7 +9,8 @@ namespace Demo3D.Choreography.Cli
     /// <summary>
     /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring] [--checks]
     ///                                                                        stress S3 [--n N] [--view W] [--load L] [--seconds S] [--out dump.json]
-    ///                                                                       usage: song | stress <S1..S6> | placements | timing [--out timing.md]
+    ///                                                                        trailer [--name action] [--roster R] [--environment E] [--shot N] [--checks] [--out-dir D]
+    ///                                                                       usage: song | stress <S1..S6> | placements | trailer | timing [--out timing.md]
     /// </summary>
     static class Program
     {
@@ -17,7 +18,7 @@ namespace Demo3D.Choreography.Cli
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            if (args.Length == 0) { Console.Error.WriteLine("usage: song | stress <S1..S5> | timing (see Program.cs)"); return 2; }
+            if (args.Length == 0) { Console.Error.WriteLine("usage: song | stress <S1..S5> | trailer | timing (see Program.cs)"); return 2; }
             string root = ChoreographyFiles.FindRepoRoot(Opt(args, "--root"));
             switch (args[0])
             {
@@ -108,6 +109,39 @@ namespace Demo3D.Choreography.Cli
                         Console.WriteLine(sb);
                     }
                     return 0;
+                }
+                case "trailer":
+                {
+                    // trailer [--name action] [--roster forest] [--environment snow] [--shot N] [--checks] [--out-dir dir]: every shot's
+                    // simulation, the per-shot table, and with --checks every failed rule (trailer.md, "Checks and Evidence").
+                    Trailer trailer = ChoreographyFiles.LoadTrailer(root, Opt(args, "--name") ?? "action", out var environments, Opt(args, "--environment"));
+                    var rows = new System.Collections.Generic.List<ShotReport>();
+                    int failures = 0;
+                    int only = IntOpt(args, "--shot");
+                    for (int i = 0; i < trailer.Shots.Length; i++)
+                    {
+                        if (only > 0 && i + 1 != only) continue;
+                        TrailerShot shot = trailer.Shots[i];
+                        ChoreographyData data = environments[shot.Environment];
+                        Timeline tl = ChoreographyFiles.BuildShot(root, trailer, i, data, Opt(args, "--roster"));
+                        rows.Add(TrailerChecks.Report(trailer, i, tl, data.Roster));
+                        if (Opt(args, "--out-dir") != null)
+                        {
+                            Directory.CreateDirectory(Opt(args, "--out-dir"));
+                            TimelineJson.WriteFile(tl, Path.Combine(Opt(args, "--out-dir"), "shot-" + shot.Number + ".json"), shot.SpanFrom, shot.End);
+                        }
+                        if (!Has(args, "--checks")) continue;
+                        foreach (var check in TrailerChecks.All(trailer, i, tl, data.Roster))
+                        {
+                            if (check.Value.Count == 0) continue;
+                            failures += check.Value.Count;
+                            Console.WriteLine("shot " + shot.Number + " fails " + check.Key + ": " + check.Value.Count + " problems");
+                            for (int k = 0; k < Math.Min(check.Value.Count, 10); k++) Console.WriteLine("  " + check.Value[k]);
+                        }
+                    }
+                    Console.Write(TrailerChecks.Table(rows));
+                    if (Has(args, "--checks")) Console.WriteLine(failures == 0 ? "trailer checks: ok" : "trailer checks: " + failures + " problems");
+                    return failures == 0 ? 0 : 1;
                 }
                 case "timing":
                 {

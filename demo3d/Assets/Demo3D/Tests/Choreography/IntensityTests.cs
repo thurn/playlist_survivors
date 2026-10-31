@@ -20,11 +20,12 @@ namespace Demo3D.Choreography.Tests
         /// The dumps' FNV-1a hashes before the tuning fields existed (ps-5pd.1), under .NET on Apple
         /// silicon, where the dump is byte-identical run to run. A change that alters normal runs on
         /// purpose records the new hashes here: the song's are ps-7n4's, whose level script turned on
-        /// one-hit kills.
+        /// one-hit kills; overdrive's was recorded before the trailer's shot fields (ps-hgs.2).
         /// </summary>
         static readonly (string name, long chars, string hash)[] Before =
         {
             ("song", 19762408, "1432eb98e74e3c29"),
+            ("song-overdrive", 62828830, "81303331b0eec9fd"),
             ("S1", 22781381, "0efef3392079eb9e"),
             ("S2", 24718997, "fd46c88ae8289c77"),
             ("S3", 26045232, "84e21b99f520e8bb"),
