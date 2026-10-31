@@ -1476,8 +1476,6 @@ namespace PS.Choreography
                 if (Formed) dir = Spread(m, a, dir);
                 float stepM = onScreen[m] ? mt.StepM : mt.StepM * OffscreenStride;
                 float step = Math.Min(stepM, Math.Max(0, left - hold));
-                // Held at its keep-out, the boss rule's boss prowls round the hero rather than standing.
-                if (keepOut && step < 0.2f * mt.StepM && d > 1e-4f) { dir = Prowl(toHero / d, laneBack); step = 0.5f * stepM; }
                 Vector2 chase = dir;
                 if (laneBack != Vector2.Zero)
                 {

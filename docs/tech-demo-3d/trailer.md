@@ -482,6 +482,13 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
     cut's shot 9 did), which hemmed the hero in during bar 96 on some seeds;
   - the climax rings on 114.1 only, and its path turns at bar 116, so the
     boss stays in view on the hero's flank rather than meeting them.
+- **Cut frames.** The player switches in 0.10–0.12 ms of CPU at every cut.
+  A GPU probe puts each cut frame up to about 14 ms over the frames after
+  it, but the same frames drawn with no cut (`--shot N --from-preroll`)
+  cost as much or more: the cost is the opening blow, not the switch
+  ([timing](../../demo3d/evidence/trailer/recut/timing.md)).
+- **The mix.** `demo3d trailer --stand-in` passes every mix check over the
+  60.5 s window and its seven cuts.
 - **The boss prowls.** Over the climax's four bars the boss reaches its
   keep-out with beats to spare, where the horde packed behind it held it
   still; it now prowls round the hero instead (see [The boss](#the-boss)).
@@ -995,10 +1002,10 @@ is to make the final slam bigger. These rules are part of the shot simulation:
   shot's largest hit shape, plus 1 m. With the climax's `shapeScale` of 2.0,
   the slam's 3.6 m ring reaches 7.2 m, so the boss keeps at least 8.2 m away.
   No blow passes through it.
-- **It never stands.** Held at that keep-out, or boxed in by the horde
-  behind it as it backs off, it prowls round the hero, on along the hero's
-  travel (ps-7mx.3: the climax's four bars bring it there beats before the
-  final slam, where it stood).
+- **It never stands.** Backing off from the hero with the horde packed
+  behind it, it prowls round the hero instead, on along the hero's travel
+  (ps-7mx.3: the climax's four bars bring it to its keep-out beats before
+  the final slam, where it stood boxed in).
 - **Spells skip it.** The laser, rings and lightning ignore it until the final
   slam.
 - **The final slam kills it.** Nothing else fires on that beat, so the slam is
@@ -1536,11 +1543,16 @@ The environment requirements are checked in the player:
   single-environment run, with `--no-trailer-look`, within 1 L*.
 - **Timing.** A windowless GPU-probe run around every cut shows no frame more
   than 2 ms slower than its neighbours.
+  Since every shot opens on a blow landing on its cut frame, a trailer
+  cut frame carries that blow's cost too (up to about 14 ms in the re-cut);
+  the switch is judged against the same frame drawn with no cut
+  (`--shot N --from-preroll`), as in
+  [the re-cut's timing](../../demo3d/evidence/trailer/recut/timing.md).
 
 Visual evidence comes from windowless, fixed-time player runs:
 
 - a still at every shot's first frame and mid-shot;
-- frame sequences across the three flash cuts and the final slam;
+- frame sequences across the flash cuts and the final slam;
 - a spot-check grid of palette, style and roster combinations.
 
 Small JPEGs go into a trailer evidence folder with a README, as overdrive's
