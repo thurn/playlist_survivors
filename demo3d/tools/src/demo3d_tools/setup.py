@@ -282,9 +282,14 @@ _BAKER_RUNTIME = {"Runtime/Playback/ShatterSounds.cs"}
 
 
 def bake_inputs(wt: paths.Worktree) -> list[Path]:
-    """What demo3d's Unity bakers read from git: everything under Assets/Demo3D (their code,
-    data, shaders and settings) except the tests and runtime C# no asset serializes, the shared
-    choreography package, the vendor manifest and the song map."""
+    """What a project's Unity bakers read from git. demo3d's: everything under Assets/Demo3D (their
+    code, data, shaders and settings) except the tests and runtime C# no asset serializes, the
+    shared choreography package, the vendor manifest and the song map. The game's: its arena's
+    code (editor, engine-free layout and runtime), the layout's data and the vendor manifest."""
+    if wt.name == "game":
+        game = [f for d in GAME_ARENA_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
+        return game + [wt.project / "Content" / n for n in ("arena-layout.json", "footprints.json")] + [
+            wt.project / "manifest.json"]
     files: list[Path] = []
     demo = wt.project / "Assets" / "Demo3D"
     package = wt.root / "unity-packages" / "com.playlistsurvivors.choreography"
@@ -326,11 +331,25 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
 }
 
 
+# The game's bakers (Tasks.BakeAll's list), the same way: the arena (ArenaBaker), which also
+# writes the level data, game/Content/arena.json.
+GAME_ARENA_DIRS = ("Assets/Game/Editor/Arena", "Assets/Game/Arena", "Assets/Game/Client/Arena")
+GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
+    "Arena": tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + ("game/Content/arena-layout.json",
+                                                              "game/Content/footprints.json"),
+}
+
+
+def baker_inputs(wt: paths.Worktree) -> dict[str, tuple[str, ...]]:
+    """The project's bakers and the inputs each claims (none for demo2d and stylelab)."""
+    return {"demo3d": BAKER_INPUTS, "game": GAME_BAKER_INPUTS}.get(wt.name, {})
+
+
 def baker_keys(wt: paths.Worktree) -> dict[str, str]:
     """Each baker's inputs key: a hash of the inputs it claims and those no baker claims."""
     digests = {f.relative_to(wt.root).as_posix(): file_hash(wt.root, f) for f in bake_inputs(wt)}
     claims = {name: {r for r in digests if any(fnmatch.fnmatchcase(r, g) for g in globs)}
-              for name, globs in BAKER_INPUTS.items()}
+              for name, globs in baker_inputs(wt).items()}
     shared = digests.keys() - set().union(*claims.values())
     keys = {}
     for name, own in claims.items():
@@ -350,10 +369,10 @@ def _recorded_keys(wt: paths.Worktree) -> dict[str, str]:
 
 
 def stale_bakers(wt: paths.Worktree) -> list[str]:
-    """The bakers whose inputs changed since the tools last saw them run, in BAKER_INPUTS order
+    """The bakers whose inputs changed since the tools last saw them run, in baker_inputs order
     (demo2d and stylelab have no Unity bakers). A BakeAll run outside the tools records nothing,
     so the next build bakes once more."""
-    if wt.name != "demo3d":
+    if not baker_inputs(wt):
         return []
     recorded = _recorded_keys(wt)
     return [name for name, key in baker_keys(wt).items() if recorded.get(name) != key]
@@ -367,7 +386,7 @@ def bake_args(wt: paths.Worktree, stale: list[str]) -> list[str]:
     """BakeAll's `-only` flags for the stale bakers (none when all are: a full run). Clears any
     record of bakers run outside the tools, so only this run's are recorded."""
     (wt.baked / BAKED_RAN).unlink(missing_ok=True)
-    if set(stale) >= BAKER_INPUTS.keys():
+    if set(stale) >= baker_inputs(wt).keys():
         return []
     return [arg for name in stale for arg in ("-only", name)]
 
@@ -377,7 +396,7 @@ def record_ran(wt: paths.Worktree) -> list[str]:
     ran_file = wt.baked / BAKED_RAN
     if not ran_file.exists():
         return []
-    ran = [n for n in ran_file.read_text(encoding="utf-8").split() if n in BAKER_INPUTS]
+    ran = [n for n in ran_file.read_text(encoding="utf-8").split() if n in baker_inputs(wt)]
     keys = baker_keys(wt)
     recorded = _recorded_keys(wt) | {n: keys[n] for n in ran}
     (wt.baked / BAKED_INPUTS).write_text(json.dumps(recorded, indent=1, sort_keys=True) + "\n",

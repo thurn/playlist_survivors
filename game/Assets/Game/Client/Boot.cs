@@ -12,7 +12,8 @@ namespace Game.Client
     /// - `--seconds N`: quits after N seconds;
     /// - `--dsp-buffer N`: Unity's DSP buffer length in frames, in place of the project's;
     /// - `--spike` or `--spike-out DIR` with `--file &lt;audio or .m3u&gt;`: the sync spike, the music
-    ///   with a click on every beat (<see cref="SyncSpike"/>, which reads `--headless` too).
+    ///   with a click on every beat (<see cref="SyncSpike"/>, which reads `--headless` too);
+    /// - `--arena`: the baked arena alone in the game camera's framing (<see cref="Arena.ArenaStage"/>).
     /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--file`, `--seed`,
     /// `--events`, `--overlay`, `--headless` and `--loop-out`).
     /// </summary>
@@ -39,6 +40,7 @@ namespace Game.Client
             }
             var file = Args.Get("--file");
             if (file != null && (Args.Has("--spike") || Args.Has("--spike-out"))) SyncSpike.Begin(gameObject, _camera, file, _seconds);
+            else if (Args.Has("--arena")) Arena.ArenaStage.Begin(gameObject, _camera);
             else GameLoop.Begin(gameObject, _camera);
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
         }

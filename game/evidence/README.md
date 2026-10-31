@@ -25,3 +25,5 @@ what was run (the exact commands), the numbers, and what they show.
 - [sim-enemies](sim-enemies/README.md): the sim's step time with 300 enemies alive (ps-msz.3.2).
 - [loop](loop/README.md): the client's frame loop, its clocks, the lead and frame-exact fixed
   time, with the debug overlay and placeholder capsules (ps-msz.3.5).
+- [arena](arena/README.md): the 240 m night arena with its crystal structures, windowless from the
+  game camera's framing, beside the 3D demo's reference look (ps-msz.3.6).

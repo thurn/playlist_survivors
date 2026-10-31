@@ -5,7 +5,8 @@ player in batch mode and fixed time (docs/tech-demo-3d/mac.md: a batch-mode play
 by hand only for the frames that keep a still), building it first when there is none, or with
 --build after a change. The full 1920×1080 stills and the player's log stay in the gitignored
 captures/game/look/SLUG/; 960 px JPEGs with the ps-render tag the vendor guard accepts go to
-game/evidence/look/SLUG/.
+game/evidence/look/SLUG/, or game/evidence/DIR/ with `--evidence DIR` (a bead's own set). The
+arena alone: `--player-args "--arena --arena-tour 2"` (ArenaStage).
 
 `game content [--check]`: the one-shot conversion of native's run content into game/Content
 (content.py).
@@ -40,6 +41,7 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     lk.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
     lk.add_argument("--build", action="store_true", help="rebuild the player first (after a change)")
     lk.add_argument("--player-args", default="", help="extra player flags")
+    lk.add_argument("--evidence", help="write the stills to game/evidence/DIR instead of look/SLUG")
     lk.set_defaults(func=cmd_look)
 
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
@@ -85,7 +87,7 @@ def cmd_look(a: argparse.Namespace) -> int:
         print(f"look: the player exited {code} with {len(stills)} of {len(times)} stills "
               f"(see {captures / 'player.log'})", file=sys.stderr)
         return 1
-    evidence = wt.project / "evidence" / "look" / a.slug
+    evidence = wt.project / "evidence" / (a.evidence or f"look/{a.slug}")
     evidence.mkdir(parents=True, exist_ok=True)
     for still in stills:
         with Image.open(still) as im:

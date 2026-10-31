@@ -134,6 +134,26 @@ def test_every_registered_baker_has_its_inputs_listed() -> None:
     assert registered == setup.BAKER_INPUTS.keys()
 
 
+def test_the_games_bakers_have_their_inputs_listed() -> None:
+    tasks = Path(__file__).resolve().parents[3] / "game" / "Assets" / "Game" / "Editor" / "Tasks.cs"
+    registered = set(re.findall(r'\("(\w+)", Bake\w+\)', tasks.read_text(encoding="utf-8")))
+    assert registered == setup.GAME_BAKER_INPUTS.keys()
+
+
+def test_the_game_bakes_its_arena_when_the_layout_changes(tmp_path: Path) -> None:
+    wt = paths.Worktree(tmp_path, "game")
+    (wt.project / "Content").mkdir(parents=True)
+    layout = wt.project / "Content" / "arena-layout.json"
+    layout.write_text("{}")
+    assert setup.stale_bakers(wt) == ["Arena"]
+    wt.baked.mkdir(parents=True)
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\n")
+    assert setup.record_ran(wt) == ["Arena"]
+    assert setup.baked(wt)
+    layout.write_text('{"seed": 8}')
+    assert setup.stale_bakers(wt) == ["Arena"]
+
+
 def test_a_bakeall_through_the_tools_records_what_it_ran(monkeypatch, wt) -> None:
     monkeypatch.setattr(unity, "run_method", fake_unity(wt, []))
     assert not setup.baked(wt)
@@ -206,6 +226,5 @@ def test_the_game_is_a_project_of_its_own(tmp_path: Path) -> None:
     wt = paths.Worktree(tmp_path, "game")
     assert wt.project == tmp_path / "game"
     assert wt.namespace == "Game"
-    assert setup.baked(wt)  # no Unity bakers yet
     assert setup.PY_BAKERS["game"] == []  # it plays the player's music, so it never needs the song
     assert "song" not in paths.PROJECT_ROOTS["game"]

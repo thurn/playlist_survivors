@@ -1188,22 +1188,49 @@ The look is the reference command's, held on every frame of a live run.
 ### The arena
 
 The arena is one large bounded space, generated in the editor from a single
-placement list, as the 3D demo's is.
+placement list, as the 3D demo's is (ps-msz.3.6; evidence in
+[game/evidence/arena](../../game/evidence/arena/README.md)).
 
-- About 240 m square (the 3D demo's is 160 m), a value in the level data.
-- Bounded by impassable edges dressed as cliffs, ruins or dense forest.
-- Clearings, ruins and paths give the run varied places to kite.
-- The static kit is lightmapped. Crystal structures are excluded from the
-  bake, because they break and regrow; they are lit by light probes, the
-  moon and Forward+ lights.
-- The moon's shadows come from a static shadow map rendered at load and
-  re-rendered after a break or regrowth.
-- Structures snap to the hero's 1.5 m grid; the navigation grid is twice as
-  fine (0.75 m).
-- The editor exports the arena's part of the level data as JSON for the sim
-  (`ArenaData`, game/Assets/Game/Sim/Level/Arena.cs): the tile size, the
-  origin and size in tiles, the tiles the dressing blocks, the structure
-  sites and the hero's start.
+- **The layout**, game/Content/arena-layout.json, is the 3D demo's format:
+  240 m square (the 3D demo's is 160 m), 160 × 160 tiles of the hero's
+  1.5 m grid. Eight clearings, paths 10 m wide between them, ruins,
+  landmarks and forest groves give the run varied places to kite: about
+  17,400 m² of open ground.
+- **Bounded by dense forest**: every tile past a fighting ground's edge band
+  is forest, which the level data blocks whole, so the outer forest (at
+  least 15 m deep) bounds the arena and the groves are obstacles. The edge
+  bands block only under their bushes and logs.
+- **The engine-free layout code**, game/Assets/Game/Arena/ (the
+  PS.Game.Arena assembly, also built under .NET), is the 3D demo's
+  ArenaLayout copied and owned. Its LevelExport turns the placement list
+  into the sim's `ArenaData` (game/Assets/Game/Sim/Level/Arena.cs): the
+  tile size, the origin and size in tiles, the blocked tiles, the
+  structure sites and the hero's start. A piece covers a tile when it
+  reaches more than 0.25 m into it.
+- **The bake**, `game unity BakeArena` (and `game build` when its inputs
+  change), builds the scene into the gitignored Assets/Baked/Arena/ in
+  about 30 s and writes the level data to game/Content/arena.json, which the
+  sim's tests check is current.
+- **Lighting**: the ground is lightmapped, and its shadowmask holds the
+  static kit's shadows; the kit is lit by a light-probe grid (every 8 m) and
+  samples the static shadow map, as the 3D demo's lit rung is. Crystal
+  structures are excluded from the bake, because they break and regrow:
+  they cast realtime shadows and are lit by the moon and Forward+ lights
+  (the crystal takes no ambient, so the probes don't matter to it).
+- The moon's static shadow map renders at load and again after a break or
+  regrowth (`ArenaRuntime.RefreshShadows`).
+- **Structures snap to the hero's 1.5 m grid**: their anchors on tile
+  centres, quarter-turn yaws, gaps an odd number of tiles. Each set of a
+  structure's pieces that share a tile is one site, large from 6 tiles; the
+  navigation grid is twice as fine (0.75 m).
+- **The crystal swap** (`CrystalStructures`) gives every site the crystal
+  material at load, its gem colour a hue by its angle around the arena's
+  centre, so the arena holds the whole spectrum and neighbours read as a
+  family.
+- **The default zone** is the neon palette over the night: purple ambient
+  and fog, magenta mist, a violet moon, a cyan hero light and eight flame
+  lights. The player's `--arena` shows the arena alone in the game camera's
+  framing (`ArenaStage`).
 
 ### The hero
 

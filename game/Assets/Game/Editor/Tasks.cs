@@ -28,6 +28,40 @@ namespace Game.EditorTools
             Debug.Log("Tasks.Noop: project opened, Unity " + Application.unityVersion);
         }
 
+        /// <summary>
+        /// Generates the arena (Arena.ArenaBaker): its scene, materials, ground and lightmaps into the
+        /// gitignored Assets/Baked/Arena/, and the level data into Content/arena.json. `[-noLightmaps]`.
+        /// </summary>
+        public static void BakeArena() => Arena.ArenaBaker.Bake();
+
+        /// <summary>
+        /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the only one so far. Each
+        /// baker that finishes appends its name to Assets/Baked/.bakeall-ran, which the tools read back
+        /// to record the inputs it baked from. `-only NAME` (repeatable) runs just those.
+        /// </summary>
+        public static void BakeAll()
+        {
+            var args = Environment.GetCommandLineArgs();
+            var only = args.Where((a, i) => i > 0 && args[i - 1] == "-only").ToList();
+            Directory.CreateDirectory(BakedRoot);
+            foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena) })
+            {
+                if (only.Count > 0 && !only.Contains(name)) continue;
+                Debug.Log("Tasks.BakeAll: running " + name);
+                run();
+                File.AppendAllText(Path.Combine(BakedRoot, ".bakeall-ran"), name + "\n");
+            }
+        }
+
+        /// <summary>The stale bakers, then the player, in one launch (`game build` when the bake's inputs changed).</summary>
+        public static void BakeAndBuild()
+        {
+            BakeAll();
+            BuildPlayer();
+        }
+
+        public const string BakedRoot = "Assets/Baked";
+
         // URP's build preprocessing rewrites these tracked assets for the build's target. BuildPlayer
         // puts them back, so a build leaves the checkout clean.
         static readonly string[] RestoredAfterBuild = { PipelinePath, RendererPath, GlobalSettingsPath };
@@ -49,7 +83,12 @@ namespace Game.EditorTools
             var args = Environment.GetCommandLineArgs();
             var scenes = args.Where((a, i) => i > 0 && args[i - 1] == "-scene").ToArray();
             if (scenes.Length == 0)
+            {
+                // The baked arena's scene, loaded by name at run time: it lives in the gitignored
+                // Baked/, so it joins the build here, not in the tracked build settings.
                 scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
+                if (File.Exists(Arena.ArenaBaker.ScenePath)) scenes = scenes.Append(Arena.ArenaBaker.ScenePath).ToArray();
+            }
             if (scenes.Length == 0) throw new Exception("Tasks.BuildPlayer: no scenes in the build settings");
 
             var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);

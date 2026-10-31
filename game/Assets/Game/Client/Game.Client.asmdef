@@ -2,6 +2,7 @@
     "name": "Game.Client",
     "rootNamespace": "Game.Client",
     "references": [
+        "PS.Game.Arena",
         "PS.Game.Sim",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",

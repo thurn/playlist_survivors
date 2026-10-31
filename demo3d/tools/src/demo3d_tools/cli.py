@@ -117,7 +117,7 @@ def cmd_check(a: argparse.Namespace) -> int:
 
 def cmd_unity(a: argparse.Namespace) -> int:
     wt = paths.worktree(name=a.project)
-    bakes = a.method == "BakeAll" and wt.name == "demo3d"
+    bakes = a.method == "BakeAll" and bool(setup.baker_inputs(wt))
     if bakes:
         setup.bake_args(wt, [])  # clears any record of an earlier run outside the tools
     code = unity.run_method(wt, a.method, a.args, cold=a.cold)
