@@ -75,6 +75,22 @@ def test_clicks_a_few_ms_apart_are_left_out_and_coincident_ones_share_their_onse
     assert abs(s["music_to_click_ms"]["median"]) < 0.03
 
 
+def test_a_run_whose_sounds_mostly_crowd_each_other_measures_too_few_to_pass() -> None:
+    # All but every eighth click has a second one 20 ms after it: the six apart are found on the
+    # music, but too few to vouch for the timing.
+    report, mix, ref = synthetic([0.0])
+    lead = report["anchorDsp"]
+    beats = list(report["clickSong"])
+    close = [b + 0.02 for k, b in enumerate(beats) if k % 8]
+    for b in close:
+        at = 3000 + round(b * RATE)
+        mix[at:at + 100] += 0.6 * np.cos(2 * np.pi * 2000 * np.arange(100) / RATE)[:, None]
+    report["clickSong"] = beats + close
+    report["clickDsp"] = [lead + b for b in report["clickSong"]]
+    s = spike.measure(report, mix, ref)
+    assert s["clicks_found"] == s["clicks_apart"] == 6 and not s["ok"]
+
+
 def test_late_clicks_and_a_misplaced_music_are_measured_against_the_music_itself() -> None:
     # The clicks sound 5 ms after their beats, though the report schedules them on the beats.
     report, mix, ref = synthetic([5.0, 5.0, 6.0])

@@ -53,6 +53,9 @@ CLICK_REFRACTORY_S = 0.05
 # A scheduled click this close to another merges with it in the mix: measured only when they coincide.
 CLICK_COINCIDENT_S = 0.001
 CLICK_APART_S = 0.06
+# Fewer clicks apart than this measure too little of the mix to vouch for its timing (30 s of the
+# slice has about 130).
+MIN_CLICKS_APART = 20
 ANALYZER_RATE = 44_100
 FRAME_TOLERANCE_MS = 1.0  # frame to heard's median
 
@@ -336,7 +339,7 @@ def measure(report: dict, mix: np.ndarray, ref: np.ndarray) -> dict:
     frame_stats = _stats(np.array(frame_err))
     # frameSong's median against the audio thread's clock: a lost half-buffer correction is 2.7 ms
     # at 256 frames, while loaded runs measure within 0.1 ms.
-    ok = (report["stalls"] == 0 and report["gaps"] == 0 and not report["error"] and len(offsets_a) > 0
+    ok = (report["stalls"] == 0 and report["gaps"] == 0 and not report["error"] and len(beats) >= MIN_CLICKS_APART
           and len(offsets_a) >= 0.98 * len(beats) and abs(offsets_stats.get("median", 99)) <= 2
           and max(abs(offsets_stats.get("p5", 99)), abs(offsets_stats.get("p95", 99))) <= 2 and backwards == 0
           and abs(frame_stats.get("median", 99)) <= FRAME_TOLERANCE_MS)
