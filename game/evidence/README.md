@@ -67,5 +67,8 @@ what was run (the exact commands), the numbers, and what they show.
   samples in Unity's mix (ps-msz.6.6).
 - [hud](hud/README.md): the crystal HUD in every screen state (play, waiting, music stopped, pause, the
   level-up's cards, a chest preview, victory and YOU FELL) and the beat gem's ring landing on the beat frame (ps-msz.6.9).
+- [full-run](full-run/README.md): the 30-minute File run to the victory card with the bot, its pacing and
+  minute 25's stills (ps-msz.6.14), and retaken at fixed time in 4 minutes, with its replay and a still at
+  25:00 of a real run (ps-msz.7.5).
 - [sweeps](sweeps/README.md): the positioning bot's four 30-minute .NET runs over the survivors test playlist,
   all to the victory card above 25% health, and the idle bot falling at 2:06, with each run's pacing (ps-msz.6.13).

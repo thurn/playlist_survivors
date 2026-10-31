@@ -13,7 +13,8 @@ uv run --project demo3d/tools game build --platform mac --backend il2cpp
 python3 game/evidence/full-run/pacing.py events.csv > pacing.json   # the numbers below
 ```
 
-Exit 0 after 35 minutes of wall clock. The player's summary:
+Exit 0 after 35 minutes of wall clock (in real time; at fixed time it now takes 4 minutes: see
+[Retaking it quickly](#retaking-it-quickly-ps-msz75)). The player's summary:
 
 ```text
 GameLoop: victory; 125138 frames to song 2121.971 s, 132618 entries (0 late), ..., hash F3C4252CC0E9CD13;
@@ -120,3 +121,51 @@ hold twice the living (600), and `CrowdSlotsTests` replaces a whole crowd of one
 Operator rows for the Manual QA checks this needs a window or speakers for (the full File run,
 tempo bands, the band boundary, beatless passages, song gaps and the mass kill) are in
 [operator-pending.md](../operator-pending.md); Watch my run and the presses were already there.
+
+## Retaking it quickly (ps-msz.7.5)
+
+Under `--fixed-time` the frames drive the music (docs/design/unity-game.md, Fixed time), so the full
+run, its replay and late stills take minutes, not their song time. On jarvis (M-series Mac),
+2026-10-31, IL2CPP player built from ps-msz.7.5's tree:
+
+```sh
+uv run --project demo3d/tools game build --platform mac --backend il2cpp
+"game/Builds/mac/il2cpp/PlaylistSurvivors.app/Contents/MacOS/Playlist Survivors" -batchmode \
+  -logFile "$PWD/player.log" --file "$PWD/native/playlists/survivors-30-twice.m3u" --headless --fixed-time \
+  --run --bot positioning --events-out "$PWD/events.csv" [--sessions "$PWD/sessions"]
+uv run --project demo3d/tools game replay sessions/<time> --player     # fixed time since ps-msz.7.5
+```
+
+(`-logFile` and the outputs want absolute paths: the player resolves a relative log path elsewhere.)
+
+| check | wall clock | before (real time) | result |
+|---|---|---|---|
+| the full run, take 1 | 240 s | 35 min | victory at 30:00, song 2129.9 s, level 55, all five evolutions, hash 1BFD33F3E43B538E |
+| the full run, take 2 | 237 s | | the same hash, and a byte-identical events.csv |
+| the full run with `--sessions`, take 3 | 255 s | | the same hash (a cold-review agent ran beside it) |
+| take 3's 30-minute session, `game replay --player` | 60 s | 35 min | matches, 1BFD33F3E43B538E (473,544 events) |
+| a 120 s session recorded in real time (no `--fixed-time`), `game replay --player` | 7.8 s | 2 min | matches, 3355A08373B6F440 |
+| a still at 24:57 of run clock (song 1748 s) on the real run, no `--start-minute` | 244 s | 29 min | [still-1748.000.jpg](still-1748.000.jpg), readability dL* +85.4 |
+
+```sh
+uv run --project demo3d/tools game look full-run-25 --evidence full-run --at 1748 --readability \
+  --player-args "--file $PWD/native/playlists/survivors-30-twice.m3u --run --bot positioning"
+```
+
+- **The fixed-time run plays the run as the real-time one did**, on its own hash (fixed time steps the
+  sim on frame time): victory at 30:00 of run clock, level 16 at 5:00 and 55 at the end, 14 chests and
+  all five evolutions (Bloody Tear 10:38, Soul Eater 16:50, Holy Wand, Unholy Vespers and Thunder Loop
+  25:26), 84 freezes (16 music stopped), 132,983 entries and none late. The player's summary now logs
+  the seconds since launch beside the song time.
+- **What limits it is the analysis.** Frames alone run 120 s of song in under 2 s. With the hindsight
+  decode on one job, as live, 120 s took 32 s: each second of music decodes a 20 s window (its front
+  end, eight networks and DBN), and the frames wait on it, as `ps entries` reads at about 5 times real
+  time for the same reason. The driven session's 8 `hindsight_jobs` run the window's front end and
+  networks in parallel: 120 s in 12 s, and the full run at about 9 times real time on average (the
+  peak's frames cost more). Its entries are the same: the fixed-time run's 120 s hash, 627F7F968D16A8D6,
+  was the same with one job and eight.
+- **The still at 25:00** is the run's own state, not a `--start-minute` hero: level 46 with the cards
+  of a level-up open, 10,923 kills, the field full of the crystal mushrooms. The crowd draws (dL* +85),
+  so ps-msz.6.14's slot overflow is gone on a real run's minute 25 too.
+- Slow CI now covers this path: `game replay --record` also replays its session at fixed time and runs
+  the file twice at fixed time to one hash (about 10 s more).

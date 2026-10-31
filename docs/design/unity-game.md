@@ -787,9 +787,11 @@ needed   = frontier - B                  // the latest stamp the frame may take
   `hindsight_jobs` (`ps_config`): the window's front end and networks run on
   8 threads, with the same entries as one (model order and each frame's
   arithmetic are kept). Live runs keep one: the decode has 0.67 s and its
-  own thread. Measured on jarvis: the analysis reads about 4 times real time
-  with one job and 12 with eight; the full run's 35 minutes of song take
-  about 3 minutes (game/evidence/full-run).
+  own thread. Measured on jarvis: with one job the analysis read about 4
+  times real time (as fast as `ps entries`); with eight the full run's 35
+  minutes of song took 4 minutes, its 30-minute session's replay 1 minute
+  and a still at 25:00 of run clock 4 minutes
+  ([game/evidence/full-run](../../game/evidence/full-run/README.md#retaking-it-quickly-ps-msz75)).
 - **An app's music can't be driven**: it arrives in real time, so `--app`
   under `--fixed-time` keeps the audio thread's render position.
 - **`--seconds N` counts song seconds** under `--fixed-time` (Unity's frame
@@ -1137,7 +1139,9 @@ debugged.
   replayed in .NET reports a difference without failing.
 - Evidence: [game/evidence/replay](../../game/evidence/replay/README.md). Slow CI
   records a 10 s headless run of the Mono player, watches it at once to its hash
-  and replays its session in .NET (`game replay --record FILE`).
+  and replays its session in .NET (`game replay --record FILE`), then replays it
+  at fixed time and runs the file twice at fixed time to one hash (the frames-driven
+  path, [Fixed time](#fixed-time)).
 - A headless replay in the same runtime must reproduce the hash.
 
 ## Gameplay Rules

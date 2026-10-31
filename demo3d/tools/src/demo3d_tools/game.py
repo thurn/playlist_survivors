@@ -34,14 +34,17 @@ the survivors playlist (botsweep.py; slow CI).
 
 `game replay --record F [--seconds N]`: the player's whole session path, headless (slow CI): a
 run of F recorded, watched at once in the same player (`--watch`) to its hash, then replayed in
-.NET. It exits 1 if the player fails or throws, its replay differs, or .NET can't replay the
-session (a .NET difference is only reported: Unity's runtimes may round differently).
+.NET; then the frames-driven path: that session replayed at fixed time to its hash, and two
+fixed-time runs of F to one hash. It exits 1 if the player fails or throws, a replay differs, the
+fixed-time runs differ, or .NET can't replay the session (a .NET difference is only reported:
+Unity's runtimes may round differently).
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import shlex
 import shutil
 import subprocess
@@ -125,8 +128,10 @@ def _dotnet_replay(wt: paths.Worktree, session: Path) -> int:
     return subprocess.run(cmd, check=False).returncode
 
 
-def _play(wt: paths.Worktree, backend: str, args: list[str], log: Path, timeout: float = 3600) -> tuple[int, list[str]]:
-    """The built player, batch mode, with `args`: its exit code (2 if there is none) and its log's Replay lines."""
+def _play(wt: paths.Worktree, backend: str, args: list[str], log: Path, timeout: float = 3600,
+          replay: bool = True) -> tuple[int, list[str]]:
+    """The built player, batch mode, with `args`: its exit code (2 if there is none) and its log's Replay
+    lines, printed when it plays a `replay`."""
     exe = setup.player_dir(wt, "mac", backend) / APP_EXE
     if not exe.exists():
         print(f"replay: no {backend} player at {exe}: run `game build` first", file=sys.stderr)
@@ -135,7 +140,8 @@ def _play(wt: paths.Worktree, backend: str, args: list[str], log: Path, timeout:
     cmd = [str(exe), "-batchmode", "-logFile", str(log), *args]
     code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL, timeout=timeout).returncode
     lines = [ln for ln in log.read_text(errors="replace").splitlines() if ln.startswith("Replay:")]
-    print("\n".join(lines) or f"replay: no Replay line in {log}")
+    if replay:
+        print("\n".join(lines) or f"replay: no Replay line in {log}")
     print(f"replay: the player exited {code} (log {log.relative_to(wt.root)})")
     return code, lines
 
@@ -160,7 +166,38 @@ def _record_and_watch(wt: paths.Worktree, a: argparse.Namespace) -> int:
         print(f"replay: the recorded run's replay failed ({len(recorded)} sessions in {sessions})", file=sys.stderr)
         return 1
     dotnet = _dotnet_replay(wt, recorded[0])
-    return 0 if dotnet in (0, 2) else 1
+    if dotnet not in (0, 2):
+        return 1
+    return _fixed_time(wt, a, recorded[0], captures)
+
+
+def _fixed_time(wt: paths.Worktree, a: argparse.Namespace, session: Path, captures: Path) -> int:
+    """The frames-driven path (docs/design/unity-game.md, Fixed time): the recorded session replayed
+    at fixed time to its hash, and two fixed-time runs of the file to one hash. 1 on a failure."""
+    from .spike import exceptions
+
+    log = captures / "fixed-replay.log"
+    code, lines = _play(wt, a.backend, ["--replay", str(session), "--headless", "--fixed-time"], log,
+                        timeout=10 * a.seconds + 300)
+    if code != 0 or exceptions(log) or not any(ln.endswith(": matches") for ln in lines):
+        print(f"replay: the session's fixed-time replay failed (log {log})", file=sys.stderr)
+        return 1
+    hashes = []
+    for run in ("a", "b"):
+        log = captures / f"fixed-{run}.log"
+        args = ["--file", str((wt.root / a.record).resolve()), "--headless", "--fixed-time", "--seconds",
+                f"{a.seconds:g}", *shlex.split(a.player_args)]
+        code, _ = _play(wt, a.backend, args, log, timeout=10 * a.seconds + 300, replay=False)
+        found = re.search(r"^GameLoop: .*? hash ([0-9A-F]{16})", log.read_text(errors="replace"), re.MULTILINE)
+        thrown = exceptions(log)
+        for line in thrown[:5]:
+            print(f"replay: the fixed-time run threw: {line}", file=sys.stderr)
+        if code != 0 or thrown or found is None:
+            print(f"replay: the fixed-time run failed (log {log})", file=sys.stderr)
+            return 1
+        hashes.append(found.group(1))
+    print(f"replay: two fixed-time runs of {a.record}: hashes {hashes[0]} and {hashes[1]}")
+    return 0 if hashes[0] == hashes[1] else 1
 
 
 def cmd_look(a: argparse.Namespace) -> int:
@@ -191,7 +228,9 @@ def cmd_look(a: argparse.Namespace) -> int:
            "--seconds", f"{times[-1] + 5:g}", *shlex.split(a.player_args),
            *(["--capture-mask"] if a.readability else [])]
     started = time.monotonic()
-    code = subprocess.run(cmd, check=False, cwd=wt.root, timeout=600, stdout=subprocess.DEVNULL).returncode
+    # (A hang guard: frames drive the music, about ten times song time on the Mac, plus drawing.)
+    code = subprocess.run(cmd, check=False, cwd=wt.root, timeout=600 + times[-1] / 2,
+                          stdout=subprocess.DEVNULL).returncode
     stills = sorted(captures.glob("still-*.jpg"))
     if code != 0 or len(stills) != len(times):
         print(f"look: the player exited {code} with {len(stills)} of {len(times)} stills "

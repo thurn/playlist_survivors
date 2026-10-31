@@ -58,5 +58,17 @@
     "monsterP10": 48.786,
     "monsterP90": 93.687,
     "pass": true
+  },
+  "still-1748.000": {
+    "monsterPx": 48563,
+    "monsterShare": 0.023,
+    "lMonster": 87.939,
+    "lRing": 2.509,
+    "dL": 85.43,
+    "dC": 33.11,
+    "cMonster": 38.08,
+    "monsterP10": 53.595,
+    "monsterP90": 93.937,
+    "pass": true
   }
 }
