@@ -1,0 +1,567 @@
+{
+  "levels": [
+    {"level": 2, "cards": [["magic-wand"], ["garlic"], ["sword"]]},
+    {
+      "level": 3,
+      "cards": [
+        ["empty-tome"],
+        ["chain-lightning", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 4,
+      "cards": [
+        ["spinach"],
+        ["fire-trail", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 5,
+      "cards": [
+        ["hollow-heart"],
+        ["sword", "spinach", "garlic", "any"],
+        ["magnet", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 6,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["armour", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 7,
+      "cards": [
+        ["sword"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 8,
+      "cards": [
+        ["sword"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 9,
+      "cards": [
+        ["sword"],
+        ["chain-lightning", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 10,
+      "cards": [
+        ["sword"],
+        ["fire-trail", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 11,
+      "cards": [
+        ["sword"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 12,
+      "cards": [
+        ["sword"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 13,
+      "cards": [
+        ["sword"],
+        ["sword", "spinach", "garlic", "any"],
+        ["magnet", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 14,
+      "cards": [
+        ["pummarola"],
+        ["sword", "spinach", "garlic", "any"],
+        ["armour", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 15,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 16,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 17,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 18,
+      "cards": [
+        ["garlic"],
+        ["chain-lightning", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 19,
+      "cards": [
+        ["garlic"],
+        ["fire-trail", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 20,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 21,
+      "cards": [
+        ["garlic"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 22,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["magnet", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 23,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["armour", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 24,
+      "cards": [
+        ["magic-wand"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 25,
+      "cards": [
+        ["magic-wand"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 26,
+      "cards": [
+        ["magic-wand"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 27,
+      "cards": [
+        ["magic-wand"],
+        ["chain-lightning", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 28,
+      "cards": [
+        ["magic-wand"],
+        ["fire-trail", "sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 29,
+      "cards": [
+        ["magic-wand"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 30,
+      "cards": [
+        ["magic-wand"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 31,
+      "cards": [
+        ["spellbinder"],
+        ["sword", "spinach", "garlic", "any"],
+        ["magnet", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 32,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["armour", "hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 33,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 34,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 35,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 36,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 37,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 38,
+      "cards": [
+        ["king-bible"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 39,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 40,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 41,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 42,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 43,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 44,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 45,
+      "cards": [
+        ["lightning-ring"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 46,
+      "cards": [
+        ["duplicator"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 47,
+      "cards": [
+        ["spinach"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 48,
+      "cards": [
+        ["spinach"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 49,
+      "cards": [
+        ["spinach"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 50,
+      "cards": [
+        ["spinach"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 51,
+      "cards": [
+        ["hollow-heart"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 52,
+      "cards": [
+        ["hollow-heart"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 53,
+      "cards": [
+        ["hollow-heart"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 54,
+      "cards": [
+        ["hollow-heart"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 55,
+      "cards": [
+        ["pummarola"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 56,
+      "cards": [
+        ["pummarola"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 57,
+      "cards": [
+        ["pummarola"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 58,
+      "cards": [
+        ["pummarola"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 59,
+      "cards": [
+        ["empty-tome"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 60,
+      "cards": [
+        ["empty-tome"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 61,
+      "cards": [
+        ["empty-tome"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 62,
+      "cards": [
+        ["empty-tome"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 63,
+      "cards": [
+        ["spellbinder"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 64,
+      "cards": [
+        ["spellbinder"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 65,
+      "cards": [
+        ["spellbinder"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 66,
+      "cards": [
+        ["spellbinder"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 67,
+      "cards": [
+        ["duplicator"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 68,
+      "cards": [
+        ["any"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 69,
+      "cards": [
+        ["any"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    },
+    {
+      "level": 70,
+      "cards": [
+        ["any"],
+        ["sword", "spinach", "garlic", "any"],
+        ["hollow-heart", "pummarola", "magic-wand", "any"]
+      ]
+    }
+  ],
+  "fallback": ["lowest-level weapon owned", "lowest-level passive owned", "any offerable"],
+  "anyOrder": [
+    "sword",
+    "garlic",
+    "magic-wand",
+    "king-bible",
+    "lightning-ring",
+    "chain-lightning",
+    "fire-trail",
+    "spinach",
+    "hollow-heart",
+    "pummarola",
+    "duplicator",
+    "empty-tome",
+    "spellbinder",
+    "magnet",
+    "armour"
+  ]
+}

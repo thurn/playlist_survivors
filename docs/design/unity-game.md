@@ -706,9 +706,10 @@ sim.State                       // hero, enemies, items, run clock
 
 ### Content data and units
 
-Content is JSON owned by the game, converted once from native's YAML and then
-edited as the game's own. The sim loads it directly, so tests read the same
-files as the game.
+Content is JSON owned by the game (game/Content/, whose README maps every
+native role and weapon to its entry), converted once from native's YAML and
+then edited as the game's own. The sim loads it directly, so tests read the
+same files as the game.
 
 - One scale converts native's pixels to metres: **about 27 px per metre**.
   It matches a native character's height (about 48 px) to the 1.8 m Synty
@@ -723,13 +724,15 @@ files as the game.
 
 An enemy role, for example. `refSpeedMps` is its speed when the hero
 strides at the reference period (see
-[Speeds Follow the Tempo](#speeds-follow-the-tempo)). Its gait pattern `x`
-means it steps on every main beat; `x.` would mean every other beat.
+[Speeds Follow the Tempo](#speeds-follow-the-tempo)): native's actual speed,
+VS's `0.231 x 1.1 x speed / 100` U/s, 0.28 of the hero's at `speed` 100. Its
+gait pattern `x` means it steps on every main beat; `x.` would mean every
+other beat. Its model, scale and crystal colour are in cast.json.
 
 ```json
-{ "id": "skeleton", "model": "skeleton", "refSpeedMps": 3.7, "health": 1.5,
-  "power": 10, "xp": 2, "radiusM": 0.45, "knockback": 1,
-  "gait": { "pattern": "x" } }
+{ "id": "skeleton", "refSpeedMps": 1.4519, "health": 1.5, "power": 10,
+  "xp": 2, "radiusM": 0.4444, "knockback": 1, "maxKnockback": 3,
+  "levelScaled": false, "brute": false, "gait": { "pattern": "x" } }
 ```
 
 ### Sessions and replay
@@ -814,13 +817,13 @@ An enemy role's speed `r` is its speed divided by the hero's reference speed
 
 ```text
 enemy step distance = r * tile * (hero strides per enemy step)
-skeleton: r = 3.7 / 5.2 = 0.71, steps every beat
-100 BPM  beat 0.60  2 strides per beat  hero 5.0 m/s  step 0.71*1.5*2 = 2.1 m
-140 BPM  beat 0.43  2 strides per beat  hero 7.0 m/s  step 2.1 m
-155 BPM  beat 0.39  1 stride per beat   hero 3.9 m/s  step 0.71*1.5*1 = 1.1 m
+skeleton: r = 1.45 / 5.2 = 0.28, steps every beat
+100 BPM  beat 0.60  2 strides per beat  hero 5.0 m/s  step 0.28*1.5*2 = 0.84 m
+140 BPM  beat 0.43  2 strides per beat  hero 7.0 m/s  step 0.84 m
+155 BPM  beat 0.39  1 stride per beat   hero 3.9 m/s  step 0.28*1.5*1 = 0.42 m
 ```
 
-- In every row the skeleton moves at 0.71 times the hero's speed.
+- In every row the skeleton moves at 0.28 times the hero's speed.
 - The run clock, spawn schedule, damage and cooldowns are unaffected.
 - Knockback and death launches, which are forced reactions, use fixed
   distances.

@@ -1,0 +1,12 @@
+{
+  "passives": [
+    {"id": "hollow-heart", "maxRank": 5, "perRank": {"maxHp": 0.2}},
+    {"id": "empty-tome", "maxRank": 5, "perRank": {"cooldown": -0.08}},
+    {"id": "spellbinder", "maxRank": 5, "perRank": {"duration": 0.1}},
+    {"id": "duplicator", "maxRank": 2, "perRank": {"amount": 1}},
+    {"id": "pummarola", "maxRank": 5, "perRank": {"recovery": 0.2}},
+    {"id": "spinach", "maxRank": 5, "perRank": {"might": 0.1}},
+    {"id": "magnet", "maxRank": 5, "perRank": {"magnet": 0.3}},
+    {"id": "armour", "maxRank": 5, "perRank": {"armor": 1}}
+  ]
+}

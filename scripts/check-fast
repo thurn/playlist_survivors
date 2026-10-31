@@ -13,7 +13,7 @@
 #   stylelab/), always, over the commits since the base and the index; its tools' lint and tests
 #   when demo3d/tools changed, the choreography layer's tests (on each demo's data) when the
 #   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/) when
-#   the sim changed.
+#   the sim or its content (game/Content/) changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."

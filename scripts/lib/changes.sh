@@ -79,7 +79,7 @@ changes_demo3d() {
 # game/Assets/Game/Sim/ and Tests/Sim/, and the .NET projects under game/dotnet/ that compile the
 # same files (docs/design/unity-game.md, The Simulation).
 changes_game_sim() {
-  changes_match '^game/(dotnet/|Assets/Game/Sim/|Assets/Game/Tests/Sim/)'
+  changes_match '^game/(dotnet/|Content/|Assets/Game/Sim/|Assets/Game/Tests/Sim/)'
 }
 
 # The demo's sync record must know every GUID its manifest lists; a manifest change rebuilds it.

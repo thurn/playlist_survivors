@@ -1,0 +1,201 @@
+{
+  "weapons": [
+    {
+      "id": "sword",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {
+        "kind": "sword",
+        "radiusM": 7.037,
+        "heavyReachScale": 1.3,
+        "heavyDamage": 2.5,
+        "waveBeyondM": 5.9259,
+        "waveBandM": 0.9259,
+        "waveDamage": 1
+      },
+      "ranks": [
+        {"power": 1, "amount": 1, "intervalS": 1.35, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2.5, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 3, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 3.5, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 4, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.2, "critMultiplier": 2, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "bloody-tear",
+      "grid": "beat",
+      "evolutionOf": "sword",
+      "requires": "hollow-heart",
+      "shape": {
+        "kind": "sword",
+        "radiusM": 7.037,
+        "heavyReachScale": 1.3,
+        "heavyDamage": 2.5,
+        "waveBeyondM": 5.9259,
+        "waveBandM": 0.9259,
+        "waveDamage": 1
+      },
+      "ranks": [
+        {"power": 4, "amount": 2, "intervalS": 1.35, "repeatS": 0.1, "area": 1.3, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0.1, "critMultiplier": 2, "critEnabled": true, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "garlic",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {"kind": "aura", "radiusM": 1.8284},
+      "ranks": [
+        {"power": 0.5, "amount": 1, "intervalS": 1.3, "repeatS": 0, "area": 1, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.7, "amount": 1, "intervalS": 1.3, "repeatS": 0, "area": 1.4, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.8, "amount": 1, "intervalS": 1.2, "repeatS": 0, "area": 1.4, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.9, "amount": 1, "intervalS": 1.2, "repeatS": 0, "area": 1.6, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.1, "amount": 1, "intervalS": 1.1, "repeatS": 0, "area": 1.6, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.2, "amount": 1, "intervalS": 1.1, "repeatS": 0, "area": 1.8, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.3, "amount": 1, "intervalS": 1, "repeatS": 0, "area": 1.8, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 1, "intervalS": 1, "repeatS": 0, "area": 2, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "soul-eater",
+      "grid": "beat",
+      "evolutionOf": "garlic",
+      "requires": "pummarola",
+      "shape": {"kind": "aura", "radiusM": 1.8284},
+      "ranks": [
+        {"power": 2, "amount": 1, "intervalS": 1, "repeatS": 0, "area": 3, "speed": 1, "durationS": 1.3, "pierce": 0, "hitDelayS": 1, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "magic-wand",
+      "grid": "eighth",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {"kind": "missile", "radiusM": 0.4571, "speedMps": 9.4276},
+      "ranks": [
+        {"power": 1, "amount": 1, "intervalS": 1.2, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1, "amount": 2, "intervalS": 1.2, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1, "amount": 2, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1, "amount": 3, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2, "amount": 3, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2, "amount": 4, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 1, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2, "amount": 4, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 2, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 3, "amount": 4, "intervalS": 1, "repeatS": 0.1, "area": 1, "speed": 1, "durationS": 1, "pierce": 2, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "holy-wand",
+      "grid": "eighth",
+      "evolutionOf": "magic-wand",
+      "requires": "empty-tome",
+      "shape": {"kind": "missile", "radiusM": 0.4571, "speedMps": 9.4276},
+      "ranks": [
+        {"power": 3, "amount": 4, "intervalS": 0.5, "repeatS": 0.1, "area": 1, "speed": 2, "durationS": 1, "pierce": 2, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "king-bible",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {
+        "kind": "orbit",
+        "radiusM": 0.4571,
+        "orbitRadiusM": 2.8569,
+        "orbitAreaCap": 4.5,
+        "radPerS": 2.1875
+      },
+      "ranks": [
+        {"power": 1, "amount": 1, "intervalS": 3, "repeatS": 0, "area": 1, "speed": 1, "durationS": 3, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 1, "amount": 2, "intervalS": 3, "repeatS": 0, "area": 1, "speed": 1, "durationS": 3, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 1, "amount": 2, "intervalS": 3, "repeatS": 0, "area": 1.25, "speed": 1.3, "durationS": 3, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 2, "amount": 2, "intervalS": 3, "repeatS": 0, "area": 1.25, "speed": 1.3, "durationS": 3.5, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 2, "amount": 3, "intervalS": 3, "repeatS": 0, "area": 1.25, "speed": 1.3, "durationS": 3.5, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 2, "amount": 3, "intervalS": 3, "repeatS": 0, "area": 1.5, "speed": 1.6, "durationS": 3.5, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 3, "amount": 3, "intervalS": 3, "repeatS": 0, "area": 1.5, "speed": 1.6, "durationS": 4, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true},
+        {"power": 3, "amount": 4, "intervalS": 3, "repeatS": 0, "area": 1.5, "speed": 1.6, "durationS": 4, "pierce": 0, "hitDelayS": 1.7, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": true}
+      ]
+    },
+    {
+      "id": "unholy-vespers",
+      "grid": "beat",
+      "evolutionOf": "king-bible",
+      "requires": "spellbinder",
+      "shape": {
+        "kind": "orbit",
+        "radiusM": 0.4571,
+        "orbitRadiusM": 2.8569,
+        "orbitAreaCap": 4.5,
+        "radPerS": 2.1875
+      },
+      "ranks": [
+        {"power": 3, "amount": 4, "intervalS": 3, "repeatS": 0, "area": 1.75, "speed": 1.5, "durationS": 3, "pierce": 0, "hitDelayS": 1.7, "knockback": 4, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "lightning-ring",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {"kind": "strike", "radiusM": 0.4571},
+      "ranks": [
+        {"power": 1.5, "amount": 2, "intervalS": 4.5, "repeatS": 0.05, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 3, "intervalS": 4.5, "repeatS": 0.05, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2.5, "amount": 3, "intervalS": 4.5, "repeatS": 0.05, "area": 2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 2.5, "amount": 4, "intervalS": 4.5, "repeatS": 0.05, "area": 2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 4.5, "amount": 4, "intervalS": 4.5, "repeatS": 0.05, "area": 3, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 4.5, "amount": 5, "intervalS": 4.5, "repeatS": 0.05, "area": 3, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 6.5, "amount": 5, "intervalS": 4.5, "repeatS": 0.05, "area": 4, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 6.5, "amount": 6, "intervalS": 4.5, "repeatS": 0.05, "area": 4, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "thunder-loop",
+      "grid": "beat",
+      "evolutionOf": "lightning-ring",
+      "requires": "duplicator",
+      "shape": {"kind": "strike", "radiusM": 0.4571},
+      "ranks": [
+        {"power": 6.5, "amount": 6, "intervalS": 4.5, "repeatS": 0, "area": 4, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "chain-lightning",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {"kind": "chain", "radiusM": 9.6296},
+      "ranks": [
+        {"power": 1.2, "amount": 3, "intervalS": 1, "repeatS": 0.125, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.2, "amount": 4, "intervalS": 1, "repeatS": 0.125, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 4, "intervalS": 1, "repeatS": 0.125, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 4, "intervalS": 1, "repeatS": 0.125, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.5, "amount": 5, "intervalS": 1, "repeatS": 0.125, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.8, "amount": 5, "intervalS": 1, "repeatS": 0.125, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.8, "amount": 5, "intervalS": 0.8, "repeatS": 0.125, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1.8, "amount": 6, "intervalS": 0.8, "repeatS": 0.125, "area": 1.4, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    },
+    {
+      "id": "fire-trail",
+      "grid": "beat",
+      "evolutionOf": null,
+      "requires": null,
+      "shape": {"kind": "trail", "radiusM": 0.7407},
+      "ranks": [
+        {"power": 0.4, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.4, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.6, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.6, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.2, "speed": 1, "durationS": 1.25, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.6, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.4, "speed": 1, "durationS": 1.25, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.8, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.4, "speed": 1, "durationS": 1.25, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 0.8, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.4, "speed": 1, "durationS": 1.5, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
+        {"power": 1, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.6, "speed": 1, "durationS": 1.5, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false}
+      ]
+    }
+  ]
+}

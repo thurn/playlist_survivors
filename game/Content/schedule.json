@@ -1,0 +1,357 @@
+{
+  "run": {"durationS": 1800, "cap": 300},
+  "easy": {"contactDamage": 0.5, "bruteChickenChance": 0.05, "bossChickens": 1},
+  "minutes": [
+    {"minute": 0, "minimum": 15, "intervalS": 1, "enemies": ["bat3"], "bosses": [], "events": [], "treasure": null},
+    {
+      "minute": 1,
+      "minimum": 30,
+      "intervalS": 1,
+      "enemies": ["zombie", "bat1"],
+      "bosses": ["bat4"],
+      "events": [],
+      "treasure": {"chances": {"tier3": 0, "tier2": 0, "tier1": 30}, "tier": null, "evolves": false}
+    },
+    {
+      "minute": 2,
+      "minimum": 50,
+      "intervalS": 0.5,
+      "enemies": ["bat1", "bat2", "bat3"],
+      "bosses": [],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 2, "chance": null, "durationS": 10, "count": 50}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 3,
+      "minimum": 40,
+      "intervalS": 0.25,
+      "enemies": ["skeleton"],
+      "bosses": ["bat4"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 1, "chance": 10, "durationS": 10, "count": 50}
+      ],
+      "treasure": {"chances": {"tier3": 0, "tier2": 5, "tier1": 40}, "tier": null, "evolves": false}
+    },
+    {
+      "minute": 4,
+      "minimum": 30,
+      "intervalS": 0.5,
+      "enemies": ["skeleton", "ghost"],
+      "bosses": [],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 1, "chance": 10, "durationS": 10, "count": 50}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 5,
+      "minimum": 10,
+      "intervalS": 1,
+      "enemies": ["mudman2"],
+      "bosses": ["xlmantis"],
+      "events": [
+        {"kind": "flower-wall", "role": "flower", "delayS": 0, "extraRepeats": 0, "chance": null, "durationS": 30, "count": 100}
+      ],
+      "treasure": {
+        "chances": {"tier3": 1, "tier2": 5, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {
+      "minute": 6,
+      "minimum": 20,
+      "intervalS": 0.5,
+      "enemies": ["zombie", "mudman2"],
+      "bosses": [],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 1, "chance": 10, "durationS": 10, "count": 50}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 7,
+      "minimum": 80,
+      "intervalS": 0.5,
+      "enemies": ["bat2", "bat3", "mudman1"],
+      "bosses": ["bat4"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 5, "chance": 80, "durationS": 10, "count": 50}
+      ],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 50},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {
+      "minute": 8,
+      "minimum": 100,
+      "intervalS": 1.5,
+      "enemies": ["zombie"],
+      "bosses": ["xlbat"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 15, "extraRepeats": 2, "chance": 80, "durationS": 10, "count": 50}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 9,
+      "minimum": 30,
+      "intervalS": 0.5,
+      "enemies": ["xlbat", "zombie"],
+      "bosses": ["bat5"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 15, "extraRepeats": 2, "chance": 70, "durationS": 10, "count": 50}
+      ],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 50},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {
+      "minute": 10,
+      "minimum": 10,
+      "intervalS": 0.5,
+      "enemies": ["mudman1", "mudman2"],
+      "bosses": ["boss-xlmantis"],
+      "events": [
+        {"kind": "flower-wall", "role": "flower", "delayS": 0, "extraRepeats": 0, "chance": null, "durationS": 60, "count": 100}
+      ],
+      "treasure": {"chances": {"tier3": 3, "tier2": 10, "tier1": 100}, "tier": 1, "evolves": true}
+    },
+    {
+      "minute": 11,
+      "minimum": 300,
+      "intervalS": 0.1,
+      "enemies": ["skeleton"],
+      "bosses": [],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 1, "chance": 10, "durationS": 10, "count": 50}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 12,
+      "minimum": 20,
+      "intervalS": 0.25,
+      "enemies": ["werewolf", "ghost", "skeleton"],
+      "bosses": ["bat4"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 5, "extraRepeats": 1, "chance": 10, "durationS": 10, "count": 50}
+      ],
+      "treasure": {"chances": {"tier3": 1, "tier2": 5, "tier1": 50}, "tier": null, "evolves": false}
+    },
+    {
+      "minute": 13,
+      "minimum": 150,
+      "intervalS": 0.5,
+      "enemies": ["werewolf", "ghost", "ghost"],
+      "bosses": [],
+      "events": [
+        {"kind": "ghost-swarm", "role": "ghost-swarm", "delayS": 1.2, "extraRepeats": 20, "chance": 70, "durationS": 10, "count": 20},
+        {"kind": "ghost-swarm", "role": "ghost-swarm", "delayS": 2.3, "extraRepeats": 20, "chance": 70, "durationS": 10, "count": 20}
+      ],
+      "treasure": null
+    },
+    {
+      "minute": 14,
+      "minimum": 20,
+      "intervalS": 0.1,
+      "enemies": ["xlbat", "werewolf"],
+      "bosses": ["bat5"],
+      "events": [],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {
+      "minute": 15,
+      "minimum": 100,
+      "intervalS": 0.1,
+      "enemies": ["werewolf", "xlbat", "mudman2"],
+      "bosses": ["boss-werewolf"],
+      "events": [
+        {"kind": "flower-wall", "role": "flower", "delayS": 0, "extraRepeats": 0, "chance": 80, "durationS": 60, "count": 100}
+      ],
+      "treasure": {"chances": {"tier3": 3, "tier2": 10, "tier1": 100}, "tier": 1, "evolves": true}
+    },
+    {
+      "minute": 16,
+      "minimum": 100,
+      "intervalS": 0.1,
+      "enemies": ["xlmantis", "mudman1", "mudman2"],
+      "bosses": ["bat4"],
+      "events": [],
+      "treasure": {"chances": {"tier3": 1, "tier2": 5, "tier1": 50}, "tier": null, "evolves": false}
+    },
+    {"minute": 17, "minimum": 20, "intervalS": 1, "enemies": ["xlmummy"], "bosses": [], "events": [], "treasure": null},
+    {
+      "minute": 18,
+      "minimum": 60,
+      "intervalS": 0.5,
+      "enemies": ["xlmummy", "mudman1"],
+      "bosses": ["bat5"],
+      "events": [],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {"minute": 19, "minimum": 100, "intervalS": 0.5, "enemies": ["xlmummy", "mudman1"], "bosses": [], "events": [], "treasure": null},
+    {
+      "minute": 20,
+      "minimum": 100,
+      "intervalS": 0.1,
+      "enemies": ["xlmummy", "mudman2", "xlbat"],
+      "bosses": ["boss-xlmummy"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 1.2, "extraRepeats": 20, "chance": 70, "durationS": 10, "count": 50},
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 2.3, "extraRepeats": 20, "chance": 70, "durationS": 10, "count": 50}
+      ],
+      "treasure": {"chances": {"tier3": 3, "tier2": 10, "tier1": 100}, "tier": 1, "evolves": true}
+    },
+    {"minute": 21, "minimum": 300, "intervalS": 0.1, "enemies": ["flower"], "bosses": ["xlflower"], "events": [], "treasure": null},
+    {
+      "minute": 22,
+      "minimum": 200,
+      "intervalS": 0.1,
+      "enemies": ["flower", "xlmummy"],
+      "bosses": ["bat4"],
+      "events": [],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {
+      "minute": 23,
+      "minimum": 300,
+      "intervalS": 0.1,
+      "enemies": ["flower", "xlmummy"],
+      "bosses": ["bat5"],
+      "events": [],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {"minute": 24, "minimum": 300, "intervalS": 0.1, "enemies": ["flower", "xlmummy"], "bosses": ["xlflower"], "events": [], "treasure": null},
+    {
+      "minute": 25,
+      "minimum": 100,
+      "intervalS": 0.1,
+      "enemies": ["xlflower"],
+      "bosses": ["boss-xlflower"],
+      "events": [
+        {"kind": "flower-wall", "role": "flower", "delayS": 10, "extraRepeats": 5, "chance": null, "durationS": 10, "count": 100}
+      ],
+      "treasure": {"chances": {"tier3": 3, "tier2": 10, "tier1": 100}, "tier": 3, "evolves": true}
+    },
+    {"minute": 26, "minimum": 150, "intervalS": 0.1, "enemies": ["xlflower", "flower"], "bosses": [], "events": [], "treasure": null},
+    {
+      "minute": 27,
+      "minimum": 300,
+      "intervalS": 0.1,
+      "enemies": ["xlmummy", "mudman1", "mudman2"],
+      "bosses": ["bat4"],
+      "events": [
+        {"kind": "ghost-swarm", "role": "ghost-swarm", "delayS": 0, "extraRepeats": 0, "chance": null, "durationS": 10, "count": 20},
+        {"kind": "ghost-swarm", "role": "ghost-swarm", "delayS": 3, "extraRepeats": 19, "chance": null, "durationS": 10, "count": 20}
+      ],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {"minute": 28, "minimum": 300, "intervalS": 0.1, "enemies": ["xlbat", "bat4"], "bosses": [], "events": [], "treasure": null},
+    {
+      "minute": 29,
+      "minimum": 300,
+      "intervalS": 0.1,
+      "enemies": ["bat4", "bat5"],
+      "bosses": ["bat4"],
+      "events": [
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 0, "extraRepeats": 0, "chance": null, "durationS": 10, "count": 50},
+        {"kind": "bat-swarm", "role": "bat-swarm", "delayS": 3, "extraRepeats": 19, "chance": null, "durationS": 10, "count": 50}
+      ],
+      "treasure": {
+        "chances": {"tier3": 3, "tier2": 10, "tier1": 100},
+        "tier": null,
+        "evolves": false
+      }
+    },
+    {"minute": 30, "minimum": 1, "intervalS": 10, "enemies": [], "bosses": [], "events": [], "treasure": null}
+  ],
+  "swarms": {"jumpDb": 6, "lateS": 10},
+  "setPieces": {
+    "groupCap": 40,
+    "gapS": 30,
+    "lifeS": 48,
+    "stampede": {
+      "fromS": 120,
+      "role": "goblin",
+      "count": 40,
+      "rows": 2,
+      "jumpDb": 6,
+      "quietS": 8,
+      "speedScale": 2.5
+    },
+    "kickLine": {
+      "fromS": 180,
+      "role": "skeleton-ember",
+      "count": 12,
+      "spacingM": 1.037,
+      "mediumBeats": 16,
+      "entranceBeats": 8,
+      "minDanceBeats": 8,
+      "maxDanceBeats": 32
+    },
+    "wedge": {
+      "fromS": 240,
+      "role": "bee",
+      "count": 9,
+      "spacingM": 0.8148,
+      "everyBeats": 16,
+      "entranceBeats": 4,
+      "danceBeats": 6
+    },
+    "ring": {
+      "fromS": 300,
+      "role": "goblin",
+      "count": 40,
+      "gaps": 3,
+      "gapPlaces": 5,
+      "everyBeats": 16,
+      "entranceBeats": 4,
+      "closeToM": 4.4444
+    }
+  },
+  "signature": {
+    "role": "minotaur",
+    "fromS": 90,
+    "slamBeats": 8,
+    "slamDamage": 25,
+    "slamRadiusM": 1.037,
+    "retreatS": 90
+  },
+  "finale": {"radiusM": 33.3333, "damage": 1000, "beats": 1, "victoryCardS": 3},
+  "zones": {
+    "ids": ["neon", "blossom", "snow", "crypt", "lava"],
+    "victory": "lava",
+    "jumpDb": 6,
+    "minGapS": 8,
+    "openingFallbackS": 60,
+    "openingS": 300,
+    "fallbackS": 240
+  }
+}

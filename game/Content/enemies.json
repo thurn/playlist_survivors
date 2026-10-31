@@ -1,0 +1,30 @@
+{
+  "roles": [
+    {"id": "bat1", "refSpeedMps": 2.0326, "health": 0.1, "power": 5, "xp": 1, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bat2", "refSpeedMps": 2.0326, "health": 0.5, "power": 5, "xp": 1, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bat3", "refSpeedMps": 2.0326, "health": 0.5, "power": 5, "xp": 1, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bat4", "refSpeedMps": 2.0326, "health": 5, "power": 10, "xp": 30, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bat5", "refSpeedMps": 2.0326, "health": 5, "power": 10, "xp": 30, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "zombie", "refSpeedMps": 1.4519, "health": 1, "power": 10, "xp": 1, "radiusM": 0.3704, "knockback": 0.8, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "ghost", "refSpeedMps": 2.9037, "health": 1, "power": 5, "xp": 1.5, "radiusM": 0.3333, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "skeleton", "refSpeedMps": 1.4519, "health": 1.5, "power": 10, "xp": 2, "radiusM": 0.4444, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "mudman1", "refSpeedMps": 1.4519, "health": 7, "power": 10, "xp": 2.5, "radiusM": 0.4815, "knockback": 0.3, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x."}},
+    {"id": "mudman2", "refSpeedMps": 1.4519, "health": 15, "power": 10, "xp": 2.5, "radiusM": 0.5185, "knockback": 0.3, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x."}},
+    {"id": "werewolf", "refSpeedMps": 1.8874, "health": 18, "power": 14, "xp": 2, "radiusM": 0.4815, "knockback": 0.8, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "xlbat", "refSpeedMps": 2.0326, "health": 27, "power": 10, "xp": 2.5, "radiusM": 0.3704, "knockback": 0.1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "xlmantis", "refSpeedMps": 1.1615, "health": 50, "power": 20, "xp": 3, "radiusM": 0.5185, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": true, "gait": {"pattern": "x."}},
+    {"id": "xlmummy", "refSpeedMps": 1.1615, "health": 50, "power": 20, "xp": 3, "radiusM": 0.5185, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": true, "gait": {"pattern": "x."}},
+    {"id": "xlflower", "refSpeedMps": 1.1615, "health": 50, "power": 20, "xp": 3, "radiusM": 0.3704, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": true, "gait": {"pattern": "x."}},
+    {"id": "flower", "refSpeedMps": 0.2904, "health": 3, "power": 1, "xp": 2, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": true, "brute": false, "gait": {"pattern": "x."}},
+    {"id": "boss-xlmantis", "refSpeedMps": 2.323, "health": 15, "power": 20, "xp": 50, "radiusM": 0.963, "knockback": 0, "maxKnockback": 1, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "boss-werewolf", "refSpeedMps": 1.8874, "health": 20, "power": 20, "xp": 30, "radiusM": 0.4815, "knockback": 0.1, "maxKnockback": 1, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "boss-xlmummy", "refSpeedMps": 1.1615, "health": 25, "power": 20, "xp": 25, "radiusM": 0.5185, "knockback": 0, "maxKnockback": 1, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "boss-xlflower", "refSpeedMps": 2.323, "health": 15, "power": 30, "xp": 50, "radiusM": 0.3704, "knockback": 0, "maxKnockback": 1, "levelScaled": true, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bat-swarm", "refSpeedMps": 10.163, "health": 0.1, "power": 1, "xp": 1, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "ghost-swarm", "refSpeedMps": 10.163, "health": 1, "power": 5, "xp": 1.5, "radiusM": 0.3333, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "goblin", "refSpeedMps": 1.4519, "health": 1, "power": 10, "xp": 1, "radiusM": 0.4444, "knockback": 0.8, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "skeleton-ember", "refSpeedMps": 1.4519, "health": 1.1, "power": 10, "xp": 2, "radiusM": 0.4444, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "bee", "refSpeedMps": 10.163, "health": 0.6, "power": 5, "xp": 1, "radiusM": 0.3333, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "minotaur", "refSpeedMps": 2.323, "health": 175, "power": 20, "xp": 50, "radiusM": 0.963, "knockback": 0, "maxKnockback": 1, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}}
+  ]
+}

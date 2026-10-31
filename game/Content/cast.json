@@ -1,0 +1,41 @@
+{
+  "models": [
+    {"id": "bat", "gem": "#a77bff"},
+    {"id": "slime", "gem": "#ff5cbf"},
+    {"id": "demon", "gem": "#ff3d3d"},
+    {"id": "skeleton", "gem": "#8be9ff"},
+    {"id": "goblin", "gem": "#6dff8a"},
+    {"id": "bigork", "gem": "#3dffc8"},
+    {"id": "troll", "gem": "#4d8bff"},
+    {"id": "mushroom", "gem": "#ffb23d"},
+    {"id": "dragon", "gem": "#ffd23d"}
+  ],
+  "cast": [
+    {"role": "bat1", "model": "bat", "scale": 1, "crystal": "#a77bff"},
+    {"role": "bat2", "model": "bat", "scale": 1, "crystal": "#a77bff"},
+    {"role": "bat3", "model": "bat", "scale": 1, "crystal": "#a77bff"},
+    {"role": "bat4", "model": "bat", "scale": 2, "crystal": "#a77bff"},
+    {"role": "bat5", "model": "bat", "scale": 2, "crystal": "#a77bff"},
+    {"role": "zombie", "model": "slime", "scale": 1, "crystal": "#ff5cbf"},
+    {"role": "ghost", "model": "demon", "scale": 1, "crystal": "#ff3d3d"},
+    {"role": "skeleton", "model": "skeleton", "scale": 1, "crystal": "#8be9ff"},
+    {"role": "mudman1", "model": "goblin", "scale": 1, "crystal": "#6dff8a"},
+    {"role": "mudman2", "model": "bigork", "scale": 1, "crystal": "#3dffc8"},
+    {"role": "werewolf", "model": "troll", "scale": 1, "crystal": "#4d8bff"},
+    {"role": "xlbat", "model": "bat", "scale": 2, "crystal": "#5a3dcc"},
+    {"role": "xlmantis", "model": "bigork", "scale": 2, "crystal": "#3dffc8"},
+    {"role": "xlmummy", "model": "troll", "scale": 2, "crystal": "#b8c8ff"},
+    {"role": "xlflower", "model": "mushroom", "scale": 2, "crystal": "#ffb23d"},
+    {"role": "flower", "model": "mushroom", "scale": 1, "crystal": "#ffb23d"},
+    {"role": "boss-xlmantis", "model": "dragon", "scale": 1, "crystal": "#ffd23d"},
+    {"role": "boss-werewolf", "model": "troll", "scale": 2, "crystal": "#4d8bff"},
+    {"role": "boss-xlmummy", "model": "bigork", "scale": 3, "crystal": "#3dffc8"},
+    {"role": "boss-xlflower", "model": "mushroom", "scale": 3, "crystal": "#ffb23d"},
+    {"role": "bat-swarm", "model": "bat", "scale": 1, "crystal": "#a77bff"},
+    {"role": "ghost-swarm", "model": "demon", "scale": 1, "crystal": "#ff3d3d"},
+    {"role": "goblin", "model": "goblin", "scale": 1, "crystal": "#6dff8a"},
+    {"role": "skeleton-ember", "model": "skeleton", "scale": 1, "crystal": "#8be9ff"},
+    {"role": "bee", "model": "demon", "scale": 1, "crystal": "#ff3d3d"},
+    {"role": "minotaur", "model": "troll", "scale": 2.5, "crystal": "#4d8bff"}
+  ]
+}
