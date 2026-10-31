@@ -80,6 +80,7 @@ namespace PS.Choreography
         readonly SimTuning tuning;    // the level script's tuning knobs (SimTuning)
         readonly ShotRules shot;      // the level script's trailer-shot fields (ShotRules.Default: none)
         readonly float heroStepS;     // the hero's step time: the shot's, else the roster's
+        readonly bool bossTramplesInView;   // the tuning's, outside the boss rule (which keeps its boss off the hero)
         readonly int[] barOfBeat;
         readonly int[][] spellCount;
 
@@ -211,6 +212,7 @@ namespace PS.Choreography
             this.tuning = tuning ?? SimTuning.Default;
             this.shot = shot ?? ShotRules.Default;
             heroStepS = this.shot.HeroStepS >= 0 ? this.shot.HeroStepS : data.Roster.HeroStepS;
+            bossTramplesInView = this.tuning.BossTramplesInView && this.shot.BossType < 0;
             if (this.shot.ShapeScale > 0) shapeScale = this.shot.ShapeScale;
             this.strandedS = strandedS;
             this.bossFallsLast = bossFallsLast;
@@ -1466,7 +1468,7 @@ namespace PS.Choreography
                 {
                     Vector2 b = a + dir * step;
                     if (nav != null) b = WallStep(a, b, mt.Radius);
-                    if (walkingBoss && !onScreen[m] && !free) Trample(m, a, b, tb);
+                    if (walkingBoss && (!onScreen[m] || bossTramplesInView) && !free) Trample(m, a, b, tb);
                     GatherCandidates(m, a, Math.Max(step, 0.8f * mt.StepM));
                     float f = SepFraction(m, a, b);
                     best = Vector2.Lerp(a, b, f);
@@ -1528,16 +1530,18 @@ namespace PS.Choreography
 
         /// <summary>
         /// A walking-in boss tramples the small fry in its step's way: a full climax's horde packs the whole
-        /// view, and would otherwise hold the boss at its edge, out of sight. The dying never block.
+        /// view, and would otherwise hold the boss at its edge, out of sight. The dying never block. With the
+        /// tuning's <see cref="SimTuning.BossTramplesInView"/> it tramples the big monsters too, bosses aside.
         /// </summary>
         void Trample(int m, Vector2 a, Vector2 b, double tb)
         {
             float step = Vector2.Distance(a, b);
             int n = Near().Gather(a, radius[m] + SmallRadius + step + Math.Max(beatMaxStep, 0.5f) + 0.05f, ref buf);
-            for (int i = 0; i < n; i++)
+            int bigs = bossTramplesInView ? bigCount : 0;
+            for (int i = 0; i < n + bigs; i++)
             {
-                int j = buf[i];
-                if (j == m || state[j] != Alive || radius[j] > SmallRadius) continue;
+                int j = i < n ? buf[i] : big[i - n];
+                if (j == m || state[j] != Alive || (i < n ? radius[j] > SmallRadius : roster.Monsters[etype[j]].Rank == MonsterRank.Boss)) continue;
                 float reach = radius[m] + radius[j];
                 bool planned = planSerial[j] == beatSerial;
                 if (ArenaLayout.SegmentDistance(rest[j], a, b) < reach || (planned && ArenaLayout.SegmentDistance(planFrom[j], a, b) < reach)) Kill(j, tb, 1f);

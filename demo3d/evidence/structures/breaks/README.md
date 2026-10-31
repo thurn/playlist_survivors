@@ -7,13 +7,17 @@ choreography (the bolts, the openings, the horde's numbers) in
 [choreography.md, Structure breaks](../../../../docs/tech-demo-3d/choreography.md#structure-breaks).
 Rendered 2026-10-30 from the branch on staging 2632ccf6.
 
-The walls schedule has three moments, two bolts each:
+The walls schedule had three moments, two bolts each, when these were rendered:
 
 | moment | song time | target | pieces | shards (crystal) | wall size |
 |---|---|---|---|---|---|
 | gate | 111.49 s (the build's downbeat) | ruins-gate/1 and /2, the hero in the gap | 5 + 5 | 77 + 75 | 5.8 m each |
 | court-south | 123.88 s (drop-2's downbeat) | courtyard/south-west and south-east | 3 + 3 | 47 + 49 | 4.7, 4.6 m |
 | court-east | 136.27 s (drop-2's second phrase) | courtyard/east-south and east-north | 3 + 3 | 52 + 43 | 4.6, 4.4 m |
+
+Since ps-hgs.8 the east wall's south run breaks on drop-2's downbeat with the south walls, beside the hero, rather than on
+the second phrase, where its end lay at the view's near edge and fell outside it under Unity's Mono. The court-south and
+court-east strips below predate that move: court-east's show the south run's bolt, which now flies at 123.88 s instead.
 
 At most 152 shards are live at once (the gate). Each break re-renders the static shadow map in 5 ms and patches
 the ground's 2048² shadowmask in 17 to 23 ms (the log's `ArenaRuntime` lines), on the impact frame.

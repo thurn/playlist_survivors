@@ -256,7 +256,9 @@ What the simulation does on each grid step:
   enters in that goal's direction from the hero and always walks in,
   trampling the small fry in its way until it is in view (a full climax packs
   the whole view and would hold it at the edge), and casts only once in view,
-  however long its reach. Both
+  however long its reach. With `bossTramplesInView` (overdrive's) it keeps
+  trampling in view, the big monsters too, since overdrive's tripled horde
+  would otherwise hold it off the hero past its last bar. Both
   demos set it: demo3d's boss comes from the `opening`, to the hero's
   north-east. `bossFallsLast` (demo2d's) spares the boss from a clearing
   section's blows until its last, so it falls to the final slam.
@@ -335,6 +337,7 @@ the normal timelines' dump hashes for demo3d and demo2d.
 | `soundGain` | `{ "base": 0.35, "perDoubling": 0.15, "max": 1 }` | The aggregated sounds' gain for a beat's n requests of a category: min(max, (base + perDoubling × log2 n) × (0.7 + 0.3 × strongest)). Overdrive's lower curve leaves a 60-kill beat clearly louder than a 5-kill one, with headroom. |
 | `oneHitKills` | false | Every monster but the boss dies to the first blow or spell that strikes it; see [One-hit kills](#one-hit-kills). |
 | `heavyBlowKills` | 0 (off) | A hero blow that kills at least this many also asks for the ring's heavy impact, at a strength growing to 1 at twice as many, so a mass kill lands as one layered boom. |
+| `bossTramplesInView` | false | A walking-in boss (`bossFrom`) tramples the monsters in its way in view too, the big ones included, not only the small fry on its way in, so a dense horde never holds it off the hero. The trailer's boss rule keeps its own boss. |
 
 **The client's feel.** An overlay's `feel` object is the client's, not the
 sim's: it scales the game's own response to each of the hero's blows by its
@@ -365,6 +368,7 @@ A schedule may only add `breaks` to sections by label:
   "sections": {
     "build": { "breaks": ["ruins-gate/1@phrase", "ruins-gate/2@phrase"] },
     "drop-2": { "breaks": ["courtyard/south-west@phrase",
+                           "courtyard/east-south@phrase",
                            "courtyard/east-north@phrase/2"] } } }
 ```
 

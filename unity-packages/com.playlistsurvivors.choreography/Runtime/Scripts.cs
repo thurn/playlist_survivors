@@ -296,6 +296,13 @@ namespace PS.Choreography
         /// dies, and the rest take non-lethal hits.
         /// </summary>
         public bool OneHitKills;
+        /// <summary>
+        /// A walking-in boss tramples the monsters in its step's way in view too, the big ones included, not
+        /// only the small fry on its way in (its <c>bossTramplesInView</c>), so a dense horde never holds it off
+        /// the hero until its last bar. The trailer's boss rule keeps its own boss. False, the default: in view
+        /// the boss walks round the horde.
+        /// </summary>
+        public bool BossTramplesInView;
 
         public static readonly SimTuning Default = new SimTuning();
 
@@ -326,6 +333,7 @@ namespace PS.Choreography
                 SoundGainMax = gain["max"].AsDouble(d.SoundGainMax),
                 HeavyBlowKills = root["heavyBlowKills"].AsInt(d.HeavyBlowKills),
                 OneHitKills = root["oneHitKills"].AsBool(d.OneHitKills),
+                BossTramplesInView = root["bossTramplesInView"].AsBool(d.BossTramplesInView),
             };
             if (!(t.ComboMinSpeed >= ClipLibrary.MinSpeed) || !(t.ComboMaxSpeed >= t.ComboMinSpeed))
                 throw new FormatException("hero combo speeds " + t.ComboMinSpeed + " to " + t.ComboMaxSpeed + " are out of order or below the clips' minimum");

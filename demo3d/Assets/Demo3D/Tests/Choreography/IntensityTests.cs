@@ -20,12 +20,12 @@ namespace Demo3D.Choreography.Tests
         /// The dumps' FNV-1a hashes before the tuning fields existed (ps-5pd.1), under .NET on Apple
         /// silicon, where the dump is byte-identical run to run. A change that alters normal runs on
         /// purpose records the new hashes here: the song's are ps-ffx's, whose drops cleave (after ps-7n4's
-        /// one-hit kills); overdrive's was recorded before the trailer's shot fields (ps-hgs.2).
+        /// one-hit kills); overdrive's is ps-hgs.8's, whose boss tramples the horde in view.
         /// </summary>
         static readonly (string name, long chars, string hash)[] Before =
         {
             ("song", 19776004, "a0d1a47dfc858a4c"),
-            ("song-overdrive", 62828830, "81303331b0eec9fd"),
+            ("song-overdrive", 62905540, "d29c149981fc2b95"),
             ("S1", 22781381, "0efef3392079eb9e"),
             ("S2", 24718997, "fd46c88ae8289c77"),
             ("S3", 26045232, "84e21b99f520e8bb"),
@@ -66,6 +66,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(t.ReleaseLeadS, Is.EqualTo(2.5f));
             Assert.That(t.YieldToAccents, Is.False);
             Assert.That(t.OneHitKills, Is.False);
+            Assert.That(t.BossTramplesInView, Is.False);
             Assert.That((t.SoundGainBase, t.SoundGainPerDoubling, t.SoundGainMax, t.HeavyBlowKills), Is.EqualTo((0.35, 0.15, 1.0, 0)));
 
             SimTuning set = LevelScript.Parse(Script("\"comboMaxSpeed\": 2.5, \"maxShapeScale\": 8, \"hitsShapeScale\": 6, \"maxShapeViewFraction\": 0.4, "
@@ -82,6 +83,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(set.ReleaseLeadS, Is.EqualTo(3f));
             Assert.That(set.YieldToAccents, Is.True);
             Assert.That(LevelScript.Parse(Script("\"oneHitKills\": true,")).Tuning.OneHitKills, Is.True);
+            Assert.That(LevelScript.Parse(Script("\"bossTramplesInView\": true,")).Tuning.BossTramplesInView, Is.True);
             SimTuning sound = LevelScript.Parse(Script("\"soundGain\": { \"base\": 0.2, \"perDoubling\": 0.1, \"max\": 0.8 }, \"heavyBlowKills\": 40,")).Tuning;
             Assert.That((sound.SoundGainBase, sound.SoundGainPerDoubling, sound.SoundGainMax, sound.HeavyBlowKills), Is.EqualTo((0.2, 0.1, 0.8, 40)));
             Assert.Throws<FormatException>(() => LevelScript.Parse(Script("\"comboMaxSpeed\": 0.5,")));

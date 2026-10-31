@@ -30,8 +30,10 @@ namespace Demo3D.Choreography.Tests
 
         /// <summary>
         /// ps-442: the hero winds up for the ending's first slam only when it must, so it keeps fighting through
-        /// the outro instead of standing frozen for seconds with the windup booked: its last blow before the slam
-        /// lands within a bar of the slam's windup.
+        /// the outro instead of standing frozen for seconds with the windup booked: its last blow or stride before
+        /// the slam ends within a bar of the slam's windup. (A stride counts: whether the horde walks back into
+        /// reach after the hero has emptied it is chaotic, so the last blow alone falls 1.8 s early on some seeds
+        /// and under Unity's Mono, ps-hgs.8; the frozen windup stood 3.3 s.)
         /// </summary>
         [TestCase("song")]
         [TestCase("song-overdrive")]
@@ -49,8 +51,11 @@ namespace Demo3D.Choreography.Tests
                 prev = e;
             }
             Assert.That(slam.Kind, Is.EqualTo(ActionKind.Attack), "the ending has a slam");
-            Assert.That(slam.ClipStart - prev.Impact, Is.LessThan(bar),
-                "the hero stands from its blow at " + prev.Impact.ToString("F2") + " to the slam's windup at " + slam.ClipStart.ToString("F2"));
+            double acted = prev.Impact;
+            foreach (MotionSegment s in tl.SegmentsOf(0))
+                if (s.T0 < slam.ClipStart && s.From != s.To) acted = Math.Max(acted, Math.Min(s.T1, slam.ClipStart));
+            Assert.That(slam.ClipStart - acted, Is.LessThan(bar),
+                "the hero stands from " + acted.ToString("F2") + " to the slam's windup at " + slam.ClipStart.ToString("F2"));
         }
 
         /// <summary>TD13: the ending's last accent slam leaves no monster alive on screen, to the song's end.</summary>

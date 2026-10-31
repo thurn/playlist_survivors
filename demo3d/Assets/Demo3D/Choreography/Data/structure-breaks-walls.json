@@ -2,12 +2,13 @@
   "name": "walls",
   "note": [
     "The first structure-breaks schedule (ps-suy.2; choreography.md, Structure breaks): `--structure-breaks walls` merges it over the level script after any --intensity. Each entry is target@position[/k], the k-th occurrence of the grid position in its section (the first by default), where the hero's bolt strikes the target and its pieces leave the obstacle map.",
-    "Targets are named by area: a courtyard's wall segments by side and end (before its yaw), a ruin wall's numbered from its from end. Each break lands beside the hero as the route reaches the wall, so the camera has it (TimelineReport's break table: every one in view, the bolt 4 to 10 m): the build opens with the hero in the ruins gate's gap, and both of the gate's wall runs blow out round it, so the horde behind follows on a front; drop-2 lands at the courtyard's south-east corner, where the south walls blow out as the drop hits and the horde that filled the courtyard comes at the hero; the new opening sends the hero out by the east gap, and on drop-2's second phrase the east walls on either side of it go too.",
+    "Targets are named by area: a courtyard's wall segments by side and end (before its yaw), a ruin wall's numbered from its from end. Each break lands beside the hero as the route reaches the wall, so the camera has it (TimelineReport's break table: every one in view, the bolt 4 to 10 m): the build opens with the hero in the ruins gate's gap, and both of the gate's wall runs blow out round it, so the horde behind follows on a front; drop-2 lands at the courtyard's south-east corner, where the south walls and the east wall's south run blow out round the corner as the drop hits and the horde that filled the courtyard comes at the hero; the hero then walks north up the courtyard, and on drop-2's second phrase the east wall's north run beside it goes too.",
+    "The east wall's south run breaks on the drop, not the second phrase (ps-hgs.8): by then the hero is 10 m north of it, and the run's end sat 1 m inside the view's near edge under .NET and 1 m outside it under Unity's Mono. On the drop it is 6 m from the hero, mid-view.",
     "drop-1 breaks nothing: its hero holds the crystal ring, 24 m from the nearest wall, and a break the camera misses is no moment."
   ],
   "sections": {
     "build": { "breaks": ["ruins-gate/1@phrase", "ruins-gate/2@phrase"] },
     "drop-2": { "breaks": ["courtyard/south-west@phrase", "courtyard/south-east@phrase",
-                           "courtyard/east-south@phrase/2", "courtyard/east-north@phrase/2"] }
+                           "courtyard/east-south@phrase", "courtyard/east-north@phrase/2"] }
   }
 }
