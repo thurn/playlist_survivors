@@ -1039,11 +1039,16 @@ positions on the arena floor, and all their travel is on main beats.
   main beat. A death launch is free.
 - **A decided step is final**, like every settled event: if the beat's
   state drops inside its move window, it still plants (native cancels it).
-- Where a step meets a structure it slides along it, and the flow field
+- A step follows the flow field's path and ends at the farthest point a
+  straight move still reaches without crossing a structure, so long steps
+  round wall ends. It heads straight for the hero only when the hero is in
+  reach and in sight. Where a step meets a structure it slides along it, and
+  no step slips between structures that meet at a corner. The flow field
   reaches about 150 m of path from the hero; beyond, steps head straight
   for the hero.
-- **No reliable beat**: enemies hold, and lunges stop. On relock they resume
-  on a future main beat, with no catch-up steps.
+- **No reliable beat**, or a frozen world: enemies hold, and lunges stop. On
+  relock or the thaw they resume on a future main beat, with no catch-up
+  steps.
 - **Bosses** telegraph with an in-place pose and deliver charges and slams as
   steps on main beats.
 - **Cap**: at most 300 alive.

@@ -15,13 +15,13 @@ namespace PS.Game.Sim
     ///   a contact lunge for T (an attack event, impact T).
     /// - <b>Decide</b> at <c>T - min(100 ms, 20% of p)</c>: with the beat reliable, every enemy
     ///   whose gait steps on this beat decides its step down the flow field, resolves separation
-    ///   inside the step, and emits it (from, to, move start, footplant T). A long step stops at
-    ///   contact range when the hero is in reach.
+    ///   inside the step, and emits it (from, to, move start, footplant T). With the hero in reach
+    ///   and nothing between them, it steps straight at the hero instead, stopping at contact.
     /// - <b>Land</b> at T: steps plant; with the beat still reliable, armed enemies in contact
     ///   (along the whole step for one that stepped) hit the hero.
     /// A beat revealed late takes what is left of these times; one revealed after T is skipped.
-    /// Without a reliable beat enemies hold and lunges stop; on relock they resume on the next
-    /// main beat, with no catch-up. A decided step is final, as every settled event is: it plants
+    /// Without a reliable beat, or while the world is frozen, enemies hold and lunges stop; on
+    /// relock or the thaw they resume on the next main beat, with no catch-up. A decided step is final, as every settled event is: it plants
     /// even if the beat's state drops inside its move window (native cancels it instead).
     ///
     /// Knockback (<see cref="Knock"/>) is the one travel between beats: immediate, a fixed
@@ -182,7 +182,8 @@ namespace PS.Game.Sim
 
         internal void Fire(Simulation sim, double t)
         {
-            bool reliable = state.Beat == Reliability.Reliable;
+            // A frozen world holds as a beat that can't be trusted does: no travel, no lunges.
+            bool reliable = state.Beat == Reliability.Reliable && !state.Frozen;
             switch (phase)
             {
                 case Phase.Notice:
@@ -248,22 +249,23 @@ namespace PS.Game.Sim
                 double dx = hx - x, dy = hy - y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 double contact = ContactOf(e.Role);
-                double len = step;
-                if (d <= step + contact + Nav.CellM)
+                double toX, toY;
+                if (d <= step + contact + Nav.CellM && Nav.Reach(x, y, hx, hy) >= 1)
                 {
-                    // The hero is in reach: straight at it, stopping at contact.
-                    len = Math.Max(0, Math.Min(step, d - contact));
-                    dx = d > 1e-9 ? dx / d : 0;
-                    dy = d > 1e-9 ? dy / d : 0;
+                    // The hero is in reach, with nothing between: straight at it, stopping at contact.
+                    double len = Math.Max(0, Math.Min(step, d - contact));
+                    toX = d > 1e-9 ? x + dx / d * len : x;
+                    toY = d > 1e-9 ? y + dy / d * len : y;
                 }
-                else if (!field.Direction(x, y, out dx, out dy))
+                else if (field.Direction(x, y, out _, out _)) FollowField(x, y, step, out toX, out toY);
+                else
                 {
                     // Beyond the field's reach: straight at the hero.
-                    dx /= d;
-                    dy /= d;
+                    toX = x + dx / d * step;
+                    toY = y + dy / d * step;
                 }
-                baseX[i] = wantX[i] = x + dx * len;
-                baseY[i] = wantY[i] = y + dy * len;
+                baseX[i] = wantX[i] = toX;
+                baseY[i] = wantY[i] = toY;
                 capLen[i] = step;
                 stepping[i] = true;
                 any++;
@@ -292,6 +294,30 @@ namespace PS.Game.Sim
                 e.SteppedBeat = beat;
                 sim.Emit(SimEvent.EnemyStep(t, i, x, y, toX, toY, t, footplant));
             }
+        }
+
+        /// <summary>
+        /// A step of <paramref name="len"/> down the flow field from (x, y): it walks the field's
+        /// path half a cell at a time and ends at the farthest point a straight move still reaches
+        /// walkably, so a long step rounds the end of a wall instead of heading off along the first
+        /// cell's heading.
+        /// </summary>
+        void FollowField(double x, double y, double len, out double toX, out double toY)
+        {
+            double px = x, py = y;
+            for (double left = len; left > 1e-9;)
+            {
+                if (!field.Direction(px, py, out double dx, out double dy)) break;
+                double part = Math.Min(left, 0.5 * Nav.CellM);
+                double qx = px + dx * part, qy = py + dy * part;
+                Nav.Clamp(px, py, ref qx, ref qy);
+                if ((Math.Abs(qx - px) < 1e-9 && Math.Abs(qy - py) < 1e-9) || Nav.Reach(x, y, qx, qy) < 1) break;
+                px = qx;
+                py = qy;
+                left -= part;
+            }
+            toX = px;
+            toY = py;
         }
 
         /// <summary>One pass pushing overlapping step destinations apart; enemies not stepping hold their ground.</summary>

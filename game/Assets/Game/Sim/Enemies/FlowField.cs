@@ -132,7 +132,8 @@ namespace PS.Game.Sim
         /// <summary>
         /// The way downhill at (x, y): the cost's gradient, interpolated over the four cell centres
         /// around it for smooth headings; where one of them is unreached, the way to the cheapest of
-        /// its own cell's eight neighbours. False where nothing is reached or at the source.
+        /// its own cell's eight neighbours that the search could step to. False where nothing is
+        /// reached or at the source.
         /// </summary>
         public bool Direction(double x, double y, out double dirX, out double dirY)
         {
@@ -170,6 +171,8 @@ namespace PS.Game.Sim
                     int nx = cx + ox, ny = cy + oy;
                     if (nx < 0 || ny < 0 || nx >= w || ny >= Grid.H) continue;
                     int n = ny * w + nx;
+                    // As in the search, no corner cutting: past a pinch the cost belongs to the far side.
+                    if (ox != 0 && oy != 0 && (Grid.IsBlocked(c + ox) || Grid.IsBlocked(c + oy * w))) continue;
                     if (Cost[n] < best)
                     {
                         best = Cost[n];

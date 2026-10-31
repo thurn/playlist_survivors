@@ -221,6 +221,92 @@ namespace PS.Game.Sim.Tests
             }
         }
 
+        /// <summary>Runs <paramref name="roles"/>, placed at the given points, to <paramref name="until"/>: each must reach the hero without a step through a structure.</summary>
+        static void AssertEnemiesReachTheHero(ArenaData arena, string[] roles, Func<Simulation, (double x, double y)> place, double until)
+        {
+            foreach (string role in roles)
+            {
+                var sim = HordeFixture.Empty(arena);
+                var entries = Steady(128, until).Entries();
+                int fed = Drive.Feed(sim, entries, 2);
+                var (x, y) = place(sim);
+                int id = HordeFixture.Place(sim, role, x, y);
+                Drive.Feed(sim, entries, until, from: fed);
+                foreach (var e in Drive.Events(sim, SimEventKind.EnemyStep))
+                {
+                    var s = e.AsEnemyStep;
+                    Assert.AreEqual(1.0, sim.Horde.Nav.Reach(s.FromX, s.FromY, s.ToX, s.ToY), $"a {role} step through a structure");
+                }
+                var en = sim.State.Enemies[id];
+                Assert.Less(Distance(en.X, en.Y, sim.State.Hero.X, sim.State.Hero.Y), 1.5, $"the {role} reached the hero");
+            }
+        }
+
+        [Test]
+        public void EnemiesJustAcrossAWallFromTheHeroGoRoundIt()
+        {
+            // A one-tile wall open at its east end, the hero against its north face and enemies
+            // against its south face: in step range of the hero, but not in sight.
+            var arena = ArenaData.Open(40, 40);
+            arena.Blocked = Enumerable.Range(0, 34).Select(x => new Tile(x, 20)).ToArray();
+            arena.HeroStart = new Tile(10, 21);
+            AssertEnemiesReachTheHero(arena, new[] { "skeleton", "werewolf", "bat-swarm" },
+                sim => (sim.State.Hero.X, sim.State.Hero.Y - 2.5), 60);
+        }
+
+        [Test]
+        public void NoStepSlipsBetweenStructuresThatMeetAtACorner()
+        {
+            // A diagonal wall of tiles touching only at their corners, open at its north-east end.
+            var arena = ArenaData.Open(40, 40);
+            arena.Blocked = Enumerable.Range(0, 34).Select(k => new Tile(k, k)).ToArray();
+            arena.HeroStart = new Tile(5, 20);
+            AssertEnemiesReachTheHero(arena, new[] { "skeleton", "bat-swarm" },
+                sim => (sim.Arena.CentreX(12), sim.Arena.CentreY(10)), 90);
+        }
+
+        [Test]
+        public void AMoveStopsAtTheFirstBlockedCellItTouches()
+        {
+            var arena = ArenaData.Open(10, 10);
+            arena.OriginX = arena.OriginY = 0;
+            arena.Blocked = new[] { new Tile(3, 3), new Tile(4, 4) };
+            var grid = new NavGrid(new ArenaGrid(arena));
+            // Clipping a structure's corner (4.5, 4.5) by a 0.1 m sliver.
+            Assert.Less(grid.Reach(4.0, 5.1, 5.1, 4.0), 1);
+            // Exactly through the corner (6, 6) where two structures meet, and just beside it.
+            Assert.Less(grid.Reach(5.5, 6.5, 6.5, 5.5), 1);
+            Assert.Less(grid.Reach(5.5, 6.6, 6.6, 5.5), 1);
+            // Beside a structure, and well clear of both.
+            Assert.AreEqual(1.0, grid.Reach(4.4, 5.0, 4.4, 1.0));
+            Assert.AreEqual(1.0, grid.Reach(1, 8, 8, 8));
+            // A stopped move ends walkable, right at the face.
+            double u = grid.Reach(1.0, 5.0, 8.0, 5.0);
+            Assert.IsTrue(grid.Walkable(1.0 + 7.0 * u, 5.0));
+            Assert.AreEqual(4.5, 1.0 + 7.0 * u, 1e-5);
+        }
+
+        [Test]
+        public void AFrozenWorldHoldsTheHorde()
+        {
+            var sim = new Simulation(HordeFixture.Config());
+            var entries = Steady(128, 30).Entries();
+            int fed = Drive.Feed(sim, entries, 10);
+            int alive = sim.State.EnemiesAlive;
+            sim.State.Frozen = true;
+            int cursor = sim.EventCount;
+            fed = Drive.Feed(sim, entries, 20, from: fed);
+            var during = sim.EventsSince(cursor).ToArray().Select(e => e.Kind).ToList();
+            CollectionAssert.DoesNotContain(during, SimEventKind.EnemyStep);
+            CollectionAssert.DoesNotContain(during, SimEventKind.Attack);
+            CollectionAssert.DoesNotContain(during, SimEventKind.Hit);
+            Assert.AreEqual(alive, sim.State.EnemiesAlive, "no spawns while frozen");
+            sim.State.Frozen = false;
+            cursor = sim.EventCount;
+            Drive.Feed(sim, entries, 22, from: fed);
+            Assert.Greater(sim.EventsSince(cursor).ToArray().Count(e => e.Kind == SimEventKind.EnemyStep), 100, "steps resume on the thaw");
+        }
+
         [Test]
         public void KnockbackIsImmediateAndPursuitResumesOnALaterBeat()
         {

@@ -28,3 +28,18 @@ The p99 is well inside the target. The p50 is mostly the flow field's rebuild sl
 frames add a main beat's decisions (flow-field lookups and two separation passes for every
 stepping enemy). The rare maxima are the loaded machine's scheduling, not the sim. Cygnus
 measures the real target in M5.
+
+## After the Warden's pathing fixes (ps-msz.3.15)
+
+Steps now walk the flow field's path half a cell at a time, keep the farthest point a straight
+move reaches, and test moves cell by cell. Old and new code alternated on 2026-10-31, built
+Release (`-c Release`), load average 8 to 10:
+
+| run | old p99 | new p99 | old max | new max |
+|---|---|---|---|---|
+| 1 | 0.486 ms | 0.491 ms | 2.215 ms | 1.626 ms |
+| 2 | 0.368 ms | 0.445 ms | 1.688 ms | 2.046 ms |
+| 3 | 0.419 ms | 0.584 ms | 1.440 ms | 3.280 ms |
+
+The path walk adds about 0.05 to 0.15 ms at p99 under this load, mostly the long steps of fast
+roles; the p99 stays well inside the 1 ms target.

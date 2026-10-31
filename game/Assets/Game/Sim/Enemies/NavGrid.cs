@@ -54,20 +54,58 @@ namespace PS.Game.Sim
 
         /// <summary>
         /// How far along the move from a to b (0 to 1) a body gets before its centre would enter a
-        /// blocked cell, marching a quarter cell at a time. 1 when the whole move is walkable.
+        /// blocked cell: 1 when the whole move is walkable. It walks every cell the move crosses,
+        /// and a move through a cell corner touches all three cells beyond it, so no move clips a
+        /// structure's corner or slips between two blocked cells that meet at a corner (the flow
+        /// field's no-corner-cutting rule). A stopped move ends just short of the blocked cell. The
+        /// start cell itself isn't tested, so a body inside a structure can walk out.
         /// </summary>
         public double Reach(double ax, double ay, double bx, double by)
         {
-            double dx = bx - ax, dy = by - ay;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            int n = Math.Max(1, (int)Math.Ceiling(len / (0.25 * CellM)));
-            for (int k = 1; k <= n; k++)
+            double gx = (ax - MinX) / CellM, gy = (ay - MinY) / CellM;
+            double dx = (bx - ax) / CellM, dy = (by - ay) / CellM;
+            int cx = Floor(gx), cy = Floor(gy);
+            int sx = Math.Sign(dx), sy = Math.Sign(dy);
+            // The move's fraction per cell crossed, and where it next crosses a column or row line.
+            double stepX = sx != 0 ? 1 / Math.Abs(dx) : double.PositiveInfinity;
+            double stepY = sy != 0 ? 1 / Math.Abs(dy) : double.PositiveInfinity;
+            double lineX = sx > 0 ? cx + 1 : cx, lineY = sy > 0 ? cy + 1 : cy;
+            double nextX = sx != 0 ? (lineX - gx) / dx : double.PositiveInfinity;
+            double nextY = sy != 0 ? (lineY - gy) / dy : double.PositiveInfinity;
+            while (true)
             {
-                double u = (double)k / n;
-                if (!Walkable(ax + dx * u, ay + dy * u)) return (double)(k - 1) / n;
+                if (Math.Min(nextX, nextY) >= 1) return 1;
+                bool crossX = nextX <= nextY + 1e-12, crossY = nextY <= nextX + 1e-12;
+                bool stop = crossX && crossY
+                    ? Blocked(cx + sx, cy) || Blocked(cx, cy + sy) || Blocked(cx + sx, cy + sy)
+                    : crossX ? Blocked(cx + sx, cy) : Blocked(cx, cy + sy);
+                if (stop)
+                {
+                    // Short of every line crossed here, so the end stays in this cell.
+                    double u = 1;
+                    if (crossX) u = Math.Min(u, (lineX - sx * Margin - gx) / dx);
+                    if (crossY) u = Math.Min(u, (lineY - sy * Margin - gy) / dy);
+                    return Math.Max(0, u);
+                }
+                if (crossX)
+                {
+                    cx += sx;
+                    lineX += sx;
+                    nextX += stepX;
+                }
+                if (crossY)
+                {
+                    cy += sy;
+                    lineY += sy;
+                    nextY += stepY;
+                }
             }
-            return 1;
         }
+
+        /// <summary>How far short of a blocked cell's edge a stopped move ends, in cells.</summary>
+        const double Margin = 1e-6;
+
+        bool Blocked(int cx, int cy) => cx < 0 || cy < 0 || cx >= W || cy >= H || blocked[cy * W + cx];
 
         /// <summary>
         /// Shortens the move from a to b to where it stays walkable, sliding along a wall when the
