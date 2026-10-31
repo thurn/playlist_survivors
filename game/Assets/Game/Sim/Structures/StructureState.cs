@@ -11,6 +11,8 @@ namespace PS.Game.Sim
         BossSlam = 3,
         FinaleBlast = 4,
         EvolvedAccent = 5,
+        /// <summary>The debug surfaces' break (<see cref="DebugCommand.BreakStructures"/>): a large structure breaks at once too.</summary>
+        Debug = 6,
     }
 
     /// <summary>

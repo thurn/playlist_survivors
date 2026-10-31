@@ -129,7 +129,7 @@ namespace PS.Game.Sim
                     sim.Emit(SimEvent.Glint(t, i, source, 0, px, py, dx, dy));
                     continue;
                 }
-                if (++s.Hits < s.HitsToBreak)
+                if (++s.Hits < s.HitsToBreak && source != StructureHit.Debug)
                 {
                     sim.Emit(SimEvent.Glint(t, i, source, s.Hits, px, py, dx, dy));
                     continue;

@@ -104,6 +104,7 @@ namespace PS.Game.Sim
         double lastImpact = double.NegativeInfinity;
         double lastPulse = double.NegativeInfinity;
         int slashes;
+        bool forcedAccent;
         int onsetFrom, forecastFrom;
 
         readonly Wave[] waves = new Wave[WaveCapacity];
@@ -278,7 +279,8 @@ namespace PS.Game.Sim
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = onBeat && Accented(s.Impact, t);
+            bool heavy = onBeat && (forcedAccent || Accented(s.Impact, t));
+            if (onBeat) forcedAccent = false;
             bool slam = onBeat && Slams(s.Beat, s.Impact);
             var kind = slam ? HeroAttackKind.Slam
                 : heavy ? HeroAttackKind.Spin
@@ -290,6 +292,9 @@ namespace PS.Game.Sim
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
             sim.Emit(SimEvent.Attack(t, -1, (int)kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
         }
+
+        /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>).</summary>
+        internal void ForceAccent() => forcedAccent = true;
 
         /// <summary>Is the beat at <paramref name="impact"/> accented: a strong onset or a forecast within the window, known now, the music clear?</summary>
         bool Accented(double impact, double now)

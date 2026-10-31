@@ -12,7 +12,7 @@ namespace PS.Game.Sim.Tests
     /// </summary>
     public class SurfaceTests
     {
-        static readonly string[] Mutators = { "Add", "AddKnown", "Press", "Release", "StepTo", "DiscardEventsBefore" };
+        static readonly string[] Mutators = { "Add", "AddKnown", "Press", "Release", "Command", "StepTo", "DiscardEventsBefore" };
 
         /// <summary>The objects the client reaches from a sim: the sim's own classes behind its public properties.</summary>
         static List<object> Surface(Simulation sim)
@@ -107,6 +107,7 @@ namespace PS.Game.Sim.Tests
             foreach (var e in stream.Ticks) sum += e.V0;
             foreach (double t in sim.Beats.Judging.Locks) sum += t;
             foreach (var k in sim.Keys) sum += k.Heard;
+            foreach (var c in sim.Commands) sum += c.Effective;
             foreach (var e in sim.EventsSince(0)) sum += e.T;
             foreach (var e in sim.State.Enemies)
             {

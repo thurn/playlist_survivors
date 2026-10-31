@@ -15,7 +15,7 @@ namespace PS.Game.Sim
     /// </code>
     ///
     /// Only <see cref="Add"/>, <see cref="AddKnown"/>, <see cref="Press"/>, <see cref="Release"/>,
-    /// <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
+    /// <see cref="Command"/>, <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
     /// public here and on what it exposes (<see cref="State"/>, <see cref="Stream"/>,
     /// <see cref="Beats"/>, <see cref="Strides"/>) is a read the client may make at any time, as
     /// often as it likes, without changing the run.
@@ -34,8 +34,13 @@ namespace PS.Game.Sim
     {
         public const int TicksPerSecond = 120;
         public const double TickSeconds = 1.0 / TicksPerSecond;
+        /// <summary>How far from the hero <see cref="DebugCommand.BreakStructures"/> reaches: the heavy strike's cleave wave's outer edge.</summary>
+        public const double DebugBreakReachM = 15;
+        /// <summary>The debug break's throw, metres: the starting sword's heavy strike's.</summary>
+        public const double DebugBreakForceM = 4.63;
 
         readonly StructList<KeyRecord> keys;
+        readonly StructList<DebugRecord> commands;
         readonly EventLog events;
         readonly Hero hero;
         readonly double knownAtBudget;
@@ -51,6 +56,7 @@ namespace PS.Game.Sim
             Strides = new StrideGrid(Stream, Beats, config.StartTime);
             events = new EventLog(config.EventCapacity);
             keys = new StructList<KeyRecord>(config.PressCapacity);
+            commands = new StructList<DebugRecord>(16);
             State = new SimState
             {
                 Tick = (long)Math.Floor(config.StartTime * TicksPerSecond + 1e-9),
@@ -122,6 +128,34 @@ namespace PS.Game.Sim
 
         /// <summary>Every key change recorded, in order.</summary>
         public ReadOnlySpan<KeyRecord> Keys => keys.AsSpan();
+
+        /// <summary>
+        /// Gives a debug command (<see cref="DebugCommand"/>); it takes effect now, recorded like a
+        /// key. A command whose system the run lacks (no zones, no sword) does nothing.
+        /// </summary>
+        public void Command(DebugCommand command)
+        {
+            commands.Add(new DebugRecord { Command = command, Effective = Now });
+            switch (command)
+            {
+                case DebugCommand.SectionChange:
+                    Zones?.Force(Now);
+                    break;
+                case DebugCommand.Accent:
+                    Sword?.ForceAccent();
+                    break;
+                case DebugCommand.BreakStructures:
+                    State.Hero.PositionAt(Now, out double x, out double y);
+                    Structures.Strike(this, Now, x, y, DebugBreakReachM, StructureHit.Debug, DebugBreakForceM);
+                    break;
+                case DebugCommand.RegrowStructures:
+                    Structures.ZoneChanged();
+                    break;
+            }
+        }
+
+        /// <summary>Every debug command given, in order.</summary>
+        public ReadOnlySpan<DebugRecord> Commands => commands.AsSpan();
 
         public ReadOnlySpan<SimEvent> EventsSince(int eventCursor) => events.Since(eventCursor);
 

@@ -861,6 +861,7 @@ keys and time, and reads state and an event log.
 sim.Add(StreamEntry e);         // held by the sim until its known_at
 sim.AddKnown(StreamEntry e, double knownAt); // a replay's recorded known_at
 sim.Press(Key k, double heard);  // effective time = the sim's current time
+sim.Command(DebugCommand c);     // the debug surfaces', effective now, like a key
 sim.StepTo(double songTime);
 ReadOnlySpan<SimEvent> sim.EventsSince(int cursor);
 sim.State                       // hero, enemies, items, run clock
@@ -868,7 +869,7 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
 ```
 
 - **Reads never change the run.** `Add`, `AddKnown`, `Press`, `Release`,
-  `StepTo` and `DiscardEventsBefore` are the only mutators. Everything else
+  `Command`, `StepTo` and `DiscardEventsBefore` are the only mutators. Everything else
   the client reaches is read-only (`{ get; internal set; }`, dense arrays as
   `ReadOnlySpan` getters) or a pure function of the revealed entries, so an
   overlay may ask about any song time, as often as it likes. The run's random

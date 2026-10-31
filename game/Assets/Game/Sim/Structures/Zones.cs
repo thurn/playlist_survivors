@@ -97,6 +97,17 @@ namespace PS.Game.Sim
             return true;
         }
 
+        /// <summary>
+        /// A section change forced at <paramref name="now"/> (<see cref="DebugCommand.SectionChange"/>):
+        /// a detected change at now, known now, in place of any waiting one, and kept whatever the gap.
+        /// </summary>
+        internal void Force(double now)
+        {
+            waiting = true;
+            waitingCause = ZoneCause.Change;
+            waitingT = waitingKnownAt = now;
+        }
+
         /// <summary>The per-tick check, at the tick's end: a fallback no downbeat took.</summary>
         internal void Tick(Simulation sim, double end)
         {
