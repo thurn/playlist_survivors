@@ -147,10 +147,10 @@ def test_the_game_bakes_its_arena_when_the_layout_changes_and_its_hero_when_the_
     layout.write_text("{}")
     clips = wt.project / "Content" / "hero-clips.json"
     clips.write_text("{}")
-    assert setup.stale_bakers(wt) == ["Arena", "Crowd", "Hero"]
+    assert setup.stale_bakers(wt) == list(setup.GAME_BAKER_INPUTS)
     wt.baked.mkdir(parents=True)
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\nHero\n")
-    assert setup.record_ran(wt) == ["Arena", "Crowd", "Hero"]
+    (wt.baked / setup.BAKED_RAN).write_text("".join(f"{n}\n" for n in setup.GAME_BAKER_INPUTS))
+    assert setup.record_ran(wt) == list(setup.GAME_BAKER_INPUTS)
     assert setup.baked(wt)
     layout.write_text('{"seed": 8}')
     assert setup.stale_bakers(wt) == ["Arena"]
@@ -166,7 +166,7 @@ def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
     cast = wt.project / "Content" / "cast.json"
     cast.write_text("{}")
     wt.baked.mkdir(parents=True)
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\nHero\n")
+    (wt.baked / setup.BAKED_RAN).write_text("".join(f"{n}\n" for n in setup.GAME_BAKER_INPUTS))
     setup.record_ran(wt)
     cast.write_text('{"cast": []}')
     assert setup.stale_bakers(wt) == ["Crowd"]

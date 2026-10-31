@@ -1,0 +1,16 @@
+{ "note": "The game's sounds (docs/design/unity-game.md, Audio), baked by game/Assets/Game/Editor/Sound/SoundBaker.cs into the gitignored Assets/Baked/Sounds/. Each category (Client/Sound/SoundScheduler.cs's SoundKind) lists its variants: a vendor clip by file name (demo3d's packs, in game/manifest.json) or a free sample by its id in public/assets/sfx/sounds.json (a free sample's onset comes from there). gain is the category's level; the aggregation multiplies it by the beat's gain (0.35 for one sound, growing with log2 of the count). rootNote (MIDI) pitches a clip to a note (the chime's pentatonic climb, from native's survivors palette). limit is the effects' level under the music at the follower's full gain; the music itself is never ducked. The swing, hit, death and crystal shatter choices are demo3d's (SoundBaker, and evidence/shatter/impact for the shatter's layers).",
+  "limit": 0.8,
+  "categories": {
+    "swing": { "gain": 0.6, "clips": ["SWORD_Whoosh_Hit_Armor_Hard_RR1_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR3_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR5_mono"] },
+    "swing-heavy": { "gain": 0.8, "clips": ["RPG3_Magic2_HeavyImpact01", "RPG3_Magic2_HeavyImpact02", "RPG3_Magic2_HeavyImpact03"] },
+    "slam": { "gain": 0.9, "clips": ["RPG3_ElectricMagic2_HeavyImpact01", "RPG3_ElectricMagic2_HeavyImpact02", "RPG3_ElectricMagic2_HeavyImpact03"] },
+    "hit": { "gain": 0.6, "clips": ["GORE_Blade_Chop_mono", "SWORD_Swing_Stab_Body_Gore_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR6_mono"] },
+    "hit-heavy": { "gain": 0.8, "clips": ["RPG3_GenericPunch_Impact01", "RPG3_GenericPunch_Impact02", "RPG3_GenericPunch_Impact03"] },
+    "death": { "gain": 0.4, "clips": ["CREATURE_Squeel_01_mono", "CREATURE_Squeel_03_mono", "CREATURE_Squeel_05_mono"] },
+    "shatter-body": { "gain": 0.55, "clips": ["RPG3_IceMagic2_IceBreak01", "RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03"] },
+    "shatter-glass": { "gain": 0.45, "clips": ["SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono"] },
+    "shatter-tinkle": { "gain": 0.22, "clips": ["SHATTER_Glass_Fragment_RR1_mono", "SHATTER_Glass_Fragment_RR4_mono", "SHATTER_Glass_Fragment_RR7_mono"] },
+    "hurt": { "gain": 0.8, "clips": ["kenney/impactPunch_medium_000", "kenney/impactPunch_medium_001"] },
+    "chime": { "gain": 0.55, "rootNote": 91, "clips": ["kenney/impactGlass_light_003"] }
+  }
+}

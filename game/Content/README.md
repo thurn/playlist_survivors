@@ -18,6 +18,8 @@ same files under .NET and Unity.
 | arena-layout.json | The arena's layout (demo3d's format): areas, structures, scatter, lighting, the zones' palettes, the stills' shots |
 | footprints.json | demo3d's footprint measurements of the kit pieces game/manifest.json syncs, which the layout places |
 | arena.json | The level data's arena part (the sim's `ArenaData`): blocked tiles, structure sites, the hero's start. The arena's bake writes it from the two above; don't edit it |
+| effects.json | The client's effect selection: the sword's Hovl prefabs and the built-in crystal bursts, as demo3d's converter reads them (Editor/Effects/EffectConverter) |
+| sounds.json | The client's sounds: each category's clips (vendor files or free samples), levels and root notes, and the mix's limit (Editor/Sound/SoundBaker) |
 
 ## Units
 

@@ -1464,6 +1464,32 @@ for each weapon's look in [The Other Weapons](#the-other-weapons).
 - Effects are spawned by sim events at their song times, never by the
   client's guesses.
 
+**Shipped (ps-msz.3.11).** demo3d's runtime is copied into
+`Client/Effects/` (EffectSystem, EffectLibrary, EffectLights and the four
+shaders), without the demo's cuts (none of the effect cuts was accepted), the
+VFX Graph sink and the overdraw pass. Its converter is
+`Editor/Effects/EffectConverter`, baking `game/Content/effects.json` into the
+gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). As
+built ([evidence](../../game/evidence/fx/README.md)):
+
+- `EffectCues` holds each event's effect until the first frame whose
+  frameSong reaches its time; `EffectsPresenter` spawns it. A slash belongs
+  to its strike's impact, not its wind-up, and the hero's position is read
+  from the frame's state then.
+- The sword's slash, spin and slam are demo3d's Hovl prefabs without fire or
+  smoke, through an ice-to-white heat ramp, spawned at the strike's reach
+  (`scaleRef` 3.5 m), a heavy strike's 1.25x more. The crystal wave is our
+  own (`CrystalWaves`, shader `Game/CrystalWave`): a ground ring from the hero
+  to the reach over 0.12 s, its front exactly at the radius hit; a heavy
+  strike's cleave wave picks up there and follows the bands' radii and times.
+- A death is demo3d's crystal shatter burst (chips and dust along the blow),
+  tinted by the role's crystal colour (`RoleLooks`, from cast.json; ice blue
+  without content); one instant's deaths share their light, 1/sqrt(n) each.
+  A hit that doesn't kill throws a few white chips; a structure break the
+  larger `structure-burst`, and `EffectCues.Burst` is the hook for a
+  regrowth's.
+- A headless player has no compute, so the effects sit it out.
+
 ### Post-processing and camera
 
 The post stack is the 3D demo's night look, driven by the live stream instead
@@ -1540,6 +1566,29 @@ The game's sounds sit under the player's music and never fight it.
   gain, under a tunable limit.
 - **Sources**: the vendor packs the 3D demo uses, plus the existing free
   packs; each weapon has fire, hit and evolved sounds.
+
+**Shipped (ps-msz.3.11).** `Client/Sound/`, with the bank baked from
+`game/Content/sounds.json` (`Editor/Sound/SoundBaker`: vendor clips by file
+name, free samples by id with their onsets, per-category levels and root
+notes, and the mix's `limit`, 0.8). As built
+([evidence](../../game/evidence/fx/README.md)):
+
+- `SoundScheduler`: 32 voices; each sound PlayScheduled at
+  `TryDspAt(song - onset / pitch)` so its attack lands on its song time, and
+  dropped when the mixer can't make it. Measured in Unity's own mix with the
+  sound probe (`game spike --sounds`): 108 of 108 sounds on their sample, none
+  dropped.
+- `SoundAggregator` makes demo3d's rule streaming: per beat and category the
+  first three times asked for take the voices (one instant layers variants),
+  and later requests raise the scheduled voices' gain
+  (`(0.35 + 0.15 log2 n)(0.7 + 0.3 strongest)`, capped at 1).
+- `SoundPresenter` schedules each event as it settles: the swing (heavy, the
+  slam) at the impact, hits (heavy, cleave bands), a death's cry under
+  demo3d's three-layer crystal shatter pitched by size, a structure break's
+  shatter lower; the hurt on the next sixteenth and gem pickups' chimes on the
+  sixteenth grid climbing C6 to C8 (`MusicalGrid`, `PentatonicChain`, native's).
+- The voices' volume is gain times the limit times the plugin's follower
+  gain; the music's source is never touched.
 
 ### Performance targets
 

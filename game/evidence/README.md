@@ -35,3 +35,6 @@ what was run (the exact commands), the numbers, and what they show.
   their readability and their footplants on the beat frame (ps-msz.3.8).
 - [shatter](shatter/README.md): the GPU monster shatter, single and mass deaths breaking on the
   impact frame from the body's pose, and the bench of 1, 50 and 300 deaths at once (ps-msz.3.9).
+- [fx](fx/README.md): the sword's slashes and crystal waves, mass crystal death bursts and the
+  cleave wave as filmstrips, and the scheduled sounds found on their samples in Unity's mix
+  (ps-msz.3.11).

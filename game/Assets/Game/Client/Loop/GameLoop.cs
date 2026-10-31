@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading;
 using Game.Client.Arena;
 using Game.Client.Crowd;
+using Game.Client.Effects;
 using Game.Client.Hero;
 using Game.Client.Look;
 using Game.Client.Music;
+using Game.Client.Sound;
 using PS.Game.Sim;
 using UnityEngine;
 
@@ -32,6 +35,11 @@ namespace Game.Client.Loop
     ///   its bake failed), `--palette NAME` the arena's zone palette;
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
     /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
+    /// - `--sound-probe`: every sound plays a click instead of its clip, at full level (<see cref="SoundScheduler.Probe"/>);
+    ///   `--sound-out DIR` keeps Unity's mix and the sounds scheduled, the audio buffers and the frames, as the
+    ///   sync spike does, for `game spike --sounds` to measure.
+    /// The crowd and the effects (<see cref="EffectsPresenter"/>) need compute, so a headless run leaves
+    /// them out; the effects and the sounds (<see cref="SoundPresenter"/>) run when their bakes are in the build.
     /// It logs a summary when the run ends: the lead, frameSong's holds and the sim's timings.
     /// </summary>
     [DefaultExecutionOrder(-100)] // after the music's poll, before Boot keeps a still of the frame
@@ -51,6 +59,11 @@ namespace Game.Client.Loop
         DebugOverlay _overlay;
         LookPresenter _look;
         HeroPresenter _hero;
+        EffectsPresenter _effects;
+        SoundScheduler _sounds;
+        MixCapture _capture;
+        string _soundOut;
+        readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
         ArenaRuntime _arena;
         CrystalStructures _crystal;
         CrowdView _crowd;
@@ -77,11 +90,14 @@ namespace Game.Client.Loop
             if (headless && !_fixed) Application.targetFrameRate = Boot.FixedFps;
             var listenerHost = camera != null ? camera.gameObject : gameObject;
             if (listenerHost.GetComponent<AudioListener>() == null) listenerHost.AddComponent<AudioListener>();
-            if (headless || _fixed)
+            _soundOut = Args.Get("--sound-out");
+            if (_soundOut != null) _soundOut = Args.Path(_soundOut);
+            if (headless || _fixed || _soundOut != null)
             {
-                var mute = listenerHost.AddComponent<MixCapture>();
-                mute.Mute = true;
-                mute.Begin(0);
+                _capture = listenerHost.AddComponent<MixCapture>();
+                _capture.Mute = headless || _fixed;
+                float seconds = Args.GetFloat("--seconds", 0f);
+                _capture.Begin(_soundOut == null ? 0 : (seconds > 0 ? seconds : 600) + 2);
             }
 
             var file = Args.Get("--file");
@@ -116,9 +132,22 @@ namespace Game.Client.Loop
             if (_hero != null) _look.DrawnHero = _hero.Drawn; // the hero presents first, then the camera follows it
             Driver.Events.Subscribe(_look);
             if (arena) LoadArena(camera);
-            // After the look, whose camera rig it culls with.
-            _crowd = new CrowdView(camera);
-            Driver.Events.Subscribe(_crowd);
+            // A headless player has no graphics device, so no compute: the crowd and the effects sit it out.
+            bool compute = SystemInfo.supportsComputeShaders;
+            if (compute)
+            {
+                // After the look, whose camera rig it culls with.
+                _crowd = new CrowdView(camera);
+                Driver.Events.Subscribe(_crowd);
+            }
+            var roles = new RoleLooks(null); // the slice's content arrives with its wiring (ps-msz.3.13)
+            var library = compute ? EffectLibrary.TryLoad() : null;
+            if (library != null)
+            {
+                _effects = new EffectsPresenter(camera, library, roles);
+                Driver.Events.Subscribe(_effects);
+            }
+            SetupSound(roles);
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
 
@@ -130,6 +159,19 @@ namespace Game.Client.Loop
             }
             Debug.Log($"GameLoop: {(file != null ? file : "no music")}, {(_fixed ? "fixed time" : "real time")}, " +
                       $"seed {config.Seed}, events {(events ?? "none")}, headless {headless}");
+        }
+
+        /// <summary>The sounds on their own voices (a filter's callback serves one source: not the music's object).</summary>
+        void SetupSound(RoleLooks roles)
+        {
+            var bank = SoundBank.Load();
+            bool probe = Args.Has("--sound-probe");
+            if (bank == null && !probe) return;
+            _sounds = new SoundScheduler(bank, new GameObject("Sounds"), Driver.Clock, () => AudioSettings.dspTime, log: _soundOut != null);
+            if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate);
+            Func<float> follower = null;
+            if (_music != null) follower = () => _music.Status.FollowerGain > 0 ? _music.Status.FollowerGain : 1f;
+            Driver.Events.Subscribe(new SoundPresenter(_sounds, Driver.Sim, roles, bank != null ? bank.Limit : 1f, follower));
         }
 
         /// <summary>The baked arena, its structures in crystal; the look drives its night volume and hero light.</summary>
@@ -164,6 +206,13 @@ namespace Game.Client.Loop
                 Frame = Time.timeSinceLevelLoadAsDouble,
             };
             if (Driver.Step(now)) Keep();
+            if (_soundOut != null && _music != null && _music.Clock.Anchored)
+                _frames.Add(new SyncSpike.FrameRow
+                {
+                    tick = MixCapture.Now,
+                    frameSong = Driver.Times.FrameSong,
+                    display = _music.Clock.DisplayLatency,
+                });
             _overlay.Toggle();
             if (_music != null && !_fixed && _music.Ended) Finish(0, null);
         }
@@ -225,6 +274,7 @@ namespace Game.Client.Loop
             _keys?.Dispose();
             _look?.Dispose();
             _hero?.Dispose();
+            _effects?.Dispose();
             _crystal?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();
@@ -240,9 +290,23 @@ namespace Game.Client.Loop
             Debug.Log("GameLoop: " + (error ?? "done") + "; " + Summary());
             _out?.Dispose();
             _out = null;
+            if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
             if (error != null) Debug.LogError("GameLoop: " + error);
             Application.Quit(code);
+        }
+
+        void KeepSounds(string error)
+        {
+            var log = _sounds.Log;
+            var songs = new double[log.Count];
+            var dsps = new double[log.Count];
+            for (int i = 0; i < log.Count; i++)
+            {
+                songs[i] = log.Array[i].Song;
+                dsps[i] = log.Array[i].Dsp;
+            }
+            SyncSpike.Write(_soundOut, _music, _capture, songs, dsps, _frames.ToArray(), error);
         }
 
         string Summary()
@@ -270,6 +334,10 @@ namespace Game.Client.Loop
                 _music != null ? 1000 * _music.Clock.LargestHold : 0, Driver.FramesAtFrontier);
             s += string.Format(c, "; sim step (ms) median {0:F3}, p99 {1:F3}, max {2:F3}",
                 Pct(steps, 0.5), Pct(steps, 0.99), steps[n - 1]);
+            if (_effects != null)
+                s += string.Format(c, "; effects {0} spawned ({1} rejected)", _effects.Spawned, _effects.System.RejectedTotal);
+            if (_sounds != null)
+                s += string.Format(c, "; sounds {0} scheduled, {1} dropped", _sounds.Scheduled, _sounds.Dropped);
             return s;
         }
 

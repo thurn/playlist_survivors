@@ -128,46 +128,59 @@ namespace Game.Client.Music
 
         void Keep(string error)
         {
-            Directory.CreateDirectory(_out);
-            var s = _music.Status;
-            AudioSettings.GetDSPBufferSize(out int length, out int count);
             var log = _clicks.Log;
+            var songs = new double[log.Count];
+            var dsps = new double[log.Count];
+            for (int i = 0; i < log.Count; i++)
+            {
+                songs[i] = log.Array[i].Song;
+                dsps[i] = log.Array[i].Dsp;
+            }
+            Write(_out, _music, _capture, songs, dsps, _frames.ToArray(), error);
+        }
+
+        /// <summary>
+        /// Keeps a measured run in <paramref name="dir"/> for `game spike`: Unity's mix (mix.wav) and
+        /// spike.json, with the sounds scheduled (each one's song time, and the DSP time it was
+        /// scheduled to sound at, NaN if dropped), the audio buffers and the frames.
+        /// </summary>
+        public static void Write(string dir, MusicPlayer music, MixCapture capture, double[] songs, double[] dsps,
+            FrameRow[] frames, string error)
+        {
+            Directory.CreateDirectory(dir);
+            var s = music.Status;
+            AudioSettings.GetDSPBufferSize(out int length, out int count);
             var r = new Report
             {
                 file = Args.Get("--file"),
                 outputRate = AudioSettings.outputSampleRate,
                 dspBufferLength = length,
                 dspBuffers = count,
-                channels = _capture.Channels,
-                outputLatency = _music.Clock.OutputLatency,
+                channels = capture.Channels,
+                outputLatency = music.Clock.OutputLatency,
                 deviceLatency = s.OutputLatency,
                 dspBuffering = MusicPlayer.DspBuffering,
                 anchorDsp = s.AnchorDsp,
                 anchorSong = s.AnchorSong,
-                captureStartDsp = _capture.Buffers > 0 ? _capture.StartDsp : double.NaN,
+                captureStartDsp = capture.Buffers > 0 ? capture.StartDsp : double.NaN,
                 stalls = s.Stalls,
                 state = s.State,
                 failed = s.Failed,
-                gaps = _capture.Gaps,
-                overflowed = _capture.Overflowed ? 1 : 0,
-                rendered = _music.Rendered,
+                gaps = capture.Gaps,
+                overflowed = capture.Overflowed ? 1 : 0,
+                rendered = music.Rendered,
                 error = error ?? "",
-                clickSong = new double[log.Count],
-                clickDsp = new double[log.Count],
-                bufferTick = new double[_capture.Buffers],
-                bufferDsp = _capture.BufferDsp.ToArray(),
-                frames = _frames.ToArray(),
+                clickSong = songs,
+                clickDsp = dsps,
+                bufferTick = new double[capture.Buffers],
+                bufferDsp = capture.BufferDsp.ToArray(),
+                frames = frames,
             };
-            for (int i = 0; i < log.Count; i++)
-            {
-                r.clickSong[i] = log.Array[i].Song;
-                r.clickDsp[i] = log.Array[i].Dsp;
-            }
-            var ticks = _capture.BufferTicks;
+            var ticks = capture.BufferTicks;
             for (int i = 0; i < r.bufferTick.Length; i++) r.bufferTick[i] = MixCapture.TicksToSeconds(ticks[i]);
-            _capture.WriteWav(Path.Combine(_out, "mix.wav"), AudioSettings.outputSampleRate);
-            File.WriteAllText(Path.Combine(_out, "spike.json"), JsonUtility.ToJson(r));
-            Debug.Log($"SyncSpike: kept {_capture.Frames} frames of the mix and {log.Count} clicks in {_out}");
+            capture.WriteWav(Path.Combine(dir, "mix.wav"), AudioSettings.outputSampleRate);
+            File.WriteAllText(Path.Combine(dir, "spike.json"), JsonUtility.ToJson(r));
+            Debug.Log($"SyncSpike: kept {capture.Frames} frames of the mix and {songs.Length} sounds in {dir}");
         }
     }
 }

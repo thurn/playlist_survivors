@@ -15,8 +15,14 @@ captures/game/spike/NAME/. Then it measures, from that mix alone:
 - **frame to heard**: each frame's frameSong against the song heard at its light, with the audio
   thread's buffer times (a centred linear fit) as the DSP clock's truth.
 
-The numbers go to game/evidence/spike/NAME.json (never audio). The source is an audio file or an
-M3U playlist (`--repeat N` plays the file N times as one, with the playlist's 2 s gaps).
+The numbers go to game/evidence/spike/NAME.json (never audio), or game/evidence/DIR/NAME.json with
+`--evidence DIR`. The source is an audio file or an M3U playlist (`--repeat N` plays the file N
+times as one, with the playlist's 2 s gaps).
+
+`--sounds` measures the game's own sounds instead of the beat clicks: the player runs the game's
+frame loop with `--sound-probe` (every sound the sim's events schedule plays a click from its first
+sample) and `--sound-out`, so "music to click" is where the music is when each scheduled sound
+starts against its song time. Give it events with `--player-args "--events FEED"`.
 """
 
 from __future__ import annotations
@@ -57,6 +63,9 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
     sp.add_argument("--player-args", default="", help="extra player flags, e.g. '--dsp-buffer 512'")
     sp.add_argument("--analyse-only", action="store_true", help="re-measure the kept capture")
     sp.add_argument("--no-evidence", action="store_true", help="print the numbers only (slow CI)")
+    sp.add_argument("--evidence", default="spike", help="the evidence folder under game/evidence (default spike)")
+    sp.add_argument("--sounds", action="store_true",
+                    help="measure the game loop's scheduled sounds (the sound probe) instead of the beat clicks")
     sp.set_defaults(func=cmd_spike)
 
 
@@ -83,9 +92,9 @@ def cmd_spike(a: argparse.Namespace) -> int:
         captures.mkdir(parents=True)
         if a.repeat > 1:
             source.write_text("".join(f"{(wt.root / a.file).resolve()}\n" for _ in range(a.repeat)))
+        out = ["--sound-out", str(captures), "--sound-probe"] if a.sounds else ["--spike-out", str(captures)]
         cmd = [str(exe), "-batchmode", "-logFile", str(captures / "player.log"), "--file", str(source),
-               "--headless", "--seconds", f"{a.seconds:g}", "--spike-out", str(captures),
-               *shlex.split(a.player_args)]
+               "--headless", "--seconds", f"{a.seconds:g}", *out, *shlex.split(a.player_args)]
         started = time.monotonic()
         code = subprocess.run(cmd, check=False, cwd=wt.root, timeout=a.seconds + 300,
                               stdout=subprocess.DEVNULL).returncode
@@ -100,10 +109,11 @@ def cmd_spike(a: argparse.Namespace) -> int:
     summary["repeat"] = a.repeat
     summary["backend"] = a.backend
     summary["player_args"] = a.player_args
+    summary["sounds"] = a.sounds
     print(table(summary))
     if a.no_evidence:
         return 0 if summary["ok"] else 1
-    evidence = wt.project / "evidence" / "spike" / f"{a.name}.json"
+    evidence = wt.project / "evidence" / a.evidence / f"{a.name}.json"
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text(json.dumps(summary, indent=2) + "\n")
     print(f"spike: -> {evidence.relative_to(wt.root)}")

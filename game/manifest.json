@@ -1631,6 +1631,27 @@
       "sourceSha256": "11d43537ffdb4db28dc3ce7e212995f6833c94825e4fbdc33b35fe4a8d35efa5",
       "guid": "f60812e2ac885d6469d2ddd6076c43b6",
       "use": "sound: blade hits on monsters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 2.prefab",
+      "sourceSha256": "7ad6a71953a7c6b67026d489338afcb843665c75588e374f684bea202219a3ac",
+      "guid": "231e3be01ac50c047bb16d07fd8d2ba5",
+      "use": "effect: the sword's slash"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 11.prefab",
+      "sourceSha256": "a1ef02dd03a08c498fa748c86b9482b822b2b17fdf48116b22e899517d873fd3",
+      "guid": "a8a6ba91edbeef2439175ecf0e08e6fb",
+      "use": "effect: the sword's spin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/AOE Magic spells Vol.1/Prefabs/Magic hit.prefab",
+      "sourceSha256": "6a08e4f8f99d529d1642945a62d32201738c1950a8f46d8032bdefa400b5254c",
+      "guid": "a32d87b33cadfed4b83eeaa564eb7724",
+      "use": "effect: the sword's slam"
     }
   ]
 }

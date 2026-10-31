@@ -1,0 +1,74 @@
+{
+  "ok": true,
+  "seconds": 21.2,
+  "output_rate": 48000,
+  "dsp_buffer": [
+    256,
+    4
+  ],
+  "output_latency_ms": 37.958,
+  "device_latency_ms": 16.625,
+  "dsp_buffering_ms": 21.333,
+  "stalls": 0,
+  "capture_gaps": 0,
+  "error": "",
+  "clicks_scheduled": 108,
+  "clicks_dropped": 0,
+  "clicks_found": 108,
+  "music_lag_frames": {
+    "anchor": 9728,
+    "median": 9728,
+    "min": 9728,
+    "max": 9728,
+    "windows": 1
+  },
+  "music_gain": 1.000086,
+  "residual_rms": 0.04461286589503288,
+  "music_to_click_ms": {
+    "n": 108,
+    "median": 0.0,
+    "mean": -0.008302938868138739,
+    "std": 0.009866607193759104,
+    "p5": -0.020833333334024928,
+    "p95": 0.0,
+    "min": -0.020833333334024928,
+    "max": 8.881784197001252e-13
+  },
+  "drift_ms_per_min": -0.04091216634049836,
+  "click_to_schedule_ms": {
+    "n": 108,
+    "median": -1.2126596023639042e-12,
+    "mean": -0.008302938868259113,
+    "std": 0.00986660719340229,
+    "p5": -0.020833333333727447,
+    "p95": 0.0,
+    "min": -0.020833333335758653,
+    "max": 6.063298011819521e-13
+  },
+  "beat_to_onset_ms": {
+    "n": 108,
+    "median": 6.000000000000227,
+    "mean": 4.73766250676954,
+    "std": 7.89490815776394,
+    "p5": -6.224079680768299,
+    "p95": 12.655787916801442,
+    "min": -42.140314343013685,
+    "max": 18.741968463487524
+  },
+  "frame_to_heard_ms": {
+    "n": 1214,
+    "median": -0.0436628516065074,
+    "mean": -0.06792840290483322,
+    "std": 0.27494211600063123,
+    "p5": -0.36303303089585404,
+    "p95": 0.2272243504137349,
+    "min": -4.876652129764042,
+    "max": 1.7368657974513728
+  },
+  "frame_song_backwards": 0,
+  "file": "public/reactive/house-128/house-128.ogg",
+  "repeat": 1,
+  "backend": "mono",
+  "player_args": "--events /Users/dthurn/playlist_survivors/.worktrees/ps-msz.3.11/game/evidence/fx/sounds.jsonl",
+  "sounds": true
+}

@@ -44,7 +44,17 @@ namespace Game.EditorTools
         public static void BakeCrowd() => Crowd.CrowdBaker.Bake();
 
         /// <summary>
-        /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the crowd and the hero. Each
+        /// Converts the effect selection (Content/effects.json: Effects.EffectConverter) into the gitignored
+        /// Assets/Baked/Effects/Resources/EffectLibrary.asset.
+        /// </summary>
+        public static void BakeEffects() => Effects.EffectConverter.Bake();
+
+        /// <summary>The sound bank (Content/sounds.json: Sound.SoundBaker) into the gitignored Assets/Baked/Sounds/.</summary>
+        public static void BakeSounds() => Sound.SoundBaker.Bake();
+
+        /// <summary>
+        /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the crowd, the hero, the
+        /// effects and the sounds. Each
         /// baker that finishes appends its name to Assets/Baked/.bakeall-ran, which the tools read back
         /// to record the inputs it baked from. `-only NAME` (repeatable) runs just those.
         /// </summary>
@@ -53,7 +63,8 @@ namespace Game.EditorTools
             var args = Environment.GetCommandLineArgs();
             var only = args.Where((a, i) => i > 0 && args[i - 1] == "-only").ToList();
             Directory.CreateDirectory(BakedRoot);
-            foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena), ("Crowd", BakeCrowd), ("Hero", BakeHero) })
+            foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena), ("Crowd", BakeCrowd), ("Hero", BakeHero),
+                         ("Effects", BakeEffects), ("Sounds", BakeSounds) })
             {
                 if (only.Count > 0 && !only.Contains(name)) continue;
                 Debug.Log("Tasks.BakeAll: running " + name);
