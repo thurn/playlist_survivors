@@ -47,8 +47,8 @@ namespace PS.Game.Sim.Tests
 
         static double[] BeatTimes(Simulation sim) => sim.Stream.Beats.ToArray().Select(b => b.T).ToArray();
 
-        static int Place(Simulation sim, string role, double dx, double dy) =>
-            HordeFixture.Place(sim, role, sim.State.Hero.X + dx, sim.State.Hero.Y + dy);
+        static int Place(Simulation sim, string role, double dx, double dy, bool boss = false) =>
+            HordeFixture.Place(sim, role, sim.State.Hero.X + dx, sim.State.Hero.Y + dy, boss);
 
         static double Reach(int rank, bool heavy = false) =>
             Content.Weapon("sword").Shape.RadiusM * Content.Weapon("sword").Rank(rank).Area * (heavy ? 1.3 : 1);
@@ -272,7 +272,7 @@ namespace PS.Game.Sim.Tests
         {
             var sim = AimSim(out double next);
             for (int k = 0; k < 4; k++) Place(sim, "skeleton", 5, -0.6 + 0.4 * k);
-            Place(sim, "boss-werewolf", -4, 0);
+            Place(sim, "boss-werewolf", -4, 0, boss: true);
             var a = SwingAfterPlacing(sim, next);
             Assert.LessOrEqual(AngleTo(a, -1, 0), Sword.AimHalfAngle + 1e-9);
         }

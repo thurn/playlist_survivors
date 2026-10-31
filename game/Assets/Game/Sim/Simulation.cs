@@ -24,7 +24,7 @@ namespace PS.Game.Sim
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
     /// then the run's own moments (the run clock reaching its duration, the victory card:
     /// <see cref="RunRules"/>), then the beat (the run's start, a resume or the finale's blast on it, then on a downbeat, structures a zone change marked regrow, then a zone change
-    /// may land: <see cref="Structures"/>, <see cref="Zones"/>), then the stride step (the music stopping on it) and the
+    /// may land, then bosses due land: <see cref="Structures"/>, <see cref="Zones"/>, <see cref="Horde"/>), then the stride step (the music stopping on it) and the
     /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
@@ -83,6 +83,7 @@ namespace PS.Game.Sim
                 Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
                 if (Horde != null) Horde.Chickens = Chickens;
             }
+            Horde?.Begin(this);
         }
 
         public SimState State { get; }
@@ -240,6 +241,7 @@ namespace PS.Game.Sim
                     {
                         Structures.Downbeat(this, beat, Beats.PeriodOf(i));
                         Zones?.Downbeat(this, beat);
+                        Horde?.Downbeat(this, beat);
                     }
                 }
                 else if (step == next)

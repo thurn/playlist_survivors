@@ -49,6 +49,8 @@ namespace PS.Game.Sim
             if (sim.Random.NextDouble() < rules.BruteChickenChance) Drop(sim, t, x, y, 1);
         }
 
+        public void BossDied(Simulation sim, double t, double x, double y) => Drop(sim, t, x, y, (int)rules.BossChickens);
+
         /// <summary><paramref name="n"/> chickens drop at <paramref name="t"/>, spread along x across (x, y).</summary>
         public void Drop(Simulation sim, double t, double x, double y, int n)
         {

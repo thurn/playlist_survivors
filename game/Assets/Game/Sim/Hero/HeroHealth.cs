@@ -5,7 +5,7 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// The hero's health (unity-game.md, The Run and Enemies; native's survivors <c>hurt</c>). A
-    /// contact lunge that lands takes <c>max(1, power * scale - armor)</c>, the scale being 1, or
+    /// contact lunge, or a boss's charge or slam, that lands takes <c>max(1, power * scale - armor)</c>, the scale being 1, or
     /// <see cref="EasyContactScale"/> on Easy, and leaves the hero unhurtable for progression.json's
     /// <c>invulnerableS</c> (native's 0.12 s lockout). At no health the hero falls: a
     /// <see cref="SimEventKind.Death"/> with enemy -1, "YOU FELL". A standing hero
@@ -38,11 +38,12 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// A contact lunge of <paramref name="power"/> reaches the hero at <paramref name="t"/>,
-        /// striking it along (dirX, dirY): a hit, with the damage it takes (0 while it can't be
-        /// hurt), and its fall when that empties its health. A fallen hero takes none.
+        /// An enemy's attack of <paramref name="power"/> (a contact lunge, or a boss's charge or
+        /// slam) reaches the hero at <paramref name="t"/>, striking it along (dirX, dirY): a hit,
+        /// with the damage it takes (0 while it can't be hurt), and its fall when that empties its
+        /// health. A fallen hero takes none.
         /// </summary>
-        public void Lunge(Simulation sim, double t, double power, double dirX, double dirY)
+        public void Hurt(Simulation sim, double t, EnemyAttackKind kind, double power, double dirX, double dirY)
         {
             if (hero.Fallen) return;
             hero.PositionAt(t, out double hx, out double hy);
@@ -54,7 +55,7 @@ namespace PS.Game.Sim
                 double floor = stands ? Math.Min(hero.Health, StandingShare * hero.MaxHealth) : 0;
                 hero.Health = Math.Max(floor, hero.Health - damage);
             }
-            sim.Emit(SimEvent.HeroHit(t, EnemyAttackKind.Lunge, damage, hx, hy, dirX, dirY));
+            sim.Emit(SimEvent.HeroHit(t, kind, damage, hx, hy, dirX, dirY));
             if (hero.Health > 1e-9) return;
             hero.Fallen = true;
             sim.Emit(SimEvent.Death(t, -1, -1, hx, hy, dirX, dirY, 0));

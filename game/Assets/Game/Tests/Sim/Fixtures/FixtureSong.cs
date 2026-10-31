@@ -20,6 +20,7 @@ namespace PS.Game.Sim.Tests
         {
             public double From, To, Bpm0, Bpm1, Evidence, Jitter;
             public bool Ticks, Silent;
+            public LoudnessLevel Level;
         }
 
         readonly List<Stretch> stretches = new List<Stretch>();
@@ -32,14 +33,14 @@ namespace PS.Game.Sim.Tests
 
         public static double StampOf(double position) => position - (M - A);
 
-        /// <summary>Beats from <paramref name="from"/> to <paramref name="to"/>, the tempo ramping linearly from bpm0 to bpm1.</summary>
+        /// <summary>Beats from <paramref name="from"/> to <paramref name="to"/>, the tempo ramping linearly from bpm0 to bpm1, its ticks at <paramref name="level"/>.</summary>
         public FixtureSong Beats(double from, double to, double bpm0, double bpm1 = double.NaN,
-            double evidence = 0.9, double jitter = 0)
+            double evidence = 0.9, double jitter = 0, LoudnessLevel level = LoudnessLevel.Medium)
         {
             stretches.Add(new Stretch
             {
                 From = from, To = to, Bpm0 = bpm0, Bpm1 = double.IsNaN(bpm1) ? bpm0 : bpm1,
-                Evidence = evidence, Jitter = jitter, Ticks = true,
+                Evidence = evidence, Jitter = jitter, Ticks = true, Level = level,
             });
             return this;
         }
@@ -50,7 +51,7 @@ namespace PS.Game.Sim.Tests
         /// </summary>
         public FixtureSong Gap(double from, double to, bool ticks = true, bool silent = false)
         {
-            stretches.Add(new Stretch { From = from, To = to, Bpm0 = 0, Evidence = silent ? 0 : 0.1, Ticks = ticks, Silent = silent });
+            stretches.Add(new Stretch { From = from, To = to, Bpm0 = 0, Evidence = silent ? 0 : 0.1, Ticks = ticks, Silent = silent, Level = LoudnessLevel.Medium });
             return this;
         }
 
@@ -116,7 +117,7 @@ namespace PS.Game.Sim.Tests
                     double evidence = s.Bpm0 > 0 || s.Silent ? s.Evidence : 0.1;
                     double energy = 0.5 + 0.2 * rng.NextDouble();
                     list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), evidence, s.Silent ? 0 : energy,
-                        level: LoudnessLevel.Medium, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
+                        level: s.Level, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
                         hat: rng.NextDouble(), bass: rng.NextDouble(), brightness: 0.4));
                     if (k % 20 == 0) list.Add(StreamEntry.Timbre(t, StampOf(t + 0.5), 0.4, 0.2, 0.6, 0.5));
                 }

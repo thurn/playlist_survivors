@@ -14,7 +14,7 @@ same files under .NET and Unity.
 | passives.json | The eight passives, their ranks and per-rank stat changes |
 | offers.json | The scripted offer table (levels 2 to 70), its fallback and the "any" scan order |
 | progression.json | Slots, the hero's stats and caps, the experience curve, gems and chests |
-| schedule.json | The run: its minutes (spawns, bosses, swarms, treasure), set pieces, the signature minotaur, the finale and zones |
+| schedule.json | The run: its cap and loudness scale, its minutes (spawns, bosses, swarms, treasure), the bosses' moves, set pieces, the signature minotaur, the finale and zones |
 | arena-layout.json | The arena's layout (demo3d's format): areas, structures, scatter, lighting, the zones' palettes, the stills' shots |
 | footprints.json | demo3d's footprint measurements of the kit pieces game/manifest.json syncs, which the layout places |
 | arena.json | The level data's arena part (the sim's `ArenaData`): blocked tiles, structure sites, the hero's start. The arena's bake writes it from the two above; don't edit it |
@@ -41,9 +41,9 @@ change to these files (scripts/check-fast).
 
 The one-shot converter is `uv run --project demo3d/tools game content` (demo3d/tools/src/
 demo3d_tools/content.py). It reads native's content/*.yaml, levels/survivors.yaml and the numbers
-native's Rust sim keeps in code, and wrote these files. `game content --check` says whether they
-still match its output; once the game edits its JSON by hand, the converter is history and can be
-deleted.
+native's Rust sim keeps in code, and wrote these files. The game now edits its JSON by hand
+(ps-msz.6.2 added schedule.json's `run.levelScale`, `levelSmoothS` and `clumpS`, and
+`bossMoves`), so `game content --check` no longer matches and the converter is history.
 
 ## From native
 
@@ -126,6 +126,10 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
 
 - Minutes, minimums, intervals (native's `frequency`, in seconds), rosters, bosses, swarm events
   and treasure are levels/survivors.yaml's, with role ids mapped.
+- `run.levelScale` and `levelSmoothS` are the survivors director's `population.levelScale` and
+  `smoothS`, which native's spawner applies to each minute's minimum. `run.clumpS` and
+  `bossMoves` are the game's own (unity-game.md, Enemies, "Shipped (ps-msz.6.2)"): native's
+  survivors bosses only walk.
 - A swarm event names its role (BAT_SWARM: bat-swarm, GHOST_SWARM: ghost-swarm, FLOWER_WALL:
   flower), as native's validator does. A chance of 0, or none, is `null`: no gate.
 - Treasure's three chances are named by tier (native's list rolls tier 3 first); `evolves` marks

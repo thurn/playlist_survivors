@@ -1,5 +1,20 @@
 {
-  "run": {"durationS": 1800, "cap": 300},
+  "run": {
+    "durationS": 1800,
+    "cap": 300,
+    "levelScale": {"quiet": 0.6, "medium": 1, "loud": 1.3},
+    "levelSmoothS": 2,
+    "clumpS": 3
+  },
+  "bossMoves": {
+    "roles": ["boss-xlmantis", "boss-werewolf", "boss-xlmummy", "boss-xlflower"],
+    "firstBeats": 4,
+    "everyBeats": 8,
+    "telegraphBeats": 2,
+    "chargeM": 9,
+    "slamRadiusM": 4,
+    "slamForceM": 4.63
+  },
   "easy": {"contactDamage": 0.5, "bruteChickenChance": 0.05, "bossChickens": 1},
   "minutes": [
     {"minute": 0, "minimum": 15, "intervalS": 1, "enemies": ["bat3"], "bosses": [], "events": [], "treasure": null},

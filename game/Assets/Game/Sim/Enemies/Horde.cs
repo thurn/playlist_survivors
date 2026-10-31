@@ -26,9 +26,9 @@ namespace PS.Game.Sim
     ///
     /// Knockback (<see cref="Knock"/>) is the one travel between beats: immediate, a fixed
     /// distance, and the enemy decides no step until it ends. A lethal hit removes the enemy at once
-    /// (<see cref="Kill"/>): its death launch is presentation's, and it drops a gem. Spawns (the slice's test schedule)
-    /// land on a ring just outside the camera's footprint, inside the walkable arena; enemies far
-    /// out of sight are recycled onto it. At most the schedule's cap are alive.
+    /// (<see cref="Kill"/>): its death launch is presentation's, and it drops a gem, and a boss its
+    /// chest. Who spawns, when and where is the <see cref="Spawner"/>'s; the bosses' telegraphs,
+    /// charges and slams are <see cref="BossMoves"/>'. At most the schedule's cap are alive.
     /// </summary>
     internal sealed class Horde
     {
@@ -43,11 +43,6 @@ namespace PS.Game.Sim
         /// <summary>Two enemies keep apart by this share of their radii's sum (native's).</summary>
         public const double Separation = 0.8;
         const int SeparationPasses = 2;
-        /// <summary>Enemies this many view widths from the hero are recycled onto the ring (native's).</summary>
-        public const double RecycleViews = 1.5;
-        public const double SpawnMarginM = 2;
-        public const double SpawnSpreadM = 1.5;
-        const int SpawnTries = 16;
         /// <summary>Flow-field cells settled per tick while a rebuild runs.</summary>
         public const int FieldBudget = 4096;
         /// <summary>How far out a push off a regrowing structure looks for open ground, in cells (the largest site is 5 tiles across).</summary>
@@ -63,12 +58,11 @@ namespace PS.Game.Sim
         readonly EnemyRole[] roles;
         readonly double heroReferenceMps;
         readonly double tileM;
-        readonly int[] roster;
-        readonly double spawnInterval;
-        readonly int minimum;
-        readonly double[] footprint;
-        readonly double viewWidth;
         readonly EnemyState[] enemies;
+        // A boss's chest, by slot: its tier (0: none) and the minute whose treasure it holds.
+        readonly int[] chestTier, chestMinute;
+        readonly Spawner spawner;
+        readonly BossMoves bosses;
         readonly int[] free;
         int freeCount;
         FlowField field, next;
@@ -83,7 +77,6 @@ namespace PS.Game.Sim
 
         int beat;
         Phase phase;
-        double nextSpawn;
         int drops;
         bool navChanged;
 
@@ -100,20 +93,6 @@ namespace PS.Game.Sim
             roles = config.Content.Roles;
             heroReferenceMps = config.Content.Progression.Hero.SpeedMps;
             tileM = arena.TileM;
-            roster = new int[config.Roster.Length];
-            for (int i = 0; i < roster.Length; i++) roster[i] = Array.IndexOf(roles, config.Content.Role(config.Roster[i]));
-            if (config.SpawnIntervalS <= 0) throw new ArgumentException("a positive spawn interval");
-            spawnInterval = config.SpawnIntervalS;
-            minimum = config.Minimum;
-            footprint = (double[])config.CameraFootprint.Clone();
-            if (footprint.Length < 6 || footprint.Length % 2 != 0) throw new ArgumentException("a camera footprint of three or more points");
-            double minX = double.PositiveInfinity, maxX = double.NegativeInfinity;
-            for (int k = 0; k < footprint.Length; k += 2)
-            {
-                minX = Math.Min(minX, footprint[k]);
-                maxX = Math.Max(maxX, footprint[k]);
-            }
-            viewWidth = maxX - minX;
 
             int cap = config.Content.Schedule.Cap;
             enemies = new EnemyState[cap];
@@ -128,6 +107,8 @@ namespace PS.Game.Sim
             capLen = new double[cap];
             stepping = new bool[cap];
             hashNext = new int[cap];
+            chestTier = new int[cap];
+            chestMinute = new int[cap];
 
             Nav = new NavGrid(arena);
             hashW = (int)Math.Ceiling(Nav.W * Nav.CellM / HashCellM) + 1;
@@ -135,8 +116,10 @@ namespace PS.Game.Sim
             hashHead = new int[hashW * hashH];
             hashStamp = new int[hashW * hashH];
 
+            spawner = new Spawner(config, this, log, state);
+            bosses = new BossMoves(config.Content, cap);
             // Paths around structures run longer than the straight line to the farthest enemy.
-            double reach = 3 * RecycleViews * viewWidth;
+            double reach = 3 * Spawner.RecycleViews * spawner.ViewWidth;
             field = new FlowField(Nav, reach);
             next = new FlowField(Nav, reach);
             field.Begin(state.Hero.X, state.Hero.Y);
@@ -144,6 +127,9 @@ namespace PS.Game.Sim
         }
 
         public NavGrid Nav { get; }
+        public EnemyRole[] Roles => roles;
+        /// <summary>Free enemy slots: how many more may spawn under the cap.</summary>
+        public int FreeSlots => freeCount;
 
         void HeroAt(double t, out double x, out double y) => state.Hero.PositionAt(t, out x, out y);
 
@@ -164,7 +150,7 @@ namespace PS.Game.Sim
 
         int HalvingsFor(double period) => strides.Halvings >= 0 ? strides.Halvings : StrideGrid.FewestHalvings(period);
 
-        double ContactOf(int role) => HeroHurtRadiusM + roles[role].RadiusM + ContactGapM;
+        internal double ContactOf(int role) => HeroHurtRadiusM + roles[role].RadiusM + ContactGapM;
 
         /// <summary>The next of the horde's exact times at or after <paramref name="floor"/>.</summary>
         internal double NextTime(double floor)
@@ -215,7 +201,7 @@ namespace PS.Game.Sim
             for (int i = 0; i < enemies.Length; i++)
             {
                 ref var e = ref enemies[i];
-                if (!e.Alive || Knocked(e, t)) continue;
+                if (!e.Alive || Knocked(e, t) || bosses.Busy(i, beat)) continue;
                 double step = roles[e.Role].Gait.StepsOn(beat) ? StepOf(e.Role, beat, h) : 0;
                 double reach = ContactOf(e.Role) + BiteSlackM + heroReach + step;
                 e.PositionAt(t, out double x, out double y);
@@ -246,7 +232,7 @@ namespace PS.Game.Sim
                 e.PositionAt(t, out double x, out double y);
                 baseX[i] = wantX[i] = x;
                 baseY[i] = wantY[i] = y;
-                if (Knocked(e, t) || !roles[e.Role].Gait.StepsOn(beat)) continue;
+                if (Knocked(e, t) || bosses.Busy(i, beat) || !roles[e.Role].Gait.StepsOn(beat)) continue;
                 double step = StepOf(e.Role, beat, h);
                 double dx = hx - x, dy = hy - y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
@@ -272,6 +258,7 @@ namespace PS.Game.Sim
                 stepping[i] = true;
                 any++;
             }
+            bosses.Decide(sim, this, beat, t, footplant, hx, hy);
             if (any == 0) return;
             for (int pass = 0; pass < SeparationPasses; pass++) Separate();
             for (int i = 0; i < enemies.Length; i++)
@@ -285,17 +272,24 @@ namespace PS.Game.Sim
                 double scale = ol > capLen[i] ? capLen[i] / ol : 1;
                 double toX = baseX[i] + ox * scale, toY = baseY[i] + oy * scale;
                 Nav.Clamp(x, y, ref toX, ref toY);
-                if (Math.Abs(toX - x) < 1e-6 && Math.Abs(toY - y) < 1e-6) continue;
-                e.Motion = EnemyMotion.Step;
-                e.FromX = x;
-                e.FromY = y;
-                e.ToX = toX;
-                e.ToY = toY;
-                e.MoveStart = t;
-                e.MoveEnd = footplant;
-                e.SteppedBeat = beat;
-                sim.Emit(SimEvent.EnemyStep(t, i, x, y, toX, toY, t, footplant));
+                StartStep(sim, i, beat, t, x, y, toX, toY, footplant);
             }
+        }
+
+        /// <summary>Enemy <paramref name="i"/> steps on main beat <paramref name="beat"/>, from (x, y) at <paramref name="t"/> to the footplant; a step that goes nowhere is none.</summary>
+        internal void StartStep(Simulation sim, int i, int beat, double t, double x, double y, double toX, double toY, double footplant)
+        {
+            if (Math.Abs(toX - x) < 1e-6 && Math.Abs(toY - y) < 1e-6) return;
+            ref var e = ref enemies[i];
+            e.Motion = EnemyMotion.Step;
+            e.FromX = x;
+            e.FromY = y;
+            e.ToX = toX;
+            e.ToY = toY;
+            e.MoveStart = t;
+            e.MoveEnd = footplant;
+            e.SteppedBeat = beat;
+            sim.Emit(SimEvent.EnemyStep(t, i, x, y, toX, toY, t, footplant));
         }
 
         /// <summary>
@@ -378,9 +372,16 @@ namespace PS.Game.Sim
 
         void Land(Simulation sim, double t, bool reliable)
         {
-            // A fallen hero is past biting.
-            reliable &= !state.Hero.Fallen;
             HeroAt(t, out double hx, out double hy);
+            // A fallen hero is past biting.
+            Bite(sim, t, reliable && !state.Hero.Fallen, hx, hy);
+            bosses.Land(sim, this, beat, t, reliable, hx, hy);
+            if (reliable) bosses.Telegraph(sim, this, beat, t, hx, hy);
+        }
+
+        /// <summary>Steps plant, and lunges armed for this beat bite a hero in contact while the beat is <paramref name="reliable"/>.</summary>
+        void Bite(Simulation sim, double t, bool reliable, double hx, double hy)
+        {
             for (int i = 0; i < enemies.Length; i++)
             {
                 ref var e = ref enemies[i];
@@ -405,11 +406,11 @@ namespace PS.Game.Sim
                     dx = 1;
                     l = 1;
                 }
-                sim.Health.Lunge(sim, t, roles[e.Role].Power, dx / l, dy / l);
+                sim.Health.Hurt(sim, t, EnemyAttackKind.Lunge, roles[e.Role].Power, dx / l, dy / l);
             }
         }
 
-        static double SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
+        internal static double SegmentDistance(double px, double py, double ax, double ay, double bx, double by)
         {
             double dx = bx - ax, dy = by - ay;
             double l2 = dx * dx + dy * dy;
@@ -498,8 +499,9 @@ namespace PS.Game.Sim
         /// Enemy <paramref name="i"/> dies at <paramref name="t"/>, struck along (dirX, dirY): it
         /// leaves the horde at once (its slot is free for a later spawn), with a death event whose
         /// force is <paramref name="launch"/>, the launch's distance in metres, and drops a gem of
-        /// its role's experience (collecting it is the arsenal's, M3), and on Easy a brute may drop
-        /// a floor chicken.
+        /// its role's experience (collecting it is the arsenal's, M3); a boss carrying a chest drops
+        /// it (opening it is the chests'). On Easy a boss drops its floor chickens, and a brute may
+        /// drop one.
         /// </summary>
         internal void Kill(Simulation sim, int i, double t, double dirX, double dirY, double launch)
         {
@@ -515,7 +517,9 @@ namespace PS.Game.Sim
             free[freeCount++] = i;
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Emit(SimEvent.Drop(t, drops++, ItemKind.Gem, x, y, roles[e.Role].Xp));
-            if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);
+            if (chestTier[i] > 0) sim.Emit(SimEvent.Chest(t, drops++, x, y, chestTier[i], chestMinute[i]));
+            if (e.Boss) Chickens?.BossDied(sim, t, x, y);
+            else if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);
         }
 
         /// <summary>
@@ -612,47 +616,23 @@ namespace PS.Game.Sim
             }
 
             HeroAt(end, out double hx, out double hy);
-            if (!state.Frozen)
-                while (state.RunClock >= nextSpawn - 1e-9)
-                {
-                    SpawnWave(sim, end, hx, hy);
-                    nextSpawn += spawnInterval;
-                }
-            Recycle(sim, end, hx, hy);
+            spawner.Tick(sim, end, hx, hy);
         }
+
+        /// <summary>At the sim's start: the lineup, if any, takes its places.</summary>
+        internal void Begin(Simulation sim) => spawner.PlaceLineup(sim);
+
+        /// <summary>On a committed downbeat at <paramref name="t"/>: bosses due land on it.</summary>
+        internal void Downbeat(Simulation sim, double t) => spawner.Downbeat(sim, t);
 
         /// <summary>
-        /// One of each roster role, and whole rosters while fewer than the minimum are alive
-        /// (Vampire Survivors' spawning); each role's share lands as one clump on the ring.
+        /// An enemy of <paramref name="role"/> enters at (x, y) at <paramref name="t"/>, in a free
+        /// slot (there must be one). A boss's health, and a level-scaled role's, is its role's
+        /// times the hero's level; a boss carries a chest of <paramref name="tier"/> (0 for
+        /// none) from minute <paramref name="minute"/>'s treasure.
         /// </summary>
-        void SpawnWave(Simulation sim, double t, double hx, double hy)
-        {
-            int shortfall = minimum - state.EnemiesAlive - roster.Length;
-            int each = 1 + (shortfall > 0 ? (shortfall + roster.Length - 1) / roster.Length : 0);
-            foreach (int role in roster)
-            {
-                int n = Math.Min(each, freeCount);
-                if (n == 0) return;
-                double clump = Math.Max(1.5, 0.5 * Math.Sqrt(n));
-                if (!RingPoint(sim.Random, hx, hy, clump + roles[role].RadiusM, out double cx, out double cy)) continue;
-                for (int k = 0; k < n; k++)
-                {
-                    double x = cx, y = cy;
-                    for (int tries = 0; tries < 4; tries++)
-                    {
-                        double a = sim.Random.Range(-Math.PI, Math.PI), r = clump * Math.Sqrt(sim.Random.NextDouble());
-                        double px = cx + Math.Cos(a) * r, py = cy + Math.Sin(a) * r;
-                        if (!Nav.Walkable(px, py)) continue;
-                        x = px;
-                        y = py;
-                        break;
-                    }
-                    Spawn(sim, t, role, x, y);
-                }
-            }
-        }
-
-        internal void Spawn(Simulation sim, double t, int role, double x, double y)
+        internal void Spawn(Simulation sim, double t, int role, double x, double y, bool boss = false,
+            int tier = 0, int minute = -1)
         {
             int i = free[--freeCount];
             enemies[i] = new EnemyState
@@ -661,68 +641,16 @@ namespace PS.Game.Sim
                 Role = role,
                 X = x,
                 Y = y,
-                Health = roles[role].Health,
+                Health = roles[role].Health * (boss || roles[role].LevelScaled ? state.Hero.Level : 1),
+                Boss = boss,
                 LungeBeat = -1,
                 SteppedBeat = -1,
             };
+            chestTier[i] = tier;
+            chestMinute[i] = minute;
+            bosses.Spawned(i, role, boss, beat);
             state.EnemiesAlive++;
-            sim.Emit(SimEvent.Spawn(t, i, role, x, y));
-        }
-
-        /// <summary>Enemies standing far out of sight re-enter on the ring with their health (native's recycling).</summary>
-        void Recycle(Simulation sim, double t, double hx, double hy)
-        {
-            double far = RecycleViews * viewWidth;
-            for (int i = 0; i < enemies.Length; i++)
-            {
-                ref var e = ref enemies[i];
-                if (!e.Alive || e.Motion != EnemyMotion.Still) continue;
-                double dx = e.X - hx, dy = e.Y - hy;
-                if (dx * dx + dy * dy < far * far) continue;
-                if (!RingPoint(sim.Random, hx, hy, roles[e.Role].RadiusM, out double x, out double y)) continue;
-                e.X = x;
-                e.Y = y;
-                e.LungeBeat = -1;
-                sim.Emit(SimEvent.Spawn(t, i, e.Role, x, y, recycled: true));
-            }
-        }
-
-        /// <summary>
-        /// A point just outside the camera's footprint around the hero at (hx, hy), <paramref name="extra"/>
-        /// beyond the margin, in a walkable cell: a random direction, retried when the point falls
-        /// outside the arena or in a structure, so a visible arena edge leaves the in-bounds arc.
-        /// </summary>
-        bool RingPoint(SimRandom random, double hx, double hy, double extra, out double x, out double y)
-        {
-            for (int tries = 0; tries < SpawnTries; tries++)
-            {
-                double a = random.Range(-Math.PI, Math.PI);
-                double c = Math.Cos(a), s = Math.Sin(a);
-                double d = FootprintEdge(c, s) + SpawnMarginM + extra + random.Range(0, SpawnSpreadM);
-                x = hx + c * d;
-                y = hy + s * d;
-                if (Nav.Walkable(x, y)) return true;
-            }
-            x = y = 0;
-            return false;
-        }
-
-        /// <summary>How far the ray from the hero along (c, s) runs to the footprint's edge.</summary>
-        double FootprintEdge(double c, double s)
-        {
-            double best = 0;
-            int n = footprint.Length / 2;
-            for (int k = 0; k < n; k++)
-            {
-                double ax = footprint[2 * k], ay = footprint[2 * k + 1];
-                double ex = footprint[2 * ((k + 1) % n)] - ax, ey = footprint[2 * ((k + 1) % n) + 1] - ay;
-                double denom = c * ey - s * ex;
-                if (Math.Abs(denom) < 1e-12) continue;
-                double r = (ax * ey - ay * ex) / denom;
-                double u = (ax * s - ay * c) / denom;
-                if (r > 0 && u >= -1e-9 && u <= 1 + 1e-9) best = Math.Max(best, r);
-            }
-            return best;
+            sim.Emit(SimEvent.Spawn(t, i, role, x, y, boss: boss));
         }
     }
 }

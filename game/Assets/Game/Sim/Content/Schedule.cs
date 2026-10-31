@@ -216,6 +216,21 @@ namespace PS.Game.Sim.Content
         public double OpeningFallbackS, OpeningS, FallbackS;
     }
 
+    /// <summary>
+    /// The scheduled bosses' moves (unity-game.md, Enemies): every <see cref="EveryBeats"/> main
+    /// beats, from <see cref="FirstBeats"/> after it lands, a boss of one of <see cref="Roles"/>
+    /// telegraphs in place for <see cref="TelegraphBeats"/> beats, then slams (the hero within
+    /// <see cref="SlamRadiusM"/>) or charges <see cref="ChargeM"/> at where the hero stood.
+    /// </summary>
+    public sealed class BossMoveRules
+    {
+        public string[] Roles;
+        public int FirstBeats, EveryBeats, TelegraphBeats;
+        public double ChargeM, SlamRadiusM;
+        /// <summary>The slam's throw against structures, metres (a heavy strike's).</summary>
+        public double SlamForceM;
+    }
+
     public sealed class EasyRules
     {
         /// <summary>Enemy contact damage's multiplier.</summary>
@@ -230,6 +245,14 @@ namespace PS.Game.Sim.Content
         public double DurationS;
         /// <summary>The most enemies alive at once.</summary>
         public int Cap;
+        /// <summary>
+        /// A minute's minimum scales by the loudness level (native's <c>levelScale</c>), blended
+        /// over the last <see cref="LevelSmoothS"/>; quiet passages skip a wave once they are full.
+        /// </summary>
+        public double QuietScale, MediumScale, LoudScale, LevelSmoothS;
+        /// <summary>A role's spawns keep landing around one point of the ring for this long, so the horde reads as masses of colour.</summary>
+        public double ClumpS;
+        public BossMoveRules BossMoves;
         public EasyRules Easy;
         /// <summary>Minutes[i] is minute i.</summary>
         public SpawnMinute[] Minutes;
@@ -253,6 +276,7 @@ namespace PS.Game.Sim.Content
             yield return (SetPieces.Wedge.Role, "setPieces.wedge.role");
             yield return (SetPieces.Ring.Role, "setPieces.ring.role");
             yield return (Signature.Role, "signature.role");
+            foreach (string b in BossMoves.Roles) yield return (b, "bossMoves.roles");
         }
 
         internal static Schedule Read(ContentReader r)
@@ -261,7 +285,25 @@ namespace PS.Game.Sim.Content
             var run = r.Object("run");
             s.DurationS = run.Number("durationS");
             s.Cap = run.Int("cap");
+            var scale = run.Object("levelScale");
+            s.QuietScale = scale.Number("quiet");
+            s.MediumScale = scale.Number("medium");
+            s.LoudScale = scale.Number("loud");
+            scale.End();
+            s.LevelSmoothS = run.Number("levelSmoothS");
+            s.ClumpS = run.Number("clumpS");
+            if (!(s.LevelSmoothS > 0)) throw ContentReader.Fail(run.Child("levelSmoothS"), "expected a positive window");
             run.End();
+            var moves = r.Object("bossMoves");
+            s.BossMoves = new BossMoveRules
+            {
+                Roles = moves.Strings("roles"), FirstBeats = moves.Int("firstBeats"), EveryBeats = moves.Int("everyBeats"),
+                TelegraphBeats = moves.Int("telegraphBeats"), ChargeM = moves.Number("chargeM"),
+                SlamRadiusM = moves.Number("slamRadiusM"), SlamForceM = moves.Number("slamForceM"),
+            };
+            if (s.BossMoves.TelegraphBeats < 1 || s.BossMoves.EveryBeats <= s.BossMoves.TelegraphBeats)
+                throw ContentReader.Fail(moves.Child("everyBeats"), "expected a cycle longer than the telegraph, which takes a beat or more");
+            moves.End();
             var easy = r.Object("easy");
             s.Easy = new EasyRules
             {

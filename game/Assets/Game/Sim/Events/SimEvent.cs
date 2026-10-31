@@ -268,13 +268,16 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>An enemy spawns: I0 enemy, I1 role, I2 1 when it is a recycled enemy re-entering (its old place is left at once); D0/D1 position.</summary>
-        public static SimEvent Spawn(double t, int enemy, int role, double x, double y, bool recycled = false)
+        /// <summary>
+        /// An enemy spawns: I0 enemy, I1 role, I2 flags: 1 a recycled enemy re-entering (its old place
+        /// is left at once), 2 a scheduled boss; D0/D1 position.
+        /// </summary>
+        public static SimEvent Spawn(double t, int enemy, int role, double x, double y, bool recycled = false, bool boss = false)
         {
             var e = Of(SimEventKind.Spawn, t);
             e.I0 = enemy;
             e.I1 = role;
-            e.I2 = recycled ? 1 : 0;
+            e.I2 = (recycled ? 1 : 0) | (boss ? 2 : 0);
             e.D0 = x;
             e.D1 = y;
             return e;
@@ -324,6 +327,14 @@ namespace PS.Game.Sim
             e.D0 = x;
             e.D1 = y;
             e.D2 = value;
+            return e;
+        }
+
+        /// <summary>A dying boss drops its chest: a <see cref="SimEventKind.Drop"/> of <see cref="ItemKind.Chest"/>, D2 its tier (1-3), D3 the schedule minute whose treasure it holds.</summary>
+        public static SimEvent Chest(double t, int item, double x, double y, int tier, int minute)
+        {
+            var e = Drop(t, item, ItemKind.Chest, x, y, tier);
+            e.D3 = minute;
             return e;
         }
 

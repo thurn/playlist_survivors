@@ -8,6 +8,10 @@ namespace PS.Game.Sim
     {
         /// <summary>A contact lunge: a notice pose, contact on the main beat, a return.</summary>
         Lunge = 0,
+        /// <summary>A boss's charge: a telegraph pose in place, then a long step on its main beat at where the hero stood (<see cref="BossMoves"/>).</summary>
+        Charge = 1,
+        /// <summary>A boss's slam: a telegraph pose in place, then a blow around it on its main beat that breaks structures.</summary>
+        Slam = 2,
     }
 
     /// <summary>
@@ -26,6 +30,8 @@ namespace PS.Game.Sim
         public double X { get; internal set; }
         public double Y { get; internal set; }
         public double Health { get; internal set; }
+        /// <summary>A scheduled boss (a minute's <c>bosses</c>): level-scaled, it may drop a chest, and the sword's aim favours it.</summary>
+        public bool Boss { get; internal set; }
         public EnemyMotion Motion { get; internal set; }
         public double FromX { get; internal set; }
         public double FromY { get; internal set; }

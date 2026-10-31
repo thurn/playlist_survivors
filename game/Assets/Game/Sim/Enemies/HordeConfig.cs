@@ -4,8 +4,8 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// What the enemies need besides the stream and the arena (unity-game.md, Enemies): the
-    /// content, the camera's ground footprint and, for the slice, a test schedule of a few roles.
-    /// M3 replaces the schedule with the content's full one.
+    /// content, the camera's ground footprint, and either the run's schedule (schedule.json's
+    /// minutes, <see cref="Schedule"/>) or a test roster of a few roles (the slice's, and tests').
     /// </summary>
     public sealed class HordeConfig
     {
@@ -18,9 +18,15 @@ namespace PS.Game.Sim
         /// </summary>
         public double[] CameraFootprint = { -17, -11, 17, -11, 17, 11, -17, 11 };
 
+        /// <summary>Play schedule.json's minutes, bosses and boss moves; the roster, interval and minimum below are then unused.</summary>
+        public bool Schedule;
+
         /// <summary>The slice's roster: every <see cref="SpawnIntervalS"/> of run clock one of each spawns, and whole rosters while fewer than <see cref="Minimum"/> are alive.</summary>
         public string[] Roster = { "bat1", "zombie", "skeleton", "mudman1" };
         public double SpawnIntervalS = 1;
         public int Minimum = 120;
+
+        /// <summary>Roles placed in a row in front of the hero at the start (the cast's stills); schedule.json's boss-move roles come as bosses.</summary>
+        public string[] Lineup = new string[0];
     }
 }

@@ -31,6 +31,8 @@ namespace PS.Game.Sim
         Gem = 0,
         /// <summary>Easy's floor chicken: the hero heals on touching it (<see cref="FloorChickens"/>).</summary>
         Chicken = 1,
+        /// <summary>A scheduled boss's chest, its value the schedule minute whose treasure it holds (the chests' to open).</summary>
+        Chest = 2,
     }
 
     /// <summary>
@@ -94,7 +96,6 @@ namespace PS.Game.Sim
         readonly Structures structures;
         readonly Zones zones;
         readonly EnemyRole[] roles;
-        readonly double[] aimWeight;
         readonly WeaponDef weapon;
         readonly int weaponIndex;
         readonly double windup;
@@ -135,10 +136,6 @@ namespace PS.Game.Sim
             rank = config.Rank;
             stats = config.Stats ?? config.Content.Progression.Hero.Stats;
             roles = config.Content.Roles;
-            aimWeight = new double[roles.Length];
-            for (int i = 0; i < roles.Length; i++)
-                aimWeight[i] = roles[i].Id.StartsWith("boss-", StringComparison.Ordinal) || roles[i].Id == "minotaur" ? BossWeight
-                    : roles[i].Brute ? BruteWeight : 1;
             int cap = state.EnemyStore.Length;
             reached = new int[cap];
             aimAngle = new double[cap];
@@ -330,6 +327,8 @@ namespace PS.Game.Sim
         /// </summary>
         bool Slams(int beat, double impact) => clock.IsDownbeat(beat) && zones != null && zones.Slams(impact);
 
+        double AimWeight(in EnemyState e) => e.Boss ? BossWeight : roles[e.Role].Brute ? BruteWeight : 1;
+
         /// <summary>
         /// The swing's direction (native's aim.rs): of 16 directions, the one whose arc holds the
         /// most weight of enemies in reach, weighted toward bosses and brutes, the one nearest the
@@ -367,7 +366,7 @@ namespace PS.Game.Sim
                 double score = 0;
                 for (int k = 0; k < n; k++)
                     if (aimDist[k] <= reach && Math.Abs(Wrap(aimAngle[k] - dir)) <= AimHalfAngle + 1e-12)
-                        score += aimWeight[enemies[reached[k]].Role];
+                        score += AimWeight(enemies[reached[k]]);
                 if (score <= 0) continue;
                 double off = Math.Abs(Wrap(dir - toNearest));
                 if (score > bestScore + 1e-9 || (Math.Abs(score - bestScore) <= 1e-9 && off < bestOff - 1e-9))

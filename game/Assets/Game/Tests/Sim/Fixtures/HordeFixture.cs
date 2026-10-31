@@ -32,11 +32,11 @@ namespace PS.Game.Sim.Tests
         public static Simulation Empty(ArenaData arena = null, int sword = 0, bool heroStands = false) =>
             new Simulation(Config(minimum: 0, arena: arena, roster: new string[0], sword: sword, heroStands: heroStands));
 
-        /// <summary>Places an enemy of role <paramref name="role"/> at (x, y) now.</summary>
-        public static int Place(Simulation sim, string role, double x, double y)
+        /// <summary>Places an enemy of role <paramref name="role"/> at (x, y) now, a scheduled boss when <paramref name="boss"/>.</summary>
+        public static int Place(Simulation sim, string role, double x, double y, bool boss = false)
         {
             int before = sim.EventCount;
-            sim.Horde.Spawn(sim, sim.Now, Content.RoleIndex(role), x, y);
+            sim.Horde.Spawn(sim, sim.Now, Content.RoleIndex(role), x, y, boss);
             return sim.EventsSince(before)[0].AsSpawn.Enemy;
         }
 

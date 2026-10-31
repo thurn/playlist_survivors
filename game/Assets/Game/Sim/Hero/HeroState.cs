@@ -31,6 +31,8 @@ namespace PS.Game.Sim
         public double MaxHealth { get; internal set; }
         /// <summary>The hero fell ("YOU FELL"): it no longer moves, strikes or takes hits.</summary>
         public bool Fallen { get; internal set; }
+        /// <summary>The hero's level, from 1: it scales level-scaled and boss enemies' health at their spawn.</summary>
+        public int Level { get; internal set; } = 1;
 
         /// <summary>Where the hero is at song time <paramref name="t"/>: on its tile, or striding to it.</summary>
         internal void PositionAt(double t, out double x, out double y)

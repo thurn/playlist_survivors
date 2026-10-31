@@ -180,7 +180,9 @@ namespace PS.Game.Sim
         public int Enemy => e.I0;
         public int Role => e.I1;
         /// <summary>A recycled enemy re-entering on the spawn ring: it leaves its old place at once.</summary>
-        public bool Recycled => e.I2 != 0;
+        public bool Recycled => (e.I2 & 1) != 0;
+        /// <summary>A scheduled boss (<see cref="EnemyState.Boss"/>).</summary>
+        public bool Boss => (e.I2 & 2) != 0;
         public double X => e.D0;
         public double Y => e.D1;
     }
@@ -321,6 +323,9 @@ namespace PS.Game.Sim
         public ItemKind ItemKind => (ItemKind)e.I1;
         public double X => e.D0;
         public double Y => e.D1;
+        /// <summary>A gem's experience, a chicken's health, a chest's tier.</summary>
         public double Value => e.D2;
+        /// <summary>A chest's schedule minute, whose treasure (chances, evolving) it holds.</summary>
+        public int Minute => ItemKind == ItemKind.Chest ? (int)e.D3 : -1;
     }
 }
