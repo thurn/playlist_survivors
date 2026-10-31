@@ -25,6 +25,12 @@ namespace PS.Game.Sim
     public struct EnemyState
     {
         public bool Alive { get; internal set; }
+        /// <summary>
+        /// Which enemy holds the slot: the spawn's number in the run, from 1, never reused. A weapon
+        /// that remembers an enemy past the tick it hit or aimed at it keeps its life too, since the
+        /// slot of one that died may go to the next spawn within the same tick.
+        /// </summary>
+        public int Life { get; internal set; }
         /// <summary>Its role's index in the content's roles.</summary>
         public int Role { get; internal set; }
         public double X { get; internal set; }

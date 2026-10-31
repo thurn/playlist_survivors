@@ -1300,7 +1300,9 @@ the sword's today:
 
 - `Horde.InReach(t, x, y, reach, into)` lists the live enemies whose
   bodies touch a circle at t, in slot order. `Horde.Damage` applies a hit:
-  the hit event, then the death and gem drop or the knock, all at t. It
+  the hit event, then the death and gem drop or the knock, all at t. The hit
+  and the death's launch go along the blow; the knock goes away from the hero,
+  as native's survivor recoil does for every weapon (ps-msz.6.18). It
   adds the whole amount to the weapon's tally, `SimState.WeaponDamage`,
   indexed by content's weapon order, for the end card.
 - The hero's attacks and hits name their weapon by content index, and
@@ -1348,8 +1350,10 @@ with `SimConfig.Content` now the one content field for the horde and the arsenal
 - **Garlic** (and Soul Eater, any aura): each shot is a new incarnation, an attack event with
   shape Aura whose reach is the aura's radius (0.32 VS units, 1.83 m, times Area). Then, at once
   and at each tick's end until the next shot, every live enemy touching the circle around the hero
-  takes power times Might, once an incarnation, as native's GarlicAura. It rests while frozen, fallen
-  or not playing.
+  takes power times Might, once an incarnation, as native's GarlicAura. An incarnation keeps its
+  shot's radius and power. Each of its hits on a survivor adds native's knockback debuff: 0.3 more
+  knockback from every later blow while below the role's maximum (`Horde.Weaken`). It rests while
+  frozen, fallen or not playing.
 - **Fire Trail**: on the grid the wake is the tiles the hero stood on. Each shot is a pulse: an
   attack event with shape Trail, then each tile the hero stood on during the last duration times
   Duration of run clock, skipping its latest 0.12 s, newest first, burns. A burn is a
@@ -1393,7 +1397,9 @@ chests'). Native's numbers throughout; its flight model is adapted:
   on a quarter turn on beats, within 15%) from the latest committed beat's period. Each tick every
   blade's swept path hits the enemies it touches, once until its memory clears every hit delay
   (1.7 s). Unholy Vespers' permanent ring is the chests'.
-- A freeze or the hero's fall ends bolts in flight and cuts rings short.
+- A freeze or the hero's fall ends bolts in flight and cuts rings short. A burst's bolts still to
+  leave are spaced on the run clock, so a freeze holds them and they follow the resume as far
+  apart, as native's held events do.
 - **Events**: `Projectile` (a leg: from, aim, arrival, the target; phases Launch, Turn and End)
   and `Orbit` (a ring: born, end, angular speed, radius, blade size; again with its new end when
   cut short). Each shot is still an attack event naming the weapon.
@@ -1416,7 +1422,7 @@ and to, the radius it hits) followed by its hits (`WeaponHit.Bolt`); each shot i
   (native's `amount(stats)`), the first on the shot's grid point, each next on the sixteenth after
   (`BeatClock.SixteenthAfter`, a quarter of the free period with no beat). Each lands on a live
   enemy in view drawn at random by the sim's generator, hitting every body touching
-  `0.4571 m x rank area x Area` with `rank power x Might`, knocked out from its centre. Native's
+  `0.4571 m x rank area x Area` with `rank power x Might`, struck out from its centre. Native's
   view is its camera's; the game's zooms with the music, so in view is the ground every zoom
   shows: `LightningRing.ViewShare` (0.6) of the way to `HordeConfig.CameraFootprint`, the loud
   view grown by the focus's slack. With nobody in view a strike lands nowhere.
@@ -1431,6 +1437,24 @@ and to, the radius it hits) followed by its hits (`WeaponHit.Bolt`); each shot i
   frozen or the hero has fallen; what a freeze held goes on from the beat play resumes on.
 - The player's `--no-cards` counts levels without opening their cards, so `--arsenal` stays as
   given in weapon stills ([evidence](../../game/evidence/weapons/README.md)).
+
+**Reviewed (ps-msz.6.18).** The six weapons against native's rules, and what changed:
+
+- **Enemies by life.** A slot freed by a death goes to the next spawn, often within the same
+  tick (the free list is last in, first out). `EnemyState.Life` numbers each spawn, never
+  reused, and every weapon that remembers an enemy past the tick keeps its life: a wand bolt's
+  target and hit memory, the bible's blades, Garlic's incarnation and a chain's hits. Before,
+  a bolt whose enemy died could hit the newcomer in its slot wherever it stood.
+- **Knockback away from the hero** for every blow (`Horde.Damage`); the hit and the death's
+  launch keep the blow's own way (a blade's sweep, a bolt's flight, a strike's centre, a jump).
+- **Shots keep their numbers.** A lightning volley's strikes and returns, and a chain's jumps,
+  keep the power, radius and ranges of their shot through a level-up, as native's pending strikes
+  and chain state do; so does Garlic's incarnation.
+- **The run's end.** No weapon shoots, hits or burns once the run isn't playing (`Weapon.Rests`,
+  native's `weapons_active`), the finale's wait for its blast included.
+- Left as is: the wand's bolts reach enemies past the view (native's die 96 px outside it); a
+  chain's spacing with no beat is the lightning's anchored sixteenth, not native's plain quarter
+  free period; shape `jumpBeats` is loaded but unread.
 
 ### Enemies
 

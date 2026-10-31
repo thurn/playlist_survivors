@@ -9,8 +9,9 @@ namespace PS.Game.Sim
     /// arsenal.
     ///
     /// - <b>A shot</b> is a burst of <c>max(1, floor(rank amount + Amount))</c> bolts: the first on
-    ///   the shot's grid point, each next one <c>rank repeat / (rank speed * Speed)</c> after the last,
-    ///   as native's Weapon.PSpeedRepeatInterval spaces them.
+    ///   the shot's grid point, each next one <c>rank repeat / (rank speed * Speed)</c> after the last
+    ///   on the run clock, as native's Weapon.PSpeedRepeatInterval spaces them; a freeze holds the
+    ///   rest of a burst, and they follow the resume as far apart (native's held events).
     /// - <b>A bolt</b> leaves the hero for the nearest live enemy, flying at
     ///   <c>shape speed * rank speed * Speed</c> metres a second, and arrives on the first sixteenth
     ///   at or after its straight flight would (at that flight with no beat known that far ahead). It
@@ -19,7 +20,8 @@ namespace PS.Game.Sim
     ///   knockback. A hit that doesn't kill uses a point of pierce; with pierce left, or after a kill
     ///   (which uses none, as native's), the bolt flies on from there to the nearest enemy it hasn't
     ///   hit within the rank's hit delay. A bolt whose enemy dies before it arrives turns, at the end
-    ///   of that tick, for the nearest other.
+    ///   of that tick, for the nearest other. Bolts know their enemies by life
+    ///   (<see cref="EnemyState.Life"/>), so a spawn into a dead enemy's slot is never the one aimed at.
     /// - <b>It ends</b> with no enemy left to fly at, past <see cref="MaxTravelM"/> of flight or
     ///   <see cref="MaxFlightS"/> of song time, when the world freezes or the hero falls. With no enemy
     ///   at launch it flies <see cref="AimlessS"/> along the hero's facing and fades.
@@ -41,26 +43,30 @@ namespace PS.Game.Sim
         struct Bolt
         {
             public bool Active;
-            public int Id, Target, Left;
+            public int Id, Target, TargetLife, Left;
             public double FromX, FromY, ToX, ToY, Start, Arrive, Born, Travel;
             public int Remembered;
         }
 
         readonly SimState state;
+        readonly RunRules run;
         readonly BeatClock clock;
         readonly Horde horde;
         readonly EnemyRole[] roles;
         readonly Bolt[] bolts = new Bolt[BoltCapacity];
+        // Each bolt's memory: the lives of the enemies it hit, and until when it passes them by.
         readonly int[] hitEnemy = new int[BoltCapacity * MemoryCapacity];
         readonly double[] hitUntil = new double[BoltCapacity * MemoryCapacity];
+        // The bursts' next bolts, on the run clock.
         readonly double[] burst = new double[BurstCapacity];
         int bursts, nextId;
 
-        public MagicWand(Arsenal arsenal, SimState state, WeaponDef def, int index, GameContent content, BeatClock clock, Horde horde)
+        public MagicWand(Arsenal arsenal, SimState state, RunRules run, WeaponDef def, int index, GameContent content, BeatClock clock, Horde horde)
             : base(arsenal, state, def, index)
         {
             if (def.Shape.Kind != ShapeKind.Missile) throw new ArgumentException(def.Id + " is not a missile weapon");
             this.state = state;
+            this.run = run;
             this.clock = clock;
             this.horde = horde;
             roles = content.Roles;
@@ -71,7 +77,7 @@ namespace PS.Game.Sim
 
         public double SpeedMps => Def.Shape.SpeedMps * Numbers.Speed * Stats.Speed;
 
-        /// <summary>The song time between a burst's bolts.</summary>
+        /// <summary>The run clock between a burst's bolts.</summary>
         public double Repeat => Numbers.RepeatS / Math.Max(1e-3, Numbers.Speed * Stats.Speed);
 
         internal override void Shoot(Simulation sim, double t)
@@ -87,13 +93,14 @@ namespace PS.Game.Sim
             else Sword.Facing(state.Hero.Facing, out dx, out dy);
             sim.Emit(SimEvent.HeroAttack(t, Index, Def.Shape.Kind, 0, t, t, dx, dy, false, Radius));
             Launch(sim, t, hx, hy, target);
-            for (int k = 1; k < Bolts && bursts < BurstCapacity; k++) burst[bursts++] = t + k * Repeat;
+            double now = run.ClockAt(t);
+            for (int k = 1; k < Bolts && bursts < BurstCapacity; k++) burst[bursts++] = now + k * Repeat;
         }
 
         internal override double NextTime(double floor)
         {
             double t = double.PositiveInfinity;
-            for (int k = 0; k < bursts; k++) t = Math.Min(t, burst[k]);
+            for (int k = 0; k < bursts; k++) t = Math.Min(t, run.SongAt(burst[k]));
             for (int b = 0; b < BoltCapacity; b++)
                 if (bolts[b].Active) t = Math.Min(t, bolts[b].Arrive);
             return Math.Max(t, floor);
@@ -114,8 +121,6 @@ namespace PS.Game.Sim
             for (int k = 1; k < bursts; k++)
                 if (burst[k] < burst[first]) first = k;
             burst[first] = burst[--bursts];
-            // A burst's later bolts wait for nothing: none while the world is frozen or the hero has fallen (native's).
-            if (Holding) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
             Launch(sim, t, hx, hy, Nearest(t, hx, hy, -1));
         }
@@ -123,7 +128,6 @@ namespace PS.Game.Sim
         /// <summary>The per-tick system, at the tick's end: bolts end in a freeze or a fall, and turn from enemies that died.</summary>
         internal override void Tick(Simulation sim, double end)
         {
-            if (Holding) bursts = 0;
             for (int b = 0; b < BoltCapacity; b++)
             {
                 ref var bolt = ref bolts[b];
@@ -134,7 +138,7 @@ namespace PS.Game.Sim
                     Finish(sim, b, end, x, y);
                     continue;
                 }
-                if (bolt.Target < 0 || state.EnemyStore[bolt.Target].Alive) continue;
+                if (bolt.Target < 0 || Holds(bolt)) continue;
                 At(bolt, end, out double fx, out double fy);
                 Retarget(sim, b, end, fx, fy);
             }
@@ -176,6 +180,7 @@ namespace PS.Game.Sim
             if (double.IsNaN(arrive)) arrive = raw;
             e.PositionAt(arrive, out double ax, out double ay);
             bolt.Target = target;
+            bolt.TargetLife = e.Life;
             bolt.FromX = x;
             bolt.FromY = y;
             bolt.ToX = ax;
@@ -196,14 +201,14 @@ namespace PS.Game.Sim
             }
             int i = bolt.Target;
             ref var e = ref state.EnemyStore[i];
-            if (e.Alive)
+            if (Holds(bolt))
             {
                 e.PositionAt(t, out x, out y);
                 Normalize(x - bolt.FromX, y - bolt.FromY, out double dx, out double dy);
                 horde.Damage(sim, i, t, Power, Index, WeaponHit.Strike, dx, dy, Numbers.Knockback, Launch(1));
                 if (e.Alive)
                 {
-                    Remember(b, i, t);
+                    Remember(b, e.Life, t);
                     if (--bolt.Left == 0)
                     {
                         Finish(sim, b, t, x, y);
@@ -248,6 +253,13 @@ namespace PS.Game.Sim
                 bolt.Arrive, Radius));
         }
 
+        /// <summary>Is the bolt's enemy alive, and still the one it aimed at?</summary>
+        bool Holds(in Bolt bolt)
+        {
+            ref var e = ref state.EnemyStore[bolt.Target];
+            return e.Alive && e.Life == bolt.TargetLife;
+        }
+
         /// <summary>Where a bolt is at <paramref name="t"/> on its leg.</summary>
         static void At(in Bolt bolt, double t, out double x, out double y)
         {
@@ -266,7 +278,7 @@ namespace PS.Game.Sim
             double bestD = double.PositiveInfinity;
             for (int i = 0; i < enemies.Length; i++)
             {
-                if (!enemies[i].Alive || (b >= 0 && Remembers(b, i, t))) continue;
+                if (!enemies[i].Alive || (b >= 0 && Remembers(b, enemies[i].Life, t))) continue;
                 enemies[i].PositionAt(t, out double ex, out double ey);
                 double d = (ex - x) * (ex - x) + (ey - y) * (ey - y);
                 if (d < bestD)
@@ -278,7 +290,7 @@ namespace PS.Game.Sim
             return best;
         }
 
-        /// <summary>Bolt <paramref name="b"/> hit <paramref name="enemy"/> at <paramref name="t"/>: it passes it by for the rank's hit delay.</summary>
+        /// <summary>Bolt <paramref name="b"/> hit the enemy of life <paramref name="enemy"/> at <paramref name="t"/>: it passes it by for the rank's hit delay.</summary>
         void Remember(int b, int enemy, double t)
         {
             ref var bolt = ref bolts[b];

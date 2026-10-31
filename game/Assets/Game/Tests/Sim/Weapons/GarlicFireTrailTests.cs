@@ -112,6 +112,69 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(0, Hits(sim, "garlic", i).Count);
         }
 
+        [Test]
+        public void EachAuraHitAddsNativesKnockbackDebuffUpToTheRolesMaximum()
+        {
+            // A skeleton (knockback 1, max 3) in the aura: every pulse adds 0.3 while it is below 3,
+            // so a later blow throws it farther.
+            var sim = Armed("garlic", 1);
+            var hero = sim.State.Hero;
+            int i = Dummy(sim, hero.X + 1, hero.Y);
+            sim.StepTo(0.1);
+            Assert.AreEqual(1 + Horde.GarlicKnockback, sim.Horde.KnockbackOf(i), Eps, "one pulse");
+            sim.StepTo(20);
+            Assert.AreEqual(1 + 7 * Horde.GarlicKnockback, sim.Horde.KnockbackOf(i), Eps, "the last step overshoots 3, then no more");
+            var start = sim.State.Enemies[i];
+            int cursor = sim.EventCount;
+            sim.Horde.Knock(sim, i, sim.Now, 1, 0, 1);
+            var knock = sim.EventsSince(cursor)[0].AsEnemyKnock;
+            Assert.AreEqual(3 * Horde.KnockbackM, knock.ToX - knock.FromX, 1e-9, "capped at the role's maximum");
+            int fresh = Dummy(sim, hero.X + 30, hero.Y);
+            Assert.AreEqual(1, sim.Horde.KnockbackOf(fresh), Eps, "a newcomer starts at its role's");
+        }
+
+        [Test]
+        public void TheAuraHitsANewcomerInTheSlotOfOneItJustKilled()
+        {
+            // A spawn inside the aura (a boss on the hero, a set piece) into the slot freed by its own kill.
+            var sim = Armed("garlic", 1);
+            var hero = sim.State.Hero;
+            int weak = HordeFixture.Place(sim, "bat-swarm", hero.X + 1, hero.Y);
+            sim.StepTo(0.1);
+            Assert.IsFalse(sim.State.Enemies[weak].Alive, "killed by the first pulse");
+            int newcomer = Dummy(sim, hero.X - 1, hero.Y);
+            Assert.AreEqual(weak, newcomer, "the slot freed last goes to the next spawn");
+            sim.StepTo(0.2);
+            Assert.AreEqual(1, Hits(sim, "garlic", newcomer).Count(h => h.T > 0.1), "the same incarnation hits it at the next tick's end");
+        }
+
+        [Test]
+        public void TheWeaponsRestOnceTheRunClockEnds()
+        {
+            // Native's weapons_active: nothing shoots, hits or burns in the finale's wait for its blast.
+            var config = HordeFixture.Config(minimum: 0, roster: new string[0]);
+            config.Arsenal = new ArsenalConfig
+            {
+                Weapons = new[] { ("garlic", 1), ("fire-trail", 1), ("lightning-ring", 1), ("magic-wand", 1) }, Cards = false,
+            };
+            var sim = new Simulation(config);
+            var hero = sim.State.Hero;
+            Dummy(sim, hero.X + 1, hero.Y);
+            Dummy(sim, hero.X + 4, hero.Y + 2);
+            sim.StepTo(5);
+            var before = sim.EventsSince(0).ToArray().Select(e => e.Kind).ToList();
+            foreach (var kind in new[] { SimEventKind.Attack, SimEventKind.Hit, SimEventKind.Burn, SimEventKind.Bolt })
+                CollectionAssert.Contains(before, kind, "they work while the run plays");
+            sim.State.Phase = RunPhase.Finale;
+            int cursor = sim.EventCount;
+            sim.StepTo(15);
+            var after = sim.EventsSince(cursor).ToArray().Select(e => e.Kind).ToList();
+            CollectionAssert.DoesNotContain(after, SimEventKind.Attack);
+            CollectionAssert.DoesNotContain(after, SimEventKind.Hit);
+            CollectionAssert.DoesNotContain(after, SimEventKind.Burn);
+            CollectionAssert.DoesNotContain(after, SimEventKind.Bolt);
+        }
+
         // ---------------------------------------------------------------- Fire Trail
 
         /// <summary>The hero's tile centres in the order it entered them, with the song time it set off for each (the first at the run's start, 0).</summary>
@@ -227,6 +290,34 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(12.7);
             var after = Drive.Events(sim, SimEventKind.Burn).Select(e => e.AsBurn).Where(b => b.T > 12).ToList();
             Assert.IsTrue(after.Any(b => b.X != hero.X), "the tiles left just before the freeze still burn after it");
+        }
+        [Test]
+        public void AWakeThatCrossesItselfBurnsEachTileAndEachEnemyOnceAPulse()
+        {
+            // Right for three tiles and back: the tiles crossed twice burn once a pulse, and an enemy
+            // between two tiles, inside both circles, burns once a pulse.
+            var sim = Armed("fire-trail", 1);
+            var hero = sim.State.Hero;
+            double tile = sim.Arena.TileM, x0 = hero.X, y0 = hero.Y;
+            int between = Dummy(sim, x0 + 1.5 * tile, y0);
+            sim.Press(Key.Right, 0);
+            sim.StepTo(1.4);
+            sim.Release(Key.Right, sim.Now);
+            sim.Press(Key.Left, sim.Now);
+            sim.StepTo(2.8);
+            sim.Release(Key.Left, sim.Now);
+            sim.StepTo(4);
+            var path = Path(sim, x0, y0);
+            Assert.IsTrue(path.Any(p => p.x < path.Max(q => q.x) && path.FindIndex(q => q.x == p.x) < path.FindLastIndex(q => q.x == p.x)),
+                "the hero walks back over its tiles");
+            var burns = Drive.Events(sim, SimEventKind.Burn).Select(e => e.AsBurn).ToList();
+            foreach (var pulse in burns.GroupBy(b => b.T))
+                Assert.AreEqual(pulse.Count(), pulse.Select(b => (b.X, b.Y)).Distinct().Count(), $"each tile once at {pulse.Key}");
+            Assert.IsTrue(burns.GroupBy(b => b.T).Any(g => g.Count(b => Math.Abs(b.Y - y0) < Eps && Math.Abs(b.X - (x0 + 1.5 * tile)) < 0.5 * tile + Eps) == 2),
+                "a pulse burns both tiles around the enemy");
+            var hits = Hits(sim, "fire-trail", between);
+            Assert.IsNotEmpty(hits);
+            Assert.AreEqual(hits.Count, hits.Select(h => h.T).Distinct().Count(), "once a pulse");
         }
     }
 }

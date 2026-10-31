@@ -89,7 +89,7 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
   travel only on main beats.
 - Dropped role fields: sprite atlas, hover, walk cycle, hop, death recipe and debris (native's 2D
   presentation, replaced by the cast); `group`, `size`, `behavior` and `contactDamage` (classic
-  mode, or the same as `power`); `resDebuffs` (always 0, and nothing debuffs); the gait's `share`
+  mode, or the same as `power`); `resDebuffs` (always 0, so Garlic's knockback debuff takes on every role); the gait's `share`
   (the doc's step rule replaces it).
 - Radii are native's, unscaled by the model's size, as native's collisions were.
 

@@ -198,7 +198,7 @@ namespace PS.Game.Sim
             state.PickupRadius = content.Progression.Gems.PickupRadiusM * s.Magnet;
         }
 
-        bool Holding => state.Frozen || state.Hero.Fallen;
+        bool Holding => Weapon.Rests(state);
 
         /// <summary>The next of the arsenal's exact times at or after <paramref name="floor"/>.</summary>
         internal double NextTime(double floor)

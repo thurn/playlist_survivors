@@ -63,6 +63,10 @@ namespace PS.Game.Sim
         readonly EnemyState[] enemies;
         // A boss's chest, by slot: its tier (0: none) and the minute whose treasure it holds.
         readonly int[] chestTier, chestMinute;
+        // Each slot's knockback: its role's, raised by Garlic's hits (native's foe knockback).
+        readonly double[] knockback;
+        // The spawns so far: each enemy's life (EnemyState.Life).
+        int lives;
         readonly Spawner spawner;
         readonly BossMoves bosses;
         readonly int[] free;
@@ -112,6 +116,7 @@ namespace PS.Game.Sim
             hashNext = new int[cap];
             chestTier = new int[cap];
             chestMinute = new int[cap];
+            knockback = new double[cap];
 
             Nav = new NavGrid(arena);
             hashW = (int)Math.Ceiling(Nav.W * Nav.CellM / HashCellM) + 1;
@@ -441,7 +446,7 @@ namespace PS.Game.Sim
 
         /// <summary>
         /// Knocks enemy <paramref name="i"/> back along (dirX, dirY) at song time
-        /// <paramref name="t"/>, at once: its role's knockback times <paramref name="power"/>
+        /// <paramref name="t"/>, at once: its knockback (its role's, plus Garlic's debuff) times <paramref name="power"/>
         /// (the weapon's), capped by the role's maximum, in units of <see cref="KnockbackM"/>,
         /// stopped short of blocked cells. It cancels a step in progress, and the enemy decides no
         /// step until the knock ends; pursuit resumes on a later main beat.
@@ -450,7 +455,7 @@ namespace PS.Game.Sim
         {
             ref var e = ref enemies[i];
             var role = roles[e.Role];
-            double units = Math.Min(role.Knockback * power, role.MaxKnockback);
+            double units = Math.Min(knockback[i] * power, role.MaxKnockback);
             double l = Math.Sqrt(dirX * dirX + dirY * dirY);
             if (!e.Alive || units <= 0 || l < 1e-9) return;
             e.PositionAt(t, out double x, out double y);
@@ -498,9 +503,10 @@ namespace PS.Game.Sim
         /// The one way the hero's weapons hurt an enemy: enemy <paramref name="i"/> takes
         /// <paramref name="amount"/> from <paramref name="weapon"/> (content's index) at
         /// <paramref name="t"/>, struck along (dirX, dirY). The hit event comes first, then the enemy
-        /// dies (<see cref="Kill"/>, thrown <paramref name="launch"/> metres) or is knocked back by
-        /// <paramref name="knockback"/> (<see cref="Knock"/>). The weapon's tally
-        /// (<see cref="SimState.WeaponDamage"/>) adds the whole amount.
+        /// dies (<see cref="Kill"/>, thrown along the blow <paramref name="launch"/> metres) or is
+        /// knocked back by <paramref name="knockback"/> away from the hero (<see cref="Knock"/>;
+        /// native's survivor recoil, whatever the blow's direction; along the blow when on the hero).
+        /// The weapon's tally (<see cref="SimState.WeaponDamage"/>) adds the whole amount.
         /// </summary>
         internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
             double dirX, double dirY, double knockback, double launch)
@@ -511,9 +517,36 @@ namespace PS.Game.Sim
             e.Health -= amount;
             state.WeaponDamageStore[weapon] += amount;
             sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY));
-            if (e.Health <= 1e-9) Kill(sim, i, t, dirX, dirY, launch);
-            else Knock(sim, i, t, dirX, dirY, knockback);
+            if (e.Health <= 1e-9)
+            {
+                Kill(sim, i, t, dirX, dirY, launch);
+                return;
+            }
+            HeroAt(t, out double hx, out double hy);
+            double ax = x - hx, ay = y - hy;
+            if (ax * ax + ay * ay < 1e-18)
+            {
+                ax = dirX;
+                ay = dirY;
+            }
+            Knock(sim, i, t, ax, ay, knockback);
         }
+
+        /// <summary>
+        /// Garlic's debuff (native's): enemy <paramref name="i"/>, hit by the aura and alive, takes
+        /// 0.3 more knockback from every later blow while below its role's maximum (the last step may
+        /// overshoot it, as native's).
+        /// </summary>
+        internal void Weaken(int i)
+        {
+            if (enemies[i].Alive && knockback[i] < roles[enemies[i].Role].MaxKnockback) knockback[i] += GarlicKnockback;
+        }
+
+        /// <summary>The knockback each of Garlic's hits adds (native's).</summary>
+        public const double GarlicKnockback = 0.3;
+
+        /// <summary>Enemy <paramref name="i"/>'s knockback: its role's, plus Garlic's debuff.</summary>
+        internal double KnockbackOf(int i) => knockback[i];
 
         /// <summary>
         /// Enemy <paramref name="i"/> dies at <paramref name="t"/>, struck along (dirX, dirY): it
@@ -709,6 +742,7 @@ namespace PS.Game.Sim
             enemies[i] = new EnemyState
             {
                 Alive = true,
+                Life = ++lives,
                 Role = role,
                 X = x,
                 Y = y,
@@ -719,6 +753,7 @@ namespace PS.Game.Sim
             };
             chestTier[i] = tier;
             chestMinute[i] = minute;
+            knockback[i] = roles[role].Knockback;
             bosses.Spawned(i, role, boss, beat);
             Scripts.Clear(i);
             state.EnemiesAlive++;

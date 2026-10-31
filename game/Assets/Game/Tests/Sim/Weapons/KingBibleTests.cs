@@ -97,7 +97,7 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void ABladeHitsWhatItSweepsPastOnTheTickItTouchesKnockingItAlong()
+        public void ABladeHitsWhatItSweepsPastOnTheTickItTouchesKnockingItOut()
         {
             // One blade at 2.19 rad/s from angle 0: an enemy at a quarter turn is hit at ~0.72 s, and on the next lap.
             var sim = Start(1);
@@ -116,7 +116,11 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(contact, first.T, Simulation.TickSeconds + 1e-9, "on the tick its sweep touches the body");
             Assert.AreEqual(1, hits.Count(h => h.Target == quarter), "once a lap: the ring ends before the next");
             double a = omega * first.T;
-            Assert.AreEqual((-Math.Sin(a), Math.Cos(a)), (first.DirX, first.DirY), "knocked along the blade's way (counterclockwise)");
+            Assert.AreEqual((-Math.Sin(a), Math.Cos(a)), (first.DirX, first.DirY), "struck along the blade's way (counterclockwise)");
+            var knock = Drive.Events(sim, SimEventKind.EnemyKnock).Select(e => e.AsEnemyKnock).First(k => k.Enemy == quarter);
+            Assert.AreEqual(first.T, knock.Start, 1e-12);
+            Assert.Greater(knock.ToY, knock.FromY, "knocked out of the ring, away from the hero (native's recoil)");
+            Assert.AreEqual(knock.FromX, knock.ToX, 1e-9);
         }
 
         [Test]

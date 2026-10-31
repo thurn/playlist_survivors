@@ -51,8 +51,13 @@ namespace PS.Game.Sim
         /// <summary>A death launch's distance in metres: native's knockback distance times the weapon's, longer for a heavier hit.</summary>
         protected double Launch(double weight) => Horde.KnockbackM * Numbers.Knockback * weight;
 
-        /// <summary>Nothing fires while the world is frozen or the hero has fallen.</summary>
-        protected bool Holding => state.Frozen || state.Hero.Fallen;
+        /// <summary>
+        /// Nothing fires while the world is frozen, the hero has fallen or the run isn't playing (native's
+        /// <c>weapons_active</c>: from the run clock's end, through the finale's wait for its blast).
+        /// </summary>
+        protected bool Holding => Rests(state);
+
+        internal static bool Rests(SimState state) => state.Frozen || state.Hero.Fallen || state.Phase != RunPhase.Playing;
 
         /// <summary>Its rank's amount plus the hero's, at least 1 (native's <c>amount(stats)</c>): strikes, jumps or projectiles a shot.</summary>
         public int Amount => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));

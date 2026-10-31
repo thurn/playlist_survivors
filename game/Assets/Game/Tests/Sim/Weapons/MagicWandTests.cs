@@ -157,17 +157,66 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void AFreezeEndsTheBoltsInFlightAndHoldsTheBurst()
+        public void AFreezeEndsTheBoltsInFlightAndTheRestOfTheBurstFollowsTheResume()
         {
+            // Rank 4: three bolts 0.1 s apart. A pause just after the first ends it in flight; the
+            // other two wait, and follow the resume as far apart on the run clock (native's held events).
             var sim = Start(4);
             Place(sim, "xlbat", 12, 0);
             sim.StepTo(0.05);
+            double first = Legs(sim).Single().T;
             sim.Control(RunControl.Pause);
             sim.StepTo(3);
             var legs = Legs(sim);
-            Assert.AreEqual(1, legs.Count(p => p.Phase == ProjectilePhase.Launch), "the burst's later bolts never leave");
+            Assert.AreEqual(1, legs.Count(p => p.Phase == ProjectilePhase.Launch), "nothing leaves while frozen");
             Assert.AreEqual(ProjectilePhase.End, legs.Last().Phase);
             Assert.AreEqual(0, Hits(sim).Count);
+            sim.Control(RunControl.Resume);
+            sim.StepTo(5);
+            var freezes = Drive.Events(sim, SimEventKind.Freeze).Select(e => e.AsFreeze).ToList();
+            double paused = freezes.First(f => f.Starts).T, resumed = freezes.Last(f => !f.Starts).T;
+            var launches = Legs(sim).Where(p => p.Phase == ProjectilePhase.Launch && p.T > 3).Select(p => p.T).ToList();
+            double left = first + 0.1 - paused;
+            Assert.IsTrue(launches.Any(t => Math.Abs(t - (resumed + left)) < 1e-9), "the second bolt, its run clock's remainder after the resume");
+            Assert.IsTrue(launches.Any(t => Math.Abs(t - (resumed + left + 0.1)) < 1e-9), "the third, 0.1 s after it");
+        }
+
+        [Test]
+        public void ABoltNeverHitsANewcomerInItsDeadEnemysSlot()
+        {
+            // Its enemy killed by something else, and a spawn far off taking the freed slot in the
+            // same tick: the bolt turns for the nearest enemy instead of hitting the newcomer where it stands.
+            var sim = Start(1);
+            int bat = Place(sim, "xlbat", 8, 0);
+            int other = Place(sim, "xlbat", 0, -9);
+            sim.StepTo(0.05);
+            var launch = Legs(sim).Single();
+            sim.StepTo(launch.T + 0.3);
+            sim.Horde.Kill(sim, bat, sim.Now, 1, 0, 0);
+            int newcomer = Place(sim, "xlbat", -30, 0);
+            Assert.AreEqual(bat, newcomer, "the slot freed last goes to the next spawn");
+            sim.StepTo(launch.Arrive + 1);
+            var turn = Legs(sim).First(p => p.Phase == ProjectilePhase.Turn);
+            Assert.AreEqual(other, turn.Target);
+            Assert.IsFalse(Hits(sim).Any(h => h.Target == newcomer), "the newcomer, 30 m off, is never hit");
+        }
+
+        [Test]
+        public void ABoltKnocksItsSurvivorAwayFromTheHero()
+        {
+            // A bolt that kills a bat swarm to the right turns back up-left for the next enemy: native's
+            // recoil is away from the hero (up-right), whatever the bolt's way.
+            var sim = Start(1, bpm: 0);
+            Place(sim, "bat-swarm", 4, 0);
+            int tough = Place(sim, "skeleton", 2, 4.5);
+            sim.State.EnemyStore[tough].Health = 1e9;
+            sim.StepTo(1);
+            var hit = Hits(sim).First(h => h.Target == tough);
+            var knock = Drive.Events(sim, SimEventKind.EnemyKnock).Select(e => e.AsEnemyKnock).First(k => k.Enemy == tough);
+            Assert.AreEqual(hit.T, knock.Start, 1e-12);
+            Assert.Less(hit.DirX, 0, "struck along the bolt's way, up-left");
+            Assert.Greater(knock.ToX, knock.FromX, "knocked up-right, away from the hero");
+            Assert.Greater(knock.ToY, knock.FromY);
         }
 
         [Test]

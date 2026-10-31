@@ -19,8 +19,9 @@ namespace PS.Game.Sim
     ///   committed beat's period at the shot.
     /// - <b>Hits</b>: each tick, every blade's path since the last (in pieces of at most
     ///   <see cref="MaxStepRad"/>, around the hero as it moves) hits each live enemy whose body it
-    ///   touches, <c>rank power * Might</c>, knocked along the blade's way; a blade hits an enemy once
-    ///   until its memory clears, every rank hit delay from the ring's start.
+    ///   touches, <c>rank power * Might</c>, struck along the blade's way (knocked away from the hero,
+    ///   as every blow is); a blade hits an enemy once until its memory clears, every rank hit delay
+    ///   from the ring's start. The memory knows enemies by life (<see cref="EnemyState.Life"/>).
     /// - <b>Its end</b>: at its duration it stops hitting and its blades shrink away over
     ///   <see cref="FadeS"/>. A freeze or the hero's fall cuts it short then.
     ///
@@ -41,8 +42,8 @@ namespace PS.Game.Sim
             public int Id, Blades;
             public double Born, End, Omega, Radius, Blade, Last, ClearAt;
             public bool Snapped;
-            /// <summary>Each blade's hit memory, by enemy slot; kept for the next ring that takes this one.</summary>
-            public bool[][] Hit = new bool[0][];
+            /// <summary>Each blade's hit memory: by enemy slot, the life of the enemy it hit there (0: none); kept for the next ring that takes this one.</summary>
+            public int[][] Hit = new int[0][];
         }
 
         readonly SimState state;
@@ -127,8 +128,8 @@ namespace PS.Game.Sim
             if (ring.Hit.Length < blades)
             {
                 int cap = state.EnemyStore.Length;
-                var hit = new bool[blades][];
-                for (int k = 0; k < blades; k++) hit[k] = k < ring.Hit.Length ? ring.Hit[k] : new bool[cap];
+                var hit = new int[blades][];
+                for (int k = 0; k < blades; k++) hit[k] = k < ring.Hit.Length ? ring.Hit[k] : new int[cap];
                 ring.Hit = hit;
             }
             for (int k = 0; k < blades; k++) Array.Clear(ring.Hit[k], 0, ring.Hit[k].Length);
@@ -211,10 +212,10 @@ namespace PS.Game.Sim
                     double dirX = -Math.Sin(a) * Math.Sign(ring.Omega), dirY = Math.Cos(a) * Math.Sign(ring.Omega);
                     for (int i = 0; i < enemies.Length; i++)
                     {
-                        if (!enemies[i].Alive || hit[i]) continue;
+                        if (!enemies[i].Alive || hit[i] == enemies[i].Life) continue;
                         enemies[i].PositionAt(to, out double ex, out double ey);
                         if (Horde.SegmentDistance(ex, ey, x0, y0, x1, y1) > body + 0.5 * roles[enemies[i].Role].RadiusM) continue;
-                        hit[i] = true;
+                        hit[i] = enemies[i].Life;
                         horde.Damage(sim, i, to, Power, Index, WeaponHit.Strike, dirX, dirY, Numbers.Knockback, Launch(1));
                     }
                 }

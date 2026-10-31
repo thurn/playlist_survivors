@@ -275,5 +275,45 @@ namespace PS.Game.Sim.Tests
                     Assert.AreEqual(resume + 0.125 * k, rest[k].T, 1e-6, $"{kind} {k + 1}: from the resume's sixteenth on");
             }
         }
+        [Test]
+        public void AVolleysLaterStrikesKeepItsShotsPowerAndRadiusThroughALevelUp()
+        {
+            // Rank 2: three strikes of 1.5 over 0.4571 m. Rank 3 (2.5 over twice the area) learned after
+            // the first: the volley's other two keep its shot's numbers, as native's pending strikes do.
+            var sim = Start(Config(new[] { ("lightning-ring", 2) }), new FixtureSong(3).Beats(0, 20, 120));
+            Place(sim, 4, 0);
+            int ring = Content.WeaponIndex("lightning-ring");
+            while (Bolts(sim).Count == 0) sim.StepTo(sim.Now + Simulation.TickSeconds);
+            sim.Arsenal.Learn(ring);
+            sim.StepTo(sim.Now + 1);
+            var volley = Bolts(sim).Take(3).ToList();
+            Assert.AreEqual(new[] { 0, 1, 2 }, volley.Select(b => b.Index).ToArray());
+            double radius = Content.Weapon("lightning-ring").Shape.RadiusM;
+            foreach (var b in volley)
+            {
+                Assert.AreEqual(radius, b.Radius, Eps, $"strike {b.Index}'s radius");
+                Assert.IsTrue(HitsAt(sim, b.T).All(h => Math.Abs(h.Damage - 1.5) < Eps), $"strike {b.Index}'s power");
+                Assert.IsNotEmpty(HitsAt(sim, b.T));
+            }
+        }
+        [Test]
+        public void AChainsLaterJumpsKeepItsShotsPowerThroughALevelUp()
+        {
+            // Rank 2: four jumps of 1.2. Rank 3 (1.5) learned after the first: the rest keep its shot's power.
+            var sim = Start(Config(new[] { ("chain-lightning", 2) }), new FixtureSong(3).Beats(0, 10, 120));
+            for (int k = 0; k < 4; k++) Place(sim, 4 + 3 * k, 0);
+            int chain = Content.WeaponIndex("chain-lightning");
+            while (Bolts(sim).Count == 0) sim.StepTo(sim.Now + Simulation.TickSeconds);
+            sim.Arsenal.Learn(chain);
+            sim.StepTo(sim.Now + 0.6);
+            var jumps = Bolts(sim).Take(4).ToList();
+            Assert.AreEqual(new[] { 0, 1, 2, 3 }, jumps.Select(b => b.Index).ToArray());
+            foreach (var b in jumps)
+            {
+                var hits = HitsAt(sim, b.T);
+                Assert.IsNotEmpty(hits);
+                Assert.IsTrue(hits.All(h => Math.Abs(h.Damage - 1.2) < Eps), $"jump {b.Index}'s power");
+            }
+        }
     }
 }

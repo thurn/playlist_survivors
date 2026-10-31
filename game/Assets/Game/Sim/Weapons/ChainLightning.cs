@@ -14,8 +14,10 @@ namespace PS.Game.Sim
     ///   (the hero, then the enemy before), closer than its range: <c>shape radius x rank area x
     ///   Area</c> for the first, <c>jump range x rank area x Area</c> after. Every enemy whose body
     ///   touches the circle of <c>hit radius x rank area x Area</c> around it, and that the chain
-    ///   hasn't hit, takes <c>rank power x Might</c>, knocked along the jump, and is hit for the rest
-    ///   of the chain. With nobody in range the chain ends.
+    ///   hasn't hit, takes <c>rank power x Might</c>, struck along the jump (knocked away from the hero,
+    ///   as every blow is), and is hit for the rest of the chain. With nobody in range the chain ends.
+    ///   A chain keeps its shot's power, ranges and hit radius (native's chain state), and knows the
+    ///   enemies it hit by life (<see cref="EnemyState.Life"/>).
     /// - Jumps move, hold through a freeze and wait out a fall as Lightning Ring's strikes do
     ///   (<see cref="LightningRing"/>).
     /// </summary>
@@ -32,14 +34,16 @@ namespace PS.Game.Sim
             public int Jump, Jumps;
             /// <summary>Where the next jump starts: the hero, then the enemy last jumped to.</summary>
             public double X, Y;
+            /// <summary>Its shot's power, first and later ranges, and hit radius.</summary>
+            public double Damage, First, Range, Radius;
         }
 
         readonly BeatClock clock;
         readonly SimState state;
         readonly Horde horde;
         readonly Chain[] chains = new Chain[Capacity];
-        /// <summary>Per chain, the enemies it has hit.</summary>
-        readonly bool[][] hit = new bool[Capacity][];
+        /// <summary>Per chain, by enemy slot, the life of the enemy it hit there (0: none).</summary>
+        readonly int[][] hit = new int[Capacity][];
         readonly int[] reached;
 
         public ChainLightning(Arsenal arsenal, WeaponDef def, int index, BeatClock clock, SimState state, Horde horde)
@@ -51,7 +55,7 @@ namespace PS.Game.Sim
             this.horde = horde;
             int cap = state.EnemyStore.Length;
             reached = new int[cap];
-            for (int c = 0; c < Capacity; c++) hit[c] = new bool[cap];
+            for (int c = 0; c < Capacity; c++) hit[c] = new int[cap];
         }
 
         double Area => Numbers.Area * Stats.Area;
@@ -85,7 +89,10 @@ namespace PS.Game.Sim
             // Shots come at least half a second apart and a chain lasts a few sixteenths: a full set is never reached.
             if (c == Capacity) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
-            chains[c] = new Chain { Active = true, Jumps = Amount, X = hx, Y = hy };
+            chains[c] = new Chain
+            {
+                Active = true, Jumps = Amount, X = hx, Y = hy, Damage = Power, First = FirstRange, Range = JumpRange, Radius = HitRadius,
+            };
             Array.Clear(hit[c], 0, hit[c].Length);
             Jump(sim, c, t);
         }
@@ -107,7 +114,7 @@ namespace PS.Game.Sim
         void Jump(Simulation sim, int c, double t)
         {
             ref var ch = ref chains[c];
-            int target = horde != null ? Nearest(c, t, ch.X, ch.Y, ch.Jump == 0 ? FirstRange : JumpRange) : -1;
+            int target = horde != null ? Nearest(c, t, ch.X, ch.Y, ch.Jump == 0 ? ch.First : ch.Range) : -1;
             if (target < 0)
             {
                 ch.Active = false;
@@ -115,7 +122,7 @@ namespace PS.Game.Sim
             }
             var enemies = state.EnemyStore;
             enemies[target].PositionAt(t, out double x, out double y);
-            double radius = HitRadius;
+            double radius = ch.Radius;
             sim.Emit(SimEvent.Bolt(t, Index, BoltKind.Jump, ch.Jump, ch.X, ch.Y, x, y, radius));
             double dx = x - ch.X, dy = y - ch.Y, d = Math.Sqrt(dx * dx + dy * dy);
             if (d > 1e-9)
@@ -128,16 +135,16 @@ namespace PS.Game.Sim
                 dx = 0;
                 dy = 1;
             }
-            double damage = Power, launch = Launch(1);
+            double damage = ch.Damage, launch = Launch(1);
             var chainHit = hit[c];
-            chainHit[target] = true;
+            chainHit[target] = enemies[target].Life;
             horde.Damage(sim, target, t, damage, Index, WeaponHit.Bolt, dx, dy, Numbers.Knockback, launch);
             int n = horde.InReach(t, x, y, radius, reached);
             for (int k = 0; k < n; k++)
             {
                 int i = reached[k];
-                if (chainHit[i]) continue;
-                chainHit[i] = true;
+                if (chainHit[i] == enemies[i].Life) continue;
+                chainHit[i] = enemies[i].Life;
                 horde.Damage(sim, i, t, damage, Index, WeaponHit.Bolt, dx, dy, Numbers.Knockback, launch);
             }
             ch.X = x;
@@ -155,7 +162,7 @@ namespace PS.Game.Sim
             double bestD = range;
             for (int i = 0; i < enemies.Length; i++)
             {
-                if (!enemies[i].Alive || chainHit[i]) continue;
+                if (!enemies[i].Alive || chainHit[i] == enemies[i].Life) continue;
                 enemies[i].PositionAt(t, out double ex, out double ey);
                 double d = Math.Sqrt((ex - x) * (ex - x) + (ey - y) * (ey - y));
                 if (d < bestD)

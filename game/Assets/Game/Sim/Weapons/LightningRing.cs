@@ -25,8 +25,10 @@ namespace PS.Game.Sim
     ///   is the ground every zoom shows, <see cref="ViewShare"/> of the way to the camera's
     ///   footprint (<see cref="HordeConfig.CameraFootprint"/>), and no strike is lost off screen.
     ///   Every enemy whose body touches the circle of <c>shape radius x rank area x Area</c> there
-    ///   takes <c>rank power x Might</c> and is knocked out from its centre. With nobody in view the strike lands nowhere and the volley
-    ///   goes on.
+    ///   takes <c>rank power x Might</c>, struck out from its centre (knocked away from the hero, as every
+    ///   blow is). A volley's strikes and their returns keep the power and radius of its shot, as
+    ///   native's pending strikes carry their shot. With nobody in view the strike lands nowhere and
+    ///   the volley goes on.
     /// - Thunder Loop strikes each point again on the first sixteenth at or after
     ///   <see cref="ReturnS"/> later, even when its enemy has moved or died.
     /// - A strike planned on a beat's continuation moves to the sixteenth a beat committed since
@@ -54,6 +56,8 @@ namespace PS.Game.Sim
             /// <summary>Thunder Loop's return to (X, Y).</summary>
             public bool Return;
             public double X, Y;
+            /// <summary>Its shot's power and radius.</summary>
+            public double Damage, Radius;
         }
 
         readonly BeatClock clock;
@@ -93,7 +97,7 @@ namespace PS.Game.Sim
         internal override void Shoot(Simulation sim, double t)
         {
             base.Shoot(sim, t);
-            Volley(sim, t, 0, Amount);
+            Volley(sim, t, new Pending { Index = 0, Amount = Amount, Damage = Power, Radius = Radius });
         }
 
         internal override void Fire(Simulation sim, double t)
@@ -108,20 +112,28 @@ namespace PS.Game.Sim
             }
             Array.Copy(pending, k + 1, pending, k, count - k - 1);
             count--;
-            if (p.Return) Strike(sim, t, BoltKind.Return, p.Index, p.X, p.Y);
-            else Volley(sim, t, p.Index, p.Amount);
+            if (p.Return) Strike(sim, t, BoltKind.Return, p);
+            else Volley(sim, t, p);
         }
 
 
-        /// <summary>Strike <paramref name="index"/> of a volley of <paramref name="amount"/>, and the next planned.</summary>
-        void Volley(Simulation sim, double t, int index, int amount)
+        /// <summary>A volley's strike <paramref name="p"/> (its index of its amount), and the next planned.</summary>
+        void Volley(Simulation sim, double t, Pending p)
         {
             if (Target(sim, t, out double x, out double y))
             {
-                Strike(sim, t, BoltKind.Strike, index, x, y);
-                if (Def.IsEvolution) Add(new Pending { T = clock.SixteenthAtOrAfter(t + ReturnS), Index = index, Return = true, X = x, Y = y });
+                var at = p;
+                at.X = x;
+                at.Y = y;
+                Strike(sim, t, BoltKind.Strike, at);
+                at.T = clock.SixteenthAtOrAfter(t + ReturnS);
+                at.Return = true;
+                if (Def.IsEvolution) Add(at);
             }
-            if (index + 1 < amount) Add(new Pending { T = clock.SixteenthAfter(t), Index = index + 1, Amount = amount });
+            if (p.Index + 1 >= p.Amount) return;
+            p.T = clock.SixteenthAfter(t);
+            p.Index++;
+            Add(p);
         }
 
         void Add(in Pending p)
@@ -149,14 +161,14 @@ namespace PS.Game.Sim
             return true;
         }
 
-        /// <summary>A strike at (x, y): its bolt, then every enemy in its reach hit, knocked out from its centre.</summary>
-        void Strike(Simulation sim, double t, BoltKind kind, int index, double x, double y)
+        /// <summary>Strike <paramref name="p"/> at its (X, Y): its bolt, then every enemy in its reach hit, struck out from its centre.</summary>
+        void Strike(Simulation sim, double t, BoltKind kind, in Pending p)
         {
-            double radius = Radius;
-            sim.Emit(SimEvent.Bolt(t, Index, kind, index, x, y, x, y, radius));
+            double x = p.X, y = p.Y, radius = p.Radius;
+            sim.Emit(SimEvent.Bolt(t, Index, kind, p.Index, x, y, x, y, radius));
             if (horde == null) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
-            double damage = Power, launch = Launch(1);
+            double damage = p.Damage, launch = Launch(1);
             var enemies = state.EnemyStore;
             int n = horde.InReach(t, x, y, radius, found);
             for (int k = 0; k < n; k++)
