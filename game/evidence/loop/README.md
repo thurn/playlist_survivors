@@ -4,7 +4,8 @@ The main thread's loop around the sim ([the design](../../../docs/design/unity-g
 Architecture, Clocks, The Sim Lead, Key Presses and Late Steps, Debug Surfaces): the plugin's
 entries and the Input System's keys into the sim, the sim stepped to the frontier, its state kept
 in a short history and its events handed to presenters, each frame shown at frameSong. The code is
-game/Assets/Game/Client/Loop/; until the presenters land it draws placeholder capsules on a plane.
+game/Assets/Game/Client/Loop/; until the presenters land it draws placeholder capsules, in the baked
+arena under the look's camera and post since ps-msz.3.7 ([look/feel](../look/feel/README.md)).
 
 ## Flags
 
@@ -20,6 +21,9 @@ Boot runs the loop unless `--spike` or `--spike-out` asks for the sync spike.
 | `--headless` | silent output, 60 frames per second. Unity's player also takes it as -nographics, so stills run under `--fixed-time` without it |
 | `--loop-out FILE` | each frame's frameSong, frontier, lead, tick, the sim's hash and event count, and the hero's position, as CSV |
 | `--seconds N` | quits after N seconds (Boot) |
+| `--no-arena`, `--palette NAME` | the placeholder plane instead of the baked arena; the arena's zone palette |
+| `--hero-path` | the camera follows a synthetic square walk instead of the sim's hero |
+| `--camera-out FILE` | each frame's camera focus, width, punch, shake and the post's offsets, as CSV |
 
 In the game the arrows or WASD stride and Space stomps; keys reach the sim with their event
 timestamps mapped by keySong.

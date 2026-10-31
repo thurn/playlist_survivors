@@ -27,3 +27,5 @@ what was run (the exact commands), the numbers, and what they show.
   time, with the debug overlay and placeholder capsules (ps-msz.3.5).
 - [arena](arena/README.md): the 240 m night arena with its crystal structures, windowless from the
   game camera's framing, beside the 3D demo's reference look (ps-msz.3.6).
+- [look/feel](look/feel/README.md): the night post's beat feel from the live stream, the fast
+  lane and the camera, as fixed-time filmstrips across a beat, an accent and a drop (ps-msz.3.7).

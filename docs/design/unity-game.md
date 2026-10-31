@@ -1355,6 +1355,32 @@ of the demo's **song map** (a hand-made file of a song's beats and sections).
   heading; the view width set by loudness and eased over two bars; bounded
   punch on heavy hits and shake on breaks.
 
+**Shipped (ps-msz.3.7).** game/Assets/Game/Client/Look/, subscribed by the
+frame loop, which now plays in the baked arena (`--no-arena` for the
+placeholder plane); evidence in game/evidence/look/feel/.
+
+- The fast lane (`FastLane`, native's lane.rs) reads the sim's revealed
+  entries, known by the frontier, so about 2.45 s before they sound, and
+  shows each at `max(t, known_at)`. The beat pulses at full on reliable
+  beats and at 0.6 on beats known ahead but below the gate (house-128's
+  evidence hovers at the gate).
+- Accents are strong onsets, at most one per 0.5 s (native's flashes). A
+  heavy strike is the deaths sharing an impact time, weighted 0 at 2 kills to
+  1 at 24. Drops (loudness jumps of 6 dB or more) flash, punch and shake as
+  they land. Breaks flash, punch and shake by their force, past the hits'
+  0.25 m shake cap up to 0.4 m.
+- Zone grades are keyed by the arena's palettes, neon being the base;
+  `PostFeel.SetZone` is M3's hook.
+- The camera's lead is 1.5 m along the heading plus the hero's smoothed
+  velocity times 2τ: the 0.4 s spring alone trails a striding hero by about
+  5 m. The view is 28, 30 or 34 m wide by the last 2 s's mean level, with
+  hysteresis. `CameraRig.Footprint` is the loud view's ground trapezoid
+  grown 4 m each side, for `HordeConfig.CameraFootprint` (the assembly
+  wires it).
+- The beat globals (`_SL_Beat`, `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy`,
+  `_SL_HeroPos`, `_SL_WaveSpeed`) come from the lane each frame, with the
+  drums as `_SL_Drums` and the build-up as `_SL_Rise`.
+
 ### HUD
 
 The HUD keeps native's layout and hierarchy, restyled in faceted crystal and
