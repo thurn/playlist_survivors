@@ -78,7 +78,6 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ex.Message, Does.Contain(message));
         }
 
-        /// <summary>The first shot's anchors count from its pre-roll's start, so its pre-roll may hold none.</summary>
         [Test]
         public void AFormationWithoutAPathFails()
         {
@@ -88,6 +87,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ex.Message, Does.Contain("shot 2: a formation's hero kites, so it needs a path"));
         }
 
+        /// <summary>The first shot's anchors count from its pre-roll's start, so its pre-roll may hold none.</summary>
         [Test]
         public void AFirstShotWhosePrerollCoversAnAnchorFails()
         {
@@ -307,7 +307,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(problems[0], Does.Contain("neither strides nor attacks"));
         }
 
-        /// <summary>A monster frozen in view fails in every beat interval it neither moves nor plays a clip; one spawning there passes it.</summary>
+        /// <summary>A monster frozen in view fails in every beat interval it neither moves nor plays a clip.</summary>
         [Test]
         public void AMonsterThatStandsAroundFails()
         {

@@ -781,13 +781,11 @@ Never jam, in a formation's shot:
 
 The liveness check holds: zero violations in all ten shots, for the
 default roster and the forest and heroic sets. The density check passes
-too, and both hold across most other trailer seeds: seeds 3, 5, 9, 10, 11,
-13, 21, 29 and 42 pass every check, and seed 17 has one monster interval.
+too, and both hold across other trailer seeds: seeds 3, 5, 9, 10, 11, 13,
+17, 21, 27, 28, 29 and 42 pass every check.
 Pinned to one environment, shot 2 or 5 can still miss a bar's density by
 up to 20%. Tuning changes from the first cut:
 
-- shot 4 converges at `shapeScale` 2.0, since slashes alone left its
-  streams piling up;
 - shots 6 and 8 run at 1.6 and 1.3, since spins and lightning on every beat
   killed faster than their streams could fill;
 - shot 5's elite charge aims at 540, since its big bodies jam a 600-strong

@@ -2815,7 +2815,8 @@ namespace PS.Choreography
         /// <summary>
         /// Places monsters on a hexagonal lattice over [<paramref name="min"/>, <paramref name="max"/>], each point kept
         /// with the chance <paramref name="density"/> gives over the lattice's, on open ground the hero's path reaches and
-        /// clear of the hero at <paramref name="h"/>. A big monster that would touch one already placed gives way to fodder.
+        /// clear of the hero at <paramref name="h"/>. A big monster that would touch one already placed gives way to fodder,
+        /// and fodder that still would leaves the point empty.
         /// </summary>
         void Fill(double t, Vector2 h, Vector2 min, Vector2 max, Func<Vector2, float> density)
         {
@@ -2826,22 +2827,29 @@ namespace PS.Choreography
             var placed = new float[cols * rows];   // the radius of the monster on each point, 0 for none
             int ring = (int)Math.Ceiling(2 * roster.MaxMonsterRadius / rowH);
             Vector2 At(int i, int j) => new Vector2(min.X + i * spacing + ((j & 1) == 1 ? spacing / 2 : 0), min.Y + j * rowH);
+            int ci = 0, cj = 0;   // the lattice point being placed
+            bool Touches(float r)
+            {
+                for (int dj = -ring; dj <= ring; dj++)
+                    for (int di = -ring; di <= ring; di++)
+                    {
+                        int ii = ci + di, jj = cj + dj;
+                        if (ii < 0 || jj < 0 || ii >= cols || jj >= rows || placed[jj * cols + ii] <= 0) continue;
+                        if (Vector2.Distance(At(ci, cj), At(ii, jj)) < r + placed[jj * cols + ii]) return true;
+                    }
+                return false;
+            }
             for (int j = 0; j < rows; j++)
                 for (int i = 0; i < cols; i++)
                 {
-                    Vector2 p = At(i, j);
+                    Vector2 p = At(ci = i, cj = j);
                     float d = density(p);
                     if (d <= 0 || spawnRng.NextFloat() >= d * perPoint) continue;
                     int type = PickType(plan.Mix, false);
                     if (Vector2.Distance(p, h) < initialInnerRadius) continue;
-                    for (int dj = -ring; dj <= ring; dj++)
-                        for (int di = -ring; di <= ring; di++)
-                        {
-                            int ii = i + di, jj = j + dj;
-                            if (ii < 0 || jj < 0 || ii >= cols || jj >= rows || placed[jj * cols + ii] <= 0) continue;
-                            if (Vector2.Distance(p, At(ii, jj)) < roster.Monsters[type].Radius + placed[jj * cols + ii]) type = PickType(plan.Mix, true);
-                        }
+                    if (Touches(roster.Monsters[type].Radius)) type = PickType(plan.Mix, true);
                     float r = roster.Monsters[type].Radius;
+                    if (Touches(r)) continue;
                     if (nav != null && (nav.Distance(p) < r + FormationClearM || !pathFields[0].Reached(p))) continue;
                     placed[j * cols + i] = r;
                     Spawn(type, p, t, true);

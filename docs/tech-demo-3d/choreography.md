@@ -221,7 +221,8 @@ What the simulation does on each grid step:
   field around walls and structures (see
   [Navigation around structures](#navigation-around-structures)). A spatial
   hash keeps them apart, so they never overlap by more than a quarter of
-  their radius.
+  their radius (a trailer shot's formation lets its crowd press and shove
+  closer, see [Shot fields](#shot-fields)).
 - **The clear ring.** A level script's `clearRadiusM` (the song's is 2 m)
   keeps the horde out of a ring round the hero, as in a horde survivor game,
   where the hero's weapons kill whatever closes in. Monsters stop at the
@@ -566,7 +567,8 @@ shot with a `formation` opens with its formation's placement and refills
 toward its target from the view's edge, predicting two beats ahead. Every
 monster chases on every beat, and its heading bends away from the
 neighbours pressing on it. A blocked monster waits for its neighbours,
-then follows one, sidesteps or, boxed in, shoves. A windup the hero's blow
+then follows one, sidesteps or, boxed in, shoves: a formation's crowd packs
+to 20% of the smaller radius's overlap, and a shove to 40%. A windup the hero's blow
 cuts short stays in the timeline. A kiting hero outruns the horde, so an
 off-screen monster behind it, past the spawn band, leaves (except round a
 vortex's loop).

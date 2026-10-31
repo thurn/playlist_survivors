@@ -338,19 +338,26 @@ namespace Demo3D.Runtime.Effects
                 if (b.Time <= from || fx < 0) continue;
                 Add(fx, b.Position, ShatterYaw(b.Blow), b.Scale, b.Seed, b.Time, Vector3.zero, 0, 0, b.Tint);
             }
-            // A dust puff at each monster's attack.
+            // A dust puff at each monster's attack that lands (a trailer shot keeps windups the hero's blow cut short).
             while (_nextAction < _actionsByTime.Length)
             {
                 var act = _tl.Actions[_actionsByTime[_nextAction]];
                 if (act.Impact > now) break;
                 _nextAction++;
-                if (_dust < 0 || act.Kind != ActionKind.Attack || act.Entity == 0) continue;
+                if (_dust < 0 || act.Kind != ActionKind.Attack || act.Entity == 0 || DiedBy(act.Entity, act.Impact)) continue;
                 var g = _tl.PositionAt(act.Entity, act.Impact, out float facing);
                 var d = Easing.Dir(facing);
                 Add(_dust, new Vector3(g.X + d.X * 0.4f, 0.05f, g.Y + d.Y * 0.4f), facing, 1f, (uint)act.Entity * 2654435761u, act.Impact, Vector3.zero, 0, 0);
             }
             // Ambient fireflies and wisps over the view (AmbientEffects).
             if (Ambient) EventsThisFrame += _ambient.Spawn(now, t => { var f = _tl.FramingAt(t); return (new Vector2(f.Focus.X, f.Focus.Y), f.ViewWidth); });
+        }
+
+        /// <summary>Has entity <paramref name="e"/> died by song time <paramref name="t"/>?</summary>
+        bool DiedBy(int e, double t)
+        {
+            foreach (ActionEvent a in _tl.ActionsOf(e)) if (a.Kind == ActionKind.Death && a.Impact <= t) return true;
+            return false;
         }
     }
 }

@@ -52,21 +52,22 @@ What to look for:
 ```
 shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness
    1  crypt                - / 3           1.21          1.0, 1                 100 %     -         0
-   2  desert             596 / 600         3.23         19.2, 196               100 %   2.4         0
-   3  snow               708 / 700         2.42         47.9, 168               100 %   2.4         0
-   4  forest             501 / 500         2.58         22.1, 113               100 %   2.3         0
-   5  crypt              488 / 540         2.58         40.9, 95                100 %   2.4         0
+   2  desert             597 / 600         3.23         19.1, 197               100 %   2.4         0
+   3  snow               710 / 700         2.42         47.8, 160               100 %   2.4         0
+   4  forest             501 / 500         2.58         20.8, 111               100 %   2.3         0
+   5  crypt              521 / 540         2.58         27.2, 106               100 %   2.4         0
    6  desert             389 / 400         1.29         38.5, 43                100 %   2.3         0
-   7  snow               470 / 500         1.94         77.7, 169               100 %   2.5         0
-   8  crypt              454 / 500         2.58         17.8, 29                100 %   2.3         0
-   9  desert             615 / 600         1.94         14.7, 16                100 %   2.4         0
-  10  forest            1271 / 1300        2.84        175.0, 1561              100 %   2.3         0
+   7  snow               471 / 500         1.94         78.0, 164               100 %   2.5         0
+   8  crypt              458 / 500         2.58         18.0, 20                100 %   2.3         0
+   9  desert             615 / 600         1.94         16.0, 18                100 %   2.4         0
+  10  forest            1283 / 1300        2.84        175.7, 1578              100 %   2.3         0
 trailer checks: ok
 ```
 
 The checks also pass for `--roster forest` and `--roster heroic`. With the
-trailer's seed changed, seeds 3, 5, 9, 10, 11, 13, 21, 29 and 42 pass every
-check, and seed 17 has a single monster interval. Pinned with
+trailer's seed changed, seeds 3, 5, 9, 10, 11, 13, 17, 21, 27, 28, 29 and
+42 pass every check too. The roster sets share the trailer's shot fields and roster, so
+their tables match the default's. Pinned with
 `--environment` to forest, crypt or neon, shot 2 or 5 can miss one bar's
 density by up to 20%. The acceptance doesn't cover pins, and the first cut
 had the same gap.
