@@ -402,7 +402,7 @@ int32_t ps_list_apps(ps_app *out, int32_t max);             // apps playing now
 int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
 int32_t ps_render_music(ps_session *s, float *out, int32_t frames,
                         int32_t channels, double dsp_time);
-void ps_status(ps_session *s, ps_status *out);   // clock anchor, latency
+void ps_status(ps_session *s, struct ps_status *out); // anchor, latency
 void ps_close(ps_session *s);
 const char *ps_last_error(void);
 ```
@@ -427,6 +427,43 @@ Contract details:
 - **Errors never cross as panics.** Every entry point catches panics. Those
   that can fail return an error code, and `ps_last_error` describes it;
   `ps_status` and `ps_close` cannot fail.
+
+**Shipped (ps-msz.1.2).** The plugin is `native/crates/plugin`
+(`libps_plugin.dylib`); its header, `native/crates/plugin/include/ps_plugin.h`,
+is the contract the C# mirrors: every struct, return code, source, state and
+entry kind with its `v` slots (`analysis::flat`'s table). Decisions:
+
+- `ps_config` holds the source, `M`, the output rate, the path (a file or an
+  M3U), the models' path (null: `$PS_MODELS`, else the checkout's) and the
+  session folder (null: no record).
+- The status is `struct ps_status`, a tag rather than a typedef, because C
+  can't give a type and the function that fills it one name.
+- It reports the anchor (DSP time, song time and the frame count it came
+  from), the default output device's latency (device, safety offset and
+  stream latency, without Unity's buffering), how far the music is buffered
+  and analysed, stalls, the state (waiting, playing, ended), the mute (0 for
+  File), whether the analysis is done, a failure flag and the follower gain.
+- A File source's threads: a decoder (`afconvert`, at 44.1 kHz: the mono
+  decode `ps entries` uses for the analyzer, a stereo one for the music, a
+  track ahead), a player that fills native's delay line to `M` past the
+  render position, and the analyzer (with its hindsight worker), fed in
+  `ps entries`' 4096-sample blocks up to `M` past the render position. So a
+  File run's records are byte for byte the dump's
+  (`crates/plugin/tests/c_interface.rs`).
+- `ps_render_music` starts the music once 0.25 s is buffered. From then on
+  song time advances by exactly the frames rendered. A buffer the line can't
+  fill plays silence and counts as a stall. It takes no lock and allocates
+  nothing (`tests/no_alloc.rs`, with a counting allocator); native's level
+  follower now preallocates for it.
+- A failure after `ps_open` (a track that won't decode, a record that can't
+  be written) sets the failure flag. `ps_poll` returns `PS_ERR_FAILED` once
+  the records before it are polled.
+- The record, in the session folder: `audio.wav` (the analyzer's input,
+  44.1 kHz mono float, exact), `entries.jsonl` (`ps entries`' line format,
+  without its header) and `meta.json` (the source, `M`, `A`, the output rate,
+  the duration, the records, the hindsight stalls and whether it finished).
+- `ps_list_apps` returns no apps, and the System and Replay sources return
+  `PS_ERR_UNSUPPORTED`, until they land.
 
 ### The delay line and Unity's output
 
@@ -488,6 +525,10 @@ the game's tools copy the result into the Unity project as a plugin.
   copy. Players use ordinary `DllImport`.
 - A headless plugin command writes a File run's entries, so the sim's tests
   and sweeps use real analyzer output without Unity.
+
+The plugin builds with `cargo build --release -p plugin` in `native/`
+(`native/target/release/libps_plugin.dylib`), and native's fast and slow
+checks run its tests with the workspace's.
 
 ## Time and Sync
 

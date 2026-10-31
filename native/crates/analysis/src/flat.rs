@@ -19,6 +19,8 @@
 //! A hindsight entry's grids don't fit 12 slots, so it is a header record followed by one
 //! hindsight-beat record per beat, offline then online, each with the header's stamp.
 
+use serde::Serialize;
+
 use crate::analyzer::Entry;
 pub use crate::structure::KEYS;
 
@@ -44,6 +46,27 @@ pub struct Record {
     pub t: f64,
     pub known_at: f64,
     pub v: [f64; 12],
+}
+
+/// A record as a JSON line of `ps entries`' dump and the plugin's session record: its kind, `t`,
+/// stamp and only its kind's `v` slots.
+#[derive(Serialize)]
+pub struct Line<'a> {
+    kind: i32,
+    t: f64,
+    known_at: f64,
+    v: &'a [f64],
+}
+
+impl Record {
+    pub fn line(&self) -> Line<'_> {
+        Line {
+            kind: self.kind,
+            t: self.t,
+            known_at: self.known_at,
+            v: &self.v[..slots(self.kind)],
+        }
+    }
 }
 
 /// How many `v` slots a kind uses.

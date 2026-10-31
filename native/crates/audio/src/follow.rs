@@ -17,7 +17,8 @@ const PERCENTILE: f64 = 0.9;
 const FOLLOW: f64 = 0.75;
 const MAX_CUT_DB: f64 = 10.0;
 
-/// The follower's state: the hop being summed, the recent hops' energies and levels.
+/// The follower's state: the hop being summed, the recent hops' energies and levels. Its buffers
+/// are allocated up front, so `push` never allocates (the game plugin runs it on the audio thread).
 pub struct Follower {
     hop: usize,
     in_hop: usize,
@@ -33,14 +34,15 @@ pub struct Follower {
 impl Follower {
     /// A follower of mono samples at `rate`.
     pub fn new(rate: f64) -> Follower {
+        let window = (WINDOW_S * RATE).round() as usize;
         Follower {
             hop: (rate / RATE).round().max(1.0) as usize,
             in_hop: 0,
             sum: 0.0,
-            hops: Vec::new(),
-            window: (WINDOW_S * RATE).round() as usize,
-            levels: Vec::new(),
-            history: Vec::new(),
+            hops: Vec::with_capacity(window),
+            window,
+            levels: Vec::with_capacity(SMOOTH),
+            history: Vec::with_capacity(HISTORY),
             scratch: Vec::with_capacity(HISTORY),
         }
     }
@@ -77,7 +79,7 @@ impl Follower {
         push_bounded(&mut self.history, smooth, HISTORY);
         self.scratch.clear();
         self.scratch.extend_from_slice(&self.history);
-        self.scratch.sort_by(f64::total_cmp);
+        self.scratch.sort_unstable_by(f64::total_cmp);
         let reference = self.scratch[(PERCENTILE * (self.scratch.len() - 1) as f64) as usize];
         let db = (FOLLOW * (smooth - reference)).clamp(-MAX_CUT_DB, 0.0);
         10f64.powf(db / 20.0) as f32

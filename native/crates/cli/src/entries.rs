@@ -22,7 +22,6 @@ use analysis::delayed::{DelayedParams, Listening, Stamps};
 use analysis::flat::{self, Record};
 use analysis::hindsight::HindsightParams;
 use analysis::tensors::Tensors;
-use serde::Serialize;
 use serde_json::json;
 use stream::playlist::{Playlist, is_playlist};
 
@@ -88,14 +87,6 @@ fn params() -> Params {
     }
 }
 
-#[derive(Serialize)]
-struct Line<'a> {
-    kind: i32,
-    t: f64,
-    known_at: f64,
-    v: &'a [f64],
-}
-
 /// Analyses `samples` and writes the dump to `out`; returns how many records it wrote.
 fn write(models: &Tensors, samples: &[f32], out: &mut impl Write) -> Result<usize, String> {
     let p = params();
@@ -124,13 +115,7 @@ fn write(models: &Tensors, samples: &[f32], out: &mut impl Write) -> Result<usiz
     serde_json::to_writer(&mut *out, &header).map_err(|e| e.to_string())?;
     out.write_all(b"\n").map_err(io)?;
     for r in &records {
-        let line = Line {
-            kind: r.kind,
-            t: r.t,
-            known_at: r.known_at,
-            v: &r.v[..flat::slots(r.kind)],
-        };
-        serde_json::to_writer(&mut *out, &line).map_err(|e| e.to_string())?;
+        serde_json::to_writer(&mut *out, &r.line()).map_err(|e| e.to_string())?;
         out.write_all(b"\n").map_err(io)?;
     }
     Ok(records.len())
