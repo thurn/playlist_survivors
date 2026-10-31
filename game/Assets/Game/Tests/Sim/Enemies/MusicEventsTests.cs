@@ -220,6 +220,29 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ASwarmAfterTheMinotaurLeftPlaysOutWhole()
+        {
+            // The minotaur lands at 5.5 s and retreats 90 s later; once it has gone, a swarm plays its 10 s.
+            var sim = HordeFixture.Empty(arena: HordeFixture.GameArena(), heroStands: true);
+            foreach (var k in Drive.Known(new FixtureSong(3).Beats(0, 140, 120).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
+            sim.StepTo(5.1);
+            sim.Command(DebugCommand.Minotaur);
+            sim.StepTo(110.1);
+            Assert.AreEqual(0, sim.State.EnemiesAlive, "the minotaur has gone");
+            sim.Command(DebugCommand.BatSwarm);
+            sim.StepTo(115);
+            var swarm = Pieces(sim).Single(p => p.Kind == SetPieceKind.BatSwarm);
+            Assert.AreEqual(swarm.Members, sim.State.EnemiesAlive, "none of the swarm left early");
+            for (int i = 0; i < sim.State.Enemies.Length; i++)
+                if (sim.State.Enemies[i].Alive) Assert.IsTrue(sim.Horde.Scripts.Scripted(i), $"enemy {i} flies with its flock");
+
+            // After its end, every member has left or joined the horde.
+            sim.StepTo(125);
+            for (int i = 0; i < sim.State.Enemies.Length; i++)
+                if (sim.State.Enemies[i].Alive) Assert.IsFalse(sim.Horde.Scripts.Scripted(i), $"enemy {i} still scripted");
+        }
+
+        [Test]
         public void AnEventMakesRoomUnderTheCapFromTheFarthestOrdinaryEnemies()
         {
             var sim = HordeFixture.Empty(heroStands: true);

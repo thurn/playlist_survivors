@@ -30,7 +30,9 @@ namespace PS.Game.Sim
         readonly BossMoves bosses;
         readonly Signature rules;
         readonly int role;
+        // Its group while it is on the field: the group object is reused once its id changes.
         MusicGroup group;
+        int groupId = -1;
         bool landed, forced;
         double landedRun, retreatRun = double.NaN;
 
@@ -42,10 +44,12 @@ namespace PS.Game.Sim
             role = m.Content.RoleIndex(rules.Role);
         }
 
+        bool OnField => group != null && group.Id == groupId;
+
         /// <summary>The minotaur on the next reliable main beat, unless it is on the field.</summary>
         public void Force()
         {
-            if (group != null && group.Active) return;
+            if (OnField) return;
             landed = false;
             forced = true;
         }
@@ -63,6 +67,7 @@ namespace PS.Game.Sim
             m.Add(g, i);
             bosses.Signature(i, beat, rules);
             group = g;
+            groupId = g.Id;
             landed = true;
             forced = false;
             landedRun = m.RunClock;
@@ -72,7 +77,7 @@ namespace PS.Game.Sim
 
         public void Tick(Simulation sim, double end, double hx, double hy)
         {
-            if (group == null || !group.Active) return;
+            if (!OnField) return;
             if (!m.Member(group, 0, out int i))
             {
                 group.Id = -1; // it died

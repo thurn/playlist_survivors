@@ -256,8 +256,9 @@ namespace PS.Game.Sim
 
         readonly MusicEvents m;
         readonly SetPieces rules;
+        // The piece in play: its group, held by id, since a group ended at a tick end is reused.
         MusicGroup active;
-        int jumpFrom, medium;
+        int activeId = -1, jumpFrom, medium;
         double next = double.NegativeInfinity;
         bool pending, forced;
         SetPieceKind pendingKind;
@@ -289,17 +290,19 @@ namespace PS.Game.Sim
 
         public void Force(SetPieceKind kind, double now) => Stage(kind, now, now, now, true);
 
+        bool InPlay => active != null && active.Id == activeId;
+
         /// <summary>The piece in play, if any, ends now (a swarm or the minotaur takes the stage), and none waits.</summary>
         public void Retire(Simulation sim, double t, double hx, double hy)
         {
-            if (active != null && active.Active) m.End(sim, active, t, hx, hy);
+            if (InPlay) m.End(sim, active, t, hx, hy);
             active = null;
             if (!forced) pending = false;
         }
 
         public void Land(Simulation sim, int beat, double t, bool reliable, double hx, double hy)
         {
-            if (active != null && !active.Active) active = null; // ended at a tick end
+            if (!InPlay) active = null; // ended at a tick end
             if (!reliable) return;
             if (active != null) Advance(sim, beat, t, hx, hy);
             if (m.Natural) Cue(beat, t);
@@ -458,6 +461,7 @@ namespace PS.Game.Sim
                 return;
             }
             active = g;
+            activeId = g.Id;
             next = m.RunClock + rules.GapS;
             sim.Emit(SimEvent.SetPiece(t, kind, g.Count, cause, known));
         }
