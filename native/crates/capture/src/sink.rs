@@ -10,7 +10,7 @@ use audio::delay::Writer;
 
 use crate::Meta;
 use crate::analysis::Source;
-use crate::clock::HostTime;
+use crate::clock::{self, HostTime};
 
 /// The capture callback's end. Real time: nothing allocates, locks or logs.
 pub struct Sink {
@@ -36,6 +36,8 @@ pub struct Stream {
 /// reader), its stereo also into `delay` when given, numbering its frames from `first` (a capture
 /// that continues another's timeline).
 pub fn sink(rate: f64, ring_s: f64, delay: Option<Writer>, first: u64) -> (Sink, Stream) {
+    // (The clock's units looked up here, not on the capture's thread.)
+    clock::tick_s();
     let (sp, sc) = rtrb::RingBuffer::new((rate * ring_s) as usize);
     let (mp, mc) = rtrb::RingBuffer::new(4096);
     let alive = Arc::new(AtomicU64::new(0));

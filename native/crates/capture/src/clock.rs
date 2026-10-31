@@ -1,7 +1,8 @@
 //! The host clock: capture buffers' times ([`crate::Meta`]), the output's and the watchdog's.
 
 /// A reading of the host clock, in the platform's units: mach ticks on the Mac (an
-/// `AudioTimeStamp`'s `mHostTime`), nanoseconds since the clock's first use elsewhere.
+/// `AudioTimeStamp`'s `mHostTime`), nanoseconds elsewhere. Readings are well above zero (the
+/// watchdog takes 0 for "no buffer yet").
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub struct HostTime(pub u64);
 
@@ -12,8 +13,14 @@ impl HostTime {
 
     /// Host seconds.
     pub fn secs(self) -> f64 {
-        self.0 as f64 * platform::tick_s()
+        self.0 as f64 * tick_s()
     }
+}
+
+/// Seconds per [`HostTime`] unit. Looked up once: call it before a real-time thread first reads
+/// the clock, so the lookup never runs there.
+pub fn tick_s() -> f64 {
+    platform::tick_s()
 }
 
 /// The host clock now (s).
@@ -49,8 +56,9 @@ mod platform {
         1e-9
     }
 
+    /// (From 1000 s before the clock's first use, as the Mac's clock counts from boot.)
     pub fn now() -> u64 {
         static EPOCH: OnceLock<Instant> = OnceLock::new();
-        EPOCH.get_or_init(Instant::now).elapsed().as_nanos() as u64
+        1_000_000_000_000 + EPOCH.get_or_init(Instant::now).elapsed().as_nanos() as u64
     }
 }

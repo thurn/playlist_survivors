@@ -12,7 +12,7 @@ use objc2_core_audio_types::*;
 use audio::mixer::{Command, Mixer, Report};
 
 use capture::Meta;
-use capture::clock::HostTime;
+use capture::clock::{self, HostTime};
 use capture::coreaudio::{self, check};
 
 /// What the render callback did, for the log.
@@ -151,6 +151,8 @@ impl Output {
             },
             "set stream format",
         )?;
+        // (The clock's units looked up here, not on the render thread.)
+        clock::tick_s();
         let (cp, cc) = rtrb::RingBuffer::new(256);
         let (ep, ec) = rtrb::RingBuffer::new(1 << 16);
         let (meta_tx, music_meta) = match &music {
