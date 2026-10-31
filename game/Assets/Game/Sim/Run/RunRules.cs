@@ -159,7 +159,6 @@ namespace PS.Game.Sim
         {
             if (state.Phase == RunPhase.Ended) return;
             Account(t);
-            if (state.Phase == RunPhase.Waiting) state.Frozen = false;
             state.Phase = RunPhase.Ended;
             state.End = why;
             state.EndedAt = t;

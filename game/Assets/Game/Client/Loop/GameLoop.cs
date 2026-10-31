@@ -336,6 +336,8 @@ namespace Game.Client.Loop
                 _releases = _music.Status.Releases;
                 Driver.Sim.Control(RunControl.Watchdog);
             }
+            bool focusLost = _focusLost;
+            _focusLost = false;
             if (!_interactive) return;
             if (state.Phase == RunPhase.Waiting)
             {
@@ -347,9 +349,8 @@ namespace Game.Client.Loop
             bool paused = state.FrozenFor(FreezeReason.Pause);
             bool esc = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
             bool click = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-            if (!paused && (esc || _focusLost)) Driver.Sim.Control(RunControl.Pause);
+            if (!paused && (esc || focusLost)) Driver.Sim.Control(RunControl.Pause);
             else if (paused && (esc || click)) Driver.Sim.Control(RunControl.Resume);
-            _focusLost = false;
         }
 
         void OnApplicationFocus(bool focus)
