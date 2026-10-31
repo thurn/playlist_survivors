@@ -48,6 +48,7 @@ namespace PS.Game.Sim
         readonly Hero hero;
         readonly double knownAtBudget;
         double cursor;
+        int inputs;
 
         public Simulation(SimConfig config)
         {
@@ -130,14 +131,14 @@ namespace PS.Game.Sim
         /// </summary>
         public void Press(Key key, double heard)
         {
-            keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now });
+            keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now, Order = inputs++ });
             hero.Press(this, key, heard);
         }
 
         /// <summary>Records a key release heard at song time <paramref name="heard"/>; it takes effect now.</summary>
         public void Release(Key key, double heard)
         {
-            keys.Add(new KeyRecord { Key = key, Down = false, Heard = heard, Effective = Now });
+            keys.Add(new KeyRecord { Key = key, Down = false, Heard = heard, Effective = Now, Order = inputs++ });
             hero.Release(this, key, heard);
         }
 
@@ -150,7 +151,7 @@ namespace PS.Game.Sim
         /// </summary>
         public void Command(DebugCommand command)
         {
-            commands.Add(new DebugRecord { Command = command, Effective = Now });
+            commands.Add(new DebugRecord { Command = command, Effective = Now, Order = inputs++ });
             switch (command)
             {
                 case DebugCommand.SectionChange:
@@ -196,7 +197,7 @@ namespace PS.Game.Sim
         public void StepTo(double songTime)
         {
             long target = (long)Math.Floor(songTime * TicksPerSecond + 1e-9);
-            Stream.SettleArrivals(knownAtBudget, Math.Max(Now, target * TickSeconds));
+            Stream.SettleArrivals(knownAtBudget, Math.Max(Now, target * TickSeconds), Now);
             while (State.Tick < target) RunTick();
         }
 

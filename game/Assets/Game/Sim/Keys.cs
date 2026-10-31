@@ -16,5 +16,7 @@ namespace PS.Game.Sim
         public bool Down;
         public double Heard;
         public double Effective;
+        /// <summary>Its place among the run's key changes and debug commands, which a replay keeps.</summary>
+        public int Order;
     }
 }

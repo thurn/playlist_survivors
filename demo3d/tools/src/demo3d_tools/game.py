@@ -21,6 +21,12 @@ passes), into readability.json beside the stills; it exits 1 if a still fails.
 
 `game spike NAME --file F`: the sync spike's headless File run, measured from Unity's own mix
 (spike.py).
+
+`game replay SESSION [--player]`: a recorded session (docs/design/unity-game.md, Sessions and
+Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Replay), or with
+`--player` in the built player, batch mode and `--headless`, which plays its recorded music through
+the plugin's Replay source in real time. Each exits 0 when the hash matches; .NET exits 2 for a
+player's session whose hash it rounds differently.
 """
 
 from __future__ import annotations
@@ -58,6 +64,12 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                     help="measure the horde's readability on each still from its ID render (exits 1 on a failure)")
     lk.set_defaults(func=cmd_look)
 
+    rp = sub.add_parser("replay", help="replay a recorded session headlessly to its hash, in .NET or the player")
+    rp.add_argument("session", help="the session's folder (the player's sessions/<time>, or a --sessions DIR's)")
+    rp.add_argument("--player", action="store_true", help="in the built player (batch mode, --headless) instead of .NET")
+    rp.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
+    rp.set_defaults(func=cmd_replay)
+
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
     pl.set_defaults(func=_cmd_plugin)
 
@@ -71,6 +83,30 @@ def _cmd_plugin(a: argparse.Namespace) -> int:
     from . import plugin
 
     return plugin.cmd_plugin(a)
+
+
+def cmd_replay(a: argparse.Namespace) -> int:
+    wt = paths.worktree(name="game")
+    session = Path(a.session).resolve()
+    if not (session / "inputs.bin").is_file():
+        print(f"replay: {session} isn't a recorded session (no inputs.bin)", file=sys.stderr)
+        return 2
+    if not a.player:
+        cmd = ["dotnet", "run", "--project", str(wt.project / "dotnet" / "PS.Game.Replay"), "-c", "Release",
+               "--", str(session), "--content", str(wt.project / "Content")]
+        return subprocess.run(cmd, check=False).returncode
+    exe = setup.player_dir(wt, "mac", a.backend) / APP_EXE
+    if not exe.exists():
+        print(f"replay: no {a.backend} player at {exe}: run `game build` first", file=sys.stderr)
+        return 2
+    log = wt.root / "captures" / "game" / "replay" / f"{session.name}.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [str(exe), "-batchmode", "-logFile", str(log), "--replay", str(session), "--headless"]
+    code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
+    lines = [ln for ln in log.read_text(errors="replace").splitlines() if ln.startswith("Replay:")]
+    print("\n".join(lines) or f"replay: no Replay line in {log}")
+    print(f"replay: the player exited {code} (log {log.relative_to(wt.root)})")
+    return code
 
 
 def cmd_look(a: argparse.Namespace) -> int:

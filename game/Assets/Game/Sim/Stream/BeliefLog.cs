@@ -29,12 +29,14 @@ namespace PS.Game.Sim
         readonly StructList<StreamEntry> arrived;
         readonly StructList<StreamEntry>[] revealed = new StructList<StreamEntry>[KindCount];
         readonly StructList<double>[] revealedKnownAt = new StructList<double>[KindCount];
+        readonly StructList<EntryRecord> accepted;
         long seq;
 
         public BeliefLog(SimConfig config)
         {
             heap = new StructList<Pending>(config.EntryCapacity);
             arrived = new StructList<StreamEntry>(256);
+            accepted = new StructList<EntryRecord>(config.TickCapacity + 2 * config.BeatCapacity);
             for (int k = 1; k < KindCount; k++)
             {
                 int cap = (EntryKind)k == EntryKind.Tick ? config.TickCapacity
@@ -60,6 +62,13 @@ namespace PS.Game.Sim
 
         /// <summary>When revealed entry <paramref name="i"/> of <paramref name="kind"/> became known.</summary>
         public double KnownAt(EntryKind kind, int i) => revealedKnownAt[Index(kind)][i];
+
+        /// <summary>
+        /// Every entry accepted, in the order it arrived: when the sim took it and its final known-at
+        /// time. A session records these; a replay gives each entry at the same time with the same
+        /// known-at (<see cref="SessionReplay"/>).
+        /// </summary>
+        public ReadOnlySpan<EntryRecord> Accepted => accepted.AsSpan();
 
         public ReadOnlySpan<StreamEntry> Beats => revealed[(int)EntryKind.Beat].AsSpan();
         public ReadOnlySpan<StreamEntry> Ticks => revealed[(int)EntryKind.Tick].AsSpan();
@@ -92,19 +101,20 @@ namespace PS.Game.Sim
             if (double.IsNaN(knownAt)) throw new ArgumentException("a replayed entry needs its known_at");
             if (knownAt < now - 1e-9)
                 throw new ArgumentException($"entry known at {knownAt} added after the sim reached {now}");
-            Push(e, knownAt);
+            Push(e, knownAt, now);
         }
 
         /// <summary>
         /// Settles the frame's arrivals: each is known from <c>max(Stamp + budget, frontierEnd)</c>,
-        /// <paramref name="frontierEnd"/> being the frontier at the end of the frame they arrived in.
+        /// <paramref name="frontierEnd"/> being the frontier at the end of the frame they arrived in,
+        /// and <paramref name="now"/> the sim's time, where the frame starts.
         /// </summary>
-        internal void SettleArrivals(double budget, double frontierEnd)
+        internal void SettleArrivals(double budget, double frontierEnd, double now)
         {
             for (int i = 0; i < arrived.Count; i++)
             {
                 ref readonly var e = ref arrived[i];
-                Push(e, Math.Max(e.Stamp + budget, frontierEnd));
+                Push(e, Math.Max(e.Stamp + budget, frontierEnd), now);
             }
             arrived.Clear();
         }
@@ -137,8 +147,9 @@ namespace PS.Game.Sim
         static bool Before(in Pending a, in Pending b) =>
             a.KnownAt < b.KnownAt || (a.KnownAt == b.KnownAt && a.Seq < b.Seq);
 
-        void Push(in StreamEntry e, double knownAt)
+        void Push(in StreamEntry e, double knownAt, double now)
         {
+            accepted.Add(new EntryRecord { Taken = now, KnownAt = knownAt });
             heap.Add(new Pending { Entry = e, KnownAt = knownAt, Seq = seq++ });
             int i = heap.Count - 1;
             while (i > 0)
@@ -167,5 +178,17 @@ namespace PS.Game.Sim
                 i = m;
             }
         }
+    }
+
+    /// <summary>
+    /// An entry as the sim accepted it (unity-game.md, "Sessions and Replay"): <see cref="Taken"/> is
+    /// the sim's time when it took the entry (the frontier its frame started from), and
+    /// <see cref="KnownAt"/> its final known-at time, <c>max(stamp + B, frontier)</c> for a live
+    /// arrival. A session records both; a replay adds the entry at <see cref="Taken"/>.
+    /// </summary>
+    public struct EntryRecord
+    {
+        public double Taken;
+        public double KnownAt;
     }
 }
