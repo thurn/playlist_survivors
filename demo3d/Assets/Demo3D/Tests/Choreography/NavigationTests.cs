@@ -306,7 +306,8 @@ namespace Demo3D.Choreography.Tests
         /// <summary>
         /// No monster or hero ever stands closer to a wall than its radius, beyond a small tolerance,
         /// sampled on every beat and 0.1 s and 0.2 s after it (while gait steps and knockbacks are in
-        /// motion), by exact distances to the placement list's footprints computed here.
+        /// motion), by exact distances to the placement list's footprints computed here. A piece a
+        /// structure break took out stops counting at its break, and not before.
         /// </summary>
         [TestCaseSource(typeof(Fixtures), nameof(Fixtures.AllTimelines))]
         public void NobodyStandsInsideAWall(string name)
@@ -322,7 +323,7 @@ namespace Demo3D.Choreography.Tests
 
         static void CheckWalls(Timeline tl, ChoreographyData data)
         {
-            var walls = new WallGeometry(data.Layout.Placements);
+            var walls = new WallGeometry(data.Layout.Placements, tl.Breaks);
             float heroR = data.Roster.HeroRadius;
             var problems = new List<string>();
             double worst = 0;
@@ -338,7 +339,7 @@ namespace Demo3D.Choreography.Tests
                         if (info.Kind == EntityKind.Projectile || t < info.Spawn || t >= info.Despawn) continue;
                         float r = info.Kind == EntityKind.Hero ? heroR : tl.TypeRadii[info.Type];
                         Vector2 p = tl.PositionAt(e, t);
-                        float d = walls.Distance(p);
+                        float d = walls.Distance(p, t);
                         samples++;
                         float into = r - d;
                         if (into > worst) worst = into;
@@ -661,17 +662,23 @@ namespace Demo3D.Choreography.Tests
         readonly List<Vector2> centres = new List<Vector2>();
         readonly List<float> radii = new List<float>();
         readonly List<Vector2[]> polys = new List<Vector2[]>();
+        readonly List<double> brokenAt = new List<double>();
         readonly Dictionary<long, List<int>> buckets = new Dictionary<long, List<int>>();
         readonly Vector2 half;
 
-        public WallGeometry(PlacementList list)
+        /// <param name="breaks">A timeline's structure breaks: each broken piece is gone from its break on.</param>
+        public WallGeometry(PlacementList list, BreakEvent[] breaks = null)
         {
             half = list.Size / 2;
-            foreach (Placement p in list.Items)
+            for (int pi = 0; pi < list.Items.Length; pi++)
             {
+                Placement p = list.Items[pi];
                 Footprint f = list.Props[p.Prop];
                 if (!f.Blocks) continue;
                 int idx = centres.Count;
+                double broken = double.PositiveInfinity;
+                foreach (BreakEvent b in breaks ?? new BreakEvent[0]) if (b.Placement == pi) broken = b.Time;
+                brokenAt.Add(broken);
                 float bound;
                 if (f.Shape == FootprintShape.Circle)
                 {
@@ -699,14 +706,15 @@ namespace Demo3D.Choreography.Tests
             }
         }
 
-        /// <summary>Distance to the nearest footprint or the arena's edge (negative inside), exact within 3 m.</summary>
-        public float Distance(Vector2 p)
+        /// <summary>Distance to the nearest footprint standing at <paramref name="t"/> or the arena's edge (negative inside), exact within 3 m.</summary>
+        public float Distance(Vector2 p, double t = double.NegativeInfinity)
         {
             float d = Math.Min(Math.Min(p.X + half.X, half.X - p.X), Math.Min(p.Y + half.Y, half.Y - p.Y));
             long k = ((long)(int)Math.Floor(p.X / Bucket) << 32) ^ (uint)(int)Math.Floor(p.Y / Bucket);
             if (!buckets.TryGetValue(k, out List<int> l)) return Math.Min(d, Reach);
             foreach (int i in l)
             {
+                if (t >= brokenAt[i]) continue;
                 float di = polys[i] == null ? Vector2.Distance(p, centres[i]) - radii[i] : PolygonDistance(polys[i], p);
                 if (di < d) d = di;
             }

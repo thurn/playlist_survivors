@@ -7,7 +7,7 @@ using PS.Choreography;
 namespace Demo3D.Choreography.Cli
 {
     /// <summary>
-    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring] [--checks]
+    /// dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- song [--level action-level-forest.json] [--intensity overdrive] [--structure-breaks walls] [--seed N] [--out dump.json] [--from S --to S] [--hero] [--onscreen] [--ring] [--checks]
     ///                                                                        stress S3 [--n N] [--view W] [--load L] [--seconds S] [--out dump.json]
     ///                                                                        trailer [--name action] [--roster R] [--environment E] [--shot N] [--checks] [--out-dir D]
     ///                                                                       usage: song | stress <S1..S6> | placements | trailer | timing [--out timing.md]
@@ -26,10 +26,13 @@ namespace Demo3D.Choreography.Cli
                 {
                     string seed = Opt(args, "--seed");
                     string level = Opt(args, "--level") ?? ChoreographyFiles.LevelFile;
-                    Timeline tl = ChoreographyFiles.BuildSong(root, seed == null ? (uint?)null : uint.Parse(seed, CultureInfo.InvariantCulture), level, Opt(args, "--intensity"));
+                    string breaks = Opt(args, "--structure-breaks");
+                    Timeline tl = ChoreographyFiles.BuildSong(root, seed == null ? (uint?)null : uint.Parse(seed, CultureInfo.InvariantCulture), level, Opt(args, "--intensity"), breaks);
+                    ChoreographyData songData = ChoreographyFiles.LoadData(root, ChoreographyFiles.LoadLevel(root, level).Layout ?? ChoreographyFiles.DefaultLayout);
                     Console.Write(TimelineReport.Summary(tl));
-                    if (Has(args, "--checks")) Checks(tl, ChoreographyFiles.LoadLevel(root, level, Opt(args, "--intensity")), root);
-                    Snapshot(tl, ChoreographyFiles.LoadData(root, ChoreographyFiles.LoadLevel(root, level).Layout ?? ChoreographyFiles.DefaultLayout), args);
+                    if (tl.Breaks.Length > 0) Console.Write("\n" + TimelineReport.BreakTable(tl, songData.Layout.Placements));
+                    if (Has(args, "--checks")) Checks(tl, ChoreographyFiles.LoadLevel(root, level, Opt(args, "--intensity"), breaks), root);
+                    Snapshot(tl, songData, args);
                     if (Has(args, "--hero"))
                         for (double ht = 0; ht < tl.Duration; ht += 5)
                         {

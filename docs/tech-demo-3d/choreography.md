@@ -72,7 +72,8 @@ public readonly struct ActionEvent {
 ```
 
 Effects and sounds are also events. The camera's framing is a track sampled
-60 times a second:
+60 times a second. Under a structure-breaks schedule, a break is one more
+event per piece it takes out (see [Structure breaks](#structure-breaks)):
 
 ```csharp
 public readonly struct EffectEvent {   // AttachTo -1 for world space
@@ -84,6 +85,12 @@ public readonly struct SoundEvent { public readonly int Sound;
     public readonly double Time; public readonly float Gain; }
 public readonly struct FramingSample { public readonly Vector2 Focus;
     public readonly float ViewWidth; }
+public readonly struct BreakEvent {    // the dump's "breaks", only when any
+    public readonly double Time;       // the bolt's impact, on the grid
+    public readonly int Placement;     // index into the placement list
+    public readonly string Target;     // "courtyard/south-west"
+    public readonly int Projectile;    // the bolt's entity
+    public readonly Vector2 Origin, Point; }  // where it flew from and struck
 ```
 
 A `Tick` is a repeat hit from a lingering effect, such as the laser's sweep
@@ -339,6 +346,97 @@ gives the hero's swings per second, kills per swing (mean and peak), hero
 kills, spell kills and their share, other kills (trampling and worst beats),
 and the mean on screen against the target.
 
+### Structure breaks
+
+`--structure-breaks <name>` (demo3d's player, and the dotnet CLI's `song`)
+lets the fight break the arena's structures (epic ps-suy). It merges
+`Choreography/Data/structure-breaks-NAME.json` over the level script after
+any intensity overlay, the same way. Without it nothing breaks, and the
+timelines are byte-identical to before (the pinned hashes in IntensityTests
+and demo2d's tests). An unknown name fails, listing the known ones. It works
+with every `--roster`, `--intensity` and `--environment`, but its schedule is
+placed on the default script's route.
+
+A schedule may only add `breaks` to sections by label:
+
+```json
+{ "name": "walls",
+  "sections": {
+    "build": { "breaks": ["ruins-gate/1@phrase", "ruins-gate/2@phrase"] },
+    "drop-2": { "breaks": ["courtyard/south-west@phrase",
+                           "courtyard/east-north@phrase/2"] } } }
+```
+
+- **An entry is a target, `@` and a grid position,** as combos and spells
+  are. `/k` picks the position's k-th occurrence in the section, the first by
+  default. A position the section lacks fails.
+- **A target is an area's name,** for every piece the area placed, or the
+  area's name, `/` and one part of it. A courtyard's parts are its wall runs,
+  named by side and end before its yaw (`south-west`, `south-east`,
+  `east-south` ... `west-south`; a closed side is just `north`). A ruin
+  wall's runs are numbered from its `from` end (`1`, `2` ...). An area's own
+  pieces are `piece-1`, `piece-2` ... in its pieces list's order. The
+  placement list records each wall piece's run (`Placement.Segment`).
+- **A target fails loudly** if the resolved environment lacks it, if it blocks
+  nothing, or if an earlier entry already broke one of its pieces.
+- **Anything else a schedule sets fails,** so looks and tuning stay in their
+  own flags.
+
+**The break is the hero's spell.** On the decision before the bolt must
+leave, the hero sends the roster's bolt (its first spell of shape `single`)
+from where it stands to the target's nearest point. The bolt flies at the
+projectile's speed and strikes on the break's grid point, like any bolt that
+lands on the grid. A spell rather than a blow, because the route rarely puts
+the hero within a blow's reach of the wall on that exact beat, and a bolt
+reads from any side. The strike is a bolt impact effect and the bolt's sound
+at the grid point's accent strength (at least 0.8). The timeline records one
+`BreakEvent` per piece. The client shatters the pieces from them (ps-suy.3).
+
+**The changing obstacle map.** A run with breaks navigates its own copy of
+the layout's grid (`NavGrid.Clone`). At the strike:
+
+- **The pieces' footprints leave the map at once.** The exact shapes stop
+  counting for distances and push-outs. The capped wall distance field and
+  every flow field's passable cells are recomputed in the cells those shapes
+  could reach, a patch of a few hundred cells.
+- **Room for every size still holds.** The widest clearance now found where
+  the footprints stood must let the largest monster through with 0.5 m to
+  spare each side, or the run fails.
+- **Every whole-grid rebuild is time-sliced.** The field toward the hero
+  rebuilds on the next beat over the new map, as when the hero moves. The
+  uncapped distance field (`Open`) rebuilds a beat's share of its columns and
+  rows per tick, keeping its old values, which only grow as footprints leave
+  and so stay lower bounds. The goal fields of the current and later sections
+  rebuild one after another, a beat's share of the grid per tick, each
+  swapped in when done. No tick carries a whole field.
+- **Debris never blocks.**
+
+**The walls schedule** (`structure-breaks-walls.json`) breaks each wall next
+to the hero as the route reaches it:
+
+- **The build's first downbeat** opens both of the ruins gate's wall runs,
+  with the hero in the gap.
+- **drop-2's first downbeat** blows out the courtyard's south walls, with the
+  hero at its south-east corner and the courtyard full of the horde.
+- **drop-2's second phrase** breaks the east walls on either side of the east
+  gap, which the new opening sends the hero through.
+
+drop-1 breaks nothing: its hero holds the crystal ring, 24 m from the nearest
+wall.
+
+**The break table.** `song --structure-breaks walls` prints
+`TimelineReport.BreakTable` after the carnage table. Each row is one break:
+
+- its time, section and number of pieces;
+- whether its point was in view, and how far the bolt flew;
+- the monsters that stepped over its footprints in the 4 bars after it,
+  against the horde alive at the break (on screen and in reserve) and against
+  those within 10 m of it.
+
+On the default script every break is in view and 4 to 17 monsters walk
+through each opening. Most of the nearby horde dies to the drop's spells
+first.
+
 ### One-hit kills
 
 demo3d's three level scripts set `oneHitKills` (ps-7n4), as a horde survivor
@@ -494,8 +592,9 @@ only linearly with the number of monsters.
   such as grass and debris have none and don't block.
 - **The obstacle map.** Footprints are rasterized onto a 0.5 m grid over the
   arena, about 320 × 320 cells for 160 × 160 m.
-- **A wall distance field.** Precomputed once per layout: each cell's distance
-  to the nearest blocked cell. After each gait step, a monster closer to a
+- **A wall distance field.** Precomputed once per layout (and patched when a
+  structure breaks; see [Structure breaks](#structure-breaks)): each cell's
+  distance to the nearest blocked cell. After each gait step, a monster closer to a
   wall than its radius is pushed out along the field's gradient, at the cost
   of one lookup per monster.
 - **A flow field toward the hero.** A Dijkstra search with 8 neighbours runs

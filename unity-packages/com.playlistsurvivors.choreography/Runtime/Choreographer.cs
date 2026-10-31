@@ -84,6 +84,8 @@ namespace PS.Choreography
                     HeroAttacks = true,
                     MonsterAttacks = true,
                     Clear = ls.Clear,
+                    Breaks = ls.Breaks,
+                    BreakPieces = Array.ConvertAll(ls.Breaks, e => StructureBreaks.Resolve(data.Layout, e.Name)),   // fails on a target the layout lacks
                 };
                 if (ls.Boss != null && plans[i].Boss < 0) throw new FormatException("level script: unknown boss type '" + ls.Boss + "'");
                 if (ls.BossFrom != null && plans[i].BossFrom == null) throw new FormatException("level script: section '" + sec.Label + "' names unknown bossFrom goal '" + ls.BossFrom + "'");
@@ -150,6 +152,8 @@ namespace PS.Choreography
         public GoalArea BossFrom;       // see LevelSection.BossFrom
         public bool HeroAttacks, MonsterAttacks;
         public bool Clear;              // see LevelSection.Clear
+        public GridEntry[] Breaks = new GridEntry[0];   // see LevelSection.Breaks
+        public int[][] BreakPieces = new int[0][];      // each break's placements
     }
 
     /// <summary>

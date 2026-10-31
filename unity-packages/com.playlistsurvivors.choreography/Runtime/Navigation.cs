@@ -10,7 +10,9 @@ namespace PS.Choreography
     /// (circles and convex polygons), bucketed on a 2 m grid, and sampled onto a 0.5 m grid over the
     /// arena: each cell's clearance is the exact distance from its centre to the nearest footprint or
     /// the arena's edge (negative inside one), capped at <see cref="MaxClearance"/>. A cell is
-    /// blocked when its clearance is under half a cell. Built once per layout, at load.
+    /// blocked when its clearance is under half a cell. Built once per layout, at load. A run with
+    /// structure breaks navigates its own <see cref="Clone"/>, from which <see cref="Remove"/> takes
+    /// the broken pieces' footprints (choreography.md, "Structure breaks").
     /// </summary>
     public sealed class NavGrid
     {
@@ -22,10 +24,17 @@ namespace PS.Choreography
         public readonly int W, H;
         public readonly Vector2 Min, Max;
         public readonly float[] Clearance;
-        /// <summary>Each cell centre's distance to the nearest blocked cell's centre, uncapped (an exact Euclidean distance transform of the obstacle map).</summary>
-        public readonly float[] Open;
-        public readonly int ShapeCount, BlockedCells;
+        /// <summary>
+        /// Each cell centre's distance to the nearest blocked cell's centre, uncapped (an exact Euclidean distance
+        /// transform of the obstacle map). After <see cref="Remove"/> it holds the old distances, which only grow
+        /// when footprints leave, so they stay lower bounds, until <see cref="StepOpen"/> finishes its rebuild.
+        /// </summary>
+        public float[] Open { get; private set; }
+        public readonly int ShapeCount;
+        public int BlockedCells { get; private set; }
 
+        readonly int[] shapeOf;   // per placement, its footprint's shape, or -1
+        readonly bool[] removed;  // per shape: taken out by a break
         readonly bool[] isCircle;
         readonly Vector2[] centre;
         readonly float[] radius;
@@ -48,9 +57,12 @@ namespace PS.Choreography
             var rad = new List<float>();
             var starts = new List<int> { 0 };
             var pts = new List<Vector2>();
-            foreach (Placement p in list.Items)
+            shapeOf = new int[list.Items.Length];
+            for (int k = 0; k < list.Items.Length; k++)
             {
+                Placement p = list.Items[k];
                 Footprint f = list.Props[p.Prop];
+                shapeOf[k] = -1;
                 if (!f.Blocks) continue;
                 if (f.Shape == FootprintShape.Circle)
                 {
@@ -71,6 +83,7 @@ namespace PS.Choreography
                     pts.AddRange(w);
                 }
                 else continue;
+                shapeOf[k] = circ.Count - 1;
                 starts.Add(pts.Count);
             }
             isCircle = circ.ToArray();
@@ -79,6 +92,7 @@ namespace PS.Choreography
             polyStart = starts.ToArray();
             polyPts = pts.ToArray();
             ShapeCount = isCircle.Length;
+            removed = new bool[ShapeCount];
 
             // Buckets: each lists the shapes within MaxClearance of any point in it.
             bw = (int)Math.Ceiling(list.Size.X / BucketM);
@@ -125,28 +139,125 @@ namespace PS.Choreography
         /// </summary>
         float[] DistanceTransform()
         {
-            const double inf = 1e9;   // far above any squared distance in cells, and exact in a double
-            var g = new double[W * H];
-            for (int i = 0; i < g.Length; i++) g[i] = IsBlocked(i) ? 0 : inf;
-            int n = Math.Max(W, H);
-            var f = new double[n];
-            var d = new double[n];
-            var v = new int[n];
-            var z = new double[n + 1];
-            for (int x = 0; x < W; x++)
-            {
-                for (int y = 0; y < H; y++) f[y] = g[y * W + x];
-                Envelope(f, H, d, v, z);
-                for (int y = 0; y < H; y++) g[y * W + x] = d[y];
-            }
-            var result = new float[W * H];
-            for (int y = 0; y < H; y++)
-            {
-                for (int x = 0; x < W; x++) f[x] = g[y * W + x];
-                Envelope(f, W, d, v, z);
-                for (int x = 0; x < W; x++) result[y * W + x] = (float)(Math.Sqrt(Math.Min(d[x], inf)) * CellM);
-            }
+            BeginOpenRebuild();
+            for (int line = 0; line < W + H; line++) TransformLine(line);
+            float[] result = dtOut;
+            dtStep = -1;
+            dtOut = null;
+            dtG = dtF = dtD = dtZ = null;   // a run that breaks structures allocates its own
+            dtV = null;
             return result;
+        }
+
+        const double DtInf = 1e9;   // far above any squared distance in cells, and exact in a double
+        double[] dtG, dtF, dtD, dtZ;
+        int[] dtV;
+        float[] dtOut;
+        int dtStep = -1;
+
+        /// <summary>Is the uncapped field being rebuilt (<see cref="StepOpen"/>)?</summary>
+        public bool RebuildingOpen => dtStep >= 0;
+
+        /// <summary>Starts rebuilding <see cref="Open"/> from the obstacle map as it is now, to be advanced by <see cref="StepOpen"/>.</summary>
+        public void BeginOpenRebuild()
+        {
+            int n = Math.Max(W, H);
+            if (dtG == null) { dtG = new double[W * H]; dtF = new double[n]; dtD = new double[n]; dtV = new int[n]; dtZ = new double[n + 1]; }
+            for (int i = 0; i < dtG.Length; i++) dtG[i] = IsBlocked(i) ? 0 : DtInf;
+            dtOut = new float[W * H];
+            dtStep = 0;
+        }
+
+        /// <summary>Advances the rebuild by <paramref name="lines"/> of its W columns and then H rows; once done, <see cref="Open"/> is the new field. True when done.</summary>
+        public bool StepOpen(int lines)
+        {
+            if (dtStep < 0) return true;
+            for (int k = 0; k < lines && dtStep < W + H; k++) TransformLine(dtStep++);
+            if (dtStep < W + H) return false;
+            Open = dtOut;
+            dtOut = null;
+            dtStep = -1;
+            return true;
+        }
+
+        /// <summary>One line of the two passes: columns 0..W-1, then rows.</summary>
+        void TransformLine(int line)
+        {
+            double[] g = dtG, f = dtF, d = dtD, z = dtZ;
+            if (line < W)
+            {
+                int x = line;
+                for (int y = 0; y < H; y++) f[y] = g[y * W + x];
+                Envelope(f, H, d, dtV, z);
+                for (int y = 0; y < H; y++) g[y * W + x] = d[y];
+                return;
+            }
+            int row = line - W;
+            for (int x = 0; x < W; x++) f[x] = g[row * W + x];
+            Envelope(f, W, d, dtV, z);
+            for (int x = 0; x < W; x++) dtOut[row * W + x] = (float)(Math.Sqrt(Math.Min(d[x], DtInf)) * CellM);
+        }
+
+        /// <summary>A copy whose obstacle map a run may change (<see cref="Remove"/>) without touching this one's.</summary>
+        public NavGrid Clone() => new NavGrid(this);
+
+        NavGrid(NavGrid o)
+        {
+            W = o.W; H = o.H; Min = o.Min; Max = o.Max;
+            Clearance = (float[])o.Clearance.Clone();
+            Open = o.Open;   // replaced whole by a rebuild, never written in place
+            ShapeCount = o.ShapeCount; BlockedCells = o.BlockedCells;
+            shapeOf = o.shapeOf; removed = (bool[])o.removed.Clone();
+            isCircle = o.isCircle; centre = o.centre; radius = o.radius; polyStart = o.polyStart; polyPts = o.polyPts;
+            bw = o.bw; bh = o.bh; bucketStart = o.bucketStart; bucketItems = o.bucketItems;
+        }
+
+        /// <summary>Does placement <paramref name="placement"/> block (have a footprint still in the map)?</summary>
+        public bool Blocks(int placement) => shapeOf[placement] >= 0 && !removed[shapeOf[placement]];
+
+        /// <summary>
+        /// Takes the placements' footprints out of the obstacle map (a structure break): the exact shapes at once,
+        /// and the capped field and every cached passable set (so each flow field's) in the cells those shapes'
+        /// reach could change. <see cref="Open"/> keeps its old lower bounds until a rebuild (<see cref="BeginOpenRebuild"/>).
+        /// Returns the largest clearance now found in the cells the footprints covered: the new opening's half width, capped.
+        /// </summary>
+        public float Remove(IEnumerable<int> placements)
+        {
+            var covered = new List<int>();
+            foreach (int k in placements)
+            {
+                int s = shapeOf[k];
+                if (s < 0 || removed[s]) continue;
+                removed[s] = true;
+                float reach = radius[s] + MaxClearance + CellM;
+                int x0 = Math.Max(0, (int)Math.Floor((centre[s].X - reach - Min.X) / CellM)), x1 = Math.Min(W - 1, (int)Math.Floor((centre[s].X + reach - Min.X) / CellM));
+                int y0 = Math.Max(0, (int)Math.Floor((centre[s].Y - reach - Min.Y) / CellM)), y1 = Math.Min(H - 1, (int)Math.Floor((centre[s].Y + reach - Min.Y) / CellM));
+                for (int y = y0; y <= y1; y++)
+                    for (int x = x0; x <= x1; x++)
+                    {
+                        int i = y * W + x;
+                        if (ShapeDistance(s, CellCenter(x, y), out _, true) < CellM / 2) covered.Add(i);
+                        float before = Clearance[i];
+                        float d = Distance(CellCenter(x, y));
+                        if (d == before) continue;
+                        Clearance[i] = d;
+                        if (before < CellM / 2 && d >= CellM / 2) BlockedCells--;
+                        if (x == 0 || y == 0 || x == W - 1 || y == H - 1) continue;
+                        foreach (KeyValuePair<float, bool[]> kv in passable) kv.Value[i] = d > kv.Key;
+                    }
+            }
+            float widest = 0;
+            foreach (int i in covered) widest = Math.Max(widest, Clearance[i]);
+            return widest;
+        }
+
+        /// <summary>The point of placement <paramref name="placement"/>'s footprint nearest <paramref name="p"/> (<paramref name="p"/> itself if it has none).</summary>
+        public Vector2 NearestPoint(int placement, Vector2 p)
+        {
+            int s = shapeOf[placement];
+            if (s < 0) return p;
+            float d = ShapeDistance(s, p, out Vector2 outward, true);
+            return p - outward * d;
         }
 
         /// <summary>The 1D squared distance transform of <paramref name="f"/>: the lower envelope of parabolas.</summary>
@@ -225,6 +336,7 @@ namespace PS.Choreography
             if (b >= 0)
                 for (int k = bucketStart[b]; k < bucketStart[b + 1]; k++)
                 {
+                    if (removed[bucketItems[k]]) continue;
                     float ds = ShapeDistance(bucketItems[k], p, out _);
                     if (ds < d) d = ds;
                 }
@@ -238,8 +350,11 @@ namespace PS.Choreography
             return y * bw + x;
         }
 
-        /// <summary>Signed distance to shape <paramref name="s"/>, with the outward direction from it at <paramref name="p"/>.</summary>
-        float ShapeDistance(int s, Vector2 p, out Vector2 outward)
+        /// <summary>
+        /// Signed distance to shape <paramref name="s"/>, with the outward direction from it at <paramref name="p"/>; beyond
+        /// <see cref="MaxClearance"/> of a polygon's bounding circle, the circle's, unless <paramref name="exact"/>.
+        /// </summary>
+        float ShapeDistance(int s, Vector2 p, out Vector2 outward, bool exact = false)
         {
             if (isCircle[s])
             {
@@ -251,7 +366,7 @@ namespace PS.Choreography
             // Quick reject by the bounding circle.
             Vector2 dc = p - centre[s];
             float lc = dc.Length();
-            if (lc - radius[s] > MaxClearance) { outward = lc > 1e-6f ? dc / lc : new Vector2(0, 1); return lc - radius[s]; }
+            if (!exact && lc - radius[s] > MaxClearance) { outward = lc > 1e-6f ? dc / lc : new Vector2(0, 1); return lc - radius[s]; }
             int a0 = polyStart[s], n = polyStart[s + 1] - a0;
             bool inside = true;
             float best = float.MaxValue, bestSide = float.MinValue;
@@ -292,6 +407,7 @@ namespace PS.Choreography
                 if (b >= 0)
                     for (int k = bucketStart[b]; k < bucketStart[b + 1]; k++)
                     {
+                        if (removed[bucketItems[k]]) continue;
                         float ds = ShapeDistance(bucketItems[k], p, out Vector2 o);
                         float ex = ds - r;
                         if (ex < worst) { worst = ex; dir = o; }

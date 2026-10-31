@@ -94,18 +94,43 @@ namespace Demo3D.Choreography
             return names;
         }
 
+        /// <summary>A structure-breaks schedule's overlay file (structure-breaks-NAME.json beside the level scripts).</summary>
+        public static string StructureBreaksFile(string name) => "structure-breaks-" + name + ".json";
+
+        /// <summary>Every structure-breaks schedule the checkout has, one per overlay file.</summary>
+        public static string[] StructureBreakNames(string root)
+        {
+            string[] files = Directory.GetFiles(Path.Combine(root, DataDir), StructureBreaksFile("*"));
+            var names = new string[files.Length];
+            for (int i = 0; i < files.Length; i++) names[i] = Path.GetFileNameWithoutExtension(files[i]).Substring("structure-breaks-".Length);
+            Array.Sort(names, StringComparer.Ordinal);
+            return names;
+        }
+
         /// <summary>
         /// A level script, with an intensity's overlay merged over it (<see cref="IntensityOverlay"/>; null or
-        /// normal: none). An unknown intensity fails, listing the known ones.
+        /// normal: none), then a structure-breaks schedule's (<see cref="PS.Choreography.StructureBreaks"/>; null:
+        /// none). An unknown intensity or schedule fails, listing the known ones.
         /// </summary>
-        public static LevelScript LoadLevel(string root, string file = LevelFile, string intensity = null)
+        public static LevelScript LoadLevel(string root, string file = LevelFile, string intensity = null, string structureBreaks = null)
         {
             string json = File.ReadAllText(DataPath(root, file));
-            if (intensity == null || intensity == NormalIntensity) return LevelScript.Parse(json);
-            string overlay = DataPath(root, IntensityFile(intensity));
-            if (!File.Exists(overlay))
-                throw new ArgumentException("--intensity: unknown intensity '" + intensity + "' (one of " + string.Join(", ", Intensities(root)) + ")");
-            return LevelScript.Parse(json, File.ReadAllText(overlay));
+            string overlay = null, breaks = null;
+            if (intensity != null && intensity != NormalIntensity)
+            {
+                string path = DataPath(root, IntensityFile(intensity));
+                if (!File.Exists(path))
+                    throw new ArgumentException("--intensity: unknown intensity '" + intensity + "' (one of " + string.Join(", ", Intensities(root)) + ")");
+                overlay = File.ReadAllText(path);
+            }
+            if (structureBreaks != null)
+            {
+                string path = DataPath(root, StructureBreaksFile(structureBreaks));
+                if (!File.Exists(path))
+                    throw new ArgumentException("--structure-breaks: unknown schedule '" + structureBreaks + "' (one of " + string.Join(", ", StructureBreakNames(root)) + ")");
+                breaks = File.ReadAllText(path);
+            }
+            return LevelScript.Parse(json, overlay, breaks);
         }
 
         /// <summary>The `--roster` sets (RosterSet.Names): each plays its own level script.</summary>
@@ -177,10 +202,10 @@ namespace Demo3D.Choreography
         public static StressScript LoadStress(string root, string scene) =>
             StressScript.Parse(File.ReadAllText(DataPath(root, "stress-" + scene.ToLowerInvariant() + ".json")));
 
-        /// <summary>The song's timeline from a tracked level script (by default action-level.json), at an intensity.</summary>
-        public static Timeline BuildSong(string root, uint? seed = null, string file = LevelFile, string intensity = null)
+        /// <summary>The song's timeline from a tracked level script (by default action-level.json), at an intensity, with a structure-breaks schedule.</summary>
+        public static Timeline BuildSong(string root, uint? seed = null, string file = LevelFile, string intensity = null, string structureBreaks = null)
         {
-            LevelScript level = LoadLevel(root, file, intensity);
+            LevelScript level = LoadLevel(root, file, intensity, structureBreaks);
             return Choreographer.Run(LoadSong(root, level.Song), level, LoadData(root, level.Layout ?? DefaultLayout), seed);
         }
     }

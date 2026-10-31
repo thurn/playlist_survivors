@@ -54,6 +54,8 @@ namespace PS.Choreography
         public EffectEvent[] Effects;
         public SoundEvent[] Sounds;
         public FramingSample[] Framing;
+        /// <summary>The structure breaks (<see cref="BreakEvent"/>), sorted by time; empty without a structure-breaks overlay.</summary>
+        public BreakEvent[] Breaks = new BreakEvent[0];
 
         public string[] TypeNames, ProjectileNames, ClipNames, EffectNames, SoundNames;
         public float[] TypeRadii;

@@ -471,13 +471,13 @@ namespace PS.Choreography
                 return false;
             }
 
-            public void Place(string id, Vector2 p, float yaw, float scale, int area, bool force, float lift = 0f)
+            public void Place(string id, Vector2 p, float yaw, float scale, int area, bool force, float lift = 0f, int segment = -1)
             {
                 int pi = PropIndex(id);
                 Footprint f = props[pi];
                 float body = Body(f, scale);
                 if (!force && Overlaps(p, body)) return;
-                Add(new Placement(pi, p, yaw, scale, area, lift), body);
+                Add(new Placement(pi, p, yaw, scale, area, lift, segment), body);
             }
 
             void Add(Placement pl, float body)
@@ -507,10 +507,10 @@ namespace PS.Choreography
                         bool gap = a.Gaps == 4 || s != a.ClosedSide;
                         if (gap)
                         {
-                            Run(walls, ref rng, A, B, 0, len / 2 - a.GapM / 2, areaIndex);
-                            Run(walls, ref rng, A, B, len / 2 + a.GapM / 2, len, areaIndex);
+                            Run(walls, ref rng, A, B, 0, len / 2 - a.GapM / 2, areaIndex, 2 * s);
+                            Run(walls, ref rng, A, B, len / 2 + a.GapM / 2, len, areaIndex, 2 * s + 1);
                         }
-                        else Run(walls, ref rng, A, B, 0, len, areaIndex);
+                        else Run(walls, ref rng, A, B, 0, len, areaIndex, 2 * s);
                     }
                 }
                 else
@@ -520,19 +520,20 @@ namespace PS.Choreography
                     for (int g = 0; g < a.Gaps; g++)
                     {
                         float mid = len * (g + 1) / (a.Gaps + 1);
-                        Run(walls, ref rng, a.From, a.To, s0, mid - a.GapM / 2, areaIndex);
+                        Run(walls, ref rng, a.From, a.To, s0, mid - a.GapM / 2, areaIndex, g);
                         s0 = mid + a.GapM / 2;
                     }
-                    Run(walls, ref rng, a.From, a.To, s0, len, areaIndex);
+                    Run(walls, ref rng, a.From, a.To, s0, len, areaIndex, a.Gaps);
                 }
             }
 
             /// <summary>
             /// Lays wall pieces end to end along A→B from <paramref name="s0"/> to <paramref name="s1"/>
             /// metres, each piece's local X axis along the run. The last piece is the longest that
-            /// fits, or ends exactly at <paramref name="s1"/> overlapping the one before.
+            /// fits, or ends exactly at <paramref name="s1"/> overlapping the one before. Its pieces are
+            /// the wall's <paramref name="segment"/> (<see cref="Placement.Segment"/>).
             /// </summary>
-            void Run(PropGroup walls, ref Rng rng, Vector2 A, Vector2 B, float s0, float s1, int areaIndex)
+            void Run(PropGroup walls, ref Rng rng, Vector2 A, Vector2 B, float s0, float s1, int areaIndex, int segment)
             {
                 if (s1 - s0 < 0.3f) return;
                 Vector2 d = Vector2.Normalize(B - A);
@@ -565,7 +566,7 @@ namespace PS.Choreography
                     }
                     Vector2 target = A + d * s;
                     Vector2 pos = target - Rotate(new Vector2(minX, midY), yaw);
-                    Place(id, pos, yaw, 1f, areaIndex, true);
+                    Place(id, pos, yaw, 1f, areaIndex, true, 0f, segment);
                     s += len;
                 }
             }
@@ -655,9 +656,14 @@ namespace PS.Choreography
         public readonly float Yaw, Scale;
         public readonly int Area;          // the landmark or structure that placed it, or -1 for scatter
         public readonly float Lift;        // metres above the ground (a piece's liftM)
-        public Placement(int prop, Vector2 position, float yaw, float scale, int area, float lift = 0f)
+        /// <summary>
+        /// A structure's wall pieces: the run between gaps they belong to (a courtyard's side × 2, plus 1 for the
+        /// side's second half; a ruin wall's runs from its <c>from</c> end, 0 up). -1 for every other piece.
+        /// </summary>
+        public readonly int Segment;
+        public Placement(int prop, Vector2 position, float yaw, float scale, int area, float lift = 0f, int segment = -1)
         {
-            Prop = prop; Position = position; Yaw = yaw; Scale = scale; Area = area; Lift = lift;
+            Prop = prop; Position = position; Yaw = yaw; Scale = scale; Area = area; Lift = lift; Segment = segment;
         }
 
         /// <summary>A footprint point (prefab frame, scale 1) on the ground.</summary>

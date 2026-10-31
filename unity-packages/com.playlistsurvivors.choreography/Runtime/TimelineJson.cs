@@ -92,6 +92,19 @@ namespace PS.Choreography
             }
             o.EndArray().Newline();
 
+            if (tl.Breaks.Length > 0)   // only under a structure-breaks overlay, so other dumps stay as they were
+            {
+                o.Key("breaks").BeginArray().Newline();
+                foreach (BreakEvent b in tl.Breaks)
+                {
+                    if (b.Time < from || b.Time > to) continue;
+                    o.BeginObject().Field("time", b.Time, T).Field("placement", b.Placement).Field("target", b.Target).Field("projectile", b.Projectile);
+                    o.Key("origin").BeginArray().Value(b.Origin.X, P).Value(b.Origin.Y, P).EndArray();
+                    o.Key("point").BeginArray().Value(b.Point.X, P).Value(b.Point.Y, P).EndArray().EndObject().Newline();
+                }
+                o.EndArray().Newline();
+            }
+
             o.Key("framing").BeginArray().Newline();
             for (int i = 0; i < tl.Framing.Length; i++)
             {

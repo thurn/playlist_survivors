@@ -5,7 +5,7 @@ using System.Numerics;
 
 namespace PS.Choreography
 {
-    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing, MonsterBolt }
+    enum ImpactKind { HeroCombo, Ring, Bolt, Circle, LaserTick, MonsterAttack, WorstRing, MonsterBolt, Break }
 
     struct Impact
     {
@@ -19,7 +19,18 @@ namespace PS.Choreography
         public double ClipStart;     // the fitted clip's start and speed (attacks), NaN otherwise
         public float ClipSpeed;
 
-        public bool Kills => Kind != ImpactKind.LaserTick && Kind != ImpactKind.MonsterAttack && Kind != ImpactKind.MonsterBolt;
+        public bool Kills => Kind != ImpactKind.LaserTick && Kind != ImpactKind.MonsterAttack && Kind != ImpactKind.MonsterBolt && Kind != ImpactKind.Break;
+    }
+
+    /// <summary>A structure break the level script schedules (choreography.md, "Structure breaks"), and its bolt once sent.</summary>
+    sealed class ScheduledBreak
+    {
+        public double Time;
+        public float Strength;
+        public string Target;
+        public int[] Pieces;
+        public int Projectile = -1;
+        public Vector2 Origin, Point;
     }
 
     struct SoundRequest
@@ -175,6 +186,16 @@ namespace PS.Choreography
         FlowField goalField;                  // the current section's goal field
         int flowRebuilds, flowSlices, sliceBudget;
 
+        // Structure breaks (a structure-breaks overlay): null without one, and the run is exactly as before.
+        readonly ScheduledBreak[] breaks;
+        readonly Move breakSpell;             // the roster's bolt, which the hero sends at each piece
+        int nextBreak;                        // the first break whose bolt is not yet sent
+        readonly List<BreakEvent> breakEvents = new List<BreakEvent>();
+        bool navChanged;                      // a break changed the obstacle map since the last beat's rebuild check
+        readonly List<string> goalRebuilds = new List<string>();   // goal fields to rebuild over the new map, in turn
+        FlowField goalNext;                   // the goal field being rebuilt (goalRebuilds[0])
+        int goalBudget, openLines;            // a rebuild's slices: cells per tick, and the open field's lines per tick
+
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
             Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false,
             SimTuning tuning = null, ShotRules shot = null)
@@ -223,6 +244,16 @@ namespace PS.Choreography
                     if (roster.Spell(e.Name) == null) throw new FormatException("spell '" + e.Name + "' is not in the roster");
             }
             nav = data.Layout.Nav;
+            foreach (SectionPlan p in plans)
+                if (p.Breaks.Length > 0)
+                {
+                    // Breaks change the obstacle map, so this run navigates its own copy.
+                    nav = nav.Clone();
+                    breaks = ScheduleBreaks();
+                    foreach (Move mv in roster.Spells) if (mv.Shape == HitShape.Single && breakSpell == null) breakSpell = mv;
+                    if (breakSpell == null) throw new FormatException("structure breaks: the roster has no bolt (a spell of shape single) for the hero to send");
+                    break;
+                }
             if (nav != null)
             {
                 heroField = new FlowField(nav, TypicalRadius);
@@ -483,6 +514,7 @@ namespace PS.Choreography
                     heroField = done;
                 }
             }
+            if (breaks != null) NavRebuildSlice();
 
             Vector2 target = HeroPosAt(t);
             float omega = 1f / FollowTimeConstant;
@@ -557,6 +589,7 @@ namespace PS.Choreography
                 MonsterDecide(tb, tnext, HeroPosAt(tnext), free);
             }
             Spells(tb, tnext);
+            if (breaks != null) SendBreaks(tb, tnext);
             Refill(tb, view);
             beatSpawns.Clear();   // spawns are in the hash from the next tick on
         }
@@ -1616,6 +1649,132 @@ namespace PS.Choreography
             return false;
         }
 
+        // ------------------------------------------------------------------ structure breaks
+
+        /// <summary>
+        /// Each section's breaks on its grid: an entry breaks on the k-th occurrence of its position in its section
+        /// (its "/k", the first by default). A position the section lacks, or a piece broken twice, fails.
+        /// </summary>
+        ScheduledBreak[] ScheduleBreaks()
+        {
+            var list = new List<ScheduledBreak>();
+            var broken = new HashSet<int>();
+            for (int s = 0; s < plans.Length; s++)
+                for (int k = 0; k < plans[s].Breaks.Length; k++)
+                {
+                    GridEntry e = plans[s].Breaks[k];
+                    int seen = 0;
+                    GridPoint at = default;
+                    for (int gi = grid.FirstAfter(map.Sections[s].Start - 1e-6); gi < grid.Count && seen < e.Every; gi++)
+                    {
+                        GridPoint p = grid.Points[gi];
+                        if (p.Section != s || (p.Flags & e.Position) != e.Position) continue;
+                        if (++seen == e.Every) at = p;
+                    }
+                    if (seen < e.Every)
+                        throw new FormatException("structure breaks: section '" + plans[s].Label + "' has no " + e.Position.ToString().ToLowerInvariant() + " #" + e.Every + " for '" + e + "'");
+                    foreach (int piece in plans[s].BreakPieces[k])
+                        if (!broken.Add(piece)) throw new FormatException("structure breaks: '" + e.Name + "' breaks a piece that an earlier entry broke");
+                    list.Add(new ScheduledBreak { Time = at.Time, Strength = Math.Max(0.8f, at.AccentStrength), Target = e.Name, Pieces = plans[s].BreakPieces[k] });
+                }
+            // By time; same-time breaks keep the script's order (List.Sort is not stable).
+            var order = new int[list.Count];
+            for (int i = 0; i < order.Length; i++) order[i] = i;
+            Array.Sort(order, (a, b) => { int c = list[a].Time.CompareTo(list[b].Time); return c != 0 ? c : a.CompareTo(b); });
+            return Array.ConvertAll(order, i => list[i]);
+        }
+
+        /// <summary>
+        /// The hero's bolt at each break whose flight starts before the next decision: it flies from where the hero
+        /// stands at its launch to the target's nearest point, and strikes on the break's grid point (choreography.md,
+        /// "Structure breaks": a spell sent at the piece, so a break is always the fight's).
+        /// </summary>
+        void SendBreaks(double tb, double tnext)
+        {
+            float speed = roster.Projectiles[breakSpell.Projectile].SpeedMps;
+            for (; nextBreak < breaks.Length; nextBreak++)
+            {
+                ScheduledBreak b = breaks[nextBreak];
+                double launch = b.Time - Vector2.Distance(HeroRest, NearestPiecePoint(b, HeroRest)) / speed;
+                if (launch >= tnext) return;
+                launch = Math.Max(tb, Math.Min(launch, b.Time));
+                b.Origin = HeroPosAt(launch);
+                b.Point = NearestPiecePoint(b, b.Origin);
+                int proj = NewEntity(EntityKind.Projectile, breakSpell.Projectile, launch);
+                despawnT[proj] = b.Time;
+                b.Projectile = proj;
+                float yaw = Easing.Yaw(b.Point - b.Origin);
+                AddSeg(new MotionSegment(proj, launch, b.Time, b.Origin, b.Point, yaw, yaw, Ease.Linear));
+                Vector2 muzzle = b.Origin + Easing.Dir(yaw) * (roster.HeroRadius + 0.4f);
+                effects.Add(new EffectEvent(Catalog.BoltLaunch, -1, eseed[proj], launch, new Vector3(muzzle.X, 1.3f, muzzle.Y), yaw, 0.6f));
+                Push(new Impact { Time = b.Time, Kind = ImpactKind.Break, Entity = proj, Target = nextBreak, Move = breakSpell, Point = b.Point, Strength = b.Strength });
+            }
+        }
+
+        Vector2 NearestPiecePoint(ScheduledBreak b, Vector2 from)
+        {
+            Vector2 best = from;
+            float bd = float.MaxValue;
+            foreach (int piece in b.Pieces)
+            {
+                if (!nav.Blocks(piece)) continue;
+                Vector2 q = nav.NearestPoint(piece, from);
+                float d = Vector2.Distance(q, from);
+                if (d < bd) { bd = d; best = q; }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// The bolt strikes: its pieces leave the obstacle map (their footprints at once, the capped field and the
+        /// passable cells round them), and the field toward the hero, the uncapped field and the goal fields of this
+        /// and the later sections rebuild over the new map, sliced across the ticks like any rebuild.
+        /// </summary>
+        void Break(ScheduledBreak b, double t)
+        {
+            effects.Add(new EffectEvent(Catalog.BoltImpact, -1, eseed[b.Projectile], t, new Vector3(b.Point.X, 1f, b.Point.Y), 0, 1f));
+            if (breakSpell.Sound >= 0) Sound(breakSpell.Sound, t, b.Strength);
+            foreach (int piece in b.Pieces) breakEvents.Add(new BreakEvent(t, piece, b.Target, b.Projectile, b.Origin, b.Point));
+            float halfWidth = nav.Remove(b.Pieces);
+            // Room for every size (choreography.md): the opening lets the largest monster through with 0.5 m to spare
+            // each side, as far as the capped field can tell.
+            float need = Math.Min(roster.MaxMonsterRadius + 0.5f, NavGrid.MaxClearance - NavGrid.CellM);
+            if (halfWidth < need)
+                throw new FormatException("structure breaks: '" + b.Target + "' leaves an opening " + (2 * halfWidth).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)
+                    + " m wide; the largest monster needs " + (2 * roster.MaxMonsterRadius + 1).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " m");
+            navChanged = true;
+            double bi = Math.Floor(map.BeatIndexAt(t));
+            int ticks = Math.Max(1, (int)Math.Floor((map.TimeOfBeatIndex(bi + 1) - map.TimeOfBeatIndex(bi)) * Choreographer.TickRate));   // a beat's
+            nav.BeginOpenRebuild();
+            openLines = (nav.W + nav.H + ticks - 1) / ticks;
+            goalBudget = Math.Max(256, (nav.W * nav.H + ticks - 1) / ticks);
+            goalRebuilds.Clear();
+            goalNext = null;
+            for (int s = map.SectionIndexAt(t); s < plans.Length; s++)
+                if (plans[s].Goal != null && !goalRebuilds.Contains(plans[s].Goal.Name)) goalRebuilds.Add(plans[s].Goal.Name);
+        }
+
+        /// <summary>One tick's slice of the rebuilds a break started: the uncapped field's lines, then each goal field in turn, swapped in when done.</summary>
+        void NavRebuildSlice()
+        {
+            if (nav.RebuildingOpen) nav.StepOpen(openLines);
+            if (goalNext == null && goalRebuilds.Count > 0)
+            {
+                GoalArea g = Array.Find(plans, p => p.Goal != null && p.Goal.Name == goalRebuilds[0]).Goal;
+                goalNext = new FlowField(nav, roster.HeroRadius + 0.05f);
+                goalNext.BeginArea(g.Center, Math.Min(g.Radius, 1f));
+                flowRebuilds++;
+            }
+            if (goalNext == null) return;
+            flowSlices++;
+            if (!goalNext.Step(goalBudget)) return;
+            string name = goalRebuilds[0];
+            if (goalField == goalFields[name]) goalField = goalNext;
+            goalFields[name] = goalNext;
+            goalNext = null;
+            goalRebuilds.RemoveAt(0);
+        }
+
         // ------------------------------------------------------------------ navigation (TD6)
 
         /// <summary>
@@ -1635,7 +1794,8 @@ namespace PS.Choreography
                 flowSlices++;
                 return;
             }
-            if (heroFieldNext.Building || Vector2.Distance(h, heroField.Source) < RebuildMoveM) return;
+            if (navChanged) navChanged = false;   // a break: rebuild over the new map, restarting one begun on the old
+            else if (heroFieldNext.Building || Vector2.Distance(h, heroField.Source) < RebuildMoveM) return;
             heroFieldNext.Begin(h);
             flowRebuilds++;
             int ticks = Math.Max(1, (int)Math.Floor((tnext - tb) * Choreographer.TickRate));
@@ -1994,6 +2154,9 @@ namespace PS.Choreography
                 }
                 case ImpactKind.MonsterBolt:
                     Parry(im.Target, t, im.Point, HeroPosAt(t));
+                    break;
+                case ImpactKind.Break:
+                    Break(breaks[im.Target], t);
                     break;
                 case ImpactKind.WorstRing:
                 {
@@ -2569,6 +2732,7 @@ namespace PS.Choreography
 
             tl.Sounds = SoundAggregator.Aggregate(sounds, map, seed, tuning);
             tl.Framing = framing;
+            tl.Breaks = breakEvents.ToArray();   // in time order, as they struck
 
             tl.TypeNames = new string[roster.Monsters.Length];
             tl.TypeRadii = new float[roster.Monsters.Length];

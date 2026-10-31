@@ -137,6 +137,28 @@ namespace PS.Choreography
         public SoundEvent(int sound, double time, float gain) { Sound = sound; Time = time; Gain = gain; }
     }
 
+    /// <summary>
+    /// One piece a structure break takes out (choreography.md, "Structure breaks"): at <see cref="Time"/>, on the
+    /// grid, the hero's bolt (<see cref="Projectile"/>, from <see cref="Origin"/>) strikes the target at
+    /// <see cref="Point"/>, and the placement leaves the obstacle map. A break of several pieces gives one event each,
+    /// with the same time, target, origin and point.
+    /// </summary>
+    public readonly struct BreakEvent
+    {
+        public readonly double Time;
+        public readonly int Placement;       // index into the layout's placement list
+        public readonly string Target;       // the overlay's target, "courtyard/south-west"
+        public readonly int Projectile;      // the bolt's entity
+        public readonly Vector2 Origin, Point;
+        public BreakEvent(double time, int placement, string target, int projectile, Vector2 origin, Vector2 point)
+        {
+            Time = time; Placement = placement; Target = target; Projectile = projectile; Origin = origin; Point = point;
+        }
+
+        /// <summary>The blow's direction on the ground, from its origin to the point it struck.</summary>
+        public Vector2 Direction => Vector2.Distance(Origin, Point) > 1e-4f ? Vector2.Normalize(Point - Origin) : new Vector2(0, 1);
+    }
+
     public readonly struct FramingSample
     {
         public readonly Vector2 Focus;

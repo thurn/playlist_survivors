@@ -19,6 +19,8 @@ namespace Demo3D.Choreography.Tests
         static Timeline songTimeline;
         static LevelScript overdriveLevel;
         static Timeline overdriveTimeline, multiHitTimeline;
+        static LevelScript wallsLevel;
+        static Timeline wallsTimeline;
         static readonly Dictionary<string, Timeline> stress = new Dictionary<string, Timeline>();
 
         public static readonly string[] StressScenes = { "S1", "S2", "S3", "S4", "S5", "S6" };
@@ -56,6 +58,12 @@ namespace Demo3D.Choreography.Tests
 
         /// <summary>The song's timeline under `--intensity overdrive`.</summary>
         public static Timeline OverdriveTimeline => overdriveTimeline ?? (overdriveTimeline = Choreographer.Run(Song, OverdriveLevel, Data));
+
+        /// <summary>The level script under `--structure-breaks walls` (structure-breaks-walls.json over action-level.json).</summary>
+        public static LevelScript WallsLevel => wallsLevel ?? (wallsLevel = ChoreographyFiles.LoadLevel(Root, ChoreographyFiles.LevelFile, null, "walls"));
+
+        /// <summary>The song's timeline under `--structure-breaks walls`.</summary>
+        public static Timeline WallsTimeline => wallsTimeline ?? (wallsTimeline = Choreographer.Run(Song, WallsLevel, Data));
 
         public static StressScript StressScript(string scene) => ChoreographyFiles.LoadStress(Root, scene);
 
@@ -109,13 +117,15 @@ namespace Demo3D.Choreography.Tests
             return tl;
         }
 
-        /// <summary>The timeline a test case names: "song", "song-overdrive" or a stress scene.</summary>
-        public static Timeline Named(string name) => name == "song" ? SongTimeline : name == "song-overdrive" ? OverdriveTimeline : Stress(name);
+        /// <summary>The timeline a test case names: "song", "song-overdrive", "song-walls" or a stress scene.</summary>
+        public static Timeline Named(string name) =>
+            name == "song" ? SongTimeline : name == "song-overdrive" ? OverdriveTimeline : name == "song-walls" ? WallsTimeline : Stress(name);
 
         public static IEnumerable<string> AllTimelines()
         {
             yield return "song";
             yield return "song-overdrive";
+            yield return "song-walls";
             foreach (string s in StressScenes) yield return s;
         }
 

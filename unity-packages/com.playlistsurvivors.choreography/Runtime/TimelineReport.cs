@@ -46,6 +46,93 @@ namespace PS.Choreography
         }
 
         /// <summary>
+        /// The structure breaks (choreography.md, "Structure breaks"), one row per break: when and where it struck,
+        /// whether the camera saw it, how far the hero's bolt flew, and the horde through the opening in the
+        /// <paramref name="bars"/> bars after it (monsters that stepped over the broken pieces' footprints), against
+        /// the horde alive at the break and the part of it within <see cref="NearBreakM"/> of the point struck. Empty
+        /// without breaks. <paramref name="list"/> is the run's placement list.
+        /// </summary>
+        public static string BreakTable(Timeline tl, PlacementList list, int bars = 4)
+        {
+            if (tl.Breaks.Length == 0) return "";
+            var sb = new StringBuilder();
+            sb.Append("| break | s | section | pieces | in view | bolt m | through it in ").Append(bars).Append(" bars | horde at the break | share | within ")
+              .Append(F(NearBreakM, 0)).Append(" m | share of those |\n");
+            sb.Append("|---|---|---|---|---|---|---|---|---|---|---|\n");
+            var deathAt = new double[tl.EntityCount];
+            for (int e = 0; e < tl.EntityCount; e++)
+            {
+                deathAt[e] = double.PositiveInfinity;
+                foreach (ActionEvent a in tl.ActionsOf(e)) if (a.Kind == ActionKind.Death) { deathAt[e] = a.Impact; break; }
+            }
+            for (int i = 0; i < tl.Breaks.Length;)
+            {
+                BreakEvent b = tl.Breaks[i];
+                var pieces = new System.Collections.Generic.List<int>();
+                for (; i < tl.Breaks.Length && tl.Breaks[i].Time == b.Time && tl.Breaks[i].Target == b.Target; i++) pieces.Add(tl.Breaks[i].Placement);
+                double bi = tl.Map.BeatIndexAt(b.Time);
+                double end = tl.Map.TimeOfBeatIndex(bi + bars * tl.Map.BeatsPerBarAt(1));
+                FramingSample f = tl.FramingAt(b.Time);
+                int alive = 0, near = 0, through = 0, nearThrough = 0;
+                for (int e = 1; e < tl.EntityCount; e++)
+                {
+                    EntityInfo info = tl.Entities[e];
+                    if (info.Kind != EntityKind.Monster || info.Spawn > end || info.Despawn <= b.Time) continue;
+                    bool isNear = false;
+                    if (info.Spawn <= b.Time && deathAt[e] > b.Time)
+                    {
+                        alive++;
+                        isNear = System.Numerics.Vector2.Distance(tl.PositionAt(e, b.Time), b.Point) <= NearBreakM;
+                        if (isNear) near++;
+                    }
+                    double stop = Math.Min(end, deathAt[e]);
+                    foreach (MotionSegment sg in tl.SegmentsOf(e))
+                    {
+                        if (sg.T1 < b.Time || sg.T0 > stop) continue;
+                        // Along the step's line, finely enough not to step over a wall's thickness.
+                        int n = Math.Max(1, (int)Math.Ceiling(System.Numerics.Vector2.Distance(sg.From, sg.To) / 0.1f));
+                        bool hit = false;
+                        for (int k = 0; k <= n && !hit; k++) hit = Within(list, pieces, System.Numerics.Vector2.Lerp(sg.From, sg.To, k / (float)n));
+                        if (hit) { through++; if (isNear) nearThrough++; break; }
+                    }
+                }
+                sb.Append("| ").Append(b.Target).Append(" | ").Append(F(b.Time, 2)).Append(" | ").Append(tl.Sections[tl.Map.SectionIndexAt(b.Time)].Label)
+                  .Append(" | ").Append(pieces.Count).Append(" | ").Append(tl.View(f.ViewWidth).Contains(f.Focus, b.Point) ? "yes" : "no")
+                  .Append(" | ").Append(F(System.Numerics.Vector2.Distance(b.Origin, b.Point), 1))
+                  .Append(" | ").Append(through).Append(" | ").Append(alive).Append(" | ").Append(alive > 0 ? F(through / (double)alive, 2) : "–")
+                  .Append(" | ").Append(near).Append(" | ").Append(near > 0 ? F(nearThrough / (double)near, 2) : "–").Append(" |\n");
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>The break table's nearby horde: within this of the point the bolt struck.</summary>
+        public const float NearBreakM = 10f;
+
+        /// <summary>Does <paramref name="p"/> lie within any of the placements' footprints?</summary>
+        static bool Within(PlacementList list, System.Collections.Generic.List<int> pieces, System.Numerics.Vector2 p)
+        {
+            foreach (int k in pieces)
+            {
+                Placement pl = list.Items[k];
+                Footprint fp = list.Props[pl.Prop];
+                if (fp.Shape == FootprintShape.Circle)
+                {
+                    if (System.Numerics.Vector2.Distance(p, pl.ToWorld(fp.Center)) < fp.Radius * pl.Scale) return true;
+                    continue;
+                }
+                if (fp.Shape != FootprintShape.Polygon) continue;
+                bool inside = false;
+                for (int a = 0, n = fp.Points.Length; a < n; a++)
+                {
+                    System.Numerics.Vector2 u = pl.ToWorld(fp.Points[a]), v = pl.ToWorld(fp.Points[(a + 1) % n]);
+                    if ((u.Y > p.Y) != (v.Y > p.Y) && p.X < u.X + (p.Y - u.Y) * (v.X - u.X) / (v.Y - u.Y)) inside = !inside;
+                }
+                if (inside) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Per section, the numbers an intensity is tuned by: the hero's swings per second, kills per
         /// swing (mean and peak), the spells' kills and their share, and the mean on screen against target.
         /// </summary>

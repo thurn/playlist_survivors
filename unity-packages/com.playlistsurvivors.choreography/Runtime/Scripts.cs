@@ -236,6 +236,8 @@ namespace PS.Choreography
         /// </summary>
         public string BossFrom;
         public bool Clear;              // the hero's combos clear the screen: no releases or refills (the ending, TD13)
+        /// <summary>The structures a hero's spell breaks in this section (a structure-breaks overlay's; <see cref="StructureBreaks"/>): target@position entries.</summary>
+        public GridEntry[] Breaks = new GridEntry[0];
     }
 
     /// <summary>
@@ -419,6 +421,8 @@ namespace PS.Choreography
         public Dictionary<string, LoadPreset> Loads = new Dictionary<string, LoadPreset>();
         /// <summary>The intensity overlay merged over the script (<see cref="IntensityOverlay"/>), or null.</summary>
         public string Intensity;
+        /// <summary>The structure-breaks overlay merged over the script after it (<see cref="PS.Choreography.StructureBreaks"/>), or null.</summary>
+        public string StructureBreaks;
         public LevelSection[] Sections;
 
         // A trailer shot's fields (trailer.md, "Shot simulations"). Each is opt-in: its default runs the song as before.
@@ -480,22 +484,31 @@ namespace PS.Choreography
             EnvelopeViewWidthM = widestM;
         }
 
-        /// <summary>The script from its JSON, with an intensity overlay's JSON (<see cref="IntensityOverlay"/>) merged over it first, if given.</summary>
-        public static LevelScript Parse(string json, string overlayJson = null)
+        /// <summary>
+        /// The script from its JSON, with an intensity overlay's JSON (<see cref="IntensityOverlay"/>) merged over it
+        /// first, if given, and then a structure-breaks overlay's (<see cref="PS.Choreography.StructureBreaks"/>).
+        /// </summary>
+        public static LevelScript Parse(string json, string overlayJson = null, string breaksJson = null)
         {
             JsonValue root = JsonValue.Parse(json);
-            string intensity = null;
+            string intensity = null, breaks = null;
             if (overlayJson != null)
             {
                 var overlay = IntensityOverlay.Parse(overlayJson);
                 root = overlay.Apply(root);
                 intensity = overlay.Name;
             }
-            return FromJson(root, intensity);
+            if (breaksJson != null)
+            {
+                var overlay = PS.Choreography.StructureBreaks.Parse(breaksJson);
+                root = overlay.Apply(root);
+                breaks = overlay.Name;
+            }
+            return FromJson(root, intensity, breaks);
         }
 
-        /// <summary>The script from its parsed JSON (a trailer's shot script builds it), naming the overlay already merged into it, if any.</summary>
-        public static LevelScript FromJson(JsonValue root, string intensity = null)
+        /// <summary>The script from its parsed JSON (a trailer's shot script builds it), naming the overlays already merged into it, if any.</summary>
+        public static LevelScript FromJson(JsonValue root, string intensity = null, string structureBreaks = null)
         {
             var ls = new LevelScript
             {
@@ -524,6 +537,7 @@ namespace PS.Choreography
                 ViewWidthToM = root["viewWidthToM"].AsFloat(0f),
                 Boss = root["boss"].AsString(),
                 Duel = root.Has("duel") ? MixEntry.ParseMix(root["duel"]) : null,
+                StructureBreaks = structureBreaks,
             };
             JsonValue span = root["spanS"];
             if (span.Type == JsonType.Array)
@@ -554,6 +568,7 @@ namespace PS.Choreography
                     Boss = s["boss"].AsString(),
                     BossFrom = s["bossFrom"].AsString(),
                     Clear = s["clear"].AsBool(false),
+                    Breaks = GridEntry.ParseList(s["breaks"]),
                 };
                 ls.Preset(ls.Sections[i].Load);
             }

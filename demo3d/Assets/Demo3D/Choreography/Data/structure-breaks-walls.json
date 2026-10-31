@@ -1,0 +1,13 @@
+{
+  "name": "walls",
+  "note": [
+    "The first structure-breaks schedule (ps-suy.2; choreography.md, Structure breaks): `--structure-breaks walls` merges it over the level script after any --intensity. Each entry is target@position[/k], the k-th occurrence of the grid position in its section (the first by default), where the hero's bolt strikes the target and its pieces leave the obstacle map.",
+    "Targets are named by area: a courtyard's wall segments by side and end (before its yaw), a ruin wall's numbered from its from end. Each break lands beside the hero as the route reaches the wall, so the camera has it (TimelineReport's break table: every one in view, the bolt 1.5 to 9 m): the build opens with the hero in the ruins gate's gap, and both of the gate's wall runs blow out round it, so the horde behind follows on a front; drop-2 lands at the courtyard's south-east corner, where the south walls blow out as the drop hits and the horde that filled the courtyard comes at the hero; the new opening sends the hero out by the east gap, and on drop-2's second phrase the east walls on either side of it go too.",
+    "drop-1 breaks nothing: its hero holds the crystal ring, 24 m from the nearest wall, and a break the camera misses is no moment."
+  ],
+  "sections": {
+    "build": { "breaks": ["ruins-gate/1@phrase", "ruins-gate/2@phrase"] },
+    "drop-2": { "breaks": ["courtyard/south-west@phrase", "courtyard/south-east@phrase",
+                           "courtyard/east-south@phrase/2", "courtyard/east-north@phrase/2"] }
+  }
+}
