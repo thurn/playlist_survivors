@@ -77,7 +77,7 @@ namespace PS.Game.Sim
         /// </summary>
         public static SessionRecord Of(SimConfig config, Simulation sim)
         {
-            if (config.Horde != null && (config.Arsenal == null || !Same(config.Horde.Roster, SliceLevel.Roster)))
+            if (config.Horde != null && (config.Arsenal == null || !Same(config.Horde.Roster, SliceLevel.Roster) || !StartsAsTheSlice(config.Arsenal)))
                 throw new NotSupportedException("a session records the slice's level or an open one");
             return new SessionRecord
             {
@@ -100,6 +100,14 @@ namespace PS.Game.Sim
                 Hash = sim.Hash,
                 Runtime = CurrentRuntime,
             };
+        }
+
+        /// <summary>The slice's starting arsenal (a player's `--arsenal` changes it, which <see cref="Config"/> couldn't rebuild).</summary>
+        static bool StartsAsTheSlice(ArsenalConfig arsenal)
+        {
+            var slice = new ArsenalConfig();
+            return arsenal.Passives.Length == 0 && arsenal.Stats == null && arsenal.Weapons.Length == slice.Weapons.Length
+                   && Array.TrueForAll(arsenal.Weapons, w => Array.IndexOf(slice.Weapons, w) >= 0);
         }
 
         static bool Same(string[] a, string[] b)

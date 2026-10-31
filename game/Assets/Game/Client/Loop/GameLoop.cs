@@ -13,6 +13,7 @@ using Game.Client.Music;
 using Game.Client.Pickups;
 using Game.Client.Sound;
 using Game.Client.Structures;
+using Game.Client.Weapons;
 using PS.Game.Sim;
 using PS.Game.Sim.Level;
 using UnityEngine;
@@ -61,6 +62,8 @@ namespace Game.Client.Loop
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
     /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
+    /// - `--arsenal "garlic:8,fire-trail:3"`: the hero's starting weapons and ranks, in slot order, in place of the sword;
+    /// - `--walk "right@9-11,up@11-12.5"`: keys held over song-time spans (<see cref="ScriptedKeys"/>), for a walking hero in stills;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
     /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included;
@@ -100,6 +103,7 @@ namespace Game.Client.Loop
         MusicTimes _musicTimes;
         KeyInput _keys;
         DebugCommands _commands;
+        ScriptedKeys _walk;
         readonly SliceCounts _counts = new SliceCounts();
         DebugOverlay _overlay;
         LookPresenter _look;
@@ -107,6 +111,8 @@ namespace Game.Client.Loop
         EffectsPresenter _effects;
         SoundScheduler _sounds;
         SoundPresenter _soundPresenter;
+        GarlicAura _garlic;
+        FireTrailView _fireTrail;
         MixCapture _capture;
         string _soundOut;
         readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
@@ -212,6 +218,8 @@ namespace Game.Client.Loop
             {
                 config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
                 config.Easy = Args.Has("--easy");
+                var arsenal = Args.Get("--arsenal");
+                if (arsenal != null && config.Arsenal != null) config.Arsenal.Weapons = Loadout(arsenal);
             }
             _config = config;
             Driver = new SimDriver(config, clock);
@@ -221,6 +229,7 @@ namespace Game.Client.Loop
             _pause = new PauseMenu(transform);
             _pauseAt = Args.GetFloat("--pause-at", -1);
             _commands = new DebugCommands(Args.Get("--debug"));
+            _walk = new ScriptedKeys(Args.Get("--walk"));
 
             var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
             Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena, hero: heroBake == null));
@@ -266,6 +275,14 @@ namespace Game.Client.Loop
                 Driver.Events.Subscribe(_effects);
             }
             SetupSound(roles);
+            if (content != null)
+            {
+                // The weapons' looks and sounds, into the effects and sounds set up above.
+                _garlic = new GarlicAura(camera, Driver.Sim, content, _effects?.System, _soundPresenter);
+                Driver.Events.Subscribe(_garlic);
+                _fireTrail = new FireTrailView(camera, content, _effects?.System, _soundPresenter);
+                Driver.Events.Subscribe(_fireTrail);
+            }
             if (_shatter != null) _shatter.Erupted += Erupted;
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
@@ -290,6 +307,15 @@ namespace Game.Client.Loop
                       $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}, " +
                       $"start {config.Start}, easy {config.Easy}");
         }
+
+        /// <summary>`--arsenal`'s weapons: `id:rank`, comma-separated, in slot order.</summary>
+        static (string Id, int Rank)[] Loadout(string list) => Array.ConvertAll(list.Split(','), item =>
+        {
+            var parts = item.Trim().Split(':');
+            if (parts.Length != 2 || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int rank) || rank < 1)
+                throw new ArgumentException($"--arsenal: '{item}' is not weapon:rank");
+            return (parts[0].Trim(), rank);
+        });
 
         /// <summary>The output device's saved calibration on the music's clock (a device change ends the run, so it holds for the run).</summary>
         void Calibrate()
@@ -362,6 +388,7 @@ namespace Game.Client.Loop
             {
                 _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
                 _commands.Apply(Driver.Sim);
+                _walk.Apply(Driver.Sim);
                 RunInput();
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
@@ -622,6 +649,8 @@ namespace Game.Client.Loop
             _arena?.Dispose();
             _crowd?.Dispose();
             _gems?.Dispose();
+            _garlic?.Dispose();
+            _fireTrail?.Dispose();
             _cards?.Dispose();
             _out?.Dispose();
             _out = null;

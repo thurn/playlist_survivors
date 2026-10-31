@@ -28,6 +28,16 @@
       "sparks": [
         { "count": 60, "speed": [5, 13], "life": [0.5, 0.8], "size": 0.09, "gravity": 1.6, "radius": 0.6, "pitch": 25, "spread": 55, "stretch": 0.025, "hdr": 8, "heightM": 0.5, "limit": 4, "dampen": 0.08, "shrink": 0.6, "fade": 0.5 },
         { "count": 140, "speed": [2, 7], "life": [0.6, 0.9], "size": 0.04, "gravity": 0.4, "radius": 0.8, "pitch": 20, "spread": 75, "stretch": 0, "hdr": 2.2, "heightM": 0.5, "limit": 1.2, "dampen": 0.2, "shrink": 0.3, "fade": 0.4 }
-      ] }
+      ] },
+    { "name": "garlic-pulse", "light": { "color": [0.55, 1.0, 0.66], "range": 5, "intensity": 1.2, "duration": 0.35, "height": 0.6 },
+      "heat": { "edge": [0.2, 0.8, 0.4], "mid": [0.55, 1.0, 0.66], "gain": 0.3 },
+      "notes": "Garlic's pulse (Client/Weapons/GarlicAura.cs): motes born on the aura's edge as each incarnation lands, drifting out and up and fading within 0.8 s; spawned at the aura's radius (scaleRef, its rank 1 radius in metres) and tinted by the weapon's colour, white-hot at the core",
+      "scaleRef": 1.8284,
+      "sparks": { "count": 72, "ring": true, "radius": 1.8284, "speed": [0.3, 1.4], "life": [0.5, 0.9], "size": 0.1, "gravity": -0.35, "stretch": 0.03, "hdr": 6, "heightM": 0.12, "dampen": 0.15, "shrink": 0.5, "fade": 0.35 } },
+    { "name": "fire-trail-flame", "light": { "color": [1.0, 0.54, 0.23], "range": 3, "intensity": 1.0, "duration": 0.3, "height": 0.4 },
+      "heat": { "edge": [0.8, 0.15, 0.05], "mid": [1.0, 0.54, 0.23], "gain": 0.3 },
+      "notes": "Fire Trail's burning tile (Client/Weapons/FireTrailView.cs): embers rising from the tile's disc at each pulse, white-hot cooling into the weapon's colour within 0.7 s; spawned at the burn's radius (scaleRef, its rank 1 radius in metres)",
+      "scaleRef": 0.7407,
+      "sparks": { "count": 26, "upward": 1, "radius": 0.55, "speed": [0.8, 2.6], "life": [0.4, 0.8], "size": 0.1, "gravity": -0.5, "stretch": 0.06, "hdr": 7, "heightM": 0.05, "dampen": 0.1, "shrink": 0.7, "fade": 0.3 } }
   ]
 }

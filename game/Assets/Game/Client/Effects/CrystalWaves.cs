@@ -146,7 +146,7 @@ namespace Game.Client.Effects
         /// position's xz and 0 (inner edge) or 1 (outer edge) in its y; uv = (angle / 2pi, edge).
         /// The shader places it at the draw's radius and width.
         /// </summary>
-        static Mesh Annulus()
+        internal static Mesh Annulus()
         {
             var verts = new Vector3[(Segments + 1) * 2];
             var uv = new Vector2[verts.Length];

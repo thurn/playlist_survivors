@@ -116,7 +116,8 @@ namespace Game.EditorTools.Effects
         /// bursts out and then floats); pitch (degrees above the ground: a cone thrown forward along
         /// the spawn's yaw, its +z, instead of upward) with spread (that cone's half-angle, degrees);
         /// shrink (the share of its size a particle loses by the end of its life), and fade (where
-        /// through its life it starts fading out, linearly to 0 at its end: 0.6 by default).
+        /// through its life it starts fading out, linearly to 0 at its end: 0.6 by default); ring
+        /// (true: born on the edge of a flat circle of the radius, thrown out from its centre).
         /// </summary>
         public static GameObject SparkBurst(JObject o, int index = 0)
         {
@@ -146,7 +147,14 @@ namespace Game.EditorTools.Effects
             em.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
             var shape = ps.shape;
             float up = F("upward", 0.4f);
-            if (o["pitch"] != null)
+            if ((bool?)o["ring"] == true)
+            {
+                // Flat on the ground: born on the circle's edge, thrown out from its centre.
+                shape.shapeType = ParticleSystemShapeType.Circle;
+                shape.radiusThickness = 0;
+                shape.rotation = new Vector3(-90, 0, 0);
+            }
+            else if (o["pitch"] != null)
             {
                 // Thrown forward: a cone along +z (the spawn's yaw turns it), tilted up by the pitch.
                 shape.shapeType = ParticleSystemShapeType.Cone;

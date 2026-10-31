@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Client.Effects;
 using Game.Client.Loop;
 using PS.Game.Sim;
@@ -12,6 +13,8 @@ namespace Game.Client.Sound
     ///   hits on enemies (heavy strikes and cleave bands too), and each death's cry under demo3d's
     ///   crystal shatter (ShatterSounds: an ice break and a glass spray, then a tinkle as the shards
     ///   land, pitched by the body's size); a structure's break shatters the same way, lower;
+    /// - the other weapons' sounds come from their own views (<see cref="Request"/>), and a weapon that
+    ///   sounds its own hits says so (<see cref="VoiceHitsElsewhere"/>);
     /// - **off-grid sounds** snapped as native snaps them: the hero's hurt on the next sixteenth, and
     ///   gem pickups' chimes on the sixteenth grid, climbing a pentatonic scale (<see cref="PentatonicChain"/>).
     /// Every request goes through the aggregation (at most three voices per beat and category). Each
@@ -28,6 +31,7 @@ namespace Game.Client.Sound
         readonly RoleLooks _roles;
         readonly Func<float> _follower;
         readonly PentatonicChain _chain = new PentatonicChain();
+        readonly HashSet<int> _voiced = new HashSet<int>();
 
         /// <param name="follower">The plugin's follower gain (0.32 to 1), or null for none (full level).</param>
         public SoundPresenter(SoundScheduler scheduler, Simulation sim, RoleLooks roles, float limit, Func<float> follower)
@@ -44,6 +48,9 @@ namespace Game.Client.Sound
         public float Limit { get; set; }
 
         public SoundAggregator Aggregator => _aggregator;
+
+        /// <summary>Weapon <paramref name="weapon"/> (content's index) sounds its own hits: the sword's hit sound leaves them.</summary>
+        public void VoiceHitsElsewhere(int weapon) => _voiced.Add(weapon);
 
         public void OnEvent(in SimEvent e)
         {
@@ -67,6 +74,7 @@ namespace Game.Client.Sound
                         Request(SoundKind.Hurt, MusicalGrid.SlotAt(_sim.Stream.Beats, e.T, MusicalGrid.Sixteenth), 1f, 1f, 1f);
                         break;
                     }
+                    if (_voiced.Contains(h.Weapon)) break; // a weapon with its own hit sound
                     bool heavy = h.WeaponHit == WeaponHit.HeavyStrike;
                     Request(heavy ? SoundKind.HitHeavy : SoundKind.Hit, e.T, 1f, 1f, heavy ? 1f : 0.6f);
                     break;
@@ -116,7 +124,8 @@ namespace Game.Client.Sound
         /// <summary>A body's pitch (playback rate) by its size: (1 / size)^0.3, within 0.8 to 1.3 (ShatterSounds.Pitch).</summary>
         public static float Pitch(float size) => Math.Min(1.3f, Math.Max(0.8f, (float)Math.Pow(1f / Math.Max(0.05f, size), 0.3)));
 
-        void Request(SoundKind kind, double t, float gain, float pitch, float strength)
+        /// <summary>A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through the beat's aggregation.</summary>
+        public void Request(SoundKind kind, double t, float gain, float pitch, float strength)
         {
             var cue = new SoundCue { Kind = kind, Song = t, Gain = gain, Pitch = pitch };
             _aggregator.Request(cue, MusicalGrid.Bucket(_sim.Stream.Beats, t), strength);

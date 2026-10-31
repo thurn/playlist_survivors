@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Game.Client.Effects;
 using Game.Client.Loop;
 using Game.Client.Sound;
+using Game.Client.Weapons;
 using NUnit.Framework;
 using PS.Game.Sim;
 using PS.Game.Sim.Content;
@@ -242,6 +244,35 @@ namespace Game.Tests
             Assert.That(s.Log.Single().Song, Is.EqualTo(3.0), "the hit's sound is any weapon's");
             p.OnEvent(sword);
             Assert.That(s.Log.Count(e => e.Song == 3.5), Is.EqualTo(1), "the sword's swing");
+        }
+
+        [Test]
+        public void GarlicAndFireTrailSoundTheirOwnPulsesAndHitsNotTheSwords()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            int garlic = content.WeaponIndex("garlic"), trail = content.WeaponIndex("fire-trail");
+            var sim = Beats();
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var sound = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
+            using var aura = new GarlicAura(null, sim, content, null, sound);
+            using var wake = new FireTrailView(null, content, null, sound);
+            var events = new[]
+            {
+                SimEvent.HeroAttack(3.0, garlic, ShapeKind.Aura, 0, 3.0, 3.0, 0, 0, false, 1.83),
+                SimEvent.EnemyHit(3.0, 4, garlic, WeaponHit.Strike, 0.5, 1, 0, 1, 0),
+                SimEvent.HeroAttack(3.5, trail, ShapeKind.Trail, 0, 3.5, 3.5, 0, 0, false, 0.74),
+                SimEvent.Burn(3.5, trail, 2.25, 0.75, 0.74),
+                SimEvent.EnemyHit(3.5, 5, trail, WeaponHit.Strike, 0.4, 2.25, 0.75, 1, 0),
+            };
+            foreach (var e in events)
+            {
+                sound.OnEvent(e);
+                aura.OnEvent(e);
+                wake.OnEvent(e);
+            }
+            var categories = _host.GetComponents<AudioSource>().Where(a => a.clip != null).Select(a => a.clip.name.Split('/')[0]).OrderBy(n => n);
+            Assert.That(categories, Is.EqualTo(new[] { "fire-trail-hit", "fire-trail-pulse", "garlic-hit", "garlic-pulse" }), "no sword hit");
+            Assert.That(s.Log.Select(e => e.Song), Is.EquivalentTo(new[] { 3.0, 3.0, 3.5, 3.5 }), "each at its event's song time");
         }
 
         [Test]

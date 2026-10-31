@@ -8,6 +8,7 @@ namespace Game.Client.Sound
     public enum SoundKind
     {
         Swing, SwingHeavy, Slam, Hit, HitHeavy, Death, ShatterBody, ShatterGlass, ShatterTinkle, Hurt, Chime,
+        GarlicPulse, GarlicHit, FireTrailPulse, FireTrailHit,
     }
 
     /// <summary>
@@ -105,7 +106,8 @@ namespace Game.Client.Sound
         }
 
         static readonly string[] Names =
-            { "swing", "swing-heavy", "slam", "hit", "hit-heavy", "death", "shatter-body", "shatter-glass", "shatter-tinkle", "hurt", "chime" };
+            { "swing", "swing-heavy", "slam", "hit", "hit-heavy", "death", "shatter-body", "shatter-glass", "shatter-tinkle", "hurt", "chime",
+              "garlic-pulse", "garlic-hit", "fire-trail-pulse", "fire-trail-hit" };
 
         /// <summary>A category's name in the bank and sounds.json.</summary>
         public static string Name(SoundKind k) => Names[(int)k];

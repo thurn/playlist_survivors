@@ -59,3 +59,5 @@ what was run (the exact commands), the numbers, and what they show.
   slamming on the beat (ps-msz.6.2).
 - [music-events](music-events/README.md): a zone change easing the arena's lighting, every swarm, set piece and the
   signature minotaur as filmstrips, and a 30-minute run's events under the cap (ps-msz.6.3).
+- [weapons](weapons/README.md): Garlic's aura pulsing on the beat and Fire Trail's wake following the
+  hero's tiles, as filmstrips, and their rules' tests against native's numbers (ps-msz.6.7).

@@ -191,6 +191,9 @@ namespace PS.Game.Sim.Tests
         {
             var config = HordeFixture.Config(sword: 1);
             Assert.Throws<NotSupportedException>(() => SessionRecord.Of(config, new Simulation(config)));
+            var armed = SliceLevel.Config(HordeFixture.Content, null, Footprint, 1);
+            armed.Arsenal.Weapons = new[] { ("garlic", 8) };
+            Assert.Throws<NotSupportedException>(() => SessionRecord.Of(armed, new Simulation(armed)), "a player's --arsenal");
         }
     }
 }

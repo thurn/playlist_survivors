@@ -1342,6 +1342,37 @@ with `SimConfig.Content` now the one content field for the horde and the arsenal
 - `ArsenalConfig.Cards = false` counts levels without opening cards, for tests of
   other systems.
 
+**Shipped (ps-msz.6.7).** Garlic and Fire Trail, each in its own files
+(`Sim/Weapons/Garlic.cs` and `FireTrail.cs`, `Client/Weapons/`), with native's numbers:
+
+- **Garlic** (and Soul Eater, any aura): each shot is a new incarnation, an attack event with
+  shape Aura whose reach is the aura's radius (0.32 VS units, 1.83 m, times Area). Then, at once
+  and at each tick's end until the next shot, every live enemy touching the circle around the hero
+  takes power times Might, once an incarnation, as native's GarlicAura. It rests while frozen, fallen
+  or not playing.
+- **Fire Trail**: on the grid the wake is the tiles the hero stood on. Each shot is a pulse: an
+  attack event with shape Trail, then each tile the hero stood on during the last duration times
+  Duration of run clock, skipping its latest 0.12 s, newest first, burns. A burn is a
+  `SimEventKind.Burn` event at the tile's centre (`BurnEvent`: weapon, x, y, radius), and every
+  enemy touching that circle (20 px, 0.74 m, times Area) takes power times Might, once a pulse.
+  A standing hero burns its own tile, as native's burns the samples under it. Run clock, so a
+  freeze doesn't age the wake.
+- **Looks** (`GarlicAura`, `FireTrailView`, on `PrismGround`: shader Game/PrismGround, a ground
+  ring or disc in the ability's colour with a prism sheen, white-hot where brightest). Garlic is a
+  mint aura at exactly the radius hit. Its rim swells out and flares at each pulse, it breathes
+  with a kick on every beat, and motes lift off its edge (`garlic-pulse`, a ring of sparks). Each
+  burning tile is an orange disc, white at its centre, flaring at the pulse and glowing while the
+  pulses renew it, with embers rising (`fire-trail-flame`). Soul Eater's own layer is the chests
+  bead's (`GarlicAura.Tint` has its colour).
+- **Sounds**: each pulse and hit has its own category (`garlic-pulse`, `garlic-hit`,
+  `fire-trail-pulse`, `fire-trail-hit`: native's palette). A weapon that voices its own hits
+  tells the sound presenter (`SoundPresenter.VoiceHitsElsewhere`), so the sword's hit sound
+  leaves them. The white hit chips are every weapon's.
+- `Weapon.Tick` takes the sim; `Power`, `Radius`, `Launch` and `Holding` moved from the sword
+  to `Weapon` for every weapon.
+- The player's `--arsenal "garlic:8,fire-trail:3"` sets the starting weapons and `--walk
+  "right@9-11"` holds keys over song-time spans, for stills of a walking hero.
+
 ### Enemies
 
 Enemies keep native's roles, stats and spawn schedule, with continuous

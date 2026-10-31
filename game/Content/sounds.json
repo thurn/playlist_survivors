@@ -1,4 +1,4 @@
-{ "note": "The game's sounds (docs/design/unity-game.md, Audio), baked by game/Assets/Game/Editor/Sound/SoundBaker.cs into the gitignored Assets/Baked/Sounds/. Each category (Client/Sound/SoundScheduler.cs's SoundKind) lists its variants: a vendor clip by file name (demo3d's packs, in game/manifest.json) or a free sample by its id in public/assets/sfx/sounds.json (a free sample's onset comes from there). gain is the category's level; the aggregation multiplies it by the beat's gain (0.35 for one sound, growing with log2 of the count). rootNote (MIDI) pitches a clip to a note (the chime's pentatonic climb, from native's survivors palette). limit is the effects' level under the music at the follower's full gain; the music itself is never ducked. The swing, hit, death and crystal shatter choices are demo3d's (SoundBaker, and evidence/shatter/impact for the shatter's layers).",
+{ "note": "The game's sounds (docs/design/unity-game.md, Audio), baked by game/Assets/Game/Editor/Sound/SoundBaker.cs into the gitignored Assets/Baked/Sounds/. Each category (Client/Sound/SoundScheduler.cs's SoundKind) lists its variants: a vendor clip by file name (demo3d's packs, in game/manifest.json) or a free sample by its id in public/assets/sfx/sounds.json (a free sample's onset comes from there). gain is the category's level; the aggregation multiplies it by the beat's gain (0.35 for one sound, growing with log2 of the count). rootNote (MIDI) pitches a clip to a note (the chime's pentatonic climb, from native's survivors palette). limit is the effects' level under the music at the follower's full gain; the music itself is never ducked. The swing, hit, death and crystal shatter choices are demo3d's (SoundBaker, and evidence/shatter/impact for the shatter's layers); Garlic's and Fire Trail's pulses and hits are native's palette (content/sounds.yaml), Garlic's pulse its accent's force field.",
   "limit": 0.8,
   "categories": {
     "swing": { "gain": 0.6, "clips": ["SWORD_Whoosh_Hit_Armor_Hard_RR1_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR3_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR5_mono"] },
@@ -11,6 +11,10 @@
     "shatter-glass": { "gain": 0.45, "clips": ["SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono"] },
     "shatter-tinkle": { "gain": 0.22, "clips": ["SHATTER_Glass_Fragment_RR1_mono", "SHATTER_Glass_Fragment_RR4_mono", "SHATTER_Glass_Fragment_RR7_mono"] },
     "hurt": { "gain": 0.8, "clips": ["kenney/impactPunch_medium_000", "kenney/impactPunch_medium_001"] },
-    "chime": { "gain": 0.55, "rootNote": 91, "clips": ["kenney/impactGlass_light_003"] }
+    "chime": { "gain": 0.55, "rootNote": 91, "clips": ["kenney/impactGlass_light_003"] },
+    "garlic-pulse": { "gain": 0.45, "clips": ["kenney/sci-forceField_000"] },
+    "garlic-hit": { "gain": 0.5, "clips": ["kenney/impactSoft_medium_000", "kenney/impactSoft_medium_002"] },
+    "fire-trail-pulse": { "gain": 0.45, "clips": ["rpg80/spell_fire_01", "rpg80/spell_fire_02", "rpg80/spell_fire_07"] },
+    "fire-trail-hit": { "gain": 0.5, "clips": ["kenney/impactSoft_medium_001", "kenney/impactSoft_medium_003"] }
   }
 }
