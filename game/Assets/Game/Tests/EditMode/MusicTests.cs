@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Game.Client.Music;
 using NUnit.Framework;
+using PS.Game.Sim;
 using UnityEngine;
 using UnityEngine.TestTools.Constraints;
 using Is = NUnit.Framework.Is; // over the Unity constraints' Is, whose AllocatingGCMemory extends it
@@ -26,9 +27,7 @@ namespace Game.Tests
         [Test]
         public void TheBindingsHaveTheHeadersLayout()
         {
-            Assert.That(Marshal.SizeOf<Plugin.Entry>(), Is.EqualTo(120));
-            Assert.That((int)Marshal.OffsetOf<Plugin.Entry>(nameof(Plugin.Entry.T)), Is.EqualTo(8));
-            Assert.That((int)Marshal.OffsetOf<Plugin.Entry>(nameof(Plugin.Entry.V0)), Is.EqualTo(24));
+            // ps_entry is the sim's StreamEntry: PS.Game.Sim.Tests' EntryLayoutTests checks it.
             Assert.That(Marshal.SizeOf<Plugin.Status>(), Is.EqualTo(72));
             Assert.That((int)Marshal.OffsetOf<Plugin.Status>(nameof(Plugin.Status.Stalls)), Is.EqualTo(48));
             Assert.That((int)Marshal.OffsetOf<Plugin.Status>(nameof(Plugin.Status.FollowerGain)), Is.EqualTo(68));
@@ -105,7 +104,7 @@ namespace Game.Tests
                 Marshal.FreeHGlobal(config.Models);
             }
             var buffer = new float[frames * 2];
-            var entries = new Plugin.Entry[256];
+            var entries = new StreamEntry[256];
             int buffers = 0;
             double lastBeat = double.NegativeInfinity, loudest = 0, dsp = 0;
             var clock = Stopwatch.StartNew();
@@ -119,7 +118,7 @@ namespace Game.Tests
                 Assert.That(n, Is.GreaterThanOrEqualTo(0));
                 for (int i = 0; i < n; i++)
                 {
-                    if (entries[i].Kind != Plugin.KindBeat) continue;
+                    if (entries[i].Kind != EntryKind.Beat) continue;
                     Assert.That(entries[i].T, Is.GreaterThan(lastBeat));
                     lastBeat = entries[i].T;
                 }
@@ -164,7 +163,7 @@ namespace Game.Tests
                     polled = Plugin.Poll(session, entries);
                 }, Is.Not.AllocatingGCMemory());
                 for (int i = 0; i < polled; i++)
-                    if (entries[i].Kind == Plugin.KindBeat) lastBeat = entries[i].T;
+                    if (entries[i].Kind == EntryKind.Beat) lastBeat = entries[i].T;
                 Plugin.GetStatus(session, out var end);
                 Assert.That(end.Stalls, Is.Zero);
                 Assert.That(loudest, Is.GreaterThan(0.1), "the music was silent");

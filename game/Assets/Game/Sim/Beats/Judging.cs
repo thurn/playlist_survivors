@@ -44,7 +44,7 @@ namespace PS.Game.Sim
         public bool JudgedAt(int i) => i >= 0 && judged[i];
 
         /// <summary>Takes in the ticks after the ones already judged (the revealed ticks, in order).</summary>
-        public void Extend(ReadOnlySpan<StreamEntry> ticks)
+        internal void Extend(ReadOnlySpan<StreamEntry> ticks)
         {
             for (int j = judged.Count; j < ticks.Length; j++)
             {

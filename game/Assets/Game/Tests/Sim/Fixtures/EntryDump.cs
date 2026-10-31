@@ -17,24 +17,12 @@ namespace PS.Game.Sim.Tests
         /// <summary>The first 20 s of house-128 (128 BPM), native/fixtures/entries.</summary>
         public const string House128 = "house-128-20s.jsonl";
 
-        /// <summary>native/fixtures/entries: under Unity the current directory is the project (game/); under .NET the test binaries' folder.</summary>
-        static string FixturePath(string name)
-        {
-            foreach (string start in new[] { Directory.GetCurrentDirectory(), TestContext.CurrentContext.TestDirectory })
-                for (var d = new DirectoryInfo(start); d != null; d = d.Parent)
-                {
-                    string candidate = Path.Combine(d.FullName, "native", "fixtures", "entries", name);
-                    if (File.Exists(candidate)) return candidate;
-                }
-            throw new FileNotFoundException("native/fixtures/entries/" + name);
-        }
-
         public static List<StreamEntry> Load(string name, out double duration)
         {
             var entries = new List<StreamEntry>();
             duration = double.NaN;
             int line = 0;
-            foreach (string text in File.ReadLines(FixturePath(name)))
+            foreach (string text in File.ReadLines(Checkout.File("native", "fixtures", "entries", name)))
             {
                 line++;
                 if (text.Length == 0) continue;
@@ -51,7 +39,6 @@ namespace PS.Game.Sim.Tests
                     Kind = (EntryKind)(int)Field(json, "kind").Number,
                     T = Field(json, "t").Number,
                     Stamp = Field(json, "known_at").Number,
-                    KnownAt = double.NaN,
                 };
                 if (!Enum.IsDefined(typeof(EntryKind), e.Kind) || e.Kind == EntryKind.None)
                     throw new FormatException($"{name}:{line}: unknown kind {(int)e.Kind}");

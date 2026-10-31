@@ -112,7 +112,7 @@ namespace PS.Game.Sim.Tests
                     double t = k * TickSeconds;
                     double evidence = s.Bpm0 > 0 ? s.Evidence : 0.1;
                     list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), evidence, 0.5 + 0.2 * rng.NextDouble(),
-                        level: (int)LoudnessLevel.Medium, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
+                        level: LoudnessLevel.Medium, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
                         hat: rng.NextDouble(), bass: rng.NextDouble(), brightness: 0.4));
                     if (k % 20 == 0) list.Add(StreamEntry.Timbre(t, StampOf(t + 0.5), 0.4, 0.2, 0.6, 0.5));
                 }
@@ -135,16 +135,30 @@ namespace PS.Game.Sim.Tests
         }
     }
 
+    /// <summary>An entry with the known-at time a replay gives it (<see cref="Simulation.AddKnown"/>).</summary>
+    public struct KnownEntry
+    {
+        public StreamEntry Entry;
+        public double KnownAt;
+
+        public KnownEntry(in StreamEntry entry, double knownAt)
+        {
+            Entry = entry;
+            KnownAt = knownAt;
+        }
+    }
+
     /// <summary>Drives a sim the way the client does: frames, arrivals, StepTo.</summary>
     public static class Drive
     {
         /// <summary>
         /// Feeds entries as the live path would: each arrives once the frontier passes its stamp by
         /// <paramref name="arrivalLag"/> (the sim's lead over the analyzer's emission), then the
-        /// frame steps the sim. Returns the index of the first entry not yet fed.
+        /// frame steps the sim, and <paramref name="eachFrame"/> reads it as a client would. Returns
+        /// the index of the first entry not yet fed.
         /// </summary>
         public static int Feed(Simulation sim, IReadOnlyList<StreamEntry> entries, double until,
-            double frame = 1.0 / 60, double arrivalLag = 0.06, int from = 0)
+            double frame = 1.0 / 60, double arrivalLag = 0.06, int from = 0, Action<Simulation> eachFrame = null)
         {
             int next = from;
             double frontier = sim.Now;
@@ -160,6 +174,7 @@ namespace PS.Game.Sim.Tests
                     next++;
                 }
                 sim.StepTo(frontier);
+                eachFrame?.Invoke(sim);
             }
             return next;
         }
@@ -168,22 +183,17 @@ namespace PS.Game.Sim.Tests
         /// The entries with their normal known-at times (<c>Stamp + B</c>, and no earlier than the
         /// start), for <see cref="Simulation.AddKnown"/>.
         /// </summary>
-        public static List<StreamEntry> Known(IEnumerable<StreamEntry> entries, double budget = 0.5)
+        public static List<KnownEntry> Known(IEnumerable<StreamEntry> entries, double budget = 0.5)
         {
-            var list = new List<StreamEntry>();
-            foreach (var e in entries)
-            {
-                var k = e;
-                k.KnownAt = Math.Max(0, e.Stamp + budget);
-                list.Add(k);
-            }
+            var list = new List<KnownEntry>();
+            foreach (var e in entries) list.Add(new KnownEntry(e, Math.Max(0, e.Stamp + budget)));
             return list;
         }
 
-        public static Simulation Replay(IEnumerable<StreamEntry> known, double until, ulong seed = 1)
+        public static Simulation Replay(IEnumerable<KnownEntry> known, double until, ulong seed = 1)
         {
             var sim = new Simulation(new SimConfig { Seed = seed });
-            foreach (var e in known) sim.AddKnown(e);
+            foreach (var k in known) sim.AddKnown(k.Entry, k.KnownAt);
             sim.StepTo(until);
             return sim;
         }

@@ -13,6 +13,12 @@ namespace PS.Game.Sim
     /// sim.EventsSince(cursor); sim.State;
     /// </code>
     ///
+    /// Only <see cref="Add"/>, <see cref="AddKnown"/>, <see cref="Press"/>, <see cref="Release"/>,
+    /// <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
+    /// public here and on what it exposes (<see cref="State"/>, <see cref="Stream"/>,
+    /// <see cref="Beats"/>, <see cref="Strides"/>) is a read the client may make at any time, as
+    /// often as it likes, without changing the run.
+    ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
     /// then the beat, then the stride step. The beat's state is updated before each of those and at
@@ -25,11 +31,13 @@ namespace PS.Game.Sim
 
         readonly StructList<KeyRecord> keys;
         readonly EventLog events;
+        readonly double knownAtBudget;
         double cursor;
 
         public Simulation(SimConfig config)
         {
-            Config = config ?? throw new ArgumentNullException(nameof(config));
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            knownAtBudget = config.KnownAtBudget;
             Random = new SimRandom(config.Seed);
             Stream = new BeliefLog(config);
             Beats = new BeatClock(Stream, config);
@@ -44,9 +52,9 @@ namespace PS.Game.Sim
             cursor = State.Now;
         }
 
-        public SimConfig Config { get; }
         public SimState State { get; }
-        public SimRandom Random { get; }
+        /// <summary>The run's one generator: the sim's alone, since every draw changes the rest of the run.</summary>
+        internal SimRandom Random { get; }
         public BeliefLog Stream { get; }
         public BeatClock Beats { get; }
         public StrideGrid Strides { get; }
@@ -66,8 +74,8 @@ namespace PS.Game.Sim
         /// </summary>
         public void Add(in StreamEntry e) => Stream.Arrive(e);
 
-        /// <summary>Accepts a replayed entry with its recorded <see cref="StreamEntry.KnownAt"/>.</summary>
-        public void AddKnown(in StreamEntry e) => Stream.AddKnown(e, Now);
+        /// <summary>Accepts a replayed entry with its recorded known-at time.</summary>
+        public void AddKnown(in StreamEntry e, double knownAt) => Stream.AddKnown(e, knownAt, Now);
 
         /// <summary>Records a key press heard at song time <paramref name="heard"/>; it takes effect now.</summary>
         public void Press(Key key, double heard) =>
@@ -91,7 +99,7 @@ namespace PS.Game.Sim
         public void StepTo(double songTime)
         {
             long target = (long)Math.Floor(songTime * TicksPerSecond + 1e-9);
-            Stream.SettleArrivals(Config.KnownAtBudget, Math.Max(Now, target * TickSeconds));
+            Stream.SettleArrivals(knownAtBudget, Math.Max(Now, target * TickSeconds));
             while (State.Tick < target) RunTick();
         }
 
@@ -119,7 +127,8 @@ namespace PS.Game.Sim
                     Beats.Fire(this, beat, State.Beat);
                     int i = Beats.LastBeat;
                     State.LastBeat = i;
-                    State.Bar = Beats.BarOf(i, out State.Downbeat);
+                    State.Bar = Beats.BarOf(i, out bool downbeat);
+                    State.Downbeat = downbeat;
                 }
                 else
                 {

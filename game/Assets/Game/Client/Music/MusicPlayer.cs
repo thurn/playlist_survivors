@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using PS.Game.Sim;
 using UnityEngine;
 
 namespace Game.Client.Music
@@ -34,7 +35,7 @@ namespace Game.Client.Music
         string _error;
 
         public readonly MusicClock Clock = new MusicClock();
-        public readonly Plugin.Entry[] Entries = new Plugin.Entry[MaxEntries];
+        public readonly StreamEntry[] Entries = new StreamEntry[MaxEntries];
         [NonSerialized] public Plugin.Status Status;
 
         /// <summary>How many of <see cref="Entries"/> this frame's poll filled.</summary>

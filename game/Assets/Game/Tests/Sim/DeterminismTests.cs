@@ -61,9 +61,9 @@ namespace PS.Game.Sim.Tests
         {
             var known = Drive.Known(Song().Entries());
             var a = Drive.Replay(known, 120);
-            int i = known.FindIndex(e => e.Kind == EntryKind.Beat && e.T > 60);
+            int i = known.FindIndex(k => k.Entry.Kind == EntryKind.Beat && k.Entry.T > 60);
             var changed = known[i];
-            changed.V1 = 0.2; // its evidence
+            changed.Entry.V1 = 0.2; // its evidence
             known[i] = changed;
             var b = Drive.Replay(known, 120);
             Assert.AreNotEqual(a.Hash, b.Hash);
@@ -99,7 +99,7 @@ namespace PS.Game.Sim.Tests
         public void TicksAllocateNothing()
         {
             var sim = new Simulation(new SimConfig());
-            foreach (var e in Drive.Known(Song().Entries())) sim.AddKnown(e);
+            foreach (var k in Drive.Known(Song().Entries())) sim.AddKnown(k.Entry, k.KnownAt);
             sim.StepTo(5); // warm up (JIT)
             long before = GC.GetAllocatedBytesForCurrentThread();
             sim.StepTo(120);

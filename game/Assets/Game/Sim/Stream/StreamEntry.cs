@@ -1,20 +1,23 @@
 using System;
+using System.Runtime.InteropServices;
 
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// One belief-stream entry, mirroring the plugin's <c>ps_entry { kind; t, known_at; v[12] }</c>
-    /// (unity-game.md, "The C Interface"). <see cref="T"/> is the content time (when in the music the
-    /// thing it describes happens), <see cref="Stamp"/> the plugin's stamp
-    /// (<c>position - (M - A)</c>, the C struct's <c>known_at</c>), and <see cref="KnownAt"/> the
-    /// game's known-at time, which the sim sets when the entry arrives:
-    /// <c>max(Stamp + B, frontier at arrival)</c>. No rule reads an entry before its
-    /// <see cref="KnownAt"/>.
+    /// One belief-stream entry: the C# mirror of the plugin's
+    /// <c>ps_entry { int32 kind; double t, known_at; double v[12]; }</c> (unity-game.md, "The C
+    /// Interface"), 120 bytes and blittable, so the client polls the plugin straight into an array
+    /// of these. <see cref="T"/> is the content time (when in the music the thing it describes
+    /// happens) and <see cref="Stamp"/> the plugin's stamp (<c>position - (M - A)</c>, the C struct's
+    /// <c>known_at</c>). The game's known-at time, <c>max(Stamp + B, frontier at arrival)</c>, is the
+    /// sim's: it keeps it beside the entry (<see cref="BeliefLog.KnownAt"/>), and no rule reads an
+    /// entry before it.
     ///
     /// The <c>v</c> slots are plain fields so the struct stays dense and blittable; each kind's
     /// layout is documented on its factory and read through its typed view (<see cref="AsBeat"/>
-    /// and the rest). Unused slots are 0; "none" is NaN unless a slot says otherwise.
+    /// and the rest). Unused slots are 0; a coded slot's "none" is -1.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct StreamEntry
     {
         public const int Slots = 12;
@@ -22,7 +25,6 @@ namespace PS.Game.Sim
         public EntryKind Kind;
         public double T;
         public double Stamp;
-        public double KnownAt;
         public double V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11;
 
         public double this[int i]
@@ -68,7 +70,7 @@ namespace PS.Game.Sim
         }
 
         static StreamEntry Of(EntryKind kind, double t, double stamp) =>
-            new StreamEntry { Kind = kind, T = t, Stamp = stamp, KnownAt = double.NaN };
+            new StreamEntry { Kind = kind, T = t, Stamp = stamp };
 
         /// <summary>A committed beat. v0 period (s), v1 evidence (0 to 1).</summary>
         public static StreamEntry Beat(double t, double stamp, double period, double evidence)
@@ -80,18 +82,18 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// A tick. v0 evidence, v1 energy, v2 level (-1 none, else <see cref="LoudnessLevel"/>),
-        /// v3 key (0 to 23 into the analyzer's key list, major from C then minor from C; -1 none),
-        /// v4 kick, v5 snare, v6 hat, v7 bass (NaN: no bands), v8 brightness (NaN: none).
+        /// A tick. v0 evidence, v1 energy, v2 level (<see cref="LoudnessLevel"/>), v3 key (0 to 23
+        /// into the analyzer's key list, major from C then minor from C; -1 none), v4 kick, v5 snare,
+        /// v6 hat, v7 bass, v8 brightness. The analyzer gives every tick a level and bands.
         /// </summary>
         public static StreamEntry Tick(double t, double stamp, double evidence, double energy,
-            int level = -1, int key = -1, double kick = double.NaN, double snare = double.NaN,
-            double hat = double.NaN, double bass = double.NaN, double brightness = double.NaN)
+            LoudnessLevel level = LoudnessLevel.Quiet, int key = -1, double kick = 0, double snare = 0,
+            double hat = 0, double bass = 0, double brightness = 0)
         {
             var e = Of(EntryKind.Tick, t, stamp);
             e.V0 = evidence;
             e.V1 = energy;
-            e.V2 = level;
+            e.V2 = (int)level;
             e.V3 = key;
             e.V4 = kick;
             e.V5 = snare;

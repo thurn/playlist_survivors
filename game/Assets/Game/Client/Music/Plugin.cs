@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using PS.Game.Sim;
 
 namespace Game.Client.Music
 {
@@ -11,7 +12,8 @@ namespace Game.Client.Music
     /// reload instead of an editor restart (unity-game.md, Building and Loading the Plugin).
     ///
     /// Every struct is blittable and every array argument pins a caller-owned buffer, so polling
-    /// and rendering never allocate. <see cref="RenderMusic"/> is Unity's audio thread's; every
+    /// and rendering never allocate. ps_entry is the sim's <see cref="StreamEntry"/>: entries are
+    /// polled straight into what the sim takes. <see cref="RenderMusic"/> is Unity's audio thread's; every
     /// other call belongs to the main thread.
     /// </summary>
     public static class Plugin
@@ -20,7 +22,6 @@ namespace Game.Client.Music
         public const int ErrFailed = -6;
         public const int SourceFile = 0;
         public const int Waiting = 0, Playing = 1, Ended = 2;
-        public const int KindBeat = 1;
 
         /// <summary>ps_config. Paths are UTF-8 strings the caller allocates (<see cref="Utf8"/>).</summary>
         [StructLayout(LayoutKind.Sequential)]
@@ -32,16 +33,6 @@ namespace Game.Client.Music
             public IntPtr Path;
             public IntPtr Models;     // zero: $PS_MODELS, else the plugin's checkout
             public IntPtr SessionDir; // zero: no record
-        }
-
-        /// <summary>ps_entry: 120 bytes. <see cref="Stamp"/> is the C struct's known_at.</summary>
-        [StructLayout(LayoutKind.Sequential)]
-        public struct Entry
-        {
-            public int Kind;
-            public double T;
-            public double Stamp;
-            public double V0, V1, V2, V3, V4, V5, V6, V7, V8, V9, V10, V11;
         }
 
         /// <summary>struct ps_status: 72 bytes.</summary>
@@ -63,7 +54,7 @@ namespace Game.Client.Music
         }
 
         public static int Open(ref Config config, out IntPtr session) => Fns.Open(ref config, out session);
-        public static int Poll(IntPtr session, Entry[] into) => Fns.Poll(session, into, into.Length);
+        public static int Poll(IntPtr session, StreamEntry[] into) => Fns.Poll(session, into, into.Length);
         public static int RenderMusic(IntPtr session, float[] interleaved, int frames, int channels, double dspTime) =>
             Fns.Render(session, interleaved, frames, channels, dspTime);
         public static void GetStatus(IntPtr session, out Status status) => Fns.GetStatus(session, out status);
@@ -94,7 +85,7 @@ namespace Game.Client.Music
 
         // The function signatures, shared by both bindings.
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int OpenFn(ref Config config, out IntPtr session);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int PollFn(IntPtr session, [Out] Entry[] into, int max);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int PollFn(IntPtr session, [Out] StreamEntry[] into, int max);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate int RenderFn(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void StatusFn(IntPtr session, out Status status);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] public delegate void CloseFn(IntPtr session);
@@ -116,7 +107,7 @@ namespace Game.Client.Music
 #else
         const string Lib = "ps_plugin";
         [DllImport(Lib, EntryPoint = "ps_open")] static extern int ps_open(ref Config config, out IntPtr session);
-        [DllImport(Lib, EntryPoint = "ps_poll")] static extern int ps_poll(IntPtr session, [Out] Entry[] into, int max);
+        [DllImport(Lib, EntryPoint = "ps_poll")] static extern int ps_poll(IntPtr session, [Out] StreamEntry[] into, int max);
         [DllImport(Lib, EntryPoint = "ps_render_music")] static extern int ps_render_music(IntPtr session, [In, Out] float[] interleaved, int frames, int channels, double dspTime);
         [DllImport(Lib, EntryPoint = "ps_status")] static extern void ps_status(IntPtr session, out Status status);
         [DllImport(Lib, EntryPoint = "ps_close")] static extern void ps_close(IntPtr session);

@@ -6,7 +6,8 @@ namespace PS.Game.Sim
     /// The belief stream as the sim holds it: entries that have arrived but are not yet known, and
     /// per kind, the entries revealed so far. Causality lives here (unity-game.md, "The Sim's
     /// Contract"): an entry is accepted as soon as it arrives and revealed only when the sim reaches
-    /// its <see cref="StreamEntry.KnownAt"/>. Rules read only the revealed lists.
+    /// its known-at time, which the log keeps beside the entry (<see cref="KnownAt"/>). Rules read
+    /// only the revealed lists.
     ///
     /// Revealed entries keep their reveal order, which is content order in practice: the plugin
     /// stamps in emission order. Committed beats and ticks must be revealed in increasing
@@ -18,6 +19,7 @@ namespace PS.Game.Sim
         struct Pending
         {
             public StreamEntry Entry;
+            public double KnownAt;
             public long Seq;
         }
 
@@ -26,6 +28,7 @@ namespace PS.Game.Sim
         readonly StructList<Pending> heap;
         readonly StructList<StreamEntry> arrived;
         readonly StructList<StreamEntry>[] revealed = new StructList<StreamEntry>[KindCount];
+        readonly StructList<double>[] revealedKnownAt = new StructList<double>[KindCount];
         long seq;
 
         public BeliefLog(SimConfig config)
@@ -38,6 +41,7 @@ namespace PS.Game.Sim
                     : (EntryKind)k == EntryKind.Beat || (EntryKind)k == EntryKind.Onset ? config.BeatCapacity
                     : 256;
                 revealed[k] = new StructList<StreamEntry>(cap);
+                revealedKnownAt[k] = new StructList<double>(cap);
             }
         }
 
@@ -48,11 +52,14 @@ namespace PS.Game.Sim
         public int PendingCount => heap.Count + arrived.Count;
 
         /// <summary>The earliest known-at time among the pending entries (infinity when none).</summary>
-        public double NextKnownAt => heap.Count > 0 ? heap[0].Entry.KnownAt : double.PositiveInfinity;
+        public double NextKnownAt => heap.Count > 0 ? heap[0].KnownAt : double.PositiveInfinity;
 
         public ReadOnlySpan<StreamEntry> Revealed(EntryKind kind) => revealed[Index(kind)].AsSpan();
         public int Count(EntryKind kind) => revealed[Index(kind)].Count;
         public ref readonly StreamEntry Get(EntryKind kind, int i) => ref revealed[Index(kind)][i];
+
+        /// <summary>When revealed entry <paramref name="i"/> of <paramref name="kind"/> became known.</summary>
+        public double KnownAt(EntryKind kind, int i) => revealedKnownAt[Index(kind)][i];
 
         public ReadOnlySpan<StreamEntry> Beats => revealed[(int)EntryKind.Beat].AsSpan();
         public ReadOnlySpan<StreamEntry> Ticks => revealed[(int)EntryKind.Tick].AsSpan();
@@ -79,13 +86,13 @@ namespace PS.Game.Sim
         }
 
         /// <summary>A replayed entry with its recorded known-at time, which must not be in the past.</summary>
-        internal void AddKnown(in StreamEntry e, double now)
+        internal void AddKnown(in StreamEntry e, double knownAt, double now)
         {
             Validate(e);
-            if (double.IsNaN(e.KnownAt)) throw new ArgumentException("a replayed entry needs its known_at");
-            if (e.KnownAt < now - 1e-9)
-                throw new ArgumentException($"entry known at {e.KnownAt} added after the sim reached {now}");
-            Push(e);
+            if (double.IsNaN(knownAt)) throw new ArgumentException("a replayed entry needs its known_at");
+            if (knownAt < now - 1e-9)
+                throw new ArgumentException($"entry known at {knownAt} added after the sim reached {now}");
+            Push(e, knownAt);
         }
 
         /// <summary>
@@ -96,9 +103,8 @@ namespace PS.Game.Sim
         {
             for (int i = 0; i < arrived.Count; i++)
             {
-                var e = arrived[i];
-                e.KnownAt = Math.Max(e.Stamp + budget, frontierEnd);
-                Push(e);
+                ref readonly var e = ref arrived[i];
+                Push(e, Math.Max(e.Stamp + budget, frontierEnd));
             }
             arrived.Clear();
         }
@@ -107,9 +113,10 @@ namespace PS.Game.Sim
         internal int Reveal(double upTo)
         {
             int n = 0;
-            while (heap.Count > 0 && heap[0].Entry.KnownAt <= upTo)
+            while (heap.Count > 0 && heap[0].KnownAt <= upTo)
             {
                 var e = heap[0].Entry;
+                double knownAt = heap[0].KnownAt;
                 PopTop();
                 var list = revealed[(int)e.Kind];
                 bool grid = e.Kind == EntryKind.Beat || e.Kind == EntryKind.Tick;
@@ -119,6 +126,7 @@ namespace PS.Game.Sim
                     continue;
                 }
                 list.Add(e);
+                revealedKnownAt[(int)e.Kind].Add(knownAt);
                 n++;
             }
             return n;
@@ -127,11 +135,11 @@ namespace PS.Game.Sim
         // A binary min-heap on (KnownAt, arrival order).
 
         static bool Before(in Pending a, in Pending b) =>
-            a.Entry.KnownAt < b.Entry.KnownAt || (a.Entry.KnownAt == b.Entry.KnownAt && a.Seq < b.Seq);
+            a.KnownAt < b.KnownAt || (a.KnownAt == b.KnownAt && a.Seq < b.Seq);
 
-        void Push(in StreamEntry e)
+        void Push(in StreamEntry e, double knownAt)
         {
-            heap.Add(new Pending { Entry = e, Seq = seq++ });
+            heap.Add(new Pending { Entry = e, KnownAt = knownAt, Seq = seq++ });
             int i = heap.Count - 1;
             while (i > 0)
             {

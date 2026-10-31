@@ -23,7 +23,10 @@ namespace PS.Game.Sim
     ///
     /// Everything reads only revealed entries, and the answers the sim acts on are taken at fixed
     /// song times (a beat's own time, a tick's end), so they are a function of the stream's
-    /// known-at times.
+    /// known-at times. Every public query is a pure function of the entries revealed now: the
+    /// client may ask at any song time without changing the run. Asked about a past time, it
+    /// answers from what is known now, which may differ from what the sim decided then (the
+    /// <see cref="SimEventKind.BeatState"/> events and <see cref="SimState"/> hold that).
     /// </summary>
     public sealed class BeatClock
     {
@@ -33,8 +36,6 @@ namespace PS.Game.Sim
         readonly BeliefLog log;
         readonly double gate;
         int fireCursor;
-        int tickCursor = -1;
-        int beatCursor = -1;
 
         public BeatClock(BeliefLog log, SimConfig config)
         {
@@ -107,25 +108,38 @@ namespace PS.Game.Sim
             return observed >= 0.5 * period && observed <= 1.5 * period ? observed : period;
         }
 
-        /// <summary>Is the music clear at song time <paramref name="s"/>? (s never decreases between calls.)</summary>
+        /// <summary>Is the music clear at song time <paramref name="s"/>?</summary>
         public bool ClearAt(double s)
         {
             var ticks = log.Ticks;
-            while (tickCursor + 1 < ticks.Length && ticks[tickCursor + 1].T <= s + 1e-9) tickCursor++;
-            if (tickCursor < 0) return false;
-            return s - ticks[tickCursor].T <= ClearTickAge + 1e-9 && Judging.JudgedAt(tickCursor);
+            int i = LastAtOrBefore(ticks, s);
+            if (i < 0) return false;
+            return s - ticks[i].T <= ClearTickAge + 1e-9 && Judging.JudgedAt(i);
         }
 
-        /// <summary>The beat's state at song time <paramref name="s"/>. (s never decreases between calls.)</summary>
+        /// <summary>The beat's state at song time <paramref name="s"/>.</summary>
         public Reliability StateAt(double s)
         {
             var beats = log.Beats;
-            while (beatCursor + 1 < beats.Length && beats[beatCursor + 1].T <= s + 1e-9) beatCursor++;
+            int i = LastAtOrBefore(beats, s);
             int closing;
-            if (StartsInterval(beatCursor)) closing = beatCursor + 1;
-            else if (Continues(beatCursor, s)) closing = beatCursor;
+            if (StartsInterval(i)) closing = i + 1;
+            else if (Continues(i, s)) closing = i;
             else return Reliability.NoBeatAhead;
             return ClearAt(s) && beats[closing].V1 >= gate ? Reliability.Reliable : Reliability.BelowGate;
+        }
+
+        /// <summary>The latest of a grid's entries at or before <paramref name="s"/>, or -1.</summary>
+        static int LastAtOrBefore(ReadOnlySpan<StreamEntry> grid, double s)
+        {
+            int lo = 0, hi = grid.Length;
+            while (lo < hi)
+            {
+                int mid = (lo + hi) >> 1;
+                if (grid[mid].T <= s + 1e-9) lo = mid + 1;
+                else hi = mid;
+            }
+            return lo - 1;
         }
 
         /// <summary>The next unfired beat's time at or after <paramref name="floor"/>; beats revealed too late are skipped as missed.</summary>

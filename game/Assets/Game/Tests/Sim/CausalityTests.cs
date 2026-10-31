@@ -16,40 +16,39 @@ namespace PS.Game.Sim.Tests
             .Beats(70, 90, 149, evidence: 0.35)
             .Beats(90, 110, 151);
 
-        static List<StreamEntry> Truncated(List<StreamEntry> known, double cut)
+        static List<KnownEntry> Truncated(List<KnownEntry> known, double cut)
         {
-            var kept = new List<StreamEntry>();
-            foreach (var e in known)
-                if (e.KnownAt <= cut) kept.Add(e);
+            var kept = new List<KnownEntry>();
+            foreach (var k in known)
+                if (k.KnownAt <= cut) kept.Add(k);
             return kept;
         }
 
-        static List<StreamEntry> Perturbed(List<StreamEntry> known, double cut, ulong seed)
+        static List<KnownEntry> Perturbed(List<KnownEntry> known, double cut, ulong seed)
         {
             var rng = new SimRandom(seed);
-            var list = new List<StreamEntry>();
-            foreach (var e in known)
+            var list = new List<KnownEntry>();
+            foreach (var k in known)
             {
-                if (e.KnownAt <= cut)
+                if (k.KnownAt <= cut)
                 {
-                    list.Add(e);
+                    list.Add(k);
                     continue;
                 }
                 if (rng.NextDouble() < 0.2) continue; // dropped
+                var e = k.Entry;
                 var p = e;
                 p.T += rng.Range(-0.3, 0.3);
                 p.V0 = rng.NextDouble();
                 p.V1 = rng.NextDouble();
-                p.KnownAt = cut + (e.KnownAt - cut) * rng.Range(1e-3, 2);
-                list.Add(p);
+                list.Add(new KnownEntry(p, cut + (k.KnownAt - cut) * rng.Range(1e-3, 2)));
                 if (rng.NextDouble() < 0.05)
                 {
                     // An extra beat or tick the original never had, known after the cut.
                     var extra = rng.NextDouble() < 0.5
                         ? StreamEntry.Beat(e.T + 0.1, e.Stamp, 0.4, 1.0)
                         : StreamEntry.Tick(e.T + 0.01, e.Stamp, 0, 0);
-                    extra.KnownAt = cut + rng.Range(1e-6, 1);
-                    list.Add(extra);
+                    list.Add(new KnownEntry(extra, cut + rng.Range(1e-6, 1)));
                 }
             }
             return list;
@@ -74,14 +73,13 @@ namespace PS.Game.Sim.Tests
         /// with the normal lookahead nothing near a cut depends on what becomes known right after
         /// it, so a small leak would go unseen there.
         /// </summary>
-        static List<StreamEntry> JustInTime(List<StreamEntry> known)
+        static List<KnownEntry> JustInTime(List<KnownEntry> known)
         {
-            var list = new List<StreamEntry>();
-            foreach (var e in known)
+            var list = new List<KnownEntry>();
+            foreach (var k in known)
             {
-                var j = e;
-                j.KnownAt = System.Math.Max(0, e.T - (e.Kind == EntryKind.Beat ? 0.03 : 0.01));
-                list.Add(j);
+                var e = k.Entry;
+                list.Add(new KnownEntry(e, System.Math.Max(0, e.T - (e.Kind == EntryKind.Beat ? 0.03 : 0.01))));
             }
             return list;
         }

@@ -1,4 +1,5 @@
 using System;
+using PS.Game.Sim;
 using UnityEngine;
 
 namespace Game.Client.Music
@@ -69,7 +70,7 @@ namespace Game.Client.Music
             {
                 ref var e = ref music.Entries[i];
                 // A beat is committed once; the stamp-every-group stream never repeats or revises one.
-                if (e.Kind != Plugin.KindBeat || e.T <= _lastBeat || _pendingCount == Capacity) continue;
+                if (e.Kind != EntryKind.Beat || e.T <= _lastBeat || _pendingCount == Capacity) continue;
                 _lastBeat = e.T;
                 _pending[(_pendingHead + _pendingCount++) % Capacity] = e.T;
             }

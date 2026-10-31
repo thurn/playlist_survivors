@@ -17,7 +17,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(1, sim.Stream.PendingCount);
             sim.StepTo(10.0);
             Assert.AreEqual(1, sim.Stream.Count(EntryKind.Beat));
-            Assert.AreEqual(10.0, sim.Stream.Get(EntryKind.Beat, 0).KnownAt, 1e-12);
+            Assert.AreEqual(10.0, sim.Stream.KnownAt(EntryKind.Beat, 0), 1e-12);
         }
 
         [Test]
@@ -29,7 +29,7 @@ namespace PS.Game.Sim.Tests
             sim.Add(StreamEntry.Onset(61.0, FixtureSong.StampOf(61.05), 0.8, true));
             sim.StepTo(58.6);
             Assert.AreEqual(1, sim.Stream.Count(EntryKind.Onset));
-            Assert.AreEqual(58.60, sim.Stream.Get(EntryKind.Onset, 0).KnownAt, 1e-9);
+            Assert.AreEqual(58.60, sim.Stream.KnownAt(EntryKind.Onset, 0), 1e-9);
         }
 
         [Test]
@@ -40,7 +40,7 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(117.9);
             sim.Add(StreamEntry.Change(119.0, FixtureSong.StampOf(120.0), 0.5));
             sim.StepTo(118.0);
-            Assert.AreEqual(118.0, sim.Stream.Get(EntryKind.Change, 0).KnownAt, 1e-9);
+            Assert.AreEqual(118.0, sim.Stream.KnownAt(EntryKind.Change, 0), 1e-9);
         }
 
         [Test]
@@ -49,10 +49,9 @@ namespace PS.Game.Sim.Tests
             var sim = new Simulation(new SimConfig());
             sim.StepTo(5);
             var e = StreamEntry.Jump(6, 1, 3);
-            e.KnownAt = 4;
-            Assert.Throws<ArgumentException>(() => sim.AddKnown(e));
-            e.KnownAt = 5;
-            Assert.DoesNotThrow(() => sim.AddKnown(e));
+            Assert.Throws<ArgumentException>(() => sim.AddKnown(e, 4));
+            Assert.Throws<ArgumentException>(() => sim.AddKnown(e, double.NaN));
+            Assert.DoesNotThrow(() => sim.AddKnown(e, 5));
         }
 
         [Test]
@@ -105,15 +104,13 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TypedViewsNameTheSlots()
         {
-            var tick = StreamEntry.Tick(1, 0, 0.7, 0.4, (int)LoudnessLevel.Loud, 13, 0.1, 0.2, 0.3, 0.4, 0.5);
+            var tick = StreamEntry.Tick(1, 0, 0.7, 0.4, LoudnessLevel.Loud, 13, 0.1, 0.2, 0.3, 0.4, 0.5);
             Assert.AreEqual(0.7, tick.AsTick.Evidence);
             Assert.AreEqual(LoudnessLevel.Loud, tick.AsTick.Level);
             Assert.AreEqual(13, tick.AsTick.Key);
             Assert.AreEqual(0.4, tick.AsTick.Bass);
             Assert.Throws<InvalidOperationException>(() => { var _ = tick.AsBeat; });
-            var bare = StreamEntry.Tick(1, 0, 0.7, 0.4);
-            Assert.IsFalse(bare.AsTick.HasBands);
-            Assert.IsFalse(bare.AsTick.HasLevel);
+            Assert.AreEqual(-1, StreamEntry.Tick(1, 0, 0.7, 0.4).AsTick.Key, "no key");
             var window = StreamEntry.Hindsight(8, 6, 3, 2);
             Assert.AreEqual(3, window.AsHindsight.OfflineCount);
             Assert.AreEqual(2, window.AsHindsight.OnlineCount);

@@ -413,7 +413,10 @@ Contract details:
   Each kind documents what its `v` slots hold, such as a beat's period and
   evidence, or a tick's energy, level, key and drum bands. `known_at` here is
   the plugin's stamp; the game adds `B`. Polling never allocates on either
-  side.
+  side. The sim's `StreamEntry` is the one C# mirror of `ps_entry` (120
+  bytes; the C `known_at` is its `Stamp`), so the client polls straight into
+  what the sim takes; a sim test checks its layout and `EntryKind` against
+  the header's `PS_KIND_*`.
 - **`ps_render_music` runs on Unity's audio thread.** It never blocks,
   allocates or logs. It writes the delayed music for one output buffer and
   records which song sample starts that buffer.
@@ -779,12 +782,23 @@ The client talks to the sim through a narrow interface: it feeds entries,
 keys and time, and reads state and an event log.
 
 ```csharp
-sim.Add(StreamEntry e);         // held by the sim until e.KnownAt
+sim.Add(StreamEntry e);         // held by the sim until its known_at
+sim.AddKnown(StreamEntry e, double knownAt); // a replay's recorded known_at
 sim.Press(Key k, double heard);  // effective time = the sim's current time
 sim.StepTo(double songTime);
 ReadOnlySpan<SimEvent> sim.EventsSince(int cursor);
 sim.State                       // hero, enemies, items, run clock
+sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
 ```
+
+- **Reads never change the run.** `Add`, `AddKnown`, `Press`, `Release`,
+  `StepTo` and `DiscardEventsBefore` are the only mutators. Everything else
+  the client reaches is read-only (`{ get; internal set; }`, dense arrays as
+  `ReadOnlySpan` getters) or a pure function of the revealed entries, so an
+  overlay may ask about any song time, as often as it likes. The run's random
+  generator and the stepping machinery are internal to the sim (its tests
+  see them through `InternalsVisibleTo`). The sim keeps each entry's
+  known-at time beside it (`sim.Stream.KnownAt(kind, i)`).
 
 - **The sim enforces causality itself**: it accepts entries as soon as they
   arrive and reveals each to its rules only when the sim reaches its

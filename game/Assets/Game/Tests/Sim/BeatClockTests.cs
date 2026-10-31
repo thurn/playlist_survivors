@@ -112,7 +112,7 @@ namespace PS.Game.Sim.Tests
         public void StaleTicksMakeTheBeatUnreliable()
         {
             var entries = Drive.Known(new FixtureSong().Beats(0, 20, 120).Entries());
-            entries.RemoveAll(e => e.Kind == EntryKind.Tick && e.T > 5.01 && e.T < 7.99);
+            entries.RemoveAll(k => k.Entry.Kind == EntryKind.Tick && k.Entry.T > 5.01 && k.Entry.T < 7.99);
             var sim = Drive.Replay(entries, 20);
             Assert.AreEqual(Reliability.Reliable, BeatAt(sim, 5.0).Reliability);
             Assert.AreEqual(Reliability.BelowGate, BeatAt(sim, 6.0).Reliability, "the latest tick is 1 s old");
@@ -123,12 +123,8 @@ namespace PS.Game.Sim.Tests
         public void ABeatKnownOnlyAfterItsTimeIsMissed()
         {
             var sim = new Simulation(new SimConfig());
-            var late = StreamEntry.Beat(2.0, 0, 0.5, 0.9);
-            late.KnownAt = 2.5;
-            sim.AddKnown(late);
-            var onTime = StreamEntry.Beat(3.0, 0, 0.5, 0.9);
-            onTime.KnownAt = 2.5;
-            sim.AddKnown(onTime);
+            sim.AddKnown(StreamEntry.Beat(2.0, 0, 0.5, 0.9), 2.5);
+            sim.AddKnown(StreamEntry.Beat(3.0, 0, 0.5, 0.9), 2.5);
             sim.StepTo(4);
             Assert.AreEqual(1, sim.Beats.Missed);
             var fired = Beats(sim);

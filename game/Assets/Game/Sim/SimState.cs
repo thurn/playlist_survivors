@@ -5,27 +5,30 @@ namespace PS.Game.Sim
     /// skeleton holds time, the run clock and the beat; the rule beads add the hero, enemies,
     /// structures and items as dense arrays here. The client copies what it needs into its own
     /// short history to show <c>frameSong</c>, which trails the frontier.
+    ///
+    /// Only the sim writes it: every property is <c>{ get; internal set; }</c>, and dense arrays
+    /// are exposed as <c>ReadOnlySpan</c> getters over the sim's storage, never as arrays.
     /// </summary>
     public sealed class SimState
     {
         /// <summary>The frontier: the song time the sim has simulated to.</summary>
-        public double Now;
-        public long Tick;
+        public double Now { get; internal set; }
+        public long Tick { get; internal set; }
 
         /// <summary>Playing time: advances with song time except while the world is frozen.</summary>
-        public double RunClock;
-        public bool Frozen;
+        public double RunClock { get; internal set; }
+        public bool Frozen { get; internal set; }
 
-        public Reliability Beat;
+        public Reliability Beat { get; internal set; }
         /// <summary>The latest committed beat fired, or -1.</summary>
-        public int LastBeat = -1;
+        public int LastBeat { get; internal set; } = -1;
         /// <summary>The latest beat's bar (-1 before any lock), and whether it was a downbeat.</summary>
-        public int Bar = -1;
-        public bool Downbeat;
+        public int Bar { get; internal set; } = -1;
+        public bool Downbeat { get; internal set; }
 
         /// <summary>The latest stride step's time, its planned period and halvings (-1 on the free pulse).</summary>
-        public double StrideStep = double.NegativeInfinity;
-        public double StridePeriod = StrideGrid.FreePeriod;
-        public int StrideHalvings = -1;
+        public double StrideStep { get; internal set; } = double.NegativeInfinity;
+        public double StridePeriod { get; internal set; } = StrideGrid.FreePeriod;
+        public int StrideHalvings { get; internal set; } = -1;
     }
 }

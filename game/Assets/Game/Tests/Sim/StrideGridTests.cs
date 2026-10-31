@@ -116,12 +116,8 @@ namespace PS.Game.Sim.Tests
             // the beat never counts as missing.
             var known = Drive.Known(new FixtureSong().Beats(0, 20, 120).Entries());
             for (int i = 0; i < known.Count; i++)
-                if (known[i].Kind == EntryKind.Beat && known[i].T > 1)
-                {
-                    var e = known[i];
-                    e.KnownAt = e.T - 0.4;
-                    known[i] = e;
-                }
+                if (known[i].Entry.Kind == EntryKind.Beat && known[i].Entry.T > 1)
+                    known[i] = new KnownEntry(known[i].Entry, known[i].Entry.T - 0.4);
             var sim = Drive.Replay(known, 19.4);
             var steps = Steps(sim);
             for (int i = 1; i < steps.Count; i++)

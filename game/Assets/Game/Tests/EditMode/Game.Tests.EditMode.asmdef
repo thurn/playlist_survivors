@@ -4,6 +4,7 @@
     "references": [
         "Game.Client",
         "Game.EditorTools",
+        "PS.Game.Sim",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "UnityEngine.TestRunner",
