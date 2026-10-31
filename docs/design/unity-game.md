@@ -936,8 +936,8 @@ Rules for every weapon:
 - Six weapon slots and six passive slots. The passives are native's eight
   stat items: Hollow Heart, Empty Tome, Spellbinder, Duplicator, Pummarola,
   Spinach, Magnet and Armour.
-- Weapons and passives rise through ranks 1 to 8, one rank per pick. An
-  evolution needs the weapon at rank 8 and its partner passive, and comes
+- Weapons rise through ranks 1 to 8 and passives to 5 (Duplicator to 2), one
+  rank per pick, as in native. An evolution needs the weapon at rank 8 and its partner passive, and comes
   from a chest.
 - The hero has a visual aura from the start (not Garlic's damage aura),
   growing with the build.
@@ -980,8 +980,8 @@ Spawning follows Vampire Survivors' ring, bounded by the arena:
 
 The cast maps native's roles onto the 3D demo's nine models:
 
-- Bats (five tiers, the XL bat, the bat swarm): the bat, scaled up for the XL
-  bat.
+- Bats (five tiers, the XL bat, the bat swarm): the bat, scaled up (x2) for
+  the XL bat and the boss tiers 4 and 5.
 - Zombie (hopping): the slime.
 - Ghost and ghost swarm (fast flyers): the demon.
 - Skeleton: the skeleton.

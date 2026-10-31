@@ -7,8 +7,9 @@ namespace PS.Game.Sim.Content
 
     /// <summary>
     /// A weapon's geometry before Area, in metres. Every kind has <see cref="RadiusM"/>: the sword's
-    /// reach, a missile's or orbiting blade's body, the aura, a strike, a chain's jump range or the
-    /// trail's width. The other fields belong to one kind each and are NaN elsewhere.
+    /// reach, a missile's or orbiting blade's body, the aura, a strike, a chain's first jump range or
+    /// the trail's width. Area multiplies every length except the orbiting blade's body (see
+    /// <see cref="BladeAreaSlope"/>). The other fields belong to one kind each and are NaN elsewhere.
     /// </summary>
     public sealed class WeaponShape
     {
@@ -21,6 +22,16 @@ namespace PS.Game.Sim.Content
         public double OrbitAreaCap = double.NaN;
         /// <summary>Orbit: angular speed at speed 1, before the beat snaps it.</summary>
         public double RadPerS = double.NaN;
+        /// <summary>Orbit: a blade's body is <c>RadiusM * (1 + BladeAreaSlope * Area)</c> (native's bible.rs).</summary>
+        public double BladeAreaSlope = double.NaN;
+        /// <summary>Chain: every jump after the first reaches this far; each hits a circle this big.</summary>
+        public double JumpRangeM = double.NaN;
+        public double HitRadiusM = double.NaN;
+        /// <summary>Chain: the beats between one jump and the next (a sixteenth).</summary>
+        public double JumpBeats = double.NaN;
+        /// <summary>Trail: hits this far apart along the hero's path, skipping its latest <see cref="SkipRecentS"/>.</summary>
+        public double SpacingM = double.NaN;
+        public double SkipRecentS = double.NaN;
         /// <summary>Sword: a heavy strike's reach and damage, as multiples of the ordinary strike's.</summary>
         public double HeavyReachScale = double.NaN;
         public double HeavyDamage = double.NaN;
@@ -50,14 +61,24 @@ namespace PS.Game.Sim.Content
                     break;
                 case "orbit":
                     s.Kind = ShapeKind.Orbit;
+                    s.BladeAreaSlope = r.Number("bladeAreaSlope");
                     s.OrbitRadiusM = r.Number("orbitRadiusM");
                     s.OrbitAreaCap = r.Number("orbitAreaCap");
                     s.RadPerS = r.Number("radPerS");
                     break;
                 case "aura": s.Kind = ShapeKind.Aura; break;
                 case "strike": s.Kind = ShapeKind.Strike; break;
-                case "chain": s.Kind = ShapeKind.Chain; break;
-                case "trail": s.Kind = ShapeKind.Trail; break;
+                case "chain":
+                    s.Kind = ShapeKind.Chain;
+                    s.JumpRangeM = r.Number("jumpRangeM");
+                    s.HitRadiusM = r.Number("hitRadiusM");
+                    s.JumpBeats = r.Number("jumpBeats");
+                    break;
+                case "trail":
+                    s.Kind = ShapeKind.Trail;
+                    s.SpacingM = r.Number("spacingM");
+                    s.SkipRecentS = r.Number("skipRecentS");
+                    break;
                 default: throw ContentReader.Fail(r.Child("kind"), "unknown shape kind '" + kind + "'");
             }
             s.RadiusM = r.Number("radiusM");

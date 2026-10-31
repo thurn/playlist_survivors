@@ -29,7 +29,8 @@ namespace PS.Game.Sim.Content
         /// <summary>The role's average speed when the hero strides at the reference period (5.19 m/s);
         /// travel scales with the hero's tempo-driven speed (unity-game.md, Speeds Follow the Tempo).</summary>
         public double RefSpeedMps;
-        /// <summary>VS max HP; a level-scaled role's is multiplied by the hero's level at spawn.</summary>
+        /// <summary>VS max HP. A level-scaled role's, and any role's spawned from a minute's bosses
+        /// list, is multiplied by the hero's level at spawn (native's spawning.rs).</summary>
         public double Health;
         public double Power;
         public double Xp;

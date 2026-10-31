@@ -67,12 +67,17 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
 | vs-boss-xlmummy | BOSS_XLMUMMY | boss-xlmummy | bigork x3 | x | minute 20 |
 | vs-boss-xlflower | BOSS_XLFLOWER | boss-xlflower | mushroom x3 | x | minute 25 |
 | goblin | | goblin | goblin x1 | x | the stampede and the ring |
-| skeleton-ember | | skeleton-ember | skeleton x1 | x | the kick line |
+| skeleton-ember | | skeleton-ember | skeleton x1 | x. | the kick line; its `.x` gait steps every other beat |
 | bee | | bee | demon x1 | x | the wedge |
 | minotaur | | minotaur | troll x2.5 | x | the signature boss, from 90 s |
 | slime, bat, eyeball, orc, orc-elite, orc-ember, skeleton, skeleton-archer | | dropped | | | the classic roster; the run never spawns them |
 
 - Each role keeps its model's gem colour (cast.json) except the two noted.
+- Health is level-scaled (times the hero's level at spawn) for `levelScaled` roles and for every
+  role a minute's `bosses` list spawns, whatever its flag (native's spawning.rs): xlmantis,
+  xlbat and xlflower too.
+- Classic gaits map to native's survivors cadence: every other beat when a step covers two or
+  more of the gait's times (skeleton-ember's `.x`), else every beat.
 - The four classic roles take native's survivors stats for them (`EnemyStats::for_art`, stats.rs)
   and content/enemies.yaml's health and radius. Their classic eighth-note gaits become `x`: enemies
   travel only on main beats.
@@ -92,14 +97,15 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
 | soul-eater | VORTEX | soul-eater | garlic + pummarola |
 | magic-wand | MAGIC_MISSILE | magic-wand | missile, 0.46 m, 9.43 m/s |
 | holy-wand | HOLY_MISSILE | holy-wand | magic-wand + empty-tome |
-| king-bible | HOLYBOOK | king-bible | orbit: 2.86 m ring (Area up to 4.5x), 0.46 m blades, 2.19 rad/s |
+| king-bible | HOLYBOOK | king-bible | orbit: 2.86 m ring (Area up to 4.5x), 0.46 m x (1 + 0.3 Area) blades, 2.19 rad/s |
 | unholy-vespers | VESPERS | unholy-vespers | king-bible + spellbinder |
 | lightning-ring | LIGHTNING | lightning-ring | strike, 0.46 m |
 | thunder-loop | LOOP | thunder-loop | lightning-ring + duplicator |
-| chain-lightning | (restored) | chain-lightning | chain, 9.63 m jumps |
-| fire-trail | (restored) | fire-trail | trail, 0.74 m |
+| chain-lightning | (restored) | chain-lightning | chain: 9.63 m first jump, 5.19 m later ones, a sixteenth apart, 0.59 m hits |
+| fire-trail | (restored) | fire-trail | trail: 0.74 m, hits 0.67 m apart, the latest 0.12 s skipped |
 | finale-blast (content/weapons.yaml) | | schedule.json `finale` | 33.3 m, 1000 damage |
-| orbiting-blades, and the classic chain-lightning and fire-trail (content/weapons.yaml) | | dropped | classic mode |
+| orbiting-blades (content/weapons.yaml) | | dropped | classic mode |
+| chain-lightning, fire-trail (content/weapons.yaml) | | folded into their shapes | the restored weapons read these recipes for jump step, hit size and trail spacing |
 | hollow-heart, empty-tome, spellbinder, duplicator, pummarola, spinach, magnet, armour (offers.rs) | | passives.json | in native's tie-break order |
 | max-health, magnet, might, armour (content/passives.yaml) | | dropped | classic mode |
 

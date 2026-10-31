@@ -23,7 +23,7 @@
     {"id": "bat-swarm", "refSpeedMps": 10.163, "health": 0.1, "power": 1, "xp": 1, "radiusM": 0.3704, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
     {"id": "ghost-swarm", "refSpeedMps": 10.163, "health": 1, "power": 5, "xp": 1.5, "radiusM": 0.3333, "knockback": 0, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
     {"id": "goblin", "refSpeedMps": 1.4519, "health": 1, "power": 10, "xp": 1, "radiusM": 0.4444, "knockback": 0.8, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
-    {"id": "skeleton-ember", "refSpeedMps": 1.4519, "health": 1.1, "power": 10, "xp": 2, "radiusM": 0.4444, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
+    {"id": "skeleton-ember", "refSpeedMps": 1.4519, "health": 1.1, "power": 10, "xp": 2, "radiusM": 0.4444, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x."}},
     {"id": "bee", "refSpeedMps": 10.163, "health": 0.6, "power": 5, "xp": 1, "radiusM": 0.3333, "knockback": 1, "maxKnockback": 3, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}},
     {"id": "minotaur", "refSpeedMps": 2.323, "health": 175, "power": 20, "xp": 50, "radiusM": 0.963, "knockback": 0, "maxKnockback": 1, "levelScaled": false, "brute": false, "gait": {"pattern": "x"}}
   ]

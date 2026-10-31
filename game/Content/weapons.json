@@ -105,6 +105,7 @@
       "shape": {
         "kind": "orbit",
         "radiusM": 0.4571,
+        "bladeAreaSlope": 0.3,
         "orbitRadiusM": 2.8569,
         "orbitAreaCap": 4.5,
         "radPerS": 2.1875
@@ -128,6 +129,7 @@
       "shape": {
         "kind": "orbit",
         "radiusM": 0.4571,
+        "bladeAreaSlope": 0.3,
         "orbitRadiusM": 2.8569,
         "orbitAreaCap": 4.5,
         "radPerS": 2.1875
@@ -168,7 +170,13 @@
       "grid": "beat",
       "evolutionOf": null,
       "requires": null,
-      "shape": {"kind": "chain", "radiusM": 9.6296},
+      "shape": {
+        "kind": "chain",
+        "radiusM": 9.6296,
+        "jumpRangeM": 5.1852,
+        "hitRadiusM": 0.5926,
+        "jumpBeats": 0.25
+      },
       "ranks": [
         {"power": 1.2, "amount": 3, "intervalS": 1, "repeatS": 0.125, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
         {"power": 1.2, "amount": 4, "intervalS": 1, "repeatS": 0.125, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 1, "knockback": 5, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
@@ -185,7 +193,7 @@
       "grid": "beat",
       "evolutionOf": null,
       "requires": null,
-      "shape": {"kind": "trail", "radiusM": 0.7407},
+      "shape": {"kind": "trail", "radiusM": 0.7407, "spacingM": 0.6667, "skipRecentS": 0.12},
       "ranks": [
         {"power": 0.4, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},
         {"power": 0.4, "amount": 1, "intervalS": 0.5, "repeatS": 0, "area": 1.2, "speed": 1, "durationS": 1, "pierce": 0, "hitDelayS": 0.5, "knockback": 0, "critChance": 0, "critMultiplier": 0, "critEnabled": false, "intervalDependsOnDuration": false},

@@ -111,6 +111,16 @@ def load(root: Path, rel: str) -> dict:
     return yaml.safe_load((root / rel).read_text())
 
 
+def classic_gait(e: dict) -> str:
+    """foes.rs's survivors cadence: every other main beat when the gait covers two or more of its
+    times per step (gait.rs gait_ground), else every main beat. Classic gaits' eighth-note steps
+    don't exist on the game's beats; the signature minotaur steps as a boss, every beat."""
+    pattern = (e.get("gait") or {}).get("pattern", "x")
+    if e["id"] == "minotaur" or len(pattern) / pattern.count("x") < 2:
+        return "x"
+    return "x."
+
+
 def enemies(root: Path) -> dict:
     roles = []
     for e in load(root, "content/survivors-enemies.yaml")["enemies"]:
@@ -130,8 +140,7 @@ def enemies(root: Path) -> dict:
             "power": num(power), "xp": num(xp), "radiusM": metres(e["radius"]),
             "knockback": num(knockback), "maxKnockback": 1 if cid == "minotaur" else 3,
             "levelScaled": False, "brute": False,
-            # Every main beat: classic gaits' eighth-note steps don't exist on the game's beats.
-            "gait": {"pattern": "x"},
+            "gait": {"pattern": classic_gait(e)},
         })
     return {"roles": roles}
 
@@ -160,15 +169,21 @@ def shape(wid: str) -> dict:
     if wid in ("garlic", "soul-eater"):
         return {"kind": "aura", "radiusM": vs_metres(0.32)}
     if wid in ("king-bible", "unholy-vespers"):
-        # The orbit's radius grows with Area up to 4.5x; BIBLE_OMEGA (bible.rs) times speed.
-        return {"kind": "orbit", "radiusM": vs_metres(0.08), "orbitRadiusM": vs_metres(0.5),
-                "orbitAreaCap": 4.5, "radPerS": num(35 * 0.0625)}
+        # The orbit's radius grows with Area up to 4.5x; BIBLE_OMEGA (bible.rs) times speed. A
+        # blade's body is 0.08 U x (1 + 0.3 x Area), not 0.08 U x Area (bible.rs BibleCycle::size).
+        return {"kind": "orbit", "radiusM": vs_metres(0.08), "bladeAreaSlope": 0.3,
+                "orbitRadiusM": vs_metres(0.5), "orbitAreaCap": 4.5, "radPerS": num(35 * 0.0625)}
     if wid in ("lightning-ring", "thunder-loop"):
         return {"kind": "strike", "radiusM": vs_metres(0.08)}
     if wid == "chain-lightning":
-        return {"kind": "chain", "radiusM": metres(260)}
+        # combat.rs: the first jump reaches 260 px x Area, every later one 140 px x Area; each jump
+        # hits a 16 px x Area circle (content/weapons.yaml's hitShape), a sixteenth after the last.
+        return {"kind": "chain", "radiusM": metres(260), "jumpRangeM": metres(140),
+                "hitRadiusM": metres(16), "jumpBeats": 0.25}
     if wid == "fire-trail":
-        return {"kind": "trail", "radiusM": metres(20)}
+        # combat.rs: hits 18 px apart along the hero's path (content/weapons.yaml's spacing),
+        # skipping its latest 0.12 s.
+        return {"kind": "trail", "radiusM": metres(20), "spacingM": metres(18), "skipRecentS": 0.12}
     raise SystemExit(f"content: no shape for weapon {wid}")
 
 

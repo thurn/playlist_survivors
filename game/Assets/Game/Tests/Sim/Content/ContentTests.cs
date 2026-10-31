@@ -111,6 +111,15 @@ namespace PS.Game.Sim.Tests
             Assert.That(skeleton.Power, Is.EqualTo(10));
             Assert.That(skeleton.Gait.StepsOn(0) && skeleton.Gait.StepsOn(1), Is.True);
             Assert.That(c.Role("mudman1").Gait.StepsOn(1), Is.False, "x. steps every other beat");
+            Assert.That(c.Role("skeleton-ember").Gait.StepsOn(1), Is.False, "the kick line's .x gait: every other beat");
+
+            WeaponShape chain = c.Weapon("chain-lightning").Shape;
+            Assert.That(chain.RadiusM, Is.EqualTo(260 / 27.0).Within(1e-4), "the first jump's 260 px");
+            Assert.That(chain.JumpRangeM, Is.EqualTo(140 / 27.0).Within(1e-4), "later jumps' 140 px");
+            Assert.That(chain.HitRadiusM, Is.EqualTo(16 / 27.0).Within(1e-4));
+            Assert.That(chain.JumpBeats, Is.EqualTo(0.25));
+            Assert.That(c.Weapon("fire-trail").Shape.SpacingM, Is.EqualTo(18 / 27.0).Within(1e-4));
+            Assert.That(c.Weapon("king-bible").Shape.BladeAreaSlope, Is.EqualTo(0.3));
         }
 
         [Test]
@@ -160,6 +169,23 @@ namespace PS.Game.Sim.Tests
         public void WrongTypesFail() =>
             AssertFails("weapons.json", t => ReplaceFirst(t, "\"grid\": \"beat\"", "\"grid\": 1"),
                 "weapons.json", "weapons[0].grid", "expected a string");
+
+        [Test]
+        public void FractionalIntegersFail() =>
+            AssertFails("progression.json", t => ReplaceFirst(t, "\"itemsByTier\": [1,", "\"itemsByTier\": [1.5,"),
+                "progression.json", "itemsByTier[0]", "expected an integer");
+
+        [Test]
+        public void AShortOfferTableFails() =>
+            AssertFails("offers.json", t =>
+            {
+                // Drop level 70, the table's last entry.
+                int last = t.IndexOf("\"level\": 70", StringComparison.Ordinal);
+                int open = t.LastIndexOf('{', last);
+                int comma = t.LastIndexOf(',', open);
+                int close = t.IndexOf('}', last);
+                return t.Substring(0, comma) + t.Substring(close + 1);
+            }, "offers.json", "levels must run from 2 to 70");
 
         [Test]
         public void OffersNamingNoWeaponFail() =>

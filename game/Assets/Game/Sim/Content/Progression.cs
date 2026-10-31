@@ -115,6 +115,7 @@ namespace PS.Game.Sim.Content
 
         /// <summary>The first level with cards (the hero starts at 1).</summary>
         public const int FirstLevel = 2;
+        public const int LastLevel = 70;
         /// <summary>Levels[i] holds level FirstLevel + i's three cards.</summary>
         public string[][][] Levels;
         public string[] Fallback;
@@ -150,6 +151,8 @@ namespace PS.Game.Sim.Content
                     throw ContentReader.Fail(r.Child("levels") + "[" + i + "]", "levels must run from " + FirstLevel + " without gaps");
                 t.Levels[i] = levels[i].row;
             }
+            if (levels.Length != LastLevel - FirstLevel + 1)
+                throw ContentReader.Fail(r.Child("levels"), "levels must run from " + FirstLevel + " to " + LastLevel);
             t.Fallback = r.Strings("fallback");
             if (string.Join("|", t.Fallback) != string.Join("|", Rule))
                 throw ContentReader.Fail(r.Child("fallback"), "unsupported fallback");
@@ -254,7 +257,7 @@ namespace PS.Game.Sim.Content
             {
                 FactorFrom = Array.ConvertAll(factors, f => f.from),
                 Factors = Array.ConvertAll(factors, f => f.factor),
-                GrowthLevels = Array.ConvertAll(xp.Numbers("growthLevels"), n => (int)n),
+                GrowthLevels = xp.Ints("growthLevels"),
                 GrowthBonus = xp.Number("growthBonus"),
             };
             for (int i = 1; i < factors.Length; i++)
@@ -277,7 +280,7 @@ namespace PS.Game.Sim.Content
             var chests = r.Object("chests");
             p.Chests = new ChestRules
             {
-                ItemsByTier = Array.ConvertAll(chests.Numbers("itemsByTier"), n => (int)n),
+                ItemsByTier = chests.Ints("itemsByTier"),
                 EvolutionOrder = chests.Strings("evolutionOrder"),
             };
             if (p.Chests.ItemsByTier.Length != 3)

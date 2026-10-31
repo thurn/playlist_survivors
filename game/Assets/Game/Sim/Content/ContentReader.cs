@@ -123,6 +123,19 @@ namespace PS.Game.Sim.Content
             return result;
         }
 
+        public int[] Ints(string key)
+        {
+            double[] numbers = Numbers(key);
+            var result = new int[numbers.Length];
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                double n = numbers[i];
+                if (n != Math.Floor(n) || Math.Abs(n) > int.MaxValue) throw Fail(Child(key) + "[" + i + "]", "expected an integer");
+                result[i] = (int)n;
+            }
+            return result;
+        }
+
         public double[] Numbers(string key)
         {
             List<JsonValue> items = Array(key);
