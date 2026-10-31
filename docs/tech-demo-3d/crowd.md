@@ -460,16 +460,34 @@ their clip timing still comes from the timeline.
   Idles packs.
 - **The crystal blade.** The knight's broadsword is replaced by a big
   white crystal blade (`HeroBlade`), under every `--monster-style`: a
-  1.45 m diamond-section blade with a spine, a crossguard of crystal
-  points, shards growing from its root and a pommel gem. Its mesh is made
-  at start-up, so it is no vendor asset. It sits where the broadsword's
-  mesh lies in the hand: the broadsword's longest side is the blade's axis
-  and its next the crossguard's, so the edges stay in the swing's plane.
-  The broadsword's renderer is turned off. (The broadsword itself drew
-  about 1 cm long, as `HeroBlade`'s log measures it: the roster attaches
-  weapons to the hand bone with no correction for the bone's scale, so it
-  was never visible. The blade undoes the hand's scale, so its mesh is in
-  metres.)
+  1.15 m faceted blade with a spine, a crossguard of crystal points,
+  shards growing from its root and a pommel gem. Its mesh is made at
+  start-up, so it is no vendor asset. The broadsword's renderer is turned
+  off.
+  - **The grip** comes from the right hand's bones in the bind pose: the
+    handle runs through the fist across the knuckles (from the fused
+    fingers' root to the index finger's), the blade leaving it on the
+    thumb's side with its edge toward the knuckles, and the handle sits
+    2 cm in from the knuckles toward the palm. That is how the Sword
+    Combat clips hold a sword. The Synty broadsword's own axes are 90
+    degrees off this hand's (its blade runs along the hand bone's Y, the
+    fist along its Z), so a blade placed by the broadsword stuck out of
+    the back of the hand and swung through the body.
+  - **The scale.** The roster attaches weapons to the hand bone with no
+    correction for the bone's scale, which drew the broadsword about 1 cm
+    long and the shield as small: the hero looked empty-handed. The blade
+    undoes the hand's scale, so its mesh is in metres, and `HeroBlade`
+    gives the shield (`SM_Wep_Shield_01`, on the left hand, placed as Synty
+    made it) the character's scale. The crowd's weapons are untouched.
+  - **The arms while walking.** The hero's walk and run are Base
+    Locomotion's unarmed clips (Sword Combat has none), whose swinging
+    arms carried the blade behind the back and through the legs. So
+    `StockCrowd.HoldArms` layers the sword idle's arms and fingers (an
+    `AvatarMask` on an `AnimationLayerMixerPlayable`) over the walk and
+    run, by their share of the blend, so the arms ease into and out of
+    the combos with the crossfades; the hold breathes on the walk's phase.
+    The hero walks about a third of the song and never plays the idle on
+    its own.
   - **The look** is Crystal's (`CrystalCommon.hlsl`, in
     `Demo3D/Styles/CrystalBlade`): faceted gem refracting the scene, banded
     reflections, lit facet edges and glints, in white. A light inside,
@@ -491,7 +509,9 @@ their clip timing still comes from the timeline.
     light pool doesn't wash its facets out, and its gem is a grey white
     that the light inside lifts to white. `--blade-tune key=value,...`
     overrides the material for a run (behind, glow, flare, gain, peak,
-    refraction, facets, and the gem's r, g, b). Stills:
+    refraction, facets, and the gem's r, g, b) and the grip (palm and back,
+    the handle's offsets in metres; pitch, yaw and roll, a turn in
+    degrees; length, the sword's scale). Stills:
     [evidence/blade](../../demo3d/evidence/blade/README.md).
 - **Animation.** A `PlayableGraph` driven by song time plays the hero's clips,
   with no Animator state machine. Each combo clip starts as its retiming

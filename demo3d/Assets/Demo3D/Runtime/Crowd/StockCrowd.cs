@@ -28,6 +28,8 @@ namespace Demo3D.Runtime.Crowd
             public PlayableGraph Graph;
             public AnimationMixerPlayable Mixer;
             public AnimationClipPlayable[] Clips;
+            public AnimationLayerMixerPlayable Layers; // with HoldArms: the mixer, then the held arms
+            public AnimationClipPlayable Hold;
             public Renderer[] Renderers;
             public Vector3 BaseScale;
             public float SinkM;
@@ -56,6 +58,29 @@ namespace Demo3D.Runtime.Crowd
         /// <summary>Called with each new monster's GameObject, after its renderers are listed, so what it
         /// adds keeps its own material properties (the hero's blade, HeroBlade).</summary>
         public System.Action<GameObject> Created;
+
+        int _holdClip = -1;
+        bool[] _holdsDuring;
+        float _holdShare;
+        AvatarMask _armsMask;
+
+        /// <summary>
+        /// Holds the arms in clip <paramref name="hold"/>'s pose while clips <paramref name="during"/>
+        /// play (the hero: the sword idle's arms over the unarmed walk and run, whose swinging arms
+        /// would fling the blade through the body), by <paramref name="share"/> of their weight. A
+        /// layer over the mixer, masked to the arms and fingers. Call before the first Draw.
+        /// </summary>
+        public void HoldArms(int hold, int[] during, float share = 1f)
+        {
+            _holdClip = hold;
+            _holdsDuring = new bool[_types[0].Assets.clips.Length];
+            foreach (int c in during) _holdsDuring[c] = true;
+            _holdShare = share;
+            _armsMask = new AvatarMask();
+            for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++) _armsMask.SetHumanoidBodyPartActive((AvatarMaskBodyPart)i, false);
+            foreach (var part in new[] { AvatarMaskBodyPart.LeftArm, AvatarMaskBodyPart.RightArm, AvatarMaskBodyPart.LeftFingers, AvatarMaskBodyPart.RightFingers })
+                _armsMask.SetHumanoidBodyPartActive(part, true);
+        }
 
         public StockCrowd(bool vendorMaterials = false) { _vendorMaterials = vendorMaterials; }
 
@@ -125,7 +150,20 @@ namespace Demo3D.Runtime.Crowd
                 slot.Mixer.SetInputWeight(c, 0);
                 slot.Clips[c] = p;
             }
-            output.SetSourcePlayable(slot.Mixer);
+            if (_holdClip >= 0)
+            {
+                slot.Layers = AnimationLayerMixerPlayable.Create(slot.Graph, 2);
+                slot.Graph.Connect(slot.Mixer, 0, slot.Layers, 0);
+                slot.Layers.SetInputWeight(0, 1);
+                slot.Hold = AnimationClipPlayable.Create(slot.Graph, t.Assets.clips[_holdClip]);
+                slot.Hold.SetApplyFootIK(false);
+                slot.Hold.SetSpeed(0);
+                slot.Graph.Connect(slot.Hold, 0, slot.Layers, 1);
+                slot.Layers.SetLayerMaskFromAvatarMask(1, _armsMask);
+                slot.Layers.SetInputWeight(1, 0);
+                output.SetSourcePlayable(slot.Layers);
+            }
+            else output.SetSourcePlayable(slot.Mixer);
             slot.Graph.Play();
             Created?.Invoke(go);
             return slot;
@@ -189,6 +227,15 @@ namespace Demo3D.Runtime.Crowd
             if (b != a) s.Mixer.SetInputWeight((int)b, 1f - blend);
             s.Clips[a].SetTime(m.TimeA);
             if (b != a) s.Clips[b].SetTime(m.TimeB);
+            if (s.Layers.IsValid())
+            {
+                // The held arms take the walk's and run's share of the blend, so they ease in and out
+                // with the crossfades to and from the sword clips; the hold clip breathes on the walk's phase.
+                float held = (_holdsDuring[a] ? blend : 0f) + (b != a && _holdsDuring[b] ? 1f - blend : 0f);
+                s.Layers.SetInputWeight(1, held * _holdShare);
+                var holdClip = s.Hold.GetAnimationClip();
+                s.Hold.SetTime(_holdsDuring[a] ? m.TimeA / Mathf.Max(s.Clips[a].GetAnimationClip().length, 0.01f) * holdClip.length : 0);
+            }
 
             float flash = Mathf.Clamp01(m.HitFlash);
             if (_vendorMaterials)
@@ -221,6 +268,7 @@ namespace Demo3D.Runtime.Crowd
                 if (t.Instances.IsCreated) t.Instances.Dispose();
             }
             if (_root != null) Object.Destroy(_root.gameObject);
+            if (_armsMask != null) Object.Destroy(_armsMask);
             _types = null;
         }
     }

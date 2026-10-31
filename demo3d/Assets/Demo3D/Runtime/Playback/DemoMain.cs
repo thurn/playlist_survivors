@@ -236,6 +236,10 @@ namespace Demo3D.Runtime.Playback
             // texture, so that is on in every run.
             _heroBlade = new HeroBlade(CrowdLibrary.Load());
             _heroRenderer.Created = _heroBlade.Attach;
+            // The walk and run are unarmed: their swinging arms would fling the blade through the body,
+            // so the sword idle holds the arms while they play.
+            int heroIdle = _hero.ClipIndex("idle"), heroRun = _hero.ClipIndex("run");
+            if (heroIdle >= 0) _heroRenderer.HoldArms(heroIdle, heroRun >= 0 ? new[] { _heroWalk, heroRun } : new[] { _heroWalk });
             ApplyAntiAliasing(_flags.Aa, _rig.Camera);
             _supersample = Supersampling.Factor(_flags);
             Supersampling.Apply(_supersample);

@@ -9,20 +9,23 @@ namespace Demo3D.Runtime.Crowd
     /// <summary>
     /// The hero's crystal blade (crowd.md, The Hero): a big cut-crystal sword, white and glowing, in
     /// place of the knight's broadsword, under every monster style. Its mesh is made here (no vendor
-    /// asset): a pommel gem, a crossguard and a long diamond-section blade with a spine, every triangle
+    /// asset): a pommel gem, a crossguard and a long faceted blade with a spine, every triangle
     /// flat with its own barycentrics, as the crowd's style mesh, so CrystalCommon's facets, edges and
     /// glints read on it. CrystalBlade.shader draws it.
     ///
-    /// The blade sits where the broadsword's mesh says the sword lies in the hand: its longest side is
-    /// the blade (toward its far end from the grip), its next the crossguard, so the blade's edges stay
-    /// in the swing's plane. The broadsword's renderer is turned off, not removed.
+    /// The grip comes from the hand's bones: the handle runs through the fist across the knuckles, the
+    /// blade leaving it on the thumb's side with its edge toward the knuckles, as the Sword Combat clips
+    /// hold a sword. The broadsword's renderer is turned off, not removed.
     /// </summary>
     public sealed class HeroBlade : IDisposable
     {
-        /// <summary>The blade's length from the guard to the tip, in metres (the broadsword's is about 1 m).</summary>
-        public const float BladeM = 1.45f;
+        /// <summary>The blade's length from the guard to the tip, in metres: big, but short enough that the
+        /// sword clips' swings stay clear of the body and the ground.</summary>
+        public const float BladeM = 1.15f;
         /// <summary>The blade's width at the guard and its thickness at the spine, in metres.</summary>
-        public const float WidthM = 0.17f, ThickM = 0.055f;
+        public const float WidthM = 0.15f, ThickM = 0.05f;
+        /// <summary>The middle of the handle, which sits in the fist (mesh metres, below the guard).</summary>
+        const float GripY = -0.06f;
 
         /// <summary>A blow's flare: up at once, gone over this long (s).</summary>
         const float FlareS = 0.22f;
@@ -31,8 +34,8 @@ namespace Demo3D.Runtime.Crowd
 
         /// <summary>
         /// `--blade-tune key=value,...`: overrides the blade material's values for a run, to judge a
-        /// change without a rebuild. Keys: behind, glow, flare, gain, peak, refraction, facets, and the
-        /// gem's colour as r, g, b.
+        /// change without a rebuild. Keys: behind, glow, flare, gain, peak, refraction, facets, the
+        /// gem's colour as r, g, b, and the grip's palm, back, pitch, yaw, roll and length (GripTune).
         /// </summary>
         public const string TuneFlag = "--blade-tune";
 
@@ -43,6 +46,12 @@ namespace Demo3D.Runtime.Crowd
         };
 
         float _flareGain = 1f;
+
+        /// <summary>The grip's tuning (`--blade-tune`): the handle's offset toward the palm and back from
+        /// the knuckles (m), a turn on top of the fist's axes (degrees: pitch about the edge, yaw about
+        /// the blade, roll about the flats) and the sword's scale.</summary>
+        struct GripTune { public float PalmM, BackM, Pitch, Yaw, Roll, Length; }
+        GripTune _tune = new GripTune { PalmM = 0.02f, Length = 1f };
 
         readonly Material _material, _motion;
         readonly Mesh _mesh;
@@ -72,57 +81,85 @@ namespace Demo3D.Runtime.Crowd
                 int k = Array.FindIndex(TuneKeys, t => t.Key == key);
                 if (k >= 0) _material.SetFloat(TuneKeys[k].Property, v);
                 else if (key == "flare") _flareGain = v;
+                else if (key == "palm") _tune.PalmM = v;
+                else if (key == "back") _tune.BackM = v;
+                else if (key == "pitch") _tune.Pitch = v;
+                else if (key == "yaw") _tune.Yaw = v;
+                else if (key == "roll") _tune.Roll = v;
+                else if (key == "length") _tune.Length = v;
                 else if (key == "r") tint.r = v;
                 else if (key == "g") tint.g = v;
                 else if (key == "b") tint.b = v;
-                else throw new ArgumentException($"{TuneFlag}: no key '{key}' (behind, glow, flare, gain, peak, refraction, facets, r, g, b)");
+                else throw new ArgumentException($"{TuneFlag}: no key '{key}' (behind, glow, flare, gain, peak, refraction, facets, r, g, b, palm, back, pitch, yaw, roll, length)");
             }
             _material.SetColor("_Tint", tint);
             Debug.Log($"HeroBlade: {TuneFlag} {pairs}");
         }
 
-        /// <summary>Puts the blade in the hero's right hand (StockCrowd.Created).</summary>
+        /// <summary>Puts the blade in the hero's right hand (StockCrowd.Created), in its bind pose.</summary>
         public void Attach(GameObject hero)
         {
             var animator = hero.GetComponentInChildren<Animator>();
             var hand = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.RightHand) : null;
             if (hand == null) throw new InvalidOperationException("HeroBlade: the hero has no humanoid right hand");
-            // The broadsword: the mesh renderer under the hand.
-            var sword = hand.GetComponentInChildren<MeshFilter>();
-            if (sword == null || sword.sharedMesh == null) throw new InvalidOperationException("HeroBlade: no sword in the hero's right hand");
+            var sword = hand.GetComponentInChildren<MeshFilter>(); // the broadsword, turned off below
+            float handScale = hand.lossyScale.x;
 
-            // The sword's mesh bounds in the hand's space: its longest side is the blade, toward the end
-            // farther from the grip (the hand's origin); the next longest is the crossguard.
-            var b = sword.sharedMesh.bounds;
-            var toHand = hand.worldToLocalMatrix * sword.transform.localToWorldMatrix;
-            Vector3 min = Vector3.positiveInfinity, max = Vector3.negativeInfinity;
-            for (int i = 0; i < 8; i++)
-            {
-                var c = toHand.MultiplyPoint3x4(b.center + Vector3.Scale(b.extents, new Vector3((i & 1) * 2 - 1, (i >> 1 & 1) * 2 - 1, (i >> 2 & 1) * 2 - 1)));
-                min = Vector3.Min(min, c);
-                max = Vector3.Max(max, c);
-            }
-            var size = max - min;
-            int along = size.x >= size.y && size.x >= size.z ? 0 : size.y >= size.z ? 1 : 2;
-            int across = along == 0 ? (size.y >= size.z ? 1 : 2) : along == 1 ? (size.x >= size.z ? 0 : 2) : (size.x >= size.y ? 0 : 1);
-            var tip = Vector3.zero;
-            tip[along] = Mathf.Abs(max[along]) >= Mathf.Abs(min[along]) ? 1 : -1;
-            var edge = Vector3.zero;
-            edge[across] = 1;
+            // The grip runs through the fist: across the knuckles, from the fused fingers' root to the
+            // index finger's, so the blade leaves the fist on the thumb's side, as a held sword does.
+            // Its edge faces the way the fingers point (the knuckles' side), and the handle sits a
+            // little in from the knuckles toward the palm. All in the hand's space, from the bind pose.
+            Vector3 Local(Transform t) => hand.InverseTransformPoint(t.position);
+            var index = Bone(animator, hand, HumanBodyBones.RightIndexProximal, "IndexFinger_01");
+            var rest = Bone(animator, hand, HumanBodyBones.RightMiddleProximal, "Finger_01")
+                ?? Bone(animator, hand, HumanBodyBones.RightRingProximal, null);
+            var thumb = Bone(animator, hand, HumanBodyBones.RightThumbProximal, "Thumb_01");
+            if (index == null || rest == null || index.childCount == 0)
+                throw new InvalidOperationException("HeroBlade: the hero's right hand has no index and middle finger bones");
+            Vector3 a = Local(index), r = Local(rest), next = Local(index.GetChild(0));
+            var axis = (a - r).normalized;
+            var finger = next - a;
+            var edge = (finger - Vector3.Dot(finger, axis) * axis).normalized;
+            var palm = Vector3.Cross(axis, edge);
+            var knuckles = (a + r) * 0.5f;
+            if (thumb != null && Vector3.Dot(palm, Local(thumb) - knuckles) < 0) palm = -palm;
+            var grip = knuckles + (palm * _tune.PalmM - edge * _tune.BackM) / handScale;
 
+            var turn = Quaternion.LookRotation(Vector3.Cross(edge, axis), axis) * Quaternion.Euler(_tune.Pitch, _tune.Yaw, _tune.Roll);
             var go = new GameObject("CrystalBlade");
             go.transform.SetParent(hand, false);
-            // The mesh is in metres: undo the hand's scale (the prefab's, at its scale in the demo).
-            float handScale = hand.lossyScale.x;
-            go.transform.localScale = Vector3.one / handScale;
-            go.transform.localRotation = Quaternion.LookRotation(Vector3.Cross(edge, tip), tip);
+            // The mesh is in metres: undo the hand's scale (the prefab's, at its scale in the demo). Its
+            // handle's middle (GripY) is in the fist.
+            go.transform.localScale = Vector3.one * (_tune.Length / handScale);
+            go.transform.localRotation = turn;
+            go.transform.localPosition = grip - turn * new Vector3(0, GripY * _tune.Length / handScale, 0);
             go.AddComponent<MeshFilter>().sharedMesh = _mesh;
-            var r = go.AddComponent<MeshRenderer>();
-            r.sharedMaterials = new[] { _material, _motion };
-            r.shadowCastingMode = ShadowCastingMode.On;
-            r.motionVectorGenerationMode = MotionVectorGenerationMode.Object;
-            sword.GetComponent<MeshRenderer>().enabled = false;
-            Debug.Log($"HeroBlade: replaced {sword.name} ({size[along] * handScale:F2} m) with a {BladeM:F2} m crystal blade");
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterials = new[] { _material, _motion };
+            mr.shadowCastingMode = ShadowCastingMode.On;
+            mr.motionVectorGenerationMode = MotionVectorGenerationMode.Object;
+            if (sword != null) sword.GetComponent<MeshRenderer>().enabled = false;
+
+            // The shield rides the left hand as the broadsword did, at the hand bone's scale, which
+            // drew it about 1 cm wide: give it the character's scale instead.
+            var leftHand = animator.GetBoneTransform(HumanBodyBones.LeftHand);
+            var shield = leftHand != null ? leftHand.GetComponentInChildren<MeshFilter>() : null;
+            if (shield != null)
+            {
+                shield.transform.localScale = Vector3.one * (hero.transform.lossyScale.x / leftHand.lossyScale.x);
+                Debug.Log($"HeroBlade: {shield.name} at the character's scale ({shield.sharedMesh.bounds.size.magnitude * hero.transform.lossyScale.x:F2} m across)");
+            }
+            Debug.Log($"HeroBlade: a {BladeM * _tune.Length:F2} m crystal blade in {hand.name}: axis {axis:F2}, edge {edge:F2}, palm {palm:F2}, " +
+                      $"grip {grip * handScale:F3} m from the wrist" + (sword != null ? $", in place of {sword.name}" : ""));
+        }
+
+        static Transform Bone(Animator animator, Transform hand, HumanBodyBones bone, string name)
+        {
+            var t = animator.GetBoneTransform(bone);
+            if (t != null || name == null) return t;
+            foreach (Transform c in hand)
+                if (c.name == name) return c;
+            return null;
         }
 
         /// <summary>Sets the blow flare for song time t in timeline tl (the world's time, as the hero is posed on).</summary>
@@ -221,8 +258,8 @@ namespace Demo3D.Runtime.Crowd
                 b.Spike(root, dir, len, 0.022f);
             }
             // The grip, inside the hand, and the pommel gem.
-            b.Bipyramid(new Vector3(0, -0.08f, 0), new Vector3(0.022f, 0, 0), new Vector3(0, 0.11f, 0), new Vector3(0, 0, 0.022f), 6);
-            b.Bipyramid(new Vector3(0, -0.21f, 0), new Vector3(0.04f, 0, 0), new Vector3(0, 0.05f, 0), new Vector3(0, 0, 0.04f), 5);
+            b.Bipyramid(new Vector3(0, GripY, 0), new Vector3(0.02f, 0, 0), new Vector3(0, 0.085f, 0), new Vector3(0, 0, 0.02f), 6);
+            b.Bipyramid(new Vector3(0, GripY - 0.11f, 0), new Vector3(0.035f, 0, 0), new Vector3(0, 0.045f, 0), new Vector3(0, 0, 0.035f), 5);
             return b.ToMesh();
         }
 
