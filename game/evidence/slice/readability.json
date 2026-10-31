@@ -1,0 +1,110 @@
+{
+  "still-008.050": {
+    "monsterPx": 175933,
+    "monsterShare": 0.085,
+    "lMonster": 67.791,
+    "lRing": 17.65,
+    "dL": 50.141,
+    "dC": 14.438,
+    "cMonster": 49.651,
+    "monsterP10": 44.132,
+    "monsterP90": 90.506,
+    "pass": true
+  },
+  "still-012.250": {
+    "monsterPx": 299304,
+    "monsterShare": 0.144,
+    "lMonster": 76.291,
+    "lRing": 17.034,
+    "dL": 59.257,
+    "dC": -6.25,
+    "cMonster": 42.398,
+    "monsterP10": 45.933,
+    "monsterP90": 99.655,
+    "pass": true
+  },
+  "still-020.000": {
+    "monsterPx": 181456,
+    "monsterShare": 0.088,
+    "lMonster": 57.126,
+    "lRing": 10.114,
+    "dL": 47.012,
+    "dC": 25.648,
+    "cMonster": 52.356,
+    "monsterP10": 31.945,
+    "monsterP90": 72.042,
+    "pass": true
+  },
+  "still-026.300": {
+    "monsterPx": 232738,
+    "monsterShare": 0.112,
+    "lMonster": 86.305,
+    "lRing": 15.988,
+    "dL": 70.317,
+    "dC": -24.025,
+    "cMonster": 30.072,
+    "monsterP10": 52.117,
+    "monsterP90": 99.655,
+    "pass": true
+  },
+  "still-030.550": {
+    "monsterPx": 205788,
+    "monsterShare": 0.099,
+    "lMonster": 73.07,
+    "lRing": 6.872,
+    "dL": 66.198,
+    "dC": -5.308,
+    "cMonster": 27.111,
+    "monsterP10": 49.394,
+    "monsterP90": 99.655,
+    "pass": true
+  },
+  "still-038.000": {
+    "monsterPx": 211567,
+    "monsterShare": 0.102,
+    "lMonster": 61.072,
+    "lRing": 5.779,
+    "dL": 55.293,
+    "dC": 2.317,
+    "cMonster": 39.425,
+    "monsterP10": 35.819,
+    "monsterP90": 79.496,
+    "pass": true
+  },
+  "still-045.100": {
+    "monsterPx": 206286,
+    "monsterShare": 0.099,
+    "lMonster": 64.972,
+    "lRing": 10.549,
+    "dL": 54.423,
+    "dC": 1.965,
+    "cMonster": 43.851,
+    "monsterP10": 28.386,
+    "monsterP90": 79.708,
+    "pass": true
+  },
+  "still-049.750": {
+    "monsterPx": 303602,
+    "monsterShare": 0.146,
+    "lMonster": 82.098,
+    "lRing": 14.377,
+    "dL": 67.721,
+    "dC": -4.964,
+    "cMonster": 36.421,
+    "monsterP10": 40.61,
+    "monsterP90": 99.605,
+    "pass": true
+  },
+  "still-057.300": {
+    "monsterPx": 322949,
+    "monsterShare": 0.156,
+    "lMonster": 65.246,
+    "lRing": 8.988,
+    "dL": 56.258,
+    "dC": 12.548,
+    "cMonster": 48.567,
+    "monsterP10": 38.439,
+    "monsterP90": 79.881,
+    "pass": true
+  }
+}

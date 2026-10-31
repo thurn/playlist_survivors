@@ -1903,6 +1903,32 @@ the operator. Inside each milestone, independent tracks run in parallel.
 Mason and Sage audits close M1, M2 and M3; M3's audit also covers live
 capture.
 
+**Shipped (ps-msz.3.13): the assembled slice.** `GameLoop` plays the slice's
+level (`Sim/Level/SliceLevel.cs`) on File audio: the arena's level data, a horde
+of five early-run roles in gem colours (bats, slimes, demons, skeletons and
+goblins: a roster a second, whole rosters below 220 alive), the starting sword,
+and a hero that stands until M3 brings the fall's card. The spawn ring stays out
+of the camera's loud view (`CameraRig.Footprint`). A level bake (`LevelBaker`,
+BakeAll's "Level") copies the sim's content and arena.json into the player.
+`--events FILE` still drives the presenters alone, with no horde or sword.
+
+- **Debug hooks** until M3's F1 menu: F5 forces a section change, F6 an
+  accent, F7 breaks every structure within 15 m of the hero (large ones at
+  once) and F8 regrows the broken ones. `--debug "change@44,break@47"` gives
+  them at song times. They are the sim's `Command(DebugCommand)`, recorded with
+  their effective time like keys.
+- **The evidence gate is native's 0.2.** At the sim's earlier 0.5, house-128's
+  beat (evidence 0.48 to 0.51) flickered below the gate, and the horde held
+  still for most of the song.
+- A zone change eases the post's grade to its zone's from its downbeat. The
+  arena's palette swap waits for M3's music events.
+- A headless player renders no static shadow map, since it has no device.
+  `--events-out FILE` writes every sim event as CSV.
+- Slow CI's File run is the slice's: 30 s of house-128 with every scheduled
+  sound a click, measured from Unity's mix (`game spike --sounds`). Evidence
+  and the comparison with the reference look:
+  [game/evidence/slice](../../game/evidence/slice/README.md).
+
 ## Alternatives Considered
 
 The design interview weighed these and chose otherwise.
@@ -1985,7 +2011,8 @@ Do this as soon as the slice exists, before any broad validation:
 4. Kill a monster. It shatters on the impact frame, with the glass sound on
    the same instant, and no flicker or build-up.
 5. Break a structure with a heavy strike on an accent. It shatters at once.
-   Force a section change from the debug menu: it regrows on a downbeat.
+   Force a section change from the debug menu (F5 in the slice; F6 forces an
+   accent): it regrows on a downbeat.
 
 Expected: no drift between music and sounds over several minutes, and the
 debug overlay's lead stays near 60 ms on built-in speakers.

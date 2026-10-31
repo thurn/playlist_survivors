@@ -40,3 +40,5 @@ what was run (the exact commands), the numbers, and what they show.
   (ps-msz.3.11).
 - [structures](structures/README.md): crystal structures shattering into PhysX shards on the impact
   frame, glinting and erupting on regrowth, with the physics and shadow bench (ps-msz.3.12).
+- [slice](slice/README.md): the assembled cinematic slice on house-128, its stills and filmstrips against
+  the reference look, the headless File run's lead and slow CI's measured File run (ps-msz.3.13).
