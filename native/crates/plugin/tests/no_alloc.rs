@@ -122,6 +122,9 @@ fn rendering_a_system_source_allocates_nothing() {
     let started = std::time::Instant::now();
     while fake.taps().len() < 2 {
         hang_guard(started, "the app was never tapped again");
+        // (The main thread's heartbeat, as Unity's polls are: the app is tapped again only while
+        // it is alive.)
+        status(s);
         // (In real time while the source waits to tap the app again.)
         if rendered as f64 * FRAMES as f64 / RATE < 10.0 + started.elapsed().as_secs_f64() {
             render(s, &mut out, RATE, &mut rendered);
