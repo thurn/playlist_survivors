@@ -26,7 +26,12 @@ namespace PS.Game.Sim
     ///   <see cref="FadeS"/>. A freeze or the hero's fall cuts it short then.
     ///
     /// Each ring is an <see cref="SimEvent.Orbit"/> event, again with its new end when cut short.
-    /// Unholy Vespers' permanent ring (native bridges each cycle into the next) is the chests bead's.
+    ///
+    /// <b>Unholy Vespers</b>, the evolution, keeps a permanent ring (native's bible.rs bridges each
+    /// cycle into the next): its newest ring has no end (infinity) until the next shot starts one, which
+    /// ends it at that shot, or at its own duration when that is later. A freeze still cuts it short.
+    /// Its blades break the structures they touch within <see cref="Accents.Window"/> of an accented
+    /// beat (<see cref="Weapon.BreakOnAccent"/>).
     /// </summary>
     internal sealed class KingBible : Weapon
     {
@@ -133,11 +138,18 @@ namespace PS.Game.Sim
                 ring.Hit = hit;
             }
             for (int k = 0; k < blades; k++) Array.Clear(ring.Hit[k], 0, ring.Hit[k].Length);
+            if (Def.IsEvolution)
+                foreach (var other in rings)
+                    if (other.Active && double.IsPositiveInfinity(other.End))
+                    {
+                        other.End = Math.Max(t, other.Born + DurationS);
+                        Announce(sim, other, t);
+                    }
             ring.Active = true;
             ring.Id = nextId++;
             ring.Blades = blades;
             ring.Born = ring.Last = t;
-            ring.End = t + DurationS;
+            ring.End = Def.IsEvolution ? double.PositiveInfinity : t + DurationS;
             ring.Omega = omega;
             ring.Radius = RingRadius;
             ring.Blade = BladeRadius;
@@ -219,6 +231,9 @@ namespace PS.Game.Sim
                         horde.Damage(sim, i, to, Power, Index, WeaponHit.Strike, dirX, dirY, Numbers.Knockback, Launch(1));
                     }
                 }
+                if (!Def.IsEvolution) continue;
+                BladeAt(ring, k, to, out double bx, out double by);
+                BreakOnAccent(sim, to, bx, by, Size(ring, to));
             }
         }
 

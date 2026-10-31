@@ -7,7 +7,8 @@ namespace PS.Game.Sim
     /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"): time,
     /// the run clock, the beat, the hero, the enemies, the structures, the zone, and the arsenal
     /// with its experience and level-up offer. The client copies what it needs into its own
-    /// short history to show <c>frameSong</c>, which trails the frontier.
+    /// short history to show <c>frameSong</c>, which trails the frontier. The chests on the field and the
+    /// latest chest's roulette come last.
     ///
     /// Only the sim writes it: every property is <c>{ get; internal set; }</c>, and dense arrays
     /// are exposed as <c>ReadOnlySpan</c> getters over the sim's storage, never as arrays.
@@ -91,5 +92,13 @@ namespace PS.Game.Sim
 
         /// <summary>The latest level-up offer: open while its cards are shown (<see cref="LevelUps"/>).</summary>
         public Offer Offer { get; internal set; }
+
+        /// <summary>The bosses' chests lying on the field, in drop order (empty without an arsenal: <see cref="Chests"/>).</summary>
+        public ReadOnlySpan<FieldChest> FieldChests => new ReadOnlySpan<FieldChest>(FieldChestStore, 0, FieldChestCount);
+        internal FieldChest[] FieldChestStore = Array.Empty<FieldChest>();
+        internal int FieldChestCount;
+
+        /// <summary>The latest chest's roulette: open while it spins, then landed with its rewards (<see cref="Chests"/>).</summary>
+        public ChestState Chest { get; internal set; }
     }
 }

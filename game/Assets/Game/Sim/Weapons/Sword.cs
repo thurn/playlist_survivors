@@ -58,14 +58,17 @@ namespace PS.Game.Sim
     ///   <c>rank power * Might</c> (x 2.5 heavy), and is knocked back or dies. A heavy strike sends
     ///   out a cleave wave, its bands one sixteenth apart from the next eighth, hitting each enemy it
     ///   passes once at the wave's damage. Strikes and bands hit crystal structures in reach too
-    ///   (<see cref="Structures"/>): a heavy strike and its wave break them, others only glint.
+    ///   (<see cref="Structures"/>): a heavy strike and its wave break them, as does Bloody Tear's
+    ///   strike within <see cref="Accents.Window"/> of an accented beat; others only glint.
+    /// - <b>Bloody Tear</b>, the evolution, is this sword with its own numbers, and its blows may be
+    ///   critical (<see cref="Hit"/>).
     /// - Nothing new winds up while the world is frozen or the hero has fallen; an attack already
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
     /// </summary>
     internal sealed class Sword : Weapon
     {
         /// <summary>A strong onset or a forecast this close to a beat makes its strike heavy (native's FORECAST_WINDOW).</summary>
-        public const double AccentWindow = 0.05;
+        public const double AccentWindow = Accents.Window;
         /// <summary>The client plays a wind-up up to this much faster, so this is the shortest it fits.</summary>
         public const double FastestRetime = 4.0 / 3.0;
         public const int AimDirections = 16;
@@ -73,6 +76,8 @@ namespace PS.Game.Sim
         public static readonly double AimHalfAngle = 75 * Math.PI / 180;
         /// <summary>Native's aim weights: a boss outweighs a crowd of hundreds.</summary>
         public const double BossWeight = 1000, BruteWeight = 2;
+        /// <summary>Bloody Tear's heal on a critical blow, and the run clock between two (native's).</summary>
+        public const double TearHeal = 8, TearHealEveryS = 1;
         const int QueueCapacity = 64;
         const int WaveCapacity = 4;
 
@@ -107,7 +112,8 @@ namespace PS.Game.Sim
         double lastPulse = double.NegativeInfinity;
         int slashes;
         bool forcedAccent;
-        int onsetFrom, forecastFrom;
+        readonly Accents accents;
+        double lastTearHeal = double.NegativeInfinity;
 
         readonly Wave[] waves = new Wave[WaveCapacity];
         readonly bool[][] waveHit = new bool[WaveCapacity][];
@@ -125,6 +131,7 @@ namespace PS.Game.Sim
             if (!(windupS > 0)) throw new ArgumentException("a positive wind-up");
             this.log = log;
             this.clock = clock;
+            accents = new Accents(log, clock);
             this.state = state;
             this.horde = horde;
             this.structures = structures;
@@ -267,7 +274,7 @@ namespace PS.Game.Sim
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = onBeat && (forcedAccent || Accented(s.Impact, t));
+            bool heavy = onBeat && (forcedAccent || accents.Accented(s.Impact, t));
             if (onBeat) forcedAccent = false;
             bool slam = onBeat && Slams(s.Beat, s.Impact);
             var kind = slam ? HeroAttackKind.Slam
@@ -283,27 +290,6 @@ namespace PS.Game.Sim
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>).</summary>
         internal void ForceAccent() => forcedAccent = true;
-
-        /// <summary>Is the beat at <paramref name="impact"/> accented: a strong onset or a forecast within the window, known now, the music clear?</summary>
-        bool Accented(double impact, double now)
-        {
-            if (!clock.ClearAt(now)) return false;
-            return Near(EntryKind.Onset, ref onsetFrom, impact, true) || Near(EntryKind.Forecast, ref forecastFrom, impact, false);
-        }
-
-        bool Near(EntryKind kind, ref int from, double impact, bool strongOnly)
-        {
-            var list = log.Revealed(kind);
-            // Entries are revealed in known-at order, close to time order: anything a second
-            // before this beat can matter to no later one.
-            while (from < list.Length && list[from].T < impact - 1.0) from++;
-            for (int i = from; i < list.Length; i++)
-            {
-                if (Math.Abs(list[i].T - impact) > AccentWindow + 1e-9) continue;
-                if (!strongOnly || new OnsetEntry(list[i]).Strong) return true;
-            }
-            return false;
-        }
 
         /// <summary>
         /// Does the main strike on beat <paramref name="beat"/> slam: is it the first downbeat after a
@@ -386,8 +372,10 @@ namespace PS.Game.Sim
             state.Hero.PositionAt(t, out double hx, out double hy);
             int wave = s.Heavy ? StartWave(sim, s, t, hx, hy) : -1;
             double launch = Launch(s.Heavy ? Def.Shape.HeavyDamage : 1);
-            structures.Strike(sim, t, hx, hy, s.Reach, s.Heavy ? StructureHit.HeavyStrike : StructureHit.Strike, launch,
-                wave >= 0 ? waves[wave].Id : -1);
+            if (s.Heavy || !Def.IsEvolution || !sim.Accents.NearAccentedBeat(t, out int accent))
+                structures.Strike(sim, t, hx, hy, s.Reach, s.Heavy ? StructureHit.HeavyStrike : StructureHit.Strike, launch,
+                    wave >= 0 ? waves[wave].Id : -1);
+            else structures.Strike(sim, t, hx, hy, s.Reach, StructureHit.EvolvedAccent, launch, AccentGroup + accent);
             if (horde == null) return;
             var enemies = state.EnemyStore;
             double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1);
@@ -400,9 +388,23 @@ namespace PS.Game.Sim
                 double dx = x - hx, dy = y - hy;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (wave >= 0) waveHit[wave][i] = true;
-                horde.Damage(sim, i, t, damage, Index, how, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY,
-                    Numbers.Knockback, launch);
+                Hit(sim, i, t, damage, how, d > 1e-9 ? dx / d : s.DirX, d > 1e-9 ? dy / d : s.DirY, launch);
             }
+        }
+
+        /// <summary>
+        /// A blow on enemy <paramref name="i"/>. A rank with crits (Bloody Tear's, native's combat.rs)
+        /// lands critical at its crit chance times Luck, for its crit multiple, and a critical blow heals
+        /// the hero <see cref="TearHeal"/>, at most once each <see cref="TearHealEveryS"/> of run clock.
+        /// </summary>
+        void Hit(Simulation sim, int i, double t, double damage, WeaponHit how, double dirX, double dirY, double launch)
+        {
+            var rank = Numbers;
+            bool critical = rank.CritEnabled && sim.Random.NextDouble() < rank.CritChance * Stats.Luck;
+            horde.Damage(sim, i, t, critical ? damage * rank.CritMultiplier : damage, Index, how, dirX, dirY, rank.Knockback, launch, critical);
+            if (!critical || state.RunClock < lastTearHeal + TearHealEveryS - 1e-9) return;
+            lastTearHeal = state.RunClock;
+            sim.Health.Heal(t, TearHeal, 0);
         }
 
         /// <summary>A heavy strike's cleave wave from (hx, hy): its first band on the next eighth, then one each sixteenth.</summary>
@@ -453,8 +455,7 @@ namespace PS.Game.Sim
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (d + 0.5 * roles[enemies[i].Role].RadiusM <= wv.Inner) continue;
                 hit[i] = true;
-                horde.Damage(sim, i, t, wv.Damage, Index, WeaponHit.Cleave, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0,
-                    Numbers.Knockback, launch);
+                Hit(sim, i, t, wv.Damage, WeaponHit.Cleave, d > 1e-9 ? dx / d : 1, d > 1e-9 ? dy / d : 0, launch);
             }
         }
     }

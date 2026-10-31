@@ -28,6 +28,9 @@ namespace PS.Game.Sim
     ///
     /// Each leg is a <see cref="SimEvent.Projectile"/> event (native homes each frame; a leg per
     /// target lets every hit land on the grid and the client draw the flight from its events).
+    ///
+    /// Holy Wand's hits within <see cref="Accents.Window"/> of an accented beat break the structures
+    /// their bolt touches (<see cref="Weapon.BreakOnAccent"/>).
     /// </summary>
     internal sealed class MagicWand : Weapon
     {
@@ -206,6 +209,7 @@ namespace PS.Game.Sim
                 e.PositionAt(t, out x, out y);
                 Normalize(x - bolt.FromX, y - bolt.FromY, out double dx, out double dy);
                 horde.Damage(sim, i, t, Power, Index, WeaponHit.Strike, dx, dy, Numbers.Knockback, Launch(1));
+                BreakOnAccent(sim, t, x, y, Radius);
                 if (e.Alive)
                 {
                     Remember(b, e.Life, t);

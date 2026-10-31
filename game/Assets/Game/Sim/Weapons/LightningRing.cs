@@ -30,7 +30,9 @@ namespace PS.Game.Sim
     ///   native's pending strikes carry their shot. With nobody in view the strike lands nowhere and
     ///   the volley goes on.
     /// - Thunder Loop strikes each point again on the first sixteenth at or after
-    ///   <see cref="ReturnS"/> later, even when its enemy has moved or died.
+    ///   <see cref="ReturnS"/> later, even when its enemy has moved or died. Its strikes within
+    ///   <see cref="Accents.Window"/> of an accented beat break the structures they touch
+    ///   (<see cref="Weapon.BreakOnAccent"/>).
     /// - A strike planned on a beat's continuation moves to the sixteenth a beat committed since
     ///   says (<see cref="BeatClock.SixteenthAtOrAfter"/>), so strikes stay on the grid. Nothing
     ///   strikes while the world is frozen or the hero has fallen: the strikes held by a freeze go on
@@ -166,6 +168,7 @@ namespace PS.Game.Sim
         {
             double x = p.X, y = p.Y, radius = p.Radius;
             sim.Emit(SimEvent.Bolt(t, Index, kind, p.Index, x, y, x, y, radius));
+            BreakOnAccent(sim, t, x, y, radius);
             if (horde == null) return;
             state.Hero.PositionAt(t, out double hx, out double hy);
             double damage = p.Damage, launch = Launch(1);

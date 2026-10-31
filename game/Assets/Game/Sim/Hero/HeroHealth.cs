@@ -28,6 +28,9 @@ namespace PS.Game.Sim
         /// <summary>What a lunge's damage loses: progression.json's base, then the arsenal's final Armor.</summary>
         public double Armor { get; set; }
 
+        /// <summary>All the health healed this run (what each heal gained), which Soul Eater feeds on.</summary>
+        public double Healed { get; private set; }
+
         public HeroHealth(HeroState hero, SimConfig config, GameContent content)
         {
             this.hero = hero;
@@ -73,6 +76,7 @@ namespace PS.Game.Sim
             double before = hero.Health;
             hero.Health = Math.Min(hero.MaxHealth, hero.Health + amount);
             hurtableFrom = Math.Max(hurtableFrom, t + immunity);
+            Healed += hero.Health - before;
             return hero.Health - before;
         }
     }

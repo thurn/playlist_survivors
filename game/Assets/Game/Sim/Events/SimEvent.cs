@@ -63,6 +63,13 @@ namespace PS.Game.Sim
     public enum FreezeReason { LevelUp, Chest, Pause, MusicStopped }
 
     /// <summary>
+    /// A chest's moments (<see cref="SimEventKind.Chest"/>): the hero takes it and its roulette opens,
+    /// freezing the world; it ticks on eight eighths; it lands on the downbeat after them, then each
+    /// reward follows at the landing's time.
+    /// </summary>
+    public enum ChestPhase { Open = 0, Tick = 1, Land = 2, Reward = 3 }
+
+    /// <summary>
     /// One settled event: dense and blittable, so the log is a plain array and its hash a pass over
     /// fields. <see cref="T"/> is the song time it fired at; the slots' meaning depends on
     /// <see cref="Kind"/>, as each factory documents, and is read through the kind's view. Positions
@@ -171,9 +178,10 @@ namespace PS.Game.Sim
         /// <summary>
         /// A hit on an enemy: I0 enemy, I1 how it landed (<see cref="WeaponHit"/>), I2 the weapon's
         /// content index (the sword's is 0); D0 the damage dealt, D1/D2 the enemy's position, D3/D4 the
-        /// direction it is struck in.
+        /// direction it is struck in, D5 1 for a critical hit (Bloody Tear's).
         /// </summary>
-        public static SimEvent EnemyHit(double t, int enemy, int weapon, WeaponHit how, double damage, double x, double y, double dirX, double dirY)
+        public static SimEvent EnemyHit(double t, int enemy, int weapon, WeaponHit how, double damage, double x, double y, double dirX, double dirY,
+            bool critical = false)
         {
             var e = Of(SimEventKind.Hit, t);
             e.I0 = enemy;
@@ -184,6 +192,7 @@ namespace PS.Game.Sim
             e.D2 = y;
             e.D3 = dirX;
             e.D4 = dirY;
+            e.D5 = critical ? 1 : 0;
             return e;
         }
 
@@ -425,12 +434,18 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A chest opens: I0 chest, I1 tier; D0/D1 position.</summary>
-        public static SimEvent Chest(double t, int chest, int tier, double x, double y)
+        /// <summary>
+        /// A chest's roulette (<see cref="Chests"/>): I0 the chest (its drop's item), I1 its phase
+        /// (<see cref="ChestPhase"/>) | tier &lt;&lt; 4, I2 the phase's value: the schedule minute when it
+        /// opens, the tick's index (0 to 7), the rewards' count when it lands, and a reward's card packed
+        /// as a level-up's (<see cref="LevelUpEvent.Card"/>) | its place &lt;&lt; 10; D0/D1 the chest's position.
+        /// </summary>
+        public static SimEvent Chest(double t, int chest, ChestPhase phase, int tier, int value, double x, double y)
         {
             var e = Of(SimEventKind.Chest, t);
             e.I0 = chest;
-            e.I1 = tier;
+            e.I1 = (int)phase | (tier << 4);
+            e.I2 = value;
             e.D0 = x;
             e.D1 = y;
             return e;

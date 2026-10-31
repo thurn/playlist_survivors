@@ -165,6 +165,38 @@ namespace PS.Game.Sim
             state.WeaponStore[slot] = new OwnedItem { Index = weapon, Rank = 1 };
         }
 
+        /// <summary>The evolution of base weapon <paramref name="weapon"/> it may take now, or -1: the weapon at its top rank and the evolution's partner passive owned.</summary>
+        public int EvolutionOf(int weapon)
+        {
+            var def = content.Weapons[weapon];
+            if (WeaponRank(weapon) != def.MaxRank) return -1;
+            for (int e = 0; e < content.Weapons.Length; e++)
+            {
+                var evolution = content.Weapons[e];
+                if (evolution.EvolutionOf == def.Id && PassiveRank(content.PassiveIndex(evolution.Requires)) > 0) return e;
+            }
+            return -1;
+        }
+
+        /// <summary>
+        /// Evolution <paramref name="evolution"/> replaces its base weapon in that weapon's slot (native's
+        /// Arsenal::evolve), at rank 1 and ready on the run clock now, as a weapon learned now. Shots of
+        /// the base weapon not yet fired, and its own times, go with it.
+        /// </summary>
+        public void Evolve(int evolution)
+        {
+            var def = content.Weapons[evolution];
+            int weapon = def.IsEvolution ? content.WeaponIndex(def.EvolutionOf) : -1;
+            if (weapon < 0 || EvolutionOf(weapon) != evolution) throw new InvalidOperationException(def.Id + " can't evolve now");
+            for (int s = 0; s < state.WeaponCount; s++)
+            {
+                if (slots[s].Weapon.Index != weapon) continue;
+                slots[s] = new Slot { Weapon = make(def, evolution), NextReady = state.RunClock };
+                state.WeaponStore[s] = new OwnedItem { Index = evolution, Rank = 1 };
+                return;
+            }
+        }
+
         /// <summary>A pick of passive <paramref name="passive"/> at <paramref name="t"/>: rank 1 in a free slot or one rank more, and its stats.</summary>
         public void LearnPassive(double t, int passive)
         {

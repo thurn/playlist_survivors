@@ -16,23 +16,37 @@ namespace PS.Game.Sim
     ///
     /// An enemy is remembered by its life (<see cref="EnemyState.Life"/>): a boss or a set piece may
     /// spawn inside the aura into the slot of one it just killed.
+    ///
+    /// <b>Soul Eater</b>, the evolution, is larger by its numbers and drains health (native's
+    /// combat.rs and weapons.rs): each of its hits heals the hero <c>1 + Recovery</c>, and a shot's
+    /// power grows by every <see cref="SoulPerPower"/> of health healed since the evolution, by any
+    /// means, up to <see cref="SoulPowerCap"/> more. A shot on an accented beat breaks the structures
+    /// in its reach (<see cref="Weapon.BreakOnAccent"/>).
     /// </summary>
     internal sealed class Garlic : Weapon
     {
+        /// <summary>Soul Eater gains a point of power for this much health healed, up to this many points (native's).</summary>
+        public const double SoulPerPower = 600, SoulPowerCap = 6;
+
         readonly SimState state;
         readonly Horde horde;
+        readonly HeroHealth health;
+        /// <summary>The run's healing when this weapon came, which Soul Eater counts from.</summary>
+        readonly double healedFrom;
         readonly int[] reached;
         // Each slot's enemy this incarnation has hit, by its life (0: none).
         readonly int[] hit;
         // The aura's radius and power since the latest shot; NaN before the first.
         double radius = double.NaN, power;
 
-        public Garlic(Arsenal arsenal, SimState state, Horde horde, WeaponDef def, int index)
+        public Garlic(Arsenal arsenal, SimState state, Horde horde, HeroHealth health, WeaponDef def, int index)
             : base(arsenal, state, def, index)
         {
             if (def.Shape.Kind != ShapeKind.Aura) throw new ArgumentException(def.Id + " is not an aura");
             this.state = state;
             this.horde = horde;
+            this.health = health;
+            healedFrom = health.Healed;
             int slots = state.EnemyStore?.Length ?? 0;
             reached = new int[slots];
             hit = new int[slots];
@@ -41,9 +55,11 @@ namespace PS.Game.Sim
         internal override void Shoot(Simulation sim, double t)
         {
             radius = Radius;
-            power = Power;
+            power = Power + (Def.IsEvolution ? Math.Min((health.Healed - healedFrom) / SoulPerPower, SoulPowerCap) : 0);
             Array.Clear(hit, 0, hit.Length);
             sim.Emit(SimEvent.HeroAttack(t, Index, ShapeKind.Aura, 0, t, t, 0, 0, false, radius));
+            state.Hero.PositionAt(t, out double hx, out double hy);
+            BreakOnAccent(sim, t, hx, hy, radius);
             Pulse(sim, t);
         }
 
@@ -70,6 +86,7 @@ namespace PS.Game.Sim
                 horde.Damage(sim, i, t, power, Index, WeaponHit.Strike, d > 1e-9 ? dx / d : 0, d > 1e-9 ? dy / d : 1,
                     Numbers.Knockback, Launch(1));
                 horde.Weaken(i);
+                if (Def.IsEvolution) health.Heal(t, 1 + Stats.Recovery, 0);
             }
         }
     }

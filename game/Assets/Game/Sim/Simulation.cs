@@ -24,14 +24,15 @@ namespace PS.Game.Sim
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
     /// then the run's own moments (the run clock reaching its duration, the victory card:
-    /// <see cref="RunRules"/>), then the beat (the run's start, a resume or the finale's blast on it, then on a downbeat, structures a zone change marked regrow, then a zone change
+    /// <see cref="RunRules"/>), then a chest's roulette tick or landing (<see cref="Chests"/>, so a landing lets play
+    /// resume on its own beat), then the beat (the run's start, a resume or the finale's blast on it, then on a downbeat, structures a zone change marked regrow, then a zone change
     /// may land, then bosses due land: <see cref="Structures"/>, <see cref="Zones"/>, <see cref="Horde"/>), then the stride step (the music stopping on it) and the
     /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the arsenal's times in slot order: the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat, the other weapons' shots, then the gems' arrivals
     /// (<see cref="Arsenal"/>). The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
     /// systems run, the hero's held strides first (judged in heard time, a lead after their steps:
-    /// <see cref="Hero"/>). A press moves the hero at once (a press stride), at the frontier, drawn
+    /// <see cref="Hero"/>), the hero taking a chest after the arsenal's. A press moves the hero at once (a press stride), at the frontier, drawn
     /// from when the press was heard. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
@@ -60,6 +61,7 @@ namespace PS.Game.Sim
             Stream = new BeliefLog(config);
             Beats = new BeatClock(Stream, config);
             Strides = new StrideGrid(Stream, Beats, config.StartTime);
+            Accents = new Accents(Stream, Beats);
             events = new EventLog(config.EventCapacity);
             keys = new StructList<KeyRecord>(config.PressCapacity);
             commands = new StructList<DebugRecord>(16);
@@ -86,7 +88,7 @@ namespace PS.Game.Sim
                     def.Shape.Kind switch
                     {
                         ShapeKind.Sword => new Sword(arsenal, def, index, windup, content, Stream, Beats, State, Horde, Structures, Zones),
-                        ShapeKind.Aura => new Garlic(arsenal, State, Horde, def, index),
+                        ShapeKind.Aura => new Garlic(arsenal, State, Horde, Health, def, index),
                         ShapeKind.Trail => new FireTrail(arsenal, State, Horde, Run, def, index),
                         ShapeKind.Missile => new MagicWand(arsenal, State, Run, def, index, content, Beats, Horde),
                         ShapeKind.Orbit => new KingBible(arsenal, State, def, index, content, Beats, Horde),
@@ -95,6 +97,7 @@ namespace PS.Game.Sim
                         _ => new Weapon(arsenal, State, def, index),
                     });
             }
+            if (Arsenal != null) Chests = new Chests(content, State, Stream, Beats, Run, Health, Arsenal, Horde, Arena);
             if (config.Easy && content != null)
             {
                 Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
@@ -109,6 +112,8 @@ namespace PS.Game.Sim
         public BeliefLog Stream { get; }
         public BeatClock Beats { get; }
         public StrideGrid Strides { get; }
+        /// <summary>Accented beats, as the evolutions' structure breaks ask (the sword keeps its own).</summary>
+        internal Accents Accents { get; }
         public ArenaGrid Arena { get; }
         /// <summary>The enemies, or null in a run without them; the client reads them through <see cref="SimState.Enemies"/>.</summary>
         internal Horde Horde { get; }
@@ -117,6 +122,8 @@ namespace PS.Game.Sim
         internal Arsenal Arsenal { get; }
         /// <summary>The hero's sword, or null in a run without it.</summary>
         internal Sword Sword => Arsenal?.Sword;
+        /// <summary>The bosses' chests and their roulette, or null in a run without an arsenal.</summary>
+        internal Chests Chests { get; }
         /// <summary>The level's crystal structures; the client reads them through <see cref="SimState.Structures"/>.</summary>
         internal Structures Structures { get; }
         /// <summary>The zones, or null in a run without content (whose schedule holds their rules).</summary>
@@ -240,7 +247,8 @@ namespace PS.Game.Sim
                 double horde = Horde?.NextTime(cursor) ?? double.PositiveInfinity;
                 double arsenal = Arsenal?.NextTime(cursor) ?? double.PositiveInfinity;
                 double run = Run.NextTime();
-                double next = Math.Min(Math.Min(Math.Min(beat, step), Math.Min(horde, arsenal)), run);
+                double chest = Chests?.NextTime(cursor) ?? double.PositiveInfinity;
+                double next = Math.Min(Math.Min(Math.Min(beat, step), Math.Min(horde, arsenal)), Math.Min(run, chest));
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
@@ -255,6 +263,10 @@ namespace PS.Game.Sim
                 if (run == next)
                 {
                     Run.Fire(this, run);
+                }
+                else if (chest == next)
+                {
+                    Chests.Fire(this, chest);
                 }
                 else if (beat == next)
                 {
@@ -298,6 +310,7 @@ namespace PS.Game.Sim
             Chickens?.Tick(this, end);
             Horde?.Tick(this, end);
             Arsenal?.Tick(this, end);
+            Chests?.Tick(this, end);
             Zones?.Tick(this, end);
         }
 

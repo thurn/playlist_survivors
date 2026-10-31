@@ -509,14 +509,14 @@ namespace PS.Game.Sim
         /// The weapon's tally (<see cref="SimState.WeaponDamage"/>) adds the whole amount.
         /// </summary>
         internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
-            double dirX, double dirY, double knockback, double launch)
+            double dirX, double dirY, double knockback, double launch, bool critical = false)
         {
             ref var e = ref enemies[i];
             if (!e.Alive) return;
             e.PositionAt(t, out double x, out double y);
             e.Health -= amount;
             state.WeaponDamageStore[weapon] += amount;
-            sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY));
+            sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY, critical));
             if (e.Health <= 1e-9)
             {
                 Kill(sim, i, t, dirX, dirY, launch);
@@ -553,7 +553,7 @@ namespace PS.Game.Sim
         /// leaves the horde at once (its slot is free for a later spawn), with a death event whose
         /// force is <paramref name="launch"/>, the launch's distance in metres, and drops a gem of
         /// its role's experience (<see cref="Gems"/>, with an arsenal); a boss carrying a chest drops
-        /// it (opening it is the chests'). On Easy a boss drops its floor chickens, and a brute may
+        /// it (<see cref="Chests"/>, with an arsenal). On Easy a boss drops its floor chickens, and a brute may
         /// drop one.
         /// </summary>
         internal void Kill(Simulation sim, int i, double t, double dirX, double dirY, double launch)
@@ -571,7 +571,11 @@ namespace PS.Game.Sim
             Scripts.Clear(i);
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Arsenal?.Gems.Drop(sim, t, x, y, roles[e.Role].Xp);
-            if (chestTier[i] > 0) sim.Emit(SimEvent.Chest(t, drops++, x, y, chestTier[i], chestMinute[i]));
+            if (chestTier[i] > 0)
+            {
+                if (sim.Chests != null) sim.Chests.Drop(sim, t, x, y, chestTier[i], chestMinute[i]);
+                else sim.Emit(SimEvent.Chest(t, drops++, x, y, chestTier[i], chestMinute[i]));
+            }
             if (e.Boss) Chickens?.BossDied(sim, t, x, y);
             else if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);
         }

@@ -21,7 +21,8 @@ namespace PS.Game.Sim
     ///   nothing until it is released and pressed again. A confirmed card ranks up its weapon or
     ///   passive, or heals; the next level's offer opens at once, and after the last the world
     ///   resumes on the next beat.
-    /// - An offer opens only while the run plays and the hero stands; levels reached otherwise wait.
+    /// - An offer opens only while the run plays, the hero stands and no chest's roulette spins;
+    ///   levels reached otherwise wait (a chest's landing opens them: <see cref="OpenPending"/>).
     /// </summary>
     internal sealed class LevelUps
     {
@@ -77,7 +78,8 @@ namespace PS.Game.Sim
 
         void Open(Simulation sim, double t)
         {
-            if (!cards || state.PendingLevels == 0 || state.Offer.Open || state.Phase != RunPhase.Playing || state.Hero.Fallen) return;
+            if (!cards || state.PendingLevels == 0 || state.Offer.Open || state.Phase != RunPhase.Playing || state.Hero.Fallen
+                || state.Chest.Open) return;
             int level = state.Level - state.PendingLevels + 1;
             Span<OfferCard> c = stackalloc OfferCard[3];
             Offers.Cards(content, arsenal, level, c);
@@ -104,6 +106,9 @@ namespace PS.Game.Sim
             run.Freeze(sim, t, FreezeReason.LevelUp);
             sim.LetGoOfHeldKeys();
         }
+
+        /// <summary>Levels that waited open their cards at <paramref name="t"/>, if they may now.</summary>
+        public void OpenPending(Simulation sim, double t) => Open(sim, t);
 
         /// <summary>A key goes down at <paramref name="t"/>: returns whether an open offer took it.</summary>
         public bool Press(Simulation sim, Key key, double t)

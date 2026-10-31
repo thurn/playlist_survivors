@@ -102,6 +102,8 @@ namespace PS.Game.Sim
         public double Y => e.D2;
         public double DirX => e.D3;
         public double DirY => e.D4;
+        /// <summary>A critical hit on an enemy (Bloody Tear's), dealing its weapon's crit multiple.</summary>
+        public bool Critical => !OnHero && e.D5 != 0;
     }
 
     public readonly struct DeathEvent
@@ -242,7 +244,17 @@ namespace PS.Game.Sim
         public ChestEvent(in SimEvent e) { this.e = e; }
         public double T => e.T;
         public int Chest => e.I0;
-        public int Tier => e.I1;
+        public ChestPhase Phase => (ChestPhase)(e.I1 & 15);
+        public int Tier => e.I1 >> 4;
+        /// <summary>When it opens, the schedule minute whose treasure it holds; -1 otherwise.</summary>
+        public int Minute => Phase == ChestPhase.Open ? e.I2 : -1;
+        /// <summary>A tick's index, 0 to 7; -1 otherwise.</summary>
+        public int Tick => Phase == ChestPhase.Tick ? e.I2 : -1;
+        /// <summary>When it lands, how many rewards follow; -1 otherwise.</summary>
+        public int Rewards => Phase == ChestPhase.Land ? e.I2 : -1;
+        /// <summary>A reward: its place among the chest's (0 first) and its card (an evolution is a weapon card from rank 0).</summary>
+        public int Place => Phase == ChestPhase.Reward ? e.I2 >> 10 : -1;
+        public OfferCard Reward => Phase == ChestPhase.Reward ? OfferCard.Unpack(e.I2 & 1023) : default;
         public double X => e.D0;
         public double Y => e.D1;
     }
