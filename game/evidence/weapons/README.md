@@ -128,3 +128,59 @@ weapon: 4 the wand, 6 the bible).
 
 Hearing the weapons' sounds against the music is an operator check
 ([operator-pending.md](../operator-pending.md)).
+
+# Lightning Ring, Thunder Loop and Chain Lightning (ps-msz.6.6)
+
+The lightning weapons' rules (game/Assets/Game/Sim/Weapons/LightningRing.cs and ChainLightning.cs,
+unity-game.md's The Other Weapons) and their looks and sounds (Client/Weapons/LightningView.cs,
+Resources/Weapons/LightningBolt.shader, effects.json's `strike-sparks` and `jump-sparks`,
+sounds.json's `lightning-strike`, `lightning-jump` and `lightning-hit`).
+
+## Filmstrips
+
+Windowless fixed-time stills of the Mac player (Mono) in the slice's level on house-128 (128 BPM, a
+sixteenth 0.117 s), the hero standing with only the lightning (`--arsenal`), and no level-up
+cards (`--no-cards`). Each still is two frames (0.033 s) after a bolt event, so it shows each bolt
+in its overbright first moment:
+
+```sh
+uv run --project demo3d/tools game look NAME --backend mono --at T1,...,T6 --strip 3 --evidence weapons \
+  --player-args "--file public/reactive/house-128/house-128.ogg --arsenal lightning-ring:8,chain-lightning:8 --no-cards"
+```
+
+- [ring.jpg](ring.jpg), 13.18 to 13.77 s: Lightning Ring's second volley at rank 8, six strikes on
+  six consecutive sixteenths from the beat at 13.15 s, each from the sky onto a monster in view,
+  with its forks, sparks and flash. The blossom zone's bright ground and bloom wash the ring's
+  electric blue halo nearly white.
+- [thunder-loop.jpg](thunder-loop.jpg) (`--arsenal thunder-loop:1 --no-cards`), 14.71 to 15.30 s: Thunder
+  Loop's returns, in its magenta with a third fork. Each strikes its strike's point again on the
+  first sixteenth at or after 1.5 s: the volley from 13.15 s returns from 14.68 s (1.5 s is 12.8
+  sixteenths at this tempo, so each return waits for the 13th).
+- [chain-neon.jpg](chain-neon.jpg), 5.68 to 5.92 s, in the dark neon zone before the first zone
+  change: Chain Lightning's first jump runs 9 m from the knight to the horde arriving from the
+  south, then a sixteenth later on through it (bowed up over the crowd, in lemon yellow). The
+  later jumps land at the frame's bottom edge, where the horde is.
+- [chain.jpg](chain.jpg), 12.25 to 12.83 s: a chain's six jumps through the crowd south of the
+  knight, one a sixteenth. In the crowd the jumps are short and pale against the blossom ground.
+
+## On the grid
+
+[bolts.csv](bolts.csv) lists every bolt of the two runs' events to 22 s (`--events-out`, the
+filmstrips' runs): its song time, weapon, kind, place in its volley or chain, and where it falls on
+the sixteenths of the committed beats. All 172 sit on a sixteenth (the worst is 3e-14 of one): 15
+ring strikes, 121 chain jumps, and 18 Thunder Loop strikes with their 18 returns. The sim's
+LightningTests check the same on the sixteenths of 70 and 128 BPM, with each beat known only
+0.05 s before its time.
+
+## Sounds on their samples
+
+```sh
+uv run --project demo3d/tools game spike sounds-lightning --file public/reactive/house-128/house-128.ogg \
+  --sounds --seconds 25 --backend mono --evidence weapons --player-args "--arsenal lightning-ring:8,chain-lightning:8 --no-cards"
+```
+
+[sounds-lightning.json](sounds-lightning.json): with the sound probe, every scheduled sound
+(thunder, zaps, crackles, deaths, shatters and chimes) plays a click from its first sample. 699
+were scheduled and none dropped. The 249 far enough apart to measure were found in Unity's mix at
++0.000 ms median from their scheduled times (p5 -0.021 ms, worst -0.021 ms). The mix by ear is on
+[the operator's list](../operator-pending.md).

@@ -62,4 +62,6 @@ what was run (the exact commands), the numbers, and what they show.
 - [weapons](weapons/README.md): Garlic's aura pulsing on the beat and Fire Trail's wake following the
   hero's tiles, as filmstrips, and their rules' tests against native's numbers (ps-msz.6.7); Magic
   Wand's violet bolts and King Bible's gold shards as filmstrips, and a headless run's shots, hits
-  and rings measured on the beat grid (ps-msz.6.5).
+  and rings measured on the beat grid (ps-msz.6.5); Lightning Ring's strikes, Thunder Loop's returns and
+  Chain Lightning's jumps as filmstrips, every bolt on a sixteenth, and their sounds found on their
+  samples in Unity's mix (ps-msz.6.6).

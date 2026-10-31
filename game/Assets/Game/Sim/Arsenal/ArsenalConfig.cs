@@ -22,8 +22,8 @@ namespace PS.Game.Sim
         /// </summary>
         public bool Cards = true;
 
-        /// <summary>Is the arsenal the run's own start: the sword at rank 1, no passives, the base stats?</summary>
+        /// <summary>Is the arsenal the run's own start: the sword at rank 1, no passives, the base stats, cards at each level?</summary>
         public bool StartsAsTheRun =>
-            Weapons.Length == 1 && Weapons[0].Id == "sword" && Weapons[0].Rank == 1 && Passives.Length == 0 && Stats == null;
+            Weapons.Length == 1 && Weapons[0].Id == "sword" && Weapons[0].Rank == 1 && Passives.Length == 0 && Stats == null && Cards;
     }
 }

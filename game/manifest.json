@@ -1652,6 +1652,48 @@
       "sourceSha256": "6a08e4f8f99d529d1642945a62d32201738c1950a8f46d8032bdefa400b5254c",
       "guid": "a32d87b33cadfed4b83eeaa564eb7724",
       "use": "effect: the sword's slam"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_LightLessImpactful01.wav",
+      "sourceSha256": "cba0944c7ae9079ffe8e972682a09e865ab7af7c8c179b5f6375d7fc26a3750e",
+      "guid": "4362085e33f96446a8d3533a640659f5",
+      "use": "sound: chain lightning jumps"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_LightLessImpactful02.wav",
+      "sourceSha256": "deed3f767bf19e02b65ce098a26ea561b4019ce9e09889f85bd9119fa1b5ad87",
+      "guid": "33c69bc54feb64ee08a0a8fa43f30c4c",
+      "use": "sound: chain lightning jumps"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_LightLessImpactful03.wav",
+      "sourceSha256": "98176723262af0f44e2da148354d7d826fe7a73ad7db846ae2d7fecf2184434c",
+      "guid": "74fc70f4cc5b04c0db51e318e1cfaec1",
+      "use": "sound: chain lightning jumps"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ELECTRICITY/ELECTRICITY_Spark_01_mono.wav",
+      "sourceSha256": "3ac235e1a61a3d0612758c2fa331df0da01108685c24b08aa295c82a7b624082",
+      "guid": "450849387a3dbd14b9aa6f1c5ecf3b0c",
+      "use": "sound: lightning hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ELECTRICITY/ELECTRICITY_Spark_02_mono.wav",
+      "sourceSha256": "7a1fd017d63a9de84bfa477d1366727b52f35ada54363bc32e3628bad9fe64e9",
+      "guid": "6d921eae355b42b438762b9385fd61e4",
+      "use": "sound: lightning hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ELECTRICITY/ELECTRICITY_Spark_03_mono.wav",
+      "sourceSha256": "a0fde4852b903128195a2a90f1d72eca26da610984e910f944b43c920d12a482",
+      "guid": "96df279fb6bdac140a9ffa68a6d50d56",
+      "use": "sound: lightning hits"
     }
   ]
 }

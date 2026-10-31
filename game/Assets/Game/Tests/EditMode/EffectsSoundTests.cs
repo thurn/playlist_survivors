@@ -323,6 +323,40 @@ namespace Game.Tests
         }
 
         [Test]
+        public void TheLightningSoundsThunderAZapClimbingItsChainAndACrackleForEachHitNotTheSwords()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            int ring = content.WeaponIndex("lightning-ring"), loop = content.WeaponIndex("thunder-loop"), chain = content.WeaponIndex("chain-lightning");
+            var looks = new WeaponLooks(content.Weapons);
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var sound = new SoundPresenter(s, Beats(), new RoleLooks(null), 0.8f, null);
+            using var view = new LightningView(null, looks, null, sound);
+            var events = new List<SimEvent>
+            {
+                SimEvent.Bolt(3.0, ring, BoltKind.Strike, 0, 1, 1, 1, 1, 0.46),
+                SimEvent.EnemyHit(3.0, 4, ring, WeaponHit.Bolt, 1.5, 1, 1, 0, 1),
+                SimEvent.Bolt(4.5, loop, BoltKind.Return, 0, 1, 1, 1, 1, 0.46),
+            };
+            for (int j = 0; j < 3; j++) events.Add(SimEvent.Bolt(5.0 + 0.125 * j, chain, BoltKind.Jump, j, 0, 0, 1, 1, 0.59));
+            foreach (var e in events)
+            {
+                sound.OnEvent(e);
+                view.OnEvent(e);
+            }
+            var played = _host.GetComponents<AudioSource>().Where(a => a.clip != null)
+                .Select(a => (category: a.clip.name.Split('/')[0], a.pitch)).ToList();
+            Assert.That(played.Where(x => x.category == "lightning-strike").Select(x => x.pitch), Is.EquivalentTo(new[] { 1f, 0.8f }),
+                "a strike's thunder, Thunder Loop's return lower");
+            Assert.That(played.Where(x => x.category == "lightning-jump").Select(x => x.pitch), Is.EquivalentTo(new[] { 1f, 9f / 8, 5f / 4 }),
+                "the chain's jumps up the pentatonic");
+            Assert.That(played.Count(x => x.category == "lightning-hit"), Is.EqualTo(1));
+            Assert.That(played.Any(x => x.category == "hit"), Is.False, "no sword hit for a bolt");
+            Assert.That(view.Count, Is.EqualTo(5));
+            Assert.That((looks.Colour(ring), looks.Colour(loop), looks.Colour(chain)),
+                Is.EqualTo((WeaponLooks.Ring, WeaponLooks.Thunder, WeaponLooks.Chain)), "Thunder Loop's distinct layer");
+        }
+
+        [Test]
         public void TheCrystalWavesFrontIsExactlyWhereTheStrikeAndTheCleaveReach()
         {
             using var waves = new CrystalWaves(null, Shader.Find("Game/CrystalWave"));

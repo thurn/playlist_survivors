@@ -20,10 +20,12 @@ namespace PS.Game.Sim
     ///
     /// - A shot is a volley of <see cref="Weapon.Amount"/> strikes: the first on the shot's grid
     ///   point, each next on the sixteenth after the one before (<see cref="BeatClock.SixteenthAfter"/>).
-    /// - Each strike lands on one of the live enemies in view (the camera's footprint around the
-    ///   hero), drawn at random, so one enemy may take several. Every enemy whose body touches the
-    ///   circle of <c>shape radius x rank area x Area</c> there takes <c>rank power x Might</c> and
-    ///   is knocked out from its centre. With nobody in view the strike lands nowhere and the volley
+    /// - Each strike lands on one of the live enemies in view, drawn at random, so one enemy may
+    ///   take several. Native's view is its camera's; the game's zooms with the music, so in view
+    ///   is the ground every zoom shows, <see cref="ViewShare"/> of the way to the camera's
+    ///   footprint (<see cref="HordeConfig.CameraFootprint"/>), and no strike is lost off screen.
+    ///   Every enemy whose body touches the circle of <c>shape radius x rank area x Area</c> there
+    ///   takes <c>rank power x Might</c> and is knocked out from its centre. With nobody in view the strike lands nowhere and the volley
     ///   goes on.
     /// - Thunder Loop strikes each point again on the first sixteenth at or after
     ///   <see cref="ReturnS"/> later, even when its enemy has moved or died.
@@ -36,6 +38,11 @@ namespace PS.Game.Sim
     {
         /// <summary>Thunder Loop's second strike on a point comes this long after the first (native's).</summary>
         public const double ReturnS = 1.5;
+        /// <summary>
+        /// The share of the way to the footprint's edge that every zoom shows: the footprint is the
+        /// loud view (34 m wide) grown by the focus's 4 m of slack a side, the quiet view 28 m wide.
+        /// </summary>
+        public const double ViewShare = 0.6;
         /// <summary>Strikes still to come: a volley's next and Thunder Loop's returns, a few volleys' worth at most.</summary>
         const int Capacity = 64;
 
@@ -135,7 +142,7 @@ namespace PS.Game.Sim
             {
                 if (!enemies[i].Alive) continue;
                 enemies[i].PositionAt(t, out double ex, out double ey);
-                if (horde.Spawner.InView(ex, ey, hx, hy)) found[n++] = i;
+                if (horde.Spawner.InView(ex, ey, hx, hy, ViewShare)) found[n++] = i;
             }
             if (n == 0) return false;
             enemies[found[sim.Random.Below(n)]].PositionAt(t, out x, out y);

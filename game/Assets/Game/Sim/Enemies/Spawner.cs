@@ -131,11 +131,11 @@ namespace PS.Game.Sim
             return d > 1e-9 && d > FootprintEdge(dx / d, dy / d) + SpawnMarginM;
         }
 
-        /// <summary>Is (x, y) inside the footprint around the hero at (hx, hy): in view?</summary>
-        public bool InView(double x, double y, double hx, double hy)
+        /// <summary>Is (x, y) within <paramref name="share"/> of the way from the hero at (hx, hy) to the footprint's edge?</summary>
+        public bool InView(double x, double y, double hx, double hy, double share)
         {
             double dx = x - hx, dy = y - hy, d = Math.Sqrt(dx * dx + dy * dy);
-            return d < 1e-9 || d <= FootprintEdge(dx / d, dy / d);
+            return d < 1e-9 || d <= share * FootprintEdge(dx / d, dy / d);
         }
 
         bool Spawning => !state.Frozen && state.RunClock < durationS - 1e-9;

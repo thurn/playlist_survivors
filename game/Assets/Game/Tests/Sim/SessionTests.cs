@@ -194,6 +194,9 @@ namespace PS.Game.Sim.Tests
             var armed = SliceLevel.Config(HordeFixture.Content, null, Footprint, 1);
             armed.Arsenal.Weapons = new[] { ("garlic", 8) };
             Assert.Throws<NotSupportedException>(() => SessionRecord.Of(armed, new Simulation(armed)), "a player's --arsenal");
+            var cardless = SliceLevel.Config(HordeFixture.Content, null, Footprint, 1);
+            cardless.Arsenal.Cards = false;
+            Assert.Throws<NotSupportedException>(() => SessionRecord.Of(cardless, new Simulation(cardless)), "a player's --no-cards");
         }
     }
 }

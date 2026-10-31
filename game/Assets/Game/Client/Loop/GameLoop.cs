@@ -63,6 +63,7 @@ namespace Game.Client.Loop
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
     /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
     /// - `--arsenal "garlic:8,fire-trail:3"`: the hero's starting weapons and ranks, in slot order, in place of the sword;
+    ///   `--no-cards`: levels count without opening their cards, so the arsenal stays as given (for weapons' stills);
     /// - `--walk "right@9-11,up@11-12.5"`: keys held over song-time spans (<see cref="ScriptedKeys"/>), for a walking hero in stills;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
@@ -123,6 +124,7 @@ namespace Game.Client.Loop
         GemView _gems;
         WandView _wand;
         BibleView _bible;
+        LightningView _lightning;
         LevelUpCards _cards;
         StreamWriter _out, _structuresOut;
         bool _fixed, _done, _quitting, _interactive;
@@ -222,6 +224,7 @@ namespace Game.Client.Loop
                 config.Easy = Args.Has("--easy");
                 var arsenal = Args.Get("--arsenal");
                 if (arsenal != null && config.Arsenal != null) config.Arsenal.Weapons = Loadout(arsenal);
+                if (Args.Has("--no-cards") && config.Arsenal != null) config.Arsenal.Cards = false;
             }
             _config = config;
             Driver = new SimDriver(config, clock);
@@ -285,6 +288,8 @@ namespace Game.Client.Loop
                 Driver.Events.Subscribe(_garlic);
                 _fireTrail = new FireTrailView(camera, content, _effects?.System, _soundPresenter);
                 Driver.Events.Subscribe(_fireTrail);
+                _lightning = new LightningView(camera, weapons, _effects, _soundPresenter);
+                Driver.Events.Subscribe(_lightning);
                 if (SystemInfo.supportsInstancing)
                 {
                     // The weapons' crystals; their casts and hits go to the effects as cues.
@@ -664,6 +669,7 @@ namespace Game.Client.Loop
             _fireTrail?.Dispose();
             _wand?.Dispose();
             _bible?.Dispose();
+            _lightning?.Dispose();
             _cards?.Dispose();
             _out?.Dispose();
             _out = null;

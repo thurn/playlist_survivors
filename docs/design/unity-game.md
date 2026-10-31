@@ -1408,6 +1408,30 @@ chests'). Native's numbers throughout; its flight model is adapted:
   run's own (`--arsenal`), which its replay couldn't rebuild.
   Evidence: [game/evidence/weapons](../../game/evidence/weapons/README.md).
 
+**Shipped (ps-msz.6.6).** The lightning, by native's rules (engine/lightning.rs and its chain), each
+bolt a `SimEventKind.Bolt` (`BoltEvent`: weapon, `BoltKind`, its place in its volley or chain, from
+and to, the radius it hits) followed by its hits (`WeaponHit.Bolt`); each shot is still an attack event:
+
+- **Lightning Ring** (`LightningRing`, shape `strike`): a shot is a volley of `Weapon.Amount` strikes
+  (native's `amount(stats)`), the first on the shot's grid point, each next on the sixteenth after
+  (`BeatClock.SixteenthAfter`, a quarter of the free period with no beat). Each lands on a live
+  enemy in view drawn at random by the sim's generator, hitting every body touching
+  `0.4571 m x rank area x Area` with `rank power x Might`, knocked out from its centre. Native's
+  view is its camera's; the game's zooms with the music, so in view is the ground every zoom
+  shows: `LightningRing.ViewShare` (0.6) of the way to `HordeConfig.CameraFootprint`, the loud
+  view grown by the focus's slack. With nobody in view a strike lands nowhere.
+- **Thunder Loop**, its evolution, strikes each point again on the first sixteenth at or after
+  1.5 s later (`BoltKind.Return`), wherever its enemy went.
+- **Chain Lightning** (`ChainLightning`, shape `chain`): a chain of `Amount` jumps a sixteenth
+  apart, each to the live enemy the chain hasn't hit nearest where it starts (the hero, then the
+  enemy before), closer than `9.63 m x area` for the first and `5.19 m x area` after, hitting
+  every unhit body touching `0.59 m x area` around it; with nobody in range the chain ends.
+- A time planned on a beat's continuation moves to the sixteenth a beat committed since says
+  (`BeatClock.SixteenthAtOrAfter`, native's deferral). Nothing strikes or jumps while the world is
+  frozen or the hero has fallen; what a freeze held goes on from the beat play resumes on.
+- The player's `--no-cards` counts levels without opening their cards, so `--arsenal` stays as
+  given in weapon stills ([evidence](../../game/evidence/weapons/README.md)).
+
 ### Enemies
 
 Enemies keep native's roles, stats and spawn schedule, with continuous
@@ -2005,6 +2029,19 @@ built ([evidence](../../game/evidence/fx/README.md)):
   larger `structure-burst`, and `EffectCues.Burst` is the hook for a
   regrowth's.
 - A headless player has no compute, so the effects sit it out.
+
+**Shipped (ps-msz.6.6).** The lightning's bolts (`Client/Weapons/LightningView`,
+`Resources/Weapons/LightningBolt.shader`): a camera-facing ribbon mesh rebuilt each frame, additive
+and HDR, a thin white-hot core in the weapon's colour (`WeaponLooks`). A strike falls 14 m from the
+sky with two forks, in Lightning Ring's electric blue (native's). Thunder Loop's return is thicker,
+in native's magenta, with a third fork (the evolution's layer). A chain's jump arcs from body to
+body, bowed up over the crowd, in lemon yellow, and outlasts the next jump so the chain reads as
+one. Each flashes overbright, then fades and flickers out, its path re-drawn 30 times a second from
+the bolt and the song time alone, so fixed-time stills repeat. The effects' `strike-sparks` and
+`jump-sparks` spray where they land, tinted by the weapon, with their light (`EffectCues.Spark`).
+The view voices them itself (sounds.json, demo3d's packs): a strike's `lightning-strike` thunder (a
+return's lower), a jump's `lightning-jump` zap climbing the major pentatonic, and a `lightning-hit`
+crackle for each of their hits, in place of the sword's.
 
 ### Post-processing and camera
 
