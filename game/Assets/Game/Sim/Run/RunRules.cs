@@ -114,10 +114,11 @@ namespace PS.Game.Sim
             if (!Plays || Holds(reason)) return;
             Account(t);
             held |= Bit(reason);
-            released &= ~Bit(reason);
             state.FreezeReasons = held;
             state.Frozen = true;
-            sim.Emit(SimEvent.Freeze(t, reason, true));
+            // A reason let go but not yet resumed holds again: its freeze never ended, so it doesn't start again.
+            if ((released & Bit(reason)) != 0) released &= ~Bit(reason);
+            else sim.Emit(SimEvent.Freeze(t, reason, true));
         }
 
         /// <summary>

@@ -72,6 +72,42 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void APauseAgainBeforeTheResumesBeatContinuesTheSameFreeze()
+        {
+            var sim = Start(new SimConfig(), Known(new FixtureSong(3).Beats(0, 30, 120)));
+            sim.StepTo(10.03);
+            double paused = sim.Now;
+            sim.Control(RunControl.Pause);
+            sim.StepTo(12.03);
+            sim.Control(RunControl.Resume);
+            sim.Control(RunControl.Pause); // Esc twice, or a focus loss, before the beat
+            sim.StepTo(14);
+            Assert.IsTrue(sim.State.FrozenFor(FreezeReason.Pause));
+            sim.Control(RunControl.Resume);
+            sim.StepTo(16);
+            var freezes = Freezes(sim);
+            Assert.AreEqual(2, freezes.Count, "one freeze, started once and ended once");
+            Assert.IsTrue(freezes[0].Starts);
+            Assert.IsFalse(freezes[1].Starts);
+            Assert.Greater(freezes[1].T, 14);
+            Assert.AreEqual(paused + (16 - freezes[1].T), sim.State.RunClock, 1e-6);
+        }
+
+        [Test]
+        public void QuietAgainBeforeTheResumeRestartsTheLock()
+        {
+            // Locked at 53 (as below), but quiet again at 53.6, before the second downbeat at 55.
+            var song = new FixtureSong(3).Beats(0, 40, 120).Gap(40, 52, silent: true).Beats(52, 53.6, 120)
+                .Gap(53.6, 54.4, silent: true).Beats(54.4, 80, 120);
+            var sim = Start(new SimConfig(), Known(song));
+            sim.StepTo(80);
+            var freezes = Freezes(sim);
+            Assert.AreEqual(2, freezes.Count);
+            Assert.AreEqual(SecondDownbeatAfterLock(sim, 54.4), freezes[1].T, Eps, "the lock after the second quiet");
+            Assert.Greater(freezes[1].T, 56.4);
+        }
+
+        [Test]
         public void TheMusicStoppingFreezesTheWorldUntilTheSecondDownbeatAfterTheBeatLocks()
         {
             var song = new FixtureSong(3).Beats(0, 40, 120).Gap(40, 52, silent: true).Beats(52, 90, 120);
