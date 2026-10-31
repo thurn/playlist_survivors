@@ -1,13 +1,18 @@
 //! The System source on a real tap, through the C interface: `afplay` plays a quiet tone after a
 //! second and a half of silence, and the plugin taps it (muted, so the tone is never heard), plays
 //! it `M` late, lets the watchdog release it when the main thread's heartbeat stops for 2 s, and
-//! taps it again once the heartbeat is back. Ignored by default: it uses the Mac's audio devices.
+//! taps it again once the heartbeat is back. Ignored by default (it uses the Mac's audio devices);
+//! slow CI runs it.
 //!
 //!     cargo test -p plugin --test system_tap -- --ignored --nocapture
 //!
 //! Without the System Audio Recording grant the tap captures silence; the mechanics (muting, the
 //! watchdog, tapping again) still run, and it prints whether the music came through. With the grant
 //! (the terminal it runs from holds it), the delayed tone must play.
+//!
+//! It waits on what the session reports, never on a clock: other audio on the machine (slow CI's
+//! Unity lanes) can stall the capture for 0.5 s, and the watchdog then releases the app and the
+//! source taps it again, as it should; that only adds releases.
 
 mod common;
 
@@ -15,13 +20,16 @@ use std::ffi::CString;
 use std::process::{Child, Command};
 use std::time::{Duration, Instant};
 
-use common::{empty_entries, last_error, status, temp, write_wav};
-use ps_plugin::{Config, PS_OK, PS_PLAYING, PS_SOURCE_SYSTEM, PS_STOPPED, Session};
+use capture::watchdog::MAIN_STALL_S;
+use common::{empty_entries, hang_guard, last_error, status, temp, write_wav};
+use ps_plugin::{Config, PS_OK, PS_PLAYING, PS_SOURCE_SYSTEM, PS_STOPPED, Session, Status};
 
 const RATE: f64 = 48_000.0;
 const FRAMES: usize = 512;
 /// The tone's amplitude (-50 dB: faint, should anything ever let it through).
 const LEVEL: f32 = 0.003;
+/// The tone's length (s): it plays on through the waits' hang guards' worth of a slow run.
+const TONE_S: f64 = 60.0;
 
 /// Kills the child when the test ends, however it ends.
 struct Killed(Child);
@@ -67,6 +75,19 @@ impl Player {
             std::thread::sleep(Duration::from_millis(2));
         }
     }
+
+    /// Plays, polling, until the session's status satisfies `done`.
+    fn play_until(&mut self, what: &str, done: impl Fn(&Status) -> bool) -> Status {
+        let started = Instant::now();
+        loop {
+            self.play(0.01, true);
+            let st = status(self.s);
+            if done(&st) {
+                return st;
+            }
+            hang_guard(started, &format!("{what}: {st:?}"));
+        }
+    }
 }
 
 #[test]
@@ -74,12 +95,11 @@ impl Player {
 fn a_real_app_is_tapped_muted_released_by_the_watchdog_and_tapped_again() {
     let dir = temp("tap");
     let wav = dir.join("tone.wav");
-    let mut samples = vec![0.0f32; (1.5 * 44_100.0) as usize * 2];
-    for i in 0..(20.0 * 44_100.0) as usize {
-        let x = LEVEL * (std::f32::consts::TAU * 440.0 * i as f32 / 44_100.0).sin();
-        samples.extend([x, x]);
+    let mut samples = vec![0.0f32; (1.5 * 44_100.0) as usize];
+    for i in 0..(TONE_S * 44_100.0) as usize {
+        samples.push(LEVEL * (std::f32::consts::TAU * 440.0 * i as f32 / 44_100.0).sin());
     }
-    write_wav(&wav, 2, &samples);
+    write_wav(&wav, 1, &samples);
     let child = Killed(Command::new("afplay").arg(&wav).spawn().unwrap());
     let pid = child.0.id() as i32;
     let started = Instant::now();
@@ -113,34 +133,31 @@ fn a_real_app_is_tapped_muted_released_by_the_watchdog_and_tapped_again() {
         peak: 0.0,
     };
 
-    // Tapped: the tone plays `M` late.
-    player.play(6.0, true);
-    let st = status(s);
-    println!("tapped: {st:?}, peak {}", player.peak);
-    assert_eq!((st.state, st.muted), (PS_PLAYING, 1));
-    assert!(
-        st.analysed > st.anchor_song + 2.5,
-        "analysed {}",
-        st.analysed
-    );
-    let heard = player.peak;
+    // Tapped: the tone plays `M` late, the analysis `M` ahead of what is heard.
+    let st = player.play_until("the music never started", |st| {
+        st.state == PS_PLAYING && st.muted == 1 && st.analysed > st.anchor_song + 2.5
+    });
+    println!("tapped: {st:?}");
 
-    // The main thread stalls for 2.5 s: the watchdog releases the app.
-    player.play(2.5, false);
+    // The main thread stalls past the watchdog's 2 s: it releases the app, and the app stays
+    // released and the music stopped while the stall lasts.
+    let before = st.releases;
+    player.play(MAIN_STALL_S + 2.0, false);
     let st = status(s);
     println!("released: {st:?}");
-    assert_eq!((st.releases, st.muted, st.state), (1, 0, PS_STOPPED));
+    assert!(
+        st.releases > before,
+        "the watchdog never released the app: {st:?}"
+    );
+    assert_eq!((st.muted, st.state), (0, PS_STOPPED));
 
     // The heartbeat is back and the app still plays: it is tapped again, and the music resumes
     // `M` later.
-    player.play(1.5, true);
-    let st = status(s);
+    let st = player.play_until("the app was never tapped again", |st| st.muted == 1);
     println!("tapped again: {st:?}");
-    assert_eq!((st.releases, st.muted), (1, 1));
-    player.play(4.0, true);
-    let st = status(s);
+    let st = player.play_until("the music never resumed", |st| st.state == PS_PLAYING);
     println!("resumed: {st:?}");
-    assert_eq!(st.state, PS_PLAYING);
+    let heard = player.peak;
     unsafe { ps_plugin::ps_close(s) };
     let meta = std::fs::read_to_string(record.join("meta.json")).unwrap();
     println!("{meta}");

@@ -550,7 +550,11 @@ A muted app must always get its sound back.
   the guardian dies too or the machine loses power.
 - **Watchdog**, on both platforms, as native's: if capture stops for 0.5 s
   or the main thread misses its heartbeat for 2 s, the plugin releases the
-  tap or restores the volume at once.
+  tap or restores the volume at once. The watchdog is one of the game's
+  threads, so a game frozen whole (a debugger's pause, `SIGSTOP`) keeps the
+  app muted until it resumes or exits. On the Mac a suspended source app is
+  no capture stall: its tap goes on capturing silence on the device's clock,
+  so the app stays muted and the run hears a song gap (measured, ps-msz.5.5).
 - **After the watchdog fires**, the world freezes as "music stopped". The
   plugin taps the app again once it produces audio, and the run resumes as
   any music-stopped freeze does (see [The Run](#the-run)). The run ends
@@ -2126,9 +2130,13 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
 - **Crash safety, Windows**: end the game's process from Task Manager. The
   guardian restores the app's volume. Then kill the guardian and the game
   together; the next launch restores it.
-- **Capture stall**: suspend the source app. Its sound is restored, the
-  world freezes as music stopped, and the run resumes after the app plays
-  again and the beat relocks.
+- **Capture stall**: on the Mac, disconnect the output device in use
+  (headphones) during a live run: the app's sound returns at once, on the
+  new output, and the run ends for the device change. Suspending the source
+  app is a song gap, not a stall (see
+  [Platform capture and crash safety](#platform-capture-and-crash-safety)):
+  the world freezes as music stopped, and resumes after the app plays again
+  and the beat relocks.
 - **Focus loss and Esc**: both pause; resuming happens on the next beat.
 
 ### Load and look
