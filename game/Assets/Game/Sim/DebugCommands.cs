@@ -28,7 +28,7 @@ namespace PS.Game.Sim
         Minotaur = 11,
         /// <summary>The finale now, whatever the run clock: its blast lands on the next downbeat and the victory card follows (<see cref="RunRules.ForceFinale"/>).</summary>
         Finale = 12,
-        /// <summary>A tier-3 chest of the last evolving minute's treasure at the hero's feet, taken once it is clear of the crowd (<see cref="Chests"/>).</summary>
+        /// <summary>A tier-3 chest of the last evolving minute's treasure two tiles ahead of the hero, for it to walk onto (<see cref="Chests"/>).</summary>
         Chest = 13,
     }
 

@@ -123,14 +123,21 @@ namespace PS.Game.Sim
             sim.Emit(SimEvent.Chest(t, dropped++, x, y, tier, minute));
         }
 
-        /// <summary>The debug surfaces' chest (<see cref="DebugCommand.Chest"/>): tier 3, of the last minute whose treasure evolves, at the hero's feet now.</summary>
-        public void DropAtHero(Simulation sim, double t)
+        /// <summary>The debug chest lies this many tiles ahead of the hero.</summary>
+        public const int DebugTilesAhead = 2;
+
+        /// <summary>
+        /// The debug surfaces' chest (<see cref="DebugCommand.Chest"/>): tier 3, of the last minute whose
+        /// treasure evolves, <see cref="DebugTilesAhead"/> tiles ahead of the hero now, for it to walk onto.
+        /// </summary>
+        public void DropAhead(Simulation sim, double t)
         {
             var minutes = content.Schedule.Minutes;
             int minute = minutes.Length - 1;
             while (minute >= 0 && !(minutes[minute].Treasure?.Evolves ?? false)) minute--;
             state.Hero.PositionAt(t, out double x, out double y);
-            Drop(sim, t, x, y, 3, minute);
+            Sword.Facing(state.Hero.Facing, out double dx, out double dy);
+            Drop(sim, t, x + dx * DebugTilesAhead * arena.TileM, y + dy * DebugTilesAhead * arena.TileM, 3, minute);
         }
 
         /// <summary>(x, y) moves to the centre of the open tile nearest it (left as it is with none near).</summary>

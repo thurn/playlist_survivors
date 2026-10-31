@@ -20,15 +20,15 @@ namespace Game.Client.Weapons
     ///   a lead ahead of frameSong, so the bolt bends onto its enemy as it closes in; until then it
     ///   flies at its aim.
     /// - Effects spawn on the first frame that reaches their song time (<see cref="EffectCues"/>).
-    /// - Holy Wand, its evolution, is a stream of prism bolts: gold crystals whose longer streak of
-    ///   afterimages runs through a prism's hues (<see cref="WeaponLooks.Prism"/>).
+    /// - Holy Wand, its evolution, is a stream of prism bolts: gold crystals whose longer, more
+    ///   widely spaced streak of afterimages runs through a prism's hues (<see cref="WeaponLooks.Prism"/>).
     /// </summary>
     public sealed class WandView : IPresenter, IDisposable
     {
         public const float ChestM = 1.05f, LengthM = 1.5f;
         /// <summary>The afterimages: how many, how far apart in song time, and how much each shrinks.</summary>
-        const int Afterimages = 7, PrismAfterimages = 12;
-        const double AfterimageS = 0.018;
+        const int Afterimages = 7, PrismAfterimages = 9;
+        const double AfterimageS = 0.018, PrismAfterimageS = 0.032;
         const float AfterimageShrink = 0.82f;
         /// <summary>A bolt shrinks away this long after it ends.</summary>
         const double VanishS = 0.08;
@@ -76,7 +76,7 @@ namespace Game.Client.Weapons
             _batch = new CrystalBatch(_mesh, WeaponLooks.Wand, "wand");
             _holy = new CrystalBatch(_mesh, WeaponLooks.Holy, "holy-wand");
             _prism = new CrystalBatch[WeaponLooks.Prism.Length];
-            for (int k = 0; k < _prism.Length; k++) _prism[k] = new CrystalBatch(_mesh, WeaponLooks.Prism[k], "holy-wand-prism-" + k, 0.6f);
+            for (int k = 0; k < _prism.Length; k++) _prism[k] = new CrystalBatch(_mesh, WeaponLooks.Prism[k] * 0.7f, "holy-wand-prism-" + k, 0.3f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }
@@ -150,7 +150,7 @@ namespace Game.Client.Weapons
                 int afterimages = bolt.Evolved ? PrismAfterimages : Afterimages;
                 for (int k = 1; k <= afterimages; k++)
                 {
-                    double back = t - k * AfterimageS;
+                    double back = t - k * (bolt.Evolved ? PrismAfterimageS : AfterimageS);
                     if (back < bolt.Legs[0].T) break;
                     scale *= bolt.Evolved ? 0.9f : AfterimageShrink;
                     if (!At(bolt, back, out var past, out var pastHeading)) break;

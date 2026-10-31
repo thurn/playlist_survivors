@@ -94,7 +94,7 @@ namespace Game.Client.Effects
                     var hero = new Vector2((float)hx, (float)hy);
                     int fx = c.Kind == EffectCues.Kind.Slam ? _slam : c.Kind == EffectCues.Kind.Spin ? _spin : _slash;
                     float height = c.Kind == EffectCues.Kind.Slam ? SlamHeight : SlashHeight;
-                    Add(fx, new Vector3(hero.x, height, hero.y), Yaw(c.Dir), c.Scale, seed, c.T, default, 0);
+                    Add(fx, new Vector3(hero.x, height, hero.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
                     _waves.Strike(c.T, hero, c.Reach, c.Heavy);
                     break;
                 }

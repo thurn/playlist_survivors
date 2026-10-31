@@ -19,8 +19,8 @@ namespace Game.Client.Weapons
     ///   shock ring thrown out past its reach.
     /// - <b>Soul Eater</b>: each hit draws a teal soul out of its enemy, arcing into the hero's chest,
     ///   and the hero glows teal as they arrive.
-    /// - <b>Bloody Tear</b>: a crimson ring at the blade's reach on each impact, a crimson burst on
-    ///   each hit, larger on a critical blow.
+    /// - <b>Bloody Tear</b>: a crimson burst on each hit, larger on a critical blow; its slashes are
+    ///   crimson too (<see cref="EffectCues.SlashTint"/>).
     /// - <b>An evolution's arrival</b> (a chest's reward that evolves a weapon, at the landing): rings
     ///   in its colour sweep out from the hero over <see cref="ArrivalS"/>, with a prism of sparks,
     ///   and its sound (`evolve`).
@@ -29,8 +29,8 @@ namespace Game.Client.Weapons
     {
         /// <summary>An evolution's arrival lasts this long (native's LIFE), and a soul's flight this long.</summary>
         public const double ArrivalS = 1.1, SoulS = 0.45;
-        const double ShockS = 0.35, TearS = 0.22, GlowS = 0.3;
-        const float ChestM = 1.1f, SoulArcM = 1.4f;
+        const double ShockS = 0.35, GlowS = 0.3;
+        const float ChestM = 1.1f, SoulArcM = 1.4f, SoulM = 0.55f;
         const int SoulAfterimages = 6;
         const float BoundsM = 120;
 
@@ -38,7 +38,7 @@ namespace Game.Client.Weapons
         {
             public double T, Life;
             public Vector2 At;
-            /// <summary>Around the hero, placed once its time comes; an arrival's first ring throws its sparks.</summary>
+            /// <summary>Around the hero (an arrival), placed once its time comes; an arrival's first ring throws its sparks.</summary>
             public bool AtHero, Placed, Sparks;
             public float From, To;
             public Color Tint;
@@ -84,7 +84,7 @@ namespace Game.Client.Weapons
             _sound = sound;
             _ground = new PrismGround(camera);
             _mesh = CrystalBatch.Build("soul", 5, 0.32f, 0.32f, 0.45f, 0.3f);
-            _souls = new CrystalBatch(_mesh, GarlicAura.SoulEater, "soul", 0.5f);
+            _souls = new CrystalBatch(_mesh, GarlicAura.SoulEater * 0.55f, "soul", 0.3f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }
@@ -112,14 +112,6 @@ namespace Game.Client.Weapons
                     {
                         T = b.T, Life = ShockS, At = new Vector2((float)b.X, (float)b.Y), From = r, To = r * 2.6f, Tint = WeaponLooks.Thunder,
                     });
-                    break;
-                }
-                case SimEventKind.Attack:
-                {
-                    var a = e.AsAttack;
-                    if (!a.IsSword || !Evolved(a.Weapon)) break;
-                    float reach = (float)a.Reach;
-                    _shocks.Add(new Shock { T = a.Impact, Life = TearS, AtHero = true, From = reach * 0.9f, To = reach * 1.05f, Tint = WeaponLooks.Tear });
                     break;
                 }
                 case SimEventKind.Hit:
@@ -188,7 +180,7 @@ namespace Game.Client.Weapons
                 }
                 if (s.AtHero && !s.Placed)
                 {
-                    // Around the hero where it stood when it struck or the chest landed.
+                    // Around the hero where it stood when the chest landed.
                     hero.PositionAt(s.T, out double sx, out double sy);
                     s.At = new Vector2((float)sx, (float)sy);
                     s.Placed = true;
@@ -246,7 +238,7 @@ namespace Game.Client.Weapons
                     var next = SoulAt(s, Mathf.Min(1, (float)((back + 0.02) / SoulS)), chest);
                     var way = next - at;
                     var turn = way.sqrMagnitude > 1e-8f ? Quaternion.LookRotation(way) : Quaternion.identity;
-                    float size = Mathf.Pow(0.8f, k);
+                    float size = SoulM * Mathf.Pow(0.8f, k);
                     var m = Matrix4x4.TRS(at, turn, new Vector3(size, size, size * 1.4f));
                     if (k == 0) _souls.Crystal(m);
                     else _souls.Afterimage(m);

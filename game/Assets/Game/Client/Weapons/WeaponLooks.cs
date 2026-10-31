@@ -11,7 +11,7 @@ namespace Game.Client.Weapons
     /// Holy Wand's gold bolts stream prism afterimages through <see cref="Prism"/>; Unholy Vespers'
     /// violet shards ride a glowing ring on the ground; Thunder Loop's magenta strikes ring the ground
     /// where they land; Soul Eater's teal aura draws souls out of what it hits into the hero; Bloody
-    /// Tear's slashes and critical blows run crimson.
+    /// Tear's slashes and hits run crimson.
     /// </summary>
     public sealed class WeaponLooks
     {

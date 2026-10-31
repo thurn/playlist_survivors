@@ -202,15 +202,17 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void TheDebugChestIsATierThreeChestOfTheLastEvolvingMinuteAtTheHerosFeet()
+        public void TheDebugChestIsATierThreeChestOfTheLastEvolvingMinuteTwoTilesAheadOfTheHero()
         {
             var sim = Start(new[] { ("magic-wand", 1) });
             sim.StepTo(1);
+            double x = sim.State.Hero.X, y = sim.State.Hero.Y;
             sim.Command(DebugCommand.Chest);
-            sim.StepTo(1.1);
-            var open = Chests(sim, ChestPhase.Open).Single();
-            Assert.AreEqual((3, 25), (open.Tier, open.Minute), "schedule.json's last evolving minute");
-            Assert.AreEqual((sim.State.Hero.X, sim.State.Hero.Y), (open.X, open.Y));
+            sim.StepTo(1.5);
+            var chest = sim.State.FieldChests.ToArray().Single();
+            Assert.AreEqual((3, 25), (chest.Tier, chest.Minute), "schedule.json's last evolving minute");
+            Assert.AreEqual((x, y - 2 * sim.Arena.TileM), (chest.X, chest.Y), "the hero faces down at the start");
+            Assert.AreEqual(0, Chests(sim, ChestPhase.Open).Count, "it lies there until the hero walks onto it");
         }
 
         [Test]

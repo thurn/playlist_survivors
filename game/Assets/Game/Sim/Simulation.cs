@@ -203,7 +203,7 @@ namespace PS.Game.Sim
                     Run.ForceFinale(Now);
                     break;
                 case DebugCommand.Chest:
-                    Chests?.DropAtHero(this, Now);
+                    Chests?.DropAhead(this, Now);
                     break;
                 default:
                     Horde?.Music.Force(command, Now);

@@ -31,7 +31,7 @@ namespace Game.Client.Pickups
     {
         public static readonly Color Gold = new Color(1f, 0.72f, 0.18f);
         /// <summary>The chest's hover over its tile, over the hero's head while it spins, and its height.</summary>
-        const float HoverM = 1.15f, OverheadM = 3.1f, SizeM = 1.0f;
+        const float HoverM = 1.15f, OverheadM = 3.4f, SizeM = 1.0f, SpinSize = 1.8f;
         const float ShardOrbitM = 0.85f, ShardM = 0.32f, BeamM = 9f;
         const double PopS = 0.25, RiseS = 0.3, FlashS = 0.16, GatherS = 0.32;
         const float TurnDegPerS = 40, SpinDegPerS = 260;
@@ -225,16 +225,17 @@ namespace Game.Client.Pickups
             if (!landed)
             {
                 float spin = (float)(t - c.Opened) * (SpinDegPerS + 60 * ticks);
-                _chest.Crystal(Upright(at, spin, SizeM * (1 + 0.3f * flash)));
+                float size = SizeM * Mathf.Lerp(1, SpinSize, rise) * (1 + 0.35f * flash);
+                _chest.Crystal(Upright(at, spin, size));
                 _beam.Afterimage(Matrix4x4.TRS(new Vector3(at.x, at.y / 2, at.z), Quaternion.Euler(-90, 0, 0),
                     new Vector3(0.5f, 0.5f, at.y) * (0.6f + 0.6f * flash)));
-                _ground.Draw(hero, 2.2f, 0.4f, new PrismGround.Look { Tint = Gold, Edge = 1, Fill = 0.5f, Intensity = 0.25f + 1.2f * flash }, age);
+                _ground.Draw(hero, 2.2f + 0.4f * flash, 0.4f, new PrismGround.Look { Tint = Gold, Edge = 1, Fill = 0.5f, Intensity = 0.25f + 1.6f * flash }, age);
                 for (int k = 0; k < shards; k++)
                 {
                     float a = (float)(t - c.Opened) * (2.5f + 0.4f * ticks) + 2 * Mathf.PI * k / shards;
-                    var s = at + new Vector3(Mathf.Cos(a), 0.2f * Mathf.Sin(3 * a), Mathf.Sin(a)) * ShardOrbitM * 1.3f;
+                    var s = at + new Vector3(Mathf.Cos(a), 0.2f * Mathf.Sin(3 * a), Mathf.Sin(a)) * ShardOrbitM * Mathf.Lerp(1, 2, rise);
                     var colour = _cycle.Length > 0 ? _cycle[(ticks + k) % _cycle.Length] : Gold;
-                    Shards(colour).Crystal(Upright(s, spin * 1.5f, ShardM * 1.2f * (1 + 0.4f * flash)));
+                    Shards(colour).Crystal(Upright(s, spin * 1.5f, ShardM * Mathf.Lerp(1, 1.8f, rise) * (1 + 0.5f * flash)));
                 }
                 return;
             }
@@ -255,9 +256,9 @@ namespace Game.Client.Pickups
             for (int k = 0; k < c.Rewards.Count; k++)
             {
                 float a = 2 * Mathf.PI * k / c.Rewards.Count;
-                var start = at + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * ShardOrbitM * 1.6f;
+                var start = at + new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)) * ShardOrbitM * 2f;
                 var s = Vector3.Lerp(start, chest, u * u);
-                Shards(c.Rewards[k]).Crystal(Upright(s, (float)t * SpinDegPerS, ShardM * 1.5f * (1 - 0.6f * u)));
+                Shards(c.Rewards[k]).Crystal(Upright(s, (float)t * SpinDegPerS, ShardM * 2f * (1 - 0.6f * u)));
             }
         }
 

@@ -226,7 +226,13 @@ namespace Game.Client.Loop
                 config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
                 config.Easy = Args.Has("--easy");
                 var arsenal = Args.Get("--arsenal");
-                if (arsenal != null && config.Arsenal != null) config.Arsenal.Weapons = Loadout(arsenal);
+                if (arsenal != null && config.Arsenal != null)
+                {
+                    // Passives (an evolution's partner) go with the weapons: "magic-wand:8,empty-tome:1".
+                    var items = Loadout(arsenal);
+                    config.Arsenal.Weapons = Array.FindAll(items, i => content.PassiveIndex(i.Id) < 0);
+                    config.Arsenal.Passives = Array.FindAll(items, i => content.PassiveIndex(i.Id) >= 0);
+                }
                 if (Args.Has("--no-cards") && config.Arsenal != null) config.Arsenal.Cards = false;
             }
             _config = config;
@@ -279,6 +285,7 @@ namespace Game.Client.Loop
             if (library != null)
             {
                 _effects = new EffectsPresenter(camera, library, roles);
+                _effects.Cues.SlashTint = w => weapons.Of(w) == WeaponLooks.Family.Sword && weapons.Evolved(w) ? WeaponLooks.Tear : default;
                 Driver.Events.Subscribe(_effects);
             }
             SetupSound(roles);
@@ -338,7 +345,7 @@ namespace Game.Client.Loop
         {
             var parts = item.Trim().Split(':');
             if (parts.Length != 2 || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int rank) || rank < 1)
-                throw new ArgumentException($"--arsenal: '{item}' is not weapon:rank");
+                throw new ArgumentException($"--arsenal: '{item}' is not weapon:rank or passive:rank");
             return (parts[0].Trim(), rank);
         });
 

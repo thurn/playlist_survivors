@@ -1473,9 +1473,8 @@ rules and layer (`Client/Weapons/EvolutionLayers.cs`, colours from native's slic
   its enemy, arcing into the hero's chest, and the hero glows teal as they arrive.
 - **Bloody Tear**: the sword at its numbers, its blows critical at its crit chance times Luck
   (drawn from the run's generator only for a rank with crits), for its crit multiple
-  (`HitEvent.Critical`); a critical blow heals the hero 8, at most once a second of run clock. A
-  crimson ring flashes at the blade's reach on each impact, and each hit bursts crimson, larger
-  when critical.
+  (`HitEvent.Critical`); a critical blow heals the hero 8, at most once a second of run clock. Its
+  slashes are crimson (`EffectCues.SlashTint`), and each hit bursts crimson, larger when critical.
 - **The arrival**: a reward that evolves sweeps three rings in its colour out from the hero at the
   landing, with six rays of sparks.
 - **Structure breaks** (Crystal Structures): an evolution's hit within 50 ms of an accented beat
@@ -1852,7 +1851,7 @@ engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
   ping on each eighth climbing the major pentatonic, one transformation for a landing that evolves.
   The HUD (ps-msz.6.9) draws the cards from `SimState.Chest` and the chest events.
 - **Debug**: `--debug chest@S` (`DebugCommand.Chest`) drops a tier-3 chest of the last evolving
-  minute's treasure at the hero's feet. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
+  minute's treasure two tiles ahead of the hero, for it to walk onto. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
 
 ## Presentation
 

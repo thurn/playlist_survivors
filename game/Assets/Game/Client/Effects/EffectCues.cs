@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using PS.Game.Sim;
 using UnityEngine;
@@ -56,6 +57,9 @@ namespace Game.Client.Effects
 
         public EffectCues(RoleLooks roles) => _roles = roles;
 
+        /// <summary>A sword attack's slash tint by its weapon (alpha 0 untinted): Bloody Tear's crimson; null leaves every slash untinted.</summary>
+        public Func<int, Color> SlashTint { get; set; }
+
         /// <summary>Cues waiting for their frame.</summary>
         public int Waiting => _pending.Count;
 
@@ -78,6 +82,7 @@ namespace Game.Client.Effects
                     {
                         Kind = kind, T = a.Impact, Dir = new Vector2((float)a.DirX, (float)a.DirY), Scale = (float)a.Reach * size,
                         Reach = (float)a.Reach, Heavy = a.Heavy || kind == Kind.Slam, Enemy = -1,
+                        Tint = SlashTint?.Invoke(a.Weapon) ?? default,
                     });
                     break;
                 }
