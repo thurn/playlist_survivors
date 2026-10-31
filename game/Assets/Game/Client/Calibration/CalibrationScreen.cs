@@ -133,9 +133,10 @@ namespace Game.Client.Calibration
                 v.clip = clip;
                 _voices[i] = v;
             }
-            // Song time is DSP time: the anchor pins them together.
+            // Song time is DSP time: the anchor pins them together. The flash is drawn with the offset on the clock.
             _clock.SetAnchor(0, 0);
             _clock.DisplayLatency = MusicPlayer.Refresh;
+            _offsets.ApplyTo(_clock);
 
             _panel = new ScreenPanel(transform, "Calibration screen", "Calibration/Calibration");
             var root = _panel.Root;
@@ -177,8 +178,8 @@ namespace Game.Client.Calibration
         /// <summary>The screen's song time now: the DSP clock's, or under --fixed-time the frames' since it opened.</summary>
         double Now() => _fixed ? Time.timeAsDouble - _opened : AudioSettings.dspTime;
 
-        /// <summary>The song time this frame shows (the video offset applied, as in the game).</summary>
-        double FrameSong() => _fixed ? Now() + _offsets.Video : _clock.FrameSong(Time.realtimeSinceStartupAsDouble);
+        /// <summary>The song time this frame shows (the clock's video offset applied, as in the game).</summary>
+        double FrameSong() => _fixed ? Now() + _clock.VideoCalibration : _clock.FrameSong(Time.realtimeSinceStartupAsDouble);
 
         /// <summary>The song time heard when a key went down at real time `real`, before any input offset.</summary>
         double Heard(double real) => _fixed ? Now() : _clock.HeardSong(real);
@@ -211,6 +212,7 @@ namespace Game.Client.Calibration
                 if (by != 0)
                 {
                     _offsets.Video = Math.Clamp(Math.Round((_offsets.Video + by * Nudge) * 1000) / 1000, -VideoLimit, VideoLimit);
+                    _offsets.ApplyTo(_clock);
                     ShowOffset();
                 }
             }
