@@ -344,13 +344,18 @@ Label {
 
 .track__waiting {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: -30px;
-    font-size: 16px;
+    left: 190px;
+    right: 190px;
+    top: -40px;
+    height: 32px;
+    font-size: 20px;
     letter-spacing: 5px;
     -unity-text-align: middle-center;
-    color: rgb(136, 144, 168);
+    color: rgb(196, 204, 226);
+    /* A glass plate, so it reads over a field of gems too. */
+    background-color: rgba(4, 6, 14, 0.62);
+    border-top-width: 1px;
+    border-top-color: rgba(200, 230, 255, 0.34);
 }
 
 .prompt {

@@ -2169,7 +2169,7 @@ drawn at frameSong, with marks in world space:
   (`BeatClock.IsDownbeat`) are taller and warm. Without a reliable beat the track empties and the
   heart greys under WAITING FOR THE BEAT. While the run waits it prompts PRESS ENTER OR SPACE.
 - **World space** (`BeatGem`, Game/HudMark on camera-facing quads, HDR for the bloom): the gem
-  floats 2.75 m over the hero's feet, drawn over everything. A ring closes on it from 0.95 m toward
+  floats 2.75 m over the hero's feet, drawn over everything. A ring closes on it from 1 m toward
   the next beat, lands on it on the beat's own frame and the gem bursts; before a downbeat the
   ring is gold and heavier, and the downbeat's burst is gold. Without a reliable beat the gem is a
   breathing pale blue disc. The life ring lies on the ground under the hero, an arc as full as its

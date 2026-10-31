@@ -49,7 +49,7 @@ namespace Game.Client.Hud
         readonly BeatGem _gem;
         readonly Queue<double> _deaths = new Queue<double>();
         readonly List<double> _bites = new List<double>();
-        readonly double[] _heldFrom;
+        readonly HeldTimes _held;
         int _killCount;
         double _bitten = double.NegativeInfinity;
 
@@ -85,8 +85,7 @@ namespace Game.Client.Hud
             _end = new EndCard(root.Q("end-layer"), content);
             _numbers = new DamageNumbers(root.Q("numbers"), camera);
             _gem = new BeatGem(camera);
-            _heldFrom = new double[content?.Weapons.Length ?? 0];
-            for (int i = 0; i < _heldFrom.Length; i++) _heldFrom[i] = double.NaN;
+            _held = new HeldTimes(content?.Weapons.Length ?? 0);
         }
 
         public void OnEvent(in SimEvent e)
@@ -146,7 +145,7 @@ namespace Game.Client.Hud
             _hpPulse.style.opacity = health < LowHealth ? (float)(0.2 + 0.5 * (locked ? hit : 0.3)) : 0;
             _kills.text = _killCount.ToString();
             _timer.text = HudText.Clock(state.RunClock);
-            KeepHeld(state.RunClock);
+            _held.Update(_sim.State.WeaponSlots, state.RunClock);
             _slots.Show(_sim.State.WeaponSlots, _sim.State.PassiveSlots);
             _track.Show(_sim.Stream, _sim.Beats, s, beat, locked);
             _prompt.text = state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT";
@@ -160,7 +159,7 @@ namespace Game.Client.Hud
 
             _cards.Present(s, state.Offer, _sim.State);
             _chest.Present(s, _sim, beat);
-            _end.Present(s, state, _killCount, _sim.State, _heldFrom);
+            _end.Present(s, state, _killCount, _sim.State, _held);
 
             double hx, hy;
             if (DrawnHero != null) DrawnHero(out hx, out hy, out _);
@@ -169,13 +168,6 @@ namespace Game.Client.Hud
             // The overhead display comes in over the run's first two seconds and goes with the end card.
             double fade = state.Phase == RunPhase.Ended ? 0 : Smooth((state.RunClock - 0.5) / 1.5);
             _gem.Present(s, new Vector3((float)hx, 0, (float)hy), beat, locked, hit, health, bitten, (float)fade);
-        }
-
-        /// <summary>When each weapon joined the slots, on the run clock (the end card's time held).</summary>
-        void KeepHeld(double runClock)
-        {
-            foreach (var slot in _sim.State.WeaponSlots)
-                if (slot.Index < _heldFrom.Length && double.IsNaN(_heldFrom[slot.Index])) _heldFrom[slot.Index] = runClock;
         }
 
         static double Smooth(double x)

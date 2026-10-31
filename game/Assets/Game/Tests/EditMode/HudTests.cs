@@ -101,6 +101,20 @@ namespace Game.Tests
         }
 
         [Test]
+        public void AWeaponEvolvedAwayStopsBeingHeldAndRankUpsDontRestartIt()
+        {
+            var held = new HeldTimes(3);
+            held.Update(new[] { new OwnedItem { Index = 0, Rank = 1 } }, 0);
+            held.Update(new[] { new OwnedItem { Index = 0, Rank = 8 } }, 60);
+            // At 100 s the chest evolves weapon 0 into weapon 2 in the same slot.
+            held.Update(new[] { new OwnedItem { Index = 2, Rank = 1 } }, 100);
+            held.Update(new[] { new OwnedItem { Index = 2, Rank = 1 } }, 160);
+            Assert.That(held.Of(0, 160), Is.EqualTo(100).Within(1e-9), "the base weapon stops at its evolution");
+            Assert.That(held.Of(2, 160), Is.EqualTo(60).Within(1e-9));
+            Assert.That(held.Of(1, 160), Is.EqualTo(0), "never held");
+        }
+
+        [Test]
         public void NumbersAreNativesTimesTen()
         {
             Assert.That(HudText.Damage(1), Is.EqualTo("10"));

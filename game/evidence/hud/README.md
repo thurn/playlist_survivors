@@ -46,7 +46,8 @@ it, phase 0 on its own frame, and two-beat bars alternate; only beats known by t
   first two seconds).
 - [music-stopped/still-066.000.jpg](music-stopped/still-066.000.jpg) (`--at 66`): house-128 fell
   silent and the world froze at 61.675 s: the MUSIC STOPPED banner, the track waiting, the gem a
-  breathing pale disc.
+  breathing pale disc. Retaken by the HUD's Warden (ps-msz.6.20, Mono) once WAITING FOR THE BEAT
+  got its glass plate: before, it was lost in the field of gems behind it.
 - [pause/still-010.600.jpg](pause/still-010.600.jpg) (`--pause-at 10 --at 10.6`): the pause menu
   over the HUD (its PAUSED heading is the banner while it is up).
 

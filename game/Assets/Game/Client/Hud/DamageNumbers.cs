@@ -78,12 +78,14 @@ namespace Game.Client.Hud
 
         public void Present(double s, double heroX, double heroY)
         {
+            // One pass, keeping the hits frameSong hasn't reached: a crowded frame holds thousands.
+            int kept = 0;
             for (int i = 0; i < _pending.Count; i++)
             {
-                if (_pending[i].T > s + 1e-9) continue;
-                Merge(_pending[i]);
-                _pending.RemoveAt(i--);
+                if (_pending[i].T > s + 1e-9) _pending[kept++] = _pending[i];
+                else Merge(_pending[i]);
             }
+            _pending.RemoveRange(kept, _pending.Count - kept);
             _live.RemoveAll(n => s - n.Last >= HoldS);
             Draw(s, heroX, heroY);
         }
