@@ -10,8 +10,8 @@ namespace Demo3D.Runtime.Playback
     /// <summary>
     /// The post stack moving with the music (ps-e8r.18), beside the camera's punch and shake:
     /// - every beat of a pulsed section: an exposure and bloom pulse and a vignette breath, decaying over the beat;
-    /// - accents, free sections' anchors and the hero's big hits: a flash (exposure spike), a chromatic-aberration
-    ///   burst and a saturation spike, scaled by their strength and gone within a beat;
+    /// - accents, free sections' anchors, the hero's big hits and structure breaks (BreakMoments): a flash (exposure
+    ///   spike), a chromatic-aberration burst and a saturation spike, scaled by their strength and gone within a beat;
     /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature, vignette), eased in over
     ///   <see cref="Amounts.EaseBars"/> bars from the section's first downbeat, as the camera's zoom eases.
     /// It writes offsets on top of the night volume's base values (NightLook.CreateProfile, the hero pool's vignette
@@ -98,7 +98,8 @@ namespace Demo3D.Runtime.Playback
         float _baseExposure, _baseSaturation, _baseContrast, _baseBloom, _baseVignette, _baseTemperature, _baseChromatic;
         Volume _bound;
 
-        public PostFeel(Timeline tl, Amounts amounts, bool enabled = true)
+        /// <param name="breaks">Structure breaks' flashes (BreakMoments.Flashes), at their strengths; none without `--structure-breaks`.</param>
+        public PostFeel(Timeline tl, Amounts amounts, bool enabled = true, IEnumerable<(double time, float strength)> breaks = null)
         {
             _map = tl.Map;
             _amounts = amounts;
@@ -114,6 +115,7 @@ namespace Demo3D.Runtime.Playback
             foreach (var a in tl.Actions)
                 if (a.Kind == ActionKind.Attack && a.Entity == 0 && a.Strength >= amounts.HitStrength)
                     flashes.Add((a.Impact, a.Strength * amounts.HitFlash));
+            if (breaks != null) flashes.AddRange(breaks);
             flashes.Sort((x, y) => x.t.CompareTo(y.t));
             _flashAt = new double[flashes.Count];
             _flashStrength = new float[flashes.Count];

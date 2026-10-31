@@ -298,6 +298,9 @@ def _demo(*globs: str) -> tuple[str, ...]:
 BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": _demo("Editor/Arena/*", "Runtime/Arena/*", "Choreography/Data/*-layout.json*",
                    "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
+    "StructureShards": _demo("Editor/Structures/*", "Editor/Crowd/CrowdShardBaker.cs*",
+                             "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
+                             "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
     "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
                    "Data/clip-annotations.json*", "Data/roster*.json*"),
     "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),

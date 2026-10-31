@@ -11,18 +11,20 @@ namespace Demo3D.Runtime.Playback
     /// - shake: per beat, amplitude = min(0.25, 0.08 × strongest + 0.02 × log2(1 + hits)) metres,
     ///   so a hundred hits on one beat never shake a hundred times harder, decaying over the beat.
     /// With an intensity's <see cref="BlowFeel"/>, each of the hero's blows punches too, by its weight,
-    /// and the beat's heaviest blow adds to the shake, under the feel's raised cap.
+    /// and the beat's heaviest blow adds to the shake, under the feel's raised cap. A structure break (BreakMoments)
+    /// punches <see cref="BreakPunch"/> and shakes its beat by its own amplitude, past the cap: a wall coming down.
     /// Both are functions of song time, so seeks and fixed-time captures reproduce them.
     /// </summary>
     public sealed class CameraFeel
     {
-        public const float PunchAmount = 0.02f, ShakeCap = 0.25f;
+        public const float PunchAmount = 0.02f, ShakeCap = 0.25f, BreakPunch = 0.035f;
         readonly SongMap _map;
         readonly double[] _punchAt;    // punches: accents and weighted blows, sorted
         readonly float[] _depth;       // per punch: its zoom-in
         readonly float[] _shake;       // per beat index: amplitude in metres
 
-        public CameraFeel(Timeline tl, BlowFeel blows = null)
+        /// <param name="breaks">Structure breaks' shakes (BreakMoments.Shakes); none without `--structure-breaks`.</param>
+        public CameraFeel(Timeline tl, BlowFeel blows = null, IEnumerable<(double time, float amplitude)> breaks = null)
         {
             _map = tl.Map;
             var punches = new List<(double t, float depth)>();
@@ -30,6 +32,7 @@ namespace Demo3D.Runtime.Playback
             if (blows != null)
                 for (int i = 0; i < blows.Count; i++)
                     if (blows.WeightOf(i) > 0) punches.Add((blows.Time(i), PunchAmount + blows.Feel.Punch * blows.WeightOf(i)));
+            if (breaks != null) foreach (var b in breaks) punches.Add((b.time, BreakPunch));
             punches.Sort((x, y) => x.t.CompareTo(y.t));
             _punchAt = punches.ConvertAll(p => p.t).ToArray();
             _depth = punches.ConvertAll(p => p.depth).ToArray();
@@ -55,6 +58,12 @@ namespace Demo3D.Runtime.Playback
             _shake = new float[beats];
             for (int b = 0; b < beats; b++)
                 _shake[b] = Mathf.Min(cap, 0.08f * strongest[b] + 0.02f * Mathf.Log(1 + hits[b], 2) + extra * heaviest[b]);
+            if (breaks != null)
+                foreach (var (time, amplitude) in breaks)
+                {
+                    int b = BeatOf(time);
+                    if (b >= 0 && b < beats) _shake[b] = Mathf.Max(_shake[b], amplitude);
+                }
         }
 
         int BeatOf(double t) => (int)Math.Floor(_map.BeatIndexAt(t) + 1e-6);

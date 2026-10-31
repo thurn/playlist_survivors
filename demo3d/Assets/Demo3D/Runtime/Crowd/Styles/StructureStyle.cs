@@ -195,6 +195,9 @@ namespace Demo3D.Runtime.Crowd
         }
 
         static Color C(string hex) => ColorUtility.TryParseHtmlString(hex, out var c) ? c.linear : Color.magenta;
+
+        /// <summary>Crystal structures' gem colour (linear): their tint, and their break's burst (BreakMoments.Bursts).</summary>
+        public static Color CrystalGem => C("#4f86ff");
         static Color H(string hex, float intensity) { var c = C(hex) * intensity; c.a = 1; return c; }
 
         /// <summary>
@@ -327,7 +330,7 @@ namespace Demo3D.Runtime.Crowd
                     m.SetVector("_NebulaB", C("#00465c"));
                     break;
                 case "crystal":
-                    m.SetVector("_Tint", C("#4f86ff"));
+                    m.SetVector("_Tint", CrystalGem);
                     m.SetFloat("_Refraction", 0.05f);
                     m.SetFloat("_Facets", 0.85f);
                     break;

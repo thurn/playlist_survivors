@@ -186,10 +186,7 @@ namespace Demo3D.Runtime.Arena
                 // The static set leaves the realtime cascades: its shadows on the static set are in
                 // the lightmaps' shadowmask, and on monsters and the hero in the static shadow map.
                 foreach (var r in Static) r.shadowCastingMode = ShadowCastingMode.Off;
-                var casters = new List<Renderer>(Static);
-                ShadowMap = StaticShadowMap.Render(casters, Moon != null ? Moon.transform.rotation : Lighting.MoonRotation, ArenaBounds);
-                Debug.Log($"ArenaRuntime: static shadow map {ShadowMap.Texture.width}² of {ShadowMap.Casters} casters, " +
-                          $"texel {ShadowMap.TexelM.x * 100:F1}×{ShadowMap.TexelM.y * 100:F1} cm, {ShadowMap.RenderMs:F0} ms");
+                RenderShadowMap();
             }
             else StaticShadowMap.Disable();
             if (Options.Without != "") Hide(root.Find("Static"));
@@ -197,6 +194,102 @@ namespace Demo3D.Runtime.Arena
             Debug.Log($"ArenaRuntime: {SceneName} ready: {Static.Count} kit renderers, {Lights.Count} realtime lights, " +
                       $"{_probes?.count ?? 0} light probes ({LightmapSettings.lightProbes?.count ?? 0} loaded), {Options.Label()}");
             OnReady?.Invoke(this);
+        }
+
+        /// <summary>(Re)renders the static shadow map from the kit renderers that are enabled now, and publishes it.</summary>
+        void RenderShadowMap()
+        {
+            ShadowMap?.Dispose();
+            ShadowMap = StaticShadowMap.Render(Static, Moon != null ? Moon.transform.rotation : Lighting.MoonRotation, ArenaBounds);
+            Debug.Log($"ArenaRuntime: static shadow map {ShadowMap.Texture.width}² of {ShadowMap.Casters} casters, " +
+                      $"texel {ShadowMap.TexelM.x * 100:F1}×{ShadowMap.TexelM.y * 100:F1} cm, {ShadowMap.RenderMs:F0} ms");
+        }
+
+        static readonly int BrokenMinId = Shader.PropertyToID("_Demo3DBrokenMin");
+        static readonly int BrokenMaxId = Shader.PropertyToID("_Demo3DBrokenMax");
+        static readonly int BrokenCountId = Shader.PropertyToID("_Demo3DBrokenCount");
+        /// <summary>StaticShadow.hlsl's DEMO3D_BROKEN_MAX: the most broken pieces whose baked shadows it lifts.</summary>
+        public const int BrokenMax = 32;
+        readonly Vector4[] _brokenMin = new Vector4[BrokenMax], _brokenMax = new Vector4[BrokenMax];
+        int _brokenCount;
+        Texture2D _shadowmask;       // the ground's baked shadowmask, while a patched copy replaces it
+        Texture2D _patchedShadowmask;
+
+        /// <summary>
+        /// No ghost shadows (environment.md, Breaks on screen; epic ps-suy, Decision 8): call when the broken structures
+        /// change, after their renderers are disabled, with each broken piece's bounds (none: everything stands again).
+        /// At E2 the static set's shadows are baked twice, and both follow: the static shadow map renders again from the
+        /// pieces still enabled, the ground's shadowmask texels whose ray to the moon passes through a broken box take that
+        /// map's visibility (<paramref name="patch"/>, ShadowmaskPatch.shader, on a copy of the baked one), and the kit's
+        /// and the horde's lighting ignores the shadowmask there (StaticShadow.hlsl, Demo3DUnderBroken). At E0 every
+        /// piece is a realtime caster, so a disabled one already casts nothing.
+        /// </summary>
+        public void Break(IReadOnlyList<Bounds> broken, Shader patch)
+        {
+            if (Rung != ArenaIndex.E2) return;
+            if (broken.Count > BrokenMax) throw new InvalidOperationException($"ArenaRuntime: {broken.Count} broken pieces, at most {BrokenMax}");
+            _brokenCount = broken.Count;
+            for (int i = 0; i < _brokenCount; i++)
+            {
+                _brokenMin[i] = broken[i].min;
+                _brokenMax[i] = broken[i].max;
+            }
+            PublishBroken();
+            RenderShadowMap();
+            PatchShadowmask(patch);
+        }
+
+        void PublishBroken()
+        {
+            Shader.SetGlobalVectorArray(BrokenMinId, _brokenMin);
+            Shader.SetGlobalVectorArray(BrokenMaxId, _brokenMax);
+            Shader.SetGlobalFloat(BrokenCountId, _brokenCount);
+        }
+
+        /// <summary>The ground's shadowmask with the broken boxes lifted (the baked one when none are), in the lightmap set.</summary>
+        void PatchShadowmask(Shader patch)
+        {
+            if (Ground == null || Ground.lightmapIndex < 0 || Ground.lightmapIndex >= LightmapSettings.lightmaps.Length) return;
+            var maps = LightmapSettings.lightmaps;
+            var data = maps[Ground.lightmapIndex];
+            if (_shadowmask == null) _shadowmask = data.shadowMask;
+            if (_shadowmask == null) return;
+            if (_patchedShadowmask != null) Destroy(_patchedShadowmask);
+            _patchedShadowmask = null;
+            if (_brokenCount > 0)
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var m = new Material(patch);
+                var b = Ground.bounds;
+                m.SetVector("_GroundST", Ground.lightmapScaleOffset);
+                m.SetVector("_GroundRect", new Vector4(b.min.x, b.min.z, b.size.x, b.size.z));
+                var channel = Vector4.zero;
+                int c = Moon != null ? Moon.bakingOutput.occlusionMaskChannel : 0;
+                channel[Mathf.Clamp(c, 0, 3)] = 1;
+                m.SetVector("_MoonChannel", channel);
+                m.SetVector("_ToMoon", -(Moon != null ? Moon.transform.forward : Lighting.MoonRotation * Vector3.forward));
+                int w = _shadowmask.width, h = _shadowmask.height;
+                var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                Graphics.Blit(_shadowmask, rt, m);
+                var active = RenderTexture.active;
+                RenderTexture.active = rt;
+                _patchedShadowmask = new Texture2D(w, h, TextureFormat.RGBA32, true, true) { name = _shadowmask.name + " (broken)", wrapMode = _shadowmask.wrapMode, filterMode = _shadowmask.filterMode };
+                _patchedShadowmask.ReadPixels(new Rect(0, 0, w, h), 0, 0, false);
+                _patchedShadowmask.Apply(true, true);
+                RenderTexture.active = active;
+                RenderTexture.ReleaseTemporary(rt);
+                Destroy(m);
+                Debug.Log($"ArenaRuntime: shadowmask {w}×{h} patched under {_brokenCount} broken pieces in {sw.Elapsed.TotalMilliseconds:F0} ms");
+            }
+            data.shadowMask = _patchedShadowmask != null ? _patchedShadowmask : _shadowmask;
+            maps[Ground.lightmapIndex] = data;
+            LightmapSettings.lightmaps = maps;
+        }
+
+        static void Destroy(UnityEngine.Object o)
+        {
+            if (Application.isPlaying) UnityEngine.Object.Destroy(o);
+            else UnityEngine.Object.DestroyImmediate(o);
         }
 
         /// <summary>The layer the scene's objects are on (<see cref="Resident"/>), or -1 if left as baked.</summary>
@@ -246,6 +339,7 @@ namespace Demo3D.Runtime.Arena
                 ShadowMap.Publish();
             }
             else StaticShadowMap.Disable();
+            PublishBroken();
             if (_probes != null) LightmapSettings.lightProbes = _probes;
         }
 
@@ -449,6 +543,12 @@ namespace Demo3D.Runtime.Arena
             ShadowMap?.Dispose();
             ShadowMap = null;
             StaticShadowMap.Disable();
+            if (_brokenCount > 0)
+            {
+                _brokenCount = 0;
+                PublishBroken();
+            }
+            if (_patchedShadowmask != null) Destroy(_patchedShadowmask);
             foreach (var c in _copies)
             {
                 if (Application.isPlaying) UnityEngine.Object.Destroy(c);

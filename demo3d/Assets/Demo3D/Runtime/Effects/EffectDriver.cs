@@ -42,7 +42,9 @@ namespace Demo3D.Runtime.Effects
         readonly int[] _actionsByTime;
         readonly int[] _projBySpawn;
         double _last = double.NaN;
-        int _nextAction, _nextProj, _nextShatter;
+        int _nextAction, _nextProj, _nextShatter, _nextBurst;
+        Playback.BreakMoments.Burst[] _bursts = Array.Empty<Playback.BreakMoments.Burst>();
+        int[] _burstFx = Array.Empty<int>();
         Shatter[] _shatters = Array.Empty<Shatter>();
         float[] _shatterLight = Array.Empty<float>(); // each break's light gain: 1/sqrt(the breaks at its moment)
         readonly HashSet<int> _shattered = new HashSet<int>();
@@ -143,6 +145,21 @@ namespace Demo3D.Runtime.Effects
             _last = double.NaN; // the next frame starts afresh
         }
 
+        /// <summary>
+        /// The structure breaks' bursts (BreakMoments.Bursts), library effects by name at their moments, sprayed along the
+        /// blow; a name the library lacks is skipped with a warning.
+        /// </summary>
+        public void SetBursts(IReadOnlyList<Playback.BreakMoments.Burst> bursts)
+        {
+            var list = new List<Playback.BreakMoments.Burst>(bursts);
+            list.Sort((a, b) => a.Time.CompareTo(b.Time));
+            _bursts = list.ToArray();
+            _burstFx = Array.ConvertAll(_bursts, b => _lib.IndexOf(b.Effect));
+            foreach (var b in _bursts)
+                if (_lib.IndexOf(b.Effect) < 0) Debug.LogWarning($"EffectDriver: no library effect '{b.Effect}' for a structure break's burst");
+            _last = double.NaN; // the next frame starts afresh
+        }
+
         /// <summary>The yaw that turns an effect's +z to <paramref name="blow"/> (the runtime's RotateY; Easing.Dir); 0 for no direction.</summary>
         public static float ShatterYaw(Vector3 blow) => blow.sqrMagnitude > 1e-8f ? Mathf.Atan2(blow.x, blow.z) : 0f;
 
@@ -173,6 +190,8 @@ namespace Demo3D.Runtime.Effects
                 while (_nextProj < _projBySpawn.Length && _tl.Entities[_projBySpawn[_nextProj]].Spawn <= from) _nextProj++;
                 _nextShatter = 0;
                 while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= from) _nextShatter++;
+                _nextBurst = 0;
+                while (_nextBurst < _bursts.Length && _bursts[_nextBurst].Time <= from) _nextBurst++;
                 _ambient.Reset(from);
             }
             _last = now;
@@ -310,6 +329,14 @@ namespace Demo3D.Runtime.Effects
                 var s = _shatters[_nextShatter++];
                 if (s.Time <= from) continue;
                 Add(_crystal, s.Position, ShatterYaw(s.Blow), s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint, light);
+            }
+            // A structure break's bursts, at its moment (BreakMoments).
+            while (_nextBurst < _bursts.Length && _bursts[_nextBurst].Time <= now)
+            {
+                int fx = _burstFx[_nextBurst];
+                var b = _bursts[_nextBurst++];
+                if (b.Time <= from || fx < 0) continue;
+                Add(fx, b.Position, ShatterYaw(b.Blow), b.Scale, b.Seed, b.Time, Vector3.zero, 0, 0, b.Tint);
             }
             // A dust puff at each monster's attack.
             while (_nextAction < _actionsByTime.Length)

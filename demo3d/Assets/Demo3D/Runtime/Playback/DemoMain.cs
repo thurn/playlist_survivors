@@ -48,6 +48,7 @@ namespace Demo3D.Runtime.Playback
         StructureStyle _structures;
         StyleBeat _styleBeat;
         CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
+        Demo3D.Runtime.Arena.StructureShatter _breaks; // --structure-breaks: the struck pieces' shards (null without breaks)
         bool _stylePosted;
         SoundScheduler _sounds;
         SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the crystal shatter's
@@ -188,6 +189,14 @@ namespace Demo3D.Runtime.Playback
                       $"{_tl.EntityCount} entities; sim ticks {_tl.TickTiming?.ToJson()}");
             _eval = new TimelineEvaluator(_tl, choreo.Clips);
             MapTypes(choreo);
+            // --structure-breaks: the pieces the bolts strike shatter on screen, and the moments' feel, bursts and sound.
+            var breakMoments = BreakMoments.None;
+            if (_tl.Breaks.Length > 0)
+            {
+                if (_arena == null) throw new InvalidOperationException($"DemoMain: {BreakSchedule.Flag} {breakSchedule.Name} needs the arena, not flat ground");
+                breakMoments = BreakMoments.Of(_tl, choreo.Layout);
+                _breaks = new Demo3D.Runtime.Arena.StructureShatter(breakMoments, _arena, choreo.Layout, _structures.Name);
+            }
             _endAt = _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
 
             _crowd = CrowdFactory.Create(_flags.Crowd);
@@ -244,13 +253,15 @@ namespace Demo3D.Runtime.Playback
                 if (_shatter != null) _shatter.Cap = _blows.Feel.ShardCap;
                 Debug.Log($"DemoMain: {intensity.Name}'s blow feel over {_blows.Count} blows");
             }
-            _feel = _tl.Map != null ? new CameraFeel(_tl, _blows) : null;
-            _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel) : null;
+            var breakShakes = breakMoments.Count > 0 ? breakMoments.Shakes() : null;
+            var breakFlashes = breakMoments.Count > 0 ? new List<(double, float)>(breakMoments.Flashes()) : null;
+            _feel = _tl.Map != null ? new CameraFeel(_tl, _blows, breakShakes) : null;
+            _postFeel = _tl.Map != null && _arena != null ? new PostFeel(_tl, _arena.Lighting.PostFeel, !_flags.NoFeel && !_flags.NoPostFeel, breakFlashes) : null;
             if (_postFeel != null && _arenas != null)
             {
                 _postFeels = new PostFeel[_arenas.Count];
                 _postFeels[0] = _postFeel;
-                for (int i = 1; i < _postFeels.Length; i++) _postFeels[i] = new PostFeel(_tl, _arenas[i].Lighting.PostFeel, _postFeel.Enabled);
+                for (int i = 1; i < _postFeels.Length; i++) _postFeels[i] = new PostFeel(_tl, _arenas[i].Lighting.PostFeel, _postFeel.Enabled, breakFlashes);
             }
             // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
             // and sound play at the blow, known from the timeline.
@@ -260,7 +271,10 @@ namespace Demo3D.Runtime.Playback
             {
                 Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
             }));
-            _soundCues = SoundScheduler.Cues(_tl, breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null);
+            if (breakMoments.Count > 0) _fxDriver?.SetBursts(breakMoments.Bursts(_structures.Name, StructureStyle.CrystalGem));
+            var clientSounds = breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null;
+            if (breakMoments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(breakMoments.Sounds(_structures.Name, _tl.Map));
+            _soundCues = SoundScheduler.Cues(_tl, clientSounds);
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
             if (!_flags.FixedTime && _flags.Scene == "song")
                 _sounds = new SoundScheduler(_soundCues, _clock, SoundBank.Load(), gameObject, _flags.StartAt);
@@ -579,6 +593,7 @@ namespace Demo3D.Runtime.Playback
 
             _shatterWatch.Start();
             _shatter?.Frame(t);
+            _breaks?.Frame(t);
             _shatterWatch.Stop();
             _evalWatch.Start();
             // The horde and the hero pose on the world's time: it holds through a heavy blow's hit-stop (BlowFeel).
@@ -756,7 +771,8 @@ namespace Demo3D.Runtime.Playback
             _gpuProbe = null;
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
                       (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : "") +
-                      (_shatter != null ? $"; crystal shatter: {_shatter.Deaths} deaths, at most {_shatter.PeakShards} shards live" : ""));
+                      (_shatter != null ? $"; crystal shatter: {_shatter.Deaths} deaths, at most {_shatter.PeakShards} shards live" : "") +
+                      (_breaks != null ? $"; structure breaks: at most {_breaks.PeakShards} shards live" : ""));
             enabled = false;
             Application.Quit(code);
         }
@@ -768,6 +784,7 @@ namespace Demo3D.Runtime.Playback
             _fx?.Dispose();
             _crowd?.Dispose();
             _shatter?.Dispose();
+            _breaks?.Dispose();
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();

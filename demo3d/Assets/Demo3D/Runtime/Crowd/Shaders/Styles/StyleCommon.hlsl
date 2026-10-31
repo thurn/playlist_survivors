@@ -36,18 +36,24 @@ float _SL_WaveSpeed; // how far the beat wave travels in one beat, metres
 float _SL_RingGain;  // the lab's beat ring on the ground: always 0 here (demo3d's ground has none)
 
 #if defined(SL_STATIC)
-// A structure's static mesh, in its renderer's object space.
+// A structure's static mesh, in its renderer's object space. A shard's (StructureShatter) has its
+// inside faces' flag in uv1.x.
 struct SLAttributes
 {
     float3 positionOS : POSITION;
     float3 normalOS : NORMAL;
     float2 uv : TEXCOORD0;
+    float2 uv1 : TEXCOORD1;
 };
 
 // Per renderer (StructureStyle's MaterialPropertyBlock): the piece's base (xyz: its bounds' centre
-// at their floor, world) and seed (w, 0..1); its hit flash (x) and death (y), 0 while it stands.
+// at their floor, world) and seed (w, 0..1); its hit flash (x) and death (y), 0 while it stands; z 1
+// on a broken piece's shard (StructureShatter), whose rest position is its corner where the piece
+// stood (_SL_Rest, the shard's object-to-world matrix at the break), so a flying shard keeps the
+// patterns it had in the wall; w its break glow (0..1), which lifts the set's grade (SL_Grade).
 float4 _SL_Piece;
 float4 _SL_PieceFx;
+float4x4 _SL_Rest;
 // Per material, from the kit material it replaces: its albedo and cutoff for alpha clip (0: none),
 // and 1 to dither out near the hero as tree canopies do (CanopyFade.hlsl).
 TEXTURE2D(_SL_ClipMap); SAMPLER(sampler_SL_ClipMap);
@@ -286,7 +292,7 @@ struct SLVertex
     uint slot;
     float3 positionWS;
     float3 normalWS;
-    float4 fx;      // x hit, y death, zw the LOD fade (CrowdLodFade)
+    float4 fx;      // x hit, y death, zw the LOD fade (CrowdLodFade); static: z 1 on a shard's inside face
     float4 center;  // xyz the feet, w the seed (0..1)
 #if defined(SL_STATIC)
     float3 rest;    // metres from the piece's base, before SL_DISPLACE
@@ -318,8 +324,9 @@ SLVertex SL_Skin(SLAttributes v)
     o.m.dissolve = _SL_PieceFx.y;
     o.positionWS = TransformObjectToWorld(v.positionOS);
     o.normalWS = TransformObjectToWorldNormal(v.normalOS);
-    o.rest = o.positionWS - _SL_Piece.xyz;
-    o.fx = float4(_SL_PieceFx.xy, 0, 1);
+    bool shard = _SL_PieceFx.z > 0.5;
+    o.rest = (shard ? mul(_SL_Rest, float4(v.positionOS, 1)).xyz : o.positionWS) - _SL_Piece.xyz;
+    o.fx = float4(_SL_PieceFx.xy, shard ? v.uv1.x : 0, 1);
     o.center = _SL_Piece;
     SL_DISPLACE(v, o.m, o.slot, o.positionWS, o.normalWS);
     return o;
@@ -383,6 +390,11 @@ SLVaryings SL_Finish(SLAttributes v, SLVertex c, float3 positionWS, float3 norma
 
 #define SL_HIT(i) ((i).fx.x)
 #define SL_DEATH(i) ((i).fx.y)
+#if defined(SL_STATIC)
+#define SL_INSIDE(i) ((i).fx.z)
+#else
+#define SL_INSIDE(i) 0.0
+#endif
 #define SL_SEED(i) ((i).center.w)
 
 // A thin line along every triangle edge of the style mesh, about `pixels` wide.
@@ -437,7 +449,8 @@ float4 SL_StaticFacets(float3 positionWS, float3 normalWS)
 }
 
 #if defined(SL_STYLE_MESH)
-#define SL_STATIC_FACETS(i) (i).bary = SL_StaticFacets((i).positionWS, normalize((i).normalWS));
+// On the rest position (the base plus rest: its world position, but where a shard stood in the wall).
+#define SL_STATIC_FACETS(i) (i).bary = SL_StaticFacets((i).rest + (i).center.xyz, normalize((i).normalWS));
 #else
 #define SL_STATIC_FACETS(i)
 #endif
@@ -479,7 +492,11 @@ float3 SL_StaticGradeOf(float3 color, float peak)
     float limited = knee + (SL_STATIC_CHANNEL_MAX - knee) * (1.0 - exp(-(m - knee) / (SL_STATIC_CHANNEL_MAX - knee)));
     return color * (limited / m);
 }
-#define SL_Grade(color) SL_StaticGradeOf((color) * _Gain, _Peak)
+// A breaking shard's glow (_SL_PieceFx.w) eases the set's grade toward the horde's, without the
+// channel limit, so a wall blooms at the moment it breaks (epic ps-suy, Decision 4) and settles back.
+#define SL_STATIC_BREAK_PEAK 2.5
+#define SL_Grade(color) lerp(SL_StaticGradeOf((color) * _Gain, _Peak), \
+    SL_GradeOf((color) * lerp(_Gain, 1.0, _SL_PieceFx.w), lerp(_Peak, SL_STATIC_BREAK_PEAK, _SL_PieceFx.w)), saturate(_SL_PieceFx.w))
 #else
 #define SL_Grade(color) SL_GradeOf((color) * _Gain, _Peak)
 #endif

@@ -305,7 +305,8 @@ namespace Demo3D.EditorTools.Crowd
             return neighbours;
         }
 
-        static int[] WeldIds(Posed p)
+        /// <summary>Each corner's welded id: corners closer than 0.1 mm share one.</summary>
+        public static int[] WeldIds(Posed p)
         {
             var map = new Dictionary<(long, long, long), int>();
             var ids = new int[p.Position.Length];
@@ -444,7 +445,7 @@ namespace Demo3D.EditorTools.Crowd
         }
 
         /// <summary>The distance along a ray to the posed mesh (infinity if it hits nothing).</summary>
-        static float Thickness(Posed p, Vector3 origin, Vector3 dir)
+        public static float Thickness(Posed p, Vector3 origin, Vector3 dir)
         {
             float best = float.PositiveInfinity;
             for (int t = 0; t < p.Triangles; t++)

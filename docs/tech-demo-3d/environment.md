@@ -283,6 +283,80 @@ not a goal under it, and it is not benchmarked.
   horde's |dL*| >= 17. Stills and numbers:
   [evidence/structures/looks](../../demo3d/evidence/structures/looks/README.md).
 
+### Breaks on screen
+
+`--structure-breaks <name>` (epic ps-suy; the choreography half is
+[Structure breaks](choreography.md#structure-breaks)) has the hero's bolt
+strike scheduled walls on the grid, and the pieces leave the obstacle map at
+that moment. The client breaks them on screen at the same song time
+(`StructureShatter`), under any `--structure-style`, baseline included, and
+with every other flag. Performance is not a goal under it.
+
+- **Moments.** `BreakMoments` groups the timeline's break events into
+  moments, the pieces one bolt takes out, each sized by the wall it opens
+  (the square root of its pieces' width times height, from their
+  footprints). Everything the moment does is known at load, so the live
+  player and fixed-time captures agree.
+- **Shards, baked.** The `StructureShards` baker (`Editor/Structures/`) cuts
+  every kit mesh any environment's structure areas place into thick chunks,
+  into `Assets/Baked/Arena/Resources/StructureShards.asset` (vendor-derived,
+  gitignored), which only a player with the flag loads. It is the crystal
+  shatter's method on a static mesh: the kit's few large triangles are split
+  until no edge is longer than a third of a chunk's radius, seeds spread
+  over the surface (about one per 1.2 m², 10 to 48), and each patch closes
+  to an apex inside the piece, its inside faces marked (UV1.x). Chunks keep
+  the kit's UVs and submeshes, so the piece's own materials draw them. A
+  target whose meshes have no shards fails loudly at the first frame.
+- **The break.** At the moment, the struck pieces' renderers (the kit's, and
+  fire's flames) hide and their shards appear where they stood, in the
+  piece's current materials: the kit's under baseline, the structure
+  style's otherwise. The break spreads from the bolt's strike as a crack
+  front (70 m/s): the strike's own shards fly on the impact frame, nothing
+  builds up before it. Each shard is a rigidbody in the shatter's own
+  physics scene, stepped in fixed 1/120 s steps on the song clock (apart
+  from the crystal shatter's), kicked outward from the strike, along the
+  bolt and up, the nearest hardest, one in five slumping and one in eight
+  flying far, under 2.2 g. After 2.4 s they sink into the ground over 1 s.
+  Debris never blocks: the horde walks the opening from the moment it opens.
+- **Per style.** A shard drawn with a structure shader carries the piece's
+  values, with `_SL_PieceFx.z` 1 and its rest pose (`_SL_Rest`, its
+  object-to-world matrix at the break), so its patterns stay as they were in
+  the wall while it flies; its inside faces read `SL_INSIDE`. Every styled
+  shard flashes white as the front passes it, and glows (`_SL_PieceFx.w`,
+  fading over 0.35 to 1.6 s by style): the glow eases the set's grade toward
+  the horde's, without its channel limit, so a wall blooms at the moment it
+  breaks and settles back under the horde.
+  - Crystal's front is slower (22 m/s) and its white flash faint: each shard
+    steps 8 cm out of the wall as the front passes, baring its inside faces,
+    which glow with the gem's light, so the seams open and light across the
+    wall from the strike, and 0.07 s later it flies.
+  - Fire's wall chars and collapses: its shards slump more than they fly,
+    are molten inside, and burn out from the piece's base (its death, from
+    0.35 s over 1.8 s), with embers rising from the rubble.
+  - Hologram's shards glitch and scan out from the top (the death, over
+    0.9 s) as they drift down under half a g.
+  - The other styles and baseline share the flash and the flight.
+- **Feel.** Each moment flashes the post (PostFeel, as a strong accent:
+  0.5 to 1.1 by size), punches the camera 3.5% and shakes its beat by 0.12
+  to 0.4 m (past the beat's own cap). Its bursts follow the style (crystal
+  chips tinted by the gem at the strike and each piece, fire's explosion and
+  embers, hologram's heavy hit and a ring of lightning, a ground shock and a
+  dust cloud for the rest), and its sound is layered from the bank's clips
+  (stone: a heavy impact and a crunch; crystal: the shatter's ice break,
+  glass spray and tinkle; fire and hologram their own), aggregated per beat
+  as the choreography's sounds are: one voice per layer, louder with log2 of
+  the pieces.
+- **No ghost shadows.** At E2 the static set's shadows are baked twice, and
+  both follow a break (`ArenaRuntime.Break`). The static shadow map renders
+  again from the pieces still standing. The ground is the only lightmapped
+  surface: its shadowmask texels whose ray to the moon passes through a
+  broken piece's box take that map's visibility instead
+  (`ShadowmaskPatch.shader` on a copy of the baked texture), and the kit's
+  and the horde's lighting ignores the shadowmask there
+  (`Demo3DUnderBroken` in StaticShadow.hlsl, up to 32 boxes). Without breaks
+  nothing changes. A seek backwards puts every piece and shadow back.
+- **Showcase:** [evidence/structures/breaks](../../demo3d/evidence/structures/breaks/README.md).
+
 ### Environment rendering
 
 The kit's prefabs, placed as plain GameObjects, cost about what Synty's own

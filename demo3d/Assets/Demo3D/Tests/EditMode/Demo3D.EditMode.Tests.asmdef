@@ -3,6 +3,7 @@
     "rootNamespace": "Demo3D.Tests",
     "references": [
         "PS.Choreography",
+        "Demo3D.Choreography",
         "Demo3D.Bench",
         "Demo3D.Runtime",
         "Demo3D.EditorTools",

@@ -30,6 +30,7 @@ half4 frag(SLVaryings i) : SV_Target
     float wave = SL_Wave(i.positionWS, 6.0);
     // Embers smoulder hottest low on the body, where the flames start.
     float heat = crack * flicker * (0.55 + 0.45 * wave) + pow(1.0 - h01, 3.0) * 0.35;
+    heat += SL_INSIDE(i) * (0.6 + 0.4 * flicker); // a broken wall's shards are molten inside (StructureShatter)
     color += FireRamp(heat, _Ember.rgb, _Flame.rgb, _Core.rgb);
 
     float fres = pow(1.0 - saturate(dot(N, V)), 2.5);

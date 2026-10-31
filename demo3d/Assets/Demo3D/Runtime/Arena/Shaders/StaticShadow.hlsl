@@ -34,6 +34,34 @@ half Demo3DStaticShadow(float3 positionWS)
     return lerp(1, s * 0.25, _Demo3DStaticShadowParams.z);
 }
 
+// Broken structures (StructureShatter; environment.md, Breaks on screen): the boxes (world, axis-aligned)
+// of up to DEMO3D_BROKEN_MAX pieces the fight has broken. The lightmaps' shadowmask was baked with them
+// standing, so a point whose ray to the moon passes through one ignores it, and the static shadow map,
+// re-rendered without them, shades it alone (ArenaRuntime.Break). No ghost shadow stays where a piece stood.
+#define DEMO3D_BROKEN_MAX 32
+float4 _Demo3DBrokenMin[DEMO3D_BROKEN_MAX];
+float4 _Demo3DBrokenMax[DEMO3D_BROKEN_MAX];
+float _Demo3DBrokenCount;
+
+bool Demo3DMoonRayHits(float3 positionWS, float3 toLight, float3 lo, float3 hi)
+{
+    float3 inv = 1.0 / (abs(toLight) > 1e-5 ? toLight : 1e-5);
+    float3 t0 = (lo - positionWS) * inv, t1 = (hi - positionWS) * inv;
+    float3 tmin = min(t0, t1), tmax = max(t0, t1);
+    float enter = max(max(tmin.x, tmin.y), max(tmin.z, 0.0)), leave = min(tmax.x, min(tmax.y, tmax.z));
+    return enter <= leave;
+}
+
+// True where the moon's ray from the point passes through a broken piece's box.
+bool Demo3DUnderBroken(float3 positionWS, float3 toLight)
+{
+    UNITY_BRANCH if (_Demo3DBrokenCount < 0.5) return false;
+    bool hit = false;
+    [loop] for (int i = 0; i < (int)_Demo3DBrokenCount; i++)
+        hit = hit || Demo3DMoonRayHits(positionWS, toLight, _Demo3DBrokenMin[i].xyz, _Demo3DBrokenMax[i].xyz);
+    return hit;
+}
+
 // The main light's scale: 1, or a shader's own before the include (the crowd's key light, CrowdSkinned).
 #ifndef DEMO3D_MAIN_LIGHT_SCALE
 #define DEMO3D_MAIN_LIGHT_SCALE 1
@@ -48,6 +76,7 @@ half3 Demo3DLightingPBR(InputData inputData, SurfaceData surfaceData)
     BRDFData brdfData;
     InitializeBRDFData(surfaceData, brdfData);
     half4 shadowMask = CalculateShadowMask(inputData);
+    if (Demo3DUnderBroken(inputData.positionWS, _MainLightPosition.xyz)) shadowMask = 1; // baked with a broken piece standing
     AmbientOcclusionFactor aoFactor = CreateAmbientOcclusionFactor(inputData, surfaceData);
     Light mainLight = GetMainLight(inputData, shadowMask, aoFactor);
     mainLight.shadowAttenuation = min(mainLight.shadowAttenuation, Demo3DStaticShadow(inputData.positionWS));

@@ -161,8 +161,15 @@ baseline crowd handles a few hundred monsters, which is enough.
   never through a wall still standing.
 - **Expect** an unknown schedule to stop the player at start-up, listing the
   known ones.
-- The pieces themselves shatter with the break on screen (ps-suy.3); before
-  it, they are still drawn after their break.
+- **Expect** each struck piece to shatter on the bolt's impact
+  ([Breaks on screen](environment.md#breaks-on-screen)): its shards burst
+  from the strike and along the bolt, with a flash, a shake and the break's
+  sound, and sink into the ground a few seconds later. Under
+  `--structure-style crystal` the seams glow across the wall from the strike
+  as it bursts; under `fire` the wall collapses and burns out in embers;
+  under `hologram` its pieces glitch and scan out.
+- **Expect** no shadow left where a broken piece stood, on the ground or on
+  the monsters walking through.
 
 ### A/B review
 
