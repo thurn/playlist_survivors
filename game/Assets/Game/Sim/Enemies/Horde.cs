@@ -87,6 +87,9 @@ namespace PS.Game.Sim
         int drops;
         bool navChanged;
 
+        /// <summary>Easy's floor chickens, which a dying brute may drop; null off Easy.</summary>
+        internal FloorChickens Chickens;
+
         public Horde(HordeConfig config, BeliefLog log, BeatClock clock, StrideGrid strides, ArenaGrid arena, SimState state)
         {
             if (config.Content == null) throw new ArgumentException("the horde needs content");
@@ -495,7 +498,8 @@ namespace PS.Game.Sim
         /// Enemy <paramref name="i"/> dies at <paramref name="t"/>, struck along (dirX, dirY): it
         /// leaves the horde at once (its slot is free for a later spawn), with a death event whose
         /// force is <paramref name="launch"/>, the launch's distance in metres, and drops a gem of
-        /// its role's experience (collecting it is the arsenal's, M3).
+        /// its role's experience (collecting it is the arsenal's, M3), and on Easy a brute may drop
+        /// a floor chicken.
         /// </summary>
         internal void Kill(Simulation sim, int i, double t, double dirX, double dirY, double launch)
         {
@@ -511,6 +515,32 @@ namespace PS.Game.Sim
             free[freeCount++] = i;
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Emit(SimEvent.Drop(t, drops++, ItemKind.Gem, x, y, roles[e.Role].Xp));
+            if (roles[e.Role].Brute) Chickens?.BruteDied(sim, t, x, y);
+        }
+
+        /// <summary>
+        /// The finale's blast at <paramref name="t"/>: every enemy whose body touches the disc of
+        /// <paramref name="radius"/> around (x, y) takes <paramref name="damage"/>, thrown or
+        /// knocked straight out from its centre. It is no weapon's, so it tallies nothing.
+        /// </summary>
+        internal void Blast(Simulation sim, double t, double x, double y, double radius, double damage)
+        {
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                ref var e = ref enemies[i];
+                if (!e.Alive) continue;
+                e.PositionAt(t, out double ex, out double ey);
+                double dx = ex - x, dy = ey - y, d = Math.Sqrt(dx * dx + dy * dy);
+                if (d > radius + 0.5 * roles[e.Role].RadiusM) continue;
+                if (d < 1e-9)
+                {
+                    dx = 0;
+                    dy = 1;
+                }
+                e.Health -= damage;
+                if (e.Health <= 1e-9) Kill(sim, i, t, dx, dy, RunRules.BlastForceM);
+                else Knock(sim, i, t, dx, dy, damage);
+            }
         }
 
         /// <summary>

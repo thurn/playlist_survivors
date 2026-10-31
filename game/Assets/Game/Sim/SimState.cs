@@ -17,9 +17,23 @@ namespace PS.Game.Sim
         public double Now { get; internal set; }
         public long Tick { get; internal set; }
 
-        /// <summary>Playing time: advances with song time except while the world is frozen.</summary>
+        /// <summary>Where the run is (<see cref="RunRules"/>): waiting for its start, playing, in its finale, or ended.</summary>
+        public RunPhase Phase { get; internal set; }
+        /// <summary>The song time the run started at, or NaN before.</summary>
+        public double StartedAt { get; internal set; } = double.NaN;
+        /// <summary>Why the run ended, and when (NaN before).</summary>
+        public RunEnd End { get; internal set; }
+        public double EndedAt { get; internal set; } = double.NaN;
+
+        /// <summary>Playing time: advances with song time while the run plays, except while the world is frozen.</summary>
         public double RunClock { get; internal set; }
+        /// <summary>The world is held: before the start, during a freeze, and after the finale's blast.</summary>
         public bool Frozen { get; internal set; }
+        /// <summary>The freezes holding the world now, a bit per <see cref="FreezeReason"/> (the banners'); a resume waits for the next beat.</summary>
+        public int FreezeReasons { get; internal set; }
+
+        /// <summary>Does <paramref name="reason"/> hold the world now?</summary>
+        public bool FrozenFor(FreezeReason reason) => (FreezeReasons & (1 << (int)reason)) != 0;
 
         public Reliability Beat { get; internal set; }
         /// <summary>The latest committed beat fired, or -1.</summary>

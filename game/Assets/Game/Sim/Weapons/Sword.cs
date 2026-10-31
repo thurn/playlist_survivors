@@ -29,6 +29,8 @@ namespace PS.Game.Sim
     public enum ItemKind
     {
         Gem = 0,
+        /// <summary>Easy's floor chicken: the hero heals on touching it (<see cref="FloorChickens"/>).</summary>
+        Chicken = 1,
     }
 
     /// <summary>

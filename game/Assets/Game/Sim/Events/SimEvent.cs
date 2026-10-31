@@ -6,7 +6,7 @@ namespace PS.Game.Sim
     /// What the sim tells presentation (unity-game.md, "The Sim's Contract"). The sim emits beats,
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
-    /// and zone changes; the rest are declared, with their fields,
+    /// zone changes, freezes, the run's start, its finale and its end; the rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
     public enum SimEventKind
@@ -33,6 +33,9 @@ namespace PS.Game.Sim
         Drop,
         Glint,
         ZoneChange,
+        RunStart,
+        Finale,
+        RunEnd,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -365,6 +368,27 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>The run starts on this beat: the run clock counts from here.</summary>
+        public static SimEvent RunStart(double t) => Of(SimEventKind.RunStart, t);
+
+        /// <summary>The finale's blast on its downbeat: D0/D1 its centre (the hero), D2 its radius.</summary>
+        public static SimEvent Finale(double t, double x, double y, double radius)
+        {
+            var e = Of(SimEventKind.Finale, t);
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = radius;
+            return e;
+        }
+
+        /// <summary>The run ends: I0 why (<see cref="PS.Game.Sim.RunEnd"/>).</summary>
+        public static SimEvent RunEnd(double t, PS.Game.Sim.RunEnd why)
+        {
+            var e = Of(SimEventKind.RunEnd, t);
+            e.I0 = (int)why;
+            return e;
+        }
+
         /// <summary>A sound to schedule: I0 cue, I1 variant; D0 its song time, D1 pitch (semitones), D2 gain, D3/D4 position.</summary>
         public static SimEvent SoundCue(double t, int cue, int variant, double at, double pitch, double gain, double x, double y)
         {
@@ -425,5 +449,7 @@ namespace PS.Game.Sim
         public DropEvent AsDrop { get { Expect(SimEventKind.Drop); return new DropEvent(this); } }
         public GlintEvent AsGlint { get { Expect(SimEventKind.Glint); return new GlintEvent(this); } }
         public ZoneChangeEvent AsZoneChange { get { Expect(SimEventKind.ZoneChange); return new ZoneChangeEvent(this); } }
+        public FinaleEvent AsFinale { get { Expect(SimEventKind.Finale); return new FinaleEvent(this); } }
+        public RunEndEvent AsRunEnd { get { Expect(SimEventKind.RunEnd); return new RunEndEvent(this); } }
     }
 }

@@ -226,6 +226,24 @@ namespace PS.Game.Sim
         public bool Starts => e.I1 != 0;
     }
 
+    public readonly struct FinaleEvent
+    {
+        readonly SimEvent e;
+        public FinaleEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double Radius => e.D2;
+    }
+
+    public readonly struct RunEndEvent
+    {
+        readonly SimEvent e;
+        public RunEndEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public RunEnd Why => (RunEnd)e.I0;
+    }
+
     public readonly struct SoundCueEvent
     {
         readonly SimEvent e;

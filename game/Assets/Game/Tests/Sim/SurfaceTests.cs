@@ -12,7 +12,7 @@ namespace PS.Game.Sim.Tests
     /// </summary>
     public class SurfaceTests
     {
-        static readonly string[] Mutators = { "Add", "AddKnown", "Press", "Release", "Command", "StepTo", "DiscardEventsBefore" };
+        static readonly string[] Mutators = { "Add", "AddKnown", "Press", "Release", "Command", "Control", "StepTo", "DiscardEventsBefore" };
 
         /// <summary>The objects the client reaches from a sim: the sim's own classes behind its public properties.</summary>
         static List<object> Surface(Simulation sim)
@@ -108,6 +108,7 @@ namespace PS.Game.Sim.Tests
             foreach (double t in sim.Beats.Judging.Locks) sum += t;
             foreach (var k in sim.Keys) sum += k.Heard;
             foreach (var c in sim.Commands) sum += c.Effective;
+            foreach (var c in sim.Controls) sum += c.Effective;
             foreach (var e in sim.EventsSince(0)) sum += e.T;
             foreach (var e in sim.State.Enemies)
             {
@@ -127,6 +128,7 @@ namespace PS.Game.Sim.Tests
                 if (type == typeof(double)) choices[i] = new object[] { sim.Now - 1, sim.Now + 1 };
                 else if (type == typeof(int)) choices[i] = new object[] { 0, 3, sim.State.LastBeat };
                 else if (type == typeof(EntryKind)) choices[i] = KindChoices();
+                else if (type == typeof(FreezeReason)) choices[i] = new object[] { FreezeReason.LevelUp, FreezeReason.MusicStopped };
                 else if (parameters[i].IsOut) choices[i] = new object[] { null };
                 else throw new NotSupportedException($"a read taking a {type.Name}: give it values here");
             }

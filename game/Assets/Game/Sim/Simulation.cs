@@ -5,7 +5,7 @@ namespace PS.Game.Sim
 {
     /// <summary>
     /// The game's deterministic simulation (unity-game.md, "The Simulation"). The client feeds it
-    /// entries, keys and time, and reads its state and event log; it never calls the client.
+    /// entries, keys, run controls and time, and reads its state and event log; it never calls the client.
     ///
     /// <code>
     /// sim.Add(entry);              // held until its known_at
@@ -15,15 +15,16 @@ namespace PS.Game.Sim
     /// </code>
     ///
     /// Only <see cref="Add"/>, <see cref="AddKnown"/>, <see cref="Press"/>, <see cref="Release"/>,
-    /// <see cref="Command"/>, <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
+    /// <see cref="Command"/>, <see cref="Control"/>, <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
     /// public here and on what it exposes (<see cref="State"/>, <see cref="Stream"/>,
     /// <see cref="Beats"/>, <see cref="Strides"/>) is a read the client may make at any time, as
     /// often as it likes, without changing the run.
     ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
-    /// then the beat (on a downbeat, structures a zone change marked regrow, then a zone change
-    /// may land: <see cref="Structures"/>, <see cref="Zones"/>), then the stride step and the
+    /// then the run's own moments (the run clock reaching its duration, the victory card:
+    /// <see cref="RunRules"/>), then the beat (the run's start, a resume or the finale's blast on it, then on a downbeat, structures a zone change marked regrow, then a zone change
+    /// may land: <see cref="Structures"/>, <see cref="Zones"/>), then the stride step (the music stopping on it) and the
     /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
@@ -42,6 +43,7 @@ namespace PS.Game.Sim
 
         readonly StructList<KeyRecord> keys;
         readonly StructList<DebugRecord> commands;
+        readonly StructList<ControlRecord> controls;
         readonly EventLog events;
         readonly Hero hero;
         readonly double knownAtBudget;
@@ -58,6 +60,7 @@ namespace PS.Game.Sim
             events = new EventLog(config.EventCapacity);
             keys = new StructList<KeyRecord>(config.PressCapacity);
             commands = new StructList<DebugRecord>(16);
+            controls = new StructList<ControlRecord>(256);
             State = new SimState
             {
                 Tick = (long)Math.Floor(config.StartTime * TicksPerSecond + 1e-9),
@@ -73,6 +76,12 @@ namespace PS.Game.Sim
             Structures = new Structures(arena, Arena, State, Horde);
             if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures, State.Now);
             if (config.Sword != null) Sword = new Sword(config.Sword, Stream, Beats, State, Horde, Structures, Zones);
+            Run = new RunRules(config, content, Stream, State);
+            if (config.Easy && content != null)
+            {
+                Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
+                if (Horde != null) Horde.Chickens = Chickens;
+            }
         }
 
         public SimState State { get; }
@@ -91,6 +100,10 @@ namespace PS.Game.Sim
         internal Structures Structures { get; }
         /// <summary>The zones, or null in a run without content (whose schedule holds their rules).</summary>
         internal Zones Zones { get; }
+        /// <summary>The run's start, clock, freezes and ends.</summary>
+        internal RunRules Run { get; }
+        /// <summary>Easy's floor chickens, or null off Easy.</summary>
+        internal FloorChickens Chickens { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -159,6 +172,19 @@ namespace PS.Game.Sim
         /// <summary>Every debug command given, in order.</summary>
         public ReadOnlySpan<DebugRecord> Commands => commands.AsSpan();
 
+        /// <summary>
+        /// Gives a run control (<see cref="RunControl"/>: the start, a pause or resume, an end, the
+        /// watchdog); it takes effect now, recorded like a key.
+        /// </summary>
+        public void Control(RunControl control)
+        {
+            controls.Add(new ControlRecord { Control = control, Effective = Now });
+            Run.Control(this, control, Now);
+        }
+
+        /// <summary>Every run control given, in order.</summary>
+        public ReadOnlySpan<ControlRecord> Controls => controls.AsSpan();
+
         public ReadOnlySpan<SimEvent> EventsSince(int eventCursor) => events.Since(eventCursor);
 
         /// <summary>Frees the events before <paramref name="eventCursor"/> once the client has read them.</summary>
@@ -184,24 +210,31 @@ namespace PS.Game.Sim
                 double step = Strides.NextTime(cursor);
                 double horde = Horde?.NextTime(cursor) ?? double.PositiveInfinity;
                 double sword = Sword?.NextTime(cursor) ?? double.PositiveInfinity;
-                double next = Math.Min(Math.Min(beat, step), Math.Min(horde, sword));
+                double run = Run.NextTime();
+                double next = Math.Min(Math.Min(Math.Min(beat, step), Math.Min(horde, sword)), run);
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
                     Stream.Reveal(cursor);
                     Beats.TakeTicks();
+                    Run.Reveal();
                     continue;
                 }
                 if (next > end) break;
                 cursor = next;
                 UpdateBeatState(next);
-                if (beat == next)
+                if (run == next)
+                {
+                    Run.Fire(this, run);
+                }
+                else if (beat == next)
                 {
                     Beats.Fire(this, beat, State.Beat);
                     int i = Beats.LastBeat;
                     State.LastBeat = i;
                     State.Bar = Beats.BarOf(i, out bool downbeat);
                     State.Downbeat = downbeat;
+                    Run.Beat(this, beat, i);
                     if (downbeat)
                     {
                         Structures.Downbeat(this, beat, Beats.PeriodOf(i));
@@ -211,6 +244,7 @@ namespace PS.Game.Sim
                 else if (step == next)
                 {
                     Strides.Fire(this, step);
+                    Run.Step(this, step);
                     hero.Step(this, Strides.Count - 1, step, Strides.Period);
                     State.StrideStep = step;
                     State.StridePeriod = Strides.Period;
@@ -230,7 +264,8 @@ namespace PS.Game.Sim
             State.Now = end;
             UpdateBeatState(end);
             hero.Tick(this, end);
-            if (!State.Frozen) State.RunClock += TickSeconds;
+            Run.Tick(end);
+            Chickens?.Tick(this, end);
             Horde?.Tick(this, end);
             Sword?.Tick(end);
             Zones?.Tick(this, end);
@@ -242,6 +277,7 @@ namespace PS.Game.Sim
             if (now == State.Beat) return;
             Emit(SimEvent.BeatState(t, now, State.Beat));
             State.Beat = now;
+            Run.BeatState(t, now);
         }
     }
 }

@@ -19,7 +19,7 @@ namespace PS.Game.Sim.Tests
         struct Stretch
         {
             public double From, To, Bpm0, Bpm1, Evidence, Jitter;
-            public bool Ticks;
+            public bool Ticks, Silent;
         }
 
         readonly List<Stretch> stretches = new List<Stretch>();
@@ -44,10 +44,13 @@ namespace PS.Game.Sim.Tests
             return this;
         }
 
-        /// <summary>No beats from <paramref name="from"/> to <paramref name="to"/>; ticks below the gate (or none).</summary>
-        public FixtureSong Gap(double from, double to, bool ticks = true)
+        /// <summary>
+        /// No beats from <paramref name="from"/> to <paramref name="to"/>; ticks below the gate (or
+        /// none), audible unless <paramref name="silent"/> (energy 0: the music stopped).
+        /// </summary>
+        public FixtureSong Gap(double from, double to, bool ticks = true, bool silent = false)
         {
-            stretches.Add(new Stretch { From = from, To = to, Bpm0 = 0, Evidence = 0.1, Ticks = ticks });
+            stretches.Add(new Stretch { From = from, To = to, Bpm0 = 0, Evidence = silent ? 0 : 0.1, Ticks = ticks, Silent = silent });
             return this;
         }
 
@@ -110,8 +113,9 @@ namespace PS.Game.Sim.Tests
                 for (long k = k0; k * TickSeconds < s.To - 1e-9; k++)
                 {
                     double t = k * TickSeconds;
-                    double evidence = s.Bpm0 > 0 ? s.Evidence : 0.1;
-                    list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), evidence, 0.5 + 0.2 * rng.NextDouble(),
+                    double evidence = s.Bpm0 > 0 || s.Silent ? s.Evidence : 0.1;
+                    double energy = 0.5 + 0.2 * rng.NextDouble();
+                    list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), evidence, s.Silent ? 0 : energy,
                         level: LoudnessLevel.Medium, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
                         hat: rng.NextDouble(), bass: rng.NextDouble(), brightness: 0.4));
                     if (k % 20 == 0) list.Add(StreamEntry.Timbre(t, StampOf(t + 0.5), 0.4, 0.2, 0.6, 0.5));

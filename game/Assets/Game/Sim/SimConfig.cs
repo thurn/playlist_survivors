@@ -32,7 +32,10 @@ namespace PS.Game.Sim
         /// <summary>The hero's sword; null runs without it.</summary>
         public SwordConfig Sword;
 
-        /// <summary>Easy: enemy contact damage at half (unity-game.md, The Run).</summary>
+        /// <summary>How the run starts: at once (the default, for tests and bots), on a key, or after clear beat.</summary>
+        public RunStart Start;
+
+        /// <summary>Easy: enemy contact damage at half, and floor chickens that heal (unity-game.md, The Run).</summary>
         public bool Easy;
 
         /// <summary>The hero never falls: it keeps a tenth of its health, its hits still landing (bots and evidence runs).</summary>
