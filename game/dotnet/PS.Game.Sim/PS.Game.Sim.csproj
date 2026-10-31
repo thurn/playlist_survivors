@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The sim's Unity-free sources, as Unity compiles them (the PS.Game.Sim assembly). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PS.Game.Sim</RootNamespace>
+    <!-- Optimized in every configuration, so `dotnet test` (Debug by default) runs the sim as a
+         player build would. -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Game/Sim/**/*.cs" />
+  </ItemGroup>
+</Project>
