@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace Game.Client.Loop
@@ -17,6 +18,9 @@ namespace Game.Client.Loop
     public static class Sessions
     {
         public const int Kept = 20;
+
+        /// <summary>A session folder's name, its start time (and a count for two in one second): only these are ever removed.</summary>
+        static readonly Regex Name = new Regex(@"^\d{8}-\d{6}(-\d+)?$");
 
         /// <summary>The run recorded last in this launch, for Watch my run; null before one is.</summary>
         public static string Last;
@@ -40,12 +44,17 @@ namespace Game.Client.Loop
             (Args.Get("--sessions") != null || Args.Has("--watch") ||
              !(Application.isBatchMode || Args.Has("--headless") || Args.Has("--fixed-time")));
 
-        /// <summary>A new run's folder (created), after removing the oldest so that <see cref="Kept"/> remain with it.</summary>
+        /// <summary>
+        /// A new run's folder (created), after removing the oldest sessions so that <see cref="Kept"/>
+        /// remain with it. Nothing but a session's folder is removed, wherever `--sessions` points.
+        /// </summary>
         public static string Begin()
         {
             string root = Root;
             Directory.CreateDirectory(root);
-            var old = Directory.GetDirectories(root).OrderBy(d => Path.GetFileName(d), StringComparer.Ordinal).ToList();
+            var old = Directory.GetDirectories(root)
+                .Where(d => Name.IsMatch(Path.GetFileName(d)) && File.Exists(Path.Combine(d, "audio.wav")))
+                .OrderBy(d => Path.GetFileName(d), StringComparer.Ordinal).ToList();
             for (int i = 0; i < old.Count - (Kept - 1); i++)
             {
                 try { Directory.Delete(old[i], recursive: true); }
