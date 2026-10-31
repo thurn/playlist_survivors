@@ -9,7 +9,8 @@ namespace Demo3D.Runtime.Crowd
     /// - <see cref="Bones"/> is CrowdSkinning.hlsl's SampleOf and BlendBone (CrowdPalette.compute):
     ///   each clip's two texture rows around its time, lerped, then the two clips crossfaded;
     /// - <see cref="Skin"/> is CrowdCommon.hlsl's SkinVertex: the weighted bone matrices, the point
-    ///   scaled by the instance, turned by its yaw and moved to its position.
+    ///   scaled by the instance, turned by its yaw and moved to its position. SkinVertex's beat bounce
+    ///   is left out: only living monsters bounce, and a breaking one is dying.
     /// It reads the texture the crowd draws with: 30 Hz under the default cuts' clips30, else 60 Hz
     /// (BoneTextureCrowd). The baked bone textures stay readable (CrowdBaker).
     /// </summary>

@@ -12,9 +12,9 @@
 // One crystal fragment. bary: the style mesh's barycentrics (xyz) and value per triangle (w);
 // hit: the hit flash (0..1); glow: a gem-coloured glow (the crowd's flying triangles, 0..1);
 // inside: 1 on a shard's inside faces, which are brighter and more saturated than the skin, as a
-// broken gem's fresh faces are.
+// broken gem's fresh faces are; throb: the horde's beat throb (CrowdThrob; 0 but on a living monster).
 half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4 bary, float hit, float glow,
-                   float inside, float fogFactor)
+                   float inside, float throb, float fogFactor)
 {
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
     float3 facet = normalize(cross(ddy(positionWS), ddx(positionWS)));
@@ -49,6 +49,8 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
     // Light trapped inside: each facet its own brightness, like a cut stone, and a core
     // that throbs on the beat.
     color += tint * (0.1 + 0.85 * faceRand * faceRand) * (0.55 + 1.1 * wave) * (1.0 + 1.5 * inside);
+    // The horde's beat throb (crowd.md, The beat pulse): the whole gem lights up on the impact, on top of the wave.
+    color += tint * throb * (0.8 + 1.2 * faceRand) + throb * 0.12;
     color += tint * pow(NdotV, 3.0) * 0.35 * (1.0 + wave);
 
     Light L = SL_MainLight(positionWS);
@@ -75,7 +77,7 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
     // grade's peak so it reaches the bloom, each facet its own brightness, throbbing on the beat, a fresh break's
     // faces the brightest.
     float3 graded = SL_Grade(color);
-    graded += tint * _InnerGlow * (0.35 + 0.65 * faceRand) * (0.7 + 0.6 * wave) * (1.0 - 0.5 * fres) * (1.0 + inside);
+    graded += tint * _InnerGlow * (0.35 + 0.65 * faceRand) * (0.7 + 0.6 * wave + 2.0 * throb) * (1.0 - 0.5 * fres) * (1.0 + inside);
     return half4(MixFog(graded, fogFactor), 1);
 }
 

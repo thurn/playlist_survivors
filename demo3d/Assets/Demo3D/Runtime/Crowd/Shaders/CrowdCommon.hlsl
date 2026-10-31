@@ -21,6 +21,15 @@ float _LodDither;     // 0 for the shadow proxy draw, which never crossfades
 float _CrowdTime;
 float _CrowdNoSkin;    // a global, set only by the --ablate skin measurement
 
+// The horde's beat pulse (crowd.md, The beat pulse), set every frame by StyleBeat.cs: the bounce,
+// the height's change as a share (negative squashed, positive stretched), this frame's and the
+// previous frame's (for motion vectors), and the brightness throb (0 at rest, 1 on a full-energy
+// downbeat). Only living monsters pulse.
+float _SL_Bounce;
+float _SL_BouncePrev;
+float _SL_Throb;
+#define CROWD_BOUNCE_WIDEN 0.75
+
 StructuredBuffer<float4> _Palette;       // 3 rows per bone, slot-major
 StructuredBuffer<float4> _PrevPalette;
 StructuredBuffer<uint> _PrevStamp;       // the frame each slot's previous palette was written
@@ -40,8 +49,14 @@ float3x4 BoneMatrix(uint slot, uint bone, bool previous)
     return float3x4(_Palette[at], _Palette[at + 1], _Palette[at + 2]);
 }
 
+// A living monster's beat throb (_SL_Throb), 0 for the dying.
+float CrowdThrob(MonsterInstance m) { return (m.flags & CROWD_ALIVE) != 0 ? _SL_Throb : 0; }
+
 // Skins a root-space vertex and normal with 4 palette bones (this frame's, or the previous
-// frame's for motion vectors), then places it by the instance.
+// frame's for motion vectors), squashes or stretches a living monster about its feet by the beat's
+// bounce, widening it as it squashes by more than its volume would (CROWD_BOUNCE_WIDEN: the game
+// camera looks down at 55 degrees, so the footprint reads more than the height), then places it
+// by the instance. CrowdPose.cs mirrors this but the bounce: a breaking monster is dying.
 void SkinVertex(MonsterInstance m, uint slot, bool previous, float3 positionOS, float3 normalOS,
                 float4 boneIndex, float4 boneWeight, out float3 positionWS, out float3 normalWS)
 {
@@ -60,6 +75,10 @@ void SkinVertex(MonsterInstance m, uint slot, bool previous, float3 positionOS, 
     }
     float3 p = mul(skin, float4(positionOS, 1)) * m.scale;
     float3 n = mul((float3x3)skin, normalOS);
+    float bounce = (m.flags & CROWD_ALIVE) != 0 ? (previous ? _SL_BouncePrev : _SL_Bounce) : 0;
+    float sy0 = 1 + bounce, sxz = 1 - CROWD_BOUNCE_WIDEN * bounce;
+    p *= float3(sxz, sy0, sxz);
+    n *= float3(sy0, sxz, sy0); // the inverse transpose of the squash, up to scale
     float sy, cy;
     sincos(m.yaw, sy, cy);
     positionWS = m.position + float3(p.x * cy + p.z * sy, p.y, -p.x * sy + p.z * cy);

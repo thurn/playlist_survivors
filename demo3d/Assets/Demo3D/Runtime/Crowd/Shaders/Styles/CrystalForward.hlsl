@@ -6,7 +6,9 @@
 SLVaryings vert(SLAttributes v)
 {
     SLVertex c = SL_Skin(v);
-    return SL_Finish(v, c, c.positionWS, c.normalWS);
+    SLVaryings o = SL_Finish(v, c, c.positionWS, c.normalWS);
+    o.extra.x = CrowdThrob(c.m); // a structure's instance has no flags: 0
+    return o;
 }
 
 half4 frag(SLVaryings i) : SV_Target
@@ -19,5 +21,5 @@ half4 frag(SLVaryings i) : SV_Target
     shatter = max(shatter, SL_INSIDE(i) * _SL_PieceFx.w);
 #endif
     // A broken structure's shard shows its fresh inside faces; the crowd has none.
-    return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, SL_HIT(i), shatter, SL_INSIDE(i), i.fogFactor);
+    return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, SL_HIT(i), shatter, SL_INSIDE(i), i.extra.x, i.fogFactor);
 }

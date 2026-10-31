@@ -1289,6 +1289,15 @@ one piece. The post feel's beat pulse and flashes run on top.
 "grade": { "exposure": 0.1, "contrast": 6, "saturation": 8, "temperature": -5 }
 ```
 
+**The horde's beat pulse.** Every living monster squashes on each beat's own
+frame, rebounds into a stretch and lights up in its own colours, harder on
+downbeats and accents and scaled by the song map's energy; in break-2's cold
+open only the three anchors hit. It is the normal run's pulse, in both cuts and
+under every style ([crowd.md, The beat pulse](crowd.md#the-beat-pulse)); at the
+cuts' view widths the throb carries it and the squash adds weight. Two-bar
+sequences of both cuts:
+[evidence/trailer/pulse](../../demo3d/evidence/trailer/pulse/README.md).
+
 **Supersampling.** The picture renders at a multiple of its output
 resolution and is downsampled to 1080p, for clean edges on blades, monsters
 and particles.

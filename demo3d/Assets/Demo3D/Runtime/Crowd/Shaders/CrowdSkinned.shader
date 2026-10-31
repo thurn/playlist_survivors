@@ -104,6 +104,7 @@ Shader "Demo3D/CrowdSkinned"
                 nointerpolation float4 fx : TEXCOORD4;
                 nointerpolation float4 tint : TEXCOORD5;
                 float fogFactor : TEXCOORD6;
+                nointerpolation float throb : TEXCOORD7; // CrowdThrob
             };
 
             Varyings vert(CrowdAttributes v)
@@ -118,6 +119,7 @@ Shader "Demo3D/CrowdSkinned"
                 o.fx = c.fx;
                 o.tint = TintOf(c.m.tint);
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
+                o.throb = CrowdThrob(c.m);
                 return o;
             }
 
@@ -156,6 +158,9 @@ Shader "Demo3D/CrowdSkinned"
             #define DEMO3D_MAIN_LIGHT_SCALE ((1 + _Demo3DCrowdKeyBoost) * (_Demo3DCrowdKeyColor.w > 0 ? _Demo3DCrowdKeyColor.rgb : float3(1, 1, 1)))
             #include "../../Arena/Shaders/StaticShadow.hlsl"
             #define CrowdLighting Demo3DLightingPBR
+            // The beat throb's gains: on the rim light, and as the albedo's own glow.
+            #define CROWD_THROB_RIM 2.0
+            #define CROWD_THROB_GLOW 0.35
 
             // Dyes Synty's grey swatches (steel, bone, cloth) toward the type's hue at their own luminance,
             // so a type reads as one colour mass; saturated swatches (skin, eyes) and the brightest
@@ -224,7 +229,9 @@ Shader "Demo3D/CrowdSkinned"
                 s.emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, i.uv).rgb * _EmissionColor.rgb
                     + (_Demo3DCrowdFlash.w > 0 ? _Demo3DCrowdFlash.rgb : _FlashColor.rgb) * i.fx.x + _DissolveEdgeColor.rgb * edge;
                 half rim = 1 - saturate(dot(inputData.normalWS, inputData.viewDirectionWS));
-                s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4;
+                s.emission += _Demo3DCrowdRim.rgb * pow(rim, max(_Demo3DCrowdRim.w, 1)) * albedo.rgb * 4 * (1 + CROWD_THROB_RIM * i.throb);
+                // The beat's throb (crowd.md, The beat pulse): the body lights up in its own colours on the impact.
+                s.emission += albedo.rgb * CROWD_THROB_GLOW * i.throb;
 
                 half3 color = CrowdLighting(inputData, s);
                 if (_SurfaceMapOn * _Demo3DCrowdGloss.x > 0.5 && _Demo3DCrowdGloss.z > 0) color += CrowdReflection(inputData, s);

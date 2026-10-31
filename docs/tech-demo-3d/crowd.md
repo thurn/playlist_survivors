@@ -166,6 +166,40 @@ flat and helps the target's GPU.
   cascade). Each call holds its 8 depth-bin commands. That makes a few
   hundred GPU draws in all, whatever the number of monsters.
 
+### The beat pulse
+
+Every living monster pulses on the music's beat, in every run, trailer or not, and under every
+monster style, the baseline included (ps-b5z.3). The horde's footplants already land on the beat,
+but at the game camera's distance that was too subtle to read. Evidence:
+[evidence/trailer/pulse](../../demo3d/evidence/trailer/pulse/README.md).
+
+- **The hits.** Every beat of a pulsed section is a hit, its strength scaled by the song map's
+  energy there (half at energy 0, all at 1). A downbeat hits harder than a beat (a squash of 22%
+  of the height against 13% at full energy), and an accent within 60 ms of a beat adds up to 40%
+  more (capped at 28%). A free section has no audible beat: its anchors hit, at a downbeat's
+  squash times their strength, and the horde rests between them.
+- **The squash.** On the hit's own frame a monster snaps from a slight stretch (the last 80 ms
+  before it rise to 30% of its squash) to its full squash about its feet, then rebounds into a
+  stretch at 0.15 s and settles before the next beat (a damped spring of 0.3 s period). It widens
+  by three quarters of its squash (`CROWD_BOUNCE_WIDEN`), more than keeping its volume would,
+  since the camera looks down at 55 degrees and the footprint reads more than the height. The feet
+  stay planted, so it rides on the footplant stepping rather than fighting it.
+- **The throb.** The body lights up on the impact and fades within the beat: 1 on a full-energy
+  downbeat, about 0.6 on a beat. The baseline (CrowdSkinned) adds the albedo times 0.35 as
+  emission and triples its rim light; Crystal lifts its trapped light and its inner glow
+  (`_InnerGlow`, the crystal trailer's look). The other styles take the squash alone, on top of
+  their own beat responses (the beat wave, spectrum's bulge, fire's licks).
+- **Where it runs.** `StyleBeat` computes both from the song clock as heard (`feelT`, as the post
+  feel's beat) and publishes `_SL_Bounce`, `_SL_BouncePrev` (the previous frame's, for motion
+  vectors) and `_SL_Throb` every frame. CrowdCommon.hlsl's `SkinVertex` applies the bounce, so
+  every pass of every crowd shader (shadows, depth and motion vectors too) sees the same squash.
+  A function of song time alone, so `--fixed-time` stills repeat.
+- **Only the living pulse.** A dying monster (its death clip, hold and dissolve) takes neither,
+  so the crystal shatter's chunks, posed on the CPU by `CrowdPose` (which mirrors `SkinVertex`
+  without the bounce), still land where the monster was drawn. The hero, the blade and the
+  structures don't pulse.
+- **Cost.** A few multiplies per vertex and a global read per fragment.
+
 ### Surfaces
 
 `--crowd-gloss` gives the default roster's swatches their own metal and
@@ -207,9 +241,9 @@ Without the flag the horde is unchanged.
 demo (epic ps-a54). The names are baseline, painted, fire, crystal,
 spectrum, hologram, chrome, void and mix. An unknown name stops the player
 at start-up. baseline is the default, and it is
-the demo exactly as it was: the baked CrowdSkinned materials, the night's
-post, and no beat globals. The look harness passes the flag through
-`--player-args`. Performance is not a goal under the flag, and it is not
+the demo exactly as it was: the baked CrowdSkinned materials and the night's
+post, with only the horde's [beat pulse](#the-beat-pulse) from the beat globals.
+The look harness passes the flag through `--player-args`. Performance is not a goal under the flag, and it is not
 benchmarked.
 
 Every style uses the pattern the painted treatment set (ps-a54.1):
@@ -351,7 +385,8 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     `--aa taa` (not the default) moving crystal monsters smear.
 - **The beat comes from `StyleBeat`.** It sets `_SL_Time`, `_SL_Beat`,
   `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy` (the song map's value per beat),
-  `_SL_HeroPos` and `_SL_WaveSpeed` every frame, from the song as heard.
+  `_SL_HeroPos` and `_SL_WaveSpeed` every frame, from the song as heard, and the
+  [beat pulse's](#the-beat-pulse) `_SL_Bounce`, `_SL_BouncePrev` and `_SL_Throb`.
 - **Post comes from `MonsterStyle.Post`.** It is the lab's `PostLook`
   (tonemapper, exposure, contrast, saturation, bloom, chroma, vignette),
   written over the night volume before PostFeel reads its base values, so

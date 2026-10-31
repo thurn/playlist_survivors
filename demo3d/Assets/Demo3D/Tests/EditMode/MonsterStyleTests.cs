@@ -137,6 +137,45 @@ namespace Demo3D.Tests
         }
 
         [Test]
+        public void TheHordeSquashesOnEveryBeatHarderOnDownbeatsAndRestsInFreeSections()
+        {
+            var map = SongMap.Parse(File.ReadAllText("Assets/Baked/Audio/action.songmap.json"));
+            var beat = new StyleBeat(map);
+            int bar = 90, down = map.DownbeatIndexOfBar(bar); // drop-2: pulsed, high energy, no accents
+            double len = map.Beats[down + 1] - map.Beats[down];
+            for (int i = down; i < down + 8; i++)
+            {
+                var on = beat.PulseAt(map.Beats[i] + 1e-4);
+                var before = beat.PulseAt(map.Beats[i] - 0.02);
+                var rebound = beat.PulseAt(map.Beats[i] + 0.15);
+                Assert.That(on.x, Is.LessThan(-0.05f), $"beat {i}: squashed on the impact");
+                Assert.That(before.x, Is.GreaterThan(0f), $"beat {i}: stretched just before it");
+                Assert.That(rebound.x, Is.GreaterThan(0f), $"beat {i}: stretched on the rebound");
+                Assert.That(Mathf.Abs(beat.PulseAt(map.Beats[i] + 0.6 * len).x), Is.LessThan(0.25f * -on.x), $"beat {i}: nearly settled before the next");
+                Assert.That(on.y, Is.GreaterThan(0.4f), $"beat {i}: the throb");
+                Assert.That(beat.PulseAt(map.Beats[i] + 0.6 * len).y, Is.LessThan(0.25f * on.y), $"beat {i}: the throb fades within the beat");
+            }
+            var downbeat = beat.PulseAt(map.Beats[down] + 1e-4);
+            var offbeat = beat.PulseAt(map.Beats[down + 1] + 1e-4);
+            Assert.That(-downbeat.x, Is.GreaterThan(1.4f * -offbeat.x), "a downbeat squashes harder");
+            Assert.That(downbeat.y, Is.GreaterThan(1.4f * offbeat.y), "and throbs harder");
+            Assert.That(beat.PulseAt(map.Beats[down] + 1e-4), Is.EqualTo(new StyleBeat(map).PulseAt(map.Beats[down] + 1e-4)), "a function of song time");
+
+            var free = Array.Find(map.Sections, s => s.Feel == SectionFeel.Free && s.Anchors.Length > 0);
+            Assert.That(free, Is.Not.Null);
+            var anchor = free.Anchors[0];
+            Assert.That(beat.PulseAt(anchor.Time + 1e-4).x, Is.LessThan(-0.02f), "a free section's anchor hits");
+            for (int i = free.FirstBeat + 2; i < free.EndBeat; i++) // past the last pulsed beat's ring
+            {
+                double t = map.Beats[i] + 1e-4;
+                bool nearAnchor = Array.Exists(free.Anchors, a => t - a.Time > -AnticipationLead && t - a.Time < 1.0);
+                if (!nearAnchor) Assert.That(Mathf.Abs(beat.PulseAt(t).x), Is.LessThan(2e-3f), $"{free.Label}'s silent beat {i} rests");
+            }
+        }
+
+        const double AnticipationLead = 0.1; // past StyleBeat's anticipation before a hit
+
+        [Test]
         public void EveryStyleShaderHasTheCrowdsSkinnedPasses()
         {
             var guids = AssetDatabase.FindAssets("t:Shader", new[] { CrowdBaker.StylesDir });

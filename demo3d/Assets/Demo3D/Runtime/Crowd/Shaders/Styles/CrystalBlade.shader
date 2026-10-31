@@ -94,7 +94,7 @@ Shader "Demo3D/Styles/CrystalBlade"
                 float beat = SL_Wave(i.positionWS, 5.0);
                 float glow = _Glow * spine * (1.0 - 0.4 * i.core.y) * (0.7 + 0.6 * beat)
                            + _BladeFlare * (0.25 + 0.5 * spine);
-                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, 0, glow, 0, i.fogFactor);
+                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, 0, glow, 0, 0, i.fogFactor);
             }
             ENDHLSL
         }

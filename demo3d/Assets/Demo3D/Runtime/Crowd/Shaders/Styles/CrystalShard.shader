@@ -89,7 +89,7 @@ Shader "Demo3D/Styles/CrystalShard"
             half4 frag(Varyings i) : SV_Target
             {
                 if (_Demo3DIdMask > 0.5) return half4(1, 1, 1, 1); // TD15's ID render, as the crowd's
-                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, _ShardFlash, 0, i.inside, i.fogFactor);
+                return CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, _ShardFlash, 0, i.inside, 0, i.fogFactor);
             }
             ENDHLSL
         }
