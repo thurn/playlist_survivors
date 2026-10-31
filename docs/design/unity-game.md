@@ -1659,10 +1659,13 @@ The game provides these so each state above can be reached on demand:
 
 - Launch flags: `--file <audio or .m3u>`, `--app <name>`, `--seed`,
   `--start-minute <n>`, `--level <file>` (a level's schedule and arena),
-  `--fixed-time`, `--headless`, `--seconds <n>`.
+  `--fixed-time`, `--headless`, `--seconds <n>`; and for presenters' checks,
+  `--events <file>` (a scripted event feed beside the sim's) and `--overlay`.
+  Under `--fixed-time` a File run waits each frame until the analysis covers
+  its frontier, so reruns show the same frames.
 - An F1 debug menu: jump the run clock, spawn a role or boss, grant a weapon,
   passive or evolution, force a section change, an accent or the finale,
   break or regrow structures, and toggle the hero's invulnerability.
 - An overlay: song time, heard time, frontier and lead; the stream's next
   beats with their `known_at`; late steps as they happen; the flow field;
-  frame and sim timings.
+  frame and sim timings. F3 toggles it; stills leave it out unless asked.

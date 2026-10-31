@@ -23,3 +23,5 @@ what was run (the exact commands), the numbers, and what they show.
 - [spike](spike/README.md): the sync spike, File audio through the music plugin into Unity's
   output with a click on every beat, measured from Unity's own mix (ps-msz.1.6).
 - [sim-enemies](sim-enemies/README.md): the sim's step time with 300 enemies alive (ps-msz.3.2).
+- [loop](loop/README.md): the client's frame loop, its clocks, the lead and frame-exact fixed
+  time, with the debug overlay and placeholder capsules (ps-msz.3.5).
