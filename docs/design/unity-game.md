@@ -2466,6 +2466,9 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
 - **Four directions and a route**: the aim becomes a goal (the chest or gem, or 6 m along the
   escape), and the bot takes the first step of the shortest path to the open tile nearest it within
   16 tiles. A greedy four-way step pinned the hero in a structure's pocket until the crowd killed it.
+  A gem off the hero's tile that the route comes no nearer to (inside a structure, past the arena's
+  edge) is forgotten and the bot aims again: standing for one, the hero took the signature
+  minotaur's slams to death once its health scaled by the hero's level (ps-b3v).
 - **On the step**: it steers once a stride step, 80 ms before the next is due, so a turn's press
   takes that step and the held key strides on the rest, never twice on one step.
 - **Cards**: Left and Enter one beat after the third card flips in, as native's. The idle bot gives
@@ -2475,9 +2478,9 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
 parallel in .NET (`game/dotnet/PS.Game.Sweep`): the survivors playlist's original, reversed and
 rotated orders over per-track dumps of `ps entries`, and the original order over the whole
 playlist's dump, seed 1, plus the idle bot. Each stream is the playlist played twice, since the
-run's freezes take 270 to 640 s of song time and one pass of its 2294 s can end first. A pass over
+run's freezes take 250 to 550 s of song time and one pass of its 2294 s can end first. A pass over
 committed inputs is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all
-four win, three without a hit; the idle bot falls at 2:06).
+four win, none below 83% health; the idle bot falls at 2:06).
 
 ## Build Order
 

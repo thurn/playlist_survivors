@@ -34,7 +34,9 @@ namespace PS.Game.Sim.Bots
     ///   aim becomes a goal, the chest or gem pulled to, or <see cref="EscapeM"/> along the escape, and
     ///   the bot takes the first step of the shortest path to the open tile nearest it within
     ///   <see cref="RouteTiles"/> (a breadth-first search, the aim's larger axis tried first), which
-    ///   zigzags a diagonal and walks round a structure.
+    ///   zigzags a diagonal and walks round a structure. A gem off the hero's tile that the route comes
+    ///   no nearer to (in a structure, or past the arena's edge) is out of reach: the bot forgets it and
+    ///   aims again, where native's hero would slide along the wall.
     /// - <b>On the step</b>: native steers once a stride, as the hero sets off. The bot decides once a
     ///   step too, <see cref="DecideS"/> before the next one is due (the latest step plus its period),
     ///   so a turn's press takes that step as a player's on the beat does, and the held key strides
@@ -114,8 +116,20 @@ namespace PS.Game.Sim.Bots
             if (sim.Now < due - DecideS || steeredFor == state.StrideStep) return;
             steeredFor = state.StrideStep;
             state.Hero.PositionAt(sim.Now, out double hx, out double hy);
-            double range = Aim(sim, hx, hy, out headingX, out headingY);
-            Let(sim, Route(sim, hx + headingX * range, hy + headingY * range, headingX, headingY));
+            var arena = sim.Arena;
+            double tileX = arena.CentreX(state.Hero.TileX), tileY = arena.CentreY(state.Hero.TileY), half = arena.TileM / 2;
+            while (true)
+            {
+                double range = Aim(sim, hx, hy, out headingX, out headingY, out int gem);
+                double gx = hx + headingX * range, gy = hy + headingY * range;
+                var key = Route(sim, gx, gy, headingX, headingY);
+                if (key != null || gem < 0 || (Math.Abs(gx - tileX) <= half && Math.Abs(gy - tileY) <= half))
+                {
+                    Let(sim, key);
+                    return;
+                }
+                gems.RemoveAll(g => g.Id == gem);
+            }
         }
 
         /// <summary>Takes in a frame's events: the gems dropped, merged and taken off.</summary>
@@ -151,10 +165,12 @@ namespace PS.Game.Sim.Bots
         /// <summary>
         /// Native's aim from the hero at (hx, hy), a unit vector (the heading when nothing pulls or
         /// pushes); returns how far its goal lies: the chest or gem pulled to, else <see cref="EscapeM"/>.
+        /// <paramref name="gem"/> is the gem pulled to, or -1.
         /// </summary>
-        double Aim(Simulation sim, double hx, double hy, out double ax, out double ay)
+        double Aim(Simulation sim, double hx, double hy, out double ax, out double ay, out int gem)
         {
             var state = sim.State;
+            gem = -1;
             double x = 0, y = 0, weight = 0;
             bool danger = false;
             foreach (var enemy in state.Enemies)
@@ -185,7 +201,8 @@ namespace PS.Game.Sim.Bots
                 if (Unit(tx - hx, ty - hy, out double cx, out double cy)) (ax, ay) = (cx, cy);
                 return Math.Sqrt(best);
             }
-            foreach (var gem in gems) Nearest(gem.X, gem.Y, hx, hy, ref best, ref tx, ref ty);
+            foreach (var g in gems)
+                if (Nearest(g.X, g.Y, hx, hy, ref best, ref tx, ref ty)) gem = g.Id;
             if (best < double.PositiveInfinity)
             {
                 // XP only while clear of contact; the wider crowd still bends the path.
@@ -197,13 +214,14 @@ namespace PS.Game.Sim.Bots
             return EscapeM;
         }
 
-        static void Nearest(double x, double y, double hx, double hy, ref double best, ref double bx, ref double by)
+        static bool Nearest(double x, double y, double hx, double hy, ref double best, ref double bx, ref double by)
         {
             double d2 = (x - hx) * (x - hx) + (y - hy) * (y - hy);
-            if (d2 >= best) return;
+            if (d2 >= best) return false;
             best = d2;
             bx = x;
             by = y;
+            return true;
         }
 
         static bool Unit(double x, double y, out double ux, out double uy)

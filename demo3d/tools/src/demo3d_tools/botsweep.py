@@ -8,7 +8,7 @@ original order over one dump of the whole playlist (native's continuous source).
 the original order's cached tracks once. Each run's stream is its playlist played twice, the second
 time after a 2 s gap: the run's freezes (each level-up's cards, each chest's roulette, the music
 stopping at track changes and holding until the next track's beat turns reliable, 56 s into the
-piano aria) take 270 to 640 s of song time, so one pass of the 2294 s playlist can end before the run clock's
+piano aria) take 250 to 550 s of song time, so one pass of the 2294 s playlist can end before the run clock's
 30 minutes, and the gates are the bots', not the playlist's length. The dumps are native's `ps entries`, cached by every
 analyzer input; the runs are game/dotnet/PS.Game.Sweep, all five in parallel.
 

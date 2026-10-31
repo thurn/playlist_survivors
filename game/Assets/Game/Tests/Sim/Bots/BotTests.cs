@@ -93,6 +93,34 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ItForgetsAGemOutOfReachAndWalksToTheNextOne()
+        {
+            // The nearer gem lies inside a walled block; standing still at the wall's foot is the
+            // nearest it can get, so it takes the farther one instead.
+            var arena = ArenaData.Open();
+            int x0 = arena.HeroStart.X, y0 = arena.HeroStart.Y;
+            var blocked = new List<Tile>();
+            for (int x = x0 - 6; x <= x0 - 2; x++)
+                for (int y = y0 - 2; y <= y0 + 2; y++)
+                    blocked.Add(new Tile(x, y));
+            arena.Blocked = blocked.ToArray();
+            var sim = HordeFixture.Empty(arena);
+            var bot = new SurvivorBot(BotKind.Positioning, 1);
+            var hero = sim.State.Hero;
+            bot.Observe(new[]
+            {
+                SimEvent.Drop(0, 1, ItemKind.Gem, sim.Arena.CentreX(x0 - 4), sim.Arena.CentreY(y0), 1),
+                SimEvent.Drop(0, 2, ItemKind.Gem, sim.Arena.CentreX(x0 + 6), sim.Arena.CentreY(y0), 1),
+            });
+            for (double t = 1.0 / 60; t < 10; t += 1.0 / 60)
+            {
+                bot.Act(sim);
+                sim.StepTo(t);
+            }
+            Assert.AreEqual((x0 + 6, y0), (hero.TileX, hero.TileY), "on the reachable gem's tile");
+        }
+
+        [Test]
         public void ItSteersOnceAStepJustBeforeItAndStridesOnceAStep()
         {
             var entries = EntryDump.Load(EntryDump.House128, out _);
