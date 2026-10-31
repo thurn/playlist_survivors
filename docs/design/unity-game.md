@@ -1373,6 +1373,41 @@ with `SimConfig.Content` now the one content field for the horde and the arsenal
 - The player's `--arsenal "garlic:8,fire-trail:3"` sets the starting weapons and `--walk
   "right@9-11"` holds keys over song-time spans, for stills of a walking hero.
 
+**Shipped (ps-msz.6.5).** Magic Wand and King Bible, `Sim/Weapons/MagicWand.cs` and
+`KingBible.cs` (each also serves its evolution's rules; the evolutions' own layers are the
+chests'). Native's numbers throughout; its flight model is adapted:
+
+- **Magic Wand**: a shot on an eighth is a burst of `max(1, floor(amount + Amount))` bolts,
+  `repeat / (speed x Speed)` apart, as native's. A bolt flies a **leg per target**, at the nearest
+  live enemy, at `9.43 m/s x speed x Speed`, arriving on the first sixteenth at or after its
+  straight flight (at that flight with no grid known that far ahead), so its hit sound lands on the
+  grid. It is aimed where its enemy will stand then, as the enemy moves now, and hits that enemy at
+  the arrival wherever it stands, for `power x Might`. A hit that doesn't kill uses a point of pierce;
+  a kill uses none (native's), so a bolt flies on through kills. A bolt whose enemy dies before it
+  arrives turns at the tick's end for the next. Native homes each frame and hits whatever it
+  crosses; legs keep the hits on the grid and the flight drawable from events.
+- **King Bible**: a shot on a beat starts a ring of `max(1, floor(amount + Amount))` evenly
+  spaced blades for `duration x Duration`, `2.86 m x min(area x Area, 4.5)` out, each blade's body
+  `0.457 m x (1 + 0.3 area x Area)` growing in over 0.5 s. Its speed, `2.19 rad/s x speed x
+  Speed`, snaps to native's beat lattice (`KingBible.OrbitSpeed`, `bible_orbit_speed`: every blade
+  on a quarter turn on beats, within 15%) from the latest committed beat's period. Each tick every
+  blade's swept path hits the enemies it touches, once until its memory clears every hit delay
+  (1.7 s). Unholy Vespers' permanent ring is the chests'.
+- A freeze or the hero's fall ends bolts in flight and cuts rings short.
+- **Events**: `Projectile` (a leg: from, aim, arrival, the target; phases Launch, Turn and End)
+  and `Orbit` (a ring: born, end, angular speed, radius, blade size; again with its new end when
+  cut short). Each shot is still an attack event naming the weapon.
+- **Client** (`Client/Weapons/`): `WeaponLooks` gives each weapon its family and colour (the
+  wand violet, the bible gold, white at the core: `Resources/Weapons/WeaponCrystal.shader`).
+  `WandView` draws each bolt as a spinning crystal with a streak of afterimages along its legs,
+  bending onto its enemy once the leg's end has settled; `BibleView` draws the shards on the
+  sim's ring around the hero, leaning into the turn. Their casts and hits are the effects'
+  `prism-cast` and `prism-hit`, tinted by the weapon (`EffectCues.Spark`), and the sounds'
+  `wand-fire`, `wand-hit`, `bible-fire` and `bible-hit` (native's palette), which the views ask
+  for themselves, as Garlic's do. A session refuses to record a starting arsenal other than the
+  run's own (`--arsenal`), which its replay couldn't rebuild.
+  Evidence: [game/evidence/weapons](../../game/evidence/weapons/README.md).
+
 ### Enemies
 
 Enemies keep native's roles, stats and spawn schedule, with continuous

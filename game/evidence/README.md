@@ -60,4 +60,6 @@ what was run (the exact commands), the numbers, and what they show.
 - [music-events](music-events/README.md): a zone change easing the arena's lighting, every swarm, set piece and the
   signature minotaur as filmstrips, and a 30-minute run's events under the cap (ps-msz.6.3).
 - [weapons](weapons/README.md): Garlic's aura pulsing on the beat and Fire Trail's wake following the
-  hero's tiles, as filmstrips, and their rules' tests against native's numbers (ps-msz.6.7).
+  hero's tiles, as filmstrips, and their rules' tests against native's numbers (ps-msz.6.7); Magic
+  Wand's violet bolts and King Bible's gold shards as filmstrips, and a headless run's shots, hits
+  and rings measured on the beat grid (ps-msz.6.5).
