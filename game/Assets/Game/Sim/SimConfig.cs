@@ -16,6 +16,13 @@ namespace PS.Game.Sim
         public double StartTime;
 
         /// <summary>
+        /// The run clock's minute the run starts at (the debug surfaces' `--start-minute`): the clock starts there as
+        /// if the run had played to it (<see cref="RunRules.JumpTo"/>), and the hero is built for it, at progression.json's
+        /// start level for the minute with each level's first card (<see cref="LevelUps.Reach"/>). 0 starts at 0:00.
+        /// </summary>
+        public int StartMinute;
+
+        /// <summary>
         /// The level's evidence gate: a reliable beat's and a clear tick's minimum evidence. Native's,
         /// the analyzer's (native/models/manifest.json's <c>gate</c>); a clear track's evidence is about 0.5.
         /// </summary>

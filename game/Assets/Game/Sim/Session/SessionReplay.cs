@@ -34,7 +34,7 @@ namespace PS.Game.Sim
             public int Order;
             public byte Type; // 0 a key change, 1 a debug command, 2 a run control
             public KeyRecord Key;
-            public DebugCommand Command;
+            public DebugRecord Command;
             public RunControl Control;
         }
 
@@ -45,7 +45,7 @@ namespace PS.Game.Sim
             inputs = new Input[record.Keys.Length + record.Commands.Length + record.Controls.Length];
             int n = 0;
             foreach (var k in record.Keys) inputs[n++] = new Input { Effective = k.Effective, Order = k.Order, Type = 0, Key = k };
-            foreach (var c in record.Commands) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Type = 1, Command = c.Command };
+            foreach (var c in record.Commands) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Type = 1, Command = c };
             foreach (var c in record.Controls) inputs[n++] = new Input { Effective = c.Effective, Order = c.Order, Type = 2, Control = c.Control };
             Array.Sort(inputs, (a, b) => a.Order.CompareTo(b.Order));
         }
@@ -97,7 +97,7 @@ namespace PS.Game.Sim
                 }
                 ref readonly var input = ref inputs[nextInput++];
                 if (input.Type == 2) sim.Control(input.Control);
-                else if (input.Type == 1) sim.Command(input.Command);
+                else if (input.Type == 1) sim.Command(input.Command.Command, input.Command.Arg);
                 else if (input.Key.Down) sim.Press(input.Key.Key, input.Key.Heard);
                 else sim.Release(input.Key.Key, input.Key.Heard);
             }

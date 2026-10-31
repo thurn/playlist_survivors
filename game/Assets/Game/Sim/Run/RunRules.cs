@@ -235,6 +235,24 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
+        /// The run clock jumps forward to <paramref name="runClock"/> at <paramref name="t"/> (the debug surfaces' jump, and
+        /// <see cref="SimConfig.StartMinute"/>'s start), before the run ends: the systems that count it move on as if the run
+        /// had played there (<see cref="Arsenal.Shift"/>, <see cref="Horde.Skip"/>), and a jump to the duration or past it
+        /// brings the finale.
+        /// </summary>
+        public void JumpTo(Simulation sim, double t, double runClock)
+        {
+            if (state.Phase == RunPhase.Ended || state.Phase == RunPhase.Finale) return;
+            Account(t);
+            double to = Math.Min(duration, runClock);
+            if (to <= state.RunClock) return;
+            double delta = to - state.RunClock;
+            state.RunClock = to;
+            sim.Arsenal?.Shift(delta);
+            sim.Horde?.Skip(to);
+        }
+
+        /// <summary>
         /// The finale at <paramref name="t"/> while the run plays, the run clock stopping where it
         /// is: the blast waits for the next downbeat, as at 30:00 (the debug surfaces' finale).
         /// </summary>

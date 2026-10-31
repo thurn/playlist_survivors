@@ -29,7 +29,9 @@ namespace Game.Client.Loop
     /// to the presenters at frameSong. The sim plays the slice's level (<see cref="SliceLevel"/>:
     /// the arena's level data, its horde and the sword) from the build's <see cref="LevelBake"/>;
     /// `--run` plays the run's schedule instead (<see cref="RunLevel"/>), and `--cast ROLE,...`
-    /// stands those roles in a row before a swordless hero, for the cast's stills.
+    /// stands those roles in a row before a swordless hero, for the cast's stills. `--level PATH` plays the run on
+    /// level files in place of the bake's (<see cref="LevelFiles"/>), and `--start-minute N` starts the run at N:00
+    /// with a hero built for it (<see cref="SimConfig.StartMinute"/>); each implies `--run`.
     /// Its music is the source Boot resolved from `--file` or `--app`, or the title screen's pick
     /// (<see cref="MusicSource"/>): played through the music plugin, which feeds the sim; live,
     /// song time is the music's (<see cref="MusicTimes"/>), calibrated for the output device it
@@ -62,13 +64,15 @@ namespace Game.Client.Loop
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
-    /// - `--debug "change@20,break@15"` and F5 to F8: the slice's debug hooks (<see cref="DebugCommands"/>);
+    /// - `--debug "change@20,spawn:werewolf@15"`, the F1 menu (<see cref="DebugMenu"/>) and F5 to F8: the debug commands
+    ///   (<see cref="DebugCommands"/>), which the sim records like keys;
     /// - `--arsenal "garlic:8,fire-trail:3"`: the hero's starting weapons and ranks, in slot order, in place of the sword;
     ///   `--no-cards`: levels count without opening their cards, so the arsenal stays as given (for weapons' stills);
     /// - `--walk "right@9-11,up@11-12.5"`: keys held over song-time spans (<see cref="ScriptedKeys"/>), for a walking hero in stills;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
-    /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included;
+    ///   a `--level` run isn't recorded, since a replay plays the build's own level;
+    /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included, with the enemies' flow field;
     /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
     /// - `--loop-out FILE`: writes each frame's times, the sim's hash, the hero and the enemies alive, as CSV;
@@ -105,6 +109,7 @@ namespace Game.Client.Loop
         MusicTimes _musicTimes;
         KeyInput _keys;
         DebugCommands _commands;
+        DebugMenu _menu;
         ScriptedKeys _walk;
         readonly SliceCounts _counts = new SliceCounts();
         DebugOverlay _overlay;
@@ -181,7 +186,7 @@ namespace Game.Client.Loop
             IGameClock clock = new FrameClock();
             SessionRecord replayed = null;
             if (source != null && source.IsReplay) replayed = SessionRecord.Read(source.Path);
-            else if (source != null && Sessions.Recording) _sessionDir = Sessions.Begin();
+            else if (source != null && Sessions.Recording && !Args.Has("--level")) _sessionDir = Sessions.Begin();
             if (source != null)
             {
                 var musicHost = new GameObject("Music");
@@ -198,8 +203,11 @@ namespace Game.Client.Loop
             ulong seed = (ulong)Math.Max(0, Args.GetInt("--seed", 1));
             var events = Args.Get("--events");
             bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
-            var level = LevelBake.Load();
+            // A replay plays the build's own level: a --level run isn't recorded.
+            var level = LevelFiles.Load(replayed == null ? Args.Get("--level") : null);
             var content = level?.Content();
+            int startMinute = Args.GetInt("--start-minute", 0);
+            if (startMinute < 0) throw new ArgumentException("--start-minute: a minute of the run, from 0");
             var config = new SimConfig { Seed = seed };
             if (replayed != null)
             {
@@ -217,7 +225,7 @@ namespace Game.Client.Loop
                 var footprint = CameraRig.Footprint(aspect);
                 var cast = Args.Get("--cast");
                 config = cast != null ? RunLevel.Lineup(content, arena ? level.Arena() : null, footprint, cast.Split(','), seed)
-                    : Args.Has("--run") ? RunLevel.Config(content, arena ? level.Arena() : null, footprint, seed)
+                    : Args.Has("--run") || Args.Has("--level") || startMinute > 0 ? RunLevel.Config(content, arena ? level.Arena() : null, footprint, seed)
                     : SliceLevel.Config(content, arena ? level.Arena() : null, footprint, seed);
             }
             _interactive = !headless && !_fixed;
@@ -225,6 +233,7 @@ namespace Game.Client.Loop
             {
                 config.Start = source == null ? RunStart.Immediately : _interactive ? RunStart.OnKey : RunStart.AfterClearBeat;
                 config.Easy = Args.Has("--easy");
+                if (config.Horde != null && config.Horde.Schedule) config.StartMinute = startMinute;
                 var arsenal = Args.Get("--arsenal");
                 if (arsenal != null && config.Arsenal != null)
                 {
@@ -242,7 +251,8 @@ namespace Game.Client.Loop
             _keys = new KeyInput();
             _pause = new PauseMenu(transform);
             _pauseAt = Args.GetFloat("--pause-at", -1);
-            _commands = new DebugCommands(Args.Get("--debug"));
+            _commands = new DebugCommands(Args.Get("--debug"), content);
+            _menu = new DebugMenu(camera, content);
             _walk = new ScriptedKeys(Args.Get("--walk"));
 
             var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
@@ -336,8 +346,9 @@ namespace Game.Client.Loop
             }
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
-                      $"{(config.Horde != null ? "the slice's level" : "no horde")}, events {(events ?? "none")}, headless {headless}, " +
-                      $"start {config.Start}, easy {config.Easy}");
+                      $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
+                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}" +
+                      (level != null && level.Replaced.Count > 0 ? $", --level files {string.Join(", ", level.Replaced)}" : ""));
         }
 
         /// <summary>`--arsenal`'s weapons: `id:rank`, comma-separated, in slot order.</summary>
@@ -420,6 +431,7 @@ namespace Game.Client.Loop
             {
                 _keyChanges += _keys.Drain(Driver.Sim, Driver.Clock);
                 _commands.Apply(Driver.Sim);
+                _menu.Apply(Driver.Sim, _commands);
                 _walk.Apply(Driver.Sim);
                 RunInput();
             }
@@ -438,6 +450,7 @@ namespace Game.Client.Loop
                     display = _music.Clock.DisplayLatency,
                 });
             _overlay.Toggle();
+            _menu.Present(Driver.Sim);
             if (_replay != null)
             {
                 if (_replay.Done(Driver.Sim) || _music.Ended) FinishReplay();
@@ -689,6 +702,7 @@ namespace Game.Client.Loop
             _evolutions?.Dispose();
             _lightning?.Dispose();
             _hud?.Dispose();
+            _overlay?.Dispose();
             _out?.Dispose();
             _out = null;
             _structuresOut?.Dispose();

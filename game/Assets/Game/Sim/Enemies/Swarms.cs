@@ -78,6 +78,9 @@ namespace PS.Game.Sim
             }
         }
 
+        /// <summary>The run clock jumped into <paramref name="minute"/>: the minutes passed never arm, the new one arms at the next tick.</summary>
+        public void Skip(int minute) => entered = Math.Max(entered, Math.Min(schedule.Minutes.Length - 1, minute) - 1);
+
         public void Tick(Simulation sim, double end, double hx, double hy)
         {
             if (m.Natural)

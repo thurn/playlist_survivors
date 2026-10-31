@@ -15,6 +15,8 @@ namespace PS.Game.Sim
         Open = 0,
         /// <summary><see cref="SliceLevel"/>'s horde and sword.</summary>
         Slice = 1,
+        /// <summary><see cref="RunLevel"/>'s schedule, events and arsenal.</summary>
+        Run = 2,
     }
 
     /// <summary>
@@ -24,8 +26,8 @@ namespace PS.Game.Sim
     /// <item><c>inputs.bin</c>: everything a replay needs, exactly (little-endian, doubles as their bits,
     /// so no runtime's number formatting can move a replay): the config's inputs, each entry's
     /// <see cref="EntryRecord"/> in arrival order (entry i is <c>entries.jsonl</c>'s line i), every key
-    /// change, debug command and run control in the order the sim took them, the frontier the run settled to and
-    /// its hash;</item>
+    /// change, debug command (with its argument) and run control in the order the sim took them, the frontier the
+    /// run settled to and its hash;</item>
     /// <item><c>run.json</c>: the same run for people: the build, runtime, platform, source and flags,
     /// the seed, the level, the end, the hash and the counts.</item>
     /// </list>
@@ -33,18 +35,20 @@ namespace PS.Game.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        const int Version = 1;
+        /// <summary>Version 2 added the start minute and each input's argument; version 1 still reads.</summary>
+        const int Version = 2;
         static readonly byte[] Magic = { (byte)'P', (byte)'S', (byte)'R', (byte)'U', (byte)'N' };
         const byte Press = 0, Release = 1, Command = 2, Control = 3;
 
         // The config's inputs.
         public ulong Seed;
         public double StartTime, Gate, KnownAtBudget;
+        public int StartMinute;
         public bool Easy, HeroStands;
         public RunStart Start;
         public SessionLevel Level;
         public bool Arena;
-        /// <summary>The slice's camera footprint (<see cref="HordeConfig.CameraFootprint"/>); empty for an open level.</summary>
+        /// <summary>The level's camera footprint (<see cref="HordeConfig.CameraFootprint"/>); empty for an open level.</summary>
         public double[] Footprint = new double[0];
 
         // The inputs, and where they led.
@@ -72,25 +76,25 @@ namespace PS.Game.Sim
 #endif
 
         /// <summary>
-        /// The session of <paramref name="sim"/>, run on <paramref name="config"/>: the slice's level or an
+        /// The session of <paramref name="sim"/>, run on <paramref name="config"/>: the run's level, the slice's or an
         /// open one, which is what <see cref="Config"/> can rebuild.
         /// </summary>
         public static SessionRecord Of(SimConfig config, Simulation sim)
         {
-            if (config.Horde != null && (config.Arsenal == null || !Same(config.Horde.Roster, SliceLevel.Roster) || !StartsAsTheSlice(config.Arsenal)))
-                throw new NotSupportedException("a session records the slice's level or an open one");
+            var level = LevelOf(config);
             if (config.Arsenal != null && !config.Arsenal.StartsAsTheRun)
                 throw new NotSupportedException("a session records the run's own starting arsenal, not a loadout");
             return new SessionRecord
             {
                 Seed = config.Seed,
                 StartTime = config.StartTime,
+                StartMinute = config.StartMinute,
                 Gate = config.Gate,
                 KnownAtBudget = config.KnownAtBudget,
                 Easy = config.Easy,
                 HeroStands = config.HeroStands,
                 Start = config.Start,
-                Level = config.Horde != null ? SessionLevel.Slice : SessionLevel.Open,
+                Level = level,
                 Arena = config.Arena != null,
                 Footprint = config.Horde?.CameraFootprint != null ? (double[])config.Horde.CameraFootprint.Clone() : new double[0],
                 Entries = sim.Stream.Accepted.ToArray(),
@@ -102,6 +106,17 @@ namespace PS.Game.Sim
                 Hash = sim.Hash,
                 Runtime = CurrentRuntime,
             };
+        }
+
+        /// <summary>Which level <paramref name="config"/> is, as <see cref="Config"/> would rebuild it.</summary>
+        static SessionLevel LevelOf(SimConfig config)
+        {
+            var horde = config.Horde;
+            if (horde == null) return SessionLevel.Open;
+            if (config.Arsenal != null && horde.Schedule && horde.MusicEvents && horde.Lineup.Length == 0 && !config.HeroStands)
+                return SessionLevel.Run;
+            if (config.Arsenal != null && Same(horde.Roster, SliceLevel.Roster) && StartsAsTheSlice(config.Arsenal)) return SessionLevel.Slice;
+            throw new NotSupportedException("a session records the run's level, the slice's or an open one");
         }
 
         /// <summary>The slice's starting arsenal (a player's `--arsenal` changes it, which <see cref="Config"/> couldn't rebuild).</summary>
@@ -126,8 +141,11 @@ namespace PS.Game.Sim
             if (Arena && arena == null) throw new ArgumentException("the session played an arena", nameof(arena));
             var config = Level == SessionLevel.Slice
                 ? SliceLevel.Config(content ?? throw new ArgumentNullException(nameof(content)), Arena ? arena : null, Footprint, Seed)
-                : new SimConfig { Seed = Seed, Arena = Arena ? arena : null };
+                : Level == SessionLevel.Run
+                    ? RunLevel.Config(content ?? throw new ArgumentNullException(nameof(content)), Arena ? arena : null, Footprint, Seed)
+                    : new SimConfig { Seed = Seed, Arena = Arena ? arena : null };
             config.StartTime = StartTime;
+            config.StartMinute = StartMinute;
             config.Gate = Gate;
             config.KnownAtBudget = KnownAtBudget;
             config.Easy = Easy;
@@ -146,6 +164,7 @@ namespace PS.Game.Sim
                 w.Write(Version);
                 w.Write(Seed);
                 w.Write(StartTime);
+                w.Write(StartMinute);
                 w.Write(Gate);
                 w.Write(KnownAtBudget);
                 w.Write(Easy);
@@ -170,6 +189,7 @@ namespace PS.Game.Sim
                 {
                     w.Write(input.Type);
                     w.Write(input.Code);
+                    w.Write(input.Arg);
                     w.Write(input.Heard);
                     w.Write(input.Effective);
                 }
@@ -181,6 +201,7 @@ namespace PS.Game.Sim
         struct Input
         {
             public byte Type, Code;
+            public int Arg;
             public double Heard, Effective;
             public int Order;
         }
@@ -192,7 +213,7 @@ namespace PS.Game.Sim
             foreach (var k in Keys)
                 inputs.Add(new Input { Type = k.Down ? Press : Release, Code = (byte)k.Key, Heard = k.Heard, Effective = k.Effective, Order = k.Order });
             foreach (var c in Commands)
-                inputs.Add(new Input { Type = Command, Code = (byte)c.Command, Effective = c.Effective, Order = c.Order });
+                inputs.Add(new Input { Type = Command, Code = (byte)c.Command, Arg = c.Arg, Effective = c.Effective, Order = c.Order });
             foreach (var c in Controls)
                 inputs.Add(new Input { Type = Control, Code = (byte)c.Control, Effective = c.Effective, Order = c.Order });
             inputs.Sort((a, b) => a.Order.CompareTo(b.Order));
@@ -210,9 +231,10 @@ namespace PS.Game.Sim
                 for (int i = 0; i < Magic.Length; i++)
                     if (magic.Length != Magic.Length || magic[i] != Magic[i]) throw new FormatException(path + ": not a session's inputs");
                 int version = reader.ReadInt32();
-                if (version != Version) throw new FormatException($"{path}: version {version}, not {Version}");
+                if (version != Version && version != 1) throw new FormatException($"{path}: version {version}, not {Version}");
                 r.Seed = reader.ReadUInt64();
                 r.StartTime = reader.ReadDouble();
+                if (version >= 2) r.StartMinute = reader.ReadInt32();
                 r.Gate = reader.ReadDouble();
                 r.KnownAtBudget = reader.ReadDouble();
                 r.Easy = reader.ReadBoolean();
@@ -235,8 +257,9 @@ namespace PS.Game.Sim
                 for (int i = 0; i < n; i++)
                 {
                     byte type = reader.ReadByte(), code = reader.ReadByte();
+                    int arg = version >= 2 ? reader.ReadInt32() : 0;
                     double heard = reader.ReadDouble(), effective = reader.ReadDouble();
-                    if (type == Command) commands.Add(new DebugRecord { Command = (DebugCommand)code, Effective = effective, Order = i });
+                    if (type == Command) commands.Add(new DebugRecord { Command = (DebugCommand)code, Arg = arg, Effective = effective, Order = i });
                     else if (type == Control) controls.Add(new ControlRecord { Control = (RunControl)code, Effective = effective, Order = i });
                     else if (type == Press || type == Release)
                         keys.Add(new KeyRecord { Key = (Key)code, Down = type == Press, Heard = heard, Effective = effective, Order = i });
@@ -278,13 +301,13 @@ namespace PS.Game.Sim
             return string.Format(c,
                 "{{\n  \"format\": \"ps-game-session\",\n  \"version\": {0},\n  \"build\": {1},\n  \"runtime\": {2},\n" +
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"level\": {7},\n" +
-                "  \"arena\": {8},\n  \"easy\": {9},\n  \"heroStands\": {10},\n  \"startTime\": {11:R},\n  \"end\": {12:R},\n" +
+                "  \"arena\": {8},\n  \"easy\": {9},\n  \"heroStands\": {10},\n  \"startTime\": {11:R},\n  \"startMinute\": {20},\n  \"end\": {12:R},\n" +
                 "  \"hash\": \"{13:X16}\",\n  \"events\": {14},\n  \"entries\": {15},\n  \"keys\": {16},\n  \"commands\": {17},\n" +
                 "  \"start\": {18},\n  \"controls\": {19}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, Seed,
-                Quote(Level == SessionLevel.Slice ? "slice" : "open"), Arena ? "true" : "false", Easy ? "true" : "false",
+                Quote(Level == SessionLevel.Slice ? "slice" : Level == SessionLevel.Run ? "run" : "open"), Arena ? "true" : "false", Easy ? "true" : "false",
                 HeroStands ? "true" : "false", StartTime, End, Hash, Events, Entries.Length, Keys.Length, Commands.Length,
-                Quote(Start.ToString()), Controls.Length);
+                Quote(Start.ToString()), Controls.Length, StartMinute);
         }
 
         static string Quote(string s)

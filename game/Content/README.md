@@ -13,7 +13,7 @@ same files under .NET and Unity.
 | weapons.json | Weapons and their five evolutions: grid, geometry, every rank's numbers |
 | passives.json | The eight passives, their ranks and per-rank stat changes |
 | offers.json | The scripted offer table (levels 2 to 70), its fallback and the "any" scan order |
-| progression.json | Slots, the hero's stats and caps, the experience curve, gems and chests |
+| progression.json | Slots, the hero's stats and caps, the experience curve, gems and chests, and the start levels `--start-minute` builds the hero to |
 | schedule.json | The run: its cap and loudness scale, its minutes (spawns, bosses, swarms, treasure), the bosses' moves, set pieces, the signature minotaur, the finale and zones |
 | arena-layout.json | The arena's layout (demo3d's format): areas, structures, scatter, lighting, the zones' palettes, the stills' shots |
 | footprints.json | demo3d's footprint measurements of the kit pieces game/manifest.json syncs, which the layout places |
@@ -43,7 +43,8 @@ The one-shot converter is `uv run --project demo3d/tools game content` (demo3d/t
 demo3d_tools/content.py). It reads native's content/*.yaml, levels/survivors.yaml and the numbers
 native's Rust sim keeps in code, and wrote these files. The game now edits its JSON by hand
 (ps-msz.6.2 added schedule.json's `run.levelScale`, `levelSmoothS` and `clumpS`, and
-`bossMoves`), so `game content --check` no longer matches and the converter is history.
+`bossMoves`; ps-msz.6.12 progression.json's `startLevels`), so `game content --check` no longer
+matches and the converter is history.
 
 ## From native
 

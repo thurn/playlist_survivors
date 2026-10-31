@@ -147,6 +147,16 @@ namespace PS.Game.Sim
             }
         }
 
+        /// <summary>The run clock jumped <paramref name="delta"/> ahead: the flying gems' steps move with it.</summary>
+        internal void Shift(double delta)
+        {
+            for (int i = 0; i < flyingCount; i++)
+            {
+                flying[i].Start += delta;
+                flying[i].Next += delta;
+            }
+        }
+
         /// <summary>
         /// One 60 Hz step of native's attraction toward the hero at (hx, hy): returns whether the
         /// gem's path passed within the hero's body and its own, which collects it.

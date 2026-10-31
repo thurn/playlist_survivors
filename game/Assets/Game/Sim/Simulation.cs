@@ -103,6 +103,11 @@ namespace PS.Game.Sim
                 Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
                 if (Horde != null) Horde.Chickens = Chickens;
             }
+            if (config.StartMinute > 0)
+            {
+                Run.JumpTo(this, State.Now, config.StartMinute * 60.0);
+                Arsenal?.LevelUps.Reach(State.Now, content.Progression.StartLevel(config.StartMinute));
+            }
             Horde?.Begin(this);
         }
 
@@ -132,6 +137,9 @@ namespace PS.Game.Sim
         internal RunRules Run { get; }
         /// <summary>Easy's floor chickens, or null off Easy.</summary>
         internal FloorChickens Chickens { get; }
+
+        /// <summary>The enemies' flow field toward the hero, for the debug overlay.</summary>
+        public FlowFieldView FlowField => new FlowFieldView(Horde?.Field);
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -178,12 +186,13 @@ namespace PS.Game.Sim
         public ReadOnlySpan<KeyRecord> Keys => keys.AsSpan();
 
         /// <summary>
-        /// Gives a debug command (<see cref="DebugCommand"/>); it takes effect now, recorded like a
-        /// key. A command whose system the run lacks (no zones, no sword) does nothing.
+        /// Gives a debug command (<see cref="DebugCommand"/>) with its argument, if it takes one; it
+        /// takes effect now, recorded like a key. A command whose system the run lacks (no zones, no
+        /// sword, no arsenal) or whose argument names nothing in the content does nothing.
         /// </summary>
-        public void Command(DebugCommand command)
+        public void Command(DebugCommand command, int arg = 0)
         {
-            commands.Add(new DebugRecord { Command = command, Effective = Now, Order = inputs++ });
+            commands.Add(new DebugRecord { Command = command, Arg = arg, Effective = Now, Order = inputs++ });
             switch (command)
             {
                 case DebugCommand.SectionChange:
@@ -204,6 +213,27 @@ namespace PS.Game.Sim
                     break;
                 case DebugCommand.Chest:
                     Chests?.DropAhead(this, Now);
+                    break;
+                case DebugCommand.JumpClock:
+                    Run.JumpTo(this, Now, arg);
+                    break;
+                case DebugCommand.SpawnRole:
+                    Horde?.SpawnInView(this, Now, arg);
+                    break;
+                case DebugCommand.SpawnBoss:
+                    Horde?.Spawner.Summon(arg);
+                    break;
+                case DebugCommand.GrantWeapon:
+                    Arsenal?.Grant(CardItem.Weapon, arg);
+                    break;
+                case DebugCommand.GrantPassive:
+                    Arsenal?.Grant(CardItem.Passive, arg, Now);
+                    break;
+                case DebugCommand.GrantEvolution:
+                    Arsenal?.GrantEvolution(arg, Now);
+                    break;
+                case DebugCommand.Invulnerable:
+                    State.Hero.Invulnerable = arg != 0;
                     break;
                 default:
                     Horde?.Music.Force(command, Now);

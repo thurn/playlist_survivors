@@ -219,6 +219,58 @@ namespace PS.Game.Sim
             if (Stats.MaxHp > before) health.Heal(t, Stats.MaxHp - before, 0);
         }
 
+        /// <summary>
+        /// The debug surfaces' grant (<see cref="DebugCommand.GrantWeapon"/>, <see cref="DebugCommand.GrantPassive"/>): a rank of
+        /// content weapon or passive <paramref name="index"/> at <paramref name="t"/>, as a card's, when a card could offer it
+        /// (a base weapon whose evolution isn't owned; below its top rank, owned or with a slot free). False when it can't.
+        /// </summary>
+        public bool Grant(CardItem item, int index, double t = 0)
+        {
+            if (item == CardItem.Weapon)
+            {
+                if (index < 0 || index >= content.Weapons.Length) return false;
+                var def = content.Weapons[index];
+                int rank = WeaponRank(index);
+                if (def.IsEvolution || OwnsEvolutionOf(index) || rank >= def.MaxRank || (rank == 0 && WeaponSlotsFull)) return false;
+                Learn(index);
+                return true;
+            }
+            if (index < 0 || index >= content.Passives.Length) return false;
+            int owned = PassiveRank(index);
+            if (owned >= content.Passives[index].MaxRank || (owned == 0 && PassiveSlotsFull)) return false;
+            LearnPassive(t, index);
+            return true;
+        }
+
+        /// <summary>
+        /// The debug surfaces' evolution (<see cref="DebugCommand.GrantEvolution"/>) at <paramref name="t"/>: its base weapon
+        /// raised to its top rank and its partner passive learned, as needed, then <see cref="Evolve"/>. Nothing changes when
+        /// the slots for them aren't free, or the evolution or one of its base is owned already.
+        /// </summary>
+        public bool GrantEvolution(int evolution, double t)
+        {
+            if (evolution < 0 || evolution >= content.Weapons.Length || !content.Weapons[evolution].IsEvolution) return false;
+            var def = content.Weapons[evolution];
+            int weapon = content.WeaponIndex(def.EvolutionOf), partner = content.PassiveIndex(def.Requires);
+            if (OwnsEvolutionOf(weapon) || (WeaponRank(weapon) == 0 && WeaponSlotsFull)
+                || (PassiveRank(partner) == 0 && PassiveSlotsFull)) return false;
+            while (WeaponRank(weapon) < content.Weapons[weapon].MaxRank) Learn(weapon);
+            if (PassiveRank(partner) == 0) LearnPassive(t, partner);
+            Evolve(evolution);
+            return true;
+        }
+
+        /// <summary>
+        /// The run clock jumped <paramref name="delta"/> ahead (<see cref="RunRules.JumpTo"/>): the slots' cooldowns, the
+        /// recovery and the flying gems move with it, so the time jumped over never comes due at once.
+        /// </summary>
+        internal void Shift(double delta)
+        {
+            for (int s = 0; s < state.WeaponCount; s++) slots[s].NextReady += delta;
+            recoveredTo += delta;
+            Gems.Shift(delta);
+        }
+
         void ApplyStats()
         {
             var caps = content.Progression.Hero;

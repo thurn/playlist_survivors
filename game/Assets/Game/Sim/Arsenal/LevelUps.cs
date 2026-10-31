@@ -70,10 +70,30 @@ namespace PS.Game.Sim
             Open(sim, t);
         }
 
+        /// <summary>
+        /// <see cref="SimConfig.StartMinute"/>'s build: the hero reaches <paramref name="level"/> at once, with the
+        /// experience it starts that level at, taking each level's first card on the way as a run nobody plays does
+        /// (<see cref="AutoCards"/>), without opening any.
+        /// </summary>
+        public void Reach(double t, int level)
+        {
+            Span<OfferCard> c = stackalloc OfferCard[3];
+            while (state.Level < level)
+            {
+                state.Level++;
+                Offers.Cards(content, arsenal, state.Level, c);
+                Give(t, c[0]);
+            }
+            state.Experience = Math.Max(state.Experience, curve.Total(state.Level - 1));
+            Publish();
+        }
+
+        /// <summary>The level and the experience bar's ends, and the hero's level that scales enemies' health at their spawn.</summary>
         void Publish()
         {
             state.ExperienceFloor = curve.Total(state.Level - 1);
             state.ExperienceNext = curve.Total(state.Level);
+            state.Hero.Level = state.Level;
         }
 
         void Open(Simulation sim, double t)
@@ -141,7 +161,18 @@ namespace PS.Game.Sim
         void Pick(Simulation sim, double t)
         {
             var offer = state.Offer;
-            var card = offer.Card(offer.Selected);
+            Give(t, offer.Card(offer.Selected));
+            offer.Open = false;
+            state.Offer = offer;
+            state.PendingLevels--;
+            sim.Emit(SimEvent.Card(t, offer.Serial, offer.Selected, true));
+            if (state.PendingLevels > 0) Open(sim, t);
+            else run.Thaw(FreezeReason.LevelUp);
+        }
+
+        /// <summary>A card's item at <paramref name="t"/>: a weapon's or passive's rank, or the heal.</summary>
+        void Give(double t, OfferCard card)
+        {
             switch (card.Item)
             {
                 case CardItem.Weapon:
@@ -154,12 +185,6 @@ namespace PS.Game.Sim
                     health.Heal(t, content.Progression.MaxedHeal, 0);
                     break;
             }
-            offer.Open = false;
-            state.Offer = offer;
-            state.PendingLevels--;
-            sim.Emit(SimEvent.Card(t, offer.Serial, offer.Selected, true));
-            if (state.PendingLevels > 0) Open(sim, t);
-            else run.Thaw(FreezeReason.LevelUp);
         }
     }
 }

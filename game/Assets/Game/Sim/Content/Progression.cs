@@ -218,6 +218,21 @@ namespace PS.Game.Sim.Content
         public ChestRules Chests;
         /// <summary>The card offered when everything is maxed heals this much.</summary>
         public double MaxedHeal;
+        /// <summary>
+        /// The level a run started at a minute is built to (<see cref="SimConfig.StartMinute"/>): StartLevels[i] at minute
+        /// <see cref="StartLevelEveryMin"/> x i, the design's pacing (about level 10 by minute 5), straight between them.
+        /// </summary>
+        public int[] StartLevels;
+        public const int StartLevelEveryMin = 5;
+
+        /// <summary>The level a run started at <paramref name="minute"/> is built to.</summary>
+        public int StartLevel(int minute)
+        {
+            double at = Math.Max(0, minute) / (double)StartLevelEveryMin;
+            int i = Math.Min(StartLevels.Length - 1, (int)Math.Floor(at));
+            if (i == StartLevels.Length - 1) return StartLevels[i];
+            return (int)Math.Round(StartLevels[i] + (StartLevels[i + 1] - StartLevels[i]) * (at - i));
+        }
 
         internal static Progression Read(ContentReader r)
         {
@@ -288,6 +303,12 @@ namespace PS.Game.Sim.Content
             chests.End();
 
             p.MaxedHeal = r.Number("maxedHeal");
+            p.StartLevels = r.Ints("startLevels");
+            if (p.StartLevels.Length == 0 || p.StartLevels[0] != 1)
+                throw ContentReader.Fail(r.Child("startLevels"), "the first start level must be 1, minute 0's");
+            for (int i = 1; i < p.StartLevels.Length; i++)
+                if (p.StartLevels[i] < p.StartLevels[i - 1] || p.StartLevels[i] > OfferTable.LastLevel)
+                    throw ContentReader.Fail(r.Child("startLevels"), "start levels must not fall, nor pass the offer table's last level");
             return p;
         }
     }

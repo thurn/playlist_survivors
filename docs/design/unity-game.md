@@ -946,7 +946,7 @@ keys and time, and reads state and an event log.
 sim.Add(StreamEntry e);         // held by the sim until its known_at
 sim.AddKnown(StreamEntry e, double knownAt); // a replay's recorded known_at
 sim.Press(Key k, double heard);  // effective time = the sim's current time
-sim.Command(DebugCommand c);     // the debug surfaces', effective now, like a key
+sim.Command(DebugCommand c, int arg = 0); // the debug surfaces', effective now, like a key
 sim.Control(RunControl c);       // start, pause, resume, Backspace, device change, watchdog: effective now
 sim.StepTo(double songTime);
 ReadOnlySpan<SimEvent> sim.EventsSince(int cursor);
@@ -1043,8 +1043,11 @@ debugged.
   the run's end frontier, event count and hash, the entries' records and the
   inputs, doubles as their bits, so no runtime's number formatting can move a
   replay. `run.json` repeats it for people, with the build, runtime, platform,
-  source and command line. A session records the slice's level or an open one
-  (what `SessionRecord.Config` rebuilds); M3's levels extend it.
+  source and command line. A session records the run's level, the slice's or an
+  open one (what `SessionRecord.Config` rebuilds), with the run's start minute;
+  version 2 (ps-msz.6.12) added each input's argument (a debug command's role,
+  weapon or time) and the start minute, and version 1 still reads. A `--level`
+  run isn't recorded, since its replay would play the build's own level.
 - **The Replay source** (`native/crates/plugin/src/replay.rs`) plays
   `audio.wav` (the analyzer's 44.1 kHz mono input, on both channels,
   interpolated to the output rate by the render thread as a System source's
@@ -2509,11 +2512,12 @@ of the camera's loud view (`CameraRig.Footprint`). A level bake (`LevelBaker`,
 BakeAll's "Level") copies the sim's content and arena.json into the player.
 `--events FILE` still drives the presenters alone, with no horde or sword.
 
-- **Debug hooks** until M3's F1 menu: F5 forces a section change, F6 an
+- **Debug hooks**: F5 forces a section change, F6 an
   accent, F7 breaks every structure within 15 m of the hero (large ones at
   once) and F8 regrows the broken ones. `--debug "change@44,break@47"` gives
   them at song times. They are the sim's `Command(DebugCommand)`, recorded with
-  their effective time like keys.
+  their effective time like keys. M3's F1 menu keeps them
+  ([Debug surfaces](#debug-surfaces)).
 - **The evidence gate is native's 0.2.** At the sim's earlier 0.5, house-128's
   beat (evidence 0.48 to 0.51) flickered below the gate, and the horde held
   still for most of the song.
@@ -2687,3 +2691,44 @@ The game provides these so each state above can be reached on demand:
 - An overlay: song time, heard time, frontier and lead; the stream's next
   beats with their `known_at`; press strides as they happen; the flow field;
   frame and sim timings. F3 toggles it; stills leave it out unless asked.
+
+**Shipped (ps-msz.6.12).** Every command is the sim's `Command(DebugCommand,
+arg)`, recorded with its argument and effective time like a key, so sessions
+replay it (`Sim/DebugCommands.cs`). Decisions:
+
+- **The F1 menu** (`Client/Loop/DebugMenu.cs`) is text at the view's top
+  right. A row's letter gives its command and Shift with the letter moves the
+  row's choice on: J jumps the run clock to the next minute, M spawns a role in
+  view, B a boss (due now, landing on the next downbeat with the minute's
+  treasure if no boss carried it), G and P grant a rank of a weapon or passive
+  as a card would, E grants an evolution (its base raised to the top rank and
+  its partner passive added as needed), N starts a music-driven event, C forces
+  a section change, X an accent, F the finale, T drops a chest ahead, K breaks
+  structures, R regrows them and I toggles invulnerability (hits land for
+  nothing). Its letters are none of the hero's keys, so nothing pauses: the run
+  plays on with the menu open.
+- **`--debug "name[:arg]@seconds,..."`** gives any command at a song time for
+  headless runs and stills: jump:MINUTES, spawn:ROLE, boss:ROLE, weapon:ID,
+  passive:ID, evolve:ID and invulnerable[:0] beside the plain names.
+- **A jump** moves the run clock forward only. The timers that count it and
+  would otherwise burst (the weapons' cooldowns, recovery, the gems in flight)
+  move with it, and the minutes passed bring no bosses or swarms: the new
+  minute's come due.
+- **`--start-minute N`** starts the run clock at N:00 through the same jump,
+  and builds the hero to progression.json's `startLevels` for that minute
+  (levels 1, 10, 15, 19, 23, 27 and 30 at minutes 0 to 30, straight between,
+  the design's pacing), each level taking its offer's first card as a run
+  nobody plays does. At 25:00 that is level 27 with Sword 8, Hollow Heart,
+  Garlic 8 and Pummarola: the minute's boss chest evolves both.
+- **`--level PATH`** is a folder of level files (the content files and
+  arena.json; game/Content itself works) or one such file, in place of the
+  bake's copies, so an edited schedule plays without a rebake. Its arena
+  changes the sim's tiles only; the arena drawn is the build's. It and
+  `--start-minute` imply `--run`.
+- **The overlay** adds the run clock, level and invulnerability, and draws the
+  enemies' flow field on the ground within 18 m of the hero: an arrow per
+  0.75 m cell, cyan near the hero to magenta at the field's reach, and a red
+  cross on blocked cells (`Client/Loop/FlowFieldLines.cs`).
+- Fixed in passing: the hero's level never reached the bosses and level-scaled
+  roles, whose health took level 1; it now scales by the hero's level.
+- Evidence: [game/evidence/debug](../../game/evidence/debug/README.md).

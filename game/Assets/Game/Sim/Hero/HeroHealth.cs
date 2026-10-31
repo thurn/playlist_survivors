@@ -10,7 +10,8 @@ namespace PS.Game.Sim
     /// <c>invulnerableS</c> (native's 0.12 s lockout). At no health the hero falls: a
     /// <see cref="SimEventKind.Death"/> with enemy -1, "YOU FELL". A standing hero
     /// (<see cref="SimConfig.HeroStands"/>, for bots and evidence runs) keeps a tenth of its health,
-    /// so its hits still land and show. A fall ends the run (<see cref="RunEnd.Death"/>).
+    /// so its hits still land and show; an invulnerable one (<see cref="HeroState.Invulnerable"/>, the debug
+    /// surfaces') takes none. A fall ends the run (<see cref="RunEnd.Death"/>).
     /// </summary>
     internal sealed class HeroHealth
     {
@@ -53,7 +54,7 @@ namespace PS.Game.Sim
             if (hero.Fallen) return;
             hero.PositionAt(t, out double hx, out double hy);
             double damage = 0;
-            if (t >= hurtableFrom - 1e-9)
+            if (t >= hurtableFrom - 1e-9 && !hero.Invulnerable)
             {
                 damage = Math.Max(1, power * contactScale - Armor);
                 hurtableFrom = t + lockout;

@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Text;
 using PS.Game.Sim;
@@ -9,19 +10,20 @@ namespace Game.Client.Loop
     /// <summary>
     /// The debug overlay (unity-game.md, Debug Surfaces): song, heard and frame time, the frontier
     /// and lead; the stream's next beats with their known_at; press strides as they happen (when
-    /// each was taken, and how far before that it is drawn from); the frame's and sim's timings.
+    /// each was taken, and how far before that it is drawn from); the run clock; the frame's and sim's
+    /// timings; and on the ground, the enemies' flow field around the hero (<see cref="FlowFieldLines"/>).
     /// F3 toggles it; it starts hidden, so stills leave it out unless
-    /// `--overlay` asks for it. It is text in the camera's view, in front of everything, so the
-    /// windowless stills draw it too. It builds its text only while shown.
+    /// `--overlay` asks for it. Its text is in the camera's view, in front of everything (<see cref="ViewText"/>),
+    /// so the windowless stills draw it too. It builds its text and lines only while shown.
     /// </summary>
-    public sealed class DebugOverlay : IPresenter
+    public sealed class DebugOverlay : IPresenter, IDisposable
     {
         const int PressStrides = 4, NextBeats = 4;
-        const float Distance = 1f, Margin = 0.03f;
 
         readonly Camera _camera;
         readonly SimDriver _driver;
         readonly TextMesh _text;
+        readonly FlowFieldLines _field = new FlowFieldLines();
         readonly StringBuilder _sb = new StringBuilder(1024);
         readonly double[] _pressAt = new double[PressStrides];
         readonly double[] _pressLag = new double[PressStrides];
@@ -31,17 +33,8 @@ namespace Game.Client.Loop
         {
             _camera = camera;
             _driver = driver;
-            var go = new GameObject("Debug overlay");
-            if (camera != null) go.transform.SetParent(camera.transform, false);
-            _text = go.AddComponent<TextMesh>();
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _text.font = font;
-            go.GetComponent<MeshRenderer>().sharedMaterial = font.material;
-            _text.fontSize = 48;
-            _text.characterSize = 0.0055f;
-            _text.anchor = TextAnchor.UpperLeft;
-            _text.color = new Color(0.6f, 1f, 0.7f);
-            go.SetActive(shown);
+            _text = ViewText.Make(camera, "Debug overlay", right: false, new Color(0.6f, 1f, 0.7f));
+            _text.gameObject.SetActive(shown);
         }
 
         public bool Shown => _text.gameObject.activeSelf;
@@ -50,8 +43,12 @@ namespace Game.Client.Loop
         public void Toggle()
         {
             var keyboard = Keyboard.current;
-            if (keyboard != null && keyboard.f3Key.wasPressedThisFrame) _text.gameObject.SetActive(!Shown);
+            if (keyboard == null || !keyboard.f3Key.wasPressedThisFrame) return;
+            _text.gameObject.SetActive(!Shown);
+            if (!Shown) _field.Hide();
         }
+
+        public void Dispose() => _field.Dispose();
 
         public void OnEvent(in SimEvent e)
         {
@@ -64,7 +61,9 @@ namespace Game.Client.Loop
         public void Present(in PresentFrame frame)
         {
             if (!Shown) return;
-            Place();
+            ViewText.Place(_camera, _text);
+            frame.State.Hero.PositionAt(frame.Song, out double hx, out double hy);
+            _field.Draw(_driver.Sim.FlowField, hx, hy);
             var c = CultureInfo.InvariantCulture;
             var t = _driver.Times;
             var sim = _driver.Sim;
@@ -86,21 +85,13 @@ namespace Game.Client.Loop
                 int slot = (_pressCount - 1 - k) % PressStrides;
                 _sb.AppendFormat(c, "  {0:F3} (drawn {1:F0} ms before)", _pressAt[slot], 1000 * _pressLag[slot]);
             }
+            var run = sim.State;
+            _sb.AppendFormat(c, "\nrun {0} clock {1}:{2:00.0}  level {3}  alive {4}{5}{6}", run.Phase, (int)(run.RunClock / 60),
+                run.RunClock % 60, run.Level, run.EnemiesAlive, run.Hero.Invulnerable ? "  INVULNERABLE" : "",
+                _field.Arrows > 0 ? $"  flow field {_field.Arrows} cells" : "");
             _sb.AppendFormat(c, "\nframe {0:F1} ms  loop {1:F2} ms  sim {2:F3} ms  tick {3}  events {4}",
                 1000 * Time.unscaledDeltaTime, _driver.FrameMs, _driver.StepMs, sim.State.Tick, sim.EventCount);
             _text.text = _sb.ToString();
-        }
-
-        /// <summary>Keeps the text at the view's top left, whatever the aspect (a still's is 16:9).</summary>
-        void Place()
-        {
-            if (_camera == null) return;
-            float aspect = Application.isBatchMode ? (float)Stills.Width / Stills.Height : _camera.aspect;
-            float h = Distance * Mathf.Tan(0.5f * _camera.fieldOfView * Mathf.Deg2Rad);
-            var t = _text.transform;
-            t.localPosition = new Vector3(-h * aspect * (1 - Margin), h * (1 - Margin), Distance);
-            t.localRotation = Quaternion.identity;
-            t.localScale = Vector3.one * (h / 0.58f); // the same size on screen at any field of view
         }
     }
 }

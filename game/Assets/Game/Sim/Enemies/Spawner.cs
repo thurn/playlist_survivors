@@ -56,7 +56,7 @@ namespace PS.Game.Sim
         // Each role's clump: its point's angle around the hero and the run clock it was chosen at.
         readonly double[] clumpAngle, clumpBorn;
         // Bosses due and waiting to land: their roles and minutes.
-        readonly int[] bossRole, bossMinute;
+        int[] bossRole, bossMinute;
         int bossCount;
         double bossDue;
         // The minutes whose treasure a boss already carries (native's one chest a minute).
@@ -165,6 +165,33 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
+        /// The run clock jumped to <paramref name="runClock"/> (<see cref="RunRules.JumpTo"/>): the minutes passed bring
+        /// no bosses, the new minute's come due at the next tick, and waves go on from now.
+        /// </summary>
+        public void Skip(double runClock)
+        {
+            if (run) minute = Math.Max(minute, Math.Min(schedule.Minutes.Length - 1, (int)Math.Floor(runClock / 60 + 1e-9)) - 1);
+            nextWave = Math.Max(nextWave, runClock);
+        }
+
+        /// <summary>
+        /// The debug surfaces' boss (<see cref="DebugCommand.SpawnBoss"/>): <paramref name="role"/> due now, at the current
+        /// minute, landing as the schedule's bosses do, with that minute's treasure if no boss carried it yet.
+        /// </summary>
+        public void Summon(int role)
+        {
+            if (role < 0 || role >= roles.Length) return;
+            if (bossCount == bossRole.Length)
+            {
+                Array.Resize(ref bossRole, bossRole.Length + 4);
+                Array.Resize(ref bossMinute, bossMinute.Length + 4);
+            }
+            if (bossCount == 0) bossDue = state.RunClock;
+            bossRole[bossCount] = role;
+            bossMinute[bossCount++] = minute;
+        }
+
+        /// <summary>
         /// The lineup (<see cref="HordeConfig.Lineup"/>) at the sim's start: a row across the hero's
         /// view <see cref="LineupAheadM"/> ahead of it (+y), each body clear of the next, schedule.json's
         /// boss-move roles as bosses.
@@ -209,7 +236,7 @@ namespace PS.Game.Sim
                 int role = bossRole[landed];
                 InViewPoint(sim.Random, hx, hy, out double x, out double y);
                 int m = bossMinute[landed], tier = 0;
-                var treasure = schedule.Minutes[m].Treasure;
+                var treasure = m >= 0 ? schedule.Minutes[m].Treasure : null;
                 if (treasure != null && (treasureMinutes & (1L << m)) == 0)
                 {
                     treasureMinutes |= 1L << m;

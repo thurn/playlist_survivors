@@ -141,6 +141,8 @@ namespace PS.Game.Sim
         /// <summary>The music-driven events' hold on their enemies.</summary>
         public Scripts Scripts { get; }
         public MusicEvents Music { get; }
+        /// <summary>The flow field the enemies follow now (a rebuild takes over once it completes).</summary>
+        public FlowField Field => field;
         /// <summary>Who spawns, when and where; its footprint says what is in view.</summary>
         public Spawner Spawner => spawner;
         /// <summary>The main beat the horde is in (the next to land).</summary>
@@ -725,6 +727,22 @@ namespace PS.Game.Sim
             HeroAt(end, out double hx, out double hy);
             Music.Tick(sim, end, hx, hy);
             spawner.Tick(sim, end, hx, hy);
+        }
+
+        /// <summary>The run clock jumped to <paramref name="runClock"/>: the spawner and the swarms skip the minutes passed.</summary>
+        internal void Skip(double runClock)
+        {
+            spawner.Skip(runClock);
+            Music.Swarms.Skip((int)Math.Floor(runClock / 60 + 1e-9));
+        }
+
+        /// <summary>The debug surfaces' enemy (<see cref="DebugCommand.SpawnRole"/>): one of <paramref name="role"/> in view at <paramref name="t"/>, if there is room.</summary>
+        internal void SpawnInView(Simulation sim, double t, int role)
+        {
+            if (role < 0 || role >= roles.Length || freeCount == 0) return;
+            state.Hero.PositionAt(t, out double hx, out double hy);
+            spawner.InViewPoint(sim.Random, hx, hy, out double x, out double y);
+            Spawn(sim, t, role, x, y);
         }
 
         /// <summary>At the sim's start: the lineup, if any, takes its places.</summary>

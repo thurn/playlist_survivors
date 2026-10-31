@@ -52,7 +52,7 @@ namespace PS.Game.Sim.Tests
         /// and its resume), then a step to the frontier.
         /// </summary>
         static Simulation Live(SimConfig config, IReadOnlyList<StreamEntry> entries, double until, double frame,
-            (double from, double to) stall = default)
+            (double from, double to) stall = default, (double at, DebugCommand command, int arg)[] debug = null)
         {
             var sim = new Simulation(config);
             int next = 0;
@@ -63,9 +63,9 @@ namespace PS.Game.Sim.Tests
                 (4.4, Key.Space, false), (6.0, Key.Right, false), (9.3, Key.Left, true), (9.31, Key.Left, false),
                 (12.0, Key.Down, true), (15.5, Key.Down, false),
             });
-            var commands = new Queue<(double at, DebugCommand command)>(new[]
+            var commands = new Queue<(double at, DebugCommand command, int arg)>(debug ?? new[]
             {
-                (7.0, DebugCommand.BreakStructures), (8.0, DebugCommand.SectionChange), (13.0, DebugCommand.Accent),
+                (7.0, DebugCommand.BreakStructures, 0), (8.0, DebugCommand.SectionChange, 0), (13.0, DebugCommand.Accent, 0),
             });
             var controls = new Queue<(double at, RunControl control)>(new[]
             {
@@ -82,7 +82,11 @@ namespace PS.Game.Sim.Tests
                     if (down) sim.Press(key, sim.Now - 0.09);
                     else sim.Release(key, sim.Now - 0.09);
                 }
-                while (commands.Count > 0 && commands.Peek().at <= frontier) sim.Command(commands.Dequeue().command);
+                while (commands.Count > 0 && commands.Peek().at <= frontier)
+                {
+                    var (_, command, arg) = commands.Dequeue();
+                    sim.Command(command, arg);
+                }
                 while (controls.Count > 0 && controls.Peek().at <= frontier) sim.Control(controls.Dequeue().control);
                 sim.StepTo(frontier);
             }
@@ -129,6 +133,35 @@ namespace PS.Game.Sim.Tests
             CollectionAssert.AreEqual(new[] { "--file", "house-128.ogg" }, record.Flags);
             Assert.AreEqual(SessionRecord.CurrentRuntime, record.Runtime);
             StringAssert.Contains($"\"hash\": \"{live.Hash:X16}\"", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
+        }
+
+        [Test]
+        public void ARunStartedAtAMinuteReplaysItsDebugCommandsWithTheirArguments()
+        {
+            RecordEntries();
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var content = HordeFixture.Content;
+            var config = RunLevel.Config(content, HordeFixture.GameArena(), Footprint, 7);
+            config.Start = RunStart.OnKey;
+            config.StartMinute = 25;
+            var debug = new[]
+            {
+                (3.0, DebugCommand.Invulnerable, 1), (4.0, DebugCommand.SpawnRole, content.RoleIndex("werewolf")),
+                (5.0, DebugCommand.GrantEvolution, content.WeaponIndex("holy-wand")), (6.0, DebugCommand.SpawnBoss, content.RoleIndex("boss-xlmummy")),
+                (9.0, DebugCommand.GrantPassive, content.PassiveIndex("spinach")), (12.0, DebugCommand.JumpClock, 1620),
+            };
+            var live = Live(config, entries, duration, 1.0 / 60, debug: debug);
+            SessionRecord.Of(config, live).Write(dir);
+            Assert.Greater(live.State.RunClock, 1620, "the jump");
+            Assert.IsTrue(live.State.Hero.Invulnerable);
+
+            var sim = Replay(out var replay);
+            Assert.AreEqual(live.Hash, sim.Hash, "replayed to its hash");
+            var record = replay.Record;
+            Assert.AreEqual(SessionLevel.Run, record.Level);
+            Assert.AreEqual(25, record.StartMinute);
+            CollectionAssert.AreEqual(debug.Select(d => (d.Item2, d.Item3)), record.Commands.Select(c => (c.Command, c.Arg)));
+            StringAssert.Contains("\"startMinute\": 25", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
         }
 
         [Test]

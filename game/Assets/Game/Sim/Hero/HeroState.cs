@@ -31,6 +31,8 @@ namespace PS.Game.Sim
         public double MaxHealth { get; internal set; }
         /// <summary>The hero fell ("YOU FELL"): it no longer moves, strikes or takes hits.</summary>
         public bool Fallen { get; internal set; }
+        /// <summary>The debug surfaces made the hero unhurtable (<see cref="DebugCommand.Invulnerable"/>): hits land for nothing.</summary>
+        public bool Invulnerable { get; internal set; }
         /// <summary>The hero's level, from 1: it scales level-scaled and boss enemies' health at their spawn.</summary>
         public int Level { get; internal set; } = 1;
 

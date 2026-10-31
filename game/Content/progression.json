@@ -50,5 +50,6 @@
     "itemsByTier": [1, 3, 5],
     "evolutionOrder": ["sword", "garlic", "magic-wand", "king-bible", "lightning-ring"]
   },
-  "maxedHeal": 30
+  "maxedHeal": 30,
+  "startLevels": [1, 10, 15, 19, 23, 27, 30]
 }
