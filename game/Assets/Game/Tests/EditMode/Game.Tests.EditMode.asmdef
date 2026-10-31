@@ -5,6 +5,8 @@
         "Game.Client",
         "Game.EditorTools",
         "PS.Game.Sim",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "UnityEngine.TestRunner",

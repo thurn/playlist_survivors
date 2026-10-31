@@ -8,6 +8,7 @@ namespace Game.Client.Music
     /// songAtDsp(d) = anchor.song + (d - anchor.dsp)
     /// heardSong(r) = songAtDsp(dspAt(r)) - outputLatency
     /// frameSong    = heardSong(now + displayLatency) + videoCalibration, never backwards
+    /// keySong(r)   = heardSong(r) - inputCalibration
     /// </code>
     /// dspAt(r) is a least-squares fit of the DSP clock against real time over the last 2 s (as
     /// the 3D demo's song clock), which smooths the DSP clock's buffer-sized steps. The output
@@ -35,6 +36,11 @@ namespace Game.Client.Music
         public double DisplayLatency { get; set; }
 
         public double VideoCalibration { get; set; }
+        public double InputCalibration { get; set; }
+
+        /// <summary>Frames whose frameSong was held because the clock fell back, and the largest fall (s).</summary>
+        public int HeldFrames { get; private set; }
+        public double LargestHold { get; private set; }
 
         /// <summary>Takes the plugin's latest anchor.</summary>
         public void SetAnchor(double dsp, double song)
@@ -82,6 +88,9 @@ namespace Game.Client.Music
         /// <summary>The song time heard from the speakers at real time `real`.</summary>
         public double HeardSong(double real) => SongAtDsp(DspAt(real)) - OutputLatency;
 
+        /// <summary>The song time a key pressed at real time `real` was played against.</summary>
+        public double KeySong(double real) => HeardSong(real) - InputCalibration;
+
         /// <summary>
         /// The song time a frame shows: heard at its light, `now` plus the display latency. Call
         /// once a frame, after <see cref="Sample"/>; it never runs backwards.
@@ -89,8 +98,14 @@ namespace Game.Client.Music
         public double FrameSong(double now)
         {
             double t = HeardSong(now + DisplayLatency) + VideoCalibration;
-            _lastFrame = Math.Max(_lastFrame, t);
-            return _lastFrame;
+            if (t < _lastFrame)
+            {
+                HeldFrames++;
+                LargestHold = Math.Max(LargestHold, _lastFrame - t);
+                return _lastFrame;
+            }
+            _lastFrame = t;
+            return t;
         }
     }
 }

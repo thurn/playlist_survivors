@@ -1,3 +1,4 @@
+using Game.Client.Loop;
 using Game.Client.Music;
 using UnityEngine;
 
@@ -9,9 +10,11 @@ namespace Game.Client
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
     ///   quitting once the last is kept;
     /// - `--seconds N`: quits after N seconds;
-    /// - `--file &lt;audio or .m3u&gt;`: plays it through the music plugin with a click on every beat
-    ///   (<see cref="SyncSpike"/>, which reads `--headless` and `--spike-out`);
-    /// - `--dsp-buffer N`: Unity's DSP buffer length in frames, in place of the project's.
+    /// - `--dsp-buffer N`: Unity's DSP buffer length in frames, in place of the project's;
+    /// - `--spike` or `--spike-out DIR` with `--file &lt;audio or .m3u&gt;`: the sync spike, the music
+    ///   with a click on every beat (<see cref="SyncSpike"/>, which reads `--headless` too).
+    /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--file`, `--seed`,
+    /// `--events`, `--overlay`, `--headless` and `--loop-out`).
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -35,7 +38,8 @@ namespace Game.Client
                 AudioSettings.Reset(audio);
             }
             var file = Args.Get("--file");
-            if (file != null) SyncSpike.Begin(gameObject, _camera, file, _seconds);
+            if (file != null && (Args.Has("--spike") || Args.Has("--spike-out"))) SyncSpike.Begin(gameObject, _camera, file, _seconds);
+            else GameLoop.Begin(gameObject, _camera);
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
         }
 

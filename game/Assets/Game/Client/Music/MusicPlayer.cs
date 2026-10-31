@@ -118,6 +118,18 @@ namespace Game.Client.Music
             // buffer times: the sync spike measured frameSong 2.7, 5.5 and 10.5 ms ahead at 256, 512
             // and 1024 frames (game/evidence/spike). Each reading is taken half a buffer back.
             Clock.Sample(Time.realtimeSinceStartupAsDouble, AudioSettings.dspTime - _halfBuffer);
+            Poll();
+        }
+
+        /// <summary>
+        /// Reads the plugin's status and anchor, then its new entries into <see cref="Entries"/>,
+        /// replacing the previous poll's. Update does this once a frame; a reader that has taken
+        /// this frame's entries may poll again for more (the --fixed-time loop waiting on the
+        /// analysis), and other readers then miss what it replaced.
+        /// </summary>
+        public void Poll()
+        {
+            if (!Open) return;
             Plugin.GetStatus(_session, out Status);
             Clock.OutputLatency = Status.OutputLatency + DspBuffering;
             if (Status.State != Plugin.Waiting) Clock.SetAnchor(Status.AnchorDsp, Status.AnchorSong);
