@@ -122,6 +122,8 @@ namespace PS.Game.Sim
         public double T => e.T;
         public int Enemy => e.I0;
         public int Role => e.I1;
+        /// <summary>A recycled enemy re-entering on the spawn ring: it leaves its old place at once.</summary>
+        public bool Recycled => e.I2 != 0;
         public double X => e.D0;
         public double Y => e.D1;
     }
@@ -194,6 +196,20 @@ namespace PS.Game.Sim
         public bool Bump => (e.I1 & 2) != 0;
         public bool Stomp => (e.I1 & 4) != 0;
         public Direction Facing => (Direction)e.I2;
+        public double FromX => e.D0;
+        public double FromY => e.D1;
+        public double ToX => e.D2;
+        public double ToY => e.D3;
+        public double Start => e.D4;
+        public double End => e.D5;
+    }
+
+    public readonly struct EnemyKnockEvent
+    {
+        readonly SimEvent e;
+        public EnemyKnockEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Enemy => e.I0;
         public double FromX => e.D0;
         public double FromY => e.D1;
         public double ToX => e.D2;

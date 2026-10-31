@@ -24,6 +24,7 @@ namespace PS.Game.Sim
         Freeze,
         SoundCue,
         HeroStep,
+        EnemyKnock,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -86,7 +87,7 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>An attack's wind-up starts: I0 attacker (-1 the hero), I1 attack kind; D0 wind-up start, D1 impact time, D2/D3 direction.</summary>
+        /// <summary>An attack's wind-up starts: I0 attacker (-1 the hero), I1 attack kind (an enemy's: <see cref="EnemyAttackKind"/>); D0 wind-up start, D1 impact time, D2/D3 direction.</summary>
         public static SimEvent Attack(double t, int attacker, int kind, double windupStart, double impact, double dirX, double dirY)
         {
             var e = Of(SimEventKind.Attack, t);
@@ -113,7 +114,7 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A hit: I0 target (-1 the hero), I1 source attack kind; D0 damage, D1/D2 position, D3/D4 direction.</summary>
+        /// <summary>A hit: I0 target (-1 the hero), I1 source attack kind (on the hero: <see cref="EnemyAttackKind"/>); D0 damage, D1/D2 position, D3/D4 direction.</summary>
         public static SimEvent Hit(double t, int target, int source, double damage, double x, double y, double dirX, double dirY)
         {
             var e = Of(SimEventKind.Hit, t);
@@ -164,14 +165,29 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>An enemy spawns: I0 enemy, I1 role; D0/D1 position.</summary>
-        public static SimEvent Spawn(double t, int enemy, int role, double x, double y)
+        /// <summary>An enemy spawns: I0 enemy, I1 role, I2 1 when it is a recycled enemy re-entering (its old place is left at once); D0/D1 position.</summary>
+        public static SimEvent Spawn(double t, int enemy, int role, double x, double y, bool recycled = false)
         {
             var e = Of(SimEventKind.Spawn, t);
             e.I0 = enemy;
             e.I1 = role;
+            e.I2 = recycled ? 1 : 0;
             e.D0 = x;
             e.D1 = y;
+            return e;
+        }
+
+        /// <summary>An enemy knocked back, at once and between beats: I0 enemy; D0/D1 from, D2/D3 to, D4 start, D5 end.</summary>
+        public static SimEvent EnemyKnock(double t, int enemy, double fromX, double fromY, double toX, double toY, double start, double end)
+        {
+            var e = Of(SimEventKind.EnemyKnock, t);
+            e.I0 = enemy;
+            e.D0 = fromX;
+            e.D1 = fromY;
+            e.D2 = toX;
+            e.D3 = toY;
+            e.D4 = start;
+            e.D5 = end;
             return e;
         }
 
@@ -271,5 +287,6 @@ namespace PS.Game.Sim
         public FreezeEvent AsFreeze { get { Expect(SimEventKind.Freeze); return new FreezeEvent(this); } }
         public SoundCueEvent AsSoundCue { get { Expect(SimEventKind.SoundCue); return new SoundCueEvent(this); } }
         public HeroStepEvent AsHeroStep { get { Expect(SimEventKind.HeroStep); return new HeroStepEvent(this); } }
+        public EnemyKnockEvent AsEnemyKnock { get { Expect(SimEventKind.EnemyKnock); return new EnemyKnockEvent(this); } }
     }
 }

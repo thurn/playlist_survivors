@@ -33,12 +33,13 @@ namespace PS.Game.Sim.Tests
         public void ReadingEverythingEveryFrameDoesNotChangeTheRun()
         {
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
-            var quiet = new Simulation(new SimConfig());
+            var quiet = new Simulation(HordeFixture.Config());
             Drive.Feed(quiet, entries, duration);
             var called = new HashSet<string>();
-            var curious = new Simulation(new SimConfig());
+            var curious = new Simulation(HordeFixture.Config());
             Drive.Feed(curious, entries, duration, eachFrame: sim => ReadEverything(sim, called));
             Assert.Greater(Drive.Events(quiet, SimEventKind.Beat).Count, 40);
+            Assert.Greater(Drive.Events(quiet, SimEventKind.EnemyStep).Count, 100);
             Assert.AreEqual(quiet.Hash, curious.Hash);
             CollectionAssert.AreEqual(quiet.EventsSince(0).ToArray(), curious.EventsSince(0).ToArray());
             CollectionAssert.IsSupersetOf(called, new[] { "BeatClock.StateAt", "BeatClock.ClearAt", "BeatClock.Continues",
@@ -49,7 +50,7 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TheClientCanWriteNothingAndCannotReachTheGenerator()
         {
-            var surface = Surface(new Simulation(new SimConfig()));
+            var surface = Surface(new Simulation(HordeFixture.Config()));
             Assert.That(surface.ConvertAll(o => o.GetType().Name), Is.SupersetOf(new[]
                 { "Simulation", "SimState", "BeliefLog", "BeatClock", "Judging", "StrideGrid", "ArenaGrid", "HeroState" }));
             foreach (object o in surface)
@@ -106,6 +107,11 @@ namespace PS.Game.Sim.Tests
             foreach (double t in sim.Beats.Judging.Locks) sum += t;
             foreach (var k in sim.Keys) sum += k.Heard;
             foreach (var e in sim.EventsSince(0)) sum += e.T;
+            foreach (var e in sim.State.Enemies)
+            {
+                e.PositionAt(sim.Now - 0.5, out double x, out double y);
+                sum += e.X + x + y;
+            }
             Assert.IsFalse(double.IsNaN(sum));
         }
 

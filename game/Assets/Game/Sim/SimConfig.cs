@@ -23,6 +23,9 @@ namespace PS.Game.Sim
         /// <summary>The level's arena; null plays an open one (<see cref="ArenaData.Open"/>).</summary>
         public ArenaData Arena;
 
+        /// <summary>The enemies' content, arena, camera footprint and schedule; null runs without enemies.</summary>
+        public HordeConfig Horde;
+
         public int TickCapacity = 40_000;
         public int BeatCapacity = 8_192;
         public int EntryCapacity = 4_096;

@@ -1,3 +1,5 @@
+using System;
+
 namespace PS.Game.Sim
 {
     /// <summary>
@@ -32,5 +34,10 @@ namespace PS.Game.Sim
         public int StrideHalvings { get; internal set; } = -1;
 
         public HeroState Hero { get; } = new HeroState();
+
+        /// <summary>Every enemy slot, alive or free (<see cref="EnemyState.Alive"/>); a slot's index is the enemy's id in events.</summary>
+        public ReadOnlySpan<EnemyState> Enemies => EnemyStore;
+        public int EnemiesAlive { get; internal set; }
+        internal EnemyState[] EnemyStore = Array.Empty<EnemyState>();
     }
 }

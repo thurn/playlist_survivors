@@ -805,8 +805,10 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
   `known_at`.
 - **Events** carry what presentation needs to anticipate and react:
   attack (wind-up start, impact time, direction, kind), enemy step (from, to,
-  move start, footplant), hit, death (impact direction and force), structure
-  break and regrowth, spawn, pickup, level-up, chest, freeze, sound cue.
+  move start, footplant), enemy knock (from, to, start, end), hit, death
+  (impact direction and force), structure break and regrowth, spawn (a
+  recycled enemy's re-entry flagged), pickup, level-up, chest, freeze, sound
+  cue.
 - **State** is the latest settled snapshot of positions and stats. The
   client keeps a short history of past states to show `frameSong`, which
   trails the frontier.
@@ -1022,9 +1024,16 @@ positions on the arena floor, and all their travel is on main beats.
   resolved as part of the step, never as a shove between beats.
 - **Long steps** test contact along the whole move, so a fast bat can't pass
   through the hero.
-- **Contact lunges**: a notice pose, contact on the beat, a return.
+- **Contact lunges**: a notice pose, contact on the beat, a return. The
+  notice comes half a beat ahead, for enemies within contact range plus
+  their step and the hero's travel in half a beat; only those lunge.
 - **Knockback** is immediate and between beats; pursuit resumes on a later
   main beat. A death launch is free.
+- **A decided step is final**, like every settled event: if the beat's
+  state drops inside its move window, it still plants (native cancels it).
+- Where a step meets a structure it slides along it, and the flow field
+  reaches about 150 m of path from the hero; beyond, steps head straight
+  for the hero.
 - **No reliable beat**: enemies hold, and lunges stop. On relock they resume
   on a future main beat, with no catch-up steps.
 - **Bosses** telegraph with an in-place pose and deliver charges and slams as

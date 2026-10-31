@@ -22,9 +22,10 @@ namespace PS.Game.Sim
     ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, events with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed,
-    /// then the beat, then the stride step and the hero's move on it. The beat's state is updated
-    /// before each of those and at the tick's end, after which the per-tick systems run. A press
-    /// may move the hero at once (a late step), at the frontier. Nothing simulated is ever revised.
+    /// then the beat, then the stride step and the hero's move on it, then the enemies' beat phases
+    /// (<see cref="Horde"/>). The beat's state is updated before each of those and at the tick's
+    /// end, after which the per-tick systems run. A press may move the hero at once (a late step),
+    /// at the frontier. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -55,6 +56,7 @@ namespace PS.Game.Sim
             cursor = State.Now;
             Arena = new ArenaGrid(config.Arena ?? ArenaData.Open());
             hero = new Hero(State.Hero, Arena, Strides);
+            if (config.Horde != null) Horde = new Horde(config.Horde, Stream, Beats, Strides, Arena, State);
         }
 
         public SimState State { get; }
@@ -64,6 +66,8 @@ namespace PS.Game.Sim
         public BeatClock Beats { get; }
         public StrideGrid Strides { get; }
         public ArenaGrid Arena { get; }
+        /// <summary>The enemies, or null in a run without them; the client reads them through <see cref="SimState.Enemies"/>.</summary>
+        internal Horde Horde { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -126,7 +130,8 @@ namespace PS.Game.Sim
                 double reveal = Stream.NextKnownAt;
                 double beat = Beats.NextTime(cursor);
                 double step = Strides.NextTime(cursor);
-                double next = Math.Min(beat, step);
+                double horde = Horde?.NextTime(cursor) ?? double.PositiveInfinity;
+                double next = Math.Min(beat, Math.Min(step, horde));
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
@@ -137,7 +142,7 @@ namespace PS.Game.Sim
                 if (next > end) break;
                 cursor = next;
                 UpdateBeatState(next);
-                if (beat <= step)
+                if (beat <= step && beat <= horde)
                 {
                     Beats.Fire(this, beat, State.Beat);
                     int i = Beats.LastBeat;
@@ -145,7 +150,7 @@ namespace PS.Game.Sim
                     State.Bar = Beats.BarOf(i, out bool downbeat);
                     State.Downbeat = downbeat;
                 }
-                else
+                else if (step <= horde)
                 {
                     Strides.Fire(this, step);
                     hero.Step(this, Strides.Count - 1, step, Strides.Period);
@@ -153,12 +158,17 @@ namespace PS.Game.Sim
                     State.StridePeriod = Strides.Period;
                     State.StrideHalvings = Strides.Halvings;
                 }
+                else
+                {
+                    Horde.Fire(this, horde);
+                }
             }
             cursor = end;
             State.Tick++;
             State.Now = end;
             UpdateBeatState(end);
             if (!State.Frozen) State.RunClock += TickSeconds;
+            Horde?.Tick(this, end);
         }
 
         void UpdateBeatState(double t)
