@@ -4,7 +4,8 @@ The sim plays schedule.json's minutes (`HordeConfig.Schedule`, the player's `--r
 entry dump of the survivors test playlist, `native/playlists/survivors-30.m3u` (2294 s of house,
 hip-hop, accelerando, drum and bass and a solo piano aria, with gaps), written by native's
 `ps entries` into `~/Library/Caches/playlist-survivors/entries/708ac14e….jsonl`. The harness,
-[Run30](Run30/Program.cs), drives the sim as the client does (60 fps frames, each entry arriving
+[Run30](Run30/Program.cs), drives the run's level (`RunLevel.Config`, its music-driven events off:
+they have their own run, game/evidence/music-events) as the client does (60 fps frames, each entry arriving
 once the frontier passes its stamp), in the game's arena, with the starting sword, a hero that
 stands still and never falls, and the headless start (after 2 s of clear beat):
 
@@ -16,7 +17,7 @@ dotnet run --project game/evidence/schedule/Run30 -c Release -- DUMP.jsonl game/
 
 ```text
 song 2172.2 s, run clock 1800.0 s, phase Ended, end Victory
-spawned 10736, killed 10736, most alive 300 (cap 300), bosses 20, chests 12
+spawned 10720, killed 10720, most alive 300 (cap 300), bosses 20, chests 14
 boss telegraphs: 2 charges, 1 slams; 0 structures broken by slams, 3 charge or slam hits on the hero
 ```
 
@@ -30,7 +31,7 @@ boss telegraphs: 2 charges, 1 slams; 0 structures broken by slams, 3 charge or s
 - **Every boss**: [bosses.csv](bosses.csv) has all 20 scheduled bosses, each on a downbeat after
   its minute starts. Minute 12's and minute 21's waited for room under the full cap (bat4 at
   13:08, xlflower at 21:11), the slot kept from the waves until it landed.
-- **Chests**: [chests.csv](chests.csv): 12 dropped, by the first boss of each minute with
+- **Chests**: [chests.csv](chests.csv): 14 dropped, by the first boss of each minute with
   treasure whose tier rolled (minutes 10, 15, 20 and 25 are scripted), the chests bead's to open.
 - **The bosses' moves are rare here** because the hero stays at level 1 until the arsenal
   (ps-msz.6.4) gives it experience: a boss's health is its role's times the hero's level, so the

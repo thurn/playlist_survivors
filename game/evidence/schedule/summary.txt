@@ -1,4 +1,4 @@
 song 2172.2 s, run clock 1800.0 s, phase Ended, end Victory
-spawned 10736, killed 10736, most alive 300 (cap 300), bosses 20, chests 12
+spawned 10720, killed 10720, most alive 300 (cap 300), bosses 20, chests 14
 boss telegraphs: 2 charges, 1 slams; 0 structures broken by slams, 3 charge or slam hits on the hero
-wall 0.7 s
+wall 0.9 s

@@ -42,14 +42,12 @@ foreach (var line in File.ReadLines(dump))
     entries.Add(e);
 }
 
-var sim = new Simulation(new SimConfig
-{
-    Arena = arena,
-    Horde = new HordeConfig { Content = content, Schedule = true },
-    Sword = new SwordConfig { Content = content },
-    HeroStands = true,
-    Start = RunStart.AfterClearBeat,
-});
+// The run's level, the schedule alone: the music-driven events have their own run (music-events/Run30).
+var config = RunLevel.Config(content, arena, new double[] { -17, -11, 17, -11, 17, 11, -17, 11 });
+config.Horde.MusicEvents = false;
+config.HeroStands = true;
+config.Start = RunStart.AfterClearBeat;
+var sim = new Simulation(config);
 int minutes = content.Schedule.Minutes.Length;
 var spawns = new int[minutes, content.Roles.Length];
 var killed = new int[minutes];
