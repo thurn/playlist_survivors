@@ -108,6 +108,9 @@ namespace Game.Client.Hud
                 case SimEventKind.Card:
                     _cards.OnEvent(e);
                     break;
+                case SimEventKind.Chest:
+                    _chest.OnEvent(e);
+                    break;
                 case SimEventKind.RunEnd:
                     _end.Ended(e.T, e.AsRunEnd.Why);
                     break;

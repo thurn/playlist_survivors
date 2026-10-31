@@ -26,10 +26,12 @@ namespace Game.Client.Hud
     /// A chest's roulette over the dimmed run (native's slice/treasure.rs): TREASURE over one, three or
     /// five gold-lit gems (the tier's items) cycling through the arsenal's items on each eighth-note
     /// tick, jittering less as the ticks run out, then landing together on the downbeat: TREASURE
-    /// FOUND, each gem swelling with its reward's name and rank. The sim's chests (ps-msz.6.8) fill
-    /// <see cref="ChestRoulette"/>; until then `--chest-preview S[:TIER]` opens a preview at song time S
-    /// whose ticks and landing come from the beats known then (eight eighths from the next
-    /// downbeat), with the hero's own items as its rewards, for stills. The preview freezes nothing.
+    /// FOUND, each gem swelling with its reward's name and rank. The sim's chest events
+    /// (<see cref="SimEventKind.Chest"/>, ps-msz.6.8) fill <see cref="ChestRoulette"/> as they settle:
+    /// its opening, each tick as it comes (the beats aren't known eight eighths ahead), the landing and
+    /// the rewards. `--chest-preview S[:TIER]` still opens a client-only preview at song time S whose
+    /// ticks and landing come from the beats known then (eight eighths from the next downbeat), with
+    /// the hero's own items as its rewards, for stills of the cards alone; it freezes nothing.
     /// </summary>
     public sealed class ChestCards
     {
@@ -43,6 +45,7 @@ namespace Game.Client.Hud
         readonly List<(VisualElement Gem, Label Mark, Label Name, Label Rank)> _items = new List<(VisualElement, Label, Label, Label)>();
         readonly double _previewAt = double.NaN;
         readonly int _previewTier = 3;
+        readonly List<double> _ticks = new List<double>(Eighths);
         ChestRoulette _roulette;
 
         public ChestCards(VisualElement layer, GameContent content, string preview)
@@ -56,6 +59,45 @@ namespace Game.Client.Hud
             var parts = preview.Split(':');
             _previewAt = double.Parse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture);
             if (parts.Length > 1) _previewTier = Math.Max(1, Math.Min(3, int.Parse(parts[1], CultureInfo.InvariantCulture)));
+        }
+
+        /// <summary>A chest event from the sim: the roulette opens, ticks, lands and gives its rewards.</summary>
+        public void OnEvent(in SimEvent e)
+        {
+            if (e.Kind != SimEventKind.Chest || _content == null) return;
+            var c = e.AsChest;
+            switch (c.Phase)
+            {
+                case ChestPhase.Open:
+                {
+                    int count = _content.Progression.Chests.ItemsByTier[Math.Max(1, Math.Min(3, c.Tier)) - 1];
+                    _ticks.Clear();
+                    Show(new ChestRoulette
+                    {
+                        Open = true, Tier = c.Tier, Opened = e.T, Ticks = Array.Empty<double>(),
+                        Landed = double.PositiveInfinity, Closes = double.PositiveInfinity,
+                        Rewards = new string[count], Ranks = new int[count],
+                    });
+                    break;
+                }
+                case ChestPhase.Tick:
+                    _ticks.Add(e.T);
+                    _roulette.Ticks = _ticks.ToArray();
+                    break;
+                case ChestPhase.Land:
+                    _roulette.Landed = e.T;
+                    _roulette.Closes = e.T + ShowAfterLandingS;
+                    break;
+                case ChestPhase.Reward:
+                {
+                    int k = c.Place;
+                    if (_roulette.Rewards == null || k < 0 || k >= _roulette.Rewards.Length) break;
+                    var card = c.Reward;
+                    _roulette.Rewards[k] = HudText.Id(_content, card);
+                    _roulette.Ranks[k] = card.After;
+                    break;
+                }
+            }
         }
 
         /// <summary>Ticks so far at song time <paramref name="s"/>.</summary>
@@ -96,7 +138,7 @@ namespace Game.Client.Hud
                 mark.text = HudText.Mark(id);
                 mark.style.translate = new Translate(0, jitter);
                 name.text = landed ? HudText.Name(id) : "";
-                rank.text = landed ? (_roulette.Ranks[k] <= 1 ? "NEW!" : "LV " + _roulette.Ranks[k]) : "";
+                rank.text = !landed || id == null ? "" : _roulette.Ranks[k] <= 1 ? "NEW!" : "LV " + _roulette.Ranks[k];
             }
         }
 

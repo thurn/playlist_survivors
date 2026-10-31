@@ -1849,7 +1849,9 @@ engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
   landing it bursts in gold and each shard, in its reward's colour, flies into the hero's chest under
   a sweeping ring of light. Sounds (native's palette): coins as it is taken and as it lands, a glass
   ping on each eighth climbing the major pentatonic, one transformation for a landing that evolves.
-  The HUD (ps-msz.6.9) draws the cards from `SimState.Chest` and the chest events.
+  The HUD's `ChestCards` (ps-msz.6.9) takes the chest events: its card opens with the roulette,
+  its gems cycle on each tick as it comes, and TREASURE FOUND shows each reward's name and rank from
+  the landing.
 - **Debug**: `--debug chest@S` (`DebugCommand.Chest`) drops a tier-3 chest of the last evolving
   minute's treasure two tiles ahead of the hero, for it to walk onto. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
 

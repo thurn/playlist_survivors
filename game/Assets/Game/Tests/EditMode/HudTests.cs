@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Game.Client.Hud;
 using NUnit.Framework;
 using PS.Game.Sim;
+using PS.Game.Sim.Content;
+using UnityEngine;
+using UnityEngine.UIElements;
 using Is = NUnit.Framework.Is;
 
 namespace Game.Tests
@@ -131,6 +136,42 @@ namespace Game.Tests
             Assert.That(HudText.Name("lightning-ring"), Is.EqualTo("LIGHTNING RING"));
             Assert.That(HudText.Mark("magic-wand"), Is.EqualTo("MW"));
             Assert.That(HudText.Mark("garlic"), Is.EqualTo("GA"));
+        }
+
+        [Test]
+        public void TheSimsChestEventsFillTheRouletteTicksAsTheyComeAndItsRewardsAtTheLanding()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            var layer = new VisualElement();
+            layer.Add(new VisualElement { name = "chest-items" });
+            layer.Add(new Label { name = "chest-heading" });
+            layer.Add(new Label { name = "chest-hint" });
+            var chest = new ChestCards(layer, content, null);
+            var sim = new Simulation(new SimConfig());
+            int holy = content.WeaponIndex("holy-wand"), wand = content.WeaponIndex("magic-wand");
+            chest.OnEvent(SimEvent.Chest(2.5, 0, ChestPhase.Open, 2, 25, 0, 0));
+            for (int k = 0; k < 8; k++) chest.OnEvent(SimEvent.Chest(3 + 0.25 * k, 0, ChestPhase.Tick, 2, k, 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Land, 2, 3, 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Reward, 2, 1 + holy, 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Reward, 2, (1 + wand) | (3 << 6) | (1 << 10), 0, 0));
+            chest.OnEvent(SimEvent.Chest(5, 0, ChestPhase.Reward, 2, 2 << 10, 0, 0));
+            var heading = layer.Q<Label>("chest-heading");
+            var items = layer.Q("chest-items");
+
+            chest.Present(2.4, sim, default);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(layer.style.opacity.value, Is.EqualTo(0f), "not before it opens");
+            chest.Present(4.1, sim, default);
+            Assert.That(heading.text, Is.EqualTo("TREASURE"));
+            Assert.That(items.childCount, Is.EqualTo(3), "a tier-2 chest's three items");
+            chest.Present(5.0, sim, default);
+            Assert.That(heading.text, Is.EqualTo("TREASURE FOUND"), "it lands on the landing's frame");
+            var names = items.Query<Label>(className: "reward__name").ToList().Select(l => l.text);
+            Assert.That(names, Is.EqualTo(new[] { "HOLY WAND", "MAGIC WAND", "HEAL" }));
+            var ranks = items.Query<Label>(className: "reward__rank").ToList().Select(l => l.text);
+            Assert.That(ranks, Is.EqualTo(new[] { "NEW!", "LV 4", "" }));
+            chest.Present(5 + ChestCards.ShowAfterLandingS, sim, default);
+            Assert.That(layer.style.display.value, Is.EqualTo(DisplayStyle.None), "its card goes after the landing");
         }
     }
 }

@@ -14,7 +14,7 @@ each hero holding only the weapon named, its levels opening no cards:
 ```sh
 P="$PWD/native/playlists/survivors-30.m3u"
 uv run --project demo3d/tools game look chest --build --backend mono --evidence evolutions \
-  --at 4.45,4.9,5.3,5.65,6.3,7.1,7.75,7.9,8.3 --strip 3 --crop 460,140,1000,900 \
+  --at 4.45,4.9,5.3,5.65,6.3,7.1,7.75,7.9,8.3 --strip 3 --crop 360,60,1200,960 \
   --player-args "--file $P --arsenal magic-wand:8,empty-tome:1 --no-cards --debug chest@4.4 --walk down@5.3-5.8"
 uv run --project demo3d/tools game look holy-wand --backend mono --evidence evolutions \
   --at 5.65,5.7675,5.885,6.0025,6.12,6.2375 --strip 3 --crop 560,280,900,800 \
@@ -38,11 +38,14 @@ uv run --project demo3d/tools game look bloody-tear --backend mono --evidence ev
   over a glow, five shards (its five items) circling it, under a faint column of light (4.9, 5.3 s).
   The knight walks down onto it (`--walk`) and takes it (5.65 s): it rises over the knight's head,
   grown, and spins over a gold ring while the world is frozen, flashing on each of its eight eighths
-  with its shards cycling the weapons' colours (6.3, 7.1 s). It lands on the downbeat after them
-  (between 7.1 and 7.75 s): it bursts, its rewards fly into the knight, and Holy Wand's gold arrival
-  rings sweep out with six rays of sparks (7.75, 7.9 s): the wand at rank 8 and its partner, Empty
-  Tome, owned, so the first reward evolves it. Play resumes on that beat and the gold stream of Holy
-  Wand flies at the horde (8.3 s, the blossom zone).
+  with its shards cycling the weapons' colours, under the HUD's TREASURE card (ps-msz.6.9, fed by the
+  chest events), whose five gems cycle on the same ticks (6.3, 7.1 s). It lands on the downbeat after
+  them (between 7.1 and 7.75 s): TREASURE FOUND, HOLY WAND (NEW!) and four ranks of Empty Tome; the
+  chest bursts, its rewards fly into the knight, and Holy Wand's gold arrival rings sweep out with six
+  rays of sparks (7.75, 7.9 s): the wand at rank 8 and its partner, Empty Tome, owned, so the first
+  reward evolves it. Play resumes on that beat and Holy Wand's gold stream flies at the horde under
+  the fading card (8.3 s). The evolutions' strips below predate the HUD's landing on staging and show
+  no HUD.
 - [holy-wand.jpg](holy-wand.jpg): Holy Wand's bolts on the eighths and their hits on the sixteenths,
   gold crystals with a long streak of afterimages through a prism's six hues. Against the bloom the
   hues read as coloured fringes along a gold-white stream rather than distinct bands (an operator row
@@ -81,6 +84,8 @@ uv run --project demo3d/tools game look bloody-tear --backend mono --evidence ev
   an accented beat breaking a structure where Garlic's, or Soul Eater's off the accent, doesn't.
 - Mutation-checked: dropping the crowd rule, the first tick's downbeat, the pause's hold, the
   level-up's guard or the evolution gate on structure breaks each fails a test.
+- game/Assets/Game/Tests/EditMode/HudTests.cs: the chest events fill the HUD's roulette, its ticks as
+  they come, TREASURE FOUND on the landing's frame with each reward's name and rank, gone after.
 - game/Assets/Game/Tests/EditMode/EffectsSoundTests.cs: the chest's coins as it is taken and lands,
   a ping on each of its eighths, and one transformation for a landing with two evolutions.
 
