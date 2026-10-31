@@ -246,6 +246,49 @@ namespace Demo3D.Choreography.Tests
             }
         }
 
+        /// <summary>
+        /// Every combo entry at an explicit bar.beat lands on it: a flurry's blow just before a spin's windup doesn't
+        /// cost the hero the spin (shot 2's on 82.3 and 84.3).
+        /// </summary>
+        [Test]
+        public void EveryBarBeatBlowLands()
+        {
+            var missing = new List<string>();
+            for (int i = 0; i < Fixtures.Trailer.Shots.Length; i++)
+            {
+                TrailerShot s = Fixtures.Trailer.Shots[i];
+                var impacts = new List<double>();
+                foreach (ActionEvent a in Fixtures.Shot(i).ActionsOf(0)) if (a.Kind == ActionKind.Attack) impacts.Add(a.Impact);
+                foreach (string entry in s.Combo)
+                {
+                    int at = entry.IndexOf('@');
+                    if (at < 0 || !char.IsDigit(entry[at + 1])) continue;
+                    double t = Fixtures.Song.TimeOfBarBeat(entry.Substring(at + 1));
+                    if (!impacts.Exists(x => Math.Abs(x - t) < 1e-6)) missing.Add("shot " + s.Number + ": " + entry);
+                }
+            }
+            Assert.That(missing, Is.Empty);
+        }
+
+        /// <summary>The final slam's dead are down before the cut to black: each death clip ends within the aftermath.</summary>
+        [Test]
+        public void TheFinalSlamsDeadFallBeforeTheCutToBlack()
+        {
+            int last = Fixtures.Trailer.Shots.Length - 1;
+            double final = Fixtures.Trailer.FinalSlamTime(Fixtures.Song);
+            ClipLibrary clips = Fixtures.ShotData(last).Clips;
+            int dead = 0;
+            foreach (ActionEvent a in Fixtures.Shot(last).Actions)
+            {
+                if (a.Kind != ActionKind.Death || Math.Abs(a.Impact - final) > 1e-6) continue;
+                dead++;
+                double start = a.HasClipTiming ? a.ClipStart : a.Impact - clips[a.Clip].Impact;
+                float speed = a.HasClipTiming ? a.ClipSpeed : 1f;
+                Assert.That(start + clips[a.Clip].End / speed, Is.LessThan(Fixtures.Trailer.BlackAt), "entity " + a.Entity);
+            }
+            Assert.That(dead, Is.GreaterThan(1000));
+        }
+
         [Test]
         public void CutsOffTheGridFail()
         {

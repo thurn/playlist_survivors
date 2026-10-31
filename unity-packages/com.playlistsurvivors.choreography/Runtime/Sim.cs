@@ -54,6 +54,7 @@ namespace PS.Choreography
         const float ShoveOverlap = 0.4f;         // ... and a monster boxed in on every side shoves this far into its neighbours
         const float KnockbackSeconds = 0.12f;
         const float CorpseLinger = 1.0f;
+        const double FinalFallShare = 0.75;      // the final slam's dead are down by this share of the aftermath
         const float HitShapeInflate = 0.5f;      // a monster is struck when its centre is within the shape plus half its radius
         const float FollowTimeConstant = 0.4f;   // camera-and-sound.md: critically damped, 0.4 s
         const int ZoomBars = 2;
@@ -967,24 +968,33 @@ namespace PS.Choreography
         /// Schedule the hero's next combo on the first grid point within 4 s (from <paramref name="firstPoint"/> on)
         /// whose clip fits, unless its clip would start after <paramref name="startBefore"/>. A combo with a windup (the
         /// hero's, or its own: demo3d's cleaves) cuts into the last one's follow-through; any other waits for its end.
+        /// A shot's fixed entry whose clip must start before <paramref name="startBefore"/> is scheduled now even past an
+        /// earlier point that waits for the next decision, which would be too late for its windup (a spin on 82.3 after a
+        /// flurry's blow on 82.2.5).
         /// </summary>
         void ScheduleHeroAction(double tb, double firstPoint = double.NegativeInfinity, double startBefore = double.PositiveInfinity)
         {
             double availFrom = Math.Max(tb, heroLastEnd);
             double last = Math.Min(shot.HasSpan ? shot.SpanTo + 1e-6 : double.PositiveInfinity, double.IsNaN(shot.Final) ? double.PositiveInfinity : shot.Final + 1e-6);
+            bool waiting = false;   // an earlier point waits for the next decision: only a fixed entry can still go now
             for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0 && grid.Points[gi].Time <= last; gi++)
             {
                 GridPoint p = grid.Points[gi];
                 GridEntry[] combo = plans[p.Section].Combo;
                 GridEntry e = PickCombo(combo, p, out bool plain);
-                if (e == null) continue;
+                if (e == null || (waiting && e.Fixed == FixedPosition.None)) continue;
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
                 float windup = roster.WindupOf(mv);
                 if (windup > 0 ? !ClipLibrary.FitWindup(clip, tb, p.Time, windup, out double start, out double end, out float speed)
                     : !ClipLibrary.Fit(clip, availFrom, p.Time, out start, out end, out speed, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)) continue;
                 if (start < tb - 1e-9) continue;
-                if (start >= startBefore) return;
+                if (start >= startBefore)
+                {
+                    if (!shot.HasFixed || waiting) return;
+                    waiting = true;
+                    continue;
+                }
                 // Across a section change a positioned combo owns its slot: skip a plain one whose
                 // recovery would leave no room for the windup of the next section's positioned one
                 // (the ending's accent slams after the outro, TD10). Within a section a positioned
@@ -2502,17 +2512,21 @@ namespace PS.Choreography
 
         /// <summary>
         /// A shot's final slam (trailer.md, "The boss"): it kills every monster in view, the boss included, and the
-        /// off-screen band the view's drift after it would reveal; its shockwave is a ring to the view's edge.
+        /// off-screen band the view's drift after it would reveal; its shockwave is a ring to the view's edge. Its dead
+        /// play their death clips faster where they must, so the horde is down by <see cref="FinalFallShare"/> of the
+        /// aftermath rather than mid-fall at the cut to black.
         /// </summary>
         void FinalSlam(double t, Vector2 o, float strength)
         {
             var view = View(viewWidth);
+            double fall = shot.HasSpan ? (shot.SpanTo - t) * FinalFallShare : double.PositiveInfinity;
             int killed = 0;
             for (int i = 0; i < liveCount; i++)
             {
                 int m = live[i];
                 if (state[m] != Alive || !view.Contains(focus, MonsterPosAt(m, t), radius[m] + SpawnMargin + SpawnBand)) continue;
-                Kill(m, t, strength);
+                ClipAnnotation death = clips[roster.Monsters[etype[m]].DeathClip];
+                Kill(m, t, strength, (float)Math.Max(1.0, (death.End - death.Impact) / fall));
                 killed++;
             }
             barStruck += killed;
@@ -2584,15 +2598,18 @@ namespace PS.Choreography
             return true;
         }
 
-        void Kill(int m, double t, float strength)
+        /// <summary>Kills <paramref name="m"/> at <paramref name="t"/>; a <paramref name="clipSpeed"/> other than 1 retimes its death clip.</summary>
+        void Kill(int m, double t, float strength, float clipSpeed = 1f)
         {
             MonsterType mt = roster.Monsters[etype[m]];
             StopAt(m, t, true);
             state[m] = Dying;
             diedAt[m] = t;
             ClipAnnotation death = clips[mt.DeathClip];
-            despawnT[m] = t + Math.Max(0.2, death.End - death.Impact) + CorpseLinger;
-            actions.Add(new ActionEvent(m, ActionKind.Death, t, mt.DeathClip, -1, strength));
+            despawnT[m] = t + Math.Max(0.2, (death.End - death.Impact) / clipSpeed) + CorpseLinger;
+            actions.Add(clipSpeed == 1f
+                ? new ActionEvent(m, ActionKind.Death, t, mt.DeathClip, -1, strength)
+                : new ActionEvent(m, ActionKind.Death, t, mt.DeathClip, -1, strength, t - death.Impact / clipSpeed, clipSpeed));
             effects.Add(new EffectEvent(Catalog.DeathBurst, m, Rng.Hash(eseed[m], 0xDEAD), t, new Vector3(0, 0.6f, 0), 0, mt.Radius / 0.4f));
             Sound(Catalog.DeathSound, t, strength);
             secKills++;
