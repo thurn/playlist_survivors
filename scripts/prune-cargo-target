@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Deletes what a worktree's next clone of a Cargo target directory cannot reuse (ps-tfn.10).
+"""Deletes what the next build in a Cargo target directory cannot reuse (ps-tfn.10, ps-msz.4.5).
 
     scripts/prune-cargo-target [--dry-run] WORKSPACE
+    scripts/prune-cargo-target [--dry-run] --warm TARGET_DIR
 
-scripts/enact-worktree remove runs it on the worktree's native/target before that becomes the seed,
-which otherwise kept every incremental session and every unit any worktree ever built. A new
-worktree's sources are newer than the seed's build, so cargo rebuilds every workspace crate there:
-only the dependencies' units are worth cloning. In each profile directory (one holding
-.fingerprint) of WORKSPACE/target it deletes:
+The first form prunes a worktree's seed: scripts/enact-worktree remove runs it on the worktree's
+native/target before that becomes the seed, which otherwise kept every incremental session and
+every unit any worktree ever built. A new worktree's sources are newer than the seed's build, so
+cargo rebuilds every workspace crate there: only the dependencies' units are worth cloning. In each
+profile directory (one holding .fingerprint) of WORKSPACE/target it deletes:
 - incremental/, which holds only workspace crates' sessions;
 - the workspace crates' own units (their files named <name>-<hash> under deps, build and examples:
   rlibs, test binaries, the object files macOS keeps for their debug info), but not their
@@ -18,8 +19,17 @@ only the dependencies' units are worth cloning. In each profile directory (one h
   of the profile's newest build; a unit is live if a root depends on it, transitively, since each
   .fingerprint/<pkg>-<hash>/<kind>-<name>.json lists the fingerprints of its dependencies, which
   are the contents of their own units' hash files. The window counts back from the newest build,
-  not from now, so an idle week deletes nothing.
-Files whose hash names no unit are kept.
+  not from now, so an idle week deletes nothing;
+- the object files of an incremental build's earlier invocations. rustc names each invocation's
+  objects <unit>.<cgu>.<token>.rcgu.o with a fresh random token and never deletes an earlier
+  invocation's, so a crate rebuilt in every run gained ~250 files a run (slow CI's debug/deps
+  reached 530k, and every rustc and rustdoc lists that directory). Only the objects carrying the
+  token of the unit's newest object are kept.
+Other files whose hash names no unit are kept.
+
+The second form prunes slow CI's persistent target directory after each run (.enact.toml), where
+the next build is the next commit's, in the same directory: it keeps the live workspace units and
+the incremental sessions of the crates built within the window, and deletes the rest as above.
 """
 
 from __future__ import annotations
@@ -35,6 +45,9 @@ from pathlib import Path
 
 KEEP_DAYS = 2
 HASH = re.compile(r"-([0-9a-f]{16})(?:\.|$)")
+# An incremental build's object file: <unit>.<cgu>.<token>.rcgu.o. (A non-incremental build's,
+# <unit>.<crate>.<hash>-cgu.<n>.rcgu.o, keeps its name from one build to the next.)
+OBJECT = re.compile(r"^([^.]+)\.[0-9a-z]+\.([0-9a-z]+)\.rcgu\.o$")
 ARTIFACT_DIRS = ("deps", "build", "examples")
 
 
@@ -66,8 +79,35 @@ def workspace_packages(workspace: Path) -> set[str]:
     return {p["name"] for p in metadata["packages"] if p["id"] in members}
 
 
-def unused_paths(profile: Path, workspace: set[str], keep_seconds: float) -> list[Path]:
-    """What a new worktree cannot reuse in one profile directory."""
+def stale_objects(entries: list[Path]) -> list[Path]:
+    """The incremental objects among entries that the newest invocation of their unit did not
+    write: all but those carrying the token of the unit's newest object."""
+    tokens: dict[str, dict[str, list[Path]]] = {}  # unit -> token -> its objects
+    newest: dict[str, tuple[float, str]] = {}  # unit -> its newest object's mtime and token
+    for e in entries:
+        m = OBJECT.match(e.name)
+        if not m:
+            continue
+        unit, token = m.groups()
+        tokens.setdefault(unit, {}).setdefault(token, []).append(e)
+        t = e.lstat().st_mtime
+        if unit not in newest or t > newest[unit][0]:
+            newest[unit] = (t, token)
+    return [
+        p
+        for unit, by_token in tokens.items()
+        for token, objects in by_token.items()
+        if token != newest[unit][1]
+        for p in objects
+    ]
+
+
+def unused_paths(
+    profile: Path, workspace: set[str], keep_seconds: float, warm: bool
+) -> list[Path]:
+    """What the next build cannot reuse in one profile directory: a new worktree's, or with warm
+    the next one in this directory, which keeps the workspace crates' units (workspace is then
+    empty) and recent incremental sessions."""
     built: dict[str, float] = {}  # unit hash -> its newest fingerprint mtime
     deps: dict[str, list[str]] = {}  # unit hash -> the fingerprints it depends on
     owner: dict[str, str] = {}  # fingerprint -> unit hash
@@ -95,46 +135,59 @@ def unused_paths(profile: Path, workspace: set[str], keep_seconds: float) -> lis
                 for d in dep_list
                 if isinstance(d, list) and len(d) == 4 and isinstance(d[3], int)
             ]
+    cutoff = max(built.values(), default=0.0) - keep_seconds
+    live = {h for h, t in built.items() if t >= cutoff}
+    queue = list(live)
+    while queue:
+        for fingerprint in deps[queue.pop()]:
+            h = owner.get(fingerprint)
+            if h is not None and h not in live:
+                live.add(h)
+                queue.append(h)
     unused: list[Path] = []
-    if built:
-        cutoff = max(built.values()) - keep_seconds
-        live = {h for h, t in built.items() if t >= cutoff}
-        queue = list(live)
-        while queue:
-            for fingerprint in deps[queue.pop()]:
-                h = owner.get(fingerprint)
-                if h is not None and h not in live:
-                    live.add(h)
-                    queue.append(h)
-        for name in (*ARTIFACT_DIRS, ".fingerprint"):
-            d = profile / name
-            if not d.is_dir():
-                continue
-            for e in d.iterdir():
-                m = HASH.search(e.name)
-                if not m or m.group(1) not in built:
-                    continue
-                h = m.group(1)
-                if h not in live or (h in ours and name != ".fingerprint"):
-                    unused.append(e)
+    for name in (*ARTIFACT_DIRS, ".fingerprint"):
+        d = profile / name
+        if not d.is_dir():
+            continue
+        kept: list[Path] = []
+        for e in d.iterdir():
+            m = HASH.search(e.name)
+            h = m.group(1) if m else None
+            if h in built and (h not in live or (h in ours and name != ".fingerprint")):
+                unused.append(e)
+            else:
+                kept.append(e)
+        unused += stale_objects(kept)
     incremental = profile / "incremental"
     if incremental.is_dir():
-        unused += list(incremental.iterdir())
+        # Each crate's directory holds its sessions, which rustc itself prunes.
+        unused += [c for c in incremental.iterdir() if not warm or newest_mtime(c) < cutoff]
     return unused
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("workspace", type=Path, help="the Cargo workspace, whose target/ is pruned")
+    parser.add_argument(
+        "path",
+        type=Path,
+        help="the Cargo workspace, whose target/ is pruned; with --warm, the target directory",
+    )
+    parser.add_argument(
+        "--warm",
+        action="store_true",
+        help="keep the live workspace units and recent incremental sessions (slow CI's target)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="report what would be deleted")
     args = parser.parse_args()
-    target = args.workspace / "target"
-    workspace = workspace_packages(args.workspace)
+    if args.warm:
+        target, workspace = args.path, set()
+    else:
+        target, workspace = args.path / "target", workspace_packages(args.path)
     profiles = [f.parent for f in target.glob("*/.fingerprint")]
     profiles += [f.parent for f in target.glob("*/*/.fingerprint")]
     count = freed = 0
     for profile in profiles:
-        for path in unused_paths(profile, workspace, KEEP_DAYS * 86400):
+        for path in unused_paths(profile, workspace, KEEP_DAYS * 86400, args.warm):
             count += 1
             freed += size(path)
             if args.dry_run:

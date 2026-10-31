@@ -100,7 +100,8 @@ fi
 # tests' build, a release build of the app and the CLI, and the live engine's cost against its
 # gates (G5, docs/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
 # engine's time per frame, then the whole frame's work (sim, evaluate, encode) offscreen.
-# `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory.
+# `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory, which it prunes after
+# the run.
 if [ "$section" = native ]; then
   uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
   uv run --no-project python -m unittest native/scripts/test_crates.py

@@ -44,14 +44,31 @@ class Target:
             f.touch()
         self.age(age_days, *files)
 
+    def objects(self, unit: str, token: str, *, age_days: float) -> None:
+        """Two object files an incremental build's invocation of unit wrote age_days ago."""
+        files = [self.profile / "deps" / f"{unit}.{cgu}.{token}.rcgu.o" for cgu in ("0abc", "1def")]
+        for f in files:
+            f.touch()
+        self.age(age_days, *files)
+
+    def session(self, crate_dir: str, *, age_days: float) -> Path:
+        """An incremental session of one crate, written age_days ago."""
+        session = self.profile / "incremental" / crate_dir / "s-1"
+        session.mkdir(parents=True)
+        (session / "dep-graph.bin").touch()
+        self.age(age_days, session / "dep-graph.bin")
+        return session
+
     def age(self, days: float, *paths: Path) -> None:
         t = time.time() - days * DAY
         for p in paths:
             os.utime(p, (t, t))
 
     def prune(self, *args: str) -> subprocess.CompletedProcess[str]:
+        """Prunes the seed's way; with --warm, slow CI's, given the target directory itself."""
+        path = self.root / "target" if "--warm" in args else self.root
         return subprocess.run(
-            [str(SCRIPT), *args, str(self.root)], check=True, capture_output=True, text=True
+            [str(SCRIPT), *args, str(path)], check=True, capture_output=True, text=True
         )
 
     def units(self) -> set[str]:
@@ -86,9 +103,7 @@ class PruneCargoTarget(unittest.TestCase):
     def test_deletes_workspace_artifacts_but_keeps_their_fingerprints(self) -> None:
         t = self.t
         t.unit("app", "aaaaaaaaaaaaaaaa", age_days=0)
-        session = t.profile / "incremental/app-0abc/s-1"
-        session.mkdir(parents=True)
-        (session / "dep-graph.bin").touch()
+        t.session("app-0abc", age_days=0)
         t.prune()
         self.assertEqual(t.artifacts(), set())
         self.assertEqual(t.units(), {"app-aaaaaaaaaaaaaaaa"})
@@ -113,6 +128,64 @@ class PruneCargoTarget(unittest.TestCase):
         t.unit("libc", "2222222222222222", age_days=30)
         t.prune()
         self.assertEqual(t.units(), {"app-aaaaaaaaaaaaaaaa", "libc-2222222222222222"})
+
+    def test_keeps_only_the_newest_invocations_objects(self) -> None:
+        t = self.t
+        t.unit("serde", "1111111111111111", age_days=1)
+        t.objects("serde-1111111111111111", "0old0", age_days=1)
+        t.objects("serde-1111111111111111", "1new1", age_days=0)
+        # A plugin without a hash in its name, and a non-incremental build's objects.
+        t.objects("ps_plugin", "2old2", age_days=1)
+        t.objects("ps_plugin", "3new3", age_days=0)
+        kept = t.profile / "deps/serde-1111111111111111.serde.0123456789abcdef-cgu.0.rcgu.o"
+        kept.touch()
+        t.age(1, kept)
+        t.prune()
+        self.assertEqual(
+            t.artifacts(),
+            {
+                "libserde-1111111111111111.rlib",
+                "serde-1111111111111111.d",
+                "serde-1111111111111111.0abc.1new1.rcgu.o",
+                "serde-1111111111111111.1def.1new1.rcgu.o",
+                "ps_plugin.0abc.3new3.rcgu.o",
+                "ps_plugin.1def.3new3.rcgu.o",
+                kept.name,
+            },
+        )
+
+    def test_warm_keeps_live_workspace_units_and_recent_sessions(self) -> None:
+        t = self.t
+        t.unit("serde", "1111111111111111", age_days=30)
+        t.unit("app", "bbbbbbbbbbbbbbbb", age_days=30)  # its old build
+        t.unit("app", "aaaaaaaaaaaaaaaa", age_days=0, deps=("1111111111111111",))
+        t.objects("app-aaaaaaaaaaaaaaaa", "0old0", age_days=0.01)
+        t.objects("app-aaaaaaaaaaaaaaaa", "1new1", age_days=0)
+        t.session("app-0abc", age_days=0)
+        t.session("app-1def", age_days=30)
+        t.prune("--warm")
+        self.assertEqual(t.units(), {"serde-1111111111111111", "app-aaaaaaaaaaaaaaaa"})
+        self.assertEqual(
+            t.artifacts(),
+            {
+                "libserde-1111111111111111.rlib",
+                "serde-1111111111111111.d",
+                "libapp-aaaaaaaaaaaaaaaa.rlib",
+                "app-aaaaaaaaaaaaaaaa.d",
+                "app-aaaaaaaaaaaaaaaa.0abc.1new1.rcgu.o",
+                "app-aaaaaaaaaaaaaaaa.1def.1new1.rcgu.o",
+            },
+        )
+        self.assertEqual({p.name for p in (t.profile / "incremental").iterdir()}, {"app-0abc"})
+
+    def test_warm_ignores_a_missing_target(self) -> None:
+        r = subprocess.run(
+            [str(SCRIPT), "--warm", str(self.t.root / "missing")],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("deleted 0 entries", r.stderr)
 
     def test_dry_run_deletes_nothing(self) -> None:
         t = self.t

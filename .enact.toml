@@ -5,8 +5,11 @@ master_branch = "master"
 
 [checks]
 fast = "scripts/check-fast"
-# One persistent target directory: the slow-CI runner is serialized by its lock.
-slow = '. scripts/lib/platform.sh && CARGO_TARGET_DIR="$PS_CACHE/target-release" scripts/ci-full'
+# One persistent target directory: the slow-CI runner is serialized by its lock. After each run,
+# pass or fail, it is pruned to what the next run reuses (scripts/prune-cargo-target --warm):
+# unpruned, rustc's stale objects grew its debug/deps to 530k files, which every rustc and rustdoc
+# lists (ps-msz.4.5). The run fails if the prune does.
+slow = '. scripts/lib/platform.sh && export CARGO_TARGET_DIR="$PS_CACHE/target-release" && { scripts/ci-full; s=$?; uv run --no-project python scripts/prune-cargo-target --warm "$CARGO_TARGET_DIR" && exit $s; }'
 
 [worktree]
 root = ".worktrees"   # inside the checkout; gitignored
