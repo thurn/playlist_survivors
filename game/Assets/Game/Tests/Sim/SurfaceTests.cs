@@ -14,9 +14,20 @@ namespace PS.Game.Sim.Tests
     {
         static readonly string[] Mutators = { "Add", "AddKnown", "Press", "Release", "StepTo", "DiscardEventsBefore" };
 
-        /// <summary>The objects the client reaches from a sim.</summary>
-        static object[] Surface(Simulation sim) =>
-            new object[] { sim, sim.State, sim.Stream, sim.Beats, sim.Beats.Judging, sim.Strides };
+        /// <summary>The objects the client reaches from a sim: the sim's own classes behind its public properties.</summary>
+        static List<object> Surface(Simulation sim)
+        {
+            var found = new List<object> { sim };
+            for (int i = 0; i < found.Count; i++)
+                foreach (var p in found[i].GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                {
+                    var type = p.PropertyType;
+                    if (!type.IsClass || type.Assembly != typeof(Simulation).Assembly || p.GetIndexParameters().Length > 0) continue;
+                    object value = p.GetValue(found[i]);
+                    if (value != null && !found.Contains(value)) found.Add(value);
+                }
+            return found;
+        }
 
         [Test]
         public void ReadingEverythingEveryFrameDoesNotChangeTheRun()
@@ -37,7 +48,10 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TheClientCanWriteNothingAndCannotReachTheGenerator()
         {
-            foreach (object o in Surface(new Simulation(new SimConfig())))
+            var surface = Surface(new Simulation(new SimConfig()));
+            Assert.That(surface.ConvertAll(o => o.GetType().Name), Is.SupersetOf(new[]
+                { "Simulation", "SimState", "BeliefLog", "BeatClock", "Judging", "StrideGrid" }));
+            foreach (object o in surface)
             {
                 var type = o.GetType();
                 foreach (var f in type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static))
