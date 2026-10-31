@@ -8,16 +8,14 @@ namespace Game.Client.Arena
     /// <summary>
     /// The arena on its own, for windowless stills (`--arena`): the baked arena in the default zone's
     /// look (`--palette NAME` for another, `--palette ""` for the night as baked), its structures in
-    /// crystal, and the camera in the game camera's framing (<see cref="Frame"/>) over the hero's
+    /// crystal, and the camera in the game camera's framing (<see cref="Look.CameraRig.Frame"/>) over the hero's
     /// start, with the hero's light there. `--arena-at x,z` frames another ground point;
     /// `--arena-tour S` holds each of the layout's <c>shots</c> for S seconds in turn, from time 0.
     /// `--view-width M` sets the view's width across the ground (default 30 m, the medium loudness).
     /// </summary>
     public sealed class ArenaStage : MonoBehaviour
     {
-        /// <summary>The game camera's pitch and vertical field of view (unity-game.md, "Post-processing and Camera").</summary>
-        public const float PitchDeg = 55f, FovDeg = 30f;
-        public const float ViewWidthM = 30f;
+        public const float ViewWidthM = Look.CameraRig.MediumWidthM;
 
         struct Shot
         {
@@ -66,22 +64,8 @@ namespace Game.Client.Arena
         {
             if (_arena == null || !_arena.Ready || _shots.Count == 0) return;
             int i = _holdS > 0 ? (int)(Time.timeSinceLevelLoad / _holdS) % _shots.Count : 0;
-            Frame(_camera, _shots[i].At, _shots[i].WidthM, (float)Stills.Width / Stills.Height);
+            Look.CameraRig.Frame(_camera, _shots[i].At, _shots[i].WidthM, (float)Stills.Width / Stills.Height);
             _arena.FollowHero(_shots[i].At);
-        }
-
-        /// <summary>
-        /// The game camera over <paramref name="focus"/>: <see cref="PitchDeg"/> down, looking north, at
-        /// <see cref="FovDeg"/>, back along its view axis so the view is <paramref name="widthM"/> wide
-        /// across the ground through the focus.
-        /// </summary>
-        public static void Frame(Camera camera, Vector3 focus, float widthM, float aspect)
-        {
-            camera.fieldOfView = FovDeg;
-            float halfWidthTan = Mathf.Tan(FovDeg * 0.5f * Mathf.Deg2Rad) * aspect;
-            float distance = widthM * 0.5f / halfWidthTan;
-            var rotation = Quaternion.Euler(PitchDeg, 0, 0);
-            camera.transform.SetPositionAndRotation(focus - rotation * Vector3.forward * distance, rotation);
         }
 
         static Vector3 Ground(JsonValue xy) => new Vector3(xy[0].AsFloat(), 0, xy[1].AsFloat());

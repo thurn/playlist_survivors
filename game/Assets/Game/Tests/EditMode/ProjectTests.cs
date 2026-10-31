@@ -29,6 +29,16 @@ namespace Game.Tests
         }
 
         [Test]
+        public void TheNightStackHasSsaoAndTheCameraNoTemporalAntialiasing()
+        {
+            var renderer = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(Tasks.RendererPath);
+            Assert.That(renderer.rendererFeatures.Any(f => f is ScreenSpaceAmbientOcclusion && f.isActive), "no active SSAO feature");
+            var scene = EditorSceneManager.OpenScene(Tasks.BootScenePath, OpenSceneMode.Single);
+            var camera = scene.GetRootGameObjects().Select(g => g.GetComponentInChildren<Camera>()).Single(c => c != null);
+            Assert.That(camera.GetUniversalAdditionalCameraData().antialiasing, Is.EqualTo(AntialiasingMode.None));
+        }
+
+        [Test]
         public void TheBootSceneIsTheFirstBuildSceneAndHasACamera()
         {
             var first = EditorBuildSettings.scenes.First(s => s.enabled);

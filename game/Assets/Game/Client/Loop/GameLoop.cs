@@ -2,6 +2,8 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using Game.Client.Arena;
+using Game.Client.Look;
 using Game.Client.Music;
 using PS.Game.Sim;
 using UnityEngine;
@@ -23,7 +25,10 @@ namespace Game.Client.Loop
     /// - `--overlay`: starts with the debug overlay shown (F3 toggles it), stills included;
     /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
-    /// - `--loop-out FILE`: writes each frame's times and the sim's hash, as CSV.
+    /// - `--loop-out FILE`: writes each frame's times and the sim's hash, as CSV;
+    /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
+    ///   its bake failed), `--palette NAME` the arena's zone palette;
+    /// - the look's `--hero-path` and `--camera-out FILE` (<see cref="LookPresenter"/>).
     /// It logs a summary when the run ends: the lead, frameSong's holds and the sim's timings.
     /// </summary>
     [DefaultExecutionOrder(-100)] // after the music's poll, before Boot keeps a still of the frame
@@ -41,6 +46,9 @@ namespace Game.Client.Loop
         MusicTimes _musicTimes;
         KeyInput _keys;
         DebugOverlay _overlay;
+        LookPresenter _look;
+        ArenaRuntime _arena;
+        CrystalStructures _crystal;
         StreamWriter _out;
         bool _fixed, _done;
         int _entries, _keyChanges;
@@ -91,7 +99,11 @@ namespace Game.Client.Loop
             if (events != null) Driver.Scripted = ScriptedEvents.Load(Args.Path(events));
             _keys = new KeyInput();
 
-            Driver.Events.Subscribe(new PlaceholderView(camera));
+            bool arena = !Args.Has("--no-arena") && ArenaBake.Load() != null;
+            Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena));
+            _look = new LookPresenter(camera, Driver.Sim);
+            Driver.Events.Subscribe(_look);
+            if (arena) LoadArena(camera);
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
 
@@ -103,6 +115,20 @@ namespace Game.Client.Loop
             }
             Debug.Log($"GameLoop: {(file != null ? file : "no music")}, {(_fixed ? "fixed time" : "real time")}, " +
                       $"seed {config.Seed}, events {(events ?? "none")}, headless {headless}");
+        }
+
+        /// <summary>The baked arena, its structures in crystal; the look drives its night volume and hero light.</summary>
+        void LoadArena(Camera camera)
+        {
+            ArenaClock.Deterministic = _fixed;
+            _arena = ArenaRuntime.Load(camera, Args.Get("--palette", ArenaLighting.DefaultPalette));
+            _arena.OnReady += a =>
+            {
+                _crystal = new CrystalStructures();
+                _crystal.Apply(a, camera);
+                _look.Volume = a.Post;
+                _look.FollowHero = a.FollowHero;
+            };
         }
 
         void Update()
@@ -182,6 +208,9 @@ namespace Game.Client.Loop
         void OnDestroy()
         {
             _keys?.Dispose();
+            _look?.Dispose();
+            _crystal?.Dispose();
+            _arena?.Dispose();
             _out?.Dispose();
             _out = null;
         }

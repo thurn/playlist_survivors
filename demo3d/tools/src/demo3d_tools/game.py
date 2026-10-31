@@ -6,7 +6,9 @@ by hand only for the frames that keep a still), building it first when there is 
 --build after a change. The full 1920×1080 stills and the player's log stay in the gitignored
 captures/game/look/SLUG/; 960 px JPEGs with the ps-render tag the vendor guard accepts go to
 game/evidence/look/SLUG/, or game/evidence/DIR/ with `--evidence DIR` (a bead's own set). The
-arena alone: `--player-args "--arena --arena-tour 2"` (ArenaStage).
+arena alone: `--player-args "--arena --arena-tour 2"` (ArenaStage). `--frames N` takes N
+consecutive fixed-time frames from the first `--at` time instead, and `--strip COLUMNS` writes
+them as one labelled filmstrip, SLUG.jpg, in place of separate stills.
 
 `game content [--check]`: the one-shot conversion of native's run content into game/Content
 (content.py).
@@ -42,6 +44,9 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     lk.add_argument("--build", action="store_true", help="rebuild the player first (after a change)")
     lk.add_argument("--player-args", default="", help="extra player flags")
     lk.add_argument("--evidence", help="write the stills to game/evidence/DIR instead of look/SLUG")
+    lk.add_argument("--frames", type=int, default=0, help="N consecutive fixed-time frames (1/60 s apart) from the first --at")
+    lk.add_argument("--strip", type=int, default=0, metavar="COLUMNS",
+                    help="one labelled filmstrip of the stills, COLUMNS wide, in place of separate stills")
     lk.set_defaults(func=cmd_look)
 
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
@@ -64,7 +69,12 @@ def cmd_look(a: argparse.Namespace) -> int:
         print("look: the game's windowless stills run on the Mac", file=sys.stderr)
         return 2
     wt = paths.worktree(name="game")
+    from . import filmstrip
+
     times = sorted(float(t) for t in a.at.split(","))
+    if a.frames > 0:
+        times = filmstrip.frame_times(times[0], a.frames, 1, 0.0)
+    at = ",".join(f"{t:.6f}" for t in times)
     exe = setup.player_dir(wt, "mac", a.backend) / APP_EXE
     if a.build or not exe.exists():
         from . import cli
@@ -78,7 +88,7 @@ def cmd_look(a: argparse.Namespace) -> int:
     shutil.rmtree(captures, ignore_errors=True)
     captures.mkdir(parents=True)
     cmd = [str(exe), "-batchmode", "-force-metal", "-logFile", str(captures / "player.log"),
-           "--fixed-time", "--capture-stills", str(captures), "--stills-at", a.at,
+           "--fixed-time", "--capture-stills", str(captures), "--stills-at", at,
            "--seconds", f"{times[-1] + 5:g}", *shlex.split(a.player_args)]
     started = time.monotonic()
     code = subprocess.run(cmd, check=False, cwd=wt.root, timeout=600, stdout=subprocess.DEVNULL).returncode
@@ -89,6 +99,12 @@ def cmd_look(a: argparse.Namespace) -> int:
         return 1
     evidence = wt.project / "evidence" / (a.evidence or f"look/{a.slug}")
     evidence.mkdir(parents=True, exist_ok=True)
+    if a.strip > 0:
+        sheet = filmstrip.strip(stills, times, None, a.strip, filmstrip.TILE_W)
+        filmstrip.save_tagged(sheet, evidence / f"{a.slug}.jpg", f"game look {a.slug}")
+        print(f"look: a {len(stills)}-frame strip in {time.monotonic() - started:.1f} s -> "
+              f"{(evidence / f'{a.slug}.jpg').relative_to(wt.root)} (full size in {captures.relative_to(wt.root)})")
+        return 0
     for still in stills:
         with Image.open(still) as im:
             small = im.convert("RGB").resize((EVIDENCE_W, round(im.height * EVIDENCE_W / im.width)), Image.LANCZOS)

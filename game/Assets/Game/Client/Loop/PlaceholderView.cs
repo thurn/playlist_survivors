@@ -5,10 +5,10 @@ using UnityEngine;
 namespace Game.Client.Loop
 {
     /// <summary>
-    /// A stand-in view until the presenters land: a plane, the hero as a white capsule that pulses
-    /// on each beat, and enemies as red capsules from Spawn, EnemyStep, EnemyKnock and Death events (the sim's
-    /// or a scripted feed's). The camera follows the hero from above and behind. Sim ground (x, y)
-    /// is Unity's (x, 0, y). A primitive's default material doesn't draw in URP players, so they
+    /// A stand-in view until the presenters land: the hero as a white capsule that pulses on each
+    /// beat, and enemies as red capsules from Spawn, EnemyStep, EnemyKnock and Death events (the sim's
+    /// or a scripted feed's), on a plane under a sun when there is no arena. The look's camera rig
+    /// frames them (LookPresenter). Sim ground (x, y) is Unity's (x, 0, y). A primitive's default material doesn't draw in URP players, so they
     /// all use a URP Lit material from Resources.
     /// </summary>
     public sealed class PlaceholderView : IPresenter
@@ -33,37 +33,36 @@ namespace Game.Client.Loop
             public double Start, End;
         }
 
-        readonly Camera _camera;
         readonly Transform _hero;
         readonly Material _lit, _enemyMaterial;
         readonly List<Enemy> _enemies = new List<Enemy>();
         readonly double[] _beats = new double[Beats];
         int _beatCount;
 
-        public PlaceholderView(Camera camera)
+        public PlaceholderView(Camera camera, bool ground = true)
         {
-            _camera = camera;
             _lit = Resources.Load<Material>(MaterialPath);
             var root = new GameObject("Placeholder").transform;
-            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
-            ground.transform.SetParent(root);
-            ground.transform.localScale = new Vector3(30, 1, 30); // 300 m
-            ground.GetComponent<Renderer>().sharedMaterial = Tinted(new Color(0.12f, 0.13f, 0.17f));
             var hero = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             hero.name = "Hero";
             hero.transform.SetParent(root);
             hero.GetComponent<Renderer>().sharedMaterial = Tinted(new Color(0.95f, 0.95f, 1f));
             _hero = hero.transform;
             _enemyMaterial = Tinted(new Color(0.85f, 0.2f, 0.25f));
+            if (!ground) return;
+            var plane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            plane.name = "Ground";
+            plane.transform.SetParent(root);
+            plane.transform.localScale = new Vector3(30, 1, 30); // 300 m
+            plane.GetComponent<Renderer>().sharedMaterial = Tinted(new Color(0.12f, 0.13f, 0.17f));
             var light = new GameObject("Sun").AddComponent<Light>();
             light.type = LightType.Directional;
             light.transform.SetParent(root);
             light.transform.rotation = Quaternion.Euler(50, -30, 0);
-            if (_camera != null)
+            if (camera != null)
             {
-                _camera.clearFlags = CameraClearFlags.SolidColor;
-                _camera.backgroundColor = new Color(0.02f, 0.02f, 0.04f);
+                camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = new Color(0.02f, 0.02f, 0.04f);
             }
         }
 
@@ -142,12 +141,6 @@ namespace Game.Client.Loop
                     y = Mathf.Lerp(move.FromY, move.ToY, a);
                 }
                 enemy.Body.localPosition = new Vector3(x, 1, y);
-            }
-            if (_camera != null)
-            {
-                var target = new Vector3((float)hx, 0, (float)hy);
-                _camera.transform.position = target + new Vector3(0, 14, -12);
-                _camera.transform.LookAt(target);
             }
         }
 
