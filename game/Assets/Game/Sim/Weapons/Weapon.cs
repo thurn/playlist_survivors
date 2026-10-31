@@ -42,6 +42,18 @@ namespace PS.Game.Sim
 
         protected WeaponRank Numbers => Def.Rank(Rank);
 
+        /// <summary>A hit's damage: the rank's power times Might.</summary>
+        public double Power => Numbers.Power * Stats.Might;
+
+        /// <summary>Its shape's radius at the rank's Area times the hero's.</summary>
+        protected double Radius => Def.Shape.RadiusM * Numbers.Area * Stats.Area;
+
+        /// <summary>A death launch's distance in metres: native's knockback distance times the weapon's, longer for a heavier hit.</summary>
+        protected double Launch(double weight) => Horde.KnockbackM * Numbers.Knockback * weight;
+
+        /// <summary>Nothing fires while the world is frozen or the hero has fallen.</summary>
+        protected bool Holding => state.Frozen || state.Hero.Fallen;
+
         /// <summary>
         /// Its interval on the run clock: the rank's times Cooldown, plus its duration times
         /// Duration for a weapon whose next shot waits for the last to end (King Bible; native's
@@ -60,7 +72,7 @@ namespace PS.Game.Sim
         internal virtual void Fire(Simulation sim, double t) => throw new InvalidOperationException(Def.Id + " has no times of its own");
 
         /// <summary>The per-tick system, at the tick's end.</summary>
-        internal virtual void Tick(double end) { }
+        internal virtual void Tick(Simulation sim, double end) { }
 
         /// <summary>A shot at <paramref name="t"/>, on its grid point: the attack event, facing the hero's way, as far as its shape reaches.</summary>
         internal virtual void Shoot(Simulation sim, double t)
@@ -68,7 +80,7 @@ namespace PS.Game.Sim
             var d = state.Hero.Facing;
             double x = d == Direction.Right ? 1 : d == Direction.Left ? -1 : 0;
             double y = d == Direction.Up ? 1 : d == Direction.Down ? -1 : 0;
-            sim.Emit(SimEvent.HeroAttack(t, Index, Def.Shape.Kind, 0, t, t, x, y, false, Def.Shape.RadiusM * Numbers.Area * Stats.Area));
+            sim.Emit(SimEvent.HeroAttack(t, Index, Def.Shape.Kind, 0, t, t, x, y, false, Radius));
         }
     }
 }

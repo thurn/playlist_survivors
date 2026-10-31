@@ -379,4 +379,15 @@ namespace PS.Game.Sim
         public double X => e.D0;
         public double Y => e.D1;
     }
+
+    public readonly struct BurnEvent
+    {
+        readonly SimEvent e;
+        public BurnEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Weapon => e.I0;
+        public double X => e.D0;
+        public double Y => e.D1;
+        public double Radius => e.D2;
+    }
 }

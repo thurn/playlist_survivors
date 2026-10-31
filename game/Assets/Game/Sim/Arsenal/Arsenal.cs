@@ -314,7 +314,7 @@ namespace PS.Game.Sim
         /// <summary>The per-tick system, at the tick's end: the weapons' own, the gems, and Recovery.</summary>
         internal void Tick(Simulation sim, double end)
         {
-            for (int s = 0; s < state.WeaponCount; s++) slots[s].Weapon.Tick(end);
+            for (int s = 0; s < state.WeaponCount; s++) slots[s].Weapon.Tick(sim, end);
             Gems.Tick(sim, end);
             double played = state.RunClock - recoveredTo;
             recoveredTo = state.RunClock;

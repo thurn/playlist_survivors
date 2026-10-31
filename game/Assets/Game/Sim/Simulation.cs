@@ -83,9 +83,13 @@ namespace PS.Game.Sim
             {
                 double windup = config.Arsenal.SwordWindupS;
                 Arsenal = new Arsenal(config.Arsenal, content, State, Stream, Beats, Run, Health, (arsenal, def, index) =>
-                    def.Shape.Kind == ShapeKind.Sword
-                        ? new Sword(arsenal, def, index, windup, content, Stream, Beats, State, Horde, Structures, Zones)
-                        : new Weapon(arsenal, State, def, index));
+                    def.Shape.Kind switch
+                    {
+                        ShapeKind.Sword => new Sword(arsenal, def, index, windup, content, Stream, Beats, State, Horde, Structures, Zones),
+                        ShapeKind.Aura => new Garlic(arsenal, State, Horde, def, index),
+                        ShapeKind.Trail => new FireTrail(arsenal, State, Horde, Run, def, index),
+                        _ => new Weapon(arsenal, State, def, index),
+                    });
             }
             if (config.Easy && content != null)
             {

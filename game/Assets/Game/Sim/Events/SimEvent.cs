@@ -7,7 +7,8 @@ namespace PS.Game.Sim
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
     /// zone changes, freezes, the run's start, its finale and its end, gems' flights and pickups,
-    /// level-ups and their cards, the music-driven events and the enemies that leave with them; the
+    /// level-ups and their cards, the music-driven events and the enemies that leave with them, and the
+    /// tiles a trail weapon burns; the
     /// rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
@@ -42,6 +43,7 @@ namespace PS.Game.Sim
         Card,
         SetPiece,
         Leave,
+        Burn,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -466,6 +468,20 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>
+        /// A trail weapon's pulse burns one tile of its wake (Fire Trail): I0 the weapon's content index;
+        /// D0/D1 the tile's centre, D2 the burn's radius there.
+        /// </summary>
+        public static SimEvent Burn(double t, int weapon, double x, double y, double radius)
+        {
+            var e = Of(SimEventKind.Burn, t);
+            e.I0 = weapon;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = radius;
+            return e;
+        }
+
         /// <summary>A sound to schedule: I0 cue, I1 variant; D0 its song time, D1 pitch (semitones), D2 gain, D3/D4 position.</summary>
         public static SimEvent SoundCue(double t, int cue, int variant, double at, double pitch, double gain, double x, double y)
         {
@@ -532,5 +548,6 @@ namespace PS.Game.Sim
         public CardEvent AsCard { get { Expect(SimEventKind.Card); return new CardEvent(this); } }
         public SetPieceEvent AsSetPiece { get { Expect(SimEventKind.SetPiece); return new SetPieceEvent(this); } }
         public LeaveEvent AsLeave { get { Expect(SimEventKind.Leave); return new LeaveEvent(this); } }
+        public BurnEvent AsBurn { get { Expect(SimEventKind.Burn); return new BurnEvent(this); } }
     }
 }

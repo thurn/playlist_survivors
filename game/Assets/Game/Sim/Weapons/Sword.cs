@@ -142,18 +142,11 @@ namespace PS.Game.Sim
         public int StrikesPerBeat => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
 
         /// <summary>A strike's damage before the heavy multiplier: the rank's power times Might, at any tempo.</summary>
-        public double Power => Numbers.Power * Stats.Might;
-
         public double Reach(bool heavy) =>
             Def.Shape.RadiusM * Numbers.Area * Stats.Area * (heavy ? Def.Shape.HeavyReachScale : 1);
 
-        /// <summary>A death launch's distance in metres: native's knockback distance times the weapon's, longer for a heavier hit.</summary>
-        double Launch(double weight) => Horde.KnockbackM * Numbers.Knockback * weight;
-
         /// <summary>Committed beats revealed too late to wind up for.</summary>
         public int Missed { get; private set; }
-
-        bool Holding => state.Frozen || state.Hero.Fallen;
 
         ref Strike At(int k) => ref queue[(head + k) % QueueCapacity];
 
@@ -229,7 +222,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>The per-tick system, at the tick's end: with no beat known ahead, the pulse on the sword's raw interval.</summary>
-        internal override void Tick(double end)
+        internal override void Tick(Simulation sim, double end)
         {
             if (Holding || count > 0) return;
             double interval = Interval;
