@@ -57,3 +57,5 @@ what was run (the exact commands), the numbers, and what they show.
   dump: every minute's roles and all 20 bosses, never above the cap of 300, and victory at 30:00 (ps-msz.6.2).
 - [cast](cast/README.md): every role and boss in its crystal and gem colour, and bosses telegraphing, charging and
   slamming on the beat (ps-msz.6.2).
+- [music-events](music-events/README.md): a zone change easing the arena's lighting, every swarm, set piece and the
+  signature minotaur as filmstrips, and a 30-minute run's events under the cap (ps-msz.6.3).
