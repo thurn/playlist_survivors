@@ -1,83 +1,237 @@
 {
-  "note": [
-    "The crypt environment (ps-bop: the control, neutral grey), minimal: the arena's area plan with a stone ground, grey neutral lighting and a neutral grade, from kit pieces already synced (Dark Fantasy's dead trees, ruins, tombs and statues, Fantasy Kingdom's rocks). The crypt bead dresses it fully. Format: arena-layout.json's note, Environments."
-  ],
+  "note": ["The crypt environment (ps-bop.3.11: a grey stone crypt; neutral grey, the control): the arena's area plan as a necropolis in POLYGON Dungeon's grey stone, with Knights' plinth tombs, gravestones and iron fences and Dark Fantasy's dead trees, tombs, braziers and candles. Pillars, mausoleums, plinth tombs and dead trees for the forest; tombstones, gravestones, broken pillars, balustrade posts, coffins, fences and candle stands for the edge bands; brick rubble, pebbles and worn flagstone slabs on a grey stone ground the forest's value, with no hue. A great hooded statue for the glowing tree, a ring of hooded statues, a mausoleum for the graveyard, balustrades and brick walls for the ruin walls and the courtyard (a paved floor inside), braziers by an altar in the brazier glade, a great ruined gateway at the opening. A white key on the set and the horde, a grey skylight, grey fog and mist, warm candles and braziers the only hue, a neutral grade. Its palette and findings: demo3d/evidence/look/env-crypt/README.md. Format: arena-layout.json's note, Environments."],
   "extends": "arena",
-  "ground": {"forest": [0.10, 0.10, 0.10], "edge": [0.21, 0.21, 0.20], "clearing": [0.46, 0.46, 0.45], "path": [0.51, 0.50, 0.49]},
+  "ground": {"forest": [0.1, 0.1, 0.1], "edge": [0.2, 0.2, 0.2], "clearing": [0.43, 0.43, 0.43], "path": [0.47, 0.47, 0.47]},
   "lighting": {
-    "moon": {"color": [0.92, 0.92, 0.92], "intensity": 1.0},
-    "ambient": {"sky": [0.07, 0.07, 0.075], "equator": [0.045, 0.045, 0.048], "ground": [0.022, 0.022, 0.022]},
-    "fog": {"color": [0.05, 0.05, 0.055]},
-    "crowd": {"rim": [0.26, 0.26, 0.28], "keyColor": [1.0, 1.0, 1.0]},
-    "hero": {"color": [1.0, 0.97, 0.94]},
-    "vignette": {"color": [0.025, 0.025, 0.03]},
+    "moon": {"color": [1.0, 1.0, 1.0], "intensity": 1.0},
+    "ambient": {"sky": [0.07, 0.07, 0.07], "equator": [0.045, 0.045, 0.045], "ground": [0.022, 0.022, 0.022]},
+    "fog": {"color": [0.05, 0.05, 0.05]},
+    "kitValue": {"Dungeon_Material": 0.7, "PolyKnights": 0.7},
+    "crowd": {"rim": [0.27, 0.27, 0.27], "keyColor": [1.0, 1.0, 1.0]},
+    "hero": {"intensity": 32, "color": [1.0, 1.0, 1.0]},
+    "vignette": {"color": [0.025, 0.025, 0.025]},
     "post": {"grade": {"shadow": [1.0, 1.0, 1.0], "mid": [1.0, 1.0, 1.0], "high": [1.0, 1.0, 1.0]}},
-    "glow": null
+    "glow": {
+      "elven/SM_Env_Tree_Glowing_01": null,
+      "dungeon/SM_Env_Statue_01": {"heightM": 3.0, "rangeM": 14, "intensity": 5, "color": [1.0, 1.0, 1.0], "pool": {"radiusM": 6.0, "intensity": 0.25}},
+      "dungeon/SM_Prop_Candle_Stand_01": {"heightM": 1.6, "rangeM": 6, "intensity": 2.0, "color": [1.0, 0.68, 0.38], "pool": {"radiusM": 2.2, "intensity": 0.22}}
+    }
   },
   "atmosphere": {
-    "mist": {"color": [0.36, 0.36, 0.37]}
+    "mist": {"color": [0.36, 0.36, 0.36]},
+    "runes": {
+      "circles": [
+        {"at": [44, 40], "radiusM": 8.6, "color": [1.0, 1.0, 1.0], "intensity": 0.05},
+        {"at": [0, 16], "radiusM": 4.6, "color": [1.0, 1.0, 1.0], "intensity": 0.05},
+        {"at": [12, -25], "radiusM": 5.4, "color": [1.0, 1.0, 1.0], "intensity": 0.05}
+      ]
+    }
   },
   "props": {
     "forest-trees": {
-      "darkfantasy/SM_Env_Tree_Dead_01": 1,
-      "darkfantasy/SM_Env_Tree_Dead_02": 1.5,
-      "darkfantasy/SM_Env_Tree_Dead_03": 0.6,
-      "kingdom/SM_Env_Tree_Dead_01": 1.5,
-      "kingdom/SM_Env_Tree_Dead_02": 1.5,
-      "darkfantasy/SM_Bld_Ruin_01": 0.3,
-      "darkfantasy/SM_Bld_Ruin_05": 0.3,
-      "darkfantasy/SM_Prop_Statue_01": 0.2,
-      "darkfantasy/SM_Prop_Statue_02": 0.2
+      "darkfantasy/SM_Env_Tree_Dead_01": 1.0, "darkfantasy/SM_Env_Tree_Dead_02": 1.2, "darkfantasy/SM_Env_Tree_Dead_03": 0.4,
+      "darkfantasy/SM_Env_Tree_Dead_04": 0.4, "dungeon/SM_Env_Pillar_Round_01": 0.5, "dungeon/SM_Env_Pillar_Round_02": 0.5,
+      "dungeon/SM_Env_Pillar_Round_03": 0.4, "dungeon/SM_Env_Pillar_Square_05": 0.4, "dungeon/SM_Env_Pillar_Square_06": 0.4,
+      "dungeon/SM_Env_Pillar_Square_07": 0.2, "dungeon/SM_Env_Wall_Pillar_Large_01": 0.2, "dungeon/SM_Env_Wall_Pillar_Large_Broken_01": 0.3,
+      "knights/SM_Prop_Plinth_01": 0.4, "darkfantasy/SM_Prop_Tomb_01": 0.4, "darkfantasy/SM_Prop_Tomb_02": 0.4,
+      "dungeon/SM_Env_Statue_02": 0.12, "dungeon/SM_Env_Statue_03": 0.12, "dungeon/SM_Env_Statue_04": 0.12,
+      "dungeon/SM_Env_RockPile_Pillar_01": 0.25, "darkfantasy/SM_Bld_Ruin_01": 0.15, "darkfantasy/SM_Bld_Ruin_05": 0.15
     },
     "forest-rocks": {
-      "kingdom/SM_Env_Rock_Chunk_02": 1,
-      "kingdom/SM_Env_Rock_Chunk_03": 1,
-      "darkfantasy/SM_Prop_Tomb_01": 0.6,
-      "darkfantasy/SM_Prop_Tomb_02": 0.6
+      "dungeon/SM_Env_RockPile_Rounded_01": 1, "dungeon/SM_Env_RockPile_Rounded_02": 1, "dungeon/SM_Env_Pillar_Broken_Pile_02": 1,
+      "darkfantasy/SM_Bld_Wall_Ruin_End_02": 0.6, "dungeon/SM_Prop_Bricks_01": 0.6
     },
     "edge-plants": {
-      "darkfantasy/SM_Prop_Tomb_Stone_01": 3,
-      "darkfantasy/SM_Prop_Tomb_01": 0.8,
-      "darkfantasy/SM_Prop_Tomb_02": 0.8,
-      "darkfantasy/SM_Prop_Gargoyle_Statue_01": 0.4,
-      "darkfantasy/SM_Bld_Wall_Ruin_End_02": 0.4,
-      "kingdom/SM_Env_Rock_Chunk_01": 1.5,
-      "kingdom/SM_Env_Rock_Chunk_02": 0.8
+      "darkfantasy/SM_Prop_Tomb_Stone_01": 1.5, "darkfantasy/SM_Prop_Tomb_Stone_02": 1.2, "darkfantasy/SM_Prop_Tomb_Stone_03": 1.2,
+      "knights/SM_Prop_Gravestone_01": 1.2, "knights/SM_Prop_Gravestone_02": 1.2, "darkfantasy/SM_Prop_Tomb_01": 0.4,
+      "darkfantasy/SM_Prop_Tomb_02": 0.4, "knights/SM_Prop_Plinth_01": 0.3, "dungeon/SM_Env_Pillar_Broken_01": 0.6,
+      "dungeon/SM_Env_Pillar_Broken_02": 0.5, "dungeon/SM_Env_Pillar_Square_01": 0.3, "dungeon/SM_Env_Pillar_Square_03": 0.3,
+      "dungeon/SM_Env_Pillar_Square_08": 0.4, "dungeon/SM_Env_Railing_Pillar_01": 0.3, "dungeon/SM_Env_Railing_Pillar_03": 0.3,
+      "dungeon/SM_Env_Railing_Pillar_04": 0.3, "dungeon/SM_Env_Railing_Broken_01": 0.2, "dungeon/SM_Env_Railing_Broken_03": 0.2,
+      "dungeon/SM_Env_Stone_Lantern_01": 0.2, "dungeon/SM_Env_Stone_Vessel_01": 0.2, "dungeon/SM_Env_Stone_Throne_01": 0.08,
+      "dungeon/SM_Prop_Coffin_01": 0.25, "knights/SM_Prop_Fence_01": 0.3, "knights/SM_Prop_Fence_02": 0.3,
+      "darkfantasy/SM_Prop_Gargoyle_Statue_01": 0.12, "dungeon/SM_Prop_Bricks_02": 0.3, "dungeon/SM_Prop_Bricks_03": 0.3,
+      "dungeon/SM_Prop_Candle_Stand_01": 0.12, "dungeon/SM_Env_RockPile_Rounded_03": 0.4, "dungeon/SM_Env_Pillar_Broken_Pile_01": 0.5
     },
     "edge-soft": {
-      "darkfantasy/SM_Env_Moss_01": 2,
-      "darkfantasy/SM_Env_Moss_02": 2,
-      "darkfantasy/SM_Prop_Skull_Pile_01": 0.5,
-      "kingdom/SM_Generic_Small_Rocks_01": 2,
-      "kingdom/SM_Generic_Small_Rocks_02": 2
+      "dungeon/SM_Env_Brick_Rubble_01": 1, "dungeon/SM_Env_Brick_Rubble_03": 1, "dungeon/SM_Env_Brick_Rubble_04": 1,
+      "dungeon/SM_Env_Brick_Rubble_06": 1, "dungeon/SM_Env_Rubble_Pebbles_01": 1, "dungeon/SM_Env_Rubble_Pebbles_02": 1,
+      "dungeon/SM_Env_Rock_Round_01": 0.8, "dungeon/SM_Env_Rock_Round_02": 0.8, "dungeon/SM_Env_Rock_Round_04": 0.8,
+      "dungeon/SM_Env_BonePile_Small_01": 0.4, "dungeon/SM_Env_BonePile_Small_02": 0.4, "darkfantasy/SM_Prop_Skull_Pile_01": 0.3,
+      "dungeon/SM_Prop_Bricks_04": 0.8, "dungeon/SM_Prop_Candles_02": 0.25, "dungeon/SM_Prop_Candles_04": 0.25
     },
     "clutter": {
-      "kingdom/SM_Env_Rock_01": 1,
-      "kingdom/SM_Env_Rock_02": 1,
-      "kingdom/SM_Env_Rock_03": 1,
-      "kingdom/SM_Env_Rock_04": 1,
-      "kingdom/SM_Generic_Small_Rocks_01": 1.5,
-      "kingdom/SM_Generic_Small_Rocks_02": 1.5,
-      "darkfantasy/SM_Prop_Skull_Pile_01": 0.3
+      "dungeon/SM_Env_Brick_Rubble_01": 1, "dungeon/SM_Env_Brick_Rubble_02": 1, "dungeon/SM_Env_Brick_Rubble_03": 1,
+      "dungeon/SM_Env_Rock_Pebble_01": 1, "dungeon/SM_Env_Rock_Pebble_02": 1, "dungeon/SM_Env_Rock_Pebble_03": 1,
+      "dungeon/SM_Env_Rubble_Pebbles_01": 0.6, "dungeon/SM_Env_BonePile_Small_01": 0.2
+    },
+    "ruin-walls": {
+      "dungeon/SM_Env_Railing_01": 1, "dungeon/SM_Env_Railing_03": 1, "dungeon/SM_Env_Railing_Broken_01": 0.8,
+      "dungeon/SM_Env_Railing_Broken_03": 0.8, "dungeon/SM_Prop_Bricks_01": 0.6, "dungeon/SM_Prop_Bricks_03": 0.6
     },
     "ground-dressing": {
-      "darkfantasy/SM_Env_Moss_01": 1,
-      "darkfantasy/SM_Env_Moss_02": 1,
-      "darkfantasy/SM_Env_Moss_03": 1,
-      "elven/SM_Env_Pebbles_01": 1,
-      "elven/SM_Env_Pebbles_02": 1,
-      "elven/SM_Env_Pebbles_03": 1
+      "knights/SM_Env_Path_Stone_02": 0.3, "knights/SM_Env_Path_Stone_03": 0.4, "dungeon/SM_Env_Rubble_Pebbles_01": 1,
+      "dungeon/SM_Env_Rubble_Pebbles_02": 1, "dungeon/SM_Env_Brick_Rubble_01": 0.6
     }
+  },
+  "scatter": {
+    "path": [
+      {"props": "clutter", "spacingM": 3.5, "scale": [1.0, 1.5], "chance": 0.35},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.2, "scale": [1.0, 1.3], "chance": 0.4}
+    ],
+    "clearing": [
+      {"props": "clutter", "spacingM": 3.0, "scale": [1.0, 1.5], "chance": 0.4},
+      {"props": "ground-dressing", "dressing": true, "spacingM": 3.6, "scale": [1.0, 1.3], "chance": 0.4}
+    ]
   },
   "pieces": {
     "glowing-tree": [
-      {"prop": "darkfantasy/SM_Prop_Statue_01", "at": [0, 0], "yawDeg": 30, "scale": 1.4},
-      {"prop": "darkfantasy/SM_Prop_Candle_01", "at": [1.6, 0.4], "yawDeg": 0},
-      {"prop": "darkfantasy/SM_Prop_Candle_02", "at": [-1.2, 1.3], "yawDeg": 40},
-      {"prop": "darkfantasy/SM_Prop_Candle_03", "at": [0.3, -1.7], "yawDeg": 80}
+      {"prop": "dungeon/SM_Env_Statue_01", "at": [0, 0], "yawDeg": 120, "scale": 1.3},
+      {"prop": "dungeon/SM_Prop_Candle_Stand_01", "at": [3.4, -2.6], "yawDeg": 20},
+      {"prop": "dungeon/SM_Prop_Candle_Stand_01", "at": [-3.2, 2.6], "yawDeg": 70},
+      {"prop": "dungeon/SM_Env_Stone_Vessel_01", "at": [2.8, 2.6], "yawDeg": 210},
+      {"prop": "darkfantasy/SM_Prop_Tomb_Stone_02", "at": [-2.8, -2.4], "yawDeg": 160}
     ],
     "glowing-tree-flowers": [
-      {"prop": "darkfantasy/SM_Prop_Skull_Pile_01", "at": [0, 0], "yawDeg": 0}
+      {"prop": "dungeon/SM_Prop_Candles_01", "at": [3.87, 1.64], "yawDeg": 0, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_02", "at": [1.13, 4.04], "yawDeg": 47, "scale": 1.3},
+      {"prop": "dungeon/SM_Prop_Candles_03", "at": [-2.46, 3.41], "yawDeg": 94, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_02", "at": [-4.2, 0.2], "yawDeg": 141, "scale": 1.3},
+      {"prop": "dungeon/SM_Prop_Candles_01", "at": [-2.78, -3.15], "yawDeg": 188, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_02", "at": [0.73, -4.14], "yawDeg": 235, "scale": 1.3},
+      {"prop": "dungeon/SM_Prop_Candles_03", "at": [3.69, -2.0], "yawDeg": 282, "scale": 1.3}
+    ],
+    "crystal-ring": [
+      {"prop": "dungeon/SM_Env_Statue_02", "at": [7.0, 0.0], "yawDeg": 270, "scale": 1.15},
+      {"prop": "dungeon/SM_Env_Statue_04", "at": [3.5, 6.06], "yawDeg": 330, "scale": 1.15},
+      {"prop": "dungeon/SM_Env_Statue_02", "at": [-3.5, 6.06], "yawDeg": 30, "scale": 1.15},
+      {"prop": "dungeon/SM_Env_Statue_04", "at": [-7.0, 0.0], "yawDeg": 90, "scale": 1.15},
+      {"prop": "dungeon/SM_Env_Statue_02", "at": [-3.5, -6.06], "yawDeg": 150, "scale": 1.15},
+      {"prop": "dungeon/SM_Env_Statue_04", "at": [3.5, -6.06], "yawDeg": 210, "scale": 1.15},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [5.6, 0.0], "yawDeg": 0, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [2.8, 4.85], "yawDeg": 47, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [-2.8, 4.85], "yawDeg": 94, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [-5.6, 0.0], "yawDeg": 141, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [-2.8, -4.85], "yawDeg": 188, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [2.8, -4.85], "yawDeg": 235, "scale": 1.4}
+    ],
+    "graveyard": [
+      {"prop": "dungeon/SM_Env_Entrance_Crypt_01", "at": [4.5, 1.5], "yawDeg": 90},
+      {"prop": "darkfantasy/SM_Prop_Tomb_01", "at": [0.2, 6.2], "yawDeg": 5},
+      {"prop": "darkfantasy/SM_Prop_Tomb_02", "at": [0.6, -4.2], "yawDeg": -8},
+      {"prop": "knights/SM_Prop_Gravestone_01", "at": [-1.6, -6.4], "yawDeg": 12},
+      {"prop": "knights/SM_Prop_Gravestone_02", "at": [1.4, -7.0], "yawDeg": -6},
+      {"prop": "darkfantasy/SM_Prop_Tomb_Stone_03", "at": [-1.5, 8.2], "yawDeg": 4},
+      {"prop": "knights/SM_Prop_Gravestone_01", "at": [2.4, 8.6], "yawDeg": -10},
+      {"prop": "dungeon/SM_Prop_Candle_Stand_01", "at": [0.8, 3.4], "yawDeg": 0},
+      {"prop": "dungeon/SM_Prop_Candle_Stand_01", "at": [0.8, -0.6], "yawDeg": 40},
+      {"prop": "darkfantasy/SM_Env_Tree_Dead_01", "at": [8.5, -5.5], "yawDeg": 40},
+      {"prop": "knights/SM_Prop_Fence_01", "at": [5.5, -4.2], "yawDeg": 0},
+      {"prop": "knights/SM_Prop_Fence_02", "at": [7.1, -4.2], "yawDeg": 0},
+      {"prop": "dungeon/SM_Prop_Coffin_01", "at": [-0.6, 1.2], "yawDeg": 80},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [-0.9, 3.0], "yawDeg": 0},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [-0.9, -0.4], "yawDeg": 0}
+    ],
+    "ruins-gate": [
+      {"prop": "dungeon/SM_Env_Wall_Pillar_Large_01", "at": [0.4, -1.2], "yawDeg": 10},
+      {"prop": "dungeon/SM_Env_Railing_Pillar_03", "at": [12.4, -1], "yawDeg": 0, "scale": 1.2},
+      {"prop": "dungeon/SM_Env_Railing_Pillar_03", "at": [19.6, -1], "yawDeg": 0, "scale": 1.2},
+      {"prop": "dungeon/SM_Env_Wall_Pillar_Large_Broken_01", "at": [31.4, -1], "yawDeg": 0}
+    ],
+    "courtyard": [
+      {"prop": "dungeon/SM_Env_Pillar_Square_05", "at": [-8, -8], "yawDeg": 0},
+      {"prop": "dungeon/SM_Env_Pillar_Square_05", "at": [8, -8], "yawDeg": 90},
+      {"prop": "dungeon/SM_Env_Pillar_Square_05", "at": [8, 8], "yawDeg": 180},
+      {"prop": "dungeon/SM_Env_Pillar_Square_05", "at": [-8, 8], "yawDeg": 270}
+    ],
+    "courtyard-circle": [
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [4.28, -0.88], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_04", "at": [3.63, 1.12], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [1.93, 2.36], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_04", "at": [-0.18, 2.36], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [-1.88, 1.12], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_04", "at": [-2.52, -0.87], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [-1.88, -2.87], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_04", "at": [-0.18, -4.11], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [1.93, -4.11], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Env_Tiles_04", "at": [3.63, -2.87], "yawDeg": 0, "scale": 0.35},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [3.89, 3.89], "yawDeg": 0, "scale": 1.4},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [-3.89, 3.89], "yawDeg": 90, "scale": 1.4},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [-3.89, -3.89], "yawDeg": 180, "scale": 1.4},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [3.89, -3.89], "yawDeg": 270, "scale": 1.4}
+    ],
+    "brazier-glade": [
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, 5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [-5.5, 0], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Brazier_01", "at": [0, -5.5], "yawDeg": 0},
+      {"prop": "darkfantasy/SM_Prop_Pyre_02", "at": [-6, 7], "yawDeg": 20},
+      {"prop": "dungeon/SM_Env_Alter_01", "at": [6, 7], "yawDeg": 200},
+      {"prop": "dungeon/SM_Env_Statue_03", "at": [8.5, 3.0], "yawDeg": 240}
+    ],
+    "opening-ruin": [
+      {"prop": "dungeon/SM_Env_Entrance_Large_01", "at": [0, 0], "yawDeg": 215},
+      {"prop": "darkfantasy/SM_Prop_Gargoyle_Statue_01", "at": [-5.5, -4.0], "yawDeg": 230},
+      {"prop": "dungeon/SM_Env_Pillar_Broken_02", "at": [4.5, -4.5], "yawDeg": 20},
+      {"prop": "dungeon/SM_Env_Pillar_Broken_Pile_02", "at": [-2.0, -6.5], "yawDeg": 70}
+    ],
+    "fairy-ring": [
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [10.0, 0.0], "yawDeg": 0, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [9.78, 2.08], "yawDeg": 47, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [9.14, 4.07], "yawDeg": 94, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [8.09, 5.88], "yawDeg": 141, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [6.69, 7.43], "yawDeg": 188, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [5.0, 8.66], "yawDeg": 235, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [3.09, 9.51], "yawDeg": 282, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [1.05, 9.95], "yawDeg": 329, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [-1.05, 9.95], "yawDeg": 16, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [-3.09, 9.51], "yawDeg": 63, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [-5.0, 8.66], "yawDeg": 110, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [-6.69, 7.43], "yawDeg": 157, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [-8.09, 5.88], "yawDeg": 204, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [-9.14, 4.07], "yawDeg": 251, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [-9.78, 2.08], "yawDeg": 298, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [-10.0, 0.0], "yawDeg": 345, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [-9.78, -2.08], "yawDeg": 32, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [-9.14, -4.07], "yawDeg": 79, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [-8.09, -5.88], "yawDeg": 126, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [-6.69, -7.43], "yawDeg": 173, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [-5.0, -8.66], "yawDeg": 220, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [-3.09, -9.51], "yawDeg": 267, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [-1.05, -9.95], "yawDeg": 314, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [1.05, -9.95], "yawDeg": 1, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [3.09, -9.51], "yawDeg": 48, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_01", "at": [5.0, -8.66], "yawDeg": 95, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rock_Pebble_01", "at": [6.69, -7.43], "yawDeg": 142, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_BonePile_Small_01", "at": [8.09, -5.88], "yawDeg": 189, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Brick_Rubble_03", "at": [9.14, -4.07], "yawDeg": 236, "scale": 1.3},
+      {"prop": "dungeon/SM_Env_Rubble_Pebbles_01", "at": [9.78, -2.08], "yawDeg": 283, "scale": 1.3},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [6.86, 1.39], "yawDeg": 0, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [3.87, 5.83], "yawDeg": 47, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [-1.39, 6.86], "yawDeg": 94, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [-5.83, 3.87], "yawDeg": 141, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [-6.86, -1.39], "yawDeg": 188, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [-3.87, -5.83], "yawDeg": 235, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [1.39, -6.86], "yawDeg": 282, "scale": 0.6},
+      {"prop": "knights/SM_Env_Path_Stone_03", "at": [5.83, -3.87], "yawDeg": 329, "scale": 0.6},
+      {"prop": "dungeon/SM_Prop_Candles_01", "at": [8.88, 3.65], "yawDeg": 0, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [3.7, 8.86], "yawDeg": 47, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_03", "at": [-3.65, 8.88], "yawDeg": 94, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [-8.86, 3.7], "yawDeg": 141, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_01", "at": [-8.88, -3.65], "yawDeg": 188, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_02", "at": [-3.7, -8.86], "yawDeg": 235, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_03", "at": [3.65, -8.88], "yawDeg": 282, "scale": 1.5},
+      {"prop": "dungeon/SM_Prop_Candles_04", "at": [8.86, -3.7], "yawDeg": 329, "scale": 1.5}
+    ],
+    "path-stones": [
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [0.75, -0.75], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [1.48, 0.43], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [2.21, 1.61], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [2.94, 2.79], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [3.67, 3.97], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [4.4, 5.15], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [5.13, 6.33], "yawDeg": 0, "scale": 0.3},
+      {"prop": "dungeon/SM_Env_Tiles_09", "at": [5.86, 7.51], "yawDeg": 0, "scale": 0.3}
     ]
   }
 }

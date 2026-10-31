@@ -3299,6 +3299,475 @@
       "use": "kit: hellscape dead trees and brambles"
     },
     {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Bones/SM_Env_BonePile_Small_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "50aa90a81020d7f4d9882a4bede1b4f3",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Bones/SM_Env_BonePile_Small_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "ff5c549bd91cb7c43ba46386303671e8",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "9830f561f80768b4f92139c1c15bc835",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "67f6358a70929f943ae115f8b4bcf075",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "9e2131326fc97464987f58ebcb08832a",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_05.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "5409c9ff5a9c7b045a9809d71ccdcab8",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_06.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "704795cfbb02b844591f900d2b76342e",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Floors/SM_Env_Tiles_09.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "faefc7bf0b06adc4497fd8b1694fad68",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Alter_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "7a216d45184954f4f8fdad696d7ab71b",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Entrance_Crypt_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "ea0c7071e67bf1c43940a8ab3ea121f8",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Entrance_Large_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "989effbb4735e434cb3444044789c3ac",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "26a1b369e86eb634bb274007abffe446",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "fe8d4d9fc1205b040a01a8f865bbf5b6",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_Broken_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "448c0a42e26b67647bccf1ae2a4e5d72",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_Broken_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "f5a7d78ddef3a0540863e2e3d08b8f17",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_Pillar_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "a10549efe9ce3bf418c9e7bf1fd1956a",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_Pillar_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "7d79016e80036a946b9856f425f39e7b",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Railing_Pillar_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "90f3c4ff3017eea40b4d574d1389d66e",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Statue_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "deb03c74d28f60441b068b11f38269ea",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Statue_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "ce4edb7ff610f9b4ea0a168c8013afef",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Statue_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "a30ebed74fb584d4ea44dc287aa3bc51",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Statue_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "9f9c8059e0040c544bd1bf5c4f50c6d3",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Stone_Lantern_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "58f22659dd1426f4a8410923cf2db4b6",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Stone_Throne_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "72b91f7a748aab9489b17b6ace89a1c7",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Misc/SM_Env_Stone_Vessel_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "6e329ba57c2f99b41acb3584d0cb8da5",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Broken_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "a0929359dc1d88b4ab98f104369aeea9",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Broken_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "b13a24f9d7893c246afe02285ef1f0f9",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Broken_Pile_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "a00cf8ef81e92b14cadd28b0a110b16f",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Broken_Pile_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "b6d8924893ac4884481532f033644103",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Round_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "b83206f9ae850f24dae2564d16c0fa60",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Round_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "276be0eeb7d45eb4eada49334e36062d",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Round_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "0564a3134c3163c4a8ff1e64350bce79",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "16cb051a8191e0649bc4c655ac511479",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "52301af46bf2aca4cba80ecf307a7777",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_05.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "4d74ebab2c4922f4b86d0662b41f9dda",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_06.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "f3be1ef107933d34d9ca25815249a775",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_07.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "50b577ad3d2a6004688e49fa6302af99",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Pillars/SM_Env_Pillar_Square_08.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "4ea2c25a7dabbf04c9e40bc05a5c78da",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Brick_Rubble_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "3e288e91154144d4a8449e8f03d24b20",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Brick_Rubble_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "03b90a12ad8bb4347a59cfa647b8e055",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Brick_Rubble_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "eca2f09fb1643284eb2b5c59aca0dc1f",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Brick_Rubble_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "d9dd031618d649541a5fadd4c573e31c",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Brick_Rubble_06.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "cb024fac4c695bc488b88db98c809d76",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Pebble_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "7717b0cc406cc31468116059bfe0ce93",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Pebble_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "e0577017f63704c439abab026bf6dd72",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Pebble_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "b94d6f588878de4499065fc6b17e6e15",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Round_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "ea1005eee93229642a97e7e4f3d01e00",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Round_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "f5a14b70f8bf0f84ab0e08084f970b65",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rock_Round_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "619697e25e552f0469a1f23a015f01e1",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_RockPile_Pillar_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "2a755289263242443842c2951bc668ab",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_RockPile_Rounded_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "faa8739308e4c154f9332d2624b6e47c",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_RockPile_Rounded_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "fe819f6613802b24cac5bd6f4a749f63",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_RockPile_Rounded_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "447936a1f1a90cd4186467e33c751882",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rubble_Pebbles_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "3e0f6b0ee51e6eb42a731a26210989b9",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Rocks/SM_Env_Rubble_Pebbles_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "6b8ef567fab8aae4fb47c66e41111903",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Walls/SM_Env_Wall_Pillar_Large_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "33604d1ec5375e3488891483b470a427",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Environments/Walls/SM_Env_Wall_Pillar_Large_Broken_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "8926256a12a856b4d8ef227f9d6fdc38",
+      "use": "kit: crypt pillars, mausoleums and statues"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Bricks_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "42d3647458ec01743b3436714c29380a",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Bricks_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "c78cd7eb80565634c9127229d650a564",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Bricks_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "adee3450e574fba4ba001e011c19c44b",
+      "use": "kit: crypt balustrades, brick walls and floor slabs"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Bricks_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "606dc5976508ea346a8b019a9f3be565",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Candle_Stand_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "eab88f6a71881d8468474cc3e3610734",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Candles_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "60c6bc14bb0e58c4a99aa8e32d80f308",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Candles_02.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "2be6c8f228f8eb14aab539bc761d3818",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Candles_03.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "3bb587ec23f47d94f9fda50197c8fb66",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Candles_04.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "0533ddc0f38f3c842bf18ac27f90260f",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Prefabs/Props/SM_Prop_Coffin_01.prefab",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "ac72a98c062e432478eb557db53fdc1d",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
       "source": "synty:POLYGON_ElvenRealm_Unity_2021_3_v1_5_2.unitypackage.gz",
       "path": "Assets/PolygonElvenRealm/Prefabs/Environment/Flowers/SM_Env_Flowers_01.prefab",
       "sourceSha256": "b421af9cfe8676fa2fb24dd84cdf5cbf2a4885431c7aed86ad57c2701f026286",
@@ -3836,6 +4305,55 @@
       "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
       "guid": "360c73b9bf9a34d4c84bc0581d0499eb",
       "use": "hero: knight"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Environments/SM_Env_Path_Stone_02.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "079fa19ccd7a3484f933ea909821713f",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Environments/SM_Env_Path_Stone_03.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "8882443425560684dba932aaf44f3350",
+      "use": "kit: crypt rubble, bones and candles"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Props/SM_Prop_Fence_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "f5e310684d533124e895f9100f7931f4",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Props/SM_Prop_Fence_02.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "7360d30a05af7804195e76840febbe6e",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Props/SM_Prop_Gravestone_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "a6cb2939c27644a4fb2c7ccfaeb7f585",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Props/SM_Prop_Gravestone_02.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "0d6e5cb5406ecf648812fe2278838cf4",
+      "use": "kit: crypt gravestones, fences and coffins"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Props/SM_Prop_Plinth_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "8a0ac44a0009f534c81764924bb79dcd",
+      "use": "kit: crypt pillars, mausoleums and statues"
     },
     {
       "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",

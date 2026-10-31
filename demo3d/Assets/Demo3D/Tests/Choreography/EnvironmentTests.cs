@@ -114,20 +114,20 @@ namespace Demo3D.Choreography.Tests
             Assert.That(tl.EntityCount, Is.GreaterThan(100), "S6 runs in " + name);
         }
 
-        /// <summary>The crypt swaps the forest's kit and leaves the untouched landmarks where the arena's are.</summary>
+        /// <summary>The crypt swaps the forest's kit and stands its own landmark pieces at the arena's anchors.</summary>
         [Test]
         public void TheCryptsPlacementListIsItsKitOnTheArenasPlan()
         {
             string root = Fixtures.Root;
             FootprintTable fp = ChoreographyFiles.LoadFootprints(root);
             ArenaLayout arena = ChoreographyFiles.LoadLayout(root), env = ArenaLayout.Parse(ChoreographyFiles.EnvironmentLayout(root, "crypt"));
-            PlacementList a = arena.Generate(fp), c = env.Generate(fp);
+            PlacementList c = env.Generate(fp);
             var ids = new HashSet<string>(c.Items.Select(p => c.Props[p.Prop].Id));
             Assert.That(ids, Does.Not.Contain("kingdom/SM_Env_Tree_Round_01"), "the forest's trees stay in the forest");
             Assert.That(ids, Does.Contain("darkfantasy/SM_Env_Tree_Dead_02"));
-            // The structures' and the untouched landmarks' pieces stand where the arena's do.
-            var graveyard = arena.Area("graveyard");
-            var at = a.Items.Where(p => p.Area >= 0 && arena.Areas[p.Area] == graveyard).Select(p => p.Position).ToList();
+            // A landmark's pieces are the crypt's own, at the arena's anchor.
+            var at = env.Area("graveyard").Pieces.Select(s => arena.Area("graveyard").Center + s.At).ToList();
+            Assert.That(at, Is.Not.EqualTo(arena.Area("graveyard").Pieces.Select(s => arena.Area("graveyard").Center + s.At)));
             Assert.That(c.Items.Where(p => p.Area >= 0 && env.Areas[p.Area].Name == "graveyard").Select(p => p.Position), Is.EqualTo(at));
         }
     }

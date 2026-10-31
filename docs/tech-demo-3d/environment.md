@@ -195,9 +195,16 @@ compare shot for shot.
 
 To add an environment, write `environment-<name>.json` from kit pieces that
 are already synced and measured (footprints.json), then bake and render it
-([Running on the Mac](mac.md#environments)). `crypt` is the minimal example:
-Dark Fantasy's dead trees, ruins, tombs and statues and Fantasy Kingdom's
-rocks on a grey stone ground, under a neutral moon and grade.
+([Running on the Mac](mac.md#environments)). Each environment's look set
+README (`demo3d/evidence/look/env-<name>/`) records its kit, palette and
+findings; `crypt` is the control, POLYGON Dungeon's grey stone at the
+forest's values with no hue
+([env-crypt](../../demo3d/evidence/look/env-crypt/README.md)).
+
+- **A ruin wall's pieces are in world coordinates.** A landmark's and a
+  courtyard's `pieces` are offsets from its anchor, but a ruin wall has only
+  `from` and `to`, so its pieces' `at` is a ground position: the
+  ruins-gate's gap runs from x 13 to 19, not 11 to 17 from `from`.
 
 ### Structure styles
 

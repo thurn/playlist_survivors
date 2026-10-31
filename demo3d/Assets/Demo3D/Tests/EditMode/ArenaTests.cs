@@ -330,7 +330,7 @@ namespace Demo3D.Tests
             Assert.That(c.Areas.Select(x => (x.Type, x.Name, x.Center, x.Radius, x.Width)), Is.EqualTo(a.Areas.Select(x => (x.Type, x.Name, x.Center, x.Radius, x.Width))));
             Assert.That(c.Shots.Select(x => (x.Name, x.At, x.ViewWidthM)), Is.EqualTo(a.Shots.Select(x => (x.Name, x.At, x.ViewWidthM))));
             Assert.That(c.Area("glowing-tree").Pieces.Select(p => p.Prop), Does.Not.Contain("elven/SM_Env_Tree_Glowing_01"), "its pieces replace the landmark's");
-            Assert.That(c.Area("graveyard").Pieces.Select(p => p.Prop), Is.EqualTo(a.Area("graveyard").Pieces.Select(p => p.Prop)), "a landmark it leaves alone");
+            Assert.That(c.Groups[c.Area("ruins-gate").Walls].Props, Is.Not.EqualTo(a.Groups[a.Area("ruins-gate").Walls].Props), "a structure keeps its plan's wall group, refilled from its kit");
             Assert.That(c.Groups["forest-trees"].Props, Has.None.StartsWith("adventure/"), "a prop group replaces whole");
 
             var fl = ArenaLighting.Parse(forest.Json);
@@ -340,7 +340,7 @@ namespace Demo3D.Tests
             Assert.That(cl.CrowdKey, Is.EqualTo(fl.CrowdKey), "the horde's lighting is the arena's");
             Assert.That(cl.PostFeel.BeatBloom, Is.EqualTo(fl.PostFeel.BeatBloom), "the post feel rides on top");
             Assert.That(cl.Flames.Count, Is.EqualTo(fl.Flames.Count), "the candles, braziers and pyres keep their flames");
-            Assert.That(cl.Glow, Is.Empty, "null removes the glowing tree's light");
+            Assert.That(cl.Glow.Select(g => g.Prop), Has.None.EqualTo("elven/SM_Env_Tree_Glowing_01"), "null removes the glowing tree's light");
             Assert.That(cl.GradeMid, Is.EqualTo(Vector3.one), "its own grade");
             var fg = ArenaBaker.GroundColors.Parse(forest.Root["ground"]);
             var cg = ArenaBaker.GroundColors.Parse(crypt.Root["ground"]);
