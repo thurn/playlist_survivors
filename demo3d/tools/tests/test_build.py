@@ -80,7 +80,7 @@ def test_a_build_rebakes_only_the_bakers_whose_inputs_changed(monkeypatch, wt) -
     assert build(monkeypatch) == (0, ["BakeAndBuild crowd"])
     assert build(monkeypatch) == (0, [])
     write(demo / "Choreography" / "Data" / "environment-neon.json", '{"fog": 1}\n')
-    assert build(monkeypatch) == (0, ["BakeAndBuild Arena,Playback"])
+    assert build(monkeypatch) == (0, ["BakeAndBuild Arena,StructureShards,Playback"])
 
 
 def test_an_input_no_baker_claims_rebakes_them_all(monkeypatch, wt) -> None:
