@@ -186,7 +186,10 @@ fn parallel_front_end_gives_the_same_features() {
         assert_eq!(fe.process_with_jobs(&pcm, jobs), inline, "{jobs} jobs");
     }
     // (More jobs than frames: a window of three hops.)
-    assert_eq!(fe.process_with_jobs(&pcm[..1000], 8), fe.process(&pcm[..1000]));
+    assert_eq!(
+        fe.process_with_jobs(&pcm[..1000], 8),
+        fe.process(&pcm[..1000])
+    );
     assert_eq!(fe.process_with_jobs(&[], 4), (0, Vec::new()));
 }
 
