@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import shutil
 from pathlib import Path
 
 import pytest
@@ -28,59 +30,116 @@ def wt(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> paths.Worktree:
     return w
 
 
-def build(monkeypatch: pytest.MonkeyPatch, *argv: str) -> tuple[int, list[str]]:
-    ran: list[str] = []
+def fake_unity(wt: paths.Worktree, ran: list[str], fail_build: bool = False):
+    """A run_method that bakes as Bakers.Run does (recording each baker it ran) and builds a player."""
 
     def run_method(wt, name, args, cold=False):
-        ran.append(name)
-        if name == "BakeAll":
-            (wt.baked).mkdir(parents=True, exist_ok=True)
-            (wt.baked / setup.BAKED_STAMP).write_text("now\n")
+        ran.append(name if "-only" not in args else
+                   f"{name} " + ",".join(args[i + 1] for i, x in enumerate(args) if x == "-only"))
+        if name in ("BakeAll", "BakeAndBuild"):
+            only = [args[i + 1] for i, x in enumerate(args) if x == "-only"]
+            wt.baked.mkdir(parents=True, exist_ok=True)
+            (wt.baked / setup.BAKED_RAN).write_text("".join(n + "\n" for n in only or setup.BAKER_INPUTS))
+        if name in ("BuildPlayer", "BakeAndBuild"):
+            if fail_build:
+                return 1
+            app = wt.project / "Builds" / "mac" / args[args.index("-backend") + 1] / "Player.app"
+            app.mkdir(parents=True, exist_ok=True)
+            (app / "Info.plist").write_text("built\n")
         return 0
 
-    monkeypatch.setattr(unity, "run_method", run_method)
-    a = cli.build_parser().parse_args(["build", "--backend", "mono", *argv])
+    return run_method
+
+
+def build(monkeypatch: pytest.MonkeyPatch, *argv: str, fail: bool = False) -> tuple[int, list[str]]:
+    ran: list[str] = []
+    monkeypatch.setattr(unity, "run_method", fake_unity(paths.worktree(), ran, fail))
+    a = cli.build_parser().parse_args(["build", "--platform", "mac", "--backend", "mono", *argv])
     return a.func(a), ran
 
 
-def test_an_unbaked_worktree_bakes_before_it_builds(monkeypatch, wt) -> None:
-    assert build(monkeypatch) == (0, ["BakeAll", "BuildPlayer"])
-    assert build(monkeypatch) == (0, ["BuildPlayer"])  # the stamp stays
+def write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
 
 
-def test_a_build_rebakes_when_the_bakers_inputs_change(monkeypatch, wt) -> None:
-    shaders = wt.project / "Assets" / "Demo3D" / "Runtime" / "Crowd" / "Shaders"
-    shaders.mkdir(parents=True)
-    (shaders / "CrowdSkinned.shader").write_text("v1\n")
-    assert build(monkeypatch) == (0, ["BakeAll", "BuildPlayer"])
+def test_an_unbaked_worktree_bakes_and_builds_in_one_launch(monkeypatch, wt) -> None:
+    assert build(monkeypatch) == (0, ["BakeAndBuild"])
+    assert build(monkeypatch) == (0, [])  # nothing changed: the player stands
+    assert build(monkeypatch, "--force") == (0, ["BuildPlayer"])
+
+
+def test_a_build_rebakes_only_the_bakers_whose_inputs_changed(monkeypatch, wt) -> None:
+    demo = wt.project / "Assets" / "Demo3D"
+    shaders = demo / "Runtime" / "Crowd" / "Shaders"
+    write(shaders / "CrowdSkinned.shader", "v1\n")
+    write(demo / "Choreography" / "Data" / "environment-neon.json", "{}\n")
+    assert build(monkeypatch) == (0, ["BakeAndBuild"])
+    assert build(monkeypatch) == (0, [])
+    write(shaders / "Styles" / "FireBody.shader", "new\n")  # a shader the crowd library lists
+    assert build(monkeypatch) == (0, ["BakeAndBuild crowd"])
+    assert build(monkeypatch) == (0, [])
+    write(demo / "Choreography" / "Data" / "environment-neon.json", '{"fog": 1}\n')
+    assert build(monkeypatch) == (0, ["BakeAndBuild Arena,Playback"])
+
+
+def test_an_input_no_baker_claims_rebakes_them_all(monkeypatch, wt) -> None:
+    package = wt.root / "unity-packages" / "com.playlistsurvivors.choreography" / "Runtime"
+    write(package / "Sim.cs", "v1\n")
+    assert build(monkeypatch) == (0, ["BakeAndBuild"])
+    write(package / "Sim.cs", "v2\n")
+    assert build(monkeypatch) == (0, ["BakeAndBuild"])  # a full run: no -only
+
+
+def test_a_changed_project_file_rebuilds_but_a_touched_one_does_not(monkeypatch, wt) -> None:
+    settings = wt.project / "ProjectSettings" / "ProjectSettings.asset"
+    write(settings, "backend: 0\n")
+    assert build(monkeypatch) == (0, ["BakeAndBuild"])
+    write(settings, "backend: 0\n")  # Unity rewrote it unchanged
+    assert build(monkeypatch) == (0, [])
+    write(settings, "backend: 1\n")
     assert build(monkeypatch) == (0, ["BuildPlayer"])
-    (shaders / "Styles").mkdir()
-    (shaders / "Styles" / "FireBody.shader").write_text("new\n")  # a shader the crowd library lists
-    assert build(monkeypatch) == (0, ["BakeAll", "BuildPlayer"])
+    assert build(monkeypatch, "--development") == (0, ["BuildPlayer"])  # other flags: another player
+    assert build(monkeypatch, "--development") == (0, [])
     assert build(monkeypatch) == (0, ["BuildPlayer"])
 
 
-def test_only_runtime_code_that_assets_serialize_is_a_bake_input(wt) -> None:
+def test_a_deleted_player_is_rebuilt(monkeypatch, wt) -> None:
+    build(monkeypatch)
+    shutil.rmtree(wt.project / "Builds" / "mac" / "mono" / "Player.app")
+    assert build(monkeypatch) == (0, ["BuildPlayer"])
+
+
+def test_a_bake_whose_build_fails_is_still_recorded(monkeypatch, wt) -> None:
+    assert build(monkeypatch, fail=True) == (1, ["BakeAndBuild"])
+    assert build(monkeypatch) == (0, ["BuildPlayer"])
+
+
+def test_only_runtime_code_that_assets_serialize_or_bakers_call_is_a_bake_input(wt) -> None:
     runtime = wt.project / "Assets" / "Demo3D" / "Runtime"
     tests = wt.project / "Assets" / "Demo3D" / "Tests"
-    for d in (runtime, tests):
-        d.mkdir(parents=True)
-    (runtime / "CrowdLibrary.cs").write_text("class CrowdLibrary : ScriptableObject {}\n")
-    (runtime / "DemoMain.cs").write_text("class DemoMain : MonoBehaviour {}\n")
-    (tests / "SomeTests.cs").write_text("class SomeTests {}\n")
+    write(runtime / "CrowdLibrary.cs", "class CrowdLibrary : ScriptableObject {}\n")
+    write(runtime / "DemoMain.cs", "class DemoMain : MonoBehaviour {}\n")
+    write(runtime / "Playback" / "ShatterSounds.cs", "static class ShatterSounds {}\n")
+    write(tests / "SomeTests.cs", "class SomeTests {}\n")
     names = {f.name for f in setup.bake_inputs(wt)}
-    assert "CrowdLibrary.cs" in names
+    assert {"CrowdLibrary.cs", "ShatterSounds.cs"} <= names
     assert not names & {"DemoMain.cs", "SomeTests.cs"}
 
 
-def test_a_bakeall_through_the_tools_records_its_inputs(monkeypatch, wt) -> None:
-    def run_method(wt, name, args, cold=False):
-        wt.baked.mkdir(parents=True, exist_ok=True)
-        (wt.baked / setup.BAKED_STAMP).write_text("now\n")
-        return 0
+def test_every_registered_baker_has_its_inputs_listed() -> None:
+    editor = Path(__file__).resolve().parents[2] / "Assets" / "Demo3D" / "Editor"
+    registered = {m for f in editor.rglob("*.cs")
+                  for m in re.findall(r'Bakers\.Register\("([^"]+)"', f.read_text(encoding="utf-8"))}
+    assert registered == setup.BAKER_INPUTS.keys()
 
-    monkeypatch.setattr(unity, "run_method", run_method)
+
+def test_a_bakeall_through_the_tools_records_what_it_ran(monkeypatch, wt) -> None:
+    monkeypatch.setattr(unity, "run_method", fake_unity(wt, []))
     assert not setup.baked(wt)
+    a = cli.build_parser().parse_args(["unity", "BakeAll", "-only", "crowd"])
+    assert a.func(a) == 0
+    assert setup.stale_bakers(wt) == [n for n in setup.BAKER_INPUTS if n != "crowd"]
     a = cli.build_parser().parse_args(["unity", "BakeAll"])
     assert a.func(a) == 0
     assert setup.baked(wt)
@@ -104,10 +163,10 @@ def test_a_build_that_compiles_many_variants_refreshes_the_library(monkeypatch, 
     log = wt.logs / "BuildPlayer.log"
     pass_line = "  Pass Bloom (fp, metal) finished in 0.5 seconds. Local cache hits 1, compiled {} variants"
     log.write_text("\n".join(pass_line.format(n) for n in (60, 40)) + "\n")
-    build(monkeypatch)  # 100 variants: not enough to save again
+    build(monkeypatch, "--force")  # 100 variants: not enough to save again
     assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"compiled"
     log.write_text(log.read_text() + pass_line.format(1) + "\n")
-    build(monkeypatch)
+    build(monkeypatch, "--force")
     assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"recompiled"
     assert setup.built_marker(entry).exists()
 

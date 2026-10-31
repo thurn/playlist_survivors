@@ -27,8 +27,18 @@ namespace Demo3D.EditorTools
         /// <summary>Applies the project configuration (ProjectSetup).</summary>
         public static void Configure() => ProjectSetup.Configure();
 
-        /// <summary>Runs every registered baker (TD5: "crowd").</summary>
-        public static void BakeAll() => Bakers.RunStale(TaskArgs.All("-only"));
+        /// <summary>Runs every registered baker (TD5: "crowd"), or only those named by `-only` (repeatable).</summary>
+        public static void BakeAll() => Bakers.Run(TaskArgs.All("-only"));
+
+        /// <summary>
+        /// BakeAll (with its `-only`) then BuildPlayer (with its flags) in one launch, so `demo3d build`
+        /// after a bake input changed opens Unity once rather than twice.
+        /// </summary>
+        public static void BakeAndBuild()
+        {
+            BakeAll();
+            BuildPlayer();
+        }
 
         /// <summary>
         /// Bakes a `--roster` set (`-roster forest|heroic`; default: today's roster, as BakeAll does)

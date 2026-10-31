@@ -26,7 +26,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 
-from . import paths, report, unity
+from . import paths, report, setup, unity
 
 EXE = "PlaylistSurvivors3D.exe"
 EXIT_NAMES = {0: "done", 2: "bad arguments", 3: "refused", 4: "failed"}
@@ -189,6 +189,7 @@ def ensure_player(wt: paths.Worktree, backend: str, build: bool) -> Path:
     exe = wt.project / "Builds" / backend / EXE
     if build or not exe.exists():
         print(f"sweep: building the {backend} player", flush=True)
+        setup.forget_build(exe.parent)
         if unity.run_method(wt, "BuildPlayer", ["-backend", backend]) != 0:
             raise RuntimeError("the player build failed")
     return exe

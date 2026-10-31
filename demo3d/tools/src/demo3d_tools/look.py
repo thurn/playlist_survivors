@@ -536,7 +536,7 @@ def cmd_look(a: argparse.Namespace) -> int:
             from .cli import cmd_build
 
             build = argparse.Namespace(project="demo3d", platform="mac", backend=a.backend, out=None,
-                                       development=False, scene=None, cold=False)
+                                       development=False, scene=None, cold=False, force=False)
             if cmd_build(build) != 0:
                 print("look: the player build failed", file=sys.stderr)
                 return 2

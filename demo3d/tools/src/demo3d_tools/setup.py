@@ -8,6 +8,7 @@ opens the project once in batch mode, which also verifies the Unity license.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
@@ -257,12 +258,14 @@ def save_built_library(wt: paths.Worktree, compiled: int = 0) -> Path | None:
     return dest
 
 
-BAKED_STAMP = ".bakeall"  # Bakers.RunStale writes it into Assets/Baked/ after a full BakeAll
-BAKED_INPUTS = ".bakeall-inputs"  # bake_inputs_key at the last full BakeAll the tools ran
+BAKED_INPUTS = ".bakeall-inputs"  # in Assets/Baked/: each baker's inputs key when it last ran
+BAKED_RAN = ".bakeall-ran"  # Bakers.Run appends each baker's name as it finishes
 
 # Runtime C# that an asset can serialize: a baked asset made before such a type changed lacks
 # its new fields (a CrowdLibrary baked before StyleShaders existed has none).
 _SERIALIZED = re.compile(rb"ScriptableObject|\[Serializable\]|\[System\.Serializable\]")
+# Runtime C# a baker calls, which no asset serializes (the SoundBank lists ShatterSounds' names).
+_BAKER_RUNTIME = {"Runtime/Playback/ShatterSounds.cs"}
 
 
 def bake_inputs(wt: paths.Worktree) -> list[Path]:
@@ -277,30 +280,176 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
             if not f.is_file() or "Tests" in f.relative_to(root).parts:
                 continue
             if (root == demo and f.suffix == ".cs" and f.relative_to(demo).parts[0] == "Runtime"
+                    and f.relative_to(demo).as_posix() not in _BAKER_RUNTIME
                     and not _SERIALIZED.search(f.read_bytes())):
                 continue
             files.append(f)
     return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
 
 
-def bake_inputs_key(wt: paths.Worktree) -> str:
-    return file_hash(wt.root, *bake_inputs(wt))
+def _demo(*globs: str) -> tuple[str, ...]:
+    return tuple("demo3d/Assets/Demo3D/" + g for g in globs)
+
+
+# The bake inputs each baker (Bakers.cs's registry) reads, as globs over repo-relative paths
+# (`*` crosses folders; a trailing `*` takes the .meta too). An input no baker claims (the
+# choreography package, Editor/Bakers.cs, the shared Editor/Assets helpers, the vendor manifest)
+# makes every baker stale, so a new folder errs toward baking too much.
+BAKER_INPUTS: dict[str, tuple[str, ...]] = {
+    "Arena": _demo("Editor/Arena/*", "Runtime/Arena/*", "Choreography/Data/*-layout.json*",
+                   "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
+    "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
+                   "Data/clip-annotations.json*", "Data/roster*.json*"),
+    "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),
+    "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
+                    "Runtime/Playback/ShatterSounds.cs*"),
+    "Roster": _demo("Editor/Assets/RosterBaker.cs*", "Runtime/Playback/RosterAssets.cs*",
+                    "Data/roster*.json*"),
+    "Playback": _demo("Editor/Assets/PlaybackBaker.cs*", "Runtime/Playback/*", "Choreography/Data/*",
+                      "Data/clip-annotations.json*") + ("songs/action/songmap.json",),
+}
+
+
+def baker_keys(wt: paths.Worktree) -> dict[str, str]:
+    """Each baker's inputs key: a hash of the inputs it claims and those no baker claims."""
+    digests = {f.relative_to(wt.root).as_posix(): file_hash(wt.root, f) for f in bake_inputs(wt)}
+    claims = {name: {r for r in digests if any(fnmatch.fnmatchcase(r, g) for g in globs)}
+              for name, globs in BAKER_INPUTS.items()}
+    shared = digests.keys() - set().union(*claims.values())
+    keys = {}
+    for name, own in claims.items():
+        h = hashlib.sha256()
+        for r in sorted(shared | own):
+            h.update(f"{r}\0{digests[r]}\n".encode())
+        keys[name] = h.hexdigest()[:16]
+    return keys
+
+
+def _recorded_keys(wt: paths.Worktree) -> dict[str, str]:
+    try:
+        keys = json.loads((wt.baked / BAKED_INPUTS).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return keys if isinstance(keys, dict) else {}  # an older single key: bake everything once
+
+
+def stale_bakers(wt: paths.Worktree) -> list[str]:
+    """The bakers whose inputs changed since the tools last saw them run, in BAKER_INPUTS order
+    (demo2d and stylelab have no Unity bakers). A BakeAll run outside the tools records nothing,
+    so the next build bakes once more."""
+    if wt.name != "demo3d":
+        return []
+    recorded = _recorded_keys(wt)
+    return [name for name, key in baker_keys(wt).items() if recorded.get(name) != key]
 
 
 def baked(wt: paths.Worktree) -> bool:
-    """Whether a full `unity BakeAll` has run in this worktree since its bakers' inputs last
-    changed (demo2d has no Unity bakers). A BakeAll run outside the tools leaves no key, so the
-    next build bakes once more."""
-    if wt.name != "demo3d":
-        return True
-    stamp, key = wt.baked / BAKED_STAMP, wt.baked / BAKED_INPUTS
-    return (stamp.exists() and key.exists()
-            and key.read_text(encoding="utf-8").strip() == bake_inputs_key(wt))
+    return not stale_bakers(wt)
 
 
-def record_baked(wt: paths.Worktree) -> None:
-    """After a successful full BakeAll: the inputs it baked from."""
-    (wt.baked / BAKED_INPUTS).write_text(bake_inputs_key(wt) + "\n", encoding="utf-8")
+def bake_args(wt: paths.Worktree, stale: list[str]) -> list[str]:
+    """BakeAll's `-only` flags for the stale bakers (none when all are: a full run). Clears any
+    record of bakers run outside the tools, so only this run's are recorded."""
+    (wt.baked / BAKED_RAN).unlink(missing_ok=True)
+    if set(stale) >= BAKER_INPUTS.keys():
+        return []
+    return [arg for name in stale for arg in ("-only", name)]
+
+
+def record_ran(wt: paths.Worktree) -> list[str]:
+    """After a BakeAll (even a failed one): records the inputs of each baker that finished."""
+    ran_file = wt.baked / BAKED_RAN
+    if not ran_file.exists():
+        return []
+    ran = [n for n in ran_file.read_text(encoding="utf-8").split() if n in BAKER_INPUTS]
+    keys = baker_keys(wt)
+    recorded = _recorded_keys(wt) | {n: keys[n] for n in ran}
+    (wt.baked / BAKED_INPUTS).write_text(json.dumps(recorded, indent=1, sort_keys=True) + "\n",
+                                         encoding="utf-8")
+    ran_file.unlink()
+    return ran
+
+
+BUILD_STAMP = ".build-inputs.json"  # in the player's folder: what the last `build` made it from
+
+
+def player_dir(wt: paths.Worktree, platform: str, backend: str, out: str | None = None) -> Path:
+    """Where BuildPlayer writes (its `-buildOut`, else demo3d's Builds/<backend> on Windows, else
+    Builds/mac/<backend>)."""
+    if out:
+        return wt.project / out
+    if platform == "windows" and wt.name == "demo3d":
+        return wt.project / "Builds" / backend
+    return wt.project / "Builds" / "mac" / backend
+
+
+def _unity_ignores(name: str) -> bool:
+    return name.startswith(".") or name.endswith("~")
+
+
+def project_files(wt: paths.Worktree, known: dict[str, list]) -> dict[str, list]:
+    """Every file a player build reads (the project's Assets, Packages and ProjectSettings, and
+    the shared packages), as [size, mtime_ns, digest]. A file whose size and mtime match `known`
+    keeps its digest unread, so the walk costs a stat per file and a file Unity rewrote unchanged
+    still matches."""
+    files: dict[str, list] = {}
+    tops = [wt.project / d for d in ("Assets", "Packages", "ProjectSettings")] + [wt.root / "unity-packages"]
+    for top in tops:
+        for dirpath, dirs, names in os.walk(top, followlinks=True):
+            dirs[:] = [d for d in dirs if not _unity_ignores(d)]
+            for n in names:
+                if _unity_ignores(n):
+                    continue
+                f = Path(dirpath, n)
+                r, st = f.relative_to(wt.root).as_posix(), f.stat()
+                old = known.get(r)
+                if old and old[:2] == [st.st_size, st.st_mtime_ns]:
+                    files[r] = old
+                else:
+                    with open(f, "rb") as fh:
+                        files[r] = [st.st_size, st.st_mtime_ns, hashlib.file_digest(fh, "sha256").hexdigest()[:16]]
+    return files
+
+
+def _build_stamp(out: Path) -> dict:
+    try:
+        stamp = json.loads((out / BUILD_STAMP).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return stamp if isinstance(stamp, dict) else {}
+
+
+def _write_build_stamp(out: Path, args: list[str], files: dict[str, list], outputs: list[str]) -> None:
+    stamp = {"args": args, "outputs": outputs, "files": files}
+    (out / BUILD_STAMP).write_text(json.dumps(stamp, separators=(",", ":")) + "\n", encoding="utf-8")
+
+
+def player_current(wt: paths.Worktree, out: Path, args: list[str]) -> bool:
+    """Whether the player in `out` was built with these flags from the project as it is now, and
+    every file that build wrote is still there."""
+    stamp = _build_stamp(out)
+    outputs = stamp.get("outputs") or []
+    if stamp.get("args") != args or not outputs or not all((out / o).exists() for o in outputs):
+        return False
+    files = project_files(wt, stamp.get("files", {}))
+    if {r: v[2] for r, v in files.items()} != {r: v[2] for r, v in stamp["files"].items()}:
+        return False
+    if files != stamp["files"]:  # touched but unchanged: keep the new mtimes, so they aren't read again
+        _write_build_stamp(out, args, files, outputs)
+    return True
+
+
+def forget_build(out: Path) -> None:
+    """Before any build into `out`: one that fails partway leaves no stamp claiming the player."""
+    (out / BUILD_STAMP).unlink(missing_ok=True)
+
+
+def record_build(wt: paths.Worktree, out: Path, args: list[str]) -> None:
+    """After a successful build: the flags and project files it was made from (read after the
+    build, which also bakes, imports and puts back the assets URP rewrites)."""
+    files = project_files(wt, _build_stamp(out).get("files", {}))
+    outputs = sorted(e.name for e in out.iterdir() if e.name != BUILD_STAMP)
+    _write_build_stamp(out, args, files, outputs)
 
 
 def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,

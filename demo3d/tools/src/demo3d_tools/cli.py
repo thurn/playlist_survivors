@@ -13,7 +13,8 @@ Commands:
   unity METHOD ...    run a batch-mode task method (warm editor if running, else cold)
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on
                       a skipped test, as CI does)
-  build               build the player (--platform windows|mac, --backend il2cpp|mono, --out DIR)
+  build               build the player (--platform windows|mac, --backend il2cpp|mono, --out DIR),
+                      baking the stale bakers first; nothing if nothing changed (--force)
   editor start|stop|status
                       the warm editor for this worktree
   library save        save this worktree's Library as the warm one for its packages
@@ -98,6 +99,7 @@ def cmd_check(a: argparse.Namespace) -> int:
     results.append(("unity editmode (cold)", summary.ok))
     if a.player:
         platform = "windows" if paths.is_windows() else "mac"
+        setup.forget_build(setup.player_dir(wt, platform, "il2cpp"))
         code = unity.run_method(wt, "BuildPlayer", ["-platform", platform, "-backend", "il2cpp"], cold=True)
         results.append((f"il2cpp player build ({platform})", code == 0))
     print("check: " + ", ".join(f"{n} {'ok' if ok else 'FAILED'}" for n, ok in results))
@@ -106,9 +108,12 @@ def cmd_check(a: argparse.Namespace) -> int:
 
 def cmd_unity(a: argparse.Namespace) -> int:
     wt = paths.worktree(name=a.project)
+    bakes = a.method == "BakeAll" and wt.name == "demo3d"
+    if bakes:
+        setup.bake_args(wt, [])  # clears any record of an earlier run outside the tools
     code = unity.run_method(wt, a.method, a.args, cold=a.cold)
-    if code == 0 and a.method == "BakeAll" and not a.args and wt.name == "demo3d":
-        setup.record_baked(wt)
+    if bakes:
+        setup.record_ran(wt)
     return code
 
 
@@ -131,22 +136,34 @@ def cmd_build(a: argparse.Namespace) -> int:
     for s in a.scene or []:
         args += ["-scene", s]
     wt = paths.worktree(name=a.project)
+    out = setup.player_dir(wt, platform, a.backend, a.out)
     # A player built before BakeAll starts, but hangs on its first missing baked asset; one built
-    # on a stale bake throws on the first field the bake predates.
-    if not setup.baked(wt):
-        print("build: this worktree isn't baked, or its bakers' inputs changed; running BakeAll first")
-        code = unity.run_method(wt, "BakeAll", [], cold=a.cold)
-        if code != 0:
-            return code
-        setup.record_baked(wt)
-    code = unity.run_method(wt, "BuildPlayer", args, cold=a.cold)
-    if code == 0 and not a.scene and not unity.warm_server(wt):
-        compiled = setup.compiled_variants(wt.logs / "BuildPlayer.log")
+    # on a stale bake throws on the first field the bake predates. So the stale bakers run first,
+    # in the same launch.
+    stale = setup.stale_bakers(wt)
+    if not stale and not a.force and setup.player_current(wt, out, args):
+        shown = out.relative_to(wt.project) if out.is_relative_to(wt.project) else out
+        print(f"build: nothing changed since the last build into {shown}; not rebuilding (--force to)")
+        return 0
+    method, bake = "BuildPlayer", []
+    if stale:
+        print(f"build: baking first, in the same launch: {', '.join(stale)} "
+              "(its inputs changed, or this worktree isn't baked)")
+        method, bake = "BakeAndBuild", setup.bake_args(wt, stale)
+    setup.forget_build(out)
+    code = unity.run_method(wt, method, bake + args, cold=a.cold)
+    if stale:
+        setup.record_ran(wt)
+    if code != 0:
+        return code
+    setup.record_build(wt, out, args)
+    if not a.scene and not unity.warm_server(wt):
+        compiled = setup.compiled_variants(wt.logs / f"{method}.log")
         dest = setup.save_built_library(wt, compiled)
         if dest:
             print(f"build: compiled {compiled} shader variants; saved the Library, with its "
                   f"shader cache, to {dest}")
-    return code
+    return 0
 
 
 def cmd_editor(a: argparse.Namespace) -> int:
@@ -290,6 +307,8 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     b.add_argument("--scene", action="append")
     b.add_argument("--development", action="store_true")
     b.add_argument("--cold", action="store_true")
+    b.add_argument("--force", action="store_true",
+                   help="build even if nothing changed since the last build into the same folder")
     b.set_defaults(func=cmd_build)
 
     lib = sub.add_parser("library")

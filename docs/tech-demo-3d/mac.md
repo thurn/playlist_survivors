@@ -28,7 +28,7 @@ From a worktree's root:
 
 ```
 uv run --project demo3d/tools demo3d setup        # vendor files, the song, a warm Library
-uv run --project demo3d/tools demo3d unity BakeAll    # build runs it if this worktree hasn't
+uv run --project demo3d/tools demo3d unity BakeAll    # build runs the stale bakers itself
 uv run --project demo3d/tools demo3d build        # Builds/mac/il2cpp/PlaylistSurvivors3D.app
 uv run --project demo3d/tools demo3d test         # EditMode tests
 ```
@@ -94,12 +94,17 @@ uv run --project demo3d/tools demo3d setup && uv run --project demo3d/tools demo
 
 `look` builds the IL2CPP player if the worktree has none: about 4.5 minutes
 in a fresh worktree with the saved Library, then about 25 s per set. After a
-change, pass `--build` (or run `build`) so the stills show it. Every build
-runs `BakeAll` first when the worktree isn't baked or anything the bakers
-read has changed since its last full bake: Assets/Demo3D apart from its
-tests and the runtime C# no asset serializes, the choreography package, the
-vendor manifest and the song map. A `BakeAll` run in the editor leaves no
-record, so the next build bakes once more. `--backend mono` uses a Mono player, whose simulation diverges from
+change, pass `--build` (or run `build`) so the stills show it. A build bakes
+first, in the same Unity launch, whenever a baker's inputs changed since the
+tools last saw it run: the bake inputs are Assets/Demo3D apart from its tests
+and the runtime C# no asset serializes, the choreography package, the vendor
+manifest and the song map, and `BAKER_INPUTS` (demo3d/tools setup.py) says
+which of them each baker reads, so only those bakers run (an input none
+claims, such as the choreography package, runs them all). A `BakeAll` run in
+the editor leaves no record, so the next build bakes once more. A build with
+nothing changed since the last one into the same folder (the same flags, and
+no project file differing in content) doesn't open Unity at all; `--force`
+rebuilds anyway. `--backend mono` uses a Mono player, whose simulation diverges from
 IL2CPP's, so never compare sets made by different players
 ([baseline README](../../demo3d/evidence/look/baseline/README.md#build-path-and-timings)).
 
