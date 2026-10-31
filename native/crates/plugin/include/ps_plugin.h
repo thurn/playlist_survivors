@@ -54,6 +54,14 @@ typedef struct {
     char name[128]; /* UTF-8, NUL-terminated (cut to fit) */
 } ps_app;
 
+/* The default output device: the key the game keeps a calibration under. */
+typedef struct {
+    char uid[256];     /* Core Audio's device UID (UTF-8, NUL-terminated); empty: no device */
+    char name[128];    /* its name, for the player (UTF-8, NUL-terminated, cut to fit) */
+    double latency;    /* its latency as ps_status's output_latency reports it (s) */
+    int32_t bluetooth; /* 1: Bluetooth, whose reported latency is a guess */
+} ps_device;
+
 /*
  * One record of the belief stream. known_at is the plugin's stamp, position - (M - A) with
  * A = 0.048 s: position is how far into the music the analyzer had read when it emitted the
@@ -142,6 +150,10 @@ int32_t ps_open(const ps_config *config, ps_session **out);
 /* Fills out with up to max of the apps producing audio now, the ones a System source can tap;
  * returns how many. (None off macOS.) */
 int32_t ps_list_apps(ps_app *out, int32_t max);
+
+/* Writes the default output device to out (no session needed); returns PS_OK. (Empty off
+ * macOS.) */
+int32_t ps_output_device(ps_device *out);
 
 /* Copies up to max new entries into out; returns how many, or PS_ERR_FAILED once every entry
  * before a failure has been polled. Never allocates. A heartbeat. */

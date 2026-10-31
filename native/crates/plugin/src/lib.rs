@@ -65,6 +65,16 @@ pub struct App {
     pub name: [c_char; 128],
 }
 
+/// `ps_device`.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct Device {
+    pub uid: [c_char; 256],
+    pub name: [c_char; 128],
+    pub latency: f64,
+    pub bluetooth: i32,
+}
+
 /// `ps_status`.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -216,9 +226,10 @@ fn system_taps() -> Result<Box<dyn system::Taps>, Error> {
     ))
 }
 
-/// `name` as a `ps_app` name: NUL-terminated, cut at a character to fit.
-fn app_name(name: &str) -> [c_char; 128] {
-    let mut out = [0 as c_char; 128];
+/// `name` as a fixed C string (a `ps_app` name, a `ps_device` UID or name): NUL-terminated, cut
+/// at a character to fit.
+fn c_text<const N: usize>(name: &str) -> [c_char; N] {
+    let mut out = [0 as c_char; N];
     let mut end = name.len().min(out.len() - 1);
     while !name.is_char_boundary(end) {
         end -= 1;
@@ -254,10 +265,33 @@ pub unsafe extern "C" fn ps_list_apps(out: *mut App, max: i32) -> i32 {
         for (slot, app) in out.iter_mut().zip(&apps) {
             *slot = App {
                 pid: app.pid,
-                name: app_name(&app.name),
+                name: c_text(&app.name),
             };
         }
         Ok(n as i32)
+    })
+}
+
+/// Writes the default output device to `out`: the key a calibration is kept under.
+///
+/// # Safety
+/// `out` is null or valid.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn ps_output_device(out: *mut Device) -> i32 {
+    guard(|| {
+        if out.is_null() {
+            return Err(Error::new(PS_ERR_ARGUMENT, "ps_output_device needs an out"));
+        }
+        let device = latency::output_device();
+        unsafe {
+            *out = Device {
+                uid: c_text(&device.uid),
+                name: c_text(&device.name),
+                latency: latency::output_latency(),
+                bluetooth: i32::from(device.bluetooth),
+            };
+        };
+        Ok(PS_OK)
     })
 }
 
@@ -358,13 +392,13 @@ mod tests {
 
     #[test]
     fn an_app_name_is_cut_at_a_character_and_terminated() {
-        let name = app_name(&"é".repeat(100));
+        let name: [c_char; 128] = c_text(&"é".repeat(100));
         let bytes: Vec<u8> = name.iter().map(|&c| c as u8).collect();
         let end = bytes.iter().position(|&b| b == 0).unwrap();
         assert_eq!(end, 126);
         assert_eq!(std::str::from_utf8(&bytes[..end]).unwrap(), "é".repeat(63));
         assert_eq!(
-            app_name("Music")[..6],
+            c_text::<128>("Music")[..6],
             [77, 117, 115, 105, 99, 0].map(|b| b as c_char)
         );
     }

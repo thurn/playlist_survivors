@@ -7,7 +7,7 @@ use std::path::Path;
 use std::process::Command;
 
 use analysis::flat;
-use ps_plugin::{App, Config, Entry, Status};
+use ps_plugin::{App, Config, Device, Entry, Status};
 
 const PROGRAM: &str = r#"
 #include <stddef.h>
@@ -24,6 +24,8 @@ int main(void) {
     FIELD(ps_config, output_rate); FIELD(ps_config, path); FIELD(ps_config, models);
     FIELD(ps_config, session_dir);
     SIZE(ps_app); FIELD(ps_app, pid); FIELD(ps_app, name);
+    SIZE(ps_device); FIELD(ps_device, uid); FIELD(ps_device, name); FIELD(ps_device, latency);
+    FIELD(ps_device, bluetooth);
     printf("ps_status %zu\n", sizeof(struct ps_status)); STATUS(anchor_dsp); STATUS(anchor_song);
     STATUS(anchor_frames); STATUS(output_latency);
     STATUS(buffered); STATUS(analysed); STATUS(stalls);
@@ -87,6 +89,11 @@ fn the_header_matches_the_library() {
         ("ps_app", size_of::<App>() as i64),
         ("ps_app.pid", offset_of!(App, pid) as i64),
         ("ps_app.name", offset_of!(App, name) as i64),
+        ("ps_device", size_of::<Device>() as i64),
+        ("ps_device.uid", offset_of!(Device, uid) as i64),
+        ("ps_device.name", offset_of!(Device, name) as i64),
+        ("ps_device.latency", offset_of!(Device, latency) as i64),
+        ("ps_device.bluetooth", offset_of!(Device, bluetooth) as i64),
         ("ps_status", size_of::<Status>() as i64),
         (
             "ps_status.anchor_dsp",

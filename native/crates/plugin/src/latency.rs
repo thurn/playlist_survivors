@@ -1,9 +1,20 @@
-//! The output device as the OS reports it: the default output device, and its latency, safety
-//! offset and first stream's latency, at its nominal rate. Unity's DSP buffering is the client's
-//! to add (docs/design/unity-game.md, "Clocks").
+//! The output device as the OS reports it: the default output device, its UID and name (what the
+//! game's calibrations are kept under), and its latency, safety offset and first stream's
+//! latency, at its nominal rate. Unity's DSP buffering is the client's to add
+//! (docs/design/unity-game.md, "Clocks" and "Calibration").
 
 #[cfg(target_os = "macos")]
-pub use mac::{default_output, output_latency};
+pub use mac::{default_output, output_device, output_latency};
+
+/// An output device as a calibration knows it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct OutputDevice {
+    /// Stable across launches and reconnections; empty when there is no device.
+    pub uid: String,
+    pub name: String,
+    /// Bluetooth (classic or LE), whose reported latency is a guess.
+    pub bluetooth: bool,
+}
 
 #[cfg(target_os = "macos")]
 #[allow(deprecated)]
@@ -52,6 +63,20 @@ mod mac {
         .unwrap_or(0)
     }
 
+    /// The default output device (empty when there is none).
+    pub fn output_device() -> super::OutputDevice {
+        let id = default_output();
+        if id == 0 {
+            return super::OutputDevice::default();
+        }
+        let d = capture::coreaudio::device(id);
+        super::OutputDevice {
+            uid: d.uid,
+            name: d.name,
+            bluetooth: matches!(d.transport.as_str(), "blue" | "blea"),
+        }
+    }
+
     /// The default output device's latency (s); 0 when the OS doesn't say.
     pub fn output_latency() -> f64 {
         let global = kAudioObjectPropertyScopeGlobal;
@@ -79,6 +104,12 @@ mod mac {
 #[cfg(not(target_os = "macos"))]
 pub fn default_output() -> u32 {
     0
+}
+
+/// The default output device: not reported yet off macOS.
+#[cfg(not(target_os = "macos"))]
+pub fn output_device() -> OutputDevice {
+    OutputDevice::default()
 }
 
 /// The default output device's latency (s): not reported yet off macOS.

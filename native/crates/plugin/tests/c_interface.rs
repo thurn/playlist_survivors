@@ -232,6 +232,23 @@ fn failures_return_codes_that_ps_last_error_describes() {
         unsafe { ps_plugin::ps_list_apps(std::ptr::null_mut(), 4) },
         PS_ERR_ARGUMENT
     );
+    assert_eq!(
+        unsafe { ps_plugin::ps_output_device(std::ptr::null_mut()) },
+        PS_ERR_ARGUMENT
+    );
+    // The default output device needs no session; a Mac without one reports an empty UID.
+    let mut device = ps_plugin::Device {
+        uid: [1; 256],
+        name: [1; 128],
+        latency: -1.0,
+        bluetooth: -1,
+    };
+    assert_eq!(
+        unsafe { ps_plugin::ps_output_device(&raw mut device) },
+        PS_OK
+    );
+    assert!(device.uid.contains(&0) && device.name.contains(&0));
+    assert!(device.latency >= 0.0 && (device.bluetooth == 0 || device.bluetooth == 1));
     assert_eq!(status(std::ptr::null_mut()), ps_plugin::Status::default());
     unsafe { ps_plugin::ps_close(std::ptr::null_mut()) };
 
