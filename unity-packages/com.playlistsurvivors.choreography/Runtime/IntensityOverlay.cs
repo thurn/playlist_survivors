@@ -43,6 +43,14 @@ namespace PS.Choreography
             return new IntensityOverlay(root);
         }
 
+        /// <summary>The overlay's global settings alone, without its per-section entries (a trailer shot's base).</summary>
+        public IntensityOverlay WithoutSections()
+        {
+            var members = new List<KeyValuePair<string, JsonValue>>(root.Members);
+            members.RemoveAll(m => m.Key == "sections");
+            return new IntensityOverlay(JsonValue.OfMembers(members));
+        }
+
         /// <summary>The level script's JSON with the overlay merged over it.</summary>
         public JsonValue Apply(JsonValue script)
         {
@@ -109,7 +117,7 @@ namespace PS.Choreography
         }
 
         /// <summary>A copy of object <paramref name="o"/> with <paramref name="key"/> set (appended if new).</summary>
-        static JsonValue Set(JsonValue o, string key, JsonValue value)
+        internal static JsonValue Set(JsonValue o, string key, JsonValue value)
         {
             var members = o.Type == JsonType.Object ? new List<KeyValuePair<string, JsonValue>>(o.Members) : new List<KeyValuePair<string, JsonValue>>();
             int at = members.FindIndex(m => m.Key == key);

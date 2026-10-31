@@ -79,6 +79,44 @@ namespace PS.Choreography
             return i + (t - Beats[i]) / (Beats[i + 1] - Beats[i]);
         }
 
+        /// <summary>Parses a bar.beat position such as "82.3" (1-based bar and beat).</summary>
+        public static bool TryParseBarBeat(string s, out int bar, out int beat)
+        {
+            bar = beat = 0;
+            int dot = s == null ? -1 : s.IndexOf('.');
+            return dot > 0 && int.TryParse(s.Substring(0, dot), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out bar)
+                && int.TryParse(s.Substring(dot + 1), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out beat)
+                && bar >= 1 && beat >= 1;
+        }
+
+        /// <summary>
+        /// The song time of bar <paramref name="bar"/>, beat <paramref name="beat"/>. With <paramref name="grid"/>,
+        /// it must also be a beat on the grid: a free section's beats are silent and fail. A position past the
+        /// bar's beats or the song fails, naming it.
+        /// </summary>
+        public double TimeOfBarBeat(int bar, int beat, BeatGrid grid = null)
+        {
+            string pos = bar + "." + beat;
+            if (beat > BeatsPerBarAt(bar)) throw new FormatException("grid position '" + pos + "': bar " + bar + " has " + BeatsPerBarAt(bar) + " beats");
+            int b = DownbeatIndexOfBar(bar) + beat - 1;
+            if (b < 0 || b >= Beats.Length) throw new FormatException("grid position '" + pos + "' is outside the song");
+            double t = Beats[b];
+            if (grid != null)
+            {
+                int gi = grid.Nearest(t);
+                if (gi < 0 || Math.Abs(grid.Points[gi].Time - t) > 1e-9 || !grid.Points[gi].Has(GridFlags.Beat))
+                    throw new FormatException("grid position '" + pos + "' is not on the grid (" + Sections[SectionIndexAt(t)].Label + " is a free section)");
+            }
+            return t;
+        }
+
+        /// <summary>The song time of a bar.beat string (see <see cref="TimeOfBarBeat(int, int, BeatGrid)"/>).</summary>
+        public double TimeOfBarBeat(string pos, BeatGrid grid = null)
+        {
+            if (!TryParseBarBeat(pos, out int bar, out int beat)) throw new FormatException("unknown grid position '" + pos + "' (expected bar.beat, such as 82.3)");
+            return TimeOfBarBeat(bar, beat, grid);
+        }
+
         /// <summary>The section containing song time <paramref name="t"/> (the first before it starts, the last after it ends).</summary>
         public int SectionIndexAt(double t)
         {

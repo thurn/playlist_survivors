@@ -88,9 +88,10 @@ namespace PS.Choreography
                 if (ls.Boss != null && plans[i].Boss < 0) throw new FormatException("level script: unknown boss type '" + ls.Boss + "'");
                 if (ls.BossFrom != null && plans[i].BossFrom == null) throw new FormatException("level script: section '" + sec.Label + "' names unknown bossFrom goal '" + ls.BossFrom + "'");
             }
-            var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, viewPitchDeg: script.ViewPitchDeg,
+            ShotRules shot = ShotRules.Resolve(script, map, data, plans);
+            var sim = new Sim(map, plans, data, seedOverride ?? script.Seed, initialInnerRadius: 6f, worstBeats: false, heroStart: shot.HeroStart, viewPitchDeg: script.ViewPitchDeg,
                 clearRadius: script.ClearRadiusM, clumpSize: script.ClumpSize, strandedS: script.StrandedS, bossFallsLast: script.BossFallsLast,
-                tuning: script.Tuning);
+                tuning: script.Tuning, shot: shot);
             Timeline tl = sim.Run("song:" + map.Song);
             tl.BuildSeconds = (Stopwatch.GetTimestamp() - t0) / (double)Stopwatch.Frequency;
             return tl;
@@ -149,6 +150,87 @@ namespace PS.Choreography
         public GoalArea BossFrom;       // see LevelSection.BossFrom
         public bool HeroAttacks, MonsterAttacks;
         public bool Clear;              // see LevelSection.Clear
+    }
+
+    /// <summary>
+    /// A level script's trailer-shot fields (trailer.md, "Shot simulations"), resolved on the song map and the
+    /// layout for one run. <see cref="Default"/> holds every field's default, under which the sim runs as before.
+    /// </summary>
+    sealed class ShotRules
+    {
+        public double SpanFrom = double.NaN, SpanTo = double.NaN;   // NaN: the whole song
+        public double Cut = double.NaN, Final = double.NaN;         // song seconds, NaN: none
+        public bool HasFixed;                                       // some combo entry fires at a fixed time
+        public System.Numerics.Vector2? HeroStart;
+        public System.Numerics.Vector2[] Path;                      // null: goals as before
+        public float PathStepM;
+        public bool PathLoop;
+        public bool HoldGround;
+        public float HeroStepS = -1;                                // negative: the roster's
+        public bool KillBudget = true;
+        public float ShapeScale;                                    // 0: the kill-rate feedback
+        public float YawDeg;
+        public float ViewWidthTo;                                   // 0: no zoom across the shot
+        public string BossFrom;                                     // null: no boss rule
+        public System.Numerics.Vector2? BossArea;                   // a named area the boss enters from
+        public int BossType = -1;
+        public int[] Duel;                                          // roster types, one per cast member; null: none
+
+        public static readonly ShotRules Default = new ShotRules();
+
+        public bool HasSpan => !double.IsNaN(SpanFrom);
+        /// <summary>The hero acts on every beat (a kite path or the duel): it strides on a beat whose blow would start later.</summary>
+        public bool ActsEveryBeat => Path != null || HoldGround;
+
+        public static ShotRules Resolve(LevelScript script, SongMap map, ChoreographyData data, SectionPlan[] plans)
+        {
+            var r = new ShotRules
+            {
+                SpanFrom = script.SpanFromS, SpanTo = script.SpanToS,
+                HoldGround = script.HoldGround, HeroStepS = script.HeroStepS, KillBudget = script.KillBudget,
+                ShapeScale = script.ShapeScale, YawDeg = script.YawDeg, ViewWidthTo = script.ViewWidthToM, BossFrom = script.Boss,
+            };
+            var grid = new BeatGrid(map);
+            if (script.Cut != null) r.Cut = map.TimeOfBarBeat(script.Cut, grid);
+            if (script.Final != null) r.Final = map.TimeOfBarBeat(script.Final, grid);
+            if (script.HeroPath != null)
+            {
+                r.Path = new System.Numerics.Vector2[script.HeroPath.Via.Length];
+                for (int i = 0; i < r.Path.Length; i++) r.Path[i] = script.HeroPath.Via[i].Resolve(data.Layout, "path waypoint " + (i + 1));
+                r.PathStepM = script.HeroPath.StepM;
+                r.PathLoop = script.HeroPath.Loop;
+            }
+            if (script.HeroAt != null) r.HeroStart = script.HeroAt.Resolve(data.Layout, "heroAt");
+            else if (r.Path != null) r.HeroStart = r.Path[0];
+            if (r.BossFrom != null)
+            {
+                for (int t = 0; t < data.Roster.Monsters.Length; t++) if (data.Roster.Monsters[t].Rank == MonsterRank.Boss) { r.BossType = t; break; }
+                if (r.BossType < 0) throw new FormatException("level script: boss rule, but the roster has no boss");
+                if (double.IsNaN(r.Final)) throw new FormatException("level script: the boss rule needs a final slam (final)");
+                if (r.BossFrom != "ahead" && r.BossFrom != "behind" && r.BossFrom != "left" && r.BossFrom != "right")
+                    r.BossArea = new LayoutPoint { Area = r.BossFrom }.Resolve(data.Layout, "boss");
+            }
+            if (script.Duel != null)
+            {
+                var cast = new System.Collections.Generic.List<int>();
+                foreach (MixEntry e in script.Duel)
+                {
+                    int t = data.Roster.MonsterIndex(e.Type);
+                    if (t < 0) throw new FormatException("duel: unknown type '" + e.Type + "'");
+                    for (int k = 0; k < (int)Math.Round(e.Weight); k++) cast.Add(t);
+                }
+                r.Duel = cast.ToArray();
+            }
+            // Fixed positions resolve per run: anchors are consumed from the cut (or the span's start) on.
+            double anchorsFrom = !double.IsNaN(r.Cut) ? r.Cut : r.HasSpan ? r.SpanFrom : double.NegativeInfinity;
+            foreach (SectionPlan p in plans)
+            {
+                p.Combo = GridEntry.Resolve(p.Combo, map, grid, r.Cut, r.Final, anchorsFrom, "combo entry");
+                p.Spells = GridEntry.Resolve(p.Spells, map, grid, r.Cut, r.Final, anchorsFrom, "spell entry");
+                foreach (GridEntry e in p.Combo) if (e.Fixed != FixedPosition.None) r.HasFixed = true;
+            }
+            return r;
+        }
     }
 
     static class RosterExtensions

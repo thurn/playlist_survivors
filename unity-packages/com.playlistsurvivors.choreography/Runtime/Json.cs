@@ -31,6 +31,8 @@ namespace PS.Choreography
         JsonValue(List<KeyValuePair<string, JsonValue>> members) { Type = JsonType.Object; Members = members; }
 
         internal static JsonValue OfNumber(double n) => new JsonValue(n);
+        internal static JsonValue OfBool(bool b) => new JsonValue(b);
+        internal static JsonValue OfString(string v) => new JsonValue(v);
         internal static JsonValue OfMembers(List<KeyValuePair<string, JsonValue>> members) => new JsonValue(members);
         internal static JsonValue OfItems(List<JsonValue> items) => new JsonValue(items);
 

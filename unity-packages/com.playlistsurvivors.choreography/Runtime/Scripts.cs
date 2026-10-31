@@ -5,6 +5,13 @@ using System.Globalization;
 namespace PS.Choreography
 {
     /// <summary>
+    /// The trailer's positions (trailer.md, "The trailer file"), each a single grid point resolved before
+    /// the run: <c>cut</c> (the script's cut), <c>final</c> (its final slam), <c>anchor</c> (the next unused
+    /// anchor of a free section) and an explicit bar.beat such as <c>82.3</c>.
+    /// </summary>
+    public enum FixedPosition { None, Anchor, BarBeat, Cut, Final }
+
+    /// <summary>
     /// A combo or spell entry: a name, optionally "@" and a grid position, optionally "/k" to fire
     /// on every k-th occurrence of that position (an extension of choreography.md's syntax, used
     /// by the load presets: "lightning@beat/3" is about one a second).
@@ -15,15 +22,30 @@ namespace PS.Choreography
         public bool Positioned;        // false: a plain combo entry that cycles
         public GridFlags Position = GridFlags.Beat;
         public int Every = 1;
+        /// <summary>A trailer position (<see cref="FixedPosition"/>): the entry fires only at <see cref="At"/>, once it is resolved.</summary>
+        public FixedPosition Fixed;
+        public int Bar, Beat;          // an explicit bar.beat's
+        /// <summary>A fixed entry's song time (NaN until <see cref="Resolve"/>).</summary>
+        public double At = double.NaN;
 
         /// <summary>A plain combo entry's rank: it plays on the beat.</summary>
         public const int BeatPriority = 2;
 
-        /// <summary>When positions coincide: phrase beats downbeat, which beats accent, which beats beat.</summary>
+        /// <summary>
+        /// When positions coincide: final beats cut, which beats an explicit bar.beat, then anchor, phrase,
+        /// downbeat, accent and beat (trailer.md, "How a shot uses the base").
+        /// </summary>
         public int Priority
         {
             get
             {
+                switch (Fixed)
+                {
+                    case FixedPosition.Final: return 9;
+                    case FixedPosition.Cut: return 8;
+                    case FixedPosition.BarBeat: return 7;
+                    case FixedPosition.Anchor: return 6;
+                }
                 switch (Position)
                 {
                     case GridFlags.Phrase: return 5;
@@ -35,6 +57,9 @@ namespace PS.Choreography
                 }
             }
         }
+
+        /// <summary>Does the entry fire on grid point <paramref name="p"/>: at its fixed time, or on every point with its position's flags?</summary>
+        public bool Matches(in GridPoint p) => Fixed != FixedPosition.None ? Math.Abs(p.Time - At) <= 1e-6 : (p.Flags & Position) == Position;
 
         public static GridEntry Parse(string s)
         {
@@ -58,7 +83,13 @@ namespace PS.Choreography
                 case "downbeat": e.Position = GridFlags.Downbeat; break;
                 case "phrase": e.Position = GridFlags.Phrase; break;
                 case "accent": e.Position = GridFlags.Accent; break;
-                default: throw new FormatException("unknown grid position '" + pos + "' in '" + s + "'");
+                case "cut": e.Fixed = FixedPosition.Cut; break;
+                case "final": e.Fixed = FixedPosition.Final; break;
+                case "anchor": e.Fixed = FixedPosition.Anchor; break;
+                default:
+                    if (!SongMap.TryParseBarBeat(pos, out e.Bar, out e.Beat)) throw new FormatException("unknown grid position '" + pos + "' in '" + s + "'");
+                    e.Fixed = FixedPosition.BarBeat;
+                    break;
             }
             return e;
         }
@@ -70,7 +101,55 @@ namespace PS.Choreography
             return list;
         }
 
-        public override string ToString() => Positioned ? Name + "@" + Position.ToString().ToLowerInvariant() + (Every > 1 ? "/" + Every : "") : Name;
+        /// <summary>
+        /// Copies of <paramref name="entries"/> with their fixed positions resolved to song times on
+        /// <paramref name="map"/>: <c>cut</c> and <c>final</c> to <paramref name="cut"/> and <paramref name="final"/>,
+        /// a bar.beat to its beat (on the grid), and each <c>anchor</c>, in list order, to the next anchor of a free
+        /// section from <paramref name="anchorsFrom"/> on, consuming it. An entry its script gives no time for fails.
+        /// </summary>
+        public static GridEntry[] Resolve(GridEntry[] entries, SongMap map, BeatGrid grid, double cut, double final, double anchorsFrom, string what)
+        {
+            var anchors = new List<double>();
+            foreach (SongSection sec in map.Sections)
+                if (sec.Feel == SectionFeel.Free)
+                    foreach (TimedStrength a in sec.Anchors) if (a.Time >= anchorsFrom - 1e-9) anchors.Add(a.Time);
+            anchors.Sort();
+            int nextAnchor = 0;
+            var list = new GridEntry[entries.Length];
+            for (int i = 0; i < entries.Length; i++)
+            {
+                GridEntry e = entries[i];
+                if (e.Fixed == FixedPosition.None) { list[i] = e; continue; }
+                var r = (GridEntry)e.MemberwiseClone();
+                switch (e.Fixed)
+                {
+                    case FixedPosition.Cut:
+                        if (double.IsNaN(cut)) throw new FormatException(what + " '" + e + "' needs the script's cut");
+                        r.At = cut;
+                        break;
+                    case FixedPosition.Final:
+                        if (double.IsNaN(final)) throw new FormatException(what + " '" + e + "' needs the script's final");
+                        r.At = final;
+                        break;
+                    case FixedPosition.Anchor:
+                        if (nextAnchor >= anchors.Count) throw new FormatException(what + " '" + e + "': no free section's anchor is left for it");
+                        r.At = anchors[nextAnchor++];
+                        break;
+                    default:
+                        r.At = map.TimeOfBarBeat(e.Bar, e.Beat, grid);
+                        break;
+                }
+                list[i] = r;
+            }
+            return list;
+        }
+
+        public override string ToString()
+        {
+            if (!Positioned) return Name;
+            string pos = Fixed == FixedPosition.BarBeat ? Bar + "." + Beat : Fixed != FixedPosition.None ? Fixed.ToString().ToLowerInvariant() : Position.ToString().ToLowerInvariant();
+            return Name + "@" + pos + (Every > 1 ? "/" + Every : "");
+        }
     }
 
     /// <summary>
@@ -257,6 +336,48 @@ namespace PS.Choreography
         }
     }
 
+    /// <summary>A point on the layout: a named area's goal centre, or [x, y] metres.</summary>
+    public sealed class LayoutPoint
+    {
+        public string Area;                  // null: metres
+        public System.Numerics.Vector2 At;
+
+        public static LayoutPoint Parse(JsonValue v, string what)
+        {
+            if (v.Type == JsonType.String) return new LayoutPoint { Area = v.AsString() };
+            if (v.Type == JsonType.Array && v.Count == 2) return new LayoutPoint { At = new System.Numerics.Vector2(v[0].AsFloat(), v[1].AsFloat()) };
+            throw new FormatException(what + ": expected a named area or [x, y] metres");
+        }
+
+        /// <summary>The point on <paramref name="layout"/>; an unknown area fails, naming it.</summary>
+        public System.Numerics.Vector2 Resolve(GroundLayout layout, string what)
+        {
+            if (Area == null) return At;
+            GoalArea g = layout.Goal(Area);
+            if (g == null) throw new FormatException(what + ": unknown area '" + Area + "' in layout '" + layout.Name + "'");
+            return g.Center;
+        }
+
+        public override string ToString() => Area ?? "[" + At.X.ToString(CultureInfo.InvariantCulture) + ", " + At.Y.ToString(CultureInfo.InvariantCulture) + "]";
+    }
+
+    /// <summary>The hero's kite path (trailer.md, "Shot simulations"): waypoints, a stride per beat, and whether it closes into a circuit.</summary>
+    public sealed class HeroPath
+    {
+        public LayoutPoint[] Via;
+        public float StepM;
+        public bool Loop;
+
+        public static HeroPath Parse(JsonValue o)
+        {
+            JsonValue via = o["via"];
+            var p = new HeroPath { Via = new LayoutPoint[via.Count], StepM = o["stepM"].AsFloat(0f), Loop = o["loop"].AsBool(false) };
+            for (int i = 0; i < via.Count; i++) p.Via[i] = LayoutPoint.Parse(via[i], "path waypoint " + (i + 1));
+            if (p.Via.Length == 0 || !(p.StepM > 0)) throw new FormatException("path: needs at least one waypoint and a positive stepM");
+            return p;
+        }
+    }
+
     /// <summary>The level script (choreography.md, "The choreographer"): per song-map section, its targets.</summary>
     public sealed class LevelScript
     {
@@ -300,6 +421,40 @@ namespace PS.Choreography
         public string Intensity;
         public LevelSection[] Sections;
 
+        // A trailer shot's fields (trailer.md, "Shot simulations"). Each is opt-in: its default runs the song as before.
+
+        /// <summary>The simulated span in song seconds (its <c>spanS</c>: [from, to]). NaN, the default: the whole song.</summary>
+        public double SpanFromS = double.NaN, SpanToS = double.NaN;
+        /// <summary>The bar.beat an <c>@cut</c> entry fires on (its <c>cut</c>), and an <c>@final</c> entry's (its <c>final</c>): the final slam, which nothing else shares. Null: none.</summary>
+        public string Cut, Final;
+        /// <summary>Where the hero starts (its <c>heroAt</c>: a named area or [x, y] metres). Null: the layout's hero start, or the path's first waypoint.</summary>
+        public LayoutPoint HeroAt;
+        /// <summary>The hero's kite path (its <c>heroPath</c>), replacing goals: null, the default, heads for the sections' goals.</summary>
+        public HeroPath HeroPath;
+        /// <summary>
+        /// The hero holds ground (its <c>holdGround</c>, the trailer's duel): it faces the nearest monster for each
+        /// blow, and on a beat without one takes a short sideways step. False, the default: it steps toward the densest monsters.
+        /// </summary>
+        public bool HoldGround;
+        /// <summary>The hero's step time (its <c>heroStepS</c>), replacing the roster's <see cref="Roster.HeroStepS"/>. Negative, the default: the roster's.</summary>
+        public float HeroStepS = -1;
+        /// <summary>The kill budget (its <c>killBudget</c>): false lets every blow and spell kill all it strikes, and spells never hold back. True, the default.</summary>
+        public bool KillBudget = true;
+        /// <summary>A fixed scale for the hit shapes (its <c>shapeScale</c>), with the kill-rate feedback off. 0, the default: the feedback scales them.</summary>
+        public float ShapeScale;
+        /// <summary>The camera's heading in degrees (its <c>yawDeg</c>), which turns the view the horde is counted and spawned around. 0, the default.</summary>
+        public float YawDeg;
+        /// <summary>A view width the zoom eases to (its <c>viewWidthToM</c>), from the cut (or the span's start) to the span's end. 0, the default: none.</summary>
+        public float ViewWidthToM;
+        /// <summary>
+        /// The boss rule (its <c>boss</c>: <c>ahead</c>, <c>behind</c>, <c>left</c>, <c>right</c>, relative to the hero's travel
+        /// at the cut, or a named area): the roster's boss enters from there outside the view on the cut, walks in, keeps
+        /// beyond the largest hit shape plus 1 m, takes no blow or spell, and dies to the final slam. Null, the default: none.
+        /// </summary>
+        public string Boss;
+        /// <summary>A fixed cast (its <c>duel</c>: counts by type), staged to meet the fixed combo entries in order, with no refill. Null, the default: none.</summary>
+        public MixEntry[] Duel;
+
         /// <summary>A section's load preset: the script's own by that name, else a built-in one.</summary>
         public LoadPreset Preset(string name) => name != null && Loads.TryGetValue(name, out LoadPreset p) ? p : LoadPreset.Get(name);
 
@@ -336,6 +491,12 @@ namespace PS.Choreography
                 root = overlay.Apply(root);
                 intensity = overlay.Name;
             }
+            return FromJson(root, intensity);
+        }
+
+        /// <summary>The script from its parsed JSON (a trailer's shot script builds it), naming the overlay already merged into it, if any.</summary>
+        public static LevelScript FromJson(JsonValue root, string intensity = null)
+        {
             var ls = new LevelScript
             {
                 Song = root["song"].AsString(),
@@ -351,7 +512,27 @@ namespace PS.Choreography
                 BossFallsLast = root["bossFallsLast"].AsBool(false),
                 Tuning = SimTuning.Parse(root),
                 Intensity = intensity,
+                Cut = root["cut"].AsString(),
+                Final = root["final"].AsString(),
+                HeroAt = root.Has("heroAt") ? LayoutPoint.Parse(root["heroAt"], "heroAt") : null,
+                HeroPath = root.Has("heroPath") ? HeroPath.Parse(root["heroPath"]) : null,
+                HoldGround = root["holdGround"].AsBool(false),
+                HeroStepS = root["heroStepS"].AsFloat(-1f),
+                KillBudget = root["killBudget"].AsBool(true),
+                ShapeScale = root["shapeScale"].AsFloat(0f),
+                YawDeg = root["yawDeg"].AsFloat(0f),
+                ViewWidthToM = root["viewWidthToM"].AsFloat(0f),
+                Boss = root["boss"].AsString(),
+                Duel = root.Has("duel") ? MixEntry.ParseMix(root["duel"]) : null,
             };
+            JsonValue span = root["spanS"];
+            if (span.Type == JsonType.Array)
+            {
+                if (span.Count != 2 || !(span[1].AsDouble() > span[0].AsDouble())) throw new FormatException("level script: spanS must be [from, to] with to after from");
+                ls.SpanFromS = span[0].AsDouble();
+                ls.SpanToS = span[1].AsDouble();
+            }
+            if (!(ls.ShapeScale >= 0) || !(ls.ViewWidthToM >= 0)) throw new FormatException("level script: shapeScale and viewWidthToM must not be negative");
             foreach (KeyValuePair<string, JsonValue> kv in root["loads"].Type == JsonType.Object ? root["loads"].Members : new List<KeyValuePair<string, JsonValue>>())
                 ls.Loads[kv.Key] = LoadPreset.Parse(kv.Key, kv.Value);
             JsonValue secs = root["sections"];

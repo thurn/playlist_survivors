@@ -64,6 +64,8 @@ namespace PS.Choreography
         readonly double viewPitchDeg;
         readonly float clearRadius;   // the level script's clear ring: monsters' bodies keep this far from the hero (0: contact)
         readonly SimTuning tuning;    // the level script's tuning knobs (SimTuning)
+        readonly ShotRules shot;      // the level script's trailer-shot fields (ShotRules.Default: none)
+        readonly float heroStepS;     // the hero's step time: the shot's, else the roster's
         readonly int[] barOfBeat;
         readonly int[][] spellCount;
 
@@ -95,6 +97,8 @@ namespace PS.Choreography
         byte[] state = new byte[0];   // 0 none, 1 alive, 2 dying, 3 gone
         double[] busyUntil = new double[0], lastActionEnd = new double[0], bossDeathAfter = new double[0], lastWanted = new double[0];
         bool bossWalksIn;   // the boss entered from a level script's bossFrom side
+        bool bossEntered;   // the boss rule's boss is in
+        float bossKeep;     // the boss rule's keep-out from the hero, centre to centre
         bool[] onScreen = new bool[0], released = new bool[0];
         sbyte[] sideMem = new sbyte[0];   // with walls: the side of each monster's last sidestep (0 none yet)
 
@@ -127,6 +131,11 @@ namespace PS.Choreography
         int comboCycle;
         GoalArea goal;
         bool goalReached;
+        // The kite path (the shot's): the waypoint the hero heads for, and each waypoint's field.
+        int pathNext;
+        bool pathDone;     // past a path's last waypoint: it runs on along its last leg
+        Vector2 runOn;
+        FlowField[] pathFields;
 
         // Section and feedback.
         int curSection = -1;
@@ -168,9 +177,12 @@ namespace PS.Choreography
 
         public Sim(SongMap map, SectionPlan[] plans, ChoreographyData data, uint seed, float initialInnerRadius, bool worstBeats,
             Vector2? heroStart = null, double viewPitchDeg = ViewGeometry.PitchDeg, float clearRadius = 0, int clumpSize = 0, float strandedS = 0, bool bossFallsLast = false,
-            SimTuning tuning = null)
+            SimTuning tuning = null, ShotRules shot = null)
         {
             this.tuning = tuning ?? SimTuning.Default;
+            this.shot = shot ?? ShotRules.Default;
+            heroStepS = this.shot.HeroStepS >= 0 ? this.shot.HeroStepS : data.Roster.HeroStepS;
+            if (this.shot.ShapeScale > 0) shapeScale = this.shot.ShapeScale;
             this.strandedS = strandedS;
             this.bossFallsLast = bossFallsLast;
             this.viewPitchDeg = viewPitchDeg;
@@ -225,7 +237,19 @@ namespace PS.Choreography
                     f.BuildAll();
                     goalFields[p.Goal.Name] = f;
                 }
+                // The kite path's fields, one per waypoint, so each leg routes round the environment's structures.
+                if (this.shot.Path != null)
+                {
+                    pathFields = new FlowField[this.shot.Path.Length];
+                    for (int i = 0; i < pathFields.Length; i++)
+                    {
+                        pathFields[i] = new FlowField(nav, roster.HeroRadius + 0.05f);
+                        pathFields[i].BeginArea(this.shot.Path[i], 1f);
+                        pathFields[i].BuildAll();
+                    }
+                }
             }
+            if (this.shot.Path != null) pathNext = this.shot.HeroStart == this.shot.Path[0] && this.shot.Path.Length > 1 ? 1 : 0;
             stats = new SectionStats[map.Sections.Length];
             statTicks = new int[map.Sections.Length];
             for (int i = 0; i < stats.Length; i++)
@@ -246,28 +270,42 @@ namespace PS.Choreography
 
         public Timeline Run(string name)
         {
-            double duration = map.Duration;
+            // A shot simulates only its span (trailer.md, "Shot simulations"): the timeline still runs in song
+            // seconds from 0, so its framing before the span holds the span's first sample.
+            double from = shot.HasSpan ? shot.SpanFrom : 0;
+            double duration = shot.HasSpan ? shot.SpanTo : map.Duration;
             int ticks = (int)Math.Ceiling(duration * Choreographer.TickRate) + 1;
-            var tickMs = new float[ticks];
+            firstTick = shot.HasSpan ? (int)Math.Ceiling(from * Choreographer.TickRate - 1e-9) : 0;
+            var tickMs = new float[ticks - firstTick];
             framing = new FramingSample[ticks];
 
-            // Decision times: a pre-roll at t = 0 when the first beat is later, then every beat.
+            // Decision times: a pre-roll at the start when the first beat is later, then every beat.
             var decisions = new List<double>();
             var decisionBeat = new List<int>();
-            if (map.Beats[0] > 0) { decisions.Add(0); decisionBeat.Add(-1); }
-            for (int b = 0; b < map.Beats.Length; b++) { decisions.Add(map.Beats[b]); decisionBeat.Add(b); }
+            if (!shot.HasSpan)
+            {
+                if (map.Beats[0] > 0) { decisions.Add(0); decisionBeat.Add(-1); }
+                for (int b = 0; b < map.Beats.Length; b++) { decisions.Add(map.Beats[b]); decisionBeat.Add(b); }
+            }
+            else
+            {
+                int b0 = 0;
+                while (b0 < map.Beats.Length && map.Beats[b0] < from - 1e-9) b0++;
+                if (b0 >= map.Beats.Length || map.Beats[b0] > from + 1e-9) { decisions.Add(from); decisionBeat.Add(-1); }
+                for (int b = b0; b < map.Beats.Length && map.Beats[b] <= duration + 1e-9; b++) { decisions.Add(map.Beats[b]); decisionBeat.Add(b); }
+            }
 
-            int hero = NewEntity(EntityKind.Hero, -1, 0);
+            int hero = NewEntity(EntityKind.Hero, -1, from);
             despawnT[hero] = duration;
-            heroSegs.Add(AddSeg(new MotionSegment(hero, 0, 0, heroStart, heroStart, 0, 0, Ease.Linear)));
+            heroSegs.Add(AddSeg(new MotionSegment(hero, from, from, heroStart, heroStart, 0, 0, Ease.Linear)));
             focus = heroStart;
 
             double toMs = 1000.0 / Stopwatch.Frequency;
             int di = 0;
-            for (int k = 0; k < ticks; k++)
+            for (int k = firstTick; k < ticks; k++)
             {
                 long start = Stopwatch.GetTimestamp();
-                double t = k * TickDt;
+                double t = shot.HasSpan ? Math.Max(from, k * TickDt) : k * TickDt;
                 while (true)
                 {
                     double nextImpact = heapCount > 0 ? heap[0].Time : double.PositiveInfinity;
@@ -279,14 +317,16 @@ namespace PS.Choreography
                     {
                         int b = decisionBeat[di];
                         double tnext = di + 1 < decisions.Count ? decisions[di + 1]
+                            : b >= 0 && b + 1 < map.Beats.Length ? map.Beats[b + 1]
                             : decisions[di] + (map.Beats[map.Beats.Length - 1] - map.Beats[map.Beats.Length - 2]);
                         Decide(decisions[di], tnext, b);
                         di++;
                     }
                 }
                 UpdateTick(t, k);
-                tickMs[k] = (float)((Stopwatch.GetTimestamp() - start) * toMs);
+                tickMs[k - firstTick] = (float)((Stopwatch.GetTimestamp() - start) * toMs);
             }
+            for (int k = 0; k < firstTick; k++) framing[k] = framing[firstTick];
             return Build(name, duration, new SimTickTiming(tickMs, Choreographer.TickRate, flowSlices, flowRebuilds));
         }
 
@@ -327,7 +367,7 @@ namespace PS.Choreography
 
         Vector2 MonsterPosAt(int m, double t) => cur[m].PositionAt(t);
 
-        ViewGeometry View(float width) => new ViewGeometry(width, viewPitchDeg);
+        ViewGeometry View(float width) => new ViewGeometry(width, viewPitchDeg, shot.YawDeg);
 
         /// <summary>
         /// Where the monster stands at <paramref name="t"/>. With <paramref name="hold"/>, it stops
@@ -447,7 +487,7 @@ namespace PS.Choreography
             Vector2 target = HeroPosAt(t);
             float omega = 1f / FollowTimeConstant;
             float dt = (float)TickDt;
-            if (k == 0) { focus = target; focusVel = Vector2.Zero; }
+            if (k == firstTick) { focus = target; focusVel = Vector2.Zero; }
             else
             {
                 Vector2 x = focus - target;
@@ -469,6 +509,7 @@ namespace PS.Choreography
         }
 
         bool hashDirty = true;
+        int firstTick;   // the span's first tick (0 for the whole song)
 
         SpatialHash Near()
         {
@@ -478,6 +519,14 @@ namespace PS.Choreography
 
         float WidthAt(double t)
         {
+            if (shot.ViewWidthTo > 0)
+            {
+                // A shot's zoom eases across it, from the cut (or its start) to its end.
+                double z0 = double.IsNaN(shot.Cut) ? shot.SpanFrom : shot.Cut, z1 = shot.SpanTo;
+                float z = (float)Math.Max(0, Math.Min(1, (t - z0) / (z1 - z0)));
+                z = z * z * (3 - 2 * z);
+                return plans[0].ViewWidth + (shot.ViewWidthTo - plans[0].ViewWidth) * z;
+            }
             if (curSection < 0) return plans[0].ViewWidth;
             if (t >= wT1 || wT1 <= wT0) return wTo;
             if (t <= wT0) return wFrom;
@@ -495,6 +544,7 @@ namespace PS.Choreography
             if (bi >= 0 && grid.IsDownbeat[bi] && tb > barStart + 1e-6) BarFeedback(tb);
             if (nav != null) FlowBeat(tb, tnext);
             if (!populated) { InitialPopulation(tb); populated = true; }
+            if (shot.BossType >= 0 && !bossEntered && (double.IsNaN(shot.Cut) || tb >= shot.Cut - 1e-9)) BossRuleEnter(tb);
             beatSerial++;
             bool free = map.Sections[s].Feel == SectionFeel.Free;
             var view = View(viewWidth > 0 ? viewWidth : plan.ViewWidth);
@@ -517,7 +567,7 @@ namespace PS.Choreography
             curSection = s;
             // A lighter section starts its hit shapes small again (TD6): shapes the feedback grew for a heavier one
             // would hold the horde at arm's length all through it, knocking back everything they strike past the budget.
-            if (!first && nav != null && plans[s].Preset.DeathsPerSecond(plans[s].TargetOnScreen) < plan.Preset.DeathsPerSecond(plan.TargetOnScreen))
+            if (!first && nav != null && shot.ShapeScale <= 0 && plans[s].Preset.DeathsPerSecond(plans[s].TargetOnScreen) < plan.Preset.DeathsPerSecond(plan.TargetOnScreen))
                 shapeScale = Math.Min(shapeScale, 1.5f);
             plan = plans[s];
             SongSection sec = map.Sections[s];
@@ -571,7 +621,7 @@ namespace PS.Choreography
             double hits = tuning.OneHitKills ? 0 : plan.Preset.HitsPerSecond(plan.TargetOnScreen);
             double target = (plan.Preset.DeathsPerSecond(plan.TargetOnScreen) + hits) * barDur;
             double rate = plan.Preset.DeathsPerSecond(plan.TargetOnScreen);
-            if (target > 0 && barDur > 0)
+            if (target > 0 && barDur > 0 && shot.ShapeScale <= 0)   // a shot's fixed scale replaces the feedback
             {
                 // Deaths come first: while the kill budget runs behind by more than half a second's worth,
                 // the shapes grow to reach more monsters. Otherwise they steer struck monsters toward the
@@ -593,6 +643,7 @@ namespace PS.Choreography
         {
             var view = View(plan.ViewWidth);
             Vector2 h = HeroRest;
+            if (shot.Duel != null) { DuelCast(t, h); return; }
             float spacing = 0;   // the widest fodder's diameter, so the opening horde starts apart
             foreach (MonsterType mt in roster.Monsters) if (mt.Rank == MonsterRank.Fodder) spacing = Math.Max(spacing, 2 * mt.Radius);
             float half = view.Radius + SpawnMargin + SpawnBand + 4;
@@ -632,6 +683,92 @@ namespace PS.Choreography
             hash.Build(live, liveCount, pos, focus);
         }
 
+        /// <summary>
+        /// The duel's fixed cast (trailer.md, shot 1): the k-th member walks in to meet the k-th fixed combo entry,
+        /// spread round the hero a third of a turn apart. Each starts as far out as it walks by its blow, so it
+        /// arrives just inside that blow's reach then, and a nearer blow before it can't reach it.
+        /// </summary>
+        void DuelCast(double t, Vector2 h)
+        {
+            var blows = new List<GridEntry>();
+            foreach (GridEntry e in plan.Combo) if (e.Fixed != FixedPosition.None) blows.Add(e);
+            blows.Sort((a, b) => a.At.CompareTo(b.At));
+            double beat = map.Beats[1] - map.Beats[0];
+            int b0 = 0;
+            while (b0 < map.Beats.Length - 1 && map.Beats[b0] < t - 1e-9) b0++;
+            double walkFrom = map.Beats[b0];   // monsters first step on the first beat
+            for (int k = 0; k < shot.Duel.Length; k++)
+            {
+                MonsterType mt = roster.Monsters[shot.Duel[k]];
+                float contact = roster.HeroRadius + mt.Radius + 0.15f;
+                double at = k < blows.Count ? blows[k].At : t + 4 * beat;
+                // Just inside the blow's reach (a body is struck within half its radius past the shape's edge).
+                float reach = k < blows.Count ? Scaled(HitSize(roster.Combo(blows[k].Name))) + HitShapeInflate * mt.Radius - 0.35f : contact;
+                float arrive = Math.Max(contact, reach);
+                float walk = (float)(mt.StepM * Math.Max(0, at - walkFrom) / beat);
+                Vector2 dir = Easing.Dir((float)(k * 2 * Math.PI / 3) + (float)(shot.YawDeg * Math.PI / 180));
+                Vector2 p = h + dir * (arrive + walk);
+                if (nav != null) p = OpenNear(p, mt.Radius);
+                Spawn(shot.Duel[k], p, t, true);
+            }
+            for (int i = 0; i < liveCount; i++) pos[live[i]] = rest[live[i]];
+            hash.Build(live, liveCount, pos, focus);
+        }
+
+        /// <summary>The nearest open ground to <paramref name="p"/> for a body of radius <paramref name="r"/> that the field toward the hero reaches.</summary>
+        Vector2 OpenNear(Vector2 p, float r)
+        {
+            for (float d = 0; d < 20f; d += 0.5f)
+                for (int k = 0; k < (d == 0 ? 1 : 12); k++)
+                {
+                    Vector2 q = p + Easing.Dir((float)(k * Math.PI / 6)) * d;
+                    if (nav.Distance(q) >= r + 0.05f && heroField.Reached(q)) return q;
+                }
+            return p;
+        }
+
+        /// <summary>A move's hit shape's size before scaling: its radius, or a line's length.</summary>
+        static float HitSize(Move mv) => mv.Shape == HitShape.Line ? mv.Length : mv.Radius;
+
+        /// <summary>
+        /// The boss rule's entrance (trailer.md, "The boss"): on the cut, outside the view from the shot's side
+        /// (relative to the hero's travel), walking in. It dies only to the final slam.
+        /// </summary>
+        void BossRuleEnter(double tb)
+        {
+            bossEntered = true;
+            Vector2 h = HeroRest;
+            Vector2 travel = shot.Path != null ? PathHeading(h) : Easing.Dir(HeroFacing);
+            Vector2 dir;
+            switch (shot.BossFrom)
+            {
+                case "ahead": dir = travel; break;
+                case "behind": dir = -travel; break;
+                case "left": dir = new Vector2(-travel.Y, travel.X); break;
+                case "right": dir = new Vector2(travel.Y, -travel.X); break;
+                default:
+                    Vector2 d = shot.BossArea.Value - h;
+                    dir = d.LengthSquared() > 1e-6f ? Vector2.Normalize(d) : travel;
+                    break;
+            }
+            var view = View(Math.Max(viewWidth, plan.ViewWidth));
+            float br = roster.Monsters[shot.BossType].Radius;
+            Vector2 p;
+            if (nav == null)
+            {
+                float dist = view.Near;
+                while (view.OutsideDistance(focus, focus + dir * dist) < SpawnMargin + br || SpawnBlocked(focus + dir * dist, br)) dist += 0.5f;
+                p = focus + dir * dist;
+            }
+            else p = BossEntry(view, dir, br);
+            int m = Spawn(shot.BossType, p, tb, false);
+            beatSpawns.Add(m);
+            bossWalksIn = true;
+            bossDeathAfter[m] = shot.Final;
+            // Its keep-out: the shot's largest scaled hit shape, plus 1 m.
+            foreach (GridEntry e in plan.Combo) bossKeep = Math.Max(bossKeep, Scaled(HitSize(roster.Combo(e.Name))) + 1f);
+        }
+
         void Classify(ViewGeometry view, double tb)
         {
             // Deaths per second, smoothed over about a second.
@@ -646,6 +783,8 @@ namespace PS.Choreography
             onScreenCount = 0;
             int offN = 0;
             float far = view.Radius + FarDespawn;
+            // A kiting hero outruns the horde: off screen behind it, past the spawn band, a monster never catches up.
+            Vector2 travel = shot.Path != null ? PathHeading(HeroRest) : Vector2.Zero;
             for (int i = 0; i < liveCount; i++)
             {
                 int m = live[i];
@@ -658,6 +797,8 @@ namespace PS.Choreography
                 float d = Vector2.Distance(pos[m], focus);
                 float outside = view.OutsideDistance(focus, pos[m]);
                 bool stranded = strandedS > 0 && tb - lastWanted[m] > strandedS && roster.Monsters[etype[m]].Rank != MonsterRank.Boss;
+                if (travel != Vector2.Zero && outside > SpawnMargin + SpawnBand && Vector2.Dot(pos[m] - focus, travel) < 0 && roster.Monsters[etype[m]].Rank != MonsterRank.Boss)
+                    stranded = true;
                 if ((d > far || stranded) && busyUntil[m] <= tb)
                 {
                     state[m] = Gone;
@@ -700,6 +841,8 @@ namespace PS.Choreography
 
         void HeroDecide(double tb, double tnext)
         {
+            // A kiting hero strides along its path on every beat, whether it strikes or not: its blows are moving strikes.
+            if (shot.Path != null && !(tb >= shot.Final - 1e-9)) ShotStride(tb, tnext, HeroRest);
             Vector2 h = HeroPosAt(tb);
             if (!goalReached && Vector2.Distance(h, goal.Center) <= goal.Radius)
             {
@@ -717,10 +860,13 @@ namespace PS.Choreography
             // travelScaledReach lets it carve its way with its scaled shapes too.
             bool scaled = (goalReached || tuning.TravelScaledReach) && nav != null;
             float reach = scaled ? Math.Max(roster.HeroReachM, Scaled(roster.HeroReachM)) : roster.HeroReachM;
-            if (canAct && (plan.Clear || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
+            // A shot's hero (a kite path or the duel) acts on every beat: it swings whatever is in reach, and strides
+            // on a beat whose next blow would start after the next decision.
+            bool everyBeat = shot.ActsEveryBeat;
+            if (canAct && (plan.Clear || everyBeat || AnyMonsterWithin(h, reach, ahead)))   // a clearing section slams on every accent
             {
                 // With a fixed windup the next combo's windup cuts into the last one's follow-through.
-                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd));
+                ScheduleHeroAction(tb, roster.HeroWindupS > 0 ? tb : Math.Max(tb, heroLastEnd), startBefore: everyBeat ? tnext : double.PositiveInfinity);
                 // A flurry (an eighth's combo entry) strikes between beats: the hero goes straight on to
                 // the following beat's action, which no later decision could still schedule, so the
                 // flurry adds a blow instead of shifting one.
@@ -730,9 +876,10 @@ namespace PS.Choreography
                     ScheduleHeroAction(after, roster.HeroWindupS > 0 ? after : heroLastEnd);
                     if (heroPendingImpact <= after + 1e-9) break;
                 }
-                return;
+                if (!everyBeat || heroPendingImpact > tb + 1e-9) return;
             }
-            if (heroLastEnd > tb + 1e-9) return;
+            if (heroLastEnd > tb + 1e-9 || shot.Path != null) return;
+            if (tb >= shot.Final - 1e-9) return;   // after the final slam the hero plays out its recovery
             // With nothing in reach just before a clearing section (an outro the hero has emptied), the hero winds
             // up for its first slam rather than striding past the beat its windup has to start on. It commits only
             // at the last decision before that windup, so until then it still strides and strikes what walks in.
@@ -766,11 +913,12 @@ namespace PS.Choreography
         /// </summary>
         void ScheduleHeroAction(double tb, double availFrom, double firstPoint = double.NegativeInfinity, double startBefore = double.PositiveInfinity)
         {
-            for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0; gi++)
+            double last = Math.Min(shot.HasSpan ? shot.SpanTo + 1e-6 : double.PositiveInfinity, double.IsNaN(shot.Final) ? double.PositiveInfinity : shot.Final + 1e-6);
+            for (int gi = grid.FirstAfter(Math.Max(tb, firstPoint - 1e-6)); gi < grid.Count && grid.Points[gi].Time <= tb + 4.0 && grid.Points[gi].Time <= last; gi++)
             {
                 GridPoint p = grid.Points[gi];
                 GridEntry[] combo = plans[p.Section].Combo;
-                GridEntry e = PickCombo(combo, p.Flags, out bool plain);
+                GridEntry e = PickCombo(combo, p, out bool plain);
                 if (e == null) continue;
                 Move mv = roster.Combo(e.Name);
                 ClipAnnotation clip = clips[mv.Clip];
@@ -789,27 +937,47 @@ namespace PS.Choreography
                 // phrase its spin or slam (both for a hero that retimes its clips by speed, as demo3d's does).
                 if (windup <= 0 && (p.Flags & GridFlags.Beat) == 0 && FlurryTakesTheBeat(gi, availFrom, end)) continue;
                 if (windup <= 0 && tuning.YieldToAccents && e.Priority <= GridEntry.BeatPriority && TakesTheAccent(gi, availFrom, end)) continue;
+                // A shot's fixed entries (its cut, final slam, anchors and bar.beats) always land: no other blow costs one its fit.
+                if (windup <= 0 && shot.HasFixed && e.Fixed == FixedPosition.None && TakesAFixedSlot(gi, availFrom, end)) continue;
 
                 Vector2 from = HeroRest;
                 float fFrom = Easing.Wrap(HeroFacing);
-                Vector2 dir = DenseDirection(from, roster.HeroReachM * 1.5f, out bool any);
-                if (!goalReached) { dir = nav != null ? GoalHeading(from, out _) : Vector2.Normalize(goal.Center - from); any = true; }   // cut a way toward the goal
-                if (!any) dir = Easing.Dir(fFrom);
-                Vector2 to = from + dir * Math.Max(clip.RootMotionM, mv.AdvanceM);
-                if (nav != null) to = WallStep(from, to, roster.HeroRadius);
-                to = HeroPath(from, to);
-                if (goalReached)
+                Vector2 dir, to;
+                if (shot.Path != null)
                 {
-                    // Pulled back into the goal, a step that slid along a wall could cut into it: it then stays where it slid.
-                    Vector2 c = ClampToGoal(to);
-                    if (nav == null || SegmentClear(from, c, roster.HeroRadius)) to = c;
+                    // A moving strike: the blow faces along the path, and the beat's stride (HeroDecide's) carries the hero on.
+                    dir = PathHeading(from);
+                    to = from;
+                }
+                else if (shot.HoldGround)
+                {
+                    dir = NearestDirection(from, out bool near);
+                    if (!near) dir = Easing.Dir(fFrom);
+                    to = from;
+                }
+                else
+                {
+                    dir = DenseDirection(from, roster.HeroReachM * 1.5f, out bool any);
+                    if (!goalReached) { dir = nav != null ? GoalHeading(from, out _) : Vector2.Normalize(goal.Center - from); any = true; }   // cut a way toward the goal
+                    if (!any) dir = Easing.Dir(fFrom);
+                    to = from + dir * Math.Max(clip.RootMotionM, mv.AdvanceM);
+                    if (nav != null) to = WallStep(from, to, roster.HeroRadius);
+                    to = HeroPath(from, to);
+                    if (goalReached)
+                    {
+                        // Pulled back into the goal, a step that slid along a wall could cut into it: it then stays where it slid.
+                        Vector2 c = ClampToGoal(to);
+                        if (nav == null || SegmentClear(from, c, roster.HeroRadius)) to = c;
+                    }
                 }
                 float fTo = Easing.Unwrap(fFrom, Easing.Yaw(dir));
                 // A stepping hero without root motion steps with the blow, on its beat; otherwise it moves over the clip.
-                if (roster.HeroStepS > 0 && clip.RootMotionM <= 0)
+                if (heroStepS > 0 && clip.RootMotionM <= 0)
                 {
-                    AddHeroSeg(new MotionSegment(0, start, p.Time, from, from, fFrom, fTo, Ease.Linear));
-                    AddHeroSeg(new MotionSegment(0, p.Time, p.Time + roster.HeroStepS, from, to, fTo, fTo, Ease.Pulse));
+                    // The turn waits for a stride still under way (a kiting hero's), so the hero never jumps to its end.
+                    double turn = shot.Path != null ? Math.Min(p.Time, Math.Max(start, segs[heroSegs[heroSegs.Count - 1]].T1)) : start;
+                    AddHeroSeg(new MotionSegment(0, turn, p.Time, from, from, fFrom, fTo, Ease.Linear));
+                    AddHeroSeg(new MotionSegment(0, p.Time, p.Time + heroStepS, from, to, fTo, fTo, Ease.Pulse));
                 }
                 else AddHeroSeg(new MotionSegment(0, start, end, from, to, fFrom, fTo, Ease.Linear));
                 Push(new Impact
@@ -837,7 +1005,7 @@ namespace PS.Choreography
             for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= grid.Points[gi].Time + 4.0; k++)
             {
                 GridPoint q = grid.Points[k];
-                GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out bool plainNext);
+                GridEntry e = PickCombo(plans[q.Section].Combo, q, out bool plainNext);
                 if (e == null || plainNext) continue;
                 if (q.Section == grid.Points[gi].Section || !AllPositioned(plans[q.Section].Combo)) return false;
                 Move next = roster.Combo(e.Name);
@@ -858,7 +1026,7 @@ namespace PS.Choreography
             while (k < grid.Count && (grid.Points[k].Flags & GridFlags.Beat) == 0) k++;
             if (k == grid.Count) return false;
             GridPoint q = grid.Points[k];
-            GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out _);
+            GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
             if (e == null) return false;
             ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
             return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
@@ -876,8 +1044,27 @@ namespace PS.Choreography
             for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= p.Time + 4.0 && grid.Points[k].Section == p.Section; k++)
             {
                 GridPoint q = grid.Points[k];
-                GridEntry e = PickCombo(plans[q.Section].Combo, q.Flags, out _);
+                GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
                 if (e == null || e.Priority <= GridEntry.BeatPriority) continue;
+                ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
+                return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
+                    && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Whether a blow at grid point <paramref name="gi"/>, ending at <paramref name="end"/>, would leave the next fixed
+        /// combo entry (within 4 s) unable to fit when it could have from <paramref name="availFrom"/>.
+        /// </summary>
+        bool TakesAFixedSlot(int gi, double availFrom, double end)
+        {
+            GridPoint p = grid.Points[gi];
+            for (int k = gi + 1; k < grid.Count && grid.Points[k].Time <= p.Time + 4.0; k++)
+            {
+                GridPoint q = grid.Points[k];
+                GridEntry e = PickCombo(plans[q.Section].Combo, q, out _);
+                if (e == null || e.Fixed == FixedPosition.None) continue;
                 ClipAnnotation c = clips[roster.Combo(e.Name).Clip];
                 return ClipLibrary.Fit(c, availFrom, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed)
                     && !ClipLibrary.Fit(c, end, q.Time, out _, out _, out _, tuning.ComboMaxSpeed, tuning.ComboMinSpeed);
@@ -891,15 +1078,16 @@ namespace PS.Choreography
             return combo.Length > 0;
         }
 
-        GridEntry PickCombo(GridEntry[] combo, GridFlags flags, out bool plain)
+        GridEntry PickCombo(GridEntry[] combo, in GridPoint p, out bool plain)
         {
             plain = false;
             GridEntry best = null;
             int plainCount = 0;
+            GridFlags flags = p.Flags;
             foreach (GridEntry e in combo)
             {
                 if (!e.Positioned) { plainCount++; continue; }
-                if ((flags & e.Position) != e.Position) continue;
+                if (!e.Matches(p)) continue;
                 if (best == null || e.Priority > best.Priority) best = e;
             }
             // A plain entry plays on the beat, so on a beat it outranks an eighth's or a sixteenth's.
@@ -916,6 +1104,7 @@ namespace PS.Choreography
 
         void Stride(double tb, double tnext, Vector2 h)
         {
+            if (shot.Path != null || shot.HoldGround) { ShotStride(tb, tnext, h); return; }
             Vector2 dir;
             float len;
             if (!goalReached)
@@ -939,9 +1128,99 @@ namespace PS.Choreography
             to = HeroPath(h, to);
             if (Vector2.Distance(h, to) < 0.05f) return;
             float fFrom = Easing.Wrap(HeroFacing);
-            double t1 = roster.HeroStepS > 0 ? Math.Min(tnext, tb + roster.HeroStepS) : tnext;
+            double t1 = heroStepS > 0 ? Math.Min(tnext, tb + heroStepS) : tnext;
             AddHeroSeg(new MotionSegment(0, tb, t1, h, to, fFrom, Easing.Unwrap(fFrom, Easing.Yaw(to - h)), Ease.Pulse));
             stats[curSection].HeroStrides++;
+        }
+
+        /// <summary>
+        /// A shot's stride: along the kite path, a beat's stride; holding ground (the duel), a short step sideways
+        /// to the nearest monster, to and fro across the hero's start.
+        /// </summary>
+        void ShotStride(double tb, double tnext, Vector2 h)
+        {
+            Vector2 to;
+            if (shot.Path != null) to = PathStep(h);
+            else
+            {
+                // Holding ground: to and fro across its spot, sideways to the nearest monster, so the brutes' walk-ins
+                // (staged against the spot) stay true.
+                const float SideStepM = 0.2f;
+                Vector2 n = NearestDirection(h, out bool any);
+                if (!any) n = Easing.Dir(HeroFacing);
+                Vector2 side = new Vector2(-n.Y, n.X);
+                Vector2 spot = shot.HeroStart ?? heroStart;
+                Vector2 a = spot + side * SideStepM, b = spot - side * SideStepM;
+                to = Vector2.Distance(h, a) >= Vector2.Distance(h, b) ? a : b;
+                if (nav != null) to = WallStep(h, to, roster.HeroRadius);
+            }
+            if (Vector2.Distance(h, to) < 0.05f) return;
+            float fFrom = Easing.Wrap(HeroFacing);
+            Vector2 face = to - h;
+            if (shot.HoldGround)   // stepping aside, the duel's hero keeps facing the nearest brute
+            {
+                Vector2 f = NearestDirection(to, out bool faces);
+                if (faces) face = f;
+            }
+            float fTo = Easing.Unwrap(fFrom, Easing.Yaw(face));
+            double t1 = heroStepS > 0 ? Math.Min(tnext, tb + heroStepS) : tnext;
+            AddHeroSeg(new MotionSegment(0, tb, t1, h, to, fFrom, fTo, Ease.Pulse));
+            stats[curSection].HeroStrides++;
+        }
+
+        /// <summary>Moves on to the next waypoint once the hero is within a stride of this one (past a path's last, it runs on).</summary>
+        void AdvancePath(Vector2 h)
+        {
+            for (int k = 0; k < shot.Path.Length && !pathDone && Vector2.Distance(h, shot.Path[pathNext]) <= shot.PathStepM; k++)
+            {
+                if (pathNext + 1 < shot.Path.Length) pathNext++;
+                else if (shot.PathLoop) pathNext = 0;
+                else
+                {
+                    pathDone = true;
+                    Vector2 leg = shot.Path.Length > 1 ? shot.Path[pathNext] - shot.Path[pathNext - 1] : Easing.Dir(HeroFacing);
+                    runOn = leg.LengthSquared() > 1e-6f ? Vector2.Normalize(leg) : Easing.Dir(HeroFacing);
+                }
+            }
+        }
+
+        /// <summary>The way along the kite path from <paramref name="h"/>: toward the next waypoint, round structures by its field.</summary>
+        Vector2 PathHeading(Vector2 h)
+        {
+            if (pathDone) return runOn;
+            Vector2 target = shot.Path[pathNext];
+            Vector2 d = target - h;
+            float l = d.Length();
+            Vector2 straight = l > 1e-4f ? d / l : Easing.Dir(HeroFacing);
+            if (nav == null || nav.Clear(h, target, roster.HeroRadius)) return straight;
+            return pathFields[pathNext].Direction(h, out Vector2 dir) ? dir : straight;
+        }
+
+        /// <summary>A beat's stride along the kite path from <paramref name="h"/>, sliding along walls.</summary>
+        Vector2 PathStep(Vector2 h)
+        {
+            AdvancePath(h);
+            Vector2 to = h + PathHeading(h) * shot.PathStepM;
+            return nav != null ? WallStep(h, to, roster.HeroRadius) : to;
+        }
+
+        /// <summary>The direction from <paramref name="p"/> to the nearest live monster within the hero's sense.</summary>
+        Vector2 NearestDirection(Vector2 p, out bool any)
+        {
+            int n = Near().Gather(p, roster.HeroSenseM, ref buf);
+            float best = float.MaxValue;
+            Vector2 dir = Vector2.Zero;
+            for (int i = 0; i < n + bigCount; i++)
+            {
+                int m = i < n ? buf[i] : big[i - n];
+                if (i < n && radius[m] > SmallRadius) continue;
+                if (state[m] != Alive) continue;
+                Vector2 d = pos[m] - p;
+                float l = d.Length();
+                if (l < best && l > 1e-4f) { best = l; dir = d / l; }
+            }
+            any = best < float.MaxValue;
+            return dir;
         }
 
         Vector2 ClampToGoal(Vector2 p)
@@ -1069,9 +1348,12 @@ namespace PS.Choreography
                 // With a clear ring the horde holds at its edge and never reaches the hero to swing: the hero's
                 // blows meet the front rank there, and the hero stays in plain sight.
                 float hold = Math.Max(contact, clearRadius + mt.Radius);
-                if (clearRadius > 0 && d < hold - 0.1f)
+                // The boss rule's boss keeps beyond the shot's largest hit shape, backing off as the hero closes in.
+                bool keepOut = shot.BossType >= 0 && mt.Rank == MonsterRank.Boss;
+                if (keepOut) hold = Math.Max(hold, bossKeep);
+                if ((clearRadius > 0 || keepOut) && d < hold - 0.1f)
                 {
-                    BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease);
+                    BackOff(m, mt, a, heroAt, toHero, d, hold, tb, tnext, ease, keepOut ? 2 * mt.StepM : mt.StepM);
                     continue;
                 }
                 // Casters still fire from their reach, which lies beyond the ring: their bolts never crowd the hero.
@@ -1174,10 +1456,10 @@ namespace PS.Choreography
         /// A monster inside the clear ring (the hero closed in on it) steps back out toward the ring's
         /// edge, still facing the hero, as far as its neighbours and the walls let it.
         /// </summary>
-        void BackOff(int m, MonsterType mt, Vector2 a, Vector2 heroAt, Vector2 toHero, float d, float hold, double tb, double tnext, Ease ease)
+        void BackOff(int m, MonsterType mt, Vector2 a, Vector2 heroAt, Vector2 toHero, float d, float hold, double tb, double tnext, Ease ease, float maxStep)
         {
             Vector2 away = d > 1e-4f ? -toHero / d : -Easing.Dir(facing[m]);
-            float step = Math.Min(mt.StepM, hold - d);
+            float step = Math.Min(maxStep, hold - d);
             Vector2 b = a + away * step;
             if (nav != null) b = WallStep(a, b, mt.Radius);
             GatherCandidates(m, a, step);
@@ -1473,15 +1755,18 @@ namespace PS.Choreography
                 GridPoint p = grid.Points[gi];
                 SectionPlan sp = plans[p.Section];
                 if (!sp.HeroAttacks) continue;
+                if (p.Time >= shot.Final - 1e-6) continue;   // nothing but the final slam fires on its beat, and nothing after it
+                if (shot.HasSpan && p.Time > shot.SpanTo + 1e-6) continue;
                 for (int k = 0; k < sp.Spells.Length; k++)
                 {
                     GridEntry e = sp.Spells[k];
-                    if ((p.Flags & e.Position) != e.Position) continue;
+                    if (!e.Matches(p)) continue;
                     int c = spellCount[p.Section][k]++;
                     if (c % e.Every != 0) continue;
                     // With one-hit kills the hero's blows reap whatever walks in, so spells only top up the
-                    // section's deaths: one that would land while they keep up with the load's rate holds back.
-                    if (tuning.OneHitKills && p.Section == curSection && OnRate(p.Time)) continue;
+                    // section's deaths: one that would land while they keep up with the load's rate holds back
+                    // (unless the kill budget is off, as in a trailer shot).
+                    if (tuning.OneHitKills && shot.KillBudget && p.Section == curSection && OnRate(p.Time)) continue;
                     CastSpell(roster.Spell(e.Name), p, tb, tnext);
                 }
             }
@@ -1566,6 +1851,7 @@ namespace PS.Choreography
                 float d = Vector2.Distance(pos[m], h);
                 if (d < minR || d > maxR) continue;
                 if (!onScreen[m]) continue;
+                if (shot.BossType >= 0 && roster.Monsters[etype[m]].Rank == MonsterRank.Boss) continue;   // the boss rule: spells skip it
                 if (needLine && nav != null && !nav.LineClear(h, pos[m])) continue;   // bolts need a clear line; lightning ignores walls
                 if (c == strike.Length) Array.Resize(ref strike, c * 2);
                 strike[c++] = m;
@@ -1604,6 +1890,7 @@ namespace PS.Choreography
                         effects.Add(new EffectEvent(mv.Effect, 0, Rng.Hash(seed, (uint)effects.Count, 0xC0B0), t, new Vector3(0, 1f, 0), im.Yaw, fxScale));
                     Sound(mv.Sound >= 0 ? mv.Sound : Catalog.SwingSound, t, im.Strength);
                     if (plan.Clear) ClearStrike(t, o, im.Strength);
+                    else if (Math.Abs(t - shot.Final) <= 1e-6) FinalSlam(t, o, im.Strength);
                     else Strike(t, o, n, im.Strength, true);
                     int swingKills = totalKills - killsBefore;
                     if (tuning.HeavyBlowKills > 0 && swingKills >= tuning.HeavyBlowKills)
@@ -1661,7 +1948,7 @@ namespace PS.Choreography
                 {
                     Vector2 o = HeroPosAt(t);
                     int n = QueryLine(o, im.Yaw, Reaching(im.Move.Length), Scaled(im.Move.Width), t);
-                    if (tuning.OneHitKills)
+                    if (tuning.OneHitKills || !shot.KillBudget)
                     {
                         // The sweep kills all it strikes but the boss, which it only flashes: a knockback a tick
                         // would shove it back on every one of the sweep's many ticks.
@@ -1669,6 +1956,7 @@ namespace PS.Choreography
                         for (int i = 0; i < n; i++)
                         {
                             if (roster.Monsters[etype[strike[i]]].Rank != MonsterRank.Boss) { strike[k++] = strike[i]; continue; }
+                            if (shot.BossType >= 0) continue;   // the boss rule: the sweep skips it entirely
                             actions.Add(new ActionEvent(strike[i], ActionKind.Tick, t, -1, -1, im.Strength));
                             stats[curSection].Ticks++;
                         }
@@ -1834,10 +2122,11 @@ namespace PS.Choreography
                 int m = order[i];
                 if (roster.Monsters[etype[m]].Rank == MonsterRank.Boss)
                 {
+                    if (shot.BossType >= 0) continue;   // the boss rule: only the final slam touches it
                     if (heroCombo && t >= bossDeathAfter[m]) Kill(m, t, 1f);
                     else Hit(m, t, origin, strength);
                 }
-                else if (tuning.OneHitKills || kills < allot) { Kill(m, t, strength); kills++; }
+                else if (tuning.OneHitKills || !shot.KillBudget || kills < allot) { Kill(m, t, strength); kills++; }
                 else Hit(m, t, origin, strength);
             }
         }
@@ -1877,6 +2166,25 @@ namespace PS.Choreography
             }
             barStruck += killed;
             effects.Add(new EffectEvent(Catalog.Effect("ring"), -1, Rng.Hash(seed, (uint)effects.Count, 0xC1EA), t, new Vector3(o.X, 0.1f, o.Y), 0, viewWidth / 2));
+        }
+
+        /// <summary>
+        /// A shot's final slam (trailer.md, "The boss"): it kills every monster in view, the boss included, and the
+        /// off-screen band the view's drift after it would reveal; its shockwave is a ring to the view's edge.
+        /// </summary>
+        void FinalSlam(double t, Vector2 o, float strength)
+        {
+            var view = View(viewWidth);
+            int killed = 0;
+            for (int i = 0; i < liveCount; i++)
+            {
+                int m = live[i];
+                if (state[m] != Alive || !view.Contains(focus, MonsterPosAt(m, t), radius[m] + SpawnMargin + SpawnBand)) continue;
+                Kill(m, t, strength);
+                killed++;
+            }
+            barStruck += killed;
+            effects.Add(new EffectEvent(Catalog.Effect("ring"), -1, Rng.Hash(seed, (uint)effects.Count, 0xF1A1), t, new Vector3(o.X, 0.1f, o.Y), 0, viewWidth / 2));
         }
 
         void Hit(int m, double t, Vector2 origin, float strength)
@@ -1979,16 +2287,35 @@ namespace PS.Choreography
             Push(new Impact { Time = downbeat, Kind = ImpactKind.WorstRing, Entity = 0, Target = -1, Strength = 1f });
         }
 
+        // The kiting refill's buffer: it starts at, and leaks back toward, a nominal fraction of the target (about the
+        // ground ahead the view sweeps in a few beats), and integrates the shortfall on screen.
+        const float KiteBufferNominal = 1.3f, KiteBufferLeak = 0.2f, KiteBufferGain = 0.3f, KiteSpawnBand = 6f;
+        float kiteBuffer = float.NaN;   // a kiting shot's off-screen buffer (NaN until its first refill)
+
         void Refill(double tb, ViewGeometry current)
         {
+            if (shot.Duel != null || tb >= shot.Final - 1e-6) return;   // a duel's cast is fixed, and refill stops at the final slam
             int total = onScreenCount + offscreenAlive;
             int want = TargetAhead(tb, out int reserve) + reserve;
+            bool kite = shot.Path != null;
+            if (kite)
+            {
+                // A kiting hero sweeps its view over whatever waits ahead, so how many wait there sets how many it sees:
+                // the off-screen buffer integrates the on-screen shortfall each beat, holding the shot near its target
+                // (a placeholder for the formations' refill streams).
+                float nominal = KiteBufferNominal * plan.TargetOnScreen;
+                if (float.IsNaN(kiteBuffer)) kiteBuffer = nominal;
+                kiteBuffer = Math.Max(0, Math.Min(3f * plan.TargetOnScreen,
+                    kiteBuffer + KiteBufferGain * (plan.TargetOnScreen - onScreenCount) + KiteBufferLeak * (nominal - kiteBuffer)));
+                want = plan.TargetOnScreen + (int)kiteBuffer;
+            }
             int need = want - total;
             if (need <= 0 || plan.Clear) return;
-            need = Math.Min(need, Math.Max(tuning.RefillMinPerBeat, (int)(want / tuning.RefillDivisor)));
+            if (!kite) need = Math.Min(need, Math.Max(tuning.RefillMinPerBeat, (int)(want / tuning.RefillDivisor)));   // the buffer paces a kiting shot's
             var view = View(Math.Max(current.Width, plan.ViewWidth));
             Vector2 travel = Vector2.Zero;
-            if (!goalReached)
+            if (kite) travel = PathHeading(HeroRest);
+            else if (!goalReached)
             {
                 Vector2 d = goal.Center - HeroRest;
                 if (d.LengthSquared() > 1e-6f) travel = Vector2.Normalize(d);
@@ -2000,16 +2327,15 @@ namespace PS.Choreography
                 int type = clumpSize > 0 ? ClumpType() : PickType(plan.Mix, false);
                 float r = roster.Monsters[type].Radius;
                 bool placed = false;
-                for (int attempt = 0, attempts = nav == null ? 6 : 12; attempt < attempts && !placed; attempt++)
+                // A kiting hero leaves the back edge behind: its refills come from the edges it runs toward, from a deeper
+                // band, so a wide view reaching past open ground still finds room.
+                for (int attempt = 0, attempts = kite ? 24 : nav == null ? 6 : 12; attempt < attempts && !placed; attempt++)
                 {
                     float u = clumpSize > 0 ? ClumpU(type, view, tb) : spawnRng.NextFloat();
-                    float margin = SpawnMargin + r + spawnRng.Range(0, SpawnBand);
+                    float margin = SpawnMargin + r + spawnRng.Range(0, kite ? KiteSpawnBand : SpawnBand);
                     Vector2 p = view.EdgePoint(focus, u, margin, out Vector2 normal);
-                    if (travel != Vector2.Zero)
-                    {
-                        float wgt = (1f + 2f * Math.Max(0f, Vector2.Dot(normal, travel))) / 3f;
-                        if (spawnRng.NextFloat() > wgt) continue;
-                    }
+                    if (kite ? Vector2.Dot(normal, travel) < -0.2f : travel != Vector2.Zero && spawnRng.NextFloat() > (1f + 2f * Math.Max(0f, Vector2.Dot(normal, travel))) / 3f)
+                        continue;
                     if (SpawnBlocked(p, r)) continue;
                     beatSpawns.Add(Spawn(type, p, tb, false));
                     placed = true;
@@ -2199,7 +2525,7 @@ namespace PS.Choreography
 
         Timeline Build(string name, double duration, SimTickTiming timing)
         {
-            var tl = new Timeline { Name = name, Seed = seed, Duration = duration, Map = map, Grid = grid, TickTiming = timing, ViewPitchDeg = viewPitchDeg };
+            var tl = new Timeline { Name = name, Seed = seed, Duration = duration, Map = map, Grid = grid, TickTiming = timing, ViewPitchDeg = viewPitchDeg, ViewYawDeg = shot.YawDeg };
             int e = entityCount;
             tl.Entities = new EntityInfo[e];
             for (int i = 0; i < e; i++)

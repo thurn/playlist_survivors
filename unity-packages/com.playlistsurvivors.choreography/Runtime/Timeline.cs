@@ -66,8 +66,11 @@ namespace PS.Choreography
         /// <summary>The camera pitch the sim counted the view with (the level script's; not part of the dump).</summary>
         public double ViewPitchDeg = ViewGeometry.PitchDeg;
 
+        /// <summary>The camera heading the sim counted the view with (a trailer shot's <c>yawDeg</c>; not part of the dump).</summary>
+        public float ViewYawDeg;
+
         /// <summary>The visible ground at <paramref name="width"/>, as the sim counted it.</summary>
-        public ViewGeometry View(float width) => new ViewGeometry(width, ViewPitchDeg);
+        public ViewGeometry View(float width) => new ViewGeometry(width, ViewPitchDeg, ViewYawDeg);
 
         public int EntityCount => Entities.Length;
 

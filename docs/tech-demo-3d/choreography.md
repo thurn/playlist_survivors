@@ -385,6 +385,49 @@ non-lethal hit. Overdrive inherits it. Its own loads drop `hitsPerDeath`,
 its build rises to 0.045 deaths/s per monster, and its groove plays
 `swarm-light` on every roster set.
 
+### Shot fields
+
+A trailer shot ([Trailer Mode](trailer.md), "Shot simulations") is one run of
+the choreographer over a short span, built from a level script with these
+top-level fields. `Trailer.ShotScript` writes them from the trailer file;
+any level script may set them. Each is opt-in, and its default runs the
+song exactly as before (the pinned dump hashes prove it, overdrive's
+included).
+
+| Field | Default | What it does |
+|---|---|---|
+| `spanS` | the whole song | `[from, to]` in song seconds: the run simulates only this span. The timeline still runs in song seconds from 0, and its framing before the span holds the span's first sample. |
+| `cut`, `final` | none | The bar.beats that `@cut` and `@final` entries fire on. Nothing but the final slam fires on its beat, nothing fires after it, and refill stops there. |
+| `heroAt` | the layout's start | The hero's start: a named area or `[x, y]` metres. With a path and no `heroAt`, the path's first waypoint. |
+| `heroPath` | none | `{ "via": [areas or metres], "stepM": 1.9, "loop": false }`, replacing goals. The hero strides `stepM` along it on every beat, whether it strikes or not, routed round structures by a flow field per waypoint. Its blows face along the path. Past a path's last waypoint, it runs on along the last leg. |
+| `holdGround` | false | The duel's hero: each blow faces the nearest monster, and a beat without one is a short step to and fro across the hero's start, sideways to the nearest monster. |
+| `heroStepS` | the roster's `stepS` | The hero's step time: each stride covers its ground in this long from the beat (the trailer's snap steps). |
+| `killBudget` | true | False: every blow and spell kills all it strikes (the laser's sweep included), and spells never hold back for the rate. |
+| `shapeScale` | the feedback | A fixed scale for the hero's and spells' hit shapes, with the kill-rate feedback off. |
+| `yawDeg` | 0 | The camera's heading, clockwise seen from above. `ViewGeometry` turns its trapezoid by it, so spawns stay outside the turned view and the counts match it. The timeline carries it as `ViewYawDeg` (not in the dump). |
+| `viewWidthToM` | none | The zoom eases from the section's width at the cut (or the span's start) to this at the span's end. |
+| `boss` | none | The boss rule: `ahead`, `behind`, `left`, `right` (relative to the hero's travel at the cut) or a named area. The roster's boss enters there outside the view on the cut and walks in, trampling. It keeps beyond the shot's largest scaled hit shape plus 1 m, backing off when the hero closes in. No blow or spell touches it until the final slam, which kills it. Needs `final`. |
+| `duel` | none | A fixed cast by type and count, with no refill and no opening horde. Its k-th member meets the k-th fixed combo entry: it starts a third of a turn from the last, as far out as it walks by that blow, so it arrives just inside its reach then. |
+
+The combo and spell grid gains the trailer's positions: `cut`, `final`,
+`anchor` (the next unused anchor of a free section, from the cut on) and an
+explicit bar.beat such as `82.3`. Each fires on one grid point, resolved
+before the run, and outranks the song's positions: final, then cut, then a
+bar.beat, then anchor, phrase, downbeat, accent and beat. No other blow
+costs a fixed entry its fit: the hero holds back one that would.
+
+A hero with a path or holding ground acts on every beat: it swings whatever
+is in reach (without waiting for a monster), and it strides on a beat whose
+next blow would start after the next decision.
+
+**The kiting refill** (a placeholder until the formations bead): a kiting
+hero sweeps its view over whatever waits ahead, so the off-screen buffer
+sets the count on screen. Each beat, the buffer integrates the on-screen
+shortfall and leaks back toward 1.3 times the target. Refill spawns only on
+the edges the hero runs toward, in a 6 m band, with no per-beat cap, and an
+off-screen monster behind the hero past the spawn band leaves, since it never
+catches up.
+
 ### Free sections
 
 A section the song map marks `free` has no steady beat, only approximate
