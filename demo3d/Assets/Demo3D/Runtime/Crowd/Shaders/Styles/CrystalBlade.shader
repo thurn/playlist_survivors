@@ -34,6 +34,7 @@ Shader "Demo3D/Styles/CrystalBlade"
             half _Behind; half _Glow; half _BladeFlare;
             half _Gain; half _Peak;
             float _HeightM;
+            half _InnerGlow; // CrystalCommon.hlsl's; the blade leaves it 0
         CBUFFER_END
 
         #include "StyleCommon.hlsl"

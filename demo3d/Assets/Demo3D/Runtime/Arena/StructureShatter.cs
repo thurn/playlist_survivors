@@ -32,6 +32,8 @@ namespace Demo3D.Runtime.Arena
     /// </summary>
     public sealed class StructureShatter : IDisposable
     {
+        static int _count; // shatters made, for their scenes' names
+
         public const float Step = 1f / 120f;
         public const int MaxStepsPerFrame = 12;
         public const float GravityScale = 2.2f, Density = 2400f; // kg/m³, stone
@@ -138,7 +140,8 @@ namespace Demo3D.Runtime.Arena
             _shards = StructureShards.Load();
             _patch = _shards.ShadowmaskPatch != null ? _shards.ShadowmaskPatch
                 : throw new InvalidOperationException("StructureShatter: StructureShards has no shadowmask patch shader (re-run `demo3d unity BakeAll -only StructureShards`)");
-            _scene = SceneManager.CreateScene("StructureShatter", new CreateSceneParameters(LocalPhysicsMode.Physics3D));
+            // Its own physics scene, named apart: a trailer has one shatter per shot that breaks structures.
+            _scene = SceneManager.CreateScene("StructureShatter" + (_count++ == 0 ? "" : " " + _count), new CreateSceneParameters(LocalPhysicsMode.Physics3D));
             _physics = _scene.GetPhysicsScene();
             _root = new GameObject("StructureShatter");
             SceneManager.MoveGameObjectToScene(_root, _scene);
@@ -245,6 +248,17 @@ namespace Demo3D.Runtime.Arena
                 _steps++;
             }
             Present(t);
+        }
+
+        /// <summary>
+        /// Puts every piece back and starts over, as a seek before the first break would: a trailer's cut away from the
+        /// shot whose breaks these are, since the next shot in the environment simulates it whole.
+        /// </summary>
+        public void Rewind()
+        {
+            if (!_resolved) return;
+            Reset();
+            _t0 = double.NaN;
         }
 
         /// <summary>The broken pieces' bounds to the arena, so its baked shadows follow (ArenaRuntime.Break).</summary>

@@ -15,6 +15,7 @@ Shader "Demo3D/Structures/Crystal"
         _Gain ("Structure gain (StructureStyle tuning)", Float) = 1
         _Peak ("Structure peak (StructureStyle tuning)", Float) = 1000
         _HeightM ("Piece height (m), per renderer", Float) = 1.8
+        _InnerGlow ("Inner glow (StructureStyle's glow tune; 0 but in a trailer's look)", Float) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull (the kit material's)", Float) = 2
     }
     SubShader

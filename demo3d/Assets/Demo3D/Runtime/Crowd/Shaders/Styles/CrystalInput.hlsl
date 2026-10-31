@@ -8,6 +8,7 @@ CBUFFER_START(UnityPerMaterial)
     half4 _Tint; float _Refraction; half _Facets;
     half _Gain; half _Peak;
     float _HeightM;
+    half _InnerGlow;
 CBUFFER_END
 
 #define SL_STYLE_MESH

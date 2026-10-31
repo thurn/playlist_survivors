@@ -91,6 +91,12 @@ namespace Demo3D.Runtime.Crowd
 
         public static StructureStyle FromCommandLine(MonsterStyle horde) => FromArgs(Environment.GetCommandLineArgs(), horde);
 
+        /// <summary>Applies `--structure-tune` pairs (a trailer look's structureTune too); an unknown key or bad number fails.</summary>
+        public void Tune(string pairs) => MonsterStyle.ParseTune(TuneFlag, pairs, _tune);
+
+        /// <summary>Crystal's inner glow (_InnerGlow; <see cref="MonsterStyle.Glow"/>): only a tune sets it, 0 otherwise.</summary>
+        public float Glow => _tune.TryGetValue("glow", out float g) ? g : 0f;
+
         /// <summary>
         /// The scale on a structure's forward colour (_Gain, SL_Grade). The set sits under the horde (environment.md,
         /// Value structure: effects, then the horde, then the set); values and why: evidence/structures/looks/README.md.
@@ -332,6 +338,7 @@ namespace Demo3D.Runtime.Crowd
                     break;
                 case "crystal":
                     m.SetVector("_Tint", CrystalGem);
+                    m.SetFloat("_InnerGlow", Glow);
                     m.SetFloat("_Refraction", 0.05f);
                     m.SetFloat("_Facets", 0.85f);
                     break;

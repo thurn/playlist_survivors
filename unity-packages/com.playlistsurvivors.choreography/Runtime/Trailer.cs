@@ -18,6 +18,16 @@ namespace PS.Choreography
         public float Exposure, Contrast, Saturation, Temperature;
     }
 
+    /// <summary>
+    /// A trailer's look (trailer.md, "The crystal cut"): the monster and structure styles and their tune pairs its run
+    /// takes when the command line names none, as the player's <c>--monster-style</c>, <c>--structure-style</c>,
+    /// <c>--style-tune</c> and <c>--structure-tune</c> would. The core passes them through; the player validates them.
+    /// </summary>
+    public sealed class TrailerStyle
+    {
+        public string MonsterStyle, StructureStyle, StyleTune, StructureTune;
+    }
+
     /// <summary>One shot of a trailer file: a continuous stretch of picture between two cuts, simulated on its own.</summary>
     public sealed class TrailerShot
     {
@@ -34,6 +44,8 @@ namespace PS.Choreography
         public TrailerFormation Formation;
         public MixEntry[] Duel;
         public string[] Combo = new string[0], Spells = new string[0];
+        /// <summary>The structures the hero's bolt breaks in the shot: target@bar.beat entries, and each one's song section's label.</summary>
+        public string[] Breaks = new string[0], BreakSections = new string[0];
         /// <summary>The grid position the combo's plain entries land on (the level script's <c>comboOn</c>): the major beats by default.</summary>
         public string BlowsOn = Trailer.DefaultBlowsOn;
         public string Boss;
@@ -89,6 +101,7 @@ namespace PS.Choreography
         public string BlackAtPos;
         public double BlackAt;
         public uint Seed;
+        public TrailerStyle Style = new TrailerStyle();
         public TrailerShot[] Shots;
 
         /// <summary>The song second of silence: the cut to black plus the fade.</summary>
@@ -121,7 +134,7 @@ namespace PS.Choreography
         public static Trailer Parse(string json, SongMap map, Func<string, GroundLayout> environment, string pinEnvironment = null)
         {
             JsonValue root = JsonValue.Parse(json);
-            CheckKeys(root, "trailer", "name", "song", "base", "startS", "blackAt", "fadeOutS", "seed", "shots", "note");
+            CheckKeys(root, "trailer", "name", "song", "base", "startS", "blackAt", "fadeOutS", "seed", "look", "shots", "note");
             var grid = new BeatGrid(map);
             var tr = new Trailer
             {
@@ -138,6 +151,16 @@ namespace PS.Choreography
             tr.BlackAt = map.TimeOfBarBeat(tr.BlackAtPos);
             if (!(tr.BlackAt > tr.StartS)) throw new FormatException("trailer: blackAt " + tr.BlackAtPos + " is not after startS");
             if (!(tr.FadeOutS >= 0)) throw new FormatException("trailer: fadeOutS must not be negative");
+            JsonValue look = root["look"];
+            if (!look.IsNull)
+            {
+                CheckKeys(look, "trailer look", "monsterStyle", "structureStyle", "styleTune", "structureTune");
+                tr.Style = new TrailerStyle
+                {
+                    MonsterStyle = look["monsterStyle"].AsString(), StructureStyle = look["structureStyle"].AsString(),
+                    StyleTune = look["styleTune"].AsString(), StructureTune = look["structureTune"].AsString(),
+                };
+            }
             JsonValue shots = root["shots"];
             if (shots.Count == 0) throw new FormatException("trailer: no shots");
             tr.Shots = new TrailerShot[shots.Count];
@@ -149,6 +172,7 @@ namespace PS.Choreography
                 if (!(s.End > s.Cut)) throw new FormatException("shot " + s.Number + ": its cut " + s.CutAt + " is not before the next cut");
                 s.SpanFrom = Math.Max(0, map.TimeOfBeatIndex(map.BeatIndexAt(s.Cut) - s.PrerollBeats));
                 ValidateEntries(s, tr, map, grid);
+                ValidateBreaks(s, map, grid);
             }
             return tr;
         }
@@ -157,7 +181,7 @@ namespace PS.Choreography
         {
             string what = "shot " + n;
             CheckKeys(o, what, "cut", "environment", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
-                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "note");
+                "boss", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "note");
             var s = new TrailerShot
             {
                 Number = n,
@@ -229,6 +253,12 @@ namespace PS.Choreography
             if (on.Fixed != FixedPosition.None || on.Every > 1) throw new FormatException(what + ": blowsOn must be a grid position such as 'strong', not '" + s.BlowsOn + "'");
             s.Combo = Strings(o["combo"]);
             s.Spells = Strings(o["spells"]);
+            s.Breaks = Strings(o["breaks"]);
+            foreach (string b in s.Breaks)
+            {
+                try { StructureBreaks.Resolve(layout, GridEntry.Parse(b).Name); } // fails on a target the environment lacks
+                catch (FormatException ex) { throw new FormatException(what + ": break '" + b + "': " + ex.Message); }
+            }
             JsonValue g = o["grade"];
             if (!g.IsNull)
             {
@@ -282,6 +312,28 @@ namespace PS.Choreography
                             break;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// A shot's breaks: each at a bar.beat on the grid, on screen (from its cut to its end), and noted with its song
+        /// section, whose level-script section carries it (<see cref="ShotScript"/>).
+        /// </summary>
+        static void ValidateBreaks(TrailerShot s, SongMap map, BeatGrid grid)
+        {
+            string what = "shot " + s.Number;
+            s.BreakSections = new string[s.Breaks.Length];
+            for (int i = 0; i < s.Breaks.Length; i++)
+            {
+                GridEntry e;
+                try { e = GridEntry.Parse(s.Breaks[i]); }
+                catch (FormatException ex) { throw new FormatException(what + ": breaks: " + ex.Message); }
+                if (e.Fixed != FixedPosition.BarBeat) throw new FormatException(what + ": break '" + s.Breaks[i] + "' needs a bar.beat, such as 105.1");
+                double t;
+                try { t = map.TimeOfBarBeat(e.Bar, e.Beat, grid); }
+                catch (FormatException ex) { throw new FormatException(what + ": break '" + s.Breaks[i] + "': " + ex.Message); }
+                if (t < s.Cut - 1e-9 || t >= s.End - 1e-9) throw new FormatException(what + ": break '" + s.Breaks[i] + "' is off screen (outside the shot's cut to its end)");
+                s.BreakSections[i] = map.Sections[map.SectionIndexAt(t)].Label;
             }
         }
 
@@ -360,6 +412,12 @@ namespace PS.Choreography
                 v = IntensityOverlay.Set(v, "boss", JsonValue.Null);
                 v = IntensityOverlay.Set(v, "bossFrom", JsonValue.Null);
                 v = IntensityOverlay.Set(v, "clear", JsonValue.OfBool(false));
+                if (s.Breaks.Length > 0)
+                {
+                    var breaks = new List<string>();
+                    for (int i = 0; i < s.Breaks.Length; i++) if (s.BreakSections[i] == sec["section"].AsString()) breaks.Add(s.Breaks[i]);
+                    v = IntensityOverlay.Set(v, "breaks", StringItems(breaks.ToArray()));
+                }
                 secs.Add(v);
             }
             root = IntensityOverlay.Set(root, "sections", JsonValue.OfItems(secs));

@@ -17,6 +17,7 @@ Shader "Demo3D/Styles/Crystal"
         _Gain ("Horde gain (MonsterStyle tuning)", Float) = 1
         _Peak ("Horde peak (MonsterStyle tuning)", Float) = 1000
         _HeightM ("Height at scale 1 (m)", Float) = 1.8
+        _InnerGlow ("Inner glow (MonsterStyle's glow tune; 0 but in a trailer's look)", Float) = 0
     }
     SubShader
     {

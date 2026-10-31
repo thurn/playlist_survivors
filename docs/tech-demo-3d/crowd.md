@@ -364,8 +364,10 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   The values and why are in
   [evidence/styles/all/README.md](../../demo3d/evidence/styles/all/README.md).
   `--style-tune key=value,...` overrides them for a run without a rebuild (keys: gain, peak,
-  exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral), so a
-  treatment can be judged with other values; it fails under baseline.
+  glow, exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral), so a
+  treatment can be judged with other values; it fails under baseline. `glow` is crystal's
+  inner glow (`_InnerGlow`, 0 unless tuned): light added after the peak, so the gems bloom on
+  dark ground, as the crystal trailer's look sets it ([trailer.md](trailer.md#the-crystal-cut)).
 - **The hero keeps its own shader** under every style. The lab paints its knight, but
   demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'
   skinning does not apply to it.

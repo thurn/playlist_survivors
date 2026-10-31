@@ -1,0 +1,433 @@
+{
+  "note": "The crystal cut (trailer.md, The crystal cut): the action trailer's music window and pace, played as a showcase of the crystal horde. Only the dark environments (crypt, neon, lava and the night forest), glowing crystal monsters under a darker grade and a low bloom threshold, crystal structures, and the hero's bolt shattering the courtyard's and the ruins gate's walls on the drops and re-entries. `--trailer crystal`; its look stands in for --monster-style, --structure-style and their tunes unless the command line names them.",
+  "name": "crystal",
+  "song": "action",
+  "base": "overdrive",
+  "startS": 121.4,
+  "blackAt": "117.3",
+  "fadeOutS": 1.5,
+  "seed": 11,
+  "look": {
+    "monsterStyle": "crystal",
+    "structureStyle": "crystal",
+    "styleTune": "glow=1.0,exposure=0.5,contrast=26,saturation=30,bloom=2.0,threshold=1.0,vignette=0.42,chroma=0.05",
+    "structureTune": "gain=0.3,glow=0.6"
+  },
+  "shots": [
+    {
+      "cut": "start",
+      "environment": "neon",
+      "viewWidthM": 20,
+      "prerollBeats": 4,
+      "hero": {
+        "at": "camp",
+        "holdGround": true
+      },
+      "duel": {
+        "bigork": 2,
+        "troll": 1
+      },
+      "combo": [
+        "slashR@anchor",
+        "spin@anchor",
+        "slashL@anchor"
+      ],
+      "grade": {
+        "exposure": -0.2,
+        "contrast": 10,
+        "saturation": 4
+      }
+    },
+    {
+      "cut": "81.1",
+      "environment": "crypt",
+      "viewWidthM": 45,
+      "path": {
+        "via": [
+          [
+            16,
+            -20
+          ],
+          [
+            14,
+            4
+          ],
+          [
+            14,
+            34
+          ],
+          [
+            36,
+            46
+          ],
+          [
+            60,
+            30
+          ]
+        ],
+        "stepM": 1.9
+      },
+      "formation": {
+        "kind": "charge",
+        "onScreen": 520,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "bat": 2,
+          "slime": 1,
+          "demon": 2
+        }
+      },
+      "shapeScale": 2.4,
+      "combo": [
+        "slam@cut",
+        "cleaveL",
+        "cleaveR",
+        "spin@82.3",
+        "spin@84.3",
+        "spin@86.3"
+      ],
+      "breaks": [
+        "courtyard/east-south@81.3",
+        "courtyard/east-north@82.3"
+      ],
+      "grade": {
+        "exposure": -0.45,
+        "contrast": 14,
+        "saturation": 6,
+        "temperature": -4
+      }
+    },
+    {
+      "cut": "89.1",
+      "environment": "lava",
+      "viewWidthM": 45,
+      "viewWidthToM": 50,
+      "path": {
+        "via": [
+          [
+            -14,
+            40
+          ],
+          [
+            22,
+            30
+          ],
+          [
+            70,
+            68
+          ]
+        ],
+        "stepM": 1.9
+      },
+      "formation": {
+        "kind": "converge",
+        "streams": 4,
+        "onScreen": 440,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "demon": 2,
+          "bigork": 0.6,
+          "troll": 0.4
+        }
+      },
+      "shapeScale": 1.8,
+      "combo": [
+        "cleaveR@cut",
+        "cleaveL",
+        "cleaveR"
+      ],
+      "spells": [
+        "lightning@downbeat"
+      ],
+      "grade": {
+        "exposure": -0.2,
+        "contrast": 10,
+        "saturation": 6,
+        "temperature": 4
+      },
+      "yawDeg": 135
+    },
+    {
+      "cut": "97.1",
+      "environment": "forest",
+      "viewWidthM": 50,
+      "yawDeg": -45,
+      "path": {
+        "via": [
+          [
+            52.5,
+            28.5
+          ],
+          [
+            64,
+            40
+          ],
+          [
+            44,
+            60
+          ],
+          [
+            24,
+            40
+          ],
+          [
+            44,
+            20
+          ]
+        ],
+        "stepM": 1.9,
+        "loop": true
+      },
+      "formation": {
+        "kind": "vortex",
+        "onScreen": 760,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "bat": 2,
+          "slime": 1
+        }
+      },
+      "shapeScale": 2.1,
+      "combo": [
+        "slam@cut",
+        "cleaveL",
+        "cleaveR",
+        "spin@98.3",
+        "spin@100.3",
+        "spin@102.3"
+      ],
+      "spells": [
+        "ring@downbeat"
+      ],
+      "grade": {
+        "exposure": -0.2,
+        "contrast": 8,
+        "saturation": 8,
+        "temperature": -2
+      }
+    },
+    {
+      "cut": "105.1",
+      "environment": "neon",
+      "viewWidthM": 40,
+      "yawDeg": 0,
+      "path": {
+        "via": [
+          [
+            -14,
+            -20
+          ],
+          [
+            -14,
+            28
+          ],
+          [
+            24,
+            30
+          ]
+        ],
+        "stepM": 1.9
+      },
+      "formation": {
+        "kind": "converge",
+        "streams": 4,
+        "onScreen": 420,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "mushroom": 2,
+          "demon": 2
+        }
+      },
+      "shapeScale": 2.0,
+      "combo": [
+        "slam@cut",
+        "cleaveL",
+        "cleaveR"
+      ],
+      "spells": [
+        "lightning@downbeat"
+      ],
+      "breaks": [
+        "courtyard/west-north@106.1",
+        "courtyard/north-east@108.3"
+      ],
+      "grade": {
+        "exposure": -0.15,
+        "contrast": 8,
+        "saturation": 10,
+        "temperature": -6
+      }
+    },
+    {
+      "cut": "109.1",
+      "environment": "crypt",
+      "viewWidthM": 40,
+      "yawDeg": 45,
+      "path": {
+        "via": [
+          [
+            52.8,
+            36.8
+          ],
+          [
+            56,
+            40
+          ],
+          [
+            44,
+            52
+          ],
+          [
+            32,
+            40
+          ],
+          [
+            44,
+            28
+          ]
+        ],
+        "stepM": 1.9,
+        "loop": true
+      },
+      "formation": {
+        "kind": "vortex",
+        "onScreen": 450,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "bat": 2,
+          "mushroom": 1,
+          "demon": 2
+        }
+      },
+      "shapeScale": 1.6,
+      "combo": [
+        "cleave@cut",
+        "cleaveL",
+        "cleaveR"
+      ],
+      "spells": [
+        "ring@downbeat"
+      ],
+      "grade": {
+        "exposure": -0.45,
+        "contrast": 14,
+        "saturation": 6,
+        "temperature": -4
+      }
+    },
+    {
+      "cut": "111.1",
+      "environment": "lava",
+      "viewWidthM": 45,
+      "yawDeg": 180,
+      "path": {
+        "via": [
+          [
+            30,
+            70
+          ],
+          [
+            30,
+            14
+          ]
+        ],
+        "stepM": 1.9
+      },
+      "formation": {
+        "kind": "converge",
+        "streams": 3,
+        "onScreen": 550,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "bat": 2,
+          "demon": 2
+        }
+      },
+      "shapeScale": 1.4,
+      "combo": [
+        "cleaveR@cut",
+        "cleaveL",
+        "cleaveR"
+      ],
+      "spells": [
+        "lightning@strong"
+      ],
+      "grade": {
+        "exposure": -0.2,
+        "contrast": 10,
+        "saturation": 6,
+        "temperature": 4
+      }
+    },
+    {
+      "cut": "113.1",
+      "environment": "forest",
+      "viewWidthM": 52,
+      "viewWidthToM": 65,
+      "path": {
+        "via": [
+          [
+            16,
+            -28
+          ],
+          [
+            16,
+            10
+          ],
+          [
+            50,
+            50
+          ],
+          [
+            70,
+            26
+          ]
+        ],
+        "stepM": 1.9
+      },
+      "formation": {
+        "kind": "converge",
+        "streams": 6,
+        "onScreen": 1300,
+        "mix": {
+          "skeleton": 4,
+          "goblin": 3,
+          "bat": 2,
+          "demon": 2,
+          "bigork": 0.4,
+          "troll": 0.3
+        }
+      },
+      "boss": "ahead",
+      "shapeScale": 2.0,
+      "densityCap": 1.8,
+      "combo": [
+        "slam@cut",
+        "cleaveL",
+        "cleaveR",
+        "spin@114.3",
+        "slam@final"
+      ],
+      "spells": [
+        "ring@114.1",
+        "laser@115.1",
+        "laser@116.1"
+      ],
+      "breaks": [
+        "ruins-gate/1@113.3",
+        "ruins-gate/2@113.3"
+      ],
+      "grade": {
+        "exposure": -0.2,
+        "contrast": 8,
+        "saturation": 10
+      }
+    }
+  ]
+}

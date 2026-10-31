@@ -20,8 +20,8 @@ namespace Demo3D.Runtime.Crowd
 
         /// <summary>
         /// `--style-tune key=value,...`: overrides the tuned values for a run, to judge a change
-        /// without a rebuild. Keys: gain and peak (every type's <see cref="Gain"/> and
-        /// <see cref="Peak"/>) and the post look's exposure, contrast, saturation, bloom,
+        /// without a rebuild. Keys: gain, peak and glow (every type's <see cref="Gain"/>,
+        /// <see cref="Peak"/> and <see cref="Glow"/>) and the post look's exposure, contrast, saturation, bloom,
         /// threshold, chroma, vignette and neutral (0 or 1).
         /// </summary>
         public const string TuneFlag = "--style-tune";
@@ -74,7 +74,7 @@ namespace Demo3D.Runtime.Crowd
 
         readonly Dictionary<string, float> _tune = new Dictionary<string, float>();
         /// <summary>The tune keys, `--style-tune`'s and `--structure-tune`'s (<see cref="StructureStyle"/>).</summary>
-        internal static readonly string[] TuneKeys = { "gain", "peak", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
+        internal static readonly string[] TuneKeys = { "gain", "peak", "glow", "exposure", "contrast", "saturation", "bloom", "threshold", "chroma", "vignette", "neutral" };
 
         MonsterStyle(string name) { Name = name; }
 
@@ -164,6 +164,12 @@ namespace Demo3D.Runtime.Crowd
             }
         }
 
+        /// <summary>
+        /// A crystal type's inner glow (the shaders' _InnerGlow): light added after the peak, so the gems bloom on dark
+        /// ground. Only a tune sets it (the crystal trailer's look, trailer.md "The crystal cut"); 0 otherwise.
+        /// </summary>
+        public float Glow => _tune.TryGetValue("glow", out float g) ? g : 0f;
+
         public static MonsterStyle FromCommandLine() => FromArgs(Environment.GetCommandLineArgs());
 
         /// <summary>
@@ -237,6 +243,7 @@ namespace Demo3D.Runtime.Crowd
                         break;
                     case "crystal":
                         m.SetVector("_Tint", look.gem);
+                        m.SetFloat("_InnerGlow", Glow);
                         break;
                     case "spectrum":
                         m.SetFloat("_Hue", look.synthHue);

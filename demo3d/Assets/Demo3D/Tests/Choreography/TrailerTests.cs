@@ -563,6 +563,70 @@ namespace Demo3D.Choreography.Tests
 
         // ------------------------------------------------------------------ helpers
 
+        // ------------------------------------------------------------------ the crystal cut and a shot's breaks
+
+        /// <summary>A shot's break is a target at a bar.beat on screen, in the shot's environment.</summary>
+        [TestCase("\"breaks\": [\"courtyard/east-south\"]", "needs a bar.beat")]
+        [TestCase("\"breaks\": [\"courtyard/east-south@phrase\"]", "needs a bar.beat")]
+        [TestCase("\"breaks\": [\"courtyard/east-south@82.3\"]", "is off screen")]
+        [TestCase("\"breaks\": [\"moat@82.1\"]", "has no area 'moat'")]
+        public void ABadBreakFailsNamingIt(string field, string message)
+        {
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2(field)));
+            Assert.That(ex.Message, Does.Contain(message));
+        }
+
+        /// <summary>A shot's break goes in its song section's level-script section, and only there.</summary>
+        [Test]
+        public void AShotsBreakGoesInItsSection()
+        {
+            Trailer t = Parse(Shot1(), Shot2("\"breaks\": [\"courtyard/east-south@82.1\"]"));
+            Assert.That(t.Shots[1].BreakSections, Is.EqualTo(new[] { "drop-2" }));
+            LevelScript ls = t.ShotScript(1, File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.LevelFile)),
+                File.ReadAllText(ChoreographyFiles.DataPath(Fixtures.Root, ChoreographyFiles.IntensityFile("overdrive"))));
+            foreach (LevelSection sec in ls.Sections)
+                Assert.That(Array.ConvertAll(sec.Breaks, e => e.ToString()), Is.EqualTo(sec.Section == "drop-2" ? new[] { "courtyard/east-south@82.1" } : new string[0]), sec.Section);
+        }
+
+        /// <summary>A trailer's look passes its styles and tunes through; an unknown key fails.</summary>
+        [Test]
+        public void ATrailersLookParses()
+        {
+            string look = "\"look\": { \"monsterStyle\": \"crystal\", \"structureStyle\": \"crystal\", \"styleTune\": \"glow=1\", \"structureTune\": \"gain=0.2\" }, ";
+            Trailer t = PS.Choreography.Trailer.Parse(Trailer(Shot1(), Shot2()).Replace("\"shots\":", look + "\"shots\":"), Fixtures.Song, Environments);
+            Assert.That((t.Style.MonsterStyle, t.Style.StructureStyle, t.Style.StyleTune, t.Style.StructureTune), Is.EqualTo(("crystal", "crystal", "glow=1", "gain=0.2")));
+            Assert.That(Fixtures.Trailer.Style.MonsterStyle, Is.Null);
+            var ex = Assert.Throws<FormatException>(() => PS.Choreography.Trailer.Parse(
+                Trailer(Shot1(), Shot2()).Replace("\"shots\":", "\"look\": { \"palette\": \"neon\" }, \"shots\":"), Fixtures.Song, Environments));
+            Assert.That(ex.Message, Does.Contain("unknown field 'palette'"));
+        }
+
+        /// <summary>
+        /// The crystal cut (trailer.md, "The crystal cut"): every shot passes the trailer's checks, its breaks among them,
+        /// and every break it schedules strikes, on screen.
+        /// </summary>
+        [Test]
+        public void TheCrystalCutPassesTheTrailersChecksAndBreaksItsWalls()
+        {
+            Trailer t = ChoreographyFiles.LoadTrailer(Fixtures.Root, "crystal", out var environments);
+            Assert.That(t.Environments, Is.EquivalentTo(new[] { "neon", "crypt", "lava", "forest" }));
+            var problems = new List<string>();
+            int scheduled = 0, struck = 0;
+            for (int i = 0; i < t.Shots.Length; i++)
+            {
+                ChoreographyData data = environments[t.Shots[i].Environment];
+                Timeline tl = ChoreographyFiles.BuildShot(Fixtures.Root, t, i, data);
+                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(t, i, tl, data)) problems.AddRange(check.Value);
+                scheduled += t.Shots[i].Breaks.Length;
+                var moments = new HashSet<(double, string)>();
+                foreach (BreakEvent b in tl.Breaks) moments.Add((b.Time, b.Target));
+                struck += moments.Count;
+            }
+            Assert.That(problems, Is.Empty, Report(problems));
+            Assert.That(scheduled, Is.GreaterThanOrEqualTo(4));
+            Assert.That(struck, Is.EqualTo(scheduled));
+        }
+
         static Trailer Parse(params string[] shots) => PS.Choreography.Trailer.Parse(Trailer(shots), Fixtures.Song, Environments);
 
         static GroundLayout Environments(string env) => ChoreographyFiles.LoadEnvironmentData(Fixtures.Root, env)?.Layout;

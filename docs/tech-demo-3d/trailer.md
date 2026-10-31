@@ -1370,6 +1370,105 @@ except `baseline` also brings a post-processing look.
 - **`--no-trailer-look`** drops the grade, grain, dirt and lens hits, and
   keeps the run's supersampling.
 
+## The Crystal Cut
+
+`--trailer crystal` plays an alternate cut, `trailer-crystal.json`, that
+showcases the crystal horde: glowing crystalline monsters on dark ground, and
+crystal walls that the hero's bolt shatters on screen (ps-7i4). The default
+cut, `--trailer` (`action`), is unchanged.
+
+```
+just demo3d --trailer crystal --sound
+just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
+```
+
+- **The same song, window and pace.** Bars 79–117, eight shots cut where the
+  action cut's are, 60.5 s with the fade. The gameplay rules hold too: blocks
+  of one type, blows on the major beats, constant motion, an open lane, one-hit
+  kills, the boss and the final slam.
+- **Dark environments only:** neon, crypt, lava and the night forest, each
+  twice. Neon opens with the duel, so no two neighbouring shots share one.
+- **Crystal without flags.** The file's `look` stands in for
+  `--monster-style`, `--structure-style`, `--style-tune` and
+  `--structure-tune` wherever the command line names none, so a flag still
+  wins (`DemoMain.UseTrailerStyle`).
+
+| # | Trailer s | Bars | Environment | Formation | Breaks |
+|---|---|---|---|---|---|
+| 1 | 0.000–2.481 | 79–80 | neon | Duel: 3 elites | |
+| 2 | 2.481–14.868 | 81–88 | crypt | Charge | courtyard east-south (81.3), east-north (82.3) |
+| 3 | 14.868–27.255 | 89–96 | lava | Converge, 4 streams | |
+| 4 | 27.255–39.642 | 97–104 | forest | Vortex | |
+| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams | courtyard west-north (106.1), north-east (108.3) |
+| 6 | 45.836–48.932 | 109–110 | crypt | Vortex | |
+| 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | |
+| 8 | 52.029–59.0 | 113–117.2 | forest | Converge, 6 streams, plus the boss | both ruins-gate runs (113.3) |
+
+### The crystal look
+
+The file's look:
+
+```json
+"look": {
+  "monsterStyle": "crystal", "structureStyle": "crystal",
+  "styleTune": "glow=1.0,exposure=0.5,contrast=26,saturation=30,bloom=2.0,threshold=1.0,vignette=0.42,chroma=0.05",
+  "structureTune": "gain=0.3,glow=0.6"
+}
+```
+
+- **Glow** is a new tune key, crystal's inner glow (`_InnerGlow`,
+  `CrystalCommon.hlsl`). It adds the gem's colour after the grade's peak, so
+  it reaches the bloom: each facet its own brightness, throbbing with the beat
+  wave, a shard's fresh faces twice as bright. It is 0 unless a tune sets it,
+  so every other run looks as before. Monsters, their shards and crystal
+  structures (and so the structures' shards) all take it.
+- **Post.** The style's post keys darken the forest's reference look (exposure
+  0.5 against the style's 0.8), deepen contrast and saturation, and lower the
+  bloom threshold to 1.0 at intensity 2.0, so the gems bloom and the ground
+  doesn't. The style post fix moves every environment by the same offsets.
+- **Per-shot grades** take each environment down further, the crypt's pale
+  stone most (exposure −0.45).
+- **Structures** are dark sapphire with a faint glow (gain 0.3, glow 0.6), so
+  a wall reads beside the horde without outshining it, and flares as it
+  breaks.
+
+### Structure breaks in a shot
+
+A shot's `breaks` field lists `target@bar.beat` entries, with targets named as
+in a structure-breaks schedule (choreography.md, Structure breaks): an area's
+name, or an area's part such as `courtyard/east-south` or `ruins-gate/1`.
+
+- **Parse** (`Trailer.ValidateBreaks`): every entry needs a bar.beat on the
+  grid within the shot's visible span, from its cut to its end, and a target
+  the shot's environment has. Anything else fails, naming the entry.
+- **The shot's script** puts each entry in its song section's level-script
+  section, and the simulation schedules a bar.beat break on that grid point
+  (`Sim.ScheduleBreaks`). The bolt, the changing obstacle map and the room
+  check are a schedule's. The room check is per environment: a wall run's
+  neighbouring kit pieces differ, so a run that breaks in one environment may
+  leave too narrow an opening in another. Among the dark environments the
+  crypt breaks every courtyard and ruins-gate run, the forest every one but
+  the courtyard's west-south, neon only the courtyard's south-west,
+  north-east and west-north and both ruins-gate runs, and lava none.
+- **On screen.** Each shot with breaks gets its own `BreakMoments` and
+  `StructureShatter` on its own environment, with the moments' bursts,
+  sounds, shakes and flashes in the shot's effect driver, cues, camera feel
+  and post feel. A cut away from the shot rewinds its shatter
+  (`StructureShatter.Rewind`), so the walls stand again for the next shot in
+  that environment, whose simulation starts whole.
+- **The check.** `breaks on screen` (`TrailerChecks.BreaksOnScreen`): each
+  break strikes in view, and its bolt flies at most 14 m. The cut's six bolts
+  fly 5.0–7.7 m.
+- **`--structure-breaks`** still conflicts with `--trailer`: a trailer's
+  breaks are its shots' own. `--environment` pins the shots and their breaks
+  together, so pinning the crystal cut to an environment where one of its
+  walls can't break (lava, say) fails at load, naming the wall.
+
+**Outcome.** Every shot passes every check (`trailer --name crystal
+--checks`, and `TrailerTests.TheCrystalCutPassesTheTrailersChecksAndBreaksItsWalls`),
+and the action cut's checks are unchanged. Stills:
+[evidence/trailer/crystal](../../demo3d/evidence/trailer/crystal/README.md).
+
 ## Command Line
 
 Trailer mode is one flag on the normal player:
@@ -1380,7 +1479,8 @@ just demo3d --trailer --sound --palette neon --monster-style crystal
 just demo3d --trailer --sound --roster heroic
 ```
 
-`--trailer` takes an optional name, which defaults to `action`. A following
+`--trailer` takes an optional name, which defaults to `action`; `crystal`
+plays [the crystal cut](#the-crystal-cut). A following
 argument that starts with `--` is the next flag, not a name.
 
 These work as in a normal run and apply to every shot:
@@ -1683,3 +1783,15 @@ the live run: the same shots, cuts and sounds, with no dropped frames.
   its pre-roll.
 - **`--overlay` in live mode.** It shows the shot number and liveness
   violations as they happen.
+
+**The crystal cut.** `just demo3d --trailer crystal --sound`, then
+`just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal`.
+Judge:
+
+- **The glow.** The gems should read as lit from inside against dark ground,
+  their facets still visible, not as flat neon silhouettes; the effects should
+  stay the brightest thing on screen.
+- **The walls.** Each of the five break moments (3.25, 4.80, 41.19, 45.06 and
+  52.80 s) should read as the hero's bolt shattering a glowing wall, and the
+  horde should pour through the openings.
+- **Darkness.** The crypt's two shots should read as dark as the others.

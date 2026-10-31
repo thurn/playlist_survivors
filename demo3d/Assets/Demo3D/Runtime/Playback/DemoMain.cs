@@ -166,6 +166,7 @@ namespace Demo3D.Runtime.Playback
                     Debug.LogWarning($"DemoMain: no arena for {arena.Label()} (baked: {Demo3D.Runtime.Arena.ArenaRuntime.Describe()}); flat ground");
                 BenchEnvironment.Build();
             }
+            if (_trailer != null) UseTrailerStyle(rosterSet);
             if (!_structures.IsBaseline)
             {
                 if (_arena == null) throw new InvalidOperationException($"DemoMain: {StructureStyle.Flag} {_structures.Name} needs the arena, not flat ground");
@@ -208,7 +209,7 @@ namespace Demo3D.Runtime.Playback
             MapTypes(choreo);
             // --structure-breaks: the pieces the bolts strike shatter on screen, and the moments' feel, bursts and sound.
             var breakMoments = BreakMoments.None;
-            if (_tl.Breaks.Length > 0)
+            if (_trailer == null && _tl.Breaks.Length > 0) // a trailer's shots break their own (PrepareShots)
             {
                 if (_arena == null) throw new InvalidOperationException($"DemoMain: {BreakSchedule.Flag} {breakSchedule.Name} needs the arena, not flat ground");
                 breakMoments = BreakMoments.Of(_tl, choreo.Layout);
@@ -873,6 +874,7 @@ namespace Demo3D.Runtime.Playback
             _crowd?.Dispose();
             _shatter?.Dispose();
             _breaks?.Dispose();
+            if (_shots != null) foreach (var s in _shots) s.Structures?.Dispose();
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();

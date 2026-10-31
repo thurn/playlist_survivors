@@ -75,6 +75,7 @@ namespace PS.Choreography
                 Check("the final slam", FinalSlam(trailer, s, tl)),
                 Check("no visible spawns", NoVisibleSpawns(s, tl)),
                 Check("density", Density(trailer, s, tl)),
+                Check("breaks on screen", BreaksOnScreen(s, tl)),
             };
         }
 
@@ -339,6 +340,28 @@ namespace PS.Choreography
             }
             // Round the circle, from the furthest any arc reaches back to the first arc's start.
             return Math.Max(best, list[0].Key + 2 * Math.PI - reach);
+        }
+
+        /// <summary>The longest bolt a break may fly and still read as the hero's (m): the walls schedule's flew 4 to 10.</summary>
+        public const float MaxBreakBoltM = 14f;
+
+        /// <summary>
+        /// Every structure break of the shot strikes where the camera has it (trailer.md, "Structure breaks in a shot"):
+        /// the point its bolt strikes is in view, and the bolt is short enough to read as the hero's.
+        /// </summary>
+        public static List<string> BreaksOnScreen(TrailerShot s, Timeline tl)
+        {
+            var problems = new List<string>();
+            for (int i = 0; i < tl.Breaks.Length; i++)
+            {
+                BreakEvent b = tl.Breaks[i];
+                if (i > 0 && tl.Breaks[i - 1].Time == b.Time && tl.Breaks[i - 1].Target == b.Target) continue; // its other pieces
+                FramingSample f = tl.FramingAt(b.Time);
+                float bolt = System.Numerics.Vector2.Distance(b.Origin, b.Point);
+                if (!tl.View(f.ViewWidth).Contains(f.Focus, b.Point)) problems.Add(Where(s, b.Time) + b.Target + " breaks out of view");
+                else if (bolt > MaxBreakBoltM) problems.Add(Where(s, b.Time) + b.Target + "'s bolt flies " + bolt.ToString("F1", CultureInfo.InvariantCulture) + " m");
+            }
+            return problems;
         }
 
         /// <summary>No monster takes a hit (or a laser's tick) and survives: every strike kills.</summary>

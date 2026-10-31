@@ -1913,14 +1913,26 @@ namespace PS.Choreography
                     GridEntry e = plans[s].Breaks[k];
                     int seen = 0;
                     GridPoint at = default;
-                    for (int gi = grid.FirstAfter(map.Sections[s].Start - 1e-6); gi < grid.Count && seen < e.Every; gi++)
+                    if (e.Fixed == FixedPosition.BarBeat)
                     {
-                        GridPoint p = grid.Points[gi];
-                        if (p.Section != s || (p.Flags & e.Position) != e.Position) continue;
-                        if (++seen == e.Every) at = p;
+                        // A trailer shot's break (trailer.md, "Structure breaks in a shot"): on its bar.beat, in this section.
+                        double t = map.TimeOfBarBeat(e.Bar, e.Beat, grid);
+                        int gi = grid.Nearest(t);
+                        if (grid.Points[gi].Section != s)
+                            throw new FormatException("structure breaks: '" + e + "' is not in section '" + plans[s].Label + "'");
+                        at = grid.Points[gi];
                     }
-                    if (seen < e.Every)
-                        throw new FormatException("structure breaks: section '" + plans[s].Label + "' has no " + e.Position.ToString().ToLowerInvariant() + " #" + e.Every + " for '" + e + "'");
+                    else
+                    {
+                        for (int gi = grid.FirstAfter(map.Sections[s].Start - 1e-6); gi < grid.Count && seen < e.Every; gi++)
+                        {
+                            GridPoint p = grid.Points[gi];
+                            if (p.Section != s || (p.Flags & e.Position) != e.Position) continue;
+                            if (++seen == e.Every) at = p;
+                        }
+                        if (seen < e.Every)
+                            throw new FormatException("structure breaks: section '" + plans[s].Label + "' has no " + e.Position.ToString().ToLowerInvariant() + " #" + e.Every + " for '" + e + "'");
+                    }
                     foreach (int piece in plans[s].BreakPieces[k])
                         if (!broken.Add(piece)) throw new FormatException("structure breaks: '" + e.Name + "' breaks a piece that an earlier entry broke");
                     list.Add(new ScheduledBreak { Time = at.Time, Strength = Math.Max(0.8f, at.AccentStrength), Target = e.Name, Pieces = plans[s].BreakPieces[k] });

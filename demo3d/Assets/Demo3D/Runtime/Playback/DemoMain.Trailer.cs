@@ -36,7 +36,7 @@ namespace Demo3D.Runtime.Playback
             ("--view-width", "it controls the song's own timeline"),
             ("--hold-at", "it controls the song's own timeline"),
             ("--beauty-empty", "it controls the song's own timeline"),
-            (BreakSchedule.Flag, "the trailer's shots break no structures"),
+            (BreakSchedule.Flag, "a trailer's structure breaks are its shots' own (their breaks)"),
             ("--resident", "the trailer makes its shots' environments resident itself"),
             ("--switch-every", "the trailer switches environments at its cuts"),
         };
@@ -53,6 +53,8 @@ namespace Demo3D.Runtime.Playback
             public BlowFeel Blows;
             public CameraFeel Feel;
             public CrystalShatter.BreakEvent[] Breaks = Array.Empty<CrystalShatter.BreakEvent>();
+            public BreakMoments Moments = BreakMoments.None;         // its structure breaks (its breaks field)
+            public Demo3D.Runtime.Arena.StructureShatter Structures; // their shards on screen (null without breaks)
             public double From;               // its first visible song time: the cut, or with --from-preroll its pre-roll's start
             public int Liveness = -1;         // --overlay: its liveness violations (TrailerChecks)
         }
@@ -91,6 +93,34 @@ namespace Demo3D.Runtime.Playback
                 Debug.LogWarning("DemoMain: --overlay is live mode only; the capture leaves it out");
                 _flags.Overlay = false;
             }
+        }
+
+        /// <summary>
+        /// The trailer file's look (trailer.md, "The crystal cut"): its monster and structure styles and tunes, wherever
+        /// the command line names none, so `--trailer crystal` plays crystal with no other flag. A flag still wins.
+        /// </summary>
+        void UseTrailerStyle(RosterSet rosterSet)
+        {
+            var look = _trailer.Style;
+            bool styled = false;
+            if (look.MonsterStyle != null && !Args.Has(MonsterStyle.Flag))
+            {
+                _style.Dispose();
+                _style = MonsterStyle.Parse(look.MonsterStyle);
+                if (look.StyleTune != null && !Args.Has(MonsterStyle.TuneFlag) && !_style.IsBaseline) _style.Tune(look.StyleTune);
+                styled = true;
+            }
+            if (look.StructureStyle != null && !Args.Has(StructureStyle.Flag))
+            {
+                _structures.Dispose();
+                _structures = StructureStyle.Parse(look.StructureStyle, _style);
+                if (look.StructureTune != null && !Args.Has(StructureStyle.TuneFlag) && !_structures.IsBaseline) _structures.Tune(look.StructureTune);
+                styled = true;
+            }
+            if (!styled) return;
+            if (!rosterSet.IsDefault && !_style.IsBaseline)
+                throw new InvalidOperationException($"DemoMain: trailer '{_trailer.Name}' plays {MonsterStyle.Flag} {_style.Name}, which {RosterSet.Flag} {rosterSet.Name} can't draw (only baseline)");
+            Debug.Log($"DemoMain: trailer '{_trailer.Name}''s look: {MonsterStyle.Flag} {_style.Name}, {StructureStyle.Flag} {_structures.Name}");
         }
 
         /// <summary>
@@ -172,11 +202,19 @@ namespace Demo3D.Runtime.Playback
                 s.Eval = new TimelineEvaluator(tl, clips.Clips);
                 s.BySpawn = BySpawn(tl);
                 s.Blows = feel != null && !_flags.NoFeel ? new BlowFeel(tl, feel) : null;
-                s.Feel = new CameraFeel(tl, s.Blows);
+                if (tl.Breaks.Length > 0)
+                {
+                    // The shot's structure breaks (trailer.md, "Structure breaks in a shot"), on its own environment.
+                    var layout = environments[s.Info.Environment].Layout;
+                    s.Moments = BreakMoments.Of(tl, layout);
+                    s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name);
+                }
+                s.Feel = new CameraFeel(tl, s.Blows, s.Moments.Count > 0 ? s.Moments.Shakes() : null);
                 if (_fx != null)
                 {
                     s.Effects = NewEffectDriver(tl);
                     s.Effects.Blows = s.Blows;
+                    if (s.Moments.Count > 0) s.Effects.SetBursts(s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem));
                 }
                 if (_shatter != null)
                 {
@@ -190,7 +228,9 @@ namespace Demo3D.Runtime.Playback
                 }));
                 if (_flags.Overlay) s.Liveness = TrailerChecks.Report(_trailer, i, tl, environments[s.Info.Environment]).LivenessViolations;
                 if (!Plays(s)) continue;
-                foreach (var c in SoundScheduler.Cues(tl, s.Breaks.Length > 0 ? ShatterSounds.For(s.Breaks, tl.Map) : null))
+                var clientSounds = s.Breaks.Length > 0 ? ShatterSounds.For(s.Breaks, tl.Map) : null;
+                if (s.Moments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(s.Moments.Sounds(_structures.Name, tl.Map));
+                foreach (var c in SoundScheduler.Cues(tl, clientSounds))
                     if (c.Time >= s.From && c.Time < s.Info.End) cues.Add(c);
             }
             _soundCues = cues.ToArray(); // the shots in order, each sorted: sorted
@@ -217,8 +257,14 @@ namespace Demo3D.Runtime.Playback
             {
                 var amounts = _arenas[a].Lighting.PostFeel;
                 var flashes = new List<(double, float)>();
-                foreach (var s in _shots) if (Plays(s)) flashes.AddRange(PostFeel.HitFlashes(s.Timeline, amounts, s.From, s.Info.End));
-                _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, null, cutFlashes, grades);
+                var breakFlashes = new List<(double, float)>();
+                foreach (var s in _shots)
+                    if (Plays(s))
+                    {
+                        flashes.AddRange(PostFeel.HitFlashes(s.Timeline, amounts, s.From, s.Info.End));
+                        breakFlashes.AddRange(s.Moments.Flashes());
+                    }
+                _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, breakFlashes, cutFlashes, grades);
             }
             _postFeel = _postFeels[0];
             Debug.Log($"DemoMain: flash cuts at trailer {string.Join(", ", cutFlashes.ConvertAll(c => (c - _timeBase).ToString("F3", CultureInfo.InvariantCulture)))} s; {_soundCues.Length} sound cues; " +
@@ -257,6 +303,8 @@ namespace Demo3D.Runtime.Playback
             _fxDriver?.Seek(); // clears particles and effect lights, and re-spawns the shot's effects still alive (pre-roll ones in flight)
             _fxLast = double.NaN;
             _shatter?.Retarget(s.Timeline, s.Breaks); // its shards so far go
+            _breaks?.Rewind(); // the shot before's broken structures stand again: each shot's simulation starts whole
+            _breaks = s.Structures;
             _worldFrom = s.From;  // no hit-stop from before the shot
             _slotBase = i << 20;
             _rig.YawDeg = s.Info.YawDeg; // the camera jumps to the shot's framing (Draw reads its framing track)

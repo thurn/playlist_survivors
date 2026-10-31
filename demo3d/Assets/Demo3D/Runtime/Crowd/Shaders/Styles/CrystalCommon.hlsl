@@ -71,7 +71,12 @@ half4 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float4
     color += float3(1.0, 1.0, 1.1) * hit + tint * 3.0 * glow;
     // A fresh break: more saturated than the weathered skin.
     if (inside > 0) color = max(0, lerp(SL_Luma(color).xxx, color, 1.0 + 0.6 * inside));
-    return half4(MixFog(SL_Grade(color), fogFactor), 1);
+    // A trailer's inner glow (_InnerGlow, the styles' glow tune; 0 elsewhere): light from the core, after the
+    // grade's peak so it reaches the bloom, each facet its own brightness, throbbing on the beat, a fresh break's
+    // faces the brightest.
+    float3 graded = SL_Grade(color);
+    graded += tint * _InnerGlow * (0.35 + 0.65 * faceRand) * (0.7 + 0.6 * wave) * (1.0 - 0.5 * fres) * (1.0 + inside);
+    return half4(MixFog(graded, fogFactor), 1);
 }
 
 #endif
