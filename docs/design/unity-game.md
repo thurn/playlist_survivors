@@ -350,6 +350,26 @@ entry from position 120.0 arriving late, frontier 118.00
 A song end is confirmed about 10 s after the music stops, so it becomes
 known about 7.5 s after the player hears the silence.
 
+**Shipped (ps-msz.1.1).** The mode is `Stamps::EveryGroup` on native's
+`DelayedParams` (`native/crates/analysis/src/delayed.rs`); native's app keeps
+`Stamps::Beats`. Every group but the committed beats is restamped
+`DelayedParams::stamp(position)` as it leaves the analyzer, where the position
+is the entry's native `known_at` (a tick's or a timbre entry's own time), so
+the content never changes. The fixed-size records are
+`native/crates/analysis/src/flat.rs`, laid out as `ps_entry`, with each
+kind's `v` slots in its table. A hindsight entry's grids don't fit 12 slots,
+so it becomes a header record and one record per grid beat.
+
+`ps entries <audio | m3u> [--out FILE] [--seconds S]` runs a File source
+through the analyzer in this mode, faster than real time. It writes JSON
+lines: a header, then one record per line (`kind`, `t`, `known_at` and the
+kind's `v` slots), in the analyzer's emission order. Dumps are cached in
+`~/Library/Caches/playlist-survivors/entries` (or `$PS_ENTRIES_CACHE`), keyed
+by every analyzer input and the audio's bytes, as `ps survive` caches its
+streams. Two runs write the same bytes. For tests without the cache,
+`native/fixtures/entries/house-128-20s.jsonl` holds the first 20 s of
+house-128 (`--seconds 20`). Regenerate it when the analyzer changes.
+
 ### Shared Rust code with native
 
 Native stays a maintained game, so the plugin shares crates with it instead

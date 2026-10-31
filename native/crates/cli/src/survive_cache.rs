@@ -23,7 +23,7 @@ pub struct TrackStream {
 pub fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
 }
-fn hash(parts: &[&[u8]]) -> Result<String, String> {
+pub fn hash(parts: &[&[u8]]) -> Result<String, String> {
     let mut child = Command::new("shasum")
         .args(["-a", "256"])
         .stdin(Stdio::piped())
@@ -195,7 +195,7 @@ pub fn cached(
     })
 }
 
-fn playlist_key(playlist: &Playlist, version: &str) -> Result<String, String> {
+pub fn playlist_key(playlist: &Playlist, version: &str) -> Result<String, String> {
     let mut audio_keys = std::collections::BTreeMap::new();
     let mut order = Vec::new();
     for track in &playlist.tracks {

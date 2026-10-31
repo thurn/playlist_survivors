@@ -1542,7 +1542,10 @@ keys, and logs it.
 **Committed beats are the one exception.** They are stamped `M − A` earlier
 than the analysis position that produced them, which is how they spend the
 lookahead (`A` is defined in [E1](#committed-beats-from-hindsight-e1)). The stamp stays a pure function of the samples, so session replay
-and the causality checks keep working.
+and the causality checks keep working. (The Unity game stamps every group
+this way, through the analyzer's `Stamps::EveryGroup`; native keeps
+`Stamps::Beats`. See docs/design/unity-game.md, "Stream entries and what the
+sim may know".)
 
 The sim, the evaluator and the oracle do not change. The sim reads every entry
 by `known_at` as before. Beats simply arrive with better times.
