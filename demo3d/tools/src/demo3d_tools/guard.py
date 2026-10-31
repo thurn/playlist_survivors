@@ -21,7 +21,8 @@ one of the machine's asset folders (a top-level folder of `unity_assets`, `pixel
 last sync). A record that lacks a demo's manifest GUIDs because one of that demo's source roots is
 absent from the machine is not stale but partial: that demo's files are treated as under a
 missing record. The roster sets' entries (`more_assets`, synced only on request) are never
-required in it; where that root is mapped, its packs must be.
+required in it; where that root is mapped, its packs must be. Nor, in the machine's own record, are
+the entries of the kit packages the machine lacks (sync.absent_kits), which its sync skips.
 
 Besides the sync record, the guard reads the derived record: the hashes and GUIDs of every file
 in the demos' Assets/Baked/ and Assets/Vendor/ (where Unity may rewrite a vendor file on import)
@@ -454,6 +455,23 @@ def manifest_guids(repo: Path) -> dict[str, tuple[str, str]]:
     return guids
 
 
+def absent_kit_guids(repo: Path, roots: dict[str, str]) -> set[str]:
+    """The GUIDs the demos' manifests list from the kit packages missing on this machine
+    (sync.absent_kits): its sync skips them, so no record built here has them."""
+    from . import sync
+
+    guids: set[str] = set()
+    for demo in paths.PROJECTS:
+        manifest = repo / demo / "manifest.json"
+        if not manifest.exists():
+            continue
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+        absent = set(sync.absent_kits(data, roots))
+        guids.update(a["guid"].lower() for a in data.get("assets", [])
+                     if a.get("guid") and a.get("source") in absent)
+    return guids
+
+
 def unrecorded_packs(roots: dict[str, str], record: Record) -> list[tuple[str, str]]:
     """The packs in the machine's asset folders that the record lacks: (root, pack) pairs.
 
@@ -562,8 +580,9 @@ def run(mode: str, repo: Path, rev: str | None, remote: str | None, record_file:
         res.failures.append(("(guard)", f"could not check: {detail}"))
         return res
     if record is not None:
+        absent = absent_kit_guids(repo, paths.load_roots()) if record_file is None else set()
         for guid, (demo, path) in manifest.items():
-            if guid not in record.guids and demo not in uncovered:
+            if guid not in record.guids and demo not in uncovered and guid not in absent:
                 res.failures.append(("(sync record)", (f"stale: {demo}'s manifest's {path} "
                                      f"({guid}) is not in it; run `{demo} sync`")))
         if record_file is None:  # the machine's own record, so its own roots

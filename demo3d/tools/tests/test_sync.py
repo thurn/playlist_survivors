@@ -223,6 +223,15 @@ def test_a_missing_kit_package_is_skipped_but_any_other_missing_package_fails(ro
         sync.resolve(manifest, sources(roots, tmp_path), skip=sync.absent_kits(manifest, roots))
 
 
+def test_the_guard_never_needs_a_missing_kit_packages_entries_in_the_record(roots, tmp_path: Path) -> None:
+    gone = "synty:POLYGON_Gone_Unity_2021_3_v1_0_0.unitypackage.gz"
+    repo = tmp_path / "repo"
+    (repo / "demo3d").mkdir(parents=True)
+    manifest = {"assets": [entry(roots, use="kit: trees"), entry(roots, source=gone, guid="9" * 32, use="kit: rocks")]}
+    (repo / "demo3d" / "manifest.json").write_text(json.dumps(manifest))
+    assert guard.absent_kit_guids(repo, roots) == {"9" * 32}
+
+
 def test_the_guard_never_needs_roster_entries_in_the_record(tmp_path: Path) -> None:
     (tmp_path / "demo3d").mkdir()
     (tmp_path / "demo3d" / "manifest.json").write_text(json.dumps({"assets": [

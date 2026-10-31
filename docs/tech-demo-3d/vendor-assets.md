@@ -241,6 +241,8 @@ and plays every other environment; naming a skipped one (`BakeArena
 -environment desert`, or `--environment desert` in the player) fails. A
 missing package with any non-kit entry (a roster's characters, an animation)
 still fails the sync, as does a missing forest kit piece in the bake. The
+guard doesn't require the skipped entries' GUIDs in the machine's own
+record, which can never have them, as for the roster sets. The
 vendor cache keys by the skipped packages, so once a pack arrives the next
 `demo3d setup` syncs a fresh vendor folder (`just demo3d` sets up only a
 checkout without one, so run it by hand there).
