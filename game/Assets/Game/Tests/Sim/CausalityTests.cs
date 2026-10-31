@@ -104,6 +104,20 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ARealDumpIsCausal([Values(false, true)] bool justInTime)
+        {
+            var known = Drive.Known(EntryDump.Load(EntryDump.House128, out double duration));
+            if (justInTime) known = JustInTime(known);
+            for (double cut = 0.85; cut < duration; cut += 1.3)
+            {
+                double at = System.Math.Floor(cut * 120) / 120;
+                var full = Drive.Replay(known, at);
+                AssertSameUpTo(full, Drive.Replay(Truncated(known, at), at), at, "truncated");
+                AssertSameUpTo(full, Drive.Replay(Perturbed(known, at, (ulong)(cut * 10)), at), at, "perturbed");
+            }
+        }
+
+        [Test]
         public void TheLivePathIsCausalToo()
         {
             // Entries fed frame by frame as they are emitted, against the same stream cut short.

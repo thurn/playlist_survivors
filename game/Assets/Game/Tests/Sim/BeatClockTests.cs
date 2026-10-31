@@ -99,12 +99,13 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(Reliability.NoBeatAhead, sim.State.Beat);
             var changes = new List<(double t, Reliability r)>();
             foreach (var e in Drive.Events(sim, SimEventKind.BeatState)) changes.Add((e.T, e.AsBeatState.Now));
-            // Below the gate from the start, reliable a second into the clear stretch, nothing ahead after the last beat.
+            // Below the gate from the start, reliable a second into the clear stretch, nothing ahead
+            // once the last beat (19.5) has continued for 1.5 periods, at the first tick after 20.25.
             Assert.AreEqual(Reliability.BelowGate, changes[0].r);
             Assert.AreEqual(Reliability.Reliable, changes[1].r);
             Assert.AreEqual(11.0, changes[1].t, 1e-6);
             Assert.AreEqual(Reliability.NoBeatAhead, changes[changes.Count - 1].r);
-            Assert.AreEqual(19.5, changes[changes.Count - 1].t, 1e-6);
+            Assert.AreEqual(20.25 + Simulation.TickSeconds, changes[changes.Count - 1].t, 1e-6);
         }
 
         [Test]

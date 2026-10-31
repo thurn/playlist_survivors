@@ -112,18 +112,24 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// A chunk of a hindsight window's grid; one window spans several entries. t is the chunk's
-        /// first time. v0 window sequence, v1 grid (0 offline, 1 online), v2 count (0 to 9),
-        /// v3 to v11 the grid times.
+        /// A hindsight window's header. t is the window's end; v0 the offline grid's beat count, v1
+        /// the online grid's. Its beats follow as <see cref="HindsightBeat"/> records, offline first,
+        /// each with the header's stamp.
         /// </summary>
-        public static StreamEntry Hindsight(double t, double stamp, int window, bool online, ReadOnlySpan<double> times)
+        public static StreamEntry Hindsight(double windowEnd, double stamp, int offline, int online)
         {
-            if (times.Length > HindsightEntry.MaxTimes) throw new ArgumentException("at most 9 times per chunk");
-            var e = Of(EntryKind.Hindsight, t, stamp);
-            e.V0 = window;
-            e.V1 = online ? 1 : 0;
-            e.V2 = times.Length;
-            for (int i = 0; i < times.Length; i++) e[3 + i] = times[i];
+            var e = Of(EntryKind.Hindsight, windowEnd, stamp);
+            e.V0 = offline;
+            e.V1 = online;
+            return e;
+        }
+
+        /// <summary>One beat of a hindsight window's grid. t is the beat; v0 grid (0 offline, 1 online), v1 the window's end.</summary>
+        public static StreamEntry HindsightBeat(double t, double stamp, bool online, double windowEnd)
+        {
+            var e = Of(EntryKind.HindsightBeat, t, stamp);
+            e.V0 = online ? 1 : 0;
+            e.V1 = windowEnd;
             return e;
         }
 
@@ -176,6 +182,7 @@ namespace PS.Game.Sim
         public TickEntry AsTick { get { Expect(EntryKind.Tick); return new TickEntry(this); } }
         public OnsetEntry AsOnset { get { Expect(EntryKind.Onset); return new OnsetEntry(this); } }
         public HindsightEntry AsHindsight { get { Expect(EntryKind.Hindsight); return new HindsightEntry(this); } }
+        public HindsightBeatEntry AsHindsightBeat { get { Expect(EntryKind.HindsightBeat); return new HindsightBeatEntry(this); } }
         public TimbreEntry AsTimbre { get { Expect(EntryKind.Timbre); return new TimbreEntry(this); } }
         public ChangeEntry AsChange { get { Expect(EntryKind.Change); return new ChangeEntry(this); } }
         public JumpEntry AsJump { get { Expect(EntryKind.Jump); return new JumpEntry(this); } }

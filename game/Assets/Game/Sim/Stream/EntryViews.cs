@@ -50,15 +50,24 @@ namespace PS.Game.Sim
 
     public readonly struct HindsightEntry
     {
-        public const int MaxTimes = StreamEntry.Slots - 3;
         readonly StreamEntry e;
         public HindsightEntry(in StreamEntry e) { this.e = e; }
+        /// <summary>The window's end.</summary>
         public double T => e.T;
         public double KnownAt => e.KnownAt;
-        public int Window => (int)e.V0;
-        public bool Online => e.V1 != 0;
-        public int Count => (int)e.V2;
-        public double Time(int i) => e[3 + i];
+        public int OfflineCount => (int)e.V0;
+        public int OnlineCount => (int)e.V1;
+    }
+
+    public readonly struct HindsightBeatEntry
+    {
+        readonly StreamEntry e;
+        public HindsightBeatEntry(in StreamEntry e) { this.e = e; }
+        /// <summary>The beat.</summary>
+        public double T => e.T;
+        public double KnownAt => e.KnownAt;
+        public bool Online => e.V0 != 0;
+        public double WindowEnd => e.V1;
     }
 
     public readonly struct TimbreEntry

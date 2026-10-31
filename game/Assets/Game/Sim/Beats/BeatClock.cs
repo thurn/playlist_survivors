@@ -11,10 +11,13 @@ namespace PS.Game.Sim
     ///   gap, not a slow beat.
     /// - <b>Clear</b> at time s: the latest revealed tick at or before s is at most
     ///   <see cref="ClearTickAge"/> old and judged clear (<see cref="Judging"/>).
-    /// - The state at s: <see cref="Reliability.NoBeatAhead"/> unless s lies in a beat interval;
-    ///   else <see cref="Reliability.Reliable"/> when clear and the interval's closing beat passes the
-    ///   gate (native's <c>enemy_reliable</c> and main window); else
-    ///   <see cref="Reliability.BelowGate"/>.
+    /// - The latest beat revealed <b>continues</b> while its interval is not yet known, for
+    ///   <see cref="TrackingGap"/> times its period: committed beats come from hindsight in batches,
+    ///   often less than a beat ahead, and a beat whose successor is merely late is not a gap.
+    /// - The state at s: <see cref="Reliability.NoBeatAhead"/> unless s lies in a beat interval or
+    ///   a continuing beat; else <see cref="Reliability.Reliable"/> when clear and the interval's
+    ///   closing beat (the continuing beat itself) passes the gate (native's <c>enemy_reliable</c>
+    ///   and main window); else <see cref="Reliability.BelowGate"/>.
     /// - Bars are two beats long, counted from the first committed beat at or after the latest
     ///   lock; a downbeat is a bar's first beat.
     ///
@@ -57,6 +60,13 @@ namespace PS.Game.Sim
             if (i < 0 || i + 1 >= beats.Length) return false;
             double gap = beats[i + 1].T - beats[i].T;
             return gap > 0 && gap <= TrackingGap * beats[i + 1].V0 + 1e-9;
+        }
+
+        /// <summary>Is beat <paramref name="i"/> the latest revealed, still continuing at song time <paramref name="s"/>?</summary>
+        public bool Continues(int i, double s)
+        {
+            var beats = log.Beats;
+            return i >= 0 && i == beats.Length - 1 && s <= beats[i].T + TrackingGap * beats[i].V0 + 1e-9;
         }
 
         /// <summary>
@@ -111,8 +121,11 @@ namespace PS.Game.Sim
         {
             var beats = log.Beats;
             while (beatCursor + 1 < beats.Length && beats[beatCursor + 1].T <= s + 1e-9) beatCursor++;
-            if (!StartsInterval(beatCursor)) return Reliability.NoBeatAhead;
-            return ClearAt(s) && beats[beatCursor + 1].V1 >= gate ? Reliability.Reliable : Reliability.BelowGate;
+            int closing;
+            if (StartsInterval(beatCursor)) closing = beatCursor + 1;
+            else if (Continues(beatCursor, s)) closing = beatCursor;
+            else return Reliability.NoBeatAhead;
+            return ClearAt(s) && beats[closing].V1 >= gate ? Reliability.Reliable : Reliability.BelowGate;
         }
 
         /// <summary>The next unfired beat's time at or after <paramref name="floor"/>; beats revealed too late are skipped as missed.</summary>

@@ -98,12 +98,63 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(2.8, steps[join - 1].T, 1e-9);
             Assert.AreEqual(1, steps[join].Halvings);
             Assert.AreEqual(3.25, steps[join + 1].T, 1e-9);
-            // The last beat (19.5) has no interval after it: the free pulse takes over from it.
+            // The last beat (19.5) has no interval after it: it continues for 1.5 periods, to 20.25,
+            // and then the free pulse takes over.
             int leave = steps.FindIndex(join, s => s.Free);
-            Assert.AreEqual(19.5, steps[leave].T, 1e-9);
-            Assert.AreEqual(19.85, steps[leave + 1].T, 1e-9);
+            Assert.AreEqual(20.25, steps[leave - 1].T, 1e-9);
+            Assert.AreEqual(1, steps[leave - 1].Halvings);
+            Assert.AreEqual(20.6, steps[leave].T, 1e-9);
             for (int i = 1; i < steps.Count; i++)
                 Assert.GreaterOrEqual(steps[i].T - steps[i - 1].T, 0.5 * steps[i].Period - 1e-9, $"steps {i - 1} and {i} too close");
+        }
+
+        [Test]
+        public void ABeatKnownLateKeepsThePace()
+        {
+            // Hindsight commits beats in batches, often less than a beat ahead: here each beat is
+            // known only 0.1 s after the one before it fires. The grid steps on through each beat and
+            // the beat never counts as missing.
+            var known = Drive.Known(new FixtureSong().Beats(0, 20, 120).Entries());
+            for (int i = 0; i < known.Count; i++)
+                if (known[i].Kind == EntryKind.Beat && known[i].T > 1)
+                {
+                    var e = known[i];
+                    e.KnownAt = e.T - 0.4;
+                    known[i] = e;
+                }
+            var sim = Drive.Replay(known, 19.4);
+            var steps = Steps(sim);
+            for (int i = 1; i < steps.Count; i++)
+            {
+                Assert.IsFalse(steps[i].Free, $"step at {steps[i].T}");
+                Assert.AreEqual(0.25, steps[i].T - steps[i - 1].T, 1e-9, $"step at {steps[i].T}");
+            }
+            foreach (var e in Drive.Events(sim, SimEventKind.BeatState))
+                Assert.AreNotEqual(Reliability.NoBeatAhead, e.AsBeatState.Now, $"at {e.T}");
+        }
+
+        [Test]
+        public void ARealSongStridesOnEveryHalfBeat()
+        {
+            // house-128's committed beats arrive in hindsight batches, some less than a beat ahead.
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var sim = new Simulation(new SimConfig());
+            Drive.Feed(sim, entries, duration);
+            Assert.AreEqual(0, sim.Stream.Dropped);
+            Assert.AreEqual(0, sim.Beats.Missed);
+            var steps = Steps(sim);
+            Assert.Greater(steps.Count, 80);
+            // After the analyzer's first, unsteady beats (0.28 s, then 0.44 s apart): 128 BPM halved once.
+            foreach (var s in steps)
+                if (s.T > 1)
+                {
+                    Assert.AreEqual(1, s.Halvings, $"step at {s.T}");
+                    Assert.That(s.Period, Is.InRange(0.22, 0.25), $"step at {s.T}");
+                }
+            for (int i = 1; i < steps.Count; i++)
+                if (steps[i].T > 1) Assert.That(steps[i].T - steps[i - 1].T, Is.InRange(0.22, 0.25), $"step at {steps[i].T}");
+            foreach (var e in Drive.Events(sim, SimEventKind.BeatState))
+                if (e.T > 0.5) Assert.AreNotEqual(Reliability.NoBeatAhead, e.AsBeatState.Now, $"at {e.T}");
         }
 
         [Test]
@@ -162,6 +213,25 @@ namespace PS.Game.Sim.Tests
                 if (step < StrideGrid.BandLow - 1e-9 || step > StrideGrid.BandHigh + 1e-9) exit = i;
             }
             Assert.That(switches[0].Beat, Is.EqualTo(exit).Or.EqualTo(exit + 1), "the next downbeat at most a beat later");
+        }
+
+        [Test]
+        public void WithNoLockYetTheGridSwitchesOnAnyBeat()
+        {
+            // Unclear music never locks, so no beat is a downbeat; the step still leaves the band,
+            // and the grid switches on the first interval outside it.
+            var song = new FixtureSong().Beats(0, 30, 151, 110, evidence: 0.3);
+            var sim = Run(song);
+            Assert.AreEqual(0, sim.Beats.Judging.Locks.Length);
+            var steps = Steps(sim);
+            var switches = Switches(steps);
+            Assert.AreEqual(1, switches.Count);
+            Assert.AreEqual(1, switches[0].Halvings);
+            var beats = song.BeatTimes();
+            int exit = beats.FindIndex(t => beats.IndexOf(t) + 1 < beats.Count && beats[beats.IndexOf(t) + 1] - t > StrideGrid.BandHigh + 1e-9);
+            Assert.AreEqual(exit, switches[0].Beat);
+            foreach (var s in steps)
+                if (!s.Free) Assert.That(s.Period, Is.InRange(0.17, 0.46), $"step at {s.T}");
         }
 
         [Test]

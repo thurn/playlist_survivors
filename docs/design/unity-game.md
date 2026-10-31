@@ -599,6 +599,12 @@ keep native's definitions.
 - **Bars** are two beats long, counted from the first committed beat after
   a lock, and a **downbeat** is a bar's first beat. The analyzer detects no
   metre, as in native.
+- **The latest beat continues.** Committed beats come from hindsight in
+  batches, often less than a beat ahead (house-128's dump has beats known
+  0.1 s after the beat before them). While the next beat is not yet known,
+  the latest one counts as still going for 1.5 of its periods, and the
+  stride grid keeps its step, as native's last grid time keeps the step
+  before it. Only after that is no beat known ahead.
 - The game is in one of three states, and each rule names the state it
   needs:
 
@@ -847,8 +853,9 @@ lies between 0.2 s and 0.4 s, and the hero's speed between 3.75 and 7.5 m/s
 
 - **Hysteresis**: a song keeps its current number of halvings while the
   period stays between 0.18 s and 0.45 s. It switches only when the period
-  leaves that range, and only on a downbeat, so a song near a boundary
-  never flickers between speeds.
+  leaves that range, and only on a downbeat (on any beat while no lock has
+  given the song bars), so a song near a boundary never flickers between
+  speeds.
 - **Pace bands**: pace rises with tempo within a band, then halves when a
   song crosses into the next one. A 149 BPM song strides every 0.20 s; a
   151 BPM song every 0.40 s.

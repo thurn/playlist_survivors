@@ -21,7 +21,7 @@ namespace PS.Game.Sim
             public long Seq;
         }
 
-        const int KindCount = (int)EntryKind.Forecast + 1;
+        const int KindCount = (int)EntryKind.Timbre + 1;
 
         readonly StructList<Pending> heap;
         readonly StructList<StreamEntry> arrived;

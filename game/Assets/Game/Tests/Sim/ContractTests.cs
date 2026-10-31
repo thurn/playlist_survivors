@@ -114,10 +114,12 @@ namespace PS.Game.Sim.Tests
             var bare = StreamEntry.Tick(1, 0, 0.7, 0.4);
             Assert.IsFalse(bare.AsTick.HasBands);
             Assert.IsFalse(bare.AsTick.HasLevel);
-            var chunk = StreamEntry.Hindsight(2, 1, 4, true, new[] { 2.0, 2.5, 3.0 });
-            Assert.AreEqual(3, chunk.AsHindsight.Count);
-            Assert.AreEqual(2.5, chunk.AsHindsight.Time(1));
-            Assert.IsTrue(chunk.AsHindsight.Online);
+            var window = StreamEntry.Hindsight(8, 6, 3, 2);
+            Assert.AreEqual(3, window.AsHindsight.OfflineCount);
+            Assert.AreEqual(2, window.AsHindsight.OnlineCount);
+            var gridBeat = StreamEntry.HindsightBeat(7.5, 6, true, 8);
+            Assert.IsTrue(gridBeat.AsHindsightBeat.Online);
+            Assert.AreEqual(8, gridBeat.AsHindsightBeat.WindowEnd);
             var death = SimEvent.Death(3, 7, 2, 1, 2, 0.6, 0.8, 5);
             Assert.AreEqual(7, death.AsDeath.Enemy);
             Assert.AreEqual(5, death.AsDeath.Force);

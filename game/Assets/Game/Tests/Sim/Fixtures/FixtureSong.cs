@@ -76,7 +76,6 @@ namespace PS.Game.Sim.Tests
         {
             var rng = new SimRandom(seed);
             var list = new List<StreamEntry>();
-            int window = 0;
             foreach (var s in stretches)
             {
                 if (s.Bpm0 > 0)
@@ -94,9 +93,12 @@ namespace PS.Game.Sim.Tests
                         if (n > 0 && n % 32 == 0) list.Add(StreamEntry.Change(t, StampOf(t + 2.1), 0.8));
                         if (n > 0 && n % 64 == 0) list.Add(StreamEntry.Jump(t, StampOf(t + 0.3), 6));
                         grid.Add(t);
-                        if (grid.Count == HindsightEntry.MaxTimes)
+                        if (grid.Count == 9)
                         {
-                            list.Add(StreamEntry.Hindsight(grid[0], StampOf(t + 1.0), window++, false, grid.ToArray()));
+                            // A window's header and its (offline) grid, all with the header's stamp.
+                            double stamp = StampOf(t + 1.0);
+                            list.Add(StreamEntry.Hindsight(t, stamp, grid.Count, 0));
+                            foreach (double b in grid) list.Add(StreamEntry.HindsightBeat(b, stamp, false, t));
                             grid.Clear();
                         }
                         t += period + (s.Jitter > 0 ? (rng.NextDouble() * 2 - 1) * s.Jitter : 0);

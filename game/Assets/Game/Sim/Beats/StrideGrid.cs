@@ -21,14 +21,21 @@ namespace PS.Game.Sim
     ///   every 0.20 s and a 151 BPM one every 0.40 s.
     /// - <b>Hysteresis</b>: later intervals keep h while the step stays within
     ///   [<see cref="BandLow"/>, <see cref="BandHigh"/>]. Outside it, h switches to the fewest
-    ///   halvings again, and only on an interval that starts on a downbeat.
-    /// - With no beat interval known (<see cref="Reliability.NoBeatAhead"/>), the grid is a free
-    ///   pulse every <see cref="FreePeriod"/> from the last step. The grid joins the next beat
-    ///   interval known at its first step that is at least half a step after the last one, and
-    ///   chooses its halvings afresh there: a beatless stretch already broke the song's pace.
+    ///   halvings again, and only on an interval that starts on a downbeat, or on any beat while
+    ///   no lock has given the song bars.
+    /// - <b>The latest beat continues</b>: committed beats come from hindsight in batches, so the
+    ///   next beat is often not yet known when the grid reaches the latest one. The grid keeps
+    ///   stepping at its step period from that beat (as native's last grid time keeps the step
+    ///   before it), for up to <see cref="BeatClock.TrackingGap"/> of the beat's period, and joins
+    ///   the real interval at its next step once the closing beat is revealed.
+    /// - With no beat interval known otherwise (<see cref="Reliability.NoBeatAhead"/>), the grid is
+    ///   a free pulse every <see cref="FreePeriod"/> from the last step, and chooses its halvings
+    ///   afresh when it joins a beat: a beatless stretch already broke the song's pace.
+    /// - The grid joins a beat interval (from the one holding the last step on) at its first step
+    ///   that is at least half a step after the last one, if that comes no later than the next
+    ///   free step, or within one and a half steps of the last while continuing a beat.
     ///
-    /// An interval's halvings are decided when the grid enters it, from what is revealed then, and
-    /// never revised.
+    /// Each step is decided from what is revealed when the grid reaches it, and never revised.
     /// </summary>
     public sealed class StrideGrid
     {
@@ -39,7 +46,7 @@ namespace PS.Game.Sim
         const int MaxHalvings = 8;
         const int HistoryLength = 64;
 
-        enum PlanKind { Continue, Boundary, Enter, Free }
+        enum PlanKind { Continue, Boundary, Enter, Carry, Free }
 
         struct Plan
         {
@@ -57,6 +64,9 @@ namespace PS.Game.Sim
         bool inSegment;
         int segBeat, segN, nextK;
         double segStart, segLen;
+        // Past the latest beat known (carryBeat), stepping on at carryPeriod until carryUntil.
+        int carryBeat = -1;
+        double carryPeriod, carryUntil;
         double lastStep = double.NegativeInfinity;
         double freeFrom;
         int scan;
@@ -104,7 +114,8 @@ namespace PS.Game.Sim
             if (current < 0) return fewest;
             double step = len / (1 << current);
             if (step >= BandLow - 1e-9 && step <= BandHigh + 1e-9) return current;
-            return clock.IsDownbeat(beat) ? fewest : current;
+            int bar = clock.BarOf(beat, out bool downbeat);
+            return downbeat || bar < 0 ? fewest : current;
         }
 
         /// <summary>The next step's time at or after <paramref name="floor"/>, from what is revealed now.</summary>
@@ -122,24 +133,28 @@ namespace PS.Game.Sim
                     return new Plan { Kind = PlanKind.Continue, Time = segStart + nextK * segLen / segN };
                 return new Plan { Kind = PlanKind.Boundary, Time = log.Beats[segBeat + 1].T };
             }
+            var fallback = carryBeat >= 0 && lastStep + carryPeriod <= carryUntil + 1e-9
+                ? new Plan { Kind = PlanKind.Carry, Time = Math.Max(lastStep + carryPeriod, floor) }
+                : new Plan { Kind = PlanKind.Free, Time = Math.Max(Math.Max(lastStep, freeFrom) + FreePeriod, floor) };
+            // A carried step yields to the real grid's next step even when that is a little later.
+            double bound = fallback.Kind == PlanKind.Carry ? lastStep + 1.5 * carryPeriod : fallback.Time;
             var beats = log.Beats;
-            double free = Math.Max(Math.Max(lastStep, freeFrom) + FreePeriod, floor);
-            while (scan < beats.Length && beats[scan].T <= lastStep + 1e-9) scan++;
-            for (int j = scan; j < beats.Length && beats[j].T <= free + 1e-9; j++)
+            while (scan + 1 < beats.Length && beats[scan + 1].T <= lastStep + 1e-9) scan++;
+            for (int j = scan; j < beats.Length && beats[j].T <= bound + 1e-9; j++)
             {
                 if (!clock.StartsInterval(j)) continue;
                 double len = beats[j + 1].T - beats[j].T;
-                int h = ChooseHalvings(j, len, -1);
+                int h = ChooseHalvings(j, len, Halvings);
                 int n = 1 << h;
                 double step = len / n;
                 double from = Math.Max(lastStep + 0.5 * step, floor);
                 int k = Math.Max(0, (int)Math.Ceiling((from - beats[j].T) / step - 1e-9));
                 if (k >= n) continue;
                 double at = beats[j].T + k * step;
-                if (at > free + 1e-9) break;
+                if (at > bound + 1e-9) break;
                 return new Plan { Kind = PlanKind.Enter, Time = at, Beat = j, Halvings = h, K = k };
             }
-            return new Plan { Kind = PlanKind.Free, Time = free };
+            return fallback;
         }
 
         internal void Fire(Simulation sim, double t)
@@ -165,8 +180,19 @@ namespace PS.Game.Sim
                         period = segLen / segN;
                         beat = j;
                     }
+                    else if (clock.Continues(j, t))
+                    {
+                        // The latest beat known: carry on at the step period until its interval is.
+                        inSegment = false;
+                        carryBeat = j;
+                        carryPeriod = segLen / segN;
+                        carryUntil = log.Beats[j].T + BeatClock.TrackingGap * log.Beats[j].V0;
+                        period = carryPeriod;
+                        beat = j;
+                    }
                     else
                     {
+                        // A tracking gap: the next beat is known, and too far away.
                         inSegment = false;
                         Halvings = -1;
                         period = FreePeriod;
@@ -183,7 +209,12 @@ namespace PS.Game.Sim
                     beat = plan.Beat;
                     break;
                 }
+                case PlanKind.Carry:
+                    period = carryPeriod;
+                    beat = carryBeat;
+                    break;
                 default:
+                    carryBeat = -1;
                     Halvings = -1;
                     period = FreePeriod;
                     beat = -1;
@@ -198,6 +229,7 @@ namespace PS.Game.Sim
         void Enter(int beat, double len, int next)
         {
             inSegment = true;
+            carryBeat = -1;
             segBeat = beat;
             segStart = log.Beats[beat].T;
             segLen = len;

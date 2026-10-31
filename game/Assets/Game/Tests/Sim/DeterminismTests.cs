@@ -43,6 +43,20 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ARealDumpRunsTheSameWhateverTheFramePacing()
+        {
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var a = new Simulation(new SimConfig());
+            Drive.Feed(a, entries, duration, frame: 1.0 / 60);
+            var b = new Simulation(new SimConfig());
+            Drive.Feed(b, entries, duration, frame: 1.0 / 23.7);
+            var replay = Drive.Replay(Drive.Known(entries), duration);
+            Assert.Greater(Drive.Events(a, SimEventKind.Beat).Count, 40);
+            Assert.AreEqual(a.Hash, b.Hash);
+            Assert.AreEqual(a.Hash, replay.Hash);
+        }
+
+        [Test]
         public void TheHashSeesAChangedEntry()
         {
             var known = Drive.Known(Song().Entries());

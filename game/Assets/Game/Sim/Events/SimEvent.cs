@@ -65,7 +65,7 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>A stride step: I0 step index, I1 halvings (-1 on the free pulse), I2 the segment's first beat (-1 free); D0 period to the next step.</summary>
+        /// <summary>A stride step: I0 step index, I1 halvings (-1 on the free pulse), I2 the segment's first beat, or the latest beat it continues (-1 free); D0 period to the next step.</summary>
         public static SimEvent StrideStep(double t, int index, int halvings, int beat, double period)
         {
             var e = Of(SimEventKind.StrideStep, t);
