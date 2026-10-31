@@ -43,6 +43,11 @@ impl Run {
         if status(self.s).state != PS_WAITING {
             self.played.extend_from_slice(&out);
         }
+        self.poll();
+    }
+
+    /// Polls the entries ready.
+    fn poll(&mut self) {
         let mut entries = empty_entries(256);
         let n = unsafe { ps_plugin::ps_poll(self.s, entries.as_mut_ptr(), 256) };
         assert!(n >= 0);
@@ -117,7 +122,10 @@ fn an_app_plays_m_late_stops_when_released_and_resumes_when_tapped_again() {
             "frame {n}"
         );
     }
+    // (The renders above may outrun the analysis thread; once it reaches `M` ahead, every
+    // earlier block's entries are ready.)
     run.wait_for_analysis();
+    run.poll();
     assert!(!run.polled.is_empty());
 
     // The watchdog releases the tap: the music stops at once, though the line holds `M` more,
