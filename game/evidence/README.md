@@ -65,3 +65,6 @@ what was run (the exact commands), the numbers, and what they show.
   and rings measured on the beat grid (ps-msz.6.5); Lightning Ring's strikes, Thunder Loop's returns and
   Chain Lightning's jumps as filmstrips, every bolt on a sixteenth, and their sounds found on their
   samples in Unity's mix (ps-msz.6.6).
+  hero's tiles, as filmstrips, and their rules' tests against native's numbers (ps-msz.6.7).
+- [hud](hud/README.md): the crystal HUD in every screen state (play, waiting, music stopped, pause, the
+  level-up's cards, a chest preview, victory and YOU FELL) and the beat gem's ring landing on the beat frame (ps-msz.6.9).
