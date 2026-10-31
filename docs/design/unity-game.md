@@ -2625,7 +2625,36 @@ the operator. Inside each milestone, independent tracks run in parallel.
    calibration, the debug surfaces, the bots and sweeps, and a full File
    run.
 5. **M4, polish and performance on the Mac**, planned from what M1 to M3
-   measured.
+   measured (ps-msz.8.1). Six tracks start in parallel, each with a Warden:
+   - **Measurement**: a windowless GPU frame probe and a per-frame CPU
+     profile in the player, a `game perf` command over the peak's
+     scenarios and the 30-minute fixed-time run, and the Mac's baseline
+     (ps-msz.8.2).
+   - **Look**: the five zones' nights and the run's peak polished to the
+     reference, with neon's thin readability margin (+19.7 dL*) raised,
+     big moments clipping at most 1% and the ordinary strike's ring
+     calmed (ps-msz.8.3).
+   - **The run's tuning**: levels brought down to `startLevels` (the bot
+     reaches 15 at 5:00 and 55 at 30:00, against 10 and 30), and the late
+     crowd's rosters mixed so the peak reads rainbow rather than 297
+     mushrooms (ps-msz.8.4).
+   - **Feel**: an on-the-beat audit of every moment's frame at the peak and
+     late steps measured across leads and tempos (ps-msz.8.5); the payoff
+     tuned from measurements: the full run's 5% of dropped sounds, the
+     finale's blast emitting hits, shatter and structure breaks at the
+     peak (ps-msz.8.6).
+   - **What M3 left**: presenters isolated from each other's faults, the
+     end card from a sim recap, the crowd's capacity from content
+     (ps-msz.8.7).
+   - Then **performance**, from the baseline: the peak at 60 fps on the
+     Mac after the look (ps-msz.8.8), and no frame over 33 ms across the
+     30-minute run (allocations, first-use hitches, spikes; ps-msz.8.9).
+   - Last, **a closing retake** of the whole run on the combined tree: the
+     fixed-time full run and its replay, the frame budget, the peak's
+     stills, and the operator rows brought up to date (ps-msz.8.14).
+
+   The Mac's numbers only guide this work; Cygnus measures against the
+   targets in M5.
 6. **M5, Windows**: the shared crates and the plugin on Windows, process
    loopback with the guardian process, the Windows player, and performance
    against the targets on Cygnus.
