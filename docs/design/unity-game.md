@@ -562,8 +562,8 @@ A muted app must always get its sound back.
   any music-stopped freeze does (see [The Run](#the-run)). The run ends
   only if the player ends it.
 - **Permissions**: on macOS the player app carries an audio-capture usage
-  description and an ad hoc signature, so the OS remembers the player's
-  grant. Running System capture inside the Unity editor needs the editor's
+  description and a stable self-signed identity (ad hoc only without it), so
+  the OS remembers the player's grant across builds. Running System capture inside the Unity editor needs the editor's
   own grant; File works in the editor without one.
 - **Device change**: an output device change ends the run, because the
   latency changes, as in native.
@@ -626,8 +626,9 @@ anchor, the records' ring, the record and the one analysis loop). Decisions:
   windowed launch names no source (`--title` forces it, for stills).
 - **A run started there returns to it** when it ends (the file's end, a
   failure, an output device change, Backspace): the boot scene reloads and the
-  title screen says why. Runs started by flags quit as before. This is the
-  stand-in until M3's run ends (ps-msz.6.1) take over the end itself.
+  title screen says why. Runs started by flags quit as before. The run's own
+  ends (ps-msz.6.1) end it the same way, and the title screen then offers W to
+  watch the run (ps-msz.6.10).
 - **`--app <name>`** picks as native's `capture::apps::pick` does by name
   (exact, ignoring case, else a part); a number is a pid, listed or not, since
   the plugin taps any process with audio. It waits up to 3 s for the app to
@@ -1031,10 +1032,11 @@ debugged.
 - **What the sim records is the record.** The sim keeps every accepted entry's
   `EntryRecord`, the time it took the entry (the frame's starting frontier) and
   its final `known_at` (`sim.Stream.Accepted`, in arrival order, so entry i is
-  `entries.jsonl`'s line i), beside its keys and debug commands, which now carry
-  their order among each other. A replay (`SessionReplay`) adds each entry at
-  the time it was taken with its recorded `known_at`, and gives each key and
-  command at its effective time in that order, so it steps through the live
+  `entries.jsonl`'s line i), beside its keys, debug commands and run controls
+  (start, pause, resume, quit, device change, watchdog), which carry their
+  order among each other. A replay (`SessionReplay`) adds each entry at the
+  time it was taken with its recorded `known_at`, and gives each key, command
+  and control at its effective time in that order, so it steps through the live
   run's states exactly. Adding entries any earlier changes the run: an entry
   that arrives in a frame that steps no tick is known at the frontier itself,
   and an earlier add would reveal it a tick sooner.
@@ -1043,8 +1045,8 @@ debugged.
   the run's end frontier, event count and hash, the entries' records and the
   inputs, doubles as their bits, so no runtime's number formatting can move a
   replay. `run.json` repeats it for people, with the build, runtime, platform,
-  source and command line. A session records the run's level, the slice's or an
-  open one (what `SessionRecord.Config` rebuilds), with the run's start minute;
+  source and command line. A session records the run's level, the slice's, an
+  open one or the run's (`RunLevel.Config`; what `SessionRecord.Config` rebuilds), with the run's start minute;
   version 2 (ps-msz.6.12) added each input's argument (a debug command's role,
   weapon or time) and the start minute, and version 1 still reads. A `--level`
   run isn't recorded, since its replay would play the build's own level.
@@ -1095,7 +1097,9 @@ playing time.
   bob in place on the beat.
 - **Music stopped**: 5 s below the analyzer's silence threshold, a confirmed
   song end, or the watchdog firing freezes the world with a "MUSIC STOPPED"
-  banner. It resumes on the second bar downbeat after the beat locks again.
+  banner. It resumes on the second bar downbeat after the beat locks again,
+  or, when the music has played 8 s without a lock (a beatless track after
+  the gap), on the free pulse, as a beatless passage plays.
 - **Ends**: victory at 30:00 (the finale blast clears the screen on the next
   downbeat, then the victory card); death ("YOU FELL"); Backspace ends a run;
   an output device change ends it.
@@ -1125,6 +1129,16 @@ playing time.
   on the first reliable beat after the quiet, and play resumes on the second
   downbeat after it: one whole bar is heard. Quiet before then restarts the
   lock.
+- **A beatless track after a stop** (ps-msz.6.14, a change from native, which
+  waits for the lock): once the music has been above the silence threshold for
+  8 s since the freeze (`RunRules.BeatlessResumeS`) with no lock, the music
+  stop lets go, and play resumes on the next committed beat, or the next
+  stride step on the free pulse. The world then plays as in a beatless passage
+  mid-song. Native's rule held the world under MUSIC STOPPED for 56 s while
+  the survivors playlist's piano aria played, whose beat turns reliable only
+  56 s in, about 220 s of each pass of the playlist. Most tracks lock well
+  inside 8 s and keep the second-downbeat resume; a hard one (hiphop-92-swing,
+  reliable 11.6 s in) now resumes on its own weak beats.
 - **Victory**: the run clock stops at exactly 30:00 (schedule.json's
   `durationS`). The finale blasts on the next downbeat the world plays: 1000
   damage to every enemy and a `FinaleBlast` to every structure within
@@ -1819,8 +1833,10 @@ Pickups and progression are native's.
   flips in (game/evidence/arsenal).
 - **Pacing**: on the slice's horde (220 alive from the start) in an open arena, a hero
   walking a square through its kills reaches level 33 by 5:00 of run clock, far faster
-  than native's run (about level 10). The run's schedule (ps-msz.6.2) is what that
-  should be measured against.
+  than native's run (about level 10). On the run's schedule (ps-msz.6.2) the bots' sweeps
+  and the full File run measure level 14 to 17 at 5:00 (game/evidence/sweeps,
+  game/evidence/full-run), against the design's level 10 there (progression.json's
+  `startLevels`); the run's tuning is M4's.
 
 **Shipped (ps-msz.6.8).** The bosses' chests (`Sim/Arsenal/Chests.cs`; native's survivors/chests.rs and
 engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
@@ -2004,6 +2020,14 @@ timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
   knock events' moves, as the sim's do. A death or a recycled re-entry ends
   the body on its frame; a death's frame writes it once more as Dying, which
   the palette pass blends but no draw shows, for the shatter to seed from.
+- **Slots** (`CrowdSlots`): each life keeps its type's instance slot for its
+  whole life, and a freed slot shows Hidden for a frame before its next
+  owner. So a frame holds last frame's slots beside this frame's new owners,
+  and each type has room for 600 (`CrowdView.SlotsPerType`, twice the
+  living): a crowd of one model replaced on one beat (a set piece making room
+  for its members) needs it. With 375, minute 25 of the full run threw on
+  every frame from its first set piece, and the crowd and the HUD stopped
+  drawing (ps-msz.6.14).
 - **The crystal** (`Game/MonsterCrystal`) shares its surface with the
   structures (CrystalSurface.hlsl): it refracts the scene behind, tinted by
   the role's gem colour, with the beat globals' facet sparkle, graded to a
@@ -2232,7 +2256,8 @@ drawn at frameSong, with marks in world space:
   dark glass plates with lit top and shaded bottom hairlines, and rotated squares for gems.
 - **Beat track**: the beats known by frameSong (a prefix of the revealed list, so a frame never
   depends on the frontier) slide in from both sides to a heart that beats on each; downbeats
-  (`BeatClock.IsDownbeat`) are taller and warm. Without a reliable beat the track empties and the
+  (`BeatClock.IsDownbeat`) are taller and warm. Past the latest committed beat the beats its
+  period predicts show at 40%, without bar marks, and brighten once committed. Without a reliable beat the track empties and the
   heart greys under WAITING FOR THE BEAT. While the run waits it prompts PRESS ENTER OR SPACE.
 - **World space** (`BeatGem`, Game/HudMark on camera-facing quads, HDR for the bloom): the gem
   floats 2.75 m over the hero's feet, drawn over everything. A ring closes on it from 1 m toward
@@ -2246,7 +2271,7 @@ drawn at frameSong, with marks in world space:
   beat; the chosen card swells, then lifts as the others fall away. A card has its item's gem,
   name, rank, native's description and EVO PAIR with an owned partner. The chest's card
   (`ChestCards`) cycles its gems on eighth-note ticks and lands on a downbeat; the sim's chests
-  (ps-msz.6.8) fill it, and until then `--chest-preview S[:TIER]` opens a client-only preview for
+  (ps-msz.6.8) fill it, and `--chest-preview S[:TIER]` still opens a client-only preview for
   stills. The end card shows VICTORY or YOU FELL, the run clock, kills and level, and per weapon its
   damage, time held and DPS (times 10).
 - **Stills**: every overlay panel is composited over the camera in order (`Stills.Overlays`).
@@ -2259,14 +2284,17 @@ The game's sounds sit under the player's music and never fight it.
 
 - **Music**: the delayed music source from
   [The Delay Line and Unity's Output](#the-delay-line-and-unitys-output),
-  at unchanged volume, never ducked.
+  at unchanged volume, never ducked in play (a calibration screen opened
+  from the pause menu ducks it under its clicks, ps-msz.6.11).
 - **Sound effects**: the 3D demo's scheduler on a voice pool, with its
   aggregation (at most three voices per beat and category, gain growing with
   the count).
 - **Mix**: effects follow the music's loudness through the plugin's follower
   gain, under a tunable limit.
 - **Sources**: the vendor packs the 3D demo uses, plus the existing free
-  packs; each weapon has fire, hit and evolved sounds.
+  packs; each weapon has its own fire and hit sounds, an evolution shares
+  its base weapon's, and an evolving chest's landing plays one `evolve`
+  sound (ps-msz.6.8).
 
 **Shipped (ps-msz.3.11).** `Client/Sound/`, with the bank baked from
 `game/Content/sounds.json` (`Editor/Sound/SoundBaker`: vendor clips by file
@@ -2289,7 +2317,7 @@ notes, and the mix's `limit`, 0.8). As built
   shatter lower; the hurt on the next sixteenth and gem pickups' chimes on the
   sixteenth grid climbing C6 to C8 (`MusicalGrid`, `PentatonicChain`, native's).
 - The voices' volume is gain times the limit times the plugin's follower
-  gain; the music's source is never touched. It plays at priority 0, and the
+  gain; the music's source is never touched in play. It plays at priority 0, and the
   project has 64 real voices, so a full pool never makes Unity virtualize
   (silence) the music or a scheduled sound. A dropped sound leaves its
   beat's voice to a later request.
@@ -2335,7 +2363,7 @@ Kept, re-implemented in C# from native's code and docs:
 - The causal rule: the sim uses an entry only once it is known.
 - Determinism, sessions with replay, and headless bots and sweeps.
 - The sound rules: sounds start on their exact sample, never late; voice
-  budgets; the music is never ducked.
+  budgets; the music is never ducked in play.
 - The fast lane's presentation: beat pulses, accent flashes, drum-band
   envelopes, build-ups before drops.
 
@@ -2473,14 +2501,21 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
   takes that step and the held key strides on the rest, never twice on one step.
 - **Cards**: Left and Enter one beat after the third card flips in, as native's. The idle bot gives
   no input but the cards' Enter (`AutoCards`), as a headless run does.
+- **Slams** (ps-msz.6.14): native's bosses don't telegraph. A telegraphed slam whose blow would reach
+  the hero (its radius from the content, plus the hero's hurt radius and 0.25 m) is danger until its
+  impact, the escape pointing away from where it lands. Without it a bot standing on a gem took four
+  of the signature minotaur's slams, which land where the hero stood, in 7 s and fell.
+- **In the player** (ps-msz.6.14): `--bot positioning|idle` plays the run with the bot in place of the
+  keyboard (`Client/Loop/BotInput.cs`), as `BotRun` drives it; its keys are recorded like a player's.
 
 `game sweep [--assert]` (demo3d/tools botsweep.py, slow CI's game section) runs native's matrix in
 parallel in .NET (`game/dotnet/PS.Game.Sweep`): the survivors playlist's original, reversed and
 rotated orders over per-track dumps of `ps entries`, and the original order over the whole
 playlist's dump, seed 1, plus the idle bot. Each stream is the playlist played twice, since the
-run's freezes take 250 to 550 s of song time and one pass of its 2294 s can end first. A pass over
-committed inputs is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all
-four win, none below 83% health; the idle bot falls at 2:06).
+run's freezes take 240 to 290 s of song time (270 to 640 s before ps-msz.6.14's beatless thaw) and
+the reversed order starts 182 s in, needing 2268 s of one pass's 2294. A pass over committed inputs
+is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all four win, the
+lowest at 87% health; the idle bot falls at 2:06).
 
 ## Build Order
 
@@ -2657,6 +2692,13 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
   Cygnus.
 - **Watch my run**: press W after a run; the replay matches what happened,
   with its music.
+
+**Measured (ps-msz.6.14).** The full File run, headless in the IL2CPP player
+with the positioning bot (`--bot positioning`) on `survivors-30-twice.m3u` (the
+playlist twice, since one pass can end first): victory at 30:00 of run clock,
+song 2109 s, level 16 at 5:00 and 54 at the end, the minutes 10, 15, 20 and 25
+bosses' chests taken, four evolutions, the cap of 300 alive first reached at 7:31, no error.
+Evidence: [game/evidence/full-run](../../game/evidence/full-run/README.md).
 
 ### Timing and feel
 

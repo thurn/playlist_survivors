@@ -23,7 +23,10 @@ music stopped; `i1` 1 at a freeze's start, 0 at the resume), in song time:
 | resume | 139.690 | accelerando reliable at 137.25 s; the lock beat 137.30, downbeats 138.50 and 139.69 |
 
 Each resume lands on the second downbeat after the lock beat (the events' `Beat` rows carry the
-downbeat bit), so one whole bar is heard first. The player's summary, at 175 s:
+downbeat bit), so one whole bar is heard first. Since ps-msz.6.14 a stop also lets go once the music has played 8 s
+with no lock (`RunRules.BeatlessResumeS`, for a beatless track after a gap), so the stop in the gap
+before hiphop-92-swing (its music back by about 62.6 s) now resumes at 70.87 s, on a beat still below
+the gate, instead of at 77.38 s (game/evidence/full-run). The player's summary, at 175 s:
 
 ```text
 run Playing from song 3.780 s, run clock 142.125 s, 2 freezes (2 music stopped), 0 run controls
