@@ -33,9 +33,9 @@ pub(crate) const BLOCK: usize = 4096;
 const CHUNK: usize = 1024;
 
 /// A track for the player: its gap and stereo frames; for the analyzer: its gap and mono samples.
-struct Part {
-    gap: usize,
-    samples: Vec<f32>,
+pub(crate) struct Part {
+    pub gap: usize,
+    pub samples: Vec<f32>,
 }
 
 /// A File source, checked.
@@ -126,10 +126,10 @@ impl File {
     }
 }
 
-/// The player: each track's gap and stereo frames into the delay line (at the output rate), at
+/// The player: each part's gap and stereo frames into the delay line (at the line's rate), at
 /// most `M` past the render position.
-fn play(sh: &Shared, parts: Receiver<Part>, mut writer: Writer) {
-    let rate = sh.output_rate;
+pub(crate) fn play(sh: &Shared, parts: impl IntoIterator<Item = Part>, mut writer: Writer) {
+    let rate = sh.line_rate;
     let mut frame = 0u64;
     let silence = [0.0f32; 2 * CHUNK];
     let mut write = |samples: &[f32]| {

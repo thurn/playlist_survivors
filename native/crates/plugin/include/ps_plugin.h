@@ -27,14 +27,14 @@ extern "C" {
 #define PS_ERR_ARGUMENT -1    /* a null pointer, an unknown source, an M or rate out of range */
 #define PS_ERR_SOURCE -2      /* the file or playlist can't be read or decoded, or the app tapped */
 #define PS_ERR_MODELS -3      /* the analyzer's models can't be loaded */
-#define PS_ERR_UNSUPPORTED -4 /* the source isn't available yet (Replay; System off macOS) */
+#define PS_ERR_UNSUPPORTED -4 /* the source isn't available yet (System off macOS) */
 #define PS_ERR_PANIC -5       /* the plugin panicked; the session should be closed */
 #define PS_ERR_FAILED -6      /* ps_poll: the session's source, analysis or record failed */
 
 /* Sources. */
 #define PS_SOURCE_FILE 0   /* an audio file, or an M3U playlist with #PS-GAP lines */
 #define PS_SOURCE_SYSTEM 1 /* an app's audio, tapped and muted (Delayed listening; macOS) */
-#define PS_SOURCE_REPLAY 2 /* a recorded session (not yet) */
+#define PS_SOURCE_REPLAY 2 /* a recorded session: its audio and entries again */
 
 typedef struct ps_session ps_session;
 
@@ -43,7 +43,7 @@ typedef struct {
     int32_t pid;             /* System: the app to tap, a ps_app's pid */
     double m;                /* the music delay M: 3.0 (1 to 10) */
     double output_rate;      /* Unity's output sample rate (whole Hz) */
-    const char *path;        /* File: the audio file or .m3u (UTF-8) */
+    const char *path;        /* File: the audio file or .m3u; Replay: the session folder (UTF-8) */
     const char *models;      /* the analyzer's madmom.bin; NULL: $PS_MODELS, else the checkout's */
     const char *session_dir; /* the folder to record the session in (created); NULL: none */
 } ps_config;

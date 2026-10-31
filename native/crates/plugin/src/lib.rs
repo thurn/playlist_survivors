@@ -6,6 +6,7 @@
 //! - [`file`]: a File source's threads (decoding, playback feeding).
 //! - [`system`]: a System source: an app tapped and muted, its watchdog, and tapping it again.
 //! - [`decode`]: a File source's tracks, decoded by macOS's `afconvert` (`capture::decode`).
+//! - [`replay`]: a Replay source: a recorded session's audio and entries, played again.
 //! - [`record`]: the session's record (the analyzer's input and every entry).
 //! - [`latency`]: the output device's latency as the OS reports it.
 //!
@@ -16,6 +17,7 @@ pub mod decode;
 pub mod file;
 pub mod latency;
 pub mod record;
+pub mod replay;
 pub mod session;
 pub mod system;
 
@@ -191,10 +193,9 @@ pub unsafe extern "C" fn ps_open(config: *const Config, out: *mut *mut Session) 
                 taps: system_taps()?,
             },
             PS_SOURCE_REPLAY => {
-                return Err(Error::new(
-                    PS_ERR_UNSUPPORTED,
-                    "the Replay source isn't available yet",
-                ));
+                Source::Replay(unsafe { path(c.path, "the path") }?.ok_or_else(|| {
+                    Error::new(PS_ERR_ARGUMENT, "the Replay source needs a session folder")
+                })?)
             }
             s => return Err(Error::new(PS_ERR_ARGUMENT, format!("unknown source {s}"))),
         };

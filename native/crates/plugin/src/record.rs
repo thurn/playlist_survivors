@@ -1,5 +1,5 @@
 //! The session's record: what the analyzer heard and every entry it emitted, in the session
-//! folder the client names (the client adds its keys and the rest in M3):
+//! folder the client names (the client adds its run beside them: game/Assets/Game/Sim/Session):
 //!
 //! - `audio.wav`: the analyzer's input, 44.1 kHz mono float, exactly as analysed;
 //! - `entries.jsonl`: every record with its stamp, one per line in `ps entries`' line format

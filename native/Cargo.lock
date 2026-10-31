@@ -1631,6 +1631,7 @@ dependencies = [
  "capture",
  "objc2-core-audio",
  "rtrb",
+ "serde",
  "serde_json",
  "stream",
 ]

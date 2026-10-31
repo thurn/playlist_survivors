@@ -7,6 +7,7 @@
 //! - [`crate::file`]: a File source, decoded and fed up to `M` past the render position, faster
 //!   than real time at first.
 //! - [`crate::system`]: a System source, an app tapped and muted, fed in real time.
+//! - [`crate::replay`]: a Replay source, a recorded session's audio and entries (no analysis).
 //!
 //! The [`Analysis`] runs native's analyzer (with its hindsight worker) in Delayed listening, every
 //! group stamped (`Stamps::EveryGroup`). Its entries become `ps_entry` records (`analysis::flat`)
@@ -67,6 +68,8 @@ pub enum Source {
     File(PathBuf),
     /// App `pid`'s audio, tapped by `taps` (the platform's, or a test's).
     System { pid: i32, taps: Box<dyn Taps> },
+    /// A session folder the plugin recorded.
+    Replay(PathBuf),
 }
 
 /// An `f64` shared through its bits.
@@ -307,6 +310,13 @@ impl Session {
         let source = match config.source {
             Source::File(path) => Opening::File(crate::file::File::open(path)?),
             Source::System { pid, taps } => Opening::System(pid, taps),
+            Source::Replay(dir) => {
+                return Session::replay(
+                    crate::replay::Replay::open(&dir)?,
+                    config.m,
+                    config.output_rate,
+                );
+            }
         };
         let models = Tensors::load(&config.models)
             .map_err(|e| Error::new(PS_ERR_MODELS, format!("{}: {e}", config.models.display())))?;
@@ -369,17 +379,36 @@ impl Session {
                 (line, shared, threads)
             }
         };
-        Ok(Session {
+        Ok(Session::new(line, records, shared, threads))
+    }
+
+    /// Opens a Replay source: no models, no analysis and no record.
+    fn replay(replay: crate::replay::Replay, m: f64, output_rate: f64) -> Result<Session, Error> {
+        let (writer, line) = crate::replay::Replay::line(m);
+        let shared = Arc::new(Shared::new(m, output_rate, SR, crate::file::START_S));
+        let (entries, records) = rtrb::RingBuffer::new(RECORDS);
+        let threads = replay.start(&shared, writer, entries)?;
+        Ok(Session::new(line, records, shared, threads))
+    }
+
+    fn new(
+        line: DelayLine,
+        records: rtrb::Consumer<Record>,
+        shared: Arc<Shared>,
+        threads: Vec<JoinHandle<()>>,
+    ) -> Session {
+        let output_rate = shared.output_rate;
+        Session {
             render: UnsafeCell::new(Render {
                 line,
-                follower: Follower::new(config.output_rate),
+                follower: Follower::new(output_rate),
                 frames: 0,
                 started: false,
             }),
             records: UnsafeCell::new(records),
             shared,
             threads,
-        })
+        }
     }
 
     /// Copies new records into `out`; returns how many, or the failure once none are left. A

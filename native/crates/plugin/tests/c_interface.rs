@@ -9,8 +9,8 @@ use common::{
 };
 use ps_plugin::decode::{SR, decode};
 use ps_plugin::{
-    PS_ENDED, PS_ERR_ARGUMENT, PS_ERR_FAILED, PS_ERR_SOURCE, PS_ERR_UNSUPPORTED, PS_OK, PS_PLAYING,
-    PS_SOURCE_REPLAY, PS_SOURCE_SYSTEM, PS_WAITING, Session,
+    PS_ENDED, PS_ERR_ARGUMENT, PS_ERR_FAILED, PS_ERR_SOURCE, PS_OK, PS_PLAYING, PS_SOURCE_REPLAY,
+    PS_SOURCE_SYSTEM, PS_WAITING, Session,
 };
 
 /// Renders and polls until the analyzer is done and every entry is polled; returns the entries'
@@ -214,11 +214,13 @@ fn failures_return_codes_that_ps_last_error_describes() {
         PS_ERR_SOURCE
     );
     assert!(last_error().contains("no app with pid"), "{}", last_error());
+    // (A Replay source's path is a session folder: a.wav isn't one.)
     system.source = PS_SOURCE_REPLAY;
     assert_eq!(
         unsafe { ps_plugin::ps_open(&raw const system, &raw mut s) },
-        PS_ERR_UNSUPPORTED
+        PS_ERR_SOURCE
     );
+    assert!(last_error().contains("audio.wav"), "{}", last_error());
     system.source = 7;
     assert_eq!(
         unsafe { ps_plugin::ps_open(&raw const system, &raw mut s) },
