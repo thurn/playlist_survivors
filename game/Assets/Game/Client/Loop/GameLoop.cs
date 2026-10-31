@@ -37,6 +37,7 @@ namespace Game.Client.Loop
     /// - `--headless`: silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
     /// - `--loop-out FILE`: writes each frame's times, the sim's hash, the hero and the enemies alive, as CSV;
+    /// - `--events-out FILE`: writes each sim event as it settles (kind, time, its first ints), as CSV;
     /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
     ///   its bake failed), `--palette NAME` the arena's zone palette;
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
@@ -180,6 +181,8 @@ namespace Game.Client.Loop
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
             Driver.Events.Subscribe(_counts);
+            var eventsPath = Args.Get("--events-out");
+            if (eventsPath != null) _counts.Open(Args.Path(eventsPath));
 
             var outPath = Args.Get("--loop-out");
             if (outPath != null)
@@ -340,6 +343,7 @@ namespace Game.Client.Loop
             _out = null;
             _structuresOut?.Dispose();
             _structuresOut = null;
+            _counts.Dispose();
         }
 
         /// <summary>Logs the run's summary and quits with `code`.</summary>
@@ -352,6 +356,7 @@ namespace Game.Client.Loop
             _out = null;
             _structuresOut?.Dispose();
             _structuresOut = null;
+            _counts.Dispose();
             if (_soundOut != null && _music != null && _sounds != null) KeepSounds(error);
             if (_music != null) _music.Close();
             if (error != null) Debug.LogError("GameLoop: " + error);
@@ -408,13 +413,27 @@ namespace Game.Client.Loop
 
         static double Pct(double[] sorted, double p) => sorted[(int)Math.Round(p * (sorted.Length - 1))];
 
-        /// <summary>What the run did, for its summary.</summary>
-        sealed class SliceCounts : IPresenter
+        /// <summary>What the run did, for its summary, and each event as CSV when asked.</summary>
+        sealed class SliceCounts : IPresenter, IDisposable
         {
             public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges;
+            StreamWriter _out;
+
+            public void Open(string path)
+            {
+                _out = new StreamWriter(path);
+                _out.WriteLine("kind,t,i0,i1,i2");
+            }
+
+            public void Dispose()
+            {
+                _out?.Dispose();
+                _out = null;
+            }
 
             public void OnEvent(in SimEvent e)
             {
+                _out?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4}", e.Kind, e.T, e.I0, e.I1, e.I2));
                 switch (e.Kind)
                 {
                     case SimEventKind.Death when e.AsDeath.Enemy >= 0: Kills++; break;

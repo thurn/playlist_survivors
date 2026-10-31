@@ -21,6 +21,7 @@ Boot runs the loop unless `--spike` or `--spike-out` asks for the sync spike.
 | `--overlay` | starts with the debug overlay shown; F3 toggles it |
 | `--headless` | silent output, 60 frames per second. Unity's player also takes it as -nographics, so stills run under `--fixed-time` without it |
 | `--loop-out FILE` | each frame's frameSong, frontier, lead, tick, the sim's hash and event count, the hero's position and the enemies alive, as CSV |
+| `--events-out FILE` | each sim event as it settles: kind, time and its first three ints (SimEvent's I0 to I2), as CSV |
 | `--seconds N` | quits after N seconds (Boot) |
 | `--no-arena`, `--palette NAME` | the placeholder plane instead of the baked arena; the arena's zone palette |
 | `--hero-path` | the camera follows a synthetic square walk instead of the sim's hero |

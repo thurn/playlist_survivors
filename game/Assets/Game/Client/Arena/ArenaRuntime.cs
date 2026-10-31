@@ -44,6 +44,7 @@ namespace Game.Client.Arena
         public readonly List<Renderer> Structures = new List<Renderer>();
         /// <summary>The realtime point lights the scene keeps (the flames).</summary>
         public readonly List<Light> Lights = new List<Light>();
+        /// <summary>The static shadow map, or null in a headless player.</summary>
         public StaticShadowMap ShadowMap { get; private set; }
         /// <summary>The hero's light, or null without one; <see cref="FollowHero"/> moves it.</summary>
         public Light HeroLight { get; private set; }
@@ -178,12 +179,14 @@ namespace Game.Client.Arena
         /// structure breaks (its renderers disabled) or regrows. The kit's own baked shadows never held a
         /// structure, so nothing else needs patching.
         /// </summary>
-        public void RefreshShadows(IReadOnlyList<Bounds> regions) => ShadowMap.Redraw(_casters, regions);
+        public void RefreshShadows(IReadOnlyList<Bounds> regions) => ShadowMap?.Redraw(_casters, regions);
 
         readonly List<Renderer> _casters = new List<Renderer>();
 
         void RenderShadowMap()
         {
+            // A headless player (-nographics) has no device to render it with.
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
             _casters.Clear();
             _casters.AddRange(Static);
             _casters.AddRange(Structures);
