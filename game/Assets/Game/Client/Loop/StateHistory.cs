@@ -29,6 +29,20 @@ namespace Game.Client.Loop
             Fallen = h.Fallen,
         };
 
+        /// <summary>Takes `later`'s move: its tiles, facing and the move to them, leaving health as it is.</summary>
+        public void TakeMove(in HeroSnapshot later)
+        {
+            TileX = later.TileX;
+            TileY = later.TileY;
+            X = later.X;
+            Y = later.Y;
+            Facing = later.Facing;
+            FromX = later.FromX;
+            FromY = later.FromY;
+            MoveStart = later.MoveStart;
+            MoveEnd = later.MoveEnd;
+        }
+
         /// <summary>Where the hero is at song time `t`: along its latest move, linearly (presenters shape the hop).</summary>
         public void PositionAt(double t, out double x, out double y)
         {
@@ -77,10 +91,10 @@ namespace Game.Client.Loop
     /// trails the frontier by the lead (unity-game.md, The Sim Lead). <see cref="Sample"/> answers
     /// at a song time between two snapshots: continuous values are interpolated, and discrete
     /// state is the earlier snapshot's, except the hero's latest move that has started by then,
-    /// from whichever later snapshot has it (a press stride, taken at the frontier, starts at the
-    /// press, before frontiers already recorded). A snapshot holds only the latest move, so with a
-    /// lead longer than a stride a press stride and the step after it can land in one snapshot,
-    /// which then shows the step's; the drawn hero follows the events. Its capacity
+    /// from whichever later snapshot has it (the sim takes a move up to the lead after its start,
+    /// in heard time, so after frontiers already recorded). A snapshot holds only the latest move,
+    /// so two moves taken within one frame show as the later; the drawn hero follows the events.
+    /// Its capacity
     /// covers a lead of a second at 120 fps.
     /// </summary>
     public sealed class StateHistory
@@ -142,7 +156,7 @@ namespace Game.Client.Loop
             for (int i = _count - 1; i > lo; i--)
             {
                 if (At(i).Hero.MoveStart > t) continue;
-                state.Hero = At(i).Hero;
+                state.Hero.TakeMove(At(i).Hero);
                 break;
             }
             return true;

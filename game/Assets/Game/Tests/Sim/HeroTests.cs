@@ -88,7 +88,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(StepAt(sim, 10.25).Index, moves[0].Step);
             Assert.AreEqual(2, moves.Count, "nothing on 10.25, the press's");
             Assert.IsFalse(moves[1].Pressed);
-            Assert.AreEqual(10.5, moves[1].T, 1e-9);
+            Assert.AreEqual(10.5, moves[1].Start, 1e-9);
             Assert.AreEqual(moves[0].ToY, moves[1].FromY, 1e-9);
         }
 
@@ -108,30 +108,32 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(10.1, moves[0].Start, 1e-9);
             Assert.AreEqual(10.21, moves[0].End, 1e-9);
             Assert.IsFalse(moves[1].Pressed);
-            Assert.AreEqual(10.25, moves[1].T, 1e-9);
+            Assert.AreEqual(10.25, moves[1].Start, 1e-9);
             Assert.AreEqual(moves[0].ToX, moves[1].FromX, 1e-9, "the second starts where the first ended");
             Assert.AreEqual(moves[0].ToX - Tile, moves[1].ToX, 1e-9);
         }
 
         [Test]
-        public void APressStrideWaitsForTheMoveInProgressAndEndsBeforeTheNextStep()
+        public void APressCutsShortTheMoveInProgressFromWhereTheHeroIs()
         {
-            // At 140 BPM the stride steps are 0.214 s apart. A press heard just after a held stride
-            // starts strides once that one ends, compressed to end on the next step.
-            var sim = new Simulation(new SimConfig());
-            foreach (var k in Drive.Known(new FixtureSong().Beats(0, 30, 140).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
-            sim.StepTo(8.0);
-            sim.Press(Key.Up, 7.98);
+            // A press heard 10 ms into a held stride sets off from where the hero is then, to the tile
+            // beside the one it was striding to.
+            var sim = At120();
             sim.StepTo(9.9);
-            double s0 = Steps(sim)[Steps(sim).Count - 1].T, s1 = s0 + 60.0 / 140 / 2;
-            sim.StepTo(s0 + 0.05);
-            Assert.AreEqual(s0, Moves(sim)[Moves(sim).Count - 1].Start, 1e-9, "Up strode on it, held");
-            sim.Press(Key.Right, s0 + 0.01);
+            sim.Press(Key.Up, 9.81);
+            sim.StepTo(10.1);
+            var up = Moves(sim)[Moves(sim).Count - 1];
+            Assert.AreEqual(10.0, up.Start, 1e-9, "Up strode on 10.00, held");
+            sim.Press(Key.Right, 10.01);
             var m = Moves(sim)[Moves(sim).Count - 1];
             Assert.IsTrue(m.Pressed);
             Assert.AreEqual(Direction.Right, m.Facing);
-            Assert.AreEqual(s0 + 0.110, m.Start, 1e-9);
-            Assert.AreEqual(s1, m.End, 1e-9);
+            Assert.AreEqual(10.01, m.Start, 1e-9);
+            Assert.AreEqual(10.12, m.End, 1e-9);
+            Assert.AreEqual(up.FromY + Tile * 0.01 / 0.11, m.FromY, 1e-9);
+            Assert.AreEqual(up.ToX, m.FromX, 1e-9);
+            Assert.AreEqual(up.ToX + Tile, m.ToX, 1e-9);
+            Assert.AreEqual(up.ToY, m.ToY, 1e-9);
         }
 
         [Test]
@@ -141,7 +143,7 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(9.9);
             sim.Press(Key.Up, 9.86); // at once, then held
             sim.StepTo(10.6);
-            sim.Press(Key.Right, 10.56); // at once, once the stride on 10.50 ends, then held over Up
+            sim.Press(Key.Right, 10.56); // at once, cutting short the stride on 10.50, then held over Up
             sim.StepTo(11.1);
             sim.Release(Key.Right, 11.06);
             sim.StepTo(11.6);
@@ -149,10 +151,10 @@ namespace PS.Game.Sim.Tests
             CollectionAssert.AreEqual(new[]
             {
                 Direction.Up, Direction.Up, Direction.Up, Direction.Up, // 9.86, 10.00, 10.25, 10.50
-                Direction.Right, Direction.Right, Direction.Right,      // 10.61, 10.75, 11.00
+                Direction.Right, Direction.Right, Direction.Right,      // 10.56, 10.75, 11.00
                 Direction.Up, Direction.Up,                             // 11.25, 11.50
             }, moves.ConvertAll(m => m.Facing));
-            var starts = new[] { 9.86, 10.0, 10.25, 10.5, 10.61, 10.75, 11.0, 11.25, 11.5 };
+            var starts = new[] { 9.86, 10.0, 10.25, 10.5, 10.56, 10.75, 11.0, 11.25, 11.5 };
             for (int i = 0; i < starts.Length; i++) Assert.AreEqual(starts[i], moves[i].Start, 1e-9);
             CollectionAssert.AreEqual(new[] { true, false, false, false, true, false, false, false, false },
                 moves.ConvertAll(m => m.Pressed));
@@ -200,7 +202,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(10.36, moves[1].Start, 1e-9);
             Assert.IsFalse(moves[1].Bump);
             Assert.AreEqual(4.5 + 0.75, moves[1].ToX, 1e-9);
-            Assert.AreEqual(10.5, moves[2].T, 1e-9);
+            Assert.AreEqual(10.5, moves[2].Start, 1e-9);
             Assert.IsTrue(moves[2].Bump);
             Assert.AreEqual(Direction.Left, moves[2].Facing);
             Assert.AreEqual(3, sim.State.Hero.TileX);
@@ -239,7 +241,7 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(11.6);
             var moves = Moves(sim);
             Assert.AreEqual(2, moves.Count, "Up is still held: 11.25 and 11.50");
-            Assert.AreEqual(11.25, moves[0].T, 1e-9);
+            Assert.AreEqual(11.25, moves[0].Start, 1e-9);
             Assert.IsTrue(moves.TrueForAll(m => m.Facing == Direction.Up));
         }
 
@@ -273,7 +275,7 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(moves[0].Pressed);
             Assert.AreEqual(Direction.Right, moves[0].Facing);
             Assert.IsFalse(moves[1].Pressed);
-            Assert.AreEqual(10.25, moves[1].T, 1e-9);
+            Assert.AreEqual(10.25, moves[1].Start, 1e-9);
             Assert.AreEqual(Direction.Up, moves[1].Facing);
             Assert.AreEqual(moves[0].ToX, moves[1].FromX, 1e-9, "the second starts where the first ended");
         }
@@ -299,7 +301,46 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(moves[0].Pressed && moves[1].Pressed && !moves[2].Pressed);
             Assert.AreEqual(Direction.Left, moves[0].Facing);
             Assert.AreEqual(Direction.Down, moves[2].Facing);
-            Assert.AreEqual(10.5, moves[2].T, 1e-9);
+            Assert.AreEqual(10.5, moves[2].Start, 1e-9);
+        }
+
+        /// <summary>A 100 ms tap at each of 50 phases across the stride period, reaching the sim 90 ms late.</summary>
+        [Test]
+        public void ATapMovesOneTileWhereverItFalls()
+        {
+            for (int i = 0; i < 50; i++)
+            {
+                var sim = At120();
+                double h = 10 + 0.25 * i / 50;
+                sim.StepTo(h + 0.09);
+                sim.Press(Key.Right, h);
+                sim.StepTo(h + 0.19);
+                sim.Release(Key.Right, h + 0.1);
+                sim.StepTo(12);
+                var moves = Moves(sim);
+                Assert.AreEqual(1, moves.Count, $"a tap at {h}");
+                Assert.AreEqual(h, moves[0].Start, 1e-9);
+            }
+        }
+
+        [Test]
+        public void ATurnHeardBeforeAStepTheSimHasPassedTurnsThere()
+        {
+            // Up held, then released and Right pressed, heard at 10.22 and taken at 10.31. The sim
+            // passed the step at 10.25 with Up still down, but judges it in heard time: no Up on it.
+            var sim = At120();
+            sim.StepTo(9.9);
+            sim.Press(Key.Up, 9.81);
+            sim.StepTo(10.31);
+            sim.Release(Key.Up, 10.22);
+            sim.Press(Key.Right, 10.22);
+            sim.StepTo(10.4);
+            sim.Release(Key.Right, 10.31);
+            sim.StepTo(12);
+            var moves = Moves(sim);
+            CollectionAssert.AreEqual(new[] { Direction.Up, Direction.Up, Direction.Right }, moves.ConvertAll(m => m.Facing));
+            CollectionAssert.AreEqual(new[] { 9.81, 10.0, 10.22 }, moves.ConvertAll(m => Math.Round(m.Start, 9)));
+            Assert.That(moves[1].T - 10.09, Is.InRange(0, Simulation.TickSeconds), "the held stride is taken the lead after its step");
         }
 
         [Test]
@@ -411,18 +452,19 @@ namespace PS.Game.Sim.Tests
                 {
                     pressed++;
                     Assert.IsTrue(heard.ContainsKey(m.T), $"a press stride at {m.T} not at a press");
-                    Assert.GreaterOrEqual(m.Start, heard[m.T] - 1e-9, "drawn from no earlier than the press was heard");
-                    Assert.GreaterOrEqual(m.Start, lastEnd - 1e-9, "after the move before it ends");
+                    Assert.GreaterOrEqual(m.Start, heard[m.T] - 1e-9, "drawn from when the press was heard");
                 }
                 else
                 {
                     onGrid++;
-                    Assert.AreEqual(m.T, m.Start);
-                    Assert.AreEqual(steps.Find(s => s.Index == m.Step).T, m.T, $"a stride at {m.T} off its step");
+                    Assert.AreEqual(steps.Find(s => s.Index == m.Step).T, m.Start, $"a stride at {m.Start} off its step");
+                    // Taken once the keys heard by its step are in: at most the script's longest lag after it.
+                    Assert.That(m.T - m.Start, Is.InRange(0, 0.14 + Simulation.TickSeconds + 1e-9));
                     // A move ends before the next step as planned when it starts; a beat revealed after
                     // that may still bring the step a little earlier.
                     if (m.Start < lastEnd - 1e-9) overlaps++;
                 }
+                Assert.LessOrEqual(m.Start, m.T + 1e-9);
                 Assert.Greater(m.End, m.Start);
                 lastEnd = m.End;
             }

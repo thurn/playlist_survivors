@@ -27,8 +27,9 @@ namespace PS.Game.Sim
     /// hero's move on it, then the enemies' beat phases (<see cref="Horde"/>), then the sword's impacts, cleave bands, plans and wind-ups
     /// (<see cref="Sword"/>), so a strike lands after the steps and lunges on its beat. The beat's
     /// state is updated before each of those and at the tick's end, after which the per-tick
-    /// systems run. A press moves the hero at once (a press stride), at the frontier, drawn from
-    /// when the press was heard. Nothing simulated is ever revised.
+    /// systems run, the hero's held strides first (judged in heard time, a lead after their steps:
+    /// <see cref="Hero"/>). A press moves the hero at once (a press stride), at the frontier, drawn
+    /// from when the press was heard. Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -124,7 +125,7 @@ namespace PS.Game.Sim
         public void Release(Key key, double heard)
         {
             keys.Add(new KeyRecord { Key = key, Down = false, Heard = heard, Effective = Now });
-            hero.Release(key);
+            hero.Release(this, key, heard);
         }
 
         /// <summary>Every key change recorded, in order.</summary>
@@ -228,6 +229,7 @@ namespace PS.Game.Sim
             State.Tick++;
             State.Now = end;
             UpdateBeatState(end);
+            hero.Tick(this, end);
             if (!State.Frozen) State.RunClock += TickSeconds;
             Horde?.Tick(this, end);
             Sword?.Tick(end);

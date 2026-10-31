@@ -360,54 +360,109 @@ namespace Game.Tests
             }
         }
 
+        const int First = 5 * 60, Every = 37, Presses = 24;
+
         /// <summary>
-        /// The hero answers an arrow key on the frame it goes down, as native's does (ps-msz.4.3): house-128
-        /// on fixed frames, the sim running its lead ahead, and taps at 24 phases across the stride
-        /// period, through the Input System, the frame loop and the hero's motion. Each moves the drawn
-        /// hero on its key-down frame or the next, and the snapshot the placeholder draws moves with it.
+        /// House-128 on fixed frames, the sim running its lead ahead, with the hero drawn: before frame
+        /// f's keys reach the sim, `keysAt(f)` presses and releases them through the Input System;
+        /// after it steps, `drawnAt(f, pose)`. The snapshot the placeholder draws agrees every frame.
         /// </summary>
-        [Test]
-        public void TheDrawnHeroMovesOnTheFrameAnArrowKeyGoesDown()
+        void Run(int frameCount, Action<Keyboard, int> keysAt, Action<int, HeroPose> drawnAt)
         {
             var keyboard = InputSystem.AddDevice<Keyboard>();
             var entries = LoopTests.House128();
-            const int first = 5 * 60, every = 37, presses = 24, hold = 6;
-            var driver = LoopTests.FixedDriver(out var frames, first + every * presses + 30);
+            var driver = LoopTests.FixedDriver(out var frames, frameCount);
             var drawn = new DrawnHero();
             driver.Events.Subscribe(drawn);
-            var lags = new List<int>();
             using (var keys = new KeyInput())
             {
-                int next = 0, pressed = -1, release = -1;
-                double x0 = 0, y0 = 0;
+                int next = 0;
                 for (int f = 0; f < frames.Length; f++)
                 {
                     double needed = driver.StampNeededFor(FrameClock.FrontierAt(frames[f].Frame));
                     while (next < entries.Count && entries[next].Stamp <= needed) driver.AddSettled(entries[next++]);
-                    // Right and left in turn, so the hero paces about the middle.
-                    var key = (f - first) / every % 2 == 0 ? keyboard.rightArrowKey : keyboard.leftArrowKey;
-                    if (f >= first && (f - first) % every == 0 && lags.Count < presses)
-                    {
-                        Press(key);
-                        pressed = f;
-                        release = f + hold;
-                        x0 = drawn.Pose.X;
-                        y0 = drawn.Pose.Y;
-                    }
-                    if (f == release) Release(key);
+                    keysAt(keyboard, f);
                     keys.Drain(driver.Sim, driver.Clock);
                     driver.Step(frames[f]);
                     driver.Presented.State.Hero.PositionAt(driver.Presented.Song, out double sx, out double sy);
-                    Assert.That(sx, Is.EqualTo(drawn.Pose.X).Within(1e-9), $"frame {f}: the snapshot and the drawn hero agree");
-                    if (pressed >= 0 && (drawn.Pose.X != x0 || drawn.Pose.Y != y0))
-                    {
-                        lags.Add(f - pressed);
-                        pressed = -1;
-                    }
+                    Assert.That((sx, sy), Is.EqualTo((drawn.Pose.X, drawn.Pose.Y)), $"frame {f}: the snapshot and the drawn hero agree");
+                    drawnAt(f, drawn.Pose);
                 }
             }
+        }
+
+        /// <summary>
+        /// The hero answers an arrow key on the frame it goes down (ps-msz.4.3): 100 ms taps at 24
+        /// phases across the stride period, right and left in turn, through the Input System, the frame
+        /// loop and the hero's motion. Each moves the drawn hero on its key-down frame or the next,
+        /// and by one tile.
+        /// </summary>
+        [Test]
+        public void TheDrawnHeroMovesOnTheFrameAnArrowKeyGoesDown()
+        {
+            const int hold = 6;
+            var lags = new List<int>();
+            var moved = new List<double>();
+            int pressed = -1;
+            double x0 = 0, y0 = 0, x = 0, y = 0;
+            Run(First + Every * Presses + 30, (keyboard, f) =>
+            {
+                int k = (f - First) / Every;
+                var key = k % 2 == 0 ? keyboard.rightArrowKey : keyboard.leftArrowKey;
+                if (f >= First && (f - First) % Every == 0 && k < Presses)
+                {
+                    if (k > 0) moved.Add(Math.Abs(x - x0) + Math.Abs(y - y0));
+                    Press(key);
+                    pressed = f;
+                    x0 = x;
+                    y0 = y;
+                }
+                if (f >= First && (f - First) % Every == hold && k < Presses) Release(key);
+            }, (f, pose) =>
+            {
+                x = pose.X;
+                y = pose.Y;
+                if (pressed < 0 || (x == x0 && y == y0)) return;
+                lags.Add(f - pressed);
+                pressed = -1;
+            });
+            moved.Add(Math.Abs(x - x0) + Math.Abs(y - y0));
             TestContext.WriteLine("frames from key-down to the drawn hero moving: " + string.Join(" ", lags));
-            Assert.That(lags.Count, Is.EqualTo(presses), "every tap moved the hero");
+            Assert.That(lags.Count, Is.EqualTo(Presses), "every tap moved the hero");
+            Assert.That(lags, Is.All.LessThanOrEqualTo(1));
+            Assert.That(moved, Is.All.EqualTo(1.5).Within(1e-9), "a tap moves one tile");
+        }
+
+        /// <summary>
+        /// Turning while a key is held answers on the key-down frame too: Up held, then Right, then Up
+        /// again, each turn releasing the other key, at 24 phases across the stride period. The drawn
+        /// hero sets off along the new axis on the turn's key-down frame or the next.
+        /// </summary>
+        [Test]
+        public void TheDrawnHeroTurnsOnTheFrameTheTurnsKeyGoesDown()
+        {
+            var lags = new List<int>();
+            int turned = -1;
+            bool right = false;
+            double along = 0;
+            Run(First + Every * Presses + 30, (keyboard, f) =>
+            {
+                if (f == First - Every) Press(keyboard.upArrowKey);
+                if (f < First || (f - First) % Every != 0 || (f - First) / Every >= Presses) return;
+                right = !right;
+                Release(right ? keyboard.upArrowKey : keyboard.rightArrowKey);
+                Press(right ? keyboard.rightArrowKey : keyboard.upArrowKey);
+                turned = f;
+            }, (f, pose) =>
+            {
+                double now = right ? pose.X : pose.Y;
+                if (f == turned - 1 || turned < 0) along = now;
+                if (turned < 0 || f < turned || now == along) return;
+                lags.Add(f - turned);
+                turned = -1;
+            });
+            TestContext.WriteLine("frames from a turn's key-down to the drawn hero turning: " + string.Join(" ", lags));
+            Assert.That(lags.Count, Is.EqualTo(Presses), "every turn turned the hero");
             Assert.That(lags, Is.All.LessThanOrEqualTo(1));
         }
 
