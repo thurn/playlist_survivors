@@ -1332,18 +1332,37 @@ The hero is the 3D demo's Synty knight, driven by sim events.
 ### The crowd
 
 The crowd is the 3D demo's GPU-driven renderer, fed by the sim instead of a
-timeline.
+timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
+[game/evidence/crowd](../../game/evidence/crowd/README.md)).
 
-- Clips are baked to bone textures; a compute pass blends each visible
-  monster's bones once; compute culling picks LODs; indirect draws go out per
-  type, LOD and submesh.
-- Each instance's clip and phase come from the sim's events: idle bob, the
-  step clip timed to its footplant, the lunge, the hit flash.
-- The crystal style shader draws monsters, refracting the scene behind them
-  and tinted by their type's colour, with beat-driven facet sparkle.
+- **The bake**, `game unity BakeCrowd` (and `game build` when its inputs
+  change), turns the nine models of Editor/Crowd/roster.json into the
+  gitignored Assets/Baked/Crowd/: per model, three LODs (LOD1 about half the
+  triangles, LOD2 a quarter) as unwelded style meshes in one submesh, and
+  the idle, walk, attack and hit clips at 30 Hz in a bone texture. The
+  library also holds the cast (cast.json: each role's model, scale and gem
+  colour), so a cast change rebakes.
+- **Drawing**: a compute pass culls each type's monsters against the frustum
+  and the moon's shadow sweep, sorts them into depth bins and picks a LOD by
+  projected height (60 and 30 px, dithered crossfades); a second blends each
+  visible monster's bones once into a palette; one indirect draw per type and
+  LOD, and one LOD2 shadow proxy per type, go out whatever the count.
+- **Events to clips** (`MonsterTrack`, tested in EditMode): the idle loops at
+  each monster's own phase; a step squeezes the walk's next half cycle into
+  its move window, so the footfall lands on the beat, holds 0.12 s, then eases
+  back to idle; a lunge retimes the attack clip so its annotated contact lands
+  on the impact, with a 0.4 m reach toward the hero; a hit flinches from the
+  hit clip's onset and flashes white over 0.12 s. Places follow the step and
+  knock events' moves, as the sim's do. A death or a recycled re-entry ends
+  the body on its frame, for the shatter to take over.
+- **The crystal** (`Game/MonsterCrystal`) shares its surface with the
+  structures (CrystalSurface.hlsl): it refracts the scene behind, tinted by
+  the role's gem colour, with the beat globals' facet sparkle, graded to a
+  luminance peak of 0.3 so effects stay brightest.
 - Transparent crystal lacks depth and motion vectors, so the game keeps MSAA
-  rather than TAA. A depth-only pass for crystal monsters, so SSAO and fog
-  see them, is the executor's call by measurement.
+  rather than TAA. There is no depth-only pass: the crystal applies its own
+  fog and takes no ambient, so SSAO would only darken the ground beside it,
+  and the horde reads at about +50 L* over the ground without it.
 
 ### Shatter
 

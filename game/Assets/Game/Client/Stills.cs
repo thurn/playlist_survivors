@@ -13,7 +13,9 @@ namespace Game.Client
     /// the camera by hand into a 1920×1080 target and keeps it as a JPEG with the `ps-render`
     /// tag. A batch-mode player draws no frames of its own, so a camera is drawn only for the
     /// frames that keep a still (drawing every frame by hand grows URP's pooled targets,
-    /// docs/tech-demo-3d/mac.md).
+    /// docs/tech-demo-3d/mac.md). With `--capture-mask` it draws the same frame again as its ID
+    /// render, still-&lt;time&gt;-mask.png: the crowd alone, flat white on black (MonsterCrystal
+    /// under _GameIdMask), with no post, for the look tools' readability measure.
     /// </summary>
     public sealed class Stills : IDisposable
     {
@@ -22,11 +24,14 @@ namespace Game.Client
         readonly string _dir;
         readonly List<double> _times = new List<double>();
         readonly RenderTexture _target, _resolved;
+        readonly bool _mask;
+        static readonly int IdMask = Shader.PropertyToID("_GameIdMask");
 
-        public Stills(Camera camera, string dir, string times)
+        public Stills(Camera camera, string dir, string times, bool mask = false)
         {
             _camera = camera;
             _dir = dir;
+            _mask = mask;
             foreach (var s in times.Split(','))
                 _times.Add(double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
             _times.Sort();
@@ -44,6 +49,12 @@ namespace Game.Client
 
         public bool Done => _times.Count == 0;
 
+        /// <summary>
+        /// Raised before the ID render draws the frame a second time: a hand-drawn camera spends the
+        /// draws queued in a frame (Graphics.RenderMesh*), so their owners queue them again.
+        /// </summary>
+        public static event Action Redrawing;
+
         /// <summary>Keeps every still due at time `t`, named still-&lt;time&gt;.jpg.</summary>
         public void CaptureDue(double t)
         {
@@ -56,7 +67,30 @@ namespace Game.Client
                 RenderTag.Save(tex, Path.Combine(_dir, name), "game stills t=" + at.ToString("F3", CultureInfo.InvariantCulture));
                 UnityEngine.Object.Destroy(tex);
                 Debug.Log($"Stills: kept {name} at t={t:F3}");
+                if (_mask) KeepMask(at);
             }
+        }
+
+        void KeepMask(double at)
+        {
+            var data = _camera.GetUniversalAdditionalCameraData();
+            var (mask, clear, background, post) = (_camera.cullingMask, _camera.clearFlags, _camera.backgroundColor, data.renderPostProcessing);
+            _camera.cullingMask = 1 << Crowd.BoneTextureCrowd.Layer;
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = Color.black;
+            data.renderPostProcessing = false;
+            Shader.SetGlobalFloat(IdMask, 1);
+            Redrawing?.Invoke();
+            Texture2D tex;
+            try { tex = Draw(); }
+            finally
+            {
+                Shader.SetGlobalFloat(IdMask, 0);
+                (_camera.cullingMask, _camera.clearFlags, _camera.backgroundColor, data.renderPostProcessing) = (mask, clear, background, post);
+            }
+            var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}-mask.png", at);
+            RenderTag.Save(tex, Path.Combine(_dir, name), "game stills mask t=" + at.ToString("F3", CultureInfo.InvariantCulture));
+            UnityEngine.Object.Destroy(tex);
         }
 
         Texture2D Draw()

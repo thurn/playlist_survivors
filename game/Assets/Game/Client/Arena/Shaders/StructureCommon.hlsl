@@ -1,7 +1,7 @@
 // What the crystal structures' shader shares with the style it came from (unity-game.md, "The
-// Look"): demo3d's StyleCommon.hlsl under SL_STATIC, copied and owned for static meshes only. The
-// beat globals, a structure's vertex front end and per-renderer values, noise, the beat wave, the
-// lighting helpers, the facets and the set's grade. The shader declares its UnityPerMaterial
+// Look"): demo3d's StyleCommon.hlsl under SL_STATIC, copied and owned for static meshes only. A
+// structure's vertex front end and per-renderer values, the facets and the set's grade, on what
+// every crystal shader shares (CrystalCommon.hlsl). The shader declares its UnityPerMaterial
 // CBUFFER (ending with `half _Gain; half _Peak;` and `float _HeightM`) before including this, in
 // its SubShader's HLSLINCLUDE, so its shadow pass sees the same clip.
 //
@@ -15,16 +15,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "StaticShadow.hlsl"
 #include "CanopyFade.hlsl"
-
-// The beat globals, shared with the crowd's styles (demo3d's StyleBeat publishes them from the music
-// each frame; ArenaRuntime sets them at rest until the look's beat feel drives them).
-float _SL_Time;      // the song's time, seconds
-float _SL_Beat;      // beats since the song's first beat, fractional
-float _SL_Pulse;     // 1 on each beat, decaying
-float _SL_BarPulse;  // 1 on each downbeat, decaying
-float _SL_Energy;    // the music's energy at this beat, 0..1
-float4 _SL_HeroPos;  // the hero's feet, world space
-float _SL_WaveSpeed; // how far the beat wave travels in one beat, metres
+#include "CrystalCommon.hlsl"
 
 // A structure's static mesh, in its renderer's object space. A shard's has its inside faces' flag in uv1.x.
 struct SLAttributes
@@ -52,90 +43,6 @@ float _SL_Cutoff;
 float _SL_Canopy;
 // SL_StaticFacets' cells per metre.
 float _SL_CellScale;
-
-// ---------------------------------------------------------------------------------------------
-// Noise.
-
-float SL_Hash(float3 p)
-{
-    p = frac(p * 0.3183099 + 0.1);
-    p *= 17.0;
-    return frac(p.x * p.y * p.z * (p.x + p.y + p.z));
-}
-
-float SL_Hash1(float n) { return frac(sin(n) * 43758.5453); }
-
-float3 SL_Hash3(float3 p)
-{
-    p = float3(dot(p, float3(127.1, 311.7, 74.7)), dot(p, float3(269.5, 183.3, 246.1)),
-               dot(p, float3(113.5, 271.9, 124.6)));
-    return frac(sin(p) * 43758.5453);
-}
-
-float SL_Luma(float3 c) { return dot(c, float3(0.2126, 0.7152, 0.0722)); }
-
-// ---------------------------------------------------------------------------------------------
-// The beat wave: a ring that leaves the hero on every beat and sweeps out across the arena.
-// 1 where the ring is passing now, decaying behind it (sharpness: how fast).
-
-float SL_Wave(float3 positionWS, float sharpness)
-{
-    float d = distance(positionWS.xz, _SL_HeroPos.xz);
-    float phase = frac(_SL_Beat - d / max(_SL_WaveSpeed, 0.01));
-    return exp(-phase * sharpness);
-}
-
-// The wave's distance-delayed beat count, for things that change once per beat as it passes.
-float SL_WaveBeat(float3 positionWS)
-{
-    float d = distance(positionWS.xz, _SL_HeroPos.xz);
-    return floor(_SL_Beat - d / max(_SL_WaveSpeed, 0.01));
-}
-
-// ---------------------------------------------------------------------------------------------
-// Lighting.
-
-// The moon, its realtime shadow combined with the arena's static shadow map.
-Light SL_MainLight(float3 positionWS)
-{
-    Light light = GetMainLight(TransformWorldToShadowCoord(positionWS));
-    light.shadowAttenuation = min(light.shadowAttenuation, GameStaticShadow(positionWS));
-    return light;
-}
-
-void SL_AddLight(Light light, float3 N, float3 V, float wrap, float specPower, inout float3 diffuse, inout float3 specular)
-{
-    float3 c = light.color * light.distanceAttenuation * light.shadowAttenuation;
-    float nl = dot(N, light.direction);
-    diffuse += c * saturate((nl + wrap) / (1.0 + wrap));
-    float3 H = normalize(light.direction + V);
-    specular += c * pow(saturate(dot(N, H)), specPower) * saturate(nl * 4.0);
-}
-
-// Every additional light (the hero's light, the flames, the effects' lights) through Forward+'s
-// cluster loop: wrapped diffuse and a Blinn-Phong highlight of the given power, summed.
-void SL_AdditionalLights(float3 positionWS, float4 positionCS, float3 N, float3 V, float wrap,
-                         float specPower, inout float3 diffuse, inout float3 specular)
-{
-#if defined(_ADDITIONAL_LIGHTS)
-    InputData inputData = (InputData)0;
-    inputData.positionWS = positionWS;
-    inputData.normalWS = N;
-    inputData.viewDirectionWS = V;
-    inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(positionCS);
-    uint pixelLightCount = GetAdditionalLightsCount();
-    #if USE_CLUSTER_LIGHT_LOOP
-    [loop] for (uint lightIndex = 0; lightIndex < min(URP_FP_DIRECTIONAL_LIGHTS_COUNT, MAX_VISIBLE_LIGHTS); lightIndex++)
-    {
-        CLUSTER_LIGHT_LOOP_SUBTRACTIVE_LIGHT_CHECK
-        SL_AddLight(GetAdditionalLight(lightIndex, positionWS, half4(1, 1, 1, 1)), N, V, wrap, specPower, diffuse, specular);
-    }
-    #endif
-    LIGHT_LOOP_BEGIN(pixelLightCount)
-        SL_AddLight(GetAdditionalLight(lightIndex, positionWS, half4(1, 1, 1, 1)), N, V, wrap, specPower, diffuse, specular);
-    LIGHT_LOOP_END
-#endif
-}
 
 // ---------------------------------------------------------------------------------------------
 // The vertex front end: placed by its renderer, with the piece's values.
@@ -193,14 +100,6 @@ SLVaryings SL_Finish(SLAttributes v, SLVertex c)
 #define SL_DEATH(i) ((i).fx.y)
 #define SL_INSIDE(i) ((i).fx.z)
 
-// A thin line along every facet edge, about `pixels` wide.
-float SL_Wire(float3 bary, float pixels)
-{
-    float e = min(bary.x, min(bary.y, bary.z));
-    float w = fwidth(e) * pixels;
-    return 1.0 - smoothstep(w * 0.5, w, e);
-}
-
 // A structure's clip in every pass but the shadow caster's: the kit material's alpha clip, and the
 // canopy fade on trees (the shadow pass's view is the light's, which the fade must not read).
 void SL_StaticClip(float4 positionCS, float3 positionWS, float2 uv, bool canopy)
@@ -244,7 +143,6 @@ float4 SL_StaticFacets(float3 positionWS)
 // (half the night's threshold of 1.5): the luminance limit alone lets a saturated hue's channel
 // past it. So a self-lit structure blooms only as the beat raises the bloom's intensity, or when
 // the effects light it, and never out-glows the horde or the effects.
-float3 SL_GradeOf(float3 color, float peak) { return color / (1.0 + Luminance(color) / peak); }
 #define SL_STATIC_CHANNEL_MAX 0.7
 float3 SL_StaticGradeOf(float3 color, float peak)
 {

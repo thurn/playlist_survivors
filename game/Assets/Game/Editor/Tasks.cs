@@ -35,7 +35,13 @@ namespace Game.EditorTools
         public static void BakeArena() => Arena.ArenaBaker.Bake();
 
         /// <summary>
-        /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena, the only one so far. Each
+        /// Bakes the crowd (Crowd.CrowdBaker): the nine monster models' style meshes and bone
+        /// textures and the cast into the gitignored Assets/Baked/Crowd/.
+        /// </summary>
+        public static void BakeCrowd() => Crowd.CrowdBaker.Bake();
+
+        /// <summary>
+        /// Every baker, for the tools (setup.py's GAME_BAKER_INPUTS): the arena and the crowd. Each
         /// baker that finishes appends its name to Assets/Baked/.bakeall-ran, which the tools read back
         /// to record the inputs it baked from. `-only NAME` (repeatable) runs just those.
         /// </summary>
@@ -44,7 +50,7 @@ namespace Game.EditorTools
             var args = Environment.GetCommandLineArgs();
             var only = args.Where((a, i) => i > 0 && args[i - 1] == "-only").ToList();
             Directory.CreateDirectory(BakedRoot);
-            foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena) })
+            foreach (var (name, run) in new (string, Action)[] { ("Arena", BakeArena), ("Crowd", BakeCrowd) })
             {
                 if (only.Count > 0 && !only.Contains(name)) continue;
                 Debug.Log("Tasks.BakeAll: running " + name);

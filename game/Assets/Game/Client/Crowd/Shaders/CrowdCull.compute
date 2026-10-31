@@ -1,0 +1,146 @@
+// The crowd's culling pass (unity-game.md, The Crowd; demo3d's CrowdCull.compute, copied and
+// owned), once per type per frame:
+// - each instance's bounding sphere against the camera frustum, and the same sphere swept
+//   toward the ground along the sun's direction by the longest shadow it can cast, so monsters
+//   just off screen still cast into view;
+// - camera-visible instances go into 8 depth bins per LOD, one indirect command per bin, so
+//   each draw runs near to far; the LOD comes from projected height, with hysteresis and a
+//   0.2 s dithered crossfade (an instance in a crossfade is listed in both LODs);
+// - camera- or shadow-visible instances go into the shadow proxy's list (one command);
+// - on-screen counts for the crowd's log.
+// Each LOD is one submesh (the crystal style mesh), so each command list is one submesh's.
+#pragma kernel ClearArgs
+#pragma kernel Cull
+
+#include "CrowdSkinning.hlsl"
+
+#define BINS 8
+#define ARGS_STRIDE 20 // IndirectDrawIndexedArgs: 5 uints
+#define LOD_HYSTERESIS 0.1
+
+StructuredBuffer<MonsterInstance> _Instances;
+StructuredBuffer<MonsterInstance> _PrevInstances; // last frame's, to see a slot change owner
+uint _PrevCount;
+RWByteAddressBuffer _Args;          // [lod][bin] commands
+RWByteAddressBuffer _ShadowArgs;    // one command
+RWStructuredBuffer<uint> _VisibleListOut; // [lod][bin] ranges of _Capacity slots
+RWStructuredBuffer<uint> _ShadowListOut;
+RWStructuredBuffer<uint4> _LodStateRW;
+RWStructuredBuffer<uint> _VisibleFlags;    // 1 camera, 2 shadow
+RWByteAddressBuffer _Counters;             // on-screen alive, on-screen dying, shadow-only, shadow casters
+
+float4 _FrustumPlanes[6];
+float3 _ShadowDir;       // the sun's light direction (sun to ground), normalized
+float _ShadowSinElev;    // sin of the sun's elevation, clamped away from 0
+float3 _CamPos;
+float3 _CamForward;
+float _BinNear, _BinFar;
+float _PixelScale;       // 2 tan(vfov / 2) / screen height: metres per pixel at depth 1
+float4 _LodThresholds;   // projected pixel height below which LOD l + 1 is used
+uint _LodCount;
+uint _Count, _Capacity, _Commands;
+float _CrowdTime;
+
+bool InsideSwept(float3 c, float3 d, float r)
+{
+    [unroll]
+    for (int i = 0; i < 6; i++)
+    {
+        float4 p = _FrustumPlanes[i];
+        float a = dot(p.xyz, c) + p.w;
+        float b = dot(p.xyz, c + d) + p.w;
+        if (max(a, b) < -r) return false;
+    }
+    return true;
+}
+
+uint RawLod(float px, float scale)
+{
+    uint l = 0;
+    for (uint i = 0; i + 1 < _LodCount; i++)
+        if (px < _LodThresholds[i] * scale) l = i + 1;
+    return l;
+}
+
+uint SelectLod(float px, uint current)
+{
+    uint coarser = RawLod(px, 1 - LOD_HYSTERESIS);
+    uint finer = RawLod(px, 1 + LOD_HYSTERESIS);
+    if (coarser > current) return coarser;
+    if (finer < current) return finer;
+    return min(current, _LodCount - 1);
+}
+
+[numthreads(64, 1, 1)]
+void ClearArgs(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x < _Commands) _Args.Store(id.x * ARGS_STRIDE + 4, 0);
+    if (id.x == 0) _ShadowArgs.Store(4, 0);
+    if (id.x < 4) _Counters.Store(id.x * 4, 0);
+}
+
+void Append(uint lod, uint bin, uint slot)
+{
+    uint cmd = lod * BINS + bin;
+    uint at;
+    _Args.InterlockedAdd(cmd * ARGS_STRIDE + 4, 1, at);
+    _VisibleListOut[cmd * _Capacity + at] = slot;
+}
+
+[numthreads(64, 1, 1)]
+void Cull(uint3 id : SV_DispatchThreadID)
+{
+    uint slot = id.x;
+    if (slot >= _Count) return;
+    MonsterInstance m = _Instances[slot];
+    if ((m.flags & CROWD_HIDDEN) != 0 || m.scale <= 0)
+    {
+        _VisibleFlags[slot] = 0;
+        return;
+    }
+    // A slot new this frame, or whose last frame was Hidden (a spawn, a refill, a slot that
+    // changed owner), forgets its LOD state: w = 1 marks it unset until the camera sees it.
+    if (slot >= _PrevCount || (_PrevInstances[slot].flags & CROWD_HIDDEN) != 0 || _PrevInstances[slot].scale <= 0)
+        _LodStateRW[slot] = uint4(0, 0, 0, 1);
+    float height;
+    float4 sphere = CrowdSphere(m, height);
+    float3 c = sphere.xyz;
+    float r = sphere.w;
+    bool camera = InsideSwept(c, 0, r);
+    float shadowLength = (c.y + r) / _ShadowSinElev;
+    bool shadow = camera || InsideSwept(c, _ShadowDir * shadowLength, r);
+    _VisibleFlags[slot] = (camera ? 1u : 0u) | (shadow ? 2u : 0u);
+
+    if (camera)
+    {
+        float depth = dot(c - _CamPos, _CamForward);
+        uint bin = (uint)clamp((int)floor((depth - _BinNear) / max(_BinFar - _BinNear, 1e-3) * BINS), 0, BINS - 1);
+        float px = height / max(depth * _PixelScale, 1e-4);
+        uint4 st = _LodStateRW[slot];
+        // A fresh slot starts at its LOD, with no crossfade or hysteresis from a previous owner.
+        bool fresh = st.w != 0;
+        uint lod = SelectLod(px, fresh ? RawLod(px, 1) : st.x);
+        if (fresh)
+        {
+            st = uint4(lod, lod, asuint(_CrowdTime), 0);
+            _LodStateRW[slot] = st;
+        }
+        else if (lod != st.x)
+        {
+            st = uint4(lod, st.x, asuint(_CrowdTime), 0);
+            _LodStateRW[slot] = st;
+        }
+        Append(lod, bin, slot);
+        float since = _CrowdTime - asfloat(st.z); // negative after the clock seeks back: no crossfade
+        if (st.y != st.x && since >= 0 && since < 0.2) Append(st.y, bin, slot);
+        _Counters.InterlockedAdd((m.flags & CROWD_DYING) != 0 ? 4 : 0, 1);
+    }
+    if (shadow)
+    {
+        uint at;
+        _ShadowArgs.InterlockedAdd(4, 1, at);
+        _ShadowListOut[at] = slot;
+        _Counters.InterlockedAdd(12, 1);
+        if (!camera) _Counters.InterlockedAdd(8, 1);
+    }
+}

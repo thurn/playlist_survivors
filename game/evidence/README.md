@@ -31,3 +31,5 @@ what was run (the exact commands), the numbers, and what they show.
   game camera's framing, beside the 3D demo's reference look (ps-msz.3.6).
 - [look/feel](look/feel/README.md): the night post's beat feel from the live stream, the fast
   lane and the camera, as fixed-time filmstrips across a beat, an accent and a drop (ps-msz.3.7).
+- [crowd](crowd/README.md): the crystal horde, 300 monsters from a synthetic feed over house-128,
+  their readability and their footplants on the beat frame (ps-msz.3.8).

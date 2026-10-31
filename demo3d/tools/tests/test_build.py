@@ -145,13 +145,25 @@ def test_the_game_bakes_its_arena_when_the_layout_changes(tmp_path: Path) -> Non
     (wt.project / "Content").mkdir(parents=True)
     layout = wt.project / "Content" / "arena-layout.json"
     layout.write_text("{}")
-    assert setup.stale_bakers(wt) == ["Arena"]
+    assert setup.stale_bakers(wt) == ["Arena", "Crowd"]
     wt.baked.mkdir(parents=True)
-    (wt.baked / setup.BAKED_RAN).write_text("Arena\n")
-    assert setup.record_ran(wt) == ["Arena"]
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\n")
+    assert setup.record_ran(wt) == ["Arena", "Crowd"]
     assert setup.baked(wt)
     layout.write_text('{"seed": 8}')
     assert setup.stale_bakers(wt) == ["Arena"]
+
+
+def test_the_game_bakes_its_crowd_when_the_cast_changes(tmp_path: Path) -> None:
+    wt = paths.Worktree(tmp_path, "game")
+    (wt.project / "Content").mkdir(parents=True)
+    cast = wt.project / "Content" / "cast.json"
+    cast.write_text("{}")
+    wt.baked.mkdir(parents=True)
+    (wt.baked / setup.BAKED_RAN).write_text("Arena\nCrowd\n")
+    setup.record_ran(wt)
+    cast.write_text('{"cast": []}')
+    assert setup.stale_bakers(wt) == ["Crowd"]
 
 
 def test_a_bakeall_through_the_tools_records_what_it_ran(monkeypatch, wt) -> None:

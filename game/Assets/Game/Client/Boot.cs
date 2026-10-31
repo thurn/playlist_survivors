@@ -8,7 +8,7 @@ namespace Game.Client
     /// The boot scene's driver. Player flags:
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
-    ///   quitting once the last is kept;
+    ///   quitting once the last is kept, each with its ID render under `--capture-mask`;
     /// - `--seconds N`: quits after N seconds;
     /// - `--dsp-buffer N`: Unity's DSP buffer length in frames, in place of the project's;
     /// - `--spike` or `--spike-out DIR` with `--file &lt;audio or .m3u&gt;`: the sync spike, the music
@@ -30,7 +30,7 @@ namespace Game.Client
             if (Args.Has("--fixed-time")) Time.captureFramerate = FixedFps;
             _seconds = Args.GetFloat("--seconds", 0f);
             var dir = Args.Get("--capture-stills");
-            if (dir != null) _stills = new Stills(_camera, dir, Args.Get("--stills-at", "0"));
+            if (dir != null) _stills = new Stills(_camera, dir, Args.Get("--stills-at", "0"), Args.Has("--capture-mask"));
             int dspBuffer = Args.GetInt("--dsp-buffer", 0);
             if (dspBuffer > 0)
             {

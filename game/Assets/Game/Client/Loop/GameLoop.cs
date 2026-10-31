@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using Game.Client.Arena;
+using Game.Client.Crowd;
 using Game.Client.Look;
 using Game.Client.Music;
 using PS.Game.Sim;
@@ -49,6 +50,7 @@ namespace Game.Client.Loop
         LookPresenter _look;
         ArenaRuntime _arena;
         CrystalStructures _crystal;
+        CrowdView _crowd;
         StreamWriter _out;
         bool _fixed, _done;
         int _entries, _keyChanges;
@@ -104,6 +106,9 @@ namespace Game.Client.Loop
             _look = new LookPresenter(camera, Driver.Sim);
             Driver.Events.Subscribe(_look);
             if (arena) LoadArena(camera);
+            // After the look, whose camera rig it culls with.
+            _crowd = new CrowdView(camera);
+            Driver.Events.Subscribe(_crowd);
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
 
@@ -211,6 +216,7 @@ namespace Game.Client.Loop
             _look?.Dispose();
             _crystal?.Dispose();
             _arena?.Dispose();
+            _crowd?.Dispose();
             _out?.Dispose();
             _out = null;
         }

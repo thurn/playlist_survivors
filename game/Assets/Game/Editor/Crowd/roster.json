@@ -1,0 +1,345 @@
+{
+  "version": 1,
+  "note": "The crowd's nine monster models (unity-game.md, Enemies: the cast) and the clips the crowd plays, from demo3d's roster.json and clip-annotations.json (TD2): idle, walk (a step is half its cycle), attack (the contact lunge, retimed to its impact) and hit. Prefabs and clips by vendor GUID (game/manifest.json); heightM is the model's height at cast scale 1, hoverM a flyer's height over the ground. Annotations: loop, impact and end in seconds, strideM the walk cycle's travel.",
+  "types": [
+    {
+      "id": "bat",
+      "rig": "generic",
+      "heightM": 0.3,
+      "hoverM": 1.3,
+      "prefab": {
+        "guid": "4f9257d4aec394d59be5f34d00fa97e8",
+        "path": "Bats/_Prefabs/Bats LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Fly Idle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Fly Forward",
+          "loop": true,
+          "strideM": 4.424
+        },
+        "attack": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Attack 1",
+          "loop": false,
+          "impact": 1.667,
+          "end": 2.183
+        },
+        "hit": {
+          "guid": "eec0bfdad45f34788ba93083b71f06dc",
+          "clip": "Got Hit",
+          "loop": false,
+          "impact": 0.033,
+          "end": 2.067
+        }
+      }
+    },
+    {
+      "id": "slime",
+      "rig": "generic",
+      "heightM": 0.9,
+      "prefab": {
+        "guid": "fe5eb242a632a47529d5bfc2a09bccda",
+        "path": "Slime/_Prefabs/Slime_LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Idle Cycle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Walk Cycle",
+          "loop": true,
+          "strideM": 0.832
+        },
+        "attack": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Stab Attack",
+          "loop": false,
+          "impact": 0.867,
+          "end": 2.333
+        },
+        "hit": {
+          "guid": "7fec430887d724867a2483827db438a9",
+          "clip": "Been Hit",
+          "loop": false,
+          "impact": 0.183,
+          "end": 1.017
+        }
+      }
+    },
+    {
+      "id": "demon",
+      "rig": "generic",
+      "heightM": 1.9,
+      "prefab": {
+        "guid": "97be6194801464926b2c78020bf4eb32",
+        "path": "Demons/_Prefabs/Demons_LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "idle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "walk",
+          "loop": true,
+          "strideM": 1.477
+        },
+        "attack": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "attack1",
+          "loop": false,
+          "impact": 0.35,
+          "end": 1.233
+        },
+        "hit": {
+          "guid": "bebd353bcd71a47dabd72141665125c1",
+          "clip": "hit reaction",
+          "loop": false,
+          "impact": 0.067,
+          "end": 1.25
+        }
+      }
+    },
+    {
+      "id": "skeleton",
+      "rig": "generic",
+      "heightM": 1.8,
+      "prefab": {
+        "guid": "6e3f218b742294893ad834f61c027945",
+        "path": "Skeleton Warrior/_Prefabs/SkeletonWarriorLP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Idle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Walk",
+          "loop": true,
+          "strideM": 1.224
+        },
+        "attack": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Attack 1",
+          "loop": false,
+          "impact": 0.75,
+          "end": 1.5
+        },
+        "hit": {
+          "guid": "d6688b4afa37b4b15b476037d756982c",
+          "clip": "Got Hit",
+          "loop": false,
+          "impact": 0.067,
+          "end": 1.6
+        }
+      }
+    },
+    {
+      "id": "goblin",
+      "rig": "generic",
+      "heightM": 1.5,
+      "prefab": {
+        "guid": "2d5e83b858ed8424291e890a090902db",
+        "path": "Goblin/_Prefabs/Goblins LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "907a74ad4197d4f268e118a17c5aa22e",
+          "clip": "",
+          "loop": true
+        },
+        "walk": {
+          "guid": "da8c9ca50ca4e4ab5b4f5b27efb389d0",
+          "clip": "",
+          "loop": true,
+          "strideM": 1.015
+        },
+        "attack": {
+          "guid": "737c1f0a1861943258251a79e1729de0",
+          "clip": "",
+          "loop": false,
+          "impact": 1.017,
+          "end": 1.7
+        },
+        "hit": {
+          "guid": "5399d5151847d4e3681776932651afe6",
+          "clip": "",
+          "loop": false,
+          "impact": 0.0,
+          "end": 1.617
+        }
+      }
+    },
+    {
+      "id": "bigork",
+      "rig": "humanoid",
+      "heightM": 2.9,
+      "prefab": {
+        "guid": "0d42bc61d684259409d481c6f5dd5d5c",
+        "path": "Characters/Character_BR_BigOrk_01.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "b94969b4c36c3c94284f72888ad9289d",
+          "clip": "",
+          "loop": true
+        },
+        "walk": {
+          "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+          "clip": "",
+          "loop": true,
+          "strideM": 2.15
+        },
+        "attack": {
+          "guid": "f3800f1bd189abc469fcc7c374371a91",
+          "clip": "",
+          "loop": false,
+          "impact": 1.133,
+          "end": 1.4
+        },
+        "hit": {
+          "guid": "adc1feaf8563f6247989bffd0737b6ad",
+          "clip": "",
+          "loop": false,
+          "impact": 0.0,
+          "end": 0.617
+        }
+      },
+      "weapons": [
+        {
+          "guid": "404a923dea987c14498264bf7d13d458",
+          "path": "Weapons/SM_Wep_Slayer_01.prefab",
+          "bone": "RightHand"
+        }
+      ]
+    },
+    {
+      "id": "troll",
+      "rig": "humanoid",
+      "heightM": 2.9,
+      "prefab": {
+        "guid": "2250a4a4fc528684c85ba955eb992ec6",
+        "path": "Characters/Character_BR_Troll_01.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "b94969b4c36c3c94284f72888ad9289d",
+          "clip": "",
+          "loop": true
+        },
+        "walk": {
+          "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+          "clip": "",
+          "loop": true,
+          "strideM": 2.15
+        },
+        "attack": {
+          "guid": "94770028b07a9ce44b555d283c113a86",
+          "clip": "",
+          "loop": false,
+          "impact": 0.85,
+          "end": 1.05
+        },
+        "hit": {
+          "guid": "202a1ac9f04ce2a419bc2bdd6b148b2a",
+          "clip": "",
+          "loop": false,
+          "impact": 0.0,
+          "end": 0.1
+        }
+      },
+      "weapons": [
+        {
+          "guid": "39e0fb4b243ffb645a622d1945004ee5",
+          "path": "Weapons/SM_Wep_Troll_01.prefab",
+          "bone": "RightHand"
+        }
+      ]
+    },
+    {
+      "id": "mushroom",
+      "rig": "generic",
+      "heightM": 1.3,
+      "prefab": {
+        "guid": "be803e2df48344dafbabe4dce2b5b5c4",
+        "path": "Mushroom Monster/_Prefabs/Mushroom_LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushIdle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushWalk",
+          "loop": true,
+          "strideM": 1.262
+        },
+        "attack": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushAttack01",
+          "loop": false,
+          "impact": 0.683,
+          "end": 1.367
+        },
+        "hit": {
+          "guid": "119e98e7044e846bb86de248d6b7c57d",
+          "clip": "MushHit",
+          "loop": false,
+          "impact": 0.0,
+          "end": 0.983
+        }
+      }
+    },
+    {
+      "id": "dragon",
+      "rig": "generic",
+      "heightM": 4.5,
+      "prefab": {
+        "guid": "a1e28cc5277b74ff0ad8566e5e54bee5",
+        "path": "Dragons/_Prefabs/Dragon_LP.prefab"
+      },
+      "clips": {
+        "idle": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Idle",
+          "loop": true
+        },
+        "walk": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Walk",
+          "loop": true,
+          "strideM": 2.625
+        },
+        "attack": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Attack 1",
+          "loop": false,
+          "impact": 0.45,
+          "end": 1.467
+        },
+        "hit": {
+          "guid": "367e6650649952543b0c5dc153649036",
+          "clip": "Got Hit 1",
+          "loop": false,
+          "impact": 0.0,
+          "end": 0.817
+        }
+      }
+    }
+  ]
+}

@@ -294,8 +294,8 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
     shared choreography package, the vendor manifest and the song map. The game's: its arena's
     code (editor, engine-free layout and runtime), the layout's data and the vendor manifest."""
     if wt.name == "game":
-        game = [f for d in GAME_ARENA_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
-        return game + [wt.project / "Content" / n for n in ("arena-layout.json", "footprints.json")] + [
+        game = [f for d in GAME_ARENA_DIRS + GAME_CROWD_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
+        return game + [wt.project / "Content" / n for n in GAME_ARENA_CONTENT + GAME_CROWD_CONTENT] + [
             wt.project / "manifest.json"]
     files: list[Path] = []
     demo = wt.project / "Assets" / "Demo3D"
@@ -339,11 +339,15 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
 
 
 # The game's bakers (Tasks.BakeAll's list), the same way: the arena (ArenaBaker), which also
-# writes the level data, game/Content/arena.json.
+# writes the level data, game/Content/arena.json, and the crowd (CrowdBaker), whose library holds
+# the cast (cast.json, in enemies.json's role order).
 GAME_ARENA_DIRS = ("Assets/Game/Editor/Arena", "Assets/Game/Arena", "Assets/Game/Client/Arena")
+GAME_ARENA_CONTENT = ("arena-layout.json", "footprints.json")
+GAME_CROWD_DIRS = ("Assets/Game/Editor/Crowd", "Assets/Game/Client/Crowd")
+GAME_CROWD_CONTENT = ("cast.json", "enemies.json")
 GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
-    "Arena": tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + ("game/Content/arena-layout.json",
-                                                              "game/Content/footprints.json"),
+    "Arena": tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + tuple(f"game/Content/{n}" for n in GAME_ARENA_CONTENT),
+    "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
 }
 
 
