@@ -69,6 +69,7 @@ namespace Game.Client.Loop
     /// - `--arsenal "garlic:8,fire-trail:3"`: the hero's starting weapons and ranks, in slot order, in place of the sword;
     ///   `--no-cards`: levels count without opening their cards, so the arsenal stays as given (for weapons' stills);
     /// - `--walk "right@9-11,up@11-12.5"`: keys held over song-time spans (<see cref="ScriptedKeys"/>), for a walking hero in stills;
+    /// - `--bot positioning|idle`: the sweeps' bot plays the run and picks its cards (<see cref="BotInput"/>), for the full run;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
     ///   a `--level` run isn't recorded, since a replay plays the build's own level;
@@ -111,6 +112,7 @@ namespace Game.Client.Loop
         DebugCommands _commands;
         DebugMenu _menu;
         ScriptedKeys _walk;
+        BotInput _bot;
         readonly SliceCounts _counts = new SliceCounts();
         DebugOverlay _overlay;
         LookPresenter _look;
@@ -254,6 +256,8 @@ namespace Game.Client.Loop
             _commands = new DebugCommands(Args.Get("--debug"), content);
             _menu = new DebugMenu(camera, content);
             _walk = new ScriptedKeys(Args.Get("--walk"));
+            if (replayed == null) _bot = BotInput.FromArgs(config.Seed, content);
+            if (_bot != null) Driver.Events.Subscribe(_bot);
 
             var heroBake = Args.Has("--no-hero") ? null : HeroBake.Load();
             Driver.Events.Subscribe(new PlaceholderView(camera, ground: !arena, hero: heroBake == null));
@@ -347,7 +351,7 @@ namespace Game.Client.Loop
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
-                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}" +
+                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, bot {Args.Get("--bot") ?? "none"}" +
                       (level != null && level.Replaced.Count > 0 ? $", --level files {string.Join(", ", level.Replaced)}" : ""));
         }
 
@@ -434,6 +438,7 @@ namespace Game.Client.Loop
                 _menu.Apply(Driver.Sim, _commands);
                 _walk.Apply(Driver.Sim);
                 RunInput();
+                _bot?.Act(Driver.Sim);
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
             var now = new ClockReadings
@@ -502,7 +507,7 @@ namespace Game.Client.Loop
             if (!_interactive)
             {
                 if (state.FrozenFor(FreezeReason.Pause)) _pause.Show(); // a scripted pause's menu, for stills
-                AutoCards.Confirm(Driver.Sim); // nobody to choose: the selected card, once all three are in
+                if (_bot == null) AutoCards.Confirm(Driver.Sim); // nobody to choose: the selected card, once all three are in
                 return;
             }
             if (state.Phase == RunPhase.Waiting)

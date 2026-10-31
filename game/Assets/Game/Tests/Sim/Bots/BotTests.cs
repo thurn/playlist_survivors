@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -22,7 +23,7 @@ namespace PS.Game.Sim.Tests
             var entries = EntryDump.Load(EntryDump.House128, out double duration);
             var config = RunLevel.Config(HordeFixture.Content, HordeFixture.GameArena(), Footprint);
             config.Start = RunStart.AfterClearBeat;
-            return BotRun.Play(config, entries, new SurvivorBot(kind, 1), duration, double.PositiveInfinity, out sim);
+            return BotRun.Play(config, entries, new SurvivorBot(kind, 1, HordeFixture.Content), duration, double.PositiveInfinity, out sim);
         }
 
         [Test]
@@ -54,6 +55,34 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(1); // the next stride step
             bot.Act(sim);
             Assert.AreEqual(Key.Left, Presses(sim).Last().Key, "the other gem, once the first took off");
+        }
+
+        [Test]
+        public void ItStepsOffTheMinotaursMarkBeforeItsSlamLands()
+        {
+            var sim = HordeFixture.Empty();
+            var bot = new SurvivorBot(BotKind.Positioning, 1, HordeFixture.Content);
+            var hero = sim.State.Hero;
+            int minotaur = HordeFixture.Place(sim, "minotaur", hero.X + 15, hero.Y); // out of the crowd's reach
+            // A gem under the hero would keep it standing, as a slam's mark finds it.
+            bot.Observe(new[] { SimEvent.Drop(0, 1, ItemKind.Gem, hero.X, hero.Y, 1) });
+            double t = 0;
+            for (; t < 2; t += 1.0 / 60)
+            {
+                bot.Act(sim);
+                sim.StepTo(t);
+            }
+            Assert.AreEqual(0, Presses(sim).Count, "it stands on the gem");
+            double markX = hero.X, markY = hero.Y, impact = t + 1;
+            bot.Observe(new[] { SimEvent.EnemyAttack(t, minotaur, EnemyAttackKind.Slam, t, impact, 1, 0, markX, markY) });
+            for (; t < impact; t += 1.0 / 60)
+            {
+                bot.Act(sim);
+                sim.StepTo(t);
+            }
+            hero.PositionAt(impact, out double x, out double y);
+            double reach = HordeFixture.Content.Schedule.Signature.SlamRadiusM + Horde.HeroHurtRadiusM;
+            Assert.That(Math.Sqrt((x - markX) * (x - markX) + (y - markY) * (y - markY)), Is.GreaterThan(reach), "off the mark as the slam lands");
         }
 
         [Test]

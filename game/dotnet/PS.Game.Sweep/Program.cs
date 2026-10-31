@@ -64,7 +64,7 @@ static class Program
         config.Start = RunStart.AfterClearBeat;
         var started = Stopwatch.StartNew();
         // A whole run plays to its victory card; a shorter one stops at its minutes of run clock.
-        var report = BotRun.Play(config, entries, new SurvivorBot(kind.Value, seed), duration,
+        var report = BotRun.Play(config, entries, new SurvivorBot(kind.Value, seed, level), duration,
             minutes >= 30 ? double.PositiveInfinity : minutes * 60, out _);
         double wall = started.Elapsed.TotalSeconds;
 

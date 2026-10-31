@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PS.Game.Sim.Content;
 
 namespace PS.Game.Sim.Bots
 {
@@ -41,6 +42,10 @@ namespace PS.Game.Sim.Bots
     ///   step too, <see cref="DecideS"/> before the next one is due (the latest step plus its period),
     ///   so a turn's press takes that step as a player's on the beat does, and the held key strides
     ///   on the steps after, never a second time on one step.
+    /// - <b>Slams</b>: native's bosses don't telegraph. A telegraphed slam (an enemy's
+    ///   <see cref="EnemyAttackKind.Slam"/> attack) whose blow would reach the hero is danger until
+    ///   its impact, the escape pointing away from where it lands: the signature minotaur's lands
+    ///   where the hero stood, so a hero left standing takes every one.
     /// - <b>Cards</b>, as native's: frozen, it lets go of its keys; one beat after the third card has
     ///   flipped in (the reveals' last interval) it presses Left, the first card, and Enter, and
     ///   releases them on the next frame. After a freeze it presses again, held keys being let go.
@@ -56,6 +61,10 @@ namespace PS.Game.Sim.Bots
         public const int RouteTiles = 16;
         /// <summary>How long before the next stride step is due the bot steers: inside a press's stride, 0.11 s.</summary>
         public const double DecideS = 0.08;
+        /// <summary>How far past a slam's radius the bot keeps clear: the hero's own hurt radius and a quarter metre.</summary>
+        public const double SlamSlackM = 10.0 / 27 + 0.25;
+        /// <summary>A slam's push on the escape: an enemy's is at most 1 / (2 <see cref="SoftM"/>), about 0.56, so it outweighs the crowd.</summary>
+        const double SlamWeight = 100;
 
         struct Gem
         {
@@ -63,10 +72,21 @@ namespace PS.Game.Sim.Bots
             public double X, Y;
         }
 
+        /// <summary>A telegraphed slam: who gives it, where it lands and when.</summary>
+        struct Slam
+        {
+            public int Enemy;
+            public double X, Y, Impact;
+        }
+
         const int Side = 2 * RouteTiles + 1;
 
         readonly BotKind kind;
         readonly List<Gem> gems = new List<Gem>();
+        readonly List<Slam> slams = new List<Slam>();
+        // The slams' radii (content's boss moves and signature), NaN without content: slams go unseen.
+        readonly double bossSlamM = double.NaN, signatureSlamM = double.NaN;
+        readonly int signatureRole = -1;
         readonly List<Key> release = new List<Key>();
         // The route's search: each cell's first step from the hero (-1 unseen), and its queue.
         readonly int[] first = new int[Side * Side];
@@ -76,9 +96,17 @@ namespace PS.Game.Sim.Bots
         int picked = -1;
         double steeredFor = double.NaN;
 
-        public SurvivorBot(BotKind kind, ulong seed)
+        /// <summary>A bot of <paramref name="kind"/>; <paramref name="content"/> (the run's) gives the slams' reach.</summary>
+        public SurvivorBot(BotKind kind, ulong seed, GameContent content = null)
         {
             this.kind = kind;
+            var schedule = content?.Schedule;
+            if (schedule?.BossMoves != null) bossSlamM = schedule.BossMoves.SlamRadiusM;
+            if (schedule?.Signature != null)
+            {
+                signatureSlamM = schedule.Signature.SlamRadiusM;
+                signatureRole = content.RoleIndex(schedule.Signature.Role);
+            }
             double angle = new SimRandom(seed ^ 0x5355525649564F52UL).NextDouble() * 2 * Math.PI;
             headingX = Math.Cos(angle);
             headingY = Math.Sin(angle);
@@ -135,21 +163,29 @@ namespace PS.Game.Sim.Bots
         /// <summary>Takes in a frame's events: the gems dropped, merged and taken off.</summary>
         public void Observe(ReadOnlySpan<SimEvent> events)
         {
-            foreach (var e in events)
+            foreach (var e in events) Observe(e);
+        }
+
+        /// <summary>Takes in one event, as the client's presenters do.</summary>
+        public void Observe(in SimEvent e)
+        {
+            if (e.Kind == SimEventKind.Drop && e.AsDrop.ItemKind == ItemKind.Gem)
             {
-                if (e.Kind == SimEventKind.Drop && e.AsDrop.ItemKind == ItemKind.Gem)
-                {
-                    var d = e.AsDrop;
-                    int i = gems.FindIndex(g => g.Id == d.Item);
-                    var gem = new Gem { Id = d.Item, X = d.X, Y = d.Y };
-                    if (i >= 0) gems[i] = gem;
-                    else gems.Add(gem);
-                }
-                else if (e.Kind == SimEventKind.GemFlight)
-                {
-                    int id = e.AsGemFlight.Gem;
-                    gems.RemoveAll(g => g.Id == id);
-                }
+                var d = e.AsDrop;
+                int i = gems.FindIndex(g => g.Id == d.Item);
+                var gem = new Gem { Id = d.Item, X = d.X, Y = d.Y };
+                if (i >= 0) gems[i] = gem;
+                else gems.Add(gem);
+            }
+            else if (e.Kind == SimEventKind.GemFlight)
+            {
+                int id = e.AsGemFlight.Gem;
+                gems.RemoveAll(g => g.Id == id);
+            }
+            else if (e.Kind == SimEventKind.Attack && !e.AsAttack.ByHero && e.AsAttack.EnemyKind == EnemyAttackKind.Slam)
+            {
+                var a = e.AsAttack;
+                slams.Add(new Slam { Enemy = a.Enemy, X = a.SlamX, Y = a.SlamY, Impact = a.Impact });
             }
         }
 
@@ -173,6 +209,22 @@ namespace PS.Game.Sim.Bots
             gem = -1;
             double x = 0, y = 0, weight = 0;
             bool danger = false;
+            for (int i = slams.Count - 1; i >= 0; i--)
+                if (slams[i].Impact < sim.Now) slams.RemoveAt(i);
+            foreach (var slam in slams)
+            {
+                var enemies = state.Enemies;
+                double radius = slam.Enemy < enemies.Length && enemies[slam.Enemy].Role == signatureRole ? signatureSlamM : bossSlamM;
+                double dx = slam.X - hx, dy = slam.Y - hy;
+                if (!(Math.Sqrt(dx * dx + dy * dy) <= radius + SlamSlackM)) continue;
+                danger = true;
+                // Away from where it lands, outweighing the crowd; from its very centre, the crowd's or the heading's way.
+                if (Unit(dx, dy, out double ux, out double uy))
+                {
+                    x -= ux * SlamWeight;
+                    y -= uy * SlamWeight;
+                }
+            }
             foreach (var enemy in state.Enemies)
             {
                 if (!enemy.Alive) continue;
