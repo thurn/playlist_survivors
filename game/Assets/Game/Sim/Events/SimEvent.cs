@@ -7,8 +7,8 @@ namespace PS.Game.Sim
     /// stride steps, beat-state changes, the hero's steps and attacks, the enemies' steps, knocks,
     /// lunges and spawns, hits, deaths, cleaves and drops, structure glints, breaks and regrowths,
     /// zone changes, freezes, the run's start, its finale and its end, gems' flights and pickups,
-    /// level-ups and their cards, the music-driven events and the enemies that leave with them, and the
-    /// tiles a trail weapon burns; the
+    /// level-ups and their cards, the music-driven events and the enemies that leave with them, the
+    /// tiles a trail weapon burns, and the weapons' projectiles and orbits (ProjectileEvents.cs); the
     /// rest are declared, with their fields,
     /// for the rule beads to emit and the client to build against.
     /// </summary>
@@ -44,6 +44,8 @@ namespace PS.Game.Sim
         SetPiece,
         Leave,
         Burn,
+        Projectile,
+        Orbit,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -65,7 +67,7 @@ namespace PS.Game.Sim
     /// <see cref="Kind"/>, as each factory documents, and is read through the kind's view. Positions
     /// are ground-plane metres (x, y), ids index the sim's dense arrays, and -1 means none.
     /// </summary>
-    public struct SimEvent
+    public partial struct SimEvent
     {
         public SimEventKind Kind;
         public double T;
