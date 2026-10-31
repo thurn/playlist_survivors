@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../PS.Game.Sim/PS.Game.Sim.csproj" />
+    <ProjectReference Include="../PS.Game.Arena/PS.Game.Arena.csproj" />
   </ItemGroup>
 </Project>

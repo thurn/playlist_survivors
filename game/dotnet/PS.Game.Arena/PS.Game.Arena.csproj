@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The arena's Unity-free layout and level export, as Unity compiles them (the PS.Game.Arena assembly). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>PS.Game.Arena</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Game/Arena/**/*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../PS.Game.Sim/PS.Game.Sim.csproj" />
+  </ItemGroup>
+</Project>

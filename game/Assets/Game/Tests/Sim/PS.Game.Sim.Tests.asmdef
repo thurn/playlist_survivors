@@ -2,6 +2,7 @@
     "name": "PS.Game.Sim.Tests",
     "rootNamespace": "PS.Game.Sim.Tests",
     "references": [
+        "PS.Game.Arena",
         "PS.Game.Sim",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

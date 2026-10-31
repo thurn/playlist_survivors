@@ -1,0 +1,16 @@
+{
+    "name": "PS.Game.Arena",
+    "rootNamespace": "PS.Game.Arena",
+    "references": [
+        "PS.Game.Sim"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,7 +1,8 @@
 # The game's content
 
 The run's data, as JSON the game owns: native's 30-minute run converted once into metres
-(docs/design/unity-game.md, [Content Data and Units](../../docs/design/unity-game.md#content-data-and-units)).
+(docs/design/unity-game.md, [Content Data and Units](../../docs/design/unity-game.md#content-data-and-units)),
+and the arena ([The Arena](../../docs/design/unity-game.md#the-arena)).
 The sim loads it with `GameContent.Load` (game/Assets/Game/Sim/Content/), and its tests read the
 same files under .NET and Unity.
 
@@ -14,6 +15,9 @@ same files under .NET and Unity.
 | offers.json | The scripted offer table (levels 2 to 70), its fallback and the "any" scan order |
 | progression.json | Slots, the hero's stats and caps, the experience curve, gems and chests |
 | schedule.json | The run: its minutes (spawns, bosses, swarms, treasure), set pieces, the signature minotaur, the finale and zones |
+| arena-layout.json | The arena's layout (demo3d's format): areas, structures, scatter, lighting, the zones' palettes, the stills' shots |
+| footprints.json | demo3d's footprint measurements of the kit pieces game/manifest.json syncs, which the layout places |
+| arena.json | The level data's arena part (the sim's `ArenaData`): blocked tiles, structure sites, the hero's start. The arena's bake writes it from the two above; don't edit it |
 
 ## Units
 
