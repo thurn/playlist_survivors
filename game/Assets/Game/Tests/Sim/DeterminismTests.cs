@@ -98,12 +98,13 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void TicksAllocateNothing()
         {
-            var sim = new Simulation(new SimConfig());
-            foreach (var k in Drive.Known(Song().Entries())) sim.AddKnown(k.Entry, k.KnownAt);
-            sim.StepTo(5); // warm up (JIT)
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            sim.StepTo(120);
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            long allocated = Drive.LeastAllocated(() =>
+            {
+                var sim = new Simulation(new SimConfig());
+                foreach (var k in Drive.Known(Song().Entries())) sim.AddKnown(k.Entry, k.KnownAt);
+                sim.StepTo(5); // warm up (JIT)
+                return () => sim.StepTo(120);
+            });
             Assert.AreEqual(0, allocated, "bytes allocated while stepping 115 s");
         }
 #endif

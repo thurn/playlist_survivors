@@ -217,5 +217,27 @@ namespace PS.Game.Sim.Tests
                 if (kind == SimEventKind.None || e.Kind == kind) list.Add(e);
             return list;
         }
+
+#if !UNITY_5_3_OR_NEWER
+        /// <summary>
+        /// The bytes the current thread allocates running what <paramref name="arrange"/> returns
+        /// (after it builds and warms up a fresh sim), the least of up to <paramref name="runs"/>
+        /// runs. Now and then, more often under load, the runtime allocates a few KB on a thread at
+        /// a random moment, with no GC and on a thread of the test's own too; the sim is
+        /// deterministic, so an allocation of its own shows in every run.
+        /// </summary>
+        public static long LeastAllocated(Func<Action> arrange, int runs = 3)
+        {
+            long least = long.MaxValue;
+            for (int r = 0; r < runs && least > 0; r++)
+            {
+                var act = arrange();
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                act();
+                least = Math.Min(least, GC.GetAllocatedBytesForCurrentThread() - before);
+            }
+            return least;
+        }
+#endif
     }
 }

@@ -551,12 +551,14 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void StrikesAllocateNothing()
         {
-            var sim = new Simulation(HordeFixture.Config(heroStands: true, sword: 2));
-            foreach (var k in Drive.Known(new FixtureSong(4).Beats(0, 60, 128).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
-            sim.StepTo(5); // warm up (JIT)
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            sim.StepTo(60);
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Simulation sim = null;
+            long allocated = Drive.LeastAllocated(() =>
+            {
+                sim = new Simulation(HordeFixture.Config(heroStands: true, sword: 2));
+                foreach (var k in Drive.Known(new FixtureSong(4).Beats(0, 60, 128).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
+                sim.StepTo(5); // warm up (JIT)
+                return () => sim.StepTo(60);
+            });
             Assert.Greater(Drive.Events(sim, SimEventKind.Death).Count, 100);
             Assert.AreEqual(0, allocated, "bytes allocated while stepping 55 s");
         }

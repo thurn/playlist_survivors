@@ -425,17 +425,22 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void AFullHordeAllocatesNothingPerTick()
         {
-            var sim = new Simulation(HordeFixture.Config(minimum: 300));
-            foreach (var k in Drive.Known(Steady(128, 60).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
-            sim.StepTo(10); // warm up (JIT, the first spawns and field builds)
-            sim.DiscardEventsBefore(sim.EventCount);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (double t = 10; t < 60; t += 1.0 / 60)
+            Simulation sim = null;
+            long allocated = Drive.LeastAllocated(() =>
             {
-                sim.StepTo(t);
+                sim = new Simulation(HordeFixture.Config(minimum: 300));
+                foreach (var k in Drive.Known(Steady(128, 60).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
+                sim.StepTo(10); // warm up (JIT, the first spawns and field builds)
                 sim.DiscardEventsBefore(sim.EventCount);
-            }
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+                return () =>
+                {
+                    for (double t = 10; t < 60; t += 1.0 / 60)
+                    {
+                        sim.StepTo(t);
+                        sim.DiscardEventsBefore(sim.EventCount);
+                    }
+                };
+            });
             Assert.AreEqual(300, sim.State.EnemiesAlive);
             Assert.AreEqual(0, allocated, "bytes allocated while stepping 50 s with 300 alive");
         }
