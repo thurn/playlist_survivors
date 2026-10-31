@@ -46,7 +46,9 @@ namespace Demo3D.Tests
             Assert.That(tuned.Post.Value.exposure, Is.EqualTo(0.8f));
             Assert.That(tuned.Post.Value.neutral, Is.True);
             Assert.That(tuned.Post.Value.bloom, Is.EqualTo(plain.Post.Value.bloom), "untuned values stay");
-            Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--monster-style", "fire", "--style-tune", "glow=2" }));
+            Assert.That(plain.Glow, Is.EqualTo(0f), "no inner glow unless tuned");
+            Assert.That(MonsterStyle.FromArgs(new[] { "--monster-style", "crystal", "--style-tune", "glow=1.5" }).Glow, Is.EqualTo(1.5f));
+            Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--monster-style", "fire", "--style-tune", "shine=2" }));
             Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--monster-style", "fire", "--style-tune", "gain=x" }));
             Assert.Throws<ArgumentException>(() => MonsterStyle.FromArgs(new[] { "--style-tune", "gain=0.5" }), "baseline has nothing to tune");
         }

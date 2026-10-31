@@ -94,7 +94,8 @@ namespace Demo3D.Tests
             Assert.That(tuned.PostOver(PostLook.Stylized()).Value.exposure, Is.EqualTo(0.4f));
             Assert.That(horde.Gain("demon"), Is.EqualTo(1f), "the horde keeps its values");
             Assert.Throws<ArgumentException>(() => StructureStyle.FromArgs(new[] { "--structure-tune", "gain=0.3" }, horde), "baseline has nothing to tune");
-            Assert.Throws<ArgumentException>(() => StructureStyle.FromArgs(new[] { "--structure-style", "fire", "--structure-tune", "glow=2" }, horde));
+            Assert.That(StructureStyle.FromArgs(new[] { "--structure-style", "crystal", "--structure-tune", "glow=0.6" }, horde).Glow, Is.EqualTo(0.6f));
+            Assert.Throws<ArgumentException>(() => StructureStyle.FromArgs(new[] { "--structure-style", "fire", "--structure-tune", "shine=2" }, horde));
         }
 
         [Test]

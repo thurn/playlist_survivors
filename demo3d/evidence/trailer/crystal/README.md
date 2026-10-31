@@ -31,7 +31,7 @@ Release -- trailer --name crystal --checks`):
 shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness  blocks  lane
    1  neon                 - / 3           1.21          1.0, 1                 100 %     -         0       -   103
    2  crypt              504 / 520         1.05         55.8, 195               100 %   2.4         0    81 %    88
-   3  lava               436 / 440         1.29         23.6, 70                100 %   2.4         0    79 %    79
+   3  lava               420 / 440         1.29         23.3, 69                100 %   2.4         0    79 %    83
    4  forest             769 / 760         1.05         71.6, 201               100 %   2.3         0    75 %   147
    5  neon               394 / 420         1.29         45.8, 97                100 %   2.5         0    87 %    91
    6  crypt              436 / 450         1.29         42.5, 91                100 %   2.4         0    68 %   107
@@ -51,3 +51,8 @@ Tuning notes:
   south side starved its first bar: the glade there is too small for the
   wave. So the drop's breaks moved to the crypt's courtyard, on the action
   cut's open-field side.
+- Shot 3 (lava) runs three streams, not four (ps-vr7): with four, its last
+  bar thinned to 372 against 440 under Unity's runtime (the EditMode test)
+  while `dotnet test` passed. `still-020.000` is retaken with three; the
+  first capture of the cut (captures/trailer-crystal-cut.mp4, 11:54 on
+  2026-10-31) predates it.

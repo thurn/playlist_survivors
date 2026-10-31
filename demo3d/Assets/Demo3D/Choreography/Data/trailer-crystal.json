@@ -122,7 +122,7 @@
       },
       "formation": {
         "kind": "converge",
-        "streams": 4,
+        "streams": 3,
         "onScreen": 440,
         "mix": {
           "skeleton": 4,

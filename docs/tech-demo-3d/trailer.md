@@ -1398,7 +1398,7 @@ just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
 |---|---|---|---|---|---|
 | 1 | 0.000–2.481 | 79–80 | neon | Duel: 3 elites | |
 | 2 | 2.481–14.868 | 81–88 | crypt | Charge | courtyard east-south (81.3), east-north (82.3) |
-| 3 | 14.868–27.255 | 89–96 | lava | Converge, 4 streams | |
+| 3 | 14.868–27.255 | 89–96 | lava | Converge, 3 streams | |
 | 4 | 27.255–39.642 | 97–104 | forest | Vortex | |
 | 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams | courtyard west-north (106.1), north-east (108.3) |
 | 6 | 45.836–48.932 | 109–110 | crypt | Vortex | |
@@ -1467,7 +1467,11 @@ name, or an area's part such as `courtyard/east-south` or `ruins-gate/1`.
 
 **Outcome.** Every shot passes every check (`trailer --name crystal
 --checks`, and `TrailerTests.TheCrystalCutPassesTheTrailersChecksAndBreaksItsWalls`),
-and the action cut's checks are unchanged. Stills:
+and the action cut's checks are unchanged. The test must pass under both
+`dotnet test` and Unity's EditMode run (`demo3d test`): their floating point
+differs, so a shot's density can pass on one and fail on the other. Shot 3's
+lava converge is the fragile one: with four streams its last bar thinned to
+372 against 440 under Unity only, so it runs three (ps-vr7). Stills:
 [evidence/trailer/crystal](../../demo3d/evidence/trailer/crystal/README.md).
 
 ## Command Line
