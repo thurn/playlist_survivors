@@ -74,8 +74,8 @@ namespace Game.Client.Look
         {
             _moments.OnEvent(e);
             if (e.Kind != SimEventKind.ZoneChange || Zones == null) return;
-            // Bars of four beats at the latest lane's period: the ease's length needn't be exact.
-            _post.SetZone(Zones[e.AsZoneChange.Zone], e.T, 4 * Lane.Period);
+            // The sim's bars of two beats, as the camera's ease, at the latest lane's period.
+            _post.SetZone(Zones[e.AsZoneChange.Zone], e.T, CameraRig.BeatsPerBar * Lane.Period);
         }
 
         public void Present(in PresentFrame frame)
