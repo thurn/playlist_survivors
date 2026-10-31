@@ -61,8 +61,12 @@ namespace Game.Client.Loop
     {
         /// <summary>The frontier it was taken at.</summary>
         public double Now;
+        public RunPhase Phase;
+        public RunEnd End;
         public double RunClock;
         public bool Frozen;
+        /// <summary>The freezes holding the world, a bit per <see cref="FreezeReason"/> (<see cref="SimState.FreezeReasons"/>).</summary>
+        public int FreezeReasons;
         public Reliability Beat;
         public int LastBeat, Bar;
         public bool Downbeat;
@@ -74,11 +78,16 @@ namespace Game.Client.Loop
         public double ExperienceFill;
         public Offer Offer;
 
+        public bool FrozenFor(FreezeReason reason) => (FreezeReasons & (1 << (int)reason)) != 0;
+
         public static SimSnapshot Of(SimState s) => new SimSnapshot
         {
             Now = s.Now,
+            Phase = s.Phase,
+            End = s.End,
             RunClock = s.RunClock,
             Frozen = s.Frozen,
+            FreezeReasons = s.FreezeReasons,
             Beat = s.Beat,
             LastBeat = s.LastBeat,
             Bar = s.Bar,

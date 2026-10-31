@@ -1,0 +1,767 @@
+/* The run's HUD in faceted crystal: dark glass plates edged with hairlines, lit along their top
+   facet and shaded along the bottom one; rotated squares for gems; letter-spaced capitals. Native's
+   colours: mint experience, red health, the item colours (HudText.Colour). Sizes are native's HUD
+   units doubled (a 1920 x 1080 panel). */
+
+.hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+Label {
+    margin: 0;
+    padding: 0;
+    color: rgb(225, 235, 250);
+}
+
+/* The play HUD's words keep a soft shadow, so they read on the bright zones (blossom, snow) too. */
+#play Label {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+    -unity-text-outline-width: 0.6px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.5);
+}
+
+/* A bar's glass: a dark plate, its top facet lit and its bottom one shaded. */
+.facet-bar {
+    position: absolute;
+    background-color: rgba(4, 6, 14, 0.62);
+    border-width: 1px;
+    border-top-color: rgba(200, 230, 255, 0.34);
+    border-left-color: rgba(160, 200, 240, 0.18);
+    border-right-color: rgba(160, 200, 240, 0.18);
+    border-bottom-color: rgba(0, 0, 0, 0.6);
+    padding: 2px;
+}
+
+.bar__shine {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 35%;
+    background-color: rgba(255, 255, 255, 0.38);
+}
+
+/* ---------------------------------------------------------------- experience and level */
+
+.xp {
+    left: 440px;
+    top: 12px;
+    width: 1040px;
+    height: 16px;
+}
+
+.xp__fill {
+    height: 100%;
+    width: 0;
+    background-color: rgb(96, 255, 192);
+}
+
+.level {
+    position: absolute;
+    left: 300px;
+    top: 8px;
+    width: 124px;
+    font-size: 21px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    -unity-text-align: middle-right;
+    color: rgb(96, 255, 192);
+}
+
+/* ---------------------------------------------------------------- health and the source tag */
+
+.health {
+    position: absolute;
+    left: 24px;
+    top: 24px;
+    width: 220px;
+}
+
+.health__label {
+    font-size: 17px;
+    -unity-font-style: bold;
+    letter-spacing: 4px;
+    color: rgb(255, 128, 144);
+    height: 22px;
+}
+
+.health__bar {
+    position: relative;
+    width: 180px;
+    height: 16px;
+}
+
+.health__fill {
+    height: 100%;
+    width: 100%;
+    background-color: rgb(255, 64, 80);
+}
+
+/* The low-health beat's glow behind the bar (its opacity set in code). */
+.health__pulse {
+    position: absolute;
+    left: -6px;
+    top: 16px;
+    width: 192px;
+    height: 28px;
+    background-color: rgb(255, 32, 72);
+    opacity: 0;
+}
+
+.source__delay {
+    margin-top: 10px;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: rgb(159, 230, 255);
+}
+
+.source__tag {
+    margin-top: 3px;
+    font-size: 15px;
+    color: rgba(190, 210, 235, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 220px;
+}
+
+/* ---------------------------------------------------------------- the arsenal's slots */
+
+.slots {
+    position: absolute;
+    left: 260px;
+    flex-direction: row;
+}
+
+.slots--weapons {
+    top: 50px;
+}
+
+.slots--passives {
+    top: 110px;
+}
+
+.slot {
+    width: 48px;
+    height: 52px;
+    margin-right: 8px;
+    align-items: center;
+}
+
+.slot--filled {
+    background-color: rgba(3, 5, 12, 0.66);
+    border-width: 1px;
+    border-top-color: rgba(220, 240, 255, 0.3);
+    border-left-color: rgba(160, 200, 240, 0.14);
+    border-right-color: rgba(160, 200, 240, 0.14);
+    border-bottom-color: rgba(0, 0, 0, 0.6);
+}
+
+/* An empty slot recedes to a dot (native's), so twelve boxes never dominate the opening. */
+.slot__dot {
+    width: 6px;
+    height: 6px;
+    margin-top: 22px;
+    rotate: 45deg;
+    background-color: rgba(76, 102, 128, 0.22);
+}
+
+.slot__gem {
+    width: 24px;
+    height: 24px;
+    margin-top: 6px;
+    rotate: 45deg;
+    border-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.85);
+    border-left-color: rgba(255, 255, 255, 0.55);
+    border-right-color: rgba(0, 0, 0, 0.35);
+    border-bottom-color: rgba(0, 0, 0, 0.5);
+}
+
+.slot__mark {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 8px;
+    height: 20px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(8, 10, 20);
+}
+
+.slot__pips {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 3px;
+    height: 4px;
+    flex-direction: row;
+}
+
+.slot__pip {
+    flex-grow: 1;
+    margin: 0 1px;
+    background-color: rgb(38, 48, 61);
+}
+
+/* ---------------------------------------------------------------- kills and the run clock */
+
+.kills {
+    position: absolute;
+    right: 24px;
+    top: 24px;
+    align-items: flex-end;
+}
+
+.kills__label {
+    font-size: 17px;
+    letter-spacing: 4px;
+    color: rgb(176, 176, 192);
+}
+
+.kills__count {
+    font-size: 36px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-align: upper-right;
+}
+
+.timer {
+    position: absolute;
+    left: 40px;
+    bottom: 22px;
+    font-size: 24px;
+    letter-spacing: 3px;
+    color: rgb(200, 205, 215);
+}
+
+/* ---------------------------------------------------------------- the beat track */
+
+.track {
+    position: absolute;
+    left: 560px;
+    width: 800px;
+    bottom: 36px;
+    height: 36px;
+}
+
+.track__rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(2, 3, 9, 0.5);
+    border-width: 1px;
+    border-top-color: rgba(190, 220, 255, 0.2);
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0.5);
+}
+
+.track__marks {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+/* A beat on its way: a thin crystal shard, its left set in code. */
+.mark {
+    position: absolute;
+    top: 8px;
+    width: 5px;
+    height: 20px;
+    margin-left: -2.5px;
+    background-color: rgb(255, 255, 255);
+}
+
+/* A downbeat's shard: taller and warm, as the gem's downbeat ring. */
+.mark--down {
+    top: 3px;
+    height: 30px;
+    width: 6px;
+    margin-left: -3px;
+    background-color: rgb(255, 232, 176);
+}
+
+.heart {
+    position: absolute;
+    left: 386px;
+    top: 4px;
+    width: 28px;
+    height: 28px;
+}
+
+.heart__lobe {
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgb(255, 48, 96);
+    border-top-color: rgba(255, 210, 225, 0.9);
+    border-top-width: 2px;
+}
+
+.heart__lobe--left {
+    left: 0;
+}
+
+.heart__lobe--right {
+    left: 12px;
+}
+
+.heart__point {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    width: 18px;
+    height: 18px;
+    rotate: 45deg;
+    background-color: rgb(255, 48, 96);
+}
+
+.heart--waiting .heart__lobe,
+.heart--waiting .heart__point {
+    background-color: rgb(136, 144, 168);
+    border-top-color: rgba(200, 205, 220, 0.6);
+}
+
+.track__waiting {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -30px;
+    font-size: 16px;
+    letter-spacing: 5px;
+    -unity-text-align: middle-center;
+    color: rgb(136, 144, 168);
+}
+
+.prompt {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 62%;
+    font-size: 26px;
+    letter-spacing: 8px;
+    -unity-text-align: middle-center;
+    color: rgba(235, 245, 255, 0.9);
+}
+
+/* ---------------------------------------------------------------- damage numbers */
+
+.number {
+    position: absolute;
+    translate: -50% -50%;
+    font-size: 30px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    -unity-text-outline-width: 1.5px;
+    -unity-text-outline-color: rgba(4, 4, 12, 0.85);
+}
+
+.number--heavy {
+    font-size: 42px;
+    color: rgb(255, 207, 56);
+}
+
+/* ---------------------------------------------------------------- banners */
+
+.banner {
+    position: absolute;
+    left: 580px;
+    width: 760px;
+    top: 35%;
+    height: 80px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(3, 4, 10, 0.72);
+    border-width: 1px;
+    border-top-color: rgba(220, 240, 255, 0.55);
+    border-bottom-color: rgba(0, 0, 0, 0.7);
+    border-left-color: rgba(160, 200, 240, 0.2);
+    border-right-color: rgba(160, 200, 240, 0.2);
+    display: none;
+}
+
+.banner__text {
+    font-size: 40px;
+    -unity-font-style: bold;
+    letter-spacing: 14px;
+    color: rgb(235, 242, 255);
+    margin: 0 28px;
+}
+
+.banner__gem {
+    width: 14px;
+    height: 14px;
+    rotate: 45deg;
+    border-width: 1px;
+    border-color: rgba(200, 225, 255, 0.7);
+}
+
+/* ---------------------------------------------------------------- the level-up and chest cards */
+
+.veil {
+    background-color: rgba(1, 2, 6, 0.52);
+    align-items: center;
+    display: none;
+}
+
+.cards__heading {
+    margin-top: 220px;
+    height: 64px;
+    font-size: 50px;
+    -unity-font-style: bold;
+    letter-spacing: 16px;
+    -unity-text-align: middle-center;
+    color: rgb(166, 255, 224);
+}
+
+.cards {
+    margin-top: 20px;
+    height: 460px;
+    width: 1560px;
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* A card's slot in the row; its face or back scales and turns in code as it flips. */
+.card {
+    width: 472px;
+    height: 404px;
+    margin: 0 24px;
+}
+
+.card__face,
+.card__back {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+}
+
+.card__face {
+    background-color: rgba(5, 9, 19, 0.97);
+    border-width: 3px;
+    border-top-color: rgba(120, 155, 190, 1);
+    border-left-color: rgba(70, 95, 125, 1);
+    border-right-color: rgba(45, 62, 84, 1);
+    border-bottom-color: rgba(30, 42, 58, 1);
+    padding: 34px 20px 20px 20px;
+}
+
+.card--selected .card__face {
+    border-color: rgb(90, 255, 205);
+    background-color: rgba(10, 26, 34, 0.97);
+}
+
+/* The back: a dark crystal plate with a big hairline facet. */
+.card__back {
+    background-color: rgb(33, 58, 76);
+    border-width: 3px;
+    border-top-color: rgb(150, 205, 235);
+    border-bottom-color: rgb(14, 26, 36);
+    border-left-color: rgb(70, 115, 145);
+    border-right-color: rgb(30, 52, 68);
+    justify-content: center;
+}
+
+.card__back-facet {
+    width: 160px;
+    height: 160px;
+    rotate: 45deg;
+    border-width: 2px;
+    border-color: rgba(190, 235, 255, 0.45);
+}
+
+/* The item's gem: a big rotated square in its colour, its mark inside. */
+.card__gem {
+    width: 92px;
+    height: 92px;
+    rotate: 45deg;
+    margin: 20px 0 36px 0;
+    border-width: 2px;
+    border-top-color: rgba(255, 255, 255, 0.9);
+    border-left-color: rgba(255, 255, 255, 0.6);
+    border-right-color: rgba(0, 0, 0, 0.35);
+    border-bottom-color: rgba(0, 0, 0, 0.55);
+}
+
+.card__gem-glow {
+    position: absolute;
+    top: 30px;
+    width: 140px;
+    height: 140px;
+    border-radius: 70px;
+    opacity: 0.16;
+}
+
+/* A gem's inner facet: a smaller, paler square, so the stone reads cut rather than flat. */
+.gem__core {
+    position: absolute;
+    left: 28%;
+    top: 28%;
+    width: 44%;
+    height: 44%;
+    background-color: rgba(255, 255, 255, 0.38);
+}
+
+.card__mark {
+    position: absolute;
+    top: 74px;
+    height: 52px;
+    left: 0;
+    right: 0;
+    font-size: 30px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(8, 10, 20);
+}
+
+.card__name {
+    font-size: 34px;
+    margin-top: 6px;
+    -unity-font-style: bold;
+    letter-spacing: 3px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    white-space: normal;
+    margin-bottom: 14px;
+}
+
+.card__rank {
+    font-size: 28px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+}
+
+.card__text {
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: rgb(215, 228, 255);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.card__pair {
+    position: absolute;
+    bottom: 22px;
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: rgb(255, 216, 102);
+}
+
+.card__key {
+    position: absolute;
+    bottom: 22px;
+    right: 26px;
+    font-size: 20px;
+    color: rgba(160, 180, 210, 0.5);
+}
+
+.card--selected .card__key {
+    color: rgb(166, 255, 224);
+}
+
+.cards__hint {
+    margin-top: 24px;
+    font-size: 19px;
+    letter-spacing: 3px;
+    color: rgba(215, 228, 255, 0.9);
+    -unity-text-align: middle-center;
+}
+
+.veil--chest {
+    background-color: rgba(2, 1, 5, 0.58);
+}
+
+.chest__heading {
+    margin-top: 250px;
+    height: 64px;
+    font-size: 50px;
+    -unity-font-style: bold;
+    letter-spacing: 16px;
+    -unity-text-align: middle-center;
+    color: rgb(255, 204, 77);
+}
+
+.chest__items {
+    margin-top: 40px;
+    height: 330px;
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* A reward: a gold-lit gem that spins through the arsenal until it lands. */
+.reward {
+    width: 252px;
+    align-items: center;
+}
+
+.reward__glow {
+    position: absolute;
+    top: 26px;
+    width: 160px;
+    height: 160px;
+    border-radius: 80px;
+    background-color: rgb(255, 153, 31);
+    opacity: 0.16;
+}
+
+.reward__gem {
+    margin-top: 54px;
+    width: 104px;
+    height: 104px;
+    rotate: 45deg;
+    border-width: 3px;
+    border-top-color: rgb(255, 245, 210);
+    border-left-color: rgb(255, 225, 150);
+    border-right-color: rgb(120, 70, 20);
+    border-bottom-color: rgb(90, 50, 10);
+}
+
+.reward__mark {
+    position: absolute;
+    top: 84px;
+    left: 0;
+    right: 0;
+    height: 44px;
+    font-size: 30px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(20, 12, 4);
+}
+
+.reward__name {
+    margin-top: 60px;
+    font-size: 22px;
+    -unity-font-style: bold;
+    letter-spacing: 2px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.reward__rank {
+    margin-top: 6px;
+    font-size: 18px;
+    color: rgb(255, 216, 140);
+}
+
+/* ---------------------------------------------------------------- the end card */
+
+.veil--end {
+    background-color: rgba(0, 0, 3, 0.72);
+    justify-content: center;
+}
+
+.end {
+    width: 1640px;
+    background-color: rgba(6, 9, 17, 0.96);
+    border-width: 1px;
+    border-top-color: rgba(200, 225, 255, 0.4);
+    border-left-color: rgba(120, 160, 200, 0.18);
+    border-right-color: rgba(120, 160, 200, 0.18);
+    border-bottom-color: rgba(0, 0, 0, 0.8);
+    padding: 0 48px 44px 48px;
+}
+
+.end__edge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+}
+
+.end__title {
+    margin-top: 34px;
+    font-size: 78px;
+    -unity-font-style: bold;
+    letter-spacing: 22px;
+    -unity-text-align: middle-center;
+}
+
+.end__stats {
+    margin-top: 18px;
+    font-size: 30px;
+    letter-spacing: 6px;
+    -unity-text-align: middle-center;
+    color: rgb(240, 242, 255);
+}
+
+.end__row {
+    flex-direction: row;
+    align-items: center;
+    height: 54px;
+    padding: 0 28px;
+}
+
+.end__row--head {
+    margin-top: 40px;
+    height: 40px;
+}
+
+.end__row--head .end__cell {
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: rgb(140, 178, 216);
+}
+
+.end__row--even {
+    background-color: rgba(26, 41, 59, 0.35);
+}
+
+.end__row--odd {
+    background-color: rgba(26, 41, 59, 0.12);
+}
+
+.end__cell {
+    width: 300px;
+    font-size: 24px;
+    -unity-text-align: middle-right;
+    color: rgb(242, 245, 255);
+}
+
+.end__cell--name {
+    flex-grow: 1;
+    -unity-text-align: middle-left;
+    letter-spacing: 2px;
+}
+
+.end__gem {
+    width: 18px;
+    height: 18px;
+    rotate: 45deg;
+    margin-right: 22px;
+}
+
+/* A weapon's share of the most damage, under its name. */
+.end__share {
+    position: absolute;
+    left: 68px;
+    bottom: 6px;
+    height: 2px;
+    opacity: 0.6;
+}

@@ -1,0 +1,82 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The run's HUD (Client/Hud/HudPresenter.cs): native's layout on a 1920 x 1080 panel, its HUD
+         units doubled. Layers bottom to top: the play HUD, damage numbers, the banner, the level-up
+         and chest cards (whose veil dims the HUD), the end card. Slots, beat marks, numbers and cards
+         are added in code; positions that follow the music or the world are set in code too. -->
+    <Style src="Hud.uss" />
+    <ui:VisualElement name="hud-root" class="hud" picking-mode="Ignore">
+        <ui:VisualElement name="play" class="layer" picking-mode="Ignore">
+            <!-- Experience along the top, the level beside it. -->
+            <ui:Label name="level" text="LV 1" class="level" />
+            <ui:VisualElement class="xp facet-bar">
+                <ui:VisualElement name="xp-fill" class="xp__fill">
+                    <ui:VisualElement class="bar__shine" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <!-- Health, top left; under it the source tag. -->
+            <ui:VisualElement class="health">
+                <ui:Label text="HP" class="health__label" />
+                <ui:VisualElement name="hp-pulse" class="health__pulse" />
+                <ui:VisualElement class="health__bar facet-bar">
+                    <ui:VisualElement name="hp-fill" class="health__fill">
+                        <ui:VisualElement class="bar__shine" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label name="delay" class="source__delay" />
+                <ui:Label name="source" class="source__tag" />
+            </ui:VisualElement>
+            <!-- The arsenal: six weapon slots over six passive slots. -->
+            <ui:VisualElement name="weapons" class="slots slots--weapons" />
+            <ui:VisualElement name="passives" class="slots slots--passives" />
+            <!-- Kills, top right. -->
+            <ui:VisualElement class="kills">
+                <ui:Label text="KILLS" class="kills__label" />
+                <ui:Label name="kills" text="0" class="kills__count" />
+            </ui:VisualElement>
+            <!-- The run clock, bottom left. -->
+            <ui:Label name="timer" text="0:00" class="timer" />
+            <!-- The beat track: beats slide in from both sides to the heart. -->
+            <ui:VisualElement name="track" class="track">
+                <ui:VisualElement class="track__rail" />
+                <ui:VisualElement name="marks" class="track__marks" />
+                <ui:VisualElement name="heart" class="heart">
+                    <ui:VisualElement class="heart__lobe heart__lobe--left" />
+                    <ui:VisualElement class="heart__lobe heart__lobe--right" />
+                    <ui:VisualElement class="heart__point" />
+                </ui:VisualElement>
+                <ui:Label name="waiting" text="WAITING FOR THE BEAT" class="track__waiting" />
+            </ui:VisualElement>
+            <ui:Label name="prompt" class="prompt" />
+        </ui:VisualElement>
+        <ui:VisualElement name="numbers" class="layer" picking-mode="Ignore" />
+        <ui:VisualElement name="banner" class="banner">
+            <ui:VisualElement class="banner__gem" />
+            <ui:Label name="banner-text" class="banner__text" />
+            <ui:VisualElement class="banner__gem" />
+        </ui:VisualElement>
+        <ui:VisualElement name="cards-layer" class="layer veil">
+            <ui:Label name="cards-heading" text="LEVEL UP" class="cards__heading" />
+            <ui:VisualElement name="cards" class="cards" />
+            <ui:Label name="cards-hint" class="cards__hint" />
+        </ui:VisualElement>
+        <ui:VisualElement name="chest-layer" class="layer veil veil--chest">
+            <ui:Label name="chest-heading" text="TREASURE" class="chest__heading" />
+            <ui:VisualElement name="chest-items" class="chest__items" />
+            <ui:Label name="chest-hint" class="cards__hint" />
+        </ui:VisualElement>
+        <ui:VisualElement name="end-layer" class="layer veil veil--end">
+            <ui:VisualElement name="end" class="end">
+                <ui:VisualElement name="end-edge" class="end__edge" />
+                <ui:Label name="end-title" class="end__title" />
+                <ui:Label name="end-stats" class="end__stats" />
+                <ui:VisualElement class="end__row end__row--head">
+                    <ui:Label text="WEAPON" class="end__cell end__cell--name" />
+                    <ui:Label text="DAMAGE" class="end__cell" />
+                    <ui:Label text="TIME HELD" class="end__cell" />
+                    <ui:Label text="DPS" class="end__cell" />
+                </ui:VisualElement>
+                <ui:VisualElement name="end-rows" class="end__rows" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

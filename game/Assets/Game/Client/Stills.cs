@@ -55,8 +55,8 @@ namespace Game.Client
         /// </summary>
         public static RenderTexture Screen;
 
-        /// <summary>A UI panel's target drawn over the camera's view while set: the pause menu over the frozen run.</summary>
-        public static RenderTexture Overlay;
+        /// <summary>UI panels' targets drawn over the camera's view, in order: the HUD, then the pause menu over the frozen run.</summary>
+        public static readonly List<RenderTexture> Overlays = new List<RenderTexture>();
 
         /// <summary>
         /// Raised before the ID render draws the frame a second time: a hand-drawn camera spends the
@@ -116,7 +116,7 @@ namespace Game.Client
                 source = _resolved;
             }
             var tex = Read(source);
-            if (Overlay != null) Composite(tex, Overlay);
+            foreach (var overlay in Overlays) Composite(tex, overlay);
             return tex;
         }
 

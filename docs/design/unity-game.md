@@ -1784,8 +1784,7 @@ Pickups and progression are native's.
   (Resources/Gems: Gem.shader, and Gem.mat with instancing on, which keeps the shader's
   instanced variant in the player) in progression.json's blue, green and red, hovering and
   throbbing on the beat, popping in at their drop, kicked out and pulled into the
-  hero's chest on their flight. `LevelUpCards` (Resources/Cards) is a minimal card
-  panel until the HUD (ps-msz.6.9) draws them. Headless and fixed-time runs confirm the
+  hero's chest on their flight. The HUD draws the cards (`Client/Hud/LevelUpCards`). Headless and fixed-time runs confirm the
   selected card through `AutoCards`, a recorded Enter half a second after the third card
   flips in (game/evidence/arsenal).
 - **Pacing**: on the slice's horde (220 alive from the start) in an open arena, a hero
@@ -2154,6 +2153,39 @@ built with UI Toolkit, whose text files coding agents can edit directly.
 - The source tag: the tapped app's name or the file.
 - Banners for pause and music stopped; level-up and chest cards that flip in
   on beats; an end card with each weapon's damage.
+
+**Shipped (ps-msz.6.9).** `Client/Hud/` and Resources/Hud (Hud.uxml, Hud.uss, the HudMark
+shader). The HUD is one UI Toolkit overlay on a 1920 x 1080 panel, native's HUD units doubled,
+drawn at frameSong, with marks in world space:
+
+- **Layout**: the mint experience bar along the top with the level left of it; health top left
+  (a bite flashes it white for 0.2 s, and under 30% a red glow pulses on each beat); under it
+  `DELAYED 3 S` and the source tag; the slots right of health, six weapons over six passives, each
+  a crystal tile with its item's gem in native's item colour, its mark (MW, GA, HH...) and rank
+  pips, an empty slot a faint dot; kills top right; the run clock bottom left. Faceted crystal is
+  dark glass plates with lit top and shaded bottom hairlines, and rotated squares for gems.
+- **Beat track**: the beats known by frameSong (a prefix of the revealed list, so a frame never
+  depends on the frontier) slide in from both sides to a heart that beats on each; downbeats
+  (`BeatClock.IsDownbeat`) are taller and warm. Without a reliable beat the track empties and the
+  heart greys under WAITING FOR THE BEAT. While the run waits it prompts PRESS ENTER OR SPACE.
+- **World space** (`BeatGem`, Game/HudMark on camera-facing quads, HDR for the bloom): the gem
+  floats 2.75 m over the hero's feet, drawn over everything. A ring closes on it from 0.95 m toward
+  the next beat, lands on it on the beat's own frame and the gem bursts; before a downbeat the
+  ring is gold and heavier, and the downbeat's burst is gold. Without a reliable beat the gem is a
+  breathing pale blue disc. The life ring lies on the ground under the hero, an arc as full as its
+  health. Damage numbers are panel labels projected from the world, times 10, summed per enemy and
+  beat (damage.rs' rules, heavy strikes gold).
+- **Screens**: MUSIC STOPPED, and PAUSED unless the pause menu is up (its heading is the banner).
+  The level-up's cards flip over in the 0.2 s before each card's beat, so a face is whole on its
+  beat; the chosen card swells, then lifts as the others fall away. A card has its item's gem,
+  name, rank, native's description and EVO PAIR with an owned partner. The chest's card
+  (`ChestCards`) cycles its gems on eighth-note ticks and lands on a downbeat; the sim's chests
+  (ps-msz.6.8) fill it, and until then `--chest-preview S[:TIER]` opens a client-only preview for
+  stills. The end card shows VICTORY or YOU FELL, the run clock, kills and level, and per weapon its
+  damage, time held and DPS (times 10).
+- **Stills**: every overlay panel is composited over the camera in order (`Stills.Overlays`).
+  `--debug finale@S` (the sim's `DebugCommand.Finale`) brings the finale and the victory card in a
+  short run. Evidence: game/evidence/hud/.
 
 ### Audio
 

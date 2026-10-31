@@ -8,6 +8,7 @@ using Game.Client.Calibration;
 using Game.Client.Crowd;
 using Game.Client.Effects;
 using Game.Client.Hero;
+using Game.Client.Hud;
 using Game.Client.Look;
 using Game.Client.Music;
 using Game.Client.Pickups;
@@ -125,7 +126,7 @@ namespace Game.Client.Loop
         WandView _wand;
         BibleView _bible;
         LightningView _lightning;
-        LevelUpCards _cards;
+        HudPresenter _hud;
         StreamWriter _out, _structuresOut;
         bool _fixed, _done, _quitting, _interactive;
         bool _deviceGiven, _focusLost;
@@ -269,8 +270,6 @@ namespace Game.Client.Loop
                     _gems = new GemView(camera, content.Progression.Gems);
                     Driver.Events.Subscribe(_gems);
                 }
-                _cards = new LevelUpCards(transform, content);
-                Driver.Events.Subscribe(_cards);
             }
             var roles = new RoleLooks(content);
             var weapons = new WeaponLooks(content?.Weapons);
@@ -300,6 +299,9 @@ namespace Game.Client.Loop
                 }
             }
             if (_shatter != null) _shatter.Erupted += Erupted;
+            _hud = new HudPresenter(transform, camera, Driver.Sim, content, source, _interactive) { Menu = _pause };
+            if (_hero != null) _hud.DrawnHero = _hero.Drawn;
+            Driver.Events.Subscribe(_hud);
             _overlay = new DebugOverlay(camera, Driver, Args.Has("--overlay"));
             Driver.Events.Subscribe(_overlay);
             Driver.Events.Subscribe(_counts);
@@ -670,7 +672,7 @@ namespace Game.Client.Loop
             _wand?.Dispose();
             _bible?.Dispose();
             _lightning?.Dispose();
-            _cards?.Dispose();
+            _hud?.Dispose();
             _out?.Dispose();
             _out = null;
             _structuresOut?.Dispose();

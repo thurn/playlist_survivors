@@ -10,7 +10,7 @@ namespace Game.Client.Title
     /// 1080p, the theme, and the text's ICU data, which only the editor assigns), so a target set
     /// here never touches the asset. A batch-mode player has no window to draw on, so the panel
     /// draws into a target of its own that the stills keep in place of the camera's view
-    /// (<see cref="Stills.Screen"/>, or drawn over it, <see cref="Stills.Overlay"/>, for an overlay)
+    /// (<see cref="Stills.Screen"/>, or drawn over it, <see cref="Stills.Overlays"/>, for an overlay)
     /// until the screen closes. A later screen draws over an earlier one.
     /// </summary>
     public sealed class ScreenPanel : IDisposable
@@ -20,6 +20,7 @@ namespace Game.Client.Title
         readonly UIDocument _doc;
         readonly PanelSettings _settings;
         readonly RenderTexture _target, _previous;
+        readonly bool _overlay;
 
         public VisualElement Root => _doc.rootVisualElement;
 
@@ -30,6 +31,7 @@ namespace Game.Client.Title
         {
             _settings = UnityEngine.Object.Instantiate(Resources.Load<PanelSettings>("Title/TitlePanel"));
             _settings.sortingOrder = ++_opened;
+            _overlay = overlay;
             if (Application.isBatchMode && SystemInfo.graphicsDeviceType != UnityEngine.Rendering.GraphicsDeviceType.Null)
             {
                 _target = new RenderTexture(Stills.Width, Stills.Height, 24, RenderTextureFormat.ARGB32) { name = name };
@@ -38,9 +40,12 @@ namespace Game.Client.Title
                 // Cleared each frame: an overlay's translucent veil would otherwise build up to opaque.
                 _settings.clearColor = true;
                 _settings.colorClearValue = Color.clear;
-                _previous = overlay ? Stills.Overlay : Stills.Screen;
-                if (overlay) Stills.Overlay = _target;
-                else Stills.Screen = _target;
+                if (overlay) Stills.Overlays.Add(_target);
+                else
+                {
+                    _previous = Stills.Screen;
+                    Stills.Screen = _target;
+                }
             }
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
@@ -59,7 +64,7 @@ namespace Game.Client.Title
         {
             if (_doc != null) UnityEngine.Object.Destroy(_doc.gameObject);
             if (_target != null && Stills.Screen == _target) Stills.Screen = _previous;
-            if (_target != null && Stills.Overlay == _target) Stills.Overlay = _previous;
+            if (_target != null && _overlay) Stills.Overlays.Remove(_target);
             if (_target != null) _target.Release();
             if (_settings != null) UnityEngine.Object.Destroy(_settings);
         }

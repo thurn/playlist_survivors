@@ -12,7 +12,8 @@ namespace Game.Client.Loop
     /// the broken ones (<see cref="DebugCommand"/>). `--debug "change@20,accent@12.5,break@15,regrow@30"`
     /// gives them at song times instead, for headless runs and stills: each when the sim first
     /// reaches its time at a frame's start, so a fixed-time rerun gives it on the same tick. The
-    /// music-driven events have names only: stampede, kick, wedge, ring, bats, ghosts, flowers and minotaur.
+    /// music-driven events and the finale have names only: stampede, kick, wedge, ring, bats, ghosts, flowers, minotaur
+    /// and finale.
     /// </summary>
     public sealed class DebugCommands
     {
@@ -22,7 +23,7 @@ namespace Game.Client.Loop
             ("break", DebugCommand.BreakStructures), ("regrow", DebugCommand.RegrowStructures),
             ("stampede", DebugCommand.Stampede), ("kick", DebugCommand.KickLine), ("wedge", DebugCommand.Wedge),
             ("ring", DebugCommand.Ring), ("bats", DebugCommand.BatSwarm), ("ghosts", DebugCommand.GhostSwarm),
-            ("flowers", DebugCommand.FlowerWall), ("minotaur", DebugCommand.Minotaur),
+            ("flowers", DebugCommand.FlowerWall), ("minotaur", DebugCommand.Minotaur), ("finale", DebugCommand.Finale),
         };
 
         readonly List<(double at, DebugCommand command)> _scheduled;
