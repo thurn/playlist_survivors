@@ -69,16 +69,10 @@ namespace PS.Game.Sim
         /// <summary>Bolts a shot fires.</summary>
         public int Bolts => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
 
-        public double Damage => Numbers.Power * Stats.Might;
-
         public double SpeedMps => Def.Shape.SpeedMps * Numbers.Speed * Stats.Speed;
 
         /// <summary>The song time between a burst's bolts.</summary>
         public double Repeat => Numbers.RepeatS / Math.Max(1e-3, Numbers.Speed * Stats.Speed);
-
-        double Radius => Def.Shape.RadiusM * Numbers.Area * Stats.Area;
-
-        bool Holding => state.Frozen || state.Hero.Fallen;
 
         internal override void Shoot(Simulation sim, double t)
         {
@@ -206,7 +200,7 @@ namespace PS.Game.Sim
             {
                 e.PositionAt(t, out x, out y);
                 Normalize(x - bolt.FromX, y - bolt.FromY, out double dx, out double dy);
-                horde.Damage(sim, i, t, Damage, Index, WeaponHit.Strike, dx, dy, Numbers.Knockback, Horde.KnockbackM * Numbers.Knockback);
+                horde.Damage(sim, i, t, Power, Index, WeaponHit.Strike, dx, dy, Numbers.Knockback, Launch(1));
                 if (e.Alive)
                 {
                     Remember(b, i, t);

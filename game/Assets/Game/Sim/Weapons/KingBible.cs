@@ -65,8 +65,6 @@ namespace PS.Game.Sim
 
         public int Blades => Math.Max(1, (int)Math.Floor(Numbers.Amount + Stats.Amount + 1e-9));
 
-        public double Damage => Numbers.Power * Stats.Might;
-
         public double DurationS => Numbers.DurationS * Stats.Duration;
 
         double Area => Numbers.Area * Stats.Area;
@@ -74,8 +72,6 @@ namespace PS.Game.Sim
         public double RingRadius => Def.Shape.OrbitRadiusM * Math.Min(Area, Def.Shape.OrbitAreaCap);
 
         public double BladeRadius => Def.Shape.RadiusM * (1 + Def.Shape.BladeAreaSlope * Area);
-
-        bool Holding => state.Frozen || state.Hero.Fallen;
 
         /// <summary>The rings still showing, for tests.</summary>
         internal int Rings
@@ -219,8 +215,7 @@ namespace PS.Game.Sim
                         enemies[i].PositionAt(to, out double ex, out double ey);
                         if (Horde.SegmentDistance(ex, ey, x0, y0, x1, y1) > body + 0.5 * roles[enemies[i].Role].RadiusM) continue;
                         hit[i] = true;
-                        horde.Damage(sim, i, to, Damage, Index, WeaponHit.Strike, dirX, dirY, Numbers.Knockback,
-                            Horde.KnockbackM * Numbers.Knockback);
+                        horde.Damage(sim, i, to, Power, Index, WeaponHit.Strike, dirX, dirY, Numbers.Knockback, Launch(1));
                     }
                 }
             }
