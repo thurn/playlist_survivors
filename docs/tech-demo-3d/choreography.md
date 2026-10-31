@@ -439,8 +439,9 @@ wall.
   against the horde alive at the break (on screen and in reserve) and against
   those within 10 m of it.
 
-On the default script every break is in view and 4 to 17 monsters walk
-through each opening. Most of the nearby horde dies to the drop's spells
+On the default script every break is in view, and up to 15 monsters walk
+through each opening in the 4 bars after it (one of the gate's two runs goes
+unused). Most of the nearby horde dies to the drop's spells and blows
 first.
 
 ### One-hit kills
