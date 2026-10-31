@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using Game.Client.Music;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is; // over the Unity constraints' Is, whose AllocatingGCMemory extends it
 
 namespace Game.Tests
 {
@@ -142,6 +144,27 @@ namespace Game.Tests
                     }
                     else System.Threading.Thread.Sleep(1);
                 }
+                // Unity's audio thread renders through the binding, and the main thread polls it
+                // every frame: neither may allocate.
+                while (true)
+                {
+                    PollBeats();
+                    Plugin.GetStatus(session, out var s);
+                    if (s.Buffered > 0.05) break;
+                    System.Threading.Thread.Sleep(1);
+                }
+                dsp += (double)frames / rate;
+                Assert.That(() => { Plugin.RenderMusic(session, buffer, frames, 2, dsp); },
+                    Is.Not.AllocatingGCMemory());
+                buffers++;
+                int polled = 0;
+                Assert.That(() =>
+                {
+                    Plugin.GetStatus(session, out _);
+                    polled = Plugin.Poll(session, entries);
+                }, Is.Not.AllocatingGCMemory());
+                for (int i = 0; i < polled; i++)
+                    if (entries[i].Kind == Plugin.KindBeat) lastBeat = entries[i].T;
                 Plugin.GetStatus(session, out var end);
                 Assert.That(end.Stalls, Is.Zero);
                 Assert.That(loudest, Is.GreaterThan(0.1), "the music was silent");

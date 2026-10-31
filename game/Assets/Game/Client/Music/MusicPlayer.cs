@@ -15,8 +15,12 @@ namespace Game.Client.Music
     ///
     /// The plugin must see the audio callback's last return before ps_close, so the callback marks
     /// itself busy before it looks at the session, and closing waits for that mark to clear.
+    ///
+    /// It updates before every other script, so a frame's readers see this frame's clock sample
+    /// and entries, and none of a poll's entries is overwritten before they read it.
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
+    [DefaultExecutionOrder(-1000)]
     public sealed class MusicPlayer : MonoBehaviour
     {
         public const double M = 3.0;
@@ -141,7 +145,9 @@ namespace Game.Client.Music
             Interlocked.Exchange(ref _busy, 0);
         }
 
-        void OnDestroy() => Close();
+        // OnDisable, not OnDestroy: Unity also calls it before a script reload in play mode, which
+        // would otherwise drop the session's handle and leave the plugin's threads running.
+        void OnDisable() => Close();
 
         /// <summary>Stops the audio callback's use of the session, then closes it.</summary>
         public void Close()

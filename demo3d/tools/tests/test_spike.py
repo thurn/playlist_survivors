@@ -11,9 +11,10 @@ from demo3d_tools import spike
 RATE = 48000
 
 
-def synthetic(offsets_ms: list[float], lead_frames: int = 3000, seconds: float = 30.0):
+def synthetic(offsets_ms: list[float], lead_frames: int = 3000, seconds: float = 30.0, frame_ms: float = 0.0):
     """A noisy 'song' with a thump every 0.5 s, mixed from frame `lead_frames` on, plus a click per
-    beat at its song time plus its offset; and the run's report as the player would write it."""
+    beat at its song time plus its offset, and frames whose frameSong is `frame_ms` ahead of the
+    song heard at their light; and the run's report as the player would write it."""
     rng = np.random.default_rng(7)
     n = int(seconds * RATE)
     song = 0.05 * rng.standard_normal(n).astype(np.float32)
@@ -28,10 +29,9 @@ def synthetic(offsets_ms: list[float], lead_frames: int = 3000, seconds: float =
     for k, b in enumerate(beats):
         at = lead_frames + round((b + offsets_ms[k % len(offsets_ms)] / 1000) * RATE)
         mix[at:at + 100] += 0.6 * np.cos(2 * np.pi * 2000 * np.arange(100) / RATE)[:, None]
-    # The audio thread's clock: tick = DSP time + 10 s. Each frame's frameSong is 2 ms ahead of
-    # the song heard at its light.
+    # The audio thread's clock: tick = DSP time + 10 s.
     frames = [{"tick": 10 + i / 60, "display": 1 / 60,
-               "frameSong": (i / 60 + 1 / 60) - lead - 0.038 + 0.002} for i in range(60, 600)]
+               "frameSong": (i / 60 + 1 / 60) - lead - 0.038 + frame_ms / 1000} for i in range(60, 600)]
     report = {
         "outputRate": RATE, "dspBufferLength": 256, "dspBuffers": 4, "outputLatency": 0.038,
         "deviceLatency": 0.0167, "dspBuffering": 0.0213, "anchorDsp": lead, "anchorSong": 0.0,
@@ -64,10 +64,12 @@ def test_late_clicks_and_a_misplaced_music_are_measured_against_the_music_itself
 
 
 def test_frame_to_heard_compares_frame_song_with_the_audio_threads_clock() -> None:
-    report, mix, ref = synthetic([0.0])
-    s = spike.measure(report, mix, ref)
-    assert abs(s["frame_to_heard_ms"]["median"] - 2.0) < 0.01
-    assert s["frame_song_backwards"] == 0
+    assert spike.measure(*synthetic([0.0], frame_ms=0.8))["ok"]
+    # A frameSong half a 256-frame buffer ahead, as before the main thread's DSP readings were
+    # taken half a buffer back, fails though every click is on its beat.
+    s = spike.measure(*synthetic([0.0], frame_ms=2.7))
+    assert abs(s["frame_to_heard_ms"]["median"] - 2.7) < 0.01
+    assert not s["ok"]
 
 
 def test_a_playlist_puts_each_track_where_the_analyzer_timeline_does(tmp_path: Path, monkeypatch) -> None:

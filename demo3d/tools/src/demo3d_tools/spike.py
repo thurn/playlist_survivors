@@ -43,6 +43,7 @@ SEARCH = 4096        # lag search either side of the anchor's lag (frames)
 CLICK_THRESHOLD = 0.2
 CLICK_REFRACTORY_S = 0.05
 ANALYZER_RATE = 44_100
+FRAME_TOLERANCE_MS = 1.0  # frame to heard's median
 
 
 def add_parser(sub: argparse._SubParsersAction) -> None:
@@ -296,9 +297,13 @@ def measure(report: dict, mix: np.ndarray, ref: np.ndarray) -> dict:
     backwards = int(np.sum(np.diff(frame_songs) < 0)) if len(frame_songs) > 1 else 0
 
     offsets_stats = _stats(offsets_a)
+    frame_stats = _stats(np.array(frame_err))
+    # frameSong's median against the audio thread's clock: a lost half-buffer correction is 2.7 ms
+    # at 256 frames, while loaded runs measure within 0.1 ms.
     ok = (report["stalls"] == 0 and report["gaps"] == 0 and not report["error"] and len(offsets_a) > 0
           and len(offsets_a) >= 0.98 * len(beats) and abs(offsets_stats.get("median", 99)) <= 2
-          and max(abs(offsets_stats.get("p5", 99)), abs(offsets_stats.get("p95", 99))) <= 2 and backwards == 0)
+          and max(abs(offsets_stats.get("p5", 99)), abs(offsets_stats.get("p95", 99))) <= 2 and backwards == 0
+          and abs(frame_stats.get("median", 99)) <= FRAME_TOLERANCE_MS)
     return {
         "ok": bool(ok),
         "seconds": round(len(mono) / rate, 3),
@@ -321,7 +326,7 @@ def measure(report: dict, mix: np.ndarray, ref: np.ndarray) -> dict:
         "drift_ms_per_min": drift,
         "click_to_schedule_ms": _stats(np.array(schedule)),
         "beat_to_onset_ms": _stats(np.array(to_onset)),
-        "frame_to_heard_ms": _stats(np.array(frame_err)),
+        "frame_to_heard_ms": frame_stats,
         "frame_song_backwards": backwards,
     }
 

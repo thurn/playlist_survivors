@@ -92,5 +92,7 @@ All at 48 kHz on the Mac's built-in speakers; every set's `ok` is true.
 
 Slow CI runs the same measurement for 15 s on a Mono player (`game spike ci ... --no-evidence`, in
 scripts/ci-full's game section), and fails if the clicks' median or 5th to 95th percentile is
-more than 2 ms off the music, over 2% of the clicks are missing, frameSong ran backwards, the plugin
-stalls or the capture has a gap.
+more than 2 ms off the music, over 2% of the clicks are missing, frameSong's median is more than
+1 ms off the audio thread's clock or it ran backwards, the plugin stalls or the capture has a gap.
+Run with every core oversubscribed twice (ps-msz.1.9), it still found 32/32 clicks on the music's
+sample, frameSong within 0.1 ms (median), and no stalls or gaps.

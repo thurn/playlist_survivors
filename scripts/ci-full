@@ -200,8 +200,10 @@ fi
 # once game/dotnet/PS.Game.Sim.Tests exists; then, windowless in batch mode, the project set up from
 # this machine's vendor packs and cache (setup builds the music plugin into it), Unity's EditMode
 # tests, where a skip fails too, and a short batch-mode File run of a Mono player, measured from
-# Unity's own mix (`game spike`: clicks on the music within 2 ms, no stalls). Unity's rewrites of
-# ProjectSettings are discarded. A machine without the packs skips the Unity half, saying so.
+# Unity's own mix (`game spike`: clicks on the music within 2 ms, frameSong within 1 ms of the
+# audio thread's clock, no stalls). Unity's rewrites of ProjectSettings are discarded. A machine
+# without the packs, or off macOS (the plugin builds only there until M5, ps-msz.9), skips the
+# Unity half, saying so.
 if [ "$section" = game ]; then
   uv run --quiet --project demo3d/tools game guard --tree HEAD
   if [ -d game/dotnet/PS.Game.Sim.Tests ]; then
@@ -211,7 +213,9 @@ if [ "$section" = game ]; then
   fi
   missing=$(uv run --quiet --project demo3d/tools python -c \
     'from demo3d_tools import guard, paths; print(" ".join(sorted(set(paths.PROJECT_ROOTS["game"]) & guard.missing_roots(paths.load_roots()))))')
-  if [ -n "$missing" ]; then
+  if [ "$(uname -s)" != Darwin ]; then
+    echo "ci-full game: skipped the Unity setup, tests and spike: the music plugin builds only on macOS until M5"
+  elif [ -n "$missing" ]; then
     echo "ci-full game: skipped the Unity setup and tests: no vendor packs here ($missing)"
   else (
     trap 'git checkout --quiet -- game/ProjectSettings' EXIT
