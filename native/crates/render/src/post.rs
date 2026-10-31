@@ -10,6 +10,7 @@
 )]
 
 use crate::atlas::Page;
+use crate::ground::{Ground, GroundPass};
 use crate::sprites::{Sprite, SpriteRenderer};
 
 /// The most shockwaves at once.
@@ -52,6 +53,13 @@ pub struct Grade {
     pub pixel: f32,
     /// Local aura haze: centre, radius in logical pixels, strength (0 disables).
     pub aura: [f32; 4],
+    /// Split toning after the grade: colour added to the shadows and to the highlights.
+    pub shadows: [f32; 3],
+    pub highlights: [f32; 3],
+    /// A low sun's warm glaze, strongest at the top left over lit pixels: its colour and strength.
+    pub sun: [f32; 4],
+    /// The painted ground under the world (`--art heroeditor`), drawn instead of the clear colour.
+    pub ground: Option<Ground>,
 }
 
 impl Default for Grade {
@@ -73,6 +81,10 @@ impl Default for Grade {
             waves: [[0.0; 4]; MAX_WAVES],
             pixel: 1.0,
             aura: [0.0; 4],
+            shadows: [0.0; 3],
+            highlights: [0.0; 3],
+            sun: [0.0; 4],
+            ground: None,
         }
     }
 }
@@ -114,6 +126,9 @@ struct Comp {
     size: [f32; 4],
     waves: [[f32; 4]; MAX_WAVES],
     aura: [f32; 4],
+    shadows: [f32; 4],
+    highlights: [f32; 4],
+    sun: [f32; 4],
 }
 
 const SHADER: &str = r"
@@ -128,6 +143,9 @@ struct Comp {
     size: vec4<f32>,
     waves: array<vec4<f32>, 4>,
     aura: vec4<f32>,
+    shadows: vec4<f32>,
+    highlights: vec4<f32>,
+    sun: vec4<f32>,
 };
 struct Blur { step: vec4<f32> };
 
@@ -249,6 +267,11 @@ fn composite_fs(i: Full) -> @location(0) vec4<f32> {
     lit = mix(vec3<f32>(luma), lit, comp.saturation);
     lit = (lit - 0.5) * comp.contrast + 0.5;
     lit = lit * comp.mul + comp.lift;
+    // Split toning and the sun's glaze (none by default).
+    let tone = clamp(dot(lit, vec3<f32>(0.299, 0.587, 0.114)), 0.0, 1.0);
+    lit += comp.shadows.rgb * (1.0 - tone) * (1.0 - tone) + comp.highlights.rgb * tone * tone;
+    let sun = clamp(1.1 - dot(i.uv, vec2<f32>(0.55, 0.75)), 0.0, 1.0);
+    lit += comp.sun.rgb * comp.sun.w * sun * tone;
     // Vignette.
     let q = i.uv - 0.5;
     let v = smoothstep(0.35, 0.95, length(q * vec2<f32>(1.0, 0.75)) * 1.25);
@@ -277,6 +300,7 @@ struct Targets {
 /// The sprites and the passes over them.
 pub struct Post {
     sprites: SpriteRenderer,
+    ground: GroundPass,
     format: wgpu::TextureFormat,
     layout: wgpu::BindGroupLayout,
     light_bind: wgpu::BindGroup,
@@ -495,6 +519,7 @@ impl Post {
         let light_capacity = 256;
         Ok(Post {
             sprites,
+            ground: GroundPass::new(device, queue, WORLD),
             format,
             layout,
             light_bind,
@@ -580,6 +605,10 @@ impl Post {
         let dpi = physical.0 as f32 / logical.0.max(1.0);
         self.sprites.begin();
         let t = self.targets.as_ref().expect("sized");
+        if let Some(ground) = &frame.grade.ground {
+            self.ground
+                .draw(queue, encoder, &t.world, physical, dpi, ground);
+        }
         self.sprites.draw(
             device,
             queue,
@@ -587,7 +616,7 @@ impl Post {
             &t.world,
             WORLD,
             logical,
-            Some(frame.clear),
+            frame.grade.ground.is_none().then_some(frame.clear),
             frame.world,
         );
         // Lights.
@@ -685,6 +714,9 @@ impl Post {
             size: [physical.0 as f32, physical.1 as f32, 0.0, 0.0],
             waves,
             aura,
+            shadows: [g.shadows[0], g.shadows[1], g.shadows[2], 0.0],
+            highlights: [g.highlights[0], g.highlights[1], g.highlights[2], 0.0],
+            sun: g.sun,
         };
         queue.write_buffer(&self.comp, 0, bytemuck::bytes_of(&comp));
         full(encoder, target, &self.composite, &t.composite);

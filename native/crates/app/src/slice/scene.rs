@@ -134,7 +134,8 @@ fn grade_of(g: ColorGrade) -> ([f32; 3], [f32; 3], f32, f32) {
 }
 
 /// The zone's grade at a beat, as the fast lane shows it: the ambient light following the
-/// loudness and pulsing on beats, the vignette on bars, the key's look over the zone's.
+/// loudness and pulsing on beats, the vignette on bars, the key's look over the zone's; at dusk
+/// under `--art heroeditor`.
 fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Frame) -> Grade {
     let (mul, lift, contrast, saturation) = grade_of(theme.color_grade);
     let amb = hex(&theme.ambient_light);
@@ -147,7 +148,7 @@ fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Fra
     let env = fast.env;
     let (kick, snare, bass) = (env.kick as f32, env.snare as f32, env.bass_drive() as f32);
     let rise = env.rise as f32;
-    Grade {
+    let mut g = Grade {
         ambient: [ambient(amb[0]), ambient(amb[1]), ambient(amb[2])],
         pulse: 1.0 + (0.05 + 0.1 * loud) * intensity * beat + ENV_EXPOSURE * kick
             - ENV_DIM_RISE * rise,
@@ -172,7 +173,16 @@ fn grade(theme: &ZoneTheme, pulse: Pulse, now: f64, pixel: f32, fast: &lane::Fra
         time: now as f32,
         pixel,
         ..Grade::default()
+    };
+    if painted() {
+        super::painted::dusk(&mut g, theme, mul, loud);
     }
+    g
+}
+
+/// The painted dusk look (`--art heroeditor`) instead of the LPC ground and props.
+fn painted() -> bool {
+    super::art::current() == super::art::Art::HeroEditor
 }
 
 /// The music's envelope layer (lane::Envelopes): what each band moves, presentation only. Kicks
@@ -731,7 +741,18 @@ impl Scene {
                 h / 2.0 + (y - cy) as f32 * scale,
             )
         };
-        // The ground: the zone's tiles on the world grid around the camera.
+        // The ground: painted under the world, or the zone's tiles on the world grid around the
+        // camera.
+        let painted = painted();
+        if painted {
+            layers.grade.ground = Some(super::painted::ground(
+                ground.seed,
+                ground.theme,
+                ground.wave,
+                (cx, cy),
+                scale,
+            ));
+        }
         let half_w = f64::from(w / scale / 2.0) + 64.0;
         let half_h = f64::from(h / scale / 2.0) + 64.0;
         let t = field::TILE;
@@ -743,27 +764,29 @@ impl Scene {
             ((cy - half_h) / t).floor() as i64,
             ((cy + half_h) / t).ceil() as i64,
         );
-        for j in j0..j1 {
-            for i in i0..i1 {
-                // (Each tile in the zone at its centre: the wave's inside its ring.)
-                let zone = ground.zone_at(i as f64 * t + t / 2.0, j as f64 * t + t / 2.0);
-                let (sx, sy) = at(i as f64 * t, j as f64 * t);
-                match art
-                    .tiles
-                    .get(&zone.terrain.ground)
-                    .filter(|v| !v.is_empty())
-                {
-                    Some(tiles) => {
-                        let v = field::tile_variant(ground.seed, i, j);
-                        let mut s =
-                            Sprite::anchored(tiles[v % tiles.len()], sx, sy, (0.0, 0.0), scale);
-                        s.w += 0.5;
-                        s.h += 0.5;
-                        out.push(s);
-                    }
-                    None => {
-                        let k = (t as f32) * scale + 0.5;
-                        out.push(rect(sx, sy, k, k, [0.1, 0.2, 0.1, 1.0]));
+        if !painted {
+            for j in j0..j1 {
+                for i in i0..i1 {
+                    // (Each tile in the zone at its centre: the wave's inside its ring.)
+                    let zone = ground.zone_at(i as f64 * t + t / 2.0, j as f64 * t + t / 2.0);
+                    let (sx, sy) = at(i as f64 * t, j as f64 * t);
+                    match art
+                        .tiles
+                        .get(&zone.terrain.ground)
+                        .filter(|v| !v.is_empty())
+                    {
+                        Some(tiles) => {
+                            let v = field::tile_variant(ground.seed, i, j);
+                            let mut s =
+                                Sprite::anchored(tiles[v % tiles.len()], sx, sy, (0.0, 0.0), scale);
+                            s.w += 0.5;
+                            s.h += 0.5;
+                            out.push(s);
+                        }
+                        None => {
+                            let k = (t as f32) * scale + 0.5;
+                            out.push(rect(sx, sy, k, k, [0.1, 0.2, 0.1, 1.0]));
+                        }
                     }
                 }
             }
@@ -795,10 +818,12 @@ impl Scene {
                 }
             }
         }
-        // (A prop shows where its own zone is: the wave's inside its ring, the old one outside.)
+        // (A prop shows where its own zone is: the wave's inside its ring, the old one outside.
+        // The painted ground has none: they are cosmetic, where the landmarks' stones are not.)
         let landmark_props = super::signature::stones(view);
         let shows = |zone: &str, p: &FieldProp| {
-            ground.zone_at(p.x, p.y).id == zone
+            !painted
+                && ground.zone_at(p.x, p.y).id == zone
                 && !view
                     .landmarks
                     .iter()
@@ -842,7 +867,9 @@ impl Scene {
         super::pickups::celebration(view, art, &at, scale, out, lights);
         // (Bursts marked to stay under the characters, as the gems' pickups.)
         self.effects.draw(art, now, &at, scale, w, h, true, out);
-        // The wave's edge: a ring in the new zone's light, and a wider one in its tint.
+        // The wave's edge: a ring in the new zone's light, and a wider one in its tint (soft glows
+        // on the painted ground).
+        let glow = art.proc.get("glow").filter(|_| painted);
         if let Some((z, wx, wy, r)) = ground.wave {
             let light = hex(&z.ambient_light);
             let tint = hex(&z.tint);
@@ -854,13 +881,13 @@ impl Scene {
                 for i in 0..n {
                     let a = i as f64 / n as f64 * std::f64::consts::TAU;
                     let (sx, sy) = at(wx + a.cos() * radius, wy + a.sin() * radius);
-                    out.push(rect(
-                        sx - k / 2.0,
-                        sy - k / 2.0,
-                        k,
-                        k,
-                        [color[0], color[1], color[2], alpha],
-                    ));
+                    let color = [color[0], color[1], color[2], alpha];
+                    out.push(match glow {
+                        Some(g) => Sprite::centred(*g, sx, sy, 3.0 * k, 3.0 * k)
+                            .tinted([color[0], color[1], color[2], 0.6 * alpha])
+                            .additive(),
+                        None => rect(sx - k / 2.0, sy - k / 2.0, k, k, color),
+                    });
                 }
             }
         }

@@ -158,9 +158,55 @@ At 30 fps, 96 px for the hero standing, 2x supersampling: 1669 frames and
 hit-flash twins. Native allows 8 (MAX_PAGES), and the swapped-out LPC page
 frees one; 45 fps would need about 5 with flash twins, 60 fps about 6.
 
+## The Painted Ground
+
+`--art heroeditor` (`just native -- --art heroeditor`) paints native's ground
+and grades the scene as dusk (`ps-4c8.2`). It sets the art once for the process
+(`slice/art.rs`), so every check drawing a scene honours it. `--art lpc`, the
+default, is native as before: its stills are byte-identical with and without
+the change.
+
+- **The ground** (`render/src/ground.rs`) is one full-screen pass into the
+  world texture, under the sprites, instead of the clear colour and the LPC
+  tiles. Each pixel is a function of its world position, so it scrolls with
+  the world and holds still as the camera moves, shakes and zooms (a test
+  moves the camera and compares). It paints, in order:
+  - broad tones of deep and light grass, brushed in long horizontal strokes,
+    with short ragged dabs of lighter and darker grass;
+  - moss patches, and clearings of earth with ragged rims;
+  - worn paths about 30 world px wide, wandering along a warped noise field's
+    middle (the width from the field's screen-space slope, so it holds at any
+    zoom), with a darker trodden rim;
+  - in some cells of a 72 px grid: a vector-like tuft of three to five tapered
+    blades, a cluster of three flowers, or a pebble with its shadow and a
+    light; none on the paths and fewer in the clearings.
+- **Zones** keep their palettes (`slice/painted.rs`): the glade's cool green,
+  the woods' fresh green, the grove's olive and ochre, the hollow's dry
+  grey-brown and the infernal grove's scorched rock with ember paths. The
+  transform wave paints the next zone's palette inside its ring, whose edge is
+  drawn in soft glows instead of square blocks.
+- **Props:** the LPC trees, bushes, flowers, tufts, rocks, braziers and ruins
+  are cosmetic and hidden (with the braziers' lights). The landmarks' standing
+  stones keep their gameplay meaning and stay as they are.
+- **Dusk** goes over native's grade: a warm ambient, bright enough for flat
+  colours to read and tinted a little by the zone's light; the zone's own
+  colour grade at 40 %; violet shadows and warm highlights (split toning, new
+  in the composite and zero by default); and a low sun's warm glaze from the
+  top left. The beat, kick, snare and rise pulses, the bloom, the vignette,
+  heat haze and the camera's zoom pulses are untouched, and the hero's and the
+  effects' lights still add over the ambient.
+- **Cost:** the soft noise reads a 256² grain texture, one filtered read per
+  octave; only the paths use exact hashed noise, for clean edges. On the Mac
+  (M5 Max) the pass adds about 0.7 to 1 ms of GPU per frame at a 960 x 640
+  window's 1920 x 1280 pixels, and about 2 ms at 3456 x 2234. CPU frame work at
+  the densest minute (`--bench-density`) is unchanged, and the encode is
+  cheaper, with no tiles or props to draw.
+
+Evidence, with LPC characters until `ps-4c8.3` lands:
+[native/evidence/heroeditor/ground/](../../native/evidence/heroeditor/ground/README.md).
+
 ## Later Beads
 
-- `ps-4c8.2`: the painted ground and dusk grade.
-- `ps-4c8.3`: the atlas bake, `--art heroeditor`, the animation mapping and the
-  feel pass. It maps native's animation names onto the captured clips and
+- `ps-4c8.3`: the atlas bake, the HeroEditor characters under
+  `--art heroeditor`, the animation mapping and the feel pass. It maps native's animation names onto the captured clips and
   draws each role at the size of the LPC sprite it replaces.

@@ -21,6 +21,8 @@
 //!     playlist-survivors --file <path> --headless --seconds 30 [--start-at S] [--switch-at S] [--press-beats] [--watch]  # no window, no Dock icon, muted:
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
+//!     playlist-survivors --art heroeditor  # the HeroEditor feel test's look: a painted dusk ground
+//!                                     # (docs/design/heroeditor-native.md); `--art lpc`, the default, is native's own
 //!     playlist-survivors --classic     # classic mode (Z between runs): presses judged on the beat; zen mode, the
 //!                                     # default, judges nothing and moves the hero on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
@@ -48,6 +50,7 @@ mod lightning;
 mod roster;
 // The output is the phase 0 spike's (57e846a^:native/spike), kept as it was.
 mod aftermath;
+mod art;
 mod atmosphere;
 mod bosses;
 mod evolution;
@@ -70,6 +73,7 @@ mod loopback;
     dead_code
 )]
 mod output;
+mod painted;
 mod pickups;
 mod recap;
 mod scene;
@@ -259,6 +263,8 @@ struct Options {
     /// this many times (E steps through on, 2x, 4x and off).
     no_envelopes: bool,
     envelope_gain: f64,
+    /// The art drawn (`--art lpc|heroeditor`).
+    art: art::Art,
 }
 
 fn options(args: &[String]) -> Result<Options, String> {
@@ -319,6 +325,7 @@ fn options(args: &[String]) -> Result<Options, String> {
         stomp_extra_ms: None,
         no_envelopes: false,
         envelope_gain: 1.0,
+        art: art::Art::Lpc,
     };
     let mut playlist = None;
     let mut it = args.iter();
@@ -596,6 +603,7 @@ fn options(args: &[String]) -> Result<Options, String> {
                 );
             }
             "--check" => o.check = true,
+            "--art" => o.art = it.next().ok_or("--art needs lpc or heroeditor")?.parse()?,
             "--volume" => {
                 o.volume = it
                     .next()
@@ -790,6 +798,7 @@ impl World {
 #[allow(clippy::single_match_else)]
 pub fn run(args: &[String]) -> Result<(), String> {
     let opts = options(args)?;
+    art::choose(opts.art);
     if let Some(file) = &opts.play_child {
         return play_child(file);
     }
@@ -4038,6 +4047,12 @@ mod tests {
             song.to_str().unwrap(),
         ]));
         assert!(e.is_err_and(|e| e.contains("plays itself")));
+        assert_eq!(plain.art, art::Art::Lpc);
+        let painted = options(&args(&["--art", "heroeditor"])).unwrap();
+        assert_eq!(painted.art, art::Art::HeroEditor);
+        assert!(
+            options(&args(&["--art", "pixel"])).is_err_and(|e| e.contains("lpc or heroeditor"))
+        );
 
         let missing = Path::new("/no/demo2d/action.wav");
         let e = showcase_audio(None, missing).unwrap_err();
