@@ -16,12 +16,16 @@ namespace Game.Client.Hud
     /// and EVO PAIR when its evolution's partner is owned. Once a card is taken the chosen one lifts and
     /// the others fall away over <see cref="ExitS"/>. Everything is a function of song time, so
     /// fixed-time frames show the same flip. The keys reach the sim through KeyInput: Left, Up and
-    /// Right choose, Space or Enter takes it.
+    /// Right choose, Space or Enter takes it. The mouse taps the same keys (<see cref="Pointed"/>):
+    /// pointing at a card chooses it and clicking takes it.
     /// </summary>
     public sealed class LevelUpCards
     {
         public const double FlipS = 0.2, ExitS = 0.42, DimS = 0.12;
         static readonly string[] Keys = { "LEFT", "UP", "RIGHT" };
+
+        /// <summary>The sim's key that chooses each card.</summary>
+        public static readonly Key[] Choose = { Key.Left, Key.Up, Key.Right };
 
         readonly VisualElement _layer, _row;
         readonly Label _heading, _hint;
@@ -37,6 +41,13 @@ namespace Game.Client.Hud
         // The latest offer's opening and its confirmation, from the events (song times).
         int _eventOffer = -1;
         double _eventOpened = double.NaN, _eventConfirmed = double.NaN;
+
+        /// <summary>
+        /// The mouse on a card, for the run to tap the sim's keys with: the shown offer's serial, the
+        /// card, and whether it was clicked (take it) or only pointed at (choose it). Null in a run
+        /// nobody plays.
+        /// </summary>
+        public Action<int, int, bool> Pointed { get; set; }
 
         public LevelUpCards(VisualElement layer, GameContent content)
         {
@@ -67,7 +78,16 @@ namespace Game.Client.Hud
                 _faces[k] = face;
                 _backs[k] = back;
                 _row.Add(slot);
+                int card = k;
+                slot.RegisterCallback<PointerEnterEvent>(_ => Point(card, false));
+                slot.RegisterCallback<PointerDownEvent>(_ => Point(card, true));
             }
+        }
+
+        // The run checks the serial against the sim's offer: a card still on show after the sim took it isn't a pick.
+        void Point(int card, bool take)
+        {
+            if (_serial >= 0) Pointed?.Invoke(_serial, card, take);
         }
 
         public void OnEvent(in SimEvent e)
@@ -139,7 +159,7 @@ namespace Game.Client.Hud
                     Moments.Mark(MomentKind.CardFlip, _shown.Reveal(k), _serial * 3 + k);
                 }
             }
-            _hint.text = s + 1e-9 >= _shown.Reveal2 ? "LEFT / UP / RIGHT CHOOSE   ·   SPACE OR ENTER TAKES IT" : "CHOOSE AFTER THE THIRD BEAT";
+            _hint.text = s + 1e-9 >= _shown.Reveal2 ? "CLICK A CARD   ·   LEFT / UP / RIGHT CHOOSE   ·   SPACE OR ENTER TAKES IT" : "CHOOSE AFTER THE THIRD BEAT";
         }
 
         void ShowClosing(double s)

@@ -648,14 +648,15 @@ anchor, the records' ring, the record and the one analysis loop). Decisions:
   UXML and USS in `Resources/Title/`) lists the apps producing audio now
   (`ps_list_apps`, refreshed each second), then the recently played files and
   those in `~/Music/Playlist Survivors` (`--music-dir` overrides). A player
-  has no file dialog, so Cmd-V adds a copied path. Up and Down choose, Enter
-  or Space starts; a click chooses and a second click starts. It opens when a
-  windowed launch names no source (`--title` forces it, for stills).
+  has no file dialog, so Cmd-V adds a copied path. Up and Down or pointing
+  choose, Enter or Space starts, and a click on the chosen row starts (so
+  pointing and clicking starts at once). It opens when a windowed launch
+  names no source (`--title` forces it, for stills).
 - **A run started there returns to it** when it ends (the file's end, a
   failure, an output device change, Backspace): the boot scene reloads and the
   title screen says why. Runs started by flags quit as before. The run's own
-  ends (ps-msz.6.1) end it the same way, and the title screen then offers W to
-  watch the run (ps-msz.6.10).
+  ends (ps-msz.6.1) end it the same way, and the title screen then offers
+  Watch my run again under LAST RUN, or W, to watch the run (ps-msz.6.10).
 - **`--app <name>`** picks as native's `capture::apps::pick` does by name
   (exact, ignoring case, else a part); a number is a pid, listed or not, since
   the plugin taps any process with audio. It waits up to 3 s for the app to
@@ -1015,15 +1016,18 @@ screens' UXML and USS in Resources/Calibration/.
   latency, and the clicks scheduled on their DSP samples as the game's
   sounds are. Each offset is therefore exactly what the game's clocks lack.
 - **Video**: a click on every beat at 120 BPM and a crystal flash drawn at
-  frameSong. Left and Right move the flash 5 ms earlier or later (up to
-  200 ms), Enter saves, Esc leaves.
+  frameSong. Left and Right (or the EARLIER and LATER buttons) move the flash
+  5 ms earlier or later (up to 200 ms), Enter (SAVE) saves, Esc (BACK) leaves.
 - **Input**: native's tap-along, eight clicks at 120 BPM tapped with an
   arrow key or Space, read through the sim's own key path with each key's
   timestamp. The median error after the first two taps, counting only taps
   within a quarter beat of a click, is saved. Native also keeps the stomp
-  key's offset apart; the game keeps one input offset.
+  key's offset apart; the game keeps one input offset. The taps are keys,
+  the ones the game is played with, never the mouse; AGAIN (Enter) and BACK
+  (Esc) are buttons too.
 - **Access**: two rows under CALIBRATE on the title screen, and the pause
-  menu (Esc in a run: resume, calibrate video, calibrate input, end run). In
+  menu (Esc or the pause button in a run: resume, calibrate video, calibrate
+  input, end run). In
   a run the music is ducked under the clicks while a screen is open.
 - Flags: `--calibrate video|input` opens a screen at launch; under
   `--fixed-time` its song time is the frames' and no click plays (stills);
@@ -1137,8 +1141,8 @@ debugged.
   entry's final `known_at`, the seed, the build and runtime, the flags, and
   the settled hash.
 - The last 20 sessions are kept, as in native.
-- **Watch my run** (W after a run) replays the session in the player with its
-  recorded music.
+- **Watch my run** (its title row, or W, after a run) replays the session in
+  the player with its recorded music; Backspace or a click stops it.
 
 **Shipped (ps-msz.6.10).** A session is a folder: the plugin's `audio.wav`,
 `entries.jsonl` and `meta.json`, and the client's `inputs.bin` and `run.json`
@@ -1250,12 +1254,12 @@ only what the grid, the 3D presentation and the lookahead require.
 The run is native's 30-minute run, built on a **run clock** that counts
 playing time.
 
-- **Start**: Enter or Space starts a run on the next beat; headless runs start
-  after 2 s of clear beat, as in native.
+- **Start**: Enter, Space or a click starts a run on the next beat; headless
+  runs start after 2 s of clear beat, as in native.
 - **Run clock**: advances with song time except while the world is frozen. It
   drives the schedule, chest tiers (how many rewards a chest holds) and
   victory.
-- **Freezes**: a level-up, a chest, a pause (Esc or focus loss) and the music
+- **Freezes**: a level-up, a chest, a pause (Esc, the pause button or focus loss) and the music
   stopping each freeze the world. Song time continues; enemies and the hero
   bob in place on the beat.
 - **Music stopped**: 5 s below the analyzer's silence threshold, a confirmed
@@ -1313,7 +1317,9 @@ playing time.
   boss) drops `bossChickens` (`FloorChickens.BossDied`). The hero eats one within 0.89 m while the world plays:
   it heals 30 at once (native waits for the next sixteenth) and can't be
   hurt for 0.3 s.
-- **The client**: Esc or focus loss pauses under the pause menu (ps-msz.6.11), and Esc or its Resume resumes.
+- **The client**: Esc, focus loss or the HUD's pause button pauses under the pause menu (ps-msz.6.11), and Esc
+  or its Resume resumes. The pause button sits bottom right and shows only while the mouse moves, fading 2 s
+  after it rests, so the play screen stays clean. The menu's rows light under the mouse and a click picks.
   The loop finishes on Backspace or a device change at once, and on a
   victory or a fall 5 s after the end, for the HUD's card. `--easy` turns
   Easy on. The bob in place during a freeze is the presenters' idle.
@@ -2016,7 +2022,8 @@ Pickups and progression are native's.
   radius is native's base radius times the Magnet passive.
 - Experience follows native's curve.
 - **Level-up**: the world freezes, and three cards from the scripted offer
-  table flip in on beats; arrows choose and Space or Enter confirms. Keys
+  table flip in on beats; arrows choose and Space or Enter confirms, or the
+  mouse chooses (pointing) and confirms (clicking). Keys
   held when the cards open are ignored until released. Play resumes on the
   next beat.
 - **Chests**: dropped by scheduled bosses, collected only when the hero is
@@ -2046,7 +2053,11 @@ Pickups and progression are native's.
   a `Card` event. Keys held when the cards open wait for a fresh press, and the hero
   lets go of its held keys, so the key that picked a card never walks it afterwards.
   The next level's offer opens at once; after the last, play resumes on the next beat.
-  While the pause menu is up the cards take no keys.
+  While the pause menu is up the cards take no keys. The mouse taps the same recorded
+  keys (`KeyInput.Tap`, ps-072): pointing at a card taps its key, and a click taps it
+  and Enter, so a session replays a mouse pick like a key's. The loop taps them only
+  while the sim still has the offer the HUD shows open, so a card still on show after
+  the sim took it never walks the hero.
 - **The client**: `GemView` draws the gems as instanced faceted crystals
   (Resources/Gems: Gem.shader, and Gem.mat with instancing on, which keeps the shader's
   instanced variant in the player) in progression.json's blue, green and red, hovering and
@@ -2561,7 +2572,7 @@ drawn at frameSong, with marks in world space:
   depends on the frontier) slide in from both sides to a heart that beats on each; downbeats
   (`BeatClock.IsDownbeat`) are taller and warm. Past the latest committed beat the beats its
   period predicts show at 40%, without bar marks, and brighten once committed. Without a reliable beat the track empties and the
-  heart greys under WAITING FOR THE BEAT. While the run waits it prompts PRESS ENTER OR SPACE.
+  heart greys under WAITING FOR THE BEAT. While the run waits it prompts CLICK OR PRESS SPACE.
 - **World space** (`BeatGem`, Game/HudMark on camera-facing quads, HDR for the bloom): the gem
   floats 2.75 m over the hero's feet, drawn over everything. A ring closes on it from 1 m toward
   the next beat, lands on it on the beat's own frame and the gem bursts; before a downbeat the
@@ -3176,8 +3187,8 @@ jarvis's built-in output: 38 ms latency plus the 52 ms margin).
   through the game, in sync with the game's sounds.
 - **Delayed listening on Windows**: the same with Spotify or a browser on
   Cygnus.
-- **Watch my run**: press W after a run; the replay matches what happened,
-  with its music.
+- **Watch my run**: click its title row (or press W) after a run; the replay
+  matches what happened, with its music.
 
 **Measured (ps-msz.6.14).** The full File run, headless in the IL2CPP player
 with the positioning bot (`--bot positioning`) on `survivors-30-twice.m3u` (the
@@ -3220,7 +3231,8 @@ Evidence: [game/evidence/full-run](../../game/evidence/full-run/README.md).
   [Platform capture and crash safety](#platform-capture-and-crash-safety)):
   the world freezes as music stopped, and resumes after the app plays again
   and the beat relocks.
-- **Focus loss and Esc**: both pause; resuming happens on the next beat.
+- **Focus loss, Esc and the pause button**: each pauses; resuming happens on
+  the next beat.
 
 ### Load and look
 

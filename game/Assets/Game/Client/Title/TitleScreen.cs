@@ -13,12 +13,12 @@ namespace Game.Client.Title
     /// <summary>
     /// The title screen (unity-game.md, The Game, as the Player Sees It), in UI Toolkit
     /// (Resources/Title: Title.uxml, Title.uss and the panel's TitlePanel.asset): pick an app producing audio now, or a local
-    /// file or playlist, and Enter or Space starts the run on it. Up and Down choose, a click
-    /// chooses and a second click starts; Cmd-V adds a copied file or playlist path. The files are
-    /// the recently played ones and those in <see cref="MusicDir"/>; the apps refresh every second.
-    /// The last rows open the calibration screens (<see cref="CalibrationScreen"/>) over it.
-    /// After a run, W watches it again (Watch my run: <see cref="Sessions.Last"/>, replayed with its
-    /// recorded music), and returns here.
+    /// file or playlist, and Enter or Space starts the run on it. Up and Down or the mouse choose, and
+    /// a click on the chosen row starts it (so pointing, then clicking, starts at once); Cmd-V adds a
+    /// copied file or playlist path. The files are the recently played ones and those in
+    /// <see cref="MusicDir"/>; the apps refresh every second. The last rows open the calibration
+    /// screens (<see cref="CalibrationScreen"/>) over it. After a run, its row (or W) watches it again
+    /// (Watch my run: <see cref="Sessions.Last"/>, replayed with its recorded music), and returns here.
     /// Player flags: `--title` shows it in batch mode or with --fixed-time too (for stills),
     /// `--music-dir DIR` lists DIR's files in place of <see cref="MusicDir"/>, and
     /// `--title-pick NAME` starts the first row whose name contains NAME, once per launch, for
@@ -50,9 +50,10 @@ namespace Game.Client.Title
         {
             public string Key, Name, Kind;
             public MusicSource Source;
-            public CalibrationScreen.Mode? Calibrate; // a calibration screen's row; neither: an empty list's note
+            public CalibrationScreen.Mode? Calibrate; // a calibration screen's row; none of the three: an empty list's note
+            public bool Watch; // Watch my run's row
             public VisualElement Element;
-            public bool Pickable => Source != null || Calibrate != null;
+            public bool Pickable => Source != null || Calibrate != null || Watch;
         }
 
         readonly List<Row> _rows = new List<Row>();
@@ -60,7 +61,7 @@ namespace Game.Client.Title
         ScreenPanel _panel;
         CalibrationScreen _calibration;
         int _calibratedFrame = -1;
-        VisualElement _apps, _files, _calibrate;
+        VisualElement _apps, _files, _watch, _watchSection, _calibrate;
         Label _message;
         Plugin.App[] _listed = Array.Empty<Plugin.App>();
         string _selected, _pick, _musicDir;
@@ -83,6 +84,8 @@ namespace Game.Client.Title
             var root = _panel.Root;
             _apps = root.Q("apps");
             _files = root.Q("files");
+            _watch = root.Q("watch");
+            _watchSection = root.Q("watch-section");
             _calibrate = root.Q("calibrate");
             _message = root.Q<Label>("message");
             var wordmark = root.Q("wordmark");
@@ -94,8 +97,7 @@ namespace Game.Client.Title
                 if (name[i] != ' ') letter.style.color = Spectrum[hue++ % Spectrum.Length];
                 wordmark.Add(letter);
             }
-            string watch = Sessions.Last != null ? "W watches the run again" : null;
-            Say(LastEnd != null && watch != null ? LastEnd + " · " + watch : LastEnd ?? watch);
+            Say(LastEnd);
             LastEnd = null;
             _listed = ListApps();
             Rebuild();
@@ -133,10 +135,7 @@ namespace Game.Client.Title
             if (k.vKey.wasPressedThisFrame && (k.leftCommandKey.isPressed || k.rightCommandKey.isPressed || k.ctrlKey.isPressed)) Paste();
             if (k.wKey.wasPressedThisFrame && Sessions.Last != null)
             {
-                Debug.Log("TitleScreen: watching " + Sessions.Last);
-                var start = _start;
-                Destroy(this);
-                start(MusicSource.Replay(Sessions.Last));
+                Watch();
                 return;
             }
             if (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame || k.spaceKey.wasPressedThisFrame)
@@ -171,6 +170,7 @@ namespace Game.Client.Title
             _rows.Clear();
             _apps.Clear();
             _files.Clear();
+            _watch.Clear();
             _calibrate.Clear();
             foreach (var app in _listed)
                 Add(_apps, new Row { Key = "app:" + app.Pid, Name = app.Name, Kind = "APP", Source = MusicSource.App(app) });
@@ -188,6 +188,11 @@ namespace Game.Client.Title
                 files++;
             }
             if (files == 0) Add(_files, new Row { Name = "Copy a file or playlist's path and press Cmd-V, or put music in " + _musicDir });
+            bool watch = Sessions.Last != null;
+            var shown = watch ? DisplayStyle.Flex : DisplayStyle.None;
+            _watchSection.style.display = shown;
+            _watch.style.display = shown;
+            if (watch) Add(_watch, new Row { Key = "watch", Name = "Watch my run again", Kind = "REPLAY", Watch = true });
             Add(_calibrate, new Row { Key = "calibrate:video", Name = "Video: line a flash up with a click", Kind = "VIDEO", Calibrate = CalibrationScreen.Mode.Video });
             Add(_calibrate, new Row { Key = "calibrate:input", Name = "Input: tap along to clicks", Kind = "INPUT", Calibrate = CalibrationScreen.Mode.Input });
             if (Selected() < 0)
@@ -217,6 +222,11 @@ namespace Game.Client.Title
                 e.Add(kind);
                 gem.style.backgroundColor = Spectrum[_rows.Count % Spectrum.Length];
                 string key = row.Key;
+                e.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    _selected = key;
+                    Show();
+                });
                 e.RegisterCallback<PointerDownEvent>(_ =>
                 {
                     if (_selected == key) Launch(_rows[Selected()]);
@@ -316,6 +326,11 @@ namespace Game.Client.Title
 
         void Launch(Row row, bool remember = true)
         {
+            if (row.Watch)
+            {
+                Watch();
+                return;
+            }
             if (row.Calibrate is CalibrationScreen.Mode mode)
             {
                 _panel.Visible = false;
@@ -332,6 +347,15 @@ namespace Game.Client.Title
             var start = _start;
             Destroy(this);
             start(row.Source);
+        }
+
+        /// <summary>Plays the last run again (Watch my run), returning here at its end.</summary>
+        void Watch()
+        {
+            Debug.Log("TitleScreen: watching " + Sessions.Last);
+            var start = _start;
+            Destroy(this);
+            start(MusicSource.Replay(Sessions.Last));
         }
 
         void OnDestroy() => _panel?.Dispose();

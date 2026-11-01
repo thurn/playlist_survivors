@@ -10,8 +10,8 @@ namespace Game.Client.Loop
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, with each event's own timestamp
     /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps, and Enter (with the
-    /// arrows and Space) answers a level-up's cards. An
-    /// event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps
+    /// arrows and Space) answers a level-up's cards; a click on a card taps its keys
+    /// (<see cref="Tap"/>). An event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps
     /// to the song time heard (<see cref="IGameClock.KeySong"/>). Two physical keys on one
     /// direction press it once and release it when both are up.
     ///
@@ -82,6 +82,18 @@ namespace Game.Client.Loop
                 return;
             }
             _queue[(_head + _count++) % Capacity] = new Change { Key = key, Down = down, Real = real };
+        }
+
+        /// <summary>
+        /// Taps a key at real time <paramref name="real"/> as if it were pressed and let go, for the
+        /// mouse's picks (a level-up card): the sim records it like any key, so a session replays it.
+        /// A key held down meanwhile is let go and pressed again, so the sim still has it held after.
+        /// </summary>
+        public void Tap(SimKey key, double real)
+        {
+            bool held = _held[(int)key] > 0;
+            Enqueue(key, !held, real);
+            Enqueue(key, held, real);
         }
 
         /// <summary>Takes the oldest collected change, if any.</summary>

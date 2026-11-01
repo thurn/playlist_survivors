@@ -623,5 +623,29 @@ namespace Game.Tests
                 Assert.That(keys.Drain(sim, new Clock()), Is.Zero);
             }
         }
+
+        /// <summary>
+        /// A click's tap (a level-up card's) reaches the sim as a press and a release, recorded like a
+        /// key; on a key held down it is a release and a press, so the sim still has it held.
+        /// </summary>
+        [Test]
+        public void ATappedKeyIsPressedAndReleasedAndAHeldOneStaysHeld()
+        {
+            var keyboard = InputSystem.AddDevice<Keyboard>();
+            using (var keys = new KeyInput())
+            {
+                var sim = new Simulation(new SimConfig());
+                keys.Tap(SimKey.Up, 10.5);
+                Press(keyboard.rightArrowKey, time: 10.75);
+                keys.Tap(SimKey.Right, 11.0);
+                Assert.That(keys.Drain(sim, new Clock()), Is.EqualTo(5));
+                var k = sim.Keys.ToArray();
+                Assert.That(Array.ConvertAll(k, c => (c.Key, c.Down, c.Heard)), Is.EqualTo(new[]
+                {
+                    (SimKey.Up, true, 20.0), (SimKey.Up, false, 20.0),
+                    (SimKey.Right, true, 20.5), (SimKey.Right, false, 21.0), (SimKey.Right, true, 21.0),
+                }));
+            }
+        }
     }
 }

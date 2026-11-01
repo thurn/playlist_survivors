@@ -12,10 +12,12 @@
             <ui:VisualElement name="apps" class="list" />
             <ui:Label text="FILES AND PLAYLISTS" class="section" />
             <ui:VisualElement name="files" class="list" />
+            <ui:Label name="watch-section" text="LAST RUN" class="section" />
+            <ui:VisualElement name="watch" class="list" />
             <ui:Label text="CALIBRATE" class="section" />
             <ui:VisualElement name="calibrate" class="list" />
             <ui:Label name="message" class="message" />
-            <ui:Label class="hint" text="Up / Down choose   ·   Enter or Space starts   ·   Cmd-V adds a copied file or playlist path" />
+            <ui:Label class="hint" text="Click or Enter starts   ·   Up / Down choose   ·   Cmd-V adds a copied file or playlist path" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -770,3 +770,32 @@ Label {
     height: 2px;
     opacity: 0.6;
 }
+
+/* ---------------------------------------------------------------- the pause button: bottom right, only while the mouse moves */
+
+.pause-button {
+    position: absolute;
+    right: 24px;
+    bottom: 22px;
+    width: 56px;
+    height: 56px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(3, 4, 10, 0.72);
+    border-width: 1px;
+    border-color: rgba(220, 240, 255, 0.35);
+    display: none;
+}
+
+.pause-button:hover {
+    background-color: rgba(150, 210, 255, 0.14);
+    border-color: rgba(225, 245, 255, 0.85);
+}
+
+.pause-button__bar {
+    width: 7px;
+    height: 22px;
+    margin: 0 4px;
+    background-color: rgb(235, 242, 255);
+}

@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-    <!-- The calibration screens (CalibrationScreen.cs): video's flash, or input's tap-along. Taps and marks are added in code. -->
+    <!-- The calibration screens (CalibrationScreen.cs): video's flash, or input's tap-along. Taps, marks and buttons are added in code. -->
     <Style src="../Title/Title.uss" />
     <Style src="Calibration.uss" />
     <ui:VisualElement name="calibration-root" class="root">
@@ -25,6 +25,7 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Label name="message" class="note" />
+            <ui:VisualElement name="buttons" class="buttons" />
             <ui:Label name="hint" class="hint" />
         </ui:VisualElement>
     </ui:VisualElement>

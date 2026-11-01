@@ -18,10 +18,12 @@ namespace Game.Client.Calibration
     /// DSP time here, heard the device's latency plus Unity's buffering later), so each offset is
     /// what the game's clocks still lack.
     /// - **Video**: a click on every beat at 120 BPM and a flash drawn at frameSong; Left and Right
-    ///   move the flash 5 ms earlier or later until it lands with the click, Enter saves, Esc leaves.
+    ///   (or the Earlier and Later buttons) move the flash 5 ms earlier or later until it lands with
+    ///   the click, Enter (Save) saves, Esc (Back) leaves.
     /// - **Input**: eight clicks at 120 BPM; the player taps an arrow key or Space with each
-    ///   (<see cref="KeyInput"/>'s timestamps, as the sim gets them). The median error after the first
-    ///   two taps is saved (<see cref="TapAlong"/>); Enter goes again, Esc leaves.
+    ///   (<see cref="KeyInput"/>'s timestamps, as the sim gets them: the keys the game is played with,
+    ///   so not the mouse). The median error after the first two taps is saved (<see cref="TapAlong"/>);
+    ///   Enter (Again) goes again, Esc (Back) leaves.
     /// In a run, the music is ducked under the clicks while the screen is open.
     /// Player flags: `--calibrate video|input` opens the screen at launch; under `--fixed-time` its
     /// song time is the frame's and no click plays, for stills; `--tap-along MS,MS,...` taps each
@@ -64,6 +66,9 @@ namespace Game.Client.Calibration
         double _opened;
         int _openedFrame;
         double[] _synthetic;
+        // The buttons' clicks since the last frame read them: a nudge (+1 earlier, -1 later), Save or Again, Back.
+        int _nudged;
+        bool _confirmed, _left;
 
         // The clicks, in the screen's song time: the video screen's every Period from _first, the tap-along's listed.
         double _first, _nextClick;
@@ -151,6 +156,14 @@ namespace Game.Client.Calibration
             _taps = root.Q("taps");
             _scale = root.Q("scale");
             _message = root.Q<Label>("message");
+            var buttons = root.Q("buttons");
+            if (video)
+            {
+                AddButton(buttons, "EARLIER", () => _nudged++);
+                AddButton(buttons, "LATER", () => _nudged--);
+            }
+            AddButton(buttons, video ? "SAVE" : "AGAIN", () => _confirmed = true);
+            AddButton(buttons, "BACK", () => _left = true);
             root.Q<Label>("hint").text = video
                 ? "Left / Right moves the flash earlier or later   ·   Enter saves   ·   Esc leaves"
                 : "Tap an arrow key or Space with each click   ·   Enter goes again   ·   Esc leaves";
@@ -164,6 +177,15 @@ namespace Game.Client.Calibration
             else StartTapAlong();
             Debug.Log($"CalibrationScreen: {_mode} for {(_device.Uid.Length > 0 ? _device.Uid : "no device")} " +
                       $"({_offsets}; output latency {1000 * (_device.Latency + MusicPlayer.DspBuffering):F1} ms{(_fixed ? ", fixed time: no clicks" : "")}) in {_store.Path}");
+        }
+
+        static void AddButton(VisualElement row, string text, Action clicked)
+        {
+            var button = new VisualElement();
+            button.AddToClassList("button");
+            button.Add(new Label(text) { pickingMode = PickingMode.Ignore });
+            button.RegisterCallback<PointerDownEvent>(_ => clicked());
+            row.Add(button);
         }
 
         static double[] ParseTaps(string list)
@@ -196,8 +218,9 @@ namespace Game.Client.Calibration
             Sample();
             // The key that opened the screen is the opener's, not a key here.
             var k = Time.frameCount == _openedFrame ? null : Keyboard.current;
-            bool esc = k != null && k.escapeKey.wasPressedThisFrame;
-            bool enter = k != null && (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame);
+            bool esc = k != null && k.escapeKey.wasPressedThisFrame || _left;
+            bool enter = k != null && (k.enterKey.wasPressedThisFrame || k.numpadEnterKey.wasPressedThisFrame) || _confirmed;
+            _left = _confirmed = false;
             if (_mode == Mode.Video) UpdateVideo(k, enter);
             else UpdateInput(enter);
             if (esc) Close();
@@ -206,15 +229,14 @@ namespace Game.Client.Calibration
         void UpdateVideo(Keyboard k, bool enter)
         {
             while (_keys.TryTake(out _)) { } // the arrows are read below
-            if (k != null)
+            int by = _nudged;
+            _nudged = 0;
+            if (k != null) by += (k.leftArrowKey.wasPressedThisFrame ? 1 : 0) - (k.rightArrowKey.wasPressedThisFrame ? 1 : 0);
+            if (by != 0)
             {
-                int by = (k.leftArrowKey.wasPressedThisFrame ? 1 : 0) - (k.rightArrowKey.wasPressedThisFrame ? 1 : 0);
-                if (by != 0)
-                {
-                    _offsets.Video = Math.Clamp(Math.Round((_offsets.Video + by * Nudge) * 1000) / 1000, -VideoLimit, VideoLimit);
-                    _offsets.ApplyTo(_clock);
-                    ShowOffset();
-                }
+                _offsets.Video = Math.Clamp(Math.Round((_offsets.Video + by * Nudge) * 1000) / 1000, -VideoLimit, VideoLimit);
+                _offsets.ApplyTo(_clock);
+                ShowOffset();
             }
             for (; _nextClick <= Now() + Horizon; _nextClick += TapAlong.Period) Click(_nextClick);
             double song = FrameSong();

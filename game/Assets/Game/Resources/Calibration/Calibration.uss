@@ -122,3 +122,33 @@
     margin-top: 10px;
     min-height: 34px;
 }
+
+/* The buttons under the screen, for every key's action: hairline facets lit under the mouse. */
+.buttons {
+    flex-direction: row;
+    justify-content: center;
+    margin-top: 26px;
+}
+
+.button {
+    height: 48px;
+    padding: 0 28px;
+    margin: 0 8px;
+    justify-content: center;
+    border-width: 1px;
+    border-color: rgba(190, 215, 255, 0.3);
+    background-color: rgba(150, 210, 255, 0.04);
+}
+
+.button:hover {
+    border-color: rgba(225, 245, 255, 0.85);
+    background-color: rgba(150, 210, 255, 0.12);
+}
+
+.button > Label {
+    font-size: 17px;
+    letter-spacing: 4px;
+    color: rgba(225, 235, 250, 0.9);
+    margin: 0;
+    padding: 0;
+}

@@ -20,6 +20,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using SimKey = PS.Game.Sim.Key;
 
 namespace Game.Client.Loop
 {
@@ -37,10 +38,10 @@ namespace Game.Client.Loop
     /// song time is the music's (<see cref="MusicTimes"/>), calibrated for the output device it
     /// plays on (<see cref="CalibrationStore"/>).
     ///
-    /// The run (unity-game.md, The Run; <see cref="RunControl"/>): with a window, Enter or Space
-    /// starts it on the next beat; a headless or fixed-time run starts after 2 s of clear beat, and
-    /// a run without music at once. Esc and focus loss pause it under the pause menu
-    /// (<see cref="PauseMenu"/>: resume, the calibration screens, end the run), and Esc or its
+    /// The run (unity-game.md, The Run; <see cref="RunControl"/>): with a window, Enter, Space or a
+    /// click starts it on the next beat; a headless or fixed-time run starts after 2 s of clear beat,
+    /// and a run without music at once. Esc, the HUD's pause button and focus loss pause it under the
+    /// pause menu (<see cref="PauseMenu"/>: resume, the calibration screens, end the run), and Esc or its
     /// Resume resumes it on the next beat. The plugin's watchdog releasing the tap stops the
     /// music. Backspace and an output device change (the latency changes) end it, each a run
     /// control the sim records.
@@ -53,7 +54,7 @@ namespace Game.Client.Loop
     /// run's end its <see cref="SessionRecord"/>. A Replay
     /// source plays one again (Watch my run, `--replay DIR`): the sim takes the recorded entries,
     /// keys, debug commands and run controls at their recorded times (<see cref="SessionReplay"/>),
-    /// no live input reaches it (Backspace stops the replay), and at the run's end the replay
+    /// no live input reaches it (Backspace or a click stops the replay), and at the run's end the replay
     /// compares the settled hash, logging a `Replay:` line (a headless `--replay` exits 1 when it
     /// differs in the runtime that recorded it). The run's config is built once, from its <see cref="RunInputs"/> (the
     /// flags' on the build, or the replayed session's), which its session records. Player flags (<see cref="LaunchOptions"/>):
@@ -161,7 +162,8 @@ namespace Game.Client.Loop
         PauseMenu _pause;
         CalibrationScreen _calibrating;
         double _pauseAt;
-        int _releases, _arenaFrame = -1;
+        int _releases, _arenaFrame = -1, _begunFrame;
+        float _mouseMovedAt = float.NegativeInfinity;
         LaunchOptions _options;
         RunInputs _run;
         string _sessionDir;
@@ -188,6 +190,7 @@ namespace Game.Client.Loop
         void Setup(Camera camera, MusicSource source)
         {
             var options = _options = LaunchOptions.Current;
+            _begunFrame = Time.frameCount;
             _fixed = options.FixedTime;
             bool headless = options.Headless;
             if (headless) Application.targetFrameRate = Boot.FixedFps;
@@ -331,6 +334,7 @@ namespace Game.Client.Loop
             if (_effects != null) Driver.Events.Subscribe(_effects);
             if (_shatter != null) _shatter.Erupted += Erupted;
             _hud = new HudPresenter(transform, camera, Driver.Sim, content, source, _interactive) { Menu = _pause };
+            if (_interactive && replayed == null) _hud.CardPointed = PointAtCard;
             if (_hero != null) _hud.DrawnHero = _hero.Drawn;
             Driver.Events.Subscribe(_hud);
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
@@ -473,7 +477,8 @@ namespace Game.Client.Loop
             if (_replay != null)
             {
                 if (_replay.Done(Driver.Sim) || _music.Ended) FinishReplay();
-                else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame) Finish(0, "the replay was stopped");
+                else if (Keyboard.current != null && Keyboard.current.backspaceKey.wasPressedThisFrame || Clicked())
+                    Finish(0, "the replay was stopped");
                 return;
             }
             var state = Driver.Sim.State;
@@ -501,11 +506,30 @@ namespace Game.Client.Loop
             return false;
         }
 
+        /// <summary>
+        /// A level-up card the mouse pointed at (`take`: clicked), as the sim's keys: its card's key
+        /// chooses it, then Enter takes it. Only while the sim still has that offer open: a card still on
+        /// show after the sim took it would otherwise walk the hero.
+        /// </summary>
+        void PointAtCard(int serial, int card, bool take)
+        {
+            var offer = Driver.Sim.State.Offer;
+            if (!offer.Open || offer.Serial != serial) return;
+            double now = Time.realtimeSinceStartupAsDouble;
+            _keys.Tap(LevelUpCards.Choose[card], now);
+            if (take) _keys.Tap(SimKey.Enter, now);
+        }
+
+        /// <summary>A left click this frame, though not the one that began the loop (the title screen's pick).</summary>
+        bool Clicked() => Time.frameCount != _begunFrame && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+
         /// <summary>The run's inputs besides the keys: the start, a pause or resume, and the watchdog.</summary>
         void RunInput()
         {
             var state = Driver.Sim.State;
             var keyboard = Keyboard.current;
+            var mouse = Mouse.current;
+            if (mouse != null && mouse.delta.ReadValue() != Vector2.zero) _mouseMovedAt = Time.unscaledTime;
             if (_music != null && _music.Status.Releases != _releases)
             {
                 _releases = _music.Status.Releases;
@@ -527,16 +551,18 @@ namespace Game.Client.Loop
             if (state.Phase == RunPhase.Waiting)
             {
                 if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.numpadEnterKey.wasPressedThisFrame
-                                         || keyboard.spaceKey.wasPressedThisFrame))
+                                         || keyboard.spaceKey.wasPressedThisFrame) || Clicked())
                     Driver.Sim.Control(RunControl.Start);
                 return;
             }
             if (_calibrating != null) return; // its screen has the keys
-            if (!state.FrozenFor(FreezeReason.Pause))
+            bool paused = state.FrozenFor(FreezeReason.Pause);
+            bool button = _hud != null && _hud.PauseButton(!paused && state.Phase != RunPhase.Ended, Time.unscaledTime - _mouseMovedAt);
+            if (!paused)
             {
                 _pause.Hide(); // resumed, or the run ended
                 bool esc = keyboard != null && keyboard.escapeKey.wasPressedThisFrame;
-                if (esc || focusLost) Driver.Sim.Control(RunControl.Pause);
+                if (esc || focusLost || button) Driver.Sim.Control(RunControl.Pause);
                 if (!Driver.Sim.State.FrozenFor(FreezeReason.Pause)) return;
             }
             _pause.Show();

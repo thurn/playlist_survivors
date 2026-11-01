@@ -6,7 +6,7 @@
         <ui:VisualElement class="pause">
             <ui:Label text="PAUSED" class="pause__heading" />
             <ui:VisualElement name="rows" class="list" />
-            <ui:Label class="hint" text="Up / Down choose   ·   Enter picks   ·   Esc resumes on the next beat" />
+            <ui:Label class="hint" text="Click or Enter picks   ·   Up / Down choose   ·   Esc resumes on the next beat" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -8,8 +8,8 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The pause menu over a paused run (Resources/Pause: Pause.uxml and Pause.uss): resume, the
-    /// two calibration screens, and end the run. Up and Down choose, Enter or Space picks, a click
-    /// picks, Esc resumes. Its panel exists only while it is open, so a batch-mode still shows it,
+    /// two calibration screens, and end the run. Up and Down or the mouse choose, Enter or Space
+    /// picks, a click picks, Esc resumes. Its panel exists only while it is open, so a batch-mode still shows it,
     /// over the frozen run, only then (<see cref="ScreenPanel"/>).
     /// </summary>
     public sealed class PauseMenu : IDisposable
@@ -50,7 +50,13 @@ namespace Game.Client.Loop
                 name.AddToClassList("entry__name");
                 e.Add(name);
                 var choice = Items[i].Choice;
+                int row = i;
                 e.RegisterCallback<PointerDownEvent>(_ => _clicked = choice);
+                e.RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    _selected = row;
+                    Highlight();
+                });
                 _rows[i] = e;
                 list.Add(e);
             }

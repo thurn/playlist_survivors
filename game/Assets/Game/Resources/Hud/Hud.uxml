@@ -1,8 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <!-- The run's HUD (Client/Hud/HudPresenter.cs): native's layout on a 1920 x 1080 panel, its HUD
          units doubled. Layers bottom to top: the play HUD, damage numbers, the banner, the level-up
-         and chest cards (whose veil dims the HUD), the end card. Slots, beat marks, numbers and cards
-         are added in code; positions that follow the music or the world are set in code too. -->
+         and chest cards (whose veil dims the HUD), the end card, the pause button. Slots, beat
+         marks, numbers and cards are added in code; positions that follow the music or the world
+         are set in code too. -->
     <Style src="Hud.uss" />
     <ui:VisualElement name="hud-root" class="hud" picking-mode="Ignore">
         <ui:VisualElement name="play" class="layer" picking-mode="Ignore">
@@ -77,6 +78,11 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="end-rows" class="end__rows" />
             </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- The pause button, bottom right, over the cards too; shown only while the mouse moves. -->
+        <ui:VisualElement name="pause-button" class="pause-button">
+            <ui:VisualElement class="pause-button__bar" picking-mode="Ignore" />
+            <ui:VisualElement class="pause-button__bar" picking-mode="Ignore" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

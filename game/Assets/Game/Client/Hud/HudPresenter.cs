@@ -21,6 +21,7 @@ namespace Game.Client.Hud
     ///   30% it glows red on each beat), the source tag under it, kills top right, the run clock
     ///   bottom left, and the arsenal's six weapon and six passive slots (<see cref="SlotsView"/>);
     /// - the beat track (<see cref="BeatTrack"/>) and, while the run waits, its start prompt;
+    /// - in a run being played, a pause button bottom right while the mouse moves (<see cref="PauseButton"/>);
     /// - damage numbers over the enemies, times 10 (<see cref="DamageNumbers"/>);
     /// - banners: MUSIC STOPPED, and PAUSED when no pause menu is up (the menu's own heading is the
     ///   banner then);
@@ -35,12 +36,14 @@ namespace Game.Client.Hud
     {
         /// <summary>A bite flashes health white this long (s); under this share of health it pulses.</summary>
         public const double BiteFlashS = 0.2, LowHealth = 0.3;
+        /// <summary>The pause button shows this long after the mouse last moved (s), then fades out over the next.</summary>
+        public const float PauseShowS = 2, PauseFadeS = 0.4f;
 
         readonly Simulation _sim;
         readonly ScreenPanel _panel;
         readonly bool _interactive;
         readonly Label _level, _kills, _timer, _prompt, _bannerText, _delay, _source;
-        readonly VisualElement _xpFill, _hpFill, _hpPulse, _banner;
+        readonly VisualElement _xpFill, _hpFill, _hpPulse, _banner, _pauseButton;
         readonly SlotsView _slots;
         readonly BeatTrack _track;
         readonly LevelUpCards _cards;
@@ -51,6 +54,7 @@ namespace Game.Client.Hud
         readonly Queue<double> _deaths = new Queue<double>();
         readonly List<double> _bites = new List<double>();
         int _killCount, _killsShown = -1;
+        bool _pauseClicked;
         double _bitten = double.NegativeInfinity;
         // The song time of the last frame shown before the beat locked (NaN while unlocked): a beat at or before it
         // never lands, since it would land late, on the frame the lock arrives (ps-msz.8.5).
@@ -61,6 +65,12 @@ namespace Game.Client.Hud
 
         /// <summary>The pause menu, whose heading stands in for the PAUSED banner while it is up.</summary>
         public PauseMenu Menu { get; set; }
+
+        /// <summary>The mouse on a level-up card: the offer's serial, the card, and whether it was clicked (<see cref="LevelUpCards.Pointed"/>).</summary>
+        public Action<int, int, bool> CardPointed
+        {
+            set => _cards.Pointed = value;
+        }
 
         public HudPresenter(Transform parent, Camera camera, Simulation sim, GameContent content, MusicSource source, bool interactive)
         {
@@ -79,6 +89,8 @@ namespace Game.Client.Hud
             _hpPulse = root.Q("hp-pulse");
             _delay = root.Q<Label>("delay");
             _source = root.Q<Label>("source");
+            _pauseButton = root.Q("pause-button");
+            _pauseButton.RegisterCallback<PointerDownEvent>(_ => _pauseClicked = true);
             _delay.text = source != null ? $"DELAYED {MusicPlayer.M:0} S" : "";
             _source.text = source?.Tag ?? "";
             _slots = new SlotsView(root.Q("weapons"), root.Q("passives"), content);
@@ -161,7 +173,7 @@ namespace Game.Client.Hud
             Show(_timer, HudText.Clock(state.RunClock));
             _slots.Show(_sim.State.WeaponSlots, _sim.State.PassiveSlots);
             _track.Show(_sim.Stream, _sim.Beats, s, beat, locked, since);
-            Show(_prompt, state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT");
+            Show(_prompt, state.Phase != RunPhase.Waiting ? "" : _interactive ? "CLICK OR PRESS SPACE" : "THE RUN STARTS ON THE BEAT");
 
             string banner = state.Phase == RunPhase.Ended ? null
                 : state.FrozenFor(FreezeReason.MusicStopped) ? "MUSIC STOPPED"
@@ -181,6 +193,22 @@ namespace Game.Client.Hud
             // The overhead display comes in over the run's first two seconds and goes with the end card.
             double fade = state.Phase == RunPhase.Ended ? 0 : Smooth((state.RunClock - 0.5) / 1.5);
             _gem.Present(s, new Vector3((float)hx, 0, (float)hy), beat, locked, since, hit, health, bitten, (float)fade);
+        }
+
+        /// <summary>
+        /// Shows the pause button while <paramref name="offered"/> (a run being played, not paused) and
+        /// the mouse moved <paramref name="idle"/> seconds ago or less, fading it out after
+        /// <see cref="PauseShowS"/>, so the play screen is clean while the mouse rests. Returns whether it
+        /// was clicked since the last call.
+        /// </summary>
+        public bool PauseButton(bool offered, float idle)
+        {
+            float a = offered ? Mathf.Clamp01((PauseShowS + PauseFadeS - idle) / PauseFadeS) : 0;
+            _pauseButton.style.display = a > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _pauseButton.style.opacity = a;
+            bool clicked = _pauseClicked && a > 0;
+            _pauseClicked = false;
+            return clicked;
         }
 
         /// <summary>Sets a label's text only when it changes: a new text has the panel lay it out again.</summary>

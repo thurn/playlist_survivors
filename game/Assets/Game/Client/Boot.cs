@@ -33,7 +33,7 @@ namespace Game.Client
     /// - `--replay DIR`: a recorded session played again, its recorded music and inputs, checking
     ///   its hash at the end (<see cref="GameLoop"/>); it quits then, with 1 if the hash differs;
     /// - neither, in a window (or with `--title`): the title screen's pick (<see cref="TitleScreen"/>).
-    ///   That run's end returns to the title screen, which says why it ended, and where W watches it again;
+    ///   That run's end returns to the title screen, which says why it ended, and where Watch my run (or W) plays it again;
     /// - neither, windowless: no music, on frame time.
     /// With `--watch`, a recorded run is replayed once it ends (<see cref="Sessions"/>), and `--seconds N`
     /// ends that run rather than the launch.
