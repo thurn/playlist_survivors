@@ -56,7 +56,7 @@ float CrowdThrob(MonsterInstance m) { return (m.flags & CROWD_ALIVE) != 0 ? _SL_
 // frame's for motion vectors), squashes or stretches a living monster about its feet by the beat's
 // bounce, widening it as it squashes by more than its volume would (CROWD_BOUNCE_WIDEN: the game
 // camera looks down at 55 degrees, so the footprint reads more than the height), then places it
-// by the instance. CrowdPose.cs mirrors this but the bounce: a breaking monster is dying.
+// by the instance.
 void SkinVertex(MonsterInstance m, uint slot, bool previous, float3 positionOS, float3 normalOS,
                 float4 boneIndex, float4 boneWeight, out float3 positionWS, out float3 normalWS)
 {

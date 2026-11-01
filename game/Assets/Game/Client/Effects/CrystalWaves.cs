@@ -1,4 +1,5 @@
 using System;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -24,6 +25,11 @@ namespace Game.Client.Effects
         /// heavy one a broad white-hot band (ps-msz.8.3), so the big moments stand out from the beat's.
         /// </summary>
         public const float StrikeIntensity = 0.04f, HeavyIntensity = 0.8f, StrikeWidth = 0.3f, HeavyWidth = 1.0f;
+        /// <summary>The wave's shader, which the effect library references so a build includes it (EffectLibrary.Shaders).</summary>
+        public const string ShaderName = "Game/CrystalWave";
+
+        /// <summary>The wave's shader in <paramref name="library"/> (the finisher rings draw on it too).</summary>
+        public static Shader ShaderIn(EffectLibrary library) => Array.Find(library.Shaders, s => s.name == ShaderName);
 
         struct Wave
         {

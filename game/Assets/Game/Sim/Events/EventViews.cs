@@ -346,6 +346,43 @@ namespace PS.Game.Sim
         public double Start => e.D4;
     }
 
+    public readonly struct FinisherEvent
+    {
+        readonly SimEvent e;
+        public FinisherEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public int Ring => e.I0;
+        public FinisherPhase Phase => (FinisherPhase)e.I1;
+        /// <summary>The ring's phrase downbeat: its beat index, and its time as predicted when the event was emitted.</summary>
+        public int Beat => e.I2;
+        public double Downbeat => e.D0;
+        /// <summary>When the ring started closing: it reaches the hero on <see cref="Downbeat"/>.</summary>
+        public double Start => e.D1;
+        /// <summary>A press heard this close to the downbeat, either side, fires the slam.</summary>
+        public double Window => e.D2;
+        /// <summary>A hit's slam: its impact (heard time's, as a press's strike) and when its press was heard.</summary>
+        public double Impact => e.D3;
+        public double Heard => e.D4;
+    }
+
+    public readonly struct HeroDashEvent
+    {
+        readonly SimEvent e;
+        public HeroDashEvent(in SimEvent e) { this.e = e; }
+        /// <summary>When the sim took the press; the dash itself runs from <see cref="Start"/>, when it was heard.</summary>
+        public double T => e.T;
+        public int Dash => e.I0;
+        /// <summary>On the beat: the long lunge that hurts what it passes and makes the sword's next beat strike a spin; else the short hop.</summary>
+        public bool OnBeat => e.I1 != 0;
+        public Direction Facing => (Direction)e.I2;
+        public double Start => e.D0;
+        public double End => e.D1;
+        public double FromX => e.D2;
+        public double FromY => e.D3;
+        public double DirX => e.D4;
+        public double DirY => e.D5;
+    }
+
     public readonly struct EnemyKnockEvent
     {
         readonly SimEvent e;

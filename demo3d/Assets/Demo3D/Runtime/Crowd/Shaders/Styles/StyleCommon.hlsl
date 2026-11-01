@@ -267,7 +267,7 @@ float SL_Dissolve(float3 rest, float death)
 #endif
 
 #if defined(SL_STYLE_MESH) && defined(SL_STATIC)
-// A structure keeps its triangles together: its break is CrystalShatter's kind of shards.
+// A structure keeps its triangles together: its break is StructureShatter's shards.
 #define SL_ShatterDisplace(v, m, slot, positionWS, strength)
 #elif defined(SL_STYLE_MESH)
 // SL_Shatter for SL_DISPLACE: a dying monster's triangles fly apart. One that has flown its course

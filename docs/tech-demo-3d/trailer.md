@@ -1323,7 +1323,7 @@ violations live.
 - **The cut.** One frame switches the environment, then swaps in the shot's
   own timeline, evaluator, effect driver, blow and camera feel and crystal
   breaks. The effect driver's seek clears particles and effect lights. The
-  crystal shatter is retargeted, which clears its shards. The horde never
+  crystal cut's horde (`LookCrowd`) is retargeted, which clears its shards. The horde never
   poses before the shot's first frame, which clears the hit-stop. Crowd slots
   are keyed per shot, so no slot carries a monster's state across the cut.
   A cut costs 0.1–0.3 ms, plus up to about 1.2 ms of CPU on its frame while
@@ -1586,12 +1586,20 @@ The file's look:
 }
 ```
 
-- **Glow** is a new tune key, crystal's inner glow (`_InnerGlow`,
-  `CrystalCommon.hlsl`). It adds the gem's colour after the grade's peak, so
-  it reaches the bloom: each facet its own brightness, throbbing with the beat
-  wave, a shard's fresh faces twice as bright. It is 0 unless a tune sets it,
-  so every other run looks as before. Monsters, their shards and crystal
-  structures (and so the structures' shards) all take it.
+- **Glow** is a new tune key, crystal's inner glow (`_InnerGlow` in
+  `CrystalCommon.hlsl` for the structures, the look package's global
+  `_SL_InnerGlow` in `MonsterCommon.hlsl` for the monsters and their shards).
+  It adds the gem's colour after the grade's peak, so it reaches the bloom:
+  each facet its own brightness, throbbing with the beat wave, a shard's fresh
+  faces twice as bright. It is 0 unless a tune sets it, so every other run
+  looks as before. Monsters, their shards and crystal structures (and so the
+  structures' shards) all take it.
+- **The horde is the look package's** (ps-wnj.22): `--monster-style crystal`
+  draws through the package's crowd and GPU shatter, in the applied `--look`
+  preset's monster look ([crowd.md](crowd.md#monster-styles), The crystal cut
+  on the look package), so every monster look built in the package shows here.
+  Its shards are the game's GPU chunks rather than PhysX bodies, and every
+  death shatters.
 - **Post.** The style's post keys darken the forest's reference look (exposure
   0.5 against the style's 0.8), deepen contrast and saturation, and lower the
   bloom threshold to 1.0 at intensity 2.0, so the gems bloom and the ground

@@ -5,6 +5,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using PS.Look.Crowd;
 
 namespace Game.Client
 {
@@ -102,7 +103,7 @@ namespace Game.Client
         {
             var data = _camera.GetUniversalAdditionalCameraData();
             var (mask, clear, background, post) = (_camera.cullingMask, _camera.clearFlags, _camera.backgroundColor, data.renderPostProcessing);
-            _camera.cullingMask = 1 << Crowd.BoneTextureCrowd.Layer;
+            _camera.cullingMask = 1 << BoneTextureCrowd.Layer;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = Color.black;
             data.renderPostProcessing = false;

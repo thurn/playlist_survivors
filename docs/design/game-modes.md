@@ -9,7 +9,8 @@ recorded in sessions and replayed faithfully.
 just game --mode free --file "$PWD/public/reactive/house-128/house-128.ogg"
 ```
 
-Filed as bead ps-y21 (2026-11-01); the zen mode as ps-myz (2026-11-01). Native (`native/`) has no modes.
+Filed as bead ps-y21 (2026-11-01); the zen mode as ps-myz (2026-11-01), its finishers (`--finishers`) as ps-qbd
+(2026-11-01) and its dash (`--dash`) as ps-zz4 (2026-11-01). Native (`native/`) has no modes.
 
 ## The modes
 
@@ -40,12 +41,17 @@ field is one system's choice:
 - `Loudness`: whether a beat sword's reach, damage and strike count follow the tick's loudness level.
 - `Reels`: whether the horde reels to the music (heavy blows throw further, a zone change shoves and staggers, the
   crowd bobs on the kick).
+- `Finishers`: whether `--finishers` may play it ([Finishers](#finishers)); only zen does, and the launch refuses the
+  flag elsewhere. `--dash` ([The dash](#the-dash)) needs no field of its own: it needs `Movement` `Free` (zen's, or
+  free's), and the launch and the sim refuse it with a grid hero.
 - Derived: `Pointer` (clicks set targets) follows the movement.
 
 The mode travels as data, never as flags read in place:
 
 - `RunInputs.Mode` (from `--mode`) builds `SimConfig.Mode`; a session's `inputs.bin` (version 3)
-  stores it, and `run.json` names it. A replay plays its session's mode, whatever the flags say.
+  stores it, and `run.json` names it. A replay plays its session's mode, whatever the flags say. `--finishers` travels
+  the same way (`RunInputs.Finishers`, `SimConfig.Finishers`, `inputs.bin` version 4, `run.json`'s `finishers`), and
+  so does `--dash` (`RunInputs.Dash`, `SimConfig.Dash`, `inputs.bin` version 5, `run.json`'s `dash`).
 - `Simulation.Rules` exposes the rules to the client, which reads them where it builds its input
   (`KeyInput` binds Z only for a press sword; `PointerInput` exists only for a pointer mode) and
   its presentation (`HeroMotion` draws `HeroGlide` events as a walk, `HeroStep` events as hops).
@@ -247,6 +253,150 @@ The tick's loudness level at a strike beat, known when its strikes are planned:
 - **The crowd bobs on the kick** (presentation, `CrowdView.Kick`, from the look's fast lane): every monster swells
   up to 14% and hops 12% of its height with the kick's envelope.
 
+## Finishers
+
+`--finishers` (zen only) adds one sparse, optional rhythm verb on top of zen's unjudged walking and striking: every
+phrase, a ring closes on the hero toward the phrase's downbeat, and Space in its window fires the screen's biggest
+move, a slam that clears the view. A miss costs nothing. So the rhythm sits on a single big, well-timed moment every
+8-15 s, not on the frequent verbs (grid hops looked jerky in 3D, free mode's Z flailed), and every moment still looks
+good.
+
+```sh
+just game --mode zen --finishers --file "$PWD/public/reactive/house-128/house-128.ogg"
+```
+
+The sim's `Finishers` (`game/Assets/Game/Sim/Hero/Finishers.cs`) and the sword's `Sword.Finisher`; the client's
+`FinisherRings` and the look's `FeelMoments`.
+
+### Cadence
+
+- **Phrases** count beats from the beat's latest lock, as bars do: a ring every 16 beats (four bars of four), or every
+  32 where 16 would come under 7 s apart (`Finishers.PhraseMinS`: over 137 BPM). So rings come 7-14 s apart from 69 BPM
+  up: 13.7 s at 70 BPM, 7.5 s at 128, 11 s at 174 (eight bars).
+- **Causal.** The target downbeat is predicted from the beats revealed now: the latest's time plus its beats on at the
+  mean of the latest four beat intervals (its own time once it is revealed). Committed beats are revealed only about
+  0.76 s ahead, less than a telegraph, so a ring always starts on a prediction. It never uses accents or section
+  changes, which a song the game hasn't heard doesn't know ahead.
+- **Retimes.** Until its window closes the ring takes, each tick, the beat nearest the downbeat it has promised; when
+  that moves it (by more than 1 ms, or at all once the beat is revealed), a `Retime` event carries the new downbeat
+  and the ring eases onto it over 0.15 s. A steady beat keeps the phrase's beat (house-128: 10 ms at most). A tracker
+  that drops or doubles beats moves the ring by less than a beat, to the beat nearest its promise, off the phrase
+  count (dnb-174, whose committed beats flip between 0.34 and 0.69 s apart: 165-177 ms).
+
+### The ring
+
+- It closes over the 4 beats before the downbeat (2 under 96 BPM, where 4 would last over 2.5 s): 1.88 s at 128 BPM.
+  Its arrival is the beat.
+- Drawn in the world, never as HUD text: a band of crystal light on the ground at the hero's feet, closing from 4.5 m
+  to 0.9 m and brightening as it closes, over a faint ring where it will land, flaring through its window
+  (`FinisherRings`, on the sword's crystal-wave shader).
+- A downbeat found with less than three quarters of its telegraph left (after a hold, a lock, the beat turning
+  reliable, or a prediction jumping) gets no ring.
+- **No rings** while the world is frozen (cards, chests, pause, the music stopped), the hero has fallen, or the beat
+  isn't reliable (the gate) when it would start. A ring in flight when a hold starts is dropped.
+
+### The press
+
+- **Space**, the dash's key too (ps-zz4; zen needs no stomp). With both flags on, a press in a ring's window is the
+  finisher, not a dash: the sim hands Space to the finishers first, and only a press they don't take goes on.
+- **Judged in heard time** against the ring's downbeat: a press heard within 100 ms of it (`Finishers.WindowS`,
+  BeatGrade's 70 ms full window and a little more) fires. A live key reaches the sim a lead after it was heard (about
+  90 ms on speakers, 0.2-0.35 s on Bluetooth), so the ring stays open for presses heard in its window for 0.5 s after
+  it (`Sword.PressBackS`) before it ends as a miss.
+- **A press outside the window**, or none, does nothing: no penalty, no meter, and the ring goes on taking a press in
+  its window. (So mashing Space hits every ring; see the open questions.)
+
+### The slam
+
+- **At once, in heard time**, as free mode's presses: one heavy sword strike that winds up from the press and lands
+  1/30 s after it (`Sword.PressImpactS`), resolved against the world as it was then, its events stamped at their own
+  times ([Attacking on the beat](#attacking-on-the-beat)). The beat's own strikes go on around it.
+- **It clears the view**: every enemy within 16 m of the hero (`Sword.FinisherReachM`; the view's nearer half-width is
+  18 m) takes 10 times the sword's power (`Sword.FinisherDamage` times a heavy's 2.5), which kills the ordinary crowd
+  of the first ten minutes; the rest are thrown (a heavy blow's knockback, 2.5x in zen). Its cleave wave rolls on 5.9 m
+  beyond, and it breaks the structures it and its wave reach. Deaths land on the impact frame, no build-up.
+- **Presented** as the sword's slam: the knight's slam clip on the press (the press's hit-stop, held 50 ms at 0.25x),
+  the slam's shock sized to the reach and its white-hot ring out to 16 m, then the cleave wave; and the look's
+  strongest moment (`FeelMoments.Kind.Finisher`): a full flash, twice a structure break's punch and the breaks' cap of
+  shake (0.4 m). The ring goes on the impact.
+
+Evidence: [game/evidence/zen-finishers](../../game/evidence/zen-finishers/README.md).
+
+## The dash
+
+`--dash` (a free hero's: zen is the target, free mode takes it too, untuned) adds a second sparse, judged verb next to
+the finishers: a dash on Space. The frequent verbs stay unjudged; dodging is the genre's real skill, and a lunge reads
+well as one action, on the beat or off it.
+
+```sh
+just game --mode zen --dash --file "$PWD/public/reactive/house-128/house-128.ogg"
+```
+
+The sim's `Dash` (`game/Assets/Game/Sim/Hero/Dash.cs`), the free hero's `FreeHero.Dash` and the sword's
+`Sword.Lunge` and `Sword.SpinAfter`; the client's `HeroMotion` (the pose), `FeelMoments` and `SoundPresenter`.
+
+### The key
+
+**Space**, which never stomps with `--dash` (zen needs no stomp); Enter still answers cards, and Space still answers
+them while they are open. With `--finishers` too, a press in a ring's window is the finisher and not a dash; any other
+press dashes.
+
+### On and off the beat
+
+Binary, not graded, so "on the beat" reads clearly, and never a dead press:
+
+- **On the beat**: heard within 70 ms of a beat (BeatGrade's full window, `Dash.WindowS`; half beats don't count;
+  `BeatGrade.OnBeat`). A long lunge, 4.5 m (three tiles) over 0.15 s (`Dash.LongM`, `LongS`). Each enemy whose body
+  comes within 1.2 m of the hero on the way (`Dash.ReachM`) is struck once, for a heavy strike's damage (the sword's
+  power x 2.5, `WeaponHit.Dash`), and thrown aside of the path to its own side (the rank's knockback, 2.5x in zen
+  as heavy blows are). **The sword's next beat strike landing after it is a heavy spin** (`Sword.SpinAfter`): lunge
+  in on the beat, land, spin out on the next. Once per dash; a zone change's slam still wins. (On the attack key, in
+  free mode, the next press is heavy.)
+- **Off the beat**: a short hop, 1.5 m (a tile) over 0.1 s (`Dash.ShortM`, `ShortS`), striking nothing, no spin.
+- **No reliable beat** (no beat ahead, under the gate, unclear music): every dash is the lunge, as BeatGrade grades
+  every press full there.
+- **Either way the hero can't be hurt** from the dash's start to 0.1 s after it lands (`Dash.AfterS`,
+  `HeroHealth.Shield`).
+- Nothing else: no groove meter, nothing punishes not dashing.
+
+### Moving
+
+- **Direction**: the held arrows (eight ways); with none, toward the pointer's target; else the walk's latest
+  direction; standing, the facing (`FreeHero.DashDirection`). A target stays set: the hero walks on to it after.
+- **Walls**: the free walk's box rules (moved one axis then the other), so a dash stops at a blocked tile or the
+  arena's edge, sliding along it as the walk does.
+- **At once, in heard time**, as free mode's presses: the dash starts when its key was heard (never before a hold nor
+  more than 0.5 s back), the hero's path from then walked again with the dash, so the drawn knight leaves its spot on
+  the key-down frame; the lunge's blows the sim has already passed resolve as it takes the key, each at its own time
+  against the world as it was then ([Attacking on the beat](#attacking-on-the-beat)). A hit the hero took in between
+  stands (nothing simulated is revised).
+
+### Rate
+
+At most one dash per zen strike period: a beat, two on the half-time pulse (over 150 BPM), half of one on the beat
+grid's slow songs (under 80 BPM), less twice the window, so two presses each on its own beat both dash (0.36 s at
+128 BPM's 0.469 s, 0.55 s at 174's pulse). A press sooner waits for the pulse and dashes then, judged by when it was
+heard (so mashing gets hops), the latest such press replacing an earlier (a finisher's press too, so no dash follows
+the slam): mashing never runs faster than the music's pulse, and no press shows nothing. Frozen (cards, chests, pause, the music stopped) or fallen, nothing dashes, and a
+press waiting is dropped.
+
+### Presented
+
+In-world only (trailer style):
+
+- **The pose** (`HeroMotion`, from a `HeroDash` event and the glides the sim settles): from the dash's start the
+  knight faces it at once, untwisted, its legs held in a long stride rather than cycling at the dash's 30 m/s, lifted
+  in a low arc: the lunge skims (0.1 m) with its blade alight, the hop jumps (0.3 m). Over 0.12 s after it lands the
+  walk's (and a swing's twist) take back over. There is no lunge clip in the Synty packs, and no velocity trail yet
+  (ps-wnj.15's VFX would carry one).
+- **The landing**: a lunge lands with a camera punch (0.04), a little flash and shake (`FeelMoments.Kind.Dash`), in
+  place of a hit-stop; its struck enemies flash and are thrown as any blow's.
+- **Sound**: the lunge whooshes with the heavy swing from its start and lands on the slam's thud, quieter and higher
+  (0.45); the hop whooshes with the light swing, quieter. A dash the sim takes late sounds as soon as the mixer can,
+  as a press's swing does.
+
+Evidence: [game/evidence/zen-dash](../../game/evidence/zen-dash/README.md).
+
 ## Open questions for play-testing
 
 - Is 70 ms the right full-grade window, and 0.5 the right floor? Both are constants in
@@ -270,3 +420,15 @@ The tick's loudness level at a strike beat, known when its strikes are planned:
   power or clutter? Does the kick bob read as the horde grooving or as jitter, and the zone change's stagger as a
   beat drop or a hiccup? Most songs are loud nearly throughout (house-128's ticks are 96% loud), so is loudness's
   power-up noticeable, or should it follow energy instead of the three levels?
+- Finishers: does a ring closing over four beats read as an invitation, and its arrival as the beat? Is 100 ms either
+  side generous enough with live latency, or too generous? A press outside the window costs nothing, so mashing Space
+  hits every ring: should an early press spend the ring (as osu! counts a miss), or is "never punished" the point? Is
+  a slam every 7.5 s at 128 BPM too often for the screen's biggest move, and 13.7 s at 70 BPM too rare? On a tracker
+  that flips between full and half time (dnb-174), rings come irregularly (6.5-29 s apart) and move up to half a
+  beat: is that acceptable, or should phrases count in time rather than in committed beats?
+- Dash: does on-the-beat-or-not read with only two outcomes, or does 70 ms on beats alone feel stingy (half beats
+  don't count, so most mashed presses hop)? Is the lunge's spin on the next beat felt as the player's move, or lost
+  among the sword's own spins? Does the held stride read as a lunge without a clip of its own, and the hop as a hop?
+  Is a dash per beat too often for a dodge, or should it ride a longer cooldown? In zen the beat strikes clear 7-8.8 m
+  round the hero, so the lunge's 1.2 m blows rarely find anyone (none in the evidence's runs): should the lunge reach
+  wider or further, or is it a dodge first and its blows a bonus for the crowds that do close in?

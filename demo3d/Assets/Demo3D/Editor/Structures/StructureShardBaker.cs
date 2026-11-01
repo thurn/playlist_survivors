@@ -5,6 +5,7 @@ using System.Linq;
 using Demo3D.EditorTools.Arena;
 using Demo3D.EditorTools.Crowd;
 using Demo3D.Runtime.Arena;
+using PS.Look.EditorTools.Crowd;
 using PS.Choreography;
 using UnityEditor;
 using UnityEngine;

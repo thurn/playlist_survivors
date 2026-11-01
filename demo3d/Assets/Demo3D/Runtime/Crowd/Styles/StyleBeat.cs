@@ -1,33 +1,24 @@
 using System;
 using System.Collections.Generic;
 using PS.Choreography;
+using PS.Look;
 using UnityEngine;
 
 namespace Demo3D.Runtime.Crowd
 {
     /// <summary>
     /// The style shaders' beat globals (StyleCommon.hlsl, after stylelab's Beat.cs), from demo3d's
-    /// song clock and song map, and the horde's beat pulse (crowd.md, The beat pulse): every
+    /// song clock and song map, published through the look package's <see cref="BeatGlobals"/>, and
+    /// the horde's beat pulse (crowd.md, The beat pulse): every
     /// monster's squash and stretch (<c>_SL_Bounce</c>, CrowdCommon.hlsl's SkinVertex, so every
     /// style and the baseline) and brightness throb (<c>_SL_Throb</c>). Set every frame of every
     /// run. A function of song time and the hero's feet alone, so fixed-time stills reproduce.
     /// </summary>
     public sealed class StyleBeat
     {
-        static readonly int TimeId = Shader.PropertyToID("_SL_Time");
-        static readonly int BeatId = Shader.PropertyToID("_SL_Beat");
-        static readonly int PulseId = Shader.PropertyToID("_SL_Pulse");
-        static readonly int BarPulseId = Shader.PropertyToID("_SL_BarPulse");
-        static readonly int EnergyId = Shader.PropertyToID("_SL_Energy");
-        static readonly int HeroPosId = Shader.PropertyToID("_SL_HeroPos");
-        static readonly int WaveSpeedId = Shader.PropertyToID("_SL_WaveSpeed");
-        static readonly int RingGainId = Shader.PropertyToID("_SL_RingGain");
         static readonly int BounceId = Shader.PropertyToID("_SL_Bounce");
         static readonly int BouncePrevId = Shader.PropertyToID("_SL_BouncePrev");
         static readonly int ThrobId = Shader.PropertyToID("_SL_Throb");
-
-        /// <summary>The beat wave's speed, metres per beat (the lab's).</summary>
-        public const float WaveSpeed = 11f;
 
         /// <summary>
         /// The pulse's squash on a beat and a downbeat at full energy (the share of its height a monster loses on the
@@ -141,15 +132,7 @@ namespace Demo3D.Runtime.Crowd
 
         public void Publish(double t, Vector3 heroFeet)
         {
-            var g = At(t);
-            Shader.SetGlobalFloat(TimeId, (float)t);
-            Shader.SetGlobalFloat(BeatId, g.x);
-            Shader.SetGlobalFloat(PulseId, g.y);
-            Shader.SetGlobalFloat(BarPulseId, g.z);
-            Shader.SetGlobalFloat(EnergyId, g.w);
-            Shader.SetGlobalVector(HeroPosId, heroFeet);
-            Shader.SetGlobalFloat(WaveSpeedId, WaveSpeed);
-            Shader.SetGlobalFloat(RingGainId, 0f);
+            BeatGlobals.Publish(t, At(t), heroFeet);
             var pulse = PulseAt(t);
             Shader.SetGlobalFloat(BouncePrevId, _published ? _bounce : pulse.x); // the previous frame's, for motion vectors
             Shader.SetGlobalFloat(BounceId, pulse.x);

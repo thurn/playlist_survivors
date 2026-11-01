@@ -2,9 +2,11 @@ using System;
 using Demo3D.EditorTools.Effects;
 using Demo3D.Runtime.Effects;
 using NUnit.Framework;
+using PS.Look.EditorTools.Effects;
+using PS.Look.Effects;
 using UnityEditor;
 using UnityEngine;
-using Slots = Demo3D.Runtime.Effects.EmitterSlots;
+using Slots = PS.Look.Effects.EmitterSlots;
 
 namespace Demo3D.Tests
 {
@@ -14,7 +16,7 @@ namespace Demo3D.Tests
         [Test]
         public void SpikeBurstConvertsToOneAdditiveBillboardBurst()
         {
-            var go = EffectConverter.SpikeBurst();
+            var go = EffectBake.SpikeBurst();
             try
             {
                 var e = EffectConverter.ConvertOne(go, "{}", out var em, out var emission, out var errors);
@@ -37,7 +39,7 @@ namespace Demo3D.Tests
         [Test]
         public void UnsupportedModulesFailLoudlyUnlessDropped()
         {
-            var go = EffectConverter.SpikeBurst();
+            var go = EffectBake.SpikeBurst();
             try
             {
                 var col = go.GetComponent<ParticleSystem>().collision;
@@ -55,7 +57,7 @@ namespace Demo3D.Tests
         [Test]
         public void TheLookScalesAChildTintsItsHeatAndAddsSparks()
         {
-            var go = EffectConverter.SpikeBurst();
+            var go = EffectBake.SpikeBurst();
             try
             {
                 EffectConverter.ConvertOne(go, "{}", out var stock, out _, out _);
@@ -281,12 +283,12 @@ namespace Demo3D.Tests
         {
             foreach (var name in new[] { "EffectSim", "EffectSort" })
             {
-                var cs = AssetDatabase.LoadAssetAtPath<ComputeShader>($"Assets/Demo3D/Runtime/Effects/Shaders/{name}.compute");
+                var cs = AssetDatabase.LoadAssetAtPath<ComputeShader>($"Packages/com.playlistsurvivors.look/Runtime/Effects/Shaders/{name}.compute");
                 Assert.That(cs, Is.Not.Null, name);
                 foreach (var m in ShaderUtil.GetComputeShaderMessages(cs))
                     Assert.That(m.severity, Is.Not.EqualTo(UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error), $"{name}: {m.message}");
             }
-            var shader = Shader.Find("Demo3D/EffectParticles");
+            var shader = Shader.Find("PS/Look/EffectParticles");
             Assert.That(shader, Is.Not.Null);
             Assert.That(ShaderUtil.ShaderHasError(shader), Is.False);
         }

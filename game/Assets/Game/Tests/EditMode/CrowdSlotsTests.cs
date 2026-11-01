@@ -3,6 +3,7 @@ using Game.Client.Crowd;
 using NUnit.Framework;
 using PS.Game.Sim.Content;
 using UnityEngine;
+using PS.Look.Crowd;
 
 namespace Game.Tests
 {

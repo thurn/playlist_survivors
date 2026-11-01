@@ -1,5 +1,6 @@
-// The crystal look's surface (crowd.md, Monster styles), shared by Crystal.shader (the crowd) and
-// CrystalShard.shader (its shards, CrystalShatter): faceted gemstone that refracts the camera's
+// The crystal look's surface (crowd.md, Monster styles), shared by the crystal structures
+// (Arena/Shaders/Structures/Crystal.shader) and the hero's blade (CrystalBlade.shader; the crystal
+// cut's monsters are the look package's, LookCrowd): faceted gemstone that refracts the camera's
 // opaque texture with a little dispersion, tinted by the type's gem colour, with light trapped in
 // each facet, hard banded reflections, facet edges that catch the light and glints as the beat wave
 // passes. Include it in a forward pass after StyleCommon.hlsl (the SubShader's HLSLINCLUDE, with

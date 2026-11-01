@@ -45,6 +45,10 @@ namespace PS.Game.Sim
         public bool Easy = Defaults.Easy;
         /// <summary>`--mode`: the way of playing (<see cref="GameModes"/>).</summary>
         public GameMode Mode = Defaults.Mode;
+        /// <summary>`--finishers`: rings on the phrase downbeats and the slam on Space (<see cref="SimConfig.Finishers"/>).</summary>
+        public bool Finishers = Defaults.Finishers;
+        /// <summary>`--dash`: Space dashes, a lunge on the beat and a hop off it (<see cref="SimConfig.Dash"/>).</summary>
+        public bool Dash = Defaults.Dash;
 
         // Never recorded: a run on any of these sets Unrecordable.
         /// <summary>`--cast`'s roles, for the <see cref="SessionLevel.Cast"/> level.</summary>
@@ -91,6 +95,8 @@ namespace PS.Game.Sim
             config.KnownAtBudget = KnownAtBudget;
             config.Easy = Easy;
             config.Mode = Mode;
+            config.Finishers = Finishers;
+            config.Dash = Dash;
             if (config.Arsenal != null)
             {
                 if (Loadout != null)
@@ -121,7 +127,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// Writes the recorded inputs as <c>inputs.bin</c> holds them (version 3's layout, which keeps a byte for whether
+        /// Writes the recorded inputs as <c>inputs.bin</c> holds them (version 5's layout, which keeps a byte for whether
         /// the hero stands: now the level's alone, <see cref="SimConfig.HeroStands"/>).
         /// </summary>
         public void Write(BinaryWriter w)
@@ -140,9 +146,11 @@ namespace PS.Game.Sim
             w.Write(Footprint.Length);
             foreach (double x in Footprint) w.Write(x);
             w.Write((byte)Mode);
+            w.Write(Finishers);
+            w.Write(Dash);
         }
 
-        /// <summary>Reads the recorded inputs of an <c>inputs.bin</c> of <paramref name="version"/> (1 has no start minute, 1 and 2 no mode).</summary>
+        /// <summary>Reads the recorded inputs of an <c>inputs.bin</c> of <paramref name="version"/> (1 has no start minute, 1 and 2 no mode, 1 to 3 no finishers, 1 to 4 no dash).</summary>
         public static RunInputs Read(BinaryReader r, int version, string path)
         {
             var run = new RunInputs { Seed = r.ReadUInt64(), StartTime = r.ReadDouble() };
@@ -165,6 +173,8 @@ namespace PS.Game.Sim
                 if (!GameModes.Known(mode)) throw new FormatException($"{path}: mode {mode}");
                 run.Mode = (GameMode)mode;
             }
+            if (version >= 4) run.Finishers = r.ReadBoolean();
+            if (version >= 5) run.Dash = r.ReadBoolean();
             return run;
         }
     }

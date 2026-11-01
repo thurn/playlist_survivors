@@ -4,6 +4,7 @@
     "references": [
         "PS.Choreography",
         "PS.Look",
+        "PS.Look.Editor",
         "Demo3D.Choreography",
         "Demo3D.Bench",
         "Demo3D.Runtime",

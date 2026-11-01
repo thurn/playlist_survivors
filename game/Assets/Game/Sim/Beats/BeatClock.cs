@@ -76,9 +76,21 @@ namespace PS.Game.Sim
         public int BarOf(int i, out bool downbeat)
         {
             downbeat = false;
+            int since = i - FirstAfterLock(log.Beats[i].T);
+            if (since < 0) return -1;
+            downbeat = (since & 1) == 0;
+            return since >> 1;
+        }
+
+        /// <summary>
+        /// The first committed beat at or after the latest lock at or before song time <paramref name="s"/>, which
+        /// bars count from (it may not be revealed yet: the beats' count then); int.MaxValue before any lock.
+        /// </summary>
+        internal int FirstAfterLock(double s)
+        {
             var beats = log.Beats;
-            double lockT = Judging.LockAtOrBefore(beats[i].T);
-            if (double.IsNaN(lockT)) return -1;
+            double lockT = Judging.LockAtOrBefore(s);
+            if (double.IsNaN(lockT)) return int.MaxValue;
             int lo = 0, hi = beats.Length;
             while (lo < hi)
             {
@@ -86,10 +98,7 @@ namespace PS.Game.Sim
                 if (beats[mid].T < lockT - 1e-9) lo = mid + 1;
                 else hi = mid;
             }
-            int since = i - lo;
-            if (since < 0) return -1;
-            downbeat = (since & 1) == 0;
-            return since >> 1;
+            return lo;
         }
 
         public bool IsDownbeat(int i)

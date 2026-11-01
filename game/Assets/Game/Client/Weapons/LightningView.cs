@@ -4,6 +4,7 @@ using Game.Client.Effects;
 using Game.Client.Loop;
 using Game.Client.Sound;
 using PS.Game.Sim;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 

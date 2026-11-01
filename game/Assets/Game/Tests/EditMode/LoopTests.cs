@@ -198,6 +198,68 @@ namespace Game.Tests
                 "heard within the output latency, a frame and the mixer's buffers: no lead");
         }
 
+        /// <summary>
+        /// A dash, live (`--dash`, ps-zz4): the drawn knight leaves its spot on the first frame after Space goes down, on the
+        /// speakers and on Bluetooth, though the key reaches the sim a lead late: the sim starts the dash when the key was
+        /// heard, and the glides it settles carry the hero from then (HeroMotion). Real time as above; Space goes down every
+        /// 0.4 s at 24 phases across a frame (no music: every dash the lunge). Seen: the first frame whose pose has moved
+        /// off the dash's start reaches the eye a display latency after it starts.
+        /// </summary>
+        [TestCase(0.038)]
+        [TestCase(0.250)]
+        public void ADashIsSeenOnTheFrameAfterItsKeyWhateverTheLead(double outputLatency)
+        {
+            const double fps = 60, buffer = 256 / 48000.0;
+            var random = new System.Random(7);
+            var clock = new MusicClock { OutputLatency = outputLatency, DisplayLatency = 1 / fps };
+            clock.SetAnchor(dsp: 5.0, song: 0.0);
+            double dspNow = 0;
+            var times = new MusicTimes(clock, 1 / fps, buffer, () => dspNow);
+            var driver = new SimDriver(new SimConfig { Mode = GameMode.Zen, Dash = true }, times);
+            var recorder = new Recorder();
+            driver.Events.Subscribe(recorder);
+            var keys = new Queue<double>(Enumerable.Range(0, 24).Select(k => 3.0 + 0.4 * k + k / 24.0 / fps));
+            var pressed = new List<double>();
+            var frameReal = new List<double>();
+            for (int i = 0; i < 14 * fps; i++)
+            {
+                double real = i / fps + (random.NextDouble() - 0.5) * 0.004;
+                dspNow = Math.Ceiling((5.0 + real) / buffer) * buffer;
+                clock.Sample(real, dspNow - buffer / 2);
+                times.Measure(1 / fps);
+                while (keys.Count > 0 && keys.Peek() <= real)
+                {
+                    pressed.Add(keys.Peek());
+                    driver.Sim.Press(SimKey.Space, times.KeySong(keys.Dequeue()));
+                }
+                driver.Step(new ClockReadings { Real = real });
+                frameReal.Add(real);
+            }
+
+            // The drawn hero, frame by frame, from the events each frame had.
+            var motion = new HeroMotion(HeroClips.Parse(File.ReadAllText(HeroClips.ContentPath)));
+            var poses = new List<HeroPose>();
+            for (int f = 0, e = 0; f < recorder.Frames.Count; f++)
+            {
+                for (; e < recorder.Events.Count && recorder.FrameOf[e] <= f; e++) motion.OnEvent(recorder.Events[e]);
+                poses.Add(motion.Evaluate(recorder.Frames[f].Song, 0, 0, Direction.Down));
+            }
+            var dashes = recorder.Events.Where(ev => ev.Kind == SimEventKind.HeroDash).Select(ev => ev.AsHeroDash).ToList();
+            Assert.That(dashes.Count, Is.EqualTo(pressed.Count), "a dash for every press");
+            var seen = new List<double>();
+            for (int k = 0; k < pressed.Count; k++)
+            {
+                var d = dashes[k];
+                int f = Enumerable.Range(0, poses.Count).First(i => frameReal[i] >= pressed[k] && poses[i].Y < d.FromY - 1e-3);
+                seen.Add(frameReal[f] + clock.DisplayLatency - pressed[k]);
+            }
+            string Ms(List<double> v) =>
+                $"{1000 * v.Min():F1} / {1000 * v.OrderBy(x => x).ElementAt(v.Count / 2):F1} / {1000 * v.Max():F1} ms";
+            TestContext.WriteLine($"output latency {1000 * outputLatency:F0} ms, lead {1000 * driver.Times.Lead:F0} ms: " +
+                                  $"key to the dash seen (min / median / max) {Ms(seen)}");
+            Assert.That(seen, Is.All.LessThanOrEqualTo(1 / fps + clock.DisplayLatency + 0.003), "seen on the frame after the key: no lead");
+        }
+
         [Test]
         public void TheDspFitAveragesFrameJitterAndForgetsReadingsOlderThanItsWindow()
         {

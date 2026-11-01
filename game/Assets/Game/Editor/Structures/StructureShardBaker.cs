@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using PS.Look.EditorTools.Crowd;
 
 namespace Game.EditorTools.Structures
 {

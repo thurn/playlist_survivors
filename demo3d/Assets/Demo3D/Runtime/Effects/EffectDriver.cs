@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PS.Choreography;
+using PS.Look.Effects;
 using UnityEngine;
 
 namespace Demo3D.Runtime.Effects
@@ -49,7 +50,7 @@ namespace Demo3D.Runtime.Effects
         float[] _shatterLight = Array.Empty<float>(); // each break's light gain: 1/sqrt(the breaks at its moment)
         readonly HashSet<int> _shattered = new HashSet<int>();
 
-        /// <summary>A crystal death's burst at its killing blow (CrystalShatter.Breaks), in place of its death burst.</summary>
+        /// <summary>A crystal death's burst at its killing blow (LookCrowd.Breaks), in place of its death burst.</summary>
         public struct Shatter
         {
             public double Time;

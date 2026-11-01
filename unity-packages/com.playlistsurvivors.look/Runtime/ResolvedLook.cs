@@ -20,6 +20,10 @@ namespace PS.Look
         /// <summary>The look the player applied (<see cref="Apply"/>), or null before.</summary>
         public static ResolvedLook Active { get; private set; }
 
+        /// <summary>The palette drawn where no look is applied (demo3d's action cut): the fallback preset's, only so it runs.</summary>
+        public static Palette FallbackPalette => _fallbackPalette ??= Resolve(new LookFlags()).Palette;
+        static Palette _fallbackPalette;
+
         /// <summary>The preset's name.</summary>
         public readonly string Name;
         /// <summary>Whether `--look` named the preset (else it is <see cref="Fallback"/>).</summary>

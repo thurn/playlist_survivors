@@ -120,26 +120,43 @@ namespace PS.Game.Sim.Tests
 
         // ---------------------------------------------------------------- a real song
 
-        /// <summary>The run's level on the game's arena in zen, house-128's first 20 s, the hero walking a square.</summary>
-        static Simulation RealRun(List<KnownEntry> known, double until)
+        /// <summary>
+        /// The run's level on the game's arena in zen, house-128's first 20 s, the hero walking a square; with
+        /// <paramref name="dash"/>, dashing on Space every 0.61 s too (`--dash`), on the beat and off it.
+        /// </summary>
+        static Simulation RealRun(List<KnownEntry> known, double until, bool dash = false)
         {
             var config = new RunInputs
             {
-                Seed = 3, Level = SessionLevel.Run, Arena = true, Footprint = RunLevel.GameFootprint, Mode = GameMode.Zen,
+                Seed = 3, Level = SessionLevel.Run, Arena = true, Footprint = RunLevel.GameFootprint, Mode = GameMode.Zen, Dash = dash,
             }.Build(Content, HordeFixture.GameArena());
             var sim = new Simulation(config);
             foreach (var k in known) sim.AddKnown(k.Entry, k.KnownAt);
             var keys = new[] { Key.Right, Key.Up, Key.Left, Key.Down };
+            var spaces = new Queue<double>(dash ? Enumerable.Range(0, 32).Select(k => 1.3 + 0.61 * k) : new double[0]);
             for (int i = 0; i < 9; i++)
             {
                 double at = 1 + 2 * i;
                 if (at >= until) break;
+                Dashes(sim, spaces, at);
                 sim.StepTo(at);
                 if (i > 0) sim.Release(keys[(i - 1) % 4], at);
                 sim.Press(keys[i % 4], at);
             }
+            Dashes(sim, spaces, until);
             sim.StepTo(until);
             return sim;
+        }
+
+        /// <summary>Space at each of <paramref name="spaces"/> before <paramref name="until"/>, heard a frame before the sim takes it.</summary>
+        static void Dashes(Simulation sim, Queue<double> spaces, double until)
+        {
+            while (spaces.Count > 0 && spaces.Peek() < until)
+            {
+                sim.StepTo(spaces.Dequeue());
+                sim.Press(Key.Space, sim.Now - 1.0 / 60);
+                sim.Release(Key.Space, sim.Now);
+            }
         }
 
         /// <summary>The dump with every entry known just before its own time, as after an analyzer stall.</summary>
@@ -162,26 +179,29 @@ namespace PS.Game.Sim.Tests
         }
 
         /// <summary>
-        /// The causality test (CausalityTests) on a zen run, sword, loudness and reeling horde: truncating or perturbing
-        /// the stream after a cut changes nothing settled before it.
+        /// The causality test (CausalityTests) on a zen run, sword, loudness and reeling horde, and dashes with `--dash`: truncating or perturbing
+        /// the stream after a cut changes nothing settled before it. Paired, not crossed, to keep the fast checks' time: the
+        /// dashes ride on the analyzer stall's case.
         /// </summary>
-        [Test]
-        public void AZenRunIsCausal([Values(false, true)] bool justInTime)
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        public void AZenRunIsCausal(bool justInTime, bool dash)
         {
             var known = Drive.Known(EntryDump.Load(EntryDump.House128, out double duration));
             if (justInTime) known = JustInTime(known);
             for (double cut = 2.85; cut < duration; cut += 3.1)
             {
                 double at = Math.Floor(cut * 120) / 120;
-                var full = RealRun(known, at);
+                var full = RealRun(known, at, dash);
                 Assert.Greater(Swings(full).Count, 0);
+                if (dash && at > 3) Assert.Greater(Drive.Events(full, SimEventKind.HeroDash).Count, 0);
                 foreach (var (what, changed) in new[]
                 {
                     ("truncated", known.Where(k => k.KnownAt <= at).ToList()),
                     ("perturbed", Perturbed(known, at, (ulong)(cut * 10))),
                 })
                 {
-                    var other = RealRun(changed, at);
+                    var other = RealRun(changed, at, dash);
                     var a = full.EventsSince(0);
                     var b = other.EventsSince(0);
                     Assert.AreEqual(a.Length, b.Length, $"{what}: event count at the cut {at}");

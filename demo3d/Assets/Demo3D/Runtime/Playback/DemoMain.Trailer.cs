@@ -52,7 +52,7 @@ namespace Demo3D.Runtime.Playback
             public EffectDriver Effects;
             public BlowFeel Blows;
             public CameraFeel Feel;
-            public CrystalShatter.BreakEvent[] Breaks = Array.Empty<CrystalShatter.BreakEvent>();
+            public LookCrowd.BreakEvent[] Breaks = Array.Empty<LookCrowd.BreakEvent>();
             public BreakMoments Moments = BreakMoments.None;         // its structure breaks (its breaks field)
             public Demo3D.Runtime.Arena.StructureShatter Structures; // their shards on screen (null without breaks)
             public BossTelegraphs Fight;      // its boss fight's zones (null without one)
@@ -243,10 +243,10 @@ namespace Demo3D.Runtime.Playback
                     if (s.Fight != null) bursts.AddRange(s.Fight.Bursts());
                     if (bursts.Count > 0) s.Effects.SetBursts(bursts);
                 }
-                if (_shatter != null)
+                if (_lookCrowd != null)
                 {
-                    _shatter.Retarget(tl);
-                    s.Breaks = _shatter.Breaks(InstanceScale, type => _hover[type]);
+                    _lookCrowd.Retarget(tl);
+                    s.Breaks = _lookCrowd.Breaks(InstanceScale, type => _hover[type]);
                 }
                 if (s.Breaks.Length > 0) s.Eval.BreaksAtImpact = new HashSet<int>(Array.ConvertAll(s.Breaks, b => b.Entity));
                 s.Effects?.SetShatters(Array.ConvertAll(s.Breaks, b => new EffectDriver.Shatter
@@ -332,7 +332,7 @@ namespace Demo3D.Runtime.Playback
             _fxDriver = s.Effects;
             _fxDriver?.Seek(); // clears particles and effect lights, and re-spawns the shot's effects still alive (pre-roll ones in flight)
             _fxLast = double.NaN;
-            _shatter?.Retarget(s.Timeline, s.Breaks); // its shards so far go
+            _lookCrowd?.Retarget(s.Timeline, s.Breaks); // its shards so far go
             _breaks?.Rewind(); // the shot before's broken structures stand again: each shot's simulation starts whole
             _breaks = s.Structures;
             _fight?.Show(false);

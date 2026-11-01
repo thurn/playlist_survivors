@@ -2346,8 +2346,15 @@ game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
 ### The crowd
 
 The crowd is the 3D demo's GPU-driven renderer, fed by the sim instead of a
-timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
-[game/evidence/crowd](../../game/evidence/crowd/README.md)).
+timeline (ps-msz.3.8; evidence in
+[game/evidence/crowd](../../game/evidence/crowd/README.md)). Since ps-wnj.4 the
+renderer, its instance struct, slots and shaders, the shatter and the beat
+globals live in the shared look package
+(`unity-packages/com.playlistsurvivors.look/Runtime/Crowd/`, namespace
+`PS.Look.Crowd`; [neon-look.md](neon-look.md), The Package); the game keeps
+its feeder (`CrowdView`, `MonsterTrack`) and its baker in
+game/Assets/Game/Client/Crowd/ and Editor/Crowd/, the baker calling the
+package's unweld step (`StyleMesh.Unweld`) and shard cutter.
 
 - **The bake**, `game unity BakeCrowd` (and `game build` when its inputs
   change), turns the nine models of Editor/Crowd/roster.json into the
@@ -2389,8 +2396,9 @@ timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
   room for its members) needs it. With 375, minute 25 of the full run threw on
   every frame from its first set piece, and the crowd and the HUD stopped
   drawing (ps-msz.6.14).
-- **The crystal** (`Game/MonsterCrystal`) shares its surface with the
-  structures (CrystalSurface.hlsl): it refracts the scene behind, tinted by
+- **The crystal** (`Game/MonsterCrystal`, the package's stand-in monster look,
+  `MonsterLooks.Crystal`, until a preset's look is built) shares its surface
+  with the structures (the package's CrystalSurface.hlsl): it refracts the scene behind, tinted by
   the role's gem colour, with the beat globals' facet sparkle, graded to a
   luminance peak of 0.3 so effects stay brightest.
 - Transparent crystal lacks depth and motion vectors, so the game keeps MSAA
@@ -2417,10 +2425,11 @@ at scale.
 - Each death also spawns one coherent crystal burst (chips and dust) and
   layered glass sounds pitched by size.
 
-**Shipped (ps-msz.3.9)**: `MonsterShatter` in game/Assets/Game/Client/Crowd/,
+**Shipped (ps-msz.3.9)**: `MonsterShatter`, in the look package's
+Runtime/Crowd/ since ps-wnj.4 (its tests, `ShatterTests`, in the package's),
 evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
 
-- **The cut** is part of the crowd's bake (`CrowdShardBaker`, demo3d's): each
+- **The cut** is part of the crowd's bake (`CrowdShardBaker`, the package's): each
   model's LOD0 in 20 to 40 chunks closed to an apex inside the body, joined
   into one mesh per model whose corners carry their chunk and skin weights;
   each chunk's pivot carries weights too.
@@ -2518,7 +2527,10 @@ for each weapon's look in [The Other Weapons](#the-other-weapons).
 shaders), without the demo's cuts (none of the effect cuts was accepted), the
 VFX Graph sink and the overdraw pass. Its converter is
 `Editor/Effects/EffectConverter`, baking `game/Content/effects.json` into the
-gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). As
+gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). Since
+ps-wnj.5 the runtime, its shaders and the converter are the look package's
+(`unity-packages/com.playlistsurvivors.look/`, shared with demo3d), and the
+game keeps only its cues, presenter and crystal wave in `Client/Effects/`. As
 built ([evidence](../../game/evidence/fx/README.md)):
 
 - `EffectCues` holds each event's effect until the first frame whose

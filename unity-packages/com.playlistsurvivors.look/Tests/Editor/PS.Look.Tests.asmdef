@@ -3,6 +3,7 @@
     "rootNamespace": "PS.Look.Tests",
     "references": [
         "PS.Look",
+        "PS.Look.Editor",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "UnityEngine.TestRunner",

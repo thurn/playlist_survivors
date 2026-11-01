@@ -52,10 +52,11 @@ namespace Game.EditorTools
                 TaskArgs.Get("-types", "").Split(',', StringSplitOptions.RemoveEmptyEntries));
 
         /// <summary>
-        /// Converts the effect selection (Content/effects.json: Effects.EffectConverter) into the gitignored
-        /// Assets/Baked/Effects/Resources/EffectLibrary.asset.
+        /// Converts the effect selection (Content/effects.json: the look package's EffectConverter) into the gitignored
+        /// Assets/Baked/Effects/Resources/EffectLibrary.asset, the sword's crystal wave shader referenced with it.
         /// </summary>
-        public static void BakeEffects() => Effects.EffectConverter.Bake();
+        public static void BakeEffects() =>
+            PS.Look.EditorTools.Effects.EffectConverter.Bake("Content/effects.json", shaders: new[] { Shader.Find(Client.Effects.CrystalWaves.ShaderName) });
 
         /// <summary>The sound bank (Content/sounds.json: Sound.SoundBaker) into the gitignored Assets/Baked/Sounds/.</summary>
         public static void BakeSounds() => Sound.SoundBaker.Bake();

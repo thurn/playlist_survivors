@@ -10,7 +10,7 @@ namespace Demo3D.Runtime.Playback
     /// The crystal shatter's sounds (camera-and-sound.md, Sound; epic ps-2iq): every crystal death's
     /// killing blow gets a layered glass break, a crunching ice break under a bright glass spray, on
     /// top of the creature's death cry at the same blow, and a quieter tinkle as the shards land. They
-    /// come from the timeline's breaks (<see cref="CrystalShatter.Breaks"/>), so the live scheduler
+    /// come from the timeline's breaks (<see cref="LookCrowd.Breaks"/>), so the live scheduler
     /// and the offline mix play the same list, aggregated as the choreography aggregates its own
     /// sounds: per beat and layer at most <see cref="MaxVoices"/> voices, their gain growing with log2
     /// of the deaths on that beat. The voices go to the beat's largest distinct types first, each
@@ -23,7 +23,7 @@ namespace Demo3D.Runtime.Playback
         /// <summary>The layers, each with <see cref="Variants"/> clips in the sound bank (`layer/variant`), and each one's level.</summary>
         public static readonly string[] Layers = { "shatter-body", "shatter-glass", "shatter-tinkle" };
         static readonly float[] Level = { 0.55f, 0.45f, 0.22f };
-        /// <summary>When the shards land, after the break, for a 1.8 m monster: their fall from a standing body under 2.2 g (CrystalShatter).</summary>
+        /// <summary>When the shards land, after the break, for a 1.8 m monster: their fall from a standing body under 2.2 g (MonsterShards.compute).</summary>
         public const float LandSeconds = 0.38f;
 
         /// <summary>Every layer's sound names, for the bank.</summary>
@@ -42,11 +42,11 @@ namespace Demo3D.Runtime.Playback
         public static float Pitch(float heightM) => Mathf.Clamp(Mathf.Pow(1.8f / Mathf.Max(0.1f, heightM), 0.3f), 0.8f, 1.3f);
 
         /// <summary>The sounds for <paramref name="breaks"/> (sorted by time), sorted by time.</summary>
-        public static List<SoundScheduler.Cue> For(IReadOnlyList<CrystalShatter.BreakEvent> breaks, SongMap map)
+        public static List<SoundScheduler.Cue> For(IReadOnlyList<LookCrowd.BreakEvent> breaks, SongMap map)
         {
             var cues = new List<SoundScheduler.Cue>();
-            var beat = new List<CrystalShatter.BreakEvent>();
-            var chosen = new List<CrystalShatter.BreakEvent>();
+            var beat = new List<LookCrowd.BreakEvent>();
+            var chosen = new List<LookCrowd.BreakEvent>();
             int i = 0;
             while (i < breaks.Count)
             {

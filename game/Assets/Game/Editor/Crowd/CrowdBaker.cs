@@ -9,6 +9,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using PS.Look.Crowd;
+using PS.Look.EditorTools.Crowd;
 
 namespace Game.EditorTools.Crowd
 {
@@ -18,7 +20,7 @@ namespace Game.EditorTools.Crowd
     /// - the combined mesh's three LODs as style meshes: every active skinned mesh plus rigid
     ///   attachments (the weapons on their hand bones) in root space at roster height, LOD1 and
     ///   LOD2 decimated to about a half and a quarter of its triangles by Unity's MeshLodUtility,
-    ///   each unwelded (<see cref="Unweld"/>) into one submesh with 4 bone indices in UV1, weights
+    ///   each unwelded (<see cref="StyleMesh.Unweld"/>) into one submesh with 4 bone indices in UV1, weights
     ///   in UV2, the face normal in the tangent and barycentrics plus a value per triangle in UV3;
     /// - one float texture of skinning matrices (bone world × bind pose, relative to the
     ///   character's root), 3 float4 rows per bone per frame, every clip sampled at 30 Hz;
@@ -32,7 +34,7 @@ namespace Game.EditorTools.Crowd
     {
         public const string OutDir = "Assets/Baked/Crowd";
         public const string LibraryPath = OutDir + "/Resources/" + CrowdLibrary.ResourcePath + ".asset";
-        const string ShaderDir = "Assets/Game/Client/Crowd/Shaders";
+        const string ShaderDir = "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders";
         const string ContentDir = "Content";
         static readonly string[] ClipRoles = { "idle", "walk", "attack", "hit" };
         /// <summary>The bosses' models' extra clips, baked after the four when the roster names them.</summary>
@@ -426,8 +428,8 @@ namespace Game.EditorTools.Crowd
             Directory.CreateDirectory(TypeDir(id));
             var welded = b.BuildMesh(id + "_welded");
             var decimated = BuildLods(welded);
-            int seed = StableSeed(id);
-            var lods = new[] { Unweld(welded, seed), Unweld(decimated[0], seed + 1), Unweld(decimated[1], seed + 2) };
+            int seed = StyleMesh.StableSeed(id);
+            var lods = new[] { StyleMesh.Unweld(welded, seed), StyleMesh.Unweld(decimated[0], seed + 1), StyleMesh.Unweld(decimated[1], seed + 2) };
             for (int l = 0; l < lods.Length; l++)
             {
                 lods[l].name = $"{id}_lod{l}";
@@ -507,69 +509,6 @@ namespace Game.EditorTools.Crowd
                 for (int i = 0; i < idx.Length; i++) idx[i] = all[start + i];
             }
             return idx;
-        }
-
-        /// <summary>
-        /// A welded mesh unwelded into the crystal's style mesh (demo3d's CrowdBaker.Unweld): every
-        /// triangle gets its own three vertices, so the crystal can facet and edge each one. It keeps
-        /// the positions (the rest pose in metres), normals and bone data (UV1/UV2) and adds the face
-        /// normal in the tangent and barycentric coordinates plus a random value per triangle in UV3.
-        /// </summary>
-        internal static Mesh Unweld(Mesh src, int seed)
-        {
-            var pos = src.vertices;
-            var nor = src.normals;
-            var bones = new List<Vector4>(); src.GetUVs(1, bones);
-            var weights = new List<Vector4>(); src.GetUVs(2, weights);
-            var tris = src.GetIndices(0); // with the submesh's base vertex applied
-            int n = tris.Length;
-            var oPos = new List<Vector3>(n);
-            var oNor = new List<Vector3>(n);
-            var oTan = new List<Vector4>(n);
-            var oBones = new List<Vector4>(n);
-            var oWeights = new List<Vector4>(n);
-            var oBary = new List<Vector4>(n);
-            var outTris = new int[n];
-            var rng = new System.Random(seed);
-            for (int t = 0; t + 2 < n; t += 3)
-            {
-                // Normalized by hand: Vector3.normalized zeroes a tiny triangle's normal, which the
-                // shader would turn into NaN. A degenerate one takes its first vertex's normal.
-                var cross = Vector3.Cross(pos[tris[t + 1]] - pos[tris[t]], pos[tris[t + 2]] - pos[tris[t]]);
-                float len = cross.magnitude;
-                var face = len > 0 ? cross / len : nor[tris[t]];
-                float r = (float)rng.NextDouble();
-                for (int k = 0; k < 3; k++)
-                {
-                    int v = tris[t + k];
-                    outTris[t + k] = oPos.Count;
-                    oPos.Add(pos[v]);
-                    oNor.Add(nor[v]);
-                    oTan.Add(new Vector4(face.x, face.y, face.z, 1));
-                    oBones.Add(bones[v]);
-                    oWeights.Add(weights[v]);
-                    oBary.Add(new Vector4(k == 0 ? 1 : 0, k == 1 ? 1 : 0, k == 2 ? 1 : 0, r));
-                }
-            }
-            var m = new Mesh();
-            if (oPos.Count > 65535) m.indexFormat = IndexFormat.UInt32;
-            m.SetVertices(oPos);
-            m.SetNormals(oNor);
-            m.SetTangents(oTan);
-            m.SetUVs(1, oBones);
-            m.SetUVs(2, oWeights);
-            m.SetUVs(3, oBary);
-            m.SetTriangles(outTris, 0, false);
-            m.bounds = src.bounds;
-            return m;
-        }
-
-        /// <summary>A seed from a type id that is the same in every run (string.GetHashCode needn't be).</summary>
-        static int StableSeed(string id)
-        {
-            int h = 17;
-            foreach (char c in id) h = unchecked(h * 31 + c);
-            return h;
         }
 
         static void Replace(UnityEngine.Object asset, string path)
