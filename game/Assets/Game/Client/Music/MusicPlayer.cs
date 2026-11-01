@@ -114,6 +114,14 @@ namespace Game.Client.Music
             }
         }
 
+        /// <summary>A new nonzero seed for the plugin's shuffle, from the system's randomness.</summary>
+        static ulong ShuffleSeed()
+        {
+            var bytes = new byte[8];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create()) rng.GetBytes(bytes);
+            return Math.Max(1UL, BitConverter.ToUInt64(bytes, 0));
+        }
+
         /// <summary>
         /// Opens a session on `source` and starts the music: a file decoded, or an app tapped muted
         /// at once (its sound is the plugin's from then on, M late). `driven`: the frames render it
@@ -137,7 +145,9 @@ namespace Game.Client.Music
                 Models = Plugin.Utf8(File.Exists(models) ? models : null),
                 SessionDir = Plugin.Utf8(sessionDir),
                 HindsightJobs = driven ? DrivenHindsightJobs : 0,
+                Shuffle = source.Kind == Plugin.SourceFile && LaunchOptions.Current.Shuffle ? ShuffleSeed() : 0,
             };
+            if (config.Shuffle != 0) Debug.Log($"MusicPlayer: --shuffle, seed {config.Shuffle}");
             try
             {
                 int code = Plugin.Open(ref config, out IntPtr session);

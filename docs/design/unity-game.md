@@ -293,7 +293,10 @@ beats from hindsight").
     the app's session volume at 1e-5, multiplied back up in the capture, as
     the Windows spike measured.
 - **File**: a local audio file, or an M3U playlist (native's `#PS-GAP`
-  line sets the silence between tracks). The plugin decodes it and feeds
+  line sets the silence between tracks). With `--shuffle` the game passes the
+  plugin a fresh seed for each File run (`ps_config.shuffle`, logged), and the
+  plugin plays the playlist's tracks in that seed's order, the gaps staying
+  in their slots. The plugin decodes it and feeds
   the same delay line and analyzer. The analyzer may read the file faster
   than real time, up to `M` ahead, so playback starts at once instead of
   after 3 s of silence. Under `--fixed-time` the frames drive it, as fast as
@@ -3231,7 +3234,7 @@ Evidence: [game/evidence/full-run](../../game/evidence/full-run/README.md).
 
 The game provides these so each state above can be reached on demand:
 
-- Launch flags: `--file <audio or .m3u>`, `--app <name>`, `--seed`,
+- Launch flags: `--file <audio or .m3u>`, `--shuffle`, `--app <name>`, `--seed`,
   `--start-minute <n>`, `--level <file>` (a level's schedule and arena),
   `--fixed-time`, `--headless`, `--seconds <n>`; and for presenters' checks,
   `--events <file>` (a scripted event feed beside the sim's) and `--overlay`.

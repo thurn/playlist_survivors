@@ -45,9 +45,9 @@ pub(crate) struct File {
 }
 
 impl File {
-    /// Checks that `path` and its tracks exist.
-    pub(crate) fn open(path: PathBuf) -> Result<File, Error> {
-        let tracks = decode::tracks(&path).map_err(|e| Error::new(PS_ERR_SOURCE, e))?;
+    /// Checks that `path` and its tracks exist; `shuffle` orders a playlist's tracks.
+    pub(crate) fn open(path: PathBuf, shuffle: u64) -> Result<File, Error> {
+        let tracks = decode::tracks(&path, shuffle).map_err(|e| Error::new(PS_ERR_SOURCE, e))?;
         Ok(File { path, tracks })
     }
 

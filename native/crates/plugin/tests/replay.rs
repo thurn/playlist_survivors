@@ -25,6 +25,7 @@ fn open_replay(dir: Option<&Path>, rate: f64) -> Result<*mut Session, i32> {
         models: std::ptr::null(),
         session_dir: std::ptr::null(),
         hindsight_jobs: 0,
+        shuffle: 0,
     };
     let mut s = std::ptr::null_mut();
     match unsafe { ps_plugin::ps_open(&raw const config, &raw mut s) } {

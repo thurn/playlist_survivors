@@ -24,7 +24,8 @@ namespace Game.Client
     /// - `--no-warmup`: the build's traced graphics states aren't warmed first (<see cref="GraphicsStates"/>).
     /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--seed`, `--events`,
     /// `--overlay`, `--headless` and `--loop-out`) on its music:
-    /// - `--file &lt;audio or .m3u&gt;`: the file;
+    /// - `--file &lt;audio or .m3u&gt;`: the file; with `--shuffle`, a playlist's tracks in a random order
+    ///   (a new one each run, the title screen's picks too);
     /// - `--app &lt;name&gt;`: the app producing audio now that the name picks, tapped muted and played
     ///   M late (Delayed listening; <see cref="MusicSource.Pick"/>, a number is a pid). The player
     ///   needs the System Audio Recording grant to hear it (docs/design/unity-game.md, Platform

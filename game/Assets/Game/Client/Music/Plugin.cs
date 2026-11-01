@@ -36,6 +36,7 @@ namespace Game.Client.Music
             public IntPtr Models;     // zero: $PS_MODELS, else the plugin's checkout
             public IntPtr SessionDir; // zero: no record
             public int HindsightJobs; // a hindsight window's models at once: 0 live, more when frames drive the analysis
+            public ulong Shuffle;     // File: a playlist's tracks in the order this seed picks; 0: the list's order
         }
 
         /// <summary>struct ps_status: 80 bytes.</summary>

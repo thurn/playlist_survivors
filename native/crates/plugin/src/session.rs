@@ -66,8 +66,8 @@ pub struct Config {
 
 /// Where the music comes from.
 pub enum Source {
-    /// An audio file, or an M3U playlist.
-    File(PathBuf),
+    /// An audio file, or an M3U playlist, its tracks in the order `shuffle` picks (0: the list's).
+    File { path: PathBuf, shuffle: u64 },
     /// App `pid`'s audio, tapped by `taps` (the platform's, or a test's).
     System { pid: i32, taps: Box<dyn Taps> },
     /// A session folder the plugin recorded.
@@ -310,7 +310,9 @@ impl Session {
         // (A file is checked first, its errors being the likeliest; an app is tapped, so muted,
         // once the rest is ready.)
         let source = match config.source {
-            Source::File(path) => Opening::File(crate::file::File::open(path)?),
+            Source::File { path, shuffle } => {
+                Opening::File(crate::file::File::open(path, shuffle)?)
+            }
             Source::System { pid, taps } => Opening::System(pid, taps),
             Source::Replay(dir) => {
                 return Session::replay(

@@ -51,6 +51,8 @@ namespace Game.Client
 
         // The music: one of these, or the title screen's pick.
         public string File, App, Replay, TitlePick, MusicDir;
+        /// <summary>`--shuffle`: each File run plays its playlist's tracks in a new random order (<see cref="Music.MusicPlayer.Play"/>).</summary>
+        public bool Shuffle;
         /// <summary>Whether the launch opens on the title screen: a window and no source, or `--title`.</summary>
         public bool Title;
         /// <summary>Whether the run has music (a source, or the title screen's pick): a run without starts at once.</summary>
@@ -134,6 +136,7 @@ namespace Game.Client
                 Replay = a.Path("--replay"),
                 TitlePick = a.Get("--title-pick"),
                 MusicDir = a.Path("--music-dir"),
+                Shuffle = a.Has("--shuffle"),
                 SessionsDir = a.Path("--sessions"),
                 Watch = a.Has("--watch"),
                 Seconds = a.Float("--seconds", 0),

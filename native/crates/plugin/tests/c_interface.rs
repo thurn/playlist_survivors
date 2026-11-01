@@ -107,6 +107,28 @@ fn tone_wav(path: &std::path::Path, seconds: f64) {
 }
 
 #[test]
+fn a_shuffled_playlist_plays_its_tracks_in_the_seeds_order_and_a_file_alone_ignores_it() {
+    let dir = temp("shuffle");
+    let names: Vec<String> = (0..8).map(|i| format!("{i}.wav")).collect();
+    for n in &names {
+        std::fs::write(dir.join(n), b"").unwrap();
+    }
+    std::fs::write(dir.join("list.m3u"), names.join("\n")).unwrap();
+    let order = |source: &str, seed| -> Vec<String> {
+        ps_plugin::decode::tracks(&dir.join(source), seed)
+            .unwrap()
+            .iter()
+            .map(|t| t.path.file_name().unwrap().to_str().unwrap().to_owned())
+            .collect()
+    };
+    assert_eq!(order("list.m3u", 0), names);
+    let shuffled = order("list.m3u", 42);
+    assert_ne!(shuffled, names);
+    assert_eq!(order("list.m3u", 42), shuffled);
+    assert_eq!(order("0.wav", 42), ["0.wav"]);
+}
+
+#[test]
 fn a_playlist_plays_continuously_at_the_output_rate_and_the_anchor_follows_the_frames() {
     const RATE: f64 = 48_000.0;
     const FRAMES: usize = 256;
@@ -202,6 +224,7 @@ fn failures_return_codes_that_ps_last_error_describes() {
         models: std::ptr::null(),
         session_dir: std::ptr::null(),
         hindsight_jobs: 0,
+        shuffle: 0,
     };
     let mut s = std::ptr::null_mut();
     assert_eq!(

@@ -58,6 +58,7 @@ pub struct Config {
     pub models: *const c_char,
     pub session_dir: *const c_char,
     pub hindsight_jobs: i32,
+    pub shuffle: u64,
 }
 
 /// `ps_app`.
@@ -185,10 +186,11 @@ pub unsafe extern "C" fn ps_open(config: *const Config, out: *mut *mut Session) 
         }
         let c = unsafe { *config };
         let source = match c.source {
-            PS_SOURCE_FILE => Source::File(
-                unsafe { path(c.path, "the path") }?
+            PS_SOURCE_FILE => Source::File {
+                path: unsafe { path(c.path, "the path") }?
                     .ok_or_else(|| Error::new(PS_ERR_ARGUMENT, "the File source needs a path"))?,
-            ),
+                shuffle: c.shuffle,
+            },
             PS_SOURCE_SYSTEM => Source::System {
                 pid: c.pid,
                 taps: system_taps()?,
@@ -418,6 +420,7 @@ mod tests {
             models: std::ptr::null(),
             session_dir: std::ptr::null(),
             hindsight_jobs: 0,
+            shuffle: 0,
         };
         let mut session = std::ptr::null_mut();
         assert_eq!(

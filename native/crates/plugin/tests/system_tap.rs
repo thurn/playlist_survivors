@@ -123,6 +123,7 @@ fn a_real_app_is_tapped_muted_released_by_the_watchdog_and_tapped_again() {
         models: std::ptr::null(),
         session_dir: record_c.as_ptr(),
         hindsight_jobs: 0,
+        shuffle: 0,
     };
     let mut s = std::ptr::null_mut();
     let code = unsafe { ps_plugin::ps_open(&raw const config, &raw mut s) };

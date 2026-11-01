@@ -14,10 +14,13 @@ use stream::playlist::{Playlist, Track, is_playlist};
 /// The analyzer's sample rate.
 pub const SR: f64 = 44_100.0;
 
-/// The tracks of `source`: a playlist's, or the file alone. Each must exist.
-pub fn tracks(source: &Path) -> Result<Vec<Track>, String> {
+/// The tracks of `source`: a playlist's, in the order `shuffle` picks (0: the list's;
+/// `Playlist::shuffle`), or the file alone. Each must exist.
+pub fn tracks(source: &Path, shuffle: u64) -> Result<Vec<Track>, String> {
     let tracks = if is_playlist(source) {
-        Playlist::load(source)?.tracks
+        let mut list = Playlist::load(source)?;
+        list.shuffle(shuffle);
+        list.tracks
     } else {
         vec![Track {
             path: source.to_path_buf(),

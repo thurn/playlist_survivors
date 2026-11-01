@@ -36,7 +36,8 @@ namespace Game.Tests
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.M)), Is.EqualTo(8));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Path)), Is.EqualTo(24));
             Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.HindsightJobs)), Is.EqualTo(48));
-            Assert.That(Marshal.SizeOf<Plugin.Config>(), Is.EqualTo(56));
+            Assert.That((int)Marshal.OffsetOf<Plugin.Config>(nameof(Plugin.Config.Shuffle)), Is.EqualTo(56));
+            Assert.That(Marshal.SizeOf<Plugin.Config>(), Is.EqualTo(64));
         }
 
         [Test]

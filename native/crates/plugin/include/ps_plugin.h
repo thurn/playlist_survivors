@@ -50,6 +50,8 @@ typedef struct {
     int32_t hindsight_jobs;  /* how many of a hindsight window's models decode at once: 0 or 1
                               * live; more (at most 8, the ensemble's) when frames drive a File
                               * source faster than real time and wait on the analysis */
+    uint64_t shuffle;        /* File: a playlist's tracks in the order this seed picks, its gaps
+                              * staying in their slots; 0: the list's order */
 } ps_config;
 
 /* An app producing audio now (System listening): the process responsible for its audio. */

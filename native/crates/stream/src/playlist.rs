@@ -57,6 +57,27 @@ impl Playlist {
         }
         Ok(Self { tracks })
     }
+    /// The tracks in an order `seed` picks (a Fisher-Yates shuffle on SplitMix64), the same for
+    /// the same seed. The gaps stay in their slots, so the first track still starts at once.
+    /// Seed 0 keeps the list's order.
+    pub fn shuffle(&mut self, seed: u64) {
+        if seed == 0 {
+            return;
+        }
+        let gaps: Vec<f64> = self.tracks.iter().map(|t| t.gap_before).collect();
+        let mut state = seed;
+        for i in (1..self.tracks.len()).rev() {
+            state = state.wrapping_add(0x9e37_79b9_7f4a_7c15);
+            let mut z = state;
+            z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+            z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+            z ^= z >> 31;
+            self.tracks.swap(i, (z % (i as u64 + 1)) as usize);
+        }
+        for (track, gap) in self.tracks.iter_mut().zip(gaps) {
+            track.gap_before = gap;
+        }
+    }
     /// The supplied decoder is also the single-file decoder. Gap lengths use the same
     /// integer sample rounding as the stream concatenator.
     pub fn decode(
@@ -109,6 +130,33 @@ mod tests {
         assert_eq!(&samples[18..20], &[1.0; 2]);
         assert!(samples[20..24].iter().all(|x| *x == 0.0));
         assert_eq!(&samples[24..], &[1.0; 2]);
+    }
+    #[test]
+    fn a_shuffle_reorders_the_tracks_by_its_seed_and_keeps_the_gaps_in_place() {
+        let text =
+            "0.ogg\n1.ogg\n2.ogg\n#PS-GAP:8\n3.ogg\n4.ogg\n5.ogg\n6.ogg\n7.ogg\n8.ogg\n9.ogg\n";
+        let list = Playlist::parse(text, Path::new("/m")).unwrap();
+        let shuffled = |seed| {
+            let mut p = list.clone();
+            p.shuffle(seed);
+            p
+        };
+        assert_eq!(shuffled(0), list);
+        assert_eq!(shuffled(7), shuffled(7));
+        assert_ne!(shuffled(7).tracks, shuffled(8).tracks);
+        let p = shuffled(7);
+        assert_ne!(p.tracks, list.tracks);
+        let mut paths: Vec<_> = p.tracks.iter().map(|t| t.path.clone()).collect();
+        paths.sort();
+        assert_eq!(
+            paths,
+            list.tracks
+                .iter()
+                .map(|t| t.path.clone())
+                .collect::<Vec<_>>()
+        );
+        let gaps = |p: &Playlist| p.tracks.iter().map(|t| t.gap_before).collect::<Vec<_>>();
+        assert_eq!(gaps(&p), gaps(&list));
     }
     #[test]
     fn malformed_lists_fail_before_playing() {

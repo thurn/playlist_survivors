@@ -38,6 +38,7 @@ pub fn open(path: &Path, rate: f64, record: Option<&Path>) -> Result<*mut Sessio
         models: std::ptr::null(),
         session_dir: record.as_ref().map_or(std::ptr::null(), |r| r.as_ptr()),
         hindsight_jobs: 0,
+        shuffle: 0,
     };
     let mut s = std::ptr::null_mut();
     match unsafe { ps_plugin::ps_open(&raw const config, &raw mut s) } {
