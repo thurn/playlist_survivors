@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using Game.Client.Arena;
@@ -18,6 +19,7 @@ using PS.Game.Sim.Level;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 namespace Game.Client.Loop
 {
@@ -86,6 +88,10 @@ namespace Game.Client.Loop
     /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
     /// - `--structures-out FILE`: each frame's structure shards and their physics and shadow costs, as CSV
     ///   (<see cref="StructureShatter"/>; the structures' bench).
+    /// - `--gpu-probe-at T1,T2,... --gpu-probe-out FILE.json`: windowless timed 1080p frames at those song times, after
+    ///   a warm-up, each through GPU completion (<see cref="GpuProbe"/>; batch mode with a device, not `--headless`);
+    /// - `--profile-out FILE.csv`: each frame's main-thread work by part, its allocation and collections, a fixed-time
+    ///   frame's music rendering and analysis wait left out (<see cref="FrameProfile"/>);
     /// - `--sound-probe`: every sound plays a click instead of its clip, at full level (<see cref="SoundScheduler.Probe"/>);
     ///   `--sound-out DIR` keeps Unity's mix and the sounds scheduled, the audio buffers and the frames, as the
     ///   sync spike does, for `game spike --sounds` to measure.
@@ -136,6 +142,9 @@ namespace Game.Client.Loop
         LightningView _lightning;
         HudPresenter _hud;
         RunTelemetry _telemetry;
+        Camera _camera;
+        GpuProbe _probe;
+        FrameProfile _profile;
         bool _fixed, _done, _quitting, _interactive;
         bool _deviceGiven, _focusLost;
         PauseMenu _pause;
@@ -312,6 +321,9 @@ namespace Game.Client.Loop
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
             _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter);
+            _camera = camera;
+            if (camera != null) _probe = GpuProbe.FromOptions(options);
+            if (options.Outputs.Profile != null) _profile = new FrameProfile(options.Outputs.Profile, Driver);
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
@@ -372,6 +384,13 @@ namespace Game.Client.Loop
         void Update()
         {
             if (_done) return;
+            long start = Stopwatch.GetTimestamp();
+            Frame();
+            _profile?.Loop(Stopwatch.GetTimestamp() - start);
+        }
+
+        void Frame()
+        {
             if (_music != null)
             {
                 if (_music.Failed) { Finish(1, _music.Error); return; }
@@ -383,10 +402,13 @@ namespace Game.Client.Loop
                     if (!Control(RunControl.DeviceChanged)) return;
                 }
                 // Fixed time: the frames drive the music, to this frame's mixer position.
+                long feed = Stopwatch.GetTimestamp();
                 _music.RenderTo(FrameClock.SongAt(Time.timeSinceLevelLoadAsDouble));
                 if (_replay != null) { if (!FeedReplay()) return; }
                 else if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
+                // A real-time frame neither renders the music (the audio thread does) nor waits on its analysis.
+                if (_fixed || _replay != null) _profile?.Wait(Stopwatch.GetTimestamp() - feed);
             }
             // Before the music's anchor no key has a song time: they wait for it. A replay takes only its recorded keys.
             if (Driver.Clock.Ready && _replay == null)
@@ -404,7 +426,16 @@ namespace Game.Client.Loop
                 Real = Time.realtimeSinceStartupAsDouble,
                 Frame = Time.timeSinceLevelLoadAsDouble,
             };
-            if (Driver.Step(now)) _telemetry.Keep();
+            if (Driver.Step(now))
+            {
+                _telemetry.Keep();
+                if (_probe != null)
+                {
+                    _profile?.BeginProbe();
+                    _probe.Frame(Driver.Times.FrameSong, _camera, Driver.Sim.State.EnemiesAlive);
+                    _profile?.EndProbe();
+                }
+            }
             if (_soundOut != null && _music != null && _music.Clock.Anchored) _telemetry.KeepFrame(_music);
             _overlay.Toggle();
             _menu.Present(Driver.Sim);
@@ -645,6 +676,8 @@ namespace Game.Client.Loop
             _hud?.Dispose();
             _overlay?.Dispose();
             _telemetry?.Dispose();
+            _probe?.Dispose();
+            _profile?.Dispose();
         }
 
         /// <summary>
@@ -659,6 +692,8 @@ namespace Game.Client.Loop
             string error = code != 0 ? why : null;
             Debug.Log("GameLoop: " + (why ?? "done") + "; " + _telemetry.Summary(_music, _musicTimes, _keys, _commands, _effects, _sounds));
             _telemetry.Dispose();
+            _profile?.Dispose();
+            _profile = null;
             if (_soundOut != null && _music != null && _sounds != null) _telemetry.KeepSounds(_soundOut, _music, _capture, _sounds, error);
             if (_music != null) _music.Close();
             // Under --watch, a session that wasn't kept leaves nothing to watch: the launch fails.

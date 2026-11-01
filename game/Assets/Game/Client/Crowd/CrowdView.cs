@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Game.Client.Loop;
 using PS.Game.Sim;
 using UnityEngine;
@@ -76,6 +77,9 @@ namespace Game.Client.Crowd
 
         /// <summary>The GPU shatter, whose Broke event is the deaths' burst hook; null without a baked library.</summary>
         public MonsterShatter Shatter => _shatter;
+
+        /// <summary>The latest frame's share of Present in the GPU shatter (its breaks and frame), in ms, for the frame profile.</summary>
+        public double ShatterMs { get; private set; }
 
         /// <summary>Monsters drawn on screen, read back from the GPU (a frame or two late).</summary>
         public int OnScreen => _crowd?.OnScreen ?? 0;
@@ -183,6 +187,7 @@ namespace Game.Client.Crowd
                 for (int k = 0; k < n; k++)
                     if (_writtenType[k] == type) instances[_writtenSlot[k]] = _written[k];
             }
+            long shatterStart = Stopwatch.GetTimestamp();
             for (int k = 0; k < n; k++)
             {
                 if ((_written[k].Flags & (uint)CrowdFlags.Dying) == 0) continue;
@@ -190,10 +195,14 @@ namespace Game.Client.Crowd
                 _shatter.Break(_writtenType[k], _writtenSlot[k], _written[k], track.Role, track.Serial, track.EndTime,
                     track.BlowX, track.BlowY, track.Force);
             }
+            long shatterTicks = Stopwatch.GetTimestamp() - shatterStart;
             _lastSong = t;
             // After the crowd's draw, which blends the dying palettes the shatter seeds from.
             if (_camera != null) _crowd.Draw(_camera, (float)t);
+            shatterStart = Stopwatch.GetTimestamp();
             _shatter.Frame(t, _camera);
+            shatterTicks += Stopwatch.GetTimestamp() - shatterStart;
+            ShatterMs = shatterTicks * 1000.0 / Stopwatch.Frequency;
         }
 
         /// <summary>

@@ -74,6 +74,8 @@ namespace Game.Client
         public string ArenaAt;
         public float ArenaTour;
         public string ShatterBench;
+        /// <summary>`--gpu-probe-at t1,t2,...`: song times for the windowless frame probe (<see cref="GpuProbe"/>).</summary>
+        public string GpuProbeAt;
 
         // Calibration.
         public string Calibrate, CalibrationFile, TapAlong;
@@ -84,7 +86,7 @@ namespace Game.Client
         /// <summary>The CSVs and folders a run writes for evidence.</summary>
         public sealed class OutputFiles
         {
-            public string Loop, Events, Structures, Sound, Camera, Hero;
+            public string Loop, Events, Structures, Sound, Camera, Hero, GpuProbe, Profile;
         }
 
         /// <summary>What plays in place of a player: debug commands, held keys, the bot and a scripted pause.</summary>
@@ -138,6 +140,7 @@ namespace Game.Client
                 ArenaAt = a.Get("--arena-at"),
                 ArenaTour = a.Float("--arena-tour", 0),
                 ShatterBench = a.Path("--shatter-bench"),
+                GpuProbeAt = a.Get("--gpu-probe-at"),
                 Calibrate = a.Get("--calibrate"),
                 CalibrationFile = a.Path("--calibration"),
                 TapAlong = a.Get("--tap-along"),
@@ -145,6 +148,7 @@ namespace Game.Client
                 {
                     Loop = a.Path("--loop-out"), Events = a.Path("--events-out"), Structures = a.Path("--structures-out"),
                     Sound = a.Path("--sound-out"), Camera = a.Path("--camera-out"), Hero = a.Path("--hero-out"),
+                    GpuProbe = a.Path("--gpu-probe-out"), Profile = a.Path("--profile-out"),
                 },
                 Scripted = { Debug = a.Get("--debug"), Walk = a.Get("--walk"), Bot = Bot(a.Get("--bot")), PauseAt = a.Float("--pause-at", -1) },
             };

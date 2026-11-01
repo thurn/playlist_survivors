@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using PS.Game.Sim;
 
 namespace Game.Client.Loop
@@ -33,18 +35,51 @@ namespace Game.Client.Loop
 
     /// <summary>
     /// Hands settled events to every subscribed presenter, in order, then each frame to them.
-    /// It keeps the cursor into the sim's event log and frees what it has handed on.
+    /// It keeps the cursor into the sim's event log and frees what it has handed on. When
+    /// <see cref="Timed"/> (`--profile-out`, <see cref="FrameProfile"/>), it adds up the time the
+    /// events' dispatch and each presenter's Present take, until <see cref="ResetTimes"/>.
     /// </summary>
     public sealed class EventDispatch
     {
         readonly List<IPresenter> _presenters = new List<IPresenter>();
+        long[] _presentTicks = new long[0];
 
         /// <summary>The sim's next event to dispatch.</summary>
         public int Cursor { get; private set; }
 
-        public void Subscribe(IPresenter presenter) => _presenters.Add(presenter);
+        /// <summary>Whether dispatch and presenting are timed (Stopwatch ticks).</summary>
+        public bool Timed { get; set; }
 
-        public void Unsubscribe(IPresenter presenter) => _presenters.Remove(presenter);
+        /// <summary>The events' dispatch to every presenter since <see cref="ResetTimes"/>, in Stopwatch ticks.</summary>
+        public long EventTicks { get; private set; }
+
+        public int Count => _presenters.Count;
+
+        public IPresenter this[int i] => _presenters[i];
+
+        /// <summary>Presenter <paramref name="i"/>'s Present since <see cref="ResetTimes"/>, in Stopwatch ticks.</summary>
+        public long PresentTicks(int i) => _presentTicks[i];
+
+        public void ResetTimes()
+        {
+            EventTicks = 0;
+            Array.Clear(_presentTicks, 0, _presentTicks.Length);
+        }
+
+        public void Subscribe(IPresenter presenter)
+        {
+            _presenters.Add(presenter);
+            Array.Resize(ref _presentTicks, _presenters.Count);
+        }
+
+        public void Unsubscribe(IPresenter presenter)
+        {
+            int i = _presenters.IndexOf(presenter);
+            if (i < 0) return;
+            _presenters.RemoveAt(i);
+            Array.Copy(_presentTicks, i + 1, _presentTicks, i, _presentTicks.Length - i - 1);
+            Array.Resize(ref _presentTicks, _presenters.Count);
+        }
 
         /// <summary>Dispatches the sim's events since the cursor and discards them from its log.</summary>
         public void DrainSim(Simulation sim)
@@ -57,12 +92,19 @@ namespace Game.Client.Loop
 
         public void Dispatch(in SimEvent e)
         {
+            long start = Timed ? Stopwatch.GetTimestamp() : 0;
             for (int i = 0; i < _presenters.Count; i++) _presenters[i].OnEvent(e);
+            if (Timed) EventTicks += Stopwatch.GetTimestamp() - start;
         }
 
         public void Present(in PresentFrame frame)
         {
-            for (int i = 0; i < _presenters.Count; i++) _presenters[i].Present(frame);
+            for (int i = 0; i < _presenters.Count; i++)
+            {
+                long start = Timed ? Stopwatch.GetTimestamp() : 0;
+                _presenters[i].Present(frame);
+                if (Timed) _presentTicks[i] += Stopwatch.GetTimestamp() - start;
+            }
         }
     }
 }

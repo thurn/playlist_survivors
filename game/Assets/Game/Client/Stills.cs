@@ -35,12 +35,9 @@ namespace Game.Client
             foreach (var s in times.Split(','))
                 _times.Add(double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
             _times.Sort();
-            // URP draws an offscreen camera with its target's sample count, so the target carries
-            // the pipeline's MSAA and is resolved for readback.
-            int msaa = GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp ? Math.Max(1, urp.msaaSampleCount) : 1;
-            _target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = msaa, name = "Still" };
-            _target.Create();
-            if (msaa > 1)
+            // The target carries the pipeline's MSAA and is resolved for readback.
+            _target = Target("Still");
+            if (_target.antiAliasing > 1)
             {
                 _resolved = new RenderTexture(Width, Height, 0, RenderTextureFormat.ARGB32) { name = "Still resolved" };
                 _resolved.Create();
@@ -48,6 +45,18 @@ namespace Game.Client
         }
 
         public bool Done => _times.Count == 0;
+
+        /// <summary>
+        /// A 1920×1080 target for a hand-drawn frame: URP draws an offscreen camera with its target's
+        /// sample count, so it carries the pipeline's MSAA (the game's 4x).
+        /// </summary>
+        public static RenderTexture Target(string name)
+        {
+            int msaa = GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp ? Math.Max(1, urp.msaaSampleCount) : 1;
+            var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32) { antiAliasing = msaa, name = name };
+            target.Create();
+            return target;
+        }
 
         /// <summary>
         /// A full-screen view kept in place of the camera's while set: the title screen's UI panel,
