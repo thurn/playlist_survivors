@@ -19,10 +19,11 @@ namespace Game.Client.Effects
         public const double RingSeconds = 0.12, FadeSeconds = 0.18;
         public const float Height = 0.06f;
         /// <summary>
-        /// A strike's ring at its start: an ordinary one (every beat) an ice ring under the effects,
-        /// a heavy one white-hot (ps-msz.8.3), so the big moments stand out from the beat's.
+        /// A strike's ring at its start, and its width (m): an ordinary one (every beat or press) a faint, thin ice
+        /// line at the reach under the slash, so the swing reads as the blade's cut and not as a ring (ps-w9p.3), a
+        /// heavy one a broad white-hot band (ps-msz.8.3), so the big moments stand out from the beat's.
         /// </summary>
-        public const float StrikeIntensity = 0.2f, HeavyIntensity = 0.8f;
+        public const float StrikeIntensity = 0.04f, HeavyIntensity = 0.8f, StrikeWidth = 0.3f, HeavyWidth = 1.0f;
 
         struct Wave
         {
@@ -57,7 +58,7 @@ namespace Game.Client.Effects
         {
             Span<double> t = stackalloc double[] { impact, impact + RingSeconds };
             Span<float> r = stackalloc float[] { 0, reach };
-            Add(centre, t, r, heavy ? 1.0f : 0.7f, heavy ? HeavyIntensity : StrikeIntensity);
+            Add(centre, t, r, heavy ? HeavyWidth : StrikeWidth, heavy ? HeavyIntensity : StrikeIntensity);
         }
 
         /// <summary>

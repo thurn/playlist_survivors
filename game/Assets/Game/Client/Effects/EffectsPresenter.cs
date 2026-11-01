@@ -10,10 +10,12 @@ namespace Game.Client.Effects
     /// The sim's events as effects (unity-game.md, Weapon and Ability Effects) on demo3d's compute
     /// particle runtime (<see cref="EffectSystem"/>), each spawned on the first frame that reaches
     /// its song time (<see cref="EffectCues"/>):
-    /// - **the sword**: a white slash along the strike's direction at the hero, oversized on a heavy
-    ///   strike, the spin's on a spin and the slam's shock on the slam, all sized to the reach; and a
-    ///   crystal wave ringing out to the reach in every direction (<see cref="CrystalWaves"/>), plus a
-    ///   heavy strike's cleave wave following its bands;
+    /// - **the sword**: the trailer's gold slash along the strike's direction at the hero, at the
+    ///   blade's arc and sweeping the blade's way (mirrored when the clip cuts against the effect's
+    ///   own sweep), moving with the free hero, oversized on a heavy strike; the spin's on a spin; the
+    ///   slam's shock on the slam, sized to the reach; and a crystal wave ringing out to the reach in
+    ///   every direction (<see cref="CrystalWaves"/>), faint on a light strike, plus a heavy strike's
+    ///   cleave wave following its bands;
     /// - **deaths**: one coherent crystal burst of chips and dust from the body, thrown along the
     ///   blow and tinted by the role's gem (demo3d's crystal shatter burst); the deaths of one instant
     ///   share their light, each 1/sqrt(n) of n, so a mass kill flashes without washing the view;
@@ -26,6 +28,13 @@ namespace Game.Client.Effects
     public sealed class EffectsPresenter : IPresenter, IDisposable
     {
         public const float SlashHeight = 1f, SlamHeight = 0.1f, BodyHeight = 0.7f, FlashHeight = 0.9f;
+        /// <summary>
+        /// The slash's crescent (Hovl's Sword Slash 11, the spin's too) as it comes, seen from above: it wipes clockwise
+        /// round the back left of its +z, its middle at -135 degrees (clockwise from +z). A swing draws it turned so
+        /// its middle lies on the clip's arc (<see cref="EffectCues.Arc"/>), mirrored when the clip cuts the other way.
+        /// </summary>
+        public const int SlashSweep = 1;
+        public const float SlashCentreDeg = -135;
 
         readonly EffectSystem _fx;
         readonly CrystalWaves _waves;
@@ -92,9 +101,18 @@ namespace Game.Client.Effects
                 {
                     frame.State.Hero.PositionAt(c.T, out double hx, out double hy);
                     var hero = new Vector2((float)hx, (float)hy);
-                    int fx = c.Kind == EffectCues.Kind.Slam ? _slam : c.Kind == EffectCues.Kind.Spin ? _spin : _slash;
-                    float height = c.Kind == EffectCues.Kind.Slam ? SlamHeight : SlashHeight;
-                    Add(fx, new Vector3(hero.x, height, hero.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
+                    var pos = new Vector3(hero.x, SlamHeight, hero.y);
+                    if (c.Kind == EffectCues.Kind.Slam) Add(_slam, pos, Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
+                    else
+                    {
+                        // The blade's cut, on the clip's arc and its way round, carried along with the hero as it runs.
+                        var (sweep, centre) = EffectCues.Arc(c.Clip);
+                        bool mirror = sweep != SlashSweep;
+                        float yaw = Yaw(c.Dir) + (centre - (mirror ? -SlashCentreDeg : SlashCentreDeg)) * Mathf.Deg2Rad;
+                        var v = _cues.HeroVelocityAt(c.T);
+                        pos.y = SlashHeight;
+                        Add(c.Kind == EffectCues.Kind.Spin ? _spin : _slash, pos, yaw, c.Scale, seed, c.T, c.Tint, 0, mirror, new Vector3(v.x, 0, v.y));
+                    }
                     _waves.Strike(c.T, hero, c.Reach, c.Heavy);
                     break;
                 }
@@ -120,12 +138,14 @@ namespace Game.Client.Effects
             }
         }
 
-        void Add(int fx, Vector3 position, float yaw, float scale, uint seed, double t, Color tint, float lightGain)
+        void Add(int fx, Vector3 position, float yaw, float scale, uint seed, double t, Color tint, float lightGain,
+            bool mirror = false, Vector3 velocity = default)
         {
             if (fx < 0) return;
             _fx.Add(new EffectSystem.Spawn
             {
                 Effect = fx, Position = position, Yaw = yaw, Scale = scale, Seed = seed, Time = t, Tint = tint, LightGain = lightGain,
+                Mirror = mirror, Velocity = velocity,
             });
             Spawned++;
         }

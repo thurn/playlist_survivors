@@ -100,3 +100,6 @@ what was run (the exact commands), the numbers, and what they show.
   next eighth (ps-w9p.1).
 - [moving-swings](moving-swings/README.md): the free hero swinging on the walk, its legs on the travel and its
   upper body twisted to the strike, the whole body turning and backpedalling past 120 degrees (ps-w9p.2).
+- [slashes](slashes/README.md): the sword's swings as the trailer's gold crescents at the blade's arc, each on
+  its clip's arc and mirrored for a cut the other way, the light strike's ring a faint line, before and after
+  beside the demo3d trailer's slash (ps-w9p.3).

@@ -1425,9 +1425,10 @@ strikes or projectiles.
   means eighth notes of the strikes).
 - Damage is a full circle around the hero, with a reach of about 7 m times
   Area. The swing's direction and arc are presentation only.
-- The visible strike must show that radius: the aimed white slash plus a
-  crystal wave that rings out to the reach in every direction, not only the
-  blade's sweep.
+- The visible strike shows the blade's cut and that radius: the trailer's
+  gold slash, sweeping the clip's way round on its arc, plus a crystal wave
+  that rings out to the reach in every direction, a faint line on an
+  ordinary strike and a white-hot band on a heavy one (ps-w9p.3).
 - Its per-hit power comes from native's rank table times Might, with no
   tempo weakening.
 - **Heavy strikes**: a beat with a detected accent (a strong onset within
@@ -2430,7 +2431,8 @@ flash and show their numbers.
 Effects use the 3D demo's compute particle runtime and its recipes, extended
 for each weapon's look in [The Other Weapons](#the-other-weapons).
 
-- The sword's slashes are white; abilities carry their own colours, white at
+- The sword's slashes are the trailer's gold crescents, white at the core
+  (ps-w9p.3; they were white); abilities carry their own colours, white at
   the core.
 - Heavy strikes oversize the slash and send the cleave wave out to the reach.
 - Effects are spawned by sim events at their song times, never by the
@@ -2503,6 +2505,37 @@ bolt's overbright first frames now brighten only its white core, the core is
 thinner (`exp(-160 a²)`, was 90) and the coloured glow is 2 (was 2.5): the
 same frames clip 0.88% and the bolts still read in their colours
 ([evidence](../../game/evidence/look-m4/README.md#the-warden-ps-msz811)).
+
+**Shipped (ps-w9p.3).** The free mode's playlist feedback (epic ps-w9p): the
+swings didn't read as the trailer's slashes but as a generic white circle
+([evidence](../../game/evidence/slashes/README.md)). The white slash was
+Sword Slash 2 through the ice ramp at the strike's reach (twice its stock size
+at free mode's 7 m), a near-full white ellipse round the hero, and every
+press rang a 0.7 m ice band out to the reach. Now:
+
+- The slash and the spin are demo3d's `spin-trail`, the trailer's gold
+  crescent (Hovl's Sword Slash 11, its cleaves' and spins' slash), in its own
+  colours (no heat ramp; HDR 0.6 and 0.3), with a warm light cue.
+- Drawn at the blade's arc, not the reach: `EffectCues.SlashArcM`, 3 m for
+  the sword's base 7.04 m reach (`scaleRef` 2.8 is the crescent's stock
+  radius), growing and shrinking with the reach so a weak free press's swing
+  is visibly smaller and Area's larger; 1.25x heavy and 0.85x a follow-up. The
+  slam's shock still covers the reach.
+- On the clip's arc and its way round: `EffectCues` picks the hero's clip
+  (`HeroMotion.ClipFor`, the same attacks in the same order), and
+  `EffectCues.Arc` gives each clip's sweep, measured from the right hand's
+  path through its impact. SlashL, Slash3 and the spin cut right to left, SlashR
+  back left to right, all through the front right (40 to 60 degrees off the
+  facing; the spin 15). The crescent wipes clockwise round its back left
+  (middle -135 degrees), so a swing turns it onto the clip's arc and mirrors it
+  for a counter-clockwise cut: a spawn's `Mirror` (a negative scale on the
+  GPU) negates the effect's x in its own frame (EffectCommon's `Frame.mirror`).
+- At the blade's height, carried with the free hero: a slash spawns with the
+  velocity of the hero's glide at its impact, so it stays round the knight on
+  the run (a grid hero, which never glides, leaves it where it struck).
+- An ordinary strike's crystal ring is a 0.3 m line at intensity 0.04 (was a
+  0.7 m band at 0.2): it still shows the reach without reading as the swing.
+  A heavy strike's is unchanged, so the big moments still stand out.
 
 ### Post-processing and camera
 

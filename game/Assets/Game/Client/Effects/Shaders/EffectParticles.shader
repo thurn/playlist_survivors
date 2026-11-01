@@ -97,7 +97,7 @@ Shader "Game/EffectParticles"
                 float4 a = _MeshVerts[v * 3], b = _MeshVerts[v * 3 + 1], c = _MeshVerts[v * 3 + 2];
                 float3 rot = (flags & (F_ROT3D | F_ROTAXES)) ? p.rotInst.xyz : float3(0, 0, p.rotInst.z);
                 float3 local = RotateEuler(rot, a.xyz * size);
-                if (align == 2) local = RotateY(f.yaw, RotateQ(f.childRot, local));
+                if (align == 2) local = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, local)));
                 world = center + local;
                 uv = float2(a.w, b.w);
                 col *= c;
@@ -132,8 +132,8 @@ Shader "Game/EffectParticles"
                     else if (align == 2)
                     {
                         float3 rot = (flags & (F_ROT3D | F_ROTAXES)) ? float3(p.rotInst.xy, 0) : 0;
-                        ax = RotateY(f.yaw, RotateQ(f.childRot, RotateEuler(rot, float3(1, 0, 0))));
-                        ay = RotateY(f.yaw, RotateQ(f.childRot, RotateEuler(rot, float3(0, 1, 0))));
+                        ax = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, RotateEuler(rot, float3(1, 0, 0)))));
+                        ay = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, RotateEuler(rot, float3(0, 1, 0)))));
                     }
                     else { ax = camRight; ay = camUp; }
                     // Minimum and maximum particle size, as fractions of the view's height.

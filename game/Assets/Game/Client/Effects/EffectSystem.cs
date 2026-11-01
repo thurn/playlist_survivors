@@ -33,6 +33,8 @@ namespace Game.Client.Effects
             public Color Tint;
             /// <summary>Above 0: the light cue's intensity scale (the crystal releases sharing one beat); 0 is the cue as authored.</summary>
             public float LightGain;
+            /// <summary>The effect's mirror image (its x negated in its own frame): a sword slash sweeping the other way round.</summary>
+            public bool Mirror;
         }
 
         public readonly EffectLibrary Library;
@@ -214,7 +216,7 @@ namespace Game.Client.Effects
                 _instData[ring] = new InstanceData
                 {
                     PosYaw = new Vector4(s.Position.x, s.Position.y, s.Position.z, s.Yaw),
-                    VelScale = new Vector4(s.Velocity.x, s.Velocity.y, s.Velocity.z, scale),
+                    VelScale = new Vector4(s.Velocity.x, s.Velocity.y, s.Velocity.z, s.Mirror ? -scale : scale), // EffectCommon's Frame.mirror
                     Timing = new Vector4((float)(s.Time - _origin), s.YawRate, BitConverter.Int32BitsToSingle(e), BitConverter.Int32BitsToSingle((int)seed)),
                     Seg0 = _seg[0], Seg1 = _seg[1], Seg2 = _seg[2], Seg3 = _seg[3],
                     Alloc = new Vector4(BitConverter.Int32BitsToSingle(count), 1, 0, s.Duration > 0 ? s.Duration : fx.Duration),

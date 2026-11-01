@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Game.Client.Effects;
+using Game.Client.Hero;
 using Game.Client.Loop;
 using Game.Client.Sound;
 using Game.Client.Weapons;
@@ -241,7 +242,8 @@ namespace Game.Tests
             cues.TakeDue(3.0, due);
             var spin = due.Single(c => c.Kind == EffectCues.Kind.Spin);
             Assert.That(spin.T, Is.EqualTo(3.0));
-            Assert.That(spin.Scale, Is.EqualTo(9.152f * EffectCues.HeavySlash).Within(1e-4), "a heavy strike oversizes its slash");
+            Assert.That(spin.Scale, Is.EqualTo(9.152f / EffectCues.BaseReachM * EffectCues.SlashArcM * EffectCues.HeavySlash).Within(1e-4),
+                "a heavy strike oversizes its slash");
             Assert.That(due.Count(c => c.Kind == EffectCues.Kind.Death), Is.EqualTo(3));
             Assert.That(due.Where(c => c.Kind == EffectCues.Kind.Death).All(c => c.Together == 3), "an instant's deaths share their light");
             Assert.That(due.Single(c => c.Kind == EffectCues.Kind.Flash).Enemy, Is.EqualTo(3), "only the hit that didn't kill flashes");
@@ -251,6 +253,39 @@ namespace Game.Tests
             cues.TakeDue(3.4, due);
             Assert.That(due.Single().T, Is.EqualTo(3.375), "the cleave band's hit on its own frame");
             Assert.That(cues.Waiting, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ASlashIsTheBladesCutTheClipsWayRoundAndMovesWithTheFreeHero()
+        {
+            var cues = new EffectCues(new RoleLooks(null));
+            var due = new List<EffectCues.Cue>();
+            // A weak press's short reach, a full one's, then two follow-ups and a slam: the hero's clips, in order.
+            // (7.04 m is the sword's base reach, as the sim rounds it into events.)
+            cues.OnEvent(SimEvent.SwordAttack(1.0, 0, HeroAttackKind.SlashLeft, 1.0, 1.3, 0, 1, false, 3.7));
+            cues.OnEvent(SimEvent.SwordAttack(1.5, 0, HeroAttackKind.SlashRight, 1.5, 1.8, 0, 1, false, 7.04));
+            cues.OnEvent(SimEvent.SwordAttack(1.9, 0, HeroAttackKind.FollowUp, 1.9, 2.05, 0, 1, false, 7.04));
+            cues.OnEvent(SimEvent.SwordAttack(2.1, 0, HeroAttackKind.FollowUp, 2.1, 2.3, 0, 1, false, 7.04));
+            cues.OnEvent(SimEvent.SwordAttack(2.4, 0, HeroAttackKind.Slam, 2.4, 2.8, 0, 1, true, 9.15));
+            cues.TakeDue(3.0, due);
+            var swings = due.OrderBy(c => c.T).ToList();
+            Assert.That(swings.Select(c => c.Clip), Is.EqualTo(new[] { HeroClip.SlashL, HeroClip.SlashR, HeroClip.Slash3, HeroClip.SlashR, HeroClip.Slam }),
+                "the clips the hero swings them with");
+            Assert.That(swings[1].Scale, Is.EqualTo(EffectCues.SlashArcM).Within(0.01), "the full reach's swing at the blade's arc, not the reach");
+            Assert.That(swings[0].Scale, Is.EqualTo(EffectCues.SlashArcM * 3.7f / 7.04f).Within(0.01), "a weak press's smaller");
+            Assert.That(swings[2].Scale, Is.EqualTo(EffectCues.SlashArcM * EffectCues.FollowUpSlash).Within(0.01));
+            Assert.That(swings[0].Reach, Is.EqualTo(3.7f), "the reach still goes to the crystal wave");
+            Assert.That(swings[4].Scale, Is.EqualTo(9.15f * EffectCues.HeavySlash).Within(1e-4), "a slam's shock still covers its reach");
+            Assert.That(EffectCues.Arc(HeroClip.SlashL).Sweep, Is.EqualTo(-EffectCues.Arc(HeroClip.SlashR).Sweep),
+                "the combo's cuts go back and forth, so their slashes mirror");
+
+            // Free mode's glides: the slash moves with the hero's; a heard input's glide replaces the ones after its start.
+            Assert.That(cues.HeroVelocityAt(1.0), Is.EqualTo(Vector2.zero), "no glides: the grid hero's slash stays put");
+            cues.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6.4, 0, Direction.Right));
+            cues.OnEvent(SimEvent.HeroGlide(2.0, 2.0, 6.4, 0, 0, 6.4, Direction.Up));
+            cues.OnEvent(SimEvent.HeroGlide(2.1, 1.9, 5.76, 0, -6.4, 0, Direction.Left));
+            Assert.That(cues.HeroVelocityAt(1.5), Is.EqualTo(new Vector2(6.4f, 0)));
+            Assert.That(cues.HeroVelocityAt(2.05), Is.EqualTo(new Vector2(-6.4f, 0)), "the replaced glide is gone");
         }
 
         [Test]

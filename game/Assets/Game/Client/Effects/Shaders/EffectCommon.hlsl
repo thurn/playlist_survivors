@@ -123,7 +123,7 @@ struct Particle
 struct Instance
 {
     float4 posYaw;   // origin, yaw (radians)
-    float4 velScale; // origin velocity, scale
+    float4 velScale; // origin velocity, scale (negative: the mirror image, Frame.mirror)
     float4 timing;   // spawn time, yaw rate, emitter (asfloat), seed (asfloat)
     float4 seg[4];   // emission segments: first particle, particles per step, first birth, step seconds
     float4 alloc;    // count (asfloat), merged density (TD11's merge cut; 1 or more), allocation offset (asfloat; ~0 rejected), duration
@@ -194,8 +194,10 @@ float3 RotateEuler(float3 r, float3 v)
 }
 
 // The emitter's frame in world space at time t: origin moving with the instance's velocity,
-// yawed by the instance's yaw (and yaw rate), scaled, then the child's own transform.
-struct Frame { float3 origin; float yaw; float scale; float4 childRot; float3 childPos; float3 childScale; };
+// yawed by the instance's yaw (and yaw rate), scaled, then the child's own transform. A spawn with
+// a negative scale is the mirror image (mirror -1): the effect's x negated after the child's own
+// transform, so a sword slash sweeps the other way round (a left slash's arc for a right one's).
+struct Frame { float3 origin; float yaw; float scale; float mirror; float4 childRot; float3 childPos; float3 childScale; };
 
 Frame EmitterFrame(Instance inst, uint e, float t)
 {
@@ -203,28 +205,32 @@ Frame EmitterFrame(Instance inst, uint e, float t)
     float dt = t - inst.timing.x;
     f.origin = inst.posYaw.xyz + inst.velScale.xyz * dt;
     f.yaw = inst.posYaw.w + inst.timing.y * dt;
-    f.scale = inst.velScale.w;
+    f.scale = abs(inst.velScale.w);
+    f.mirror = inst.velScale.w < 0 ? -1 : 1;
     f.childRot = EM(e, S_CHILDROT);
     f.childPos = EM(e, S_CHILDPOS).xyz;
     f.childScale = EM(e, S_CHILDSCALE).xyz;
     return f;
 }
 
+// An effect-space vector in the frame's mirror (its own inverse).
+float3 Mirror(Frame f, float3 v) { return float3(v.x * f.mirror, v.y, v.z); }
+
 // Emitter-local point to world.
 float3 FramePoint(Frame f, float3 p)
 {
-    return f.origin + RotateY(f.yaw, (f.childPos + RotateQ(f.childRot, p * f.childScale)) * f.scale);
+    return f.origin + RotateY(f.yaw, Mirror(f, f.childPos + RotateQ(f.childRot, p * f.childScale)) * f.scale);
 }
 
 // Emitter-local direction to world (scaled).
 float3 FrameVector(Frame f, float3 v)
 {
-    return RotateY(f.yaw, RotateQ(f.childRot, v * f.childScale) * f.scale);
+    return RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, v * f.childScale)) * f.scale);
 }
 
 float3 FrameInverseVector(Frame f, float3 w)
 {
-    float3 v = RotateY(-f.yaw, w) / max(f.scale, 1e-4);
+    float3 v = Mirror(f, RotateY(-f.yaw, w)) / max(f.scale, 1e-4);
     float4 qi = float4(-f.childRot.xyz, f.childRot.w);
     return RotateQ(qi, v) / max(f.childScale, 1e-4);
 }

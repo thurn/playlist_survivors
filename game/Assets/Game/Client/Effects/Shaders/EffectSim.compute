@@ -333,7 +333,8 @@ void Simulate(uint3 id : SV_DispatchThreadID)
             else
             {
                 float3 rel = p.posAge.xyz - FramePoint(f, off);
-                float3 w = RotateY(f.yaw, RotateQ(f.childRot, orb.xyz));
+                // An axial vector: a mirror turns it the other way round too.
+                float3 w = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, orb.xyz))) * f.mirror;
                 v += cross(w, rel) + (dot(rel, rel) > 1e-8 ? normalize(rel) * orb.w * f.scale : 0);
             }
         }
