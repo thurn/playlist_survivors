@@ -2,14 +2,15 @@
   "graphicsDeviceName": "Apple M5 Max",
   "size": [1920, 1080],
   "msaa": 4,
-  "args": "-batchmode -force-metal -logFile /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.2/captures/game/perf/finale/player.log --fixed-time --file /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.2/public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --profile-out /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.2/captures/game/perf/finale/profile.csv --start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,finale@68 --gpu-probe-at 68.4,68.7,69.2 --gpu-probe-out /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.2/captures/game/perf/finale/gpu-probe.json --seconds 71",
+  "args": "-batchmode -force-metal -logFile /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.9/captures/game/perf/finale/player.log --fixed-time --file /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.9/public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --profile-out /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.9/captures/game/perf/finale/profile.csv --start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,finale@68 --gpu-probe-at 68.4,68.7,69.2 --gpu-probe-out /Users/dthurn/playlist_survivors/.worktrees/ps-msz.8.9/captures/game/perf/finale/gpu-probe.json --seconds 71",
   "frames": 24,
-  "p50Ms": 4.26,
-  "p99Ms": 8.31,
-  "maxMs": 8.31,
+  "p50Ms": 5.26,
+  "p99Ms": 8.35,
+  "maxMs": 8.35,
+  "firstMaxMs": 36.52,
   "points": [
-    {"at": 68.400, "alive": 4, "medianMs": 5.30, "maxMs": 8.31, "frames": [[68.4333, 4, 8.31], [68.4500, 4, 4.60], [68.4667, 4, 4.26], [68.4833, 4, 5.86], [68.5000, 4, 5.85], [68.5167, 4, 4.06], [68.5333, 4, 4.13], [68.5500, 4, 5.30]]},
-    {"at": 68.700, "alive": 4, "medianMs": 3.80, "maxMs": 5.10, "frames": [[68.7167, 4, 4.24], [68.7333, 4, 3.80], [68.7500, 4, 5.10], [68.7667, 4, 3.75], [68.7833, 4, 3.58], [68.8000, 4, 5.06], [68.8167, 4, 3.41], [68.8333, 4, 3.36]]},
-    {"at": 69.200, "alive": 4, "medianMs": 4.27, "maxMs": 5.53, "frames": [[69.2167, 4, 3.44], [69.2333, 4, 4.67], [69.2500, 4, 4.43], [69.2667, 4, 3.25], [69.2833, 4, 4.27], [69.3000, 4, 3.54], [69.3167, 4, 3.61], [69.3333, 4, 5.53]]}
+    {"at": 68.400, "alive": 11, "firstMs": 36.52, "medianMs": 5.52, "maxMs": 8.35, "frames": [[68.4167, 11, 6.75], [68.4333, 11, 5.87], [68.4500, 11, 5.26], [68.4667, 11, 5.13], [68.4833, 11, 4.99], [68.5000, 11, 8.35], [68.5167, 11, 5.28], [68.5333, 11, 5.52]]},
+    {"at": 68.700, "alive": 11, "firstMs": 4.34, "medianMs": 5.41, "maxMs": 6.33, "frames": [[68.7167, 11, 4.76], [68.7333, 11, 6.33], [68.7500, 11, 5.56], [68.7667, 11, 5.76], [68.7833, 11, 5.41], [68.8000, 11, 4.55], [68.8167, 11, 4.91], [68.8333, 11, 4.08]]},
+    {"at": 69.200, "alive": 11, "firstMs": 5.33, "medianMs": 5.14, "maxMs": 6.75, "frames": [[69.2167, 11, 5.36], [69.2333, 11, 4.12], [69.2500, 11, 4.33], [69.2667, 11, 4.09], [69.2833, 11, 6.75], [69.3000, 11, 5.13], [69.3167, 11, 5.14], [69.3333, 11, 5.26]]}
   ]
 }

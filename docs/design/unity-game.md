@@ -2643,6 +2643,43 @@ run's heaviest, 8 to 20 ms in the probe (CPU share 4.5 ms), for M5 on
 Cygnus (ps-msz.9.2). Numbers in
 [game/evidence/perf](../../game/evidence/perf/README.md#the-runs-peak-at-60-fps-on-the-mac-ps-msz88).
 
+**Shipped (ps-msz.8.9): no frame over 33 ms on the Mac.** Three kinds of
+hitch, each found with a new measure in [game/evidence/perf](../../game/evidence/perf/README.md):
+
+- **Garbage.** The frame profile writes an allocation census beside it
+  (`profile-alloc.csv`: the main thread's allocations by type and by the part
+  of the frame that made them). It named the HUD's per-frame texts, the
+  damage numbers' strings and closure, per-frame delegates, the bot's lambdas,
+  UI trees rebuilt at each level-up, and the sim's stream lists doubling to
+  53 MB of garbage over a run. The texts are made once and set on a change,
+  the delegates once, pools and capacities replace the growth, and the run's
+  level sizes the sim's storage for 40 minutes of song
+  (`SimConfig.HindsightCapacity` and `SparseCapacity` with the others). A full
+  run allocates 18 B a frame (from 1125) with 2 collections (from 38); the
+  peak 36 B a frame, 480 B at p99, none in most frames.
+- **First use.** `--gpu-probe-firsts` probes the first sighting of each kind
+  of moment. On a first launch of a build, macOS compiles each shader
+  variant's pipeline as it first draws: 3.5 s for the first frame, up to 666
+  ms at a first sighting (a zone's change, the first spawn, the first deaths).
+  The boot now warms up a traced `GraphicsStateCollection`
+  (`Client/GraphicsStates.cs`) per graphics API, from the build's
+  StreamingAssets (gitignored, traced per machine by `game perf --trace` in a
+  development player, as Unity traces only there): 3.3 to 4.5 s at boot on a
+  cold launch. A trace holds no compute, and each compute kernel's first
+  dispatch stalled its frame 54 to 164 ms on a cold launch (the first frame,
+  spawn, emitter burst and death), so each system hands its kernels to
+  `GraphicsStates.Prepare` as it loads (`ComputeShader.IsSupported` builds
+  them, 0.4 s). A cold launch then has no first sighting over 27 ms and no
+  main-thread frame over 5 ms.
+- **Load in the run's frames.** The arena's scene finished loading in the
+  frame of the sim's first step (36 to 48 ms of CPU, its static shadow map 23
+  ms of it); the loop now steps from the frame after.
+
+The frame profile also reports each frame's main-thread CPU time (`cpu_ms`),
+which tells a frame's waits (the machine's other builds, a compiler) from its
+own work: no frame's own work went over 8 ms in any take after the fixes. The
+graphics states are traced per graphics API: Cygnus needs its own (M5).
+
 ## What Carries Over, and What Changes
 
 Both prototypes were built under constraints this game doesn't have. Native
@@ -2777,7 +2814,8 @@ Checks, by layer:
   or with `--player` in the player).
 - **Performance** (ps-msz.8.2): `game perf` runs the player windowless at fixed time over the
   standard scenarios with its frame probe and CPU frame profile, into a JSON summary
-  ([Performance targets](#performance-targets)).
+  ([Performance targets](#performance-targets)); its `firsts` scenario probes each first
+  sighting, and `--trace` traces the graphics states the boot warms up (ps-msz.8.9).
 - **Vendor guard**: the repository's check that blocks committing vendor
   files covers the new project.
 
@@ -2923,7 +2961,8 @@ the operator. Inside each milestone, independent tracks run in parallel.
    targets in M5.
 6. **M5, Windows**: the shared crates and the plugin on Windows, process
    loopback with the guardian process, the Windows player, and performance
-   against the targets on Cygnus.
+   against the targets on Cygnus, with Cygnus's own traced graphics states
+   for the boot's warm-up (the Mac's trace is Metal's; ps-msz.8.9).
 
 Mason and Sage audits close M1, M2 and M3; M3's audit also covers live
 capture.

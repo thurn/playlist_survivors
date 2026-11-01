@@ -1,4 +1,4 @@
-# The run's performance baseline on the Mac (ps-msz.8.2)
+# The run's performance on the Mac (ps-msz.8.2, ps-msz.8.9)
 
 The game's first frame numbers: a windowless frame probe and a per-frame CPU profile in the player,
 and one command over the run's standard scenarios. Taken on jarvis (Apple M5 Max, Metal), the IL2CPP
@@ -11,8 +11,9 @@ uv run --project demo3d/tools game perf --only peak,break # a subset
 ```
 
 It writes [summary.json](summary.json) and each scenario's probe (`gpu-probe-<scenario>.json`) here;
-the per-frame profiles (`profile.csv`, 16 MB for the full run) and the players' logs stay in
-`captures/game/perf/<scenario>/`. It exits 1 if a player fails.
+the per-frame profiles (`profile.csv`, 16 MB for the full run), their allocation census
+(`profile-alloc.csv`) and the players' logs stay in `captures/game/perf/<scenario>/`. It exits 1 if a
+player fails. summary.json is ps-msz.8.9's take; ps-msz.8.2's baseline is the table below.
 
 ## What it measures
 
@@ -41,6 +42,21 @@ the per-frame profiles (`profile.csv`, 16 MB for the full run) and the players' 
   reverse P/Invoke attaches first, so it re-entered itself until the stack ran out.
 - **In batch mode the main thread doesn't render**: `frame_ms` is the frame's update work. A
   windowed frame adds its render submission, which the probe's frame contains.
+- **The frame's CPU time** (`cpu_ms`, ps-msz.8.9): the main thread's own CPU time in the frame
+  (`CLOCK_THREAD_CPUTIME_ID`, the wait and probe left out as above; -1 on Windows, whose thread times
+  move in 16 ms ticks). A frame whose `frame_ms` is far over its `cpu_ms` waited on the OS, not on its
+  work: the summary lists every frame over 16.7 ms with both (`slow`), and p99 and p99.9 of each.
+- **The allocation census** (`profile-alloc.csv`, ps-msz.8.9): the main thread's allocations from the
+  first profiled frame to the run's end by type and by the part of the frame that made them (`engine`,
+  `loop`, `sim`, `probe`, or a presenter's `Present`/`OnEvent`), with each type's count, bytes and
+  largest, from the same native hook (the type's name from IL2CPP).
+- **First sightings** (`--gpu-probe-firsts`, ps-msz.8.9): the probe also draws three frames at the run's
+  first frame and at the first sighting of each kind of moment, by its events: each weapon's first
+  strike, hit, projectile, orbit, bolt and burn, a heavy strike, each role's first spawn, death and
+  leave, each enemy attack, each zone's first change, each set piece, the first break, regrowth, glint,
+  cleave, gem, chest phase, level-up and card, and the finale. Its first frame (`first_ms`) is the one
+  that first draws the moment: in batch mode nothing else draws, so a shader variant's compile or a
+  pool's fill lands there.
 
 ## The scenarios
 
@@ -54,10 +70,12 @@ summary.json):
 | finale | the peak's, plus `finale@68` (the blast at 68.30 s: 296 alive to 4) | 68.4, 68.7, 69.2 | 68 to 71 |
 | early | `--run` (the run's first minute) | 45, 60, 75 | 20 to 80 |
 | full | `--file native/playlists/survivors-30-twice.m3u --run`, to the victory card | none | the whole run |
+| firsts | the full run's, with `--gpu-probe-firsts` | each first sighting | the whole run |
+| firsts-rest | the peak's with `--arsenal sword:8,unholy-vespers:1,thunder-loop:1,chain-lightning:8,fire-trail:8 --debug stampede@8,kick@16,wedge@24`, `--gpu-probe-firsts`: what the full run never shows | each first sighting | 0 to 45 |
 
-## The baseline
+## The baseline (ps-msz.8.2)
 
-The take in summary.json (load average 22 to 37: other agents' builds shared the machine). Times in
+ps-msz.8.2's take (load average 22 to 37: other agents' builds shared the machine). Times in
 ms: probe frame p50/p99/max over its 24 counted frames; main thread p50/p99/max over the window.
 
 | scenario | probe frame | main thread | over 16.7 / 33 ms | alloc B/frame mean, p99, max | GCs | sim step p99 at 285+ alive (frames) | alive median, max |
@@ -231,3 +249,122 @@ SSAO is the look's, and half resolution keeps it.
   ps-msz.9.2's to measure on Cygnus, windowed, against the targets.
 - **A one-off 144 ms probe frame** at 60.03 s in the first take of the peak never repeated in the
   fourteen takes after it: a GPU shared with other sessions' players.
+
+# No frame over 33 ms on the Mac (ps-msz.8.9)
+
+The doc's target is no frame over 33 ms in a 30-minute run on Cygnus. On the Mac this bead removed the
+steady allocations, sized the sim's storage for a run, moved the arena's load out of the run's frames,
+and warmed up every graphics state and compute kernel the run uses at boot. The take in summary.json
+(this bead's tree, before ps-msz.8.8's half-resolution SSAO landed beside it, which only shortens the GPU's share),
+on jarvis at a load average of 9 to 17 (times in ms; main thread p50 / p99 / p99.9 / max, the
+analysis wait left out; CPU max the main thread's own CPU time in its longest frame):
+
+| scenario | probe frame p50 / p99 / max | main thread | CPU max | over 16.7 / 33 ms | alloc B/frame mean, p99, max (frames allocating) | GCs | sim step p99 at 285+ |
+|---|---|---|---|---|---|---|---|
+| peak | 5.09 / 18.70 / 18.70 | 1.21 / 2.42 / 6.97 / 24.14 | 3.65 | 2 / 0 | 36, 480, 21688 (208 of 1921) | 0 | 0.35 |
+| break | 5.25 / 6.90 / 6.90 | 1.69 / 2.95 / 5.04 / 5.04 | 2.85 | 0 / 0 | 184, 2698, 17906 (15 of 121) | 0 | 0.39 |
+| finale | 5.26 / 8.35 / 8.35 | 1.46 / 3.93 / 6.61 / 6.61 | 3.46 | 0 / 0 | 813, 6592, 74916 (7 of 181) | 1 | 0.25 |
+| early | 5.30 / 7.03 / 7.03 | 0.72 / 2.20 / 4.96 / 9.92 | 3.07 | 0 / 0 | 72, 1568, 30560 (293 of 3601) | 0 | |
+| full (124,827 frames) | | 0.94 / 2.70 / 4.21 / 11.98 | 7.99 | 0 / 0 | 18, 76, 131104 (8019) | 2 | 0.47 |
+| firsts | 6.29 / 14.20 / 28.50 | 0.78 / 1.82 / 2.27 / 6.28 | 6.24 | 0 / 0 | 19, 76, 131104 | 7 | 0.36 |
+| firsts-rest | 4.71 / 7.01 / 7.63 | 0.69 / 1.29 / 1.68 / 3.26 | 3.26 | 0 / 0 | 253, 3136, 176134 (515 of 2699) | 2 | 0.27 |
+
+Against ps-msz.8.2's baseline above: the full run's longest frame 22.17 to 11.98 ms (4 frames over
+16.7 ms to none), its allocation 1125 to 18 B a frame and its collections 38 to 2; the peak's
+allocation 1281 B a frame (at least 458 B in every frame) to 36 B, its p99 3982 B to 480 B and its
+median to 0, with no collection. The peak's two frames over 16.7 ms (at 56.70 s) had 1.4 and 1.9 ms
+of CPU.
+
+**Wall time and CPU time.** jarvis shares its cores with other agents' builds, so a frame's wall
+clock can stretch while the OS runs something else, and a frame can also block (on a file, a lock or
+the GPU's compiler) without spending CPU. `cpu_ms` shows both: a frame far over its CPU time waited.
+A wait that repeats at the same moment in every take is the run's (the compute kernels' compiles below
+were); one at a different moment each take is the machine's. After the fixes no frame's own CPU work
+went over 8 ms in any take, and no frame over 33 ms repeated.
+
+## Allocations
+
+The census of a full run before the fixes named the garbage (bytes over the 30 minutes):
+
+| source | bytes | fix |
+|---|---|---|
+| the sim's stream lists doubling: hindsight grid beats (69,273 a run), ticks (41,660), their known-at times, the accepted entries | 53 MB, 45 doublings, the largest 15.7 MB | sized for 40 minutes of song in the run's level (`SimConfig.HindsightCapacity`, `SparseCapacity`, `TickCapacity`, `BeatCapacity`, `PressCapacity` in `RunLevel.Config`): about 35 MB at the start |
+| the HUD's texts every frame: level, kills, clock (and the clock's boxed numbers) | 26.8 MB | made once each and set only on a change (`HudText.Level`, `Clock`, `Name`, `Mark`) |
+| the damage numbers: a capturing lambda every frame, a string per merged hit | 19 MB | a loop; each shown amount's text made once, only for the numbers drawn |
+| the effects' counter readback: a new delegate every frame | 16 MB | made once |
+| the bot's gem searches (lambdas) | 4.7 MB | loops |
+| the wand's bolts and their legs | 5.9 MB | pooled |
+| the zone's palette parsed from the layout's JSON on its first change | 1.4 MB | every zone's palette parsed at load |
+| the fog's camera callback re-subscribed through a zone's ease | 1.7 MB | made once |
+| a chest's shard batches at its first roulette | 1.6 MB | every colour's at load |
+| the level-up cards and the arsenal's slots rebuilt as new UI trees | 2.5 MB | built once, filled in |
+| a break's shard sets and materials (`Array.Find`, `sharedMaterials`) | 0.2 MB | a loop, a reused list |
+
+What allocates still: the HUD's kill counter (a string per change, 270 KB a run), the run's summary
+at its end (2 MB of percentile copies, after play), the structures' shard pool filling at its first
+breaks, and the effects' cue list growing once at the finale's blast (53 KB).
+
+## First-use hitches
+
+Each first sighting probed (102 points in the full run, 32 in firsts-rest) on a build's first launch:
+the game's Metal shader cache (`$(getconf DARWIN_USER_CACHE_DIR)/ca.thurn.playlist-survivors.game/com.apple.metal`)
+removed before each take ([firsts-cold.json](firsts-cold.json)). macOS compiles a pipeline the first
+time it's used and keeps it, so these stalls come on the first launch of each build (changed shaders
+compile again) and not after: the warm takes above have none.
+
+| on a cold launch | without a warm-up | graphics states only | both (shipped) |
+|---|---|---|---|
+| the run's first drawn frame (probe) | 3515 ms | 25 | 24 |
+| zone 1's first change (probe) | 666 | 3.9 | 2.6 |
+| the first spawn, bat3 (probe) | 563 | 8.4 | 2.7 |
+| the first sword hit, death and gem (probe) | 287 | 6.6 | 3.1 |
+| the first ghost's death / bat4's death / zone 2 (probe) | 275 / 265 / 243 | 6.5 / 7.0 / 8.3 | 4.7 / 3.2 / 2.6 |
+| the worst of the full run's 102 first sightings (probe) | 3515 | 26.9 | 26.3 |
+| the worst of firsts-rest's 32 (probe) | 2265 | 25.6 | 25.6 |
+| the longest main-thread frame, full run | 171 | 113 | 4.1 |
+| the longest main-thread frame, firsts-rest | 169 | 168 | 3.0 |
+
+Two warm-ups at boot, both in `Client/GraphicsStates.cs`:
+
+- **Graphics states.** A traced `GraphicsStateCollection`: `game perf --trace` builds a development
+  player (Unity traces only in one) and runs the scenarios with `--graphics-states-out` into
+  `game/Assets/StreamingAssets/GraphicsStates/Metal.graphicsstate` (gitignored, made per machine),
+  which the next `game build` ships. The boot warms its 76 variants in 87 states before the title or the
+  run: 3.3 to 4.5 s on a cold launch, near nothing warm. firsts-rest's weapons and set pieces added no
+  state to the full run's trace.
+- **Compute kernels.** A trace holds no compute, and the first dispatch of each of the 17 kernels (the
+  effects' simulation and sort, the crowd's cull and palette, the shatter's) stalled its frame on the
+  compiler with almost no CPU of its own, at the same moments in every cold take: the first frame
+  (effects, 111 to 164 ms), the first spawn (crowd, 84 to 130), the first emitter burst (effects, 89 to
+  151), the first death (shatter, 54 to 76). Each system now hands its kernels to
+  `GraphicsStates.Prepare` as it loads, and `ComputeShader.IsSupported` builds them: 371 to 421 ms at
+  load on a cold launch.
+
+`--no-warmup` measures without both. One cold take with both warm-ups at a load average near 15 had
+first sightings up to 83 ms (a boss's spawn) and a 64 ms main-thread frame with 1.8 ms of CPU, at
+moments no other take repeated; the next, at 8, had none over 26.3 and 4.1 ms.
+
+**The process's first drawn frame.** Each timed scenario's first probe point is the first frame that
+player draws at all, with its uploads (24 to 37 ms, the finale's drawn on the blast with 296
+shatters); in a window that cost is the load frame's, before the run.
+
+## The arena's load
+
+The arena's scene finishes loading in the frame after the loop starts, and its setup (the 4096² static
+shadow map took 23 ms of it) ran in the same frame as the sim's first step: 36 to 48 ms of CPU in
+the run's first frame. The loop now steps the sim and draws its presenters from the frame after the
+arena's load (that frame still takes the music's entries and the keys), so no frame of the run
+carries it; the sim's frames are its own, so the run is the same.
+
+## Spikes
+
+None left over 33 ms on the Mac: a structure break's frames 5.0 ms at most and the finale's blast
+frame 6.6 ms; in the full run, with its 134 breaks, 126 regrowths, 77 zone changes and 131 set
+pieces, no frame over 12.0 ms wall or 8.0 ms of CPU; and the probe's frames at the break and the
+finale 6.9 and 8.4 ms p99.
+
+## For Cygnus (M5)
+
+The graphics-state file is per graphics API: Cygnus needs its own trace (Direct3D 12 or Vulkan), from
+a development player there (`game perf` is the Mac's today); the compute kernels' preparation is
+the same code there. `cpu_ms` reads -1 on Windows. Mac numbers only guide this; the target is Cygnus's.
