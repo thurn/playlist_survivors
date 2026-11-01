@@ -1,6 +1,6 @@
 //! Actual opening-minute zone fallbacks, offscreen in an explicitly empty synthetic run.
-use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
-use render::{atlas::Atlases, capture, font::Align, post::Frame};
+use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, scene};
+use render::{capture, font::Align, post::Frame};
 use sim::survivors::{Inventory, WeaponId, weapon_catalog};
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
@@ -90,7 +90,7 @@ fn capture(dir: &Path, aura_only: bool) -> Result<(), String> {
     let beats: Vec<_> = log.beats.iter().map(|b| b.t).collect();
     let mut replay = stream::Replay::new(log);
     let mut engine = world.engine(true)?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let mut scene = Scene::default();
     let mut clip = crate::slice::clip::Clip::new(1280, 720, 24)?;

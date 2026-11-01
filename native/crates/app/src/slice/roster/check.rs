@@ -1,5 +1,5 @@
 //! One real simulated role per clip; no app window, input sound or survival claim.
-use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, live, scene};
+use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, scene};
 use render::{atlas::Atlases, capture, font::Align, post::Frame};
 use std::path::Path;
 const ROLES: [&str; 8] = [
@@ -34,7 +34,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
         };
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut video = capture::Offscreen::new(&art.pages, 640, 360)?;
     let mut still = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let selected = std::env::var("PS_ROSTER_ROLES").unwrap_or_else(|_| ROLES.join(","));

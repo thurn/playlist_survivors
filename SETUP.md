@@ -115,6 +115,7 @@ From `native/`, run `cargo run --locked --release -p app -- <flags>`:
 | `--mute`, `--volume <0-1>` | everything runs, the device gets silence or less |
 | `--headless --seconds <n> [--press-beats] [--watch]` | no window, no Dock icon, muted, on a timer, for checks |
 | `--showcase [--file <path>]` | demo2d's song (`uv run --project demo3d/tools demo2d setup` bakes it) played start to end by the virtual player on `levels/action-showcase.yaml`, in Delayed listening; quits once the run is over ([docs/design/native-showcase.md](docs/design/native-showcase.md): what it is, its measurement tools, how it differs from demo2d) |
+| `--art heroeditor` | the HeroEditor feel test: a HeroEditor knight and undead horde on a painted dusk ground, from atlases `just herocap` bakes into the machine's cache (needs the vendor packs; [docs/design/heroeditor-native.md](docs/design/heroeditor-native.md)) |
 | `--still <png> [--still-track <id> --still-at <s>]` | a still of a bundled track at a time, offscreen |
 | `--bench [--check]` | the frame's work over 60 s, offscreen |
 

@@ -1,7 +1,7 @@
 //! Synthetic committed beat/forecast stream through real shot emission, drawn without a window.
-use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, live, scene};
+use crate::slice::{HudState, KeyLight, Scene, World, clip::Clip, damage, hud, scene};
 use render::font::Align;
-use render::{atlas::Atlases, capture, post::Frame};
+use render::{capture, post::Frame};
 use sim::survivors::{WeaponId, weapon_catalog};
 use std::path::Path;
 fn reexec_batch() -> Result<bool, String> {
@@ -166,7 +166,7 @@ pub fn run(dir: &Path, fixture: Option<(WeaponId, u8)>) -> Result<(), String> {
             ..Default::default()
         });
     }
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let (w, h) = (1280u32, 720u32);
     let mut gpu = capture::Offscreen::new(&art.pages, w, h)?;
     let mut clip = Clip::new(w, h, 30)?;

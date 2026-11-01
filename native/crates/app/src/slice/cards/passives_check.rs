@@ -1,9 +1,8 @@
 //! Two labelled, synthetic presentation stills of all six passive cards and HUD slots.
 use super::card_draw;
-use crate::slice::{HudState, KeyLight, hud, live};
+use crate::slice::{HudState, KeyLight, hud};
 use eval::live::LiveView;
 use render::{
-    atlas::Atlases,
     capture,
     font::Align,
     post::{Frame, Grade},
@@ -20,7 +19,7 @@ const PASSIVES: [PassiveId; 6] = [
 ];
 pub fn run(dir: &Path) -> Result<(), String> {
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut inv = Inventory::default();
     for w in [
         WeaponId::Sword,

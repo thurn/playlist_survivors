@@ -1,6 +1,6 @@
 //! Reproducible offscreen presentation fixture, using real offer input/freeze/resume paths.
-use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
-use render::{atlas::Atlases, capture, post::Frame};
+use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, scene};
+use render::{capture, post::Frame};
 use sim::movement::InputKey;
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
@@ -47,7 +47,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
     eprintln!(
         "cards-check: presentation fixture: bat health0.0001 speed1000 xp10, 12 zombies health1000000, minute0 one roster; normal hero damage, no pacing/survival claim"
     );
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let text = std::fs::read_to_string(
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../../public/reactive/house-128/stream.json"),

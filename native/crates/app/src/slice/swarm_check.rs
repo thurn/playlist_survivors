@@ -1,6 +1,6 @@
 //! Bounded offscreen actual-event captures; durable XP-free enemies, normal hero damage.
-use super::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
-use render::{atlas::Atlases, capture, font::Align, post::Frame};
+use super::{HudState, KeyLight, Scene, World, damage, hud, scene};
+use render::{capture, font::Align, post::Frame};
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
     if std::env::var_os("PS_NATIVE_BATCH").is_none() {
@@ -18,7 +18,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
         };
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let mut trace = std::fs::File::create(dir.join("events.jsonl")).map_err(|e| e.to_string())?;
     for (name, kind, role, count, duration, until) in [

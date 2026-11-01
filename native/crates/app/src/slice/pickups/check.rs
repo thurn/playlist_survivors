@@ -1,5 +1,5 @@
 //! A real first minute on the Rust fixture, then a separately labelled 400-gem layout.
-use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
+use crate::slice::{HudState, KeyLight, Scene, World, damage, hud, scene};
 use render::{atlas::Atlases, capture, post::Frame};
 use std::path::Path;
 #[derive(serde::Deserialize)]
@@ -85,7 +85,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
         }
     }
     let now = reached.ok_or("pickup fixture did not reach minute1")?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let minute = engine.view.borrow().clone();
     draw(

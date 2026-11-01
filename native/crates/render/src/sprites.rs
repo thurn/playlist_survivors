@@ -1,5 +1,6 @@
 //! Instanced sprites: each a quad on screen, textured from a region of an atlas page (or solid),
-//! tinted, drawn in the order given. Nearest sampling keeps the pixel art crisp.
+//! tinted, drawn in the order given. Nearest sampling keeps the pixel art crisp; smooth pages
+//! (procedural and hi-res art) are sampled linearly.
 #![allow(clippy::default_trait_access)]
 
 use crate::atlas::{Page, Region};
@@ -390,7 +391,11 @@ impl SpriteRenderer {
             pipelines: Vec::new(),
             slots: Vec::new(),
             next_slot: 0,
-            smooth_pages: pages.iter().map(|p| p.name == "proc").collect(),
+            // (The procedural textures and the HeroEditor pages are drawn smooth.)
+            smooth_pages: pages
+                .iter()
+                .map(|p| p.name == "proc" || p.name.starts_with("heroeditor-"))
+                .collect(),
             page_sizes: pages
                 .iter()
                 .map(|p| (p.width as f32, p.height as f32))

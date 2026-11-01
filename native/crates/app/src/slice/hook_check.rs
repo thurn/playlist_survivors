@@ -1,7 +1,7 @@
 //! Offscreen evidence from an actual normal-damage five-minute bot recording.
 use super::{HudState, KeyLight, Scene, World, damage, hud, scene};
 use eval::session::{AppliedKey, Arrival, rebase_append};
-use render::{atlas::Atlases, capture, font::Align, post::Frame};
+use render::{capture, font::Align, post::Frame};
 use sim::movement::InputKey;
 use std::{io::Write, path::Path};
 fn lines<T: serde::de::DeserializeOwned>(p: &Path) -> Result<Vec<T>, String> {
@@ -51,7 +51,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
         .ok_or("missing level source")?
         .into();
     let mut engine = world.engine(true)?;
-    let art = Atlases::load(&super::live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let out = dir.join("hook");
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     let mut trace = std::fs::File::create(out.join("frames.jsonl")).map_err(|e| e.to_string())?;

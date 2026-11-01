@@ -16,6 +16,9 @@ the batch-mode Capture task (Capture.cs). It writes, under paths.heroeditor_cach
 
 Never in the tree: they are HeroEditor-derived, and the guard's derived record covers them.
 
+`herocap bake`: packs the frames into native's character atlas, `<cache>/heroeditor/assets/`, for
+`--art heroeditor` (herobake.py).
+
 `herocap evidence`: small tagged renders of the capture in native/evidence/heroeditor/capture/: a
 contact sheet per recipe, the face lineup, and budget.json (frames, pixels and 4096 pages).
 """
@@ -31,7 +34,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 from PIL.PngImagePlugin import PngInfo
 
-from . import paths, unity
+from . import herobake, paths, unity
 
 # Faces are dots and lines (the epic's decision 7): the hero's two dots, short line and thin flat
 # brows; the undead's two soft glows and a blank or no mouth. Everything else is banned, by name:
@@ -114,6 +117,8 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
                        "native/evidence/heroeditor/capture/")
     e.add_argument("--out", help="the capture's folder (default: the cache's heroeditor/)")
     e.set_defaults(func=cmd_evidence)
+
+    herobake.add_parser(sub)
 
 
 def cmd_capture(a: argparse.Namespace) -> int:

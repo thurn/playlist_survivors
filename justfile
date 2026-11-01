@@ -146,10 +146,12 @@ stylelab-play *args:
 stylelab-tool *args:
     {{tools}} stylelab "$@"
 
-# Set up if needed, then capture HeroEditor's recipes to PNG frames in the machine's cache (--recipe hero, --clip walk)
+# Set up if needed, capture HeroEditor's recipes to PNG frames in the machine's cache (--recipe hero, --clip walk),
+# then bake them into native's `--art heroeditor` atlas there
 [group('herocap')]
 herocap *args: (_setup "herocap")
     {{tools}} herocap capture "$@"
+    {{tools}} herocap bake
 
 # The tools themselves: `just herocap-tool evidence` (contact sheets, faces, budget), `just herocap-tool setup`
 [group('herocap')]

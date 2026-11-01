@@ -132,7 +132,7 @@ struct Painter {
 impl Painter {
     fn new(delayed: f64) -> Result<Painter, String> {
         Ok(Painter {
-            art: Atlases::load(&super::live::resource("assets", "../../../public/assets"))?,
+            art: crate::slice::art::atlases()?,
             scene: Scene::default(),
             delayed,
         })

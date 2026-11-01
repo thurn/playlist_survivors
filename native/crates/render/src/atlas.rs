@@ -54,6 +54,12 @@ pub struct Animation {
     pub anchor_y: f32,
     pub frames: [Vec<Region>; 4],
     pub flash: [Vec<Region>; 4],
+    /// Frame pixels per world pixel: 1 for pixel art, more for hi-res frames drawn smooth.
+    pub density: f32,
+    /// Side view only: every facing holds the right-facing frames, mirrored for left.
+    pub side: bool,
+    /// The frame a strike lands on, if the bake knows it.
+    pub impact: Option<usize>,
 }
 
 impl Animation {
@@ -73,6 +79,16 @@ impl Animation {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Whether it is drawn mirrored facing `facing` (a side view facing left).
+    pub fn mirrored(&self, facing: Facing) -> bool {
+        self.side && facing == Facing::Left
+    }
+
+    /// Whether a hit flash needs drawing as a silhouette (no white twins were baked).
+    pub fn flash_is_silhouette(&self) -> bool {
+        self.flash.iter().all(Vec::is_empty)
     }
 }
 
@@ -141,6 +157,16 @@ struct RawAnimation {
     anchor_x: f32,
     anchor_y: f32,
     frames: HashMap<String, Vec<RawFrame>>,
+    #[serde(default = "one")]
+    density: f32,
+    #[serde(default)]
+    side: bool,
+    #[serde(default)]
+    impact: Option<usize>,
+}
+
+fn one() -> f32 {
+    1.0
 }
 
 #[derive(Deserialize)]
@@ -238,18 +264,36 @@ pub fn read_png(path: &Path) -> Result<Page, String> {
 impl Atlases {
     /// Loads the atlases from `dir` (`public/assets`, or the bundle's copy of it).
     pub fn load(dir: &Path) -> Result<Atlases, String> {
+        Self::load_with(dir, None)
+    }
+
+    /// Loads the atlases from `dir`, with the character sprites of the atlas in `over` (another
+    /// characters.json and its pages) in place of those of the same name.
+    pub fn load_with(dir: &Path, over: Option<&Path>) -> Result<Atlases, String> {
         let chars: RawCharacters = read_json(&dir.join("characters.json"))?;
+        let extra: Option<RawCharacters> = over
+            .map(|o| read_json(&o.join("characters.json")))
+            .transpose()?;
         let effects: RawEffects = read_json(&dir.join("effects.json"))?;
         let world: RawWorld = read_json(&dir.join("world.json"))?;
         let mut pages = Vec::new();
-        let mut offsets = [0u32; 3];
-        for (k, names) in [&chars.pages, &effects.pages, &world.pages]
-            .into_iter()
-            .enumerate()
+        let mut offsets = [0u32; 4];
+        let none = Vec::new();
+        for (k, (from, names)) in [
+            (dir, &chars.pages),
+            (
+                over.unwrap_or(dir),
+                extra.as_ref().map_or(&none, |e| &e.pages),
+            ),
+            (dir, &effects.pages),
+            (dir, &world.pages),
+        ]
+        .into_iter()
+        .enumerate()
         {
             offsets[k] = pages.len() as u32;
             for name in names {
-                pages.push(read_png(&dir.join(name))?);
+                pages.push(read_png(&from.join(name))?);
             }
         }
         let check = |r: Region, base: u32, pages: &[Page]| -> Result<Region, String> {
@@ -263,42 +307,53 @@ impl Atlases {
             Ok(Region { page, ..r })
         };
         let mut characters = HashMap::new();
-        for (id, sprite) in chars.sprites {
-            let mut anims = HashMap::new();
-            for (name, a) in sprite.animations {
-                let mut frames: [Vec<Region>; 4] = Default::default();
-                let mut flash: [Vec<Region>; 4] = Default::default();
-                for (k, facing) in ["up", "left", "down", "right"].iter().enumerate() {
-                    for f in a.frames.get(*facing).into_iter().flatten() {
-                        frames[k].push(check(f.region, offsets[0], &pages)?);
-                        if let Some(fl) = f.flash {
-                            flash[k].push(check(fl, offsets[0], &pages)?);
+        let sources = [
+            Some((chars.sprites, offsets[0])),
+            extra.map(|e| (e.sprites, offsets[1])),
+        ];
+        for (sprites, base) in sources.into_iter().flatten() {
+            for (id, sprite) in sprites {
+                let mut anims = HashMap::new();
+                for (name, a) in sprite.animations {
+                    let mut frames: [Vec<Region>; 4] = Default::default();
+                    let mut flash: [Vec<Region>; 4] = Default::default();
+                    for (k, facing) in ["up", "left", "down", "right"].iter().enumerate() {
+                        // (A side view's every facing reads its right-facing frames.)
+                        let facing = if a.side { "right" } else { facing };
+                        for f in a.frames.get(facing).into_iter().flatten() {
+                            frames[k].push(check(f.region, base, &pages)?);
+                            if let Some(fl) = f.flash {
+                                flash[k].push(check(fl, base, &pages)?);
+                            }
                         }
                     }
+                    if frames.iter().any(Vec::is_empty) {
+                        return Err(format!("{id}.{name}: a facing has no frames"));
+                    }
+                    anims.insert(
+                        name,
+                        Animation {
+                            frame_w: a.frame_w,
+                            frame_h: a.frame_h,
+                            anchor_x: a.anchor_x,
+                            anchor_y: a.anchor_y,
+                            frames,
+                            flash,
+                            density: a.density,
+                            side: a.side,
+                            impact: a.impact,
+                        },
+                    );
                 }
-                if frames.iter().any(Vec::is_empty) {
-                    return Err(format!("{id}.{name}: a facing has no frames"));
-                }
-                anims.insert(
-                    name,
-                    Animation {
-                        frame_w: a.frame_w,
-                        frame_h: a.frame_h,
-                        anchor_x: a.anchor_x,
-                        anchor_y: a.anchor_y,
-                        frames,
-                        flash,
-                    },
-                );
+                characters.insert(id, anims);
             }
-            characters.insert(id, anims);
         }
         let mut fx = HashMap::new();
         for (name, e) in effects.anims {
             let frames = e
                 .frames
                 .into_iter()
-                .map(|r| check(r, offsets[1], &pages))
+                .map(|r| check(r, offsets[2], &pages))
                 .collect::<Result<Vec<_>, _>>()?;
             fx.insert(
                 name,
@@ -314,7 +369,7 @@ impl Atlases {
         for (name, list) in world.tiles {
             let list = list
                 .into_iter()
-                .map(|r| check(r, offsets[2], &pages))
+                .map(|r| check(r, offsets[3], &pages))
                 .collect::<Result<Vec<_>, _>>()?;
             tiles.insert(name, list);
         }
@@ -325,7 +380,7 @@ impl Atlases {
                 .into_iter()
                 .map(|v| {
                     Ok(Prop {
-                        region: check(v.rect, offsets[2], &pages)?,
+                        region: check(v.rect, offsets[3], &pages)?,
                         anchor_x: v.anchor_x,
                         anchor_y: v.anchor_y,
                     })
@@ -424,6 +479,48 @@ mod tests {
         assert_eq!(a.effects["sparks"].frames[0].page, 1);
         assert_eq!(a.tiles["grass-summer"][0].page, 2);
         assert!(!a.props["tree-summer"].is_empty());
+    }
+
+    #[test]
+    fn an_overlay_atlas_replaces_sprites_by_name_with_side_views() {
+        let dir = std::env::temp_dir().join(format!("ps-atlas-over-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        crate::capture::write_png(&dir.join("heroeditor-0.png"), 64, 32, &[255; 64 * 32 * 4])
+            .unwrap();
+        let frame = |x: u32| serde_json::json!({"page": 0, "x": x, "y": 0, "w": 16, "h": 30});
+        let chars = serde_json::json!({"pages": ["heroeditor-0.png"], "sprites": {"bat": {
+            "animations": {"walk": {"frameW": 16, "frameH": 30, "anchorX": 5, "anchorY": 28,
+                "density": 2.0, "side": true, "impact": 1,
+                "frames": {"right": [frame(0), frame(16), frame(32)]}}}}}});
+        std::fs::write(dir.join("characters.json"), chars.to_string()).unwrap();
+        let lpc = Atlases::load(&assets()).unwrap();
+        let a = Atlases::load_with(&assets(), Some(&dir)).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+        assert_eq!(a.pages.len(), lpc.pages.len() + 1);
+        assert_eq!(a.pages[1].name, "heroeditor-0.png");
+        // (Every later atlas's regions move up a page; the others' sprites are untouched.)
+        assert_eq!(a.effects["sparks"].frames[0].page, 2);
+        assert_eq!(a.tiles["grass-summer"][0].page, 3);
+        assert_eq!(
+            a.animation("hero", "walk").unwrap().frames,
+            lpc.animation("hero", "walk").unwrap().frames
+        );
+        let bat = a.animation("bat", "walk").unwrap();
+        assert!(
+            a.animation("bat", "hurt").is_none(),
+            "the overlay's sprite replaces it whole"
+        );
+        assert_eq!((bat.len(), bat.density, bat.impact), (3, 2.0, Some(1)));
+        assert_eq!(
+            bat.frame(Facing::Up, 1, false),
+            bat.frame(Facing::Right, 1, false)
+        );
+        assert_eq!(bat.frame(Facing::Left, 2, true).page, 1);
+        assert!(bat.mirrored(Facing::Left) && !bat.mirrored(Facing::Right));
+        assert!(bat.flash_is_silhouette());
+        let lpc_bat = lpc.animation("bat", "walk").unwrap();
+        assert!(!lpc_bat.mirrored(Facing::Left) && !lpc_bat.flash_is_silhouette());
+        assert_eq!((lpc_bat.density, lpc_bat.impact), (1.0, None));
     }
 
     #[test]

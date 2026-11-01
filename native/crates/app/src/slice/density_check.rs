@@ -1,6 +1,6 @@
 //! SP5 actual-engine density stills: explicit injected final loadouts and diagnostic actors.
-use super::{HudState, KeyLight, Scene, World, damage, hud, live, scene};
-use render::{atlas::Atlases, capture, font::Align, post::Frame};
+use super::{HudState, KeyLight, Scene, World, damage, hud, scene};
+use render::{capture, font::Align, post::Frame};
 use sim::movement::InputKey;
 use std::{io::Write, path::Path};
 pub fn run(dir: &Path) -> Result<(), String> {
@@ -26,7 +26,7 @@ fn run_cases(dir: &Path, restored: bool) -> Result<(), String> {
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
     let world = World::load(None)?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let text = std::fs::read_to_string(
         Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../../public/reactive/house-128/stream.json"),

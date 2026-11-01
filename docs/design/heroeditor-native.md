@@ -25,7 +25,8 @@ Related:
 - [vendor-assets.md](../tech-demo-3d/vendor-assets.md): the rules HeroEditor
   falls under, an Asset Store pack.
 - [native/evidence/heroeditor/](../../native/evidence/heroeditor/): the
-  capture's contact sheets and face lineup, and later the run's stills.
+  capture's contact sheets and face lineup, the ground's stills, and the
+  run's paired stills and filmstrips.
 
 ## Decisions
 
@@ -67,9 +68,13 @@ Settled with the operator on 2026-10-31; no human gates later.
 ## The Pipeline
 
 ```sh
-just herocap                                  # set up if needed, then capture every recipe
+just herocap                                  # set up if needed, capture every recipe, bake the atlas
+just native -- --art heroeditor               # play it
 uv run --project demo3d/tools herocap evidence  # contact sheets, faces, budget into evidence
 ```
+
+`just herocap` is `herocap capture` then `herocap bake`; either runs alone through
+`just herocap-tool`.
 
 1. **Vendor intake.** `herocap setup` syncs HeroEditor from the `more_assets`
    root (`~/unity_assets/MoreAssets/MoreAssets` on the Mac) into the gitignored
@@ -117,6 +122,10 @@ uv run --project demo3d/tools herocap evidence  # contact sheets, faces, budget 
 
    The guard's derived record hashes everything there, so a copied frame is
    caught anywhere in the tree.
+6. **The bake** (`herocap bake`, `demo3d_tools/herobake.py`) packs the frames
+   native draws into `<cache>/heroeditor/assets/`: a characters.json in
+   native's atlas format and its page, `heroeditor-0.png`. See
+   [The Characters in Native](#the-characters-in-native).
 
 ## Recipes
 
@@ -153,10 +162,12 @@ slash2h, cast, hurt and death-back.
 
 ## Frame Budget
 
-At 30 fps, 96 px for the hero standing, 2x supersampling: 1669 frames and
-20.8 megapixels (2 px padding), **2 pages** of 4096², **3** with native's
-hit-flash twins. Native allows 8 (MAX_PAGES), and the swapped-out LPC page
-frees one; 45 fps would need about 5 with flash twins, 60 fps about 6.
+At 30 fps, 96 px for the hero standing, 2x supersampling, the capture is 1669
+frames and 20.8 megapixels (2 px padding), 2 pages of 4096². The bake packs
+only the clips native draws (no enemy attacks or idles) and no hit-flash twins,
+which native draws as silhouettes: 1104 frames on **1 page**. With native's six
+own pages that is 7 of the 8 it binds (MAX_PAGES), so 60 fps frames (about 2
+pages) would need MAX_PAGES raised or the LPC character page dropped.
 
 ## The Painted Ground
 
@@ -202,11 +213,61 @@ the change.
   the densest minute (`--bench-density`) is unchanged, and the encode is
   cheaper, with no tiles or props to draw.
 
-Evidence, with LPC characters until `ps-4c8.3` lands:
+Evidence (taken with LPC characters, before `ps-4c8.3`):
 [native/evidence/heroeditor/ground/](../../native/evidence/heroeditor/ground/README.md).
 
-## Later Beads
+## The Characters in Native
 
-- `ps-4c8.3`: the atlas bake, the HeroEditor characters under
-  `--art heroeditor`, the animation mapping and the feel pass. It maps native's animation names onto the captured clips and
-  draws each role at the size of the LPC sprite it replaces.
+`--art heroeditor` draws every survivors role as its HeroEditor recipe
+(`ps-4c8.3`). native's sim, timing, input and effects are untouched: only the
+drawing changes, and `--art lpc`, the default, draws byte-identical frames.
+
+- **The bake's names.** Each atlas gets native's animation names, each one of
+  its clips:
+  - the hero: `idle`, `slash` and `halfslash` (slash), `backslash` and
+    `thrust` (jab), `slash-oversize` (slash2h), `spellcast` (cast), `hurt`,
+    and `jump`, the beat step, as the run cycle (HeroEditor's Jump clip holds
+    one pose);
+  - an enemy: `walk`, `hurt`, `death` (death-back or death-front), and its
+    dancers' `kick` and `kick-alt`, the two halves of the arms-up `victory`
+    loop, so two beats play it whole;
+  - the thorn plants are rooted shamans: their `walk` is the idle clip.
+- **Loading.** `art::atlases()` loads native's atlases with the cache's
+  characters laid over the LPC ones by sprite name (`Atlases::load_with`), so a
+  sprite the bake lacks (the eyeball, skeleton archers) keeps its LPC art. With
+  no bake in the cache it fails, naming `just herocap`. `PS_HEROEDITOR_ASSETS`
+  points it elsewhere; otherwise it reads `DEMO3D_CACHE` or the Mac's default
+  cache, as the tools write.
+- **Size.** Each baked animation carries a `density`, frame pixels per world
+  pixel, drawn smooth-sampled (pages named `heroeditor-*` use the linear
+  sampler) at the LPC size: each character stands as tall as the LPC sprite it
+  replaces (its walk, or the thorn plants' prop), so sim radii, reach and
+  density read unchanged. The bat, bee and slime were blobs, not people: their
+  stand-ins keep the recipe's scale against the hero instead. On a Retina
+  screen at the camera's base zoom the hero's frames land about 1:1 on pixels.
+- **Side view.** Animations marked `side` hold right-facing frames for every
+  facing; native mirrors them about the anchor for left. An enemy moving up or
+  down faces the hero; the hero keeps its last horizontal facing.
+- **Hit flash.** No white twins are baked: a flash draws the frame as a white
+  silhouette (the sprite shader's alpha mask).
+- **Timing.** native's sim times the hero's swings in its atlas's frames
+  (`default_hero_anims`: a slash is 6 frames, the strike on frame 4). The sim
+  now also reports each pose's frame unfloored (`Recorder::hero_phase`, the
+  live view's `HeroPose::phase`), and the scene maps that phase onto the
+  HeroEditor clip piecewise: the wind-up onto the frames before the clip's
+  impact frame, the follow-through onto those after, so the strike's frame
+  lands on native's strike time and every frame between plays (a 16-frame
+  slash shows about 9 frames in a 190 ms wind-up). Enemy walks keep native's
+  beat-fraction indexing (20 frames a cycle instead of 8); a death plays the
+  whole clip over native's 0.5 s fall from the killing blow, with no build-up,
+  where LPC falls take six steps.
+- **The swing's smear.** LPC slashes draw a white crescent in their frames;
+  HeroEditor's have none. A slash (light or heavy) draws a smooth additive arc
+  (`Sprite::arc`) along the facing side from above the hero's chest to below,
+  from half a frame before the strike to a frame and a half after it.
+- **Everything else** (hover, hops, squash and stretch, knockback, tints, the
+  hero's light and outline, the brute's stomp) works on the HeroEditor sprites
+  as on the LPC ones; the thorn plants keep their beat bounce.
+
+Evidence, the whole-run acceptance and costs:
+[native/evidence/heroeditor/README.md](../../native/evidence/heroeditor/README.md).

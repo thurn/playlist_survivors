@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use eval::field::{self, CHUNK, ChunkContent, FieldProp};
 use eval::live::{LiveView, Moment};
-use render::atlas::{Atlases, Facing};
+use render::atlas::{Animation, Atlases, Facing};
 use render::font::Align;
 use render::post::{Grade, Light};
 use sim::content::types::{ColorGrade, ZoneTheme};
@@ -68,6 +68,8 @@ pub struct Scene {
     tier_change: Option<(f64, bool)>,
     /// Each enemy's last hit: when (host s), and whether it killed.
     struck: HashMap<usize, (f64, bool)>,
+    /// The hero last faced left, for side-view art facing up or down.
+    hero_left: bool,
 }
 
 /// A hit flashes an enemy white this long; a killing blow knocks it back over this long, and it
@@ -226,6 +228,84 @@ fn type_phase(kind: &str) -> f64 {
         (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
     });
     f64::from(h % 3) * TYPE_PHASE_STEP
+}
+
+/// Frame `n` of a character animation facing `facing`, its anchor at the screen point (x, y),
+/// `scale` screen pixels to the world's: hi-res frames at their density, side views mirrored for
+/// left, and a hit flash its white twin or, with none baked, its silhouette.
+#[allow(clippy::many_single_char_names)]
+fn character(
+    a: &Animation,
+    facing: Facing,
+    n: usize,
+    flash: bool,
+    (x, y): (f32, f32),
+    scale: f32,
+) -> Sprite {
+    let r = a.frame(facing, n, flash);
+    let k = scale / a.density;
+    let s = if a.mirrored(facing) {
+        Sprite::anchored(r, x, y, (a.frame_w as f32 - a.anchor_x, a.anchor_y), k).mirrored()
+    } else {
+        Sprite::anchored(r, x, y, (a.anchor_x, a.anchor_y), k)
+    };
+    if flash && a.flash_is_silhouette() {
+        s.silhouette()
+    } else {
+        s
+    }
+}
+
+/// The hero's frame in `a`, art with its own frame count (HeroEditor's): the pose's phase
+/// through the frames the sim times (its atlas's, `default_hero_anims`), so a strike's frame
+/// lands on the strike and the rest play smoothly either side of it.
+#[allow(clippy::many_single_char_names)]
+fn hero_frame(a: &Animation, hero: &eval::live::HeroPose) -> usize {
+    let Some(info) = sim::engine::default_hero_anims().get(hero.anim).copied() else {
+        return hero.frame;
+    };
+    let (n, p) = (a.len() as f64, hero.phase);
+    let f = match (info.impact_frame, a.impact) {
+        (Some(i), Some(j)) if p < i => p / i * j as f64,
+        (Some(i), Some(j)) => j as f64 + (p - i) / (info.frames - i).max(1e-6) * (n - j as f64),
+        _ => p / info.frames * n,
+    };
+    (f.max(0.0) as usize).min(a.len() - 1)
+}
+
+/// A smooth crescent along a hi-res hero's blade around a slash's strike, as the LPC slashes draw
+/// one in their frames (HeroEditor's swings have none): it sweeps the facing side from above to
+/// below the chest at (x, y), brightest just after the strike, and is gone a frame and a half on.
+fn smear(
+    hero: &eval::live::HeroPose,
+    left: bool,
+    (x, y): (f32, f32),
+    scale: f32,
+) -> Option<Sprite> {
+    let radius = match hero.anim {
+        "slash" | "halfslash" => 34.0,
+        "slash-oversize" => 44.0,
+        _ => return None,
+    };
+    let strike = sim::engine::default_hero_anims()
+        .get(hero.anim)?
+        .impact_frame?;
+    let u = ((hero.phase - (strike - 0.5)) / 2.0) as f32;
+    if !(0.0..1.0).contains(&u) {
+        return None;
+    }
+    let s = Sprite::arc(
+        x,
+        y,
+        radius * scale,
+        render::sprites::Arc {
+            head: -1.9 + 2.8 * (1.0 - (1.0 - u).powi(2)),
+            span: 1.0 + 1.2 * (std::f32::consts::PI * u).sin(),
+            width: radius / 7.0 * scale,
+        },
+        [1.0, 0.97, 0.9, (1.0 - u).powf(0.7)],
+    );
+    Some(if left { s.mirrored() } else { s })
 }
 
 /// A sprite stretched by (kx, ky) about the screen point it is anchored at.
@@ -1132,7 +1212,10 @@ impl Scene {
                         base
                     };
                     let tint = [rgb[0], rgb[1], rgb[2], alpha];
-                    if style == super::roster::Style::Plant {
+                    // (A thorn plant is a prop, unless the art draws it as a character.)
+                    if style == super::roster::Style::Plant
+                        && art.animation(sprite, "walk").is_none()
+                    {
                         if let Some(prop) = art.props.get(sprite).and_then(|v| v.first()) {
                             let sway = (std::f64::consts::TAU * pulse.bar).sin() as f32 * 0.065;
                             let s = Sprite::anchored(
@@ -1165,7 +1248,16 @@ impl Scene {
                             out,
                         );
                     }
-                    let hurt = art.animation(sprite, "hurt").filter(|_| fall >= 0.0);
+                    // (A side view facing up or down faces the hero.)
+                    let side = match facing {
+                        Facing::Left | Facing::Right => facing,
+                        _ if view.hero.is_some_and(|h| h.x < f.x) => Facing::Left,
+                        _ => Facing::Right,
+                    };
+                    let hurt = art
+                        .animation(sprite, "death")
+                        .or_else(|| art.animation(sprite, "hurt"))
+                        .filter(|_| fall >= 0.0);
                     let beat = view.run.and_then(|r| r.frozen_beat).unwrap_or(pulse.index);
                     let dancing = (!dead && view.dancers.contains(&id))
                         .then(|| {
@@ -1181,9 +1273,10 @@ impl Scene {
                         .flatten();
                     if let Some(walk) = hurt.or(dancing).or_else(|| art.animation(sprite, "walk")) {
                         // (Enemies are sampled 60 times a second; a walk frame every 6 samples;
-                        // a fall's six frames over its length.)
+                        // a fall's frames over its length, six for LPC art.)
                         let frame = if hurt.is_some() {
-                            ((fall / DEATH_FALL_S * 6.0) as usize).min(5)
+                            let n = if walk.side { walk.len() } else { 6 };
+                            ((fall / DEATH_FALL_S * n as f64) as usize).min(n - 1)
                         } else if dancing.is_some() {
                             (beat.rem_euclid(1.0) * walk.len() as f64) as usize
                         } else if view.run.is_some() {
@@ -1194,11 +1287,12 @@ impl Scene {
                             f.samples / 6
                         };
                         out.push(stretch(
-                            Sprite::anchored(
-                                walk.frame(facing, frame, flash),
-                                sx,
-                                sy,
-                                (walk.anchor_x, walk.anchor_y),
+                            character(
+                                walk,
+                                if walk.side { side } else { facing },
+                                frame,
+                                flash,
+                                (sx, sy),
                                 size * scale,
                             )
                             .tinted(tint),
@@ -1244,19 +1338,36 @@ impl Scene {
                     layers.feet = Some(at(hero.x, hero.y));
                     let facing =
                         [Facing::Up, Facing::Left, Facing::Down, Facing::Right][hero.facing.min(3)];
+                    match facing {
+                        Facing::Left => self.hero_left = true,
+                        Facing::Right => self.hero_left = false,
+                        _ => {}
+                    }
                     let flash =
                         now - self.bitten < 0.6 && ((now - self.bitten) * 12.0) as i64 % 2 == 0;
                     match art
                         .animation("hero", hero.anim)
                         .or_else(|| art.animation("hero", "idle"))
                     {
-                        Some(a) => out.push(Sprite::anchored(
-                            a.frame(facing, hero.frame, flash),
-                            sx,
-                            sy,
-                            (a.anchor_x, a.anchor_y),
-                            scale,
-                        )),
+                        Some(a) if a.side => {
+                            let (cx, cy) = at(hero.x, hero.y - hero.z - 20.0);
+                            out.extend(smear(&hero, self.hero_left, (cx, cy), scale));
+                            out.push(character(
+                                a,
+                                if self.hero_left {
+                                    Facing::Left
+                                } else {
+                                    Facing::Right
+                                },
+                                hero_frame(a, &hero),
+                                flash,
+                                (sx, sy),
+                                scale,
+                            ));
+                        }
+                        Some(a) => {
+                            out.push(character(a, facing, hero.frame, flash, (sx, sy), scale));
+                        }
                         None => out.push(square(sx, sy, 26.0 * scale, [0.4, 0.85, 1.0, 1.0])),
                     }
                     hero_top = out.last().copied();
@@ -1809,5 +1920,84 @@ mod density_tests {
                 "boss recipe must bypass ordinary admission, retired{retired}"
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use render::atlas::Region;
+
+    /// A side-view animation of `n` frames 40 x 60, anchored at (10, 50), drawn at density 2.
+    fn side(n: u32, impact: Option<usize>) -> Animation {
+        let frames: Vec<Region> = (0..n)
+            .map(|k| Region {
+                page: 0,
+                x: k * 40,
+                y: 0,
+                w: 40,
+                h: 60,
+            })
+            .collect();
+        Animation {
+            frame_w: 40,
+            frame_h: 60,
+            anchor_x: 10.0,
+            anchor_y: 50.0,
+            frames: [frames.clone(), frames.clone(), frames.clone(), frames],
+            flash: Default::default(),
+            density: 2.0,
+            side: true,
+            impact,
+        }
+    }
+
+    #[test]
+    fn hi_res_side_views_draw_at_world_size_mirrored_about_the_anchor() {
+        let a = side(4, None);
+        let right = character(&a, Facing::Right, 1, false, (100.0, 200.0), 1.5);
+        // (40 x 60 frame pixels at density 2 and 1.5 screen px per world px: 30 x 45.)
+        assert_eq!((right.w, right.h), (30.0, 45.0));
+        assert_eq!((right.x, right.y), (100.0 - 7.5, 200.0 - 37.5));
+        let left = character(&a, Facing::Left, 1, false, (100.0, 200.0), 1.5);
+        // Mirrored: the anchor stays put, the frame flipped about it.
+        assert_eq!((left.w, left.h), (-30.0, 45.0));
+        assert_eq!(left.x, 100.0 + 7.5);
+        assert_eq!(left.region, right.region);
+        // No white twins: the flash is the frame's silhouette.
+        let flash = character(&a, Facing::Right, 1, true, (100.0, 200.0), 1.5);
+        assert_eq!(flash.region, right.region);
+        assert_ne!(flash, right);
+        assert_eq!(flash, right.silhouette());
+    }
+
+    #[test]
+    fn hero_frames_land_the_strike_on_the_art_s_impact_frame() {
+        let a = side(16, Some(9));
+        let info = sim::engine::default_hero_anims()["slash"];
+        let pose = |phase: f64| eval::live::HeroPose {
+            anim: "slash",
+            phase,
+            frame: phase as usize,
+            ..Default::default()
+        };
+        let impact = info.impact_frame.unwrap();
+        assert_eq!(hero_frame(&a, &pose(impact)), 9);
+        assert_eq!(hero_frame(&a, &pose(0.0)), 0);
+        assert_eq!(hero_frame(&a, &pose(impact - 1e-6)), 8);
+        assert_eq!(hero_frame(&a, &pose(info.frames - 1e-6)), 15);
+        // The wind-up and follow-through step through every frame between.
+        let seen: std::collections::BTreeSet<usize> = (0..600)
+            .map(|k| hero_frame(&a, &pose(f64::from(k) / 100.0)))
+            .collect();
+        assert_eq!(seen.len(), 16);
+        // Without an impact frame (idle), its phase through the sim's frames.
+        let idle = side(30, None);
+        let still = eval::live::HeroPose {
+            anim: "idle",
+            phase: 1.0,
+            ..Default::default()
+        };
+        assert_eq!(hero_frame(&idle, &still), 15);
     }
 }

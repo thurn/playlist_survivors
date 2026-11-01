@@ -725,18 +725,22 @@ impl Sim {
             Some(f) if wk - self.st.swing_pool[f].w_strike <= half + 1e-9 => Some(f),
             _ => winding.or(following),
         };
-        let (anim, frame, facing);
+        // (`phase`: the frame unfloored, for art with more frames than the atlas's.)
+        let (anim, frame, facing, phase);
         if let Some(c) = chosen {
             let sw = &self.st.swing_pool[c];
-            let fr = if sw.struck {
+            let (fr, ph) = if sw.struck {
                 let since = wk - sw.w_strike;
                 if since <= half + 1e-9 {
-                    sw.impact
+                    (sw.impact, sw.impact)
                 } else {
-                    clamp(
-                        sw.impact + floor(since * sw.fps + 1e-6),
-                        sw.impact,
-                        sw.frames - 1.0,
+                    (
+                        clamp(
+                            sw.impact + floor(since * sw.fps + 1e-6),
+                            sw.impact,
+                            sw.frames - 1.0,
+                        ),
+                        clamp(sw.impact + since * sw.fps, sw.impact, sw.frames - 1e-6),
                     )
                 }
             } else {
@@ -745,17 +749,18 @@ impl Sim {
                     step_span(self.base_steps(), sk, sw.s_strike),
                 );
                 if to_impact_w <= half + 1e-9 {
-                    sw.impact
+                    (sw.impact, sw.impact)
                 } else {
-                    clamp(
-                        floor((sw.impact * (sk - sw.s_wind)) / max(1e-6, sw.s_strike - sw.s_wind)),
-                        0.0,
-                        sw.impact - 1.0,
+                    let u = (sw.impact * (sk - sw.s_wind)) / max(1e-6, sw.s_strike - sw.s_wind);
+                    (
+                        clamp(floor(u), 0.0, sw.impact - 1.0),
+                        clamp(u, 0.0, sw.impact - 1e-6),
                     )
                 }
             };
             anim = anim_idx(&sw.anim);
             frame = fr;
+            phase = ph;
             facing = facing_index(if sw.aimed {
                 sw.dir
             } else {
@@ -764,12 +769,15 @@ impl Sim {
         } else if p.u < 1.0 {
             anim = anim_idx("jump");
             frame = clamp(floor(p.u * 5.0), 0.0, 4.0);
+            phase = clamp(p.u * 5.0, 0.0, 5.0 - 1e-6);
             facing = facing_index(self.st.facing_angle);
         } else {
             anim = anim_idx("idle");
-            frame = floor(frac(self.sbi_at(sk) / 2.0) * 2.0) % 2.0;
+            phase = frac(self.sbi_at(sk) / 2.0) * 2.0;
+            frame = floor(phase) % 2.0;
             facing = facing_index(self.st.facing_angle);
         }
+        self.rec.hero_phase(phase);
         self.rec.hero(p.x, p.y, p.z, facing, anim, frame);
         // The camera follows the hero with the loudness level's lead along the heading.
         let (tx, ty) = self.lead_dir_at(sk);

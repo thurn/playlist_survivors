@@ -1,6 +1,6 @@
 //! End cards from real combat records: shortened victory and normal-contact defeat.
-use crate::slice::{Scene, World, damage, live, scene};
-use render::{atlas::Atlases, capture, font::Align, post::Frame};
+use crate::slice::{Scene, World, damage, scene};
+use render::{capture, font::Align, post::Frame};
 use sim::{
     movement::InputKey,
     survivors::{FreezeReason, WeaponId, weapon_catalog},
@@ -22,7 +22,7 @@ pub fn run(dir: &Path) -> Result<(), String> {
         };
     }
     std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = crate::slice::art::atlases()?;
     let mut gpu = capture::Offscreen::new(&art.pages, 1280, 720)?;
     let mut trace = std::fs::File::create(dir.join("cards.jsonl")).map_err(|e| e.to_string())?;
     for (name, victory) in [("victory", true), ("fell", false)] {

@@ -935,7 +935,7 @@ pub fn run(args: &[String]) -> Result<(), String> {
             (None, Vec::new())
         }
     };
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = art::atlases()?;
     // (Headless, the app never shows: no window, no Dock icon, no focus taken.)
     let event_loop = if opts.headless {
         use winit::platform::macos::{ActivationPolicy, EventLoopBuilderExtMacOS};
@@ -1569,7 +1569,7 @@ fn bench_pass(mode: BenchMode) -> Result<BenchTimes, String> {
             "reactive.yaml"
         },
     )))?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = art::atlases()?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../../public/reactive/house-128/stream.json");
     let text = std::fs::read_to_string(&stream_path)
@@ -1804,7 +1804,7 @@ fn still(
         envelope_gain,
     } = options;
     let world = World::load(level)?;
-    let art = Atlases::load(&live::resource("assets", "../../../public/assets"))?;
+    let art = art::atlases()?;
     let stream_path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!(
         "../../../public/reactive/{}/stream.json",
         track.unwrap_or("house-128")
