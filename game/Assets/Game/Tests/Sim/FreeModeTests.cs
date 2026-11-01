@@ -283,17 +283,21 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(new[] { Reach(), Reach() }, Swings(sim).Select(s => s.Reach).ToArray());
         }
 
-        [Test]
-        public void MashingSwingsNoFasterThanTheSwing()
+        /// <summary>Rank 2's Amount 2 adds a follow-up inside each swing, which never slows the next press.</summary>
+        [TestCase(1)]
+        [TestCase(2)]
+        public void MashingSwingsNoFasterThanTheSwing(int rank)
         {
-            var sim = Fighter(new KnownEntry[0]);
+            var sim = Fighter(new KnownEntry[0], ("sword", rank));
             Attack(sim, 3.0);
             Attack(sim, 3.05); // mid-swing: dropped
             Attack(sim, 3.15); // waits for the swing
             Attack(sim, 3.2);  // the next is already waiting: dropped
             sim.StepTo(5);
-            var impacts = Swings(sim).Select(s => s.Impact).ToArray();
-            Assert.AreEqual(new[] { 3.0 + Sword.PressWindupS, 3.0 + Sword.PressWindupS + Sword.SwingS }, impacts);
+            var swings = Swings(sim);
+            var mains = swings.Where(s => s.SwordKind != HeroAttackKind.FollowUp).Select(s => s.Impact).ToArray();
+            Assert.AreEqual(new[] { 3.0 + Sword.PressWindupS, 3.0 + Sword.PressWindupS + Sword.SwingS }, mains);
+            Assert.AreEqual(2 * rank, swings.Count, "each press's follow-ups");
         }
 
         [Test]

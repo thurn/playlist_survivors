@@ -81,10 +81,10 @@ namespace PS.Game.Sim
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
     /// - <b>On the attack key</b> (<see cref="SwordTrigger.Press"/>, a mode's): no beat plans a strike. A press heard
     ///   at h, taken at F, winds up at once and lands at <c>max(h + PressWindupS, F + a tick)</c>, at least
-    ///   <see cref="SwingS"/> after the previous impact; a press that would wait more than <see cref="SwingBufferS"/>
+    ///   <see cref="SwingS"/> after the previous press's main impact; a press that would wait more than <see cref="SwingBufferS"/>
     ///   for that is dropped, so mashing swings no faster than the swing. Its reach and damage are scaled by
     ///   <see cref="BeatGrade"/>; a full-grade press on a beat that is accented (as a beat strike's heaviness asks)
-    ///   is heavy, once per beat. Amount adds follow-ups the swing's length apart over one swing. It never slams.
+    ///   is heavy, once per beat. Amount adds follow-ups spread evenly over the swing, which never slow the next press. It never slams.
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -145,6 +145,8 @@ namespace PS.Game.Sim
         readonly bool onPress;
         // The beat the latest heavy press was measured from: one heavy per beat.
         double lastHeavyPress = double.NaN;
+        // The latest press's main impact: the next press's lands a swing after it, its follow-ups between.
+        double lastPress = double.NegativeInfinity;
 
         readonly Strike[] queue = new Strike[QueueCapacity];
         int head, count;
@@ -407,9 +409,10 @@ namespace PS.Game.Sim
             if (!onPress || Holding) return;
             double now = sim.Now;
             double impact = Math.Max(heard + PressWindupS, now + Simulation.TickSeconds);
-            double after = lastImpact + SwingS;
+            double after = lastPress + SwingS;
             if (after - impact > SwingBufferS + 1e-9) return;
             impact = Math.Max(impact, after);
+            lastPress = impact;
             double grade = BeatGrade.Of(log, clock, heard, out double point, out bool onBeat);
             bool heavy = forcedAccent || grade >= 1 && onBeat && point != lastHeavyPress && accents.Accented(point, now);
             forcedAccent = false;

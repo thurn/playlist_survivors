@@ -80,7 +80,7 @@ song time, cycling the run clip once per 3 m walked, with no hop.
 The sword never strikes by itself. Z (the sim's `Key.Attack`) swings it:
 
 - **Timing**: a press heard at h, taken at F, winds up at once and lands at
-  `max(h + 0.08 s, F + a tick)`. Impacts are at least 0.2 s apart (the swing). A press that
+  `max(h + 0.08 s, F + a tick)`. Presses' impacts are at least 0.2 s apart (the swing). A press that
   would wait more than 0.1 s for the swing before it is dropped, so mashing swings at most five
   times a second, and a press mid-swing never queues.
 - **Grade** (`BeatGrade`): the press, in heard time, against the nearest beat or half beat of
@@ -94,7 +94,8 @@ The sword never strikes by itself. Z (the sim's `Key.Attack`) swings it:
   grid's heavy strikes ask (a strong onset or accent forecast within 50 ms), is a heavy spin
   with its cleave wave, which breaks structures. Once per beat. F6's forced accent makes the next
   press heavy.
-- **Amount** (Duplicator and the like) adds follow-up strikes over the swing.
+- **Amount** (the sword's rank 2 on, Duplicator and the like) adds follow-up strikes spread over
+  the swing; they never delay the next press, whose impact needs only 0.2 s after the last press's.
 - Free presses never slam on a section change.
 
 The other weapons (wand, bible, lightning, garlic, fire trail) keep firing on the beat by
