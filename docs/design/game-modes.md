@@ -429,4 +429,6 @@ Evidence: [game/evidence/zen-dash](../../game/evidence/zen-dash/README.md).
 - Dash: does on-the-beat-or-not read with only two outcomes, or does 70 ms on beats alone feel stingy (half beats
   don't count, so most mashed presses hop)? Is the lunge's spin on the next beat felt as the player's move, or lost
   among the sword's own spins? Does the held stride read as a lunge without a clip of its own, and the hop as a hop?
-  Is a dash per beat too often for a dodge, or should it ride a longer cooldown?
+  Is a dash per beat too often for a dodge, or should it ride a longer cooldown? In zen the beat strikes clear 7-8.8 m
+  round the hero, so the lunge's 1.2 m blows rarely find anyone (none in the evidence's runs): should the lunge reach
+  wider or further, or is it a dodge first and its blows a bonus for the crowds that do close in?
