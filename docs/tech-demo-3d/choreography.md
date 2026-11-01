@@ -595,7 +595,7 @@ kiting hero's way (ps-7mx.1; [Trailer Mode](trailer.md), "Kiting and
 formations", has the details):
 
 - every monster it places or refills takes the type of its spot's block, a
-  square of ground 30% of the view wide dealt one of the mix's types by the
+  square of ground 30% of the view wide (at least 12 m) dealt one of the mix's types by the
   ground its share of the count covers, so waves arrive as coloured masses;
 - no monster steps into the hero's escape lane (45° either side of straight
   behind it, to 8 m) or the ground its next two strides sweep, and none

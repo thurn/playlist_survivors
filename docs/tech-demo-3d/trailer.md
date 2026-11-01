@@ -210,19 +210,18 @@ blows gets a weight from 0 to 1, from how many it kills. That weight drives:
 The hero is drawn at their true size, about as tall as a skeleton (1.85 m
 against 1.8 m), so the humanoid monsters look like a threat (ps-b5z.1).
 Overdrive drew them 1.7× larger until then (`heroScale`), which made the horde
-look small and harmless. Instead, overdrive's `heroOutline` draws a thin
-glowing line round the hero (`HeroOutline`, 3 px at 1080p), which blooms into
-a halo, so the hero is easy to find at 45–65 m views:
-
-- **The default cut** keeps the shader's cyan blue, the complement of its warm
-  desert, lava and torchlit shots and the hero's warm light pool.
-- **The crystal cut** turns it gold in its look (`"heroOutline": "3,3,1.3,0.1"`,
-  see [The crystal look](#the-crystal-look)), against a horde of cyan, green,
-  blue and red gems.
-
-White was tried first. It bloomed into the hot centre of the warm shots and
-into the cyan crystals, while the saturated complements read in every still.
-The stills, the old 1.7× captures beside them, are in
+look small and harmless. Closer views keep the hero findable instead
+(ps-b5z.6): most horde shots frame at 32–42 m rather than overdrive's 40–50 m,
+each on-screen target scaled down with the view's area so the crowd is as
+dense as before, and the dragon fight at 34 m (32 m in the crystal cut)
+rather than 36–44 m. Two shots keep their old views, the default cut's
+desert charge (45 m) and the crystal cut's lava streams (45→50 m), whose
+first and last bars fell outside the density check's band at every closer
+view tried. A glowing outline round the hero (ps-b5z.1's
+`heroOutline`, cyan in the default cut and gold in the crystal cut) was
+removed on the operator's review ("no yellow glow around the hero"; the
+closer camera was their ask). The stills of ps-b5z.1's outline, beside the old
+1.7× captures, are in
 [evidence/trailer/hero-scale](../../demo3d/evidence/trailer/hero-scale/README.md).
 
 The trailer uses overdrive as the base of every shot (see
@@ -360,12 +359,12 @@ No shot is shorter than 2 bars.
 |---|---|---|---|---|---|---|---|
 | 1 | 0.000–2.481 | 79–80 | crypt | Duel: 3 elites | 3 | 20 m | 0° |
 | 2 | 2.481–14.868 | 81–88 | desert | Charge | ~560 | 45 m | 0° |
-| 3 | 14.868–27.255 | 89–96 | lava | Converge, 4 streams, with elites | ~440 | 45→50 m | 135° |
-| 4 | 27.255–39.642 | 97–104 | blossom | Vortex | ~760 | 50 m | −45° |
-| 5 | 39.642–45.836 | 105–108 | neon | Charge | ~420 | 40 m | −90° |
-| 6 | 45.836–48.933 | 109–110 | snow | Vortex | ~450 | 40 m | 45° |
-| 7 | 48.933–52.029 | 111–112 | crypt | Converge, 3 streams | ~550 | 45 m | 180° |
-| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | The boss fight, the horde in a vortex round its arena | ~520 | 36→44 m | 0° |
+| 3 | 14.868–27.255 | 89–96 | lava | Converge, 4 streams, with elites | ~390 | 42→47 m | 135° |
+| 4 | 27.255–39.642 | 97–104 | blossom | Vortex | ~490 | 40 m | −45° |
+| 5 | 39.642–45.836 | 105–108 | neon | Charge | ~290 | 34 m | −90° |
+| 6 | 45.836–48.933 | 109–110 | snow | Vortex | ~290 | 32 m | 45° |
+| 7 | 48.933–52.029 | 111–112 | crypt | Converge, 3 streams | ~350 | 36 m | 180° |
+| 8 | 52.029–58.997 | 113–116, plus 117.1–117.2 | forest | The boss fight, the horde in a vortex round its arena | ~380 | 34 m | 0° |
 
 The columns:
 
@@ -388,11 +387,13 @@ The shot list escalates on four tracks at once:
   drop; lightning in the lava; spins and rings in the blossom vortex; then
   lightning on the strong beats, and finally the dragon fight and the final
   slam.
-- **Density.** 3 monsters, then 420–760. The climax holds its horde of about
-  500 back at the edge of the fight's arena, so the fight reads.
-- **View.** Tight for the duel and wide for the long shots. Final-peak
-  opens tighter at 40 m and widens shot by shot, and the climax closes in
-  again to 36 m on the fight, easing out to 44 m by the final slam.
+- **Density.** 3 monsters, then 290–560 in view (the closer views hold
+  about the same crowd per square metre as the old 420–760). The climax
+  holds its horde of about 380 in view back at the edge of the fight's
+  arena, so the fight reads.
+- **View.** Tight for the duel, 40–45 m for the long shots, 32–36 m for
+  final-peak's short ones, and 34 m on the fight, so the true-size hero and
+  the dragon fill the frame with the horde pressing at its edges.
 - **Pace.** 8-bar shots through drop-2, then 4, 2 and 2 bars, until the
   climax plays unbroken.
 
@@ -431,7 +432,7 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
    - The hero cuts across the streams, turning once just before 90.1,
      cleaving on the strong beats. Big Orks and Trolls in their own blocks
      fall to single cleaves, so their size sells each blow.
-   - Lightning strikes on every downbeat. The view widens from 45 to 50 m
+   - Lightning strikes on every downbeat. The view widens from 42 to 47 m
      across the shot.
 4. **The blossom vortex (blossom, vortex, 8 bars).** A white flash covers
    the cut, and the hero's slam lands on 97.1, drop-2's hottest phrase.
@@ -453,8 +454,8 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
    and the hero's slam lands on 113.1, on the dragon itself, in a clearing
    the horde rings (see [The boss fight](#the-boss-fight)).
    - The dragon holds the middle of the forest's fairy ring. The hero circles
-     it on a loop 5.5 m out, and the horde, a vortex of about 500, presses at the arena's
-     edge 10 m out.
+     it on a loop 5.5 m out, and the horde presses at the arena's edge 10 m
+     out, round the frame's edges at the fight's 34 m view.
    - Three telegraphed attacks: a fire breath (113.2 to 114.1), a tail sweep
      (114.4 to 115.3) and a second breath (116.1 to 116.3). In the crystal
      cut the sweep comes first. Each zone glows under the hero from its
@@ -463,7 +464,7 @@ combo entries land on the strong beats (each bar's beats 1 and 3, see
    - Between the attacks the hero's blows land on the dragon: the slam on
      the cut, cleaves on the strong beats and a spin on 114.3, five hits in
      all. No blow falls on an attack's impact, so each miss reads alone.
-   - The view closes in to 36 m on the fight and eases out to 44 m.
+   - The view holds 34 m on the fight.
    - The final slam on 117.1 kills every monster in view, the dragon
      included. The aftermath's two beats show the horde falling: its death
      clips play faster where they must, so every body is down by three
@@ -680,10 +681,10 @@ climax:
       "hero": { "at": "camp", "holdGround": true },
       "duel": { "bigork": 2, "troll": 1 },
       "combo": ["slashR@anchor", "spin@anchor", "slashL@anchor"] },
-    { "cut": "113.1", "environment": "forest", "viewWidthM": 36, "viewWidthToM": 44,
+    { "cut": "113.1", "environment": "forest", "viewWidthM": 34,
       "path": { "via": [[40.1, 36.1], [38.5, 40], [40.1, 43.9], [44, 45.5],
                         [47.9, 43.9], [49.5, 40], [47.9, 36.1], [44, 34.5]], "stepM": 1.9, "loop": true },
-      "formation": { "kind": "vortex", "onScreen": 500,
+      "formation": { "kind": "vortex", "onScreen": 380,
                      "mix": { "skeleton": 4, "goblin": 3, "bat": 2, "demon": 2,
                               "bigork": 0.4, "troll": 0.3 } },
       "boss": "ahead",
@@ -991,7 +992,8 @@ were confetti, its hero flailed on every beat and eighth, and monsters
 stood packed round the hero. Three changes, all in a formation's shot only:
 
 - **Type blocks.** The ground is cut into square blocks 30% of the view
-  wide, and each block is dealt one of the mix's types, from the block and
+  wide, and at least 12 m (ps-b5z.6: a close view's smaller blocks broke
+  up under the type-block check's 3 m neighbourhood), and each block is dealt one of the mix's types, from the block and
   the seed. Blocks are dealt by the ground each type's share of the count
   covers (its weight × its diameter²), as the song's clump arcs are. Every
   opening monster and every refill takes its spot's block's type, so
@@ -1078,9 +1080,14 @@ and the client only draws them.
   round it on the hero's side; one left no step at all swings at the air,
   snarling at the hero, rather than mark time. The vortex opens outside the
   arena with three quarters of a vortex's horde, since the edge holds the
-  horde in view instead of feeding it to the hero's blows. The fight reads
-  in a clear arena ringed by a vortex of about 500 (520 in the action cut,
-  whose bars run higher), and the hero's blows still cut the front rank.
+  horde in view instead of feeding it to the hero's blows. Its refill makes
+  up a quarter of the shortfall on screen each beat, from beyond the view
+  (ps-b5z.6): most of the ring is off screen at the fight's close view, held
+  at the arena's edge, so the usual refill (which counts that ring as
+  arriving and feeds the breaths' bursts of kills back in) starved the view
+  or flooded it. The fight reads in a clear arena whose edge rings the
+  frame, about 380 in view at 34 m, and the hero's blows still cut the front
+  rank.
 - **Telegraphed attacks on the music.** Each attack winds up on a beat and
   lands on a later strong beat or accent, at least two beats on. On the
   windup the sim places its zone where the hero will be through the windup,
@@ -1114,25 +1121,35 @@ The client (`BossTelegraphs`) draws each zone on the ground from its windup
 to its impact in the Demo3D/BossTelegraph shader: a bright rim, a dim fill
 charging outward from the dragon to reach the rim on the impact, hazard
 bands streaming outward, a throb on each beat, and a white-hot flash as the
-blow lands. A breath's zone burns orange, a sweep's blood red. The hero's
+blow lands. A breath's zone burns red, a sweep's magenta, both drawn
+premultiplied so they read on a lit floor and in the dark. The hero's
 dodge plays its run clip at 1.6× and kicks up dust where it starts and
 lands.
 
-**Outcome (ps-b5z.5).** Both cuts' climaxes as shipped, from
+**Outcome (ps-b5z.5, framing from ps-b5z.6).** Both cuts' climaxes as shipped, from
 `trailer --checks` (the dodges are the hero's distance from the dodge's start
 to the impact):
 
 | Cut | Ground | Attacks (windup to impact) | Dodges | Hits on screen | On screen / target |
 |---|---|---|---|---|---|
-| action | (44, 40), the fairy ring | breath 113.2–114.1, sweep 114.4–115.3, breath 116.1–116.3 | 3.1, 5.8, 3.6 m | 5 | 546 / 520 |
-| crystal | (36, 30) | sweep 113.2–114.1, breath 114.4–115.3, breath 116.1–116.3 | 4.5, 3.1, 3.6 m | 5 | 477 / 500 |
+| action | (44, 40), the fairy ring | breath 113.2–114.1, sweep 114.4–115.3, breath 116.1–116.3 | 3.1, 5.8, 3.6 m | 5 | 404 / 380 |
+| crystal | (36, 30) | sweep 113.2–114.1, breath 114.4–115.3, breath 116.1–116.3 | 4.0, 2.9, 3.5 m | 5 | 343 / 340 |
 
-- The breaths kill 96 and 84 (action) and 74 and 55 (crystal) of the horde
+- The breaths kill 79 and 78 (action) and 67 and 64 (crystal) of the horde
   pressing at the arena's edge; the sweeps, inside it, clear the dragon's
   ground and the hero's dodge. The crystal cut's two breaths smash its two
   formations. Every check passes in both cuts.
 - The action cut fights in the forest's fairy ring (its candles and stones
   ring the arena); the crystal cut on the open field south-west of it.
+- The final review (ps-b5z.6) found the hero hard to find in the fight's
+  frames: at the first cut's 36–44 m the true-size hero is about 30 px tall,
+  and in the crystal cut its gold outline sat on the arena's warm-lit ground
+  beside the gold dragon, so the dodges barely read. The outline is gone and
+  the fight holds 34 m (32 m in the crystal cut): the arena's edge rings the
+  frame and a 3 m dodge is a tenth of its width. Closer still, 30 m, read
+  better, but its bars swung past the density band under one runtime or
+  the other. The crystal cut's two formations stand 5 m tall so they break
+  wholly in view.
 - Evidence is in
   [demo3d/evidence/trailer/fight](../../demo3d/evidence/trailer/fight/README.md):
   each attack's telegraph, dodge and impact in both cuts.
@@ -1351,8 +1368,8 @@ What varies per shot:
   could fix each level's camera heading. Today the camera's heading is always
   0, so the camera rig gains a heading, and the shot simulation's view
   footprint turns with it.
-- **The hero's drawn size.** Overdrive's 1.7× keeps the hero readable at
-  45–65 m views.
+- **The hero's size.** True size (ps-b5z.1); the shots frame closer, at
+  32–45 m, to keep the hero readable (ps-b5z.6).
 
 No shot adds a virtual zoom, an orbit, a punch-in or any camera move a player
 wouldn't see.
@@ -1543,7 +1560,7 @@ just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
 | 2 | 2.481–14.868 | 81–88 | crypt | Charge | 4.80 (82.3), 9.45 (85.3), 13.32 (88.1) |
 | 3 | 14.868–27.255 | 89–96 | lava | Converge, 3 streams | 17.19 (90.3), 21.06 (93.1), 22.61 (94.1) |
 | 4 | 27.255–39.642 | 97–104 | forest | Vortex | 29.58 (98.3), 34.22 (101.3), 38.09 (104.1) |
-| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams (400) | 41.19 (106.1), 44.29 (108.1) |
+| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams (300) | 41.19 (106.1), 44.29 (108.1) |
 | 6 | 45.836–48.932 | 109–110 | crypt | Vortex | 47.38 (110.1) |
 | 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | 50.48 (112.1) |
 | 8 | 52.029–59.0 | 113–117.2 | forest | The boss fight, a vortex round its arena | 55.90 (115.3), 57.45 (116.3), both by the dragon's breath |
@@ -1556,8 +1573,7 @@ The file's look:
 "look": {
   "monsterStyle": "crystal", "structureStyle": "crystal",
   "styleTune": "glow=1.0,exposure=0.5,contrast=26,saturation=30,bloom=2.0,threshold=1.0,vignette=0.42,chroma=0.05",
-  "structureTune": "gain=0.3,glow=0.6",
-  "heroOutline": "3,3,1.3,0.1"
+  "structureTune": "gain=0.3,glow=0.6"
 }
 ```
 
@@ -1573,9 +1589,6 @@ The file's look:
   doesn't. The style post fix moves every environment by the same offsets.
 - **Per-shot grades** take each environment down further, the crypt's pale
   stone most (exposure −0.45).
-- **The hero's outline** is gold (`heroOutline`, `px,r,g,b` as
-  `--hero-outline` takes it), against the cool gems, instead of overdrive's
-  cyan, which vanished into the cyan blocks. `--hero-outline` still wins.
 - **Structures** are dark sapphire with a faint glow (gain 0.3, glow 0.6), so
   a wall reads beside the horde without outshining it.
 - **Formations** are their own warm white-gold (`CrystalFormations.Gem`,
@@ -1630,6 +1643,10 @@ A shot's `crystals` field places them:
   frame holds it whole. They break 4 to 8 m from the hero, as monsters die
   at the same reach. On the line itself the hero's path bent round them and
   could miss its blow.
+- **Height.** 10 m by default. The closer views (ps-b5z.6) cut a tall
+  spire's top off the frame where it stands far up the screen, so shots 5
+  and 7 stand theirs 8 m tall and the climax's two 5 m (the fight's 32 m
+  view), each still towering over the horde.
 
 **On screen** (`CrystalFormations`, `StructureShatter`):
 

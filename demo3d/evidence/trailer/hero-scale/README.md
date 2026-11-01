@@ -1,5 +1,9 @@
 # Hero at humanoid size (ps-b5z.1)
 
+> **Superseded in part (ps-b5z.6).** The outline described here was removed on the operator's
+> review ("no yellow glow around the hero please"); the hero stays at true size and the shots
+> frame closer instead ([../views](../views/README.md)).
+
 The operator's note on both trailers: the hero, drawn 1.7x by overdrive's
 `heroScale`, made the humanoid monsters look small and harmless. The hero is
 now drawn at their own size (1.85 m against the skeleton's 1.8 m and the

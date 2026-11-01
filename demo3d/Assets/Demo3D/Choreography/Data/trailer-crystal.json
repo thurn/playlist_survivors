@@ -11,8 +11,7 @@
     "monsterStyle": "crystal",
     "structureStyle": "crystal",
     "styleTune": "glow=1.0,exposure=0.5,contrast=26,saturation=30,bloom=2.0,threshold=1.0,vignette=0.42,chroma=0.05",
-    "structureTune": "gain=0.3,glow=0.6",
-    "heroOutline": "3,3,1.3,0.1"
+    "structureTune": "gain=0.3,glow=0.6"
   },
   "shots": [
     {
@@ -42,7 +41,7 @@
     {
       "cut": "81.1",
       "environment": "crypt",
-      "viewWidthM": 45,
+      "viewWidthM": 40.5,
       "path": {
         "via": [
           [
@@ -70,7 +69,7 @@
       },
       "formation": {
         "kind": "charge",
-        "onScreen": 520,
+        "onScreen": 420,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -189,7 +188,7 @@
     {
       "cut": "97.1",
       "environment": "forest",
-      "viewWidthM": 50,
+      "viewWidthM": 40,
       "yawDeg": -45,
       "path": {
         "via": [
@@ -219,7 +218,7 @@
       },
       "formation": {
         "kind": "vortex",
-        "onScreen": 760,
+        "onScreen": 490,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -269,7 +268,7 @@
     {
       "cut": "105.1",
       "environment": "neon",
-      "viewWidthM": 40,
+      "viewWidthM": 36,
       "yawDeg": 0,
       "path": {
         "via": [
@@ -291,7 +290,7 @@
       "formation": {
         "kind": "converge",
         "streams": 4,
-        "onScreen": 400,
+        "onScreen": 300,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -319,20 +318,22 @@
           "at": [
             -19.3,
             17.7
-          ]
+          ],
+          "heightM": 8
         },
         {
           "at": [
             -2.9,
             29.4
-          ]
+          ],
+          "heightM": 8
         }
       ]
     },
     {
       "cut": "109.1",
       "environment": "crypt",
-      "viewWidthM": 40,
+      "viewWidthM": 32,
       "yawDeg": 45,
       "path": {
         "via": [
@@ -362,7 +363,7 @@
       },
       "formation": {
         "kind": "vortex",
-        "onScreen": 450,
+        "onScreen": 290,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -398,7 +399,7 @@
     {
       "cut": "111.1",
       "environment": "lava",
-      "viewWidthM": 45,
+      "viewWidthM": 36,
       "yawDeg": 180,
       "path": {
         "via": [
@@ -416,7 +417,7 @@
       "formation": {
         "kind": "converge",
         "streams": 3,
-        "onScreen": 550,
+        "onScreen": 350,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -444,15 +445,15 @@
           "at": [
             34.7,
             31.2
-          ]
+          ],
+          "heightM": 8
         }
       ]
     },
     {
       "cut": "113.1",
       "environment": "forest",
-      "viewWidthM": 36,
-      "viewWidthToM": 44,
+      "viewWidthM": 32,
       "path": {
         "via": [
           [
@@ -493,7 +494,7 @@
       },
       "formation": {
         "kind": "vortex",
-        "onScreen": 500,
+        "onScreen": 340,
         "mix": {
           "skeleton": 4,
           "goblin": 3,
@@ -548,7 +549,7 @@
             38.5
           ],
           "radiusM": 1.6,
-          "heightM": 7
+          "heightM": 5
         },
         {
           "at": [
@@ -556,7 +557,7 @@
             40.0
           ],
           "radiusM": 1.6,
-          "heightM": 7
+          "heightM": 5
         }
       ]
     }

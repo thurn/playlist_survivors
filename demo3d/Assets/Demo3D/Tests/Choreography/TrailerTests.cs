@@ -131,7 +131,7 @@ namespace Demo3D.Choreography.Tests
             Assert.That(ls.BossFight.At.At, Is.EqualTo(s.BossFight.At.At));
             Assert.That(Array.ConvertAll(ls.BossFight.Attacks, a => a.Kind + "@" + a.Windup + ">" + a.Impact),
                 Is.EqualTo(Array.ConvertAll(s.BossFight.Attacks, a => a.Kind + "@" + a.Windup + ">" + a.Impact)));
-            Assert.That(ls.EnvelopeViewWidthM, Is.EqualTo(s.ViewWidthToM));
+            Assert.That(ls.EnvelopeViewWidthM, Is.EqualTo(Math.Max(s.ViewWidthM, s.ViewWidthToM)), "the widest view the shot eases through");
             foreach (LevelSection sec in ls.Sections)
             {
                 Assert.That(sec.ViewWidthM, Is.EqualTo(s.ViewWidthM), sec.Section);
@@ -695,10 +695,9 @@ namespace Demo3D.Choreography.Tests
         [Test]
         public void ATrailersLookParses()
         {
-            string look = "\"look\": { \"monsterStyle\": \"crystal\", \"structureStyle\": \"crystal\", \"styleTune\": \"glow=1\", \"structureTune\": \"gain=0.2\", \"heroOutline\": \"3,3,1.3,0.1\" }, ";
+            string look = "\"look\": { \"monsterStyle\": \"crystal\", \"structureStyle\": \"crystal\", \"styleTune\": \"glow=1\", \"structureTune\": \"gain=0.2\" }, ";
             Trailer t = PS.Choreography.Trailer.Parse(Trailer(Shot1(), Shot2()).Replace("\"shots\":", look + "\"shots\":"), Fixtures.Song, Environments);
-            Assert.That((t.Style.MonsterStyle, t.Style.StructureStyle, t.Style.StyleTune, t.Style.StructureTune, t.Style.HeroOutline),
-                Is.EqualTo(("crystal", "crystal", "glow=1", "gain=0.2", "3,3,1.3,0.1")));
+            Assert.That((t.Style.MonsterStyle, t.Style.StructureStyle, t.Style.StyleTune, t.Style.StructureTune), Is.EqualTo(("crystal", "crystal", "glow=1", "gain=0.2")));
             Assert.That(Fixtures.Trailer.Style.MonsterStyle, Is.Null);
             var ex = Assert.Throws<FormatException>(() => PS.Choreography.Trailer.Parse(
                 Trailer(Shot1(), Shot2()).Replace("\"shots\":", "\"look\": { \"palette\": \"neon\" }, \"shots\":"), Fixtures.Song, Environments));

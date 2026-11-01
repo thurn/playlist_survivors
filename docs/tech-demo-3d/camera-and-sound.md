@@ -49,7 +49,6 @@ weight = clamp01((ln(1 + kills) − ln(1 + crispKills)) / (ln(1 + heavyKills) �
 | `spark`, `deathBurst` | 1.4, 0.8 | Hit sparks' and death bursts' size factors, so sparks read through a packed crowd and hundreds of bursts don't mush together. |
 | `lightKnee` | 10 | Each effect light's intensity saturates toward this knee as knee × (1 − e^(−I / knee)), so dozens of bursts summed in one cell are one wave of light, not a white-out. |
 | `shardCap` | 240 | The crystal shatter's cap on live shard sets: deaths in view take shards in time order while fewer are live, and the rest break by the Crystal shader's own shatter with the stock burst and sound. |
-| `heroOutline` | 3 | The hero's glowing outline (`HeroOutline`), in pixels at 1080p (default 0: none), so the protagonist reads at overdrive's 45 m views without being drawn larger than the humanoid monsters (ps-b5z.1, which replaced `heroScale` 1.7). An inverted hull in HDR cyan blue that blooms into a thin halo; a trailer's look can recolour it (trailer.md, The crystal look) and `--hero-outline px[,r,g,b]` overrides both. |
 
 The tuning and its frame sequences are in
 [overdrive/feel](../../demo3d/evidence/overdrive/feel/README.md).

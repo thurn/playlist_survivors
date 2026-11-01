@@ -1,9 +1,11 @@
 # The dragon fight
 
 Both cuts' climaxes as a boss fight (ps-b5z.5; [trailer.md, The boss
-fight](../../../../docs/tech-demo-3d/trailer.md#the-boss-fight)). One strip per attack, from the
-batch-mode player's fixed-time stills of shot 8 (`--trailer [crystal] --shot 8 --fixed-time
---capture-stills`), each tile half the 1080p frame, labelled with its trailer second:
+fight](../../../../docs/tech-demo-3d/trailer.md#the-boss-fight)), retaken by the run's final review
+(ps-b5z.6) with no hero outline and the closer fight views (34 m, 32 m in the crystal cut). One
+strip per attack, from the batch-mode player's fixed-time stills of shot 8, each tile a 1280 x 720
+crop of the 1080p frame centred between the hero and the zone's origin, labelled with its trailer
+second:
 
 1. the windup plus 0.05 s: the zone lights under the hero;
 2. halfway to the dodge: the fill charging outward, the hero strafing inside it (often mid-blow on
@@ -17,12 +19,12 @@ batch-mode player's fixed-time stills of shot 8 (`--trailer [crystal] --shot 8 -
 
 | Strip | Cut | Attack | Windup | Impact (trailer s, bar.beat) | Dodge | Killed |
 |---|---|---|---|---|---|---|
-| `action-1-breath` | action | breath | 113.2 | 53.578 (114.1) | 3.1 m | 96 |
+| `action-1-breath` | action | breath | 113.2 | 53.578 (114.1) | 3.1 m | 79 |
 | `action-2-sweep` | action | sweep | 114.4 | 55.900 (115.3) | 5.8 m | 0 |
-| `action-3-breath` | action | breath | 116.1 | 57.449 (116.3) | 3.6 m | 84 |
-| `crystal-1-sweep` | crystal | sweep | 113.2 | 53.578 (114.1) | 4.5 m | 0 |
-| `crystal-2-breath` | crystal | breath | 114.4 | 55.900 (115.3) | 3.1 m | 74, and crystal-1 |
-| `crystal-3-breath` | crystal | breath | 116.1 | 57.449 (116.3) | 3.6 m | 55, and crystal-2 |
+| `action-3-breath` | action | breath | 116.1 | 57.449 (116.3) | 3.6 m | 78 |
+| `crystal-1-sweep` | crystal | sweep | 113.2 | 53.578 (114.1) | 4.0 m | 0 |
+| `crystal-2-breath` | crystal | breath | 114.4 | 55.900 (115.3) | 2.9 m | 67, and crystal-1 |
+| `crystal-3-breath` | crystal | breath | 116.1 | 57.449 (116.3) | 3.5 m | 64, and crystal-2 |
 
 What they show:
 
@@ -39,16 +41,32 @@ What they show:
   cone and burns the horde in it; the sweep's slash rings the dragon. In the crystal cut the
   breaths smash the two white-gold formations in the horde ring (`crystal-2`, `crystal-3`,
   tile 8).
-- **Weak spots.** The hero is the smallest thing in these frames at the climax's 36-44 m views; its
-  cyan (gold in the crystal cut) outline finds it, but in the crystal cut it sits close to the
-  glowing gold dragon. The sweep kills nothing: the horde is held back beyond its disc.
+- **Weak spots.** Even at 32-34 m the true-size hero is about 35 px tall at 1080p, a textured
+  figure in the warm pool of its own light. In the crystal cut it is the one figure that doesn't
+  glow, which finds it beside the gold dragon; in the default cut the dragon is green and the
+  hero reads against it. A closer 30 m read better still but would not hold the density check
+  under both runtimes (trailer.md, The boss fight). The sweep kills nothing: the horde is held
+  back beyond its disc.
 
 The checks (`dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- trailer
-[--name crystal] --checks`), shot 8, the action cut's row then the crystal cut's:
+[--name crystal] --checks`; Unity's EditMode trailer tests pass too), shot 8, the action cut's row
+then the crystal cut's:
 
 ```
 shot  environment  on screen / target  swings/s  kills/swing (mean, peak)  hero acted  kite  liveness  blocks  lane  breaks
-   8  forest             546 / 520         0.86        112.8, 615               100 %   2.5         0    64 %    93       0
-   8  forest             477 / 500         0.86        133.8, 748               100 %   2.4         0    71 %    74       2
+   8  forest             404 / 380         0.86         97.8, 534               100 %   2.5         0    63 %    94       0
+   8  forest             343 / 340         0.86        102.0, 562               100 %   2.4         0    78 %    87       2
 trailer checks: ok (both cuts, every shot)
+```
+
+Made with (a built player; `strips.py` lists the stills round each attack from the shot's dump,
+then crops and labels them):
+
+```
+dotnet run --project demo3d/dotnet/Demo3D.Choreography.Cli -c Release -- trailer [--name crystal] --shot 8 --out-dir captures/fight-CUT
+"demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo" \
+  -batchmode -force-metal --trailer [crystal] --shot 8 --fixed-time --capture-stills captures/fight-stills-CUT \
+  --stills-at $(uv run --project demo3d/tools python demo3d/evidence/trailer/fight/strips.py captures/fight-CUT CUT) --seconds 57.8
+uv run --project demo3d/tools python demo3d/evidence/trailer/fight/strips.py \
+  captures/fight-CUT CUT captures/fight-stills-CUT demo3d/evidence/trailer/fight
 ```

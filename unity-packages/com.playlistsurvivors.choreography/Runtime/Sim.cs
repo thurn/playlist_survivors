@@ -1945,6 +1945,7 @@ namespace PS.Choreography
         const float MinBossClipSpeed = 0.5f;   // an attack's clip slows to at most half speed to fill its windup
         const float BossRecoilM = 0.5f;        // a blow knocks the boss back this far
         const float FightArenaM = 10f;         // the horde holds back this far from the boss's ground: the fight's arena
+        const float FightRefillGain = 0.25f;   // a fight's refill places this share of its shortfall on screen a beat
         const float FightOpening = 0.75f;      // a fight's vortex opens with this share of a vortex's horde
 
         /// <summary>
@@ -3220,6 +3221,7 @@ namespace PS.Choreography
         const float FormationClearM = 1f;       // formations place monsters this far from structures, never in a crevice
         // Type blocks.
         const float BlockShare = 0.3f;          // a type's block of ground is this share of the view's width across
+        const float MinBlockM = 12f;            // ... and at least this wide, so a close view's blocks still hold their type (TrailerChecks' 3 m neighbourhood)
         const uint BlockSalt = 0xB10C;          // ... dealt from the seed and this, apart from the other streams
         float refillBias;                       // the shortfall built up so far
         bool refillShort;                       // the last refill placed fewer than it asked for
@@ -3432,6 +3434,10 @@ namespace PS.Choreography
                 refillBias = Math.Max(-0.5f * target, Math.Min(0.5f * target, refillBias + RefillGain * (target - aliveOnScreen)));
             int need = target + (int)refillBias - incoming + (int)Math.Round(deathRate * beat * PredictBeats);
             need = Math.Min(need, (int)(StockShare * target + slowDeathRate * beat * StockBeats) - stock);
+            // A boss fight's horde stands at the arena's edge, most of its ring off screen, so the prediction (which sees
+            // that ring arriving) and the kill rate (the breaths' bursts) both misjudge it: its refill makes up a share of
+            // the shortfall on screen instead, from beyond the view, and the ring's own walk-in does the rest.
+            if (fight != null) need = (int)(FightRefillGain * Math.Max(0, target - aliveOnScreen));
             refillShort = false;
             if (need <= 0) return;
             int placedBefore = beatSpawns.Count;
@@ -3492,7 +3498,7 @@ namespace PS.Choreography
         /// </summary>
         int BlockType(Vector2 p)
         {
-            float size = BlockShare * plan.ViewWidth;
+            float size = Math.Max(BlockShare * plan.ViewWidth, MinBlockM);
             uint h = Rng.Hash(seed ^ BlockSalt, (uint)(int)Math.Floor(p.X / size), (uint)(int)Math.Floor(p.Y / size));
             double total = 0;
             int last = -1;

@@ -607,19 +607,6 @@ their clip timing still comes from the timeline.
     the handle's offsets in metres; pitch, yaw and roll, a turn in
     degrees; length, the sword's scale). Stills:
     [evidence/blade](../../demo3d/evidence/blade/README.md).
-- **The outline** (`HeroOutline`, ps-b5z.1). Under an intensity whose feel
-  sets `heroOutline` (overdrive's, so every trailer), each of the hero's
-  renderers (body and shield, not the blade, which glows on its own) draws
-  its mesh again with `Demo3D/Styles/Shells/HeroOutline`, an extra
-  material: an inverted hull pushed out along the normals in clip space by a
-  constant width in pixels (3 at 1080p, scaled with the output's height), in
-  an HDR colour past the bloom's threshold. It draws after the opaques and
-  the blade without writing depth, so only the rim round the silhouette
-  shows, and it casts no shadow. The vendor meshes aren't readable, so the
-  hull uses the models' own normals; at the 20 m duel view their hard edges
-  show as a few inner lines, at 45 m views a clean line. It is what keeps a
-  hero drawn at a skeleton's height findable in a crowd of humanoids.
-  `--hero-outline px[,r,g,b]` sets the width (0: none) and colour for a run.
 - **Animation.** A `PlayableGraph` driven by song time plays the hero's clips,
   with no Animator state machine. Each combo clip starts as its retiming
   dictates, and locomotion phase follows distance.

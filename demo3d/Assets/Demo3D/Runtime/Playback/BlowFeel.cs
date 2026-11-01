@@ -34,8 +34,6 @@ namespace Demo3D.Runtime.Playback
             public float LightKnee;
             /// <summary>The crystal shatter's cap on live shard sets (CrystalShatter.Cap); deaths past it break by the shader's own shatter. 0: no cap.</summary>
             public int ShardCap;
-            /// <summary>The hero's glowing outline (HeroOutline), in pixels at 1080p, so a humanoid-sized hero reads at an intensity's wider views. 0: none.</summary>
-            public float HeroOutline;
 
             /// <summary>The amounts in <paramref name="feel"/>, or null if it isn't an object (a normal run).</summary>
             public static Amounts Parse(JsonValue feel)
@@ -56,12 +54,11 @@ namespace Demo3D.Runtime.Playback
                     DeathBurst = feel["deathBurst"].AsFloat(d.DeathBurst),
                     LightKnee = feel["lightKnee"].AsFloat(d.LightKnee),
                     ShardCap = feel["shardCap"].AsInt(d.ShardCap),
-                    HeroOutline = feel["heroOutline"].AsFloat(d.HeroOutline),
                 };
                 if (a.CrispKills < 0 || a.HeavyKills <= a.CrispKills) throw new FormatException("feel: heavyKills must be above crispKills (and crispKills not negative)");
                 if (a.HitStop < 0 || !(a.HitStopCatchUp > 0) || a.HitStop > a.HitStopCatchUp)
                     throw new FormatException("feel: hitStop must be 0 to hitStopCatchUp, so the catch-up runs at most twice as fast");
-                if (a.Punch < 0 || a.Shake < 0 || a.ShakeCap < 0 || a.Trail < 0 || !(a.Spark > 0) || !(a.DeathBurst > 0) || a.LightKnee < 0 || a.ShardCap < 0 || a.HeroOutline < 0)
+                if (a.Punch < 0 || a.Shake < 0 || a.ShakeCap < 0 || a.Trail < 0 || !(a.Spark > 0) || !(a.DeathBurst > 0) || a.LightKnee < 0 || a.ShardCap < 0)
                     throw new FormatException("feel: amounts must not be negative");
                 return a;
             }

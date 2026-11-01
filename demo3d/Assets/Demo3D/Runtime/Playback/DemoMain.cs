@@ -26,7 +26,6 @@ namespace Demo3D.Runtime.Playback
         CrowdSlots _slots;
         StockCrowd _heroRenderer;
         HeroBlade _heroBlade;
-        HeroOutline _heroOutline; // an intensity's (BlowFeel.Amounts.HeroOutline); made before the hero's first draw
         GameCameraRig _rig;
         SongClock _clock;
         CaptureTool _capture;
@@ -240,11 +239,7 @@ namespace Demo3D.Runtime.Playback
             // The hero's crystal blade (HeroBlade), under every style: it refracts the camera's opaque
             // texture, so that is on in every run.
             _heroBlade = new HeroBlade(CrowdLibrary.Load());
-            _heroRenderer.Created = hero =>
-            {
-                _heroOutline?.Attach(hero); // before the blade turns the broadsword (and so its outline) off
-                _heroBlade.Attach(hero);
-            };
+            _heroRenderer.Created = _heroBlade.Attach;
             // The walk and run are unarmed: their swinging arms would fling the blade through the body,
             // so the sword idle holds the arms while they play.
             int heroIdle = _hero.ClipIndex("idle"), heroRun = _hero.ClipIndex("run");
@@ -287,7 +282,6 @@ namespace Demo3D.Runtime.Playback
                 if (_fxDriver != null) _fxDriver.Blows = _blows;
                 if (_fx != null) _fx.Lights.Knee = _blows.Feel.LightKnee;
                 if (_shatter != null) _shatter.Cap = _blows.Feel.ShardCap;
-                _heroOutline = HeroOutline.Create(CrowdLibrary.Load(), _blows.Feel.HeroOutline, _trailer?.Style.HeroOutline);
                 Debug.Log($"DemoMain: {intensity.Name}'s blow feel over {_blows.Count} blows");
             }
             var breakShakes = breakMoments.Count > 0 ? breakMoments.Shakes() : null;
@@ -911,7 +905,6 @@ namespace Demo3D.Runtime.Playback
             _structures?.Dispose();
             _heroRenderer?.Dispose();
             _heroBlade?.Dispose();
-            _heroOutline?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();
             if (_warmTarget != null) _warmTarget.Release();

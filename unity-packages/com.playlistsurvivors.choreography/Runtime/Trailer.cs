@@ -21,12 +21,11 @@ namespace PS.Choreography
     /// <summary>
     /// A trailer's look (trailer.md, "The crystal cut"): the monster and structure styles and their tune pairs its run
     /// takes when the command line names none, as the player's <c>--monster-style</c>, <c>--structure-style</c>,
-    /// <c>--style-tune</c> and <c>--structure-tune</c> would, and the hero's outline as <c>--hero-outline</c> would
-    /// (<c>px[,r,g,b]</c>). The core passes them through; the player validates them.
+    /// <c>--style-tune</c> and <c>--structure-tune</c> would. The core passes them through; the player validates them.
     /// </summary>
     public sealed class TrailerStyle
     {
-        public string MonsterStyle, StructureStyle, StyleTune, StructureTune, HeroOutline;
+        public string MonsterStyle, StructureStyle, StyleTune, StructureTune;
     }
 
     /// <summary>One shot of a trailer file: a continuous stretch of picture between two cuts, simulated on its own.</summary>
@@ -161,12 +160,11 @@ namespace PS.Choreography
             JsonValue look = root["look"];
             if (!look.IsNull)
             {
-                CheckKeys(look, "trailer look", "monsterStyle", "structureStyle", "styleTune", "structureTune", "heroOutline");
+                CheckKeys(look, "trailer look", "monsterStyle", "structureStyle", "styleTune", "structureTune");
                 tr.Style = new TrailerStyle
                 {
                     MonsterStyle = look["monsterStyle"].AsString(), StructureStyle = look["structureStyle"].AsString(),
                     StyleTune = look["styleTune"].AsString(), StructureTune = look["structureTune"].AsString(),
-                    HeroOutline = look["heroOutline"].AsString(),
                 };
             }
             JsonValue shots = root["shots"];
