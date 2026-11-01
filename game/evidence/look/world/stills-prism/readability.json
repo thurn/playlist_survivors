@@ -1,0 +1,38 @@
+{
+  "still-020.000": {
+    "monsterPx": 636488,
+    "monsterShare": 0.307,
+    "lMonster": 47.245,
+    "lRing": 3.023,
+    "dL": 44.222,
+    "dC": 17.959,
+    "cMonster": 24.932,
+    "monsterP10": 29.761,
+    "monsterP90": 73.719,
+    "pass": true
+  },
+  "still-045.000": {
+    "monsterPx": 297392,
+    "monsterShare": 0.143,
+    "lMonster": 44.907,
+    "lRing": 1.507,
+    "dL": 43.4,
+    "dC": 30.808,
+    "cMonster": 36.416,
+    "monsterP10": 19.082,
+    "monsterP90": 65.256,
+    "pass": true
+  },
+  "still-064.100": {
+    "monsterPx": 676713,
+    "monsterShare": 0.326,
+    "lMonster": 41.974,
+    "lRing": 2.941,
+    "dL": 39.033,
+    "dC": 21.422,
+    "cMonster": 32.031,
+    "monsterP10": 17.289,
+    "monsterP90": 61.61,
+    "pass": true
+  }
+}
