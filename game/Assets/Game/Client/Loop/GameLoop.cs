@@ -91,7 +91,7 @@ namespace Game.Client.Loop
     /// - `--moments-out FILE`: each key moment the presenters show, on the frame they first show it (<see cref="Moments"/>),
     ///   for the on-the-beat audit (`game beat`);
     /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
-    ///   its bake failed), `--palette NAME` the arena's zone palette;
+    ///   its bake failed), `--palette NAME` the arena's zone palette (a look palette's name is the look's: <see cref="LaunchOptions.Palette"/>);
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
     /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
     /// - `--structures-out FILE`: each frame's structure shards and their physics and shadow costs, as CSV

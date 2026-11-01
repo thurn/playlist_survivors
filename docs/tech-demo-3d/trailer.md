@@ -1748,7 +1748,12 @@ argument that starts with `--` is the next flag, not a name.
 These work as in a normal run and apply to every shot:
 
 - **`--palette <name>`:** recolours each environment's moon, ambient light,
-  fog and ground.
+  fog and ground. The name of one of the look package's palettes is the
+  crystal cut's look palette instead ([neon-look.md](../design/neon-look.md),
+  Flags).
+- **The look flags** (`--look`, the axis flags, `--beat-ripple`): the crystal
+  cut's look preset, logged at start (`Look: ...`). The action cut ignores
+  them.
 - **`--roster <name>`:** picks the roster set.
 - **`--monster-style <name>`:** picks the horde's style. As today, a roster
   set can't take a style other than `baseline`.

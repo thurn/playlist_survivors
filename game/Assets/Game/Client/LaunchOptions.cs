@@ -4,6 +4,7 @@ using System.Globalization;
 using Game.Client.Arena;
 using PS.Game.Sim;
 using PS.Game.Sim.Bots;
+using PS.Look;
 using UnityEngine;
 
 namespace Game.Client
@@ -52,7 +53,13 @@ namespace Game.Client
         /// <summary>`--events FILE`: a synthetic event feed in place of the horde and sword.</summary>
         public string Events;
         public bool NoArena, NoHero, Overlay, SoundProbe, HeroPath;
+        /// <summary>
+        /// `--palette NAME`: the arena's zone palette, unless NAME is one of the look package's palettes, which the
+        /// look takes instead (<see cref="LookFlags"/>); the arena then keeps the default.
+        /// </summary>
         public string Palette = ArenaLighting.DefaultPalette, ChestPreview;
+        /// <summary>The look flags (`--look`, each axis's, `--palette`, `--beat-ripple`), parsed by the look package; Boot applies the look.</summary>
+        public LookFlags Look;
         /// <summary>`--view-width M`; 0 when not given.</summary>
         public float ViewWidth;
 
@@ -135,7 +142,6 @@ namespace Game.Client
                 Overlay = a.Has("--overlay"),
                 SoundProbe = a.Has("--sound-probe"),
                 HeroPath = a.Has("--hero-path"),
-                Palette = a.Get("--palette") ?? ArenaLighting.DefaultPalette,
                 ChestPreview = a.Get("--chest-preview"),
                 ViewWidth = a.Float("--view-width", 0),
                 File = a.Path("--file"),
@@ -175,6 +181,10 @@ namespace Game.Client
                 },
                 Scripted = { Debug = a.Get("--debug"), Walk = a.Get("--walk"), Bot = Bot(a.Get("--bot")), PauseAt = a.Float("--pause-at", -1) },
             };
+            foreach (var flag in LookFlags.ValuedFlags) a.Get(flag); // claimed here, parsed by the package
+            foreach (var flag in LookFlags.Switches) a.Has(flag);
+            o.Look = LookFlags.Parse(args);
+            o.Palette = o.Look.ArenaPalette ?? ArenaLighting.DefaultPalette;
             o.Title = o.File == null && o.App == null && o.Replay == null && (a.Has("--title") || o.Windowed && o.Events == null);
             o.Recording = !a.Has("--no-session") && (o.SessionsDir != null || o.Watch || o.Windowed);
             o.Run = RunOf(a, o);

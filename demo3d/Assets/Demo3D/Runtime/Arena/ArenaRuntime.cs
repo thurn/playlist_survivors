@@ -98,8 +98,8 @@ namespace Demo3D.Runtime.Arena
             var layout = PlaybackData.Load().EnvironmentLayout(o.Environment);
             ArenaPipeline.Apply(o);
             // `--palette name` swaps the environment's colours for one of the layout's palettes (ps-ocd),
-            // over the `--roster` set's own look (ps-f8a.4).
-            var lighting = ArenaLighting.Parse(layout, Args.Get("--palette"), RosterSet.Active.Name);
+            // over the `--roster` set's own look (ps-f8a.4). A look palette's name is the look package's instead.
+            var lighting = ArenaLighting.Parse(layout, PS.Look.LookFlags.Current.ArenaPalette, RosterSet.Active.Name);
             var a = new ArenaRuntime(o, entry.scene, lighting, camera, volumeParent);
             SceneManager.sceneLoaded += a.Loaded;
             SceneManager.LoadScene(entry.scene, LoadSceneMode.Additive);

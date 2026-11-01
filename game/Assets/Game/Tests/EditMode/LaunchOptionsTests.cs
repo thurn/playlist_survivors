@@ -1,8 +1,12 @@
 using System;
+using System.IO;
 using Game.Client;
+using Game.Client.Arena;
 using NUnit.Framework;
 using PS.Game.Sim;
 using PS.Game.Sim.Bots;
+using PS.Look;
+using UnityEngine;
 
 namespace Game.Tests
 {
@@ -126,6 +130,33 @@ namespace Game.Tests
         [TestCaseSource(nameof(Unrecognized))]
         public void EachUnrecognizedArgumentGetsANote(string flags, string[] notes) =>
             Assert.That(Parse(flags).Unrecognized, Is.EqualTo(notes));
+
+        [Test]
+        public void TheLookFlagsAreReadByTheLookPackage()
+        {
+            var o = Parse("--headless --look hologram --monster-look solid-emissive --world pure-void --beat-ripple --palette electric");
+            Assert.That(o.Unrecognized, Is.Empty);
+            Assert.That(o.Look.Look, Is.EqualTo("hologram"));
+            Assert.That(o.Look.Overrides[LookAxes.Monsters], Is.EqualTo("solid-emissive"));
+            Assert.That(o.Look.BeatRipple, Is.True);
+            Assert.That(ResolvedLook.Resolve(o.Look).Describe(), Does.Contain("monsters solid-emissive (--monster-look)"));
+        }
+
+        [Test]
+        public void PaletteNamesTheLooksPaletteOrElseTheArenas()
+        {
+            var look = Parse("--palette electric");
+            Assert.That(look.Look.LookPalette, Is.EqualTo("electric"));
+            Assert.That(look.Palette, Is.EqualTo(ArenaLighting.DefaultPalette), "the arena keeps its default zone palette");
+            var arena = Parse("--palette lava");
+            Assert.That(arena.Palette, Is.EqualTo("lava"));
+            Assert.That(arena.Look.LookPalette, Is.Null);
+            Assert.That(LaunchOptions.Parse(new[] { "player", "--palette", "" }, false).Palette, Is.Empty, "the night as baked");
+            // A name both could mean would be read as the look's and leave its zone palette unreachable.
+            string layout = File.ReadAllText(Path.Combine(Application.dataPath, "..", "Content", "arena-layout.json"));
+            foreach (var zone in ArenaLighting.Palettes(layout))
+                Assert.That(LookLibrary.Shared.HasPalette(zone), Is.False, $"the arena's {zone} is also a look palette");
+        }
 
         [Test]
         public void TheRunsInputsOnTheBuild()

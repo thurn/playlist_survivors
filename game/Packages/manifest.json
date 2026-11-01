@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.playlistsurvivors.look": "file:../../unity-packages/com.playlistsurvivors.look",
     "com.unity.burst": "2.0.0",
     "com.unity.collections": "6.6.0",
     "com.unity.inputsystem": "1.20.1",
@@ -21,5 +22,8 @@
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.modules.unitywebrequest": "1.0.0",
     "com.unity.modules.video": "1.0.0"
-  }
+  },
+  "testables": [
+    "com.playlistsurvivors.look"
+  ]
 }

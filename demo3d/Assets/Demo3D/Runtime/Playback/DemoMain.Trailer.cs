@@ -97,6 +97,18 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
+        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags. The
+        /// action cut, and the song outside a trailer, keep their Synty look (the epic's "before") and ignore them.
+        /// </summary>
+        void UseLook()
+        {
+            var flags = PS.Look.LookFlags.Current;
+            if (_flags.Trailer != null && _flags.Trailer != "action") PS.Look.ResolvedLook.Resolve(flags).Apply();
+            else if (flags.Any) Debug.Log("DemoMain: the look flags are for the crystal cut; " +
+                                          (_flags.Trailer != null ? "the action cut" : "the song") + " keeps its look");
+        }
+
+        /// <summary>
         /// The trailer file's look (trailer.md, "The crystal cut"): its monster and structure styles and tunes, wherever
         /// the command line names none, so `--trailer crystal` plays crystal with no other flag. A flag still wins.
         /// </summary>

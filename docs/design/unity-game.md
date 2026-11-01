@@ -3405,6 +3405,12 @@ The game provides these so each state above can be reached on demand:
   frame until the analysis covers its frontier, so reruns show the same
   frames; `--seconds N` counts song seconds then ([Fixed time](#fixed-time)).
   The run's summary logs its seconds since launch.
+  The look flags (`--look <preset>`, `--monster-look`, `--structure-look`,
+  `--world`, `--post`, `--vfx`, `--hero-look`, `--palette`, `--beat-ripple`)
+  are the look package's ([neon-look.md](neon-look.md), Flags): Boot resolves
+  and applies the preset first and logs it (`Look: look edge, palette
+  electric; monsters ...`). `--palette` names a look palette or, as before,
+  the arena's zone palette.
   A flag or argument the client doesn't read (an unknown flag, one typed
   with an en dash or one hyphen, a flag missing its value, a value after a
   flag that takes none) opens a popup listing each with a note before

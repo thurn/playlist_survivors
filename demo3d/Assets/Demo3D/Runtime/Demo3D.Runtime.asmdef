@@ -3,6 +3,7 @@
     "rootNamespace": "Demo3D.Runtime",
     "references": [
         "PS.Choreography",
+        "PS.Look",
         "Demo3D.Bench",
         "Unity.Mathematics",
         "Unity.Burst",

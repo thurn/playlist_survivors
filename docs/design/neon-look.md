@@ -203,6 +203,17 @@ Rules the style guide enforces:
   white.
 - **The floor is near black** everywhere outside a ripple or a light pool.
 
+In the package (ps-wnj.3), palettes are
+`Runtime/Resources/Look/Palettes/<name>.json`, loaded in both players' builds
+through Resources. `Palette` parses one: a top-level hex string is a role
+(`spark`), a group's member is `group.member` (`hero.body`), and the doc's
+roles above are required; a palette may add roles. `SetShaderGlobals` gives
+every role to shaders as `_Look` plus its parts capitalized
+(`_LookHeroBody`), and the enemy hues and zone tints as linear arrays
+`_LookEnemies[8]` and `_LookZones[8]` with `_LookEnemyCount` and
+`_LookZoneCount`. `electric` holds the example values above as a
+placeholder until the style guide sets the real palettes.
+
 ### Look presets
 
 A preset is a JSON file in the package (`Looks/<name>.json`):
@@ -251,6 +262,32 @@ just trailer-looks                # all four presets, one capture each
 ```
 
 `trailer-looks` is a new recipe; the exact shape is the executor's.
+
+How the package implements them (ps-wnj.3):
+
+- Presets are `Runtime/Resources/Look/Looks/<name>.json`. A preset names its
+  palette, a string for every axis and a `motion` object; an unknown key, a
+  missing axis or an unknown motion layer fails at start.
+- **The axis registry** is `LookAxes`: each axis (monsters, structures,
+  world, post, vfx, hero, and motion's layers) is declared in its own file
+  under `Runtime/Axes/` with the options built so far. The work that builds an
+  option adds it to its axis's file and nothing else.
+- An option or layer a preset or flag asks for that isn't built draws today's
+  look: `ResolvedLook.Option(axis)` is null for it, and applying the look
+  logs one warning listing everything not built yet.
+- `LookFlags` parses the flags once; game's `LaunchOptions` claims them so
+  its unknown-flag check doesn't flag them. `ResolvedLook.Resolve` picks the
+  preset (`edge` without `--look`), lays the flags over it, and `Apply` sets
+  the palette's shader globals and logs the look:
+  `Look: look edge, palette electric; monsters wireframe (--monster-look), ...`.
+- `--palette` keeps its old meaning beside the new one: a name that is one of
+  the package's palettes is the look's palette; any other name is still the
+  arena's zone palette (game's and demo3d's `neon`, `lava`, ...), which the
+  void world retires. Game's tests check no arena palette shares a look
+  palette's name.
+- `game/` resolves and applies the look at boot in every launch. demo3d does
+  so for any trailer but the action cut; the action cut and the song outside
+  a trailer ignore the look flags and say so.
 
 ## The Axes
 

@@ -3,6 +3,7 @@ using Game.Client.Calibration;
 using Game.Client.Loop;
 using Game.Client.Music;
 using Game.Client.Title;
+using PS.Look;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -11,6 +12,8 @@ namespace Game.Client
     /// <summary>
     /// The boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>), once a popup has listed any
     /// it didn't recognize (<see cref="FlagsPopup"/>):
+    /// - the look flags (`--look NAME`, each axis's flag, `--palette`, `--beat-ripple`): the look preset, resolved and
+    ///   applied first, whatever the launch (<see cref="ResolvedLook"/>);
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
     ///   quitting once the last is kept, each with its ID render under `--capture-mask`;
@@ -52,7 +55,11 @@ namespace Game.Client
         void Start()
         {
             LaunchOptions options;
-            try { options = LaunchOptions.Current; }
+            try
+            {
+                options = LaunchOptions.Current;
+                ResolvedLook.Resolve(options.Look).Apply();
+            }
             catch (ArgumentException e)
             {
                 Debug.LogError("Boot: " + e.Message);

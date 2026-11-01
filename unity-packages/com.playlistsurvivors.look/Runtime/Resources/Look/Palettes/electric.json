@@ -1,0 +1,12 @@
+{
+  "name": "electric",
+  "description": "A placeholder: the design doc's example values, until the style guide (docs/design/neon-look-style.md) sets each preset's palette.",
+  "void":    { "floor": "#05060a", "fog": "#0a0c18" },
+  "grid":    { "line": "#1d3cff", "pulse": "#5f7dff" },
+  "hero":    { "body": "#f4f1ff", "blade": "#ffffff", "trail": "#9ff6ff" },
+  "enemies": ["#ff2e88", "#28f0ff", "#9dff3a", "#ffb21e", "#b45bff", "#ff5a2e"],
+  "boss":    { "body": "#ff3355", "telegraph": "#ff1030" },
+  "shatter": { "gem": "#ffe9a8", "core": "#ffffff" },
+  "spark":   "#ffffff",
+  "zones":   [ { "name": "cobalt", "tint": "#1d3cff" }, { "name": "rose", "tint": "#ff2e88" } ]
+}

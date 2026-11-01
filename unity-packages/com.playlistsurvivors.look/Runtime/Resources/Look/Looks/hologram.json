@@ -1,0 +1,11 @@
+{
+  "name": "hologram",
+  "palette": "electric",
+  "monsters": "wireframe",
+  "structures": "wireframe",
+  "world": "pure-void",
+  "post": "scanlines",
+  "vfx": "light-streaks",
+  "hero": "hologram",
+  "motion": { "springs": true, "swarm": true, "trails": true, "beatRipple": false }
+}

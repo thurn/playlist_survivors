@@ -1,0 +1,11 @@
+{
+  "name": "solid",
+  "palette": "electric",
+  "monsters": "solid-emissive",
+  "structures": "solid-glass",
+  "world": "hued-zones",
+  "post": "punchy-bloom",
+  "vfx": "light-streaks",
+  "hero": "solid",
+  "motion": { "springs": true, "swarm": true, "trails": true, "beatRipple": false }
+}

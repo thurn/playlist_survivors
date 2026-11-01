@@ -1,0 +1,11 @@
+{
+  "name": "edge",
+  "palette": "electric",
+  "monsters": "dark-core-edges",
+  "structures": "edge-glass",
+  "world": "void-grid",
+  "post": "neon-bloom",
+  "vfx": "light-streaks",
+  "hero": "edge",
+  "motion": { "springs": true, "swarm": true, "trails": true, "beatRipple": false }
+}

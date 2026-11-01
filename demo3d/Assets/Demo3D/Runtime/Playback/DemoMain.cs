@@ -117,6 +117,7 @@ namespace Demo3D.Runtime.Playback
                 Debug.LogError("DemoMain: video needs a windowed player; a batch-mode player draws no frames");
             _flags = DevFlags.FromCommandLine();
             CheckTrailerFlags();
+            UseLook();
             _style = MonsterStyle.FromCommandLine();
             _structures = StructureStyle.FromCommandLine(_style); // fails here on an unknown name; match follows the horde
             Debug.Log($"DemoMain: {StructureStyle.Flag} {_structures.Name}");
@@ -439,7 +440,7 @@ namespace Demo3D.Runtime.Playback
         PostLook ForestPost()
         {
             if (_forestPost is PostLook post) return post;
-            var lighting = Demo3D.Runtime.Arena.ArenaLighting.Parse(PlaybackData.Load().EnvironmentLayout(LayoutEnvironment.Default), Args.Get("--palette"), RosterSet.Active.Name);
+            var lighting = Demo3D.Runtime.Arena.ArenaLighting.Parse(PlaybackData.Load().EnvironmentLayout(LayoutEnvironment.Default), PS.Look.LookFlags.Current.ArenaPalette, RosterSet.Active.Name);
             var profile = Demo3D.Runtime.Arena.NightLook.CreateProfile(lighting);
             post = PostLook.From(profile);
             foreach (var c in profile.components) Destroy(c);

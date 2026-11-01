@@ -17,6 +17,7 @@ Vision: Playlist Survivors is "the game that doesn't need a trailer". This is be
 - `herocap/`: a small Unity project that captures HeroEditor characters to PNG frames in the per-machine cache for native's `--art heroeditor` feel test (docs/design/heroeditor-native.md, epic ps-4c8), on the same tools (`uv run --project demo3d/tools herocap`, `just herocap`).
 - `stylelab/`: the Unity shader style lab, demo3d's horde in cyclable stylized treatments (docs/tech-demo-3d/stylelab.md), on the same tools (`uv run --project demo3d/tools stylelab`).
 - `unity-packages/com.playlistsurvivors.choreography/`: the engine-free choreography core both demos share (docs/tech-demo-3d/choreography.md).
+- `unity-packages/com.playlistsurvivors.look/`: the neon look demo3d's crystal cut and `game/` share: palettes, look presets and the look flags (docs/design/neon-look.md).
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - SETUP.md covers installing, building and playing.
 - Outside the tree: caches in `~/Library/Caches/playlist-survivors/` (`$PS_CACHE`; `entries/` holds `ps entries` dumps), the game's sessions in `~/Library/Application Support/Playlist Survivors/Playlist Survivors/sessions/`, and captures in the tree's `captures/`. Never search with `find /` or `find ~`: such a crawl runs for an hour.
