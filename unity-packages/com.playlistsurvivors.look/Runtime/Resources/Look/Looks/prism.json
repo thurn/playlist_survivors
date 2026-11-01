@@ -5,7 +5,7 @@
   "structures": "refractive-gem",
   "world": "hued-zones",
   "post": "prism-bloom",
-  "vfx": "light-streaks",
+  "vfx": "prism-streaks",
   "hero": "prism",
   "motion": { "springs": true, "swarm": true, "trails": true, "beatRipple": false }
 }

@@ -374,7 +374,7 @@ namespace Demo3D.Runtime.Playback
         /// <summary>An effect driver for a timeline on the effect runtime, its big types' heavier variants and --only-effects.</summary>
         EffectDriver NewEffectDriver(Timeline tl)
         {
-            var driver = new EffectDriver(tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss");
+            var driver = new EffectDriver(tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss", EffectLibrary.ActiveVfx);
             driver.OnlyAmbient = _beautyEmpty;
             driver.OnlyEffects(Args.Get("--only-effects"));
             return driver;

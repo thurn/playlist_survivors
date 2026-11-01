@@ -30,6 +30,11 @@ namespace PS.Look.Effects
         [TextArea] public string Selection;
         /// <summary>The colours the selection names by palette role, resolved by the runtime against the applied look's palette.</summary>
         public RoleColor[] Roles = Array.Empty<RoleColor>();
+        /// <summary>
+        /// The effects a vfx option draws in place of others (the selection's <c>vfx</c>; neon-look.md, The Axes &gt; VFX):
+        /// under <c>light-streaks</c>, the procedural slash for the vendor one. <see cref="IndexOf(string, string)"/> reads it.
+        /// </summary>
+        public VfxVariant[] Variants = Array.Empty<VfxVariant>();
         /// <summary>The heat ramp's gain on a tinted spawn, times the emitter's (the selection's <c>tintGain</c>, 1 by default).</summary>
         public float TintGain = 1f;
 
@@ -57,6 +62,28 @@ namespace PS.Look.Effects
                 if (Effects[i].Name == name) return i;
             return -1;
         }
+
+        /// <summary>
+        /// Effect <paramref name="name"/> as vfx option <paramref name="vfx"/> draws it: its variant's index
+        /// (<see cref="Variants"/>), else its own; null or an option without variants draws the effect itself.
+        /// </summary>
+        public int IndexOf(string name, string vfx)
+        {
+            if (vfx != null)
+                foreach (var v in Variants)
+                    if (v.Option == vfx && v.Name == name) return IndexOf(v.Effect);
+            return IndexOf(name);
+        }
+
+        /// <summary>The applied look's vfx option, or null where none is built or no look is applied (the action cut).</summary>
+        public static string ActiveVfx => ResolvedLook.Active?.Option(LookAxes.Vfx);
+    }
+
+    /// <summary>Under vfx option <see cref="Option"/>, effect <see cref="Name"/> draws as effect <see cref="Effect"/>.</summary>
+    [Serializable]
+    public struct VfxVariant
+    {
+        public string Option, Name, Effect;
     }
 
     /// <summary>One converted effect: a range of emitters, its light cue and its timing.</summary>
@@ -156,11 +183,12 @@ namespace PS.Look.Effects
     /// </summary>
     public static class EmitterSlots
     {
-        public const int Stride = 28, LutRows = 14, LutWidth = 64;
+        public const int Stride = 30, LutRows = 14, LutWidth = 64;
         public const int Time = 0, Life = 1, SizeMin = 2, SizeMax = 3, RotMin = 4, RotMax = 5, ColA = 6, ColB = 7,
             Shape0 = 8, Shape1 = 9, Shape2 = 10, ShapePos = 11, ShapeRot = 12, ChildPos = 13, ChildRot = 14, ChildScale = 15,
             Noise = 16, Render0 = 17, Render1 = 18, Tex = 19, Mat0 = 20, Mat1 = 21, Mat2 = 22, Mod = 23, ShapeScale = 24, Orbital = 25,
-            Heat0 = 26, Heat1 = 27; // the selection's heat ramp: (edge rgb, mix), (mid rgb, gain); mix 0 is off
+            Heat0 = 26, Heat1 = 27, // the selection's heat ramp: (edge rgb, mix), (mid rgb, gain); mix 0 is off
+            Arc0 = 28, Arc1 = 29;   // a procedural arc's shape (sweep, centre, width, tilt) and light (head, tail, core, softness)
 
         // LUT rows, relative to the emitter's first row (ChildScale.w).
         public const int RowColor = 0, RowColor2 = 1, RowSize = 2, RowSize2 = 3, RowVel = 4, RowVel2 = 5,
@@ -174,7 +202,7 @@ namespace PS.Look.Effects
             SizeOverLife = 8192, RotOverLife = 16384, SheetAnim = 32768, SizeBySpeed = 65536, Custom = 131072,
             StartColorTwo = 262144, StartColorGradient = 524288, Vel2 = 1u << 20, Force2 = 1u << 21, Size2 = 1u << 22,
             ShapeScaleOnly = 1u << 23, SoftParticles = 1u << 24, NoiseTex = 1u << 25, RandomRotDir = 1u << 26,
-            Beam = 1u << 27, SheetRandomRow = 1u << 28, Orbital = 1u << 29, RotAxes = 1u << 30,
+            Beam = 1u << 27, SheetRandomRow = 1u << 28, Orbital = 1u << 29, RotAxes = 1u << 30, Arc = 1u << 31,
         }
 
         public enum RenderMode { Billboard = 0, Stretch = 1, Horizontal = 2, Vertical = 3, Mesh = 4, Beam = 5 }

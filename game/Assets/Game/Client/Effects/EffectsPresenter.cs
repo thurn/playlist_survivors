@@ -31,6 +31,9 @@ namespace Game.Client.Effects
     /// the role's gem per death (a mass kill's merge) and a big one in the shatter's gem per break; it is published
     /// after the frame's cues, so a ring sets out on the frame its impact reaches, and marked as a moment.
     /// The hero's position at an impact comes from the frame's state.
+    /// Under the look's vfx option (neon-look.md, The Axes &gt; VFX) each effect is the selection's variant where it names one
+    /// (<see cref="EffectLibrary.Variants"/>): light-streaks' procedural slash, spin and slam ribbons (drawn on the same arc
+    /// as the vendor crescent: its middle at <see cref="SlashCentreDeg"/>, sweeping clockwise), streaking chips and smears.
     /// </summary>
     public sealed class EffectsPresenter : IPresenter, IDisposable
     {
@@ -50,6 +53,7 @@ namespace Game.Client.Effects
         readonly EffectCues _cues;
         readonly Camera _camera;
         readonly EffectLibrary _library;
+        readonly string _vfx = EffectLibrary.ActiveVfx;
         readonly int _slash, _spin, _slam, _death, _flash, _structure;
         readonly List<EffectCues.Cue> _due = new List<EffectCues.Cue>(256);
         double _last = double.NaN;
@@ -73,23 +77,21 @@ namespace Game.Client.Effects
             ImpulseField.Active = _impulses;
             _palette = ResolvedLook.Active?.Palette ?? ResolvedLook.FallbackPalette;
             _waves = new CrystalWaves(camera, CrystalWaves.ShaderIn(library));
-            _slash = Find(library, "slash");
-            _spin = Find(library, "spin");
-            _slam = Find(library, "slam");
-            _death = Find(library, "crystal-burst");
-            _flash = Find(library, "hit-flash");
-            _structure = Find(library, "structure-burst");
+            _slash = IndexOf("slash");
+            _spin = IndexOf("spin");
+            _slam = IndexOf("slam");
+            _death = IndexOf("crystal-burst");
+            _flash = IndexOf("hit-flash");
+            _structure = IndexOf("structure-burst");
         }
 
-        static int Find(EffectLibrary library, string name)
+        /// <summary>An effect's index in the library by its name in effects.json (its vfx option's variant), or -1 (warned) without it.</summary>
+        public int IndexOf(string name)
         {
-            int i = library.IndexOf(name);
+            int i = _library.IndexOf(name, _vfx);
             if (i < 0) Debug.LogWarning($"EffectsPresenter: the effect library has no '{name}' (rebake the effects)");
             return i;
         }
-
-        /// <summary>An effect's index in the library by its name in effects.json, or -1 (warned) without it.</summary>
-        public int IndexOf(string name) => Find(_library, name);
 
         public void OnEvent(in SimEvent e) => _cues.OnEvent(e);
 

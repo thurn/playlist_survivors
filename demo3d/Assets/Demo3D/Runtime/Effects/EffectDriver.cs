@@ -19,6 +19,9 @@ namespace Demo3D.Runtime.Effects
     /// blow and tinted by the type's gem.
     /// With an intensity's blow feel (<see cref="Blows"/>), the hero's trails and shocks and the sparks
     /// of its blows grow with the blow's weight, and death bursts by the feel's own factor.
+    /// Under a look's vfx option (the crystal cut's; neon-look.md, The Axes &gt; VFX) every effect it maps to is drawn
+    /// as the selection's variant (<see cref="EffectLibrary.Variants"/>): the procedural slashes, streaks and sparks,
+    /// a slash cutting right to left (slashL, slash3) mirrored so its light sweeps the blade's way.
     /// </summary>
     public sealed class EffectDriver
     {
@@ -33,11 +36,12 @@ namespace Demo3D.Runtime.Effects
         readonly Timeline _tl;
         readonly ISpawnSink _fx;
         readonly EffectLibrary _lib;
+        readonly string _vfx;
         bool _resetFrame;
         double _now;
         readonly Mapping[] _map;
         readonly int _projectile, _dust, _crystal;
-        readonly int _deathBurstEvent, _hitSparkEvent; // the timeline's death-burst and hit-spark effect names, -1 if it has none
+        readonly int _deathBurstEvent, _hitSparkEvent, _slashTrail; // the timeline's death-burst, hit-spark and slash-trail effect names, -1 if it has none
         readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
         readonly int[] _actionsByTime;
@@ -76,13 +80,15 @@ namespace Demo3D.Runtime.Effects
         /// <summary>Effects and spawns this frame (timeline events, plus the client's own).</summary>
         public int EventsThisFrame { get; private set; }
 
-        public EffectDriver(Timeline tl, EffectSystem fx, Func<int, bool> isEliteType = null) : this(tl, fx.Library, fx, isEliteType) { }
+        /// <param name="vfx">The look's vfx option (<see cref="EffectLibrary.ActiveVfx"/>), or null for every effect as itself.</param>
+        public EffectDriver(Timeline tl, EffectSystem fx, Func<int, bool> isEliteType = null, string vfx = null) : this(tl, fx.Library, fx, isEliteType, vfx) { }
 
-        public EffectDriver(Timeline tl, EffectLibrary lib, ISpawnSink fx, Func<int, bool> isEliteType = null)
+        public EffectDriver(Timeline tl, EffectLibrary lib, ISpawnSink fx, Func<int, bool> isEliteType = null, string vfx = null)
         {
             _tl = tl;
             _fx = fx;
             _lib = lib;
+            _vfx = vfx;
             var root = JsonValue.Parse(string.IsNullOrEmpty(lib.Selection) ? "{}" : lib.Selection);
             var catalog = root["catalog"];
             _map = new Mapping[tl.EffectNames.Length];
@@ -92,19 +98,20 @@ namespace Demo3D.Runtime.Effects
                 var c = catalog[tl.EffectNames[i]];
                 if (!c.IsNull && c.Count > 0)
                 {
-                    m.Variants = Indices(lib, c["effects"]);
-                    m.With = Indices(lib, c["with"]);
-                    m.Elite = Index(lib, c["elite"].AsString());
-                    m.Large = Index(lib, c["large"].AsString());
+                    m.Variants = Indices(lib, c["effects"], vfx);
+                    m.With = Indices(lib, c["with"], vfx);
+                    m.Elite = Index(lib, c["elite"].AsString(), vfx);
+                    m.Large = Index(lib, c["large"].AsString(), vfx);
                     m.LargeScale = c["largeScale"].AsFloat(float.MaxValue);
                 }
-                else if (lib.IndexOf(tl.EffectNames[i]) >= 0) m.Variants = new[] { lib.IndexOf(tl.EffectNames[i]) };
+                else if (lib.IndexOf(tl.EffectNames[i], vfx) >= 0) m.Variants = new[] { lib.IndexOf(tl.EffectNames[i], vfx) };
                 _map[i] = m;
             }
             var client = root["client"];
-            _projectile = Index(lib, client["projectile"].AsString());
-            _dust = Index(lib, client["monsterAttack"].AsString());
-            _crystal = Index(lib, client["crystalShatter"].AsString());
+            _projectile = Index(lib, client["projectile"].AsString(), vfx);
+            _dust = Index(lib, client["monsterAttack"].AsString(), vfx);
+            _crystal = Index(lib, client["crystalShatter"].AsString(), vfx);
+            _slashTrail = Array.IndexOf(tl.EffectNames, "slash-trail");
             _deathBurstEvent = Array.IndexOf(tl.EffectNames, "death-burst");
             _hitSparkEvent = Array.IndexOf(tl.EffectNames, "hit-spark");
             _ambient = new AmbientEffects(lib, fx);
@@ -155,7 +162,7 @@ namespace Demo3D.Runtime.Effects
             var list = new List<Playback.BreakMoments.Burst>(bursts);
             list.Sort((a, b) => a.Time.CompareTo(b.Time));
             _bursts = list.ToArray();
-            _burstFx = Array.ConvertAll(_bursts, b => _lib.IndexOf(b.Effect));
+            _burstFx = Array.ConvertAll(_bursts, b => _lib.IndexOf(b.Effect, _vfx));
             foreach (var b in _bursts)
                 if (_lib.IndexOf(b.Effect) < 0) Debug.LogWarning($"EffectDriver: no library effect '{b.Effect}' for a structure break's burst");
             _last = double.NaN; // the next frame starts afresh
@@ -164,14 +171,26 @@ namespace Demo3D.Runtime.Effects
         /// <summary>The yaw that turns an effect's +z to <paramref name="blow"/> (the runtime's RotateY; Easing.Dir); 0 for no direction.</summary>
         public static float ShatterYaw(Vector3 blow) => blow.sqrMagnitude > 1e-8f ? Mathf.Atan2(blow.x, blow.z) : 0f;
 
-        static int Index(EffectLibrary lib, string name) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name);
+        static int Index(EffectLibrary lib, string name, string vfx) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name, vfx);
 
-        static int[] Indices(EffectLibrary lib, JsonValue arr)
+        static int[] Indices(EffectLibrary lib, JsonValue arr, string vfx)
         {
             if (arr == null || arr.Type != JsonType.Array) return Array.Empty<int>();
             var r = new List<int>();
-            for (int i = 0; i < arr.Count; i++) { int k = lib.IndexOf(arr[i].AsString()); if (k >= 0) r.Add(k); }
+            for (int i = 0; i < arr.Count; i++) { int k = lib.IndexOf(arr[i].AsString(), vfx); if (k >= 0) r.Add(k); }
             return r.ToArray();
+        }
+
+        /// <summary>
+        /// Whether the hero's slash at <paramref name="t"/> cuts right to left (slashL, slash3, as seen from above:
+        /// counter-clockwise), so a vfx option's arc, which sweeps clockwise, is drawn mirrored.
+        /// </summary>
+        bool CutsLeft(double t)
+        {
+            foreach (ActionEvent a in _tl.ActionsOf(0))
+                if (a.Kind == ActionKind.Attack && Math.Abs(a.Impact - t) < 1e-6 && a.Clip >= 0)
+                    return _tl.ClipNames[a.Clip] == "slashL" || _tl.ClipNames[a.Clip] == "slash3";
+            return false;
         }
 
         /// <summary>The next <see cref="Frame"/> seeks: it clears the pool and re-spawns what is still alive then (a trailer's cut into this driver's shot).</summary>
@@ -255,7 +274,8 @@ namespace Demo3D.Runtime.Effects
                 duration = (float)bar;
             }
             float scale = ev.Scale * FeelScale(ev);
-            Add(fx, pos, yaw, scale, ev.Seed, ev.Time, Vector3.zero, yawRate, duration);
+            bool mirror = _vfx != null && ev.Effect == _slashTrail && ev.AttachTo == 0 && CutsLeft(ev.Time);
+            Add(fx, pos, yaw, scale, ev.Seed, ev.Time, Vector3.zero, yawRate, duration, mirror: mirror);
             foreach (int w in m.With) Add(w, pos, yaw, scale, ev.Seed ^ 0x5bd1e995u, ev.Time, Vector3.zero, 0, 0);
         }
 
@@ -285,7 +305,8 @@ namespace Demo3D.Runtime.Effects
             return (beats[i] - beats[i - 1]) * _tl.Map.BeatsPerBarAt(1);
         }
 
-        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration, Color tint = default, float lightGain = 0)
+        void Add(int fx, Vector3 pos, float yaw, float scale, uint seed, double time, Vector3 vel, float yawRate, float duration, Color tint = default, float lightGain = 0,
+            bool mirror = false)
         {
             // After a seek or loop wrap, the look-back re-spawns only effects still alive now.
             if (Only != null && (fx < 0 || fx >= Only.Length || !Only[fx])) return;
@@ -293,7 +314,7 @@ namespace Demo3D.Runtime.Effects
             _fx.Add(new EffectSystem.Spawn
             {
                 Effect = fx, Position = pos, Yaw = yaw, Scale = scale, Seed = seed, Time = time, Velocity = vel,
-                YawRate = yawRate, Duration = duration, Tint = tint, LightGain = lightGain,
+                YawRate = yawRate, Duration = duration, Tint = tint, LightGain = lightGain, Mirror = mirror,
             });
             EventsThisFrame++;
         }

@@ -732,6 +732,40 @@ own selection with it. A selection colour may name a palette role
 they look as before in every preset until the VFX beads restyle them
 ([effects.md, The look](../tech-demo-3d/effects.md#the-look)).
 
+The vfx axis's options (ps-wnj.15): **`light-streaks`** (edge, solid,
+hologram) and **`prism-streaks`** (prism). Each project's selection names the
+effects an option draws in place of the vendor ones (its `vfx` table,
+[effects.md, Vfx variants](../tech-demo-3d/effects.md#the-look)), built from
+the runtime's two new procedural kinds, arcs and light streaks, plus the
+spark bursts:
+
+- **Slashes and spins** are ribbons of light on the blade's arc (`arcs`): the
+  head sweeps the arc in the first third of the life and the light trails
+  behind it, narrowing, white at the core into `hero.trail`, with a thinner
+  echo inside it. The game draws them where it drew the vendor crescent (its
+  middle at -135 degrees, sweeping clockwise, turned onto each clip's arc and
+  mirrored for a cut the other way); demo3d centres them on the blow and
+  mirrors the right-to-left cuts (slashL, slash3). A spin sweeps a little past
+  a full turn; demo3d's thrust is a lance of light streaking forward.
+- **The slam** is a thin ring of light flat on the ground racing out to the
+  reach (`grow`), a brief inner flash and sparks thrown up off it; demo3d's
+  formation smashes take it too.
+- **Light streaks and smears**: the crystal burst's chips are drawn as short
+  streaks and a velocity smear shoots along the blow; a hit's chips streak
+  with a smear (game) or are crisp short sparks white-hot into `hero.trail`
+  (demo3d); demo3d's bolt is a glowing head with a streak behind it
+  (`streaks`) and a monster's lunge streaks forward faintly in `grid.pulse`
+  (the dust puff's place). The game's bolts already streak (WandView's
+  afterimages).
+- **`prism-streaks`** splits the cuts, the ring and demo3d's bolt into three
+  softer layers in `enemies[0]`, `[2]` and `[4]` (the palette's key, accent
+  and counter families), each a little inside and behind the last: dispersion
+  in the palette's hues. Its bursts and sparks are `light-streaks'`.
+
+Strikes still land on their frames: every variant spawns at its effect's own
+time. Evidence: [game/evidence/look/vfx](../../game/evidence/look/vfx/README.md)
+and [demo3d/evidence/look/vfx](../../demo3d/evidence/look/vfx/README.md).
+
 ### Motion
 
 - **Spring secondary motion**: per-instance squash and stretch, lean into

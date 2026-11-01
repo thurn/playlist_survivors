@@ -139,6 +139,33 @@ and our own draw shader; no vendor file changes. Per effect:
   this times its emitter's gain. game's is 0.6, so a crimson Bloody Tear
   holds its colour further into the core (ps-msz.8.3).
 
+**Procedural arcs** (ps-wnj.15, [neon-look.md](../design/neon-look.md#vfx)): an entry's `arcs`, a
+list of layers, are ribbons of light built by the converter with no prefab or texture. Each is one
+particle drawn as a strip bent round the spawn's origin in the draw shader (every arc shares one
+64-segment strip mesh, so arcs take one draw bucket; the shape is the emitter's `Arc0` and `Arc1`
+slots and its `Arc` flag). A layer gives the arc's radius (m at scale 1; the particle's size), its
+width (the ribbon's share of the radius, inward from the edge), sweep and centre (degrees; the middle
+clockwise from +z seen from above, the light sweeping clockwise, a mirrored spawn the other way), tilt
+(about the middle's direction), heightM, life, delay, head (the share of the life the head takes to
+sweep the arc, easing out; 0 lit at once), tail (the share of the arc the light fades over behind
+the head, the ribbon narrowing toward it), core (a thin line just inside the outer edge, at that gain
+over the body), soft (the body's falloff toward the inner edge), fade, grow (`[start, end]` radius
+scale over the life: the slam's ring racing out) and hdr. The shader draws the light white; the
+layer's `heat` colours it, so a ramp from a palette role to the same role keeps the body in the
+role's hue and turns the core white. A full turn or more is a ring: its ends don't soften.
+
+**Light streaks** (ps-wnj.15): an entry's `streaks` are quads stretched behind a moving spawn (a
+bolt's flight): each lives as long as its spawn's duration (the beam's lifetime rule), in world
+space with the spawn's velocity, its length `trail` seconds of travel, its light brightest at its
+head and fading along its tail (a generated texture), with an optional glowing head (`head`, a
+billboard riding the spawn).
+
+**Vfx variants** (ps-wnj.15): the selection's `vfx` table, `{ option: { effect: variant } }`, names
+the effects a look's vfx option draws in place of others (`EffectLibrary.Variants`,
+`IndexOf(name, vfx)`): the converter checks every option is built and every name converted. Both
+players look effects up through it with the applied look's option (`EffectLibrary.ActiveVfx`, null
+without a look or under `--vfx classic`), so every effect keeps its vendor self until a look asks.
+
 **The crystal shatter's burst** (epic ps-2iq,
 [evidence](../../demo3d/evidence/shatter/impact/README.md)): under `--monster-style crystal`
 (the crystal cut's horde, `LookCrowd`), deaths skip their death burst. At the killing blow, where

@@ -100,6 +100,7 @@ namespace PS.Look.EditorTools.Effects
             lib.TextureNames = b.Textures.Select(t => t.name).ToArray();
             lib.Roles = b.Roles.ToArray();
             lib.TintGain = (float?)selection["tintGain"] ?? 1f;
+            lib.Variants = Variants(selection, entries);
             if (keepStock) lib.StockPrefabs = stock.ToArray();
             lib.Selection = File.ReadAllText(selectionPath);
             lib.Simulate = AssetDatabase.LoadAssetAtPath<ComputeShader>(Shaders + "EffectSim.compute");
@@ -143,6 +144,10 @@ namespace PS.Look.EditorTools.Effects
 
         /// <summary>The child name of a selection's <paramref name="index"/>th spark burst.</summary>
         public static string SparkChild(int index) => index == 0 ? SparkName : $"{SparkName} {index + 1}";
+
+        /// <summary>The child names of a selection's <paramref name="index"/>th arc and streak (their tuning and heat).</summary>
+        public static string ArcChild(int index) => $"Arc (look) {index + 1}";
+        public static string StreakChild(int index) => $"Streak (look) {index + 1}";
 
         /// <summary>
         /// The selection's spark burst (tech-demo-3d/effects.md, The look): our own short-lived stretched sparks
@@ -239,6 +244,28 @@ namespace PS.Look.EditorTools.Effects
             return go;
         }
 
+        /// <summary>
+        /// The selection's <c>vfx</c> table, <c>{ option: { effect: variant } }</c> (neon-look.md, The Axes &gt; VFX): every
+        /// option a built option of the vfx axis, every effect and variant one the selection converts.
+        /// </summary>
+        static VfxVariant[] Variants(JObject selection, List<EffectEntry> entries)
+        {
+            var list = new List<VfxVariant>();
+            if (!(selection["vfx"] is JObject table)) return list.ToArray();
+            bool Has(string n) => entries.Any(e => e.Name == n);
+            foreach (var option in table)
+            {
+                if (!LookAxes.Vfx.IsBuilt(option.Key)) throw new Exception($"EffectConverter: vfx option '{option.Key}' isn't one of the vfx axis's ({string.Join(", ", LookAxes.Vfx.Built)})");
+                foreach (var kv in (JObject)option.Value)
+                {
+                    var variant = (string)kv.Value;
+                    if (!Has(kv.Key) || !Has(variant)) throw new Exception($"EffectConverter: vfx {option.Key}: '{kv.Key}' -> '{variant}' names an effect the selection doesn't convert");
+                    list.Add(new VfxVariant { Option = option.Key, Name = kv.Key, Effect = variant });
+                }
+            }
+            return list.ToArray();
+        }
+
         static Dictionary<string, string> ManifestGuids()
         {
             var manifest = JObject.Parse(File.ReadAllText("manifest.json"));
@@ -273,6 +300,8 @@ namespace PS.Look.EditorTools.Effects
             public readonly JObject Heat;
             /// <summary>The selection's spark bursts: <c>sparks</c> as one object, or a list of layers.</summary>
             public readonly List<JObject> Sparks = new List<JObject>();
+            /// <summary>The selection's procedural arcs (<c>arcs</c>) and light streaks (<c>streaks</c>): our own, built here (<see cref="Builder.Arc"/>, <see cref="Builder.Streak"/>).</summary>
+            public readonly List<JObject> Arcs = new List<JObject>(), Streaks = new List<JObject>();
             public readonly Dictionary<string, JObject> Tune;
 
             public Options(JObject o)
@@ -297,6 +326,8 @@ namespace PS.Look.EditorTools.Effects
                 Heat = o["heat"] as JObject;
                 if (o["sparks"] is JObject one) Sparks.Add(one);
                 else if (o["sparks"] is JArray layers) Sparks.AddRange(layers.Cast<JObject>());
+                if (o["arcs"] is JArray arcs) Arcs.AddRange(arcs.Cast<JObject>());
+                if (o["streaks"] is JArray streaks) Streaks.AddRange(streaks.Cast<JObject>());
                 Tune = new Dictionary<string, JObject>();
                 if (o["tune"] is JObject t)
                     foreach (var kv in t) Tune[kv.Key] = (JObject)kv.Value;
@@ -312,6 +343,10 @@ namespace PS.Look.EditorTools.Effects
             {
                 for (int i = 0; i < Sparks.Count; i++)
                     if (child == SparkChild(i)) return Sparks[i]["heat"] != null ? Sparks[i]["heat"] as JObject : Heat ?? new JObject(); // white-hot to red by default
+                for (int i = 0; i < Arcs.Count; i++)
+                    if (child == ArcChild(i)) return Arcs[i]["heat"] as JObject ?? Heat ?? new JObject();
+                for (int i = 0; i < Streaks.Count; i++)
+                    if (child == StreakChild(i)) return Streaks[i]["heat"] as JObject ?? Heat ?? new JObject();
                 if (Tune.TryGetValue(child, out var t) && t["heat"] != null) return t["heat"] as JObject;
                 return Heat;
             }
@@ -412,6 +447,19 @@ namespace PS.Look.EditorTools.Effects
                     }
                 }
                 foreach (var sp in sparks) UnityEngine.Object.DestroyImmediate(sp);
+                for (int i = 0; i < o.Arcs.Count; i++)
+                {
+                    Arc(name, ArcChild(i), o.Arcs[i], o, out float life);
+                    entry.EmitterCount++;
+                    lifetime = Mathf.Max(lifetime, life);
+                    duration = Mathf.Max(duration, life);
+                }
+                for (int i = 0; i < o.Streaks.Count; i++)
+                {
+                    entry.EmitterCount += Streak(name, StreakChild(i), o.Streaks[i], o);
+                    duration = Mathf.Max(duration, 0.5f);
+                    lifetime = Mathf.Max(lifetime, 0.5f);
+                }
                 foreach (var lr in prefab.GetComponentsInChildren<LineRenderer>(true))
                 {
                     if (!ActiveIn(lr.transform, root) || (!lr.enabled && !o.Lines)) continue;
@@ -854,6 +902,181 @@ namespace PS.Look.EditorTools.Effects
                 Emission.Add(new EmitterEmission { Duration = 1, Loop = false, Bursts = new[] { new Burst { Time = 0, CountMin = 1, CountMax = 1, Cycles = 1, Probability = 1 } }, MaxParticles = 1, LifeMax = 1, SeedEmitter = Emission.Count });
                 Notes.Add($"{fxName}: LineRenderer '{lr.name}' converted to a beam ({len:F2} m, width {w:F2} m); its scripts' scrolling isn't reproduced");
                 return true;
+            }
+
+            /// <summary>
+            /// A procedural arc (tech-demo-3d/effects.md, Procedural arcs): one particle drawn as a ribbon of light bent
+            /// round the spawn's origin (the shared strip mesh, bent in the draw shader), the slash's and spin's cut and the
+            /// slam's ring. Its layer: radius (m at scale 1), width (the ribbon's share of the radius, inward from the
+            /// edge), sweep and centre (degrees; the middle clockwise from +z, seen from above, the head sweeping
+            /// clockwise), tilt (degrees about the middle's direction), heightM, life (s), delay (s), head (the share of
+            /// the life the head takes to sweep the arc, easing out; 0 lit at once), tail (the share of the arc the
+            /// light fades over behind the head), core (the edge's thin core's gain over the body), soft (the body's
+            /// falloff power toward the inner edge), fade (where through its life it starts fading out), grow ([start,
+            /// end] radius scale over its life, easing out), hdr and heat.
+            /// </summary>
+            void Arc(string fxName, string child, JObject a, Options o, out float lifetime)
+            {
+                float F(string k, float d) => (float?)a[k] ?? d;
+                var v = new Vector4[Slots.Stride];
+                int row = LutRows.Count;
+                var flags = Slots.Flags.LocalSpace | Slots.Flags.ColorOverLife | Slots.Flags.Arc;
+                float life = F("life", 0.3f) * o.Life, delay = F("delay", 0f) * o.Life, radius = F("radius", 1f);
+                v[Slots.Time] = new Vector4(life, 0, 0, 0);
+                v[Slots.Life] = new Vector4(life, life, 0, 0);
+                v[Slots.SizeMin] = new Vector4(radius, radius, radius, 0);
+                v[Slots.SizeMax] = new Vector4(radius, radius, radius, 0);
+                v[Slots.ColA] = v[Slots.ColB] = Vector4.one;
+                v[Slots.ShapeRot] = v[Slots.ChildRot] = new Vector4(0, 0, 0, 1);
+                v[Slots.ShapeScale] = Vector3.one;
+                v[Slots.ChildPos] = new Vector4(0, F("heightM", 0f), 0, 0);
+                v[Slots.ChildScale] = new Vector4(1, 1, 1, row);
+                v[Slots.Render0] = new Vector4((float)Slots.RenderMode.Mesh, (float)Slots.Alignment.Local, 0, 0);
+                v[Slots.Render1] = new Vector4(0, 1e4f, 0, ArcStrip());
+                v[Slots.Tex] = new Vector4(TextureSlice(Texture2D.whiteTexture), 1, 1, 1);
+                float hdr = F("hdr", 1f);
+                v[Slots.Mat0] = new Vector4(hdr, hdr, hdr, 1);
+                v[Slots.Mat1] = new Vector4((float)Slots.Blend.Additive, 0, 0, 0);
+                v[Slots.Arc0] = new Vector4(F("sweep", 180f) * Mathf.Deg2Rad, F("centre", 0f) * Mathf.Deg2Rad, Mathf.Clamp01(F("width", 0.3f)), F("tilt", 0f) * Mathf.Deg2Rad);
+                v[Slots.Arc1] = new Vector4(F("head", 0.4f), F("tail", 0.4f), F("core", 3f), F("soft", 1.5f));
+                v[Slots.Mod].x = Emission.Count;
+                var rows = new Vector4[Slots.LutRows][];
+                for (int i = 0; i < rows.Length; i++) rows[i] = Fill(Vector4.one);
+                float fade = F("fade", 0.5f);
+                for (int i = 0; i < 64; i++)
+                {
+                    float u = i / 63f;
+                    float alpha = u <= fade ? 1f : Mathf.Pow(1f - (u - fade) / Mathf.Max(1e-3f, 1f - fade), 1.5f);
+                    rows[Slots.RowColor][i] = new Vector4(1, 1, 1, alpha);
+                }
+                if (a["grow"] is JArray grow)
+                {
+                    flags |= Slots.Flags.SizeOverLife;
+                    float g0 = (float)grow[0], g1 = (float)grow[1];
+                    for (int i = 0; i < 64; i++)
+                    {
+                        float u = i / 63f;
+                        rows[Slots.RowSize][i] = Vector4.one * Mathf.Lerp(g0, g1, 1f - (1f - u) * (1f - u));
+                    }
+                }
+                rows[Slots.RowMisc] = Fill(Vector4.zero);
+                Look(v, o, child, fxName);
+                v[Slots.Time].w = BitConverter.Int32BitsToSingle((int)(uint)flags);
+                Emitters.AddRange(v);
+                foreach (var rr in rows) LutRows.Add(rr);
+                Emission.Add(new EmitterEmission
+                {
+                    Duration = life, DelayMin = delay, DelayMax = delay, Loop = false,
+                    Bursts = new[] { new Burst { Time = 0, CountMin = 1, CountMax = 1, Cycles = 1, Probability = 1 } },
+                    MaxParticles = 1, LifeMax = life, SeedEmitter = Emission.Count,
+                });
+                lifetime = delay + life;
+                Notes.Add($"{fxName}/{child}: arc, radius {radius:F2} m, sweep {F("sweep", 180f):F0} deg, life {life:F2} s");
+            }
+
+            /// <summary>The strip every arc bends (64 segments; vertex xy = (along, across), 0 to 1), shared so arcs take one draw bucket.</summary>
+            int ArcStrip()
+            {
+                const string name = "arc strip (look)";
+                for (int i = 0; i < Meshes.Count; i++) if (Meshes[i].Name == name) return i;
+                const int n = 64;
+                var verts = new Vector3[(n + 1) * 2];
+                var uv = new Vector2[verts.Length];
+                for (int i = 0; i <= n; i++)
+                    for (int j = 0; j < 2; j++)
+                    {
+                        verts[i * 2 + j] = new Vector3(i / (float)n, j, 0);
+                        uv[i * 2 + j] = new Vector2(i / (float)n, j);
+                    }
+                var tris = new int[n * 6];
+                for (int i = 0; i < n; i++)
+                {
+                    int a = i * 2;
+                    tris[i * 6] = a; tris[i * 6 + 1] = a + 1; tris[i * 6 + 2] = a + 3;
+                    tris[i * 6 + 3] = a; tris[i * 6 + 4] = a + 3; tris[i * 6 + 5] = a + 2;
+                }
+                var mesh = new Mesh { name = name, vertices = verts, uv = uv, triangles = tris };
+                int index = MeshIndex(mesh);
+                UnityEngine.Object.DestroyImmediate(mesh);
+                return index;
+            }
+
+            /// <summary>
+            /// A light streak (tech-demo-3d/effects.md, Light streaks): a quad stretched behind the spawn as it moves at its
+            /// velocity, as long as the spawn's duration (a bolt's flight, the hero's dash), brightest at its head and
+            /// fading along its tail, with an optional glowing head. Its layer: size (m, the streak's width), trail (s
+            /// of travel the streak is long), head (the head's size, m; 0 none), heightM, hdr and heat. Returns the
+            /// emitters it adds.
+            /// </summary>
+            int Streak(string fxName, string child, JObject a, Options o)
+            {
+                float F(string k, float d) => (float?)a[k] ?? d;
+                int Add(bool head)
+                {
+                    var v = new Vector4[Slots.Stride];
+                    int row = LutRows.Count;
+                    // Lives as long as its spawn asks (a beam's lifetime); the streak in world space, inheriting the spawn's velocity.
+                    var flags = Slots.Flags.Beam | Slots.Flags.ColorOverLife | (head ? Slots.Flags.LocalSpace : 0);
+                    float size = head ? F("head", 0f) : F("size", 0.15f);
+                    v[Slots.Time] = new Vector4(1, 0, 0, 0);
+                    v[Slots.Life] = new Vector4(1, 1, 0, 0);
+                    v[Slots.SizeMin] = new Vector4(size, size, size, 0);
+                    v[Slots.SizeMax] = new Vector4(size, size, size, 0);
+                    v[Slots.RotMin] = new Vector4(0, 0, 0, head ? 0 : 1); // w: the spawn's velocity inherited
+                    v[Slots.ColA] = v[Slots.ColB] = Vector4.one;
+                    v[Slots.ShapeRot] = v[Slots.ChildRot] = new Vector4(0, 0, 0, 1);
+                    v[Slots.ShapeScale] = Vector3.one;
+                    v[Slots.ChildPos] = new Vector4(0, F("heightM", 0f), 0, 0);
+                    v[Slots.ChildScale] = new Vector4(1, 1, 1, row);
+                    v[Slots.Render0] = head ? new Vector4((float)Slots.RenderMode.Billboard, 0, 0, 0)
+                        : new Vector4((float)Slots.RenderMode.Stretch, 3, 0, Mathf.Max(0.01f, F("trail", 0.08f))); // alignment 3: behind its particle
+                    v[Slots.Render1] = new Vector4(0, 1e4f, 0, 0);
+                    v[Slots.Tex] = new Vector4(TextureSlice(head ? AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd") : StreakTexture()), 1, 1, 1);
+                    float hdr = F("hdr", 1f);
+                    v[Slots.Mat0] = new Vector4(hdr, hdr, hdr, 1);
+                    v[Slots.Mat1] = new Vector4((float)Slots.Blend.Additive, 0, 0, 0);
+                    v[Slots.Mod].x = Emission.Count;
+                    var rows = new Vector4[Slots.LutRows][];
+                    for (int i = 0; i < rows.Length; i++) rows[i] = Fill(Vector4.one);
+                    // Quick in, held, a quick fade at the end of its flight.
+                    for (int i = 0; i < 64; i++) { float u = i / 63f; rows[Slots.RowColor][i] = new Vector4(1, 1, 1, Mathf.Clamp01(u * 30f) * Mathf.Clamp01((1 - u) * 8f)); }
+                    rows[Slots.RowMisc] = Fill(Vector4.zero);
+                    Look(v, o, child, fxName);
+                    v[Slots.Time].w = BitConverter.Int32BitsToSingle((int)(uint)flags);
+                    Emitters.AddRange(v);
+                    foreach (var rr in rows) LutRows.Add(rr);
+                    Emission.Add(new EmitterEmission
+                    {
+                        Duration = 1, Loop = false, Bursts = new[] { new Burst { Time = 0, CountMin = 1, CountMax = 1, Cycles = 1, Probability = 1 } },
+                        MaxParticles = 1, LifeMax = 1, SeedEmitter = Emission.Count,
+                    });
+                    return 1;
+                }
+                int added = Add(false);
+                if (F("head", 0f) > 0) added += Add(true);
+                Notes.Add($"{fxName}/{child}: light streak, {F("size", 0.15f):F2} m wide, {F("trail", 0.08f):F2} s of travel long");
+                return added;
+            }
+
+            Texture2D _streak;
+
+            /// <summary>The streak's light: brightest at its head (u 1), fading along its tail, soft across (white, in alpha).</summary>
+            Texture2D StreakTexture()
+            {
+                if (_streak != null) return _streak;
+                const int n = 64;
+                _streak = new Texture2D(n, n, TextureFormat.RGBA32, false, false) { name = "streak (look)", wrapMode = TextureWrapMode.Clamp };
+                var px = new Color32[n * n];
+                for (int y = 0; y < n; y++)
+                    for (int x = 0; x < n; x++)
+                    {
+                        float u = (x + 0.5f) / n, across = ((y + 0.5f) / n - 0.5f) * 2f;
+                        float a = Mathf.Pow(u, 1.6f) * Mathf.Clamp01((1 - u) * 14f) * Mathf.Exp(-across * across * 5f) * Mathf.Clamp01((1 - Mathf.Abs(across)) * 6f);
+                        px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255));
+                    }
+                _streak.SetPixels32(px);
+                _streak.Apply(false, false);
+                return _streak;
             }
 
             /// <summary>The selection's look on one emitter: its HDR colour scale and its heat ramp.</summary>

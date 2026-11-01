@@ -93,7 +93,25 @@ Shader "PS/Look/EffectParticles"
             float3 camPos = _EffCamPos.xyz;
             float3 world;
             float2 uv;
-            if (mode == RM_MESH)
+            if (mode == RM_MESH && (flags & F_ARC))
+            {
+                // A procedural arc (tech-demo-3d/effects.md, Procedural arcs): the shared strip mesh's
+                // (along, across) bent round the spawn's origin, from the inner edge (across 0) to the
+                // outer at the particle's size; its middle at the centre angle (clockwise from +z, seen
+                // from above), sweeping clockwise, then tilted about its middle's direction.
+                uint v = _MeshFirst + vid;
+                float2 sa = _MeshVerts[v * 3].xy;
+                float4 a0 = EM(e, S_ARC0);
+                float theta = a0.y + (sa.x - 0.5) * a0.x;
+                float3 pt = float3(sin(theta), 0, cos(theta)) * (1 - a0.z * (1 - sa.y));
+                float3 axis = float3(sin(a0.y), 0, cos(a0.y));
+                float st, ct;
+                sincos(a0.w, st, ct);
+                pt = pt * ct + cross(axis, pt) * st + axis * dot(axis, pt) * (1 - ct);
+                world = center + RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, pt * size.x)));
+                uv = sa;
+            }
+            else if (mode == RM_MESH)
             {
                 uint v = _MeshFirst + vid;
                 float4 a = _MeshVerts[v * 3], b = _MeshVerts[v * 3 + 1], c = _MeshVerts[v * 3 + 2];
@@ -158,7 +176,8 @@ Shader "PS/Look/EffectParticles"
             }
             float4 m1 = EM(e, S_MAT1), m2 = EM(e, S_MAT2), m0 = EM(e, S_MAT0);
             float age = p.posAge.w;
-            float2 noiseUv = uv + m2.xy * age;
+            // An arc's light reads its own life where the noise mask's uv would be.
+            float2 noiseUv = (flags & F_ARC) ? float2(t, 0) : uv + m2.xy * age;
             uv += m2.zw * age;
             float custom = 0;
             if (flags & F_CUSTOM) custom = Lut(e, R_CUSTOM, t).x;
@@ -188,12 +207,32 @@ Shader "PS/Look/EffectParticles"
             return hue * (l / max(dot(hue, lum), 1e-4));
         }
 
+        // A procedural arc's light (tech-demo-3d/effects.md, Procedural arcs), white, for the heat ramp to
+        // colour: the head sweeps the arc (uv.x, 0 to 1) in the first share of the life (ease out), the
+        // light trailing behind it and fading over the tail's share of the arc, the ribbon narrowing
+        // toward the tail; across it (uv.y, 1 at the outer edge) a thin core just inside the edge, at
+        // the core's gain, over a soft body falling off toward the inner edge by the softness.
+        float ArcLight(uint e, float2 uv, float t)
+        {
+            float4 a1 = EM(e, S_ARC1);
+            float head = a1.x > 0 ? 1 - (1 - saturate(t / a1.x)) * (1 - saturate(t / a1.x)) : 1;
+            float d = head - uv.x;
+            float trail = d < 0 ? saturate(1 + d * 40) : exp(-d / max(a1.y, 1e-3));
+            float x = (1 - uv.y) / lerp(0.3, 1, trail);
+            float body = pow(saturate(1 - x), a1.w);
+            float core = exp(-abs(x - 0.1) * 22);
+            // An arc's ends soften; a ring's (a full turn or more) meet, or lie under its own light.
+            float ends = EM(e, S_ARC0).x >= 6.283 ? 1 : saturate(uv.x * 20) * saturate((1 - uv.x) * 20);
+            return trail * ends * saturate(x * 14) * (body + core * a1.z);
+        }
+
         float4 Frag(Varyings i) : SV_Target
         {
             uint e = i.info.x;
-            float4 c = SAMPLE_TEXTURE2D_ARRAY(_Textures, sampler_Textures, i.uv.xy, i.info.y);
+            float4 c = (i.info.w & F_ARC) ? float4(ArcLight(e, i.uv.xy, i.uv.z).xxx, 1)
+                : SAMPLE_TEXTURE2D_ARRAY(_Textures, sampler_Textures, i.uv.xy, i.info.y);
             float second = EM(e, S_MAT1).w;
-            if (second > 0.5)
+            if (second > 0.5) // never an arc's: arcs have no texture or mask
             {
                 // Sword slashes: the shape texture times a second texture over the mesh's UVs, and a
                 // scrolling noise mask (observed inputs; the vendor graph's exact mix isn't reproduced).

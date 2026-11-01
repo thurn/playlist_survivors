@@ -4,7 +4,7 @@
 #ifndef DEMO3D_EFFECT_COMMON
 #define DEMO3D_EFFECT_COMMON
 
-#define EMITTER_STRIDE 28
+#define EMITTER_STRIDE 30
 #define LUT_ROWS 14
 #define LUT_WIDTH 64
 
@@ -36,6 +36,8 @@
 #define S_ORBITAL 25
 #define S_HEAT0 26
 #define S_HEAT1 27
+#define S_ARC0 28
+#define S_ARC1 29
 
 #define R_COLOR 0
 #define R_COLOR2 1
@@ -83,6 +85,7 @@
 #define F_SHEETROW (1u << 28)
 #define F_ORBITAL (1u << 29)
 #define F_ROTAXES (1u << 30)
+#define F_ARC (1u << 31)
 
 #define RM_BILLBOARD 0
 #define RM_STRETCH 1

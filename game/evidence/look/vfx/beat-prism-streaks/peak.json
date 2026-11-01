@@ -1,0 +1,278 @@
+{
+  "ok": true,
+  "frames": 2399,
+  "span": [
+    0.0333,
+    40.0
+  ],
+  "moments": 14317,
+  "off_frame": 0,
+  "kinds_never_shown": [
+    "CardFlip"
+  ],
+  "unshown": {},
+  "kinds": {
+    "HeroPress": {
+      "checked": 57,
+      "on": 57,
+      "late": 0,
+      "early": 0,
+      "events": 57
+    },
+    "HeroStride": {
+      "checked": 54,
+      "on": 54,
+      "late": 0,
+      "early": 0,
+      "events": 54
+    },
+    "HeroLand": {
+      "checked": 111,
+      "on": 111,
+      "late": 0,
+      "early": 0,
+      "events": 111
+    },
+    "Blade": {
+      "checked": 109,
+      "on": 109,
+      "late": 0,
+      "early": 0,
+      "events": 109
+    },
+    "Footfall": {
+      "checked": 5627,
+      "on": 5627,
+      "late": 0,
+      "early": 0,
+      "events": 6637
+    },
+    "Death": {
+      "checked": 652,
+      "on": 652,
+      "late": 0,
+      "early": 0,
+      "events": 652
+    },
+    "Break": {
+      "checked": 11,
+      "on": 11,
+      "late": 0,
+      "early": 0,
+      "events": 11
+    },
+    "Regrow": {
+      "checked": 4,
+      "on": 4,
+      "late": 0,
+      "early": 0,
+      "events": 4
+    },
+    "Effect": {
+      "checked": 7311,
+      "on": 7311,
+      "late": 0,
+      "early": 0,
+      "by_effect": {
+        "garlic-pulse": 31,
+        "prism-cast": 247,
+        "prism-hit": 3329,
+        "prism-slam": 1,
+        "prism-slash": 109,
+        "streak-burst": 652,
+        "streak-flash": 2910,
+        "strike-sparks": 12,
+        "structure-burst": 20
+      },
+      "off_by_effect": {}
+    },
+    "GemRing": {
+      "checked": 47,
+      "on": 47,
+      "late": 0,
+      "early": 0,
+      "events": 76
+    },
+    "CardFlip": {
+      "checked": 0,
+      "on": 0,
+      "late": 0,
+      "early": 0
+    },
+    "Impulse": {
+      "checked": 334,
+      "on": 334,
+      "late": 0,
+      "early": 0,
+      "by_effect": {
+        "Blow": 109,
+        "Death": 218,
+        "Shatter": 7
+      },
+      "off_by_effect": {}
+    }
+  },
+  "settled_ahead": {
+    "Attack": {
+      "n": 230,
+      "min_ms": 68.33,
+      "median_ms": 330.0,
+      "past_their_frame": 0
+    },
+    "Beat": {
+      "n": 76,
+      "min_ms": 70.0,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "BeatState": {
+      "n": 9,
+      "min_ms": 70.0,
+      "median_ms": 80.33,
+      "past_their_frame": 0
+    },
+    "Bolt": {
+      "n": 12,
+      "min_ms": 69.17,
+      "median_ms": 73.33,
+      "past_their_frame": 0
+    },
+    "Cleave": {
+      "n": 1,
+      "min_ms": 83.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "Death": {
+      "n": 652,
+      "min_ms": 66.67,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Drop": {
+      "n": 638,
+      "min_ms": 66.67,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "EnemyKnock": {
+      "n": 1675,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "EnemyStep": {
+      "n": 6637,
+      "min_ms": 166.67,
+      "median_ms": 173.33,
+      "past_their_frame": 0
+    },
+    "Finale": {
+      "n": 1,
+      "min_ms": 80.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "GemFlight": {
+      "n": 307,
+      "min_ms": 75.0,
+      "median_ms": 75.0,
+      "past_their_frame": 0
+    },
+    "Glint": {
+      "n": 95,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "HeroStep": {
+      "n": 111,
+      "min_ms": 66.67,
+      "median_ms": 66.67,
+      "past_their_frame": 0
+    },
+    "Hit": {
+      "n": 3633,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Leave": {
+      "n": 171,
+      "min_ms": 70.0,
+      "median_ms": 70.0,
+      "past_their_frame": 0
+    },
+    "Orbit": {
+      "n": 5,
+      "min_ms": 70.0,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Pickup": {
+      "n": 307,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Projectile": {
+      "n": 912,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Regrowth": {
+      "n": 4,
+      "min_ms": 83.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "RunEnd": {
+      "n": 1,
+      "min_ms": 80.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "RunStart": {
+      "n": 1,
+      "min_ms": 83.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "SetPiece": {
+      "n": 4,
+      "min_ms": 70.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Spawn": {
+      "n": 1144,
+      "min_ms": 70.0,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "StrideStep": {
+      "n": 151,
+      "min_ms": 68.33,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "StructureBreak": {
+      "n": 11,
+      "min_ms": 66.67,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "ZoneChange": {
+      "n": 1,
+      "min_ms": 83.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    }
+  },
+  "file": "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+  "seconds": 40.0,
+  "player_args": "--start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,break@18,regrow@24,finale@32 --look prism",
+  "backend": "il2cpp",
+  "sounds": false
+}
