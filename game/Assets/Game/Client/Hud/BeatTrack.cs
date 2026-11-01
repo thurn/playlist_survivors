@@ -50,7 +50,8 @@ namespace Game.Client.Hud
             return a;
         }
 
-        public void Show(BeliefLog log, BeatClock clock, double s, in HeardBeat beat, bool locked)
+        /// <param name="since">The periods since the latest beat (1 or more: none to pulse for).</param>
+        public void Show(BeliefLog log, BeatClock clock, double s, in HeardBeat beat, bool locked, double since)
         {
             int used = 0;
             if (locked)
@@ -88,7 +89,6 @@ namespace Game.Client.Hud
                 }
             }
             for (int i = used; i < _pool.Count; i++) _pool[i].style.display = DisplayStyle.None;
-            double since = beat.Has ? (s - beat.LastT) / Math.Max(1e-6, beat.Period) : 1;
             float pulse = locked ? Mathf.Exp(-6 * Mathf.Clamp01((float)since)) : 0;
             float scale = 1 + 0.43f * pulse;
             _heart.style.scale = new Scale(new Vector3(scale, scale, 1));

@@ -792,6 +792,10 @@ needed   = frontier - B                  // the latest stamp the frame may take
   minutes of song took 4 minutes, its 30-minute session's replay 1 minute
   and a still at 25:00 of run clock 4 minutes
   ([game/evidence/full-run](../../game/evidence/full-run/README.md#retaking-it-quickly-ps-msz75)).
+- **A frame shows its song time and a microsecond** (`FrameClock.Reached`,
+  ps-msz.8.5): Unity's frame time, a sum of 1/60 steps, falls a rounding
+  short of the sim's tick at the same time for most frames, which showed the
+  moments timed on that tick a frame late. The frontier is the frame's own.
 - **An app's music can't be driven**: it arrives in real time, so `--app`
   under `--fixed-time` keeps the audio thread's render position.
 - **`--seconds N` counts song seconds** under `--fixed-time` (Unity's frame
@@ -853,11 +857,14 @@ happened and the lead never delays the hero.
 ```text
 press (direction d, heard time h), processed at the sim's current time F:
   s = the latest stride step at or before h + 0.11   // one the stride would still be on is its
-  if a press already strode for s:  queue d for the first step after F no press took
+  if a press already strode for s, and d repeats it or that stride is still drawing:
+                                    queue d for the first step after F no press took
   else:                             stride now: the tile changes at F, drawn from h
+                                    (the held stride on s, if it hadn't set off by h, gives way)
 held keys, on a stride step t that no press took:
   judged once every key heard before t is in: at the next key change heard after t,
-  or the latest key's lead (F - h) after t; stride with the keys held then, drawn from t
+  or the longest lead (F - h) of the last 16 keys after t; stride with the keys held then,
+  drawn from t
 the session records (h, F); a replay applies the press at F
 F is the previous frame's frontier: steps before F are already simulated
 ```
@@ -877,9 +884,11 @@ Up held, Right pressed (Up released) heard at 10.22, taken at 10.31: the sim pas
   the next step that may stride.
 - A press takes the step whose stride it would overlap, so a hold's first
   repeat is on the step after.
-- One press stride per step: a second press for the same step waits for
-  the next step no press took. Mashing stays at the grid's pace, and the
-  last press wins.
+- One press stride per step and direction: a second press for the same step
+  waits for the next step no press took, unless it turns (goes another way)
+  once the first press's stride has drawn (110 ms), when it strides at once:
+  a quick L moves twice, as in native's classic mode. Mashing one key, or
+  faster than a stride, stays at the grid's pace, and the last press wins.
 - A tap released before the next step is heard never strides on it, however
   long the lead, and a turn heard before a step turns on it.
 - The hero's tile changes when the sim takes a move, up to the lead after it
@@ -888,14 +897,36 @@ Up held, Right pressed (Up released) heard at 10.22, taken at 10.31: the sim pas
   already fired from the old tile.
 - Held keys stride on every step a press hasn't taken. The last-pressed held
   direction wins.
-- The lead a held stride waits is the latest key's. A key change heard just
-  before a step but arriving later than that is judged without, so it lands
-  a step late: the lead's jitter, a frame at most.
+- The lead a held stride waits is the longest of the last 16 keys'. A key's
+  lag runs up to a frame short of the lead with where in its frame it fell,
+  and waiting only the latest key's let a key change heard just before a
+  step, arriving a little later than the key before it, find the step judged
+  without it. The longest of recent keys is the lead, give or take a
+  sub-frame. A press heard before the held stride on its step set off takes
+  that stride's place, the hero striding from where it stood at h, so a turn
+  never hops diagonally over both. A key heard at a step's own time counts
+  for it.
+- So a held stride reaches the client about a display latency (a refresh)
+  after its step and draws from there, as an on-time step does whose start
+  fell just after the frame before: its takeoff is at most a frame behind
+  the beat. No frame can show a step on time and also know every key heard
+  in the refresh before it.
 - A press made while the world is frozen never strides after it, as in
   native.
 - Space stomps (stands still) at once, as a press.
 - Keys come from Unity's Input System with their event timestamps, mapped by
   `keySong`.
+
+**Shipped (ps-msz.8.5).** Measured against native's classic mode (a tap moves
+one tile on its key-down frame, a turn turns at once) by Game.Sim's
+LateStepTests: taps, turns, rollovers and double taps at 48 phases of the
+step, on a 90 ms and a 250 ms lead, at 100, 128 and 170 BPM, the keys reaching
+the sim at frame starts. Taps were already right. A turn hopped diagonally in
+1 to 3 phases of 96 (the latest key's lag), and a quick second tap the other
+way waited up to a step (468 ms on Bluetooth) in half the phases (one press
+stride per step); both now answer at once everywhere, by the longest-lag wait,
+the press taking a held stride's place, and the turning second press above.
+Numbers: game/evidence/beat.
 
 ### Attacks and steps land on the beat
 
@@ -928,6 +959,9 @@ time. It is never started late; a sound that can't make its time is dropped.
   next sixteenth, gem chimes on the grid, climbing a pentatonic scale.
 - **Stream-driven sounds and presentation**, such as drop build-ups, read the
   stream directly and may anticipate by up to the lookahead.
+- Every sound is asked for from its event as it settles, never from a
+  presenter's frame, which is already past its time (ps-msz.8.5: a regrowth's
+  eruption sound was, and dropped).
 
 ### Calibration
 
@@ -2703,6 +2737,28 @@ run's freezes take 250 to 320 s of song time (up to 640 s before ps-msz.6.14's b
 the reversed order starts 182 s in, needing 2280 s of one pass's 2294. A pass over committed inputs
 is stamped by their hash and skipped after. Evidence: game/evidence/sweeps (all four win, none
 below 86% health; the idle bot falls at 2:06).
+
+**Shipped (ps-msz.8.5): the on-the-beat audit.** `game beat NAME --file F`
+(demo3d/tools beat.py) runs the player windowless at fixed time with
+`--moments-out` (Client/Loop/Moments.cs: each presenter marks a key moment on
+the frame it first shows it, with its song time) and `--events-out` (every sim
+event with the frameSong it settled at), and checks that every moment is on
+the first frame at or after its time: the hero's hops setting off and landing,
+the blade's flare, footfalls, deaths, breaks and regrowths, every particle
+effect as the GPU emits it, the beat gem's ring and the cards' flips; that
+each event settled before its moment's frame; and counts them against the
+sim's events. `--sounds` runs it in real time, headless, with the sound probe:
+every sound on its event's song time (but those snapped to the grid by design)
+and its anchor's DSP time, each probe click on the music in Unity's mix, and
+the lead at output latency plus margin. At the peak (minute 25, three
+evolutions, a break, a regrowth, the finale) and over the run's first 87 s,
+every one of 10,584 and 5,275 moments is on its frame, and 888 sounds are on
+their events with the lead at 90.3 ms. It found moments a frame late from
+fixed time's rounding (Fixed Time above), the weapons' and chests' effects a
+frame late (the effects now present after the views that ask for them as they
+present), the gem's ring landing when the beat locked after the beat (a beat
+before the lock no longer lands) and the regrowth's dropped sound. Slow CI
+runs a 20 s peak on house-128 (`game beat ci`). Evidence: game/evidence/beat.
 
 ## Build Order
 

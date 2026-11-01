@@ -12,7 +12,8 @@ namespace Game.Client.Sound
     /// - **impact sounds** at the impact's song time: the sword's swing (heavy, or the slam), its
     ///   hits on enemies (heavy strikes and cleave bands too), and each death's cry under demo3d's
     ///   crystal shatter (ShatterSounds: an ice break and a glass spray, then a tinkle as the shards
-    ///   land, pitched by the body's size); a structure's break shatters the same way, lower;
+    ///   land, pitched by the body's size); a structure's break shatters the same way, lower, and so
+    ///   does its regrowth's eruption, at its start;
     /// - the other weapons' sounds come from their own views (<see cref="Request"/>), and a weapon that
     ///   sounds its own hits says so (<see cref="VoiceHitsElsewhere"/>);
     /// - **off-grid sounds** snapped as native snaps them: the hero's hurt on the next sixteenth, and
@@ -93,6 +94,15 @@ namespace Game.Client.Sound
                     var structures = _sim.State.Structures;
                     bool large = b.Structure >= 0 && b.Structure < structures.Length && structures[b.Structure].Large;
                     Shatter(e.T, large ? 4f : 2.5f, (uint)b.Structure * 0x9E3779B1u ^ (uint)(e.T * 1000));
+                    break;
+                }
+                case SimEventKind.Regrowth:
+                {
+                    // Scheduled as it settles, a lead ahead: the eruption's frame is already past its time (ps-msz.8.5).
+                    var r = e.AsRegrowth;
+                    var structures = _sim.State.Structures;
+                    bool large = r.Structure >= 0 && r.Structure < structures.Length && structures[r.Structure].Large;
+                    Shatter(r.Start, large ? 4f : 2.5f, (uint)r.Structure * 0x9E3779B1u ^ (uint)(r.Start * 1000));
                     break;
                 }
                 case SimEventKind.Pickup:

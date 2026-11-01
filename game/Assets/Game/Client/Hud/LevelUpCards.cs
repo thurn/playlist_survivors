@@ -29,6 +29,7 @@ namespace Game.Client.Hud
         readonly VisualElement[] _cards = new VisualElement[3], _faces = new VisualElement[3], _backs = new VisualElement[3];
         Offer _shown;
         int _serial = -1, _selected = -1;
+        int _flipsMarked; // the cards whose flip has come to rest in the on-the-beat trace (Moments), a bit each
         double _opened = double.NaN, _closed = double.NaN, _chosenAt = double.NegativeInfinity;
         // The latest offer's opening and its confirmation, from the events (song times).
         int _eventOffer = -1;
@@ -106,6 +107,11 @@ namespace Game.Client.Hud
                 _faces[k].style.display = face ? DisplayStyle.Flex : DisplayStyle.None;
                 _backs[k].style.display = face ? DisplayStyle.None : DisplayStyle.Flex;
                 card.EnableInClassList("card--selected", selected);
+                if (Moments.On && (_flipsMarked & 1 << k) == 0 && s + 1e-9 >= _shown.Reveal(k))
+                {
+                    _flipsMarked |= 1 << k;
+                    Moments.Mark(MomentKind.CardFlip, _shown.Reveal(k), _serial * 3 + k);
+                }
             }
             _hint.text = s + 1e-9 >= _shown.Reveal2 ? "LEFT / UP / RIGHT CHOOSE   ·   SPACE OR ENTER TAKES IT" : "CHOOSE AFTER THE THIRD BEAT";
         }
@@ -141,6 +147,7 @@ namespace Game.Client.Hud
         {
             _serial = offer.Serial;
             _selected = offer.Selected;
+            _flipsMarked = 0;
             _chosenAt = double.NegativeInfinity;
             _opened = _eventOffer == offer.Serial ? _eventOpened : double.NaN;
             _heading.text = "LEVEL UP";

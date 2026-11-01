@@ -108,6 +108,7 @@ namespace Game.Client.Loop
             frame.AtFrontier = !History.Sample(times.FrameSong, out frame.State);
             if (frame.AtFrontier) FramesAtFrontier++;
             Presented = frame;
+            Moments.Frame(Frames, frame.Song);
             Events.Present(frame);
             Frames++;
             FrameMs = Ms(Stopwatch.GetTimestamp() - start);

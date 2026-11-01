@@ -81,7 +81,10 @@ namespace Game.Client.Loop
     /// - `--headless` (or Unity's batch mode): silences the output and paces frames at 60 per second. (Unity's player
     ///   also takes it as -nographics, so stills can't use it: they run under --fixed-time.)
     /// - `--loop-out FILE`: writes each frame's times, the sim's hash, the hero and the enemies alive, as CSV;
-    /// - `--events-out FILE`: writes each sim event as it settles (kind, time, its first ints), as CSV;
+    /// - `--events-out FILE`: writes each sim event as it settles (kind, time, its first ints, its moment and the frame's
+    ///   frameSong), as CSV;
+    /// - `--moments-out FILE`: each key moment the presenters show, on the frame they first show it (<see cref="Moments"/>),
+    ///   for the on-the-beat audit (`game beat`);
     /// - `--no-arena`: the placeholder's plane instead of the baked arena (which a build has unless
     ///   its bake failed), `--palette NAME` the arena's zone palette;
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
@@ -238,6 +241,7 @@ namespace Game.Client.Loop
             Driver = new SimDriver(config, clock);
             if (replayed != null) Driver.Replay = _replay = new SessionReplay(replayed);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(events);
+            if (options.Outputs.Moments != null) Moments.Open(options.Outputs.Moments);
             _keys = new KeyInput();
             _pause = new PauseMenu(transform);
             _pauseAt = options.Scripted.PauseAt;
@@ -288,7 +292,6 @@ namespace Game.Client.Loop
             {
                 _effects = new EffectsPresenter(camera, library, roles);
                 _effects.Cues.SlashTint = w => weapons.Of(w) == WeaponLooks.Family.Sword && weapons.Evolved(w) ? WeaponLooks.Tear : default;
-                Driver.Events.Subscribe(_effects);
             }
             SetupSound(roles);
             if (content != null)
@@ -314,6 +317,10 @@ namespace Game.Client.Loop
                     Driver.Events.Subscribe(_evolutions);
                 }
             }
+            // The effects present after every view that asks for effects as it presents (a cast due this frame, the
+            // garlic's motes, a chest's burst), so each is emitted on the frame that reaches its time, not the next
+            // (ps-msz.8.5).
+            if (_effects != null) Driver.Events.Subscribe(_effects);
             if (_shatter != null) _shatter.Erupted += Erupted;
             _hud = new HudPresenter(transform, camera, Driver.Sim, content, source, _interactive) { Menu = _pause };
             if (_hero != null) _hud.DrawnHero = _hero.Drawn;
@@ -343,13 +350,10 @@ namespace Game.Client.Loop
 
         /// <summary>
         /// A regrowth erupting: the effects' structure burst thrown up from its footprint, half its height
-        /// up, and the crystal shatter's sound, pitched by its size as a break's (2.5 small, 4 large).
+        /// up. Its sound is the sound presenter's, scheduled from the Regrowth event a lead ahead.
         /// </summary>
-        void Erupted(double t, int site, Vector3 centre, float sizeM, Color tint)
-        {
+        void Erupted(double t, int site, Vector3 centre, float sizeM, Color tint) =>
             _effects?.Cues.Burst(t, centre + Vector3.up * 0.5f, Vector2.zero, Mathf.Clamp(sizeM / 3f, 0.8f, 1.5f), tint);
-            _soundPresenter?.Shatter(t, sizeM > 3.5f ? 4f : 2.5f, (uint)site * 0x9E3779B1u ^ (uint)(t * 1000));
-        }
 
         /// <summary>The sounds on their own voices (a filter's callback serves one source: not the music's object).</summary>
         void SetupSound(RoleLooks roles)
@@ -678,6 +682,7 @@ namespace Game.Client.Loop
             _telemetry?.Dispose();
             _probe?.Dispose();
             _profile?.Dispose();
+            Moments.Close();
         }
 
         /// <summary>

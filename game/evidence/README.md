@@ -80,3 +80,6 @@ what was run (the exact commands), the numbers, and what they show.
 - [perf](perf/README.md): the run's performance baseline on the Mac from `game perf`: the windowless frame probe and
   the CPU frame profile at the peak, a structure break, the finale's mass kill, the run's first minute and the
   30-minute fixed-time run (ps-msz.8.2).
+- [beat](beat/README.md): the on-the-beat audit, every key moment on the first frame at or after its song time at the
+  run's peak and over an early stretch, and every sound on its event's song time, with the late moments it found
+  fixed (before and after filmstrips); and the key rules' late steps measured in .NET and tuned (ps-msz.8.5).

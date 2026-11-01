@@ -47,6 +47,8 @@ namespace Game.Client.Music
             public int stalls, state, failed, gaps, overflowed, rendered;
             public string error;
             public double[] clickSong, clickDsp;
+            /// <summary>Each sound's category (sounds.json's name), for the game's sounds; empty for the spike's clicks.</summary>
+            public string[] clickKind;
             public double[] bufferTick, bufferDsp;
             public FrameRow[] frames;
         }
@@ -136,16 +138,17 @@ namespace Game.Client.Music
                 songs[i] = log.Array[i].Song;
                 dsps[i] = log.Array[i].Dsp;
             }
-            Write(_out, _music, _capture, songs, dsps, _frames.ToArray(), error);
+            Write(_out, _music, _capture, songs, dsps, null, _frames.ToArray(), error);
         }
 
         /// <summary>
         /// Keeps a measured run in <paramref name="dir"/> for `game spike`: Unity's mix (mix.wav) and
         /// spike.json, with the sounds scheduled (each one's song time, and the DSP time it was
-        /// scheduled to sound at, NaN if dropped), the audio buffers and the frames.
+        /// scheduled to sound at, NaN if dropped, and its category when <paramref name="kinds"/> names them), the
+        /// audio buffers and the frames.
         /// </summary>
         public static void Write(string dir, MusicPlayer music, MixCapture capture, double[] songs, double[] dsps,
-            FrameRow[] frames, string error)
+            string[] kinds, FrameRow[] frames, string error)
         {
             Directory.CreateDirectory(dir);
             var s = music.Status;
@@ -172,6 +175,7 @@ namespace Game.Client.Music
                 error = error ?? "",
                 clickSong = songs,
                 clickDsp = dsps,
+                clickKind = kinds ?? Array.Empty<string>(),
                 bufferTick = new double[capture.Buffers],
                 bufferDsp = capture.BufferDsp.ToArray(),
                 frames = frames,

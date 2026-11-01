@@ -1,4 +1,5 @@
 using System;
+using Game.Client.Loop;
 
 namespace Game.Client.Crowd
 {
@@ -119,6 +120,7 @@ namespace Game.Client.Crowd
             public float Speed, Phase;      // the clip's speed; a step's starting phase in the walk
             public double DirX, DirY;       // a lunge's direction
             public float YawFrom, YawTo;    // the facing it turns through, over Start..Impact
+            public bool Marked;             // a step's footplant is in the on-the-beat trace (Moments)
         }
 
         readonly Move[] _moves = new Move[Moves];
@@ -292,6 +294,11 @@ namespace Game.Client.Crowd
             }
 
             ref var a = ref _actions[active];
+            if (Moments.On && !a.Marked && (a.Kind == Kind.Step || a.Kind == Kind.Charge) && t >= a.Impact)
+            {
+                a.Marked = true;
+                Moments.Mark(MomentKind.Footfall, a.Impact, Serial);
+            }
             pose.Yaw = LerpAngle(a.YawFrom, a.YawTo, Ramp(t, a.Start, a.Impact));
             pose.HitFlash = HitFlash(t);
             if (a.Kind == Kind.Lunge)

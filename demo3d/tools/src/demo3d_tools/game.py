@@ -22,6 +22,10 @@ passes), into readability.json beside the stills; it exits 1 if a still fails.
 `game spike NAME --file F`: the sync spike's headless File run, measured from Unity's own mix
 (spike.py).
 
+`game beat NAME --file F [--sounds]`: the on-the-beat audit, every key moment on the first frame at
+or after its song time at fixed time, or every sound on its event's song time on a real-time run
+(beat.py).
+
 `game replay SESSION [--player]`: a recorded session (docs/design/unity-game.md, Sessions and
 Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Replay), or with
 `--player` in the built player, batch mode, `--headless` and `--fixed-time`, which plays its recorded
@@ -95,10 +99,11 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
     pl.set_defaults(func=_cmd_plugin)
 
-    from . import botsweep, content, perf, spike
+    from . import beat, botsweep, content, perf, spike
 
     content.add_parser(sub)
     spike.add_parser(sub)
+    beat.add_parser(sub)
     botsweep.add_parser(sub)
     perf.add_parser(sub)
 

@@ -42,6 +42,7 @@ namespace Game.Client.Sound
 
         public struct Entry
         {
+            public SoundKind Kind;
             public double Song;
             public double Dsp; // the voice's start; NaN: dropped
         }
@@ -146,7 +147,7 @@ namespace Game.Client.Sound
             if (clip == null || !_clock.TryDspAt(cue.Song - lead, out double dsp))
             {
                 Dropped++;
-                Keep(cue.Song, double.NaN);
+                Keep(cue, double.NaN);
                 return -1;
             }
             int v = FreeVoice();
@@ -162,7 +163,7 @@ namespace Game.Client.Sound
             _end[v] = dsp + clip.length / pitch;
             _generation[v]++;
             Scheduled++;
-            Keep(cue.Song, dsp + lead);
+            Keep(cue, dsp + lead);
             return v | (_generation[v] << 8);
         }
 
@@ -198,9 +199,9 @@ namespace Game.Client.Sound
             return oldest;
         }
 
-        void Keep(double song, double dsp)
+        void Keep(in SoundCue cue, double dsp)
         {
-            if (LogCount < _log.Length) _log[LogCount++] = new Entry { Song = song, Dsp = dsp };
+            if (LogCount < _log.Length) _log[LogCount++] = new Entry { Kind = cue.Kind, Song = cue.Song, Dsp = dsp };
         }
     }
 }

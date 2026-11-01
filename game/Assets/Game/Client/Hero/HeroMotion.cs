@@ -1,4 +1,5 @@
 using System;
+using Game.Client.Loop;
 using PS.Game.Sim;
 
 namespace Game.Client.Hero
@@ -75,7 +76,7 @@ namespace Game.Client.Hero
         struct Step
         {
             public double FromX, FromY, ToX, ToY, Start, End;
-            public bool Bump, Stomp;
+            public bool Bump, Stomp, Pressed;
             public Direction Facing;
             public int Foot;
         }
@@ -94,6 +95,9 @@ namespace Game.Client.Hero
         readonly Step[] _steps = new Step[Keep];
         readonly Swing[] _swings = new Swing[Keep];
         int _stepCount, _swingCount;
+        // The latest step whose start and landing, and the latest impact whose flare, the trace has (Moments).
+        int _startMarked = -1, _landMarked = -1;
+        double _flareMarked = double.NegativeInfinity;
 
         public HeroMotion(HeroClips clips) { _clips = clips; }
 
@@ -108,7 +112,7 @@ namespace Game.Client.Hero
             _steps[_stepCount % Keep] = new Step
             {
                 FromX = e.FromX, FromY = e.FromY, ToX = e.ToX, ToY = e.ToY, Start = e.Start, End = e.End,
-                Bump = e.Bump, Stomp = e.Stomp, Facing = e.Facing, Foot = _stepCount & 1,
+                Bump = e.Bump, Stomp = e.Stomp, Pressed = e.Pressed, Facing = e.Facing, Foot = _stepCount & 1,
             };
             _stepCount++;
         }
@@ -159,6 +163,39 @@ namespace Game.Client.Hero
             Legs(t, ref p);
             Swings(t, ref p);
             return p;
+        }
+
+        /// <summary>
+        /// The moments the pose at song time t first shows, into the on-the-beat trace (<see cref="Moments"/>): the
+        /// latest step setting off and touching down (one the next cuts short never lands), and the blade's flare
+        /// on the latest impact.
+        /// </summary>
+        public void MarkMoments(double t)
+        {
+            int k = Latest(_steps, _stepCount, t, (in Step s) => s.Start);
+            if (k >= 0)
+            {
+                var s = _steps[k % Keep];
+                if (k > _startMarked)
+                {
+                    _startMarked = k;
+                    if (!s.Stomp) Moments.Mark(s.Pressed ? MomentKind.HeroPress : MomentKind.HeroStride, s.Start, k);
+                }
+                if (k > _landMarked && t >= s.End && !s.Stomp)
+                {
+                    _landMarked = k;
+                    Moments.Mark(MomentKind.HeroLand, s.End, k);
+                }
+            }
+            for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
+            {
+                var s = _swings[i % Keep];
+                if (s.Impact <= t + Reached && s.Impact > _flareMarked)
+                {
+                    _flareMarked = s.Impact;
+                    Moments.Mark(MomentKind.Blade, s.Impact, i);
+                }
+            }
         }
 
         void Legs(double t, ref HeroPose p)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Client.Loop;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -193,6 +194,7 @@ namespace Game.Client.Effects
             float scale = s.Scale / Mathf.Max(1e-4f, fx.ScaleRef);
             // A spawn is rejected whole: all its emitter instances fit this frame's list, or none go.
             if (_frameCount + fx.EmitterCount > MaxFrameInstances) { Rejections.AddCpu(1, _excuseFrame); return; }
+            if (Moments.On) _marks.Add((s.Time, s.Effect));
             int leader = _frameCount;
             for (int k = 0; k < fx.EmitterCount; k++)
             {
@@ -222,6 +224,8 @@ namespace Game.Client.Effects
         }
 
         readonly Vector4[] _seg = new Vector4[4];
+        // The spawns queued for the next Update, for the on-the-beat trace (Moments): their times and effects.
+        readonly List<(double t, int effect)> _marks = new List<(double, int)>();
 
         /// <summary>
         /// The emitter's particle count for one spawn and its emission segments: (first particle,
@@ -280,6 +284,8 @@ namespace Game.Client.Effects
         public void Update(double now, float dt, Camera camera)
         {
             Lights.Update(now, camera);
+            foreach (var (t, effect) in _marks) Moments.Mark(MomentKind.Effect, t, effect, Library.Effects[effect].Name);
+            _marks.Clear();
             _frameInstCount = _frameCount;
             if (_pendingCount > 0)
             {

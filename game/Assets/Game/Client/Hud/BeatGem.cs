@@ -1,4 +1,5 @@
 using System;
+using Game.Client.Loop;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -37,6 +38,7 @@ namespace Game.Client.Hud
         readonly Material _over, _ground;
         readonly Mesh _quad;
         readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
+        int _ringMarked = -1; // the latest beat whose landed ring is in the on-the-beat trace (Moments)
 
         public BeatGem(Camera camera)
         {
@@ -57,10 +59,11 @@ namespace Game.Client.Hud
         }
 
         /// <param name="feet">The hero's feet as drawn.</param>
+        /// <param name="since">The periods since the latest beat (1 or more for a beat the lock came after: it never lands).</param>
         /// <param name="hit">The beat's hit, 1 on a reliable beat decaying over it (0 without one).</param>
         /// <param name="health">The hero's health, 0 to 1.</param>
         /// <param name="fade">The whole display's strength, 0 to 1.</param>
-        public void Present(double s, Vector3 feet, in HeardBeat beat, bool locked, double hit, double health, bool bitten, float fade)
+        public void Present(double s, Vector3 feet, in HeardBeat beat, bool locked, double sinceBeat, double hit, double health, bool bitten, float fade)
         {
             if (_over == null || fade <= 0) return;
             var head = feet + Vector3.up * HeadM;
@@ -77,7 +80,7 @@ namespace Game.Client.Hud
             else
             {
                 float phase = (float)beat.Phase(s);
-                float since = (float)((s - beat.LastT) / Math.Max(1e-6, beat.Period));
+                float since = (float)sinceBeat;
                 // The ring closing toward the next beat, heavier and gold before a downbeat.
                 var ringColour = beat.NextDown ? Downbeat * 1.3f : Ring * 1.5f;
                 float ringR = RingNearM + (RingFarM - RingNearM) * (1 - phase);
@@ -85,6 +88,11 @@ namespace Game.Client.Hud
                 // On the beat: the ring lands on the gem, then the burst throws out a diamond's edge.
                 if (since < LandedShare)
                 {
+                    if (beat.Last > _ringMarked)
+                    {
+                        _ringMarked = beat.Last;
+                        Moments.Mark(MomentKind.GemRing, beat.LastT, beat.Last);
+                    }
                     // In front of the gem, its rim just outside the swollen gem's.
                     var landed = beat.LastDown ? Downbeat * 1.6f : Ring * 2f;
                     Draw(_over, Behind(head, -1), face, RingNearM + 0.04f, Shape.Ring, Alpha(landed, (1 - since / (float)LandedShare) * fade), inner: 1 - (beat.LastDown ? 0.1f : 0.07f) / (RingNearM + 0.04f));

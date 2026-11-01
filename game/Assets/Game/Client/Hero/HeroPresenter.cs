@@ -84,6 +84,7 @@ namespace Game.Client.Hero
             var hero = frame.State.Hero;
             hero.PositionAt(t, out double x, out double y);
             var pose = _pose = _motion.Evaluate(t, x, y, hero.Facing);
+            if (Moments.On) _motion.MarkMoments(t);
             double dt = double.IsNaN(_last) ? double.PositiveInfinity : Math.Max(0, t - _last);
             _last = t;
             float turn = Mathf.DeltaAngle(_yaw * Mathf.Rad2Deg, pose.Yaw * Mathf.Rad2Deg) * Mathf.Deg2Rad;

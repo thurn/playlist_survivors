@@ -1,0 +1,114 @@
+{
+  "ok": true,
+  "count": 945,
+  "scheduled": 945,
+  "dropped": 0,
+  "on_event": 725,
+  "snapped": 220,
+  "off_event": 0,
+  "off_anchor": 0,
+  "by_kind": {
+    "chime": {
+      "scheduled": 103,
+      "snapped": 103
+    },
+    "death": {
+      "scheduled": 115,
+      "on_event": 115
+    },
+    "garlic-hit": {
+      "scheduled": 50,
+      "on_event": 50
+    },
+    "garlic-pulse": {
+      "scheduled": 31,
+      "on_event": 31
+    },
+    "hit": {
+      "scheduled": 160,
+      "on_event": 160
+    },
+    "hit-heavy": {
+      "scheduled": 3,
+      "on_event": 3
+    },
+    "lightning-hit": {
+      "scheduled": 14,
+      "on_event": 14
+    },
+    "lightning-strike": {
+      "scheduled": 12,
+      "on_event": 12
+    },
+    "shatter-body": {
+      "scheduled": 115,
+      "on_event": 115
+    },
+    "shatter-glass": {
+      "scheduled": 115,
+      "on_event": 115
+    },
+    "shatter-tinkle": {
+      "scheduled": 117,
+      "snapped": 117
+    },
+    "slam": {
+      "scheduled": 1,
+      "on_event": 1
+    },
+    "swing": {
+      "scheduled": 108,
+      "on_event": 108
+    },
+    "swing-heavy": {
+      "scheduled": 1,
+      "on_event": 1
+    }
+  },
+  "off_event_first": [],
+  "off_anchor_first": [],
+  "lead": {
+    "median_ms": 91.4,
+    "p5_ms": 90.3,
+    "p95_ms": 92.1,
+    "min_ms": 90.3,
+    "max_ms": 95.8,
+    "output_latency_ms": 38.0,
+    "margin_ms": 52.3,
+    "ok": true
+  },
+  "mix": {
+    "ok": true,
+    "clicks_scheduled": 945,
+    "clicks_apart": 438,
+    "clicks_found": 438,
+    "clicks_dropped": 0,
+    "music_to_click_ms": {
+      "n": 438,
+      "median": 0.0,
+      "mean": -0.005471514039580731,
+      "std": 0.008878993574265913,
+      "p5": -0.020833333334024928,
+      "p95": 0.0,
+      "min": -0.020833333334024928,
+      "max": 8.881784197001252e-13
+    },
+    "drift_ms_per_min": 0.002177317919763077,
+    "frame_to_heard_ms": {
+      "n": 2288,
+      "median": -0.34920850573527673,
+      "mean": -0.4052434579478661,
+      "std": 0.9201277581238482,
+      "p5": -0.9772592479353026,
+      "p95": 0.15311572140759014,
+      "min": -33.90939694649653,
+      "max": 0.5527480496446135
+    },
+    "output_latency_ms": 37.958
+  },
+  "file": "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+  "seconds": 40.0,
+  "player_args": "--start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,break@18,regrow@24,finale@32",
+  "backend": "il2cpp",
+  "sounds": true
+}

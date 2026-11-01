@@ -224,8 +224,9 @@ fi
 # click, measured from Unity's own mix (`game spike --sounds`: the sounds on the music within 2 ms,
 # so the music's anchor matches the mix, frameSong within 1 ms of the audio thread's clock, no
 # stalls, no exception in the player's log), then a 10 s run of that player recorded and watched at
-# once to its hash (`game replay --record`), its session replayed in .NET too. Unity's rewrites of
-# ProjectSettings are discarded. A machine
+# once to its hash (`game replay --record`), its session replayed in .NET too, and the on-the-beat
+# audit (`game beat`: 20 s of the run's peak on house-128 at fixed time, every key moment on the
+# first frame at or after its song time). Unity's rewrites of ProjectSettings are discarded. A machine
 # without the packs, or off macOS (the plugin builds only there until M5, ps-msz.9), skips the
 # Unity half, saying so.
 if [ "$section" = game ]; then
@@ -251,5 +252,8 @@ if [ "$section" = game ]; then
       --sounds --seconds 30 --backend mono --build --no-evidence
     uv run --quiet --project demo3d/tools game replay --record public/reactive/house-128/house-128.ogg \
       --seconds 10 --backend mono --player-args "--debug break@5,change@7"
+    uv run --quiet --project demo3d/tools game beat ci --file public/reactive/house-128/house-128.ogg \
+      --seconds 20 --backend mono --no-evidence \
+      --player-args "--start-minute 25 --bot positioning --debug evolve:bloody-tear@3,evolve:soul-eater@3,break@8,regrow@12,finale@15"
   ) fi
 fi

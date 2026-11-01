@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Game.Client.Loop;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -206,6 +207,7 @@ namespace Game.Client.Crowd
             }
             int slot = (s.Start + s.Count) % RingCapacity;
             s.Count++;
+            Moments.Mark(MomentKind.Death, time, serial);
             s.Times[slot] = time;
             double len = Math.Sqrt(dirX * dirX + dirY * dirY);
             var blow = len > 1e-9 ? new Vector2((float)(dirX / len), (float)(dirY / len)) : Vector2.zero;

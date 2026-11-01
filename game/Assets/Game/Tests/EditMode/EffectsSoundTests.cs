@@ -187,6 +187,19 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ARegrowthShattersAtItsStartAsItSettlesNotWhenItsFrameShowsIt()
+        {
+            // The eruption's frame is past its song time, when no sound can make it: the event, a lead ahead, schedules it.
+            var sim = Beats();
+            var s = Scheduler(new TestClock { Mixer = 3.5 });
+            var p = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
+            p.OnEvent(SimEvent.Regrowth(4.0, 0, 4.0, 4.5));
+            var kinds = s.Log.Where(e => Math.Abs(e.Song - 4.0) < 1e-9).Select(e => e.Kind).ToList();
+            CollectionAssert.AreEquivalent(new[] { SoundKind.ShatterBody, SoundKind.ShatterGlass }, kinds);
+            Assert.That(s.Dropped, Is.EqualTo(0));
+        }
+
+        [Test]
         public void EffectsWaitForTheFrameThatReachesTheirSongTime()
         {
             var cues = new EffectCues(new RoleLooks(null));

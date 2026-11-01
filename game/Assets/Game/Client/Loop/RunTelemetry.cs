@@ -22,7 +22,7 @@ namespace Game.Client.Loop
 
         readonly SimDriver _driver;
         readonly StructureShatter _shatter;
-        readonly Counts _counts = new Counts();
+        readonly Counts _counts;
         readonly double[] _leads = new double[LeadCapacity];
         readonly double[] _steps = new double[LeadCapacity];
         readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
@@ -35,6 +35,7 @@ namespace Game.Client.Loop
         {
             _driver = driver;
             _shatter = shatter;
+            _counts = new Counts(driver);
             driver.Events.Subscribe(_counts);
             if (outputs.Events != null) _counts.Open(outputs.Events);
             if (outputs.Loop != null)
@@ -85,12 +86,14 @@ namespace Game.Client.Loop
             var log = sounds.Log;
             var songs = new double[log.Count];
             var dsps = new double[log.Count];
+            var kinds = new string[log.Count];
             for (int i = 0; i < log.Count; i++)
             {
                 songs[i] = log.Array[i].Song;
                 dsps[i] = log.Array[i].Dsp;
+                kinds[i] = SoundScheduler.Name(log.Array[i].Kind);
             }
-            SyncSpike.Write(dir, music, capture, songs, dsps, _frames.ToArray(), error);
+            SyncSpike.Write(dir, music, capture, songs, dsps, kinds, _frames.ToArray(), error);
         }
 
         /// <summary>The run's summary line; the music, its times, the effects and the sounds may be null.</summary>
@@ -149,16 +152,22 @@ namespace Game.Client.Loop
             _counts.Dispose();
         }
 
-        /// <summary>What the run did, for its summary, and each event as CSV when asked.</summary>
+        /// <summary>
+        /// What the run did, for its summary, and each event as CSV when asked: its slots, and the frameSong of the
+        /// frame it settled in, which a moment it brings must not precede for its frame to show it on time.
+        /// </summary>
         sealed class Counts : IPresenter, IDisposable
         {
             public int Kills, HeavyStrikes, Breaks, Regrowths, ZoneChanges, SetPieces, Freezes, MusicStops;
+            readonly SimDriver _driver;
             StreamWriter _out;
+
+            public Counts(SimDriver driver) => _driver = driver;
 
             public void Open(string path)
             {
                 _out = new StreamWriter(path);
-                _out.WriteLine("kind,t,i0,i1,i2");
+                _out.WriteLine("kind,t,i0,i1,i2,d0,d1,d2,d3,d4,d5,frame_song");
             }
 
             public void Dispose()
@@ -169,7 +178,8 @@ namespace Game.Client.Loop
 
             public void OnEvent(in SimEvent e)
             {
-                _out?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4}", e.Kind, e.T, e.I0, e.I1, e.I2));
+                _out?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4},{5:R},{6:R},{7:R},{8:R},{9:R},{10:R},{11:R}",
+                    e.Kind, e.T, e.I0, e.I1, e.I2, e.D0, e.D1, e.D2, e.D3, e.D4, e.D5, _driver.Times.FrameSong));
                 switch (e.Kind)
                 {
                     case SimEventKind.Death when e.AsDeath.Enemy >= 0: Kills++; break;

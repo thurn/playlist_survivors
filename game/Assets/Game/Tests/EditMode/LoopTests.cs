@@ -135,11 +135,31 @@ namespace Game.Tests
             for (int n = 0; n < 600; n += 37)
             {
                 var t = clock.Frame(new ClockReadings { Real = 123.4 + n, Frame = n / Fps });
-                Assert.That(t.FrameSong, Is.EqualTo(n / Fps));
+                Assert.That(t.FrameSong, Is.EqualTo(n / Fps + FrameClock.Reached));
                 Assert.That(t.Frontier, Is.EqualTo(FrameClock.FrontierAt(n / Fps)));
                 Assert.That(t.Lead, Is.EqualTo(FrameClock.OutputLatency + FrameClock.Margin).Within(1e-12));
                 Assert.That(clock.KeySong(999), Is.EqualTo(n / Fps));
             }
+        }
+
+        [Test]
+        public void AMomentOnAFramesTickShowsOnThatFrame()
+        {
+            // Unity's frame time, a sum of 1/60 steps, falls a rounding short of the sim's tick at the same time
+            // for most frames (frame 909's is 15.149999999999999): frameSong reaches past it, so a moment on that
+            // tick shows then.
+            var clock = new FrameClock();
+            int behind = 0;
+            double frame = 0;
+            for (int n = 0; n < 3600; n++, frame += 1 / Fps)
+            {
+                double tick = 2 * n * Simulation.TickSeconds;
+                if (frame < tick) behind++;
+                var t = clock.Frame(new ClockReadings { Frame = frame });
+                Assert.That(tick, Is.LessThanOrEqualTo(t.FrameSong), $"frame {n}");
+                Assert.That(t.FrameSong - frame, Is.LessThan(1e-5), "still the frame's own song time");
+            }
+            Assert.That(behind, Is.GreaterThan(0), "some frames do fall short");
         }
 
         /// <summary>A driver on fixed frames, stepped frame by frame from `first`.</summary>
@@ -242,7 +262,7 @@ namespace Game.Tests
                 for (int k = extra(f); k > 0 && next < entries.Count; k--) driver.AddSettled(entries[next++]);
                 driver.Step(frames[f]);
                 hashes.Add(driver.Sim.Hash);
-                Assert.That(recorder.Frames[f].Song, Is.EqualTo(frames[f].Frame));
+                Assert.That(recorder.Frames[f].Song, Is.EqualTo(frames[f].Frame + FrameClock.Reached));
             }
             Assert.That(driver.LateEntries, Is.Zero);
             return (hashes, recorder.Events);

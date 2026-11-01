@@ -1,0 +1,245 @@
+{
+  "ok": true,
+  "frames": 5401,
+  "span": [
+    0.0,
+    90.0
+  ],
+  "moments": 5275,
+  "off_frame": 0,
+  "kinds_never_shown": [],
+  "kinds": {
+    "HeroPress": {
+      "checked": 110,
+      "on": 110,
+      "late": 0,
+      "early": 0,
+      "events": 110
+    },
+    "HeroStride": {
+      "checked": 144,
+      "on": 144,
+      "late": 0,
+      "early": 0,
+      "events": 144
+    },
+    "HeroLand": {
+      "checked": 254,
+      "on": 254,
+      "late": 0,
+      "early": 0,
+      "events": 254
+    },
+    "Blade": {
+      "checked": 149,
+      "on": 149,
+      "late": 0,
+      "early": 0,
+      "events": 149
+    },
+    "Footfall": {
+      "checked": 3442,
+      "on": 3442,
+      "late": 0,
+      "early": 0,
+      "events": 3533
+    },
+    "Death": {
+      "checked": 282,
+      "on": 282,
+      "late": 0,
+      "early": 0,
+      "events": 282
+    },
+    "Break": {
+      "checked": 10,
+      "on": 10,
+      "late": 0,
+      "early": 0,
+      "events": 10
+    },
+    "Regrow": {
+      "checked": 6,
+      "on": 6,
+      "late": 0,
+      "early": 0,
+      "events": 6
+    },
+    "Effect": {
+      "checked": 735,
+      "on": 735,
+      "late": 0,
+      "early": 0,
+      "by_effect": {
+        "crystal-burst": 282,
+        "hit-flash": 18,
+        "prism-cast": 44,
+        "prism-hit": 226,
+        "slam": 4,
+        "slash": 139,
+        "spin": 6,
+        "structure-burst": 16
+      },
+      "off_by_effect": {}
+    },
+    "GemRing": {
+      "checked": 132,
+      "on": 132,
+      "late": 0,
+      "early": 0,
+      "events": 170
+    },
+    "CardFlip": {
+      "checked": 11,
+      "on": 11,
+      "late": 0,
+      "early": 0,
+      "events": 12
+    }
+  },
+  "settled_ahead": {
+    "Attack": {
+      "n": 193,
+      "min_ms": 68.33,
+      "median_ms": 393.33,
+      "past_their_frame": 0
+    },
+    "Beat": {
+      "n": 170,
+      "min_ms": 70.0,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "BeatState": {
+      "n": 18,
+      "min_ms": 70.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Card": {
+      "n": 3,
+      "min_ms": 66.67,
+      "median_ms": 66.67,
+      "past_their_frame": 0
+    },
+    "Cleave": {
+      "n": 7,
+      "min_ms": 70.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Death": {
+      "n": 282,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Drop": {
+      "n": 139,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "EnemyKnock": {
+      "n": 18,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "EnemyStep": {
+      "n": 3533,
+      "min_ms": 166.67,
+      "median_ms": 173.33,
+      "past_their_frame": 0
+    },
+    "Freeze": {
+      "n": 7,
+      "min_ms": 70.0,
+      "median_ms": 78.33,
+      "past_their_frame": 0
+    },
+    "GemFlight": {
+      "n": 104,
+      "min_ms": 75.0,
+      "median_ms": 75.0,
+      "past_their_frame": 0
+    },
+    "Glint": {
+      "n": 30,
+      "min_ms": 70.0,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "HeroStep": {
+      "n": 254,
+      "min_ms": 66.67,
+      "median_ms": 68.33,
+      "past_their_frame": 0
+    },
+    "Hit": {
+      "n": 300,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "LevelUp": {
+      "n": 4,
+      "min_ms": 76.67,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "Pickup": {
+      "n": 93,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "Projectile": {
+      "n": 687,
+      "min_ms": 67.5,
+      "median_ms": 75.0,
+      "past_their_frame": 0
+    },
+    "Regrowth": {
+      "n": 6,
+      "min_ms": 76.67,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "RunStart": {
+      "n": 1,
+      "min_ms": 83.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "Spawn": {
+      "n": 307,
+      "min_ms": 75.0,
+      "median_ms": 75.0,
+      "past_their_frame": 0
+    },
+    "StrideStep": {
+      "n": 341,
+      "min_ms": 66.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "StructureBreak": {
+      "n": 10,
+      "min_ms": 68.33,
+      "median_ms": 77.5,
+      "past_their_frame": 0
+    },
+    "ZoneChange": {
+      "n": 4,
+      "min_ms": 76.67,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    }
+  },
+  "file": "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+  "seconds": 90.0,
+  "player_args": "--run --bot positioning",
+  "backend": "il2cpp",
+  "sounds": false
+}

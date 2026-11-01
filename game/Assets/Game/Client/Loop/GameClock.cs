@@ -121,11 +121,15 @@ namespace Game.Client.Loop
     /// n/60), for stills and filmstrips, and for runs without music. The lead is the built-in
     /// speakers' (the sync spike's 38 ms output latency plus <see cref="MusicTimes.Margin"/> at
     /// 60 fps and 256-frame buffers), so the sim runs as far ahead as it would live. No music
-    /// plays in time with these frames, so no sound can be scheduled.
+    /// plays in time with these frames, so no sound can be scheduled. frameSong is the frame's song
+    /// time and a microsecond (<see cref="Reached"/>): n/60 falls a rounding short of a moment the sim
+    /// times on the frame's own tick half the time, which would show it a frame late (ps-msz.8.5).
     /// </summary>
     public sealed class FrameClock : IGameClock
     {
         public const double OutputLatency = 0.038;
+        /// <summary>How far past its frame's song time a frame shows: far under a frame, far over a rounding.</summary>
+        public const double Reached = 1e-6;
         public const double Margin = 2.0 / Boot.FixedFps + Simulation.TickSeconds + 2 * 256.0 / 48000;
 
         double _frameSong;
@@ -139,7 +143,7 @@ namespace Game.Client.Loop
             {
                 Song = SongAt(now.Frame),
                 Heard = now.Frame,
-                FrameSong = now.Frame,
+                FrameSong = now.Frame + Reached,
                 Frontier = FrontierAt(now.Frame),
             };
         }

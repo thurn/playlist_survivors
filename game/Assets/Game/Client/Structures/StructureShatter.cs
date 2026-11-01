@@ -299,6 +299,7 @@ namespace Game.Client.Structures
         {
             var site = _sites[p.Site];
             if (site.Broken) return;
+            Moments.Mark(MomentKind.Break, p.T, p.Site);
             Hide(site, true);
             site.Growing = false;
             _shadowsDirty.Add(site.Bounds);
@@ -491,6 +492,7 @@ namespace Game.Client.Structures
         void Regrow(in Pending p)
         {
             var site = _sites[p.Site];
+            Moments.Mark(MomentKind.Regrow, p.T, p.Site);
             Hide(site, false);
             site.GrowStart = p.T;
             site.GrowEnd = Math.Max(p.End, p.T + 1e-3);

@@ -52,6 +52,9 @@ namespace Game.Client.Hud
         readonly HeldTimes _held;
         int _killCount;
         double _bitten = double.NegativeInfinity;
+        // The song time of the last frame shown before the beat locked (NaN while unlocked): a beat at or before it
+        // never lands, since it would land late, on the frame the lock arrives (ps-msz.8.5).
+        double _lockedAfter = double.NaN, _lastSong = double.NaN;
 
         /// <summary>The hero as drawn (the hero presenter's), else the sim's.</summary>
         public LookPresenter.HeroAt DrawnHero { get; set; }
@@ -125,6 +128,11 @@ namespace Game.Client.Hud
             bool locked = state.Beat == Reliability.Reliable && beat.Has;
             // The beat's hit, 1 on it and decaying over it (hud.rs' exp(-8 phase)), 0 without a reliable beat.
             double since = beat.Has ? (s - beat.LastT) / Math.Max(1e-6, beat.Period) : 1;
+            if (!locked) _lockedAfter = double.NaN;
+            else if (double.IsNaN(_lockedAfter)) _lockedAfter = double.IsNaN(_lastSong) ? double.NegativeInfinity : _lastSong;
+            _lastSong = s;
+            // A beat the lock came after shows as gone by: no landing, no flash.
+            if (locked && beat.LastT <= _lockedAfter + 1e-9) since = 1;
             double hit = locked ? Math.Exp(-8 * Math.Max(0, Math.Min(1, since))) : 0;
 
             while (_deaths.Count > 0 && _deaths.Peek() <= s + 1e-9)
@@ -150,7 +158,7 @@ namespace Game.Client.Hud
             _timer.text = HudText.Clock(state.RunClock);
             _held.Update(_sim.State.WeaponSlots, state.RunClock);
             _slots.Show(_sim.State.WeaponSlots, _sim.State.PassiveSlots);
-            _track.Show(_sim.Stream, _sim.Beats, s, beat, locked);
+            _track.Show(_sim.Stream, _sim.Beats, s, beat, locked, since);
             _prompt.text = state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT";
 
             string banner = state.Phase == RunPhase.Ended ? null
@@ -170,7 +178,7 @@ namespace Game.Client.Hud
             _numbers.Present(s, hx, hy);
             // The overhead display comes in over the run's first two seconds and goes with the end card.
             double fade = state.Phase == RunPhase.Ended ? 0 : Smooth((state.RunClock - 0.5) / 1.5);
-            _gem.Present(s, new Vector3((float)hx, 0, (float)hy), beat, locked, hit, health, bitten, (float)fade);
+            _gem.Present(s, new Vector3((float)hx, 0, (float)hy), beat, locked, since, hit, health, bitten, (float)fade);
         }
 
         static double Smooth(double x)
