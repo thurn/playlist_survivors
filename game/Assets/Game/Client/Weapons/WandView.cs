@@ -30,6 +30,12 @@ namespace Game.Client.Weapons
         const int Afterimages = 7, PrismAfterimages = 9;
         const double AfterimageS = 0.018, PrismAfterimageS = 0.032;
         const float AfterimageShrink = 0.82f;
+        /// <summary>
+        /// An afterimage's length, as a multiple of its bolt's: Magic Wand's overlap into one streak; Holy
+        /// Wand's are short of their 0.6 m spacing at its speed, so the prism's hues stay apart as bands
+        /// instead of adding up to white (ps-msz.8.3).
+        /// </summary>
+        const float AfterimageLength = 1.3f, PrismAfterimageLength = 0.55f;
         /// <summary>A bolt shrinks away this long after it ends.</summary>
         const double VanishS = 0.08;
         const float SpinDegPerS = 540;
@@ -76,7 +82,7 @@ namespace Game.Client.Weapons
             _batch = new CrystalBatch(_mesh, WeaponLooks.Wand, "wand");
             _holy = new CrystalBatch(_mesh, WeaponLooks.Holy, "holy-wand");
             _prism = new CrystalBatch[WeaponLooks.Prism.Length];
-            for (int k = 0; k < _prism.Length; k++) _prism[k] = new CrystalBatch(_mesh, WeaponLooks.Prism[k] * 0.7f, "holy-wand-prism-" + k, 0.3f);
+            for (int k = 0; k < _prism.Length; k++) _prism[k] = new CrystalBatch(_mesh, WeaponLooks.Prism[k], "holy-wand-prism-" + k, 0.4f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }
@@ -155,7 +161,7 @@ namespace Game.Client.Weapons
                     scale *= bolt.Evolved ? 0.9f : AfterimageShrink;
                     if (!At(bolt, back, out var past, out var pastHeading)) break;
                     (bolt.Evolved ? _prism[(k + bolt.Seed) % _prism.Length] : _batch).Afterimage(Matrix4x4.TRS(past, Quaternion.LookRotation(pastHeading, Vector3.up) * spin,
-                        new Vector3(scale, scale, size * LengthM * 1.3f)));
+                        new Vector3(scale, scale, size * LengthM * (bolt.Evolved ? PrismAfterimageLength : AfterimageLength))));
                 }
             }
             foreach (long key in _done) _bolts.Remove(key);

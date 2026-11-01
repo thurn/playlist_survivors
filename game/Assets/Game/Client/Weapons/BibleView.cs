@@ -64,7 +64,8 @@ namespace Game.Client.Weapons
                 if (looks.Of(w) == WeaponLooks.Family.Bible) sound?.VoiceHitsElsewhere(w);
             _mesh = CrystalBatch.Build("bible-shard", 4, 1f, 0.35f, 0.6f, 0.4f);
             _batch = new CrystalBatch(_mesh, WeaponLooks.Bible, "bible", 0.35f);
-            _vespers = new CrystalBatch(_mesh, WeaponLooks.Vespers, "unholy-vespers", 0.45f);
+            // Vespers' violet at full glow, and its afterimages overlapping along the orbit, read white: dimmed, it stays violet.
+            _vespers = new CrystalBatch(_mesh, WeaponLooks.Vespers * 0.6f, "unholy-vespers", 0.4f);
             _cast = effects?.IndexOf("prism-cast") ?? -1;
             _hit = effects?.IndexOf("prism-hit") ?? -1;
         }

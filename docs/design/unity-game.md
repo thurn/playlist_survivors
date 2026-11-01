@@ -2013,6 +2013,19 @@ The look is the reference command's, held on every frame of a live run.
   palettes (neon, blossom, snow, crypt, lava), eased over two bars from the
   change's downbeat: each zone a night in its own hue.
 
+**Shipped (ps-msz.8.3).** M4's look pass, measured against the reference
+stills ([evidence](../../game/evidence/look-m4/README.md)): every zone settled
+and mid-ease at the run's density reads +37.7 to +71.8 dL*, and no still of
+the run's peak clips more than 0.65% of its frame (the heavy strike 5.5%
+before).
+
+- Snow's moon is down to 0.55 and crypt's is a cool slate at 0.55 with darker
+  ambient and fog (arena-layout.json): both read as overcast dusk before
+  (ground L* p50 about 12, against neon's 4 and the reference's 3.5 to 8).
+- A hit lights a crystal half white and half its gem colour
+  (`CrystalSurface.hlsl`), so a crowd under constant hits, and a mass kill's
+  shards on their break frame, keep their hue instead of washing to pale.
+
 ### The arena
 
 The arena is one large bounded space, generated in the editor from a single
@@ -2293,6 +2306,27 @@ The view voices them itself (sounds.json, demo3d's packs): a strike's `lightning
 return's lower), a jump's `lightning-jump` zap climbing the major pentatonic, and a `lightning-hit`
 crackle for each of their hits, in place of the sword's.
 
+**Shipped (ps-msz.8.3).** The effects tuned so the big moments stand out and
+nothing blows out ([evidence](../../game/evidence/look-m4/README.md)):
+
+- The sword's slash, spin and slam at HDR 0.3, 0.15 and 0.7 (effects.json):
+  Hovl's slash material (emission 7, opacity 20) blew a heavy spin's crescent
+  to white.
+- A strike's crystal ring is an ice ring on an ordinary strike (intensity
+  0.2) and white-hot on a heavy one (0.8): the ordinary strike's new light
+  peaks at L* p98 90, a heavy one's at 99.6 (both at white before).
+- A tinted spawn's heat ramp runs at 0.6 of its emitter's gain, so Bloody
+  Tear's slashes, the gem bursts and the weapons' sparks keep their colour
+  further into the core.
+- The lightning's coloured glow is 2.5 (was 4) around its white core, so a
+  bolt reads in its colour rather than as a white band.
+- Holy Wand's prism afterimages are 0.55 of the bolt's length (they are 0.6 m
+  apart at its speed), so the six hues show as bands instead of summing to
+  white; Unholy Vespers' crystal is at 0.6 of its violet, so its shards read
+  lilac, not white.
+- Every weapon's and evolution's effect is visible in each of the five
+  zones in the evidence's stills.
+
 ### Post-processing and camera
 
 The post stack is the 3D demo's night look, driven by the live stream instead
@@ -2339,6 +2373,12 @@ placeholder plane); evidence in game/evidence/look/feel/.
 - The beat globals (`_SL_Beat`, `_SL_Pulse`, `_SL_BarPulse`, `_SL_Energy`,
   `_SL_HeroPos`, `_SL_WaveSpeed`) come from the lane each frame, with the
   drums as `_SL_Drums` and the build-up as `_SL_Rise`.
+
+**Shipped (ps-msz.8.3).** A full flash lifts exposure by 0.35 stops (was
+0.7; `PostFeel.FlashExposure`), its aberration and saturation unchanged: at
+0.7 an accent, a break or a 24-kill impact pushed every highlight past white.
+The zone grades, bloom and beat pulse are unchanged
+([evidence](../../game/evidence/look-m4/README.md)).
 
 ### HUD
 

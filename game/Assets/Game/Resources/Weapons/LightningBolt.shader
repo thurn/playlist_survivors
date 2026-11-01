@@ -40,7 +40,7 @@ Shader "Game/LightningBolt"
                 float a = abs(i.uv.x);
                 float core = exp(-a * a * 90);
                 float glow = exp(-a * 3) * (1 - a);
-                float3 rgb = float3(1, 1, 1) * core * 3 + i.color * (glow * 4 + core);
+                float3 rgb = float3(1, 1, 1) * core * 3 + i.color * (glow * 2.5 + core);
                 return float4(rgb * i.uv.y, 0);
             }
             ENDHLSL

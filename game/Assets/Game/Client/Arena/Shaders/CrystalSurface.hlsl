@@ -62,7 +62,9 @@ float3 CrystalShade(float3 positionWS, float3 normalWS, float4 positionCS, float
     color += SL_Wire(bary.xyz, 1.0) * (tint * 0.25 + 0.1) * (0.4 + wave);
     float twinkle = step(0.88, SL_Hash1(faceRand * 91.7 + SL_WaveBeat(positionWS) * 13.1));
     color += twinkle * wave * (tint * 3.0 + 1.5);
-    color += float3(1.0, 1.0, 1.1) * hit + tint * 3.0 * glow;
+    // A hit lights the gem up half white, half its own colour, so a crowd under constant hits keeps its hue
+    // (ps-msz.8.3: a white flash washed the amber flowers to pale peach).
+    color += lerp(float3(1.0, 1.0, 1.1), tint * 1.4, 0.5) * hit + tint * 3.0 * glow;
     // A fresh break: more saturated than the weathered skin.
     if (inside > 0) color = max(0, lerp(SL_Luma(color).xxx, color, 1.0 + 0.6 * inside));
     return color;

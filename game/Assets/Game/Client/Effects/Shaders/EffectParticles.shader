@@ -209,11 +209,13 @@ Shader "Game/EffectParticles"
             float3 rgb = i.extra.z > 0.5 ? c.rgb * i.color.a : c.rgb * c.a;
             float4 h0 = EM(e, S_HEAT0), h1 = EM(e, S_HEAT1);
             // A tinted spawn (a crystal death's gem) takes the ramp in its own colour: the edge the
-            // gem deepened (squared), the mid the gem, the core still white-hot, at the emitter's gain.
+            // gem deepened (squared), the mid the gem, the core still white-hot, at 0.6 of the
+            // emitter's gain, so its colour holds further into the core (ps-msz.8.3: Bloody Tear's
+            // heavy slashes blew out to white).
             if (i.tint.a > 0)
             {
                 float3 edge = i.tint.rgb * i.tint.rgb;
-                float4 mid = float4(i.tint.rgb, h0.w > 0 ? h1.w : 1);
+                float4 mid = float4(i.tint.rgb, (h0.w > 0 ? h1.w : 1) * 0.6);
                 rgb = lerp(h0.w > 0 ? lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w) : rgb, Heat(rgb, edge, mid), i.tint.a);
             }
             else if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w);

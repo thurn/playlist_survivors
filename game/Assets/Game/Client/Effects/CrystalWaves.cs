@@ -18,6 +18,11 @@ namespace Game.Client.Effects
         /// <summary>How long a strike's ring takes to reach its radius, and how long a wave fades after its last key.</summary>
         public const double RingSeconds = 0.12, FadeSeconds = 0.18;
         public const float Height = 0.06f;
+        /// <summary>
+        /// A strike's ring at its start: an ordinary one (every beat) an ice ring under the effects,
+        /// a heavy one white-hot (ps-msz.8.3), so the big moments stand out from the beat's.
+        /// </summary>
+        public const float StrikeIntensity = 0.2f, HeavyIntensity = 0.8f;
 
         struct Wave
         {
@@ -52,7 +57,7 @@ namespace Game.Client.Effects
         {
             Span<double> t = stackalloc double[] { impact, impact + RingSeconds };
             Span<float> r = stackalloc float[] { 0, reach };
-            Add(centre, t, r, heavy ? 1.0f : 0.7f, heavy ? 1.2f : 0.8f);
+            Add(centre, t, r, heavy ? 1.0f : 0.7f, heavy ? HeavyIntensity : StrikeIntensity);
         }
 
         /// <summary>

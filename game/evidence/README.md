@@ -70,6 +70,9 @@ what was run (the exact commands), the numbers, and what they show.
 - [full-run](full-run/README.md): the 30-minute File run to the victory card with the bot, its pacing and
   minute 25's stills (ps-msz.6.14), and retaken at fixed time in 4 minutes, with its replay and a still at
   25:00 of a real run (ps-msz.7.5).
+- [look-m4](look-m4/README.md): M4's look pass, the five zones settled and mid-ease at the run's density, the
+  peak's heavy strike, break and mass kill, and every weapon's and evolution's effect in every zone, against the
+  reference's stills, with before and after (ps-msz.8.3).
 - [sweeps](sweeps/README.md): the positioning bot's four 30-minute .NET runs over the survivors test playlist,
   all to the victory card above 25% health, and the idle bot falling at 2:05, with each run's pacing against
   `startLevels`, its boss chests' drop-to-take delays and the late crowd's role mix (ps-msz.6.13, ps-msz.8.4).

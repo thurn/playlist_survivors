@@ -25,7 +25,7 @@ namespace Game.Client.Look
         /// <summary>The beat's pulse: exposure (stops), bloom intensity and vignette (demo3d's arena-layout postFeel).</summary>
         public const float BeatExposure = 0.12f, BeatBloom = 0.35f, BeatVignette = -0.03f;
         /// <summary>A full flash: exposure (stops), aberration and saturation.</summary>
-        public const float FlashExposure = 0.7f, FlashChromatic = 0.5f, FlashSaturation = 25f;
+        public const float FlashExposure = 0.35f, FlashChromatic = 0.5f, FlashSaturation = 25f;
         /// <summary>A drop's build-up at its peak: exposure, bloom, saturation and vignette; the kick's bloom.</summary>
         public const float RiseExposure = 0.15f, RiseBloom = 0.4f, RiseSaturation = 10f, RiseVignette = 0.06f, KickBloom = 0.15f;
         public const float EaseBars = 2f;
