@@ -120,17 +120,22 @@ fn rendering_a_system_source_allocates_nothing() {
     assert_eq!(status(s).state, PS_PLAYING);
     fake.release("the main thread stalled for 2 s");
     let started = std::time::Instant::now();
-    while fake.taps().len() < 2 {
+    while status(s).releases == 0 {
+        hang_guard(started, "the release was never seen");
+        std::thread::yield_now();
+    }
+    for _ in 0..(1.0 * RATE) as usize / FRAMES {
+        render(s, &mut out, RATE, &mut rendered);
+    }
+    // (Nothing renders while the source waits to tap the app again: rendering on in real time
+    // let a loaded machine run the render past where the source resumes the music. The fake
+    // sees the tap before the source has it, so the wait is for the source too.)
+    let started = std::time::Instant::now();
+    // (Each status is the main thread's heartbeat, as Unity's polls are: the app is tapped again
+    // only while it is alive.)
+    while status(s).muted == 0 || fake.taps().len() < 2 {
         hang_guard(started, "the app was never tapped again");
-        // (The main thread's heartbeat, as Unity's polls are: the app is tapped again only while
-        // it is alive.)
-        status(s);
-        // (In real time while the source waits to tap the app again.)
-        if rendered as f64 * FRAMES as f64 / RATE < 10.0 + started.elapsed().as_secs_f64() {
-            render(s, &mut out, RATE, &mut rendered);
-        } else {
-            std::thread::yield_now();
-        }
+        std::thread::yield_now();
     }
     assert_eq!(status(s).state, PS_STOPPED);
     for _ in 0..(5.0 * RATE) as usize / FRAMES {
