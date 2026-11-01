@@ -52,7 +52,8 @@ namespace Game.Client.Loop
         /// <summary>
         /// The sound-scheduling hook: the DSP time at which the mixer plays song time `song`, for
         /// PlayScheduled. False when the mixer is already past it, or no music is playing in time
-        /// with the frames: the sound is then dropped, never started late (unity-game.md, Sound Timing).
+        /// with the frames: the sound is then dropped, never started late (unity-game.md, Sound Timing), but for a
+        /// heard-time sound, started at <see cref="EarliestDsp"/> instead (<see cref="Game.Client.Sound.SoundCue.Asap"/>).
         /// </summary>
         bool TryDspAt(double song, out double dsp);
 

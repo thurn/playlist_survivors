@@ -89,7 +89,7 @@ namespace PS.Game.Sim
     ///   <see cref="Horde.Rewound"/>), the damage applied at F and the events stamped at their own times. Nothing
     ///   simulated is rewound: what the sim's systems did in between stands (an enemy the blow killed may still have
     ///   bitten, or been hit by another weapon). Never across a hold (frozen, fallen) nor further back than
-    ///   <see cref="PressBackS"/>.
+    ///   <see cref="PressBackS"/>: a key heard before either winds up from there, its grade still from when it was heard.
     ///   It is at least <see cref="SwingS"/> after the previous press's main impact; a press that would wait more
     ///   than <see cref="SwingBufferS"/> past its own landing for that (one in the swing before's strike, before
     ///   its impact) is dropped while that swing shows: mashing swings no faster than the swing, and a press in
@@ -145,7 +145,7 @@ namespace PS.Game.Sim
         struct Strike
         {
             public double Impact, Windup, Period;
-            /// <summary>A press's wind-up start, its attack event's: when it was heard, or the impact before it if later.</summary>
+            /// <summary>A press's wind-up start, its attack event's: when it was heard (at most PressBackS back, never before a hold), or the impact before it if later.</summary>
             public double From;
             public int Beat;
             public bool Main, HalfTime, Wound, Cancelled, Heavy, Pressed;
@@ -439,7 +439,9 @@ namespace PS.Game.Sim
         {
             if (!onPress || Holding) return;
             double now = sim.Now;
-            double natural = Math.Max(heard + PressImpactS, Math.Max(heldUntil, now - PressBackS));
+            // Never resolved before a hold nor further back than PressBackS: a key heard earlier winds up from there.
+            double start = Math.Max(heard, Math.Max(heldUntil, now - PressBackS));
+            double natural = start + PressImpactS;
             double after = lastPress + SwingS;
             if (after - natural > SwingBufferS + 1e-9) return;
             // After every strike queued too: the previous press's follow-ups end within its swing.
@@ -453,7 +455,7 @@ namespace PS.Game.Sim
             for (int k = 0; k < n && count < QueueCapacity; k++)
             {
                 double at = impact + SwingS * k / n;
-                double from = k == 0 ? Math.Max(heard, lastImpact) : lastImpact;
+                double from = k == 0 ? Math.Max(start, lastImpact) : lastImpact;
                 At(count++) = new Strike
                 {
                     Impact = at,

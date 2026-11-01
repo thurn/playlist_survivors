@@ -354,6 +354,33 @@ namespace PS.Game.Sim.Tests
         }
 
         /// <summary>
+        /// A key heard while the world was frozen and taken after it thaws never resolves inside the freeze: it winds up
+        /// from the thaw and hits PressImpactS after it, its grade still from when it was heard.
+        /// </summary>
+        [Test]
+        public void APressHeardInAFreezeResolvesFromItsEnd()
+        {
+            var sim = Fighter(Plain(120, 20));
+            sim.StepTo(9);
+            int enemy = HordeFixture.Place(sim, "boss-werewolf", sim.State.Hero.X + 0.5, sim.State.Hero.Y, boss: true);
+            sim.Control(RunControl.Pause);
+            sim.StepTo(9.6);
+            sim.Control(RunControl.Resume);
+            sim.StepTo(10.2);
+            double thaw = Drive.Events(sim, SimEventKind.Freeze).Last().T;
+            Assert.IsTrue(sim.State.Phase == RunPhase.Playing && !sim.State.Frozen && thaw > 9.6, "thawed on a beat after the resume");
+            double heard = thaw - 0.1;
+            sim.StepTo(heard + 0.3);
+            Assert.Less(sim.Now - Sword.PressBackS, heard, "within reach of heard time but for the freeze");
+            sim.Press(Key.Attack, heard);
+            var swing = Swings(sim).Single();
+            Assert.GreaterOrEqual(swing.WindupStart, thaw - Simulation.TickSeconds - 1e-9, "no wind-up in the frozen world");
+            Assert.AreEqual(swing.WindupStart + Sword.PressImpactS, swing.Impact, 1e-9);
+            var hit = Drive.Events(sim, SimEventKind.Hit).Single(e => e.AsHit.Target == enemy);
+            Assert.AreEqual(swing.Impact, hit.T, 1e-9, "its blow, after the thaw");
+        }
+
+        /// <summary>
         /// A press in the swing before's follow-through cuts it short into the next: it lands a swing after the last press,
         /// winding up from when it was heard, or from the last strike queued (a follow-up's impact) if that is later.
         /// </summary>

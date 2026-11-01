@@ -173,7 +173,9 @@ namespace Game.Tests
             }
             UnityEngine.Object.DestroyImmediate(host);
 
-            var impacts = recorder.Events.Where(e => e.Kind == SimEventKind.Attack && e.AsAttack.IsSword).Select(e => e.AsAttack.Impact).ToList();
+            var attacks = Enumerable.Range(0, recorder.Events.Count)
+                .Where(i => recorder.Events[i].Kind == SimEventKind.Attack && recorder.Events[i].AsAttack.IsSword).ToList();
+            var impacts = attacks.Select(i => recorder.Events[i].AsAttack.Impact).ToList();
             var swings = sounds.Log.Where(e => e.Kind == SoundKind.Swing).ToList();
             Assert.That(impacts.Count, Is.EqualTo(pressed.Count), "a swing for every press");
             Assert.That(swings.Count, Is.EqualTo(pressed.Count), "a swing's sound for every press");
@@ -182,6 +184,7 @@ namespace Game.Tests
             for (int k = 0; k < pressed.Count; k++)
             {
                 int f = recorder.Frames.FindIndex(fr => fr.Song >= impacts[k]);
+                Assert.That(recorder.FrameOf[attacks[k]], Is.LessThanOrEqualTo(f), $"press {k}'s strike settled after the frame that reached its impact");
                 seen.Add(frameReal[f] + clock.DisplayLatency - pressed[k]);
                 Assert.That(double.IsNaN(swings[k].Dsp), Is.False, $"press {k}'s swing was dropped");
                 heard.Add(swings[k].Dsp - 5.0 + outputLatency - pressed[k]);
@@ -304,7 +307,13 @@ namespace Game.Tests
         {
             public readonly List<SimEvent> Events = new List<SimEvent>();
             public readonly List<PresentFrame> Frames = new List<PresentFrame>();
-            public void OnEvent(in SimEvent e) => Events.Add(e);
+            /// <summary>Each event's frame: the index of the frame that presented it first.</summary>
+            public readonly List<int> FrameOf = new List<int>();
+            public void OnEvent(in SimEvent e)
+            {
+                Events.Add(e);
+                FrameOf.Add(Frames.Count);
+            }
             public void Present(in PresentFrame frame) => Frames.Add(frame);
         }
 
