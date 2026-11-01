@@ -148,6 +148,18 @@ namespace PS.Look.Tests
         }
 
         [Test]
+        public void ShadersGetTheRolesInLinear()
+        {
+            var palette = Palette.Parse(Electric);
+            palette.SetShaderGlobals();
+            var floor = Shader.GetGlobalVector("_LookVoidFloor");
+            var linear = palette.VoidFloor.linear;
+            Assert.That(floor.x, Is.EqualTo(linear.r).Within(1e-6f));
+            Assert.That(floor.z, Is.EqualTo(linear.b).Within(1e-6f));
+            Assert.That(floor.z, Is.LessThan(palette.VoidFloor.b), "linear, not the file's sRGB");
+        }
+
+        [Test]
         public void ApplyingALookGivesShadersItsPalette()
         {
             var look = Resolve("--look hologram");

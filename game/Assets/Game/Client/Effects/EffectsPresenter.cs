@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Client.Loop;
 using PS.Game.Sim;
+using PS.Look;
 using PS.Look.Effects;
 using UnityEngine;
 
@@ -24,6 +25,11 @@ namespace Game.Client.Effects
     /// - **structure breaks**: the larger crystal burst from the strike point
     ///   (<see cref="EffectCues.Burst"/> is the hook for a regrowth's).
     /// - **the weapons' own**: each weapon's view asks for its casts and hits (<see cref="EffectCues.Spark"/>).
+    /// The sword's strikes, the deaths and the structure breaks also write the look's impulse field
+    /// (<see cref="ImpulseField"/>, neon-look.md, The impulse field) at their impacts, in the look's palette: a ring
+    /// from the hero per strike (faint on a light one, strong on a heavy one, strongest on the slam), a small one in
+    /// the role's gem per death (a mass kill's merge) and a big one in the shatter's gem per break; it is published
+    /// after the frame's cues, so a ring sets out on the frame its impact reaches, and marked as a moment.
     /// The hero's position at an impact comes from the frame's state.
     /// </summary>
     public sealed class EffectsPresenter : IPresenter, IDisposable
@@ -39,6 +45,8 @@ namespace Game.Client.Effects
 
         readonly EffectSystem _fx;
         readonly CrystalWaves _waves;
+        readonly ImpulseField _impulses = new ImpulseField();
+        readonly Palette _palette;
         readonly EffectCues _cues;
         readonly Camera _camera;
         readonly EffectLibrary _library;
@@ -47,6 +55,7 @@ namespace Game.Client.Effects
         double _last = double.NaN;
 
         public EffectSystem System => _fx;
+        public ImpulseField Impulses => _impulses;
         public EffectCues Cues => _cues;
         /// <summary>Effects spawned.</summary>
         public int Spawned { get; private set; }
@@ -60,6 +69,9 @@ namespace Game.Client.Effects
             _fx.AddCamera(camera);
             // The on-the-beat trace (Moments), opened before the run builds its presenters.
             if (Moments.On) _fx.Marked = (t, effect) => Moments.Mark(MomentKind.Effect, t, effect, library.Effects[effect].Name);
+            if (Moments.On) _impulses.Shown = (kind, t) => Moments.Mark(MomentKind.Impulse, t, (int)kind, kind.ToString());
+            ImpulseField.Active = _impulses;
+            _palette = ResolvedLook.Active?.Palette ?? ResolvedLook.FallbackPalette;
             _waves = new CrystalWaves(camera, CrystalWaves.ShaderIn(library));
             _slash = Find(library, "slash");
             _spin = Find(library, "spin");
@@ -89,6 +101,7 @@ namespace Game.Client.Effects
             _fx.BeginFrame();
             _cues.TakeDue(now, _due);
             foreach (var c in _due) Spawn(c, frame);
+            _impulses.Publish(now);
             _fx.Update(now, dt, _camera);
             _waves.Present(now);
         }
@@ -117,6 +130,8 @@ namespace Game.Client.Effects
                         Add(c.Kind == EffectCues.Kind.Spin ? _spin : _slash, pos, yaw, c.Scale, seed, c.T, c.Tint, c.Light, mirror, new Vector3(v.x, 0, v.y));
                     }
                     _waves.Strike(c.T, hero, c.Reach, c.Heavy);
+                    float weight = c.Kind == EffectCues.Kind.Slam ? 1f : c.Heavy ? 0.7f : c.Kind == EffectCues.Kind.Spin ? 0.35f : 0f;
+                    _impulses.Add(ImpulseField.Blow(hero, c.T, c.Reach, weight, _palette.HeroTrail));
                     break;
                 }
                 case EffectCues.Kind.Cleave:
@@ -125,6 +140,7 @@ namespace Game.Client.Effects
                 case EffectCues.Kind.Death:
                     Add(_death, new Vector3(c.At.x, BodyHeight * c.Scale, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint,
                         1f / Mathf.Sqrt(Mathf.Max(1, c.Together)));
+                    _impulses.Add(ImpulseField.Death(c.At, c.T, c.Tint.a > 0 ? c.Tint : _palette.Enemies[0]));
                     break;
                 case EffectCues.Kind.Flash:
                 {
@@ -134,6 +150,8 @@ namespace Game.Client.Effects
                 }
                 case EffectCues.Kind.Burst:
                     Add(_structure, new Vector3(c.At.x, c.Reach, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
+                    // A break's burst is thrown along its blow; a regrowth's eruption (thrown up) writes no ring.
+                    if (c.Dir.sqrMagnitude > 1e-8f) _impulses.Add(ImpulseField.Shatter(c.At, c.T, 3f * c.Scale, _palette.ShatterGem));
                     break;
                 case EffectCues.Kind.Spark:
                     Add(c.Effect, new Vector3(c.At.x, c.Reach, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
@@ -161,6 +179,11 @@ namespace Game.Client.Effects
 
         public void Dispose()
         {
+            if (ImpulseField.Active == _impulses)
+            {
+                ImpulseField.Active = null;
+                ImpulseField.Unpublish();
+            }
             _fx.Dispose();
             _waves.Dispose();
         }

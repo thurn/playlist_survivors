@@ -56,6 +56,7 @@ namespace Demo3D.Runtime.Playback
             public BreakMoments Moments = BreakMoments.None;         // its structure breaks (its breaks field)
             public Demo3D.Runtime.Arena.StructureShatter Structures; // their shards on screen (null without breaks)
             public BossTelegraphs Fight;      // its boss fight's zones (null without one)
+            public PS.Look.Impulse[] Impulses = Array.Empty<PS.Look.Impulse>(); // its rings on the look's impulse field (ShotImpulses)
             public double From;               // its first visible song time: the cut, or with --from-preroll its pre-roll's start
             public int Liveness = -1;         // --overlay: its liveness violations (TrailerChecks)
         }
@@ -69,6 +70,8 @@ namespace Demo3D.Runtime.Playback
         double _worldFrom = double.NegativeInfinity; // the horde never poses before its shot's first frame (a cut clears the hit-stop)
         int _slotBase;       // crowd slot keys per shot, so no slot carries a monster's state across a cut
         Volume _black;       // the trailer's black: before its first frame and from the cut to black
+        PS.Look.ImpulseField _impulses; // the look's impulse field (the crystal cut's), loaded with each shot's rings at its cut
+        PS.Look.GridFloor _floor;       // the look's world floor in place of the environments' ground (the crystal cut's)
         AudioSource _music;
 
         /// <summary>`--overlay`'s trailer line: trailer time, the shot and its liveness violations (null outside a trailer).</summary>
@@ -97,9 +100,10 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags, and its
-        /// post stack in place of the environments' night grades (<see cref="PreparePost"/>). The action cut, and the
-        /// song outside a trailer, keep their Synty look (the epic's "before") and ignore them.
+        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags, its
+        /// post stack in place of the environments' night grades (<see cref="PreparePost"/>), its impulse field and its
+        /// world's grid floor (which replaces each environment's ground once it is ready). The action cut, and the song
+        /// outside a trailer, keep their Synty look (the epic's "before") and ignore them.
         /// </summary>
         void UseLook()
         {
@@ -110,6 +114,8 @@ namespace Demo3D.Runtime.Playback
                 look.Apply();
                 _lookPost = PS.Look.PostStack.OptionOf(look);
                 if (_lookPost != null) PS.Look.PostStack.Use(_lookPost);
+                _impulses = PS.Look.ImpulseField.Active = new PS.Look.ImpulseField();
+                _floor = PS.Look.GridFloor.For(look);
             }
             else if (flags.Any) Debug.Log("DemoMain: the look flags are for the crystal cut; " +
                                           (_flags.Trailer != null ? "the action cut" : "the song") + " keeps its look");
@@ -249,6 +255,7 @@ namespace Demo3D.Runtime.Playback
                     s.Breaks = _lookCrowd.Breaks(InstanceScale, type => _hover[type]);
                 }
                 if (s.Breaks.Length > 0) s.Eval.BreaksAtImpact = new HashSet<int>(Array.ConvertAll(s.Breaks, b => b.Entity));
+                if (_impulses != null) s.Impulses = ShotImpulses.Of(tl, s.Breaks, s.Moments, s.Blows, PS.Look.ResolvedLook.Active.Palette);
                 s.Effects?.SetShatters(Array.ConvertAll(s.Breaks, b => new EffectDriver.Shatter
                 {
                     Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
@@ -339,6 +346,11 @@ namespace Demo3D.Runtime.Playback
             _fight = s.Fight;
             _fight?.Show(true);
             _worldFrom = s.From;  // no hit-stop from before the shot
+            if (_impulses != null)
+            {
+                _impulses.Clear(); // the shot before's rings go with it
+                foreach (var r in s.Impulses) _impulses.Add(r);
+            }
             _slotBase = i << 20;
             _rig.YawDeg = s.Info.YawDeg; // the camera jumps to the shot's framing (Draw reads its framing track)
         }

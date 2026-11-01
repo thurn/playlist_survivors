@@ -16,6 +16,7 @@ using Game.Client.Structures;
 using Game.Client.Weapons;
 using PS.Game.Sim;
 using PS.Game.Sim.Level;
+using PS.Look;
 using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -157,6 +158,7 @@ namespace Game.Client.Loop
         string _soundOut;
         ArenaRuntime _arena;
         CrystalStructures _crystal;
+        GridFloor _floor;
         StructureShatter _shatter;
         CrowdView _crowd;
         GemView _gems;
@@ -429,6 +431,10 @@ namespace Game.Client.Loop
                 _look.FollowHero = a.FollowHero;
                 _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
                 if (_look.Zones != null) _look.ZoneLight.Preload(_look.Zones);
+                // The look's world draws the reactive grid floor in place of the arena's ground.
+                _floor = GridFloor.For(ResolvedLook.Active);
+                if (_floor != null) GridFloor.Replace(a.Ground);
+                _look.Floor = _floor;
             };
         }
 
@@ -752,6 +758,7 @@ namespace Game.Client.Loop
             _finishers?.Dispose();
             _shatter?.Dispose();
             _crystal?.Dispose();
+            _floor?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();
             _gems?.Dispose();

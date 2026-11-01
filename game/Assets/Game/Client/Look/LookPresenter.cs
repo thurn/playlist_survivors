@@ -14,7 +14,8 @@ namespace Game.Client.Look
     /// The look each frame (unity-game.md, "Post-processing and Camera"): the fast lane read at
     /// frameSong from the sim's revealed stream, the sim's heavy strikes and breaks as moments, the
     /// post volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
-    /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). A zone change
+    /// moments' punch and shake), the look's grid floor under it (<see cref="GridFloor"/>) and the shaders' beat
+    /// globals (<see cref="BeatGlobals"/>). A zone change
     /// eases the grade and the arena's runtime lighting to its zone's over two bars from its downbeat
     /// (<see cref="PostFeel.SetZone"/>, <see cref="ZoneLighting"/>). Player flags:
     /// - `--hero-path`: the camera follows <see cref="SyntheticHero"/>'s square walk instead of the sim's hero;
@@ -54,6 +55,9 @@ namespace Game.Client.Look
 
         /// <summary>The arena's zone lighting, or null without an arena.</summary>
         public ZoneLighting ZoneLight { get; set; }
+
+        /// <summary>The look's grid floor, kept under the camera's view each frame, or null for the arena's ground.</summary>
+        public GridFloor Floor { get; set; }
 
         public PostFeel Post => _post;
         public CameraRig Rig => _rig;
@@ -118,6 +122,7 @@ namespace Game.Client.Look
             float punch = _moments.Punch(s, lane.Period), shake = _moments.ShakeAmplitude(s, lane.Period);
             // Stills draw into their own target, whose shape a windowless camera doesn't know yet.
             if (_camera != null) _rig.Apply(_camera, _stills ? (float)Stills.Width / Stills.Height : _camera.aspect, s, punch, shake, _viewWidth);
+            Floor?.Follow(_camera);
             var feet = new Vector3((float)hx, 0, (float)hy);
             BeatGlobals.Publish(s, BeatGlobals.At(lane.Beat, lane.SinceBeat, lane.SinceDownbeat, lane.Energy), feet);
             BeatGlobals.PublishDrums(new Vector4((float)lane.Kick, (float)lane.Snare, (float)lane.Hat, (float)lane.Bass),

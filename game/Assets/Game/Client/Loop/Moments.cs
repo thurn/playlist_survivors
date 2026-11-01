@@ -29,6 +29,8 @@ namespace Game.Client.Loop
         GemRing,
         /// <summary>A level-up card's flip coming to rest face up.</summary>
         CardFlip,
+        /// <summary>An impulse ring setting out over the grid floor (a strike's, a death's, a break's).</summary>
+        Impulse,
     }
 
     /// <summary>

@@ -87,7 +87,9 @@ namespace PS.Look
         /// <summary>Sets every role as a shader global (<see cref="GlobalName"/>).</summary>
         public void SetShaderGlobals()
         {
-            foreach (var kv in _roles) Shader.SetGlobalColor(GlobalName(kv.Key), kv.Value); // linear in a linear project
+            // As linear vectors: Shader.SetGlobalColor handed shaders the sRGB values unconverted (the grid floor's void
+            // came out at L* 10 for 1, ps-wnj.7), and a vector is never converted.
+            foreach (var kv in _roles) Shader.SetGlobalVector(GlobalName(kv.Key), kv.Value.linear);
             Shader.SetGlobalVectorArray(IdEnemies, Linear(Enemies));
             Shader.SetGlobalInt(IdEnemyCount, Enemies.Length);
             Shader.SetGlobalVectorArray(IdZones, Linear(Array.ConvertAll(Zones, z => z.Tint)));

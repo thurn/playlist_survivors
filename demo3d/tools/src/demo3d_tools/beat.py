@@ -63,7 +63,7 @@ LEAD_TOLERANCE_MS = 2.0
 
 # The moments, and the sim events each one shows (for coverage).
 MOMENTS = ["HeroPress", "HeroStride", "HeroLand", "Blade", "Footfall", "Death", "Break", "Regrow",
-           "Effect", "GemRing", "CardFlip"]
+           "Effect", "GemRing", "CardFlip", "Impulse"]
 # The moments shown once for each of the sim's events; the others' counts are upper bounds (a hop cut short
 # never lands, only monsters on a slot are posed, the ring lands only on a reliable beat).
 ONE_EACH = {"HeroPress", "HeroStride", "Blade", "Death", "Break", "Regrow"}
@@ -284,7 +284,7 @@ def audit_moments(moments: list[dict], events: list[dict], frames: list[float]) 
         entry = {"checked": len(ms), "on": v["on"], "late": v["late"], "early": v["early"]}
         if kind in want:
             entry["events"] = want[kind]
-        if kind == "Effect":
+        if kind in ("Effect", "Impulse"):
             entry["by_effect"] = dict(sorted(Counter(m["detail"] for m in ms).items()))
             entry["off_by_effect"] = dict(sorted(Counter(f"{m['detail']} {verdict(m)}" for m in off).items()))
         if off:

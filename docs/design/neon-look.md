@@ -241,7 +241,8 @@ through Resources. `Palette` parses one: a top-level hex string is a role
 roles above are required; a palette may add roles, and `name`, `description`
 and `note` are not roles. `SetShaderGlobals` gives
 every role to shaders as `_Look` plus its parts capitalized
-(`_LookHeroBody`), and the enemy hues and zone tints as linear arrays
+(`_LookHeroBody`), a linear vector (ps-wnj.7: `Shader.SetGlobalColor` had
+passed the sRGB values unconverted), and the enemy hues and zone tints as linear arrays
 `_LookEnemies[8]` and `_LookZones[8]` with `_LookEnemyCount` and
 `_LookZoneCount`. The style guide's four palettes are there: `ion` (edge),
 `arcade` (solid), `phosphor` (hologram) and `spectrum` (prism).
@@ -373,6 +374,51 @@ One shared GPU service the grid, the crowd and the post read:
 This is the main thing that ties every element to every other: a blow is seen
 in the floor, the crowd and the screen at once. Stylelab's beat wave is the
 precedent.
+
+In the package (ps-wnj.7):
+
+- **The field** is `Runtime/Impulse/ImpulseField.cs`, a ring list (not a
+  texture): each ring has a centre, a start in song time, strength, speed,
+  reach, width and a palette colour. Players add rings as soon as they know
+  them; `Publish(song)` hands shaders the 32 strongest alive at that time as
+  globals (`Impulse.hlsl`: `_ImpulseRing`, `_ImpulseColor`, `_ImpulseCount`),
+  so a ring sets out on the first frame that reaches its time and fixed-time
+  frames reproduce. Same-instant rings of one kind within 3 m merge (a mass
+  kill is a few strong rings, not hundreds).
+- **Ring shapes** (`ImpulseField.Blow`, `Death`, `Shatter`, `Beat`) follow the
+  style guide's pace: across a 35 m frame in about a beat, gone in about one
+  and a half. A light strike's ring is faint, a heavy one strong, the slam's
+  and a formation smash's strongest; a death's is a small ring in its gem;
+  a break's a big one in `shatter.gem`.
+- **The floor** is `Runtime/World/GridFloor.cs` and `GridFloor.shader`: a
+  240 m patch kept under the camera's view, `void.floor` with a 1.5 m grid of
+  `grid.line`, every fourth line twice as bright, lines thinner than a pixel
+  dimming and fading out where a cell is under ~4 px (no moiré), and no scene
+  fog (the arenas' night fog lifted the void). Rings shove
+  the lines outward from their centres (the warp), lift the floor under the
+  front and light the lines in `grid.pulse` and the ring's colour. On the beat
+  the lines alone breathe up (`_SL_Pulse`, `_SL_BarPulse`). Every world option
+  draws it: `void-grid` as set, `pure-void` with a faint grid, `hued-zones`
+  with the lines in the first zone's hue (`SetZoneTint`). It replaces the
+  arena's ground and its light decals (`Runes`, `GlowPools`); the rest of
+  each Synty set stays until the world kit (ps-wnj.8).
+- **Beats**: the floor breathes floor-wide, so the players write no beat
+  rings (the style guide: a breath is a ring from the hero or a floor-wide
+  lift, never both). `ImpulseField.Beat` is there for a look that wants the
+  ring instead.
+- **Crowd hook**: `ImpulseCrowd(rootXZ, out hop, out light)` in
+  `Impulse.hlsl`, for the monster looks to wobble and light up as a ring
+  passes. No look calls it yet.
+- **Post hook**: `_ImpulseStrongest` (centre, radius, strength now) is the
+  strongest ring alive, for the post stack's screen ripple at big impacts.
+- **The game** feeds it from `EffectsPresenter`'s cues (strikes, deaths,
+  structure breaks, not regrowths) and marks each ring as an `Impulse` moment
+  for `game beat`. **demo3d's crystal cut** loads each shot's rings at its cut
+  (`ShotImpulses`: the hero's blows weighted by `BlowFeel`, the shattering
+  deaths, the `BreakMoments`). The action cut has neither.
+
+Evidence is in
+[game/evidence/look/impulse](../../game/evidence/look/impulse/README.md).
 
 ### Post-processing stack
 

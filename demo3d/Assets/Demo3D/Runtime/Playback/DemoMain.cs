@@ -172,6 +172,7 @@ namespace Demo3D.Runtime.Playback
                 BenchEnvironment.Build();
             }
             if (_trailer != null) UseTrailerStyle(rosterSet);
+            if (_floor != null && _arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => PS.Look.GridFloor.Replace(a.Ground);
             if (!_structures.IsBaseline)
             {
                 if (_arena == null) throw new InvalidOperationException($"DemoMain: {StructureStyle.Flag} {_structures.Name} needs the arena, not flat ground");
@@ -693,6 +694,8 @@ namespace Demo3D.Runtime.Playback
             float punch = _feel != null && !_flags.NoFeel ? _feel.Punch(feelT) : 1f;
             _rig.Frame(new Vector2(framing.Focus.X, framing.Focus.Y), viewWidth * punch, viewWidth);
             if (_feel != null && !_flags.NoFeel) _rig.Camera.transform.position += _feel.Shake(feelT);
+            _floor?.Follow(_rig.Camera);
+            _impulses?.Publish(t); // the rings on song time, as the effects: they set out over a hit-stop's frozen blow
             if (!_stylePosted && _arena?.Post != null)
             {
                 // The arena's volume exists once its scene has loaded; the style's grade goes on it before
@@ -940,6 +943,7 @@ namespace Demo3D.Runtime.Playback
             _structures?.Dispose();
             _heroRenderer?.Dispose();
             _heroBlade?.Dispose();
+            _floor?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();
             if (_lookPost != null) PS.Look.PostStack.Release();
