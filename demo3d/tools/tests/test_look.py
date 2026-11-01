@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import argparse
+import json
 from pathlib import Path
 
 import numpy as np
@@ -245,3 +247,116 @@ def test_type_readability_classes_monster_pixels_by_their_signature_hue() -> Non
     assert t["skeleton"]["dL"] == pytest.approx(look.lstar(np.array([200, 90, 40], dtype=np.uint8)) - 50.0, abs=0.1)
     assert t["skeleton"]["hueMatch"] == 0  # grey ground: nothing in its hue
     assert t["goblin"]["hueMatch"] == 1  # green ground all round it
+
+
+# --- The neon look's metrics (ps-wnj.2) ---
+
+ELECTRIC = {"name": "electric", "void": {"floor": "#05060a"}, "hero": {"body": "#f4f1ff", "blade": "#ffffff"},
+            "enemies": ["#ff2e88", "#28f0ff", "#9dff3a"], "shatter": {"gem": "#ffe9a8"},
+            "zones": [{"name": "cobalt", "tint": "#1d3cff"}]}
+CYAN, ORANGE = (40, 240, 255), (255, 100, 0)  # ORANGE: 38+ degrees from every role below
+
+
+def crowd(outline: bool, spacing: int = 24, r: int = 16, w: int = 1920, h: int = 1080) -> np.ndarray:
+    """A near-black frame with a packed crowd of overlapping cyan discs, flat or each with a dark rim."""
+    img = np.full((h, w, 3), 6, dtype=np.uint8)
+    yy, xx = np.mgrid[-r:r + 1, -r:r + 1]
+    d = np.hypot(yy, xx)
+    for i, cy in enumerate(range(300, 780, spacing)):
+        for cx in range(500 + (spacing // 2) * (i % 2), 1400, spacing):
+            patch = img[cy - r:cy + r + 1, cx - r:cx + r + 1]
+            patch[d <= r] = CYAN
+            if outline:
+                patch[(d <= r) & (d > r - 3)] = (4, 30, 34)
+    return img
+
+
+def test_palette_roles_are_every_colour_by_its_path() -> None:
+    roles = look.palette_roles(ELECTRIC)
+    assert roles["void.floor"] == (5, 6, 10) and roles["hero.blade"] == (255, 255, 255)
+    assert roles["enemies.1"] == (0x28, 0xF0, 0xFF)
+    assert roles["zones.cobalt.tint"] == (0x1D, 0x3C, 0xFF)
+    assert "name" not in roles and len(roles) == 8
+
+
+def test_conformance_counts_bright_pixels_near_a_roles_hue() -> None:
+    img = frame(5, 100, 100)  # a near-black floor: not bright, not counted
+    img[:50, :50] = CYAN  # an enemy role
+    img[:50, 50:] = 255  # white: the blade's role
+    img[50:75] = ORANGE  # off the palette: no role near its hue
+    c = look.palette_conformance(img, look.palette_roles(ELECTRIC))
+    assert c["brightShare"] == pytest.approx(0.75)
+    assert c["conformance"] == pytest.approx(2 / 3)
+    assert c["neutral"] == pytest.approx(1 / 3)
+    assert c["roles"]["enemies.1"] == pytest.approx(1 / 3)
+    assert c["families"] == 2  # cyan and orange; white is no hue family
+    no_white = {k: v for k, v in ELECTRIC.items() if k != "hero"}
+    assert look.palette_conformance(img, look.palette_roles(no_white))["conformance"] == pytest.approx(1 / 3)
+    assert look.palette_conformance(frame(5), look.palette_roles(ELECTRIC)) == {"brightShare": 0.0}
+
+
+def test_hue_families_count_peaks_so_a_split_hue_counts_once() -> None:
+    assert look.hue_families(np.array([])) == 0
+    assert look.hue_families(np.r_[np.full(50, 29.0), np.full(40, 31.0)]) == 1  # one hue across a bin edge
+    assert look.hue_families(np.r_[np.full(30, 10.0), np.full(30, 130.0), np.full(30, 250.0), [190.0]]) == 3  # a stray pixel is no family
+    assert look.hue_families(np.arange(0, 360, 0.5)) == 12  # a rainbow: every bin peaks alike
+
+
+def test_value_structure_splits_emitters_from_the_floor() -> None:
+    img = frame(19, 100, 100)  # floor at L* 5.9
+    img[:10] = CYAN  # bright and saturated: emitted
+    img[10:20] = 255  # emitted and clipped
+    img[20:30] = 90  # L* 38.2, grey: a lit floor, counted with it
+    v = look.value_structure(img)
+    assert v["emitted"] == pytest.approx(0.2)
+    assert v["clipped"] == pytest.approx(0.1) and v["clippedBlob"] == pytest.approx(0.1)
+    assert v["floorP50"] == pytest.approx(5.9, abs=0.1)
+    assert v["floorP90"] == pytest.approx(38.2, abs=0.1)
+    assert "floorP50" not in look.value_structure(frame(255))
+
+
+def test_a_flat_clump_reads_as_a_blob_and_an_outlined_one_as_a_swarm() -> None:
+    enemies = [look.palette_roles(ELECTRIC)[f"enemies.{i}"] for i in range(3)]
+    blob, swarm = look.swarm_separation(crowd(False), enemies), look.swarm_separation(crowd(True), enemies)
+    assert blob["denseTiles"] > 50 and swarm["denseTiles"] > 50
+    assert blob["separation"] < 0.15 and swarm["separation"] > 0.3
+    assert {t["enemy"] for t in swarm["tiles"]} == {1}  # all cyan
+    # The same crowd at half size: measured at 1920, it scores alike; its boxes are in its own pixels.
+    half = np.asarray(Image.fromarray(crowd(True)).resize((960, 540), Image.LANCZOS))
+    small = look.swarm_separation(half, enemies)
+    assert small["separation"] == pytest.approx(swarm["separation"], abs=0.1)
+    assert small["tiles"][0]["box"][2] == 32
+    # A sparse crowd has no dense clump to judge.
+    sparse = look.swarm_separation(crowd(False, spacing=48), enemies)
+    assert sparse["denseTiles"] == 0 and "separation" not in sparse
+
+
+def test_rules_break_on_min_and_max_and_skip_a_missing_metric() -> None:
+    rules = [{"metric": "floorP50", "max": 8}, {"metric": "separation", "min": 0.3}, {"metric": "conformance", "min": 0.9}]
+    assert look.check_rules({"floorP50": 4.0, "separation": 0.5}, rules) == []
+    assert look.check_rules({"floorP50": 9.0, "separation": 0.1}, rules) == ["floorP50 9 > 8", "separation 0.1 < 0.3"]
+
+
+def test_look_metrics_writes_the_report_and_fails_on_a_broken_rule(tmp_path: Path) -> None:
+    stills, out = tmp_path / "stills", tmp_path / "out"
+    stills.mkdir()
+    Image.fromarray(crowd(True)).save(stills / "swarm.png")
+    Image.fromarray(crowd(False)).save(stills / "blob.png")
+    Image.fromarray(frame(0)).save(stills / "mask-0.png")  # an ID render: skipped
+    (tmp_path / "palette.json").write_text(json.dumps(ELECTRIC))
+    rules = {"rules": [{"metric": "separation", "min": 0.3}, {"metric": "floorP50", "max": 8}]}
+    (tmp_path / "rules.json").write_text(json.dumps(rules))
+
+    def run(src: Path) -> int:
+        return look.cmd_look_metrics(argparse.Namespace(stills=str(src), palette=str(tmp_path / "palette.json"),
+                                                        thresholds=str(tmp_path / "rules.json"), out=str(out), title=None))
+
+    assert run(stills) == 1
+    numbers = json.loads((out / "metrics.json").read_text())
+    assert set(numbers["stills"]) == {"swarm", "blob"}
+    assert numbers["stills"]["swarm"]["broken"] == [] and numbers["stills"]["blob"]["broken"][0].startswith("separation")
+    assert "| blob |" in (out / "metrics.md").read_text()
+    assert (out / "blob-swarm.jpg").exists() and b"ps-render" in (out / "blob-swarm.jpg").read_bytes()[:400]
+    (stills / "blob.png").unlink()
+    assert run(stills) == 0
+    assert run(tmp_path / "empty") == 2

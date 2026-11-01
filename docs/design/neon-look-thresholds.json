@@ -1,0 +1,13 @@
+{
+ "provisional": true,
+ "source": "ps-wnj.2's starting values from neon-look.md's examples and the v2 calibration (demo3d/evidence/look/metrics); the style guide (ps-wnj.1, neon-look-style.md) sets the real ones by editing this file",
+ "rules": [
+  { "metric": "conformance", "min": 0.9, "why": "the bright pixels sit on the palette's roles" },
+  { "metric": "families", "max": 4, "why": "a hue budget: at most four hue families plus white in a frame" },
+  { "metric": "floorP50", "max": 8, "why": "the floor is near black" },
+  { "metric": "floorP90", "max": 20, "why": "outside ripples and light pools the floor stays dark" },
+  { "metric": "emitted", "max": 0.3, "why": "light comes from emitters; the dark stays dark" },
+  { "metric": "clipped", "max": 0.02, "why": "white is earned: at most 2% clipped outside impact frames" },
+  { "metric": "separation", "min": 0.3, "why": "a dense clump of one type reads as individuals, not a blob" }
+ ]
+}

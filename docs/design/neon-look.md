@@ -426,11 +426,20 @@ readability. It gains:
 - **Value structure**: the floor's and the frame's L* distribution, the share
   of the frame that is emitted light, the clipped share.
 - **Swarm separation**: in dense crowd regions, the contrast along boundaries
-  between adjacent monsters of one type (from an ID or edge pass in the
-  windowless stills, or from luminance edges if that is enough).
+  between adjacent monsters of one type. It uses luminance edges, not an ID
+  pass (ps-wnj.2): in each 64 px tile that one enemy hue mostly covers, it
+  measures the share of the clump's pixels on an edge of at least 30 L*.
 
-The thresholds come from the style guide. The tools run them on windowless
-stills of both projects.
+`look-metrics DIR --palette P.json` runs all three over a directory of
+stills: demo3d's or game's windowless stills, or frames cut from a capture.
+It works under both `demo3d` and `game`, and exits 1 when a still breaks a
+rule. The rules are in `docs/design/neon-look-thresholds.json`. They are
+provisional until the style guide edits them.
+
+Calibration on v2 is in
+[demo3d/evidence/look/metrics](../../demo3d/evidence/look/metrics/README.md).
+Every v2 frame fails swarm separation (0.00-0.24 against a floor of 0.3). The
+lit floors and heavy emitted share break the value rules.
 
 ### Evidence per bead
 

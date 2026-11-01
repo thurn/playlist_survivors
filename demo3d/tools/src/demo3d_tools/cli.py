@@ -36,6 +36,9 @@ Commands:
   report DIR          regenerate a sweep folder's report.md from its rows
   look SLUG           the look pass's set on the Mac, windowless: song stills, TD15's beauty shots,
                       their stats and |dL*| readability (--baseline SLUG for a contact sheet)
+  look-metrics DIR    the neon look's metrics over a directory of stills (demo3d or game): palette
+                      conformance, value structure, swarm separation against --palette and the
+                      thresholds; exits 1 on a broken rule (--out DIR for metrics.md and overlays)
   filmstrip SLUG      consecutive windowless frames from --at: a JPEG strip and an mp4 (--baseline
                       SLUG for a before/after strip, --check SLUG to compare two runs' frames)
   pix SPEC            a PIX GPU capture at one point (--point n=..,viewWidthM=..,load=..,aa=..) and
@@ -260,6 +263,12 @@ def cmd_look(a: argparse.Namespace) -> int:
     return look.cmd_look(a)
 
 
+def cmd_look_metrics(a: argparse.Namespace) -> int:
+    from . import look
+
+    return look.cmd_look_metrics(a)
+
+
 def cmd_look_sheet(a: argparse.Namespace) -> int:
     from . import look
 
@@ -354,6 +363,13 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
     y.set_defaults(func=cmd_sync)
+    lm = sub.add_parser("look-metrics", help="the neon look's metrics over a directory of stills (ps-wnj.2)")
+    lm.add_argument("stills", help="a directory of PNG or JPEG stills (searched recursively; mask-* skipped)")
+    lm.add_argument("--palette", required=True, help="a palette JSON (docs/design/neon-look.md, Palettes)")
+    lm.add_argument("--thresholds", help="the rules (default docs/design/neon-look-thresholds.json)")
+    lm.add_argument("--out", help="write metrics.md, metrics.json and swarm overlays here")
+    lm.add_argument("--title", help="the report's title (default: the stills directory's name)")
+    lm.set_defaults(func=cmd_look_metrics)
     if project == "game":
         from . import game
 

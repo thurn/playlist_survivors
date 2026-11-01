@@ -50,12 +50,19 @@ The ground (ps-e8r.6) is measured in the empty beauty shots, from the same view-
 pixel is classed by ArenaLayout.FightingDistance as fighting ground (inside a clearing or path) or
 outer (the edge bands and forest). look.md has each class's median L* and the fighting ground's
 local detail, the mean standard deviation of L* in GROUND_WINDOW px windows.
+
+`look-metrics DIR --palette P.json` (ps-wnj.2) measures any directory of stills, demo3d's, game's or frames cut from a
+capture, by the neon look's metrics (docs/design/neon-look.md, Look metrics): palette conformance, value structure and
+swarm separation (luminance edges inside dense one-hue clumps), checked against the thresholds file's rules
+(docs/design/neon-look-thresholds.json by default). It writes metrics.md, metrics.json and an overlay per still with
+--out and exits 1 when a still breaks a rule. The v2 calibration is in demo3d/evidence/look/metrics.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -65,7 +72,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from . import paths
 
@@ -107,11 +114,22 @@ def lstar(rgb: np.ndarray) -> np.ndarray:
     return 116 * _f(y) - 16
 
 
-def chroma(rgb: np.ndarray) -> np.ndarray:
-    """C*ab of 8-bit sRGB pixels (D65)."""
+def lab(rgb: np.ndarray) -> np.ndarray:
+    """CIELAB (D65) of 8-bit sRGB pixels: L*, a*, b* on the last axis."""
     m = np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]])
     f = _f(_linear(rgb) @ m.T / np.array([0.95047, 1.0, 1.08883]))
-    return np.hypot(500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2]))
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], axis=-1)
+
+
+def chroma(rgb: np.ndarray) -> np.ndarray:
+    """C*ab of 8-bit sRGB pixels (D65)."""
+    c = lab(rgb)
+    return np.hypot(c[..., 1], c[..., 2])
+
+
+def lab_hue(c: np.ndarray) -> np.ndarray:
+    """CIELAB hue h_ab (degrees, 0-360) of lab() values; noise for greys, so gate it on chroma."""
+    return np.degrees(np.arctan2(c[..., 2], c[..., 1])) % 360.0
 
 
 def hue(rgb: np.ndarray) -> np.ndarray:
@@ -356,6 +374,200 @@ def effect_stats(horde: np.ndarray, measured: np.ndarray) -> dict:
             "clipped": float((horde[fx] >= 250).all(axis=-1).mean())}
 
 
+# --- The neon look's metrics (ps-wnj.2) ----------------------------------------------------------
+
+BRIGHT_L = 50.0  # a bright pixel, for palette conformance
+NEUTRAL_C = 15.0  # below this C*ab a pixel, or a palette role, is neutral (white, grey or black)
+HUE_TOL = 20.0  # degrees of CIELAB hue: a bright chromatic pixel this near a role's hue conforms
+FAMILY_BIN, FAMILY_MIN = 30.0, 0.03  # a hue family: a peak 30-degree bin holding 3% of the bright chromatic pixels
+EMIT_L, EMIT_C = 60.0, 45.0  # emitted light: L* or C*ab at least these; the rest of the frame is the floor's estimate
+SWARM_C, SWARM_L = 30.0, 25.0  # a monster pixel candidate: coloured and lit
+SWARM_W = 1920  # the width swarm separation measures at
+SWARM_TILE = 64  # px at SWARM_W: wider than one monster at the trailer's 32-42 m framing
+SWARM_DENSE, SWARM_CLOSE = 0.5, 2  # a dense tile: one enemy hue covers half of it, gaps of up to 4 px closed
+SWARM_EDGE_DL = 30.0  # a boundary pixel: L* spans at least this much in its 3x3 window
+
+
+def palette_roles(palette: dict) -> dict[str, tuple[int, int, int]]:
+    """Every colour in a palette JSON (neon-look.md's format) by its role's path: `grid.line`, `enemies.0`,
+    `zones.cobalt.tint`. Any `#rrggbb` string is a role, so the style guide can add roles freely."""
+    roles: dict[str, tuple[int, int, int]] = {}
+
+    def walk(v: object, path: str) -> None:
+        if isinstance(v, str) and re.fullmatch(r"#[0-9a-fA-F]{6}", v):
+            roles[path] = (int(v[1:3], 16), int(v[3:5], 16), int(v[5:7], 16))
+        elif isinstance(v, dict):
+            for k, x in v.items():
+                walk(x, f"{path}.{k}" if path else k)
+        elif isinstance(v, list):
+            for i, x in enumerate(v):
+                walk(x, f"{path}.{x['name'] if isinstance(x, dict) and 'name' in x else i}")
+
+    walk(palette, "")
+    return roles
+
+
+def hue_families(h: np.ndarray) -> int:
+    """The hue families among chromatic pixels' CIELAB hues: the 30-degree bins that hold at least FAMILY_MIN of
+    them and are no lower than either neighbour on the hue circle (so one hue split by a bin edge counts once)."""
+    if h.size == 0:
+        return 0
+    n = round(360 / FAMILY_BIN)
+    bins = np.bincount((h // FAMILY_BIN).astype(int) % n, minlength=n) / h.size
+    peak = (bins >= np.roll(bins, 1)) & (bins >= np.roll(bins, -1))
+    return int((peak & (bins >= FAMILY_MIN)).sum())
+
+
+def palette_conformance(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]]) -> dict:
+    """The bright pixels (L* >= BRIGHT_L) against the palette: a chromatic one conforms when its CIELAB hue is within
+    HUE_TOL of a chromatic role's, a neutral one (C*ab < NEUTRAL_C) when the palette has a bright neutral role
+    (white). Also each role's share of the bright pixels (the nearest conforming role) and the hue families."""
+    c = lab(rgb)
+    lum, cc = c[..., 0], np.hypot(c[..., 1], c[..., 2])
+    bright = lum >= BRIGHT_L
+    n = int(bright.sum())
+    if n == 0:
+        return {"brightShare": 0.0}
+    names = list(roles)
+    rl = lab(np.array([roles[k] for k in names], dtype=np.uint8))
+    rc, rh = np.hypot(rl[:, 1], rl[:, 2]), lab_hue(rl)
+    chromatic_roles = np.flatnonzero(rc >= NEUTRAL_C)
+    white_roles = np.flatnonzero((rc < NEUTRAL_C) & (rl[:, 0] >= BRIGHT_L))
+    col = bright & (cc >= NEUTRAL_C)
+    h = lab_hue(c[col])
+    shares = dict.fromkeys(names, 0.0)
+    ok = 0
+    if chromatic_roles.size:
+        gaps = np.stack([_hue_gap(h, rh[i]) for i in chromatic_roles])
+        near = gaps.min(axis=0) <= HUE_TOL
+        ok += int(near.sum())
+        for j, cnt in zip(*np.unique(gaps.argmin(axis=0)[near], return_counts=True)):
+            shares[names[chromatic_roles[j]]] = cnt / n
+    neutral = n - int(col.sum())
+    if white_roles.size:
+        ok += neutral
+        shares[names[white_roles[0]]] += neutral / n
+    return {"brightShare": n / lum.size, "conformance": ok / n, "neutral": neutral / n,
+            "families": hue_families(h), "roles": {k: v for k, v in shares.items() if v > 0}}
+
+
+def value_structure(rgb: np.ndarray) -> dict:
+    """The frame's L* p50/p98; the emitted light's share (L* >= EMIT_L or C*ab >= EMIT_C); the floor's L* p50/p90,
+    estimated as every other pixel (no depth or ID pass needed, so it runs on any still or video frame); the
+    clipped share (every channel >= 250) and its largest connected region's."""
+    lum, cc = lstar(rgb), chroma(rgb)
+    emitted = (lum >= EMIT_L) | (cc >= EMIT_C)
+    clipped = (rgb >= 250).all(axis=-1)
+    p50, p98 = np.percentile(lum, [50, 98])
+    out = {"frameP50": float(p50), "frameP98": float(p98), "emitted": float(emitted.mean()),
+           "clipped": float(clipped.mean()), "clippedBlob": largest_region(clipped) / lum.size}
+    if not emitted.all():
+        f50, f90 = np.percentile(lum[~emitted], [50, 90])
+        out.update({"floorP50": float(f50), "floorP90": float(f90)})
+    return out
+
+
+def erode(mask: np.ndarray, r: int) -> np.ndarray:
+    """A square erosion by r pixels (outside the frame counts as set)."""
+    return ~dilate(~mask, r)
+
+
+def local_range(lum: np.ndarray) -> np.ndarray:
+    """Each pixel's L* range (max less min) over its 3x3 window."""
+    h, w = lum.shape
+    p = np.pad(lum, 1, mode="edge")
+    lo, hi = lum.copy(), lum.copy()
+    for dy in range(3):
+        for dx in range(3):
+            np.minimum(lo, p[dy:dy + h, dx:dx + w], out=lo)
+            np.maximum(hi, p[dy:dy + h, dx:dx + w], out=hi)
+    return hi - lo
+
+
+def swarm_separation(rgb: np.ndarray, enemies: list[tuple[int, int, int]]) -> dict:
+    """How well a dense clump of one type reads as individuals (the "blob" feedback), from luminance edges, measured
+    at SWARM_W wide (the still is resampled if it differs, so the 3x3 edges mean the same at any size).
+
+    A candidate monster pixel (C*ab >= SWARM_C, L* >= SWARM_L) takes the enemy hue nearest its CIELAB hue. A tile
+    (SWARM_TILE px) is dense when one hue covers SWARM_DENSE of it once gaps of up to 2 * SWARM_CLOSE px are closed:
+    at the trailer's framing that is several monsters overlapping. In each dense tile, separation is the share of that
+    clump's pixels on a boundary, where L* spans SWARM_EDGE_DL in a 3x3 window: dark gaps, outlines, rims and facets
+    between neighbours. One flat colour mass scores only its outer edge. A clump mostly dark between lit edges never
+    covers the tile, so it is not measured: it cannot read as a colour blob. Boxes are in the still's own pixels."""
+    h0, w0 = rgb.shape[:2]
+    if w0 != SWARM_W:
+        rgb = np.asarray(Image.fromarray(rgb).resize((SWARM_W, round(h0 * SWARM_W / w0)), Image.LANCZOS))
+    scale = w0 / SWARM_W
+    c = lab(rgb)
+    lum, cc = c[..., 0], np.hypot(c[..., 1], c[..., 2])
+    hh = lab_hue(c)
+    nearest = np.stack([_hue_gap(hh, t) for t in lab_hue(lab(np.array(enemies, dtype=np.uint8)))]).argmin(axis=0)
+    cand = (cc >= SWARM_C) & (lum >= SWARM_L)
+    edge = local_range(lum) >= SWARM_EDGE_DL
+    t = SWARM_TILE
+    th, tw = lum.shape[0] // t, lum.shape[1] // t
+
+    def tiles(m: np.ndarray) -> np.ndarray:
+        return m[:th * t, :tw * t].reshape(th, t, tw, t).sum(axis=(1, 3))
+
+    found: list[dict] = []
+    for k in range(len(enemies)):
+        fam = cand & (nearest == k)
+        if fam.sum() < SWARM_DENSE * t * t:
+            continue
+        clump = erode(dilate(fam, SWARM_CLOSE), SWARM_CLOSE)
+        cover, on = tiles(clump), tiles(clump & edge)
+        for y, x in zip(*np.nonzero(cover >= SWARM_DENSE * t * t)):
+            found.append({"enemy": k, "box": [round(x * t * scale), round(y * t * scale), round(t * scale)],
+                          "separation": float(on[y, x] / cover[y, x])})
+    out: dict = {"denseTiles": len(found), "denseShare": len(found) / (th * tw), "tiles": found}
+    if found:
+        sep = np.array([f["separation"] for f in found])
+        out.update({"separation": float(np.median(sep)), "separationP10": float(np.percentile(sep, 10))})
+    return out
+
+
+def swarm_overlay(rgb: np.ndarray, tiles: list[dict], floor: float | None) -> Image.Image:
+    """The still with each dense tile outlined and labelled by its separation: red under `floor`, green at or over it
+    (white with no floor)."""
+    im = Image.fromarray(rgb)
+    draw = ImageDraw.Draw(im)
+    font = ImageFont.load_default(size=max(10, round(im.width / 96)))
+    for tile in tiles:
+        x, y, size = tile["box"]
+        v = tile["separation"]
+        col = (255, 255, 255) if floor is None else ((255, 50, 50) if v < floor else (60, 255, 90))
+        draw.rectangle([x, y, x + size - 1, y + size - 1], outline=col, width=max(2, round(im.width / 640)))
+        draw.text((x + 5, y + 3), f"{v:.2f}", fill=col, font=font)
+    return im
+
+
+def neon_metrics(rgb: np.ndarray, palette: dict) -> dict:
+    """Every neon look metric of one still against a palette: conformance, value structure and swarm separation,
+    flat (the names the thresholds' rules use), plus the swarm's tiles and each role's share for the evidence."""
+    roles = palette_roles(palette)
+    enemies = [roles[k] for k in roles if k.startswith("enemies.")]
+    conf, swarm = palette_conformance(rgb, roles), swarm_separation(rgb, enemies)
+    flat = {k: v for k, v in conf.items() if k != "roles"} | value_structure(rgb)
+    flat |= {k: v for k, v in swarm.items() if k != "tiles"}
+    return {"metrics": flat, "roles": conf.get("roles", {}), "tiles": swarm["tiles"]}
+
+
+def check_rules(metrics: dict, rules: list[dict]) -> list[str]:
+    """The rules (thresholds JSON: {"metric", "min" and/or "max"}) a still's metrics break, as text. A metric the
+    still lacks (no dense clump, no bright pixel) breaks nothing."""
+    broken = []
+    for rule in rules:
+        v = metrics.get(rule["metric"])
+        if v is None:
+            continue
+        if "min" in rule and v < rule["min"]:
+            broken.append(f"{rule['metric']} {v:.3g} < {rule['min']:g}")
+        if "max" in rule and v > rule["max"]:
+            broken.append(f"{rule['metric']} {v:.3g} > {rule['max']:g}")
+    return broken
+
+
 # --- Capture -----------------------------------------------------------------------------------
 
 @dataclass
@@ -413,10 +625,10 @@ def load_rgb(path: Path) -> np.ndarray:
         return np.asarray(im.convert("RGB"))
 
 
-def small_jpeg(src: Path, dst: Path, label: str) -> None:
+def small_jpeg(src: Path | Image.Image, dst: Path, label: str) -> None:
     """A 960 px JPEG with the ps-render tag (RenderTag's JPEG comment), which the vendor guard accepts."""
-    with Image.open(src) as im:
-        small = im.convert("RGB").resize((JPEG_W, JPEG_H), Image.LANCZOS)
+    with (Image.open(src) if isinstance(src, Path) else src.copy()) as im:
+        small = im.convert("RGB").resize((JPEG_W, round(im.height * JPEG_W / im.width)), Image.LANCZOS)
     dst.parent.mkdir(parents=True, exist_ok=True)
     small.save(dst, "JPEG", quality=82, comment=f"ps-render look harness {label}".encode())
 
@@ -714,3 +926,87 @@ def cmd_look_sheet(a: argparse.Namespace) -> int:
     contact_sheet(a.stills.split(","), sets, dst, labels, a.scale)
     print(f"look-sheet: {dst}")
     return 0
+
+
+def metrics_report(title: str, rows: dict[str, dict], broken: dict[str, list[str]], palette: Path,
+                   thresholds: dict) -> str:
+    """metrics.md: a row per still of the neon look's metrics (ps-wnj.2) and the rules each breaks."""
+    lines = [f"# Look metrics: {title}", "",
+             "Generated by `demo3d look-metrics` (demo3d/tools/src/demo3d_tools/look.py) against the palette",
+             f"`{palette.name}` and the thresholds below. L* is CIE L*, C*ab and hue are CIELAB (D65).", "",
+             f"- **Bright, conformance, families**: bright is the share of pixels at L* >= {BRIGHT_L:g}; conformance is",
+             f"  the share of them within {HUE_TOL:g} degrees of a palette role's hue (neutral ones, C*ab < {NEUTRAL_C:g}, when",
+             f"  the palette has a white); families is the hue peaks ({FAMILY_BIN:g}-degree bins) holding {FAMILY_MIN * 100:g}% of",
+             "  the bright chromatic pixels.",
+             f"- **Value structure**: emitted is the share at L* >= {EMIT_L:g} or C*ab >= {EMIT_C:g}; the floor is every other",
+             "  pixel (its L* p50 and p90); clipped is every channel >= 250.",
+             f"- **Swarm separation**: in each {SWARM_TILE} px tile (at {SWARM_W} wide) that one enemy hue covers at least",
+             f"  {SWARM_DENSE * 100:g}% of (C*ab >= {SWARM_C:g}, L* >= {SWARM_L:g}, gaps up to {2 * SWARM_CLOSE} px closed), the share of",
+             f"  that clump's pixels on a boundary (L* spanning {SWARM_EDGE_DL:g} in a 3x3 window); separation is the",
+             "  dense tiles' median, p10 their 10th percentile. The `-swarm.jpg` overlays outline every dense tile.", "",
+             "Rules (" + ("provisional: " if thresholds.get("provisional") else "") + f"{thresholds.get('source', '')}):", ""]
+    lines += [f"- `{r['metric']}`" + (f" >= {r['min']:g}" if "min" in r else "") + (f" <= {r['max']:g}" if "max" in r else "")
+              + (f": {r['why']}" if r.get("why") else "") for r in thresholds["rules"]]
+    lines += ["", ("| still | bright | conformance | families | frame L* p50 | floor L* p50 | floor p90 | emitted | "
+                   "clipped | dense tiles | separation | p10 | rules |"),
+              "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
+
+    def num(m: dict, k: str, fmt: str) -> str:
+        v = m.get(k)
+        return "" if v is None else (_pct(v) if fmt == "%" else format(v, fmt))
+
+    for name, m in rows.items():
+        lines.append(f"| {name} | {num(m, 'brightShare', '%')} | {num(m, 'conformance', '%')} | {num(m, 'families', 'd')} | "
+                     f"{num(m, 'frameP50', '.1f')} | {num(m, 'floorP50', '.1f')} | {num(m, 'floorP90', '.1f')} | "
+                     f"{num(m, 'emitted', '%')} | {num(m, 'clipped', '%')} | {m['denseTiles']} | "
+                     f"{num(m, 'separation', '.2f')} | {num(m, 'separationP10', '.2f')} | "
+                     f"{'pass' if not broken[name] else 'FAIL ' + str(len(broken[name]))} |")
+    failing = {n: b for n, b in broken.items() if b}
+    if failing:
+        lines += ["", "## Broken rules", ""] + [f"- {n}: " + "; ".join(b) for n, b in failing.items()]
+    return "\n".join(lines) + "\n"
+
+
+def find_stills(root: Path) -> list[Path]:
+    """The PNG and JPEG stills under root, less the players' ID renders and this command's own overlays."""
+    return sorted(p for p in root.rglob("*") if p.suffix.lower() in (".png", ".jpg", ".jpeg")
+                  and not p.name.startswith(("mask-", "contact-sheet")) and not p.stem.endswith("-swarm"))
+
+
+def cmd_look_metrics(a: argparse.Namespace) -> int:
+    """The neon look's metrics (ps-wnj.2) over a directory of stills, against a palette and a thresholds file: the
+    table on stdout and, with --out, metrics.md, metrics.json and a swarm overlay per still. Exits 1 if a still breaks
+    a rule, 2 if there is nothing to measure."""
+    root, palette_path = Path(a.stills), Path(a.palette)
+    thresholds_path = Path(a.thresholds) if a.thresholds else paths.worktree().root / "docs" / "design" / "neon-look-thresholds.json"
+    stills = find_stills(root) if root.is_dir() else []
+    if not stills:
+        print(f"look-metrics: no stills under {root}", file=sys.stderr)
+        return 2
+    palette = json.loads(palette_path.read_text(encoding="utf-8"))
+    thresholds = json.loads(thresholds_path.read_text(encoding="utf-8"))
+    if not any(k.startswith("enemies.") for k in palette_roles(palette)):
+        print(f"look-metrics: {palette_path} has no enemies", file=sys.stderr)
+        return 2
+    out = Path(a.out) if a.out else None
+    floor = next((r["min"] for r in thresholds["rules"] if r["metric"] == "separation" and "min" in r), None)
+    rows: dict[str, dict] = {}
+    broken: dict[str, list[str]] = {}
+    numbers: dict[str, dict] = {}
+    for p in stills:
+        name = p.relative_to(root).with_suffix("").as_posix()
+        rgb = load_rgb(p)
+        m = neon_metrics(rgb, palette)
+        rows[name], broken[name] = m["metrics"], check_rules(m["metrics"], thresholds["rules"])
+        numbers[name] = {"metrics": m["metrics"], "roles": m["roles"], "broken": broken[name]}
+        if out:
+            small_jpeg(swarm_overlay(rgb, m["tiles"], floor), out / f"{name.replace('/', '-')}-swarm.jpg",
+                       f"look-metrics {name}")
+    text = metrics_report(a.title or root.name, rows, broken, palette_path, thresholds)
+    if out:
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "metrics.md").write_text(text, encoding="utf-8")
+        (out / "metrics.json").write_text(json.dumps({"palette": palette_path.name, "thresholds": thresholds,
+                                                      "stills": numbers}, indent=1) + "\n", encoding="utf-8")
+    print(text)
+    return 1 if any(broken.values()) else 0
