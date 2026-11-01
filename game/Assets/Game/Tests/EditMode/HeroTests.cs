@@ -317,6 +317,31 @@ namespace Game.Tests
             }
         }
 
+        /// <summary>A swing entering before the one before has followed through holds the twist: it never lets go between them.</summary>
+        [Test]
+        public void AChainOfSwingsHoldsTheTwist()
+        {
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(AimedAttack(2, 2.3, 0));
+            motion.OnEvent(AimedAttack(2.6, 2.9, 0));
+            for (double t = 2 + HeroMotion.TwistLead * 0.3; t <= 3.0; t += 1 / Fps)
+                Assert.That(motion.Evaluate(t, 0, 0, Direction.Up).Twist, Is.EqualTo((float)(-Math.PI / 2)).Within(1e-4f), $"at {t}");
+
+            // A swing turning the other way crossfades the twist across, from the one before's aim to its own.
+            motion.OnEvent(AimedAttack(3.0, 3.3, Math.PI * 0.9));
+            float last = motion.Evaluate(3.0, 0, 0, Direction.Up).Twist;
+            Assert.That(last, Is.EqualTo((float)(-Math.PI / 2)).Within(1e-4f));
+            for (double t = 3.0 + 1 / Fps; t <= 3.0 + HeroMotion.TwistLead * 0.3; t += 1 / Fps)
+            {
+                float twist = motion.Evaluate(t, 0, 0, Direction.Up).Twist;
+                Assert.That(Math.Abs(twist - last), Is.LessThan(0.5f), $"at {t}: no jump");
+                last = twist;
+            }
+            Assert.That(motion.Evaluate(3.0 + HeroMotion.TwistLead * 0.3, 0, 0, Direction.Up).Twist, Is.EqualTo((float)(Math.PI * 0.4)).Within(1e-4f),
+                "on the new aim");
+        }
+
         /// <summary>
         /// Past 120 degrees the twist unwinds and the whole body turns, the legs coming off the forward run: square to
         /// the travel they take the attack's footwork, and a strike straight behind backpedals with no twist, whichever

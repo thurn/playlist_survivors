@@ -123,6 +123,8 @@ namespace Game.Client.Hero
             public bool Heavy;
             public float Yaw;
             public bool Aimed;
+            /// <summary>The twist's weight carried in from the aimed swing before, at this one's entry.</summary>
+            public double Carry;
         }
 
         struct Glide
@@ -192,12 +194,19 @@ namespace Game.Client.Hero
             var ann = _clips[clip];
             var clock = HeroClips.Fit(ann.impact, e.WindupStart, e.Impact);
             bool aimed = e.DirX != 0 || e.DirY != 0;
-            _swings[_swingCount % Keep] = new Swing
+            var swing = new Swing
             {
                 Clip = clip, Clock = clock, Entry = Math.Max(clock.Start, e.WindupStart), Impact = e.Impact,
                 End = clock.TimeAt(ann.end), Heavy = e.Heavy,
                 Yaw = aimed ? (float)Math.Atan2(e.DirX, e.DirY) : 0f, Aimed = aimed,
             };
+            for (int i = _swingCount - 1; aimed && i >= Math.Max(0, _swingCount - Keep); i--)
+                if (_swings[i % Keep].Aimed)
+                {
+                    swing.Carry = TwistWeight(_swings[i % Keep], swing.Entry);
+                    break;
+                }
+            _swings[_swingCount % Keep] = swing;
             _swingCount++;
         }
 
@@ -379,26 +388,26 @@ namespace Game.Client.Hero
 
         /// <summary>
         /// The way the walking hero's upper body faces at song time t: the travel, turned toward the aimed swings' aims
-        /// (each from the one before as its twist comes in) by the strongest twist's weight.
+        /// (each from the one before as its twist comes in) by the latest aimed swing's twist weight.
         /// </summary>
         double UpperYaw(double t, double travel)
         {
-            int oldest = Math.Max(0, _swingCount - Keep), first = -1;
-            double weight = 0;
-            for (int i = _swingCount - 1; i >= oldest; i--)
+            int latest = -1, first = -1;
+            for (int i = _swingCount - 1; i >= Math.Max(0, _swingCount - Keep); i--)
             {
                 var s = _swings[i % Keep];
                 if (!s.Aimed || s.Entry > t) continue;
-                double into = TwistIn(s, t);
-                weight = Math.Max(weight, into * (1 - Smooth(Clamp01((t - s.End) / TwistOut))));
-                if (first < 0 || TwistIn(_swings[first % Keep], t) < 1) first = i;
+                if (latest < 0) latest = i;
+                first = i;
+                if (TwistIn(s, t) >= 1) break;
             }
-            if (first < 0 || weight <= 0) return travel;
+            double weight = latest < 0 ? 0 : TwistWeight(_swings[latest % Keep], t);
+            if (weight <= 0) return travel;
             double aim = _swings[first % Keep].Yaw;
-            for (int i = first + 1; i < _swingCount; i++)
+            for (int i = first + 1; i <= latest; i++)
             {
                 var s = _swings[i % Keep];
-                if (s.Aimed && s.Entry <= t) aim = LerpAngle(aim, s.Yaw, TwistIn(s, t));
+                if (s.Aimed) aim = LerpAngle(aim, s.Yaw, TwistIn(s, t));
             }
             return LerpAngle(travel, aim, weight);
         }
@@ -406,6 +415,13 @@ namespace Game.Client.Hero
         /// <summary>A swing's twist coming in: eased over the first <see cref="TwistLead"/> of its wind-up.</summary>
         static double TwistIn(in Swing s, double t) =>
             Smooth(Clamp01((t - s.Entry) / Math.Max(1e-3, TwistLead * (s.Impact - s.Entry))));
+
+        /// <summary>
+        /// A swing's twist weight at song time t: up from the weight carried in from the swing before (so a chain of swings
+        /// never lets the twist go between them), eased out over <see cref="TwistOut"/> after its follow-through.
+        /// </summary>
+        static double TwistWeight(in Swing s, double t) =>
+            (s.Carry + (1 - s.Carry) * TwistIn(s, t)) * (1 - Smooth(Clamp01((t - s.End) / TwistOut)));
 
         HeroSlot SlotAt(in Swing s, double t)
         {
