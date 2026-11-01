@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.Client.Effects
+namespace PS.Look.Effects
 {
     /// <summary>
     /// Effect lights (tech-demo-3d/effects.md, Effect lights): each spawned effect's light cue lives for its

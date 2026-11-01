@@ -5,6 +5,7 @@
   "description": "The neon crystal look both demo3d's crystal cut and the game draw with (docs/design/neon-look.md): palettes of semantic roles, look presets naming one option per aesthetic axis, and the look flags both players take.",
   "unity": "6000.6",
   "dependencies": {
-    "com.unity.nuget.newtonsoft-json": "3.2.2"
+    "com.unity.nuget.newtonsoft-json": "3.2.2",
+    "com.unity.render-pipelines.universal": "17.6.0"
   }
 }

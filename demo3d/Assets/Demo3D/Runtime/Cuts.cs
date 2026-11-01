@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using PS.Look.Effects;
 
 namespace Demo3D.Runtime
 {
@@ -58,6 +59,18 @@ namespace Demo3D.Runtime
         public string Describe() => string.Format(CultureInfo.InvariantCulture,
             "cuts [{0}] lodPx {1:0.###},{2:0.###} shadowLod {3} lightCell {4:0.###} m mergePx {5:0.###}",
             string.Join(",", Array.FindAll(All, On)), LodPx1, LodPx2, ShadowProxyLod, LightCellM, MergePx);
+
+        /// <summary>
+        /// Sets an effect runtime's cuts: <c>merge</c> folds identical spawns of one effect in a frame whose centres lie
+        /// within MergePx on screen into one with their combined density; <c>drop-glow</c> skips glow-quad emitters;
+        /// <c>light-cell</c> sets the light clusters' cell.
+        /// </summary>
+        public void Apply(EffectSystem fx)
+        {
+            fx.MergePx = On(Merge) ? MergePx : 0;
+            fx.DropGlow = On(DropGlow);
+            fx.Lights.Cell = On(LightCell) ? LightCellM : EffectLights.DefaultCell;
+        }
 
         /// <summary>The cuts in force for this run (set by DemoMain or a bench scene before it builds its renderers).</summary>
         public static Cuts Active = FromCommandLine();

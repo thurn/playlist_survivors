@@ -126,6 +126,18 @@ and our own draw shader; no vendor file changes. Per effect:
   (the ring and lightning).
 - **Light cues** take the effect's heat colour: a white cue on every hit
   washed the ground and the horde yellow-white at a climax.
+- **Palette roles** (ps-wnj.5, [neon-look.md](../design/neon-look.md#vfx)):
+  any of these colours (a `heat` edge or mid, a spark layer's, a light's
+  `color`) may be a palette role's name instead of `[r, g, b]`: `"edge":
+  "shatter.gem"`, `"color": "boss.telegraph"`, or an enemy hue slot as
+  `"enemies.2"`. The converter records it and checks every package palette
+  has it; the runtime draws it in the applied look's palette (the fallback
+  preset's where no look is applied, as in the action cut), a heat colour as
+  the selection's own numbers would be, a light linear. Today's effects keep
+  their literal colours until the neon look restyles them.
+- **`tintGain`** (top level, 1 by default): a tinted spawn's heat ramp runs at
+  this times its emitter's gain. game's is 0.6, so a crimson Bloody Tear
+  holds its colour further into the core (ps-msz.8.3).
 
 **The crystal shatter's burst** (epic ps-2iq,
 [evidence](../../demo3d/evidence/shatter/impact/README.md)): wherever Crystal draws a type, its
@@ -276,6 +288,16 @@ VFX Graph template  …         …          …                       one graph
   any VFX Graph feature that turned out to disable its batching.
 
 ### The runtime
+
+The runtime and the converter live in the look package,
+`unity-packages/com.playlistsurvivors.look/` (`Runtime/Effects/`,
+`Editor/Effects/EffectConverter.cs`; ps-wnj.5), shared by demo3d and the
+game. Each project keeps its own selection and bake: demo3d's `EffectBake`
+(TD8's spike burst built in, the stock prefabs kept for the A/B gallery, the
+converter report) and game's `Tasks.BakeEffects`. demo3d's cuts reach it as
+plain settings (`MergePx`, `DropGlow`, the light cell; `Cuts.Apply`), game's
+moments trace and kernel warm-up as hooks (`EffectSystem.Marked`,
+`ComputeKernels.Prepare`).
 
 Whichever runtime wins must meet the requirements below. The mechanisms
 describe our own runtime; VFX Graph meets them through the spawn buffers and

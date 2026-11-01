@@ -5,6 +5,7 @@ using PS.Choreography;
 using Demo3D.Runtime.Bench;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
+using PS.Look.Effects;
 using UnityEngine;
 
 namespace Demo3D.Runtime.Playback
@@ -102,6 +103,7 @@ namespace Demo3D.Runtime.Playback
                 else
                 {
                     _fx = new EffectSystem(EffectLibrary.Load(), Opt("effectPool", EffectSystem.DefaultPool), _drawLights ? Opt("lightPool", EffectLights.DefaultPool) : 0);
+                    Cuts.Active.Apply(_fx);
                     _fx.AddCamera(ctx.Camera);
                 }
             }

@@ -3,34 +3,56 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Demo3D.Runtime.Effects;
 using Newtonsoft.Json.Linq;
+using PS.Look.Effects;
 using UnityEditor;
 using UnityEngine;
-using Slots = Demo3D.Runtime.Effects.EmitterSlots;
+using Slots = PS.Look.Effects.EmitterSlots;
 
-namespace Demo3D.EditorTools.Effects
+namespace PS.Look.EditorTools.Effects
 {
     /// <summary>
-    /// TD8's converter (effects.md, The converter): reads the chosen prefabs (Data/effects.json)
-    /// through the public ParticleSystem, ParticleSystemRenderer and LineRenderer APIs and writes
-    /// the GPU runtime's effect library, its lookup rows and its texture array into the
-    /// gitignored Assets/Baked/Effects/. It implements exactly the entries in TD8's inventory
-    /// (evidence/td8/inventory.md); anything else fails loudly, per prefab and child, unless the
-    /// selection drops the module (cosmetic) or skips the child, which the notes record.
+    /// The effect converter (tech-demo-3d/effects.md, The converter), demo3d's and game's: reads a
+    /// project's chosen prefabs (demo3d's Data/effects.json, game's Content/effects.json) through the
+    /// public ParticleSystem, ParticleSystemRenderer and LineRenderer APIs, builds the selection's own
+    /// spark bursts, and writes the GPU runtime's effect library, its lookup rows and its texture array
+    /// into the project's gitignored Assets/Baked/Effects/. It implements exactly the entries in
+    /// demo3d's TD8 inventory (demo3d/evidence/td8/inventory.md); anything else fails loudly, per
+    /// prefab and child, unless the selection drops the module (cosmetic) or skips the child. A colour
+    /// in the selection is an [r, g, b] array or a palette role's name (neon-look.md, The Axes &gt;
+    /// VFX), which the runtime draws in the applied look's palette.
     /// </summary>
     public static class EffectConverter
     {
-        public const string SelectionPath = "Assets/Demo3D/Data/effects.json";
         public const string OutDir = "Assets/Baked/Effects/Resources";
         public const int TextureSize = 512;
+        const string Shaders = "Packages/com.playlistsurvivors.look/Runtime/Effects/Shaders/";
 
-        [InitializeOnLoadMethod]
-        static void Register() => Bakers.Register("effects", Bake);
-
-        public static void Bake()
+        /// <summary>An effect a project builds from its own parts rather than a selection entry (demo3d's runtime spike): converted after the selection.</summary>
+        public readonly struct BuiltIn
         {
-            var selection = JObject.Parse(File.ReadAllText(SelectionPath));
+            public readonly string Name, Source;
+            public readonly GameObject Root;
+            public readonly JObject Options;
+
+            public BuiltIn(string name, string source, GameObject root, JObject options)
+            {
+                Name = name;
+                Source = source;
+                Root = root;
+                Options = options;
+            }
+        }
+
+        /// <summary>
+        /// Converts the selection at <paramref name="selectionPath"/> (relative to the project) and the
+        /// <paramref name="builtIns"/> into Assets/Baked/Effects/Resources/EffectLibrary.asset.
+        /// <paramref name="keepStock"/> references each effect's stock prefab for demo3d's A/B gallery (it
+        /// pulls vendor prefabs into a build); <paramref name="shaders"/> are referenced so a build includes them.
+        /// </summary>
+        public static void Bake(string selectionPath, IEnumerable<BuiltIn> builtIns = null, bool keepStock = false, Shader[] shaders = null)
+        {
+            var selection = JObject.Parse(File.ReadAllText(selectionPath));
             var guids = ManifestGuids();
             var lib = ScriptableObject.CreateInstance<EffectLibrary>();
             var b = new Builder();
@@ -61,12 +83,13 @@ namespace Demo3D.EditorTools.Effects
                 entries.Add(entry);
                 stock.Add(prefab);
             }
-            // The runtime spike's billboard burst (effects.md, Choosing the GPU runtime): our own
-            // particle system, built here and converted like the rest, so it isn't vendor-derived.
-            var spike = SpikeBurst();
-            var spikeEntry = b.Convert(SpikeName, "built in (TD8's runtime spike)", spike, new Options(new JObject { ["noLight"] = true }), errors);
-            UnityEngine.Object.DestroyImmediate(spike);
-            if (spikeEntry != null) { entries.Add(spikeEntry); stock.Add(null); }
+            foreach (var x in builtIns ?? Array.Empty<BuiltIn>())
+            {
+                var entry = b.Convert(x.Name, x.Source, x.Root, new Options(x.Options), errors);
+                if (entry == null) continue;
+                entries.Add(entry);
+                stock.Add(null);
+            }
             if (errors.Length > 0) throw new Exception("EffectConverter: unsupported modules in use\n" + errors);
 
             lib.Effects = entries.ToArray();
@@ -75,12 +98,16 @@ namespace Demo3D.EditorTools.Effects
             lib.MeshVertices = b.MeshVerts.ToArray();
             lib.Meshes = b.Meshes.ToArray();
             lib.TextureNames = b.Textures.Select(t => t.name).ToArray();
-            lib.StockPrefabs = stock.ToArray();
-            lib.Selection = File.ReadAllText(SelectionPath);
-            lib.Simulate = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Demo3D/Runtime/Effects/Shaders/EffectSim.compute");
-            lib.Sort = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Demo3D/Runtime/Effects/Shaders/EffectSort.compute");
-            lib.Draw = Shader.Find("Demo3D/EffectParticles");
-            if (lib.Simulate == null || lib.Sort == null || lib.Draw == null) throw new Exception("EffectConverter: the runtime's shaders are missing");
+            lib.Roles = b.Roles.ToArray();
+            lib.TintGain = (float?)selection["tintGain"] ?? 1f;
+            if (keepStock) lib.StockPrefabs = stock.ToArray();
+            lib.Selection = File.ReadAllText(selectionPath);
+            lib.Simulate = AssetDatabase.LoadAssetAtPath<ComputeShader>(Shaders + "EffectSim.compute");
+            lib.Sort = AssetDatabase.LoadAssetAtPath<ComputeShader>(Shaders + "EffectSort.compute");
+            lib.Draw = Shader.Find("PS/Look/EffectParticles");
+            lib.Shaders = shaders ?? Array.Empty<Shader>();
+            if (lib.Simulate == null || lib.Sort == null || lib.Draw == null || Array.IndexOf(lib.Shaders, null) >= 0)
+                throw new Exception("EffectConverter: the runtime's shaders are missing");
 
             Directory.CreateDirectory(OutDir);
             var lut = b.BuildLut();
@@ -100,38 +127,6 @@ namespace Demo3D.EditorTools.Effects
                       $"{b.Meshes.Count} meshes, {b.Rows} lookup rows -> {libPath}\n" + string.Join("\n", b.Notes));
         }
 
-        /// <summary>Validates every candidate in the manifest and writes the per-prefab result (evidence).</summary>
-        public static void Report(string outPath)
-        {
-            var manifest = JObject.Parse(File.ReadAllText("manifest.json"));
-            var sb = new StringBuilder();
-            sb.AppendLine("# TD8: converter report over every effect candidate");
-            sb.AppendLine();
-            sb.AppendLine("Generated by `demo3d unity EffectReport`: each candidate run through the converter with no drops or skips. ");
-            sb.AppendLine("`ok` converts as is; otherwise the errors the converter fails with.");
-            sb.AppendLine();
-            foreach (var a in manifest["assets"].Where(a => ((string)a["use"]).StartsWith("effect candidate") && ((string)a["path"]).EndsWith(".prefab")))
-            {
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath((string)a["guid"]));
-                var errors = new StringBuilder();
-                var b = new Builder();
-                var e = b.Convert(prefab.name, (string)a["path"], prefab, new Options(new JObject()), errors);
-                var parent = Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName((string)a["path"])));
-                sb.AppendLine($"## {parent} / {prefab.name}");
-                sb.AppendLine();
-                if (errors.Length == 0) sb.AppendLine($"ok: {e.EmitterCount} emitters, lifetime {e.Lifetime:F2} s" + (e.Light.Active ? ", light cue" : ""));
-                else foreach (var line in errors.ToString().Split('\n').Where(l => l.Trim().Length > 0)) sb.AppendLine("    " + line.TrimEnd());
-                sb.AppendLine();
-                foreach (var n in b.Notes) sb.AppendLine("- " + n);
-                sb.AppendLine();
-            }
-            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
-            File.WriteAllText(outPath, sb.ToString().Replace("\r\n", "\n"));
-            Debug.Log("EffectConverter: report -> " + outPath);
-        }
-
-        public const string SpikeName = "spike-burst";
-
         /// <summary>Converts one prefab or scene object with a selection entry's options (tests): its entry, emitter slots and emission, or the errors.</summary>
         public static EffectEntry ConvertOne(GameObject go, string optionsJson, out Vector4[] emitters, out EmitterEmission[] emission, out string errors)
         {
@@ -144,56 +139,13 @@ namespace Demo3D.EditorTools.Effects
             return e;
         }
 
-        /// <summary>
-        /// The spike's effect, mirrored by the VFX Graph template: a burst of 20 additive billboards
-        /// from a 0.15 m sphere at 2 to 5 m/s, living 0.35 to 0.8 s, fading out and shrinking.
-        /// </summary>
-        public static GameObject SpikeBurst()
-        {
-            var go = new GameObject(SpikeName);
-            var ps = go.AddComponent<ParticleSystem>();
-            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            var main = ps.main;
-            main.duration = 1f;
-            main.loop = false;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.8f);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(2f, 5f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.15f, 0.35f);
-            main.startColor = new Color(1f, 0.75f, 0.4f, 1f);
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.maxParticles = 100;
-            var em = ps.emission;
-            em.rateOverTime = 0;
-            em.SetBursts(new[] { new ParticleSystem.Burst(0f, 20) });
-            var shape = ps.shape;
-            shape.shapeType = ParticleSystemShapeType.Sphere;
-            shape.radius = 0.15f;
-            var col = ps.colorOverLifetime;
-            col.enabled = true;
-            var g = new UnityEngine.Gradient();
-            g.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(Color.white, 1) },
-                new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(0, 1) });
-            col.color = g;
-            var size = ps.sizeOverLifetime;
-            size.enabled = true;
-            size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0, 1, 1, 0.2f));
-            var r = go.GetComponent<ParticleSystemRenderer>();
-            r.renderMode = ParticleSystemRenderMode.Billboard;
-            var mat = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")) { name = "SpikeBurst" };
-            mat.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
-            mat.SetFloat("_SrcBlend", 5);
-            mat.SetFloat("_DstBlend", 1);
-            r.sharedMaterial = mat;
-            return go;
-        }
-
         public const string SparkName = "Sparks (look)";
 
         /// <summary>The child name of a selection's <paramref name="index"/>th spark burst.</summary>
         public static string SparkChild(int index) => index == 0 ? SparkName : $"{SparkName} {index + 1}";
 
         /// <summary>
-        /// The selection's spark burst (effects.md, The look): our own short-lived stretched sparks
+        /// The selection's spark burst (tech-demo-3d/effects.md, The look): our own short-lived stretched sparks
         /// thrown from where an effect hits, white-hot, through the heat ramp the selection gives
         /// them. <c>sparks</c> (one, or a list of layers): count, speed [min, max] m/s, life [min,
         /// max] s, size m, gravity, radius m, upward (0 a sphere, 1 a cone straight up), stretch
@@ -202,7 +154,8 @@ namespace Demo3D.EditorTools.Effects
         /// bursts out and then floats); pitch (degrees above the ground: a cone thrown forward along
         /// the spawn's yaw, its +z, instead of upward) with spread (that cone's half-angle, degrees);
         /// shrink (the share of its size a particle loses by the end of its life), and fade (where
-        /// through its life it starts fading out, linearly to 0 at its end: 0.6 by default).
+        /// through its life it starts fading out, linearly to 0 at its end: 0.6 by default); ring
+        /// (true: born on the edge of a flat circle of the radius, thrown out from its centre).
         /// </summary>
         public static GameObject SparkBurst(JObject o, int index = 0)
         {
@@ -232,7 +185,14 @@ namespace Demo3D.EditorTools.Effects
             em.SetBursts(new[] { new ParticleSystem.Burst(0f, (short)count) });
             var shape = ps.shape;
             float up = F("upward", 0.4f);
-            if (o["pitch"] != null)
+            if ((bool?)o["ring"] == true)
+            {
+                // Flat on the ground: born on the circle's edge, thrown out from its centre.
+                shape.shapeType = ParticleSystemShapeType.Circle;
+                shape.radiusThickness = 0;
+                shape.rotation = new Vector3(-90, 0, 0);
+            }
+            else if (o["pitch"] != null)
             {
                 // Thrown forward: a cone along +z (the spawn's yaw turns it), tilted up by the pitch.
                 shape.shapeType = ParticleSystemShapeType.Cone;
@@ -287,8 +247,19 @@ namespace Demo3D.EditorTools.Effects
             return d;
         }
 
-        /// <summary>A selection entry's choices (Data/effects.json).</summary>
-        sealed class Options
+        /// <summary>A selection colour's palette role, which every palette in the package must draw (so the runtime never misses one).</summary>
+        static string RoleOf(JValue value, string where)
+        {
+            var role = (string)value;
+            var library = LookLibrary.Shared;
+            foreach (var name in library.Palettes)
+                if (!Palette.Parse(library.PaletteJson(name)).TryRole(role, out _))
+                    throw new Exception($"EffectConverter: {where}: palette {name} has no role {role}");
+            return role;
+        }
+
+        /// <summary>A selection entry's choices (tech-demo-3d/effects.md, The converter).</summary>
+        public sealed class Options
         {
             public readonly HashSet<string> Skip, Drop, Approximate, Glow;
             public readonly float BeamLength;
@@ -297,7 +268,7 @@ namespace Demo3D.EditorTools.Effects
             public readonly JObject Light;
             public readonly string Notes;
             public readonly bool NoLight;
-            /// <summary>The look (effects.md, The look): HDR colour and lifetime scales, the heat ramp, per-child tuning and our own spark burst.</summary>
+            /// <summary>The look (tech-demo-3d/effects.md, The look): HDR colour and lifetime scales, the heat ramp, per-child tuning and our own spark burst.</summary>
             public readonly float Hdr, Life;
             public readonly JObject Heat;
             /// <summary>The selection's spark bursts: <c>sparks</c> as one object, or a list of layers.</summary>
@@ -346,9 +317,11 @@ namespace Demo3D.EditorTools.Effects
             }
         }
 
-        sealed class Builder
+        /// <summary>Converts effects into one library's emitters, rows, textures and meshes (demo3d's converter report uses it alone).</summary>
+        public sealed class Builder
         {
             public readonly List<Vector4> Emitters = new List<Vector4>();
+            public readonly List<RoleColor> Roles = new List<RoleColor>();
             public readonly List<EmitterEmission> Emission = new List<EmitterEmission>();
             public readonly List<Vector4[]> LutRows = new List<Vector4[]>();
             public readonly List<Texture> Textures = new List<Texture>();
@@ -455,6 +428,7 @@ namespace Demo3D.EditorTools.Effects
                             cue = CueFromLight(l, Mathf.Max(0.2f, duration * 0.6f));
                             break;
                         }
+                if (o.Light?["color"] is JValue { Type: JTokenType.String } lightRole) entry.LightRole = RoleOf(lightRole, $"{name}: light");
                 if (o.Light != null) cue = CueOverride(cue, o.Light, duration);
                 if (cue.Active) cue.Intensity *= o.Intensity;
                 if (errs.Count > 0)
@@ -892,10 +866,21 @@ namespace Demo3D.EditorTools.Effects
                 float gain = (float?)heat?["gain"] ?? 1f;
                 if (hdr != 1f || heat != null) Notes.Add($"{fxName}/{child}: look: hdr {hdr:F2}, heat " + (heat != null ? $"gain {gain:F2}" : "off"));
                 if (heat == null) return;
-                Vector4 Rgb(string key, Color fallback) =>
-                    heat[key] is JArray c ? new Vector4((float)c[0], (float)c[1], (float)c[2], 0) : (Vector4)fallback;
-                var edge = Rgb("edge", new Color(1f, 0.08f, 0.02f));
-                var mid = Rgb("mid", new Color(1f, 0.55f, 0.12f));
+                Vector4 Rgb(string key, int slot, Color fallback)
+                {
+                    if (heat[key] is JArray c) return new Vector4((float)c[0], (float)c[1], (float)c[2], 0);
+                    if (heat[key] is JValue { Type: JTokenType.String } role)
+                    {
+                        // Resolved at run time; the fallback look's colour until then.
+                        var name = RoleOf(role, $"{fxName}/{child}: heat {key}");
+                        Roles.Add(new RoleColor { Emitter = Emitters.Count / Slots.Stride, Slot = slot, Role = name });
+                        var rc = ResolvedLook.FallbackPalette.Role(name);
+                        return new Vector4(rc.r, rc.g, rc.b, 0);
+                    }
+                    return fallback;
+                }
+                var edge = Rgb("edge", Slots.Heat0, new Color(1f, 0.08f, 0.02f));
+                var mid = Rgb("mid", Slots.Heat1, new Color(1f, 0.55f, 0.12f));
                 edge.w = (float?)heat["mix"] ?? 1f;
                 mid.w = gain;
                 v[Slots.Heat0] = edge;
@@ -1014,6 +999,7 @@ namespace Demo3D.EditorTools.Effects
             {
                 if (cue.Curve == null) cue = CueFromLightValues(Color.white, 4, 1, Mathf.Max(0.2f, duration));
                 if (o["color"] is JArray c) cue.Color = new Color((float)c[0], (float)c[1], (float)c[2]).linear;
+                else if (o["color"] is JValue { Type: JTokenType.String } role) cue.Color = ResolvedLook.FallbackPalette.Role((string)role).linear; // resolved at run time
                 if (o["range"] != null) cue.Range = (float)o["range"];
                 if (o["intensity"] != null) cue.Intensity = (float)o["intensity"];
                 if (o["duration"] != null) cue.Duration = (float)o["duration"];

@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Game.Client.Loop;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-namespace Game.Client.Effects
+namespace PS.Look.Effects
 {
     /// <summary>
     /// The GPU effect runtime (tech-demo-3d/effects.md, The runtime): one particle pool for every effect type.
@@ -14,9 +13,10 @@ namespace Game.Client.Effects
     /// seed, emission segments) and go up in one upload; the emit, simulate and compact kernels,
     /// the back-to-front sort of alpha-blended billboards and the indirect draws (from a render
     /// pass after opaques) do the rest. A spawn that would overflow the pool is rejected whole and
-    /// counted. Light cues go to <see cref="EffectLights"/>.
+    /// counted. Light cues go to <see cref="EffectLights"/>. Colours the selection names by palette role
+    /// (neon-look.md, The Axes &gt; VFX) are the applied look's (<see cref="ApplyPalette"/>).
     /// </summary>
-    public sealed class EffectSystem : IDisposable
+    public sealed class EffectSystem : ISpawnSink
     {
         public const int DefaultPool = 1 << 18, InstanceRing = 1 << 16, MaxPerInstance = 8192;
         const int InstanceFloat4s = 9, ParticleStride = 112;
@@ -46,7 +46,7 @@ namespace Game.Client.Effects
         readonly int _kInit, _kBegin, _kAlloc, _kEmit, _kFinish, _kSim, _kPost, _kPad, _kLocalSort, _kLocalMerge, _kGlobal;
         readonly Material _material;
         readonly MaterialPropertyBlock[] _blocks;
-        readonly CommandBuffer _cmd = new CommandBuffer { name = "Game effects" };
+        readonly CommandBuffer _cmd = new CommandBuffer { name = "Effects" };
         readonly EffectPass _pass;
         /// <summary>The GPU's Instance record (EffectCommon.hlsl), 144 bytes.</summary>
         struct InstanceData { public Vector4 PosYaw, VelScale, Timing, Seg0, Seg1, Seg2, Seg3, Alloc, Tint; }
@@ -77,6 +77,34 @@ namespace Game.Client.Effects
         public long ParticlesRequested { get; private set; }
         public long ParticlesEmitted { get; private set; }
         public int InstancesThisFrame => _frameInstCount;
+
+        /// <summary>Spawns folded into another by the merge cut, and glow emitters skipped by drop-glow, since start.</summary>
+        public long MergedTotal { get; private set; }
+        public long GlowsDropped { get; private set; }
+
+        /// <summary>
+        /// demo3d's merge cut (TD11): above 0, identical spawns of one effect in a frame whose centres lie within
+        /// this many pixels on screen fold into one with their combined density. 0 is off.
+        /// </summary>
+        public float MergePx;
+        /// <summary>demo3d's drop-glow cut (TD11): skips glow-quad emitters (<see cref="EmitterEmission.Glow"/>), leaving their halo to bloom.</summary>
+        public bool DropGlow;
+
+        /// <summary>
+        /// Called in <see cref="Update"/> with each spawn queued since the last, its time and effect: game's on-the-beat
+        /// trace (Moments). Null for none.
+        /// </summary>
+        public Action<double, int> Marked;
+
+        readonly List<Spawn> _queued = new List<Spawn>();
+        readonly List<Merged> _merged = new List<Merged>();
+        struct Merged { public Spawn Spawn; public Vector2 Screen; public int Count; }
+
+        // The emitter definitions and light colours with the selection's palette roles resolved (ApplyPalette).
+        readonly Vector4[] _emitterDefs;
+        readonly Color[] _lightColors;
+        Palette _palette;
+
         public EffectSystem(EffectLibrary library, int poolSize = DefaultPool, int lightPool = EffectLights.DefaultPool)
         {
             Library = library;
@@ -96,7 +124,8 @@ namespace Game.Client.Effects
             _drawList = new GraphicsBuffer(structured, poolSize * _buckets, 4) { name = "Effect draw lists" };
             _sortList = new GraphicsBuffer(structured, poolSize, 8) { name = "Effect sort list" };
             _emitters = new GraphicsBuffer(structured, Math.Max(1, library.Emitters.Length), 16) { name = "Effect emitters" };
-            if (library.Emitters.Length > 0) _emitters.SetData(library.Emitters);
+            _emitterDefs = (Vector4[])library.Emitters.Clone();
+            _lightColors = Array.ConvertAll(library.Effects, fx => fx.Light.Color);
             _meshVerts = new GraphicsBuffer(structured, Math.Max(3, library.MeshVertices.Length), 16) { name = "Effect mesh vertices" };
             if (library.MeshVertices.Length > 0) _meshVerts.SetData(library.MeshVertices);
 
@@ -118,8 +147,8 @@ namespace Game.Client.Effects
             _kLocalSort = _sort.FindKernel("LocalSort");
             _kLocalMerge = _sort.FindKernel("LocalMerge");
             _kGlobal = _sort.FindKernel("GlobalStep");
-            GraphicsStates.Prepare(_sim, _kInit, _kBegin, _kAlloc, _kEmit, _kFinish, _kSim, _kPost, _kPad);
-            GraphicsStates.Prepare(_sort, _kLocalSort, _kLocalMerge, _kGlobal);
+            ComputeKernels.Prepare(_sim, new[] { _kInit, _kBegin, _kAlloc, _kEmit, _kFinish, _kSim, _kPost, _kPad });
+            ComputeKernels.Prepare(_sort, new[] { _kLocalSort, _kLocalMerge, _kGlobal });
 
             _material = new Material(library.Draw) { name = "Effect particles" };
             _material.SetBuffer("_Particles", _particles);
@@ -131,6 +160,7 @@ namespace Game.Client.Effects
             _material.SetTexture("_Lut", library.Lut);
             _material.SetTexture("_Textures", library.Textures);
             _material.SetInt("_BucketCap", poolSize);
+            _material.SetFloat("_TintGain", library.TintGain);
             _blocks = new MaterialPropertyBlock[_buckets];
             for (int b = 0; b < _buckets; b++)
             {
@@ -143,6 +173,7 @@ namespace Game.Client.Effects
             Lights = new EffectLights(lightPool);
             _pass = new EffectPass(this);
             _onCounters = OnCounters;
+            ApplyPalette(ResolvedLook.Active?.Palette ?? ResolvedLook.FallbackPalette);
             Reset(0);
             RenderPipelineManager.beginCameraRendering += OnBeginCamera;
         }
@@ -150,6 +181,33 @@ namespace Game.Client.Effects
         /// <summary>Draw for this camera (the game or bench camera; captures use the same one).</summary>
         public void AddCamera(Camera camera) => _cameras.Add(camera);
         public void RemoveCamera(Camera camera) => _cameras.Remove(camera);
+
+        /// <summary>
+        /// Draws the selection's palette roles (<see cref="EffectLibrary.Roles"/>) in <paramref name="palette"/>'s
+        /// colours: the heat ramps' edge and mid as the selection's own numbers would be, light cues linear. Particles
+        /// alive take the new colours at once; light cues already lit keep theirs. Done at construction with the
+        /// applied look's palette (the fallback preset's without one).
+        /// </summary>
+        public void ApplyPalette(Palette palette)
+        {
+            if (palette == _palette) return;
+            _palette = palette;
+            foreach (var r in Library.Roles)
+            {
+                var c = palette.Role(r.Role);
+                ref var v = ref _emitterDefs[r.Emitter * EmitterSlots.Stride + r.Slot];
+                v = new Vector4(c.r, c.g, c.b, v.w);
+            }
+            for (int i = 0; i < Library.Effects.Length; i++)
+                if (!string.IsNullOrEmpty(Library.Effects[i].LightRole)) _lightColors[i] = palette.Role(Library.Effects[i].LightRole).linear;
+            if (_emitterDefs.Length > 0) _emitters.SetData(_emitterDefs);
+        }
+
+        /// <summary>Emitter <paramref name="emitter"/>'s definition slot as drawn, its palette roles resolved.</summary>
+        public Vector4 EmitterSlot(int emitter, int slot) => _emitterDefs[emitter * EmitterSlots.Stride + slot];
+
+        /// <summary>Effect <paramref name="effect"/>'s light cue colour as drawn (linear), its palette role resolved.</summary>
+        public Color LightColor(int effect) => _lightColors[effect];
 
         /// <summary>Clears every particle and cue (seeks, rebuilds); <paramref name="origin"/> is the new time zero.</summary>
         public void Reset(double origin)
@@ -159,6 +217,7 @@ namespace Game.Client.Effects
             _frameCount = 0;
             _frameInstCount = _frameNewParticles = 0;
             _pendingCount = 0;
+            _queued.Clear();
             Lights.Clear();
             // Readbacks issued before this reset describe the old pool; the re-spawn that follows
             // is excused from the pass rule (its overflow is logged, not counted).
@@ -186,26 +245,29 @@ namespace Game.Client.Effects
             if (fx.Light.Active)
             {
                 var cue = fx.Light;
+                cue.Color = _lightColors[s.Effect];
                 if (s.Tint.a > 0) cue.Color = Color.Lerp(cue.Color, new Color(s.Tint.r, s.Tint.g, s.Tint.b), s.Tint.a);
                 if (s.LightGain > 0) cue.Intensity *= s.LightGain;
                 Lights.Add(s.Position + Vector3.up * (cue.Height * scale), cue, s.Time, scale, s.Velocity);
             }
-            Expand(s);
+            if (MergePx > 0) _queued.Add(s); // merged against the camera in Update
+            else Expand(s, 1);
             return true;
         }
 
-        /// <summary>A spawn's emitter instances.</summary>
-        void Expand(in Spawn s)
+        /// <summary>A spawn's emitter instances, standing for <paramref name="density"/> merged spawns.</summary>
+        void Expand(in Spawn s, int density)
         {
             var fx = Library.Effects[s.Effect];
             float scale = s.Scale / Mathf.Max(1e-4f, fx.ScaleRef);
             // A spawn is rejected whole: all its emitter instances fit this frame's list, or none go.
             if (_frameCount + fx.EmitterCount > MaxFrameInstances) { Rejections.AddCpu(1, _excuseFrame); return; }
-            if (Moments.On) _marks.Add((s.Time, s.Effect));
+            if (Marked != null) _marks.Add((s.Time, s.Effect));
             int leader = _frameCount;
             for (int k = 0; k < fx.EmitterCount; k++)
             {
                 int e = fx.FirstEmitter + k;
+                if (DropGlow && Library.Emission[e].Glow) { GlowsDropped++; continue; }
                 uint seed = Hash(s.Seed, (uint)Library.Emission[e].SeedEmitter);
                 int count = Segments(Library.Emission[e], s, fx, seed, _seg);
                 if (count == 0) continue;
@@ -219,7 +281,7 @@ namespace Game.Client.Effects
                     VelScale = new Vector4(s.Velocity.x, s.Velocity.y, s.Velocity.z, s.Mirror ? -scale : scale), // EffectCommon's Frame.mirror
                     Timing = new Vector4((float)(s.Time - _origin), s.YawRate, BitConverter.Int32BitsToSingle(e), BitConverter.Int32BitsToSingle((int)seed)),
                     Seg0 = _seg[0], Seg1 = _seg[1], Seg2 = _seg[2], Seg3 = _seg[3],
-                    Alloc = new Vector4(BitConverter.Int32BitsToSingle(count), 1, 0, s.Duration > 0 ? s.Duration : fx.Duration),
+                    Alloc = new Vector4(BitConverter.Int32BitsToSingle(count), density, 0, s.Duration > 0 ? s.Duration : fx.Duration),
                     Tint = s.Tint,
                 };
                 _frameData[_frameCount++] = new FrameInst { Ring = (uint)ring, First = (uint)_frameNewParticles, Count = (uint)count };
@@ -230,8 +292,45 @@ namespace Game.Client.Effects
             if (_frameCount > leader) _frameData[leader].Pad = (uint)(_frameCount - leader);
         }
 
+        /// <summary>
+        /// The merge cut: this frame's queued spawns, in order, each folded into the first earlier
+        /// one of the same effect, scale, duration and velocity whose screen centre lies within
+        /// MergePx pixels (spawns behind the camera never merge); then expanded. Deterministic in
+        /// the spawn order.
+        /// </summary>
+        void MergeQueued(Camera camera)
+        {
+            _merged.Clear();
+            float r2 = MergePx * MergePx;
+            foreach (var s in _queued)
+            {
+                var sp = camera.WorldToScreenPoint(s.Position);
+                bool front = sp.z > 0;
+                int into = -1;
+                if (front)
+                    for (int i = 0; i < _merged.Count; i++)
+                    {
+                        var m = _merged[i];
+                        if (m.Spawn.Effect != s.Effect || m.Screen.x < -1e8f) continue;
+                        if (Mathf.Abs(m.Spawn.Scale - s.Scale) > 1e-3f * Mathf.Max(1f, s.Scale) || m.Spawn.Duration != s.Duration || m.Spawn.Tint != s.Tint
+                            || (m.Spawn.Velocity - s.Velocity).sqrMagnitude > 1e-4f || m.Spawn.YawRate != s.YawRate || m.Spawn.Mirror != s.Mirror) continue;
+                        if (((Vector2)sp - m.Screen).sqrMagnitude <= r2) { into = i; break; }
+                    }
+                if (into >= 0)
+                {
+                    var m = _merged[into];
+                    m.Count++;
+                    _merged[into] = m;
+                    MergedTotal++;
+                }
+                else _merged.Add(new Merged { Spawn = s, Screen = front ? (Vector2)sp : new Vector2(-1e9f, -1e9f), Count = 1 });
+            }
+            _queued.Clear();
+            foreach (var m in _merged) Expand(m.Spawn, m.Count);
+        }
+
         readonly Vector4[] _seg = new Vector4[4];
-        // The spawns queued for the next Update, for the on-the-beat trace (Moments): their times and effects.
+        // The spawns queued for the next Update, for Marked: their times and effects.
         readonly List<(double t, int effect)> _marks = new List<(double, int)>();
 
         /// <summary>
@@ -291,7 +390,8 @@ namespace Game.Client.Effects
         public void Update(double now, float dt, Camera camera)
         {
             Lights.Update(now, camera);
-            foreach (var (t, effect) in _marks) Moments.Mark(MomentKind.Effect, t, effect, Library.Effects[effect].Name);
+            if (_queued.Count > 0) MergeQueued(camera);
+            foreach (var (t, effect) in _marks) Marked?.Invoke(t, effect);
             _marks.Clear();
             _frameInstCount = _frameCount;
             if (_pendingCount > 0)
@@ -437,6 +537,13 @@ namespace Game.Client.Effects
                 cmd.DrawProceduralIndirect(Matrix4x4.identity, _material, 0, MeshTopology.Triangles, _args, (4 + b * 4) * 4, _blocks[b]);
         }
 
+        /// <summary>The overdraw counters' transparent pass (benchmarks.md, Measurements).</summary>
+        public void DrawOverdraw(CommandBuffer cmd)
+        {
+            foreach (int b in DrawOrder())
+                cmd.DrawProceduralIndirect(Matrix4x4.identity, _material, 1, MeshTopology.Triangles, _args, (4 + b * 4) * 4, _blocks[b]);
+        }
+
         IEnumerable<int> DrawOrder()
         {
             yield return 0;
@@ -445,8 +552,8 @@ namespace Game.Client.Effects
             for (int m = 0; m < _meshBuckets; m++) yield return 3 + 2 * m;
         }
 
-        /// <summary>While set, no camera draws the pool: the frame probe's "effects" ablation (<see cref="GpuProbe"/>).</summary>
-        internal static bool Hidden;
+        /// <summary>While set, no camera draws the pool: game's frame probe's "effects" ablation (GpuProbe).</summary>
+        public static bool Hidden;
 
         void OnBeginCamera(ScriptableRenderContext context, Camera camera)
         {
@@ -491,7 +598,7 @@ namespace Game.Client.Effects
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 var resources = frameData.Get<UniversalResourceData>();
-                using var builder = renderGraph.AddRasterRenderPass<PassData>("Game effects", out var data);
+                using var builder = renderGraph.AddRasterRenderPass<PassData>("Effects", out var data);
                 data.System = _system;
                 builder.SetRenderAttachment(resources.activeColorTexture, 0);
                 builder.SetRenderAttachmentDepth(resources.activeDepthTexture, AccessFlags.Read);

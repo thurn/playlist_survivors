@@ -2527,7 +2527,10 @@ for each weapon's look in [The Other Weapons](#the-other-weapons).
 shaders), without the demo's cuts (none of the effect cuts was accepted), the
 VFX Graph sink and the overdraw pass. Its converter is
 `Editor/Effects/EffectConverter`, baking `game/Content/effects.json` into the
-gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). As
+gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). Since
+ps-wnj.5 the runtime, its shaders and the converter are the look package's
+(`unity-packages/com.playlistsurvivors.look/`, shared with demo3d), and the
+game keeps only its cues, presenter and crystal wave in `Client/Effects/`. As
 built ([evidence](../../game/evidence/fx/README.md)):
 
 - `EffectCues` holds each event's effect until the first frame whose

@@ -1,7 +1,7 @@
-namespace Demo3D.Runtime.Effects
+namespace PS.Look.Effects
 {
     /// <summary>
-    /// Rejected spawns (effects.md, The runtime: budgets are hard, and any rejection fails the
+    /// Rejected spawns (tech-demo-3d/effects.md, The runtime: budgets are hard, and any rejection fails the
     /// pass rule). The CPU's count (a frame's instance list full) and the GPU's (the pool full,
     /// read back once per frame as that frame's count) are kept apart and summed. A reset (a seek,
     /// a rebuild, a loop wrap) starts a new epoch: readbacks issued before it are ignored, and the

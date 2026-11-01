@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using PS.Choreography;
+using PS.Look.Effects;
 using UnityEngine;
 
 namespace Demo3D.Runtime.Effects

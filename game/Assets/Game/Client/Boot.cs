@@ -68,7 +68,7 @@ namespace Game.Client
             }
             if (options.FixedTime) Time.captureFramerate = FixedFps;
             GraphicsStates.WarmUp(options);
-            ComputeKernels.Prepare = GraphicsStates.Prepare; // the look package's crowd and shatter
+            ComputeKernels.Prepare = GraphicsStates.Prepare; // the look package's crowd, shatter and effects
             _seconds = options.Seconds;
             if (options.StillsDir != null) _stills = new Stills(_camera, options.StillsDir, options.StillsAt, options.StillsMask);
             if (options.DspBuffer > 0)

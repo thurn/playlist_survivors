@@ -16,6 +16,7 @@ using Game.Client.Structures;
 using Game.Client.Weapons;
 using PS.Game.Sim;
 using PS.Game.Sim.Level;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -322,7 +323,7 @@ namespace Game.Client.Loop
                 _effects.Cues.SlashTint = w => weapons.Of(w) == WeaponLooks.Family.Sword && weapons.Evolved(w) ? WeaponLooks.Tear : default;
                 if (config.Finishers)
                 {
-                    _finishers = new FinisherRings(camera, library.Wave);
+                    _finishers = new FinisherRings(camera, CrystalWaves.ShaderIn(library));
                     if (_hero != null) _finishers.DrawnHero = _hero.Drawn;
                     Driver.Events.Subscribe(_finishers);
                 }

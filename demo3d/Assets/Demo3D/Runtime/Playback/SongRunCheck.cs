@@ -73,7 +73,7 @@ namespace Demo3D.Runtime.Playback
                 if (double.IsNaN(t)) { beforeFirstUpdate++; continue; }
                 frames.Add(new SongWindows.Frame { T = t, GpuMs = f.Gpu, MainMs = f.Main, RenderMs = f.Render });
             }
-            var r = SongWindows.Evaluate(frames, _drops, _rejected, new Lines(), Effects.EffectLights.DropLimit);
+            var r = SongWindows.Evaluate(frames, _drops, _rejected, new Lines(), PS.Look.Effects.EffectLights.DropLimit);
             // Coverage by the run's Updates, not its first measured frame: the first frame loads for
             // over a second while the song plays, so the first frame after it starts near 1 s.
             bool whole = r.Frames > 0 && _updateSong.Count > 0 && _updateSong[0] <= 0.5 && _updateSong[_updateSong.Count - 1] >= songDuration - 0.5;

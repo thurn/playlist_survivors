@@ -5,6 +5,7 @@ using Demo3D.Runtime;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
 using NUnit.Framework;
+using PS.Look.Effects;
 using UnityEditor;
 using UnityEngine;
 
@@ -113,7 +114,7 @@ namespace Demo3D.Tests
             {
                 int burst = lib.IndexOf("death-burst");
                 var cuts = Cuts.Parse("merge,drop-glow");
-                fx.Cuts = cuts;
+                cuts.Apply(fx);
                 EffectSystem.Spawn At(Vector3 p, uint seed) => new EffectSystem.Spawn { Effect = burst, Position = p, Scale = 1, Seed = seed, Time = 0 };
                 fx.BeginFrame();
                 fx.Add(At(new Vector3(0, 1, 0), 1));
@@ -130,7 +131,7 @@ namespace Demo3D.Tests
                 Assert.That(fx.GlowsDropped, Is.EqualTo(3)); // three spawns expanded, one glow each
                 Assert.That(fx.SpawnsTotal, Is.EqualTo(4));
                 // Without the cuts nothing merges or drops.
-                fx.Cuts = Cuts.Parse("none");
+                Cuts.Parse("none").Apply(fx);
                 fx.Add(At(new Vector3(0, 1, 0), 5));
                 fx.Add(At(new Vector3(0, 1, 0), 6));
                 fx.Update(0.1, 0.1f, cam);
@@ -138,7 +139,7 @@ namespace Demo3D.Tests
                 Assert.That(fx.GlowsDropped, Is.EqualTo(3));
                 // The light-cell cut sets the cluster cell.
                 Assert.That(fx.Lights.Cell, Is.EqualTo(EffectLights.DefaultCell));
-                fx.Cuts = Cuts.Parse("light-cell");
+                Cuts.Parse("light-cell").Apply(fx);
                 Assert.That(fx.Lights.Cell, Is.EqualTo(cuts.LightCellM));
             }
             finally

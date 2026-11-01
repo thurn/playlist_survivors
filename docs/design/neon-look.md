@@ -398,6 +398,17 @@ palette roles. Old vendor effects (the Hovl sword slash in
   the preset's look, still bursting on the impact frame (the operator's rule:
   no crack-then-burst, no twinkling).
 
+The runtime in the package (ps-wnj.5): `Runtime/Effects/` (`EffectSystem`,
+`EffectLibrary`, `EffectLights`, the sim, sort and draw shaders) and
+`Editor/Effects/EffectConverter.cs`, game's fork with demo3d's merge and
+glow cuts and overdraw pass; both forks are gone, and each project bakes its
+own selection with it. A selection colour may name a palette role
+(`"edge": "shatter.gem"`, `"color": "boss.telegraph"`, an enemy slot
+`"enemies.2"`), which `EffectSystem` draws in the applied look's palette
+(`ApplyPalette`, at construction). Today's effects keep literal colours, so
+they look as before in every preset until the VFX beads restyle them
+([effects.md, The look](../tech-demo-3d/effects.md#the-look)).
+
 ### Motion
 
 - **Spring secondary motion**: per-instance squash and stretch, lean into

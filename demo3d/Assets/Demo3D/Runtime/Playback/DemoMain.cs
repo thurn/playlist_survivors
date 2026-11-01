@@ -4,6 +4,7 @@ using System.Globalization;
 using PS.Choreography;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
+using PS.Look.Effects;
 using Unity.Collections;
 using UnityEngine;
 using ChoreoRoster = PS.Choreography.Roster;
@@ -333,6 +334,7 @@ namespace Demo3D.Runtime.Playback
                 return;
             }
             _fx = new EffectSystem(lib, Args.GetInt("--effect-pool", EffectSystem.DefaultPool), Args.GetInt("--light-pool", EffectLights.DefaultPool));
+            Cuts.Active.Apply(_fx);
             _fx.AddCamera(_rig.Camera);
             _fxDriver = NewEffectDriver(_tl);
         }

@@ -2,7 +2,8 @@
     "name": "PS.Look",
     "rootNamespace": "PS.Look",
     "references": [
-        "Unity.RenderPipelines.Core.Runtime"
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

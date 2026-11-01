@@ -7,6 +7,7 @@ using System.Text;
 using Game.Client.Loop;
 using PS.Game.Sim;
 using PS.Game.Sim.Content;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -205,8 +206,8 @@ namespace Game.Client
                     camera.cullingMask &= ~(1 << BoneTextureCrowd.Layer);
                     return () => camera.cullingMask = mask;
                 case "effects": // the particle pool
-                    Effects.EffectSystem.Hidden = true;
-                    return () => Effects.EffectSystem.Hidden = false;
+                    EffectSystem.Hidden = true;
+                    return () => EffectSystem.Hidden = false;
                 case "effect-lights": // the effects' pooled point lights
                     var root = GameObject.Find("EffectLights");
                     var lit = root == null ? new List<Light>() : root.GetComponentsInChildren<Light>().Where(l => l.enabled).ToList();

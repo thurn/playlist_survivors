@@ -1,5 +1,6 @@
 #if DEMO3D_VFX
 using Demo3D.Runtime.Effects;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.VFX;
 

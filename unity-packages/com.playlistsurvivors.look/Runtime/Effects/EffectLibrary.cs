@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 
-namespace Game.Client.Effects
+namespace PS.Look.Effects
 {
     /// <summary>
     /// The converter's output (tech-demo-3d/effects.md, The converter): every converted effect's emitter
     /// definitions, packed for the GPU runtime, with their lookup rows, texture slices and meshes.
-    /// One asset in the gitignored Assets/Baked/Effects/Resources/, since it is vendor-derived; the
+    /// One asset in each project's gitignored Assets/Baked/Effects/Resources/, since it is vendor-derived; the
     /// runtime's shaders are referenced here so a build includes them.
     /// </summary>
     public sealed class EffectLibrary : ScriptableObject
@@ -26,21 +26,28 @@ namespace Game.Client.Effects
         public Vector4[] MeshVertices = Array.Empty<Vector4>();
         public MeshRange[] Meshes = Array.Empty<MeshRange>();
         public string[] TextureNames = Array.Empty<string>();
-        /// <summary>The selection (game/Content/effects.json) it was converted from.</summary>
+        /// <summary>The selection (demo3d's Data/effects.json, game's Content/effects.json) it was converted from: the catalog mapping demo3d's client reads.</summary>
         [TextArea] public string Selection;
+        /// <summary>The colours the selection names by palette role, resolved by the runtime against the applied look's palette.</summary>
+        public RoleColor[] Roles = Array.Empty<RoleColor>();
+        /// <summary>The heat ramp's gain on a tinted spawn, times the emitter's (the selection's <c>tintGain</c>, 1 by default).</summary>
+        public float TintGain = 1f;
 
         public ComputeShader Simulate;
         public ComputeShader Sort;
         public Shader Draw;
-        /// <summary>The sword's crystal wave (<see cref="CrystalWaves"/>), referenced here so a build includes it.</summary>
-        public Shader Wave;
+        /// <summary>Further shaders a project draws its effects with (game's crystal wave), referenced here so a build includes them.</summary>
+        public Shader[] Shaders = Array.Empty<Shader>();
+
+        /// <summary>Stock prefabs by effect, for demo3d's A/B gallery only (a local build references vendor prefabs; nothing is committed); empty in game.</summary>
+        public GameObject[] StockPrefabs = Array.Empty<GameObject>();
 
         public int EmitterCount => Emission.Length;
 
         public static EffectLibrary Load() =>
             Resources.Load<EffectLibrary>(ResourcePath)
             ?? throw new InvalidOperationException(
-                "EffectLibrary: Assets/Baked/Effects/Resources/EffectLibrary.asset is missing (run `game unity BakeAll -only Effects`, or `game build`)");
+                "EffectLibrary: Assets/Baked/Effects/Resources/EffectLibrary.asset is missing (run `demo3d unity BakeEffects`, or `game unity BakeAll -only Effects`)");
 
         public static EffectLibrary TryLoad() => Resources.Load<EffectLibrary>(ResourcePath);
 
@@ -66,7 +73,11 @@ namespace Game.Client.Effects
         /// <summary>Loops of a looping system per spawn, when the request gives no duration.</summary>
         public float Duration;
         public LightCue Light;
+        /// <summary>The palette role the light cue's colour is drawn in (resolved at run time), or null for its own colour.</summary>
+        public string LightRole;
         public string Notes;
+        /// <summary>demo3d's A/B gallery placement: the height of the effect's origin and the view width that frames it.</summary>
+        public float GalleryHeight = 1f, GalleryViewWidth = 8f;
     }
 
     /// <summary>
@@ -92,6 +103,18 @@ namespace Game.Client.Effects
             if (i < 0) return Curve[0] * Intensity;
             return Mathf.Lerp(Curve[i], Curve[i + 1], x - i) * Intensity;
         }
+    }
+
+    /// <summary>
+    /// A heat ramp colour the selection names by palette role (neon-look.md, The Axes &gt; VFX): emitter
+    /// <see cref="Emitter"/>'s definition slot <see cref="Slot"/> (<see cref="EmitterSlots.Heat0"/>'s edge or
+    /// <see cref="EmitterSlots.Heat1"/>'s mid; its w is kept).
+    /// </summary>
+    [Serializable]
+    public struct RoleColor
+    {
+        public int Emitter, Slot;
+        public string Role;
     }
 
     /// <summary>A particle mesh's range in <see cref="EffectLibrary.MeshVertices"/> (3 float4 per vertex).</summary>
@@ -123,6 +146,8 @@ namespace Game.Client.Effects
         public float LifeMax;
         /// <summary>The emitter whose seed and births this one shares (a trail drawn over its head's particles).</summary>
         public int SeedEmitter;
+        /// <summary>A large soft glow quad (the selection's <c>glow</c> list): demo3d's <c>drop-glow</c> cut leaves its halo to bloom.</summary>
+        public bool Glow;
     }
 
     /// <summary>

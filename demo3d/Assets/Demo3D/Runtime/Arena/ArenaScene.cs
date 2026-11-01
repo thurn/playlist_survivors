@@ -6,6 +6,7 @@ using Demo3D.Bench;
 using PS.Choreography;
 using Demo3D.Runtime.Bench;
 using Demo3D.Runtime.Playback;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -29,7 +30,7 @@ namespace Demo3D.Runtime.Arena
         LayoutShot[] _shots;
         float _holdS = 3f;
         double _t;
-        Effects.EffectSystem _fx;          // TD15: the ambient fireflies and wisps, part of the environment
+        EffectSystem _fx;          // TD15: the ambient fireflies and wisps, part of the environment
         Effects.AmbientEffects _ambient;
         double _fxLast = double.NaN;
 
@@ -93,9 +94,10 @@ namespace Demo3D.Runtime.Arena
         /// <summary>The ambient particles over the view (fireflies, wisps), unless the effect library isn't baked or `--no-effects`.</summary>
         void StartAmbient()
         {
-            var lib = Args.Has("--no-effects") ? null : Effects.EffectLibrary.TryLoad();
+            var lib = Args.Has("--no-effects") ? null : EffectLibrary.TryLoad();
             if (lib == null) return;
-            _fx = new Effects.EffectSystem(lib, 1 << 15, 8);
+            _fx = new EffectSystem(lib, 1 << 15, 8);
+            Cuts.Active.Apply(_fx);
             _fx.AddCamera(_ctx.Camera);
             _ambient = new Effects.AmbientEffects(lib, _fx);
             if (!_ambient.Any) { _fx.Dispose(); _fx = null; }

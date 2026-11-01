@@ -1,11 +1,11 @@
-// The effect runtime's draw (effects.md, The runtime): procedural quads, beams and meshes, one
+// The effect runtime's draw (tech-demo-3d/effects.md, The runtime): procedural quads, beams and meshes, one
 // indirect draw per bucket, expanded from the particle pool in the vertex shader. Every blend
 // mode the converted materials use is drawn with premultiplied blending (One,
 // OneMinusSrcAlpha): additive materials write alpha 0, alpha-blended ones premultiply. The
 // shading is written from scratch from the materials' observed behaviour: texture times vertex
 // colour times an HDR tint, optional flipbook, a scrolling noise mask and soft particles
 // against the scene depth.
-Shader "Demo3D/EffectParticles"
+Shader "PS/Look/EffectParticles"
 {
     SubShader
     {
@@ -24,6 +24,7 @@ Shader "Demo3D/EffectParticles"
         SAMPLER(sampler_Textures);
         uint _Bucket, _BucketCap, _UseSort, _MeshFirst, _SortSize;
         float _Now;
+        float _TintGain; // EffectLibrary.TintGain
         float4x4 _OverdrawVP;
         float4 _EffCamPos, _EffCamRight, _EffCamUp, _EffCamFwd; // set by EffectSystem each frame; _EffCamFwd.w is tan(vfov / 2)
 
@@ -98,7 +99,7 @@ Shader "Demo3D/EffectParticles"
                 float4 a = _MeshVerts[v * 3], b = _MeshVerts[v * 3 + 1], c = _MeshVerts[v * 3 + 2];
                 float3 rot = (flags & (F_ROT3D | F_ROTAXES)) ? p.rotInst.xyz : float3(0, 0, p.rotInst.z);
                 float3 local = RotateEuler(rot, a.xyz * size);
-                if (align == 2) local = RotateY(f.yaw, RotateQ(f.childRot, local));
+                if (align == 2) local = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, local)));
                 world = center + local;
                 uv = float2(a.w, b.w);
                 col *= c;
@@ -133,8 +134,8 @@ Shader "Demo3D/EffectParticles"
                     else if (align == 2)
                     {
                         float3 rot = (flags & (F_ROT3D | F_ROTAXES)) ? float3(p.rotInst.xy, 0) : 0;
-                        ax = RotateY(f.yaw, RotateQ(f.childRot, RotateEuler(rot, float3(1, 0, 0))));
-                        ay = RotateY(f.yaw, RotateQ(f.childRot, RotateEuler(rot, float3(0, 1, 0))));
+                        ax = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, RotateEuler(rot, float3(1, 0, 0)))));
+                        ay = RotateY(f.yaw, Mirror(f, RotateQ(f.childRot, RotateEuler(rot, float3(0, 1, 0)))));
                     }
                     else { ax = camRight; ay = camUp; }
                     // Minimum and maximum particle size, as fractions of the view's height.
@@ -174,7 +175,7 @@ Shader "Demo3D/EffectParticles"
         Varyings Vert(uint vid : SV_VertexID, uint iid : SV_InstanceID) { return Expand(vid, iid, false); }
         Varyings VertOverdraw(uint vid : SV_VertexID, uint iid : SV_InstanceID) { return Expand(vid, iid, true); }
 
-        // The selection's heat ramp (effects.md, The look): the fragment's own luminance, times the
+        // The selection's heat ramp (tech-demo-3d/effects.md, The look): the fragment's own luminance, times the
         // gain, picks its hue from the saturated edge colour through the mid colour to a white-hot
         // core; the luminance is kept, so only the hue changes. Bright centres read white, falloffs
         // yellow to red (or white to cyan to blue), whatever the vendor texture's tint.
@@ -213,11 +214,13 @@ Shader "Demo3D/EffectParticles"
             float3 rgb = i.extra.z > 0.5 ? c.rgb * i.color.a : c.rgb * c.a;
             float4 h0 = EM(e, S_HEAT0), h1 = EM(e, S_HEAT1);
             // A tinted spawn (a crystal death's gem) takes the ramp in its own colour: the edge the
-            // gem deepened (squared), the mid the gem, the core still white-hot, at the emitter's gain.
+            // gem deepened (squared), the mid the gem, the core still white-hot, at the library's
+            // tint gain times the emitter's gain (game's 0.6 holds its colour further into the core,
+            // ps-msz.8.3: Bloody Tear's heavy slashes blew out to white; demo3d's is 1).
             if (i.tint.a > 0)
             {
                 float3 edge = i.tint.rgb * i.tint.rgb;
-                float4 mid = float4(i.tint.rgb, h0.w > 0 ? h1.w : 1);
+                float4 mid = float4(i.tint.rgb, (h0.w > 0 ? h1.w : 1) * _TintGain);
                 rgb = lerp(h0.w > 0 ? lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w) : rgb, Heat(rgb, edge, mid), i.tint.a);
             }
             else if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w);
@@ -225,6 +228,7 @@ Shader "Demo3D/EffectParticles"
         }
 
         float4 FragOverdraw(Varyings i) : SV_Target { return float4(0, 1, 0, 0); }
+
         ENDHLSL
 
         Pass
