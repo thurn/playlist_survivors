@@ -50,5 +50,11 @@ Windows, where `python3` is the Microsoft Store stub).
 - `/enact <bead|epic|task>` runs Enact work inline in one session (subagents
   for an epic's beads) and waits for slow CI; `/enact-plan <bead|plan|task>`
   runs it unattended across sessions. Most work goes through neither.
-- Enact roles in use: all (Executor, Warden, Steward, Mason, Sage, Archivist).
-- Review policy: one Warden bead per substantial implementation bead.
+- **Runs are light by default**: treat every `/enact` and `/enact-plan`
+  invocation as if it carried the keyword **light** (the skills' "Light
+  runs" sections: `run:light` label, no Mason, Sage or Archivist work, at
+  most one final Warden), unless the invocation says **full**.
+- Enact roles in use: light runs use Executor, Warden and Steward; a full
+  run uses all (Executor, Warden, Steward, Mason, Sage, Archivist).
+- Review policy: light runs get the skills' single final Warden; a full run
+  gets one Warden bead per substantial implementation bead.
