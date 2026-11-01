@@ -7,7 +7,8 @@ namespace Game.Client.Look
     /// <summary>
     /// The look's post stack moving with the live stream (unity-game.md, "Post-processing and
     /// Camera"), demo3d's PostFeel with the song map replaced by the fast lane and the sim's events,
-    /// at the look's post option's beat and flash amounts (<see cref="PostOption.Feel"/>):
+    /// at the look's post option's beat and flash amounts (<see cref="PostOption.Feel"/>; under the classic
+    /// look, the night post's, <see cref="NightFeel"/>):
     /// - every beat: an exposure and bloom pulse and a vignette breath, decaying over the beat
     ///   (<see cref="LaneFrame.Pulse"/>: full on a reliable beat, softer below the gate);
     /// - accents, heavy strikes, breaks and drops (<see cref="FeelMoments"/>): an exposure flash, a
@@ -18,7 +19,8 @@ namespace Game.Client.Look
     /// - per zone: a grade offset (exposure, saturation, contrast, white-balance temperature,
     ///   vignette) and a pulse scale, eased over <see cref="EaseBars"/> bars from the change
     ///   (<see cref="SetZone"/>, the hook for M3's zones).
-    /// It writes offsets on top of the volume's base values (the look's stack, PostStack) through the
+    /// It writes offsets on top of the volume's base values (the look's stack, PostStack, or the
+    /// classic look's night, NightLook.CreateProfile) through the
     /// package's <see cref="PostBinding"/>, read when it first binds; on a beat and a flash the bloom
     /// leans toward the palette's colours when the binding has its tints.
     /// </summary>
@@ -65,10 +67,20 @@ namespace Game.Client.Look
         /// <summary>The look the game draws: Boot's, else the fallback preset's (a test that runs no boot).</summary>
         public static ResolvedLook Look => ResolvedLook.Active ?? ResolvedLook.Resolve(new LookFlags());
 
-        /// <summary>The post option <paramref name="look"/> draws, plain where it asks for one not built: game keeps no post of its own.</summary>
-        public static PostOption OptionOf(ResolvedLook look) => PostStack.OptionOf(look) ?? PostOption.Plain;
+        /// <summary>The post option <paramref name="look"/> draws, or null for the night post (NightLook): classic, or one not built.</summary>
+        public static PostOption OptionOf(ResolvedLook look) => PostStack.OptionOf(look);
 
-        /// <summary>The beat's pulse and a full flash (the look's post option's).</summary>
+        /// <summary>The night post's beat pulse and full flash, from before the look's post stacks (demo3d's arena-layout postFeel).</summary>
+        public static PostOption.FeelAmounts NightFeel => new PostOption.FeelAmounts
+        {
+            BeatExposure = 0.12f, BeatBloom = 0.35f, BeatVignette = -0.03f,
+            FlashExposure = 0.35f, FlashChromatic = 0.5f, FlashSaturation = 25f,
+        };
+
+        /// <summary>The feel of <paramref name="option"/> (<see cref="OptionOf"/>): its own, or the night's.</summary>
+        public static PostOption.FeelAmounts FeelOf(PostOption option) => option?.Feel ?? NightFeel;
+
+        /// <summary>The beat's pulse and a full flash (the look's post option's, or the night's).</summary>
         public readonly PostOption.FeelAmounts Feel;
         /// <summary>The volume's base values and the offsets over them, with the look's bloom tints.</summary>
         public readonly PostBinding Binding = new PostBinding();

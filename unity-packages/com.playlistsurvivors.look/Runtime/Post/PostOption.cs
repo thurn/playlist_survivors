@@ -57,12 +57,6 @@ namespace PS.Look
 
         PostOption(string name) => Name = name;
 
-        /// <summary>
-        /// A stack with no grade, bloom or feel and URP's neutral tonemap: what a player draws where it has no post
-        /// of its own to fall back on and the look asks for a post option not built yet (game, PostStack.OptionOf).
-        /// </summary>
-        public static PostOption Plain => new PostOption("plain") { Tonemap = Tonemaps.Neutral };
-
         /// <summary>Parses a post option file; throws <see cref="FormatException"/> on a malformed one.</summary>
         public static PostOption Parse(string json)
         {

@@ -2653,7 +2653,10 @@ the 3D demo's night look), driven by the live stream instead of the demo's
 - **The look's stack**: the post option's tonemap, bloom and wide halo,
   colour, vignette toward the palette's void, chromatic aberration, grain,
   retro scanlines, and the renderer's SSAO. The arena keeps its ambient, fog
-  and clear colour (`NightLook`) until the void world replaces it.
+  and clear colour (`NightLook`) until the void world replaces it. Under
+  the classic look (`--look classic` or `--post classic`) the volume is the
+  night's again (`NightLook.CreateProfile`: bloom, neutral tonemap, the
+  night grade's LUT, vignette) at the night's beat feel.
 - **Beat feel**, read from the stream: an exposure and bloom pulse and a
   vignette breath on every beat; an exposure flash, chromatic aberration and
   saturation spike on accents, heavy strikes and breaks; a grade offset per

@@ -284,6 +284,7 @@ Both players take the same look flags:
 --monster-look wireframe         # override one axis
 --world pure-void --post neon-bloom --palette ion
 --beat-ripple                    # steps ripple outward (off in every preset)
+--look classic                   # the look before the epic, for parity checks
 ```
 
 The crystal cut's file (`trailer-crystal.json`) names no look. The capture
@@ -308,6 +309,18 @@ How the package implements them (ps-wnj.3):
 - An option or layer a preset or flag asks for that isn't built draws today's
   look: `ResolvedLook.Option(axis)` is null for it, and applying the look
   logs one warning listing everything not built yet.
+- **`classic`** is the look before this epic, for parity comparisons:
+  every axis takes the option `classic` (`LookAxis.Classic`), which is never
+  built, so the axis draws today's look without a warning, and the `classic`
+  preset names it on every axis with no motion layers. `--look classic` puts
+  back the Synty arenas, the crystal monsters and structures and the night
+  post (game's `NightLook` grade and LUT, restored for it; the crystal cut's
+  environments' night volumes, shot grades and trailer dressing); an axis
+  flag mixes one axis in (`--look edge --post classic`). Not pixel-exact: the
+  crystal cut draws its monsters through the package's crowd (ps-wnj.22's
+  differences: GPU shards, every death shattering, LODs, the half-tinted hit
+  flash), and the palette's role globals now reach shaders linear. For exact
+  parity, capture a build of the tree before the epic (`34950f68^`).
 - `LookFlags` parses the flags once; game's `LaunchOptions` claims them so
   its unknown-flag check doesn't flag them. `ResolvedLook.Resolve` picks the
   preset (`edge` without `--look`), lays the flags over it, and `Apply` sets

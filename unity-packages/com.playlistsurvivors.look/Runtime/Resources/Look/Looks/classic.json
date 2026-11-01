@@ -1,0 +1,12 @@
+{
+  "name": "classic",
+  "description": "The look before the neon look (ps-wnj), for parity comparisons: every axis classic, so the Synty arenas, the crystal monsters and structures and the night post; no motion layers. The palette only colours what the package draws in any look (impulse rings, effects naming a role).",
+  "palette": "ion",
+  "monsters": "classic",
+  "structures": "classic",
+  "world": "classic",
+  "post": "classic",
+  "vfx": "classic",
+  "hero": "classic",
+  "motion": { "springs": false, "swarm": false, "trails": false, "beatRipple": false }
+}

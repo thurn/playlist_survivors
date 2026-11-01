@@ -46,7 +46,7 @@ namespace PS.Look.Tests
         public void EveryPackagePresetResolvesOnThePackagesPalettes()
         {
             var library = LookLibrary.Shared;
-            Assert.That(library.Presets, Is.EquivalentTo(new[] { "edge", "hologram", "prism", "solid" }));
+            Assert.That(library.Presets, Is.EquivalentTo(new[] { "classic", "edge", "hologram", "prism", "solid" }));
             foreach (var name in library.Palettes) Assert.That(Palette.Parse(library.PaletteJson(name)).Name, Is.EqualTo(name));
             foreach (var name in library.Presets)
             {
@@ -100,6 +100,23 @@ namespace PS.Look.Tests
             Assert.That(look.NotBuilt, Does.Contain("monsters not-a-look"));
             foreach (var layer in LookAxes.MotionLayers)
                 if (!LookAxes.Motion.IsBuilt(layer)) Assert.That(look.MotionOn(layer), Is.False, layer);
+        }
+
+        [Test]
+        public void ClassicDrawsTodaysLookOnEveryAxisWithoutAWarning()
+        {
+            var look = ResolvedLook.Resolve(new LookFlags { Look = "classic" });
+            foreach (var axis in LookAxes.All)
+            {
+                Assert.That(look.Requested(axis), Is.EqualTo(LookAxis.Classic), axis.Key);
+                Assert.That(look.Option(axis), Is.Null, axis.Key);
+            }
+            foreach (var layer in LookAxes.MotionLayers) Assert.That(look.MotionOn(layer), Is.False, layer);
+            Assert.That(look.NotBuilt, Is.Empty, "classic is asked for, not missing");
+
+            var mixed = Resolve("--look edge --post classic");
+            Assert.That((mixed.Option(LookAxes.Post), mixed.Option(LookAxes.Monsters)), Is.EqualTo(((string)null, "dark-core-edges")));
+            Assert.That(mixed.NotBuilt, Has.None.StartsWith("post"));
         }
 
         [Test]

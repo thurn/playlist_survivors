@@ -9,7 +9,7 @@ namespace PS.Look
     /// <summary>
     /// A look preset (neon-look.md, Look presets) with the look flags over it: its palette, one option per axis
     /// (<see cref="LookAxes"/>) and its motion layers. An option or layer that isn't built yet draws today's look:
-    /// <see cref="Option"/> is null for it and <see cref="Apply"/> warns. A preset file is Resources/Look/Looks/NAME.json:
+    /// <see cref="Option"/> is null for it and <see cref="Apply"/> warns, unless the option is <see cref="LookAxis.Classic"/>. A preset file is Resources/Look/Looks/NAME.json:
     /// its name, a palette, a string for every axis's key and a <c>motion</c> object of layers.
     /// </summary>
     public sealed class ResolvedLook
@@ -59,7 +59,7 @@ namespace PS.Look
             {
                 var missing = new List<string>();
                 foreach (var axis in LookAxes.All)
-                    if (Option(axis) == null) missing.Add($"{axis.Key} {Requested(axis)}");
+                    if (Option(axis) == null && Requested(axis) != LookAxis.Classic) missing.Add($"{axis.Key} {Requested(axis)}");
                 foreach (var layer in LookAxes.MotionLayers)
                     if (MotionRequested(layer) && !MotionOn(layer)) missing.Add($"motion {layer}");
                 return missing;

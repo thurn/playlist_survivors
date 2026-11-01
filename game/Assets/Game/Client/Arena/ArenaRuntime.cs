@@ -54,7 +54,7 @@ namespace Game.Client.Arena
         public Light HeroLight { get; private set; }
         public Bounds ArenaBounds { get; private set; }
         public event Action<ArenaRuntime> OnReady;
-        /// <summary>The look's post volume (PostStack), once the scene is set up.</summary>
+        /// <summary>The look's post volume (PostStack; the classic look's night, NightLook), once the scene is set up.</summary>
         public UnityEngine.Rendering.Volume Post { get; private set; }
         float _heroHeightM;
 
@@ -140,8 +140,13 @@ namespace Game.Client.Arena
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
             var look = Look.PostFeel.Look;
-            Post = PS.Look.PostStack.CreateVolume(_volumeParent != null ? _volumeParent : root, Look.PostFeel.OptionOf(look), look.Palette);
-            PS.Look.PostStack.SceneExposure = Lighting.Exposure;
+            var volumeParent = _volumeParent != null ? _volumeParent : root;
+            if (Look.PostFeel.OptionOf(look) is PS.Look.PostOption post)
+            {
+                Post = PS.Look.PostStack.CreateVolume(volumeParent, post, look.Palette);
+                PS.Look.PostStack.SceneExposure = Lighting.Exposure;
+            }
+            else Post = NightLook.CreateVolume(volumeParent, Lighting); // the classic look
             if (Lighting.HeroIntensity > 0) CreateHeroLight(root);
             SetBeatAtRest();
 

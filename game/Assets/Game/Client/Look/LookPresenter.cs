@@ -74,8 +74,8 @@ namespace Game.Client.Look
             _sim = sim;
             var look = PostFeel.Look;
             var post = PostFeel.OptionOf(look);
-            _post = new PostFeel(post.Feel);
-            _post.Binding.Tints = PS.Look.PostStack.Tints(post, look.Palette);
+            _post = new PostFeel(PostFeel.FeelOf(post));
+            if (post != null) _post.Binding.Tints = PS.Look.PostStack.Tints(post, look.Palette);
             var options = LaunchOptions.Current;
             _synthetic = options.HeroPath;
             _stills = options.StillsDir != null;

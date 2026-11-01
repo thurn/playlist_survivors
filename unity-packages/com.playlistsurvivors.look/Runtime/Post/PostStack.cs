@@ -25,7 +25,7 @@ namespace PS.Look
 
         /// <summary>
         /// The option the look's post axis draws, or null when it asks for one not built (today's post, which
-        /// ResolvedLook warns of; a player with none of its own draws <see cref="PostOption.Plain"/>) or there is no look.
+        /// ResolvedLook warns of) or <see cref="LookAxis.Classic"/>, both the player's own night post, or there is no look.
         /// </summary>
         public static PostOption OptionOf(ResolvedLook look, LookLibrary library = null)
         {

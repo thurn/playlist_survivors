@@ -126,7 +126,7 @@ namespace Game.Tests
             var sim = Music(extra: add => add(StreamEntry.Onset(8.0, 0, 1, strong: true)));
             var lane = new FastLane();
             var moments = new FeelMoments();
-            var feel = PostFeel.OptionOf(PostFeel.Look).Feel;
+            var feel = PostFeel.FeelOf(PostFeel.OptionOf(PostFeel.Look));
             var post = new PostFeel(feel);
             PS.Look.PostOffsets At(double s) => post.At(s, ReadAt(sim, lane, s, moments), moments);
 
@@ -149,7 +149,7 @@ namespace Game.Tests
         [Test]
         public void AZoneGradeEasesInOverTwoBarsFromItsChange()
         {
-            var post = new PostFeel(PostFeel.OptionOf(PostFeel.Look).Feel);
+            var post = new PostFeel(PostFeel.FeelOf(PostFeel.OptionOf(PostFeel.Look)));
             post.SetZone("lava", from: 10, barS: 1);
             var lava = PostFeel.GradeOf("lava");
             Assert.That(post.Grade(10).Temperature, Is.EqualTo(0));

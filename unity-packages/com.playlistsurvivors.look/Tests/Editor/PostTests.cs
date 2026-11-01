@@ -22,6 +22,7 @@ namespace PS.Look.Tests
             foreach (var name in LookAxes.Post.Built) Assert.That(PostOption.Parse(library.PostJson(name)).Name, Is.EqualTo(name));
             foreach (var preset in library.Presets)
             {
+                if (preset == LookAxis.Classic) continue; // the night post, the player's own
                 var look = ResolvedLook.Resolve(new LookFlags { Look = preset });
                 Assert.That(PostStack.OptionOf(look), Is.Not.Null, $"{preset} draws its post option");
             }
