@@ -1,5 +1,8 @@
 # The full run: a 30-minute File playlist to the victory card (ps-msz.6.14)
 
+The run as M4 left it, with its pacing tuned, its replay, its frame budget and its late stills, is in
+[Retaken after M4](#retaken-after-m4-ps-msz814); the sections before it are the earlier takes.
+
 The run from its start to the victory card, headless in the IL2CPP player on the Mac (jarvis),
 2026-10-31, built from this bead's tree on staging after ps-b3v, with the positioning bot playing
 (`--bot positioning`, the sweeps' bot in place of the keyboard) over the survivors test playlist
@@ -169,3 +172,120 @@ uv run --project demo3d/tools game look full-run-25 --evidence full-run --at 174
   so ps-msz.6.14's slot overflow is gone on a real run's minute 25 too.
 - Slow CI now covers this path: `game replay --record` also replays its session at fixed time and runs
   the file twice at fixed time to one hash (about 10 s more).
+
+## Retaken after M4 (ps-msz.8.14)
+
+The whole run again on M4's combined tree (staging 341d5239: the look polished, the run's pacing tuned, the
+payoff, the faults isolated, the peak's frame cut and no frame over 33 ms), on jarvis, 2026-10-31, the IL2CPP
+player built after `game perf --trace` (so it warms up the traced graphics states at boot), at a load
+average of 23 to 33 (other sessions' builds):
+
+```sh
+uv run --project demo3d/tools game perf --trace && uv run --project demo3d/tools game build --platform mac --backend il2cpp
+"game/Builds/mac/il2cpp/PlaylistSurvivors.app/Contents/MacOS/Playlist Survivors" -batchmode \
+  -logFile "$PWD/player.log" --file "$PWD/native/playlists/survivors-30-twice.m3u" --headless --fixed-time \
+  --run --bot positioning --events-out "$PWD/events.csv" --sessions "$PWD/sessions"
+python3 game/evidence/full-run/pacing.py events.csv > pacing-m4.json
+uv run --project demo3d/tools game replay sessions/<time> --player
+```
+
+```text
+GameLoop: victory; 124828 frames to song 2080.483 s (290.4 s since launch), 130332 entries (0 late), ...,
+488185 events, hash AC0F5686B95E04BE; run Ended from song 3.780 s, run clock 1800.000 s, 61 freezes (16 music
+stopped), 0 run controls; presenter faults 0; ...; sim step (ms) median 0.012, p99 0.380, max 5.523; enemies
+alive 114, 14129 killed, 161 heavy strikes, 134 structures broken, 126 regrown, 77 zone changes, 131 set
+pieces, 0 debug commands; sounds 46226 scheduled (1798 into their clip), 0 dropped, 1367 cut off
+```
+
+- **Victory at 30:00** in 290 s of wall clock, no exception in the log and no presenter fault. Its session
+  (6080 key changes) replays in the player (`game replay --player`, 61 s) to its hash, AC0F5686B95E04BE,
+  488,185 events: it matches.
+- **The pacing** ([pacing-m4.json](pacing-m4.json)) now follows the design's `startLevels`, where the take
+  above ran far ahead:
+
+| | after M4 | before M4 (ps-msz.7.5's take) | the design (`startLevels`) |
+|---|---|---|---|
+| level at 5, 10, 15, 20, 25, 30 minutes | 10, 13, 18, 23, 25, 31 | 16, ..., 55 (ps-msz.6.14's: 15, 22, 33, 44, 45, 55) | 10, 15, 19, 23, 27, 30 |
+| chests (run clock taken, its minute) | 15: 8:19 (7), 9:01 (5), 10:20 (9), 10:39 (10), 15:06 (14, tier 3), 15:34 (12), 16:10 (15), 16:14 (16, tier 2), 18:38 (18), 20:33 (20), 22:51 (22), 24:50 (23), 25:42 (25, tier 3), 27:20 (27), 29:59 (29) | 14 | boss chests at minutes 10, 15, 20 and 25 |
+| evolutions | Bloody Tear 10:39, Soul Eater 16:10, Holy Wand 20:33 | all five | |
+| frozen (s of song) | cards 83, chests 62, music stopped 123 | cards 145, chests 33, music stopped 132 | |
+| sounds | 46,226 scheduled, none dropped, 3.0% cut off | 44,072 scheduled, 2220 (5%) dropped | |
+| finale | the blast at song 2072.48 s, the victory card 3 s later | | 30:00 |
+
+- **Every boss chest was taken soon after its minute**: minute 10's at 10:39, 15's at 16:10, 20's at
+  20:33 and 25's at 25:42 (before ps-msz.8.4, minute 20's waited until 25:25). Fewer levels mean fewer
+  top-rank weapons, so three evolutions, as in the sweeps (game/evidence/sweeps: two or three).
+- **The peak**: 300 alive (the cap) first at 7:34 of run clock, and from 25:00 to the finale 66% of frames
+  at the cap and 95% at 285 or more (the perf take's profile of the same run).
+
+### The frame budget and the audits
+
+- **`game perf`**, all seven scenarios, the 30-minute CPU profile among them
+  ([../perf/README.md](../perf/README.md#retaken-after-m4-ps-msz814)): no frame over 33 ms in the 30-minute
+  run, none over 16.7 ms anywhere, the full run's main thread 0.74 / 1.60 ms p50 / p99 (13.7 ms at most, a
+  wait with 2.3 ms of CPU); the peak's probe frame 5.2 to 6.3 ms p50 over four takes, its main thread
+  1.3 to 2.1 ms p99 and the sim's step 0.29 ms p99 at 300 alive, at or under the perf beads' numbers.
+- **`game sweep --assert`** passes, retaken into game/evidence/sweeps (levels 10 to 11 at 5:00 and 31 to 33
+  at 30:00 in the four .NET runs, the idle bot falling at 2:05).
+- **The on-the-beat audit** (game/evidence/beat's commands, `--no-evidence`): the peak's 10,584 moments and the
+  early stretch's 5,275 all on their frames, every kind the sim made shown; the peak's 967 sounds in real
+  time all scheduled, none dropped or off their event or anchor, the probe's 434 clicks on the music.
+
+### The peak's stills
+
+Two sets, windowless at fixed time, measured with
+[colours.py](colours.py) (`uv run --project demo3d/tools python game/evidence/full-run/colours.py
+captures/game/look/SLUG`): the crowd's gem colours (the ID render's monster pixels classed by the nearest of
+cast.json's crystal colours by hue, colours within 15 degrees taken as one, a colour counted at 3% or more of
+them: a colour estimate, as a zone's grade or a hit's flash can move a crystal into its neighbour's hue) and
+the frame's clipped share.
+
+```sh
+uv run --project demo3d/tools game look full-run-m4-late --evidence full-run/m4 --readability \
+  --at 1705,1712.25,1715,1725,1735,1740,1745,1765,1775,1800,1830,1870,1950,2030 \
+  --player-args "--file $PWD/native/playlists/survivors-30-twice.m3u --run --bot positioning"   # about 4 minutes
+uv run --project demo3d/tools game look full-run-m4-peak --evidence full-run/m4 --at 60,61.2,68.45,68.8,72 --readability \
+  --player-args "--file $PWD/public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --start-minute 25 \
+  --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,break@64,finale@68"
+```
+
+(Each `game look` writes its own set's readability.json; [m4/readability.json](m4/readability.json) has
+both sets'. The real run's stills were taken in two runs, the same frames each time.)
+
+The real run from 25:00 (song 1712.25 s is 25:00 of run clock), the bot playing; readability dL* passes at
+17:
+
+| still | run clock | what it shows | dL* | clipped | gem colours in the crowd |
+|---|---|---|---|---|---|
+| 1705.0 | 24:58 | (not kept) | +54.3 | 0.01% | 5 |
+| [1712.25](m4/still-1712.250.jpg) | 25:00 | between songs: WAITING FOR THE BEAT, the crowd round the field's edge, teal mud men and ice mummies | +38.3 | 0.17% | 5 |
+| [1715.0](m4/still-1715.000.jpg) | 25:03 | teal and ice-blue crystal brutes closing in | +45.9 | 0.28% | 4 |
+| 1725.0, 1735.0, 1745.0 | 25:13 to 25:33 | (not kept) the lava zone's red night, the crowd thin round the hero | +40.6 to +52.6 | 0.04 to 0.13% | 3, 4, 4 |
+| [1740.0](m4/still-1740.000.jpg) | 25:27 | the lava zone: amber bats and a few brutes; its red grade pulls the crystals' hues towards red | +46.7 | 0.07% | 3 |
+| [1765.0](m4/still-1765.000.jpg) | 25:48 | the peak: a blue and ice-white flock shattering, amber flowers, green and teal brutes, violet bats | +57.5 | 0.04% | 7 |
+| [1775.0](m4/still-1775.000.jpg) | 25:58 | a mass of ice-white shards over the hero from Holy Wand's and the slashes' kills, amber and green round it | +58.7 | 0.05% | 6 |
+| 1800.0, 1830.0 | 26:13, 26:43 | (not kept) a field of teal mud men; then teal, pink, amber | +60.6, +53.6 | 0.06%, 0.11% | 2, 5 |
+| [1870.0](m4/still-1870.000.jpg) | 27:13 | blossom's magenta night: teal, green, blue, violet and amber crystal, each its own colour | +44.9 | 0.12% | 7 |
+| [1950.0](m4/still-1950.000.jpg) | 28:21 | the crowd breaking on the slashes: amber flowers, teal brutes, violet and ice shards, red bees | +48.1 | 0.24% | 6 |
+| [2030.0](m4/still-2030.000.jpg) | 29:39 | the last minute's teal, green and violet | +83.6 | 0.18% | 5 |
+
+The peak as `--start-minute 25` builds it (level 27, the three evolutions at 5 s) on go-cart, a break and
+the forced finale, as in the stills above:
+
+| still | what it shows | dL* | clipped | gem colours |
+|---|---|---|---|---|
+| [060.0](m4/still-060.000.jpg) | the peak: blue werewolves, amber mushrooms, teal brutes round Soul Eater's ring | +44.0 | 0.09% | 3 |
+| [061.2](m4/still-061.200.jpg) | a structure break beside a heavy strike, the crowd shattering | +51.4 | 0.22% | 6 |
+| [068.45](m4/still-068.450.jpg) | the finale's blast: every monster breaking into its own colour of glass | +52.8 | 0.01% | 6 |
+| [068.8](m4/still-068.800.jpg) | the glass settling | +41.0 | 0.03% | 4 |
+| [072.0](m4/still-072.000.jpg) | the victory card | +76.0 | 0.00% | 5 |
+
+- **Every still passes readability** (+38.3 to +83.6) and **none clips past 0.28%**, against 1%.
+- **The crowd reads rainbow**: at the run's busy moments from minute 25 (25:48, 25:58, 27:13, 28:21) six or
+  seven gem colours, and four or more in 13 of the 19 stills; ps-msz.6.14's minute 25 was 297 of 300
+  crystal mushrooms, one colour. Fewer come where the field is thin or one swarm holds it: between songs, in
+  lava's red grade, and at 26:13 a field of teal mud men (83% of the coloured pixels).
+- **For the look's review**: at 25:48 and 25:58 a burst of ice-white shards (the pale ice mummies' and the
+  ice-blue crystal's deaths under Holy Wand and the slashes, lit half white by their hits) covers the hero for
+  a moment. It reads as the payoff's glass, but it is the frame's largest pale mass; the operator's full
+  File run row (operator-pending.md) asks to note whether it hides the hero too long.

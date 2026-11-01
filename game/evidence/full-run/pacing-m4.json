@@ -1,0 +1,129 @@
+{
+ "start": 3.78,
+ "end_song": 2075.48,
+ "end_clock": 1800.0,
+ "end": "1",
+ "finale_song": 2072.48,
+ "final_level": 31,
+ "level_at_minute": {
+  "5": 10,
+  "10": 13,
+  "15": 18,
+  "20": 23,
+  "25": 25,
+  "30": 31
+ },
+ "chests": [
+  {
+   "song": 569.01,
+   "clock": 499.8,
+   "minute": 7,
+   "tier": 1
+  },
+  {
+   "song": 617.66,
+   "clock": 541.5,
+   "minute": 5,
+   "tier": 1
+  },
+  {
+   "song": 718.49,
+   "clock": 620.5,
+   "minute": 9,
+   "tier": 1
+  },
+  {
+   "song": 741.09,
+   "clock": 639.8,
+   "minute": 10,
+   "tier": 1
+  },
+  {
+   "song": 1034.91,
+   "clock": 906.4,
+   "minute": 14,
+   "tier": 3
+  },
+  {
+   "song": 1069.24,
+   "clock": 934.1,
+   "minute": 12,
+   "tier": 1
+  },
+  {
+   "song": 1113.84,
+   "clock": 970.8,
+   "minute": 15,
+   "tier": 1
+  },
+  {
+   "song": 1121.71,
+   "clock": 974.7,
+   "minute": 16,
+   "tier": 2
+  },
+  {
+   "song": 1292.78,
+   "clock": 1118.7,
+   "minute": 18,
+   "tier": 1
+  },
+  {
+   "song": 1419.03,
+   "clock": 1233.2,
+   "minute": 20,
+   "tier": 1
+  },
+  {
+   "song": 1572.89,
+   "clock": 1371.5,
+   "minute": 22,
+   "tier": 1
+  },
+  {
+   "song": 1699.66,
+   "clock": 1490.4,
+   "minute": 23,
+   "tier": 1
+  },
+  {
+   "song": 1756.59,
+   "clock": 1542.3,
+   "minute": 25,
+   "tier": 3
+  },
+  {
+   "song": 1876.99,
+   "clock": 1640.2,
+   "minute": 27,
+   "tier": 1
+  },
+  {
+   "song": 2066.22,
+   "clock": 1799.3,
+   "minute": 29,
+   "tier": 1
+  }
+ ],
+ "evolutions": [
+  [
+   "bloody-tear",
+   639.8
+  ],
+  [
+   "soul-eater",
+   970.8
+  ],
+  [
+   "holy-wand",
+   1233.2
+  ]
+ ],
+ "frozen_s": {
+  "level-up": 82.7,
+  "chest": 62.1,
+  "pause": 0.0,
+  "music stopped": 123.2
+ },
+ "freezes": 59
+}

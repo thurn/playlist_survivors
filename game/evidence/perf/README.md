@@ -396,3 +396,50 @@ worktree after `game perf --trace` and `game build`. Times in ms as in ps-msz.8.
   their own), and the JSON rebuilt with every point after each point (each point's line is now made once).
   After: the probe 5.9 MB in firsts, which has **3 collections**, and the peak and the break none.
 - A probe draw that throws now restores the camera's target and the passes it turned off.
+
+# Retaken after M4 (ps-msz.8.14)
+
+`game perf` (all seven scenarios) on M4's combined tree (staging 341d5239), jarvis, 2026-10-31, from a fresh
+worktree after `game setup`, `game perf --trace` and `game build`, at a load average falling from 17 to 8
+over the take. [summary.json](retake-m4/summary.json) and the probes are in [retake-m4/](retake-m4/). Times in
+ms as in the tables above:
+
+```sh
+uv run --project demo3d/tools game perf --evidence perf/retake-m4
+```
+
+| scenario | probe frame p50 / p99 / max | main thread p50 / p99 / p99.9 / max | CPU max | over 16.7 / 33 ms | alloc B/frame mean, p99, max | GCs | sim step p99 at 285+ (frames) |
+|---|---|---|---|---|---|---|---|
+| peak | 5.44 / 15.58 / 15.58 | 0.95 / 2.05 / 2.98 / 13.28 | 3.21 | 0 / 0 | 37, 480, 22296 | 0 | 0.29 (1,872) |
+| break | 2.78 / 5.37 / 5.37 | 1.11 / 1.87 / 2.09 / 2.09 | 2.01 | 0 / 0 | 184, 2698, 17906 | 0 | 0.24 (121) |
+| finale | 5.39 / 15.76 / 15.76 | 0.87 / 1.80 / 2.99 / 2.99 | 2.92 | 0 / 0 | 813, 6592, 74916 | 1 | 0.21 (18) |
+| early | 4.12 / 9.03 / 9.03 | 0.46 / 1.14 / 1.47 / 1.85 | 1.76 | 0 / 0 | 72, 1568, 30560 | 0 | |
+| full (124,827 frames) | | 0.74 / 1.60 / 2.36 / 13.69 | 4.39 | 0 / 0 | 18, 76, 131104 | 2 | 0.25 (58,945) |
+| firsts | 6.29 / 12.56 / 15.39 | 0.71 / 1.39 / 1.78 / 6.58 | 5.19 | 0 / 0 | 19, 76, 131104 | 3 | 0.24 |
+| firsts-rest | 6.16 / 7.89 / 8.74 | 0.75 / 1.35 / 1.94 / 3.00 | 2.95 | 0 / 0 | 252, 3136, 177126 | 2 | 0.26 |
+
+Three more takes of peak, break and finale side by side just after (`game perf --only peak,break,finale`, load
+average 8 to 9; probe p50 / p99 and main thread p99):
+
+| scenario | take 2 | take 3 | take 4 |
+|---|---|---|---|
+| peak | 6.28 / 8.22, 1.31 | 5.16 / 10.33, 1.37 | 5.29 / 6.63, 1.42 |
+| break | 2.57 / 4.87, 1.61 | 2.67 / 4.67, 1.75 | 4.82 / 6.98, 1.88 |
+| finale | 3.78 / 14.57, 1.76 | 3.82 / 12.03, 1.96 | 4.60 / 6.38, 2.11 |
+
+- **No frame over 33 ms in the 30-minute run, nor over 16.7 ms** in any scenario. The full run's longest
+  frame, 13.7 ms at song 528 s (7:39 of run clock), had 2.3 ms of CPU, and the peak's 13.3 ms had 3.2 ms:
+  waits on a shared machine. No frame's own CPU work went over 5.2 ms.
+- **The peak at or under the perf beads' numbers**: probe p50 5.2 to 6.3 ms in the four takes (ps-msz.8.8
+  6.41, ps-msz.8.9 5.09, ps-msz.8.10 6.23); probe p99 6.6 to 15.6 (ps-msz.8.8 9.03, ps-msz.8.9 18.70,
+  ps-msz.8.10 9.52), a single frame of 24 at the first point drawn after load in the first take; main thread
+  p99 1.3 to 2.1 (2.90, 2.42, 1.38); the sim's step at 300 alive 0.29 ms p99 against 1 ms. The finale's
+  frames just after the blast are still the heaviest probe frames (6.4 to 15.8 ms p99), ps-msz.9.2's for
+  Cygnus.
+- **Allocations as ps-msz.8.9 and ps-msz.8.10 left them**: the same means and p99s in every scenario; the
+  peak's largest frame 22,296 B (21,688 before) and firsts-rest's 177,126 B (175,526). Collections: firsts 3
+  as after ps-msz.8.10's fix, the peak and the break none.
+- **The run's peak**: 300 alive first at song 523 s (7:34 of run clock); from 25:00 to the finale 66% of
+  frames at the cap and 95% at 285 or more.
+- **The first sightings, warm**: firsts' worst first-drawn frame 26.1 ms (ps-msz.8.10 21.5, ps-msz.8.9 26.3),
+  the process's first drawn frame with its uploads as before.

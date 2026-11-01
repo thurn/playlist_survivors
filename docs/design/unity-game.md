@@ -3058,6 +3058,24 @@ the operator. Inside each milestone, independent tracks run in parallel.
 
    The Mac's numbers only guide this work; Cygnus measures against the
    targets in M5.
+
+   **Shipped (ps-msz.8.14): what M4 left, retaken together.** On the
+   combined tree the 30-minute fixed-time File run with the positioning bot
+   wins at 30:00 with no exception or presenter fault, and its session
+   replays in the player to its hash. Its levels follow `startLevels`
+   (10, 13, 18, 23, 25 and 31 at minutes 5 to 30, against 15 to 55 before
+   M4), every boss chest is taken by 72 s after its minute, three
+   evolutions arrive, and none of its 46,226 sounds is dropped (5% before).
+   No frame goes over 33 ms in the run, nor over 16.7 ms in any `game perf`
+   scenario; the peak's probe frame is 5 to 6 ms at the median and the
+   sim's step 0.29 ms p99 at 300 alive. The late crowd reads rainbow: four
+   to seven gem colours in the busy stills from minute 25, every still
+   readable and none clipping past 0.3%. The sweeps and the on-the-beat
+   audit pass. Evidence:
+   [game/evidence/full-run](../../game/evidence/full-run/README.md#retaken-after-m4-ps-msz814)
+   and [perf](../../game/evidence/perf/README.md#retaken-after-m4-ps-msz814).
+   The operator's checks wait in operator-pending.md for the Archivist
+   (ps-msz.10).
 6. **M5, Windows**: the shared crates and the plugin on Windows, process
    loopback with the guardian process, the Windows player, and performance
    against the targets on Cygnus, with Cygnus's own traced graphics states

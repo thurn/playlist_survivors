@@ -69,20 +69,21 @@ what was run (the exact commands), the numbers, and what they show.
   level-up's cards, a chest preview, victory and YOU FELL) and the beat gem's ring landing on the beat frame (ps-msz.6.9).
 - [full-run](full-run/README.md): the 30-minute File run to the victory card with the bot, its pacing and
   minute 25's stills (ps-msz.6.14), and retaken at fixed time in 4 minutes, with its replay and a still at
-  25:00 of a real run (ps-msz.7.5).
+  25:00 of a real run (ps-msz.7.5); retaken after M4 on the combined tree, with the run's late stills and the
+  crowd's gem colours counted (ps-msz.8.14).
 - [look-m4](look-m4/README.md): M4's look pass, the five zones settled and mid-ease at the run's density, the
   peak's heavy strike, break and mass kill, and every weapon's and evolution's effect in every zone, against the
   reference's stills, with before and after (ps-msz.8.3).
 - [sweeps](sweeps/README.md): the positioning bot's four 30-minute .NET runs over the survivors test playlist,
   all to the victory card above 25% health, and the idle bot falling at 2:05, with each run's pacing against
-  `startLevels`, its boss chests' drop-to-take delays and the late crowd's role mix (ps-msz.6.13, ps-msz.8.4).
-  all to the victory card above 25% health, and the idle bot falling at 2:06, with each run's pacing (ps-msz.6.13).
+  `startLevels`, its boss chests' drop-to-take delays and the late crowd's role mix (ps-msz.6.13, ps-msz.8.4),
+  retaken after M4 (ps-msz.8.14).
 - [perf](perf/README.md): the run's performance on the Mac from `game perf`: the windowless frame probe and
   the CPU frame profile at the peak, a structure break, the finale's mass kill, the run's first minute and the
   30-minute fixed-time run (ps-msz.8.2); the peak's frame split into CPU and GPU with each pass's cost, and SSAO
-  at half resolution, the tails shorter and the look unchanged (ps-msz.8.8).
-  30-minute fixed-time run (ps-msz.8.2); no frame over 33 ms, the allocations removed by the census, and every
-  first sighting probed on a cold launch with and without the boot's graphics-state warm-up (ps-msz.8.9).
+  at half resolution, the tails shorter and the look unchanged (ps-msz.8.8); no frame over 33 ms, the allocations
+  removed by the census, and every first sighting probed on a cold launch with and without the boot's
+  graphics-state warm-up (ps-msz.8.9); every scenario retaken after M4 (ps-msz.8.14).
 - [beat](beat/README.md): the on-the-beat audit, every key moment on the first frame at or after its song time at the
   run's peak and over an early stretch, and every sound on its event's song time, with the late moments it found
   fixed (before and after filmstrips); and the key rules' late steps measured in .NET and tuned (ps-msz.8.5).

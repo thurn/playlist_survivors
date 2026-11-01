@@ -1,27 +1,27 @@
 {
   "asserted": true,
   "pacingReportOnly": true,
-  "wallSeconds": 28.8,
+  "wallSeconds": 24.6,
   "cases": [
     {
       "case": "cached-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2003.308,
+      "song": 2001.525,
       "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 63.983,
-        "Chest": 44.183,
+        "LevelUp": 62.933,
+        "Chest": 43,
         "Pause": 0,
-        "MusicStopped": 75.833,
-        "resuming": 12.4
+        "MusicStopped": 76.967,
+        "resuming": 11.067
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.8681,
-      "heroHits": 3,
+      "lowestHealthShare": 0.8333,
+      "heroHits": 2,
       "levelAt5": 11,
-      "level": 34,
+      "level": 32,
       "pacing": [
         {
           "minute": 5,
@@ -49,13 +49,13 @@
         },
         {
           "minute": 25,
-          "level": 25,
+          "level": 26,
           "design": 27,
           "within": true
         },
         {
           "minute": 30,
-          "level": 34,
+          "level": 32,
           "design": 30,
           "within": true
         }
@@ -63,73 +63,78 @@
       "chests": [
         {
           "minute": 3,
-          "dropped": 225.187,
-          "taken": 226.979
+          "dropped": 215.309,
+          "taken": 216.751
         },
         {
-          "minute": 10,
-          "dropped": 648.536,
-          "taken": 650.069
+          "minute": 7,
+          "dropped": 481.572,
+          "taken": 485.68
+        },
+        {
+          "minute": 9,
+          "dropped": 555.963,
+          "taken": 558.755
         },
         {
           "minute": 5,
-          "dropped": 666.036,
-          "taken": 667.561
+          "dropped": 566.608,
+          "taken": 568
         },
         {
-          "minute": 12,
-          "dropped": 752.82,
-          "taken": 756.262
+          "minute": 10,
+          "dropped": 648.518,
+          "taken": 649.076
         },
         {
           "minute": 14,
-          "dropped": 966.429,
-          "taken": 970.154
+          "dropped": 959.233,
+          "taken": 962.174
         },
         {
           "minute": 16,
-          "dropped": 1014.636,
-          "taken": 1017.845
+          "dropped": 1005.693,
+          "taken": 1008.276
         },
         {
           "minute": 15,
-          "dropped": 1024.077,
-          "taken": 1025.319
+          "dropped": 1025.505,
+          "taken": 1028.313
         },
         {
           "minute": 18,
-          "dropped": 1174.893,
-          "taken": 1177.352
+          "dropped": 1089.365,
+          "taken": 1091.306
         },
         {
           "minute": 20,
-          "dropped": 1246.114,
-          "taken": 1248.842
-        },
-        {
-          "minute": 25,
-          "dropped": 1559.972,
-          "taken": 1562.93
+          "dropped": 1254.461,
+          "taken": 1256.503
         },
         {
           "minute": 23,
-          "dropped": 1564.852,
-          "taken": 1565.344
+          "dropped": 1395.06,
+          "taken": 1396.535
+        },
+        {
+          "minute": 25,
+          "dropped": 1548.473,
+          "taken": 1551.418
         },
         {
           "minute": 22,
-          "dropped": 1564.502,
-          "taken": 1565.35
+          "dropped": 1554.17,
+          "taken": 1556.212
         },
         {
           "minute": 27,
-          "dropped": 1633.639,
-          "taken": 1635.881
+          "dropped": 1632.801,
+          "taken": 1638.976
         },
         {
           "minute": 29,
-          "dropped": 1754.332,
-          "taken": 1756.44
+          "dropped": 1759.053,
+          "taken": 1762.062
         }
       ],
       "lateCrowd": {
@@ -137,83 +142,83 @@
           {
             "minute": 20,
             "peak": 300,
-            "topShare": 0.3858,
-            "topRole": "xlmantis",
+            "topShare": 0.3777,
+            "topRole": "xlflower",
             "colours": 5
           },
           {
             "minute": 21,
             "peak": 300,
-            "topShare": 0.3129,
+            "topShare": 0.3828,
             "topRole": "xlflower",
-            "colours": 4
+            "colours": 5
           },
           {
             "minute": 22,
             "peak": 300,
-            "topShare": 0.2584,
-            "topRole": "mudman1",
-            "colours": 5
+            "topShare": 0.2467,
+            "topRole": "werewolf",
+            "colours": 7
           },
           {
             "minute": 23,
             "peak": 300,
-            "topShare": 0.1987,
-            "topRole": "mudman1",
+            "topShare": 0.2467,
+            "topRole": "werewolf",
             "colours": 7
           },
           {
             "minute": 24,
             "peak": 300,
-            "topShare": 0.2274,
-            "topRole": "mudman1",
+            "topShare": 0.2517,
+            "topRole": "werewolf",
             "colours": 7
           },
           {
             "minute": 25,
             "peak": 300,
-            "topShare": 0.4201,
+            "topShare": 0.413,
             "topRole": "flower",
             "colours": 7
           },
           {
             "minute": 26,
             "peak": 300,
-            "topShare": 0.3707,
+            "topShare": 0.3665,
             "topRole": "flower",
-            "colours": 5
+            "colours": 6
           },
           {
             "minute": 27,
             "peak": 300,
-            "topShare": 0.3667,
-            "topRole": "xlmantis",
+            "topShare": 0.3445,
+            "topRole": "ghost-swarm",
             "colours": 7
           },
           {
             "minute": 28,
             "peak": 300,
-            "topShare": 0.3281,
-            "topRole": "xlmummy",
+            "topShare": 0.3584,
+            "topRole": "mudman2",
             "colours": 5
           },
           {
             "minute": 29,
             "peak": 300,
-            "topShare": 0.3513,
+            "topShare": 0.3925,
             "topRole": "bat5",
             "colours": 7
           },
           {
             "minute": 30,
             "peak": 300,
-            "topShare": 0.2733,
+            "topShare": 0.3211,
             "topRole": "bat5",
             "colours": 7
           }
         ],
         "mixed": true,
-        "fewestColours": 4
+        "fewestColours": 5
       },
       "evolutions": [
         "bloody-tear",
@@ -221,33 +226,33 @@
         "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 16634,
-      "hash": "909CDDE8BFE47930",
-      "wallSeconds": 24.1
+      "kills": 15717,
+      "hash": "B0B3B2880A8A920A",
+      "wallSeconds": 6.4
     },
     {
       "case": "cached-reverse-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2176.417,
+      "song": 2185.55,
       "startedAt": 182.07,
       "frozen": {
-        "LevelUp": 68.833,
-        "Chest": 29.683,
+        "LevelUp": 74.283,
+        "Chest": 40.883,
         "Pause": 0,
-        "MusicStopped": 79.867,
-        "resuming": 12.1
+        "MusicStopped": 69.733,
+        "resuming": 14.45
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.8681,
+      "lowestHealthShare": 0.7371,
       "heroHits": 5,
-      "levelAt5": 10,
-      "level": 31,
+      "levelAt5": 11,
+      "level": 33,
       "pacing": [
         {
           "minute": 5,
-          "level": 10,
+          "level": 11,
           "design": 10,
           "within": true
         },
@@ -260,6 +265,217 @@
         {
           "minute": 15,
           "level": 21,
+          "design": 19,
+          "within": true
+        },
+        {
+          "minute": 20,
+          "level": 23,
+          "design": 23,
+          "within": true
+        },
+        {
+          "minute": 25,
+          "level": 27,
+          "design": 27,
+          "within": true
+        },
+        {
+          "minute": 30,
+          "level": 33,
+          "design": 30,
+          "within": true
+        }
+      ],
+      "chests": [
+        {
+          "minute": 5,
+          "dropped": 562.805,
+          "taken": 564.113
+        },
+        {
+          "minute": 10,
+          "dropped": 636.77,
+          "taken": 639.92
+        },
+        {
+          "minute": 14,
+          "dropped": 863.592,
+          "taken": 865.544
+        },
+        {
+          "minute": 15,
+          "dropped": 981.455,
+          "taken": 984.363
+        },
+        {
+          "minute": 16,
+          "dropped": 1029.527,
+          "taken": 1032.118
+        },
+        {
+          "minute": 18,
+          "dropped": 1118.652,
+          "taken": 1120.794
+        },
+        {
+          "minute": 20,
+          "dropped": 1254.29,
+          "taken": 1255.899
+        },
+        {
+          "minute": 22,
+          "dropped": 1355.496,
+          "taken": 1356.654
+        },
+        {
+          "minute": 23,
+          "dropped": 1542.147,
+          "taken": 1543.972
+        },
+        {
+          "minute": 25,
+          "dropped": 1586.128,
+          "taken": 1588.77
+        },
+        {
+          "minute": 27,
+          "dropped": 1659.883,
+          "taken": 1661.541
+        },
+        {
+          "minute": 29,
+          "dropped": 1762.968,
+          "taken": 1764.91
+        }
+      ],
+      "lateCrowd": {
+        "minutes": [
+          {
+            "minute": 20,
+            "peak": 300,
+            "topShare": 0.332,
+            "topRole": "xlflower",
+            "colours": 6
+          },
+          {
+            "minute": 21,
+            "peak": 300,
+            "topShare": 0.3452,
+            "topRole": "xlflower",
+            "colours": 5
+          },
+          {
+            "minute": 22,
+            "peak": 300,
+            "topShare": 0.4048,
+            "topRole": "xlmantis",
+            "colours": 5
+          },
+          {
+            "minute": 23,
+            "peak": 300,
+            "topShare": 0.301,
+            "topRole": "xlflower",
+            "colours": 7
+          },
+          {
+            "minute": 24,
+            "peak": 300,
+            "topShare": 0.32,
+            "topRole": "werewolf",
+            "colours": 7
+          },
+          {
+            "minute": 25,
+            "peak": 300,
+            "topShare": 0.3433,
+            "topRole": "werewolf",
+            "colours": 7
+          },
+          {
+            "minute": 26,
+            "peak": 300,
+            "topShare": 0.4853,
+            "topRole": "flower",
+            "colours": 5
+          },
+          {
+            "minute": 27,
+            "peak": 300,
+            "topShare": 0.2867,
+            "topRole": "mudman1",
+            "colours": 5
+          },
+          {
+            "minute": 28,
+            "peak": 300,
+            "topShare": 0.332,
+            "topRole": "bat4",
+            "colours": 5
+          },
+          {
+            "minute": 29,
+            "peak": 300,
+            "topShare": 0.3345,
+            "topRole": "bat5",
+            "colours": 7
+          },
+          {
+            "minute": 30,
+            "peak": 300,
+            "topShare": 0.2,
+            "topRole": "ghost-swarm",
+            "colours": 7
+          }
+        ],
+        "mixed": true,
+        "fewestColours": 5
+      },
+      "evolutions": [
+        "bloody-tear",
+        "soul-eater"
+      ],
+      "peakEnemies": 300,
+      "kills": 15452,
+      "hash": "5C433AF52A87E4F2",
+      "wallSeconds": 6.3
+    },
+    {
+      "case": "cached-rotate-positioning-1",
+      "passed": true,
+      "runClock": 1800,
+      "song": 2001.058,
+      "startedAt": 3.76,
+      "frozen": {
+        "LevelUp": 69.417,
+        "Chest": 43.6,
+        "Pause": 0,
+        "MusicStopped": 70.033,
+        "resuming": 10.25
+      },
+      "victory": true,
+      "fallen": false,
+      "lowestHealthShare": 0.7014,
+      "heroHits": 3,
+      "levelAt5": 10,
+      "level": 31,
+      "pacing": [
+        {
+          "minute": 5,
+          "level": 10,
+          "design": 10,
+          "within": true
+        },
+        {
+          "minute": 10,
+          "level": 14,
+          "design": 15,
+          "within": true
+        },
+        {
+          "minute": 15,
+          "level": 19,
           "design": 19,
           "within": true
         },
@@ -284,59 +500,74 @@
       ],
       "chests": [
         {
-          "minute": 10,
-          "dropped": 631.936,
-          "taken": 633.211
+          "minute": 1,
+          "dropped": 67.397,
+          "taken": 71.315
+        },
+        {
+          "minute": 7,
+          "dropped": 451.433,
+          "taken": 452.545
         },
         {
           "minute": 5,
-          "dropped": 751.329,
-          "taken": 753.124
+          "dropped": 511.198,
+          "taken": 515.956
+        },
+        {
+          "minute": 9,
+          "dropped": 609.567,
+          "taken": 611.592
+        },
+        {
+          "minute": 10,
+          "dropped": 614.323,
+          "taken": 616.232
         },
         {
           "minute": 14,
-          "dropped": 851.724,
-          "taken": 853.815
+          "dropped": 870.112,
+          "taken": 871.945
         },
         {
           "minute": 15,
-          "dropped": 1113.54,
-          "taken": 1114.665
+          "dropped": 972.325,
+          "taken": 975.483
         },
         {
           "minute": 18,
-          "dropped": 1178.365,
-          "taken": 1181.273
+          "dropped": 1088.861,
+          "taken": 1091.119
         },
         {
           "minute": 20,
-          "dropped": 1245.55,
-          "taken": 1247.542
-        },
-        {
-          "minute": 23,
-          "dropped": 1388.881,
-          "taken": 1389.789
-        },
-        {
-          "minute": 25,
-          "dropped": 1569.432,
-          "taken": 1570.866
+          "dropped": 1388.686,
+          "taken": 1390.261
         },
         {
           "minute": 22,
-          "dropped": 1618.595,
-          "taken": 1621.287
+          "dropped": 1408.774,
+          "taken": 1413.199
+        },
+        {
+          "minute": 23,
+          "dropped": 1447.646,
+          "taken": 1448.862
+        },
+        {
+          "minute": 25,
+          "dropped": 1521.19,
+          "taken": 1522.465
         },
         {
           "minute": 27,
-          "dropped": 1661.744,
-          "taken": 1663.902
+          "dropped": 1648.66,
+          "taken": 1649.969
         },
         {
           "minute": 29,
-          "dropped": 1778.039,
-          "taken": 1778.964
+          "dropped": 1757.286,
+          "taken": 1759.861
         }
       ],
       "lateCrowd": {
@@ -344,78 +575,78 @@
           {
             "minute": 20,
             "peak": 300,
-            "topShare": 0.3277,
-            "topRole": "xlmantis",
+            "topShare": 0.3233,
+            "topRole": "mudman2",
             "colours": 5
           },
           {
             "minute": 21,
             "peak": 300,
-            "topShare": 0.3095,
-            "topRole": "xlflower",
-            "colours": 5
+            "topShare": 0.2628,
+            "topRole": "mudman2",
+            "colours": 8
           },
           {
             "minute": 22,
             "peak": 300,
-            "topShare": 0.3098,
-            "topRole": "xlflower",
-            "colours": 5
+            "topShare": 0.28,
+            "topRole": "mudman2",
+            "colours": 7
           },
           {
             "minute": 23,
             "peak": 300,
-            "topShare": 0.2767,
-            "topRole": "xlbat",
+            "topShare": 0.35,
+            "topRole": "xlflower",
             "colours": 7
           },
           {
             "minute": 24,
             "peak": 300,
-            "topShare": 0.2817,
-            "topRole": "xlbat",
-            "colours": 7
+            "topShare": 0.3984,
+            "topRole": "xlmummy",
+            "colours": 5
           },
           {
             "minute": 25,
             "peak": 300,
-            "topShare": 0.4152,
+            "topShare": 0.3581,
             "topRole": "flower",
-            "colours": 7
+            "colours": 5
           },
           {
             "minute": 26,
             "peak": 300,
-            "topShare": 0.274,
+            "topShare": 0.2947,
             "topRole": "flower",
             "colours": 6
           },
           {
             "minute": 27,
             "peak": 300,
-            "topShare": 0.2575,
-            "topRole": "mudman1",
-            "colours": 5
+            "topShare": 0.3779,
+            "topRole": "xlmantis",
+            "colours": 7
           },
           {
             "minute": 28,
             "peak": 300,
-            "topShare": 0.3333,
-            "topRole": "bat4",
+            "topShare": 0.3183,
+            "topRole": "xlmummy",
             "colours": 5
           },
           {
             "minute": 29,
             "peak": 300,
-            "topShare": 0.2804,
-            "topRole": "bat5",
+            "topShare": 0.4246,
+            "topRole": "ghost-swarm",
             "colours": 7
           },
           {
             "minute": 30,
             "peak": 300,
-            "topShare": 0.2767,
-            "topRole": "bat5",
+            "topShare": 0.28,
+            "topRole": "ghost-swarm",
             "colours": 6
           }
         ],
@@ -424,36 +655,37 @@
       },
       "evolutions": [
         "bloody-tear",
-        "soul-eater"
+        "soul-eater",
+        "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 14329,
-      "hash": "9CC0879F3EF2F66D",
-      "wallSeconds": 23.7
+      "kills": 14798,
+      "hash": "1E31B3CD75EC106C",
+      "wallSeconds": 6.2
     },
     {
-      "case": "cached-rotate-positioning-1",
+      "case": "continuous-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 1998.408,
-      "startedAt": 3.76,
+      "song": 2062.192,
+      "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 66.367,
-        "Chest": 45,
+        "LevelUp": 62.617,
+        "Chest": 41.45,
         "Pause": 0,
-        "MusicStopped": 70.033,
-        "resuming": 8.867
+        "MusicStopped": 137.683,
+        "resuming": 13.333
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.6216,
-      "heroHits": 3,
-      "levelAt5": 10,
-      "level": 31,
+      "lowestHealthShare": 1,
+      "heroHits": 0,
+      "levelAt5": 11,
+      "level": 32,
       "pacing": [
         {
           "minute": 5,
-          "level": 10,
+          "level": 11,
           "design": 10,
           "within": true
         },
@@ -465,25 +697,25 @@
         },
         {
           "minute": 15,
-          "level": 17,
+          "level": 21,
           "design": 19,
           "within": true
         },
         {
           "minute": 20,
-          "level": 22,
+          "level": 24,
           "design": 23,
           "within": true
         },
         {
           "minute": 25,
-          "level": 25,
+          "level": 27,
           "design": 27,
           "within": true
         },
         {
           "minute": 30,
-          "level": 31,
+          "level": 32,
           "design": 30,
           "within": true
         }
@@ -491,78 +723,78 @@
       "chests": [
         {
           "minute": 1,
-          "dropped": 67.397,
-          "taken": 71.315
-        },
-        {
-          "minute": 3,
-          "dropped": 291.151,
-          "taken": 293.376
+          "dropped": 100.269,
+          "taken": 104.038
         },
         {
           "minute": 7,
-          "dropped": 476.833,
-          "taken": 479.742
-        },
-        {
-          "minute": 5,
-          "dropped": 516.316,
-          "taken": 517.691
+          "dropped": 510.487,
+          "taken": 512.878
         },
         {
           "minute": 9,
-          "dropped": 549.281,
-          "taken": 552.406
+          "dropped": 544.997,
+          "taken": 546.385
+        },
+        {
+          "minute": 5,
+          "dropped": 580.153,
+          "taken": 582.078
         },
         {
           "minute": 10,
-          "dropped": 614.797,
-          "taken": 616.047
+          "dropped": 628.493,
+          "taken": 631.518
         },
         {
-          "minute": 14,
-          "dropped": 900.994,
-          "taken": 903.936
-        },
-        {
-          "minute": 15,
-          "dropped": 961.895,
-          "taken": 964.776
+          "minute": 12,
+          "dropped": 963.695,
+          "taken": 970.453
         },
         {
           "minute": 16,
-          "dropped": 992.287,
-          "taken": 993.428
+          "dropped": 975.498,
+          "taken": 977.973
+        },
+        {
+          "minute": 15,
+          "dropped": 1037.214,
+          "taken": 1038.372
+        },
+        {
+          "minute": 14,
+          "dropped": 1039.557,
+          "taken": 1041.866
         },
         {
           "minute": 18,
-          "dropped": 1101.161,
-          "taken": 1103.22
+          "dropped": 1139.512,
+          "taken": 1141.337
         },
         {
           "minute": 20,
-          "dropped": 1358.071,
-          "taken": 1359.563
+          "dropped": 1292.038,
+          "taken": 1294.121
         },
         {
           "minute": 22,
-          "dropped": 1412.769,
-          "taken": 1417.494
+          "dropped": 1327.689,
+          "taken": 1331.664
         },
         {
           "minute": 23,
-          "dropped": 1420.537,
-          "taken": 1422.396
+          "dropped": 1460.336,
+          "taken": 1463.827
         },
         {
           "minute": 25,
-          "dropped": 1514.533,
-          "taken": 1515.866
+          "dropped": 1542.326,
+          "taken": 1543.309
         },
         {
           "minute": 27,
-          "dropped": 1647.576,
-          "taken": 1648.835
+          "dropped": 1663.255,
+          "taken": 1664.697
         }
       ],
       "lateCrowd": {
@@ -570,306 +802,79 @@
           {
             "minute": 20,
             "peak": 300,
-            "topShare": 0.4502,
-            "topRole": "xlmummy",
-            "colours": 5
-          },
-          {
-            "minute": 21,
-            "peak": 300,
-            "topShare": 0.2891,
-            "topRole": "xlflower",
-            "colours": 7
-          },
-          {
-            "minute": 22,
-            "peak": 300,
-            "topShare": 0.28,
-            "topRole": "werewolf",
-            "colours": 6
-          },
-          {
-            "minute": 23,
-            "peak": 300,
-            "topShare": 0.3725,
-            "topRole": "xlflower",
-            "colours": 7
-          },
-          {
-            "minute": 24,
-            "peak": 300,
-            "topShare": 0.3957,
-            "topRole": "xlflower",
-            "colours": 6
-          },
-          {
-            "minute": 25,
-            "peak": 300,
-            "topShare": 0.4567,
-            "topRole": "flower",
-            "colours": 5
-          },
-          {
-            "minute": 26,
-            "peak": 300,
-            "topShare": 0.3346,
-            "topRole": "xlmummy",
-            "colours": 6
-          },
-          {
-            "minute": 27,
-            "peak": 300,
-            "topShare": 0.3867,
-            "topRole": "xlmantis",
-            "colours": 5
-          },
-          {
-            "minute": 28,
-            "peak": 300,
-            "topShare": 0.3345,
-            "topRole": "bat4",
-            "colours": 4
-          },
-          {
-            "minute": 29,
-            "peak": 300,
-            "topShare": 0.3289,
-            "topRole": "ghost-swarm",
-            "colours": 6
-          },
-          {
-            "minute": 30,
-            "peak": 299,
-            "topShare": 0.1846,
-            "topRole": "mudman2",
-            "colours": 6
-          }
-        ],
-        "mixed": true,
-        "fewestColours": 4
-      },
-      "evolutions": [
-        "bloody-tear",
-        "soul-eater",
-        "holy-wand"
-      ],
-      "peakEnemies": 300,
-      "kills": 14344,
-      "hash": "6A73FA42048C91A0",
-      "wallSeconds": 23.1
-    },
-    {
-      "case": "continuous-original-positioning-1",
-      "passed": true,
-      "runClock": 1800,
-      "song": 2062.192,
-      "startedAt": 3.78,
-      "frozen": {
-        "LevelUp": 62.367,
-        "Chest": 44.6,
-        "Pause": 0,
-        "MusicStopped": 135.917,
-        "resuming": 12.067
-      },
-      "victory": true,
-      "fallen": false,
-      "lowestHealthShare": 0.6667,
-      "heroHits": 3,
-      "levelAt5": 11,
-      "level": 31,
-      "pacing": [
-        {
-          "minute": 5,
-          "level": 11,
-          "design": 10,
-          "within": true
-        },
-        {
-          "minute": 10,
-          "level": 13,
-          "design": 15,
-          "within": true
-        },
-        {
-          "minute": 15,
-          "level": 18,
-          "design": 19,
-          "within": true
-        },
-        {
-          "minute": 20,
-          "level": 22,
-          "design": 23,
-          "within": true
-        },
-        {
-          "minute": 25,
-          "level": 25,
-          "design": 27,
-          "within": true
-        },
-        {
-          "minute": 30,
-          "level": 31,
-          "design": 30,
-          "within": true
-        }
-      ],
-      "chests": [
-        {
-          "minute": 3,
-          "dropped": 215.287,
-          "taken": 217.7
-        },
-        {
-          "minute": 7,
-          "dropped": 510.309,
-          "taken": 511.518
-        },
-        {
-          "minute": 9,
-          "dropped": 617.153,
-          "taken": 619.911
-        },
-        {
-          "minute": 10,
-          "dropped": 656.343,
-          "taken": 657.768
-        },
-        {
-          "minute": 5,
-          "dropped": 662.741,
-          "taken": 664.299
-        },
-        {
-          "minute": 14,
-          "dropped": 927.178,
-          "taken": 931.27
-        },
-        {
-          "minute": 16,
-          "dropped": 980.987,
-          "taken": 983.296
-        },
-        {
-          "minute": 15,
-          "dropped": 994.174,
-          "taken": 995.432
-        },
-        {
-          "minute": 18,
-          "dropped": 1165.687,
-          "taken": 1166.212
-        },
-        {
-          "minute": 20,
-          "dropped": 1232.701,
-          "taken": 1234.467
-        },
-        {
-          "minute": 22,
-          "dropped": 1343.648,
-          "taken": 1346.14
-        },
-        {
-          "minute": 23,
-          "dropped": 1431.999,
-          "taken": 1433.441
-        },
-        {
-          "minute": 25,
-          "dropped": 1535.731,
-          "taken": 1536.639
-        },
-        {
-          "minute": 27,
-          "dropped": 1715.921,
-          "taken": 1717.279
-        },
-        {
-          "minute": 29,
-          "dropped": 1764.79,
-          "taken": 1766.248
-        }
-      ],
-      "lateCrowd": {
-        "minutes": [
-          {
-            "minute": 20,
-            "peak": 300,
-            "topShare": 0.4,
+            "topShare": 0.3919,
             "topRole": "xlmantis",
             "colours": 5
           },
           {
             "minute": 21,
             "peak": 300,
-            "topShare": 0.2676,
+            "topShare": 0.2867,
             "topRole": "bat-swarm",
-            "colours": 7
+            "colours": 5
           },
           {
             "minute": 22,
             "peak": 300,
-            "topShare": 0.2542,
+            "topShare": 0.3278,
             "topRole": "werewolf",
-            "colours": 6
+            "colours": 5
           },
           {
             "minute": 23,
             "peak": 300,
-            "topShare": 0.2542,
-            "topRole": "xlflower",
+            "topShare": 0.3033,
+            "topRole": "werewolf",
             "colours": 6
           },
           {
             "minute": 24,
             "peak": 300,
-            "topShare": 0.3468,
-            "topRole": "xlmummy",
-            "colours": 5
+            "topShare": 0.2977,
+            "topRole": "werewolf",
+            "colours": 7
           },
           {
             "minute": 25,
             "peak": 300,
-            "topShare": 0.3893,
-            "topRole": "xlmummy",
+            "topShare": 0.3535,
+            "topRole": "flower",
             "colours": 6
           },
           {
             "minute": 26,
             "peak": 300,
-            "topShare": 0.3188,
+            "topShare": 0.37,
             "topRole": "flower",
             "colours": 4
           },
           {
             "minute": 27,
             "peak": 300,
-            "topShare": 0.3424,
+            "topShare": 0.3709,
             "topRole": "mudman2",
-            "colours": 7
+            "colours": 5
           },
           {
             "minute": 28,
             "peak": 300,
-            "topShare": 0.3398,
-            "topRole": "mudman2",
-            "colours": 7
+            "topShare": 0.3167,
+            "topRole": "xlmantis",
+            "colours": 6
           },
           {
             "minute": 29,
             "peak": 300,
-            "topShare": 0.339,
+            "topShare": 0.3367,
             "topRole": "ghost-swarm",
             "colours": 7
           },
           {
             "minute": 30,
-            "peak": 299,
-            "topShare": 0.1906,
-            "topRole": "ghost-swarm",
-            "colours": 6
+            "peak": 300,
+            "topShare": 0.2315,
+            "topRole": "bat5",
+            "colours": 7
           }
         ],
         "mixed": true,
@@ -881,9 +886,9 @@
         "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 14397,
-      "hash": "86A5A8A66E2BB0BF",
-      "wallSeconds": 23.9
+      "kills": 17007,
+      "hash": "7197FC1970C58D7C",
+      "wallSeconds": 6.3
     },
     {
       "case": "cached-original-idle-1",
@@ -911,7 +916,7 @@
       "peakEnemies": 135,
       "kills": 249,
       "hash": "EFE61BEACFE34463",
-      "wallSeconds": 0.5
+      "wallSeconds": 0.2
     }
   ]
 }

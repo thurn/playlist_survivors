@@ -1,0 +1,2623 @@
+{
+  "peak": {
+    "help": "minute 25, three evolutions, the crowd near 300",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/peak/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5",
+      "--gpu-probe-at",
+      "40,50,60",
+      "--gpu-probe-out",
+      "captures/game/perf/peak/gpu-probe.json",
+      "--seconds",
+      "62"
+    ],
+    "exit": 0,
+    "wall_s": 8.9,
+    "cpu": {
+      "frames": 1921,
+      "song": [
+        30.0,
+        62.0
+      ],
+      "alive": {
+        "median": 300,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 0.946,
+        "p99": 2.05,
+        "p99.9": 2.98,
+        "max": 13.276,
+        "mean": 1.019
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.927,
+        "p99": 1.932,
+        "p99.9": 2.286,
+        "max": 3.214,
+        "mean": 0.984
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.017,
+          "p99": 0.292,
+          "p99.9": 0.332,
+          "max": 0.377,
+          "mean": 0.069
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.068,
+          "p99.9": 0.094,
+          "max": 0.103,
+          "mean": 0.007
+        },
+        "crowd": {
+          "p50": 0.131,
+          "p99": 0.29,
+          "p99.9": 0.414,
+          "max": 1.16,
+          "mean": 0.141
+        },
+        "shatter": {
+          "p50": 0.023,
+          "p99": 0.096,
+          "p99.9": 0.128,
+          "max": 0.193,
+          "mean": 0.028
+        },
+        "effects": {
+          "p50": 0.048,
+          "p99": 0.127,
+          "p99.9": 0.184,
+          "max": 0.28,
+          "mean": 0.056
+        },
+        "weapons": {
+          "p50": 0.016,
+          "p99": 0.037,
+          "p99.9": 0.052,
+          "max": 0.074,
+          "mean": 0.017
+        },
+        "pickups": {
+          "p50": 0.009,
+          "p99": 0.018,
+          "p99.9": 0.028,
+          "max": 0.042,
+          "mean": 0.009
+        },
+        "structures": {
+          "p50": 0.01,
+          "p99": 0.03,
+          "p99.9": 0.582,
+          "max": 1.195,
+          "mean": 0.012
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.389,
+          "p99.9": 0.465,
+          "max": 0.595,
+          "mean": 0.048
+        },
+        "hero": {
+          "p50": 0.04,
+          "p99": 0.072,
+          "p99.9": 0.086,
+          "max": 0.099,
+          "mean": 0.041
+        },
+        "look": {
+          "p50": 0.006,
+          "p99": 0.022,
+          "p99.9": 0.041,
+          "max": 0.077,
+          "mean": 0.007
+        },
+        "hud": {
+          "p50": 0.046,
+          "p99": 0.105,
+          "p99.9": 0.286,
+          "max": 0.796,
+          "mean": 0.049
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.001,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.004,
+          "p99": 0.025,
+          "p99.9": 0.03,
+          "max": 0.033,
+          "mean": 0.005
+        },
+        "engine": {
+          "p50": 0.492,
+          "p99": 1.027,
+          "p99.9": 2.628,
+          "max": 11.038,
+          "mean": 0.53
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 1.0,
+      "alloc_bytes": {
+        "mean": 37,
+        "p99": 480,
+        "max": 22296,
+        "frames": 208
+      },
+      "gc_collections": 0,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 1872,
+        "p99_ms": 0.29
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 5.44,
+      "p99_ms": 15.58,
+      "max_ms": 15.58,
+      "cpu_p50_ms": 1.86,
+      "cpu_p99_ms": 2.86,
+      "first_max_ms": 23.88,
+      "points": [
+        {
+          "at": 40.0,
+          "alive": 300,
+          "median_ms": 6.69,
+          "max_ms": 15.58,
+          "first_ms": 23.88
+        },
+        {
+          "at": 50.0,
+          "alive": 297,
+          "median_ms": 4.72,
+          "max_ms": 6.11,
+          "first_ms": 19.99
+        },
+        {
+          "at": 60.0,
+          "alive": 300,
+          "median_ms": 3.88,
+          "max_ms": 11.1,
+          "first_ms": 4.25
+        }
+      ]
+    },
+    "ok": true
+  },
+  "break": {
+    "help": "the peak with a structure break at 64 s",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/break/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,break@64",
+      "--gpu-probe-at",
+      "64.05,64.4,65",
+      "--gpu-probe-out",
+      "captures/game/perf/break/gpu-probe.json",
+      "--seconds",
+      "66"
+    ],
+    "exit": 0,
+    "wall_s": 8.3,
+    "cpu": {
+      "frames": 121,
+      "song": [
+        64.0,
+        66.0
+      ],
+      "alive": {
+        "median": 300,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 1.11,
+        "p99": 1.874,
+        "p99.9": 2.087,
+        "max": 2.087,
+        "mean": 1.153
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 1.05,
+        "p99": 1.785,
+        "p99.9": 2.014,
+        "max": 2.014,
+        "mean": 1.106
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.014,
+          "p99": 0.241,
+          "p99.9": 0.266,
+          "max": 0.266,
+          "mean": 0.073
+        },
+        "events": {
+          "p50": 0.004,
+          "p99": 0.058,
+          "p99.9": 0.069,
+          "max": 0.069,
+          "mean": 0.008
+        },
+        "crowd": {
+          "p50": 0.126,
+          "p99": 0.207,
+          "p99.9": 0.22,
+          "max": 0.22,
+          "mean": 0.133
+        },
+        "shatter": {
+          "p50": 0.025,
+          "p99": 0.081,
+          "p99.9": 0.123,
+          "max": 0.123,
+          "mean": 0.031
+        },
+        "effects": {
+          "p50": 0.048,
+          "p99": 0.111,
+          "p99.9": 0.135,
+          "max": 0.135,
+          "mean": 0.054
+        },
+        "weapons": {
+          "p50": 0.015,
+          "p99": 0.032,
+          "p99.9": 0.039,
+          "max": 0.039,
+          "mean": 0.016
+        },
+        "pickups": {
+          "p50": 0.01,
+          "p99": 0.015,
+          "p99.9": 0.025,
+          "max": 0.025,
+          "mean": 0.01
+        },
+        "structures": {
+          "p50": 0.007,
+          "p99": 0.068,
+          "p99.9": 0.59,
+          "max": 0.59,
+          "mean": 0.014
+        },
+        "physics": {
+          "p50": 0.173,
+          "p99": 0.383,
+          "p99.9": 0.428,
+          "max": 0.428,
+          "mean": 0.181
+        },
+        "hero": {
+          "p50": 0.039,
+          "p99": 0.073,
+          "p99.9": 0.238,
+          "max": 0.238,
+          "mean": 0.041
+        },
+        "look": {
+          "p50": 0.005,
+          "p99": 0.011,
+          "p99.9": 0.025,
+          "max": 0.025,
+          "mean": 0.006
+        },
+        "hud": {
+          "p50": 0.042,
+          "p99": 0.083,
+          "p99.9": 0.088,
+          "max": 0.088,
+          "mean": 0.044
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.001,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.004,
+          "p99": 0.023,
+          "p99.9": 0.025,
+          "max": 0.025,
+          "mean": 0.006
+        },
+        "engine": {
+          "p50": 0.503,
+          "p99": 0.94,
+          "p99.9": 0.991,
+          "max": 0.991,
+          "mean": 0.536
+        }
+      },
+      "top": [
+        "engine",
+        "physics",
+        "crowd"
+      ],
+      "wait_s": 0.0,
+      "alloc_bytes": {
+        "mean": 184,
+        "p99": 2698,
+        "max": 17906,
+        "frames": 15
+      },
+      "gc_collections": 0,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 121,
+        "p99_ms": 0.241
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 2.78,
+      "p99_ms": 5.37,
+      "max_ms": 5.37,
+      "cpu_p50_ms": 1.62,
+      "cpu_p99_ms": 2.53,
+      "first_max_ms": 25.51,
+      "points": [
+        {
+          "at": 64.05,
+          "alive": 300,
+          "median_ms": 3.12,
+          "max_ms": 5.37,
+          "first_ms": 25.51
+        },
+        {
+          "at": 64.4,
+          "alive": 300,
+          "median_ms": 2.71,
+          "max_ms": 3.48,
+          "first_ms": 2.9
+        },
+        {
+          "at": 65.0,
+          "alive": 300,
+          "median_ms": 2.74,
+          "max_ms": 3.39,
+          "first_ms": 3.16
+        }
+      ]
+    },
+    "ok": true
+  },
+  "finale": {
+    "help": "the peak with the finale's mass kill at 68 s",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/finale/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,finale@68",
+      "--gpu-probe-at",
+      "68.4,68.7,69.2",
+      "--gpu-probe-out",
+      "captures/game/perf/finale/gpu-probe.json",
+      "--seconds",
+      "71"
+    ],
+    "exit": 0,
+    "wall_s": 9.0,
+    "cpu": {
+      "frames": 181,
+      "song": [
+        68.0,
+        71.0
+      ],
+      "alive": {
+        "median": 11,
+        "max": 299
+      },
+      "frame_ms": {
+        "p50": 0.871,
+        "p99": 1.795,
+        "p99.9": 2.992,
+        "max": 2.992,
+        "mean": 0.964
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.808,
+        "p99": 1.669,
+        "p99.9": 2.92,
+        "max": 2.92,
+        "mean": 0.91
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.005,
+          "p99": 0.2,
+          "p99.9": 0.241,
+          "max": 0.241,
+          "mean": 0.015
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.032,
+          "p99.9": 0.396,
+          "max": 0.396,
+          "mean": 0.003
+        },
+        "crowd": {
+          "p50": 0.111,
+          "p99": 0.194,
+          "p99.9": 0.29,
+          "max": 0.29,
+          "mean": 0.119
+        },
+        "shatter": {
+          "p50": 0.023,
+          "p99": 0.061,
+          "p99.9": 0.113,
+          "max": 0.113,
+          "mean": 0.022
+        },
+        "effects": {
+          "p50": 0.037,
+          "p99": 0.079,
+          "p99.9": 0.15,
+          "max": 0.15,
+          "mean": 0.04
+        },
+        "weapons": {
+          "p50": 0.007,
+          "p99": 0.017,
+          "p99.9": 0.021,
+          "max": 0.021,
+          "mean": 0.008
+        },
+        "pickups": {
+          "p50": 0.019,
+          "p99": 0.026,
+          "p99.9": 0.038,
+          "max": 0.038,
+          "mean": 0.019
+        },
+        "structures": {
+          "p50": 0.003,
+          "p99": 0.029,
+          "p99.9": 1.046,
+          "max": 1.046,
+          "mean": 0.013
+        },
+        "physics": {
+          "p50": 0.274,
+          "p99": 0.519,
+          "p99.9": 0.664,
+          "max": 0.664,
+          "mean": 0.275
+        },
+        "hero": {
+          "p50": 0.032,
+          "p99": 0.058,
+          "p99.9": 0.067,
+          "max": 0.067,
+          "mean": 0.034
+        },
+        "look": {
+          "p50": 0.004,
+          "p99": 0.01,
+          "p99.9": 0.011,
+          "max": 0.011,
+          "mean": 0.005
+        },
+        "hud": {
+          "p50": 0.023,
+          "p99": 0.059,
+          "p99.9": 0.164,
+          "max": 0.164,
+          "mean": 0.027
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.002,
+          "max": 0.002,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.003,
+          "p99": 0.01,
+          "p99.9": 0.018,
+          "max": 0.018,
+          "mean": 0.004
+        },
+        "engine": {
+          "p50": 0.334,
+          "p99": 0.772,
+          "p99.9": 0.798,
+          "max": 0.798,
+          "mean": 0.381
+        }
+      },
+      "top": [
+        "engine",
+        "physics",
+        "crowd"
+      ],
+      "wait_s": 0.0,
+      "alloc_bytes": {
+        "mean": 813,
+        "p99": 6592,
+        "max": 74916,
+        "frames": 7
+      },
+      "gc_collections": 1,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 18,
+        "p99_ms": 0.206
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 5.39,
+      "p99_ms": 15.76,
+      "max_ms": 15.76,
+      "cpu_p50_ms": 1.69,
+      "cpu_p99_ms": 2.74,
+      "first_max_ms": 30.75,
+      "points": [
+        {
+          "at": 68.4,
+          "alive": 11,
+          "median_ms": 9.78,
+          "max_ms": 15.76,
+          "first_ms": 30.75
+        },
+        {
+          "at": 68.7,
+          "alive": 11,
+          "median_ms": 4.79,
+          "max_ms": 5.66,
+          "first_ms": 4.52
+        },
+        {
+          "at": 69.2,
+          "alive": 11,
+          "median_ms": 3.77,
+          "max_ms": 5.42,
+          "first_ms": 4.1
+        }
+      ]
+    },
+    "ok": true
+  },
+  "early": {
+    "help": "the run's first minute",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/early/profile.csv",
+      "--run",
+      "--bot",
+      "positioning",
+      "--gpu-probe-at",
+      "45,60,75",
+      "--gpu-probe-out",
+      "captures/game/perf/early/gpu-probe.json",
+      "--seconds",
+      "80"
+    ],
+    "exit": 0,
+    "wall_s": 9.2,
+    "cpu": {
+      "frames": 3601,
+      "song": [
+        20.0,
+        80.0
+      ],
+      "alive": {
+        "median": 22,
+        "max": 48
+      },
+      "frame_ms": {
+        "p50": 0.457,
+        "p99": 1.136,
+        "p99.9": 1.467,
+        "max": 1.849,
+        "mean": 0.507
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.44,
+        "p99": 1.056,
+        "p99.9": 1.403,
+        "max": 1.764,
+        "mean": 0.486
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.004,
+          "p99": 0.226,
+          "p99.9": 0.254,
+          "max": 0.273,
+          "mean": 0.039
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.017,
+          "p99.9": 0.025,
+          "max": 0.17,
+          "mean": 0.002
+        },
+        "crowd": {
+          "p50": 0.037,
+          "p99": 0.105,
+          "p99.9": 0.145,
+          "max": 0.188,
+          "mean": 0.041
+        },
+        "shatter": {
+          "p50": 0.015,
+          "p99": 0.061,
+          "p99.9": 0.138,
+          "max": 0.163,
+          "mean": 0.014
+        },
+        "effects": {
+          "p50": 0.031,
+          "p99": 0.085,
+          "p99.9": 0.156,
+          "max": 0.183,
+          "mean": 0.034
+        },
+        "weapons": {
+          "p50": 0.004,
+          "p99": 0.01,
+          "p99.9": 0.014,
+          "max": 0.056,
+          "mean": 0.004
+        },
+        "pickups": {
+          "p50": 0.003,
+          "p99": 0.009,
+          "p99.9": 0.013,
+          "max": 0.027,
+          "mean": 0.003
+        },
+        "structures": {
+          "p50": 0.007,
+          "p99": 0.02,
+          "p99.9": 0.459,
+          "max": 0.766,
+          "mean": 0.009
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.312,
+          "p99.9": 0.381,
+          "max": 0.438,
+          "mean": 0.037
+        },
+        "hero": {
+          "p50": 0.029,
+          "p99": 0.055,
+          "p99.9": 0.07,
+          "max": 0.095,
+          "mean": 0.03
+        },
+        "look": {
+          "p50": 0.003,
+          "p99": 0.014,
+          "p99.9": 0.027,
+          "max": 0.031,
+          "mean": 0.004
+        },
+        "hud": {
+          "p50": 0.013,
+          "p99": 0.042,
+          "p99.9": 0.062,
+          "max": 0.098,
+          "mean": 0.015
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.003,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.002,
+          "p99": 0.018,
+          "p99.9": 0.023,
+          "max": 0.045,
+          "mean": 0.003
+        },
+        "engine": {
+          "p50": 0.261,
+          "p99": 0.575,
+          "p99.9": 0.916,
+          "max": 1.427,
+          "mean": 0.271
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 2.4,
+      "alloc_bytes": {
+        "mean": 72,
+        "p99": 1568,
+        "max": 30560,
+        "frames": 293
+      },
+      "gc_collections": 0,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 0,
+        "p99_ms": null
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 4.12,
+      "p99_ms": 9.03,
+      "max_ms": 9.03,
+      "cpu_p50_ms": 1.25,
+      "cpu_p99_ms": 1.73,
+      "first_max_ms": 19.76,
+      "points": [
+        {
+          "at": 45.0,
+          "alive": 16,
+          "median_ms": 6.96,
+          "max_ms": 7.82,
+          "first_ms": 19.76
+        },
+        {
+          "at": 60.0,
+          "alive": 15,
+          "median_ms": 3.42,
+          "max_ms": 4.12,
+          "first_ms": 3.35
+        },
+        {
+          "at": 75.0,
+          "alive": 38,
+          "median_ms": 4.34,
+          "max_ms": 9.03,
+          "first_ms": 6.21
+        }
+      ]
+    },
+    "ok": true
+  },
+  "full": {
+    "help": "the 30-minute fixed-time File run (CPU profile only)",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "native/playlists/survivors-30-twice.m3u",
+      "--profile-out",
+      "captures/game/perf/full/profile.csv",
+      "--run",
+      "--bot",
+      "positioning"
+    ],
+    "exit": 0,
+    "wall_s": 176.4,
+    "cpu": {
+      "frames": 124827,
+      "song": [
+        0.033,
+        2080.467
+      ],
+      "alive": {
+        "median": 266,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 0.741,
+        "p99": 1.601,
+        "p99.9": 2.36,
+        "max": 13.69,
+        "mean": 0.78
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.725,
+        "p99": 1.522,
+        "p99.9": 1.944,
+        "max": 4.394,
+        "mean": 0.758
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.009,
+          "p99": 0.26,
+          "p99.9": 0.355,
+          "max": 4.606,
+          "mean": 0.049
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.036,
+          "p99.9": 0.067,
+          "max": 0.252,
+          "mean": 0.003
+        },
+        "crowd": {
+          "p50": 0.183,
+          "p99": 0.326,
+          "p99.9": 0.507,
+          "max": 6.06,
+          "mean": 0.179
+        },
+        "shatter": {
+          "p50": 0.019,
+          "p99": 0.07,
+          "p99.9": 0.109,
+          "max": 4.213,
+          "mean": 0.02
+        },
+        "effects": {
+          "p50": 0.035,
+          "p99": 0.091,
+          "p99.9": 0.143,
+          "max": 4.079,
+          "mean": 0.041
+        },
+        "weapons": {
+          "p50": 0.008,
+          "p99": 0.027,
+          "p99.9": 0.036,
+          "max": 1.628,
+          "mean": 0.009
+        },
+        "pickups": {
+          "p50": 0.011,
+          "p99": 0.022,
+          "p99.9": 0.029,
+          "max": 0.224,
+          "mean": 0.01
+        },
+        "structures": {
+          "p50": 0.009,
+          "p99": 0.022,
+          "p99.9": 0.286,
+          "max": 3.102,
+          "mean": 0.01
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.43,
+          "p99.9": 0.608,
+          "max": 4.18,
+          "mean": 0.029
+        },
+        "hero": {
+          "p50": 0.033,
+          "p99": 0.064,
+          "p99.9": 0.087,
+          "max": 1.317,
+          "mean": 0.035
+        },
+        "look": {
+          "p50": 0.005,
+          "p99": 0.019,
+          "p99.9": 0.034,
+          "max": 0.807,
+          "mean": 0.006
+        },
+        "hud": {
+          "p50": 0.02,
+          "p99": 0.06,
+          "p99.9": 0.083,
+          "max": 1.515,
+          "mean": 0.022
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.038,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.002,
+          "p99": 0.019,
+          "p99.9": 0.026,
+          "max": 0.258,
+          "mean": 0.003
+        },
+        "engine": {
+          "p50": 0.347,
+          "p99": 0.705,
+          "p99.9": 0.94,
+          "max": 12.349,
+          "mean": 0.364
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 65.0,
+      "alloc_bytes": {
+        "mean": 18,
+        "p99": 76,
+        "max": 131104,
+        "frames": 8017
+      },
+      "gc_collections": 2,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 58945,
+        "p99_ms": 0.245
+      }
+    },
+    "ok": true
+  },
+  "firsts": {
+    "help": "the 30-minute run with the probe at each first sighting",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "native/playlists/survivors-30-twice.m3u",
+      "--profile-out",
+      "captures/game/perf/firsts/profile.csv",
+      "--run",
+      "--bot",
+      "positioning",
+      "--gpu-probe-firsts",
+      "--gpu-probe-out",
+      "captures/game/perf/firsts/gpu-probe.json"
+    ],
+    "exit": 0,
+    "wall_s": 168.0,
+    "cpu": {
+      "frames": 124827,
+      "song": [
+        0.033,
+        2080.467
+      ],
+      "alive": {
+        "median": 266,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 0.705,
+        "p99": 1.393,
+        "p99.9": 1.779,
+        "max": 6.581,
+        "mean": 0.735
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.689,
+        "p99": 1.338,
+        "p99.9": 1.673,
+        "max": 5.187,
+        "mean": 0.716
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.008,
+          "p99": 0.238,
+          "p99.9": 0.329,
+          "max": 0.558,
+          "mean": 0.047
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.039,
+          "p99.9": 0.073,
+          "max": 0.274,
+          "mean": 0.003
+        },
+        "crowd": {
+          "p50": 0.18,
+          "p99": 0.308,
+          "p99.9": 0.399,
+          "max": 5.355,
+          "mean": 0.171
+        },
+        "shatter": {
+          "p50": 0.018,
+          "p99": 0.067,
+          "p99.9": 0.095,
+          "max": 0.19,
+          "mean": 0.019
+        },
+        "effects": {
+          "p50": 0.034,
+          "p99": 0.085,
+          "p99.9": 0.117,
+          "max": 0.276,
+          "mean": 0.038
+        },
+        "weapons": {
+          "p50": 0.007,
+          "p99": 0.027,
+          "p99.9": 0.035,
+          "max": 3.676,
+          "mean": 0.009
+        },
+        "pickups": {
+          "p50": 0.01,
+          "p99": 0.022,
+          "p99.9": 0.028,
+          "max": 0.176,
+          "mean": 0.01
+        },
+        "structures": {
+          "p50": 0.008,
+          "p99": 0.019,
+          "p99.9": 0.288,
+          "max": 2.052,
+          "mean": 0.009
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.364,
+          "p99.9": 0.561,
+          "max": 1.805,
+          "mean": 0.027
+        },
+        "hero": {
+          "p50": 0.031,
+          "p99": 0.056,
+          "p99.9": 0.073,
+          "max": 0.261,
+          "mean": 0.033
+        },
+        "look": {
+          "p50": 0.004,
+          "p99": 0.015,
+          "p99.9": 0.029,
+          "max": 0.216,
+          "mean": 0.005
+        },
+        "hud": {
+          "p50": 0.018,
+          "p99": 0.057,
+          "p99.9": 0.079,
+          "max": 0.249,
+          "mean": 0.02
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.009,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.003,
+          "p99": 0.019,
+          "p99.9": 0.024,
+          "max": 0.23,
+          "mean": 0.003
+        },
+        "engine": {
+          "p50": 0.329,
+          "p99": 0.625,
+          "p99.9": 0.776,
+          "max": 3.72,
+          "mean": 0.34
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 59.6,
+      "alloc_bytes": {
+        "mean": 19,
+        "p99": 76,
+        "max": 131104,
+        "frames": 8019
+      },
+      "gc_collections": 3,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 58945,
+        "p99_ms": 0.243
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 204,
+      "p50_ms": 6.29,
+      "p99_ms": 12.56,
+      "max_ms": 15.39,
+      "cpu_p50_ms": 2.08,
+      "cpu_p99_ms": 3.75,
+      "first_max_ms": 26.13,
+      "points": [
+        {
+          "at": 0.033,
+          "alive": 0,
+          "median_ms": 2.79,
+          "max_ms": 3.78,
+          "first_ms": 21.43,
+          "label": "first frame",
+          "first": true
+        },
+        {
+          "at": 3.783,
+          "alive": 20,
+          "median_ms": 3.06,
+          "max_ms": 3.08,
+          "first_ms": 3.08,
+          "label": "spawn bat3",
+          "first": true
+        },
+        {
+          "at": 3.933,
+          "alive": 20,
+          "median_ms": 2.97,
+          "max_ms": 4.27,
+          "first_ms": 2.93,
+          "label": "attack sword",
+          "first": true
+        },
+        {
+          "at": 4.25,
+          "alive": 20,
+          "median_ms": 3.68,
+          "max_ms": 5.5,
+          "first_ms": 3.3,
+          "label": "Glint",
+          "first": true
+        },
+        {
+          "at": 6.6,
+          "alive": 22,
+          "median_ms": 3.61,
+          "max_ms": 4.46,
+          "first_ms": 5.67,
+          "label": "zone 1",
+          "first": true
+        },
+        {
+          "at": 7.217,
+          "alive": 23,
+          "median_ms": 3.46,
+          "max_ms": 3.63,
+          "first_ms": 5.68,
+          "label": "attack sword heavy",
+          "first": true
+        },
+        {
+          "at": 7.533,
+          "alive": 23,
+          "median_ms": 5.99,
+          "max_ms": 6.29,
+          "first_ms": 6.02,
+          "label": "Cleave, StructureBreak",
+          "first": true
+        },
+        {
+          "at": 8.0,
+          "alive": 18,
+          "median_ms": 3.48,
+          "max_ms": 6.21,
+          "first_ms": 6.24,
+          "label": "hit sword, death bat3, drop Gem",
+          "first": true
+        },
+        {
+          "at": 10.133,
+          "alive": 21,
+          "median_ms": 5.68,
+          "max_ms": 6.33,
+          "first_ms": 4.98,
+          "label": "GemFlight",
+          "first": true
+        },
+        {
+          "at": 10.817,
+          "alive": 21,
+          "median_ms": 5.21,
+          "max_ms": 6.06,
+          "first_ms": 3.43,
+          "label": "Pickup, LevelUp",
+          "first": true
+        },
+        {
+          "at": 12.7,
+          "alive": 21,
+          "median_ms": 4.25,
+          "max_ms": 4.51,
+          "first_ms": 5.31,
+          "label": "Card",
+          "first": true
+        },
+        {
+          "at": 13.15,
+          "alive": 21,
+          "median_ms": 3.09,
+          "max_ms": 4.68,
+          "first_ms": 5.84,
+          "label": "attack magic-wand, projectile magic-wand",
+          "first": true
+        },
+        {
+          "at": 17.733,
+          "alive": 22,
+          "median_ms": 3.87,
+          "max_ms": 3.88,
+          "first_ms": 6.05,
+          "label": "hit magic-wand",
+          "first": true
+        },
+        {
+          "at": 19.733,
+          "alive": 19,
+          "median_ms": 6.32,
+          "max_ms": 6.43,
+          "first_ms": 4.59,
+          "label": "zone 2",
+          "first": true
+        },
+        {
+          "at": 20.65,
+          "alive": 19,
+          "median_ms": 6.94,
+          "max_ms": 7.28,
+          "first_ms": 7.09,
+          "label": "Regrowth",
+          "first": true
+        },
+        {
+          "at": 34.733,
+          "alive": 20,
+          "median_ms": 2.87,
+          "max_ms": 3.74,
+          "first_ms": 4.51,
+          "label": "zone 3",
+          "first": true
+        },
+        {
+          "at": 51.6,
+          "alive": 17,
+          "median_ms": 2.25,
+          "max_ms": 2.64,
+          "first_ms": 5.26,
+          "label": "zone 4",
+          "first": true
+        },
+        {
+          "at": 71.533,
+          "alive": 20,
+          "median_ms": 6.87,
+          "max_ms": 6.99,
+          "first_ms": 8.16,
+          "label": "zone 0",
+          "first": true
+        },
+        {
+          "at": 81.3,
+          "alive": 39,
+          "median_ms": 3.85,
+          "max_ms": 6.01,
+          "first_ms": 6.06,
+          "label": "spawn zombie, spawn bat1",
+          "first": true
+        },
+        {
+          "at": 82.617,
+          "alive": 38,
+          "median_ms": 6.39,
+          "max_ms": 6.64,
+          "first_ms": 4.46,
+          "label": "spawn bat4 boss",
+          "first": true
+        },
+        {
+          "at": 83.533,
+          "alive": 37,
+          "median_ms": 6.42,
+          "max_ms": 6.54,
+          "first_ms": 6.58,
+          "label": "death bat1",
+          "first": true
+        },
+        {
+          "at": 89.033,
+          "alive": 40,
+          "median_ms": 5.55,
+          "max_ms": 6.14,
+          "first_ms": 3.92,
+          "label": "death zombie",
+          "first": true
+        },
+        {
+          "at": 98.533,
+          "alive": 42,
+          "median_ms": 5.83,
+          "max_ms": 6.75,
+          "first_ms": 7.38,
+          "label": "death bat4",
+          "first": true
+        },
+        {
+          "at": 109.35,
+          "alive": 40,
+          "median_ms": 6.55,
+          "max_ms": 7.18,
+          "first_ms": 6.02,
+          "label": "attack garlic",
+          "first": true
+        },
+        {
+          "at": 115.883,
+          "alive": 40,
+          "median_ms": 6.29,
+          "max_ms": 6.62,
+          "first_ms": 4.16,
+          "label": "spawn minotaur boss, set piece Signature",
+          "first": true
+        },
+        {
+          "at": 140.3,
+          "alive": 60,
+          "median_ms": 3.54,
+          "max_ms": 4.37,
+          "first_ms": 9.47,
+          "label": "enemy Slam",
+          "first": true
+        },
+        {
+          "at": 157.75,
+          "alive": 66,
+          "median_ms": 3.15,
+          "max_ms": 4.71,
+          "first_ms": 7.29,
+          "label": "spawn bat2",
+          "first": true
+        },
+        {
+          "at": 162.5,
+          "alive": 63,
+          "median_ms": 4.21,
+          "max_ms": 6.86,
+          "first_ms": 3.22,
+          "label": "death bat2",
+          "first": true
+        },
+        {
+          "at": 175.5,
+          "alive": 74,
+          "median_ms": 2.89,
+          "max_ms": 5.31,
+          "first_ms": 7.05,
+          "label": "enemy Lunge",
+          "first": true
+        },
+        {
+          "at": 182.517,
+          "alive": 91,
+          "median_ms": 2.47,
+          "max_ms": 3.02,
+          "first_ms": 2.89,
+          "label": "hit garlic",
+          "first": true
+        },
+        {
+          "at": 204.217,
+          "alive": 71,
+          "median_ms": 4.26,
+          "max_ms": 5.58,
+          "first_ms": 6.9,
+          "label": "hit on the hero",
+          "first": true
+        },
+        {
+          "at": 216.783,
+          "alive": 117,
+          "median_ms": 3.4,
+          "max_ms": 6.29,
+          "first_ms": 6.5,
+          "label": "spawn bat-swarm, set piece BatSwarm",
+          "first": true
+        },
+        {
+          "at": 219.55,
+          "alive": 75,
+          "median_ms": 6.84,
+          "max_ms": 8.93,
+          "first_ms": 6.82,
+          "label": "death bat-swarm",
+          "first": true
+        },
+        {
+          "at": 226.783,
+          "alive": 115,
+          "median_ms": 3.63,
+          "max_ms": 4.17,
+          "first_ms": 4.66,
+          "label": "leave bat-swarm",
+          "first": true
+        },
+        {
+          "at": 227.467,
+          "alive": 113,
+          "median_ms": 3.49,
+          "max_ms": 5.69,
+          "first_ms": 5.15,
+          "label": "spawn skeleton",
+          "first": true
+        },
+        {
+          "at": 232.933,
+          "alive": 52,
+          "median_ms": 6.9,
+          "max_ms": 8.77,
+          "first_ms": 8.48,
+          "label": "leave minotaur",
+          "first": true
+        },
+        {
+          "at": 241.267,
+          "alive": 69,
+          "median_ms": 3.06,
+          "max_ms": 3.71,
+          "first_ms": 5.01,
+          "label": "death skeleton",
+          "first": true
+        },
+        {
+          "at": 298.033,
+          "alive": 122,
+          "median_ms": 2.97,
+          "max_ms": 4.07,
+          "first_ms": 5.96,
+          "label": "spawn ghost",
+          "first": true
+        },
+        {
+          "at": 306.833,
+          "alive": 129,
+          "median_ms": 6.49,
+          "max_ms": 7.41,
+          "first_ms": 6.51,
+          "label": "death ghost",
+          "first": true
+        },
+        {
+          "at": 361.333,
+          "alive": 105,
+          "median_ms": 4.75,
+          "max_ms": 5.39,
+          "first_ms": 10.05,
+          "label": "spawn xlmantis boss",
+          "first": true
+        },
+        {
+          "at": 363.283,
+          "alive": 100,
+          "median_ms": 7.14,
+          "max_ms": 7.6,
+          "first_ms": 6.87,
+          "label": "spawn mudman2",
+          "first": true
+        },
+        {
+          "at": 368.65,
+          "alive": 188,
+          "median_ms": 6.38,
+          "max_ms": 7.93,
+          "first_ms": 7.34,
+          "label": "spawn flower, set piece FlowerWall",
+          "first": true
+        },
+        {
+          "at": 378.083,
+          "alive": 161,
+          "median_ms": 6.1,
+          "max_ms": 6.91,
+          "first_ms": 8.21,
+          "label": "death flower",
+          "first": true
+        },
+        {
+          "at": 391.733,
+          "alive": 157,
+          "median_ms": 5.95,
+          "max_ms": 6.87,
+          "first_ms": 4.81,
+          "label": "death mudman2",
+          "first": true
+        },
+        {
+          "at": 402.133,
+          "alive": 62,
+          "median_ms": 5.54,
+          "max_ms": 6.02,
+          "first_ms": 5.44,
+          "label": "leave flower",
+          "first": true
+        },
+        {
+          "at": 404.4,
+          "alive": 93,
+          "median_ms": 3.39,
+          "max_ms": 5.81,
+          "first_ms": 4.55,
+          "label": "spawn goblin, set piece Ring",
+          "first": true
+        },
+        {
+          "at": 416.267,
+          "alive": 82,
+          "median_ms": 5.02,
+          "max_ms": 5.75,
+          "first_ms": 7.14,
+          "label": "death goblin",
+          "first": true
+        },
+        {
+          "at": 431.8,
+          "alive": 129,
+          "median_ms": 5.08,
+          "max_ms": 10.06,
+          "first_ms": 12.94,
+          "label": "leave goblin",
+          "first": true
+        },
+        {
+          "at": 484.75,
+          "alive": 130,
+          "median_ms": 6.72,
+          "max_ms": 7.57,
+          "first_ms": 11.11,
+          "label": "spawn mudman1",
+          "first": true
+        },
+        {
+          "at": 498.267,
+          "alive": 133,
+          "median_ms": 4.62,
+          "max_ms": 6.18,
+          "first_ms": 6.26,
+          "label": "death mudman1",
+          "first": true
+        },
+        {
+          "at": 523.0,
+          "alive": 300,
+          "median_ms": 5.07,
+          "max_ms": 6.48,
+          "first_ms": 7.64,
+          "label": "leave bat3, leave mudman2, leave bat2",
+          "first": true
+        },
+        {
+          "at": 550.3,
+          "alive": 183,
+          "median_ms": 6.27,
+          "max_ms": 7.14,
+          "first_ms": 7.74,
+          "label": "spawn xlbat boss",
+          "first": true
+        },
+        {
+          "at": 559.033,
+          "alive": 129,
+          "median_ms": 2.81,
+          "max_ms": 4.57,
+          "first_ms": 3.88,
+          "label": "drop Chest",
+          "first": true
+        },
+        {
+          "at": 569.017,
+          "alive": 126,
+          "median_ms": 6.94,
+          "max_ms": 8.63,
+          "first_ms": 8.41,
+          "label": "chest Open",
+          "first": true
+        },
+        {
+          "at": 570.183,
+          "alive": 126,
+          "median_ms": 3.81,
+          "max_ms": 4.9,
+          "first_ms": 3.72,
+          "label": "chest Tick",
+          "first": true
+        },
+        {
+          "at": 574.067,
+          "alive": 126,
+          "median_ms": 6.2,
+          "max_ms": 6.8,
+          "first_ms": 4.56,
+          "label": "chest Land, chest Reward",
+          "first": true
+        },
+        {
+          "at": 594.483,
+          "alive": 120,
+          "median_ms": 6.29,
+          "max_ms": 6.77,
+          "first_ms": 8.85,
+          "label": "death xlbat",
+          "first": true
+        },
+        {
+          "at": 616.167,
+          "alive": 75,
+          "median_ms": 4.83,
+          "max_ms": 6.12,
+          "first_ms": 8.0,
+          "label": "spawn xlbat",
+          "first": true
+        },
+        {
+          "at": 616.517,
+          "alive": 62,
+          "median_ms": 3.49,
+          "max_ms": 6.24,
+          "first_ms": 6.46,
+          "label": "death xlmantis",
+          "first": true
+        },
+        {
+          "at": 616.983,
+          "alive": 56,
+          "median_ms": 3.24,
+          "max_ms": 4.7,
+          "first_ms": 4.46,
+          "label": "spawn bat5 boss",
+          "first": true
+        },
+        {
+          "at": 687.85,
+          "alive": 218,
+          "median_ms": 7.17,
+          "max_ms": 8.49,
+          "first_ms": 12.72,
+          "label": "spawn boss-xlmantis boss",
+          "first": true
+        },
+        {
+          "at": 713.4,
+          "alive": 280,
+          "median_ms": 6.91,
+          "max_ms": 7.41,
+          "first_ms": 11.47,
+          "label": "enemy Charge",
+          "first": true
+        },
+        {
+          "at": 716.7,
+          "alive": 259,
+          "median_ms": 7.82,
+          "max_ms": 9.07,
+          "first_ms": 8.78,
+          "label": "death bat5",
+          "first": true
+        },
+        {
+          "at": 738.75,
+          "alive": 163,
+          "median_ms": 5.6,
+          "max_ms": 6.76,
+          "first_ms": 11.22,
+          "label": "death boss-xlmantis",
+          "first": true
+        },
+        {
+          "at": 743.9,
+          "alive": 156,
+          "median_ms": 6.71,
+          "max_ms": 7.1,
+          "first_ms": 7.47,
+          "label": "attack bloody-tear",
+          "first": true
+        },
+        {
+          "at": 744.217,
+          "alive": 151,
+          "median_ms": 7.24,
+          "max_ms": 8.08,
+          "first_ms": 7.03,
+          "label": "hit bloody-tear",
+          "first": true
+        },
+        {
+          "at": 770.9,
+          "alive": 300,
+          "median_ms": 7.2,
+          "max_ms": 10.15,
+          "first_ms": 22.17,
+          "label": "attack bloody-tear heavy",
+          "first": true
+        },
+        {
+          "at": 794.817,
+          "alive": 300,
+          "median_ms": 7.3,
+          "max_ms": 12.56,
+          "first_ms": 14.32,
+          "label": "leave skeleton",
+          "first": true
+        },
+        {
+          "at": 828.6,
+          "alive": 300,
+          "median_ms": 7.18,
+          "max_ms": 7.63,
+          "first_ms": 10.95,
+          "label": "leave mudman1",
+          "first": true
+        },
+        {
+          "at": 838.133,
+          "alive": 300,
+          "median_ms": 6.37,
+          "max_ms": 6.98,
+          "first_ms": 5.28,
+          "label": "spawn werewolf",
+          "first": true
+        },
+        {
+          "at": 858.583,
+          "alive": 299,
+          "median_ms": 6.72,
+          "max_ms": 7.31,
+          "first_ms": 8.69,
+          "label": "death werewolf",
+          "first": true
+        },
+        {
+          "at": 901.783,
+          "alive": 289,
+          "median_ms": 6.95,
+          "max_ms": 7.98,
+          "first_ms": 13.81,
+          "label": "leave werewolf, leave ghost",
+          "first": true
+        },
+        {
+          "at": 933.05,
+          "alive": 194,
+          "median_ms": 6.91,
+          "max_ms": 7.27,
+          "first_ms": 13.54,
+          "label": "spawn ghost-swarm, set piece GhostSwarm",
+          "first": true
+        },
+        {
+          "at": 942.267,
+          "alive": 269,
+          "median_ms": 6.78,
+          "max_ms": 6.95,
+          "first_ms": 6.71,
+          "label": "death ghost-swarm",
+          "first": true
+        },
+        {
+          "at": 943.05,
+          "alive": 249,
+          "median_ms": 6.68,
+          "max_ms": 7.12,
+          "first_ms": 4.62,
+          "label": "leave ghost-swarm",
+          "first": true
+        },
+        {
+          "at": 976.75,
+          "alive": 300,
+          "median_ms": 7.44,
+          "max_ms": 7.86,
+          "first_ms": 13.04,
+          "label": "leave xlbat",
+          "first": true
+        },
+        {
+          "at": 1030.1,
+          "alive": 300,
+          "median_ms": 5.54,
+          "max_ms": 5.92,
+          "first_ms": 13.68,
+          "label": "spawn boss-werewolf boss",
+          "first": true
+        },
+        {
+          "at": 1100.217,
+          "alive": 299,
+          "median_ms": 5.44,
+          "max_ms": 5.47,
+          "first_ms": 12.5,
+          "label": "spawn xlmantis",
+          "first": true
+        },
+        {
+          "at": 1108.633,
+          "alive": 297,
+          "median_ms": 4.34,
+          "max_ms": 7.17,
+          "first_ms": 6.37,
+          "label": "death boss-werewolf",
+          "first": true
+        },
+        {
+          "at": 1117.8,
+          "alive": 300,
+          "median_ms": 3.95,
+          "max_ms": 4.73,
+          "first_ms": 4.75,
+          "label": "attack soul-eater",
+          "first": true
+        },
+        {
+          "at": 1118.583,
+          "alive": 300,
+          "median_ms": 5.0,
+          "max_ms": 5.13,
+          "first_ms": 4.33,
+          "label": "hit soul-eater",
+          "first": true
+        },
+        {
+          "at": 1159.95,
+          "alive": 285,
+          "median_ms": 6.39,
+          "max_ms": 6.53,
+          "first_ms": 14.85,
+          "label": "leave xlmantis",
+          "first": true
+        },
+        {
+          "at": 1174.6,
+          "alive": 300,
+          "median_ms": 5.35,
+          "max_ms": 6.08,
+          "first_ms": 5.27,
+          "label": "spawn xlmummy",
+          "first": true
+        },
+        {
+          "at": 1185.333,
+          "alive": 190,
+          "median_ms": 7.5,
+          "max_ms": 8.64,
+          "first_ms": 8.11,
+          "label": "death xlmummy",
+          "first": true
+        },
+        {
+          "at": 1211.05,
+          "alive": 54,
+          "median_ms": 3.99,
+          "max_ms": 6.58,
+          "first_ms": 11.62,
+          "label": "attack king-bible, orbit king-bible",
+          "first": true
+        },
+        {
+          "at": 1211.467,
+          "alive": 50,
+          "median_ms": 3.66,
+          "max_ms": 5.26,
+          "first_ms": 4.37,
+          "label": "hit king-bible",
+          "first": true
+        },
+        {
+          "at": 1371.467,
+          "alive": 157,
+          "median_ms": 5.53,
+          "max_ms": 6.98,
+          "first_ms": 7.83,
+          "label": "attack lightning-ring, bolt lightning-ring Strike, hit lightning-ring",
+          "first": true
+        },
+        {
+          "at": 1385.867,
+          "alive": 214,
+          "median_ms": 5.37,
+          "max_ms": 7.79,
+          "first_ms": 14.15,
+          "label": "spawn xlflower",
+          "first": true
+        },
+        {
+          "at": 1386.633,
+          "alive": 240,
+          "median_ms": 6.44,
+          "max_ms": 6.81,
+          "first_ms": 7.43,
+          "label": "spawn boss-xlmummy boss",
+          "first": true
+        },
+        {
+          "at": 1403.367,
+          "alive": 300,
+          "median_ms": 6.33,
+          "max_ms": 7.43,
+          "first_ms": 13.69,
+          "label": "death xlflower",
+          "first": true
+        },
+        {
+          "at": 1407.683,
+          "alive": 300,
+          "median_ms": 6.24,
+          "max_ms": 6.52,
+          "first_ms": 5.57,
+          "label": "leave xlflower, leave xlmummy",
+          "first": true
+        },
+        {
+          "at": 1417.85,
+          "alive": 298,
+          "median_ms": 7.27,
+          "max_ms": 8.21,
+          "first_ms": 26.13,
+          "label": "death boss-xlmummy",
+          "first": true
+        },
+        {
+          "at": 1431.1,
+          "alive": 300,
+          "median_ms": 6.66,
+          "max_ms": 6.9,
+          "first_ms": 5.77,
+          "label": "attack holy-wand, projectile holy-wand",
+          "first": true
+        },
+        {
+          "at": 1431.383,
+          "alive": 299,
+          "median_ms": 6.91,
+          "max_ms": 8.53,
+          "first_ms": 8.66,
+          "label": "hit holy-wand",
+          "first": true
+        },
+        {
+          "at": 1459.25,
+          "alive": 300,
+          "median_ms": 8.48,
+          "max_ms": 15.39,
+          "first_ms": 12.25,
+          "label": "spawn xlflower boss",
+          "first": true
+        },
+        {
+          "at": 1714.333,
+          "alive": 300,
+          "median_ms": 6.8,
+          "max_ms": 8.57,
+          "first_ms": 12.66,
+          "label": "spawn boss-xlflower boss",
+          "first": true
+        },
+        {
+          "at": 1755.8,
+          "alive": 300,
+          "median_ms": 6.6,
+          "max_ms": 7.92,
+          "first_ms": 12.46,
+          "label": "death boss-xlflower",
+          "first": true
+        },
+        {
+          "at": 1919.533,
+          "alive": 300,
+          "median_ms": 7.05,
+          "max_ms": 12.27,
+          "first_ms": 15.85,
+          "label": "spawn bat4",
+          "first": true
+        },
+        {
+          "at": 1923.883,
+          "alive": 300,
+          "median_ms": 9.96,
+          "max_ms": 10.38,
+          "first_ms": 10.19,
+          "label": "leave bat4",
+          "first": true
+        },
+        {
+          "at": 1991.233,
+          "alive": 300,
+          "median_ms": 6.06,
+          "max_ms": 6.65,
+          "first_ms": 16.96,
+          "label": "spawn bat5",
+          "first": true
+        },
+        {
+          "at": 2012.05,
+          "alive": 300,
+          "median_ms": 5.98,
+          "max_ms": 7.21,
+          "first_ms": 10.64,
+          "label": "leave bat5",
+          "first": true
+        },
+        {
+          "at": 2072.483,
+          "alive": 114,
+          "median_ms": 12.45,
+          "max_ms": 13.29,
+          "first_ms": 15.05,
+          "label": "hit blast, Finale",
+          "first": true
+        }
+      ]
+    },
+    "ok": true
+  },
+  "firsts-rest": {
+    "help": "the weapons and set pieces the full run never shows, with the probe at each first sighting",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/firsts-rest/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--arsenal",
+      "sword:8,unholy-vespers:1,thunder-loop:1,chain-lightning:8,fire-trail:8",
+      "--debug",
+      "stampede@8,kick@16,wedge@24",
+      "--gpu-probe-firsts",
+      "--gpu-probe-out",
+      "captures/game/perf/firsts-rest/gpu-probe.json",
+      "--seconds",
+      "45"
+    ],
+    "exit": 0,
+    "wall_s": 6.9,
+    "cpu": {
+      "frames": 2699,
+      "song": [
+        0.033,
+        45.0
+      ],
+      "alive": {
+        "median": 299,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 0.746,
+        "p99": 1.349,
+        "p99.9": 1.941,
+        "max": 2.999,
+        "mean": 0.761
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.732,
+        "p99": 1.314,
+        "p99.9": 1.92,
+        "max": 2.946,
+        "mean": 0.744
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.026,
+          "p99": 0.256,
+          "p99.9": 0.299,
+          "max": 0.308,
+          "mean": 0.068
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.052,
+          "p99.9": 0.068,
+          "max": 0.219,
+          "mean": 0.006
+        },
+        "crowd": {
+          "p50": 0.113,
+          "p99": 0.205,
+          "p99.9": 0.343,
+          "max": 0.401,
+          "mean": 0.11
+        },
+        "shatter": {
+          "p50": 0.018,
+          "p99": 0.07,
+          "p99.9": 0.102,
+          "max": 0.141,
+          "mean": 0.02
+        },
+        "effects": {
+          "p50": 0.04,
+          "p99": 0.1,
+          "p99.9": 0.138,
+          "max": 0.167,
+          "mean": 0.047
+        },
+        "weapons": {
+          "p50": 0.025,
+          "p99": 0.047,
+          "p99.9": 0.062,
+          "max": 1.413,
+          "mean": 0.025
+        },
+        "pickups": {
+          "p50": 0.005,
+          "p99": 0.012,
+          "p99.9": 0.016,
+          "max": 0.035,
+          "mean": 0.005
+        },
+        "structures": {
+          "p50": 0.009,
+          "p99": 0.018,
+          "p99.9": 0.076,
+          "max": 0.926,
+          "mean": 0.01
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.193,
+          "p99.9": 0.351,
+          "max": 0.38,
+          "mean": 0.016
+        },
+        "hero": {
+          "p50": 0.033,
+          "p99": 0.054,
+          "p99.9": 0.065,
+          "max": 0.219,
+          "mean": 0.034
+        },
+        "look": {
+          "p50": 0.004,
+          "p99": 0.018,
+          "p99.9": 0.024,
+          "max": 0.042,
+          "mean": 0.005
+        },
+        "hud": {
+          "p50": 0.029,
+          "p99": 0.063,
+          "p99.9": 0.083,
+          "max": 0.187,
+          "mean": 0.03
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.001,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.003,
+          "p99": 0.02,
+          "p99.9": 0.024,
+          "max": 0.078,
+          "mean": 0.004
+        },
+        "engine": {
+          "p50": 0.369,
+          "p99": 0.728,
+          "p99.9": 1.002,
+          "max": 2.12,
+          "mean": 0.382
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 0.6,
+      "alloc_bytes": {
+        "mean": 252,
+        "p99": 3136,
+        "max": 177126,
+        "frames": 516
+      },
+      "gc_collections": 2,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 2144,
+        "p99_ms": 0.261
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 64,
+      "p50_ms": 6.16,
+      "p99_ms": 7.89,
+      "max_ms": 8.74,
+      "cpu_p50_ms": 1.54,
+      "cpu_p99_ms": 2.61,
+      "first_max_ms": 21.79,
+      "points": [
+        {
+          "at": 0.033,
+          "alive": 0,
+          "median_ms": 3.16,
+          "max_ms": 5.53,
+          "first_ms": 21.79,
+          "label": "first frame",
+          "first": true
+        },
+        {
+          "at": 3.15,
+          "alive": 137,
+          "median_ms": 4.19,
+          "max_ms": 5.78,
+          "first_ms": 3.48,
+          "label": "spawn minotaur boss, set piece Signature, attack unholy-vespers, orbit unholy-vespers, attack thunder-loop, attack chain-lightning, bolt chain-lightning Jump, hit chain-lightning, attack fire-trail, burn fire-trail, attack magic-wand, projectile magic-wand, spawn xlflower, spawn xlmummy, spawn werewolf, spawn mudman2",
+          "first": true
+        },
+        {
+          "at": 3.35,
+          "alive": 145,
+          "median_ms": 5.64,
+          "max_ms": 5.78,
+          "first_ms": 3.43,
+          "label": "attack sword",
+          "first": true
+        },
+        {
+          "at": 3.683,
+          "alive": 158,
+          "median_ms": 3.25,
+          "max_ms": 5.98,
+          "first_ms": 5.71,
+          "label": "spawn boss-xlflower boss, Glint",
+          "first": true
+        },
+        {
+          "at": 4.2,
+          "alive": 178,
+          "median_ms": 5.91,
+          "max_ms": 6.16,
+          "first_ms": 3.54,
+          "label": "hit sword",
+          "first": true
+        },
+        {
+          "at": 4.583,
+          "alive": 194,
+          "median_ms": 6.07,
+          "max_ms": 6.27,
+          "first_ms": 3.81,
+          "label": "hit magic-wand",
+          "first": true
+        },
+        {
+          "at": 6.283,
+          "alive": 262,
+          "median_ms": 7.01,
+          "max_ms": 7.04,
+          "first_ms": 5.76,
+          "label": "enemy Slam, enemy Charge, bolt thunder-loop Strike, hit thunder-loop",
+          "first": true
+        },
+        {
+          "at": 6.417,
+          "alive": 263,
+          "median_ms": 5.76,
+          "max_ms": 6.63,
+          "first_ms": 4.74,
+          "label": "death werewolf, drop Gem",
+          "first": true
+        },
+        {
+          "at": 7.267,
+          "alive": 275,
+          "median_ms": 5.68,
+          "max_ms": 7.12,
+          "first_ms": 6.89,
+          "label": "hit unholy-vespers",
+          "first": true
+        },
+        {
+          "at": 7.333,
+          "alive": 279,
+          "median_ms": 7.06,
+          "max_ms": 7.21,
+          "first_ms": 7.2,
+          "label": "hit on the hero, hit fire-trail",
+          "first": true
+        },
+        {
+          "at": 7.583,
+          "alive": 287,
+          "median_ms": 6.96,
+          "max_ms": 7.02,
+          "first_ms": 6.96,
+          "label": "enemy Lunge",
+          "first": true
+        },
+        {
+          "at": 7.85,
+          "alive": 299,
+          "median_ms": 6.79,
+          "max_ms": 6.86,
+          "first_ms": 4.81,
+          "label": "bolt thunder-loop Return",
+          "first": true
+        },
+        {
+          "at": 8.117,
+          "alive": 298,
+          "median_ms": 6.17,
+          "max_ms": 6.91,
+          "first_ms": 4.66,
+          "label": "death xlflower",
+          "first": true
+        },
+        {
+          "at": 8.3,
+          "alive": 293,
+          "median_ms": 6.84,
+          "max_ms": 6.91,
+          "first_ms": 6.89,
+          "label": "GemFlight",
+          "first": true
+        },
+        {
+          "at": 8.383,
+          "alive": 297,
+          "median_ms": 5.48,
+          "max_ms": 6.59,
+          "first_ms": 5.09,
+          "label": "leave mudman2, leave werewolf, spawn goblin, set piece Stampede",
+          "first": true
+        },
+        {
+          "at": 9.033,
+          "alive": 298,
+          "median_ms": 6.15,
+          "max_ms": 6.9,
+          "first_ms": 6.56,
+          "label": "Pickup",
+          "first": true
+        },
+        {
+          "at": 12.683,
+          "alive": 300,
+          "median_ms": 5.69,
+          "max_ms": 6.6,
+          "first_ms": 5.46,
+          "label": "death boss-xlflower, drop Chest",
+          "first": true
+        },
+        {
+          "at": 13.333,
+          "alive": 300,
+          "median_ms": 4.92,
+          "max_ms": 5.66,
+          "first_ms": 5.51,
+          "label": "death xlmummy",
+          "first": true
+        },
+        {
+          "at": 14.117,
+          "alive": 300,
+          "median_ms": 5.48,
+          "max_ms": 6.05,
+          "first_ms": 4.61,
+          "label": "zone 1, death goblin",
+          "first": true
+        },
+        {
+          "at": 15.15,
+          "alive": 297,
+          "median_ms": 4.42,
+          "max_ms": 5.82,
+          "first_ms": 4.29,
+          "label": "chest Open, chest Tick",
+          "first": true
+        },
+        {
+          "at": 17.25,
+          "alive": 290,
+          "median_ms": 4.24,
+          "max_ms": 6.51,
+          "first_ms": 5.81,
+          "label": "chest Land, chest Reward, attack holy-wand, projectile holy-wand",
+          "first": true
+        },
+        {
+          "at": 17.433,
+          "alive": 298,
+          "median_ms": 6.08,
+          "max_ms": 6.34,
+          "first_ms": 4.55,
+          "label": "attack bloody-tear",
+          "first": true
+        },
+        {
+          "at": 17.5,
+          "alive": 298,
+          "median_ms": 4.38,
+          "max_ms": 4.46,
+          "first_ms": 6.22,
+          "label": "hit holy-wand",
+          "first": true
+        },
+        {
+          "at": 17.75,
+          "alive": 300,
+          "median_ms": 6.08,
+          "max_ms": 6.35,
+          "first_ms": 4.09,
+          "label": "hit bloody-tear",
+          "first": true
+        },
+        {
+          "at": 18.817,
+          "alive": 300,
+          "median_ms": 6.1,
+          "max_ms": 6.49,
+          "first_ms": 6.59,
+          "label": "death mudman2",
+          "first": true
+        },
+        {
+          "at": 19.3,
+          "alive": 299,
+          "median_ms": 7.12,
+          "max_ms": 7.21,
+          "first_ms": 4.69,
+          "label": "leave goblin, leave xlflower, leave xlmummy, spawn flower, set piece FlowerWall",
+          "first": true
+        },
+        {
+          "at": 25.333,
+          "alive": 300,
+          "median_ms": 6.81,
+          "max_ms": 6.91,
+          "first_ms": 4.77,
+          "label": "spawn bee, set piece Wedge",
+          "first": true
+        },
+        {
+          "at": 26.383,
+          "alive": 299,
+          "median_ms": 7.2,
+          "max_ms": 7.26,
+          "first_ms": 9.61,
+          "label": "StructureBreak, death bee",
+          "first": true
+        },
+        {
+          "at": 27.167,
+          "alive": 298,
+          "median_ms": 5.34,
+          "max_ms": 5.76,
+          "first_ms": 5.91,
+          "label": "death flower",
+          "first": true
+        },
+        {
+          "at": 29.3,
+          "alive": 271,
+          "median_ms": 4.96,
+          "max_ms": 6.81,
+          "first_ms": 4.6,
+          "label": "leave flower",
+          "first": true
+        },
+        {
+          "at": 37.067,
+          "alive": 300,
+          "median_ms": 5.55,
+          "max_ms": 5.55,
+          "first_ms": 5.02,
+          "label": "zone 2",
+          "first": true
+        },
+        {
+          "at": 38.117,
+          "alive": 275,
+          "median_ms": 7.89,
+          "max_ms": 8.74,
+          "first_ms": 7.76,
+          "label": "Regrowth",
+          "first": true
+        }
+      ]
+    },
+    "ok": true
+  }
+}
