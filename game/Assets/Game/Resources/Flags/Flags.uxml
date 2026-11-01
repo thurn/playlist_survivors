@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- The unrecognized flags' popup (FlagsPopup.cs), before the launch goes on. Notes are added in code. -->
+    <Style src="../Title/Title.uss" />
+    <Style src="Flags.uss" />
+    <ui:VisualElement name="flags-root" class="veil">
+        <ui:VisualElement class="flags">
+            <ui:Label text="UNRECOGNIZED FLAGS" class="flags__heading" />
+            <ui:Label text="The game ignored these arguments" class="tagline" />
+            <ui:VisualElement name="notes" class="list" />
+            <ui:Label class="hint" text="Click, Enter or Esc continues" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

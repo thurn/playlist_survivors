@@ -3287,6 +3287,13 @@ The game provides these so each state above can be reached on demand:
   frame until the analysis covers its frontier, so reruns show the same
   frames; `--seconds N` counts song seconds then ([Fixed time](#fixed-time)).
   The run's summary logs its seconds since launch.
+  A flag or argument the client doesn't read (an unknown flag, one typed
+  with an en dash or one hyphen, a flag missing its value, a value after a
+  flag that takes none) opens a popup listing each with a note before
+  anything starts (`FlagsPopup`; a near flag is suggested), and is logged as
+  a warning; windowless launches only log, unless they keep stills, which
+  show the popup. Unity's and the OS's one-hyphen
+  flags and their values aren't judged.
 - An F1 debug menu: jump the run clock, spawn a role or boss, grant a weapon,
   passive or evolution, force a section change, an accent or the finale,
   break or regrow structures, and toggle the hero's invulnerability.

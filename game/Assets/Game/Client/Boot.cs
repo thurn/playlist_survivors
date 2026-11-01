@@ -9,7 +9,8 @@ using UnityEngine.SceneManagement;
 namespace Game.Client
 {
     /// <summary>
-    /// The boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>):
+    /// The boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>), once a popup has listed any
+    /// it didn't recognize (<see cref="FlagsPopup"/>):
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
     ///   quitting once the last is kept, each with its ID render under `--capture-mask`;
@@ -68,12 +69,17 @@ namespace Game.Client
                 audio.dspBufferSize = options.DspBuffer;
                 AudioSettings.Reset(audio);
             }
+            FlagsPopup.Begin(gameObject, options, () => Launch(options));
+            Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
+        }
+
+        void Launch(LaunchOptions options)
+        {
             if (options.File != null && options.Spike) SyncSpike.Begin(gameObject, _camera, options.File, _seconds);
             else if (options.ArenaStage) Arena.ArenaStage.Begin(gameObject, _camera);
             else if (options.ShatterBench != null) Crowd.ShatterBench.Begin(gameObject, _camera, options.ShatterBench);
             else if (CalibrationScreen.Wanted is CalibrationScreen.Mode mode) CalibrationScreen.Begin(gameObject, mode, StartGame);
             else StartGame();
-            Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}");
         }
 
         void StartGame()

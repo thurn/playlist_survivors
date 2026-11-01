@@ -93,6 +93,36 @@ namespace Game.Tests
             Assert.Throws<ArgumentException>(() => Parse("--headless --file a.ogg --watch --level Content"));
         }
 
+        static readonly string[] Recognized =
+        {
+            // just game's own launch, Unity's and the tools' one-hyphen flags with their values, every flag read.
+            "-screen-width 1920 -screen-height 1080 -screen-fullscreen 0 --file a.m3u --run --shuffle",
+            "-batchmode -force-metal -logFile p.log --headless --file a.ogg --seconds 10 --sessions out",
+            "--events e.csv --run --cast bat1 --start-minute 3", // --run read though --events wins
+            "--spike --spike-out dir --file a.ogg",
+        };
+
+        [TestCaseSource(nameof(Recognized))]
+        public void ALaunchOfKnownFlagsHasNothingUnrecognized(string flags) =>
+            Assert.That(Parse(flags).Unrecognized, Is.Empty);
+
+        static readonly object[] Unrecognized =
+        {
+            // flags: the notes
+            new object[] { "--file a.m3u \u2013shuffle", new[] { "\u2013shuffle: starts with an en dash (\u2013), not two hyphens; did you mean --shuffle?" } },
+            new object[] { "--file a.m3u --shufle", new[] { "--shufle: not a flag the game knows; did you mean --shuffle?" } },
+            new object[] { "--frobnicate", new[] { "--frobnicate: not a flag the game knows" } },
+            new object[] { "-shuffle", new[] { "-shuffle: has one hyphen; did you mean --shuffle?" } },
+            new object[] { "--run extra", new[] { "extra: follows --run, which takes no value" } },
+            new object[] { "a.ogg --run", new[] { "a.ogg: no flag takes this argument" } },
+            new object[] { "--seeed 3", new[] { "--seeed: not a flag the game knows; did you mean --seed?", "3: follows --seeed, which isn't recognized" } },
+            new object[] { "--run --file", new[] { "--file: needs a value after it" } },
+        };
+
+        [TestCaseSource(nameof(Unrecognized))]
+        public void EachUnrecognizedArgumentGetsANote(string flags, string[] notes) =>
+            Assert.That(Parse(flags).Unrecognized, Is.EqualTo(notes));
+
         [Test]
         public void TheRunsInputsOnTheBuild()
         {

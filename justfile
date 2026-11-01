@@ -210,7 +210,9 @@ _play project app *args:
     #!/usr/bin/env bash
     set -euo pipefail
     shift 2
-    flags=(-screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} --sound "$@")
+    # --sound unmutes the demos' players (PlayerMute); the game has no such flag and would list it as unrecognized.
+    sound=(--sound); [ "{{project}}" = game ] && sound=()
+    flags=(-screen-width 1920 -screen-height 1080 -screen-fullscreen {{fullscreen}} ${sound[@]+"${sound[@]}"} "$@")
     if [ "{{os()}}" = windows ]; then
         player="{{project}}/Builds/{{backend}}/{{app}}.exe"
         [ -f "$player" ] || { echo "no {{backend}} {{project}} player yet; run just {{project}}" >&2; exit 1; }

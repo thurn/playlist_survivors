@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Game.Client.Arena;
 using PS.Game.Sim;
@@ -33,6 +34,12 @@ namespace Game.Client
 
         /// <summary>The flags as given, for a session's run.json.</summary>
         public string[] Flags;
+        /// <summary>
+        /// What the client read none of, one note each: an unknown flag (a near one suggested), one started with an
+        /// en dash or one hyphen, a flag missing its value, or an argument no flag takes. Unity's and the OS's
+        /// one-hyphen flags and their values aren't the game's to judge. Boot shows them (<see cref="FlagsPopup"/>).
+        /// </summary>
+        public string[] Unrecognized;
         public LaunchMode Mode;
         public bool Windowed => Mode == LaunchMode.Windowed;
         public bool Headless => Mode == LaunchMode.Headless;
@@ -173,6 +180,7 @@ namespace Game.Client
             o.Run = RunOf(a, o);
             if (o.Watch && o.Run.Unrecordable != null)
                 throw new ArgumentException($"--watch: a run on {o.Run.Unrecordable} isn't recorded, so there's nothing to watch");
+            o.Unrecognized = a.Unrecognized(); // last: every flag has been read
             return o;
         }
 
@@ -187,9 +195,10 @@ namespace Game.Client
             if (startMinute < 0) throw new ArgumentException("--start-minute: a minute of the run, from 0");
             var cast = a.Get("--cast");
             var arsenal = a.Get("--arsenal");
+            bool run = a.Has("--run"); // read even when --events or --cast wins, so it isn't unrecognized
             var level = o.Events != null ? SessionLevel.Open
                 : cast != null ? SessionLevel.Cast
-                : a.Has("--run") || o.LevelPath != null || startMinute > 0 ? SessionLevel.Run
+                : run || o.LevelPath != null || startMinute > 0 ? SessionLevel.Run
                 : SessionLevel.Slice;
             return new RunInputs
             {
@@ -240,20 +249,124 @@ namespace Game.Client
             return System.IO.Path.GetFullPath(pwd != null ? System.IO.Path.Combine(pwd, path) : path);
         }
 
-        /// <summary>`--name value` and `--flag` arguments.</summary>
-        readonly struct Reader
+        /// <summary>
+        /// `--name value` and `--flag` arguments. It notes every flag asked for and every argument a flag claimed, so
+        /// what's left once every flag is read is <see cref="Unrecognized"/>.
+        /// </summary>
+        sealed class Reader
         {
+            /// <summary>Dashes a word processor or a copied web page puts where hyphens were typed.</summary>
+            const string LookalikeDashes = "\u2010\u2011\u2012\u2013\u2014\u2015\u2212";
+
             readonly string[] _args;
+            readonly bool[] _claimed;
+            readonly HashSet<string> _flags = new HashSet<string>(), _valued = new HashSet<string>();
+            readonly List<string> _notes = new List<string>();
 
-            public Reader(string[] args) => _args = args;
+            public Reader(string[] args)
+            {
+                _args = args;
+                _claimed = new bool[args.Length];
+                if (args.Length > 0) _claimed[0] = true; // the executable
+            }
 
-            public bool Has(string name) => Array.IndexOf(_args, name) >= 0;
+            public bool Has(string name)
+            {
+                _flags.Add(name);
+                bool found = false;
+                for (int i = 1; i < _args.Length; i++)
+                    if (_args[i] == name) _claimed[i] = found = true;
+                return found;
+            }
 
             public string Get(string name)
             {
-                for (int i = 0; i < _args.Length - 1; i++)
-                    if (_args[i] == name) return _args[i + 1];
-                return null;
+                _flags.Add(name);
+                _valued.Add(name);
+                string value = null;
+                for (int i = 1; i < _args.Length; i++)
+                {
+                    if (_args[i] != name) continue;
+                    _claimed[i] = true;
+                    if (i + 1 < _args.Length)
+                    {
+                        _claimed[i + 1] = true;
+                        value ??= _args[i + 1];
+                    }
+                    else _notes.Add($"{name}: needs a value after it");
+                }
+                return value;
+            }
+
+            /// <summary>A note for each argument no flag read (<see cref="LaunchOptions.Unrecognized"/>).</summary>
+            public string[] Unrecognized()
+            {
+                var notes = new List<string>(_notes);
+                for (int i = 1; i < _args.Length; i++)
+                {
+                    if (_claimed[i]) continue;
+                    string arg = _args[i];
+                    if (arg.StartsWith("--", StringComparison.Ordinal)) notes.Add(arg + ": not a flag the game knows" + Nearest(arg));
+                    else if (arg.Length > 1 && LookalikeDashes.IndexOf(arg[0]) >= 0)
+                    {
+                        string meant = "--" + arg.TrimStart(LookalikeDashes.ToCharArray()).TrimStart('-');
+                        notes.Add($"{arg}: starts with {DashName(arg[0])}, not two hyphens" +
+                                  (_flags.Contains(meant) ? $"; did you mean {meant}?" : ", and " + meant + " isn't a flag the game knows" + Nearest(meant)));
+                    }
+                    else if (arg.StartsWith("-", StringComparison.Ordinal) && arg.Length > 1 && !char.IsDigit(arg[1]))
+                    {
+                        // Unity's and the OS's flags (-batchmode, -screen-width 1920, -logFile F) have one hyphen.
+                        if (_flags.Contains("-" + arg)) notes.Add($"{arg}: has one hyphen; did you mean -{arg}?");
+                        else if (i + 1 < _args.Length && !_claimed[i + 1] && !_args[i + 1].StartsWith("-", StringComparison.Ordinal)) i++;
+                    }
+                    else
+                    {
+                        string before = _args[i - 1];
+                        notes.Add(arg + ": " + (_flags.Contains(before) && !_valued.Contains(before) ? $"follows {before}, which takes no value"
+                            : !_claimed[i - 1] && i > 1 && !_flags.Contains(before) ? $"follows {before}, which isn't recognized"
+                            : "no flag takes this argument"));
+                    }
+                }
+                return notes.ToArray();
+            }
+
+            static string DashName(char c) =>
+                c == '\u2013' ? "an en dash (\u2013)" : c == '\u2014' ? "an em dash (\u2014)" : c == '\u2212' ? "a minus sign (\u2212)" : $"a dash ({c})";
+
+            /// <summary>"; did you mean --flag?" for the known flag within two edits of `arg`, else nothing.</summary>
+            string Nearest(string arg)
+            {
+                string best = null;
+                int bestDistance = 3;
+                foreach (var flag in _flags)
+                {
+                    int d = Distance(arg, flag);
+                    if (d < bestDistance || d == bestDistance && best != null && string.CompareOrdinal(flag, best) < 0)
+                    {
+                        best = flag;
+                        bestDistance = d;
+                    }
+                }
+                return best != null ? $"; did you mean {best}?" : "";
+            }
+
+            /// <summary>The Levenshtein distance between `a` and `b`.</summary>
+            static int Distance(string a, string b)
+            {
+                var row = new int[b.Length + 1];
+                for (int j = 0; j <= b.Length; j++) row[j] = j;
+                for (int i = 1; i <= a.Length; i++)
+                {
+                    int diagonal = row[0];
+                    row[0] = i;
+                    for (int j = 1; j <= b.Length; j++)
+                    {
+                        int above = row[j];
+                        row[j] = Math.Min(Math.Min(row[j] + 1, row[j - 1] + 1), diagonal + (a[i - 1] == b[j - 1] ? 0 : 1));
+                        diagonal = above;
+                    }
+                }
+                return row[b.Length];
             }
 
             public string Path(string name)

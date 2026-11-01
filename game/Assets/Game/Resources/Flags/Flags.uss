@@ -1,0 +1,53 @@
+/* The unrecognized flags' popup: the pause menu's veil (Pause.uss) over a wider column of notes in the title screen's list (Title.uss). */
+
+.veil {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(4, 5, 11, 0.86);
+    align-items: center;
+    justify-content: center;
+}
+
+.flags {
+    width: 1100px;
+    align-items: stretch;
+}
+
+.flags__heading {
+    font-size: 44px;
+    -unity-font-style: bold;
+    letter-spacing: 12px;
+    color: rgb(255, 170, 190);
+    -unity-text-align: middle-center;
+    margin-bottom: 12px;
+}
+
+.note {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 14px 18px;
+    border-bottom-width: 1px;
+    border-color: rgba(150, 200, 255, 0.08);
+}
+
+.note__arg {
+    font-size: 24px;
+    color: rgb(255, 255, 255);
+    width: 300px;
+    margin: 0 24px 0 0;
+    padding: 0;
+    white-space: normal;
+}
+
+.note__why {
+    font-size: 22px;
+    color: rgba(225, 232, 245, 0.75);
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0;
+    padding: 0;
+    white-space: normal;
+}
