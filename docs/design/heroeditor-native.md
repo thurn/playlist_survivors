@@ -69,7 +69,7 @@ Settled with the operator on 2026-10-31; no human gates later.
 
 ```sh
 just herocap                                  # set up if needed, capture every recipe, bake the atlas
-just native -- --art heroeditor               # play it
+just native --art heroeditor                  # play it
 uv run --project demo3d/tools herocap evidence  # contact sheets, faces, budget into evidence
 ```
 
@@ -171,7 +171,7 @@ pages) would need MAX_PAGES raised or the LPC character page dropped.
 
 ## The Painted Ground
 
-`--art heroeditor` (`just native -- --art heroeditor`) paints native's ground
+`--art heroeditor` (`just native --art heroeditor`) paints native's ground
 and grades the scene as dusk (`ps-4c8.2`). It sets the art once for the process
 (`slice/art.rs`), so every check drawing a scene honours it. `--art lpc`, the
 default, is native as before: its stills are byte-identical with and without

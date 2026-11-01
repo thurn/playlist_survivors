@@ -14,7 +14,7 @@ as the vendor rules allow. The capture's contact sheets and face lineup are in
 
 ```sh
 just herocap                       # capture every recipe and bake the atlas into the cache
-just native -- --art heroeditor    # play it
+just native --art heroeditor       # play it
 
 # The evidence below (from the repository root, after `cargo build --release -p app` in native/):
 uv run --project demo3d/tools python native/scripts/heroeditor_evidence.py pair OUT.jpg --track T --at S
@@ -55,7 +55,7 @@ frame is the same run, re-simulated to its time.
 ## Whole-Run Acceptance (2026-10-31, Apple M5 Max)
 
 - **One command sequence.** `just herocap` (setup, capture, bake), then
-  `just native -- --art heroeditor`. The bake takes about 3 s: 13 sprites,
+  `just native --art heroeditor`. The bake takes about 3 s: 13 sprites,
   1104 frames, one 4096-wide page in
   `~/Library/Caches/playlist-survivors/demo3d/heroeditor/assets/`.
 - **Every role is HeroEditor.** Every atlas the survivors run uses has a
