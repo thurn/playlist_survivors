@@ -21,18 +21,14 @@ namespace Game.Client.Crowd
     /// </summary>
     public sealed class CrowdView : IPresenter, IDisposable
     {
-        /// <summary>The sim's cap on the living (unity-game.md, Enemies): any one type may hold them all.</summary>
-        public const int Capacity = 300;
-        // Lives that ended but may still show (a death not yet reached by frameSong) need room too,
-        // and a freed slot waits a frame before its next owner (CrowdSlots).
-        const int Pool = Capacity * 2;
         /// <summary>
-        /// Each type's slots: a frame holds the last frame's slots, Hidden for a frame, beside this frame's new
-        /// owners, so a whole crowd of one type replaced on one beat (a set piece making room for its members,
-        /// a swarm) needs twice the living. With a quarter more, the full run's minute 25 ran out (ps-msz.6.14).
-        /// Past them a monster goes undrawn for the frame (<see cref="CrowdSlots.Assign"/>), never the crowd.
+        /// Each type's slots for a cap of <paramref name="alive"/> living, any one type holding them all: a frame
+        /// holds the last frame's slots, Hidden for a frame, beside this frame's new owners, so a whole crowd of
+        /// one type replaced on one beat (a set piece making room for its members, a swarm) needs twice the
+        /// living. With a quarter more, the full run's minute 25 ran out (ps-msz.6.14). Past them a monster
+        /// goes undrawn for the frame (<see cref="CrowdSlots.Assign"/>), never the crowd.
         /// </summary>
-        public const int SlotsPerType = Pool;
+        public static int SlotsPerType(int alive) => 2 * alive;
 
         readonly Camera _camera;
         readonly CrowdLibrary _lib;
@@ -43,28 +39,37 @@ namespace Game.Client.Crowd
         readonly Stack<MonsterTrack> _free = new Stack<MonsterTrack>();
         readonly List<MonsterTrack> _live = new List<MonsterTrack>();
         readonly Dictionary<int, MonsterTrack> _byEnemy = new Dictionary<int, MonsterTrack>();
-        readonly MonsterInstance[] _written = new MonsterInstance[Pool];
-        readonly int[] _writtenType = new int[Pool], _writtenSlot = new int[Pool];
-        readonly MonsterTrack[] _writtenTrack = new MonsterTrack[Pool];
+        // Lives that ended but may still show (a death not yet reached by frameSong) need room too, and a
+        // freed slot waits a frame before its next owner (CrowdSlots): as many lives as each type's slots.
+        readonly int _pool;
+        readonly MonsterInstance[] _written;
+        readonly int[] _writtenType, _writtenSlot;
+        readonly MonsterTrack[] _writtenTrack;
         double _lastSong = double.NegativeInfinity;
         int _serial, _unknownRoles, _overSlots;
         double _heroX, _heroY; // the latest frame's, which a spawn faces
 
-        public CrowdView(Camera camera)
+        /// <param name="alive">The sim's cap on the living (schedule.json's run cap; unity-game.md, Enemies).</param>
+        public CrowdView(Camera camera, int alive)
         {
             _camera = camera;
+            _pool = SlotsPerType(alive);
+            _written = new MonsterInstance[_pool];
+            _writtenType = new int[_pool];
+            _writtenSlot = new int[_pool];
+            _writtenTrack = new MonsterTrack[_pool];
             _lib = CrowdLibrary.Load();
             if (_lib == null)
             {
                 Debug.LogWarning("CrowdView: no baked crowd (Assets/Baked/Crowd; run `game unity BakeCrowd`): the horde is not drawn");
                 return;
             }
-            _crowd = new BoneTextureCrowd(_lib, SlotsPerType);
+            _crowd = new BoneTextureCrowd(_lib, _pool);
             _shatter = new MonsterShatter(_lib, _crowd.Palette);
-            _slots = new CrowdSlots(_lib.Types.Length, SlotsPerType);
+            _slots = new CrowdSlots(_lib.Types.Length, _pool);
             _clips = new MonsterClips[_lib.Types.Length];
             for (int i = 0; i < _clips.Length; i++) _clips[i] = MonsterClips.Of(_lib.Types[i]);
-            for (int i = 0; i < Pool; i++) _free.Push(new MonsterTrack());
+            for (int i = 0; i < _pool; i++) _free.Push(new MonsterTrack());
             Stills.Redrawing += Requeue;
         }
 
@@ -144,7 +149,7 @@ namespace Game.Client.Crowd
             }
             if (_free.Count == 0)
             {
-                Debug.LogWarning($"CrowdView: more than {Pool} lives at once; the spawn of enemy {s.Enemy} is not drawn");
+                Debug.LogWarning($"CrowdView: more than {_pool} lives at once; the spawn of enemy {s.Enemy} is not drawn");
                 return;
             }
             var track = _free.Pop();
@@ -215,7 +220,7 @@ namespace Game.Client.Crowd
             int slot = _slots.Assign(look.Type, track.Serial);
             if (slot < 0)
             {
-                if (_overSlots++ == 0) Debug.LogWarning($"CrowdView: type {look.Type} is over its {SlotsPerType} slots; a monster is not drawn this frame");
+                if (_overSlots++ == 0) Debug.LogWarning($"CrowdView: type {look.Type} is over its {_pool} slots; a monster is not drawn this frame");
                 return false;
             }
             var pose = track.Sample(at);

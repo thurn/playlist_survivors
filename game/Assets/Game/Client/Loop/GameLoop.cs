@@ -271,10 +271,10 @@ namespace Game.Client.Loop
             }
             // A headless player has no graphics device, so no compute: the crowd and the effects sit it out.
             bool compute = SystemInfo.supportsComputeShaders;
-            if (compute)
+            if (compute && content != null)
             {
-                // After the look, whose camera rig it culls with.
-                _crowd = new CrowdView(camera);
+                // After the look, whose camera rig it culls with; sized for the content's cap on the living.
+                _crowd = new CrowdView(camera, content.Schedule.Cap);
                 Driver.Events.Subscribe(_crowd);
             }
             if (content != null)

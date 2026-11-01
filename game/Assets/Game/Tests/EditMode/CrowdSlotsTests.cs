@@ -1,16 +1,19 @@
+using System.IO;
 using Game.Client.Crowd;
 using NUnit.Framework;
+using PS.Game.Sim.Content;
+using UnityEngine;
 
 namespace Game.Tests
 {
-    /// <summary>The crowd's stable slots (CrowdSlots) at the budget CrowdView gives each type.</summary>
+    /// <summary>The crowd's stable slots (CrowdSlots) at the budget CrowdView gives each type for the content's cap on the living.</summary>
     public class CrowdSlotsTests
     {
         [Test]
         public void AWholeCrowdOfOneTypeReplacedOnOneBeatFitsItsTypesSlots()
         {
-            var slots = new CrowdSlots(1, CrowdView.SlotsPerType);
-            const int n = CrowdView.Capacity;
+            int n = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content")).Schedule.Cap;
+            var slots = new CrowdSlots(1, CrowdView.SlotsPerType(n));
             slots.Begin();
             for (int e = 0; e < n; e++) slots.Assign(0, e);
             slots.End();
