@@ -23,7 +23,7 @@ namespace PS.Game.Sim
     ///   half-time pulse, half of one on the beat grid's slow songs: <see cref="StrikePeriod"/>), less twice the window,
     ///   so two presses each on its beat both dash. A press sooner waits for it, judged by when it was heard, the latest
     ///   such press replacing an earlier: mashing never runs faster than the music's pulse, and no press is lost.
-    /// - Frozen or fallen, no dash; a press waiting is dropped.
+    /// - Frozen or fallen, no dash; a press waiting is dropped, as it is when a later press is a finisher's.
     /// </summary>
     internal sealed class Dash
     {
@@ -92,6 +92,9 @@ namespace PS.Game.Sim
             }
             Begin(sim, start, heard);
         }
+
+        /// <summary>A later Space went elsewhere (a finisher's, <see cref="Finishers"/>): a press waiting for the pulse is replaced by it, and never dashes.</summary>
+        internal void Supersede() => waiting = false;
 
         /// <summary>The tick's end: a waiting press dashes, and the lunge strikes along the path the hero has taken.</summary>
         internal void Tick(Simulation sim, double end)

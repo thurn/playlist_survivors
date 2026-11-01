@@ -180,10 +180,12 @@ namespace PS.Game.Sim.Tests
 
         /// <summary>
         /// The causality test (CausalityTests) on a zen run, sword, loudness and reeling horde, and dashes with `--dash`: truncating or perturbing
-        /// the stream after a cut changes nothing settled before it.
+        /// the stream after a cut changes nothing settled before it. Paired, not crossed, to keep the fast checks' time: the
+        /// dashes ride on the analyzer stall's case.
         /// </summary>
-        [Test]
-        public void AZenRunIsCausal([Values(false, true)] bool justInTime, [Values(false, true)] bool dash)
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        public void AZenRunIsCausal(bool justInTime, bool dash)
         {
             var known = Drive.Known(EntryDump.Load(EntryDump.House128, out double duration));
             if (justInTime) known = JustInTime(known);

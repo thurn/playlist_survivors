@@ -300,6 +300,25 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(1, Drive.Events(sim, SimEventKind.HeroDash).Count, "and no dash");
         }
 
+        /// <summary>Mashing into a ring: the finisher's press replaces a dash still waiting for the pulse, which never follows the slam.</summary>
+        [Test]
+        public void TheFinishersPressDropsADashWaitingForThePulse()
+        {
+            var config = Config();
+            config.Dash = true;
+            var sim = Start(Plain(128, 40), config);
+            var ring = NextRing(sim);
+            sim.StepTo(ring.Downbeat - 0.3);
+            sim.Press(Key.Space, sim.Now);
+            sim.StepTo(ring.Downbeat - 0.2);
+            sim.Press(Key.Space, sim.Now); // outside the window, sooner than the pulse: waits
+            sim.StepTo(ring.Downbeat);
+            sim.Press(Key.Space, sim.Now);
+            Assert.AreEqual(1, Rings(sim, FinisherPhase.Hit).Count, "the finisher");
+            sim.StepTo(ring.Downbeat + 1);
+            Assert.AreEqual(1, Drive.Events(sim, SimEventKind.HeroDash).Count, "the first dash only");
+        }
+
         [Test]
         public void ALiveKeyHeardInTheWindowHitsThoughTheSimTakesItAfter()
         {

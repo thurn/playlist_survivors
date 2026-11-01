@@ -193,8 +193,12 @@ namespace PS.Game.Sim
         {
             keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now, Order = inputs++ });
             bool cards = Arsenal != null && Arsenal.LevelUps.Press(this, key, Now);
-            // Space in a finisher ring's window is the finisher's alone.
-            if (key == Key.Space && !cards && Finishers != null && Finishers.Press(this, heard)) return;
+            // Space in a finisher ring's window is the finisher's alone, and replaces a dash waiting for the pulse.
+            if (key == Key.Space && !cards && Finishers != null && Finishers.Press(this, heard))
+            {
+                Dash?.Supersede();
+                return;
+            }
             // Then it dashes, and never stomps.
             if (key == Key.Space && !cards && Dash != null)
             {

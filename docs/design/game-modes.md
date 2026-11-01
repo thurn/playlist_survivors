@@ -376,8 +376,8 @@ Binary, not graded, so "on the beat" reads clearly, and never a dead press:
 At most one dash per zen strike period: a beat, two on the half-time pulse (over 150 BPM), half of one on the beat
 grid's slow songs (under 80 BPM), less twice the window, so two presses each on its own beat both dash (0.36 s at
 128 BPM's 0.469 s, 0.55 s at 174's pulse). A press sooner waits for the pulse and dashes then, judged by when it was
-heard (so mashing gets hops), the latest such press replacing an earlier: mashing never runs faster than the music's
-pulse, and no press shows nothing. Frozen (cards, chests, pause, the music stopped) or fallen, nothing dashes, and a
+heard (so mashing gets hops), the latest such press replacing an earlier (a finisher's press too, so no dash follows
+the slam): mashing never runs faster than the music's pulse, and no press shows nothing. Frozen (cards, chests, pause, the music stopped) or fallen, nothing dashes, and a
 press waiting is dropped.
 
 ### Presented
