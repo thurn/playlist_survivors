@@ -462,7 +462,8 @@ namespace Game.Client.Loop
             // music's poll replaces them each frame), and the sim's frames are its own, so starting a frame later changes
             // nothing; an arena that failed to load holds nothing up.
             bool loading = _arena != null && _arena.Failure == null && (!_arena.Ready || Time.frameCount <= _arenaFrame);
-            if (!loading && Driver.Step(now))
+            bool stepped = !loading && Driver.Step(now);
+            if (stepped)
             {
                 _telemetry.Keep();
                 if (_probe != null)
@@ -472,7 +473,8 @@ namespace Game.Client.Loop
                     _profile?.EndProbe();
                 }
             }
-            if (_soundOut != null && _music != null && _music.Clock.Anchored) _telemetry.KeepFrame(_music);
+            // Only a frame the driver stepped has a frameSong: a loading frame's Times are the last step's, or none (0).
+            if (stepped && _soundOut != null && _music != null && _music.Clock.Anchored) _telemetry.KeepFrame(_music);
             _overlay.Toggle();
             _menu.Present(Driver.Sim);
             if (_replay != null)
