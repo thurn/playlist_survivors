@@ -343,6 +343,49 @@ silhouette or crease edges (dihedral angle over a threshold) rather than
 internal triangulation, so edge lines trace the model's facets, not every
 triangle. Wireframe can use all edges or feature edges as its option.
 
+How the package implements it (ps-wnj.10):
+
+- **Feature edges** (`StyleMesh.FeatureEdges`, run by `StyleMesh.Unweld` for
+  every LOD in both crowd bakers): UV5 of the style mesh, the same on a
+  triangle's three corners, component k 1 where the edge opposite corner k
+  is a real edge. An edge is real when its two faces turn by more than
+  `FeatureAngleDeg` (24), when it is open, or when more than two faces share
+  it; corners weld by position (0.1 mm), so UV and material seams don't
+  count. Corner k has barycentric k 1, so a shader draws a line where a
+  flagged barycentric is small (`EdgeLine` in MonsterEdge.hlsl, a fixed width
+  in pixels from the barycentric's screen derivative). Derived at bake time,
+  gitignored with the rest of the bake.
+- **Shards keep them** (`CrowdShardBaker`): a skin triangle keeps its style
+  mesh's edges and adds the crack, the edges on its chunk's boundary; an
+  inside face flags its edge on the skin. Every chunk is outlined where it
+  broke.
+- **Type to slot** (`MonsterSlots`): the style guide's table in code, so a
+  look that draws in the palette's hues takes a type's `enemies[i]` (the
+  dragon `boss.body`) rather than the role's gem on each instance.
+- **Dark core, lit edges** (`EdgeLook`, option `dark-core-edges`, the edge
+  preset's; shaders `Resources/Look/Shaders/MonsterEdge` and
+  `MonsterEdgeShard` over `Runtime/Crowd/Shaders/MonsterEdge.hlsl`): glass in
+  `void.floor`, each facet a shade apart; the type's slot hue, scaled to one
+  linear luminance (`EdgeLook.Level`, so amber doesn't bloom to white beside
+  cobalt), in a fresnel rim, in the feature lines (1.25 px, a little brighter
+  toward the silhouette, dimmed to 35% on triangles only a few pixels across
+  so fine detail isn't a tangle of wire) and in a small core round the clip's
+  bounding-sphere centre, seen wherever the view ray passes near it. `_SL_Pulse` (the beat globals both players feed)
+  flares the core and lifts the lines on a living monster; a hit adds
+  `shatter.core` to the lines, rim and core. Shards outline their cracks,
+  hottest on the break's frame and fading over 0.6 s, and the set flashes
+  `shatter.core` for the hit flash's 0.12 s. Drawn where the crystal draws
+  (the transparent queue, ZWrite on, no blend): opaque on screen, outside the
+  renderers' forced depth prepass. Its gains are the shaders' property
+  defaults, tuned on game's and the crystal cut's stills
+  ([game](../../game/evidence/look/monster-edge/README.md),
+  [crystal cut](../../demo3d/evidence/look/monster-edge/README.md)): swarm
+  separation 16.5-17 in game (6.5-7.6 with the crystal) and 6.7-11.5 on the
+  cut's smaller monsters (provisional; 2.8-9.1 before), conformance 0.97-1.00,
+  monster form 36-57, game perf at the peak 3.3 / 10.1 ms p50 / max.
+- The impulse field's rings (ps-wnj.7) weren't on staging when the look
+  landed: the look reacts to the beat pulse only, until it reads the field.
+
 ### World
 
 World options, all from one procedural kit:

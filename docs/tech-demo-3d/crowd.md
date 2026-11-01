@@ -302,8 +302,10 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
 - **The crystal cut on the look package** (ps-wnj.22; [neon-look.md](../design/neon-look.md#what-moves-in)).
   `--monster-style crystal`, the crystal cut's, is the one style demo3d doesn't draw itself: DemoMain hands
   the horde to `LookCrowd`, which feeds the look package's crowd (`PS.Look.Crowd.BoneTextureCrowd`) and GPU
-  shatter (`MonsterShatter`), drawn in the applied preset's monster look (`MonsterLooks.Active`; every option
-  draws the crystal stand-in until its look is built). The action cut and every other style keep demo3d's
+  shatter (`MonsterShatter`), drawn in the applied preset's monster look (`MonsterLooks.Active`; the edge
+  preset's dark-core-edges is built, and every other option draws the crystal stand-in until its look is).
+  The style meshes carry the package's feature edges in UV5 (neon-look.md, Monsters), and the shards carry
+  them plus their cracks. The action cut and every other style keep demo3d's
   own crowd. The package's crowd is the game's, so where demo3d's had more, the crystal cut now has the
   game's:
   - **The library.** CrowdBaker also writes `LookCrowd.asset` (the package's `CrowdLibrary`, beside

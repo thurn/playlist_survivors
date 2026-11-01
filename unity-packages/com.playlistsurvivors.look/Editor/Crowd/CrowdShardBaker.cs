@@ -42,6 +42,10 @@ namespace PS.Look.EditorTools.Crowd
     ///   corner on the skin its style mesh corner's, the apex the patch's area-weighted blend of
     ///   them, cut to its four largest, so it moves with the patch. UV4 is (inside face 0 or 1, the
     ///   chunk's index).
+    /// - UV5 is each triangle's feature edges (<see cref="StyleMesh.FeatureEdges"/>), so a look that lights
+    ///   them lights the shards' too: a skin triangle keeps the style mesh's and adds the edges on its
+    ///   chunk's boundary (the crack), and an inside face flags its edge on the skin, so every chunk is
+    ///   outlined where it broke.
     /// - Each chunk's pivot (its centroid, a quarter of the way from the patch's centre to the apex)
     ///   carries the apex's bones and weights, so the shatter can pose it too: the chunk turns
     ///   about it as it flies.
@@ -58,6 +62,8 @@ namespace PS.Look.EditorTools.Crowd
         {
             public Vector3[] Position, Normal;
             public Vector4[] Bary, Bones, Weights;
+            /// <summary>Each corner's triangle's feature edges (UV5), zero where the style mesh has none.</summary>
+            public Vector3[] Edges;
             public int Triangles => Position.Length / 3;
         }
 
@@ -69,12 +75,14 @@ namespace PS.Look.EditorTools.Crowd
             var bones = new List<Vector4>(); style.GetUVs(1, bones);
             var weights = new List<Vector4>(); style.GetUVs(2, weights);
             var bary = new List<Vector4>(); style.GetUVs(3, bary);
+            var edges = new List<Vector3>(); style.GetUVs(5, edges);
+            bool hasEdges = edges.Count == pos.Length;
             var tris = new List<int>();
             for (int sm = 0; sm < style.subMeshCount; sm++) tris.AddRange(style.GetIndices(sm));
             var o = new Posed
             {
                 Position = new Vector3[tris.Count], Normal = new Vector3[tris.Count], Bary = new Vector4[tris.Count],
-                Bones = new Vector4[tris.Count], Weights = new Vector4[tris.Count],
+                Bones = new Vector4[tris.Count], Weights = new Vector4[tris.Count], Edges = new Vector3[tris.Count],
             };
             for (int k = 0; k < tris.Count; k++)
             {
@@ -84,6 +92,7 @@ namespace PS.Look.EditorTools.Crowd
                 o.Bary[k] = bary[v];
                 o.Bones[k] = bones[v];
                 o.Weights[k] = weights[v];
+                if (hasEdges) o.Edges[k] = edges[v];
             }
             return o;
         }
@@ -109,6 +118,7 @@ namespace PS.Look.EditorTools.Crowd
             mesh.SetUVs(2, into.Weights);
             mesh.SetUVs(3, into.Bary);
             mesh.SetUVs(4, into.Chunk);
+            mesh.SetUVs(5, into.Edges);
             mesh.SetTriangles(Enumerable.Range(0, into.Positions.Count).ToArray(), 0, true);
             return (mesh, shards);
         }
@@ -119,6 +129,7 @@ namespace PS.Look.EditorTools.Crowd
             public readonly List<Vector3> Positions = new List<Vector3>(), Normals = new List<Vector3>();
             public readonly List<Vector4> Bary = new List<Vector4>(), Bones = new List<Vector4>(), Weights = new List<Vector4>();
             public readonly List<Vector2> Chunk = new List<Vector2>();
+            public readonly List<Vector3> Edges = new List<Vector3>();
         }
 
         // ---------------------------------------------------------------------------------
@@ -399,8 +410,9 @@ namespace PS.Look.EditorTools.Crowd
             var pivot = Vector3.Lerp(c, apex, 0.25f); // a pyramid's centroid sits a quarter of the way to its apex
 
             int first = into.Positions.Count;
-            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag, Vector4 bi, Vector4 bw)
+            void Corner(Vector3 pos, Vector3 nor, Vector4 bc, float flag, Vector4 bi, Vector4 bw, Vector3 edges)
             {
+                into.Edges.Add(edges);
                 into.Positions.Add(pos);
                 into.Normals.Add(nor);
                 into.Bary.Add(bc);
@@ -418,13 +430,24 @@ namespace PS.Look.EditorTools.Crowd
                     if (directed.ContainsKey((b, a))) directed.Remove((b, a)); // shared inside the piece
                     else directed[(a, b)] = at;
                 }
-            // The skin: the style mesh's own corners.
+            // The skin: the style mesh's own corners, its feature edges plus the crack (edge k→k+1 is opposite corner k+2).
+            var crack = new Dictionary<int, Vector3>();
+            foreach (int at in directed.Values)
+            {
+                crack.TryGetValue(at / 3, out var e);
+                e[(at % 3 + 2) % 3] = 1;
+                crack[at / 3] = e;
+            }
             foreach (int t in tris)
+            {
+                var edges = p.Edges[3 * t];
+                if (crack.TryGetValue(t, out var e)) edges = Vector3.Max(edges, e);
                 for (int k = 0; k < 3; k++)
                 {
                     int at = 3 * t + k;
-                    Corner(p.Position[at], p.Normal[at], p.Bary[at], 0, p.Bones[at], p.Weights[at]);
+                    Corner(p.Position[at], p.Normal[at], p.Bary[at], 0, p.Bones[at], p.Weights[at], edges);
                 }
+            }
             // Inside faces: each boundary edge a→b, turned round (b, a, apex) to face out of the solid.
             foreach (var kv in directed.OrderBy(kv => kv.Value))
             {
@@ -435,9 +458,10 @@ namespace PS.Look.EditorTools.Crowd
                 var face = Vector3.Cross(a - b, apex - b);
                 var nor = face.sqrMagnitude > 0 ? face.normalized : -inward;
                 float r = (float)rng.NextDouble();
-                Corner(b, nor, new Vector4(1, 0, 0, r), 1, p.Bones[bt], p.Weights[bt]);
-                Corner(a, nor, new Vector4(0, 1, 0, r), 1, p.Bones[at], p.Weights[at]);
-                Corner(apex, nor, new Vector4(0, 0, 1, r), 1, apexBones, apexWeights);
+                var rim = new Vector3(0, 0, 1); // the edge on the skin, opposite the apex
+                Corner(b, nor, new Vector4(1, 0, 0, r), 1, p.Bones[bt], p.Weights[bt], rim);
+                Corner(a, nor, new Vector4(0, 1, 0, r), 1, p.Bones[at], p.Weights[at], rim);
+                Corner(apex, nor, new Vector4(0, 0, 1, r), 1, apexBones, apexWeights, rim);
             }
 
             float size = 0;

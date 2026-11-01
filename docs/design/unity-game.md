@@ -2396,6 +2396,10 @@ package's unweld step (`StyleMesh.Unweld`) and shard cutter.
   room for its members) needs it. With 375, minute 25 of the full run threw on
   every frame from its first set piece, and the crowd and the HUD stopped
   drawing (ps-msz.6.14).
+- **The monster look** is the preset's (`MonsterLooks.Active`;
+  [neon-look.md](neon-look.md#monsters)): the edge preset's dark-core-edges
+  (`EdgeLook`: dark glass, the type's palette slot in rim, feature lines and
+  a core) is built; an option not built yet draws the crystal.
 - **The crystal** (`Game/MonsterCrystal`, the package's stand-in monster look,
   `MonsterLooks.Crystal`, until a preset's look is built) shares its surface
   with the structures (the package's CrystalSurface.hlsl): it refracts the scene behind, tinted by

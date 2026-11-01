@@ -31,9 +31,10 @@ float3 MonsterInnerGlow(float3 positionWS, float3 normalWS, float4 bary, float3 
         * (1.0 - 0.5 * fres) * (1.0 + inside);
 }
 
-// The crowd's style mesh (CrowdBaker.Unweld): every triangle its own vertices, the rest pose in
-// root space at roster height, bone data in TEXCOORD1/2, the face normal in the tangent and
-// barycentrics plus a random value per triangle in TEXCOORD3.
+// The crowd's style mesh (StyleMesh.Unweld): every triangle its own vertices, the rest pose in
+// root space at roster height, bone data in TEXCOORD1/2, the face normal in the tangent,
+// barycentrics plus a random value per triangle in TEXCOORD3 and the triangle's feature edges in
+// TEXCOORD5 (component k 1 where the edge opposite corner k is a real edge of the model).
 struct MonsterAttributes
 {
     float3 positionOS : POSITION;
@@ -41,6 +42,7 @@ struct MonsterAttributes
     float4 boneIndex : TEXCOORD1;
     float4 boneWeight : TEXCOORD2;
     float4 bary : TEXCOORD3;
+    float3 edges : TEXCOORD5;
     uint instanceID : SV_InstanceID;
 };
 

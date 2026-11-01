@@ -29,7 +29,10 @@ namespace PS.Look.Crowd
         /// <summary>The stand-in: the crystal shaders the library names.</summary>
         public static readonly IMonsterLook Crystal = new CrystalLook();
 
-        static readonly Dictionary<string, IMonsterLook> Built = new Dictionary<string, IMonsterLook>();
+        static readonly Dictionary<string, IMonsterLook> Built = new Dictionary<string, IMonsterLook>
+        {
+            [EdgeLook.Option] = new EdgeLook(),
+        };
 
         /// <summary>Registers the look built for <paramref name="look"/>'s option (list the option in Axes/Monsters.cs too).</summary>
         public static void Register(IMonsterLook look) => Built[look.Name] = look;
