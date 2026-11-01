@@ -2060,9 +2060,10 @@ Pickups and progression are native's.
   The next level's offer opens at once; after the last, play resumes on the next beat.
   While the pause menu is up the cards take no keys. The mouse taps the same recorded
   keys (`KeyInput.Tap`, ps-072): pointing at a card taps its key, and a click taps it
-  and Enter, so a session replays a mouse pick like a key's. The loop taps them only
-  while the sim still has the offer the HUD shows open, so a card still on show after
-  the sim took it never walks the hero.
+  and Enter, so a session replays a mouse pick like a key's. Each tap carries the
+  serial of the offer the HUD shows and reaches the sim only if, when the keys are
+  handed over, the sim still has that offer open: a card still on show after a key
+  or an earlier click took it never walks the hero.
 - **The client**: `GemView` draws the gems as instanced faceted crystals
   (Resources/Gems: Gem.shader, and Gem.mat with instancing on, which keeps the shader's
   instanced variant in the player) in progression.json's blue, green and red, hovering and

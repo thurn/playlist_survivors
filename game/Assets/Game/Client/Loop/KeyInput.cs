@@ -28,6 +28,12 @@ namespace Game.Client.Loop
             public bool Down;
             /// <summary>The event's timestamp: real time.</summary>
             public double Real;
+            /// <summary>
+            /// A click's tap (<see cref="Tap"/>), answering the level-up offer with serial <see cref="Offer"/>:
+            /// a press and a release (Down), or a release and a press again of a key held down (not Down).
+            /// </summary>
+            public bool Tapped;
+            public int Offer;
         }
 
         static readonly (string path, SimKey key)[] Bindings =
@@ -74,27 +80,28 @@ namespace Game.Client.Loop
             }
         }
 
-        void Enqueue(SimKey key, bool down, double real)
+        void Enqueue(in Change change)
         {
             if (_count == Capacity)
             {
                 Dropped++;
                 return;
             }
-            _queue[(_head + _count++) % Capacity] = new Change { Key = key, Down = down, Real = real };
+            _queue[(_head + _count++) % Capacity] = change;
         }
+
+        void Enqueue(SimKey key, bool down, double real) => Enqueue(new Change { Key = key, Down = down, Real = real });
 
         /// <summary>
         /// Taps a key at real time <paramref name="real"/> as if it were pressed and let go, for the
-        /// mouse's picks (a level-up card): the sim records it like any key, so a session replays it.
-        /// A key held down meanwhile is let go and pressed again, so the sim still has it held after.
+        /// mouse's picks on the level-up offer with serial <paramref name="offer"/>: the sim records it
+        /// like any key, so a session replays it. A key held down meanwhile is let go and pressed
+        /// again, so the sim still has it held after. <see cref="Drain"/> drops the tap unless the sim
+        /// still has that offer open then: a card still on show after the sim took it (a key just
+        /// before took it, or it closed) would otherwise walk the hero.
         /// </summary>
-        public void Tap(SimKey key, double real)
-        {
-            bool held = _held[(int)key] > 0;
-            Enqueue(key, !held, real);
-            Enqueue(key, held, real);
-        }
+        public void Tap(SimKey key, double real, int offer) =>
+            Enqueue(new Change { Key = key, Down = _held[(int)key] == 0, Real = real, Tapped = true, Offer = offer });
 
         /// <summary>Takes the oldest collected change, if any.</summary>
         public bool TryTake(out Change change)
@@ -107,17 +114,35 @@ namespace Game.Client.Loop
             return true;
         }
 
-        /// <summary>Presses and releases every collected change in the sim, heard at the clock's keySong.</summary>
+        /// <summary>
+        /// Presses and releases every collected change in the sim, heard at the clock's keySong, and
+        /// returns how many key changes it made: a tap is two, or none once its offer is gone.
+        /// </summary>
         public int Drain(Simulation sim, IGameClock clock)
         {
             int n = 0;
-            for (; TryTake(out var c); n++)
+            while (TryTake(out var c))
             {
                 double heard = clock.KeySong(c.Real);
-                if (c.Down) sim.Press(c.Key, heard);
-                else sim.Release(c.Key, heard);
+                if (!c.Tapped)
+                {
+                    Apply(sim, c.Key, c.Down, heard);
+                    n++;
+                    continue;
+                }
+                var offer = sim.State.Offer;
+                if (!offer.Open || offer.Serial != c.Offer) continue;
+                Apply(sim, c.Key, c.Down, heard);
+                Apply(sim, c.Key, !c.Down, heard);
+                n += 2;
             }
             return n;
+        }
+
+        static void Apply(Simulation sim, SimKey key, bool down, double heard)
+        {
+            if (down) sim.Press(key, heard);
+            else sim.Release(key, heard);
         }
     }
 }

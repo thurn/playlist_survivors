@@ -626,25 +626,35 @@ namespace Game.Tests
 
         /// <summary>
         /// A click's tap (a level-up card's) reaches the sim as a press and a release, recorded like a
-        /// key; on a key held down it is a release and a press, so the sim still has it held.
+        /// key; on a key held down it is a release and a press, so the sim still has it held. It
+        /// reaches the sim only while the offer it answers is open when the keys are drained: a tap
+        /// for an offer a key already took, or an earlier one, would walk the hero.
         /// </summary>
         [Test]
-        public void ATappedKeyIsPressedAndReleasedAndAHeldOneStaysHeld()
+        public void ATappedKeyReachesTheSimOnlyWhileItsOfferIsOpenAndAHeldOneStaysHeld()
         {
             var keyboard = InputSystem.AddDevice<Keyboard>();
             using (var keys = new KeyInput())
             {
                 var sim = new Simulation(new SimConfig());
-                keys.Tap(SimKey.Up, 10.5);
+                sim.State.Offer = new Offer { Open = true, Serial = 3 };
+                keys.Tap(SimKey.Up, 10.5, offer: 3);
                 Press(keyboard.rightArrowKey, time: 10.75);
-                keys.Tap(SimKey.Right, 11.0);
+                keys.Tap(SimKey.Right, 11.0, offer: 3);
+                keys.Tap(SimKey.Enter, 11.0, offer: 2); // the offer before: not this one's pick
                 Assert.That(keys.Drain(sim, new Clock()), Is.EqualTo(5));
-                var k = sim.Keys.ToArray();
-                Assert.That(Array.ConvertAll(k, c => (c.Key, c.Down, c.Heard)), Is.EqualTo(new[]
+                Assert.That(Array.ConvertAll(sim.Keys.ToArray(), c => (c.Key, c.Down, c.Heard)), Is.EqualTo(new[]
                 {
                     (SimKey.Up, true, 20.0), (SimKey.Up, false, 20.0),
                     (SimKey.Right, true, 20.5), (SimKey.Right, false, 21.0), (SimKey.Right, true, 21.0),
                 }));
+
+                // Queued while the offer was open; drained once it closed.
+                keys.Tap(SimKey.Left, 11.25, offer: 3);
+                keys.Tap(SimKey.Enter, 11.25, offer: 3);
+                sim.State.Offer = new Offer { Open = false, Serial = 3 };
+                Assert.That(keys.Drain(sim, new Clock()), Is.Zero);
+                Assert.That(sim.Keys.Length, Is.EqualTo(5), "the closed offer's taps never reach the sim");
             }
         }
     }

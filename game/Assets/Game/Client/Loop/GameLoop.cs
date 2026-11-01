@@ -123,6 +123,7 @@ namespace Game.Client.Loop
         public const double EndCardS = 5;
         /// <summary>How far past the sim a replay's frame wants its entries supplied (s): more than a frame steps.</summary>
         const double ReplayAhead = 1;
+        const float ClickGraceS = 0.5f;
 
         MusicPlayer _music;
         MusicTimes _musicTimes;
@@ -162,8 +163,8 @@ namespace Game.Client.Loop
         PauseMenu _pause;
         CalibrationScreen _calibrating;
         double _pauseAt;
-        int _releases, _arenaFrame = -1, _begunFrame;
-        float _mouseMovedAt = float.NegativeInfinity;
+        int _releases, _arenaFrame = -1;
+        float _begunAt, _mouseMovedAt = float.NegativeInfinity;
         LaunchOptions _options;
         RunInputs _run;
         string _sessionDir;
@@ -190,7 +191,7 @@ namespace Game.Client.Loop
         void Setup(Camera camera, MusicSource source)
         {
             var options = _options = LaunchOptions.Current;
-            _begunFrame = Time.frameCount;
+            _begunAt = Time.unscaledTime;
             _fixed = options.FixedTime;
             bool headless = options.Headless;
             if (headless) Application.targetFrameRate = Boot.FixedFps;
@@ -508,20 +509,21 @@ namespace Game.Client.Loop
 
         /// <summary>
         /// A level-up card the mouse pointed at (`take`: clicked), as the sim's keys: its card's key
-        /// chooses it, then Enter takes it. Only while the sim still has that offer open: a card still on
-        /// show after the sim took it would otherwise walk the hero.
+        /// chooses it, then Enter takes it. The keys answer the offer the HUD shows, and reach the sim
+        /// only while it still has that offer open (<see cref="KeyInput.Tap"/>).
         /// </summary>
         void PointAtCard(int serial, int card, bool take)
         {
-            var offer = Driver.Sim.State.Offer;
-            if (!offer.Open || offer.Serial != serial) return;
             double now = Time.realtimeSinceStartupAsDouble;
-            _keys.Tap(LevelUpCards.Choose[card], now);
-            if (take) _keys.Tap(SimKey.Enter, now);
+            _keys.Tap(LevelUpCards.Choose[card], now, serial);
+            if (take) _keys.Tap(SimKey.Enter, now, serial);
         }
 
-        /// <summary>A left click this frame, though not the one that began the loop (the title screen's pick).</summary>
-        bool Clicked() => Time.frameCount != _begunFrame && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+        /// <summary>
+        /// A left click this frame, though not within <see cref="ClickGraceS"/> of the loop's start: the
+        /// title screen's pick, or a double-click on its row, neither starts the run nor stops a replay.
+        /// </summary>
+        bool Clicked() => Time.unscaledTime - _begunAt > ClickGraceS && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
 
         /// <summary>The run's inputs besides the keys: the start, a pause or resume, and the watchdog.</summary>
         void RunInput()

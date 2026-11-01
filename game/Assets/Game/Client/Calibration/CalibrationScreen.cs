@@ -289,7 +289,7 @@ namespace Game.Client.Calibration
                 return;
             }
             while (_keys.TryTake(out var change))
-                if (change.Down) Tap(Heard(change.Real));
+                if (change.Down && !change.Tapped) Tap(Heard(change.Real)); // a key, not a click's tap
             if (_synthetic != null)
                 for (; _synthesized < _clicks.Count; _synthesized++)
                 {
