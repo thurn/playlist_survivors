@@ -330,9 +330,11 @@ What GW does with icons we do with silhouettes:
 
 ## Rules and Thresholds
 
-The metrics bead implements these on windowless stills scaled to **960 px
-wide** (ring widths are in those pixels). Pixel classes, from look.py's
-`lstar`, `chroma` and `hue`:
+`look-metrics` (ps-wnj.2, ps-wnj.21; `demo3d/tools/src/demo3d_tools/look.py`)
+implements these on windowless stills scaled to **960 px wide** (ring widths
+are in those pixels), keyed in
+[neon-look-thresholds.json](neon-look-thresholds.json) exactly as below.
+Pixel classes, from look.py's `lstar`, `chroma` and `hue`:
 
 - **colourful**: C*ab >= 30 and L* >= 20;
 - **bright** (emitted light; there is no sun): L* >= 50; **emitter**:
@@ -340,15 +342,23 @@ wide** (ring widths are in those pixels). Pixel classes, from look.py's
 - **clipped**: every channel >= 250; **white**: C*ab < 15 and L* >= 85;
 - **floor**: ground-plane pixels not covered by monsters, hero or structures
   (the ID render and view json look.py's stage measure uses);
-- **impact frames**: an impact frame and the next one.
+- **hero**: a screen capsule from the view json's hero feet to 1.8 m above
+  them, 0.5 m wide (the ID render marks only monsters and structures);
+- **impact frames**: an impact frame and the next one (`--impact` names
+  them).
 
-Value and hue rules run on steady-state frames (outside impact frames).
-Keys are the names the thresholds file should use.
+Value and hue rules run on steady-state frames (outside impact frames); an
+impact frame is judged by `clipped_impact_max` alone. Rules that need the ID
+render or the view json (floor, hero, monster form, readability) are skipped
+on a still without them, such as a video frame, which gets `frame_p25_max`
+for the floor instead. A preset's value applies with `--preset` or when the
+palette is that preset's (ion, arcade, phosphor, spectrum); with neither, the
+loosest preset's value applies.
 
 | key | rule | threshold | v2 | GW3 |
 | --- | --- | --- | ---: | ---: |
-| `floor_p50_max` | floor L* p50 | <= 8 | (mask) | |
-| `floor_p90_max` | floor L* p90, rings and breaths included | <= 30 | (mask) | |
+| `floor_p50_max` | floor L* p50 | <= 8 | 3.8 (1.4-26) | |
+| `floor_p90_max` | floor L* p90, rings and breaths included | <= 30 | 30 (10-69) | |
 | `frame_p25_max` | frame L* p25 (video fallback for the floor) | <= 6 | 5.4 (1-16) | 10.6 |
 | `black_share_min` | share with L* < 10 | >= 0.30; solid 0.25 | 0.39 | 0.24 |
 | `bright_share_max` | emitted-light share, L* >= 50 | edge 0.22, solid 0.32, hologram 0.22, prism 0.28 | 0.24 | 0.24 |
@@ -361,23 +371,42 @@ Keys are the names the thresholds file should use.
 | `families_max` | greedy 60-degree hue windows each holding >= 8% of colourful pixels | <= 4 | 3 (1-4) | 3 (2-3) |
 | `key60_min` | colourful share in the best 60-degree window, every frame | >= 0.55 | 0.47 | 0.70 |
 | `key60_median_min` | the same, median over a cut or a set | >= 0.62 | 0.47 | 0.70 |
-| `palette_conformance_min` | share of pixels with L* >= 40 and C* >= 30 whose hue is within 20 degrees of a palette role or zone tint in use | >= 0.85; prism 0.75 | | |
-| `shot_floor_range_max` | spread of the shots' floor p50 across a cut | <= 6 | 3.8-41.6 (frame p50) | |
-| `hero_margin_min` | hero L* p90 less the monsters' L* p90 | >= 5 | | |
-| `monster_form_min` | monster pixels' L* p90 less p10 | >= 30; solid 18 | | |
-| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL* | >= 10 and >= 1.5x v2's dense-clump median | (calibrate) | |
-| `readability_min` | look.py's \|dL*\| monsters against their ring (TD15) | >= 17 | | |
+| `palette_conformance_min` | share of pixels with L* >= 40 and C* >= 30 whose hue is within 20 degrees of a palette role or zone tint | >= 0.85; prism 0.75 | 0.98 (own colours) | |
+| `shot_floor_range_max` | spread of the shots' floor p50 (frame p25 without a floor) across a cut | <= 6 | 24 (floor), 16 (frame p25) | |
+| `hero_margin_min` | hero L* p90 less the monsters' L* p90 | >= 5 | -4 (-30-12) | |
+| `monster_form_min` | monster pixels' L* p90 less p10 in each 32 px tile they cover a quarter of, the tiles' median | >= 30; solid 20 | 14 (10-18) | |
+| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile, the tiles' median | >= 13 | 9.4 (3-16) | |
+| `readability_min` | look.py's \|dL*\| monsters against their ring (TD15) | >= 17 | 48 (33-68) | |
+
+v2's mask columns come from the crystal cut re-rendered with its ID render
+and view json (`demo3d/evidence/look/metrics/masked`); the rest from the
+study above.
 
 Notes:
 
 - **The key is the rule v2 fails hardest** and GW3 passes in every still.
   `families_max` is the doc's ceiling, not a discriminator: v2's soup often
   merges into three or four wide windows.
-- **Provisional**: `halo_min`, `monster_form_min` and
-  `swarm_separation_min` are set from GW3 and v2 frames without masks.
-  ps-wnj.2 calibrates them on v2's dense clumps (the blob must fail
-  `swarm_separation_min`) and edits the thresholds file; record any change
-  here too.
+- **Calibrated on v2** (ps-wnj.21, [evidence](../../demo3d/evidence/look/metrics/README.md)):
+  - `halo_min` stays 15. GW3's stills (17-26) pass with margin; v2's
+    dark-floor frames, where emitters are flat paint, fail (4-12). The v2
+    frames that pass do so because a lit floor lifts the ring, and they fail
+    the floor rules instead. 17 would sit on GW3's lowest still.
+  - `monster_form_min` is measured per tile, a monster's own span: over a
+    whole crowd p90 less p10 mixes types of different L* (v2 scores 35-84
+    that way, though its bodies are flat). Per tile v2 scores 10-18. 30 is
+    about twice that; solid rises from 18 to 20 so that every v2 frame fails
+    it, since v2's bright crystal bodies already are the solid look viewers
+    called flat.
+  - `swarm_separation_min` is a contrast in L*, as this table asks, not
+    ps-wnj.2's share of edge pixels. Seam depth: how far a pixel's L* (box
+    averaged over 3x3, so speckle is no seam) sits under the clump within
+    4 px on both sides across rows or columns; a tile's contrast is its
+    clump's 90th percentile. v2's dense-clump median is 8.4 with masks (4.5
+    on video frames, where shards in enemy hues join the clumps); 1.5x is
+    12.5, so 13. The blob frames (20, 28, 32, 56 s) fail with and without
+    masks; v2's three least dense crowds pass (8, 24, 36 s). A crowd of
+    outlined discs scores 40, the same discs flat 0.
 - **Timing rules stay where they are**: beat steps (`game beat`, the trailer
   checks), impact-frame payoffs (death and break checks) and the rules in
   Motion above, measured from event logs, not pixels.

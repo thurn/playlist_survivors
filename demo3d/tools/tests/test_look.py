@@ -249,12 +249,21 @@ def test_type_readability_classes_monster_pixels_by_their_signature_hue() -> Non
     assert t["goblin"]["hueMatch"] == 1  # green ground all round it
 
 
-# --- The neon look's metrics (ps-wnj.2) ---
+# --- The neon look's metrics (ps-wnj.2, ps-wnj.21) ---
 
 ELECTRIC = {"name": "electric", "void": {"floor": "#05060a"}, "hero": {"body": "#f4f1ff", "blade": "#ffffff"},
             "enemies": ["#ff2e88", "#28f0ff", "#9dff3a"], "shatter": {"gem": "#ffe9a8"},
             "zones": [{"name": "cobalt", "tint": "#1d3cff"}]}
-CYAN, ORANGE = (40, 240, 255), (255, 100, 0)  # ORANGE: 38+ degrees from every role below
+CYAN, MAGENTA, BLUE = (40, 240, 255), (255, 46, 136), (40, 60, 255)  # enemies.1, enemies.0, near the zone tint
+ORANGE, GEM = (255, 60, 0), (255, 233, 168)  # ORANGE: 30+ HSV degrees from every role; GEM: shatter.gem
+RULES = {"presets": ["edge", "solid"], "pairings": {"electric": "solid"}, "rules": {
+    "floor_p50_max": {"value": 8},
+    "frame_p25_max": {"value": 6, "unless": "floor_p50"},
+    "black_share_min": {"value": 0.30, "solid": 0.25},
+    "bright_share_max": {"edge": 0.22, "solid": 0.32},
+    "clipped_impact_max": {"value": 0.12, "metric": "clipped", "on": "impact"},
+    "key60_median_min": {"value": 0.62, "on": "cut"},
+    "swarm_separation_min": {"value": 13}}}
 
 
 def crowd(outline: bool, spacing: int = 24, r: int = 16, w: int = 1920, h: int = 1080) -> np.ndarray:
@@ -271,6 +280,13 @@ def crowd(outline: bool, spacing: int = 24, r: int = 16, w: int = 1920, h: int =
     return img
 
 
+def top_down(w: int, h: int, metres: float = 20.0) -> dict:
+    """A view json for an orthographic camera looking straight down on the ground at y 0, `metres` wide, the hero's
+    feet at the origin: the still's centre."""
+    sx, sz = 2 / metres, 2 / (metres * h / w)
+    return {"viewProj": [sx, 0, 0, 0, 0, 0, -sz, 0, 0, -0.01, 0, 0, 0, 0, 0, 1], "hero": [0, 0, 0]}
+
+
 def test_palette_roles_are_every_colour_by_its_path() -> None:
     roles = look.palette_roles(ELECTRIC)
     assert roles["void.floor"] == (5, 6, 10) and roles["hero.blade"] == (255, 255, 255)
@@ -279,62 +295,118 @@ def test_palette_roles_are_every_colour_by_its_path() -> None:
     assert "name" not in roles and len(roles) == 8
 
 
-def test_conformance_counts_bright_pixels_near_a_roles_hue() -> None:
-    img = frame(5, 100, 100)  # a near-black floor: not bright, not counted
-    img[:50, :50] = CYAN  # an enemy role
-    img[:50, 50:] = 255  # white: the blade's role
-    img[50:75] = ORANGE  # off the palette: no role near its hue
+def test_the_key_is_the_best_60_degree_window_and_families_are_greedy_windows() -> None:
+    assert look.hue_windows(np.full(10, 186.0)) == (1.0, 1)
+    assert look.hue_windows(np.r_[np.full(50, 186.0), np.full(50, 334.0)]) == (0.5, 2)
+    key, families = look.hue_windows(np.r_[np.full(50, 186.0), np.full(45, 334.0), np.full(5, 90.0)])
+    assert key == pytest.approx(0.5) and families == 2  # 5% is under a family's 8%
+    assert look.hue_windows(np.arange(0, 360, 0.5)) == (pytest.approx(1 / 6), 6)  # a rainbow: six windows
+    assert look.hue_windows(np.r_[np.full(50, 355.0), np.full(50, 15.0)])[0] == 1.0  # windows wrap round red
+
+
+def test_frame_measures_follow_the_guides_pixel_classes() -> None:
+    img = frame(GREY_DARK, 100, 100)  # L* 5.9: near black
+    img[30:70, 30:70] = 100  # L* 42.4: a glow round the emitter, not bright
+    img[40:60, 40:60] = 255  # an emitter: bright, white and clipped
+    img[:10, :50] = MAGENTA  # colourful and bright (L* 57.7), under the emitter rung
+    img[:10, 50:] = BLUE  # colourful, not bright
+    m = look.frame_measures(img)
+    assert m["frame_p25"] == pytest.approx(5.9, abs=0.1)
+    assert m["black_share"] == pytest.approx(0.74)
+    assert m["bright_share"] == pytest.approx(0.09)
+    assert m["clipped"] == m["clipped_blob"] == m["white"] == pytest.approx(0.04)
+    assert m["halo"] == pytest.approx(42.4 - 5.9, abs=0.1)  # the ring 3-10 px out lies wholly in the glow
+    assert (m["key60"], m["families"]) == (0.5, 2)  # magenta and blue, 100 degrees apart
+    flat = look.frame_measures(frame(GREY_DARK))
+    assert "halo" not in flat and "key60" not in flat  # no emitter, no colour
+
+
+def test_conformance_judges_lit_colourful_pixels_by_their_hue() -> None:
+    img = frame(5, 100, 100)  # a near-black floor: not judged
+    img[:40] = CYAN  # an enemy role
+    img[40:60] = ORANGE  # off the palette: no role near its hue
+    img[60:80] = 255  # white: no chroma, not judged
+    img[80:90] = (60, 0, 0)  # a dark red: under L* 40, not judged
     c = look.palette_conformance(img, look.palette_roles(ELECTRIC))
-    assert c["brightShare"] == pytest.approx(0.75)
-    assert c["conformance"] == pytest.approx(2 / 3)
-    assert c["neutral"] == pytest.approx(1 / 3)
-    assert c["roles"]["enemies.1"] == pytest.approx(1 / 3)
-    assert c["families"] == 2  # cyan and orange; white is no hue family
-    no_white = {k: v for k, v in ELECTRIC.items() if k != "hero"}
-    assert look.palette_conformance(img, look.palette_roles(no_white))["conformance"] == pytest.approx(1 / 3)
-    assert look.palette_conformance(frame(5), look.palette_roles(ELECTRIC)) == {"brightShare": 0.0}
-
-
-def test_hue_families_count_peaks_so_a_split_hue_counts_once() -> None:
-    assert look.hue_families(np.array([])) == 0
-    assert look.hue_families(np.r_[np.full(50, 29.0), np.full(40, 31.0)]) == 1  # one hue across a bin edge
-    assert look.hue_families(np.r_[np.full(30, 10.0), np.full(30, 130.0), np.full(30, 250.0), [190.0]]) == 3  # a stray pixel is no family
-    assert look.hue_families(np.arange(0, 360, 0.5)) == 12  # a rainbow: every bin peaks alike
-
-
-def test_value_structure_splits_emitters_from_the_floor() -> None:
-    img = frame(19, 100, 100)  # floor at L* 5.9
-    img[:10] = CYAN  # bright and saturated: emitted
-    img[10:20] = 255  # emitted and clipped
-    img[20:30] = 90  # L* 38.2, grey: a lit floor, counted with it
-    v = look.value_structure(img)
-    assert v["emitted"] == pytest.approx(0.2)
-    assert v["clipped"] == pytest.approx(0.1) and v["clippedBlob"] == pytest.approx(0.1)
-    assert v["floorP50"] == pytest.approx(5.9, abs=0.1)
-    assert v["floorP90"] == pytest.approx(38.2, abs=0.1)
-    assert "floorP50" not in look.value_structure(frame(255))
+    assert c["palette_conformance"] == pytest.approx(2 / 3)
+    assert c["roles"] == {"enemies.1": pytest.approx(2 / 3)}
+    assert look.palette_conformance(frame(5), look.palette_roles(ELECTRIC)) == {}
 
 
 def test_a_flat_clump_reads_as_a_blob_and_an_outlined_one_as_a_swarm() -> None:
-    enemies = [look.palette_roles(ELECTRIC)[f"enemies.{i}"] for i in range(3)]
-    blob, swarm = look.swarm_separation(crowd(False), enemies), look.swarm_separation(crowd(True), enemies)
-    assert blob["denseTiles"] > 50 and swarm["denseTiles"] > 50
-    assert blob["separation"] < 0.15 and swarm["separation"] > 0.3
-    assert {t["enemy"] for t in swarm["tiles"]} == {1}  # all cyan
-    # The same crowd at half size: measured at 1920, it scores alike; its boxes are in its own pixels.
-    half = np.asarray(Image.fromarray(crowd(True)).resize((960, 540), Image.LANCZOS))
-    small = look.swarm_separation(half, enemies)
-    assert small["separation"] == pytest.approx(swarm["separation"], abs=0.1)
-    assert small["tiles"][0]["box"][2] == 32
-    # A sparse crowd has no dense clump to judge.
-    sparse = look.swarm_separation(crowd(False, spacing=48), enemies)
-    assert sparse["denseTiles"] == 0 and "separation" not in sparse
+    roles = look.palette_roles(ELECTRIC)
+    outlined = look.neon_size(crowd(True))
+    blob, swarm = look.swarm_separation(look.neon_size(crowd(False)), roles), look.swarm_separation(outlined, roles)
+    assert blob["dense_tiles"] > 50 and swarm["dense_tiles"] > 50
+    assert blob["swarm_separation"] < 3 and swarm["swarm_separation"] > 26  # twice the guide's 13
+    assert {t["enemy"] for t in swarm["tiles"]} == {"enemies.1"}  # all cyan
+    # The ID render keeps the measure to monsters: a mask over half the crowd halves its dense tiles.
+    half = np.zeros(outlined.shape[:2], dtype=bool)
+    half[:, :outlined.shape[1] // 2] = True
+    masked = look.swarm_separation(outlined, roles, half)
+    assert 0.3 < masked["dense_tiles"] / swarm["dense_tiles"] < 0.7
+    # A sparse crowd has no dense clump to judge; a formation in the gem's hue is no clump.
+    assert look.swarm_separation(look.neon_size(crowd(False, spacing=48)), roles)["dense_tiles"] == 0
+    gem = frame(6, 540, 960)
+    gem[100:400, 200:700] = GEM
+    assert look.swarm_separation(gem, roles)["dense_tiles"] == 0
 
 
-def test_rules_break_on_min_and_max_and_skip_a_missing_metric() -> None:
-    rules = [{"metric": "floorP50", "max": 8}, {"metric": "separation", "min": 0.3}, {"metric": "conformance", "min": 0.9}]
-    assert look.check_rules({"floorP50": 4.0, "separation": 0.5}, rules) == []
-    assert look.check_rules({"floorP50": 9.0, "separation": 0.1}, rules) == ["floorP50 9 > 8", "separation 0.1 < 0.3"]
+def test_speckle_in_a_flat_clump_is_no_seam() -> None:
+    """Black specks (shards, noise) on one in twenty pixels of a flat colour field (v2's red mass) do not make it read
+    as individuals: the smoothing averages them away before the seams are found."""
+    img = frame(6, 540, 960)
+    img[100:440, 200:760] = CYAN
+    rng = np.random.default_rng(1)
+    specks = rng.random(img.shape[:2]) < 0.05
+    img[specks & (img[..., 1] == 240)] = (4, 30, 34)
+    s = look.swarm_separation(img, look.palette_roles(ELECTRIC))
+    assert s["dense_tiles"] > 100 and s["swarm_separation"] < 13
+
+
+def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:
+    w = h = 320  # 20 m wide: 16 px a metre, the hero's 0.5 m radius 8 px round the centre
+    img = frame(GREY_DARK, h, w)  # the floor, L* 5.9
+    img[150:170, 150:170][np.hypot(*np.mgrid[-10:10, -10:10] + 0.5) <= 6] = 255  # the hero, inside its capsule
+    monsters = np.zeros((h, w), dtype=bool)
+    monsters[256:320, 0:64] = True  # a monster lit in 16 px stripes: form in every tile it covers
+    img[256:320, 0:64][:, np.arange(64) % 32 < 16] = 220
+    structures = np.zeros((h, w), dtype=bool)
+    structures[0:64, 256:320] = True  # a lit structure: not floor
+    img[0:64, 256:320] = 200
+    m = look.mask_rules(img, monsters, structures, top_down(w, h))
+    lit = float(look.lstar(np.array([220] * 3, dtype=np.uint8)))
+    assert m["floor_p50"] == m["floor_p90"] == pytest.approx(5.9, abs=0.1)
+    assert m["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
+    assert m["monster_form"] == pytest.approx(lit - 5.9, abs=0.1)
+    # A flat monster, with no view json: no floor or hero, and no form; it stands well off the ground.
+    img[256:320, 0:64] = CYAN
+    flat = look.mask_rules(img, monsters, None, None)
+    assert flat["monster_form"] == pytest.approx(0, abs=0.1) and "floor_p50" not in flat and "hero_margin" not in flat
+    assert flat["readability"] == pytest.approx(look.lstar(np.array(CYAN, dtype=np.uint8)) - 5.9, abs=0.1)
+
+
+def test_rules_are_keyed_as_the_guide_and_pick_the_presets_values() -> None:
+    def value(key: str, preset: str | None) -> float:
+        return next(r["value"] for r in look.load_rules(RULES, preset) if r["key"] == key)
+
+    assert value("black_share_min", "solid") == 0.25 and value("black_share_min", "edge") == 0.30
+    assert value("bright_share_max", "edge") == 0.22
+    assert value("bright_share_max", None) == 0.32 and value("black_share_min", None) == 0.30  # the loosest
+    rules = look.load_rules(RULES, "edge")
+    assert look.check_rules({"black_share": 0.27, "bright_share": 0.25, "swarm_separation": 14}, rules) == {
+        "black_share_min": "black_share 0.27 < 0.3", "bright_share_max": "bright_share 0.25 > 0.22"}
+    assert look.check_rules({"frame_p25": 9}, rules) == {"frame_p25_max": "frame_p25 9 > 6"}
+    assert look.check_rules({"frame_p25": 9, "floor_p50": 4}, rules) == {}  # the floor, measured, replaces the fallback
+    assert look.check_rules({"clipped": 0.2, "swarm_separation": 5}, rules, "impact") == {
+        "clipped_impact_max": "clipped 0.2 > 0.12"}  # impact frames: only the impact rules
+    assert look.check_rules({"key60_median": 0.5}, rules, "cut") == {"key60_median_min": "key60_median 0.5 < 0.62"}
+
+
+def test_the_cuts_measures_span_its_stills() -> None:
+    cut = look.cut_metrics({"a": {"key60": 0.5, "frame_p25": 2.0, "floor_p50": 3.0},
+                            "b": {"key60": 0.7, "frame_p25": 9.0}, "c": {"key60": 0.9, "frame_p25": 1.0}})
+    assert cut == {"key60_median": 0.7, "shot_floor_range": 8.0}  # b has no floor: its frame p25 stands in
 
 
 def test_look_metrics_writes_the_report_and_fails_on_a_broken_rule(tmp_path: Path) -> None:
@@ -342,21 +414,30 @@ def test_look_metrics_writes_the_report_and_fails_on_a_broken_rule(tmp_path: Pat
     stills.mkdir()
     Image.fromarray(crowd(True)).save(stills / "swarm.png")
     Image.fromarray(crowd(False)).save(stills / "blob.png")
-    Image.fromarray(frame(0)).save(stills / "mask-0.png")  # an ID render: skipped
+    Image.fromarray(crowd(True)).save(stills / "still-001.000.png")  # a game still with its ID render
+    mask = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    mask[:, :960] = 255
+    Image.fromarray(mask).save(stills / "still-001.000-mask.png")
+    Image.fromarray(frame(0)).save(stills / "mask-0.png")  # demo3d's ID render: no still
     (tmp_path / "palette.json").write_text(json.dumps(ELECTRIC))
-    rules = {"rules": [{"metric": "separation", "min": 0.3}, {"metric": "floorP50", "max": 8}]}
-    (tmp_path / "rules.json").write_text(json.dumps(rules))
+    (tmp_path / "rules.json").write_text(json.dumps(RULES))
 
-    def run(src: Path) -> int:
+    def run(src: Path, impact: list[str] | None = None, preset: str | None = None) -> int:
         return look.cmd_look_metrics(argparse.Namespace(stills=str(src), palette=str(tmp_path / "palette.json"),
-                                                        thresholds=str(tmp_path / "rules.json"), out=str(out), title=None))
+                                                        thresholds=str(tmp_path / "rules.json"), out=str(out),
+                                                        title=None, preset=preset, impact=impact))
 
     assert run(stills) == 1
     numbers = json.loads((out / "metrics.json").read_text())
-    assert set(numbers["stills"]) == {"swarm", "blob"}
-    assert numbers["stills"]["swarm"]["broken"] == [] and numbers["stills"]["blob"]["broken"][0].startswith("separation")
+    assert numbers["preset"] == "solid"  # the palette's pairing
+    assert set(numbers["stills"]) == {"swarm", "blob", "still-001.000"}
+    assert numbers["stills"]["swarm"]["broken"] == {}
+    assert list(numbers["stills"]["blob"]["broken"]) == ["swarm_separation_min"]
+    assert "readability" in numbers["stills"]["still-001.000"]["metrics"]  # its mask was read
+    assert numbers["cut"] == {"metrics": {"key60_median": 1.0, "shot_floor_range": 0.0}, "broken": {}}  # one hue
     assert "| blob |" in (out / "metrics.md").read_text()
     assert (out / "blob-swarm.jpg").exists() and b"ps-render" in (out / "blob-swarm.jpg").read_bytes()[:400]
-    (stills / "blob.png").unlink()
-    assert run(stills) == 0
+    assert run(stills, impact=["blob"]) == 0  # an impact frame: only the clipped share is judged
+    assert json.loads((out / "metrics.json").read_text())["stills"]["blob"]["impact"] is True
+    assert run(stills, preset="hologram") == 2
     assert run(tmp_path / "empty") == 2

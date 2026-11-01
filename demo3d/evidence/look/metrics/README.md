@@ -1,156 +1,177 @@
-# The neon look's metrics, calibrated on v2 (ps-wnj.2, 2026-11-01)
+# The neon look's metrics, calibrated on v2 (ps-wnj.2, ps-wnj.21, 2026-11-01)
 
-`look-metrics` measures a directory of stills against a palette and a
-thresholds file and exits 1 when a still breaks a rule. It adds the three
-measures the neon look (docs/design/neon-look.md, **Look metrics**) is judged
-by: palette conformance, value structure and swarm separation. This folder is
-its run on fifteen frames of the v2 crystal cut, the capture viewers reviewed.
+`look-metrics` measures a directory of stills against a palette and the
+style guide's rules
+([neon-look-style.md, Rules and Thresholds](../../../../docs/design/neon-look-style.md#rules-and-thresholds))
+and exits 1 when a still or the cut breaks one. This folder is its run on
+fifteen frames of the v2 crystal cut, the capture viewers reviewed, and the
+calibration of the guide's three provisional thresholds.
 
 ```sh
-uv run --project demo3d/tools demo3d look-metrics STILLS --palette PALETTE.json --out DIR
+uv run --project demo3d/tools demo3d look-metrics STILLS --palette PALETTE.json [--preset NAME] [--impact GLOB] --out DIR
 uv run --project demo3d/tools game look-metrics STILLS --palette PALETTE.json   # the same, for game stills
 ```
 
-`--thresholds` defaults to
-[docs/design/neon-look-thresholds.json](../../../../docs/design/neon-look-thresholds.json),
-a list of `{metric, min/max, why}` rules over the names in `metrics.json`.
-Its values are provisional until the style guide (ps-wnj.1) edits them.
+- `--thresholds` defaults to
+  [docs/design/neon-look-thresholds.json](../../../../docs/design/neon-look-thresholds.json),
+  keyed exactly as the guide's table (`floor_p50_max`, `key60_min`, ...). A
+  key's suffix says min or max; per-preset values (`solid`, `prism`, ...) sit
+  beside `value`.
+- `--preset` picks a preset's values. Without it the palette's pairing does
+  (ion edge, arcade solid, phosphor hologram, spectrum prism), and without
+  that the loosest preset's value applies: the ceiling every preset meets.
+- `--impact` names impact frames (globs over still names). They are judged by
+  `clipped_impact_max` alone and left out of the cut's measures.
+- A still's ID render and view json, when the player wrote them beside it
+  (demo3d's `mask-T.png` and `view-T.json`, game's `still-T-mask.png`), give
+  the floor, hero margin, monster form and readability. A video frame gets
+  the frame-level rules, with `frame_p25_max` standing in for the floor.
 
 ## What is here
 
-- [metrics.md](metrics.md): every still's numbers and the rules it breaks.
-- [metrics.json](metrics.json): the same, plus each palette role's share of the
-  bright pixels.
-- `v2-tNN-swarm.jpg`: each frame (at NN s into the cut) with every dense
-  clump tile outlined. Red tiles are under the separation floor, 0.3; green
-  ones are over it.
-- [v2-palette.json](v2-palette.json): v2's colours in the palette format. v2
-  had no palette, so these values were measured from its frames' bright hue
-  peaks: nine type colours, the gold formations, white blade and sparks, and
-  the grey-blue ground.
+- [metrics.md](metrics.md) and [metrics.json](metrics.json): v2's video
+  frames, `ffmpeg -ss NN -i captures/trailer-crystal-v2.silent.mp4
+  -frames:v 1` at 1, 4, 8, ... 56 s. Each still's numbers, the cut's and the
+  rules broken.
+- [masked/](masked/metrics.md): the same fifteen moments re-rendered by the
+  demo3d player built from the v2 tree, windowless, with their ID renders and
+  view json:
 
-The frames were taken with
-`ffmpeg -ss NN -i captures/trailer-crystal-v2.silent.mp4 -frames:v 1`, at 1,
-4, 8, ... 56 s. They are video frames (H.264), not windowless stills. The
-numbers would shift a little on lossless stills, but not the verdicts.
+  ```sh
+  "demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo" \
+    -batchmode -force-metal -logFile captures/look-metrics/v2-masked/player.log \
+    --trailer crystal --fixed-time --capture-stills captures/look-metrics/v2-masked \
+    --stills-format png --capture-mask --stills-at 1,4,8,12,16,20,24,28,32,36,40,44,48,52,56 --seconds 57
+  ```
+
+  Its frame-level numbers match the video's within a few tenths, so it is v2;
+  the mask rules come from it.
+- `*-swarm.jpg`: each still with every dense clump tile outlined and labelled
+  by its boundary contrast (dL*). Red is under `swarm_separation_min` (13),
+  green at or over it.
+- [v2-palette.json](v2-palette.json): v2's colours in the palette format,
+  measured from its frames' bright hue peaks (v2 had no palette): nine type
+  colours, the gold formations, white blade and sparks, the grey-blue ground.
 
 ## What the metrics flag in v2
 
-Every frame breaks at least one rule. Each viewer complaint shows up in a
-metric:
+Every frame breaks rules, and each viewer complaint shows in one:
 
+- **"A bunch of unrelated stitched together parts."** No colour key: key60
+  is 0.34-0.54 in 13 of 15 frames (the guide wants 0.55; GW3's stills
+  0.56-0.83), and the cut's median is 0.46 against 0.62. The floor jumps
+  between shots: the shots' floor p50 spans 24 L* (the guide allows 6).
 - **"When the enemies clump up they look like a blob more than a swarm."**
-  Every frame fails swarm separation. The median dense tile ranges from 0.00
-  to 0.24 across the frames, against a floor of 0.3. Of all 1,363 dense
-  tiles, 85% are under 0.3 and 67% are under 0.15. For reference, the unit
-  tests' synthetic crowds score 0.00 (flat overlapping discs) and 0.36 (the
-  same discs with a 3 px dark rim, the "solid" look's outline). The worst
-  frames are the masses viewers described:
-  - t28: the cyan horde, 0.01;
-  - t56: the finale's wall of cyan and green, 0.01;
-  - t20: the green and red masses, 0.10;
-  - t32 and t36: the mixed climax, 0.08 and 0.12.
-- **"Something about the bright colour low detail... the large number of
-  low-poly entities makes it feel 'flat'."** 19-61% of the screen emits
-  light (7 of 15 frames are over the 30% cap). The floor's p90 is 18-41 L*
-  (14 frames are over 20), because the ground is lit grey or
-  orange instead of falling to black. Geometry Wars' grammar is the
-  opposite: a black field with a small share of bright emitters.
-- **"A bunch of unrelated stitched together parts."** The floor's p50 jumps
-  between shots, from 2.2-4.9 in the dark crypt and neon shots to 8.7-13.4
-  in the lit ones (t04, t08, t28, t32, t36 and t56 break the 8 L* cap). Each shot's world
-  has its own ground and grade.
+  Swarm separation fails in 13 of 15 video frames and 12 of 15 masked ones.
+  The worst are the masses viewers described: t28's cyan horde (1.8 on
+  video), t56's finale wall (2.1), t32's climax (4.3), t20's drop (8.2).
+- **"Something about the large number of low-poly entities makes it feel
+  'flat'."** Monster form fails in every masked frame: a body's own L* span
+  is 10-18 against 30 (20 for solid). Halos fail in 8 of 15: emitters are
+  flat paint. The hero is dimmer than the monsters in 10 of 15 (margin -30 to
+  +12 against +5).
+- **The lit world**: the lava and finale shots light the floor (floor p50 up
+  to 26, p90 up to 69, frame p25 up to 17), lifting the bright share to
+  40-47% against 32%.
 
-What the metrics do **not** flag in v2:
+What passes: palette conformance (91-99% against v2's own colours: it checks
+that a look keeps to its palette, not cohesion), families (1-4), clipping
+(at most 1.6%) and readability (33-68 against 17: v2 monsters stand off
+their ground; they just do not read as individuals or as forms).
 
-- **Conformance** is 96-100% (95.6% at worst) against v2's own nine-hue palette. v2's
-  colours were consistent with themselves; the trouble was too many of them.
-  Conformance is a check that new looks keep to their palette. It does not
-  measure cohesion on its own.
-- **Hue families** count 1-4 per frame. The per-frame budget mostly held,
-  because each section showed only a few types.
-- **Clipping** is at most 1.4%.
+## Calibration
 
-## How each metric works, and why
+The guide left `halo_min`, `monster_form_min` and `swarm_separation_min`
+provisional, set from GW3 and v2 frames without masks. The guide's table and
+the thresholds file now agree on these values.
 
-All colour work is in CIELAB (D65). The code is in
-`demo3d/tools/src/demo3d_tools/look.py`, section *The neon look's metrics*.
+### halo_min: 15, unchanged
 
-### Palette conformance
+The halo is the median L* in a 3-10 px ring round emitters (L* >= 70; ring
+pixels under 70), less the frame's L* p25. v2 scores 4-26 (median 12);
+GW3's stills 17-26.
 
-Bright pixels are those at L* >= 50. A chromatic bright pixel conforms when
-its CIELAB hue is within 20 degrees of a chromatic palette role's hue. A
-neutral one (C*ab < 15) conforms when the palette has a bright neutral role
-(white).
+- v2's dark-floor frames, where emitters are flat paint, fail: 4-12 (t04,
+  t08, t16, t20, t24, t32, t40, t52).
+- The v2 frames that pass (t01, t12, t28, t36, t44, t48, t56) do so because
+  a lit pool, floor or fog lifts the ring. They break the floor rules instead.
+- 17 would sit on GW3's lowest still with no margin, so 15 stays.
 
-Hue is used rather than full colour distance because bloom and tonemapping
-move an emitter's lightness and chroma far more than its hue. Every
-`#rrggbb` anywhere in the palette JSON is a role, so the style guide can add
-roles without a code change.
+### monster_form_min: 30, solid 20
 
-Hue families count the 30-degree hue bins that hold at least 3% of the bright
-chromatic pixels and are no lower than either neighbour. Counting peaks this
-way means one hue split by a bin edge counts once.
+The guide's form is "a monster's L* spans at least 30". Measured over all
+the monster pixels at once, p90 less p10 spans the crowd's types, whose L*
+differ: v2 scored 35-84 that way, though its bodies are flat. So the measure
+is per tile: in each 32 px tile that monster bodies (the ID render, a pixel
+in from its edge) cover a quarter of, their L* p90 less p10; the tiles'
+median. v2 scores 10-18, median 14.
 
-### Value structure
+- 30 for edge, hologram and prism is about twice v2. An edge-lit body (dark
+  core, lit rim) spans 50 or more.
+- solid rises from 18 to 20 so that every v2 frame fails it (v2's best is
+  18.3, the finale). v2's bright crystal bodies already are a solid look, the
+  one viewers called flat.
+- Video frames have no ID render, so they skip the rule. An estimate from the
+  enemy hues' clumps read 17-43 on v2 against the mask's 10-18: too far off
+  to judge by.
 
-The value-structure metrics are:
+### swarm_separation_min: 13, a contrast in L*
 
-- the frame's L* p50 and p98;
-- **emitted**: the share of pixels at L* >= 60 or C*ab >= 45;
-- **the floor**: every other pixel, reported as its L* p50 and p90;
-- **clipped**: pixels with every channel >= 250, and the largest connected
-  clipped region.
+The guide asks for "boundary contrast between adjacent same-type monsters,
+dL*, >= 10 and >= 1.5x v2's dense-clump median". ps-wnj.2's measure was a
+share of edge pixels, which is not a contrast and cannot be stated that way,
+so it is replaced:
 
-The floor is an estimate. Without a depth or ID pass it also takes in dark
-monster sides and fog. It was chosen so that the command runs on any still,
-including video frames like these. In the void world, where everything that
-is not emitting should be near black, the estimate and the real floor
-converge.
+1. A candidate monster pixel is coloured and lit (C*ab >= 30, L* >= 25),
+   and its nearest chromatic palette role by HSV hue is an enemy (so the gem
+   formations are no clump). Gaps up to 2 px are closed. With an ID render,
+   the clump is kept to the monsters.
+2. A 32 px tile (at 960 wide) is dense when one enemy's clump covers half
+   of it.
+3. **Seam depth**: L* is box-averaged over 3x3 (speckle is no seam), then
+   each pixel's depth is how far it sits under the clump on both sides
+   within 4 px, across rows or columns: the brightest pixel on its darker
+   side, less its own L*. A dark gap or outline between two lit bodies is
+   deep; so is a dark core between lit edges. A flat body or a smooth falloff
+   is 0.
+4. A tile's boundary contrast is the 90th percentile of its clump's seam
+   depth. The still's `swarm_separation` is its dense tiles' median.
 
-### Swarm separation: luminance edges, not an ID pass
+On v2, the dense-clump median (all tiles of all frames) is 8.4 with masks
+and 4.5 on video frames, where shards and gore in enemy hues join the clumps.
+1.5x the masked median is 12.5, so the threshold is 13. Against it:
 
-The swarm-separation metric works like this:
-
-1. A candidate monster pixel is coloured and lit (C*ab >= 30, L* >= 25). It
-   takes the palette enemy hue nearest its own.
-2. The still is measured at 1920 px wide (resampled if needed). A 64 px tile
-   is dense when one enemy hue covers half of it, after gaps of up to 4 px are
-   closed. At the trailer's 32-42 m framing, that means several monsters
-   overlapping.
-3. In each dense tile, separation is the share of the clump's pixels on a
-   boundary: pixels whose 3x3 window spans 30 L* or more. Dark gaps,
-   outlines, rims and facets all count. A flat colour mass scores only its
-   outer edge.
-
-Why luminance edges instead of an ID pass:
-
-- The calibration has to run on v2, which exists only as video. No ID pass
-  can be taken from it.
-- The question is perceptual: do neighbours *look* separate? The ID render
-  demo3d already writes (`--capture-mask`) marks all monsters alike, so it
-  could not tell two touching monsters apart anyway. An instance-ID pass
-  would need a new player flag in both projects. It would also measure
-  geometry, not what the viewer sees.
-- The same command then measures demo3d and game stills alike, with no
-  player change.
-
-Tuning on v2:
-
-- At full resolution, a 20 L* edge picked up the crystal facets inside
-  bodies. 30 L* keeps the dividers and drops most facets.
-- Measuring at a fixed 1920 width makes a 960 px still score the same as a
-  1920 px one (the tests check this).
+- The blob frames fail with and without masks: t20 (8.2 video, 12.2
+  masked), t28 (1.8, 9.4), t32 (4.3, 8.4), t56 (2.1, 3.0).
+- v2's three least dense crowds pass: t08 (13.5), t24 (13.4, 15.7 masked)
+  and, with masks, t36 (13.1).
+- The unit tests' crowds: overlapping flat discs score 0, the same discs
+  with a dark rim 40 (the solid look's outline), and a flat field with black
+  specks on one pixel in twenty stays under 13.
 
 Known limits:
 
-- A large body of an enemy hue reads as a clump. Examples are a giant (t01's
-  brutes), a boss, or a structure that shares an enemy's hue (v2's blue walls
-  at t40 and t44 share the trolls' blue). Such a body fails when it is flat.
-  For the new looks that is intended: a flat giant is the "flat" feedback.
-  But a v2 structure scoring 0.00 is a false "blob", so read the overlays.
+- A large body of an enemy hue reads as a clump: a giant, a boss, or a
+  structure in an enemy's hue on a video frame (the ID render removes the
+  last). A flat giant failing is intended: it is the "flat" feedback.
 - A clump that is mostly dark between lit edges (the edge and hologram looks)
   never covers half a tile, so it is not measured. It cannot read as a colour
   blob.
-- The style guide must keep the shatter colour's hue clear of the enemy
-  hues. Otherwise lit formations would count as clumps.
+- Heavy single-pixel speckle (one pixel in ten, black on a bright field)
+  still reads as seams; the 3x3 averaging handles sparser shards.
+
+## Other measures, and why
+
+- **Hues are HSV** for the key, the families and conformance, as the guide
+  measures them (ps-wnj.2 used CIELAB hue and 30-degree peaks). Conformance
+  judges pixels at L* >= 40 and C*ab >= 30 against every chromatic role
+  (C*ab >= 15), zone tints included.
+- **The floor** is the ground-plane pixels (each pixel's view ray met with
+  the plane through the hero's feet), less the monsters and structures of the
+  ID render and the hero's region, each dilated 2 px. ps-wnj.2's estimate
+  (every pixel not emitting) is gone; `frame_p25` is the video fallback.
+- **The hero's region** is a screen capsule from its feet to 1.8 m above
+  them, 0.5 m wide: the ID render marks only monsters and structures. Its L*
+  p90 is the hero's brightest parts while the hero covers a tenth of it.
+- **Everything is measured at 960 px wide**, the guide's width, readability's
+  3-10 px ring included, so a 1920 still and a 960 one score alike.

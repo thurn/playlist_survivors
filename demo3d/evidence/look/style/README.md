@@ -1,10 +1,11 @@
 # The neon look's reference board (ps-wnj.1, 2026-11-01)
 
 Six frames of the v2 crystal cut (`captures/trailer-crystal-v2.mp4`, the cut viewers reviewed)
-measured against the frame-level rules of the [style guide](../../../../docs/design/neon-look-style.md#rules-and-thresholds).
-Red numbers in `board.jpg` and ✗ below fail a rule. Mask rules (floor, monster form, swarm
-separation, hero brightest) need the players' ID render and are measured by the look metrics
-(ps-wnj.2); the frame's L* p25 stands in for the floor on a finished video.
+measured against the frame-level rules of the [style guide](../../../../docs/design/neon-look-style.md#rules-and-thresholds),
+with look-metrics' own measures and thresholds file (every preset's ceiling where they differ).
+Red numbers in `board.jpg` and ✗ below fail a rule. Mask rules (floor, monster form, hero
+brightest) need the players' ID render, so `look-metrics` measures those
+([../metrics](../metrics/README.md)); the frame's L* p25 stands in for the floor on a finished video.
 
 ```sh
 uv run --project demo3d/tools python demo3d/evidence/look/style/board.py captures/trailer-crystal-v2.silent.mp4
@@ -12,7 +13,7 @@ uv run --project demo3d/tools python demo3d/evidence/look/style/board.py capture
 
 ![board](board.jpg)
 
-| t (s) | frame | key60 (>= 0.55) | families (<= 4) | near-black (>= 30%) | bright (<= 32%) | clipped (<= 2%) | white (<= 2%) | halo dL* (>= 15) | L* p25 (<= 6) |
+| t (s) | frame | key60 (>= 0.55) | families (<= 4) | black_share (>= 0.3) | bright_share (<= 0.32, >= 0.04) | clipped (<= 0.02) | white (<= 0.02) | halo (>= 15) | frame_p25 (<= 6) |
 |---:|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | 0.5 | opening: the darkest shot, but a lit pool and a textured floor | 0.92 | 1 | 70% | 7% | 0.0% | 0.1% | 10.7 ✗ | 1.2 |
 | 4.0 | formations: the loved white-gold crystal, in a soup of hues | 0.53 ✗ | 4 | 43% | 15% | 0.0% | 0.0% | 11.8 ✗ | 5.3 |

@@ -457,27 +457,37 @@ checks the package's shaders build and run there.
 ### Look metrics
 
 `demo3d/tools/src/demo3d_tools/look.py` already measures L*, chroma and
-readability. It gains:
+readability. `look-metrics DIR --palette P.json` (ps-wnj.2, ps-wnj.21) adds
+every pixel rule of the style guide's
+[Rules and Thresholds](neon-look-style.md#rules-and-thresholds), under the
+guide's own keys:
 
-- **Palette conformance**: the share of bright pixels whose hue sits near a
-  palette role.
-- **Value structure**: the floor's and the frame's L* distribution, the share
-  of the frame that is emitted light, the clipped share.
+- **Value structure**: the floor's L* p50 and p90 (from the ID render and the
+  view json; the frame's L* p25 on a video frame), the near-black, bright,
+  clipped and white shares, the largest clipped region.
+- **Light and hue**: the halo round emitters, the colour key (the best
+  60-degree window) and the hue families, palette conformance.
+- **Form**: the hero's margin over the monsters, monster form (a body's own L*
+  span, per 32 px tile) and readability.
 - **Swarm separation**: in dense crowd regions, the contrast along boundaries
-  between adjacent monsters of one type. It uses luminance edges, not an ID
-  pass (ps-wnj.2): in each 64 px tile that one enemy hue mostly covers, it
-  measures the share of the clump's pixels on an edge of at least 30 L*.
+  between adjacent monsters of one type, in L*: in each 32 px tile that one
+  enemy hue mostly covers, how far its seams sit under the bodies either side
+  of them.
+- **Per cut**: the key's median and the spread of the shots' floors.
 
-`look-metrics DIR --palette P.json` runs all three over a directory of
-stills: demo3d's or game's windowless stills, or frames cut from a capture.
-It works under both `demo3d` and `game`, and exits 1 when a still breaks a
-rule. The rules are in `docs/design/neon-look-thresholds.json`. They are
-provisional until the style guide edits them.
+It runs over a directory of stills: demo3d's or game's windowless stills,
+with their ID renders and view json where the player wrote them, or frames
+cut from a capture. It works under both `demo3d` and `game`, takes
+`--preset` (else the palette's pairing) and `--impact` for impact frames, and
+exits 1 when a still or the cut breaks a rule. The rules are in
+`docs/design/neon-look-thresholds.json`.
 
 Calibration on v2 is in
-[demo3d/evidence/look/metrics](../../demo3d/evidence/look/metrics/README.md).
-Every v2 frame fails swarm separation (0.00-0.24 against a floor of 0.3). The
-lit floors and heavy emitted share break the value rules.
+[demo3d/evidence/look/metrics](../../demo3d/evidence/look/metrics/README.md),
+on its video frames and on the crystal cut re-rendered with ID renders. Every
+v2 frame breaks rules: the key in 13 of 15 frames, swarm separation
+in the blob frames, monster form in all of them, and the lit floors break the
+value rules.
 
 ### Evidence per bead
 
