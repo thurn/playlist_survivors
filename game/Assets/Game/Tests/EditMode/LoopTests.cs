@@ -453,7 +453,7 @@ namespace Game.Tests
             foreach (var f in frames) driver.Step(f);
             LogAssert.NoUnexpectedReceived();
 
-            Assert.That(thrower.Throws, Is.GreaterThan(count), "it threw on beats and frames");
+            Assert.That(thrower.Throws - (count - 9), Is.GreaterThan(0), "it threw on beats as well as on every frame from the 10th");
             Assert.That(driver.Events.Faults, Is.EqualTo(thrower.Throws), "every throw counted for the summary");
             Assert.That(driver.Events.FaultReport(), Does.Contain($"Present of Thrower: InvalidOperationException x {count - 9}")
                 .And.Contain($"OnEvent of Thrower: InvalidOperationException x {thrower.Throws - (count - 9)}"));
