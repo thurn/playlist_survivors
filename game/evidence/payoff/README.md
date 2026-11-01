@@ -47,6 +47,10 @@ By category, scheduled / dropped / cut off:
 | lightning-strike | 562 / 0 / 484 | 562 / 0 / 168 |
 | chime, garlic-hit, wand-fire, wand-hit, bible-fire, bible-hit, lightning-hit | 21,282 / 0 / 156 | 21,282 / 0 / 0 |
 
+Retaken after rebasing onto ps-msz.8.5 (staging 1fd9fcac; its press rules move the run, hash
+AC0F5686B95E04BE, 14,129 killed): 53,112 scheduled (1,801 into their clip), 0 dropped, 1,782 cut off
+(3.4%), none of them a swing, the slam, a chest's or an evolution's.
+
 The positioning bot is hit once in the whole run. The idle bot's run (`--bot idle`, falling at 1:59 of
 run clock) schedules 7 hurts, none dropped or cut off.
 
