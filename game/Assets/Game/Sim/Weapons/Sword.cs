@@ -109,6 +109,10 @@ namespace PS.Game.Sim
     ///   planning, scales its strikes' reach and damage (<see cref="QuietScale"/>, 1, <see cref="LoudScale"/>); a loud
     ///   beat adds a strike to each of its half beats or its beat, on the subdivisions, and its accent may be heavy
     ///   though the strike beat before was.
+    /// - <b>The finisher</b> (<see cref="Finishers"/>, `--finishers`): a press in a ring's window queues one heavy slam
+    ///   that hits at once in heard time as a press does (<see cref="Finisher"/>): <see cref="FinisherReachM"/> round the
+    ///   hero, <see cref="FinisherDamage"/> times a heavy strike's damage, breaking structures and sending out its cleave
+    ///   wave beyond; the beat's strikes go on around it.
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -159,6 +163,10 @@ namespace PS.Game.Sim
         public const double QuietScale = 0.75;
         /// <summary>A loud strike beat's reach and damage, with <see cref="ModeRules.Loudness"/>.</summary>
         public const double LoudScale = 1.25;
+        /// <summary>The finisher's reach (m): most of the view, whose nearer half-width is 18 m (the game's footprint).</summary>
+        public const double FinisherReachM = 16;
+        /// <summary>The finisher's damage, times a heavy strike's (2.5x the rank's power): 10x, enough for the ordinary crowd of the first ten minutes.</summary>
+        public const double FinisherDamage = 4;
         const int QueueCapacity = 64;
         const int WaveCapacity = 4;
 
@@ -175,8 +183,10 @@ namespace PS.Game.Sim
             public bool Loud;
             /// <summary>Beats on from its strike beat (<see cref="ModeRules.BeatGrid"/>): where on the beats it lands.</summary>
             public double On;
-            /// <summary>The reach's and damage's scale: a press's grade (0.5 to 1), else 1.</summary>
+            /// <summary>The reach's and damage's scale: a press's grade (0.5 to 1), else 1; the finisher's damage (its reach is its own).</summary>
             public double Scale;
+            /// <summary>The finisher's slam (<see cref="Sword.Finisher"/>).</summary>
+            public bool Finisher;
             public double Reach, DirX, DirY;
         }
 
@@ -338,7 +348,7 @@ namespace PS.Game.Sim
         /// <summary>The per-tick system, at the tick's end: with no beat known ahead, the pulse on the sword's raw interval.</summary>
         internal override void Tick(Simulation sim, double end)
         {
-            if (onPress && Holding) heldUntil = end;
+            if (Holding) heldUntil = end;
             if (onPress || Holding || count > 0) return;
             double interval = Interval;
             double due = lastPulse + interval;
@@ -501,17 +511,17 @@ namespace PS.Game.Sim
                 forcedAccent = false;
                 lastHeavy = heavy;
             }
-            bool slam = onBeat && Slams(s.Beat, s.Impact, s.HalfTime);
+            bool slam = s.Finisher || onBeat && Slams(s.Beat, s.Impact, s.HalfTime);
             var kind = slam ? HeroAttackKind.Slam
                 : heavy ? HeroAttackKind.Spin
                 : !s.Main && !s.Half ? HeroAttackKind.FollowUp
                 : (slashes++ & 1) == 0 ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight;
             s.Heavy = heavy;
-            s.Reach = Reach(heavy) * s.Scale;
+            s.Reach = s.Finisher ? FinisherReachM : Reach(heavy) * s.Scale;
             HeroAt(sim, t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
             sim.Emit(SimEvent.SwordAttack(t, Index, kind, s.Pressed ? Math.Min(s.From, t) : t, s.Impact, s.DirX, s.DirY, heavy, s.Reach,
-                s.Pressed ? s.Scale : 0));
+                s.Finisher ? 1 : s.Pressed ? s.Scale : 0));
         }
 
         /// <summary>
@@ -555,6 +565,38 @@ namespace PS.Game.Sim
                 lastImpact = at;
             }
             CatchUp(sim);
+        }
+
+        /// <summary>
+        /// The finisher, its press heard at <paramref name="heard"/> in a ring's window (<see cref="Finishers"/>): one heavy
+        /// slam that winds up from the press and hits <see cref="PressImpactS"/> after it, in heard time as a press's strike
+        /// (never before a hold nor further back than <see cref="PressBackS"/>), whatever strikes the beat has queued
+        /// around it. Returns its impact.
+        /// </summary>
+        internal double Finisher(Simulation sim, double heard)
+        {
+            double start = Math.Max(heard, Math.Max(heldUntil, sim.Now - PressBackS));
+            var slam = new Strike
+            {
+                Impact = start + PressImpactS,
+                Windup = start,
+                From = start,
+                Period = SwingS,
+                Beat = -1,
+                Main = true,
+                Pressed = true,
+                Heavy = true,
+                Finisher = true,
+                Scale = FinisherDamage,
+            };
+            if (count == QueueCapacity) return slam.Impact;
+            // In impact order among the beat's strikes: those before it have all wound up (they wind up a wind-up ahead).
+            int k = count++;
+            for (; k > 0 && At(k - 1).Impact > slam.Impact; k--) At(k) = At(k - 1);
+            At(k) = slam;
+            lastImpact = Math.Max(lastImpact, slam.Impact);
+            CatchUp(sim);
+            return slam.Impact;
         }
 
         /// <summary>

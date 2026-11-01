@@ -108,6 +108,9 @@ what was run (the exact commands), the numbers, and what they show.
 - [zen-mode](zen-mode/README.md): `--mode zen`, the sword on the beat by itself while the hero walks: every slash
   on its beat grid over three songs (70, 128 and 174 BPM), loudness scaling the strikes, zone changes shoving the horde
   (ps-myz).
+- [zen-finishers](zen-finishers/README.md): `--finishers`, a ring closing on the zen hero toward each phrase downbeat
+  and Space in its window a screen-clearing slam: rings against the downbeats over real songs, hits and misses in
+  heard time, and a strip of the ring and the slam (ps-qbd).
 - [moving-swings](moving-swings/README.md): the free hero swinging on the walk, its legs on the travel and its
   upper body twisted to the strike, the whole body turning and backpedalling past 120 degrees (ps-w9p.2).
 - [slashes](slashes/README.md): the sword's swings as the trailer's gold crescents at the blade's arc, each on

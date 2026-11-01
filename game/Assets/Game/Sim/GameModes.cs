@@ -58,9 +58,11 @@ namespace PS.Game.Sim
         public readonly bool Loudness;
         /// <summary>Whether the horde reels to the music: thrown further by heavy blows, staggered by a zone change (<see cref="Horde.Reels"/>), bobbing on the kick.</summary>
         public readonly bool Reels;
+        /// <summary>Whether `--finishers` may play it: rings closing on phrase downbeats, Space on one a screen-clearing slam (<see cref="Sim.Finishers"/>).</summary>
+        public readonly bool Finishers;
 
         public ModeRules(GameMode mode, string name, string summary, HeroMovement movement, SwordTrigger sword, bool bots,
-            bool beatGrid = false, bool loudness = false, bool reels = false)
+            bool beatGrid = false, bool loudness = false, bool reels = false, bool finishers = false)
         {
             Mode = mode;
             Name = name;
@@ -71,6 +73,7 @@ namespace PS.Game.Sim
             BeatGrid = beatGrid;
             Loudness = loudness;
             Reels = reels;
+            Finishers = finishers;
         }
 
         /// <summary>Whether a left click (or a held button) sets the hero's target.</summary>
@@ -86,7 +89,8 @@ namespace PS.Game.Sim
             new ModeRules(GameMode.Free, "free", "walk freely (arrows, or click to move); Z strikes, bigger on the beat",
                 HeroMovement.Free, SwordTrigger.Press, bots: false),
             new ModeRules(GameMode.Zen, "zen", "walk freely (arrows, or click to move); the sword strikes on the beat by itself, harder when it's loud, and the horde reels to the music",
-                HeroMovement.Free, SwordTrigger.Beat, bots: false, beatGrid: true, loudness: true, reels: true),
+                HeroMovement.Free, SwordTrigger.Beat, bots: false, beatGrid: true, loudness: true, reels: true,
+                finishers: true),
         };
 
         /// <summary>The rules of <paramref name="mode"/>.</summary>

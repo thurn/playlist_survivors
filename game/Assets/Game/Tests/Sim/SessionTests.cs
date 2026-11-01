@@ -54,7 +54,8 @@ namespace PS.Game.Sim.Tests
         /// clicks, then holds the pointer, ahead of the hero.
         /// </summary>
         static Simulation Live(SimConfig config, IReadOnlyList<StreamEntry> entries, double until, double frame,
-            (double from, double to) stall = default, (double at, DebugCommand command, int arg)[] debug = null, bool free = false)
+            (double from, double to) stall = default, (double at, DebugCommand command, int arg)[] debug = null, bool free = false,
+            (double at, Key key, bool down)[] more = null)
         {
             var sim = new Simulation(config);
             int next = 0;
@@ -65,7 +66,8 @@ namespace PS.Game.Sim.Tests
                 (4.4, Key.Space, false), (6.0, Key.Right, false), (9.3, Key.Left, true), (9.31, Key.Left, false),
                 (12.0, Key.Down, true), (15.5, Key.Down, false),
             }.Concat(free ? new[] { (3.0, Key.Attack, true), (3.05, Key.Attack, false), (5.5, Key.Attack, true), (5.52, Key.Attack, false),
-                (13.0, Key.Attack, true), (13.1, Key.Attack, false) } : new (double, Key, bool)[0]).OrderBy(p => p.Item1));
+                (13.0, Key.Attack, true), (13.1, Key.Attack, false) } : new (double, Key, bool)[0]).Concat(more ?? new (double, Key, bool)[0])
+                .OrderBy(p => p.Item1));
             var targets = new Queue<double>(free ? new[] { 7.2, 7.3, 7.4 } : new double[0]);
             var commands = new Queue<(double at, DebugCommand command, int arg)>(debug ?? new[]
             {
@@ -289,7 +291,7 @@ namespace PS.Game.Sim.Tests
         {
             nameof(SimConfig.Seed), nameof(SimConfig.StartTime), nameof(SimConfig.StartMinute), nameof(SimConfig.Gate),
             nameof(SimConfig.KnownAtBudget), nameof(SimConfig.Arena), nameof(SimConfig.Start), nameof(SimConfig.Easy),
-            nameof(SimConfig.Mode),
+            nameof(SimConfig.Mode), nameof(SimConfig.Finishers),
         };
         static readonly string[] FromLevelAndContent =
         {
@@ -311,7 +313,7 @@ namespace PS.Game.Sim.Tests
             var run = new RunInputs
             {
                 Seed = 11, Level = SessionLevel.Run, Arena = true, Footprint = Footprint, Start = RunStart.AfterClearBeat,
-                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, Mode = GameMode.Free,
+                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, Mode = GameMode.Zen, Finishers = true,
             };
             var config = Build(run);
             var plain = new SimConfig();
@@ -322,12 +324,13 @@ namespace PS.Game.Sim.Tests
 
         /// <summary>
         /// Sessions already written read as they were: <c>inputs.bin</c>'s bytes of each version, laid out by hand
-        /// (version 1 has no start minute and no input arguments, 1 and 2 no mode or pointer targets), so a change to the
+        /// (version 1 has no start minute and no input arguments, 1 and 2 no mode or pointer targets, 1 to 3 no finishers), so a change to the
         /// layout fails here, not on disk.
         /// </summary>
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
+        [TestCase(4)]
         public void SessionsAlreadyWrittenReadAsTheyWere(int version)
         {
             using (var w = new BinaryWriter(File.Create(Path.Combine(dir, SessionRecord.InputsFile))))
@@ -347,7 +350,8 @@ namespace PS.Game.Sim.Tests
                 w.Write(2);
                 w.Write(-1.5);
                 w.Write(2.5);
-                if (version >= 3) w.Write((byte)GameMode.Free);
+                if (version >= 3) w.Write((byte)(version >= 4 ? GameMode.Zen : GameMode.Free));
+                if (version >= 4) w.Write(true); // finishers
                 w.Write(30.25);  // end
                 w.Write(1234);   // events
                 w.Write(0xABCDEF0123456789UL);
@@ -397,13 +401,14 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(DebugCommand.JumpClock, record.Commands.Single().Command);
             Assert.AreEqual(version >= 2 ? 1620 : 0, record.Commands.Single().Arg);
             Assert.AreEqual(1, record.Commands.Single().Order, "in the order the sim took them");
-            Assert.AreEqual(version >= 3 ? GameMode.Free : GameMode.Grid, run.Mode);
+            Assert.AreEqual(version >= 4 ? GameMode.Zen : version >= 3 ? GameMode.Free : GameMode.Grid, run.Mode);
+            Assert.AreEqual(version >= 4, run.Finishers);
             if (version >= 3)
                 Assert.AreEqual(new TargetRecord { X = -4.5, Y = 7.75, Heard = 3.2, Effective = 3.25, Order = 2 }, record.Targets.Single());
             else CollectionAssert.IsEmpty(record.Targets);
 
-            // Written again, the same bytes (version 3's).
-            if (version != 3) return;
+            // Written again, the same bytes (version 4's).
+            if (version != 4) return;
             var bytes = File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile));
             record.Write(dir);
             CollectionAssert.AreEqual(bytes, File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile)));
@@ -450,6 +455,34 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void AZenFinishersSessionReplaysToItsHash()
+        {
+            RecordEntries();
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var run = Inputs();
+            run.Mode = GameMode.Zen;
+            run.Finishers = true;
+            // Enter now and then answers the level-ups' cards, which hold the world; then Space on every ring's downbeat
+            // (heard there, taken 90 ms on), as a dry run found them.
+            var enter = Enumerable.Range(4, 32).Select(k => k * 0.5).SelectMany(t => new[] { (t, Key.Enter, true), (t + 0.05, Key.Enter, false) }).ToArray();
+            var dry = Live(Build(run), entries, duration, 1.0 / 60, free: true, more: enter);
+            var downbeats = Drive.Events(dry, SimEventKind.Finisher).Select(e => e.AsFinisher)
+                .Where(f => f.Phase == FinisherPhase.Miss).Select(f => f.Downbeat).ToList();
+            Assert.Greater(downbeats.Count, 0, "rings in the dry run");
+            var presses = downbeats.SelectMany(d => new[] { (d + 0.09, Key.Space, true), (d + 0.2, Key.Space, false) }).Concat(enter).ToArray();
+            var live = Live(Build(run), entries, duration, 1.0 / 60, free: true, more: presses);
+            SessionRecord.Of(run, live).Write(dir);
+            var hits = Drive.Events(live, SimEventKind.Finisher).Select(e => e.AsFinisher).Where(f => f.Phase == FinisherPhase.Hit).ToList();
+            Assert.Greater(hits.Count, 0, "the finisher fired");
+            StringAssert.Contains("\"finishers\": true", File.ReadAllText(Path.Combine(dir, "run.json")));
+
+            var sim = Replay(out var replay);
+            Assert.IsTrue(replay.Record.Run.Finishers);
+            Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16} at {sim.Now}, recorded {live.Hash:X16} at {live.Now}");
+            CollectionAssert.AreEqual(live.EventsSince(0).ToArray(), sim.EventsSince(0).ToArray());
+        }
+
+        [Test]
         public void RunInputsRoundTripFieldForField()
         {
             var levels = new[]
@@ -461,6 +494,7 @@ namespace PS.Game.Sim.Tests
                 },
                 Inputs(seed: ulong.MaxValue),
                 new RunInputs { Seed = 2, Start = RunStart.AfterClearBeat },
+                new RunInputs { Seed = 4, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Mode = GameMode.Zen, Finishers = true },
             };
             var recorded = typeof(RunInputs).GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (var run in levels)
@@ -468,7 +502,7 @@ namespace PS.Game.Sim.Tests
                 var bytes = new MemoryStream();
                 using (var w = new BinaryWriter(bytes, System.Text.Encoding.UTF8, leaveOpen: true)) run.Write(w);
                 bytes.Position = 0;
-                var read = RunInputs.Read(new BinaryReader(bytes), 3, "test");
+                var read = RunInputs.Read(new BinaryReader(bytes), 4, "test");
                 Assert.AreEqual(bytes.Length, bytes.Position, $"{run.Level}: all of it read");
                 foreach (var f in recorded)
                 {
