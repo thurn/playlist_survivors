@@ -1,8 +1,10 @@
 // The dark-core-edges monster look's bodies (neon-look.md, The Axes > Monsters; EdgeLook.cs): the
 // crowd's style mesh skinned as every look skins it (MonsterCommon.hlsl), drawn as near-black glass
 // lit only by the type's palette hue in its rim, its feature edges and its inner core
-// (MonsterEdge.hlsl). Opaque, but in the transparent queue where the crystal draws: the renderers
-// force depth priming, and outside the opaque queue the crowd needs no depth prepass of its own.
+// (MonsterEdge.hlsl). As an impulse ring passes (Impulse.hlsl's ImpulseCrowd) a living monster hops
+// and its rim and lines take the ring's light. Opaque, but in the transparent queue where the
+// crystal draws: the renderers force depth priming, and outside the opaque queue the crowd needs
+// no depth prepass of its own.
 // Under the global _GameIdMask (the stills' ID render) it draws flat white.
 Shader "Look/MonsterEdge"
 {
@@ -16,6 +18,7 @@ Shader "Look/MonsterEdge"
         _Edge ("Edge gain", Float) = 2.6
         _EdgePx ("Edge width (px)", Float) = 1.25
         _Beat ("Edge lift on the beat", Float) = 0.6
+        _Ring ("Ring light on rim and lines", Float) = 1.5
         _CoreGlow ("Core at rest", Float) = 0.1
         _CoreFlare ("Core on the beat", Float) = 0.8
         _CoreSize ("Core radius (share of the body's)", Float) = 0.18
@@ -32,12 +35,13 @@ Shader "Look/MonsterEdge"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint; half4 _Core; half4 _Flash;
-            half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat;
+            half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat; half _Ring;
             half _CoreGlow; half _CoreFlare; half _CoreSize;
             half _Gain; half _Peak; half _Facets;
         CBUFFER_END
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterEdge.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
         ENDHLSL
 
         Pass
@@ -62,6 +66,7 @@ Shader "Look/MonsterEdge"
                 float4 bary : TEXCOORD5;
                 nointerpolation float3 edges : TEXCOORD6;
                 nointerpolation float4 core : TEXCOORD7; // the body's bounding sphere (CrowdSphere): centre (world), radius
+                nointerpolation float3 ring : TEXCOORD8; // the impulse rings' light where it stands (linear)
             };
 
             Varyings vert(MonsterAttributes v)
@@ -70,10 +75,14 @@ Shader "Look/MonsterEdge"
                 MonsterInstance m = _Instances[CrowdSlot(v.instanceID)];
                 float height;
                 Varyings o;
+                float alive = (m.flags & CROWD_ALIVE) != 0 ? 1 : 0;
+                float hop;
+                ImpulseCrowd(m.position.xz, hop, o.ring);
+                o.ring *= alive;
+                c.positionWS.y += hop * alive;
                 o.positionWS = c.positionWS;
                 o.positionCS = TransformWorldToHClip(c.positionWS);
                 o.normalWS = c.normalWS;
-                float alive = (m.flags & CROWD_ALIVE) != 0 ? 1 : 0;
                 o.fx = float4(c.fx.x, alive * max(_SL_Pulse, c.fx.y), c.fx.zw);
                 o.tint = _Tint.rgb; // the slot's hue, not the role's gem
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
@@ -91,6 +100,7 @@ Shader "Look/MonsterEdge"
                 float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, i.tint, i.fx.y, 0, lit, fres);
                 float3 core = EdgeCore(i.positionWS, i.core, i.tint, i.fx.y);
                 color += core;
+                color += i.ring * _Ring * (lit + fres);
                 // A hit lights what is lit already toward white: the lines, the rim and the core.
                 color += _Flash.rgb * i.fx.x * (2.0 * lit + fres + 0.5 * Luminance(core));
                 return half4(MixFog(color, i.fogFactor), 1);

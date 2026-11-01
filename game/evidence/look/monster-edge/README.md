@@ -51,12 +51,20 @@ shards; 64.1 s a structure break among trolls, mushrooms and bigorks.
 - The 20 s still's bright share (0.223) is lightning and a troll clump in its
   hit flash.
 
+## Rings
+
+`slam/edge-slam.jpg`: ps-wnj.7's slam recipe (game/evidence/look/impulse,
+`--at 16.17 --frames 12 --strip 4`) with `--look edge`. As each impulse
+ring passes a living monster it hops (Impulse.hlsl's `ImpulseCrowd`) and its
+rim and lines take the ring's light: the troll clump on the left lights as
+the slam's ring reaches it, the mushrooms on the right as the hit's does.
+
 ## Perf: in budget
 
 | | peak p50/p99/max | break | finale | first frames |
 | --- | --- | --- | --- | --- |
 | crystal ([post](../post/README.md), edge) | 5.15 / 8.59 / 8.59 | 4.09 / 7.25 / 7.25 | 5.72 / 10.05 / 10.05 | 30-49 |
-| edge look | 3.26 / 10.09 / 10.09 | 6.30 / 7.13 / 7.13 | 6.25 / 7.39 / 7.39 | 32-36 |
+| edge look, rings included | 4.92 / 6.63 / 6.63 | 5.72 / 9.91 / 9.91 | 6.53 / 7.87 / 7.87 | 29-38 |
 
 GPU-complete 1080p frames, ms. The look is opaque glass with no refraction
 (no opaque-texture reads); nothing comes near 33 ms after each scenario's

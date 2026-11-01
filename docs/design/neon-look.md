@@ -382,9 +382,10 @@ How the package implements it (ps-wnj.10):
   [crystal cut](../../demo3d/evidence/look/monster-edge/README.md)): swarm
   separation 16.5-17 in game (6.5-7.6 with the crystal) and 6.7-11.5 on the
   cut's smaller monsters (provisional; 2.8-9.1 before), conformance 0.97-1.00,
-  monster form 36-57, game perf at the peak 3.3 / 10.1 ms p50 / max.
-- The impulse field's rings (ps-wnj.7) weren't on staging when the look
-  landed: the look reacts to the beat pulse only, until it reads the field.
+  monster form 36-57, game perf at the peak 4.9 / 6.6 ms p50 / max.
+- **Rings** (the impulse field, `ImpulseCrowd`): a living edge monster hops
+  as a ring passes its root and its rim and lines take the ring's light
+  (`_Ring`), so a slam's ring visibly runs through the swarm.
 
 ### World
 
