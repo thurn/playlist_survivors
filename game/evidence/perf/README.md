@@ -124,3 +124,110 @@ allocations were the same to the byte in every take.
   1973 s, 10.3 MB at 1998 s: lists that double as the run goes on. By their sizes and times most
   likely the sim's belief log (`BeliefLog`), which keeps every entry (128 B each, 133,000 over the run).
 - **The first frame** takes 22 to 43 ms (and 1.5 MB of allocation): startup, before the music.
+
+# The run's peak at 60 fps on the Mac (ps-msz.8.8)
+
+The peak measured again on the polished look (ps-msz.8.3), its frame split into CPU and GPU, each pass's
+cost measured, and the one cut that saved GPU time without changing a pixel's worth of the look. Jarvis
+(M5 Max, Metal), the IL2CPP player, 2026-10-31. Other sessions' Unity builds kept the load average at 20
+to 70 through every take, and their players shared the GPU: read every upper percentile as a loaded
+machine's, and compare only takes run side by side.
+
+```sh
+uv run --project demo3d/tools game perf --only peak,break,finale --evidence perf/peak-m4
+uv run --project demo3d/tools game perf --only peak,finale --ablate --evidence perf/peak-m4/ablate
+```
+
+## What the probe now measures
+
+- **The CPU's share**: each probe frame also times the camera's Render call before its wait on the GPU
+  (`cpuP50Ms`/`cpuP99Ms`, each frame's fourth number). At the peak it is 2.3 ms of a 6 ms frame.
+- **Each pass's cost** (`--gpu-probe-ablate`, `game perf --ablate`): at each probe time, 25 rounds of the
+  full frame and the frame with one pass off (SSAO, the whole post stack, bloom, the main light's shadows,
+  the opaque texture the crystal refracts, MSAA, the crowd and its shards, the effects' particles, the
+  effects' lights), one after another, so a pass is timed beside full frames under the same load. The
+  summary's `pairedSavedMs` is the median of each frame without the pass against the full frame drawn
+  just before it: a loaded machine's bursts move it least. `game perf --ablate` keeps only points 4.5 s
+  apart (an ablated point takes 4.2 s of song).
+- **One pass off in every frame** (`--gpu-probe-without PASS,...`): for a moment too short for the cycle,
+  compared with a run that keeps the pass, since a fixed-time run reaches the same frames each time.
+- **The GPU's own time**: Instruments' Metal System Trace on a probe run
+  (`xcrun xctrace record --template 'Metal System Trace' --launch -- <player> <the scenario's flags>`,
+  then `xcrun xctrace export` of `metal-gpu-intervals`): the player's encoders, their union per probe
+  frame. The probe's frames are told apart by their last blit's encoder index, which differs by pass set
+  (27 full, 23 without SSAO, 10 without post, 11 without bloom, 26 without shadows, 25 without the
+  opaque texture, 28 without MSAA).
+
+## Where the frame goes at the peak
+
+- **The GPU is not the bottleneck.** A full probe frame keeps the GPU busy 0.8 to 6 ms (median 3.5 to
+  4.7 ms in the traced takes, lowest when no other process held the GPU; eight frames at 40 s traced
+  alone, 2.1 to 3.6 ms). The rest of the probe's 6 ms is the CPU's 2.3 ms of submission and the GPU
+  waiting on it between passes: the probe draws CPU then GPU in series, a windowed frame overlaps them.
+- **No pass dominates.** Each pass's saving at the peak, from [ablate/summary.json](peak-m4/ablate/summary.json)
+  (paired median, ms; the earlier takes agree within about 0.5 ms):
+
+| pass off | peak | finale (68.4 s, after the blast) | of which CPU (peak) |
+|---|---|---|---|
+| the crowd and its shards (300 crystal monsters) | 1.51 | 1.70 | 0.53 |
+| the main light's shadows | 0.68 | 0.66 | 0.21 |
+| SSAO (half resolution, after this bead's cut) | 0.45 | 0.35 | 0.15 |
+| MSAA 4x | 0.45 | 0.0 | 0.0 |
+| the post stack (bloom 0.28 of it) | 0.33 | 0.61 | 0.19 |
+| the effects' lights | 0.18 | 0.24 | 0.0 |
+| the effects' particles | 0.13 | (noise) | 0.05 |
+| the crystal's opaque texture | (noise) | (noise) | 0.11 |
+
+- **The top three costs at the peak**: (1) the frame's CPU submission, 2.3 ms p50 (URP's culling and
+  render graph, the crowd's 0.5 ms of indirect draws by type, LOD and depth bin among it); (2) the crowd's
+  draws on the GPU, about 1 ms more (refracting crystal over a full crowd); (3) the main light's
+  shadows, 0.7 ms.
+- **The main thread**: at the peak 1.42 ms p50 and 2.90 ms p99 ([summary.json](peak-m4/summary.json)),
+  Unity's own loop the largest part (1.38 ms p99), then the structures' physics (0.52), the crowd (0.49)
+  and the sim (0.39). Main plus render at the peak, update p99 plus the probe's CPU p99, is at most
+  2.90 + 5.66 = 8.6 ms against Cygnus's 10.4 ms. Every part measured 1.3 to 1.5x the baseline above,
+  uniformly: the machine's load, not new work.
+- **The sim's step at 300 alive**: 0.39 ms p99 over 1,872 frames at 285 or more alive (break 0.36,
+  finale 0.30), against 1 ms.
+
+## The cut: SSAO at half resolution
+
+URP's SSAO ran at full 1080p: its AO pass and three bilateral blur passes over every pixel, behind a
+depth-normals prepass. `Downsample` on (`Settings/URP-Game_Renderer.asset`) runs the AO and its blurs at
+half resolution, a quarter of the pixels; the prepass is unchanged. In the traced takes SSAO's GPU cost
+was 0.44 and 0.72 ms at full resolution and within the noise (0.04 to 0.67 ms) at half.
+
+Before and after, the same build otherwise, run side by side three times each (72 probe frames a
+scenario; load 20 to 35):
+
+| scenario | before: probe p50 / p90 / p99 / max | after | frames over 16.7 ms, before / after | CPU share p50, before / after |
+|---|---|---|---|---|
+| peak | 6.22 / 8.91 / 14.93 / 17.84 | 6.41 / 8.01 / 9.90 / 12.56 | 1 / 0 | 2.30 / 2.23 |
+| break | 5.34 / 8.10 / 9.51 / 11.27 | 5.40 / 7.07 / 8.78 / 10.62 | 0 / 0 | 2.38 / 2.41 |
+| finale | 5.92 / 7.50 / 16.96 / 20.51 | 6.25 / 8.78 / 13.10 / 13.76 | 2 / 0 | 2.52 / 2.52 |
+
+The medians are the same within the load's noise (the GPU is mostly waiting); the tails are shorter.
+The look doesn't change: the eight peak stills (the five zones, the forced accent's heavy strike, the
+break and the finale's blast) read the same dL* to the tenth (+42.2 to +66.3, all passing), and the
+pixels differ by 0.07 to 0.19 of 255 on average, 2 to 3 at the 99th percentile (JPEG noise). Three of
+them before and after: [before-after.jpg](peak-m4/before-after.jpg) ([before/](peak-m4/before/),
+[after/](peak-m4/after/), each with its readability.json).
+
+Tried and not kept: SSAO off entirely in the asset (`m_Active: 0`) blacks out the camera, since the
+build then strips SSAO's shaders while the feature is still listed and URP fails to set up its renderer.
+SSAO is the look's, and half resolution keeps it.
+
+## Against the targets
+
+- **60 fps at the peak on the Mac: met.** The after take ([summary.json](peak-m4/summary.json)): probe
+  p99 9.03 ms at the peak and 6.79 ms at the break, with the main thread's p99 2.90 and 3.50 ms. A probe
+  frame is CPU and GPU in series, an upper bound on a windowed frame.
+- **The finale's first frames are the run's heaviest**: in every take the frames just after the blast
+  (68.30 s, about 300 monsters shattering at once) are the slowest, 8 to 20 ms against 6 ms, decaying over
+  six frames, with the CPU's share near 4.5 ms against 2.3. The evidence take's p99 there is 20.11 ms, one
+  frame of 24 (the side-by-side takes above: 13.10 ms over 72). Turning single passes off in those frames
+  (`--gpu-probe-without`) left the spike within the load's noise (8.9 to 18.4 ms with no pass off), so
+  the cost is spread over the CPU's submission of the shards, the crowd and the effects. It is
+  ps-msz.9.2's to measure on Cygnus, windowed, against the targets.
+- **A one-off 144 ms probe frame** at 60.03 s in the first take of the peak never repeated in the
+  fourteen takes after it: a GPU shared with other sessions' players.

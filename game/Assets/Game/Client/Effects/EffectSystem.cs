@@ -438,9 +438,12 @@ namespace Game.Client.Effects
             for (int m = 0; m < _meshBuckets; m++) yield return 3 + 2 * m;
         }
 
+        /// <summary>While set, no camera draws the pool: the frame probe's "effects" ablation (<see cref="GpuProbe"/>).</summary>
+        internal static bool Hidden;
+
         void OnBeginCamera(ScriptableRenderContext context, Camera camera)
         {
-            if (!_cameras.Contains(camera)) return;
+            if (Hidden || !_cameras.Contains(camera)) return;
             var data = camera.GetUniversalAdditionalCameraData();
             data?.scriptableRenderer?.EnqueuePass(_pass);
         }

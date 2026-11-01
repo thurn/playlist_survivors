@@ -94,6 +94,8 @@ namespace Game.Client.Loop
     ///   deaths and their live shards (<see cref="MonsterShatter"/>);
     /// - `--gpu-probe-at T1,T2,... --gpu-probe-out FILE.json`: windowless timed 1080p frames at those song times, after
     ///   a warm-up, each through GPU completion (<see cref="GpuProbe"/>; batch mode with a device, not `--headless`);
+    ///   with `--gpu-probe-ablate` also each pass's cost beside them, with `--gpu-probe-without PASS,...` every frame
+    ///   without those passes;
     /// - `--profile-out FILE.csv`: each frame's main-thread work by part, its allocation and collections, a fixed-time
     ///   frame's music rendering and analysis wait left out (<see cref="FrameProfile"/>);
     /// - `--sound-probe`: every sound plays a click instead of its clip, at full level (<see cref="SoundScheduler.Probe"/>);

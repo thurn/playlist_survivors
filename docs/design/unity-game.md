@@ -2621,6 +2621,25 @@ frame takes 7.0 ms median and 7.7 ms p99, the main thread's update 0.8 ms and
 has no frame over 33 ms. Drawing the frame is the top cost by far, then
 Unity's own player loop, then the crowd.
 
+**Shipped (ps-msz.8.8): the peak on the polished look.** The probe now
+splits each frame into its CPU share (the camera's Render call) and the wait
+on the GPU, and `game perf --ablate` (`--gpu-probe-ablate`) times each pass
+off beside full frames: SSAO, post, bloom, shadows, the opaque texture,
+MSAA, the crowd, the effects and their lights. `--gpu-probe-without PASS`
+turns passes off in every probe frame, for moments too short for that
+cycle. A Metal System Trace showed the GPU busy only 1 to 5 ms of a 6 ms
+probe frame at the peak: the CPU's 2.3 ms of submission is the largest cost,
+then the crowd's draws (about 1.5 ms with their CPU share) and the main
+light's shadows (0.7 ms). SSAO now runs at half resolution: its GPU cost
+fell from about 0.5 ms to the noise, the probe's tails shortened (p99 at the
+peak 9.9 ms against 14.9, side by side) and no still changed beyond JPEG
+noise. On the Mac at the peak: probe p99 9.0 ms, main thread p99 2.9 ms,
+main plus render at most 8.6 ms against Cygnus's 10.4, and the sim's step
+0.39 ms p99 at 300 alive. The finale's first frames after the blast are the
+run's heaviest, 8 to 20 ms in the probe (CPU share 4.5 ms), for M5 on
+Cygnus (ps-msz.9.2). Numbers in
+[game/evidence/perf](../../game/evidence/perf/README.md#the-runs-peak-at-60-fps-on-the-mac-ps-msz88).
+
 ## What Carries Over, and What Changes
 
 Both prototypes were built under constraints this game doesn't have. Native

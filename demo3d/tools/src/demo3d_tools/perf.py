@@ -18,7 +18,8 @@ the summary (per scenario: the probe's frame p50/p99/max, the main thread's p50/
 the scenario's window of song time, allocations and collections, and the sim's step p99 at 285 or
 more alive) goes to captures/game/perf/summary.json, and with `--evidence DIR` beside the probes'
 JSON into game/evidence/DIR/. It exits 1 if a player fails (a non-zero exit, an exception in its log,
-or a missing profile or probe point).
+or a missing profile or probe point). With `--ablate` the probe also draws each counted frame's
+neighbours with one pass turned off (`--gpu-probe-ablate`), and the summary has each pass's saving.
 """
 
 from __future__ import annotations
@@ -42,6 +43,9 @@ EVOLVED = "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5"
 PEAK = ["--start-minute", "25", "--bot", "positioning"]
 # The sim's step is measured against the target at 300 alive: frames this close to the cap count.
 PEAK_ALIVE = 285
+# With --ablate a probe point draws GpuProbe.AblateRounds rounds of its ten frame kinds (250 frames,
+# 4.2 s of song at fixed time): its points are spaced this far apart and the run goes on this long after.
+ABLATE_S = 4.5
 # The columns that aren't parts of the frame's work.
 NOT_PARTS = {"frame_ms", "wait_ms", "probe_ms"}
 
@@ -78,6 +82,8 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--backend", choices=["il2cpp", "mono"], default="il2cpp")
     p.add_argument("--build", action="store_true", help="rebuild the player first (after a change)")
     p.add_argument("--evidence", help="also write the summary and the probes' JSON to game/evidence/DIR")
+    p.add_argument("--ablate", action="store_true",
+                   help="also time the probe's frames with each pass turned off (SSAO, post, shadows, ...)")
     p.set_defaults(func=cmd_perf)
 
 
@@ -105,7 +111,7 @@ def cmd_perf(a: argparse.Namespace) -> int:
     root = wt.root / "captures" / "game" / "perf"
     summary, failed = {}, []
     for scenario in (s for s in SCENARIOS if s.name in wanted):
-        result = run(exe, wt.root, root / scenario.name, scenario)
+        result = run(exe, wt.root, root / scenario.name, scenario, ablate=a.ablate)
         summary[scenario.name] = result
         if not result["ok"]:
             failed.append(scenario.name)
@@ -128,7 +134,7 @@ def cmd_perf(a: argparse.Namespace) -> int:
     return 0
 
 
-def run(exe: Path, repo: Path, out: Path, s: Scenario) -> dict:
+def run(exe: Path, repo: Path, out: Path, s: Scenario, ablate: bool = False) -> dict:
     """One scenario in the player, at fixed time in batch mode; its summary, `ok` false on a failure."""
     from .spike import exceptions
 
@@ -137,10 +143,16 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario) -> dict:
     log, profile, probe = out / "player.log", out / "profile.csv", out / "gpu-probe.json"
     cmd = [str(exe), "-batchmode", "-force-metal", "-logFile", str(log), "--fixed-time",
            "--file", str((repo / s.file).resolve()), "--profile-out", str(profile), *s.args]
-    if s.probe:
-        cmd += ["--gpu-probe-at", ",".join(f"{t:g}" for t in s.probe), "--gpu-probe-out", str(probe)]
-    if s.seconds is not None:
-        cmd += ["--seconds", f"{s.seconds:g}"]
+    points, seconds = s.probe, s.seconds
+    if ablate and points:
+        points = ablate_points(points)
+        seconds = max(seconds, points[-1] + ABLATE_S) if seconds is not None else None
+    if points:
+        cmd += ["--gpu-probe-at", ",".join(f"{t:g}" for t in points), "--gpu-probe-out", str(probe)]
+        if ablate:
+            cmd.append("--gpu-probe-ablate")
+    if seconds is not None:
+        cmd += ["--seconds", f"{seconds:g}"]
     started = time.monotonic()
     # (A hang guard: the full run takes about 4 minutes, a peak scenario under one.)
     try:
@@ -163,8 +175,8 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario) -> dict:
     if s.probe:
         if probe.exists():
             result["probe"] = probe_summary(json.loads(probe.read_text()))
-            if len(result["probe"]["points"]) != len(s.probe):
-                errors.append(f"{len(result['probe']['points'])} of {len(s.probe)} probe points")
+            if len(result["probe"]["points"]) != len(points):
+                errors.append(f"{len(result['probe']['points'])} of {len(points)} probe points")
         else:
             errors.append("no probe")
     result["ok"] = not errors
@@ -173,6 +185,15 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario) -> dict:
         for e in errors:
             print(f"perf: {s.name}: {e} (log {log})", file=sys.stderr)
     return result
+
+
+def ablate_points(points: list[float]) -> list[float]:
+    """The probe points an ablation run keeps: each at least ABLATE_S after the last one kept."""
+    kept: list[float] = []
+    for t in points:
+        if not kept or t >= kept[-1] + ABLATE_S:
+            kept.append(t)
+    return kept
 
 
 def read_profile(path: Path) -> list[dict[str, float]]:
@@ -231,16 +252,32 @@ def probe_summary(probe: dict) -> dict:
         "p50_ms": round(pct(ms, 0.5), 2) if ms else None,
         "p99_ms": round(pct(ms, 0.99), 2) if ms else None,
         "max_ms": round(ms[-1], 2) if ms else None,
+        # The frame's CPU share (the Render call, before the wait for the GPU).
+        "cpu_p50_ms": probe.get("cpuP50Ms"), "cpu_p99_ms": probe.get("cpuP99Ms"),
         "points": [{"at": p["at"], "alive": p["alive"], "median_ms": p["medianMs"], "max_ms": p["maxMs"]}
                    for p in probe["points"]],
+        **({"ablations": [ablation(x) for x in probe["ablations"]]} if "ablations" in probe else {}),
     }
+
+
+def ablation(x: dict) -> dict:
+    """One pass's ablation from the probe, its pairs (each frame without the pass beside the full frame
+    drawn just before it) folded into their median saving, which a loaded machine's bursts move least."""
+    out = {k: v for k, v in x.items() if k != "pairs"}
+    if x.get("pairs"):
+        out["pairedSavedMs"] = round(pct(sorted(full - without for full, without in x["pairs"]), 0.5), 2)
+    return out
 
 
 def report_line(name: str, r: dict) -> str:
     cpu, probe = r.get("cpu", {}), r.get("probe")
     parts = []
     if probe:
-        parts.append(f"probe p50/p99/max {probe['p50_ms']}/{probe['p99_ms']}/{probe['max_ms']} ms")
+        parts.append(f"probe p50/p99/max {probe['p50_ms']}/{probe['p99_ms']}/{probe['max_ms']} ms"
+                     + (f" (CPU p50/p99 {probe['cpu_p50_ms']}/{probe['cpu_p99_ms']})" if probe.get("cpu_p50_ms") is not None else ""))
+        if probe.get("ablations"):
+            parts.append("saved without (paired) " + ", ".join(
+                f"{x['name']} {x.get('pairedSavedMs', x['savedMs'])}" for x in probe["ablations"]) + " ms")
     if cpu.get("frames"):
         f = cpu["frame_ms"]
         parts.append(f"main p50/p99/max {f['p50']}/{f['p99']}/{f['max']} ms over {cpu['frames']} frames "

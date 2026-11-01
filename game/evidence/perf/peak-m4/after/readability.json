@@ -1,0 +1,98 @@
+{
+  "still-016.100": {
+    "monsterPx": 649983,
+    "monsterShare": 0.313,
+    "lMonster": 56.343,
+    "lRing": 10.314,
+    "dL": 46.029,
+    "dC": 0.837,
+    "cMonster": 29.2,
+    "monsterP10": 36.547,
+    "monsterP90": 71.352,
+    "pass": true
+  },
+  "still-022.400": {
+    "monsterPx": 157314,
+    "monsterShare": 0.076,
+    "lMonster": 55.068,
+    "lRing": 12.873,
+    "dL": 42.194,
+    "dC": 19.417,
+    "cMonster": 44.802,
+    "monsterP10": 27.364,
+    "monsterP90": 85.569,
+    "pass": true
+  },
+  "still-032.500": {
+    "monsterPx": 489251,
+    "monsterShare": 0.236,
+    "lMonster": 54.374,
+    "lRing": 6.105,
+    "dL": 48.269,
+    "dC": 29.713,
+    "cMonster": 37.045,
+    "monsterP10": 11.596,
+    "monsterP90": 71.028,
+    "pass": true
+  },
+  "still-042.200": {
+    "monsterPx": 63315,
+    "monsterShare": 0.031,
+    "lMonster": 49.51,
+    "lRing": 4.921,
+    "dL": 44.589,
+    "dC": 48.146,
+    "cMonster": 56.005,
+    "monsterP10": 18.947,
+    "monsterP90": 93.297,
+    "pass": true
+  },
+  "still-052.600": {
+    "monsterPx": 564805,
+    "monsterShare": 0.272,
+    "lMonster": 58.396,
+    "lRing": 5.016,
+    "dL": 53.379,
+    "dC": 12.87,
+    "cMonster": 35.383,
+    "monsterP10": 38.47,
+    "monsterP90": 70.382,
+    "pass": true
+  },
+  "still-056.650": {
+    "monsterPx": 690324,
+    "monsterShare": 0.333,
+    "lMonster": 61.952,
+    "lRing": 16.983,
+    "dL": 44.968,
+    "dC": -1.21,
+    "cMonster": 38.447,
+    "monsterP10": 37.172,
+    "monsterP90": 78.156,
+    "pass": true
+  },
+  "still-064.050": {
+    "monsterPx": 456026,
+    "monsterShare": 0.22,
+    "lMonster": 51.653,
+    "lRing": 3.503,
+    "dL": 48.15,
+    "dC": 5.886,
+    "cMonster": 32.094,
+    "monsterP10": 20.067,
+    "monsterP90": 67.626,
+    "pass": true
+  },
+  "still-068.400": {
+    "monsterPx": 692916,
+    "monsterShare": 0.334,
+    "lMonster": 70.661,
+    "lRing": 4.388,
+    "dL": 66.272,
+    "dC": 4.526,
+    "cMonster": 31.147,
+    "monsterP10": 42.639,
+    "monsterP90": 79.322,
+    "pass": true
+  }
+}

@@ -79,7 +79,8 @@ what was run (the exact commands), the numbers, and what they show.
   all to the victory card above 25% health, and the idle bot falling at 2:06, with each run's pacing (ps-msz.6.13).
 - [perf](perf/README.md): the run's performance baseline on the Mac from `game perf`: the windowless frame probe and
   the CPU frame profile at the peak, a structure break, the finale's mass kill, the run's first minute and the
-  30-minute fixed-time run (ps-msz.8.2).
+  30-minute fixed-time run (ps-msz.8.2); the peak's frame split into CPU and GPU with each pass's cost, and SSAO
+  at half resolution, the tails shorter and the look unchanged (ps-msz.8.8).
 - [beat](beat/README.md): the on-the-beat audit, every key moment on the first frame at or after its song time at the
   run's peak and over an early stretch, and every sound on its event's song time, with the late moments it found
   fixed (before and after filmstrips); and the key rules' late steps measured in .NET and tuned (ps-msz.8.5).

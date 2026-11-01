@@ -76,6 +76,10 @@ namespace Game.Client
         public string ShatterBench;
         /// <summary>`--gpu-probe-at t1,t2,...`: song times for the windowless frame probe (<see cref="GpuProbe"/>).</summary>
         public string GpuProbeAt;
+        /// <summary>`--gpu-probe-ablate`: the probe also times its frames with each pass turned off (<see cref="GpuProbe.Ablations"/>).</summary>
+        public bool GpuProbeAblate;
+        /// <summary>`--gpu-probe-without PASS,...`: the probe's frames all drawn without those passes.</summary>
+        public string GpuProbeWithout;
 
         // Calibration.
         public string Calibrate, CalibrationFile, TapAlong;
@@ -141,6 +145,8 @@ namespace Game.Client
                 ArenaTour = a.Float("--arena-tour", 0),
                 ShatterBench = a.Path("--shatter-bench"),
                 GpuProbeAt = a.Get("--gpu-probe-at"),
+                GpuProbeAblate = a.Has("--gpu-probe-ablate"),
+                GpuProbeWithout = a.Get("--gpu-probe-without"),
                 Calibrate = a.Get("--calibrate"),
                 CalibrationFile = a.Path("--calibration"),
                 TapAlong = a.Get("--tap-along"),

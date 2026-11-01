@@ -56,3 +56,22 @@ def test_the_probe_summary_pools_every_points_counted_frames() -> None:
     assert (s["frames"], s["p50_ms"], s["p99_ms"], s["max_ms"]) == (6, 7.0, 12.0, 12.0)
     assert s["points"][1] == {"at": 50, "alive": 300, "median_ms": 9.0, "max_ms": 12.0}
     assert s["msaa"] == 4
+
+
+def test_an_ablation_run_keeps_only_points_its_longer_probe_leaves_room_for() -> None:
+    # The break's points fall 0.35 and 0.95 s apart; an ablated point takes 4.2 s of song.
+    assert perf.ablate_points([64.05, 64.4, 65]) == [64.05]
+    assert perf.ablate_points([40, 50, 60]) == [40, 50, 60]
+    assert perf.ablate_points([10, 12, 14, 16, 18]) == [10, 16]
+
+
+def test_the_probe_summary_carries_the_cpu_share_and_the_ablations() -> None:
+    probe = {"cpuP50Ms": 2.1, "cpuP99Ms": 5.0, "points": [{"at": 40, "alive": 300, "medianMs": 7.0, "maxMs": 7.0,
+                                                          "frames": [[40.0, 300, 7.0, 2.1]]}],
+             "ablations": [{"name": "ssao", "medianMs": 5.9, "savedMs": 1.1, "cpuSavedMs": 0.1,
+                            # A burst doubled one pair; the median of the pairs' savings ignores it.
+                            "pairs": [[7.0, 6.0], [7.2, 6.1], [14.0, 7.0]]}]}
+    s = perf.probe_summary(probe)
+    assert (s["cpu_p50_ms"], s["cpu_p99_ms"]) == (2.1, 5.0)
+    assert s["ablations"] == [{"name": "ssao", "medianMs": 5.9, "savedMs": 1.1, "cpuSavedMs": 0.1, "pairedSavedMs": 1.1}]
+    assert "saved without (paired) ssao 1.1 ms" in perf.report_line("peak", {"ok": True, "wall_s": 1, "probe": s})
