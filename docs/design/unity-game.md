@@ -1457,7 +1457,12 @@ an arsenal slot since ps-msz.6.4 (`SimConfig.Arsenal`: its rank, the hero's stat
   shifts the phase costs one 1.5-beat pause, never two swings a fast beat
   apart. Two accented beats in a row that the pulse skipped, each within
   8 beats of the one before and no accented strike beat between, move the
-  pulse onto the second; a stray accent never does. A stream's first two
+  pulse onto the second; a stray accent never does. The move is a 1.5-beat
+  pause too, never a swing a fast beat after the last: when the second
+  accent is known as the beat before it is planned, that beat gives way and
+  the accent strikes; known later, the pulse pauses past it to the beat
+  after next. Skipped beats count their accents even when Amount's
+  subdivisions land on them (ps-avv). A stream's first two
   beats carry the analyzer's 0.28 s placeholder period, so the pulse skips
   the second.
 - With no beat known ahead, the same pulse

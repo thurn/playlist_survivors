@@ -55,7 +55,10 @@ namespace PS.Game.Sim
     ///   phase. The accents choose the half-time pulse's phase:
     ///   at <see cref="PhaseShiftAccents"/> accented beats the pulse skipped, each within
     ///   <see cref="PhaseShiftBeats"/> beats of the one before and with no accented strike beat
-    ///   between, the pulse moves onto that skipped beat.
+    ///   between, the pulse moves onto that skipped beat, never striking a beat after the last
+    ///   strike: when the last accent is known at the previous beat's planning, that beat gives way
+    ///   and the accent strikes; else the pulse pauses past the accent to the beat after the next.
+    ///   Every beat is asked in order, even one the previous pulse's subdivisions reach.
     /// - <b>Planning</b> at <c>T - windup</c> (or when the beat is revealed, if later; a beat
     ///   revealed at or after its time is missed): the beat's strikes are queued, each winding up at
     ///   <c>max(impact - windup, the previous impact)</c>, so strikes closer than a wind-up follow on.
@@ -199,15 +202,15 @@ namespace PS.Game.Sim
             return t;
         }
 
-        /// <summary>When the next committed beat's strikes are planned; beats too late to wind up for are skipped.</summary>
+        /// <summary>When the next committed beat is planned; beats too late to wind up for are skipped.</summary>
         double PlanTime(double floor)
         {
             var beats = log.Beats;
             while (planBeat < beats.Length)
             {
                 double t = beats[planBeat].T;
-                if (t > floor + 1e-9 && t > lastImpact + 1e-9) return Math.Max(t - windup, floor);
-                if (t <= floor + 1e-9) Missed++;
+                if (t > floor + 1e-9) return Math.Max(t - windup, floor);
+                Missed++;
                 planBeat++;
             }
             return double.PositiveInfinity;
@@ -238,8 +241,10 @@ namespace PS.Game.Sim
                 }
             if (PlanTime(t) <= t)
             {
+                // Every beat is asked, in order, even one the previous pulse's strikes reach (on the
+                // half-time pulse, a skipped beat holds a subdivision): its accent still counts.
                 int b = planBeat++;
-                if (Holding || !StrikesOn(b, t, out bool halfTime)) return;
+                if (Holding || !StrikesOn(b, t, out bool halfTime) || log.Beats[b].T <= lastImpact + 1e-9) return;
                 Pulse(t, log.Beats[b].T, StrikePeriod(b, halfTime), b, halfTime);
                 return;
             }
@@ -273,23 +278,46 @@ namespace PS.Game.Sim
         /// </summary>
         bool StrikesOn(int b, double now, out bool halfTime)
         {
-            var beat = log.Beats[b];
+            var beats = log.Beats;
+            var beat = beats[b];
             halfTime = beat.V0 < HalfTimeBelow;
-            bool accented = halfTime && accents.Accented(beat.T, now);
             bool strikes = beat.T - lastStrikeBeat >= 0.75 * (halfTime ? 2 : 1) * beat.V0 - 1e-9;
-            if (!halfTime || (strikes && accented)) offAccents = 0;
-            else if (!strikes && accented)
+            if (!halfTime) offAccents = 0;
+            else if (accents.Accented(beat.T, now))
             {
-                if (beat.T - lastOffAccent > PhaseShiftBeats * beat.V0 + 1e-9) offAccents = 0;
-                lastOffAccent = beat.T;
-                if (++offAccents >= PhaseShiftAccents)
+                if (strikes) offAccents = 0;
+                else if (ShiftsPhase(beat))
                 {
-                    offAccents = 0;
-                    strikes = true;
+                    // Known too late to strike it the moment after the last strike: the pulse moves
+                    // onto it, pausing for 1.5 beats rather than swinging twice a beat apart.
+                    lastStrikeBeat = beat.T;
+                    return false;
                 }
             }
+            else if (strikes && offAccents > 0 && b + 1 < beats.Length && WouldShift(beats[b + 1], now))
+                // The next, skipped beat's accent, known now, completes the shift: this beat gives way,
+                // and the next strikes on its accent, 1.5 beats after the last strike.
+                return false;
             if (strikes) lastStrikeBeat = beat.T;
             return strikes;
+        }
+
+        /// <summary>Accents in a row off the half-time pulse's phase, counting one more at <paramref name="beat"/>.</summary>
+        int OffAccentsWith(in StreamEntry beat) =>
+            (beat.T - lastOffAccent <= PhaseShiftBeats * beat.V0 + 1e-9 ? offAccents : 0) + 1;
+
+        /// <summary>Would an accent on the skipped <paramref name="beat"/>, known at <paramref name="now"/>, move the pulse onto it?</summary>
+        bool WouldShift(in StreamEntry beat, double now) =>
+            beat.V0 < HalfTimeBelow && OffAccentsWith(beat) >= PhaseShiftAccents && accents.Accented(beat.T, now);
+
+        /// <summary>Counts the accent on the skipped <paramref name="beat"/>: does it move the pulse onto it?</summary>
+        bool ShiftsPhase(in StreamEntry beat)
+        {
+            offAccents = OffAccentsWith(beat);
+            lastOffAccent = beat.T;
+            if (offAccents < PhaseShiftAccents) return false;
+            offAccents = 0;
+            return true;
         }
 
         /// <summary>The interval from strike beat <paramref name="b"/> to the next: one beat, or two on the half-time pulse.</summary>

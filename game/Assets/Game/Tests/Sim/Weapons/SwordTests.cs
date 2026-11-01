@@ -172,6 +172,30 @@ namespace PS.Game.Sim.Tests
             Assert.Greater(mains.Count, 35);
         }
 
+        [TestCase(0, 0.5)]
+        [TestCase(1, 2.0)]
+        [TestCase(1, 0.5)]
+        public void AnAccentPairMovesTheHalfTimePulseWithAPauseNeverASwingABeatAfterTheLast(double amount, double ahead)
+        {
+            // Accents on skipped beats 30 and 32, then on 34 and 36: known 2 s ahead, the pulse skips 31
+            // to strike 32; known only 0.5 s ahead (after 31's planning), it pauses past 33 to 34. At
+            // Amount 1 the follow-ups land on the skipped beats, which still count their accents.
+            var stats = Content.Progression.Hero.Stats;
+            stats.Amount = amount;
+            var known = Plain(180, 20);
+            var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
+            foreach (int b in new[] { 30, 32, 34, 36 })
+                known.Add(new KnownEntry(StreamEntry.Onset(beats[b], 0, 300, true), beats[b] - ahead));
+            var sim = Start(Config(stats: stats), known);
+            sim.StepTo(20);
+            var mains = MainImpacts(sim).Select(t => beats.IndexOf(t)).ToList();
+            int moved = ahead > 1 ? 32 : 34;
+            CollectionAssert.AreEqual(Enumerable.Range(0, 4).Select(k => moved + 2 * k), mains.SkipWhile(b => b < moved).Take(4),
+                "the pulse moves onto the accents' beats");
+            CollectionAssert.AreEqual(new[] { moved - 5, moved - 3 }, mains.Where(b => b < moved).TakeLast(2),
+                "on the odd beats until one pause of 1.5 beats, never a strike a beat before the move");
+        }
+
         [Test]
         public void AccentsInARowOnTheSkippedBeatsMoveTheHalfTimePulseAndAStrayOneDoesNot()
         {
@@ -184,10 +208,10 @@ namespace PS.Game.Sim.Tests
             var sim = Start(Config(), known);
             sim.StepTo(20);
             var mains = MainImpacts(sim).Select(t => beats.IndexOf(t)).ToList();
-            CollectionAssert.AreEqual(Enumerable.Range(0, 16).Select(k => 2 * k + 1), mains.TakeWhile(b => b < 32),
-                "the stray accent leaves the pulse on the odd beats, as does the first of the pair");
+            CollectionAssert.AreEqual(Enumerable.Range(0, 15).Select(k => 2 * k + 1), mains.TakeWhile(b => b < 32),
+                "the stray accent leaves the pulse on the odd beats, as does the first of the pair; beat 31 gives way");
             CollectionAssert.AreEqual(new[] { 32, 34, 36, 38, 40 }, mains.SkipWhile(b => b < 32).Take(5),
-                "the second accent in a row moves the pulse onto the even beats");
+                "the second accent in a row, known ahead, moves the pulse onto the even beats");
             var heavy = HeroAttacks(sim).Where(a => a.Heavy).Select(a => beats.IndexOf(a.Impact)).ToList();
             CollectionAssert.AreEqual(new[] { 32, 36 }, heavy, "on the pulse, the accents make heavy strikes, never two in a row");
         }
