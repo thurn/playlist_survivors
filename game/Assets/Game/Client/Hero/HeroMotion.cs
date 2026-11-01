@@ -44,13 +44,17 @@ namespace Game.Client.Hero
         public float AShare;
         /// <summary>The blade's blow flare: up at each impact, gone over <see cref="HeroMotion.FlareS"/>.</summary>
         public float Flare;
+        /// <summary>The drawn hero turns to this pose at once rather than easing (<see cref="HeroTurn"/>): a press's strike, quicker than the ease.</summary>
+        public bool TurnAtOnce;
     }
 
     /// <summary>
     /// The drawn hero's turn (<see cref="HeroPresenter"/>): its legs ease to the pose's yaw over <see cref="Seconds"/>,
     /// and its upper body, apart, to the way the pose's upper body faces (the yaw plus the twist), so a walk that
     /// changes direction mid-swing turns the legs under a torso that stays on the strike, rather than swinging the
-    /// torso off the aim with the legs' lag. With no twist both ease alike and the eased twist stays none.
+    /// torso off the aim with the legs' lag. With no twist both ease alike and the eased twist stays none. A press's
+    /// strike (<see cref="HeroPose.TurnAtOnce"/>) lands a few frames after the key, too soon for the ease, so through it
+    /// both take the pose at once and the blow faces its aim.
     /// </summary>
     public struct HeroTurn
     {
@@ -65,7 +69,7 @@ namespace Game.Client.Hero
         /// <summary>Eases toward the pose over dt seconds (the first call lands on it) and sets its twist to the eased upper body's turn from the eased legs.</summary>
         public void Ease(ref HeroPose p, double dt)
         {
-            double k = _set ? 1 - Math.Exp(-Math.Max(0, dt) / Seconds) : 1;
+            double k = _set && !p.TurnAtOnce ? 1 - Math.Exp(-Math.Max(0, dt) / Seconds) : 1;
             _set = true;
             _legs = HeroMotion.Wrap(_legs + HeroMotion.Wrap(p.Yaw - _legs) * k);
             _upper = HeroMotion.Wrap(_upper + HeroMotion.Wrap(p.Yaw + (double)p.Twist - _upper) * k);
@@ -89,13 +93,18 @@ namespace Game.Client.Hero
     ///   <see cref="HopIn"/> and down over <see cref="HopOut"/>, with no hop; the hero faces its travel, and
     ///   stopped, the way it last went.
     /// - **Attacks**: each clip is retimed so its impact frame lands on the attack's impact
-    ///   (<see cref="HeroClips.Fit"/>; a long wind-up coils rather than starting late), entered no earlier than the
-    ///   wind-up, so the swing before it keeps its own impact, and showing on its entry frame. A free press's wind-up
-    ///   starts at the press, in heard time, so it arrives on the key-down frame, as a pressed step does. Slashes
-    ///   alternate left and right; a follow-up continues the combo from the swing before (left, right, then the
-    ///   third); heavy strikes spin and section changes slam,
+    ///   (<see cref="HeroClips.Fit"/>), entered no earlier than the wind-up, so the swing before it keeps its own
+    ///   impact, and showing on its entry frame. Slashes alternate left and right; a follow-up continues the combo
+    ///   from the swing before (left, right, then the third); heavy strikes spin and section changes slam,
     ///   holding 50 ms at 0.6x after the impact as demo3d's heavy blows do. Standing, the hero turns to the
     ///   swing's direction from its wind-up to its follow-through.
+    /// - **Presses** (the free mode's, <see cref="AttackEvent.Pressed"/>; game-modes.md, Attacking on the beat): a press
+    ///   hits at once (the sim lands it two frames after the key, or a tick after it takes the key), its wind-up from
+    ///   the press in heard time, so it arrives on the key-down frame, as a pressed step does. Its clip plays up to <see cref="HeroClips.PressSpeed"/>, entered just short of its
+    ///   impact frame, and follows through as fast; every press holds <see cref="HitStop"/> at
+    ///   <see cref="PressSlow"/> on its impact for punch, and the drawn hero turns to it at once
+    ///   (<see cref="HeroPose.TurnAtOnce"/>). Its blade flares by its grade: brighter on the beat
+    ///   (<see cref="OnBeatFlare"/>), dimmer off it.
     /// - **Swings on the walk** (game-modes.md, Swinging on the move): the legs keep walking and carry the hips
     ///   (<see cref="HeroPose.Hips"/>), facing the travel, and the upper body twists to the swing's aim, eased in over
     ///   the first <see cref="TwistLead"/> of its wind-up (the torso leads the blade) and out over <see cref="TwistOut"/>
@@ -116,10 +125,13 @@ namespace Game.Client.Hero
         /// <summary>The attack's blend on its entry frame: a 60 Hz frame's step in, so the entry frame already shows it.</summary>
         const double EntryStep = 1.0 / 60;
         public const double FlareS = 0.22;
-        public const float HeavyFlare = 1.5f;
+        /// <summary>A heavy blow's flare, and a full-grade (on the beat) press's; an off-beat press's is its grade.</summary>
+        public const float HeavyFlare = 1.5f, OnBeatFlare = 1.25f;
         /// <summary>demo3d's heavy blow: from the impact the clip runs at 0.6x for 50 ms, then catches up over 0.15 s.</summary>
         public const double HitStop = 0.05, CatchUp = 0.15;
         public const float HeavySlow = 0.6f;
+        /// <summary>A press's hit-stop: from its impact the clip all but stops for <see cref="HitStop"/>, against its fast strike.</summary>
+        public const float PressSlow = 0.25f;
         /// <summary>A song time this close short of an impact has reached it: a frame clock's n/60 can fall a rounding short.</summary>
         const double Reached = 1e-6;
         const int Keep = 8;
@@ -147,7 +159,9 @@ namespace Game.Client.Hero
             public HeroClip Clip;
             public HeroClips.Retime Clock;
             public double Entry, Impact, End;
-            public bool Heavy;
+            public bool Heavy, Pressed;
+            /// <summary>A press's beat grade (0.5 to 1); 0 for a strike the beat planned.</summary>
+            public float Grade;
             public float Yaw;
             public bool Aimed;
             /// <summary>The twist's weight carried in from the aimed swing before, at this one's entry.</summary>
@@ -219,12 +233,12 @@ namespace Game.Client.Hero
         {
             var clip = ClipFor(e.SwordKind, _swingCount > 0 ? _swings[(_swingCount - 1) % Keep].Clip : (HeroClip?)null);
             var ann = _clips[clip];
-            var clock = HeroClips.Fit(ann.impact, e.WindupStart, e.Impact);
+            var clock = HeroClips.Fit(ann.impact, e.WindupStart, e.Impact, e.Pressed ? HeroClips.PressSpeed : HeroClips.MaxSpeed);
             bool aimed = e.DirX != 0 || e.DirY != 0;
             var swing = new Swing
             {
                 Clip = clip, Clock = clock, Entry = Math.Max(clock.Start, e.WindupStart), Impact = e.Impact,
-                End = clock.TimeAt(ann.end), Heavy = e.Heavy,
+                End = clock.TimeAt(ann.end), Heavy = e.Heavy, Pressed = e.Pressed, Grade = (float)e.Grade,
                 Yaw = aimed ? (float)Math.Atan2(e.DirX, e.DirY) : 0f, Aimed = aimed,
             };
             for (int i = _swingCount - 1; aimed && i >= Math.Max(0, _swingCount - Keep); i--)
@@ -358,14 +372,18 @@ namespace Game.Client.Hero
         float Swings(double t, ref HeroPose p)
         {
             double latestImpact = double.NegativeInfinity;
-            bool heavy = false;
+            float peak = 1f;
             for (int i = _swingCount - 1; i >= 0 && i >= _swingCount - Keep; i--)
             {
                 var s = _swings[i % Keep];
-                if (s.Impact <= t + Reached && s.Impact > latestImpact) { latestImpact = s.Impact; heavy = s.Heavy; }
+                if (s.Impact <= t + Reached && s.Impact > latestImpact)
+                {
+                    latestImpact = s.Impact;
+                    peak = s.Heavy ? HeavyFlare : !s.Pressed ? 1f : s.Grade >= 1 ? OnBeatFlare : s.Grade;
+                }
             }
             double since = Math.Max(0, t - latestImpact);
-            if (since < FlareS) p.Flare = (float)(1 - since / FlareS) * (heavy ? HeavyFlare : 1f);
+            if (since < FlareS) p.Flare = (float)(1 - since / FlareS) * peak;
 
             int k = Latest(_swings, _swingCount, t, (in Swing s) => s.Entry);
             if (k < 0) return p.Yaw;
@@ -385,6 +403,7 @@ namespace Game.Client.Hero
             }
             p.A = SlotAt(a, t);
             p.Attack = (float)((carried + (1 - carried) * ramp) * (1 - Clamp01((t - a.End) / AttackOut)));
+            p.TurnAtOnce = a.Pressed && t <= a.Impact + Reached;
             return a.Aimed && t < a.End + AttackOut * 0.5 ? a.Yaw : p.Yaw;
         }
 
@@ -454,7 +473,7 @@ namespace Game.Client.Hero
 
         HeroSlot SlotAt(in Swing s, double t)
         {
-            double local = s.Clock.ClipTime(s.Heavy ? HoldThenCatchUp(t, s.Impact, HeavySlow) : t);
+            double local = s.Clock.ClipTime(s.Pressed ? HoldThenCatchUp(t, s.Impact, PressSlow) : s.Heavy ? HoldThenCatchUp(t, s.Impact, HeavySlow) : t);
             return new HeroSlot { Clip = s.Clip, Time = (float)Math.Min(_clips[s.Clip].length, Math.Max(0, local)) };
         }
 

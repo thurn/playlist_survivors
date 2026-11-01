@@ -85,62 +85,92 @@ namespace Game.Tests
             Assert.That(pose.A.Time, Is.EqualTo(expected).Within(1e-4f), "a short wind-up enters the clip part-way, at 1.33x");
         }
 
+        /// <summary>A free press (<see cref="AttackEvent.Pressed"/>): its event arrives as the sim takes it, its wind-up from when it was heard.</summary>
+        static SimEvent Press(double heard, double impact, double grade = 1, HeroAttackKind kind = HeroAttackKind.SlashLeft, double dirX = 1, double dirY = 0) =>
+            SimEvent.SwordAttack(heard + 0.03, 0, kind, heard, impact, dirX, dirY, kind == HeroAttackKind.Spin, 7.04 * grade, grade);
+
         /// <summary>
-        /// A wind-up longer than the clip's at 0.75x (a free press landing on a far eighth) starts the clip at the wind-up
-        /// anyway and coils, slowly, into the strike, which runs at 0.75x onto the impact: never a late start with
-        /// nothing on screen.
+        /// A free press hits at once (game-modes.md, Attacking on the beat): on the key-down frame, at the heard time, the hero
+        /// is already in the strike, its clip just short of the impact frame, whose sliver plays at PressSpeed onto the
+        /// impact; a press the sim took late, or one waiting a swing, shows more of its wind-up, as fast.
         /// </summary>
         [Test]
-        public void ALongWindupCoilsFromItsStartIntoTheStrike()
+        public void AFreePressIsInItsStrikeOnTheKeyDownFrame()
         {
-            foreach (var clip in new[] { HeroClip.SlashL, HeroClip.SlashR })
-            {
-                var motion = new HeroMotion(Clips);
-                if (clip == HeroClip.SlashR) motion.OnEvent(Attack(HeroAttackKind.SlashLeft, 0, 0.32));
-                float impact = Clips[clip].impact;
-                double windup = 2, at = windup + 2.5 * impact / HeroClips.MinSpeed;
-                motion.OnEvent(Attack(clip == HeroClip.SlashL ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight, windup, at));
-                int swing = motion.SwingCount - 1;
-                var first = motion.Evaluate(windup, 0, 0, Direction.Up);
-                Assert.That(first.A.Clip, Is.EqualTo(clip));
-                Assert.That(first.A.Time, Is.EqualTo(0f).Within(1e-5f), $"{clip}: from its first frame at the wind-up");
-                Assert.That(first.Attack, Is.GreaterThan(0f), $"{clip}: showing on the wind-up's frame");
-                float last = 0;
-                for (double t = windup + 1 / Fps; t < at - 1e-9; t += 1 / Fps)
+            foreach (var kind in new[] { HeroAttackKind.SlashLeft, HeroAttackKind.Spin })
+                foreach (double gap in new[] { 1 / 30.0, 0.05, 0.1, 0.15 })
                 {
-                    motion.ClipTime(swing, t, out _, out float time);
-                    Assert.That(time, Is.GreaterThan(last), $"{clip} at {t}: moving all the way");
-                    Assert.That(time - last, Is.LessThanOrEqualTo(HeroClips.MinSpeed / Fps + 1e-4), $"{clip} at {t}: no faster than 0.75x");
-                    last = time;
+                    var clip = kind == HeroAttackKind.Spin ? HeroClip.Spin : HeroClip.SlashL;
+                    float impact = Clips[clip].impact;
+                    var motion = new HeroMotion(Clips);
+                    double heard = 10;
+                    motion.OnEvent(Press(heard, heard + gap, kind: kind, dirX: 0, dirY: -1));
+                    var pose = motion.Evaluate(heard, 0, 0, Direction.Up);
+                    string at = $"{clip}, {gap:F3} s to the impact";
+                    Assert.That(pose.Attack, Is.GreaterThan(0f), $"{at}: in the attack on the key-down frame");
+                    Assert.That(pose.A.Clip, Is.EqualTo(clip));
+                    Assert.That(pose.A.Time, Is.LessThan(impact), $"{at}: short of the impact frame");
+                    Assert.That(pose.A.Time, Is.EqualTo(Math.Max(0, impact - gap * HeroClips.PressSpeed)).Within(1e-4f), $"{at}: at PressSpeed onto it");
+                    if (gap < 0.05) Assert.That(pose.A.Time, Is.GreaterThan(impact - 0.15f), $"{at}: a sliver of the wind-up");
+                    Assert.That(Math.Abs(pose.Yaw), Is.EqualTo((float)Math.PI).Within(1e-5f), $"{at}: turned to the swing");
+                    Assert.That(pose.TurnAtOnce, Is.True, $"{at}: the drawn hero turns at once");
+                    Assert.That(motion.Evaluate(heard + 1 / Fps, 0, 0, Direction.Up).A.Time, Is.GreaterThan(pose.A.Time), $"{at}: and moving");
+                    motion.ClipTime(0, heard + gap, out _, out float landed);
+                    Assert.That(landed, Is.EqualTo(impact).Within(1e-4f), $"{at}: on the impact");
+                    Assert.That(motion.Evaluate(heard + gap + 0.01, 0, 0, Direction.Up).TurnAtOnce, Is.False, $"{at}: easing again after it");
                 }
-                motion.ClipTime(swing, at, out _, out float landed);
-                Assert.That(landed, Is.EqualTo(impact).Within(1e-4f), $"{clip}: on the impact");
-                motion.ClipTime(swing, at - (1 - HeroClips.CoilShare) * impact / HeroClips.MinSpeed, out _, out float coiled);
-                Assert.That(coiled, Is.EqualTo(HeroClips.CoilShare * impact).Within(1e-4f), $"{clip}: the strike at 0.75x from the coil");
-            }
         }
 
         /// <summary>
-        /// A free press (game-modes.md, Attacking on the beat): its attack event arrives as the sim takes it, its wind-up
-        /// from when it was heard and its impact on an eighth. On the key-down frame, at the heard time, the hero is
-        /// already in the attack, in the clip's wind-up.
+        /// A press's blow holds: from its impact its clip all but stops for HitStop, then catches up, and follows through at
+        /// PressSpeed, a fast recovery; its flare is brighter on the beat and dimmer off it.
         /// </summary>
         [Test]
-        public void AFreePressShowsItsWindupOnTheKeyDownFrame()
+        public void APressHoldsOnItsImpactAndFollowsThroughFast()
         {
-            foreach (double gap in new[] { 0.12, 0.25, 0.37, 0.62 })
+            var motion = new HeroMotion(Clips);
+            var slash = Clips[HeroClip.SlashL];
+            double heard = 10, impact = heard + 1 / 30.0;
+            motion.OnEvent(Press(heard, impact));
+            motion.ClipTime(0, impact + HeroMotion.HitStop, out _, out float held);
+            Assert.That(held - slash.impact, Is.EqualTo(HeroMotion.HitStop * HeroMotion.PressSlow * HeroClips.PressSpeed).Within(1e-4f), "held");
+            double caughtUp = impact + HeroMotion.HitStop + HeroMotion.CatchUp;
+            motion.ClipTime(0, caughtUp, out _, out float after);
+            Assert.That(after, Is.EqualTo(Math.Min(slash.length, slash.impact + (caughtUp - impact) * HeroClips.PressSpeed)).Within(1e-4f),
+                "caught up, at PressSpeed");
+            double done = impact + (slash.end - slash.impact) / HeroClips.PressSpeed + HeroMotion.AttackOut;
+            Assert.That(done - heard, Is.LessThan(0.4), "the whole swing, blend out and all, in under 0.4 s");
+            Assert.That(motion.Evaluate(done + 1e-3, 0, 0, Direction.Up).Attack, Is.EqualTo(0f), "followed through and blended out");
+
+            Assert.That(motion.Evaluate(impact, 0, 0, Direction.Up).Flare, Is.EqualTo(HeroMotion.OnBeatFlare).Within(1e-5f), "on the beat: brighter");
+            var off = new HeroMotion(Clips);
+            off.OnEvent(Press(heard, impact, grade: 0.6));
+            Assert.That(off.Evaluate(impact, 0, 0, Direction.Up).Flare, Is.EqualTo(0.6f).Within(1e-5f), "off it: dimmer, by its grade");
+        }
+
+        /// <summary>
+        /// Walking east, a press aimed north: the strike comes two frames after the key, quicker than the drawn turn's ease,
+        /// so the drawn upper body takes the twist at once and the blow faces its aim.
+        /// </summary>
+        [Test]
+        public void AWalkingPressFacesItsAimAtTheImpact()
+        {
+            double east = Math.PI / 2, heard = 2, impact = heard + 1 / 30.0;
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(Press(heard, impact, dirX: 0, dirY: 1));
+            var turn = new HeroTurn();
+            for (double t = 1.5, last = t; t < impact - 1e-9; last = t, t += 1 / Fps)
             {
-                var motion = new HeroMotion(Clips);
-                double heard = 10;
-                motion.OnEvent(SimEvent.SwordAttack(heard + 0.03, 0, HeroAttackKind.SlashLeft, heard, heard + gap, 1, 0, false, 7.04));
-                var pose = motion.Evaluate(heard, 0, 0, Direction.Up);
-                Assert.That(pose.Attack, Is.GreaterThan(0f), $"{gap} s to the impact: in the attack on the key-down frame");
-                Assert.That(pose.A.Time, Is.LessThan(Clips[HeroClip.SlashL].impact), $"{gap} s: in the wind-up");
-                Assert.That(pose.Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5f), $"{gap} s: turned to the swing");
-                Assert.That(motion.Evaluate(heard + 1 / Fps, 0, 0, Direction.Up).A.Time, Is.GreaterThan(pose.A.Time), $"{gap} s: and moving");
-                motion.ClipTime(0, heard + gap, out _, out float landed);
-                Assert.That(landed, Is.EqualTo(Clips[HeroClip.SlashL].impact).Within(1e-4f), $"{gap} s: on the impact");
+                var p = motion.Evaluate(t, 0, 0, Direction.Up);
+                turn.Ease(ref p, t - last);
             }
+            var atImpact = motion.Evaluate(impact, 0, 0, Direction.Up);
+            Assert.That(atImpact.Yaw, Is.EqualTo((float)east).Within(1e-5f), "the legs on the travel");
+            Assert.That(atImpact.Twist, Is.EqualTo((float)-east).Within(1e-5f), "the upper body on the aim");
+            turn.Ease(ref atImpact, 1 / Fps);
+            Assert.That(turn.Legs, Is.EqualTo((float)east).Within(1e-4f), "the drawn legs on the travel");
+            Assert.That(Off(turn.Legs + atImpact.Twist, 0), Is.EqualTo(0).Within(1e-4), "the drawn upper body facing north at the impact");
         }
 
         /// <summary>A subdivision strike's follow-up crossfades in from the swing before without taking its impact.</summary>

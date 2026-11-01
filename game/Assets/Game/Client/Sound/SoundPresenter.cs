@@ -13,7 +13,8 @@ namespace Game.Client.Sound
     ///   hits on enemies (heavy strikes and cleave bands too), and each death's cry under demo3d's
     ///   crystal shatter (ShatterSounds: an ice break and a glass spray, then a tinkle as the shards
     ///   land, pitched by the body's size); a structure's break shatters the same way, lower, and so
-    ///   does its regrowth's eruption, at its start;
+    ///   does its regrowth's eruption, at its start; a free press's swing is as loud as its grade, and a
+    ///   full-grade (on the beat) light press's main strike layers the heavy swing under its own (<see cref="OnBeatAccent"/>);
     /// - the other weapons' sounds come from their own views (<see cref="Request"/>), and a weapon that
     ///   sounds its own hits says so (<see cref="VoiceHitsElsewhere"/>);
     /// - **off-grid sounds** snapped as native snaps them: the hero's hurt on the next sixteenth, and
@@ -25,6 +26,8 @@ namespace Game.Client.Sound
     {
         /// <summary>The shards land this long after a standard body's break (ShatterSounds.LandSeconds).</summary>
         public const float LandSeconds = 0.38f;
+        /// <summary>A full-grade light press's accent: the heavy swing's whoosh under its own, at this gain.</summary>
+        public const float OnBeatAccent = 0.5f;
 
         readonly SoundScheduler _scheduler;
         readonly SoundAggregator _aggregator;
@@ -62,7 +65,8 @@ namespace Game.Client.Sound
                     var a = e.AsAttack;
                     if (!a.IsSword) break; // the other weapons' sounds are their own
                     var kind = a.SwordKind == HeroAttackKind.Slam ? SoundKind.Slam : a.Heavy ? SoundKind.SwingHeavy : SoundKind.Swing;
-                    Request(kind, a.Impact, 1f, 1f, a.Heavy ? 1f : 0.6f);
+                    Request(kind, a.Impact, a.Pressed ? (float)a.Grade : 1f, 1f, a.Heavy ? 1f : 0.6f);
+                    if (a.Pressed && a.Grade >= 1 && kind == SoundKind.Swing && a.SwordKind != HeroAttackKind.FollowUp) Request(SoundKind.SwingHeavy, a.Impact, OnBeatAccent, 1f, 0.6f);
                     break;
                 }
                 case SimEventKind.Hit:

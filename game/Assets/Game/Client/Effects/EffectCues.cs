@@ -14,7 +14,8 @@ namespace Game.Client.Effects
     /// - a hero's attack: a slash, spin or slam at its impact (not its wind-up), with the clip the
     ///   hero swings it with (<see cref="HeroMotion.ClipFor"/>, so the slash can sweep the blade's
     ///   way); a slash or spin sized to the blade's arc (<see cref="SlashArcM"/>, with the reach),
-    ///   oversized when heavy, a slam to the reach; the strike's crystal wave goes with it;
+    ///   oversized when heavy, a slam to the reach; the strike's crystal wave goes with it; a free press's light by
+    ///   its grade, brighter on the beat (<see cref="OnBeatLight"/>), dimmer off it;
     /// - a heavy strike's cleave wave, with its bands' radii and times;
     /// - a death's crystal burst, tinted by its role's gem, with the deaths of its instant counted
     ///   (<see cref="Cue.Together"/>) so they can share their light;
@@ -35,6 +36,8 @@ namespace Game.Client.Effects
         public const float SlashArcM = 3.0f, BaseReachM = 7.037f;
         /// <summary>A heavy strike's slash beyond the arc, and a follow-up's.</summary>
         public const float HeavySlash = 1.25f, FollowUpSlash = 0.85f;
+        /// <summary>A full-grade (on the beat) press's slash light, times the authored; an off-beat press's is its grade.</summary>
+        public const float OnBeatLight = 1.75f;
         /// <summary>A boss slam's burst: its scale, and its warm tint against the crystal's cold.</summary>
         public const float SlamBurst = 1.5f;
         public static readonly Color SlamTint = new Color(1f, 0.45f, 0.15f);
@@ -63,6 +66,8 @@ namespace Game.Client.Effects
             public int Effect;
             /// <summary>A hero's attack's: the clip the hero swings it with.</summary>
             public HeroClip Clip;
+            /// <summary>A hero's attack's light, times the authored (0: as authored): a press's by its grade.</summary>
+            public float Light;
         }
 
         readonly RoleLooks _roles;
@@ -103,7 +108,7 @@ namespace Game.Client.Effects
                         Kind = kind, T = a.Impact, Dir = new Vector2((float)a.DirX, (float)a.DirY),
                         Scale = (float)a.Reach * (kind == Kind.Slam ? 1 : SlashArcM / BaseReachM) * size,
                         Reach = (float)a.Reach, Heavy = a.Heavy || kind == Kind.Slam, Enemy = -1,
-                        Tint = SlashTint?.Invoke(a.Weapon) ?? default, Clip = clip,
+                        Tint = SlashTint?.Invoke(a.Weapon) ?? default, Clip = clip, Light = PressLight(a),
                     });
                     break;
                 }
@@ -159,6 +164,9 @@ namespace Game.Client.Effects
                 }
             }
         }
+
+        /// <summary>A sword attack's light scale: a press's by its grade, <see cref="OnBeatLight"/> on the beat; 0 (as authored) for a beat's.</summary>
+        public static float PressLight(in AttackEvent a) => !a.Pressed ? 0f : a.Grade >= 1 ? OnBeatLight : (float)a.Grade;
 
         /// <summary>
         /// A structure burst at song time <paramref name="t"/> (a break's, or a regrowth's eruption),

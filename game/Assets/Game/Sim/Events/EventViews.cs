@@ -64,6 +64,10 @@ namespace PS.Game.Sim
         public double DirY => e.D3;
         /// <summary>The hero's strike: how far around it the hit reaches, which the visible strike shows.</summary>
         public double Reach => e.D4;
+        /// <summary>A sword strike on the attack key's: its press's beat grade (0.5 to 1, full on the beat); 0 for one the beat planned.</summary>
+        public double Grade => IsSword ? e.D5 : 0;
+        /// <summary>A sword strike on the attack key (the free mode's): it hits at once, its grade the payoff.</summary>
+        public bool Pressed => Grade > 0;
         /// <summary>An enemy's slam: where it lands, the boss's place or the signature minotaur's mark.</summary>
         public double SlamX => !ByHero ? e.D4 : throw Not("an enemy's");
         public double SlamY => !ByHero ? e.D5 : throw Not("an enemy's");

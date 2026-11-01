@@ -225,29 +225,39 @@ namespace PS.Game.Sim.Tests
             Attack(sim, beat);
             sim.StepTo(beat + 1);
             var swing = Swings(sim).Single();
-            Assert.AreEqual(beat + 0.25, swing.Impact, 1e-9, "on the next eighth");
             Assert.AreEqual(beat, swing.WindupStart, 1e-9, "winds up from when the press was heard");
+            Assert.That(swing.Impact, Is.InRange(beat + Sword.PressImpactS - 1e-9, beat + ImmediateS), "hits at once");
             Assert.AreEqual(Reach(), swing.Reach, 1e-9, "on the beat: full reach");
+            Assert.AreEqual(1, swing.Grade, "carrying its grade");
         }
 
+        /// <summary>A press's impact at most this long after it was heard (s): three 60 Hz frames.</summary>
+        const double ImmediateS = 0.05;
+
         /// <summary>
-        /// React now, land on the grid: wherever a press falls, it winds up from when it was heard and its impact lands on
-        /// the first eighth (a beat or half beat) at least GridWindupS after it, and its blows with it.
+        /// The beat grades the payoff, never the timing: wherever a press falls against the beat, or with no beat at all,
+        /// it winds up from when it was heard and its impact, and its blow, land at once: PressImpactS after it, or the
+        /// tick after the sim took it if that is later.
         /// </summary>
         [TestCase(120.0)]
         [TestCase(93.0)]
-        public void APressWindsUpAtOnceAndItsImpactLandsOnTheNextEighth(double bpm)
+        [TestCase(0.0)]
+        public void APressHitsAtOnceWhereverItFallsAgainstTheBeat(double bpm)
         {
-            var known = Plain(bpm, 30);
+            var known = bpm > 0 ? Plain(bpm, 30) : new List<KnownEntry>();
             var sim = Fighter(known);
-            var beats = Beats(known);
-            var eighths = beats.SelectMany((t, i) => i + 1 < beats.Count ? new[] { t, (t + beats[i + 1]) / 2 } : new[] { t }).ToList();
+            var beats = bpm > 0 ? Beats(known) : Enumerable.Range(0, 40).Select(i => 9.6 + 0.5 * i).ToList();
             int b = beats.FindIndex(t => t > 9.5);
             sim.StepTo(9);
             int boss = HordeFixture.Place(sim, "boss-werewolf", sim.State.Hero.X + 0.5, sim.State.Hero.Y, boss: true);
-            // A press every beat and a bit, sweeping its offset from the grid across a whole eighth.
+            // A press every beat and a bit, sweeping its offset from the beat across a whole eighth.
             var heard = Enumerable.Range(0, 12).Select(i => beats[b + 2 * i] + (beats[b + 1] - beats[b]) * i / 24.0).ToList();
-            foreach (double h in heard) Attack(sim, h);
+            var taken = new List<double>();
+            foreach (double h in heard)
+            {
+                Attack(sim, h);
+                taken.Add(sim.Now);
+            }
             sim.StepTo(beats[b + 26]);
             var swings = Swings(sim);
             Assert.AreEqual(heard.Count, swings.Count, "none waited for a swing");
@@ -255,48 +265,45 @@ namespace PS.Game.Sim.Tests
             for (int i = 0; i < heard.Count; i++)
             {
                 double impact = swings[i].Impact;
-                double landed = eighths.First(t => t >= heard[i] + Sword.GridWindupS - 1e-9);
-                Assert.AreEqual(landed, impact, 1e-9, $"press {i} at {heard[i]}: the first eighth a wind-up after it");
+                Assert.AreEqual(Math.Max(heard[i] + Sword.PressImpactS, taken[i] + Simulation.TickSeconds), impact, 1e-9, $"press {i} at {heard[i]}");
+                Assert.LessOrEqual(impact - heard[i], ImmediateS, $"press {i}: at once");
                 Assert.AreEqual(heard[i], swings[i].WindupStart, 1e-9, $"press {i}: winds up from the press");
-                Assert.IsTrue(hits.Any(h => Math.Abs(h.T - impact) < 1e-9), $"press {i}: its blow lands on the eighth");
+                Assert.IsTrue(hits.Any(h => Math.Abs(h.T - impact) < 1e-9), $"press {i}: its blow lands on the impact");
             }
         }
 
-        /// <summary>Faster than an eighth a swing, a press after the swing before skips to the eighth that leaves it room.</summary>
+        /// <summary>A live key reaches the sim about a lead after it was heard: its impact is the tick after the sim takes it.</summary>
         [Test]
-        public void AtAFastTempoAPressSkipsToTheEighthAfterTheSwing()
+        public void APressTheSimTakesLateHitsTheTickAfter()
         {
-            var known = Plain(180, 20);
-            var sim = Fighter(known);
-            var beats = Beats(known);
-            int b = beats.FindIndex(t => t > 9.5);
-            double eighth = (beats[b + 1] - beats[b]) / 2;
-            Assert.Less(eighth, Sword.SwingS);
-            Attack(sim, beats[b]);                 // lands an eighth on
-            Attack(sim, beats[b] + eighth);        // the swing ends past the next eighth: the one after it
-            Attack(sim, beats[b] + 2 * eighth);    // would land on that same eighth: dropped mid-swing
-            sim.StepTo(beats[b + 4]);
-            var impacts = Swings(sim).Select(s => s.Impact).ToArray();
-            Assert.AreEqual(2, impacts.Length);
-            Assert.AreEqual(beats[b] + eighth, impacts[0], 1e-9);
-            Assert.AreEqual(beats[b + 1] + eighth, impacts[1], 1e-9);
+            var sim = Fighter(Plain(120, 20));
+            sim.StepTo(10.09);
+            double taken = sim.Now;
+            sim.Press(Key.Attack, 10.0);
+            sim.StepTo(11);
+            var swing = Swings(sim).Single();
+            Assert.AreEqual(taken + Simulation.TickSeconds, swing.Impact, 1e-9);
+            Assert.AreEqual(10.0, swing.WindupStart, 1e-9, "still winding up from when it was heard");
         }
 
-        /// <summary>A press during the swing before winds up from its impact, so that swing keeps it.</summary>
-        [Test]
-        public void APressDuringTheSwingBeforeWindsUpFromItsImpact()
+        /// <summary>
+        /// A press in the swing before's follow-through cuts it short into the next: it lands a swing after the last press,
+        /// winding up from when it was heard, or from the last strike queued (a follow-up's impact) if that is later.
+        /// </summary>
+        [TestCase(1)]
+        [TestCase(2)]
+        public void APressInTheSwingBeforesFollowThroughCutsItShort(int rank)
         {
-            var known = Plain(60, 30);
-            var sim = Fighter(known, ("sword", 2));
-            var beats = Beats(known);
-            int b = beats.FindIndex(t => t > 9.5);
-            Attack(sim, beats[b]);              // lands on the half beat; its follow-up on the sixteenth after
-            Attack(sim, beats[b] + 0.45);       // lands on the next beat
-            sim.StepTo(beats[b + 3]);
+            var sim = Fighter(new KnownEntry[0], ("sword", rank));
+            Attack(sim, 3.0);
+            Attack(sim, 3.05);
+            sim.StepTo(4);
             var swings = Swings(sim);
-            Assert.AreEqual(new[] { beats[b] + 0.5, beats[b] + 0.75, beats[b + 1], beats[b + 1] + 0.25 }, swings.Select(s => s.Impact).ToArray(),
-                "the follow-ups on the sixteenths");
-            Assert.AreEqual(beats[b] + 0.75, swings[2].WindupStart, 1e-9, "from the follow-up's impact");
+            double first = 3.0 + Sword.PressImpactS, next = first + Sword.SwingS;
+            var expected = rank == 1 ? new[] { first, next } : new[] { first, first + Sword.SwingS / 2, next, next + Sword.SwingS / 2 };
+            Assert.AreEqual(expected.Length, swings.Count);
+            for (int i = 0; i < expected.Length; i++) Assert.AreEqual(expected[i], swings[i].Impact, 1e-9, $"strike {i}: the follow-ups halfway through the swing");
+            Assert.AreEqual(rank == 1 ? 3.05 : first + Sword.SwingS / 2, swings[rank].WindupStart, 1e-9);
         }
 
         [Test]
@@ -352,21 +359,27 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(new[] { Reach(), Reach() }, Swings(sim).Select(s => s.Reach).ToArray());
         }
 
-        /// <summary>Rank 2's Amount 2 adds a follow-up inside each swing, which never slows the next press.</summary>
+        /// <summary>
+        /// Mashing swings no faster than the swing: a press waits for the swing before to end, and one while a waiting swing
+        /// winds up (before its impact, so it shows) is dropped. Rank 2's Amount 2 adds a follow-up inside each swing,
+        /// which never slows the next press.
+        /// </summary>
         [TestCase(1)]
         [TestCase(2)]
         public void MashingSwingsNoFasterThanTheSwing(int rank)
         {
             var sim = Fighter(new KnownEntry[0], ("sword", rank));
             Attack(sim, 3.0);
-            Attack(sim, 3.05); // mid-swing: dropped
-            Attack(sim, 3.15); // waits for the swing
-            Attack(sim, 3.2);  // the next is already waiting: dropped
+            Attack(sim, 3.02); // waits for the swing
+            Attack(sim, 3.04); // the next is already waiting: dropped
+            Attack(sim, 3.2);  // waits for that one
             sim.StepTo(5);
             var swings = Swings(sim);
             var mains = swings.Where(s => s.SwordKind != HeroAttackKind.FollowUp).Select(s => s.Impact).ToArray();
-            Assert.AreEqual(new[] { 3.0 + Sword.PressWindupS, 3.0 + Sword.PressWindupS + Sword.SwingS }, mains);
-            Assert.AreEqual(2 * rank, swings.Count, "each press's follow-ups");
+            double first = 3.0 + Sword.PressImpactS;
+            Assert.AreEqual(3, mains.Length, "the third press dropped");
+            for (int i = 0; i < 3; i++) Assert.AreEqual(first + i * Sword.SwingS, mains[i], 1e-9, $"press {i}: a swing after the one before");
+            Assert.AreEqual(3 * rank, swings.Count, "each press's follow-ups");
         }
 
         [Test]
@@ -379,20 +392,20 @@ namespace PS.Game.Sim.Tests
             known.Add(new KnownEntry(StreamEntry.Onset(beats[b + 4] + 0.01, 0, 300, true), beats[b + 4] - 2));
             var sim = Fighter(known);
             Attack(sim, beats[b] - 0.06);
-            Attack(sim, beats[b] + 0.06);       // the same beat, landing on the same eighth: dropped
+            Attack(sim, beats[b] + 0.06);       // the same beat: not again
             Attack(sim, beats[b + 2]);          // no accent
             Attack(sim, beats[b + 4] + 0.1);    // the accent, but off it
             sim.StepTo(beats[b + 6]);
             var swings = Swings(sim);
-            Assert.AreEqual(new[] { true, false, false }, swings.Select(s => s.Heavy).ToArray());
+            Assert.AreEqual(new[] { true, false, false, false }, swings.Select(s => s.Heavy).ToArray());
             Assert.AreEqual(HeroAttackKind.Spin, swings[0].SwordKind);
             Assert.AreEqual(Reach(heavy: true), swings[0].Reach, 1e-9);
             var cleave = Drive.Events(sim, SimEventKind.Cleave).Single().AsCleave;
-            Assert.AreEqual(beats[b] + 0.25, swings[0].Impact, 1e-9, "the spin lands on the eighth after its beat");
-            Assert.AreEqual(beats[b] + 0.5, cleave.FirstBand, 1e-9, "its cleave wave's first band on the eighth after that");
-            Assert.AreEqual(0.125, cleave.BandSeconds, 1e-9, "the rest a sixteenth apart");
+            Assert.That(swings[0].Impact - (beats[b] - 0.06), Is.InRange(Sword.PressImpactS - 1e-9, ImmediateS), "the spin hits at once, on the accent");
+            Assert.AreEqual(swings[0].Impact + Sword.SwingS / 2, cleave.FirstBand, 1e-9, "its cleave wave's bands spread over the swing");
+            Assert.AreEqual(Sword.SwingS / 4, cleave.BandSeconds, 1e-9);
 
-            // Faster, a second full press from the accented beat lands an eighth later: still not heavy.
+            // Faster, a second full press from the accented beat: still not heavy.
             known = Plain(180, 20);
             beats = Beats(known);
             b = beats.FindIndex(t => t > 10);

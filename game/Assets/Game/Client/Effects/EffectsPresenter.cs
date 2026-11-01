@@ -111,7 +111,7 @@ namespace Game.Client.Effects
                         float yaw = Yaw(c.Dir) + (centre - (mirror ? -SlashCentreDeg : SlashCentreDeg)) * Mathf.Deg2Rad;
                         var v = _cues.HeroVelocityAt(c.T);
                         pos.y = SlashHeight;
-                        Add(c.Kind == EffectCues.Kind.Spin ? _spin : _slash, pos, yaw, c.Scale, seed, c.T, c.Tint, 0, mirror, new Vector3(v.x, 0, v.y));
+                        Add(c.Kind == EffectCues.Kind.Spin ? _spin : _slash, pos, yaw, c.Scale, seed, c.T, c.Tint, c.Light, mirror, new Vector3(v.x, 0, v.y));
                     }
                     _waves.Strike(c.T, hero, c.Reach, c.Heavy);
                     break;

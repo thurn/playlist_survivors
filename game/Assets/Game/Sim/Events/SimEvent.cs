@@ -138,10 +138,17 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>The hero's sword winds up a strike: <see cref="HeroAttack"/> with the sword's shape.</summary>
+        /// <summary>
+        /// The hero's sword winds up a strike: <see cref="HeroAttack"/> with the sword's shape, and D5 a press's beat grade
+        /// (<see cref="BeatGrade"/>, 0.5 to 1; 0 for a strike the beat planned).
+        /// </summary>
         public static SimEvent SwordAttack(double t, int weapon, HeroAttackKind kind, double windupStart, double impact,
-            double dirX, double dirY, bool heavy, double reach) =>
-            HeroAttack(t, weapon, ShapeKind.Sword, (int)kind, windupStart, impact, dirX, dirY, heavy, reach);
+            double dirX, double dirY, bool heavy, double reach, double grade = 0)
+        {
+            var e = HeroAttack(t, weapon, ShapeKind.Sword, (int)kind, windupStart, impact, dirX, dirY, heavy, reach);
+            e.D5 = grade;
+            return e;
+        }
 
         /// <summary>
         /// An enemy's attack winds up: I0 enemy, I1 <see cref="EnemyAttackKind"/>; D0 wind-up start, D1 impact time,

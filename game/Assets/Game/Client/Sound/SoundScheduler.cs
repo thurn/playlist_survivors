@@ -49,6 +49,7 @@ namespace Game.Client.Sound
             public SoundKind Kind;
             public double Song;
             public double Dsp; // the voice's start; NaN: dropped
+            public float Gain; // the cue's own, before its beat's aggregation and the bus
         }
 
         readonly IGameClock _clock;
@@ -264,7 +265,7 @@ namespace Game.Client.Sound
 
         void Keep(in SoundCue cue, double dsp)
         {
-            if (LogCount < _log.Length) _log[LogCount++] = new Entry { Kind = cue.Kind, Song = cue.Song, Dsp = dsp };
+            if (LogCount < _log.Length) _log[LogCount++] = new Entry { Kind = cue.Kind, Song = cue.Song, Dsp = dsp, Gain = cue.Gain };
         }
     }
 }

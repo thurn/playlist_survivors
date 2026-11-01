@@ -288,6 +288,39 @@ namespace Game.Tests
             Assert.That(cues.HeroVelocityAt(2.05), Is.EqualTo(new Vector2(-6.4f, 0)), "the replaced glide is gone");
         }
 
+        /// <summary>
+        /// A free press's payoff follows its grade (game-modes.md, Attacking on the beat): on the beat its slash's light is
+        /// brighter and its swing full, with the heavy swing's whoosh layered under it; off the beat its slash is smaller,
+        /// dimmer and quieter. A strike the beat planned keeps the authored light and a plain swing.
+        /// </summary>
+        [Test]
+        public void AFreePressesPayoffFollowsItsGrade()
+        {
+            var onBeat = SimEvent.SwordAttack(2.97, 0, HeroAttackKind.SlashLeft, 2.97, 3.0, 1, 0, false, 7.04, grade: 1);
+            var offBeat = SimEvent.SwordAttack(3.47, 0, HeroAttackKind.SlashRight, 3.47, 3.5, 1, 0, false, 7.04 * 0.6, grade: 0.6);
+            var planned = SimEvent.SwordAttack(3.68, 0, HeroAttackKind.SlashLeft, 3.68, 4.0, 1, 0, false, 7.04);
+
+            var cues = new EffectCues(new RoleLooks(null));
+            var due = new List<EffectCues.Cue>();
+            cues.OnEvent(onBeat);
+            cues.OnEvent(offBeat);
+            cues.OnEvent(planned);
+            cues.TakeDue(4.0, due);
+            var slashes = due.OrderBy(c => c.T).ToList();
+            Assert.That(slashes.Select(c => c.Light), Is.EqualTo(new[] { EffectCues.OnBeatLight, 0.6f, 0f }), "brighter on the beat, dimmer off it, authored on a beat's");
+            Assert.That(slashes[1].Scale, Is.LessThan(slashes[0].Scale), "off the beat, smaller");
+
+            var s = Scheduler(new TestClock { Mixer = 0 });
+            var p = new SoundPresenter(s, Beats(), new RoleLooks(null), 0.8f, null);
+            p.OnEvent(onBeat);
+            p.OnEvent(offBeat);
+            p.OnEvent(planned);
+            (SoundKind, float)[] At(double t) => s.Log.Where(e => e.Song == t).Select(e => (e.Kind, e.Gain)).ToArray();
+            Assert.That(At(3.0), Is.EquivalentTo(new[] { (SoundKind.Swing, 1f), (SoundKind.SwingHeavy, SoundPresenter.OnBeatAccent) }), "on the beat: the accent");
+            Assert.That(At(3.5), Is.EquivalentTo(new[] { (SoundKind.Swing, 0.6f) }), "off the beat: quieter");
+            Assert.That(At(4.0), Is.EquivalentTo(new[] { (SoundKind.Swing, 1f) }), "the beat's own swing as ever");
+        }
+
         [Test]
         public void OnlyTheSwordsAttacksSlashAndSwing()
         {
