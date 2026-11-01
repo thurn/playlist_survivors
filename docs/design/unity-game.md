@@ -2453,6 +2453,35 @@ until then M4 profiles on the Mac, and its numbers only guide the work.
 - On the Mac the game plays at 60 fps or more; the Mac's numbers are not the
   performance claim.
 
+**Shipped (ps-msz.8.2): the measurement.** `uv run --project demo3d/tools game perf`
+builds the player if needed and runs it windowless at fixed time over the
+standard scenarios: the peak (`--start-minute 25` with Bloody Tear, Soul Eater
+and Holy Wand evolved, the crowd near 300), a structure break and the finale's
+mass kill there, the run's first minute, and the 30-minute File run. It writes
+a JSON summary per scenario and exits 1 if a player fails. Two player flags
+measure:
+
+- `--gpu-probe-at T1,T2,... --gpu-probe-out FILE.json` (`Client/GpuProbe.cs`,
+  demo3d's probe): nine hand-drawn 1080p frames with MSAA 4x at each song time,
+  the first a warm-up, each timed through GPU completion. CPU submission and
+  GPU in series: an upper bound on a windowed frame. Batch mode with a device
+  only (not `--headless`), and only a handful of times per run.
+- `--profile-out FILE.csv` (`Client/Loop/FrameProfile.cs`): each frame's main
+  thread by part (sim, events, each presenter's Present, the crowd's GPU
+  shatter and the structures' physics apart, the loop and Unity's engine), its
+  managed allocation and collections. A fixed-time frame's music rendering and
+  analysis wait, and the probe's draw, are left out, so the run measured in 4
+  minutes reports its frames' own work. IL2CPP lacks the per-thread allocation
+  counter, so a native hook counts allocations
+  (`Client/Loop/AllocationCounter.c`).
+
+The baseline on jarvis (M5 Max, IL2CPP), in
+[game/evidence/perf](../../game/evidence/perf/README.md): at the peak a probe
+frame takes 7.0 ms median and 7.7 ms p99, the main thread's update 0.8 ms and
+1.6 ms p99, and the sim's step 0.31 ms p99 at 285 or more alive. The full run
+has no frame over 33 ms. Drawing the frame is the top cost by far, then
+Unity's own player loop, then the crowd.
+
 ## What Carries Over, and What Changes
 
 Both prototypes were built under constraints this game doesn't have. Native
@@ -2563,6 +2592,7 @@ headlessly; nothing they run opens a window that takes the operator's focus.
 just game --file public/reactive/house-128/house-128.ogg  # build and play
 uv run --project demo3d/tools game check --player         # every check
 uv run --project demo3d/tools game look <name>            # windowless stills
+uv run --project demo3d/tools game perf                   # frame probe and CPU profile
 uv run --project demo3d/tools game sim-test               # the sim, no Unity
 ```
 
@@ -2584,6 +2614,9 @@ Checks, by layer:
   above 25% health; an idle bot must die before minute 10.
 - **Replay**: a recorded session replays to its hash in its runtime (`game replay DIR`, in .NET
   or with `--player` in the player).
+- **Performance** (ps-msz.8.2): `game perf` runs the player windowless at fixed time over the
+  standard scenarios with its frame probe and CPU frame profile, into a JSON summary
+  ([Performance targets](#performance-targets)).
 - **Vendor guard**: the repository's check that blocks committing vendor
   files covers the new project.
 

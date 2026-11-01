@@ -73,3 +73,7 @@ what was run (the exact commands), the numbers, and what they show.
 - [sweeps](sweeps/README.md): the positioning bot's four 30-minute .NET runs over the survivors test playlist,
   all to the victory card above 25% health, and the idle bot falling at 2:05, with each run's pacing against
   `startLevels`, its boss chests' drop-to-take delays and the late crowd's role mix (ps-msz.6.13, ps-msz.8.4).
+  all to the victory card above 25% health, and the idle bot falling at 2:06, with each run's pacing (ps-msz.6.13).
+- [perf](perf/README.md): the run's performance baseline on the Mac from `game perf`: the windowless frame probe and
+  the CPU frame profile at the peak, a structure break, the finale's mass kill, the run's first minute and the
+  30-minute fixed-time run (ps-msz.8.2).
