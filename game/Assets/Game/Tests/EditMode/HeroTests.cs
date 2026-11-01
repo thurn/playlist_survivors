@@ -8,7 +8,7 @@ using Is = NUnit.Framework.Is;
 
 namespace Game.Tests
 {
-    /// <summary>The hero's motion: attacks retimed onto the sim's impacts, follow-ups, hops and the blade's flare.</summary>
+    /// <summary>The hero's motion: attacks retimed onto the sim's impacts, follow-ups, hops, swings on the walk and the blade's flare.</summary>
     public class HeroTests
     {
         const double Fps = 60;
@@ -257,6 +257,134 @@ namespace Game.Tests
             Assert.That(motion.Evaluate(1.0 + HeroMotion.FlareS / 2, 0, 0, Direction.Up).Flare, Is.EqualTo(0.5f).Within(1e-4f));
             Assert.That(motion.Evaluate(1.5, 0, 0, Direction.Up).Flare, Is.EqualTo(HeroMotion.HeavyFlare).Within(1e-5f), "a heavy blow flares more");
             Assert.That(motion.Evaluate(3.5, 0, 0, Direction.Up).Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5f), "back to its travel after the follow-through");
+        }
+
+        static double Off(double a, double b) => Math.IEEERemainder(a - b, 2 * Math.PI);
+
+        static double Deg(double d) => d * Math.PI / 180;
+
+        /// <summary>A swing aimed at <paramref name="yaw"/> (radians clockwise from north) while the hero walks.</summary>
+        static SimEvent AimedAttack(double windupStart, double impact, double yaw) =>
+            Attack(HeroAttackKind.SlashLeft, windupStart, impact, dirX: Math.Sin(yaw), dirY: Math.Cos(yaw));
+
+        /// <summary>
+        /// Walking east, a swing to the north (game-modes.md, Swinging on the move): the legs keep running east and the
+        /// upper body twists to the swing, eased in so it is on the aim before the impact, and back out after the
+        /// follow-through; up to 120 degrees either way the twist alone reaches the aim.
+        /// </summary>
+        [Test]
+        public void WalkingTheLegsKeepToTheTravelAndTheUpperBodyTwistsToTheSwing()
+        {
+            double east = Math.PI / 2, windup = 2, impact = 2.3;
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(AimedAttack(windup, impact, 0));
+
+            var before = motion.Evaluate(windup - 0.01, 0, 0, Direction.Up);
+            Assert.That(before.Twist, Is.EqualTo(0f));
+            Assert.That(before.Yaw, Is.EqualTo((float)east).Within(1e-5f));
+            Assert.That(before.Run, Is.EqualTo(1f), "running");
+            Assert.That(before.Hips, Is.EqualTo(1f), "the walk carries the hips");
+
+            var entry = motion.Evaluate(windup, 0, 0, Direction.Up);
+            Assert.That(entry.Attack, Is.GreaterThan(0f), "the swing shows on its first frame");
+            Assert.That(entry.Twist, Is.EqualTo(0f).Within(1e-5f), "the twist eases in");
+            float easing = motion.Evaluate(windup + 0.3 * HeroMotion.TwistLead * (impact - windup), 0, 0, Direction.Up).Twist;
+            Assert.That(easing, Is.InRange(-east + 0.1, -0.05), "twisting left, part of the way");
+            var led = motion.Evaluate(windup + HeroMotion.TwistLead * (impact - windup), 0, 0, Direction.Up);
+            Assert.That(led.Twist, Is.EqualTo((float)-east).Within(1e-5f), "on the aim before the impact: the torso leads");
+
+            var atImpact = motion.Evaluate(impact, 0, 0, Direction.Up);
+            Assert.That(atImpact.Yaw, Is.EqualTo((float)east).Within(1e-5f), "the legs face the travel");
+            Assert.That(atImpact.Twist, Is.EqualTo((float)-east).Within(1e-5f), "the upper body faces the swing");
+            Assert.That(atImpact.Run, Is.EqualTo(1f).Within(1e-5f), "still running forward");
+            Assert.That(atImpact.Hips, Is.EqualTo(1f).Within(1e-5f));
+            Assert.That(atImpact.Attack, Is.EqualTo(1f).Within(1e-5f));
+
+            var after = motion.Evaluate(4, 0, 0, Direction.Up);
+            Assert.That(after.Twist, Is.EqualTo(0f).Within(1e-5f), "unwound after the follow-through");
+            Assert.That(after.Yaw, Is.EqualTo((float)east).Within(1e-5f));
+
+            foreach (double offset in new[] { -119.0, -90, -45, 10, 60, 100, 119 })
+            {
+                var m = new HeroMotion(Clips);
+                m.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+                m.OnEvent(AimedAttack(windup, impact, east + Deg(offset)));
+                var p = m.Evaluate(impact, 0, 0, Direction.Up);
+                Assert.That(p.Yaw, Is.EqualTo((float)east).Within(1e-5f), $"{offset} degrees: the legs on the travel");
+                Assert.That(p.Twist, Is.EqualTo((float)Deg(offset)).Within(1e-5f), $"{offset} degrees: the twist reaches the aim");
+                Assert.That(p.Run, Is.EqualTo(1f).Within(1e-5f), $"{offset} degrees: the forward run");
+            }
+        }
+
+        /// <summary>
+        /// Past 120 degrees the twist unwinds and the whole body turns, the legs coming off the forward run: square to
+        /// the travel they take the attack's footwork, and a strike straight behind backpedals with no twist, whichever
+        /// side it is on.
+        /// </summary>
+        [Test]
+        public void PastTheClampTheBodyTurnsAndTheLegsComeOffTheForwardRun()
+        {
+            double windup = 2, impact = 2.3;
+            HeroPose At(double offset)
+            {
+                var m = new HeroMotion(Clips);
+                m.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 0, 6, Direction.Up));
+                m.OnEvent(AimedAttack(windup, impact, Deg(offset)));
+                var p = m.Evaluate(impact, 0, 0, Direction.Up);
+                Assert.That(Off(p.Yaw + p.Twist, Deg(offset)), Is.EqualTo(0).Within(1e-5), $"{offset} degrees: the upper body on the aim");
+                Assert.That(Math.Abs(p.Twist), Is.LessThanOrEqualTo(HeroMotion.TwistMax + 1e-5), $"{offset} degrees: within the clamp");
+                return p;
+            }
+
+            foreach (double sign in new[] { 1.0, -1.0 })
+            {
+                var past = At(sign * 130);
+                Assert.That(past.Twist, Is.EqualTo((float)(sign * Deg(100))).Within(1e-4f), "10 degrees past: a sixth unwound");
+                Assert.That(past.Yaw, Is.EqualTo((float)(sign * Deg(30))).Within(1e-4f), "the legs turned off the travel");
+                Assert.That(past.Run, Is.EqualTo((float)Math.Cos(Deg(30))).Within(1e-4f), "off the forward run");
+                Assert.That(past.Back, Is.EqualTo(0f));
+                Assert.That(past.Hips, Is.EqualTo(past.Run).Within(1e-5f));
+
+                var square = At(sign * 150);
+                Assert.That(square.Yaw, Is.EqualTo((float)(sign * Deg(90))).Within(1e-4f), "square to the travel");
+                Assert.That(square.Run + square.Back, Is.LessThan(1e-4f), "the legs and hips on the attack's footwork");
+                Assert.That(square.Hips, Is.LessThan(1e-4f));
+                Assert.That(square.Attack, Is.EqualTo(1f).Within(1e-5f));
+            }
+
+            var behindLeft = At(-179.9);
+            var behindRight = At(179.9);
+            foreach (var behind in new[] { behindLeft, behindRight })
+            {
+                Assert.That(Math.Abs(behind.Twist), Is.LessThan(0.01f), "straight behind: no twist");
+                Assert.That(Math.Abs(Off(behind.Yaw, Math.PI)), Is.LessThan(0.01), "the legs on the aim");
+                Assert.That(behind.Back, Is.EqualTo(1f).Within(1e-4f), "backpedalling");
+                Assert.That(behind.Run, Is.EqualTo(0f));
+            }
+            Assert.That(Math.Abs(Off(behindLeft.Yaw, behindRight.Yaw)), Is.LessThan(0.02), "either side of straight behind, the same pose");
+
+            // The backpedal is the run clip played backward: as the walk goes on, its time goes back.
+            var walk = new HeroMotion(Clips);
+            walk.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 0, 6, Direction.Up));
+            var a = walk.Evaluate(1.4, 0, 0, Direction.Up);
+            var b = walk.Evaluate(1.4 + 1 / Fps, 0, 0, Direction.Up);
+            Assert.That(b.RunTime - a.RunTime, Is.GreaterThan(0f));
+            Assert.That(b.BackTime - a.BackTime, Is.EqualTo(-(b.RunTime - a.RunTime)).Within(1e-4f));
+        }
+
+        /// <summary>Standing, a swing turns the whole body as it always has: no twist, the walk's run and hips gone.</summary>
+        [Test]
+        public void StandingASwingTurnsTheWholeBody()
+        {
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(SimEvent.HeroGlide(1.5, 1.5, 3, 0, 0, 0, Direction.Right));
+            motion.OnEvent(AimedAttack(2, 2.3, Math.PI));
+            var p = motion.Evaluate(2.3, 0, 0, Direction.Up);
+            Assert.That(Math.Abs(p.Yaw), Is.EqualTo((float)Math.PI).Within(1e-5f), "turned to the swing");
+            Assert.That(p.Twist, Is.EqualTo(0f));
+            Assert.That(p.Run + p.Back + p.Hips, Is.EqualTo(0f));
         }
 
         [Test]

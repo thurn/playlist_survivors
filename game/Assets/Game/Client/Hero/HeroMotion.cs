@@ -13,23 +13,30 @@ namespace Game.Client.Hero
 
     /// <summary>
     /// The hero at one song time (<see cref="HeroMotion.Evaluate"/>): where it stands, how high it
-    /// hops, which way it means to face, and its clips' weights and times. The legs blend the idle,
-    /// the hop (<see cref="Run"/>) and the attack's full-body share; the upper body the sword idle's arms
-    /// and the attack. The attack has two slots: <see cref="A"/>, and <see cref="B"/>, the swing it
-    /// crossfades from, by <see cref="AShare"/>.
+    /// hops, which way its legs mean to face and how far its upper body twists from them, and its clips'
+    /// weights and times. The legs blend the idle, the hop or walk (<see cref="Run"/>, and <see cref="Back"/>
+    /// backward) and the attack's full-body share; the torso (hips and spine) the walk's share (<see cref="Hips"/>)
+    /// and the sword idle or the attack; the upper body the sword idle's arms and the attack. The attack has two
+    /// slots: <see cref="A"/>, and <see cref="B"/>, the swing it crossfades from, by <see cref="AShare"/>.
     /// </summary>
     public struct HeroPose
     {
         public double X, Y;
         /// <summary>The hop's height above the ground (m).</summary>
         public float Lift;
-        /// <summary>The facing it turns toward, radians clockwise from north (+y): Unity's yaw.</summary>
+        /// <summary>The facing its legs (its root) turn toward, radians clockwise from north (+y): Unity's yaw.</summary>
         public float Yaw;
+        /// <summary>The upper body's turn from the legs (radians, clockwise), spread over the spine: a walking swing's aim.</summary>
+        public float Twist;
         /// <summary>The way it travels (its latest step's facing), whatever the swing turns it to.</summary>
         public Direction Facing;
         public float IdleTime;
-        /// <summary>The hop's weight on the legs (0..1) and the time into the run clip.</summary>
+        /// <summary>The hop's or the forward walk's weight on the legs (0..1) and the time into the run clip.</summary>
         public float Run, RunTime;
+        /// <summary>The backpedal's weight on the legs (0..1): the run clip played backward, at <see cref="BackTime"/>.</summary>
+        public float Back, BackTime;
+        /// <summary>The walk's share of the torso (hips and spine, 0..1); the sword idle or the attack has the rest.</summary>
+        public float Hips;
         /// <summary>The attack's weight on the upper body (0..1); the legs take it where the hop doesn't.</summary>
         public float Attack;
         public HeroSlot A, B;
@@ -60,8 +67,16 @@ namespace Game.Client.Hero
     ///   starts at the press, in heard time, so it arrives on the key-down frame, as a pressed step does. Slashes
     ///   alternate left and right; a follow-up continues the combo from the swing before (left, right, then the
     ///   third); heavy strikes spin and section changes slam,
-    ///   holding 50 ms at 0.6x after the impact as demo3d's heavy blows do. The hero turns to the
+    ///   holding 50 ms at 0.6x after the impact as demo3d's heavy blows do. Standing, the hero turns to the
     ///   swing's direction from its wind-up to its follow-through.
+    /// - **Swings on the walk** (game-modes.md, Swinging on the move): the legs keep walking and carry the hips
+    ///   (<see cref="HeroPose.Hips"/>), facing the travel, and the upper body twists to the swing's aim, eased in over
+    ///   the first <see cref="TwistLead"/> of its wind-up (the torso leads the blade) and out over <see cref="TwistOut"/>
+    ///   after its follow-through. Up to <see cref="TwistMax"/> the twist alone reaches the aim; past it the twist
+    ///   unwinds and the whole body turns, until a strike straight behind has none, the legs on the aim and
+    ///   backpedalling. Legs turned off the travel blend from the forward run to the backpedal (the run clip
+    ///   played backward) through the attack's own footwork, square to the travel: the Synty packs have no
+    ///   strafe or backpedal clips.
     /// </summary>
     public sealed class HeroMotion
     {
@@ -85,6 +100,12 @@ namespace Game.Client.Hero
         const int GlideKeep = 64;
         /// <summary>The walk a run cycle covers (m): two of the grid's tiles, a stride a foot.</summary>
         public const double CycleM = 3.0;
+        /// <summary>The upper body's twist from the walking legs at most (rad, 120 degrees): past it the whole body turns.</summary>
+        public const double TwistMax = 2 * Math.PI / 3;
+        /// <summary>The twist reaches a swing's aim this share of the way through its wind-up, so the torso leads the blade.</summary>
+        public const double TwistLead = 0.6;
+        /// <summary>The twist unwinds over this after the swing's follow-through (s).</summary>
+        public const double TwistOut = 0.25;
 
         struct Step
         {
@@ -208,9 +229,12 @@ namespace Game.Client.Hero
         {
             var p = new HeroPose { X = x, Y = y, Yaw = YawOf(facing), Facing = facing, AShare = 1f };
             p.IdleTime = (float)Repeat(t, _clips[HeroClip.Idle].length);
-            if (_glideCount > 0) Walk(t, ref p);
+            bool walking = _glideCount > 0;
+            if (walking) Walk(t, ref p);
             else Legs(t, ref p);
-            Swings(t, ref p);
+            float standing = Swings(t, ref p);
+            if (walking) Torso(t, ref p, standing);
+            else p.Yaw = standing;
             return p;
         }
 
@@ -291,9 +315,11 @@ namespace Game.Client.Hero
                 p.Run = (float)(wasMoving ? 1 - Clamp01(since / HopOut) : 0);
             double walked = g.Walked + Math.Sqrt(g.VX * g.VX + g.VY * g.VY) * since;
             p.RunTime = (float)(Repeat(walked / CycleM, 1) * _clips[HeroClip.Run].length);
+            p.BackTime = (float)(Repeat(-walked / CycleM, 1) * _clips[HeroClip.Run].length);
         }
 
-        void Swings(double t, ref HeroPose p)
+        /// <summary>The attack's slots and weight, and the flare; returns the yaw a standing hero turns to (its swing's, or <see cref="HeroPose.Yaw"/>).</summary>
+        float Swings(double t, ref HeroPose p)
         {
             double latestImpact = double.NegativeInfinity;
             bool heavy = false;
@@ -306,7 +332,7 @@ namespace Game.Client.Hero
             if (since < FlareS) p.Flare = (float)(1 - since / FlareS) * (heavy ? HeavyFlare : 1f);
 
             int k = Latest(_swings, _swingCount, t, (in Swing s) => s.Entry);
-            if (k < 0) return;
+            if (k < 0) return p.Yaw;
             var a = _swings[k % Keep];
             // The blend's first step shows on the entry frame itself: a press moves the hero on its key-down frame.
             double ramp = Clamp01((t - a.Entry + EntryStep) / (EntryStep + Math.Max(1e-3, Math.Min(AttackIn, 0.5 * (a.Impact - a.Entry)))));
@@ -323,8 +349,63 @@ namespace Game.Client.Hero
             }
             p.A = SlotAt(a, t);
             p.Attack = (float)((carried + (1 - carried) * ramp) * (1 - Clamp01((t - a.End) / AttackOut)));
-            if (a.Aimed && t < a.End + AttackOut * 0.5) p.Yaw = a.Yaw;
+            return a.Aimed && t < a.End + AttackOut * 0.5 ? a.Yaw : p.Yaw;
         }
+
+        /// <summary>
+        /// The walking hero's legs and upper body (<see cref="HeroMotion"/>, Swings on the walk), from the walk's
+        /// weight (<see cref="HeroPose.Run"/> on entry) and facing: blended toward the standing hero's
+        /// (<paramref name="standing"/>, no twist) as the walk's weight goes.
+        /// </summary>
+        void Torso(double t, ref HeroPose p, float standing)
+        {
+            double walk = p.Run, travel = p.Yaw;
+            double upper = UpperYaw(t, travel);
+            double d = Wrap(upper - travel), twist = d, legs = travel;
+            if (Math.Abs(d) > TwistMax)
+            {
+                double past = (Math.Abs(d) - TwistMax) / (Math.PI - TwistMax);
+                twist = Math.Sign(d) * TwistMax * (1 - past);
+                legs = upper - twist;
+            }
+            double ahead = Math.Cos(legs - travel);
+            double forward = Math.Max(0, ahead), back = Math.Max(0, -ahead);
+            p.Yaw = (float)Wrap(LerpAngle(standing, legs, walk));
+            p.Twist = (float)(twist * walk);
+            p.Run = (float)(walk * forward);
+            p.Back = (float)(walk * back);
+            p.Hips = (float)(walk * (forward + back));
+        }
+
+        /// <summary>
+        /// The way the walking hero's upper body faces at song time t: the travel, turned toward the aimed swings' aims
+        /// (each from the one before as its twist comes in) by the strongest twist's weight.
+        /// </summary>
+        double UpperYaw(double t, double travel)
+        {
+            int oldest = Math.Max(0, _swingCount - Keep), first = -1;
+            double weight = 0;
+            for (int i = _swingCount - 1; i >= oldest; i--)
+            {
+                var s = _swings[i % Keep];
+                if (!s.Aimed || s.Entry > t) continue;
+                double into = TwistIn(s, t);
+                weight = Math.Max(weight, into * (1 - Smooth(Clamp01((t - s.End) / TwistOut))));
+                if (first < 0 || TwistIn(_swings[first % Keep], t) < 1) first = i;
+            }
+            if (first < 0 || weight <= 0) return travel;
+            double aim = _swings[first % Keep].Yaw;
+            for (int i = first + 1; i < _swingCount; i++)
+            {
+                var s = _swings[i % Keep];
+                if (s.Aimed && s.Entry <= t) aim = LerpAngle(aim, s.Yaw, TwistIn(s, t));
+            }
+            return LerpAngle(travel, aim, weight);
+        }
+
+        /// <summary>A swing's twist coming in: eased over the first <see cref="TwistLead"/> of its wind-up.</summary>
+        static double TwistIn(in Swing s, double t) =>
+            Smooth(Clamp01((t - s.Entry) / Math.Max(1e-3, TwistLead * (s.Impact - s.Entry))));
 
         HeroSlot SlotAt(in Swing s, double t)
         {
@@ -372,6 +453,18 @@ namespace Game.Client.Hero
             d == Direction.Right ? (float)(Math.PI / 2) : d == Direction.Down ? (float)Math.PI : d == Direction.Left ? (float)(-Math.PI / 2) : 0f;
 
         static double Clamp01(double v) => v < 0 ? 0 : v > 1 ? 1 : v;
+
+        static double Smooth(double u) => u * u * (3 - 2 * u);
+
+        /// <summary>An angle wrapped into (-pi, pi].</summary>
+        static double Wrap(double a)
+        {
+            a = Math.IEEERemainder(a, 2 * Math.PI);
+            return a <= -Math.PI ? a + 2 * Math.PI : a;
+        }
+
+        /// <summary>From angle a toward b the short way round, by u.</summary>
+        static double LerpAngle(double a, double b, double u) => a + Wrap(b - a) * u;
 
         static double Repeat(double t, double length) => length <= 0 ? 0 : t - Math.Floor(t / length) * length;
     }

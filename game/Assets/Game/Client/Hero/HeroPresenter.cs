@@ -15,7 +15,8 @@ namespace Game.Client.Hero
     /// - the aura's hook: <see cref="AuraAnchor"/> follows the hero's feet (not its turn) for the aura's
     ///   effects to hang on, and <see cref="Aura"/> is its strength, from <see cref="AuraStart"/> growing
     ///   with the build to 1.
-    /// Player flag `--hero-out FILE`: each frame's song time, position, lift, yaw, clips and weights, and the flare, as CSV.
+    /// Player flag `--hero-out FILE`: each frame's song time, position, lift, yaw, clips and weights, the flare, and the
+    /// walking swing's twist, backpedal and the walk's share of the torso, as CSV.
     /// </summary>
     public sealed class HeroPresenter : IPresenter, IDisposable
     {
@@ -68,7 +69,7 @@ namespace Game.Client.Hero
             if (outPath != null)
             {
                 _out = new StreamWriter(outPath);
-                _out.WriteLine("song,x,y,lift,yaw,run,run_time,attack,a_clip,a_time,b_clip,b_time,a_share,flare");
+                _out.WriteLine("song,x,y,lift,yaw,run,run_time,attack,a_clip,a_time,b_clip,b_time,a_share,flare,twist,back,hips");
             }
         }
 
@@ -94,9 +95,9 @@ namespace Game.Client.Hero
             AuraAnchor.position = new Vector3((float)pose.X, 0, (float)pose.Y);
             Pulse(t, hero);
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,
-                "{0:R},{1:R},{2:R},{3:R},{4:R},{5:R},{6:R},{7:R},{8},{9:R},{10},{11:R},{12:R},{13:R}",
+                "{0:R},{1:R},{2:R},{3:R},{4:R},{5:R},{6:R},{7:R},{8},{9:R},{10},{11:R},{12:R},{13:R},{14:R},{15:R},{16:R}",
                 t, pose.X, pose.Y, pose.Lift, _yaw, pose.Run, pose.RunTime, pose.Attack,
-                pose.A.Clip, pose.A.Time, pose.B.Clip, pose.B.Time, pose.AShare, pose.Flare));
+                pose.A.Clip, pose.A.Time, pose.B.Clip, pose.B.Time, pose.AShare, pose.Flare, pose.Twist, pose.Back, pose.Hips));
         }
 
         /// <summary>The low-health pulse: red emission on each beat, its strength rising as health falls under <see cref="LowHealth"/>.</summary>
