@@ -1,5 +1,5 @@
 // The dark-core-edges monster look's shards (EdgeLook.cs; MonsterShatter.cs): the type's chunks,
-// one instance per death, posed and moved as MonsterShard.shader poses them (MonsterShards.hlsl), in
+// one instance per death, posed and moved as every look's shards are (MonsterShards.hlsl), in
 // the bodies' surface (MonsterEdge.hlsl). Every chunk is outlined where it broke (the shard baker's
 // crack edges in TEXCOORD5) as well as on the model's feature edges, so an edge monster shatters
 // into edge-lit glass. The outlines are hottest on the break's frame, fading over FRESH_SECONDS,

@@ -7,7 +7,7 @@
 // - Integrate: every live shard to the frame's song time in steps of at most 1/120 s: gravity,
 //   tumble, ground bounce and friction, then a sink after LINGER seconds.
 // A shard's state is its pivot's place and its turn since the break; the draw shader skins its
-// corners from the frozen palette and moves them rigidly with it (MonsterShard.shader).
+// corners from the frozen palette and moves them rigidly with it (each look's shard shader).
 #pragma kernel SeedPalette
 #pragma kernel SeedShards
 #pragma kernel Integrate

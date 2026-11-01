@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PS.Look.Tests
 {
-    /// <summary>The monster looks by option (MonsterLooks): an option without a built look draws the crystal stand-in.</summary>
+    /// <summary>The monster looks by option (MonsterLooks): an option without a built look draws the stand-in, the gem; classic the crystal.</summary>
     public sealed class MonsterLookTests
     {
         sealed class Plain : IMonsterLook
@@ -15,19 +15,29 @@ namespace PS.Look.Tests
         }
 
         [Test]
-        public void AnOptionWithoutALookDrawsTheCrystal()
+        public void AnOptionWithoutALookDrawsTheGem()
         {
-            Assert.AreSame(MonsterLooks.Crystal, MonsterLooks.Of(null));
-            Assert.AreSame(MonsterLooks.Crystal, MonsterLooks.Of("not-built-yet"));
-            Assert.AreEqual("crystal", MonsterLooks.Crystal.Name);
+            Assert.IsInstanceOf<GemLook>(MonsterLooks.StandIn);
+            Assert.AreSame(MonsterLooks.StandIn, MonsterLooks.Of(null));
+            Assert.AreSame(MonsterLooks.StandIn, MonsterLooks.Of("not-built-yet"));
+            Assert.AreSame(MonsterLooks.StandIn, MonsterLooks.Of(GemLook.Option));
         }
 
         [Test]
-        public void ARegisteredLookDrawsItsOption()
+        public void TheClassicOptionDrawsTheCrystal()
         {
-            var look = new Plain();
-            MonsterLooks.Register(look);
-            Assert.AreSame(look, MonsterLooks.Of("test-plain"));
+            var before = ResolvedLook.Active;
+            try
+            {
+                ResolvedLook.Resolve(new LookFlags { Look = "classic" }).Apply();
+                Assert.AreSame(MonsterLooks.Classic, MonsterLooks.Active);
+                ResolvedLook.Resolve(new LookFlags { Look = "prism" }).Apply();
+                Assert.IsInstanceOf<GemLook>(MonsterLooks.Active);
+            }
+            finally
+            {
+                before?.Apply();
+            }
         }
 
         [Test]
@@ -37,8 +47,8 @@ namespace PS.Look.Tests
             lib.Crystal = Shader.Find("Hidden/InternalErrorShader");
             lib.ShardShader = lib.Crystal;
             var type = new CrowdType { Id = "blob" };
-            var body = MonsterLooks.Crystal.Body(lib, type);
-            var shards = MonsterLooks.Crystal.Shards(lib, type);
+            var body = MonsterLooks.Classic.Body(lib, type);
+            var shards = MonsterLooks.Classic.Shards(lib, type);
             Assert.AreSame(lib.Crystal, body.shader);
             Assert.AreSame(lib.ShardShader, shards.shader);
             Assert.AreEqual("blob_crystal", body.name);
@@ -46,6 +56,14 @@ namespace PS.Look.Tests
             Object.DestroyImmediate(body);
             Object.DestroyImmediate(shards);
             Object.DestroyImmediate(lib);
+        }
+
+        [Test]
+        public void ARegisteredLookDrawsItsOption()
+        {
+            var look = new Plain();
+            MonsterLooks.Register(look);
+            Assert.AreSame(look, MonsterLooks.Of("test-plain"));
         }
     }
 }

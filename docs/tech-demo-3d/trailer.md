@@ -1593,7 +1593,9 @@ The file's look:
   each facet its own brightness, throbbing with the beat wave, a shard's fresh
   faces twice as bright. It is 0 unless a tune sets it, so every other run
   looks as before. Monsters, their shards and crystal structures (and so the
-  structures' shards) all take it.
+  structures' shards) all take it; the monsters only in the crystal, the
+  `--look classic` monster look (ps-wnj.13: the other looks have their own
+  light).
 - **The horde is the look package's** (ps-wnj.22): `--monster-style crystal`
   draws through the package's crowd and GPU shatter, in the applied `--look`
   preset's monster look ([crowd.md](crowd.md#monster-styles), The crystal cut

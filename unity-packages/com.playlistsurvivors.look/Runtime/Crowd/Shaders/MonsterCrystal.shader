@@ -59,7 +59,7 @@ Shader "Game/MonsterCrystal"
                 float3 color = CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, i.tint, i.fx.x, 0, 0, 1, false);
                 // The beat throb (CrowdThrob): the whole gem lights up on the impact.
                 color += i.tint * i.fx.y * (0.8 + 1.2 * i.bary.w) + i.fx.y * 0.12;
-                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, i.fx.y, 0);
+                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, i.fx.y, 0, _Facets);
                 return half4(MixFog(graded, i.fogFactor), 1);
             }
             ENDHLSL

@@ -186,8 +186,8 @@ but at the game camera's distance that was too subtle to read. Evidence:
   stay planted, so it rides on the footplant stepping rather than fighting it.
 - **The throb.** The body lights up on the impact and fades within the beat: 1 on a full-energy
   downbeat, about 0.6 on a beat. The baseline (CrowdSkinned) adds the albedo times 0.35 as
-  emission and triples its rim light; the look package's crystal (the crystal cut's, LookCrowd)
-  lifts its trapped light and its inner glow (`_SL_InnerGlow`, the crystal trailer's look). The other styles take the squash alone, on top of
+  emission and triples its rim light; the look package's crystal (the crystal cut's under `--look classic`, LookCrowd)
+  lifts its trapped light and its inner glow (`_SL_InnerGlow`, the crystal trailer's look); the other monster looks flare their cores and lines on the pulse. The other styles take the squash alone, on top of
   their own beat responses (the beat wave, spectrum's bulge, fire's licks).
 - **Where it runs.** `StyleBeat` computes both from the song clock as heard (`feelT`, as the post
   feel's beat) and publishes `_SL_Bounce`, `_SL_BouncePrev` (the previous frame's, for motion
@@ -303,8 +303,9 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   `--monster-style crystal`, the crystal cut's, is the one style demo3d doesn't draw itself: DemoMain hands
   the horde to `LookCrowd`, which feeds the look package's crowd (`PS.Look.Crowd.BoneTextureCrowd`) and GPU
   shatter (`MonsterShatter`), drawn in the applied preset's monster look (`MonsterLooks.Active`; the edge
-  preset's dark-core-edges, the solid preset's solid-emissive and the hologram preset's wireframe are built, and
-  every other option draws the crystal stand-in until its look is).
+  preset's dark-core-edges, the solid preset's solid-emissive, the hologram preset's wireframe and the prism
+  preset's refractive gem are built; an option not built yet draws the gem, `MonsterLooks.StandIn`, and the
+  `classic` option the crystal, `MonsterLooks.Classic`).
   The style meshes carry the package's feature edges in UV5 (neon-look.md, Monsters), and the shards carry
   them plus their cracks. The action cut and every other style keep demo3d's
   own crowd. The package's crowd is the game's, so where demo3d's had more, the crystal cut now has the
@@ -318,7 +319,7 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     cut is off by default), the LOD2 shadow proxy. No motion vectors (the crystal is transparent, so it
     had none anyway). Each type's gem colour (`StyleLook`) is its instances' tint. The horde's beat pulse
     (`_SL_Bounce`, `_SL_Throb`) and the trailer's inner glow (`_SL_InnerGlow`, the glow tune) are globals
-    the package's crystal reads and only demo3d sets, so the game's look doesn't move. `--style-tune`'s
+    the package's crystal (classic's) reads and only demo3d sets, so the game's look doesn't move. `--style-tune`'s
     gain and peak don't reach it (the package's grade is the crystal's, peak 0.3); the hit flash is the
     game's, half white and half the gem's colour.
   - **At the blow.** Every monster death breaks on its killing blow's impact frame, from whatever pose the
@@ -396,7 +397,7 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   `--style-tune key=value,...` overrides them for a run without a rebuild (keys: gain, peak,
   glow, exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral), so a
   treatment can be judged with other values; it fails under baseline. `glow` is crystal's
-  inner glow (the package's `_SL_InnerGlow`, 0 unless tuned): light added after the peak, so the gems bloom on
+  inner glow (the package's `_SL_InnerGlow`, 0 unless tuned; the crystal cut's monsters take it only under `--look classic`): light added after the peak, so the gems bloom on
   dark ground, as the crystal trailer's look sets it ([trailer.md](trailer.md#the-crystal-cut)).
 - **The hero keeps its own shader** under every style. The lab paints its knight, but
   demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'

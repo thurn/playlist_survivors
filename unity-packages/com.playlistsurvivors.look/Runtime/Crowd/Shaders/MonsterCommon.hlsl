@@ -1,8 +1,8 @@
-// The crystal monsters' vertex front end (MonsterCrystal.shader's HLSLINCLUDE): demo3d's
-// StyleCommon.hlsl for the skinned crowd, copied and owned for the crystal alone. The style mesh's
-// attributes, the palette skinning, the instance's hit flash, tint and LOD fade, on what every
-// crystal shader shares (CrystalCommon.hlsl). The shader declares its UnityPerMaterial CBUFFER
-// (with `half4 _Tint; half _Gain; half _Peak;`) before including this.
+// The monster looks' vertex front end (every look's body and shard shaders include it): the style
+// mesh's attributes, the palette skinning, the instance's hit flash, tint and LOD fade, on the beat
+// globals and helpers the crystal shaders share (CrystalCommon.hlsl), and the crystal's inner glow
+// (the classic look's, MonsterCrystal). The shader declares its UnityPerMaterial CBUFFER (with
+// `half4 _Tint;`) before including this.
 #ifndef GAME_MONSTER_COMMON_INCLUDED
 #define GAME_MONSTER_COMMON_INCLUDED
 
@@ -20,12 +20,12 @@ float _GameIdMask;
 // ground, each facet its own brightness, throbbing on the beat, a fresh break's faces the brightest.
 float _SL_InnerGlow;
 
-float3 MonsterInnerGlow(float3 positionWS, float3 normalWS, float4 bary, float3 tint, float throb, float inside)
+float3 MonsterInnerGlow(float3 positionWS, float3 normalWS, float4 bary, float3 tint, float throb, float inside, half facets)
 {
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
     float3 facet = normalize(cross(ddy(positionWS), ddx(positionWS)));
     if (dot(facet, V) < 0) facet = -facet;
-    float3 N = normalize(lerp(normalize(normalWS), facet, _Facets));
+    float3 N = normalize(lerp(normalize(normalWS), facet, facets));
     float fres = pow(1.0 - saturate(dot(N, V)), 3.0);
     return tint * _SL_InnerGlow * (0.35 + 0.65 * bary.w) * (0.7 + 0.6 * SL_Wave(positionWS, 6.0) + 2.0 * throb)
         * (1.0 - 0.5 * fres) * (1.0 + inside);

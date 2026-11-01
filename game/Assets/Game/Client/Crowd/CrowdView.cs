@@ -5,6 +5,7 @@ using Game.Client.Loop;
 using PS.Game.Sim;
 using UnityEngine;
 using PS.Look.Crowd;
+using UnityEngine.Rendering.Universal;
 
 namespace Game.Client.Crowd
 {
@@ -87,6 +88,9 @@ namespace Game.Client.Crowd
             }
             _crowd = new BoneTextureCrowd(_lib, _pool);
             _shatter = new MonsterShatter(_lib, _crowd.Palette);
+            // The gem and the crystal refract the scene behind them, which the arena turns on only for its own refracting looks.
+            if (MonsterLooks.Refracts(MonsterLooks.Active) && camera != null && camera.TryGetComponent<UniversalAdditionalCameraData>(out var data))
+                data.requiresColorOption = CameraOverrideOption.On;
             _slots = new CrowdSlots(_lib.Types.Length, _pool);
             _clips = new MonsterClips[_lib.Types.Length];
             for (int i = 0; i < _clips.Length; i++) _clips[i] = MonsterClips.Of(_lib.Types[i]);

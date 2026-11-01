@@ -133,7 +133,7 @@ Shader "Look/MonsterEdge"
             {
                 ShadowVaryings o;
                 // URP repeats the shadow draw for each cascade: skip a monster outside this cascade's
-                // light-space box (the depth axis is not tested), as MonsterCrystal does.
+                // light-space box (the depth axis is not tested), as MonsterGem does.
                 uint slot = CrowdSlot(v.instanceID);
                 float height;
                 float4 sphere = CrowdSphere(_Instances[slot], height);

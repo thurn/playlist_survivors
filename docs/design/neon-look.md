@@ -171,7 +171,9 @@ globals are the package's (`Runtime/Crowd/`, namespace `PS.Look.Crowd`;
 step (`StyleMesh.Unweld`) and shard cutter (`CrowdShardBaker`, in the package's
 editor assembly `PS.Look.Editor`). Bodies and shards take their materials from
 a **monster look** (`IMonsterLook`, registered by option in `MonsterLooks`); an
-option without a look draws `MonsterLooks.Crystal`, today's crystal. The game
+option without a look draws `MonsterLooks.StandIn`, the refractive gem since
+ps-wnj.13 (today's crystal, MonsterCrystal and MonsterShard, is the `classic`
+option's alone, `MonsterLooks.Classic`). The game
 draws through the package and its forks are deleted; its `CrowdView` feeds the
 crowd and its crowd baker (game's roster and cast) calls the package's steps.
 demo3d's `StyleBeat` publishes through `BeatGlobals`. Players hook the package's
@@ -188,7 +190,9 @@ cutter). demo3d's crystal forks are deleted: `CrystalShatter`, `CrowdShards`,
 package's cutter) and the `Crystal` and `CrystalShard` style shaders (the mix's
 slimes are hologram now). The horde's beat pulse (`_SL_Bounce`, `_SL_Throb`)
 and the trailer's inner glow (`_SL_InnerGlow`) moved into the package's crowd as
-globals only demo3d sets, so the game's look is unchanged. Where the forks
+globals only demo3d sets, so the game's look is unchanged (only the crystal,
+classic's monster look since ps-wnj.13, reads the inner glow: the other looks
+look the same in both players). Where the forks
 diverged the crystal cut took the game's: GPU shards for PhysX, LODs, the
 half-tinted hit flash ([crowd.md](../tech-demo-3d/crowd.md#monster-styles)). The
 action cut and the other Synty styles keep demo3d's own crowd (Decision 11).
@@ -466,6 +470,40 @@ How the hologram is built (ps-wnj.12):
   38-49 and 35-46, swarm separation 11.7-13.5 in game and 8.2-12.4 on the
   cut (provisional: a see-through body has no dark core, and six tunings
   all landed at 11-13.7), game perf at the peak 4.1 / 5.6 ms p50 / max.
+
+How the package implements the refractive gem (ps-wnj.13):
+
+- **Refractive gem** (`GemLook`, option `refractive-gem`, the prism preset's
+  and `MonsterLooks.StandIn`, the look of an option not built yet; shaders
+  `Resources/Look/Shaders/MonsterGem` and `MonsterGemShard` over
+  `Runtime/Crowd/Shaders/MonsterGem.hlsl`, using MonsterEdge.hlsl's line and
+  core): clear gem showing the void and grid behind it (the camera's opaque
+  texture, three taps along each facet's bend) split into the type's slot
+  hue and the slot's hue turned 28 degrees either way (`GemLook.FringeDeg`),
+  all levelled to one luminance as the edge look's are, so the dispersion
+  stays in the slot's family. A body is mostly dark: a narrow band of
+  reflected light per facet that jumps between facets as the view turns,
+  brightest at grazing angles, a fresnel rim and fine pale feature lines,
+  a few facets of trapped light that sparkle on `_SL_Pulse`, and a small core
+  that flares on it. A hit lights the bands, rim, lines and core half
+  `shatter.core` and half the slot's hue, so a crowd under constant hits keeps
+  its colour. A body under about 7% of the screen's half-height (`GemFar`:
+  the crystal cut's horde, not the game's) keeps a glow in its slot's hue,
+  where the bands and lines would average out to a dim outline. Rings hop it
+  and light its bands, rim and lines. Shards keep the gem; their fresh inside
+  faces and cracks are lit, hottest on the break's frame. The gem ignores
+  the crystal cut's inner glow (`_SL_InnerGlow`), so it looks the same in
+  both players. The old crystal (MonsterCrystal, MonsterShard, the shaders
+  the library names) is no longer the stand-in: it draws only the monsters'
+  `classic` option (`MonsterLooks.Classic`), for `--look classic`'s parity
+  with the look before the epic. The game's `CrowdView` turns on the
+  camera's opaque texture whenever the gem or the crystal draws
+  (`MonsterLooks.Refracts`); demo3d's crystal cut always has it on. Game: swarm separation 13.2-13.6
+  (5.4 with the crystal), form 43-49, conformance 0.89-0.92, perf at the peak
+  3.5 / 7.2 ms; the crystal cut: form 31-46 (11-25), conformance 0.71-0.84
+  (0.39-0.84), separation 5.4-11.9 (provisional at trailer distance)
+  ([game](../../game/evidence/look/monster-gem/README.md),
+  [crystal cut](../../demo3d/evidence/look/monster-gem/README.md)).
 
 ### World
 

@@ -15,7 +15,7 @@ namespace Game.Client
     /// tag. A batch-mode player draws no frames of its own, so a camera is drawn only for the
     /// frames that keep a still (drawing every frame by hand grows URP's pooled targets,
     /// docs/tech-demo-3d/mac.md). With `--capture-mask` it draws the same frame again as its ID
-    /// render, still-&lt;time&gt;-mask.png: the crowd alone, flat white on black (MonsterCrystal
+    /// render, still-&lt;time&gt;-mask.png: the crowd alone, flat white on black (every monster look
     /// under _GameIdMask), with no post, for the look tools' readability measure.
     /// </summary>
     public sealed class Stills : IDisposable

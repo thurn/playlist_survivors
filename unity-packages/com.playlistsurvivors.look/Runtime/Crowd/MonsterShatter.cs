@@ -47,8 +47,8 @@ namespace PS.Look.Crowd
     ///   exactly where the body was, on the same frame it disappears;
     /// - integrates every live shard to the frame's song time: gravity, tumble, ground bounce, then
     ///   a sink after <see cref="LingerSeconds"/> over <see cref="SinkSeconds"/>;
-    /// - draws each type's live deaths as instances of its chunk mesh with the crystal surface
-    ///   (MonsterShard.shader), skinned from the frozen palettes and moved with their chunks.
+    /// - draws each type's live deaths as instances of its chunk mesh in the monster look's shard material
+    ///   (<see cref="IMonsterLook.Shards"/>), skinned from the frozen palettes and moved with their chunks.
     /// No GameObjects and no main-thread posing: per type a frame costs one upload and two
     /// dispatches for its deaths, one integration dispatch and one indirect draw, however many die.
     /// Each type keeps a ring of death slots: every death lives the same time, so they end in the
@@ -154,7 +154,6 @@ namespace PS.Look.Crowd
             _look = look ?? MonsterLooks.Active;
             _palette = palette;
             _cs = lib.ShardCompute ? lib.ShardCompute : throw new InvalidOperationException("CrowdLibrary has no shard compute (re-run `game unity BakeCrowd`)");
-            if (!lib.ShardShader) throw new InvalidOperationException("CrowdLibrary has no shard shader (re-run `game unity BakeCrowd`)");
             _kSeedPalette = _cs.FindKernel("SeedPalette");
             _kSeedShards = _cs.FindKernel("SeedShards");
             _kIntegrate = _cs.FindKernel("Integrate");

@@ -2416,19 +2416,23 @@ package's unweld step (`StyleMesh.Unweld`) and shard cutter.
   [neon-look.md](neon-look.md#monsters)): the edge preset's dark-core-edges
   (`EdgeLook`: dark glass, the type's palette slot in rim, feature lines and
   a core), the solid preset's solid-emissive (`SolidLook`: bodies self-lit
-  in the type's palette slot with a dark silhouette band and outline) and the
+  in the type's palette slot with a dark silhouette band and outline), the
   hologram preset's wireframe (`HologramLook`: lines and a faint fill added
-  over the arena; `wireframe-all` on every triangle edge) are built; an
-  option not built yet draws the crystal.
-- **The crystal** (`Game/MonsterCrystal`, the package's stand-in monster look,
-  `MonsterLooks.Crystal`, until a preset's look is built) shares its surface
-  with the structures (the package's CrystalSurface.hlsl): it refracts the scene behind, tinted by
-  the role's gem colour, with the beat globals' facet sparkle, graded to a
-  luminance peak of 0.3 so effects stay brightest.
-- Transparent crystal lacks depth and motion vectors, so the game keeps MSAA
-  rather than TAA. There is no depth-only pass: the crystal applies its own
-  fog and takes no ambient, so SSAO would only darken the ground beside it,
-  and the horde reads at about +50 L* over the ground without it.
+  over the arena; `wireframe-all` on every triangle edge) and the prism
+  preset's refractive-gem (`GemLook`: clear gem showing the void and grid
+  behind in the slot's hue family, with reflected bands, a rim and a core)
+  are built; an option not built yet draws the gem (`MonsterLooks.StandIn`),
+  which replaced the crystal as the stand-in (ps-wnj.13). `CrowdView` turns
+  on the camera's opaque texture whenever the gem or the crystal draws.
+- **The crystal** (`Game/MonsterCrystal`, `MonsterLooks.Classic`) is the
+  monsters' `classic` option alone, for parity with the look before the
+  epic. It shares its surface with the structures (the package's
+  CrystalSurface.hlsl): it refracts the scene behind, tinted by the role's
+  gem colour, with the beat globals' facet sparkle, graded to a luminance
+  peak of 0.3 so effects stay brightest.
+- The looks draw in the transparent queue without motion vectors, so the
+  game keeps MSAA rather than TAA. Each look applies its own fog and takes no
+  ambient, so SSAO would only darken the ground beside it.
 
 ### Shatter
 
@@ -2468,9 +2472,9 @@ evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
   friction, then after 1.2 s a 0.6 s sink. Song time drives it, so fixed-time
   runs repeat exactly; a seek backwards clears the shards.
 - **The draw** is one indirect draw per model of its live deaths' instances
-  (`Game/MonsterShard`): each corner skinned from its death's frozen palette
-  and moved rigidly with its chunk, in the crystal surface, inside faces
-  brighter, with a white flash on the break. It casts shadows and draws under
+  (the monster look's shard material): each corner skinned from its death's frozen palette
+  and moved rigidly with its chunk, in the look's surface, inside faces
+  brighter, with a `shatter.core` flash on the break. It casts shadows and draws under
   the stills' ID mask on the crowd's layer.
 - **The burst hook** is `MonsterShatter.Broke` (`CrowdView.Shatter`): each
   death's time, hit point, blow, force, height, gem colour and role, raised

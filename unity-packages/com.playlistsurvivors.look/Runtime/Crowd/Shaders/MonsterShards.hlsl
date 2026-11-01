@@ -1,5 +1,5 @@
 // The GPU shatter's records (MonsterShatter.cs), shared by its compute passes (MonsterShards.compute)
-// and its draw (MonsterShard.shader).
+// and its draw (each look's shard shader).
 #ifndef GAME_MONSTER_SHARDS_INCLUDED
 #define GAME_MONSTER_SHARDS_INCLUDED
 

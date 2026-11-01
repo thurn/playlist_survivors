@@ -1,5 +1,5 @@
 // What the crystal shaders share (unity-game.md, "The Look"): the crystal structures
-// (StructureCrystal) and the crystal monsters (MonsterCrystal). demo3d's StyleCommon.hlsl's beat
+// (StructureCrystal) and the monster looks (MonsterCommon.hlsl). demo3d's StyleCommon.hlsl's beat
 // globals, noise, beat wave, lighting helpers, facet edges and luminance grade, copied and owned.
 // Include it after URP's Core.hlsl and Lighting.hlsl and StaticShadow.hlsl, in the SubShader's
 // HLSLINCLUDE.

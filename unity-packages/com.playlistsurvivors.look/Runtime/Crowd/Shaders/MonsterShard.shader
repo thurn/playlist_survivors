@@ -124,7 +124,7 @@ Shader "Game/MonsterShard"
             {
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float3 color = CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, i.tint, i.fx.x, 0, i.fx.y, 1, false);
-                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, 0, i.fx.y);
+                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, 0, i.fx.y, _Facets);
                 return half4(MixFog(graded, i.fogFactor), 1);
             }
             ENDHLSL
