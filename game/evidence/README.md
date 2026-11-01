@@ -100,6 +100,8 @@ what was run (the exact commands), the numbers, and what they show.
 - [free-mode](free-mode/README.md): `--mode free`, the hero walking off the grid and Z's swings graded by
   the beat, a heavy one on an accent (ps-y21); each in its strike on its key-down frame and hitting 1/30 s
   later, the beat grading the payoff (ps-w9p.8; ps-w9p.1's landing on the next eighth was dropped).
+- [press-latency](press-latency/README.md): a free press's blow seen and its swing heard about 1/30 s after the key
+  live, on the speakers and a Bluetooth-like 250 ms output, before and after its resolution in heard time (ps-w9p.10).
 - [moving-swings](moving-swings/README.md): the free hero swinging on the walk, its legs on the travel and its
   upper body twisted to the strike, the whole body turning and backpedalling past 120 degrees (ps-w9p.2).
 - [slashes](slashes/README.md): the sword's swings as the trailer's gold crescents at the blade's arc, each on

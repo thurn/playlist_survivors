@@ -103,7 +103,9 @@ reason, without weakening a decision below.
    of milliseconds ahead of what the player hears on speakers (more on
    Bluetooth headphones). A key press strides at once when the sim takes it,
    and is drawn from when it was heard, so the lead never delays the hero.
-   See the [Key Presses](#key-presses) section.
+   See the [Key Presses](#key-presses) section. The free mode's sword presses
+   resolve in heard time the same way, against the world's recent history,
+   with nothing re-simulated (ps-w9p.10, [The sim lead](#the-sim-lead)).
 7. **The run is native's 30-minute run**: run clock, schedule, **freezes**
    (the world pausing while the music plays on, for level-up cards and the
    like), chests, evolutions and victory, with at most 300 enemies alive.
@@ -768,7 +770,41 @@ lead     = frontier - heardSong(now)     // = outputLatency + margin
   drawn from when it was heard either way. `B` (0.5 s) stays larger than the
   lead in both cases.
 - Nothing the sim has settled is ever revised. Events at or before the
-  frontier are final.
+  frontier are final: none is changed or withdrawn.
+- **Heard-time strikes** (ps-w9p.10) are the one kind of event a frame
+  settles before the previous frontier. A free-mode press heard at h lands
+  its blow at `h + 1/30 s` (game-modes.md, Attacking on the beat), which a
+  live key reaches the sim after: about the lead later, at F. So when the
+  sim takes the key, it resolves the press's moments it has already passed
+  (the wind-up, the blows, a heavy cleave's first bands), each at its own
+  time against the world as it was then: the free hero's kept path
+  (`IHeroControl.PositionWas`, 64 ticks) and the horde's history of each
+  enemy's latest two moves and its life's start (`Horde.Rewound`). Their
+  damage applies at F, and their events (attack, hits, knocks, deaths,
+  drops, glints, breaks) are stamped at their own times, at most 0.5 s back
+  (`Sword.PressBackS`) and never before a freeze or fall.
+  - **The rule kept: no rollback.** Nothing simulated is rewound or run
+    again; what the sim's systems did in (h, F] stands. An enemy the blow
+    killed at h + 1/30 may still have bitten the hero, been hit by another
+    weapon or stepped in between; its knock, as a press stride's re-walk
+    does for the hero, replaces the moves it made after its time, in the sim
+    and in the crowd. A bounded re-simulation of the lead was rejected: it
+    would revise settled events, sounds and the run's random draws, for a
+    difference no one sees in a tenth of a second.
+  - **Why it shows on time**: frameSong trails the frontier by the lead, so
+    when the frame after the key settles the press, the screen is about a
+    display latency past h: the blow at h + 1/30 is on that frame or the
+    next. A death that settles after the frames passed its time breaks on the
+    frame it arrives (CrowdView).
+  - **Sound**: the mixer is past h + 1/30 by then (a DSP buffer past the
+    heard song plus the output latency), so the press's sounds start as
+    soon as the mixer can rather than drop ([Sound timing](#sound-timing)).
+  - Measured by `LoopTests.AFreePressIsSeenAndHeardAtOnceWhateverTheLead`
+    ([game/evidence/press-latency](../../game/evidence/press-latency/README.md)):
+    key to the blow seen in 35-51 ms on speakers and on a 250 ms Bluetooth
+    output alike, and to its swing heard in the output latency plus at most a
+    frame and two DSP buffers; before, both took the lead (about 90 ms, and
+    0.3 s on Bluetooth).
 - The presentation shows the sim's recorded state at `frameSong`, which is
   normally behind the frontier, so it interpolates recorded history. If
   display latency ever exceeds the lead, the frame shows the frontier's
@@ -973,7 +1009,15 @@ retimes the clip to fit.
 ### Sound timing
 
 Every sound is scheduled on Unity's DSP clock at the DSP time of its song
-time. It is never started late; a sound that can't make its time is dropped.
+time. It is never started late; a sound that can't make its time is dropped,
+but for **heard-time sounds** (ps-w9p.10): a free press's swing, hits,
+deaths and breaks, whose events the sim stamps before the frontier it
+settles them at ([The sim lead](#the-sim-lead)). The mixer is already past
+most of them, and dropping them would leave a press silent, so each starts
+as soon as the mixer can (a DSP buffer past its clock's reading), at its
+attack, its lead-in skipped (`SoundCue.Asap`; the run's summary counts them
+as late). The presenter knows them by their stamp: before the previous
+frame's frontier.
 When the mixer can make a sound's attack but not all of the clip's lead-in
 before it, the sound starts into its clip so the attack still lands on time
 (ps-msz.8.6). Unity's mixer honours that start (`AudioSource.time` before

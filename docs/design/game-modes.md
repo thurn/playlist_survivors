@@ -81,14 +81,25 @@ song time, cycling the run clip once per 3 m walked, with no hop.
 The sword never strikes by itself. Z (the sim's `Key.Attack`) swings it:
 
 - **Timing: hit at once; the beat grades the payoff, never the timing** (ps-w9p.8). A press heard at h
-  lands its main impact at `max(h + 1/30 s, F + a tick)` (`Sword.PressImpactS`, F the sim's time when it
-  takes the key), beat or no beat: two 60 Hz frames after the key, so the key-down frame already shows the
-  strike and the next its last sliver before the blow. The blows, deaths, kill sounds, shatters and
-  structure breaks all follow the impact at once; nothing waits for the grid.
-  - The sim can't land a blow before it takes the key. A scripted key (`--walk`) is heard as the sim takes
-    it, so its impact is 1/30 s on; a live key reaches the sim about the lead after it was heard (outputLatency
-    plus the margin, about 90 ms on the built-in speakers), so its impact is a tick after that. The pose
-    still reacts on the key-down frame, in heard time, and plays into the impact from there.
+  lands its main impact at `h + 1/30 s` (`Sword.PressImpactS`), beat or no beat: two 60 Hz frames after the
+  key, so the key-down frame already shows the strike and the next its last sliver before the blow. The
+  blows, deaths, kill sounds, shatters and structure breaks all follow the impact at once; nothing waits for
+  the grid.
+  - **In heard time** (ps-w9p.10). A live key reaches the sim about the lead after it was heard (outputLatency
+    plus the margin: about 90 ms on the built-in speakers, 0.2-0.35 s on Bluetooth), past its impact. The sim
+    resolves the press as it takes the key: each moment it has passed (wind-up, blows, a spin's first cleave
+    bands) at its own time, against the world as it was then (where the walking hero was, where each enemy
+    stood or stepped), the damage applied as it takes the key and the events stamped at their own times. Nothing is
+    re-simulated: what happened in the lead stands (an enemy the blow killed may still have bitten), the
+    design's no-rollback rule kept ([The sim lead](unity-game.md#the-sim-lead)). The client trails the sim by
+    the lead, so the blow is drawn on time, and its sounds, already past the mixer, start as soon as it can
+    ([Sound timing](unity-game.md#sound-timing)): key to blow seen in 35-51 ms whatever the output, to the
+    swing heard in the output latency and up to 27 ms more
+    ([game/evidence/press-latency](../../game/evidence/press-latency/README.md)). Before, impacts landed a tick
+    after the sim took the key, a lead late, and play-testers found the swings "barely connected to the button
+    press".
+  - A scripted key (`--walk`) is heard as the sim takes it, so its impact is simply 1/30 s on. The pose reacts
+    on the key-down frame, in heard time, and plays into the impact from there.
   - The knight's pose (`HeroMotion`, Presses): the press's wind-up starts at h, so the key-down frame is
     already in the strike. The clip plays up to 2.5x (`HeroClips.PressSpeed`), entered just short of its
     impact frame (a sliver of the wind-up: 0.08 s of the clip at 1/30 s), and follows through as fast (the
@@ -172,9 +183,11 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
 - Is 70 ms the right full-grade window, and 0.5 the right floor? Both are constants in
   `BeatGrade`.
 - Does a strike entered a sliver short of its impact read as a sword swing or as a twitch, the spin above
-  all (its flourish is mostly skipped)? Is the live lead (about 90 ms from key to blow) short enough, or
-  does the sim's lead need to shrink? (Closed: the eighth's wait from press to impact read as lag,
-  ps-w9p.1, and was dropped, ps-w9p.8.)
+  all (its flourish is mostly skipped)? (Closed: the eighth's wait from press to impact read as lag,
+  ps-w9p.1, and was dropped, ps-w9p.8; the live lead from key to blow, ps-w9p.10.)
+- A press's sounds start as soon as the mixer allows, with their lead-in skipped: does the swing's whoosh,
+  cut to its attack, still read as a swing on speakers? On Bluetooth the output latency itself (about
+  0.25 s) stays between the key and the sound.
 - Is the payoff's difference (reach, light, flare, the swing's accent) enough to make pressing on the beat
   worth it, against mashing at 6.7 swings a second?
 - Does the walk need a pulse on the beat to read as rhythmic, now that the hero glides?

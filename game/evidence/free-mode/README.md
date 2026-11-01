@@ -42,8 +42,8 @@ uv run --project demo3d/tools game look free-mode --backend mono --at 7.6 --fram
   Every main impact is 1/30 s after its press but the one that waited for the swing before (ps-w9p.1 landed these
   0.12-0.33 s on, on the eighths). The deaths and structure breaks follow at once: the spin breaks the wall at
   7.633 and its cleave's bands kill and break from 7.708 every 37.5 ms; the 8.90 press's blow kills at 8.933. A live
-  key reaches the sim about the lead (~90 ms) after it was heard, so live its impact is a tick after that
-  (game-modes.md, Attacking on the beat). The drawn hero (`hero.csv`) is in the strike on each key-down frame: at
+  key reaches the sim about the lead (~90 ms) after it was heard, past its impact; since ps-w9p.10 the press then
+  resolves in heard time, so live too its impact is 1/30 s on ([press-latency](../press-latency/README.md)). The drawn hero (`hero.csv`) is in the strike on each key-down frame: at
   6.500 the SlashL clip at 0.267 s, 0.083 s short of its 0.35 s impact frame, the attack weighted 0.5 (1 a frame
   later), at its impact frame on 6.533 with the flare at 0.79 (the grade), then held (0.360, 0.371 a frame apart:
   the hit-stop at 0.25x); at 7.600 the spin at 1.350 of its 1.433 s impact, on it at 7.633 with the heavy's 1.5 flare.
