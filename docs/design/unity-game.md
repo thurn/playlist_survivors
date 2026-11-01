@@ -2239,7 +2239,11 @@ game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
   about a second), so a hop is the run clip's half-cycle, alternating feet,
   across the step's move, with a parabolic lift (14 cm, 7 cm for a bump in
   place). A stomp stands. The hero faces its travel, and turns to the
-  swing's direction from its wind-up through its follow-through.
+  swing's direction from its wind-up through its follow-through. The free
+  hero walking keeps its legs on the travel and twists its upper body to the
+  swing instead, up to 120 degrees, past which the whole body turns and the
+  legs come off the forward run to a backpedal (the run clip backward)
+  ([Swinging on the move](game-modes.md#swinging-on-the-move), ps-w9p.2).
 - Attacks: slashes alternate left and right (Light Combo A and B), a
   follow-up continues the combo (A, then B, then C, then B again), heavy
   strikes spin (Heavy Flourish) and section changes slam (Light Leaping),
@@ -2248,10 +2252,13 @@ game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
   more than 1.33x is entered part-way at the wind-up, crossfading from the
   swing before, which keeps its own impact. Heavy blows hold 50 ms at 0.6x
   after the impact, as in demo3d.
-- The legs layer blends the idle, the hop and the attack (full body when
-  standing); the upper-body layer (body, head, arms) always shows either the
+- The legs layer blends the idle, the hop or walk, the backpedal and the
+  attack (full body when standing); the torso layer (the mask's body: hips
+  and spine) shows the sword idle or the attack except where the free hero's
+  walk carries it; the upper-body layer (head, arms) always shows either the
   sword idle's arms or the attack, so the unarmed run never swings the blade
-  and stepping never erases the strike pose.
+  and stepping never erases the strike pose. After the graph, a walking
+  swing's twist turns the spine's bones about the vertical.
 - The blade is demo3d's mesh and grip, drawn by Game/CrystalBlade on the
   structures' shared include; it flares to 1 at each impact (1.5 heavy) and
   fades over 0.22 s.

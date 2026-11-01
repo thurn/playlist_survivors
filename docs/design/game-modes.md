@@ -121,6 +121,31 @@ The sword never strikes by itself. Z (the sim's `Key.Attack`) swings it:
 The other weapons (wand, bible, lightning, garlic, fire trail) keep firing on the beat by
 themselves, aimed from wherever the hero walks.
 
+### Swinging on the move
+
+The player attacks almost always while walking, so a swing on the walk must read as one (ps-w9p.2). Standing,
+the knight turns its whole body to the swing, as the grid hero does. Walking (`HeroMotion`, from the glides):
+
+- **The legs keep the walk.** They face the travel, run forward and carry the hips: the torso layer (the
+  humanoid mask's Body, hips and spine together) takes the run's hips and spine, not the attack's, so the
+  attack's own hip and leg motion never fights the run cycle. The head, arms and blade carry the attack.
+- **The upper body twists to the aim.** `HeroPose.Twist` is spread evenly over the spine, chest and upper chest
+  after the graph evaluates, so the chest, arms and blade face the strike. It eases in over the first 60% of
+  the wind-up (`TwistLead`), so the torso leads and the blade arc reads in the strike's direction, and unwinds
+  over 0.25 s after the follow-through (`TwistOut`). A swing that enters before the one before has unwound
+  carries its twist on, crossfading from that aim to its own, so a chain of swings never lets go between them.
+- **Up to 120 degrees** (`TwistMax`) the twist alone reaches the aim.
+- **Past it the whole body turns.** The twist unwinds linearly to none at 180 degrees, and the legs turn by the
+  rest, so a strike straight behind faces the knight round, whichever side it is on (no flip across 180).
+  Legs off the travel blend from the forward run (by the cosine of their angle off it) to a backpedal (the
+  run clip played backward, by minus that cosine), through the attack's own footwork, which has the legs and
+  hips square to the travel. The Synty packs have only forward run and walk clips (A_Run_F, A_Walk_F), so
+  there is no true strafe.
+- **Blending with standing**: the walk's weight (up over 0.03 s, down over 0.1 s) blends the walking legs and
+  twist with the standing hero's whole-body turn, so stopping mid-swing hands over smoothly.
+- The pose stays a function of the events and the song time, with no state machine. The grid hero's hops are
+  unchanged: it hops a tile at a time and turns whole to its swings.
+
 ### Scripted and recorded play
 
 - `--walk "right@9-11,z@10-10.05"` holds keys over song-time spans, Z included.
@@ -137,4 +162,7 @@ themselves, aimed from wherever the hero walks.
 - Should a heavy land on the accent itself (a press an eighth before it) rather than an eighth after a
   press on it? Today the grade and the heavy are both judged on the press.
 - Does the walk need a pulse on the beat to read as rhythmic, now that the hero glides?
+- Does a 120-degree twist read as athletic or contorted, and does the turn round for a strike behind read as a
+  pivot or a snap? Do the legs read as skating while square to the walk, where the attack's footwork stands in
+  for a strafe clip?
 - Click-to-move without path finding: is pressing against a wall acceptable?
