@@ -203,7 +203,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>The latest of a grid's entries at or before <paramref name="s"/>, or -1.</summary>
-        static int LastAtOrBefore(ReadOnlySpan<StreamEntry> grid, double s)
+        internal static int LastAtOrBefore(ReadOnlySpan<StreamEntry> grid, double s)
         {
             int lo = 0, hi = grid.Length;
             while (lo < hi)

@@ -14,7 +14,7 @@ namespace PS.Game.Sim
     /// <item><c>inputs.bin</c>: everything a replay needs, exactly (little-endian, doubles as their bits,
     /// so no runtime's number formatting can move a replay): the run's inputs (<see cref="RunInputs"/>), each entry's
     /// <see cref="EntryRecord"/> in arrival order (entry i is <c>entries.jsonl</c>'s line i), every key
-    /// change, debug command (with its argument) and run control in the order the sim took them, the frontier the
+    /// change, pointer target (with its point), debug command (with its argument) and run control in the order the sim took them, the frontier the
     /// run settled to and its hash;</item>
     /// <item><c>run.json</c>: the same run for people: the build, runtime, platform, source and flags,
     /// the seed, the level, the end, the hash and the counts.</item>
@@ -23,10 +23,10 @@ namespace PS.Game.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        /// <summary>Version 2 added the start minute and each input's argument; version 1 still reads.</summary>
-        const int Version = 2;
+        /// <summary>Version 3 added the mode and pointer targets, version 2 the start minute and each input's argument; 1 and 2 still read.</summary>
+        const int Version = 3;
         static readonly byte[] Magic = { (byte)'P', (byte)'S', (byte)'R', (byte)'U', (byte)'N' };
-        const byte Press = 0, Release = 1, Command = 2, Control = 3;
+        const byte Press = 0, Release = 1, Command = 2, Control = 3, Target = 4;
 
         /// <summary>The run's inputs besides the stream and keys: what built its config (<see cref="RunInputs.Build"/>).</summary>
         public RunInputs Run = new RunInputs();
@@ -34,6 +34,7 @@ namespace PS.Game.Sim
         // The inputs, and where they led.
         public EntryRecord[] Entries = new EntryRecord[0];
         public KeyRecord[] Keys = new KeyRecord[0];
+        public TargetRecord[] Targets = new TargetRecord[0];
         public DebugRecord[] Commands = new DebugRecord[0];
         public ControlRecord[] Controls = new ControlRecord[0];
         /// <summary>The frontier the run settled to, its event count and the hash of its settled event log.</summary>
@@ -64,6 +65,7 @@ namespace PS.Game.Sim
                 Run = run,
                 Entries = sim.Stream.Accepted.ToArray(),
                 Keys = sim.Keys.ToArray(),
+                Targets = sim.Targets.ToArray(),
                 Commands = sim.Commands.ToArray(),
                 Controls = sim.Controls.ToArray(),
                 End = sim.Now,
@@ -100,26 +102,32 @@ namespace PS.Game.Sim
                     w.Write(input.Arg);
                     w.Write(input.Heard);
                     w.Write(input.Effective);
+                    if (input.Type != Target) continue;
+                    w.Write(input.X);
+                    w.Write(input.Y);
                 }
             }
             File.WriteAllText(Path.Combine(dir, RunFile), RunJson());
         }
 
-        /// <summary>A key change, debug command or run control, as <c>inputs.bin</c> holds them.</summary>
+        /// <summary>A key change, pointer target, debug command or run control, as <c>inputs.bin</c> holds them (a target's point after it).</summary>
         struct Input
         {
             public byte Type, Code;
             public int Arg;
             public double Heard, Effective;
+            public double X, Y;
             public int Order;
         }
 
-        /// <summary>The key changes, debug commands and run controls, in the order the sim took them.</summary>
+        /// <summary>The key changes, pointer targets, debug commands and run controls, in the order the sim took them.</summary>
         List<Input> Inputs()
         {
-            var inputs = new List<Input>(Keys.Length + Commands.Length + Controls.Length);
+            var inputs = new List<Input>(Keys.Length + Targets.Length + Commands.Length + Controls.Length);
             foreach (var k in Keys)
                 inputs.Add(new Input { Type = k.Down ? Press : Release, Code = (byte)k.Key, Heard = k.Heard, Effective = k.Effective, Order = k.Order });
+            foreach (var t in Targets)
+                inputs.Add(new Input { Type = Target, Heard = t.Heard, Effective = t.Effective, X = t.X, Y = t.Y, Order = t.Order });
             foreach (var c in Commands)
                 inputs.Add(new Input { Type = Command, Code = (byte)c.Command, Arg = c.Arg, Effective = c.Effective, Order = c.Order });
             foreach (var c in Controls)
@@ -139,7 +147,7 @@ namespace PS.Game.Sim
                 for (int i = 0; i < Magic.Length; i++)
                     if (magic.Length != Magic.Length || magic[i] != Magic[i]) throw new FormatException(path + ": not a session's inputs");
                 int version = reader.ReadInt32();
-                if (version != Version && version != 1) throw new FormatException($"{path}: version {version}, not {Version}");
+                if (version < 1 || version > Version) throw new FormatException($"{path}: version {version}, not {Version}");
                 r.Run = RunInputs.Read(reader, version, path);
                 r.End = reader.ReadDouble();
                 r.Events = reader.ReadInt32();
@@ -149,6 +157,7 @@ namespace PS.Game.Sim
                     r.Entries[i] = new EntryRecord { Taken = reader.ReadDouble(), KnownAt = reader.ReadDouble() };
                 int n = reader.ReadInt32();
                 var keys = new List<KeyRecord>();
+                var targets = new List<TargetRecord>();
                 var commands = new List<DebugRecord>();
                 var controls = new List<ControlRecord>();
                 for (int i = 0; i < n; i++)
@@ -160,9 +169,12 @@ namespace PS.Game.Sim
                     else if (type == Control) controls.Add(new ControlRecord { Control = (RunControl)code, Effective = effective, Order = i });
                     else if (type == Press || type == Release)
                         keys.Add(new KeyRecord { Key = (Key)code, Down = type == Press, Heard = heard, Effective = effective, Order = i });
+                    else if (type == Target && version >= 3)
+                        targets.Add(new TargetRecord { X = reader.ReadDouble(), Y = reader.ReadDouble(), Heard = heard, Effective = effective, Order = i });
                     else throw new FormatException($"{path}: input {i} of unknown type {type}");
                 }
                 r.Keys = keys.ToArray();
+                r.Targets = targets.ToArray();
                 r.Commands = commands.ToArray();
                 r.Controls = controls.ToArray();
             }
@@ -201,11 +213,11 @@ namespace PS.Game.Sim
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"level\": {7},\n" +
                 "  \"arena\": {8},\n  \"easy\": {9},\n  \"heroStands\": {10},\n  \"startTime\": {11:R},\n  \"startMinute\": {20},\n  \"end\": {12:R},\n" +
                 "  \"hash\": \"{13:X16}\",\n  \"events\": {14},\n  \"entries\": {15},\n  \"keys\": {16},\n  \"commands\": {17},\n" +
-                "  \"start\": {18},\n  \"controls\": {19}\n}}\n",
+                "  \"start\": {18},\n  \"controls\": {19},\n  \"mode\": {21},\n  \"targets\": {22}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, run.Seed,
                 Quote(run.Level == SessionLevel.Slice ? "slice" : run.Level == SessionLevel.Run ? "run" : "open"), run.Arena ? "true" : "false",
                 run.Easy ? "true" : "false", run.Level == SessionLevel.Slice ? "true" : "false", run.StartTime, End, Hash, Events, Entries.Length, Keys.Length,
-                Commands.Length, Quote(run.Start.ToString()), Controls.Length, run.StartMinute);
+                Commands.Length, Quote(run.Start.ToString()), Controls.Length, run.StartMinute, Quote(GameModes.Of(run.Mode).Name), Targets.Length);
         }
 
         static string Quote(string s)

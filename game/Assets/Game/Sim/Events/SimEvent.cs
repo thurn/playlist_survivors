@@ -47,6 +47,7 @@ namespace PS.Game.Sim
         Projectile,
         Orbit,
         Bolt,
+        HeroGlide,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -555,6 +556,22 @@ namespace PS.Game.Sim
             return e;
         }
 
+        /// <summary>
+        /// The free hero's velocity changes (<see cref="FreeHero"/>): I2 facing; D0/D1 where it is at the start,
+        /// D2/D3 its velocity (m/s) until the next glide, D4 the start.
+        /// </summary>
+        public static SimEvent HeroGlide(double t, double start, double fromX, double fromY, double vx, double vy, Direction facing)
+        {
+            var e = Of(SimEventKind.HeroGlide, t);
+            e.I2 = (int)facing;
+            e.D0 = fromX;
+            e.D1 = fromY;
+            e.D2 = vx;
+            e.D3 = vy;
+            e.D4 = start;
+            return e;
+        }
+
         void Expect(SimEventKind kind)
         {
             if (Kind != kind) throw new System.InvalidOperationException($"a {Kind} event read as a {kind}");
@@ -589,5 +606,6 @@ namespace PS.Game.Sim
         public LeaveEvent AsLeave { get { Expect(SimEventKind.Leave); return new LeaveEvent(this); } }
         public BurnEvent AsBurn { get { Expect(SimEventKind.Burn); return new BurnEvent(this); } }
         public BoltEvent AsBolt { get { Expect(SimEventKind.Bolt); return new BoltEvent(this); } }
+        public HeroGlideEvent AsHeroGlide { get { Expect(SimEventKind.HeroGlide); return new HeroGlideEvent(this); } }
     }
 }

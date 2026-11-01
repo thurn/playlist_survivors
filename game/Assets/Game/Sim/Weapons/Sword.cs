@@ -79,6 +79,12 @@ namespace PS.Game.Sim
     ///   critical (<see cref="Hit"/>).
     /// - Nothing new winds up while the world is frozen or the hero has fallen; an attack already
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
+    /// - <b>On the attack key</b> (<see cref="SwordTrigger.Press"/>, a mode's): no beat plans a strike. A press heard
+    ///   at h, taken at F, winds up at once and lands at <c>max(h + PressWindupS, F + a tick)</c>, at least
+    ///   <see cref="SwingS"/> after the previous impact; a press that would wait more than <see cref="SwingBufferS"/>
+    ///   for that is dropped, so mashing swings no faster than the swing. Its reach and damage are scaled by
+    ///   <see cref="BeatGrade"/>; a full-grade press on a beat that is accented (as a beat strike's heaviness asks)
+    ///   is heavy, once per beat. Amount adds follow-ups the swing's length apart over one swing. It never slams.
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -102,6 +108,12 @@ namespace PS.Game.Sim
         public const double BossWeight = 1000, BruteWeight = 2;
         /// <summary>Bloody Tear's heal on a critical blow, and the run clock between two (native's).</summary>
         public const double TearHeal = 8, TearHealEveryS = 1;
+        /// <summary>A press's wind-up (s): the swing's impact this long after the press was heard, joined late.</summary>
+        public const double PressWindupS = 0.08;
+        /// <summary>The swing's length (s): presses' impacts are at least this far apart.</summary>
+        public const double SwingS = 0.2;
+        /// <summary>The longest a press waits for the swing before it to end (s); a press mid-swing is dropped.</summary>
+        public const double SwingBufferS = 0.1;
         const int QueueCapacity = 64;
         const int WaveCapacity = 4;
 
@@ -109,7 +121,9 @@ namespace PS.Game.Sim
         {
             public double Impact, Windup, Period;
             public int Beat;
-            public bool Main, HalfTime, Wound, Cancelled, Heavy;
+            public bool Main, HalfTime, Wound, Cancelled, Heavy, Pressed;
+            /// <summary>The reach's and damage's scale: a press's grade, else 1.</summary>
+            public double Scale;
             public double Reach, DirX, DirY;
         }
 
@@ -128,6 +142,9 @@ namespace PS.Game.Sim
         readonly Zones zones;
         readonly EnemyRole[] roles;
         readonly double windup;
+        readonly bool onPress;
+        // The beat the latest heavy press was measured from: one heavy per beat.
+        double lastHeavyPress = double.NaN;
 
         readonly Strike[] queue = new Strike[QueueCapacity];
         int head, count;
@@ -150,7 +167,7 @@ namespace PS.Game.Sim
         readonly int[] reached;
         readonly double[] aimAngle, aimDist;
 
-        public Sword(Arsenal arsenal, WeaponDef def, int index, double windupS, GameContent content, BeliefLog log, BeatClock clock,
+        public Sword(Arsenal arsenal, WeaponDef def, int index, double windupS, SwordTrigger trigger, GameContent content, BeliefLog log, BeatClock clock,
             SimState state, Horde horde, Structures structures, Zones zones)
             : base(arsenal, state, def, index)
         {
@@ -164,6 +181,7 @@ namespace PS.Game.Sim
             this.structures = structures;
             this.zones = zones;
             windup = windupS;
+            onPress = trigger == SwordTrigger.Press;
             roles = content.Roles;
             int cap = state.EnemyStore.Length;
             reached = new int[cap];
@@ -205,6 +223,7 @@ namespace PS.Game.Sim
         /// <summary>When the next committed beat is planned; beats too late to wind up for are skipped.</summary>
         double PlanTime(double floor)
         {
+            if (onPress) return double.PositiveInfinity;
             var beats = log.Beats;
             while (planBeat < beats.Length)
             {
@@ -260,7 +279,7 @@ namespace PS.Game.Sim
         /// <summary>The per-tick system, at the tick's end: with no beat known ahead, the pulse on the sword's raw interval.</summary>
         internal override void Tick(Simulation sim, double end)
         {
-            if (Holding || count > 0) return;
+            if (onPress || Holding || count > 0) return;
             double interval = Interval;
             double due = lastPulse + interval;
             if (end < due - windup - 1e-9 || clock.StateAt(end) != Reliability.NoBeatAhead) return;
@@ -346,6 +365,7 @@ namespace PS.Game.Sim
                     Beat = beat,
                     Main = k == 0,
                     HalfTime = halfTime,
+                    Scale = 1,
                 };
                 lastImpact = impact;
             }
@@ -360,7 +380,7 @@ namespace PS.Game.Sim
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = onBeat && (forcedAccent || !lastHeavy && accents.Accented(s.Impact, t));
+            bool heavy = s.Pressed ? s.Heavy : onBeat && (forcedAccent || !lastHeavy && accents.Accented(s.Impact, t));
             if (onBeat)
             {
                 forcedAccent = false;
@@ -372,13 +392,48 @@ namespace PS.Game.Sim
                 : !s.Main ? HeroAttackKind.FollowUp
                 : (slashes++ & 1) == 0 ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight;
             s.Heavy = heavy;
-            s.Reach = Reach(heavy);
+            s.Reach = Reach(heavy) * s.Scale;
             state.Hero.PositionAt(t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
             sim.Emit(SimEvent.SwordAttack(t, Index, kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
         }
 
-        /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>).</summary>
+        /// <summary>
+        /// The attack key, heard at <paramref name="heard"/>, in a mode whose sword waits for it: queues the press's
+        /// strikes, which wind up at once (see the class's On the attack key).
+        /// </summary>
+        internal void Press(Simulation sim, double heard)
+        {
+            if (!onPress || Holding) return;
+            double now = sim.Now;
+            double impact = Math.Max(heard + PressWindupS, now + Simulation.TickSeconds);
+            double after = lastImpact + SwingS;
+            if (after - impact > SwingBufferS + 1e-9) return;
+            impact = Math.Max(impact, after);
+            double grade = BeatGrade.Of(log, clock, heard, out double point, out bool onBeat);
+            bool heavy = forcedAccent || grade >= 1 && onBeat && point != lastHeavyPress && accents.Accented(point, now);
+            forcedAccent = false;
+            if (heavy) lastHeavyPress = point;
+            int n = StrikesPerBeat;
+            for (int k = 0; k < n && count < QueueCapacity; k++)
+            {
+                double at = impact + SwingS * k / n;
+                At(count++) = new Strike
+                {
+                    Impact = at,
+                    Windup = k == 0 ? now : lastImpact,
+                    Period = SwingS,
+                    Beat = -1,
+                    Main = k == 0,
+                    Pressed = true,
+                    Heavy = k == 0 && heavy,
+                    Scale = grade,
+                };
+                lastImpact = at;
+            }
+        }
+
+        /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>); on the attack key, the next press.</summary>
         internal void ForceAccent() => forcedAccent = true;
 
         /// <summary>
@@ -474,7 +529,7 @@ namespace PS.Game.Sim
             else structures.Strike(sim, t, hx, hy, s.Reach, StructureHit.EvolvedAccent, launch, accent);
             if (horde == null) return;
             var enemies = state.EnemyStore;
-            double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1);
+            double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1) * s.Scale;
             var how = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
             int n = horde.InReach(t, hx, hy, s.Reach, reached);
             for (int k = 0; k < n; k++)

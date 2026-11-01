@@ -43,6 +43,8 @@ namespace PS.Game.Sim
         public int StartMinute = Defaults.StartMinute;
         public double Gate = Defaults.Gate, KnownAtBudget = Defaults.KnownAtBudget;
         public bool Easy = Defaults.Easy;
+        /// <summary>`--mode`: the way of playing (<see cref="GameModes"/>).</summary>
+        public GameMode Mode = Defaults.Mode;
 
         // Never recorded: a run on any of these sets Unrecordable.
         /// <summary>`--cast`'s roles, for the <see cref="SessionLevel.Cast"/> level.</summary>
@@ -88,6 +90,7 @@ namespace PS.Game.Sim
             config.Gate = Gate;
             config.KnownAtBudget = KnownAtBudget;
             config.Easy = Easy;
+            config.Mode = Mode;
             if (config.Arsenal != null)
             {
                 if (Loadout != null)
@@ -118,7 +121,7 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// Writes the recorded inputs as <c>inputs.bin</c> holds them (version 2's layout, which keeps a byte for whether
+        /// Writes the recorded inputs as <c>inputs.bin</c> holds them (version 3's layout, which keeps a byte for whether
         /// the hero stands: now the level's alone, <see cref="SimConfig.HeroStands"/>).
         /// </summary>
         public void Write(BinaryWriter w)
@@ -136,9 +139,10 @@ namespace PS.Game.Sim
             w.Write(Arena);
             w.Write(Footprint.Length);
             foreach (double x in Footprint) w.Write(x);
+            w.Write((byte)Mode);
         }
 
-        /// <summary>Reads the recorded inputs of an <c>inputs.bin</c> of <paramref name="version"/> (1 has no start minute).</summary>
+        /// <summary>Reads the recorded inputs of an <c>inputs.bin</c> of <paramref name="version"/> (1 has no start minute, 1 and 2 no mode).</summary>
         public static RunInputs Read(BinaryReader r, int version, string path)
         {
             var run = new RunInputs { Seed = r.ReadUInt64(), StartTime = r.ReadDouble() };
@@ -155,6 +159,12 @@ namespace PS.Game.Sim
             run.Arena = r.ReadBoolean();
             run.Footprint = new double[r.ReadInt32()];
             for (int i = 0; i < run.Footprint.Length; i++) run.Footprint[i] = r.ReadDouble();
+            if (version >= 3)
+            {
+                byte mode = r.ReadByte();
+                if (!GameModes.Known(mode)) throw new FormatException($"{path}: mode {mode}");
+                run.Mode = (GameMode)mode;
+            }
             return run;
         }
     }

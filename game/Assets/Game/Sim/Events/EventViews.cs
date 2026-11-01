@@ -325,6 +325,23 @@ namespace PS.Game.Sim
         public double End => e.D5;
     }
 
+    public readonly struct HeroGlideEvent
+    {
+        readonly SimEvent e;
+        public HeroGlideEvent(in SimEvent e) { this.e = e; }
+        public double T => e.T;
+        public Direction Facing => (Direction)e.I2;
+        /// <summary>
+        /// Where the free hero is at <see cref="Start"/>, and its velocity until the next glide's start. Emitted when
+        /// the sim takes it (T); a heard input's starts up to the lead before, and replaces every glide from there on.
+        /// </summary>
+        public double FromX => e.D0;
+        public double FromY => e.D1;
+        public double VX => e.D2;
+        public double VY => e.D3;
+        public double Start => e.D4;
+    }
+
     public readonly struct EnemyKnockEvent
     {
         readonly SimEvent e;

@@ -31,7 +31,7 @@ namespace PS.Game.Sim
     ///   before would otherwise find its step judged without it, ps-msz.8.5). So a tap released
     ///   before the next step was heard never strides on it, and a turn heard before a step the sim
     ///   has passed turns on it.
-    /// - Space is a press only: it stomps (stands still). Enter never moves the hero.
+    /// - Space is a press only: it stomps (stands still). Enter and Attack never move the hero.
     /// - While a level-up's cards are open their keys are theirs: the hero holds none of them, and
     ///   lets go of the keys it held when the cards opened (<see cref="LetGo"/>).
     /// - <b>A stride</b> takes <see cref="StrideSeconds"/> from its start, compressed to end before
@@ -45,7 +45,7 @@ namespace PS.Game.Sim
     /// Each move is a <see cref="SimEventKind.HeroStep"/> event, emitted when the sim takes it and
     /// carrying its start in heard time, which may precede it by up to the lead.
     /// </summary>
-    internal sealed class Hero
+    internal sealed class Hero : IHeroControl
     {
         public const double StrideSeconds = 0.110;
 
@@ -107,7 +107,7 @@ namespace PS.Game.Sim
         public void Press(Simulation sim, Key key, double heard, bool forCards)
         {
             KeyChange(sim, heard);
-            if (key == Key.Enter) return;
+            if (key == Key.Enter || key == Key.Attack) return;
             if (key != Key.Space && !forCards) Hold((Direction)key);
             // A press made while frozen never strides, even when the world thaws before the next step.
             if (sim.State.Frozen || state.Fallen) return;
@@ -136,12 +136,15 @@ namespace PS.Game.Sim
         public void Release(Simulation sim, Key key, double heard)
         {
             KeyChange(sim, heard);
-            if (key == Key.Space || key == Key.Enter) return;
+            if (key == Key.Space || key == Key.Enter || key == Key.Attack) return;
             int i = Array.IndexOf(held, (Direction)key, 0, heldCount);
             if (i < 0) return;
             Array.Copy(held, i + 1, held, i, heldCount - i - 1);
             heldCount--;
         }
+
+        /// <summary>A grid hero has no pointer: a target never moves it.</summary>
+        public void Target(Simulation sim, double x, double y, double heard) { }
 
         /// <summary>Lets go of every held key: only presses after this move the hero.</summary>
         public void LetGo() => heldCount = 0;

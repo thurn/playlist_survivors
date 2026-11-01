@@ -46,6 +46,9 @@ namespace PS.Game.Sim
         /// <summary>How the run starts: at once (the default, for tests and bots), on a key, or after clear beat.</summary>
         public RunStart Start;
 
+        /// <summary>The way of playing (`--mode`): which hero and sword rules the run plays (<see cref="GameModes"/>).</summary>
+        public GameMode Mode;
+
         /// <summary>Easy: enemy contact damage at half, and floor chickens that heal (unity-game.md, The Run).</summary>
         public bool Easy;
 

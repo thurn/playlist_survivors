@@ -11,11 +11,12 @@ namespace PS.Game.Sim
     /// <code>
     /// sim.Add(entry);              // held until its known_at
     /// sim.Press(key, heard);       // recorded at the sim's current time
+    /// sim.Target(x, y, heard);     // a pointer's target, in a mode with one
     /// sim.StepTo(frontier);        // fixed 1/120 s ticks
     /// sim.EventsSince(cursor); sim.State;
     /// </code>
     ///
-    /// Only <see cref="Add"/>, <see cref="AddKnown"/>, <see cref="Press"/>, <see cref="Release"/>,
+    /// Only <see cref="Add"/>, <see cref="AddKnown"/>, <see cref="Press"/>, <see cref="Release"/>, <see cref="Target"/>,
     /// <see cref="Command"/>, <see cref="Control"/>, <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/> change the sim. Everything else
     /// public here and on what it exposes (<see cref="State"/>, <see cref="Stream"/>,
     /// <see cref="Beats"/>, <see cref="Strides"/>) is a read the client may make at any time, as
@@ -45,10 +46,11 @@ namespace PS.Game.Sim
         public const double DebugBreakForceM = 4.63;
 
         readonly StructList<KeyRecord> keys;
+        readonly StructList<TargetRecord> targets;
         readonly StructList<DebugRecord> commands;
         readonly StructList<ControlRecord> controls;
         readonly EventLog events;
-        readonly Hero hero;
+        readonly IHeroControl hero;
         readonly double knownAtBudget;
         double cursor;
         int inputs;
@@ -64,6 +66,8 @@ namespace PS.Game.Sim
             Accents = new Accents(Stream, Beats);
             events = new EventLog(config.EventCapacity);
             keys = new StructList<KeyRecord>(config.PressCapacity);
+            targets = new StructList<TargetRecord>(16);
+            Rules = GameModes.Of(config.Mode);
             commands = new StructList<DebugRecord>(16);
             controls = new StructList<ControlRecord>(256);
             State = new SimState
@@ -74,7 +78,7 @@ namespace PS.Game.Sim
             cursor = State.Now;
             var arena = config.Arena ?? ArenaData.Open();
             Arena = new ArenaGrid(arena);
-            hero = new Hero(State.Hero, Arena, Strides);
+            hero = Rules.Movement == HeroMovement.Free ? new FreeHero(State.Hero, Arena, Strides) : (IHeroControl)new Hero(State.Hero, Arena, Strides);
             var content = config.Content;
             if (content != null) State.Recap.Begin(content.Weapons.Length);
             if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State);
@@ -88,7 +92,7 @@ namespace PS.Game.Sim
                 Arsenal = new Arsenal(config.Arsenal, content, State, Stream, Beats, Run, Health, (arsenal, def, index) =>
                     def.Shape.Kind switch
                     {
-                        ShapeKind.Sword => new Sword(arsenal, def, index, windup, content, Stream, Beats, State, Horde, Structures, Zones),
+                        ShapeKind.Sword => new Sword(arsenal, def, index, windup, Rules.Sword, content, Stream, Beats, State, Horde, Structures, Zones),
                         ShapeKind.Aura => new Garlic(arsenal, State, Horde, Health, def, index),
                         ShapeKind.Trail => new FireTrail(arsenal, State, Horde, Run, def, index),
                         ShapeKind.Missile => new MagicWand(arsenal, State, Run, def, index, content, Beats, Horde),
@@ -113,6 +117,8 @@ namespace PS.Game.Sim
         }
 
         public SimState State { get; }
+        /// <summary>The mode's rules (<see cref="SimConfig.Mode"/>).</summary>
+        public ModeRules Rules { get; }
         /// <summary>The run's one generator: the sim's alone, since every draw changes the rest of the run.</summary>
         internal SimRandom Random { get; }
         public BeliefLog Stream { get; }
@@ -170,6 +176,7 @@ namespace PS.Game.Sim
             keys.Add(new KeyRecord { Key = key, Down = true, Heard = heard, Effective = Now, Order = inputs++ });
             bool cards = Arsenal != null && Arsenal.LevelUps.Press(this, key, Now);
             hero.Press(this, key, heard, cards);
+            if (key == Key.Attack && !cards) Sword?.Press(this, heard);
         }
 
         /// <summary>Records a key release heard at song time <paramref name="heard"/>; it takes effect now.</summary>
@@ -179,6 +186,19 @@ namespace PS.Game.Sim
             Arsenal?.LevelUps.Release(key);
             hero.Release(this, key, heard);
         }
+
+        /// <summary>
+        /// Records a pointer's target, the ground point (<paramref name="x"/>, <paramref name="y"/>) heard at song time
+        /// <paramref name="heard"/>; it takes effect now. Only a mode's free hero walks to it (<see cref="FreeHero"/>).
+        /// </summary>
+        public void Target(double x, double y, double heard)
+        {
+            targets.Add(new TargetRecord { X = x, Y = y, Heard = heard, Effective = Now, Order = inputs++ });
+            hero.Target(this, x, y, heard);
+        }
+
+        /// <summary>Every pointer target recorded, in order.</summary>
+        public ReadOnlySpan<TargetRecord> Targets => targets.AsSpan();
 
         /// <summary>The cards opened: the hero lets go of its held keys, so a key held through them never walks it after.</summary>
         internal void LetGoOfHeldKeys() => hero.LetGo();
