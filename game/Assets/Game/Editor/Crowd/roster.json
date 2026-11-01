@@ -232,7 +232,8 @@
         {
           "guid": "404a923dea987c14498264bf7d13d458",
           "path": "Weapons/SM_Wep_Slayer_01.prefab",
-          "bone": "RightHand"
+          "bone": "RightHand",
+          "grip": { "palm": 0.02, "yaw": 90, "pitch": 20 }
         }
       ]
     },
@@ -285,7 +286,8 @@
         {
           "guid": "39e0fb4b243ffb645a622d1945004ee5",
           "path": "Weapons/SM_Wep_Troll_01.prefab",
-          "bone": "RightHand"
+          "bone": "RightHand",
+          "grip": { "palm": 0.02, "yaw": 90, "pitch": 20 }
         }
       ]
     },

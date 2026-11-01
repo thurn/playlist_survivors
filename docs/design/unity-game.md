@@ -2224,6 +2224,16 @@ timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
   the idle, walk, attack and hit clips at 30 Hz in a bone texture. The
   library also holds the cast (cast.json: each role's model, scale and gem
   colour), so a cast change rebakes.
+- **Weapons** ride their hand bone rigidly, baked into the mesh. The two
+  roster.json attaches, the big orc's Slayer and the troll's club, sit in
+  the fist by their `grip` (ps-9rw, demo3d's ps-b5z.2; crowd.md, Common
+  requirements): `Roster.Spawn` runs the handle through `Fist` (from the
+  hand's finger bones, shared with the hero's blade) instead of leaving
+  Synty's blade pointing out of the palm, then turns it by the grip's
+  `palm`, `pitch`, `yaw` and `roll` (both elites: 0.02 m, 20, 90, 0).
+  Prefab-carried weapons (the skeleton's and goblin's) are placed by their
+  pack. `GripTests` checks the elites' grips; evidence in
+  [game/evidence/crowd/grips](../../game/evidence/crowd/grips/README.md).
 - **Drawing**: a compute pass culls each type's monsters against the frustum
   and the moon's shadow sweep, sorts them into depth bins and picks a LOD by
   projected height (60 and 30 px, dithered crossfades); a second blends each

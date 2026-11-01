@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Client.Crowd;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -58,27 +59,12 @@ namespace Game.Client.Hero
             if (hand == null) throw new InvalidOperationException("HeroBlade: the hero has no humanoid right hand");
             float handScale = hand.lossyScale.x;
 
-            // The grip runs through the fist: across the knuckles, from the fused fingers' root to the
-            // index finger's, so the blade leaves the fist on the thumb's side, as a held sword does.
-            // Its edge faces the way the fingers point (the knuckles' side), and the handle sits a
+            // The grip runs through the fist (Fist), its edge toward the knuckles, and the handle sits a
             // little in from the knuckles toward the palm. All in the hand's space, from the bind pose.
-            Vector3 Local(Transform t) => hand.InverseTransformPoint(t.position);
-            var index = Bone(animator, hand, HumanBodyBones.RightIndexProximal, "IndexFinger_01");
-            var rest = Bone(animator, hand, HumanBodyBones.RightMiddleProximal, "Finger_01")
-                ?? Bone(animator, hand, HumanBodyBones.RightRingProximal, null);
-            var thumb = Bone(animator, hand, HumanBodyBones.RightThumbProximal, "Thumb_01");
-            if (index == null || rest == null || index.childCount == 0)
-                throw new InvalidOperationException("HeroBlade: the hero's right hand has no index and middle finger bones");
-            Vector3 a = Local(index), r = Local(rest), next = Local(index.GetChild(0));
-            var axis = (a - r).normalized;
-            var finger = next - a;
-            var edge = (finger - Vector3.Dot(finger, axis) * axis).normalized;
-            var palm = Vector3.Cross(axis, edge);
-            var knuckles = (a + r) * 0.5f;
-            if (thumb != null && Vector3.Dot(palm, Local(thumb) - knuckles) < 0) palm = -palm;
-            var grip = knuckles + palm * PalmM / handScale;
+            var fist = Fist.Of(animator, right: true);
+            var grip = fist.Knuckles + fist.Palm * PalmM / handScale;
 
-            var turn = Quaternion.LookRotation(Vector3.Cross(edge, axis), axis);
+            var turn = fist.Turn;
             var go = new GameObject("CrystalBlade");
             go.transform.SetParent(hand, false);
             // The mesh is in metres: undo the hand's scale. Its handle's middle (GripY) is in the fist.
@@ -91,17 +77,8 @@ namespace Game.Client.Hero
             mr.shadowCastingMode = ShadowCastingMode.On;
             mr.motionVectorGenerationMode = MotionVectorGenerationMode.Object;
             Transform = go.transform;
-            Debug.Log($"HeroBlade: a {BladeM:F2} m crystal blade in {hand.name}: axis {axis:F2}, edge {edge:F2}, palm {palm:F2}, " +
+            Debug.Log($"HeroBlade: a {BladeM:F2} m crystal blade in {hand.name}: axis {fist.Axis:F2}, edge {fist.Edge:F2}, palm {fist.Palm:F2}, " +
                       $"grip {grip * handScale:F3} m from the wrist");
-        }
-
-        static Transform Bone(Animator animator, Transform hand, HumanBodyBones bone, string name)
-        {
-            var t = animator.GetBoneTransform(bone);
-            if (t != null || name == null) return t;
-            foreach (Transform c in hand)
-                if (c.name == name) return c;
-            return null;
         }
 
         /// <summary>

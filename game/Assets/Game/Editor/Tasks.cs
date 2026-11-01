@@ -44,6 +44,14 @@ namespace Game.EditorTools
         public static void BakeCrowd() => Crowd.CrowdBaker.Bake();
 
         /// <summary>
+        /// Renders close-ups of the armed types' grips (Crowd.GripStills): `-out DIR` (default
+        /// captures/game/grips), `-types a,b` (default: every type with roster weapons).
+        /// </summary>
+        public static void GripStills() =>
+            Crowd.GripStills.Run(TaskArgs.Get("-out", "../captures/game/grips"),
+                TaskArgs.Get("-types", "").Split(',', StringSplitOptions.RemoveEmptyEntries));
+
+        /// <summary>
         /// Converts the effect selection (Content/effects.json: Effects.EffectConverter) into the gitignored
         /// Assets/Baked/Effects/Resources/EffectLibrary.asset.
         /// </summary>

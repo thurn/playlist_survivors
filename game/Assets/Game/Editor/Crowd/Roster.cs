@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Game.Client.Crowd;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
@@ -39,6 +40,21 @@ namespace Game.EditorTools.Crowd
             public string guid;
             public string path;
             public string bone;
+            /// <summary>Holds the weapon in the hand's fist (unity-game.md, The crowd); without one it rides the hand bone as it comes.</summary>
+            public Grip grip;
+        }
+
+        /// <summary>
+        /// A weapon's grip in a humanoid hand's fist (Fist): the weapon's +Y along the fist's axis (out
+        /// on the thumb's side), its +X toward the knuckles, its pivot at the knuckles' middle, then
+        /// these. Lengths are metres at the prefab's own scale, turns degrees in the weapon's own axes.
+        /// </summary>
+        public sealed class Grip
+        {
+            /// <summary>The pivot's move from the knuckles toward the palm.</summary>
+            public float palm;
+            /// <summary>Turns about the weapon's own X, Y (a spin in the fist) and Z, as Quaternion.Euler takes them.</summary>
+            public float pitch, yaw, roll;
         }
 
         public sealed class Type
@@ -115,11 +131,24 @@ namespace Game.EditorTools.Crowd
                 if (bone == null) continue;
                 var weapon = (GameObject)PrefabUtility.InstantiatePrefab(LoadPrefab(new Ref { guid = w.guid, path = w.path }));
                 weapon.transform.SetParent(bone, false);
+                if (w.grip != null) Hold(weapon.transform, animator, w);
             }
             // Scale the prefab to the type's height (measured in its bind pose).
             float native = MeasureHeight(go);
             if (native > 0.05f) go.transform.localScale *= t.heightM / native;
             return go;
+        }
+
+        /// <summary>Puts a weapon in its hand's fist, by its grip (the weapon is the hand bone's child).</summary>
+        static void Hold(Transform weapon, Animator animator, WeaponRef w)
+        {
+            if (w.bone != "RightHand" && w.bone != "LeftHand")
+                throw new Exception($"Roster: {w.path}'s grip needs a humanoid RightHand or LeftHand, not '{w.bone}'");
+            var fist = Fist.Of(animator, w.bone == "RightHand");
+            float scale = weapon.parent.lossyScale.x; // the hand's, at the prefab's own scale (Spawn scales it after)
+            var g = w.grip;
+            weapon.localRotation = fist.Turn * Quaternion.Euler(g.pitch, g.yaw, g.roll);
+            weapon.localPosition = fist.Knuckles + fist.Palm * (g.palm / scale);
         }
 
         static float MeasureHeight(GameObject go)
