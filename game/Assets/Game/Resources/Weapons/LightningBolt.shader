@@ -38,10 +38,13 @@ Shader "Game/LightningBolt"
             float4 Frag(Varyings i) : SV_Target
             {
                 float a = abs(i.uv.x);
-                float core = exp(-a * a * 90);
+                float core = exp(-a * a * 160);
                 float glow = exp(-a * 3) * (1 - a);
-                float3 rgb = float3(1, 1, 1) * core * 3 + i.color * (glow * 2.5 + core);
-                return float4(rgb * i.uv.y, 0);
+                // A bolt's overbright first frames (intensity past 1) brighten only its core: the
+                // whole ribbon overbright blew to white under a slam's flash in crypt (ps-msz.8.11).
+                float lit = min(i.uv.y, 1);
+                float3 rgb = float3(1, 1, 1) * core * 3 * i.uv.y + i.color * (glow * 2 + core) * lit;
+                return float4(rgb, 0);
             }
             ENDHLSL
         }

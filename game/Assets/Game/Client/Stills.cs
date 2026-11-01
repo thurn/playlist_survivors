@@ -73,23 +73,32 @@ namespace Game.Client
         /// </summary>
         public static event Action Redrawing;
 
-        /// <summary>Keeps every still due at time `t`, named still-&lt;time&gt;.jpg.</summary>
+        /// <summary>
+        /// Keeps every still due at time `t`, named still-&lt;time&gt;.jpg. Stills due on one frame share
+        /// its one drawing: drawn again, the frame would miss the draws the first spent (ps-msz.8.11:
+        /// the second of two stills on one frame lost the crowd, the structures and the effects).
+        /// </summary>
         public void CaptureDue(double t)
         {
+            Texture2D tex = null, mask = null;
             while (_times.Count > 0 && t + 1e-6 >= _times[0])
             {
                 var at = _times[0];
                 _times.RemoveAt(0);
-                var tex = Draw();
+                tex ??= Draw();
                 var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.jpg", at);
                 RenderTag.Save(tex, Path.Combine(_dir, name), "game stills t=" + at.ToString("F3", CultureInfo.InvariantCulture));
-                UnityEngine.Object.Destroy(tex);
                 Debug.Log($"Stills: kept {name} at t={t:F3}");
-                if (_mask) KeepMask(at);
+                if (!_mask) continue;
+                mask ??= DrawMask();
+                name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}-mask.png", at);
+                RenderTag.Save(mask, Path.Combine(_dir, name), "game stills mask t=" + at.ToString("F3", CultureInfo.InvariantCulture));
             }
+            if (tex != null) UnityEngine.Object.Destroy(tex);
+            if (mask != null) UnityEngine.Object.Destroy(mask);
         }
 
-        void KeepMask(double at)
+        Texture2D DrawMask()
         {
             var data = _camera.GetUniversalAdditionalCameraData();
             var (mask, clear, background, post) = (_camera.cullingMask, _camera.clearFlags, _camera.backgroundColor, data.renderPostProcessing);
@@ -99,16 +108,12 @@ namespace Game.Client
             data.renderPostProcessing = false;
             Shader.SetGlobalFloat(IdMask, 1);
             Redrawing?.Invoke();
-            Texture2D tex;
-            try { tex = Draw(); }
+            try { return Draw(); }
             finally
             {
                 Shader.SetGlobalFloat(IdMask, 0);
                 (_camera.cullingMask, _camera.clearFlags, _camera.backgroundColor, data.renderPostProcessing) = (mask, clear, background, post);
             }
-            var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}-mask.png", at);
-            RenderTag.Save(tex, Path.Combine(_dir, name), "game stills mask t=" + at.ToString("F3", CultureInfo.InvariantCulture));
-            UnityEngine.Object.Destroy(tex);
         }
 
         Texture2D Draw()

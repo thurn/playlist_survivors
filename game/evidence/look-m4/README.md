@@ -161,6 +161,41 @@ Before/after sheets: [the peak](before-after-peak.jpg) (heavy strike, ordinary s
 kill), [the zones](before-after-zones.jpg) (neon, blossom, snow, crypt, lava settled), [the
 weapons](before-after-weapons.jpg).
 
+## The Warden (ps-msz.8.11)
+
+Re-checked on staging 382b50a9 (after ps-msz.8.4 to 8.6 landed, so the run's crowd and chests differ
+and the same times show other frames: 48.0 s now falls in a chest's freeze). The set's commands still
+pass: every still in the peak and weapon sets passes `--readability` (settled +37.0 to +68.5, the
+weapon sets +29.7 to +66.3); neon settled at 13.0 s reads +45.8 with 0.20% clipped (above: +43.1,
+0.21%), the heavy strike at 56.65 s +48.8 with 0.76% clipped (above: +55.9, 0.65%); `light` gives the
+ordinary and heavy strikes' L* p98 at 90.0 and 99.6, as above. Note that the peak set's 19.5 s
+("blossom, settled") falls in a chest's freeze, so blossom's settled number is better read from the
+weapon sets (19.86 and 19.4 s).
+
+**What the set missed: a slam on its impact frame.** The peak set's zone stills sit two seconds after
+each change, past the slam. On the slam's own frames (the change's downbeat, +1, +2):
+
+| still | before: clipped, blob | after: clipped, blob | dL* |
+|---|---|---|---|
+| [30.55 s](warden/after/still-030.550.jpg), snow to crypt | 0.89%, 0.27% | 0.59%, 0.08% | +54.6 |
+| [40.2 s](warden/after/still-040.200.jpg), crypt to lava | **1.44%**, 0.40% | 0.88%, 0.22% | +46.0 |
+| [40.233 s](warden/after/still-040.233.jpg) | **1.21%**, 0.41% | 0.88%, 0.24% | +46.6 |
+
+The blossom-to-snow and lava-to-neon slams clip 0.14% and 0.19%. What blew out was Thunder Loop's and
+Lightning Ring's bolts landing on the downbeat: a bolt is 2.2 times overbright for its first 0.04 s,
+which drove its whole ribbon, not only its core, to white under the slam's flash and crypt's
+desaturated, higher-contrast grade (40.25 s, past the overbright, clipped 0.77%). Now the overbright
+brightens only the white core, the core is thinner and the coloured glow is 2
+(Resources/Weapons/LightningBolt.shader); the bolts still read magenta, blue and lemon around a thin
+white-hot core ([before/after](warden/before-after-slams.jpg)). Taken with the peak command above and
+`--at 30.55,40.2,40.233` into `--evidence look-m4/warden/before` (the reviewed shader) and
+`look-m4/warden/after`.
+
+**A stills bug.** Two `--at` times on one frame (40.217 rounds up to the 40.233 frame) drew the camera
+twice, and the second drawing missed the draws the first spent (Graphics.RenderMesh*): no crowd, no
+structures, no effects, and a readability FAIL. Stills due on one frame now share its one drawing
+(Client/Stills.cs).
+
 ## Left to the operator
 
 The flash, the ring and the effects in motion: [operator-pending.md](../operator-pending.md)'s beat-feel,

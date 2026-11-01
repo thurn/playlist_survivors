@@ -2390,6 +2390,14 @@ nothing blows out ([evidence](../../game/evidence/look-m4/README.md)):
 - Every weapon's and evolution's effect is visible in each of the five
   zones in the evidence's stills.
 
+**Shipped (ps-msz.8.11).** A slam on a zone change's downbeat clipped 1.44%
+of the frame in crypt at the run's peak, where Thunder Loop's bolts landed on
+the same sixteenth under the slam's flash and crypt's desaturating grade. A
+bolt's overbright first frames now brighten only its white core, the core is
+thinner (`exp(-160 a²)`, was 90) and the coloured glow is 2 (was 2.5): the
+same frames clip 0.88% and the bolts still read in their colours
+([evidence](../../game/evidence/look-m4/README.md#the-warden-ps-msz811)).
+
 ### Post-processing and camera
 
 The post stack is the 3D demo's night look, driven by the live stream instead
