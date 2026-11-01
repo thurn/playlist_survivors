@@ -93,10 +93,13 @@ namespace PS.Look.Tests
         }
 
         [Test]
-        public void EveryPresetSpringsAndSwarmsWithoutTheRipple()
+        public void EveryNeonPresetSpringsAndSwarmsWithoutTheRipple()
         {
+            var classic = Resolve("--look", "classic");
+            Assert.That((classic.MotionOn("springs"), classic.MotionOn("swarm")), Is.EqualTo((false, false)), "the look before the neon look");
             foreach (var name in LookLibrary.Shared.Presets)
             {
+                if (name == "classic") continue;
                 var look = Resolve("--look", name);
                 Assert.That((look.MotionOn("springs"), look.MotionOn("swarm"), look.MotionOn("beatRipple")), Is.EqualTo((true, true, false)), name);
                 Assert.That(Resolve("--look", name, "--beat-ripple").MotionOn("beatRipple"), Is.True, name);
