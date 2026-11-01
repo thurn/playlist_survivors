@@ -101,6 +101,8 @@ namespace PS.Look.Crowd
         static readonly int IdRingStart = Shader.PropertyToID("_RingStart");
         static readonly int IdRingCount = Shader.PropertyToID("_RingCount");
         static readonly int IdRingCapacity = Shader.PropertyToID("_RingCapacity");
+        static readonly int IdMotion = Shader.PropertyToID("_Motion");
+        static readonly int IdMotionCount = Shader.PropertyToID("_MotionCount");
         static readonly int IdNow = Shader.PropertyToID("_Now");
         static readonly int IdHeightM = Shader.PropertyToID("_HeightM");
         static readonly int IdLargest = Shader.PropertyToID("_Largest");
@@ -126,7 +128,7 @@ namespace PS.Look.Crowd
             public CrowdType Type;
             public int Bones, ShardCount;
             public float Largest;
-            public GraphicsBuffer Seeds, Deaths, Frozen, Shards, Rest, Args;
+            public GraphicsBuffer Seeds, Deaths, Frozen, Shards, Rest, Args, NoMotion;
             public Material Material;
             public MaterialPropertyBlock Block;
             public readonly Death[] Pending = new Death[RingCapacity];
@@ -183,6 +185,11 @@ namespace PS.Look.Crowd
             s.Block.SetInt(IdBoneCount, t.BoneCount);
             s.Block.SetInt(IdShardCount, s.ShardCount);
             s.Block.SetInt(IdRingCapacity, RingCapacity);
+            // The shards skin through the crowd's SkinVertex, whose motion layers skip them (not alive): a stand-in.
+            s.NoMotion = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, MonsterMotion.Stride) { name = t.Id + "_shardNoMotion" };
+            s.NoMotion.SetData(new[] { MonsterMotion.Still(0) });
+            s.Block.SetBuffer(IdMotion, s.NoMotion);
+            s.Block.SetInt(IdMotionCount, 0);
             return s;
         }
 
@@ -387,6 +394,7 @@ namespace PS.Look.Crowd
                 s.Shards?.Dispose();
                 s.Rest?.Dispose();
                 s.Args?.Dispose();
+                s.NoMotion?.Dispose();
                 if (s.Material == null) continue;
                 if (Application.isPlaying) UnityEngine.Object.Destroy(s.Material);
                 else UnityEngine.Object.DestroyImmediate(s.Material); // the EditMode tests

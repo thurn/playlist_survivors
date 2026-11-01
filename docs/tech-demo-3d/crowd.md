@@ -336,6 +336,14 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     death shatters, in view or not (demo3d capped live sets at the overdrive feel's 240, the rest playing
     their death clip). The song clock drives them, so `--fixed-time` runs repeat exactly; a seek backwards
     and a trailer's cut clear them; deaths before a run's first frame are not reconstructed.
+  - **Motion layers** (ps-wnj.14; [neon-look.md](../design/neon-look.md#motion)). `LookCrowd.MotionOf`
+    reads each monster's clocks off the timeline for the package's springs: its latest gait step (a pulse
+    segment, which moves after its beat, so the plant kicks the lean), its latest attack (a lunge from its
+    clip's start to its blow) or hit (thrown back, or along the knockback starting with it). With the
+    preset's swarm on, `LookCrowd.Place` sets each life a little off its spot, facing and size before the
+    shatter can seed from it; `--beat-ripple` evaluates a monster's place, facing and walk up to a sixteenth
+    note early by its distance from the hero (`LookCrowd.RippleDelay`). The hero (a `StockCrowd`) takes the
+    same step spring on its strides (`DemoMain.HeroSpring`, `StockCrowd.Spring`), only in the crystal cut.
   - `--shatter-log` logs each break with its song time and place in the view, to find deaths for
     filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
   - Before and after: [trailer/look-crowd](../../demo3d/evidence/trailer/look-crowd/README.md). The PhysX

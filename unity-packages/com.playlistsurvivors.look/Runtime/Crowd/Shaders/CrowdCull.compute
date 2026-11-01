@@ -113,7 +113,7 @@ void Cull(uint3 id : SV_DispatchThreadID)
     float height;
     float4 sphere = CrowdSphere(m, height);
     float3 c = sphere.xyz;
-    float r = sphere.w;
+    float r = sphere.w * 1.2; // the motion layers' lean and stretch reach past the clip's sphere (CrowdCommon.hlsl)
     bool camera = InsideSwept(c, 0, r);
     float shadowLength = (c.y + r) / _ShadowSinElev;
     bool shadow = camera || InsideSwept(c, _ShadowDir * shadowLength, r);

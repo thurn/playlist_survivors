@@ -33,6 +33,8 @@ namespace Demo3D.Runtime.Crowd
             public Renderer[] Renderers;
             public Vector3 BaseScale;
             public float SinkM;
+            public float Stretch;  // the look's hop spring (Spring): a share of the height, and the lean toward the travel
+            public Vector2 Lean;
             public uint LastA = uint.MaxValue, LastB = uint.MaxValue;
             public bool Fresh = true;
         }
@@ -169,6 +171,19 @@ namespace Demo3D.Runtime.Crowd
             return slot;
         }
 
+        /// <summary>
+        /// The look's hop spring on a monster from the next <see cref="Draw"/> on (the crystal cut's hero; see
+        /// PS.Look.Crowd.CrowdMotion.StepSpring): squashed or stretched about its feet by <paramref name="stretch"/> of
+        /// its height, leaning by <paramref name="lean"/> on the ground (x, z: the tilt's tangent). Nothing else sets it.
+        /// </summary>
+        public void Spring(int type, int index, float stretch, Vector2 lean)
+        {
+            var t = _types[type];
+            while (t.Slots.Count <= index) t.Slots.Add(Create(t));
+            t.Slots[index].Stretch = stretch;
+            t.Slots[index].Lean = lean;
+        }
+
         public void Draw(Camera camera)
         {
             int total = 0;
@@ -211,8 +226,12 @@ namespace Demo3D.Runtime.Crowd
             // A set's corpse, lying where its death clip left it, sinks its whole height below the
             // ground over the dissolve, easing in, with its own materials untouched.
             if (_vendorMaterials) position.y -= dissolve * dissolve * s.SinkM * scale;
-            tr.SetPositionAndRotation(position, Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0));
-            tr.localScale = s.BaseScale * scale * (_vendorMaterials ? 1f : 1f - dissolve);
+            var turn = Quaternion.Euler(0, m.Yaw * Mathf.Rad2Deg, 0);
+            float lean = s.Lean.magnitude;
+            if (lean > 1e-5f) turn = Quaternion.AngleAxis(Mathf.Atan(lean) * Mathf.Rad2Deg, new Vector3(s.Lean.y, 0, -s.Lean.x) / lean) * turn;
+            tr.SetPositionAndRotation(position, turn);
+            tr.localScale = Vector3.Scale(s.BaseScale * scale * (_vendorMaterials ? 1f : 1f - dissolve),
+                new Vector3(1 - 0.5f * s.Stretch, 1 + s.Stretch, 1 - 0.5f * s.Stretch));
             int n = s.Clips.Length;
             uint a = m.ClipA < n ? m.ClipA : 0, b = m.ClipB < n ? m.ClipB : a;
             if (a != s.LastA || b != s.LastB)

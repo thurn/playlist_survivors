@@ -24,6 +24,10 @@ namespace Demo3D.Runtime.Crowd
     ///   before a run's first frame are not reconstructed (their instance stays hidden).
     /// - Each type's gem colour (<see cref="StyleLook"/>) is its instances' tint. The horde's beat pulse and the
     ///   inner glow are shader globals: StyleBeat publishes the pulse, and the constructor the style's glow tune.
+    /// - The look's motion layers (<see cref="Look.CrowdMotion"/>): each monster's clocks from the timeline
+    ///   (<see cref="MotionOf"/>: its latest gait step, which moves after its beat, and its latest kick, a lunge, a hit or
+    ///   a knockback) go beside its instance (<see cref="Motion"/>); the swarm places each life off its spot
+    ///   (<see cref="Place"/>); the beat ripple delays each gait step by its distance from the hero (<see cref="RippleDelay"/>).
     /// </summary>
     public sealed class LookCrowd : ICrowdRenderer
     {
@@ -104,6 +108,97 @@ namespace Demo3D.Runtime.Crowd
 
         public NativeArray<MonsterInstance> Instances(int type, int count) =>
             _crowd.Instances(_libType[type], count).Reinterpret<MonsterInstance>();
+
+        /// <summary>The type's motion clocks for this frame, by the same slots as its instances (<see cref="Look.BoneTextureCrowd.Motion"/>).</summary>
+        public NativeArray<Look.MonsterMotion> Motion(int type, int count) => _crowd.Motion(_libType[type], count);
+
+        /// <summary>
+        /// A monster's motion clocks at song time <paramref name="t"/>, its instance scale <paramref name="scale"/>: its
+        /// latest gait step (a pulse segment that moves) as of <paramref name="t"/> less <paramref name="delay"/> (the
+        /// ripple's), planting on its beat and moving after it; and its latest kick by then: a lunge from its clip's start
+        /// to its blow, toward the way it faces, or a hit, thrown back from the way it faces, or along the knockback that
+        /// starts with it.
+        /// </summary>
+        public Look.MonsterMotion MotionOf(int entity, int type, double t, float scale, double delay = 0)
+        {
+            var m = Look.MonsterMotion.Still(_tl.Entities[entity].Seed);
+            float height = Mathf.Max(0.1f, _lib.Types[_libType[type]].HeightM * scale);
+            var segs = _tl.SegmentsOf(entity);
+            double ts = t - delay;
+            for (int i = segs.Count - 1; i >= 0; i--)
+            {
+                var g = segs.Array[segs.Offset + i];
+                if (g.T0 > ts || g.Ease != Ease.Pulse) continue;
+                var d = g.To - g.From;
+                if (d.LengthSquared() < 1e-8f) continue;
+                m.StepAge = (float)(ts - g.T0);
+                m.StepMove = 0;
+                m.Travel = new Vector2(d.X, d.Y) / height;
+                break;
+            }
+            var acts = _tl.ActionsOf(entity);
+            for (int i = acts.Count - 1; i >= 0; i--)
+            {
+                var a = acts.Array[acts.Offset + i];
+                bool lunge = a.Kind == ActionKind.Attack;
+                if (!lunge && a.Kind != ActionKind.Hit) continue;
+                double start = lunge && a.HasClipTiming ? Math.Min(a.ClipStart, a.Impact) : a.Impact;
+                if (start > t) continue;
+                _tl.PositionAt(entity, a.Impact, out float facing);
+                var way = Easing.Dir(facing);
+                float strength = lunge ? Look.CrowdMotion.LungeKick : Look.CrowdMotion.HitKick;
+                if (!lunge)
+                {
+                    way = -way;
+                    // A knockback starting on the hit throws it along its push.
+                    for (int j = segs.Count - 1; j >= 0; j--)
+                    {
+                        var g = segs.Array[segs.Offset + j];
+                        if (g.T0 > a.Impact + 1e-4) continue;
+                        if (g.T0 >= a.Impact - 1e-4 && g.Ease == Ease.Linear && (g.To - g.From).LengthSquared() > 1e-8f)
+                        {
+                            way = System.Numerics.Vector2.Normalize(g.To - g.From);
+                            strength = Look.CrowdMotion.KnockKick;
+                        }
+                        break;
+                    }
+                }
+                m.KickAge = (float)(t - a.Impact);
+                m.KickWind = (float)(a.Impact - start);
+                m.Kick = new Vector2(way.X, way.Y) * strength;
+                break;
+            }
+            return m;
+        }
+
+        /// <summary>The swarm's placement of a life (<see cref="Look.CrowdMotion.Place"/>), on demo3d's instance.</summary>
+        public static void Place(ref MonsterInstance inst, uint seed)
+        {
+            var m = Reinterpret(inst);
+            Look.CrowdMotion.Place(ref m, seed);
+            inst.Position = m.Position;
+            inst.Yaw = m.Yaw;
+            inst.Scale = m.Scale;
+        }
+
+        /// <summary>
+        /// The beat ripple's delay of a monster's gait step at song time <paramref name="t"/>
+        /// (<see cref="Look.CrowdMotion.RippleDelay"/>): by its distance from the hero, the beat its current pulse
+        /// segment's length (a step runs from its beat to the next); none outside a pulse segment.
+        /// </summary>
+        public double RippleDelay(int entity, double t)
+        {
+            var segs = _tl.SegmentsOf(entity);
+            for (int i = segs.Count - 1; i >= 0; i--)
+            {
+                var g = segs.Array[segs.Offset + i];
+                if (g.T0 > t) continue;
+                if (g.Ease != Ease.Pulse || g.T1 <= g.T0) return 0;
+                var d = _tl.PositionAt(entity, t) - _tl.PositionAt(0, t);
+                return Look.CrowdMotion.RippleDelay(d.Length(), g.T1 - g.T0);
+            }
+            return 0;
+        }
 
         /// <summary>A crowd type's gem colour as an instance's tint.</summary>
         public uint Tint(int type) => _tint[type];

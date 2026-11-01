@@ -83,6 +83,7 @@ namespace PS.Look
         public void Apply()
         {
             Palette.SetShaderGlobals();
+            Crowd.CrowdMotion.SetShaderGlobals(this);
             Active = this;
             Debug.Log("Look: " + Describe());
             var missing = NotBuilt;
@@ -131,6 +132,13 @@ namespace PS.Look
             {
                 if (flags.Overrides.TryGetValue(axis, out var option)) look._options[axis] = (option, axis.Flag);
                 else if (!look._options.ContainsKey(axis)) throw new FormatException($"look {name}: no {axis.Key}");
+            }
+            if (flags.Motion != null)
+            {
+                foreach (var layer in flags.Motion)
+                    if (Array.IndexOf(LookAxes.MotionLayers, layer) < 0)
+                        throw new ArgumentException($"{LookFlags.MotionFlag}: {layer} is not one of none, {string.Join(", ", LookAxes.MotionLayers)}");
+                foreach (var layer in LookAxes.MotionLayers) look._motion[layer] = (Array.IndexOf(flags.Motion, layer) >= 0, LookFlags.MotionFlag);
             }
             if (flags.BeatRipple) look._motion["beatRipple"] = (true, LookFlags.BeatRippleFlag);
             return look;

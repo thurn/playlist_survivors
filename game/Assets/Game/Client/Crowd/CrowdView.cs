@@ -22,6 +22,9 @@ namespace Game.Client.Crowd
     /// the crowd draws. Sim ground (x, y) is Unity's (x, 0, y). Without a baked library (a checkout
     /// without the vendor packs) it draws nothing. With <see cref="Kick"/> (a mode whose horde reels to the music,
     /// <see cref="ModeRules.Reels"/>) every monster swells and hops on the kick.
+    /// The look's motion layers (<see cref="CrowdMotion"/>): each monster's step and kick clocks go beside its instance for
+    /// the springs, the swarm places each life a little off the sim's spot, and the beat ripple (`--beat-ripple`) delays
+    /// each step by its plant's distance from the hero, up to a sixteenth note.
     /// </summary>
     public sealed class CrowdView : IPresenter, IDisposable
     {
@@ -50,10 +53,12 @@ namespace Game.Client.Crowd
         // freed slot waits a frame before its next owner (CrowdSlots): as many lives as each type's slots.
         readonly int _pool;
         readonly MonsterInstance[] _written;
+        readonly MonsterMotion[] _writtenMotion;
         readonly int[] _writtenType, _writtenSlot;
         readonly MonsterTrack[] _writtenTrack;
         int _serial, _unknownRoles, _overSlots;
-        double _heroX, _heroY; // the latest frame's, which a spawn faces
+        double _heroX, _heroY; // the latest frame's, which a spawn faces and the ripple measures from
+        double _beat = 0.5; // the latest frame's beat (s), the ripple's
         float _kick; // this frame's kick envelope (Kick), 0 without
 
         /// <summary>
@@ -70,6 +75,7 @@ namespace Game.Client.Crowd
             _pool = SlotsPerType(alive);
             _byEnemy = new Dictionary<int, MonsterTrack>(_pool);
             _written = new MonsterInstance[_pool];
+            _writtenMotion = new MonsterMotion[_pool];
             _writtenType = new int[_pool];
             _writtenSlot = new int[_pool];
             _writtenTrack = new MonsterTrack[_pool];
@@ -118,7 +124,10 @@ namespace Game.Client.Crowd
                 case SimEventKind.EnemyStep:
                 {
                     var s = e.AsEnemyStep;
-                    Of(s.Enemy)?.Step(s.FromX, s.FromY, s.ToX, s.ToY, s.MoveStart, s.Footplant);
+                    double delay = CrowdMotion.Ripple
+                        ? CrowdMotion.RippleDelay(Math.Sqrt((s.ToX - _heroX) * (s.ToX - _heroX) + (s.ToY - _heroY) * (s.ToY - _heroY)), _beat)
+                        : 0;
+                    Of(s.Enemy)?.Step(s.FromX, s.FromY, s.ToX, s.ToY, s.MoveStart + delay, s.Footplant + delay);
                     break;
                 }
                 case SimEventKind.EnemyKnock:
@@ -180,6 +189,7 @@ namespace Game.Client.Crowd
             if (_lib == null) return;
             double t = frame.Song;
             frame.State.Hero.PositionAt(t, out _heroX, out _heroY);
+            if (frame.State.StridePeriod > 0 && frame.State.StrideHalvings >= 0) _beat = frame.State.StridePeriod * (1 << frame.State.StrideHalvings);
             _kick = Kick != null ? Mathf.Clamp01(Kick()) : 0f;
             _slots.Begin();
             int n = 0;
@@ -206,8 +216,14 @@ namespace Game.Client.Crowd
                 if (count == 0) continue;
                 var instances = _crowd.Instances(type, count);
                 _slots.FillHidden(type, instances);
+                var motion = _crowd.Motion(type, count);
+                for (int i = 0; i < count; i++) motion[i] = MonsterMotion.Still(0);
                 for (int k = 0; k < n; k++)
-                    if (_writtenType[k] == type) instances[_writtenSlot[k]] = _written[k];
+                    if (_writtenType[k] == type)
+                    {
+                        instances[_writtenSlot[k]] = _written[k];
+                        motion[_writtenSlot[k]] = _writtenMotion[k];
+                    }
             }
             long shatterStart = Stopwatch.GetTimestamp();
             for (int k = 0; k < n; k++)
@@ -261,6 +277,11 @@ namespace Game.Client.Crowd
                 Tint = MonsterInstance.Pack(look.Gem),
                 Flags = (uint)flags,
             };
+            if (CrowdMotion.Swarm) CrowdMotion.Place(ref _written[n], (uint)track.Serial);
+            var motion = pose.Motion;
+            float height = Mathf.Max(0.1f, type.HeightM * look.Scale);
+            motion.Travel /= height;
+            _writtenMotion[n] = motion;
             return true;
         }
 

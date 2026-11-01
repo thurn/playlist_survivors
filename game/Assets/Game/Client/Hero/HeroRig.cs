@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using PS.Look.Crowd;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -40,6 +41,7 @@ namespace Game.Client.Hero
         readonly Slot _legsA, _legsB, _torsoA, _torsoB, _upperA, _upperB;
         readonly AvatarMask _torsoMask, _upperMask;
         readonly Transform[] _spine;
+        readonly Vector3 _scale; // the knight's own, which the hop's spring scales
 
         public GameObject Knight { get; }
         public Animator Animator { get; }
@@ -48,6 +50,7 @@ namespace Game.Client.Hero
         {
             Knight = UnityEngine.Object.Instantiate(bake.knight, parent);
             Knight.name = "Hero";
+            _scale = Knight.transform.localScale;
             Animator = Knight.GetComponentInChildren<Animator>();
             if (Animator == null || !Animator.isHuman) throw new InvalidOperationException("HeroRig: the baked knight has no humanoid Animator");
             Animator.applyRootMotion = false;
@@ -131,7 +134,15 @@ namespace Game.Client.Hero
         /// </summary>
         public void Pose(in HeroPose p, float yaw)
         {
-            Knight.transform.SetPositionAndRotation(new Vector3((float)p.X, p.Lift, (float)p.Y), Quaternion.Euler(0, yaw * Mathf.Rad2Deg, 0));
+            var facing = Quaternion.Euler(0, yaw * Mathf.Rad2Deg, 0);
+            if (CrowdMotion.Springs)
+            {
+                // The hop's spring (HeroPose.Stretch): squashed or stretched about its feet, leaning toward its travel.
+                float lean = Mathf.Sqrt(p.LeanX * p.LeanX + p.LeanY * p.LeanY);
+                if (lean > 1e-5f) facing = Quaternion.AngleAxis(Mathf.Atan(lean) * Mathf.Rad2Deg, new Vector3(p.LeanY, 0, -p.LeanX) / lean) * facing;
+                Knight.transform.localScale = Vector3.Scale(_scale, new Vector3(1 - 0.5f * p.Stretch, 1 + p.Stretch, 1 - 0.5f * p.Stretch));
+            }
+            Knight.transform.SetPositionAndRotation(new Vector3((float)p.X, p.Lift, (float)p.Y), facing);
             float attack = Mathf.Clamp01(p.Attack), a = Mathf.Clamp01(p.AShare);
             float run = Mathf.Clamp01(p.Run), back = Mathf.Clamp01(p.Back), walking = Mathf.Min(1, run + back);
             float legsAttack = (1 - walking) * attack;

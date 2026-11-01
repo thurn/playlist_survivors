@@ -2,6 +2,8 @@ using System;
 using Game.Client.Loop;
 using PS.Game.Sim;
 
+using PS.Look.Crowd;
+
 namespace Game.Client.Hero
 {
     /// <summary>One attack slot of the hero's pose: a clip and the time into it.</summary>
@@ -46,6 +48,12 @@ namespace Game.Client.Hero
         public float Flare;
         /// <summary>The drawn hero turns to this pose at once rather than easing (<see cref="HeroTurn"/>): a press's strike, quicker than the ease.</summary>
         public bool TurnAtOnce;
+        /// <summary>
+        /// The motion layers' spring on the latest hop or dash (<see cref="CrowdMotion.StepSpring"/>): the stretch of its
+        /// height (negative squashed) and its lean on the ground (x, y: the shear's tangent toward the travel).
+        /// The rig draws them only with the look's springs on.
+        /// </summary>
+        public float Stretch, LeanX, LeanY;
     }
 
     /// <summary>
@@ -315,7 +323,41 @@ namespace Game.Client.Hero
             if (walking) Torso(t, ref p, standing);
             else p.Yaw = standing;
             Dash(t, ref p);
+            Spring(t, ref p);
             return p;
+        }
+
+        /// <summary>The hero's height, which sizes a hop's spring (<see cref="CrowdMotion.StepSize"/>).</summary>
+        public const float SpringHeightM = 1.8f;
+
+        /// <summary>
+        /// The spring on the latest hop or dash (<see cref="HeroPose.Stretch"/>): it stretches and leans into its
+        /// travel in the air and squashes on its touchdown, the lean overshooting back and settling. A bump, which hops
+        /// in place, squashes at half size without a lean; a stomp has none.
+        /// </summary>
+        void Spring(double t, ref HeroPose p)
+        {
+            double start = double.NegativeInfinity, end = 0, dx = 0, dy = 0;
+            float size = 0;
+            int k = Latest(_steps, _stepCount, t, (in Step s) => s.Start);
+            if (k >= 0 && !_steps[k % Keep].Stomp)
+            {
+                var s = _steps[k % Keep];
+                (start, end, dx, dy) = (s.Start, s.End, s.ToX - s.FromX, s.ToY - s.FromY);
+                size = s.Bump ? 0.5f : CrowdMotion.StepSize((float)(Math.Sqrt(dx * dx + dy * dy) / SpringHeightM));
+            }
+            int j = Latest(_dashes, _dashCount, t, (in DashMove d) => d.Start);
+            if (j >= 0 && _dashes[j % Keep].Start > start)
+            {
+                var d = _dashes[j % Keep];
+                (start, end, dx, dy, size) = (d.Start, d.End, Math.Sin(d.Yaw), Math.Cos(d.Yaw), 1f);
+            }
+            if (double.IsNegativeInfinity(start)) return;
+            CrowdMotion.StepSpring((float)(t - end), (float)(end - start), size, out p.Stretch, out float lean);
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1e-6) return;
+            p.LeanX = (float)(dx / len * lean);
+            p.LeanY = (float)(dy / len * lean);
         }
 
         /// <summary>The dash's pose over the walk's (<see cref="HeroMotion"/>, Dashes), and back over <see cref="DashOut"/>.</summary>

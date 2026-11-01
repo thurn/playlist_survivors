@@ -61,6 +61,8 @@ namespace Game.Client.Crowd
         public double X, Y;
         /// <summary>Radians about the vertical: 0 faces +y on the ground (Unity's +z).</summary>
         public float Yaw;
+        /// <summary>The motion layers' clocks (<see cref="MonsterTrack.Motion"/>), the travel in metres until the caller scales it to heights.</summary>
+        public MonsterMotion Motion;
     }
 
     /// <summary>
@@ -86,6 +88,9 @@ namespace Game.Client.Crowd
     /// takes its place in time, and the knock, as in the sim, replaces the moves and steps after its start.
     /// Each new clip fades in over a few frames from what showed before it. Ground positions are
     /// the sim's (x, y): EnemyState.PositionAt's linear moves.
+    /// The pose also carries the motion layers' clocks (neon-look.md, The Axes &gt; Motion; <see cref="CrowdMotion"/>):
+    /// the latest step's plant and travel, and the latest kick: a lunge toward the hero from its notice to its contact,
+    /// a knock along its move, a hit away from the way it faces.
     /// </summary>
     public sealed class MonsterTrack
     {
@@ -107,13 +112,20 @@ namespace Game.Client.Crowd
         /// <summary>How fast a telegraphing boss turns to face the hero.</summary>
         public const double TelegraphTurn = 0.2;
         const double StepFade = 0.05, LungeFade = 0.06, HitFade = 0.03, TelegraphFade = 0.1;
-        const int Moves = 4, Actions = 8;
+        const int Moves = 4, Actions = 8, Springs = 4;
 
         enum Kind : byte { Step, Lunge, Hit, Telegraph, Charge }
 
         struct Move
         {
             public double FromX, FromY, ToX, ToY, Start, End;
+        }
+
+        /// <summary>A step or a kick, kept for the motion layers' springs after its action is forgotten.</summary>
+        struct Spring
+        {
+            public double Start, At;   // a step's move start and plant; a kick's start (a lunge's notice) and contact
+            public float X, Y;         // a step's travel (m); a kick's way times its strength
         }
 
         struct Action
@@ -128,7 +140,8 @@ namespace Game.Client.Crowd
 
         readonly Move[] _moves = new Move[Moves];
         readonly Action[] _actions = new Action[Actions];
-        int _moveCount, _actionCount, _steps;
+        readonly Spring[] _stepSprings = new Spring[Springs], _kickSprings = new Spring[Springs];
+        int _moveCount, _actionCount, _steps, _stepSpringCount, _kickSpringCount;
         MonsterClips _clips;
         float _idlePhase, _yaw;
         double _forgottenHit, _chargeAt;
@@ -158,7 +171,7 @@ namespace Game.Client.Crowd
             Died = false;
             _spawnX = x;
             _spawnY = y;
-            _moveCount = _actionCount = _steps = 0;
+            _moveCount = _actionCount = _steps = _stepSpringCount = _kickSpringCount = 0;
             _forgottenHit = _chargeAt = double.NegativeInfinity;
             _yaw = faceX != x || faceY != y ? (float)Math.Atan2(faceX - x, faceY - y) : 0;
             _idlePhase = Jitter(serial) * clips.Idle.Length;
@@ -207,12 +220,19 @@ namespace Game.Client.Crowd
                 YawFrom = yaw,
                 YawTo = to,
             });
+            AddSpring(_stepSprings, ref _stepSpringCount, new Spring
+                { Start = start, At = Math.Max(start, footplant), X = (float)(toX - fromX), Y = (float)(toY - fromY) });
         }
 
         /// <summary>An EnemyKnock: from, to and its times. One in heard time replaces the moves and steps after its start.</summary>
         public void Knock(double fromX, double fromY, double toX, double toY, double start, double end)
         {
             while (_moveCount > 0 && _moves[_moveCount - 1].Start > start) _moveCount--;
+            while (_stepSpringCount > 0 && _stepSprings[_stepSpringCount - 1].Start > start) _stepSpringCount--;
+            double kx = toX - fromX, ky = toY - fromY, len = Math.Sqrt(kx * kx + ky * ky);
+            if (len > 1e-6)
+                AddSpring(_kickSprings, ref _kickSpringCount, new Spring
+                    { Start = start, At = start, X = (float)(kx / len * CrowdMotion.KnockKick), Y = (float)(ky / len * CrowdMotion.KnockKick) });
             int kept = 0;
             for (int i = 0; i < _actionCount; i++)
                 if (_actions[i].Start <= start || (_actions[i].Kind != Kind.Step && _actions[i].Kind != Kind.Charge)) _actions[kept++] = _actions[i];
@@ -239,6 +259,10 @@ namespace Game.Client.Crowd
                 YawFrom = yaw,
                 YawTo = dirX != 0 || dirY != 0 ? (float)Math.Atan2(dirX, dirY) : yaw,
             });
+            double len = Math.Sqrt(dirX * dirX + dirY * dirY);
+            if (len > 1e-6)
+                AddSpring(_kickSprings, ref _kickSpringCount, new Spring
+                    { Start = notice, At = impact, X = (float)(dirX / len * CrowdMotion.LungeKick), Y = (float)(dirY / len * CrowdMotion.LungeKick) });
         }
 
         /// <summary>
@@ -282,6 +306,10 @@ namespace Game.Client.Crowd
                 YawFrom = yaw,
                 YawTo = yaw,
             });
+            // Thrown back from the way it faces (the blows come from the hero, which it faces).
+            float back = YawAt(t) + (float)Math.PI;
+            AddSpring(_kickSprings, ref _kickSpringCount, new Spring
+                { Start = t, At = t, X = (float)Math.Sin(back) * CrowdMotion.HitKick, Y = (float)Math.Cos(back) * CrowdMotion.HitKick });
         }
 
         /// <summary>What it shows at song time <paramref name="t"/>; also forgets what can no longer show.</summary>
@@ -289,6 +317,7 @@ namespace Game.Client.Crowd
         {
             var pose = new MonsterPose();
             PositionAt(t, out pose.X, out pose.Y);
+            pose.Motion = Motion(t);
 
             int active = ActiveAt(t);
             Forget(active - 1);
@@ -331,6 +360,57 @@ namespace Game.Client.Crowd
             else Idle(t, out pose.ClipB, out pose.TimeB);
             pose.Blend = (float)Ramp(t, a.Start, a.Start + FadeOf(a.Kind));
             return pose;
+        }
+
+        /// <summary>
+        /// The motion layers' clocks at song time <paramref name="t"/> (<see cref="CrowdMotion"/>): the latest step
+        /// whose move has started and the latest kick that has started, the travel in metres; the seed is
+        /// <see cref="Serial"/>.
+        /// </summary>
+        public MonsterMotion Motion(double t)
+        {
+            var m = MonsterMotion.Still((uint)Serial);
+            for (int i = _stepSpringCount - 1; i >= 0; i--)
+            {
+                ref var s = ref _stepSprings[i];
+                if (s.Start > t) continue;
+                m.StepAge = (float)(t - s.At);
+                m.StepMove = (float)(s.At - s.Start);
+                m.Travel = new UnityEngine.Vector2(s.X, s.Y);
+                break;
+            }
+            for (int i = _kickSpringCount - 1; i >= 0; i--)
+            {
+                ref var k = ref _kickSprings[i];
+                if (k.Start > t) continue;
+                m.KickAge = (float)(t - k.At);
+                m.KickWind = (float)(k.At - k.Start);
+                m.Kick = new UnityEngine.Vector2(k.X, k.Y);
+                break;
+            }
+            return m;
+        }
+
+        /// <summary>The facing at song time t: the latest action's turn, else the standing facing.</summary>
+        float YawAt(double t)
+        {
+            int a = ActiveAt(t);
+            return a < 0 ? _yaw : LerpAngle(_actions[a].YawFrom, _actions[a].YawTo, Ramp(t, _actions[a].Start, _actions[a].Impact));
+        }
+
+        /// <summary>Keeps a spring in start order (a free press's hit arrives in heard time), dropping the oldest when full.</summary>
+        static void AddSpring(Spring[] springs, ref int count, in Spring s)
+        {
+            if (count == springs.Length)
+            {
+                Array.Copy(springs, 1, springs, 0, count - 1);
+                count--;
+            }
+            int at = count;
+            while (at > 0 && springs[at - 1].Start > s.Start) at--;
+            Array.Copy(springs, at, springs, at + 1, count - at);
+            springs[at] = s;
+            count++;
         }
 
         void Idle(double t, out uint clip, out float time)

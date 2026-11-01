@@ -2395,6 +2395,14 @@ package's unweld step (`StyleMesh.Unweld`) and shard cutter.
   knock events' moves, as the sim's do. A death or a recycled re-entry ends
   the body on its frame; a death's frame writes it once more as Dying, which
   the palette pass blends but no draw shows, for the shatter to seed from.
+  The track also keeps the look's motion clocks (neon-look.md, Motion): its
+  latest step's plant, move and travel, and its latest kick (a lunge toward
+  the hero from its notice, a knock along its push, a hit away from the way it
+  faces), which `CrowdView` writes beside the instances for the package's
+  springs; with the preset's swarm on it places each life a little off the
+  sim's spot, and `--beat-ripple` delays each step event by its plant's
+  distance from the hero, up to a sixteenth note. The hero's hops and dashes
+  take the same spring (`HeroMotion`'s stretch and lean, drawn by `HeroRig`).
 - **Slots** (`CrowdSlots`): each life keeps its type's instance slot for its
   whole life, and a freed slot shows Hidden for a frame before its next
   owner. So a frame holds last frame's slots beside this frame's new owners,
@@ -3457,7 +3465,7 @@ The game provides these so each state above can be reached on demand:
   frames; `--seconds N` counts song seconds then ([Fixed time](#fixed-time)).
   The run's summary logs its seconds since launch.
   The look flags (`--look <preset>`, `--monster-look`, `--structure-look`,
-  `--world`, `--post`, `--vfx`, `--hero-look`, `--palette`, `--beat-ripple`)
+  `--world`, `--post`, `--vfx`, `--hero-look`, `--palette`, `--motion`, `--beat-ripple`)
   are the look package's ([neon-look.md](neon-look.md), Flags): Boot resolves
   and applies the preset first and logs it (`Look: look edge, palette
   ion; monsters ...`). `--palette` names a look palette or, as before,

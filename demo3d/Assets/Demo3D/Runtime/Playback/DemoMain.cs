@@ -750,17 +750,33 @@ namespace Demo3D.Runtime.Playback
             for (int type = 0; type < _typeLists.Length; type++)
             {
                 var list = _typeLists[type];
-                var inst = _crowd.Instances(type, _slots.Count(type));
+                int count = _slots.Count(type);
+                var inst = _crowd.Instances(type, count);
                 _slots.FillHidden(type, inst);
+                // The look's motion layers (LookCrowd: the springs' clocks, the swarm's placement, the beat ripple).
+                var motion = _lookCrowd != null ? _lookCrowd.Motion(type, count) : default;
+                for (int i = 0; i < motion.Length; i++) motion[i] = PS.Look.Crowd.MonsterMotion.Still(0);
                 for (int k = 0; k < list.Count; k++)
                 {
                     int e = list[k];
+                    uint seed = _tl.Entities[e].Seed;
                     var st = _eval.Evaluate(e, world, _walkStride[type], _walkLength[type], _hover[type]);
-                    var mi = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
+                    double ripple = _lookCrowd != null && PS.Look.Crowd.CrowdMotion.Ripple && !st.Broken && !st.Dying ? _lookCrowd.RippleDelay(e, world) : 0;
+                    if (ripple > 0)
+                    {
+                        // Its gait steps run late by the ripple: its place, facing and walk from then, its actions on time.
+                        var late = _eval.Evaluate(e, world - ripple, _walkStride[type], _walkLength[type], _hover[type]);
+                        st.Position = late.Position;
+                        st.Yaw = late.Yaw;
+                        if (st.A.Clip < 0 && late.A.Clip < 0) st.A = late.A;
+                    }
+                    var mi = ToInstance(st, _typeAssets[type], type, seed);
+                    if (_lookCrowd != null && PS.Look.Crowd.CrowdMotion.Swarm) LookCrowd.Place(ref mi, seed);
                     int slot = _slots.Assign(type, _slotBase + e);
                     // From its killing blow a crystal monster is its shards (LookCrowd).
                     if (st.Broken && _lookCrowd != null) mi.Flags = (uint)_lookCrowd.Breaking(e, type, slot, mi);
                     inst[slot] = mi;
+                    if (_lookCrowd != null) motion[slot] = _lookCrowd.MotionOf(e, type, world, mi.Scale, ripple);
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {
                         if (st.Dying) OnScreenDying++; else OnScreenAlive++;
@@ -776,12 +792,38 @@ namespace Demo3D.Runtime.Playback
             if (_fight != null && _heroRunAnn >= 0 && _fight.Dodge(world, out double dodgeFrom)) Dodging(ref heroState, world - dodgeFrom);
             var heroInst = _heroRenderer.Instances(0, 1);
             heroInst[0] = ToInstance(heroState, _hero, -1, 0);
+            if (_lookCrowd != null && PS.Look.Crowd.CrowdMotion.Springs) HeroSpring(world);
             _heroBlade.Pose(_tl, world);
             if (!_maskOn) _heroRenderer.Draw(_rig.Camera);
             Demo3D.Runtime.Arena.CanopyFade.SetHero(heroState.Position); // TD15: canopies near the hero dither out
             _arena?.FollowHero(heroState.Position);
             _heroFeet = heroState.Position;
             _styleBeat?.Publish(feelT, _heroFeet); // the beat as heard, as the post feel
+        }
+
+        /// <summary>
+        /// The look's hop spring on the crystal cut's hero (PS.Look.Crowd.CrowdMotion.StepSpring): its latest stride, a
+        /// pulse segment snapping from its beat to its landing, stretches and leans it into the travel, then squashes it
+        /// on the landing, the lean overshooting back and settling.
+        /// </summary>
+        void HeroSpring(double t)
+        {
+            var segs = _tl.SegmentsOf(0);
+            float stretch = 0;
+            var lean = Vector2.zero;
+            for (int i = segs.Count - 1; i >= 0; i--)
+            {
+                var g = segs.Array[segs.Offset + i];
+                if (g.T0 > t || g.Ease != Ease.Pulse) continue;
+                var d = g.To - g.From;
+                float len = d.Length();
+                if (len < 1e-4f) continue;
+                float size = PS.Look.Crowd.CrowdMotion.StepSize(len / Mathf.Max(0.1f, _hero.heightM));
+                PS.Look.Crowd.CrowdMotion.StepSpring((float)(t - g.T1), (float)(g.T1 - g.T0), size, out stretch, out float l);
+                lean = new Vector2(d.X, d.Y) / len * l;
+                break;
+            }
+            _heroRenderer.Spring(0, 0, stretch, lean);
         }
 
         /// <summary>

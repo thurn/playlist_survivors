@@ -194,6 +194,48 @@ namespace Game.Tests
             Assert.That(b.Sample(5.1).X, Is.EqualTo(0.5).Within(1e-9));
         }
 
+        /// <summary>The motion layers' clocks (MonsterTrack.Motion, neon-look.md's Motion): the latest step's plant and travel, the latest kick.</summary>
+        [Test]
+        public void TheMotionClocksFollowTheLatestStepAndKick()
+        {
+            var m = Spawned();
+            var still = m.Sample(1.5).Motion;
+            Assert.That((still.StepAge, still.KickAge, still.Seed), Is.EqualTo((PS.Look.Crowd.MonsterMotion.Long, PS.Look.Crowd.MonsterMotion.Long, 1u)));
+            m.Step(0, 0, 1, 0, 2.0, 2.1);
+            m.Lunge(3.0, 3.25, 0, 1);
+            Assert.That(m.Sample(1.99).Motion.StepAge, Is.EqualTo(PS.Look.Crowd.MonsterMotion.Long), "nothing before the move");
+            var moving = m.Sample(2.05).Motion;
+            Assert.That(moving.StepAge, Is.EqualTo(-0.05f).Within(1e-5), "negative through the move");
+            Assert.That(moving.StepMove, Is.EqualTo(0.1f).Within(1e-5));
+            Assert.That((moving.Travel.x, moving.Travel.y), Is.EqualTo((1f, 0f)), "metres until the view scales it");
+            Assert.That(m.Sample(2.1).Motion.StepAge, Is.EqualTo(0f).Within(1e-5), "the plant on the beat");
+            var winding = m.Sample(3.1).Motion;
+            Assert.That(winding.KickAge, Is.EqualTo(-0.15f).Within(1e-5));
+            Assert.That(winding.KickWind, Is.EqualTo(0.25f).Within(1e-5));
+            Assert.That((winding.Kick.x, winding.Kick.y), Is.EqualTo((0f, PS.Look.Crowd.CrowdMotion.LungeKick)), "toward the hero");
+            Assert.That(winding.StepAge, Is.EqualTo(1.0f).Within(1e-5), "the step keeps settling through the lunge");
+
+            m.Hit(4.0);
+            var hit = m.Sample(4.0).Motion;
+            Assert.That((hit.KickAge, hit.KickWind), Is.EqualTo((0f, 0f)));
+            Assert.That(hit.Kick.y, Is.EqualTo(-PS.Look.Crowd.CrowdMotion.HitKick).Within(1e-5), "thrown back from the way it faces (the hero's)");
+            Assert.That(hit.Kick.x, Is.EqualTo(0f).Within(1e-5));
+        }
+
+        [Test]
+        public void AKnockKicksAlongItsPushAndDropsTheStepsItReplaces()
+        {
+            var m = Spawned();
+            m.Step(0, 0, 1, 0, 2.0, 2.1);
+            m.Step(1, 0, 2, 0, 5.05, 5.15);
+            m.Hit(5.0);
+            m.Knock(1, 0, 1, -2, 5.0, 5.12);
+            var p = m.Sample(5.1).Motion;
+            Assert.That(p.StepAge, Is.EqualTo(3.0f).Within(1e-5), "the replaced step never springs");
+            Assert.That((p.Kick.x, p.Kick.y), Is.EqualTo((0f, -PS.Look.Crowd.CrowdMotion.KnockKick)), "along the push");
+            Assert.That(p.KickAge, Is.EqualTo(0.1f).Within(1e-5));
+        }
+
         [Test]
         public void ADeathEndsItsLifeOnTheImpactFrameWithItsBlow()
         {

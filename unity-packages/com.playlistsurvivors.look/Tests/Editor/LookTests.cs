@@ -133,7 +133,7 @@ namespace PS.Look.Tests
         public void EveryLookFlagIsListedForPlayersThatClaimTheirFlags()
         {
             Assert.That(LookFlags.ValuedFlags, Is.EquivalentTo(new[]
-                { "--look", "--palette", "--monster-look", "--structure-look", "--world", "--post", "--vfx", "--hero-look" }));
+                { "--look", "--palette", "--motion", "--monster-look", "--structure-look", "--world", "--post", "--vfx", "--hero-look" }));
             Assert.That(LookFlags.Switches, Is.EquivalentTo(new[] { "--beat-ripple" }));
         }
 

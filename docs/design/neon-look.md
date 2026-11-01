@@ -283,6 +283,7 @@ Both players take the same look flags:
 --look edge                      # pick a preset
 --monster-look wireframe         # override one axis
 --world pure-void --post neon-bloom --palette ion
+--motion springs,swarm           # exactly these motion layers (or none), in place of the preset's
 --beat-ripple                    # steps ripple outward (off in every preset)
 --look classic                   # the look before the epic, for parity checks
 ```
@@ -705,6 +706,62 @@ they look as before in every preset until the VFX beads restyle them
   from the hero, up to ~1/16 note.
 - **Trails and smears**: afterimage ribbons on the hero and fast monsters,
   velocity smears on blows.
+
+How the package implements it (ps-wnj.14; `CrowdMotion`, the layers
+`springs`, `swarm` and `beatRipple` in `Axes/Motion.cs`; evidence in
+[game/evidence/look/motion](../../game/evidence/look/motion/README.md)):
+
+- **The clocks.** Beside each type's instances a feeder writes each monster's
+  `MonsterMotion` (`BoneTextureCrowd.Motion`, 48 bytes a slot): seconds from
+  its latest step's plant (negative while the move runs before it), the move's
+  length before the plant, the step's travel in the monster's own heights, the
+  same for its latest kick (a lunge from its notice to its contact, a hit, a
+  knock) with the kick's way times its strength, and a seed per life. The
+  game's `MonsterTrack` keeps them from the sim's events (its steps move in
+  the 100 ms before the beat); demo3d's `LookCrowd.MotionOf` reads them off
+  the timeline (a gait step moves after its beat). A type with no clocks in a
+  frame draws without the layers.
+- **Springs** are closed-form damped springs in `SkinVertex`
+  (CrowdCommon.hlsl's `CrowdMotion`), so every look, pass and LOD springs
+  alike and fixed-time frames reproduce. Only the body's shape moves: a
+  squash or stretch about the feet and a lean, a shear by height above them;
+  the feet stay where the feeder put them, so a step plants on its beat's
+  frame. A step stretches (up to 7% of the height) and leans into its travel
+  (a shear of 0.2 at full size, a travel of 0.3 of the height) while it moves,
+  drops into a 13% squash on the plant's own frame, rebounds and settles
+  within about 0.4 s, the lean overshooting back; where the move follows the
+  plant (the trailer) the plant kicks the lean instead. A lunge crouches and
+  leans back through the first 60% of its wind-up, reaches into its contact
+  (a shear of 0.3) and springs back; a hit (0.7 of a lunge) or a knock throws
+  the body back on its own frame and squashes it, then settles. Dying bodies
+  and shards take none (the shatter breaks on the impact frame as before).
+- **Swarm**: each life is placed up to 0.2 m (times its cast scale) off the
+  sim's spot, turned up to 0.12 rad off its facing and sized within 10% of its
+  cast scale, on the CPU (`CrowdMotion.Place`) so the shatter seeds where the
+  body drew; on the GPU it stands with a slight tilt of its own (a shear up to
+  0.08) and wobbles slowly (0.45-0.8 Hz, a 0.025 lean and a 1.5% breath), each
+  at its own phase. Idles were already phase-offset per monster. Separation on
+  the horde feed's dense clumps: solid 13.4 to 13.7 mean (each still now
+  passing 13), edge unchanged at 9.0 (its outlines carry it); game perf at the peak 3.5 / 6.0 ms probe
+  p50 / p99.
+- **The hero** takes the same step spring on its hops and dashes, on the CPU
+  (`CrowdMotion.StepSpring`): game's `HeroMotion` and `HeroRig` scale and tilt
+  the knight, demo3d's crystal cut its `StockCrowd` hero (`DemoMain.HeroSpring`;
+  the action cut never sets it).
+- **The ripple** (`--beat-ripple`, off in every preset) delays each step by
+  its plant's distance from the hero, up to a sixteenth note (a quarter beat)
+  at 24 m (`CrowdMotion.RippleDelay`): the game shifts the step event's times
+  (the beat from the stride grid), demo3d evaluates a rippled monster's place,
+  facing and walk that much earlier (the beat its gait step's length). Its
+  actions, hits and breaks stay on time. With it on, `game beat` reports the
+  delayed footfalls as off their frames, as it should.
+- **Restrained by default** (the operator, 2026-11-01: the neon visuals
+  overwhelmed; subtle secondary motion, flourishes for special moments):
+  a louder first tuning (a 20% squash, a 0.3 lean) read better in strips but
+  is not the default.
+- `--motion LAYERS` (or `none`) sets the layers in place of the preset's, for
+  before-and-after captures from one build. Every preset turns on springs and
+  swarm; trails belong to the trails bead.
 
 ### Hero
 

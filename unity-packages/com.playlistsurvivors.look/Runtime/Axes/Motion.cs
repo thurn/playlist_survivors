@@ -7,8 +7,8 @@ namespace PS.Look
 
         /// <summary>
         /// The motion axis: its built options are the <see cref="MotionLayers"/> built so far. It has no flag of its
-        /// own; <c>--beat-ripple</c> switches beatRipple on.
+        /// own; <c>--motion</c> sets the layers and <c>--beat-ripple</c> switches beatRipple on.
         /// </summary>
-        public static readonly LookAxis Motion = new LookAxis("motion", null);
+        public static readonly LookAxis Motion = new LookAxis("motion", null, "springs", "swarm", "beatRipple");
     }
 }

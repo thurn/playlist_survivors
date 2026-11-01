@@ -17,7 +17,9 @@ namespace PS.Look.Crowd
     /// the shadow proxy. A Dying instance (a death's frame) is not drawn, but its palette is blended
     /// wherever it is, for the GPU shatter to seed its shards from. The instance buffers form a ring
     /// longer than the frames in flight, so the CPU never writes one the GPU may still read; the
-    /// previous frame's copy tells the culling pass when a slot changed owner.
+    /// previous frame's copy tells the culling pass when a slot changed owner. Beside each type's instances the
+    /// feeder may write its monsters' motion clocks (<see cref="Motion"/>), which the motion layers spring from
+    /// (<see cref="CrowdMotion"/>); a type whose feeder writes none that frame draws without them.
     /// </summary>
     public sealed class BoneTextureCrowd : IDisposable
     {
@@ -65,6 +67,8 @@ namespace PS.Look.Crowd
         static readonly int IdPaletteOut = Shader.PropertyToID("_PaletteOut");
         static readonly int IdClipRate = Shader.PropertyToID("_ClipRate");
         static readonly int IdHeightM = Shader.PropertyToID("_HeightM");
+        static readonly int IdMotion = Shader.PropertyToID("_Motion");
+        static readonly int IdMotionCount = Shader.PropertyToID("_MotionCount");
 
         /// <summary>LOD thresholds in projected pixels: LOD1 below x, LOD2 below y (TD11's, which passed its A/B check).</summary>
         static readonly Vector4 LodThresholds = new Vector4(60, 30, 0, 0);
@@ -92,12 +96,14 @@ namespace PS.Look.Crowd
             public CrowdType Type;
             public Material Material;
             public GraphicsBuffer[] Instances; // a ring: the CPU never writes one the GPU may still read
+            public GraphicsBuffer[] Motions;   // the motion clocks, in the same ring
             public GraphicsBuffer VisibleList, ShadowList, LodState, VisibleFlags, Counters, Args, ShadowArgs, ClipTable, ClipBounds;
             public GraphicsBuffer Palette;
             public MaterialPropertyBlock[] Main; // per LOD (a queued draw keeps its block)
             public MaterialPropertyBlock Shadow;
             public int Count, PrevCount;
-            public bool Locked;
+            public bool Locked, MotionLocked;
+            public int MotionCount;
             public int OnScreen;
             public Action<AsyncGPUReadbackRequest> OnReadback;
         }
@@ -144,6 +150,10 @@ namespace PS.Look.Crowd
             for (int i = 0; i < _ring; i++)
                 s.Instances[i] = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     cap, MonsterInstance.Stride) { name = t.Id + "_instances" + i };
+            s.Motions = new GraphicsBuffer[_ring];
+            for (int i = 0; i < _ring; i++)
+                s.Motions[i] = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    cap, MonsterMotion.Stride) { name = t.Id + "_motion" + i };
             s.VisibleList = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cap * Bins * Lods, 4) { name = t.Id + "_visible" };
             s.ShadowList = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cap, 4) { name = t.Id + "_shadowList" };
             s.LodState = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cap, 16) { name = t.Id + "_lodState" };
@@ -221,7 +231,22 @@ namespace PS.Look.Crowd
             return s.Instances[_frame % _ring].LockBufferForWrite<MonsterInstance>(0, count);
         }
 
-        /// <summary>Culls, blends and queues this frame's draws for the camera; `time` clocks the LOD crossfades (song time).</summary>
+        /// <summary>
+        /// The type's motion clocks for this frame, by the same slots as its <see cref="Instances"/> (the first
+        /// <paramref name="count"/>), mapped GPU memory: write every slot (never read it). Optional: a type whose
+        /// feeder doesn't ask for them in a frame draws without springs or swarm that frame.
+        /// </summary>
+        public NativeArray<MonsterMotion> Motion(int type, int count)
+        {
+            var s = _types[type];
+            if (count > _capacity) throw new ArgumentOutOfRangeException(nameof(count), $"capacity is {_capacity}");
+            if (s.MotionLocked) throw new InvalidOperationException("BoneTextureCrowd: Motion called twice for a type in one frame");
+            s.MotionCount = count;
+            s.MotionLocked = true;
+            return s.Motions[_frame % _ring].LockBufferForWrite<MonsterMotion>(0, count);
+        }
+
+        /// <summary>Culls, blends and queues this frame's draws for the camera; `time` clocks the LOD crossfades and the swarm's wobble (song time).</summary>
         public void Draw(Camera camera, float time)
         {
             int icur = (int)(_frame % _ring), iprev = (int)((_frame - 1) % _ring);
@@ -247,6 +272,9 @@ namespace PS.Look.Crowd
                 if (s.Locked) s.Instances[icur].UnlockBufferAfterWrite<MonsterInstance>(s.Count);
                 else s.Count = 0;
                 s.Locked = false;
+                if (s.MotionLocked) s.Motions[icur].UnlockBufferAfterWrite<MonsterMotion>(s.MotionCount);
+                else s.MotionCount = 0;
+                s.MotionLocked = false;
                 instances += s.Count;
                 if (s.Count > 0)
                 {
@@ -256,6 +284,8 @@ namespace PS.Look.Crowd
                     {
                         var mpb = bi < Lods ? s.Main[bi] : s.Shadow;
                         mpb.SetBuffer(IdInstances, s.Instances[icur]);
+                        mpb.SetBuffer(IdMotion, s.Motions[icur]);
+                        mpb.SetInt(IdMotionCount, Mathf.Min(s.MotionCount, s.Count));
                         mpb.SetFloat(IdCrowdTime, time);
                     }
                     AsyncGPUReadback.Request(s.Counters, s.OnReadback);
@@ -356,7 +386,9 @@ namespace PS.Look.Crowd
             foreach (var s in _types)
             {
                 if (s.Locked) s.Instances[_frame % _ring].UnlockBufferAfterWrite<MonsterInstance>(0);
+                if (s.MotionLocked) s.Motions[_frame % _ring].UnlockBufferAfterWrite<MonsterMotion>(0);
                 foreach (var b in s.Instances) b?.Dispose();
+                foreach (var b in s.Motions) b?.Dispose();
                 s.VisibleList?.Dispose();
                 s.ShadowList?.Dispose();
                 s.LodState?.Dispose();

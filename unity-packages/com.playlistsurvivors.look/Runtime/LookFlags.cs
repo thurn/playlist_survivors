@@ -11,11 +11,12 @@ namespace PS.Look
     /// - `--palette NAME`: when NAME is one of the package's palettes, the look's palette in place of the preset's;
     ///   any other NAME is the arena's zone palette as before (<see cref="ArenaPalette"/>), until the void world
     ///   replaces the arenas;
-    /// - `--beat-ripple`: the beat ripple motion layer on, whatever the preset says.
+    /// - `--motion LAYERS`: exactly these motion layers on (comma-separated, or `none`), in place of the preset's;
+    /// - `--beat-ripple`: the beat ripple motion layer on, whatever the preset or `--motion` says.
     /// </summary>
     public sealed class LookFlags
     {
-        public const string LookFlag = "--look", PaletteFlag = "--palette", BeatRippleFlag = "--beat-ripple";
+        public const string LookFlag = "--look", PaletteFlag = "--palette", MotionFlag = "--motion", BeatRippleFlag = "--beat-ripple";
 
         static LookFlags _current;
 
@@ -28,12 +29,14 @@ namespace PS.Look
         public string LookPalette;
         /// <summary>`--palette` when it names no look palette (an arena's zone palette, or "" for its night as baked), else null.</summary>
         public string ArenaPalette;
+        /// <summary>`--motion`'s layers (empty for `none`), or null for the preset's.</summary>
+        public string[] Motion;
         public bool BeatRipple;
         /// <summary>The axis flags given: the option each names, by axis.</summary>
         public readonly Dictionary<LookAxis, string> Overrides = new Dictionary<LookAxis, string>();
 
         /// <summary>Whether any flag chooses something about the look (`--palette` only when it names a look palette).</summary>
-        public bool Any => Look != null || LookPalette != null || BeatRipple || Overrides.Count > 0;
+        public bool Any => Look != null || LookPalette != null || Motion != null || BeatRipple || Overrides.Count > 0;
 
         /// <summary>Every look flag that takes a value, for a player that claims the flags it reads.</summary>
         public static IEnumerable<string> ValuedFlags
@@ -42,6 +45,7 @@ namespace PS.Look
             {
                 yield return LookFlag;
                 yield return PaletteFlag;
+                yield return MotionFlag;
                 foreach (var axis in LookAxes.All)
                     if (axis.Flag != null) yield return axis.Flag;
             }
@@ -70,6 +74,8 @@ namespace PS.Look
             var flags = new LookFlags { Look = Get(LookFlag), BeatRipple = Array.IndexOf(args, BeatRippleFlag) >= 0 };
             foreach (var axis in LookAxes.All)
                 if (axis.Flag != null && Get(axis.Flag) is string option) flags.Overrides[axis] = option;
+            if (Get(MotionFlag) is string motion)
+                flags.Motion = motion == "none" ? new string[0] : motion.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             if (Get(PaletteFlag) is string palette)
             {
                 if ((library ?? LookLibrary.Shared).HasPalette(palette)) flags.LookPalette = palette;
