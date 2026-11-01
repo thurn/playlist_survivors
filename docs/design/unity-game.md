@@ -2407,9 +2407,11 @@ package's unweld step (`StyleMesh.Unweld`) and shard cutter.
 - **The monster look** is the preset's (`MonsterLooks.Active`;
   [neon-look.md](neon-look.md#monsters)): the edge preset's dark-core-edges
   (`EdgeLook`: dark glass, the type's palette slot in rim, feature lines and
-  a core) and the solid preset's solid-emissive (`SolidLook`: bodies self-lit
-  in the type's palette slot with a dark silhouette band and outline) are
-  built; an option not built yet draws the crystal.
+  a core), the solid preset's solid-emissive (`SolidLook`: bodies self-lit
+  in the type's palette slot with a dark silhouette band and outline) and the
+  hologram preset's wireframe (`HologramLook`: lines and a faint fill added
+  over the arena; `wireframe-all` on every triangle edge) are built; an
+  option not built yet draws the crystal.
 - **The crystal** (`Game/MonsterCrystal`, the package's stand-in monster look,
   `MonsterLooks.Crystal`, until a preset's look is built) shares its surface
   with the structures (the package's CrystalSurface.hlsl): it refracts the scene behind, tinted by

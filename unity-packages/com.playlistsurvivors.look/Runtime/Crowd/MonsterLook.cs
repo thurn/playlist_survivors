@@ -33,6 +33,8 @@ namespace PS.Look.Crowd
         {
             [EdgeLook.Option] = new EdgeLook(),
             [SolidLook.Option] = new SolidLook(),
+            [HologramLook.Option] = new HologramLook(false),
+            [HologramLook.AllEdgesOption] = new HologramLook(true),
         };
 
         /// <summary>Registers the look built for <paramref name="look"/>'s option (list the option in Axes/Monsters.cs too).</summary>

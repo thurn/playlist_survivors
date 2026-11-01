@@ -426,6 +426,33 @@ How the package implements it (ps-wnj.10):
   0.88-0.99, monster form 23-62, game perf at the peak 5.7 / 9.2 ms probe p50 /
   p99, level with the crystal.
 
+How the hologram is built (ps-wnj.12):
+
+- **Wireframe hologram** (`HologramLook`, option `wireframe`, the hologram
+  preset's; shaders `Resources/Look/Shaders/MonsterHologram` and
+  `MonsterHologramShard` over `Runtime/Crowd/Shaders/MonsterHologram.hlsl`,
+  the lines from `MonsterLines.hlsl`, which the edge look shares): bodies of
+  light. The type's slot hue (levelled as the edge look's) in 1.25 px lines
+  on the feature edges, a thin fresnel rim and a faint fill (ground light,
+  L* about 11 face-on to 25 at the silhouette), blended premultiplied: the
+  light added, what is behind dimmed by a 25% veil, so the grid shows
+  through. A depth-only pass (`SRPDefaultUnlit`, the same vertex function)
+  runs before the light pass, so each draw adds its front surfaces alone:
+  a clump shows the near monster's lines, never every back face's wire.
+  `_SL_Pulse` lifts the lines and sends a band up the body from its feet; a
+  hit flashes lines and rim toward `shatter.core`; rings light and lift it
+  as they do the edge look. No shadow pass. Shards are line fragments: the
+  feature and crack edges, hottest on the break's frame, little fill.
+- **`wireframe-all`** draws the triangulation's edges too, at 40% of a
+  feature edge's light: a mesh texture, the busier option (form and swarm
+  separation fail on it in game).
+- Measured ([game](../../game/evidence/look/monster-hologram/README.md),
+  [crystal cut](../../demo3d/evidence/look/monster-hologram/README.md)):
+  conformance 0.96-0.98 in game and 0.86-0.94 on the cut, monster form
+  38-49 and 35-46, swarm separation 11.7-13.5 in game and 8.2-12.4 on the
+  cut (provisional: a see-through body has no dark core, and six tunings
+  all landed at 11-13.7), game perf at the peak 4.1 / 5.6 ms p50 / max.
+
 ### World
 
 World options, all from one procedural kit:

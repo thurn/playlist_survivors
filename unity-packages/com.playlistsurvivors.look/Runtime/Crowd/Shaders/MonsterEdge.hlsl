@@ -9,6 +9,8 @@
 #ifndef LOOK_MONSTER_EDGE_INCLUDED
 #define LOOK_MONSTER_EDGE_INCLUDED
 
+#include "MonsterLines.hlsl"
+
 // The CBUFFER's edge properties, set by EdgeLook from the palette (linear):
 //   half4 _Tint;     the type's enemy slot (MonsterSlots)
 //   half4 _Core;     void.floor, the glass's colour
@@ -17,19 +19,6 @@
 //   half _Edge, _EdgePx, _Beat;  the feature lines' gain, width in pixels, and lift on the beat
 //   half _CoreGlow, _CoreFlare, _CoreSize; the core's resting gain, its gain on the beat, its radius
 //                                          as a share of the body's
-
-// How lit a feature edge is at this pixel: 1 on a flagged edge, falling off over a pixel at
-// _EdgePx from it. A barycentric's screen derivative makes the width the same in pixels at any
-// distance, as a neon tube's would be. A triangle only a few pixels across (a far or finely cut
-// part) fades its lines, so small detail doesn't turn the body into a tangle of wire.
-float EdgeLine(float3 bary, float3 edges, float px)
-{
-    float3 fw = max(fwidth(bary), 1e-5);
-    float3 w = bary / fw;
-    float3 on = (1 - smoothstep(px - 0.75, px + 0.75, w)) * edges;
-    float size = 1 / max(fw.x, max(fw.y, fw.z)); // the triangle's height in pixels, roughly
-    return max(on.x, max(on.y, on.z)) * lerp(0.35, 1, saturate((size - 1.5) / 4));
-}
 
 // The glass, the rim and the lines; `inside` 1 on a shard's fresh inside face, which has no rim
 // (it faces into the break).
