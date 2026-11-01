@@ -430,6 +430,26 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void AZenModeSessionReplaysToItsHash()
+        {
+            RecordEntries();
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var run = Inputs();
+            run.Mode = GameMode.Zen;
+            var live = Live(Build(run), entries, duration, 1.0 / 60, free: true);
+            SessionRecord.Of(run, live).Write(dir);
+            Assert.Greater(Drive.Events(live, SimEventKind.HeroGlide).Count, 10, "the hero walked");
+            var swings = Drive.Events(live, SimEventKind.Attack).Select(e => e.AsAttack).Where(a => a.IsSword).ToList();
+            Assert.Greater(swings.Count, 10, "the sword swung on the beats");
+            Assert.IsTrue(swings.All(a => !a.Pressed), "and never on the attack key");
+
+            var sim = Replay(out var replay);
+            Assert.AreEqual(GameMode.Zen, replay.Record.Run.Mode);
+            Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16} at {sim.Now}, recorded {live.Hash:X16} at {live.Now}");
+            CollectionAssert.AreEqual(live.EventsSince(0).ToArray(), sim.EventsSince(0).ToArray());
+        }
+
+        [Test]
         public void RunInputsRoundTripFieldForField()
         {
             var levels = new[]

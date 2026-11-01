@@ -65,6 +65,8 @@ namespace PS.Game.Sim
         readonly int[] chestTier, chestMinute;
         // Each slot's knockback: its role's, raised by Garlic's hits (native's foe knockback).
         readonly double[] knockback;
+        // Each enemy's stagger's end (ZoneChanged): until then it neither lunges nor steps.
+        readonly double[] staggered;
         // The spawns so far: each enemy's life (EnemyState.Life).
         int lives;
         readonly Spawner spawner;
@@ -132,6 +134,7 @@ namespace PS.Game.Sim
             chestTier = new int[cap];
             chestMinute = new int[cap];
             knockback = new double[cap];
+            staggered = new double[cap];
             past = new Past[cap];
 
             Nav = new NavGrid(arena);
@@ -176,6 +179,18 @@ namespace PS.Game.Sim
         /// enough for any lead; before the older, it answers where that one started.
         /// </summary>
         internal bool Rewound { get; set; }
+
+        /// <summary>
+        /// The horde reels to the music (<see cref="ModeRules.Reels"/>, a mode's): heavy blows and their cleave throw an
+        /// enemy <see cref="ReelKnockScale"/> times as far, its role's cap on knockback too, and a zone change shoves
+        /// the enemies in view back and staggers them for a beat (<see cref="ZoneChanged"/>).
+        /// </summary>
+        internal bool Reels { get; set; }
+
+        /// <summary>Heavy blows' and their cleave's knockback, and its cap, while the horde <see cref="Reels"/>.</summary>
+        public const double ReelKnockScale = 2.5;
+        /// <summary>A zone change's shove while the horde <see cref="Reels"/>: a blow's knockback power, capped by the role's maximum.</summary>
+        public const double StaggerPower = 3;
 
         /// <summary>Where enemy <paramref name="i"/> is at <paramref name="t"/>: from its history while <see cref="Rewound"/>, else its current move.</summary>
         internal void PositionOf(int i, double t, out double x, out double y)
@@ -261,6 +276,31 @@ namespace PS.Game.Sim
             return Math.Max(at, floor);
         }
 
+        /// <summary>
+        /// A zone change landed at <paramref name="t"/> (<see cref="Zones"/>): while the horde <see cref="Reels"/>, every
+        /// enemy within a view's width of the hero, but the music's scripted ones, is shoved straight back from it
+        /// (<see cref="StaggerPower"/>) and staggered, neither lunging nor stepping, for the beat after.
+        /// </summary>
+        internal void ZoneChanged(Simulation sim, double t)
+        {
+            if (!Reels) return;
+            HeroAt(t, out double hx, out double hy);
+            double reach = spawner.ViewWidth;
+            int b = Math.Min(beat, log.Beats.Length - 1);
+            double until = b >= 0 ? t + clock.PeriodOf(b) : t;
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                if (!enemies[i].Alive || Scripts.Scripted(i)) continue;
+                PositionOf(i, t, out double x, out double y);
+                double dx = x - hx, dy = y - hy;
+                if (dx * dx + dy * dy > reach * reach) continue;
+                staggered[i] = until;
+                Knock(sim, i, t, dx, dy, StaggerPower);
+            }
+        }
+
+        bool Staggered(int i, double t) => t < staggered[i] - 1e-9;
+
         internal void Fire(Simulation sim, double t)
         {
             // A frozen world holds as a beat that can't be trusted does: no travel, no lunges.
@@ -294,7 +334,7 @@ namespace PS.Game.Sim
             for (int i = 0; i < enemies.Length; i++)
             {
                 ref var e = ref enemies[i];
-                if (!e.Alive || Knocked(e, t) || bosses.Busy(i, beat)) continue;
+                if (!e.Alive || Knocked(e, t) || Staggered(i, t) || bosses.Busy(i, beat)) continue;
                 double step = roles[e.Role].Gait.StepsOn(beat) ? StepOf(e.Role, beat, h) : 0;
                 double reach = ContactOf(e.Role) + BiteSlackM + heroReach + step;
                 e.PositionAt(t, out double x, out double y);
@@ -325,7 +365,7 @@ namespace PS.Game.Sim
                 e.PositionAt(t, out double x, out double y);
                 baseX[i] = wantX[i] = x;
                 baseY[i] = wantY[i] = y;
-                if (Knocked(e, t) || bosses.Busy(i, beat) || !roles[e.Role].Gait.StepsOn(beat)) continue;
+                if (Knocked(e, t) || Staggered(i, t) || bosses.Busy(i, beat) || !roles[e.Role].Gait.StepsOn(beat)) continue;
                 double step = StepOf(e.Role, beat, h);
                 if (Scripts.Scripted(i))
                 {
@@ -526,13 +566,14 @@ namespace PS.Game.Sim
         /// <paramref name="t"/>, at once: its knockback (its role's, plus Garlic's debuff) times <paramref name="power"/>
         /// (the weapon's), capped by the role's maximum, in units of <see cref="KnockbackM"/>,
         /// stopped short of blocked cells. It cancels a step in progress, and the enemy decides no
-        /// step until the knock ends; pursuit resumes on a later main beat.
+        /// step until the knock ends; pursuit resumes on a later main beat. <paramref name="scale"/> multiplies the
+        /// knock and its cap (<see cref="ReelKnockScale"/>).
         /// </summary>
-        internal void Knock(Simulation sim, int i, double t, double dirX, double dirY, double power)
+        internal void Knock(Simulation sim, int i, double t, double dirX, double dirY, double power, double scale = 1)
         {
             ref var e = ref enemies[i];
             var role = roles[e.Role];
-            double units = Math.Min(knockback[i] * power, role.MaxKnockback);
+            double units = Math.Min(knockback[i] * power, role.MaxKnockback) * scale;
             double l = Math.Sqrt(dirX * dirX + dirY * dirY);
             if (!e.Alive || units <= 0 || l < 1e-9) return;
             PositionOf(i, t, out double x, out double y);
@@ -609,7 +650,7 @@ namespace PS.Game.Sim
                 ax = dirX;
                 ay = dirY;
             }
-            Knock(sim, i, t, ax, ay, knockback);
+            Knock(sim, i, t, ax, ay, knockback, Reels && (how == WeaponHit.HeavyStrike || how == WeaponHit.Cleave) ? ReelKnockScale : 1);
         }
 
         /// <summary>
@@ -862,6 +903,7 @@ namespace PS.Game.Sim
             chestTier[i] = tier;
             chestMinute[i] = minute;
             knockback[i] = roles[role].Knockback;
+            staggered[i] = double.NegativeInfinity;
             bosses.Spawned(i, role, boss, beat);
             Scripts.Clear(i);
             Placed(i, t, x, y);

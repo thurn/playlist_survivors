@@ -66,9 +66,10 @@ namespace Game.Client.Loop
     ///   stamp + B;
     /// - `--seed N`: the sim's seed;
     /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
-    /// - `--mode NAME`: the way of playing (<see cref="GameModes"/>, docs/design/game-modes.md): `grid`, the default, or
+    /// - `--mode NAME`: the way of playing (<see cref="GameModes"/>, docs/design/game-modes.md): `grid`, the default;
     ///   `free`, the hero walking freely (the arrows, or a click or held button: <see cref="PointerInput"/>) and the
-    ///   sword striking on Z, graded by the beat; a replay plays its session's;
+    ///   sword striking on Z, graded by the beat; or `zen`, walking freely with the sword on the beat by itself, its
+    ///   power following the loudness and the horde reeling to the music; a replay plays its session's;
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
@@ -296,6 +297,7 @@ namespace Game.Client.Loop
             {
                 // After the look, whose camera rig it culls with; sized for the content's cap on the living.
                 _crowd = new CrowdView(camera, content.Schedule.Cap);
+                if (Driver.Sim.Rules.Reels) _crowd.Kick = () => (float)_look.Lane.Kick;
                 Driver.Events.Subscribe(_crowd);
             }
             if (content != null)

@@ -12,6 +12,8 @@ namespace PS.Game.Sim
         Grid = 0,
         /// <summary>The hero walks freely; the sword strikes on Z, its reach and damage graded by the press's timing.</summary>
         Free = 1,
+        /// <summary>The hero walks freely; the sword strikes on the beat by itself, loud music swings harder and the horde reels to it.</summary>
+        Zen = 2,
     }
 
     /// <summary>How the hero moves.</summary>
@@ -47,8 +49,18 @@ namespace PS.Game.Sim
         public readonly SwordTrigger Sword;
         /// <summary>Whether the bots can play it: they steer a grid hero and leave the sword to the beat.</summary>
         public readonly bool Bots;
+        /// <summary>
+        /// Whether a beat sword keeps to the beat grid: every half beat on slow songs (<see cref="Sim.Sword.HalfBeatsAbove"/>),
+        /// and the half-time pulse's subdivisions on the beats it spans rather than evenly between its strike beats.
+        /// </summary>
+        public readonly bool BeatGrid;
+        /// <summary>Whether a beat sword's power follows the music's loudness (<see cref="Sim.Sword.QuietScale"/>, <see cref="Sim.Sword.LoudScale"/>).</summary>
+        public readonly bool Loudness;
+        /// <summary>Whether the horde reels to the music: thrown further by heavy blows, staggered by a zone change (<see cref="Horde.Reels"/>), bobbing on the kick.</summary>
+        public readonly bool Reels;
 
-        public ModeRules(GameMode mode, string name, string summary, HeroMovement movement, SwordTrigger sword, bool bots)
+        public ModeRules(GameMode mode, string name, string summary, HeroMovement movement, SwordTrigger sword, bool bots,
+            bool beatGrid = false, bool loudness = false, bool reels = false)
         {
             Mode = mode;
             Name = name;
@@ -56,6 +68,9 @@ namespace PS.Game.Sim
             Movement = movement;
             Sword = sword;
             Bots = bots;
+            BeatGrid = beatGrid;
+            Loudness = loudness;
+            Reels = reels;
         }
 
         /// <summary>Whether a left click (or a held button) sets the hero's target.</summary>
@@ -70,6 +85,8 @@ namespace PS.Game.Sim
                 HeroMovement.Grid, SwordTrigger.Beat, bots: true),
             new ModeRules(GameMode.Free, "free", "walk freely (arrows, or click to move); Z strikes, bigger on the beat",
                 HeroMovement.Free, SwordTrigger.Press, bots: false),
+            new ModeRules(GameMode.Zen, "zen", "walk freely (arrows, or click to move); the sword strikes on the beat by itself, harder when it's loud, and the horde reels to the music",
+                HeroMovement.Free, SwordTrigger.Beat, bots: false, beatGrid: true, loudness: true, reels: true),
         };
 
         /// <summary>The rules of <paramref name="mode"/>.</summary>

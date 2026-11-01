@@ -98,6 +98,8 @@ reactive-local/
 /game/*.slnx
 /game/dotnet/**/bin/
 /game/dotnet/**/obj/
+/game/evidence/**/bin/
+/game/evidence/**/obj/
 /game/Assets/FreeSounds/
 /game/Assets/FreeSounds.meta
 # The HeroEditor capture (docs/design/heroeditor-native.md), under the same rules: HeroEditor is an

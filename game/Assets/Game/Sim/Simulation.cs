@@ -83,7 +83,7 @@ namespace PS.Game.Sim
             hero = Rules.Movement == HeroMovement.Free ? new FreeHero(State.Hero, Arena, Strides) : (IHeroControl)new Hero(State.Hero, Arena, Strides);
             var content = config.Content;
             if (content != null) State.Recap.Begin(content.Weapons.Length);
-            if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State);
+            if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State) { Reels = Rules.Reels };
             Health = new HeroHealth(State.Hero, config, content);
             Structures = new Structures(arena, Arena, State, Horde);
             if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures);
@@ -94,7 +94,7 @@ namespace PS.Game.Sim
                 Arsenal = new Arsenal(config.Arsenal, content, State, Stream, Beats, Run, Health, (arsenal, def, index) =>
                     def.Shape.Kind switch
                     {
-                        ShapeKind.Sword => new Sword(arsenal, def, index, windup, Rules.Sword, content, Stream, Beats, State, Horde, Structures, Zones),
+                        ShapeKind.Sword => new Sword(arsenal, def, index, windup, Rules, content, Stream, Beats, State, Horde, Structures, Zones),
                         ShapeKind.Aura => new Garlic(arsenal, State, Horde, Health, def, index),
                         ShapeKind.Trail => new FireTrail(arsenal, State, Horde, Run, def, index),
                         ShapeKind.Missile => new MagicWand(arsenal, State, Run, def, index, content, Beats, Horde),

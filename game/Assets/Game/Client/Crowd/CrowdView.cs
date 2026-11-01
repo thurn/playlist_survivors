@@ -19,7 +19,8 @@ namespace Game.Client.Crowd
     /// arrives, from its own time's pose.
     /// Each frame every visible monster's pose at frameSong goes into its type's instance slots and
     /// the crowd draws. Sim ground (x, y) is Unity's (x, 0, y). Without a baked library (a checkout
-    /// without the vendor packs) it draws nothing.
+    /// without the vendor packs) it draws nothing. With <see cref="Kick"/> (a mode whose horde reels to the music,
+    /// <see cref="ModeRules.Reels"/>) every monster swells and hops on the kick.
     /// </summary>
     public sealed class CrowdView : IPresenter, IDisposable
     {
@@ -31,6 +32,9 @@ namespace Game.Client.Crowd
         /// goes undrawn for the frame (<see cref="CrowdSlots.Assign"/>), never the crowd.
         /// </summary>
         public static int SlotsPerType(int alive) => 2 * alive;
+
+        /// <summary>A full kick's swell of each monster's scale, and its hop, in its own heights (<see cref="Kick"/>).</summary>
+        public const float KickSwell = 0.14f, KickHop = 0.12f;
 
         readonly Camera _camera;
         readonly CrowdLibrary _lib;
@@ -49,6 +53,14 @@ namespace Game.Client.Crowd
         readonly MonsterTrack[] _writtenTrack;
         int _serial, _unknownRoles, _overSlots;
         double _heroX, _heroY; // the latest frame's, which a spawn faces
+        float _kick; // this frame's kick envelope (Kick), 0 without
+
+        /// <summary>
+        /// The frame's kick envelope, 0 to 1 (the look's lane: <see cref="Look.LaneFrame.Kick"/>), which the crowd swells
+        /// and hops to, or null to keep it still (a mode whose horde does not reel, <see cref="ModeRules.Reels"/>).
+        /// Read in Present, after the look's.
+        /// </summary>
+        public Func<float> Kick { get; set; }
 
         /// <param name="alive">The sim's cap on the living (schedule.json's run cap; unity-game.md, Enemies).</param>
         public CrowdView(Camera camera, int alive)
@@ -167,6 +179,7 @@ namespace Game.Client.Crowd
             if (_lib == null) return;
             double t = frame.Song;
             frame.State.Hero.PositionAt(t, out _heroX, out _heroY);
+            _kick = Kick != null ? Mathf.Clamp01(Kick()) : 0f;
             _slots.Begin();
             int n = 0;
             for (int i = _live.Count - 1; i >= 0; i--)
@@ -230,16 +243,18 @@ namespace Game.Client.Crowd
             _writtenType[n] = look.Type;
             _writtenSlot[n] = slot;
             _writtenTrack[n] = track;
+            // The kick's swell and hop on a living monster (a dying one's pose seeds the shatter as it was).
+            float kick = (flags & CrowdFlags.Dying) == 0 ? _kick : 0f;
             _written[n] = new MonsterInstance
             {
-                Position = new Vector3((float)pose.X, type.HoverM * look.Scale, (float)pose.Y),
+                Position = new Vector3((float)pose.X, (type.HoverM + KickHop * kick) * look.Scale, (float)pose.Y),
                 Yaw = pose.Yaw,
                 ClipA = pose.ClipA,
                 TimeA = pose.TimeA,
                 ClipB = pose.ClipB,
                 TimeB = pose.TimeB,
                 Blend = pose.Blend,
-                Scale = look.Scale,
+                Scale = look.Scale * (1 + KickSwell * kick),
                 HitFlash = pose.HitFlash,
                 Tint = MonsterInstance.Pack(look.Gem),
                 Flags = (uint)flags,

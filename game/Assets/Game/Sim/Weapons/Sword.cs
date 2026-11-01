@@ -98,6 +98,17 @@ namespace PS.Game.Sim
     ///   full-grade press on a beat that is accented (as a beat strike's heaviness asks) is heavy, once per beat,
     ///   its cleave wave's bands spreading over the swing after its impact. Amount adds follow-ups spread evenly
     ///   over the swing, which never slow the next press. It never slams.
+    /// - <b>The beat grid</b> (<see cref="ModeRules.BeatGrid"/>, a mode's): over a <see cref="HalfBeatsAbove"/> period
+    ///   a strike beat's interval holds twice the strikes, the one on the half beat a slash of its own, so slow songs
+    ///   swing on the eighths rather than leave the hero standing between beats; and every strike after a beat's first
+    ///   lands on the beats it spans, a share of each beat interval as its beats-on count says (a half-time pulse's
+    ///   on its skipped beat), not evenly over an estimated interval, which a tracked beat's jitter sets off the beat.
+    ///   A strike planned before the beats it needs are revealed takes the estimate, and moves onto them at its
+    ///   wind-up if they are known then.
+    /// - <b>Loudness</b> (<see cref="ModeRules.Loudness"/>, a mode's): the tick level at a strike beat, known at its
+    ///   planning, scales its strikes' reach and damage (<see cref="QuietScale"/>, 1, <see cref="LoudScale"/>); a loud
+    ///   beat adds a strike to each of its half beats or its beat, on the subdivisions, and its accent may be heavy
+    ///   though the strike beat before was.
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -139,6 +150,15 @@ namespace PS.Game.Sim
         /// swing before's impact, while its strike shows, is dropped; one in its follow-through cuts it short.
         /// </summary>
         public const double SwingBufferS = 0.15;
+        /// <summary>
+        /// Over this tracker period (80 BPM) a mode with <see cref="ModeRules.BeatGrid"/> strikes every half beat: slashes
+        /// then come 0.375 s apart or more, as on the half-time pulse they come 0.8 s apart or less.
+        /// </summary>
+        public const double HalfBeatsAbove = 0.75;
+        /// <summary>A quiet strike beat's reach and damage, with <see cref="ModeRules.Loudness"/>.</summary>
+        public const double QuietScale = 0.75;
+        /// <summary>A loud strike beat's reach and damage, with <see cref="ModeRules.Loudness"/>.</summary>
+        public const double LoudScale = 1.25;
         const int QueueCapacity = 64;
         const int WaveCapacity = 4;
 
@@ -149,6 +169,12 @@ namespace PS.Game.Sim
             public double From;
             public int Beat;
             public bool Main, HalfTime, Wound, Cancelled, Heavy, Pressed;
+            /// <summary>A half beat's strike (<see cref="ModeRules.BeatGrid"/>): a slash, never a follow-up.</summary>
+            public bool Half;
+            /// <summary>On a loud beat (<see cref="ModeRules.Loudness"/>): heavy though the strike beat before was.</summary>
+            public bool Loud;
+            /// <summary>Beats on from its strike beat (<see cref="ModeRules.BeatGrid"/>): where on the beats it lands.</summary>
+            public double On;
             /// <summary>The reach's and damage's scale: a press's grade (0.5 to 1), else 1.</summary>
             public double Scale;
             public double Reach, DirX, DirY;
@@ -169,7 +195,7 @@ namespace PS.Game.Sim
         readonly Zones zones;
         readonly EnemyRole[] roles;
         readonly double windup;
-        readonly bool onPress;
+        readonly bool onPress, beatGrid, loudness;
         // The beat the latest heavy press was measured from: one heavy per beat.
         double lastHeavyPress = double.NaN;
         // The latest press's main impact: the next press's lands a swing after it, its follow-ups between.
@@ -198,7 +224,7 @@ namespace PS.Game.Sim
         readonly int[] reached;
         readonly double[] aimAngle, aimDist;
 
-        public Sword(Arsenal arsenal, WeaponDef def, int index, double windupS, SwordTrigger trigger, GameContent content, BeliefLog log, BeatClock clock,
+        public Sword(Arsenal arsenal, WeaponDef def, int index, double windupS, ModeRules rules, GameContent content, BeliefLog log, BeatClock clock,
             SimState state, Horde horde, Structures structures, Zones zones)
             : base(arsenal, state, def, index)
         {
@@ -212,7 +238,9 @@ namespace PS.Game.Sim
             this.structures = structures;
             this.zones = zones;
             windup = windupS;
-            onPress = trigger == SwordTrigger.Press;
+            onPress = rules.Sword == SwordTrigger.Press;
+            beatGrid = rules.BeatGrid;
+            loudness = rules.Loudness;
             roles = content.Roles;
             int cap = state.EnemyStore.Length;
             reached = new int[cap];
@@ -381,14 +409,23 @@ namespace PS.Game.Sim
             return beats[b + beatsOn].T - beats[b].T;
         }
 
-        /// <summary>Queues a pulse's strikes from <paramref name="t0"/>, <paramref name="period"/> long, planned at <paramref name="now"/>.</summary>
+        /// <summary>
+        /// Queues a pulse's strikes from <paramref name="t0"/>, <paramref name="period"/> long, planned at <paramref name="now"/>:
+        /// its beat's, or its half beats' with <see cref="ModeRules.BeatGrid"/> on a slow beat, each with Amount's subdivisions.
+        /// </summary>
         void Pulse(double now, double t0, double period, int beat, bool halfTime = false)
         {
-            int n = StrikesPerBeat;
+            int halves = beatGrid && beat >= 0 && log.Beats[beat].V0 > HalfBeatsAbove ? 2 : 1;
+            var level = loudness && beat >= 0 ? LevelAt(t0) : LoudnessLevel.Medium;
+            bool loud = level == LoudnessLevel.Loud;
+            int per = StrikesPerBeat + (loud ? 1 : 0);
+            int n = per * halves;
+            double scale = level == LoudnessLevel.Quiet ? QuietScale : loud ? LoudScale : 1;
             lastPulse = t0;
             for (int k = 0; k < n && count < QueueCapacity; k++)
             {
-                double impact = t0 + period * k / n;
+                double on = (halfTime ? 2.0 : 1.0) * k / n;
+                double impact = beatGrid && beat >= 0 && Spanned(beat, on, out double at) ? at : t0 + period * k / n;
                 At(count++) = new Strike
                 {
                     Impact = impact,
@@ -396,23 +433,59 @@ namespace PS.Game.Sim
                     Period = period,
                     Beat = beat,
                     Main = k == 0,
+                    Half = k > 0 && k % per == 0,
+                    Loud = loud,
+                    On = on,
                     HalfTime = halfTime,
-                    Scale = 1,
+                    Scale = scale,
                 };
                 lastImpact = impact;
             }
         }
 
+        /// <summary>
+        /// The time <paramref name="on"/> beats on from beat <paramref name="b"/>: whole beats, then a share of the next
+        /// interval. False while the beats it needs are not all revealed, each starting an interval.
+        /// </summary>
+        bool Spanned(int b, double on, out double at)
+        {
+            int whole = (int)Math.Floor(on + 1e-9);
+            double rest = on - whole;
+            at = double.NaN;
+            for (int k = 0; k < whole + (rest > 1e-9 ? 1 : 0); k++)
+                if (!clock.StartsInterval(b + k)) return false;
+            var known = log.Beats;
+            at = known[b + whole].T;
+            if (rest > 1e-9) at += rest * (known[b + whole + 1].T - at);
+            return true;
+        }
+
+        /// <summary>The loudness of the latest revealed tick at or before <paramref name="t"/>; medium with none.</summary>
+        LoudnessLevel LevelAt(double t)
+        {
+            var ticks = log.Ticks;
+            int lo = 0, hi = ticks.Length;
+            while (lo < hi)
+            {
+                int mid = (lo + hi) >> 1;
+                if (ticks[mid].T <= t + 1e-9) lo = mid + 1;
+                else hi = mid;
+            }
+            return lo > 0 ? new TickEntry(ticks[lo - 1]).Level : LoudnessLevel.Medium;
+        }
+
         void WindUp(Simulation sim, ref Strike s, double t)
         {
             s.Wound = true;
+            // Onto the beats it spans, revealed since its planning.
+            if (beatGrid && s.Beat >= 0 && Spanned(s.Beat, s.On, out double at) && at > t) s.Impact = at;
             if (Holding)
             {
                 s.Cancelled = true;
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = s.Pressed ? s.Heavy : onBeat && (forcedAccent || !lastHeavy && accents.Accented(s.Impact, t));
+            bool heavy = s.Pressed ? s.Heavy : onBeat && (forcedAccent || (!lastHeavy || s.Loud) && accents.Accented(s.Impact, t));
             if (onBeat)
             {
                 forcedAccent = false;
@@ -421,7 +494,7 @@ namespace PS.Game.Sim
             bool slam = onBeat && Slams(s.Beat, s.Impact, s.HalfTime);
             var kind = slam ? HeroAttackKind.Slam
                 : heavy ? HeroAttackKind.Spin
-                : !s.Main ? HeroAttackKind.FollowUp
+                : !s.Main && !s.Half ? HeroAttackKind.FollowUp
                 : (slashes++ & 1) == 0 ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight;
             s.Heavy = heavy;
             s.Reach = Reach(heavy) * s.Scale;

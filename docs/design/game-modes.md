@@ -9,7 +9,7 @@ recorded in sessions and replayed faithfully.
 just game --mode free --file "$PWD/public/reactive/house-128/house-128.ogg"
 ```
 
-Filed as bead ps-y21 (2026-11-01). Native (`native/`) has no modes.
+Filed as bead ps-y21 (2026-11-01); the zen mode as ps-myz (2026-11-01). Native (`native/`) has no modes.
 
 ## The modes
 
@@ -17,8 +17,10 @@ Filed as bead ps-y21 (2026-11-01). Native (`native/`) has no modes.
 |---|---|---|---|
 | `grid` (default) | hops a 4-direction grid on the stride steps ([Hero movement on the grid](unity-game.md#hero-movement-on-the-grid)) | strikes on every beat by itself ([The sword](unity-game.md#the-sword)) | yes |
 | `free` | walks freely: 8 ways on the arrows, or to a clicked point | strikes on Z, its size graded by the beat | no |
+| `zen` | walks freely, as `free` | strikes on the beat by itself, kept to the beat grid; its power follows the loudness | no |
 
-Everything else (the horde, the other weapons, structures, the run) is the same in every mode. The opening's
+Everything else (the horde, the other weapons, structures, the run) is the same in every mode, but in `zen` the horde
+reels to the music ([The zen mode](#the-zen-mode)). The opening's
 denser crowd (ps-w9p.4, [Enemies](unity-game.md#enemies)) and the crowd's floor (ps-w9p.12: the crowd left behind
 brought round ahead of a hero on the move, no minute's minimum below 80) are the spawner's and schedule.json's, so
 every mode has them.
@@ -33,6 +35,11 @@ field is one system's choice:
 - `Sword` (`SwordTrigger.Beat` or `Press`): whether the `Sword` plans strikes from the beats or
   waits for the attack key.
 - `Bots`: whether `--bot` can play it.
+- `BeatGrid`: whether a beat sword keeps every strike on the beat grid (half beats on slow songs, a pulse's
+  subdivisions on the beats it spans).
+- `Loudness`: whether a beat sword's reach, damage and strike count follow the tick's loudness level.
+- `Reels`: whether the horde reels to the music (heavy blows throw further, a zone change shoves and staggers, the
+  crowd bobs on the kick).
 - Derived: `Pointer` (clicks set targets) follows the movement.
 
 The mode travels as data, never as flags read in place:
@@ -180,6 +187,66 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
 - Targets are recorded in `inputs.bin` beside the keys and replay exactly.
 - `--bot` refuses the free mode: the bots steer a grid hero and leave the sword to the beat.
 
+## The zen mode
+
+`--mode zen` is a plain survivors game that moves to the music: the hero walks freely, exactly as in the free mode
+([Walking](#walking)), and the sword strikes by itself on the beat while it walks. Nothing is judged: no Z key, no
+grade, no timing to get right. The music shapes the fight instead.
+
+```sh
+just game --mode zen --file "$PWD/public/reactive/house-128/house-128.ogg"
+```
+
+### The sword keeps to the beat
+
+Slashes landing on the beat matter more than anything else here for game feel (the user, 2026-11-01). Every slash
+impact lands on the tracker's committed beats, on a grid chosen by the beat's period:
+
+| Tracked tempo | Strikes on | Slashes apart |
+|---|---|---|
+| under 80 BPM (a period over 0.75 s, `Sword.HalfBeatsAbove`) | every half beat, each a slash of its own | 0.375-0.75 s |
+| 80 to 150 BPM | every beat (the grid mode's rule) | 0.4-0.75 s |
+| over 150 BPM (a period under 0.4 s, `Sword.HalfTimeBelow`) | every other beat (the grid mode's half-time pulse) | under 0.8 s (0.69 s at 174 BPM) |
+
+- Everything else is the grid mode's sword ([The sword](unity-game.md#the-sword)): heavy spins on accents, a slam on a
+  zone change's downbeat, Amount's follow-ups, the aim at the crowd, wind-ups planned ahead from the lookahead.
+- **On the beats, not an estimate.** A strike after its beat's first (a half beat, a follow-up, a half-time pulse's
+  subdivision) lands a share of the actual beat interval it falls in. The grid mode spreads them evenly over an
+  estimated interval, which a tracked beat's jitter sets 5-10 ms off the skipped beat. Committed beats are revealed
+  about 0.76 s ahead (median), often after a strike is planned, so a strike planned on the estimate moves onto the
+  beats at its wind-up when they are known by then.
+- With no beat known ahead, the sword keeps the grid mode's free pulse (every 1.35 s at rank 1), off any grid, so the
+  hero still fights through a beatless intro.
+- Real songs under 80 BPM are mostly tracked at double time (house-128 slowed to 70 BPM tracks at 141), so they
+  strike on the beat the tracker hears, every 0.43 s; the half-beat rule catches the ones tracked slow.
+
+### Loudness drives power
+
+The tick's loudness level at a strike beat, known when its strikes are planned:
+
+| Level | Reach and damage | Strikes |
+|---|---|---|
+| quiet | 0.75x (`Sword.QuietScale`) | as ever |
+| medium | 1x | as ever |
+| loud | 1.25x (`Sword.LoudScale`) | one more per beat (or half beat), on its eighth (sixteenth) |
+
+- The slash is drawn at the attack event's reach, so a quiet passage swings visibly smaller.
+- On a loud beat an accent may be heavy though the strike beat before was heavy too, so a drop's run of accents spins
+  every time.
+
+### The horde reels
+
+`Horde.Reels`:
+
+- **Heavy blows throw further**: a heavy strike's and its cleave's knockback, and the role's cap on it, times 2.5
+  (`Horde.ReelKnockScale`): 2.8 m for most roles, from 1.1 m.
+- **A zone change staggers the horde**: on the zone change's downbeat every enemy within a view's width of the hero
+  (but a set piece's) is shoved straight back (a blow of knockback power 3, `Horde.StaggerPower`) and staggered for
+  the beat after, neither noticing the hero nor stepping; pursuit resumes the beat after that. The sword's slam lands
+  on the same downbeat.
+- **The crowd bobs on the kick** (presentation, `CrowdView.Kick`, from the look's fast lane): every monster swells
+  up to 14% and hops 12% of its height with the kick's envelope.
+
 ## Open questions for play-testing
 
 - Is 70 ms the right full-grade window, and 0.5 the right floor? Both are constants in
@@ -199,3 +266,7 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
 - Click-to-move without path finding: is pressing against a wall acceptable?
 - Is the opening's crowd (40 alive from the first second, 52 on a loud song; ps-w9p.4) right for a level-1
   hero whose sword only swings on Z, or does it want to start fuller still, or gentler?
+- Zen: does a slash on every beat read as dancing or as a metronome? Is the loud passages' extra eighth strike
+  power or clutter? Does the kick bob read as the horde grooving or as jitter, and the zone change's stagger as a
+  beat drop or a hiccup? Most songs are loud nearly throughout (house-128's ticks are 96% loud), so is loudness's
+  power-up noticeable, or should it follow energy instead of the three levels?

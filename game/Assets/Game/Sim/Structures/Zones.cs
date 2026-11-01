@@ -161,6 +161,7 @@ namespace PS.Game.Sim
             if (cause != ZoneCause.Fallback) detected++;
             sim.Emit(SimEvent.ZoneChange(t, state.Zone, previous, cause, causeT, knownAt));
             structures.ZoneChanged();
+            sim.Horde?.ZoneChanged(sim, t);
         }
     }
 }
