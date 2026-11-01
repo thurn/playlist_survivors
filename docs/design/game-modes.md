@@ -154,7 +154,7 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
   there is no true strafe.
 - **Turning the walk mid-swing**: the presenter eases the legs' facing and the upper body's apart (0.04 s
   each, `HeroTurn`), so the legs swing round to the new walk under a torso that stays on the strike, rather
-  than the torso riding the legs' lag off the aim.
+  than the torso riding the legs' lag off the aim. A press's strike, too soon for the ease, takes both at once up to its impact (`HeroPose.TurnAtOnce`).
 - **Blending with standing**: the walk's weight (up over 0.03 s, down over 0.1 s) blends the walking legs and
   twist with the standing hero's whole-body turn, so stopping mid-swing hands over smoothly.
 - The pose stays a function of the events and the song time, with no state machine. The grid hero's hops are
