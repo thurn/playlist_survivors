@@ -13,8 +13,10 @@ piano aria) take 250 to 550 s of song time, so one pass of the 2294 s playlist c
 analyzer input; the runs are game/dotnet/PS.Game.Sweep, all five in parallel.
 
 `--assert` gates them: each positioning run reaches its victory card with its health above 25% all
-the way, and the idle bot falls before minute 10. Pacing (the level at minute 5, the chests' times)
-is reported, never asserted. A pass with every input committed writes a stamp keyed by their hash,
+the way, and the idle bot falls before minute 10. The rest is reported, never asserted: the pacing
+(the level every five minutes against progression.json's `startLevels`, and whether each is within
+20% of it), each chest's drop and take, and the late crowd's mix (from minute 20 on, the largest
+share one role holds of 250 or more alive, and the crystal colours at each minute's peak). A pass with every input committed writes a stamp keyed by their hash,
 and a later sweep over the same inputs skips (`--force` runs anyway), as slow CI's parity and
 survivors sections do. `--evidence` writes the summary to game/evidence/sweeps/summary.json.
 """
@@ -61,6 +63,10 @@ PREPARE_BUDGET = 45 * 60
 RUN_BUDGET = 15 * 60
 HEALTH_FLOOR = 0.25
 IDLE_FALLS_BY = 600
+# The pacing's band round progression.json's startLevels, and the late crowd's minutes and largest share of one role.
+PACING_BAND = 0.2
+LATE_CROWD = range(20, 31)
+CROWD_SHARE = 0.5
 
 
 @dataclass(frozen=True)
@@ -125,7 +131,31 @@ def verdict(case: Case, report: dict) -> bool:
     return report["fallen"] and report["runClock"] < IDLE_FALLS_BY
 
 
-def summary(case: Case, report: dict) -> dict:
+def pacing(levels: list[int], start_levels: list[int]) -> list[dict]:
+    """The level every five minutes against the design's (progression.json's startLevels, from minute 0)."""
+    rows = []
+    for k, design in enumerate(start_levels[1:], 1):
+        minute = 5 * k
+        level = levels[minute] if minute < len(levels) else None
+        rows.append({"minute": minute, "level": level, "design": design,
+                     "within": level is not None and abs(level - design) <= PACING_BAND * design})
+    return rows
+
+
+def late_crowd(crowd: list[dict]) -> dict:
+    """The late minutes' crowd: by minute, its peak, the largest share one role held of 250 or more alive, and the
+    crystal colours at the peak; whether no role held more than half, and the fewest colours at a minute's peak
+    (minute 30, the finale's instant, left out)."""
+    minutes = [{"minute": m, "peak": crowd[m]["peak"], "topShare": crowd[m]["topShare"], "topRole": crowd[m].get("topRole"),
+                "colours": crowd[m]["coloursAtPeak"]} for m in LATE_CROWD if m < len(crowd)]
+    return {
+        "minutes": minutes,
+        "mixed": all(m["topShare"] <= CROWD_SHARE for m in minutes),
+        "fewestColours": min((m["colours"] for m in minutes if m["minute"] < LATE_CROWD[-1]), default=None),
+    }
+
+
+def summary(case: Case, report: dict, start_levels: list[int]) -> dict:
     levels = report["levelByMinute"]
     return {
         "case": case.name,
@@ -140,7 +170,9 @@ def summary(case: Case, report: dict) -> dict:
         "heroHits": report["heroHits"],
         "levelAt5": levels[5] if len(levels) > 5 else None,
         "level": report["level"],
-        "chests": [c["runClock"] for c in report["chests"]],
+        "pacing": pacing(levels, start_levels) if case.bot == "positioning" else None,
+        "chests": [{"minute": c["minute"], "dropped": c.get("droppedAt"), "taken": c["runClock"]} for c in report["chests"]],
+        "lateCrowd": late_crowd(report["crowd"]) if case.bot == "positioning" else None,
         "evolutions": report["evolutions"],
         "peakEnemies": report["peakEnemies"],
         "kills": report["kills"],
@@ -242,7 +274,8 @@ def _sweep(root: Path, a: argparse.Namespace, key: str | None, stamp: Path) -> i
 
     with ThreadPoolExecutor(max_workers=len(CASES)) as pool:
         reports = list(pool.map(lambda c: run_case(dll, root, c, timeline(c), out, deadline), CASES))
-    rows = [summary(case, report) for case, report in zip(CASES, reports, strict=True)]
+    start_levels = json.loads((root / "game" / "Content" / "progression.json").read_text())["startLevels"]
+    rows = [summary(case, report, start_levels) for case, report in zip(CASES, reports, strict=True)]
     result = {"asserted": a.check, "pacingReportOnly": True, "wallSeconds": round(time.monotonic() - started, 1), "cases": rows}
     (out / "summary.json").write_text(json.dumps(result, indent=2) + "\n")
     for r in rows:
@@ -250,6 +283,12 @@ def _sweep(root: Path, a: argparse.Namespace, key: str | None, stamp: Path) -> i
               f"{'victory' if r['victory'] else 'fell' if r['fallen'] else 'stopped'}, lowest health {r['lowestHealthShare']:.3f}, "
               f"level {r['level']} (minute 5: {r['levelAt5']}), {len(r['chests'])} chests, {r['wallSeconds']} s: "
               f"{'pass' if r['passed'] else 'FAIL'}")
+        if r["lateCrowd"]:
+            levels = " ".join(f"{p['minute']}:{p['level']}/{p['design']}{'' if p['within'] else '!'}" for p in r["pacing"])
+            crowd = r["lateCrowd"]
+            share = max(m["topShare"] for m in crowd["minutes"])
+            print(f"    levels by minute (design) {levels}; late crowd's largest role share {share:.2f}"
+                  f"{'' if crowd['mixed'] else ' (over half)'}, fewest colours {crowd['fewestColours']}")
     if a.evidence:
         evidence = root / "game" / "evidence" / "sweeps"
         evidence.mkdir(parents=True, exist_ok=True)

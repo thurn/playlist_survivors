@@ -35,3 +35,22 @@ def test_the_verdicts_are_the_doc_s_gates() -> None:
     assert botsweep.verdict(idle, report(fallen=True, victory=False, runClock=420.0))
     assert not botsweep.verdict(idle, report(fallen=True, victory=False, runClock=601.0))
     assert not botsweep.verdict(idle, report())
+
+
+def test_the_pacing_reads_each_five_minutes_against_the_design() -> None:
+    levels = [1, 2, 3, 4, 5, 9, 9, 9, 9, 9, 18, 18]
+    rows = botsweep.pacing(levels, [1, 10, 15, 19])
+    assert [(r["minute"], r["level"], r["within"]) for r in rows] == [(5, 9, True), (10, 18, True), (15, None, False)]
+    assert not botsweep.pacing([1] * 6, [1, 10])[0]["within"]
+
+
+def test_the_late_crowd_is_mixed_when_no_role_holds_more_than_half() -> None:
+    crowd = [{"peak": 0, "topShare": 1.0, "coloursAtPeak": 1}] * 20 + [
+        {"peak": 300, "topShare": 0.5, "topRole": "flower", "coloursAtPeak": 5},
+        {"peak": 300, "topShare": 0.3, "topRole": "bat4", "coloursAtPeak": 4},
+    ] + [{"peak": 280, "topShare": 0.2, "coloursAtPeak": 6}] * 8 + [{"peak": 5, "topShare": 0, "coloursAtPeak": 1}]
+    late = botsweep.late_crowd(crowd)
+    assert late["mixed"]
+    assert late["fewestColours"] == 4, "minute 30, the finale's instant, left out"
+    crowd[21] = {**crowd[21], "topShare": 0.51}
+    assert not botsweep.late_crowd(crowd)["mixed"]

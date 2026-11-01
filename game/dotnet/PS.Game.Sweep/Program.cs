@@ -96,8 +96,26 @@ static class Program
                 w.WriteStartObject();
                 w.WriteNumber("runClock", Math.Round(c.RunClock, 3));
                 w.WriteNumber("song", Math.Round(c.Song, 3));
+                if (!double.IsNaN(c.DroppedAt)) w.WriteNumber("droppedAt", Math.Round(c.DroppedAt, 3));
                 w.WriteNumber("minute", c.Minute);
                 w.WriteNumber("tier", c.Tier);
+                w.WriteEndObject();
+            }
+            w.WriteEndArray();
+            w.WriteStartArray("crowd");
+            foreach (var c in report.Crowd)
+            {
+                w.WriteStartObject();
+                w.WriteNumber("peak", c.Peak);
+                w.WriteNumber("topShare", Math.Round(c.TopShare, 4));
+                if (c.TopRole >= 0) w.WriteString("topRole", level.Roles[c.TopRole].Id);
+                w.WriteStartObject("atPeak");
+                for (int r = 0; r < (c.AtPeak?.Length ?? 0); r++)
+                    if (c.AtPeak[r] > 0) w.WriteNumber(level.Roles[r].Id, c.AtPeak[r]);
+                w.WriteEndObject();
+                // The crowd's colours at the peak: each alive role's crystal (cast.json), as the client tints it.
+                w.WriteNumber("coloursAtPeak", Enumerable.Range(0, c.AtPeak?.Length ?? 0).Where(r => c.AtPeak[r] > 0)
+                    .Select(r => level.Cast[r].Crystal).Distinct().Count());
                 w.WriteEndObject();
             }
             w.WriteEndArray();

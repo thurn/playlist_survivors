@@ -1,195 +1,895 @@
 {
   "asserted": true,
   "pacingReportOnly": true,
-  "wallSeconds": 6.1,
+  "wallSeconds": 28.8,
   "cases": [
     {
       "case": "cached-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2069.675,
+      "song": 2003.308,
       "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 134.367,
-        "Chest": 31.833,
+        "LevelUp": 63.983,
+        "Chest": 44.183,
         "Pause": 0,
-        "MusicStopped": 76.467,
-        "resuming": 18.883
+        "MusicStopped": 75.833,
+        "resuming": 12.4
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.8602,
-      "heroHits": 1,
-      "levelAt5": 17,
-      "level": 65,
-      "chests": [
-        560.957,
-        676.312,
-        799.922,
-        937.078,
-        1038.522,
-        1149.428,
-        1340.608,
-        1402.798,
-        1459.558,
-        1552.04,
-        1650.629
+      "lowestHealthShare": 0.8681,
+      "heroHits": 3,
+      "levelAt5": 11,
+      "level": 34,
+      "pacing": [
+        {
+          "minute": 5,
+          "level": 11,
+          "design": 10,
+          "within": true
+        },
+        {
+          "minute": 10,
+          "level": 14,
+          "design": 15,
+          "within": true
+        },
+        {
+          "minute": 15,
+          "level": 19,
+          "design": 19,
+          "within": true
+        },
+        {
+          "minute": 20,
+          "level": 23,
+          "design": 23,
+          "within": true
+        },
+        {
+          "minute": 25,
+          "level": 25,
+          "design": 27,
+          "within": true
+        },
+        {
+          "minute": 30,
+          "level": 34,
+          "design": 30,
+          "within": true
+        }
       ],
+      "chests": [
+        {
+          "minute": 3,
+          "dropped": 225.187,
+          "taken": 226.979
+        },
+        {
+          "minute": 10,
+          "dropped": 648.536,
+          "taken": 650.069
+        },
+        {
+          "minute": 5,
+          "dropped": 666.036,
+          "taken": 667.561
+        },
+        {
+          "minute": 12,
+          "dropped": 752.82,
+          "taken": 756.262
+        },
+        {
+          "minute": 14,
+          "dropped": 966.429,
+          "taken": 970.154
+        },
+        {
+          "minute": 16,
+          "dropped": 1014.636,
+          "taken": 1017.845
+        },
+        {
+          "minute": 15,
+          "dropped": 1024.077,
+          "taken": 1025.319
+        },
+        {
+          "minute": 18,
+          "dropped": 1174.893,
+          "taken": 1177.352
+        },
+        {
+          "minute": 20,
+          "dropped": 1246.114,
+          "taken": 1248.842
+        },
+        {
+          "minute": 25,
+          "dropped": 1559.972,
+          "taken": 1562.93
+        },
+        {
+          "minute": 23,
+          "dropped": 1564.852,
+          "taken": 1565.344
+        },
+        {
+          "minute": 22,
+          "dropped": 1564.502,
+          "taken": 1565.35
+        },
+        {
+          "minute": 27,
+          "dropped": 1633.639,
+          "taken": 1635.881
+        },
+        {
+          "minute": 29,
+          "dropped": 1754.332,
+          "taken": 1756.44
+        }
+      ],
+      "lateCrowd": {
+        "minutes": [
+          {
+            "minute": 20,
+            "peak": 300,
+            "topShare": 0.3858,
+            "topRole": "xlmantis",
+            "colours": 5
+          },
+          {
+            "minute": 21,
+            "peak": 300,
+            "topShare": 0.3129,
+            "topRole": "xlflower",
+            "colours": 4
+          },
+          {
+            "minute": 22,
+            "peak": 300,
+            "topShare": 0.2584,
+            "topRole": "mudman1",
+            "colours": 5
+          },
+          {
+            "minute": 23,
+            "peak": 300,
+            "topShare": 0.1987,
+            "topRole": "mudman1",
+            "colours": 7
+          },
+          {
+            "minute": 24,
+            "peak": 300,
+            "topShare": 0.2274,
+            "topRole": "mudman1",
+            "colours": 7
+          },
+          {
+            "minute": 25,
+            "peak": 300,
+            "topShare": 0.4201,
+            "topRole": "flower",
+            "colours": 7
+          },
+          {
+            "minute": 26,
+            "peak": 300,
+            "topShare": 0.3707,
+            "topRole": "flower",
+            "colours": 5
+          },
+          {
+            "minute": 27,
+            "peak": 300,
+            "topShare": 0.3667,
+            "topRole": "xlmantis",
+            "colours": 7
+          },
+          {
+            "minute": 28,
+            "peak": 300,
+            "topShare": 0.3281,
+            "topRole": "xlmummy",
+            "colours": 5
+          },
+          {
+            "minute": 29,
+            "peak": 300,
+            "topShare": 0.3513,
+            "topRole": "bat5",
+            "colours": 7
+          },
+          {
+            "minute": 30,
+            "peak": 300,
+            "topShare": 0.2733,
+            "topRole": "bat5",
+            "colours": 7
+          }
+        ],
+        "mixed": true,
+        "fewestColours": 4
+      },
       "evolutions": [
         "bloody-tear",
         "soul-eater",
-        "holy-wand",
-        "unholy-vespers",
-        "thunder-loop"
+        "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 14904,
-      "hash": "7C9ABA8B26C2C2FD",
-      "wallSeconds": 4.7
+      "kills": 16634,
+      "hash": "909CDDE8BFE47930",
+      "wallSeconds": 24.1
     },
     {
       "case": "cached-reverse-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2279.583,
+      "song": 2176.417,
       "startedAt": 182.07,
       "frozen": {
-        "LevelUp": 139.567,
-        "Chest": 43.717,
+        "LevelUp": 68.833,
+        "Chest": 29.683,
         "Pause": 0,
-        "MusicStopped": 85.133,
-        "resuming": 25.983
+        "MusicStopped": 79.867,
+        "resuming": 12.1
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 1,
-      "heroHits": 0,
-      "levelAt5": 15,
-      "level": 64,
-      "chests": [
-        516.809,
-        610.054,
-        630.388,
-        708.786,
-        789.018,
-        857.19,
-        1029.891,
-        1057.35,
-        1130.362,
-        1380.388,
-        1527.892,
-        1531.147,
-        1575.992,
-        1658.704,
-        1794.608
+      "lowestHealthShare": 0.8681,
+      "heroHits": 5,
+      "levelAt5": 10,
+      "level": 31,
+      "pacing": [
+        {
+          "minute": 5,
+          "level": 10,
+          "design": 10,
+          "within": true
+        },
+        {
+          "minute": 10,
+          "level": 13,
+          "design": 15,
+          "within": true
+        },
+        {
+          "minute": 15,
+          "level": 21,
+          "design": 19,
+          "within": true
+        },
+        {
+          "minute": 20,
+          "level": 23,
+          "design": 23,
+          "within": true
+        },
+        {
+          "minute": 25,
+          "level": 26,
+          "design": 27,
+          "within": true
+        },
+        {
+          "minute": 30,
+          "level": 31,
+          "design": 30,
+          "within": true
+        }
       ],
+      "chests": [
+        {
+          "minute": 10,
+          "dropped": 631.936,
+          "taken": 633.211
+        },
+        {
+          "minute": 5,
+          "dropped": 751.329,
+          "taken": 753.124
+        },
+        {
+          "minute": 14,
+          "dropped": 851.724,
+          "taken": 853.815
+        },
+        {
+          "minute": 15,
+          "dropped": 1113.54,
+          "taken": 1114.665
+        },
+        {
+          "minute": 18,
+          "dropped": 1178.365,
+          "taken": 1181.273
+        },
+        {
+          "minute": 20,
+          "dropped": 1245.55,
+          "taken": 1247.542
+        },
+        {
+          "minute": 23,
+          "dropped": 1388.881,
+          "taken": 1389.789
+        },
+        {
+          "minute": 25,
+          "dropped": 1569.432,
+          "taken": 1570.866
+        },
+        {
+          "minute": 22,
+          "dropped": 1618.595,
+          "taken": 1621.287
+        },
+        {
+          "minute": 27,
+          "dropped": 1661.744,
+          "taken": 1663.902
+        },
+        {
+          "minute": 29,
+          "dropped": 1778.039,
+          "taken": 1778.964
+        }
+      ],
+      "lateCrowd": {
+        "minutes": [
+          {
+            "minute": 20,
+            "peak": 300,
+            "topShare": 0.3277,
+            "topRole": "xlmantis",
+            "colours": 5
+          },
+          {
+            "minute": 21,
+            "peak": 300,
+            "topShare": 0.3095,
+            "topRole": "xlflower",
+            "colours": 5
+          },
+          {
+            "minute": 22,
+            "peak": 300,
+            "topShare": 0.3098,
+            "topRole": "xlflower",
+            "colours": 5
+          },
+          {
+            "minute": 23,
+            "peak": 300,
+            "topShare": 0.2767,
+            "topRole": "xlbat",
+            "colours": 7
+          },
+          {
+            "minute": 24,
+            "peak": 300,
+            "topShare": 0.2817,
+            "topRole": "xlbat",
+            "colours": 7
+          },
+          {
+            "minute": 25,
+            "peak": 300,
+            "topShare": 0.4152,
+            "topRole": "flower",
+            "colours": 7
+          },
+          {
+            "minute": 26,
+            "peak": 300,
+            "topShare": 0.274,
+            "topRole": "flower",
+            "colours": 6
+          },
+          {
+            "minute": 27,
+            "peak": 300,
+            "topShare": 0.2575,
+            "topRole": "mudman1",
+            "colours": 5
+          },
+          {
+            "minute": 28,
+            "peak": 300,
+            "topShare": 0.3333,
+            "topRole": "bat4",
+            "colours": 5
+          },
+          {
+            "minute": 29,
+            "peak": 300,
+            "topShare": 0.2804,
+            "topRole": "bat5",
+            "colours": 7
+          },
+          {
+            "minute": 30,
+            "peak": 300,
+            "topShare": 0.2767,
+            "topRole": "bat5",
+            "colours": 6
+          }
+        ],
+        "mixed": true,
+        "fewestColours": 5
+      },
       "evolutions": [
         "bloody-tear",
-        "soul-eater",
-        "holy-wand",
-        "unholy-vespers"
+        "soul-eater"
       ],
       "peakEnemies": 300,
-      "kills": 14352,
-      "hash": "882C9D071AF256BC",
-      "wallSeconds": 4.7
+      "kills": 14329,
+      "hash": "9CC0879F3EF2F66D",
+      "wallSeconds": 23.7
     },
     {
       "case": "cached-rotate-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2065.542,
+      "song": 1998.408,
       "startedAt": 3.76,
       "frozen": {
-        "LevelUp": 126.55,
-        "Chest": 42.117,
+        "LevelUp": 66.367,
+        "Chest": 45,
         "Pause": 0,
         "MusicStopped": 70.033,
-        "resuming": 18.683
+        "resuming": 8.867
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.8681,
-      "heroHits": 1,
-      "levelAt5": 14,
-      "level": 57,
-      "chests": [
-        64.388,
-        482.038,
-        625.632,
-        665.481,
-        730.877,
-        878.904,
-        984.631,
-        986.011,
-        1102.298,
-        1375.944,
-        1380.139,
-        1474.042,
-        1581.857,
-        1646.113
+      "lowestHealthShare": 0.6216,
+      "heroHits": 3,
+      "levelAt5": 10,
+      "level": 31,
+      "pacing": [
+        {
+          "minute": 5,
+          "level": 10,
+          "design": 10,
+          "within": true
+        },
+        {
+          "minute": 10,
+          "level": 14,
+          "design": 15,
+          "within": true
+        },
+        {
+          "minute": 15,
+          "level": 17,
+          "design": 19,
+          "within": true
+        },
+        {
+          "minute": 20,
+          "level": 22,
+          "design": 23,
+          "within": true
+        },
+        {
+          "minute": 25,
+          "level": 25,
+          "design": 27,
+          "within": true
+        },
+        {
+          "minute": 30,
+          "level": 31,
+          "design": 30,
+          "within": true
+        }
       ],
+      "chests": [
+        {
+          "minute": 1,
+          "dropped": 67.397,
+          "taken": 71.315
+        },
+        {
+          "minute": 3,
+          "dropped": 291.151,
+          "taken": 293.376
+        },
+        {
+          "minute": 7,
+          "dropped": 476.833,
+          "taken": 479.742
+        },
+        {
+          "minute": 5,
+          "dropped": 516.316,
+          "taken": 517.691
+        },
+        {
+          "minute": 9,
+          "dropped": 549.281,
+          "taken": 552.406
+        },
+        {
+          "minute": 10,
+          "dropped": 614.797,
+          "taken": 616.047
+        },
+        {
+          "minute": 14,
+          "dropped": 900.994,
+          "taken": 903.936
+        },
+        {
+          "minute": 15,
+          "dropped": 961.895,
+          "taken": 964.776
+        },
+        {
+          "minute": 16,
+          "dropped": 992.287,
+          "taken": 993.428
+        },
+        {
+          "minute": 18,
+          "dropped": 1101.161,
+          "taken": 1103.22
+        },
+        {
+          "minute": 20,
+          "dropped": 1358.071,
+          "taken": 1359.563
+        },
+        {
+          "minute": 22,
+          "dropped": 1412.769,
+          "taken": 1417.494
+        },
+        {
+          "minute": 23,
+          "dropped": 1420.537,
+          "taken": 1422.396
+        },
+        {
+          "minute": 25,
+          "dropped": 1514.533,
+          "taken": 1515.866
+        },
+        {
+          "minute": 27,
+          "dropped": 1647.576,
+          "taken": 1648.835
+        }
+      ],
+      "lateCrowd": {
+        "minutes": [
+          {
+            "minute": 20,
+            "peak": 300,
+            "topShare": 0.4502,
+            "topRole": "xlmummy",
+            "colours": 5
+          },
+          {
+            "minute": 21,
+            "peak": 300,
+            "topShare": 0.2891,
+            "topRole": "xlflower",
+            "colours": 7
+          },
+          {
+            "minute": 22,
+            "peak": 300,
+            "topShare": 0.28,
+            "topRole": "werewolf",
+            "colours": 6
+          },
+          {
+            "minute": 23,
+            "peak": 300,
+            "topShare": 0.3725,
+            "topRole": "xlflower",
+            "colours": 7
+          },
+          {
+            "minute": 24,
+            "peak": 300,
+            "topShare": 0.3957,
+            "topRole": "xlflower",
+            "colours": 6
+          },
+          {
+            "minute": 25,
+            "peak": 300,
+            "topShare": 0.4567,
+            "topRole": "flower",
+            "colours": 5
+          },
+          {
+            "minute": 26,
+            "peak": 300,
+            "topShare": 0.3346,
+            "topRole": "xlmummy",
+            "colours": 6
+          },
+          {
+            "minute": 27,
+            "peak": 300,
+            "topShare": 0.3867,
+            "topRole": "xlmantis",
+            "colours": 5
+          },
+          {
+            "minute": 28,
+            "peak": 300,
+            "topShare": 0.3345,
+            "topRole": "bat4",
+            "colours": 4
+          },
+          {
+            "minute": 29,
+            "peak": 300,
+            "topShare": 0.3289,
+            "topRole": "ghost-swarm",
+            "colours": 6
+          },
+          {
+            "minute": 30,
+            "peak": 299,
+            "topShare": 0.1846,
+            "topRole": "mudman2",
+            "colours": 6
+          }
+        ],
+        "mixed": true,
+        "fewestColours": 4
+      },
       "evolutions": [
         "bloody-tear",
         "soul-eater",
-        "holy-wand",
-        "unholy-vespers",
-        "thunder-loop"
+        "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 15033,
-      "hash": "7CD60909AB40250F",
-      "wallSeconds": 4.6
+      "kills": 14344,
+      "hash": "6A73FA42048C91A0",
+      "wallSeconds": 23.1
     },
     {
       "case": "continuous-original-positioning-1",
       "passed": true,
       "runClock": 1800,
-      "song": 2123.525,
+      "song": 2062.192,
       "startedAt": 3.78,
       "frozen": {
-        "LevelUp": 120.667,
-        "Chest": 44.517,
+        "LevelUp": 62.367,
+        "Chest": 44.6,
         "Pause": 0,
-        "MusicStopped": 130.5,
-        "resuming": 20.75
+        "MusicStopped": 135.917,
+        "resuming": 12.067
       },
       "victory": true,
       "fallen": false,
-      "lowestHealthShare": 0.9692,
-      "heroHits": 1,
-      "levelAt5": 16,
-      "level": 57,
-      "chests": [
-        477.411,
-        614.118,
-        632.575,
-        794.842,
-        919.123,
-        995.463,
-        1125.46,
-        1401.493,
-        1486.703,
-        1503.577,
-        1554.087,
-        1651.326
+      "lowestHealthShare": 0.6667,
+      "heroHits": 3,
+      "levelAt5": 11,
+      "level": 31,
+      "pacing": [
+        {
+          "minute": 5,
+          "level": 11,
+          "design": 10,
+          "within": true
+        },
+        {
+          "minute": 10,
+          "level": 13,
+          "design": 15,
+          "within": true
+        },
+        {
+          "minute": 15,
+          "level": 18,
+          "design": 19,
+          "within": true
+        },
+        {
+          "minute": 20,
+          "level": 22,
+          "design": 23,
+          "within": true
+        },
+        {
+          "minute": 25,
+          "level": 25,
+          "design": 27,
+          "within": true
+        },
+        {
+          "minute": 30,
+          "level": 31,
+          "design": 30,
+          "within": true
+        }
       ],
+      "chests": [
+        {
+          "minute": 3,
+          "dropped": 215.287,
+          "taken": 217.7
+        },
+        {
+          "minute": 7,
+          "dropped": 510.309,
+          "taken": 511.518
+        },
+        {
+          "minute": 9,
+          "dropped": 617.153,
+          "taken": 619.911
+        },
+        {
+          "minute": 10,
+          "dropped": 656.343,
+          "taken": 657.768
+        },
+        {
+          "minute": 5,
+          "dropped": 662.741,
+          "taken": 664.299
+        },
+        {
+          "minute": 14,
+          "dropped": 927.178,
+          "taken": 931.27
+        },
+        {
+          "minute": 16,
+          "dropped": 980.987,
+          "taken": 983.296
+        },
+        {
+          "minute": 15,
+          "dropped": 994.174,
+          "taken": 995.432
+        },
+        {
+          "minute": 18,
+          "dropped": 1165.687,
+          "taken": 1166.212
+        },
+        {
+          "minute": 20,
+          "dropped": 1232.701,
+          "taken": 1234.467
+        },
+        {
+          "minute": 22,
+          "dropped": 1343.648,
+          "taken": 1346.14
+        },
+        {
+          "minute": 23,
+          "dropped": 1431.999,
+          "taken": 1433.441
+        },
+        {
+          "minute": 25,
+          "dropped": 1535.731,
+          "taken": 1536.639
+        },
+        {
+          "minute": 27,
+          "dropped": 1715.921,
+          "taken": 1717.279
+        },
+        {
+          "minute": 29,
+          "dropped": 1764.79,
+          "taken": 1766.248
+        }
+      ],
+      "lateCrowd": {
+        "minutes": [
+          {
+            "minute": 20,
+            "peak": 300,
+            "topShare": 0.4,
+            "topRole": "xlmantis",
+            "colours": 5
+          },
+          {
+            "minute": 21,
+            "peak": 300,
+            "topShare": 0.2676,
+            "topRole": "bat-swarm",
+            "colours": 7
+          },
+          {
+            "minute": 22,
+            "peak": 300,
+            "topShare": 0.2542,
+            "topRole": "werewolf",
+            "colours": 6
+          },
+          {
+            "minute": 23,
+            "peak": 300,
+            "topShare": 0.2542,
+            "topRole": "xlflower",
+            "colours": 6
+          },
+          {
+            "minute": 24,
+            "peak": 300,
+            "topShare": 0.3468,
+            "topRole": "xlmummy",
+            "colours": 5
+          },
+          {
+            "minute": 25,
+            "peak": 300,
+            "topShare": 0.3893,
+            "topRole": "xlmummy",
+            "colours": 6
+          },
+          {
+            "minute": 26,
+            "peak": 300,
+            "topShare": 0.3188,
+            "topRole": "flower",
+            "colours": 4
+          },
+          {
+            "minute": 27,
+            "peak": 300,
+            "topShare": 0.3424,
+            "topRole": "mudman2",
+            "colours": 7
+          },
+          {
+            "minute": 28,
+            "peak": 300,
+            "topShare": 0.3398,
+            "topRole": "mudman2",
+            "colours": 7
+          },
+          {
+            "minute": 29,
+            "peak": 300,
+            "topShare": 0.339,
+            "topRole": "ghost-swarm",
+            "colours": 7
+          },
+          {
+            "minute": 30,
+            "peak": 299,
+            "topShare": 0.1906,
+            "topRole": "ghost-swarm",
+            "colours": 6
+          }
+        ],
+        "mixed": true,
+        "fewestColours": 4
+      },
       "evolutions": [
         "bloody-tear",
         "soul-eater",
-        "holy-wand",
-        "unholy-vespers"
+        "holy-wand"
       ],
       "peakEnemies": 300,
-      "kills": 13753,
-      "hash": "1DBA426D6C77FDA0",
-      "wallSeconds": 4.7
+      "kills": 14397,
+      "hash": "86A5A8A66E2BB0BF",
+      "wallSeconds": 23.9
     },
     {
       "case": "cached-original-idle-1",
       "passed": true,
-      "runClock": 126.398,
-      "song": 143.9,
+      "runClock": 125.198,
+      "song": 142.7,
       "startedAt": 3.78,
       "frozen": {
         "LevelUp": 0,
@@ -204,12 +904,14 @@
       "heroHits": 7,
       "levelAt5": null,
       "level": 1,
+      "pacing": null,
       "chests": [],
+      "lateCrowd": null,
       "evolutions": [],
-      "peakEnemies": 132,
-      "kills": 327,
-      "hash": "0FB25E0063248273",
-      "wallSeconds": 0.1
+      "peakEnemies": 135,
+      "kills": 249,
+      "hash": "EFE61BEACFE34463",
+      "wallSeconds": 0.5
     }
   ]
 }

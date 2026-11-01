@@ -4,11 +4,27 @@ using PS.Game.Sim.Content;
 
 namespace PS.Game.Sim.Bots
 {
-    /// <summary>A chest the hero took: its roulette opening, at run clock and song time, and the minute whose treasure it held.</summary>
+    /// <summary>
+    /// A chest the hero took: its roulette opening, at run clock and song time, the minute whose treasure it held, and
+    /// the run clock its boss dropped it at.
+    /// </summary>
     public struct ChestTaken
     {
-        public double RunClock, Song;
+        public double RunClock, Song, DroppedAt;
         public int Minute, Tier;
+    }
+
+    /// <summary>
+    /// The alive crowd in one minute of run clock, sampled at every frame's end: its peak, and over the frames with at
+    /// least <see cref="BotReport.CrowdFloor"/> alive, the largest share any one role held and that role. At the
+    /// peak's frame, how many of each role were alive.
+    /// </summary>
+    public sealed class CrowdMinute
+    {
+        public int Peak;
+        public double TopShare;
+        public int TopRole = -1;
+        public int[] AtPeak;
     }
 
     /// <summary>What a bot's run did: native's survive report (native/crates/eval/src/survive.rs), for the sweeps.</summary>
@@ -22,6 +38,10 @@ namespace PS.Game.Sim.Bots
         /// <summary>The hero's level as the run clock reached each minute, from minute 0.</summary>
         public readonly List<int> LevelByMinute = new List<int>();
         public readonly List<ChestTaken> Chests = new List<ChestTaken>();
+        /// <summary>The crowd by minute of run clock, from minute 0.</summary>
+        public readonly List<CrowdMinute> Crowd = new List<CrowdMinute>();
+        /// <summary>A frame counts toward a minute's <see cref="CrowdMinute.TopShare"/> with this many alive.</summary>
+        public const int CrowdFloor = 250;
         /// <summary>The evolutions owned, in the order they arrived.</summary>
         public readonly List<string> Evolutions = new List<string>();
         /// <summary>The weapons and passives at the end, as "id:rank".</summary>
@@ -66,6 +86,8 @@ namespace PS.Game.Sim.Bots
             sim = new Simulation(config);
             var content = config.Content;
             var report = new BotReport();
+            var drops = new Dictionary<int, double>();
+            var counts = new int[content?.Roles.Length ?? 0];
             int next = 0, cursor = 0;
             double frontier = sim.Now;
             while (frontier < until - 1e-12)
@@ -77,7 +99,7 @@ namespace PS.Game.Sim.Bots
                 sim.StepTo(frontier);
                 var events = sim.EventsSince(cursor);
                 bot.Observe(events);
-                Take(report, sim, content, events, frontier - before);
+                Take(report, sim, content, events, frontier - before, drops, counts);
                 cursor = sim.EventCount;
                 sim.DiscardEventsBefore(cursor);
                 var state = sim.State;
@@ -100,7 +122,8 @@ namespace PS.Game.Sim.Bots
             return report;
         }
 
-        static void Take(BotReport report, Simulation sim, GameContent content, ReadOnlySpan<SimEvent> events, double frame)
+        static void Take(BotReport report, Simulation sim, GameContent content, ReadOnlySpan<SimEvent> events, double frame,
+            Dictionary<int, double> drops, int[] counts)
         {
             var state = sim.State;
             if (state.Frozen && state.Phase == RunPhase.Playing)
@@ -118,20 +141,55 @@ namespace PS.Game.Sim.Bots
                     report.HeroDamage += e.AsHit.Damage;
                 }
                 else if (e.Kind == SimEventKind.Freeze && e.AsFreeze.Starts) report.Freezes++;
+                else if (e.Kind == SimEventKind.Drop && e.AsDrop.ItemKind == ItemKind.Chest) drops[e.AsDrop.Item] = state.RunClock;
                 else if (e.Kind == SimEventKind.Chest && e.AsChest.Phase == ChestPhase.Open)
                 {
                     var c = e.AsChest;
-                    report.Chests.Add(new ChestTaken { RunClock = state.RunClock, Song = c.T, Minute = c.Minute, Tier = c.Tier });
+                    report.Chests.Add(new ChestTaken
+                    {
+                        RunClock = state.RunClock, Song = c.T, Minute = c.Minute, Tier = c.Tier,
+                        DroppedAt = drops.TryGetValue(c.Chest, out double at) ? at : double.NaN,
+                    });
                 }
             }
             if (state.Hero.MaxHealth > 0) report.LowestHealthShare = Math.Min(report.LowestHealthShare, Math.Max(0, state.Hero.Health) / state.Hero.MaxHealth);
             report.PeakEnemies = Math.Max(report.PeakEnemies, state.EnemiesAlive);
-            while (report.LevelByMinute.Count <= (int)Math.Floor(state.RunClock / 60 + 1e-9)) report.LevelByMinute.Add(state.Level);
+            int minute = (int)Math.Floor(state.RunClock / 60 + 1e-9);
+            while (report.LevelByMinute.Count <= minute) report.LevelByMinute.Add(state.Level);
             if (content == null) return;
+            Census(report, state, minute, counts);
             foreach (var w in state.WeaponSlots)
             {
                 var def = content.Weapons[w.Index];
                 if (def.IsEvolution && !report.Evolutions.Contains(def.Id)) report.Evolutions.Add(def.Id);
+            }
+        }
+
+        /// <summary>The alive crowd's roles at this frame's end, into <paramref name="minute"/>'s <see cref="CrowdMinute"/>.</summary>
+        static void Census(BotReport report, SimState state, int minute, int[] counts)
+        {
+            while (report.Crowd.Count <= minute) report.Crowd.Add(new CrowdMinute());
+            var crowd = report.Crowd[minute];
+            int alive = 0;
+            Array.Clear(counts, 0, counts.Length);
+            foreach (ref readonly var enemy in state.Enemies)
+                if (enemy.Alive)
+                {
+                    counts[enemy.Role]++;
+                    alive++;
+                }
+            if (alive > crowd.Peak || crowd.AtPeak == null)
+            {
+                crowd.Peak = alive;
+                crowd.AtPeak = (int[])counts.Clone();
+            }
+            if (alive < BotReport.CrowdFloor) return;
+            for (int r = 0; r < counts.Length; r++)
+            {
+                double share = counts[r] / (double)alive;
+                if (share <= crowd.TopShare) continue;
+                crowd.TopShare = share;
+                crowd.TopRole = r;
             }
         }
     }
