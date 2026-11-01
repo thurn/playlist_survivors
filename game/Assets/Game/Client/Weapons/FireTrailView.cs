@@ -5,7 +5,6 @@ using Game.Client.Loop;
 using Game.Client.Sound;
 using PS.Game.Sim;
 using PS.Game.Sim.Content;
-using PS.Look.Effects;
 using UnityEngine;
 
 namespace Game.Client.Weapons

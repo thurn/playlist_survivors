@@ -3,7 +3,6 @@ using System.Globalization;
 using System.IO;
 using Game.Client.Arena;
 using Game.Client.Loop;
-using PS.Look;
 using PS.Game.Sim;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -13,7 +12,7 @@ namespace Game.Client.Look
     /// <summary>
     /// The look each frame (unity-game.md, "Post-processing and Camera"): the fast lane read at
     /// frameSong from the sim's revealed stream, the sim's heavy strikes and breaks as moments, the
-    /// night volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
+    /// post volume's beat feel (<see cref="PostFeel"/>), the camera (<see cref="CameraRig"/>, with the
     /// moments' punch and shake) and the shaders' beat globals (<see cref="BeatGlobals"/>). A zone change
     /// eases the grade and the arena's runtime lighting to its zone's over two bars from its downbeat
     /// (<see cref="PostFeel.SetZone"/>, <see cref="ZoneLighting"/>). Player flags:
@@ -27,14 +26,14 @@ namespace Game.Client.Look
         readonly Simulation _sim;
         readonly FastLane _lane = new FastLane();
         readonly FeelMoments _moments = new FeelMoments();
-        readonly PostFeel _post = new PostFeel();
+        readonly PostFeel _post;
         readonly CameraRig _rig = new CameraRig();
         readonly bool _synthetic, _stills;
         readonly float _viewWidth;
         StreamWriter _out;
         double _last = double.NaN;
 
-        /// <summary>The volume the beat feel drives (the arena's night post), or null for none yet.</summary>
+        /// <summary>The volume the beat feel drives (the arena's post, the look's stack), or null for none yet.</summary>
         public Volume Volume { get; set; }
 
         /// <summary>Where a presenter subscribed before the look drew the hero this frame.</summary>
@@ -65,6 +64,10 @@ namespace Game.Client.Look
         {
             _camera = camera;
             _sim = sim;
+            var look = PostFeel.Look;
+            var post = PostFeel.OptionOf(look);
+            _post = new PostFeel(post.Feel);
+            _post.Binding.Tints = PS.Look.PostStack.Tints(post, look.Palette);
             var options = LaunchOptions.Current;
             _synthetic = options.HeroPath;
             _stills = options.StillsDir != null;
@@ -115,9 +118,7 @@ namespace Game.Client.Look
             // Stills draw into their own target, whose shape a windowless camera doesn't know yet.
             if (_camera != null) _rig.Apply(_camera, _stills ? (float)Stills.Width / Stills.Height : _camera.aspect, s, punch, shake, _viewWidth);
             var feet = new Vector3((float)hx, 0, (float)hy);
-            BeatGlobals.Publish(s, BeatGlobals.At(lane.Beat, lane.SinceBeat, lane.SinceDownbeat, lane.Energy), feet);
-            BeatGlobals.PublishDrums(new Vector4((float)lane.Kick, (float)lane.Snare, (float)lane.Hat, (float)lane.Bass),
-                (float)Math.Max(lane.Rise, lane.KickPre));
+            BeatGlobals.Publish(s, lane, feet);
             FollowHero?.Invoke(feet);
 
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,

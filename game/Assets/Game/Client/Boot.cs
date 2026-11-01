@@ -13,7 +13,7 @@ namespace Game.Client
     /// The boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>), once a popup has listed any
     /// it didn't recognize (<see cref="FlagsPopup"/>):
     /// - the look flags (`--look NAME`, each axis's flag, `--palette`, `--beat-ripple`): the look preset, resolved and
-    ///   applied first, whatever the launch (<see cref="ResolvedLook"/>);
+    ///   applied first, whatever the launch (<see cref="ResolvedLook"/>), and its post stack's own pass on (<see cref="PostStack"/>);
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>),
     ///   quitting once the last is kept, each with its ID render under `--capture-mask`;
@@ -58,7 +58,9 @@ namespace Game.Client
             try
             {
                 options = LaunchOptions.Current;
-                ResolvedLook.Resolve(options.Look).Apply();
+                var look = ResolvedLook.Resolve(options.Look);
+                look.Apply();
+                if (PostStack.OptionOf(look) is PostOption post) PostStack.Use(post);
             }
             catch (ArgumentException e)
             {
@@ -68,7 +70,6 @@ namespace Game.Client
             }
             if (options.FixedTime) Time.captureFramerate = FixedFps;
             GraphicsStates.WarmUp(options);
-            ComputeKernels.Prepare = GraphicsStates.Prepare; // the look package's crowd, shatter and effects
             _seconds = options.Seconds;
             if (options.StillsDir != null) _stills = new Stills(_camera, options.StillsDir, options.StillsAt, options.StillsMask);
             if (options.DspBuffer > 0)

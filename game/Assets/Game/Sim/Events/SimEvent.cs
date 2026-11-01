@@ -48,8 +48,6 @@ namespace PS.Game.Sim
         Orbit,
         Bolt,
         HeroGlide,
-        Finisher,
-        HeroDash,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -71,13 +69,6 @@ namespace PS.Game.Sim
     /// reward follows at the landing's time.
     /// </summary>
     public enum ChestPhase { Open = 0, Tick = 1, Land = 2, Reward = 3 }
-
-    /// <summary>
-    /// A finisher ring's moments (<see cref="SimEventKind.Finisher"/>, <see cref="Finishers"/>): it starts closing on the
-    /// hero toward its phrase downbeat; its downbeat's prediction moves; a press in its window fires the slam; or it
-    /// ends with no press in it, or is dropped by a hold.
-    /// </summary>
-    public enum FinisherPhase { Ring = 0, Retime = 1, Hit = 2, Miss = 3, Drop = 4 }
 
     /// <summary>
     /// One settled event: dense and blittable, so the log is a plain array and its hash a pass over
@@ -588,47 +579,6 @@ namespace PS.Game.Sim
             return e;
         }
 
-        /// <summary>
-        /// The free hero dashes (<see cref="Dash"/>, `--dash`): I0 the dash, I1 1 on the beat (the long lunge) or 0 (the
-        /// short hop), I2 its facing; D0 its start (the press in heard time, as the hero's glide from it), D1 its end,
-        /// D2/D3 where the hero was at its start, D4/D5 its direction.
-        /// </summary>
-        public static SimEvent HeroDash(double t, int dash, bool onBeat, Direction facing, double start, double end,
-            double fromX, double fromY, double dirX, double dirY)
-        {
-            var e = Of(SimEventKind.HeroDash, t);
-            e.I0 = dash;
-            e.I1 = onBeat ? 1 : 0;
-            e.I2 = (int)facing;
-            e.D0 = start;
-            e.D1 = end;
-            e.D2 = fromX;
-            e.D3 = fromY;
-            e.D4 = dirX;
-            e.D5 = dirY;
-            return e;
-        }
-
-        /// <summary>
-        /// A finisher ring (<see cref="Finishers"/>): I0 the ring, I1 its <see cref="FinisherPhase"/>, I2 its downbeat's
-        /// beat index; D0 the downbeat (as predicted then), D1 when the ring started closing, D2 its window either side
-        /// of the downbeat; on a hit, D3 the slam's impact and D4 when the press was heard.
-        /// </summary>
-        public static SimEvent Finisher(double t, int ring, FinisherPhase phase, int beat, double downbeat, double start, double window,
-            double impact = 0, double heard = 0)
-        {
-            var e = Of(SimEventKind.Finisher, t);
-            e.I0 = ring;
-            e.I1 = (int)phase;
-            e.I2 = beat;
-            e.D0 = downbeat;
-            e.D1 = start;
-            e.D2 = window;
-            e.D3 = impact;
-            e.D4 = heard;
-            return e;
-        }
-
         void Expect(SimEventKind kind)
         {
             if (Kind != kind) throw new System.InvalidOperationException($"a {Kind} event read as a {kind}");
@@ -664,7 +614,5 @@ namespace PS.Game.Sim
         public BurnEvent AsBurn { get { Expect(SimEventKind.Burn); return new BurnEvent(this); } }
         public BoltEvent AsBolt { get { Expect(SimEventKind.Bolt); return new BoltEvent(this); } }
         public HeroGlideEvent AsHeroGlide { get { Expect(SimEventKind.HeroGlide); return new HeroGlideEvent(this); } }
-        public FinisherEvent AsFinisher { get { Expect(SimEventKind.Finisher); return new FinisherEvent(this); } }
-        public HeroDashEvent AsHeroDash { get { Expect(SimEventKind.HeroDash); return new HeroDashEvent(this); } }
     }
 }

@@ -49,18 +49,6 @@ namespace PS.Game.Sim
         /// <summary>The way of playing (`--mode`): which hero and sword rules the run plays (<see cref="GameModes"/>).</summary>
         public GameMode Mode;
 
-        /// <summary>
-        /// Finishers (`--finishers`, a mode's whose <see cref="ModeRules.Finishers"/> allows them): a ring closes on the
-        /// hero toward each phrase downbeat, and Space in its window fires a screen-clearing slam (<see cref="Finishers"/>).
-        /// </summary>
-        public bool Finishers;
-
-        /// <summary>
-        /// The dash (`--dash`, a free hero's: <see cref="HeroMovement.Free"/>): Space dashes, on the beat a long lunge that
-        /// strikes what it passes and makes the sword's next beat strike a spin, off it a short hop (<see cref="Dash"/>).
-        /// </summary>
-        public bool Dash;
-
         /// <summary>Easy: enemy contact damage at half, and floor chickens that heal (unity-game.md, The Run).</summary>
         public bool Easy;
 

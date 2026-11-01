@@ -16,13 +16,11 @@ using Game.Client.Structures;
 using Game.Client.Weapons;
 using PS.Game.Sim;
 using PS.Game.Sim.Level;
-using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using SimKey = PS.Game.Sim.Key;
-using PS.Look.Crowd;
 
 namespace Game.Client.Loop
 {
@@ -72,10 +70,6 @@ namespace Game.Client.Loop
     ///   `free`, the hero walking freely (the arrows, or a click or held button: <see cref="PointerInput"/>) and the
     ///   sword striking on Z, graded by the beat; or `zen`, walking freely with the sword on the beat by itself, its
     ///   power following the loudness and the horde reeling to the music; a replay plays its session's;
-    /// - `--finishers`: in zen, a ring closing on the hero toward each phrase downbeat, and Space in its window a
-    ///   screen-clearing slam (<see cref="FinisherRings"/>; docs/design/game-modes.md, Finishers); a replay plays its session's;
-    /// - `--dash`: a free hero (zen's) dashes on Space, on the beat a long lunge that strikes what it passes and makes the
-    ///   sword's next beat strike a spin, off it a short hop (docs/design/game-modes.md, The dash); a replay plays its session's;
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
@@ -148,7 +142,6 @@ namespace Game.Client.Loop
         LookPresenter _look;
         HeroPresenter _hero;
         EffectsPresenter _effects;
-        FinisherRings _finishers;
         SoundScheduler _sounds;
         SoundPresenter _soundPresenter;
         GarlicAura _garlic;
@@ -323,12 +316,6 @@ namespace Game.Client.Loop
             {
                 _effects = new EffectsPresenter(camera, library, roles);
                 _effects.Cues.SlashTint = w => weapons.Of(w) == WeaponLooks.Family.Sword && weapons.Evolved(w) ? WeaponLooks.Tear : default;
-                if (config.Finishers)
-                {
-                    _finishers = new FinisherRings(camera, CrystalWaves.ShaderIn(library));
-                    if (_hero != null) _finishers.DrawnHero = _hero.Drawn;
-                    Driver.Events.Subscribe(_finishers);
-                }
             }
             SetupSound(roles);
             if (content != null)
@@ -376,7 +363,7 @@ namespace Game.Client.Loop
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
-                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, mode {Driver.Sim.Rules.Name}, finishers {config.Finishers}, dash {config.Dash}, " +
+                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, " +
                       $"bot {options.Scripted.Bot?.ToString().ToLowerInvariant() ?? "none"}" +
                       (level != null && level.Replaced.Count > 0 ? $", --level files {string.Join(", ", level.Replaced)}" : ""));
         }
@@ -749,7 +736,6 @@ namespace Game.Client.Loop
             _look?.Dispose();
             _hero?.Dispose();
             _effects?.Dispose();
-            _finishers?.Dispose();
             _shatter?.Dispose();
             _crystal?.Dispose();
             _arena?.Dispose();

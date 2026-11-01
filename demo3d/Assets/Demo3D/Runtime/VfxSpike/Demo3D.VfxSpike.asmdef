@@ -3,8 +3,7 @@
     "rootNamespace": "Demo3D.Runtime.VfxSpike",
     "references": [
         "Demo3D.Runtime",
-        "Unity.VisualEffectGraph.Runtime",
-        "PS.Look"
+        "Unity.VisualEffectGraph.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

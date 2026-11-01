@@ -1,0 +1,83 @@
+// Back-to-front sort of the alpha-blended billboards across every effect type (effects.md, The
+// runtime): a bitonic sort of (key, particle) pairs, ascending by key, over a power-of-two size
+// of at least 2048. Blocks of 2048 are sorted and merged in group-shared memory; the larger
+// strides run one dispatch each.
+#pragma kernel LocalSort
+#pragma kernel LocalMerge
+#pragma kernel GlobalStep
+
+#define BLOCK 2048
+#define THREADS 1024
+
+RWStructuredBuffer<uint2> _SortList;
+uint _K, _J, _SortSize;
+
+groupshared uint2 s_data[BLOCK];
+
+void CompareSwapShared(uint i, uint ixj, bool ascending)
+{
+    uint2 a = s_data[i], b = s_data[ixj];
+    if ((a.x > b.x) == ascending)
+    {
+        s_data[i] = b;
+        s_data[ixj] = a;
+    }
+}
+
+[numthreads(THREADS, 1, 1)]
+void LocalSort(uint3 gid : SV_GroupID, uint3 tid : SV_GroupThreadID)
+{
+    uint base = gid.x * BLOCK;
+    s_data[tid.x] = _SortList[base + tid.x];
+    s_data[tid.x + THREADS] = _SortList[base + tid.x + THREADS];
+    GroupMemoryBarrierWithGroupSync();
+    for (uint k = 2; k <= BLOCK; k <<= 1)
+    {
+        for (uint j = k >> 1; j > 0; j >>= 1)
+        {
+            uint i = 2 * j * (tid.x / j) + (tid.x % j);
+            uint ixj = i + j;
+            bool ascending = ((base + i) & k) == 0;
+            CompareSwapShared(i, ixj, ascending);
+            GroupMemoryBarrierWithGroupSync();
+        }
+    }
+    _SortList[base + tid.x] = s_data[tid.x];
+    _SortList[base + tid.x + THREADS] = s_data[tid.x + THREADS];
+}
+
+// The strides below BLOCK of the merge for size _K.
+[numthreads(THREADS, 1, 1)]
+void LocalMerge(uint3 gid : SV_GroupID, uint3 tid : SV_GroupThreadID)
+{
+    uint base = gid.x * BLOCK;
+    s_data[tid.x] = _SortList[base + tid.x];
+    s_data[tid.x + THREADS] = _SortList[base + tid.x + THREADS];
+    GroupMemoryBarrierWithGroupSync();
+    for (uint j = BLOCK >> 1; j > 0; j >>= 1)
+    {
+        uint i = 2 * j * (tid.x / j) + (tid.x % j);
+        bool ascending = ((base + i) & _K) == 0;
+        CompareSwapShared(i, i + j, ascending);
+        GroupMemoryBarrierWithGroupSync();
+    }
+    _SortList[base + tid.x] = s_data[tid.x];
+    _SortList[base + tid.x + THREADS] = s_data[tid.x + THREADS];
+}
+
+// One stride _J (at least BLOCK) of the merge for size _K: one thread per pair.
+[numthreads(256, 1, 1)]
+void GlobalStep(uint3 id : SV_DispatchThreadID)
+{
+    uint t = id.x;
+    if (t >= _SortSize / 2) return;
+    uint i = 2 * _J * (t / _J) + (t % _J);
+    uint ixj = i + _J;
+    bool ascending = (i & _K) == 0;
+    uint2 a = _SortList[i], b = _SortList[ixj];
+    if ((a.x > b.x) == ascending)
+    {
+        _SortList[i] = b;
+        _SortList[ixj] = a;
+    }
+}

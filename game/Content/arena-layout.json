@@ -6,8 +6,8 @@
     "props: named groups of kit pieces ('pack/prefab', as in footprints.json), each with a weight; every piece must be in game/manifest.json and footprints.json. scatter: per area type (clearing, path, edge, forest), layers of {props, spacingM, scale [min, max], yawJitterDeg, chance, keepCanopyOff, dressing}. Clearing and path layers may hold only pieces that do not block.",
     "areas: {type, name?, shape, pieces?}. Shapes: center + radius (a disc), center + ring [inner, outer], from + to + width (a path), or fill (forest: everything not otherwise typed). Landmarks (at) are placed explicitly: pieces [{prop, at (from the anchor), yawDeg, scale, liftM}]; their blocking pieces block tiles. Structures are the crystal structures' sites, snapped to the hero's grid: kind courtyard (center, size [x, y], yawDeg, gaps 3 or 4 of gapM, closedSide 0 south / 1 east / 2 north / 3 west when 3), ruin-wall (from, to along a grid axis, gaps evenly spaced) or pieces (its explicit pieces only); walls come from the prop group named by walls. A ruin wall's pieces are at ground positions (it has no anchor). Anchors snap to tile centres, yaws to quarter turns, gaps to an odd number of tiles. Each set of a structure's blocking pieces that share a tile is one site, large from 6 tiles.",
     "shots: the arena stills' ground focus (at) and view width (game look's `--arena-tour`).",
-    "lighting: demo3d's night (moon: elevationDeg, yawDeg, colour sRGB, intensity; trilight ambient; fog, linear in view depth from startAtFocus to endAtFocus times the camera's focus distance, or exponential with density; kitValue, RGB scales for converted kit materials by vendor name prefix; hero, the hero's light; vignette; post, the night's base post stack; flames, flickering realtime point lights on these pieces, at most maxLights, with an optional ground pool; glow, point lights baked on glowing pieces). ArenaLighting reads it; ArenaBaker places the lights and bakes the night.",
-    "palettes: the zones' looks (demo3d's palettes, with blossom and snow as night versions at neon's darkness and crypt's ground and mist darkened, so every zone keeps the dark world: unity-game.md, The Look; schedule.json's zones run neon, blossom, snow, crypt, lava), each a partial lighting object over lighting plus groundTint (linear rgb over the ground's albedo) and mist (the mist cards' colour). The runtime applies one: the moon's realtime light, ambient, fog and clear colour, vignette, the hero's light, the ground and the mist; the baked kit and its bounce keep the night's. neon, the first zone's, is the default: purple ambient and fog, magenta mist, a violet moon, a cyan hero light. Their fog is exponential, as demo3d's palettes' is in practice (its ArenaLighting resets a palette's fog mode).",
+    "lighting: demo3d's night (moon: elevationDeg, yawDeg, colour sRGB, intensity; trilight ambient; fog, linear in view depth from startAtFocus to endAtFocus times the camera's focus distance, or exponential with density; kitValue, RGB scales for converted kit materials by vendor name prefix; hero, the hero's light; exposure, the scene's in stops, added to the look's post stack's (the baked night is lit dim); flames, flickering realtime point lights on these pieces, at most maxLights, with an optional ground pool; glow, point lights baked on glowing pieces). ArenaLighting reads it; ArenaBaker places the lights and bakes the night.",
+    "palettes: the zones' looks (demo3d's palettes, with blossom and snow as night versions at neon's darkness and crypt's ground and mist darkened, so every zone keeps the dark world: unity-game.md, The Look; schedule.json's zones run neon, blossom, snow, crypt, lava), each a partial lighting object over lighting plus groundTint (linear rgb over the ground's albedo) and mist (the mist cards' colour). The runtime applies one: the moon's realtime light, ambient, fog and clear colour, the hero's light, the ground and the mist; the baked kit and its bounce keep the night's. neon, the first zone's, is the default: purple ambient and fog, magenta mist, a violet moon, a cyan hero light. Their fog is exponential, as demo3d's palettes' is in practice (its ArenaLighting resets a palette's fog mode).",
     "atmosphere: mist, low mist cards in hollows (colour sRGB, heightM, noiseScale, softM; cards {at, size [x, y], yawDeg, opacity}), merged into one mesh with Game/MistCard; runes, glowing rune circles on the ground (circles {at, radiusM, color linear, intensity}, turning turnsPerS).",
     "ground: the ground's albedo colours by type (sRGB): forest, edge, clearing and path. ArenaBaker generates the ground's albedo from them, with noise."
   ],
@@ -25,15 +25,7 @@
     "fog": { "color": [0.035, 0.05, 0.09], "mode": "linear", "startAtFocus": 1.1, "endAtFocus": 2.4 },
     "kitValue": { "PolygonElven": 0.5, "PolygonDarkFantasy": 0.7, "RockTriplanar": 0.6, "Brick_": 0.75, "Stucco_": 0.75 },
     "hero": { "heightM": 6, "rangeM": 15, "intensity": 40, "color": [1.0, 0.86, 0.76] },
-    "vignette": { "intensity": 0.29, "smoothness": 0.5, "color": [0.02, 0.025, 0.07] },
-    "post": {
-      "exposure": 0.8,
-      "contrast": 25,
-      "saturation": 30,
-      "temperature": 0,
-      "tonemap": "neutral",
-      "bloom": { "threshold": 1.5, "intensity": 1.0, "scatter": 0.65 }
-    },
+    "exposure": 0.8,
     "flames": {
       "maxLights": 8,
       "props": {
@@ -78,7 +70,6 @@
       "ambient": { "sky": [0.05, 0.1, 0.18], "equator": [0.12, 0.03, 0.14], "ground": [0.03, 0.01, 0.05] },
       "fog": { "color": [0.1, 0.04, 0.16], "mode": "exponential" },
       "hero": { "intensity": 40, "color": [0.4, 0.9, 1.0] },
-      "vignette": { "intensity": 0.3, "color": [0.06, 0.0, 0.08] },
       "groundTint": [0.55, 0.6, 0.75],
       "mist": [0.6, 0.1, 0.55]
     },
@@ -87,7 +78,6 @@
       "ambient": { "sky": [0.1, 0.05, 0.13], "equator": [0.14, 0.04, 0.12], "ground": [0.05, 0.015, 0.045] },
       "fog": { "color": [0.15, 0.04, 0.13], "mode": "exponential" },
       "hero": { "intensity": 40, "color": [1.0, 0.65, 0.85] },
-      "vignette": { "intensity": 0.3, "color": [0.08, 0.0, 0.06] },
       "groundTint": [0.7, 0.45, 0.68],
       "mist": [0.62, 0.16, 0.45]
     },
@@ -96,7 +86,6 @@
       "ambient": { "sky": [0.05, 0.09, 0.17], "equator": [0.04, 0.07, 0.12], "ground": [0.015, 0.025, 0.05] },
       "fog": { "color": [0.05, 0.09, 0.16], "mode": "exponential" },
       "hero": { "intensity": 40, "color": [0.7, 0.88, 1.0] },
-      "vignette": { "intensity": 0.3, "color": [0.01, 0.03, 0.09] },
       "groundTint": [0.52, 0.64, 0.92],
       "mist": [0.24, 0.36, 0.6]
     },
@@ -105,7 +94,6 @@
       "ambient": { "sky": [0.06, 0.062, 0.072], "equator": [0.045, 0.047, 0.055], "ground": [0.025, 0.025, 0.03] },
       "fog": { "color": [0.07, 0.072, 0.082], "mode": "exponential" },
       "hero": { "color": [1.0, 1.0, 1.0] },
-      "vignette": { "color": [0.02, 0.02, 0.02] },
       "groundTint": [0.55, 0.62, 0.8],
       "mist": [0.22, 0.22, 0.24]
     },
@@ -114,7 +102,6 @@
       "ambient": { "sky": [0.08, 0.02, 0.01], "equator": [0.1, 0.03, 0.01], "ground": [0.22, 0.06, 0.01] },
       "fog": { "color": [0.2, 0.05, 0.02], "mode": "exponential" },
       "hero": { "intensity": 40, "color": [1.0, 0.6, 0.4] },
-      "vignette": { "intensity": 0.32, "color": [0.08, 0.0, 0.0] },
       "groundTint": [0.45, 0.42, 0.42],
       "mist": [0.5, 0.12, 0.03]
     }

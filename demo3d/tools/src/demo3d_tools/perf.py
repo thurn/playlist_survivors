@@ -30,7 +30,7 @@ runs a development player (game/Builds/mac/trace; Unity traces only in one) that
 states it draws into the build's warm-up (`--graphics-states-out`, game/Assets/StreamingAssets/GraphicsStates/,
 gitignored; its captures go to captures/game/perf-trace/): the next `game build` ships them, and its
 player warms them up at boot, so no first sighting compiles a shader mid-run. `--no-warmup` measures
-without the warm-up.
+without the warm-up. `--player-args` adds flags to every scenario's player (a look preset: `--look hologram`).
 """
 
 from __future__ import annotations
@@ -39,6 +39,7 @@ import argparse
 import csv
 import json
 import math
+import shlex
 import shutil
 import subprocess
 import sys
@@ -113,6 +114,7 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
                    help=f"trace the graphics states each scenario draws into the build's warm-up ({TRACE}), "
                         "in a development player of its own; `game build` after ships them")
     p.add_argument("--no-warmup", action="store_true", help="the player doesn't warm up the build's traced graphics states")
+    p.add_argument("--player-args", default="", help="extra player flags for every scenario, e.g. '--look hologram'")
     p.set_defaults(func=cmd_perf)
 
 
@@ -145,7 +147,8 @@ def cmd_perf(a: argparse.Namespace) -> int:
     root = wt.root / "captures" / "game" / ("perf-trace" if a.trace else "perf")
     summary, failed = {}, []
     for scenario in (s for s in SCENARIOS if s.name in wanted):
-        extra = (["--graphics-states-out", str(wt.project / TRACE)] if a.trace else []) + (["--no-warmup"] if a.no_warmup else [])
+        extra = ((["--graphics-states-out", str(wt.project / TRACE)] if a.trace else []) + (["--no-warmup"] if a.no_warmup else [])
+                 + shlex.split(a.player_args))
         result = run(exe, wt.root, root / scenario.name, scenario, extra, ablate=a.ablate)
         summary[scenario.name] = result
         if not result["ok"]:

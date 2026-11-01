@@ -10,8 +10,8 @@ namespace Demo3D.Tests
     /// <summary>The crystal shatter's sounds (epic ps-2iq): layered on each killing blow, aggregated so a crowded beat stays a few voices.</summary>
     public class ShatterSoundTests
     {
-        static LookCrowd.BreakEvent R(double t, int entity, int type, float height) =>
-            new LookCrowd.BreakEvent { Time = t, Entity = entity, Type = type, Height = height, Seed = (uint)(entity * 7919) };
+        static CrystalShatter.BreakEvent R(double t, int entity, int type, float height) =>
+            new CrystalShatter.BreakEvent { Time = t, Entity = entity, Type = type, Height = height, Seed = (uint)(entity * 7919) };
 
         [Test]
         public void ALoneDeathLayersABreakASprayAndALaterTinkle()
@@ -28,7 +28,7 @@ namespace Demo3D.Tests
         [Test]
         public void ACrowdedBeatPlaysAFewVoicesOfItsDistinctTypesLouder()
         {
-            var breaks = new List<LookCrowd.BreakEvent>();
+            var breaks = new List<CrystalShatter.BreakEvent>();
             for (int i = 0; i < 20; i++) breaks.Add(R(10.0, 10 + i, 0, 1.8f)); // skeletons
             breaks.Add(R(10.0, 40, 1, 3.2f));                                     // a troll
             breaks.Add(R(10.0, 41, 2, 0.7f));                                     // a slime

@@ -161,39 +161,8 @@ look-bearing pairs move into the package and both forks are deleted:
 | Beat globals | `Crowd/Styles/StyleBeat.cs` | `Client/Look/BeatGlobals.cs` |
 | Bakers' unweld step | `Editor/Crowd/CrowdBaker.cs` (`Unweld`) | `Editor/Crowd/CrowdBaker.cs` |
 
-Paths are under `demo3d/Assets/Demo3D/` and `game/Assets/Game/`.
-
-**Moved so far (ps-wnj.4)**: the crowd renderer, its instance struct, slots,
-culling, library format and shaders, the GPU monster shatter, the crystal
-surface includes (CrystalCommon, CrystalSurface, StaticShadow) and the beat
-globals are the package's (`Runtime/Crowd/`, namespace `PS.Look.Crowd`;
-`Runtime/Shaders/`; `Runtime/Beat/BeatGlobals.cs`), as are the bakers' unweld
-step (`StyleMesh.Unweld`) and shard cutter (`CrowdShardBaker`, in the package's
-editor assembly `PS.Look.Editor`). Bodies and shards take their materials from
-a **monster look** (`IMonsterLook`, registered by option in `MonsterLooks`); an
-option without a look draws `MonsterLooks.Crystal`, today's crystal. The game
-draws through the package and its forks are deleted; its `CrowdView` feeds the
-crowd and its crowd baker (game's roster and cast) calls the package's steps.
-demo3d's `StyleBeat` publishes through `BeatGlobals`. Players hook the package's
-compute kernels' warm-up through `ComputeKernels.Prepare` (the game's GraphicsStates).
-
-**The crystal cut on the package (ps-wnj.22)**: demo3d's crystal cut
-(`--monster-style crystal`) draws its monsters and their shards with the
-package's `BoneTextureCrowd` and `MonsterShatter` in `MonsterLooks.Active`, fed
-by `LookCrowd` (its break schedule, bursts and sounds stay demo3d's), from a
-package `CrowdLibrary` demo3d's crowd baker writes beside its own
-(`LookCrowd.asset`: joined style meshes, 30 Hz bones, the package's shard
-cutter). demo3d's crystal forks are deleted: `CrystalShatter`, `CrowdShards`,
-`CrowdPose`, its `CrowdShardBaker` (its structure shard baker uses the
-package's cutter) and the `Crystal` and `CrystalShard` style shaders (the mix's
-slimes are hologram now). The horde's beat pulse (`_SL_Bounce`, `_SL_Throb`)
-and the trailer's inner glow (`_SL_InnerGlow`) moved into the package's crowd as
-globals only demo3d sets, so the game's look is unchanged. Where the forks
-diverged the crystal cut took the game's: GPU shards for PhysX, LODs, the
-half-tinted hit flash ([crowd.md](../tech-demo-3d/crowd.md#monster-styles)). The
-action cut and the other Synty styles keep demo3d's own crowd (Decision 11).
-
-Where the forks have diverged (game's shards on compute, its regrowth, its heard-time
+Paths are under `demo3d/Assets/Demo3D/` and `game/Assets/Game/`. Where the
+forks have diverged (game's shards on compute, its regrowth, its heard-time
 strikes), the package takes the game's version: it is the one that has to
 hold a frame budget.
 
@@ -392,6 +361,54 @@ and the trailer's `TrailerLook` dressing. Options per stage:
 The per-shot `TrailerGrade` goes away: every shot of a cut is graded by its
 preset, so cuts no longer jump between looks.
 
+How the package implements it (ps-wnj.6):
+
+- **An option is a file**, `Runtime/Resources/Look/Post/<name>.json`
+  (`PostOption`): `tonemap` (`neutral`, `aces` or `filmic`, with the filmic
+  curve's `shoulder` and `whiten`), `void` (a toe's `knee` and `power`),
+  `colour`, `bloom`, `halo`, `lens`
+  (chromatic, vignette, grain, dirt), `retro` (scanlines, mask) and `feel`
+  (the beat's exposure, bloom, vignette and bloom tint; the flash's exposure,
+  aberration and saturation; the hero's hits that flash). Left-out values are
+  off; an unknown key fails. The four built: `neon-bloom` (edge), `punchy-bloom`
+  (solid), `scanlines` (hologram), `prism-bloom` (prism).
+- **The look's scene pass** (`LookPostPass`, `Resources/Look/Shaders/LookPost.shader`)
+  runs before URP's post on every game camera that has post on, enqueued by
+  `PostStack.Use`, on the scene's light: the exposure (the option's plus
+  `PostStack.SceneExposure`, a dim world's own: game's baked arena sets it),
+  the void's toe (light under the knee, linear, of the brightest channel,
+  sinks toward black by the power, the other channels scaled alike, so a lit
+  floor falls to the void while emitters over the knee keep their value), the
+  halo (a soft-knee threshold, the glow's saturation raised, a
+  dual-filter pyramid from about 540 rows down six levels and back up), and
+  the filmic curve (the brightest channel rolls off past the shoulder with the
+  others scaled alike, so a saturated emitter keeps its hue; a core past white
+  leans white, fully at 8x). A camera without post (an ID render) is left
+  alone.
+- **URP's half** is a volume profile (`PostStack.CreateProfile`) on what that
+  pass drew: colour adjustments, bloom as the tight core layer with the lens
+  dirt (`LensDirt`, moved in) on it, vignette toward `void.floor`, chromatic
+  aberration, film grain (raised by a supersampling factor) and zeroed
+  exposure and white balance. URP grades in LDR, as before: both players'
+  builds strip the uber shader's HDR grading variants, so the tonemap can't
+  move after URP's grade. Its tonemapper is off under `filmic`, URP's own
+  under `neutral` and `aces`. The post feel writes its offsets over the
+  profile's values through `PostBinding` (both projects' `PostFeel`s, whose
+  volume bindings were forks), which also leans the bloom's tint toward
+  `grid.pulse` on a beat and `spark` on a flash.
+- **The retro pass**, after URP's post, draws the scanlines (360 to a frame's
+  height) and the soft CRT mask, for an option with them.
+- **Lens hits** stay demo3d's `TrailerLook` (its hits come from the
+  choreography); `LensHitFeature` and its shader moved in.
+- **demo3d's crystal cut** puts the stack's profile on every environment's
+  night volume, with no shot, section or style grade and no `TrailerLook`
+  grain and dirt; the action cut and the song keep `NightLook`,
+  `TrailerGrade` and the trailer dressing unchanged. **game** builds its
+  arena's volume from the stack and keeps `NightLook` for fog and ambient
+  only; its zone grades still ride on top until the void world's zones.
+- An option not built draws today's post in demo3d and
+  `PostOption.Plain` in game, which has no post of its own left.
+
 ### VFX
 
 All effects run on the moved compute particle runtime and take colours from
@@ -410,17 +427,6 @@ palette roles. Old vendor effects (the Hovl sword slash in
 - **Structure breaks**: the formation shatter's burst, flash and debris in
   the preset's look, still bursting on the impact frame (the operator's rule:
   no crack-then-burst, no twinkling).
-
-The runtime in the package (ps-wnj.5): `Runtime/Effects/` (`EffectSystem`,
-`EffectLibrary`, `EffectLights`, the sim, sort and draw shaders) and
-`Editor/Effects/EffectConverter.cs`, game's fork with demo3d's merge and
-glow cuts and overdraw pass; both forks are gone, and each project bakes its
-own selection with it. A selection colour may name a palette role
-(`"edge": "shatter.gem"`, `"color": "boss.telegraph"`, an enemy slot
-`"enemies.2"`), which `EffectSystem` draws in the applied look's palette
-(`ApplyPalette`, at construction). Today's effects keep literal colours, so
-they look as before in every preset until the VFX beads restyle them
-([effects.md, The look](../tech-demo-3d/effects.md#the-look)).
 
 ### Motion
 

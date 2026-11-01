@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using PS.Choreography;
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace Demo3D.Runtime.Playback
 {
@@ -18,8 +17,9 @@ namespace Demo3D.Runtime.Playback
     ///   within an eighth note (<see cref="CutFlash"/>);
     /// - a trailer's per-shot grade (trailer.md, "Look"): each shot's exposure, contrast, saturation and temperature
     ///   offsets from its cut to the next, switching with the cut (<see cref="ShotGrade"/>).
-    /// It writes offsets on top of the night volume's base values (NightLook.CreateProfile, the hero pool's vignette
-    /// included), read once when it first binds, and is a function of song time alone, so fixed-time stills reproduce.
+    /// It writes offsets on top of the volume's base values (NightLook.CreateProfile, the hero pool's vignette included;
+    /// under a look, the look's post stack) through the look package's <see cref="PS.Look.PostBinding"/>, read once when
+    /// it first binds, and is a function of song time alone, so fixed-time stills reproduce.
     /// </summary>
     public sealed class PostFeel
     {
@@ -65,6 +65,14 @@ namespace Demo3D.Runtime.Playback
                 return a;
             }
 
+            /// <summary>A look's post option's beat and flash amounts (neon-look.md, Post-processing stack): no section grades.</summary>
+            public static Amounts From(PS.Look.PostOption.FeelAmounts f) => new Amounts
+            {
+                BeatExposure = f.BeatExposure, BeatBloom = f.BeatBloom, BeatVignette = f.BeatVignette,
+                FlashExposure = f.FlashExposure, FlashChromatic = f.FlashChromatic, FlashSaturation = f.FlashSaturation,
+                HitStrength = f.HitStrength, HitFlash = f.HitFlash,
+            };
+
             /// <summary>The first grade whose <see cref="SectionGrade.Match"/> starts the label, or none.</summary>
             public SectionGrade For(string label)
             {
@@ -81,12 +89,6 @@ namespace Demo3D.Runtime.Playback
             public float Exposure, Saturation, Contrast, Temperature, Vignette, Pulse = 1f;
         }
 
-        /// <summary>Offsets from the volume's base values at one moment.</summary>
-        public struct Offsets
-        {
-            public float Exposure, Bloom, Vignette, Saturation, Contrast, Temperature, Chromatic;
-        }
-
         /// <summary>A flash cut's peak: exposure (stops), saturation and bloom offsets, which wash the frame out to near white.</summary>
         public const float CutFlashExposure = 5f, CutFlashSaturation = -70f, CutFlashBloom = 4f;
 
@@ -99,14 +101,8 @@ namespace Demo3D.Runtime.Playback
         readonly double[] _shotFrom;       // sorted: each shot's grade from its first frame
         readonly TrailerGrade[] _shotGrade;
         public readonly bool Enabled;
-
-        ColorAdjustments _color;
-        Bloom _bloom;
-        Vignette _vignette;
-        WhiteBalance _white;
-        ChromaticAberration _chromatic;
-        float _baseExposure, _baseSaturation, _baseContrast, _baseBloom, _baseVignette, _baseTemperature, _baseChromatic;
-        Volume _bound;
+        /// <summary>The volume's base values and the offsets over them (a look's bloom tints set on it by the player).</summary>
+        public readonly PS.Look.PostBinding Binding = new PS.Look.PostBinding();
 
         /// <param name="breaks">Structure breaks' flashes (BreakMoments.Flashes), at their strengths; none without `--structure-breaks`.</param>
         public PostFeel(Timeline tl, Amounts amounts, bool enabled = true, IEnumerable<(double time, float strength)> breaks = null)
@@ -226,14 +222,14 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>The offsets at song time t (when disabled, a trailer shot's grade alone: it is the trailer's look, not the feel).</summary>
-        public Offsets At(double t)
+        public PS.Look.PostOffsets At(double t)
         {
             var shot = ShotGrade(t);
-            if (!Enabled) return new Offsets { Exposure = shot.Exposure, Saturation = shot.Saturation, Contrast = shot.Contrast, Temperature = shot.Temperature };
+            if (!Enabled) return new PS.Look.PostOffsets { Exposure = shot.Exposure, Saturation = shot.Saturation, Contrast = shot.Contrast, Temperature = shot.Temperature };
             var g = Grade(t, out float pulseScale);
             float pulse = Pulse(t) * pulseScale, flash = Flash(t), cut = CutFlash(t);
             var a = _amounts;
-            return new Offsets
+            return new PS.Look.PostOffsets
             {
                 Exposure = g.Exposure + shot.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + CutFlashExposure * cut,
                 Bloom = a.BeatBloom * pulse + CutFlashBloom * cut,
@@ -242,6 +238,8 @@ namespace Demo3D.Runtime.Playback
                 Contrast = g.Contrast + shot.Contrast,
                 Temperature = g.Temperature + shot.Temperature,
                 Chromatic = a.FlashChromatic * flash,
+                Pulse = pulse,
+                Flash = Math.Max(flash, cut),
             };
         }
 
@@ -249,29 +247,7 @@ namespace Demo3D.Runtime.Playback
         public void Apply(Volume volume, double t)
         {
             if ((!Enabled && _shotFrom.Length == 0) || volume == null) return;
-            if (volume != _bound) Bind(volume);
-            var o = At(t);
-            if (_color != null)
-            {
-                _color.postExposure.value = _baseExposure + o.Exposure;
-                _color.saturation.value = _baseSaturation + o.Saturation;
-                _color.contrast.value = _baseContrast + o.Contrast;
-            }
-            if (_bloom != null) _bloom.intensity.value = Math.Max(0, _baseBloom + o.Bloom);
-            if (_vignette != null) _vignette.intensity.value = _baseVignette + o.Vignette;
-            if (_white != null) _white.temperature.value = _baseTemperature + o.Temperature;
-            if (_chromatic != null) _chromatic.intensity.value = _baseChromatic + o.Chromatic;
-        }
-
-        void Bind(Volume volume)
-        {
-            _bound = volume;
-            var p = volume.sharedProfile;
-            if (p.TryGet(out _color)) { _baseExposure = _color.postExposure.value; _baseSaturation = _color.saturation.value; _baseContrast = _color.contrast.value; }
-            if (p.TryGet(out _bloom)) _baseBloom = _bloom.intensity.value;
-            if (p.TryGet(out _vignette)) _baseVignette = _vignette.intensity.value;
-            if (p.TryGet(out _white)) _baseTemperature = _white.temperature.value;
-            if (p.TryGet(out _chromatic)) _baseChromatic = _chromatic.intensity.value;
+            Binding.Apply(volume, At(t));
         }
 
         double BeatLength(double t)

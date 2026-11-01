@@ -1,0 +1,18 @@
+{
+  "graphicsDeviceName": "Apple M5 Max",
+  "size": [1920, 1080],
+  "msaa": 4,
+  "args": "-batchmode -force-metal -logFile captures/game/perf/peak/player.log --fixed-time --file public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --profile-out captures/game/perf/peak/profile.csv --start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5 --look prism --gpu-probe-at 40,50,60 --gpu-probe-out captures/game/perf/peak/gpu-probe.json --seconds 62",
+  "frames": 24,
+  "p50Ms": 6.93,
+  "p99Ms": 7.81,
+  "maxMs": 7.81,
+  "firstMaxMs": 30.22,
+  "cpuP50Ms": 1.76,
+  "cpuP99Ms": 2.39,
+  "points": [
+    {"at": 40.000, "alive": 300, "firstMs": 30.22, "medianMs": 2.95, "maxMs": 5.64, "frames": [[40.0167, 300, 5.64, 2.32], [40.0333, 300, 3.45, 1.72], [40.0500, 300, 2.99, 1.89], [40.0667, 300, 2.58, 1.44], [40.0833, 300, 2.91, 1.76], [40.1000, 300, 2.41, 1.37], [40.1167, 298, 2.95, 1.48], [40.1333, 298, 2.69, 1.47]]},
+    {"at": 50.000, "alive": 300, "firstMs": 6.48, "medianMs": 6.93, "maxMs": 7.29, "frames": [[50.0167, 300, 7.00, 2.28], [50.0333, 300, 4.23, 1.88], [50.0500, 300, 6.29, 1.83], [50.0667, 300, 6.59, 1.71], [50.0833, 300, 6.70, 1.73], [50.1000, 300, 7.29, 1.83], [50.1167, 300, 6.93, 1.80], [50.1333, 300, 6.97, 1.74]]},
+    {"at": 60.000, "alive": 300, "firstMs": 7.82, "medianMs": 7.32, "maxMs": 7.81, "frames": [[60.0167, 300, 7.81, 2.39], [60.0333, 300, 7.32, 1.85], [60.0500, 300, 7.28, 1.83], [60.0667, 300, 7.12, 1.69], [60.0833, 300, 7.04, 1.69], [60.1000, 300, 7.59, 1.78], [60.1167, 300, 7.51, 1.68], [60.1333, 300, 7.05, 1.64]]}
+  ]
+}

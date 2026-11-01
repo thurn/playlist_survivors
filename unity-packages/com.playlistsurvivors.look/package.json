@@ -2,7 +2,7 @@
   "name": "com.playlistsurvivors.look",
   "version": "0.1.0",
   "displayName": "Playlist Survivors Look",
-  "description": "The neon crystal look both demo3d's crystal cut and the game draw with (docs/design/neon-look.md): palettes of semantic roles, look presets naming one option per aesthetic axis, and the look flags both players take.",
+  "description": "The neon crystal look both demo3d's crystal cut and the game draw with (docs/design/neon-look.md): palettes of semantic roles, look presets naming one option per aesthetic axis, the look flags both players take, and the post-processing stack.",
   "unity": "6000.6",
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.2",

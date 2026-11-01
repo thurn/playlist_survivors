@@ -1,0 +1,15 @@
+{
+  "name": "punchy-bloom",
+  "note": "The solid preset's post: punchy contrast and moderate bloom for bright solid bodies, a tighter halo, a later shoulder so the bodies keep their value steps, and a void toe sinking the lit world toward black (neon-look-style.md, Post).",
+  "tonemap": "filmic", "shoulder": 0.7, "whiten": 0.25,
+  "void":   { "knee": 0.55, "power": 3.0 },
+  "colour": { "exposure": 0, "contrast": 20, "saturation": 12 },
+  "bloom":  { "threshold": 0.9, "intensity": 0.8, "scatter": 0.5 },
+  "halo":   { "threshold": 0.5, "intensity": 0.8, "saturation": 1.3 },
+  "lens":   { "chromatic": 0, "vignette": 0.25, "smoothness": 0.45, "grain": 0.06, "dirt": 4 },
+  "feel": {
+    "beat":  { "exposure": 0.12, "bloom": 0.35, "vignette": -0.03, "tint": 0.25 },
+    "flash": { "exposure": 0.5, "chromatic": 0.5, "saturation": 25 },
+    "hit":   { "minStrength": 0.95, "flash": 0.6 }
+  }
+}

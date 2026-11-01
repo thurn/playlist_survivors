@@ -79,14 +79,14 @@ namespace Demo3D.EditorTools
             Effects.EffectInventory.Run(TaskArgs.Get("-out", "evidence/td8/inventory.md"));
 
         /// <summary>Converts the chosen effects (Data/effects.json) into Assets/Baked/Effects/ (TD8).</summary>
-        public static void BakeEffects() => Effects.EffectBake.Bake();
+        public static void BakeEffects() => Effects.EffectConverter.Bake();
 
         /// <summary>Writes the runtime spike's VFX Graph template from the package's Simple Burst (TD8).</summary>
         public static void VfxSpikeTemplate() => Effects.VfxSpikeTemplate.Write();
 
         /// <summary>Runs every effect candidate through the converter and writes the report (TD8).</summary>
         public static void EffectReport() =>
-            Effects.EffectBake.Report(TaskArgs.Get("-out", "evidence/td8/converter-report.md"));
+            Effects.EffectConverter.Report(TaskArgs.Get("-out", "evidence/td8/converter-report.md"));
 
         /// <summary>
         /// Builds the player. `-platform windows|mac` (default: this machine's), `-backend

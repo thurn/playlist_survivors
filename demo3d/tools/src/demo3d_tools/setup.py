@@ -291,15 +291,13 @@ _BAKER_RUNTIME = {"Runtime/Playback/ShatterSounds.cs"}
 def bake_inputs(wt: paths.Worktree) -> list[Path]:
     """What a project's Unity bakers read from git. demo3d's: everything under Assets/Demo3D (their
     code, data, shaders and settings) except the tests and runtime C# no asset serializes, the
-    shared choreography package, the look package's crowd (the crystal cut's library), the vendor
-    manifest and the song map. The game's: its arena's
+    shared choreography package, the vendor manifest and the song map. The game's: its arena's
     code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime and
     clip table, the effects' converter and runtime, the sound baker and bank, their selections, the
     structure shards' baker and asset type, the level's baker and asset type with the sim's content
     and level data, and the vendor manifest."""
     if wt.name == "game":
         game = [f for d in GAME_BAKER_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
-        game += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
         game += [wt.project / f"{f}{m}" for f in (GAME_SOUND_RUNTIME, GAME_LEVEL_RUNTIME) + GAME_STRUCTURE_FILES
                  for m in ("", ".meta")]
         return game + [wt.project / "Content" / n for n in GAME_BAKER_CONTENT] + [wt.project / "manifest.json"]
@@ -315,16 +313,7 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
                     and not _SERIALIZED.search(f.read_bytes())):
                 continue
             files.append(f)
-    files += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
     return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
-
-
-# The look package's crowd (repo-relative): its runtime and shaders, which the crowd library
-# serializes and names, and the bakers' unweld step and shard cutter, which both crowd bakers (the
-# game's, and demo3d's for its crystal cut's library) and both structure shard bakers call.
-LOOK = "unity-packages/com.playlistsurvivors.look"
-LOOK_CROWD_DIRS = (f"{LOOK}/Runtime/Crowd", f"{LOOK}/Editor/Crowd", f"{LOOK}/Runtime/Shaders")
-LOOK_SHARD_BAKER = f"{LOOK}/Editor/Crowd/CrowdShardBaker.cs"
 
 
 def _demo(*globs: str) -> tuple[str, ...]:
@@ -338,12 +327,11 @@ def _demo(*globs: str) -> tuple[str, ...]:
 BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": _demo("Editor/Arena/*", "Runtime/Arena/*", "Choreography/Data/*-layout.json*",
                    "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
-    "StructureShards": _demo("Editor/Structures/*", "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
-                             "Choreography/Data/environment-*", "Choreography/Data/footprints.json*")
-                       + (f"{LOOK_SHARD_BAKER}*",),
+    "StructureShards": _demo("Editor/Structures/*", "Editor/Crowd/CrowdShardBaker.cs*",
+                             "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
+                             "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
     "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
-                   "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*")
-             + tuple(f"{d}/*" for d in LOOK_CROWD_DIRS),
+                   "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*"),
     "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),
     "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
                     "Runtime/Playback/ShatterSounds.cs*"),
@@ -373,8 +361,8 @@ GAME_SOUND_DIRS = ("Assets/Game/Editor/Sound",)
 GAME_SOUND_RUNTIME = "Assets/Game/Client/Sound/SoundBank.cs"  # the asset the sound baker writes
 GAME_SOUND_CONTENT = ("sounds.json",)
 GAME_STRUCTURE_DIRS = ("Assets/Game/Editor/Structures",)
-# The asset the shard baker writes (it calls the look package's shard cutter, LOOK_SHARD_BAKER).
-GAME_STRUCTURE_FILES = ("Assets/Game/Client/Structures/StructureShards.cs",)
+# The asset the shard baker writes, and the crowd's shard cutter it calls.
+GAME_STRUCTURE_FILES = ("Assets/Game/Client/Structures/StructureShards.cs", "Assets/Game/Editor/Crowd/CrowdShardBaker.cs")
 GAME_LEVEL_DIRS = ("Assets/Game/Editor/Level",)
 GAME_LEVEL_RUNTIME = "Assets/Game/Client/Loop/LevelBake.cs"  # the asset the level baker writes
 # GameContent.Files and the level data (arena.json, which the arena's bake rewrites).
@@ -387,15 +375,14 @@ GAME_BAKER_CONTENT = tuple(dict.fromkeys(GAME_ARENA_CONTENT + GAME_CROWD_CONTENT
 GAME_BAKER_ARENA = tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + tuple(f"game/Content/{n}" for n in GAME_ARENA_CONTENT)
 GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": GAME_BAKER_ARENA,
-    "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"{d}/*" for d in LOOK_CROWD_DIRS) +
-             tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
+    "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
     "Hero": tuple(f"game/{d}/*" for d in GAME_HERO_DIRS) + ("game/Assets/Game/Editor/Arena/MaterialConverter.cs*",) +
             tuple(f"game/Content/{n}" for n in GAME_HERO_CONTENT),
     "Effects": tuple(f"game/{d}/*" for d in GAME_EFFECT_DIRS) + tuple(f"game/Content/{n}" for n in GAME_EFFECT_CONTENT),
     "Sounds": tuple(f"game/{d}/*" for d in GAME_SOUND_DIRS) + (f"game/{GAME_SOUND_RUNTIME}*",) +
               tuple(f"game/Content/{n}" for n in GAME_SOUND_CONTENT),
     "StructureShards": tuple(f"game/{d}/*" for d in GAME_STRUCTURE_DIRS) + tuple(f"game/{f}*" for f in GAME_STRUCTURE_FILES) +
-                       (f"{LOOK_SHARD_BAKER}*",) + GAME_BAKER_ARENA,
+                       GAME_BAKER_ARENA,
     "Level": tuple(f"game/{d}/*" for d in GAME_LEVEL_DIRS) + (f"game/{GAME_LEVEL_RUNTIME}*",) +
              tuple(f"game/Content/{n}" for n in GAME_LEVEL_CONTENT) + GAME_BAKER_ARENA,
 }

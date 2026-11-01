@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Game.Client.Loop;
 using PS.Game.Sim;
-using PS.Look.Effects;
 using UnityEngine;
 
 namespace Game.Client.Effects
@@ -58,9 +57,7 @@ namespace Game.Client.Effects
             _cues = new EffectCues(roles);
             _fx = new EffectSystem(library);
             _fx.AddCamera(camera);
-            // The on-the-beat trace (Moments), opened before the run builds its presenters.
-            if (Moments.On) _fx.Marked = (t, effect) => Moments.Mark(MomentKind.Effect, t, effect, library.Effects[effect].Name);
-            _waves = new CrystalWaves(camera, CrystalWaves.ShaderIn(library));
+            _waves = new CrystalWaves(camera, library.Wave);
             _slash = Find(library, "slash");
             _spin = Find(library, "spin");
             _slam = Find(library, "slam");

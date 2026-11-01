@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Demo3D.Runtime.Playback;
+using PS.Look;
 using NUnit.Framework;
 using PS.Choreography;
 

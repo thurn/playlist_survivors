@@ -173,37 +173,6 @@ namespace Game.Tests
             Assert.That(Off(turn.Legs + atImpact.Twist, 0), Is.EqualTo(0).Within(1e-4), "the drawn upper body facing north at the impact");
         }
 
-        /// <summary>
-        /// A dash (`--dash`), walking east and dashing north: from its start the knight faces it at once, untwisted by a
-        /// swing, legs held in a stride and lifted in an arc (the lunge low with its blade alight, the hop high and dark),
-        /// and after it lands the walk's pose takes back over.
-        /// </summary>
-        [Test]
-        public void ADashFacesItAtOnceLiftedThenHandsBackToTheWalk([Values(true, false)] bool onBeat)
-        {
-            double east = Math.PI / 2, start = 2, end = start + (onBeat ? Dash.LongS : Dash.ShortS);
-            var motion = new HeroMotion(Clips);
-            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
-            motion.OnEvent(Attack(HeroAttackKind.SlashLeft, 1.7, 2.02, dirX: 0, dirY: 1));
-            motion.OnEvent(SimEvent.HeroGlide(2.05, start, 6, 0, 0, onBeat ? 30 : 15, Direction.Up));
-            motion.OnEvent(SimEvent.HeroDash(2.05, 0, onBeat, Direction.Up, start, end, 6, 0, 0, 1));
-            motion.OnEvent(SimEvent.HeroGlide(2.05, end, 6, onBeat ? 4.5 : 1.5, 6, 0, Direction.Right));
-
-            var before = motion.Evaluate(start - 0.01, 0, 0, Direction.Up);
-            Assert.That(before.Twist, Is.Not.EqualTo(0f), "the swing twists the walk before");
-            var mid = motion.Evaluate(0.5 * (start + end), 0, 0, Direction.Up);
-            Assert.That(mid.Yaw, Is.EqualTo(0f).Within(1e-5f), "facing the dash");
-            Assert.That(mid.Twist, Is.EqualTo(0f).Within(1e-5f), "square to it");
-            Assert.That(mid.TurnAtOnce, Is.True);
-            Assert.That(mid.Lift, Is.EqualTo(onBeat ? HeroMotion.LungeLiftM : HeroMotion.HopLiftM).Within(1e-5f), "the arc's peak");
-            Assert.That(mid.RunTime, Is.EqualTo(HeroMotion.DashStride * Clips[HeroClip.Run].length).Within(1e-5f), "a held stride");
-            Assert.That(mid.Y, Is.EqualTo(onBeat ? 2.25 : 0.75).Within(1e-9), "carried by the glides");
-            Assert.That(mid.Flare >= HeroMotion.OnBeatFlare, Is.EqualTo(onBeat), "the lunge's blade alight");
-            var back = motion.Evaluate(end + HeroMotion.DashOut + 0.01, 0, 0, Direction.Up);
-            Assert.That(back.Yaw, Is.EqualTo((float)east).Within(1e-5f), "the walk's again");
-            Assert.That(back.Lift, Is.EqualTo(0f));
-        }
-
         /// <summary>A subdivision strike's follow-up crossfades in from the swing before without taking its impact.</summary>
         [Test]
         public void AFollowUpContinuesFromTheSwingBeforeWhichKeepsItsImpact()

@@ -122,7 +122,7 @@ namespace Demo3D.Tests
             var feel = new PostFeel(_map, _amounts, true, new (double, float)[0], null, null, grades);
             foreach (var (t, g) in new[] { (cut - 1e-3, first), (cut, second), (cut + 1.0, second) })
             {
-                PostFeel.Offsets a = feel.At(t), b = plain.At(t);
+                PS.Look.PostOffsets a = feel.At(t), b = plain.At(t);
                 Assert.That(a.Exposure - b.Exposure, Is.EqualTo(g.Exposure).Within(1e-5f), $"t = {t}");
                 Assert.That(a.Contrast - b.Contrast, Is.EqualTo(g.Contrast).Within(1e-4f), $"t = {t}");
                 Assert.That(a.Saturation - b.Saturation, Is.EqualTo(g.Saturation).Within(1e-4f), $"t = {t}");
@@ -140,7 +140,7 @@ namespace Demo3D.Tests
         {
             var feel = Feel(enabled: false);
             for (double t = 0; t < _map.Duration; t += 1.0 / 60)
-                Assert.That(feel.At(t), Is.EqualTo(default(PostFeel.Offsets)), $"t = {t}");
+                Assert.That(feel.At(t), Is.EqualTo(default(PS.Look.PostOffsets)), $"t = {t}");
         }
 
         [Test]

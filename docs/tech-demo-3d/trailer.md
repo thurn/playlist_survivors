@@ -1323,7 +1323,7 @@ violations live.
 - **The cut.** One frame switches the environment, then swaps in the shot's
   own timeline, evaluator, effect driver, blow and camera feel and crystal
   breaks. The effect driver's seek clears particles and effect lights. The
-  crystal cut's horde (`LookCrowd`) is retargeted, which clears its shards. The horde never
+  crystal shatter is retargeted, which clears its shards. The horde never
   poses before the shot's first frame, which clears the hit-stop. Crowd slots
   are keyed per shot, so no slot carries a monster's state across the cut.
   A cut costs 0.1–0.3 ms, plus up to about 1.2 ms of CPU on its frame while
@@ -1498,7 +1498,8 @@ except `baseline` also brings a post-processing look.
   live run defaults to 1× ([performance.md](performance.md#the-trailers-look));
   a normal run renders at 1×. `--supersample` overrides any of them.
 - **Lens hits** are `TrailerLook` and the renderer's `LensHitFeature`, a pass
-  after the post stack (`Hidden/Demo3D/LensHit`). The pass draws only on frames
+  after the post stack (`Hidden/Look/LensHit`; the feature and `LensDirt` live
+  in the look package since ps-wnj.6). The pass draws only on frames
   with a hit, so a run without one, every normal run, pays nothing.
   - **What hits.** Each `slam-shock` and `ring` effect (the hero's slams, ring
     spells and the final slam), and every hero blow of weight 0.5 or more
@@ -1523,6 +1524,14 @@ except `baseline` also brings a post-processing look.
   finger wipes. It goes on URP's bloom at intensity 12.
 - **`--no-trailer-look`** drops the grade, grain, dirt and lens hits, and
   keeps the run's supersampling.
+
+**Under a look (ps-wnj.6).** The crystal cut draws with its look preset's post
+stack ([neon-look.md, Post-processing stack](../design/neon-look.md#post-processing-stack)):
+every environment's night volume takes the stack's one profile, so no shot
+grade, section grade, style post look or trailer grain and dirt apply; the
+option brings its own grain and dirt, its beat and flash amounts drive the
+post feel, and lens hits and flash cuts are unchanged. The action cut keeps
+everything above.
 
 ## The Crystal Cut
 
@@ -1577,20 +1586,12 @@ The file's look:
 }
 ```
 
-- **Glow** is a new tune key, crystal's inner glow (`_InnerGlow` in
-  `CrystalCommon.hlsl` for the structures, the look package's global
-  `_SL_InnerGlow` in `MonsterCommon.hlsl` for the monsters and their shards).
-  It adds the gem's colour after the grade's peak, so it reaches the bloom:
-  each facet its own brightness, throbbing with the beat wave, a shard's fresh
-  faces twice as bright. It is 0 unless a tune sets it, so every other run
-  looks as before. Monsters, their shards and crystal structures (and so the
-  structures' shards) all take it.
-- **The horde is the look package's** (ps-wnj.22): `--monster-style crystal`
-  draws through the package's crowd and GPU shatter, in the applied `--look`
-  preset's monster look ([crowd.md](crowd.md#monster-styles), The crystal cut
-  on the look package), so every monster look built in the package shows here.
-  Its shards are the game's GPU chunks rather than PhysX bodies, and every
-  death shatters.
+- **Glow** is a new tune key, crystal's inner glow (`_InnerGlow`,
+  `CrystalCommon.hlsl`). It adds the gem's colour after the grade's peak, so
+  it reaches the bloom: each facet its own brightness, throbbing with the beat
+  wave, a shard's fresh faces twice as bright. It is 0 unless a tune sets it,
+  so every other run looks as before. Monsters, their shards and crystal
+  structures (and so the structures' shards) all take it.
 - **Post.** The style's post keys darken the forest's reference look (exposure
   0.5 against the style's 0.8), deepen contrast and saturation, and lower the
   bloom threshold to 1.0 at intensity 2.0, so the gems bloom and the ground

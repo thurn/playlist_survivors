@@ -9,8 +9,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Debug = UnityEngine.Debug;
-using Game.Client.Loop;
-using PS.Look.Crowd;
 
 namespace Game.Client.Crowd
 {
@@ -176,8 +174,7 @@ namespace Game.Client.Crowd
                 var away = new Vector2(p.body.Position.x, p.body.Position.z);
                 if (away.sqrMagnitude < 1e-6f) away = Vector2.up;
                 away.Normalize();
-                if (_shatter.Break(p.type, p.slot, p.body, p.role, _frames + i, t, away.x, away.y, i % 5 == 0 ? 4.63 : 1.85))
-                    Moments.Mark(MomentKind.Death, t, _frames + i);
+                _shatter.Break(p.type, p.slot, p.body, p.role, _frames + i, t, away.x, away.y, i % 5 == 0 ? 4.63 : 1.85);
             }
         }
 

@@ -40,20 +40,11 @@ namespace PS.Look
         /// <summary>Every role's name (<c>hero.body</c>), in file order.</summary>
         public IEnumerable<string> Roles => _roles.Keys;
 
-        /// <summary>The colour of <paramref name="role"/> (<c>hero.body</c>, or an enemy hue slot as <c>enemies.2</c>).</summary>
+        /// <summary>The colour of <paramref name="role"/> (<c>hero.body</c>).</summary>
         public Color Role(string role) =>
-            TryRole(role, out var c) ? c : throw new KeyNotFoundException($"palette {Name}: no role {role}");
+            _roles.TryGetValue(role, out var c) ? c : throw new KeyNotFoundException($"palette {Name}: no role {role}");
 
-        public bool TryRole(string role, out Color colour)
-        {
-            if (role.StartsWith("enemies.", StringComparison.Ordinal))
-            {
-                bool slot = int.TryParse(role.Substring(8), System.Globalization.NumberStyles.None, null, out int i) && i < Enemies.Length;
-                colour = slot ? Enemies[i] : default;
-                return slot;
-            }
-            return _roles.TryGetValue(role, out colour);
-        }
+        public bool TryRole(string role, out Color colour) => _roles.TryGetValue(role, out colour);
 
         public Color VoidFloor => Role("void.floor");
         public Color VoidFog => Role("void.fog");

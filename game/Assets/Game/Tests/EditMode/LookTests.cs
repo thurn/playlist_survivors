@@ -126,28 +126,30 @@ namespace Game.Tests
             var sim = Music(extra: add => add(StreamEntry.Onset(8.0, 0, 1, strong: true)));
             var lane = new FastLane();
             var moments = new FeelMoments();
-            var post = new PostFeel();
-            PostFeel.Offsets At(double s) => post.At(s, ReadAt(sim, lane, s, moments), moments);
+            var feel = PostFeel.OptionOf(PostFeel.Look).Feel;
+            var post = new PostFeel(feel);
+            PS.Look.PostOffsets At(double s) => post.At(s, ReadAt(sim, lane, s, moments), moments);
 
             var rest = At(6.0 - 1 / Fps);
             var beat = At(6.0);
-            Assert.That(beat.Exposure - rest.Exposure, Is.EqualTo(PostFeel.BeatExposure).Within(0.01));
+            Assert.That(beat.Exposure - rest.Exposure, Is.EqualTo(feel.BeatExposure).Within(0.01));
             Assert.That(beat.Bloom, Is.GreaterThan(rest.Bloom + 0.3f));
             Assert.That(beat.Vignette, Is.LessThan(rest.Vignette));
             Assert.That(beat.Chromatic, Is.EqualTo(0));
             Assert.That(rest.Chromatic, Is.EqualTo(0));
 
             var accent = At(8.0);
-            Assert.That(accent.Chromatic, Is.EqualTo(PostFeel.FlashChromatic).Within(1e-6));
-            Assert.That(accent.Saturation, Is.EqualTo(PostFeel.FlashSaturation).Within(1e-4));
-            Assert.That(accent.Exposure, Is.EqualTo(PostFeel.BeatExposure + PostFeel.FlashExposure).Within(0.01));
+            Assert.That(accent.Chromatic, Is.EqualTo(feel.FlashChromatic).Within(1e-6));
+            Assert.That(accent.Saturation, Is.EqualTo(feel.FlashSaturation).Within(1e-4));
+            Assert.That(accent.Exposure, Is.EqualTo(feel.BeatExposure + feel.FlashExposure).Within(0.01));
+            Assert.That(accent.Flash, Is.EqualTo(1).Within(1e-6), "the flash tints the bloom fully toward the palette's spark");
             Assert.That(At(8.0 + Period).Chromatic, Is.EqualTo(0)); // gone within a beat
         }
 
         [Test]
         public void AZoneGradeEasesInOverTwoBarsFromItsChange()
         {
-            var post = new PostFeel();
+            var post = new PostFeel(PostFeel.OptionOf(PostFeel.Look).Feel);
             post.SetZone("lava", from: 10, barS: 1);
             var lava = PostFeel.GradeOf("lava");
             Assert.That(post.Grade(10).Temperature, Is.EqualTo(0));

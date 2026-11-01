@@ -503,7 +503,7 @@ namespace Demo3D.Runtime.Bench
             MainMax = row.MainMaxMs ?? double.NaN,
             RenderMax = row.RenderMaxMs ?? double.NaN,
             SpawnsRejected = row.SpawnsRejected,
-            LightDropWithinLimit = row.LightDropShareP99.HasValue ? row.LightDropShareP99.Value <= PS.Look.Effects.EffectLights.DropLimit : (bool?)null,
+            LightDropWithinLimit = row.LightDropShareP99.HasValue ? row.LightDropShareP99.Value <= Effects.EffectLights.DropLimit : (bool?)null,
             Noisy = row.Noisy,
         };
 

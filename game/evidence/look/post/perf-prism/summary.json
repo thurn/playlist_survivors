@@ -1,0 +1,656 @@
+{
+  "peak": {
+    "help": "minute 25, three evolutions, the crowd near 300",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/peak/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5",
+      "--look",
+      "prism",
+      "--gpu-probe-at",
+      "40,50,60",
+      "--gpu-probe-out",
+      "captures/game/perf/peak/gpu-probe.json",
+      "--seconds",
+      "62"
+    ],
+    "exit": 0,
+    "wall_s": 7.9,
+    "cpu": {
+      "frames": 1921,
+      "song": [
+        30.0,
+        62.0
+      ],
+      "alive": {
+        "median": 300,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 0.759,
+        "p99": 1.397,
+        "p99.9": 1.684,
+        "max": 1.852,
+        "mean": 0.787
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 0.737,
+        "p99": 1.339,
+        "p99.9": 1.591,
+        "max": 1.819,
+        "mean": 0.764
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.018,
+          "p99": 0.254,
+          "p99.9": 0.304,
+          "max": 0.423,
+          "mean": 0.065
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.054,
+          "p99.9": 0.072,
+          "max": 0.089,
+          "mean": 0.005
+        },
+        "crowd": {
+          "p50": 0.11,
+          "p99": 0.214,
+          "p99.9": 0.301,
+          "max": 0.364,
+          "mean": 0.116
+        },
+        "shatter": {
+          "p50": 0.019,
+          "p99": 0.067,
+          "p99.9": 0.086,
+          "max": 0.088,
+          "mean": 0.022
+        },
+        "effects": {
+          "p50": 0.036,
+          "p99": 0.094,
+          "p99.9": 0.113,
+          "max": 0.143,
+          "mean": 0.043
+        },
+        "weapons": {
+          "p50": 0.013,
+          "p99": 0.026,
+          "p99.9": 0.032,
+          "max": 0.173,
+          "mean": 0.014
+        },
+        "pickups": {
+          "p50": 0.006,
+          "p99": 0.013,
+          "p99.9": 0.021,
+          "max": 0.035,
+          "mean": 0.007
+        },
+        "structures": {
+          "p50": 0.008,
+          "p99": 0.02,
+          "p99.9": 0.39,
+          "max": 0.464,
+          "mean": 0.009
+        },
+        "physics": {
+          "p50": 0.0,
+          "p99": 0.265,
+          "p99.9": 0.406,
+          "max": 0.646,
+          "mean": 0.041
+        },
+        "hero": {
+          "p50": 0.034,
+          "p99": 0.062,
+          "p99.9": 0.075,
+          "max": 0.087,
+          "mean": 0.035
+        },
+        "look": {
+          "p50": 0.004,
+          "p99": 0.019,
+          "p99.9": 0.034,
+          "max": 0.058,
+          "mean": 0.005
+        },
+        "hud": {
+          "p50": 0.031,
+          "p99": 0.065,
+          "p99.9": 0.076,
+          "max": 0.084,
+          "mean": 0.032
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.001,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.003,
+          "p99": 0.028,
+          "p99.9": 0.034,
+          "max": 0.035,
+          "mean": 0.004
+        },
+        "engine": {
+          "p50": 0.376,
+          "p99": 0.665,
+          "p99.9": 0.822,
+          "max": 1.259,
+          "mean": 0.389
+        }
+      },
+      "top": [
+        "engine",
+        "crowd",
+        "sim"
+      ],
+      "wait_s": 0.9,
+      "alloc_bytes": {
+        "mean": 59,
+        "p99": 672,
+        "max": 60522,
+        "frames": 201
+      },
+      "gc_collections": 1,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 1861,
+        "p99_ms": 0.254
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 6.93,
+      "p99_ms": 7.81,
+      "max_ms": 7.81,
+      "cpu_p50_ms": 1.76,
+      "cpu_p99_ms": 2.39,
+      "first_max_ms": 30.22,
+      "points": [
+        {
+          "at": 40.0,
+          "alive": 300,
+          "median_ms": 2.95,
+          "max_ms": 5.64,
+          "first_ms": 30.22
+        },
+        {
+          "at": 50.0,
+          "alive": 300,
+          "median_ms": 6.93,
+          "max_ms": 7.29,
+          "first_ms": 6.48
+        },
+        {
+          "at": 60.0,
+          "alive": 300,
+          "median_ms": 7.32,
+          "max_ms": 7.81,
+          "first_ms": 7.82
+        }
+      ]
+    },
+    "ok": true
+  },
+  "break": {
+    "help": "the peak with a structure break at 64 s",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/break/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,break@64",
+      "--look",
+      "prism",
+      "--gpu-probe-at",
+      "64.05,64.4,65",
+      "--gpu-probe-out",
+      "captures/game/perf/break/gpu-probe.json",
+      "--seconds",
+      "66"
+    ],
+    "exit": 0,
+    "wall_s": 8.5,
+    "cpu": {
+      "frames": 121,
+      "song": [
+        64.0,
+        66.0
+      ],
+      "alive": {
+        "median": 300,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 1.076,
+        "p99": 1.832,
+        "p99.9": 1.898,
+        "max": 1.898,
+        "mean": 1.136
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 1.029,
+        "p99": 1.772,
+        "p99.9": 1.861,
+        "max": 1.861,
+        "mean": 1.091
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.024,
+          "p99": 0.271,
+          "p99.9": 0.291,
+          "max": 0.291,
+          "mean": 0.08
+        },
+        "events": {
+          "p50": 0.004,
+          "p99": 0.068,
+          "p99.9": 0.079,
+          "max": 0.079,
+          "mean": 0.008
+        },
+        "crowd": {
+          "p50": 0.127,
+          "p99": 0.227,
+          "p99.9": 0.266,
+          "max": 0.266,
+          "mean": 0.137
+        },
+        "shatter": {
+          "p50": 0.024,
+          "p99": 0.095,
+          "p99.9": 0.106,
+          "max": 0.106,
+          "mean": 0.03
+        },
+        "effects": {
+          "p50": 0.049,
+          "p99": 0.112,
+          "p99.9": 0.122,
+          "max": 0.122,
+          "mean": 0.056
+        },
+        "weapons": {
+          "p50": 0.015,
+          "p99": 0.031,
+          "p99.9": 0.031,
+          "max": 0.031,
+          "mean": 0.017
+        },
+        "pickups": {
+          "p50": 0.01,
+          "p99": 0.016,
+          "p99.9": 0.017,
+          "max": 0.017,
+          "mean": 0.011
+        },
+        "structures": {
+          "p50": 0.003,
+          "p99": 0.076,
+          "p99.9": 0.301,
+          "max": 0.301,
+          "mean": 0.008
+        },
+        "physics": {
+          "p50": 0.15,
+          "p99": 0.236,
+          "p99.9": 0.247,
+          "max": 0.247,
+          "mean": 0.152
+        },
+        "hero": {
+          "p50": 0.042,
+          "p99": 0.062,
+          "p99.9": 0.082,
+          "max": 0.082,
+          "mean": 0.043
+        },
+        "look": {
+          "p50": 0.006,
+          "p99": 0.017,
+          "p99.9": 0.027,
+          "max": 0.027,
+          "mean": 0.006
+        },
+        "hud": {
+          "p50": 0.045,
+          "p99": 0.088,
+          "p99.9": 0.094,
+          "max": 0.094,
+          "mean": 0.048
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.003,
+          "max": 0.003,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.005,
+          "p99": 0.03,
+          "p99.9": 0.034,
+          "max": 0.034,
+          "mean": 0.007
+        },
+        "engine": {
+          "p50": 0.494,
+          "p99": 0.882,
+          "p99.9": 0.951,
+          "max": 0.951,
+          "mean": 0.534
+        }
+      },
+      "top": [
+        "engine",
+        "physics",
+        "crowd"
+      ],
+      "wait_s": 0.0,
+      "alloc_bytes": {
+        "mean": 69,
+        "p99": 2698,
+        "max": 4176,
+        "frames": 12
+      },
+      "gc_collections": 1,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 121,
+        "p99_ms": 0.271
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 6.19,
+      "p99_ms": 7.01,
+      "max_ms": 7.01,
+      "cpu_p50_ms": 2.13,
+      "cpu_p99_ms": 3.21,
+      "first_max_ms": 37.41,
+      "points": [
+        {
+          "at": 64.05,
+          "alive": 299,
+          "median_ms": 6.41,
+          "max_ms": 6.83,
+          "first_ms": 37.41
+        },
+        {
+          "at": 64.4,
+          "alive": 300,
+          "median_ms": 6.65,
+          "max_ms": 7.01,
+          "first_ms": 6.92
+        },
+        {
+          "at": 65.0,
+          "alive": 300,
+          "median_ms": 4.85,
+          "max_ms": 6.14,
+          "first_ms": 4.14
+        }
+      ]
+    },
+    "ok": true
+  },
+  "finale": {
+    "help": "the peak with the finale's mass kill at 68 s",
+    "args": [
+      "--fixed-time",
+      "--file",
+      "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg",
+      "--profile-out",
+      "captures/game/perf/finale/profile.csv",
+      "--start-minute",
+      "25",
+      "--bot",
+      "positioning",
+      "--debug",
+      "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5,finale@68",
+      "--look",
+      "prism",
+      "--gpu-probe-at",
+      "68.4,68.7,69.2",
+      "--gpu-probe-out",
+      "captures/game/perf/finale/gpu-probe.json",
+      "--seconds",
+      "71"
+    ],
+    "exit": 0,
+    "wall_s": 9.7,
+    "cpu": {
+      "frames": 181,
+      "song": [
+        68.0,
+        71.0
+      ],
+      "alive": {
+        "median": 27,
+        "max": 300
+      },
+      "frame_ms": {
+        "p50": 1.257,
+        "p99": 2.511,
+        "p99.9": 6.375,
+        "max": 6.375,
+        "mean": 1.352
+      },
+      "over_16_7ms": 0,
+      "over_33ms": 0,
+      "cpu_ms": {
+        "p50": 1.182,
+        "p99": 2.384,
+        "p99.9": 6.148,
+        "max": 6.148,
+        "mean": 1.277
+      },
+      "slow": [],
+      "parts_ms": {
+        "sim": {
+          "p50": 0.008,
+          "p99": 0.216,
+          "p99.9": 0.238,
+          "max": 0.238,
+          "mean": 0.018
+        },
+        "events": {
+          "p50": 0.0,
+          "p99": 0.018,
+          "p99.9": 0.371,
+          "max": 0.371,
+          "mean": 0.003
+        },
+        "crowd": {
+          "p50": 0.145,
+          "p99": 0.207,
+          "p99.9": 0.279,
+          "max": 0.279,
+          "mean": 0.15
+        },
+        "shatter": {
+          "p50": 0.033,
+          "p99": 0.065,
+          "p99.9": 0.135,
+          "max": 0.135,
+          "mean": 0.028
+        },
+        "effects": {
+          "p50": 0.047,
+          "p99": 0.1,
+          "p99.9": 0.149,
+          "max": 0.149,
+          "mean": 0.051
+        },
+        "weapons": {
+          "p50": 0.008,
+          "p99": 0.025,
+          "p99.9": 0.031,
+          "max": 0.031,
+          "mean": 0.009
+        },
+        "pickups": {
+          "p50": 0.02,
+          "p99": 0.025,
+          "p99.9": 0.028,
+          "max": 0.028,
+          "mean": 0.02
+        },
+        "structures": {
+          "p50": 0.008,
+          "p99": 0.081,
+          "p99.9": 3.737,
+          "max": 3.737,
+          "mean": 0.037
+        },
+        "physics": {
+          "p50": 0.544,
+          "p99": 0.897,
+          "p99.9": 1.465,
+          "max": 1.465,
+          "mean": 0.505
+        },
+        "hero": {
+          "p50": 0.039,
+          "p99": 0.056,
+          "p99.9": 0.067,
+          "max": 0.067,
+          "mean": 0.04
+        },
+        "look": {
+          "p50": 0.006,
+          "p99": 0.012,
+          "p99.9": 0.014,
+          "max": 0.014,
+          "mean": 0.006
+        },
+        "hud": {
+          "p50": 0.03,
+          "p99": 0.064,
+          "p99.9": 0.157,
+          "max": 0.157,
+          "mean": 0.033
+        },
+        "sound": {
+          "p50": 0.0,
+          "p99": 0.001,
+          "p99.9": 0.001,
+          "max": 0.001,
+          "mean": 0.0
+        },
+        "loop": {
+          "p50": 0.005,
+          "p99": 0.015,
+          "p99.9": 0.019,
+          "max": 0.019,
+          "mean": 0.006
+        },
+        "engine": {
+          "p50": 0.41,
+          "p99": 0.813,
+          "p99.9": 0.957,
+          "max": 0.957,
+          "mean": 0.446
+        }
+      },
+      "top": [
+        "physics",
+        "engine",
+        "crowd"
+      ],
+      "wait_s": 0.0,
+      "alloc_bytes": {
+        "mean": 817,
+        "p99": 5280,
+        "max": 130348,
+        "frames": 5
+      },
+      "gc_collections": 1,
+      "sim_at_peak": {
+        "alive_from": 285,
+        "frames": 18,
+        "p99_ms": 0.222
+      }
+    },
+    "probe": {
+      "device": "Apple M5 Max",
+      "size": [
+        1920,
+        1080
+      ],
+      "msaa": 4,
+      "frames": 24,
+      "p50_ms": 6.48,
+      "p99_ms": 11.11,
+      "max_ms": 11.11,
+      "cpu_p50_ms": 2.29,
+      "cpu_p99_ms": 3.23,
+      "first_max_ms": 41.08,
+      "points": [
+        {
+          "at": 68.4,
+          "alive": 27,
+          "median_ms": 6.82,
+          "max_ms": 11.11,
+          "first_ms": 41.08
+        },
+        {
+          "at": 68.7,
+          "alive": 27,
+          "median_ms": 6.68,
+          "max_ms": 7.66,
+          "first_ms": 7.32
+        },
+        {
+          "at": 69.2,
+          "alive": 27,
+          "median_ms": 6.42,
+          "max_ms": 6.52,
+          "first_ms": 10.82
+        }
+      ]
+    },
+    "ok": true
+  }
+}

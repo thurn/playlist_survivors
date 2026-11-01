@@ -68,9 +68,6 @@ namespace PS.Game.Sim
             sim.Run.End(sim, t, RunEnd.Death);
         }
 
-        /// <summary>The hero can't be hurt until <paramref name="until"/> (a dash's: <see cref="Dash"/>).</summary>
-        public void Shield(double until) => hurtableFrom = Math.Max(hurtableFrom, until);
-
         /// <summary>
         /// The hero heals <paramref name="amount"/> at <paramref name="t"/>, up to its maximum, and
         /// can't be hurt for <paramref name="immunity"/> after; returns the health it gained.

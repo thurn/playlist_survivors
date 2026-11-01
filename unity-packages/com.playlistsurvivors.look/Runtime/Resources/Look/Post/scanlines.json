@@ -1,0 +1,16 @@
+{
+  "name": "scanlines",
+  "note": "The hologram preset's post: scanlines under 15% darkening and a soft CRT mask, slight chromatic aberration (under 2 px at a 1080p edge), bloom and a wide halo for the wireframes' glow, and a void toe sinking the lit world toward black (neon-look-style.md, Post).",
+  "tonemap": "filmic", "shoulder": 0.6, "whiten": 0.25,
+  "void":   { "knee": 0.65, "power": 3.3 },
+  "colour": { "exposure": 0, "contrast": 6, "saturation": 4 },
+  "bloom":  { "threshold": 0.8, "intensity": 0.9, "scatter": 0.55 },
+  "halo":   { "threshold": 0.5, "intensity": 0.9, "saturation": 1.4 },
+  "lens":   { "chromatic": 0.12, "vignette": 0.35, "smoothness": 0.45, "grain": 0.1, "dirt": 0 },
+  "retro":  { "scanlines": 0.14, "mask": 0.1 },
+  "feel": {
+    "beat":  { "exposure": 0.12, "bloom": 0.35, "vignette": -0.03, "tint": 0.25 },
+    "flash": { "exposure": 0.5, "chromatic": 0.5, "saturation": 25 },
+    "hit":   { "minStrength": 0.95, "flash": 0.6 }
+  }
+}

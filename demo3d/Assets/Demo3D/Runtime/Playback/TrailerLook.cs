@@ -10,8 +10,8 @@ namespace Demo3D.Runtime.Playback
     /// <summary>
     /// The trailer's look on top of each environment's own (trailer.md, "Look"), besides the per-shot grade (the post
     /// feel's <see cref="PostFeel.ShotGrade"/>):
-    /// - film grain and the lens dirt (<see cref="LensDirt"/>) on every environment's night volume (<see cref="Dress"/>);
-    /// - the impact lens hits (<see cref="LensHitFeature"/>): every slam, ring blast and mass kill hits the lens at its
+    /// - film grain and the lens dirt (<see cref="PS.Look.LensDirt"/>) on every environment's night volume (<see cref="Dress"/>);
+    /// - the impact lens hits (<see cref="PS.Look.LensHitFeature"/>): every slam, ring blast and mass kill hits the lens at its
     ///   screen position, with a strength from the blow's weight (BlowFeel), held on the impact's frame and gone within
     ///   an eighth note. Overlapping hits add, to the same cap.
     /// Like the post feel it is a function of song time, so fixed-time stills reproduce. `--no-trailer-look` leaves it
@@ -164,12 +164,12 @@ namespace Demo3D.Runtime.Playback
             float s = StrengthAt(t, out var p);
             var vp = s > 0 ? camera.WorldToViewportPoint(p) : Vector3.zero;
             if (vp.z <= 0) s = 0; // behind the camera: no centre
-            LensHitFeature.Strength = s;
-            LensHitFeature.Centre = new Vector2(Mathf.Clamp(vp.x, -0.5f, 1.5f), Mathf.Clamp(vp.y, -0.5f, 1.5f));
+            PS.Look.LensHitFeature.Strength = s;
+            PS.Look.LensHitFeature.Centre = new Vector2(Mathf.Clamp(vp.x, -0.5f, 1.5f), Mathf.Clamp(vp.y, -0.5f, 1.5f));
         }
 
         /// <summary>No lens hit (before the first frame, from the cut to black).</summary>
-        public static void Off() => LensHitFeature.Strength = 0f;
+        public static void Off() => PS.Look.LensHitFeature.Strength = 0f;
 
         /// <summary>
         /// Film grain and the lens dirt on an environment's night volume. Grain is a pixel's size at the render
@@ -183,7 +183,7 @@ namespace Demo3D.Runtime.Playback
             grain.response.Override(GrainResponse);
             if (profile.TryGet(out Bloom bloom))
             {
-                bloom.dirtTexture.Override(LensDirt.Texture);
+                bloom.dirtTexture.Override(PS.Look.LensDirt.Texture);
                 bloom.dirtIntensity.Override(DirtIntensity);
             }
         }

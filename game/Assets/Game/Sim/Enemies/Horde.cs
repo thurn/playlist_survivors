@@ -181,7 +181,7 @@ namespace PS.Game.Sim
         internal bool Rewound { get; set; }
 
         /// <summary>
-        /// The horde reels to the music (<see cref="ModeRules.Reels"/>, a mode's): heavy blows, their cleave and a lunge (<see cref="Dash"/>) throw an
+        /// The horde reels to the music (<see cref="ModeRules.Reels"/>, a mode's): heavy blows and their cleave throw an
         /// enemy <see cref="ReelKnockScale"/> times as far, its role's cap on knockback too, and a zone change shoves
         /// the enemies in view back and staggers them for a beat (<see cref="ZoneChanged"/>).
         /// </summary>
@@ -624,12 +624,11 @@ namespace PS.Game.Sim
         /// <paramref name="t"/>, struck along (dirX, dirY). The hit event comes first, then the enemy
         /// dies (<see cref="Kill"/>, thrown along the blow <paramref name="launch"/> metres) or is
         /// knocked back by <paramref name="knockback"/> away from the hero (<see cref="Knock"/>;
-        /// native's survivor recoil, whatever the blow's direction; along the blow when on the hero, or when
-        /// <paramref name="along"/>: a lunge's, thrown aside of the hero's path).
+        /// native's survivor recoil, whatever the blow's direction; along the blow when on the hero).
         /// The weapon's tally (<see cref="RunRecap.Damage"/>) adds the whole amount; <see cref="NoWeapon"/> tallies nothing.
         /// </summary>
         internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
-            double dirX, double dirY, double knockback, double launch, bool critical = false, bool along = false)
+            double dirX, double dirY, double knockback, double launch, bool critical = false)
         {
             ref var e = ref enemies[i];
             if (!e.Alive) return;
@@ -646,12 +645,12 @@ namespace PS.Game.Sim
             if (Rewound) sim.HeroWas(t, out hx, out hy);
             else HeroAt(t, out hx, out hy);
             double ax = x - hx, ay = y - hy;
-            if (along || ax * ax + ay * ay < 1e-18)
+            if (ax * ax + ay * ay < 1e-18)
             {
                 ax = dirX;
                 ay = dirY;
             }
-            Knock(sim, i, t, ax, ay, knockback, Reels && (how == WeaponHit.HeavyStrike || how == WeaponHit.Cleave || how == WeaponHit.Dash) ? ReelKnockScale : 1);
+            Knock(sim, i, t, ax, ay, knockback, Reels && (how == WeaponHit.HeavyStrike || how == WeaponHit.Cleave) ? ReelKnockScale : 1);
         }
 
         /// <summary>

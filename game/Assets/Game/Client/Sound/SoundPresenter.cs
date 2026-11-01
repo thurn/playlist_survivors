@@ -15,8 +15,6 @@ namespace Game.Client.Sound
     ///   land, pitched by the body's size); a structure's break shatters the same way, lower, and so
     ///   does its regrowth's eruption, at its start; a free press's swing is as loud as its grade, and a
     ///   full-grade (on the beat) light press's main strike layers the heavy swing under its own (<see cref="OnBeatAccent"/>);
-    ///   a dash (`--dash`) whooshes from its start, the lunge on the beat with the heavy swing and an accent, the slam's
-    ///   thud at <see cref="DashAccent"/>, as it lands; the hop off it with the light swing, quieter;
     /// - the other weapons' sounds come from their own views (<see cref="Request"/>), and a weapon that
     ///   sounds its own hits says so (<see cref="VoiceHitsElsewhere"/>);
     /// - **off-grid sounds** snapped as native snaps them: the hero's hurt on the next sixteenth, and
@@ -34,8 +32,6 @@ namespace Game.Client.Sound
         public const float LandSeconds = 0.38f;
         /// <summary>A full-grade light press's accent: the heavy swing's whoosh under its own, at this gain.</summary>
         public const float OnBeatAccent = 0.5f;
-        /// <summary>A lunge's landing accent: the slam's thud at this gain; a hop's whoosh at this gain.</summary>
-        public const float DashAccent = 0.45f, HopGain = 0.5f;
 
         readonly SoundScheduler _scheduler;
         readonly SoundAggregator _aggregator;
@@ -79,20 +75,6 @@ namespace Game.Client.Sound
                     Request(kind, a.Impact, a.Pressed ? (float)a.Grade : 1f, 1f, a.Heavy ? 1f : 0.6f, asap: asap);
                     if (a.Pressed && a.Grade >= 1 && kind == SoundKind.Swing && a.SwordKind != HeroAttackKind.FollowUp)
                         Request(SoundKind.SwingHeavy, a.Impact, OnBeatAccent, 1f, 0.6f, asap: asap);
-                    break;
-                }
-                case SimEventKind.HeroDash:
-                {
-                    // A dash starts when its key was heard: in heard time, as a press's swing.
-                    var d = e.AsHeroDash;
-                    bool late = d.Start < _settled;
-                    if (!d.OnBeat)
-                    {
-                        Request(SoundKind.Swing, d.Start, HopGain, 1.2f, 0.6f, asap: late);
-                        break;
-                    }
-                    Request(SoundKind.SwingHeavy, d.Start, 1f, 1f, 1f, asap: late);
-                    Request(SoundKind.Slam, d.End, DashAccent, 1.3f, 0.6f, asap: d.End < _settled);
                     break;
                 }
                 case SimEventKind.Hit:

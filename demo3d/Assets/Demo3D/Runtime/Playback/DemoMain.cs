@@ -4,7 +4,6 @@ using System.Globalization;
 using PS.Choreography;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
-using PS.Look.Effects;
 using Unity.Collections;
 using UnityEngine;
 using ChoreoRoster = PS.Choreography.Roster;
@@ -50,15 +49,16 @@ namespace Demo3D.Runtime.Playback
         MonsterStyle _style;
         StructureStyle _structures;
         StyleBeat _styleBeat;
-        LookCrowd _lookCrowd; // the crystal style's horde on the look package, also _crowd (null under any other style)
+        CrystalShatter _shatter; // crystal types' deaths break into baked shards (null without one)
         Demo3D.Runtime.Arena.StructureShatter _breaks; // --structure-breaks: the struck pieces' shards (null without breaks)
         BossTelegraphs _fight; // a trailer shot's boss fight zones (null without one)
         int _heroRunAnn = -1;  // the hero's run clip's annotation: its dodge's pose
         bool _stylePosted;
         float _supersample = 1f;  // --supersample (Supersampling)
         TrailerLook _look;        // a trailer's grain, dirt and lens hits (null outside a trailer and with --no-trailer-look)
+        PS.Look.PostOption _lookPost; // the crystal cut's look's post option (UseLook); null: the environments' night volumes
         SoundScheduler _sounds;
-        SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the monster shatter's
+        SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the crystal shatter's
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
         // horde and no combat effects: the arena, the hero and the ambient particles), --capture-mask
         // (after each still, the same frame again as an ID render of the monsters: mask-<t>.png).
@@ -221,29 +221,21 @@ namespace Demo3D.Runtime.Playback
             }
             _endAt = _trailer != null ? TrailerEnd() : _flags.Seconds > 0 ? _flags.StartAt + _flags.Seconds : _tl.Duration;
 
-            if (_style.Name == LookCrowd.Style)
+            _crowd = CrowdFactory.Create(_flags.Crowd);
+            if (_crowd is BoneTextureCrowd bone)
             {
-                // The crystal cut's horde draws through the look package (LookCrowd), its deaths shattering on the GPU.
-                if (_flags.Crowd != "auto" && _flags.Crowd != "bone") throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
-                _crowd = _lookCrowd = new LookCrowd(_tl, _style.Glow) { Clock = () => SongTime, View = _rig.Camera }; // deterministic LOD crossfades and shards
+                bone.Style = _style;
+                bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
             }
-            else
-            {
-                _crowd = CrowdFactory.Create(_flags.Crowd);
-                if (_crowd is BoneTextureCrowd bone)
-                {
-                    bone.Style = _style;
-                    bone.Clock = () => (float)SongTime; // deterministic LOD crossfades
-                }
-                else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
-            }
+            else if (!_style.IsBaseline) throw new InvalidOperationException($"DemoMain: {MonsterStyle.Flag} {_style.Name} needs the bone crowd, not --crowd {_flags.Crowd}");
             // Every run publishes the style beat: the hero's blade (HeroBlade) throbs on it under any style.
             _styleBeat = new StyleBeat(_tl.Map ?? SongMap.Synthetic(120, _tl.Duration));
+            if (_crowd is BoneTextureCrowd)
+                _shatter = CrystalShatter.Create(_tl, _style, CrowdLibrary.Load(), Array.ConvertAll(_typeAssets, t => t.id));
+            if (_shatter != null) _shatter.View = _rig.Camera;
             Debug.Log($"DemoMain: {MonsterStyle.Flag} {_style.Name}");
-            // Instances per type; the bone path sizes small buffers by it, and the look package's crowd sizes every buffer.
-            int capacity = _lookCrowd != null ? LookCapacity() : 16384;
-            _crowd.Initialize(Array.ConvertAll(_typeAssets, t => t.id), capacity);
-            _slots = new CrowdSlots(_typeAssets.Length, capacity);
+            _crowd.Initialize(Array.ConvertAll(_typeAssets, t => t.id), 16384); // instances per type; the bone path sizes small buffers by it
+            _slots = new CrowdSlots(_typeAssets.Length, 16384);
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
             // The hero's crystal blade (HeroBlade), under every style: it refracts the camera's opaque
@@ -291,6 +283,7 @@ namespace Demo3D.Runtime.Playback
             {
                 if (_fxDriver != null) _fxDriver.Blows = _blows;
                 if (_fx != null) _fx.Lights.Knee = _blows.Feel.LightKnee;
+                if (_shatter != null) _shatter.Cap = _blows.Feel.ShardCap;
                 Debug.Log($"DemoMain: {intensity.Name}'s blow feel over {_blows.Count} blows");
             }
             var breakShakes = breakMoments.Count > 0 ? breakMoments.Shakes() : null;
@@ -308,7 +301,7 @@ namespace Demo3D.Runtime.Playback
             {
                 // A crystal death breaks at its killing blow: it plays no death clip, and its burst, light
                 // and sound play at the blow, known from the timeline.
-                var breaks = _lookCrowd?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<LookCrowd.BreakEvent>();
+                var breaks = _shatter?.Breaks(InstanceScale, type => _hover[type]) ?? Array.Empty<CrystalShatter.BreakEvent>();
                 _eval.BreaksAtImpact = breaks.Length > 0 ? new HashSet<int>(Array.ConvertAll(breaks, b => b.Entity)) : null;
                 _fxDriver?.SetShatters(Array.ConvertAll(breaks, b => new EffectDriver.Shatter
                 {
@@ -328,22 +321,6 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The look package's crowd's instances per type: twice the most monsters of a type in a timeline (a trailer's
-        /// cut frees one shot's slots as the next takes its own), so its palettes stay small.
-        /// </summary>
-        int LookCapacity()
-        {
-            int most = 0;
-            foreach (var tl in _shots != null ? Array.ConvertAll(_shots, s => s.Timeline) : new[] { _tl })
-            {
-                var count = new int[tl.TypeNames.Length];
-                foreach (var e in tl.Entities)
-                    if (e.Kind == EntityKind.Monster && e.Type >= 0) most = Math.Max(most, ++count[e.Type]);
-            }
-            return Math.Clamp(2 * most, 64, 16384);
-        }
-
-        /// <summary>
         /// TD8's effects on the GPU runtime, unless `--no-effects` or the library isn't baked:
         /// `--effect-pool N` particles, `--light-pool N` pooled lights (EffectLights.DefaultPool),
         /// `--only-effects a,b` to spawn only those library effects.
@@ -357,7 +334,6 @@ namespace Demo3D.Runtime.Playback
                 return;
             }
             _fx = new EffectSystem(lib, Args.GetInt("--effect-pool", EffectSystem.DefaultPool), Args.GetInt("--light-pool", EffectLights.DefaultPool));
-            Cuts.Active.Apply(_fx);
             _fx.AddCamera(_rig.Camera);
             _fxDriver = NewEffectDriver(_tl);
         }
@@ -438,10 +414,22 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// An arena's night volume before its post feel first binds: the style's grade, the bloom fitted to the
-        /// supersampling, and a trailer's grain and lens dirt.
+        /// supersampling, and a trailer's grain and lens dirt. Under a look's post option (the crystal cut) the volume
+        /// takes the look's stack instead, the same in every environment, with no style grade or trailer dressing: the
+        /// option has its own grain and dirt.
         /// </summary>
         void PreparePost(Demo3D.Runtime.Arena.ArenaRuntime arena)
         {
+            if (_lookPost != null)
+            {
+                var night = arena.Post.sharedProfile;
+                arena.Post.sharedProfile = PS.Look.PostStack.CreateProfile(_lookPost, PS.Look.ResolvedLook.Active.Palette, _supersample);
+                foreach (var c in night.components) Destroy(c);
+                Destroy(night);
+                Supersampling.FitBloom(arena.Post.sharedProfile, _supersample);
+                Debug.Log($"DemoMain: the look's post stack {_lookPost.Name} on the night volume" + (_arenas != null ? " of " + arena.Options.Environment : ""));
+                return;
+            }
             PostStyle(arena);
             Supersampling.FitBloom(arena.Post.sharedProfile, _supersample);
             _look?.Dress(arena.Post.sharedProfile);
@@ -589,7 +577,6 @@ namespace Demo3D.Runtime.Playback
         {
             _maskOn = on;
             Shader.SetGlobalFloat("_Demo3DIdMask", on ? 1f : 0f);
-            Shader.SetGlobalFloat("_GameIdMask", on ? 1f : 0f); // the look package's crowd (LookCrowd)
             if (_arena != null)
             {
                 if (_arena.Rung == Demo3D.Runtime.Arena.ArenaIndex.E2) _arena.SetIdMask(on);
@@ -611,7 +598,7 @@ namespace Demo3D.Runtime.Playback
 
         readonly System.Diagnostics.Stopwatch _evalWatch = new System.Diagnostics.Stopwatch();
         readonly System.Diagnostics.Stopwatch _drawWatch = new System.Diagnostics.Stopwatch();
-        readonly System.Diagnostics.Stopwatch _shatterWatch = new System.Diagnostics.Stopwatch(); // the structure shatter's and the monster breaks' CPU side
+        readonly System.Diagnostics.Stopwatch _shatterWatch = new System.Diagnostics.Stopwatch(); // the crystal shatter's physics steps and shard updates
         double _lastWall;
 
         bool _quitNext;
@@ -705,7 +692,7 @@ namespace Demo3D.Runtime.Playback
             }
 
             _shatterWatch.Start();
-            _lookCrowd?.Frame(t);
+            _shatter?.Frame(t);
             _breaks?.Frame(t);
             _shatterWatch.Stop();
             _fight?.Frame(t);
@@ -728,10 +715,14 @@ namespace Demo3D.Runtime.Playback
                     int e = list[k];
                     var st = _eval.Evaluate(e, world, _walkStride[type], _walkLength[type], _hover[type]);
                     var mi = ToInstance(st, _typeAssets[type], type, _tl.Entities[e].Seed);
-                    int slot = _slots.Assign(type, _slotBase + e);
-                    // From its killing blow a crystal monster is its shards (LookCrowd).
-                    if (st.Broken && _lookCrowd != null) mi.Flags = (uint)_lookCrowd.Breaking(e, type, slot, mi);
-                    inst[slot] = mi;
+                    // From its killing blow a crystal monster is its shards (CrystalShatter).
+                    if (st.Broken && _shatter != null)
+                    {
+                        _shatterWatch.Start(); // posing the chunks is the shatter's cost too
+                        if (_shatter.Breaking(e, type, mi)) mi.Flags |= (uint)CrowdFlags.Hidden;
+                        _shatterWatch.Stop();
+                    }
+                    inst[_slots.Assign(type, _slotBase + e)] = mi;
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {
                         if (st.Dying) OnScreenDying++; else OnScreenAlive++;
@@ -783,7 +774,7 @@ namespace Demo3D.Runtime.Playback
                 Scale = InstanceScale(seed),
                 HitFlash = st.HitFlash,
                 Dissolve = st.Dissolve,
-                Tint = _lookCrowd != null && type >= 0 ? _lookCrowd.Tint(type) : 0, // the look package's crowd's gem colour
+                Tint = 0,
                 Flags = (uint)(st.Dying ? CrowdFlags.Dying : CrowdFlags.Alive),
             };
         }
@@ -856,12 +847,12 @@ namespace Demo3D.Runtime.Playback
                 _tl.FramingAt(Math.Max(0, t)).ViewWidth, (wall - _lastWall) * 1000, _evalWatch.Elapsed.TotalMilliseconds,
                 _drawWatch.Elapsed.TotalMilliseconds) + string.Format(CultureInfo.InvariantCulture, ",{0},{1},{2},{3},{4:F4},{5},{6:F2}",
                 _fx?.Particles ?? 0, _fx?.SpawnsTotal ?? 0, _fx?.Lights.ActiveCues ?? 0, _fx?.Lights.LightsUsed ?? 0, _fx?.Lights.DropShare ?? 0,
-                _lookCrowd?.Shards ?? 0, _shatterWatch.Elapsed.TotalMilliseconds));
+                _shatter?.Shards ?? 0, _shatterWatch.Elapsed.TotalMilliseconds));
         }
 
         /// <summary>
         /// The sounds with each one's clip name, gain and pitch, for TD13's offline mix (the same
-        /// list the live scheduler plays: the timeline's events and the monster shatter's). A
+        /// list the live scheduler plays: the timeline's events and the crystal shatter's). A
         /// trailer's also carry its cut and end fades (<see cref="TrailerSoundsHeader"/>).
         /// </summary>
         void DumpSounds(string path)
@@ -909,7 +900,7 @@ namespace Demo3D.Runtime.Playback
             int peakStructureShards = PeakStructureShards();
             Debug.Log($"DemoMain: done at song time {SongTime.ToString("F2", CultureInfo.InvariantCulture)}" +
                       (_fx != null ? $"; effects: {_fx.SpawnsTotal} spawns, {_fx.MergedTotal} merged (cuts), {_fx.GlowsDropped} glow emitters dropped (cuts)" : "") +
-                      (_lookCrowd != null ? $"; monster shatter: {_lookCrowd.Deaths} deaths, at most {_lookCrowd.PeakShards} shards live" : "") +
+                      (_shatter != null ? $"; crystal shatter: {_shatter.Deaths} deaths, at most {_shatter.PeakShards} shards live" : "") +
                       (peakStructureShards >= 0 ? $"; structure breaks: at most {peakStructureShards} shards live" : ""));
             enabled = false;
             Application.Quit(code);
@@ -921,6 +912,7 @@ namespace Demo3D.Runtime.Playback
             _songCheck?.Dispose();
             _fx?.Dispose();
             _crowd?.Dispose();
+            _shatter?.Dispose();
             if (_shots == null) _breaks?.Dispose();
             else foreach (var s in _shots) { s.Structures?.Dispose(); s.Fight?.Dispose(); } // a trailer's _breaks is its current shot's
             _style?.Dispose();
@@ -929,6 +921,7 @@ namespace Demo3D.Runtime.Playback
             _heroBlade?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();
+            if (_lookPost != null) PS.Look.PostStack.Release();
             if (_warmTarget != null) _warmTarget.Release();
         }
     }

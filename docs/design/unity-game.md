@@ -2346,15 +2346,8 @@ game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
 ### The crowd
 
 The crowd is the 3D demo's GPU-driven renderer, fed by the sim instead of a
-timeline (ps-msz.3.8; evidence in
-[game/evidence/crowd](../../game/evidence/crowd/README.md)). Since ps-wnj.4 the
-renderer, its instance struct, slots and shaders, the shatter and the beat
-globals live in the shared look package
-(`unity-packages/com.playlistsurvivors.look/Runtime/Crowd/`, namespace
-`PS.Look.Crowd`; [neon-look.md](neon-look.md), The Package); the game keeps
-its feeder (`CrowdView`, `MonsterTrack`) and its baker in
-game/Assets/Game/Client/Crowd/ and Editor/Crowd/, the baker calling the
-package's unweld step (`StyleMesh.Unweld`) and shard cutter.
+timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
+[game/evidence/crowd](../../game/evidence/crowd/README.md)).
 
 - **The bake**, `game unity BakeCrowd` (and `game build` when its inputs
   change), turns the nine models of Editor/Crowd/roster.json into the
@@ -2396,9 +2389,8 @@ package's unweld step (`StyleMesh.Unweld`) and shard cutter.
   room for its members) needs it. With 375, minute 25 of the full run threw on
   every frame from its first set piece, and the crowd and the HUD stopped
   drawing (ps-msz.6.14).
-- **The crystal** (`Game/MonsterCrystal`, the package's stand-in monster look,
-  `MonsterLooks.Crystal`, until a preset's look is built) shares its surface
-  with the structures (the package's CrystalSurface.hlsl): it refracts the scene behind, tinted by
+- **The crystal** (`Game/MonsterCrystal`) shares its surface with the
+  structures (CrystalSurface.hlsl): it refracts the scene behind, tinted by
   the role's gem colour, with the beat globals' facet sparkle, graded to a
   luminance peak of 0.3 so effects stay brightest.
 - Transparent crystal lacks depth and motion vectors, so the game keeps MSAA
@@ -2425,11 +2417,10 @@ at scale.
 - Each death also spawns one coherent crystal burst (chips and dust) and
   layered glass sounds pitched by size.
 
-**Shipped (ps-msz.3.9)**: `MonsterShatter`, in the look package's
-Runtime/Crowd/ since ps-wnj.4 (its tests, `ShatterTests`, in the package's),
+**Shipped (ps-msz.3.9)**: `MonsterShatter` in game/Assets/Game/Client/Crowd/,
 evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
 
-- **The cut** is part of the crowd's bake (`CrowdShardBaker`, the package's): each
+- **The cut** is part of the crowd's bake (`CrowdShardBaker`, demo3d's): each
   model's LOD0 in 20 to 40 chunks closed to an apex inside the body, joined
   into one mesh per model whose corners carry their chunk and skin weights;
   each chunk's pivot carries weights too.
@@ -2527,10 +2518,7 @@ for each weapon's look in [The Other Weapons](#the-other-weapons).
 shaders), without the demo's cuts (none of the effect cuts was accepted), the
 VFX Graph sink and the overdraw pass. Its converter is
 `Editor/Effects/EffectConverter`, baking `game/Content/effects.json` into the
-gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). Since
-ps-wnj.5 the runtime, its shaders and the converter are the look package's
-(`unity-packages/com.playlistsurvivors.look/`, shared with demo3d), and the
-game keeps only its cues, presenter and crystal wave in `Client/Effects/`. As
+gitignored `Assets/Baked/Effects/` (`game unity BakeAll -only Effects`). As
 built ([evidence](../../game/evidence/fx/README.md)):
 
 - `EffectCues` holds each event's effect until the first frame whose
@@ -2626,11 +2614,15 @@ press rang a 0.7 m ice band out to the reach. Now:
 
 ### Post-processing and camera
 
-The post stack is the 3D demo's night look, driven by the live stream instead
-of the demo's **song map** (a hand-made file of a song's beats and sections).
+The post stack is the look preset's (the look package's `PostStack`,
+[neon-look.md](neon-look.md#post-processing-stack), since ps-wnj.6; it was
+the 3D demo's night look), driven by the live stream instead of the demo's
+**song map** (a hand-made file of a song's beats and sections).
 
-- **Night look**: bloom, tonemapping, a colour lookup table built in code,
-  vignette, white balance, chromatic aberration (zero at rest) and SSAO.
+- **The look's stack**: the post option's tonemap, bloom and wide halo,
+  colour, vignette toward the palette's void, chromatic aberration, grain,
+  retro scanlines, and the renderer's SSAO. The arena keeps its ambient, fog
+  and clear colour (`NightLook`) until the void world replaces it.
 - **Beat feel**, read from the stream: an exposure and bloom pulse and a
   vignette breath on every beat; an exposure flash, chromatic aberration and
   saturation spike on accents, heavy strikes and breaks; a grade offset per
@@ -2676,6 +2668,19 @@ placeholder plane); evidence in game/evidence/look/feel/.
 0.7 an accent, a break or a 24-kill impact pushed every highlight past white.
 The zone grades, bloom and beat pulse are unchanged
 ([evidence](../../game/evidence/look-m4/README.md)).
+
+**Shipped (ps-wnj.6).** The arena's volume is the look's stack
+(`PostStack.CreateVolume`), Boot turns on its own passes (`PostStack.Use`),
+and the arena sets the scene's exposure (`lighting.exposure`, 0.8 stops, the
+night grade's: the baked night is lit dim). Under the options' void toe the
+arena falls almost to black, so the game already reads as the void, its
+monsters and effects the light.
+The beat and flash amounts are the post option's `feel` (every option's flash
+lifts 0.5 stops), the build-up and kick stay `PostFeel`'s, the zone grades
+ride on top as before, and on a beat or a flash the bloom leans toward the
+palette's `grid.pulse` and `spark` (`PostBinding`). A `--post` option not
+built draws `PostOption.Plain` (neutral tonemap, nothing else): game keeps no
+post of its own. Evidence per option in game/evidence/look/post/.
 
 ### HUD
 

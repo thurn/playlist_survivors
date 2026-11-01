@@ -13,9 +13,9 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.playlistsurvivors.look/Runtime/Shaders/StaticShadow.hlsl"
+#include "StaticShadow.hlsl"
 #include "CanopyFade.hlsl"
-#include "Packages/com.playlistsurvivors.look/Runtime/Shaders/CrystalCommon.hlsl"
+#include "CrystalCommon.hlsl"
 
 // A structure's static mesh, in its renderer's object space. A shard's has its inside faces' flag in uv1.x.
 struct SLAttributes

@@ -32,6 +32,8 @@ namespace Demo3D.Runtime.Playback
             public float Trail, Spark = 1f, DeathBurst = 1f;
             /// <summary>Effect lights' knee (EffectLights.Knee): a cluster's intensity saturates toward it, so a mass kill is one wave of light, not a white-out. 0: no knee.</summary>
             public float LightKnee;
+            /// <summary>The crystal shatter's cap on live shard sets (CrystalShatter.Cap); deaths past it break by the shader's own shatter. 0: no cap.</summary>
+            public int ShardCap;
 
             /// <summary>The amounts in <paramref name="feel"/>, or null if it isn't an object (a normal run).</summary>
             public static Amounts Parse(JsonValue feel)
@@ -51,11 +53,12 @@ namespace Demo3D.Runtime.Playback
                     Spark = feel["spark"].AsFloat(d.Spark),
                     DeathBurst = feel["deathBurst"].AsFloat(d.DeathBurst),
                     LightKnee = feel["lightKnee"].AsFloat(d.LightKnee),
+                    ShardCap = feel["shardCap"].AsInt(d.ShardCap),
                 };
                 if (a.CrispKills < 0 || a.HeavyKills <= a.CrispKills) throw new FormatException("feel: heavyKills must be above crispKills (and crispKills not negative)");
                 if (a.HitStop < 0 || !(a.HitStopCatchUp > 0) || a.HitStop > a.HitStopCatchUp)
                     throw new FormatException("feel: hitStop must be 0 to hitStopCatchUp, so the catch-up runs at most twice as fast");
-                if (a.Punch < 0 || a.Shake < 0 || a.ShakeCap < 0 || a.Trail < 0 || !(a.Spark > 0) || !(a.DeathBurst > 0) || a.LightKnee < 0)
+                if (a.Punch < 0 || a.Shake < 0 || a.ShakeCap < 0 || a.Trail < 0 || !(a.Spark > 0) || !(a.DeathBurst > 0) || a.LightKnee < 0 || a.ShardCap < 0)
                     throw new FormatException("feel: amounts must not be negative");
                 return a;
             }

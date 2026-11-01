@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Demo3D.Runtime.Playback;
-using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -60,7 +59,6 @@ namespace Demo3D.Runtime.Effects
             }
             _lib = EffectLibrary.Load();
             _fx = new EffectSystem(_lib);
-            Cuts.Active.Apply(_fx);
             _rig = new GameCameraRig();
             _rig.Camera.backgroundColor = new Color(0.05f, 0.06f, 0.08f);
             _fx.AddCamera(_rig.Camera);

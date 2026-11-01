@@ -23,8 +23,8 @@ namespace PS.Game.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        /// <summary>Version 5 added the dash, 4 the finishers, 3 the mode and pointer targets, 2 the start minute and each input's argument; 1 to 4 still read.</summary>
-        const int Version = 5;
+        /// <summary>Version 3 added the mode and pointer targets, version 2 the start minute and each input's argument; 1 and 2 still read.</summary>
+        const int Version = 3;
         static readonly byte[] Magic = { (byte)'P', (byte)'S', (byte)'R', (byte)'U', (byte)'N' };
         const byte Press = 0, Release = 1, Command = 2, Control = 3, Target = 4;
 
@@ -213,12 +213,11 @@ namespace PS.Game.Sim
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"level\": {7},\n" +
                 "  \"arena\": {8},\n  \"easy\": {9},\n  \"heroStands\": {10},\n  \"startTime\": {11:R},\n  \"startMinute\": {20},\n  \"end\": {12:R},\n" +
                 "  \"hash\": \"{13:X16}\",\n  \"events\": {14},\n  \"entries\": {15},\n  \"keys\": {16},\n  \"commands\": {17},\n" +
-                "  \"start\": {18},\n  \"controls\": {19},\n  \"mode\": {21},\n  \"finishers\": {23},\n  \"dash\": {24},\n  \"targets\": {22}\n}}\n",
+                "  \"start\": {18},\n  \"controls\": {19},\n  \"mode\": {21},\n  \"targets\": {22}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, run.Seed,
                 Quote(run.Level == SessionLevel.Slice ? "slice" : run.Level == SessionLevel.Run ? "run" : "open"), run.Arena ? "true" : "false",
                 run.Easy ? "true" : "false", run.Level == SessionLevel.Slice ? "true" : "false", run.StartTime, End, Hash, Events, Entries.Length, Keys.Length,
-                Commands.Length, Quote(run.Start.ToString()), Controls.Length, run.StartMinute, Quote(GameModes.Of(run.Mode).Name), Targets.Length,
-                run.Finishers ? "true" : "false", run.Dash ? "true" : "false");
+                Commands.Length, Quote(run.Start.ToString()), Controls.Length, run.StartMinute, Quote(GameModes.Of(run.Mode).Name), Targets.Length);
         }
 
         static string Quote(string s)

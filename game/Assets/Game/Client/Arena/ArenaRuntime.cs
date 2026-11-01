@@ -52,14 +52,14 @@ namespace Game.Client.Arena
         public Light HeroLight { get; private set; }
         public Bounds ArenaBounds { get; private set; }
         public event Action<ArenaRuntime> OnReady;
-        /// <summary>The night's post volume (NightLook), once the scene is set up.</summary>
+        /// <summary>The look's post volume (PostStack), once the scene is set up.</summary>
         public UnityEngine.Rendering.Volume Post { get; private set; }
         float _heroHeightM;
 
         /// <summary>
         /// Starts loading the baked arena in <paramref name="palette"/>'s look (the default zone's
         /// unless given; empty for the night as the bake lit it). <paramref name="camera"/> gets the
-        /// night's clear colour and post; the post volume goes under <paramref name="volumeParent"/>
+        /// night's clear colour, and the look's post volume (PostStack) goes under <paramref name="volumeParent"/>
         /// (or the scene root). Throws when the build has no arena.
         /// </summary>
         public static ArenaRuntime Load(Camera camera, string palette = ArenaLighting.DefaultPalette, Transform volumeParent = null)
@@ -136,7 +136,9 @@ namespace Game.Client.Arena
             if (Lighting.Palette != null) ApplyPalette(Lighting);
             NightLook.ApplyRenderSettings(Lighting);
             if (_camera != null) NightLook.ApplyCamera(_camera, Lighting);
-            Post = NightLook.CreateVolume(_volumeParent != null ? _volumeParent : root, Lighting);
+            var look = Look.PostFeel.Look;
+            Post = PS.Look.PostStack.CreateVolume(_volumeParent != null ? _volumeParent : root, Look.PostFeel.OptionOf(look), look.Palette);
+            PS.Look.PostStack.SceneExposure = Lighting.Exposure;
             if (Lighting.HeroIntensity > 0) CreateHeroLight(root);
             SetBeatAtRest();
 

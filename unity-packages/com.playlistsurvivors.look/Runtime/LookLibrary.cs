@@ -4,22 +4,25 @@ using UnityEngine;
 namespace PS.Look
 {
     /// <summary>
-    /// The package's look presets and palettes as JSON text by name: Resources/Look/Looks/NAME.json and
-    /// Resources/Look/Palettes/NAME.json, in every build of both players (<see cref="Shared"/>).
+    /// The package's look presets, palettes and post options as JSON text by name: Resources/Look/Looks/NAME.json,
+    /// Resources/Look/Palettes/NAME.json and Resources/Look/Post/NAME.json, in every build of both players
+    /// (<see cref="Shared"/>).
     /// </summary>
     public sealed class LookLibrary
     {
         static LookLibrary _shared;
 
         /// <summary>The package's own files, loaded on first use.</summary>
-        public static LookLibrary Shared => _shared ??= new LookLibrary(Load("Look/Looks"), Load("Look/Palettes"));
+        public static LookLibrary Shared => _shared ??= new LookLibrary(Load("Look/Looks"), Load("Look/Palettes"), Load("Look/Post"));
 
-        readonly IReadOnlyDictionary<string, string> _presets, _palettes;
+        readonly IReadOnlyDictionary<string, string> _presets, _palettes, _posts;
 
-        public LookLibrary(IReadOnlyDictionary<string, string> presets, IReadOnlyDictionary<string, string> palettes)
+        public LookLibrary(IReadOnlyDictionary<string, string> presets, IReadOnlyDictionary<string, string> palettes,
+            IReadOnlyDictionary<string, string> posts = null)
         {
             _presets = presets;
             _palettes = palettes;
+            _posts = posts ?? new Dictionary<string, string>();
         }
 
         public IEnumerable<string> Presets => Sorted(_presets);
@@ -28,6 +31,9 @@ namespace PS.Look
         public bool HasPalette(string name) => name != null && _palettes.ContainsKey(name);
         public string PresetJson(string name) => _presets[name];
         public string PaletteJson(string name) => _palettes[name];
+        public IEnumerable<string> Posts => Sorted(_posts);
+        public string PostJson(string name) =>
+            _posts.TryGetValue(name, out var json) ? json : throw new KeyNotFoundException($"no post option file Resources/Look/Post/{name}.json");
 
         static Dictionary<string, string> Load(string folder)
         {

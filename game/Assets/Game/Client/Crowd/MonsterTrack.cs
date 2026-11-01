@@ -1,6 +1,5 @@
 using System;
 using Game.Client.Loop;
-using PS.Look.Crowd;
 
 namespace Game.Client.Crowd
 {

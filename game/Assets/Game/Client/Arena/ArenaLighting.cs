@@ -8,8 +8,8 @@ namespace Game.Client.Arena
     /// The arena's lighting (unity-game.md, "The Look"), from the <c>lighting</c> object of
     /// game/Content/arena-layout.json with a zone's palette over it: demo3d's ArenaLighting, copied
     /// and owned. The baker places the moon and the flame and glow lights from it; the runtime applies
-    /// the moon's realtime colour, the ambient, fog, hero light, ground tint, mist and the night's
-    /// base post stack. The default zone's palette is neon (<see cref="DefaultPalette"/>): purple
+    /// the moon's realtime colour, the ambient, fog, hero light, ground tint and mist (the post is the
+    /// look's, PostStack). The default zone's palette is neon (<see cref="DefaultPalette"/>): purple
     /// ambient and fog, magenta mist, a violet moon and a cyan hero light, over the authored night.
     /// </summary>
     public sealed class ArenaLighting
@@ -45,19 +45,8 @@ namespace Game.Client.Arena
         /// </summary>
         public float HeroHeightM = 4f, HeroRangeM = 12f, HeroIntensity;
         public Color HeroColor = new Color(1f, 0.78f, 0.55f);
-        /// <summary>The post stack's vignette (NightLook.CreateProfile): intensity, smoothness and its tint.</summary>
-        public float VignetteIntensity = 0.26f, VignetteSmoothness = 0.45f;
-        public Color VignetteColor = new Color(0.01f, 0.015f, 0.04f);
-        /// <summary>
-        /// The post stack's base values (NightLook.CreateProfile): colour adjustments' exposure, contrast
-        /// and saturation, white balance's temperature, bloom, and the tonemapper (neutral or aces).
-        /// </summary>
-        public float PostExposure = 0.8f, PostContrast = 25f, PostSaturation = 30f, PostTemperature;
-        public float BloomThreshold = 1.5f, BloomIntensity = 1f, BloomScatter = 0.65f;
-        public string Tonemap = "neutral";
-        /// <summary>The grade's tints (NightLook.Grade): the display-referred colour's multipliers in the shadows, midtones and highlights.</summary>
-        public Vector3 GradeShadow = new Vector3(0.97f, 0.99f, 1.05f), GradeMid = new Vector3(1.06f, 1.0f, 0.90f),
-            GradeHigh = new Vector3(1.02f, 1.0f, 0.97f);
+        /// <summary>The scene's exposure in stops, added to the look's post option's before its tonemap (PostStack.SceneExposure): the baked night is lit dim.</summary>
+        public float Exposure = 0.8f;
         public int MaxFlameLights = 8;
         /// <summary>Flickering flame lights (realtime, at most <see cref="MaxFlameLights"/>), in placement order.</summary>
         public readonly List<PropLight> Flames = new List<PropLight>();
@@ -109,8 +98,8 @@ namespace Game.Client.Arena
         /// The runtime lighting <paramref name="u"/> of the way from <paramref name="a"/> to <paramref name="b"/>
         /// (a zone's ease, ZoneLighting): the moon's colour and intensity, the ambient, the fog's colour and
         /// depths, the hero's light, the ground tint and the mist, into <paramref name="into"/>. The fog's mode
-        /// and the palette's name switch half way; the baked parts (flames, glow) and the post stack's base
-        /// stay the loaded palette's (the post's zone grade is PostFeel's).
+        /// and the palette's name switch half way; the baked parts (flames, glow) stay the loaded palette's
+        /// (the post's zone grade is PostFeel's).
         /// </summary>
         public static ArenaLighting Lerp(ArenaLighting a, ArenaLighting b, float u, ArenaLighting into)
         {
@@ -162,24 +151,7 @@ namespace Game.Client.Arena
             l.HeroRangeM = hero["rangeM"].AsFloat(l.HeroRangeM);
             l.HeroIntensity = hero["intensity"].AsFloat(l.HeroIntensity);
             l.HeroColor = Col(hero["color"], l.HeroColor);
-            JsonValue vignette = root["vignette"];
-            l.VignetteIntensity = vignette["intensity"].AsFloat(l.VignetteIntensity);
-            l.VignetteSmoothness = vignette["smoothness"].AsFloat(l.VignetteSmoothness);
-            l.VignetteColor = Col(vignette["color"], l.VignetteColor);
-            JsonValue post = root["post"];
-            l.PostExposure = post["exposure"].AsFloat(l.PostExposure);
-            l.PostContrast = post["contrast"].AsFloat(l.PostContrast);
-            l.PostSaturation = post["saturation"].AsFloat(l.PostSaturation);
-            l.PostTemperature = post["temperature"].AsFloat(l.PostTemperature);
-            l.Tonemap = post["tonemap"].AsString(l.Tonemap);
-            JsonValue grade = post["grade"];
-            l.GradeShadow = Vec(grade["shadow"], l.GradeShadow);
-            l.GradeMid = Vec(grade["mid"], l.GradeMid);
-            l.GradeHigh = Vec(grade["high"], l.GradeHigh);
-            JsonValue bloom = post["bloom"];
-            l.BloomThreshold = bloom["threshold"].AsFloat(l.BloomThreshold);
-            l.BloomIntensity = bloom["intensity"].AsFloat(l.BloomIntensity);
-            l.BloomScatter = bloom["scatter"].AsFloat(l.BloomScatter);
+            l.Exposure = root["exposure"].AsFloat(l.Exposure);
             JsonValue flames = root["flames"];
             l.MaxFlameLights = flames["maxLights"].AsInt(l.MaxFlameLights);
             Lights(flames["props"], l.Flames, new Color(1f, 0.55f, 0.25f));
@@ -200,9 +172,6 @@ namespace Game.Client.Arena
                     Color = Col(kv.Value["color"], fallback),
                 });
         }
-
-        static Vector3 Vec(JsonValue v, Vector3 fallback) =>
-            v.Count >= 3 ? new Vector3(v[0].AsFloat(), v[1].AsFloat(), v[2].AsFloat()) : fallback;
 
         static Color Col(JsonValue v, Color fallback) =>
             v.Count >= 3 ? new Color(v[0].AsFloat(), v[1].AsFloat(), v[2].AsFloat()) : fallback;

@@ -83,7 +83,7 @@ Shader "Game/RockTriplanar"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.playlistsurvivors.look/Runtime/Shaders/StaticShadow.hlsl"
+            #include "StaticShadow.hlsl"
 
             struct Attributes
             {

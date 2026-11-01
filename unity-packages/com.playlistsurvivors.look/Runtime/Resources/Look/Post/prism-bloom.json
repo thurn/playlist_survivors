@@ -1,0 +1,15 @@
+{
+  "name": "prism-bloom",
+  "note": "The prism preset's post: soft wide bloom and the widest, most saturated halo for the gems' light, chromatic aberration as the dispersion, lens dirt catching the glow, and a void toe sinking the lit world toward black (neon-look-style.md, Post).",
+  "tonemap": "filmic", "shoulder": 0.6, "whiten": 0.25,
+  "void":   { "knee": 0.7, "power": 3.4 },
+  "colour": { "exposure": -0.15, "contrast": 8, "saturation": 10 },
+  "bloom":  { "threshold": 0.85, "intensity": 0.7, "scatter": 0.6 },
+  "halo":   { "threshold": 0.5, "intensity": 0.9, "saturation": 1.6 },
+  "lens":   { "chromatic": 0.2, "vignette": 0.3, "smoothness": 0.45, "grain": 0.06, "dirt": 8 },
+  "feel": {
+    "beat":  { "exposure": 0.12, "bloom": 0.35, "vignette": -0.03, "tint": 0.25 },
+    "flash": { "exposure": 0.5, "chromatic": 0.5, "saturation": 25 },
+    "hit":   { "minStrength": 0.95, "flash": 0.6 }
+  }
+}

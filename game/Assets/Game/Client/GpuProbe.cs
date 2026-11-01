@@ -7,12 +7,10 @@ using System.Text;
 using Game.Client.Loop;
 using PS.Game.Sim;
 using PS.Game.Sim.Content;
-using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Stopwatch = System.Diagnostics.Stopwatch;
-using PS.Look.Crowd;
 
 namespace Game.Client
 {
@@ -203,11 +201,11 @@ namespace Game.Client
                     return null; // the 1x target (Single)
                 case "crowd": // the monsters and their shatter's shards
                     int mask = camera.cullingMask;
-                    camera.cullingMask &= ~(1 << BoneTextureCrowd.Layer);
+                    camera.cullingMask &= ~(1 << Crowd.BoneTextureCrowd.Layer);
                     return () => camera.cullingMask = mask;
                 case "effects": // the particle pool
-                    EffectSystem.Hidden = true;
-                    return () => EffectSystem.Hidden = false;
+                    Effects.EffectSystem.Hidden = true;
+                    return () => Effects.EffectSystem.Hidden = false;
                 case "effect-lights": // the effects' pooled point lights
                     var root = GameObject.Find("EffectLights");
                     var lit = root == null ? new List<Light>() : root.GetComponentsInChildren<Light>().Where(l => l.enabled).ToList();

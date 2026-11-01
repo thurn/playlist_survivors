@@ -52,7 +52,7 @@ namespace Demo3D.Runtime.Playback
             public EffectDriver Effects;
             public BlowFeel Blows;
             public CameraFeel Feel;
-            public LookCrowd.BreakEvent[] Breaks = Array.Empty<LookCrowd.BreakEvent>();
+            public CrystalShatter.BreakEvent[] Breaks = Array.Empty<CrystalShatter.BreakEvent>();
             public BreakMoments Moments = BreakMoments.None;         // its structure breaks (its breaks field)
             public Demo3D.Runtime.Arena.StructureShatter Structures; // their shards on screen (null without breaks)
             public BossTelegraphs Fight;      // its boss fight's zones (null without one)
@@ -97,13 +97,20 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags. The
-        /// action cut, and the song outside a trailer, keep their Synty look (the epic's "before") and ignore them.
+        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags, and its
+        /// post stack in place of the environments' night grades (<see cref="PreparePost"/>). The action cut, and the
+        /// song outside a trailer, keep their Synty look (the epic's "before") and ignore them.
         /// </summary>
         void UseLook()
         {
             var flags = PS.Look.LookFlags.Current;
-            if (_flags.Trailer != null && _flags.Trailer != "action") PS.Look.ResolvedLook.Resolve(flags).Apply();
+            if (_flags.Trailer != null && _flags.Trailer != "action")
+            {
+                var look = PS.Look.ResolvedLook.Resolve(flags);
+                look.Apply();
+                _lookPost = PS.Look.PostStack.OptionOf(look);
+                if (_lookPost != null) PS.Look.PostStack.Use(_lookPost);
+            }
             else if (flags.Any) Debug.Log("DemoMain: the look flags are for the crystal cut; " +
                                           (_flags.Trailer != null ? "the action cut" : "the song") + " keeps its look");
         }
@@ -236,10 +243,10 @@ namespace Demo3D.Runtime.Playback
                     if (s.Fight != null) bursts.AddRange(s.Fight.Bursts());
                     if (bursts.Count > 0) s.Effects.SetBursts(bursts);
                 }
-                if (_lookCrowd != null)
+                if (_shatter != null)
                 {
-                    _lookCrowd.Retarget(tl);
-                    s.Breaks = _lookCrowd.Breaks(InstanceScale, type => _hover[type]);
+                    _shatter.Retarget(tl);
+                    s.Breaks = _shatter.Breaks(InstanceScale, type => _hover[type]);
                 }
                 if (s.Breaks.Length > 0) s.Eval.BreaksAtImpact = new HashSet<int>(Array.ConvertAll(s.Breaks, b => b.Entity));
                 s.Effects?.SetShatters(Array.ConvertAll(s.Breaks, b => new EffectDriver.Shatter
@@ -259,7 +266,8 @@ namespace Demo3D.Runtime.Playback
             var cutFlashes = new List<double>();
             foreach (var s in _shots)
                 if (Plays(s) && s.Info.Number > 1 && Array.Exists(map.Accents, a => Math.Abs(a.Time - s.Info.Cut) < FlashCutToleranceS)) cutFlashes.Add(s.Info.Cut);
-            // The trailer's look (trailer.md, Look): each shot's grade from its first frame, and its lens hits.
+            // The trailer's look (trailer.md, Look): each shot's grade from its first frame, and its lens hits. Under a
+            // look's post stack every shot takes the stack's one grade: no shot grades.
             var grades = new List<(double, TrailerGrade)>();
             var hits = new List<TrailerLook.Hit>();
             if (!_flags.NoTrailerLook)
@@ -267,7 +275,7 @@ namespace Demo3D.Runtime.Playback
                 foreach (var s in _shots)
                 {
                     if (!Plays(s)) continue;
-                    grades.Add((s.From, s.Info.Grade));
+                    if (_lookPost == null) grades.Add((s.From, s.Info.Grade));
                     hits.AddRange(TrailerLook.HitsOf(s.Timeline, feel, s.From, s.Info.End));
                 }
                 _look = new TrailerLook(map, hits, _supersample);
@@ -275,7 +283,7 @@ namespace Demo3D.Runtime.Playback
             _postFeels = new PostFeel[_arenas.Count];
             for (int a = 0; a < _postFeels.Length; a++)
             {
-                var amounts = _arenas[a].Lighting.PostFeel;
+                var amounts = _lookPost != null ? PostFeel.Amounts.From(_lookPost.Feel) : _arenas[a].Lighting.PostFeel;
                 var flashes = new List<(double, float)>();
                 var breakFlashes = new List<(double, float)>();
                 foreach (var s in _shots)
@@ -286,6 +294,7 @@ namespace Demo3D.Runtime.Playback
                         if (s.Fight != null) breakFlashes.AddRange(s.Fight.Flashes());
                     }
                 _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, breakFlashes, cutFlashes, grades);
+                if (_lookPost != null) _postFeels[a].Binding.Tints = PS.Look.PostStack.Tints(_lookPost, PS.Look.ResolvedLook.Active.Palette);
             }
             _postFeel = _postFeels[0];
             Debug.Log($"DemoMain: flash cuts at trailer {string.Join(", ", cutFlashes.ConvertAll(c => (c - _timeBase).ToString("F3", CultureInfo.InvariantCulture)))} s; {_soundCues.Length} sound cues; " +
@@ -323,7 +332,7 @@ namespace Demo3D.Runtime.Playback
             _fxDriver = s.Effects;
             _fxDriver?.Seek(); // clears particles and effect lights, and re-spawns the shot's effects still alive (pre-roll ones in flight)
             _fxLast = double.NaN;
-            _lookCrowd?.Retarget(s.Timeline, s.Breaks); // its shards so far go
+            _shatter?.Retarget(s.Timeline, s.Breaks); // its shards so far go
             _breaks?.Rewind(); // the shot before's broken structures stand again: each shot's simulation starts whole
             _breaks = s.Structures;
             _fight?.Show(false);

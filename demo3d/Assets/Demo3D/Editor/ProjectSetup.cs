@@ -218,10 +218,10 @@ namespace Demo3D.EditorTools
         /// </summary>
         static void EnsureLensHit(UniversalRendererData renderer)
         {
-            var feature = renderer.rendererFeatures.OfType<Demo3D.Runtime.Playback.LensHitFeature>().FirstOrDefault();
+            var feature = renderer.rendererFeatures.OfType<PS.Look.LensHitFeature>().FirstOrDefault();
             if (feature == null)
             {
-                feature = ScriptableObject.CreateInstance<Demo3D.Runtime.Playback.LensHitFeature>();
+                feature = ScriptableObject.CreateInstance<PS.Look.LensHitFeature>();
                 feature.name = "LensHit";
                 AssetDatabase.AddObjectToAsset(feature, renderer);
                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(feature, out string _, out long localId);
@@ -237,7 +237,7 @@ namespace Demo3D.EditorTools
             feature.SetActive(true);
             var f = new SerializedObject(feature);
             (f.FindProperty("shader") ?? throw new InvalidOperationException("ProjectSetup: LensHitFeature has no shader field")).objectReferenceValue =
-                Shader.Find("Hidden/Demo3D/LensHit") ?? throw new InvalidOperationException("ProjectSetup: no shader Hidden/Demo3D/LensHit");
+                Shader.Find("Hidden/Look/LensHit") ?? throw new InvalidOperationException("ProjectSetup: no shader Hidden/Look/LensHit");
             f.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(feature);
         }
