@@ -71,10 +71,13 @@ namespace PS.Game.Sim.Tests
             var hits = events.Where(e => e.Kind == SimEventKind.Hit && !e.AsHit.OnHero).Select(e => e.AsHit).ToList();
             for (int w = 0; w < Content.Weapons.Length; w++)
                 Assert.AreEqual(hits.Where(h => h.Weapon == w).Sum(h => h.Damage), recap.Damage[w], 1e-9, Content.Weapons[w].Id);
-            var final = (recap.Kills, recap.Damage.ToArray(), recap.Held(Content.WeaponIndex("sword")));
+            int sword = Content.WeaponIndex("sword");
+            var (finalKills, finalDamage, finalHeld) = (recap.Kills, recap.Damage.ToArray(), recap.Held(sword));
 
             sim.StepTo(40);
-            Assert.AreEqual(final, (recap.Kills, recap.Damage.ToArray(), recap.Held(Content.WeaponIndex("sword"))), "nothing tallies after the end");
+            Assert.AreEqual(finalKills, recap.Kills, "nothing tallies after the end");
+            CollectionAssert.AreEqual(finalDamage, recap.Damage.ToArray());
+            Assert.AreEqual(finalHeld, recap.Held(sword));
         }
     }
 }
