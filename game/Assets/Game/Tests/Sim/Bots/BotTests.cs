@@ -133,7 +133,7 @@ namespace PS.Game.Sim.Tests
                 SimEvent.EnemyAttack(0, minotaur, EnemyAttackKind.Slam, 0, 2, -1, 0, markX, markY),
             });
             bot.Act(sim);
-            Assert.That(Presses(sim).Last().Key, Is.AnyOf(Key.Up, Key.Down), "round the blow to the gem behind it, not into it");
+            CollectionAssert.Contains(new[] { Key.Up, Key.Down }, Presses(sim).Last().Key, "round the blow to the gem behind it, not into it");
         }
 
         [Test]
