@@ -113,6 +113,11 @@ namespace Game.Client.Hero
     ///   backpedalling. Legs turned off the travel blend from the forward run to the backpedal (the run clip
     ///   played backward) through the attack's own footwork, square to the travel: the Synty packs have no
     ///   strafe or backpedal clips.
+    /// - **Dashes** (`--dash`, <see cref="HeroDashEvent"/>; game-modes.md, The dash): the glides carry the hero; from the
+    ///   dash's start (its key, in heard time) to its end the knight faces the dash at once, untwisted, its legs held in
+    ///   a stride (<see cref="DashStride"/>) rather than cycling at the dash's speed, lifted in a low arc: the lunge on the
+    ///   beat skims (<see cref="LungeLiftM"/>) with its blade alight, the hop off it jumps (<see cref="HopLiftM"/>). Over
+    ///   <see cref="DashOut"/> after it lands the walk's pose takes back over.
     /// </summary>
     public sealed class HeroMotion
     {
@@ -145,6 +150,12 @@ namespace Game.Client.Hero
         public const double TwistLead = 0.6;
         /// <summary>The twist unwinds over this after the swing's follow-through (s).</summary>
         public const double TwistOut = 0.25;
+        /// <summary>A dash's arc at its peak (m): the lunge on the beat skims, the hop off it jumps.</summary>
+        public const float LungeLiftM = 0.1f, HopLiftM = 0.3f;
+        /// <summary>The run clip's point the legs hold through a dash: a share of its cycle, a long stride.</summary>
+        public const float DashStride = 0.2f;
+        /// <summary>The walk's pose takes back over this long after a dash lands (s).</summary>
+        public const double DashOut = 0.12;
 
         struct Step
         {
@@ -168,6 +179,13 @@ namespace Game.Client.Hero
             public double Carry;
         }
 
+        struct DashMove
+        {
+            public double Start, End;
+            public bool OnBeat;
+            public float Yaw;
+        }
+
         struct Glide
         {
             public double Start, FromX, FromY, VX, VY;
@@ -183,7 +201,8 @@ namespace Game.Client.Hero
         int _glideCount;
         readonly Step[] _steps = new Step[Keep];
         readonly Swing[] _swings = new Swing[Keep];
-        int _stepCount, _swingCount;
+        readonly DashMove[] _dashes = new DashMove[Keep];
+        int _stepCount, _swingCount, _dashCount;
         // The latest step whose start and landing, and the latest impact whose flare, the trace has (Moments).
         int _startMarked = -1, _landMarked = -1;
         double _flareMarked = double.NegativeInfinity;
@@ -195,6 +214,16 @@ namespace Game.Client.Hero
             if (e.Kind == SimEventKind.HeroStep) OnStep(e.AsHeroStep);
             else if (e.Kind == SimEventKind.HeroGlide) OnGlide(e.AsHeroGlide);
             else if (e.Kind == SimEventKind.Attack && e.AsAttack.IsSword) OnAttack(e.AsAttack);
+            else if (e.Kind == SimEventKind.HeroDash) OnDash(e.AsHeroDash);
+        }
+
+        public void OnDash(in HeroDashEvent e)
+        {
+            _dashes[_dashCount % Keep] = new DashMove
+            {
+                Start = e.Start, End = e.End, OnBeat = e.OnBeat, Yaw = (float)Math.Atan2(e.DirX, e.DirY),
+            };
+            _dashCount++;
         }
 
         public void OnStep(in HeroStepEvent e)
@@ -285,7 +314,29 @@ namespace Game.Client.Hero
             float standing = Swings(t, ref p);
             if (walking) Torso(t, ref p, standing);
             else p.Yaw = standing;
+            Dash(t, ref p);
             return p;
+        }
+
+        /// <summary>The dash's pose over the walk's (<see cref="HeroMotion"/>, Dashes), and back over <see cref="DashOut"/>.</summary>
+        void Dash(double t, ref HeroPose p)
+        {
+            int k = Latest(_dashes, _dashCount, t, (in DashMove d) => d.Start);
+            if (k < 0) return;
+            var d = _dashes[k % Keep];
+            if (t >= d.End + DashOut) return;
+            double w = t <= d.End ? 1 : 1 - (t - d.End) / DashOut;
+            p.Yaw = (float)Wrap(LerpAngle(p.Yaw, d.Yaw, w));
+            p.Twist = (float)(p.Twist * (1 - w));
+            p.Run = (float)Math.Max(p.Run, w);
+            p.Back = (float)(p.Back * (1 - w));
+            p.Hips = (float)Math.Max(p.Hips, w);
+            if (t > d.End) return;
+            double u = Clamp01((t - d.Start) / Math.Max(1e-6, d.End - d.Start));
+            p.Lift = (float)Math.Max(p.Lift, (d.OnBeat ? LungeLiftM : HopLiftM) * 4 * u * (1 - u));
+            p.RunTime = DashStride * _clips[HeroClip.Run].length;
+            p.TurnAtOnce = true;
+            if (d.OnBeat) p.Flare = Math.Max(p.Flare, OnBeatFlare);
         }
 
         /// <summary>

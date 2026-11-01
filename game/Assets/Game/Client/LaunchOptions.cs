@@ -192,6 +192,8 @@ namespace Game.Client
                 throw new ArgumentException($"--bot: the bots play only {string.Join(", ", Array.ConvertAll(Array.FindAll(GameModes.All, m => m.Bots), m => m.Name))}");
             if (o.Run.Finishers && !GameModes.Of(o.Run.Mode).Finishers)
                 throw new ArgumentException($"--finishers: only {string.Join(", ", Array.ConvertAll(Array.FindAll(GameModes.All, m => m.Finishers), m => m.Name))} has them (--mode zen)");
+            if (o.Run.Dash && GameModes.Of(o.Run.Mode).Movement != HeroMovement.Free)
+                throw new ArgumentException($"--dash: only a free hero dashes ({string.Join(", ", Array.ConvertAll(Array.FindAll(GameModes.All, m => m.Movement == HeroMovement.Free), m => m.Name))}: --mode zen)");
             if (o.Watch && o.Run.Unrecordable != null)
                 throw new ArgumentException($"--watch: a run on {o.Run.Unrecordable} isn't recorded, so there's nothing to watch");
             o.Unrecognized = a.Unrecognized(); // last: every flag has been read
@@ -201,7 +203,7 @@ namespace Game.Client
         /// <summary>
         /// The run's inputs from the flags: the level (`--events`' open ground, `--cast`, the run's with `--run`,
         /// `--level` or `--start-minute`, else the slice's), the seed, the start (with a window on a key, without one
-        /// after clear beat, and at once without music), Easy, the mode (`--mode`), the finishers and a player's loadout.
+        /// after clear beat, and at once without music), Easy, the mode (`--mode`), the finishers, the dash and a player's loadout.
         /// </summary>
         static RunInputs RunOf(Reader a, LaunchOptions o)
         {
@@ -223,6 +225,7 @@ namespace Game.Client
                 Easy = a.Has("--easy"),
                 Mode = a.Get("--mode") is string mode ? GameModes.Parse(mode) : GameMode.Grid,
                 Finishers = a.Has("--finishers"),
+                Dash = a.Has("--dash"),
                 Cast = level == SessionLevel.Cast ? cast.Split(',') : null,
                 Loadout = arsenal != null ? Loadout(arsenal) : null,
                 NoCards = a.Has("--no-cards"),

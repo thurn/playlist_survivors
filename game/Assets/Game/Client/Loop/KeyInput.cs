@@ -10,7 +10,7 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, with each event's own timestamp
-    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps (with `--finishers`, fires the finisher in a ring's window), Z attacks in a mode whose sword waits
+    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps (with `--finishers`, fires the finisher in a ring's window; with `--dash`, dashes otherwise), Z attacks in a mode whose sword waits
     /// for it (<see cref="SwordTrigger.Press"/>), and Enter (with the arrows and Space) answers a level-up's cards;
     /// a click on a card taps its keys
     /// (<see cref="Tap"/>). An event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps

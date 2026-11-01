@@ -74,6 +74,8 @@ namespace Game.Client.Loop
     ///   power following the loudness and the horde reeling to the music; a replay plays its session's;
     /// - `--finishers`: in zen, a ring closing on the hero toward each phrase downbeat, and Space in its window a
     ///   screen-clearing slam (<see cref="FinisherRings"/>; docs/design/game-modes.md, Finishers); a replay plays its session's;
+    /// - `--dash`: a free hero (zen's) dashes on Space, on the beat a long lunge that strikes what it passes and makes the
+    ///   sword's next beat strike a spin, off it a short hop (docs/design/game-modes.md, The dash); a replay plays its session's;
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
@@ -374,7 +376,7 @@ namespace Game.Client.Loop
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
-                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, mode {Driver.Sim.Rules.Name}, finishers {config.Finishers}, " +
+                      $"start {config.Start}, easy {config.Easy}, start minute {config.StartMinute}, mode {Driver.Sim.Rules.Name}, finishers {config.Finishers}, dash {config.Dash}, " +
                       $"bot {options.Scripted.Bot?.ToString().ToLowerInvariant() ?? "none"}" +
                       (level != null && level.Replaced.Count > 0 ? $", --level files {string.Join(", ", level.Replaced)}" : ""));
         }

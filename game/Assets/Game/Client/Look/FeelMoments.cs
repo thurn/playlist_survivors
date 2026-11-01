@@ -16,7 +16,7 @@ namespace Game.Client.Look
     /// </summary>
     public sealed class FeelMoments
     {
-        public enum Kind { Accent, Blow, Break, Drop, Finisher }
+        public enum Kind { Accent, Blow, Break, Drop, Finisher, Dash }
 
         /// <summary>A punch's zoom-in on an accent, a weight-1 blow's on top of it, and a break's.</summary>
         public const float AccentPunch = 0.02f, BlowPunch = 0.03f, BreakPunch = 0.035f, DropPunch = 0.03f;
@@ -24,6 +24,8 @@ namespace Game.Client.Look
         public const float BlowFlash = 0.6f, BlowShake = 0.12f, ShakeCap = 0.25f, BreakShakeCap = 0.4f;
         /// <summary>A finisher's slam (`--finishers`): the strongest moment there is, a full flash, twice a break's punch and the breaks' cap of shake.</summary>
         public const float FinisherPunch = 0.07f, FinisherShake = 0.4f;
+        /// <summary>A lunge on the beat landing (`--dash`): an accent's punch with a blow's, a little flash and shake.</summary>
+        public const float DashPunch = 0.04f, DashFlash = 0.3f, DashShake = 0.08f;
         /// <summary>A blow's weight is 0 at or below <see cref="CrispKills"/> kills and 1 at <see cref="HeavyKills"/>, log-scaled between (BlowFeel).</summary>
         public const int CrispKills = 2, HeavyKills = 24;
         /// <summary>A heavy strike's throw (m; the sim's launch, a break's force): a break at it flashes, punches and shakes in full, a cleave band's (1.85 m) at 0.4.</summary>
@@ -59,7 +61,8 @@ namespace Game.Client.Look
         /// <summary>
         /// A sim event: each death adds a kill to the hero's blow at its impact time (deaths land on
         /// their blow's impact), whose weight sets its flash, punch and shake; a structure break flashes,
-        /// punches and shakes by its force against a heavy strike's throw; a finisher's slam does all three in full at its impact.
+        /// punches and shakes by its force against a heavy strike's throw; a finisher's slam does all three in full at its impact;
+        /// a lunge on the beat (`--dash`) lands with a punch.
         /// </summary>
         public void OnEvent(in SimEvent e)
         {
@@ -85,6 +88,9 @@ namespace Game.Client.Look
                 }
                 case SimEventKind.Finisher when e.AsFinisher.Phase == FinisherPhase.Hit:
                     Add(new Moment { T = e.AsFinisher.Impact, Kind = Kind.Finisher, Flash = 1f, Punch = FinisherPunch, Shake = FinisherShake });
+                    break;
+                case SimEventKind.HeroDash when e.AsHeroDash.OnBeat:
+                    Add(new Moment { T = e.AsHeroDash.End, Kind = Kind.Dash, Flash = DashFlash, Punch = DashPunch, Shake = DashShake });
                     break;
             }
         }
