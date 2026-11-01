@@ -55,8 +55,9 @@ namespace Game.Client.Hero
     ///   <see cref="HopIn"/> and down over <see cref="HopOut"/>, with no hop; the hero faces its travel, and
     ///   stopped, the way it last went.
     /// - **Attacks**: each clip is retimed so its impact frame lands on the attack's impact
-    ///   (<see cref="HeroClips.Fit"/>), entered no earlier than the wind-up, so the swing before it
-    ///   keeps its own impact. Slashes alternate left and right; a follow-up continues the combo from
+    ///   (<see cref="HeroClips.Fit"/>; a long wind-up coils rather than starting late), entered no earlier than the
+    ///   wind-up, so the swing before it keeps its own impact, and showing on its entry frame. A free press's wind-up
+    ///   starts at the press, in heard time, so it arrives on the key-down frame, as a pressed step does. Slashes alternate left and right; a follow-up continues the combo from
     ///   the swing before (left, right, then the third); heavy strikes spin and section changes slam,
     ///   holding 50 ms at 0.6x after the impact as demo3d's heavy blows do. The hero turns to the
     ///   swing's direction from its wind-up to its follow-through.
@@ -69,6 +70,8 @@ namespace Game.Client.Hero
         public const double HopIn = 0.03, HopOut = 0.1;
         /// <summary>An attack's blend in (at most half its time to impact, so the impact pose is whole) and out after its follow-through.</summary>
         public const double AttackIn = 0.08, AttackOut = 0.2;
+        /// <summary>The attack's blend on its entry frame: a 60 Hz frame's step in, so the entry frame already shows it.</summary>
+        const double EntryStep = 1.0 / 60;
         public const double FlareS = 0.22;
         public const float HeavyFlare = 1.5f;
         /// <summary>demo3d's heavy blow: from the impact the clip runs at 0.6x for 50 ms, then catches up over 0.15 s.</summary>
@@ -93,8 +96,8 @@ namespace Game.Client.Hero
         struct Swing
         {
             public HeroClip Clip;
-            public double Start, Entry, Impact, End;
-            public float Speed;
+            public HeroClips.Retime Clock;
+            public double Entry, Impact, End;
             public bool Heavy;
             public float Yaw;
             public bool Aimed;
@@ -165,12 +168,12 @@ namespace Game.Client.Hero
         {
             var clip = ClipFor(e.SwordKind, _swingCount > 0 ? _swings[(_swingCount - 1) % Keep].Clip : (HeroClip?)null);
             var ann = _clips[clip];
-            HeroClips.Fit(ann.impact, e.WindupStart, e.Impact, out double start, out float speed);
+            var clock = HeroClips.Fit(ann.impact, e.WindupStart, e.Impact);
             bool aimed = e.DirX != 0 || e.DirY != 0;
             _swings[_swingCount % Keep] = new Swing
             {
-                Clip = clip, Start = start, Entry = Math.Max(start, e.WindupStart), Impact = e.Impact,
-                End = start + ann.end / speed, Speed = speed, Heavy = e.Heavy,
+                Clip = clip, Clock = clock, Entry = Math.Max(clock.Start, e.WindupStart), Impact = e.Impact,
+                End = clock.TimeAt(ann.end), Heavy = e.Heavy,
                 Yaw = aimed ? (float)Math.Atan2(e.DirX, e.DirY) : 0f, Aimed = aimed,
             };
             _swingCount++;
@@ -304,7 +307,8 @@ namespace Game.Client.Hero
             int k = Latest(_swings, _swingCount, t, (in Swing s) => s.Entry);
             if (k < 0) return;
             var a = _swings[k % Keep];
-            double ramp = Clamp01((t - a.Entry) / Math.Max(1e-3, Math.Min(AttackIn, 0.5 * (a.Impact - a.Entry))));
+            // The blend's first step shows on the entry frame itself: a press moves the hero on its key-down frame.
+            double ramp = Clamp01((t - a.Entry + EntryStep) / (EntryStep + Math.Max(1e-3, Math.Min(AttackIn, 0.5 * (a.Impact - a.Entry)))));
             double carried = 0;
             if (k > 0 && k - 1 >= _swingCount - Keep)
             {
@@ -323,8 +327,8 @@ namespace Game.Client.Hero
 
         HeroSlot SlotAt(in Swing s, double t)
         {
-            double local = (s.Heavy ? HoldThenCatchUp(t, s.Impact, HeavySlow) : t) - s.Start;
-            return new HeroSlot { Clip = s.Clip, Time = (float)Math.Min(_clips[s.Clip].length, Math.Max(0, local * s.Speed)) };
+            double local = s.Clock.ClipTime(s.Heavy ? HoldThenCatchUp(t, s.Impact, HeavySlow) : t);
+            return new HeroSlot { Clip = s.Clip, Time = (float)Math.Min(_clips[s.Clip].length, Math.Max(0, local)) };
         }
 
         /// <summary>The time into a swing's clip at song time t (for its tests and evidence): its retimed clock.</summary>

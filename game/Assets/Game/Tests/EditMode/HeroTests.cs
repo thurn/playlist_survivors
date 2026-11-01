@@ -85,6 +85,64 @@ namespace Game.Tests
             Assert.That(pose.A.Time, Is.EqualTo(expected).Within(1e-4f), "a short wind-up enters the clip part-way, at 1.33x");
         }
 
+        /// <summary>
+        /// A wind-up longer than the clip's at 0.75x (a free press landing on a far eighth) starts the clip at the wind-up
+        /// anyway and coils, slowly, into the strike, which runs at 0.75x onto the impact: never a late start with
+        /// nothing on screen.
+        /// </summary>
+        [Test]
+        public void ALongWindupCoilsFromItsStartIntoTheStrike()
+        {
+            foreach (var clip in new[] { HeroClip.SlashL, HeroClip.SlashR })
+            {
+                var motion = new HeroMotion(Clips);
+                if (clip == HeroClip.SlashR) motion.OnEvent(Attack(HeroAttackKind.SlashLeft, 0, 0.32));
+                float impact = Clips[clip].impact;
+                double windup = 2, at = windup + 2.5 * impact / HeroClips.MinSpeed;
+                motion.OnEvent(Attack(clip == HeroClip.SlashL ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight, windup, at));
+                int swing = motion.SwingCount - 1;
+                var first = motion.Evaluate(windup, 0, 0, Direction.Up);
+                Assert.That(first.A.Clip, Is.EqualTo(clip));
+                Assert.That(first.A.Time, Is.EqualTo(0f).Within(1e-5f), $"{clip}: from its first frame at the wind-up");
+                Assert.That(first.Attack, Is.GreaterThan(0f), $"{clip}: showing on the wind-up's frame");
+                float last = 0;
+                for (double t = windup + 1 / Fps; t < at - 1e-9; t += 1 / Fps)
+                {
+                    motion.ClipTime(swing, t, out _, out float time);
+                    Assert.That(time, Is.GreaterThan(last), $"{clip} at {t}: moving all the way");
+                    Assert.That(time - last, Is.LessThanOrEqualTo(HeroClips.MinSpeed / Fps + 1e-4), $"{clip} at {t}: no faster than 0.75x");
+                    last = time;
+                }
+                motion.ClipTime(swing, at, out _, out float landed);
+                Assert.That(landed, Is.EqualTo(impact).Within(1e-4f), $"{clip}: on the impact");
+                motion.ClipTime(swing, at - (1 - HeroClips.CoilShare) * impact / HeroClips.MinSpeed, out _, out float coiled);
+                Assert.That(coiled, Is.EqualTo(HeroClips.CoilShare * impact).Within(1e-4f), $"{clip}: the strike at 0.75x from the coil");
+            }
+        }
+
+        /// <summary>
+        /// A free press (game-modes.md, Attacking on the beat): its attack event arrives as the sim takes it, its wind-up
+        /// from when it was heard and its impact on an eighth. On the key-down frame, at the heard time, the hero is
+        /// already in the attack, in the clip's wind-up.
+        /// </summary>
+        [Test]
+        public void AFreePressShowsItsWindupOnTheKeyDownFrame()
+        {
+            foreach (double gap in new[] { 0.12, 0.25, 0.37, 0.62 })
+            {
+                var motion = new HeroMotion(Clips);
+                double heard = 10;
+                motion.OnEvent(SimEvent.SwordAttack(heard + 0.03, 0, HeroAttackKind.SlashLeft, heard, heard + gap, 1, 0, false, 7.04));
+                var pose = motion.Evaluate(heard, 0, 0, Direction.Up);
+                Assert.That(pose.Attack, Is.GreaterThan(0f), $"{gap} s to the impact: in the attack on the key-down frame");
+                Assert.That(pose.A.Time, Is.LessThan(Clips[HeroClip.SlashL].impact), $"{gap} s: in the wind-up");
+                Assert.That(pose.Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5f), $"{gap} s: turned to the swing");
+                Assert.That(motion.Evaluate(heard + 1 / Fps, 0, 0, Direction.Up).A.Time, Is.GreaterThan(pose.A.Time), $"{gap} s: and moving");
+                motion.ClipTime(0, heard + gap, out _, out float landed);
+                Assert.That(landed, Is.EqualTo(Clips[HeroClip.SlashL].impact).Within(1e-4f), $"{gap} s: on the impact");
+            }
+        }
+
         /// <summary>A subdivision strike's follow-up crossfades in from the swing before without taking its impact.</summary>
         [Test]
         public void AFollowUpContinuesFromTheSwingBeforeWhichKeepsItsImpact()

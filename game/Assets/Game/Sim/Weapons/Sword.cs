@@ -80,11 +80,17 @@ namespace PS.Game.Sim
     /// - Nothing new winds up while the world is frozen or the hero has fallen; an attack already
     ///   emitted lands, as every settled event is final, unless the hero has fallen.
     /// - <b>On the attack key</b> (<see cref="SwordTrigger.Press"/>, a mode's): no beat plans a strike. A press heard
-    ///   at h, taken at F, winds up at once and lands at <c>max(h + PressWindupS, F + a tick)</c>, at least
-    ///   <see cref="SwingS"/> after the previous press's main impact; a press that would wait more than <see cref="SwingBufferS"/>
-    ///   for that is dropped, so mashing swings no faster than the swing. Its reach and damage are scaled by
-    ///   <see cref="BeatGrade"/>; a full-grade press on a beat that is accented (as a beat strike's heaviness asks)
-    ///   is heavy, once per beat. Amount adds follow-ups spread evenly over the swing, which never slow the next press. It never slams.
+    ///   at h, taken at F, winds up from h (its attack event's wind-up start, so the hero moves on the key-down
+    ///   frame; from the previous impact if that is later) and, <b>reacting now and landing on the grid</b>, its main
+    ///   impact lands on the first eighth of the beat (a beat or half beat, <see cref="BeatClock.GridAtOrAfter"/>)
+    ///   at least <see cref="GridWindupS"/> after h, and after F. With no reliable beat at h it lands at
+    ///   <c>max(h + PressWindupS, F + a tick)</c>. Either way it is at least <see cref="SwingS"/> after the previous
+    ///   press's main impact (on the next eighth that is, so at a fast tempo it skips one); a press that would wait
+    ///   more than <see cref="SwingBufferS"/> past its own landing for that is dropped, while the swing before it
+    ///   shows: mashing swings no faster than the swing. Its reach and damage are scaled by <see cref="BeatGrade"/>,
+    ///   measured on the press; a full-grade press on a beat that is accented (as a beat strike's heaviness asks) is
+    ///   heavy, once per beat, its cleave wave's bands on the grid after its impact. Amount adds follow-ups spread
+    ///   evenly to the next eighth (over the swing with no beat), which never slow the next press. It never slams.
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -108,8 +114,16 @@ namespace PS.Game.Sim
         public const double BossWeight = 1000, BruteWeight = 2;
         /// <summary>Bloody Tear's heal on a critical blow, and the run clock between two (native's).</summary>
         public const double TearHeal = 8, TearHealEveryS = 1;
-        /// <summary>A press's wind-up (s): the swing's impact this long after the press was heard, joined late.</summary>
+        /// <summary>A press's wind-up with no reliable beat (s): the swing's impact this long after the press was heard.</summary>
         public const double PressWindupS = 0.08;
+        /// <summary>
+        /// The least wind-up before a press's impact on the grid (s). Short enough that every full-grade press (within
+        /// <see cref="BeatGrade.FullWindowS"/> of its eighth) lands on the very next eighth up to about 158 BPM, so a
+        /// press in time always hits an eighth later; long enough that the slash clips show a wind-up at their fastest
+        /// retime (at 1.33x, 0.12 s is the last 0.16 s of the clip's wind-up; the eighth of a press in time at 120 BPM
+        /// gives 0.18-0.32 s, about all of it).
+        /// </summary>
+        public const double GridWindupS = 0.12;
         /// <summary>The swing's length (s): presses' impacts are at least this far apart.</summary>
         public const double SwingS = 0.2;
         /// <summary>The longest a press waits for the swing before it to end (s); a press mid-swing is dropped.</summary>
@@ -120,6 +134,8 @@ namespace PS.Game.Sim
         struct Strike
         {
             public double Impact, Windup, Period;
+            /// <summary>A press's wind-up start, its attack event's: when it was heard, or the impact before it if later.</summary>
+            public double From;
             public int Beat;
             public bool Main, HalfTime, Wound, Cancelled, Heavy, Pressed;
             /// <summary>The reach's and damage's scale: a press's grade, else 1.</summary>
@@ -397,21 +413,23 @@ namespace PS.Game.Sim
             s.Reach = Reach(heavy) * s.Scale;
             state.Hero.PositionAt(t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
-            sim.Emit(SimEvent.SwordAttack(t, Index, kind, t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
+            sim.Emit(SimEvent.SwordAttack(t, Index, kind, s.Pressed ? Math.Min(s.From, t) : t, s.Impact, s.DirX, s.DirY, heavy, s.Reach));
         }
 
         /// <summary>
         /// The attack key, heard at <paramref name="heard"/>, in a mode whose sword waits for it: queues the press's
-        /// strikes, which wind up at once (see the class's On the attack key).
+        /// strikes, which wind up from the press and land on the grid (see the class's On the attack key).
         /// </summary>
         internal void Press(Simulation sim, double heard)
         {
             if (!onPress || Holding) return;
             double now = sim.Now;
-            double impact = Math.Max(heard + PressWindupS, now + Simulation.TickSeconds);
+            bool grid = clock.StateAt(heard) == Reliability.Reliable;
+            double natural = Land(Math.Max(heard + (grid ? GridWindupS : PressWindupS), now + Simulation.TickSeconds), ref grid, out _);
             double after = lastPress + SwingS;
-            if (after - impact > SwingBufferS + 1e-9) return;
-            impact = Math.Max(impact, after);
+            if (after - natural > SwingBufferS + 1e-9) return;
+            // After every strike queued too: the previous press's follow-ups end before its next eighth.
+            double impact = Land(Math.Max(Math.Max(natural, after), lastImpact + 1e-6), ref grid, out double step);
             lastPress = impact;
             double grade = BeatGrade.Of(log, clock, heard, out double point, out bool onBeat);
             bool heavy = forcedAccent || grade >= 1 && onBeat && point != lastHeavyPress && accents.Accented(point, now);
@@ -420,12 +438,15 @@ namespace PS.Game.Sim
             int n = StrikesPerBeat;
             for (int k = 0; k < n && count < QueueCapacity; k++)
             {
-                double at = impact + SwingS * k / n;
+                double at = impact + step * k / n;
+                double from = k == 0 ? Math.Max(heard, lastImpact) : lastImpact;
                 At(count++) = new Strike
                 {
                     Impact = at,
-                    Windup = k == 0 ? now : lastImpact,
-                    Period = SwingS,
+                    Windup = Math.Max(from, now),
+                    From = from,
+                    // The cleave's bands follow the beat on the grid.
+                    Period = grid ? 2 * step : SwingS,
                     Beat = -1,
                     Main = k == 0,
                     Pressed = true,
@@ -434,6 +455,26 @@ namespace PS.Game.Sim
                 };
                 lastImpact = at;
             }
+        }
+
+        /// <summary>
+        /// A press's impact at or after <paramref name="floor"/>: on the grid, the first eighth there and the
+        /// <paramref name="step"/> to the eighth after it; else (or with no eighth known there, clearing
+        /// <paramref name="grid"/>) the floor itself and the swing.
+        /// </summary>
+        double Land(double floor, ref bool grid, out double step)
+        {
+            step = SwingS;
+            if (!grid) return floor;
+            double t = clock.GridAtOrAfter(floor, 0.5, out double beat);
+            double next = double.IsNaN(t) ? double.NaN : clock.GridPoint(beat + 0.5);
+            if (double.IsNaN(next))
+            {
+                grid = false;
+                return floor;
+            }
+            step = next - t;
+            return t;
         }
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>); on the attack key, the next press.</summary>
