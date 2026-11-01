@@ -66,7 +66,7 @@ namespace PS.Game.Sim
             Accents = new Accents(Stream, Beats);
             events = new EventLog(config.EventCapacity);
             keys = new StructList<KeyRecord>(config.PressCapacity);
-            targets = new StructList<TargetRecord>(16);
+            targets = new StructList<TargetRecord>(config.PressCapacity);
             Rules = GameModes.Of(config.Mode);
             commands = new StructList<DebugRecord>(16);
             controls = new StructList<ControlRecord>(256);

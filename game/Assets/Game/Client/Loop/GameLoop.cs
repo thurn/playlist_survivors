@@ -66,6 +66,9 @@ namespace Game.Client.Loop
     ///   stamp + B;
     /// - `--seed N`: the sim's seed;
     /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
+    /// - `--mode NAME`: the way of playing (<see cref="GameModes"/>, docs/design/game-modes.md): `grid`, the default, or
+    ///   `free`, the hero walking freely (the arrows, or a click or held button: <see cref="PointerInput"/>) and the
+    ///   sword striking on Z, graded by the beat; a replay plays its session's;
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;
@@ -128,6 +131,8 @@ namespace Game.Client.Loop
         MusicPlayer _music;
         MusicTimes _musicTimes;
         KeyInput _keys;
+        PointerInput _pointer;
+        Func<Vector2, bool> _onHud;
         DebugCommands _commands;
         DebugMenu _menu;
         ScriptedKeys _walk;
@@ -254,7 +259,12 @@ namespace Game.Client.Loop
             if (replayed != null) Driver.Replay = _replay = new SessionReplay(replayed);
             if (events != null) Driver.Scripted = ScriptedEvents.Load(events);
             if (options.Outputs.Moments != null) Moments.Open(options.Outputs.Moments);
-            _keys = new KeyInput();
+            _keys = new KeyInput(Driver.Sim.Rules);
+            if (Driver.Sim.Rules.Pointer && _interactive && replayed == null)
+            {
+                _pointer = new PointerInput();
+                _onHud = p => _hud != null && _hud.OnPauseButton(p);
+            }
             _pause = new PauseMenu(transform);
             _pauseAt = options.Scripted.PauseAt;
             _commands = new DebugCommands(options.Scripted.Debug, content);
@@ -448,6 +458,8 @@ namespace Game.Client.Loop
                 _menu.Apply(Driver.Sim, _commands);
                 _walk.Apply(Driver.Sim);
                 RunInput();
+                // After the run's input, so a click that pauses the run sends the hero nowhere.
+                _pointer?.Apply(Driver.Sim, Driver.Clock, _camera, _onHud);
                 _bot?.Act(Driver.Sim);
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);

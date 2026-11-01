@@ -49,6 +49,11 @@ namespace Game.Client.Hero
     ///   to end before the next step), a hop: the run clip's half-cycle, one foot then the other,
     ///   with a parabolic lift.
     ///   A bump hops in place, lower; a stomp stands. The hero faces its travel.
+    /// - **Glides** (the free hero's, <see cref="HeroGlideEvent"/>): along each glide from its start at its velocity;
+    ///   a glide replaces those from its start on (a heard input's re-walk). Walking, the run clip cycles once per
+    ///   <see cref="CycleM"/> walked, as a grid stride's half-cycle covers a tile, its weight up over
+    ///   <see cref="HopIn"/> and down over <see cref="HopOut"/>, with no hop; the hero faces its travel, and
+    ///   stopped, the way it last went.
     /// - **Attacks**: each clip is retimed so its impact frame lands on the attack's impact
     ///   (<see cref="HeroClips.Fit"/>), entered no earlier than the wind-up, so the swing before it
     ///   keeps its own impact. Slashes alternate left and right; a follow-up continues the combo from
@@ -72,6 +77,10 @@ namespace Game.Client.Hero
         /// <summary>A song time this close short of an impact has reached it: a frame clock's n/60 can fall a rounding short.</summary>
         const double Reached = 1e-6;
         const int Keep = 8;
+        /// <summary>The glides kept: a target steered round a wall changes velocity each tick, and the pose lags the sim by the lead.</summary>
+        const int GlideKeep = 64;
+        /// <summary>The walk a run cycle covers (m): two of the grid's tiles, a stride a foot.</summary>
+        public const double CycleM = 3.0;
 
         struct Step
         {
@@ -91,7 +100,19 @@ namespace Game.Client.Hero
             public bool Aimed;
         }
 
+        struct Glide
+        {
+            public double Start, FromX, FromY, VX, VY;
+            /// <summary>The walk before its start, for the run cycle's phase.</summary>
+            public double Walked;
+            public float Yaw;
+            public bool Moving;
+            public Direction Facing;
+        }
+
         readonly HeroClips _clips;
+        readonly Glide[] _glides = new Glide[GlideKeep];
+        int _glideCount;
         readonly Step[] _steps = new Step[Keep];
         readonly Swing[] _swings = new Swing[Keep];
         int _stepCount, _swingCount;
@@ -104,6 +125,7 @@ namespace Game.Client.Hero
         public void OnEvent(in SimEvent e)
         {
             if (e.Kind == SimEventKind.HeroStep) OnStep(e.AsHeroStep);
+            else if (e.Kind == SimEventKind.HeroGlide) OnGlide(e.AsHeroGlide);
             else if (e.Kind == SimEventKind.Attack && e.AsAttack.IsSword) OnAttack(e.AsAttack);
         }
 
@@ -116,6 +138,28 @@ namespace Game.Client.Hero
             };
             _stepCount++;
         }
+
+        public void OnGlide(in HeroGlideEvent e)
+        {
+            while (_glideCount > 0 && _glideCount > OldestGlide && _glides[(_glideCount - 1) % GlideKeep].Start >= e.Start - 1e-9) _glideCount--;
+            bool moving = e.VX * e.VX + e.VY * e.VY > 1e-12;
+            var g = new Glide
+            {
+                Start = e.Start, FromX = e.FromX, FromY = e.FromY, VX = e.VX, VY = e.VY, Moving = moving, Facing = e.Facing,
+                Yaw = moving ? (float)Math.Atan2(e.VX, e.VY) : YawOf(e.Facing),
+            };
+            if (_glideCount > OldestGlide)
+            {
+                var prev = _glides[(_glideCount - 1) % GlideKeep];
+                if (!moving) g.Yaw = prev.Yaw;
+                g.Walked = prev.Walked + Math.Sqrt(prev.VX * prev.VX + prev.VY * prev.VY) * (e.Start - prev.Start);
+            }
+            _glides[_glideCount % GlideKeep] = g;
+            _glideCount++;
+        }
+
+        /// <summary>The oldest glide still in the ring: a re-walk never reaches back past it.</summary>
+        int OldestGlide => Math.Max(0, _glideCount - GlideKeep + 1);
 
         public void OnAttack(in AttackEvent e)
         {
@@ -160,7 +204,8 @@ namespace Game.Client.Hero
         {
             var p = new HeroPose { X = x, Y = y, Yaw = YawOf(facing), Facing = facing, AShare = 1f };
             p.IdleTime = (float)Repeat(t, _clips[HeroClip.Idle].length);
-            Legs(t, ref p);
+            if (_glideCount > 0) Walk(t, ref p);
+            else Legs(t, ref p);
             Swings(t, ref p);
             return p;
         }
@@ -221,6 +266,27 @@ namespace Game.Client.Hero
             double w = t <= s.End ? carried + (1 - carried) * Clamp01((t - s.Start) / HopIn) : 1 - Clamp01((t - s.End) / HopOut);
             p.Run = (float)w;
             p.RunTime = (float)((s.Foot * 0.5 + u * 0.5) * _clips[HeroClip.Run].length);
+        }
+
+        void Walk(double t, ref HeroPose p)
+        {
+            int k = -1;
+            for (int i = _glideCount - 1; i >= OldestGlide - 1 && i >= 0; i--)
+                if (_glides[i % GlideKeep].Start <= t) { k = i; break; }
+            if (k < 0) return;
+            var g = _glides[k % GlideKeep];
+            double since = t - g.Start;
+            p.X = g.FromX + g.VX * since;
+            p.Y = g.FromY + g.VY * since;
+            p.Facing = g.Facing;
+            p.Yaw = g.Yaw;
+            bool wasMoving = k > 0 && k - 1 >= OldestGlide - 1 && _glides[(k - 1) % GlideKeep].Moving;
+            if (g.Moving)
+                p.Run = (float)(wasMoving ? 1 : Clamp01(since / HopIn));
+            else
+                p.Run = (float)(wasMoving ? 1 - Clamp01(since / HopOut) : 0);
+            double walked = g.Walked + Math.Sqrt(g.VX * g.VX + g.VY * g.VY) * since;
+            p.RunTime = (float)(Repeat(walked / CycleM, 1) * _clips[HeroClip.Run].length);
         }
 
         void Swings(double t, ref HeroPose p)

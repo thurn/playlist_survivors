@@ -10,13 +10,13 @@ namespace Game.Client.Loop
     /// `--walk "right@9-11,up@11-12.5"` holds Right from 9 s to 11 s, then Up to 12.5 s. Each key goes
     /// down and up when the sim first reaches its time at a frame's start, heard then, as
     /// <see cref="DebugCommands"/> gives its commands, so a fixed-time rerun walks the same way.
-    /// The keys are up, down, left, right and space; a session records them as any key.
+    /// The keys are up, down, left, right, space and z (the attack key); a session records them as any key.
     /// </summary>
     public sealed class ScriptedKeys
     {
         static readonly (string name, Key key)[] Names =
         {
-            ("up", Key.Up), ("down", Key.Down), ("left", Key.Left), ("right", Key.Right), ("space", Key.Space),
+            ("up", Key.Up), ("down", Key.Down), ("left", Key.Left), ("right", Key.Right), ("space", Key.Space), ("z", Key.Attack),
         };
 
         readonly List<(double at, Key key, bool down)> _changes;

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using PS.Game.Sim;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -9,8 +10,9 @@ namespace Game.Client.Loop
 {
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, with each event's own timestamp
-    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps, and Enter (with the
-    /// arrows and Space) answers a level-up's cards; a click on a card taps its keys
+    /// (unity-game.md, Key Presses): the arrows and WASD steer, Space stomps, Z attacks in a mode whose sword waits
+    /// for it (<see cref="SwordTrigger.Press"/>), and Enter (with the arrows and Space) answers a level-up's cards;
+    /// a click on a card taps its keys
     /// (<see cref="Tap"/>). An event's time is on real time's timeline (Time.realtimeSinceStartup), which the clock maps
     /// to the song time heard (<see cref="IGameClock.KeySong"/>). Two physical keys on one
     /// direction press it once and release it when both are up.
@@ -36,7 +38,7 @@ namespace Game.Client.Loop
             public int Offer;
         }
 
-        static readonly (string path, SimKey key)[] Bindings =
+        static readonly (string path, SimKey key)[] Common =
         {
             ("upArrow", SimKey.Up), ("w", SimKey.Up),
             ("downArrow", SimKey.Down), ("s", SimKey.Down),
@@ -46,14 +48,25 @@ namespace Game.Client.Loop
             ("enter", SimKey.Enter), ("numpadEnter", SimKey.Enter),
         };
 
-        readonly bool[] _physical = new bool[Bindings.Length];
-        readonly int[] _held = new int[(int)SimKey.Enter + 1];
+        readonly (string path, SimKey key)[] _bindings;
+        readonly bool[] _physical;
+        readonly int[] _held = new int[(int)SimKey.Attack + 1];
         readonly Change[] _queue = new Change[Capacity];
-        readonly KeyControl[] _controls = new KeyControl[Bindings.Length];
+        readonly KeyControl[] _controls;
         Keyboard _keyboard;
         int _head, _count;
 
-        public KeyInput() => InputSystem.onEvent += OnEvent;
+        /// <summary>The keys of the grid mode, which every screen but a run's uses.</summary>
+        public KeyInput() : this(GameModes.Of(GameMode.Grid)) { }
+
+        /// <summary>The keys of a run on <paramref name="rules"/>: Z only where it attacks.</summary>
+        public KeyInput(ModeRules rules)
+        {
+            _bindings = rules.Sword == SwordTrigger.Press ? Common.Append(("z", SimKey.Attack)).ToArray() : Common;
+            _physical = new bool[_bindings.Length];
+            _controls = new KeyControl[_bindings.Length];
+            InputSystem.onEvent += OnEvent;
+        }
 
         public void Dispose() => InputSystem.onEvent -= OnEvent;
 
@@ -66,17 +79,17 @@ namespace Game.Client.Loop
             if (keyboard != _keyboard)
             {
                 _keyboard = keyboard;
-                for (int i = 0; i < Bindings.Length; i++) _controls[i] = (KeyControl)keyboard[Bindings[i].path];
+                for (int i = 0; i < _bindings.Length; i++) _controls[i] = (KeyControl)keyboard[_bindings[i].path];
             }
-            for (int i = 0; i < Bindings.Length; i++)
+            for (int i = 0; i < _bindings.Length; i++)
             {
                 if (!_controls[i].ReadValueFromEvent(ev, out float value)) continue;
                 bool down = value >= 0.5f;
                 if (down == _physical[i]) continue;
                 _physical[i] = down;
-                int k = (int)Bindings[i].key;
+                int k = (int)_bindings[i].key;
                 _held[k] += down ? 1 : -1;
-                if (down ? _held[k] == 1 : _held[k] == 0) Enqueue(Bindings[i].key, down, ev.time);
+                if (down ? _held[k] == 1 : _held[k] == 0) Enqueue(_bindings[i].key, down, ev.time);
             }
         }
 

@@ -79,6 +79,8 @@ namespace Game.Tests
             Assert.That(System.IO.Path.IsPathRooted(o.File), Is.True);
             Assert.That(o.Flags[0], Is.EqualTo("--headless"), "the flags without the executable");
             Assert.That(Parse("").Scripted.Bot, Is.Null);
+            Assert.That(Parse("").Run.Mode, Is.EqualTo(GameMode.Grid));
+            Assert.That(Parse("--mode free").Run.Mode, Is.EqualTo(GameMode.Free));
             Assert.That(Parse("").Scripted.PauseAt, Is.LessThan(0));
         }
 
@@ -88,6 +90,8 @@ namespace Game.Tests
             Assert.Throws<ArgumentException>(() => Parse("--start-minute -1"));
             Assert.Throws<ArgumentException>(() => Parse("--arsenal garlic"));
             Assert.Throws<ArgumentException>(() => Parse("--bot fast"));
+            Assert.That(Assert.Throws<ArgumentException>(() => Parse("--mode fast")).Message, Does.Contain("grid, free"), "the modes listed");
+            Assert.Throws<ArgumentException>(() => Parse("--mode free --bot positioning"), "the bots play the grid");
             // --watch replays the run it records: one that can't be recorded leaves nothing to watch.
             Assert.Throws<ArgumentException>(() => Parse("--headless --file a.ogg --watch --cast bat1"));
             Assert.Throws<ArgumentException>(() => Parse("--headless --file a.ogg --watch --level Content"));

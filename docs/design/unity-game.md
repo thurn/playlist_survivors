@@ -172,6 +172,9 @@ Two standing project rules also apply:
 
 ## Related Information
 
+- [game-modes.md](game-modes.md): `--mode`, other ways of playing this game
+  for prototyping (the free mode: free movement, attacks on Z graded by the
+  beat). This document describes the default, `grid`.
 - [native-app.md](native-app.md): the native game's architecture. It defines
   the belief stream, entries' known-at times, Delayed listening, the clocks
   and the session format that this plan reuses or replaces.

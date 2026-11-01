@@ -178,6 +178,8 @@ namespace Game.Client
             o.Title = o.File == null && o.App == null && o.Replay == null && (a.Has("--title") || o.Windowed && o.Events == null);
             o.Recording = !a.Has("--no-session") && (o.SessionsDir != null || o.Watch || o.Windowed);
             o.Run = RunOf(a, o);
+            if (o.Scripted.Bot != null && !GameModes.Of(o.Run.Mode).Bots)
+                throw new ArgumentException($"--bot: the bots play only {string.Join(", ", Array.ConvertAll(Array.FindAll(GameModes.All, m => m.Bots), m => m.Name))}");
             if (o.Watch && o.Run.Unrecordable != null)
                 throw new ArgumentException($"--watch: a run on {o.Run.Unrecordable} isn't recorded, so there's nothing to watch");
             o.Unrecognized = a.Unrecognized(); // last: every flag has been read
@@ -187,7 +189,7 @@ namespace Game.Client
         /// <summary>
         /// The run's inputs from the flags: the level (`--events`' open ground, `--cast`, the run's with `--run`,
         /// `--level` or `--start-minute`, else the slice's), the seed, the start (with a window on a key, without one
-        /// after clear beat, and at once without music), Easy, and a player's loadout.
+        /// after clear beat, and at once without music), Easy, the mode (`--mode`) and a player's loadout.
         /// </summary>
         static RunInputs RunOf(Reader a, LaunchOptions o)
         {
@@ -207,6 +209,7 @@ namespace Game.Client
                 Start = !o.Music ? RunStart.Immediately : o.Windowed ? RunStart.OnKey : RunStart.AfterClearBeat,
                 StartMinute = level == SessionLevel.Run ? startMinute : 0,
                 Easy = a.Has("--easy"),
+                Mode = a.Get("--mode") is string mode ? GameModes.Parse(mode) : GameMode.Grid,
                 Cast = level == SessionLevel.Cast ? cast.Split(',') : null,
                 Loadout = arsenal != null ? Loadout(arsenal) : null,
                 NoCards = a.Has("--no-cards"),

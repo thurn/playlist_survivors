@@ -211,6 +211,18 @@ namespace Game.Client.Hud
             return clicked;
         }
 
+        /// <summary>
+        /// Whether the screen point <paramref name="screen"/> (the Input System's, from the bottom left) is on the pause
+        /// button while it shows: a click there is the button's, never the arena's (<see cref="PointerInput"/>).
+        /// </summary>
+        public bool OnPauseButton(Vector2 screen)
+        {
+            var panel = _pauseButton.panel;
+            if (panel == null || _pauseButton.resolvedStyle.display == DisplayStyle.None) return false;
+            var point = RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y));
+            return _pauseButton.worldBound.Contains(point);
+        }
+
         /// <summary>Sets a label's text only when it changes: a new text has the panel lay it out again.</summary>
         internal static void Show(Label label, string text)
         {

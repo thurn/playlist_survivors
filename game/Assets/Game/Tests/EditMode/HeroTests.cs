@@ -123,6 +123,38 @@ namespace Game.Tests
         }
 
         [Test]
+        public void AGlideWalksAtItsVelocityAndAHeardInputsGlideReplacesThoseAfterIt()
+        {
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 2, 3, 0, 0, Direction.Down));
+            motion.OnEvent(SimEvent.HeroGlide(2.0, 2.0, 2, 3, 6, 0, Direction.Right));
+            var start = motion.Evaluate(2.0, 0, 0, Direction.Up);
+            var walking = motion.Evaluate(2.5, 0, 0, Direction.Up);
+            Assert.That(start.X, Is.EqualTo(2).Within(1e-9));
+            Assert.That(start.Run, Is.EqualTo(0f), "the run's weight comes up from standing");
+            Assert.That(walking.X, Is.EqualTo(5).Within(1e-9));
+            Assert.That(walking.Y, Is.EqualTo(3).Within(1e-9));
+            Assert.That(walking.Lift, Is.EqualTo(0f), "a walk, not hops");
+            Assert.That(walking.Run, Is.EqualTo(1f));
+            Assert.That(walking.Yaw, Is.EqualTo((float)(Math.PI / 2)).Within(1e-5f), "facing east");
+            Assert.That(motion.Evaluate(2.25, 0, 0, Direction.Up).RunTime, Is.EqualTo(Clips[HeroClip.Run].length * (1.5 / HeroMotion.CycleM)).Within(1e-4f),
+                "a cycle each CycleM walked");
+
+            // A turn north heard at 2.4, emitted at 2.45 after the sim had already emitted a stop at 2.42.
+            motion.OnEvent(SimEvent.HeroGlide(2.42, 2.42, 4.52, 3, 0, 0, Direction.Right));
+            motion.OnEvent(SimEvent.HeroGlide(2.45, 2.4, 4.4, 3, 0, 6, Direction.Up));
+            var turned = motion.Evaluate(2.5, 0, 0, Direction.Up);
+            Assert.That(turned.X, Is.EqualTo(4.4).Within(1e-9), "the stop it replaced is gone");
+            Assert.That(turned.Y, Is.EqualTo(3.6).Within(1e-9));
+            Assert.That(turned.Run, Is.EqualTo(1f), "still walking");
+
+            motion.OnEvent(SimEvent.HeroGlide(3.0, 3.0, 4.4, 6.6, 0, 0, Direction.Up));
+            var stopped = motion.Evaluate(3.0 + HeroMotion.HopOut, 0, 0, Direction.Down);
+            Assert.That(stopped.Run, Is.EqualTo(0f), "standing again");
+            Assert.That(stopped.Yaw, Is.EqualTo(0f).Within(1e-5f), "facing the way it last went");
+        }
+
+        [Test]
         public void AStrideHopsAlongItsMoveFacingItsTravelAndABumpHopsInPlace()
         {
             var motion = new HeroMotion(Clips);
