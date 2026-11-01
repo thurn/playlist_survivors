@@ -1,0 +1,13 @@
+{
+  "name": "phosphor",
+  "note": "The hologram preset's palette (docs/design/neon-look-style.md): a phosphor-green key, amber accent, hot-pink counter, after a vector monitor. enemies[0..1] key family, [2..3] accent, [4..5] counter; the boss in the counter's red half.",
+  "void":    { "floor": "#020604", "fog": "#04100a" },
+  "grid":    { "line": "#0d4a30", "pulse": "#2bff9a" },
+  "hero":    { "body": "#ecfff7", "blade": "#ffffff", "trail": "#b8fff0" },
+  "enemies": ["#38ff86", "#22f0d0", "#ffc21e", "#ff761c", "#ff2e9c", "#de3dff"],
+  "boss":    { "body": "#ff2e58", "telegraph": "#ff1040" },
+  "shatter": { "gem": "#eefff2", "core": "#ffffff" },
+  "spark":   "#ffffff",
+  "zones":   [ { "name": "phosphor", "tint": "#18ff78" }, { "name": "cyan", "tint": "#00e0ff" },
+               { "name": "amber", "tint": "#ffaa00" }, { "name": "magenta", "tint": "#ff2ec0" } ]
+}

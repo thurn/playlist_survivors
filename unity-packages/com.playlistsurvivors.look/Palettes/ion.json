@@ -1,0 +1,13 @@
+{
+  "name": "ion",
+  "note": "The edge preset's palette (docs/design/neon-look-style.md): a cobalt-cyan key, magenta-violet accent, amber counter. enemies[0..1] key family, [2..3] accent, [4..5] counter; the boss in the counter's warm half.",
+  "void":    { "floor": "#040509", "fog": "#070a14" },
+  "grid":    { "line": "#1b2f8f", "pulse": "#4f7cff" },
+  "hero":    { "body": "#eef4ff", "blade": "#ffffff", "trail": "#8ff3ff" },
+  "enemies": ["#1fe2ff", "#3a86ff", "#ff2fa6", "#d24dff", "#ff7a1a", "#ffb01f"],
+  "boss":    { "body": "#ff3b2e", "telegraph": "#ff1a3a" },
+  "shatter": { "gem": "#fff0cc", "core": "#ffffff" },
+  "spark":   "#ffffff",
+  "zones":   [ { "name": "cobalt", "tint": "#1d3cff" }, { "name": "teal", "tint": "#00b2c8" },
+               { "name": "violet", "tint": "#6a2cff" }, { "name": "rose", "tint": "#ff2e88" } ]
+}

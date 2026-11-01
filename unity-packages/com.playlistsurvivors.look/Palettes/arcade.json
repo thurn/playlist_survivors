@@ -1,0 +1,13 @@
+{
+  "name": "arcade",
+  "note": "The solid preset's palette (docs/design/neon-look-style.md): a violet-magenta key, aqua accent, hot counter, every body hue held under L* 80 so the hero stays brightest. enemies[0..1] key family, [2..3] accent, [4..5] counter; the boss in the counter's red half.",
+  "void":    { "floor": "#050308", "fog": "#0b0614" },
+  "grid":    { "line": "#3d1670", "pulse": "#a24dff" },
+  "hero":    { "body": "#fff8ee", "blade": "#ffffff", "trail": "#fff0b8" },
+  "enemies": ["#a84dff", "#f03cc8", "#12d6a0", "#1cc8f0", "#ff5a1f", "#ffa51c"],
+  "boss":    { "body": "#ff2a40", "telegraph": "#ff1030" },
+  "shatter": { "gem": "#ffeec2", "core": "#ffffff" },
+  "spark":   "#ffffff",
+  "zones":   [ { "name": "violet", "tint": "#7a2cff" }, { "name": "magenta", "tint": "#ff2ea0" },
+               { "name": "aqua", "tint": "#00c8e0" }, { "name": "ember", "tint": "#ff5a1a" } ]
+}

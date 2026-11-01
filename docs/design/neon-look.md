@@ -190,7 +190,10 @@ drawn reads its colours from a role.
 }
 ```
 
-Values above are only an example; the style guide sets the real ones.
+Values above are only an example. The real palettes are `ion`, `arcade`, `phosphor` and
+`spectrum` in the package's `Palettes/`, set by the
+[style guide](neon-look-style.md#the-palettes), which also maps monster types onto the enemy
+slots (`enemies[0..1]` the key family, `[2..3]` the accent, `[4..5]` the counter).
 Rules the style guide enforces:
 
 - **A hue budget per frame**: the hero's colour, at most three enemy hue
@@ -207,7 +210,7 @@ A preset is a JSON file in the package (`Looks/<name>.json`):
 ```json
 {
   "name": "edge",
-  "palette": "electric",
+  "palette": "ion",
   "monsters": "dark-core-edges",
   "structures": "edge-glass",
   "world": "void-grid",
@@ -221,12 +224,12 @@ A preset is a JSON file in the package (`Looks/<name>.json`):
 The starting four presets, one per monster look. Each preset's other choices
 are the executors' call against the style guide:
 
-| Preset | Monsters | Likely world | Likely post |
-| --- | --- | --- | --- |
-| `edge` | dark core, lit edges | void grid | heavy bloom, filmic tonemap |
-| `solid` | bright solid emissive | hued zones | punchy contrast, moderate bloom |
-| `hologram` | wireframe hologram | pure void grid | scanlines, chromatic aberration |
-| `prism` | refractive gem | hued zones | rainbow dispersion, soft bloom |
+| Preset | Palette | Monsters | Likely world | Likely post |
+| --- | --- | --- | --- | --- |
+| `edge` | `ion` | dark core, lit edges | void grid | heavy bloom, filmic tonemap |
+| `solid` | `arcade` | bright solid emissive | hued zones | punchy contrast, moderate bloom |
+| `hologram` | `phosphor` | wireframe hologram | pure void grid | scanlines, chromatic aberration |
+| `prism` | `spectrum` | refractive gem | hued zones | dispersion in the palette's hues, soft bloom |
 
 ### Flags
 
@@ -235,7 +238,7 @@ Both players take the same look flags:
 ```sh
 --look edge                      # pick a preset
 --monster-look wireframe         # override one axis
---world pure-void --post neon-bloom --palette electric
+--world pure-void --post neon-bloom --palette ion
 --beat-ripple                    # steps ripple outward (off in every preset)
 ```
 
@@ -403,7 +406,7 @@ checks the package's shaders build and run there.
 
 ### The style guide
 
-The first bead writes `docs/design/neon-look-style.md`:
+[neon-look-style.md](neon-look-style.md) (ps-wnj.1) holds:
 
 - a study of Geometry Wars 3 (and any other references it finds useful):
   value structure, how light is used, hue budget, how it keeps 100s of
