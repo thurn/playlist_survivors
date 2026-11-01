@@ -238,7 +238,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(0, Moves(sim).Count);
             Assert.AreEqual(sim.Arena.HeroStart.Y, sim.State.Hero.TileY);
             sim.State.Frozen = false;
-            sim.StepTo(11.6);
+            sim.StepTo(11.7); // 11.50 is judged the recent keys' longest lag after it, Left's 0.14
             var moves = Moves(sim);
             Assert.AreEqual(2, moves.Count, "Up is still held: 11.25 and 11.50");
             Assert.AreEqual(11.25, moves[0].Start, 1e-9);

@@ -12,17 +12,25 @@ namespace PS.Game.Sim
     /// - <b>A press</b> (direction d, heard at h), taken at the sim's current time F:
     ///   <code>
     ///   s = the latest stride step at or before h + 0.11   // one the stride would still be on is its
-    ///   if a press already strode for s:  queue d for the first step after F no press took
+    ///   if a press already strode for s, and d repeats it or its stride is still drawing:
+    ///                                     queue d for the first step after F no press took
     ///   else:                             stride now, drawn from h; s is this press's
     ///   </code>
     ///   The stride sets off from where the hero is at h, cutting short a move in progress, so the
     ///   client shows it on the frame the key went down: the sim's lead never delays it. No held
-    ///   key strides on s, and one press stride per step keeps mashing at the grid's pace.
+    ///   key strides on s, and one press stride per step and direction keeps mashing at the grid's
+    ///   pace, while a quick second tap the other way (an L, 120 ms on) moves at once, as in native's
+    ///   classic mode (ps-msz.8.5). A press heard before the held stride on its step set off (one the
+    ///   sim judged before the press arrived) takes that stride's place: the hero strides from where it
+    ///   stood when the press was heard, never diagonally over both (ps-msz.8.5).
     /// - <b>Held keys</b> stride on every step a press hasn't taken, the last-pressed held direction
     ///   winning, as they were held when the step was heard. A step's held stride is judged once
     ///   the sim has every key heard before it: at the next key change heard after it, or the
-    ///   latest key's lead after it (<see cref="Tick"/>). So a tap released before the next step
-    ///   was heard never strides on it, and a turn heard before a step the sim has passed turns on it.
+    ///   longest lead of the recent keys after it (<see cref="Tick"/>; a key's lag runs up to a frame
+    ///   short of the lead with where in its frame it fell, and a turn arriving later than the key
+    ///   before would otherwise find its step judged without it, ps-msz.8.5). So a tap released
+    ///   before the next step was heard never strides on it, and a turn heard before a step the sim
+    ///   has passed turns on it.
     /// - Space is a press only: it stomps (stands still). Enter never moves the hero.
     /// - While a level-up's cards are open their keys are theirs: the hero holds none of them, and
     ///   lets go of the keys it held when the cards opened (<see cref="LetGo"/>).
@@ -42,6 +50,16 @@ namespace PS.Game.Sim
         public const double StrideSeconds = 0.110;
 
         const int None = -1, Stomp = 4;
+        /// <summary>How many recent key changes' lags the held strides wait for the longest of.</summary>
+        const int Lags = 16;
+
+        /// <summary>The hero's tile and latest move, as a held stride found them.</summary>
+        struct Before
+        {
+            public int TileX, TileY;
+            public double X, Y, FromX, FromY, MoveStart, MoveEnd;
+            public Direction Facing;
+        }
 
         /// <summary>A stride step whose held stride is still to be judged.</summary>
         struct Pending
@@ -58,10 +76,17 @@ namespace PS.Game.Sim
         readonly Direction[] held = new Direction[4];
         int heldCount;
         int queued = None;
-        // The stride step the latest press stride took, by index.
-        int pressed = int.MinValue;
-        // How long after the player hears a key the sim takes it: the latest key's.
+        // The stride step the latest press stride took, by index, and that stride's way and start.
+        int pressed = int.MinValue, pressedAction = None;
+        double pressedStart;
+        // How long after the player hears a key the sim takes it: the longest of the recent keys' lags.
         double lag;
+        readonly double[] lags = new double[Lags];
+        int lagCount;
+        // The latest held stride, by step index and start, and the hero as it was before it.
+        int heldStep = int.MinValue;
+        double heldStart;
+        Before before;
         readonly Pending[] pending = new Pending[8];
         int pendingHead, pendingCount;
 
@@ -90,12 +115,18 @@ namespace PS.Game.Sim
             // The next step, as the grid plans it now: a beat revealed before then may still move it.
             double next = strides.NextTime(sim.Now);
             int s = StepOf(heard, next);
-            if (s == pressed)
+            // A second press for a step strides too when it turns once the press stride before it has drawn.
+            bool turns = action != pressedAction && action != Stomp && heard >= pressedStart + StrideSeconds - 1e-9;
+            if (s == pressed && !turns)
             {
                 queued = action;
                 return;
             }
+            // The held stride on this step hadn't set off when the press was heard: the press takes its place.
+            if (s == heldStep && heard <= heldStart + 1e-9 && state.MoveStart == heldStart) TakeBack();
             pressed = s;
+            pressedAction = action;
+            pressedStart = heard;
             queued = None;
             double start = Math.Min(heard, sim.Now);
             double end = start + Math.Min(StrideSeconds, NextStrideAfter(start, s, next) - start);
@@ -124,16 +155,21 @@ namespace PS.Game.Sim
             Tick(sim, t);
         }
 
-        /// <summary>At song time <paramref name="now"/>, judges the steps the keys heard by now have settled.</summary>
+        /// <summary>
+        /// At song time <paramref name="now"/>, judges the steps the keys heard by now have settled: those the lag
+        /// is past, not one it just reaches, as a key arriving now heard at the step's own time counts for it.
+        /// </summary>
         public void Tick(Simulation sim, double now)
         {
-            while (pendingCount > 0 && pending[pendingHead].T + lag <= now + 1e-9) Judge(sim, now);
+            while (pendingCount > 0 && pending[pendingHead].T + lag < now - 1e-9) Judge(sim, now);
         }
 
         /// <summary>A key heard at <paramref name="heard"/>: the steps heard before it are judged without it.</summary>
         void KeyChange(Simulation sim, double heard)
         {
-            lag = Math.Max(0, sim.Now - heard);
+            lags[lagCount++ % Lags] = Math.Max(0, sim.Now - heard);
+            lag = 0;
+            for (int i = 0; i < Lags && i < lagCount; i++) lag = Math.Max(lag, lags[i]);
             while (pendingCount > 0 && pending[pendingHead].T < heard - 1e-9) Judge(sim, sim.Now);
         }
 
@@ -192,9 +228,34 @@ namespace PS.Game.Sim
             return at;
         }
 
+        /// <summary>The hero back as it was before the latest held stride, which a press heard before it replaces.</summary>
+        void TakeBack()
+        {
+            state.TileX = before.TileX;
+            state.TileY = before.TileY;
+            state.X = before.X;
+            state.Y = before.Y;
+            state.FromX = before.FromX;
+            state.FromY = before.FromY;
+            state.MoveStart = before.MoveStart;
+            state.MoveEnd = before.MoveEnd;
+            state.Facing = before.Facing;
+            heldStep = int.MinValue;
+        }
+
         /// <summary>A move from where the hero is at <paramref name="start"/>, cutting short one in progress; emitted at <paramref name="t"/>.</summary>
         void Move(Simulation sim, int action, int step, double t, double start, double end, bool press)
         {
+            if (!press)
+            {
+                heldStep = step;
+                heldStart = start;
+                before = new Before
+                {
+                    TileX = state.TileX, TileY = state.TileY, X = state.X, Y = state.Y, FromX = state.FromX, FromY = state.FromY,
+                    MoveStart = state.MoveStart, MoveEnd = state.MoveEnd, Facing = state.Facing,
+                };
+            }
             state.PositionAt(start, out double fromX, out double fromY);
             bool bump = false;
             if (action != Stomp)
