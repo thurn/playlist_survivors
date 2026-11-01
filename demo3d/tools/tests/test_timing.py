@@ -64,3 +64,10 @@ def test_log_takes_the_newest_session_with_a_timing_log(tmp_path: Path, monkeypa
     assert "20261031-120000" in capsys.readouterr().out
     assert timing.cmd_log(argparse.Namespace(session=str(tmp_path / "20261031-130000"), start=None, end=None,
                                              hitch=timing.HITCH_MS, no_table=True)) == 1
+
+
+def test_a_row_cut_off_by_a_run_that_did_not_end_cleanly_is_left_out(tmp_path: Path) -> None:
+    path = session(tmp_path / "s") / timing.FILE
+    summary = timing.summarise(timing.read(path))
+    path.write_text(path.read_text() + row(64, 2.0, 16.7, 1.02)[:40])
+    assert timing.summarise(timing.read(path)) == summary

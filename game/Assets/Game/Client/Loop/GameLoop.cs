@@ -336,7 +336,7 @@ namespace Game.Client.Loop
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
             _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter, _crowd?.Shatter);
-            if (_sessionDir != null) _timing = new TimingLog(_sessionDir, Driver, _telemetry, _music, _sounds, _effects);
+            if (_sessionDir != null) _timing = TimingLog.Open(_sessionDir, Driver, _telemetry, _music, _sounds, _effects);
             _camera = camera;
             if (camera != null) _probe = GpuProbe.FromOptions(options, content);
             if (_probe?.Sightings != null) Driver.Events.Subscribe(_probe.Sightings);
@@ -407,6 +407,7 @@ namespace Game.Client.Loop
             if (_done) return;
             long start = Stopwatch.GetTimestamp();
             AllocationCensus.Tag(AllocationCensus.Loop);
+            _timing?.Begin();
             Frame();
             long ticks = Stopwatch.GetTimestamp() - start;
             _profile?.Loop(ticks);

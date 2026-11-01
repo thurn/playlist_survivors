@@ -1,8 +1,16 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Game.Client;
 using Game.Client.Loop;
 using NUnit.Framework;
 using PS.Game.Sim;
+using UnityEngine;
+using UnityEngine.TestTools;
+using UnityEngine.TestTools.Constraints;
+using Is = NUnit.Framework.Is;
 
 namespace Game.Tests
 {
@@ -70,6 +78,62 @@ namespace Game.Tests
             Assert.That(Column(fields, "hero_y"), Is.EqualTo("nan"));
             Assert.That(Column(fields, "cpu_ms"), Is.EqualTo("-1.000"));
             Assert.That(Column(fields, "phase"), Is.EqualTo("waiting"));
+        }
+    
+        [Test]
+        public void ARunsLogHasARowPerFrameWhoseCountsAddUpToTheRunsAndASteadyFrameAllocatesNothing()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "timing-log-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try
+            {
+                var driver = LoopTests.FixedDriver(out var frames, 300);
+                foreach (var e in LoopTests.House128()) driver.AddSettled(e);
+                var telemetry = new RunTelemetry(driver, new LaunchOptions.OutputFiles(), null, null);
+                var log = TimingLog.Open(dir, driver, telemetry, null, null, null);
+                Assert.That(log, Is.Not.Null);
+                int f = 0;
+                void Next()
+                {
+                    log.Begin();
+                    driver.Step(frames[f++]);
+                    log.Write(0);
+                }
+                while (f < 250) Next();
+                Assert.That(() => Next(), Is.Not.AllocatingGCMemory());
+                while (f < frames.Length) Next();
+                log.Dispose();
+                telemetry.Dispose();
+
+                var lines = File.ReadAllLines(Path.Combine(dir, TimingLog.FileName));
+                var header = lines[0].Split(',');
+                Assert.That(lines[0], Is.EqualTo(TimingLog.Header));
+                var rows = lines.Skip(1).Select(l => l.Split(',')).ToArray();
+                Assert.That(rows.Length, Is.EqualTo(frames.Length));
+                Assert.That(rows.All(r => r.Length == header.Length));
+                int Col(string name) => Array.IndexOf(header, name);
+                Assert.That(rows.All(r => r[Col("stepped")] == "1"));
+                Assert.That(double.Parse(rows[rows.Length - 1][Col("frame_song")], System.Globalization.CultureInfo.InvariantCulture),
+                    Is.EqualTo(frames[frames.Length - 1].Frame).Within(1e-4));
+                Assert.That(driver.Sim.EventCount, Is.GreaterThan(0));
+                Assert.That(rows.Sum(r => long.Parse(r[Col("events")])), Is.EqualTo(driver.Sim.EventCount),
+                    "each row holds its frame's share of the run's events");
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Test]
+        public void ALogThatCantBeOpenedLeavesTheRunWithoutOne()
+        {
+            var driver = LoopTests.FixedDriver(out _, 1);
+            var telemetry = new RunTelemetry(driver, new LaunchOptions.OutputFiles(), null, null);
+            LogAssert.Expect(LogType.Warning, new Regex("^TimingLog: no timing log in "));
+            string missing = Path.Combine(Path.GetTempPath(), "timing-log-" + Guid.NewGuid().ToString("N"), "gone");
+            Assert.That(TimingLog.Open(missing, driver, telemetry, null, null, null), Is.Null);
+            telemetry.Dispose();
         }
     }
 }

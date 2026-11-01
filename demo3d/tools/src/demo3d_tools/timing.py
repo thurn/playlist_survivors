@@ -52,9 +52,14 @@ def newest(root: Path) -> Path | None:
 
 
 def read(path: Path) -> list[dict]:
-    """The timing log's rows, numbers as floats (nan before the sim's first step) and `phase` as given."""
-    with path.open(newline="") as f:
-        return [{k: (v if k == "phase" else float(v)) for k, v in row.items()} for row in csv.DictReader(f)]
+    """The timing log's rows, numbers as floats (nan before the sim's first step) and `phase` as given.
+
+    A run that didn't end cleanly (killed, crashed) can leave its last row cut off where the player's buffer filled:
+    a last line without its line end is left out."""
+    lines = path.read_text().splitlines(keepends=True)
+    if lines and not lines[-1].endswith("\n"):
+        lines.pop()
+    return [{k: (v if k == "phase" else float(v)) for k, v in row.items()} for row in csv.DictReader(lines)]
 
 
 def pct(sorted_values: list[float], p: float) -> float:

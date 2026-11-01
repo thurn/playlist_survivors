@@ -18,7 +18,8 @@ namespace Game.Client.Loop
     /// - `frame` (Unity's frame count), `stepped` (1 when the sim stepped: not while the arena loads or before the
     ///   music's anchor), `real_s` (the time since launch);
     /// - `interval_ms`, the time since the previous frame, and `cpu_ms`, the main thread's CPU time over that interval
-    ///   (an IL2CPP player's, -1 elsewhere): a long interval with little CPU time waited on the GPU, the display or the OS;
+    ///   (from the previous frame's Update to this one's, so it holds the previous frame's loop; an IL2CPP player's,
+    ///   -1 elsewhere): a long interval with little CPU time waited on the GPU, the display or the OS;
     /// - `loop_ms` (<see cref="GameLoop"/>'s Update), `step_ms` (the sim's step, the dispatch and the presenters) and
     ///   `sim_ms` (the sim's step alone);
     /// - `render_ms`, `gpu_ms` and `present_wait_ms`: Unity's frame timing (FrameTimingManager) of the latest frame it
@@ -29,6 +30,7 @@ namespace Game.Client.Loop
     ///   that arrived late, key changes, sounds scheduled, dropped and cut off, effects spawned and rejected, garbage
     ///   collections, presenter faults, freezes started, and the music plugin's stalls.
     /// A row is written without allocating, into a buffer flushed about once a second, so a crash loses at most that.
+    /// The log never stops a run: if it can't be opened or written it says so once in the player's log and stops.
     /// </summary>
     sealed class TimingLog : IDisposable
     {
@@ -59,18 +61,36 @@ namespace Game.Client.Loop
         readonly MusicPlayer _music;
         readonly SoundScheduler _sounds;
         readonly EffectsPresenter _effects;
-        readonly StreamWriter _out;
+        StreamWriter _out;
         readonly long[] _counts = new long[CountCount], _before = new long[CountCount];
         readonly FrameTiming[] _timings = new FrameTiming[1];
         readonly StringBuilder _row = new StringBuilder(1024);
         readonly char[] _chars = new char[1024];
         readonly int _collections;
         long _cpu = -1;
+        double _cpuMs = -1;
         int _framesSeen;
         double _flushedAt;
 
-        /// <summary>The log in <paramref name="sessionDir"/>; the music, the sounds and the effects may be null.</summary>
-        public TimingLog(string sessionDir, SimDriver driver, RunTelemetry telemetry, MusicPlayer music, SoundScheduler sounds,
+        /// <summary>
+        /// The log in <paramref name="sessionDir"/>, or null if it can't be created there (the run goes on without
+        /// it); the music, the sounds and the effects may be null.
+        /// </summary>
+        public static TimingLog Open(string sessionDir, SimDriver driver, RunTelemetry telemetry, MusicPlayer music,
+            SoundScheduler sounds, EffectsPresenter effects)
+        {
+            try
+            {
+                return new TimingLog(sessionDir, driver, telemetry, music, sounds, effects);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"TimingLog: no timing log in {sessionDir}: {e.Message}");
+                return null;
+            }
+        }
+
+        TimingLog(string sessionDir, SimDriver driver, RunTelemetry telemetry, MusicPlayer music, SoundScheduler sounds,
             EffectsPresenter effects)
         {
             _driver = driver;
@@ -83,27 +103,49 @@ namespace Game.Client.Loop
             _out.Write('\n');
             _collections = GC.CollectionCount(0);
             _framesSeen = driver.Frames;
-            _cpu = ThreadCpu.Ns;
+        }
+
+        /// <summary>
+        /// The start of GameLoop's Update: the main thread's CPU time since the previous one's start, which spans the
+        /// frame's interval (the previous frame's Update, its rendering and this frame's start) as Unity measures it.
+        /// </summary>
+        public void Begin()
+        {
+            long cpu = ThreadCpu.Ns;
+            _cpuMs = cpu < 0 || _cpu < 0 ? -1 : (cpu - _cpu) / 1e6;
+            _cpu = cpu;
         }
 
         /// <summary>The frame's row, at the end of GameLoop's Update, which took <paramref name="loopTicks"/> (Stopwatch ticks).</summary>
         public void Write(long loopTicks)
         {
+            if (_out == null) return;
+            try
+            {
+                WriteRow(loopTicks);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"TimingLog: stopped writing the timing log: {e.Message}");
+                Dispose();
+            }
+        }
+
+        void WriteRow(long loopTicks)
+        {
             var driver = _driver;
-            long cpu = ThreadCpu.Ns;
             var f = new Frame
             {
                 Index = Time.frameCount,
                 Stepped = driver.Frames != _framesSeen,
                 RealS = Time.realtimeSinceStartupAsDouble,
                 IntervalMs = 1000.0 * Time.unscaledDeltaTime,
-                CpuMs = cpu < 0 || _cpu < 0 ? -1 : (cpu - _cpu) / 1e6,
+                CpuMs = _cpuMs,
                 LoopMs = loopTicks * 1000.0 / Stopwatch.Frequency,
                 RenderMs = -1, GpuMs = -1, PresentWaitMs = -1,
                 Song = double.NaN, LeadMs = double.NaN, HeroX = double.NaN, HeroY = double.NaN,
                 Counts = _counts,
             };
-            _cpu = cpu;
             if (f.Stepped)
             {
                 f.StepMs = driver.FrameMs;
@@ -198,6 +240,19 @@ namespace Game.Client.Loop
             return sb.ToString();
         }
 
-        public void Dispose() => _out.Dispose();
+        /// <summary>Closes the log, flushing its last rows; a failure to is only logged.</summary>
+        public void Dispose()
+        {
+            var o = _out;
+            _out = null;
+            try
+            {
+                o?.Dispose();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"TimingLog: couldn't close the timing log: {e.Message}");
+            }
+        }
     }
 }

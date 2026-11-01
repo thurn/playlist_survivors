@@ -52,3 +52,12 @@ What the sim did frame by frame comes from replaying the session, which takes th
 
 It matched the recorded hash (`26A0BCFF72F97708`, 16946 events) and wrote 2664 frames of
 `--loop-out` and 452 moments.
+
+## The Warden's re-run (ps-087)
+
+`cpu_ms` was measured from the end of one frame's Update to the end of the next, so the hitch a
+heavy Update caused showed that Update's loop time beside CPU time that left it out. It now runs
+from one Update's start to the next, the interval's span. Re-run as above for 25 s with the break
+at 15 s, from the reviewed tree with that fix: 1488 rows, intervals p50/p95/p99 16.7/17.6/17.6 ms,
+the main thread at 1.5 ms (p50), the boot frame's 623 ms interval with its 121 ms of CPU as the
+first hitch, 0 late entries, 0 dropped sounds, and `gpu_ms` on 46 of its frames (`render_ms` on none).

@@ -1207,8 +1207,10 @@ its `timing.jsonl` beside each session. One row per frame of the loop, from
 the run's setup:
 
 - `interval_ms` (the time since the previous frame) and `cpu_ms` (the main
-  thread's CPU time over that interval; IL2CPP only, -1 elsewhere). A long
-  interval with little CPU time waited on the GPU, the display or the OS.
+  thread's CPU time over that interval, from the previous frame's Update to
+  this one's, so it holds the previous frame's loop; IL2CPP only, -1
+  elsewhere). A long interval with little CPU time waited on the GPU, the
+  display or the OS.
 - `loop_ms` (GameLoop's Update), `step_ms` (the sim's step, the dispatch and
   the presenters) and `sim_ms` (the step alone).
 - `render_ms`, `gpu_ms` and `present_wait_ms`: Unity's FrameTimingManager for
@@ -1221,7 +1223,10 @@ the run's setup:
   and rejected, collections, presenter faults, freezes, the plugin's stalls.
 
 Rows are written without allocating, into a 64 KB buffer flushed about once a second.
-A 30-minute run at 120 fps is about 30 MB, a tenth of its `audio.wav`.
+A 30-minute run at 120 fps is about 30 MB, a tenth of its `audio.wav`. The log
+never stops a run: one it can't open or write says so once in the player's log
+and the run goes on without it. A run killed mid-flush can leave its last row
+cut off; `game log` leaves that row out.
 
 `game log [SESSION] [--from S] [--to S] [--hitch MS] [--no-table]`
 (`demo3d/tools/src/demo3d_tools/timing.py`) summarises the newest session's
