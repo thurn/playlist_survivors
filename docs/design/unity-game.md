@@ -1406,8 +1406,11 @@ Vampire Survivors' stat names: **Might** multiplies damage, **Area**
 multiplies size, **Cooldown** multiplies intervals, and **Amount** adds
 strikes or projectiles.
 
-- It strikes on every main beat. Each point of Amount adds a strike on a
-  subdivision (one extra strike means eighth notes).
+- It strikes on every main beat, or on every other one when the beat runs
+  faster than 150 BPM: a beat tracked at double time (Sunflower's 90 BPM
+  heard as 180) would otherwise swing back to back with no follow-through.
+  Each point of Amount adds a strike on a subdivision (one extra strike
+  means eighth notes of the strikes).
 - Damage is a full circle around the hero, with a reach of about 7 m times
   Area. The swing's direction and arc are presentation only.
 - The visible strike must show that radius: the aimed white slash plus a
@@ -1418,7 +1421,8 @@ strikes or projectiles.
 - **Heavy strikes**: a beat with a detected accent (a strong onset within
   50 ms of the beat, visible ahead thanks to the lookahead) or an accent
   forecast deals 2.5x damage plus an outward cleave wave. A forecast and
-  its onset never make two heavy strikes.
+  its onset never make two heavy strikes, and two strikes in a row are
+  never both heavy.
 - **Direction**: chosen at wind-up from the enemies in reach, weighted toward
   crowds and bosses, nearest on ties; with nobody in reach, the hero keeps
   facing.
@@ -1431,9 +1435,23 @@ strikes or projectiles.
 **Shipped (ps-msz.3.3).** The sim's sword is `Sim/Weapons/Sword.cs`, turned
 an arsenal slot since ps-msz.6.4 (`SimConfig.Arsenal`: its rank, the hero's stats, `SwordWindupS`). As built:
 
-- `n = max(1, floor(rank amount + Amount))` strikes per committed beat, at
-  `T + k * p / n`, p the interval to the next beat when it is known at
-  planning, else the beat's period. With no beat known ahead, the same pulse
+- `n = max(1, floor(rank amount + Amount))` strikes per strike beat, at
+  `T + k * p / n`, p the interval to the next strike beat when it is known
+  at planning, else its period (two beats' on the half-time pulse).
+- **Strike beats** (ps-at1): every committed beat, unless the tracker's
+  period (the beat's `period`) is under 0.4 s (`Sword.HalfTimeBelow`, 150
+  BPM): then every other beat, the **half-time pulse**. Either way a beat
+  strikes only 0.75 of its strike interval (a period, or two on the pulse)
+  or more after the previous strike beat. Counted in time, the pulse
+  survives the tracker flipping to the half tempo and back (Sunflower's
+  0.33 s grid turns 0.67 s for three beats every few bars): a flip that
+  shifts the phase costs one 1.5-beat pause, never two swings a fast beat
+  apart. Two accented beats in a row that the pulse skipped, each within
+  8 beats of the one before and no accented strike beat between, move the
+  pulse onto the second; a stray accent never does. A stream's first two
+  beats carry the analyzer's 0.28 s placeholder period, so the pulse skips
+  the second.
+- With no beat known ahead, the same pulse
   repeats every rank interval times Cooldown (1.35 s at rank 1), counted
   from the latest pulse, unless a revealed beat comes within half an
   interval.
@@ -1442,7 +1460,8 @@ an arsenal slot since ps-msz.6.4 (`SimConfig.Arsenal`: its rank, the hero's stat
   `max(impact - 0.32, the previous impact)`: the attack event's time is its
   wind-up start, always before its impact.
 - At the wind-up: heavy (a main strike, the music clear, a revealed strong
-  onset or forecast within 50 ms of the beat, decided once per beat), the
+  onset or forecast within 50 ms of the beat, decided once per beat, and
+  the previous main strike on a beat not heavy), the
   kind (`HeroAttackKind`: slam, spin, follow-up, or alternating slashes),
   the direction (native's aim: 16 directions, a 150° scoring arc, bosses
   1000 and brutes 2, nearest on ties, else the grid facing) and the reach
@@ -1458,7 +1477,9 @@ an arsenal slot since ps-msz.6.4 (`SimConfig.Arsenal`: its rank, the hero's stat
 - The slam goes to the zone change's downbeat (Music-Driven Events, Zones:
   a structure change or loud jump at least 8 s after the previous zone
   change), when the change is known at that strike's wind-up, else to the
-  next downbeat. Each detected zone change gets one slam; the fallback gets
+  next downbeat. On the half-time pulse, which may strike only between the
+  two-beat bars' downbeats, it goes to the first strike beat after the zone
+  change instead. Each detected zone change gets one slam; the fallback gets
   none.
 - Hero health (`HeroHealth`): a landed lunge takes
   `max(1, power * (0.5 on Easy) - armor)`, then 0.12 s of lockout (hits in
@@ -1871,12 +1892,14 @@ The clock decides who spawns; the music decides when things happen and how
 they look. These hooks are native's:
 
 - **Zones**: a detected section change (a structure change, or a loudness
-  jump of 6 dB or more) at least 8 s after the previous zone change moves to
+  jump of 6 dB or more) at least 8 s after the previous zone change (or the
+  run's start) moves to
   the next of five zones, cycling back to the first after the fifth.
   - It lands on the first downbeat at or after the change's `t` if that is
     known in time, otherwise on the first downbeat after its `known_at`.
   - **Fallback**: with no detected change, the zone changes 60 s after the
-    previous zone change during the first 5 minutes, then 4 minutes after.
+    previous zone change (or the run's start) during the first 5 minutes,
+    then 4 minutes after.
 - **Swarms**: each minute's scheduled swarm event (bats, ghosts, a wall of
   flowers) waits for the first big loudness jump in that minute.
 - **Musical set pieces**, each from its native start time:
@@ -1898,10 +1921,13 @@ with content (schedule.json's `zones`), emits `SimEventKind.ZoneChange`
 (new and previous zone, cause, the cause's time and known-at) and keeps
 `SimState.Zone`. As built:
 
-- Changes and jumps are taken in known-at order. The 8 s gap is from the
-  previous zone change's downbeat to the candidate's `t`; the first
-  detected change keeps no gap. One kept change waits for its downbeat at
-  a time, and the next is judged against it once it lands.
+- Changes and jumps are taken in known-at order, once the run has started.
+  The 8 s gap is from the previous zone change's downbeat, or the run's
+  start (ps-at1), to the candidate's `t`. The analyzer reports a loudness
+  jump about 6 s into a stream as the music comes in, and the player
+  usually starts after it: counted from the song's start, that jump opened
+  the run with a zone change and a slam. One kept change waits for its
+  downbeat at a time, and the next is judged against it once it lands.
 - "Known in time" reduces to the first downbeat at or after both `t` and
   `known_at`.
 - The fallback's "first 5 minutes" reads the run clock at the previous

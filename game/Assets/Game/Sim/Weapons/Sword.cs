@@ -42,19 +42,29 @@ namespace PS.Game.Sim
     /// <summary>
     /// The sword (unity-game.md, The Sword and "Attacks and Steps Land on the Beat").
     ///
-    /// - <b>Strikes</b>: one on every committed beat, plus one more for each point of Amount, on
-    ///   the beat's even subdivisions: <c>n = max(1, floor(rank amount + Amount))</c> strikes at
-    ///   <c>T + k * p / n</c>, p being the interval to the next beat when it is known, else the
-    ///   beat's period. With no beat known ahead, the same pulse repeats every rank interval times
-    ///   Cooldown, counted from the latest pulse.
+    /// - <b>Strikes</b>: one on every <b>strike beat</b>, plus one more for each point of Amount, on
+    ///   the strike's even subdivisions: <c>n = max(1, floor(rank amount + Amount))</c> strikes at
+    ///   <c>T + k * p / n</c>, p being the interval to the next strike beat when it is known, else
+    ///   its period (twice the beat's on the half-time pulse). With no beat known ahead, the same
+    ///   pulse repeats every rank interval times Cooldown, counted from the latest pulse.
+    /// - <b>Strike beats</b>: every committed beat, unless the tracker's period is under
+    ///   <see cref="HalfTimeBelow"/>: then the <b>half-time pulse</b> strikes on every other beat.
+    ///   Either way a beat strikes only 0.75 of its strike interval (one period, or two on the
+    ///   pulse) or more after the previous strike beat, so a tracker flipping to the half tempo and
+    ///   back keeps the pulse, pausing once rather than swinging twice when the flip shifts its
+    ///   phase. The accents choose the half-time pulse's phase:
+    ///   at <see cref="PhaseShiftAccents"/> accented beats the pulse skipped, each within
+    ///   <see cref="PhaseShiftBeats"/> beats of the one before and with no accented strike beat
+    ///   between, the pulse moves onto that skipped beat.
     /// - <b>Planning</b> at <c>T - windup</c> (or when the beat is revealed, if later; a beat
     ///   revealed at or after its time is missed): the beat's strikes are queued, each winding up at
     ///   <c>max(impact - windup, the previous impact)</c>, so strikes closer than a wind-up follow on.
     /// - <b>Wind-up</b>: the strike's kind and heaviness are decided, its direction is chosen from
     ///   the enemies there then, and the attack event is emitted with the impact time, always ahead
     ///   of it. A main strike is <b>heavy</b> when the music is clear and a revealed strong onset or
-    ///   accent forecast lies within <see cref="AccentWindow"/> of its beat; the decision is per
-    ///   beat, so a forecast and its onset make one heavy strike.
+    ///   accent forecast lies within <see cref="AccentWindow"/> of its beat, and the previous main
+    ///   strike on a beat was not heavy; the decision is per beat, so a forecast and its onset make
+    ///   one heavy strike.
     /// - <b>Impact</b>: every enemy whose body reaches the circle of radius
     ///   <c>shape radius * rank area * Area</c> around the hero (x 1.3 heavy) takes
     ///   <c>rank power * Might</c> (x 2.5 heavy), and is knocked back or dies. A heavy strike sends
@@ -71,6 +81,15 @@ namespace PS.Game.Sim
     {
         /// <summary>A strong onset or a forecast this close to a beat makes its strike heavy (native's FORECAST_WINDOW).</summary>
         public const double AccentWindow = Accents.Window;
+        /// <summary>
+        /// Under this tracker period (150 BPM) the sword strikes on the half-time pulse: a beat tracked
+        /// at double time (Sunflower's 90 BPM heard as 180) would swing back to back with no follow-through.
+        /// </summary>
+        public const double HalfTimeBelow = 0.4;
+        /// <summary>Accents in a row on the beats the half-time pulse skips that move it onto them...</summary>
+        public const int PhaseShiftAccents = 2;
+        /// <summary>...each this many beats or fewer after the one before: one stray accent never counts toward a later one.</summary>
+        public const int PhaseShiftBeats = 8;
         /// <summary>The client plays a wind-up up to this much faster, so this is the shortest it fits.</summary>
         public const double FastestRetime = 4.0 / 3.0;
         public const int AimDirections = 16;
@@ -87,7 +106,7 @@ namespace PS.Game.Sim
         {
             public double Impact, Windup, Period;
             public int Beat;
-            public bool Main, Wound, Cancelled, Heavy;
+            public bool Main, HalfTime, Wound, Cancelled, Heavy;
             public double Reach, DirX, DirY;
         }
 
@@ -113,7 +132,10 @@ namespace PS.Game.Sim
         double lastImpact = double.NegativeInfinity;
         double lastPulse = double.NegativeInfinity;
         int slashes;
-        bool forcedAccent;
+        bool forcedAccent, lastHeavy;
+        // The latest strike beat's time, and the half-time pulse's accents in a row off its phase, the latest at lastOffAccent.
+        double lastStrikeBeat = double.NegativeInfinity, lastOffAccent = double.NegativeInfinity;
+        int offAccents;
         readonly Accents accents;
         double lastTearHeal = double.NegativeInfinity;
 
@@ -217,10 +239,8 @@ namespace PS.Game.Sim
             if (PlanTime(t) <= t)
             {
                 int b = planBeat++;
-                if (Holding) return;
-                var beats = log.Beats;
-                double period = clock.StartsInterval(b) ? beats[b + 1].T - beats[b].T : clock.PeriodOf(b);
-                Pulse(t, beats[b].T, period, b);
+                if (Holding || !StrikesOn(b, t, out bool halfTime)) return;
+                Pulse(t, log.Beats[b].T, StrikePeriod(b, halfTime), b, halfTime);
                 return;
             }
             for (int k = 0; k < count; k++)
@@ -247,8 +267,43 @@ namespace PS.Game.Sim
             Pulse(end, impact, interval, -1);
         }
 
+        /// <summary>
+        /// Is beat <paramref name="b"/>, planned at <paramref name="now"/>, a strike beat, and is the
+        /// sword on its half-time pulse there? Asked once per beat, in order.
+        /// </summary>
+        bool StrikesOn(int b, double now, out bool halfTime)
+        {
+            var beat = log.Beats[b];
+            halfTime = beat.V0 < HalfTimeBelow;
+            bool accented = halfTime && accents.Accented(beat.T, now);
+            bool strikes = beat.T - lastStrikeBeat >= 0.75 * (halfTime ? 2 : 1) * beat.V0 - 1e-9;
+            if (!halfTime || (strikes && accented)) offAccents = 0;
+            else if (!strikes && accented)
+            {
+                if (beat.T - lastOffAccent > PhaseShiftBeats * beat.V0 + 1e-9) offAccents = 0;
+                lastOffAccent = beat.T;
+                if (++offAccents >= PhaseShiftAccents)
+                {
+                    offAccents = 0;
+                    strikes = true;
+                }
+            }
+            if (strikes) lastStrikeBeat = beat.T;
+            return strikes;
+        }
+
+        /// <summary>The interval from strike beat <paramref name="b"/> to the next: one beat, or two on the half-time pulse.</summary>
+        double StrikePeriod(int b, bool halfTime)
+        {
+            var beats = log.Beats;
+            int beatsOn = halfTime ? 2 : 1;
+            for (int k = 0; k < beatsOn; k++)
+                if (!clock.StartsInterval(b + k)) return beatsOn * clock.PeriodOf(b);
+            return beats[b + beatsOn].T - beats[b].T;
+        }
+
         /// <summary>Queues a pulse's strikes from <paramref name="t0"/>, <paramref name="period"/> long, planned at <paramref name="now"/>.</summary>
-        void Pulse(double now, double t0, double period, int beat)
+        void Pulse(double now, double t0, double period, int beat, bool halfTime = false)
         {
             int n = StrikesPerBeat;
             lastPulse = t0;
@@ -262,6 +317,7 @@ namespace PS.Game.Sim
                     Period = period,
                     Beat = beat,
                     Main = k == 0,
+                    HalfTime = halfTime,
                 };
                 lastImpact = impact;
             }
@@ -276,9 +332,13 @@ namespace PS.Game.Sim
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = onBeat && (forcedAccent || accents.Accented(s.Impact, t));
-            if (onBeat) forcedAccent = false;
-            bool slam = onBeat && Slams(s.Beat, s.Impact);
+            bool heavy = onBeat && (forcedAccent || !lastHeavy && accents.Accented(s.Impact, t));
+            if (onBeat)
+            {
+                forcedAccent = false;
+                lastHeavy = heavy;
+            }
+            bool slam = onBeat && Slams(s.Beat, s.Impact, s.HalfTime);
             var kind = slam ? HeroAttackKind.Slam
                 : heavy ? HeroAttackKind.Spin
                 : !s.Main ? HeroAttackKind.FollowUp
@@ -296,9 +356,15 @@ namespace PS.Game.Sim
         /// <summary>
         /// Does the main strike on beat <paramref name="beat"/> slam: is it the first downbeat after a
         /// section change, the zone change's own downbeat when that is known at the wind-up
-        /// (<see cref="Zones.Slams"/>)?
+        /// (<see cref="Zones.Slams"/>)? The half-time pulse may never fall on a downbeat, so there
+        /// the first strike beat after the zone change slams.
         /// </summary>
-        bool Slams(int beat, double impact) => clock.IsDownbeat(beat) && zones != null && zones.Slams(impact);
+        bool Slams(int beat, double impact, bool halfTime)
+        {
+            if (zones == null) return false;
+            bool downbeat = clock.IsDownbeat(beat);
+            return (downbeat || halfTime) && zones.Slams(impact, shares: downbeat);
+        }
 
         double AimWeight(in EnemyState e) => e.Boss ? BossWeight : roles[e.Role].Brute ? BruteWeight : 1;
 

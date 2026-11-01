@@ -69,11 +69,14 @@ namespace PS.Game.Sim.Tests
             var attacks = HeroAttacks(sim);
             int n = rank == 1 ? 1 : 2;
             Assert.AreEqual(0, sim.Sword.Missed, "every beat is known before its time");
-            Assert.Greater(attacks.Count, n * (beats.Length - 2));
+            Assert.Greater(attacks.Count, n * (beats.Length - 3));
 
             var mains = attacks.Where(a => a.SwordKind != HeroAttackKind.FollowUp).Select(a => a.Impact).ToList();
-            // Every beat but those still to come at the end has its one main strike, exactly on it.
-            var struck = beats.Where(t => t - Windup <= sim.Now + 1e-9).ToList();
+            // Every beat but those still to come at the end has its one main strike, exactly on it, but
+            // the stream's second: its first two beats carry the analyzer's 0.28 s placeholder period,
+            // so the half-time pulse skips the second.
+            var struck = beats.Where(t => t - Windup <= sim.Now + 1e-9).Where((t, i) => i != 1).ToList();
+            Assert.Less(sim.Stream.Beats[1].V0, Sword.HalfTimeBelow);
             CollectionAssert.AreEqual(struck, mains, "one main strike on each committed beat, at its time");
             double previous = double.NegativeInfinity;
             foreach (var a in attacks)
@@ -90,7 +93,9 @@ namespace PS.Game.Sim.Tests
                 double half = a.Impact - beats[b];
                 bool toNext = b + 1 < beats.Length && Math.Abs(half - 0.5 * (beats[b + 1] - beats[b])) < 1e-9;
                 bool byPeriod = Math.Abs(half - 0.5 * sim.Beats.PeriodOf(b)) < 1e-9;
-                Assert.IsTrue(toNext || byPeriod, $"a follow-up {half:F4} s after beat {b}");
+                // The first beat's strikes span the skipped second beat, so its follow-up lands on it.
+                bool onSkipped = b == 0 && a.Impact == beats[1];
+                Assert.IsTrue(toNext || byPeriod || onSkipped, $"a follow-up {half:F4} s after beat {b}");
             }
             int followUps = attacks.Count(a => a.SwordKind == HeroAttackKind.FollowUp);
             if (n == 1) Assert.AreEqual(0, followUps);
@@ -115,7 +120,7 @@ namespace PS.Game.Sim.Tests
 
         [TestCase(190, 0)]
         [TestCase(240, 2)]
-        public void AttacksAreAnnouncedAheadOfTheirImpactsAtFastTempos(double bpm, double amount)
+        public void AtFastTemposStrikesFallOnEveryOtherBeatAnnouncedAhead(double bpm, double amount)
         {
             var stats = Content.Progression.Hero.Stats;
             stats.Amount = amount;
@@ -125,19 +130,78 @@ namespace PS.Game.Sim.Tests
             var attacks = HeroAttacks(sim);
             int n = 2 + (int)amount;
             Assert.AreEqual(n, sim.Sword.StrikesPerBeat);
-            Assert.Greater(attacks.Count, n * (beats.Length - 2));
+            Assert.Greater(attacks.Count, n * (beats.Length / 2 - 2));
+            var mains = attacks.Where(a => a.SwordKind != HeroAttackKind.FollowUp).Select(a => Array.IndexOf(beats, a.Impact)).ToList();
+            Assert.IsTrue(mains.All(b => b >= 0), "main strikes land on beats");
+            for (int k = 1; k < mains.Count; k++) Assert.AreEqual(2, mains[k] - mains[k - 1], "on the half-time pulse: every other beat");
             double previous = double.NegativeInfinity;
             foreach (var a in attacks)
             {
                 Assert.Less(a.WindupStart, a.Impact);
                 Assert.GreaterOrEqual(a.WindupStart, previous - 1e-9, "a strike closer than a wind-up follows on from the previous impact");
                 previous = a.Impact;
-                int b = Array.FindLastIndex(beats, t => t <= a.Impact + 1e-9);
-                double gap = b + 1 < beats.Length ? beats[b + 1] - beats[b] : sim.Beats.PeriodOf(b);
+                int b = mains.Last(m => beats[m] <= a.Impact + 1e-9);
+                double gap = b + 2 < beats.Length ? beats[b + 2] - beats[b] : 2 * sim.Beats.PeriodOf(b);
                 double k = (a.Impact - beats[b]) / (gap / n);
-                Assert.AreEqual(Math.Round(k), k, 1e-6, "on an even subdivision of the beat");
+                Assert.AreEqual(Math.Round(k), k, 1e-6, "on an even subdivision of the two beats to the next strike beat");
                 Assert.AreEqual(k < 0.5, a.SwordKind != HeroAttackKind.FollowUp);
             }
+        }
+
+        /// <summary>A song's beats and ticks only, at their normal known-at times.</summary>
+        static List<KnownEntry> BeatsOnly(FixtureSong song) =>
+            Drive.Known(song.Entries().Where(e => e.Kind == EntryKind.Beat || e.Kind == EntryKind.Tick));
+
+        static List<double> MainImpacts(Simulation sim) =>
+            HeroAttacks(sim).Where(a => a.SwordKind != HeroAttackKind.FollowUp).Select(a => a.Impact).ToList();
+
+        [Test]
+        public void ADoubleTimeBeatStrikesOnTheHalfTimePulseThroughAFlipToTheHalfTempoAndBack()
+        {
+            // Sunflower's 90 BPM tracked at 180, with a stretch where the tracker hears 90.
+            var sim = Start(Config(), BeatsOnly(new FixtureSong(3).Beats(0, 10, 180).Beats(10, 16, 90).Beats(16, 26, 180)));
+            sim.StepTo(26);
+            var beats = BeatTimes(sim);
+            var mains = MainImpacts(sim);
+            CollectionAssert.IsSubsetOf(mains, beats, "main strikes land on beats");
+            var gaps = mains.Zip(mains.Skip(1), (a, b) => b - a).ToList();
+            Assert.IsTrue(gaps.All(g => Math.Abs(g - 2.0 / 3) < 1e-6 || Math.Abs(g - 1) < 1e-6),
+                "one strike every 90 BPM beat, or one pause of 1.5 beats where a flip shifts the phase: never two swings a 180 BPM beat apart");
+            Assert.LessOrEqual(gaps.Count(g => Math.Abs(g - 1) < 1e-6), 2, "a pause at most at each flip");
+            CollectionAssert.IsSubsetOf(beats.Where(t => t >= 11 && t < 16), mains, "at 90 BPM, every beat strikes");
+            Assert.Greater(mains.Count, 35);
+        }
+
+        [Test]
+        public void AccentsInARowOnTheSkippedBeatsMoveTheHalfTimePulseAndAStrayOneDoesNot()
+        {
+            var known = Plain(180, 20);
+            var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
+            // The pulse starts on the odd beats (beat 0, at the sim's start, is missed). A stray strong
+            // onset on skipped beat 10; then on skipped beats 30 and 32, and on 34, 36, 38 after.
+            foreach (int b in new[] { 10, 30, 32, 34, 36, 38 })
+                known.Add(new KnownEntry(StreamEntry.Onset(beats[b], 0, 300, true), beats[b] - 2));
+            var sim = Start(Config(), known);
+            sim.StepTo(20);
+            var mains = MainImpacts(sim).Select(t => beats.IndexOf(t)).ToList();
+            CollectionAssert.AreEqual(Enumerable.Range(0, 16).Select(k => 2 * k + 1), mains.TakeWhile(b => b < 32),
+                "the stray accent leaves the pulse on the odd beats, as does the first of the pair");
+            CollectionAssert.AreEqual(new[] { 32, 34, 36, 38, 40 }, mains.SkipWhile(b => b < 32).Take(5),
+                "the second accent in a row moves the pulse onto the even beats");
+            var heavy = HeroAttacks(sim).Where(a => a.Heavy).Select(a => beats.IndexOf(a.Impact)).ToList();
+            CollectionAssert.AreEqual(new[] { 32, 36 }, heavy, "on the pulse, the accents make heavy strikes, never two in a row");
+        }
+
+        [Test]
+        public void NoTwoMainStrikesInARowAreHeavy()
+        {
+            var known = Plain(120, 16);
+            var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
+            for (int b = 8; b <= 14; b++) known.Add(new KnownEntry(StreamEntry.Onset(beats[b], 0, 300, true), beats[b] - 2));
+            var sim = Start(Config(), known);
+            sim.StepTo(16);
+            var heavy = HeroAttacks(sim).Where(a => a.Heavy).Select(a => beats.IndexOf(a.Impact)).ToList();
+            CollectionAssert.AreEqual(new[] { 8, 10, 12, 14 }, heavy, "a strong onset on every beat: every other strike is heavy");
         }
 
         [Test]
@@ -224,7 +288,14 @@ namespace PS.Game.Sim.Tests
                     if (Math.Abs(forecasts[i].T - a.Impact) <= 0.05 + 1e-9 && log.KnownAt(EntryKind.Forecast, i) <= a.WindupStart + 1e-9) return true;
                 return false;
             }
-            var expected = attacks.Where(Accent).Select(a => a.Impact).ToList();
+            // Accented main strikes are heavy, but never two in a row.
+            var expected = new List<double>();
+            bool previousHeavy = false;
+            foreach (var a in attacks.Where(a => a.SwordKind != HeroAttackKind.FollowUp))
+            {
+                previousHeavy = !previousHeavy && Accent(a);
+                if (previousHeavy) expected.Add(a.Impact);
+            }
             var heavy = attacks.Where(a => a.Heavy).Select(a => a.Impact).ToList();
             CollectionAssert.AreEqual(expected, heavy);
             Assert.GreaterOrEqual(heavy.Count, 7, "the dump's forecasts and strong onsets on beats");
@@ -459,6 +530,25 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(late, zones[1].T, "the late change still lands on its downbeat");
             CollectionAssert.AreEqual(new[] { zones[0].T, downbeats.First(t => t > late) }, slams,
                 "the slam shares the zone change's downbeat, or takes the next when the change came after its wind-up");
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void OnTheHalfTimePulseTheFirstStrikeAfterASectionChangeSlams(bool offDownbeats)
+        {
+            // At 180 BPM the pulse strikes every other beat: on the two-beat bars' downbeats, or with an
+            // accent pair on beats 8 and 10 moving it, between them, slamming a beat after the zone change.
+            var known = Plain(180, 20);
+            var beats = known.Where(k => k.Entry.Kind == EntryKind.Beat).Select(k => k.Entry.T).OrderBy(t => t).ToList();
+            if (offDownbeats)
+                foreach (int b in new[] { 8, 10 }) known.Add(new KnownEntry(StreamEntry.Onset(beats[b], 0, 300, true), beats[b] - 2));
+            known.Add(new KnownEntry(StreamEntry.Change(10.1, 0, 0.8), 8));
+            var sim = Start(Config(), known);
+            sim.StepTo(20);
+            var zone = Drive.Events(sim, SimEventKind.ZoneChange).Select(e => e.AsZoneChange).Single();
+            var slam = HeroAttacks(sim).Single(a => a.SwordKind == HeroAttackKind.Slam);
+            Assert.AreEqual(MainImpacts(sim).First(t => t >= zone.T - 1e-9), slam.Impact);
+            Assert.AreEqual(offDownbeats ? beats[beats.IndexOf(zone.T) + 1] : zone.T, slam.Impact);
         }
 
         [Test]

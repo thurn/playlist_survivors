@@ -233,6 +233,31 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ChangesBeforeTheRunsStartOrTooSoonAfterItNeitherChangeTheZoneNorSlam()
+        {
+            var known = Plain(120, 90);
+            // The analyzer's jump as the music comes in, before the player starts at 10 s; a change 4 s
+            // into the run, too soon after its start; the fallback a minute after the start, not the song's.
+            known.Add(new KnownEntry(StreamEntry.Jump(6.0, 0, 7.3), 4.05));
+            known.Add(new KnownEntry(StreamEntry.Change(14.2, 0, 0.8), 13.0));
+            var config = HordeFixture.Config(minimum: 0, arena: Arena(), roster: new string[0], sword: 1, heroStands: true);
+            config.Start = RunStart.OnKey;
+            var sim = new Simulation(config);
+            foreach (var k in known) sim.AddKnown(k.Entry, k.KnownAt);
+            sim.StepTo(10);
+            sim.Control(RunControl.Start);
+            sim.StepTo(90);
+            double started = sim.State.StartedAt;
+            Assert.AreEqual(10.5, started, 1e-9);
+            var change = ZoneChanges(sim).Single();
+            Assert.AreEqual(ZoneCause.Fallback, change.Cause);
+            Assert.AreEqual(started + 60, change.CauseT, 1e-9);
+            Assert.AreEqual(FirstAtOrAfter(Downbeats(sim), started + 60), change.T);
+            Assert.IsFalse(Drive.Events(sim, SimEventKind.Attack).Select(e => e.AsAttack)
+                .Any(a => a.ByHero && a.SwordKind == HeroAttackKind.Slam), "the fallback claims no slam");
+        }
+
+        [Test]
         public void TheFallbackChangesZoneEveryMinuteForFiveMinutesThenEveryFour()
         {
             var sim = Start(Arena(), Plain(128, 800, from: 0.1));
@@ -366,7 +391,9 @@ namespace PS.Game.Sim.Tests
             foreach (var r in regrowths)
                 TestContext.Out.WriteLine($"regrowth {r.Structure} at {r.T:F3} to {r.End:F3}");
 
-            Assert.GreaterOrEqual(zones.Count, 2);
+            // The dump's loudness jump at 6 s, as its music comes in, is within minGapS of the start.
+            Assert.GreaterOrEqual(zones.Count, 1);
+            Assert.Greater(zones[0].CauseT, 8);
             foreach (var z in zones)
                 Assert.AreEqual(FirstAtOrAfter(downbeats, Math.Max(z.CauseT, z.KnownAt)), z.T, "a zone change lands on its downbeat");
             Assert.Greater(breaks.Count, 0);

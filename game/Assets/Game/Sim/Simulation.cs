@@ -80,7 +80,7 @@ namespace PS.Game.Sim
             if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State);
             Health = new HeroHealth(State.Hero, config, content);
             Structures = new Structures(arena, Arena, State, Horde);
-            if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures, State.Now);
+            if (content != null) Zones = new Zones(content.Schedule.Zones, Stream, State, Structures);
             Run = new RunRules(config, content, Stream, State);
             if (config.Arsenal != null)
             {
