@@ -29,6 +29,10 @@ music through the plugin's Replay source as fast as its frames compute (a 30-min
 Each exits 0 when the hash matches; .NET exits 2 for a player's session whose hash it rounds
 differently.
 
+`game perf [--only NAME,...]`: the run's frame probe and CPU frame profile in the player over the
+standard scenarios (the peak, a structure break and the finale's mass kill at minute 25, the run's
+first minute, and the 30-minute fixed-time File run), into a JSON summary (perf.py).
+
 `game sweep [--assert]`: the positioning and idle bots' 30-minute runs in .NET over entry dumps of
 the survivors playlist (botsweep.py; slow CI).
 
@@ -91,11 +95,12 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
     pl.set_defaults(func=_cmd_plugin)
 
-    from . import botsweep, content, spike
+    from . import botsweep, content, perf, spike
 
     content.add_parser(sub)
     spike.add_parser(sub)
     botsweep.add_parser(sub)
+    perf.add_parser(sub)
 
 
 def _cmd_plugin(a: argparse.Namespace) -> int:
