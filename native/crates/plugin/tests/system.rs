@@ -148,11 +148,12 @@ fn an_app_plays_m_late_stops_when_released_and_resumes_when_tapped_again() {
     assert_eq!(status(s).stalls, 0);
 
     // Once the app plays again it is tapped again where the analyzer's silence reached (`M` past
-    // the render position), and the music resumes there.
+    // the render position), and the music resumes there. (The fake sees the tap before the source
+    // has it, so the wait is for the source too.)
     run.fake.set_playing(true);
     let started = std::time::Instant::now();
     let waited_from = run.played.len() / 2;
-    while run.fake.taps().len() < 2 {
+    while run.fake.taps().len() < 2 || status(s).muted == 0 {
         hang_guard(started, "the app was never tapped again");
         // (Rendered in real time, as Unity's audio thread would, while the source waits.)
         if ((run.played.len() / 2 - waited_from) as f64 / RATE) < started.elapsed().as_secs_f64() {
