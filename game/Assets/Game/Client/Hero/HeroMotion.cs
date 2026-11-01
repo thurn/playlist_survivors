@@ -57,8 +57,9 @@ namespace Game.Client.Hero
     /// - **Attacks**: each clip is retimed so its impact frame lands on the attack's impact
     ///   (<see cref="HeroClips.Fit"/>; a long wind-up coils rather than starting late), entered no earlier than the
     ///   wind-up, so the swing before it keeps its own impact, and showing on its entry frame. A free press's wind-up
-    ///   starts at the press, in heard time, so it arrives on the key-down frame, as a pressed step does. Slashes alternate left and right; a follow-up continues the combo from
-    ///   the swing before (left, right, then the third); heavy strikes spin and section changes slam,
+    ///   starts at the press, in heard time, so it arrives on the key-down frame, as a pressed step does. Slashes
+    ///   alternate left and right; a follow-up continues the combo from the swing before (left, right, then the
+    ///   third); heavy strikes spin and section changes slam,
     ///   holding 50 ms at 0.6x after the impact as demo3d's heavy blows do. The hero turns to the
     ///   swing's direction from its wind-up to its follow-through.
     /// </summary>

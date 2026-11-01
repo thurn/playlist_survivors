@@ -96,4 +96,5 @@ what was run (the exact commands), the numbers, and what they show.
   for a real-time run at the peak, with its allocation census against a run without one, and its session
   replayed with the `--*-out` flags (ps-sba).
 - [free-mode](free-mode/README.md): `--mode free`, the hero walking off the grid and Z's swings graded by
-  the beat, a heavy one on an accent (ps-y21).
+  the beat, a heavy one on an accent (ps-y21); each winding up on its key-down frame and landing on the
+  next eighth (ps-w9p.1).
