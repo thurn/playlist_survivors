@@ -18,7 +18,8 @@ Filed as bead ps-y21 (2026-11-01). Native (`native/`) has no modes.
 | `grid` (default) | hops a 4-direction grid on the stride steps ([Hero movement on the grid](unity-game.md#hero-movement-on-the-grid)) | strikes on every beat by itself ([The sword](unity-game.md#the-sword)) | yes |
 | `free` | walks freely: 8 ways on the arrows, or to a clicked point | strikes on Z, its size graded by the beat | no |
 
-Everything else (the horde, the other weapons, structures, the run) is the same in every mode.
+Everything else (the horde, the other weapons, structures, the run) is the same in every mode. The opening's
+denser crowd (ps-w9p.4, [Enemies](unity-game.md#enemies)) is schedule.json's, so every mode has it.
 
 ## How modes are built
 
@@ -181,3 +182,5 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
   pivot or a snap? Do the legs read as skating while square to the walk, where the attack's footwork stands in
   for a strafe clip?
 - Click-to-move without path finding: is pressing against a wall acceptable?
+- Is the opening's crowd (40 alive from the first second, 52 on a loud song; ps-w9p.4) right for a level-1
+  hero whose sword only swings on Z, or does it want to start fuller still, or gentler?

@@ -46,4 +46,6 @@ kills (the positioning bot's full arsenal) differ from the sword alone's, so the
 compared on a dump. ScheduleTests pins the game to native's rule instead: with nothing killed,
 minutes 0 to 3 spawn exactly native's 74, 121 and 105 and then hold at the cap with minute 3's
 boss waiting; loudness scales minute 0 as native's `levelScale` (15, 74 and 77 for quiet, medium
-and loud); and a killed horde refills to the minimum on the next wave.
+and loud); and a killed horde refills to the minimum on the next wave. Since ps-w9p.4's denser
+opening (game/evidence/opening) minutes 0 to 2 are the game's own numbers, and the same rule
+gives 278 and 22 before the cap (40, 278 and 282 for minute 0 by loudness); this run predates it.

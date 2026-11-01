@@ -8,7 +8,7 @@ namespace PS.Game.Sim.Tests
 {
     /// <summary>
     /// The run's schedule (unity-game.md, Enemies; native's survivors spawning): schedule.json's
-    /// minutes spawn native's counts, scaled by loudness, refilled to the minimum, in clumps, with
+    /// minutes spawn by native's rule, scaled by loudness, refilled to the minimum, in clumps, with
     /// scheduled bosses landing on downbeats and waiting for room under the cap.
     /// </summary>
     public class ScheduleTests
@@ -50,16 +50,16 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void TheFirstMinutesSpawnNativesCountsUntilTheCapAndABossWaitsForRoom()
+        public void TheFirstMinutesSpawnUntilTheCapAndABossWaitsForRoom()
         {
             // Native's rule with nothing killed, at medium loudness (scale 1):
-            // minute 0 (bat3, minimum 15, every 1 s): 15 at 0 s, then one a wave: 15 + 59 = 74.
-            // minute 1 (zombie and bat1, minimum 30, every 1 s): two a wave, 120, and its boss bat4: 121.
-            // minute 2 (bat1-3, every 0.5 s): three a wave until the cap: 300 - 195 = 105.
-            // minute 3: the cap is full, so its boss (bat4) waits.
+            // minute 0 (bat3 and bat1, minimum 40, every 0.5 s): 40 at 0 s, then two a wave: 40 + 119 x 2 = 278.
+            // minute 1 (zombie and bat1, every 0.5 s): two a wave until the cap, a slot kept for its boss bat4,
+            // which lands on a downbeat: 300 - 278 = 22.
+            // minute 2: the cap is full, nothing spawns; minute 3: its boss (bat4) waits.
             var spawns = new List<SpawnEvent>();
             var sim = Play(Run(), new FixtureSong(3).Beats(0, 200, 120), 195, spawns);
-            CollectionAssert.AreEqual(new[] { 74, 121, 105, 0 }, PerMinute(spawns, 4));
+            CollectionAssert.AreEqual(new[] { 278, 22, 0, 0 }, PerMinute(spawns, 4));
             Assert.AreEqual(300, sim.State.EnemiesAlive);
             var bat4 = HordeFixture.Content.RoleIndex("bat4");
             Assert.AreEqual(1, spawns.Count(s => s.Boss), "minute 3's boss is still waiting");
@@ -79,13 +79,14 @@ namespace PS.Game.Sim.Tests
         }
 
         // The level blends over the last 2 s, medium before the first tick, so the first wave at 0 s
-        // brings minute 0's 15 whatever the music. Then:
-        // quiet: the minimum is ceil(15 x 0.6) = 9, and a quiet wave with that many up is skipped: 15 in all.
-        // medium: one a wave, 15 + 59 = 74.
-        // loud: half loud at 1 s, 18; all loud from 2 s, ceil(15 x 1.3) = 20; then one a wave: 20 + 57 = 77.
-        [TestCase(LoudnessLevel.Quiet, 15)]
-        [TestCase(LoudnessLevel.Medium, 74)]
-        [TestCase(LoudnessLevel.Loud, 77)]
+        // brings minute 0's 40 whatever the music. Then, two roles a wave every 0.5 s:
+        // quiet: the minimum is ceil(40 x 0.6) = 24, and a quiet wave with that many up is skipped: 40 in all.
+        // medium: two a wave, 40 + 119 x 2 = 278.
+        // loud: the minimum climbs to 43, 46, 49 and 52 over the first 2 s (44, 46, 50, 52 up), all loud
+        // from 2 s, ceil(40 x 1.3) = 52; then two a wave: 52 + 115 x 2 = 282.
+        [TestCase(LoudnessLevel.Quiet, 40)]
+        [TestCase(LoudnessLevel.Medium, 278)]
+        [TestCase(LoudnessLevel.Loud, 282)]
         public void LoudnessScalesTheMinimumAndQuietWavesBreathe(LoudnessLevel level, int minuteZero)
         {
             var spawns = new List<SpawnEvent>();
@@ -101,14 +102,14 @@ namespace PS.Game.Sim.Tests
             for (int i = 0; i < sim.State.Enemies.Length; i++)
                 if (sim.State.Enemies[i].Alive) sim.Horde.Kill(sim, i, sim.Now, 1, 0, 0);
             Assert.AreEqual(0, sim.State.EnemiesAlive);
-            sim.StepTo(21.5);
-            Assert.AreEqual(15, sim.State.EnemiesAlive, "minute 0's minimum, at one wave");
+            sim.StepTo(21.25);
+            Assert.AreEqual(40, sim.State.EnemiesAlive, "minute 0's minimum, at one wave");
         }
 
         [Test]
         public void AtTheCapTheFreeSlotsGoRoundTheRoster()
         {
-            // Minute 2 (bat1-3, every 0.5 s) fills the cap by 2:18. Then one slot frees before each wave: native's
+            // The cap is full from minute 1. In minute 2 (bat1-3, every 0.5 s) one slot frees before each wave: native's
             // pass always starts at the roster's first role, which would take every one; here they go round.
             var spawns = new List<SpawnEvent>();
             var sim = Play(Run(), new FixtureSong(3).Beats(0, 200, 120), 150, spawns);
@@ -131,11 +132,12 @@ namespace PS.Game.Sim.Tests
         [Test]
         public void ARolesTrickleGathersIntoOneClumpOnTheRing()
         {
-            // Minute 0 spawns one bat a second: within the clump time, each lands by the last.
+            // Minute 0 spawns one bat3 every half second: within the clump time, each lands by the last.
             var spawns = new List<SpawnEvent>();
             var sim = Play(Run(), new FixtureSong(3).Beats(0, 40, 120), 30, spawns);
             var hero = sim.State.Hero;
-            var trickle = spawns.Where(s => s.T > 0.5).ToList();
+            int bat3 = HordeFixture.Content.RoleIndex("bat3");
+            var trickle = spawns.Where(s => s.T > 0.25 && s.Role == bat3).ToList();
             int near = 0;
             for (int k = 1; k < trickle.Count; k++)
             {
@@ -144,7 +146,7 @@ namespace PS.Game.Sim.Tests
                 double d = Math.Abs(Math.IEEERemainder(a - b, 2 * Math.PI));
                 if (d < 0.35) near++;
             }
-            // A fresh point every clump time (3 s) at most: two in three land beside the last.
+            // A fresh point every clump time (3 s) at most: five in six land beside the last; two in three will do.
             Assert.GreaterOrEqual(near, 2 * (trickle.Count - 1) / 3, $"{near} of {trickle.Count - 1}");
         }
 

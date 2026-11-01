@@ -130,7 +130,9 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
   and treasure are levels/survivors.yaml's, with role ids mapped, except the game's own late crowd
   (ps-msz.8.4): minutes 20 to 29 mix four to six roles of different crystals (minute 19 three), minutes 20 and 29's
   swarms are a bat swarm and a ghost swarm of 20, minute 25's flower walls 50 (unity-game.md, The
-  run, "Shipped (ps-msz.8.4)").
+  run, "Shipped (ps-msz.8.4)"), and the game's denser opening (ps-w9p.4): minute 0 is bat3 and bat1
+  every 0.5 s to 40, minute 1 every 0.5 s to 60, minute 2 to 80 (native's 15, 30 and 50; unity-game.md,
+  Enemies, "The opening").
 - `run.levelScale` and `levelSmoothS` are the survivors director's `population.levelScale` and
   `smoothS`, which native's spawner applies to each minute's minimum. `run.clumpS` and
   `bossMoves` are the game's own (unity-game.md, Enemies, "Shipped (ps-msz.6.2)"): native's

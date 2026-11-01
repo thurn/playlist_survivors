@@ -74,6 +74,8 @@ what was run (the exact commands), the numbers, and what they show.
 - [look-m4](look-m4/README.md): M4's look pass, the five zones settled and mid-ease at the run's density, the
   peak's heavy strike, break and mass kill, and every weapon's and evolution's effect in every zone, against the
   reference's stills, with before and after (ps-msz.8.3).
+- [opening](opening/README.md): the run's first two minutes before and after ps-w9p.4's denser opening, each
+  second's alive crowd and the part of it on screen for the positioning and idle bots (ps-w9p.4).
 - [sweeps](sweeps/README.md): the positioning bot's four 30-minute .NET runs over the survivors test playlist,
   all to the victory card above 25% health, and the idle bot falling at 2:05, with each run's pacing against
   `startLevels`, its boss chests' drop-to-take delays and the late crowd's role mix (ps-msz.6.13, ps-msz.8.4),

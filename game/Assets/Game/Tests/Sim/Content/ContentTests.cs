@@ -164,7 +164,7 @@ namespace PS.Game.Sim.Tests
 
         [Test]
         public void MissingFieldsFail() =>
-            AssertFails("schedule.json", t => ReplaceFirst(t, "\"minimum\": 15, ", ""),
+            AssertFails("schedule.json", t => ReplaceFirst(t, "\"minimum\": 40, ", ""),
                 "schedule.json", "minutes[0].minimum", "missing");
 
         [Test]
@@ -211,7 +211,7 @@ namespace PS.Game.Sim.Tests
 
         [Test]
         public void ScheduleNamingNoRoleFails() =>
-            AssertFails("schedule.json", t => ReplaceFirst(t, "\"enemies\": [\"bat3\"]", "\"enemies\": [\"bat9\"]"),
+            AssertFails("schedule.json", t => ReplaceFirst(t, "\"enemies\": [\"bat3\", \"bat1\"]", "\"enemies\": [\"bat9\", \"bat1\"]"),
                 "schedule.json", "minutes[0].enemies", "bat9");
 
         [Test]

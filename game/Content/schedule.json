@@ -17,11 +17,11 @@
   },
   "easy": {"contactDamage": 0.5, "bruteChickenChance": 0.05, "bossChickens": 1},
   "minutes": [
-    {"minute": 0, "minimum": 15, "intervalS": 1, "enemies": ["bat3"], "bosses": [], "events": [], "treasure": null},
+    {"minute": 0, "minimum": 40, "intervalS": 0.5, "enemies": ["bat3", "bat1"], "bosses": [], "events": [], "treasure": null},
     {
       "minute": 1,
-      "minimum": 30,
-      "intervalS": 1,
+      "minimum": 60,
+      "intervalS": 0.5,
       "enemies": ["zombie", "bat1"],
       "bosses": ["bat4"],
       "events": [],
@@ -29,7 +29,7 @@
     },
     {
       "minute": 2,
-      "minimum": 50,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["bat1", "bat2", "bat3"],
       "bosses": [],

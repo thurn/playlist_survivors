@@ -1817,6 +1817,17 @@ slice stays the default until the full run, ps-msz.6.14). Evidence in
   short starts one role further along the roster each wave (ps-msz.8.4):
   native's always starts at the first, so at the cap the first-listed role
   took every free slot and filled the crowd.
+- **The opening** (ps-w9p.4, the game's own numbers, in every mode): native's
+  first minutes (15 bats every 1 s, then 30 and 50) left the screen empty
+  for seconds at a time once the sword cleared a clump, the crowd a single
+  violet mass from one side. Minute 0 is now bat3 and bat1 every 0.5 s to
+  a minimum of 40 (52 loud), minute 1 zombies and bat1 every 0.5 s to 60,
+  minute 2 to 80; minute 3 on are native's. The first wave lands as two
+  clumps at once and is on screen 1.3 s into the run; a hero who keeps
+  killing faces about 30 to 60 alive through minute 0 and 60 to 90 in minute 1,
+  where native's left it 3 to 24 and 25 to 53. With nothing dying the cap
+  fills at about 1:05 instead of 2:18. Evidence in
+  [game/evidence/opening](../../game/evidence/opening/README.md).
 - **Clumps**: a role's share of a wave lands as one clump, and a role keeps
   landing within about 7° of a point of the ring for `run.clumpS` (3 s)
   after choosing it, so a trickle of one a wave still gathers into one mass
