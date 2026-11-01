@@ -22,6 +22,8 @@ namespace Game.Client.Music
         readonly long[] _bufferTicks = new long[MaxBuffers];
         readonly double[] _bufferDsp = new double[MaxBuffers];
         int _length, _buffers, _channels, _gaps, _full;
+        // The mix's rate, read on the main thread: the audio thread may not ask (a development player throws on it).
+        int _rate;
         double _expectDsp = double.NaN;
 
         public bool Mute { get; set; }
@@ -47,8 +49,10 @@ namespace Game.Client.Music
         public void Begin(double seconds)
         {
             int channels = AudioSettings.speakerMode == AudioSpeakerMode.Mono ? 1 : 2;
-            _samples = new float[(int)(seconds * AudioSettings.outputSampleRate) * channels];
+            _samples = new float[(int)(seconds * _rate) * channels];
         }
+
+        void Awake() => _rate = AudioSettings.outputSampleRate;
 
         void OnAudioFilterRead(float[] data, int channels)
         {
@@ -57,7 +61,7 @@ namespace Game.Client.Music
             int frames = data.Length / channels;
             if (_buffers < MaxBuffers && _length + data.Length <= _samples.Length)
             {
-                if (_buffers > 0 && Math.Abs(dsp - _expectDsp) * AudioSettings.outputSampleRate > 0.5) _gaps++;
+                if (_buffers > 0 && Math.Abs(dsp - _expectDsp) * _rate > 0.5) _gaps++;
                 _channels = channels;
                 _bufferDsp[_buffers] = dsp;
                 _bufferTicks[_buffers] = ticks;
@@ -66,7 +70,7 @@ namespace Game.Client.Music
                 Volatile.Write(ref _buffers, _buffers + 1);
             }
             else _full = 1;
-            _expectDsp = dsp + (double)frames / AudioSettings.outputSampleRate;
+            _expectDsp = dsp + (double)frames / _rate;
             if (Mute) Array.Clear(data, 0, data.Length);
         }
 

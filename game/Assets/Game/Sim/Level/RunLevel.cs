@@ -26,6 +26,15 @@ namespace PS.Game.Sim.Level
                 Content = content,
                 Horde = new HordeConfig { CameraFootprint = footprint, Schedule = true, MusicEvents = true },
                 Arsenal = new ArsenalConfig(),
+                // The stream of a whole run, sized for 40 minutes of song (30 of run clock, its freezes, a slow start)
+                // from a full run's 2080 s on jarvis, with room for denser music: 50 ms ticks; 5.4 onsets and 1.7 beats
+                // a second; 33 hindsight grid beats a second, more at faster tempos; a hindsight window and a timbre a
+                // second; 6080 key changes by the bot (ps-msz.8.9). About 35 MB at the start, instead of doubling to 20 MB with 45 MB of garbage.
+                TickCapacity = 48_000,
+                BeatCapacity = 24_576,
+                HindsightCapacity = 120_000,
+                SparseCapacity = 3_000,
+                PressCapacity = 16_384,
             };
 
         /// <summary>

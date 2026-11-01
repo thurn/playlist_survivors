@@ -122,6 +122,7 @@ namespace Game.Client.Loop
             long start = Timed ? Stopwatch.GetTimestamp() : 0;
             for (int i = 0; i < _presenters.Count; i++)
             {
+                int tag = AllocationCensus.Tag(AllocationCensus.OnEvent(i));
                 try
                 {
                     _presenters[i].OnEvent(e);
@@ -130,6 +131,7 @@ namespace Game.Client.Loop
                 {
                     Contain(_presenters[i], nameof(IPresenter.OnEvent), x);
                 }
+                AllocationCensus.Tag(tag);
             }
             if (Timed) EventTicks += Stopwatch.GetTimestamp() - start;
         }
@@ -139,6 +141,7 @@ namespace Game.Client.Loop
             for (int i = 0; i < _presenters.Count; i++)
             {
                 long start = Timed ? Stopwatch.GetTimestamp() : 0;
+                int tag = AllocationCensus.Tag(AllocationCensus.Present(i));
                 try
                 {
                     _presenters[i].Present(frame);
@@ -147,6 +150,7 @@ namespace Game.Client.Loop
                 {
                     Contain(_presenters[i], nameof(IPresenter.Present), x);
                 }
+                AllocationCensus.Tag(tag);
                 if (Timed) _presentTicks[i] += Stopwatch.GetTimestamp() - start;
             }
         }

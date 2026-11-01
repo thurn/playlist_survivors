@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using PS.Game.Sim;
 using PS.Game.Sim.Content;
@@ -16,16 +17,22 @@ namespace Game.Client.Hud
         /// <summary>What the HUD shows of a damage amount: 10 times it.</summary>
         public const double DamageScale = 10;
 
+        // The texts the HUD shows every frame, made once each: a frame's new string is garbage by the next.
+        static readonly Dictionary<string, string> Names = new Dictionary<string, string>(), Marks = new Dictionary<string, string>();
+        static readonly List<string> Levels = new List<string>(), Clocks = new List<string>();
+
         /// <summary>A weapon's or passive's name by its content id, in capitals (the sword is native's "sword spin").</summary>
         public static string Name(string id)
         {
-            switch (id)
-            {
-                case "sword": return "SWORD SPIN";
-                case null: return "HEAL";
-                default: return id.Replace('-', ' ').ToUpperInvariant();
-            }
+            if (id == null) return "HEAL";
+            if (!Names.TryGetValue(id, out var name))
+                Names[id] = name = id == "sword" ? "SWORD SPIN" : id.Replace('-', ' ').ToUpperInvariant();
+            return name;
         }
+
+        /// <summary>A level as the HUD shows it: LV 12.</summary>
+        public static string Level(int level) =>
+            Made(Levels, level, n => "LV " + n.ToString(CultureInfo.InvariantCulture));
 
         /// <summary>A card's item id: the weapon's or passive's, null for the heal.</summary>
         public static string Id(GameContent content, in OfferCard card) =>
@@ -78,8 +85,9 @@ namespace Game.Client.Hud
         public static string Mark(string id)
         {
             if (id == null) return "+";
+            if (Marks.TryGetValue(id, out var mark)) return mark;
             var parts = id.Split('-');
-            return parts.Length > 1 ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
+            return Marks[id] = parts.Length > 1 ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
                 : id.Substring(0, Math.Min(2, id.Length)).ToUpperInvariant();
         }
 
@@ -125,11 +133,19 @@ namespace Game.Client.Hud
         }
 
         /// <summary>A run clock as minutes and seconds: 12:05.</summary>
-        public static string Clock(double seconds)
+        public static string Clock(double seconds) =>
+            Made(Clocks, (int)Math.Min(int.MaxValue, Math.Max(0, seconds)), s => $"{s / 60}:{s % 60:00}");
+
+        /// <summary>Text <paramref name="n"/> of <paramref name="made"/>, made by <paramref name="make"/> the first time it's asked for.</summary>
+        static string Made(List<string> made, int n, Func<int, string> make)
         {
-            long s = (long)Math.Max(0, seconds);
-            return $"{s / 60}:{s % 60:00}";
+            if (n < 0 || n > MadeLimit) return make(n);
+            while (made.Count <= n) made.Add(null);
+            return made[n] ??= make(n);
         }
+
+        // Past an hour's seconds, or levels, texts are made each time.
+        const int MadeLimit = 3600;
 
         /// <summary>How long a weapon was held, to tenths: 0:12.3.</summary>
         public static string Held(double seconds)

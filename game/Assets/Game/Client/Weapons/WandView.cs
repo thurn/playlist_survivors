@@ -50,8 +50,8 @@ namespace Game.Client.Weapons
 
         sealed class Bolt
         {
-            public readonly List<Leg> Legs = new List<Leg>(2);
-            public double End = double.PositiveInfinity;
+            public readonly List<Leg> Legs = new List<Leg>(8);
+            public double End;
             public float Radius;
             public int Seed;
             public bool Evolved;
@@ -67,6 +67,8 @@ namespace Game.Client.Weapons
         readonly int _cast, _hit;
         readonly Dictionary<long, Bolt> _bolts = new Dictionary<long, Bolt>();
         readonly List<long> _done = new List<long>();
+        // Bolts gone, kept with their legs' room for the next ones: a burst's bolts come and go every beat.
+        readonly Stack<Bolt> _free = new Stack<Bolt>();
 
         /// <param name="effects">The effects, or null without compute.</param>
         /// <param name="sound">The sounds, or null without them; its hits are this view's to sound.</param>
@@ -102,7 +104,12 @@ namespace Game.Client.Weapons
                     if (!_bolts.TryGetValue(key, out var bolt))
                     {
                         if (p.Phase != ProjectilePhase.Launch) break;
-                        _bolts[key] = bolt = new Bolt { Radius = (float)p.Radius, Seed = p.Projectile * 7919, Evolved = _looks.Evolved(p.Weapon) };
+                        bolt = _free.Count > 0 ? _free.Pop() : new Bolt();
+                        bolt.End = double.PositiveInfinity;
+                        bolt.Radius = (float)p.Radius;
+                        bolt.Seed = p.Projectile * 7919;
+                        bolt.Evolved = _looks.Evolved(p.Weapon);
+                        _bolts[key] = bolt;
                     }
                     if (p.Phase == ProjectilePhase.End) bolt.End = p.T;
                     bolt.Legs.Add(new Leg { T = p.T, FromX = p.FromX, FromY = p.FromY, ToX = p.ToX, ToY = p.ToY, Arrive = p.Arrive });
@@ -164,7 +171,13 @@ namespace Game.Client.Weapons
                         new Vector3(scale, scale, size * LengthM * (bolt.Evolved ? PrismAfterimageLength : AfterimageLength))));
                 }
             }
-            foreach (long key in _done) _bolts.Remove(key);
+            foreach (long key in _done)
+            {
+                var gone = _bolts[key];
+                gone.Legs.Clear();
+                _free.Push(gone);
+                _bolts.Remove(key);
+            }
             frame.State.Hero.PositionAt(t, out double hx, out double hy);
             var bounds = new Bounds(new Vector3((float)hx, 0, (float)hy), Vector3.one * BoundsM);
             _batch.Draw(_camera, bounds);

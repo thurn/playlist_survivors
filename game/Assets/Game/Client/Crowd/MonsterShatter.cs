@@ -155,6 +155,7 @@ namespace Game.Client.Crowd
             _kSeedPalette = _cs.FindKernel("SeedPalette");
             _kSeedShards = _cs.FindKernel("SeedShards");
             _kIntegrate = _cs.FindKernel("Integrate");
+            GraphicsStates.Prepare(_cs, _kSeedPalette, _kSeedShards, _kIntegrate);
             _types = new TypeState[lib.Types.Length];
             for (int i = 0; i < _types.Length; i++) _types[i] = Create(lib.Types[i]);
         }

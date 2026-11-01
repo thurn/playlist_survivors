@@ -26,7 +26,7 @@ namespace Game.Tests
             var frame = new FrameProfile.Frame
             {
                 Index = 41, Song = 1500.123456, Alive = 300, Collections = 1, Allocated = 1234,
-                TotalMs = 20, LoopMs = 15, WaitMs = 6, ProbeMs = 3, Parts = parts,
+                TotalMs = 20, LoopMs = 15, WaitMs = 6, ProbeMs = 3, CpuMs = 7.25, Parts = parts,
             };
             var sb = new StringBuilder();
             FrameProfile.Row(frame, sb);
@@ -49,6 +49,8 @@ namespace Game.Tests
             Assert.That(Column(header, fields, "engine_ms"), Is.EqualTo(5));
             Assert.That(Column(header, fields, "alloc_bytes"), Is.EqualTo(1234));
             Assert.That(Column(header, fields, "gc"), Is.EqualTo(1));
+            // The main thread's CPU time, kept as measured: short of the 11 ms when the OS ran other work.
+            Assert.That(Column(header, fields, "cpu_ms"), Is.EqualTo(7.25));
             double sum = 0;
             for (int i = Array.IndexOf(header, "sim_ms"); i <= Array.IndexOf(header, "engine_ms"); i++)
                 sum += double.Parse(fields[i], CultureInfo.InvariantCulture);
@@ -60,7 +62,7 @@ namespace Game.Tests
         {
             var parts = new double[Enum.GetValues(typeof(FrameProfile.Part)).Length];
             parts[(int)FrameProfile.Part.Sim] = 0.00004;
-            var frame = new FrameProfile.Frame { TotalMs = 1, LoopMs = 2, Parts = parts };
+            var frame = new FrameProfile.Frame { TotalMs = 1, LoopMs = 2, CpuMs = -1, Parts = parts };
             var sb = new StringBuilder();
             FrameProfile.Row(frame, sb);
             var header = FrameProfile.Header.Split(',');
@@ -68,6 +70,7 @@ namespace Game.Tests
             Assert.That(fields[Array.IndexOf(header, "sim_ms")], Is.EqualTo("0.0000"));
             Assert.That(fields[Array.IndexOf(header, "engine_ms")], Is.EqualTo("-1.0000"));
             Assert.That(fields[Array.IndexOf(header, "frame_song")], Is.EqualTo("0.0000"));
+            Assert.That(fields[Array.IndexOf(header, "cpu_ms")], Is.EqualTo("-1.0000"), "unknown where the thread's time can't be read");
         }
 
         sealed class Busy : IPresenter

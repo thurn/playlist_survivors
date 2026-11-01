@@ -96,8 +96,11 @@ namespace Game.Client.Loop
     ///   a warm-up, each through GPU completion (<see cref="GpuProbe"/>; batch mode with a device, not `--headless`);
     ///   with `--gpu-probe-ablate` also each pass's cost beside them, with `--gpu-probe-without PASS,...` every frame
     ///   without those passes;
+    ///   `--gpu-probe-firsts` also at each kind of moment's first sighting (<see cref="GpuProbe.Firsts"/>);
+    /// - `--graphics-states-out FILE`: the graphics states the run draws, traced into FILE for the warm-up (<see cref="GraphicsStates"/>);
     /// - `--profile-out FILE.csv`: each frame's main-thread work by part, its allocation and collections, a fixed-time
-    ///   frame's music rendering and analysis wait left out (<see cref="FrameProfile"/>);
+    ///   frame's music rendering and analysis wait left out (<see cref="FrameProfile"/>), and beside it `FILE-alloc.csv`,
+    ///   the allocations by part and type (<see cref="AllocationCensus"/>);
     /// - `--sound-probe`: every sound plays a click instead of its clip, at full level (<see cref="SoundScheduler.Probe"/>);
     ///   `--sound-out DIR` keeps Unity's mix and the sounds scheduled, the audio buffers and the frames, as the
     ///   sync spike does, for `game spike --sounds` to measure.
@@ -156,7 +159,7 @@ namespace Game.Client.Loop
         PauseMenu _pause;
         CalibrationScreen _calibrating;
         double _pauseAt;
-        int _releases;
+        int _releases, _arenaFrame = -1;
         LaunchOptions _options;
         RunInputs _run;
         string _sessionDir;
@@ -332,8 +335,11 @@ namespace Game.Client.Loop
             Driver.Events.Subscribe(_overlay);
             _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter, _crowd?.Shatter);
             _camera = camera;
-            if (camera != null) _probe = GpuProbe.FromOptions(options);
+            if (camera != null) _probe = GpuProbe.FromOptions(options, content);
+            if (_probe?.Sightings != null) Driver.Events.Subscribe(_probe.Sightings);
             if (options.Outputs.Profile != null) _profile = new FrameProfile(options.Outputs.Profile, Driver);
+            GraphicsStates.ReportCompute();
+            GraphicsStates.BeginTrace(options.Outputs.GraphicsStates);
             Debug.Log($"GameLoop: {(source != null ? (source.IsApp ? $"app {source.Tag} (pid {source.Pid})" : source.Path) : "no music")}, " +
                       $"{(_fixed ? "fixed time" : "real time")}, seed {config.Seed}, " +
                       $"{(config.Horde == null ? "no horde" : config.Horde.Schedule ? "the run's level" : "the slice's level")}, events {(events ?? "none")}, headless {headless}, " +
@@ -382,12 +388,14 @@ namespace Game.Client.Loop
             _arena = ArenaRuntime.Load(camera, _options.Palette);
             _arena.OnReady += a =>
             {
+                _arenaFrame = Time.frameCount;
                 _crystal = new CrystalStructures();
                 _crystal.Apply(a, camera);
                 _shatter.Attach(a.Sites, a.RefreshShadows);
                 _look.Volume = a.Post;
                 _look.FollowHero = a.FollowHero;
                 _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
+                if (_look.Zones != null) _look.ZoneLight.Preload(_look.Zones);
             };
         }
 
@@ -395,6 +403,7 @@ namespace Game.Client.Loop
         {
             if (_done) return;
             long start = Stopwatch.GetTimestamp();
+            AllocationCensus.Tag(AllocationCensus.Loop);
             Frame();
             _profile?.Loop(Stopwatch.GetTimestamp() - start);
         }
@@ -412,13 +421,13 @@ namespace Game.Client.Loop
                     if (!Control(RunControl.DeviceChanged)) return;
                 }
                 // Fixed time: the frames drive the music, to this frame's mixer position.
-                long feed = Stopwatch.GetTimestamp();
+                _profile?.BeginWait();
                 _music.RenderTo(FrameClock.SongAt(Time.timeSinceLevelLoadAsDouble));
                 if (_replay != null) { if (!FeedReplay()) return; }
                 else if (_fixed) { if (!FeedSettled()) return; }
                 else FeedLive();
                 // A real-time frame neither renders the music (the audio thread does) nor waits on its analysis.
-                if (_fixed || _replay != null) _profile?.Wait(Stopwatch.GetTimestamp() - feed);
+                if (_fixed || _replay != null) _profile?.EndWait();
             }
             // Before the music's anchor no key has a song time: they wait for it. A replay takes only its recorded keys.
             if (Driver.Clock.Ready && _replay == null)
@@ -436,7 +445,13 @@ namespace Game.Client.Loop
                 Real = Time.realtimeSinceStartupAsDouble,
                 Frame = Time.timeSinceLevelLoadAsDouble,
             };
-            if (Driver.Step(now))
+            // The arena's load (the scene's setup and its 4096² static shadow map, about 36 ms on jarvis) lands in the
+            // frame its scene finishes loading, before this Update: the sim steps and the presenters draw from the frame
+            // after, so no frame of the run carries it (ps-msz.8.9). That frame still takes its entries and keys (the
+            // music's poll replaces them each frame), and the sim's frames are its own, so starting a frame later changes
+            // nothing; an arena that failed to load holds nothing up.
+            bool loading = _arena != null && _arena.Failure == null && (!_arena.Ready || Time.frameCount <= _arenaFrame);
+            if (!loading && Driver.Step(now))
             {
                 _telemetry.Keep();
                 if (_probe != null)
@@ -703,6 +718,7 @@ namespace Game.Client.Loop
             string error = code != 0 ? why : null;
             Debug.Log("GameLoop: " + (why ?? "done") + "; " + _telemetry.Summary(_music, _musicTimes, _keys, _commands, _effects, _sounds));
             _telemetry.Dispose();
+            GraphicsStates.EndTrace();
             _profile?.Dispose();
             _profile = null;
             if (_soundOut != null && _music != null && _sounds != null) _telemetry.KeepSounds(_soundOut, _music, _capture, _sounds, error);

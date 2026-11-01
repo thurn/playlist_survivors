@@ -29,6 +29,16 @@ namespace Game.Client.Arena
             _from = _to = initial;
         }
 
+        /// <summary>
+        /// Parses <paramref name="palettes"/>' lighting now, at load, so no zone's first change parses the layout
+        /// mid-run (a first-use spike of a few ms each).
+        /// </summary>
+        public void Preload(IEnumerable<string> palettes)
+        {
+            foreach (var palette in palettes)
+                if (!_palettes.ContainsKey(palette)) _palettes[palette] = ArenaLighting.Parse(_layoutJson, palette);
+        }
+
         /// <summary>The palette eased toward, by name.</summary>
         public string Palette => _to.Palette;
 

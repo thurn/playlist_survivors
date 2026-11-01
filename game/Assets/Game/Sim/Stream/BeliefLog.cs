@@ -36,15 +36,18 @@ namespace PS.Game.Sim
         {
             heap = new StructList<Pending>(config.EntryCapacity);
             arrived = new StructList<StreamEntry>(256);
-            accepted = new StructList<EntryRecord>(config.TickCapacity + 2 * config.BeatCapacity);
+            int all = 0;
             for (int k = 1; k < KindCount; k++)
             {
                 int cap = (EntryKind)k == EntryKind.Tick ? config.TickCapacity
                     : (EntryKind)k == EntryKind.Beat || (EntryKind)k == EntryKind.Onset ? config.BeatCapacity
-                    : 256;
+                    : (EntryKind)k == EntryKind.HindsightBeat ? config.HindsightCapacity
+                    : config.SparseCapacity;
                 revealed[k] = new StructList<StreamEntry>(cap);
                 revealedKnownAt[k] = new StructList<double>(cap);
+                all += cap;
             }
+            accepted = new StructList<EntryRecord>(all);
         }
 
         /// <summary>Entries dropped because they were revealed out of content order (beats and ticks).</summary>

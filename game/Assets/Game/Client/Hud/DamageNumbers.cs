@@ -26,16 +26,18 @@ namespace Game.Client.Hud
             public long Beat;
             public double Value, X, Y, Born, Last;
             public bool Heavy;
-            public string Text;
         }
 
         readonly VisualElement _layer;
         readonly Camera _camera;
         readonly List<Number> _live = new List<Number>(Cap);
-        readonly List<HitEvent> _pending = new List<HitEvent>();
-        readonly List<(double T, int Index, double Period)> _beats = new List<(double, int, double)>();
+        readonly List<HitEvent> _pending = new List<HitEvent>(1024);
+        readonly List<(double T, int Index, double Period)> _beats = new List<(double, int, double)>(65);
         readonly Label[] _labels = new Label[Labels];
         readonly HashSet<long> _cells = new HashSet<long>();
+        // Each amount's text, made once (only those drawn): a crowd's hits sum into the same amounts again and again.
+        readonly Dictionary<long, string> _texts = new Dictionary<long, string>(TextCap);
+        const int TextCap = 4096;
 
         public DamageNumbers(VisualElement layer, Camera camera)
         {
@@ -86,7 +88,10 @@ namespace Game.Client.Hud
                 else Merge(_pending[i]);
             }
             _pending.RemoveRange(kept, _pending.Count - kept);
-            _live.RemoveAll(n => s - n.Last >= HoldS);
+            kept = 0;
+            for (int i = 0; i < _live.Count; i++)
+                if (s - _live[i].Last < HoldS) _live[kept++] = _live[i];
+            _live.RemoveRange(kept, _live.Count - kept);
             Draw(s, heroX, heroY);
         }
 
@@ -102,7 +107,6 @@ namespace Game.Client.Hud
                 n.Last = hit.T;
                 n.X = hit.X;
                 n.Y = hit.Y;
-                n.Text = HudText.Damage(n.Value);
                 _live[i] = n;
                 return;
             }
@@ -110,8 +114,16 @@ namespace Game.Client.Hud
             _live.Add(new Number
             {
                 Foe = hit.Target, Beat = beat, Value = hit.Damage, X = hit.X, Y = hit.Y, Born = hit.T, Last = hit.T,
-                Heavy = hit.WeaponHit == WeaponHit.HeavyStrike, Text = HudText.Damage(hit.Damage),
+                Heavy = hit.WeaponHit == WeaponHit.HeavyStrike,
             });
+        }
+
+        string Text(double amount)
+        {
+            long key = BitConverter.DoubleToInt64Bits(Math.Round(amount * HudText.DamageScale));
+            if (_texts.TryGetValue(key, out var text)) return text;
+            if (_texts.Count >= TextCap) _texts.Clear();
+            return _texts[key] = HudText.Damage(amount);
         }
 
         void Draw(double s, double heroX, double heroY)
@@ -137,7 +149,7 @@ namespace Game.Client.Hud
                 float pop = 1 + 0.25f * Mathf.Exp(-(float)age * 18);
                 var l = _labels[used++];
                 l.style.display = DisplayStyle.Flex;
-                if (l.text != n.Text) l.text = n.Text;
+                HudPresenter.Show(l, Text(n.Value));
                 l.EnableInClassList("number--heavy", n.Heavy);
                 l.style.left = x;
                 l.style.top = y;

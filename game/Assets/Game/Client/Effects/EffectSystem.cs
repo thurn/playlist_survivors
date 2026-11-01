@@ -66,6 +66,8 @@ namespace Game.Client.Effects
         public readonly RejectionLedger Rejections = new RejectionLedger();
         bool _excuseFrame;
         readonly Queue<(int epoch, bool excused)> _readbacks = new Queue<(int, bool)>();
+        // The counters' readback callback, made once: a method group makes a new delegate each frame.
+        readonly Action<AsyncGPUReadbackRequest> _onCounters;
         public int SpawnsThisFrame { get; private set; }
         public long SpawnsTotal { get; private set; }
         public int AlphaCount { get; private set; }
@@ -114,6 +116,8 @@ namespace Game.Client.Effects
             _kLocalSort = _sort.FindKernel("LocalSort");
             _kLocalMerge = _sort.FindKernel("LocalMerge");
             _kGlobal = _sort.FindKernel("GlobalStep");
+            GraphicsStates.Prepare(_sim, _kInit, _kBegin, _kAlloc, _kEmit, _kFinish, _kSim, _kPost, _kPad);
+            GraphicsStates.Prepare(_sort, _kLocalSort, _kLocalMerge, _kGlobal);
 
             _material = new Material(library.Draw) { name = "Effect particles" };
             _material.SetBuffer("_Particles", _particles);
@@ -136,6 +140,7 @@ namespace Game.Client.Effects
 
             Lights = new EffectLights(lightPool);
             _pass = new EffectPass(this);
+            _onCounters = OnCounters;
             Reset(0);
             RenderPipelineManager.beginCameraRendering += OnBeginCamera;
         }
@@ -321,7 +326,7 @@ namespace Game.Client.Effects
             Dispatch(cmd, _kPad, (sortSize + 255) / 256, aliveIn, aliveOut);
             SortAlpha(cmd, sortSize);
             _readbacks.Enqueue((Rejections.Epoch, _excuseFrame));
-            cmd.RequestAsyncReadback(_counters, OnCounters);
+            cmd.RequestAsyncReadback(_counters, _onCounters);
             Graphics.ExecuteCommandBuffer(cmd);
             cmd.Clear();
             _aliveFlip = !_aliveFlip;

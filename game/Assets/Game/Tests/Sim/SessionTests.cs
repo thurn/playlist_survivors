@@ -285,7 +285,7 @@ namespace PS.Game.Sim.Tests
         static readonly string[] FromLevelAndContent =
         {
             nameof(SimConfig.Content), nameof(SimConfig.Horde), nameof(SimConfig.Arsenal), nameof(SimConfig.HeroStands), nameof(SimConfig.TickCapacity),
-            nameof(SimConfig.BeatCapacity), nameof(SimConfig.EntryCapacity), nameof(SimConfig.EventCapacity), nameof(SimConfig.PressCapacity),
+            nameof(SimConfig.BeatCapacity), nameof(SimConfig.HindsightCapacity), nameof(SimConfig.SparseCapacity), nameof(SimConfig.EntryCapacity), nameof(SimConfig.EventCapacity), nameof(SimConfig.PressCapacity),
         };
 
         [Test]

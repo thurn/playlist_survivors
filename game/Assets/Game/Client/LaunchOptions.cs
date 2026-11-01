@@ -80,6 +80,10 @@ namespace Game.Client
         public bool GpuProbeAblate;
         /// <summary>`--gpu-probe-without PASS,...`: the probe's frames all drawn without those passes.</summary>
         public string GpuProbeWithout;
+        /// <summary>`--gpu-probe-firsts`: the frame probe also at each kind of moment's first sighting (<see cref="GpuProbe.Firsts"/>).</summary>
+        public bool GpuProbeFirsts;
+        /// <summary>`--no-warmup`: the build's traced graphics states aren't warmed at boot (<see cref="GraphicsStates"/>).</summary>
+        public bool NoWarmup;
 
         // Calibration.
         public string Calibrate, CalibrationFile, TapAlong;
@@ -90,7 +94,7 @@ namespace Game.Client
         /// <summary>The CSVs and folders a run writes for evidence.</summary>
         public sealed class OutputFiles
         {
-            public string Loop, Events, Structures, Shatter, Sound, Camera, Hero, GpuProbe, Profile, Moments;
+            public string Loop, Events, Structures, Shatter, Sound, Camera, Hero, GpuProbe, Profile, Moments, GraphicsStates;
         }
 
         /// <summary>What plays in place of a player: debug commands, held keys, the bot and a scripted pause.</summary>
@@ -147,6 +151,8 @@ namespace Game.Client
                 GpuProbeAt = a.Get("--gpu-probe-at"),
                 GpuProbeAblate = a.Has("--gpu-probe-ablate"),
                 GpuProbeWithout = a.Get("--gpu-probe-without"),
+                GpuProbeFirsts = a.Has("--gpu-probe-firsts"),
+                NoWarmup = a.Has("--no-warmup"),
                 Calibrate = a.Get("--calibrate"),
                 CalibrationFile = a.Path("--calibration"),
                 TapAlong = a.Get("--tap-along"),
@@ -155,7 +161,7 @@ namespace Game.Client
                     Loop = a.Path("--loop-out"), Events = a.Path("--events-out"), Structures = a.Path("--structures-out"), Shatter = a.Path("--shatter-out"),
                     Sound = a.Path("--sound-out"), Camera = a.Path("--camera-out"), Hero = a.Path("--hero-out"),
                     GpuProbe = a.Path("--gpu-probe-out"), Profile = a.Path("--profile-out"),
-                    Moments = a.Path("--moments-out"),
+                    Moments = a.Path("--moments-out"), GraphicsStates = a.Path("--graphics-states-out"),
                 },
                 Scripted = { Debug = a.Get("--debug"), Walk = a.Get("--walk"), Bot = Bot(a.Get("--bot")), PauseAt = a.Float("--pause-at", -1) },
             };

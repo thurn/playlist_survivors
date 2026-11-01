@@ -52,8 +52,16 @@ namespace PS.Game.Sim
         /// <summary>The hero never falls: it keeps a tenth of its health, its hits still landing (bots and evidence runs).</summary>
         public bool HeroStands;
 
+        // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run. The defaults
+        // suit tests and short levels; the run's level sizes them for a whole run (RunLevel.Config).
+        /// <summary>The ticks kept, and the judging's per-tick record.</summary>
         public int TickCapacity = 40_000;
+        /// <summary>The beats kept, and as many onsets.</summary>
         public int BeatCapacity = 8_192;
+        /// <summary>The hindsight windows' grid beats kept.</summary>
+        public int HindsightCapacity = 256;
+        /// <summary>Each other stream kind's entries kept (hindsight windows, timbre, changes, jumps, forecasts, ends).</summary>
+        public int SparseCapacity = 256;
         public int EntryCapacity = 4_096;
         public int EventCapacity = 65_536;
         public int PressCapacity = 4_096;

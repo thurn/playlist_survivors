@@ -27,6 +27,9 @@ namespace Game.Client.Hud
         readonly Label _heading, _hint;
         readonly GameContent _content;
         readonly VisualElement[] _cards = new VisualElement[3], _faces = new VisualElement[3], _backs = new VisualElement[3];
+        // Each card's parts an offer fills in: built once, as a new tree each level-up made the frame's garbage.
+        readonly VisualElement[] _glows = new VisualElement[3], _gems = new VisualElement[3];
+        readonly Label[] _marks = new Label[3], _names = new Label[3], _ranks = new Label[3], _texts = new Label[3], _footers = new Label[3];
         Offer _shown;
         int _serial = -1, _selected = -1;
         int _flipsMarked; // the cards whose flip has come to rest in the on-the-beat trace (Moments), a bit each
@@ -42,6 +45,29 @@ namespace Game.Client.Hud
             _heading = layer.Q<Label>("cards-heading");
             _hint = layer.Q<Label>("cards-hint");
             _content = content;
+            if (content == null) return;
+            for (int k = 0; k < 3; k++)
+            {
+                var slot = SlotsView.Element("card");
+                var face = SlotsView.Element("card__face");
+                face.Add(_glows[k] = SlotsView.Element("card__gem-glow"));
+                var gem = _gems[k] = SlotsView.Element("card__gem");
+                gem.Add(SlotsView.Element("gem__core"));
+                face.Add(gem);
+                face.Add(_marks[k] = Text("", "card__mark"));
+                face.Add(_names[k] = Text("", "card__name"));
+                face.Add(_ranks[k] = Text("", "card__rank"));
+                face.Add(_texts[k] = Text("", "card__text"));
+                face.Add(_footers[k] = Text("", "card__key"));
+                var back = SlotsView.Element("card__back");
+                back.Add(SlotsView.Element("card__back-facet"));
+                slot.Add(back);
+                slot.Add(face);
+                _cards[k] = slot;
+                _faces[k] = face;
+                _backs[k] = back;
+                _row.Add(slot);
+            }
         }
 
         public void OnEvent(in SimEvent e)
@@ -151,38 +177,22 @@ namespace Game.Client.Hud
             _chosenAt = double.NegativeInfinity;
             _opened = _eventOffer == offer.Serial ? _eventOpened : double.NaN;
             _heading.text = "LEVEL UP";
-            _row.Clear();
             for (int k = 0; k < 3; k++)
             {
                 var card = offer.Card(k);
                 string id = HudText.Id(_content, card);
                 var colour = HudText.Colour(id);
-                var slot = SlotsView.Element("card");
-                var face = SlotsView.Element("card__face");
-                var glow = SlotsView.Element("card__gem-glow");
-                glow.style.backgroundColor = colour;
-                face.Add(glow);
-                var gem = SlotsView.Element("card__gem");
-                gem.style.backgroundColor = colour;
-                gem.Add(SlotsView.Element("gem__core"));
-                face.Add(gem);
-                face.Add(Text(HudText.Mark(id), "card__mark"));
-                face.Add(Text(HudText.Name(id), "card__name"));
-                var rank = Text(HudText.Rank(card), "card__rank");
-                rank.style.color = colour;
-                face.Add(rank);
-                face.Add(Text(HudText.Description(_content, card), "card__text"));
+                _glows[k].style.backgroundColor = colour;
+                _gems[k].style.backgroundColor = colour;
+                HudPresenter.Show(_marks[k], HudText.Mark(id));
+                HudPresenter.Show(_names[k], HudText.Name(id));
+                HudPresenter.Show(_ranks[k], HudText.Rank(card));
+                _ranks[k].style.color = colour;
+                HudPresenter.Show(_texts[k], HudText.Description(_content, card));
                 string partner = Partner(card, arsenal);
-                if (partner != null) face.Add(Text("EVO PAIR  ·  " + HudText.Name(partner), "card__pair"));
-                else face.Add(Text(Keys[k], "card__key"));
-                var back = SlotsView.Element("card__back");
-                back.Add(SlotsView.Element("card__back-facet"));
-                slot.Add(back);
-                slot.Add(face);
-                _cards[k] = slot;
-                _faces[k] = face;
-                _backs[k] = back;
-                _row.Add(slot);
+                HudPresenter.Show(_footers[k], partner != null ? "EVO PAIR  ·  " + HudText.Name(partner) : Keys[k]);
+                _footers[k].EnableInClassList("card__pair", partner != null);
+                _footers[k].EnableInClassList("card__key", partner == null);
             }
         }
 

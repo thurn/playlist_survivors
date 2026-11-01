@@ -20,7 +20,8 @@ namespace Game.Client
     /// - `--arena`: the baked arena alone in the game camera's framing (<see cref="Arena.ArenaStage"/>);
     /// - `--shatter-bench OUT.json`: the GPU shatter's bench (<see cref="Crowd.ShatterBench"/>);
     /// - `--calibrate video|input`: that calibration screen first (<see cref="CalibrationScreen"/>),
-    ///   then the game as below once it closes.
+    ///   then the game as below once it closes;
+    /// - `--no-warmup`: the build's traced graphics states aren't warmed first (<see cref="GraphicsStates"/>).
     /// Otherwise it runs the game's frame loop (<see cref="GameLoop"/>, with `--seed`, `--events`,
     /// `--overlay`, `--headless` and `--loop-out`) on its music:
     /// - `--file &lt;audio or .m3u&gt;`: the file;
@@ -57,6 +58,7 @@ namespace Game.Client
                 return;
             }
             if (options.FixedTime) Time.captureFramerate = FixedFps;
+            GraphicsStates.WarmUp(options);
             _seconds = options.Seconds;
             if (options.StillsDir != null) _stills = new Stills(_camera, options.StillsDir, options.StillsAt, options.StillsMask);
             if (options.DspBuffer > 0)

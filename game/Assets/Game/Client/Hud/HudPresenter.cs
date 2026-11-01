@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Game.Client.Loop;
 using Game.Client.Look;
 using Game.Client.Music;
@@ -49,7 +50,7 @@ namespace Game.Client.Hud
         readonly BeatGem _gem;
         readonly Queue<double> _deaths = new Queue<double>();
         readonly List<double> _bites = new List<double>();
-        int _killCount;
+        int _killCount, _killsShown = -1;
         double _bitten = double.NegativeInfinity;
         // The song time of the last frame shown before the beat locked (NaN while unlocked): a beat at or before it
         // never lands, since it would land late, on the frame the lock arrives (ps-msz.8.5).
@@ -145,25 +146,29 @@ namespace Game.Client.Hud
                 _bites.RemoveAt(i);
             }
 
-            _level.text = "LV " + Math.Max(1, state.Level);
+            Show(_level, HudText.Level(Math.Max(1, state.Level)));
             _xpFill.style.width = Length.Percent((float)(100 * state.ExperienceFill));
             double health = state.Hero.MaxHealth > 0 ? Math.Max(0, Math.Min(1, state.Hero.Health / state.Hero.MaxHealth)) : 0;
             bool bitten = s - _bitten < BiteFlashS;
             _hpFill.style.width = Length.Percent((float)(100 * health));
             _hpFill.style.backgroundColor = bitten ? Color.white : health < LowHealth && hit > 0.5 ? HudText.Rgb(0xffb0b8) : HudText.Rgb(0xff4050);
             _hpPulse.style.opacity = health < LowHealth ? (float)(0.2 + 0.5 * (locked ? hit : 0.3)) : 0;
-            _kills.text = _killCount.ToString();
-            _timer.text = HudText.Clock(state.RunClock);
+            if (_killCount != _killsShown)
+            {
+                _killsShown = _killCount;
+                _kills.text = _killCount.ToString(CultureInfo.InvariantCulture);
+            }
+            Show(_timer, HudText.Clock(state.RunClock));
             _slots.Show(_sim.State.WeaponSlots, _sim.State.PassiveSlots);
             _track.Show(_sim.Stream, _sim.Beats, s, beat, locked, since);
-            _prompt.text = state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT";
+            Show(_prompt, state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT");
 
             string banner = state.Phase == RunPhase.Ended ? null
                 : state.FrozenFor(FreezeReason.MusicStopped) ? "MUSIC STOPPED"
                 : state.FrozenFor(FreezeReason.Pause) && (Menu == null || !Menu.Open) ? "PAUSED"
                 : null;
             _banner.style.display = banner != null ? DisplayStyle.Flex : DisplayStyle.None;
-            if (banner != null) _bannerText.text = banner;
+            if (banner != null) Show(_bannerText, banner);
 
             _cards.Present(s, state.Offer, _sim.State);
             _chest.Present(s, _sim, beat, state.Offer.Open);
@@ -176,6 +181,12 @@ namespace Game.Client.Hud
             // The overhead display comes in over the run's first two seconds and goes with the end card.
             double fade = state.Phase == RunPhase.Ended ? 0 : Smooth((state.RunClock - 0.5) / 1.5);
             _gem.Present(s, new Vector3((float)hx, 0, (float)hy), beat, locked, since, hit, health, bitten, (float)fade);
+        }
+
+        /// <summary>Sets a label's text only when it changes: a new text has the panel lay it out again.</summary>
+        internal static void Show(Label label, string text)
+        {
+            if (label.text != text) label.text = text;
         }
 
         static double Smooth(double x)

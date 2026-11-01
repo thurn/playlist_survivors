@@ -11,15 +11,26 @@ fixed-time frame's music rendering and analysis wait left out):
 - `break`: the same with a structure break at 64 s (`--debug break@64`);
 - `finale`: the same with the finale's mass kill forced at 68 s (`--debug finale@68`);
 - `early`: the run's first minute on the same song;
-- `full`: the 30-minute fixed-time File run with the bot, for the CPU profile (about 4 minutes).
+- `full`: the 30-minute fixed-time File run with the bot, for the CPU profile (about 4 minutes);
+- `firsts`: the same run with the probe at each kind of moment's first sighting (`--gpu-probe-firsts`: the
+  first heavy strike, each role's first death, each weapon's first hit, the first break, chest and level-up,
+  each zone's first change...), its `first_ms` the frame that first draws it: a first-use hitch's cost;
+- `firsts-rest`: the same probe at minute 25 on what that run never shows: Unholy Vespers, Thunder Loop, Chain
+  Lightning and the fire trail, and the stampede, kick line and wedge.
 
 Each scenario's CSV and probe JSON and the player's log stay in the gitignored captures/game/perf/NAME/;
 the summary (per scenario: the probe's frame p50/p99/max, the main thread's p50/p99/max by part over
-the scenario's window of song time, allocations and collections, and the sim's step p99 at 285 or
-more alive) goes to captures/game/perf/summary.json, and with `--evidence DIR` beside the probes'
-JSON into game/evidence/DIR/. It exits 1 if a player fails (a non-zero exit, an exception in its log,
-or a missing profile or probe point). With `--ablate` the probe also draws each counted frame's
-neighbours with one pass turned off (`--gpu-probe-ablate`), and the summary has each pass's saving.
+the scenario's window of song time, the main thread's CPU time, each frame over 16.7 ms with its CPU
+time and top part, allocations and collections, and the sim's step p99 at 285 or more alive) goes to
+captures/game/perf/summary.json, and with `--evidence DIR` beside the probes' JSON into
+game/evidence/DIR/. It exits 1 if a player fails (a non-zero exit, an exception in its log, or a missing
+profile or probe point). With `--ablate` the probe also draws each counted frame's neighbours with one
+pass turned off (`--gpu-probe-ablate`), and the summary has each pass's saving. `--trace` builds and
+runs a development player (game/Builds/mac/trace; Unity traces only in one) that traces the graphics
+states it draws into the build's warm-up (`--graphics-states-out`, game/Assets/StreamingAssets/GraphicsStates/,
+gitignored; its captures go to captures/game/perf-trace/): the next `game build` ships them, and its
+player warms them up at boot, so no first sighting compiles a shader mid-run. `--no-warmup` measures
+without the warm-up.
 """
 
 from __future__ import annotations
@@ -41,13 +52,21 @@ SONG = "public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg"
 PLAYLIST = "native/playlists/survivors-30-twice.m3u"
 EVOLVED = "evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5"
 PEAK = ["--start-minute", "25", "--bot", "positioning"]
+# What the full run's bot never reaches (ps-msz.8.9): the other two evolutions and the last two weapons, and the set
+# pieces its songs never cue.
+REST_ARSENAL = "sword:8,unholy-vespers:1,thunder-loop:1,chain-lightning:8,fire-trail:8"
+REST_SET_PIECES = "stampede@8,kick@16,wedge@24"
 # The sim's step is measured against the target at 300 alive: frames this close to the cap count.
 PEAK_ALIVE = 285
 # With --ablate a probe point draws GpuProbe.AblateRounds rounds of its ten frame kinds (250 frames,
 # 4.2 s of song at fixed time): its points are spaced this far apart and the run goes on this long after.
 ABLATE_S = 4.5
+# The traced graphics states the player warms up at boot (Client/GraphicsStates.cs), in the gitignored
+# StreamingAssets the build copies: per machine, made by `game perf --trace`.
+TRACE = "Assets/StreamingAssets/GraphicsStates/Metal.graphicsstate"
+TRACE_PLAYER = "Builds/mac/trace"
 # The columns that aren't parts of the frame's work.
-NOT_PARTS = {"frame_ms", "wait_ms", "probe_ms"}
+NOT_PARTS = {"frame_ms", "wait_ms", "probe_ms", "cpu_ms"}
 
 
 @dataclass(frozen=True)
@@ -61,6 +80,8 @@ class Scenario:
     # --seconds (song time at fixed time); None runs to the run's end.
     seconds: float | None
     file: str = SONG
+    # The probe at each first sighting too (`--gpu-probe-firsts`).
+    firsts: bool = False
 
 
 SCENARIOS = [
@@ -73,6 +94,10 @@ SCENARIOS = [
     Scenario("early", "the run's first minute", ["--run", "--bot", "positioning"], [45, 60, 75], (20, 80), 80),
     Scenario("full", "the 30-minute fixed-time File run (CPU profile only)", ["--run", "--bot", "positioning"],
              [], (0, math.inf), None, file=PLAYLIST),
+    Scenario("firsts", "the 30-minute run with the probe at each first sighting", ["--run", "--bot", "positioning"],
+             [], (0, math.inf), None, file=PLAYLIST, firsts=True),
+    Scenario("firsts-rest", "the weapons and set pieces the full run never shows, with the probe at each first sighting",
+             [*PEAK, "--arsenal", REST_ARSENAL, "--debug", REST_SET_PIECES], [], (0, math.inf), 45, firsts=True),
 ]
 
 
@@ -84,6 +109,10 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--evidence", help="also write the summary and the probes' JSON to game/evidence/DIR")
     p.add_argument("--ablate", action="store_true",
                    help="also time the probe's frames with each pass turned off (SSAO, post, shadows, ...)")
+    p.add_argument("--trace", action="store_true",
+                   help=f"trace the graphics states each scenario draws into the build's warm-up ({TRACE}), "
+                        "in a development player of its own; `game build` after ships them")
+    p.add_argument("--no-warmup", action="store_true", help="the player doesn't warm up the build's traced graphics states")
     p.set_defaults(func=cmd_perf)
 
 
@@ -99,19 +128,25 @@ def cmd_perf(a: argparse.Namespace) -> int:
     wt = paths.worktree(name="game")
     from .game import APP_EXE
 
-    exe = setup.player_dir(wt, "mac", a.backend) / APP_EXE
-    if a.build or not exe.exists():
+    if a.trace and a.evidence:
+        print("perf: --trace runs a development player, whose numbers aren't evidence", file=sys.stderr)
+        return 2
+    # Unity traces graphics states only in a development build: --trace has its own player, and its own captures.
+    out = TRACE_PLAYER if a.trace else None
+    exe = setup.player_dir(wt, "mac", a.backend, out) / APP_EXE
+    if a.build or a.trace or not exe.exists():
         from . import cli
 
         code = cli.cmd_build(argparse.Namespace(
-            project="game", platform="mac", backend=a.backend, out=None, development=False,
+            project="game", platform="mac", backend=a.backend, out=out, development=a.trace,
             scene=None, cold=False, force=False))
         if code != 0:
             return code
-    root = wt.root / "captures" / "game" / "perf"
+    root = wt.root / "captures" / "game" / ("perf-trace" if a.trace else "perf")
     summary, failed = {}, []
     for scenario in (s for s in SCENARIOS if s.name in wanted):
-        result = run(exe, wt.root, root / scenario.name, scenario, ablate=a.ablate)
+        extra = (["--graphics-states-out", str(wt.project / TRACE)] if a.trace else []) + (["--no-warmup"] if a.no_warmup else [])
+        result = run(exe, wt.root, root / scenario.name, scenario, extra, ablate=a.ablate)
         summary[scenario.name] = result
         if not result["ok"]:
             failed.append(scenario.name)
@@ -134,7 +169,7 @@ def cmd_perf(a: argparse.Namespace) -> int:
     return 0
 
 
-def run(exe: Path, repo: Path, out: Path, s: Scenario, ablate: bool = False) -> dict:
+def run(exe: Path, repo: Path, out: Path, s: Scenario, extra: list[str] | None = None, ablate: bool = False) -> dict:
     """One scenario in the player, at fixed time in batch mode; its summary, `ok` false on a failure."""
     from .spike import exceptions
 
@@ -142,15 +177,19 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario, ablate: bool = False) -> 
     out.mkdir(parents=True)
     log, profile, probe = out / "player.log", out / "profile.csv", out / "gpu-probe.json"
     cmd = [str(exe), "-batchmode", "-force-metal", "-logFile", str(log), "--fixed-time",
-           "--file", str((repo / s.file).resolve()), "--profile-out", str(profile), *s.args]
+           "--file", str((repo / s.file).resolve()), "--profile-out", str(profile), *s.args, *(extra or [])]
     points, seconds = s.probe, s.seconds
     if ablate and points:
         points = ablate_points(points)
         seconds = max(seconds, points[-1] + ABLATE_S) if seconds is not None else None
     if points:
-        cmd += ["--gpu-probe-at", ",".join(f"{t:g}" for t in points), "--gpu-probe-out", str(probe)]
+        cmd += ["--gpu-probe-at", ",".join(f"{t:g}" for t in points)]
         if ablate:
             cmd.append("--gpu-probe-ablate")
+    if s.firsts:
+        cmd += ["--gpu-probe-firsts"]
+    if points or s.firsts:
+        cmd += ["--gpu-probe-out", str(probe)]
     if seconds is not None:
         cmd += ["--seconds", f"{seconds:g}"]
     started = time.monotonic()
@@ -172,11 +211,12 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario, ablate: bool = False) -> 
             errors.append("no profiled frame in the window")
     else:
         errors.append("no profile")
-    if s.probe:
+    if s.probe or s.firsts:
         if probe.exists():
             result["probe"] = probe_summary(json.loads(probe.read_text()))
-            if len(result["probe"]["points"]) != len(points):
-                errors.append(f"{len(result['probe']['points'])} of {len(points)} probe points")
+            timed = sum(1 for p in result["probe"]["points"] if not p.get("first"))
+            if timed != len(points):
+                errors.append(f"{timed} of {len(points)} probe points")
         else:
             errors.append("no probe")
     result["ok"] = not errors
@@ -209,8 +249,8 @@ def pct(sorted_values: list[float], p: float) -> float:
 
 def stats(values: list[float]) -> dict[str, float]:
     v = sorted(values)
-    return {"p50": round(pct(v, 0.5), 3), "p99": round(pct(v, 0.99), 3), "max": round(v[-1], 3),
-            "mean": round(sum(v) / len(v), 3)}
+    return {"p50": round(pct(v, 0.5), 3), "p99": round(pct(v, 0.99), 3), "p99.9": round(pct(v, 0.999), 3),
+            "max": round(v[-1], 3), "mean": round(sum(v) / len(v), 3)}
 
 
 def summarise(rows: list[dict[str, float]], window: tuple[float, float]) -> dict:
@@ -225,6 +265,7 @@ def summarise(rows: list[dict[str, float]], window: tuple[float, float]) -> dict
     alloc = sorted(r["alloc_bytes"] for r in frames)
     peak = sorted(r["sim_ms"] for r in frames if r["alive"] >= PEAK_ALIVE)
     frame_ms = [r["frame_ms"] for r in frames]
+    cpu = [r["cpu_ms"] for r in frames if r.get("cpu_ms", -1) >= 0]
     alive = sorted(r["alive"] for r in frames)
     return {
         "frames": len(frames),
@@ -233,6 +274,12 @@ def summarise(rows: list[dict[str, float]], window: tuple[float, float]) -> dict
         "frame_ms": stats(frame_ms),
         "over_16_7ms": sum(ms > 1000 / 60 for ms in frame_ms),
         "over_33ms": sum(ms > 1000 / 30 for ms in frame_ms),
+        # The main thread's CPU time (where the player could read it): a slow frame with little is the OS's, not the frame's.
+        **({"cpu_ms": stats(cpu)} if cpu else {}),
+        "slow": [{"song": round(r["frame_song"], 3), "frame_ms": round(r["frame_ms"], 2),
+                  **({"cpu_ms": round(r["cpu_ms"], 2)} if r.get("cpu_ms", -1) >= 0 else {}),
+                  "top": max(parts, key=lambda p: r[f"{p}_ms"]), "alloc_bytes": int(r["alloc_bytes"])}
+                 for r in frames if r["frame_ms"] > 1000 / 60],
         "parts_ms": by_part,
         "top": sorted(parts, key=lambda p: by_part[p]["mean"], reverse=True)[:3],
         "wait_s": round(sum(r["wait_ms"] for r in frames) / 1000, 1),
@@ -244,8 +291,10 @@ def summarise(rows: list[dict[str, float]], window: tuple[float, float]) -> dict
 
 
 def probe_summary(probe: dict) -> dict:
-    """The frame probe's counted frames over every point: p50, p99 and max in ms, and each point's."""
+    """The frame probe's counted frames over every point: p50, p99 and max in ms, and each point's, with its first
+    (warm-up) frame's; a first sighting's point (`--gpu-probe-firsts`) has its label and `first` true."""
     ms = sorted(f[2] for p in probe["points"] for f in p["frames"])
+    firsts = [p.get("firstMs") for p in probe["points"] if p.get("firstMs") is not None]
     return {
         "device": probe.get("graphicsDeviceName"), "size": probe.get("size"), "msaa": probe.get("msaa"),
         "frames": len(ms),
@@ -254,7 +303,10 @@ def probe_summary(probe: dict) -> dict:
         "max_ms": round(ms[-1], 2) if ms else None,
         # The frame's CPU share (the Render call, before the wait for the GPU).
         "cpu_p50_ms": probe.get("cpuP50Ms"), "cpu_p99_ms": probe.get("cpuP99Ms"),
-        "points": [{"at": p["at"], "alive": p["alive"], "median_ms": p["medianMs"], "max_ms": p["maxMs"]}
+        "first_max_ms": round(max(firsts), 2) if firsts else None,
+        "points": [{"at": p["at"], "alive": p["alive"], "median_ms": p["medianMs"], "max_ms": p["maxMs"],
+                    **({"first_ms": p["firstMs"]} if "firstMs" in p else {}),
+                    **({"label": p["label"], "first": not p["label"].startswith("at ")} if "label" in p else {})}
                    for p in probe["points"]],
         **({"ablations": [ablation(x) for x in probe["ablations"]]} if "ablations" in probe else {}),
     }
@@ -274,7 +326,8 @@ def report_line(name: str, r: dict) -> str:
     parts = []
     if probe:
         parts.append(f"probe p50/p99/max {probe['p50_ms']}/{probe['p99_ms']}/{probe['max_ms']} ms"
-                     + (f" (CPU p50/p99 {probe['cpu_p50_ms']}/{probe['cpu_p99_ms']})" if probe.get("cpu_p50_ms") is not None else ""))
+                     + (f" (CPU p50/p99 {probe['cpu_p50_ms']}/{probe['cpu_p99_ms']})" if probe.get("cpu_p50_ms") is not None else "")
+                     + f", first frames max {probe['first_max_ms']} ms over {len(probe['points'])} points")
         if probe.get("ablations"):
             parts.append("saved without (paired) " + ", ".join(
                 f"{x['name']} {x.get('pairedSavedMs', x['savedMs'])}" for x in probe["ablations"]) + " ms")

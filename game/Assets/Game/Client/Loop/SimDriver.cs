@@ -96,8 +96,10 @@ namespace Game.Client.Loop
             Times = times;
 
             long stepStart = Stopwatch.GetTimestamp();
+            int tag = AllocationCensus.Tag(AllocationCensus.Sim);
             if (Replay != null) Replay.StepTo(Sim, times.Frontier);
             else Sim.StepTo(times.Frontier);
+            AllocationCensus.Tag(tag);
             StepMs = Ms(Stopwatch.GetTimestamp() - stepStart);
             History.Record(Sim.State);
 

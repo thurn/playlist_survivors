@@ -126,6 +126,8 @@ namespace Game.Client.Structures
         readonly List<Pending> _pending = new List<Pending>();
         readonly StructureShards _shards;
         Action<IReadOnlyList<Bounds>> _refreshShadows;
+        // A cut renderer's materials, for its shards (the property copies an array each time).
+        readonly List<Material> _materials = new List<Material>();
         Site[] _sites;
         Scene _scene;
         bool _ownScene;
@@ -366,7 +368,7 @@ namespace Game.Client.Structures
             var rot = renderer.transform.rotation;
             var lossy = renderer.transform.lossyScale;
             float volumeScale = Mathf.Abs(lossy.x * lossy.y * lossy.z);
-            var mats = renderer.sharedMaterials;
+            renderer.GetSharedMaterials(_materials);
             var block = site.Blocks[r];
             for (int i = 0; i < set.Shards.Length; i += every)
             {
@@ -374,7 +376,7 @@ namespace Game.Client.Structures
                 var rest = l2w.MultiplyPoint3x4(src.Center);
                 var s = Take(src.Mesh);
                 launch(s, rest);
-                s.Renderer.sharedMaterials = mats;
+                s.Renderer.SetSharedMaterials(_materials);
                 s.Transform.SetPositionAndRotation(rest, rot);
                 s.Rest = rest;
                 s.Transform.localScale = lossy;

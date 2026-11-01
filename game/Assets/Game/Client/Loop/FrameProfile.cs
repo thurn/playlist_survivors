@@ -34,15 +34,17 @@ namespace Game.Client.Loop
     /// reports the frames' own work; and `probe_ms`, the frame probe's hand-drawn camera and its file
     /// (<see cref="GpuProbe"/>), whose allocation is left out too. `alloc_bytes` is what the main thread allocated in the frame (IL2CPP
     /// lacks GC.GetAllocatedBytesForCurrentThread, so a native allocation hook counts there); `gc` the
-    /// collections since the previous frame. Rows are written without allocating, so the profile
-    /// doesn't make the garbage it counts.
+    /// collections since the previous frame; `cpu_ms` the main thread's CPU time in the frame, its wait and probe left
+    /// out, which falls short of `frame_ms` when the OS gave the thread's time to others. Rows are written without allocating, so the profile
+    /// doesn't make the garbage it counts. Beside it, `FILE-alloc.csv`: the main thread's allocations from
+    /// the first profiled frame to the end, by part of the frame and type (<see cref="AllocationCensus"/>).
     /// </summary>
     public sealed class FrameProfile : IDisposable
     {
         public enum Part { Sim, Events, Crowd, Shatter, Effects, Weapons, Pickups, Structures, Physics, Hero, Look, Hud, Sound, Loop, Engine }
 
         public const string Header = "frame,frame_song,alive,frame_ms,wait_ms,probe_ms,sim_ms,events_ms,crowd_ms,shatter_ms,effects_ms," +
-                                     "weapons_ms,pickups_ms,structures_ms,physics_ms,hero_ms,look_ms,hud_ms,sound_ms,loop_ms,engine_ms,alloc_bytes,gc";
+                                     "weapons_ms,pickups_ms,structures_ms,physics_ms,hero_ms,look_ms,hud_ms,sound_ms,loop_ms,engine_ms,alloc_bytes,gc,cpu_ms";
 
         static readonly int PartCount = Enum.GetValues(typeof(Part)).Length;
         static readonly double TickMs = 1000.0 / Stopwatch.Frequency;
@@ -54,24 +56,29 @@ namespace Game.Client.Loop
             public double Song;
             /// <summary>The whole frame, GameLoop's Update in it, and the waits and probe draw inside that.</summary>
             public double TotalMs, LoopMs, WaitMs, ProbeMs;
+            /// <summary>The main thread's CPU time in the frame, its waits and probe draw left out; negative where unknown.</summary>
+            public double CpuMs;
             /// <summary>The timed parts by <see cref="Part"/>; <see cref="Row"/> works out Loop and Engine.</summary>
             public double[] Parts;
             public long Allocated;
         }
 
         readonly SimDriver _driver;
+        readonly string _path;
         readonly StreamWriter _out;
         readonly double[] _parts = new double[PartCount];
         readonly StringBuilder _row = new StringBuilder(512);
         readonly char[] _chars = new char[512];
         readonly PlayerLoopSystem.UpdateFunction _begin, _end;
         long _start, _loopTicks, _waitTicks, _probeTicks, _allocated, _probeStart, _probeAllocStart, _probeAllocated;
+        long _cpuStart, _waitStart, _waitCpuStart, _probeCpuStart, _asideCpu;
         int _collections, _framesSeen;
         bool _closed;
 
         public FrameProfile(string path, SimDriver driver)
         {
             _driver = driver;
+            _path = path;
             _out = new StreamWriter(path);
             _out.WriteLine(Header);
             driver.Events.Timed = true;
@@ -84,41 +91,62 @@ namespace Game.Client.Loop
         }
 
         /// <summary>GameLoop's Update took <paramref name="ticks"/> (Stopwatch ticks).</summary>
-        public void Loop(long ticks) => _loopTicks += ticks;
+        public void Loop(long ticks)
+        {
+            _loopTicks += ticks;
+            AllocationCensus.Tag(AllocationCensus.Engine);
+        }
 
-        /// <summary>The frame rendered the music or waited on its analysis for <paramref name="ticks"/>.</summary>
-        public void Wait(long ticks) => _waitTicks += ticks;
+        /// <summary>Around the frame rendering its music or waiting on its analysis, which the frame leaves out.</summary>
+        public void BeginWait()
+        {
+            _waitStart = Stopwatch.GetTimestamp();
+            _waitCpuStart = ThreadCpu.Ns;
+        }
+
+        public void EndWait()
+        {
+            _waitTicks += Stopwatch.GetTimestamp() - _waitStart;
+            _asideCpu += ThreadCpu.Ns - _waitCpuStart;
+        }
 
         /// <summary>Around the frame probe's work (<see cref="GpuProbe.Frame"/>), whose time and allocation the frame leaves out.</summary>
         public void BeginProbe()
         {
             _probeStart = Stopwatch.GetTimestamp();
             _probeAllocStart = AllocatedBytes.Current;
+            _probeCpuStart = ThreadCpu.Ns;
+            AllocationCensus.Tag(AllocationCensus.Probe);
         }
 
         public void EndProbe()
         {
             _probeTicks += Stopwatch.GetTimestamp() - _probeStart;
             _probeAllocated += AllocatedBytes.Current - _probeAllocStart;
+            _asideCpu += ThreadCpu.Ns - _probeCpuStart;
+            AllocationCensus.Tag(AllocationCensus.Loop);
         }
 
         void BeginFrame()
         {
             if (_closed) return;
-            _loopTicks = _waitTicks = _probeTicks = _probeAllocated = 0;
+            _loopTicks = _waitTicks = _probeTicks = _probeAllocated = _asideCpu = 0;
             _driver.Events.ResetTimes();
             _allocated = AllocatedBytes.Current;
+            _cpuStart = ThreadCpu.Ns;
             _start = Stopwatch.GetTimestamp();
         }
 
         void EndFrame()
         {
             long total = Stopwatch.GetTimestamp() - _start;
+            long cpu = ThreadCpu.Ns;
             long allocated = AllocatedBytes.Current - _allocated - _probeAllocated;
             int collections = GC.CollectionCount(0);
             // Only frames that stepped the sim: before the music's anchor there is nothing to show. Closed,
             // the hooks still run to the end of the frame (the player loop changes from the next).
             if (_closed || _driver.Frames == _framesSeen || _start == 0) return;
+            if (!AllocationCensus.On) AllocationCensus.Start();
             _framesSeen = _driver.Frames;
             var f = new Frame
             {
@@ -129,6 +157,7 @@ namespace Game.Client.Loop
                 LoopMs = _loopTicks * TickMs,
                 WaitMs = _waitTicks * TickMs,
                 ProbeMs = _probeTicks * TickMs,
+                CpuMs = cpu < 0 || _cpuStart < 0 ? -1 : (cpu - _cpuStart - _asideCpu) / 1e6,
                 Allocated = allocated,
                 Collections = collections - _collections,
                 Parts = _parts,
@@ -204,7 +233,8 @@ namespace Game.Client.Loop
             Fixed(row, f.ProbeMs, 4);
             for (int i = 0; i < f.Parts.Length; i++) Fixed(row.Append(','), f.Parts[i], 4);
             Int(row.Append(','), f.Allocated).Append(',');
-            Int(row, f.Collections).Append('\n');
+            Int(row, f.Collections).Append(',');
+            Fixed(row, f.CpuMs, 4).Append('\n');
         }
 
         static StringBuilder Int(StringBuilder sb, long v)
@@ -264,6 +294,15 @@ namespace Game.Client.Loop
             if (_closed) return;
             _closed = true;
             Hook(false);
+            var tags = new List<string> { "engine", "loop", "sim", "probe" };
+            for (int i = 0; i < _driver.Events.Count; i++)
+            {
+                string name = _driver.Events[i].GetType().Name;
+                tags.Add("Present " + name);
+                tags.Add("OnEvent " + name);
+            }
+            AllocationCensus.Write(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(_path)),
+                Path.GetFileNameWithoutExtension(_path) + "-alloc.csv"), tags.ToArray());
             AllocatedBytes.Stop();
             _driver.Events.Timed = false;
             _out.Dispose();
@@ -288,5 +327,61 @@ namespace Game.Client.Loop
             public static void Stop() { }
 #endif
         }
+    }
+
+    /// <summary>The calling thread's CPU time in ns (AllocationCounter.c), or -1 where it can't be read finely (Windows, the editor).</summary>
+    static class ThreadCpu
+    {
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+        [DllImport("__Internal", EntryPoint = "game_thread_cpu_ns")] static extern long Read();
+        public static long Ns => Read();
+#else
+        public static long Ns => -1;
+#endif
+    }
+
+    /// <summary>
+    /// The frame profile's census of the main thread's allocations by part of the frame and type
+    /// (AllocationCounter.c): the loop tags each part as it runs it, from <see cref="Start"/> to <see cref="Write"/>.
+    /// A tag is <see cref="Engine"/> (outside GameLoop's Update), <see cref="Loop"/>, <see cref="Sim"/> (its step),
+    /// <see cref="Probe"/> (the frame probe's, which the profile's rows leave out), or a
+    /// presenter's Present or OnEvent by its index in the dispatch. Only in an IL2CPP player; elsewhere nothing.
+    /// </summary>
+    public static class AllocationCensus
+    {
+        public const int Engine = 0, Loop = 1, Sim = 2, Probe = 3;
+
+        /// <summary>Whether the census is counting (the profile started it), so tags are kept.</summary>
+        public static bool On { get; private set; }
+
+        public static int Present(int presenter) => 4 + 2 * presenter;
+        public static int OnEvent(int presenter) => 5 + 2 * presenter;
+
+        /// <summary>The part allocating from now on; returns the one before, to restore.</summary>
+        public static int Tag(int tag) => On ? NativeTag(tag) : tag;
+
+#if ENABLE_IL2CPP && !UNITY_EDITOR
+        [DllImport("__Internal", EntryPoint = "game_census_start")] static extern void NativeStart();
+        [DllImport("__Internal", EntryPoint = "game_census_tag")] static extern int NativeTag(int tag);
+        [DllImport("__Internal", EntryPoint = "game_census_write")] static extern int NativeWrite(string path, string[] tags, int count);
+
+        public static void Start()
+        {
+            NativeStart();
+            On = true;
+        }
+
+        /// <summary>Writes the census as CSV, most bytes first (part, type, count, bytes, largest), and ends it.</summary>
+        public static void Write(string path, string[] tags)
+        {
+            if (!On) return;
+            On = false;
+            if (NativeWrite(path, tags, tags.Length) != 0) UnityEngine.Debug.LogWarning($"FrameProfile: the allocation census {path} wasn't written");
+        }
+#else
+        static int NativeTag(int tag) => tag;
+        public static void Start() { }
+        public static void Write(string path, string[] tags) { }
+#endif
     }
 }

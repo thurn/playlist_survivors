@@ -4,6 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Game.Client.Loop;
+using PS.Game.Sim;
+using PS.Game.Sim.Content;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -18,8 +21,9 @@ namespace Game.Client
     /// the game's MSAA (<see cref="Stills.Target"/>), and times each draw through GPU completion (an
     /// AsyncGPUReadback waited on). That is one frame's CPU submission and GPU work in series, an upper
     /// bound on the frame a windowed player pipelines; the HUD's panel isn't in it. Each time's first
-    /// frame is a warm-up and isn't counted. Only a handful of times: hand-drawn frames hold URP's
-    /// pooled targets until a frame the player loop draws. It writes the JSON after each time's frames.
+    /// frame is a warm-up and isn't counted, but is kept as the point's `firstMs`. Only a handful of times:
+    /// hand-drawn frames hold URP's pooled targets until a frame the player loop draws. It writes the JSON
+    /// after each time's frames.
     ///
     /// Each frame also records its CPU share: the camera's Render call, before the wait for the GPU.
     ///
@@ -33,11 +37,18 @@ namespace Game.Client
     /// `--gpu-probe-without PASS,...` turns those passes off in every probe frame: for a moment too
     /// short for the cycle, such as a mass kill's first frames, compared with a run that keeps them, since
     /// a fixed-time run reaches the same frames each time.
+    ///
+    /// `--gpu-probe-firsts` adds a point at the run's first frame and at the first sighting of each kind of
+    /// moment (<see cref="Firsts"/>: the first heavy strike, each role's first death, each weapon's first hit,
+    /// the first break and regrowth, chest, level-up, each zone's first change...), <see cref="FirstFrames"/>
+    /// full frames each, so its `firstMs` is the frame that first draws it: what a first-use hitch (a shader
+    /// variant's compile, a pool's fill) costs. A batch-mode player draws nothing else, so whatever a point first
+    /// shows compiles in its first frame.
     /// </summary>
     public sealed class GpuProbe : IDisposable
     {
-        /// <summary>Frames drawn at each time: a warm-up, then the counted ones.</summary>
-        public const int Frames = 9;
+        /// <summary>Frames drawn at each time: a warm-up, then the counted ones; at a first sighting, fewer.</summary>
+        public const int Frames = 9, FirstFrames = 3;
         /// <summary>Rounds of every frame kind at each time with `--gpu-probe-ablate`: a probe frame varies by 2x under load, so more.</summary>
         public const int AblateRounds = 25;
 
@@ -45,7 +56,9 @@ namespace Game.Client
         public static readonly string[] Ablations = { "ssao", "post", "bloom", "shadows", "opaque-texture", "msaa", "crowd", "effects", "effect-lights" };
 
         readonly List<double> _at = new List<double>();
-        readonly List<(double at, double t, int alive, double ms, double cpuMs, int kind)> _samples = new List<(double, double, int, double, double, int)>();
+        // Each point: its song time, its first sightings (null for a time asked for alone) and its warm-up frame's draw.
+        readonly List<(double At, string Label, double FirstMs)> _points = new List<(double, string, double)>();
+        readonly List<(int point, double t, int alive, double ms, double cpuMs, int kind)> _samples = new List<(int, double, int, double, double, int)>();
         readonly string _out;
         readonly RenderTexture _target;
         RenderTexture _single;
@@ -53,32 +66,37 @@ namespace Game.Client
         readonly int _kinds, _rounds;
         // `--gpu-probe-without`: off in every frame.
         readonly string[] _without;
-        int _next, _left;
+        int _next, _left, _pointKinds, _pointFrames;
 
-        GpuProbe(string at, string outPath, bool ablate, string without)
+        /// <summary>The first sightings to probe (`--gpu-probe-firsts`), to subscribe to the events; else null.</summary>
+        public Firsts Sightings { get; }
+
+        GpuProbe(string at, bool firsts, GameContent content, string outPath, bool ablate, string without)
         {
             _without = without?.Split(',') ?? new string[0];
             foreach (var pass in _without)
                 if (!Ablations.Contains(pass)) throw new ArgumentException($"GpuProbe: no pass {pass} (one of {string.Join(", ", Ablations)})");
             _kinds = ablate ? 1 + Ablations.Length : 1;
             _rounds = ablate ? AblateRounds : Frames;
-            foreach (var s in at.Split(','))
-                _at.Add(double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
+            if (at != null)
+                foreach (var s in at.Split(','))
+                    _at.Add(double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
             _at.Sort();
+            if (firsts) Sightings = new Firsts(content);
             _out = outPath;
             _target = Stills.Target("GpuProbe");
         }
 
         /// <summary>The probe the launch asks for, or null: none asked, or not in batch mode, or no graphics device (`--headless`).</summary>
-        public static GpuProbe FromOptions(LaunchOptions options)
+        public static GpuProbe FromOptions(LaunchOptions options, GameContent content)
         {
-            if (options.GpuProbeAt == null) return null;
+            if (options.GpuProbeAt == null && !options.GpuProbeFirsts) return null;
             if (!Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
             {
-                Debug.LogWarning("GpuProbe: --gpu-probe-at needs batch mode with a graphics device (not --headless)");
+                Debug.LogWarning("GpuProbe: --gpu-probe-at and --gpu-probe-firsts need batch mode with a graphics device (not --headless)");
                 return null;
             }
-            return new GpuProbe(options.GpuProbeAt,
+            return new GpuProbe(options.GpuProbeAt, options.GpuProbeFirsts, content,
                 options.Outputs.GpuProbe ?? Path.Combine(Application.persistentDataPath, "gpu-probe.json"), options.GpuProbeAblate,
                 options.GpuProbeWithout);
         }
@@ -89,13 +107,18 @@ namespace Game.Client
         /// </summary>
         public void Frame(double t, Camera camera, int alive)
         {
-            if (_next >= _at.Count) return;
             if (_left == 0)
             {
-                if (t < _at[_next]) return;
-                _left = _rounds * _kinds;
+                bool timed = _next < _at.Count && t >= _at[_next];
+                string firsts = Sightings?.TakeDue(t);
+                if (!timed && firsts == null) return;
+                double at = timed ? _at[_next++] : t;
+                _points.Add((at, timed ? (firsts != null ? $"at {at:0.###} s, {firsts}" : null) : firsts, double.NaN));
+                // A first sighting's point draws only full frames.
+                _pointKinds = timed ? _kinds : 1;
+                _left = _pointFrames = (timed ? _rounds : FirstFrames) * _pointKinds;
             }
-            int drawn = _rounds * _kinds - _left, kind = drawn % _kinds;
+            int point = _points.Count - 1, drawn = _pointFrames - _left, kind = drawn % _pointKinds;
             var off = kind == 0 ? _without : _without.Append(Ablations[kind - 1]).ToArray();
             var target = off.Contains("msaa") ? Single() : _target;
             var restores = off.Select(pass => Ablate(pass, camera)).ToList();
@@ -108,14 +131,10 @@ namespace Game.Client
             long done = Stopwatch.GetTimestamp();
             camera.targetTexture = previous;
             restores.ForEach(restore => restore?.Invoke());
-            if (drawn >= _kinds)
-                _samples.Add((_at[_next], t, alive, (done - start) * 1000.0 / Stopwatch.Frequency,
-                    (submitted - start) * 1000.0 / Stopwatch.Frequency, kind));
-            if (--_left == 0)
-            {
-                _next++;
-                Write();
-            }
+            double ms = (done - start) * 1000.0 / Stopwatch.Frequency;
+            if (drawn == 0) _points[point] = (_points[point].At, _points[point].Label, ms);
+            if (drawn >= _pointKinds) _samples.Add((point, t, alive, ms, (submitted - start) * 1000.0 / Stopwatch.Frequency, kind));
+            if (--_left == 0) Write();
         }
 
         /// <summary>A 1080p target without MSAA, for the "msaa" ablation.</summary>
@@ -188,9 +207,9 @@ namespace Game.Client
             sb.AppendFormat(ci, "  \"graphicsDeviceName\": \"{0}\",\n  \"size\": [{1}, {2}],\n  \"msaa\": {3},\n",
                 SystemInfo.graphicsDeviceName, Stills.Width, Stills.Height, _target.antiAliasing);
             if (_without.Length > 0) sb.AppendFormat(ci, "  \"without\": [{0}],\n", string.Join(", ", _without.Select(w => $"\"{w}\"")));
-            sb.AppendFormat(ci, "  \"args\": \"{0}\",\n", string.Join(" ", Environment.GetCommandLineArgs().Skip(1)).Replace("\\", "\\\\").Replace("\"", "\\\""));
-            sb.AppendFormat(ci, "  \"frames\": {0},\n  \"p50Ms\": {1:F2},\n  \"p99Ms\": {2:F2},\n  \"maxMs\": {3:F2},\n",
-                all.Count, Pct(all, 0.5), Pct(all, 0.99), all[all.Count - 1]);
+            sb.AppendFormat(ci, "  \"args\": \"{0}\",\n", Escape(string.Join(" ", Environment.GetCommandLineArgs().Skip(1))));
+            sb.AppendFormat(ci, "  \"frames\": {0},\n  \"p50Ms\": {1:F2},\n  \"p99Ms\": {2:F2},\n  \"maxMs\": {3:F2},\n  \"firstMaxMs\": {4:F2},\n",
+                all.Count, Pct(all, 0.5), Pct(all, 0.99), all[all.Count - 1], _points.Max(p => p.FirstMs));
             // The CPU's share: the Render call, before the wait for the GPU.
             sb.AppendFormat(ci, "  \"cpuP50Ms\": {0:F2},\n  \"cpuP99Ms\": {1:F2},\n", Pct(cpu, 0.5), Pct(cpu, 0.99));
             if (_kinds > 1)
@@ -210,22 +229,26 @@ namespace Game.Client
                 sb.Append("],\n");
             }
             sb.Append("  \"points\": [\n");
-            var points = full.GroupBy(s => s.at).ToList();
-            for (int i = 0; i < points.Count; i++)
+            for (int i = 0; i < _points.Count; i++)
             {
-                var ms = points[i].Select(s => s.ms).OrderBy(x => x).ToList();
-                // frames: each counted frame in order, [song time, alive, draw ms, its CPU ms].
-                sb.AppendFormat(ci, "    {{\"at\": {0:F3}, \"alive\": {1}, \"medianMs\": {2:F2}, \"maxMs\": {3:F2}, \"frames\": [{4}]}}{5}\n",
-                    points[i].Key, points[i].Max(s => s.alive), Pct(ms, 0.5), ms[ms.Count - 1],
-                    string.Join(", ", points[i].Select(s => string.Format(ci, "[{0:F4}, {1}, {2:F2}, {3:F2}]", s.t, s.alive, s.ms, s.cpuMs))),
-                    i + 1 < points.Count ? "," : "");
+                var frames = full.Where(s => s.point == i).ToList();
+                var ms = frames.Select(s => s.ms).OrderBy(x => x).ToList();
+                // frames: each counted frame in order, [song time, alive, draw ms, its CPU ms]; firstMs the warm-up frame's draw.
+                sb.AppendFormat(ci, "    {{\"at\": {0:F3}, {1}\"alive\": {2}, \"firstMs\": {3:F2}, \"medianMs\": {4:F2}, \"maxMs\": {5:F2}, \"frames\": [{6}]}}{7}\n",
+                    _points[i].At, _points[i].Label != null ? $"\"label\": \"{Escape(_points[i].Label)}\", " : "",
+                    frames.Max(s => s.alive), _points[i].FirstMs, Pct(ms, 0.5), ms[ms.Count - 1],
+                    string.Join(", ", frames.Select(s => string.Format(ci, "[{0:F4}, {1}, {2:F2}, {3:F2}]", s.t, s.alive, s.ms, s.cpuMs))),
+                    i + 1 < _points.Count ? "," : "");
             }
             sb.Append("  ]\n}\n");
             File.WriteAllText(_out, sb.ToString());
-            var latest = full.Where(s => s.at == _at[_next - 1]).Select(s => s.ms).OrderBy(x => x).ToList();
-            Debug.Log(string.Format(ci, "GpuProbe: {0} frames at {1:F3} s, median {2:F2} ms, max {3:F2} ms -> {4}",
-                latest.Count, _at[_next - 1], Pct(latest, 0.5), latest[latest.Count - 1], _out));
+            var last = _points[_points.Count - 1];
+            var latest = full.Where(s => s.point == _points.Count - 1).Select(s => s.ms).OrderBy(x => x).ToList();
+            Debug.Log(string.Format(ci, "GpuProbe: {0} frames at {1:F3} s{2}, first {3:F2} ms, median {4:F2} ms, max {5:F2} ms -> {6}",
+                latest.Count, last.At, last.Label != null ? $" ({last.Label})" : "", last.FirstMs, Pct(latest, 0.5), latest[latest.Count - 1], _out));
         }
+
+        static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         static double Pct(List<double> sorted, double p) => sorted[(int)Math.Round(p * (sorted.Count - 1))];
 
@@ -233,6 +256,112 @@ namespace Game.Client
         {
             if (_target != null) _target.Release();
             if (_single != null) _single.Release();
+        }
+
+        /// <summary>
+        /// The first sighting of each kind of moment the camera can show, by the events: the hero's first
+        /// strike of each weapon (a heavy one apart), each enemy attack's, each weapon's first hit, bolt,
+        /// projectile, orbit and burn, the first hit on the hero, each role's first spawn, death and leave,
+        /// each zone's first change, each set piece's, and the first structure break, regrowth, glint,
+        /// cleave, drop of each kind, gem flight, pickup, chest phase, level-up, card and the finale. Each
+        /// is due once frameSong reaches its event's time.
+        /// </summary>
+        public sealed class Firsts : IPresenter
+        {
+            readonly GameContent _content;
+            readonly HashSet<long> _seen = new HashSet<long>();
+            readonly List<(double T, long Key)> _due = new List<(double, long)>();
+            bool _drawn;
+
+            /// <summary>The run's first frame: every upload and state the arena and the hero need, before any moment.</summary>
+            const long FirstFrame = -2;
+
+            public Firsts(GameContent content) => _content = content;
+
+            public void OnEvent(in SimEvent e)
+            {
+                long key = Key(e);
+                if (key >= 0 && _seen.Add(key)) _due.Add((e.T, key));
+            }
+
+            public void Present(in PresentFrame frame)
+            {
+                if (_drawn) return;
+                _drawn = true;
+                _due.Add((frame.Song, FirstFrame));
+            }
+
+            /// <summary>The sightings due by song time <paramref name="t"/>, named and taken; null if none.</summary>
+            public string TakeDue(double t)
+            {
+                List<string> names = null;
+                for (int i = 0; i < _due.Count; i++)
+                {
+                    if (_due[i].T > t) continue;
+                    (names ??= new List<string>()).Add(Name(_due[i].Key));
+                    _due.RemoveAt(i--);
+                }
+                return names == null ? null : string.Join(", ", names);
+            }
+
+            /// <summary>The kind of moment an event shows, as its kind and a detail; -1 for an event with nothing new to draw.</summary>
+            static long Key(in SimEvent e)
+            {
+                long detail;
+                switch (e.Kind)
+                {
+                    case SimEventKind.Attack:
+                        var a = e.AsAttack;
+                        detail = a.ByHero ? 2 * a.Weapon + (a.Heavy ? 1 : 0) : -1 - (int)a.EnemyKind;
+                        break;
+                    case SimEventKind.Hit: detail = e.AsHit.OnHero ? -2 : e.AsHit.Weapon; break;
+                    case SimEventKind.Death: detail = e.AsDeath.Role; break;
+                    case SimEventKind.Spawn: detail = 2 * e.AsSpawn.Role + (e.AsSpawn.Boss ? 1 : 0); break;
+                    case SimEventKind.Leave: detail = e.AsLeave.Role; break;
+                    case SimEventKind.ZoneChange: detail = e.AsZoneChange.Zone; break;
+                    case SimEventKind.SetPiece: detail = (int)e.AsSetPiece.Kind; break;
+                    case SimEventKind.Bolt: detail = 8 * e.AsBolt.Weapon + (int)e.AsBolt.Kind; break;
+                    case SimEventKind.Projectile: detail = e.AsProjectile.Weapon; break;
+                    case SimEventKind.Orbit: detail = e.AsOrbit.Weapon; break;
+                    case SimEventKind.Burn: detail = e.AsBurn.Weapon; break;
+                    case SimEventKind.Drop: detail = (int)e.AsDrop.ItemKind; break;
+                    case SimEventKind.Chest: detail = (int)e.AsChest.Phase; break;
+                    case SimEventKind.StructureBreak: case SimEventKind.Regrowth: case SimEventKind.Glint: case SimEventKind.Cleave:
+                    case SimEventKind.GemFlight: case SimEventKind.Pickup: case SimEventKind.LevelUp: case SimEventKind.Card:
+                    case SimEventKind.Finale:
+                        detail = 0;
+                        break;
+                    default: return -1;
+                }
+                return ((long)e.Kind << 32) | (uint)(int)detail;
+            }
+
+            string Name(long key)
+            {
+                if (key == FirstFrame) return "first frame";
+                var kind = (SimEventKind)(key >> 32);
+                int detail = (int)(uint)key;
+                string Weapon(int w) => w >= 0 && _content != null && w < _content.Weapons.Length ? _content.Weapons[w].Id : w < 0 ? "blast" : $"weapon {w}";
+                string Role(int r) => _content != null && r >= 0 && r < _content.Roles.Length ? _content.Roles[r].Id : $"role {r}";
+                switch (kind)
+                {
+                    case SimEventKind.Attack:
+                        return detail >= 0 ? $"attack {Weapon(detail / 2)}{(detail % 2 == 1 ? " heavy" : "")}" : $"enemy {(EnemyAttackKind)(-1 - detail)}";
+                    case SimEventKind.Hit: return detail == -2 ? "hit on the hero" : $"hit {Weapon(detail)}";
+                    case SimEventKind.Death: return $"death {Role(detail)}";
+                    case SimEventKind.Spawn: return $"spawn {Role(detail / 2)}{(detail % 2 == 1 ? " boss" : "")}";
+                    case SimEventKind.Leave: return $"leave {Role(detail)}";
+                    case SimEventKind.ZoneChange: return $"zone {detail}";
+                    case SimEventKind.SetPiece: return $"set piece {(SetPieceKind)detail}";
+                    case SimEventKind.Bolt: return $"bolt {Weapon(detail / 8)} {(BoltKind)(detail % 8)}";
+                    case SimEventKind.Projectile: return $"projectile {Weapon(detail)}";
+                    case SimEventKind.Orbit: return $"orbit {Weapon(detail)}";
+                    case SimEventKind.Burn: return $"burn {Weapon(detail)}";
+                    case SimEventKind.Drop: return $"drop {(ItemKind)detail}";
+                    case SimEventKind.Chest: return $"chest {(ChestPhase)detail}";
+                    default: return kind.ToString();
+                }
+            }
         }
     }
 }

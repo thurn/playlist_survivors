@@ -87,6 +87,11 @@ namespace Game.Client.Pickups
                 if (!content.Weapons[w].IsEvolution) cycle.Add(ItemColour(CardItem.Weapon, w));
             _cycle = cycle.ToArray();
             _cast = effects?.IndexOf("prism-cast") ?? -1;
+            // Every reward colour's shards now, not at a chest's first roulette: each batch's materials and arrays.
+            for (int w = 0; w < content.Weapons.Length; w++) Shards(ItemColour(CardItem.Weapon, w));
+            Shards(ItemColour(CardItem.Passive, 0));
+            Shards(ItemColour(CardItem.Heal, 0));
+            Shards(Gold);
         }
 
         /// <summary>Chests shown or still to come, for tests.</summary>

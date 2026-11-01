@@ -124,8 +124,8 @@ namespace Game.Client.Hud
             _layer.style.opacity = Mathf.Clamp01((float)((s - _roulette.Opened) / LevelUpCards.DimS));
             bool landed = s + 1e-9 >= _roulette.Landed;
             int ticks = TicksBy(_roulette.Ticks, s);
-            _heading.text = landed ? "TREASURE FOUND" : "TREASURE";
-            _hint.text = landed ? "REWARDS RECEIVED" : "TWO BARS   ·   IT LANDS ON THE DOWNBEAT";
+            HudPresenter.Show(_heading, landed ? "TREASURE FOUND" : "TREASURE");
+            HudPresenter.Show(_hint, landed ? "REWARDS RECEIVED" : "TWO BARS   ·   IT LANDS ON THE DOWNBEAT");
             float burst = landed ? Mathf.Exp(-3 * (float)(s - _roulette.Landed)) : 0;
             var cycle = _content.Weapons;
             for (int k = 0; k < _items.Count; k++)
@@ -138,10 +138,10 @@ namespace Game.Client.Hud
                 gem.style.translate = new Translate(0, jitter);
                 gem.style.scale = new Scale(new Vector3(swell, swell, 1));
                 gem.style.backgroundColor = HudText.Colour(id);
-                mark.text = HudText.Mark(id);
+                HudPresenter.Show(mark, HudText.Mark(id));
                 mark.style.translate = new Translate(0, jitter);
-                name.text = landed ? HudText.Name(id) : "";
-                rank.text = !landed || id == null ? "" : _roulette.Ranks[k] <= 1 ? "NEW!" : "LV " + _roulette.Ranks[k];
+                HudPresenter.Show(name, landed ? HudText.Name(id) : "");
+                HudPresenter.Show(rank, !landed || id == null ? "" : _roulette.Ranks[k] <= 1 ? "NEW!" : HudText.Level(_roulette.Ranks[k]));
             }
         }
 

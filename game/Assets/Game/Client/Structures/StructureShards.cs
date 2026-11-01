@@ -44,6 +44,12 @@ namespace Game.Client.Structures
         public static StructureShards Load() => Resources.Load<StructureShards>(ResourcePath);
 
         /// <summary>The shards cut from <paramref name="mesh"/>, or null if none were baked for it.</summary>
-        public Set Of(Mesh mesh) => mesh == null ? null : Array.Find(Meshes, s => s.Source == mesh);
+        public Set Of(Mesh mesh)
+        {
+            if (mesh == null) return null;
+            foreach (var set in Meshes)
+                if (set.Source == mesh) return set;
+            return null;
+        }
     }
 }

@@ -82,7 +82,7 @@ namespace PS.Game.Sim.Bots
         const int Side = 2 * RouteTiles + 1;
 
         readonly BotKind kind;
-        readonly List<Gem> gems = new List<Gem>();
+        readonly List<Gem> gems = new List<Gem>(1024);
         readonly List<Slam> slams = new List<Slam>();
         // The slams' radii (content's boss moves and signature), NaN without content: slams go unseen.
         readonly double bossSlamM = double.NaN, signatureSlamM = double.NaN;
@@ -156,8 +156,22 @@ namespace PS.Game.Sim.Bots
                     Let(sim, key);
                     return;
                 }
-                gems.RemoveAll(g => g.Id == gem);
+                RemoveGem(gem);
             }
+        }
+
+        // (Loops, not lambdas: a capturing lambda allocates on every call, and the bot plays every frame.)
+        int IndexOfGem(int id)
+        {
+            for (int i = 0; i < gems.Count; i++)
+                if (gems[i].Id == id) return i;
+            return -1;
+        }
+
+        void RemoveGem(int id)
+        {
+            int i = IndexOfGem(id);
+            if (i >= 0) gems.RemoveAt(i);
         }
 
         /// <summary>Takes in a frame's events: the gems dropped, merged and taken off.</summary>
@@ -172,15 +186,14 @@ namespace PS.Game.Sim.Bots
             if (e.Kind == SimEventKind.Drop && e.AsDrop.ItemKind == ItemKind.Gem)
             {
                 var d = e.AsDrop;
-                int i = gems.FindIndex(g => g.Id == d.Item);
+                int i = IndexOfGem(d.Item);
                 var gem = new Gem { Id = d.Item, X = d.X, Y = d.Y };
                 if (i >= 0) gems[i] = gem;
                 else gems.Add(gem);
             }
             else if (e.Kind == SimEventKind.GemFlight)
             {
-                int id = e.AsGemFlight.Gem;
-                gems.RemoveAll(g => g.Id == id);
+                RemoveGem(e.AsGemFlight.Gem);
             }
             else if (e.Kind == SimEventKind.Attack && !e.AsAttack.ByHero && e.AsAttack.EnemyKind == EnemyAttackKind.Slam)
             {

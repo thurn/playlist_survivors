@@ -112,6 +112,8 @@ namespace Game.Client.Crowd
             _kernels = new[] { _kClear, _kCull };
             _palette = lib.PaletteShader ? lib.PaletteShader : throw new InvalidOperationException("CrowdLibrary has no palette shader");
             _kBlend = _palette.FindKernel("Blend");
+            GraphicsStates.Prepare(_cull, _kClear, _kCull);
+            GraphicsStates.Prepare(_palette, _kBlend);
             _types = new TypeState[lib.Types.Length];
             for (int i = 0; i < _types.Length; i++) _types[i] = Create(lib.Types[i]);
         }

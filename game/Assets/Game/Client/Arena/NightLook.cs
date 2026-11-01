@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -18,6 +19,8 @@ namespace Game.Client.Arena
         static readonly ArenaLighting Night = new ArenaLighting();
         static readonly Dictionary<(Vector3, Vector3, Vector3), Texture2D> Luts = new Dictionary<(Vector3, Vector3, Vector3), Texture2D>();
         static ArenaLighting _fogLighting;
+        // Made once: a zone's ease applies the render settings every frame, and a method group makes a new delegate each time.
+        static readonly Action<ScriptableRenderContext, Camera> FitFog = FitFogToCamera;
 
         public static void ApplyRenderSettings(ArenaLighting l)
         {
@@ -33,8 +36,8 @@ namespace Game.Client.Arena
             RenderSettings.fogStartDistance = range.x;
             RenderSettings.fogEndDistance = range.y;
             _fogLighting = l;
-            RenderPipelineManager.beginCameraRendering -= FitFogToCamera;
-            if (l.FogMode == FogMode.Linear) RenderPipelineManager.beginCameraRendering += FitFogToCamera;
+            RenderPipelineManager.beginCameraRendering -= FitFog;
+            if (l.FogMode == FogMode.Linear) RenderPipelineManager.beginCameraRendering += FitFog;
             RenderSettings.skybox = null;
         }
 

@@ -48,8 +48,9 @@ namespace Game.Client.Pickups
         static readonly int PulseId = Shader.PropertyToID("_Pulse");
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        readonly List<Gem> _gems = new List<Gem>();
-        readonly Dictionary<int, int> _index = new Dictionary<int, int>();
+        // Sized for a full field of gems up front: a list's growth mid-run is a large copy and garbage.
+        readonly List<Gem> _gems = new List<Gem>(Batch + 1);
+        readonly Dictionary<int, int> _index = new Dictionary<int, int>(Batch + 1);
         readonly double[] _tierFrom;
         readonly Material[] _materials;
         readonly Matrix4x4[][] _matrices;

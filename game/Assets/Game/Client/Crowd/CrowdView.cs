@@ -38,7 +38,7 @@ namespace Game.Client.Crowd
         readonly MonsterClips[] _clips;
         readonly Stack<MonsterTrack> _free = new Stack<MonsterTrack>();
         readonly List<MonsterTrack> _live = new List<MonsterTrack>();
-        readonly Dictionary<int, MonsterTrack> _byEnemy = new Dictionary<int, MonsterTrack>();
+        readonly Dictionary<int, MonsterTrack> _byEnemy;
         // Lives that ended but may still show (a death not yet reached by frameSong) need room too, and a
         // freed slot waits a frame before its next owner (CrowdSlots): as many lives as each type's slots.
         readonly int _pool;
@@ -54,6 +54,7 @@ namespace Game.Client.Crowd
         {
             _camera = camera;
             _pool = SlotsPerType(alive);
+            _byEnemy = new Dictionary<int, MonsterTrack>(_pool);
             _written = new MonsterInstance[_pool];
             _writtenType = new int[_pool];
             _writtenSlot = new int[_pool];

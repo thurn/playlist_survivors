@@ -20,11 +20,13 @@ namespace Game.Client.Crowd
 
         sealed class TypeSlots
         {
-            public readonly Dictionary<int, int> SlotOf = new Dictionary<int, int>();
+            public readonly Dictionary<int, int> SlotOf;
             public int[] Owner = Array.Empty<int>();    // entity, or -1
             public int[] Seen = Array.Empty<int>();     // the frame the owner was last assigned
             public readonly Queue<(int slot, int freedAt)> Free = new Queue<(int, int)>();
             public int HighWater;
+
+            public TypeSlots(int capacity) => SlotOf = new Dictionary<int, int>(capacity);
         }
 
         readonly TypeSlots[] _types;
@@ -35,7 +37,7 @@ namespace Game.Client.Crowd
         {
             _capacity = capacityPerType;
             _types = new TypeSlots[types];
-            for (int i = 0; i < types; i++) _types[i] = new TypeSlots();
+            for (int i = 0; i < types; i++) _types[i] = new TypeSlots(capacityPerType);
         }
 
         public void Begin() => _frame++;
