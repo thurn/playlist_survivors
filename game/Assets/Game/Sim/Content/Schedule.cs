@@ -252,6 +252,11 @@ namespace PS.Game.Sim.Content
         public double QuietScale, MediumScale, LoudScale, LevelSmoothS;
         /// <summary>A role's spawns keep landing around one point of the ring for this long, so the horde reads as masses of colour.</summary>
         public double ClumpS;
+        /// <summary>
+        /// The view's floor: while fewer than this many are in view and the hero is on the move, enemies out of sight
+        /// behind it are brought round onto the ring ahead of it.
+        /// </summary>
+        public int ViewFloor;
         public BossMoveRules BossMoves;
         public EasyRules Easy;
         /// <summary>Minutes[i] is minute i.</summary>
@@ -292,6 +297,8 @@ namespace PS.Game.Sim.Content
             scale.End();
             s.LevelSmoothS = run.Number("levelSmoothS");
             s.ClumpS = run.Number("clumpS");
+            s.ViewFloor = run.Int("viewFloor");
+            if (s.ViewFloor < 0 || s.ViewFloor > s.Cap) throw ContentReader.Fail(run.Child("viewFloor"), "expected 0 to the cap " + s.Cap);
             if (!(s.LevelSmoothS > 0)) throw ContentReader.Fail(run.Child("levelSmoothS"), "expected a positive window");
             run.End();
             var moves = r.Object("bossMoves");

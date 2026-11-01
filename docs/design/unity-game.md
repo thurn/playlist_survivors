@@ -1872,6 +1872,24 @@ slice stays the default until the full run, ps-msz.6.14). Evidence in
   where native's left it 3 to 24 and 25 to 53. With nothing dying the cap
   fills at about 1:05 instead of 2:18. Evidence in
   [game/evidence/opening](../../game/evidence/opening/README.md).
+- **The crowd's floor** (ps-w9p.12, in every mode): a hero on the move
+  outruns the crowd (5.2 m/s against 1.2 to 2.9, on main beats only), and
+  native's later minimums dip to 10 to 60, so the screen still emptied for
+  seconds at a time, often at the cap with the whole crowd out of sight
+  behind. Three changes hold it: while fewer than `run.viewFloor` (60) are
+  in view and the hero is on the move (its displacement over the last
+  1.5 s longer than 1 m), enemies out of sight behind it, beyond the spawn
+  ring, are brought round onto the ring ahead of it, a clump a tick within
+  0.8 rad of its heading (anywhere walkable at an edge or a wall); the
+  waves' minimum counts only the horde's own, not the music-driven events'
+  scripted enemies (a flower wall left behind no longer stops the waves);
+  and no minute past the opening has a minimum below 80 (minutes 3 to 6, 9,
+  10, 12, 14, 17 and 18 raised; loudness still scales it). Over a 30-minute
+  run, the positioning bot's stretches with fewer than 15 on screen for over
+  2 s fell from 46 to 1 on the survivors playlist and from 55 to none on
+  house-128. The experience curve's factor rose to 3.2 to keep the levels on
+  `startLevels`. Evidence in
+  [game/evidence/floor](../../game/evidence/floor/README.md).
 - **Clumps**: a role's share of a wave lands as one clump, and a role keeps
   landing within about 7° of a point of the ring for `run.clumpS` (3 s)
   after choosing it, so a trickle of one a wave still gathers into one mass
@@ -2176,9 +2194,10 @@ engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
 
 **Shipped (ps-msz.8.4).** The game's own experience curve, and chests the hero can always reach:
 
-- **The curve**: `factor x level^exponent` (progression.json's new `experience.exponent`), now 1.9 x
+- **The curve**: `factor x level^exponent` (progression.json's new `experience.exponent`), then 1.9 x
   level^2.8 in one band, against native's 5, 6.5 and 8 x level². Reaching level 10 takes 893
-  experience in all (native's 405), level 20 7232 (1805) and level 30 23630 (5467). The steeper power follows the
+  experience in all (native's 405), level 20 7232 (1805) and level 30 23630 (5467). The factor is 3.2
+  since ps-w9p.12's denser crowd (The crowd's floor, Enemies): level 10 takes 1503, 20 12180 and 30 39798. The steeper power follows the
   design's flattening pace (`startLevels`: nine levels in the first five minutes, three in the last
   five) as the bot's income grows. Growth's bonus at levels 20 and 40 is unchanged.
 - **Chest drops**: a chest lands on the nearest open tile joined to the hero's own by steps in the four

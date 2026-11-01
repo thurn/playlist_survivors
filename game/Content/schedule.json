@@ -4,7 +4,8 @@
     "cap": 300,
     "levelScale": {"quiet": 0.6, "medium": 1, "loud": 1.3},
     "levelSmoothS": 2,
-    "clumpS": 3
+    "clumpS": 3,
+    "viewFloor": 60
   },
   "bossMoves": {
     "roles": ["boss-xlmantis", "boss-werewolf", "boss-xlmummy", "boss-xlflower"],
@@ -40,7 +41,7 @@
     },
     {
       "minute": 3,
-      "minimum": 40,
+      "minimum": 80,
       "intervalS": 0.25,
       "enemies": ["skeleton"],
       "bosses": ["bat4"],
@@ -51,7 +52,7 @@
     },
     {
       "minute": 4,
-      "minimum": 30,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["skeleton", "ghost"],
       "bosses": [],
@@ -62,7 +63,7 @@
     },
     {
       "minute": 5,
-      "minimum": 10,
+      "minimum": 80,
       "intervalS": 1,
       "enemies": ["mudman2"],
       "bosses": ["xlmantis"],
@@ -77,7 +78,7 @@
     },
     {
       "minute": 6,
-      "minimum": 20,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["zombie", "mudman2"],
       "bosses": [],
@@ -114,7 +115,7 @@
     },
     {
       "minute": 9,
-      "minimum": 30,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["xlbat", "zombie"],
       "bosses": ["bat5"],
@@ -129,7 +130,7 @@
     },
     {
       "minute": 10,
-      "minimum": 10,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["mudman1", "mudman2"],
       "bosses": ["boss-xlmantis"],
@@ -151,7 +152,7 @@
     },
     {
       "minute": 12,
-      "minimum": 20,
+      "minimum": 80,
       "intervalS": 0.25,
       "enemies": ["werewolf", "ghost", "skeleton"],
       "bosses": ["bat4"],
@@ -174,7 +175,7 @@
     },
     {
       "minute": 14,
-      "minimum": 20,
+      "minimum": 80,
       "intervalS": 0.1,
       "enemies": ["xlbat", "werewolf"],
       "bosses": ["bat5"],
@@ -205,10 +206,10 @@
       "events": [],
       "treasure": {"chances": {"tier3": 1, "tier2": 5, "tier1": 50}, "tier": null, "evolves": false}
     },
-    {"minute": 17, "minimum": 20, "intervalS": 1, "enemies": ["xlmummy"], "bosses": [], "events": [], "treasure": null},
+    {"minute": 17, "minimum": 80, "intervalS": 1, "enemies": ["xlmummy"], "bosses": [], "events": [], "treasure": null},
     {
       "minute": 18,
-      "minimum": 60,
+      "minimum": 80,
       "intervalS": 0.5,
       "enemies": ["xlmummy", "mudman1"],
       "bosses": ["bat5"],

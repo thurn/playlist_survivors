@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The crowd's floor's evidence run (../README.md): a whole run's on-screen crowd over entry dumps, outside the checks. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../dotnet/PS.Game.Sim/PS.Game.Sim.csproj" />
+  </ItemGroup>
+</Project>

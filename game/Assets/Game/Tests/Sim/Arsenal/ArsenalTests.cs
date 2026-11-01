@@ -548,8 +548,8 @@ namespace PS.Game.Sim.Tests
         {
             var sim = Start(Config(new ArsenalConfig()), new FixtureSong(3).Beats(0, 30, 120));
             sim.StepTo(10.01);
-            sim.Arsenal.LevelUps.Gain(sim, sim.Now, 45);
-            Assert.AreEqual((4, 3), (sim.State.Level, sim.State.PendingLevels), "5, 20 and 45 for levels 2 to 4");
+            sim.Arsenal.LevelUps.Gain(sim, sim.Now, 75);
+            Assert.AreEqual((4, 3), (sim.State.Level, sim.State.PendingLevels), "3.2, 22 and 70 for levels 2 to 4");
             for (int level = 2; level <= 4; level++)
             {
                 Assert.AreEqual(level, sim.State.Offer.Level);

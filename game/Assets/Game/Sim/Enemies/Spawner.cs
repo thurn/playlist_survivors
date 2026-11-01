@@ -8,7 +8,8 @@ namespace PS.Game.Sim
     /// and engine/spawning.rs). The run clock decides who spawns; the ring decides where.
     ///
     /// - <b>Waves</b>: every interval of run clock one of each roster role spawns, then whole
-    ///   rosters while fewer than the minimum are alive. A pass the horde's room cuts short starts
+    ///   rosters while fewer than the minimum are alive, not counting the music-driven events'
+    ///   scripted enemies. A pass the horde's room cuts short starts
     ///   one role further along the roster each wave (native's always starts at its first), so a
     ///   crowd at the cap stays the roster's mix. In a run (<see cref="HordeConfig.Schedule"/>)
     ///   the roster, interval and minimum are the current minute's of schedule.json, the minimum
@@ -25,6 +26,9 @@ namespace PS.Game.Sim
     /// - <b>Health</b>: a boss's, and a level-scaled role's, is its role's times the hero's level.
     /// - <b>The ring</b>: new enemies land just outside the camera's footprint in walkable cells,
     ///   and enemies standing far out of sight are recycled onto it (native's).
+    /// - <b>The view's floor</b>: in a run, while fewer than <see cref="Schedule.ViewFloor"/> are in
+    ///   view and the hero is on the move, enemies out of sight behind it are brought round onto the
+    ///   ring ahead of it, a clump a tick, so a hero who outruns the crowd runs into it again.
     /// Nothing spawns while the world is frozen or after the run clock's end.
     /// </summary>
     internal sealed class Spawner
@@ -40,6 +44,14 @@ namespace PS.Game.Sim
         /// <summary>How far from its clump's point, in radians along the ring, a role's spawns land.</summary>
         const double ClumpWander = 0.12;
         const int SpawnTries = 16;
+        /// <summary>The hero's heading is its displacement over about this long (an exponential window), seconds.</summary>
+        const double HeadingS = 1.5;
+        /// <summary>The hero is on the move while that displacement is longer than this, metres (a stride is about 1.3 m).</summary>
+        const double MovingM = 1;
+        /// <summary>The view's floor brings round enemies this far beyond the spawn ring's outer edge, metres: not one it just landed.</summary>
+        const double LeftBehindM = 1;
+        /// <summary>How far either side of the hero's heading, radians, the view's floor brings a clump round.</summary>
+        const double AheadSpread = 0.8;
         /// <summary>The lineup's distance ahead of the hero and the clear ground between its bodies, metres.</summary>
         public const double LineupAheadM = 5, LineupGapM = 2.5;
 
@@ -64,6 +76,8 @@ namespace PS.Game.Sim
         // The minutes whose treasure a boss already carries (native's one chest a minute).
         long treasureMinutes;
         double nextWave;
+        // The hero's displacement over the last HeadingS (decaying), and its place at the last tick.
+        double headingX, headingY, lastHx = double.NaN, lastHy;
         // Whose turn it is to lead a wave's last, short pass.
         int waveTurn;
         int minute = -1;
@@ -135,6 +149,13 @@ namespace PS.Game.Sim
             return d > 1e-9 && d > FootprintEdge(dx / d, dy / d) + SpawnMarginM;
         }
 
+        /// <summary>Is the point (dx, dy) from the hero beyond the spawn ring by <see cref="LeftBehindM"/>, where nothing lands?</summary>
+        bool LeftBehind(double dx, double dy)
+        {
+            double d = Math.Sqrt(dx * dx + dy * dy);
+            return d > 1e-9 && d > FootprintEdge(dx / d, dy / d) + SpawnMarginM + SpawnSpreadM + LeftBehindM;
+        }
+
         /// <summary>Is (x, y) within <paramref name="share"/> of the way from the hero at (hx, hy) to the footprint's edge?</summary>
         public bool InView(double x, double y, double hx, double hy, double share)
         {
@@ -157,6 +178,14 @@ namespace PS.Game.Sim
                     nextWave += run ? schedule.Minutes[minute].IntervalS : sliceInterval;
                 }
             }
+            if (!double.IsNaN(lastHx))
+            {
+                double keep = Math.Exp(-Simulation.TickSeconds / HeadingS);
+                headingX = headingX * keep + (hx - lastHx);
+                headingY = headingY * keep + (hy - lastHy);
+            }
+            lastHx = hx;
+            lastHy = hy;
             Recycle(sim, end, hx, hy);
         }
 
@@ -294,16 +323,16 @@ namespace PS.Game.Sim
         {
             int[] roster = run ? minuteRosters[minute] : sliceRoster;
             if (roster.Length == 0) return;
-            int target = sliceMinimum;
+            int target = sliceMinimum, crowd = Crowd();
             if (run)
             {
                 double scale = Math.Max(0.6, Math.Min(1.3, LevelScale(t)));
                 target = (int)Math.Ceiling(schedule.Minutes[minute].Minimum * scale - 1e-9);
-                if (scale < 0.99 && state.EnemiesAlive >= Math.Min(target, horde.FreeSlots + state.EnemiesAlive - bossCount)) return;
+                if (scale < 0.99 && crowd >= Math.Min(target, horde.FreeSlots + crowd - bossCount)) return;
             }
             // Whole passes over the roster, the last one cut short by the room left: its places go round the
             // roster from wave to wave, so at the cap no role takes every free slot by its place in the list.
-            int shortfall = target - state.EnemiesAlive - roster.Length;
+            int shortfall = target - crowd - roster.Length;
             int passes = 1 + (shortfall > 0 ? (shortfall + roster.Length - 1) / roster.Length : 0);
             int total = Math.Min(passes * roster.Length, Math.Max(0, horde.FreeSlots - bossCount));
             int first = waveTurn++ % roster.Length;
@@ -329,6 +358,19 @@ namespace PS.Game.Sim
                     horde.Spawn(sim, t, role, x, y);
                 }
             }
+        }
+
+        /// <summary>
+        /// The alive enemies the waves' minimum counts: the horde's own, not those a music-driven event scripts (a flower
+        /// wall, a swarm, a set piece), which come and go on their own and may be far behind a hero on the move.
+        /// </summary>
+        int Crowd()
+        {
+            int crowd = state.EnemiesAlive;
+            var enemies = state.EnemyStore;
+            for (int i = 0; i < enemies.Length; i++)
+                if (enemies[i].Alive && horde.Scripts.Scripted(i)) crowd--;
+            return crowd;
         }
 
         /// <summary>
@@ -382,24 +424,63 @@ namespace PS.Game.Sim
             return false;
         }
 
-        /// <summary>Enemies standing far out of sight re-enter on the ring with their health (native's recycling).</summary>
+        /// <summary>
+        /// Enemies standing far out of sight re-enter on the ring with their health (native's recycling), and in a run,
+        /// while the view holds fewer than <see cref="Schedule.ViewFloor"/> and the hero is on the move, enemies out of
+        /// sight behind it re-enter on the ring ahead of it, around one point within <see cref="AheadSpread"/> of its heading.
+        /// </summary>
         void Recycle(Simulation sim, double t, double hx, double hy)
         {
             double far = RecycleViews * ViewWidth;
             var enemies = state.EnemyStore;
+            int wanted = 0;
+            double heading = Math.Sqrt(headingX * headingX + headingY * headingY), ahead = 0;
+            if (run && heading > MovingM)
+            {
+                wanted = schedule.ViewFloor;
+                for (int i = 0; i < enemies.Length && wanted > 0; i++)
+                    if (enemies[i].Alive && InView(enemies[i].X, enemies[i].Y, hx, hy, 1)) wanted--;
+                if (wanted > 0 && !AheadPoint(sim.Random, hx, hy, out ahead)) wanted = 0;
+            }
             for (int i = 0; i < enemies.Length; i++)
             {
                 ref var e = ref enemies[i];
                 if (!e.Alive || e.Motion != EnemyMotion.Still || horde.Scripts.Scripted(i)) continue;
-                double dx = e.X - hx, dy = e.Y - hy;
-                if (dx * dx + dy * dy < far * far) continue;
-                if (!RingPoint(sim.Random, hx, hy, roles[e.Role].RadiusM, out double x, out double y)) continue;
+                double dx = e.X - hx, dy = e.Y - hy, x, y;
+                if (dx * dx + dy * dy >= far * far)
+                {
+                    if (!RingPoint(sim.Random, hx, hy, roles[e.Role].RadiusM, out x, out y)) continue;
+                }
+                else if (wanted > 0 && dx * headingX + dy * headingY < 0 && LeftBehind(dx, dy))
+                {
+                    if (!RingPointAt(sim.Random, ahead + sim.Random.Range(-ClumpWander, ClumpWander), hx, hy, roles[e.Role].RadiusM, out x, out y))
+                        continue;
+                    wanted--;
+                }
+                else continue;
                 e.X = x;
                 e.Y = y;
                 e.LungeBeat = -1;
                 horde.Placed(i, t, x, y);
                 sim.Emit(SimEvent.Spawn(t, i, e.Role, x, y, recycled: true, boss: e.Boss));
             }
+        }
+
+        /// <summary>
+        /// The angle around the hero at (hx, hy) the view's floor brings a clump round to: within <see cref="AheadSpread"/>
+        /// of its heading where the ring there is walkable, else anywhere walkable round it (a hero heading into the arena's
+        /// edge or a wall); false if no try finds walkable ring.
+        /// </summary>
+        bool AheadPoint(SimRandom random, double hx, double hy, out double angle)
+        {
+            double heading = Math.Atan2(headingY, headingX);
+            for (int tries = 0; tries < 2 * SpawnTries; tries++)
+            {
+                angle = tries < SpawnTries ? heading + random.Range(-AheadSpread, AheadSpread) : random.Range(-Math.PI, Math.PI);
+                if (RingPointAt(random, angle, hx, hy, 0, out _, out _)) return true;
+            }
+            angle = 0;
+            return false;
         }
 
         /// <summary>

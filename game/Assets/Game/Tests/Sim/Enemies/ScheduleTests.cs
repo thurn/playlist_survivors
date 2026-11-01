@@ -107,6 +107,29 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void TheMinimumCountsOnlyTheHordesOwnNotAnEventsScriptedEnemies()
+        {
+            // 30 alive held by a music-driven event's script (a flower wall's, a swarm's) and the rest killed: the next
+            // wave still brings the horde's own back to minute 0's 40.
+            var spawns = new List<SpawnEvent>();
+            var sim = Play(Run(), new FixtureSong(3).Beats(0, 40, 120), 20.5, spawns);
+            int scripted = 0;
+            for (int i = 0; i < sim.State.Enemies.Length; i++)
+            {
+                if (!sim.State.Enemies[i].Alive) continue;
+                if (scripted < 30)
+                {
+                    sim.Horde.Scripts.Line(i, 1, 0, 1, flier: false);
+                    scripted++;
+                }
+                else sim.Horde.Kill(sim, i, sim.Now, 1, 0, 0);
+            }
+            Assert.AreEqual(30, sim.State.EnemiesAlive);
+            sim.StepTo(21.25);
+            Assert.AreEqual(30 + 40, sim.State.EnemiesAlive, "minute 0's minimum of its own beside the 30, at one wave");
+        }
+
+        [Test]
         public void AtTheCapTheFreeSlotsGoRoundTheRoster()
         {
             // The cap is full from minute 1. In minute 2 (bat1-3, every 0.5 s) one slot frees before each wave: native's
@@ -127,6 +150,54 @@ namespace PS.Game.Sim.Tests
             var content = HordeFixture.Content;
             CollectionAssert.AreEquivalent(new[] { "bat1", "bat1", "bat2", "bat2", "bat3", "bat3" },
                 refills.Select(r => content.Roles[r].Id), "each role in turn");
+        }
+
+        /// <summary>How far (dx, dy) from the hero lies beyond the edge of the test footprint (17 by 11 m each way), along its ray.</summary>
+        static double Beyond(double dx, double dy)
+        {
+            double d = Math.Sqrt(dx * dx + dy * dy);
+            return d - Math.Min(17 / Math.Abs(dx / d), 11 / Math.Abs(dy / d));
+        }
+
+        [Test]
+        public void AHeroOnTheMoveRunsIntoTheCrowdItLeftBehind()
+        {
+            // The hero walks right from 5 s, away from minute 0's first clumps: the view holds fewer than the floor, so
+            // enemies behind it, beyond the ring, are brought round onto the ring ahead of it.
+            var config = Run();
+            config.HeroStands = false;
+            var places = new List<(double x, double y)>();
+            var broughtRound = new List<(double fromX, double fromY, double heroX, double heroY, SpawnEvent to)>();
+            int cursor = 0;
+            var sim = new Simulation(config);
+            sim.Press(Key.Right, 5);
+            Drive.Feed(sim, new FixtureSong(3).Beats(0, 40, 120).Entries(), 30, eachFrame: s =>
+            {
+                foreach (var e in s.EventsSince(cursor))
+                {
+                    if (e.Kind != SimEventKind.Spawn || !e.AsSpawn.Recycled) continue;
+                    s.State.Hero.PositionAt(e.T, out double hx, out double hy);
+                    broughtRound.Add((places[e.AsSpawn.Enemy].x, places[e.AsSpawn.Enemy].y, hx, hy, e.AsSpawn));
+                }
+                cursor = s.EventCount;
+                s.DiscardEventsBefore(cursor);
+                places.Clear();
+                foreach (ref readonly var enemy in s.State.Enemies) places.Add((enemy.X, enemy.Y));
+            });
+            Assert.Greater(sim.State.Hero.X, 50, "the hero walked right");
+            Assert.That(broughtRound, Is.Not.Empty);
+            foreach (var (fromX, fromY, heroX, heroY, to) in broughtRound)
+            {
+                Assert.Less(fromX, heroX, "from behind the hero");
+                Assert.Greater(Beyond(fromX - heroX, fromY - heroY), 2 + 1.5 + 1 - 1e-6, "beyond the ring");
+                double angle = Math.Atan2(to.Y - heroY, to.X - heroX);
+                Assert.Less(Math.Abs(angle), 1.1, "onto the ring ahead of it");
+                Assert.That(Beyond(to.X - heroX, to.Y - heroY), Is.InRange(2.0, 2 + 1.5 + 1), "on the ring");
+            }
+            int inView = 0;
+            foreach (ref readonly var enemy in sim.State.Enemies)
+                if (enemy.Alive && Math.Abs(enemy.X - sim.State.Hero.X) < 17 && Math.Abs(enemy.Y - sim.State.Hero.Y) < 11) inView++;
+            Assert.Greater(inView, 0, $"the crowd keeps meeting the hero ({broughtRound.Count} brought round, {HordeFixture.Content.Schedule.ViewFloor} the floor)");
         }
 
         [Test]

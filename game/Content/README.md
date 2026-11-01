@@ -44,7 +44,8 @@ demo3d_tools/content.py). It reads native's content/*.yaml, levels/survivors.yam
 native's Rust sim keeps in code, and wrote these files. The game now edits its JSON by hand
 (ps-msz.6.2 added schedule.json's `run.levelScale`, `levelSmoothS` and `clumpS`, and
 `bossMoves`; ps-msz.6.12 progression.json's `startLevels`; ps-msz.8.4 the experience curve's
-`exponent` and the late minutes' rosters), so `game content --check` no longer matches and the
+`exponent` and the late minutes' rosters; ps-w9p.12 `run.viewFloor`, the later minimums and the
+experience curve's factor, 3.2), so `game content --check` no longer matches and the
 converter is history.
 
 ## From native
@@ -132,10 +133,13 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
   swarms are a bat swarm and a ghost swarm of 20, minute 25's flower walls 50 (unity-game.md, The
   run, "Shipped (ps-msz.8.4)"), and the game's denser opening (ps-w9p.4): minute 0 is bat3 and bat1
   every 0.5 s to 40, minute 1 every 0.5 s to 60, minute 2 to 80 (native's 15, 30 and 50; unity-game.md,
-  Enemies, "The opening").
+  Enemies, "The opening"), and the crowd's floor (ps-w9p.12): no minute past the opening below 80
+  (minutes 3, 4, 5, 6, 9, 10, 12, 14, 17 and 18 were 40, 30, 10, 20, 30, 10, 20, 20, 20 and 60;
+  unity-game.md, Enemies, "The crowd's floor").
 - `run.levelScale` and `levelSmoothS` are the survivors director's `population.levelScale` and
-  `smoothS`, which native's spawner applies to each minute's minimum. `run.clumpS` and
-  `bossMoves` are the game's own (unity-game.md, Enemies, "Shipped (ps-msz.6.2)"): native's
+  `smoothS`, which native's spawner applies to each minute's minimum. `run.clumpS`,
+  `run.viewFloor` (ps-w9p.12: while fewer are in view, enemies left behind a hero on the move are
+  brought round ahead of it) and `bossMoves` are the game's own (unity-game.md, Enemies, "Shipped (ps-msz.6.2)"): native's
   survivors bosses only walk.
 - A swarm event names its role (BAT_SWARM: bat-swarm, GHOST_SWARM: ghost-swarm, FLOWER_WALL:
   flower), as native's validator does. A chance of 0, or none, is `null`: no gate.

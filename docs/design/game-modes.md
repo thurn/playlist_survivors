@@ -19,7 +19,9 @@ Filed as bead ps-y21 (2026-11-01). Native (`native/`) has no modes.
 | `free` | walks freely: 8 ways on the arrows, or to a clicked point | strikes on Z, its size graded by the beat | no |
 
 Everything else (the horde, the other weapons, structures, the run) is the same in every mode. The opening's
-denser crowd (ps-w9p.4, [Enemies](unity-game.md#enemies)) is schedule.json's, so every mode has it.
+denser crowd (ps-w9p.4, [Enemies](unity-game.md#enemies)) and the crowd's floor (ps-w9p.12: the crowd left behind
+brought round ahead of a hero on the move, no minute's minimum below 80) are the spawner's and schedule.json's, so
+every mode has them.
 
 ## How modes are built
 
