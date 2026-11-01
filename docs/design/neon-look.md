@@ -161,8 +161,26 @@ look-bearing pairs move into the package and both forks are deleted:
 | Beat globals | `Crowd/Styles/StyleBeat.cs` | `Client/Look/BeatGlobals.cs` |
 | Bakers' unweld step | `Editor/Crowd/CrowdBaker.cs` (`Unweld`) | `Editor/Crowd/CrowdBaker.cs` |
 
-Paths are under `demo3d/Assets/Demo3D/` and `game/Assets/Game/`. Where the
-forks have diverged (game's shards on compute, its regrowth, its heard-time
+Paths are under `demo3d/Assets/Demo3D/` and `game/Assets/Game/`.
+
+**Moved so far (ps-wnj.4)**: the crowd renderer, its instance struct, slots,
+culling, library format and shaders, the GPU monster shatter, the crystal
+surface includes (CrystalCommon, CrystalSurface, StaticShadow) and the beat
+globals are the package's (`Runtime/Crowd/`, namespace `PS.Look.Crowd`;
+`Runtime/Shaders/`; `Runtime/Beat/BeatGlobals.cs`), as are the bakers' unweld
+step (`StyleMesh.Unweld`) and shard cutter (`CrowdShardBaker`, in the package's
+editor assembly `PS.Look.Editor`). Bodies and shards take their materials from
+a **monster look** (`IMonsterLook`, registered by option in `MonsterLooks`); an
+option without a look draws `MonsterLooks.Crystal`, today's crystal. The game
+draws through the package and its forks are deleted; its `CrowdView` feeds the
+crowd and its crowd baker (game's roster and cast) calls the package's steps.
+demo3d's crowd baker calls the package's unweld and its `StyleBeat` publishes
+through `BeatGlobals`; its crystal cut moving onto the package's crowd and
+shatter, and deleting demo3d's crystal forks (`CrystalShatter`, `CrowdShards`,
+its `CrowdShardBaker`), is ps-wnj.22. Players hook the package's compute
+kernels' warm-up through `ComputeKernels.Prepare` (the game's GraphicsStates).
+
+Where the forks have diverged (game's shards on compute, its regrowth, its heard-time
 strikes), the package takes the game's version: it is the one that has to
 hold a frame budget.
 

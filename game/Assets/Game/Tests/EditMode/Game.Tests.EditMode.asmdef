@@ -6,6 +6,7 @@
         "Game.EditorTools",
         "PS.Game.Sim",
         "PS.Look",
+        "PS.Look.Editor",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
         "Unity.RenderPipelines.Core.Runtime",

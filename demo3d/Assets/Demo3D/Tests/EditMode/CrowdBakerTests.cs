@@ -291,7 +291,7 @@ namespace Demo3D.Tests
             {
                 foreach (var src in new[] { welded, lods[0], lods[1] })
                 {
-                    var style = CrowdBaker.Unweld(src, 7);
+                    var style = PS.Look.EditorTools.Crowd.StyleMesh.Unweld(src, 7);
                     try
                     {
                         Assert.That(style.subMeshCount, Is.EqualTo(src.subMeshCount));
@@ -365,7 +365,7 @@ namespace Demo3D.Tests
         {
             using var b = Bake("slime");
             var welded = b.BuildMesh("slime_test");
-            var style = CrowdBaker.Unweld(welded, 7);
+            var style = PS.Look.EditorTools.Crowd.StyleMesh.Unweld(welded, 7);
             CrowdShards.Set set = null;
             try
             {
@@ -454,7 +454,7 @@ namespace Demo3D.Tests
             tex.SetPixelData(b.Texels, 0);
             tex.Apply(false, false);
             var mesh = b.BuildMesh("pose-test");
-            var style = CrowdBaker.Unweld(mesh, 5);
+            var style = PS.Look.EditorTools.Crowd.StyleMesh.Unweld(mesh, 5);
             var set = CrowdShardBaker.Bake(b, style, 13);
             var lib = ScriptableObject.CreateInstance<CrowdLibrary>();
             lib.CullShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(CrowdBaker.CullPath);

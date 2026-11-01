@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>
-    /// Stable crowd slots (demo3d's CrowdSlots, copied and owned): per type, each live entity
+    /// Stable crowd slots: per type, each live entity
     /// keeps its slot for its whole life, so the previous frame's copy of a slot is the same
     /// monster (the previous palette, LOD state). A slot freed by a despawn is written Hidden for at least
     /// one frame before another entity takes it, which tells the crowd the slot changed owner.

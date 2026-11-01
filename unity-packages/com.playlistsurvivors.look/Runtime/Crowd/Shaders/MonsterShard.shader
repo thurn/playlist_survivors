@@ -92,7 +92,7 @@ Shader "Game/MonsterShard"
             #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
-            #include "../../Arena/Shaders/CrystalSurface.hlsl"
+            #include "Packages/com.playlistsurvivors.look/Runtime/Shaders/CrystalSurface.hlsl"
 
             struct Varyings
             {

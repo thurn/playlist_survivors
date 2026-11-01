@@ -3,6 +3,7 @@
     "rootNamespace": "PS.Look.Tests",
     "references": [
         "PS.Look",
+        "PS.Look.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

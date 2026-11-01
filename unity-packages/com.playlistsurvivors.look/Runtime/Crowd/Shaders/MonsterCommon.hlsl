@@ -8,8 +8,8 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "../../Arena/Shaders/StaticShadow.hlsl"
-#include "../../Arena/Shaders/CrystalCommon.hlsl"
+#include "Packages/com.playlistsurvivors.look/Runtime/Shaders/StaticShadow.hlsl"
+#include "Packages/com.playlistsurvivors.look/Runtime/Shaders/CrystalCommon.hlsl"
 #include "CrowdCommon.hlsl"
 
 // 1 while the stills draw their ID render (Stills.cs): the crowd flat white.

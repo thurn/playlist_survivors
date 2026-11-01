@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>
     /// The crowd baker's output (unity-game.md, The Crowd), one asset in the gitignored

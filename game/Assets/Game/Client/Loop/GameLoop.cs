@@ -21,6 +21,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using SimKey = PS.Game.Sim.Key;
+using PS.Look.Crowd;
 
 namespace Game.Client.Loop
 {

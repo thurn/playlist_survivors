@@ -5,6 +5,8 @@
         "PS.Game.Arena",
         "PS.Game.Sim",
         "Game.Client",
+        "PS.Look",
+        "PS.Look.Editor",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

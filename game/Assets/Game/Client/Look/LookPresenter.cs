@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using Game.Client.Arena;
 using Game.Client.Loop;
+using PS.Look;
 using PS.Game.Sim;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -114,7 +115,9 @@ namespace Game.Client.Look
             // Stills draw into their own target, whose shape a windowless camera doesn't know yet.
             if (_camera != null) _rig.Apply(_camera, _stills ? (float)Stills.Width / Stills.Height : _camera.aspect, s, punch, shake, _viewWidth);
             var feet = new Vector3((float)hx, 0, (float)hy);
-            BeatGlobals.Publish(s, lane, feet);
+            BeatGlobals.Publish(s, BeatGlobals.At(lane.Beat, lane.SinceBeat, lane.SinceDownbeat, lane.Energy), feet);
+            BeatGlobals.PublishDrums(new Vector4((float)lane.Kick, (float)lane.Snare, (float)lane.Hat, (float)lane.Bass),
+                (float)Math.Max(lane.Rise, lane.KickPre));
             FollowHero?.Invoke(feet);
 
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,

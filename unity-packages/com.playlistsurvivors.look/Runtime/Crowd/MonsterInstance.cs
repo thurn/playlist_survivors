@@ -1,12 +1,11 @@
 using System.Runtime.InteropServices;
 using UnityEngine;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>
     /// One monster's state for a frame, as the crowd's presenter writes it and the GPU passes read
-    /// it (unity-game.md, The Crowd): 64 bytes, matching CrowdSkinning.hlsl's struct. demo3d's
-    /// MonsterInstance, copied and owned. Clip indices are into the type's clip table
+    /// it (unity-game.md, The Crowd): 64 bytes, matching CrowdSkinning.hlsl's struct. Clip indices are into the type's clip table
     /// (<see cref="CrowdType.Clips"/>); times are seconds into each clip.
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]

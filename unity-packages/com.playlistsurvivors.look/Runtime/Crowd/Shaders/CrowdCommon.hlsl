@@ -1,5 +1,4 @@
-// The crowd's draw-side shader code (unity-game.md, The Crowd; demo3d's CrowdCommon.hlsl, copied
-// and owned): palette skinning (CrowdPalette.compute blends each visible monster's bones once per
+// The crowd's draw-side shader code (unity-game.md, The Crowd): palette skinning (CrowdPalette.compute blends each visible monster's bones once per
 // frame; every pass reads 4 matrices per vertex), the instance's tint and the LOD crossfade's
 // dither.
 #ifndef GAME_CROWD_COMMON_INCLUDED

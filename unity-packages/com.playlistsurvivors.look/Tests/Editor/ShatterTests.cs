@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Client.Crowd;
-using Game.EditorTools.Crowd;
 using NUnit.Framework;
+using PS.Look.Crowd;
+using PS.Look.EditorTools.Crowd;
 using UnityEditor;
 using UnityEngine;
 
-namespace Game.Tests
+namespace PS.Look.Tests
 {
     /// <summary>
     /// The GPU monster shatter (MonsterShatter) on a made-up one-bone monster (no baked library
@@ -37,8 +37,8 @@ namespace Game.Tests
             _shards = shards;
             _lib = ScriptableObject.CreateInstance<CrowdLibrary>();
             _lib.Types = new[] { new CrowdType { Id = "blob", BoneCount = 1, HeightM = HeightM, ShardMesh = mesh, Shards = shards } };
-            _lib.ShardCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/Game/Client/Crowd/Shaders/MonsterShards.compute");
-            _lib.ShardShader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Game/Client/Crowd/Shaders/MonsterShard.shader");
+            _lib.ShardCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>("Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterShards.compute");
+            _lib.ShardShader = AssetDatabase.LoadAssetAtPath<Shader>("Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterShard.shader");
             var rows = new Vector4[CrowdSlots * 3];
             for (int i = 0; i < CrowdSlots; i++)
             {

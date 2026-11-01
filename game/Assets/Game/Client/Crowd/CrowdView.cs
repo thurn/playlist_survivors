@@ -4,6 +4,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 using Game.Client.Loop;
 using PS.Game.Sim;
 using UnityEngine;
+using PS.Look.Crowd;
 
 namespace Game.Client.Crowd
 {
@@ -213,8 +214,9 @@ namespace Game.Client.Crowd
             {
                 if ((_written[k].Flags & (uint)CrowdFlags.Dying) == 0) continue;
                 var track = _writtenTrack[k];
-                _shatter.Break(_writtenType[k], _writtenSlot[k], _written[k], track.Role, track.Serial, track.EndTime,
-                    track.BlowX, track.BlowY, track.Force);
+                if (_shatter.Break(_writtenType[k], _writtenSlot[k], _written[k], track.Role, track.Serial, track.EndTime,
+                        track.BlowX, track.BlowY, track.Force))
+                    Moments.Mark(MomentKind.Death, track.EndTime, track.Serial);
             }
             long shatterTicks = Stopwatch.GetTimestamp() - shatterStart;
             // After the crowd's draw, which blends the dying palettes the shatter seeds from.

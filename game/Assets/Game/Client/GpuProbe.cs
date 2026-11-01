@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Stopwatch = System.Diagnostics.Stopwatch;
+using PS.Look.Crowd;
 
 namespace Game.Client
 {
@@ -201,7 +202,7 @@ namespace Game.Client
                     return null; // the 1x target (Single)
                 case "crowd": // the monsters and their shatter's shards
                     int mask = camera.cullingMask;
-                    camera.cullingMask &= ~(1 << Crowd.BoneTextureCrowd.Layer);
+                    camera.cullingMask &= ~(1 << BoneTextureCrowd.Layer);
                     return () => camera.cullingMask = mask;
                 case "effects": // the particle pool
                     Effects.EffectSystem.Hidden = true;

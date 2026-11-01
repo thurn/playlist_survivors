@@ -285,7 +285,7 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   new style needs `BakeCrowd`. The baker also records each type's albedo
   value range (`CrowdType.ValueRange`) for painted's colour strip.
 - **Some styles draw the style mesh.** CrowdBaker also writes each type's three
-  LODs unwelded (`CrowdBaker.Unweld`, stylelab's StyleMesh), so every triangle has its own
+  LODs unwelded (the look package's `StyleMesh.Unweld`, after stylelab's StyleMesh), so every triangle has its own
   vertices. Bone data stays in UV1/UV2 and the position is already the rest pose in metres.
   The face normal is in the tangent, and barycentrics plus a random value per triangle are in
   UV3. They are listed in their own asset, `CrowdStyleMeshes`, not in the library: the library

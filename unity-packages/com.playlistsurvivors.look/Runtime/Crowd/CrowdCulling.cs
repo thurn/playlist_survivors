@@ -1,11 +1,10 @@
 using UnityEngine;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>
     /// The culling pass's camera-side arithmetic (CrowdCull.compute takes its results): the
-    /// frustum's planes, the depth bins' range and the projected-height scale. demo3d's
-    /// CrowdCulling, copied and owned.
+    /// frustum's planes, the depth bins' range and the projected-height scale.
     /// </summary>
     public static class CrowdCulling
     {

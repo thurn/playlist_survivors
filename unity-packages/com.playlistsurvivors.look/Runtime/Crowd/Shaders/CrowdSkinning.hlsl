@@ -1,6 +1,6 @@
 // The crowd's skinning core, shared by the draw shader and the compute passes (no stage-specific
 // code here): the instance struct, the bone texture's layout and the 2-clip × 2-frame blend.
-// demo3d's CrowdSkinning.hlsl, copied and owned. The clip rate (CrowdLibrary.ClipRate) comes as a
+// The clip rate (CrowdLibrary.ClipRate) comes as a
 // parameter.
 #ifndef GAME_CROWD_SKINNING_INCLUDED
 #define GAME_CROWD_SKINNING_INCLUDED
@@ -9,7 +9,7 @@
 #define CROWD_DYING 2u
 #define CROWD_HIDDEN 4u
 
-// Matches Game.Client.Crowd.MonsterInstance (64 bytes).
+// Matches PS.Look.Crowd.MonsterInstance (64 bytes).
 struct MonsterInstance
 {
     float3 position; float yaw;

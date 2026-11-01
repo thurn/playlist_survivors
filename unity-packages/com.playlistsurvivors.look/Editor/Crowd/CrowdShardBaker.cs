@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Game.Client.Crowd;
+using PS.Look.Crowd;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.EditorTools.Crowd
+namespace PS.Look.EditorTools.Crowd
 {
     /// <summary>
     /// The GPU shatter's shards (unity-game.md, Shatter): demo3d's CrowdShardBaker, copied and owned.

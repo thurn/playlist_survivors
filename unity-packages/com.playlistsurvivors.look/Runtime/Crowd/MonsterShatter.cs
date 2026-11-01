@@ -1,10 +1,9 @@
 using System;
 using System.Runtime.InteropServices;
-using Game.Client.Loop;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>One death's break, as its burst (the chips and dust the effects draw) needs it.</summary>
     public readonly struct ShatterBurst
@@ -113,6 +112,7 @@ namespace Game.Client.Crowd
         public event Action<ShatterBurst> Broke;
 
         readonly CrowdLibrary _lib;
+        readonly IMonsterLook _look;
         readonly Func<int, GraphicsBuffer> _palette;
         readonly ComputeShader _cs;
         readonly int _kSeedPalette, _kSeedShards, _kIntegrate;
@@ -146,16 +146,17 @@ namespace Game.Client.Crowd
         /// The shatter for the library's types, seeding from <paramref name="palette"/>: a type's palette
         /// buffer, as the crowd's palette pass writes it (<see cref="BoneTextureCrowd.Palette"/>).
         /// </summary>
-        public MonsterShatter(CrowdLibrary lib, Func<int, GraphicsBuffer> palette)
+        public MonsterShatter(CrowdLibrary lib, Func<int, GraphicsBuffer> palette, IMonsterLook look = null)
         {
             _lib = lib;
+            _look = look ?? MonsterLooks.Active;
             _palette = palette;
             _cs = lib.ShardCompute ? lib.ShardCompute : throw new InvalidOperationException("CrowdLibrary has no shard compute (re-run `game unity BakeCrowd`)");
             if (!lib.ShardShader) throw new InvalidOperationException("CrowdLibrary has no shard shader (re-run `game unity BakeCrowd`)");
             _kSeedPalette = _cs.FindKernel("SeedPalette");
             _kSeedShards = _cs.FindKernel("SeedShards");
             _kIntegrate = _cs.FindKernel("Integrate");
-            GraphicsStates.Prepare(_cs, _kSeedPalette, _kSeedShards, _kIntegrate);
+            ComputeKernels.Prepare(_cs, new[] { _kSeedPalette, _kSeedShards, _kIntegrate });
             _types = new TypeState[lib.Types.Length];
             for (int i = 0; i < _types.Length; i++) _types[i] = Create(lib.Types[i]);
         }
@@ -174,7 +175,7 @@ namespace Game.Client.Crowd
             s.Rest.SetData(t.Shards);
             s.Args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 5, 4) { name = t.Id + "_shardArgs" };
             s.Args.SetData(new uint[] { t.ShardMesh.GetIndexCount(0), 0, t.ShardMesh.GetIndexStart(0), t.ShardMesh.GetBaseVertex(0), 0 });
-            s.Material = new Material(_lib.ShardShader) { name = t.Id + "_shards", enableInstancing = false };
+            s.Material = _look.Shards(_lib, t);
             s.Block = new MaterialPropertyBlock();
             s.Block.SetBuffer(IdDeaths, s.Deaths);
             s.Block.SetBuffer(IdShards, s.Shards);
@@ -197,13 +198,13 @@ namespace Game.Client.Crowd
         /// monster written Dying at <paramref name="crowdSlot"/> as <paramref name="body"/>, killed at
         /// song time <paramref name="time"/> by a blow along (dirX, dirY) on the ground with the sim's
         /// launch distance <paramref name="force"/>. <paramref name="serial"/> seeds its kicks.
-        /// Raises <see cref="Broke"/>.
+        /// Raises <see cref="Broke"/>. False when the type's ring had no room left this frame (the body breaks unseen).
         /// </summary>
-        public void Break(int type, int crowdSlot, in MonsterInstance body, int role, int serial, double time,
+        public bool Break(int type, int crowdSlot, in MonsterInstance body, int role, int serial, double time,
                           double dirX, double dirY, double force)
         {
             var s = _types[type];
-            if (s.PendingCount == RingCapacity) return; // a type's whole ring dying in one frame: the rest stay bodiless
+            if (s.PendingCount == RingCapacity) return false; // a type's whole ring dying in one frame: the rest stay bodiless
             if (s.Count == RingCapacity)
             {
                 s.Start = (s.Start + 1) % RingCapacity; // give up the oldest
@@ -211,7 +212,6 @@ namespace Game.Client.Crowd
             }
             int slot = (s.Start + s.Count) % RingCapacity;
             s.Count++;
-            Moments.Mark(MomentKind.Death, time, serial);
             Breaks++;
             s.Times[slot] = time;
             double len = Math.Sqrt(dirX * dirX + dirY * dirY);
@@ -227,6 +227,7 @@ namespace Game.Client.Crowd
             var gem = new Color32((byte)body.Tint, (byte)(body.Tint >> 8), (byte)(body.Tint >> 16), 255);
             Broke?.Invoke(new ShatterBurst(time, hit, new Vector3(blow.x, 0, blow.y), (float)force, height,
                 ((Color)gem).linear, role, s.ShardCount));
+            return true;
         }
 
         /// <summary>

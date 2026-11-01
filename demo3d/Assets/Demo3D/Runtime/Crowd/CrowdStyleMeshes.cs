@@ -15,7 +15,7 @@ namespace Demo3D.Runtime.Crowd
         public Entry[] Types = Array.Empty<Entry>();
 
         /// <summary>
-        /// A type's welded LOD0 to LOD2 unwelded (CrowdBaker.Unweld): the face normal in the
+        /// A type's welded LOD0 to LOD2 unwelded (the look package's StyleMesh.Unweld): the face normal in the
         /// tangent, barycentrics plus a value per triangle in UV3.
         /// </summary>
         [Serializable]

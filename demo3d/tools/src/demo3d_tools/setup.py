@@ -298,6 +298,7 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
     and level data, and the vendor manifest."""
     if wt.name == "game":
         game = [f for d in GAME_BAKER_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
+        game += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
         game += [wt.project / f"{f}{m}" for f in (GAME_SOUND_RUNTIME, GAME_LEVEL_RUNTIME) + GAME_STRUCTURE_FILES
                  for m in ("", ".meta")]
         return game + [wt.project / "Content" / n for n in GAME_BAKER_CONTENT] + [wt.project / "manifest.json"]
@@ -313,7 +314,17 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
                     and not _SERIALIZED.search(f.read_bytes())):
                 continue
             files.append(f)
+    files += [wt.root / f"{LOOK_STYLE_MESH}{m}" for m in ("", ".meta")]
     return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
+
+
+# The look package's crowd (repo-relative): its runtime and shaders, which the crowd library
+# serializes and names, and the bakers' unweld step and shard cutter, which demo3d's crowd baker
+# (the unweld) and the game's crowd and structure shard bakers call.
+LOOK = "unity-packages/com.playlistsurvivors.look"
+LOOK_CROWD_DIRS = (f"{LOOK}/Runtime/Crowd", f"{LOOK}/Editor/Crowd", f"{LOOK}/Runtime/Shaders")
+LOOK_STYLE_MESH = f"{LOOK}/Editor/Crowd/StyleMesh.cs"
+LOOK_SHARD_BAKER = f"{LOOK}/Editor/Crowd/CrowdShardBaker.cs"
 
 
 def _demo(*globs: str) -> tuple[str, ...]:
@@ -331,7 +342,8 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
                              "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
                              "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
     "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
-                   "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*"),
+                   "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*")
+             + (f"{LOOK_STYLE_MESH}*",),
     "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),
     "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
                     "Runtime/Playback/ShatterSounds.cs*"),
@@ -361,8 +373,8 @@ GAME_SOUND_DIRS = ("Assets/Game/Editor/Sound",)
 GAME_SOUND_RUNTIME = "Assets/Game/Client/Sound/SoundBank.cs"  # the asset the sound baker writes
 GAME_SOUND_CONTENT = ("sounds.json",)
 GAME_STRUCTURE_DIRS = ("Assets/Game/Editor/Structures",)
-# The asset the shard baker writes, and the crowd's shard cutter it calls.
-GAME_STRUCTURE_FILES = ("Assets/Game/Client/Structures/StructureShards.cs", "Assets/Game/Editor/Crowd/CrowdShardBaker.cs")
+# The asset the shard baker writes (it calls the look package's shard cutter, LOOK_SHARD_BAKER).
+GAME_STRUCTURE_FILES = ("Assets/Game/Client/Structures/StructureShards.cs",)
 GAME_LEVEL_DIRS = ("Assets/Game/Editor/Level",)
 GAME_LEVEL_RUNTIME = "Assets/Game/Client/Loop/LevelBake.cs"  # the asset the level baker writes
 # GameContent.Files and the level data (arena.json, which the arena's bake rewrites).
@@ -375,14 +387,15 @@ GAME_BAKER_CONTENT = tuple(dict.fromkeys(GAME_ARENA_CONTENT + GAME_CROWD_CONTENT
 GAME_BAKER_ARENA = tuple(f"game/{d}/*" for d in GAME_ARENA_DIRS) + tuple(f"game/Content/{n}" for n in GAME_ARENA_CONTENT)
 GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": GAME_BAKER_ARENA,
-    "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
+    "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"{d}/*" for d in LOOK_CROWD_DIRS) +
+             tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
     "Hero": tuple(f"game/{d}/*" for d in GAME_HERO_DIRS) + ("game/Assets/Game/Editor/Arena/MaterialConverter.cs*",) +
             tuple(f"game/Content/{n}" for n in GAME_HERO_CONTENT),
     "Effects": tuple(f"game/{d}/*" for d in GAME_EFFECT_DIRS) + tuple(f"game/Content/{n}" for n in GAME_EFFECT_CONTENT),
     "Sounds": tuple(f"game/{d}/*" for d in GAME_SOUND_DIRS) + (f"game/{GAME_SOUND_RUNTIME}*",) +
               tuple(f"game/Content/{n}" for n in GAME_SOUND_CONTENT),
     "StructureShards": tuple(f"game/{d}/*" for d in GAME_STRUCTURE_DIRS) + tuple(f"game/{f}*" for f in GAME_STRUCTURE_FILES) +
-                       GAME_BAKER_ARENA,
+                       (f"{LOOK_SHARD_BAKER}*",) + GAME_BAKER_ARENA,
     "Level": tuple(f"game/{d}/*" for d in GAME_LEVEL_DIRS) + (f"game/{GAME_LEVEL_RUNTIME}*",) +
              tuple(f"game/Content/{n}" for n in GAME_LEVEL_CONTENT) + GAME_BAKER_ARENA,
 }

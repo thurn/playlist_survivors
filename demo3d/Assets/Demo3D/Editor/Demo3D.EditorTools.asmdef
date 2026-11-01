@@ -3,6 +3,8 @@
     "rootNamespace": "Demo3D.EditorTools",
     "references": [
         "PS.Choreography",
+        "PS.Look",
+        "PS.Look.Editor",
         "Demo3D.Runtime",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Core.Editor",

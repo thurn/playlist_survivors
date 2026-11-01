@@ -3,7 +3,7 @@ using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Game.Client.Crowd
+namespace PS.Look.Crowd
 {
     /// <summary>
     /// The GPU-driven crowd (unity-game.md, The Crowd): demo3d's BoneTextureCrowd, copied and owned
@@ -76,6 +76,7 @@ namespace Game.Client.Crowd
         public int Written { get; private set; }
 
         readonly CrowdLibrary _lib;
+        readonly IMonsterLook _look;
         readonly ComputeShader _cull, _palette;
         readonly int _kClear, _kCull, _kBlend;
         readonly int[] _kernels;
@@ -101,10 +102,14 @@ namespace Game.Client.Crowd
             public Action<AsyncGPUReadbackRequest> OnReadback;
         }
 
-        /// <summary>Every type in the library, each with room for <paramref name="capacityPerType"/> monsters.</summary>
-        public BoneTextureCrowd(CrowdLibrary lib, int capacityPerType)
+        /// <summary>
+        /// Every type in the library, each with room for <paramref name="capacityPerType"/> monsters, drawn in
+        /// <paramref name="look"/> (the applied preset's, <see cref="MonsterLooks.Active"/>, when null).
+        /// </summary>
+        public BoneTextureCrowd(CrowdLibrary lib, int capacityPerType, IMonsterLook look = null)
         {
             _lib = lib;
+            _look = look ?? MonsterLooks.Active;
             _capacity = capacityPerType;
             _cull = lib.CullShader ? lib.CullShader : throw new InvalidOperationException("CrowdLibrary has no cull shader");
             _kClear = _cull.FindKernel("ClearArgs");
@@ -112,8 +117,8 @@ namespace Game.Client.Crowd
             _kernels = new[] { _kClear, _kCull };
             _palette = lib.PaletteShader ? lib.PaletteShader : throw new InvalidOperationException("CrowdLibrary has no palette shader");
             _kBlend = _palette.FindKernel("Blend");
-            GraphicsStates.Prepare(_cull, _kClear, _kCull);
-            GraphicsStates.Prepare(_palette, _kBlend);
+            ComputeKernels.Prepare(_cull, new[] { _kClear, _kCull });
+            ComputeKernels.Prepare(_palette, new[] { _kBlend });
             _types = new TypeState[lib.Types.Length];
             for (int i = 0; i < _types.Length; i++) _types[i] = Create(lib.Types[i]);
         }
@@ -181,7 +186,7 @@ namespace Game.Client.Crowd
             s.ClipBounds = new GraphicsBuffer(GraphicsBuffer.Target.Structured, spheres.Length, 16) { name = t.Id + "_clipBounds" };
             s.ClipBounds.SetData(spheres);
 
-            s.Material = new Material(_lib.Crystal) { name = t.Id + "_crystal", enableInstancing = false };
+            s.Material = _look.Body(_lib, t);
             s.Material.SetFloat(IdHeightM, t.HeightM);
             s.Main = new MaterialPropertyBlock[Lods];
             for (int l = 0; l < Lods; l++) s.Main[l] = new MaterialPropertyBlock();
