@@ -234,8 +234,10 @@ What GW does with icons we do with silhouettes:
     the rim and feature edges (L* 55-80), a small core that flares on the
     beat. Bright share stays low; separation comes free.
   - `solid` (bright-solid): the slot's hue as emission at L* 50-78 (never
-    the hero's rung), with a 1-2 px dark outline in screen space and a
-    darker fresnel falloff toward the silhouette so a clump shows seams.
+    the hero's rung), with a 2-3 px dark outline in screen space and a
+    darker falloff toward the silhouette so a clump shows seams (as built,
+    ps-wnj.11: a 2.5 px outline and a band about 3 px wide inside the
+    silhouette; 2 px lost too much depth to the bloom).
   - `hologram` (wireframe): feature edges or all edges at L* 60-85, fill at
     ground light (L* 15-30, additive, under 25% opacity), scanlines in the
     post rather than per monster.

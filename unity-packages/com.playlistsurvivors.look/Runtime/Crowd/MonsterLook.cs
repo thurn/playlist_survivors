@@ -32,6 +32,7 @@ namespace PS.Look.Crowd
         static readonly Dictionary<string, IMonsterLook> Built = new Dictionary<string, IMonsterLook>
         {
             [EdgeLook.Option] = new EdgeLook(),
+            [SolidLook.Option] = new SolidLook(),
         };
 
         /// <summary>Registers the look built for <paramref name="look"/>'s option (list the option in Axes/Monsters.cs too).</summary>

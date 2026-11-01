@@ -386,6 +386,45 @@ How the package implements it (ps-wnj.10):
 - **Rings** (the impulse field, `ImpulseCrowd`): a living edge monster hops
   as a ring passes its root and its rim and lines take the ring's light
   (`_Ring`), so a slam's ring visibly runs through the swarm.
+- **Bright solid emissive** (ps-wnj.11; `SolidLook`, option `solid-emissive`,
+  the solid preset's; shaders `Resources/Look/Shaders/MonsterSolid` and
+  `MonsterSolidShard` over `Runtime/Crowd/Shaders/MonsterSolid.hlsl`): the
+  type's slot hue (`MonsterSlots`, at the palette's own value: `arcade` holds
+  every enemy at L* 78 or under) as emission, shaded for form by a soft light
+  from above leaning toward the camera, each facet a step apart. Separation
+  comes from two dark lines:
+  - **The silhouette band**: a dark band about 3 px wide (`_FalloffPx`, at 1080
+    rows) just inside each body's silhouette, which the post's void toe sinks
+    to black. On a body r pixels in radius a band d pixels in from the edge is
+    where the view-facing term nv < sqrt(2d / r), so the band keeps its width at
+    any size; it is capped at nv 0.4, because under the trailer's steep camera a
+    body's sides face the view at nv near 0.5 and would go dark. Bodies large on
+    screen (a radius from 50 px, fully from 100: the game's close packs, which
+    interpenetrate and hide each other's outline) also darken broadly toward
+    their silhouette.
+  - **The outline**: an inverted hull in URP's unlit pass beside the body,
+    pushed out 2.5 px at 1080 rows (along the normal bent halfway toward the
+    body's centre, so the low-poly creases don't crack it), in `void.floor`.
+    The style guide asked for 1-2 px; after the bloom and the metric's 3 px
+    smoothing a 2 px line kept too little of its depth, and 2.5 raised game
+    separation from 13.0-14.7 to 13.8-15.8.
+
+  `_SL_Pulse` lights a small hot spot where a living body faces the camera; a
+  passing impulse ring (`ImpulseCrowd`) lifts the body and lights it in its own
+  hue with a touch of the ring's colour, softly capped, since stacked rings sum
+  far past white; a hit brightens the faces turned to the camera in the body's
+  hue, the most frontal leaning to `shatter.core`, and the silhouette band
+  stays dark. Shards keep the surface and the outline, fresh inside faces a
+  little brighter, and flash `shatter.core` on the impact frame, cubed over the
+  hit flash's 0.12 s so the white is nearly gone two trailer frames on. Drawn
+  where the crystal draws, as the edge look is. Gains are the shaders'
+  property defaults, tuned on game's and the crystal cut's stills
+  ([game](../../game/evidence/look/monster-solid/README.md),
+  [crystal cut](../../demo3d/evidence/look/monster-solid/README.md)): swarm
+  separation 14.3-20.7 in game (3.4-6.0 with the crystal) and 10.5-16.4 on the
+  cut's smaller monsters (provisional at trailer distance), conformance
+  0.88-0.99, monster form 23-62, game perf at the peak 5.7 / 9.2 ms probe p50 /
+  p99, level with the crystal.
 
 ### World
 
