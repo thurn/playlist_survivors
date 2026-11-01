@@ -13,7 +13,10 @@ Moments.cs), and `--events-out`, every sim event as it settled. Then, from those
   weapons' casts and hits), the beat gem's ring landing and the cards' flips. Late is a frame after
   that, early a frame before its time.
 - **coverage**: how many of the sim's events of each kind in the run's frames were shown (the
-  footfalls are a sample: only monsters on a slot are posed).
+  footfalls are a sample: only monsters on a slot are posed). A moment the presenters show once
+  for each event (hero strides, blade flares, deaths, breaks, regrowths) shown fewer times than
+  the sim made them fails, as does any kind the sim made but nothing showed: a presenter that
+  stops showing a moment, or marking it, must not pass as all on time.
 - **settled ahead**: the margin by which each event settled before its moment, against the frame
   that dispatched it; a moment that settled after its frame had passed can only show late.
 
@@ -61,6 +64,9 @@ LEAD_TOLERANCE_MS = 2.0
 # The moments, and the sim events each one shows (for coverage).
 MOMENTS = ["HeroPress", "HeroStride", "HeroLand", "Blade", "Footfall", "Death", "Break", "Regrow",
            "Effect", "GemRing", "CardFlip"]
+# The moments shown once for each of the sim's events; the others' counts are upper bounds (a hop cut short
+# never lands, only monsters on a slot are posed, the ring lands only on a reliable beat).
+ONE_EACH = {"HeroPress", "HeroStride", "Blade", "Death", "Break", "Regrow"}
 
 # The sounds snapped to the grid by design (unity-game.md, Sound Timing), not at an event's time.
 SNAPPED = {"hurt", "chime", "shatter-tinkle"}
@@ -290,13 +296,16 @@ def audit_moments(moments: list[dict], events: list[dict], frames: list[float]) 
     checked = sum(k["checked"] for k in kinds.values())
     off = sum(k["late"] + k["early"] for k in kinds.values())
     shown = [k for k in MOMENTS if k != "HeroPress" and kinds[k]["checked"] == 0]
+    unshown = {k: f"{kinds[k]['checked']} of {want[k]}" for k in MOMENTS if want.get(k, 0) > 0 and
+               (kinds[k]["checked"] < want[k] if k in ONE_EACH else kinds[k]["checked"] == 0)}
     return {
-        "ok": off == 0 and checked > 0,
+        "ok": off == 0 and checked > 0 and not unshown,
         "frames": len(frames),
         "span": [round(lo, 4), round(hi, 4)],
         "moments": checked,
         "off_frame": off,
         "kinds_never_shown": shown,
+        "unshown": unshown,
         "kinds": kinds,
         "settled_ahead": settled,
     }
@@ -341,6 +350,8 @@ def moment_table(s: dict) -> str:
     past = {k: v["past_their_frame"] for k, v in s["settled_ahead"].items() if v["past_their_frame"]}
     if past:
         rows.append(f"settled past their frame (moments the presenters can't show on time): {past}")
+    if s["unshown"]:
+        rows.append(f"beat: moments the sim made that the presenters didn't show: {s['unshown']}")
     rows.append(f"\n{s['frames']} frames, song {s['span'][0]:.3f} to {s['span'][1]:.3f} s; {s['moments']} moments, "
                 f"{s['off_frame']} off their frame; never shown: {', '.join(s['kinds_never_shown']) or 'none'}; "
                 f"{'ok' if s['ok'] else 'NOT OK'}")

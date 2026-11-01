@@ -50,6 +50,19 @@ def test_the_audit_counts_each_kind_and_fails_on_a_late_one():
     assert not s["ok"] and s["off_frame"] == 1 and s["kinds"]["Death"]["late"] == 1
 
 
+def test_the_audit_fails_on_a_moment_the_sim_made_that_nothing_showed():
+    frames = [n * FRAME + 1e-6 for n in range(120)]
+    events = [event("Death", 30.5 * FRAME, 25 * FRAME, i0=3), event("Death", 40.5 * FRAME, 30 * FRAME, i0=4),
+              event("EnemyStep", 25 * FRAME, 20 * FRAME, d5=40.2 * FRAME),
+              event("EnemyStep", 25 * FRAME, 20 * FRAME, d5=40.2 * FRAME)]
+    shown = [moment("Death", 30.5 * FRAME, 31), moment("Death", 40.5 * FRAME, 41), moment("Footfall", 40.2 * FRAME, 41)]
+    assert beat.audit_moments(shown, events, frames)["ok"], "a sample of the footfalls is enough"
+    s = beat.audit_moments(shown[1:], events, frames)
+    assert not s["ok"] and s["off_frame"] == 0 and s["unshown"] == {"Death": "1 of 2"}
+    s = beat.audit_moments(shown[:2], events, frames)
+    assert not s["ok"] and s["unshown"] == {"Footfall": "0 of 2"}
+
+
 def test_an_event_settling_after_its_moment_passed_is_counted():
     frames = [n * FRAME + 1e-6 for n in range(60)]
     # A held stride drawn from frame 10's time, settling in frame 12: frame 11 had passed its start.
