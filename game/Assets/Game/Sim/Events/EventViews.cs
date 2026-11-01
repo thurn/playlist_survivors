@@ -93,7 +93,7 @@ namespace PS.Game.Sim
         public bool OnHero => e.I0 < 0;
         /// <summary>The enemy struck; -1 for the hero.</summary>
         public int Target => e.I0;
-        /// <summary>The hero's weapon that struck an enemy: its index in content's weapons; -1 on the hero.</summary>
+        /// <summary>The hero's weapon that struck an enemy: its index in content's weapons; -1 on the hero or for the finale's blast (<see cref="Horde.NoWeapon"/>).</summary>
         public int Weapon => OnHero ? -1 : e.I2;
         public WeaponHit WeaponHit => !OnHero ? (WeaponHit)e.I1 : throw new System.InvalidOperationException("a hit on the hero");
         public EnemyAttackKind EnemyKind => OnHero ? (EnemyAttackKind)e.I1 : throw new System.InvalidOperationException("a hit on an enemy");

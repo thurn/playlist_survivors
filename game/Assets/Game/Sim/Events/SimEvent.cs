@@ -177,7 +177,7 @@ namespace PS.Game.Sim
 
         /// <summary>
         /// A hit on an enemy: I0 enemy, I1 how it landed (<see cref="WeaponHit"/>), I2 the weapon's
-        /// content index (the sword's is 0); D0 the damage dealt, D1/D2 the enemy's position, D3/D4 the
+        /// content index (the sword's is 0; -1 for the finale's blast); D0 the damage dealt, D1/D2 the enemy's position, D3/D4 the
         /// direction it is struck in, D5 1 for a critical hit (Bloody Tear's).
         /// </summary>
         public static SimEvent EnemyHit(double t, int enemy, int weapon, WeaponHit how, double damage, double x, double y, double dirX, double dirY,

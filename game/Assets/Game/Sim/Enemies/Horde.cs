@@ -508,7 +508,7 @@ namespace PS.Game.Sim
         /// dies (<see cref="Kill"/>, thrown along the blow <paramref name="launch"/> metres) or is
         /// knocked back by <paramref name="knockback"/> away from the hero (<see cref="Knock"/>;
         /// native's survivor recoil, whatever the blow's direction; along the blow when on the hero).
-        /// The weapon's tally (<see cref="SimState.WeaponDamage"/>) adds the whole amount.
+        /// The weapon's tally (<see cref="SimState.WeaponDamage"/>) adds the whole amount; <see cref="NoWeapon"/> tallies nothing.
         /// </summary>
         internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
             double dirX, double dirY, double knockback, double launch, bool critical = false)
@@ -517,7 +517,7 @@ namespace PS.Game.Sim
             if (!e.Alive) return;
             e.PositionAt(t, out double x, out double y);
             e.Health -= amount;
-            state.WeaponDamageStore[weapon] += amount;
+            if (weapon != NoWeapon) state.WeaponDamageStore[weapon] += amount;
             sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY, critical));
             if (e.Health <= 1e-9)
             {
@@ -560,17 +560,8 @@ namespace PS.Game.Sim
         /// </summary>
         internal void Kill(Simulation sim, int i, double t, double dirX, double dirY, double launch)
         {
+            if (!Remove(i, t, out double x, out double y)) return;
             ref var e = ref enemies[i];
-            if (!e.Alive) return;
-            e.PositionAt(t, out double x, out double y);
-            e.Alive = false;
-            e.X = x;
-            e.Y = y;
-            e.Motion = EnemyMotion.Still;
-            e.LungeBeat = -1;
-            state.EnemiesAlive--;
-            free[freeCount++] = i;
-            Scripts.Clear(i);
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Arsenal?.Gems.Drop(sim, t, x, y, roles[e.Role].Xp);
             if (chestTier[i] > 0)
@@ -588,9 +579,22 @@ namespace PS.Game.Sim
         /// </summary>
         internal void Leave(Simulation sim, int i, double t)
         {
+            if (Remove(i, t, out double x, out double y)) sim.Emit(SimEvent.Leave(t, i, enemies[i].Role, x, y));
+        }
+
+        /// <summary>
+        /// Enemy <paramref name="i"/>, if alive, stops where it stands at <paramref name="t"/>, at
+        /// (x, y), and frees its slot: the removal a death and a leaving share. False if it was gone.
+        /// </summary>
+        bool Remove(int i, double t, out double x, out double y)
+        {
             ref var e = ref enemies[i];
-            if (!e.Alive) return;
-            e.PositionAt(t, out double x, out double y);
+            if (!e.Alive)
+            {
+                x = y = 0;
+                return false;
+            }
+            e.PositionAt(t, out x, out y);
             e.Alive = false;
             e.X = x;
             e.Y = y;
@@ -599,7 +603,7 @@ namespace PS.Game.Sim
             state.EnemiesAlive--;
             free[freeCount++] = i;
             Scripts.Clear(i);
-            sim.Emit(SimEvent.Leave(t, i, e.Role, x, y));
+            return true;
         }
 
         /// <summary>
@@ -632,9 +636,11 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
-        /// The finale's blast at <paramref name="t"/>: every enemy whose body touches the disc of
-        /// <paramref name="radius"/> around (x, y) takes <paramref name="damage"/>, thrown or
-        /// knocked straight out from its centre. It is no weapon's, so it tallies nothing.
+        /// The finale's blast at <paramref name="t"/>, centred on the hero at (x, y): every enemy whose
+        /// body touches the disc of <paramref name="radius"/> takes <paramref name="damage"/> through
+        /// <see cref="Damage"/> (a <see cref="WeaponHit.Blast"/> hit, so the survivors flash and show
+        /// their numbers), thrown or knocked straight out from the centre. It is no weapon's, so it
+        /// tallies nothing.
         /// </summary>
         internal void Blast(Simulation sim, double t, double x, double y, double radius, double damage)
         {
@@ -650,11 +656,12 @@ namespace PS.Game.Sim
                     dx = 0;
                     dy = 1;
                 }
-                e.Health -= damage;
-                if (e.Health <= 1e-9) Kill(sim, i, t, dx, dy, RunRules.BlastForceM);
-                else Knock(sim, i, t, dx, dy, damage);
+                Damage(sim, i, t, damage, NoWeapon, WeaponHit.Blast, dx, dy, damage, RunRules.BlastForceM);
             }
         }
+
+        /// <summary>The weapon index of a hit that is no weapon's (the finale's blast): it tallies nothing.</summary>
+        public const int NoWeapon = -1;
 
         /// <summary>
         /// A structure's tiles turn impassable (it regrows) or open (it breaks): the nav grid is

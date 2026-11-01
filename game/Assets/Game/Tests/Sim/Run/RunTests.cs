@@ -277,6 +277,8 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(Beats(sim).First(b => b.T >= victory && b.Downbeat).T, finale.T, Eps);
             Assert.IsTrue(Drive.Events(sim, SimEventKind.Death).Any(e => e.AsDeath.Enemy == skeleton && Math.Abs(e.T - finale.T) < Eps),
                 "the blast clears the screen");
+            Assert.IsTrue(Drive.Events(sim, SimEventKind.Hit).Any(e => e.AsHit.Target == skeleton && e.AsHit.WeaponHit == WeaponHit.Blast
+                && Math.Abs(e.T - finale.T) < Eps), "its victims flash and show their numbers");
             var end = Drive.Events(sim, SimEventKind.RunEnd).Single().AsRunEnd;
             Assert.AreEqual(RunEnd.Victory, end.Why);
             Assert.AreEqual(finale.T + HordeFixture.Content.Schedule.Finale.VictoryCardS, end.T, Eps);

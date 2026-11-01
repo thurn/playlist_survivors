@@ -360,6 +360,31 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void TheBlastHitsEverySurvivorAndVictimOnItsTimeAndTalliesNoWeapon()
+        {
+            var sim = HordeFixture.Empty();
+            Drive.Feed(sim, Steady(128).Entries(), 5);
+            double hx = sim.State.Hero.X, hy = sim.State.Hero.Y, t = sim.Now;
+            int victim = HordeFixture.Place(sim, "skeleton", hx + 3, hy);
+            int survivor = HordeFixture.Place(sim, "mudman2", hx, hy - 4);
+            int outside = HordeFixture.Place(sim, "skeleton", hx + 12, hy);
+            int cursor = sim.EventCount;
+            sim.Horde.Blast(sim, t, hx, hy, 8, 10);
+            var events = sim.EventsSince(cursor).ToArray();
+            CollectionAssert.AreEqual(new[] { SimEventKind.Hit, SimEventKind.Death, SimEventKind.Hit, SimEventKind.EnemyKnock },
+                events.Select(e => e.Kind), "each enemy's hit first, then its death or knock");
+            Assert.IsTrue(events.All(e => e.T == t), "all on the blast's own time");
+            var hits = events.Where(e => e.Kind == SimEventKind.Hit).Select(e => e.AsHit).ToList();
+            CollectionAssert.AreEqual(new[] { victim, survivor }, hits.Select(h => h.Target));
+            Assert.IsTrue(hits.All(h => h.Weapon == Horde.NoWeapon && h.WeaponHit == WeaponHit.Blast && h.Damage == 10));
+            Assert.AreEqual((0.0, -4.0), (hits[1].DirX, hits[1].DirY), "struck straight out from the centre");
+            Assert.AreEqual(RunRules.BlastForceM, events[1].AsDeath.Force);
+            Assert.Less(events[3].AsEnemyKnock.ToY, hy - 4, "the survivor knocked outward");
+            Assert.IsTrue(sim.State.Enemies[survivor].Alive && sim.State.Enemies[outside].Alive);
+            Assert.IsTrue(sim.State.WeaponDamage.ToArray().All(d => d == 0), "no weapon's");
+        }
+
+        [Test]
         public void SpawnsLandOnTheRingInsideTheArenaAndOutOfStructures()
         {
             // The hero near the arena's corner: the ring's in-bounds arc only.

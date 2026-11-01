@@ -25,6 +25,8 @@ namespace PS.Game.Sim
         Cleave = 2,
         /// <summary>A lightning bolt: a strike from the sky or a chain's jump (<see cref="SimEventKind.Bolt"/>).</summary>
         Bolt = 3,
+        /// <summary>The finale's blast (<see cref="Horde.NoWeapon"/>'s): no weapon's hit.</summary>
+        Blast = 4,
     }
 
     /// <summary>What a dying enemy drops.</summary>
