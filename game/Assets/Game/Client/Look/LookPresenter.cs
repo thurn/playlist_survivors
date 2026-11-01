@@ -53,11 +53,14 @@ namespace Game.Client.Look
         /// <summary>The zones' names by the sim's zone index (schedule.json's zone ids), or null to keep the night's grade.</summary>
         public string[] Zones { get; set; }
 
-        /// <summary>The arena's zone lighting, or null without an arena.</summary>
+        /// <summary>The arena's zone lighting, or null without an arena or in the void world.</summary>
         public ZoneLighting ZoneLight { get; set; }
 
         /// <summary>The look's grid floor, kept under the camera's view each frame, or null for the arena's ground.</summary>
         public GridFloor Floor { get; set; }
+
+        /// <summary>The look's void world, whose zones tint it in place of the zone grades and lighting, or null for the arena's night.</summary>
+        public VoidWorld World { get; set; }
 
         public PostFeel Post => _post;
         public CameraRig Rig => _rig;
@@ -88,9 +91,15 @@ namespace Game.Client.Look
         public void OnEvent(in SimEvent e)
         {
             _moments.OnEvent(e);
-            if (e.Kind != SimEventKind.ZoneChange || Zones == null) return;
+            if (e.Kind != SimEventKind.ZoneChange) return;
             // The sim's bars of two beats, as the camera's ease, at the latest lane's period.
             double bar = CameraRig.BeatsPerBar * Lane.Period;
+            if (World != null)
+            {
+                World.SetZone(e.AsZoneChange.Zone, e.T, PostFeel.EaseBars * bar);
+                return;
+            }
+            if (Zones == null) return;
             string zone = Zones[e.AsZoneChange.Zone];
             _post.SetZone(zone, e.T, bar);
             ZoneLight?.SetZone(zone, e.T, PostFeel.EaseBars * bar);
@@ -107,6 +116,7 @@ namespace Game.Client.Look
             var offsets = _post.At(s, lane, _moments);
             _post.Apply(Volume, offsets);
             ZoneLight?.Present(s);
+            World?.Present(s);
 
             double hx, hy;
             Direction facing;

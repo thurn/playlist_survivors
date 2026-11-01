@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Game.Client.Structures;
+using PS.Look;
 using Game.EditorTools.Arena;
 using Game.EditorTools.Crowd;
 using UnityEditor;

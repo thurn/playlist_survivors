@@ -1,14 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace Game.Client.Structures
+namespace PS.Look
 {
     /// <summary>
-    /// The crystal structures' shard sets (unity-game.md, "Shatter": structure shards keep PhysX),
-    /// demo3d's StructureShards copied and owned: each kit mesh a structure site places, cut at
-    /// bake time into thick chunks that together are the mesh (StructureShardBaker), which
-    /// <see cref="StructureShatter"/> flies when the sim breaks the site. Derived from vendor models,
-    /// so it lives only in the gitignored Assets/Baked/Structures/Resources/.
+    /// Shard sets for <see cref="StructureShatter"/>: each source mesh cut into thick chunks that together are the mesh.
+    /// The crystal kit's props and formations make theirs in code (<see cref="CrystalKit"/>); the game's bake cuts the
+    /// kit meshes its arena places (its StructureShardBaker), which, derived from vendor models, live only in the
+    /// game's gitignored Assets/Baked/Structures/Resources/ (<see cref="Load"/>).
     /// </summary>
     public sealed class StructureShards : ScriptableObject
     {
@@ -16,20 +15,19 @@ namespace Game.Client.Structures
 
         public Set[] Meshes = Array.Empty<Set>();
 
-        /// <summary>One kit mesh's shards.</summary>
+        /// <summary>One source mesh's shards.</summary>
         [Serializable]
         public sealed class Set
         {
-            /// <summary>The kit mesh they were cut from (a site renderer's shared mesh).</summary>
+            /// <summary>The mesh they were cut from (a site renderer's shared mesh).</summary>
             public Mesh Source;
             public Shard[] Shards = Array.Empty<Shard>();
         }
 
         /// <summary>
-        /// One chunk: the kit mesh's triangles that fell in it (its skin, with the kit's UVs and
-        /// submeshes, so the site's crystal materials draw it as they draw the piece), closed by
-        /// inside faces (UV1.x 1) to an apex inside the piece. Its corners are relative to
-        /// <see cref="Center"/>, a point in the source mesh's object space.
+        /// One chunk: the source mesh's faces that fell in it (its skin, drawn by the site's materials as they draw the
+        /// piece), closed by inside faces (UV1.x 1). Its corners are relative to <see cref="Center"/>, a point in the
+        /// source mesh's object space.
         /// </summary>
         [Serializable]
         public sealed class Shard

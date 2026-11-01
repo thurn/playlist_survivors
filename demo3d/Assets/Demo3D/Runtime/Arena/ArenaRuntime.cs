@@ -43,6 +43,8 @@ namespace Demo3D.Runtime.Arena
         /// <summary>Why the loaded scene failed to set up, or null.</summary>
         public Exception Failure { get; private set; }
         public Light Moon { get; private set; }
+        /// <summary>The scene's Arena root, once set up.</summary>
+        public Transform Root { get; private set; }
         public Renderer Ground { get; private set; }
         public readonly List<Renderer> Static = new List<Renderer>();
         /// <summary>
@@ -151,6 +153,7 @@ namespace Demo3D.Runtime.Arena
             foreach (var go in _roots)
                 if (go.name == "Arena") root = go.transform;
             if (root == null) throw new InvalidOperationException("ArenaRuntime: scene " + SceneName + " has no Arena root");
+            Root = root;
             if (root.GetComponent<ArenaClock>() == null) root.gameObject.AddComponent<ArenaClock>();
             foreach (var l in root.GetComponentsInChildren<Light>(true))
             {
@@ -312,6 +315,19 @@ namespace Demo3D.Runtime.Arena
             foreach (var go in _roots)
             foreach (var l in go.GetComponentsInChildren<Light>(true))
                 if (l.enabled && !(l.bakingOutput.isBaked && l.bakingOutput.lightmapBakeType == LightmapBakeType.Baked)) _shown.Add(l);
+        }
+
+        /// <summary>Turns the scene's realtime lights (the flames') off for good: a resident scene's stay off as it shows (the look's void world, VoidArena).</summary>
+        public void Unlight()
+        {
+            foreach (var l in Lights) l.enabled = false;
+            _shown.RemoveAll(Lights.Contains);
+        }
+
+        /// <summary>Renders the static shadow map again, from the kit renderers enabled now, if the rung has one.</summary>
+        public void RefreshShadowMap()
+        {
+            if (ShadowMap != null) RenderShadowMap();
         }
 
         /// <summary>Turns a resident scene's realtime lights and post volume on or off (its renderers follow the camera's culling mask).</summary>

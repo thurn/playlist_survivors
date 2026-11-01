@@ -1,22 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Game.Client.Arena;
-using Game.Client.Look;
-using Game.Client.Loop;
-using PS.Game.Sim;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
-namespace Game.Client.Structures
+namespace PS.Look
 {
     /// <summary>
     /// The crystal structures' breaks, regrowths and glints on screen (unity-game.md, "Crystal
-    /// Structures" and "Shatter"), demo3d's StructureShatter copied and owned for the sim's events:
-    /// - <b>A break</b> (StructureBreak): on the first frame at or after its song time the site's
-    ///   renderers hide and their baked shards (<see cref="StructureShards"/>) take their place, in
+    /// Structures" and "Shatter"; neon-look.md, The Package: the game's version, moved in). The caller
+    /// passes each moment as it learns of it (the game from its sim's events), ahead of its frame:
+    /// - <b>A break</b> (<see cref="Break"/>): on the first frame at or after its song time the site's
+    ///   renderers hide and their shards (<see cref="StructureShards"/>: the crystal kit's own, or the
+    ///   game's baked ones) take their place, in
     ///   the site's crystal materials and gem colour, and fly outward from the strike point, along the
     ///   blow and up, the nearest hardest. There is no crack front: the shards nearest the strike
     ///   launch on the impact frame and the farthest within <see cref="LaunchSpreadSeconds"/>, so the
@@ -28,20 +26,20 @@ namespace Game.Client.Structures
     ///   impact frame already shows a frame's flight and `--fixed-time` runs repeat. They clatter down,
     ///   and after <see cref="LingerSeconds"/> sink into the ground. The debris never blocks: the sim
     ///   opened the tiles at the hit.
-    /// - <b>A regrowth</b> (Regrowth): the site erupts from the ground over its beat, from the event's
+    /// - <b>A regrowth</b> (<see cref="Regrow"/>): the site erupts from the ground over its beat, from the event's
     ///   downbeat (the structure shader's <c>_SL_Sink</c>, overshooting a little before it settles),
     ///   flashing and glowing as it comes, with a burst of small shards thrown up from its footprint
-    ///   and <see cref="Erupted"/> for the effects' burst (the sound presenter shatters it from the event).
-    /// - <b>A glint</b> (Glint, a hit that doesn't break): the site flashes, brighter for a hit that
+    ///   and <see cref="Erupted"/> for the effects' burst.
+    /// - <b>A glint</b> (<see cref="Glint"/>, a hit that doesn't break): the site flashes, brighter for a hit that
     ///   counts toward a large structure's break.
-    /// - The static shadow map re-renders where the site stands after a break and once a regrowth is whole
-    ///   (<see cref="ArenaRuntime.RefreshShadows"/>); the shards and the growing crystal cast realtime
+    /// - The caller's static shadows redraw where the site stands after a break and once a regrowth is whole
+    ///   (<see cref="Attach"/>'s refreshShadows); the shards and the growing crystal cast realtime
     ///   shadows meanwhile, and light probes light both.
-    /// The flash, punch and shake are the look's (FeelMoments reads the same events), and the break's
-    /// burst and glass are the effects' and the sound's. Events arrive ahead of frameSong; each waits
-    /// for its frame. Nothing shows until <see cref="Attach"/> gives it the arena's sites.
+    /// The flash, punch and shake are the caller's, and the break's burst and glass the effects' and the
+    /// sound's. Each moment waits for its frame (<see cref="Broke"/> and <see cref="Regrew"/> say when it
+    /// shows). Nothing shows until <see cref="Attach"/> gives it the sites.
     /// </summary>
-    public sealed class StructureShatter : IPresenter, IDisposable
+    public sealed class StructureShatter : IDisposable
     {
         public const float Step = 1f / 120f;
         public const int MaxStepsPerFrame = 12;
@@ -56,7 +54,7 @@ namespace Game.Client.Structures
         public const float LingerSeconds = 2.4f, SinkSeconds = 1f;
         /// <summary>A launching shard's white flash and the glow of its fresh inside faces (_SL_PieceFx.x and w): their peaks and fades.</summary>
         public const float FlashSeconds = 0.2f, GlowSeconds = 0.45f, Flash = 0.25f, Glow = 0.5f;
-        /// <summary>The flight at a heavy strike's throw (FeelMoments.HeavyThrowM): outward from the strike, along the blow and up (m/s), and the tumble (rad/s).</summary>
+        /// <summary>The flight at a break's full power (a heavy strike's throw): outward from the strike, along the blow and up (m/s), and the tumble (rad/s).</summary>
         public const float Outward = 3.4f, Blow = 6.5f, Up = 2.6f, Spin = 7f;
         /// <summary>A glint's flash and how long it fades; a hit toward a large structure's break flashes at full.</summary>
         public const float GlintSeconds = 0.3f, GlintFlash = 0.5f;
@@ -81,14 +79,15 @@ namespace Game.Client.Structures
             public double T;
             public int Site;
             public Vector3 Point, Blow; // the strike's point and direction on the ground
-            public float Throw;         // the hit's throw (m) for a break; the glint's strength
+            public float Power;         // a break's power (1 a heavy strike's); a glint's flash
             public double End;          // a regrowth's end
         }
 
-        /// <summary>A site: its renderers and their property blocks (each carries the crystal swap's piece values and tint).</summary>
+        /// <summary>A site: its renderers, their shards (null: the baked ones of their meshes) and property blocks (each carries the piece values and tint).</summary>
         sealed class Site
         {
             public Renderer[] Renderers;
+            public StructureShards.Set[] Sets;
             public MaterialPropertyBlock[] Blocks;
             public Bounds Bounds;
             public bool Broken;
@@ -146,6 +145,9 @@ namespace Game.Client.Structures
         /// </summary>
         public event Action<double, int, Vector3, float, Color> Erupted;
 
+        /// <summary>A site broke on this frame, at song time t (the break's own time), or began to regrow.</summary>
+        public event Action<double, int> Broke, Regrew;
+
         /// <summary>Shards in flight or sinking now, and the most at once.</summary>
         public int Shards { get; private set; }
         public int PeakShards { get; private set; }
@@ -158,30 +160,28 @@ namespace Game.Client.Structures
         public double FramePhysicsMs { get; private set; }
         public double FrameShadowMs { get; private set; }
 
-        public StructureShatter() : this(StructureShards.Load()) { }
-
-        /// <summary>Flies <paramref name="shards"/>' sets (null: breaks only hide).</summary>
-        public StructureShatter(StructureShards shards)
-        {
-            _shards = shards;
-            if (_shards == null) Debug.LogWarning("StructureShatter: no structure shards in this build (run `game unity BakeStructureShards`): breaks only hide");
-        }
+        /// <summary>Flies the baked <paramref name="shards"/>' sets for site meshes given none of their own (null: those only hide).</summary>
+        public StructureShatter(StructureShards shards = null) => _shards = shards;
 
         /// <summary>
-        /// Shows the breaks on the arena's <paramref name="sites"/> (<see cref="ArenaRuntime.Sites"/>, once
-        /// ready and in crystal: CrystalStructures.Apply), redrawing its static shadows where they change
-        /// with <paramref name="refreshShadows"/> (<see cref="ArenaRuntime.RefreshShadows"/>). The shards
+        /// Shows the breaks on <paramref name="sites"/>, each a site's renderers by its index, redrawing the
+        /// static shadows where they change with <paramref name="refreshShadows"/> (null: none to redraw).
+        /// <paramref name="sets"/> gives each renderer's shards (the crystal kit's: <see cref="CrystalProps"/>);
+        /// without it, a renderer's mesh takes the baked ones. The shards
         /// fly in a local physics scene of their own, or in <paramref name="physicsScene"/> when given (the
         /// editor's tests pass a preview scene: play mode alone creates scenes), which the caller then owns.
         /// </summary>
-        public void Attach(IReadOnlyList<Renderer[]> sites, Action<IReadOnlyList<Bounds>> refreshShadows, Scene? physicsScene = null)
+        public void Attach(IReadOnlyList<Renderer[]> sites, Action<IReadOnlyList<Bounds>> refreshShadows, Scene? physicsScene = null,
+            IReadOnlyList<StructureShards.Set[]> sets = null)
         {
             _refreshShadows = refreshShadows;
+            if (sets == null && _shards == null)
+                Debug.LogWarning("StructureShatter: no structure shards (in a game build, run `game unity BakeStructureShards`): breaks only hide");
             _sites = new Site[sites.Count];
             for (int i = 0; i < _sites.Length; i++)
             {
                 var rs = sites[i];
-                var site = new Site { Renderers = rs, Blocks = new MaterialPropertyBlock[rs.Length] };
+                var site = new Site { Renderers = rs, Sets = sets?[i], Blocks = new MaterialPropertyBlock[rs.Length] };
                 for (int k = 0; k < rs.Length; k++)
                 {
                     site.Blocks[k] = new MaterialPropertyBlock();
@@ -207,37 +207,24 @@ namespace Game.Client.Structures
             box.size = new Vector3(4000, 1, 4000);
             box.center = new Vector3(0, -0.5f, 0);
             box.sharedMaterial = _material;
-            Debug.Log($"StructureShatter: {_sites.Length} sites, {(_shards != null ? _shards.Meshes.Length : 0)} shard sets");
+            Debug.Log($"StructureShatter: {_sites.Length} sites, " + (sets != null ? "the crystal kit's shards" : $"{(_shards != null ? _shards.Meshes.Length : 0)} baked shard sets"));
         }
 
-        public void OnEvent(in SimEvent e)
-        {
-            switch (e.Kind)
-            {
-                case SimEventKind.StructureBreak:
-                {
-                    var b = e.AsStructureBreak;
-                    Add(new Pending
-                    {
-                        Kind = Kind.Break, T = e.T, Site = b.Structure, Point = new Vector3((float)b.X, 0, (float)b.Y),
-                        Blow = new Vector3((float)b.DirX, 0, (float)b.DirY), Throw = (float)b.Force,
-                    });
-                    break;
-                }
-                case SimEventKind.Regrowth:
-                {
-                    var r = e.AsRegrowth;
-                    Add(new Pending { Kind = Kind.Regrow, T = r.Start, Site = r.Structure, End = r.End });
-                    break;
-                }
-                case SimEventKind.Glint:
-                {
-                    var g = e.AsGlint;
-                    Add(new Pending { Kind = Kind.Glint, T = e.T, Site = g.Structure, Throw = g.Hits > 0 ? 1f : GlintFlash });
-                    break;
-                }
-            }
-        }
+        /// <summary>
+        /// Site <paramref name="site"/> breaks at song time <paramref name="t"/>, struck at <paramref name="point"/> on the
+        /// ground along <paramref name="blow"/>, at <paramref name="power"/> (1 a heavy strike's throw; held to 0.45 to 1.2).
+        /// </summary>
+        public void Break(double t, int site, Vector3 point, Vector3 blow, float power) =>
+            Add(new Pending { Kind = Kind.Break, T = t, Site = site, Point = point, Blow = blow, Power = power });
+
+        /// <summary>Site <paramref name="site"/> regrows, erupting from <paramref name="start"/> (a downbeat) to <paramref name="end"/>.</summary>
+        public void Regrow(double start, double end, int site) => Add(new Pending { Kind = Kind.Regrow, T = start, Site = site, End = end });
+
+        /// <summary>
+        /// Site <paramref name="site"/> is hit without breaking at song time <paramref name="t"/>: it flashes at full
+        /// for a hit toward a large structure's break (<paramref name="counts"/>), else at <see cref="GlintFlash"/>.
+        /// </summary>
+        public void Glint(double t, int site, bool counts) => Add(new Pending { Kind = Kind.Glint, T = t, Site = site, Power = counts ? 1f : GlintFlash });
 
         /// <summary>Keeps the pending moments in song-time order (events settle in about that order already).</summary>
         void Add(in Pending p)
@@ -247,12 +234,13 @@ namespace Game.Client.Structures
             _pending.Insert(i, p);
         }
 
-        public void Present(in PresentFrame frame)
+        /// <summary>Brings the moments and shards to song time <paramref name="song"/>; call once a frame.</summary>
+        public void Present(double song)
         {
             FrameSteps = 0;
             FramePhysicsMs = FrameShadowMs = 0;
             if (_sites == null) return;
-            double song = frame.Song, now = song + MotionLead;
+            double now = song + MotionLead;
             if (double.IsNaN(_physicsT)) _physicsT = now;
             while (_pending.Count > 0 && _pending[0].T <= song)
             {
@@ -284,7 +272,7 @@ namespace Game.Client.Structures
             FramePhysicsMs = _live.Count > 0 ? _watch.Elapsed.TotalMilliseconds : 0;
             PresentShards(now);
             PresentSites(song, now);
-            if (_shadowsDirty.Count > 0)
+            if (_shadowsDirty.Count > 0 && _refreshShadows != null)
             {
                 _watch.Restart();
                 _refreshShadows(_shadowsDirty);
@@ -301,12 +289,11 @@ namespace Game.Client.Structures
         {
             var site = _sites[p.Site];
             if (site.Broken) return;
-            Moments.Mark(MomentKind.Break, p.T, p.Site);
+            Broke?.Invoke(p.T, p.Site);
             Hide(site, true);
             site.Growing = false;
             _shadowsDirty.Add(site.Bounds);
             Breaks++;
-            if (_shards == null) return;
             var live = new Live { Site = p.Site, At = p.T, Linger = LingerSeconds, Sink = SinkSeconds };
             var rng = new System.Random(p.Site * 7919 + (int)(p.T * 1000));
             // The strike, on the site's surface at a third of its height: the kick is hardest near it.
@@ -314,7 +301,7 @@ namespace Game.Client.Structures
             var strike = b.ClosestPoint(new Vector3(p.Point.x, b.min.y + 0.33f * b.size.y, p.Point.z));
             float reach = Mathf.Max(0.5f, (b.center - strike).magnitude + b.extents.magnitude);
             var blow = p.Blow.sqrMagnitude > 1e-6f ? p.Blow.normalized : Vector3.zero;
-            float power = Mathf.Clamp(p.Throw / FeelMoments.HeavyThrowM, 0.45f, 1.2f);
+            float power = Mathf.Clamp(p.Power, 0.45f, 1.2f);
             for (int r = 0; r < site.Renderers.Length; r++)
                 Cut(site, r, live, (s, rest) =>
                 {
@@ -358,10 +345,10 @@ namespace Game.Client.Structures
         {
             var renderer = site.Renderers[r];
             if (!(renderer is MeshRenderer) || !renderer.TryGetComponent<MeshFilter>(out var mf)) return;
-            var set = _shards.Of(mf.sharedMesh);
+            var set = site.Sets != null ? site.Sets[r] : _shards?.Of(mf.sharedMesh);
             if (set == null)
             {
-                Debug.LogWarning($"StructureShatter: no shards for {mf.sharedMesh?.name} (re-run `game unity BakeStructureShards`)");
+                if (_shards != null) Debug.LogWarning($"StructureShatter: no shards for {mf.sharedMesh?.name} (re-run `game unity BakeStructureShards`)");
                 return;
             }
             var l2w = renderer.localToWorldMatrix;
@@ -494,7 +481,7 @@ namespace Game.Client.Structures
         void Regrow(in Pending p)
         {
             var site = _sites[p.Site];
-            Moments.Mark(MomentKind.Regrow, p.T, p.Site);
+            Regrew?.Invoke(p.T, p.Site);
             Hide(site, false);
             site.GrowStart = p.T;
             site.GrowEnd = Math.Max(p.End, p.T + 1e-3);
@@ -507,7 +494,6 @@ namespace Game.Client.Structures
                 if (l.Site == p.Site && !l.Burst) l.Linger = Math.Min(l.Linger, (float)(p.T - l.At));
             var tint = site.Blocks.Length > 0 ? (Color)site.Blocks[0].GetVector(TintId) : Color.white;
             Erupted?.Invoke(p.T, p.Site, centre, Mathf.Sqrt(b.size.x * b.size.z), tint);
-            if (_shards == null) return;
             var live = new Live { Site = p.Site, Burst = true, At = p.T, Linger = BurstLingerSeconds, Sink = BurstSinkSeconds };
             var rng = new System.Random(p.Site * 104729 + (int)(p.T * 1000));
             for (int r = 0; r < site.Renderers.Length; r++)
@@ -528,7 +514,7 @@ namespace Game.Client.Structures
             var site = _sites[p.Site];
             if (site.Broken) return;
             site.GlintT = p.T;
-            site.GlintFlash = p.Throw;
+            site.GlintFlash = p.Power;
             site.Lit = true;
         }
 

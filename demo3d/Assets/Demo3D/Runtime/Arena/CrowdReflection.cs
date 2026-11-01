@@ -48,7 +48,8 @@ namespace Demo3D.Runtime.Arena
             }
             bool ok = cam.RenderToCubemap(_cube, 63);
             _cube.GenerateMips();
-            Object.Destroy(go);
+            if (Application.isPlaying) Object.Destroy(go);
+            else Object.DestroyImmediate(go); // an edit-mode test's arena
             Shader.SetGlobalTexture("_Demo3DCrowdReflection", _cube);
             Debug.Log($"CrowdReflection: captured at {at} ({(ok ? "ok" : "RenderToCubemap failed")}), face means {FaceMeans()}");
         }

@@ -6,7 +6,7 @@ using Game.Client.Crowd;
 using Game.Client.Effects;
 using Game.Client.Music;
 using Game.Client.Sound;
-using Game.Client.Structures;
+using PS.Look;
 using PS.Game.Sim;
 using PS.Look.Crowd;
 

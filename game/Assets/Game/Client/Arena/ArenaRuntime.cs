@@ -35,6 +35,8 @@ namespace Game.Client.Arena
         /// <summary>Why the loaded scene failed to set up, or null.</summary>
         public Exception Failure { get; private set; }
         public Light Moon { get; private set; }
+        /// <summary>The scene's Arena root, once set up.</summary>
+        public Transform Root { get; private set; }
         public Renderer Ground { get; private set; }
         /// <summary>The mist cards, or null without them.</summary>
         public Renderer Mist { get; private set; }
@@ -101,6 +103,7 @@ namespace Game.Client.Arena
             foreach (var go in scene.GetRootGameObjects())
                 if (go.name == "Arena") root = go.transform;
             if (root == null) throw new InvalidOperationException("ArenaRuntime: scene " + SceneName + " has no Arena root");
+            Root = root;
             if (root.GetComponent<ArenaClock>() == null) root.gameObject.AddComponent<ArenaClock>();
             foreach (var l in root.GetComponentsInChildren<Light>(true))
             {
@@ -188,6 +191,19 @@ namespace Game.Client.Arena
         public void RefreshShadows(IReadOnlyList<Bounds> regions) => ShadowMap?.Redraw(_casters, regions);
 
         readonly List<Renderer> _casters = new List<Renderer>();
+
+        /// <summary>
+        /// Puts <paramref name="structures"/> in the sites' place as the static shadow map's structures (the void world's
+        /// crystal props: VoidArena), and renders the map again from the casters enabled now.
+        /// </summary>
+        public void Restage(IReadOnlyList<Renderer> structures)
+        {
+            Structures.Clear();
+            Structures.AddRange(structures);
+            ShadowMap?.Dispose();
+            ShadowMap = null;
+            RenderShadowMap();
+        }
 
         void RenderShadowMap()
         {

@@ -1,19 +1,15 @@
 using System.Collections.Generic;
-using Game.Client.Look;
-using Game.Client.Loop;
-using Game.Client.Structures;
 using NUnit.Framework;
-using PS.Game.Sim;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Game.Tests
+namespace PS.Look.Tests
 {
     /// <summary>
     /// The structures' shatter (StructureShatter) on a made-up site (no baked arena or shards needed):
-    /// a 2 × 3 × 2 m block cut into its eight octants, broken from its east side at a heavy strike's
-    /// throw, then regrown, presented at a fixed 60 fps as the player's `--fixed-time` frames are.
+    /// a 2 × 3 × 2 m block cut into its eight octants, broken from its east side at full power (a heavy
+    /// strike's throw), then regrown, presented at a fixed 60 fps as the game's `--fixed-time` frames are.
     /// </summary>
     public class StructureShatterTests
     {
@@ -70,10 +66,9 @@ namespace Game.Tests
             Object.DestroyImmediate(_shards);
         }
 
-        void Present(double song) => _shatter.Present(new PresentFrame { Song = song });
+        void Present(double song) => _shatter.Present(song);
 
-        void Break() =>
-            _shatter.OnEvent(SimEvent.StructureBreak(T, 0, StructureHit.HeavyStrike, 1.0, 0.0, -1, 0, FeelMoments.HeavyThrowM));
+        void Break() => _shatter.Break(T, 0, new Vector3(1, 0, 0), new Vector3(-1, 0, 0), 1f);
 
         [Test]
         public void TheShardsMoveOnTheImpactFrameAndAllFlyWithin50Ms()
@@ -103,7 +98,7 @@ namespace Game.Tests
         {
             const double Start = 12, End = 12.47;
             Break();
-            _shatter.OnEvent(SimEvent.Regrowth(Start - 2, 0, Start, End));
+            _shatter.Regrow(Start, End, 0);
             var erupted = new List<double>();
             _shatter.Erupted += (t, site, centre, size, tint) => erupted.Add(t);
             for (int f = (int)(T * Fps); f < Start * Fps; f++) Present(f / Fps);

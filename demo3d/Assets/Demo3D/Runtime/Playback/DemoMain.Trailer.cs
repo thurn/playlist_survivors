@@ -113,9 +113,12 @@ namespace Demo3D.Runtime.Playback
                 var look = PS.Look.ResolvedLook.Resolve(flags);
                 look.Apply();
                 _lookPost = PS.Look.PostStack.OptionOf(look);
+                _structureLook = PS.Look.StructureLook.For(look);
+                _world = PS.Look.VoidWorld.For(look);
                 if (_lookPost != null) PS.Look.PostStack.Use(_lookPost);
                 _impulses = PS.Look.ImpulseField.Active = new PS.Look.ImpulseField();
                 _floor = PS.Look.GridFloor.For(look);
+                if (_world != null) _world.Floor = _floor;
             }
             else if (flags.Any) Debug.Log("DemoMain: the look flags are for the crystal cut; " +
                                           (_flags.Trailer != null ? "the action cut" : "the song") + " keeps its look");
@@ -234,7 +237,7 @@ namespace Demo3D.Runtime.Playback
                     // formations"), on its own environment.
                     var layout = environments[s.Info.Environment].Layout;
                     s.Moments = BreakMoments.Of(tl, layout);
-                    s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name, tl.Crystals, CrowdLibrary.Load());
+                    s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name, tl.Crystals, CrowdLibrary.Load(), _structureLook);
                 }
                 // The shot's boss fight (trailer.md, "The boss fight"): its zones, and its blows' flashes, shakes and dust.
                 if (tl.BossAttacks.Length > 0) s.Fight = new BossTelegraphs(tl, transform);
@@ -245,7 +248,7 @@ namespace Demo3D.Runtime.Playback
                 {
                     s.Effects = NewEffectDriver(tl);
                     s.Effects.Blows = s.Blows;
-                    var bursts = s.Moments.Count > 0 ? s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem, Demo3D.Runtime.Arena.CrystalFormations.Gem) : new List<BreakMoments.Burst>();
+                    var bursts = s.Moments.Count > 0 ? s.Moments.Bursts(_structures.Name, StructureStyle.CrystalGem, _structureLook?.Gem ?? PS.Look.CrystalFormations.Gem) : new List<BreakMoments.Burst>();
                     if (s.Fight != null) bursts.AddRange(s.Fight.Bursts());
                     if (bursts.Count > 0) s.Effects.SetBursts(bursts);
                 }
@@ -353,6 +356,9 @@ namespace Demo3D.Runtime.Playback
             }
             _slotBase = i << 20;
             _rig.YawDeg = s.Info.YawDeg; // the camera jumps to the shot's framing (Draw reads its framing track)
+            // Under hued-zones each shot is a zone of the kit, its tint taken on the cut (the style guide: only the zone tint may change at a cut).
+            _world?.SetZone(i, double.NegativeInfinity, 0);
+            _world?.Present(0);
         }
 
         /// <summary>

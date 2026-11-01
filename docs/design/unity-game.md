@@ -2285,6 +2285,14 @@ placement list, as the 3D demo's is (ps-msz.3.6; evidence in
   material at load, its gem colour a hue by its angle around the arena's
   centre, so the arena holds the whole spectrum and neighbours read as a
   family.
+- **The void world** (neon-look.md, The Axes > World; ps-wnj.8): under a
+  look's world option `VoidArena` hides the Synty set, the mist and the
+  flames' lights (the grid floor replaces the ground), and under its
+  structure look each site's kit pieces give way to the look package's
+  crystal props standing on the site's tiles in the build's `arena.json`, in
+  the palette's `shatter.gem`. The crystal swap remains only for a look
+  without a structure look. Zones then tint the floor and fog with the
+  palette's zone hues instead of easing the zone grade and lighting.
 - **The default zone** is the neon palette over the night: purple ambient
   and fog, magenta mist, a violet moon, a cyan hero light and eight flame
   lights. The player's `--arena` shows the arena alone in the game camera's
@@ -2465,7 +2473,10 @@ evidence in [game/evidence/shatter](../../game/evidence/shatter/README.md).
   bodies in a separate local physics scene at 1/120 s.
 - Shards linger about 2.4 s and then sink.
 
-**Shipped (ps-msz.3.12)**: `StructureShatter` in game/Assets/Game/Client/Structures/,
+**Shipped (ps-msz.3.12)**: `StructureShatter` in game/Assets/Game/Client/Structures/
+(since ps-wnj.8 in the look package's `Runtime/Crystal/`, fed the sim's events by the
+game's `StructurePresenter`; under a structure look its sites are the crystal props,
+whose shards are cut in code, not baked),
 subscribed by the frame loop with the arena, on shards cut by `StructureShardBaker`
 (`game unity BakeStructureShards`, after the arena: every kit mesh the baked sites
 draw, 10 to 48 chunks each by surface area, with the crowd's cutter, into the

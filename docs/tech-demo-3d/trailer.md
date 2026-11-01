@@ -1665,7 +1665,7 @@ A shot's `crystals` field places them:
   and 7 stand theirs 8 m tall and the climax's two 5 m (the fight's 32 m
   view), each still towering over the horde.
 
-**On screen** (`CrystalFormations`, `StructureShatter`):
+**On screen** (the look package's `CrystalFormations`, demo3d's `StructureShatter`):
 
 - **The formation.** A main spire of the formation's height and five to
   seven shorter ones leaning out round it, hexagonal and tapering to off-axis
@@ -1673,7 +1673,9 @@ A shot's `crystals` field places them:
   Each spire is cut at build time into chunky shards: slices of its shaft
   split round the axis into two or three wedges, and its tip, about fifty a
   formation, their cut faces flagged as a baked shard's are. They draw in
-  crystal's structure shader, in the formations' gem, and stand from the
+  crystal's structure shader, in the formations' gem (under a look with a
+  structure look, its featured material in the palette's `shatter.gem`:
+  neon-look.md, The Axes > World), and stand from the
   shot's first frame; a cut away hides them, and their shot's next showing
   puts them back whole.
 - **The burst, on the impact frame.** On the blow's frame the formation is

@@ -154,8 +154,8 @@ look-bearing pairs move into the package and both forks are deleted:
 | --- | --- | --- |
 | Crowd renderer | `Runtime/Crowd/BoneTextureCrowd.cs`, `Crowd/Shaders/Crowd*.{shader,hlsl,compute}` | `Client/Crowd/BoneTextureCrowd.cs`, `MonsterInstance.cs` |
 | Monster shatter | `Crowd/Styles/CrystalShatter.cs`, `CrystalShard.shader` | `Client/Crowd/MonsterShatter.cs`, `MonsterShard.shader`, `MonsterShards.compute` |
-| Structure shatter | `Arena/StructureShatter.cs`, `StructureShards.cs` | `Client/Structures/StructureShatter.cs`, `StructureShards.cs` |
-| Crystal formations | `Arena/CrystalFormations.cs` | none |
+| Structure shatter | `Arena/StructureShatter.cs`, `StructureShards.cs` (kept: the action cut's) | `Client/Structures/StructureShatter.cs`, `StructureShards.cs` (moved in, ps-wnj.8) |
+| Crystal formations | `Arena/CrystalFormations.cs` (moved in, ps-wnj.8) | none |
 | Effects runtime | `Runtime/Effects/Effect*.cs`, `EffectSim.compute`, `EffectParticles.shader` | `Client/Effects/` forks |
 | Post and grade | `Arena/NightLook.cs`, `Playback/PostFeel.cs`, `TrailerLook.cs`, `LensHitFeature.cs` | `Client/Arena/NightLook.cs`, `Client/Look/PostFeel.cs` |
 | Beat globals | `Crowd/Styles/StyleBeat.cs` | `Client/Look/BeatGlobals.cs` |
@@ -404,6 +404,60 @@ Synty environment meshes leave the crystal cut and `game/`'s arena.
 `game/`'s arena keeps its layout (`game/Content/arena-layout.json`, the
 structures and footprints the sim routes round). Only how it is drawn
 changes.
+
+How the package implements the kit (ps-wnj.8), in `Runtime/Crystal/` beside
+the grid floor (`Runtime/World/GridFloor.cs`, ps-wnj.7):
+
+- **`CrystalKit`** builds every piece in code with its shards, cut as it is
+  built (a `StructureShards.Set`, its `Source` the whole): `Formation`
+  (demo3d's spire clusters, the same geometry and seeds), `Shard` (one leaning
+  spire), `Obelisk` (a square tapering pillar), `Ring` (a half-sunk standing
+  ring of diamond-section segments, an arch over its line) and `Wall` (a low
+  hedge of spires). Every face is fanned from its centre with uv2.x 0 on its
+  real edges, so a look draws facet edges, not triangles. `Fill` fits pieces
+  to a structure's tiles: an obelisk on one tile, a shard on each of two, a
+  ring or wall along a line, else a formation at the shape's middle and shards
+  on the tiles beyond it; nothing stands off its tiles.
+- **`StructureLook`** is the structures axis: one material in
+  `CrystalProp.shader` (self-lit, `shatter.gem`, the shatter's per-piece flash,
+  glow and sink), set per option: `edge-glass` (near-black glass, rim and lit
+  edges flaring on the beat), `solid-glass` (bright body falling off to the
+  silhouette, dark facet lines), `wireframe` (lit edges over a void fill) and
+  `refractive-gem` (the void and grid seen through the facets, fainter edges;
+  it turns on the camera's opaque texture). Its `Featured` material, the
+  same look with faces, rim and edges lit brighter, draws the shots'
+  formations: the set pieces keep the white-gold glow people loved and
+  outshine the props round them.
+- **`CrystalProps`** stands a structure's pieces on its tiles in a look's
+  material and hands `StructureShatter` its sites and their shards.
+- **`StructureShatter`** is the game's (PhysX shards in their own scene, no
+  crack front, regrowth and glints), moved in and freed of the sim:
+  `Break`, `Regrow`, `Glint` and `Present(song)`, with `Broke` and `Regrew`
+  for the caller's moments. A site's renderers take the crystal kit's shards
+  or, without them, the game's baked shards of their meshes.
+- **`CrystalFormations`** is demo3d's, moved in: formations from
+  `CrystalKit.Formation` in the material it is given.
+- **`VoidWorld`** is the air: the camera clears to `void.floor`, the
+  distance fades into `void.fog` (exponential squared, gone past about
+  150 m), `Hide` takes the vendor set away, and under `hued-zones` a zone
+  eases the floor's lines and the fog's hue to the palette's next zone tint.
+- **game**: `VoidArena` hides the Synty set under Static, the mist and the
+  flames' lights under a world option, and under a structure look stands
+  `CrystalProps` on each site's tiles from the build's own `arena.json`
+  (the kit pieces hidden), re-rendering the static shadow map from what
+  stands. `StructurePresenter` turns the sim's events into the shatter's
+  calls. Zones tint the void world in place of the zone grades and the
+  arena's zone relighting. Without a structure look the kit's sites turn
+  crystal as before (`CrystalStructures`).
+- **demo3d**: each of the crystal cut's environments gets a `VoidArena`:
+  the whole Synty set, mist and flame lights go under a world option, and
+  under a structure look a crystal piece stands on the tiles each of its
+  `Structures` pieces covered (not the landmarks, whose wide footprints
+  buried the formations in crystal), on the environment's resident layer.
+  The formations draw in the structure look's `Featured` and still break through demo3d's own
+  `StructureShatter` (the action cut's copy, with the formation burst people
+  liked); under `hued-zones` each shot takes the next zone tint on its cut.
+  Re-staging the shots for the void is ps-wnj.17.
 
 ### The impulse field
 

@@ -157,9 +157,9 @@ namespace Game.Client.Loop
         MixCapture _capture;
         string _soundOut;
         ArenaRuntime _arena;
-        CrystalStructures _crystal;
+        VoidArena _void;
         GridFloor _floor;
-        StructureShatter _shatter;
+        StructurePresenter _structures;
         CrowdView _crowd;
         GemView _gems;
         WandView _wand;
@@ -296,8 +296,8 @@ namespace Game.Client.Loop
             Driver.Events.Subscribe(_look);
             if (arena)
             {
-                _shatter = new StructureShatter();
-                Driver.Events.Subscribe(_shatter);
+                _structures = new StructurePresenter(new StructureShatter(StructureShards.Load()));
+                Driver.Events.Subscribe(_structures);
                 LoadArena(camera);
             }
             // A headless player has no graphics device, so no compute: the crowd and the effects sit it out.
@@ -360,14 +360,14 @@ namespace Game.Client.Loop
             // garlic's motes, a chest's burst), so each is emitted on the frame that reaches its time, not the next
             // (ps-msz.8.5).
             if (_effects != null) Driver.Events.Subscribe(_effects);
-            if (_shatter != null) _shatter.Erupted += Erupted;
+            if (_structures != null) _structures.Shatter.Erupted += Erupted;
             _hud = new HudPresenter(transform, camera, Driver.Sim, content, source, _interactive) { Menu = _pause };
             if (_interactive && replayed == null) _hud.CardPointed = PointAtCard;
             if (_hero != null) _hud.DrawnHero = _hero.Drawn;
             Driver.Events.Subscribe(_hud);
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
-            _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter, _crowd?.Shatter);
+            _telemetry = new RunTelemetry(Driver, options.Outputs, _structures?.Shatter, _crowd?.Shatter);
             if (_sessionDir != null) _timing = TimingLog.Open(_sessionDir, Driver, _telemetry, _music, _sounds, _effects);
             _camera = camera;
             if (camera != null) _probe = GpuProbe.FromOptions(options, content);
@@ -424,17 +424,22 @@ namespace Game.Client.Loop
             _arena.OnReady += a =>
             {
                 _arenaFrame = Time.frameCount;
-                _crystal = new CrystalStructures();
-                _crystal.Apply(a, camera);
-                _shatter.Attach(a.Sites, a.RefreshShadows);
+                _void = new VoidArena(a, ResolvedLook.Active, camera);
+                _structures.Shatter.Attach(_void.Sites, a.RefreshShadows, null, _void.Sets);
                 _look.Volume = a.Post;
                 _look.FollowHero = a.FollowHero;
-                _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
-                if (_look.Zones != null) _look.ZoneLight.Preload(_look.Zones);
                 // The look's world draws the reactive grid floor in place of the arena's ground.
                 _floor = GridFloor.For(ResolvedLook.Active);
                 if (_floor != null) GridFloor.Replace(a.Ground);
                 _look.Floor = _floor;
+                // The void world's zones tint it; the arena's own zones relight its night.
+                _look.World = _void.World;
+                if (_void.World != null) _void.World.Floor = _floor;
+                else
+                {
+                    _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
+                    if (_look.Zones != null) _look.ZoneLight.Preload(_look.Zones);
+                }
             };
         }
 
@@ -756,8 +761,8 @@ namespace Game.Client.Loop
             _hero?.Dispose();
             _effects?.Dispose();
             _finishers?.Dispose();
-            _shatter?.Dispose();
-            _crystal?.Dispose();
+            _structures?.Dispose();
+            _void?.Dispose();
             _floor?.Dispose();
             _arena?.Dispose();
             _crowd?.Dispose();

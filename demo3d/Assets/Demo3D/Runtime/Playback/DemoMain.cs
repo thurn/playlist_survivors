@@ -58,6 +58,10 @@ namespace Demo3D.Runtime.Playback
         float _supersample = 1f;  // --supersample (Supersampling)
         TrailerLook _look;        // a trailer's grain, dirt and lens hits (null outside a trailer and with --no-trailer-look)
         PS.Look.PostOption _lookPost; // the crystal cut's look's post option (UseLook); null: the environments' night volumes
+        PS.Look.StructureLook _structureLook; // the crystal cut's look's structure look, its formations' material (UseLook); null: their own crystal
+        PS.Look.VoidWorld _world;  // the crystal cut's look's world (UseLook); null: the environments' own
+        readonly List<Demo3D.Runtime.Arena.VoidArena> _voids = new List<Demo3D.Runtime.Arena.VoidArena>(); // each environment in the world kit
+        bool _worldApplied;
         SoundScheduler _sounds;
         SoundScheduler.Cue[] _soundCues; // the timeline's sounds and the monster shatter's
         // TD15's beauty shots: --hold-at x,y (a stress scene's hero holds that point), --beauty-empty (no
@@ -173,6 +177,8 @@ namespace Demo3D.Runtime.Playback
             }
             if (_trailer != null) UseTrailerStyle(rosterSet);
             if (_floor != null && _arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => PS.Look.GridFloor.Replace(a.Ground);
+            // The crystal cut's environments in the look's world kit, once each scene is ready (after the structure style's swap).
+            bool voided = _trailer != null && (_world != null || _structureLook != null);
             if (!_structures.IsBaseline)
             {
                 if (_arena == null) throw new InvalidOperationException($"DemoMain: {StructureStyle.Flag} {_structures.Name} needs the arena, not flat ground");
@@ -181,6 +187,7 @@ namespace Demo3D.Runtime.Playback
                 if (_arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
                 else _arena.OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
             }
+            if (voided) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _voids.Add(new Demo3D.Runtime.Arena.VoidArena(a, _world, _structureLook));
             var data = PlaybackData.Load();
             var level = LevelScript.Parse(data.Level(rosterSet).text, data.Overlay(intensity), data.Overlay(breakSchedule));
             if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
@@ -434,7 +441,13 @@ namespace Demo3D.Runtime.Playback
 
         void SwitchArena(int i)
         {
+            var was = _arena;
             _arena = _arenas.Switch(i);
+            if (_world != null && (_arena != was || !_worldApplied))
+            {
+                _world.Apply(_rig.Camera); // over the environment's own fog and clear colour
+                _worldApplied = true;
+            }
             if (_postFeels != null) _postFeel = _postFeels[i];
         }
 
@@ -939,6 +952,8 @@ namespace Demo3D.Runtime.Playback
             _crowd?.Dispose();
             if (_shots == null) _breaks?.Dispose();
             else foreach (var s in _shots) { s.Structures?.Dispose(); s.Fight?.Dispose(); } // a trailer's _breaks is its current shot's
+            foreach (var v in _voids) v.Dispose();
+            _structureLook?.Dispose(); // after the shots' formations and the props, which draw in it
             _style?.Dispose();
             _structures?.Dispose();
             _heroRenderer?.Dispose();

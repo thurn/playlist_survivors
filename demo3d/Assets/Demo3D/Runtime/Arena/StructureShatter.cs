@@ -13,7 +13,8 @@ namespace Demo3D.Runtime.Arena
     /// `--structure-breaks` (<see cref="BreakMoments"/>: the hero's bolt strikes on the grid and the pieces leave the
     /// obstacle map), the struck pieces' renderers hide and their baked shards (<see cref="StructureShards"/>) take their
     /// place, in the piece's own materials (the kit's under baseline, the `--structure-style`'s otherwise), and fly. A
-    /// trailer shot's crystal formations (<see cref="CrystalFormations"/>, trailer.md "Crystal formations") stand with it
+    /// trailer shot's crystal formations (the look package's <see cref="PS.Look.CrystalFormations"/>, trailer.md "Crystal
+    /// formations") stand with it, in the look's structure look when it has one (<see cref="PS.Look.StructureLook.Featured"/>),
     /// and break the same way when the hero's blow smashes one, into their generated shards, in their own manner.
     ///
     /// - Each shard is a PhysX rigidbody in its own physics scene, stepped in fixed steps of <see cref="Step"/> on the
@@ -114,7 +115,8 @@ namespace Demo3D.Runtime.Arena
         readonly ArenaRuntime _arena;
         readonly GroundLayout _ground;
         readonly StructureShards _shards;
-        readonly CrystalFormations _formations; // a trailer shot's crystal formations, or null
+        readonly PS.Look.CrystalFormations _formations; // a trailer shot's crystal formations, or null
+        readonly Material _formationMaterial;          // theirs outside a structure look (owned), or null
         readonly Shader _patch;
         readonly Manner _manner;
         readonly string _style;
@@ -137,10 +139,11 @@ namespace Demo3D.Runtime.Arena
         /// The breaks of <paramref name="moments"/> on <paramref name="arena"/>, whose scene places
         /// <paramref name="ground"/>'s placements (the layout the timeline ran on), in <paramref name="style"/>'s manner (the
         /// resolved `--structure-style`), and a trailer shot's <paramref name="crystals"/> (its timeline's), which stand
-        /// from the first frame it draws and are made from <paramref name="lib"/>'s crystal structure shader.
+        /// from the first frame it draws, in <paramref name="look"/>'s material or else <paramref name="lib"/>'s crystal
+        /// structure shader.
         /// </summary>
         public StructureShatter(BreakMoments moments, ArenaRuntime arena, GroundLayout ground, string style,
-            IReadOnlyList<CrystalPiece> crystals = null, Demo3D.Runtime.Crowd.CrowdLibrary lib = null)
+            IReadOnlyList<CrystalPiece> crystals = null, Demo3D.Runtime.Crowd.CrowdLibrary lib = null, PS.Look.StructureLook look = null)
         {
             _moments = moments;
             _arena = arena;
@@ -167,8 +170,23 @@ namespace Demo3D.Runtime.Arena
             box.center = new Vector3(0, -0.5f, 0);
             box.sharedMaterial = _material;
             if (crystals != null && crystals.Count > 0)
-                _formations = new CrystalFormations(crystals, _root.transform,
-                    lib ?? throw new ArgumentNullException(nameof(lib), "StructureShatter: crystal formations need the crowd library's crystal shader"), arena.Options.Prepass);
+            {
+                if (look == null)
+                    _formationMaterial = FormationMaterial(
+                        (lib ?? throw new ArgumentNullException(nameof(lib), "StructureShatter: crystal formations need the crowd library's crystal shader"))
+                        .StructureShader("Demo3D/Structures/Crystal"), arena.Options.Prepass);
+                var spots = new List<PS.Look.CrystalFormations.Spot>(crystals.Count);
+                for (int i = 0; i < crystals.Count; i++)
+                {
+                    var c = crystals[i];
+                    spots.Add(new PS.Look.CrystalFormations.Spot
+                    {
+                        Placement = c.Placement, Name = CrystalPiece.Target(i), Position = new Vector2(c.Position.X, c.Position.Y),
+                        RadiusM = c.RadiusM, HeightM = c.HeightM,
+                    });
+                }
+                _formations = new PS.Look.CrystalFormations(spots, _root.transform, look != null ? look.Featured : _formationMaterial);
+            }
             Debug.Log($"StructureShatter: {moments.Count} breaks in the {style} manner" + (_formations != null ? $", {crystals.Count} crystal formations" : ""));
         }
 
@@ -195,7 +213,7 @@ namespace Demo3D.Runtime.Arena
                             Placement = mp.Placement, Root = formation.Renderer.transform, Renderers = new Renderer[] { formation.Renderer },
                             Bounds = formation.Renderer.bounds, Formation = true,
                         };
-                        _pieces[mp.Placement].Cut.Add((formation.Renderer, formation.Set));
+                        _pieces[mp.Placement].Cut.Add((formation.Renderer, Local(formation.Set)));
                         cut += formation.Set.Shards.Length;
                         continue;
                     }
@@ -231,6 +249,44 @@ namespace Demo3D.Runtime.Arena
                     _pieces[mp.Placement] = piece;
                 }
             Debug.Log($"StructureShatter: {_pieces.Count} pieces in {_arena.SceneName}, {cut} shards");
+        }
+
+        /// <summary>A formation's shards as this shatter's sets hold them.</summary>
+        static StructureShards.Set Local(PS.Look.StructureShards.Set set) => new StructureShards.Set
+        {
+            Source = set.Source,
+            Shards = Array.ConvertAll(set.Shards, s => new StructureShards.Shard { Mesh = s.Mesh, Center = s.Center, Volume = s.Volume, Size = s.Size }),
+        };
+
+        /// <summary>The formations' gem, grade and glow, past the bloom's knee: lit from inside.</summary>
+        public const float FormationGain = 0.55f, FormationPeak = 0.35f, FormationGlow = 1.6f;
+
+        /// <summary>
+        /// The formations' material outside a structure look: crystal's structure shader on its own, in their warm white-gold
+        /// (<see cref="PS.Look.CrystalFormations.Gem"/>), brighter than a crystal wall, their light reaching the bloom;
+        /// out of the depth prepass unless <paramref name="prepass"/> (the arena's E6 setting).
+        /// </summary>
+        static Material FormationMaterial(Shader shader, bool prepass)
+        {
+            var m = new Material(shader) { name = "CrystalFormation", enableInstancing = false };
+            m.SetVector("_Tint", PS.Look.CrystalFormations.Gem);
+            m.SetFloat("_InnerGlow", FormationGlow);
+            m.SetFloat("_Refraction", 0.05f);
+            m.SetFloat("_Facets", 0.7f);
+            m.SetFloat("_Gain", FormationGain);
+            m.SetFloat("_Peak", FormationPeak);
+            m.SetFloat("_SL_CellScale", 1.1f);
+            m.SetTexture("_SL_ClipMap", Texture2D.whiteTexture);
+            m.SetVector("_SL_ClipMap_ST", new Vector4(1, 1, 0, 0));
+            m.SetFloat("_SL_Cutoff", 0f);
+            m.SetFloat("_SL_Canopy", 0f);
+            m.SetFloat("_Cull", (float)CullMode.Back);
+            if (!prepass)
+            {
+                m.SetShaderPassEnabled("DepthNormals", false);
+                m.SetShaderPassEnabled("DepthOnly", false);
+            }
+            return m;
         }
 
         /// <summary>The arena's structure and landmark pieces, where a broken placement's scene object is found.</summary>
@@ -528,6 +584,7 @@ namespace Demo3D.Runtime.Arena
         public void Dispose()
         {
             _formations?.Dispose();
+            if (_formationMaterial != null) UnityEngine.Object.Destroy(_formationMaterial);
             if (_root != null) UnityEngine.Object.Destroy(_root);
             if (_material != null) UnityEngine.Object.Destroy(_material);
             if (_scene.IsValid() && _scene.isLoaded) SceneManager.UnloadSceneAsync(_scene);

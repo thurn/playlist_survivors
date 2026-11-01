@@ -177,10 +177,10 @@ namespace Game.Client.Loop
                     f.Parts[(int)Part.Shatter] += crowd.ShatterMs;
                     ms -= crowd.ShatterMs;
                 }
-                else if (presenter is StructureShatter structures)
+                else if (presenter is StructurePresenter structures)
                 {
-                    f.Parts[(int)Part.Physics] += structures.FramePhysicsMs;
-                    ms -= structures.FramePhysicsMs;
+                    f.Parts[(int)Part.Physics] += structures.Shatter.FramePhysicsMs;
+                    ms -= structures.Shatter.FramePhysicsMs;
                 }
                 var part = PartOf(presenter);
                 if (part != Part.Loop) f.Parts[(int)part] += ms; // the rest of the loop, which Row works out
@@ -201,7 +201,7 @@ namespace Game.Client.Loop
                 case WandView _: case BibleView _: case GarlicAura _: case FireTrailView _: case LightningView _: case EvolutionLayers _:
                     return Part.Weapons;
                 case GemView _: case ChestView _: return Part.Pickups;
-                case StructureShatter _: return Part.Structures;
+                case StructurePresenter _: return Part.Structures;
                 case HeroPresenter _: return Part.Hero;
                 case LookPresenter _: return Part.Look;
                 case HudPresenter _: case DebugOverlay _: return Part.Hud;

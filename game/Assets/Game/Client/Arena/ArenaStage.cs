@@ -7,8 +7,8 @@ namespace Game.Client.Arena
 {
     /// <summary>
     /// The arena on its own, for windowless stills (`--arena`): the baked arena in the default zone's
-    /// look (`--palette NAME` for another, `--palette ""` for the night as baked), its structures in
-    /// crystal, and the camera in the game camera's framing (<see cref="Look.CameraRig.Frame"/>) over the hero's
+    /// look (`--palette NAME` for another, `--palette ""` for the night as baked), drawn in the look's
+    /// world kit (<see cref="VoidArena"/>, the grid floor in the ground's place), and the camera in the game camera's framing (<see cref="Look.CameraRig.Frame"/>) over the hero's
     /// start, with the hero's light there. `--arena-at x,z` frames another ground point;
     /// `--arena-tour S` holds each of the layout's <c>shots</c> for S seconds in turn, from time 0.
     /// `--view-width M` sets the view's width across the ground (default 30 m, the medium loudness).
@@ -25,7 +25,8 @@ namespace Game.Client.Arena
 
         Camera _camera;
         ArenaRuntime _arena;
-        CrystalStructures _crystal;
+        VoidArena _void;
+        PS.Look.GridFloor _floor;
         readonly List<Shot> _shots = new List<Shot>();
         float _holdS;
 
@@ -41,8 +42,10 @@ namespace Game.Client.Arena
 
         void Ready(ArenaRuntime arena)
         {
-            _crystal = new CrystalStructures();
-            _crystal.Apply(arena, _camera);
+            _void = new VoidArena(arena, PS.Look.ResolvedLook.Active, _camera);
+            _floor = PS.Look.GridFloor.For(PS.Look.ResolvedLook.Active);
+            if (_floor != null) PS.Look.GridFloor.Replace(arena.Ground);
+            if (_void.World != null) _void.World.Floor = _floor;
             var options = LaunchOptions.Current;
             float width = options.ViewWidth > 0 ? options.ViewWidth : ViewWidthM;
             _holdS = options.ArenaTour;
@@ -67,6 +70,7 @@ namespace Game.Client.Arena
             int i = _holdS > 0 ? (int)(Time.timeSinceLevelLoad / _holdS) % _shots.Count : 0;
             Look.CameraRig.Frame(_camera, _shots[i].At, _shots[i].WidthM, (float)Stills.Width / Stills.Height);
             _arena.FollowHero(_shots[i].At);
+            _floor?.Follow(_camera);
         }
 
         static Vector3 Ground(JsonValue xy) => new Vector3(xy[0].AsFloat(), 0, xy[1].AsFloat());
@@ -79,7 +83,8 @@ namespace Game.Client.Arena
 
         void OnDestroy()
         {
-            _crystal?.Dispose();
+            _void?.Dispose();
+            _floor?.Dispose();
             _arena?.Dispose();
         }
     }
