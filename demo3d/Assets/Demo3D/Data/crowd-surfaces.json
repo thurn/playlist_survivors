@@ -1,5 +1,5 @@
 {
-  "note": "Per-swatch surfaces under --crowd-gloss (crowd.md, Surfaces): each type's albedo colours (sRGB, from surfaces-report.md beside the baked library) with a metallic and a smoothness. Unlisted texels keep the material's own (0.2 smoothness, not metallic). tolerance: per channel, 0-255.",
+  "note": "Per-swatch surfaces, on unless --no-crowd-gloss (crowd.md, Surfaces): each type's albedo colours (sRGB, from surfaces-report.md beside the baked library) with a metallic and a smoothness. Unlisted texels keep the material's own (0.2 smoothness, not metallic). tolerance: per channel, 0-255.",
   "tolerance": 6,
   "types": {
     "skeleton": [

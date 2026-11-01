@@ -202,10 +202,11 @@ but at the game camera's distance that was too subtle to read. Evidence:
 
 ### Surfaces
 
-`--crowd-gloss` gives the default roster's swatches their own metal and
-gloss, so armour and blades shine beside matte cloth and hide (a prototype;
-evidence in [evidence/surfaces/](../../demo3d/evidence/surfaces/README.md)).
-Without the flag the horde is unchanged.
+The default roster's swatches have their own metal and gloss, so armour and
+blades shine beside matte cloth and hide (evidence in
+[evidence/surfaces/](../../demo3d/evidence/surfaces/README.md); on by
+default since 2026-10-31). `--no-crowd-gloss` turns the surfaces and the
+arena's reflection off, back to the material's single 0.2 smoothness.
 
 - **The swatches are listed by colour.** `Data/crowd-surfaces.json` lists,
   per type, albedo colours (sRGB, matched within `tolerance` per channel)
@@ -226,7 +227,7 @@ Without the flag the horde is unchanged.
   effects stay the brightest pixels. The type dye still tints grey swatches,
   so a dyed type's metal shines in its colour.
 - **Metal reflects the arena.** The night has no skybox, so the global probe
-  reflects black and full metal went black. Under the flag, `CrowdReflection`
+  reflects black and full metal went black. With the gloss on, `CrowdReflection`
   renders a 128 px HDR cubemap of the arena once it is ready, from its centre
   at 1.6 m (the lit ground, the braziers, the walls). Its sky is the night's
   ambient sky colour times `--crowd-reflect-sky` (4), since from the camera

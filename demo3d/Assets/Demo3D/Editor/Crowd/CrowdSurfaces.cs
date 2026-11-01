@@ -12,7 +12,7 @@ namespace Demo3D.EditorTools.Crowd
     /// Per-swatch surfaces (crowd.md, Surfaces): Data/crowd-surfaces.json gives a type's swatch
     /// colours their own metallic and smoothness, so armour shines beside matte cloth. The baker
     /// writes a surface map beside each albedo (R metallic, G smoothness; every other texel keeps the
-    /// material's own values), which the crowd shader reads under `--crowd-gloss`. It also writes
+    /// material's own values), which the crowd shader reads unless `--no-crowd-gloss`. It also writes
     /// surfaces-report.md beside the library: each submesh's swatches with their share of the
     /// triangles and the bones those triangles ride, which is how the file's colours were picked.
     /// </summary>

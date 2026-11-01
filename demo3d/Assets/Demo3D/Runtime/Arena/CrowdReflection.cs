@@ -6,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 namespace Demo3D.Runtime.Arena
 {
     /// <summary>
-    /// The crowd's reflection under `--crowd-gloss` (crowd.md, Surfaces). The night has no skybox, so the
+    /// The crowd's reflection while its gloss is on (crowd.md, Surfaces; `--no-crowd-gloss` turns it off). The night has no skybox, so the
     /// global probe reflects black and metal swatches show only their direct highlights. Once the arena is
     /// ready this renders a cubemap of it from the arena's centre at eye height (the lit ground, the
     /// braziers, the walls), over a sky of the night's ambient sky colour times `--crowd-reflect-sky`
@@ -16,14 +16,16 @@ namespace Demo3D.Runtime.Arena
     public static class CrowdReflection
     {
         public const string SkyFlag = "--crowd-reflect-sky";
+        /// <summary>The swatches' own metal and gloss, and this reflection, are on unless `--no-crowd-gloss`.</summary>
+        public static bool GlossOn => !Args.Has("--no-crowd-gloss");
         const int Size = 128;
         const float DefaultSky = 4f;
         static RenderTexture _cube;
 
-        /// <summary>Captures the arena's reflection when `--crowd-gloss` asks for it; otherwise does nothing.</summary>
+        /// <summary>Captures the arena's reflection unless `--no-crowd-gloss`; otherwise does nothing.</summary>
         public static void Capture(ArenaLighting lighting, Vector3 at)
         {
-            if (!Args.Has("--crowd-gloss")) return;
+            if (!GlossOn) return;
             var go = new GameObject("CrowdReflectionCamera");
             var cam = go.AddComponent<Camera>();
             cam.enabled = false;

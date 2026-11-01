@@ -148,11 +148,11 @@ Shader "Demo3D/CrowdSkinned"
             // (cos, sin) of the angle that first turns the type's whole albedo round the luma axis (YIQ):
             // a saturated hide sitting on another type's hue. (1, 0) or unset: none.
             float4 _Demo3DTypeRotate;
-            // `--crowd-gloss` (crowd.md, Surfaces): x 1 reads each type's surface map, its swatches' own
+            // The crowd's gloss (crowd.md, Surfaces; off with `--no-crowd-gloss`): x 1 reads each type's surface map, its swatches' own
             // metallic and smoothness (0 keeps the material's single values); y scales the metallic; z the
             // arena's reflection.
             float4 _Demo3DCrowdGloss;
-            // The arena's reflection under `--crowd-gloss` (CrowdReflection): a cubemap of the lit arena, added as
+            // The arena's reflection while the gloss is on (CrowdReflection): a cubemap of the lit arena, added as
             // URP's environment specular term, since the night has no skybox and the global probe reflects black.
             TEXTURECUBE(_Demo3DCrowdReflection); SAMPLER(sampler_Demo3DCrowdReflection);
             #define DEMO3D_MAIN_LIGHT_SCALE ((1 + _Demo3DCrowdKeyBoost) * (_Demo3DCrowdKeyColor.w > 0 ? _Demo3DCrowdKeyColor.rgb : float3(1, 1, 1)))

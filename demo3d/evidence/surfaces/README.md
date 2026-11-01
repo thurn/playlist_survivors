@@ -1,7 +1,7 @@
 # Crowd surfaces: per-swatch metal and gloss (prototype)
 
-`--crowd-gloss` gives the default roster's swatches their own metallic and
-smoothness ([crowd.md, Surfaces](../../../docs/tech-demo-3d/crowd.md#surfaces)):
+`--crowd-gloss` gave the default roster's swatches their own metallic and
+smoothness (on by default since 2026-10-31; `--no-crowd-gloss` turns it off) ([crowd.md, Surfaces](../../../docs/tech-demo-3d/crowd.md#surfaces)):
 armour, blades and buckles metallic, skin, slime and mushroom caps glossy,
 cloth, fur and leather left at the old 0.2. The colours, from the baker's
 `surfaces-report.md`, are in `Data/crowd-surfaces.json`. The question was
@@ -73,11 +73,12 @@ From the worktree's root, after `demo3d setup` and `demo3d build`:
 ```
 APP="demo3d/Builds/mac/il2cpp/PlaylistSurvivors3D.app/Contents/MacOS/Playlist Survivors 3D Demo"
 "$APP" -batchmode -force-metal --view-width 8 --no-effects --fixed-time \
-  --capture-stills "$PWD/captures/surfaces/close-on" --stills-at 60,100,145,175 --seconds 180 --crowd-gloss
+  --capture-stills "$PWD/captures/surfaces/close-on" --stills-at 60,100,145,175 --seconds 180
 "$APP" -batchmode -force-metal --fixed-time \
-  --capture-stills "$PWD/captures/surfaces/song-on" --stills-at 60,100,145,175 --seconds 180 --crowd-gloss
+  --capture-stills "$PWD/captures/surfaces/song-on" --stills-at 60,100,145,175 --seconds 180
 ```
 
-Drop `--crowd-gloss` for the left halves; add `--crowd-gloss-metal <k>` for
+Add `--no-crowd-gloss` for the left halves (these runs passed `--crowd-gloss`
+when it was opt-in); add `--crowd-gloss-metal <k>` for
 the metal sweep, `--crowd-reflect 0` or `--crowd-reflect-sky <k>` for the
 reflection's. The pairs are `magick off.jpg on.jpg +append`.
