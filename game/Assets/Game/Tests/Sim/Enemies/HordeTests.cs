@@ -355,8 +355,8 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(second.All(e => e.T == t), "all on the hit's own time");
             Assert.AreEqual(1.85, second[1].AsDeath.Force);
             Assert.IsFalse(sim.State.Enemies[id].Alive);
-            Assert.AreEqual(1.5 * health, sim.State.WeaponDamage[wand], 1e-12, "the whole of each hit, overkill too");
-            Assert.AreEqual(0, sim.State.WeaponDamage[HordeFixture.Content.WeaponIndex("sword")]);
+            Assert.AreEqual(1.5 * health, sim.State.Recap.Damage[wand], 1e-12, "the whole of each hit, overkill too");
+            Assert.AreEqual(0, sim.State.Recap.Damage[HordeFixture.Content.WeaponIndex("sword")]);
         }
 
         [Test]
@@ -381,7 +381,7 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(RunRules.BlastForceM, events[1].AsDeath.Force);
             Assert.Less(events[3].AsEnemyKnock.ToY, hy - 4, "the survivor knocked outward");
             Assert.IsTrue(sim.State.Enemies[survivor].Alive && sim.State.Enemies[outside].Alive);
-            Assert.IsTrue(sim.State.WeaponDamage.ToArray().All(d => d == 0), "no weapon's");
+            Assert.IsTrue(sim.State.Recap.Damage.ToArray().All(d => d == 0), "no weapon's");
         }
 
         [Test]

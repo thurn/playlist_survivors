@@ -184,6 +184,7 @@ namespace PS.Game.Sim
             state.Phase = RunPhase.Ended;
             state.End = why;
             state.EndedAt = t;
+            state.Recap.Close();
             sim.Emit(SimEvent.RunEnd(t, why));
         }
 

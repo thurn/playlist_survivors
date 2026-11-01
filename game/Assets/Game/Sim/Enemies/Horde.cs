@@ -104,7 +104,6 @@ namespace PS.Game.Sim
             int cap = content.Schedule.Cap;
             enemies = new EnemyState[cap];
             state.EnemyStore = enemies;
-            state.WeaponDamageStore = new double[content.Weapons.Length];
             free = new int[cap];
             for (int i = 0; i < cap; i++) free[freeCount++] = cap - 1 - i;
             baseX = new double[cap];
@@ -508,7 +507,7 @@ namespace PS.Game.Sim
         /// dies (<see cref="Kill"/>, thrown along the blow <paramref name="launch"/> metres) or is
         /// knocked back by <paramref name="knockback"/> away from the hero (<see cref="Knock"/>;
         /// native's survivor recoil, whatever the blow's direction; along the blow when on the hero).
-        /// The weapon's tally (<see cref="SimState.WeaponDamage"/>) adds the whole amount; <see cref="NoWeapon"/> tallies nothing.
+        /// The weapon's tally (<see cref="RunRecap.Damage"/>) adds the whole amount; <see cref="NoWeapon"/> tallies nothing.
         /// </summary>
         internal void Damage(Simulation sim, int i, double t, double amount, int weapon, WeaponHit how,
             double dirX, double dirY, double knockback, double launch, bool critical = false)
@@ -517,7 +516,7 @@ namespace PS.Game.Sim
             if (!e.Alive) return;
             e.PositionAt(t, out double x, out double y);
             e.Health -= amount;
-            if (weapon != NoWeapon) state.WeaponDamageStore[weapon] += amount;
+            if (weapon != NoWeapon) state.Recap.Dealt(weapon, amount);
             sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY, critical));
             if (e.Health <= 1e-9)
             {
@@ -562,6 +561,7 @@ namespace PS.Game.Sim
         {
             if (!Remove(i, t, out double x, out double y)) return;
             ref var e = ref enemies[i];
+            state.Recap.Killed();
             sim.Emit(SimEvent.Death(t, i, e.Role, x, y, dirX, dirY, launch));
             sim.Arsenal?.Gems.Drop(sim, t, x, y, roles[e.Role].Xp);
             if (chestTier[i] > 0)

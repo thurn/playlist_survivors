@@ -7,14 +7,16 @@ namespace PS.Game.Sim
     /// The latest settled snapshot the client reads (unity-game.md, "The Sim's Contract"): time,
     /// the run clock, the beat, the hero, the enemies, the structures, the zone, and the arsenal
     /// with its experience and level-up offer. The client copies what it needs into its own
-    /// short history to show <c>frameSong</c>, which trails the frontier. The chests on the field and the
-    /// latest chest's roulette come last.
+    /// short history to show <c>frameSong</c>, which trails the frontier. The chests on the field, the
+    /// latest chest's roulette and the run's recap come last.
     ///
     /// Only the sim writes it: every property is <c>{ get; internal set; }</c>, and dense arrays
     /// are exposed as <c>ReadOnlySpan</c> getters over the sim's storage, never as arrays.
     /// </summary>
     public sealed class SimState
     {
+        public SimState() => Recap = new RunRecap(this);
+
         /// <summary>The frontier: the song time the sim has simulated to.</summary>
         public double Now { get; internal set; }
         public long Tick { get; internal set; }
@@ -56,9 +58,6 @@ namespace PS.Game.Sim
         public int EnemiesAlive { get; internal set; }
         internal EnemyState[] EnemyStore = Array.Empty<EnemyState>();
 
-        /// <summary>The damage each of the hero's weapons has dealt to enemies this run, by content's weapon index (empty without a horde).</summary>
-        public ReadOnlySpan<double> WeaponDamage => WeaponDamageStore;
-        internal double[] WeaponDamageStore = Array.Empty<double>();
 
         /// <summary>Every crystal structure, standing or broken; the index is the level data's and the structure's id in events.</summary>
         public ReadOnlySpan<StructureState> Structures => StructureStore;
@@ -100,5 +99,8 @@ namespace PS.Game.Sim
 
         /// <summary>The latest chest's roulette: open while it spins, then landed with its rewards (<see cref="Chests"/>).</summary>
         public ChestState Chest { get; internal set; }
+
+        /// <summary>The end card's numbers: the kills, and each weapon's damage and time held, final from the run's end.</summary>
+        public RunRecap Recap { get; }
     }
 }

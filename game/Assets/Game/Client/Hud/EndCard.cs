@@ -12,8 +12,9 @@ namespace Game.Client.Hud
     /// darkened run, fading in over half a second from the run's end; the run clock, kills and level;
     /// then a row per weapon that dealt damage (the arsenal's in slot order, then any it evolved away):
     /// its damage and damage per second times 10, and how long it was held, an evolution's name in
-    /// gold, each with a hairline as long as its share of the most damage. A run ended by hand shows
-    /// no card (the loop finishes at once).
+    /// gold, each with a hairline as long as its share of the most damage. Its numbers are the sim's
+    /// <see cref="RunRecap"/>, final from the run's end, so the card is the same at any frame rate and
+    /// in a replay. A run ended by hand shows no card (the loop finishes at once).
     /// </summary>
     public sealed class EndCard
     {
@@ -43,9 +44,8 @@ namespace Game.Client.Hud
             _why = why;
         }
 
-        /// <param name="final">The sim's state at the frontier, past the end: the arsenal and its damage as they ended.</param>
-        /// <param name="held">How long each weapon was held.</param>
-        public void Present(double s, in SimSnapshot state, int kills, SimState final, HeldTimes held)
+        /// <param name="final">The sim's state at the frontier, past the end: the arsenal and its recap as they ended.</param>
+        public void Present(double s, in SimSnapshot state, SimState final)
         {
             bool shows = (_why == RunEnd.Victory || _why == RunEnd.Death) && s + 1e-9 >= _endedAt;
             _layer.style.display = shows ? DisplayStyle.Flex : DisplayStyle.None;
@@ -57,13 +57,14 @@ namespace Game.Client.Hud
             _title.text = _why == RunEnd.Victory ? "VICTORY" : "YOU FELL";
             _title.style.color = colour;
             _edge.style.backgroundColor = colour;
-            _stats.text = $"TIME {HudText.Clock(state.RunClock)}   ·   KILLS {kills}   ·   LEVEL {Math.Max(1, state.Level)}";
-            if (_content != null) Rows(state.RunClock, final, held);
+            _stats.text = $"TIME {HudText.Clock(state.RunClock)}   ·   KILLS {final.Recap.Kills}   ·   LEVEL {Math.Max(1, state.Level)}";
+            if (_content != null) Rows(final);
         }
 
-        void Rows(double runClock, SimState final, HeldTimes times)
+        void Rows(SimState final)
         {
-            var damage = final.WeaponDamage;
+            var recap = final.Recap;
+            var damage = recap.Damage;
             var order = new System.Collections.Generic.List<int>();
             foreach (var slot in final.WeaponSlots) order.Add(slot.Index);
             for (int i = 0; i < damage.Length; i++)
@@ -75,7 +76,7 @@ namespace Game.Client.Hud
                 int i = order[r];
                 var def = _content.Weapons[i];
                 double dealt = (i < damage.Length ? damage[i] : 0) * HudText.DamageScale;
-                double held = times.Of(i, runClock);
+                double held = recap.Held(i);
                 var tint = def.IsEvolution ? new Color(1f, 0.83f, 0.4f) : new Color(0.8f, 0.88f, 1f);
                 var row = SlotsView.Element("end__row");
                 row.AddToClassList(r % 2 == 0 ? "end__row--even" : "end__row--odd");
@@ -95,47 +96,6 @@ namespace Game.Client.Hud
                 row.Add(share);
                 _rows.Add(row);
             }
-        }
-    }
-
-    /// <summary>
-    /// How long each weapon was held on the run clock (native's eval/recap.rs): from when it joins
-    /// the slots until it leaves them, evolved away; a rank up doesn't restart it.
-    /// </summary>
-    public sealed class HeldTimes
-    {
-        readonly double[] _since, _held;
-
-        public HeldTimes(int weapons)
-        {
-            _since = new double[weapons];
-            _held = new double[weapons];
-            for (int i = 0; i < weapons; i++) _since[i] = double.NaN;
-        }
-
-        /// <summary>The slots as they are at <paramref name="runClock"/>.</summary>
-        public void Update(ReadOnlySpan<OwnedItem> slots, double runClock)
-        {
-            for (int i = 0; i < _since.Length; i++)
-            {
-                if (double.IsNaN(_since[i]) || Holds(slots, i)) continue;
-                _held[i] += Math.Max(0, runClock - _since[i]);
-                _since[i] = double.NaN;
-            }
-            foreach (var slot in slots)
-                if (slot.Index < _since.Length && double.IsNaN(_since[slot.Index])) _since[slot.Index] = runClock;
-        }
-
-        /// <summary>How long weapon <paramref name="weapon"/> was held by <paramref name="runClock"/> (s).</summary>
-        public double Of(int weapon, double runClock) =>
-            weapon < 0 || weapon >= _held.Length ? 0
-            : _held[weapon] + (double.IsNaN(_since[weapon]) ? 0 : Math.Max(0, runClock - _since[weapon]));
-
-        static bool Holds(ReadOnlySpan<OwnedItem> slots, int weapon)
-        {
-            foreach (var slot in slots)
-                if (slot.Index == weapon) return true;
-            return false;
         }
     }
 }

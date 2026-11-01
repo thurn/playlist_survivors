@@ -429,8 +429,8 @@ namespace PS.Game.Sim.Tests
             int sword = Content.WeaponIndex("sword");
             Assert.Greater(hits.Count, 100);
             Assert.IsTrue(hits.All(h => h.Weapon == sword), "every enemy hit names the sword");
-            Assert.AreEqual(hits.Sum(h => h.Damage), sim.State.WeaponDamage[sword], 1e-9);
-            Assert.AreEqual(sim.State.WeaponDamage[sword], sim.State.WeaponDamage.ToArray().Sum(), "no other weapon dealt any");
+            Assert.AreEqual(hits.Sum(h => h.Damage), sim.State.Recap.Damage[sword], 1e-9);
+            Assert.AreEqual(sim.State.Recap.Damage[sword], sim.State.Recap.Damage.ToArray().Sum(), "no other weapon dealt any");
             Assert.IsTrue(HeroAttacks(sim).All(a => a.IsSword && a.Weapon == sword && a.Shape == ShapeKind.Sword));
         }
 

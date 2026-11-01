@@ -27,7 +27,7 @@ namespace Game.Client.Hud
     ///   roulette (<see cref="ChestCards"/>), and the victory or YOU FELL card with each weapon's
     ///   damage (<see cref="EndCard"/>).
     /// Kills, bites and numbers come from the sim's events, each shown once frameSong reaches it;
-    /// the slots and the end card's damage read the sim's state at the frontier, which they match
+    /// the slots and the end card's recap read the sim's state at the frontier, which they match
     /// at the moments they change (in a freeze, after the end).
     /// </summary>
     public sealed class HudPresenter : IPresenter, IDisposable
@@ -49,7 +49,6 @@ namespace Game.Client.Hud
         readonly BeatGem _gem;
         readonly Queue<double> _deaths = new Queue<double>();
         readonly List<double> _bites = new List<double>();
-        readonly HeldTimes _held;
         int _killCount;
         double _bitten = double.NegativeInfinity;
         // The song time of the last frame shown before the beat locked (NaN while unlocked): a beat at or before it
@@ -88,7 +87,6 @@ namespace Game.Client.Hud
             _end = new EndCard(root.Q("end-layer"), content);
             _numbers = new DamageNumbers(root.Q("numbers"), camera);
             _gem = new BeatGem(camera);
-            _held = new HeldTimes(content?.Weapons.Length ?? 0);
         }
 
         public void OnEvent(in SimEvent e)
@@ -156,7 +154,6 @@ namespace Game.Client.Hud
             _hpPulse.style.opacity = health < LowHealth ? (float)(0.2 + 0.5 * (locked ? hit : 0.3)) : 0;
             _kills.text = _killCount.ToString();
             _timer.text = HudText.Clock(state.RunClock);
-            _held.Update(_sim.State.WeaponSlots, state.RunClock);
             _slots.Show(_sim.State.WeaponSlots, _sim.State.PassiveSlots);
             _track.Show(_sim.Stream, _sim.Beats, s, beat, locked, since);
             _prompt.text = state.Phase != RunPhase.Waiting ? "" : _interactive ? "PRESS ENTER OR SPACE" : "THE RUN STARTS ON THE BEAT";
@@ -170,7 +167,7 @@ namespace Game.Client.Hud
 
             _cards.Present(s, state.Offer, _sim.State);
             _chest.Present(s, _sim, beat, state.Offer.Open);
-            _end.Present(s, state, _killCount, _sim.State, _held);
+            _end.Present(s, state, _sim.State);
 
             double hx, hy;
             if (DrawnHero != null) DrawnHero(out hx, out hy, out _);

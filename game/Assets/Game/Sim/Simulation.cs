@@ -76,6 +76,7 @@ namespace PS.Game.Sim
             Arena = new ArenaGrid(arena);
             hero = new Hero(State.Hero, Arena, Strides);
             var content = config.Content;
+            if (content != null) State.Recap.Begin(content.Weapons.Length);
             if (config.Horde != null) Horde = new Horde(config.Horde, content, Stream, Beats, Strides, Arena, State);
             Health = new HeroHealth(State.Hero, config, content);
             Structures = new Structures(arena, Arena, State, Horde);

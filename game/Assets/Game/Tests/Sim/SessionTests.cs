@@ -136,6 +136,42 @@ namespace PS.Game.Sim.Tests
             StringAssert.Contains($"\"hash\": \"{live.Hash:X16}\"", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
         }
 
+        /// <summary>The recap's numbers, exactly: the kills, then each weapon's damage and time held.</summary>
+        static string Recap(Simulation sim)
+        {
+            var recap = sim.State.Recap;
+            return recap.Kills + ": " + string.Join(", ", Enumerable.Range(0, recap.Damage.Length)
+                .Select(w => $"{recap.Damage[w]:R}/{recap.Held(w):R}"));
+        }
+
+        [Test]
+        public void TheEndCardsRecapIsTheSameAtAnyFramePacingAndInTheRunsReplay()
+        {
+            RecordEntries();
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var run = new RunInputs
+            {
+                Seed = 3, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Start = RunStart.AfterClearBeat,
+            };
+            Simulation Paced(double frame)
+            {
+                var sim = new Simulation(Build(run));
+                int next = Drive.Feed(sim, entries, duration - 2, frame);
+                sim.Control(RunControl.Quit); // at one song time whatever the pacing
+                Drive.Feed(sim, entries, duration, frame, from: next);
+                return sim;
+            }
+            var live = Paced(1.0 / 60);
+            Assert.AreEqual(RunEnd.Quit, live.State.End);
+            Assert.Greater(live.State.Recap.Kills, 10, "a run with a horde to kill");
+            Assert.AreEqual(Recap(live), Recap(Paced(1.0 / 23.7)));
+
+            SessionRecord.Of(run, live).Write(dir);
+            var sim = Replay(out var replay);
+            Assert.IsTrue(replay.Matches(sim));
+            Assert.AreEqual(Recap(live), Recap(sim), "the replay ends with the run's recap");
+        }
+
         [Test]
         public void ARunStartedAtAMinuteReplaysItsDebugCommandsWithTheirArguments()
         {

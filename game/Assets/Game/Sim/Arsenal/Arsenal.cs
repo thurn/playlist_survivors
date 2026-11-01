@@ -163,6 +163,7 @@ namespace PS.Game.Sim
             int slot = state.WeaponCount++;
             slots[slot] = new Slot { Weapon = make(content.Weapons[weapon], weapon), NextReady = state.RunClock };
             state.WeaponStore[slot] = new OwnedItem { Index = weapon, Rank = 1 };
+            state.Recap.Joined(weapon);
         }
 
         /// <summary>The evolution of base weapon <paramref name="weapon"/> it may take now, or -1: the weapon at its top rank and the evolution's partner passive owned.</summary>
@@ -193,6 +194,8 @@ namespace PS.Game.Sim
                 if (slots[s].Weapon.Index != weapon) continue;
                 slots[s] = new Slot { Weapon = make(def, evolution), NextReady = state.RunClock };
                 state.WeaponStore[s] = new OwnedItem { Index = evolution, Rank = 1 };
+                state.Recap.Left(weapon);
+                state.Recap.Joined(evolution);
                 return;
             }
         }
@@ -262,11 +265,13 @@ namespace PS.Game.Sim
 
         /// <summary>
         /// The run clock jumped <paramref name="delta"/> ahead (<see cref="RunRules.JumpTo"/>): the slots' cooldowns, the
-        /// recovery and the flying gems move with it, so the time jumped over never comes due at once.
+        /// recovery and the flying gems move with it, so the time jumped over never comes due at once, and it isn't
+        /// time the weapons were held (<see cref="RunRecap"/>).
         /// </summary>
         internal void Shift(double delta)
         {
             for (int s = 0; s < state.WeaponCount; s++) slots[s].NextReady += delta;
+            state.Recap.Shift(delta);
             recoveredTo += delta;
             Gems.Shift(delta);
         }

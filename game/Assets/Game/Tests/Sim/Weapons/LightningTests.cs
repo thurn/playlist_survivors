@@ -91,7 +91,7 @@ namespace PS.Game.Sim.Tests
             }
             Assert.Greater(targets.Count, 1, "each strike draws its own enemy");
             Assert.IsFalse(Drive.Events(sim, SimEventKind.Hit).Any(e => e.AsHit.Target == far), "nothing out of view is struck");
-            Assert.AreEqual(1.5 * bolts.Count, sim.State.WeaponDamage[Content.WeaponIndex("lightning-ring")], 1e-9, "its tally");
+            Assert.AreEqual(1.5 * bolts.Count, sim.State.Recap.Damage[Content.WeaponIndex("lightning-ring")], 1e-9, "its tally");
 
             // Alone in the 34 x 22 m footprint but beyond the 0.6 of it every zoom shows, a flower
             // (it barely moves) is never struck: the volleys land nowhere.
