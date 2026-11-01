@@ -759,8 +759,10 @@ lead     = frontier - heardSong(now)     // = outputLatency + margin
 
 Checks, stills and filmstrips run on frame time instead (`--fixed-time`): frame
 `n` shows song time `n / 60` however long it takes, so a rerun shows the same
-frames. No music plays in time with those frames, so the output is silent and
-no sound is scheduled.
+frames. No music plays in time with those frames, so the output is silent. The
+sounds still keep their books on the frames' mixer position (a DSP buffer past
+`song` below, the live rule), playing nothing, so a fixed-time run counts the
+sounds a live one would drop or cut off (ps-msz.8.6).
 
 ```text
 song     = frame + 0.038                 // FrameClock: the built-in speakers' output latency
@@ -952,6 +954,9 @@ retimes the clip to fit.
 
 Every sound is scheduled on Unity's DSP clock at the DSP time of its song
 time. It is never started late; a sound that can't make its time is dropped.
+When the mixer can make a sound's attack but not all of the clip's lead-in
+before it, the sound starts into its clip so the attack still lands on time
+(ps-msz.8.6).
 
 - **Impact sounds** (hits, shatters, swings) play at the impact's song time.
   The lead guarantees they are known in time.
@@ -2290,6 +2295,16 @@ gitignored Baked/Structures/). As built:
   most 0.9 ms in any frame; all 38 sites at once peak at 2.9 ms.
 - Evidence: [game/evidence/structures/](../../game/evidence/structures/README.md).
 
+**Checked at the peak (ps-msz.8.6)**: filmstrips of minute 25's mass kills,
+a heavy strike breaking four structures, a regrowth and the finale's
+290-monster break, all moving on their impact frame with nothing before it
+([evidence](../../game/evidence/payoff/README.md)). Over a peak minute at 300
+alive (13 deaths a second) the live monster shards are 802 median, 2,050 at
+most (`--shatter-out`): scattered glass, not a carpet, so the shard counts,
+kick and linger are unchanged. The finale's blast now hits through
+`Horde.Damage` (a `WeaponHit.Blast` Hit event, no weapon's), so the survivors
+flash and show their numbers.
+
 ### Weapon and ability effects
 
 Effects use the 3D demo's compute particle runtime and its recipes, extended
@@ -2489,7 +2504,7 @@ name, free samples by id with their onsets, per-category levels and root
 notes, and the mix's `limit`, 0.8). As built
 ([evidence](../../game/evidence/fx/README.md)):
 
-- `SoundScheduler`: 32 voices; each sound PlayScheduled at
+- `SoundScheduler`: 32 voices (64 since ps-msz.8.6); each sound PlayScheduled at
   `TryDspAt(song - onset / pitch)` so its attack lands on its song time, and
   dropped when the mixer can't make it. Measured in Unity's own mix with the
   sound probe (`game spike --sounds`): 108 of 108 sounds on their sample, none
@@ -2508,6 +2523,24 @@ notes, and the mix's `limit`, 0.8). As built
   project has 64 real voices, so a full pool never makes Unity virtualize
   (silence) the music or a scheduled sound. A dropped sound leaves its
   beat's voice to a later request.
+
+**Shipped (ps-msz.8.6)**: the mix tuned from the full run's drops
+([evidence](../../game/evidence/payoff/README.md)). The run summary counts each
+category's sounds scheduled, dropped and cut off (still ringing when a later
+sound took the voice), and fixed-time runs keep those books (Fixed time), so the
+30-minute run measures them in 4 minutes. Before: 3.9% dropped, 32% cut off.
+
+- Dropped: every Garlic pulse and evolution sound (clip lead-ins of 54 and
+  94 ms, longer than an event's slack) and every regrowth's shatter (raised on
+  the frame that reached it, after the mixer). A clip now starts into its
+  lead-in when only that part is late, and the sound presenter shatters a
+  regrowth from its event. None dropped now.
+- Cut off: the pool is 64 voices and the project 128 real voices; a full pool
+  takes the oldest voice that isn't the hero's own (swings, the slam, the
+  hurt), a chest's or an evolution's. 3.6% cut off now, all ice-break,
+  thunderclap and hit tails; no swing.
+- The aggregation is unchanged: the finale's 290 deaths are three layered
+  shatters at full gain.
 
 ### Performance targets
 

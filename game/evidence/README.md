@@ -83,3 +83,6 @@ what was run (the exact commands), the numbers, and what they show.
 - [beat](beat/README.md): the on-the-beat audit, every key moment on the first frame at or after its song time at the
   run's peak and over an early stretch, and every sound on its event's song time, with the late moments it found
   fixed (before and after filmstrips); and the key rules' late steps measured in .NET and tuned (ps-msz.8.5).
+- [payoff](payoff/README.md): the 30-minute run's sounds by category before and after (none dropped now, a tenth as many
+  cut off), the finale's blast flashing a survivor, and filmstrips of mass kills, structure breaks, regrowth and the
+  finale at the peak with the live-shard count over a peak minute (ps-msz.8.6).
