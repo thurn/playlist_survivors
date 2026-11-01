@@ -132,12 +132,17 @@ def cmd_spike(a: argparse.Namespace) -> int:
 
 
 def exceptions(log: Path) -> list[str]:
-    """The managed exceptions a player's log reports (Unity logs each as `SomeException: message`)."""
+    """The managed exceptions a player's log reports (Unity logs each as `SomeException: message`), and its
+    run summary's presenter faults when there are any: the event dispatch contains a presenter's throws and
+    logs only the first of each kind, so the summary's count is the whole of them."""
     try:
         text = log.read_text(errors="replace")
     except OSError:
         return []
-    return [line.strip() for line in text.splitlines() if re.match(r"\s*[\w.]*Exception: ", line)]
+    found = [line.strip() for line in text.splitlines() if re.match(r"\s*[\w.]*Exception: ", line)]
+    found += [f"presenter faults {m.group(1)}{m.group(2) or ''}"
+              for m in re.finditer(r"^GameLoop: .*?; presenter faults ([1-9]\d*)( \([^)]*\))?", text, re.MULTILINE)]
+    return found
 
 
 def read_wav(path: Path) -> np.ndarray:

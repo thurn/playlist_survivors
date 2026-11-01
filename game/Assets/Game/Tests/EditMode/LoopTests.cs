@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using Game.Client.Hero;
 using Game.Client.Loop;
 using Game.Client.Music;
@@ -8,6 +10,7 @@ using NUnit.Framework;
 using PS.Game.Sim;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.TestTools;
 using UnityEngine.TestTools.Constraints;
 using Is = NUnit.Framework.Is;
 using SimKey = PS.Game.Sim.Key;
@@ -401,6 +404,65 @@ namespace Game.Tests
             public int Count;
             public void OnEvent(in SimEvent e) => Count++;
             public void Present(in PresentFrame frame) { }
+        }
+
+        /// <summary>
+        /// A presenter that throws on every frame from the 10th, as ps-msz.6.14's crowd did, and on every beat after it (so
+        /// its Present's fault is logged first).
+        /// </summary>
+        sealed class Thrower : IPresenter
+        {
+            public int Throws, Frames;
+
+            public void OnEvent(in SimEvent e)
+            {
+                if (e.Kind != SimEventKind.Beat || Frames < 10) return;
+                Throws++;
+                throw new InvalidOperationException("thrown in OnEvent");
+            }
+
+            public void Present(in PresentFrame frame)
+            {
+                if (++Frames < 10) return;
+                Throws++;
+                throw new InvalidOperationException("thrown in Present");
+            }
+        }
+
+        [Test]
+        public void AThrowingPresenterIsLoggedOnceAndTheOthersStillGetEveryEventOnceAndEveryFrame()
+        {
+            const int count = 300;
+            var entries = House128();
+            var reference = new Recorder();
+            var driver = FixedDriver(out var frames, count);
+            driver.Events.Subscribe(reference);
+            foreach (var e in entries) driver.AddSettled(e);
+            foreach (var f in frames) driver.Step(f);
+
+            var before = new Recorder();
+            var thrower = new Thrower();
+            var hud = new Recorder(); // after the thrower, as the HUD is after the crowd
+            driver = FixedDriver(out frames, count);
+            driver.Events.Subscribe(before);
+            driver.Events.Subscribe(thrower);
+            driver.Events.Subscribe(hud);
+            foreach (var e in entries) driver.AddSettled(e);
+            LogAssert.Expect(LogType.Exception, new Regex("thrown in Present"));
+            LogAssert.Expect(LogType.Exception, new Regex("thrown in OnEvent"));
+            foreach (var f in frames) driver.Step(f);
+            LogAssert.NoUnexpectedReceived();
+
+            Assert.That(thrower.Throws, Is.GreaterThan(count), "it threw on beats and frames");
+            Assert.That(driver.Events.Faults, Is.EqualTo(thrower.Throws), "every throw counted for the summary");
+            Assert.That(driver.Events.FaultReport(), Does.Contain($"Present of Thrower: InvalidOperationException x {count - 9}")
+                .And.Contain($"OnEvent of Thrower: InvalidOperationException x {thrower.Throws - (count - 9)}"));
+            Assert.That(driver.Events.Cursor, Is.EqualTo(driver.Sim.EventCount), "the cursor went on past each frame's events");
+            foreach (var other in new[] { before, hud })
+            {
+                CollectionAssert.AreEqual(reference.Events, other.Events, "every event exactly once, in order");
+                CollectionAssert.AreEqual(reference.Frames.Select(f => f.Song), other.Frames.Select(f => f.Song), "every frame");
+            }
         }
     }
 

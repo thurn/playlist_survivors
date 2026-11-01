@@ -132,3 +132,13 @@ def test_a_players_exceptions_are_found_in_its_log(tmp_path: Path) -> None:
     assert spike.exceptions(log) == ["NullReferenceException: Object reference not set",
                                      "System.InvalidOperationException: the queue is empty"]
     assert spike.exceptions(tmp_path / "missing.log") == []
+
+
+def test_a_runs_presenter_faults_are_failures_and_none_are_not(tmp_path: Path) -> None:
+    log = tmp_path / "player.log"
+    log.write_text("GameLoop: done; 100 frames to song 1.000 s, hash 0123456789ABCDEF; run Ended from song 0.500 s, "
+                   "run clock 0.500 s, 0 freezes (0 music stopped), 0 run controls; presenter faults 0; lead (ms) median 90.0\n")
+    assert spike.exceptions(log) == []
+    log.write_text("GameLoop: done; 100 frames, hash 0123456789ABCDEF; run Ended, 0 run controls; presenter faults 1530 "
+                   "(Present of CrowdView: InvalidOperationException x 1530); lead (ms) median 90.0\n")
+    assert spike.exceptions(log) == ["presenter faults 1530 (Present of CrowdView: InvalidOperationException x 1530)"]

@@ -119,6 +119,9 @@ namespace Game.Client.Loop
                 driver.Sim.EventCount, driver.Sim.Hash, UnityEngine.Time.realtimeSinceStartupAsDouble);
             s += string.Format(c, "; run {0} from song {1:F3} s, run clock {2:F3} s, {3} freezes ({4} music stopped), {5} run controls",
                 run.Phase, run.StartedAt, run.RunClock, _counts.Freezes, _counts.MusicStops, driver.Sim.Controls.Length);
+            // Always given, 0 too, so the tools can read it (spike.py's exceptions()).
+            s += string.Format(c, "; presenter faults {0}", driver.Events.Faults);
+            if (driver.Events.Faults > 0) s += " (" + driver.Events.FaultReport() + ")";
             if (n == 0) return s;
             // The first second settles the DSP fit and the frame interval; the lead is measured after it.
             int skip = Math.Min(n - 1, Boot.FixedFps);

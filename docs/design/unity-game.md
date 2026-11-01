@@ -259,6 +259,19 @@ sim.StepTo(frontier)                              // fixed 1/120 s ticks
 client.Present(frameSong, sim.EventsSince(cursor), sim.State)
 ```
 
+**Shipped (ps-msz.8.7).** The client's presenters (the crowd, the hero,
+effects, sound, structures, the HUD...) are isolated from each other's
+faults. `EventDispatch` calls each presenter's `OnEvent` and `Present` in
+its own try: a throw is contained, so the others still get every event
+exactly once and draw every frame, and the cursor into the sim's event log
+always moves on. The first throw of each presenter, call and exception type
+is logged as a `PresenterFaultException` wrapping it; later ones are only
+counted. The run's summary line always gives `presenter faults N` (with
+each kind's count when N > 0), and the game tools' log check (spike.py's
+`exceptions`, used by `game spike`, `game replay --record` and `game perf`)
+fails on any. Before, ps-msz.6.14's crowd throwing on every frame from
+minute 25 stopped every later presenter and the HUD for the rest of the run.
+
 ## Music: the Rust Plugin
 
 The plugin is a native library loaded into the Unity process. It is built
@@ -1458,8 +1471,8 @@ the sword's today:
   the hit event, then the death and gem drop or the knock, all at t. The hit
   and the death's launch go along the blow; the knock goes away from the hero,
   as native's survivor recoil does for every weapon (ps-msz.6.18). It
-  adds the whole amount to the weapon's tally, `SimState.WeaponDamage`,
-  indexed by content's weapon order, for the end card.
+  adds the whole amount to the weapon's tally, `RunRecap.Damage`
+  (`SimState.Recap`), indexed by content's weapon order, for the end card.
 - The hero's attacks and hits name their weapon by content index, and
   attacks also name its shape. The views read them typed:
   `AttackEvent.ByHero`, `Enemy`, `Weapon`, `Shape`, `IsSword`,
@@ -2188,9 +2201,10 @@ timeline (ps-msz.3.8; game/Assets/Game/Client/Crowd/, evidence in
 - **Slots** (`CrowdSlots`): each life keeps its type's instance slot for its
   whole life, and a freed slot shows Hidden for a frame before its next
   owner. So a frame holds last frame's slots beside this frame's new owners,
-  and each type has room for 600 (`CrowdView.SlotsPerType`, twice the
-  living): a crowd of one model replaced on one beat (a set piece making room
-  for its members) needs it. With 375, minute 25 of the full run threw on
+  and each type has room for twice the living (`CrowdView.SlotsPerType`:
+  600 at schedule.json's cap of 300, read from the content since
+  ps-msz.8.7): a crowd of one model replaced on one beat (a set piece making
+  room for its members) needs it. With 375, minute 25 of the full run threw on
   every frame from its first set piece, and the crowd and the HUD stopped
   drawing (ps-msz.6.14).
 - **The crystal** (`Game/MonsterCrystal`) shares its surface with the
@@ -2476,6 +2490,15 @@ drawn at frameSong, with marks in world space:
   (ps-msz.6.8) fill it, and `--chest-preview S[:TIER]` still opens a client-only preview for
   stills. The end card shows VICTORY or YOU FELL, the run clock, kills and level, and per weapon its
   damage, time held and DPS (times 10).
+
+**Shipped (ps-msz.8.7).** The end card's numbers are the sim's `RunRecap` (`SimState.Recap`,
+native's eval/recap.rs): the kills, and each weapon's damage and time held on the run clock, from
+joining the slots until it is evolved away (a rank up doesn't restart it, and a jump of the run
+clock isn't time held). The sim tallies it as the run plays and closes it at the run's end, so the
+card is the same at any frame rate and in a session's replay (RecapTests and SessionTests). Before,
+the HUD tallied held times and kills per presented frame, mixing the sim's latest state (about 90
+ms ahead) with the frame's run clock. The live kill counter top right still counts deaths as
+frameSong reaches them.
 - **Stills**: every overlay panel is composited over the camera in order (`Stills.Overlays`).
   `--debug finale@S` (the sim's `DebugCommand.Finale`) brings the finale and the victory card in a
   short run. Evidence: game/evidence/hud/.
