@@ -1090,7 +1090,8 @@ sim.Stream, sim.Beats, sim.Strides // what the sim knows: reads only
   arrive and reveals each to its rules only when the sim reaches its
   `known_at`.
 - **Events** carry what presentation needs to anticipate and react:
-  attack (wind-up start, impact time, direction, kind, heavy, reach), enemy
+  attack (wind-up start, impact time, direction, kind, heavy, reach, a free
+  press's beat grade), enemy
   step (from, to, move start, footplant), enemy knock (from, to, start, end),
   hit, death (impact direction and force), cleave (centre, radii, band
   times), drop, structure glint, break (strike point, direction, force) and

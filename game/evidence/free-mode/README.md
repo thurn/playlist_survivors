@@ -23,28 +23,33 @@ uv run --project demo3d/tools game look free-mode --backend mono --at 7.6 --fram
 - **The walk**: 11 HeroGlide events and no HeroStep. The drawn hero moves 0.0752 m a frame on each
   axis on the diagonal (6.4 m/s, a 1.5 m tile per 0.234 s stride step), at off-grid points such as
   (8.036, -1.347), with the run clip weighted 1 and no hop.
-- **The swings** (since ps-w9p.1: react now, land on the grid), as `events.csv` has them: each attack's wind-up
-  start, impact and reach (full reach is 7.037 m), against the beat. The tracker's beats here are 0.47 s apart
-  (6.12, 6.59, 7.06, 7.53, 8.00, 8.47, 8.93, 9.40), so the eighths fall on them and halfway between:
+- **The swings** (since ps-w9p.8: hit at once; the beat grades the payoff, never the timing), as `events.csv`
+  has them: each attack's wind-up start, impact, reach (full reach is 7.037 m) and grade (`d5`, the attack event's
+  `Grade`), against the beat. The tracker's beats here are 0.47 s apart (6.12, 6.59, 7.06, 7.53, 8.00, 8.47, 8.93,
+  9.40). Scripted keys are heard as the sim takes them, so each impact is `Sword.PressImpactS` (1/30 s) on:
 
-  | Press (s) | Wind-up from (s) | First eighth 0.12 s on | Impact (s) | Grid point | Reach (m) | Grade | Note |
-  |---|---|---|---|---|---|---|---|
-  | 6.50 | 6.50 | 6.825 | 6.825 | half beat | 5.56 | 0.79 | off the beat |
-  | 6.60 | | 6.825 | | | | | lands on the eighth the swing before has: dropped mid-wind-up |
-  | 7.00 | 7.00 | 7.295 | 7.295 | half beat | 7.04 | 1 | |
-  | 7.25 | 7.295 | 7.53 | 7.53 | beat | 7.04 | 1 | winds up from the swing before's impact, which it keeps |
-  | 7.60 | 7.60 | 7.765 | 7.765 | half beat | 9.15 | 1 | full on the accented beat 7.53: a heavy spin; its cleave's bands from 8.00 a sixteenth (0.1175 s) apart |
-  | 8.00 | 8.00 | 8.235 | 8.235 | half beat | 7.04 | 1 | |
-  | 8.35 | 8.35 | 8.47 | 8.47 | beat | 3.70 | 0.53 | close to a quarter beat off |
-  | 8.90 | 8.90 | 9.165 | 9.165 | half beat | 7.04 | 1 | |
+  | Press (s) | Wind-up from (s) | Impact (s) | Press to impact (s) | Reach (m) | Grade | Note |
+  |---|---|---|---|---|---|---|
+  | 6.50 | 6.50 | 6.533 | 0.033 | 5.56 | 0.79 | off the beat: smaller, its light, flare and swing at 0.79 |
+  | 6.60 | 6.60 | 6.683 | 0.083 | 7.04 | 1 | in the swing before's follow-through: waits for its 0.15 s swing, winding up from the key |
+  | 7.00 | 7.00 | 7.033 | 0.033 | 7.04 | 1 | on the beat: 1.75x light, 1.25x flare, the heavy whoosh under the swing |
+  | 7.25 | 7.25 | 7.283 | 0.033 | 7.04 | 1 | a half beat |
+  | 7.60 | 7.60 | 7.633 | 0.033 | 9.15 | 1 | full on the accented beat 7.53: a heavy spin; its cleave's bands from 7.708 (75 ms on), 37.5 ms apart |
+  | 8.00 | 8.00 | 8.033 | 0.033 | 7.04 | 1 | |
+  | 8.35 | 8.35 | 8.383 | 0.033 | 3.70 | 0.53 | close to a quarter beat off: half the reach and damage, dim and quiet |
+  | 8.90 | 8.90 | 8.933 | 0.033 | 7.04 | 1 | |
 
-  Every impact is on an eighth, and so are the deaths and structure breaks: the spin's at 7.765, its cleave's at
-  8.00, 8.1175, 8.235 and on. The drawn hero (`hero.csv`) is in the attack on each key-down frame: at 6.500 the
-  SlashL clip at 0.000 s with the attack weighted 0.17, its wind-up running 0.325 s to the impact frame (6.833, the
-  clip past its 0.35 s impact, the blade's flare up).
-- **[free-mode.jpg](free-mode.jpg)**, 7.60 to 7.88 s a frame apart: the knight beside a crystal wall winds up from
-  the heavy press's key-down frame (+0) and spins on the half beat at 7.765 s (+10), breaking the wall and sending
-  out its cleave wave on the impact frame.
+  Every main impact is 1/30 s after its press but the one that waited for the swing before (ps-w9p.1 landed these
+  0.12-0.33 s on, on the eighths). The deaths and structure breaks follow at once: the spin breaks the wall at
+  7.633 and its cleave's bands kill and break from 7.708 every 37.5 ms; the 8.90 press's blow kills at 8.933. A live
+  key reaches the sim about the lead (~90 ms) after it was heard, so live its impact is a tick after that
+  (game-modes.md, Attacking on the beat). The drawn hero (`hero.csv`) is in the strike on each key-down frame: at
+  6.500 the SlashL clip at 0.267 s, 0.083 s short of its 0.35 s impact frame, the attack weighted 0.5 (1 a frame
+  later), at its impact frame on 6.533 with the flare at 0.79 (the grade), then held (0.360, 0.371 a frame apart:
+  the hit-stop at 0.25x); at 7.600 the spin at 1.350 of its 1.433 s impact, on it at 7.633 with the heavy's 1.5 flare.
+- **[free-mode.jpg](free-mode.jpg)**, 7.60 to 7.88 s a frame apart, from the heavy press's key-down frame (+0): the
+  knight beside a crystal wall is in the spin at once, and two frames later (+2, 7.633 s) the blow lands, the gold
+  crescent sweeps and the wall shatters; the cleave wave rolls out from +6 and breaks the rest by +11.
 
-How it feels by hand (the pointer, the timing window, the eighth's wait from press to impact) is on
+How it feels by hand (the pointer, the timing window, the strike's sliver of wind-up, the hit-stop and the on-beat payoff) is on
 [the operator's list](../operator-pending.md).

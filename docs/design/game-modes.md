@@ -79,43 +79,53 @@ song time, cycling the run clip once per 3 m walked, with no hop.
 
 The sword never strikes by itself. Z (the sim's `Key.Attack`) swings it:
 
-- **Timing: react now, land on the grid** (ps-w9p.1, Hi-Fi Rush's answer). Landing kill sounds and impact
-  FX on the beat is much of why the trailer works, but the knight must answer Z at once. So a press heard
-  at h winds up from h, in heard time like the walk's keys, so the knight is in the attack on the key-down
-  frame, and its impact lands on the **first eighth** of the beat (a beat or half beat, from the beats
-  revealed then) at least **0.12 s** (`Sword.GridWindupS`) after h. The blows, deaths, kill sounds,
-  shatters and structure breaks all follow the impact, so they land on the grid too.
-  - A press in time therefore hits an eighth later: one on the beat lands on the half beat after it,
-    one on the half beat on the next beat. 0.12 s keeps that true for every full-grade press up to about
-    158 BPM, and leaves the slash clips a visible wind-up even at their fastest retime; at 120 BPM a press
-    in time waits 0.18-0.32 s, about the clips' whole wind-up.
-  - The clip is retimed to fill the wait (`HeroClips.Fit`): from its first frame at the press when the wait
-    fits 0.75x-1.33x; a shorter wait (a press just before an eighth) enters it part-way, still in the
-    wind-up; a longer one (a slow tempo, a late press) **coils**, playing the first 60% of the way to the
-    impact slowly, then the strike at 0.75x, rather than starting late with nothing on screen.
-  - With no reliable beat at the press there is no grid: the impact is `max(h + 0.08 s, F + a tick)`, as
-    before.
-- **The swing**: presses' main impacts are at least 0.2 s apart, on the next eighth that leaves that much
-  (so faster than 150 BPM, where an eighth is shorter than the swing, a press skips one). A press that would
-  wait more than 0.1 s past its own landing for the swing before it is dropped: on the grid, one that would
-  land on the eighth the pending swing already has. That swing is on screen, so a press is never swallowed
-  while the knight shows nothing. A press during the swing before winds up from that swing's impact, which
-  it keeps.
+- **Timing: hit at once; the beat grades the payoff, never the timing** (ps-w9p.8). A press heard at h
+  lands its main impact at `max(h + 1/30 s, F + a tick)` (`Sword.PressImpactS`, F the sim's time when it
+  takes the key), beat or no beat: two 60 Hz frames after the key, so the key-down frame already shows the
+  strike and the next its last sliver before the blow. The blows, deaths, kill sounds, shatters and
+  structure breaks all follow the impact at once; nothing waits for the grid.
+  - The sim can't land a blow before it takes the key. A scripted key (`--walk`) is heard as the sim takes
+    it, so its impact is 1/30 s on; a live key reaches the sim about the lead after it was heard (outputLatency
+    plus the margin, about 90 ms on the built-in speakers), so its impact is a tick after that. The pose
+    still reacts on the key-down frame, in heard time, and plays into the impact from there.
+  - The knight's pose (`HeroMotion`, Presses): the press's wind-up starts at h, so the key-down frame is
+    already in the strike. The clip plays up to 2.5x (`HeroClips.PressSpeed`), entered just short of its
+    impact frame (a sliver of the wind-up: 0.08 s of the clip at 1/30 s), and follows through as fast (the
+    first slash's 0.37 s follow-through in 0.15 s), so the next press never fights a long recovery. Every
+    press's blow holds 50 ms at 0.25x then catches up (`PressSlow`, demo3d's `HoldThenCatchUp`), and the drawn
+    knight turns to the strike at once rather than easing over 0.04 s (`HeroPose.TurnAtOnce`), so a walking
+    swing's twist is on the aim at the impact.
+  - **Tried and rejected: react now, land on the grid** (ps-w9p.1, Hi-Fi Rush's answer). The impact landed on
+    the first eighth at least 0.12 s after the press (0.18-0.32 s at 120 BPM), the clip retimed to fill the
+    wait, and a long wait coiled. In play-test the swings felt "awful and barely connected to the button
+    press": a quarter second between Z and the blow reads as lag, however well the wind-up fills it, and the
+    blow on the grid sounded on the beat only for presses that were already in time. The music shapes the
+    reward instead.
+- **The swing**: presses' main impacts are at least 0.15 s apart (`SwingS`, the slash's sped-up length). A
+  press in the swing before's follow-through waits for it, at most 0.15 s (`SwingBufferS`), cutting the
+  follow-through short into the next swing; a press while a waiting swing still winds up (before its impact)
+  is dropped, and that swing is on screen, so a press is never swallowed while the knight shows nothing.
+  Mashing swings at most about 6.7 times a second; presses a swing apart all hit at once.
 - **Grade** (`BeatGrade`): the press, in heard time, against the nearest beat or half beat of
   its beat interval. Within 70 ms it is full; from there it falls linearly to 0.5 at a quarter
   beat off, the furthest a press can be from that grid. At 120 BPM a press is full for about
   half of all moments, and only the eighths' exact midpoints reach 0.5.
 - **No beat, full grade**: with no reliable beat at the press (no beat ahead, below the gate, the
   music unclear), every press is full.
-- **Size**: the grade scales the strike's reach and its damage.
+- **The payoff** follows the grade, which the attack event carries (`AttackEvent.Grade`):
+  - reach and damage scale with it, and the slash is drawn at that reach, so an off-beat press is visibly smaller;
+  - the slash's light: 1.75x the authored on the beat (`EffectCues.OnBeatLight`), times the grade off it;
+  - the blade's flare: 1.25x on the beat (`HeroMotion.OnBeatFlare`), the grade off it (a heavy's 1.5x as ever);
+  - the swing's sound: as loud as the grade, and on the beat a light press layers the heavy swing's whoosh under
+    its own at 0.5 (`SoundPresenter.OnBeatAccent`).
 - **Heavy**: a full-grade press measured from a beat (not a half beat) that is accented, as the
   grid's heavy strikes ask (a strong onset or accent forecast within 50 ms), is a heavy spin
   with its cleave wave, which breaks structures. Once per beat. F6's forced accent makes the next
-  press heavy. The spin lands an eighth after the accent, like any press in time, and its cleave's
-  bands follow on the grid: the first on the eighth after the impact, the rest a sixteenth apart.
+  press heavy. The spin hits at once, on the accent, and its cleave's bands spread fast over the
+  swing after it: the first half a swing (75 ms) after the impact, the rest a quarter swing apart.
 - **Amount** (the sword's rank 2 on, Duplicator and the like) adds follow-up strikes spread evenly
-  to the next eighth (rank 2's on the sixteenth; over the swing with no beat); they never delay the
-  next press, whose impact needs only 0.2 s after the last press's.
+  over the swing after the main impact (rank 2's 75 ms on), not to the grid; they never delay the
+  next press, whose impact needs only 0.15 s after the last press's.
 - Free presses never slam on a section change.
 
 The other weapons (wand, bible, lightning, garlic, fire trail) keep firing on the beat by
@@ -160,11 +170,12 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
 
 - Is 70 ms the right full-grade window, and 0.5 the right floor? Both are constants in
   `BeatGrade`.
-- Does the eighth's wait from press to impact (about 0.25 s at 120 BPM) read as weighty or as laggy,
-  and does the coil read as anticipation or as a stall at slow tempos? (Closed: an early press's impact
-  now waits for the grid, ps-w9p.1.)
-- Should a heavy land on the accent itself (a press an eighth before it) rather than an eighth after a
-  press on it? Today the grade and the heavy are both judged on the press.
+- Does a strike entered a sliver short of its impact read as a sword swing or as a twitch, the spin above
+  all (its flourish is mostly skipped)? Is the live lead (about 90 ms from key to blow) short enough, or
+  does the sim's lead need to shrink? (Closed: the eighth's wait from press to impact read as lag,
+  ps-w9p.1, and was dropped, ps-w9p.8.)
+- Is the payoff's difference (reach, light, flare, the swing's accent) enough to make pressing on the beat
+  worth it, against mashing at 6.7 swings a second?
 - Does the walk need a pulse on the beat to read as rhythmic, now that the hero glides?
 - Does a 120-degree twist read as athletic or contorted, and does the turn round for a strike behind read as a
   pivot or a snap? Do the legs read as skating while square to the walk, where the attack's footwork stands in
