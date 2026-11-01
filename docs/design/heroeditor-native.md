@@ -247,12 +247,14 @@ drawing changes, and `--art lpc`, the default, draws byte-identical frames.
   screen at the camera's base zoom the hero's frames land about 1:1 on pixels.
 - **Side view.** Animations marked `side` hold right-facing frames for every
   facing; native mirrors them about the anchor for left. An enemy moving up or
-  down faces the hero; the hero keeps its last horizontal facing.
+  down faces the hero. The hero faces the side its facing angle leans to
+  (`HeroPose::dir`: its heading, or a swing's aim), so a swing aimed down and to
+  the left swings left; only straight up or down keeps its last side.
 - **Hit flash.** No white twins are baked: a flash draws the frame as a white
   silhouette (the sprite shader's alpha mask).
 - **Timing.** native's sim times the hero's swings in its atlas's frames
   (`default_hero_anims`: a slash is 6 frames, the strike on frame 4). The sim
-  now also reports each pose's frame unfloored (`Recorder::hero_phase`, the
+  now also reports each pose's frame unfloored (`Recorder::hero_art`, the
   live view's `HeroPose::phase`), and the scene maps that phase onto the
   HeroEditor clip piecewise: the wind-up onto the frames before the clip's
   impact frame, the follow-through onto those after, so the strike's frame

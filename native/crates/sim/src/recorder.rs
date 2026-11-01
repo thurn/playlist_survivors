@@ -443,8 +443,9 @@ pub trait Recorder {
     /// A warp break: appended, or replacing the last one.
     fn warp(&mut self, b: WarpBreak, replace_last: bool) {}
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {}
-    /// The next hero pose's frame unfloored (frame `n` runs from `n` to `n + 1`), just before it.
-    fn hero_phase(&mut self, phase: f64) {}
+    /// Just before a hero pose, for art with more frames or only side views: its frame unfloored
+    /// (frame `n` runs from `n` to `n + 1`) and the angle its facing quantizes (radians).
+    fn hero_art(&mut self, phase: f64, dir: f64) {}
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {}
     /// A new enemy (its id is the next index); its first sample follows.
     fn spawn(&mut self, rec: EnemyRecord) {}
@@ -543,8 +544,8 @@ impl<R: Recorder + ?Sized> Recorder for std::rc::Rc<std::cell::RefCell<R>> {
     fn hero(&mut self, x: f64, y: f64, z: f64, facing: f64, anim: f64, frame: f64) {
         self.borrow_mut().hero(x, y, z, facing, anim, frame);
     }
-    fn hero_phase(&mut self, phase: f64) {
-        self.borrow_mut().hero_phase(phase);
+    fn hero_art(&mut self, phase: f64, dir: f64) {
+        self.borrow_mut().hero_art(phase, dir);
     }
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {
         self.borrow_mut().camera(x, y, zoom);

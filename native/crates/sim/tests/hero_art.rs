@@ -1,5 +1,6 @@
-//! The hero's phase (its frame unfloored, for art with more frames than the atlas the sim times)
-//! agrees with its frame in every pose of a live run with presses.
+//! The hero's art details (`Recorder::hero_art`) agree with its pose in every pose of a live run
+//! with presses: the phase (its frame unfloored, for art with more frames than the atlas the sim
+//! times) runs through the frame it names, and the angle points the way the facing does.
 
 mod common;
 
@@ -12,22 +13,25 @@ use sim::recorder::Recorder;
 
 #[derive(Default)]
 struct Poses {
-    phase: f64,
+    art: (f64, f64),
     /// (anim, frame, phase) of every pose.
     seen: Vec<(usize, f64, f64)>,
+    /// (facing, angle) of every pose.
+    facings: Vec<(f64, f64)>,
 }
 
 impl Recorder for Poses {
-    fn hero_phase(&mut self, phase: f64) {
-        self.phase = phase;
+    fn hero_art(&mut self, phase: f64, dir: f64) {
+        self.art = (phase, dir);
     }
-    fn hero(&mut self, _x: f64, _y: f64, _z: f64, _facing: f64, anim: f64, frame: f64) {
-        self.seen.push((anim as usize, frame, self.phase));
+    fn hero(&mut self, _x: f64, _y: f64, _z: f64, facing: f64, anim: f64, frame: f64) {
+        self.seen.push((anim as usize, frame, self.art.0));
+        self.facings.push((facing, self.art.1));
     }
 }
 
 #[test]
-fn the_hero_s_phase_runs_through_each_frame_it_names() {
+fn the_hero_s_phase_and_angle_agree_with_its_frame_and_facing() {
     let file = stream_file("causality-mix");
     let log = with_silent_tail(file.log.clone(), 10.0);
     let poses = Rc::new(RefCell::new(Poses::default()));
@@ -59,4 +63,16 @@ fn the_hero_s_phase_runs_through_each_frame_it_names() {
         swings > 100,
         "the run swung between frames ({swings} poses)"
     );
+    // (0 up, 1 left, 2 down, 3 right, y down.)
+    for &(facing, dir) in &p.facings {
+        let (dx, dy) = (dir.cos(), dir.sin());
+        let along = [-dy, -dx, dy, dx][facing as usize];
+        assert!(
+            along >= dx.abs().max(dy.abs()) - 1e-9,
+            "facing {facing}, angle {dir}"
+        );
+    }
+    let quarters: std::collections::BTreeSet<u8> =
+        p.facings.iter().map(|&(f, _)| f as u8).collect();
+    assert!(quarters.len() > 1, "the hero turned ({quarters:?})");
 }

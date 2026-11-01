@@ -725,8 +725,9 @@ impl Sim {
             Some(f) if wk - self.st.swing_pool[f].w_strike <= half + 1e-9 => Some(f),
             _ => winding.or(following),
         };
-        // (`phase`: the frame unfloored, for art with more frames than the atlas's.)
-        let (anim, frame, facing, phase);
+        // (`phase`: the frame unfloored, for art with more frames than the atlas's; `dir`: the
+        // angle the facing quantizes, for side-view art.)
+        let (anim, frame, phase, dir);
         if let Some(c) = chosen {
             let sw = &self.st.swing_pool[c];
             let (fr, ph) = if sw.struck {
@@ -761,24 +762,24 @@ impl Sim {
             anim = anim_idx(&sw.anim);
             frame = fr;
             phase = ph;
-            facing = facing_index(if sw.aimed {
+            dir = if sw.aimed {
                 sw.dir
             } else {
                 self.st.facing_angle
-            });
+            };
         } else if p.u < 1.0 {
             anim = anim_idx("jump");
             frame = clamp(floor(p.u * 5.0), 0.0, 4.0);
             phase = clamp(p.u * 5.0, 0.0, 5.0 - 1e-6);
-            facing = facing_index(self.st.facing_angle);
+            dir = self.st.facing_angle;
         } else {
             anim = anim_idx("idle");
             phase = frac(self.sbi_at(sk) / 2.0) * 2.0;
             frame = floor(phase) % 2.0;
-            facing = facing_index(self.st.facing_angle);
+            dir = self.st.facing_angle;
         }
-        self.rec.hero_phase(phase);
-        self.rec.hero(p.x, p.y, p.z, facing, anim, frame);
+        self.rec.hero_art(phase, dir);
+        self.rec.hero(p.x, p.y, p.z, facing_index(dir), anim, frame);
         // The camera follows the hero with the loudness level's lead along the heading.
         let (tx, ty) = self.lead_dir_at(sk);
         let d = &env.director;

@@ -34,6 +34,8 @@ pub struct HeroPose {
     pub frame: usize,
     /// The frame unfloored (frame `n` runs from `n` to `n + 1`), for art with more frames.
     pub phase: f64,
+    /// The angle `facing` quantizes (radians, y down), for side-view art.
+    pub dir: f64,
 }
 
 /// An enemy as last sampled.
@@ -839,7 +841,8 @@ struct Notes {
     hits: VecDeque<NoteHit>,
     tier: f64,
     hero_x: f64,
-    hero_phase: f64,
+    /// The next hero pose's phase and facing angle (`Recorder::hero_art`).
+    hero_art: (f64, f64),
 }
 
 /// A recent hit, for the fates and swings that name it.
@@ -995,7 +998,7 @@ impl Recorder for LiveRecorder {
         let anim = HERO_ANIMS.get(anim as usize).copied().unwrap_or("idle");
         let mut j = self.0.borrow_mut();
         j.notes.hero_x = x;
-        let (world, phase) = (j.notes.w, j.notes.hero_phase.max(0.0));
+        let (world, (phase, dir)) = (j.notes.w, j.notes.hero_art);
         j.push(Record::Hero(HeroPose {
             world,
             x,
@@ -1004,11 +1007,12 @@ impl Recorder for LiveRecorder {
             facing: (facing as usize).min(3),
             anim,
             frame: frame.max(0.0) as usize,
-            phase,
+            phase: phase.max(0.0),
+            dir,
         }));
     }
-    fn hero_phase(&mut self, phase: f64) {
-        self.0.borrow_mut().notes.hero_phase = phase;
+    fn hero_art(&mut self, phase: f64, dir: f64) {
+        self.0.borrow_mut().notes.hero_art = (phase, dir);
     }
 
     fn camera(&mut self, x: f64, y: f64, zoom: f64) {

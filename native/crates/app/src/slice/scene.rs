@@ -68,7 +68,7 @@ pub struct Scene {
     tier_change: Option<(f64, bool)>,
     /// Each enemy's last hit: when (host s), and whether it killed.
     struck: HashMap<usize, (f64, bool)>,
-    /// The hero last faced left, for side-view art facing up or down.
+    /// The hero last faced left, for side-view art (`faces_left`).
     hero_left: bool,
 }
 
@@ -254,6 +254,14 @@ fn character(
     } else {
         s
     }
+}
+
+/// Whether side-view art faces left for a hero facing or aiming at `dir` (radians): the side it
+/// leans to, so a swing aimed down and to the left swings left, and the last side (`was_left`)
+/// only when it points straight up or down.
+fn faces_left(was_left: bool, dir: f64) -> bool {
+    let dx = dir.cos();
+    if dx.abs() < 0.1 { was_left } else { dx < 0.0 }
 }
 
 /// The hero's frame in `a`, art with its own frame count (HeroEditor's): the pose's phase
@@ -1338,11 +1346,7 @@ impl Scene {
                     layers.feet = Some(at(hero.x, hero.y));
                     let facing =
                         [Facing::Up, Facing::Left, Facing::Down, Facing::Right][hero.facing.min(3)];
-                    match facing {
-                        Facing::Left => self.hero_left = true,
-                        Facing::Right => self.hero_left = false,
-                        _ => {}
-                    }
+                    self.hero_left = faces_left(self.hero_left, hero.dir);
                     let flash =
                         now - self.bitten < 0.6 && ((now - self.bitten) * 12.0) as i64 % 2 == 0;
                     match art
@@ -1969,6 +1973,16 @@ mod tests {
         assert_eq!(flash.region, right.region);
         assert_ne!(flash, right);
         assert_eq!(flash, right.silhouette());
+    }
+
+    #[test]
+    fn side_views_face_the_side_the_hero_leans_to_and_keep_it_straight_up_or_down() {
+        use std::f64::consts::PI;
+        // (Angles with y down: a swing aimed down and to the left, or up and to the right.)
+        assert!(faces_left(false, 0.6 * PI));
+        assert!(!faces_left(true, -0.4 * PI));
+        assert!(faces_left(true, PI / 2.0) && !faces_left(false, -PI / 2.0));
+        assert!(!faces_left(true, 0.0) && faces_left(false, PI));
     }
 
     #[test]
