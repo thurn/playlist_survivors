@@ -34,7 +34,9 @@ namespace PS.Game.Sim
     /// state is updated before each of those and at the tick's end, after which the per-tick
     /// systems run, the hero's held strides first (judged in heard time, a lead after their steps:
     /// <see cref="Hero"/>), the hero taking a chest after the arsenal's. A press moves the hero at once (a press stride), at the frontier, drawn
-    /// from when the press was heard. Nothing simulated is ever revised.
+    /// from when the press was heard; a free press's sword strike resolves at once against the world as it was when
+    /// it was heard, its events stamped then (<see cref="Sword"/>), the one kind settled before the frontier.
+    /// Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -199,6 +201,9 @@ namespace PS.Game.Sim
 
         /// <summary>Every pointer target recorded, in order.</summary>
         public ReadOnlySpan<TargetRecord> Targets => targets.AsSpan();
+
+        /// <summary>Where the hero was at song time <paramref name="t"/>, up to the frontier (<see cref="IHeroControl.PositionWas"/>).</summary>
+        internal void HeroWas(double t, out double x, out double y) => hero.PositionWas(t, out x, out y);
 
         /// <summary>The cards opened: the hero lets go of its held keys, so a key held through them never walks it after.</summary>
         internal void LetGoOfHeldKeys() => hero.LetGo();

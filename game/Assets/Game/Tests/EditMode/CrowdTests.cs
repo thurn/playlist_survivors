@@ -166,6 +166,34 @@ namespace Game.Tests
             Assert.That(p.HitFlash, Is.GreaterThan(0.5f));
         }
 
+        /// <summary>
+        /// A free press's hit and knock arrive in heard time, after the sim had settled the step that followed: the hit
+        /// shows from its time, and the knock replaces that step, as the sim's does.
+        /// </summary>
+        [Test]
+        public void AHeardTimeHitShowsFromItsTimeAndItsKnockReplacesTheStepAfterIt()
+        {
+            var m = Spawned();
+            m.Step(0, 0, 1, 0, 5.05, 5.15); // settled first, a lead ahead
+            m.Hit(5.0);
+            m.Knock(0, 0, 0, -1, 5.0, 5.12);
+            var struck = m.Sample(5.0);
+            Assert.That((struck.ClipA, struck.HitFlash), Is.EqualTo((Hit, 1f)));
+            var p = m.Sample(5.1);
+            Assert.That(p.ClipA, Is.EqualTo(Hit), "the flinch, not the step");
+            Assert.That(p.X, Is.EqualTo(0.0));
+            Assert.That(p.Y, Is.EqualTo(-0.1 / 0.12).Within(1e-9), "carried back by the knock");
+            Assert.That((m.Sample(5.3).X, m.Sample(5.3).Y), Is.EqualTo((0.0, -1.0)), "the step never happens");
+
+            // A hit in heard time on a boss, too heavy to knock: its step still walks after it.
+            var b = Spawned();
+            b.Step(0, 0, 1, 0, 5.05, 5.15);
+            b.Hit(5.0);
+            Assert.That(b.Sample(5.02).ClipA, Is.EqualTo(Hit));
+            Assert.That(b.Sample(5.1).ClipA, Is.EqualTo(Walk), "the step cuts in at its own time");
+            Assert.That(b.Sample(5.1).X, Is.EqualTo(0.5).Within(1e-9));
+        }
+
         [Test]
         public void ADeathEndsItsLifeOnTheImpactFrameWithItsBlow()
         {

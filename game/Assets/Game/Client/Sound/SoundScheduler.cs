@@ -23,6 +23,11 @@ namespace Game.Client.Sound
         public SoundKind Kind;
         public double Song;
         public float Gain, Pitch, Note;
+        /// <summary>
+        /// A heard-time sound (a free press's, whose events the sim stamps in heard time, before the frontier it
+        /// settles them at): when the mixer is already past it, it starts as soon as the mixer can, rather than dropped.
+        /// </summary>
+        public bool Asap;
     }
 
     /// <summary>
@@ -31,7 +36,9 @@ namespace Game.Client.Sound
     /// (<see cref="IGameClock.TryDspAt"/>), started early by its clip's onset so the attack lands on
     /// that time, and dropped, never started late, when the mixer can't make the attack; when it
     /// can make the attack but not the whole lead-in, the voice starts into the clip, at the
-    /// earliest it can, so the attack still lands on time. 64 voices; a new sound takes a finished
+    /// earliest it can, so the attack still lands on time. A heard-time sound (<see cref="SoundCue.Asap"/>, a
+    /// free press's) is never dropped for being late: it starts at the earliest the mixer allows, at its attack
+    /// (its lead-in skipped), a DSP buffer past the clock's reading. 64 voices; a new sound takes a finished
     /// voice, else the one that started first among the least important sounding (<see cref="Important"/>:
     /// the hero's swing, slam and hurt, the chests' and the evolutions' are cut off last). The voices' volume is each
     /// sound's gain times <see cref="Bus"/>, the effects' level (the plugin's follower gain under the
@@ -76,6 +83,8 @@ namespace Game.Client.Sound
         public int Stolen { get; private set; }
         /// <summary>Sounds started into their clip: the mixer made the attack but not all of the lead-in before it.</summary>
         public int Trimmed { get; private set; }
+        /// <summary>Heard-time sounds the mixer was already past: started late, as soon as it could (<see cref="SoundCue.Asap"/>).</summary>
+        public int Late { get; private set; }
 
         /// <summary><paramref name="k"/>'s sounds scheduled.</summary>
         public int ScheduledOf(SoundKind k) => _scheduledOf[(int)k];
@@ -182,20 +191,28 @@ namespace Game.Client.Sound
             // The attack lands on the cue's song time: the voice starts its onset earlier, or as early
             // as the mixer allows, skipping that much of the lead-in.
             double lead = onset / pitch;
+            double earliest = _clock.EarliestDsp;
+            bool late = false;
             if (clip == null || !_clock.TryDspAt(cue.Song, out double attack))
             {
-                Dropped++;
-                _droppedOf[(int)cue.Kind]++;
-                Keep(cue, double.NaN);
-                return -1;
+                if (clip == null || !cue.Asap || !_clock.Ready)
+                {
+                    Dropped++;
+                    _droppedOf[(int)cue.Kind]++;
+                    Keep(cue, double.NaN);
+                    return -1;
+                }
+                // A heard-time sound the mixer is past: its attack as soon as it can be.
+                attack = earliest;
+                late = true;
+                Late++;
             }
             double dsp = attack - lead, skip = 0;
-            double earliest = _clock.EarliestDsp;
             if (dsp < earliest)
             {
                 skip = (earliest - dsp) * pitch; // clip seconds
                 dsp = earliest;
-                Trimmed++;
+                if (!late) Trimmed++;
             }
             int v = FreeVoice();
             if (_end[v] > _dspNow())

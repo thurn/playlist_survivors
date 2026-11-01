@@ -50,7 +50,7 @@ namespace Game.Tests
             public double EarliestDsp => Mixer + 100;
         }
 
-        static SoundBank Bank(float onset = 0)
+        internal static SoundBank Bank(float onset = 0)
         {
             var bank = ScriptableObject.CreateInstance<SoundBank>();
             var names = new List<string>();
@@ -113,6 +113,45 @@ namespace Game.Tests
             Assert.That(s.Dropped, Is.EqualTo(1));
             Assert.That(double.IsNaN(s.Log.Array[0].Dsp));
             Assert.That(s.Log.Array[1].Dsp, Is.EqualTo(103.2).Within(1e-9), "the sound's DSP time is its song time's");
+        }
+
+        /// <summary>
+        /// A heard-time sound (a free press's) the mixer is already past is never dropped: it starts as soon as the mixer
+        /// can, at its attack, its lead-in skipped.
+        /// </summary>
+        [Test]
+        public void AHeardTimeSoundTheMixerIsPastStartsAsSoonAsItCan()
+        {
+            var clock = new TestClock { Mixer = 3.0 };
+            var s = Scheduler(clock, Bank(onset: 0.02f));
+            Assert.That(s.Play(new SoundCue { Kind = SoundKind.Swing, Song = 2.95, Gain = 1, Pitch = 1, Asap = true }, 0, 1), Is.GreaterThanOrEqualTo(0));
+            Assert.That((s.Scheduled, s.Late, s.Dropped, s.Trimmed), Is.EqualTo((1, 1, 0, 0)));
+            Assert.That(s.Log.Array[0].Dsp, Is.EqualTo(103.0).Within(1e-9), "its attack at the earliest the mixer allows");
+            Assert.That(s.Play(new SoundCue { Kind = SoundKind.Swing, Song = 3.5, Gain = 1, Pitch = 1, Asap = true }, 0, 1), Is.GreaterThanOrEqualTo(0));
+            Assert.That(s.Log.Array[1].Dsp, Is.EqualTo(103.5).Within(1e-9), "one the mixer can make lands on its time");
+            Assert.That(s.Late, Is.EqualTo(1));
+        }
+
+        /// <summary>
+        /// The free press's sounds: its events are stamped in heard time, before the frontier of the frame before the
+        /// one that settles them, and their sounds start as soon as they can; any other sound the mixer is past drops.
+        /// </summary>
+        [Test]
+        public void APressesSoundsStampedInHeardTimeStartLateAndOthersDrop()
+        {
+            var sim = Beats();
+            var s = Scheduler(new TestClock { Mixer = 5.02 });
+            var sound = new SoundPresenter(s, sim, new RoleLooks(null), 0.8f, null);
+            sound.Present(new PresentFrame { Song = 4.92, Frontier = 5.0 });
+            int sword = 0;
+            sound.OnEvent(SimEvent.SwordAttack(4.92, sword, HeroAttackKind.SlashLeft, 4.92, 4.953, 1, 0, false, 7, 0.8));
+            sound.OnEvent(SimEvent.EnemyHit(4.953, 3, sword, WeaponHit.Strike, 0.8, 1, 0, 1, 0));
+            sound.OnEvent(SimEvent.Death(4.953, 3, 0, 1, 0, 1, 0, 1.85));
+            Assert.That(s.Dropped, Is.Zero, "the press's swing, hit, death and shatter: none dropped");
+            Assert.That(s.Late, Is.EqualTo(5), "swing, hit, death cry, ice break and glass spray, at once");
+            Assert.That(s.Log.Take(5).Select(e => e.Dsp), Is.All.EqualTo(105.02).Within(1e-9));
+            sound.OnEvent(SimEvent.EnemyHit(5.01, 4, sword, WeaponHit.Strike, 1, 1, 0, 1, 0));
+            Assert.That(s.Dropped, Is.EqualTo(1), "an event settled after the frontier, the mixer past it: dropped as ever");
         }
 
         [Test]

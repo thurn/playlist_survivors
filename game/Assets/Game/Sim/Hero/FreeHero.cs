@@ -167,6 +167,32 @@ namespace PS.Game.Sim
             Walk(sim, now, x, y, first);
         }
 
+        /// <summary>
+        /// Where the hero was at <paramref name="t"/>: along the tick ahead's chord from its start, else between the
+        /// kept tick ends (the path a heard input's re-walk revised), else at the oldest kept.
+        /// </summary>
+        public void PositionWas(double t, out double x, out double y)
+        {
+            if (pathCount == 0 || t >= state.MoveStart)
+            {
+                state.PositionAt(t, out x, out y);
+                return;
+            }
+            int back = 0;
+            while (back < pathCount - 1 && PathT(back) > t) back++;
+            int i = Index(back);
+            if (back == 0 || pathT[i] >= t)
+            {
+                x = pathX[i];
+                y = pathY[i];
+                return;
+            }
+            int j = Index(back - 1);
+            double u = (t - pathT[i]) / (pathT[j] - pathT[i]);
+            x = pathX[i] + (pathX[j] - pathX[i]) * u;
+            y = pathY[i] + (pathY[j] - pathY[i]) * u;
+        }
+
         /// <summary>Where the hero's input takes it from (<paramref name="x"/>, <paramref name="y"/>) over <paramref name="span"/> seconds.</summary>
         void Advance(Simulation sim, double x, double y, double span, out double nx, out double ny)
         {

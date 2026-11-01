@@ -397,6 +397,7 @@ namespace PS.Game.Sim
                 e.X = x;
                 e.Y = y;
                 e.LungeBeat = -1;
+                horde.Placed(i, t, x, y);
                 sim.Emit(SimEvent.Spawn(t, i, e.Role, x, y, recycled: true, boss: e.Boss));
             }
         }

@@ -81,6 +81,8 @@ namespace Game.Client.Crowd
     ///   beat) runs the charge clip at its own speed instead of the walk, held a moment after.
     /// - **Hit**: a flinch from the hit clip's onset, cut short, and a white flash over 0.12 s.
     /// - **Knock** (EnemyKnock): its place moves from `from` to `to` between the knock's times.
+    /// A free press's hit and knock arrive in heard time, before moves and steps the sim had already settled: the hit
+    /// takes its place in time, and the knock, as in the sim, replaces the moves and steps after its start.
     /// Each new clip fades in over a few frames from what showed before it. Ground positions are
     /// the sim's (x, y): EnemyState.PositionAt's linear moves.
     /// </summary>
@@ -206,9 +208,16 @@ namespace Game.Client.Crowd
             });
         }
 
-        /// <summary>An EnemyKnock: from, to and its times.</summary>
-        public void Knock(double fromX, double fromY, double toX, double toY, double start, double end) =>
+        /// <summary>An EnemyKnock: from, to and its times. One in heard time replaces the moves and steps after its start.</summary>
+        public void Knock(double fromX, double fromY, double toX, double toY, double start, double end)
+        {
+            while (_moveCount > 0 && _moves[_moveCount - 1].Start > start) _moveCount--;
+            int kept = 0;
+            for (int i = 0; i < _actionCount; i++)
+                if (_actions[i].Start <= start || (_actions[i].Kind != Kind.Step && _actions[i].Kind != Kind.Charge)) _actions[kept++] = _actions[i];
+            _actionCount = kept;
             AddMove(fromX, fromY, toX, toY, start, end);
+        }
 
         /// <summary>A contact lunge (the enemy's Attack): its notice, its contact on the beat and its direction toward the hero.</summary>
         public void Lunge(double notice, double impact, double dirX, double dirY)
@@ -438,8 +447,12 @@ namespace Game.Client.Crowd
         void AddAction(in Action a)
         {
             if (_actionCount == Actions) Forget(1);
-            // Events come in time order; an action never starts before the last one.
-            _actions[_actionCount++] = a;
+            // Events come in time order, but a free press's hit in heard time: each takes its place by its start.
+            int at = _actionCount;
+            while (at > 0 && _actions[at - 1].Start > a.Start) at--;
+            Array.Copy(_actions, at, _actions, at + 1, _actionCount - at);
+            _actions[at] = a;
+            _actionCount++;
         }
 
         static double Ramp(double t, double a, double b) => b > a ? Math.Max(0, Math.Min(1, (t - a) / (b - a))) : t >= a ? 1 : 0;

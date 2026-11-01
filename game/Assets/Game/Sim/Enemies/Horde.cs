@@ -81,6 +81,22 @@ namespace PS.Game.Sim
         readonly int[] hashHead, hashStamp, hashNext;
         int hashGeneration;
 
+        // The enemies' recent travel, for a press the sim resolves in heard time (Rewound): each slot's life's start and
+        // place then, and its latest two moves, the newest first.
+        struct Move
+        {
+            public double FromX, FromY, ToX, ToY, Start, End;
+        }
+
+        struct Past
+        {
+            public double Born, X, Y;
+            public Move A, B;
+            public int Moves;
+        }
+
+        readonly Past[] past;
+
         int beat;
         Phase phase;
         /// <summary>Counts the chests dropped: a chest's item in its drop.</summary>
@@ -116,6 +132,7 @@ namespace PS.Game.Sim
             chestTier = new int[cap];
             chestMinute = new int[cap];
             knockback = new double[cap];
+            past = new Past[cap];
 
             Nav = new NavGrid(arena);
             hashW = (int)Math.Ceiling(Nav.W * Nav.CellM / HashCellM) + 1;
@@ -150,6 +167,64 @@ namespace PS.Game.Sim
         public int FreeSlots => freeCount;
 
         void HeroAt(double t, out double x, out double y) => state.Hero.PositionAt(t, out x, out y);
+
+        /// <summary>
+        /// While set, the horde answers where its enemies were from its history of their travel, not their current
+        /// moves, and leaves out those that entered since (<see cref="InReach"/>, <see cref="PositionOf"/>,
+        /// <see cref="Damage"/> and its knock or kill): the sword sets it while it resolves a press in heard time, the
+        /// moments the sim has already passed (<see cref="Sword"/>). The history holds each enemy's latest two moves,
+        /// enough for any lead; before the older, it answers where that one started.
+        /// </summary>
+        internal bool Rewound { get; set; }
+
+        /// <summary>Where enemy <paramref name="i"/> is at <paramref name="t"/>: from its history while <see cref="Rewound"/>, else its current move.</summary>
+        internal void PositionOf(int i, double t, out double x, out double y)
+        {
+            if (!Rewound)
+            {
+                enemies[i].PositionAt(t, out x, out y);
+                return;
+            }
+            ref var p = ref past[i];
+            if (p.Moves == 0)
+            {
+                x = p.X;
+                y = p.Y;
+            }
+            else if (t >= p.A.Start) Along(p.A, t, out x, out y);
+            // Before the newest move started: the older was cut short there, if it was still going.
+            else if (p.Moves > 1 && t >= p.B.Start) Along(p.B, t, out x, out y);
+            else
+            {
+                x = p.Moves > 1 ? p.B.FromX : p.A.FromX;
+                y = p.Moves > 1 ? p.B.FromY : p.A.FromY;
+            }
+        }
+
+        static void Along(in Move m, double t, out double x, out double y)
+        {
+            double u = t >= m.End || m.End <= m.Start ? 1 : t <= m.Start ? 0 : (t - m.Start) / (m.End - m.Start);
+            x = m.FromX + (m.ToX - m.FromX) * u;
+            y = m.FromY + (m.ToY - m.FromY) * u;
+        }
+
+        /// <summary>Enemy <paramref name="i"/> starts a life, or re-enters, at (x, y) at <paramref name="t"/>: its history starts there.</summary>
+        internal void Placed(int i, double t, double x, double y) => past[i] = new Past { Born = t, X = x, Y = y };
+
+        /// <summary>Enemy <paramref name="i"/> sets off on a move: a move from before the newest (a knock in heard time) replaces those after it.</summary>
+        void Moved(int i, double fromX, double fromY, double toX, double toY, double start, double end)
+        {
+            ref var p = ref past[i];
+            if (p.Moves > 0 && p.A.Start >= start)
+            {
+                p.A = p.B;
+                p.Moves--;
+                if (p.Moves > 0 && p.A.Start >= start) p.Moves = 0;
+            }
+            p.B = p.A;
+            p.A = new Move { FromX = fromX, FromY = fromY, ToX = toX, ToY = toY, Start = start, End = end };
+            p.Moves = Math.Min(2, p.Moves + 1);
+        }
 
         public static double MoveWindow(double period) => Math.Min(MaxMoveWindow, MoveWindowShare * period);
 
@@ -314,6 +389,7 @@ namespace PS.Game.Sim
             e.MoveStart = t;
             e.MoveEnd = footplant;
             e.SteppedBeat = beat;
+            Moved(i, x, y, toX, toY, t, footplant);
             sim.Emit(SimEvent.EnemyStep(t, i, x, y, toX, toY, t, footplant));
         }
 
@@ -459,7 +535,7 @@ namespace PS.Game.Sim
             double units = Math.Min(knockback[i] * power, role.MaxKnockback);
             double l = Math.Sqrt(dirX * dirX + dirY * dirY);
             if (!e.Alive || units <= 0 || l < 1e-9) return;
-            e.PositionAt(t, out double x, out double y);
+            PositionOf(i, t, out double x, out double y);
             double dist = KnockbackM * units;
             double toX = x + dirX / l * dist, toY = y + dirY / l * dist;
             Nav.Clamp(x, y, ref toX, ref toY);
@@ -478,6 +554,7 @@ namespace PS.Game.Sim
             e.ToY = toY;
             e.MoveStart = t;
             e.MoveEnd = t + KnockSeconds;
+            Moved(i, x, y, toX, toY, t, t + KnockSeconds);
             sim.Emit(SimEvent.EnemyKnock(t, i, x, y, toX, toY, t, t + KnockSeconds));
         }
 
@@ -491,8 +568,8 @@ namespace PS.Game.Sim
             int n = 0;
             for (int i = 0; i < enemies.Length; i++)
             {
-                if (!enemies[i].Alive) continue;
-                enemies[i].PositionAt(t, out double ex, out double ey);
+                if (!enemies[i].Alive || Rewound && t < past[i].Born) continue;
+                PositionOf(i, t, out double ex, out double ey);
                 double dx = ex - x, dy = ey - y;
                 if (Math.Sqrt(dx * dx + dy * dy) > reach + 0.5 * roles[enemies[i].Role].RadiusM) continue;
                 into[n++] = i;
@@ -514,7 +591,7 @@ namespace PS.Game.Sim
         {
             ref var e = ref enemies[i];
             if (!e.Alive) return;
-            e.PositionAt(t, out double x, out double y);
+            PositionOf(i, t, out double x, out double y);
             e.Health -= amount;
             if (weapon != NoWeapon) state.Recap.Dealt(weapon, amount);
             sim.Emit(SimEvent.EnemyHit(t, i, weapon, how, amount, x, y, dirX, dirY, critical));
@@ -523,7 +600,9 @@ namespace PS.Game.Sim
                 Kill(sim, i, t, dirX, dirY, launch);
                 return;
             }
-            HeroAt(t, out double hx, out double hy);
+            double hx, hy;
+            if (Rewound) sim.HeroWas(t, out hx, out hy);
+            else HeroAt(t, out hx, out hy);
             double ax = x - hx, ay = y - hy;
             if (ax * ax + ay * ay < 1e-18)
             {
@@ -594,7 +673,7 @@ namespace PS.Game.Sim
                 x = y = 0;
                 return false;
             }
-            e.PositionAt(t, out x, out y);
+            PositionOf(i, t, out x, out y);
             e.Alive = false;
             e.X = x;
             e.Y = y;
@@ -785,6 +864,7 @@ namespace PS.Game.Sim
             knockback[i] = roles[role].Knockback;
             bosses.Spawned(i, role, boss, beat);
             Scripts.Clear(i);
+            Placed(i, t, x, y);
             state.EnemiesAlive++;
             sim.Emit(SimEvent.Spawn(t, i, role, x, y, boss: boss));
             return i;

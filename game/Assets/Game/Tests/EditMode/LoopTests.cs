@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Game.Client.Effects;
 using Game.Client.Hero;
 using Game.Client.Loop;
 using Game.Client.Music;
+using Game.Client.Sound;
 using NUnit.Framework;
 using PS.Game.Sim;
+using PS.Game.Sim.Content;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.TestTools;
@@ -121,6 +124,75 @@ namespace Game.Tests
                 if (!times.TryDspAt(settledAfter + 1e-9, out _)) unschedulable++;
             }
             Assert.That(unschedulable, Is.Zero, $"of {frames} frames, the earliest settled event was already too late to schedule");
+        }
+
+        /// <summary>
+        /// A free press, live (ps-w9p.10): its strike is seen and its swing heard about PressImpactS after the key goes
+        /// down, on the built-in speakers (38 ms of output latency) and on Bluetooth (250 ms), though the key reaches the
+        /// sim a lead late. Real time at 60 fps with ±2 ms of jitter and the DSP clock in 256-frame buffers, as above; a Z
+        /// goes down every 0.4 s at 24 phases across a frame and is drained at the next frame's start, as KeyInput drains
+        /// it. Seen: the first frame that shows the impact reaches the eye a display latency after it starts. Heard: the
+        /// swing's attack, a DSP time, leaves the speakers the output latency after the mixer plays it.
+        /// </summary>
+        [TestCase(0.038)]
+        [TestCase(0.250)]
+        public void AFreePressIsSeenAndHeardAtOnceWhateverTheLead(double outputLatency)
+        {
+            const double fps = 60, buffer = 256 / 48000.0;
+            var random = new System.Random(7);
+            var clock = new MusicClock { OutputLatency = outputLatency, DisplayLatency = 1 / fps };
+            clock.SetAnchor(dsp: 5.0, song: 0.0);
+            double dspNow = 0;
+            var times = new MusicTimes(clock, 1 / fps, buffer, () => dspNow);
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            var driver = new SimDriver(new SimConfig
+            {
+                Mode = GameMode.Free, Content = content, Arsenal = new ArsenalConfig { Weapons = new[] { ("sword", 1) }, Cards = false },
+            }, times);
+            var host = new GameObject("sounds");
+            var sounds = new SoundScheduler(EffectsSoundTests.Bank(), host, times, () => dspNow, log: true, audible: false);
+            var recorder = new Recorder();
+            driver.Events.Subscribe(new SoundPresenter(sounds, driver.Sim, new RoleLooks(null), 1f, null));
+            driver.Events.Subscribe(recorder);
+            var keys = new Queue<double>(Enumerable.Range(0, 24).Select(k => 3.0 + 0.4 * k + k / 24.0 / fps));
+            var pressed = new List<double>();
+            var frameReal = new List<double>();
+            for (int i = 0; i < 14 * fps; i++)
+            {
+                double real = i / fps + (random.NextDouble() - 0.5) * 0.004;
+                dspNow = Math.Ceiling((5.0 + real) / buffer) * buffer;
+                clock.Sample(real, dspNow - buffer / 2);
+                times.Measure(1 / fps);
+                while (keys.Count > 0 && keys.Peek() <= real)
+                {
+                    pressed.Add(keys.Peek());
+                    driver.Sim.Press(SimKey.Attack, times.KeySong(keys.Dequeue()));
+                }
+                driver.Step(new ClockReadings { Real = real });
+                frameReal.Add(real);
+            }
+            UnityEngine.Object.DestroyImmediate(host);
+
+            var impacts = recorder.Events.Where(e => e.Kind == SimEventKind.Attack && e.AsAttack.IsSword).Select(e => e.AsAttack.Impact).ToList();
+            var swings = sounds.Log.Where(e => e.Kind == SoundKind.Swing).ToList();
+            Assert.That(impacts.Count, Is.EqualTo(pressed.Count), "a swing for every press");
+            Assert.That(swings.Count, Is.EqualTo(pressed.Count), "a swing's sound for every press");
+            var seen = new List<double>();
+            var heard = new List<double>();
+            for (int k = 0; k < pressed.Count; k++)
+            {
+                int f = recorder.Frames.FindIndex(fr => fr.Song >= impacts[k]);
+                seen.Add(frameReal[f] + clock.DisplayLatency - pressed[k]);
+                Assert.That(double.IsNaN(swings[k].Dsp), Is.False, $"press {k}'s swing was dropped");
+                heard.Add(swings[k].Dsp - 5.0 + outputLatency - pressed[k]);
+            }
+            string Ms(List<double> v) =>
+                $"{1000 * v.Min():F1} / {1000 * v.OrderBy(x => x).ElementAt(v.Count / 2):F1} / {1000 * v.Max():F1} ms";
+            TestContext.WriteLine($"output latency {1000 * outputLatency:F0} ms, lead {1000 * driver.Times.Lead:F0} ms: " +
+                                  $"key to the impact seen (min / median / max) {Ms(seen)}, to the swing heard {Ms(heard)}");
+            Assert.That(seen, Is.All.LessThanOrEqualTo(Sword.PressImpactS + 1 / fps + 0.003), "seen within PressImpactS and a frame");
+            Assert.That(heard, Is.All.LessThanOrEqualTo(outputLatency + 1 / fps + 2 * buffer + 0.003),
+                "heard within the output latency, a frame and the mixer's buffers: no lead");
         }
 
         [Test]

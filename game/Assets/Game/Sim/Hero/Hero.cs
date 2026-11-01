@@ -167,6 +167,9 @@ namespace PS.Game.Sim
             while (pendingCount > 0 && pending[pendingHead].T + lag < now - 1e-9) Judge(sim, now);
         }
 
+        /// <summary>From its latest move: the grid hero's sword never strikes in heard time.</summary>
+        public void PositionWas(double t, out double x, out double y) => state.PositionAt(t, out x, out y);
+
         /// <summary>A key heard at <paramref name="heard"/>: the steps heard before it are judged without it.</summary>
         void KeyChange(Simulation sim, double heard)
         {

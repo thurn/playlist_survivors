@@ -151,8 +151,8 @@ namespace Game.Client.Loop
                 s += string.Format(c, "; effects {0} spawned ({1} rejected)", effects.Spawned, effects.System.RejectedTotal);
             if (sounds != null)
             {
-                s += string.Format(c, "; sounds {0} scheduled ({1} into their clip), {2} dropped, {3} cut off (by category, scheduled/dropped/cut off:",
-                    sounds.Scheduled, sounds.Trimmed, sounds.Dropped, sounds.Stolen);
+                s += string.Format(c, "; sounds {0} scheduled ({1} into their clip, {2} late in heard time), {3} dropped, {4} cut off " +
+                                      "(by category, scheduled/dropped/cut off:", sounds.Scheduled, sounds.Trimmed, sounds.Late, sounds.Dropped, sounds.Stolen);
                 foreach (SoundKind k in Enum.GetValues(typeof(SoundKind)))
                     if (sounds.ScheduledOf(k) + sounds.DroppedOf(k) > 0)
                         s += string.Format(c, " {0} {1}/{2}/{3}", SoundScheduler.Name(k), sounds.ScheduledOf(k), sounds.DroppedOf(k), sounds.StolenOf(k));

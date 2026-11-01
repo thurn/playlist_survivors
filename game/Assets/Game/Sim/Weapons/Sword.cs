@@ -82,7 +82,14 @@ namespace PS.Game.Sim
     /// - <b>On the attack key</b> (<see cref="SwordTrigger.Press"/>, a mode's): no beat plans a strike. A press heard
     ///   at h, taken at F, winds up from h (its attack event's wind-up start, so the hero moves on the key-down
     ///   frame; from the previous impact if that is later) and <b>hits at once</b>: its main impact lands at
-    ///   <c>max(h + PressImpactS, F + a tick)</c>, beat or no beat; the music grades the payoff, never the timing.
+    ///   <c>h + PressImpactS</c>, beat or no beat; the music grades the payoff, never the timing. <b>In heard
+    ///   time</b>: a live key reaches the sim about the lead after it was heard, past its impact, so the moments the
+    ///   sim has passed (its wind-up, its blows, its cleave's first bands) resolve at once when it takes the key,
+    ///   each against the world as it was at its own time (the free hero's path, the horde's history:
+    ///   <see cref="Horde.Rewound"/>), the damage applied at F and the events stamped at their own times. Nothing
+    ///   simulated is rewound: what the sim's systems did in between stands (an enemy the blow killed may still have
+    ///   bitten, or been hit by another weapon). Never across a hold (frozen, fallen) nor further back than
+    ///   <see cref="PressBackS"/>.
     ///   It is at least <see cref="SwingS"/> after the previous press's main impact; a press that would wait more
     ///   than <see cref="SwingBufferS"/> past its own landing for that (one in the swing before's strike, before
     ///   its impact) is dropped while that swing shows: mashing swings no faster than the swing, and a press in
@@ -116,10 +123,15 @@ namespace PS.Game.Sim
         public const double TearHeal = 8, TearHealEveryS = 1;
         /// <summary>
         /// A press's impact this long after it was heard at the soonest (s): two 60 Hz frames, so the strike shows a
-        /// sliver of its swing on the key-down frame and the next before its blow. The sim can't land it before it
-        /// takes the press: F + a tick bounds it too (a live key reaches the sim about the lead after it was heard).
+        /// sliver of its swing on the key-down frame and the next before its blow. A live key reaches the sim after
+        /// that (about the lead later), and the press resolves in heard time (see the class's On the attack key).
         /// </summary>
         public const double PressImpactS = 1.0 / 30;
+        /// <summary>
+        /// The furthest before the sim's time a press resolves (s): past any lead (Bluetooth's is about 0.35 s), and
+        /// inside the free hero's kept path (<see cref="FreeHero.History"/>, 0.53 s).
+        /// </summary>
+        public const double PressBackS = 0.5;
         /// <summary>The swing's length (s): presses' main impacts are at least this far apart.</summary>
         public const double SwingS = 0.15;
         /// <summary>
@@ -162,6 +174,8 @@ namespace PS.Game.Sim
         double lastHeavyPress = double.NaN;
         // The latest press's main impact: the next press's lands a swing after it, its follow-ups between.
         double lastPress = double.NegativeInfinity;
+        // The latest tick end the sword held (frozen, fallen or out of play): a press never resolves before it.
+        double heldUntil = double.NegativeInfinity;
 
         readonly Strike[] queue = new Strike[QueueCapacity];
         int head, count;
@@ -296,6 +310,7 @@ namespace PS.Game.Sim
         /// <summary>The per-tick system, at the tick's end: with no beat known ahead, the pulse on the sword's raw interval.</summary>
         internal override void Tick(Simulation sim, double end)
         {
+            if (onPress && Holding) heldUntil = end;
             if (onPress || Holding || count > 0) return;
             double interval = Interval;
             double due = lastPulse + interval;
@@ -410,7 +425,7 @@ namespace PS.Game.Sim
                 : (slashes++ & 1) == 0 ? HeroAttackKind.SlashLeft : HeroAttackKind.SlashRight;
             s.Heavy = heavy;
             s.Reach = Reach(heavy) * s.Scale;
-            state.Hero.PositionAt(t, out double hx, out double hy);
+            HeroAt(sim, t, out double hx, out double hy);
             Aim(t, hx, hy, s.Reach, out s.DirX, out s.DirY);
             sim.Emit(SimEvent.SwordAttack(t, Index, kind, s.Pressed ? Math.Min(s.From, t) : t, s.Impact, s.DirX, s.DirY, heavy, s.Reach,
                 s.Pressed ? s.Scale : 0));
@@ -424,7 +439,7 @@ namespace PS.Game.Sim
         {
             if (!onPress || Holding) return;
             double now = sim.Now;
-            double natural = Math.Max(heard + PressImpactS, now + Simulation.TickSeconds);
+            double natural = Math.Max(heard + PressImpactS, Math.Max(heldUntil, now - PressBackS));
             double after = lastPress + SwingS;
             if (after - natural > SwingBufferS + 1e-9) return;
             // After every strike queued too: the previous press's follow-ups end within its swing.
@@ -442,7 +457,7 @@ namespace PS.Game.Sim
                 At(count++) = new Strike
                 {
                     Impact = at,
-                    Windup = Math.Max(from, now),
+                    Windup = from,
                     From = from,
                     // The cleave's bands spread over the swing, so the whole blow reads at once.
                     Period = SwingS,
@@ -454,6 +469,25 @@ namespace PS.Game.Sim
                 };
                 lastImpact = at;
             }
+            CatchUp(sim);
+        }
+
+        /// <summary>
+        /// The press's moments the sim has already passed (a live key's wind-up, blows and first cleave bands), each
+        /// resolved now at its own time, against the world as it was then (see the class's On the attack key).
+        /// </summary>
+        void CatchUp(Simulation sim)
+        {
+            if (horde != null) horde.Rewound = true;
+            for (double t = NextTime(double.NegativeInfinity); t <= sim.Now; t = NextTime(double.NegativeInfinity)) Fire(sim, t);
+            if (horde != null) horde.Rewound = false;
+        }
+
+        /// <summary>Where the hero is at <paramref name="t"/>: before the sim's time (a press in heard time), where it was.</summary>
+        void HeroAt(Simulation sim, double t, out double x, out double y)
+        {
+            if (t < sim.Now) sim.HeroWas(t, out x, out y);
+            else state.Hero.PositionAt(t, out x, out y);
         }
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>); on the attack key, the next press.</summary>
@@ -488,7 +522,7 @@ namespace PS.Game.Sim
             double nearestD = double.PositiveInfinity;
             for (int k = 0; k < n; k++)
             {
-                enemies[reached[k]].PositionAt(t, out double x, out double y);
+                horde.PositionOf(reached[k], t, out double x, out double y);
                 double d = Math.Sqrt((x - hx) * (x - hx) + (y - hy) * (y - hy));
                 aimDist[k] = d;
                 aimAngle[k] = Math.Atan2(y - hy, x - hx);
@@ -543,7 +577,7 @@ namespace PS.Game.Sim
         void Impact(Simulation sim, in Strike s, double t)
         {
             if (s.Cancelled || !s.Wound || state.Hero.Fallen) return;
-            state.Hero.PositionAt(t, out double hx, out double hy);
+            HeroAt(sim, t, out double hx, out double hy);
             int wave = s.Heavy ? StartWave(sim, s, t, hx, hy) : -1;
             double launch = Launch(s.Heavy ? Def.Shape.HeavyDamage : 1);
             if (s.Heavy || !Def.IsEvolution || !sim.Accents.NearAccentedBeat(t, out int accent))
@@ -551,14 +585,13 @@ namespace PS.Game.Sim
                     wave >= 0 ? waves[wave].Id : -1);
             else structures.Strike(sim, t, hx, hy, s.Reach, StructureHit.EvolvedAccent, launch, accent);
             if (horde == null) return;
-            var enemies = state.EnemyStore;
             double damage = Power * (s.Heavy ? Def.Shape.HeavyDamage : 1) * s.Scale;
             var how = s.Heavy ? WeaponHit.HeavyStrike : WeaponHit.Strike;
             int n = horde.InReach(t, hx, hy, s.Reach, reached);
             for (int k = 0; k < n; k++)
             {
                 int i = reached[k];
-                enemies[i].PositionAt(t, out double x, out double y);
+                horde.PositionOf(i, t, out double x, out double y);
                 double dx = x - hx, dy = y - hy;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (wave >= 0) waveHit[wave][i] = true;
@@ -624,7 +657,7 @@ namespace PS.Game.Sim
             {
                 int i = reached[k];
                 if (hit[i]) continue;
-                enemies[i].PositionAt(t, out double x, out double y);
+                horde.PositionOf(i, t, out double x, out double y);
                 double dx = x - wv.X, dy = y - wv.Y;
                 double d = Math.Sqrt(dx * dx + dy * dy);
                 if (d + 0.5 * roles[enemies[i].Role].RadiusM <= wv.Inner) continue;

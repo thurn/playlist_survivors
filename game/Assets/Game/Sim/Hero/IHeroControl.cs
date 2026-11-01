@@ -23,5 +23,12 @@ namespace PS.Game.Sim
 
         /// <summary>The per-tick turn, at the tick's end <paramref name="now"/>.</summary>
         void Tick(Simulation sim, double now);
+
+        /// <summary>
+        /// Where the hero was at song time <paramref name="t"/>, up to the sim's time: a press resolved in heard time
+        /// reads it (<see cref="Sword"/>). The free hero answers from its path's history, as far back as it keeps;
+        /// the grid hero from its latest move.
+        /// </summary>
+        void PositionWas(double t, out double x, out double y);
     }
 }

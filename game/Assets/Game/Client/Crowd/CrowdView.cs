@@ -14,7 +14,9 @@ namespace Game.Client.Crowd
     /// colour; EnemyStep, the enemy's Attack (the lunge), Hit and EnemyKnock add to it; a Death, a
     /// recycled re-entry or a Leave (out of sight) ends it, and from that frame the body is gone. A death's first frame writes
     /// the body once more as Dying, posed at the death's time, which the crowd blends but doesn't
-    /// draw, and the GPU shatter (<see cref="MonsterShatter"/>) breaks it into shards from that pose.
+    /// draw, and the GPU shatter (<see cref="MonsterShatter"/>) breaks it into shards from that pose. A death that
+    /// settles after the frames have passed its time (a free press's, stamped in heard time) breaks on the frame it
+    /// arrives, from its own time's pose.
     /// Each frame every visible monster's pose at frameSong goes into its type's instance slots and
     /// the crowd draws. Sim ground (x, y) is Unity's (x, 0, y). Without a baked library (a checkout
     /// without the vendor packs) it draws nothing.
@@ -45,7 +47,6 @@ namespace Game.Client.Crowd
         readonly MonsterInstance[] _written;
         readonly int[] _writtenType, _writtenSlot;
         readonly MonsterTrack[] _writtenTrack;
-        double _lastSong = double.NegativeInfinity;
         int _serial, _unknownRoles, _overSlots;
         double _heroX, _heroY; // the latest frame's, which a spawn faces
 
@@ -173,8 +174,9 @@ namespace Game.Client.Crowd
                 var track = _live[i];
                 if (t >= track.EndTime)
                 {
-                    // A death's first frame: its body once more, posed at the death, for the shatter.
-                    if (track.Died && track.EndTime > _lastSong && track.EndTime >= track.SpawnTime
+                    // A death's first frame: its body once more, posed at the death, for the shatter. A track is freed
+                    // on the first frame past its end, so one ending before the last frame's song died in heard time.
+                    if (track.Died && track.EndTime >= track.SpawnTime
                         && Write(track, track.EndTime, CrowdFlags.Alive | CrowdFlags.Dying, n)) n++;
                     if (_byEnemy.TryGetValue(track.Enemy, out var current) && current == track) _byEnemy.Remove(track.Enemy);
                     _live.RemoveAt(i);
@@ -202,7 +204,6 @@ namespace Game.Client.Crowd
                     track.BlowX, track.BlowY, track.Force);
             }
             long shatterTicks = Stopwatch.GetTimestamp() - shatterStart;
-            _lastSong = t;
             // After the crowd's draw, which blends the dying palettes the shatter seeds from.
             if (_camera != null) _crowd.Draw(_camera, (float)t);
             shatterStart = Stopwatch.GetTimestamp();

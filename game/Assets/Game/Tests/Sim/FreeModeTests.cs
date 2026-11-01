@@ -236,8 +236,7 @@ namespace PS.Game.Sim.Tests
 
         /// <summary>
         /// The beat grades the payoff, never the timing: wherever a press falls against the beat, or with no beat at all,
-        /// it winds up from when it was heard and its impact, and its blow, land at once: PressImpactS after it, or the
-        /// tick after the sim took it if that is later.
+        /// it winds up from when it was heard and its impact, and its blow, land at once: PressImpactS after it.
         /// </summary>
         [TestCase(120.0)]
         [TestCase(93.0)]
@@ -252,12 +251,7 @@ namespace PS.Game.Sim.Tests
             int boss = HordeFixture.Place(sim, "boss-werewolf", sim.State.Hero.X + 0.5, sim.State.Hero.Y, boss: true);
             // A press every beat and a bit, sweeping its offset from the beat across a whole eighth.
             var heard = Enumerable.Range(0, 12).Select(i => beats[b + 2 * i] + (beats[b + 1] - beats[b]) * i / 24.0).ToList();
-            var taken = new List<double>();
-            foreach (double h in heard)
-            {
-                Attack(sim, h);
-                taken.Add(sim.Now);
-            }
+            foreach (double h in heard) Attack(sim, h);
             sim.StepTo(beats[b + 26]);
             var swings = Swings(sim);
             Assert.AreEqual(heard.Count, swings.Count, "none waited for a swing");
@@ -265,25 +259,98 @@ namespace PS.Game.Sim.Tests
             for (int i = 0; i < heard.Count; i++)
             {
                 double impact = swings[i].Impact;
-                Assert.AreEqual(Math.Max(heard[i] + Sword.PressImpactS, taken[i] + Simulation.TickSeconds), impact, 1e-9, $"press {i} at {heard[i]}");
+                Assert.AreEqual(heard[i] + Sword.PressImpactS, impact, 1e-9, $"press {i} at {heard[i]}");
                 Assert.LessOrEqual(impact - heard[i], ImmediateS, $"press {i}: at once");
                 Assert.AreEqual(heard[i], swings[i].WindupStart, 1e-9, $"press {i}: winds up from the press");
                 Assert.IsTrue(hits.Any(h => Math.Abs(h.T - impact) < 1e-9), $"press {i}: its blow lands on the impact");
             }
         }
 
-        /// <summary>A live key reaches the sim about a lead after it was heard: its impact is the tick after the sim takes it.</summary>
-        [Test]
-        public void APressTheSimTakesLateHitsTheTickAfter()
+        /// <summary>
+        /// A live key reaches the sim about a lead after it was heard (outputLatency plus the margin: about 90 ms on the
+        /// built-in speakers, 0.3 s on Bluetooth), past its impact: the press resolves in heard time as the sim takes
+        /// it, its swing, its blow and the death it deals stamped at its impact, PressImpactS after the key, never a
+        /// lead late (the lead's own sim times, unity-game.md's The sim lead).
+        /// </summary>
+        [TestCase(0.090)]
+        [TestCase(0.302)]
+        public void APressTheSimTakesALeadLateHitsInHeardTime(double lead)
         {
+            const double heard = 10.0;
             var sim = Fighter(Plain(120, 20));
-            sim.StepTo(10.09);
+            sim.StepTo(9);
+            int boss = HordeFixture.Place(sim, "boss-werewolf", sim.State.Hero.X + 0.5, sim.State.Hero.Y, boss: true);
+            int weak = HordeFixture.Place(sim, "bat1", sim.State.Hero.X - 1, sim.State.Hero.Y);
+            sim.StepTo(heard + lead);
             double taken = sim.Now;
-            sim.Press(Key.Attack, 10.0);
-            sim.StepTo(11);
-            var swing = Swings(sim).Single();
-            Assert.AreEqual(taken + Simulation.TickSeconds, swing.Impact, 1e-9);
-            Assert.AreEqual(10.0, swing.WindupStart, 1e-9, "still winding up from when it was heard");
+            int before = sim.EventCount;
+            sim.Press(Key.Attack, heard);
+            // Everything below settled as the sim took the key, before it stepped on.
+            var settled = sim.EventsSince(before).ToArray();
+            double impact = heard + Sword.PressImpactS;
+            Assert.Less(impact, taken, "the key reached the sim past its impact");
+            var swing = settled.Where(e => e.Kind == SimEventKind.Attack).Select(e => e.AsAttack).Single(a => a.IsSword);
+            Assert.AreEqual(heard, swing.WindupStart, 1e-9, "winding up from the key");
+            Assert.AreEqual(impact, swing.Impact, 1e-9, "hitting PressImpactS after it");
+            Assert.IsTrue(settled.Any(e => e.Kind == SimEventKind.Hit && e.AsHit.Target == boss && e.T == impact), "the blow, at the impact");
+            Assert.IsTrue(settled.Any(e => e.Kind == SimEventKind.Death && e.AsDeath.Enemy == weak && e.T == impact), "the kill, at the impact");
+            Assert.IsFalse(sim.State.Enemies[weak].Alive, "dead from the sim's time on");
+        }
+
+        /// <summary>
+        /// A press in heard time strikes the world as it was at its impact, from where the walking hero was then: an
+        /// enemy it has walked away from since is still hit, and one it has walked up to is not.
+        /// </summary>
+        [Test]
+        public void APressInHeardTimeStrikesFromWhereTheHeroWasThen()
+        {
+            const double heard = 4.0, lead = 0.302;
+            double impact = heard + Sword.PressImpactS;
+            var sim = Fighter(new KnownEntry[0]);
+            sim.StepTo(3);
+            sim.Press(Key.Right, 3);
+            var glide = Glides(sim).Last();
+            Assert.Greater(glide.VX, 1, "walking right");
+            double x = glide.FromX + glide.VX * (impact - glide.Start), y = sim.State.Hero.Y;
+            double edge = Reach() + 0.5 * Content.Roles[Content.RoleIndex("boss-werewolf")].RadiusM;
+            // No beat: the enemies hold their ground.
+            int behind = HordeFixture.Place(sim, "boss-werewolf", x - edge + 0.3, y, boss: true);
+            int ahead = HordeFixture.Place(sim, "boss-werewolf", x + edge + 0.3, y, boss: true);
+            sim.StepTo(heard + lead);
+            Assert.Greater(sim.State.Hero.X - x, 0.6, "the hero has walked on since the impact");
+            sim.Press(Key.Attack, heard);
+            var hit = Drive.Events(sim, SimEventKind.Hit).Select(e => e.AsHit).Where(h => !h.OnHero).Select(h => h.Target).ToList();
+            CollectionAssert.AreEqual(new[] { behind }, hit, "in reach of where the hero was at the impact, not where it is now");
+        }
+
+        /// <summary>
+        /// ...and where each enemy was then: one killed mid-step dies where it was on its step at the impact, though
+        /// the sim had planted the step by the time it took the key.
+        /// </summary>
+        [Test]
+        public void APressInHeardTimeKillsAnEnemyWhereItWasThen()
+        {
+            Simulation Build(out int enemy)
+            {
+                var s = Fighter(Plain(120, 20));
+                s.StepTo(9);
+                enemy = HordeFixture.Place(s, "bat1", s.State.Hero.X + 6, s.State.Hero.Y);
+                return s;
+            }
+            // The same run unpressed shows the enemy's step.
+            var twin = Build(out int first);
+            twin.StepTo(12);
+            var step = Drive.Events(twin, SimEventKind.EnemyStep).Select(e => e.AsEnemyStep).First(m => m.Enemy == first && m.MoveStart > 10);
+            double impact = 0.5 * (step.MoveStart + step.Footplant), heard = impact - Sword.PressImpactS;
+
+            var sim = Build(out int enemy);
+            sim.StepTo(heard + 0.302);
+            Assert.Greater(sim.Now, step.Footplant, "the step has planted by the time the sim takes the key");
+            sim.Press(Key.Attack, heard);
+            var death = Drive.Events(sim, SimEventKind.Death).Single(e => e.AsDeath.Enemy == enemy);
+            Assert.AreEqual(impact, death.T, 1e-9);
+            Assert.AreEqual(0.5 * (step.FromX + step.ToX), death.AsDeath.X, 1e-9, "halfway along its step");
+            Assert.AreEqual(0.5 * (step.FromY + step.ToY), death.AsDeath.Y, 1e-9);
         }
 
         /// <summary>
