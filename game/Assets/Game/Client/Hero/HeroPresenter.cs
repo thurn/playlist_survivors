@@ -20,8 +20,6 @@ namespace Game.Client.Hero
     /// </summary>
     public sealed class HeroPresenter : IPresenter, IDisposable
     {
-        /// <summary>How quickly the knight turns to the facing it means: a time constant (s).</summary>
-        public const double TurnSeconds = 0.04;
         public const double LowHealth = 1 / 3.0, PulseDecay = 0.15;
         public const float AuraStart = 0.2f;
         static readonly Color PulseColor = new Color(1f, 0.08f, 0.06f) * 2.5f;
@@ -36,7 +34,7 @@ namespace Game.Client.Hero
         readonly double[] _beats = new double[Beats];
         int _beatCount;
         double _last = double.NaN;
-        float _yaw;
+        HeroTurn _turn;
         HeroPose _pose;
         bool _pulsing;
         StreamWriter _out;
@@ -86,17 +84,16 @@ namespace Game.Client.Hero
             hero.PositionAt(t, out double x, out double y);
             var pose = _pose = _motion.Evaluate(t, x, y, hero.Facing);
             if (Moments.On) _motion.MarkMoments(t);
-            double dt = double.IsNaN(_last) ? double.PositiveInfinity : Math.Max(0, t - _last);
+            double dt = double.IsNaN(_last) ? 0 : t - _last;
             _last = t;
-            float turn = Mathf.DeltaAngle(_yaw * Mathf.Rad2Deg, pose.Yaw * Mathf.Rad2Deg) * Mathf.Deg2Rad;
-            _yaw += turn * (float)(1 - Math.Exp(-dt / TurnSeconds));
-            _rig.Pose(pose, _yaw);
+            _turn.Ease(ref pose, dt);
+            _rig.Pose(pose, _turn.Legs);
             _blade.Flare = pose.Flare;
             AuraAnchor.position = new Vector3((float)pose.X, 0, (float)pose.Y);
             Pulse(t, hero);
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "{0:R},{1:R},{2:R},{3:R},{4:R},{5:R},{6:R},{7:R},{8},{9:R},{10},{11:R},{12:R},{13:R},{14:R},{15:R},{16:R}",
-                t, pose.X, pose.Y, pose.Lift, _yaw, pose.Run, pose.RunTime, pose.Attack,
+                t, pose.X, pose.Y, pose.Lift, _turn.Legs, pose.Run, pose.RunTime, pose.Attack,
                 pose.A.Clip, pose.A.Time, pose.B.Clip, pose.B.Time, pose.AShare, pose.Flare, pose.Twist, pose.Back, pose.Hips));
         }
 

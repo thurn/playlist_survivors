@@ -133,7 +133,8 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
   after the graph evaluates, so the chest, arms and blade face the strike. It eases in over the first 60% of
   the wind-up (`TwistLead`), so the torso leads and the blade arc reads in the strike's direction, and unwinds
   over 0.25 s after the follow-through (`TwistOut`). A swing that enters before the one before has unwound
-  carries its twist on, crossfading from that aim to its own, so a chain of swings never lets go between them.
+  carries its twist on, crossfading from that aim to its own, so a chain of swings never lets go between them;
+  one entering after it has unwound eases in from the travel.
 - **Up to 120 degrees** (`TwistMax`) the twist alone reaches the aim.
 - **Past it the whole body turns.** The twist unwinds linearly to none at 180 degrees, and the legs turn by the
   rest, so a strike straight behind faces the knight round, whichever side it is on (no flip across 180).
@@ -141,6 +142,9 @@ the knight turns its whole body to the swing, as the grid hero does. Walking (`H
   run clip played backward, by minus that cosine), through the attack's own footwork, which has the legs and
   hips square to the travel. The Synty packs have only forward run and walk clips (A_Run_F, A_Walk_F), so
   there is no true strafe.
+- **Turning the walk mid-swing**: the presenter eases the legs' facing and the upper body's apart (0.04 s
+  each, `HeroTurn`), so the legs swing round to the new walk under a torso that stays on the strike, rather
+  than the torso riding the legs' lag off the aim.
 - **Blending with standing**: the walk's weight (up over 0.03 s, down over 0.1 s) blends the walking legs and
   twist with the standing hero's whole-body turn, so stopping mid-swing hands over smoothly.
 - The pose stays a function of the events and the song time, with no state machine. The grid hero's hops are

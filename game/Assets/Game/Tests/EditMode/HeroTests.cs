@@ -343,6 +343,54 @@ namespace Game.Tests
         }
 
         /// <summary>
+        /// A swing entering long after an earlier one has unwound eases straight in toward its own aim: the old swing's aim
+        /// (here behind the walk, on the other side) never bends its way in round the back.
+        /// </summary>
+        [Test]
+        public void AFreshSwingEasesInFromTheTravelNotFromAnOldSwingsAim()
+        {
+            double east = Math.PI / 2;
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(AimedAttack(2, 2.3, east + Deg(170)));
+            motion.OnEvent(AimedAttack(5, 5.3, 0));
+            Assert.That(motion.Evaluate(4.9, 0, 0, Direction.Up).Twist, Is.EqualTo(0f), "the old swing has unwound");
+            float last = 0;
+            for (double t = 5; t <= 5.3; t += 1 / Fps)
+            {
+                float twist = motion.Evaluate(t, 0, 0, Direction.Up).Twist;
+                Assert.That(twist, Is.LessThanOrEqualTo(last + 1e-5f), $"at {t}: twisting left toward the aim, never round the back");
+                last = twist;
+            }
+            Assert.That(last, Is.EqualTo((float)-east).Within(1e-5f));
+        }
+
+        /// <summary>
+        /// The walk turns mid-swing (east to north, toward the strike), the twist already on the aim: the drawn legs ease
+        /// round under an upper body that stays on the strike, rather than the torso swinging off the aim with the legs' lag.
+        /// </summary>
+        [Test]
+        public void TurningTheWalkMidSwingKeepsTheDrawnUpperBodyOnTheAim()
+        {
+            var motion = new HeroMotion(Clips);
+            motion.OnEvent(SimEvent.HeroGlide(1.0, 1.0, 0, 0, 6, 0, Direction.Right));
+            motion.OnEvent(AimedAttack(2, 2.3, 0));
+            motion.OnEvent(SimEvent.HeroGlide(2.25, 2.25, 7.5, 0, 0, 6, Direction.Up));
+            var turn = new HeroTurn();
+            double turned = 0;
+            for (double t = 1.5, last = t; t <= 2.4; last = t, t += 1 / Fps)
+            {
+                var p = motion.Evaluate(t, 0, 0, Direction.Up);
+                float meant = p.Yaw + p.Twist;
+                turn.Ease(ref p, t - last);
+                if (t > 2.24) Assert.That(Math.Abs(Off(turn.Legs + p.Twist, meant)), Is.LessThan(0.05), $"at {t}: the upper body on the strike");
+                if (t < 2) Assert.That(p.Twist, Is.EqualTo(0f), $"at {t}: no swing, no twist");
+                if (t > 2.25) turned = Math.Max(turned, Math.Abs(Off(turn.Legs, Math.PI / 2)));
+            }
+            Assert.That(turned, Is.GreaterThan(1.0), "the legs turned to the new walk");
+        }
+
+        /// <summary>
         /// Past 120 degrees the twist unwinds and the whole body turns, the legs coming off the forward run: square to
         /// the travel they take the attack's footwork, and a strike straight behind backpedals with no twist, whichever
         /// side it is on.

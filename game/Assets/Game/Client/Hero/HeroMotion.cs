@@ -47,6 +47,33 @@ namespace Game.Client.Hero
     }
 
     /// <summary>
+    /// The drawn hero's turn (<see cref="HeroPresenter"/>): its legs ease to the pose's yaw over <see cref="Seconds"/>,
+    /// and its upper body, apart, to the way the pose's upper body faces (the yaw plus the twist), so a walk that
+    /// changes direction mid-swing turns the legs under a torso that stays on the strike, rather than swinging the
+    /// torso off the aim with the legs' lag. With no twist both ease alike and the eased twist stays none.
+    /// </summary>
+    public struct HeroTurn
+    {
+        /// <summary>How quickly the knight turns to the facing it means: a time constant (s).</summary>
+        public const double Seconds = 0.04;
+        double _legs, _upper;
+        bool _set;
+
+        /// <summary>The legs' eased yaw (radians).</summary>
+        public float Legs => (float)_legs;
+
+        /// <summary>Eases toward the pose over dt seconds (the first call lands on it) and sets its twist to the eased upper body's turn from the eased legs.</summary>
+        public void Ease(ref HeroPose p, double dt)
+        {
+            double k = _set ? 1 - Math.Exp(-Math.Max(0, dt) / Seconds) : 1;
+            _set = true;
+            _legs = HeroMotion.Wrap(_legs + HeroMotion.Wrap(p.Yaw - _legs) * k);
+            _upper = HeroMotion.Wrap(_upper + HeroMotion.Wrap(p.Yaw + (double)p.Twist - _upper) * k);
+            p.Twist = (float)HeroMotion.Wrap(_upper - _legs);
+        }
+    }
+
+    /// <summary>
     /// The hero's motion on song time (unity-game.md, The Hero; Attacks and Steps Land on the Beat): a
     /// function of the sim's HeroStep and hero Attack events and the song time, with no state machine,
     /// so the client never guesses. Events arrive ahead of the time they show (by the sim's lead),
@@ -388,7 +415,9 @@ namespace Game.Client.Hero
 
         /// <summary>
         /// The way the walking hero's upper body faces at song time t: the travel, turned toward the aimed swings' aims
-        /// (each from the one before as its twist comes in) by the latest aimed swing's twist weight.
+        /// (each from the one before as its twist comes in) by the latest aimed swing's twist weight. The chain reaches
+        /// back only through swings that carried a twist in: one entering after the twist before has unwound starts
+        /// from its own aim, so an old swing's aim never bends its ease in.
         /// </summary>
         double UpperYaw(double t, double travel)
         {
@@ -399,7 +428,7 @@ namespace Game.Client.Hero
                 if (!s.Aimed || s.Entry > t) continue;
                 if (latest < 0) latest = i;
                 first = i;
-                if (TwistIn(s, t) >= 1) break;
+                if (s.Carry <= 0 || TwistIn(s, t) >= 1) break;
             }
             double weight = latest < 0 ? 0 : TwistWeight(_swings[latest % Keep], t);
             if (weight <= 0) return travel;
@@ -473,7 +502,7 @@ namespace Game.Client.Hero
         static double Smooth(double u) => u * u * (3 - 2 * u);
 
         /// <summary>An angle wrapped into (-pi, pi].</summary>
-        static double Wrap(double a)
+        internal static double Wrap(double a)
         {
             a = Math.IEEERemainder(a, 2 * Math.PI);
             return a <= -Math.PI ? a + 2 * Math.PI : a;
