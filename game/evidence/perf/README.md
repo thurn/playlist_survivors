@@ -368,3 +368,31 @@ finale 6.9 and 8.4 ms p99.
 The graphics-state file is per graphics API: Cygnus needs its own trace (Direct3D 12 or Vulkan), from
 a development player there (`game perf` is the Mac's today); the compute kernels' preparation is
 the same code there. `cpu_ms` reads -1 on Windows. Mac numbers only guide this; the target is Cygnus's.
+
+# The Warden's re-run (ps-msz.8.10)
+
+`game perf` (all seven scenarios) re-run on jarvis, 2026-10-31, at a load average of 18 to 26, from a fresh
+worktree after `game perf --trace` and `game build`. Times in ms as in ps-msz.8.9's table above:
+
+| scenario | probe frame p50 / p99 / max | main thread p50 / p99 / p99.9 / max | CPU max | over 16.7 / 33 ms | alloc B/frame mean, p99, max | GCs | sim step p99 at 285+ |
+|---|---|---|---|---|---|---|---|
+| peak | 6.23 / 9.52 / 9.52 | 0.77 / 1.38 / 1.94 / 2.83 | 2.77 | 0 / 0 | 36, 480, 21688 | 1 | 0.23 |
+| break | 6.43 / 10.84 / 10.84 | 1.13 / 1.83 / 1.85 / 1.85 | 1.77 | 0 / 0 | 184, 2698, 17906 | 1 | 0.25 |
+| finale | 5.01 / 14.70 / 14.70 | 0.92 / 1.75 / 2.65 / 2.65 | 2.58 | 0 / 0 | 813, 6592, 74916 | 1 | 0.20 |
+| early | 3.51 / 5.82 / 5.82 | 0.45 / 1.10 / 1.58 / 1.89 | 1.84 | 0 / 0 | 72, 1568, 30560 | 0 | |
+| full | | 0.67 / 1.37 / 1.75 / 5.30 | 4.02 | 0 / 0 | 18, 76, 131104 | 2 | 0.24 |
+| firsts | 6.19 / 11.56 / 17.24 | 0.79 / 2.23 / 4.11 / 24.23 | 5.38 | 1 / 0 | 19, 76, 131104 | 8 | 0.38 |
+| firsts-rest | 6.41 / 11.82 / 12.33 | 1.32 / 2.66 / 4.36 / 5.84 | 4.04 | 0 / 0 | 251, 3136, 175526 | 2 | 0.44 |
+
+- **Reproduced.** Every scenario's allocations match ps-msz.8.9's take to the byte (firsts-rest's within 2 B
+  a frame); the timings fall within the load's spread; no frame over 33 ms. The one frame over 16.7 ms
+  (firsts, 1869 s, 24.2 ms) had 2.7 ms of CPU: the machine's load. The first sightings' worst probe frame
+  was 21.5 ms (26.3 in ps-msz.8.9's).
+- **The probe's own garbage moved the collections.** The probe's allocations are left out of each frame's
+  `alloc_bytes`, but the collections they bring on are not: the peak's and the break's one collection each
+  came just after a probe point (ps-msz.8.9's take had none), and firsts had 8 against the full run's 2.
+  The census (`profile-alloc.csv`, part `probe`) put firsts' probe at 24.7 MB against the frames' 4 MB: a
+  capture of the camera made on every frame of a probed run (`GpuProbe.Frame`'s lambdas, now in a method of
+  their own), and the JSON rebuilt with every point after each point (each point's line is now made once).
+  After: the probe 5.9 MB in firsts, which has **3 collections**, and the peak and the break none.
+- A probe draw that throws now restores the camera's target and the passes it turned off.

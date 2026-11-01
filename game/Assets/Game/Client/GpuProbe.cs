@@ -60,6 +60,10 @@ namespace Game.Client
         readonly List<(double At, string Label, double FirstMs)> _points = new List<(double, string, double)>();
         readonly List<(int point, double t, int alive, double ms, double cpuMs, int kind)> _samples = new List<(int, double, int, double, double, int)>();
         readonly string _out;
+        // The JSON's points, each made once (Write), and the file's text, kept for the next write.
+        readonly List<string> _pointLines = new List<string>();
+        readonly StringBuilder _json = new StringBuilder();
+        char[] _chars = new char[0];
         readonly RenderTexture _target;
         RenderTexture _single;
         // Frame kinds: 0 the full frame, then one per ablation.
@@ -118,19 +122,34 @@ namespace Game.Client
                 _pointKinds = timed ? _kinds : 1;
                 _left = _pointFrames = (timed ? _rounds : FirstFrames) * _pointKinds;
             }
+            Draw(t, camera, alive);
+        }
+
+        // Apart from Frame: its lambdas capture the camera, and a method whose lambda captures a parameter
+        // allocates the capture on entry, so Frame would make garbage every frame of a run, not only a probe's.
+        void Draw(double t, Camera camera, int alive)
+        {
             int point = _points.Count - 1, drawn = _pointFrames - _left, kind = drawn % _pointKinds;
             var off = kind == 0 ? _without : _without.Append(Ablations[kind - 1]).ToArray();
             var target = off.Contains("msaa") ? Single() : _target;
             var restores = off.Select(pass => Ablate(pass, camera)).ToList();
             var previous = camera.targetTexture;
             camera.targetTexture = target;
-            long start = Stopwatch.GetTimestamp();
-            camera.Render();
-            long submitted = Stopwatch.GetTimestamp();
-            AsyncGPUReadback.Request(target, 0, 0, 1, 0, 1, 0, 1).WaitForCompletion();
-            long done = Stopwatch.GetTimestamp();
-            camera.targetTexture = previous;
-            restores.ForEach(restore => restore?.Invoke());
+            long start, submitted, done;
+            try
+            {
+                start = Stopwatch.GetTimestamp();
+                camera.Render();
+                submitted = Stopwatch.GetTimestamp();
+                AsyncGPUReadback.Request(target, 0, 0, 1, 0, 1, 0, 1).WaitForCompletion();
+                done = Stopwatch.GetTimestamp();
+            }
+            finally
+            {
+                // A throw mustn't leave the camera on the probe's target or a pass off for the rest of the run.
+                camera.targetTexture = previous;
+                restores.ForEach(restore => restore?.Invoke());
+            }
             double ms = (done - start) * 1000.0 / Stopwatch.Frequency;
             if (drawn == 0) _points[point] = (_points[point].At, _points[point].Label, ms);
             if (drawn >= _pointKinds) _samples.Add((point, t, alive, ms, (submitted - start) * 1000.0 / Stopwatch.Frequency, kind));
@@ -203,7 +222,7 @@ namespace Game.Client
             var full = _samples.Where(s => s.kind == 0).ToList();
             var all = full.Select(s => s.ms).OrderBy(x => x).ToList();
             var cpu = full.Select(s => s.cpuMs).OrderBy(x => x).ToList();
-            var sb = new StringBuilder("{\n");
+            var sb = _json.Clear().Append("{\n");
             sb.AppendFormat(ci, "  \"graphicsDeviceName\": \"{0}\",\n  \"size\": [{1}, {2}],\n  \"msaa\": {3},\n",
                 SystemInfo.graphicsDeviceName, Stills.Width, Stills.Height, _target.antiAliasing);
             if (_without.Length > 0) sb.AppendFormat(ci, "  \"without\": [{0}],\n", string.Join(", ", _without.Select(w => $"\"{w}\"")));
@@ -228,24 +247,26 @@ namespace Game.Client
                 }
                 sb.Append("],\n");
             }
+            // Each point's line is made once, as its frames end: rewriting every point's after each one made a run with
+            // a hundred first sightings allocate more than its frames did, and collections the profile counts.
+            int done = _points.Count - 1;
+            var frames = full.Where(s => s.point == done).ToList();
+            var doneMs = frames.Select(s => s.ms).OrderBy(x => x).ToList();
+            // frames: each counted frame in order, [song time, alive, draw ms, its CPU ms]; firstMs the warm-up frame's draw.
+            _pointLines.Add(string.Format(ci, "    {{\"at\": {0:F3}, {1}\"alive\": {2}, \"firstMs\": {3:F2}, \"medianMs\": {4:F2}, \"maxMs\": {5:F2}, \"frames\": [{6}]}}",
+                _points[done].At, _points[done].Label != null ? $"\"label\": \"{Escape(_points[done].Label)}\", " : "",
+                frames.Max(s => s.alive), _points[done].FirstMs, Pct(doneMs, 0.5), doneMs[doneMs.Count - 1],
+                string.Join(", ", frames.Select(s => string.Format(ci, "[{0:F4}, {1}, {2:F2}, {3:F2}]", s.t, s.alive, s.ms, s.cpuMs)))));
             sb.Append("  \"points\": [\n");
-            for (int i = 0; i < _points.Count; i++)
-            {
-                var frames = full.Where(s => s.point == i).ToList();
-                var ms = frames.Select(s => s.ms).OrderBy(x => x).ToList();
-                // frames: each counted frame in order, [song time, alive, draw ms, its CPU ms]; firstMs the warm-up frame's draw.
-                sb.AppendFormat(ci, "    {{\"at\": {0:F3}, {1}\"alive\": {2}, \"firstMs\": {3:F2}, \"medianMs\": {4:F2}, \"maxMs\": {5:F2}, \"frames\": [{6}]}}{7}\n",
-                    _points[i].At, _points[i].Label != null ? $"\"label\": \"{Escape(_points[i].Label)}\", " : "",
-                    frames.Max(s => s.alive), _points[i].FirstMs, Pct(ms, 0.5), ms[ms.Count - 1],
-                    string.Join(", ", frames.Select(s => string.Format(ci, "[{0:F4}, {1}, {2:F2}, {3:F2}]", s.t, s.alive, s.ms, s.cpuMs))),
-                    i + 1 < _points.Count ? "," : "");
-            }
+            for (int i = 0; i < _pointLines.Count; i++) sb.Append(_pointLines[i]).Append(i + 1 < _pointLines.Count ? ",\n" : "\n");
             sb.Append("  ]\n}\n");
-            File.WriteAllText(_out, sb.ToString());
-            var last = _points[_points.Count - 1];
-            var latest = full.Where(s => s.point == _points.Count - 1).Select(s => s.ms).OrderBy(x => x).ToList();
+            // Through a buffer kept from write to write, not a string of the whole file each time.
+            if (_chars.Length < sb.Length) _chars = new char[2 * sb.Length];
+            sb.CopyTo(0, _chars, 0, sb.Length);
+            using (var file = new StreamWriter(_out)) file.Write(_chars, 0, sb.Length);
+            var last = _points[done];
             Debug.Log(string.Format(ci, "GpuProbe: {0} frames at {1:F3} s{2}, first {3:F2} ms, median {4:F2} ms, max {5:F2} ms -> {6}",
-                latest.Count, last.At, last.Label != null ? $" ({last.Label})" : "", last.FirstMs, Pct(latest, 0.5), latest[latest.Count - 1], _out));
+                doneMs.Count, last.At, last.Label != null ? $" ({last.Label})" : "", last.FirstMs, Pct(doneMs, 0.5), doneMs[doneMs.Count - 1], _out));
         }
 
         static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");

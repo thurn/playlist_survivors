@@ -2712,6 +2712,13 @@ which tells a frame's waits (the machine's other builds, a compiler) from its
 own work: no frame's own work went over 8 ms in any take after the fixes. The
 graphics states are traced per graphics API: Cygnus needs its own (M5).
 
+**Reviewed (ps-msz.8.10).** `game perf` re-run on the Mac reproduced the
+evidence: allocations the same to the byte, timings within the load's spread.
+The frame probe made garbage the run's collections counted: a capture every
+frame of a probed run, and its JSON rebuilt whole after each point. A probed
+scenario's collections now track the run's (the 30-minute run with its 102
+first sightings: 3, from 8; the run alone: 2).
+
 ## What Carries Over, and What Changes
 
 Both prototypes were built under constraints this game doesn't have. Native
