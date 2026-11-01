@@ -11,6 +11,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using PS.Look.EditorTools.Crowd;
+using PackageCrowd = PS.Look.Crowd;
 
 namespace Demo3D.EditorTools.Crowd
 {
@@ -27,22 +28,24 @@ namespace Demo3D.EditorTools.Crowd
     /// - the style mesh of each of those three (<see cref="StyleMesh.Unweld"/>), for the `--monster-style`
     ///   treatments that need one, listed in their own CrowdStyleMeshes asset so the default path
     ///   never loads them;
-    /// - the crystal shatter's shard set of each type (<see cref="CrowdShardBaker"/>), its style mesh
-    ///   on its rest pose cut into chunks that keep its skin weights, in their own CrowdShards asset
-    ///   for the same reason;
     /// - the clip table (first row, frame count, loop, length and TD2's annotations);
     /// - one crowd material per albedo texture (one per type except the dragon, which has two);
     ///   InfinityPBR's colour-ID shader is baked to a plain albedo texture;
     /// - the stock baseline's prefab: the same combined mesh on one SkinnedMeshRenderer, with an
     ///   AnimatorController holding every clip as a state;
-    /// and the CrowdLibrary asset that lists them.
+    /// and the CrowdLibrary asset that lists them. Beside it, the look package's library for the crystal
+    /// cut (crowd.md, The crystal cut on the look package; <see cref="LookLibraryPath"/>): per type the
+    /// three style meshes with their submeshes joined (the package's crowd draws one submesh), the 30 Hz
+    /// bone texture and clip rows, the bounds, and LOD0's rest pose cut into the GPU shatter's chunks
+    /// (the package's <see cref="CrowdShardBaker"/>), with the package's crowd shaders.
     /// </summary>
     public static class CrowdBaker
     {
         public const string OutDir = "Assets/Baked/Crowd";
         public const string LibraryPath = OutDir + "/Resources/CrowdLibrary.asset";
         public const string StyleMeshesPath = OutDir + "/Resources/CrowdStyleMeshes.asset";
-        public const string ShardsPath = OutDir + "/Resources/CrowdShards.asset";
+        public const string LookLibraryPath = OutDir + "/Resources/" + PackageCrowd.CrowdLibrary.TrailerResourcePath + ".asset";
+        const string LookShaderDir = "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders";
         public const string ShaderPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdSkinned.shader";
         public const string CullPath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdCull.compute";
         public const string PalettePath = "Assets/Demo3D/Runtime/Crowd/Shaders/CrowdPalette.compute";
@@ -144,7 +147,7 @@ namespace Demo3D.EditorTools.Crowd
             Directory.CreateDirectory(OutDir + "/Stock");
             var types = new List<CrowdType>();
             var styleMeshes = new List<CrowdStyleMeshes.Entry>();
-            var shardSets = new List<CrowdShards.Set>();
+            var lookTypes = new List<PackageCrowd.CrowdType>();
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath) ?? throw new Exception("CrowdBaker: no " + ShaderPath);
             var colors = Roster.TypeColors();
             CrowdSurfaces.Begin();
@@ -153,7 +156,7 @@ namespace Demo3D.EditorTools.Crowd
                 var started = DateTime.UtcNow;
                 using var bake = BakeType(t, annotations);
                 int height = bake.Height, width = bake.Width, subs = bake.Submeshes.Count;
-                var ct = Save(bake, shader, styleMeshes, shardSets);
+                var ct = Save(bake, shader, styleMeshes, lookTypes);
                 ct.Hue = t.hue ?? -1;
                 ct.HueSaturation = colors.saturation;
                 ct.Dye = colors.dye;
@@ -182,7 +185,7 @@ namespace Demo3D.EditorTools.Crowd
             var style = ScriptableObject.CreateInstance<CrowdStyleMeshes>();
             style.Types = styleMeshes.ToArray();
             Replace(style, StyleMeshesPath);
-            SaveShards(shardSets);
+            SaveLookLibrary(lookTypes);
             CrowdSurfaces.End();
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // leave no modified scene behind
             AssetDatabase.SaveAssets();
@@ -508,18 +511,23 @@ namespace Demo3D.EditorTools.Crowd
 
         static string TypeDir(string id) => $"{OutDir}/{id}";
 
-        /// <summary>The shard sets in one asset, every mesh a sub-asset of it.</summary>
-        static void SaveShards(List<CrowdShards.Set> sets)
+        /// <summary>The look package's library for the crystal cut: its types and the package's crowd shaders.</summary>
+        static void SaveLookLibrary(List<PackageCrowd.CrowdType> types)
         {
-            var shards = ScriptableObject.CreateInstance<CrowdShards>();
-            shards.Types = sets.ToArray();
-            Replace(shards, ShardsPath);
-            foreach (var set in sets)
-                foreach (var s in set.Shards) AssetDatabase.AddObjectToAsset(s.Mesh, shards);
-            EditorUtility.SetDirty(shards);
+            var lib = ScriptableObject.CreateInstance<PackageCrowd.CrowdLibrary>();
+            lib.Types = types.ToArray();
+            lib.Crystal = Load<Shader>(LookShaderDir + "/MonsterCrystal.shader");
+            lib.CullShader = Load<ComputeShader>(LookShaderDir + "/CrowdCull.compute");
+            lib.PaletteShader = Load<ComputeShader>(LookShaderDir + "/CrowdPalette.compute");
+            lib.ShardShader = Load<Shader>(LookShaderDir + "/MonsterShard.shader");
+            lib.ShardCompute = Load<ComputeShader>(LookShaderDir + "/MonsterShards.compute");
+            Replace(lib, LookLibraryPath);
         }
 
-        static CrowdType Save(TypeBake b, Shader shader, List<CrowdStyleMeshes.Entry> styleMeshes, List<CrowdShards.Set> shardSets)
+        static T Load<T>(string path) where T : UnityEngine.Object =>
+            AssetDatabase.LoadAssetAtPath<T>(path) ?? throw new Exception("CrowdBaker: no " + path);
+
+        static CrowdType Save(TypeBake b, Shader shader, List<CrowdStyleMeshes.Entry> styleMeshes, List<PackageCrowd.CrowdType> lookTypes)
         {
             var id = b.Type.id;
             Directory.CreateDirectory(TypeDir(id));
@@ -534,20 +542,13 @@ namespace Demo3D.EditorTools.Crowd
             Replace(style[1], $"{TypeDir(id)}/{id}_style_lod1.mesh");
             Replace(style[2], $"{TypeDir(id)}/{id}_style_lod2.mesh");
             styleMeshes.Add(new CrowdStyleMeshes.Entry { Id = id, Lod0 = style[0], Lod1 = style[1], Lod2 = style[2] });
-            var shardsStarted = DateTime.UtcNow;
-            var set = CrowdShardBaker.Bake(b, style[0], seed + 3);
-            shardSets.Add(set);
-            Debug.Log($"CrowdBaker: {id}: {set.Shards.Length} shards, volumes " +
-                      $"{set.Shards.Min(x => x.Volume) * 1e6:F0} to {set.Shards.Max(x => x.Volume) * 1e6:F0} cm³ " +
-                      $"(median {set.Shards.Select(x => x.Volume).OrderBy(v => v).ElementAt(set.Shards.Length / 2) * 1e6:F0}), " +
-                      $"in {(DateTime.UtcNow - shardsStarted).TotalSeconds:F1} s");
 
             var tex = new Texture2D(b.Width, b.Height, TextureFormat.RGBAFloat, false, true)
             {
                 name = id + "_bones", filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, anisoLevel = 0,
             };
             tex.SetPixelData(b.Texels, 0);
-            tex.Apply(false, false); // kept readable: the crystal shatter poses its chunks on the CPU (CrowdPose)
+            tex.Apply(false, false); // kept readable: the tests read it
             Replace(tex, $"{TypeDir(id)}/{id}_bones.asset");
             var tex30 = new Texture2D(b.Width, b.Height30, TextureFormat.RGBAFloat, false, true)
             {
@@ -556,6 +557,7 @@ namespace Demo3D.EditorTools.Crowd
             tex30.SetPixelData(b.Texels30, 0);
             tex30.Apply(false, false);
             Replace(tex30, $"{TypeDir(id)}/{id}_bones30.asset");
+            lookTypes.Add(SaveLook(b, style, tex30, seed + 3));
 
             var crowdMats = new Material[b.Submeshes.Count];
             var stockMats = new Material[b.Submeshes.Count];
@@ -607,6 +609,56 @@ namespace Demo3D.EditorTools.Crowd
             };
             ct.StockPrefab = SaveStock(b, stockMats);
             return ct;
+        }
+
+        /// <summary>
+        /// A type in the look package's library (<see cref="SaveLookLibrary"/>): its style meshes joined into one
+        /// submesh each, the 30 Hz bone texture and clip rows, and the GPU shatter's chunks cut from LOD0.
+        /// </summary>
+        static PackageCrowd.CrowdType SaveLook(TypeBake b, Mesh[] style, Texture2D bones30, int seed)
+        {
+            var id = b.Type.id;
+            var lods = new Mesh[style.Length];
+            for (int l = 0; l < lods.Length; l++)
+            {
+                lods[l] = Joined(style[l], $"{id}_look_lod{l}");
+                Replace(lods[l], $"{TypeDir(id)}/{id}_look_lod{l}.mesh");
+            }
+            var started = DateTime.UtcNow;
+            var (shardMesh, shards) = CrowdShardBaker.Bake(id, b.HeightM, lods[0], seed);
+            Replace(shardMesh, $"{TypeDir(id)}/{id}_look_shards.mesh");
+            Debug.Log($"CrowdBaker: {id}: {shards.Length} shards ({shardMesh.GetIndexCount(0) / 3} triangles) in {(DateTime.UtcNow - started).TotalSeconds:F1} s");
+            return new PackageCrowd.CrowdType
+            {
+                Id = id,
+                Lods = lods,
+                Bones = bones30,
+                BoneCount = b.Entries.Count,
+                Clips = b.Clips.Select(c => new PackageCrowd.CrowdClip
+                {
+                    Role = c.Role, Name = c.Name, FirstRow = c.FirstRow30, Frames = c.Frames30, Length = c.Length, Loop = c.Loop,
+                    Impact = c.Impact, End = c.End, StrideM = c.StrideM, CenterY = c.CenterY, Radius = c.Radius, HeightM = c.HeightM,
+                }).ToArray(),
+                CenterY = b.CenterY,
+                Radius = b.Radius,
+                HeightM = b.HeightM,
+                HoverM = b.Type.hoverM,
+                ShardMesh = shardMesh,
+                Shards = shards,
+            };
+        }
+
+        /// <summary>A mesh with its submeshes joined into one, its vertices and triangles in order.</summary>
+        static Mesh Joined(Mesh src, string name)
+        {
+            var m = UnityEngine.Object.Instantiate(src);
+            m.name = name;
+            var tris = new List<int>();
+            for (int sm = 0; sm < src.subMeshCount; sm++) tris.AddRange(src.GetIndices(sm));
+            m.subMeshCount = 1;
+            m.SetIndices(tris, MeshTopology.Triangles, 0, false);
+            m.bounds = src.bounds;
+            return m;
         }
 
         /// <summary>

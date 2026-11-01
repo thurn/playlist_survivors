@@ -174,11 +174,24 @@ a **monster look** (`IMonsterLook`, registered by option in `MonsterLooks`); an
 option without a look draws `MonsterLooks.Crystal`, today's crystal. The game
 draws through the package and its forks are deleted; its `CrowdView` feeds the
 crowd and its crowd baker (game's roster and cast) calls the package's steps.
-demo3d's crowd baker calls the package's unweld and its `StyleBeat` publishes
-through `BeatGlobals`; its crystal cut moving onto the package's crowd and
-shatter, and deleting demo3d's crystal forks (`CrystalShatter`, `CrowdShards`,
-its `CrowdShardBaker`), is ps-wnj.22. Players hook the package's compute
-kernels' warm-up through `ComputeKernels.Prepare` (the game's GraphicsStates).
+demo3d's `StyleBeat` publishes through `BeatGlobals`. Players hook the package's
+compute kernels' warm-up through `ComputeKernels.Prepare` (the game's GraphicsStates).
+
+**The crystal cut on the package (ps-wnj.22)**: demo3d's crystal cut
+(`--monster-style crystal`) draws its monsters and their shards with the
+package's `BoneTextureCrowd` and `MonsterShatter` in `MonsterLooks.Active`, fed
+by `LookCrowd` (its break schedule, bursts and sounds stay demo3d's), from a
+package `CrowdLibrary` demo3d's crowd baker writes beside its own
+(`LookCrowd.asset`: joined style meshes, 30 Hz bones, the package's shard
+cutter). demo3d's crystal forks are deleted: `CrystalShatter`, `CrowdShards`,
+`CrowdPose`, its `CrowdShardBaker` (its structure shard baker uses the
+package's cutter) and the `Crystal` and `CrystalShard` style shaders (the mix's
+slimes are hologram now). The horde's beat pulse (`_SL_Bounce`, `_SL_Throb`)
+and the trailer's inner glow (`_SL_InnerGlow`) moved into the package's crowd as
+globals only demo3d sets, so the game's look is unchanged. Where the forks
+diverged the crystal cut took the game's: GPU shards for PhysX, LODs, the
+half-tinted hit flash ([crowd.md](../tech-demo-3d/crowd.md#monster-styles)). The
+action cut and the other Synty styles keep demo3d's own crowd (Decision 11).
 
 Where the forks have diverged (game's shards on compute, its regrowth, its heard-time
 strikes), the package takes the game's version: it is the one that has to

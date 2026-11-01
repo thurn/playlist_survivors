@@ -291,7 +291,8 @@ _BAKER_RUNTIME = {"Runtime/Playback/ShatterSounds.cs"}
 def bake_inputs(wt: paths.Worktree) -> list[Path]:
     """What a project's Unity bakers read from git. demo3d's: everything under Assets/Demo3D (their
     code, data, shaders and settings) except the tests and runtime C# no asset serializes, the
-    shared choreography package, the vendor manifest and the song map. The game's: its arena's
+    shared choreography package, the look package's crowd (the crystal cut's library), the vendor
+    manifest and the song map. The game's: its arena's
     code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime and
     clip table, the effects' converter and runtime, the sound baker and bank, their selections, the
     structure shards' baker and asset type, the level's baker and asset type with the sim's content
@@ -314,16 +315,15 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
                     and not _SERIALIZED.search(f.read_bytes())):
                 continue
             files.append(f)
-    files += [wt.root / f"{LOOK_STYLE_MESH}{m}" for m in ("", ".meta")]
+    files += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
     return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
 
 
 # The look package's crowd (repo-relative): its runtime and shaders, which the crowd library
-# serializes and names, and the bakers' unweld step and shard cutter, which demo3d's crowd baker
-# (the unweld) and the game's crowd and structure shard bakers call.
+# serializes and names, and the bakers' unweld step and shard cutter, which both crowd bakers (the
+# game's, and demo3d's for its crystal cut's library) and both structure shard bakers call.
 LOOK = "unity-packages/com.playlistsurvivors.look"
 LOOK_CROWD_DIRS = (f"{LOOK}/Runtime/Crowd", f"{LOOK}/Editor/Crowd", f"{LOOK}/Runtime/Shaders")
-LOOK_STYLE_MESH = f"{LOOK}/Editor/Crowd/StyleMesh.cs"
 LOOK_SHARD_BAKER = f"{LOOK}/Editor/Crowd/CrowdShardBaker.cs"
 
 
@@ -338,12 +338,12 @@ def _demo(*globs: str) -> tuple[str, ...]:
 BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Arena": _demo("Editor/Arena/*", "Runtime/Arena/*", "Choreography/Data/*-layout.json*",
                    "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
-    "StructureShards": _demo("Editor/Structures/*", "Editor/Crowd/CrowdShardBaker.cs*",
-                             "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
-                             "Choreography/Data/environment-*", "Choreography/Data/footprints.json*"),
+    "StructureShards": _demo("Editor/Structures/*", "Runtime/Arena/StructureShards.cs*", "Choreography/Data/*-layout.json*",
+                             "Choreography/Data/environment-*", "Choreography/Data/footprints.json*")
+                       + (f"{LOOK_SHARD_BAKER}*",),
     "crowd": _demo("Editor/Crowd/*", "Runtime/Crowd/*", "Runtime/Arena/Shaders/Structures/*",
                    "Data/clip-annotations.json*", "Data/roster*.json*", "Data/crowd-surfaces.json*")
-             + (f"{LOOK_STYLE_MESH}*",),
+             + tuple(f"{d}/*" for d in LOOK_CROWD_DIRS),
     "effects": _demo("Editor/Effects/*", "Runtime/Effects/*", "Data/effects.json*"),
     "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
                     "Runtime/Playback/ShatterSounds.cs*"),

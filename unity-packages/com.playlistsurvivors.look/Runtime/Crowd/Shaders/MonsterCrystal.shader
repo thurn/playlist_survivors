@@ -3,7 +3,8 @@
 // after the opaque scene: each facet refracts what is behind it (the camera's opaque texture) with
 // a little dispersion, tinted by the role's gem colour (the instance's tint), with facet edges that
 // catch the light and glints as the beat wave passes (CrystalSurface.hlsl, shared with the
-// structures). Deaths shatter (the GPU shards), so the body has no death of its own. In the
+// structures), and the horde's beat pulse and the crystal cut's inner glow where a player sets them
+// (CrowdCommon.hlsl, MonsterCommon.hlsl). Deaths shatter (the GPU shards), so the body has no death of its own. In the
 // transparent queue URP runs no depth or motion pass for it: the game keeps MSAA, not TAA.
 // Under the global _GameIdMask (the stills' ID render) it draws flat white.
 Shader "Game/MonsterCrystal"
@@ -56,7 +57,10 @@ Shader "Game/MonsterCrystal"
                 CrowdLodClip(i.fx.zw, i.positionCS);
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float3 color = CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, i.tint, i.fx.x, 0, 0, 1, false);
-                return half4(MixFog(SL_GradeOf(color * _Gain, _Peak), i.fogFactor), 1);
+                // The beat throb (CrowdThrob): the whole gem lights up on the impact.
+                color += i.tint * i.fx.y * (0.8 + 1.2 * i.bary.w) + i.fx.y * 0.12;
+                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, i.fx.y, 0);
+                return half4(MixFog(graded, i.fogFactor), 1);
             }
             ENDHLSL
         }

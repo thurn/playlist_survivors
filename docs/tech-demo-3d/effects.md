@@ -140,9 +140,10 @@ and our own draw shader; no vendor file changes. Per effect:
   holds its colour further into the core (ps-msz.8.3).
 
 **The crystal shatter's burst** (epic ps-2iq,
-[evidence](../../demo3d/evidence/shatter/impact/README.md)): wherever Crystal draws a type, its
-deaths skip their death burst. At the killing blow, where its shards break, `crystal-burst`
-spawns where the blow lands on the body (`CrystalShatter.HitPoint`) instead: the selection's
+[evidence](../../demo3d/evidence/shatter/impact/README.md)): under `--monster-style crystal`
+(the crystal cut's horde, `LookCrowd`), deaths skip their death burst. At the killing blow, where
+its shards break, `crystal-burst` spawns where the blow lands on the body (the look package's
+`MonsterShatter.HitPoint`) instead: the selection's
 `client.crystalShatter`, scaled by the monster's height and turned along the blow (the spawn's
 yaw turns the effect's +z). It is built in, with no prefab: an entry without one is built from
 its `sparks`, which may be a list of layers. Its two layers are thrown forward in cones along the

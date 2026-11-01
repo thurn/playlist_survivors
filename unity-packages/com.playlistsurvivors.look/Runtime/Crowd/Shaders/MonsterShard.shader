@@ -3,7 +3,8 @@
 // palette frozen on the break, so the chunks start exactly where the body was; then it moves
 // rigidly with its chunk's state (MonsterShards.compute), turning about the chunk's pivot. Inside
 // faces are brighter and more saturated, as a broken gem's fresh faces are, and the whole set
-// flashes white on the break, fading as the crowd's hit flash does. Under the global _GameIdMask
+// flashes white on the break, fading as the crowd's hit flash does; the crystal cut's inner glow
+// (MonsterCommon.hlsl) lights them as it lights the bodies. Under the global _GameIdMask
 // (the stills' ID render) it draws flat white, as the crowd does.
 Shader "Game/MonsterShard"
 {
@@ -123,7 +124,8 @@ Shader "Game/MonsterShard"
             {
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float3 color = CrystalShade(i.positionWS, i.normalWS, i.positionCS, i.bary, i.tint, i.fx.x, 0, i.fx.y, 1, false);
-                return half4(MixFog(SL_GradeOf(color * _Gain, _Peak), i.fogFactor), 1);
+                float3 graded = SL_GradeOf(color * _Gain, _Peak) + MonsterInnerGlow(i.positionWS, i.normalWS, i.bary, i.tint, 0, i.fx.y);
+                return half4(MixFog(graded, i.fogFactor), 1);
             }
             ENDHLSL
         }

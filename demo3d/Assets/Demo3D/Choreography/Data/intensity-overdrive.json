@@ -35,8 +35,7 @@
     "trail": 0.6,
     "spark": 1.4,
     "deathBurst": 0.8,
-    "lightKnee": 10,
-    "shardCap": 240
+    "lightKnee": 10
   },
   "loads": {
     "overdrive": {

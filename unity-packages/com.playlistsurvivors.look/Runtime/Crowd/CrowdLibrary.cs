@@ -4,15 +4,17 @@ using UnityEngine;
 namespace PS.Look.Crowd
 {
     /// <summary>
-    /// The crowd baker's output (unity-game.md, The Crowd), one asset in the gitignored
-    /// Assets/Baked/Crowd/Resources/ so a player loads it with <see cref="Load"/>: the nine monster
-    /// models in roster order, the cast (each role's model, scale and gem colour, from
+    /// A crowd baker's output (unity-game.md, The Crowd), one asset in the gitignored
+    /// Assets/Baked/Crowd/Resources/ so a player loads it with <see cref="Load"/>: the monster
+    /// models in roster order, the cast (the game's: each role's model, scale and gem colour, from
     /// game/Content/cast.json at bake time) and the shaders the crowd needs, so a build includes
-    /// them. demo3d's CrowdLibrary, copied and owned for the crystal style alone.
+    /// them. The game's crowd baker writes <see cref="ResourcePath"/>; demo3d's writes
+    /// <see cref="TrailerResourcePath"/> for its crystal cut (crowd.md), with no cast.
     /// </summary>
     public sealed class CrowdLibrary : ScriptableObject
     {
         public const string ResourcePath = "GameCrowd";
+        public const string TrailerResourcePath = "LookCrowd";
         /// <summary>The bone textures' rate: demo3d's default (TD11's clips30 cut).</summary>
         public const float ClipRate = 30f;
 
@@ -27,7 +29,7 @@ namespace PS.Look.Crowd
         public ComputeShader ShardCompute;
 
         /// <summary>The baked library, or null when the bake is missing (a checkout without the vendor packs).</summary>
-        public static CrowdLibrary Load() => Resources.Load<CrowdLibrary>(ResourcePath);
+        public static CrowdLibrary Load(string resourcePath = ResourcePath) => Resources.Load<CrowdLibrary>(resourcePath);
 
         public int IndexOf(string id)
         {

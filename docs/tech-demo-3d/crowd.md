@@ -186,17 +186,18 @@ but at the game camera's distance that was too subtle to read. Evidence:
   stay planted, so it rides on the footplant stepping rather than fighting it.
 - **The throb.** The body lights up on the impact and fades within the beat: 1 on a full-energy
   downbeat, about 0.6 on a beat. The baseline (CrowdSkinned) adds the albedo times 0.35 as
-  emission and triples its rim light; Crystal lifts its trapped light and its inner glow
-  (`_InnerGlow`, the crystal trailer's look). The other styles take the squash alone, on top of
+  emission and triples its rim light; the look package's crystal (the crystal cut's, LookCrowd)
+  lifts its trapped light and its inner glow (`_SL_InnerGlow`, the crystal trailer's look). The other styles take the squash alone, on top of
   their own beat responses (the beat wave, spectrum's bulge, fire's licks).
 - **Where it runs.** `StyleBeat` computes both from the song clock as heard (`feelT`, as the post
   feel's beat) and publishes `_SL_Bounce`, `_SL_BouncePrev` (the previous frame's, for motion
   vectors) and `_SL_Throb` every frame. CrowdCommon.hlsl's `SkinVertex` applies the bounce, so
-  every pass of every crowd shader (shadows, depth and motion vectors too) sees the same squash.
-  A function of song time alone, so `--fixed-time` stills repeat.
-- **Only the living pulse.** A dying monster (its death clip, hold and dissolve) takes neither,
-  so the crystal shatter's chunks, posed on the CPU by `CrowdPose` (which mirrors `SkinVertex`
-  without the bounce), still land where the monster was drawn. The hero, the blade and the
+  every pass of every crowd shader (shadows, depth and motion vectors too) sees the same squash;
+  the look package's CrowdCommon.hlsl reads the same globals (no previous frame: it draws no
+  motion vectors). A function of song time alone, so `--fixed-time` stills repeat.
+- **Only the living pulse.** A dying monster (its death clip, hold and dissolve, or the crystal
+  cut's break frame) takes neither, so the GPU shatter's chunks, seeded from the palette without
+  the bounce, start where the monster was drawn on that frame. The hero, the blade and the
   structures don't pulse.
 - **Cost.** A few multiplies per vertex and a global read per fragment.
 
@@ -290,98 +291,58 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   The face normal is in the tangent, and barycentrics plus a random value per triangle are in
   UV3. They are listed in their own asset, `CrowdStyleMeshes`, not in the library: the library
   loads on every run and would load every mesh it referenced. Only a style whose
-  `MonsterStyle.UsesStyleMesh` is true for some type (crystal, spectrum, hologram, and the mix's
+  `MonsterStyle.UsesStyleMesh` is true for some type (spectrum, hologram, and the mix's
   slimes and bats) loads it: its shader defines
   `SL_STYLE_MESH`, which adds those streams to `SLAttributes` and `bary` to the varyings, and
   `SL_SkinFace` turns the face normal with the bones. The welded meshes and the default path are
   unchanged.
-  - **Shatter** (crystal, spectrum) is `SL_ShatterDisplace` in `SL_DISPLACE`, so every pass
+  - **Shatter** (spectrum) is `SL_ShatterDisplace` in `SL_DISPLACE`, so every pass
     moves the shards. A shard that has finished its flight collapses to a point, and such a
     style sets `SL_DISSOLVE` to `0.0` (no clip). Hologram's scan-out is its own `SL_DISSOLVE`.
-    In the demo, crystal's deaths break into baked shards instead (below), so only spectrum
-    still flies its triangles apart.
-- **The crystal shatter** (epic ps-2iq) replaces crystal's triangle shatter wherever Crystal draws
-  a type (`--monster-style crystal`, the mix's slimes):
-  - **At the blow.** A crystal death breaks on the killing blow's impact frame, from whatever pose
-    the monster is in (walking, attacking, flinching), with no death clip, hold or pause. Its death
-    plays no clip (`TimelineEvaluator.BreaksAtImpact`, `ClipSchedule.ActiveAction`'s `skipDeath`),
-    so up to the blow it shows exactly what it would have without dying; from the blow it is
-    `State.Broken`, and DemoMain hides the instance and hands it to `CrystalShatter.Breaking`.
-  - **Baked shards on the rest pose.** CrowdBaker gives `CrowdShardBaker` each type's LOD0 style
-    mesh on its rest pose, which it cuts into 20 to 40 chunks of varied size: surface patches
-    around weighted seeds, split into connected pieces and merged by contact, each closed by inside
-    faces to an apex inside the body (the vendor meshes are rarely closed, so a Voronoi slice would
-    have nothing to cap). Every corner keeps the style mesh's bones and weights (UV4, UV5), and an
-    apex takes its patch's area-weighted blend. They go to `CrowdShards.asset` beside the style
-    meshes, which only a crystal run loads. The rest pose because the pose at the blow varies: it is
-    the pose every pose is skinned from, so the chunks can be skinned to any of them, and its limbs
-    stand apart, so a chunk rarely spans two.
-  - **The swap: posing the chunks on the CPU.** `CrystalShatter` takes a pooled set of the type's
-    chunks and skins every corner with `CrowdPose`, a CPU mirror of the crowd's skinning: the bone
-    texture's rows (30 Hz under the default cuts) around both slots' clip times, lerped and
-    crossfaded as `CrowdPalette.compute` does, then the corner's weighted matrices and the
-    instance's scale, yaw and position, as `SkinVertex` does. So the chunks land where the crowd
-    drew the monster on that frame (an EditMode test checks the CPU's bones against the GPU's
-    palette, and every chunk corner against the drawn mesh). Each chunk then becomes rigid: its
-    frame turns with the bone that carries most of it, its pivot is its box's centre in that
-    frame, and its mesh (its own per pooled set) is rewritten relative to them, with the inside
-    faces' normals from their posed corners. Why on the CPU rather than in the shard shader: the
-    colliders and the kick need the posed chunks on the CPU anyway, it happens once per death, and
-    the shards stay plain MeshRenderers whose shadow and motion-vector passes URP draws unchanged.
-    The bone textures stay readable for it. The shards flash white as the crowd's hit flash does
-    (`_ShardFlash`, over 0.12 s).
-  - **The break.** On the same frame every chunk becomes a PhysX rigidbody with a box collider
-    fitted to it (85% of its box, as a chunk tapers to its apex; colliders approximate), kicked
-    outward from where the blow landed (`CrystalShatter.HitPoint`: 0.6 of the height up, toward
-    the hero), harder near it, along the killing blow (the hero to the monster) and a little up:
-    2.8, 5.0 and 1.6 m/s for a 1.8 m monster. Each shard's share varies widely: a quarter slump
-    where they stand (the legs fold under the body), one in eight flies far, and the largest
-    chunks get about half the smallest's share. Small shards spin fastest. Gravity is 2.2 times
-    Earth's, so they clack down, bounce once or twice, skitter and settle into a pile on a floor
-    collider under y = 0, and sink after 1.2 s (over 0.6 s). They linger only that long so the
-    piles never bury the hero (at 5 s they hid the hero under neon and cost most of the frame).
-    The blow also brings the burst: a spray of bright chips and crystal dust along the blow with a flash of light in place of the death burst
-    ([effects.md](effects.md#the-look)), and a layered glass break pitched by the type's size, on
-    top of the death cry ([camera-and-sound.md](camera-and-sound.md#sound)). Both are worked out
-    from the timeline ahead of time (`CrystalShatter.Breaks`, at each death's impact). Physics
-    steps on the song clock in script mode at 120 Hz, so `--fixed-time` runs repeat exactly;
-    deaths before a run's first frame are not reconstructed. Tuning and filmstrips:
-    [shatter/impact](../../demo3d/evidence/shatter/impact/README.md).
-  - **Motion vectors.** Each shard draws a second material on the same shader in the last opaque
-    queue with only its MotionVectors pass enabled, so under `--aa taa` the shards reproject with
-    their own motion (the crowd's crystal monsters still smear, as below).
-  - **Cost** (the Mac's M5 Max, 2026-10-30; the starting point for the scale-up). Beauty came
-    first. Each shard is a pooled GameObject with a PhysX rigidbody, a box collider and two
-    materials (the surface and its motion-vector twin), and physics steps at 120 Hz. At the song's
-    own density under `--monster-style crystal --palette neon` (windowless, real time, `--stats`,
-    whose `shards` and `shatterMs` columns are the live shards and the shatter's time, including
-    posing the chunks at each break): 6,350 deaths shattered, no errors. With the old 5 s linger
-    and 1.2 s sink, at most 16,659 shards were live; with 1.2 s and 0.6 s, 10,919.
-
-    | song time | live shards (mean), 5 s → 1.2 s | CPU frame (mean / max ms) | of it the shatter (mean ms) |
-    |---|---:|---:|---:|
-    | 60 | 5,220 → 1,548 | 198 / 542 → 0.6 / 1.4 | 197 → 0.1 |
-    | 113 | 5,968 → 1,560 | 33 / 93 → 0.7 / 1.7 | 31 → 0.2 |
-    | 145 | 9,029 → 2,818 | 130 / 390 → 4.7 / 27 | 128 → 3.9 |
-    | 175 | 13,981 → 4,545 | 366 / 700 → 12 / 53 | 363 → 11 |
-    | 197 | 7,012 → 4,201 | 252 / 463 → 15 / 106 | 249 → 14 |
-
-    The numbers are the mean and max over the 4 s around each time (a sample every 0.5 s), with
-    no frames drawn; the whole song's mean CPU frame fell from 127 to 2.9 ms. With the long linger
-    the shards on the floor were most of the cost: a real-time run that falls behind steps physics
-    up to 12 times a frame, so one slow stretch fed the next and the run never caught up. What is
-    left is the climax's and the ending's mass kills, where tens of monsters break in one frame
-    (posing each set skins every corner of its chunks, tens of thousands, on the CPU). Moving the
-    posing and the physics off the main thread, or onto the GPU, is the scale-up epic's.
+- **The crystal cut on the look package** (ps-wnj.22; [neon-look.md](../design/neon-look.md#what-moves-in)).
+  `--monster-style crystal`, the crystal cut's, is the one style demo3d doesn't draw itself: DemoMain hands
+  the horde to `LookCrowd`, which feeds the look package's crowd (`PS.Look.Crowd.BoneTextureCrowd`) and GPU
+  shatter (`MonsterShatter`), drawn in the applied preset's monster look (`MonsterLooks.Active`; every option
+  draws the crystal stand-in until its look is built). The action cut and every other style keep demo3d's
+  own crowd. The package's crowd is the game's, so where demo3d's had more, the crystal cut now has the
+  game's:
+  - **The library.** CrowdBaker also writes `LookCrowd.asset` (the package's `CrowdLibrary`, beside
+    demo3d's): per type its three style meshes with their submeshes joined (the package's crowd draws one
+    submesh), the 30 Hz bone texture and clip rows, the bounds, and LOD0's rest pose cut into the GPU
+    shatter's chunks by the package's `CrowdShardBaker`. Gitignored like the rest of the bake.
+  - **Drawing.** The package's fixed cuts: 30 Hz clips (demo3d's default too), LOD1 below 60 projected
+    pixels and LOD2 below 30 with a dithered crossfade (demo3d's crystal drew LOD0 only, as its `lod`
+    cut is off by default), the LOD2 shadow proxy. No motion vectors (the crystal is transparent, so it
+    had none anyway). Each type's gem colour (`StyleLook`) is its instances' tint. The horde's beat pulse
+    (`_SL_Bounce`, `_SL_Throb`) and the trailer's inner glow (`_SL_InnerGlow`, the glow tune) are globals
+    the package's crystal reads and only demo3d sets, so the game's look doesn't move. `--style-tune`'s
+    gain and peak don't reach it (the package's grade is the crystal's, peak 0.3); the hit flash is the
+    game's, half white and half the gem's colour.
+  - **At the blow.** Every monster death breaks on its killing blow's impact frame, from whatever pose the
+    monster is in, with no death clip (`TimelineEvaluator.BreaksAtImpact`; from the blow it is
+    `State.Broken`). `LookCrowd.Breaks` works every break out from the timeline ahead of time, for its
+    burst ([effects.md](effects.md#the-look)) and glass-break sound
+    ([camera-and-sound.md](camera-and-sound.md#sound)). On the blow's frame `LookCrowd.Breaking` writes the
+    instance Dying, so the crowd blends its palette without drawing it, and `MonsterShatter.Break` seeds the
+    chunks from that palette after the crowd's draw: they start exactly where the body was, on the frame it
+    disappears. After it the instance is Hidden.
+  - **The shards** are the game's ([unity-game.md](../design/unity-game.md), Shatter), GPU chunks in place
+    of demo3d's PhysX rigid bodies: the same kick (demo3d's tuning, 2.8, 5.0 and 1.6 m/s outward, along
+    the blow and up for a 1.8 m monster, wide variance per shard), gravity 2.2 g, a bounce and slide on the
+    ground instead of colliding with each other, a sink after 1.2 s over 0.6 s. With no PhysX cost, every
+    death shatters, in view or not (demo3d capped live sets at the overdrive feel's 240, the rest playing
+    their death clip). The song clock drives them, so `--fixed-time` runs repeat exactly; a seek backwards
+    and a trailer's cut clear them; deaths before a run's first frame are not reconstructed.
   - `--shatter-log` logs each break with its song time and place in the view, to find deaths for
     filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
-  - **Transparent styles.** Crystal draws in Transparent-10 and refracts the camera's opaque
-    texture. URP's asset keeps that texture off, and `MonsterStyle.NeedsOpaqueTexture` turns it
-    on for the game camera only under crystal and mix (DemoMain): one half-resolution copy of the
-    colour target per frame. Hologram is additive in Transparent, so it needs no sort. It has
-    no ShadowCaster, so BoneTextureCrowd skips its shadow draws.
+  - Before and after: [trailer/look-crowd](../../demo3d/evidence/trailer/look-crowd/README.md). The PhysX
+    shatter's tuning and filmstrips: [shatter/impact](../../demo3d/evidence/shatter/impact/README.md).
+  - **Transparent styles.** The package's crystal draws in Transparent-10 and refracts the camera's
+    opaque texture, which DemoMain turns on in every run (the hero's blade refracts it too): one
+    half-resolution copy of the colour target per frame. Hologram is additive in Transparent, so it
+    needs no sort. It has no ShadowCaster, so BoneTextureCrowd skips its shadow draws.
   - **No depth or motion passes run for them.** URP draws DepthOnly, DepthNormals and
-    MotionVectors for the opaque queue only. Crystal writes depth in its forward pass, but its
+    MotionVectors for the opaque queue only. The crystal writes depth in its forward pass, but its
     monsters are missing from the depth texture (SSAO) and get the camera's motion only. Under
     `--aa taa` (not the default) moving crystal monsters smear.
 - **The beat comes from `StyleBeat`.** It sets `_SL_Time`, `_SL_Beat`,
@@ -412,8 +373,8 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   StyleCommon's helpers, so it may use the noise, `SL_SeedOf(slot)`, the
   beat globals and the material's CBUFFER.
 - **mix is a style per type**, the lab's showcase mix (`Treatments.StyleFor`):
-  `MonsterStyle.StyleOf` gives painted skeletons, goblins and mushrooms; crystal slimes,
-  spectrum bats and fire demons; chrome orks, void trolls and a fire dragon. Materials,
+  `MonsterStyle.StyleOf` gives painted skeletons, goblins and mushrooms; hologram slimes (the
+  lab's are crystal, which is the look package's now), spectrum bats and fire demons; chrome orks, void trolls and a fire dragon. Materials,
   shells and the style mesh follow each type's style; the post look is the mix's own.
 - **Tuning.** Each style shader grades its forward colour with `SL_Grade`: a gain, then a
   soft limit on luminance (`MonsterStyle.Gain` and `Peak`, per type's style), which keeps the
@@ -424,7 +385,7 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
   `--style-tune key=value,...` overrides them for a run without a rebuild (keys: gain, peak,
   glow, exposure, contrast, saturation, bloom, threshold, chroma, vignette, neutral), so a
   treatment can be judged with other values; it fails under baseline. `glow` is crystal's
-  inner glow (`_InnerGlow`, 0 unless tuned): light added after the peak, so the gems bloom on
+  inner glow (the package's `_SL_InnerGlow`, 0 unless tuned): light added after the peak, so the gems bloom on
   dark ground, as the crystal trailer's look sets it ([trailer.md](trailer.md#the-crystal-cut)).
 - **The hero keeps its own shader** under every style. The lab paints its knight, but
   demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'

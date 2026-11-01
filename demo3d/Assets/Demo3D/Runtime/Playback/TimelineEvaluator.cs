@@ -37,7 +37,7 @@ namespace Demo3D.Runtime.Playback
         public ClipSchedule Schedule => _schedule;
 
         /// <summary>
-        /// Entities whose death plays no clip: they break at the blow (CrystalShatter, crowd.md's
+        /// Entities whose death plays no clip: they break at the blow (LookCrowd, crowd.md's
         /// crystal shatter), so they keep their pose up to it. Null: every death plays its clip.
         /// </summary>
         public HashSet<int> BreaksAtImpact;

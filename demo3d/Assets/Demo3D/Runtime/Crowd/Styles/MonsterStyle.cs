@@ -11,7 +11,9 @@ namespace Demo3D.Runtime.Crowd
     /// monster looks drawn through the bone-texture crowd's indirect draws. baseline (the default)
     /// is the baked CrowdSkinned materials and the night's post, unchanged; any other style gives
     /// every type per-submesh materials of its shader (Shaders/Styles/) and its post look, and
-    /// needs <see cref="StyleBeat"/> publishing the beat. It owns the materials and textures it
+    /// needs <see cref="StyleBeat"/> publishing the beat. crystal (the crystal cut's) is the one
+    /// style drawn by the look package's crowd instead (<see cref="LookCrowd"/>): this class gives
+    /// it its post look, grade and glow tune, not materials. It owns the materials and textures it
     /// makes.
     /// </summary>
     public sealed class MonsterStyle : IDisposable
@@ -34,15 +36,16 @@ namespace Demo3D.Runtime.Crowd
 
         /// <summary>
         /// The single style a type draws in: the style itself, or under mix the showcase's choice
-        /// (stylelab's Treatments.StyleFor): painted fodder; crystal slimes, spectrum bats and fire
-        /// demons; chrome orks, void trolls and a fire dragon.
+        /// (after stylelab's Treatments.StyleFor): painted fodder; hologram slimes (the lab's crystal,
+        /// which is the look package's now), spectrum bats and fire demons; chrome orks, void trolls
+        /// and a fire dragon.
         /// </summary>
         public string StyleOf(string typeId)
         {
             if (Name != "mix") return Name;
             switch (typeId)
             {
-                case "slime": return "crystal";
+                case "slime": return "hologram";
                 case "bat": return "spectrum";
                 case "demon": return "fire";
                 case "bigork": return "chrome";
@@ -60,14 +63,14 @@ namespace Demo3D.Runtime.Crowd
         public bool UsesStyleMesh(string typeId)
         {
             var s = StyleOf(typeId);
-            return s == "crystal" || s == "spectrum" || s == "hologram";
+            return s == "spectrum" || s == "hologram";
         }
 
         /// <summary>
-        /// Whether some type reads the camera's opaque texture (crystal's refraction, the mix's
-        /// slimes). URP's asset leaves it off, so only these styles' camera pays for the copy (DemoMain).
+        /// Whether the horde reads the camera's opaque texture (crystal's refraction). URP's asset
+        /// leaves it off; DemoMain turns it on in every run for the hero's blade anyway.
         /// </summary>
-        public bool NeedsOpaqueTexture => Name == "crystal" || Name == "mix";
+        public bool NeedsOpaqueTexture => Name == "crystal";
 
         readonly List<UnityEngine.Object> _owned = new List<UnityEngine.Object>();
         readonly Dictionary<string, Texture2D> _ramps = new Dictionary<string, Texture2D>();
@@ -165,7 +168,7 @@ namespace Demo3D.Runtime.Crowd
         }
 
         /// <summary>
-        /// A crystal type's inner glow (the shaders' _InnerGlow): light added after the peak, so the gems bloom on dark
+        /// A crystal type's inner glow (the look package's crowd's _SL_InnerGlow, LookCrowd): light added after the peak, so the gems bloom on dark
         /// ground. Only a tune sets it (the crystal trailer's look, trailer.md "The crystal cut"); 0 otherwise.
         /// </summary>
         public float Glow => _tune.TryGetValue("glow", out float g) ? g : 0f;
@@ -203,11 +206,12 @@ namespace Demo3D.Runtime.Crowd
             }
         }
 
-        /// <summary>A type's materials, one per submesh: the baked ones under baseline, else this style's.</summary>
+        /// <summary>A type's materials, one per submesh: the baked ones under baseline, else this style's (never crystal's: <see cref="LookCrowd"/>).</summary>
         public Material[] Materials(CrowdLibrary lib, CrowdType type)
         {
             if (IsBaseline) return type.Materials;
             var style = StyleOf(type.Id);
+            if (style == LookCrowd.Style) throw new InvalidOperationException($"MonsterStyle: {Flag} {style} draws through the look package (LookCrowd)");
             var mats = new Material[type.Materials.Length];
             for (int k = 0; k < mats.Length; k++)
             {
@@ -240,10 +244,6 @@ namespace Demo3D.Runtime.Crowd
                         m.SetVector("_RimColor", look.voidRim);
                         m.SetVector("_NebulaA", look.nebulaA);
                         m.SetVector("_NebulaB", look.nebulaB);
-                        break;
-                    case "crystal":
-                        m.SetVector("_Tint", look.gem);
-                        m.SetFloat("_InnerGlow", Glow);
                         break;
                     case "spectrum":
                         m.SetFloat("_Hue", look.synthHue);
@@ -307,7 +307,6 @@ namespace Demo3D.Runtime.Crowd
                 case "fire": return "Demo3D/Styles/FireBody";
                 case "chrome": return "Demo3D/Styles/Chrome";
                 case "void": return "Demo3D/Styles/Void";
-                case "crystal": return "Demo3D/Styles/Crystal";
                 case "spectrum": return "Demo3D/Styles/Spectrum";
                 case "hologram": return "Demo3D/Styles/Hologram";
                 default: throw new InvalidOperationException(name);

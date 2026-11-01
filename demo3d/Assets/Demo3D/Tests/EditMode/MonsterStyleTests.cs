@@ -191,11 +191,11 @@ namespace Demo3D.Tests
                     // Shells cast no shadow (the body does); an opaque shell still needs depth and motion
                     // vectors, while an additive one (the flames) has only its colour pass.
                     string[] passes;
-                    if (shader.name == "Demo3D/Styles/CrystalShard" || shader.name == "Demo3D/Styles/CrystalBlade")
+                    if (shader.name == "Demo3D/Styles/CrystalBlade")
                     {
-                        // The crystal shatter's shards and the hero's blade: MeshRenderers, not the crowd. Their
-                        // motion-vector twins draw in an opaque queue, where a depth pass would write them into
-                        // the depth prepass and punch holes in the opaque texture behind them.
+                        // The hero's blade: a MeshRenderer, not the crowd. Its motion-vector twin draws in an
+                        // opaque queue, where a depth pass would write it into the depth prepass and punch holes
+                        // in the opaque texture behind it.
                         passes = new[] { "ForwardLit", "ShadowCaster", "MotionVectors" };
                         Assert.That(m.FindPass("DepthOnly"), Is.LessThan(0), shader.name);
                         Assert.That(m.FindPass("DepthNormals"), Is.LessThan(0), shader.name);
@@ -273,16 +273,20 @@ namespace Demo3D.Tests
         }
 
         [Test]
-        public void CrystalSpectrumAndHologramDrawTheStyleMeshInTheirOwnQueues()
+        public void SpectrumAndHologramDrawTheStyleMeshInTheirOwnQueues()
         {
             var lib = AssetDatabase.LoadAssetAtPath<CrowdLibrary>(CrowdBaker.LibraryPath);
             if (lib == null) Assert.Ignore("no baked library: run `demo3d unity BakeCrowd`");
             Assert.That(MonsterStyle.Baseline().UsesStyleMesh("slime") || MonsterStyle.Parse("painted").UsesStyleMesh("slime"), Is.False,
                 "the default path keeps the welded mesh");
             Assert.That(MonsterStyle.Baseline().NeedsOpaqueTexture, Is.False);
+            using (var crystal = MonsterStyle.Parse("crystal"))
+            {
+                Assert.That(crystal.NeedsOpaqueTexture, "the look package's crystal refracts");
+                Assert.Throws<InvalidOperationException>(() => crystal.Materials(lib, lib.Types[0]), "crystal draws through the look package (LookCrowd)");
+            }
             var expected = new[]
             {
-                ("crystal", "_Tint", (int)RenderQueue.Transparent - 10),
                 ("spectrum", "_Hue", (int)RenderQueue.Geometry),
                 ("hologram", "_Color", (int)RenderQueue.Transparent),
             };
@@ -290,7 +294,7 @@ namespace Demo3D.Tests
             {
                 using var style = MonsterStyle.Parse(name);
                 Assert.That(style.UsesStyleMesh(lib.Types[0].Id), name);
-                Assert.That(style.NeedsOpaqueTexture, Is.EqualTo(name == "crystal"), name);
+                Assert.That(style.NeedsOpaqueTexture, Is.False, name);
                 Assert.That(style.Post, Is.Not.Null, name);
                 foreach (var t in lib.Types)
                 {
@@ -315,7 +319,7 @@ namespace Demo3D.Tests
             var expected = new System.Collections.Generic.Dictionary<string, string>
             {
                 ["skeleton"] = "Demo3D/Styles/Painted", ["goblin"] = "Demo3D/Styles/Painted", ["mushroom"] = "Demo3D/Styles/Painted",
-                ["slime"] = "Demo3D/Styles/Crystal", ["bat"] = "Demo3D/Styles/Spectrum", ["demon"] = "Demo3D/Styles/FireBody",
+                ["slime"] = "Demo3D/Styles/Hologram", ["bat"] = "Demo3D/Styles/Spectrum", ["demon"] = "Demo3D/Styles/FireBody",
                 ["bigork"] = "Demo3D/Styles/Chrome", ["troll"] = "Demo3D/Styles/Void", ["dragon"] = "Demo3D/Styles/FireBody",
             };
             int seen = 0;
@@ -330,13 +334,13 @@ namespace Demo3D.Tests
                 }
                 Assert.That(mix.UsesStyleMesh(t.Id), Is.EqualTo(t.Id == "slime" || t.Id == "bat"), t.Id);
                 var shell = mix.Shell(lib, t);
-                if (shader == "Demo3D/Styles/Spectrum" || shader == "Demo3D/Styles/Crystal" || shader == "Demo3D/Styles/Chrome" || shader == "Demo3D/Styles/Void")
+                if (shader == "Demo3D/Styles/Spectrum" || shader == "Demo3D/Styles/Hologram" || shader == "Demo3D/Styles/Chrome" || shader == "Demo3D/Styles/Void")
                     Assert.That(shell, Is.Null, t.Id);
                 else
                     Assert.That(shell.shader.name, Is.EqualTo(shader == "Demo3D/Styles/FireBody" ? "Demo3D/Styles/Shells/FireShell" : "Demo3D/Styles/Shells/Outline"), t.Id);
             }
             Assert.That(seen, Is.EqualTo(expected.Count), "the roster has every showcase type");
-            Assert.That(mix.NeedsOpaqueTexture, "the slimes refract");
+            Assert.That(mix.NeedsOpaqueTexture, Is.False, "nothing in the mix refracts");
             Assert.That(mix.Post, Is.Not.Null);
         }
     }

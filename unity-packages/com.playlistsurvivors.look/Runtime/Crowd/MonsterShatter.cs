@@ -370,7 +370,8 @@ namespace PS.Look.Crowd
             return o;
         }
 
-        void Clear()
+        /// <summary>Drops every live and pending death (a seek backwards does it itself; demo3d's trailer at a cut).</summary>
+        public void Clear()
         {
             foreach (var s in _types) s.Start = s.Count = s.PendingCount = 0;
         }

@@ -1,6 +1,6 @@
 // The crowd's draw-side shader code (unity-game.md, The Crowd): palette skinning (CrowdPalette.compute blends each visible monster's bones once per
-// frame; every pass reads 4 matrices per vertex), the instance's tint and the LOD crossfade's
-// dither.
+// frame; every pass reads 4 matrices per vertex), the horde's beat pulse, the instance's tint and the LOD
+// crossfade's dither.
 #ifndef GAME_CROWD_COMMON_INCLUDED
 #define GAME_CROWD_COMMON_INCLUDED
 
@@ -16,6 +16,12 @@ float _LodIndex;
 float _LodDither;     // 0 for the shadow proxy draw, which never crossfades
 float _CrowdTime;
 StructuredBuffer<float4> _Palette;       // 3 rows per bone, slot-major
+// The horde's beat pulse (crowd.md, The beat pulse; demo3d's StyleBeat sets them for the crystal cut, and
+// where nothing sets them, as in the game, they are 0): a living monster's squash and stretch (the
+// share of its height it gains, negative squashed) and its brightness throb.
+float _SL_Bounce;
+float _SL_Throb;
+#define CROWD_BOUNCE_WIDEN 0.75
 
 uint CrowdSlot(uint svInstanceID)
 {
@@ -29,7 +35,13 @@ float3x4 BoneMatrix(uint slot, uint bone)
     return float3x4(_Palette[at], _Palette[at + 1], _Palette[at + 2]);
 }
 
-// Skins a root-space vertex and normal with 4 palette bones, then places it by the instance.
+// A living monster's beat throb (_SL_Throb), 0 for the dying.
+float CrowdThrob(MonsterInstance m) { return (m.flags & CROWD_ALIVE) != 0 ? _SL_Throb : 0; }
+
+// Skins a root-space vertex and normal with 4 palette bones, squashes or stretches a living monster
+// about its feet by the beat's bounce, widening it as it squashes by more than its volume would
+// (CROWD_BOUNCE_WIDEN: the camera looks down, so the footprint reads more than the height), then
+// places it by the instance.
 void SkinVertex(MonsterInstance m, uint slot, float3 positionOS, float3 normalOS, float4 boneIndex, float4 boneWeight,
                 out float3 positionWS, out float3 normalWS)
 {
@@ -39,6 +51,10 @@ void SkinVertex(MonsterInstance m, uint slot, float3 positionOS, float3 normalOS
     UNITY_BRANCH if (boneWeight.w > 0) skin += BoneMatrix(slot, (uint)boneIndex.w) * boneWeight.w;
     float3 p = mul(skin, float4(positionOS, 1)) * m.scale;
     float3 n = mul((float3x3)skin, normalOS);
+    float bounce = (m.flags & CROWD_ALIVE) != 0 ? _SL_Bounce : 0;
+    float sy0 = 1 + bounce, sxz = 1 - CROWD_BOUNCE_WIDEN * bounce;
+    p *= float3(sxz, sy0, sxz);
+    n *= float3(sy0, sxz, sy0); // the inverse transpose of the squash, up to scale
     float sy, cy;
     sincos(m.yaw, sy, cy);
     positionWS = m.position + float3(p.x * cy + p.z * sy, p.y, -p.x * sy + p.z * cy);
