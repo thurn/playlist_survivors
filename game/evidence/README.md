@@ -86,3 +86,5 @@ what was run (the exact commands), the numbers, and what they show.
 - [payoff](payoff/README.md): the 30-minute run's sounds by category before and after (none dropped now, a tenth as many
   cut off), the finale's blast flashing a survivor, and filmstrips of mass kills, structure breaks, regrowth and the
   finale at the peak with the live-shard count over a peak minute (ps-msz.8.6).
+- [recap](recap/README.md): the victory card from the sim's recap at the peak, and a headless run's summary
+  reporting no presenter faults, its session replayed to its hash (ps-msz.8.7).
