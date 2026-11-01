@@ -90,7 +90,8 @@ namespace Game.Client.Loop
     /// - the look's `--hero-path`, `--view-width M` and `--camera-out FILE` (<see cref="LookPresenter"/>);
     /// - the hero's `--hero-out FILE` (<see cref="HeroPresenter"/>), and `--no-hero` for the placeholder's capsule.
     /// - `--structures-out FILE`: each frame's structure shards and their physics and shadow costs, as CSV
-    ///   (<see cref="StructureShatter"/>; the structures' bench).
+    ///   (<see cref="StructureShatter"/>; the structures' bench); `--shatter-out FILE` each frame's monster
+    ///   deaths and their live shards (<see cref="MonsterShatter"/>);
     /// - `--gpu-probe-at T1,T2,... --gpu-probe-out FILE.json`: windowless timed 1080p frames at those song times, after
     ///   a warm-up, each through GPU completion (<see cref="GpuProbe"/>; batch mode with a device, not `--headless`);
     /// - `--profile-out FILE.csv`: each frame's main-thread work by part, its allocation and collections, a fixed-time
@@ -327,7 +328,7 @@ namespace Game.Client.Loop
             Driver.Events.Subscribe(_hud);
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
-            _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter);
+            _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter, _crowd?.Shatter);
             _camera = camera;
             if (camera != null) _probe = GpuProbe.FromOptions(options);
             if (options.Outputs.Profile != null) _profile = new FrameProfile(options.Outputs.Profile, Driver);
@@ -361,7 +362,10 @@ namespace Game.Client.Loop
             var bank = SoundBank.Load();
             bool probe = _options.SoundProbe;
             if (bank == null && !probe) return;
-            _sounds = new SoundScheduler(bank, new GameObject("Sounds"), Driver.Clock, () => AudioSettings.dspTime, log: _soundOut != null);
+            // On the frames' clock no music plays in time with them: the sounds keep their books silently on its mixer.
+            var frames = Driver.Clock as FrameClock;
+            Func<double> dspNow = frames != null ? () => frames.Mixer : (Func<double>)(() => AudioSettings.dspTime);
+            _sounds = new SoundScheduler(bank, new GameObject("Sounds"), Driver.Clock, dspNow, log: _soundOut != null, audible: frames == null);
             if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate);
             Func<float> follower = null;
             if (_music != null) follower = () => _music.Status.FollowerGain > 0 ? _music.Status.FollowerGain : 1f;

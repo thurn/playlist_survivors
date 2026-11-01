@@ -72,7 +72,18 @@ namespace Game.Tests
             Assert.That(times.TryDspAt(3.006, out _), Is.True);
             dspNow = 8.01; // the reading when the sound is scheduled counts, not the frame's
             Assert.That(times.TryDspAt(3.006, out _), Is.False);
-            Assert.That(new FrameClock().TryDspAt(3.1, out _), Is.False, "no music plays in time with fixed frames");
+        }
+
+        [Test]
+        public void TheFrameClockSchedulesSilentSoundsADspBufferPastItsFramesMixer()
+        {
+            var clock = new FrameClock();
+            clock.Frame(new ClockReadings { Frame = 3.0 });
+            double mixer = FrameClock.SongAt(3.0);
+            Assert.That(clock.Mixer, Is.EqualTo(mixer));
+            Assert.That(clock.TryDspAt(mixer + FrameClock.DspBuffer, out double dsp), Is.True);
+            Assert.That(dsp, Is.EqualTo(mixer + FrameClock.DspBuffer), "song time stands for DSP time");
+            Assert.That(clock.TryDspAt(mixer + FrameClock.DspBuffer - 1e-6, out _), Is.False, "past the mixer: dropped, as live");
         }
 
         /// <summary>
@@ -524,6 +535,7 @@ namespace Game.Tests
             public FrameTimes Frame(in ClockReadings now) => default;
             public double KeySong(double real) => 2 * real - 1; // any mapping will do; this one is easy to spot
             public bool TryDspAt(double song, out double dsp) { dsp = 0; return false; }
+            public double EarliestDsp => double.PositiveInfinity;
         }
 
         [Test]

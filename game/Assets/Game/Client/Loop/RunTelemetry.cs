@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using Game.Client.Crowd;
 using Game.Client.Effects;
 using Game.Client.Music;
 using Game.Client.Sound;
@@ -14,7 +15,7 @@ namespace Game.Client.Loop
     /// What a run reports besides its session: the summary <see cref="GameLoop"/> logs when it ends (the lead,
     /// frameSong's holds, the sim's timings and what the run did), and the evidence files its flags ask for
     /// (<see cref="LaunchOptions.OutputFiles"/>): `--loop-out`'s frames, `--events-out`'s events, `--structures-out`'s
-    /// shards, and `--sound-out`'s sounds and frames for `game spike --sounds`.
+    /// shards, `--shatter-out`'s monster shards, and `--sound-out`'s sounds and frames for `game spike --sounds`.
     /// </summary>
     sealed class RunTelemetry : IDisposable
     {
@@ -22,19 +23,21 @@ namespace Game.Client.Loop
 
         readonly SimDriver _driver;
         readonly StructureShatter _shatter;
+        readonly MonsterShatter _monsters;
         readonly Counts _counts;
         readonly double[] _leads = new double[LeadCapacity];
         readonly double[] _steps = new double[LeadCapacity];
         readonly List<SyncSpike.FrameRow> _frames = new List<SyncSpike.FrameRow>();
-        StreamWriter _out, _structuresOut;
+        StreamWriter _out, _structuresOut, _monstersOut;
 
         /// <summary>The entries the loop fed the sim and the key changes it drained into it.</summary>
         public int Entries, KeyChanges;
 
-        public RunTelemetry(SimDriver driver, LaunchOptions.OutputFiles outputs, StructureShatter shatter)
+        public RunTelemetry(SimDriver driver, LaunchOptions.OutputFiles outputs, StructureShatter shatter, MonsterShatter monsters)
         {
             _driver = driver;
             _shatter = shatter;
+            _monsters = monsters;
             _counts = new Counts(driver);
             driver.Events.Subscribe(_counts);
             if (outputs.Events != null) _counts.Open(outputs.Events);
@@ -47,6 +50,11 @@ namespace Game.Client.Loop
             {
                 _structuresOut = new StreamWriter(outputs.Structures);
                 _structuresOut.WriteLine("frame,frame_song,breaks,shards,flying,moved_m,steps,physics_ms,shadow_ms");
+            }
+            if (outputs.Shatter != null && monsters != null)
+            {
+                _monstersOut = new StreamWriter(outputs.Shatter);
+                _monstersOut.WriteLine("frame,frame_song,alive,breaks,live_deaths,live_shards");
             }
         }
 
@@ -63,6 +71,8 @@ namespace Game.Client.Loop
             _structuresOut?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4},{5:F4},{6},{7:F4},{8:F4}",
                 frame, driver.Times.FrameSong, _shatter.Breaks, _shatter.Shards, _shatter.Flying, _shatter.MovedM,
                 _shatter.FrameSteps, _shatter.FramePhysicsMs, _shatter.FrameShadowMs));
+            _monstersOut?.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0},{1:R},{2},{3},{4},{5}",
+                frame, driver.Times.FrameSong, driver.Sim.State.EnemiesAlive, _monsters.Breaks, _monsters.LiveDeaths, _monsters.LiveShards));
             if (_out == null) return;
             var t = driver.Times;
             var hero = driver.Presented.State.Hero;
@@ -133,7 +143,14 @@ namespace Game.Client.Loop
             if (effects != null)
                 s += string.Format(c, "; effects {0} spawned ({1} rejected)", effects.Spawned, effects.System.RejectedTotal);
             if (sounds != null)
-                s += string.Format(c, "; sounds {0} scheduled, {1} dropped", sounds.Scheduled, sounds.Dropped);
+            {
+                s += string.Format(c, "; sounds {0} scheduled ({1} into their clip), {2} dropped, {3} cut off (by category, scheduled/dropped/cut off:",
+                    sounds.Scheduled, sounds.Trimmed, sounds.Dropped, sounds.Stolen);
+                foreach (SoundKind k in Enum.GetValues(typeof(SoundKind)))
+                    if (sounds.ScheduledOf(k) + sounds.DroppedOf(k) > 0)
+                        s += string.Format(c, " {0} {1}/{2}/{3}", SoundScheduler.Name(k), sounds.ScheduledOf(k), sounds.DroppedOf(k), sounds.StolenOf(k));
+                s += ")";
+            }
             if (music != null && music.Source.IsApp)
                 s += string.Format(c, "; app {0}: state {1}, muted {2}, stalls {3}, releases {4}", music.Source.Tag,
                     music.Status.State, music.Status.Muted, music.Status.Stalls, music.Status.Releases);
@@ -149,6 +166,8 @@ namespace Game.Client.Loop
             _out = null;
             _structuresOut?.Dispose();
             _structuresOut = null;
+            _monstersOut?.Dispose();
+            _monstersOut = null;
             _counts.Dispose();
         }
 

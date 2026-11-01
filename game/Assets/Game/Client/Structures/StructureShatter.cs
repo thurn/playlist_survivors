@@ -31,7 +31,7 @@ namespace Game.Client.Structures
     /// - <b>A regrowth</b> (Regrowth): the site erupts from the ground over its beat, from the event's
     ///   downbeat (the structure shader's <c>_SL_Sink</c>, overshooting a little before it settles),
     ///   flashing and glowing as it comes, with a burst of small shards thrown up from its footprint
-    ///   and <see cref="Erupted"/> for the effects' burst and sound.
+    ///   and <see cref="Erupted"/> for the effects' burst (the sound presenter shatters it from the event).
     /// - <b>A glint</b> (Glint, a hit that doesn't break): the site flashes, brighter for a hit that
     ///   counts toward a large structure's break.
     /// - The static shadow map re-renders where the site stands after a break and once a regrowth is whole

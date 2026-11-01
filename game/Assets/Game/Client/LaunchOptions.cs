@@ -86,7 +86,7 @@ namespace Game.Client
         /// <summary>The CSVs and folders a run writes for evidence.</summary>
         public sealed class OutputFiles
         {
-            public string Loop, Events, Structures, Sound, Camera, Hero, GpuProbe, Profile, Moments;
+            public string Loop, Events, Structures, Shatter, Sound, Camera, Hero, GpuProbe, Profile, Moments;
         }
 
         /// <summary>What plays in place of a player: debug commands, held keys, the bot and a scripted pause.</summary>
@@ -146,7 +146,7 @@ namespace Game.Client
                 TapAlong = a.Get("--tap-along"),
                 Outputs =
                 {
-                    Loop = a.Path("--loop-out"), Events = a.Path("--events-out"), Structures = a.Path("--structures-out"),
+                    Loop = a.Path("--loop-out"), Events = a.Path("--events-out"), Structures = a.Path("--structures-out"), Shatter = a.Path("--shatter-out"),
                     Sound = a.Path("--sound-out"), Camera = a.Path("--camera-out"), Hero = a.Path("--hero-out"),
                     GpuProbe = a.Path("--gpu-probe-out"), Profile = a.Path("--profile-out"),
                     Moments = a.Path("--moments-out"),

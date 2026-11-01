@@ -55,6 +55,9 @@ namespace Game.Client.Loop
         /// with the frames: the sound is then dropped, never started late (unity-game.md, Sound Timing).
         /// </summary>
         bool TryDspAt(double song, out double dsp);
+
+        /// <summary>The earliest DSP time a sound scheduled now can start (TryDspAt's bound).</summary>
+        double EarliestDsp { get; }
     }
 
     /// <summary>
@@ -112,8 +115,10 @@ namespace Game.Client.Loop
         public bool TryDspAt(double song, out double dsp)
         {
             dsp = _clock.DspAtSong(song);
-            return _clock.Anchored && dsp >= _dspNow() + DspBuffer;
+            return _clock.Anchored && dsp >= EarliestDsp;
         }
+
+        public double EarliestDsp => _dspNow() + DspBuffer;
     }
 
     /// <summary>
@@ -121,24 +126,31 @@ namespace Game.Client.Loop
     /// n/60), for stills and filmstrips, and for runs without music. The lead is the built-in
     /// speakers' (the sync spike's 38 ms output latency plus <see cref="MusicTimes.Margin"/> at
     /// 60 fps and 256-frame buffers), so the sim runs as far ahead as it would live. No music
-    /// plays in time with these frames, so no sound can be scheduled. frameSong is the frame's song
-    /// time and a microsecond (<see cref="Reached"/>): n/60 falls a rounding short of a moment the sim
-    /// times on the frame's own tick half the time, which would show it a frame late (ps-msz.8.5).
+    /// plays in time with these frames, so no sound is heard, but the sounds keep their books on
+    /// the frames' mixer (<see cref="TryDspAt"/>): a fixed-time run drops what a live one would.
+    /// frameSong is the frame's song time and a microsecond (<see cref="Reached"/>): n/60 falls a
+    /// rounding short of a moment the sim times on the frame's own tick half the time, which would
+    /// show it a frame late (ps-msz.8.5).
     /// </summary>
     public sealed class FrameClock : IGameClock
     {
         public const double OutputLatency = 0.038;
         /// <summary>How far past its frame's song time a frame shows: far under a frame, far over a rounding.</summary>
         public const double Reached = 1e-6;
-        public const double Margin = 2.0 / Boot.FixedFps + Simulation.TickSeconds + 2 * 256.0 / 48000;
+        public const double DspBuffer = 256.0 / 48000;
+        public const double Margin = 2.0 / Boot.FixedFps + Simulation.TickSeconds + 2 * DspBuffer;
 
         double _frameSong;
 
         public bool Ready => true;
 
+        /// <summary>This frame's mixer position (<see cref="SongAt"/>): the DSP clock's reading for silent sounds, in song time.</summary>
+        public double Mixer { get; private set; } = double.NegativeInfinity;
+
         public FrameTimes Frame(in ClockReadings now)
         {
             _frameSong = now.Frame;
+            Mixer = SongAt(now.Frame);
             return new FrameTimes
             {
                 Song = SongAt(now.Frame),
@@ -157,10 +169,17 @@ namespace Game.Client.Loop
         /// <summary>A key can't be placed between frames on this clock: it was heard at the latest frame's song time.</summary>
         public double KeySong(double real) => _frameSong;
 
+        /// <summary>
+        /// A silent sound's "DSP time" is its song time, schedulable a DSP buffer past this frame's
+        /// mixer as live (<see cref="MusicTimes.TryDspAt"/>), so the scheduler counts what it would
+        /// drop and its voices free on the frames' timeline.
+        /// </summary>
         public bool TryDspAt(double song, out double dsp)
         {
-            dsp = double.NaN;
-            return false;
+            dsp = song;
+            return song >= EarliestDsp;
         }
+
+        public double EarliestDsp => Mixer + DspBuffer;
     }
 }

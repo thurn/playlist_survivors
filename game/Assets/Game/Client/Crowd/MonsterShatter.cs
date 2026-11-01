@@ -135,6 +135,9 @@ namespace Game.Client.Crowd
             public int Start, Count, DrawnCount = -1;
         }
 
+        /// <summary>Deaths broken so far.</summary>
+        public int Breaks { get; private set; }
+
         /// <summary>Deaths showing shards, and their shards.</summary>
         public int LiveDeaths { get; private set; }
         public int LiveShards { get; private set; }
@@ -208,6 +211,7 @@ namespace Game.Client.Crowd
             int slot = (s.Start + s.Count) % RingCapacity;
             s.Count++;
             Moments.Mark(MomentKind.Death, time, serial);
+            Breaks++;
             s.Times[slot] = time;
             double len = Math.Sqrt(dirX * dirX + dirY * dirY);
             var blow = len > 1e-9 ? new Vector2((float)(dirX / len), (float)(dirY / len)) : Vector2.zero;

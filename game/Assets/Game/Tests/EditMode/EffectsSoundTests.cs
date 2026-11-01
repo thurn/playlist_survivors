@@ -45,6 +45,8 @@ namespace Game.Tests
                 dsp = song + 100;
                 return song >= Mixer;
             }
+
+            public double EarliestDsp => Mixer + 100;
         }
 
         static SoundBank Bank(float onset = 0)
@@ -121,8 +123,28 @@ namespace Game.Tests
             // The log holds where the attack lands; the voice starts 0.02 s / 2 earlier.
             Assert.That(s.Log.Array[0].Dsp, Is.EqualTo(103.5).Within(1e-9));
             clock.Mixer = 3.495;
-            Assert.That(s.Play(new SoundCue { Kind = SoundKind.Hurt, Song = 3.5, Gain = 1, Pitch = 1 }, 0, 1), Is.EqualTo(-1),
-                "its early start is already past");
+            Assert.That(s.Play(new SoundCue { Kind = SoundKind.Hurt, Song = 3.5, Gain = 1, Pitch = 1 }, 0, 1), Is.GreaterThanOrEqualTo(0),
+                "its early start is past, its attack isn't: it starts into the clip");
+            Assert.That(s.Trimmed, Is.EqualTo(1));
+            Assert.That(s.Log.Array[1].Dsp, Is.EqualTo(103.5).Within(1e-9), "the attack still lands on its time");
+            Assert.That(s.Play(new SoundCue { Kind = SoundKind.Hurt, Song = 3.49, Gain = 1, Pitch = 1 }, 0, 1), Is.EqualTo(-1),
+                "an attack the mixer is past is dropped");
+        }
+
+        [Test]
+        public void AFullPoolCutsOffTheOldestUnimportantSoundAndSparesTheHerosOwn()
+        {
+            var clock = new TestClock { Mixer = 3.0 };
+            var s = Scheduler(clock);
+            s.Play(new SoundCue { Kind = SoundKind.Swing, Song = 3.0, Gain = 1, Pitch = 1 }, 0, 1);
+            for (int i = 1; i < SoundScheduler.Voices; i++)
+                s.Play(new SoundCue { Kind = SoundKind.Hit, Song = 3.0 + 0.001 * i, Gain = 1, Pitch = 1 }, 0, 1);
+            Assert.That(s.Stolen, Is.Zero);
+            s.Play(new SoundCue { Kind = SoundKind.Death, Song = 3.05, Gain = 1, Pitch = 1 }, 0, 1);
+            Assert.That(s.Stolen, Is.EqualTo(1));
+            Assert.That(s.StolenOf(SoundKind.Hit), Is.EqualTo(1), "the oldest hit went, not the older swing");
+            Assert.That(s.StolenOf(SoundKind.Swing), Is.Zero);
+            Assert.That(s.ScheduledOf(SoundKind.Death), Is.EqualTo(1));
         }
 
         [Test]
