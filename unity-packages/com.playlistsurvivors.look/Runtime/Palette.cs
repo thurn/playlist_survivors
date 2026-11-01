@@ -108,6 +108,7 @@ namespace PS.Look
                 {
                     case "name":
                     case "description":
+                    case "note":
                         break;
                     case "enemies":
                         if (!(kv.Value is JArray hues) || hues.Count == 0 || hues.Count > MaxSlots)

@@ -1,6 +1,6 @@
 {
   "name": "edge",
-  "palette": "electric",
+  "palette": "ion",
   "monsters": "dark-core-edges",
   "structures": "edge-glass",
   "world": "void-grid",

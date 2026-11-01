@@ -3409,7 +3409,7 @@ The game provides these so each state above can be reached on demand:
   `--world`, `--post`, `--vfx`, `--hero-look`, `--palette`, `--beat-ripple`)
   are the look package's ([neon-look.md](neon-look.md), Flags): Boot resolves
   and applies the preset first and logs it (`Look: look edge, palette
-  electric; monsters ...`). `--palette` names a look palette or, as before,
+  ion; monsters ...`). `--palette` names a look palette or, as before,
   the arena's zone palette.
   A flag or argument the client doesn't read (an unknown flag, one typed
   with an en dash or one hyphen, a flag missing its value, a value after a

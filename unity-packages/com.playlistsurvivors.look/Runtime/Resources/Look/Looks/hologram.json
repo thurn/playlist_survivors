@@ -1,6 +1,6 @@
 {
   "name": "hologram",
-  "palette": "electric",
+  "palette": "phosphor",
   "monsters": "wireframe",
   "structures": "wireframe",
   "world": "pure-void",

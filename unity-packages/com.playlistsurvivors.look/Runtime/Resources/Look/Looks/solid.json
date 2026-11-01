@@ -1,6 +1,6 @@
 {
   "name": "solid",
-  "palette": "electric",
+  "palette": "arcade",
   "monsters": "solid-emissive",
   "structures": "solid-glass",
   "world": "hued-zones",

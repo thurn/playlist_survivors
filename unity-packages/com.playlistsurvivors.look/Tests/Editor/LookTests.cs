@@ -47,6 +47,7 @@ namespace PS.Look.Tests
         {
             var library = LookLibrary.Shared;
             Assert.That(library.Presets, Is.EquivalentTo(new[] { "edge", "hologram", "prism", "solid" }));
+            foreach (var name in library.Palettes) Assert.That(Palette.Parse(library.PaletteJson(name)).Name, Is.EqualTo(name));
             foreach (var name in library.Presets)
             {
                 var look = ResolvedLook.Resolve(new LookFlags { Look = name });

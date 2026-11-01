@@ -134,7 +134,7 @@ namespace Game.Tests
         [Test]
         public void TheLookFlagsAreReadByTheLookPackage()
         {
-            var o = Parse("--headless --look hologram --monster-look solid-emissive --world pure-void --beat-ripple --palette electric");
+            var o = Parse("--headless --look hologram --monster-look solid-emissive --world pure-void --beat-ripple --palette ion");
             Assert.That(o.Unrecognized, Is.Empty);
             Assert.That(o.Look.Look, Is.EqualTo("hologram"));
             Assert.That(o.Look.Overrides[LookAxes.Monsters], Is.EqualTo("solid-emissive"));
@@ -145,8 +145,8 @@ namespace Game.Tests
         [Test]
         public void PaletteNamesTheLooksPaletteOrElseTheArenas()
         {
-            var look = Parse("--palette electric");
-            Assert.That(look.Look.LookPalette, Is.EqualTo("electric"));
+            var look = Parse("--palette ion");
+            Assert.That(look.Look.LookPalette, Is.EqualTo("ion"));
             Assert.That(look.Palette, Is.EqualTo(ArenaLighting.DefaultPalette), "the arena keeps its default zone palette");
             var arena = Parse("--palette lava");
             Assert.That(arena.Palette, Is.EqualTo("lava"));

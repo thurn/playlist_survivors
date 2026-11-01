@@ -64,7 +64,7 @@ namespace PS.Look
 
         /// <summary>
         /// One line: the preset, its palette, every axis's option and the motion layers on, each a flag chose marked
-        /// with it: "look edge, palette electric; monsters wireframe (--monster-look), structures edge-glass, ...".
+        /// with it: "look edge, palette ion; monsters wireframe (--monster-look), structures edge-glass, ...".
         /// </summary>
         public string Describe()
         {

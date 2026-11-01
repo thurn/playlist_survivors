@@ -12,7 +12,7 @@ package reads it first. It answers three questions:
   motion, hero, transitions.
 - **How do we know we got there?** Rules with measurable forms and
   thresholds. The look metrics bead (ps-wnj.2) turns them into checks; the
-  palettes (`unity-packages/com.playlistsurvivors.look/Palettes/`) hold the
+  palettes (`unity-packages/com.playlistsurvivors.look/Runtime/Resources/Look/Palettes/`) hold the
   colours.
 
 The short version:
@@ -385,7 +385,7 @@ Notes:
 ## The Palettes
 
 Four palettes, one per preset, in
-`unity-packages/com.playlistsurvivors.look/Palettes/`, in neon-look.md's
+`unity-packages/com.playlistsurvivors.look/Runtime/Resources/Look/Palettes/`, in neon-look.md's
 format (a `note` field added). All share the role structure above; they
 differ in key so the four presets are four distinct looks rather than one
 look four ways.

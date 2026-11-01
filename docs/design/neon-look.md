@@ -207,12 +207,13 @@ In the package (ps-wnj.3), palettes are
 `Runtime/Resources/Look/Palettes/<name>.json`, loaded in both players' builds
 through Resources. `Palette` parses one: a top-level hex string is a role
 (`spark`), a group's member is `group.member` (`hero.body`), and the doc's
-roles above are required; a palette may add roles. `SetShaderGlobals` gives
+roles above are required; a palette may add roles, and `name`, `description`
+and `note` are not roles. `SetShaderGlobals` gives
 every role to shaders as `_Look` plus its parts capitalized
 (`_LookHeroBody`), and the enemy hues and zone tints as linear arrays
 `_LookEnemies[8]` and `_LookZones[8]` with `_LookEnemyCount` and
-`_LookZoneCount`. `electric` holds the example values above as a
-placeholder until the style guide sets the real palettes.
+`_LookZoneCount`. The style guide's four palettes are there: `ion` (edge),
+`arcade` (solid), `phosphor` (hologram) and `spectrum` (prism).
 
 ### Look presets
 
@@ -279,7 +280,7 @@ How the package implements them (ps-wnj.3):
   its unknown-flag check doesn't flag them. `ResolvedLook.Resolve` picks the
   preset (`edge` without `--look`), lays the flags over it, and `Apply` sets
   the palette's shader globals and logs the look:
-  `Look: look edge, palette electric; monsters wireframe (--monster-look), ...`.
+  `Look: look edge, palette ion; monsters wireframe (--monster-look), ...`.
 - `--palette` keeps its old meaning beside the new one: a name that is one of
   the package's palettes is the look's palette; any other name is still the
   arena's zone palette (game's and demo3d's `neon`, `lava`, ...), which the
