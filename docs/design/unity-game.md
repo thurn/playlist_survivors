@@ -1199,6 +1199,38 @@ debugged.
   path, [Fixed time](#fixed-time)).
 - A headless replay in the same runtime must reproduce the hash.
 
+**The timing log (ps-sba).** A replay rebuilds what the sim did, not how the
+frames ran: a hitch, a late entry or a dropped sound on the machine that played
+the run happens only once. So every recorded run also writes `timing.csv` into
+its session folder (`Client/Loop/TimingLog.cs`), always on, as native writes
+its `timing.jsonl` beside each session. One row per frame of the loop, from
+the run's setup:
+
+- `interval_ms` (the time since the previous frame) and `cpu_ms` (the main
+  thread's CPU time over that interval; IL2CPP only, -1 elsewhere). A long
+  interval with little CPU time waited on the GPU, the display or the OS.
+- `loop_ms` (GameLoop's Update), `step_ms` (the sim's step, the dispatch and
+  the presenters) and `sim_ms` (the step alone).
+- `render_ms`, `gpu_ms` and `present_wait_ms`: Unity's FrameTimingManager for
+  the latest frame it has timed, a few frames behind; -1 where it timed
+  nothing (most of a batch-mode player's frames).
+- `frame_song`, `lead_ms`, `phase`, `frozen`, `alive` and the hero's
+  `hero_x`/`hero_y` (nan before the sim's first step).
+- The frame's share of the run's counts: sim events, kills, entries and late
+  entries, key changes (the player's, the bot's and `--walk`'s), sounds scheduled, dropped and cut off, effects spawned
+  and rejected, collections, presenter faults, freezes, the plugin's stalls.
+
+Rows are written without allocating, into a 64 KB buffer flushed about once a second.
+A 30-minute run at 120 fps is about 30 MB, a tenth of its `audio.wav`.
+
+`game log [SESSION] [--from S] [--to S] [--hitch MS] [--no-table]`
+(`demo3d/tools/src/demo3d_tools/timing.py`) summarises the newest session's
+log, or SESSION's: interval and CPU percentiles, each part's work, the lead,
+the counts, every hitch over 33 ms at the frame that took it (its song time
+and work beside the interval and CPU time), and a table per second of song.
+For what the sim did frame by frame (events, moments, the camera), replay
+the session with the `--*-out` flags instead.
+
 ## Gameplay Rules
 
 This section specifies what the sim does. It starts from native's run as it

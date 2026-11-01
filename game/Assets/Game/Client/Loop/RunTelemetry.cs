@@ -33,6 +33,10 @@ namespace Game.Client.Loop
         /// <summary>The entries the loop fed the sim and the key changes it drained into it.</summary>
         public int Entries, KeyChanges;
 
+        /// <summary>The kills and the freezes started so far.</summary>
+        public int Kills => _counts.Kills;
+        public int Freezes => _counts.Freezes;
+
         public RunTelemetry(SimDriver driver, LaunchOptions.OutputFiles outputs, StructureShatter shatter, MonsterShatter monsters)
         {
             _driver = driver;

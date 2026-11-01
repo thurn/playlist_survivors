@@ -37,6 +37,10 @@ differently.
 standard scenarios (the peak, a structure break and the finale's mass kill at minute 25, the run's
 first minute, and the 30-minute fixed-time File run), into a JSON summary (perf.py).
 
+`game log [SESSION] [--from S] [--to S] [--no-table]`: a recorded session's timing log (the newest by default)
+summarised: frame-time percentiles, each hitch over 33 ms with its song time, the lead, the run's counts and a table
+per second of song (timing.py).
+
 `game sweep [--assert]`: the positioning and idle bots' 30-minute runs in .NET over entry dumps of
 the survivors playlist (botsweep.py; slow CI).
 
@@ -99,13 +103,14 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:
     pl = sub.add_parser("plugin", help="build the music plugin and copy it into the project (setup and build run it)")
     pl.set_defaults(func=_cmd_plugin)
 
-    from . import beat, botsweep, content, perf, spike
+    from . import beat, botsweep, content, perf, spike, timing
 
     content.add_parser(sub)
     spike.add_parser(sub)
     beat.add_parser(sub)
     botsweep.add_parser(sub)
     perf.add_parser(sub)
+    timing.add_parser(sub)
 
 
 def _cmd_plugin(a: argparse.Namespace) -> int:

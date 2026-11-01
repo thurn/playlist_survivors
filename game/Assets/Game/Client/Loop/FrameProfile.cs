@@ -225,49 +225,16 @@ namespace Game.Client.Loop
             f.Parts[(int)Part.Loop] = loop - timed;
             f.Parts[(int)Part.Engine] = frame - loop;
             row.Clear();
-            Int(row, f.Index).Append(',');
-            Fixed(row, f.Song, 4).Append(',');
-            Int(row, f.Alive).Append(',');
-            Fixed(row, frame, 4).Append(',');
-            Fixed(row, f.WaitMs, 4).Append(',');
-            Fixed(row, f.ProbeMs, 4);
-            for (int i = 0; i < f.Parts.Length; i++) Fixed(row.Append(','), f.Parts[i], 4);
-            Int(row.Append(','), f.Allocated).Append(',');
-            Int(row, f.Collections).Append(',');
-            Fixed(row, f.CpuMs, 4).Append('\n');
-        }
-
-        static StringBuilder Int(StringBuilder sb, long v)
-        {
-            if (v < 0)
-            {
-                sb.Append('-');
-                v = -v;
-            }
-            int start = sb.Length;
-            do
-            {
-                sb.Append((char)('0' + v % 10));
-                v /= 10;
-            } while (v > 0);
-            for (int i = start, j = sb.Length - 1; i < j; i++, j--) (sb[i], sb[j]) = (sb[j], sb[i]);
-            return sb;
-        }
-
-        static StringBuilder Fixed(StringBuilder sb, double v, int decimals)
-        {
-            long scale = 1;
-            for (int i = 0; i < decimals; i++) scale *= 10;
-            long units = (long)Math.Round(Math.Abs(v) * scale);
-            if (v < 0 && units > 0) sb.Append('-');
-            Int(sb, units / scale).Append('.');
-            long frac = units % scale;
-            for (long d = scale / 10; d > 0; d /= 10)
-            {
-                sb.Append((char)('0' + frac / d));
-                frac %= d;
-            }
-            return sb;
+            CsvText.Int(row, f.Index).Append(',');
+            CsvText.Fixed(row, f.Song, 4).Append(',');
+            CsvText.Int(row, f.Alive).Append(',');
+            CsvText.Fixed(row, frame, 4).Append(',');
+            CsvText.Fixed(row, f.WaitMs, 4).Append(',');
+            CsvText.Fixed(row, f.ProbeMs, 4);
+            for (int i = 0; i < f.Parts.Length; i++) CsvText.Fixed(row.Append(','), f.Parts[i], 4);
+            CsvText.Int(row.Append(','), f.Allocated).Append(',');
+            CsvText.Int(row, f.Collections).Append(',');
+            CsvText.Fixed(row, f.CpuMs, 4).Append('\n');
         }
 
         void Hook(bool on)

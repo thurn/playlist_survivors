@@ -91,3 +91,6 @@ what was run (the exact commands), the numbers, and what they show.
   finale at the peak with the live-shard count over a peak minute (ps-msz.8.6).
 - [recap](recap/README.md): the victory card from the sim's recap at the peak, and a headless run's summary
   reporting no presenter faults, its session replayed to its hash (ps-msz.8.7).
+- [timing](timing/README.md): the timing log every recorded run writes beside its session, summarised by `game log`
+  for a real-time run at the peak, with its allocation census against a run without one, and its session
+  replayed with the `--*-out` flags (ps-sba).

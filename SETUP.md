@@ -99,7 +99,9 @@ System Audio Recording; the player is signed so macOS remembers the grant
 Adding `--spike` plays the sync spike instead, a click on every beat, and
 `just game-tool spike <name> --file <path>` measures that windowless
 ([the spike's evidence](game/evidence/spike/README.md)). The `-build`, `-play` and `-tool`
-recipes are the single steps. On Windows (Cygnus, under Git for Windows' bash) `just demo3d`
+recipes are the single steps. Every run you play is recorded in the game's sessions folder, with
+a timing log of every frame: `just game-tool log` summarises the newest (its hitches, frame times
+and counts), and `just game-tool replay <session>` replays it. On Windows (Cygnus, under Git for Windows' bash) `just demo3d`
 builds and plays the Windows player; demo2d and stylelab build Mac players only. Run `just` to list them
 ([install just](https://just.systems/man/en/packages.html), or `brew install just`).
 
@@ -325,6 +327,7 @@ Enact syncs through `refs/dolt/data` on `origin`.
 | LPC sources | `~/Documents/lpc`; `LPC_ROOT` overrides it |
 | Downloaded asset packs | `~/.cache/playlist-survivors`; `PS_CACHE` overrides it |
 | Listening-session recordings | `native/logs/sessions/` in the checkout; `PS_SESSIONS` overrides it |
+| Game sessions and timing logs | `~/Library/Application Support/Playlist Survivors/Playlist Survivors/sessions/` (the newest 20); the player's log in `~/Library/Logs/Playlist Survivors/Playlist Survivors/Player.log` |
 | Analyzer models | Committed `native/models/madmom.bin`; `PS_MODELS` overrides it |
 | Calibration | Local user settings; recalibrate on a new display/audio setup |
 | Enact / Hive runtime data | Machine-local; configure afresh rather than copying live state |

@@ -49,7 +49,8 @@ namespace Game.Client.Loop
     /// screen if it started there.
     ///
     /// Each run with music is recorded (<see cref="Sessions"/>): the plugin writes its audio and
-    /// entries into the run's folder, and the run's end its <see cref="SessionRecord"/>. A Replay
+    /// entries into the run's folder, the loop each frame's row of its timing log (<see cref="TimingLog"/>), and the
+    /// run's end its <see cref="SessionRecord"/>. A Replay
     /// source plays one again (Watch my run, `--replay DIR`): the sim takes the recorded entries,
     /// keys, debug commands and run controls at their recorded times (<see cref="SessionReplay"/>),
     /// no live input reaches it (Backspace stops the replay), and at the run's end the replay
@@ -151,6 +152,7 @@ namespace Game.Client.Loop
         LightningView _lightning;
         HudPresenter _hud;
         RunTelemetry _telemetry;
+        TimingLog _timing;
         Camera _camera;
         GpuProbe _probe;
         FrameProfile _profile;
@@ -334,6 +336,7 @@ namespace Game.Client.Loop
             _overlay = new DebugOverlay(camera, Driver, options.Overlay);
             Driver.Events.Subscribe(_overlay);
             _telemetry = new RunTelemetry(Driver, options.Outputs, _shatter, _crowd?.Shatter);
+            if (_sessionDir != null) _timing = new TimingLog(_sessionDir, Driver, _telemetry, _music, _sounds, _effects);
             _camera = camera;
             if (camera != null) _probe = GpuProbe.FromOptions(options, content);
             if (_probe?.Sightings != null) Driver.Events.Subscribe(_probe.Sightings);
@@ -405,7 +408,9 @@ namespace Game.Client.Loop
             long start = Stopwatch.GetTimestamp();
             AllocationCensus.Tag(AllocationCensus.Loop);
             Frame();
-            _profile?.Loop(Stopwatch.GetTimestamp() - start);
+            long ticks = Stopwatch.GetTimestamp() - start;
+            _profile?.Loop(ticks);
+            _timing?.Write(ticks);
         }
 
         void Frame()
@@ -701,6 +706,7 @@ namespace Game.Client.Loop
             _hud?.Dispose();
             _overlay?.Dispose();
             _telemetry?.Dispose();
+            _timing?.Dispose();
             _probe?.Dispose();
             _profile?.Dispose();
             Moments.Close();
@@ -718,6 +724,8 @@ namespace Game.Client.Loop
             string error = code != 0 ? why : null;
             Debug.Log("GameLoop: " + (why ?? "done") + "; " + _telemetry.Summary(_music, _musicTimes, _keys, _commands, _effects, _sounds));
             _telemetry.Dispose();
+            _timing?.Dispose();
+            _timing = null;
             GraphicsStates.EndTrace();
             _profile?.Dispose();
             _profile = null;
