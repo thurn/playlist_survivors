@@ -55,14 +55,17 @@ namespace Game.Client.Music
             }
         }
 
-        /// <summary>A decaying 2 kHz cosine: full height on its first sample, so its onset is exact.</summary>
-        public static AudioClip MakeClip(int rate)
+        /// <summary>
+        /// A decaying 2 kHz cosine after <paramref name="leadIn"/> seconds of silence: full height on its
+        /// first sample, so its onset is exact.
+        /// </summary>
+        public static AudioClip MakeClip(int rate, float leadIn = 0)
         {
-            int n = (int)(Length * rate);
+            int lead = (int)Math.Round(leadIn * rate), n = lead + (int)(Length * rate);
             var data = new float[n];
-            for (int i = 0; i < n; i++)
+            for (int i = lead; i < n; i++)
             {
-                float t = (float)i / rate;
+                float t = (float)(i - lead) / rate;
                 data[i] = Gain * Mathf.Exp(-t / Decay) * Mathf.Cos(2f * Mathf.PI * Hz * t);
             }
             var clip = AudioClip.Create("beat-click", n, 1, rate, false);

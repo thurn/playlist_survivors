@@ -88,6 +88,20 @@ After those, one moment stayed late: **the gem's ring** landed 2.4 frames after 
 on the frame the beat locked (1.10 s), with the gem's flash and the beat track's heart. A beat the lock came
 after now shows as gone by (HudPresenter): no landing, no flash. The runs above are with every fix.
 
+### The audit fails on a late moment (ps-msz.8.13)
+
+The Warden checked the audit catches what it is for, in a scratch build (not committed) of slow CI's run
+(`game beat ci` above): structure breaks, regrowths and glints taken a frame late in StructureShatter
+(`_pending[0].T <= song - 1.0 / 60`), and the effects subscribed before the views again (GameLoop). It
+failed (exit 1) with 39 of 6,219 moments off their frame: all 14 breaks (+1.2 to +1.5 frames) and 5
+regrowths (+1.8), and 20 effects (garlic-pulse 12, structure-burst 6, prism-cast 2, +1.8 frames). The same
+run without them: 0 off, ok.
+
+It also checks coverage now: a moment shown once per sim event (HeroPress, HeroStride, Blade, Death, Break,
+Regrow) shown fewer times than the sim made it fails, as does any kind the sim made that nothing showed
+(footfalls, landings and gem rings are counted against an upper bound, so only none at all fails). Before,
+a presenter that stopped showing or marking a moment passed as all on time.
+
 ## The sounds
 
 `--sounds` runs the player in real time, headless, with the sound probe and `--sound-out` (as `game spike
@@ -103,6 +117,14 @@ apart from the rest all found in the mix, median +0.000 ms and p5 to p95 -0.021 
 **The lead** held at the output latency plus the margin: median 91.4 ms, p5 to p95 90.3 to 92.1 (output latency
 38.0 + margin 52.3; the audit allows 2 ms). A real-time run isn't frame-exact, so its counts vary a little from run
 to run (an earlier one scheduled 888).
+
+Since ps-msz.8.13 the probe has a 100 ms lead-in before its click (`SoundScheduler.ProbeLeadIn`, as long
+as the longest real clip's), so it starts early by it as a clip with an onset does, or into it when the
+mixer can't make all of it (ps-msz.8.6's trim). Retaken on mono: 934 scheduled, 703 of them into their
+clip, 0 dropped, 0 off their event or anchor, all 350 probe clicks apart from the rest found on the music
+(median -0.021 ms, p5 to p95 -0.021 to +0.000), lead 91.7 ms. Slow CI's `game spike ci --sounds`: 450 of
+598 into their clip, 275 of 275 clicks found, within 0.021 ms. Unity's mixer honours `AudioSource.time`
+under `PlayScheduled`, to the sample.
 
 Reading the sounds' code found one off its event: a regrowth's eruption sound was asked for when its frame
 showed it (GameLoop.Erupted), already past its song time, so the mixer couldn't make it and a windowed run

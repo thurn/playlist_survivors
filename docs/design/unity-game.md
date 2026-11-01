@@ -969,7 +969,10 @@ Every sound is scheduled on Unity's DSP clock at the DSP time of its song
 time. It is never started late; a sound that can't make its time is dropped.
 When the mixer can make a sound's attack but not all of the clip's lead-in
 before it, the sound starts into its clip so the attack still lands on time
-(ps-msz.8.6).
+(ps-msz.8.6). Unity's mixer honours that start (`AudioSource.time` before
+`PlayScheduled`): the sound probe has a 100 ms lead-in before its click, so
+`game spike --sounds` and `game beat --sounds` find on the music both the
+probes started early by it and those started into it (ps-msz.8.13).
 
 - **Impact sounds** (hits, shatters, swings) play at the impact's song time.
   The lead guarantees they are known in time.
@@ -2831,7 +2834,9 @@ the first frame at or after its time: the hero's hops setting off and landing,
 the blade's flare, footfalls, deaths, breaks and regrowths, every particle
 effect as the GPU emits it, the beat gem's ring and the cards' flips; that
 each event settled before its moment's frame; and counts them against the
-sim's events. `--sounds` runs it in real time, headless, with the sound probe:
+sim's events, failing when a moment shown once per event (hero strides, blade
+flares, deaths, breaks, regrowths) is shown fewer times than the sim made it,
+or a kind the sim made is never shown (ps-msz.8.13). `--sounds` runs it in real time, headless, with the sound probe:
 every sound on its event's song time (but those snapped to the grid by design)
 and its anchor's DSP time, each probe click on the music in Unity's mix, and
 the lead at output latency plus margin. At the peak (minute 25, three
@@ -2843,6 +2848,9 @@ frame late (the effects now present after the views that ask for them as they
 present), the gem's ring landing when the beat locked after the beat (a beat
 before the lock no longer lands) and the regrowth's dropped sound. Slow CI
 runs a 20 s peak on house-128 (`game beat ci`). Evidence: game/evidence/beat.
+Its Warden made breaks and regrowths a frame late and put the effects back
+before the views in a scratch build: the audit failed on all 14 breaks, 5
+regrowths and 20 effects (ps-msz.8.13).
 
 ## Build Order
 

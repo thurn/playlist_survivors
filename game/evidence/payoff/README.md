@@ -61,6 +61,8 @@ What dropped, and the fixes:
   pulse settles on its own impact, so it was always too late. Now, when the mixer can make the attack
   but not all of the lead-in, the voice starts into the clip at the earliest it can, so the attack still
   lands on its time (`SoundScheduler.Trimmed`). Only an attack the mixer is already past is dropped.
+  Unity's mix honours the start: ps-msz.8.13 gave the sound probe a 100 ms lead-in and found every probe
+  click started into its clip on the music (game/evidence/beat, The sounds).
 - **Every regrowth's shatter (121 of each layer)**: `StructureShatter` raised it on the frame that
   reached the eruption, a lead after the mixer had played it. The sound presenter now shatters it from
   the Regrowth event, as a break's, a lead ahead (ps-msz.8.5's audit found it too, and landed the same fix).

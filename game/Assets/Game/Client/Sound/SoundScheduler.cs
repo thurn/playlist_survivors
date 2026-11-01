@@ -84,12 +84,20 @@ namespace Game.Client.Sound
         public int StolenOf(SoundKind k) => _stolenOf[(int)k];
 
         /// <summary>
-        /// The sync probe (`--sound-probe`): every sound plays this clip instead, from its first
-        /// sample, at full level whatever the bus and at its own rate whatever the pitch, so the mix
-        /// capture can find each one's onset (a resampled click ends in a one-sample pop, which the
-        /// onset search takes for a click). Every scheduled or dropped sound is then kept in <see cref="Log"/>.
+        /// The sync probe (`--sound-probe`): every sound plays this clip instead, its click
+        /// <see cref="ProbeLeadIn"/> into it, at full level whatever the bus and at its own rate whatever
+        /// the pitch, so the mix capture can find each one's onset (a resampled click ends in a one-sample
+        /// pop, which the onset search takes for a click). Every scheduled or dropped sound is then kept in
+        /// <see cref="Log"/>.
         /// </summary>
         public AudioClip Probe { get; set; }
+
+        /// <summary>
+        /// The probe's silence before its click, as long as the longest real clip's lead-in (the
+        /// evolution's 94 ms): the probe starts early by it as a clip with an onset does, or into it when
+        /// the mixer can't make all of it, so the mix capture finds both on the music (ps-msz.8.13).
+        /// </summary>
+        public const float ProbeLeadIn = 0.1f;
 
         public int LogCount { get; private set; }
         public ArraySegment<Entry> Log => new ArraySegment<Entry>(_log, 0, LogCount);
@@ -158,7 +166,7 @@ namespace Game.Client.Sound
             var set = _variants[(int)cue.Kind];
             AudioClip clip;
             float onset, level, root;
-            if (Probe != null) { clip = Probe; onset = 0; level = 1; root = 0; }
+            if (Probe != null) { clip = Probe; onset = ProbeLeadIn; level = 1; root = 0; }
             else if (set.Length > 0)
             {
                 int i = set[variant % set.Length];

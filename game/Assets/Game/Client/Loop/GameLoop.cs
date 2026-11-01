@@ -368,7 +368,7 @@ namespace Game.Client.Loop
             var frames = Driver.Clock as FrameClock;
             Func<double> dspNow = frames != null ? () => frames.Mixer : (Func<double>)(() => AudioSettings.dspTime);
             _sounds = new SoundScheduler(bank, new GameObject("Sounds"), Driver.Clock, dspNow, log: _soundOut != null, audible: frames == null);
-            if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate);
+            if (probe) _sounds.Probe = BeatClicks.MakeClip(AudioSettings.outputSampleRate, SoundScheduler.ProbeLeadIn);
             Func<float> follower = null;
             if (_music != null) follower = () => _music.Status.FollowerGain > 0 ? _music.Status.FollowerGain : 1f;
             _soundPresenter = new SoundPresenter(_sounds, Driver.Sim, roles, bank != null ? bank.Limit : 1f, follower);
