@@ -176,17 +176,19 @@ namespace PS.Game.Sim.Content
     {
         public int[] FactorFrom;
         public double[] Factors;
+        /// <summary>The curve's power of the level: native's 2, steeper for the game's pacing.</summary>
+        public double Exponent;
         /// <summary>Levels at which Growth rises by <see cref="GrowthBonus"/> while the hero is at them.</summary>
         public int[] GrowthLevels;
         public double GrowthBonus;
 
         /// <summary>The experience needed in all to reach the level after <paramref name="level"/>:
-        /// factor(level) x level².</summary>
+        /// factor(level) x level^<see cref="Exponent"/>.</summary>
         public double Total(int level)
         {
             double factor = Factors[0];
             for (int i = 0; i < FactorFrom.Length; i++) if (level >= FactorFrom[i]) factor = Factors[i];
-            return factor * level * (double)level;
+            return factor * Math.Pow(level, Exponent);
         }
     }
 
@@ -272,12 +274,14 @@ namespace PS.Game.Sim.Content
             {
                 FactorFrom = Array.ConvertAll(factors, f => f.from),
                 Factors = Array.ConvertAll(factors, f => f.factor),
+                Exponent = xp.Number("exponent"),
                 GrowthLevels = xp.Ints("growthLevels"),
                 GrowthBonus = xp.Number("growthBonus"),
             };
             for (int i = 1; i < factors.Length; i++)
                 if (factors[i].from <= factors[i - 1].from)
                     throw ContentReader.Fail(xp.Child("factors"), "factors must start at rising levels");
+            if (!(p.Experience.Exponent >= 1)) throw ContentReader.Fail(xp.Child("exponent"), "expected an exponent of at least 1");
             xp.End();
 
             var gems = r.Object("gems");

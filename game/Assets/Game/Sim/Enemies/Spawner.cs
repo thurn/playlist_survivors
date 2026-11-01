@@ -8,7 +8,9 @@ namespace PS.Game.Sim
     /// and engine/spawning.rs). The run clock decides who spawns; the ring decides where.
     ///
     /// - <b>Waves</b>: every interval of run clock one of each roster role spawns, then whole
-    ///   rosters while fewer than the minimum are alive. In a run (<see cref="HordeConfig.Schedule"/>)
+    ///   rosters while fewer than the minimum are alive. A pass the horde's room cuts short starts
+    ///   one role further along the roster each wave (native's always starts at its first), so a
+    ///   crowd at the cap stays the roster's mix. In a run (<see cref="HordeConfig.Schedule"/>)
     ///   the roster, interval and minimum are the current minute's of schedule.json, the minimum
     ///   scaled by the loudness level as native's <c>levelScale</c> (quiet 0.6, loud 1.3, blended
     ///   over the last 2 s), and a quiet wave is skipped once the horde is that full. Otherwise
@@ -62,6 +64,8 @@ namespace PS.Game.Sim
         // The minutes whose treasure a boss already carries (native's one chest a minute).
         long treasureMinutes;
         double nextWave;
+        // Whose turn it is to lead a wave's last, short pass.
+        int waveTurn;
         int minute = -1;
 
         public Spawner(HordeConfig config, GameContent content, Horde horde, BeliefLog log, SimState state)
@@ -297,13 +301,15 @@ namespace PS.Game.Sim
                 target = (int)Math.Ceiling(schedule.Minutes[minute].Minimum * scale - 1e-9);
                 if (scale < 0.99 && state.EnemiesAlive >= Math.Min(target, horde.FreeSlots + state.EnemiesAlive - bossCount)) return;
             }
-            // Whole passes over the roster, the last one cut short by the room left.
+            // Whole passes over the roster, the last one cut short by the room left: its places go round the
+            // roster from wave to wave, so at the cap no role takes every free slot by its place in the list.
             int shortfall = target - state.EnemiesAlive - roster.Length;
             int passes = 1 + (shortfall > 0 ? (shortfall + roster.Length - 1) / roster.Length : 0);
             int total = Math.Min(passes * roster.Length, Math.Max(0, horde.FreeSlots - bossCount));
+            int first = waveTurn++ % roster.Length;
             for (int j = 0; j < roster.Length; j++)
             {
-                int role = roster[j];
+                int role = roster[(first + j) % roster.Length];
                 int n = total / roster.Length + (j < total % roster.Length ? 1 : 0);
                 if (n == 0) return;
                 double clump = Math.Max(1.5, 0.5 * Math.Sqrt(n));

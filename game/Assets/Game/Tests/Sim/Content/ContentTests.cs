@@ -140,10 +140,12 @@ namespace PS.Game.Sim.Tests
         {
             GameContent c = Load();
             ExperienceCurve xp = c.Progression.Experience;
-            Assert.That(xp.Total(1), Is.EqualTo(5));
-            Assert.That(xp.Total(19), Is.EqualTo(5 * 19 * 19));
-            Assert.That(xp.Total(20), Is.EqualTo(6.5 * 400));
-            Assert.That(xp.Total(40), Is.EqualTo(8 * 1600));
+            // The experience curve is the game's own, steeper than native's for the design's pacing (ps-msz.8.4).
+            Assert.That(xp.Total(1), Is.EqualTo(1.9));
+            Assert.That(xp.Total(20), Is.EqualTo(1.9 * Math.Pow(20, 2.8)).Within(1e-9));
+            var banded = new ExperienceCurve { FactorFrom = new[] { 1, 20 }, Factors = new[] { 5.0, 6.5 }, Exponent = 2 };
+            Assert.That(banded.Total(19), Is.EqualTo(5 * 19 * 19), "native's curve: factor x level²");
+            Assert.That(banded.Total(20), Is.EqualTo(6.5 * 400), "its factor rising from level 20");
             Assert.That(c.Passive("duplicator").MaxRank, Is.EqualTo(2));
             Assert.That(c.Passive("empty-tome").PerRank.Cooldown, Is.EqualTo(-0.08));
             Assert.That(c.Progression.Hero.Stats.MaxHp, Is.EqualTo(120));

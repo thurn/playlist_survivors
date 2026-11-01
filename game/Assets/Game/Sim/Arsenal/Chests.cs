@@ -54,7 +54,8 @@ namespace PS.Game.Sim
     /// engine/chests.rs).
     ///
     /// - <b>Drops</b>: a scheduled boss carrying treasure drops its chest where it dies, on the centre of
-    ///   the nearest open tile, a <see cref="SimEventKind.Drop"/> of <see cref="ItemKind.Chest"/>.
+    ///   the nearest open tile the hero can walk to from where it stands, a <see cref="SimEventKind.Drop"/>
+    ///   of <see cref="ItemKind.Chest"/>: never in a pocket the arena's dressing walls off.
     /// - <b>Taking</b>: at a tick's end, while the world plays and the hero stands, the hero takes a
     ///   chest within <see cref="ReachM"/> (native's 22 px) when it is clear of the crowd: no live
     ///   enemy's body within <see cref="ClearM"/>. The roulette opens (<see cref="ChestPhase.Open"/>) and
@@ -90,6 +91,9 @@ namespace PS.Game.Sim
         readonly Horde horde;
         readonly ArenaGrid arena;
         readonly int[] reached;
+        // The tiles the hero can walk to (a drop's search), and the search's queue.
+        readonly bool[] walkable;
+        readonly int[] frontier;
         int dropped;
         // The roulette's next point: its fractional beat on the grid (NaN off it), and the song time it
         // looks for one from, or falls back to with no beat known.
@@ -110,6 +114,8 @@ namespace PS.Game.Sim
             this.horde = horde;
             this.arena = arena;
             reached = new int[state.EnemyStore.Length];
+            walkable = new bool[arena.Width * arena.Height];
+            frontier = new int[arena.Width * arena.Height];
             state.FieldChestStore = new FieldChest[FieldCapacity];
             state.Chest = new ChestState { Chest = -1, Opened = double.NaN, LastTick = double.NaN, Landed = double.NaN };
         }
@@ -140,16 +146,20 @@ namespace PS.Game.Sim
             Drop(sim, t, x + dx * DebugTilesAhead * arena.TileM, y + dy * DebugTilesAhead * arena.TileM, 3, minute);
         }
 
-        /// <summary>(x, y) moves to the centre of the open tile nearest it (left as it is with none near).</summary>
+        /// <summary>
+        /// (x, y) moves to the centre of the nearest tile the hero can walk to: the first ring of tiles round it
+        /// holding one, the nearest of those.
+        /// </summary>
         void OpenTile(ref double x, ref double y)
         {
+            Walkable();
             int tx = (int)Math.Floor((x - arena.OriginX) / arena.TileM), ty = (int)Math.Floor((y - arena.OriginY) / arena.TileM);
             double best = double.PositiveInfinity;
-            for (int r = 0; r <= 4 && double.IsPositiveInfinity(best); r++)
+            for (int r = 0; r <= Math.Max(arena.Width, arena.Height) && double.IsPositiveInfinity(best); r++)
                 for (int dy = -r; dy <= r; dy++)
                     for (int dx = -r; dx <= r; dx++)
                     {
-                        if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r || !arena.IsOpen(tx + dx, ty + dy)) continue;
+                        if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r || !Walkable(tx + dx, ty + dy)) continue;
                         double cx = arena.CentreX(tx + dx), cy = arena.CentreY(ty + dy);
                         double d = (cx - x) * (cx - x) + (cy - y) * (cy - y);
                         if (d >= best) continue;
@@ -157,6 +167,30 @@ namespace PS.Game.Sim
                         x = cx;
                         y = cy;
                     }
+        }
+
+        bool Walkable(int x, int y) => x >= 0 && y >= 0 && x < arena.Width && y < arena.Height && walkable[y * arena.Width + x];
+
+        /// <summary><see cref="walkable"/>: the open tiles joined to the hero's by steps of one tile in the four directions.</summary>
+        void Walkable()
+        {
+            Array.Clear(walkable, 0, walkable.Length);
+            int w = arena.Width, head = 0, tail = 0;
+            int start = state.Hero.TileY * w + state.Hero.TileX;
+            if (start < 0 || start >= walkable.Length) return;
+            walkable[start] = true;
+            frontier[tail++] = start;
+            while (head < tail)
+            {
+                int at = frontier[head++], ax = at % w, ay = at / w;
+                for (int k = 0; k < 4; k++)
+                {
+                    int nx = ax + (k == 0 ? 1 : k == 1 ? -1 : 0), ny = ay + (k == 2 ? 1 : k == 3 ? -1 : 0);
+                    if (!arena.IsOpen(nx, ny) || walkable[ny * w + nx]) continue;
+                    walkable[ny * w + nx] = true;
+                    frontier[tail++] = ny * w + nx;
+                }
+            }
         }
 
         bool Paused => state.FrozenFor(FreezeReason.Pause) || state.FrozenFor(FreezeReason.MusicStopped);

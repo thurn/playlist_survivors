@@ -28,11 +28,8 @@
     }
   },
   "experience": {
-    "factors": [
-      {"fromLevel": 1, "factor": 5},
-      {"fromLevel": 20, "factor": 6.5},
-      {"fromLevel": 40, "factor": 8}
-    ],
+    "factors": [{"fromLevel": 1, "factor": 1.9}],
+    "exponent": 2.8,
     "growthLevels": [20, 40],
     "growthBonus": 1
   },

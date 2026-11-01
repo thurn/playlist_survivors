@@ -1223,6 +1223,37 @@ playing time.
   victory or a fall 5 s after the end, for the HUD's card. `--easy` turns
   Easy on. The bob in place during a freeze is the presenters' idle.
 
+**Shipped (ps-msz.8.4).** The run's pacing and its late crowd, tuned in the
+game's content (native's stays as it was). Evidence:
+[game/evidence/sweeps](../../game/evidence/sweeps/README.md).
+
+- **Pacing**: the experience curve is the game's own (Pickups below), so the
+  positioning bot's four sweep runs track progression.json's `startLevels`
+  within 20% at every five minutes: level 10 to 11 at 5:00 (design 10), 13
+  to 14 at 10:00 (15), 17 to 21 at 15:00 (19), 22 to 23 at 20:00 (23), 25
+  to 26 at 25:00 (27) and 31 to 34 at 30:00 (30), against 14 to 17 at 5:00
+  and 57 to 65 at 30:00 before. All four still win, lowest health 62% to
+  87%; the idle bot falls at 2:05.
+- **The late crowd's mix**: minutes 20 to 29 hold four to six roles of
+  different crystals, and minute 19 three (schedule.json), where minutes 21
+  to 26 were mostly the mushrooms' and 28 and 29 the bats'. The immobile flower left the
+  rosters, since it piles up uncaught at the cap; minute 25's flower walls
+  (50 each now, from 100) and the brute xlflower keep the orange. The slow
+  brutes are spread over three roles (xlmummy, xlmantis, xlflower), and the
+  level-scaled bats split between bat4 (minute 28) and bat5 (29). Minute
+  20's two bat swarms and minute 29's are now a bat swarm and a ghost swarm
+  of 20 each (from 50). With the waves' turns (Enemies), no role holds more
+  than 46% of 250 or more alive at any minute from 20 to 30 in the sweeps
+  (297 of 300 were mushrooms at 25:00 before), and every minute's peak
+  shows four to seven crystal colours.
+- **Boss chests**: the sweeps took each chest 0.5 to 4.7 s after it fell, so
+  neither the 2 m clear radius nor the bot's seeking is slow. Chests came
+  late because their bosses died late (minute 20's at 25:25 lived five
+  minutes at the hero's level 41), which the slower levels shorten. One
+  run's minute 20 chest fell on a walled-in tile and was never taken (the
+  bot stood beside it for six minutes): a chest now lands only where the
+  hero can walk (Pickups below).
+
 ### Hero movement on the grid
 
 The hero occupies one tile of a square grid aligned with the arena, and moves
@@ -1650,7 +1681,10 @@ slice stays the default until the full run, ps-msz.6.14). Evidence in
   quiet, 1.3 loud, blended over the last 2 s; schedule.json's `run`), and a
   quiet wave with that many alive is skipped. Waves spawn at tick ends;
   native snaps them to the next known eighth, which the game's enemies don't
-  need, since they hold until a main beat anyway.
+  need, since they hold until a main beat anyway. A pass that the cap cuts
+  short starts one role further along the roster each wave (ps-msz.8.4):
+  native's always starts at the first, so at the cap the first-listed role
+  took every free slot and filled the crowd.
 - **Clumps**: a role's share of a wave lands as one clump, and a role keeps
   landing within about 7° of a point of the ring for `run.clumpS` (3 s)
   after choosing it, so a trickle of one a wave still gathers into one mass
@@ -1941,6 +1975,17 @@ engine/chests.rs), presented by `Client/Pickups/ChestView.cs`:
   the landing, until level-up cards opening meanwhile take the screen.
 - **Debug**: `--debug chest@S` (`DebugCommand.Chest`) drops a tier-3 chest of the last evolving
   minute's treasure two tiles ahead of the hero, for it to walk onto. Evidence: [game/evidence/evolutions](../../game/evidence/evolutions/README.md).
+
+**Shipped (ps-msz.8.4).** The game's own experience curve, and chests the hero can always reach:
+
+- **The curve**: `factor x level^exponent` (progression.json's new `experience.exponent`), now 1.9 x
+  level^2.8 in one band, against native's 5, 6.5 and 8 x level². Reaching level 10 takes 893
+  experience in all (native's 405), level 20 7232 (1805) and level 30 23630 (5467). The steeper power follows the
+  design's flattening pace (`startLevels`: nine levels in the first five minutes, three in the last
+  five) as the bot's income grows. Growth's bonus at levels 20 and 40 is unchanged.
+- **Chest drops**: a chest lands on the nearest open tile joined to the hero's own by steps in the four
+  directions (a search of the arena at each drop), never in a pocket the arena's dressing walls off,
+  where the old nearest open tile could put it.
 
 ## Presentation
 

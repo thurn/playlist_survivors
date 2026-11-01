@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using PS.Game.Sim.Content;
+using PS.Game.Sim.Level;
 
 namespace PS.Game.Sim.Tests
 {
@@ -80,6 +81,24 @@ namespace PS.Game.Sim.Tests
             Assert.IsTrue(sim.State.FrozenFor(FreezeReason.Chest));
             Assert.IsTrue(sim.State.Chest.Open);
             Assert.AreEqual(3, sim.State.Chest.Rewards, "a tier-2 chest holds three");
+        }
+
+        [Test]
+        public void AChestFallingInAPocketTheHeroCannotEnterLandsWhereItCanWalk()
+        {
+            // A 40 x 40 arena, the hero on tile (20, 20); tile (25, 20) is open but walled in on its four sides.
+            var arena = ArenaData.Open(40, 40);
+            arena.Blocked = new[] { new Tile(24, 20), new Tile(26, 20), new Tile(25, 19), new Tile(25, 21) };
+            var config = HordeFixture.Config(minimum: 0, arena: arena, roster: new string[0], heroStands: true);
+            config.Arsenal = new ArsenalConfig { Weapons = new[] { ("magic-wand", 1) }, Cards = false };
+            var sim = new Simulation(config);
+            var grid = sim.Arena;
+            double px = grid.CentreX(25), py = grid.CentreY(20);
+            int cursor = sim.EventCount;
+            sim.Chests.Drop(sim, sim.Now, px, py, 1, 10);
+            var drop = sim.EventsSince(cursor).ToArray().Select(e => e.AsDrop).Single();
+            Assert.AreEqual(grid.TileM * Math.Sqrt(2), Math.Sqrt((drop.X - px) * (drop.X - px) + (drop.Y - py) * (drop.Y - py)), Eps,
+                "a corner of the pocket's ring, the nearest open tiles joined to the hero's");
         }
 
         [Test]

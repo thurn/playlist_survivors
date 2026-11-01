@@ -280,22 +280,24 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
-        public void ExperienceFollowsNativesCurveAndGrowthDoublesAtLevelTwenty()
+        public void ExperienceFollowsTheCurveAndGrowthDoublesAtLevelTwenty()
         {
             var sim = Start(Config(new ArsenalConfig { Cards = false }), null);
             var levels = sim.Arsenal.LevelUps;
-            levels.Gain(sim, sim.Now, 4.9);
+            var curve = Content.Progression.Experience;
+            levels.Gain(sim, sim.Now, curve.Total(1) - 0.1);
             Assert.AreEqual(1, sim.State.Level);
-            levels.Gain(sim, sim.Now, 0.1);
-            Assert.AreEqual(2, sim.State.Level, "5 for level 2");
-            levels.Gain(sim, sim.Now, 20 - 5);
-            Assert.AreEqual(3, sim.State.Level, "5 x 2² for level 3");
-            levels.Gain(sim, sim.Now, 5 * 19 * 19 - 20);
-            Assert.AreEqual(20, sim.State.Level, "5 x 19² for level 20");
+            levels.Gain(sim, sim.Now, 0.1 + Eps);
+            Assert.AreEqual(2, sim.State.Level, "the curve's total at level 1 for level 2");
+            levels.Gain(sim, sim.Now, curve.Total(2) - sim.State.Experience + Eps);
+            Assert.AreEqual(3, sim.State.Level);
+            levels.Gain(sim, sim.Now, curve.Total(19) - sim.State.Experience + Eps);
+            Assert.AreEqual(20, sim.State.Level);
             Assert.AreEqual(19, sim.State.PendingLevels, "no cards: every level waits");
+            double before = sim.State.Experience;
             levels.Gain(sim, sim.Now, 1);
-            Assert.AreEqual(5 * 19 * 19 + 2, sim.State.Experience, Eps, "Growth 2 while at level 20");
-            Assert.AreEqual(6.5 * 400, sim.State.ExperienceNext, Eps, "the factor rises to 6.5 from level 20");
+            Assert.AreEqual(before + 2, sim.State.Experience, Eps, "Growth 2 while at level 20");
+            Assert.AreEqual(curve.Total(20), sim.State.ExperienceNext, Eps);
         }
 
         // ---------------------------------------------------------------- offers and cards

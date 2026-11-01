@@ -106,6 +106,29 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void AtTheCapTheFreeSlotsGoRoundTheRoster()
+        {
+            // Minute 2 (bat1-3, every 0.5 s) fills the cap by 2:18. Then one slot frees before each wave: native's
+            // pass always starts at the roster's first role, which would take every one; here they go round.
+            var spawns = new List<SpawnEvent>();
+            var sim = Play(Run(), new FixtureSong(3).Beats(0, 200, 120), 150, spawns);
+            Assert.AreEqual(300, sim.State.EnemiesAlive);
+            var refills = new List<int>();
+            for (int wave = 0; wave < 6; wave++)
+            {
+                int victim = Enumerable.Range(0, 300).First(i => sim.State.Enemies[i].Alive);
+                sim.Horde.Kill(sim, victim, sim.Now, 1, 0, 0);
+                int cursor = sim.EventCount;
+                sim.StepTo(sim.Now + 0.5);
+                foreach (var e in sim.EventsSince(cursor))
+                    if (e.Kind == SimEventKind.Spawn && !e.AsSpawn.Recycled) refills.Add(e.AsSpawn.Role);
+            }
+            var content = HordeFixture.Content;
+            CollectionAssert.AreEquivalent(new[] { "bat1", "bat1", "bat2", "bat2", "bat3", "bat3" },
+                refills.Select(r => content.Roles[r].Id), "each role in turn");
+        }
+
+        [Test]
         public void ARolesTrickleGathersIntoOneClumpOnTheRing()
         {
             // Minute 0 spawns one bat a second: within the clump time, each lands by the last.
