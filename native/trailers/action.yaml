@@ -1,0 +1,83 @@
+# The native trailer: 59 s of pure play, then 1.5 s of black as the song fades, to the same
+# window of *Action* as demo3d's trailer (docs/tech-demo-3d/trailer.md, "The Music Window"):
+# song 121.40 s, just before 79.3, to the cut to black on 117.3, cut on the same beats. Every
+# shot is its own short run of levels/trailer.yaml, staged here: its zone, its crowd (the
+# schedule row: the enemy mix, set pieces, the view's widening, and the minimum crowd: on screen,
+# or alive in all when the row has set pieces) and the
+# arsenal the hero starts with. No interface is drawn and nothing levels up or drops.
+#
+# Film it with `just native-trailer` (records a showcase session for the music stream if there
+# is none, then this spec), or from native/:
+#   cargo run --release -p app -- --trailer <session> [--trailer-spec <yaml>] [--out <mp4>]
+#
+# Positions are seconds or bar / bar:beat on the song map's grid (155 BPM, bar n at 0.00982 +
+# (n - 1) x 1.548 s).
+width: 1920
+height: 1080
+fps: 60
+songMap: songs/action/songmap.json
+level: levels/trailer.yaml
+start: 121.40
+end: "117:3"
+tail: 1.5
+crossfadeMs: 24
+music: 0.75
+sfx: 1.0
+warmup: 6
+shots:
+  # The cold open, break-2 (no beat, three stabs): night in the glade, brutes closing on the
+  # hero through a skeleton crowd.
+  - zone: twilight-glade
+    row: { minimum: 90, enemies: [vs-xlmummy, vs-skeleton, vs-skeleton, vs-skeleton] }
+    arsenal: [bloody-tear]
+  # The drop (81.1): eight bars in the green woods, a charging horde of skeletons and slimes
+  # carved by Bloody Tear and Magic Wand's volleys.
+  - at: "81"
+    zone: galop-woods
+    row: { minimum: 320, widen: 1.2, enemies: [vs-skeleton, vs-skeleton, vs-skeleton, vs-zombie] }
+    arsenal: [bloody-tear, magic-wand]
+  # The re-entry (89.1): the ember hollow, bats and swarms streaming in, Thunder Loop striking
+  # on the beat and King Bible circling.
+  - at: "89"
+    zone: ember-hollow
+    row:
+      minimum: 900
+      widen: 1.2
+      enemies: [vs-bat2, vs-bat3, vs-bat3, vs-xlbat]
+      events: [{ kind: BAT_SWARM, delayMs: 2000, extraRepeats: 3, durationMs: 4000, count: 60 }]
+    arsenal: [thunder-loop, king-bible]
+  # The hottest phrase (97.1): the gold grove, ranks of orcs and werewolves into Soul Eater's
+  # aura and Holy Wand's homing volleys.
+  - at: "97"
+    zone: mushroom-grove
+    row: { minimum: 300, widen: 1.2, enemies: [vs-mudman1, vs-mudman1, vs-mudman1, vs-werewolf] }
+    arsenal: [soul-eater, holy-wand]
+  # The final peak (105.1): ghosts swarming the woods, Unholy Vespers and Chain Lightning.
+  - at: "105"
+    zone: galop-woods
+    row: { minimum: 340, widen: 1.3, enemies: [vs-ghost, vs-ghost, vs-ghost, vs-skeleton] }
+    arsenal: [unholy-vespers, chain-lightning, bloody-tear]
+  # Two bars: slimes and orcs pouring over the night glade into Soul Eater's aura and the Fire
+  # Trail.
+  - at: "109"
+    zone: twilight-glade
+    row: { minimum: 420, widen: 1.3, enemies: [vs-zombie, vs-zombie, vs-zombie, vs-mudman1] }
+    arsenal: [fire-trail, soul-eater, bloody-tear]
+  # Two bars: brutes and werewolves in the ember hollow.
+  - at: "111"
+    zone: ember-hollow
+    row: { minimum: 320, widen: 1.3, enemies: [vs-xlmantis, vs-werewolf, vs-werewolf, vs-skeleton] }
+    arsenal: [bloody-tear, thunder-loop, holy-wand]
+  # The climax (113.1): the infernal grove, the boss in the biggest crowd, the whole arsenal, and
+  # the finale's blast on the final slam (117.1) clearing the field before the cut.
+  - at: "113"
+    zone: infernal-grove
+    row:
+      minimum: 384
+      widen: 1.35
+      enemies: [vs-skeleton, vs-skeleton, vs-zombie, vs-mudman1, vs-werewolf, vs-xlmantis, vs-bat3]
+      bosses: [vs-boss-xlmantis]
+    arsenal: [bloody-tear, holy-wand, soul-eater, unholy-vespers, thunder-loop]
+    finale: "117"
+    # (The finale lands on an even beat of the run: a beat more of warm-up puts 117.1 on one.)
+    warmup: 6.387

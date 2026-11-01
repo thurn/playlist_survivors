@@ -21,21 +21,23 @@ fn lines<T: serde::de::DeserializeOwned>(p: &Path) -> Result<Vec<T>, String> {
 
 /// The recorded run: its start (song s), its end, the live run's settled hash and count, and its
 /// arrivals and keys.
-struct Recorded {
-    s0: f64,
-    end: f64,
+pub(super) struct Recorded {
+    pub(super) s0: f64,
+    pub(super) end: f64,
     hash: String,
     records: usize,
-    arrivals: Vec<Arrival>,
-    keys: Vec<(f64, InputKey, bool)>,
+    pub(super) arrivals: Vec<Arrival>,
+    pub(super) keys: Vec<(f64, InputKey, bool)>,
     /// Delayed listening's delay (s), or 0.
-    delayed: f64,
+    pub(super) delayed: f64,
     /// The level source the run played.
-    level: String,
+    pub(super) level: String,
+    /// The music file the session played, if it says.
+    pub(super) file: Option<String>,
 }
 
 impl Recorded {
-    fn load(dir: &Path) -> Result<Recorded, String> {
+    pub(super) fn load(dir: &Path) -> Result<Recorded, String> {
         let meta: serde_json::Value = serde_json::from_slice(
             &std::fs::read(dir.join("meta.json")).map_err(|e| e.to_string())?,
         )
@@ -59,6 +61,7 @@ impl Recorded {
                 0.0
             },
             level: run["level"].as_str().ok_or("no level source")?.into(),
+            file: meta["file"].as_str().map(Into::into),
         })
     }
 }
@@ -123,23 +126,26 @@ fn replay(
 }
 
 /// Offscreen drawing of a replay: the scene kept up every frame, and drawn when asked.
-struct Painter {
-    art: Atlases,
-    scene: Scene,
+pub(super) struct Painter {
+    pub(super) art: Atlases,
+    pub(super) scene: Scene,
     delayed: f64,
+    /// Pure play (the trailer): no HUD, and the scene's interface pieces left out.
+    pub(super) clean: bool,
 }
 
 impl Painter {
-    fn new(delayed: f64) -> Result<Painter, String> {
+    pub(super) fn new(delayed: f64) -> Result<Painter, String> {
         Ok(Painter {
             art: crate::slice::art::atlases()?,
             scene: Scene::default(),
             delayed,
+            clean: false,
         })
     }
 
     /// The frame's moments and level, at run time `s`.
-    fn keep_up(&mut self, world: &World, engine: &mut Engine, s: f64) {
+    pub(super) fn keep_up(&mut self, world: &World, engine: &mut Engine, s: f64) {
         let beats: Vec<_> = engine.stream().beats.iter().map(|b| b.t).collect();
         let moments = engine.view.borrow_mut().take_moments();
         self.scene.moments(
@@ -159,7 +165,7 @@ impl Painter {
 
     /// Builds the frame at run time `s` and encodes it into `gpu` (the frame's scene and HUD, as
     /// the app draws them); returns the encode's CPU ms.
-    fn draw(
+    pub(super) fn draw(
         &mut self,
         world: &World,
         engine: &mut Engine,
@@ -215,8 +221,10 @@ impl Painter {
             keys_visible: true,
         };
         let mut overlay = std::mem::take(&mut layers.overlay);
-        hud::draw(&view, &st, &self.art, w, h, &mut overlay);
-        overlay.append(&mut layers.modal);
+        if !self.clean {
+            hud::draw(&view, &st, &self.art, w, h, &mut overlay);
+            overlay.append(&mut layers.modal);
+        }
         let t0 = super::thread_cpu_s();
         gpu.draw(&Frame {
             clear: super::CLEAR,
@@ -357,7 +365,7 @@ struct Tally {
 }
 
 /// The enemies inside the camera's view (the sim's 960 x 540 world view at the camera's zoom).
-fn on_screen(view: &eval::live::LiveView) -> usize {
+pub(super) fn on_screen(view: &eval::live::LiveView) -> usize {
     let (cx, cy, zoom) = view.camera;
     let (hw, hh) = (
         sim::camera::VIEW_W / 2.0 / zoom,

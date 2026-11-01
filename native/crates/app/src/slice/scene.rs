@@ -70,6 +70,9 @@ pub struct Scene {
     struck: HashMap<usize, (f64, bool)>,
     /// The hero last faced left, for side-view art (`faces_left`).
     hero_left: bool,
+    /// Pure play, for the trailer: no gems, damage numbers, boss banners, chests, evolution
+    /// screens or level-up cards.
+    pub clean: bool,
 }
 
 /// A hit flashes an enemy white this long; a killing blow knocks it back over this long, and it
@@ -1424,6 +1427,13 @@ impl Scene {
         super::atmosphere::drop_trails(view, art, &at, scale, fast.drop, out);
         // Keep objective sprites crisp above additive effects and post flashes. HUD/cards
         // still draw afterwards, so offers can cover the hero deliberately.
+        // (The clean picture draws its interface pieces here and drops them.)
+        let mut dropped = Vec::new();
+        let ui = if self.clean {
+            &mut dropped
+        } else {
+            &mut layers.overlay
+        };
         if view.run.is_some() {
             let swell = 0.5 + 0.5 * (std::f64::consts::TAU * pulse.beat.min(1.0)).cos();
             gems::draw(
@@ -1433,10 +1443,10 @@ impl Scene {
                 scale,
                 view.run.map_or(self.run_s, |r| r.presentation_s),
                 fast.pulsed(swell),
-                &mut layers.overlay,
+                ui,
             );
         }
-        self.numbers.draw(art, now, &at, scale, &mut layers.overlay);
+        self.numbers.draw(art, now, &at, scale, ui);
         if view.run.is_some()
             && let Some(hero) = hero_top
         {
@@ -1449,22 +1459,29 @@ impl Scene {
             layers.overlay.push(hero);
         }
         super::signature::draw(view, art, &at, scale, out);
-        super::bosses::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
-        super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
-        self.evolution.draw(
-            view,
-            art,
-            &at,
-            scale,
-            w,
-            h,
-            out,
-            lights,
-            &mut layers.overlay,
-        );
-        self.cards.grade(now, &mut layers.grade);
-        self.cards
-            .draw(art, now, w, h, layers.feet, &mut layers.modal);
+        let ui = if self.clean {
+            &mut dropped
+        } else {
+            &mut layers.overlay
+        };
+        super::bosses::draw(view, art, &at, scale, w, h, out, ui);
+        if !self.clean {
+            super::treasure::draw(view, art, &at, scale, w, h, out, &mut layers.overlay);
+            self.evolution.draw(
+                view,
+                art,
+                &at,
+                scale,
+                w,
+                h,
+                out,
+                lights,
+                &mut layers.overlay,
+            );
+            self.cards.grade(now, &mut layers.grade);
+            self.cards
+                .draw(art, now, w, h, layers.feet, &mut layers.modal);
+        }
         // (The cards cover the hero: no marker at its feet, no display over its head.)
         if self.cards.covers_hero(now) {
             layers.feet = None;

@@ -38,6 +38,20 @@ native-test *args:
 ps *args:
     cd native && cargo run --locked --release -p cli -- "$@"
 
+# Film the native trailer (native/trailers/action.yaml) to captures/native-trailer.mp4 (records the showcase once for its stream)
+[group('native')]
+native-trailer *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    sessions="${PS_CACHE:-$HOME/Library/Caches/playlist-survivors}/trailer-session"
+    cd native
+    cargo build --locked --release -p app
+    if ! ls "$sessions"/*/stream.jsonl >/dev/null 2>&1; then
+        mkdir -p "$sessions"
+        PS_SESSIONS="$sessions" ./target/release/playlist-survivors --showcase --headless
+    fi
+    ./target/release/playlist-survivors --trailer "$(ls -dt "$sessions"/*/ | head -1)" "$@"
+
 # Build and sign native/target/PlaylistSurvivors.app (for system audio)
 [group('native')]
 bundle *args:

@@ -39,6 +39,9 @@
 //!                                     # level, autoplayed offscreen: crowds per section, stills, frame work
 //!     playlist-survivors --showcase-arsenal <session> [--level <yaml>]  # the same, measuring the
 //!                                     # hero's growth: level-ups, chests, time frozen, arsenal per section
+//!     playlist-survivors --trailer <session> [--trailer-spec <yaml>] [--out <mp4>] [--file <song>]
+//!                                     # a recorded showcase filmed offscreen as the trailer's music cuts
+//!                                     # (trailers/action.yaml), 1080p60 with sound, to captures/native-trailer.mp4
 
 mod bible;
 mod calibration;
@@ -85,6 +88,7 @@ mod swarm_check;
 mod sword;
 mod tier;
 mod timing;
+mod trailer;
 mod treasure;
 mod wand;
 mod weapons_check;
@@ -191,6 +195,10 @@ struct Options {
     showcase_density: Option<PathBuf>,
     /// The same replay, the hero's growth per section measured (`showcase::arsenal_growth`).
     showcase_arsenal: Option<PathBuf>,
+    /// A recorded showcase filmed as the trailer (`trailer::run`), its spec and its video.
+    trailer: Option<PathBuf>,
+    trailer_spec: Option<PathBuf>,
+    out: Option<PathBuf>,
     file: Option<PathBuf>,
     level: Option<PathBuf>,
     still: Option<PathBuf>,
@@ -273,6 +281,9 @@ fn options(args: &[String]) -> Result<Options, String> {
         showcase_stills: None,
         showcase_density: None,
         showcase_arsenal: None,
+        trailer: None,
+        trailer_spec: None,
+        out: None,
         file: None,
         level: None,
         still: None,
@@ -347,6 +358,17 @@ fn options(args: &[String]) -> Result<Options, String> {
                         .into(),
                 );
             }
+            "--trailer" => {
+                o.trailer = Some(
+                    it.next()
+                        .ok_or("--trailer needs a session directory")?
+                        .into(),
+                );
+            }
+            "--trailer-spec" => {
+                o.trailer_spec = Some(it.next().ok_or("--trailer-spec needs a path")?.into());
+            }
+            "--out" => o.out = Some(it.next().ok_or("--out needs a path")?.into()),
             "--showcase-arsenal" => {
                 o.showcase_arsenal = Some(
                     it.next()
@@ -840,6 +862,21 @@ pub fn run(args: &[String]) -> Result<(), String> {
     }
     if let Some(dir) = &opts.showcase_arsenal {
         return showcase::arsenal_growth(dir, &showcase_level());
+    }
+    if let Some(dir) = &opts.trailer {
+        let native = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        return trailer::run(
+            dir,
+            &opts
+                .trailer_spec
+                .clone()
+                .unwrap_or_else(|| native.join("trailers/action.yaml")),
+            &opts
+                .out
+                .clone()
+                .unwrap_or_else(|| native.join("../captures/native-trailer.mp4")),
+            opts.file.as_deref(),
+        );
     }
     if let Some(dir) = &opts.passives_check {
         return cards::passives_check::run(dir);

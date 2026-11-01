@@ -123,6 +123,7 @@ dependencies = [
  "render",
  "rtrb",
  "serde",
+ "serde-saphyr",
  "serde_json",
  "sim",
  "stream",

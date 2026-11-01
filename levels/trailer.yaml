@@ -1,0 +1,64 @@
+# The native trailer's base level (native/trailers/action.yaml, `--trailer`): each shot is its
+# own short run of this level, with the shot's zone, crowd and set pieces as its one schedule row
+# and its arsenal given at the start. No experience is taken (no level-ups), nothing drops a
+# chest or a chicken, and the hero never falls. The finale is the run clock's (durationS, which a
+# shot sets to land its blast), not the song's end.
+song: reactive
+seed: 2026
+player: reactive-moderate
+reactive: true
+survivors:
+  durationS: 600
+  endsWithSong: false
+  heroStands: true
+  cap: 1400
+  contactDamage: 0.5
+  bruteChickenChance: 0
+  bossChickens: 0
+  maxedHeal: 30
+  # (Each shot replaces this row.)
+  schedule:
+    - {"minute":0,"songS":0,"xpScale":0,"widen":1.0,"minimum":0,"frequency":250,"enemies":["vs-skeleton"],"bosses":[],"events":[],"treasure":[]}
+hero: { health: { max: 120, invulnerableMs: 120 } }
+upgrades: { loadout: [], offer: [] }
+zones: [twilight-glade, galop-woods, mushroom-grove, ember-hollow, infernal-grove]
+sections:
+  - section: reactive
+    bars: all
+    pace: 50
+    presses: "xx"
+    zone: twilight-glade
+    camera: { zoom: 1.2, lead: 50, punchOnAccents: false }
+    sfxPalette: crisp-steel
+director:
+  population: { start: 0, perMinute: 0, max: 300, levelScale: { quiet: 1.0, medium: 1.0, loud: 1.0 } }
+  sections:
+    - { slime: 2, bat: 1 }
+    - { goblin: 2, slime: 2, bat: 1 }
+    - { goblin: 3, orc: 1, slime: 1, bat: 1 }
+    - { goblin: 3, orc: 2, skeleton: 1, orc-elite: 0.01 }
+    - { goblin: 2, orc: 2, skeleton: 2, orc-ember: 1, orc-elite: 0.01 }
+    - { orc-ember: 3, skeleton-ember: 2, goblin: 2, orc-elite: 0.01 }
+  sectionRule: { jumpDb: 6, minGapS: 8 }
+  levelUps: []
+  levelUpWaitS: 20
+  zoneFallbackS: 240
+  smoothS: 2
+  # One zoom at every loudness: the showcase frames by demo2d's view widths (the schedule's
+  # widen), not by native's loudness camera.
+  camera:
+    quiet: { zoom: 1.2, lead: 30 }
+    medium: { zoom: 1.2, lead: 50 }
+    loud: { zoom: 1.2, lead: 60 }
+  palettes: { quiet: soft-chimes, medium: crisp-steel, loud: heavy-infernal }
+  paletteHoldS: 2
+  calm: { quiet: 0.5, medium: 0, loud: 0 }
+  setPieces:
+    gapS: 6
+    stampede: { enemy: goblin, count: 40, rows: 2, jumpDb: 6, quietS: 8 }
+    ring: { enemy: goblin, count: 40, gaps: 3, afterS: 3, maxBeats: 12 }
+    volleys: { archers: 2, everyBeats: 4 }
+    wedge: bee-wedge
+    kickLine: { formation: skeleton-kick-line, mediumBeats: 16, minDanceBeats: 8, maxDanceBeats: 32 }
+    boss: { type: minotaur, afterS: 900, landAfterS: 0.6, slamBeats: 8, retreatS: 90, landmark: standing-stones }
+    finale: { blast: finale-blast, landmark: ruined-shrine, windowS: 10, swell: 0.4, swellS: 1.5, epilogueS: 3 }
