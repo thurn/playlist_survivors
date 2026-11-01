@@ -478,7 +478,17 @@ namespace PS.Game.Sim
         {
             s.Wound = true;
             // Onto the beats it spans, revealed since its planning.
-            if (beatGrid && s.Beat >= 0 && Spanned(s.Beat, s.On, out double at) && at > t) s.Impact = at;
+            if (beatGrid && s.Beat >= 0 && Spanned(s.Beat, s.On, out double at) && at > t && at != s.Impact)
+            {
+                s.Impact = at;
+                // The strikes queued after it wind up from its impact at the earliest, as Pulse plans them.
+                for (int k = 0; k < count; k++)
+                {
+                    ref var next = ref At(k);
+                    if (!next.Wound && next.Windup < at) next.Windup = at;
+                }
+                lastImpact = Math.Max(lastImpact, at);
+            }
             if (Holding)
             {
                 s.Cancelled = true;

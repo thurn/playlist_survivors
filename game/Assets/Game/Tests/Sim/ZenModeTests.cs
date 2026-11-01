@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using PS.Game.Sim.Content;
+using PS.Game.Sim.Level;
 
 namespace PS.Game.Sim.Tests
 {
@@ -115,6 +116,101 @@ namespace PS.Game.Sim.Tests
             sim.StepTo(18);
             CollectionAssert.AreEqual(beats.Where(t => t > 6 && t < 18).ToList(),
                 Swings(sim).Where(a => a.Impact > 6 && a.Impact < 18).Select(a => a.Impact).ToList());
+        }
+
+        // ---------------------------------------------------------------- a real song
+
+        /// <summary>The run's level on the game's arena in zen, house-128's first 20 s, the hero walking a square.</summary>
+        static Simulation RealRun(List<KnownEntry> known, double until)
+        {
+            var config = new RunInputs
+            {
+                Seed = 3, Level = SessionLevel.Run, Arena = true, Footprint = RunLevel.GameFootprint, Mode = GameMode.Zen,
+            }.Build(Content, HordeFixture.GameArena());
+            var sim = new Simulation(config);
+            foreach (var k in known) sim.AddKnown(k.Entry, k.KnownAt);
+            var keys = new[] { Key.Right, Key.Up, Key.Left, Key.Down };
+            for (int i = 0; i < 9; i++)
+            {
+                double at = 1 + 2 * i;
+                if (at >= until) break;
+                sim.StepTo(at);
+                if (i > 0) sim.Release(keys[(i - 1) % 4], at);
+                sim.Press(keys[i % 4], at);
+            }
+            sim.StepTo(until);
+            return sim;
+        }
+
+        /// <summary>The dump with every entry known just before its own time, as after an analyzer stall.</summary>
+        static List<KnownEntry> JustInTime(List<KnownEntry> known) =>
+            known.Select(k => new KnownEntry(k.Entry, Math.Max(0, k.Entry.T - (k.Entry.Kind == EntryKind.Beat ? 0.03 : 0.01)))).ToList();
+
+        [Test]
+        public void ARealSongsSwingsEachWindUpFromTheImpactBefore([Values(false, true)] bool justInTime)
+        {
+            var known = Drive.Known(EntryDump.Load(EntryDump.House128, out double duration));
+            if (justInTime) known = JustInTime(known);
+            var swings = Swings(RealRun(known, duration));
+            Assert.Greater(swings.Count, 20);
+            for (int i = 1; i < swings.Count; i++)
+            {
+                Assert.GreaterOrEqual(swings[i].Impact, swings[i - 1].Impact, $"swing {i} lands in order");
+                Assert.GreaterOrEqual(swings[i].WindupStart, swings[i - 1].Impact - 1e-9,
+                    $"swing {i} winds up at {swings[i].WindupStart:F4}, before the impact at {swings[i - 1].Impact:F4} lands");
+            }
+        }
+
+        /// <summary>
+        /// The causality test (CausalityTests) on a zen run, sword, loudness and reeling horde: truncating or perturbing
+        /// the stream after a cut changes nothing settled before it.
+        /// </summary>
+        [Test]
+        public void AZenRunIsCausal([Values(false, true)] bool justInTime)
+        {
+            var known = Drive.Known(EntryDump.Load(EntryDump.House128, out double duration));
+            if (justInTime) known = JustInTime(known);
+            for (double cut = 2.85; cut < duration; cut += 3.1)
+            {
+                double at = Math.Floor(cut * 120) / 120;
+                var full = RealRun(known, at);
+                Assert.Greater(Swings(full).Count, 0);
+                foreach (var (what, changed) in new[]
+                {
+                    ("truncated", known.Where(k => k.KnownAt <= at).ToList()),
+                    ("perturbed", Perturbed(known, at, (ulong)(cut * 10))),
+                })
+                {
+                    var other = RealRun(changed, at);
+                    var a = full.EventsSince(0);
+                    var b = other.EventsSince(0);
+                    Assert.AreEqual(a.Length, b.Length, $"{what}: event count at the cut {at}");
+                    for (int i = 0; i < a.Length; i++) Assert.AreEqual(a[i], b[i], $"{what}: event {i} at the cut {at}");
+                    Assert.AreEqual(full.Hash, other.Hash, $"{what}: hash at the cut {at}");
+                }
+            }
+        }
+
+        /// <summary>After <paramref name="cut"/>, entries' times, values and known-at times moved and a fifth dropped.</summary>
+        static List<KnownEntry> Perturbed(List<KnownEntry> known, double cut, ulong seed)
+        {
+            var rng = new SimRandom(seed);
+            var list = new List<KnownEntry>();
+            foreach (var k in known)
+            {
+                if (k.KnownAt <= cut)
+                {
+                    list.Add(k);
+                    continue;
+                }
+                if (rng.NextDouble() < 0.2) continue;
+                var p = k.Entry;
+                p.T += rng.Range(-0.3, 0.3);
+                p.V0 = rng.NextDouble();
+                p.V1 = rng.NextDouble();
+                list.Add(new KnownEntry(p, cut + (k.KnownAt - cut) * rng.Range(1e-3, 2)));
+            }
+            return list;
         }
 
         // ---------------------------------------------------------------- loudness
