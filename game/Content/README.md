@@ -43,8 +43,9 @@ The one-shot converter is `uv run --project demo3d/tools game content` (demo3d/t
 demo3d_tools/content.py). It reads native's content/*.yaml, levels/survivors.yaml and the numbers
 native's Rust sim keeps in code, and wrote these files. The game now edits its JSON by hand
 (ps-msz.6.2 added schedule.json's `run.levelScale`, `levelSmoothS` and `clumpS`, and
-`bossMoves`; ps-msz.6.12 progression.json's `startLevels`), so `game content --check` no longer
-matches and the converter is history.
+`bossMoves`; ps-msz.6.12 progression.json's `startLevels`; ps-msz.8.4 the experience curve's
+`exponent` and the late minutes' rosters), so `game content --check` no longer matches and the
+converter is history.
 
 ## From native
 
@@ -126,7 +127,10 @@ Every native role and weapon, and its game entry. Roles drop native's `vs-` pref
 ### The schedule
 
 - Minutes, minimums, intervals (native's `frequency`, in seconds), rosters, bosses, swarm events
-  and treasure are levels/survivors.yaml's, with role ids mapped.
+  and treasure are levels/survivors.yaml's, with role ids mapped, except the game's own late crowd
+  (ps-msz.8.4): minutes 20 to 29 mix four to six roles of different crystals (minute 19 three), minutes 20 and 29's
+  swarms are a bat swarm and a ghost swarm of 20, minute 25's flower walls 50 (unity-game.md, The
+  run, "Shipped (ps-msz.8.4)").
 - `run.levelScale` and `levelSmoothS` are the survivors director's `population.levelScale` and
   `smoothS`, which native's spawner applies to each minute's minimum. `run.clumpS` and
   `bossMoves` are the game's own (unity-game.md, Enemies, "Shipped (ps-msz.6.2)"): native's

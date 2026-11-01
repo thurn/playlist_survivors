@@ -16,9 +16,9 @@ analyzer input; the runs are game/dotnet/PS.Game.Sweep, all five in parallel.
 the way, and the idle bot falls before minute 10. The rest is reported, never asserted: the pacing
 (the level every five minutes against progression.json's `startLevels`, and whether each is within
 20% of it), each chest's drop and take, and the late crowd's mix (from minute 20 on, the largest
-share one role holds of 250 or more alive, and the crystal colours at each minute's peak). A pass with every input committed writes a stamp keyed by their hash,
-and a later sweep over the same inputs skips (`--force` runs anyway), as slow CI's parity and
-survivors sections do. `--evidence` writes the summary to game/evidence/sweeps/summary.json.
+share one role holds of 250 or more alive, and the crystal colours at each minute's peak). A pass
+with every input committed writes a stamp keyed by their hash, and a later sweep over the same
+inputs skips (`--force` runs anyway), as slow CI's parity and survivors sections do. `--evidence` writes the summary to game/evidence/sweeps/summary.json.
 """
 
 from __future__ import annotations
