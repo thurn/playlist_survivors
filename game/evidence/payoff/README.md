@@ -59,7 +59,7 @@ What dropped, and the fixes:
   lands on its time (`SoundScheduler.Trimmed`). Only an attack the mixer is already past is dropped.
 - **Every regrowth's shatter (121 of each layer)**: `StructureShatter` raised it on the frame that
   reached the eruption, a lead after the mixer had played it. The sound presenter now shatters it from
-  the Regrowth event, as a break's, a lead ahead.
+  the Regrowth event, as a break's, a lead ahead (ps-msz.8.5's audit found it too, and landed the same fix).
 - **Cut off**: with 32 voices a third of all sounds lost their voice while still ringing. The pool is now 64 (the project's real
   voices 128, so the music and a full pool never make Unity virtualize either), and a full pool takes
   the oldest voice that isn't the hero's own (swings, the slam, the hurt), a chest's or an evolution's.

@@ -17,9 +17,9 @@ Moments.cs), and `--events-out`, every sim event as it settled. Then, from those
 - **settled ahead**: the margin by which each event settled before its moment, against the frame
   that dispatched it; a moment that settled after its frame had passed can only show late.
 
-`--sounds` audits the sounds instead, on a real-time headless run (the only kind that schedules
-them): the player's `--sound-out` with the sound probe, as `game spike --sounds` runs it, and
-`--events-out`. Every scheduled sound's song time must be its event's (a swing's impact, a hit's
+`--sounds` audits the sounds instead, on a real-time headless run (the only kind that plays
+them; a fixed-time run keeps their books silently): the player's `--sound-out` with the sound
+probe, as `game spike --sounds` runs it, and `--events-out`. Every scheduled sound's song time must be its event's (a swing's impact, a hit's
 or a death's time, a cast's, a chest's tick), apart from those snapped to the grid by design (the
 hurt and the gem chimes on the sixteenth, a shatter's tinkle as its shards land); its DSP time must
 be its song time's on the music's anchor; the mix measurement (spike.py) finds each probe click on

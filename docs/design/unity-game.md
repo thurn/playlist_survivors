@@ -2534,7 +2534,8 @@ sound took the voice), and fixed-time runs keep those books (Fixed time), so the
   94 ms, longer than an event's slack) and every regrowth's shatter (raised on
   the frame that reached it, after the mixer). A clip now starts into its
   lead-in when only that part is late, and the sound presenter shatters a
-  regrowth from its event. None dropped now.
+  regrowth from its event (ps-msz.8.5 found and fixed it the same way). None
+  dropped now.
 - Cut off: the pool is 64 voices and the project 128 real voices; a full pool
   takes the oldest voice that isn't the hero's own (swings, the slam, the
   hurt), a chest's or an evolution's. 3.6% cut off now, all ice-break,
