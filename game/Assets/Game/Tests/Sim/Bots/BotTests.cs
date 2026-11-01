@@ -84,6 +84,59 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void ANoticedLungeTurnsItAwayFromTheLungerEvenFromAGem()
+        {
+            var sim = HordeFixture.Empty();
+            var bot = new SurvivorBot(BotKind.Positioning, 1);
+            var hero = sim.State.Hero;
+            double zx = hero.X + 9.5;
+            int zombie = HordeFixture.Place(sim, "zombie", zx, hero.Y);
+            bot.Observe(new[] { SimEvent.Drop(0, 1, ItemKind.Gem, hero.X + 12, hero.Y, 1) });
+            bot.Act(sim);
+            Assert.AreEqual(Key.Right, Presses(sim).Last().Key, "clear of the crowd: the gem");
+            sim.StepTo(1); // the next stride step, the zombie still outside the crowd's safety distance
+            hero.PositionAt(sim.Now, out double hx, out _);
+            Assert.That(zx - hx, Is.GreaterThan(SurvivorBot.SafetyM));
+            bot.Observe(new[] { SimEvent.EnemyAttack(1, zombie, EnemyAttackKind.Lunge, 1, 1.2, -1, 0) });
+            bot.Act(sim);
+            Assert.AreEqual(Key.Left, Presses(sim).Last().Key, "the lunge: away from the lunger");
+        }
+
+        [Test]
+        public void InDangerAgainstAWallItSlidesAlongIt()
+        {
+            // A wall to the left longer than the route looks, and an enemy close on the right a little above.
+            var arena = ArenaData.Open();
+            int x0 = arena.HeroStart.X, y0 = arena.HeroStart.Y;
+            var blocked = new List<Tile>();
+            for (int y = y0 - SurvivorBot.RouteTiles - 2; y <= y0 + SurvivorBot.RouteTiles + 2; y++) blocked.Add(new Tile(x0 - 1, y));
+            arena.Blocked = blocked.ToArray();
+            var sim = HordeFixture.Empty(arena);
+            var bot = new SurvivorBot(BotKind.Positioning, 1);
+            var hero = sim.State.Hero;
+            HordeFixture.Place(sim, "zombie", hero.X + 2, hero.Y + 0.1);
+            bot.Act(sim);
+            Assert.AreEqual(new[] { Key.Down }, Presses(sim).Select(k => k.Key).ToArray(), "along the wall, away from the enemy's side");
+        }
+
+        [Test]
+        public void ClearOfASlamsBlowItsRouteKeepsOutUntilItLands()
+        {
+            var sim = HordeFixture.Empty();
+            var bot = new SurvivorBot(BotKind.Positioning, 1, HordeFixture.Content);
+            var hero = sim.State.Hero;
+            int minotaur = HordeFixture.Place(sim, "minotaur", hero.X + 15, hero.Y); // out of the crowd's reach
+            double markX = hero.X + 3, markY = hero.Y; // the signature's blow: about 1 m, the hero clear of it
+            bot.Observe(new[]
+            {
+                SimEvent.Drop(0, 1, ItemKind.Gem, hero.X + 6, hero.Y, 1),
+                SimEvent.EnemyAttack(0, minotaur, EnemyAttackKind.Slam, 0, 2, -1, 0, markX, markY),
+            });
+            bot.Act(sim);
+            Assert.That(Presses(sim).Last().Key, Is.AnyOf(Key.Up, Key.Down), "round the blow to the gem behind it, not into it");
+        }
+
+        [Test]
         public void ABlockedTileGivesWayToTheAimsOtherAxis()
         {
             var arena = ArenaData.Open();

@@ -2950,7 +2950,15 @@ the nearest gem bent 0.35 along the escape; 27 px a metre). What the grid change
   the hero (its radius from the content, plus the hero's hurt radius and 0.25 m) is danger until its
   impact, the escape pointing away from where it lands. The signature minotaur's lands where the
   hero stood, so a bot standing still for any reason (a gem underfoot, or one out of reach before
-  ps-b3v) takes every one.
+  ps-b3v) takes every one. Clear of a slam's blow, the route keeps out of it until it lands (ps-6bl).
+- **Every telegraph** (ps-6bl): a telegraphed charge whose line passes within its contact of the
+  hero is danger until its impact, the escape across the line; a noticed lunge is danger until its
+  impact, the escape away from the lunger. The crowd's pull counts every enemy alike, so a far crowd
+  walked the hero into a boss's bite. In danger with no step toward the escape (a wall across it),
+  the bot steps along the wall, the escape's smaller axis first, as native's hero slides; it had
+  stood against the wall and taken every lunge. The sword's half-time pulse (ps-at1) moved the
+  sweep's reversed run into those gaps (lowest health 0.14); with them closed, seeds 1 to 4 of all
+  four positioning cases win, none below 86% health.
 - **In the player** (ps-msz.6.14): `--bot positioning|idle` plays the run with the bot in place of the
   keyboard (`Client/Loop/BotInput.cs`), as `BotRun` drives it; its keys are recorded like a player's.
 

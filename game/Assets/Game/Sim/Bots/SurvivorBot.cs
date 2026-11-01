@@ -45,7 +45,20 @@ namespace PS.Game.Sim.Bots
     /// - <b>Slams</b>: native's bosses don't telegraph. A telegraphed slam (an enemy's
     ///   <see cref="EnemyAttackKind.Slam"/> attack) whose blow would reach the hero is danger until
     ///   its impact, the escape pointing away from where it lands: the signature minotaur's lands
-    ///   where the hero stood, so a hero left standing takes every one.
+    ///   where the hero stood, so a hero left standing takes every one. Clear of a slam's blow, the
+    ///   route keeps out of it until it lands: the danger ends at its edge, and a chest past it once
+    ///   walked the hero back in on the next step.
+    /// - <b>Charges</b>: a telegraphed charge (<see cref="EnemyAttackKind.Charge"/>, the boss holding
+    ///   where it telegraphed, then up to the schedule's <c>chargeM</c> along its aim) whose line
+    ///   passes within its contact of the hero is danger until its impact, the escape across the line.
+    /// - <b>Lunges</b>: native's hero glides off a lunge between frames; the grid hero, a tile a
+    ///   step, can step into one. A noticed lunge (an enemy's <see cref="EnemyAttackKind.Lunge"/>
+    ///   attack, half a beat ahead) is danger until its impact, the escape pointing away from the
+    ///   lunger as from a slam: the crowd's pull counts every enemy alike, so a far crowd otherwise
+    ///   walks the hero into a boss's bite.
+    /// - <b>Walls</b>: in danger with no step toward the escape (a wall or the arena's edge across
+    ///   it), the bot steps along the wall, the escape's smaller axis its own way first, as native's
+    ///   hero slides; before, it stood against the wall and took every lunge.
     /// - <b>Cards</b>, as native's: frozen, it lets go of its keys; one beat after the third card has
     ///   flipped in (the reveals' last interval) it presses Left, the first card, and Enter, and
     ///   releases them on the next frame. After a freeze it presses again, held keys being let go.
@@ -72,18 +85,23 @@ namespace PS.Game.Sim.Bots
             public double X, Y;
         }
 
-        /// <summary>A telegraphed slam: who gives it, where it lands and when.</summary>
-        struct Slam
+        /// <summary>A telegraphed attack: who gives it, where it lands or sets off, its aim (a charge's), its reach (a slam's) and when.</summary>
+        struct Threat
         {
             public int Enemy;
-            public double X, Y, Impact;
+            public double X, Y, DirX, DirY, Radius, Impact;
         }
 
         const int Side = 2 * RouteTiles + 1;
 
         readonly BotKind kind;
         readonly List<Gem> gems = new List<Gem>(1024);
-        readonly List<Slam> slams = new List<Slam>();
+        readonly List<Threat> slams = new List<Threat>(), charges = new List<Threat>(), lunges = new List<Threat>();
+        // The slams the hero is clear of, which the route keeps out of: each centre, and its radius and slack.
+        readonly List<Threat> shut = new List<Threat>();
+        // The bosses' charge length (content's boss moves), NaN without content: charges go unseen.
+        readonly double chargeM = double.NaN;
+        readonly EnemyRole[] roles;
         // The slams' radii (content's boss moves and signature), NaN without content: slams go unseen.
         readonly double bossSlamM = double.NaN, signatureSlamM = double.NaN;
         readonly int signatureRole = -1;
@@ -101,7 +119,12 @@ namespace PS.Game.Sim.Bots
         {
             this.kind = kind;
             var schedule = content?.Schedule;
-            if (schedule?.BossMoves != null) bossSlamM = schedule.BossMoves.SlamRadiusM;
+            roles = content?.Roles;
+            if (schedule?.BossMoves != null)
+            {
+                bossSlamM = schedule.BossMoves.SlamRadiusM;
+                chargeM = schedule.BossMoves.ChargeM;
+            }
             if (schedule?.Signature != null)
             {
                 signatureSlamM = schedule.Signature.SlamRadiusM;
@@ -148,9 +171,10 @@ namespace PS.Game.Sim.Bots
             double tileX = arena.CentreX(state.Hero.TileX), tileY = arena.CentreY(state.Hero.TileY), half = arena.TileM / 2;
             while (true)
             {
-                double range = Aim(sim, hx, hy, out headingX, out headingY, out int gem);
+                double range = Aim(sim, hx, hy, out headingX, out headingY, out int gem, out bool danger);
                 double gx = hx + headingX * range, gy = hy + headingY * range;
                 var key = Route(sim, gx, gy, headingX, headingY);
+                if (key == null && danger) key = Slide(sim, hx, hy, headingX, headingY);
                 if (key != null || gem < 0 || (Math.Abs(gx - tileX) <= half && Math.Abs(gy - tileY) <= half))
                 {
                     Let(sim, key);
@@ -198,7 +222,18 @@ namespace PS.Game.Sim.Bots
             else if (e.Kind == SimEventKind.Attack && !e.AsAttack.ByHero && e.AsAttack.EnemyKind == EnemyAttackKind.Slam)
             {
                 var a = e.AsAttack;
-                slams.Add(new Slam { Enemy = a.Enemy, X = a.SlamX, Y = a.SlamY, Impact = a.Impact });
+                slams.Add(new Threat { Enemy = a.Enemy, X = a.SlamX, Y = a.SlamY, Impact = a.Impact });
+            }
+            else if (e.Kind == SimEventKind.Attack && !e.AsAttack.ByHero && e.AsAttack.EnemyKind == EnemyAttackKind.Lunge)
+            {
+                var a = e.AsAttack;
+                lunges.Add(new Threat { Enemy = a.Enemy, Impact = a.Impact });
+            }
+            else if (e.Kind == SimEventKind.Attack && !e.AsAttack.ByHero && e.AsAttack.EnemyKind == EnemyAttackKind.Charge)
+            {
+                // The boss holds its pose where it telegraphed (SlamX, SlamY) and sets off from there along the aim.
+                var a = e.AsAttack;
+                charges.Add(new Threat { Enemy = a.Enemy, X = a.SlamX, Y = a.SlamY, DirX = a.DirX, DirY = a.DirY, Impact = a.Impact });
             }
         }
 
@@ -216,12 +251,13 @@ namespace PS.Game.Sim.Bots
         /// pushes); returns how far its goal lies: the chest or gem pulled to, else <see cref="EscapeM"/>.
         /// <paramref name="gem"/> is the gem pulled to, or -1.
         /// </summary>
-        double Aim(Simulation sim, double hx, double hy, out double ax, out double ay, out int gem)
+        double Aim(Simulation sim, double hx, double hy, out double ax, out double ay, out int gem, out bool danger)
         {
             var state = sim.State;
             gem = -1;
             double x = 0, y = 0, weight = 0;
-            bool danger = false;
+            danger = false;
+            shut.Clear();
             for (int i = slams.Count - 1; i >= 0; i--)
                 if (slams[i].Impact < sim.Now) slams.RemoveAt(i);
             foreach (var slam in slams)
@@ -229,10 +265,46 @@ namespace PS.Game.Sim.Bots
                 var enemies = state.Enemies;
                 double radius = slam.Enemy < enemies.Length && enemies[slam.Enemy].Role == signatureRole ? signatureSlamM : bossSlamM;
                 double dx = slam.X - hx, dy = slam.Y - hy;
-                if (!(Math.Sqrt(dx * dx + dy * dy) <= radius + SlamSlackM)) continue;
+                if (!(Math.Sqrt(dx * dx + dy * dy) <= radius + SlamSlackM))
+                {
+                    // Clear of its blow: the route keeps out of it until it lands.
+                    if (radius > 0) shut.Add(new Threat { X = slam.X, Y = slam.Y, Radius = radius + SlamSlackM });
+                    continue;
+                }
                 danger = true;
                 // Away from where it lands, outweighing the crowd; from its very centre, the crowd's or the heading's way.
                 if (Unit(dx, dy, out double ux, out double uy))
+                {
+                    x -= ux * SlamWeight;
+                    y -= uy * SlamWeight;
+                }
+            }
+            for (int i = charges.Count - 1; i >= 0; i--)
+                if (charges[i].Impact < sim.Now) charges.RemoveAt(i);
+            foreach (var charge in charges)
+            {
+                var enemies = state.Enemies;
+                if (roles == null || charge.Enemy >= enemies.Length || !enemies[charge.Enemy].Alive) continue;
+                // The nearest point of its line to the hero; within its contact (and slack), danger, the escape across the line.
+                double along = Math.Clamp((hx - charge.X) * charge.DirX + (hy - charge.Y) * charge.DirY, 0, chargeM);
+                double dx = hx - (charge.X + charge.DirX * along), dy = hy - (charge.Y + charge.DirY * along);
+                double contact = Horde.HeroHurtRadiusM + roles[enemies[charge.Enemy].Role].RadiusM + Horde.ContactGapM + SlamSlackM;
+                if (!(Math.Sqrt(dx * dx + dy * dy) <= contact)) continue;
+                danger = true;
+                if (!Unit(dx, dy, out double ux, out double uy)) (ux, uy) = (-charge.DirY, charge.DirX);
+                x += ux * SlamWeight;
+                y += uy * SlamWeight;
+            }
+            for (int i = lunges.Count - 1; i >= 0; i--)
+                if (lunges[i].Impact < sim.Now) lunges.RemoveAt(i);
+            foreach (var lunge in lunges)
+            {
+                var enemies = state.Enemies;
+                if (lunge.Enemy >= enemies.Length || !enemies[lunge.Enemy].Alive) continue;
+                enemies[lunge.Enemy].PositionAt(sim.Now, out double lx, out double ly);
+                danger = true;
+                // Away from the lunger, as from a slam; from its very centre, the crowd's or the heading's way.
+                if (Unit(lx - hx, ly - hy, out double ux, out double uy))
                 {
                     x -= ux * SlamWeight;
                     y -= uy * SlamWeight;
@@ -277,6 +349,25 @@ namespace PS.Game.Sim.Bots
                 return Math.Sqrt(best);
             }
             return EscapeM;
+        }
+
+        /// <summary>
+        /// In danger with no step toward the escape (a wall or the arena's edge across it), the step
+        /// along the wall: the escape's smaller axis, its own way first, as native's hero slides along
+        /// what it touches; none if both ways are shut.
+        /// </summary>
+        Key? Slide(Simulation sim, double hx, double hy, double ex, double ey)
+        {
+            bool alongY = Math.Abs(ex) >= Math.Abs(ey);
+            double along = alongY ? ey : ex;
+            double sign = along < 0 ? -1 : 1;
+            for (int k = 0; k < 2; k++, sign = -sign)
+            {
+                double sx = alongY ? 0 : sign, sy = alongY ? sign : 0;
+                var key = Route(sim, hx + sx * EscapeM, hy + sy * EscapeM, sx, sy);
+                if (key != null) return key;
+            }
+            return null;
         }
 
         static bool Nearest(double x, double y, double hx, double hy, ref double best, ref double bx, ref double by)
@@ -340,12 +431,21 @@ namespace PS.Game.Sim.Bots
                     int ny = cy + (order[k] == Key.Up ? 1 : order[k] == Key.Down ? -1 : 0);
                     if (nx < -RouteTiles || nx > RouteTiles || ny < -RouteTiles || ny > RouteTiles) continue;
                     int next = (ny + RouteTiles) * Side + nx + RouteTiles;
-                    if (first[next] >= 0 || !arena.IsOpen(hero.TileX + nx, hero.TileY + ny)) continue;
+                    if (first[next] >= 0 || !arena.IsOpen(hero.TileX + nx, hero.TileY + ny) ||
+                        Shut(arena.CentreX(hero.TileX + nx), arena.CentreY(hero.TileY + ny))) continue;
                     first[next] = cell == start ? (int)order[k] : first[cell];
                     queue[tail++] = next;
                 }
             }
             return best == start ? (Key?)null : (Key)first[best];
+        }
+
+        /// <summary>Does (x, y) lie in the blow of a slam the hero is clear of, before it lands?</summary>
+        bool Shut(double x, double y)
+        {
+            foreach (var s in shut)
+                if ((x - s.X) * (x - s.X) + (y - s.Y) * (y - s.Y) <= s.Radius * s.Radius) return true;
+            return false;
         }
 
         static Key Opposite(Key k) => k == Key.Left ? Key.Right : k == Key.Right ? Key.Left : k == Key.Up ? Key.Down : Key.Up;
