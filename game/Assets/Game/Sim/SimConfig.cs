@@ -55,6 +55,12 @@ namespace PS.Game.Sim
         /// </summary>
         public bool Finishers;
 
+        /// <summary>
+        /// The dash (`--dash`, a free hero's: <see cref="HeroMovement.Free"/>): Space dashes, on the beat a long lunge that
+        /// strikes what it passes and makes the sword's next beat strike a spin, off it a short hop (<see cref="Dash"/>).
+        /// </summary>
+        public bool Dash;
+
         /// <summary>Easy: enemy contact damage at half, and floor chickens that heal (unity-game.md, The Run).</summary>
         public bool Easy;
 

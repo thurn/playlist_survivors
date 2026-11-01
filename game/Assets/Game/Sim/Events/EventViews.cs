@@ -365,6 +365,24 @@ namespace PS.Game.Sim
         public double Heard => e.D4;
     }
 
+    public readonly struct HeroDashEvent
+    {
+        readonly SimEvent e;
+        public HeroDashEvent(in SimEvent e) { this.e = e; }
+        /// <summary>When the sim took the press; the dash itself runs from <see cref="Start"/>, when it was heard.</summary>
+        public double T => e.T;
+        public int Dash => e.I0;
+        /// <summary>On the beat: the long lunge that hurts what it passes and makes the sword's next beat strike a spin; else the short hop.</summary>
+        public bool OnBeat => e.I1 != 0;
+        public Direction Facing => (Direction)e.I2;
+        public double Start => e.D0;
+        public double End => e.D1;
+        public double FromX => e.D2;
+        public double FromY => e.D3;
+        public double DirX => e.D4;
+        public double DirY => e.D5;
+    }
+
     public readonly struct EnemyKnockEvent
     {
         readonly SimEvent e;

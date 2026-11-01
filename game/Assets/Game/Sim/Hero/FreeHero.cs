@@ -21,6 +21,9 @@ namespace PS.Game.Sim
     ///   or a fall) is walked again with the new input. So the client shows the turn on the frame the key went down;
     ///   the sim's systems in (h, F] already saw the old path, which differs by at most the lead's walk.
     /// - Frozen or fallen, it stands; a level-up's cards let go of its keys and target (<see cref="LetGo"/>).
+    /// - <b>Dashes</b> (`--dash`, <see cref="Sim.Dash"/>): from a dash's start to its end the hero moves at the dash's
+    ///   velocity instead of walking, by the same box rules, so a wall stops it; a dash heard before the sim took it is
+    ///   walked again from its start as a heard input is.
     ///
     /// <see cref="HeroState"/> holds the chord of the tick ahead: from where it is at the tick's start to where it
     /// will be at its end, so <see cref="HeroState.PositionAt"/> answers for any time in the tick. Each change of
@@ -53,6 +56,8 @@ namespace PS.Game.Sim
         bool glided;
         // The earliest time an input may re-walk from: the latest tick the hero was frozen or fallen.
         double floor = double.NegativeInfinity;
+        // The latest dash: its span and velocity.
+        double dashStart = double.NegativeInfinity, dashEnd = double.NegativeInfinity, dashX, dashY;
 
         public FreeHero(HeroState state, ArenaGrid arena, StrideGrid strides)
         {
@@ -99,6 +104,52 @@ namespace PS.Game.Sim
 
         public void Step(Simulation sim, int index, double t, double period) { }
 
+        /// <summary>
+        /// A dash from <paramref name="start"/> (up to the sim's time back, its press's heard time) to <paramref name="end"/>
+        /// at velocity (<paramref name="vx"/>, <paramref name="vy"/>), walked again from its start as a heard input is.
+        /// </summary>
+        internal void Dash(Simulation sim, double start, double end, double vx, double vy)
+        {
+            dashStart = start;
+            dashEnd = end;
+            dashX = vx;
+            dashY = vy;
+            Rewalk(sim, start);
+        }
+
+        /// <summary>
+        /// The way a dash from (<paramref name="x"/>, <paramref name="y"/>) goes, a unit vector: the held arrows', else
+        /// toward the pointer's target, else the walk's, else the facing.
+        /// </summary>
+        internal void DashDirection(double x, double y, out double dx, out double dy)
+        {
+            int across = (held[(int)Direction.Right] ? 1 : 0) - (held[(int)Direction.Left] ? 1 : 0);
+            int up = (held[(int)Direction.Up] ? 1 : 0) - (held[(int)Direction.Down] ? 1 : 0);
+            double ex = across, ey = up;
+            if (across == 0 && up == 0 && targeting)
+            {
+                ex = targetX - x;
+                ey = targetY - y;
+            }
+            if (ex * ex + ey * ey < 1e-12)
+            {
+                ex = glideX;
+                ey = glideY;
+            }
+            double d = Math.Sqrt(ex * ex + ey * ey);
+            if (d < 1e-9)
+            {
+                Sword.Facing(state.Facing, out dx, out dy);
+                return;
+            }
+            dx = ex / d;
+            dy = ey / d;
+        }
+
+        /// <summary>The four-way facing of a travel along (<paramref name="dx"/>, <paramref name="dy"/>), the larger axis's.</summary>
+        internal static Direction FacingOf(double dx, double dy) =>
+            Math.Abs(dx) >= Math.Abs(dy) ? dx > 0 ? Direction.Right : Direction.Left : dy > 0 ? Direction.Up : Direction.Down;
+
         public void Tick(Simulation sim, double now)
         {
             if (sim.State.Frozen || state.Fallen) floor = now;
@@ -110,7 +161,7 @@ namespace PS.Game.Sim
         void Walk(Simulation sim, double now, double x, double y, bool force)
         {
             double dt = Simulation.TickSeconds;
-            Advance(sim, x, y, dt, out double nx, out double ny);
+            Advance(sim, now, x, y, dt, out double nx, out double ny);
             Chord(x, y, nx, ny, now, now + dt);
             Glide(sim, now, now, x, y, (nx - x) / dt, (ny - y) / dt, force);
         }
@@ -153,7 +204,7 @@ namespace PS.Game.Sim
                 double b = PathT(back), span = b - t;
                 if (span > 1e-9)
                 {
-                    Advance(sim, x, y, span, out double nx, out double ny);
+                    Advance(sim, t, x, y, span, out double nx, out double ny);
                     Glide(sim, now, t, x, y, (nx - x) / span, (ny - y) / span, first);
                     first = false;
                     x = nx;
@@ -193,15 +244,19 @@ namespace PS.Game.Sim
             y = pathY[i] + (pathY[j] - pathY[i]) * u;
         }
 
-        /// <summary>Where the hero's input takes it from (<paramref name="x"/>, <paramref name="y"/>) over <paramref name="span"/> seconds.</summary>
-        void Advance(Simulation sim, double x, double y, double span, out double nx, out double ny)
+        /// <summary>
+        /// Where the hero's input takes it from (<paramref name="x"/>, <paramref name="y"/>) over the <paramref name="span"/>
+        /// seconds from <paramref name="t"/>: dashing for the share of them in a dash, walking the rest.
+        /// </summary>
+        void Advance(Simulation sim, double t, double x, double y, double span, out double nx, out double ny)
         {
             nx = x;
             ny = y;
             if (sim.State.Frozen || state.Fallen) return;
             int across = (held[(int)Direction.Right] ? 1 : 0) - (held[(int)Direction.Left] ? 1 : 0);
             int up = (held[(int)Direction.Up] ? 1 : 0) - (held[(int)Direction.Down] ? 1 : 0);
-            double step = Speed * span, dx, dy;
+            double dashing = Math.Max(0, Math.Min(t + span, dashEnd) - Math.Max(t, dashStart));
+            double step = Speed * (span - dashing), dx = 0, dy = 0;
             if (across != 0 || up != 0)
             {
                 double scale = across != 0 && up != 0 ? Math.Sqrt(0.5) * step : step;
@@ -223,10 +278,14 @@ namespace PS.Game.Sim
                     dy = ey / d * step;
                 }
             }
-            else return;
-            if (dx != 0 || dy != 0)
-                state.Facing = Math.Abs(dx) >= Math.Abs(dy) ? dx > 0 ? Direction.Right : Direction.Left
-                    : dy > 0 ? Direction.Up : Direction.Down;
+            if (dashing > 0)
+            {
+                state.Facing = FacingOf(dashX, dashY);
+                dx += dashX * dashing;
+                dy += dashY * dashing;
+            }
+            else if (dx != 0 || dy != 0) state.Facing = FacingOf(dx, dy);
+            if (dx == 0 && dy == 0) return;
             nx = Slide(x, y, dx, true);
             ny = Slide(y, nx, dy, false);
         }

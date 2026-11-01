@@ -291,7 +291,7 @@ namespace PS.Game.Sim.Tests
         {
             nameof(SimConfig.Seed), nameof(SimConfig.StartTime), nameof(SimConfig.StartMinute), nameof(SimConfig.Gate),
             nameof(SimConfig.KnownAtBudget), nameof(SimConfig.Arena), nameof(SimConfig.Start), nameof(SimConfig.Easy),
-            nameof(SimConfig.Mode), nameof(SimConfig.Finishers),
+            nameof(SimConfig.Mode), nameof(SimConfig.Finishers), nameof(SimConfig.Dash),
         };
         static readonly string[] FromLevelAndContent =
         {
@@ -313,7 +313,7 @@ namespace PS.Game.Sim.Tests
             var run = new RunInputs
             {
                 Seed = 11, Level = SessionLevel.Run, Arena = true, Footprint = Footprint, Start = RunStart.AfterClearBeat,
-                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, Mode = GameMode.Zen, Finishers = true,
+                StartTime = 0.25, StartMinute = 3, Gate = 0.3, KnownAtBudget = 0.6, Easy = true, Mode = GameMode.Zen, Finishers = true, Dash = true,
             };
             var config = Build(run);
             var plain = new SimConfig();
@@ -324,13 +324,14 @@ namespace PS.Game.Sim.Tests
 
         /// <summary>
         /// Sessions already written read as they were: <c>inputs.bin</c>'s bytes of each version, laid out by hand
-        /// (version 1 has no start minute and no input arguments, 1 and 2 no mode or pointer targets, 1 to 3 no finishers), so a change to the
+        /// (version 1 has no start minute and no input arguments, 1 and 2 no mode or pointer targets, 1 to 3 no finishers, 1 to 4 no dash), so a change to the
         /// layout fails here, not on disk.
         /// </summary>
         [TestCase(1)]
         [TestCase(2)]
         [TestCase(3)]
         [TestCase(4)]
+        [TestCase(5)]
         public void SessionsAlreadyWrittenReadAsTheyWere(int version)
         {
             using (var w = new BinaryWriter(File.Create(Path.Combine(dir, SessionRecord.InputsFile))))
@@ -352,6 +353,7 @@ namespace PS.Game.Sim.Tests
                 w.Write(2.5);
                 if (version >= 3) w.Write((byte)(version >= 4 ? GameMode.Zen : GameMode.Free));
                 if (version >= 4) w.Write(true); // finishers
+                if (version >= 5) w.Write(true); // dash
                 w.Write(30.25);  // end
                 w.Write(1234);   // events
                 w.Write(0xABCDEF0123456789UL);
@@ -403,12 +405,13 @@ namespace PS.Game.Sim.Tests
             Assert.AreEqual(1, record.Commands.Single().Order, "in the order the sim took them");
             Assert.AreEqual(version >= 4 ? GameMode.Zen : version >= 3 ? GameMode.Free : GameMode.Grid, run.Mode);
             Assert.AreEqual(version >= 4, run.Finishers);
+            Assert.AreEqual(version >= 5, run.Dash);
             if (version >= 3)
                 Assert.AreEqual(new TargetRecord { X = -4.5, Y = 7.75, Heard = 3.2, Effective = 3.25, Order = 2 }, record.Targets.Single());
             else CollectionAssert.IsEmpty(record.Targets);
 
-            // Written again, the same bytes (version 4's).
-            if (version != 4) return;
+            // Written again, the same bytes (version 5's).
+            if (version != 5) return;
             var bytes = File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile));
             record.Write(dir);
             CollectionAssert.AreEqual(bytes, File.ReadAllBytes(Path.Combine(dir, SessionRecord.InputsFile)));
@@ -483,6 +486,30 @@ namespace PS.Game.Sim.Tests
         }
 
         [Test]
+        public void AZenDashSessionReplaysToItsHash()
+        {
+            RecordEntries();
+            var entries = EntryDump.Load(EntryDump.House128, out double duration);
+            var run = Inputs();
+            run.Mode = GameMode.Zen;
+            run.Dash = true;
+            // Enter now and then answers the level-ups' cards; Space every 0.37 s, some on the beat and some off it, some
+            // too soon after the dash before (heard 90 ms before the sim takes them).
+            var enter = Enumerable.Range(4, 32).Select(k => k * 0.5).SelectMany(t => new[] { (t, Key.Enter, true), (t + 0.05, Key.Enter, false) });
+            var space = Enumerable.Range(0, 60).Select(k => 2.3 + 0.37 * k).SelectMany(t => new[] { (t, Key.Space, true), (t + 0.05, Key.Space, false) });
+            var live = Live(Build(run), entries, duration, 1.0 / 60, free: true, more: enter.Concat(space).ToArray());
+            SessionRecord.Of(run, live).Write(dir);
+            var dashes = Drive.Events(live, SimEventKind.HeroDash).Select(e => e.AsHeroDash).ToList();
+            Assert.IsTrue(dashes.Any(d => d.OnBeat) && dashes.Any(d => !d.OnBeat), "lunges and hops");
+            StringAssert.Contains("\"dash\": true", File.ReadAllText(Path.Combine(dir, "run.json")));
+
+            var sim = Replay(out var replay);
+            Assert.IsTrue(replay.Record.Run.Dash);
+            Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16} at {sim.Now}, recorded {live.Hash:X16} at {live.Now}");
+            CollectionAssert.AreEqual(live.EventsSince(0).ToArray(), sim.EventsSince(0).ToArray());
+        }
+
+        [Test]
         public void RunInputsRoundTripFieldForField()
         {
             var levels = new[]
@@ -495,6 +522,7 @@ namespace PS.Game.Sim.Tests
                 Inputs(seed: ulong.MaxValue),
                 new RunInputs { Seed = 2, Start = RunStart.AfterClearBeat },
                 new RunInputs { Seed = 4, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Mode = GameMode.Zen, Finishers = true },
+                new RunInputs { Seed = 5, Level = SessionLevel.Slice, Arena = true, Footprint = Footprint, Mode = GameMode.Zen, Dash = true },
             };
             var recorded = typeof(RunInputs).GetFields(BindingFlags.Public | BindingFlags.Instance);
             foreach (var run in levels)
@@ -502,7 +530,7 @@ namespace PS.Game.Sim.Tests
                 var bytes = new MemoryStream();
                 using (var w = new BinaryWriter(bytes, System.Text.Encoding.UTF8, leaveOpen: true)) run.Write(w);
                 bytes.Position = 0;
-                var read = RunInputs.Read(new BinaryReader(bytes), 4, "test");
+                var read = RunInputs.Read(new BinaryReader(bytes), 5, "test");
                 Assert.AreEqual(bytes.Length, bytes.Position, $"{run.Level}: all of it read");
                 foreach (var f in recorded)
                 {

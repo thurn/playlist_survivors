@@ -48,5 +48,21 @@ namespace PS.Game.Sim
             if (off <= FullWindowS || worst <= FullWindowS) return 1;
             return 1 - (1 - Lowest) * Math.Min(1, (off - FullWindowS) / (worst - FullWindowS));
         }
+
+        /// <summary>
+        /// Is a press heard at <paramref name="heard"/> on the beat (the dash's judgement, <see cref="Dash"/>): within
+        /// <paramref name="window"/> of the nearest beat of the beat interval it falls in, measured as <see cref="Of"/>
+        /// measures (half beats don't count)? With no reliable beat, every press is.
+        /// </summary>
+        public static bool OnBeat(BeliefLog log, BeatClock clock, double heard, double window)
+        {
+            if (clock.StateAt(heard) != Reliability.Reliable) return true;
+            var beats = log.Beats;
+            int b = BeatClock.LastAtOrBefore(beats, heard);
+            if (b < 0) return true;
+            double start = beats[b].T;
+            double next = clock.StartsInterval(b) ? beats[b + 1].T : start + clock.PeriodOf(b);
+            return Math.Min(heard - start, next - heard) <= window + 1e-9;
+        }
     }
 }

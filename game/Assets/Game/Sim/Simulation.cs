@@ -36,8 +36,9 @@ namespace PS.Game.Sim
     /// <see cref="Hero"/>), the hero taking a chest after the arsenal's. A press moves the hero at once (a press stride), at the frontier, drawn
     /// from when the press was heard; a free press's sword strike resolves at once against the world as it was when
     /// it was heard, its events stamped then (<see cref="Sword"/>), the one kind settled before the frontier; so does a
-    /// finisher's slam, Space in a ring's window (<see cref="Finishers"/>, which runs last of the per-tick systems).
-    /// Nothing simulated is ever revised.
+    /// finisher's slam, Space in a ring's window (<see cref="Finishers"/>, which runs last of the per-tick systems), and
+    /// a dash, Space otherwise (<see cref="Sim.Dash"/>: the hero's path from its press and the lunge's blows, its per-tick
+    /// sweep after the finishers'). Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -111,6 +112,11 @@ namespace PS.Game.Sim
                 if (!Rules.Finishers) throw new ArgumentException($"--finishers: the {Rules.Name} mode has none");
                 Finishers = new Finishers(Stream, Beats, State);
             }
+            if (config.Dash)
+            {
+                if (!(hero is FreeHero free)) throw new ArgumentException($"--dash: the {Rules.Name} mode's hero walks the grid; the dash needs a free one");
+                Dash = new Dash(free, Stream, Beats, State, Health, Horde, Rules);
+            }
             if (config.Easy && content != null)
             {
                 Chickens = new FloorChickens(content.Schedule.Easy, State, Health);
@@ -152,6 +158,8 @@ namespace PS.Game.Sim
         internal RunRules Run { get; }
         /// <summary>The finisher rings (`--finishers`), or null without them.</summary>
         internal Finishers Finishers { get; }
+        /// <summary>The dash (`--dash`), or null without it.</summary>
+        internal Dash Dash { get; }
         /// <summary>Easy's floor chickens, or null off Easy.</summary>
         internal FloorChickens Chickens { get; }
 
@@ -187,6 +195,12 @@ namespace PS.Game.Sim
             bool cards = Arsenal != null && Arsenal.LevelUps.Press(this, key, Now);
             // Space in a finisher ring's window is the finisher's alone.
             if (key == Key.Space && !cards && Finishers != null && Finishers.Press(this, heard)) return;
+            // Then it dashes, and never stomps.
+            if (key == Key.Space && !cards && Dash != null)
+            {
+                Dash.Press(this, heard);
+                return;
+            }
             hero.Press(this, key, heard, cards);
             if (key == Key.Attack && !cards) Sword?.Press(this, heard);
         }
@@ -385,6 +399,7 @@ namespace PS.Game.Sim
             Chests?.Tick(this, end);
             Zones?.Tick(this, end);
             Finishers?.Tick(this, end);
+            Dash?.Tick(this, end);
         }
 
         void UpdateBeatState(double t)

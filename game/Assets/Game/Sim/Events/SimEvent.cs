@@ -49,6 +49,7 @@ namespace PS.Game.Sim
         Bolt,
         HeroGlide,
         Finisher,
+        HeroDash,
     }
 
     /// <summary>The beat's three states (unity-game.md, "Beats, Bars and Reliability").</summary>
@@ -588,6 +589,27 @@ namespace PS.Game.Sim
         }
 
         /// <summary>
+        /// The free hero dashes (<see cref="Dash"/>, `--dash`): I0 the dash, I1 1 on the beat (the long lunge) or 0 (the
+        /// short hop), I2 its facing; D0 its start (the press in heard time, as the hero's glide from it), D1 its end,
+        /// D2/D3 where the hero was at its start, D4/D5 its direction.
+        /// </summary>
+        public static SimEvent HeroDash(double t, int dash, bool onBeat, Direction facing, double start, double end,
+            double fromX, double fromY, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.HeroDash, t);
+            e.I0 = dash;
+            e.I1 = onBeat ? 1 : 0;
+            e.I2 = (int)facing;
+            e.D0 = start;
+            e.D1 = end;
+            e.D2 = fromX;
+            e.D3 = fromY;
+            e.D4 = dirX;
+            e.D5 = dirY;
+            return e;
+        }
+
+        /// <summary>
         /// A finisher ring (<see cref="Finishers"/>): I0 the ring, I1 its <see cref="FinisherPhase"/>, I2 its downbeat's
         /// beat index; D0 the downbeat (as predicted then), D1 when the ring started closing, D2 its window either side
         /// of the downbeat; on a hit, D3 the slam's impact and D4 when the press was heard.
@@ -643,5 +665,6 @@ namespace PS.Game.Sim
         public BoltEvent AsBolt { get { Expect(SimEventKind.Bolt); return new BoltEvent(this); } }
         public HeroGlideEvent AsHeroGlide { get { Expect(SimEventKind.HeroGlide); return new HeroGlideEvent(this); } }
         public FinisherEvent AsFinisher { get { Expect(SimEventKind.Finisher); return new FinisherEvent(this); } }
+        public HeroDashEvent AsHeroDash { get { Expect(SimEventKind.HeroDash); return new HeroDashEvent(this); } }
     }
 }

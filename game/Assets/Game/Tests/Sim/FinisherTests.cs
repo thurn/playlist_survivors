@@ -281,6 +281,25 @@ namespace PS.Game.Sim.Tests
 
         static double Health(Simulation sim) => sim.State.Hero.MaxHealth;
 
+        /// <summary>With `--dash` too, Space in a ring's window is the finisher's and dashes not; outside it, it dashes.</summary>
+        [Test]
+        public void WithTheDashTooAPressInTheWindowIsAFinisherAndNotADash()
+        {
+            var config = Config();
+            config.Dash = true;
+            var sim = Start(Plain(128, 40), config);
+            var ring = NextRing(sim);
+            sim.StepTo(ring.Downbeat - 0.5);
+            sim.Press(Key.Space, sim.Now);
+            Assert.AreEqual(1, Drive.Events(sim, SimEventKind.HeroDash).Count, "outside the window: a dash");
+            sim.StepTo(ring.Downbeat);
+            sim.Press(Key.Space, sim.Now);
+            Assert.AreEqual(1, Rings(sim, FinisherPhase.Hit).Count, "in it: the finisher");
+            Assert.AreEqual(1, Slams(sim).Count);
+            sim.StepTo(ring.Downbeat + 1);
+            Assert.AreEqual(1, Drive.Events(sim, SimEventKind.HeroDash).Count, "and no dash");
+        }
+
         [Test]
         public void ALiveKeyHeardInTheWindowHitsThoughTheSimTakesItAfter()
         {

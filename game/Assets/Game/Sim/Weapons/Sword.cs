@@ -27,6 +27,8 @@ namespace PS.Game.Sim
         Bolt = 3,
         /// <summary>The finale's blast (<see cref="Horde.NoWeapon"/>'s): no weapon's hit.</summary>
         Blast = 4,
+        /// <summary>The hero's lunge on the beat (<see cref="Dash"/>), struck with the sword.</summary>
+        Dash = 5,
     }
 
     /// <summary>What a dying enemy drops.</summary>
@@ -113,6 +115,9 @@ namespace PS.Game.Sim
     ///   that hits at once in heard time as a press does (<see cref="Finisher"/>): <see cref="FinisherReachM"/> round the
     ///   hero, <see cref="FinisherDamage"/> times a heavy strike's damage, breaking structures and sending out its cleave
     ///   wave beyond; the beat's strikes go on around it.
+    /// - <b>The dash</b> (<see cref="Dash"/>, `--dash`): a lunge on the beat strikes what it passes
+    ///   (<see cref="Lunge"/>), and the next main strike on a beat landing after it, or the next press, is a heavy spin
+    ///   (<see cref="SpinAfter"/>).
     /// </summary>
     internal sealed class Sword : Weapon
     {
@@ -212,6 +217,8 @@ namespace PS.Game.Sim
         double lastPress = double.NegativeInfinity;
         // The latest tick end the sword held (frozen, fallen or out of play): a press never resolves before it.
         double heldUntil = double.NegativeInfinity;
+        // A lunge's landing: the next main beat strike, or press, landing at or after it is heavy.
+        double spinAfter = double.NaN;
 
         readonly Strike[] queue = new Strike[QueueCapacity];
         int head, count;
@@ -505,9 +512,11 @@ namespace PS.Game.Sim
                 return;
             }
             bool onBeat = s.Main && s.Beat >= 0;
-            bool heavy = s.Pressed ? s.Heavy : onBeat && (forcedAccent || (!lastHeavy || s.Loud) && accents.Accented(s.Impact, t));
+            bool spin = onBeat && s.Impact >= spinAfter - 1e-9;
+            bool heavy = s.Pressed ? s.Heavy : onBeat && (forcedAccent || spin || (!lastHeavy || s.Loud) && accents.Accented(s.Impact, t));
             if (onBeat)
             {
+                if (spin) spinAfter = double.NaN;
                 forcedAccent = false;
                 lastHeavy = heavy;
             }
@@ -541,8 +550,10 @@ namespace PS.Game.Sim
             double impact = Math.Max(Math.Max(natural, after), lastImpact + 1e-6);
             lastPress = impact;
             double grade = BeatGrade.Of(log, clock, heard, out double point, out bool onBeat);
-            bool heavy = forcedAccent || grade >= 1 && onBeat && point != lastHeavyPress && accents.Accented(point, now);
+            bool spin = impact >= spinAfter - 1e-9;
+            bool heavy = forcedAccent || spin || grade >= 1 && onBeat && point != lastHeavyPress && accents.Accented(point, now);
             forcedAccent = false;
+            if (spin) spinAfter = double.NaN;
             if (heavy) lastHeavyPress = point;
             int n = StrikesPerBeat;
             for (int k = 0; k < n && count < QueueCapacity; k++)
@@ -619,6 +630,16 @@ namespace PS.Game.Sim
 
         /// <summary>The next main strike to wind up on a beat is heavy (<see cref="DebugCommand.Accent"/>); on the attack key, the next press.</summary>
         internal void ForceAccent() => forcedAccent = true;
+
+        /// <summary>A lunge on the beat lands at <paramref name="landing"/> (<see cref="Dash"/>): the next main beat strike, or press, landing then or after is a heavy spin.</summary>
+        internal void SpinAfter(double landing) => spinAfter = landing;
+
+        /// <summary>
+        /// A lunge on the beat (<see cref="Dash"/>) passes enemy <paramref name="i"/> at <paramref name="t"/>: a heavy
+        /// strike's blow, throwing it along (dirX, dirY), aside of the hero's path.
+        /// </summary>
+        internal void Lunge(Simulation sim, int i, double t, double dirX, double dirY) =>
+            Hit(sim, i, t, Power * Def.Shape.HeavyDamage, WeaponHit.Dash, dirX, dirY, Launch(Def.Shape.HeavyDamage), along: true);
 
         /// <summary>
         /// Does the main strike on beat <paramref name="beat"/> slam: is it the first downbeat after a
@@ -729,13 +750,14 @@ namespace PS.Game.Sim
         /// <summary>
         /// A blow on enemy <paramref name="i"/>. A rank with crits (Bloody Tear's, native's combat.rs)
         /// lands critical at its crit chance times Luck, for its crit multiple, and a critical blow heals
-        /// the hero <see cref="TearHeal"/>, at most once each <see cref="TearHealEveryS"/> of run clock.
+        /// the hero <see cref="TearHeal"/>, at most once each <see cref="TearHealEveryS"/> of run clock. A survivor is
+        /// knocked away from the hero, or along the blow if <paramref name="along"/>.
         /// </summary>
-        void Hit(Simulation sim, int i, double t, double damage, WeaponHit how, double dirX, double dirY, double launch)
+        void Hit(Simulation sim, int i, double t, double damage, WeaponHit how, double dirX, double dirY, double launch, bool along = false)
         {
             var rank = Numbers;
             bool critical = rank.CritEnabled && sim.Random.NextDouble() < rank.CritChance * Stats.Luck;
-            horde.Damage(sim, i, t, critical ? damage * rank.CritMultiplier : damage, Index, how, dirX, dirY, rank.Knockback, launch, critical);
+            horde.Damage(sim, i, t, critical ? damage * rank.CritMultiplier : damage, Index, how, dirX, dirY, rank.Knockback, launch, critical, along);
             if (!critical || state.RunClock < lastTearHeal + TearHealEveryS - 1e-9) return;
             lastTearHeal = state.RunClock;
             sim.Health.Heal(t, TearHeal, 0);
