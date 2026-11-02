@@ -16,7 +16,11 @@ namespace Champions.Client
         /// <summary>This launch's options, parsed from its command line on first use.</summary>
         public static LaunchOptions Current => _current ??= Parse(Environment.GetCommandLineArgs(), Application.isBatchMode);
 
-        /// <summary>Windowless (`--headless`, or Unity's batch mode): the output silenced, frames paced at 60 per second.</summary>
+        /// <summary>
+        /// Windowless (`--headless`, or Unity's batch mode): the output silenced, frames paced at 60 per second. Unity's
+        /// player reads `--headless` too and draws with the Null device, so windowless stills run in batch mode without
+        /// it (`champions play --headless` does that).
+        /// </summary>
         public bool Headless;
         /// <summary>`--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes.</summary>
         public bool FixedTime;

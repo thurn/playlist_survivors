@@ -32,9 +32,12 @@ The CLI (`rhythm_champions/tools`, a uv project; `champions --help`):
 | `unity <Method>` | A batch-mode task method of `Champions.EditorTools.Tasks` |
 | `guard`, `sync`, `manifest find\|add`, `library save` | The vendor guard, the vendor sync, curating the manifest, saving a warm Library |
 
-Player flags so far: `--headless`, `--seconds N`, `--fixed-time` (exactly
-1/60 s per frame), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p
-JPEGs at those times, then quit). For example, a still of the first second:
+Player flags so far: `--seconds N`, `--fixed-time` (exactly 1/60 s per
+frame), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p JPEGs at
+those times, then quit). `champions play --headless` runs the player in
+batch mode on Metal; given to the player itself, `--headless` makes Unity
+draw with its Null device, so no still could be kept. For example, a still
+of the first second:
 
 ```sh
 just champions-play --headless --fixed-time --capture-stills captures/boot --stills-at 1

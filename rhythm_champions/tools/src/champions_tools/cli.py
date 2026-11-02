@@ -112,9 +112,9 @@ def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
     if a.headless:
         wt.logs.mkdir(parents=True, exist_ok=True)
         log = wt.logs / "player.log"
-        # Batch mode draws with the Null device unless told otherwise; stills need Metal.
-        cmd = [str(app.parent / setup.APP_EXE), "-batchmode", "-force-metal", "-logFile", str(log),
-               "--headless", *player_flags]
+        # Batch mode draws with the Null device unless told otherwise, and so does a player given
+        # `--headless`, which Unity reads too: stills need Metal. The game counts batch mode as headless.
+        cmd = [str(app.parent / setup.APP_EXE), "-batchmode", "-force-metal", "-logFile", str(log), *player_flags]
         started = time.monotonic()
         code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
         print(f"play: the player exited {code} after {time.monotonic() - started:.1f} s (log {log.relative_to(wt.root)})")
@@ -150,14 +150,14 @@ def cmd_editor(a: argparse.Namespace) -> int:
 def check_variants(wt: paths.Worktree, build_first: bool) -> bool:
     """The variant budget (plan.md, Rendering > Pipeline) on the Mono player: built first with a
     clean build cache, so every shader's variants are counted afresh."""
-    folder = setup.player_dir(wt, "mono")
-    if build_first and build(wt, "mono", cold=True, clean_cache=True) != 0:
-        print("check: the variant budget's build FAILED (over budget, or see Logs/BuildPlayer.log)")
-        report = folder / VARIANTS_REPORT
-        if report.exists():
-            print_variants(json.loads(report.read_text(encoding="utf-8")))
-        return False
-    report = folder / VARIANTS_REPORT
+    report = setup.player_dir(wt, "mono") / VARIANTS_REPORT
+    if build_first:
+        report.unlink(missing_ok=True)  # a build that fails before counting leaves none to misread
+        if build(wt, "mono", cold=True, clean_cache=True) != 0:
+            print("check: the variant budget's build FAILED (over budget, or see Logs/BuildPlayer.log)")
+            if report.exists():
+                print_variants(json.loads(report.read_text(encoding="utf-8")))
+            return False
     if not report.exists():
         print(f"check: no variant report at {report}; build the Mono player first")
         return False

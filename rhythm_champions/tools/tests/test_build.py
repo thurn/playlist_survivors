@@ -184,4 +184,5 @@ def test_play_needs_a_build_and_passes_unknown_flags_to_the_player(monkeypatch, 
     assert played.value.code == 0
     exe, *args = calls[0]
     assert exe.endswith(setup.APP_EXE)
-    assert args[:2] == ["-batchmode", "-force-metal"] and args[-4:] == ["--headless", "--seconds", "5", "--fixed-time"]
+    assert args[:2] == ["-batchmode", "-force-metal"] and args[-3:] == ["--seconds", "5", "--fixed-time"]
+    assert "--headless" not in args  # Unity's player would draw with the Null device
