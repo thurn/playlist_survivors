@@ -105,9 +105,9 @@ namespace Champions.EditorTools.EdgeCuts
                             ClipB = (uint)clipIndex, TimeB = time, Blend = 1, Scale = 1, Tint = MonsterInstance.Pack(Tint),
                             Flags = (uint)CrowdFlags.Alive,
                         };
-                        var mask = DrawCut(crowd, camera, rt, body, mask: true, post: false);
-                        var plain = DrawCut(crowd, camera, rt, body, mask: false, post: false);
-                        var beauty = DrawCut(crowd, camera, rt, body, mask: false, post: true);
+                        var mask = DrawCut(crowd, typeIndex, camera, rt, body, mask: true, post: false);
+                        var plain = DrawCut(crowd, typeIndex, camera, rt, body, mask: false, post: false);
+                        var beauty = DrawCut(crowd, typeIndex, camera, rt, body, mask: false, post: true);
                         sheet.SetPixels32(2 * pi * cell + cell, 0, cell, cell, beauty);
                         var (share, silhouette, top, bottom) = BlackShare(mask, beauty, cell);
                         var (plainShare, _, _, _) = BlackShare(mask, plain, cell);
@@ -154,11 +154,11 @@ namespace Champions.EditorTools.EdgeCuts
             RenderTexture.active = null;
         }
 
-        static Color32[] DrawCut(EdgeCrowd crowd, Camera camera, RenderTexture rt, MonsterInstance body, bool mask, bool post)
+        static Color32[] DrawCut(EdgeCrowd crowd, int type, Camera camera, RenderTexture rt, MonsterInstance body, bool mask, bool post)
         {
             EdgeLook.Mask(mask);
             camera.GetUniversalAdditionalCameraData().renderPostProcessing = post;
-            var slots = crowd.Instances(0, 1);
+            var slots = crowd.Instances(type, 1);
             slots[0] = body;
             crowd.Draw(camera);
             camera.Render();
