@@ -91,6 +91,12 @@ namespace PS.Look.Tests
                 Assert.That(lib.IndexOf("slash", "light-streaks"), Is.EqualTo(1));
                 Assert.That(lib.IndexOf("slash", "prism-streaks"), Is.EqualTo(2));
                 Assert.That(lib.IndexOf("spin", "light-streaks"), Is.EqualTo(-1), "an effect the library lacks");
+                Assert.That(lib.IndexOf("slash", "light-streaks", special: true), Is.EqualTo(1), "no special variant: the everyday one");
+                lib.Effects = new[] { lib.Effects[0], lib.Effects[1], lib.Effects[2], new EffectEntry { Name = "streak-slash-big" } };
+                lib.Variants = new[] { lib.Variants[0], lib.Variants[1], new VfxVariant { Option = "light-streaks", Name = "slash@special", Effect = "streak-slash-big" } };
+                Assert.That(lib.IndexOf("slash", "light-streaks", special: true), Is.EqualTo(3), "a special moment's bright variant");
+                Assert.That(lib.IndexOf("slash", "light-streaks"), Is.EqualTo(1), "the everyday one otherwise");
+                Assert.That(lib.IndexOf("slash", null, special: true), Is.EqualTo(0), "no option: the effect itself");
             }
             finally { Object.DestroyImmediate(lib); }
         }

@@ -21,13 +21,17 @@ namespace Demo3D.Runtime.Effects
     /// of its blows grow with the blow's weight, and death bursts by the feel's own factor.
     /// Under a look's vfx option (the crystal cut's; neon-look.md, The Axes &gt; VFX) every effect it maps to is drawn
     /// as the selection's variant (<see cref="EffectLibrary.Variants"/>): the procedural slashes, streaks and sparks,
-    /// a slash cutting right to left (slashL, slash3) mirrored so its light sweeps the blade's way.
+    /// a slash cutting right to left (slashL, slash3) mirrored so its light sweeps the blade's way. They are modest every
+    /// day; a special moment (neon-look.md, Special moments) draws the option's bright variant: a heavy blow (its blow
+    /// feel's weight <see cref="HeavyBlow"/> or more) and every slam's shock.
     /// </summary>
     public sealed class EffectDriver
     {
         sealed class Mapping
         {
             public int[] Variants = Array.Empty<int>();
+            /// <summary>The variants at a special moment (the vfx option's bright ones, else the everyday ones).</summary>
+            public int[] Special = Array.Empty<int>();
             public int[] With = Array.Empty<int>();
             public int Elite = -1, Large = -1;
             public float LargeScale = float.MaxValue;
@@ -41,7 +45,7 @@ namespace Demo3D.Runtime.Effects
         double _now;
         readonly Mapping[] _map;
         readonly int _projectile, _dust, _crystal;
-        readonly int _deathBurstEvent, _hitSparkEvent, _slashTrail; // the timeline's death-burst, hit-spark and slash-trail effect names, -1 if it has none
+        readonly int _deathBurstEvent, _hitSparkEvent, _slashTrail, _slamShock; // the timeline's death-burst, hit-spark, slash-trail and slam-shock effect names, -1 if it has none
         readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
         readonly int[] _actionsByTime;
@@ -99,12 +103,17 @@ namespace Demo3D.Runtime.Effects
                 if (!c.IsNull && c.Count > 0)
                 {
                     m.Variants = Indices(lib, c["effects"], vfx);
+                    m.Special = Indices(lib, c["effects"], vfx, true);
                     m.With = Indices(lib, c["with"], vfx);
                     m.Elite = Index(lib, c["elite"].AsString(), vfx);
                     m.Large = Index(lib, c["large"].AsString(), vfx);
                     m.LargeScale = c["largeScale"].AsFloat(float.MaxValue);
                 }
-                else if (lib.IndexOf(tl.EffectNames[i], vfx) >= 0) m.Variants = new[] { lib.IndexOf(tl.EffectNames[i], vfx) };
+                else if (lib.IndexOf(tl.EffectNames[i], vfx) >= 0)
+                {
+                    m.Variants = new[] { lib.IndexOf(tl.EffectNames[i], vfx) };
+                    m.Special = new[] { lib.IndexOf(tl.EffectNames[i], vfx, true) };
+                }
                 _map[i] = m;
             }
             var client = root["client"];
@@ -112,6 +121,7 @@ namespace Demo3D.Runtime.Effects
             _dust = Index(lib, client["monsterAttack"].AsString(), vfx);
             _crystal = Index(lib, client["crystalShatter"].AsString(), vfx);
             _slashTrail = Array.IndexOf(tl.EffectNames, "slash-trail");
+            _slamShock = Array.IndexOf(tl.EffectNames, "slam-shock");
             _deathBurstEvent = Array.IndexOf(tl.EffectNames, "death-burst");
             _hitSparkEvent = Array.IndexOf(tl.EffectNames, "hit-spark");
             _ambient = new AmbientEffects(lib, fx);
@@ -162,7 +172,7 @@ namespace Demo3D.Runtime.Effects
             var list = new List<Playback.BreakMoments.Burst>(bursts);
             list.Sort((a, b) => a.Time.CompareTo(b.Time));
             _bursts = list.ToArray();
-            _burstFx = Array.ConvertAll(_bursts, b => _lib.IndexOf(b.Effect, _vfx));
+            _burstFx = Array.ConvertAll(_bursts, b => _lib.IndexOf(b.Effect, _vfx, true)); // a formation smash is a set piece: special
             foreach (var b in _bursts)
                 if (_lib.IndexOf(b.Effect) < 0) Debug.LogWarning($"EffectDriver: no library effect '{b.Effect}' for a structure break's burst");
             _last = double.NaN; // the next frame starts afresh
@@ -173,13 +183,20 @@ namespace Demo3D.Runtime.Effects
 
         static int Index(EffectLibrary lib, string name, string vfx) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name, vfx);
 
-        static int[] Indices(EffectLibrary lib, JsonValue arr, string vfx)
+        static int[] Indices(EffectLibrary lib, JsonValue arr, string vfx, bool special = false)
         {
             if (arr == null || arr.Type != JsonType.Array) return Array.Empty<int>();
             var r = new List<int>();
-            for (int i = 0; i < arr.Count; i++) { int k = lib.IndexOf(arr[i].AsString(), vfx); if (k >= 0) r.Add(k); }
+            for (int i = 0; i < arr.Count; i++) { int k = lib.IndexOf(arr[i].AsString(), vfx, special); if (k >= 0) r.Add(k); }
             return r.ToArray();
         }
+
+        /// <summary>A hero's blow whose blow feel's weight reaches this is a special moment (its kills near the feel's heavy count).</summary>
+        public const float HeavyBlow = 0.75f;
+
+        /// <summary>Whether event <paramref name="ev"/> is a special moment under the vfx option: a slam's shock, or a heavy blow's trail.</summary>
+        bool Special(in EffectEvent ev) =>
+            _vfx != null && (ev.Effect == _slamShock || ev.AttachTo == 0 && Blows != null && Blows.WeightAt(ev.Time) >= HeavyBlow);
 
         /// <summary>
         /// Whether the hero's slash at <paramref name="t"/> cuts right to left (slashL, slash3, as seen from above:
@@ -262,7 +279,8 @@ namespace Demo3D.Runtime.Effects
                 }
                 return;
             }
-            int fx = m.Variants[(int)(ev.Seed % (uint)m.Variants.Length)];
+            var variants = Special(ev) && m.Special.Length == m.Variants.Length ? m.Special : m.Variants;
+            int fx = variants[(int)(ev.Seed % (uint)variants.Length)];
             if (elite && m.Elite >= 0) fx = m.Elite;
             if (ev.Scale >= m.LargeScale && m.Large >= 0) fx = m.Large;
             float yawRate = 0, duration = 0;

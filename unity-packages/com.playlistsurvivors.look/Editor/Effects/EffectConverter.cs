@@ -245,8 +245,9 @@ namespace PS.Look.EditorTools.Effects
         }
 
         /// <summary>
-        /// The selection's <c>vfx</c> table, <c>{ option: { effect: variant } }</c> (neon-look.md, The Axes &gt; VFX): every
-        /// option a built option of the vfx axis, every effect and variant one the selection converts.
+        /// The selection's <c>vfx</c> table, <c>{ option: { effect: variant } }</c> (neon-look.md, The Axes &gt; VFX), an
+        /// effect's key with <c>@special</c> its variant at a special moment: every option a built option of the vfx axis,
+        /// every effect and variant one the selection converts.
         /// </summary>
         static VfxVariant[] Variants(JObject selection, List<EffectEntry> entries)
         {
@@ -259,7 +260,8 @@ namespace PS.Look.EditorTools.Effects
                 foreach (var kv in (JObject)option.Value)
                 {
                     var variant = (string)kv.Value;
-                    if (!Has(kv.Key) || !Has(variant)) throw new Exception($"EffectConverter: vfx {option.Key}: '{kv.Key}' -> '{variant}' names an effect the selection doesn't convert");
+                    var name = kv.Key.EndsWith(EffectLibrary.Special) ? kv.Key.Substring(0, kv.Key.Length - EffectLibrary.Special.Length) : kv.Key;
+                    if (!Has(name) || !Has(variant)) throw new Exception($"EffectConverter: vfx {option.Key}: '{kv.Key}' -> '{variant}' names an effect the selection doesn't convert");
                     list.Add(new VfxVariant { Option = option.Key, Name = kv.Key, Effect = variant });
                 }
             }

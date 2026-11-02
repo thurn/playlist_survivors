@@ -34,6 +34,8 @@ namespace Game.Client.Effects
     /// Under the look's vfx option (neon-look.md, The Axes &gt; VFX) each effect is the selection's variant where it names one
     /// (<see cref="EffectLibrary.Variants"/>): light-streaks' procedural slash, spin and slam ribbons (drawn on the same arc
     /// as the vendor crescent: its middle at <see cref="SlashCentreDeg"/>, sweeping clockwise), streaking chips and smears.
+    /// Those are modest every day; a special moment (neon-look.md, Special moments) draws the option's bright variant: a
+    /// heavy strike's slash or spin, and a mass kill's bursts (<see cref="MassKill"/> or more deaths at one instant).
     /// </summary>
     public sealed class EffectsPresenter : IPresenter, IDisposable
     {
@@ -45,6 +47,8 @@ namespace Game.Client.Effects
         /// </summary>
         public const int SlashSweep = 1;
         public const float SlashCentreDeg = -135;
+        /// <summary>The deaths at one instant that make a mass kill, a special moment whose bursts are the vfx option's bright ones.</summary>
+        public const int MassKill = 8;
 
         readonly EffectSystem _fx;
         readonly CrystalWaves _waves;
@@ -55,6 +59,8 @@ namespace Game.Client.Effects
         readonly EffectLibrary _library;
         readonly string _vfx = EffectLibrary.ActiveVfx;
         readonly int _slash, _spin, _slam, _death, _flash, _structure;
+        // A special moment's (the vfx option's bright variants; the effect itself without one).
+        readonly int _slashBig, _spinBig, _deathBig;
         readonly List<EffectCues.Cue> _due = new List<EffectCues.Cue>(256);
         double _last = double.NaN;
 
@@ -83,6 +89,9 @@ namespace Game.Client.Effects
             _death = IndexOf("crystal-burst");
             _flash = IndexOf("hit-flash");
             _structure = IndexOf("structure-burst");
+            _slashBig = _library.IndexOf("slash", _vfx, special: true);
+            _spinBig = _library.IndexOf("spin", _vfx, special: true);
+            _deathBig = _library.IndexOf("crystal-burst", _vfx, special: true);
         }
 
         /// <summary>An effect's index in the library by its name in effects.json (its vfx option's variant), or -1 (warned) without it.</summary>
@@ -129,7 +138,8 @@ namespace Game.Client.Effects
                         float yaw = Yaw(c.Dir) + (centre - (mirror ? -SlashCentreDeg : SlashCentreDeg)) * Mathf.Deg2Rad;
                         var v = _cues.HeroVelocityAt(c.T);
                         pos.y = SlashHeight;
-                        Add(c.Kind == EffectCues.Kind.Spin ? _spin : _slash, pos, yaw, c.Scale, seed, c.T, c.Tint, c.Light, mirror, new Vector3(v.x, 0, v.y));
+                        int fx = c.Kind == EffectCues.Kind.Spin ? (c.Heavy ? _spinBig : _spin) : c.Heavy ? _slashBig : _slash;
+                        Add(fx, pos, yaw, c.Scale, seed, c.T, c.Tint, c.Light, mirror, new Vector3(v.x, 0, v.y));
                     }
                     _waves.Strike(c.T, hero, c.Reach, c.Heavy);
                     float weight = c.Kind == EffectCues.Kind.Slam ? 1f : c.Heavy ? 0.7f : c.Kind == EffectCues.Kind.Spin ? 0.35f : 0f;
@@ -140,7 +150,7 @@ namespace Game.Client.Effects
                     _waves.Cleave(c.T, c.At, c.Reach, c.Outer, c.Bands, c.FirstBand, c.BandSeconds);
                     break;
                 case EffectCues.Kind.Death:
-                    Add(_death, new Vector3(c.At.x, BodyHeight * c.Scale, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint,
+                    Add(c.Together >= MassKill ? _deathBig : _death, new Vector3(c.At.x, BodyHeight * c.Scale, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint,
                         1f / Mathf.Sqrt(Mathf.Max(1, c.Together)));
                     _impulses.Add(ImpulseField.Death(c.At, c.T, c.Tint.a > 0 ? c.Tint : _palette.Enemies[0]));
                     break;

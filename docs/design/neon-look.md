@@ -762,6 +762,22 @@ spark bursts:
   and counter families), each a little inside and behind the last: dispersion
   in the palette's hues. Its bursts and sparks are `light-streaks'`.
 
+**Restraint (ps-wnj.25, the operator's 2026-11-01 direction).** Every one of
+these is modest every day: one thin ribbon at about half the brightness, a
+single faint smear, dimmer chips and sparks, half the light. The bright
+versions (a wider ribbon with a white core and its echo, the full smear,
+twice the light) are each entry's `-big`, drawn only at a **special moment**
+through the `vfx` table's `NAME@special` keys:
+
+- the game: a heavy strike's slash or spin, the sword's slam (always), and a
+  mass kill's bursts (8 or more deaths at one instant, `EffectsPresenter.MassKill`);
+- demo3d's crystal cut: every slam's shock (the shots' cuts and the finale),
+  a formation smash, and a heavy blow (its blow feel's weight 0.75 or more,
+  `EffectDriver.HeavyBlow`).
+
+ps-wnj.24 owns the special-moment tier for the rest of the look (the grid,
+the structure flashes, the post stack); these are the VFX's moments.
+
 Strikes still land on their frames: every variant spawns at its effect's own
 time. Evidence: [game/evidence/look/vfx](../../game/evidence/look/vfx/README.md)
 and [demo3d/evidence/look/vfx](../../demo3d/evidence/look/vfx/README.md).

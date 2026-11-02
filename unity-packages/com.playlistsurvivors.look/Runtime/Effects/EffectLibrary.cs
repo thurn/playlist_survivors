@@ -32,7 +32,8 @@ namespace PS.Look.Effects
         public RoleColor[] Roles = Array.Empty<RoleColor>();
         /// <summary>
         /// The effects a vfx option draws in place of others (the selection's <c>vfx</c>; neon-look.md, The Axes &gt; VFX):
-        /// under <c>light-streaks</c>, the procedural slash for the vendor one. <see cref="IndexOf(string, string)"/> reads it.
+        /// under <c>light-streaks</c>, the procedural slash for the vendor one, and its bright one at a special moment
+        /// (<c>slash@special</c>). <see cref="IndexOf(string, string, bool)"/> reads it.
         /// </summary>
         public VfxVariant[] Variants = Array.Empty<VfxVariant>();
         /// <summary>The heat ramp's gain on a tinted spawn, times the emitter's (the selection's <c>tintGain</c>, 1 by default).</summary>
@@ -63,15 +64,25 @@ namespace PS.Look.Effects
             return -1;
         }
 
+        /// <summary>A variant's key for a special moment (neon-look.md, special moments): <c>slash@special</c>.</summary>
+        public const string Special = "@special";
+
         /// <summary>
         /// Effect <paramref name="name"/> as vfx option <paramref name="vfx"/> draws it: its variant's index
-        /// (<see cref="Variants"/>), else its own; null or an option without variants draws the effect itself.
+        /// (<see cref="Variants"/>), else its own; null or an option without variants draws the effect itself. At a
+        /// <paramref name="special"/> moment the option's <c>NAME@special</c> variant (the bright one) comes first,
+        /// then its everyday one.
         /// </summary>
-        public int IndexOf(string name, string vfx)
+        public int IndexOf(string name, string vfx, bool special = false)
         {
             if (vfx != null)
+            {
+                if (special)
+                    foreach (var v in Variants)
+                        if (v.Option == vfx && v.Name == name + Special) return IndexOf(v.Effect);
                 foreach (var v in Variants)
                     if (v.Option == vfx && v.Name == name) return IndexOf(v.Effect);
+            }
             return IndexOf(name);
         }
 

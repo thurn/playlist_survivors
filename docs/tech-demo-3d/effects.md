@@ -162,7 +162,10 @@ billboard riding the spawn).
 
 **Vfx variants** (ps-wnj.15): the selection's `vfx` table, `{ option: { effect: variant } }`, names
 the effects a look's vfx option draws in place of others (`EffectLibrary.Variants`,
-`IndexOf(name, vfx)`): the converter checks every option is built and every name converted. Both
+`IndexOf(name, vfx)`): the converter checks every option is built and every name converted. A key
+`NAME@special` is the option's variant at a special moment (`IndexOf(name, vfx, special: true)`,
+falling back to the everyday one): the everyday variants are modest and the `-big` ones bright
+(ps-wnj.25, [neon-look.md](../design/neon-look.md#vfx)). Both
 players look effects up through it with the applied look's option (`EffectLibrary.ActiveVfx`, null
 without a look or under `--vfx classic`), so every effect keeps its vendor self until a look asks.
 

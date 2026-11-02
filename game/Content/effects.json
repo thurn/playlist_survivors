@@ -59,12 +59,20 @@
       "heat": { "edge": [1.0, 0.85, 0.3], "mid": [1.0, 0.97, 0.75], "gain": 0.3 },
       "notes": "a chain lightning jump landing on its enemy: a small burst of white-hot sparks off the body, gone within 0.25 s, tinted per spawn by the chain's lemon yellow",
       "sparks": { "count": 14, "speed": [2.5, 6], "life": [0.1, 0.25], "size": 0.045, "gravity": 1.2, "radius": 0.2, "upward": 0, "stretch": 0.03, "hdr": 7, "heightM": 0, "shrink": 0.5, "fade": 0.4 } },
-    {"name": "streak-slash", "light": {"color": "hero.trail", "range": 5, "intensity": 2, "duration": 0.3}, "notes": "light-streaks: the blade's cut as a ribbon of light along its arc, white at the core into the hero's trail colour, the head sweeping the arc in the first third of its life and the light trailing behind it, with a thinner echo inside it",
+    {"name": "streak-slash", "light": {"color": "hero.trail", "range": 5, "intensity": 1.0, "duration": 0.3}, "notes": "light-streaks: the blade's cut as a ribbon of light along its arc, white at the core into the hero's trail colour, the head sweeping the arc in the first third of its life and the light trailing behind it: the everyday one, modest; streak-slash-big at a special moment",
+      "arcs": [
+        {"radius": 0.75, "width": 0.2, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.26, "head": 0.12, "tail": 0.3, "core": 2, "soft": 2.2, "fade": 0.45, "hdr": 0.8, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}}
+      ] },
+    {"name": "streak-slash-big", "light": {"color": "hero.trail", "range": 5, "intensity": 2, "duration": 0.3}, "notes": "light-streaks: the blade's cut as a ribbon of light along its arc, white at the core into the hero's trail colour, the head sweeping the arc in the first third of its life and the light trailing behind it, with a thinner echo inside it (the bright one, for a special moment)",
       "arcs": [
         {"radius": 0.75, "width": 0.3, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.3, "head": 0.12, "tail": 0.4, "core": 3.5, "soft": 1.8, "fade": 0.45, "hdr": 1.6, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}},
         {"radius": 0.645, "width": 0.14, "sweep": 140, "centre": -135, "tilt": 10, "life": 0.24, "delay": 0.03, "head": 0.15, "tail": 0.25, "core": 2, "soft": 2, "fade": 0.4, "hdr": 0.72, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}}
       ] },
-    {"name": "streak-spin", "light": {"color": "hero.trail", "range": 7, "intensity": 3, "duration": 0.45}, "notes": "light-streaks: the spin's cut, a ribbon sweeping a little past a full turn",
+    {"name": "streak-spin", "light": {"color": "hero.trail", "range": 7, "intensity": 1.5, "duration": 0.45}, "notes": "light-streaks: the spin's cut, a ribbon sweeping a little past a full turn: the everyday one, modest; streak-spin-big at a special moment",
+      "arcs": [
+        {"radius": 0.85, "width": 0.2, "sweep": 400, "centre": -135, "tilt": 6, "life": 0.42, "head": 0.3, "tail": 0.3, "core": 2, "soft": 2.2, "fade": 0.5, "hdr": 0.7, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}}
+      ] },
+    {"name": "streak-spin-big", "light": {"color": "hero.trail", "range": 7, "intensity": 3, "duration": 0.45}, "notes": "light-streaks: the spin's cut, a ribbon sweeping a little past a full turn (the bright one, for a special moment)",
       "arcs": [
         {"radius": 0.85, "width": 0.3, "sweep": 400, "centre": -135, "tilt": 6, "life": 0.42, "head": 0.3, "tail": 0.3, "core": 3.5, "soft": 1.8, "fade": 0.5, "hdr": 1.4, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}},
         {"radius": 0.68, "width": 0.14, "sweep": 360, "centre": -135, "tilt": 6, "life": 0.34, "delay": 0.04, "head": 0.3, "tail": 0.2, "core": 2, "soft": 2, "fade": 0.45, "hdr": 0.63, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}}
@@ -74,13 +82,25 @@
         {"radius": 1, "width": 0.06, "sweep": 360, "head": 0, "tail": 50, "core": 4, "soft": 2, "life": 0.45, "fade": 0.15, "grow": [0.15, 1.0], "hdr": 1.6, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}},
         {"radius": 0.5, "width": 0.25, "sweep": 360, "head": 0, "tail": 50, "core": 2, "soft": 1.2, "life": 0.18, "fade": 0, "grow": [0.1, 0.6], "hdr": 0.96, "heat": {"edge": "hero.trail", "mid": "hero.trail", "gain": 0.25}}
       ] },
-    {"name": "prism-slash", "light": {"color": "hero.trail", "range": 5, "intensity": 2, "duration": 0.3}, "notes": "prism-streaks: the cut split into three softer ribbons in the palette's key, accent and counter hues, each a little inside and behind the last",
+    {"name": "prism-slash", "light": {"color": "hero.trail", "range": 5, "intensity": 1.0, "duration": 0.3}, "notes": "prism-streaks: the cut split into three softer ribbons in the palette's key, accent and counter hues, each a little inside and behind the last: the everyday one, modest; prism-slash-big at a special moment",
+      "arcs": [
+        {"radius": 0.75, "width": 0.14, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.0, "head": 0.12, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.0", "mid": "enemies.0", "gain": 0.3}},
+        {"radius": 0.698, "width": 0.14, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.012, "head": 0.12, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.2", "mid": "enemies.2", "gain": 0.3}},
+        {"radius": 0.645, "width": 0.14, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.024, "head": 0.12, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.4", "mid": "enemies.4", "gain": 0.3}}
+      ] },
+    {"name": "prism-slash-big", "light": {"color": "hero.trail", "range": 5, "intensity": 2, "duration": 0.3}, "notes": "prism-streaks: the cut split into three softer ribbons in the palette's key, accent and counter hues, each a little inside and behind the last (the bright one, for a special moment)",
       "arcs": [
         {"radius": 0.75, "width": 0.2, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.0, "head": 0.12, "tail": 0.5, "core": 1.2, "soft": 1.2, "fade": 0.45, "hdr": 0.9, "heat": {"edge": "enemies.0", "mid": "enemies.0", "gain": 0.3}},
         {"radius": 0.698, "width": 0.2, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.012, "head": 0.12, "tail": 0.5, "core": 1.2, "soft": 1.2, "fade": 0.45, "hdr": 0.9, "heat": {"edge": "enemies.2", "mid": "enemies.2", "gain": 0.3}},
         {"radius": 0.645, "width": 0.2, "sweep": 160, "centre": -135, "tilt": 10, "life": 0.34, "delay": 0.024, "head": 0.12, "tail": 0.5, "core": 1.2, "soft": 1.2, "fade": 0.45, "hdr": 0.9, "heat": {"edge": "enemies.4", "mid": "enemies.4", "gain": 0.3}}
       ] },
-    {"name": "prism-spin", "light": {"color": "hero.trail", "range": 7, "intensity": 3, "duration": 0.45}, "notes": "prism-streaks: the spin's cut split into the palette's three hue families",
+    {"name": "prism-spin", "light": {"color": "hero.trail", "range": 7, "intensity": 1.5, "duration": 0.45}, "notes": "prism-streaks: the spin's cut split into the palette's three hue families: the everyday one, modest; prism-spin-big at a special moment",
+      "arcs": [
+        {"radius": 0.85, "width": 0.14, "sweep": 400, "centre": -135, "tilt": 10, "life": 0.45, "delay": 0.0, "head": 0.3, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.0", "mid": "enemies.0", "gain": 0.3}},
+        {"radius": 0.79, "width": 0.14, "sweep": 400, "centre": -135, "tilt": 10, "life": 0.45, "delay": 0.012, "head": 0.3, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.2", "mid": "enemies.2", "gain": 0.3}},
+        {"radius": 0.731, "width": 0.14, "sweep": 400, "centre": -135, "tilt": 10, "life": 0.45, "delay": 0.024, "head": 0.3, "tail": 0.5, "core": 0.8, "soft": 1.2, "fade": 0.45, "hdr": 0.495, "heat": {"edge": "enemies.4", "mid": "enemies.4", "gain": 0.3}}
+      ] },
+    {"name": "prism-spin-big", "light": {"color": "hero.trail", "range": 7, "intensity": 3, "duration": 0.45}, "notes": "prism-streaks: the spin's cut split into the palette's three hue families (the bright one, for a special moment)",
       "arcs": [
         {"radius": 0.85, "width": 0.2, "sweep": 400, "centre": -135, "tilt": 10, "life": 0.45, "delay": 0.0, "head": 0.3, "tail": 0.5, "core": 1.2, "soft": 1.2, "fade": 0.45, "hdr": 0.9, "heat": {"edge": "enemies.0", "mid": "enemies.0", "gain": 0.3}},
         {"radius": 0.79, "width": 0.2, "sweep": 400, "centre": -135, "tilt": 10, "life": 0.45, "delay": 0.012, "head": 0.3, "tail": 0.5, "core": 1.2, "soft": 1.2, "fade": 0.45, "hdr": 0.9, "heat": {"edge": "enemies.2", "mid": "enemies.2", "gain": 0.3}},
@@ -92,7 +112,13 @@
         {"radius": 1, "width": 0.08, "sweep": 360, "head": 0, "tail": 50, "core": 1.5, "soft": 1.4, "life": 0.5, "delay": 0.02, "fade": 0.2, "grow": [0.15, 0.94], "hdr": 1.0, "heat": {"edge": "enemies.2", "mid": "enemies.2", "gain": 0.3}},
         {"radius": 1, "width": 0.08, "sweep": 360, "head": 0, "tail": 50, "core": 1.5, "soft": 1.4, "life": 0.5, "delay": 0.04, "fade": 0.2, "grow": [0.15, 0.88], "hdr": 1.0, "heat": {"edge": "enemies.4", "mid": "enemies.4", "gain": 0.3}}
       ] },
-    {"name": "streak-burst", "light": {"color": [0.55, 0.9, 1.0], "range": 4, "intensity": 2.2, "duration": 0.25, "height": 0.4}, "heat": {"edge": [0.1, 0.45, 1.0], "mid": [0.55, 0.9, 1.0], "gain": 0.12}, "notes": "light-streaks: the crystal burst with its chips drawn as short light streaks and a velocity smear along the blow, tinted per spawn by the role's gem",
+    {"name": "streak-burst", "light": {"color": [0.55, 0.9, 1.0], "range": 4, "intensity": 1.4, "duration": 0.25, "height": 0.4}, "heat": {"edge": [0.1, 0.45, 1.0], "mid": [0.55, 0.9, 1.0], "gain": 0.12}, "notes": "light-streaks: the crystal burst with its chips drawn as short light streaks and a velocity smear along the blow, tinted per spawn by the role's gem",
+      "sparks": [
+        {"count": 34, "speed": [4, 10], "life": [0.4, 0.65], "size": 0.053, "gravity": 1.6, "radius": 0.2, "pitch": 18, "spread": 38, "stretch": 0.04, "hdr": 5, "heightM": 0, "limit": 3, "dampen": 0.08, "shrink": 0.6, "fade": 0.5},
+        {"count": 80, "speed": [1.5, 6], "life": [0.45, 0.7], "size": 0.032, "gravity": 0.4, "radius": 0.3, "pitch": 12, "spread": 60, "stretch": 0, "hdr": 2.2, "heightM": 0, "limit": 1.0, "dampen": 0.2, "shrink": 0.3, "fade": 0.4},
+        {"count": 1, "speed": [14, 20], "life": [0.05, 0.09], "size": 0.08, "gravity": 0, "radius": 0.05, "pitch": 4, "spread": 5, "stretch": 0.05, "hdr": 2.5, "heightM": 0, "limit": 40, "dampen": 0, "fade": 0.3}
+      ] },
+    {"name": "streak-burst-big", "light": {"color": [0.55, 0.9, 1.0], "range": 4, "intensity": 2.2, "duration": 0.25, "height": 0.4}, "heat": {"edge": [0.1, 0.45, 1.0], "mid": [0.55, 0.9, 1.0], "gain": 0.12}, "notes": "light-streaks: the crystal burst with its chips drawn as short light streaks and a velocity smear along the blow, tinted per spawn by the role's gem (the bright one, for a special moment)",
       "sparks": [
         {"count": 34, "speed": [4, 10], "life": [0.4, 0.65], "size": 0.053, "gravity": 1.6, "radius": 0.2, "pitch": 18, "spread": 38, "stretch": 0.06, "hdr": 8, "heightM": 0, "limit": 3, "dampen": 0.08, "shrink": 0.6, "fade": 0.5},
         {"count": 80, "speed": [1.5, 6], "life": [0.45, 0.7], "size": 0.032, "gravity": 0.4, "radius": 0.3, "pitch": 12, "spread": 60, "stretch": 0, "hdr": 2.2, "heightM": 0, "limit": 1.0, "dampen": 0.2, "shrink": 0.3, "fade": 0.4},
@@ -100,9 +126,9 @@
       ] },
     {"name": "streak-flash", "heat": {"edge": [0.55, 0.75, 1.0], "mid": [0.88, 0.95, 1.0], "gain": 0.3}, "notes": "light-streaks: a hit that doesn't kill: white-hot chips streaking off the body and a smear along the blow",
       "sparks": [
-        {"count": 10, "speed": [3, 7], "life": [0.08, 0.2], "size": 0.04, "gravity": 0.8, "radius": 0.15, "pitch": 15, "spread": 45, "stretch": 0.06, "hdr": 6, "heightM": 0, "shrink": 0.5, "fade": 0.4},
-        {"count": 1, "speed": [12, 16], "life": [0.05, 0.08], "size": 0.08, "gravity": 0, "radius": 0.05, "pitch": 4, "spread": 5, "stretch": 0.05, "hdr": 4, "heightM": 0, "limit": 40, "dampen": 0, "fade": 0.3}
+        {"count": 10, "speed": [3, 7], "life": [0.08, 0.2], "size": 0.04, "gravity": 0.8, "radius": 0.15, "pitch": 15, "spread": 45, "stretch": 0.06, "hdr": 4, "heightM": 0, "shrink": 0.5, "fade": 0.4},
+        {"count": 1, "speed": [12, 16], "life": [0.05, 0.08], "size": 0.08, "gravity": 0, "radius": 0.05, "pitch": 4, "spread": 5, "stretch": 0.05, "hdr": 2, "heightM": 0, "limit": 40, "dampen": 0, "fade": 0.3}
       ] }
 ],
-  "vfx": {"light-streaks": {"slash": "streak-slash", "spin": "streak-spin", "slam": "streak-slam", "crystal-burst": "streak-burst", "hit-flash": "streak-flash"}, "prism-streaks": {"slash": "prism-slash", "spin": "prism-spin", "slam": "prism-slam", "crystal-burst": "streak-burst", "hit-flash": "streak-flash"}}
+  "vfx": {"light-streaks": {"slash": "streak-slash", "spin": "streak-spin", "slam": "streak-slam", "crystal-burst": "streak-burst", "hit-flash": "streak-flash", "slash@special": "streak-slash-big", "spin@special": "streak-spin-big", "crystal-burst@special": "streak-burst-big"}, "prism-streaks": {"slash": "prism-slash", "spin": "prism-spin", "slam": "prism-slam", "crystal-burst": "streak-burst", "hit-flash": "streak-flash", "slash@special": "prism-slash-big", "spin@special": "prism-spin-big", "crystal-burst@special": "streak-burst-big"}}
 }
