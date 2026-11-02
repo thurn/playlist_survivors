@@ -15,6 +15,30 @@ playwright-report/
 reactive-local/
 # 3D tech demo: paid vendor assets and everything derived from them, plus
 # Unity's generated folders. Never commit these (AGENTS.md, vendor assets).
+# Rhythm Champions (docs/champions/plan.md, Project layout): vendor files and everything derived
+# from them (Vendor/, Baked/, the edge cuts' Blender work), Unity's generated folders, the plugin's
+# build output and target, and the dotnet projects' bin/obj.
+/rhythm_champions/Assets/Vendor/
+/rhythm_champions/Assets/Vendor.meta
+/rhythm_champions/Assets/Baked/
+/rhythm_champions/Assets/Baked.meta
+/rhythm_champions/Assets/Plugins/
+/rhythm_champions/Assets/Plugins.meta
+/rhythm_champions/Assets/StreamingAssets/
+/rhythm_champions/Assets/StreamingAssets.meta
+/rhythm_champions/[Ll]ibrary/
+/rhythm_champions/[Tt]emp/
+/rhythm_champions/[Oo]bj/
+/rhythm_champions/[Bb]uilds/
+/rhythm_champions/[Ll]ogs/
+/rhythm_champions/[Uu]ser[Ss]ettings/
+/rhythm_champions/*.csproj
+/rhythm_champions/*.sln
+/rhythm_champions/*.slnx
+/rhythm_champions/plugin/target/
+/rhythm_champions/dotnet/**/bin/
+/rhythm_champions/dotnet/**/obj/
+/rhythm_champions/tools/.venv/
 /demo3d/Assets/Vendor/
 /demo3d/Assets/Vendor.meta
 /demo3d/Assets/Baked/
