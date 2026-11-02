@@ -787,6 +787,40 @@ Strikes still land on their frames: every variant spawns at its effect's own
 time. Evidence: [game/evidence/look/vfx](../../game/evidence/look/vfx/README.md)
 and [demo3d/evidence/look/vfx](../../demo3d/evidence/look/vfx/README.md).
 
+The death flourish and the spawn warp (ps-wnj.16; the package's
+`Effects/Flourishes.cs`, the selections' `death-pop`, `death-ring` and
+`spawn-warp`) come with either vfx option and only with one: `--vfx classic`
+and the action cut draw and sound neither. Both are tinted per spawn by the
+monster's gem and sized by its body, and kept faint (the operator's restraint):
+
+- **The death flourish**: on the death's impact frame, a soft pop a body wide on
+  the body, gone in 0.1 s, and a thin ring of light flat on the ground racing out
+  to 1.6 m (times the body) in 0.4 s, over the shatter and the death's impulse
+  ring. The deaths of one instant within 3 m share one ring at their centre, its
+  size their mean times the square root of their count (up to 2.5): a mass kill
+  is a few larger rings, as its impulse rings merge, not a ring per body. Every
+  body keeps its own pop.
+- **The spawn warp**: from a monster's spawn, two thin rings on the ground
+  collapse onto it faster and faster (`"ease": "in"` on an arc's grow) and a
+  soft glow pops where they meet 0.14 s in, well before its first step (the
+  next beat). It starts on the spawn's own frame (events settle only a lead
+  ahead, too late to start it earlier), so the body stands from its spawn as
+  the sim has it. Only spawns in view warp: the game's by the spawner's own
+  footprint test (`Simulation.InView`; the ring of spawns past the view's edge
+  never does, its set pieces' and swarms' do), the crystal cut's by the
+  camera's ground footprint round the framing's focus at the spawn, turned by
+  the shot's heading, after the shot's cut (`LookCrowd.Warps`). The
+  choreography spawns every monster outside the view and walks it in, so the
+  crystal cut has no warps until a re-staged shot spawns in view.
+- **Sounds** (Decision 13), from the free samples (Kenney, CC0), each at its
+  event's time and aggregated per beat as the deaths' (at most three voices per
+  beat): a short bright pluck for each death's pop (`death-pop`: drop_001,
+  pluck_001, pluck_002, pitched by the body), and a rising swell for each warp
+  (`spawn-warp`: maximize_001 to 003), its attack on the spawn and its peak as
+  the rings meet. game's in `game/Content/sounds.json`; demo3d's
+  `FlourishSounds` (setup clones the free samples into `demo3d/Assets/FreeSounds/`
+  too, and the offline mix finds them in `public/assets/sfx/`).
+
 ### Motion
 
 - **Spring secondary motion**: per-instance squash and stretch, lean into

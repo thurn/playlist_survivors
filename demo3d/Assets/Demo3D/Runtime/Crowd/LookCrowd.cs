@@ -51,13 +51,24 @@ namespace Demo3D.Runtime.Crowd
             public uint Seed;
         }
 
+        /// <summary>One monster's spawn warp (neon-look.md, The Axes &gt; VFX; ps-wnj.16), known from the timeline ahead of time: its effect and sound.</summary>
+        public struct WarpEvent
+        {
+            public double Time;     // the spawn
+            public int Entity, Type;
+            public Vector2 At;      // where it spawns, on the ground
+            public float Height;    // the type's standing height in metres, times the instance's scale
+            public Color Gem;       // the type's gem colour (linear)
+            public uint Seed;
+        }
+
         /// <summary>The song clock, for the LOD crossfades and the shards.</summary>
         public Func<double> Clock = () => Time.timeAsDouble;
 
         /// <summary>The game camera, for `--shatter-log`'s view positions.</summary>
         public Camera View;
 
-        /// <summary>`--shatter-log`: a line per break, to find deaths for filmstrips.</summary>
+        /// <summary>`--shatter-log`: a line per break and per spawn warp, to find deaths and spawns for filmstrips.</summary>
         readonly bool _log = Args.Has("--shatter-log");
 
         readonly Look.CrowdLibrary _lib;
@@ -240,6 +251,51 @@ namespace Demo3D.Runtime.Crowd
             _breaks.Clear();
             foreach (var b in list) _breaks[b.Entity] = b;
             return list.ToArray();
+        }
+
+        /// <summary>
+        /// Every monster's spawn warp in the timeline, by time: each monster spawning after <paramref name="from"/> (a shot's
+        /// cut, or the run's start: the monsters there on its first frame were already there) inside the camera's view of
+        /// the ground (<see cref="Demo3D.Bench.CameraGeometry.GroundFootprint"/> round the framing's focus at its spawn, turned
+        /// by the camera's heading <paramref name="yawDeg"/>, a trailer shot's). <paramref name="scaleOf"/> is the client's
+        /// instance scale for an entity's seed. Call it after <see cref="Initialize"/>.
+        /// </summary>
+        public WarpEvent[] Warps(double from, float yawDeg, Func<uint, float> scaleOf)
+        {
+            float cos = Mathf.Cos(yawDeg * Mathf.Deg2Rad), sin = Mathf.Sin(yawDeg * Mathf.Deg2Rad);
+            var list = new List<WarpEvent>();
+            for (int e = 0; e < _tl.EntityCount; e++)
+            {
+                var info = _tl.Entities[e];
+                if (info.Kind != EntityKind.Monster || info.Spawn <= from || info.Type < 0 || info.Type >= _gem.Length) continue;
+                var p = _tl.PositionAt(e, info.Spawn);
+                var framing = _tl.FramingAt(info.Spawn);
+                // Into the camera's own ground frame: it looks along (sin yaw, cos yaw) (GameCameraRig).
+                float dx = p.X - framing.Focus.X, dz = p.Y - framing.Focus.Y;
+                if (!InView(framing.ViewWidth, dx * cos - dz * sin, dx * sin + dz * cos)) continue;
+                list.Add(new WarpEvent
+                {
+                    Time = info.Spawn, Entity = e, Type = info.Type, At = new Vector2(p.X, p.Y), Gem = _gem[info.Type], Seed = info.Seed,
+                    Height = _lib.Types[_libType[info.Type]].HeightM * scaleOf(info.Seed),
+                });
+            }
+            list.Sort((x, y) => { int c = x.Time.CompareTo(y.Time); return c != 0 ? c : x.Entity.CompareTo(y.Entity); });
+            if (_log)
+                foreach (var w in list)
+                    Debug.Log(FormattableString.Invariant($"LookCrowd: warp {_lib.Types[_libType[w.Type]].Id} entity {w.Entity} at t {w.Time:F3} ({w.At.x:F2}, {w.At.y:F2})"));
+            return list.ToArray();
+        }
+
+        /// <summary>Whether ground offset (<paramref name="x"/>, <paramref name="z"/>) from the camera's target is in its footprint (a convex quad, counter-clockwise).</summary>
+        static bool InView(float viewWidth, float x, float z)
+        {
+            var q = Demo3D.Bench.CameraGeometry.GroundFootprint(viewWidth);
+            for (int i = 0; i < 4; i++)
+            {
+                double ax = q[2 * i], az = q[2 * i + 1], bx = q[(2 * i + 2) % 8], bz = q[(2 * i + 3) % 8];
+                if ((bx - ax) * (z - az) - (bz - az) * (x - ax) < 0) return false;
+            }
+            return true;
         }
 
         /// <summary>

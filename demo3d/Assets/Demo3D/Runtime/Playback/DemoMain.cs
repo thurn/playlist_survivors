@@ -331,8 +331,13 @@ namespace Demo3D.Runtime.Playback
                     Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
                 }));
                 if (breakMoments.Count > 0) _fxDriver?.SetBursts(breakMoments.Bursts(_structures.Name, StructureStyle.CrystalGem));
+                // The look's spawn warps (ps-wnj.16): every monster spawning in view after the run's start.
+                bool flourish = EffectLibrary.ActiveVfx != null;
+                var warps = flourish && _lookCrowd != null ? _lookCrowd.Warps(_tl.Entities[0].Spawn, 0, InstanceScale) : Array.Empty<LookCrowd.WarpEvent>();
+                _fxDriver?.SetWarps(Warps(warps));
                 var clientSounds = breaks.Length > 0 ? ShatterSounds.For(breaks, _tl.Map) : null;
                 if (breakMoments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(breakMoments.Sounds(_structures.Name, _tl.Map));
+                if (flourish) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(FlourishSounds.For(breaks, warps, _tl.Map));
                 _soundCues = SoundScheduler.Cues(_tl, clientSounds);
             }
             if (_flags.DumpSounds != null) DumpSounds(_flags.DumpSounds);
@@ -379,6 +384,12 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>An effect driver for a timeline on the effect runtime, its big types' heavier variants and --only-effects.</summary>
+        /// <summary>The effect driver's warps for <paramref name="warps"/>: on the ground where each spawns, sized by its body, in its gem.</summary>
+        static EffectDriver.Warp[] Warps(LookCrowd.WarpEvent[] warps) => Array.ConvertAll(warps, w => new EffectDriver.Warp
+        {
+            Time = w.Time, Position = new Vector3(w.At.x, 0, w.At.y), Scale = w.Height / 1.8f, Seed = w.Seed, Tint = w.Gem,
+        });
+
         EffectDriver NewEffectDriver(Timeline tl)
         {
             var driver = new EffectDriver(tl, _fx, t => _typeAssets[t].kind == "elite" || _typeAssets[t].kind == "boss", EffectLibrary.ActiveVfx);

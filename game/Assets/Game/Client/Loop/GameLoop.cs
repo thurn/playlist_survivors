@@ -325,6 +325,7 @@ namespace Game.Client.Loop
             {
                 _effects = new EffectsPresenter(camera, library, roles);
                 _effects.Cues.SlashTint = w => weapons.Of(w) == WeaponLooks.Family.Sword && weapons.Evolved(w) ? WeaponLooks.Tear : default;
+                if (_effects.Flourishing) _effects.Cues.Seen = Driver.Sim.InView; // the look's spawn warps, for spawns in view
                 if (config.Finishers)
                 {
                     _finishers = new FinisherRings(camera, CrystalWaves.ShaderIn(library));
@@ -413,6 +414,8 @@ namespace Game.Client.Loop
             Func<float> follower = null;
             if (_music != null) follower = () => _music.Status.FollowerGain > 0 ? _music.Status.FollowerGain : 1f;
             _soundPresenter = new SoundPresenter(_sounds, Driver.Sim, roles, bank != null ? bank.Limit : 1f, follower);
+            // The look's death flourish and spawn warp sound under its vfx option, as they draw, drawn or not (a headless player).
+            if (EffectLibrary.ActiveVfx != null) _soundPresenter.Flourishes = Driver.Sim.InView;
             Driver.Events.Subscribe(_soundPresenter);
         }
 

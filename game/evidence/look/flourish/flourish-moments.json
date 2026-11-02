@@ -1,0 +1,255 @@
+{
+  "ok": true,
+  "frames": 959,
+  "span": [
+    0.0333,
+    16.0
+  ],
+  "moments": 2829,
+  "off_frame": 0,
+  "kinds_never_shown": [
+    "Regrow"
+  ],
+  "unshown": {},
+  "kinds": {
+    "HeroPress": {
+      "checked": 22,
+      "on": 22,
+      "late": 0,
+      "early": 0,
+      "events": 22
+    },
+    "HeroStride": {
+      "checked": 21,
+      "on": 21,
+      "late": 0,
+      "early": 0,
+      "events": 21
+    },
+    "HeroLand": {
+      "checked": 43,
+      "on": 43,
+      "late": 0,
+      "early": 0,
+      "events": 43
+    },
+    "Blade": {
+      "checked": 22,
+      "on": 22,
+      "late": 0,
+      "early": 0,
+      "events": 22
+    },
+    "Footfall": {
+      "checked": 1953,
+      "on": 1953,
+      "late": 0,
+      "early": 0,
+      "events": 2060
+    },
+    "Death": {
+      "checked": 170,
+      "on": 170,
+      "late": 0,
+      "early": 0,
+      "events": 170
+    },
+    "Break": {
+      "checked": 6,
+      "on": 6,
+      "late": 0,
+      "early": 0,
+      "events": 6
+    },
+    "Regrow": {
+      "checked": 0,
+      "on": 0,
+      "late": 0,
+      "early": 0
+    },
+    "Effect": {
+      "checked": 478,
+      "on": 478,
+      "late": 0,
+      "early": 0,
+      "by_effect": {
+        "death-pop": 170,
+        "death-ring": 54,
+        "prism-cast": 10,
+        "prism-hit": 21,
+        "spawn-warp": 7,
+        "streak-burst": 170,
+        "streak-flash": 18,
+        "streak-slash": 20,
+        "streak-spin": 2,
+        "structure-burst": 6
+      },
+      "off_by_effect": {}
+    },
+    "GemRing": {
+      "checked": 31,
+      "on": 31,
+      "late": 0,
+      "early": 0,
+      "events": 35
+    },
+    "CardFlip": {
+      "checked": 3,
+      "on": 3,
+      "late": 0,
+      "early": 0,
+      "events": 3
+    },
+    "Impulse": {
+      "checked": 80,
+      "on": 80,
+      "late": 0,
+      "early": 0,
+      "by_effect": {
+        "Blow": 22,
+        "Death": 53,
+        "Shatter": 5
+      },
+      "off_by_effect": {}
+    }
+  },
+  "settled_ahead": {
+    "Attack": {
+      "n": 56,
+      "min_ms": 68.33,
+      "median_ms": 316.67,
+      "past_their_frame": 0
+    },
+    "Beat": {
+      "n": 35,
+      "min_ms": 70.0,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "BeatState": {
+      "n": 2,
+      "min_ms": 80.33,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "Card": {
+      "n": 1,
+      "min_ms": 66.67,
+      "median_ms": 66.67,
+      "past_their_frame": 0
+    },
+    "Cleave": {
+      "n": 2,
+      "min_ms": 70.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Death": {
+      "n": 170,
+      "min_ms": 67.5,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "Drop": {
+      "n": 85,
+      "min_ms": 67.5,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "EnemyKnock": {
+      "n": 18,
+      "min_ms": 68.33,
+      "median_ms": 73.33,
+      "past_their_frame": 0
+    },
+    "EnemyStep": {
+      "n": 2060,
+      "min_ms": 163.33,
+      "median_ms": 170.0,
+      "past_their_frame": 0
+    },
+    "Freeze": {
+      "n": 2,
+      "min_ms": 70.0,
+      "median_ms": 71.67,
+      "past_their_frame": 0
+    },
+    "GemFlight": {
+      "n": 62,
+      "min_ms": 75.0,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "Glint": {
+      "n": 17,
+      "min_ms": 70.0,
+      "median_ms": 73.33,
+      "past_their_frame": 0
+    },
+    "HeroStep": {
+      "n": 43,
+      "min_ms": 66.67,
+      "median_ms": 66.67,
+      "past_their_frame": 0
+    },
+    "Hit": {
+      "n": 189,
+      "min_ms": 67.5,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "LevelUp": {
+      "n": 1,
+      "min_ms": 71.67,
+      "median_ms": 71.67,
+      "past_their_frame": 0
+    },
+    "Pickup": {
+      "n": 49,
+      "min_ms": 68.33,
+      "median_ms": 75.0,
+      "past_their_frame": 0
+    },
+    "Projectile": {
+      "n": 36,
+      "min_ms": 68.33,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "RunStart": {
+      "n": 1,
+      "min_ms": 80.0,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    },
+    "SetPiece": {
+      "n": 1,
+      "min_ms": 70.0,
+      "median_ms": 70.0,
+      "past_their_frame": 0
+    },
+    "Spawn": {
+      "n": 377,
+      "min_ms": 66.67,
+      "median_ms": 83.33,
+      "past_their_frame": 0
+    },
+    "StrideStep": {
+      "n": 67,
+      "min_ms": 68.33,
+      "median_ms": 76.67,
+      "past_their_frame": 0
+    },
+    "StructureBreak": {
+      "n": 6,
+      "min_ms": 67.5,
+      "median_ms": 80.0,
+      "past_their_frame": 0
+    }
+  },
+  "file": "public/reactive/house-128/house-128.ogg",
+  "seconds": 16.0,
+  "player_args": "--start-minute 1 --bot positioning --debug spawn:werewolf@4,spawn:werewolf@4,spawn:werewolf@4,spawn:skeleton@4,spawn:skeleton@4,spawn:skeleton@4,bats@8 --look edge",
+  "backend": "il2cpp",
+  "sounds": false
+}

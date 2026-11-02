@@ -1,0 +1,102 @@
+{
+  "ok": true,
+  "count": 267,
+  "scheduled": 267,
+  "dropped": 0,
+  "on_event": 204,
+  "snapped": 63,
+  "off_event": 0,
+  "off_anchor": 0,
+  "by_kind": {
+    "chime": {
+      "scheduled": 29,
+      "snapped": 29
+    },
+    "death": {
+      "scheduled": 34,
+      "on_event": 34
+    },
+    "death-pop": {
+      "scheduled": 34,
+      "on_event": 34
+    },
+    "hit": {
+      "scheduled": 36,
+      "on_event": 36
+    },
+    "hit-heavy": {
+      "scheduled": 6,
+      "on_event": 6
+    },
+    "shatter-body": {
+      "scheduled": 34,
+      "on_event": 34
+    },
+    "shatter-glass": {
+      "scheduled": 34,
+      "on_event": 34
+    },
+    "shatter-tinkle": {
+      "scheduled": 34,
+      "snapped": 34
+    },
+    "spawn-warp": {
+      "scheduled": 4,
+      "on_event": 4
+    },
+    "swing": {
+      "scheduled": 20,
+      "on_event": 20
+    },
+    "swing-heavy": {
+      "scheduled": 2,
+      "on_event": 2
+    }
+  },
+  "off_event_first": [],
+  "off_anchor_first": [],
+  "lead": {
+    "median_ms": 91.4,
+    "p5_ms": 90.9,
+    "p95_ms": 92.0,
+    "min_ms": 90.7,
+    "max_ms": 92.5,
+    "output_latency_ms": 38.0,
+    "margin_ms": 53.3,
+    "ok": true
+  },
+  "mix": {
+    "ok": true,
+    "clicks_scheduled": 266,
+    "clicks_apart": 107,
+    "clicks_found": 107,
+    "clicks_dropped": 0,
+    "music_to_click_ms": {
+      "n": 107,
+      "median": -0.02083333333224857,
+      "mean": -0.011885220841818513,
+      "std": 0.010477125323447134,
+      "p5": -0.020833333334024928,
+      "p95": 0.0,
+      "min": -0.020833333334024928,
+      "max": 0.01458249587837912
+    },
+    "drift_ms_per_min": 0.0009912420176172868,
+    "frame_to_heard_ms": {
+      "n": 921,
+      "median": -0.3657251653113036,
+      "mean": -0.3730614780987095,
+      "std": 0.3769511641390249,
+      "p5": -0.9422071893023798,
+      "p95": 0.22218024800091385,
+      "min": -3.0483710049349355,
+      "max": 0.5504565858656663
+    },
+    "output_latency_ms": 37.958
+  },
+  "file": "public/reactive/house-128/house-128.ogg",
+  "seconds": 16.0,
+  "player_args": "--start-minute 1 --bot positioning --debug spawn:werewolf@4,spawn:werewolf@4,spawn:werewolf@4,spawn:skeleton@4,spawn:skeleton@4,spawn:skeleton@4,bats@8 --look edge",
+  "backend": "il2cpp",
+  "sounds": true
+}

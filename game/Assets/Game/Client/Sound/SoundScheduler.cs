@@ -12,6 +12,7 @@ namespace Game.Client.Sound
         WandFire, WandHit, BibleFire, BibleHit,
         LightningStrike, LightningJump, LightningHit,
         ChestOpen, ChestTick, ChestLand, Evolve,
+        DeathPop, SpawnWarp,
     }
 
     /// <summary>
@@ -153,7 +154,8 @@ namespace Game.Client.Sound
         static readonly string[] Names =
             { "swing", "swing-heavy", "slam", "hit", "hit-heavy", "death", "shatter-body", "shatter-glass", "shatter-tinkle", "hurt", "chime",
               "garlic-pulse", "garlic-hit", "fire-trail-pulse", "fire-trail-hit", "wand-fire", "wand-hit", "bible-fire", "bible-hit",
-              "lightning-strike", "lightning-jump", "lightning-hit", "chest-open", "chest-tick", "chest-land", "evolve" };
+              "lightning-strike", "lightning-jump", "lightning-hit", "chest-open", "chest-tick", "chest-land", "evolve",
+              "death-pop", "spawn-warp" };
 
         /// <summary>A category's name in the bank and sounds.json.</summary>
         public static string Name(SoundKind k) => Names[(int)k];

@@ -915,7 +915,8 @@ namespace PS.Look.EditorTools.Effects
             /// the life the head takes to sweep the arc, easing out; 0 lit at once), tail (the share of the arc the
             /// light fades over behind the head), core (the edge's thin core's gain over the body), soft (the body's
             /// falloff power toward the inner edge), fade (where through its life it starts fading out), grow ([start,
-            /// end] radius scale over its life, easing out), hdr and heat.
+            /// end] radius scale over its life, easing out; easing in with ease "in": a spawn warp's ring collapsing
+            /// faster and faster onto its point), hdr and heat.
             /// </summary>
             void Arc(string fxName, string child, JObject a, Options o, out float lifetime)
             {
@@ -955,10 +956,11 @@ namespace PS.Look.EditorTools.Effects
                 {
                     flags |= Slots.Flags.SizeOverLife;
                     float g0 = (float)grow[0], g1 = (float)grow[1];
+                    bool easeIn = (string)a["ease"] == "in";
                     for (int i = 0; i < 64; i++)
                     {
                         float u = i / 63f;
-                        rows[Slots.RowSize][i] = Vector4.one * Mathf.Lerp(g0, g1, 1f - (1f - u) * (1f - u));
+                        rows[Slots.RowSize][i] = Vector4.one * Mathf.Lerp(g0, g1, easeIn ? u * u : 1f - (1f - u) * (1f - u));
                     }
                 }
                 rows[Slots.RowMisc] = Fill(Vector4.zero);

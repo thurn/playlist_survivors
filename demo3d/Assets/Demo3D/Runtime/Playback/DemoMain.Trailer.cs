@@ -4,6 +4,7 @@ using System.Globalization;
 using PS.Choreography;
 using Demo3D.Runtime.Crowd;
 using Demo3D.Runtime.Effects;
+using PS.Look.Effects;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -227,6 +228,7 @@ namespace Demo3D.Runtime.Playback
         void PrepareShots(BlowFeel.Amounts feel, ChoreographyData clips, Dictionary<string, ChoreographyData> environments)
         {
             var cues = new List<SoundScheduler.Cue>();
+            bool flourish = EffectLibrary.ActiveVfx != null; // the look's death flourish and spawn warp (ps-wnj.16)
             for (int i = 0; i < _shots.Length; i++)
             {
                 var s = _shots[i];
@@ -255,10 +257,12 @@ namespace Demo3D.Runtime.Playback
                     if (s.Fight != null) bursts.AddRange(s.Fight.Bursts());
                     if (bursts.Count > 0) s.Effects.SetBursts(bursts);
                 }
+                var warps = Array.Empty<LookCrowd.WarpEvent>();
                 if (_lookCrowd != null)
                 {
                     _lookCrowd.Retarget(tl);
                     s.Breaks = _lookCrowd.Breaks(InstanceScale, type => _hover[type]);
+                    if (flourish) warps = _lookCrowd.Warps(s.From, s.Info.YawDeg, InstanceScale);
                 }
                 if (s.Breaks.Length > 0) s.Eval.BreaksAtImpact = new HashSet<int>(Array.ConvertAll(s.Breaks, b => b.Entity));
                 if (_impulses != null)
@@ -268,10 +272,12 @@ namespace Demo3D.Runtime.Playback
                 {
                     Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
                 }));
+                s.Effects?.SetWarps(Warps(warps));
                 if (_flags.Overlay) s.Liveness = TrailerChecks.Report(_trailer, i, tl, environments[s.Info.Ground]).LivenessViolations;
                 if (!Plays(s)) continue;
                 var clientSounds = s.Breaks.Length > 0 ? ShatterSounds.For(s.Breaks, tl.Map) : null;
                 if (s.Moments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(s.Moments.Sounds(_structures.Name, tl.Map));
+                if (flourish) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(FlourishSounds.For(s.Breaks, warps, tl.Map));
                 foreach (var c in SoundScheduler.Cues(tl, clientSounds))
                     if (c.Time >= s.From && c.Time < s.Info.End) cues.Add(c);
             }

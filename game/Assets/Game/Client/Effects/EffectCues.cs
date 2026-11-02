@@ -22,7 +22,9 @@ namespace Game.Client.Effects
     /// - a hit that doesn't kill: a flash (a killing hit's flash gives way to the death's burst);
     /// - a structure's burst, from its break or <see cref="Burst"/>;
     /// - a boss's slam: a burst where it lands (the signature minotaur's mark), at its impact;
-    /// - a weapon's own effects, which its view asks for (<see cref="Spark"/>).
+    /// - a weapon's own effects, which its view asks for (<see cref="Spark"/>);
+    /// - a spawn in view, given a test for it (<see cref="Seen"/>, under a look's vfx option): its warp, tinted by
+    ///   its role's gem and sized by its body, from the spawn's own time.
     /// </summary>
     public sealed class EffectCues
     {
@@ -42,7 +44,7 @@ namespace Game.Client.Effects
         public const float SlamBurst = 1.5f;
         public static readonly Color SlamTint = new Color(1f, 0.45f, 0.15f);
 
-        public enum Kind { Slash, Spin, Slam, Death, Flash, Burst, Cleave, Spark }
+        public enum Kind { Slash, Spin, Slam, Death, Flash, Burst, Cleave, Spark, Warp }
 
         public struct Cue
         {
@@ -78,6 +80,12 @@ namespace Game.Client.Effects
         readonly List<(double Start, Vector2 V)> _glides = new List<(double, Vector2)>(GlideKeep);
 
         public EffectCues(RoleLooks roles) => _roles = roles;
+
+        /// <summary>
+        /// Whether a spawn at song time t at ground point (x, y) is in view (<see cref="Simulation.InView"/>): each one that is
+        /// warps in (<see cref="Kind.Warp"/>). Null (no look's vfx option) cues no warps.
+        /// </summary>
+        public Func<double, double, double, bool> Seen { get; set; }
 
         /// <summary>A sword attack's slash tint by its weapon (alpha 0 untinted): Bloody Tear's crimson; null leaves every slash untinted.</summary>
         public Func<int, Color> SlashTint { get; set; }
@@ -154,6 +162,17 @@ namespace Game.Client.Effects
                     while (_glides.Count > 0 && _glides[_glides.Count - 1].Start >= g.Start - 1e-9) _glides.RemoveAt(_glides.Count - 1);
                     if (_glides.Count == GlideKeep) _glides.RemoveAt(0);
                     _glides.Add((g.Start, new Vector2((float)g.VX, (float)g.VY)));
+                    break;
+                }
+                case SimEventKind.Spawn:
+                {
+                    var sp = e.AsSpawn;
+                    if (Seen == null || !Seen(e.T, sp.X, sp.Y)) break;
+                    _pending.Add(new Cue
+                    {
+                        Kind = Kind.Warp, T = e.T, At = new Vector2((float)sp.X, (float)sp.Y), Enemy = sp.Enemy,
+                        Scale = _roles.Size(sp.Role), Tint = _roles.Gem(sp.Role),
+                    });
                     break;
                 }
                 case SimEventKind.StructureBreak:

@@ -262,6 +262,42 @@ namespace Game.Tests
         }
 
         [Test]
+        public void ALooksFlourishesSoundEachDeathsPopAndWarpOnlySpawnsInView()
+        {
+            var sim = Beats();
+            Func<double, double, double, bool> inView = (t, x, y) => x < 10;
+            List<SoundKind> KindsAt(SoundScheduler s, double t) => s.Log.Where(e => Math.Abs(e.Song - t) < 1e-9).Select(e => e.Kind).ToList();
+            void Play(SoundPresenter p)
+            {
+                p.OnEvent(SimEvent.Death(3.0, 4, 0, 2, 0, 1, 0, 1.85));
+                p.OnEvent(SimEvent.Spawn(3.5, 5, 0, 5, 0));
+                p.OnEvent(SimEvent.Spawn(3.5, 6, 0, 20, 0));
+            }
+            var plain = Scheduler(new TestClock { Mixer = 0 });
+            Play(new SoundPresenter(plain, sim, new RoleLooks(null), 0.8f, null));
+            Assert.That(KindsAt(plain, 3.0), Has.No.Member(SoundKind.DeathPop), "no flourish without a look's vfx option");
+            Assert.That(KindsAt(plain, 3.5), Is.Empty);
+
+            var flourished = Scheduler(new TestClock { Mixer = 0 });
+            Play(new SoundPresenter(flourished, sim, new RoleLooks(null), 0.8f, null) { Flourishes = inView });
+            Assert.That(KindsAt(flourished, 3.0).Count(k => k == SoundKind.DeathPop), Is.EqualTo(1), "the pop at the death's own time");
+            CollectionAssert.AreEqual(new[] { SoundKind.SpawnWarp }, KindsAt(flourished, 3.5), "the spawn in view warps, the one outside it doesn't");
+
+            var cues = new EffectCues(new RoleLooks(null));
+            var due = new List<EffectCues.Cue>();
+            cues.OnEvent(SimEvent.Spawn(3.5, 5, 0, 5, 0));
+            cues.Seen = inView;
+            cues.OnEvent(SimEvent.Spawn(3.5, 5, 0, 5, 0));
+            cues.OnEvent(SimEvent.Spawn(3.5, 6, 0, 20, 0));
+            cues.TakeDue(3.49, due);
+            Assert.That(due, Is.Empty, "a warp from its spawn's own time, never before it");
+            cues.TakeDue(3.5, due);
+            var warp = due.Single();
+            Assert.That(warp.Kind, Is.EqualTo(EffectCues.Kind.Warp));
+            Assert.That(warp.At, Is.EqualTo(new Vector2(5, 0)));
+        }
+
+        [Test]
         public void EffectsWaitForTheFrameThatReachesTheirSongTime()
         {
             var cues = new EffectCues(new RoleLooks(null));

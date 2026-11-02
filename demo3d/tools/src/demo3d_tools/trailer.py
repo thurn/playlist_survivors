@@ -212,7 +212,7 @@ def main(argv: list[str]) -> int:
     print(f"trailer: {frames(dump)} frames from song {dump['start']:.3f} s to {dump['end']:.3f} s", flush=True)
 
     m = mix.mix_video(files["sounds"], files["silent"], out, Path(a.song) if a.song else None,
-                      sounds_dir=wt.project / "Assets" / "Vendor")
+                      sounds_dir=[wt.project / "Assets" / "Vendor", wt.root / setup.FREE_SOUNDS])
     problems = check(m)
     for problem in problems:
         print(f"trailer: FAILED: {problem}", file=sys.stderr)

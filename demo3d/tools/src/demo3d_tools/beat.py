@@ -84,6 +84,7 @@ SOUND_EVENTS = {
     "lightning-strike": [("Bolt", "t")], "lightning-jump": [("Bolt", "t")],
     "chest-open": [("Chest", "t")], "chest-tick": [("Chest", "t")], "chest-land": [("Chest", "t")],
     "evolve": [("Chest", "t"), ("Card", "t"), ("Projectile", "t"), ("Attack", "t")],
+    "death-pop": [("Death", "t")], "spawn-warp": [("Spawn", "t")],
 }
 
 

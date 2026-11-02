@@ -346,7 +346,8 @@ Every style uses the pattern the painted treatment set (ps-a54.1):
     note early by its distance from the hero (`LookCrowd.RippleDelay`). The hero (a `StockCrowd`) takes the
     same step spring on its strides (`DemoMain.HeroSpring`, `StockCrowd.Spring`), only in the crystal cut.
   - `--shatter-log` logs each break with its song time and place in the view, to find deaths for
-    filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)).
+    filmstrips (`demo3d filmstrip`, [mac.md](mac.md#filmstrips)), and each spawn warp (ps-wnj.16) with its
+    song time and place on the ground.
   - Before and after: [trailer/look-crowd](../../demo3d/evidence/trailer/look-crowd/README.md). The PhysX
     shatter's tuning and filmstrips: [shatter/impact](../../demo3d/evidence/shatter/impact/README.md).
   - **Transparent styles.** The package's crystal draws in Transparent-10 and refracts the camera's

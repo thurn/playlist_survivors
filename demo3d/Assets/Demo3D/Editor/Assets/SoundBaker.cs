@@ -11,11 +11,14 @@ namespace Demo3D.EditorTools.Assets
     /// <summary>
     /// Bakes the SoundBank (into Assets/Baked/Sounds/Resources/, since it references vendor
     /// clips): each timeline sound name, `category/variant`, gets one clip from TD2's chosen packs,
-    /// and so does each of the crystal shatter's (ShatterSounds, epic ps-2iq).
+    /// and so does each of the crystal shatter's (ShatterSounds, epic ps-2iq); the look's death flourish and
+    /// spawn warp (FlourishSounds, ps-wnj.16) take game's free samples (Assets/FreeSounds, cloned by setup from
+    /// public/assets/sfx, by id).
     /// </summary>
     public static class SoundBaker
     {
         const string Dir = "Assets/Baked/Sounds/Resources";
+        const string FreeDir = "Assets/FreeSounds";
 
         // Per category, the clips' file names in the vendor folder, one per variant.
         static readonly Dictionary<string, string[]> Choices = new Dictionary<string, string[]>
@@ -33,6 +36,10 @@ namespace Demo3D.EditorTools.Assets
             ["shatter-body"] = new[] { "RPG3_IceMagic2_IceBreak01", "RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03" },
             ["shatter-glass"] = new[] { "SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono" },
             ["shatter-tinkle"] = new[] { "SHATTER_Glass_Fragment_RR1_mono", "SHATTER_Glass_Fragment_RR4_mono", "SHATTER_Glass_Fragment_RR7_mono" },
+            // The look's flourishes (game/Content/sounds.json's): a short bright pop over each death's shatter, and a
+            // rising swell for each spawn in view.
+            [FlourishSounds.Pop] = new[] { "kenney/drop_001", "kenney/pluck_001", "kenney/pluck_002" },
+            [FlourishSounds.Warp] = new[] { "kenney/maximize_001", "kenney/maximize_002", "kenney/maximize_003" },
         };
 
         [InitializeOnLoadMethod]
@@ -44,15 +51,23 @@ namespace Demo3D.EditorTools.Assets
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .GroupBy(p => Path.GetFileNameWithoutExtension(p))
                 .ToDictionary(g => g.Key, g => g.First());
-            var names = Catalog.SoundNames().Concat(ShatterSounds.Names()).ToArray();
+            var names = Catalog.SoundNames().Concat(ShatterSounds.Names()).Concat(FlourishSounds.Names()).ToArray();
             var clips = new AudioClip[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
                 var parts = names[i].Split('/');
                 var file = Choices[parts[0]][int.Parse(parts[1]) % Choices[parts[0]].Length];
-                if (!byName.TryGetValue(file, out var path))
+                string path;
+                if (file.Contains("/"))
+                {
+                    // A free sample by its id: kenney/drop_001 is Assets/FreeSounds/kenney/drop_001.ogg.
+                    path = $"{FreeDir}/{file}.ogg";
+                    if (!File.Exists(path)) throw new System.Exception($"SoundBaker: no free sample {path} for {names[i]} (run setup)");
+                }
+                else if (!byName.TryGetValue(file, out path))
                     throw new System.Exception($"SoundBaker: no vendor clip {file} for {names[i]} (is it in the manifest?)");
-                clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                clips[i] = AssetDatabase.LoadAssetAtPath<AudioClip>(path)
+                           ?? throw new System.Exception($"SoundBaker: {path} is not an imported audio clip");
             }
             Directory.CreateDirectory(Dir);
             var bank = ScriptableObject.CreateInstance<SoundBank>();

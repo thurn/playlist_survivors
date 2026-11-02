@@ -107,8 +107,9 @@ def _song_build(wt: paths.Worktree, roots: dict[str, str], out: Path) -> None:
     subprocess.run(cmd, check=True)
 
 
-# The game's free sound packs are the repository's own CC0 and CC-BY samples
-# (assets-src/sfx-catalogue.md), cloned into a gitignored folder so game/ never tracks audio. Not
+# The free sound packs are the repository's own CC0 and CC-BY samples (assets-src/sfx-catalogue.md),
+# cloned into a gitignored folder of game/ and demo3d/ (the crystal cut's flourish sounds, ps-wnj.16)
+# so neither tracks audio. Not
 # into Baked/: the guard may record a Baked/ file as derived (derived.py), which would then fail
 # the tracked originals.
 FREE_SOUNDS = Path("public") / "assets" / "sfx"
@@ -589,9 +590,10 @@ def setup(wt: paths.Worktree, song: str | None = None, run_unity: bool = True,
         n = clone.clone_tree(src, wt.baked / b.name)
         print(f"setup: Baked/{b.name} {'rebaked' if built else 'cloned'} ({n} files, {key})")
     print(f"setup: Baked in {time.monotonic() - t:.2f} s")
-    if wt.name == "game":
+    if wt.name in ("game", "demo3d"):
         n = clone.clone_tree(wt.root / FREE_SOUNDS, free_sounds(wt))
         print(f"setup: FreeSounds cloned ({n} files) from {FREE_SOUNDS.as_posix()}")
+    if wt.name == "game":
         from . import plugin
 
         try:

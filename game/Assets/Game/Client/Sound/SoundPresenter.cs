@@ -17,6 +17,9 @@ namespace Game.Client.Sound
     ///   full-grade (on the beat) light press's main strike layers the heavy swing under its own (<see cref="OnBeatAccent"/>);
     ///   a dash (`--dash`) whooshes from its start, the lunge on the beat with the heavy swing and an accent, the slam's
     ///   thud at <see cref="DashAccent"/>, as it lands; the hop off it with the light swing, quieter;
+    /// - under a look's vfx option (<see cref="Flourishes"/>), the death flourish's pop at each death, pitched by the
+    ///   body's size, and the spawn warp's swell at each spawn in view, each at its event's time (neon-look.md, The
+    ///   Axes &gt; VFX; ps-wnj.16);
     /// - the other weapons' sounds come from their own views (<see cref="Request"/>), and a weapon that
     ///   sounds its own hits says so (<see cref="VoiceHitsElsewhere"/>);
     /// - **off-grid sounds** snapped as native snaps them: the hero's hurt on the next sixteenth, and
@@ -57,6 +60,12 @@ namespace Game.Client.Sound
             Limit = limit;
             _follower = follower;
         }
+
+        /// <summary>
+        /// The look's death flourish and spawn warp sound under its vfx option, as they draw: whether a spawn at
+        /// song time t at ground point (x, y) is in view, which only those warp (Simulation.InView). Null for neither.
+        /// </summary>
+        public Func<double, double, double, bool> Flourishes { get; set; }
 
         /// <summary>The effects' level at the follower's full gain (sounds.json's limit; tunable).</summary>
         public float Limit { get; set; }
@@ -116,6 +125,13 @@ namespace Game.Client.Sound
                     if (d.Enemy < 0) break; // the hero's fall is the HUD's
                     Request(SoundKind.Death, e.T, 1f, 1f, 1f, asap: asap);
                     Shatter(e.T, _roles.Size(d.Role), (uint)d.Enemy * 2654435761u ^ (uint)(e.T * 1000), asap);
+                    if (Flourishes != null) Request(SoundKind.DeathPop, e.T, 1f, Pitch(_roles.Size(d.Role)), 1f, asap: asap);
+                    break;
+                }
+                case SimEventKind.Spawn:
+                {
+                    var s = e.AsSpawn;
+                    if (Flourishes != null && Flourishes(e.T, s.X, s.Y)) Request(SoundKind.SpawnWarp, e.T, 1f, 1f, 1f);
                     break;
                 }
                 case SimEventKind.StructureBreak:

@@ -36,6 +36,9 @@ namespace Game.Client.Effects
     /// as the vendor crescent: its middle at <see cref="SlashCentreDeg"/>, sweeping clockwise), streaking chips and smears.
     /// Those are modest every day; a special moment (neon-look.md, Special moments) draws the option's bright variant: a
     /// heavy strike's slash or spin, and a mass kill's bursts (<see cref="MassKill"/> or more deaths at one instant).
+    /// The option also brings the death flourish and the spawn warp (<see cref="Flourishes"/>): a pop on each dying body and
+    /// a ring on the ground per instant's deaths within 3 m, on the impact frame, and a warp at each spawn in view
+    /// (<see cref="EffectCues.Seen"/>), each tinted by its role's gem and sized by its body.
     /// </summary>
     public sealed class EffectsPresenter : IPresenter, IDisposable
     {
@@ -61,12 +64,16 @@ namespace Game.Client.Effects
         readonly int _slash, _spin, _slam, _death, _flash, _structure;
         // A special moment's (the vfx option's bright variants; the effect itself without one).
         readonly int _slashBig, _spinBig, _deathBig;
+        readonly int _pop, _ring, _warp; // the vfx option's flourishes, -1 without one
         readonly List<EffectCues.Cue> _due = new List<EffectCues.Cue>(256);
+        readonly List<Flourishes.Death> _deaths = new List<Flourishes.Death>(64), _rings = new List<Flourishes.Death>(64);
         double _last = double.NaN;
 
         public EffectSystem System => _fx;
         public ImpulseField Impulses => _impulses;
         public EffectCues Cues => _cues;
+        /// <summary>The look's vfx option draws the death flourish and the spawn warp (<see cref="Flourishes"/>).</summary>
+        public bool Flourishing => _pop >= 0 || _ring >= 0 || _warp >= 0;
         /// <summary>Effects spawned.</summary>
         public int Spawned { get; private set; }
 
@@ -92,6 +99,9 @@ namespace Game.Client.Effects
             _slashBig = _library.IndexOf("slash", _vfx, special: true);
             _spinBig = _library.IndexOf("spin", _vfx, special: true);
             _deathBig = _library.IndexOf("crystal-burst", _vfx, special: true);
+            _pop = Flourishes.IndexOf(library, Flourishes.Pop, _vfx);
+            _ring = Flourishes.IndexOf(library, Flourishes.Ring, _vfx);
+            _warp = Flourishes.IndexOf(library, Flourishes.Warp, _vfx);
         }
 
         /// <summary>An effect's index in the library by its name in effects.json (its vfx option's variant), or -1 (warned) without it.</summary>
@@ -111,7 +121,9 @@ namespace Game.Client.Effects
             _last = now;
             _fx.BeginFrame();
             _cues.TakeDue(now, _due);
+            _deaths.Clear();
             foreach (var c in _due) Spawn(c, frame);
+            if (_deaths.Count > 0) DeathRings();
             _impulses.Publish(now);
             _fx.Update(now, dt, _camera);
             _waves.Present(now);
@@ -153,6 +165,11 @@ namespace Game.Client.Effects
                     Add(c.Together >= MassKill ? _deathBig : _death, new Vector3(c.At.x, BodyHeight * c.Scale, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint,
                         1f / Mathf.Sqrt(Mathf.Max(1, c.Together)));
                     _impulses.Add(ImpulseField.Death(c.At, c.T, c.Tint.a > 0 ? c.Tint : _palette.Enemies[0]));
+                    Add(_pop, new Vector3(c.At.x, BodyHeight * c.Scale, c.At.y), 0, c.Scale, seed, c.T, c.Tint, 0);
+                    if (_ring >= 0) _deaths.Add(new Flourishes.Death { Time = c.T, At = c.At, Scale = c.Scale, Tint = c.Tint });
+                    break;
+                case EffectCues.Kind.Warp:
+                    Add(_warp, new Vector3(c.At.x, 0, c.At.y), 0, c.Scale, seed, c.T, c.Tint, 0);
                     break;
                 case EffectCues.Kind.Flash:
                 {
@@ -169,6 +186,16 @@ namespace Game.Client.Effects
                     Add(c.Effect, new Vector3(c.At.x, c.Reach, c.At.y), Yaw(c.Dir), c.Scale, seed, c.T, c.Tint, 0);
                     break;
             }
+        }
+
+        /// <summary>The death flourish's rings for this frame's deaths: one per instant's deaths within 3 m (<see cref="Flourishes.Rings"/>).</summary>
+        void DeathRings()
+        {
+            _deaths.Sort((a, b) => a.Time.CompareTo(b.Time));
+            Flourishes.Rings(_deaths, _rings);
+            foreach (var r in _rings)
+                Add(_ring, new Vector3(r.At.x, 0, r.At.y), 0, r.Scale, EffectSystem.Hash((uint)(r.Time * 10000), (uint)(r.At.x * 64) ^ (uint)(r.At.y * 4096)),
+                    r.Time, r.Tint, 0);
         }
 
         void Add(int fx, Vector3 position, float yaw, float scale, uint seed, double t, Color tint, float lightGain,

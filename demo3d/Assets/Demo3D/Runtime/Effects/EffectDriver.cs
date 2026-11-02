@@ -23,7 +23,10 @@ namespace Demo3D.Runtime.Effects
     /// as the selection's variant (<see cref="EffectLibrary.Variants"/>): the procedural slashes, streaks and sparks,
     /// a slash cutting right to left (slashL, slash3) mirrored so its light sweeps the blade's way. They are modest every
     /// day; a special moment (neon-look.md, Special moments) draws the option's bright variant: a heavy blow (its blow
-    /// feel's weight <see cref="HeavyBlow"/> or more) and every slam's shock.
+    /// feel's weight <see cref="HeavyBlow"/> or more) and every slam's shock. The option also draws the death flourish and
+    /// the spawn warp (<see cref="Flourishes"/>, the selection's client.deathPop, deathRing and spawnWarp): a pop at each
+    /// crystal death's break and a ring on the ground per instant's breaks within 3 m, on the blow's frame, and a warp at
+    /// each monster spawning in view (<see cref="SetWarps"/>), each in its type's gem.
     /// </summary>
     public sealed class EffectDriver
     {
@@ -45,6 +48,7 @@ namespace Demo3D.Runtime.Effects
         double _now;
         readonly Mapping[] _map;
         readonly int _projectile, _dust, _crystal;
+        readonly int _pop, _ring, _warp; // the vfx option's flourishes, -1 without one
         readonly int _deathBurstEvent, _hitSparkEvent, _slashTrail, _slamShock; // the timeline's death-burst, hit-spark, slash-trail and slam-shock effect names, -1 if it has none
         readonly AmbientEffects _ambient;
         readonly bool[] _eliteType;
@@ -56,6 +60,9 @@ namespace Demo3D.Runtime.Effects
         int[] _burstFx = Array.Empty<int>();
         Shatter[] _shatters = Array.Empty<Shatter>();
         float[] _shatterLight = Array.Empty<float>(); // each break's light gain: 1/sqrt(the breaks at its moment)
+        Flourishes.Death[] _rings = Array.Empty<Flourishes.Death>(); // the death flourish's rings, by time
+        Warp[] _warps = Array.Empty<Warp>();
+        int _nextRing, _nextWarp;
         readonly HashSet<int> _shattered = new HashSet<int>();
 
         /// <summary>A crystal death's burst at its killing blow (LookCrowd.Breaks), in place of its death burst.</summary>
@@ -66,6 +73,15 @@ namespace Demo3D.Runtime.Effects
             public Vector3 Position;
             /// <summary>The blow's direction on the ground: the burst's yaw (the effect sprays along its +z). Zero keeps yaw 0.</summary>
             public Vector3 Blow;
+            public float Scale;
+            public uint Seed;
+            public Color Tint;
+        }
+        /// <summary>A monster's spawn warp (LookCrowd.Warps): where on the ground, its size and its gem.</summary>
+        public struct Warp
+        {
+            public double Time;
+            public Vector3 Position;
             public float Scale;
             public uint Seed;
             public Color Tint;
@@ -120,6 +136,9 @@ namespace Demo3D.Runtime.Effects
             _projectile = Index(lib, client["projectile"].AsString(), vfx);
             _dust = Index(lib, client["monsterAttack"].AsString(), vfx);
             _crystal = Index(lib, client["crystalShatter"].AsString(), vfx);
+            _pop = Flourish(client["deathPop"].AsString());
+            _ring = Flourish(client["deathRing"].AsString());
+            _warp = Flourish(client["spawnWarp"].AsString());
             _slashTrail = Array.IndexOf(tl.EffectNames, "slash-trail");
             _slamShock = Array.IndexOf(tl.EffectNames, "slam-shock");
             _deathBurstEvent = Array.IndexOf(tl.EffectNames, "death-burst");
@@ -160,6 +179,17 @@ namespace Demo3D.Runtime.Effects
                 for (j = i + 1; j < _shatters.Length && _shatters[j].Time - _shatters[i].Time < 1e-3; j++) { }
                 for (int k = i; k < j; k++) _shatterLight[k] = 1f / Mathf.Sqrt(j - i);
             }
+            var rings = new List<Flourishes.Death>();
+            if (_ring >= 0)
+                Flourishes.Rings(Array.ConvertAll(_shatters, b => new Flourishes.Death { Time = b.Time, At = new Vector2(b.Position.x, b.Position.z), Scale = b.Scale, Tint = b.Tint }), rings);
+            _rings = rings.ToArray();
+            _last = double.NaN; // the next frame starts afresh
+        }
+
+        /// <summary>The spawn warps, sorted by time (LookCrowd.Warps): nothing draws them without a vfx option.</summary>
+        public void SetWarps(Warp[] warps)
+        {
+            _warps = _warp >= 0 && warps != null ? warps : Array.Empty<Warp>();
             _last = double.NaN; // the next frame starts afresh
         }
 
@@ -182,6 +212,9 @@ namespace Demo3D.Runtime.Effects
         public static float ShatterYaw(Vector3 blow) => blow.sqrMagnitude > 1e-8f ? Mathf.Atan2(blow.x, blow.z) : 0f;
 
         static int Index(EffectLibrary lib, string name, string vfx) => string.IsNullOrEmpty(name) ? -1 : lib.IndexOf(name, vfx);
+
+        /// <summary>A flourish the selection's client table names, drawn only under a vfx option (<see cref="Flourishes.IndexOf"/>).</summary>
+        int Flourish(string name) => string.IsNullOrEmpty(name) ? -1 : Flourishes.IndexOf(_lib, name, _vfx);
 
         static int[] Indices(EffectLibrary lib, JsonValue arr, string vfx, bool special = false)
         {
@@ -232,6 +265,10 @@ namespace Demo3D.Runtime.Effects
                 while (_nextShatter < _shatters.Length && _shatters[_nextShatter].Time <= from) _nextShatter++;
                 _nextBurst = 0;
                 while (_nextBurst < _bursts.Length && _bursts[_nextBurst].Time <= from) _nextBurst++;
+                _nextRing = 0;
+                while (_nextRing < _rings.Length && _rings[_nextRing].Time <= from) _nextRing++;
+                _nextWarp = 0;
+                while (_nextWarp < _warps.Length && _warps[_nextWarp].Time <= from) _nextWarp++;
                 _ambient.Reset(from);
             }
             _last = now;
@@ -372,6 +409,22 @@ namespace Demo3D.Runtime.Effects
                 var s = _shatters[_nextShatter++];
                 if (s.Time <= from) continue;
                 Add(_crystal, s.Position, ShatterYaw(s.Blow), s.Scale, s.Seed ^ 0x6C8E9CF5u, s.Time, Vector3.zero, 0, 0, s.Tint, light);
+                if (_pop >= 0) Add(_pop, s.Position, 0, s.Scale, s.Seed ^ 0x2F6B1D35u, s.Time, Vector3.zero, 0, 0, s.Tint);
+            }
+            // The death flourish's rings, one per instant's breaks within 3 m (Flourishes.Rings).
+            while (_nextRing < _rings.Length && _rings[_nextRing].Time <= now)
+            {
+                var r = _rings[_nextRing++];
+                if (r.Time <= from) continue;
+                Add(_ring, new Vector3(r.At.x, 0, r.At.y), 0, r.Scale, EffectSystem.Hash((uint)(r.Time * 10000), (uint)(r.At.x * 64) ^ (uint)(r.At.y * 4096)),
+                    r.Time, Vector3.zero, 0, 0, r.Tint);
+            }
+            // A monster's warp as it spawns in view.
+            while (_nextWarp < _warps.Length && _warps[_nextWarp].Time <= now)
+            {
+                var w = _warps[_nextWarp++];
+                if (w.Time <= from) continue;
+                Add(_warp, w.Position, 0, w.Scale, w.Seed ^ 0x4A7C15F3u, w.Time, Vector3.zero, 0, 0, w.Tint);
             }
             // A structure break's bursts, at its moment (BreakMoments).
             while (_nextBurst < _bursts.Length && _bursts[_nextBurst].Time <= now)

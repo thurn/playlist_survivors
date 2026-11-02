@@ -166,6 +166,17 @@ namespace PS.Game.Sim
         /// <summary>The enemies' flow field toward the hero, for the debug overlay.</summary>
         public FlowFieldView FlowField => new FlowFieldView(Horde?.Field);
 
+        /// <summary>
+        /// Whether ground point (<paramref name="x"/>, <paramref name="y"/>) is in the view's footprint round the hero at song
+        /// time <paramref name="t"/> (the spawner's own test), for the client's spawn warps; false in a run without enemies.
+        /// </summary>
+        public bool InView(double t, double x, double y)
+        {
+            if (Horde == null) return false;
+            State.Hero.PositionAt(t, out double hx, out double hy);
+            return Horde.Spawner.InView(x, y, hx, hy, 1);
+        }
+
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
 

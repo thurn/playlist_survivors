@@ -229,7 +229,9 @@ Since ps-msz.1.3 the same guard and tools cover the Unity game, `game/`
   CC0 and CC-BY): setup clones them into the gitignored
   `game/Assets/FreeSounds/`, so `game/` tracks no audio. Not into
   `Assets/Baked/`, whose files the derived record may list, which would
-  then fail the tracked originals.
+  then fail the tracked originals. demo3d takes a few of them too (the
+  crystal cut's death flourish and spawn warp sounds, ps-wnj.16): setup
+  clones the same packs into the gitignored `demo3d/Assets/FreeSounds/`.
 - **`game <command>`** (`uv run --project demo3d/tools game`) runs the
   setup, sync, guard, Unity, test and build tools on `game/`, plus its own
   `look`.

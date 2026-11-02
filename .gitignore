@@ -102,6 +102,8 @@ reactive-local/
 /game/evidence/**/obj/
 /game/Assets/FreeSounds/
 /game/Assets/FreeSounds.meta
+/demo3d/Assets/FreeSounds/
+/demo3d/Assets/FreeSounds.meta
 # The HeroEditor capture (docs/design/heroeditor-native.md), under the same rules: HeroEditor is an
 # Asset Store pack. Its frames and atlases live in the per-machine cache, never in the tree.
 /herocap/Assets/Vendor/

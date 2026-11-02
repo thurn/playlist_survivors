@@ -150,7 +150,8 @@ clockwise from +z seen from above, the light sweeping clockwise, a mirrored spaw
 sweep the arc, easing out; 0 lit at once), tail (the share of the arc the light fades over behind
 the head, the ribbon narrowing toward it), core (a thin line just inside the outer edge, at that gain
 over the body), soft (the body's falloff toward the inner edge), fade, grow (`[start, end]` radius
-scale over the life: the slam's ring racing out) and hdr. The shader draws the light white; the
+scale over the life, easing out: the slam's ring racing out; easing in with `"ease": "in"`: a spawn warp's
+ring collapsing onto its point) and hdr. The shader draws the light white; the
 layer's `heat` colours it, so a ramp from a palette role to the same role keeps the body in the
 role's hue and turns the core white. A full turn or more is a ring: its ends don't soften.
 

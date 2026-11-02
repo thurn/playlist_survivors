@@ -50,11 +50,13 @@ def decode(path: Path, start: float = 0.0, seconds: float | None = None):
     return np.frombuffer(raw, dtype=np.float32).reshape(-1, 2).copy()
 
 
-def find_clips(names: set[str], sounds_dir: Path) -> dict[str, Path]:
+def find_clips(names: set[str], sounds_dir: Path | list[Path]) -> dict[str, Path]:
+    """Each clip name's file under the folders, by stem (the first folder's first)."""
     found: dict[str, Path] = {}
-    for p in sounds_dir.rglob("*"):
-        if p.suffix.lower() in (".wav", ".mp3", ".ogg") and p.stem in names:
-            found.setdefault(p.stem, p)
+    for folder in [sounds_dir] if isinstance(sounds_dir, Path) else sounds_dir:
+        for p in folder.rglob("*"):
+            if p.suffix.lower() in (".wav", ".mp3", ".ogg") and p.stem in names:
+                found.setdefault(p.stem, p)
     return found
 
 
@@ -154,7 +156,7 @@ class Mix:
 
 
 def mix_video(events: Path, video: Path, out: Path, song: Path | None = None, start: float | None = None,
-              seconds: float | None = None, sounds_dir: Path = Path("demo3d/Assets/Vendor")) -> Mix:
+              seconds: float | None = None, sounds_dir: Path | list[Path] = Path("demo3d/Assets/Vendor")) -> Mix:
     """Mixes the song window under a `--dump-sounds` file's events and muxes it into `video` as `out`."""
     from . import paths
 
