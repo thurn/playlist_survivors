@@ -233,6 +233,18 @@ Techniques that tend to work:
   blades and round the hump tiled a tortoise's shell. Keep the hump's crest
   outlined: leant normals dim the rim there, so a ridge over an open crest
   stood up like an antenna (the troll).
+- **Few rings round a big body**: on a round trunk seen from 60 degrees,
+  each ring drawn round it reads as a hoop (a barrel, a turtle shell, stacked
+  tyres), and the widest one as a crate's bottom edge; let long lines shape
+  it, with one ring at most where a form turns (the Fat Ogre's fold under
+  the chest). Close long lines that run over a hump behind the head with a
+  collar round the neck, or they end in mid-air as rays round the head.
+- **Lean vertex normals only a little** (about 0.4 straight up): leant far,
+  a shard turned over shows a face whose normals point away from the camera,
+  which the rim draws solid (the Fat Ogre's pate flew off as a lit slab).
+- **A strap is a plane's cut**: where a tilted plane cuts the body, two lines
+  on its surface (ray-cast onto the body's own polygons) read as a strap
+  worn round it (the Fat Ogre's sash).
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
