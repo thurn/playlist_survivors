@@ -190,7 +190,10 @@ Techniques that tend to work:
   domed shield, and a ridged breastplate tried and dropped). Thin plates, and
   facets facing up toward the game camera, stay dark. Where a big facet must
   turn away, give its vertices normals that lean up (`Mesh.normals`): the
-  rim mixes them with the facet's own (the slime's sides).
+  rim mixes them with the facet's own (the slime's sides). On a closed
+  plate lean only its top face's: the shader turns the facet toward the
+  viewer but not the vertex normal, so a plate leant all round draws solid
+  when its shard turns over (the goblin's shield).
 - **Mind the camera's 60 degrees on a round body**: seen from above, rings
   around a vertical axis nest into a target and an apex's spokes into an
   umbrella or a spider web. The slime closes under a crown and a face
@@ -201,6 +204,13 @@ Techniques that tend to work:
 - **Print a small feature on its panel**: give each of its vertices the
   panel corners' weights, blended by where it lies, so it follows the panel
   through every clip instead of stretching or sinking (the slime's eye).
+- **Check an enlarged feature in the clips**: a small bone's motion made for
+  the vendor's size swings a feature you lengthen much further. The goblin's
+  ears, twice as long on its ear bones, stood up as a rabbit's; rigid on the
+  head they stay out.
+- **One prism per limb**: separate segments, each capped at the knee and
+  elbow, read as a kit of boxes with gaps; one loft through all the joints
+  closes the outline (the goblin).
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
@@ -208,7 +218,10 @@ the trailer's 24-degree creases flagged by the recipe itself (`creases()`),
 so the mesh is drawn as designed at every distance.
 `tools/recipes/monster/slime.py` is the other kind: a body built from
 scratch as polygons, every edge it designs drawn (`mesh.edges`), and some
-hushed so a panel stays quiet.
+hushed so a panel stays quiet. `tools/recipes/monster/goblin.py` builds a
+whole humanoid that way: prisms lofted through the vendor's joints, each
+shape skinned by transfer from the vendor's nearest vertices over its own
+bones, thin plates drawing only their tops.
 
 Keep the vendor rig, bind poses and clips. For skin transfer, partitioning,
 stream compaction and bounds, follow
