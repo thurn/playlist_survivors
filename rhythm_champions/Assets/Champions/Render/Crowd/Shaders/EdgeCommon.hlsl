@@ -131,7 +131,8 @@ float HeightPx(Owner o)
     float3 centre = o.position + float3(0, 0.5 * _HeightM * o.scale, 0);
     float depth = max(-TransformWorldToView(centre).z, 1e-3);
     float rows = _ScaledScreenParams.y;
-    return _HeightM * o.scale * UNITY_MATRIX_P._m11 * 0.5 * rows / depth / max(1.0, rows / 1080.0);
+    // abs: the projection flips y (a negative _m11) when the camera renders into a texture.
+    return _HeightM * o.scale * abs(UNITY_MATRIX_P._m11) * 0.5 * rows / depth / max(1.0, rows / 1080.0);
 }
 
 // The beat wave's flare at the owner: the world's (World.hlsl) and the bench's ring of `_EdgeWaveWidth` round its

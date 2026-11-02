@@ -1,6 +1,7 @@
 """A vendor model as Unity exported it for its recipe (EdgeCutSource.cs): one mesh in root space at the model's
 height (metres, y up, facing +z), each vertex skinned to 4 entries (bones, or rigid attachments) of its rig, every
-triangle tagged with the renderer it came from. Recipes pick parts of it with `Selection`s."""
+triangle tagged with the renderer it came from, and the same vertices posed by the recipe's `pose` clip where it names
+one. Recipes pick parts of it with `Selection`s."""
 
 from __future__ import annotations
 
@@ -49,6 +50,8 @@ class Source:
         self.entry_paths: list[str] = [e["path"] for e in meta["entries"]]
         self.renderers: list[str] = [r["name"] for r in meta["renderers"]]
         self.positions = a["positions"].astype(np.float64)
+        # Where the model's pose leaves each vertex (a T-posed rig standing as in the game), else the bind pose.
+        self.posed = a["posed"].astype(np.float64) if "posed" in a else self.positions
         self.normals = a["normals"].astype(np.float64)
         self.bones = a["bones"].astype(np.int64)
         self.weights = a["weights"].astype(np.float64)

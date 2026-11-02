@@ -23,6 +23,7 @@ namespace Champions.EditorTools.EdgeCuts
             try
             {
                 var source = new EdgeCutSource(root);
+                source.SamplePose(model);
                 var path = $"{EdgeCutModel.Dir(model.id)}/source.json";
                 source.Write(path, model);
                 Debug.Log($"EdgeCutTasks.Export: {model.id}: {source.Positions.Count} vertices, {source.Indices.Count / 3} triangles, " +

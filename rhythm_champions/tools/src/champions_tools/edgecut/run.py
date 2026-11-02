@@ -29,7 +29,7 @@ THRESHOLDS = {
 }
 # What each step reads besides the recipe's model, relative to the project.
 EXPORT_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutSource.cs", "Assets/Champions/Editor/EdgeCuts/EdgeCutModel.cs",
-               "manifest.json")
+               "Assets/Champions/Editor/EdgeCuts/Fist.cs", "manifest.json")
 CUT_CODE = ("tools/src/champions_tools/edgecut",)
 BAKE_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutBaker.cs", "Assets/Champions/Render/Crowd/EdgeCutType.cs")
 

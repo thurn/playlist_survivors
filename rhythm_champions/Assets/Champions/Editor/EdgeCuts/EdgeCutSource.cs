@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using UnityEditor;
 using UnityEngine;
 
 namespace Champions.EditorTools.EdgeCuts
@@ -11,8 +12,9 @@ namespace Champions.EditorTools.EdgeCuts
     /// A spawned model's active renderers combined into one mesh in root space at its height, as game/'s crowd baker
     /// combined them (ported by review): each skin's bones and each rigid attachment become an entry, a transform with
     /// the bind matrix that maps root-space vertices into its space, and every vertex keeps its 4 strongest entries.
-    /// <see cref="Write"/> exports it for the recipe as source.json/.bytes (<see cref="ArrayFile"/>); the baker
-    /// combines the same spawn again to sample the clips onto the same entries.
+    /// <see cref="Write"/> exports it for the recipe as source.json/.bytes (<see cref="ArrayFile"/>), with the same
+    /// vertices posed by the model's <see cref="EdgeCutModel.pose"/> clip where it names one; the baker combines the
+    /// same spawn again to sample the clips onto the same entries.
     /// </summary>
     public sealed class EdgeCutSource
     {
@@ -33,6 +35,8 @@ namespace Champions.EditorTools.EdgeCuts
         /// <summary>Per triangle: its renderer (into <see cref="Renderers"/>) and the submesh it came from.</summary>
         public readonly List<int> TriangleRenderer = new List<int>(), TriangleSubmesh = new List<int>();
         public readonly List<Renderer> Renderers = new List<Renderer>();
+        /// <summary>Every vertex in root space posed by <see cref="SamplePose"/>, or null.</summary>
+        public List<Vector3> Posed;
 
         public EdgeCutSource(GameObject root)
         {
@@ -151,7 +155,54 @@ namespace Champions.EditorTools.EdgeCuts
         }
 
         /// <summary>
-        /// source.json/.bytes for the recipe: positions, normals, bones (entry indices) and weights per vertex,
+        /// Poses the spawn by the model's <see cref="EdgeCutModel.pose"/> clip at its first frame and keeps every
+        /// vertex where that leaves it, in root space (<see cref="Posed"/>), so a recipe sees a T-posed rig standing
+        /// as it does in the game. Nothing without a pose.
+        /// </summary>
+        public void SamplePose(EdgeCutModel model)
+        {
+            if (string.IsNullOrEmpty(model.pose)) return;
+            var c = model.clips.FirstOrDefault(x => x.role == model.pose)
+                ?? throw new Exception($"EdgeCutSource: {model.id}'s pose names no clip role '{model.pose}'");
+            var animator = Root.GetComponentInChildren<Animator>();
+            var rootInv = RootTR.inverse;
+            Posed = new List<Vector3>(Positions.Count);
+            AnimationMode.StartAnimationMode();
+            try
+            {
+                AnimationMode.BeginSampling();
+                AnimationMode.SampleAnimationClip(animator.gameObject, model.LoadClip(c), 0);
+                AnimationMode.EndSampling();
+                var baked = new Mesh();
+                foreach (var r in Renderers)
+                {
+                    Matrix4x4 toRoot;
+                    Vector3[] verts;
+                    if (r is SkinnedMeshRenderer smr)
+                    {
+                        // Unscaled, BakeMesh leaves the world-scaled vertices in the renderer's rotated frame.
+                        smr.BakeMesh(baked, false);
+                        verts = baked.vertices;
+                        toRoot = rootInv * Matrix4x4.TRS(r.transform.position, r.transform.rotation, Vector3.one);
+                    }
+                    else
+                    {
+                        verts = r.GetComponent<MeshFilter>().sharedMesh.vertices;
+                        toRoot = rootInv * r.transform.localToWorldMatrix;
+                    }
+                    foreach (var v in verts) Posed.Add(toRoot.MultiplyPoint3x4(v));
+                }
+                UnityEngine.Object.DestroyImmediate(baked);
+            }
+            finally
+            {
+                AnimationMode.StopAnimationMode();
+            }
+            if (Posed.Count != Positions.Count) throw new Exception($"EdgeCutSource: {model.id}'s posed mesh has {Posed.Count} vertices, not {Positions.Count}");
+        }
+
+        /// <summary>
+        /// source.json/.bytes for the recipe: positions (and posed ones, if sampled), normals, bones (entry indices) and weights per vertex,
         /// triangles with their renderer and submesh, and in the header each entry's name, path and bind (row-major),
         /// and each renderer's name, path, kind and materials.
         /// </summary>
@@ -160,6 +211,7 @@ namespace Champions.EditorTools.EdgeCuts
             var b = new ArrayFile.Builder();
             int n = Positions.Count;
             b.Add("positions", Flatten(Positions), n, 3);
+            if (Posed != null) b.Add("posed", Flatten(Posed), n, 3);
             b.Add("normals", Flatten(Normals), n, 3);
             b.Add("bones", BoneIndices.SelectMany(v => new[] { (int)v.x, (int)v.y, (int)v.z, (int)v.w }).ToArray(), n, 4);
             b.Add("weights", BoneWeights.SelectMany(v => new[] { v.x, v.y, v.z, v.w }).ToArray(), n, 4);

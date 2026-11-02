@@ -18,11 +18,11 @@ entries) redrawn as about seventy lines over a body of convex parts.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 67.7% (poses 67%, 72%, 64%) | ok |
+| black share at game scale >= 65% | 66.5% (poses 66%, 72%, 62%) | ok |
 | line segments <= 120 | 72 | ok |
 | body triangles 300-800 | 322 | ok |
 
-23 shard pieces; the bone texture holds 62 entries.
+23 shard pieces; the bone texture holds 61 entries.
 
 ## Sheets
 
@@ -36,15 +36,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 48.1% | 50.9% | 611 | 40 |
-| far | walk | 53.3% | 54.8% | 589 | 41 |
-| far | attack | 36.9% | 42.0% | 398 | 32 |
-| game | idle | 67.0% | 68.0% | 2215 | 81 |
-| game | walk | 71.8% | 73.2% | 2198 | 82 |
-| game | attack | 64.2% | 66.0% | 1485 | 65 |
-| near | idle | 81.0% | 81.2% | 8334 | 164 |
-| near | walk | 84.5% | 84.8% | 8285 | 166 |
-| near | attack | 78.7% | 79.4% | 5641 | 132 |
+| far | idle | 44.2% | 49.3% | 635 | 41 |
+| far | walk | 54.2% | 55.9% | 612 | 42 |
+| far | attack | 36.4% | 42.8% | 418 | 34 |
+| game | idle | 66.0% | 67.3% | 2323 | 83 |
+| game | walk | 71.8% | 73.1% | 2296 | 85 |
+| game | attack | 61.7% | 65.7% | 1557 | 67 |
+| near | idle | 80.9% | 81.3% | 8734 | 169 |
+| near | walk | 84.5% | 85.1% | 8697 | 170 |
+| near | attack | 77.9% | 79.5% | 5950 | 136 |
 
 ## Parts
 

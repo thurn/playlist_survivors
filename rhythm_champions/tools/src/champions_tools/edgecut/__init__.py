@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from .cut import Cut
 from .source import Selection, Source
 
-__all__ = ["Clip", "Cut", "Model", "Selection", "Source"]
+__all__ = ["Clip", "Cut", "Model", "Selection", "Source", "Weapon"]
 
 
 @dataclass(frozen=True)
@@ -28,9 +28,24 @@ class Clip:
 
 
 @dataclass(frozen=True)
+class Weapon:
+    """A weapon prefab (by GUID) held in a humanoid's right or left fist, its handle through the fist across the
+    knuckles as Synty's combat clips hold one, then moved by its grip: `palm` metres (at the prefab's own scale) from
+    the knuckles toward the palm, turned by `pitch`, `yaw` and `roll` degrees about its own axes."""
+
+    prefab: str
+    hand: str = "right"
+    palm: float = 0.0
+    pitch: float = 0.0
+    yaw: float = 0.0
+    roll: float = 0.0
+
+
+@dataclass(frozen=True)
 class Model:
     """A recipe's vendor sources: the prefab by GUID, its height at scale 1, a flyer's hover, children never shown,
-    and the clips (manifest.json lists every file)."""
+    weapons put in its hands, the clips (manifest.json lists every file), and the role of the clip whose first frame
+    the line choice sees the model in (`pose`: a T-posed rig standing as in the game; empty, the bind pose)."""
 
     id: str
     prefab: str
@@ -38,9 +53,12 @@ class Model:
     clips: tuple[Clip, ...]
     hoverM: float = 0.0
     hide: tuple[str, ...] = field(default_factory=tuple)
+    weapons: tuple[Weapon, ...] = field(default_factory=tuple)
+    pose: str = ""
 
     def json(self) -> dict:
         d = asdict(self)
         d["clips"] = [asdict(c) for c in self.clips]
         d["hide"] = list(self.hide)
+        d["weapons"] = [asdict(w) for w in self.weapons]
         return d

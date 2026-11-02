@@ -1,7 +1,7 @@
 """Choosing a model's lines (design.md, The Look > Edge cuts; plan.md, Rendering > Edge cuts, step 5).
 
-Candidates come from a smoothed proxy of the source: its edges that the game camera sees on the silhouette from many
-headings (the creases that shape the outline), its sharp creases and its open rims. They chain into polylines,
+Candidates come from a smoothed proxy of the source, in its pose: its edges that the game camera sees on the silhouette
+from many headings (the creases that shape the outline), its sharp creases and its open rims. They chain into polylines,
 simplified, each scored by its length and salience; edges the body hides from every view are dropped. The recipe's
 keep and drop lists and its count pick the lines, and each gets an importance from its score, so the renderer fades
 the least important first when the monster is small on screen.
@@ -42,8 +42,8 @@ class Chain:
 
 @dataclass
 class Proxy:
-    """The selection welded by position: vertices (raw and smoothed), faces, edges with their faces, and the
-    source vertex each welded vertex stands for (for its skin)."""
+    """The selection welded by position: vertices (raw, and smoothed in the source's pose), faces, edges with their
+    faces, and the source vertex each welded vertex stands for (for its skin)."""
 
     raw: np.ndarray
     smooth: np.ndarray
@@ -66,6 +66,7 @@ def weld(src: Source, sel: Selection, face_part: np.ndarray, tolerance: float, s
     ok = (faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])
     faces, parts = faces[ok], parts[ok]
     raw = src.positions[used[first]]
+    posed = src.posed[used[first]]
     pairs = np.sort(np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1)
     edges, inverse = np.unique(pairs, axis=0, return_inverse=True)
     inverse = inverse.reshape(-1)
@@ -73,7 +74,7 @@ def weld(src: Source, sel: Selection, face_part: np.ndarray, tolerance: float, s
     edge_faces: list[list[int]] = [[] for _ in range(len(edges))]
     for e, f in zip(inverse, face_of, strict=True):
         edge_faces[e].append(int(f))
-    smooth = taubin(raw, edges, smooth_iterations)
+    smooth = taubin(posed, edges, smooth_iterations)
     return Proxy(raw, smooth, used[first], faces, parts, edges, edge_faces)
 
 

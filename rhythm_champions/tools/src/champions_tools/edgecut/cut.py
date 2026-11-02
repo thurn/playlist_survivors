@@ -142,6 +142,23 @@ class Cut:
         for a, b in pairwise(ids):
             self._segment(a, b, importance, part)
 
+    def contours(self, sel: Selection, part: str, sides: int = 4, importance: float = 0.5) -> None:
+        """Straight strokes along the selection's long axis at its surface, `sides` of them evenly round it, rigid on
+        the entry holding most of its skin: from any heading about two lie near its outline. For a chunky low-poly
+        limb, whose mesh has no long edge along it to choose."""
+        pts = self.src.positions[self.src.vertices_of(sel)]
+        centre = pts.mean(0)
+        rel = pts - centre
+        _, _, axes = np.linalg.svd(rel, full_matrices=False)
+        along = rel @ axes[0]
+        lo, hi = np.percentile(along, 4), np.percentile(along, 96)  # past the joints' stray vertices
+        entry = self.src.dominant_entry(sel)
+        for k in range(sides):
+            a = 2 * np.pi * (k + 0.5) / sides
+            d = np.cos(a) * axes[1] + np.sin(a) * axes[2]
+            r = np.percentile(rel @ d, 92)
+            self.stroke([centre + lo * axes[0] + r * d, centre + hi * axes[0] + r * d], entry, part, importance)
+
     def _segment(self, a: int, b: int, importance: float, part: str) -> None:
         self.segments.append((a, b))
         self.segment_importance.append(importance)

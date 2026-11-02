@@ -19,8 +19,8 @@ inside, 8 entries) redrawn as its outline and its eye over one dark blob.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 89.3% (poses 89%, 90%, 89%) | ok |
-| line segments <= 120 | 34 | ok |
+| black share at game scale >= 65% | 94.2% (poses 94%, 95%, 94%) | ok |
+| line segments <= 120 | 42 | ok |
 | body triangles 300-800 | 328 | ok |
 
 21 shard pieces; the bone texture holds 7 entries.
@@ -37,19 +37,19 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 80.3% | 80.3% | 569 | 27 |
-| far | walk | 79.6% | 79.6% | 633 | 30 |
-| far | attack | 78.2% | 78.3% | 559 | 26 |
-| game | idle | 89.1% | 89.1% | 2117 | 51 |
-| game | walk | 89.8% | 89.8% | 2287 | 57 |
-| game | attack | 89.0% | 89.0% | 2083 | 51 |
-| near | idle | 94.4% | 94.4% | 7917 | 100 |
-| near | walk | 94.7% | 94.7% | 8596 | 112 |
-| near | attack | 94.2% | 94.2% | 7826 | 98 |
+| far | idle | 88.1% | 88.1% | 1599 | 44 |
+| far | walk | 88.9% | 88.9% | 1731 | 50 |
+| far | attack | 88.3% | 88.3% | 1571 | 44 |
+| game | idle | 94.2% | 94.2% | 6138 | 88 |
+| game | walk | 94.7% | 94.7% | 6610 | 98 |
+| game | attack | 93.8% | 93.9% | 6072 | 87 |
+| near | idle | 96.7% | 96.7% | 23549 | 171 |
+| near | walk | 97.1% | 97.1% | 25376 | 192 |
+| near | attack | 96.6% | 96.6% | 23316 | 169 |
 
 ## Parts
 
 | Part | Body triangles | Line segments |
 | --- | --- | --- |
-| body | 312 | 24 |
+| body | 312 | 32 |
 | eye | 16 | 10 |

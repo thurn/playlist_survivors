@@ -9,7 +9,8 @@ namespace Champions.EditorTools.EdgeCuts
     /// <summary>
     /// A model's vendor sources as its recipe names them (rhythm_champions/tools/recipes/edgecut/&lt;model&gt;.py, `MODEL`),
     /// which `champions edgecut` writes to Assets/Baked/EdgeCuts/&lt;model&gt;/model.json: the prefab and clips by vendor
-    /// GUID (manifest.json), the model's height at scale 1 and the prefab children it never shows.
+    /// GUID (manifest.json), the model's height at scale 1, the prefab children it never shows, the weapons put in
+    /// its hands and the clip role whose first frame the recipe also sees it in (`pose`, for a T-posed rig).
     /// </summary>
     [Serializable]
     public sealed class EdgeCutModel
@@ -19,6 +20,8 @@ namespace Champions.EditorTools.EdgeCuts
         public float heightM;
         public float hoverM;
         public string[] hide = Array.Empty<string>();
+        public Weapon[] weapons = Array.Empty<Weapon>();
+        public string pose = "";
         public Clip[] clips = Array.Empty<Clip>();
 
         /// <summary>A clip the crowd plays: its role (idle, walk, attack, hit, ...), source and annotations (negative where absent).</summary>
@@ -30,6 +33,19 @@ namespace Champions.EditorTools.EdgeCuts
             public string clip;
             public bool loop;
             public float impact = -1, end = -1, strideM = -1;
+        }
+
+        /// <summary>
+        /// A weapon prefab held in a humanoid's right or left <see cref="Fist"/>, then moved by its grip: `palm` metres
+        /// (at the prefab's own scale) from the knuckles toward the palm, turned by `pitch`, `yaw` and `roll` degrees
+        /// about its own axes, as Quaternion.Euler takes them.
+        /// </summary>
+        [Serializable]
+        public sealed class Weapon
+        {
+            public string prefab;
+            public string hand = "right";
+            public float palm, pitch, yaw, roll;
         }
 
         public const string BakedRoot = "Assets/Baked/EdgeCuts";
@@ -64,23 +80,21 @@ namespace Champions.EditorTools.EdgeCuts
 
         /// <summary>
         /// The prefab at the origin, unpacked, without the vendor's scripts, its hidden children or its animator's
-        /// controller, scaled to <see cref="heightM"/> (measured on its skins' bind-pose bounds).
+        /// controller, its weapons in its fists, scaled to <see cref="heightM"/> (<see cref="MeasureHeight"/>).
         /// </summary>
         public GameObject Spawn()
         {
-            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(PathOf(prefab))
-                ?? throw new Exception($"EdgeCutModel: {PathOf(prefab)} is not a prefab");
-            var go = (GameObject)PrefabUtility.InstantiatePrefab(asset);
-            PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            var go = Instantiate(prefab);
             foreach (var name in hide)
             {
                 var child = go.GetComponentsInChildren<Transform>(true).FirstOrDefault(x => x.name == name)
                     ?? throw new Exception($"EdgeCutModel: {id}'s prefab has no child '{name}' to hide");
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
+            var animator = go.GetComponentInChildren<Animator>() ?? throw new Exception($"EdgeCutModel: {id} has no Animator");
+            foreach (var w in weapons) Hold(w, animator);
             foreach (var t in go.GetComponentsInChildren<Transform>(true))
                 GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
-            var animator = go.GetComponentInChildren<Animator>() ?? throw new Exception($"EdgeCutModel: {id} has no Animator");
             animator.applyRootMotion = false;
             animator.runtimeAnimatorController = null;
             float native = MeasureHeight(go);
@@ -88,19 +102,43 @@ namespace Champions.EditorTools.EdgeCuts
             return go;
         }
 
+        static GameObject Instantiate(string guid)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(PathOf(guid))
+                ?? throw new Exception($"EdgeCutModel: {PathOf(guid)} is not a prefab");
+            var go = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            return go;
+        }
+
+        /// <summary>Puts a weapon in its fist, a child of the hand bone (game/'s Roster.Hold, ported by review).</summary>
+        void Hold(Weapon w, Animator animator)
+        {
+            if (w.hand != "right" && w.hand != "left")
+                throw new Exception($"EdgeCutModel: {id}'s weapon {w.prefab} is for hand '{w.hand}', not right or left");
+            var fist = Fist.Of(animator, w.hand == "right");
+            var weapon = Instantiate(w.prefab).transform;
+            weapon.SetParent(fist.Hand, false);
+            float scale = fist.Hand.lossyScale.x; // at the prefab's own scale (Spawn scales the whole after)
+            weapon.localRotation = fist.Turn * Quaternion.Euler(w.pitch, w.yaw, w.roll);
+            weapon.localPosition = fist.Knuckles + fist.Palm * (w.palm / scale);
+        }
+
+        /// <summary>
+        /// The skins' height in their bind pose, from their vertices as the export places them (Magic Pig's meshes
+        /// carry bounds up to a third taller than their vertices).
+        /// </summary>
         static float MeasureHeight(GameObject go)
         {
             float top = float.MinValue, bottom = float.MaxValue;
             foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(false))
             {
                 if (r.sharedMesh == null) continue;
-                var b = r.sharedMesh.bounds;
-                for (int i = 0; i < 8; i++)
+                foreach (var v in r.sharedMesh.vertices)
                 {
-                    var c = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) * 2 - 1, (i >> 1 & 1) * 2 - 1, (i >> 2 & 1) * 2 - 1));
-                    var w = r.transform.TransformPoint(c);
-                    top = Mathf.Max(top, w.y);
-                    bottom = Mathf.Min(bottom, w.y);
+                    float y = r.transform.TransformPoint(v).y;
+                    top = Mathf.Max(top, y);
+                    bottom = Mathf.Min(bottom, y);
                 }
             }
             return top == float.MinValue ? 0 : top - Mathf.Min(bottom, go.transform.position.y);

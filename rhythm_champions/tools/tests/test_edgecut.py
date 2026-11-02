@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from champions_tools import paths
-from champions_tools.edgecut import Cut, Source, arrays, lines, run
+from champions_tools.edgecut import Clip, Cut, Model, Source, Weapon, arrays, lines, run
 
 BOX = np.array([[x, y, z] for x in (0, 1) for y in (0, 1) for z in (0, 1)], float)
 # Outward-facing triangles of the unit box above (two per face).
@@ -18,8 +18,9 @@ BOX_TRIS = np.array([[0, 1, 3], [0, 3, 2], [4, 6, 7], [4, 7, 5], [0, 4, 5], [0, 
                      [2, 3, 7], [2, 7, 6], [0, 2, 6], [0, 6, 4], [1, 5, 7], [1, 7, 3]])
 
 
-def write_source(path: Path) -> Path:
-    """A torso box (0.4 x 1 x 0.3 m, on bone 0) and a shield box (0.5 x 0.5 x 0.02 m, on bone 1)."""
+def write_source(path: Path, posed: np.ndarray | None = None) -> Path:
+    """A torso box (0.4 x 1 x 0.3 m, on bone 0) and a shield box (0.5 x 0.5 x 0.02 m, on bone 1), with its vertices
+    posed as `posed` if given."""
     torso = BOX * [0.4, 1.0, 0.3] + [-0.2, 0.5, -0.15]
     shield = BOX * [0.5, 0.5, 0.02] + [-0.8, 0.8, 0.2]
     positions = np.vstack([torso, shield])
@@ -32,9 +33,9 @@ def write_source(path: Path) -> Path:
             "entries": [{"name": "Torso", "path": "Root/Torso"}, {"name": "ShieldBone", "path": "Root/ShieldBone"}],
             "renderers": [{"name": "Body"}, {"name": "Shield"}]}
     arrays.write(path, meta, {
-        "positions": positions, "normals": np.zeros_like(positions), "bones": bones, "weights": weights,
-        "triangles": triangles, "triangle_renderer": np.repeat([0, 1], 12), "triangle_submesh": np.zeros(24, np.int64),
-        "binds": np.tile(np.eye(4), (2, 1, 1)),
+        "positions": positions, **({"posed": posed} if posed is not None else {}), "normals": np.zeros_like(positions),
+        "bones": bones, "weights": weights, "triangles": triangles, "triangle_renderer": np.repeat([0, 1], 12),
+        "triangle_submesh": np.zeros(24, np.int64), "binds": np.tile(np.eye(4), (2, 1, 1)),
     })
     return path
 
@@ -87,6 +88,29 @@ def test_feature_lines_follow_the_creases_within_the_count(src: Source) -> None:
     fewer = Cut(src)
     fewer.feature_lines(parts, count=40, drop=("shield",), caps={"torso": 3}, min_length=0.01)
     assert set(fewer.segment_part) == {"torso"} and fewer.segment_count <= 3
+
+
+def test_the_line_choice_sees_the_source_in_its_pose(src: Source, tmp_path: Path) -> None:
+    assert src.posed is src.positions, "without a pose, the bind pose"
+    lifted = src.positions + [0, 3, 0]
+    posed = Source(write_source(tmp_path / "posed.json", posed=lifted))
+    face_part = np.zeros(posed.triangle_count, np.int64)
+    proxy = lines.weld(posed, posed.renderers_named("Body"), face_part, 1e-4, smooth_iterations=0)
+    assert np.allclose(proxy.raw, posed.positions[proxy.source_vertex]), "lines keep the bind pose, for their skin"
+    assert np.allclose(proxy.smooth, lifted[proxy.source_vertex]), "silhouettes are judged on the posed shape"
+
+
+def test_contours_run_along_a_part_at_its_surface_rigid_on_its_bone(src: Source) -> None:
+    c = Cut(src)
+    c.contours(src.renderers_named("Body"), "torso")
+    assert c.segment_count == 4 and set(c.segment_part) == {"torso"}
+    ends = np.array(c.line_positions)
+    assert np.allclose(ends[0::2, [0, 2]], ends[1::2, [0, 2]]), "each runs along the box's long (y) axis"
+    assert np.allclose(np.sort(ends[:, 1]), [0.5] * 4 + [1.5] * 4)
+    # Four turns apart round the axis, each as far out as the box reaches that way (its support along the diagonal).
+    offsets = {(round(x, 6), round(z, 6)) for x, _, z in ends}
+    assert offsets == {(x, z) for x in (-0.175, 0.175) for z in (-0.175, 0.175)}
+    assert all(b[0] == 0 and w[0] == 1 for b, w in zip(c.line_bones, c.line_weights, strict=True))
 
 
 def test_a_circle_and_strokes_are_rigid_on_their_bones(src: Source) -> None:
@@ -154,6 +178,14 @@ def cut(src: Source) -> Cut:
     c.hull(src.renderers_named("Body"), "torso", points={points})
     return c
 '''
+
+
+def test_the_model_names_its_weapons_and_pose_as_unity_reads_them() -> None:
+    model = Model(id="ork", prefab="0" * 32, heightM=2.4, clips=(Clip("idle", "1" * 32, "Idle", loop=True),),
+                  weapons=(Weapon("2" * 32, palm=0.02, pitch=20, yaw=90),), pose="idle")
+    d = json.loads(json.dumps(model.json()))
+    assert d["weapons"] == [{"prefab": "2" * 32, "hand": "right", "palm": 0.02, "pitch": 20, "yaw": 90, "roll": 0}]
+    assert d["pose"] == "idle" and d["clips"][0]["role"] == "idle"
 
 
 def test_a_bake_runs_only_the_steps_whose_inputs_changed(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
