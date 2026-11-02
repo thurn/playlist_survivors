@@ -19,7 +19,7 @@ when spread, so it is drawn with very few lines.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 77.9% (poses 79%, 86%, 69%) | ok |
+| black share at game scale >= 65% | 80.1% (poses 81%, 87%, 73%) | ok |
 | line segments <= 120 | 14 | ok |
 | body triangles 300-800 | 364 | ok |
 
@@ -37,15 +37,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 64.7% | 68.3% | 312 | 31 |
-| far | walk | 73.3% | 75.5% | 326 | 23 |
-| far | attack | 51.6% | 53.8% | 186 | 16 |
-| game | idle | 79.1% | 81.1% | 1146 | 64 |
-| game | walk | 85.7% | 86.7% | 1275 | 47 |
-| game | attack | 68.9% | 73.7% | 704 | 33 |
-| near | idle | 88.9% | 90.4% | 4450 | 128 |
-| near | walk | 91.8% | 93.3% | 5035 | 95 |
-| near | attack | 84.2% | 86.3% | 2836 | 68 |
+| far | idle | 66.6% | 68.8% | 308 | 32 |
+| far | walk | 73.5% | 74.5% | 325 | 23 |
+| far | attack | 48.9% | 48.9% | 184 | 16 |
+| game | idle | 80.8% | 81.1% | 1146 | 64 |
+| game | walk | 86.6% | 86.8% | 1279 | 47 |
+| game | attack | 72.8% | 72.8% | 703 | 33 |
+| near | idle | 90.3% | 90.4% | 4437 | 128 |
+| near | walk | 93.2% | 93.2% | 5015 | 95 |
+| near | attack | 86.4% | 86.5% | 2812 | 68 |
 
 ## Parts
 

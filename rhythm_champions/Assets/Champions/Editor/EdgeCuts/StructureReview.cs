@@ -36,6 +36,7 @@ namespace Champions.EditorTools.EdgeCuts
             var type = lib.Types[typeIndex];
             var zones = new ZoneSweep(Palette.Load(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Content"))).Zones);
             zones.Publish(0, Vector2.zero);
+            new BeatWave().Publish(0, Vector2.zero); // at rest, as EdgeCutReview: no ring an earlier task left flares the edges
             Directory.CreateDirectory(outDir);
 
             var camera = new GameObject("ReviewCamera").AddComponent<Camera>();

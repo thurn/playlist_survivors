@@ -17,7 +17,7 @@ short stem and four stubby legs) redrawn as a ring round a dark cap, the design'
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 84.2% (poses 85%, 84%, 84%) | ok |
+| black share at game scale >= 65% | 84.8% (poses 85%, 85%, 85%) | ok |
 | line segments <= 120 | 56 | ok |
 | body triangles 300-800 | 334 | ok |
 
@@ -35,15 +35,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 74.8% | 76.3% | 713 | 32 |
-| far | walk | 73.0% | 74.5% | 732 | 32 |
-| far | attack | 74.0% | 75.0% | 612 | 29 |
-| game | idle | 84.5% | 85.1% | 2624 | 60 |
-| game | walk | 84.2% | 84.8% | 2652 | 61 |
-| game | attack | 84.0% | 84.6% | 2228 | 54 |
-| near | idle | 91.5% | 92.0% | 9918 | 117 |
-| near | walk | 91.2% | 91.8% | 10019 | 119 |
-| near | attack | 91.6% | 92.1% | 8425 | 104 |
+| far | idle | 74.2% | 74.3% | 720 | 31 |
+| far | walk | 74.4% | 74.7% | 727 | 32 |
+| far | attack | 74.6% | 74.8% | 606 | 28 |
+| game | idle | 85.1% | 85.1% | 2625 | 60 |
+| game | walk | 84.6% | 84.7% | 2650 | 61 |
+| game | attack | 84.6% | 84.6% | 2222 | 54 |
+| near | idle | 91.9% | 92.0% | 9891 | 116 |
+| near | walk | 91.8% | 91.8% | 9997 | 119 |
+| near | attack | 92.0% | 92.0% | 8409 | 104 |
 
 ## Parts
 

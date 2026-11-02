@@ -20,7 +20,7 @@ rig) with the Slayer greatsword in its right fist, redrawn as long lines and a f
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 55% | 63.1% (poses 62%, 69%, 59%) | ok |
+| black share at game scale >= 55% | 70.2% (poses 69%, 72%, 69%) | ok |
 | line segments <= 220 | 133 | ok |
 | body triangles 300-800 | 356 | ok |
 
@@ -38,15 +38,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 52.5% | 57.8% | 1635 | 80 |
-| far | walk | 58.6% | 61.2% | 1541 | 90 |
-| far | attack | 52.5% | 56.6% | 1483 | 66 |
-| game | idle | 61.6% | 70.9% | 5857 | 162 |
-| game | walk | 68.7% | 73.3% | 5552 | 178 |
-| game | attack | 59.1% | 69.9% | 5524 | 136 |
-| near | idle | 80.4% | 83.5% | 21673 | 323 |
-| near | walk | 83.0% | 85.2% | 20747 | 349 |
-| near | attack | 79.8% | 83.2% | 21103 | 292 |
+| far | idle | 57.4% | 58.7% | 1624 | 80 |
+| far | walk | 60.7% | 61.1% | 1548 | 89 |
+| far | attack | 55.6% | 57.2% | 1481 | 65 |
+| game | idle | 69.2% | 70.7% | 5845 | 161 |
+| game | walk | 72.4% | 73.2% | 5543 | 178 |
+| game | attack | 69.1% | 70.2% | 5511 | 136 |
+| near | idle | 83.0% | 83.4% | 21611 | 321 |
+| near | walk | 85.1% | 85.3% | 20639 | 348 |
+| near | attack | 82.5% | 83.1% | 21051 | 291 |
 
 ## Parts
 

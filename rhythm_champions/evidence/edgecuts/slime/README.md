@@ -19,7 +19,7 @@ inside, 8 entries) redrawn as its outline and its eye over one dark blob.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 93.8% (poses 94%, 94%, 93%) | ok |
+| black share at game scale >= 65% | 94.2% (poses 94%, 95%, 94%) | ok |
 | line segments <= 120 | 42 | ok |
 | body triangles 300-800 | 328 | ok |
 
@@ -37,15 +37,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 88.5% | 88.7% | 1595 | 45 |
-| far | walk | 88.3% | 89.3% | 1722 | 49 |
-| far | attack | 87.2% | 88.1% | 1575 | 44 |
-| game | idle | 93.8% | 94.2% | 6156 | 88 |
-| game | walk | 94.1% | 94.6% | 6620 | 98 |
-| game | attack | 93.5% | 93.8% | 6086 | 87 |
-| near | idle | 96.6% | 96.7% | 23631 | 171 |
-| near | walk | 97.0% | 97.1% | 25446 | 192 |
-| near | attack | 96.5% | 96.6% | 23384 | 170 |
+| far | idle | 88.1% | 88.1% | 1599 | 44 |
+| far | walk | 88.9% | 88.9% | 1731 | 50 |
+| far | attack | 88.3% | 88.3% | 1571 | 44 |
+| game | idle | 94.2% | 94.2% | 6138 | 88 |
+| game | walk | 94.7% | 94.7% | 6610 | 98 |
+| game | attack | 93.8% | 93.9% | 6072 | 87 |
+| near | idle | 96.7% | 96.7% | 23549 | 171 |
+| near | walk | 97.1% | 97.1% | 25376 | 192 |
+| near | attack | 96.6% | 96.6% | 23316 | 169 |
 
 ## Parts
 

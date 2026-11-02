@@ -19,7 +19,7 @@ with its spiked club in its right fist, redrawn as long lines and a few strokes 
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 55% | 65.0% (poses 64%, 66%, 65%) | ok |
+| black share at game scale >= 55% | 71.1% (poses 70%, 72%, 71%) | ok |
 | line segments <= 220 | 130 | ok |
 | body triangles 300-800 | 362 | ok |
 
@@ -37,15 +37,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 43.8% | 54.9% | 1853 | 68 |
-| far | walk | 48.1% | 57.6% | 1786 | 76 |
-| far | attack | 45.6% | 55.1% | 1940 | 84 |
-| game | idle | 63.5% | 72.3% | 6690 | 138 |
-| game | walk | 66.2% | 73.4% | 6477 | 150 |
-| game | attack | 65.3% | 72.8% | 7010 | 170 |
-| near | idle | 79.2% | 84.0% | 24653 | 273 |
-| near | walk | 80.8% | 85.1% | 24124 | 298 |
-| near | attack | 81.9% | 84.9% | 26346 | 340 |
+| far | idle | 51.3% | 55.0% | 1855 | 69 |
+| far | walk | 54.0% | 57.6% | 1791 | 76 |
+| far | attack | 52.5% | 55.6% | 1945 | 84 |
+| game | idle | 70.3% | 72.4% | 6678 | 138 |
+| game | walk | 71.6% | 73.3% | 6477 | 150 |
+| game | attack | 71.3% | 73.0% | 7009 | 170 |
+| near | idle | 82.9% | 84.1% | 24540 | 273 |
+| near | walk | 83.7% | 85.1% | 24029 | 298 |
+| near | attack | 84.3% | 84.9% | 26243 | 340 |
 
 ## Parts
 

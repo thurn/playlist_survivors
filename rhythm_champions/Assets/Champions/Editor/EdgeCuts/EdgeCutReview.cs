@@ -49,6 +49,9 @@ namespace Champions.EditorTools.EdgeCuts
             int typeIndex = lib.IndexOf(model.id);
             if (typeIndex < 0) throw new Exception($"EdgeCutReview: {model.id} is not baked");
             var type = lib.Types[typeIndex];
+            // The world at rest: no beat ring an earlier task left in this editor (the EditMode tests publish them),
+            // which would flare the lines and bloom over the body.
+            new BeatWave().Publish(0, Vector2.zero);
             Directory.CreateDirectory(outDir);
 
             var camera = new GameObject("ReviewCamera").AddComponent<Camera>();

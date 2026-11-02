@@ -25,7 +25,7 @@ redrawn as a big dark shape with a few strong strokes (docs/champions/reference/
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 55% | 82.2% (poses 80%, 78%, 75%, 79%, 85%, 90%, 88%) | ok |
+| black share at game scale >= 55% | 86.5% (poses 85%, 83%, 81%, 86%, 88%, 92%, 91%) | ok |
 | line segments <= 450 | 146 | ok |
 | body triangles 300-1500 | 524 | ok |
 
@@ -43,27 +43,27 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 74.2% | 79.5% | 9550 | 161 |
-| far | walk | 73.0% | 78.3% | 7665 | 157 |
-| far | breath | 71.0% | 76.7% | 8361 | 187 |
-| far | tail | 75.4% | 80.8% | 10077 | 156 |
-| far | fireball | 79.4% | 83.5% | 11202 | 190 |
-| far | fly | 86.0% | 87.8% | 8553 | 130 |
-| far | land | 83.0% | 86.4% | 11851 | 225 |
-| game | idle | 80.1% | 87.1% | 37358 | 322 |
-| game | walk | 77.8% | 85.8% | 29915 | 311 |
-| game | breath | 75.3% | 84.3% | 32526 | 373 |
-| game | tail | 79.2% | 87.3% | 39460 | 315 |
-| game | fireball | 85.0% | 89.2% | 44658 | 384 |
-| game | fly | 89.8% | 92.7% | 36203 | 269 |
-| game | land | 87.9% | 91.9% | 47475 | 457 |
-| near | idle | 66.0% | 89.2% | 144818 | 636 |
-| near | walk | 66.0% | 88.1% | 115259 | 604 |
-| near | breath | 61.3% | 86.7% | 125937 | 739 |
-| near | tail | 68.9% | 89.3% | 151316 | 628 |
-| near | fireball | 75.8% | 91.2% | 176760 | 776 |
-| near | fly | 83.9% | 94.2% | 166945 | 589 |
-| near | land | 82.9% | 93.6% | 191085 | 927 |
+| far | idle | 79.0% | 79.7% | 9509 | 161 |
+| far | walk | 77.2% | 78.2% | 7662 | 156 |
+| far | breath | 75.7% | 76.6% | 8357 | 187 |
+| far | tail | 80.1% | 81.1% | 10076 | 156 |
+| far | fireball | 82.7% | 83.5% | 11189 | 189 |
+| far | fly | 87.5% | 87.7% | 8549 | 129 |
+| far | land | 85.9% | 86.6% | 11841 | 226 |
+| game | idle | 84.8% | 87.1% | 37313 | 321 |
+| game | walk | 83.1% | 85.9% | 29889 | 310 |
+| game | breath | 81.0% | 84.3% | 32506 | 374 |
+| game | tail | 85.6% | 87.2% | 39403 | 315 |
+| game | fireball | 88.1% | 89.3% | 44603 | 384 |
+| game | fly | 91.9% | 92.7% | 36136 | 269 |
+| game | land | 90.8% | 91.9% | 47424 | 457 |
+| near | idle | 82.2% | 89.2% | 144503 | 636 |
+| near | walk | 79.8% | 88.1% | 114967 | 604 |
+| near | breath | 76.2% | 86.7% | 125632 | 737 |
+| near | tail | 80.0% | 89.3% | 150934 | 628 |
+| near | fireball | 85.9% | 91.2% | 176259 | 775 |
+| near | fly | 91.2% | 94.2% | 166248 | 588 |
+| near | land | 89.0% | 93.6% | 190516 | 926 |
 
 ## Parts
 

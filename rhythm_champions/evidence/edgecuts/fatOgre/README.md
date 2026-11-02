@@ -23,7 +23,7 @@ tall at game scale, so its lines are a small share of it.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 55% | 87.6% (poses 89%, 89%, 87%, 88%, 86%, 88%) | ok |
+| black share at game scale >= 55% | 89.5% (poses 90%, 90%, 90%, 89%, 88%, 89%) | ok |
 | line segments <= 450 | 201 | ok |
 | body triangles 300-1500 | 530 | ok |
 
@@ -41,24 +41,24 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 77.9% | 83.2% | 8076 | 159 |
-| far | walk | 77.6% | 82.6% | 7628 | 148 |
-| far | charge | 76.3% | 82.2% | 7749 | 155 |
-| far | smash | 78.4% | 81.5% | 7663 | 214 |
-| far | stomp | 72.7% | 80.6% | 7384 | 179 |
-| far | throw | 76.3% | 81.7% | 8911 | 147 |
-| game | idle | 88.8% | 90.7% | 31993 | 323 |
-| game | walk | 88.6% | 90.6% | 30256 | 296 |
-| game | charge | 87.4% | 90.0% | 30701 | 317 |
-| game | smash | 87.6% | 89.4% | 30029 | 438 |
-| game | stomp | 85.6% | 89.2% | 29225 | 367 |
-| game | throw | 87.6% | 89.9% | 36350 | 308 |
-| near | idle | 88.9% | 93.3% | 127378 | 653 |
-| near | walk | 89.0% | 93.3% | 122273 | 603 |
-| near | charge | 86.9% | 92.9% | 122848 | 655 |
-| near | smash | 88.3% | 92.4% | 120037 | 916 |
-| near | stomp | 84.0% | 92.2% | 116428 | 766 |
-| near | throw | 85.5% | 92.8% | 154828 | 678 |
+| far | idle | 81.7% | 83.0% | 8080 | 160 |
+| far | walk | 81.2% | 82.9% | 7593 | 147 |
+| far | charge | 79.5% | 81.7% | 7746 | 156 |
+| far | smash | 80.7% | 81.3% | 7672 | 214 |
+| far | stomp | 78.5% | 80.4% | 7367 | 178 |
+| far | throw | 79.9% | 81.5% | 8912 | 146 |
+| game | idle | 90.3% | 90.8% | 31939 | 323 |
+| game | walk | 90.1% | 90.6% | 30209 | 296 |
+| game | charge | 89.5% | 90.0% | 30641 | 317 |
+| game | smash | 89.1% | 89.5% | 29978 | 436 |
+| game | stomp | 88.4% | 89.2% | 29169 | 367 |
+| game | throw | 89.5% | 89.9% | 36294 | 308 |
+| near | idle | 91.8% | 93.3% | 126885 | 652 |
+| near | walk | 91.9% | 93.3% | 121810 | 601 |
+| near | charge | 91.1% | 92.8% | 122407 | 654 |
+| near | smash | 91.0% | 92.5% | 119629 | 915 |
+| near | stomp | 89.3% | 92.2% | 116014 | 765 |
+| near | throw | 90.8% | 92.7% | 154282 | 677 |
 
 ## Parts
 

@@ -18,7 +18,7 @@ entries) redrawn as about seventy lines over a body of convex parts.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 62.0% (poses 61%, 68%, 57%) | FAILED |
+| black share at game scale >= 65% | 66.5% (poses 66%, 72%, 62%) | ok |
 | line segments <= 120 | 72 | ok |
 | body triangles 300-800 | 322 | ok |
 
@@ -36,15 +36,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 37.2% | 50.2% | 632 | 41 |
-| far | walk | 46.8% | 56.3% | 615 | 42 |
-| far | attack | 28.1% | 46.2% | 416 | 33 |
-| game | idle | 60.7% | 67.1% | 2335 | 83 |
-| game | walk | 68.1% | 73.1% | 2296 | 85 |
-| game | attack | 57.3% | 65.7% | 1559 | 67 |
-| near | idle | 78.5% | 81.3% | 8781 | 169 |
-| near | walk | 82.3% | 85.1% | 8736 | 171 |
-| near | attack | 73.0% | 79.3% | 5970 | 136 |
+| far | idle | 44.2% | 49.3% | 635 | 41 |
+| far | walk | 54.2% | 55.9% | 612 | 42 |
+| far | attack | 36.4% | 42.8% | 418 | 34 |
+| game | idle | 66.0% | 67.3% | 2323 | 83 |
+| game | walk | 71.8% | 73.1% | 2296 | 85 |
+| game | attack | 61.7% | 65.7% | 1557 | 67 |
+| near | idle | 80.9% | 81.3% | 8734 | 169 |
+| near | walk | 84.5% | 85.1% | 8697 | 170 |
+| near | attack | 77.9% | 79.5% | 5950 | 136 |
 
 ## Parts
 
