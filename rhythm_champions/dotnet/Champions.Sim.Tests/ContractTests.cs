@@ -163,6 +163,10 @@ namespace Champions.Sim.Tests
                         sim.Judge(sim.Now - 0.05);
                         sim.Telegraphs.Plan(sim.Now, 2);
                         sim.Snapshot();
+                        if (i % 10 != 0) continue;
+                        sim.Progression.Treasure(sim);
+                        sim.Press(Key.Right, sim.Now - 0.02);
+                        sim.Press(Key.Enter, sim.Now - 0.01);
                     }
                 };
             });

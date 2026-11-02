@@ -20,8 +20,8 @@ namespace Champions.Sim
     /// <see cref="Target"/>, <see cref="Control"/>, <see cref="StepTo"/> and <see cref="DiscardEventsBefore"/>
     /// change the sim. Everything else public here and on what it exposes (<see cref="State"/>,
     /// <see cref="Stream"/>, <see cref="Beats"/>, <see cref="Judgement"/>, <see cref="Telegraphs"/>,
-    /// <see cref="Cadence"/>, <see cref="Quiet"/>) is a read the client may make at any time without
-    /// changing the run.
+    /// <see cref="Cadence"/>, <see cref="Quiet"/>, <see cref="Progression"/>) is a read the client may make at any
+    /// time without changing the run.
     ///
     /// Tick k covers song time (k/120, (k+1)/120]. Inside it, moments with exact times fire at those
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed, then a
@@ -30,11 +30,12 @@ namespace Champions.Sim
     /// moments, the run clock, the hero's walk, its dash, its health, then the attacks (<see cref="Arsenal"/>,
     /// which takes the tick's beats and strikes in time order), the horde (<see cref="Sim.Horde"/>, which
     /// acts on the tick's beats in time order), the bosses (<see cref="Sim.Bosses"/>, which a downbeat brings), the
-    /// structures' chunks (<see cref="Sim.StructureField"/>, loaded round the hero) and the zone key
-    /// (<see cref="Sim.Zones"/>, which a beat moves on). Inputs take effect when given, at the frontier, judged from
-    /// when they were heard (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
-    /// <see cref="Judgement"/>); hits on the hero settle once the inputs heard by then are in
-    /// (<see cref="HeroHealth"/>). Nothing simulated is ever revised.
+    /// structures' chunks (<see cref="Sim.StructureField"/>, loaded round the hero), the zone key
+    /// (<see cref="Sim.Zones"/>, which a beat moves on) and the progression (<see cref="Sim.Progression"/>: held levels
+    /// show, the run starts after the first offer). Inputs take effect when given, at the frontier, judged from when
+    /// they were heard (<see cref="HeroWalk"/>, <see cref="Dashes"/>, <see cref="Judgement"/>); while cards are up, key
+    /// presses are theirs. Hits on the hero settle once the inputs heard by then are in (<see cref="HeroHealth"/>).
+    /// Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -90,6 +91,7 @@ namespace Champions.Sim
             Zones = new Zones(config.Zones);
             State.Zone = Zones.Key;
             Bosses = new Bosses(this, config);
+            Progression = new Progression(this, config);
         }
 
         public SimState State { get; }
@@ -128,6 +130,9 @@ namespace Champions.Sim
         public StructureField StructureField { get; }
         /// <summary>The hero's attacks and mods, and every blow it deals.</summary>
         public Arsenal Arsenal { get; }
+
+        /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
+        public Progression Progression { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -169,6 +174,13 @@ namespace Champions.Sim
                     h = Hashing.Fold(h, Hashing.Bits(Bosses.Break));
                     h = Hashing.Fold(h, Hashing.Bits(Bosses.Health));
                 }
+                // Only once the progression has moved, so the sessions before it keep their hashes.
+                if (State.Experience > 0 || State.Level > 1 || Progression.Picks > 0 || State.Offer.Up)
+                {
+                    h = Hashing.Fold(h, (ulong)(uint)State.Level | (ulong)(uint)State.HeldLevels << 32);
+                    h = Hashing.Fold(h, Hashing.Bits(State.Experience));
+                    h = Hashing.Fold(h, (ulong)(uint)Progression.Picks | (ulong)State.Offer.Kind << 32 | (ulong)(uint)(State.Offer.Focus + 1) << 40);
+                }
                 return h;
             }
         }
@@ -189,11 +201,12 @@ namespace Champions.Sim
         /// <summary>Every input taken, in order: a session records them.</summary>
         public ReadOnlySpan<InputRecord> Inputs => inputs.AsSpan();
 
-        /// <summary>A key pressed, heard at song time <paramref name="heard"/>; it takes effect now.</summary>
+        /// <summary>A key pressed, heard at song time <paramref name="heard"/>; it takes effect now. While cards are up it is theirs.</summary>
         public void Press(Key key, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Press, Code = (byte)key, Heard = heard, Effective = Now });
             health.Took(heard, Now);
+            if (Progression.Press(this, key)) return;
             hero.Press(this, key, heard);
             if (key == Key.Space) dashes.Press(this, heard);
         }
@@ -250,6 +263,14 @@ namespace Champions.Sim
         {
             bool held = State.Held;
             run.Hold(this, reason, on, Now);
+            if (State.Held != held) HeldChanged();
+        }
+
+        /// <summary>Starts a waiting run at <paramref name="t"/> (the progression's, after the first offer).</summary>
+        internal void StartRun(double t)
+        {
+            bool held = State.Held;
+            run.Start(this, t);
             if (State.Held != held) HeldChanged();
         }
 
@@ -338,6 +359,11 @@ namespace Champions.Sim
                 BossPhase = Bosses.Phase,
                 BossStaggerFrom = Bosses.StaggerFrom,
                 BossStaggerUntil = Bosses.StaggerUntil,
+                Level = State.Level,
+                Experience = State.Experience,
+                ExperienceNeeded = State.ExperienceNeeded,
+                HeldLevels = State.HeldLevels,
+                Offer = State.Offer,
             };
         }
 
@@ -392,6 +418,7 @@ namespace Champions.Sim
             Bosses.Tick(end);
             StructureField?.Tick(this, end);
             Zones.Tick(this, end);
+            Progression.Tick(this, end);
         }
 
         void FireBeat(double t)
@@ -403,6 +430,7 @@ namespace Champions.Sim
             State.LastBeat = i;
             State.Bar = bar;
             State.Downbeat = downbeat;
+            Progression.Beat(this, t, downbeat);
             Arsenal.Beat(this, t, i, downbeat, bar);
             horde.Beat(t, i);
             Bosses.Beat(t, i, downbeat);

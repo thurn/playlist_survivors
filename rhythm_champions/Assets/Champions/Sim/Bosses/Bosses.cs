@@ -280,6 +280,7 @@ namespace Champions.Sim
                 }
                 enemies.Kill(id);
                 sim.Emit(SimEvent.Kill(t, id, BlowSource.Boss, BlowFlags.None, dx, dy, rules.EntrancePower, ex, ey));
+                sim.Progression.Killed(sim, e.Type, t);
                 shattered++;
             }
             horde.Moved();

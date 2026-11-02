@@ -3,8 +3,10 @@ namespace Champions.Sim
     /// <summary>
     /// The run's one random generator (xoshiro256**, seeded through SplitMix64). Every random choice
     /// in the sim draws from it in simulation order, never from time or hash ordering, so a seed and
-    /// a stream always give the same run. The one exception is the arena's chunks: each draws from a
-    /// generator of its own, seeded from the run's seed and its coordinates (<see cref="StructureChunks"/>).
+    /// a stream always give the same run. Two exceptions draw from generators of their own, seeded from the
+    /// run's seed: the arena's chunks, each with its coordinates (<see cref="StructureChunks"/>), and the
+    /// progression's offers (<see cref="Progression"/>), so a scripted run's picks meet the same cards whatever
+    /// the horde draws.
     /// </summary>
     public sealed class SimRandom
     {

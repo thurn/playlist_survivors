@@ -51,9 +51,9 @@ namespace Champions.Sim
     /// hits and, for the horde, separation, contact and steering (plan.md, "Systems": one spatial hash).
     /// The hero's blows land on them through <see cref="Strikes"/>: a hit takes the blow's damage from the
     /// health, and one that kills shatters the enemy on the blow's frame, thrown away from it
-    /// (<see cref="SimEventKind.Hit"/>, <see cref="SimEventKind.Kill"/>; the kill mods follow). A boss's hits go on to
-    /// <see cref="Bosses"/> (Break's damage, phase two, its death); nothing here moves an enemy, so a boss is never
-    /// knocked back.
+    /// (<see cref="SimEventKind.Hit"/>, <see cref="SimEventKind.Kill"/>; the kill mods and the kill's experience follow). A
+    /// boss's hits go on to <see cref="Bosses"/> (Break's damage, phase two, its death); nothing here moves an enemy, so a
+    /// boss is never knocked back.
     ///
     /// The grid hashes 2 m cells into buckets (the arena is infinite) and is rebuilt lazily, by a counting
     /// sort, on the first query after <see cref="Moved"/> or a spawn: whoever moves enemies calls
@@ -237,10 +237,12 @@ namespace Champions.Sim
                 return false;
             }
             double x = e.X, y = e.Y;
+            int type = e.Type;
             Kill(id);
             sim.Emit(SimEvent.Kill(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, x, y));
             sim.Arsenal.Killed(sim, blow, x, y);
             if (boss) sim.Bosses.Killed(blow.T, dx, dy);
+            sim.Progression.Killed(sim, type, blow.T);
             return true;
         }
 

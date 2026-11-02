@@ -245,6 +245,10 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(BossStage.Dead, sim.Bosses.Stage);
             Assert.IsFalse(sim.Horde.Spawner.Stopped, "the Ogre's death resumes spawning");
             Assert.IsTrue(sim.Horde.Spawner.SecondHalf, "with the second half's mix");
+            sim.StepTo(sim.Now + Tick);
+            Assert.AreEqual(OfferKind.Treasure, sim.State.Offer.Kind, "its treasure holds the world until a pick");
+            // The treasure, then the levels its entrance's kills reached.
+            while (sim.State.Offer.Up) sim.Press(Key.One, sim.Now);
             sim.StepTo(39.9);
             Assert.AreEqual(1, sim.Bosses.Called);
             sim.StepTo(40.1);

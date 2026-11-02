@@ -5,8 +5,9 @@ namespace Champions.Sim
     /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
     /// moves, dashes, hits, heals and death, the attacks: the build, swings, blows, waves, hits and kills on
     /// the enemies, the horde: spawns, departures, formed waves, elite moves and spores, the zone key, the structures:
-    /// loaded, unloaded, hit and broken, and the bosses: calls, entrances, telegraphs, landings, Break, staggers,
-    /// phases and deaths. The systems' beads add their kinds after these.
+    /// loaded, unloaded, hit and broken, the bosses: calls, entrances, telegraphs, landings, Break, staggers, phases and
+    /// deaths, and the progression: levels reached, offers, focus and picks. The systems' beads add their kinds after
+    /// these.
     /// </summary>
     public enum SimEventKind
     {
@@ -56,6 +57,10 @@ namespace Champions.Sim
         BossStagger,
         BossPhase,
         BossDeath,
+        LevelUp,
+        Offer,
+        CardFocus,
+        Pick,
     }
 
     /// <summary>
@@ -739,6 +744,55 @@ namespace Champions.Sim
             e.D3 = dirY;
             return e;
         }
+
+        /// <summary>
+        /// A level reached on a kill's impact frame, held for its quiet moment: I0 the level, I1 the levels held now; D0
+        /// the experience carried toward the next, D1 what the next needs.
+        /// </summary>
+        public static SimEvent LevelUp(double t, int level, int held, double experience, double needed)
+        {
+            var e = Of(SimEventKind.LevelUp, t);
+            e.I0 = level;
+            e.I1 = held;
+            e.D0 = experience;
+            e.D1 = needed;
+            return e;
+        }
+
+        /// <summary>
+        /// Cards opened, the world holding: I0, I1, I2 the cards' <see cref="Card.Code"/>s (-1 past the offer's count),
+        /// D0 the <see cref="Sim.OfferKind"/> (<see cref="OfferKindOf"/>).
+        /// </summary>
+        public static SimEvent Offer(double t, in Sim.Offer offer)
+        {
+            var e = Of(SimEventKind.Offer, t);
+            e.I0 = offer.CodeOf(0);
+            e.I1 = offer.CodeOf(1);
+            e.I2 = offer.CodeOf(2);
+            e.D0 = (int)offer.Kind;
+            return e;
+        }
+
+        /// <summary>The arrows focused a card: I0 its slot (0-2).</summary>
+        public static SimEvent CardFocus(double t, int slot)
+        {
+            var e = Of(SimEventKind.CardFocus, t);
+            e.I0 = slot;
+            return e;
+        }
+
+        /// <summary>A card was picked (the build's <see cref="Upgrade"/> or <see cref="DashEquip"/> follows): I0 its slot, I1 its <see cref="Card.Code"/>, I2 the offer's <see cref="Sim.OfferKind"/>.</summary>
+        public static SimEvent Pick(double t, int slot, in Card card, OfferKind kind)
+        {
+            var e = Of(SimEventKind.Pick, t);
+            e.I0 = slot;
+            e.I1 = card.Code;
+            e.I2 = (int)kind;
+            return e;
+        }
+
+        /// <summary>An <see cref="SimEventKind.Offer"/>'s kind.</summary>
+        public OfferKind OfferKindOf => (OfferKind)(int)D0;
 
         // Reading a beat's flags.
         public bool Downbeat => (I2 & 1) != 0;

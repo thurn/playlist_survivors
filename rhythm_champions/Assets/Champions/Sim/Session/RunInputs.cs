@@ -65,6 +65,7 @@ namespace Champions.Sim
                 Structures = !Level || content == null ? null : content.Structures.Clone(),
                 Bosses = content != null ? content.Bosses.Clone() : new BossRules(),
                 Duel = DuelCast(content),
+                Progression = content != null ? content.Progression.Clone() : new ProgressionRules(),
             };
         }
 
@@ -115,7 +116,7 @@ namespace Champions.Sim
                 KnownAtBudget = r.ReadDouble(),
             };
             byte start = r.ReadByte();
-            if (start > (byte)RunStart.OnControl) throw new FormatException($"{path}: run start {start}");
+            if (start > (byte)RunStart.FirstOffer) throw new FormatException($"{path}: run start {start}");
             run.Start = (RunStart)start;
             if (version < 2) return run;
             run.Loadout = new Upgrade[Count(r, path, "loadout")];

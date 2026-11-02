@@ -6,7 +6,7 @@ namespace Champions.Sim
     /// <summary>
     /// The game's content: rhythm_champions/Content/*.json, read strictly (<see cref="ContentReader"/>: a
     /// missing, unknown or mistyped field fails with its file and path). Units are metres and seconds.
-    /// The systems' beads add their files here (bosses, progression).
+    /// The systems' beads add their files here (bosses).
     /// </summary>
     public sealed class GameContent
     {
@@ -20,6 +20,7 @@ namespace Champions.Sim
         public ZoneRules Zones = new ZoneRules();
         public StructureRules Structures = new StructureRules();
         public BossRules Bosses = new BossRules();
+        public ProgressionRules Progression = new ProgressionRules();
 
         /// <summary>Loads the content folder <paramref name="dir"/>.</summary>
         public static GameContent Load(string dir)
@@ -34,6 +35,7 @@ namespace Champions.Sim
                 Enemies = EnemyRules.Read(Parse(dir, EnemyRules.File), EnemyRules.File),
                 Zones = ZoneRules.Read(Parse(dir, ZoneRules.File), ZoneRules.File),
                 Structures = StructureRules.Read(Parse(dir, StructureRules.File), StructureRules.File),
+                Progression = ProgressionRules.Read(Parse(dir, ProgressionRules.File), ProgressionRules.File),
             };
             content.Level = LevelRules.Read(Parse(dir, LevelRules.File), LevelRules.File, content.Enemies);
             content.Bosses = BossRules.Read(Parse(dir, BossRules.File), BossRules.File, content.Enemies);

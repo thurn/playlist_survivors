@@ -56,6 +56,9 @@ namespace Champions.Sim
         /// <summary>A scripted duel: the cast index of the boss called at the start (<see cref="RunInputs.Duel"/>), or -1.</summary>
         public int Duel = -1;
 
+        /// <summary>The experience curve and held levels' rules (Content/progression.json).</summary>
+        public ProgressionRules Progression = new ProgressionRules();
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;

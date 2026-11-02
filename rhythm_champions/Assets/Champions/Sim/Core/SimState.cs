@@ -2,7 +2,7 @@ namespace Champions.Sim
 {
     /// <summary>
     /// The latest settled state (plan.md, "The Sim", Shape): time, the run, the beat, the attack cadence,
-    /// quiet moments and the hero. The client copies what it needs each frame (<see cref="Simulation.Snapshot"/>)
+    /// quiet moments, the zone key, the progression and the hero. The client copies what it needs each frame (<see cref="Simulation.Snapshot"/>)
     /// to show song times trailing the frontier. Only the sim writes it: every property is
     /// <c>{ get; internal set; }</c>. The systems' beads add their state after these.
     /// </summary>
@@ -48,6 +48,15 @@ namespace Champions.Sim
 
         /// <summary>The floor's zone key now (<see cref="Zones"/>).</summary>
         public int Zone { get; internal set; }
+
+        /// <summary>The hero's level (1 at the start), the experience toward the next and what that needs (<see cref="Sim.Progression"/>).</summary>
+        public int Level { get; internal set; } = 1;
+        public double Experience { get; internal set; }
+        public double ExperienceNeeded { get; internal set; }
+        /// <summary>Levels reached and held for a quiet moment (the indicator's dot), not counting the cards up.</summary>
+        public int HeldLevels { get; internal set; }
+        /// <summary>The cards up (<see cref="Offer.Up"/>), and the focused one.</summary>
+        public Offer Offer { get; internal set; }
 
         public HeroState Hero { get; } = new HeroState();
     }
@@ -96,6 +105,11 @@ namespace Champions.Sim
         public double BossHealth, BossMaxHealth, BossBreak;
         public int BossPhase;
         public double BossStaggerFrom, BossStaggerUntil;
+        /// <summary>The hairline bar's: the level, the experience toward the next and what it needs; the indicator's dot: the levels held; the cards up.</summary>
+        public int Level;
+        public double Experience, ExperienceNeeded;
+        public int HeldLevels;
+        public Offer Offer;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 

@@ -26,6 +26,11 @@ namespace Champions.Sim
         Immediately = 0,
         /// <summary>On <see cref="RunControl.Start"/>.</summary>
         OnControl = 1,
+        /// <summary>
+        /// The game's (design.md, "Starting"): the first offer opens at the sim's start, the world empty and held, and the
+        /// run starts on the first downbeat after its pick, or at once with no reliable beat (<see cref="Progression"/>).
+        /// </summary>
+        FirstOffer = 2,
     }
 
     /// <summary>
@@ -56,7 +61,7 @@ namespace Champions.Sim
     /// The run's start, holds, clock and end (design.md, "The Run" and Terms, "Run clock"). The run clock
     /// advances with song time while the run plays and nothing holds the world; the music never stops it.
     /// The level's rules (its timeline, death and victory) end it through <see cref="End"/>; the
-    /// progression holds it for cards through <see cref="Hold"/>.
+    /// progression holds it for cards through <see cref="Hold"/> and starts it after the first offer (<see cref="Start"/>).
     /// </summary>
     internal sealed class RunRules
     {
@@ -77,10 +82,7 @@ namespace Champions.Sim
             switch (control)
             {
                 case RunControl.Start:
-                    if (state.Phase != RunPhase.Waiting) return;
-                    state.Phase = RunPhase.Playing;
-                    state.StartedAt = now;
-                    sim.Emit(SimEvent.RunStart(now));
+                    Start(sim, now);
                     break;
                 case RunControl.Pause:
                     if (state.Phase == RunPhase.Playing) Hold(sim, HoldReason.Pause, true, now);
@@ -92,6 +94,15 @@ namespace Champions.Sim
                     End(sim, RunEnd.Quit, now);
                     break;
             }
+        }
+
+        /// <summary>The run starts at <paramref name="now"/>, once.</summary>
+        public void Start(Simulation sim, double now)
+        {
+            if (state.Phase != RunPhase.Waiting) return;
+            state.Phase = RunPhase.Playing;
+            state.StartedAt = now;
+            sim.Emit(SimEvent.RunStart(now));
         }
 
         /// <summary>Holds the world for <paramref name="reason"/>, or lets it go; a change emits a <see cref="SimEventKind.Hold"/>.</summary>
