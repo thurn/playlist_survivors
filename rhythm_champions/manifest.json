@@ -1,0 +1,925 @@
+{
+  "version": 1,
+  "requires": [
+    "more_assets"
+  ],
+  "assets": [
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@2HitComboAttack.FBX",
+      "sourceSha256": "d630c123c81222a10d45e4af1cbc426a50c9ee9c0c28a3f742cddf12081ee8bd",
+      "guid": "85c79ed57510ed843949f7d351e38e03",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@2HitComboAttackForward.FBX",
+      "sourceSha256": "f87498f0d91c65ec28d28ed9f88298601a54f2b97761328ef2b8fb823b9f8ef3",
+      "guid": "66ad9b7bfd4d8374c86e47947bc25691",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@3HitComboAttack.FBX",
+      "sourceSha256": "2135e8d1b2a52a1338cb8ebbbc2c2c7d6d0ef4b6aae5e988e528734f4d19206b",
+      "guid": "30d757544e6888b41876d9aa13a84d23",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@3HitComboAttackForward.FBX",
+      "sourceSha256": "f01743febdcabd216356e44c02d53377711f4eb9260f71859bb9544f07f60f88",
+      "guid": "2c74a9e4d042841409e88031f0c534ad",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack1.FBX",
+      "sourceSha256": "955926f75d9f821effb7270c176d38e02f6244790e6babeca239569cf75a9869",
+      "guid": "c6c60bc28d145e341afa22a0cc166250",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack1Forward.FBX",
+      "sourceSha256": "b388d11d91bae4f13b4352af6a17877d78f2c5b3e81cf538bff0fe5cae0e2903",
+      "guid": "851f9f2929ff4e74f84acac9559ce622",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack2.FBX",
+      "sourceSha256": "ba949a4940d364c2661d13ef6d69a8495184884e07c8d96769f70f761c4fac70",
+      "guid": "ce6e8484c21fc4b4b86347ffad099cb9",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack2Forward.FBX",
+      "sourceSha256": "0b12676653dd4ef9560353e9077b2cd97eb6aceb8a6a309975da7dcaaedb4bb9",
+      "guid": "dc9e08abc88346040ba4f56571c2d6b8",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack3.FBX",
+      "sourceSha256": "6390e22ce4ab07a602cf1baabb3ef2a525d1382ae73b423a26dda560ab971bba",
+      "guid": "fb257973bbfc68149a4f05170713e05e",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Attack3Forward.FBX",
+      "sourceSha256": "a195aacc82bea31af370d56eacb7fc613b472404ed4d3aa3151e9fde080bcfba",
+      "guid": "ef5c6a06178c1ab4e9b1138b821aa43a",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Death.FBX",
+      "sourceSha256": "e559d927e0aea0de3a108c000c1c6d002e1fba897e2264abb1be2f9084272397",
+      "guid": "f8fda3699676d2e47a8a056e972152b9",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@GetHit1.FBX",
+      "sourceSha256": "f1541b1caf4155341f932b1cc96d5fddeda7b1d0de688e9bccd599fec92c95fa",
+      "guid": "cdd3e2fbf61484c409c420669720c247",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@GetHit2.FBX",
+      "sourceSha256": "a23f12dfa35070cb664523bae61f80b9ad455fd2dc0d23c19a6f2e57a9d5dcd6",
+      "guid": "1d29c24c975aec34493739c521ffc0cf",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Idle.FBX",
+      "sourceSha256": "5f1152fcba485715ba323e40ceeaba3af7ce691ae6411aa640ea9984fc763b3f",
+      "guid": "6b5e201a6a4432d4180d70e7d9d9d93e",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@RoarTaunt.FBX",
+      "sourceSha256": "b997480e301399ca959b39fab65a7806876c94bdd924ea193d00f5e2ce69ac24",
+      "guid": "ccf447dcedefe0845af78115db3dcaa4",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Run.FBX",
+      "sourceSha256": "8588dcd4c96db5ed2940e3315618d5a1c5eba00feb92dfbd088a9b17821ae834",
+      "guid": "b723a2a23ae2f9948b91122d94804a0f",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@Walk.FBX",
+      "sourceSha256": "9070a0cb283a6f93552613b9e8564fb281ef5956336a7a7e30ece430d98df2a2",
+      "guid": "950067766357002429f0616dae6b2207",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/Prefabs/FatOgre.prefab",
+      "sourceSha256": "b78fae5ec223865b6d86edc3ed7da49459f04d45b7cdf303479e1868e5c20bf1",
+      "guid": "e040fed9364558541bb6583b064025c2",
+      "use": "mid-boss: the Fat Ogre"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "6c670ea8c84cf324980a21b4b9b927a0",
+      "use": "hero and elite walk and run"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_RootMotion_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "8b45cba6e566e0847aa0b9eee86847b9",
+      "use": "hero and elite walk and run"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Walk/A_Walk_F_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "eead3eb07cb89cb4eb25b3550df5e84b",
+      "use": "hero and elite walk and run"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Walk/A_Walk_F_RootMotion_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "478462c18c5fec84da94ea6ea124f43e",
+      "use": "hero and elite walk and run"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_ReturnToIdle_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "0273161bb8797ff4c8b20735fa717f9c",
+      "use": "hero: HeavyFlourish01"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_ReturnToIdle_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "3c4651f8c8a77944aadd0b01d719f361",
+      "use": "hero: HeavyFlourish01"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "673ce1a7a02a07a4195366197dd832c4",
+      "use": "hero: HeavyFlourish01"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyFlourish01/A_Attack_HeavyFlourish01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b48c7e37f2264c3418122c894c6f98af",
+      "use": "hero: HeavyFlourish01"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_ReturnToIdle_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "0f506981894649b45869a037d90f339b",
+      "use": "hero: Blade Rush (HeavyStab01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_ReturnToIdle_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "e056f13312f57e2489fc76f6a0e0a5ce",
+      "use": "hero: Blade Rush (HeavyStab01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "11a2f3f6a3035f94dbac2f8355f33c36",
+      "use": "hero: Blade Rush (HeavyStab01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/HeavyStab01/A_Attack_HeavyStab01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b963d0c4e093a9c4ea792b8095e51ba2",
+      "use": "hero: Blade Rush (HeavyStab01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_ReturnToIdle_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "02a40f647edd37542a22ed8a535c7ccd",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_ReturnToIdle_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "149ce20164ff14e43b1bafa61f1c1402",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "e6a21f89bfbdef241b09f0f0bfefd522",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01A_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "9f773338b2a96174ebe9b63870034ca3",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_ReturnToIdle_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "92cdba5e74f5b7b489caa1aa4b3e1aaa",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_ReturnToIdle_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "9badd10faaa482146adf0dbc6a5e3b3e",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "09bfbb429e3e8ab45ae69ab30d1ecaee",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightCombo01/A_Attack_LightCombo01B_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "95697c3218923dd43aa160c110bfbc79",
+      "use": "hero: Sword Slash (LightCombo01A/B)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_ReturnToIdle_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "3135f7ac106978248989b534828cefdd",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_ReturnToIdle_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "47ff0a2d4109d434b853e09fb858eb7a",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "a54195297d6a64448a8236512ffecc63",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_RootMotionHorizontal_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "9d38c22b8d6202d4eaebf76e61ff863f",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_RootMotionVertical_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "df8ad5bb17afe4e499ee0ff7028d3854",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Attack/LightLeaping01/A_Attack_LightLeaping01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "72f114cf4075d3b4db5ce63cb994a704",
+      "use": "hero: Leap Slam (LightLeaping01)"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_Break_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "2edfb6b66ab00da4ca004dddaeae4d35",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_Break_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "4fcd7aa8f0cf2c24797b5076c7f6ddbc",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_CounterShove_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "e4fe0d13f62c20f4ba05f2032679fde5",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_CounterShove_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "828888b34302fe14287e9cd61695aa75",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_PommelStrike_RootMotion_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "293dbffc50254244c8e72b80f212e31e",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_PommelStrike_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "7697c0667cb467a4bb21c9e0b248d42b",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_ReturnToBlock_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "9763e5345af7e854d90aedaecb71f9e4",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_F_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "7966ebc17e0dc2a4b8faaf62594fb9b2",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_L_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "d8fffad451c75ed4eb493ed8fc040ff7",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Block/A_Parry_R_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "3b3e1dc00268ab9478f37609c8d5a393",
+      "use": "hero: parries, Shield Charge's forward parry pose"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Death/A_Death_B_01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "a0b8f6f252ea03c46b36b357f5ea81e5",
+      "use": "elite death"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Death/A_Death_F_01_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "90f98101f7a4c2c4bbbf30f76e7b91c7",
+      "use": "elite death"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Hit/HitReact/A_Hit_F_React_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "adc1feaf8563f6247989bffd0737b6ad",
+      "use": "elite hit"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Hit/HitReact/A_Hit_L_React_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "202a1ac9f04ce2a419bc2bdd6b148b2a",
+      "use": "elite hit"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Idle/Base/A_Idle_Base_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "b94969b4c36c3c94284f72888ad9289d",
+      "use": "hero: idle"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_House_03_Optimized.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "c004583408826104080451c4b7713ee5",
+      "use": "structure: cottages"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Hut_01_Optimized.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "3416a1f8a57501f41b39470697272c5e",
+      "use": "structure: cottages"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_Tower_01_Optimized.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "ad046a662ca27474fbd4aef7604bdde6",
+      "use": "structure: a tower"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "818fbf9ffe287c5489125f1d37e02de5",
+      "use": "structure: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Rock_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "b932914ce87c734468a4c00f71611068",
+      "use": "structure: rocks"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_StoneWall_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "56f5a6de40a6f8f4d9078f2e524efd73",
+      "use": "structure: wall runs"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_StoneWall_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "86daca1bdd0349e45b86e593c9c6c4d3",
+      "use": "structure: wall runs"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Pine_Cluster_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "5d42ad4d961622744969e55de6f5270b",
+      "use": "structure: two kinds of tree"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Environments/SM_Env_Tree_Round_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "86a6bda8f78af6b449cd7570bc4efc6f",
+      "use": "structure: two kinds of tree"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Fence_01.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "8b5272035dfd90243984731c03b5b100",
+      "use": "structure: fence runs"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
+      "path": "Assets/PolygonFantasyKingdom/Prefabs/Props/SM_Prop_Fence_02.prefab",
+      "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",
+      "guid": "989fa0cd50fb71a438ab067423508172",
+      "use": "structure: fence runs"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Characters/Character_BR_BigOrk_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "0d42bc61d684259409d481c6f5dd5d5c",
+      "use": "elite: big ork"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Characters/Character_BR_Troll_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "2250a4a4fc528684c85ba955eb992ec6",
+      "use": "elite: troll"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Weapons/SM_Wep_Slayer_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "404a923dea987c14498264bf7d13d458",
+      "use": "elite: big ork"
+    },
+    {
+      "source": "synty:POLYGON_Fantasy_Rivals_Unity_2021_3_v1_3_1.unitypackage.gz",
+      "path": "Assets/PolygonFantasyRivals/Prefabs/Weapons/SM_Wep_Troll_01.prefab",
+      "sourceSha256": "f5b2197465eb4fcd0ce06cec1faa2790523a8a1ae8a669c1ef9a0b0316919e6c",
+      "guid": "39e0fb4b243ffb645a622d1945004ee5",
+      "use": "elite: troll"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Characters/Character_Knight_01_Orange.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "360c73b9bf9a34d4c84bc0581d0499eb",
+      "use": "hero: the knight"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Weapons/SM_Wep_Broadsword_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "f61def225eac3e247985f6679965a655",
+      "use": "hero: sword and shield"
+    },
+    {
+      "source": "synty:POLYGON_Knights_Unity_2021_3_v1_5_1.unitypackage.gz",
+      "path": "Assets/PolygonKnights/Prefabs/Weapons/SM_Wep_Shield_01.prefab",
+      "sourceSha256": "ef0aedb72af33542c0b846b8b9c0e31e79949b7e46bbc90c41d93d115a04e9f8",
+      "guid": "a7b97d24ba2370040ba159577de7b931",
+      "use": "hero: sword and shield"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 1.prefab",
+      "sourceSha256": "578bffd274cc114e46b6833a37287bf5f3992b1c986cf003a8d4abf46d887f42",
+      "guid": "5bea49531fc500c408823a2e2863106f",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 10.prefab",
+      "sourceSha256": "9177cbccb20f88cf6bf4e5e8c3a25cc1c00d08676fa3a58fe3c32cfaeaeeb311",
+      "guid": "3e914ef784028124db1daf7002a87cc8",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 11.prefab",
+      "sourceSha256": "a1ef02dd03a08c498fa748c86b9482b822b2b17fdf48116b22e899517d873fd3",
+      "guid": "a8a6ba91edbeef2439175ecf0e08e6fb",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 12.prefab",
+      "sourceSha256": "3505e21d73a0b4c02b239f95972df3b8683b852858a733111390fd287dfc874e",
+      "guid": "bf9f848a24682054e9fddc30f1184e46",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 13.prefab",
+      "sourceSha256": "a0147bf55d6f6546ee85868e56d03c4362c82bdd26bc86e38434b4d3e31e4e36",
+      "guid": "3f0def245cefa134c838d34a7f6d2556",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 14.prefab",
+      "sourceSha256": "6537e66755094fb0ba0b85d6e822a6bdb6c7a293006ed0f9d81b5865f33e3973",
+      "guid": "5153725f7adb4cf47952f6201f4ee095",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 15.prefab",
+      "sourceSha256": "bde663179fa3b700a31e62d60388381e04fc9ecdacb02c4ffacfe718adddd1cc",
+      "guid": "5e841c48be9318145af9204a7658cc2e",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 16.prefab",
+      "sourceSha256": "8fd49c4b4725984b404624fb62576e9805ef7f8756543f4ff7fe61b08d7e3eac",
+      "guid": "5ddce4a94a63ce14b9f717142ff9ba41",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 17.prefab",
+      "sourceSha256": "32570831855a3189323534534d5f3e5c7a11a2b6f3e4c7af699b3f824da31736",
+      "guid": "028b1ae485e846c4688aabad7557e474",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 2.prefab",
+      "sourceSha256": "7ad6a71953a7c6b67026d489338afcb843665c75588e374f684bea202219a3ac",
+      "guid": "231e3be01ac50c047bb16d07fd8d2ba5",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 3.prefab",
+      "sourceSha256": "71d29047d649ab19b9edf2099f714aeee22453fc9a273c2a0e1bebc1f2ae316e",
+      "guid": "3be98662c9e7ef5468cb9c4e11010dc7",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 4.prefab",
+      "sourceSha256": "0d0a856e3ec0ee5f873ee651b6706872d97be111c6dc13d4ce55c36ec49738fe",
+      "guid": "e60d36cff17a1ce4db49ef54f9e72f61",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 5.prefab",
+      "sourceSha256": "4895c550f88880d06c368e80d0f7cffd39bb28b1ce645b2bfc64b24fbc2cb0c2",
+      "guid": "ca63c6ac7458764498741e0306f78528",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 6.prefab",
+      "sourceSha256": "01dfe6724907156315867faf2df1f65e55d1a2f86478cfafff07d71e1042c803",
+      "guid": "fb101b1453aec9747a5ed7244075b1a2",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 7.prefab",
+      "sourceSha256": "513bfc81ba861bd7ae7ac435b171544fb1342caf57ead29a56a3fe28668e8523",
+      "guid": "bfbc37d0bc0e8ff4082a8b2894b3a486",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 8.prefab",
+      "sourceSha256": "bd03c88675e3c4b894c567fd43cad715d13434be696f0a15f56b62e3383ccbf8",
+      "guid": "5e3170c6ef0f014409bd7423e3bb805a",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 9.prefab",
+      "sourceSha256": "313d8a2358c053f16e2c901ba2743deab44f0fd3481de4f878572d6b987306b5",
+      "guid": "c4d564b5d4682ad46b8621f0fa6f40d9",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 1.prefab",
+      "sourceSha256": "a2c24c4f56c0aa8de668e968b7f5994e5b25cc5b320431ff11eda2f1b82ec21f",
+      "guid": "a51fb9315f1ec6542bde13fa3ecc04a8",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 2.prefab",
+      "sourceSha256": "5600bbd27a5fd3bc050f6ec751e6548dde142ce58b7854edb7681984596f141c",
+      "guid": "6a199701ed4e40c43a219746bf8b0ac7",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 3.prefab",
+      "sourceSha256": "21c2003d308406199b5d9db25b3ddbcb5de06a2d52048903baed67c98cd810a4",
+      "guid": "ba91425caf3aa564ba28090632715dd3",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 4.prefab",
+      "sourceSha256": "f4c1951574eab787247c65949a2fba78d6d03dcd1eac78d0dd5b624da97ca925",
+      "guid": "2bed68aa33523d44bb5b6c338443b98b",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 5.prefab",
+      "sourceSha256": "676899085aadf63a1f377f58e58813176902ff540af30c96e86f53c35f3cbe38",
+      "guid": "ed8a7612f6f028e46910f9371ae70bf8",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 6.prefab",
+      "sourceSha256": "0db3140df289ec49b81b91672a0bc8a8f31c8df861cddc4c82c3375c673831e3",
+      "guid": "9a4f46efafb833e4185db15f62d96634",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 7.prefab",
+      "sourceSha256": "532e0a67233ef72b748b06d0a9dc097d3ae326fc4f06913b7c9afe450378b367",
+      "guid": "c2053024f4730614f871bfcfa823ca86",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 8.prefab",
+      "sourceSha256": "0b8eaa7aa26d16fab73ab5781798047560248f0d6e03bf3c25623ee0bd61bf12",
+      "guid": "66b22539fa4a1514cb2f1020bf5f780a",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash Combo 9.prefab",
+      "sourceSha256": "d1fcad74fd91a2b8b3a86e446c1326f34c2a22ba74e979fe42756fa501763002",
+      "guid": "4214c4291f8ff5146820136ad679170f",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash mirror.prefab",
+      "sourceSha256": "9acbbbca73a0640154c8c7ede8d45ade9cf0910d637ae19658015d0fdb4faf2c",
+      "guid": "85fb7f94b930528439a19b0da7c8b36c",
+      "use": "effect: Hovl's slash shapes, drawn in white"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Bats/_Prefabs/Bats LP.prefab",
+      "sourceSha256": "dcb6e090ea21acaad3efd3cf9264c2fedd7f543b5a767cecb7c5a38c6dd39611",
+      "guid": "4f9257d4aec394d59be5f34d00fa97e8",
+      "use": "fodder: bat"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Bats/Meshes/Bats LP.fbx",
+      "sourceSha256": "e06900ac2ca26a8d9a4af69398069851eb8821d6af68f3bcad4594b57e0160ec",
+      "guid": "eec0bfdad45f34788ba93083b71f06dc",
+      "use": "fodder: bat"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Demons/_Prefabs/Demons_LP.prefab",
+      "sourceSha256": "3bc3d9c5819bb19c9352f6a6bbf4e03cff20da3de84f3542582abac37d19de13",
+      "guid": "97be6194801464926b2c78020bf4eb32",
+      "use": "fodder: demon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Demons/Models/Demons_LP.fbx",
+      "sourceSha256": "e3c7dfd3827edcc7948e42e097727077e7911d8119c2568b9dfe21be97ba10dd",
+      "guid": "bebd353bcd71a47dabd72141665125c1",
+      "use": "fodder: demon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Dragons/_Prefabs/Dragon_LP.prefab",
+      "sourceSha256": "bb4269fa952bd422abdf9498f24a40ab958c52f0d78728ff64b52d7977264f52",
+      "guid": "a1e28cc5277b74ff0ad8566e5e54bee5",
+      "use": "boss: the dragon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Dragons/Models/Dragon_LP.fbx",
+      "sourceSha256": "daee8e51e18919ed78eb93f4a3ea8bbaa13e52837f07679d9541794ae64b7f32",
+      "guid": "367e6650649952543b0c5dc153649036",
+      "use": "boss: the dragon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/_Prefabs/Goblins LP.prefab",
+      "sourceSha256": "2a36906f05a8a301a13d8595bec436a6bb6f5abbfbbbd4eb3d3afe2d52c84175",
+      "guid": "2d5e83b858ed8424291e890a090902db",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack1.fbx",
+      "sourceSha256": "699e2061158c2c1b6ed5869c5d1fd785b6cd43213c5e56e7a03ac2c81ef188b3",
+      "guid": "737c1f0a1861943258251a79e1729de0",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack2.fbx",
+      "sourceSha256": "40880b6848f10e608d7c7ea44425379146744b85333cb961acd5806ed76b57a7",
+      "guid": "3ed1a5ac07e0e46f2ba828703bfbdeb5",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack3.fbx",
+      "sourceSha256": "8e76194cdad7a2f1aaf1a8929fb715fb393e4534d3625052cfba8bd49f377b67",
+      "guid": "e88bb37eac4a54b45bcec16ea05b21c1",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Attack4.fbx",
+      "sourceSha256": "8eb604a6d8ea09bf6017190226dc88ddc3b9708a5b1421ca323c017359120a2e",
+      "guid": "4eceb3266cb4d411fbd460ebbaf9113f",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Death.fbx",
+      "sourceSha256": "8d91950b13834b75b0beb99c5e03ea330c6cb01ea838ce6d05fa8e75ea37fa98",
+      "guid": "5f170624cb4f045769503a05a205076f",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Dodge.fbx",
+      "sourceSha256": "84f22bede793b895a206c4761044b8b39d1ee02fe7d5c6607a5311fc4469b6f2",
+      "guid": "0ff2f4b29992246ddb51c80c3eb72b57",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@GotHit.fbx",
+      "sourceSha256": "b67ac1f2a0de87d8e97d82965c7954b1d2e590961fad61bd4500c5bdc2d2ba7c",
+      "guid": "5399d5151847d4e3681776932651afe6",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Idle.fbx",
+      "sourceSha256": "95d0ec91b43fa7de2c42578f589e32ac0aa2440a38a3dbb5ee5fe9167c655e96",
+      "guid": "907a74ad4197d4f268e118a17c5aa22e",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Idle_break.fbx",
+      "sourceSha256": "eaaabec2ea95ca1b3d8aa977e4c100a637cdd097ffef1fd0b81f2479bc77b39f",
+      "guid": "87be1233021724e8d97283a232bd72e7",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Taunt.fbx",
+      "sourceSha256": "28919092217a51018f96bcb932e0bc001925bdd2b53f7b61ec43e8c17a0ff9f0",
+      "guid": "698dd11801fa748b39055da6ec0d7abf",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Taunt2.fbx",
+      "sourceSha256": "b6b653e027898f13c4dc18e76c571528c5b06ec214a6fc78e55ef06f4b7de289",
+      "guid": "031aea45fa98ffc4d9ac07879ff922c4",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@Walk.fbx",
+      "sourceSha256": "cf9ba8598004f179a41ccc7d32db1e3b94d16186d1d5b04bbf944739c1525972",
+      "guid": "da8c9ca50ca4e4ab5b4f5b27efb389d0",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Animations/Goblins@WalkBack.fbx",
+      "sourceSha256": "39b9d9f2e786a6847277d6b5b736815a2411887092aec55113f4ce422753d8fb",
+      "guid": "daa8ce8771af64d1a80a7d51b6e98e6e",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/Meshes/Goblins LP.fbx",
+      "sourceSha256": "a46dcba399602bc28e681dc81b003d1319c58014cb3c594f4cef1dddbf92b6b5",
+      "guid": "c5040ee8ce85c473388230d694758f1c",
+      "use": "fodder: goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Mushroom Monster/_Prefabs/Mushroom_LP.prefab",
+      "sourceSha256": "a80eb3799721fc0fe5b540f2db856c9e4d60cb5aeee6a635244387e171057bd9",
+      "guid": "be803e2df48344dafbabe4dce2b5b5c4",
+      "use": "ranged: mushroom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Mushroom Monster/Models/Mushroom_LP.fbx",
+      "sourceSha256": "259710e41bf8251ebcc249d8caa1f2024acdc4e6cadf5f9e5515dfc002e33a90",
+      "guid": "119e98e7044e846bb86de248d6b7c57d",
+      "use": "ranged: mushroom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Skeleton Warrior/_Prefabs/SkeletonWarriorLP.prefab",
+      "sourceSha256": "a722c1da9a55f88a871f956f53a4838bf294cb1af5298047afb2a469904f6c94",
+      "guid": "6e3f218b742294893ad834f61c027945",
+      "use": "fodder: skeleton"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Skeleton Warrior/Models/SkeletonWarriorLP.fbx",
+      "sourceSha256": "de8f13673aade336a5d2ef08ed843e2966d2148d0ce00bc5138bed2198d8644a",
+      "guid": "d6688b4afa37b4b15b476037d756982c",
+      "use": "fodder: skeleton"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Slime/_Prefabs/Slime_LP.prefab",
+      "sourceSha256": "b288527883abb23512cb8f31d5206d11f025527683d52b657ae63ad7bf1ac92d",
+      "guid": "fe5eb242a632a47529d5bfc2a09bccda",
+      "use": "fodder: slime"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Slime/Models/Slime_LP.fbx",
+      "sourceSha256": "41162a2653ba20e6a65565640b3c51a475df2c69387b9bb5f113c66ad4830d2e",
+      "guid": "7fec430887d724867a2483827db438a9",
+      "use": "fodder: slime"
+    }
+  ]
+}

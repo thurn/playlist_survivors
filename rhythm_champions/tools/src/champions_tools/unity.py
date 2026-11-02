@@ -1,0 +1,307 @@
+"""Runs Unity in batch mode on a worktree's own project, cold or through the warm editor.
+
+Every launch names its project (Unity reopens its last project otherwise). A cold launch
+streams the log to the console with `-logFile -`. The warm editor (WarmEditor.cs) holds the
+project's lock while it runs, so every Unity step in that worktree goes through it then.
+
+Every launch uses the machine's Unity Accelerator when one answers (SETUP.md, the Unity
+Accelerator): one local instance at $UNITY_ACCELERATOR (default 127.0.0.1:10080) that every
+worktree and CI share, so an import or a shader one worktree compiled is a download for the next.
+"""
+
+from __future__ import annotations
+
+import itertools
+import json
+import os
+import signal
+import socket
+import subprocess
+import sys
+import threading
+import time
+import uuid
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from pathlib import Path
+
+from . import paths
+
+
+def method_name(name: str) -> str:
+    """A task method's full name: `Noop` is the project's `Champions.EditorTools.Tasks.Noop`."""
+    return name if "." in name else f"{paths.NAMESPACE}.EditorTools.Tasks.{name}"
+
+
+ACCELERATOR = "127.0.0.1:10080"
+
+
+def accelerator() -> str | None:
+    """The Unity Accelerator's endpoint if one answers there, else None."""
+    endpoint = os.environ.get("UNITY_ACCELERATOR", ACCELERATOR)
+    host, _, port = endpoint.rpartition(":")
+    try:
+        with socket.create_connection((host, int(port)), timeout=0.3):
+            return endpoint
+    except (OSError, ValueError):
+        return None
+
+
+def base_args(wt: paths.Worktree) -> list[str]:
+    args = [str(paths.unity_exe()), "-batchmode", "-projectPath", str(wt.project)]
+    endpoint = accelerator()
+    if endpoint:
+        args += ["-EnableCacheServer", "-cacheServerEndpoint", endpoint,
+                 "-cacheServerEnableDownload", "true", "-cacheServerEnableUpload", "true"]
+    return args
+
+
+def run_cold(wt: paths.Worktree, extra: list[str], log_name: str, quiet: bool = False) -> int:
+    """One cold batch-mode launch, its log streamed to the console and saved under Logs/.
+
+    The run ends when Unity exits, not when its stdout closes: its UnityPackageManager server
+    can outlive it holding the inherited pipe, so the pipe is read on a daemon thread, the
+    server is reaped once Unity exits, and the pipe gets a moment to drain.
+    """
+    wt.logs.mkdir(parents=True, exist_ok=True)
+    log = wt.logs / f"{log_name}.log"
+    cmd = base_args(wt) + extra + ["-logFile", "-"]
+    started = time.monotonic()
+    with open(log, "w", encoding="utf-8", errors="replace") as out:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        assert proc.stdout
+
+        def pump() -> None:
+            try:
+                for raw in proc.stdout:
+                    line = raw.decode("utf-8", "replace")
+                    out.write(line)
+                    if not quiet:
+                        sys.stdout.write(line)
+            except ValueError:  # `out` closed under a pipe something else still holds
+                pass
+
+        reader = threading.Thread(target=pump, daemon=True)
+        reader.start()
+        code = proc.wait()
+        reap_package_manager(proc.pid)
+        reader.join(timeout=5)
+    print(f"unity: {log_name} exited {code} after {time.monotonic() - started:.1f} s (log {log})")
+    return code
+
+
+def reap_package_manager(unity_pid: int) -> None:
+    """Kills the UnityPackageManager server Unity `unity_pid` started, if it outlived Unity.
+
+    The server runs in its own session, so it isn't in Unity's process group; it names its
+    Unity as `-s <pid>`.
+    """
+    if paths.is_windows():
+        return
+    ps = subprocess.run(["ps", "-axo", "pid=,command="], check=False, capture_output=True,
+                        text=True)
+    for row in ps.stdout.splitlines():
+        pid, _, command = row.strip().partition(" ")
+        args = command.split()
+        if any(a.endswith("UnityPackageManager") for a in args) and any(
+                a == "-s" and b == str(unity_pid) for a, b in itertools.pairwise(args)):
+            try:
+                os.kill(int(pid), signal.SIGTERM)
+            except OSError:
+                pass
+
+
+# The warm editor.
+
+
+@dataclass
+class Server:
+    port: int
+    token: str
+    pid: int
+
+
+def _server_file(wt: paths.Worktree) -> Path:
+    return wt.library / f"{paths.NAMESPACE}Warm" / "server.json"
+
+
+def pid_alive(pid: int) -> bool:
+    if paths.is_windows():
+        import ctypes
+
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return False
+        code = ctypes.c_ulong()
+        ok = kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+        kernel32.CloseHandle(handle)
+        return bool(ok) and code.value == 259  # STILL_ACTIVE
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def warm_server(wt: paths.Worktree) -> Server | None:
+    f = _server_file(wt)
+    if not f.exists():
+        return None
+    try:
+        s = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    server = Server(int(s["port"]), s["token"], int(s["pid"]))
+    return server if pid_alive(server.pid) else None
+
+
+def _send(server: Server, cmd: str, args: list[str]) -> str:
+    job = uuid.uuid4().hex
+    msg = json.dumps({"token": server.token, "id": job, "cmd": cmd, "args": "\t".join(args)})
+    deadline = time.monotonic() + 120
+    while True:  # the listener is down for a moment during a domain reload
+        try:
+            with socket.create_connection(("127.0.0.1", server.port), timeout=10) as sock:
+                sock.sendall(msg.encode() + b"\n")
+                reply = json.loads(sock.makefile("rb").readline() or b"{}")
+            break
+        except (ConnectionError, TimeoutError, OSError):
+            if time.monotonic() > deadline or not pid_alive(server.pid):
+                raise
+            time.sleep(0.5)
+    if reply.get("accepted") != job:
+        raise RuntimeError(f"warm editor refused the job: {reply}")
+    return job
+
+
+def warm_job(wt: paths.Worktree, server: Server, cmd: str, args: list[str], timeout: float) -> dict:
+    job = _send(server, cmd, args)
+    result = wt.library / f"{paths.NAMESPACE}Warm" / "jobs" / f"{job}.json"
+    deadline = time.monotonic() + timeout
+    while not result.exists():
+        if not pid_alive(server.pid):
+            raise RuntimeError("the warm editor exited during the job (see Logs/warm-editor.log)")
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"warm editor job {cmd} timed out after {timeout:.0f} s")
+        time.sleep(0.1)
+    for _ in range(50):
+        try:
+            return json.loads(result.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            time.sleep(0.05)
+    raise RuntimeError(f"unreadable job result {result}")
+
+
+def editor_start(wt: paths.Worktree, wait: float = 600) -> Server:
+    existing = warm_server(wt)
+    if existing:
+        return existing
+    _server_file(wt).unlink(missing_ok=True)
+    wt.logs.mkdir(parents=True, exist_ok=True)
+    cmd = base_args(wt) + [
+        "-executeMethod", f"{paths.NAMESPACE}.EditorTools.WarmEditor.Serve",
+        "-logFile", str(wt.logs / "warm-editor.log"),
+    ]
+    flags = 0
+    if paths.is_windows():
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+    proc = subprocess.Popen(cmd, creationflags=flags, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        server = warm_server(wt)
+        if server:
+            return server
+        if proc.poll() is not None:
+            raise RuntimeError(f"the warm editor exited with {proc.returncode} (Logs/warm-editor.log)")
+        time.sleep(0.25)
+    raise TimeoutError("the warm editor didn't start (Logs/warm-editor.log)")
+
+
+def editor_stop(wt: paths.Worktree) -> bool:
+    server = warm_server(wt)
+    if not server:
+        return False
+    try:
+        _send(server, "quit", [])
+    except OSError:
+        pass
+    deadline = time.monotonic() + 60
+    while pid_alive(server.pid) and time.monotonic() < deadline:
+        time.sleep(0.25)
+    reap_package_manager(server.pid)
+    return True
+
+
+# Commands that use the warm editor when it runs and a cold launch otherwise.
+
+
+def run_method(wt: paths.Worktree, name: str, args: list[str], cold: bool = False,
+               timeout: float = 3600) -> int:
+    method = method_name(name)
+    server = None if cold else warm_server(wt)
+    if server:
+        started = time.monotonic()
+        refresh = warm_job(wt, server, "refresh", [], timeout)
+        if not refresh["ok"]:
+            print(f"unity (warm): compile failed:\n{refresh['detail']}")
+            return 1
+        res = warm_job(wt, server, "exec", [method, *args], timeout)
+        print(f"unity (warm): {method} {'ok' if res['ok'] else 'FAILED'} after "
+              f"{time.monotonic() - started:.1f} s\n{res['detail']}")
+        return 0 if res["ok"] else 1
+    return run_cold(wt, ["-executeMethod", method, *args, "-quit"], name.split(".")[-1])
+
+
+@dataclass
+class TestSummary:
+    total: int
+    passed: int
+    failed: int
+    skipped: int
+    failures: str
+    skips: str = ""  # each skipped test and its reason (Assert.Ignore names the missing setup step)
+
+    @property
+    def ok(self) -> bool:
+        return self.failed == 0 and self.total > 0
+
+
+def parse_nunit(xml_path: Path) -> TestSummary:
+    root = ET.parse(xml_path).getroot()
+    failures = []
+    skips = []
+    for case in root.iter("test-case"):
+        if case.get("result") == "Failed":
+            msg = case.findtext("failure/message") or ""
+            failures.append(f"{case.get('fullname')}: {msg.strip()}")
+        elif case.get("result") == "Skipped":
+            msg = case.findtext("reason/message") or ""
+            skips.append(f"{case.get('fullname')}: {msg.strip()}")
+    return TestSummary(
+        int(root.get("total", 0)), int(root.get("passed", 0)), int(root.get("failed", 0)),
+        int(root.get("skipped", 0)), "\n".join(failures), "\n".join(skips),
+    )
+
+
+def run_tests(wt: paths.Worktree, assemblies: list[str], cold: bool = False) -> TestSummary:
+    server = None if cold else warm_server(wt)
+    if server:
+        started = time.monotonic()
+        refresh = warm_job(wt, server, "refresh", [], 1800)
+        if not refresh["ok"]:
+            return TestSummary(0, 0, 1, 0, f"compile failed: {refresh['detail']}")
+        res = warm_job(wt, server, "test", assemblies, 1800)
+        summary = parse_nunit(Path(res["detail"]["xml"]))
+        print(f"unity (warm): EditMode tests after {time.monotonic() - started:.1f} s")
+        return summary
+    xml = wt.logs / "editmode-results.xml"
+    xml.unlink(missing_ok=True)
+    extra = ["-runTests", "-testPlatform", "EditMode", "-testResults", str(xml)]
+    if assemblies:
+        extra += ["-assemblyNames", ";".join(assemblies)]
+    code = run_cold(wt, extra, "editmode-tests", quiet=True)
+    if not xml.exists():
+        return TestSummary(0, 0, 1, 0, f"no results (exit {code}): compile errors? see Logs/editmode-tests.log")
+    return parse_nunit(xml)

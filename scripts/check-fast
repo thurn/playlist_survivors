@@ -9,9 +9,10 @@
 # - The friction ledger: its records and scripts/friction's tests, when either changed.
 # - scripts/prune-cargo-target's tests, when it or they changed.
 # - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
-# - The vendor guard (demo3d/tools, covering every Unity project: game/, demo3d/, demo2d/,
-#   stylelab/ and herocap/), always, over the commits since the base and the index; its tools' lint and tests
-#   when demo3d/tools changed, the choreography layer's tests (on each demo's data) when the
+# - The vendor guard (rhythm_champions/tools, covering every Unity project: rhythm_champions/ and
+#   the frozen game/, demo3d/, demo2d/, stylelab/ and herocap/), always, over the commits since the base
+#   and the index; the champions tools' lint and tests when rhythm_champions/tools changed.
+# - demo3d/tools' lint and tests when they changed, the choreography layer's tests (on each demo's data) when the
 #   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/), and its
 #   replay and sweep commands and evidence harnesses built, when the sim, its arena layout or its content (game/Content/) changed.
 #   herocap's recipe tests (dot and line faces, one recipe per atlas) when herocap/ or the survivors
@@ -88,9 +89,13 @@ fi
 # The vendor guard (docs/archive/tech-demo-3d/vendor-assets.md), whatever changed: a vendor file is
 # caught by its hash anywhere in the tree.
 if [ -n "$CHANGES_BASE" ]; then
-  uv run --quiet --project demo3d/tools demo3d guard --range "$CHANGES_BASE..HEAD"
+  uv run --quiet --project rhythm_champions/tools champions guard --range "$CHANGES_BASE..HEAD"
 fi
-uv run --quiet --project demo3d/tools demo3d guard --index
+uv run --quiet --project rhythm_champions/tools champions guard --index
+if changes_match '^rhythm_champions/tools/'; then
+  uv run --directory rhythm_champions/tools ruff check .
+  uv run --directory rhythm_champions/tools pytest -q
+fi
 if changes_match '^demo3d/tools/'; then
   uv run --directory demo3d/tools ruff check .
   uv run --directory demo3d/tools pytest -q
