@@ -189,14 +189,17 @@ def readme(recipe: ModuleType, summary: dict, result: dict, limits: dict, verdic
         f"{cam['fovDeg']:g} degree field, the monster turned {cam['yawDeg']:g} degrees) with the pipeline's post, "
         "beside the vendor original in flat grey. Each sheet is one camera distance, the same for every model (game "
         "scale stands a 1.8 m monster 113 px tall at 1080 rows; far is twice as far, near half), in square cells "
-        "twice the larger of the monster's height and its reach at a 1080-row frame's pixel density: idle, walk and "
-        "attack, each the original then the cut. Game scale is the old game camera's medium width; the world bead's "
-        "camera may differ."),
+        "twice the larger of the monster's height and its reach at a 1080-row frame's pixel density, three poses to "
+        f"a row ({', '.join(m.reviewPoses)}), each the original then the cut, and a last row of the shatter: the first pose "
+        "broken by a blow away from the camera, then 0.08, 0.2, 0.4, 0.8 and 1.4 s after (as many as the row holds). "
+        "Game scale is the old game camera's medium width; the world bead's camera may differ."),
         "",
     ]
     for size in dict.fromkeys(c["size"] for c in result["cells"]):
         px = next(c["heightPx"] for c in result["cells"] if c["size"] == size)
-        lines += [f"- {size} ({px:g} px tall): [{size}.jpg]({size}.jpg)"]
+        scale = result.get("sheetScales", {}).get(size, 1)
+        saved = f", saved at 1/{round(1 / scale)} size" if scale < 1 else ""
+        lines += [f"- {size} ({px:g} px tall{saved}): [{size}.jpg]({size}.jpg)"]
     lines += [
         "",
         f"## Black share per cell (the cut's silhouette darker than L* {result['blackLStar']:g})",

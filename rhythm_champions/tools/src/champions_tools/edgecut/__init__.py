@@ -16,7 +16,8 @@ __all__ = ["Clip", "Cut", "Model", "Selection", "Source", "Weapon"]
 @dataclass(frozen=True)
 class Clip:
     """A clip the crowd plays: its role (idle, walk, attack, hit, ...), the vendor file's GUID and the clip's name,
-    and its annotations in seconds and metres (negative where absent). Fields are named as model.json's."""
+    its annotations in seconds and metres (negative where absent), and `liftM`, metres the whole clip is raised (a
+    flyer's clips authored on the ground but played in the air). Fields are named as model.json's."""
 
     role: str
     guid: str
@@ -25,6 +26,7 @@ class Clip:
     impact: float = -1
     end: float = -1
     strideM: float = -1
+    liftM: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -44,8 +46,9 @@ class Weapon:
 @dataclass(frozen=True)
 class Model:
     """A recipe's vendor sources: the prefab by GUID, its height at scale 1, a flyer's hover, children never shown,
-    weapons put in its hands, the clips (manifest.json lists every file), and the role of the clip whose first frame
-    the line choice sees the model in (`pose`: a T-posed rig standing as in the game; empty, the bind pose)."""
+    weapons put in its hands, the clips (manifest.json lists every file), the role of the clip whose first frame the
+    line choice sees the model in (`pose`: a T-posed rig standing as in the game; empty, the bind pose), and the clip
+    roles its review draws (`reviewPoses`: a boss's every attack)."""
 
     id: str
     prefab: str
@@ -55,10 +58,12 @@ class Model:
     hide: tuple[str, ...] = field(default_factory=tuple)
     weapons: tuple[Weapon, ...] = field(default_factory=tuple)
     pose: str = ""
+    reviewPoses: tuple[str, ...] = ("idle", "walk", "attack")
 
     def json(self) -> dict:
         d = asdict(self)
         d["clips"] = [asdict(c) for c in self.clips]
         d["hide"] = list(self.hide)
         d["weapons"] = [asdict(w) for w in self.weapons]
+        d["reviewPoses"] = list(self.reviewPoses)
         return d

@@ -10,7 +10,8 @@ namespace Champions.EditorTools.EdgeCuts
     /// A model's vendor sources as its recipe names them (rhythm_champions/tools/recipes/edgecut/&lt;model&gt;.py, `MODEL`),
     /// which `champions edgecut` writes to Assets/Baked/EdgeCuts/&lt;model&gt;/model.json: the prefab and clips by vendor
     /// GUID (manifest.json), the model's height at scale 1, the prefab children it never shows, the weapons put in
-    /// its hands and the clip role whose first frame the recipe also sees it in (`pose`, for a T-posed rig).
+    /// its hands, the clip role whose first frame the recipe also sees it in (`pose`, for a T-posed rig) and the clip
+    /// roles its review draws.
     /// </summary>
     [Serializable]
     public sealed class EdgeCutModel
@@ -23,8 +24,12 @@ namespace Champions.EditorTools.EdgeCuts
         public Weapon[] weapons = Array.Empty<Weapon>();
         public string pose = "";
         public Clip[] clips = Array.Empty<Clip>();
+        public string[] reviewPoses = { "idle", "walk", "attack" };
 
-        /// <summary>A clip the crowd plays: its role (idle, walk, attack, hit, ...), source and annotations (negative where absent).</summary>
+        /// <summary>
+        /// A clip the crowd plays: its role (idle, walk, attack, hit, ...), source and annotations (negative where
+        /// absent), and the metres the whole clip is raised (a flyer's clips authored on the ground, played in the air).
+        /// </summary>
         [Serializable]
         public sealed class Clip
         {
@@ -33,6 +38,7 @@ namespace Champions.EditorTools.EdgeCuts
             public string clip;
             public bool loop;
             public float impact = -1, end = -1, strideM = -1;
+            public float liftM;
         }
 
         /// <summary>

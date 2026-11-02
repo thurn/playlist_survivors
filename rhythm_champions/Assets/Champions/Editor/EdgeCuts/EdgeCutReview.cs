@@ -16,13 +16,17 @@ namespace Champions.EditorTools.EdgeCuts
     /// <summary>
     /// A cut's review sheet (plan.md, Rendering &gt; Edge cuts): the cut at the game camera's angle, drawn by the edge
     /// crowd itself with the pipeline's post, beside the vendor original (flat grey, lit), at three camera distances
-    /// and in its idle, walk and attack poses. Each distance is a sheet (far.jpg, game.jpg, near.jpg) of six cells,
-    /// square and twice the larger of the monster's height and its reach from its middle over all clips: idle, walk
-    /// and attack, each the original then the cut. The cells keep a 1080-row frame's pixel density at the camera's 30
-    /// degree field and every model stands at the same distances, so a monster is exactly as large as it would be in
-    /// the game (a 0.3 m bat a sixth of a skeleton). Beside the sheets it writes review.json: per cell the
-    /// cut's black share (the share of its silhouette, from a flat-white mask render, darker than L* 10 in the
-    /// beauty render, and without the post's bloom), its height on screen, and the cut's counts.
+    /// and in the poses its recipe names (idle, walk and attack unless it names others; a boss names its every
+    /// attack). Each distance is a sheet (far.jpg, game.jpg, near.jpg) of square cells twice the larger of the
+    /// monster's height and its reach from its middle over all clips, three poses to a row, each the original then the
+    /// cut; a last row shows its shatter, the first pose broken by a blow away from the camera and its pieces at
+    /// <see cref="ShatterAt"/> after the break. The cells keep a 1080-row frame's pixel density at the camera's 30
+    /// degree field and every model stands at the same distances, so a monster is exactly
+    /// as large as it would be in the game (a 0.3 m bat a sixth of a skeleton); a sheet wider than
+    /// <see cref="MaxSheetPx"/> is saved scaled down by a whole factor, but measured at full size. Beside the sheets it
+    /// writes review.json: per cell the cut's black share (the share of its silhouette, from a flat-white mask render,
+    /// darker than L* 10 in the beauty render, and without the post's bloom), its height on screen, and the cut's
+    /// counts.
     /// </summary>
     public static class EdgeCutReview
     {
@@ -31,8 +35,11 @@ namespace Champions.EditorTools.EdgeCuts
         /// at 1080 rows there; the middle is game scale.</summary>
         public static readonly (string Name, float HeightPx)[] Sizes = { ("far", 56), ("game", 113), ("near", 226) };
         public const float ReferenceHeightM = 1.8f;
-        /// <summary>The poses: a clip role and where in it (a share of its length, or its impact when it has one).</summary>
-        static readonly (string Name, string Role, float At)[] Poses = { ("idle", "idle", 0.3f), ("walk", "walk", 0.25f), ("attack", "attack", -1) };
+        const int PosesPerRow = 3;
+        /// <summary>The shatter row's times after the break, one per cell, and the blow's launch distance (the sword's).</summary>
+        static readonly float[] ShatterAt = { 0, 0.08f, 0.2f, 0.4f, 0.8f, 1.4f };
+        const float BlowForce = 1.85f;
+        const int MaxSheetPx = 6144;
         public const float BlackLStar = 10f;
         static readonly Color32 Tint = new Color32(90, 220, 255, 255);
 
@@ -63,7 +70,11 @@ namespace Champions.EditorTools.EdgeCuts
             original.transform.rotation = Quaternion.Euler(0, YawDeg, 0);
             var animator = original.GetComponentInChildren<Animator>();
             var crowd = new EdgeCrowd(lib, 1);
+            var shatter = new EdgeShatter(lib, crowd.Palette);
             var cells = new List<string>();
+            var scales = new List<string>();
+            var poseClips = model.reviewPoses.Select(role => type.Clip(role) is var c && c >= 0 ? c
+                : throw new Exception($"EdgeCutReview: {model.id} has no {role} clip")).ToArray();
             RenderTexture rt = null;
             Texture2D sheet = null;
             AnimationMode.StartAnimationMode();
@@ -82,25 +93,33 @@ namespace Champions.EditorTools.EdgeCuts
                     // The cell's field keeps a 1080-row frame's pixels per radian at the game's field of view.
                     camera.fieldOfView = 2 * Mathf.Rad2Deg * Mathf.Atan(Mathf.Tan(0.5f * FovDeg * Mathf.Deg2Rad) * cell / 1080f);
                     if (sheet != null) UnityEngine.Object.DestroyImmediate(sheet);
-                    sheet = new Texture2D(6 * cell, cell, TextureFormat.RGB24, false);
+                    int columns = 2 * Mathf.Min(model.reviewPoses.Length, PosesPerRow);
+                    int rows = (model.reviewPoses.Length + PosesPerRow - 1) / PosesPerRow + 1;
+                    int shrink = Mathf.CeilToInt(columns * cell / (float)MaxSheetPx), saved = cell / shrink;
+                    sheet = new Texture2D(columns * saved, rows * saved, TextureFormat.RGB24, false);
+                    sheet.SetPixels32(new Color32[sheet.width * sheet.height]); // black where a short last row leaves cells empty
+                    scales.Add(string.Format(CultureInfo.InvariantCulture, "\"{0}\": {1}", sizeName, 1f / shrink));
+                    MonsterInstance first = default;
                     float depth = ReferenceHeightM / Mathf.Tan(0.5f * FovDeg * Mathf.Deg2Rad) * 540f / referencePx;
                     var focus = new Vector3(0, 0.5f * type.HeightM, 0);
                     camera.transform.rotation = Quaternion.Euler(PitchDeg, 0, 0);
                     camera.transform.position = focus - camera.transform.forward * depth;
-                    for (int pi = 0; pi < Poses.Length; pi++)
+                    for (int pi = 0; pi < model.reviewPoses.Length; pi++)
                     {
-                        var (poseName, role, at) = Poses[pi];
-                        int clipIndex = type.Clip(role);
-                        if (clipIndex < 0) throw new Exception($"EdgeCutReview: {model.id} has no {role} clip");
+                        var role = model.reviewPoses[pi];
+                        int clipIndex = poseClips[pi];
                         var clip = type.Clips[clipIndex];
-                        float time = at < 0 ? (clip.Impact >= 0 ? clip.Impact : 0.5f * clip.Length) : at * clip.Length;
-                        // The original, posed by its clip.
+                        float time = PoseTime(clip);
+                        int x = 2 * (pi % PosesPerRow) * saved, y = (rows - 1 - pi / PosesPerRow) * saved;
+                        // The original, posed and raised by its clip.
+                        var source = model.clips.First(c => c.role == role);
                         original.SetActive(true);
+                        original.transform.position = Vector3.up * source.liftM;
                         AnimationMode.BeginSampling();
-                        AnimationMode.SampleAnimationClip(animator.gameObject, model.LoadClip(model.clips.First(c => c.role == role)), time);
+                        AnimationMode.SampleAnimationClip(animator.gameObject, model.LoadClip(source), time);
                         AnimationMode.EndSampling();
                         data.renderPostProcessing = false;
-                        Render(camera, rt, sheet, 2 * pi * cell, true);
+                        Place(sheet, Render(camera, rt, true), cell, shrink, x, y);
                         original.SetActive(false);
 
                         // The cut: its mask, then the beauty with the pipeline's post.
@@ -110,17 +129,20 @@ namespace Champions.EditorTools.EdgeCuts
                             ClipB = (uint)clipIndex, TimeB = time, Blend = 1, Scale = 1, Tint = MonsterInstance.Pack(Tint),
                             Flags = (uint)CrowdFlags.Alive,
                         };
+                        if (pi == 0) first = body;
                         var mask = DrawCut(crowd, typeIndex, camera, rt, body, mask: true, post: false);
                         var plain = DrawCut(crowd, typeIndex, camera, rt, body, mask: false, post: false);
                         var beauty = DrawCut(crowd, typeIndex, camera, rt, body, mask: false, post: true);
-                        sheet.SetPixels32(2 * pi * cell + cell, 0, cell, cell, beauty);
+                        Place(sheet, beauty, cell, shrink, x + saved, y);
                         var (share, silhouette, top, bottom) = BlackShare(mask, beauty, cell);
                         var (plainShare, _, _, _) = BlackShare(mask, plain, cell);
                         cells.Add(string.Format(CultureInfo.InvariantCulture,
                             "{{\"size\": \"{0}\", \"heightPx\": {1:0.#}, \"pose\": \"{2}\", \"clipTime\": {3:F3}, \"blackShare\": {4:F4}, " +
                             "\"blackShareWithoutPost\": {5:F4}, \"silhouettePx\": {6}, \"screenHeightPx\": {7}}}",
-                            sizeName, px, poseName, time, share, plainShare, silhouette, top - bottom + 1));
+                            sizeName, px, role, time, share, plainShare, silhouette, top - bottom + 1));
                     }
+                    // Each distance breaks it afresh, after the last distance's pieces are gone.
+                    Shatter(crowd, shatter, typeIndex, camera, rt, sheet, first, 10.0 * (si + 1), Mathf.Min(columns, ShatterAt.Length), cell, shrink);
                     sheet.Apply();
                     RenderTag.SaveJpeg(sheet, Path.Combine(outDir, sizeName + ".jpg"), $"champions edgecut review {model.id} {sizeName}");
                 }
@@ -130,7 +152,8 @@ namespace Champions.EditorTools.EdgeCuts
                     .Append(",\n  \"entries\": ").Append(type.BoneCount)
                     .Append(",\n  \"camera\": {\"pitchDeg\": ").Append(PitchDeg).Append(", \"fovDeg\": ").Append(FovDeg)
                     .Append(", \"yawDeg\": ").Append(YawDeg).Append("},\n  \"blackLStar\": ")
-                    .Append(BlackLStar.ToString(CultureInfo.InvariantCulture)).Append(",\n  \"cells\": [\n    ")
+                    .Append(BlackLStar.ToString(CultureInfo.InvariantCulture))
+                    .Append(",\n  \"sheetScales\": {").Append(string.Join(", ", scales)).Append("},\n  \"cells\": [\n    ")
                     .Append(string.Join(",\n    ", cells)).Append("\n  ]\n}\n");
                 File.WriteAllText(Path.Combine(outDir, "review.json"), json.ToString());
                 Debug.Log($"EdgeCutReview: {model.id}: wrote its sheets and review.json to {outDir}");
@@ -139,6 +162,7 @@ namespace Champions.EditorTools.EdgeCuts
             {
                 AnimationMode.StopAnimationMode();
                 EdgeLook.Mask(false);
+                shatter.Dispose();
                 crowd.Dispose();
                 camera.targetTexture = null;
                 if (rt != null) rt.Release();
@@ -150,13 +174,72 @@ namespace Champions.EditorTools.EdgeCuts
             }
         }
 
-        static void Render(Camera camera, RenderTexture rt, Texture2D sheet, int x, bool warm)
+        /// <summary>Where a pose samples its clip: at its impact when it has one, else a share of its length.</summary>
+        static float PoseTime(EdgeClip clip) =>
+            clip.Impact >= 0 ? clip.Impact : (clip.Role == "idle" ? 0.3f : clip.Role == "walk" ? 0.25f : 0.5f) * clip.Length;
+
+        /// <summary>The camera's render, read back.</summary>
+        static Color32[] Render(Camera camera, RenderTexture rt, bool warm)
         {
             if (warm) camera.Render(); // the first render of a fresh pose or material can come out stale
             camera.Render();
+            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
             RenderTexture.active = rt;
-            sheet.ReadPixels(new Rect(0, 0, rt.width, rt.height), x, 0);
+            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
             RenderTexture.active = null;
+            var px = tex.GetPixels32();
+            UnityEngine.Object.DestroyImmediate(tex);
+            return px;
+        }
+
+        /// <summary>A cell's pixels into the sheet at (x, y), each <paramref name="shrink"/> square of them averaged.</summary>
+        static void Place(Texture2D sheet, Color32[] px, int cell, int shrink, int x, int y)
+        {
+            if (shrink == 1)
+            {
+                sheet.SetPixels32(x, y, cell, cell, px);
+                return;
+            }
+            int n = cell / shrink, area = shrink * shrink;
+            var o = new Color32[n * n];
+            for (int j = 0; j < n; j++)
+            for (int i = 0; i < n; i++)
+            {
+                int r = 0, g = 0, b = 0;
+                for (int dy = 0; dy < shrink; dy++)
+                for (int dx = 0; dx < shrink; dx++)
+                {
+                    var c = px[(j * shrink + dy) * cell + i * shrink + dx];
+                    r += c.r;
+                    g += c.g;
+                    b += c.b;
+                }
+                o[j * n + i] = new Color32((byte)(r / area), (byte)(g / area), (byte)(b / area), 255);
+            }
+            sheet.SetPixels32(x, y, n, n, o);
+        }
+
+        /// <summary>
+        /// The shatter row along the sheet's bottom: <paramref name="body"/> broken at song time <paramref name="broke"/>
+        /// by a blow away from the camera, then drawn with the post at each of the first <paramref name="count"/>
+        /// <see cref="ShatterAt"/> times after.
+        /// </summary>
+        static void Shatter(EdgeCrowd crowd, EdgeShatter shatter, int type, Camera camera, RenderTexture rt, Texture2D sheet,
+            MonsterInstance body, double broke, int count, int cell, int shrink)
+        {
+            EdgeLook.Mask(false);
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            for (int k = 0; k < count; k++)
+            {
+                double now = broke + ShatterAt[k];
+                body.Flags = (uint)(k == 0 ? CrowdFlags.Dying : CrowdFlags.Hidden);
+                if (k == 0) shatter.Break(type, 0, body, 1, now, 0, 1, BlowForce);
+                var slots = crowd.Instances(type, 1);
+                slots[0] = body;
+                crowd.Draw(camera);
+                shatter.Frame(now, camera);
+                Place(sheet, Render(camera, rt, false), cell, shrink, k * (cell / shrink), 0);
+            }
         }
 
         static Color32[] DrawCut(EdgeCrowd crowd, int type, Camera camera, RenderTexture rt, MonsterInstance body, bool mask, bool post)
@@ -166,14 +249,7 @@ namespace Champions.EditorTools.EdgeCuts
             var slots = crowd.Instances(type, 1);
             slots[0] = body;
             crowd.Draw(camera);
-            camera.Render();
-            var tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBA32, false);
-            RenderTexture.active = rt;
-            tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
-            RenderTexture.active = null;
-            var px = tex.GetPixels32();
-            UnityEngine.Object.DestroyImmediate(tex);
-            return px;
+            return Render(camera, rt, false);
         }
 
         /// <summary>The share of the mask's pixels the beauty render leaves darker than L* <see cref="BlackLStar"/>, the mask's pixel count and rows.</summary>

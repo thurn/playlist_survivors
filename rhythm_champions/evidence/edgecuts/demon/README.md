@@ -17,7 +17,7 @@ entries) redrawn as a few dozen lines over a body of convex parts.
 
 | Threshold | Measured | |
 | --- | --- | --- |
-| black share at game scale >= 65% | 78.2% (poses 77%, 78%, 79%) | ok |
+| black share at game scale >= 65% | 75.6% (poses 73%, 76%, 77%) | ok |
 | line segments <= 120 | 44 | ok |
 | body triangles 300-800 | 308 | ok |
 
@@ -25,7 +25,7 @@ entries) redrawn as a few dozen lines over a body of convex parts.
 
 ## Sheets
 
-The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 degree field, the monster turned 160 degrees) with the pipeline's post, beside the vendor original in flat grey. Each sheet is one camera distance, the same for every model (game scale stands a 1.8 m monster 113 px tall at 1080 rows; far is twice as far, near half), in square cells twice the larger of the monster's height and its reach at a 1080-row frame's pixel density: idle, walk and attack, each the original then the cut. Game scale is the old game camera's medium width; the world bead's camera may differ.
+The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 degree field, the monster turned 160 degrees) with the pipeline's post, beside the vendor original in flat grey. Each sheet is one camera distance, the same for every model (game scale stands a 1.8 m monster 113 px tall at 1080 rows; far is twice as far, near half), in square cells twice the larger of the monster's height and its reach at a 1080-row frame's pixel density, three poses to a row (idle, walk, attack), each the original then the cut, and a last row of the shatter: the first pose broken by a blow away from the camera, then 0.08, 0.2, 0.4, 0.8 and 1.4 s after (as many as the row holds). Game scale is the old game camera's medium width; the world bead's camera may differ.
 
 - far (59.1 px tall): [far.jpg](far.jpg)
 - game (119.3 px tall): [game.jpg](game.jpg)
@@ -35,15 +35,15 @@ The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 d
 
 | Size | Pose | Black share | Without post | Silhouette px | On screen px |
 | --- | --- | --- | --- | --- | --- |
-| far | idle | 60.4% | 61.5% | 455 | 30 |
-| far | walk | 61.8% | 64.1% | 429 | 31 |
-| far | attack | 63.5% | 64.1% | 471 | 32 |
-| game | idle | 77.1% | 77.4% | 1705 | 58 |
-| game | walk | 78.2% | 78.8% | 1609 | 61 |
-| game | attack | 79.2% | 79.4% | 1755 | 66 |
-| near | idle | 87.5% | 87.7% | 6352 | 116 |
-| near | walk | 87.9% | 88.3% | 6167 | 121 |
-| near | attack | 88.7% | 88.7% | 6685 | 136 |
+| far | idle | 57.0% | 62.9% | 456 | 29 |
+| far | walk | 58.4% | 63.5% | 425 | 30 |
+| far | attack | 60.1% | 62.0% | 476 | 33 |
+| game | idle | 73.4% | 77.5% | 1704 | 58 |
+| game | walk | 76.0% | 78.9% | 1608 | 61 |
+| game | attack | 77.3% | 79.1% | 1764 | 66 |
+| near | idle | 86.0% | 87.7% | 6367 | 116 |
+| near | walk | 86.6% | 88.5% | 6174 | 121 |
+| near | attack | 88.0% | 88.8% | 6705 | 136 |
 
 ## Parts
 

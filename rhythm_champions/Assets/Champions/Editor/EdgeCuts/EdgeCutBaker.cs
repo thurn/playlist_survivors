@@ -308,8 +308,10 @@ namespace Champions.EditorTools.EdgeCuts
                         var c = Clips[ci];
                         var clip = _clips[ci];
                         // A looping clip that travels would jump at its seam: its horizontal drift is removed
-                        // linearly (the sim moves the monster instead).
+                        // linearly (the sim moves the monster instead). A clip authored on the ground for the air is
+                        // raised by its lift.
                         var drift = Vector3.zero;
+                        var lift = Vector3.up * _model.clips[ci].liftM;
                         if (c.Loop)
                         {
                             drift = BodyAt(clip, c.Length, body) - BodyAt(clip, 0, body);
@@ -320,7 +322,7 @@ namespace Champions.EditorTools.EdgeCuts
                         {
                             float time = c.FrameTime(f);
                             Pose(clip, time);
-                            var rootInv = Matrix4x4.Translate(-drift * (time / c.Length)) * _source.RootTR.inverse;
+                            var rootInv = Matrix4x4.Translate(lift - drift * (time / c.Length)) * _source.RootTR.inverse;
                             for (int e = 0; e < _entries.Count; e++)
                             {
                                 var m = rootInv * _entries[e].Bone.localToWorldMatrix * _entries[e].Bind;
