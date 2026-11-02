@@ -245,6 +245,27 @@ Techniques that tend to work:
 - **A strap is a plane's cut**: where a tilted plane cuts the body, two lines
   on its surface (ray-cast onto the body's own polygons) read as a strap
   worn round it (the Fat Ogre's sash).
+- **Close a plate's outline with bevels**: a line draws inside the faces on
+  either side of its edge, and a thin plate's rim, square to it, is edge-on
+  whenever the plate faces the camera, so its outline draws at half a
+  finger's width and fades. Two narrow bevels meeting at a ridge round the
+  outline give it a lit face on both sides (the dragon's wings).
+- **Choose a membrane's normals from the clips**: a wing folded on the
+  ground is seen edge-on and glows whole in the rim. The baked bone texture
+  (`Assets/Baked/Monsters/<type>/<type>_bones.asset`, one 3x4 skin matrix a
+  bone a frame) says which rest-frame direction each bone turns toward the
+  sky, and so the camera, in most frames; give the membrane's points that
+  normal (the dragon's, up in about 95% of all frames). The same texture
+  gives each bone's joint, the point it and its parent move alike over every
+  frame, exactly where the export has no bone positions.
+- **Skin a wing's trailing edge between its fingers**: skinned by transfer
+  from the vendor's membrane, a point between two finger tips rides one
+  finger and zigzags across the folded wing; blended between the two
+  fingers' last bones it stays taut (the dragon).
+- **A bone name can have two bind poses**: parts bound separately (the
+  dragon's tail) carry their own palette entries under the same names and
+  paths, with different matrices. Skin a shape that replaces a part to that
+  part's entries, by index.
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
@@ -255,7 +276,9 @@ scratch as polygons, every edge it designs drawn (`mesh.edges`), and some
 hushed so a panel stays quiet. `tools/recipes/monster/goblin.py` builds a
 whole humanoid that way: prisms lofted through the vendor's joints, each
 shape skinned by transfer from the vendor's nearest vertices over its own
-bones, thin plates drawing only their tops.
+bones, thin plates drawing only their tops. `tools/recipes/monster/dragon.py`
+builds wings: bevelled membrane plates between finger bones, their normals
+chosen from the clips.
 
 Keep the vendor rig, bind poses and clips. For skin transfer, partitioning,
 stream compaction and bounds, follow
