@@ -155,7 +155,7 @@ Shader "Look/MonsterSolidShard"
             {
                 ShardVertex c = ShardSkin(v);
                 Varyings o;
-                o.positionCS = SolidOutlineCS(c.positionWS, c.normalWS, c.pivot);
+                o.positionCS = MonsterOutlineCS(c.positionWS, c.normalWS, c.pivot, _OutlinePx);
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
                 return o;
             }

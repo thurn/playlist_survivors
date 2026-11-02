@@ -59,6 +59,25 @@ namespace PS.Look.Tests
         }
 
         [Test]
+        public void EveryNeonLooksBodyDrawsADarkOutline()
+        {
+            // The swarm-separation rule (neon-look-style.md): a clump's touching rims part on a dark seam.
+            foreach (var option in new[] { EdgeLook.Option, SolidLook.Option, HologramLook.Option, GemLook.Option })
+            {
+                var body = MonsterLooks.Of(option).Body(null, new CrowdType { Id = "skeleton" });
+                try
+                {
+                    Assert.That(body.FindPass("Outline"), Is.GreaterThanOrEqualTo(0), option);
+                    Assert.That(body.GetFloat("_OutlinePx"), Is.GreaterThan(0), option);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(body);
+                }
+            }
+        }
+
+        [Test]
         public void ARegisteredLookDrawsItsOption()
         {
             var look = new Plain();

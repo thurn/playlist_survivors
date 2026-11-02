@@ -133,7 +133,7 @@ Shader "Look/MonsterSolid"
                 float pulse, radiusPx;
                 MonsterVertex c = SolidSkin(v, light, pulse, centre, radiusPx);
                 Varyings o;
-                o.positionCS = SolidOutlineCS(c.positionWS, c.normalWS, centre);
+                o.positionCS = MonsterOutlineCS(c.positionWS, c.normalWS, centre, _OutlinePx);
                 o.lod = c.fx.zw;
                 o.fogFactor = ComputeFogFactor(o.positionCS.z);
                 return o;

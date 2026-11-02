@@ -1,8 +1,10 @@
 // The dark-core-edges monster look's bodies (neon-look.md, The Axes > Monsters; EdgeLook.cs): the
 // crowd's style mesh skinned as every look skins it (MonsterCommon.hlsl), drawn as near-black glass
 // lit only by the type's palette hue in its rim, its feature edges and its inner core
-// (MonsterEdge.hlsl). As an impulse ring passes (Impulse.hlsl's ImpulseCrowd) a living monster hops
-// and its rim and lines take the ring's light. Opaque, but in the transparent queue where the
+// (MonsterEdge.hlsl), with a dark outline hull (MonsterOutline.hlsl) in the unlit pass URP draws
+// beside it, so a clump's touching rims part. As an impulse ring passes (Impulse.hlsl's
+// ImpulseCrowd) a living monster hops and its rim and lines take the ring's light. Opaque, but in the
+// transparent queue where the
 // crystal draws: the renderers force depth priming, and outside the opaque queue the crowd needs
 // no depth prepass of its own.
 // Under the global _GameIdMask (the stills' ID render) it draws flat white.
@@ -13,15 +15,17 @@ Shader "Look/MonsterEdge"
         [HDR] _Tint ("Slot hue (linear)", Color) = (0.1, 0.8, 1.0, 1)
         _Core ("Glass (void.floor, linear)", Color) = (0.002, 0.002, 0.004, 1)
         [HDR] _Flash ("Flash (shatter.core, linear)", Color) = (1, 1, 1, 1)
-        _Rim ("Rim gain", Float) = 2.0
+        _Rim ("Rim gain", Float) = 5.5
         _RimPower ("Rim falloff", Float) = 4.0
         _Edge ("Edge gain", Float) = 2.6
         _EdgePx ("Edge width (px)", Float) = 1.25
         _Beat ("Edge lift on the beat", Float) = 0.3
         _Ring ("Ring light on rim and lines", Float) = 1.1
-        _CoreGlow ("Core at rest", Float) = 0.1
+        _CoreGlow ("Core at rest", Float) = 0.3
         _CoreFlare ("Core on the beat", Float) = 0.35
         _CoreSize ("Core radius (share of the body's)", Float) = 0.18
+        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 4
+        _OutlineBack ("Outline hull behind the body (share of its radius)", Float) = 0
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
         _Facets ("Faceting (unused)", Float) = 0.6
@@ -36,12 +40,13 @@ Shader "Look/MonsterEdge"
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint; half4 _Core; half4 _Flash;
             half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat; half _Ring;
-            half _CoreGlow; half _CoreFlare; half _CoreSize;
+            half _CoreGlow; half _CoreFlare; half _CoreSize; half _OutlinePx; half _OutlineBack;
             half _Gain; half _Peak; half _Facets;
         CBUFFER_END
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterEdge.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterOutline.hlsl"
         ENDHLSL
 
         Pass
@@ -105,6 +110,23 @@ Shader "Look/MonsterEdge"
                 color += _Flash.rgb * i.fx.x * LookFlash(LOOK_HIT_CALM) * (2.0 * lit + fres + 0.5 * Luminance(core));
                 return half4(MixFog(color, i.fogFactor), 1);
             }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
+            ZWrite On
+            Cull Front
+            HLSLPROGRAM
+            #pragma vertex outlineVert
+            #pragma fragment outlineFrag
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
+
+            OutlineVaryings outlineVert(MonsterAttributes v) { return LineOutlineVert(v, _OutlinePx, _OutlineBack); }
+
+            half4 outlineFrag(OutlineVaryings i) : SV_Target { return LineOutlineFrag(i, _Core.rgb); }
             ENDHLSL
         }
 

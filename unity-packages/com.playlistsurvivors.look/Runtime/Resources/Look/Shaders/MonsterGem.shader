@@ -3,8 +3,10 @@
 // the void and the grid behind it, split into the type's palette family, with reflected bands, a rim
 // and fine lines in the slot's hue and a core of trapped light that flares on the beat
 // (MonsterGem.hlsl, MonsterEdge.hlsl's EdgeCore). As an impulse ring passes (Impulse.hlsl's
-// ImpulseCrowd) a living monster hops and its bands, rim and lines take the ring's light. Drawn in
-// the transparent queue, after the camera's opaque texture is copied, with ZWrite: opaque on screen.
+// ImpulseCrowd) a living monster hops and its bands, rim and lines take the ring's light. A dark
+// outline hull (MonsterOutline.hlsl) in the unlit pass URP draws beside it parts a clump's touching
+// rims. Drawn in the transparent queue, after the camera's opaque texture is copied, with ZWrite:
+// opaque on screen.
 // Under the global _GameIdMask (the stills' ID render) it draws flat white.
 Shader "Look/MonsterGem"
 {
@@ -30,6 +32,8 @@ Shader "Look/MonsterGem"
         _CoreGlow ("Core at rest", Float) = 0.15
         _CoreFlare ("Core on the beat", Float) = 0.4
         _CoreSize ("Core radius (share of the body's)", Float) = 0.2
+        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 4
+        _OutlineBack ("Outline hull behind the body (share of its radius)", Float) = 0.25
     }
     SubShader
     {
@@ -42,12 +46,13 @@ Shader "Look/MonsterGem"
             half4 _Tint; half4 _FringeA; half4 _FringeB; half4 _Core; half4 _Flash;
             float _Refraction; half _Behind; half _Shine; half _ShineWidth; half _Sparkle; half _Far;
             half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat; half _Ring;
-            half _CoreGlow; half _CoreFlare; half _CoreSize;
+            half _CoreGlow; half _CoreFlare; half _CoreSize; half _OutlinePx; half _OutlineBack;
         CBUFFER_END
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterEdge.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterGem.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterOutline.hlsl"
         ENDHLSL
 
         Pass
@@ -113,6 +118,23 @@ Shader "Look/MonsterGem"
                 color += GemFlash(_Tint.rgb) * i.fx.x * LookFlash(LOOK_HIT_CALM) * (lit + 0.7 * shine + 0.4 * Luminance(core) + 0.05);
                 return half4(MixFog(color, i.fogFactor), 1);
             }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
+            ZWrite On
+            Cull Front
+            HLSLPROGRAM
+            #pragma vertex outlineVert
+            #pragma fragment outlineFrag
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
+
+            OutlineVaryings outlineVert(MonsterAttributes v) { return LineOutlineVert(v, _OutlinePx, _OutlineBack); }
+
+            half4 outlineFrag(OutlineVaryings i) : SV_Target { return LineOutlineFrag(i, _Core.rgb); }
             ENDHLSL
         }
 

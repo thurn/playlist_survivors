@@ -2,7 +2,9 @@
 // the crowd's style mesh skinned as every look skins it (MonsterCommon.hlsl), drawn as light added
 // over the world: lines in the type's palette hue, a thin rim and a faint fill (MonsterHologram.hlsl).
 // The first pass writes depth only, so the second adds each draw's front surfaces alone (the same
-// vertex function in both, so their depths match exactly). As an impulse ring passes (Impulse.hlsl's
+// vertex function in both, so their depths match exactly); the third, after them (URP draws a
+// material's unlit, forward and forward-only passes in that order), is a black outline hull
+// (MonsterOutline.hlsl) that parts a clump's touching rims. As an impulse ring passes (Impulse.hlsl's
 // ImpulseCrowd) a living monster hops and its lines and rim take the ring's light. In the transparent
 // queue where the crystal draws (outside the renderers' forced depth priming); casts no shadow, being
 // light. Under the global _GameIdMask (the stills' ID render) it draws flat white.
@@ -16,14 +18,16 @@ Shader "Look/MonsterHologram"
         _Fill ("Fill face-on", Float) = 0.03
         _FillRim ("Fill toward the silhouette", Float) = 0.08
         _Veil ("Fill opacity: how much it dims what is behind", Float) = 0.25
-        _Rim ("Rim gain", Float) = 2.0
+        _Rim ("Rim gain", Float) = 4.0
         _RimPower ("Rim falloff", Float) = 4.0
-        _Edge ("Line gain", Float) = 3.0
+        _Edge ("Line gain", Float) = 3.6
         _EdgePx ("Line width (px)", Float) = 1.25
         _Beat ("Line lift on the beat", Float) = 0.3
         _Sweep ("Beat band gain", Float) = 0.5
         _SweepWidth ("Beat band half-width (share of height)", Float) = 0.08
         _Ring ("Ring light on lines and rim", Float) = 1.1
+        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 4
+        _OutlineBack ("Outline hull behind the body (share of its radius)", Float) = 0
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
         _Facets ("Faceting (unused)", Float) = 0.6
@@ -38,12 +42,13 @@ Shader "Look/MonsterHologram"
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint; half4 _Flash;
             half _AllEdges; half _Fill; half _FillRim; half _Veil; half _Rim; half _RimPower;
-            half _Edge; half _EdgePx; half _Beat; half _Sweep; half _SweepWidth; half _Ring;
+            half _Edge; half _EdgePx; half _Beat; half _Sweep; half _SweepWidth; half _Ring; half _OutlinePx; half _OutlineBack;
             half _Gain; half _Peak; half _Facets; // MonsterCommon.hlsl's, unused here
         CBUFFER_END
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterHologram.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterOutline.hlsl"
 
         struct Varyings
         {
@@ -129,6 +134,23 @@ Shader "Look/MonsterHologram"
                 // fog, which takes neither's colour.
                 return half4(MixFogColor(color, 0, i.fogFactor), MixFogColor(_Veil.xxx, 0, i.fogFactor).x);
             }
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode" = "UniversalForwardOnly" }
+            ZWrite On
+            Cull Front
+            HLSLPROGRAM
+            #pragma vertex outlineVert
+            #pragma fragment outlineFrag
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
+
+            OutlineVaryings outlineVert(MonsterAttributes v) { return LineOutlineVert(v, _OutlinePx, _OutlineBack); }
+
+            half4 outlineFrag(OutlineVaryings i) : SV_Target { return LineOutlineFrag(i, 0); }
             ENDHLSL
         }
     }

@@ -16,9 +16,9 @@ Shader "Look/MonsterHologramShard"
         _Fill ("Fill face-on", Float) = 0.02
         _FillRim ("Fill toward the silhouette", Float) = 0.06
         _Veil ("Fill opacity: how much it dims what is behind", Float) = 0.1
-        _Rim ("Rim gain", Float) = 0.6
+        _Rim ("Rim gain", Float) = 1.2
         _RimPower ("Rim falloff", Float) = 5.0
-        _Edge ("Line gain", Float) = 1.8
+        _Edge ("Line gain", Float) = 2.2
         _EdgePx ("Line width (px)", Float) = 1.1
         _Beat ("Line lift when fresh", Float) = 0.6
         _Sweep ("Beat band gain (unused)", Float) = 0

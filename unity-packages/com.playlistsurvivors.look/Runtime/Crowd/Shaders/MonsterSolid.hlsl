@@ -2,15 +2,17 @@
 // solid), shared by its bodies (MonsterSolid.shader) and shards (MonsterSolidShard.shader): a
 // saturated self-lit body in the type's palette hue, shaded so it shows form (a soft light from
 // above the camera, each facet a step apart, and a darker falloff toward the silhouette), and a thin
-// dark outline in screen space drawn as an inverted hull, so two touching monsters of one type show
-// a dark seam between them. The beat (_SL_Pulse, the beat globals) lights a small hot spot where the
-// body faces the camera, never the whole body; a passing impulse ring (ImpulseCrowd) lifts the body
-// and lights it in the ring's colour; a hit lightens it toward shatter.core. Include after
-// MonsterCommon.hlsl, in a shader whose UnityPerMaterial CBUFFER declares the properties below.
+// dark outline in screen space drawn as an inverted hull (MonsterOutline.hlsl), so two touching
+// monsters of one type show a dark seam between them. The beat (_SL_Pulse, the beat globals) lights
+// a small hot spot where the body faces the camera, never the whole body; a passing impulse ring
+// (ImpulseCrowd) lifts the body and lights it in the ring's colour; a hit lightens it toward
+// shatter.core. Include after MonsterCommon.hlsl, in a shader whose UnityPerMaterial CBUFFER
+// declares the properties below.
 #ifndef LOOK_MONSTER_SOLID_INCLUDED
 #define LOOK_MONSTER_SOLID_INCLUDED
 
 #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
+#include "MonsterOutline.hlsl"
 
 // The CBUFFER's solid properties, set by SolidLook from the palette (linear):
 //   half4 _Tint;     the type's enemy slot (MonsterSlots)
@@ -86,27 +88,6 @@ float3 SolidImpulse(float3 root, inout float3 positionWS)
     positionWS.y += hop;
     float l = Luminance(light);
     return (_Tint.rgb + 0.25 * light / max(l, 1e-4)) * (_Impulse * l / (1 + l));
-}
-
-// The outline hull's clip position: the vertex pushed out by _OutlinePx pixels (scaled from 1080
-// rows to the target's height, so a supersampled capture keeps the width), the same width at any
-// distance, along its normal's projection bent halfway toward the direction from the body's
-// `centre` (a low-poly body's facets split their corners' normals, and pushed apart along them
-// alone the hull cracks at every crease). Drawn with front faces culled, the pushed-out back faces
-// show as a dark rim round the body and over whatever lies behind it.
-float4 SolidOutlineCS(float3 positionWS, float3 normalWS, float3 centre)
-{
-    float4 cs = TransformWorldToHClip(positionWS);
-    float3 away = positionWS - centre;
-    float3 dir = normalWS + (dot(away, away) > 1e-8 ? normalize(away) : 0);
-    float2 n = mul((float3x3)UNITY_MATRIX_VP, dir).xy;
-    float len = length(n);
-    if (len > 1e-5)
-    {
-        float px = _OutlinePx * max(1.0, _ScreenParams.y / 1080.0);
-        cs.xy += n / len * (2.0 * px / _ScreenParams.xy) * cs.w;
-    }
-    return cs;
 }
 
 #endif
