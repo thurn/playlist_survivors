@@ -1529,7 +1529,7 @@ except `baseline` also brings a post-processing look.
 - **`--no-trailer-look`** drops the grade, grain, dirt and lens hits, and
   keeps the run's supersampling.
 
-**Under a look (ps-wnj.6).** The crystal cut draws with its look preset's post
+**Under a look (ps-wnj.6).** The crystal cut and the neon action cut draw with their look preset's post
 stack ([neon-look.md, Post-processing stack](../design/neon-look.md#post-processing-stack)):
 every environment's night volume takes the stack's one profile, so no shot
 grade, section grade, style post look or trailer grain and dirt apply; the
@@ -1540,7 +1540,7 @@ flash at the option's `calm` share, structure breaks and formation smashes in
 full, and the formations' breaks, the grid's ripples and the horde's hit
 flashes peak only in a special moment
 ([neon-look.md, Restraint and special moments](../design/neon-look.md#restraint-and-special-moments)).
-The action cut keeps everything above.
+The plain action cut (`--trailer`, no look flag) keeps everything above.
 
 ## The Crystal Cut
 
@@ -1685,7 +1685,8 @@ zone tint under `hued-zones`, else the palette's `grid.pulse`):
   trailer's own rule), and its blur is noise against the run's restraint.
 - The cut to black at 117.3 and the fade are unchanged.
 
-The action cut keeps its near-white flash cuts and hard cuts.
+The plain action cut keeps its near-white flash cuts and hard cuts; the neon
+action cut takes the crystal cut's transitions.
 
 ### The crystal look
 
@@ -1866,6 +1867,58 @@ lava converge is the fragile one: with four streams its last bar thinned to
 [evidence/trailer/crystal](../../demo3d/evidence/trailer/crystal/README.md);
 the formations: [evidence/trailer/shatter](../../demo3d/evidence/trailer/shatter/README.md).
 
+## The Neon Action Cut
+
+`--trailer --look PRESET` plays the action cut on the look package
+(`trailer-action-neon.json`, ps-wnj.26): the crystal cut's world, crowd,
+shatter, post stack, grid floor, transitions and restraint, on the action
+cut's own shots. Plain `--trailer`, with no look flag, still plays the Synty
+action cut unchanged, the epic's "before"
+([neon-look.md, Decision 11](../design/neon-look.md#decisions)).
+
+```
+just demo3d --trailer --look edge --sound
+just trailer --out captures/trailer-action-edge.mp4 -- --trailer --look edge
+just trailer-looks action          # edge, solid, hologram and prism in turn
+```
+
+- **A file of its own.** Any look flag swaps `--trailer`'s default `action`
+  for `action-neon` (`DemoMain.UseLook`); `--trailer action-neon` names it
+  directly. The void staging changes every shot's ground, path, heading and
+  framing, so the neon cut is a second file rather than per-look overrides in
+  the first.
+- **The action cut's shots.** The same cuts, beats, combos, spells, duel,
+  formations (kinds, streams, mixes, on-screen counts), seed and dragon fight
+  (breath, sweep, breath) as `trailer-action.json`;
+  `TrailerTests.TheNeonActionCutIsTheActionCutInTheVoid` holds it to that
+  shot by shot.
+- **Re-staged the crystal cut's way** ([The void staging](#the-void-staging)):
+  every shot on the void's open ground, hosted by the forest; each turned by
+  its old heading into yaw 0 and centred (its path's and boss ground's box)
+  on the void, so it frames as it did; zones 0 to 3 each twice. No crystal
+  formations: those are the crystal cut's showcase.
+- **The camera grammar** ([The camera grammar](#the-camera-grammar)): one
+  heading and one framing per shot, the action cut's widths held for the
+  whole shot (shot 3's 42→47 m zoom is 47 m throughout, shot 5's 34 m 36 m
+  for its density).
+- **Its look** is the crystal cut's `look` block and any preset's
+  ([The crystal look](#the-crystal-look)).
+
+| # | Trailer s | Bars | Zone (the action cut's place) | View | Formation |
+|---|---|---|---|---|---|
+| 1 | 0.000–2.481 | 79–80 | 0 (crypt) | 20 m | Duel: 3 elites |
+| 2 | 2.481–14.868 | 81–88 | 1 (desert) | 44 m | Charge (560) |
+| 3 | 14.868–27.255 | 89–96 | 2 (lava) | 47 m | Converge, 4 streams (390) |
+| 4 | 27.255–39.642 | 97–104 | 3 (blossom) | 42 m | Vortex (490) |
+| 5 | 39.642–45.836 | 105–108 | 0 (neon) | 36 m | Charge (290) |
+| 6 | 45.836–48.932 | 109–110 | 1 (snow) | 34 m | Vortex (290) |
+| 7 | 48.932–52.029 | 111–112 | 2 (crypt) | 36 m | Converge, 3 streams (350) |
+| 8 | 52.029–59.0 | 113–117.2 | 3 (forest) | 34 m | The boss fight, a vortex round its arena (380) |
+
+**Outcome.** Every shot passes every check (`trailer --name action-neon
+--checks`) under dotnet and Unity's EditMode run. Evidence:
+[demo3d/evidence/look/action-neon](../../demo3d/evidence/look/action-neon/README.md).
+
 ## Command Line
 
 Trailer mode is one flag on the normal player:
@@ -1877,8 +1930,10 @@ just demo3d --trailer --sound --roster heroic
 ```
 
 `--trailer` takes an optional name, which defaults to `action`; `crystal`
-plays [the crystal cut](#the-crystal-cut). A following
-argument that starts with `--` is the next flag, not a name.
+plays [the crystal cut](#the-crystal-cut). With any look flag, `action`
+plays [the neon action cut](#the-neon-action-cut) (`action-neon`) instead,
+and says so in the log. A following argument that starts with `--` is the
+next flag, not a name.
 
 These work as in a normal run and apply to every shot:
 
@@ -1887,8 +1942,8 @@ These work as in a normal run and apply to every shot:
   crystal cut's look palette instead ([neon-look.md](../design/neon-look.md),
   Flags).
 - **The look flags** (`--look`, the axis flags, `--beat-ripple`): the crystal
-  cut's look preset, logged at start (`Look: ...`). The action cut ignores
-  them.
+  cut's and the neon action cut's look preset, logged at start (`Look: ...`).
+  Any of them turns `--trailer` (the action cut) into the neon action cut.
 - **`--roster <name>`:** picks the roster set.
 - **`--monster-style <name>`:** picks the horde's style. As today, a roster
   set can't take a style other than `baseline`.
@@ -2217,3 +2272,15 @@ Judge:
   and the horde pouring through where it stood. Judge whether one every
   three to five seconds is the centrepiece without wearing thin.
 - **Darkness.** The crypt's two shots should read as dark as the others.
+
+**The neon action cut.** `just trailer-looks action` (or `just demo3d
+--trailer --look edge --sound`, then `solid`, `hologram`, `prism`). Judge:
+
+- **The same trailer.** Beside `captures/trailer.mp4` (the plain action cut),
+  every shot should read as the same moment: the duel, the drop's charge, the
+  lava streams, the vortices, the dragon's breath, sweep and breath, the final
+  slam on 117.1.
+- **One world.** No shot should show the void's edge or a hole in the horde;
+  the cuts flash in the incoming zone's colour, the soft ones only wipe.
+- **Restraint.** The hero reads first, the horde second, the grid last; only
+  the drop's cuts, the shatters and the slams flash.

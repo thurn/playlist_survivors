@@ -120,6 +120,16 @@ trailer *args: demo3d-build
     [ -z "$out" ] || set -- --out captures/trailer.mp4 "$@"
     {{tools}} demo3d trailer --backend {{backend}} "$@"
 
+# Capture a trailer in each look preset to captures/trailer-CUT-PRESET.mp4: the crystal cut, or `just trailer-looks action` the neon action cut; player flags after the cut
+[group('demo3d')]
+trailer-looks cut="crystal" *args: demo3d-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cut="$1"; shift
+    for look in edge solid hologram prism; do
+        {{tools}} demo3d trailer --backend {{backend}} --out "captures/trailer-$cut-$look.mp4" -- --trailer "$cut" --look "$look" "$@"
+    done
+
 # Build the 2D demo (setting up first if needed) and play it at 1080p, with player flags
 [group('demo2d')]
 demo2d *args: demo2d-build

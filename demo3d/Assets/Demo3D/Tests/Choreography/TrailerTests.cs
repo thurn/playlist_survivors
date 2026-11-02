@@ -740,6 +740,59 @@ namespace Demo3D.Choreography.Tests
         }
 
         /// <summary>
+        /// The neon action cut (trailer.md, "The Neon Action Cut") is the action cut re-staged in the void: every shot on
+        /// the void's open ground (one host, the four zones each twice) with the crystal cut's look, passing the trailer's
+        /// checks, the camera grammar among them; and each shot the action cut's, cut, beats, combo, spells, duel,
+        /// formation and dragon fight alike, its path and boss ground the action cut's turned and moved as one (every
+        /// distance between them kept).
+        /// </summary>
+        [Test]
+        public void TheNeonActionCutIsTheActionCutInTheVoid()
+        {
+            Trailer t = Fixtures.NeonActionCut.Trailer, action = Fixtures.Trailer;
+            Assert.That(t.Environments, Is.EquivalentTo(new[] { "forest" }));
+            Assert.That(Array.TrueForAll(t.Shots, s => s.Layout == "void"), "every shot on the void's open ground");
+            Assert.That(Array.ConvertAll(t.Shots, s => s.Zone), Is.EqualTo(new[] { 0, 1, 2, 3, 0, 1, 2, 3 }));
+            Assert.That((t.Style.MonsterStyle, t.Style.StyleTune), Is.EqualTo((Fixtures.CrystalCut.Style.MonsterStyle, Fixtures.CrystalCut.Style.StyleTune)));
+            Assert.That((t.Song, t.Base, t.StartS, t.BlackAt, t.FadeOutS, t.Seed), Is.EqualTo((action.Song, action.Base, action.StartS, action.BlackAt, action.FadeOutS, action.Seed)));
+            Assert.That(t.Shots.Length, Is.EqualTo(action.Shots.Length));
+            var problems = new List<string>();
+            for (int i = 0; i < t.Shots.Length; i++)
+            {
+                TrailerShot s = t.Shots[i], a = action.Shots[i];
+                string shot = "shot " + s.Number + " ";
+                Assert.That((s.Cut, s.End, s.PrerollBeats, s.ShapeScale, s.DensityCap, s.Boss), Is.EqualTo((a.Cut, a.End, a.PrerollBeats, a.ShapeScale, a.DensityCap, a.Boss)), shot);
+                Assert.That(s.Combo, Is.EqualTo(a.Combo), shot + "combo");
+                Assert.That(s.Spells, Is.EqualTo(a.Spells), shot + "spells");
+                Assert.That(Mix(s.Duel), Is.EqualTo(Mix(a.Duel)), shot + "duel");
+                Assert.That(s.Formation?.Kind, Is.EqualTo(a.Formation?.Kind), shot + "formation");
+                Assert.That((s.Formation?.Streams, s.Formation?.OnScreen, Mix(s.Formation?.Mix)), Is.EqualTo((a.Formation?.Streams, a.Formation?.OnScreen, Mix(a.Formation?.Mix))), shot + "formation");
+                Assert.That(s.Crystals, Is.Empty, shot + "no crystal formations: those are the crystal cut's");
+                Assert.That(Attacks(s.BossFight), Is.EqualTo(Attacks(a.BossFight)), shot + "the dragon's attacks");
+                List<Vector2> ours = Ground(s), theirs = Ground(a);
+                Assert.That(ours.Count, Is.EqualTo(theirs.Count), shot + "path");
+                for (int p = 0; p < ours.Count; p++)
+                    for (int q = p + 1; q < ours.Count; q++)
+                        Assert.That(Vector2.Distance(ours[p], ours[q]), Is.EqualTo(Vector2.Distance(theirs[p], theirs[q])).Within(0.15f), shot + "path and boss ground turned and moved as one");
+                foreach (KeyValuePair<string, List<string>> check in TrailerChecks.All(t, i, Fixtures.NeonActionCut.Shot(i), Fixtures.NeonActionCut.ShotData(i))) problems.AddRange(check.Value);
+            }
+            Assert.That(problems, Is.Empty, Report(problems));
+        }
+
+        static string Mix(MixEntry[] mix) => mix == null ? null : string.Join(",", Array.ConvertAll(mix, m => m.Type + "=" + m.Weight.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+        static string Attacks(BossFightScript fight) => fight == null ? null : string.Join(",", Array.ConvertAll(fight.Attacks, k => k.Kind + "@" + k.Windup + "-" + k.Impact));
+
+        /// <summary>A shot's hero path, then its boss ground, in metres.</summary>
+        static List<Vector2> Ground(TrailerShot s)
+        {
+            var points = new List<Vector2>();
+            if (s.Path != null) foreach (LayoutPoint p in s.Path.Via) points.Add(p.At);
+            if (s.BossFight != null) points.Add(s.BossFight.At.At);
+            return points;
+        }
+
+        /// <summary>
         /// A crystal formation blocks the horde until the hero's blow smashes it, and then the horde walks where it stood:
         /// no monster's body enters its footprint before its break, and some monster's centre stands in it after.
         /// </summary>

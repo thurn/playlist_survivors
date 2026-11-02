@@ -117,26 +117,46 @@ namespace Demo3D.Choreography.Tests
             return tl;
         }
 
-        static Trailer crystalCut;
-        static Dictionary<string, ChoreographyData> crystalEnvironments;
-        static readonly Dictionary<int, Timeline> crystalShots = new Dictionary<int, Timeline>();
+        /// <summary>A checked-in trailer file besides the action cut, its shots' run inputs and timelines, each loaded once.</summary>
+        public sealed class Cut
+        {
+            readonly string name;
+            Trailer trailer;
+            Dictionary<string, ChoreographyData> environments;
+            readonly Dictionary<int, Timeline> shots = new Dictionary<int, Timeline>();
+
+            public Cut(string name) { this.name = name; }
+
+            public Trailer Trailer => trailer ?? (trailer = ChoreographyFiles.LoadTrailer(Root, name, out environments));
+
+            /// <summary>A shot's run inputs (its ground's).</summary>
+            public ChoreographyData ShotData(int index)
+            {
+                Trailer t = Trailer;   // loads the environments with it
+                return environments[t.Shots[index].Ground];
+            }
+
+            /// <summary>A shot's timeline (by index from 0), built once.</summary>
+            public Timeline Shot(int index)
+            {
+                if (!shots.TryGetValue(index, out Timeline tl)) shots[index] = tl = ChoreographyFiles.BuildShot(Root, Trailer, index, ShotData(index));
+                return tl;
+            }
+        }
+
+        static readonly Cut crystal = new Cut("crystal");
 
         /// <summary>The checked-in crystal cut (trailer-crystal.json, trailer.md "The Crystal Cut").</summary>
-        public static Trailer CrystalCut => crystalCut ?? (crystalCut = ChoreographyFiles.LoadTrailer(Root, "crystal", out crystalEnvironments));
+        public static Trailer CrystalCut => crystal.Trailer;
 
         /// <summary>A crystal cut shot's run inputs (the void's open ground).</summary>
-        public static ChoreographyData CrystalShotData(int index)
-        {
-            Trailer t = CrystalCut;
-            return crystalEnvironments[t.Shots[index].Ground];
-        }
+        public static ChoreographyData CrystalShotData(int index) => crystal.ShotData(index);
 
         /// <summary>A crystal cut shot's timeline (by index from 0), built once.</summary>
-        public static Timeline CrystalShot(int index)
-        {
-            if (!crystalShots.TryGetValue(index, out Timeline tl)) crystalShots[index] = tl = ChoreographyFiles.BuildShot(Root, CrystalCut, index, CrystalShotData(index));
-            return tl;
-        }
+        public static Timeline CrystalShot(int index) => crystal.Shot(index);
+
+        /// <summary>The checked-in neon action cut (trailer-action-neon.json, trailer.md "The Neon Action Cut").</summary>
+        public static readonly Cut NeonActionCut = new Cut("action-neon");
 
         /// <summary>The timeline a test case names: "song", "song-overdrive", "song-walls" or a stress scene.</summary>
         public static Timeline Named(string name) =>

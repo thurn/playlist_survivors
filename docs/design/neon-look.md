@@ -130,8 +130,11 @@ record their reasons in bead notes.
     designed transitions.
 11. **Replace crystal, keep action.** The crystal cut and `game/` move fully
     onto the package and their old crystal look code is deleted. demo3d's
-    action cut and its Synty-environment looks stay untouched as the
-    "before" reference.
+    action cut gains an opt-in neon look (ps-wnj.26, operator request
+    2026-11-01): with any look flag, `--trailer` plays the neon action cut
+    (`trailer-action-neon.json`, [The Trailer](#the-trailer)). Plain
+    `--trailer`, with no look flag, is the plain action cut: it and its
+    Synty-environment looks stay untouched as the "before" reference.
 12. **Style guide plus metrics** judge cohesion (see
     [Checks and Evidence](#checks-and-evidence)).
 13. **Sound**: only the new effects get sounds (spawn warp, death pop, grid
@@ -195,7 +198,8 @@ classic's monster look since ps-wnj.13, reads the inner glow: the other looks
 look the same in both players). Where the forks
 diverged the crystal cut took the game's: GPU shards for PhysX, LODs, the
 half-tinted hit flash ([crowd.md](../tech-demo-3d/crowd.md#monster-styles)). The
-action cut and the other Synty styles keep demo3d's own crowd (Decision 11).
+plain action cut and the other Synty styles keep demo3d's own crowd (Decision
+11); the neon action cut draws through the package like the crystal cut.
 
 Where the forks have diverged (game's shards on compute, its regrowth, its heard-time
 strikes), the package takes the game's version: it is the one that has to
@@ -204,7 +208,7 @@ hold a frame budget.
 What stays in each project: playback and the choreographer (demo3d), the sim,
 presenters and HUD (game), and the trailer's shot system. demo3d's action cut
 keeps its own copies of anything it needs that the package changes, so the
-action cut's look does not move.
+plain action cut's look does not move.
 
 ### Palettes
 
@@ -297,10 +301,12 @@ recipe takes one or many:
 
 ```sh
 just trailer --out captures/trailer-neon-edge.mp4 -- --trailer crystal --look edge
-just trailer-looks                # all four presets, one capture each
+just trailer-looks                # all four presets, captures/trailer-crystal-PRESET.mp4
+just trailer-looks action         # the neon action cut, captures/trailer-action-PRESET.mp4
 ```
 
-`trailer-looks` is a new recipe; the exact shape is the executor's.
+`trailer-looks [CUT] [player flags]` (ps-wnj.26) captures one cut in edge,
+solid, hologram and prism in turn.
 
 How the package implements them (ps-wnj.3):
 
@@ -337,8 +343,9 @@ How the package implements them (ps-wnj.3):
   void world retires. Game's tests check no arena palette shares a look
   palette's name.
 - `game/` resolves and applies the look at boot in every launch. demo3d does
-  so for any trailer but the action cut; the action cut and the song outside
-  a trailer ignore the look flags and say so.
+  so for any trailer but the plain action cut: `--trailer` (the action cut)
+  with any look flag plays the neon action cut in its place and says so; the
+  song outside a trailer ignores the look flags and says so.
 
 ## The Axes
 
@@ -658,7 +665,7 @@ In the package (ps-wnj.7):
   structure breaks, not regrowths) and marks each ring as an `Impulse` moment
   for `game beat`. **demo3d's crystal cut** loads each shot's rings at its cut
   (`ShotImpulses`: the hero's blows weighted by `BlowFeel`, the shattering
-  deaths, the `BreakMoments`). The action cut has neither.
+  deaths, the `BreakMoments`). The plain action cut has neither.
 
 Evidence is in
 [game/evidence/look/impulse](../../game/evidence/look/impulse/README.md).
@@ -722,7 +729,7 @@ How the package implements it (ps-wnj.6):
   choreography); `LensHitFeature` and its shader moved in.
 - **demo3d's crystal cut** puts the stack's profile on every environment's
   night volume, with no shot, section or style grade and no `TrailerLook`
-  grain and dirt; the action cut and the song keep `NightLook`,
+  grain and dirt; the plain action cut and the song keep `NightLook`,
   `TrailerGrade` and the trailer dressing unchanged. **game** builds its
   arena's volume from the stack and keeps `NightLook` for fog and ambient
   only; its zone grades still ride on top until the void world's zones.
@@ -812,7 +819,7 @@ and [demo3d/evidence/look/vfx](../../demo3d/evidence/look/vfx/README.md).
 The death flourish and the spawn warp (ps-wnj.16; the package's
 `Effects/Flourishes.cs`, the selections' `death-pop`, `death-ring` and
 `spawn-warp`) come with either vfx option and only with one: `--vfx classic`
-and the action cut draw and sound neither. Both are tinted per spawn by the
+and the plain action cut draw and sound neither. Both are tinted per spawn by the
 monster's gem and sized by its body, and kept faint (the operator's restraint):
 
 - **The death flourish**: on the death's impact frame, a soft pop a body wide on
@@ -896,7 +903,7 @@ How the package implements it (ps-wnj.14; `CrowdMotion`, the layers
 - **The hero** takes the same step spring on its hops and dashes, on the CPU
   (`CrowdMotion.StepSpring`): game's `HeroMotion` and `HeroRig` scale and tilt
   the knight, demo3d's crystal cut its `StockCrowd` hero (`DemoMain.HeroSpring`;
-  the action cut never sets it).
+  the plain action cut never sets it).
 - **The ripple** (`--beat-ripple`, off in every preset) delays each step by
   its plant's distance from the hero, up to a sixteenth note (a quarter beat)
   at 24 m (`CrowdMotion.RippleDelay`): the game shifts the step event's times
@@ -1016,7 +1023,7 @@ kill too), accents, anchors, glints on structures, beats.
   moment's exposure, aberration and saturation spike is that share of its
   own. Game's `FeelMoments` treats breaks, finishers and drops as special;
   demo3d's `PostFeel` its structure breaks (accents, anchors and hits calm).
-  The night feel (`--look classic`) and the action cut keep every flash
+  The night feel (`--look classic`) and the plain action cut keep every flash
   (calm 1).
 
 **What is calmer everywhere**, special moment or not:
@@ -1103,6 +1110,25 @@ What shipped (ps-wnj.17; trailer.md, The Crystal Cut):
   finale 32 m), no zoom within a shot.
 - The per-shot grades went with the environments they balanced. Evidence:
   [demo3d/evidence/look/restage](../../demo3d/evidence/look/restage/README.md).
+
+**The neon action cut** (ps-wnj.26; trailer.md, The Neon Action Cut): the
+action cut on the package, for the operator's request of 2026-11-01. It is a
+trailer file of its own, `trailer-action-neon.json`, which `--trailer` plays
+in place of `trailer-action.json` whenever a look flag is given (and
+`--trailer action-neon` names directly). A separate file, because the void
+staging changes every shot's ground, path, heading and framing; one file with
+per-look overrides would have doubled every shot's fields. It is the action
+cut re-staged the crystal cut's way: the same shots, beats, combos, spells,
+duel, formations and dragon fight, each shot turned by its old heading into
+yaw 0 and centred on the void, the four zones each twice, one framing per
+shot (20, 44, 47, 42, 36, 34, 36, 34 m: the action cut's own widths, held
+for the whole shot), the crystal cut's look block, and its transitions,
+impulse field, special-moment tier and every look axis. It has no crystal
+formations: the crystal cut is the formations' showcase, this the action
+cut's horde and dragon. A test holds it to the action cut shot by shot
+(`TheNeonActionCutIsTheActionCutInTheVoid`). Capture all four presets with
+`just trailer-looks action`; evidence in
+[demo3d/evidence/look/action-neon](../../demo3d/evidence/look/action-neon/README.md).
 
 ## The Game
 
@@ -1249,8 +1275,8 @@ executors resolve conflicts.
 - Breaks and deaths still pay off on the impact frame; beat steps still land
   on the beat frame unless `--beat-ripple` is passed.
 - `game perf` holds the budget in every preset; `game beat` passes.
-- demo3d's action cut is unchanged (its checks pass; its stills match those
-  taken before the epic).
+- demo3d's plain action cut (`--trailer`, no look flag) is unchanged (its
+  checks pass; its stills match those taken before the epic).
 - Nothing vendor-derived is committed.
 - trailer.md, unity-game.md, effects.md and this document describe what
   shipped; the operator-pending rows are filed.

@@ -27,6 +27,13 @@ namespace Demo3D.Runtime.Playback
         public const double CutFadeS = 0.06;
         /// <summary>How close to a song map accent a cut lands to flash (the accents are curated, the cuts on the grid).</summary>
         const double FlashCutToleranceS = 0.01;
+        /// <summary>The action cut (trailer-action.json), `--trailer`'s default: the Synty "before" without a look flag.</summary>
+        const string ActionCut = "action";
+        /// <summary>
+        /// The action cut on the look package (trailer-action-neon.json, trailer.md "The Neon Action Cut"): its shots
+        /// re-staged in the void, played in its place under any look flag.
+        /// </summary>
+        const string NeonActionCut = "action-neon";
 
         /// <summary>The flags a trailer rejects, and why: each controls the song's own timeline or the player's residency.</summary>
         static readonly (string flag, string why)[] TrailerConflicts =
@@ -101,15 +108,21 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The look package's preset (neon-look.md, Flags) for the crystal cut, from `--look` and the axis flags, its
-        /// post stack in place of the environments' night grades (<see cref="PreparePost"/>), its impulse field and its
-        /// world's grid floor (which replaces each environment's ground once it is ready). The action cut, and the song
-        /// outside a trailer, keep their Synty look (the epic's "before") and ignore them.
+        /// The look package's preset (neon-look.md, Flags) for a trailer on the package, from `--look` and the axis flags,
+        /// its post stack in place of the environments' night grades (<see cref="PreparePost"/>), its impulse field and
+        /// its world's grid floor (which replaces each environment's ground once it is ready). The action cut with a look
+        /// flag plays its neon cut (<see cref="NeonActionCut"/>, re-staged in the void); with none it keeps its Synty look
+        /// (the epic's "before"), as the song outside a trailer does, which ignores the flags.
         /// </summary>
         void UseLook()
         {
             var flags = PS.Look.LookFlags.Current;
-            if (_flags.Trailer != null && _flags.Trailer != "action")
+            if (_flags.Trailer == ActionCut && flags.Any)
+            {
+                _flags.Trailer = NeonActionCut;
+                Debug.Log($"DemoMain: the action cut with a look flag plays its neon cut, --trailer {NeonActionCut}");
+            }
+            if (_flags.Trailer != null && _flags.Trailer != ActionCut)
             {
                 var look = PS.Look.ResolvedLook.Resolve(flags);
                 look.Apply();
@@ -121,8 +134,7 @@ namespace Demo3D.Runtime.Playback
                 _floor = PS.Look.GridFloor.For(look);
                 if (_world != null) _world.Floor = _floor;
             }
-            else if (flags.Any) Debug.Log("DemoMain: the look flags are for the crystal cut; " +
-                                          (_flags.Trailer != null ? "the action cut" : "the song") + " keeps its look");
+            else if (flags.Any) Debug.Log("DemoMain: the look flags are for the trailers; the song keeps its look");
         }
 
         /// <summary>
