@@ -220,6 +220,19 @@ Techniques that tend to work:
   hand, a blade draws as a solid bright bar; turned a quarter on its grip,
   as an outlined dark cleaver. Keep its flats flat: folded along the middle,
   the half turned away lights in the rim (the big ork).
+- **Look at the head from behind too**: walking away, the 60-degree
+  camera shows whatever stands in front of the skull above it. Ears, tusks
+  reaching past the snout's top and a long jaw read there as horns, a crown
+  or a cat's ears, and a long skull as a box. Keep what juts forward inside
+  the snout's outline, and taper the head from a wide jaw to a narrow nape,
+  an ape's from behind (the troll).
+- **Put a hunch the clips don't have in the mesh**: the elites walk with
+  upright clips, so the troll's hump rises behind its neck and its head is
+  sunk and thrust forward on the head bone. Draw the back as a few big
+  planes (a spine ridge and one plane each side); lines over the shoulder
+  blades and round the hump tiled a tortoise's shell. Keep the hump's crest
+  outlined: leant normals dim the rim there, so a ridge over an open crest
+  stood up like an antenna (the troll).
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
