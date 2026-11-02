@@ -1,0 +1,25 @@
+{
+  "gate": 0.2,
+  "beatsPerBar": 4,
+  "strongBeatWindowS": 0.05,
+  "judgement": {
+    "beatS": 0.08,
+    "halfBeatS": 0.06,
+    "strongOnsetS": 0.06,
+    "playedWithinS": 0.05
+  },
+  "cadence": {
+    "targetS": 1.0,
+    "beats": [1, 2, 4],
+    "holdWithin": 0.08,
+    "fallbackS": 1.0
+  },
+  "quiet": {
+    "silenceEnergy": 0.1,
+    "silenceS": 0.75,
+    "beatlessS": 2.0
+  },
+  "telegraph": {
+    "beatlessBeatS": 0.5
+  }
+}

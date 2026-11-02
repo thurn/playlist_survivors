@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The sim's Unity-free sources, as Unity compiles them (the Champions.Sim assembly). -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>Champions.Sim</RootNamespace>
+    <!-- Optimized in every configuration, so `dotnet test` (Debug by default) runs the sim as a
+         player build would. -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/Champions/Sim/**/*.cs" />
+  </ItemGroup>
+</Project>

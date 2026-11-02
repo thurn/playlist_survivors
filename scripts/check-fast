@@ -16,6 +16,7 @@
 #   replay and sweep commands and evidence harnesses built, when the sim, its arena layout or its content (game/Content/) changed.
 #   herocap's recipe tests (dot and line faces, one recipe per atlas) when herocap/ or the survivors
 #   roster changed.
+# - Rhythm Champions' sim tests (rhythm_champions/dotnet/) when its sim, content or sessions changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
@@ -109,6 +110,12 @@ if changes_game_sim && [ -d game/dotnet/PS.Game.Sim.Tests ]; then
   dotnet build game/dotnet/PS.Game.Sweep --nologo -v q
   # The evidence harnesses (game/evidence/*/*.csproj) build on the sim too: outside the checks they rot.
   for p in game/evidence/*/*/*.csproj; do [ -f "$p" ] && dotnet build "$p" --nologo -v q; done
+fi
+
+# Rhythm Champions' sim (rhythm_champions/dotnet): its tests, the recorded sessions' replays among them, and
+# the replay tool built, when the sim, its tests, the content or the sessions changed.
+if changes_match '^rhythm_champions/(Assets/Champions/Sim/|dotnet/|Content/|sessions/)'; then
+  dotnet test rhythm_champions/dotnet --nologo -v q
 fi
 
 echo "check-fast: passed in $(( $(date +%s) - started )) s"

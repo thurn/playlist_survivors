@@ -1,0 +1,197 @@
+using System;
+
+namespace Champions.Sim
+{
+    /// <summary>
+    /// The belief stream as the sim holds it: entries that have arrived but are not yet known, and
+    /// per kind, the entries revealed so far. Causality lives here (plan.md, "The Sim", Shape): an
+    /// entry is accepted as soon as it arrives and revealed only when the sim reaches its known-at
+    /// time, which the log keeps beside the entry (<see cref="KnownAt"/>). Rules read only the
+    /// revealed lists.
+    ///
+    /// Revealed entries keep their reveal order, which is content order in practice: the plugin
+    /// stamps in emission order. Committed beats and ticks must be revealed in increasing
+    /// <see cref="StreamEntry.T"/>, since the rules index them as grids; one that is not is dropped
+    /// and counted in <see cref="Dropped"/>.
+    /// </summary>
+    public sealed class BeliefLog
+    {
+        struct Pending
+        {
+            public StreamEntry Entry;
+            public double KnownAt;
+            public long Seq;
+        }
+
+        const int KindCount = (int)EntryKind.Timbre + 1;
+
+        readonly StructList<Pending> heap;
+        readonly StructList<StreamEntry> arrived;
+        readonly StructList<StreamEntry>[] revealed = new StructList<StreamEntry>[KindCount];
+        readonly StructList<double>[] revealedKnownAt = new StructList<double>[KindCount];
+        readonly StructList<EntryRecord> accepted;
+        long seq;
+
+        public BeliefLog(SimConfig config)
+        {
+            heap = new StructList<Pending>(config.EntryCapacity);
+            arrived = new StructList<StreamEntry>(256);
+            int all = 0;
+            for (int k = 1; k < KindCount; k++)
+            {
+                int cap = (EntryKind)k == EntryKind.Tick ? config.TickCapacity
+                    : (EntryKind)k == EntryKind.Beat || (EntryKind)k == EntryKind.Onset ? config.BeatCapacity
+                    : (EntryKind)k == EntryKind.HindsightBeat ? config.HindsightCapacity
+                    : config.SparseCapacity;
+                revealed[k] = new StructList<StreamEntry>(cap);
+                revealedKnownAt[k] = new StructList<double>(cap);
+                all += cap;
+            }
+            accepted = new StructList<EntryRecord>(all);
+        }
+
+        /// <summary>Entries dropped because they were revealed out of content order (beats and ticks).</summary>
+        public int Dropped { get; private set; }
+
+        /// <summary>Entries accepted but not yet known.</summary>
+        public int PendingCount => heap.Count + arrived.Count;
+
+        /// <summary>The earliest known-at time among the pending entries (infinity when none).</summary>
+        public double NextKnownAt => heap.Count > 0 ? heap[0].KnownAt : double.PositiveInfinity;
+
+        public ReadOnlySpan<StreamEntry> Revealed(EntryKind kind) => revealed[Index(kind)].AsSpan();
+        public int Count(EntryKind kind) => revealed[Index(kind)].Count;
+        public ref readonly StreamEntry Get(EntryKind kind, int i) => ref revealed[Index(kind)][i];
+
+        /// <summary>When revealed entry <paramref name="i"/> of <paramref name="kind"/> became known.</summary>
+        public double KnownAt(EntryKind kind, int i) => revealedKnownAt[Index(kind)][i];
+
+        /// <summary>
+        /// Every entry accepted, in the order it arrived: when the sim took it and its final known-at
+        /// time. A session records these; a replay gives each entry at the same time with the same
+        /// known-at (<see cref="SessionReplay"/>).
+        /// </summary>
+        public ReadOnlySpan<EntryRecord> Accepted => accepted.AsSpan();
+
+        public ReadOnlySpan<StreamEntry> Beats => revealed[(int)EntryKind.Beat].AsSpan();
+        public ReadOnlySpan<StreamEntry> Ticks => revealed[(int)EntryKind.Tick].AsSpan();
+
+        static int Index(EntryKind kind)
+        {
+            int k = (int)kind;
+            if (k < 1 || k >= KindCount) throw new ArgumentOutOfRangeException(nameof(kind), kind, "not a stream kind");
+            return k;
+        }
+
+        static void Validate(in StreamEntry e)
+        {
+            Index(e.Kind);
+            if (double.IsNaN(e.T) || double.IsInfinity(e.T)) throw new ArgumentException("an entry's t must be finite");
+        }
+
+        /// <summary>An arriving entry, known from <c>max(Stamp + B, frontier)</c> once its frame settles.</summary>
+        internal void Arrive(in StreamEntry e)
+        {
+            Validate(e);
+            if (double.IsNaN(e.Stamp) || double.IsInfinity(e.Stamp)) throw new ArgumentException("an entry's stamp must be finite");
+            arrived.Add(e);
+        }
+
+        /// <summary>A replayed entry with its recorded known-at time, which must not be in the past.</summary>
+        internal void AddKnown(in StreamEntry e, double knownAt, double now)
+        {
+            Validate(e);
+            if (double.IsNaN(knownAt)) throw new ArgumentException("a replayed entry needs its known_at");
+            if (knownAt < now - 1e-9)
+                throw new ArgumentException($"entry known at {knownAt} added after the sim reached {now}");
+            Push(e, knownAt, now);
+        }
+
+        /// <summary>
+        /// Settles the frame's arrivals: each is known from <c>max(Stamp + budget, frontierEnd)</c>,
+        /// <paramref name="frontierEnd"/> being the frontier at the end of the frame they arrived in,
+        /// and <paramref name="now"/> the sim's time, where the frame starts.
+        /// </summary>
+        internal void SettleArrivals(double budget, double frontierEnd, double now)
+        {
+            for (int i = 0; i < arrived.Count; i++)
+            {
+                ref readonly var e = ref arrived[i];
+                Push(e, Math.Max(e.Stamp + budget, frontierEnd), now);
+            }
+            arrived.Clear();
+        }
+
+        /// <summary>Reveals every pending entry known at or before <paramref name="upTo"/>; returns how many.</summary>
+        internal int Reveal(double upTo)
+        {
+            int n = 0;
+            while (heap.Count > 0 && heap[0].KnownAt <= upTo)
+            {
+                var e = heap[0].Entry;
+                double knownAt = heap[0].KnownAt;
+                PopTop();
+                var list = revealed[(int)e.Kind];
+                bool grid = e.Kind == EntryKind.Beat || e.Kind == EntryKind.Tick;
+                if (grid && list.Count > 0 && e.T <= list.Last.T + 1e-9)
+                {
+                    Dropped++;
+                    continue;
+                }
+                list.Add(e);
+                revealedKnownAt[(int)e.Kind].Add(knownAt);
+                n++;
+            }
+            return n;
+        }
+
+        // A binary min-heap on (KnownAt, arrival order).
+
+        static bool Before(in Pending a, in Pending b) =>
+            a.KnownAt < b.KnownAt || (a.KnownAt == b.KnownAt && a.Seq < b.Seq);
+
+        void Push(in StreamEntry e, double knownAt, double now)
+        {
+            accepted.Add(new EntryRecord { Taken = now, KnownAt = knownAt });
+            heap.Add(new Pending { Entry = e, KnownAt = knownAt, Seq = seq++ });
+            int i = heap.Count - 1;
+            while (i > 0)
+            {
+                int parent = (i - 1) >> 1;
+                if (!Before(heap[i], heap[parent])) break;
+                (heap[i], heap[parent]) = (heap[parent], heap[i]);
+                i = parent;
+            }
+        }
+
+        void PopTop()
+        {
+            int last = heap.Count - 1;
+            heap[0] = heap[last];
+            heap.RemoveLast();
+            int i = 0;
+            int n = heap.Count;
+            while (true)
+            {
+                int l = 2 * i + 1, r = l + 1, m = i;
+                if (l < n && Before(heap[l], heap[m])) m = l;
+                if (r < n && Before(heap[r], heap[m])) m = r;
+                if (m == i) break;
+                (heap[i], heap[m]) = (heap[m], heap[i]);
+                i = m;
+            }
+        }
+    }
+
+    /// <summary>
+    /// An entry as the sim accepted it (plan.md, "Sessions and replay"): <see cref="Taken"/> is
+    /// the sim's time when it took the entry (the frontier its frame started from), and
+    /// <see cref="KnownAt"/> its final known-at time, <c>max(stamp + B, frontier)</c> for a live
+    /// arrival. A session records both; a replay adds the entry at <see cref="Taken"/>.
+    /// </summary>
+    public struct EntryRecord
+    {
+        public double Taken;
+        public double KnownAt;
+    }
+}

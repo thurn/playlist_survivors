@@ -1,0 +1,17 @@
+{
+  "format": "rhythm-champions-session",
+  "version": 1,
+  "build": "test",
+  "runtime": ".NET 10.0.7",
+  "platform": "",
+  "source": "dotnet/Champions.Sim.Tests SessionTests.LiveRun: a synthetic fixture song, no audio",
+  "flags": [],
+  "seed": 21,
+  "startTime": 0,
+  "start": "OnControl",
+  "end": 60,
+  "hash": "495A453F21ADF112",
+  "events": 230,
+  "entries": 1696,
+  "inputs": 20
+}

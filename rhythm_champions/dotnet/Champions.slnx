@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Champions.Replay/Champions.Replay.csproj" />
+  <Project Path="Champions.Sim.Tests/Champions.Sim.Tests.csproj" />
+  <Project Path="Champions.Sim/Champions.Sim.csproj" />
+</Solution>
