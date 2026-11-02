@@ -374,9 +374,14 @@ def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:
     structures = np.zeros((h, w), dtype=bool)
     structures[0:64, 256:320] = True  # a lit structure: not floor
     img[0:64, 256:320] = 200
-    m = look.mask_rules(img, monsters, structures, top_down(w, h))
+    effects = np.zeros((h, w), dtype=bool)
+    effects[100:110, 0:320] = True  # a slam's ring on the floor (3% of it): drawn on it, not of it
+    img[100:110, 0:320] = 160
+    m = look.mask_rules(img, monsters, structures, top_down(w, h), effects)
     lit = float(look.lstar(np.array([220] * 3, dtype=np.uint8)))
     assert m["floor_p50"] == m["floor_p90"] == m["floor_p99"] == pytest.approx(5.9, abs=0.1)
+    assert m["monster_share"] == pytest.approx(64 * 64 / (w * h))
+    assert look.mask_rules(img, monsters, structures, top_down(w, h))["floor_p99"] > 50  # unmarked, the ring is floor
     assert m["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
     assert m["monster_form"] == pytest.approx(lit - 5.9, abs=0.1)
     # Game's view json marks its ID render as the crowd alone: the hero still, no floor.
@@ -412,6 +417,11 @@ def test_rules_are_keyed_as_the_guide_and_pick_the_presets_values() -> None:
     assert look.check_rules({"clipped": 0.2, "swarm_separation": 5}, rules, "impact") == {
         "clipped_impact_max": "clipped 0.2 > 0.12"}  # impact frames: only the impact rules
     assert look.check_rules({"key60_median": 0.5}, rules, "cut") == {"key60_median_min": "key60_median 0.5 < 0.62"}
+    sparse = look.load_rules({"rules": {"bright_share_min": {"value": 0.04, "unless_below": {"monster_share": 0.1}}}}, None)
+    assert look.check_rules({"bright_share": 0.01, "monster_share": 0.3}, sparse) == {
+        "bright_share_min": "bright_share 0.01 < 0.04"}
+    assert look.check_rules({"bright_share": 0.01, "monster_share": 0.03}, sparse) == {}  # a staged sparse still
+    assert look.check_rules({"bright_share": 0.01}, sparse) == {"bright_share_min": "bright_share 0.01 < 0.04"}  # no mask
 
 
 def test_the_cuts_measures_span_its_stills() -> None:

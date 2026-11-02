@@ -571,20 +571,22 @@ def hero_region(view: dict, w: int, h: int) -> np.ndarray:
     return np.hypot(xx - fx - t * dx, yy - fy - t * dy) <= r
 
 
-def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | None, view: dict | None) -> dict:
-    """The guide's mask rules, from the ID render (monsters, structures; bool at the still's NEON_W size) and the
-    view json: the floor's L* p50/p90/p99 (ground-plane pixels clear of monsters, structures and the hero; p99 is
-    the grid's lines), the
+def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | None, view: dict | None,
+               effects: np.ndarray | None = None) -> dict:
+    """The guide's mask rules, from the ID render (monsters, structures, effects; bool at the still's NEON_W size)
+    and the view json: the floor's L* p50/p90/p99 (ground-plane pixels clear of monsters, structures, effects and
+    the hero; p99 is the grid's lines), the
     hero's margin (its L* p90 less the monsters', unmeasured when under HERO_VISIBLE_MIN of its capsule, hero_visible,
     is clear of the monsters), monster form, readability (TD15's |dL*| against the
     ground round them) and the background's light (background_light: the share of the frame's linear luminance in
-    pixels clear of monsters, structures and, with the view json, the hero, under the emitter rung: the grid, the
-    floor's halos and the world's glow, which must not drown the swarm). Monster form is a monster's own L* span, not the crowd's (whose types differ in L*): the
-    L* p90 less p10 of the body pixels (a pixel in from the edge) in each FORM_TILE tile they cover FORM_MIN of,
-    the tiles' median."""
+    pixels clear of monsters, structures, effects and, with the view json, the hero, under the emitter rung: the
+    grid, the floor's halos and the world's glow, which must not drown the swarm), and the share of the frame the
+    monsters cover (monster_share: how sparse a staged still is). Monster form is a monster's own L* span, not the
+    crowd's (whose types differ in L*): the L* p90 less p10 of the body pixels (a pixel in from the edge) in each
+    FORM_TILE tile they cover FORM_MIN of, the tiles' median."""
     lum = lstar(rgb)
     h, w = lum.shape
-    out: dict = {}
+    out: dict = {"monster_share": float(monsters.mean())}
     body = erode(monsters, 1)
     t = FORM_TILE
     spans = [np.subtract(*np.percentile(px, [90, 10]))
@@ -599,8 +601,9 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
     region = hero_region(view, w, h) if view is not None else None
     light = _linear(rgb) @ np.array([0.2126, 0.7152, 0.0722])
     background = ~dilate(monsters, 2) & (lum < EMITTER_L)
-    if structures is not None:
-        background &= ~dilate(structures, 2)
+    for drawn in (structures, effects):
+        if drawn is not None:
+            background &= ~dilate(drawn, 2)
     if region is not None:
         background &= ~dilate(region, 2)
     if light.sum() > 0:
@@ -609,8 +612,9 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
         return out
     hero = region & ~dilate(monsters, 1)
     floor = np.isfinite(ground_points(view, w, h)[0]) & ~dilate(monsters, 2) & ~dilate(region, 2)
-    if structures is not None:
-        floor &= ~dilate(structures, 2)
+    for drawn in (structures, effects):
+        if drawn is not None:
+            floor &= ~dilate(drawn, 2)
     # Game's view json says "floor": false: its ID render marks only the crowd, so its structures and effects would
     # count as floor.
     if floor.any() and view.get("floor", True):
@@ -626,19 +630,21 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
 def neon_metrics(rgb: np.ndarray, palette: dict, mask: np.ndarray | None = None, view: dict | None = None) -> dict:
     """Every neon look metric of one still against a palette, flat by the thresholds' metric names, plus the swarm's
     tiles and each role's share for the evidence. `mask` is the ID render (RGB, any size): red or white monsters,
-    blue structures; with `view`, the floor and the hero's margin. Without a mask (a video frame) the mask rules
-    are absent and frame_p25 stands in for the floor."""
+    blue structures, green effects (the light of a slash, a ring or a spark, drawn on the floor but not of it);
+    with `view`, the floor and the hero's margin. Without a mask (a video frame) the mask rules are absent and
+    frame_p25 stands in for the floor."""
     rgb = neon_size(rgb)
     roles = palette_roles(palette)
-    monsters = structures = None
+    monsters = structures = effects = None
     if mask is not None:
         m = np.asarray(Image.fromarray(mask).resize(rgb.shape[1::-1], Image.NEAREST))
         monsters, structures = m[..., 0] > 127, (m[..., 2] > 127) & (m[..., 0] <= 127)
+        effects = (m[..., 1] > 127) & (m[..., 0] <= 127) & (m[..., 2] <= 127)
     conf, swarm = palette_conformance(rgb, roles), swarm_separation(rgb, roles, monsters)
     flat = frame_measures(rgb) | {k: v for k, v in conf.items() if k != "roles"}
     flat |= {k: v for k, v in swarm.items() if k != "tiles"}
     if monsters is not None:
-        flat |= mask_rules(rgb, monsters, structures, view)
+        flat |= mask_rules(rgb, monsters, structures, view, effects)
     return {"metrics": flat, "roles": conf.get("roles", {}), "tiles": swarm["tiles"]}
 
 
@@ -648,7 +654,8 @@ def load_rules(thresholds: dict, preset: str | None) -> list[dict]:
     """The thresholds file's rules, keyed as the guide's table (`floor_p50_max`), for one preset. A key's suffix
     says min or max, the rest names the metric unless the rule's `metric` does; `on` is when it applies (`steady`
     frames by default, `impact` frames, or the whole `cut`), `unless` a metric whose presence skips it (a
-    fallback). The value is the preset's, else `value`, else the loosest preset's (with no preset given, the
+    fallback), `unless_below` metrics under whose values it is skipped (`{"monster_share": 0.1}`: a staged sparse
+    still). The value is the preset's, else `value`, else the loosest preset's (with no preset given, the
     ceiling every preset must meet)."""
     presets = thresholds.get("presets", [])
     rules = []
@@ -659,7 +666,8 @@ def load_rules(thresholds: dict, preset: str | None) -> list[dict]:
         else:
             value = r["value"] if "value" in r else (max if op == "max" else min)(r[p] for p in presets if p in r)
         rules.append({"key": key, "metric": r.get("metric", key.rsplit("_", 1)[0]), "op": op, "value": value,
-                      "on": r.get("on", "steady"), "unless": r.get("unless"), "why": r.get("why", "")})
+                      "on": r.get("on", "steady"), "unless": r.get("unless"), "unless_below": r.get("unless_below", {}),
+                      "why": r.get("why", "")})
     return rules
 
 
@@ -670,6 +678,8 @@ def check_rules(metrics: dict, rules: list[dict], on: str = "steady") -> dict[st
     for r in rules:
         v = metrics.get(r["metric"])
         if r["on"] != on or v is None or (r["unless"] and r["unless"] in metrics):
+            continue
+        if any(metrics.get(k) is not None and metrics[k] < below for k, below in r.get("unless_below", {}).items()):
             continue
         if (v < r["value"]) if r["op"] == "min" else (v > r["value"]):
             broken[r["key"]] = f"{r['metric']} {v:.3g} {'<' if r['op'] == 'min' else '>'} {r['value']:g}"
@@ -1073,7 +1083,8 @@ NEON_COLUMNS = [  # metrics.md's columns: (heading, metric, format)
     ("clip blob", "clipped_blob", "%"), ("white", "white", "%"), ("flash", "flash", "%"),
     ("background", "background_light", "%"), ("halo", "halo", ".1f"),
     ("families", "families", "d"), ("key60", "key60", ".2f"), ("conformance", "palette_conformance", "%"),
-    ("hero margin", "hero_margin", ".1f"), ("form", "monster_form", ".1f"), ("dense", "dense_tiles", "d"),
+    ("monsters", "monster_share", "%"), ("hero margin", "hero_margin", ".1f"), ("form", "monster_form", ".1f"),
+    ("dense", "dense_tiles", "d"),
     ("separation", "swarm_separation", ".1f"), ("p10", "swarm_separation_p10", ".1f"),
     ("readability", "readability", ".1f")]
 
@@ -1091,7 +1102,9 @@ def metrics_report(title: str, rows: dict[str, dict], cut: dict, preset: str | N
     for r in rules:
         when = {"steady": "", "impact": " (impact frames)", "cut": " (the cut)"}[r["on"]]
         lines.append(f"- `{r['key']}` ({r['metric']} {'>=' if r['op'] == 'min' else '<='} {r['value']:g}{when}"
-                     + (f", unless the still has {r['unless']}" if r["unless"] else "") + ")" + (f": {r['why']}" if r["why"] else ""))
+                     + (f", unless the still has {r['unless']}" if r["unless"] else "")
+                     + "".join(f", unless {k} < {v:g}" for k, v in r.get("unless_below", {}).items())
+                     + ")" + (f": {r['why']}" if r["why"] else ""))
     lines += ["", "| still | " + " | ".join(c[0] for c in NEON_COLUMNS) + " | rules |",
               "|---|" + "---:|" * len(NEON_COLUMNS) + "---|"]
 

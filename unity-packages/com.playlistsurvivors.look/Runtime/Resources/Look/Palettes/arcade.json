@@ -4,7 +4,7 @@
   "void":    { "floor": "#050308", "fog": "#0b0614" },
   "grid":    { "line": "#3d1670", "pulse": "#a24dff" },
   "hero":    { "body": "#fff8ee", "blade": "#ffffff", "trail": "#fff0b8" },
-  "enemies": ["#a84dff", "#f03cc8", "#12d6a0", "#1cc8f0", "#ff5a1f", "#ffa51c"],
+  "enemies": ["#bc72ff", "#f03cc8", "#12d6a0", "#1cc8f0", "#ff5a1f", "#ffa51c"],
   "boss":    { "body": "#ff2a40", "telegraph": "#ff1030" },
   "shatter": { "gem": "#ffeec2", "core": "#ffffff" },
   "spark":   "#ffffff",

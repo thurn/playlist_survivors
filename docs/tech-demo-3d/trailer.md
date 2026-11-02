@@ -1589,6 +1589,15 @@ just trailer --out captures/trailer-crystal-edge.mp4 -- --trailer crystal --look
 | 7 | 48.932–52.029 | 111–112 | 2 (lava) | 36 m | Converge, 3 streams | 50.48 (112.1) |
 | 8 | 52.029–59.0 | 113–117.2 | 3 (forest) | 32 m | The boss fight, a vortex round its arena | 55.90 (115.3), 57.45 (116.3), both by the dragon's breath |
 
+**The mixes key the frame** (ps-wnj.29,
+[evidence](../../demo3d/evidence/look/trailer/last-breaks/README.md)). The
+style guide's key wants one hue family to hold most of a still's colour, and a
+type's share of the colour is not its share of the mix: an elite took 40-48%
+of shot 3's colourful pixels from 8% of its mix, and the accent goblins far
+outdraw the key skeletons. So shot 3 is the key family with a few elites,
+shot 4 all key family, shots 5 and 6 have fewer goblins and more demons, and
+the finale no goblins. Every still keys at 0.55 or more in every preset.
+
 ### The void staging
 
 The Synty cut (ps-b5z) stood each shot in a dark environment: neon, crypt,

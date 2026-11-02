@@ -12,6 +12,8 @@
 // Per renderer, as the structure shatter sets them (the game's structure shaders' names): _SL_PieceFx (x the
 // hit's flash, z 1 on a shard, w its break glow), _SL_Tint (a gem colour; alpha 0 keeps _Tint), _SL_Sink and
 // _HeightM (a regrowing piece under the ground, in its heights).
+// Under the global _GameIdMask (the stills' ID render) it draws the structures' blue, so look-metrics counts a
+// formation and its shards as structures, neither monsters nor floor.
 Shader "PS/Look/CrystalProp"
 {
     Properties
@@ -50,6 +52,7 @@ Shader "PS/Look/CrystalProp"
         float4 _SL_Tint;
         float _SL_Sink;
         float _SL_Pulse;
+        float _GameIdMask;
 
         struct Attributes
         {
@@ -104,6 +107,7 @@ Shader "PS/Look/CrystalProp"
 
             half4 frag(Varyings i) : SV_Target
             {
+                if (_GameIdMask > 0.5) return half4(0, 0, 1, 1);
                 float3 n = normalize(i.normalWS);
                 float3 view = normalize(GetWorldSpaceViewDir(i.positionWS));
                 float ndv = saturate(abs(dot(n, view)));

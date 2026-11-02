@@ -639,8 +639,9 @@ namespace Demo3D.Runtime.Playback
         /// The ID render's frame (TD15's readability measure): only the crowd, drawn flat white
         /// (CrowdSkinned's _Demo3DIdMask) on black. At E2 the set and the hero draw black with their depth
         /// (LitStaticShadow), so a monster behind a tree or a wall is masked out; the ground, the
-        /// atmosphere's cards and particles are hidden; effects and post are off. At E0 (URP Lit kit) the
-        /// arena is hidden instead, without that occlusion.
+        /// atmosphere's cards and particles are hidden; post is off. The look's effects draw green where their
+        /// light shows and its crystal formations blue (the structures'), so look-metrics counts neither as
+        /// floor. At E0 (URP Lit kit) the arena is hidden instead, without that occlusion.
         /// </summary>
         void MaskMode(bool on)
         {
@@ -661,7 +662,6 @@ namespace Demo3D.Runtime.Playback
             else if (_arena != null) _rig.Camera.backgroundColor = _maskBackground;
             var data = _rig.Camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             if (data != null) data.renderPostProcessing = !on;
-            if (on) _fx?.RemoveCamera(_rig.Camera); else _fx?.AddCamera(_rig.Camera);
         }
 
         Color _maskBackground;

@@ -4,7 +4,8 @@
 // OneMinusSrcAlpha): additive materials write alpha 0, alpha-blended ones premultiply. The
 // shading is written from scratch from the materials' observed behaviour: texture times vertex
 // colour times an HDR tint, optional flipbook, a scrolling noise mask and soft particles
-// against the scene depth.
+// against the scene depth. Under the global _GameIdMask (the stills' ID render) an effect draws its visible light
+// green, so look-metrics leaves it out of the floor and the background.
 Shader "PS/Look/EffectParticles"
 {
     SubShader
@@ -27,6 +28,7 @@ Shader "PS/Look/EffectParticles"
         float _TintGain; // EffectLibrary.TintGain
         float4x4 _OverdrawVP;
         float4 _EffCamPos, _EffCamRight, _EffCamUp, _EffCamFwd; // set by EffectSystem each frame; _EffCamFwd.w is tan(vfov / 2)
+        float _GameIdMask;
 
         struct Varyings
         {
@@ -263,6 +265,12 @@ Shader "PS/Look/EffectParticles"
                 rgb = lerp(h0.w > 0 ? lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w) : rgb, Heat(rgb, edge, mid), i.tint.a);
             }
             else if (h0.w > 0) rgb = lerp(rgb, Heat(rgb, h0.rgb, h1), h0.w);
+            if (_GameIdMask > 0.5)
+            {
+                // The ID render: green where the effect's light shows (added, so a monster under it stays white).
+                clip(dot(rgb, float3(0.2126, 0.7152, 0.0722)) - 0.12);
+                return float4(0, 1, 0, 0);
+            }
             return float4(rgb, blend == 0 ? 0 : c.a);
         }
 

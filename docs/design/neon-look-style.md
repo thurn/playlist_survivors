@@ -372,10 +372,12 @@ Pixel classes, from look.py's `lstar`, `chroma` and `hue`:
 - **bright** (emitted light; there is no sun): L* >= 50; **emitter**:
   L* >= 70;
 - **clipped**: every channel >= 250; **white**: C*ab < 15 and L* >= 85;
-- **floor**: ground-plane pixels not covered by monsters, hero or structures
-  (the ID render and view json look.py's stage measure uses);
+- **floor**: ground-plane pixels not covered by monsters, hero, structures
+  or effects (the ID render and view json look.py's stage measure uses; the
+  ID render draws monsters white, structures blue, the crystal formations and
+  their shards among them, and the effects' light green, ps-wnj.29);
 - **hero**: a screen capsule from the view json's hero feet to 1.8 m above
-  them, 0.5 m wide (the ID render marks only monsters and structures);
+  them, 0.5 m wide (the ID render doesn't mark the hero);
 - **impact frames**: an impact frame and the next one (`--impact` names
   them).
 
@@ -396,7 +398,7 @@ loosest preset's value applies.
 | `frame_p25_max` | frame L* p25 (video fallback for the floor) | <= 6 | 5.4 (1-16) | 10.6 |
 | `black_share_min` | share with L* < 10 | >= 0.30; solid 0.25 | 0.39 | 0.24 |
 | `bright_share_max` | emitted-light share, L* >= 50 | edge 0.22, solid 0.32, hologram 0.22, prism 0.28 | 0.24 | 0.24 |
-| `bright_share_min` | emitted-light share | >= 0.04 | 0.24 | 0.24 |
+| `bright_share_min` | emitted-light share, unless monsters cover under 10% of the frame (a staged sparse still, ps-wnj.29) | >= 0.04 | 0.24 | 0.24 |
 | `clipped_max` | clipped share | <= 0.02 | 0.000 | 0.011 |
 | `clipped_impact_max` | clipped share on impact frames | <= 0.12 | | 0.082 |
 | `clipped_blob_max` | largest connected clipped region, of the frame | <= 0.005 | | |
@@ -470,6 +472,32 @@ Notes:
   clear of the render (`hero_visible`), the margin isn't measured: the
   game's 30 s still at minute 25 left 38 px (2.4%) of the knight and scored
   -24 to -46 in every preset, a measure of the shards and lines in the gaps.
+- **The crystal cut's last breaks** (ps-wnj.29,
+  [evidence](../../demo3d/evidence/look/trailer/last-breaks/README.md)):
+  - **The key is staged, not just lit.** A type's share of a still's colour
+    is not its share of the mix: an accent goblin draws far more colour than
+    a key skeleton, and an elite took 40-48% of shot 3's colourful pixels
+    (edge, solid, hologram) from 8% of its mix. The key light slot's pale
+    hues (ion's `#1fe2ff`, spectrum's `#6cd4ff`) render at C* 17-28, mostly
+    under the colourful cut, and cyan can't get much deeper at that L*. So the cut's mixes keep
+    the key family the colour's majority (trailer.md, The Crystal Cut), and
+    the rule stands.
+  - **`bright_share_min` skips a staged sparse still**, one whose monsters
+    cover under 10% of the frame (`monster_share`, from the ID render). The
+    duel, three elites alone in the void, covers 3% and measures 0.011-0.018
+    in every preset; the sparsest crowd still covers 18%. Its light is judged
+    by the hero margin and readability, which still apply.
+  - **Effects are not floor.** The ID render didn't mark the effects, so
+    prism's three-ring slam and three-ribbon swings, wider than one ring,
+    filled the floor's top 1% and broke `floor_p99_max` (28-37) where the
+    grid's lines measure 10. The effects now draw green in the ID render, and
+    the floor and background rules leave them out. The crystal formations and
+    their shards drew in their gem colour, which counted them as monsters;
+    they draw the structures' blue now.
+  - **Solid's violet was under its rung.** arcade's key `#a84dff` (L* 53)
+    rendered at L* 43 under solid's shading, under the style's L* 50, and its
+    all-violet shot broke `bright_share_min` (0.021). It is `#bc72ff` (L* 62)
+    now, the same hue.
 - **Timing rules stay where they are**: beat steps (`game beat`, the trailer
   checks), impact-frame payoffs (death and break checks) and the rules in
   Motion above, measured from event logs, not pixels.

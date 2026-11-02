@@ -135,11 +135,10 @@
         "streams": 3,
         "onScreen": 440,
         "mix": {
-          "skeleton": 4,
-          "goblin": 3,
-          "demon": 2,
-          "bigork": 0.6,
-          "troll": 0.4
+          "skeleton": 5,
+          "demon": 4,
+          "bigork": 0.3,
+          "troll": 0.2
         }
       },
       "shapeScale": 1.8,
@@ -208,10 +207,10 @@
         "kind": "vortex",
         "onScreen": 490,
         "mix": {
-          "skeleton": 4,
-          "goblin": 3,
+          "skeleton": 5,
           "bat": 2,
-          "slime": 1
+          "slime": 2,
+          "demon": 1
         }
       },
       "shapeScale": 2.1,
@@ -276,9 +275,9 @@
         "onScreen": 300,
         "mix": {
           "skeleton": 4,
-          "goblin": 3,
-          "mushroom": 2,
-          "demon": 2
+          "goblin": 2,
+          "mushroom": 1,
+          "demon": 4
         }
       },
       "shapeScale": 2.0,
@@ -344,10 +343,10 @@
         "onScreen": 290,
         "mix": {
           "skeleton": 4,
-          "goblin": 3,
+          "goblin": 2,
           "bat": 2,
           "mushroom": 1,
-          "demon": 2
+          "demon": 3
         }
       },
       "shapeScale": 1.6,
@@ -466,9 +465,8 @@
         "onScreen": 340,
         "mix": {
           "skeleton": 4,
-          "goblin": 3,
           "bat": 2,
-          "demon": 2,
+          "demon": 3,
           "bigork": 0.4,
           "troll": 0.3
         }

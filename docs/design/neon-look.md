@@ -1191,6 +1191,22 @@ body at the cut's distance; hologram and prism in five to seven), the key in sho
 bright share in the duel (1.6 s: three elites alone in the void), and
 prism's floor p99 under its slam rings and formation shards (12 and 36 s).
 
+ps-wnj.29 fixed the rest
+([evidence](../../demo3d/evidence/look/trailer/last-breaks/README.md)):
+
+- **The key**: the cut's mixes keep the key family the colour's majority
+  (trailer.md, The Crystal Cut); elites and goblins draw far more colour than
+  their share of a mix.
+- **The duel**: `bright_share_min` skips a staged sparse still, whose
+  monsters cover under 10% of the frame (the new `monster_share`).
+- **Prism's floor**: the ID render marks the effects' light green and the
+  crystal formations blue, and the floor rules leave both out; the floor's
+  top 1% had been prism's three-ring slam and three-ribbon swings.
+- **Solid's violet**: arcade's key is `#bc72ff` (was `#a84dff`, which
+  rendered under solid's L* 50).
+
+Only swarm separation still breaks (ps-wnj.28).
+
 ## The Game
 
 `game/` takes every package piece in place of its forks, and runs every
