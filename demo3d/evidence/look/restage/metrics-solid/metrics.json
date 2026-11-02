@@ -1,0 +1,595 @@
+{
+ "palette": "arcade.json",
+ "preset": "solid",
+ "thresholds": {
+  "source": "docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min, monster_form_min and swarm_separation_min calibrated on v2 by ps-wnj.21 (demo3d/evidence/look/metrics)",
+  "presets": [
+   "edge",
+   "solid",
+   "hologram",
+   "prism"
+  ],
+  "pairings": {
+   "ion": "edge",
+   "arcade": "solid",
+   "phosphor": "hologram",
+   "spectrum": "prism"
+  },
+  "rules": {
+   "floor_p50_max": {
+    "value": 8,
+    "why": "the floor is void"
+   },
+   "floor_p90_max": {
+    "value": 30,
+    "why": "rings and breaths included, the floor stays under ground light"
+   },
+   "frame_p25_max": {
+    "value": 6,
+    "unless": "floor_p50",
+    "why": "the video fallback for the floor: the darkest quarter is void"
+   },
+   "black_share_min": {
+    "value": 0.3,
+    "solid": 0.25,
+    "why": "a swarm is lit things with dark between them"
+   },
+   "bright_share_max": {
+    "edge": 0.22,
+    "solid": 0.32,
+    "hologram": 0.22,
+    "prism": 0.28,
+    "why": "light comes from emitters, not a lit world"
+   },
+   "bright_share_min": {
+    "value": 0.04,
+    "why": "something emits"
+   },
+   "clipped_max": {
+    "value": 0.02,
+    "why": "white is earned"
+   },
+   "clipped_impact_max": {
+    "value": 0.12,
+    "metric": "clipped",
+    "on": "impact",
+    "why": "even an impact frame is not a white-out"
+   },
+   "clipped_blob_max": {
+    "value": 0.005,
+    "why": "no blown-out region outside impact frames"
+   },
+   "white_max": {
+    "value": 0.02,
+    "why": "white is earned: impact frames, sparks and the blade's flare"
+   },
+   "halo_min": {
+    "value": 15,
+    "why": "emitters glow: their surroundings sit well over the dark"
+   },
+   "families_max": {
+    "value": 4,
+    "why": "the hue budget: the zone's key and three enemy families"
+   },
+   "key60_min": {
+    "value": 0.55,
+    "why": "each frame has a colour key"
+   },
+   "key60_median_min": {
+    "value": 0.62,
+    "on": "cut",
+    "why": "a cut keys as GW3 does"
+   },
+   "palette_conformance_min": {
+    "value": 0.85,
+    "prism": 0.75,
+    "why": "everything drawn takes its colour from a role"
+   },
+   "shot_floor_range_max": {
+    "value": 6,
+    "on": "cut",
+    "why": "one world across the shots, not stitched parts"
+   },
+   "hero_margin_min": {
+    "value": 5,
+    "why": "the hero is the brightest thing on screen"
+   },
+   "monster_form_min": {
+    "value": 30,
+    "solid": 20,
+    "why": "a monster shows form, not flat paint"
+   },
+   "swarm_separation_min": {
+    "value": 13,
+    "why": "a dense clump of one type reads as individuals, not a blob"
+   },
+   "readability_min": {
+    "value": 17,
+    "why": "monsters stand off the ground round them (TD15)"
+   }
+  }
+ },
+ "stills": {
+  "still-001.600": {
+   "metrics": {
+    "frame_p25": 0.0,
+    "black_share": 0.963082561728395,
+    "bright_share": 0.015557484567901235,
+    "clipped": 0.0,
+    "clipped_blob": 0.0,
+    "white": 0.0,
+    "halo": 0.3126689419948683,
+    "key60": 0.9923195084485408,
+    "families": 1,
+    "palette_conformance": 0.9983771173547012,
+    "dense_tiles": 4,
+    "swarm_separation": 12.737417105960642,
+    "swarm_separation_p10": 5.242729275474771,
+    "monster_form": 47.8195728351389,
+    "readability": 49.14631725132004,
+    "floor_p50": 0.05828956249395745,
+    "floor_p90": 0.3907539250535663,
+    "hero_margin": -49.02594738797566
+   },
+   "roles": {
+    "hero.trail": 0.007404402069175373,
+    "enemies.4": 0.5364641444365554,
+    "enemies.5": 0.2679784968049498,
+    "shatter.gem": 0.01815599959427934,
+    "zones.violet.tint": 0.00010143016533116949,
+    "zones.ember.tint": 0.1682726442844102
+   },
+   "impact": false,
+   "broken": {
+    "bright_share_min": "bright_share 0.0156 < 0.04",
+    "halo_min": "halo 0.313 < 15",
+    "hero_margin_min": "hero_margin -49 < 5",
+    "swarm_separation_min": "swarm_separation 12.7 < 13"
+   }
+  },
+  "still-004.000": {
+   "metrics": {
+    "frame_p25": 0.2741748000656514,
+    "black_share": 0.7860956790123457,
+    "bright_share": 0.05666087962962963,
+    "clipped": 1.9290123456790124e-06,
+    "clipped_blob": 1.9290123456790124e-06,
+    "white": 2.7006172839506174e-05,
+    "halo": 0.9419549431055536,
+    "key60": 0.6543143877724589,
+    "families": 2,
+    "palette_conformance": 0.9995937661570279,
+    "dense_tiles": 30,
+    "swarm_separation": 17.249966774836974,
+    "swarm_separation_p10": 12.085648895904608,
+    "monster_form": 41.211328581182,
+    "readability": 38.909747854791895,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 0.9420448723761581,
+    "hero_margin": -28.38576967269921
+   },
+   "roles": {
+    "grid.line": 0.00014772139744441981,
+    "grid.pulse": 0.0006093507644582318,
+    "hero.trail": 0.017098751754191593,
+    "enemies.0": 0.49673166408154223,
+    "enemies.1": 0.08693404239604106,
+    "enemies.2": 0.36385626708028657,
+    "enemies.3": 0.0002585124455277347,
+    "enemies.5": 5.5395524041657433e-05,
+    "shatter.gem": 0.03301573232882783,
+    "zones.violet.tint": 0.0006462811138193367,
+    "zones.magenta.tint": 3.6930349361104953e-05,
+    "zones.aqua.tint": 0.0001846517468055248,
+    "zones.ember.tint": 1.8465174680552477e-05
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 0.942 < 15",
+    "hero_margin_min": "hero_margin -28.4 < 5"
+   }
+  },
+  "still-012.000": {
+   "metrics": {
+    "frame_p25": 0.6649287251192177,
+    "black_share": 0.6905729166666666,
+    "bright_share": 0.1066358024691358,
+    "clipped": 0.0021508487654320987,
+    "clipped_blob": 0.001711033950617284,
+    "white": 0.0032310956790123457,
+    "halo": 7.592705635234502,
+    "key60": 0.8557625611817232,
+    "families": 2,
+    "palette_conformance": 0.999427865939956,
+    "dense_tiles": 2,
+    "swarm_separation": 10.74962511166762,
+    "swarm_separation_p10": 10.305011096663938,
+    "monster_form": 41.4526963308675,
+    "readability": 43.79531997323032,
+    "floor_p50": 0.7639058279429207,
+    "floor_p90": 4.281450400340127,
+    "hero_margin": -66.7135027604701
+   },
+   "roles": {
+    "grid.line": 0.0002559547110722997,
+    "grid.pulse": 0.008115269956939383,
+    "hero.trail": 0.10206570507994821,
+    "enemies.0": 0.5191363786925232,
+    "enemies.1": 0.2737812038905116,
+    "enemies.2": 0.05366015236833389,
+    "enemies.5": 9.033695684904695e-05,
+    "boss.telegraph": 3.0112318949682314e-05,
+    "shatter.gem": 0.03971814869463097,
+    "zones.violet.tint": 0.002002469210153874,
+    "zones.magenta.tint": 0.0005119094221445994,
+    "zones.ember.tint": 6.022463789936463e-05
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 7.59 < 15",
+    "hero_margin_min": "hero_margin -66.7 < 5",
+    "swarm_separation_min": "swarm_separation 10.7 < 13"
+   }
+  },
+  "still-020.000": {
+   "metrics": {
+    "frame_p25": 1.3338055673593843,
+    "black_share": 0.6207908950617284,
+    "bright_share": 0.14884259259259258,
+    "clipped": 1.9290123456790123e-05,
+    "clipped_blob": 7.71604938271605e-06,
+    "white": 6.36574074074074e-05,
+    "halo": 2.3484820564486952,
+    "key60": 0.45795685925171803,
+    "families": 3,
+    "palette_conformance": 0.9992231663738601,
+    "dense_tiles": 51,
+    "swarm_separation": 15.582484363806776,
+    "swarm_separation_p10": 11.516752797256327,
+    "monster_form": 45.33511048965701,
+    "readability": 44.07788395349759,
+    "floor_p50": 1.3697773011279963,
+    "floor_p90": 6.138885596770869,
+    "hero_margin": -65.89618481199656
+   },
+   "roles": {
+    "grid.line": 0.001302690234603755,
+    "grid.pulse": 0.004350268306383182,
+    "hero.trail": 0.0866826813906517,
+    "enemies.0": 0.12087531222736128,
+    "enemies.1": 0.2957226345416084,
+    "enemies.2": 0.19272644700201977,
+    "enemies.3": 1.1951286555997753e-05,
+    "enemies.4": 0.19480597086276338,
+    "enemies.5": 0.04805612324166696,
+    "boss.body": 0.0001792692983399663,
+    "boss.telegraph": 0.0002031718714519618,
+    "shatter.gem": 0.03807679896740884,
+    "zones.violet.tint": 0.0002868308773439461,
+    "zones.magenta.tint": 0.000729028479915863,
+    "zones.aqua.tint": 3.585385966799326e-05,
+    "zones.ember.tint": 0.015178133926117146
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 2.35 < 15",
+    "key60_min": "key60 0.458 < 0.55",
+    "hero_margin_min": "hero_margin -65.9 < 5"
+   }
+  },
+  "still-028.000": {
+   "metrics": {
+    "frame_p25": 0.2741748000656514,
+    "black_share": 0.7841878858024691,
+    "bright_share": 0.028765432098765434,
+    "clipped": 1.1574074074074073e-05,
+    "clipped_blob": 5.787037037037037e-06,
+    "white": 6.36574074074074e-05,
+    "halo": 1.0963701905025296,
+    "key60": 0.9153684162854943,
+    "families": 1,
+    "palette_conformance": 0.999982004031097,
+    "dense_tiles": 32,
+    "swarm_separation": 9.590677886386548,
+    "swarm_separation_p10": 6.933110221731555,
+    "monster_form": 27.946342579158227,
+    "readability": 39.82377181572882,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 0.8573705086897441,
+    "hero_margin": -10.383087706835916
+   },
+   "roles": {
+    "grid.line": 1.7995968902965736e-05,
+    "grid.pulse": 0.004067088972070256,
+    "hero.trail": 0.012111287071695941,
+    "enemies.0": 0.8370465015836452,
+    "enemies.1": 0.04331629714943853,
+    "enemies.2": 0.04587172473365966,
+    "enemies.4": 5.398790670889721e-05,
+    "enemies.5": 0.00037791534696228046,
+    "shatter.gem": 0.057029225453498415,
+    "zones.ember.tint": 8.997984451482867e-05
+   },
+   "impact": false,
+   "broken": {
+    "bright_share_min": "bright_share 0.0288 < 0.04",
+    "halo_min": "halo 1.1 < 15",
+    "hero_margin_min": "hero_margin -10.4 < 5",
+    "swarm_separation_min": "swarm_separation 9.59 < 13"
+   }
+  },
+  "still-036.000": {
+   "metrics": {
+    "frame_p25": 1.389572721692737,
+    "black_share": 0.6034510030864197,
+    "bright_share": 0.13414930555555554,
+    "clipped": 0.0019695216049382715,
+    "clipped_blob": 0.001412037037037037,
+    "white": 0.0031520061728395063,
+    "halo": 4.834078043545901,
+    "key60": 0.6292602570760841,
+    "families": 3,
+    "palette_conformance": 0.9992182040013741,
+    "dense_tiles": 41,
+    "swarm_separation": 11.932138401199934,
+    "swarm_separation_p10": 8.360389934898981,
+    "monster_form": 41.6519775332205,
+    "readability": 42.59318676180579,
+    "floor_p50": 1.389572721692737,
+    "floor_p90": 7.653641156763406,
+    "hero_margin": -39.25687173835842
+   },
+   "roles": {
+    "grid.line": 0.0003790526053943924,
+    "grid.pulse": 0.01544639366982149,
+    "hero.trail": 0.08197012591653735,
+    "enemies.0": 0.4796673813387664,
+    "enemies.1": 0.052629085180227665,
+    "enemies.2": 0.32533374397365583,
+    "enemies.3": 0.0001895263026971962,
+    "enemies.5": 0.00014214472702289715,
+    "shatter.gem": 0.04157733265419741,
+    "zones.violet.tint": 0.0013622203006360978,
+    "zones.magenta.tint": 0.00013029933310432237,
+    "zones.aqua.tint": 0.00023690787837149524,
+    "zones.ember.tint": 0.0001539901209414719
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 4.83 < 15",
+    "hero_margin_min": "hero_margin -39.3 < 5",
+    "swarm_separation_min": "swarm_separation 11.9 < 13"
+   }
+  },
+  "still-044.000": {
+   "metrics": {
+    "frame_p25": 0.8068227489221194,
+    "black_share": 0.6401890432098766,
+    "bright_share": 0.1452295524691358,
+    "clipped": 3.279320987654321e-05,
+    "clipped_blob": 5.787037037037037e-06,
+    "white": 0.00017361111111111112,
+    "halo": 5.579049540690665,
+    "key60": 0.6156919407765892,
+    "families": 2,
+    "palette_conformance": 0.9977175096274273,
+    "dense_tiles": 9,
+    "swarm_separation": 12.829890292009487,
+    "swarm_separation_p10": 10.761408690124902,
+    "monster_form": 45.07045962222009,
+    "readability": 47.98679679758663,
+    "floor_p50": 0.9020350922159928,
+    "floor_p90": 6.135195540617431,
+    "hero_margin": -64.56763183904506
+   },
+   "roles": {
+    "grid.line": 0.0019898634017300105,
+    "grid.pulse": 0.01921973944494516,
+    "hero.trail": 0.060058759495745205,
+    "enemies.0": 0.318366439197968,
+    "enemies.1": 0.16802640665784885,
+    "enemies.2": 0.059333044608055434,
+    "enemies.3": 0.16447976777123594,
+    "enemies.5": 0.00022239649784041297,
+    "boss.telegraph": 0.0001287558671707654,
+    "shatter.gem": 0.008614938021607576,
+    "zones.violet.tint": 0.0015099551695480669,
+    "zones.magenta.tint": 0.0015801856425503025,
+    "zones.aqua.tint": 0.19408191214167828,
+    "zones.ember.tint": 0.0001053457095033535
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 5.58 < 15",
+    "hero_margin_min": "hero_margin -64.6 < 5",
+    "swarm_separation_min": "swarm_separation 12.8 < 13"
+   }
+  },
+  "still-047.200": {
+   "metrics": {
+    "frame_p25": 0.293970220630392,
+    "black_share": 0.7977179783950618,
+    "bright_share": 0.07331018518518519,
+    "clipped": 3.279320987654321e-05,
+    "clipped_blob": 1.1574074074074073e-05,
+    "white": 0.00016010802469135801,
+    "halo": 2.0133135509675917,
+    "key60": 0.6461368246358105,
+    "families": 3,
+    "palette_conformance": 0.999838463609441,
+    "dense_tiles": 8,
+    "swarm_separation": 12.129530379190836,
+    "swarm_separation_p10": 9.597041815777557,
+    "monster_form": 32.541227432489606,
+    "readability": 44.988492737136184,
+    "floor_p50": 0.43177047514338796,
+    "floor_p90": 1.9134091328162164,
+    "hero_margin": -33.826509319517704
+   },
+   "roles": {
+    "grid.pulse": 0.03399443596876963,
+    "hero.trail": 0.08489634748272458,
+    "enemies.0": 0.2938346944269945,
+    "enemies.1": 0.2346046845553262,
+    "enemies.2": 0.1821053576236202,
+    "enemies.3": 0.03609440904603787,
+    "enemies.4": 7.179395135959795e-05,
+    "enemies.5": 0.0003051242932782913,
+    "boss.telegraph": 1.7948487839899487e-05,
+    "shatter.gem": 0.03794310329354752,
+    "zones.violet.tint": 1.7948487839899487e-05,
+    "zones.magenta.tint": 7.179395135959795e-05,
+    "zones.aqua.tint": 0.09546800682042537,
+    "zones.ember.tint": 0.0004128152203176882
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 2.01 < 15",
+    "hero_margin_min": "hero_margin -33.8 < 5",
+    "swarm_separation_min": "swarm_separation 12.1 < 13"
+   }
+  },
+  "still-050.200": {
+   "metrics": {
+    "frame_p25": 0.566719311735703,
+    "black_share": 0.733917824074074,
+    "bright_share": 0.08385995370370371,
+    "clipped": 3.472222222222222e-05,
+    "clipped_blob": 3.858024691358025e-06,
+    "white": 8.873456790123456e-05,
+    "halo": 1.8561629438220848,
+    "key60": 0.8925428574206786,
+    "families": 1,
+    "palette_conformance": 0.9994296520877736,
+    "dense_tiles": 13,
+    "swarm_separation": 13.299588943311372,
+    "swarm_separation_p10": 10.285705773709577,
+    "monster_form": 34.50508304322567,
+    "readability": 42.08359836860663,
+    "floor_p50": 0.6475024116436074,
+    "floor_p90": 2.012688281206387,
+    "hero_margin": -40.2238659179922
+   },
+   "roles": {
+    "grid.line": 0.00024014648935850869,
+    "grid.pulse": 0.03651727553807823,
+    "hero.trail": 0.04035961936781437,
+    "enemies.0": 0.37929637078617956,
+    "enemies.1": 0.43714165641041036,
+    "enemies.2": 0.09581844925404497,
+    "enemies.3": 1.5009155584906793e-05,
+    "enemies.5": 0.00034521057845285624,
+    "shatter.gem": 0.009335694773812025,
+    "zones.violet.tint": 0.00018010986701888151,
+    "zones.aqua.tint": 7.504577792453396e-05,
+    "zones.ember.tint": 0.00010506408909434755
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 1.86 < 15",
+    "hero_margin_min": "hero_margin -40.2 < 5"
+   }
+  },
+  "still-052.000": {
+   "metrics": {
+    "frame_p25": 0.4314414653833083,
+    "black_share": 0.7109510030864198,
+    "bright_share": 0.08902970679012345,
+    "clipped": 2.8935185185185186e-05,
+    "clipped_blob": 3.858024691358025e-06,
+    "white": 0.00016010802469135801,
+    "halo": 3.2444099973008633,
+    "key60": 0.7584895355868069,
+    "families": 3,
+    "palette_conformance": 0.998495086457283,
+    "dense_tiles": 18,
+    "swarm_separation": 12.399870215974117,
+    "swarm_separation_p10": 10.273971805198112,
+    "monster_form": 38.84923521122107,
+    "readability": 41.78673550649417,
+    "floor_p50": 0.5285541795665623,
+    "floor_p90": 3.267504061137405,
+    "hero_margin": -52.657675177477294
+   },
+   "roles": {
+    "grid.line": 0.00025583530226188506,
+    "grid.pulse": 0.004559888034432422,
+    "hero.trail": 0.11628466944574034,
+    "enemies.0": 0.320471338921579,
+    "enemies.1": 0.34283435416635316,
+    "enemies.2": 0.15551776550437177,
+    "enemies.3": 0.00012039308341735767,
+    "enemies.4": 6.0196541708678834e-05,
+    "enemies.5": 0.0005116706045237701,
+    "boss.body": 1.5049135427169708e-05,
+    "boss.telegraph": 0.00012039308341735767,
+    "shatter.gem": 0.05548616231997472,
+    "zones.violet.tint": 0.00027088443768905475,
+    "zones.magenta.tint": 0.0018209453866875349,
+    "zones.aqua.tint": 6.0196541708678834e-05,
+    "zones.ember.tint": 0.00010534394799018796
+   },
+   "impact": false,
+   "broken": {
+    "halo_min": "halo 3.24 < 15",
+    "hero_margin_min": "hero_margin -52.7 < 5",
+    "swarm_separation_min": "swarm_separation 12.4 < 13"
+   }
+  },
+  "still-056.300": {
+   "metrics": {
+    "frame_p25": 0.8023999698721376,
+    "black_share": 0.5374228395061729,
+    "bright_share": 0.2167650462962963,
+    "clipped": 0.017744984567901235,
+    "clipped_blob": 0.007926311728395061,
+    "white": 0.022393904320987656,
+    "halo": 8.365553036644066,
+    "key60": 0.4427346132641026,
+    "families": 3,
+    "palette_conformance": 0.9943130567749362,
+    "dense_tiles": 89,
+    "swarm_separation": 19.585397686573558,
+    "swarm_separation_p10": 12.61189086053883,
+    "monster_form": 62.287113579885244,
+    "readability": 50.30975470217394,
+    "floor_p50": 0.7243149868134395,
+    "floor_p90": 6.909424206415338,
+    "hero_margin": -69.73728559893964
+   },
+   "roles": {
+    "grid.line": 0.0018126057711306022,
+    "grid.pulse": 0.023014079909283804,
+    "hero.trail": 0.009260611475254924,
+    "enemies.0": 0.19210184954513046,
+    "enemies.1": 0.048321836315685485,
+    "enemies.2": 0.46549606123343096,
+    "enemies.3": 0.0004209368852388602,
+    "enemies.4": 0.008753769103232624,
+    "enemies.5": 0.05448125971805819,
+    "boss.body": 0.11578341508672159,
+    "boss.telegraph": 0.03976564983205477,
+    "shatter.gem": 0.012842870274124408,
+    "zones.violet.tint": 0.0010824091334713547,
+    "zones.magenta.tint": 0.0004209368852388602,
+    "zones.aqua.tint": 0.019947254031114966,
+    "zones.ember.tint": 0.0008075115757643441
+   },
+   "impact": false,
+   "broken": {
+    "clipped_blob_max": "clipped_blob 0.00793 > 0.005",
+    "white_max": "white 0.0224 > 0.02",
+    "halo_min": "halo 8.37 < 15",
+    "key60_min": "key60 0.443 < 0.55",
+    "hero_margin_min": "hero_margin -69.7 < 5"
+   }
+  }
+ },
+ "cut": {
+  "metrics": {
+   "key60_median": 0.6543143877724589,
+   "shot_floor_range": 1.3312831591987795
+  },
+  "broken": {}
+ }
+}
