@@ -211,6 +211,15 @@ Techniques that tend to work:
 - **One prism per limb**: separate segments, each capped at the knee and
   elbow, read as a kit of boxes with gaps; one loft through all the joints
   closes the outline (the goblin).
+- **Lean a body's normals up its limbs**: a round trunk's and a hanging
+  arm's long facets light in the rim as gradient bands. Leaning each
+  facet's normal toward its shape's root (up the trunk and the legs, along
+  the arm toward the shoulder, which is up while it hangs) keeps them dark;
+  faces turned against the lean keep their own (the big ork).
+- **Turn a hanging blade's flat to the camera**: hanging edge-on from the
+  hand, a blade draws as a solid bright bar; turned a quarter on its grip,
+  as an outlined dark cleaver. Keep its flats flat: folded along the middle,
+  the half turned away lights in the rim (the big ork).
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
