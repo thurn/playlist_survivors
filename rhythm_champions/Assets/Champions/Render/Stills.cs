@@ -43,6 +43,9 @@ namespace Champions.Render
 
         public bool Done => _times.Count == 0;
 
+        /// <summary>Whether a still is due at time `t` (so its frame's draws must be queued for the camera).</summary>
+        public bool IsDue(double t) => _times.Count > 0 && t + 1e-6 >= _times[0];
+
         /// <summary>Keeps every still due at time `t`.</summary>
         public void CaptureDue(double t)
         {

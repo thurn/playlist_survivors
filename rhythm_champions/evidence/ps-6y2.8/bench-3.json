@@ -1,0 +1,16 @@
+{
+  "alive": 1000,
+  "slots": 1058,
+  "device": "Apple M5 Max",
+  "development": false,
+  "onScreenMedian": 998,
+  "breaks": 300,
+  "syncedFrameMs": {"crowd": {"frames": 841, "p50": 1.739, "p99": 4.944}, "empty": {"frames": 840, "p50": 0.820, "p99": 4.010}, "crowdP50MinusEmptyP50": 0.919, "submittedP50": {"crowd": 0.573, "empty": 0.276}},
+  "gpuRecordersMs": {
+    "EdgeCrowd.Cull+Palette": {"frames": 0, "p50": null, "p99": null},
+    "EdgeShatter.Seed+Integrate": {"frames": 0, "p50": null, "p99": null},
+    "DrawOpaqueObjects": {"frames": 0, "p50": null, "p99": null},
+    "DrawTransparentObjects": {"frames": 0, "p50": null, "p99": null}
+  },
+  "windowedGpuFrameMs": {"frames": 0, "p50": null, "p99": null}
+}

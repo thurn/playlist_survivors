@@ -1,0 +1,73 @@
+# Edge cut: skeleton
+
+Written by `champions edgecut review skeleton` from the recipe [tools/recipes/edgecut/skeleton.py](../../../tools/recipes/edgecut/skeleton.py) (role fodder).
+
+The skeleton's edge cut, the reference cut (ps-6y2.8): Magic Pig's Skeleton Warrior LP (9,310 triangles, 120
+entries) redrawn as about seventy lines over a body of convex parts.
+
+- Body: one hull per part, its corners budgeted by how much of the outline the part makes at game scale (the
+  chest and head most, fingers nothing: a hand is one small hull). The shield is a flat disc.
+- Lines: the outline-making creases of the armour and bones (lines.choose), chains shorter than 6% of the height
+  dropped; the helmet's kept, the torso's capped, the hands' and feet's given little (the ribs lie under the
+  breastplate and show none); the shield an empty circle; the sword two strokes (pommel to tip, the guard).
+  Fewer lines than the 120 allowed: at game scale each line's light spreads over a pixel or two of the dark body
+  round it, and the black share needs that body.
+- Shards: a piece per part, the chest, the pelvis and the shield split in two.
+
+## Thresholds (plan.md, Rendering > Edge cuts)
+
+| Threshold | Measured | |
+| --- | --- | --- |
+| black share at game scale >= 65% | 67.6% (poses 67%, 72%, 64%) | ok |
+| line segments <= 120 | 72 | ok |
+| body triangles 300-800 | 322 | ok |
+
+23 shard pieces; the bone texture holds 62 entries.
+
+## Sheets
+
+The edge crowd draws the cut at the game camera's angle (60 degrees down, a 30 degree field, the monster turned 160 degrees) with the pipeline's post, beside the vendor original in flat grey. Each sheet is one size on screen, the monster's standing height in pixels at 1080 rows, in cells twice that square and at a 1080-row frame's pixel density: idle, walk and attack, each the original then the cut. Game scale is the old game camera's medium width; the world bead's camera may differ.
+
+- far (56 px): [far.jpg](far.jpg)
+- game (113 px): [game.jpg](game.jpg)
+- near (226 px): [near.jpg](near.jpg)
+
+## Black share per cell (the cut's silhouette darker than L* 10)
+
+| Size | Pose | Black share | Without post | Silhouette px | On screen px |
+| --- | --- | --- | --- | --- | --- |
+| far | idle | 47.9% | 50.9% | 611 | 40 |
+| far | walk | 53.1% | 54.8% | 589 | 41 |
+| far | attack | 36.9% | 42.0% | 398 | 32 |
+| game | idle | 67.0% | 68.0% | 2215 | 81 |
+| game | walk | 71.7% | 73.2% | 2198 | 82 |
+| game | attack | 64.2% | 66.0% | 1485 | 65 |
+| near | idle | 81.0% | 81.2% | 8334 | 164 |
+| near | walk | 84.5% | 84.8% | 8285 | 166 |
+| near | attack | 78.6% | 79.4% | 5641 | 132 |
+
+## Parts
+
+| Part | Body triangles | Line segments |
+| --- | --- | --- |
+| head | 26 | 6 |
+| chest | 38 | 9 |
+| ribs | 16 | 0 |
+| spine | 10 | 0 |
+| pelvis | 24 | 8 |
+| pauldron_l | 18 | 2 |
+| pauldron_r | 20 | 2 |
+| upperarm_l | 12 | 2 |
+| upperarm_r | 6 | 2 |
+| forearm_l | 16 | 4 |
+| forearm_r | 16 | 2 |
+| hand_l | 12 | 0 |
+| hand_r | 12 | 0 |
+| thigh_l | 12 | 2 |
+| thigh_r | 8 | 1 |
+| calf_l | 14 | 4 |
+| calf_r | 16 | 6 |
+| foot_l | 16 | 4 |
+| foot_r | 14 | 4 |
+| shield | 16 | 12 |
+| sword | 0 | 2 |

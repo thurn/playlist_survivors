@@ -33,6 +33,11 @@ namespace Champions.Client
         public string File;
         /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
         public string App;
+        /// <summary>`--edge-crowd N`: the edge crowd's test scene with N alive (<see cref="Bench.EdgeCrowdBench"/>), of
+        /// `--edge-type ID` (default skeleton), its timings to `--bench-out PATH`.</summary>
+        public int EdgeCrowd;
+        public string EdgeType;
+        public string BenchOut;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -47,6 +52,9 @@ namespace Champions.Client
                 StillsDir = a.Get("--capture-stills"),
                 File = a.Get("--file"),
                 App = a.Get("--app"),
+                EdgeCrowd = (int)a.Double("--edge-crowd", 0),
+                EdgeType = a.Get("--edge-type"),
+                BenchOut = a.Get("--bench-out"),
             };
             if (o.File != null && o.App != null) throw new ArgumentException("--file and --app: give one music source");
             var at = a.Get("--stills-at");
