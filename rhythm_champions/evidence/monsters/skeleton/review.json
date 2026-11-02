@@ -1,0 +1,15 @@
+{
+  "type": "skeleton",
+  "look": "default",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [9310, 4734, 2367],
+  "trailerLodTriangles": [9310, 4734, 2367],
+  "shards": 30,
+  "bones": 120,
+  "heightM": 1.745,
+  "poses": ["idle", "walk", "attack"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

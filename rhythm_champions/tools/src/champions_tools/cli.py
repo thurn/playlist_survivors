@@ -17,9 +17,13 @@ Commands:
                       the warm editor for this worktree, which build, test and unity then use
   check               every check before a push: the guard, the EditMode tests (cold) and the
                       variant budget; or only those named (--guard, --tests, --variants)
+  monster bake TYPE   bake a monster type (or `all`) for both looks: `--look trailer`'s from the vendor mesh,
+                      the default's from tools/recipes/monster/TYPE.py if it exists (--force bakes again)
+  monster review TYPE the type's review sheets and README in evidence/monsters/TYPE/ (--look trailer for the
+                      trailer's; always a side-by-side of both; --out DIR)
   stills              fixed-time stills of the scripted scenes in one headless launch of the last
                       build, with their type-ID passes and views (--scene NAME, repeatable; --out DIR,
-                      default captures/stills)
+                      default captures/stills; --look trailer for the trailer's monsters)
   look [STILLS]       the look metrics (docs/champions/style.md) on stills (default captures/stills):
                       every threshold key per still, the palette's rules; --out DIR writes metrics.md,
                       metrics.json and evidence JPEGs; exits 1 on a broken rule
@@ -91,6 +95,13 @@ def build(wt: paths.Worktree, backend: str = "mono", out: str | None = None, dev
         shown = folder.relative_to(wt.project) if folder.is_relative_to(wt.project) else folder
         print(f"build: nothing changed since the last build into {shown}; not rebuilding (--force to)")
         return 0
+    from . import monster
+
+    try:
+        monster.prepare_all(wt)  # the recipes' meshes, which the player build's bake takes
+    except monster.MonsterError as e:
+        print(f"build: {e}", file=sys.stderr)
+        return 2
     setup.forget_build(folder)
     code = unity.run_method(wt, "BuildPlayer", args + (["-cleanBuildCache"] if clean_cache else []), cold=cold)
     if code != 0:
@@ -232,6 +243,12 @@ def cmd_stills(a: argparse.Namespace) -> int:
     return stills.cmd_stills(a)
 
 
+def cmd_monster(a: argparse.Namespace) -> int:
+    from . import monster
+
+    return monster.cmd_monster(a)
+
+
 def cmd_look(a: argparse.Namespace) -> int:
     from . import look
 
@@ -329,7 +346,17 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--scene", action="append", help="a scene to play (repeatable; default all)")
     st.add_argument("--out", help="the stills folder (default captures/stills)")
     st.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
+    st.add_argument("--look", choices=["default", "trailer"], default="default",
+                    help="the monsters' drawing: trailer for the neon edge trailer's")
     st.set_defaults(func=cmd_stills)
+
+    mo = sub.add_parser("monster", help="bake a monster type, or review one (monster review TYPE)")
+    mo.add_argument("action", choices=["bake", "review"])
+    mo.add_argument("type", help="a type in Assets/Champions/Editor/Monsters/monsters.json, or all")
+    mo.add_argument("--look", choices=["default", "trailer"], default="default", help="review: the look the sheets draw")
+    mo.add_argument("--out", help="review: the folder for the sheets (default evidence/monsters/TYPE)")
+    mo.add_argument("--force", action="store_true", help="bake again even if nothing changed")
+    mo.set_defaults(func=cmd_monster)
 
     lk = sub.add_parser("look", help="a diagnostic: where stills stray from the style's guide values (never fails)")
     lk.add_argument("stills", nargs="?", help="a folder of stills (default captures/stills)")

@@ -1,0 +1,15 @@
+{
+  "type": "mushroom",
+  "look": "default",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [1638, 958, 512],
+  "trailerLodTriangles": [1638, 958, 512],
+  "shards": 27,
+  "bones": 15,
+  "heightM": 0.984,
+  "poses": ["idle", "walk", "attack"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

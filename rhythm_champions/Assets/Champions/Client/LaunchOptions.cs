@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Champions.Render;
+using Champions.Render.Crowd;
 using UnityEngine;
 
 namespace Champions.Client
@@ -36,13 +37,18 @@ namespace Champions.Client
         public string File;
         /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
         public string App;
-        /// <summary>`--bench-out PATH`: the gallery's GPU timings (with `--gallery --capture-stills DIR`).</summary>
+        /// <summary>`--bench-out PATH`: the gallery's GPU timings (with `--gallery --capture-stills DIR`), or the crowd bench's.</summary>
         public string BenchOut;
         /// <summary>`--gallery`: the weapon effects' gallery (Scenes.GalleryScene): in a window, every effect in turn, over and
         /// over; with `--capture-stills DIR`, its stills (as `--stills-scenes gallery`), then quit.</summary>
         public bool Gallery;
         /// <summary>`--calibration FILE`: the calibrations' file instead of calibration.json in the player's data folder (Calibration.CalibrationStore).</summary>
         public string CalibrationFile;
+        /// <summary>`--look trailer`: the monsters drawn exactly as the neon edge trailer drew them (MonsterLook.Trailer);
+        /// without it, the game's own look (plan.md, Rendering &gt; The edge look).</summary>
+        public MonsterLook Look;
+        /// <summary>`--crowd-bench N`: the crowd's timing scene with N monsters (Bench.CrowdBench), its timings to `--bench-out`.</summary>
+        public int CrowdBench;
         /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
         public Tier? Tier;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
@@ -62,7 +68,12 @@ namespace Champions.Client
                 Gallery = a.Has("--gallery"),
                 BenchOut = a.Get("--bench-out"),
                 CalibrationFile = a.Get("--calibration"),
+                CrowdBench = (int)a.Double("--crowd-bench", 0),
             };
+            var look = a.Get("--look");
+            if (look != null)
+                o.Look = look == "trailer" ? MonsterLook.Trailer : look == "default" ? MonsterLook.Default
+                    : throw new ArgumentException($"--look: {look} is not trailer or default");
             var tier = a.Get("--tier");
             if (tier != null)
                 o.Tier = QualityTiers.TryParse(tier, out var t) ? t : throw new ArgumentException($"--tier: {tier} is not low, medium or high");

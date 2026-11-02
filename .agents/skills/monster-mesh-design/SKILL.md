@@ -109,13 +109,39 @@ better beats any of them:
 
 ## 3. Build it
 
-Write a recipe at `rhythm_champions/tools/recipes/monster/<type>.py`.
-`champions monster bake <type>` runs it (Blender 5.2 LTS headless allowed:
-`/Applications/Blender.app`, `--background --python`, with
-`--python-exit-code 1`) and bakes the result, feature edges and shard pieces
-included, into ignored `Assets/Baked/Monsters/<type>/`. If the interface
-that ps-6y2.28 landed differs from this, follow what landed and fix this
-skill.
+Write a recipe at `rhythm_champions/tools/recipes/monster/<type>.py`: a
+module whose docstring says what it changes and why (the review's README
+quotes it), with
+
+```python
+from champions_tools.monster import Mesh, Source, blender
+
+def build(source: Source) -> Mesh:
+    mesh = source.mesh()  # the vendor mesh, unchanged: start here
+    ...
+    return mesh
+```
+
+- `Source` is the vendor model as the game draws it: every renderer
+  combined in root space, metres at the type's height, its rest pose.
+  Numpy arrays `positions`, `normals`, `triangles`, `bones` and `weights`
+  (four influences per vertex, into `bone_names`), `carried` (a weapon's or
+  shield's vertices), and `parts` (each renderer's vertex range:
+  `source.part("Sword_LP")`); `source.bone("Hand_R")` finds a bone.
+- Return a `Mesh` skinned to the same bones (`positions`, `triangles`,
+  `bones`, `weights`; `normals` optional; `carried` optional, so the shatter
+  flings your weapon's chunks with the body). It shares the vendor bone
+  texture, so it moves with the vendor rig and clips.
+- Blender 5.2 LTS headless: `blender(script, *args)` runs a script with
+  `--background --python-exit-code 1`; `source.save(path)` and
+  `Mesh.load(path)` trade `.npz` files with it.
+
+`champions monster bake <type>` exports the vendor mesh (Unity), runs the
+recipe and bakes both looks into ignored `Assets/Baked/Monsters/<type>/`
+(`source/` the export, `recipe/` your mesh), feature edges, LODs and shard
+pieces included; each step reruns only when its inputs change (`--force`
+reruns all). `--look trailer` always bakes from the vendor mesh. A player
+build bakes your mesh too (`champions build` runs the recipes first).
 
 Techniques that tend to work:
 
@@ -144,11 +170,14 @@ the cost if you go over (the crowd draws 1,000).
 
 ## 4. Judge it
 
-- `champions monster review <type>` renders the default look beside
-  `--look trailer`: three sizes, idle, walk and attack, the shatter and a
-  crowd cell over the grid, in the type's colour. Look at game scale first,
-  then zoom. Watch every pose: a shape that reads at idle can collapse
-  mid-stride.
+- `champions monster review <type>` renders the default look into
+  `rhythm_champions/evidence/monsters/<type>/`: `default-far.jpg`,
+  `default-game.jpg` and `default-near.jpg` (idle, walk and attack, then the
+  shatter), `default-crowd.jpg` (a crowd over the grid) and `compare.jpg`
+  (`--look trailer` on the left, the default on the right); add
+  `--look trailer` for the `trailer-*.jpg` sheets. Everything in the type's
+  colour at the game camera. Look at game scale first, then zoom. Watch
+  every pose: a shape that reads at idle can collapse mid-stride.
 - **Get a blind critique** from a fresh agent that knows nothing of your
   intent. Give it only the images, no docs, no recipe, no numbers, so its
   eye isn't anchored on yours:
@@ -176,7 +205,8 @@ the cost if you go over (the crowd draws 1,000).
   - the review sheets;
   - a README saying what you saw in the trailer's drawing, what you changed
     and why, the blind critique quoted with what you did about it, and what
-    still looks weak.
+    still looks weak. The review rewrites the README's top each time and
+    keeps everything from its `## Notes` heading on: write yours there.
 - The default look uses the new mesh only if it reads better than the
   trailer's drawing; otherwise say why the vendor mesh stays.
   `--look trailer` never changes.

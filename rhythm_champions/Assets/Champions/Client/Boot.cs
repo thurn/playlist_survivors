@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Champions.Client.Bench;
 using Champions.Client.Loop;
 using Champions.Client.Music;
 using Champions.Client.Scenes;
@@ -26,6 +27,9 @@ namespace Champions.Client
     /// - `--calibration FILE`: the calibrations' file (Calibration.CalibrationStore);
     /// - `--gallery`: the weapon effects' gallery in a window, every effect in turn (<see cref="GalleryScene"/>); with
     ///   `--capture-stills DIR`, its stills as a scripted scene;
+    /// - `--look trailer`: the monsters as the neon edge trailer drew them (the still scenes and the bench take it);
+    /// - `--crowd-bench N`: the crowd's timing scene (<see cref="CrowdBench"/>), with its own world; `--bench-out PATH`
+    ///   for its timings;
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -37,6 +41,7 @@ namespace Champions.Client
         StillScenes _scenes;
         WorldPresenter _world;
         GalleryDriver _gallery;
+        CrowdBench _bench;
         Flow _flow;
         Palette _palette;
         GameContent _content;
@@ -59,8 +64,8 @@ namespace Champions.Client
             if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
             // The tier first: the stills' target takes the pipeline's MSAA.
             QualityTiers.Apply(_options.Tier ?? QualityTiers.Default());
-            // The still scenes and the gallery place the camera themselves: no world of Boot's under them.
-            if (_options.StillsScenes.Length == 0 && !_options.Gallery)
+            // The still scenes, the gallery and the bench place the camera themselves: no world of Boot's under them.
+            if (_options.StillsScenes.Length == 0 && !_options.Gallery && _options.CrowdBench <= 0)
             {
                 try
                 {
@@ -81,7 +86,7 @@ namespace Champions.Client
             if (_options.StillsDir != null) _stills = new Stills(_camera, _options.StillsDir, _options.StillsAt);
             if (_options.StillsScenes.Length > 0)
             {
-                try { _scenes = new StillScenes(_stills, _camera, _options.StillsScenes, ContentDir()); }
+                try { _scenes = new StillScenes(_stills, _camera, _options.StillsScenes, ContentDir(), _options.Look); }
                 catch (Exception e) when (e is ArgumentException || e is ContentException)
                 {
                     Debug.LogError("Boot: " + e.Message);
@@ -102,6 +107,18 @@ namespace Champions.Client
                     Application.Quit(2);
                     return;
                 }
+            }
+            if (_options.CrowdBench > 0)
+            {
+                _bench = CrowdBench.Start(_camera, _options.CrowdBench, _options.Look, Palette.Load(ContentDir()), _options.BenchOut, out string why);
+                if (_bench == null)
+                {
+                    Debug.LogError("Boot: --crowd-bench: " + why);
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+                if (_stills != null) _stills.Requeue = _bench.Requeue;
             }
             if (_options.File != null || _options.App != null)
             {
@@ -148,6 +165,7 @@ namespace Champions.Client
             double t = Time.timeAsDouble;
             // Without a run or a scene, the world stands still around the hero's spot.
             if (!_driven && (_flow == null || !_flow.Running)) _world?.Present(t, Vector2.zero, Time.deltaTime);
+            _bench?.Frame(t);
             if (_scenes != null)
             {
                 _scenes.Update(t);
@@ -163,6 +181,8 @@ namespace Champions.Client
 
         void Quit(string why)
         {
+            _bench?.Report();
+            _bench = null;
             Debug.Log("Boot: quitting, " + why);
             enabled = false;
             Application.Quit(0);
@@ -170,6 +190,8 @@ namespace Champions.Client
 
         void OnDestroy()
         {
+            _bench?.Report(); // a windowed run the player quit
+            _bench?.Dispose();
             _stills?.Dispose();
             _world?.Dispose();
             if (_gallery != null) Destroy(_gallery.gameObject);

@@ -49,9 +49,11 @@ def library_key(wt: paths.Worktree) -> str:
 
 
 # What the bakers read (plan.md, Build Policy: the baked cache): the editor code that bakes (the
-# weapon effects' library and the sound bank) and the vendor manifest. A worktree whose Assets/Baked/
-# was made from the same inputs copies it from the cache instead of baking again.
-BAKE_INPUTS = ("Assets/Champions/Editor",)
+# weapon effects' library, the sound bank and the monsters, with their table), the monster asset it
+# writes, the monster recipes and the code that runs them, and the vendor manifest. A worktree whose
+# Assets/Baked/ was made from the same inputs copies it from the cache instead of baking again.
+BAKE_INPUTS = ("Assets/Champions/Editor", "Assets/Champions/Render/Crowd/MonsterType.cs", "tools/recipes",
+               "tools/src/champions_tools/monster.py")
 BAKED_KEY = ".baked-key"  # in Assets/Baked/: the inputs key it was baked from
 
 
@@ -60,7 +62,8 @@ def baked_dir(wt: paths.Worktree) -> Path:
 
 
 def baked_key(wt: paths.Worktree) -> str:
-    files = [f for d in BAKE_INPUTS for f in sorted((wt.project / d).rglob("*"))
+    files = [f for d in BAKE_INPUTS for f in (sorted((wt.project / d).rglob("*")) if (wt.project / d).is_dir()
+                                              else [wt.project / d])
              if f.is_file() and "__pycache__" not in f.parts]
     return file_hash(wt.root, *files, wt.project / "manifest.json")
 

@@ -317,10 +317,22 @@ trailer's, ported back:
     `EdgeLook`'s gains;
   - `CrowdShardBaker` with `MonsterShards.compute`, each shard outlined
     along its crack.
+  - As landed (Render/Crowd, Editor/Monsters): `MonsterCrowd`,
+    `MonsterShatter`, `EdgeLook` and `EdgeGains`, the ten types' vendor
+    models in `Editor/Monsters/monsters.json`. Three deliberate changes from
+    the trailer: the trailer's post had a void toe (its neon-bloom preset
+    sank everything under a knee toward black) that the game's post lacks,
+    so the monster shaders apply it to their own light (`EdgeToe`); the
+    world's beat wave stands in for the trailer's global beat pulse (the
+    core glow and line lift travel out with the wave); and a weapon's or
+    shield's chunks are flung with the body (the trailer's kick left a
+    sword hanging by the feet standing where it fell).
 - **`--look trailer`**: a player flag, honoured by stills and reviews too,
   that draws exactly the trailer's look: vendor meshes, `MonsterEdge.hlsl`
   and its gains as ported. The default look starts identical; later work
-  changes only the default, and a test pins the trailer look.
+  changes only the default, and a test pins the trailer look
+  (`MonsterLookTests`: the trailer's shader files and `EdgeGains.Trailer`; a
+  change to the default gets its own shader).
 - **Monster meshes** (ps-6y2.31-40): one bead per monster runs the
   [monster-mesh-design skill](../../.agents/skills/monster-mesh-design/SKILL.md).
   - `champions monster bake <type>` bakes from

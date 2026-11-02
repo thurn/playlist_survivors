@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Champions.Render;
+using Champions.Render.Crowd;
 using Champions.Sim;
 using UnityEngine;
 
@@ -8,10 +9,10 @@ namespace Champions.Client.Scenes
 {
     /// <summary>
     /// `palette`: the palette as drawn (docs/champions/style.md, The palette scene). Minute 5's horde from level1.json
-    /// (its density and mix), each monster a stand-in at its type's size in its type's colour (a near-black body whose
-    /// silhouette glows, Champions/StandIn), round the hero in white, on the void, under the real post. It measures the
-    /// palette's key, families, conformance and the hero's margin until the trailer's edge look replaces the stand-ins.
-    /// Placed from a fixed seed, so every run keeps the same still.
+    /// (its density and mix), each monster drawn by the crowd in the edge look (`--look trailer` for the trailer's) in
+    /// its type's colour, walking in place toward the hero (a stand-in in white, Champions/StandIn), on the void, under
+    /// the real post; a build without baked monsters draws stand-ins at their types' sizes instead. Placed from a fixed
+    /// seed, so every run keeps the same still.
     /// </summary>
     sealed class PaletteScene : IStillScene
     {
@@ -28,11 +29,13 @@ namespace Champions.Client.Scenes
 
         readonly GameContent _content;
         readonly Palette _palette;
+        readonly MonsterLook _look;
 
-        public PaletteScene(GameContent content, Palette palette)
+        public PaletteScene(GameContent content, Palette palette, MonsterLook look)
         {
             _content = content;
             _palette = palette;
+            _look = look;
         }
 
         public double[] Times => new[] { 0.25 };
@@ -59,6 +62,9 @@ namespace Champions.Client.Scenes
             view.Hero = Vector3.zero;
             view.Ids[IdPass.Hero] = ("hero", "hero", HeroM);
 
+            var lib = MonsterLibrary.Load(_look);
+            if (lib == null) Debug.LogWarning("PaletteScene: no baked monsters (champions monster bake all): stand-ins");
+            var crowd = new List<(int Type, int Code, Vector3 Feet)>();
             var rng = new System.Random(Seed);
             var placed = new List<(double X, double Z, double R)>();
             var mix = Array.FindAll(level.Mix, e => e.FromS <= MinuteS);
@@ -88,12 +94,15 @@ namespace Champions.Client.Scenes
                         placed.Add((x, z, type.RadiusM));
                         bool flies = type.Role == EnemyRole.Swarmer;
                         bool round = type.SizeM <= 2 * type.RadiusM;
-                        Spawn(root, round, new Vector3((float)x, flies ? FlyM : 0, (float)z), (float)type.SizeM, (float)type.RadiusM, material);
+                        int baked = lib?.IndexOf(type.Id) ?? -1;
+                        if (baked >= 0) crowd.Add((baked, code, new Vector3((float)x, lib.Types[baked].HoverM, (float)z)));
+                        else Spawn(root, round, new Vector3((float)x, flies ? FlyM : 0, (float)z), (float)type.SizeM, (float)type.RadiusM, material);
                         break;
                     }
                 }
             }
 
+            if (crowd.Count > 0) view.Requeue = root.gameObject.AddComponent<PaletteCrowd>().Begin(camera, lib, _palette, crowd);
             camera.fieldOfView = FovDeg;
             camera.transform.rotation = Quaternion.Euler(PitchDeg, 0, 0);
             camera.transform.position = new Vector3(0, HeroM / 2, 0) - camera.transform.forward * DistanceM;
@@ -129,5 +138,62 @@ namespace Champions.Client.Scenes
             go.transform.localPosition = feet + Vector3.up * height / 2;
             go.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
+    }
+    /// <summary>
+    /// Draws <see cref="PaletteScene"/>'s horde with the crowd every frame, from the frame it began, before Boot keeps a
+    /// still of it; torn down with its root.
+    /// </summary>
+    [DefaultExecutionOrder(-100)]
+    sealed class PaletteCrowd : MonoBehaviour
+    {
+        MonsterCrowd _crowd;
+        Camera _camera;
+        List<(int Type, int Code, Vector3 Feet)>[] _byType;
+        double _start;
+
+        /// <summary>Starts drawing the monsters (type in the library, ID code, feet); the stills' requeue.</summary>
+        public Action Begin(Camera camera, MonsterLibrary lib, Palette palette, List<(int Type, int Code, Vector3 Feet)> monsters)
+        {
+            _camera = camera;
+            _start = Time.timeAsDouble;
+            _byType = new List<(int, int, Vector3)>[lib.Types.Length];
+            for (int t = 0; t < _byType.Length; t++) _byType[t] = monsters.FindAll(m => m.Type == t);
+            int most = 1;
+            foreach (var list in _byType) most = Math.Max(most, list.Count);
+            _crowd = new MonsterCrowd(lib, most, palette);
+            foreach (var list in _byType)
+                if (list.Count > 0) _crowd.SetIdCode(list[0].Type, list[0].Code);
+            Present(0); // drawn from the first frame, and in an EditMode test, where nothing updates it
+            return () => _crowd.Queue(_camera);
+        }
+
+        void Update() => Present(Time.timeAsDouble - _start);
+
+        void Present(double t)
+        {
+            for (int type = 0; type < _byType.Length; type++)
+            {
+                var list = _byType[type];
+                if (list.Count == 0) continue;
+                var clips = _crowd.Library.Types[type];
+                int walk = Math.Max(0, clips.Clip("walk"));
+                var slots = _crowd.Instances(type, list.Count);
+                var motion = _crowd.Motion(type, list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var feet = list[i].Feet;
+                    float time = (float)(t + 0.37 * i);
+                    slots[i] = new MonsterInstance
+                    {
+                        Position = feet, Yaw = Mathf.Atan2(-feet.x, -feet.z), ClipA = (uint)walk, TimeA = time, ClipB = (uint)walk,
+                        TimeB = time, Blend = 1, Scale = 1, Flags = (uint)CrowdFlags.Alive,
+                    };
+                    motion[i] = MonsterMotion.Still((uint)(type * 1000 + i + 1));
+                }
+            }
+            _crowd.Draw(_camera, t);
+        }
+
+        void OnDestroy() => _crowd?.Dispose();
     }
 }

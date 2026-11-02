@@ -10,8 +10,10 @@ title (Play, Calibrate, Quit), whose music picker starts a run on an app's
 audio or a file; with a music source the music plays 3 s late
 through the plugin while its beats feed the sim, whose beats send the beat
 wave across the grid and whose section changes move the zone key. The
-monsters, the hero, the bosses and the structures draw as stand-ins
-([below](#stand-ins)) until the trailer's edge look is ported. The hero's
+monsters draw in the neon edge trailer's look on their vendor meshes
+(`champions monster bake all`, then build; `--look trailer` for the trailer's
+exact drawing); the hero, the bosses and the structures draw as stand-ins
+([below](#stand-ins)) until they join it. The hero's
 weapon effects draw Hovl's slash shapes in white (`--gallery` shows them
 all), and the hero's sounds are baked and scheduled, for the assembly to wire
 to the sim. A run shows the hero's
@@ -58,7 +60,9 @@ in a window; with `--capture-stills DIR`, a still of each, as `--stills-scenes
 gallery`; with `--bench-out PATH` too, each effect's GPU time), and `--tier
 low|medium|high` (the quality tier; without it the pause menu's last choice,
 or the GPU's guess: an M-series Max or Ultra plays High, a Pro Medium,
-anything else Low). With music, the log's `Music:` lines show
+anything else Low), `--look trailer` (the monsters exactly as the neon edge
+trailer drew them) and `--crowd-bench N` (N monsters timed, headless, with
+`--bench-out PATH`). With music, the log's `Music:` lines show
 the delay, each beat the sim reaches with when it became known, and a
 summary. `--calibration FILE` keeps the calibrations
 in FILE instead of the player's data folder. `champions play --headless` runs the player in

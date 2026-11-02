@@ -1,0 +1,15 @@
+{
+  "type": "troll",
+  "look": "default",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [5220, 2686, 1344],
+  "trailerLodTriangles": [5220, 2686, 1344],
+  "shards": 33,
+  "bones": 50,
+  "heightM": 2.429,
+  "poses": ["idle", "walk", "attack"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

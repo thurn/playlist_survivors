@@ -1,0 +1,15 @@
+{
+  "type": "dragon",
+  "look": "default",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [5444, 2815, 1408],
+  "trailerLodTriangles": [5444, 2815, 1408],
+  "shards": 34,
+  "bones": 108,
+  "heightM": 2.693,
+  "poses": ["idle", "walk", "breath", "tail", "fireball", "fly", "land"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

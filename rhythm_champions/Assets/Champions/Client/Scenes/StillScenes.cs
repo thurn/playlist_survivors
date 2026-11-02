@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Champions.Render;
+using Champions.Render.Crowd;
 using Champions.Sim;
 using UnityEngine;
 
@@ -41,7 +42,7 @@ namespace Champions.Client.Scenes
         /// <summary>The scenes by name, in the order `all` plays them.</summary>
         static readonly (string Name, Func<StillScenes, IStillScene> Make)[] Known =
         {
-            (PaletteScene.Name, s => new PaletteScene(s._content, s._palette)),
+            (PaletteScene.Name, s => new PaletteScene(s._content, s._palette, s._look)),
             (WorldScene.Name, s => new WorldScene(s._palette)),
             (StructureScene.Name, s => new StructureScene(s._content, s._palette)),
             (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
@@ -56,6 +57,7 @@ namespace Champions.Client.Scenes
         readonly GameContent _content;
         readonly Palette _palette;
         readonly string _contentDir;
+        readonly MonsterLook _look;
         readonly Queue<string> _pending;
         string _name;
         IStillScene _scene;
@@ -66,8 +68,10 @@ namespace Champions.Client.Scenes
 
         /// <param name="names">Scene names, or `all`; an unknown one throws.</param>
         /// <param name="contentDir">The content folder (the palette, the cast, the level).</param>
-        public StillScenes(Stills stills, Camera camera, IEnumerable<string> names, string contentDir)
+        /// <param name="look">The monsters' drawing (`--look trailer`).</param>
+        public StillScenes(Stills stills, Camera camera, IEnumerable<string> names, string contentDir, MonsterLook look = MonsterLook.Default)
         {
+            _look = look;
             _stills = stills;
             _camera = camera;
             _content = GameContent.Load(contentDir);

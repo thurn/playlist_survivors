@@ -1,0 +1,15 @@
+{
+  "type": "demon",
+  "look": "default",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [5992, 3070, 1536],
+  "trailerLodTriangles": [5992, 3070, 1536],
+  "shards": 29,
+  "bones": 59,
+  "heightM": 1.419,
+  "poses": ["idle", "walk", "attack"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

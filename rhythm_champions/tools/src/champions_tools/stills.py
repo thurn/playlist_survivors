@@ -32,7 +32,7 @@ def cmd_stills(a: argparse.Namespace) -> int:
         for old in out.glob(pattern):
             old.unlink()
     code = headless(wt, app, ["--fixed-time", "--capture-stills", str(out),
-                              "--stills-scenes", ",".join(a.scene or ["all"])], "stills.log")
+                              "--stills-scenes", ",".join(a.scene or ["all"]), "--look", a.look], "stills.log")
     kept = sorted(out.glob("still-*"))
     print(f"stills: {len(kept)} stills in {out}" + "".join(f"\n  {p.name}" for p in kept))
     return code if code != 0 else (0 if kept else 1)
