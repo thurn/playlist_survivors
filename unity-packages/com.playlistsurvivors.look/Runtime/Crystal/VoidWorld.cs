@@ -10,7 +10,8 @@ namespace PS.Look
     /// framing, gone past about 150 m, so the far floor has no moiré), and the vendor set the world replaces is hidden
     /// (<see cref="Hide"/>). The grid floor is <see cref="GridFloor"/>'s. Under `hued-zones` a zone takes the palette's
     /// zone tint in turn: <see cref="SetZone"/> eases to it, the fog takes its hue at the fog's own lightness and the
-    /// <see cref="Floor"/>'s lines take it; `void-grid` and `pure-void` keep the key throughout.
+    /// <see cref="Floor"/>'s lines and the <see cref="Terrain"/>'s hedges take it; `void-grid` and `pure-void` keep the key
+    /// throughout.
     /// </summary>
     public sealed class VoidWorld
     {
@@ -45,6 +46,18 @@ namespace PS.Look
 
         /// <summary>The grid floor whose lines take the zone's hue under `hued-zones`, or null.</summary>
         public GridFloor Floor { get; set; }
+
+        /// <summary>The structure look whose terrain (the impassable ground's hedges) takes the zone's hue under `hued-zones`, or null.</summary>
+        public StructureLook Terrain
+        {
+            get => _terrain;
+            set
+            {
+                _terrain = value;
+                if (Zoned) _terrain?.TintTerrain(_now);
+            }
+        }
+        StructureLook _terrain;
 
         /// <summary>Sets the fog and <paramref name="camera"/>'s clear colour (it draws the void); call once the arena's own night is applied.</summary>
         public void Apply(Camera camera)
@@ -88,7 +101,9 @@ namespace PS.Look
             if (now == _now) return;
             _now = now;
             ApplyFog();
-            if (Zoned) Floor?.SetZoneTint(_now, 1f);
+            if (!Zoned) return;
+            Floor?.SetZoneTint(_now, 1f);
+            _terrain?.TintTerrain(_now);
         }
 
         Color At(double s)

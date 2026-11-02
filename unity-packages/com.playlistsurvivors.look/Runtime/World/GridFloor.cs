@@ -15,6 +15,9 @@ namespace PS.Look
     /// - `void-grid`: the grid as the style guide sets it;
     /// - `pure-void`: a fainter grid (its lines at half the material's L* after the post);
     /// - `hued-zones`: the grid in the palette's first zone's hue (<see cref="SetZoneTint"/> for another).
+    /// In every option a level's impassable ground (<see cref="SetBlocked"/>) shows no grid: the lines fade to
+    /// <see cref="BlockedLines"/> over it and a kerb outlines the walkable floor, so the gridded floor is where the hero
+    /// can walk.
     /// </summary>
     public sealed class GridFloor : IDisposable
     {
@@ -30,6 +33,12 @@ namespace PS.Look
 
         static readonly int TintId = Shader.PropertyToID("_Tint");
         static readonly int LineLId = Shader.PropertyToID("_LineL");
+        static readonly int BlockMaskId = Shader.PropertyToID("_BlockMask");
+        static readonly int BlockRectId = Shader.PropertyToID("_BlockRect");
+        static readonly int BlockedLinesId = Shader.PropertyToID("_BlockedLines");
+
+        /// <summary>The lines' brightness over blocked ground, against the walkable floor's.</summary>
+        public const float BlockedLines = 0.1f;
 
         public readonly string Option;
         public readonly Material Material;
@@ -71,6 +80,19 @@ namespace PS.Look
         {
             var linear = tint.linear;
             Material.SetVector(TintId, new Vector4(linear.r, linear.g, linear.b, Mathf.Clamp01(amount)));
+        }
+
+        /// <summary>
+        /// Marks <paramref name="ground"/>'s blocked tiles, and everything outside its rectangle, as impassable: the lines
+        /// fade out over them and a kerb outlines the walkable floor. The floor draws from the mask, so it must outlive
+        /// the floor's use of it.
+        /// </summary>
+        public void SetBlocked(BlockedGround ground)
+        {
+            Material.SetTexture(BlockMaskId, ground.Mask);
+            Material.SetVector(BlockRectId, new Vector4(ground.Origin.x, ground.Origin.y,
+                1f / (ground.Width * ground.TileM), 1f / (ground.Height * ground.TileM)));
+            Material.SetFloat(BlockedLinesId, BlockedLines);
         }
 
         /// <summary>Hides an arena's ground and the floor decals beside it (<see cref="Decals"/>): the floor is the ground now.</summary>
@@ -129,9 +151,12 @@ namespace PS.Look
 
         public void Dispose()
         {
-            if (_go != null) UnityEngine.Object.Destroy(_go);
-            if (_mesh != null) UnityEngine.Object.Destroy(_mesh);
-            if (Material != null) UnityEngine.Object.Destroy(Material);
+            foreach (var o in new UnityEngine.Object[] { _go, _mesh, Material })
+            {
+                if (o == null) continue;
+                if (Application.isPlaying) UnityEngine.Object.Destroy(o);
+                else UnityEngine.Object.DestroyImmediate(o);
+            }
         }
     }
 }

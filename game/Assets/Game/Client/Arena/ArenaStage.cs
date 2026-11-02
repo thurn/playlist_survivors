@@ -45,7 +45,7 @@ namespace Game.Client.Arena
             _void = new VoidArena(arena, PS.Look.ResolvedLook.Active, _camera);
             _floor = PS.Look.GridFloor.For(PS.Look.ResolvedLook.Active);
             if (_floor != null) PS.Look.GridFloor.Replace(arena.Ground);
-            if (_void.World != null) _void.World.Floor = _floor;
+            _void.Lay(_floor);
             var options = LaunchOptions.Current;
             float width = options.ViewWidth > 0 ? options.ViewWidth : ViewWidthM;
             _holdS = options.ArenaTour;

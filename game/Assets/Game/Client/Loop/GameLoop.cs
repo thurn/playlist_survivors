@@ -437,8 +437,8 @@ namespace Game.Client.Loop
                 _look.Floor = _floor;
                 // The void world's zones tint it; the arena's own zones relight its night.
                 _look.World = _void.World;
-                if (_void.World != null) _void.World.Floor = _floor;
-                else
+                _void.Lay(_floor);
+                if (_void.World == null)
                 {
                     _look.ZoneLight = new ZoneLighting(a.LayoutJson, a.Lighting, a.Relight);
                     if (_look.Zones != null) _look.ZoneLight.Preload(_look.Zones);

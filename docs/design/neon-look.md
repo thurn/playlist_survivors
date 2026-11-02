@@ -555,6 +555,24 @@ the grid floor (`Runtime/World/GridFloor.cs`, ps-wnj.7):
   or, without them, the game's baked shards of their meshes.
 - **`CrystalFormations`** is demo3d's, moved in: formations from
   `CrystalKit.Formation` in the material it is given.
+- **`BlockedGround`** marks a level's impassable ground (ps-wnj.23): the
+  tiles it blocks with no structure on them, whose trees, rocks and forest
+  edge leave with the vendor set. Every blocked tile beside walkable ground
+  (diagonals too) carries a low hedge: the longest straight runs of such
+  tiles take `CrystalKit.Wall` pieces at most five tiles long, a lone tile a
+  `CrystalKit.Shard`, all within their tiles; they never break, so they merge
+  into one mesh per 16-tile chunk with no shards or shadows. Its `Mask` (a
+  texel a tile) goes to `GridFloor.SetBlocked`: the floor's lines fade to a
+  tenth over blocked ground and outside the level, and a kerb (the lines' hue
+  halfway to `grid.pulse`, at L* 38 after the post in every option, over the
+  lines' 12) runs along the
+  walkable side of every edge with blocked ground, so the gridded floor is
+  the walkable floor and its outline is lit. The hedges draw in
+  `StructureLook.Terrain`: the structure look at 60% light (lit edges at
+  least 0.3, under every look's props) in `grid.pulse` (the zone's hue under `hued-zones`), so the
+  world's walls read with the floor, apart from the gem of what breaks and
+  well under the monsters
+  ([evidence](../../game/evidence/look/void-blocking/README.md)).
 - **`VoidWorld`** is the air: the camera clears to `void.floor`, the
   distance fades into `void.fog` (exponential squared, gone past about
   150 m), `Hide` takes the vendor set away, and under `hued-zones` a zone
@@ -563,7 +581,11 @@ the grid floor (`Runtime/World/GridFloor.cs`, ps-wnj.7):
   flames' lights under a world option, and under a structure look stands
   `CrystalProps` on each site's tiles from the build's own `arena.json`
   (the kit pieces hidden), re-rendering the static shadow map from what
-  stands. `StructurePresenter` turns the sim's events into the shatter's
+  stands. Under a world option it marks the rest of `arena.json`'s blocked
+  tiles with `BlockedGround` (the hedges in the structure look's terrain, or
+  `edge-glass`'s without one), so the hero meets no invisible wall; the
+  check is `VoidArenaTests` (every blocked tile marked under each world
+  option, nothing standing on walkable ground). `StructurePresenter` turns the sim's events into the shatter's
   calls. Zones tint the void world in place of the zone grades and the
   arena's zone relighting. Without a structure look the kit's sites turn
   crystal as before (`CrystalStructures`).

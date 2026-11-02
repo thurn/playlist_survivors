@@ -13,7 +13,9 @@ namespace Game.Client.Arena
     /// structures and footprints stay the bake's; only the drawing changes:
     /// - a world option built (<see cref="VoidWorld"/>): the Synty set under Static (everything but the structure sites),
     ///   the mist and the flames' lights go, the fog and the camera's clear colour are the palette's void, and the grid
-    ///   floor takes the ground's place (GridFloor);
+    ///   floor takes the ground's place (GridFloor); the tiles the level data blocks with no structure on them, whose
+    ///   trees, rocks and forest edge went with the set, are marked (<see cref="Blocked"/>): low crystal hedges on every
+    ///   one beside walkable ground, in the structure look's terrain, and no grid on the floor over them (<see cref="Lay"/>);
     /// - a structure look built (<see cref="StructureLook"/>): each structure site's kit pieces give way to crystal kit
     ///   pieces standing on the site's tiles in the level data (the build's own arena.json, as the arena drawn is the
     ///   build's), in the look's material, with their own shards (<see cref="CrystalProps"/>); without one, the kit
@@ -25,6 +27,10 @@ namespace Game.Client.Arena
     {
         public readonly VoidWorld World;
         public readonly StructureLook Structures;
+        /// <summary>The level's impassable ground, marked under a world option; null otherwise (the arena's set shows it).</summary>
+        public readonly BlockedGround Blocked;
+        /// <summary>The terrain's look when the look names no structure look of its own.</summary>
+        readonly StructureLook _terrain;
         readonly CrystalProps _props;
         readonly CrystalStructures _crystal;
 
@@ -39,6 +45,7 @@ namespace Game.Client.Arena
             Structures = StructureLook.For(look);
             var stat = arena.Root.Find("Static");
             var sites = stat.Find("Structures");
+            var level = LevelBake.Load()?.Arena();
             if (World != null)
             {
                 var set = new List<Renderer>();
@@ -47,12 +54,19 @@ namespace Game.Client.Arena
                 if (arena.Mist != null) set.Add(arena.Mist);
                 VoidWorld.Hide(set, arena.Lights);
                 World.Apply(camera);
+                if (level != null)
+                {
+                    var terrain = Structures ?? (_terrain = new StructureLook(StructureLook.EdgeGlass, look.Palette));
+                    Blocked = Blocking(level, look, terrain.Terrain, arena.Root);
+                    World.Terrain = terrain;
+                    Debug.Log($"VoidArena: {level.Blocked.Length} blocked tiles, {Blocked.RimTiles} beside walkable ground under {Blocked.Pieces} crystal pieces");
+                }
+                else Debug.LogWarning("VoidArena: the build has no level data: its blocked ground stays unmarked");
             }
             if (Structures != null)
             {
                 if (sites != null) VoidWorld.Hide(sites.GetComponentsInChildren<Renderer>(true));
                 _props = new CrystalProps(arena.Root, Structures.Material);
-                var level = LevelBake.Load()?.Arena();
                 bool tiled = level != null && level.Structures.Length == arena.Sites.Count;
                 if (!tiled) Debug.LogWarning("VoidArena: the build's level data doesn't list the arena's sites: crystal props fill each site's bounds");
                 for (int i = 0; i < arena.Sites.Count; i++)
@@ -75,6 +89,28 @@ namespace Game.Client.Arena
                 Sites = arena.Sites;
                 if (World != null) arena.Restage(new List<Renderer>(arena.Structures));
             }
+        }
+
+        /// <summary>
+        /// The impassable ground <paramref name="look"/> marks in <paramref name="terrain"/>: under a world option, the
+        /// tiles <paramref name="level"/> blocks with no structure on them (structures stand as their own props); null
+        /// under none, whose arena set shows them.
+        /// </summary>
+        public static BlockedGround Blocking(ArenaData level, ResolvedLook look, Material terrain, Transform parent = null)
+        {
+            if (level == null || look?.Option(LookAxes.World) == null) return null;
+            var blocked = new bool[level.Width * level.Height];
+            foreach (var t in level.Blocked) blocked[t.Y * level.Width + t.X] = true;
+            return new BlockedGround(parent, terrain, blocked, level.Width, level.Height,
+                new Vector2((float)level.OriginX, (float)level.OriginY), (float)level.TileM, 4099);
+        }
+
+        /// <summary>Lays <paramref name="floor"/> (the look's grid floor, or null) as the void world's ground: zones tint its lines and the blocked ground shows no grid.</summary>
+        public void Lay(GridFloor floor)
+        {
+            if (World == null) return;
+            World.Floor = floor;
+            if (floor != null && Blocked != null) floor.SetBlocked(Blocked);
         }
 
         /// <summary>A site's tiles' centres on the ground.</summary>
@@ -103,7 +139,9 @@ namespace Game.Client.Arena
         {
             _props?.Dispose();
             _crystal?.Dispose();
+            Blocked?.Dispose();
             Structures?.Dispose();
+            _terrain?.Dispose();
         }
     }
 }

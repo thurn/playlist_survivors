@@ -16,6 +16,8 @@ namespace PS.Look
     /// pieces that shatter on the beat, draw in <see cref="Featured"/>: the same look lit from inside, brighter than
     /// the props around them (the formations people loved were the white-gold glow). A hit's flash and a break's glow
     /// are full only in a special moment (CrystalProp.shader's _FlashCalm; neon-look.md, Restraint and special moments).
+    /// The impassable ground's hedges (<see cref="BlockedGround"/>) draw in <see cref="Terrain"/>: the same look dimmer,
+    /// in the grid's hue, so the world's walls read as the floor's and apart from the gem of what breaks.
     /// </summary>
     public sealed class StructureLook : IDisposable
     {
@@ -45,6 +47,8 @@ namespace PS.Look
         public readonly Material Material;
         /// <summary>The formations' material: the look with its faces, rim and edges brighter.</summary>
         public readonly Material Featured;
+        /// <summary>The impassable ground's material: the look's faces, rim and edges dimmer, in <c>grid.pulse</c> (<see cref="TintTerrain"/>).</summary>
+        public readonly Material Terrain;
         /// <summary>The palette's <c>shatter.gem</c>, linear: the props' colour and their breaks' bursts.</summary>
         public readonly Color Gem;
 
@@ -72,6 +76,25 @@ namespace PS.Look
             f.Rim = s.Rim > 0 ? FeaturedRim * s.Rim : s.Rim;
             f.Edge = FeaturedEdge * s.Edge;
             Featured = Make(shared, "Crystal formation (" + option + ")", f);
+            var t = s;
+            t.Body = TerrainLight * s.Body;
+            t.Rim = TerrainLight * s.Rim;
+            t.Edge = s.Edge > 0 ? Mathf.Max(TerrainLight * s.Edge, TerrainEdgeMin) : 0f;
+            Terrain = Make(shared, "Crystal terrain (" + option + ")", t);
+            TintTerrain(palette != null ? palette.GridPulse : new Color(0.31f, 0.49f, 1f));
+        }
+
+        /// <summary>The terrain's light against the props': its faces', rim's and edges'.</summary>
+        public const float TerrainLight = 0.6f;
+        /// <summary>The least light of the terrain's edges where the look draws lit edges (refractive-gem's faint ones would vanish), under every look's props'.</summary>
+        public const float TerrainEdgeMin = 0.3f;
+
+        /// <summary>The terrain in <paramref name="hue"/> (sRGB; a zone's tint under `hued-zones`), at full value.</summary>
+        public void TintTerrain(Color hue)
+        {
+            var linear = hue.linear;
+            float max = Mathf.Max(linear.r, Mathf.Max(linear.g, linear.b), 1e-4f);
+            Terrain.SetColor("_Tint", new Color(linear.r / max, linear.g / max, linear.b / max, 1f));
         }
 
         /// <summary>
@@ -99,7 +122,7 @@ namespace PS.Look
 
         public void Dispose()
         {
-            foreach (var m in new[] { Material, Featured })
+            foreach (var m in new[] { Material, Featured, Terrain })
             {
                 if (m == null) continue;
                 if (Application.isPlaying) UnityEngine.Object.Destroy(m);
