@@ -5,7 +5,7 @@
   "swordSlash": {
     "tags": ["Strike", "Area"],
     "damage": 1.0,
-    "windupS": 0.25,
+    "windupS": 0.35,
     "spinDamage": 1.5,
     "ranks": [
       { "arcDeg": 150, "reachM": 3.0, "spinEvery": 0, "tempest": false },

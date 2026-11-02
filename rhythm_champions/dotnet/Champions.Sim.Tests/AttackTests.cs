@@ -23,7 +23,7 @@ namespace Champions.Sim.Tests
         public void SwordSlashSwingsOnTheCadenceItsImpactOnTheBeat(double bpm, int count)
         {
             var sim = Arena.Run(Arena.Song(bpm), 30, Arena.Build("swordSlash:1"), new Dummy(2, 0, Arena.Tough));
-            double period = 60.0 / bpm;
+            double period = 60.0 / bpm, windup = new AttackRules().SwordSlash.WindupS;
             var lockedAt = Drive.Events(sim, SimEventKind.Cadence).Single().T;
             var beats = new HashSet<double>(Arena.ReliableBeats(sim).Select(e => e.T));
             var strikes = Arena.Strikes(sim, BlowSource.SwordSlash).Where(e => e.T > lockedAt + 2 * count * period).ToList();
@@ -36,7 +36,7 @@ namespace Champions.Sim.Tests
                 if (i > 0) Assert.AreEqual(count * period, s.T - strikes[i - 1].T, 1e-6, $"{bpm} BPM: every {count} beats");
                 Assert.AreEqual(BlowFlags.None, Arena.Flags(s), "the hero's own swing");
                 var swing = swings.Single(w => w.D0 == s.T);
-                Assert.That(s.T - swing.T, Is.InRange(0.25 - Tick, 0.25 + 1e-9), "planned a wind-up before its impact");
+                Assert.That(s.T - swing.T, Is.InRange(windup - Tick, windup + 1e-9), "planned a wind-up before its impact");
                 Assert.AreEqual(s.D2, swing.D1, 1e-12, "the aim chosen at the wind-up");
                 Assert.AreEqual(s.D3, swing.D2, 1e-12);
             }

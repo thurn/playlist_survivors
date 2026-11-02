@@ -138,9 +138,11 @@ namespace Champions.Sim
         public double Damage = 1;
         /// <summary>
         /// The swing is planned (and its aim held) this long before its impact on the beat: the wind-up of the
-        /// hero's clip, which the client starts on the <see cref="SimEventKind.Swing"/> event.
+        /// hero's clip, which the client starts on the <see cref="SimEventKind.Swing"/> event. LightCombo01A's impact
+        /// frame (0.35 s in; LightCombo01B's is 0.267 s), so both slashes play from their first frame at natural speed;
+        /// the spin's flourish, longer, enters part-way (ps-6y2.20).
         /// </summary>
-        public double WindupS = 0.25;
+        public double WindupS = 0.35;
         public double SpinDamage = 1.5;
         public Rank[] Ranks =
         {

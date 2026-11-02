@@ -1,0 +1,287 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Champions.Client.Hero;
+using Champions.Render.Crowd;
+using NUnit.Framework;
+using UnityEngine;
+using Object = UnityEngine.Object;
+
+namespace Champions.Tests
+{
+    /// <summary>
+    /// The hero's motion and rig (design.md, The Hero &gt; Animation; Dashes) on the knight's clip annotations
+    /// (tools/recipes/edgecut/hero.py) and a three-bone stand-in rig, so they run without the vendor files: Sword Slash's
+    /// clips at natural speed with each impact frame on its beat, the legs under a twisted upper body, the dash poses and
+    /// death, and the rig's composing, twisting and layering.
+    /// </summary>
+    public sealed class HeroTests
+    {
+        const double Frame = 1.0 / 60, Windup = 0.35;
+
+        static RigClip Clip(string role, float length, float impact = -1, float end = -1, bool loop = false, float stride = -1) =>
+            new RigClip { Role = role, Name = role, Length = length, Frames = RigClip.FrameCount(length), Impact = impact, End = end, Loop = loop, StrideM = stride };
+
+        static readonly RigClip[] Knight =
+        {
+            Clip("idle", 1.767f, loop: true), Clip("run", 0.6f, loop: true, stride: 3.9f), Clip("back", 0.7f, loop: true, stride: 1.73f),
+            Clip("left", 0.7f, loop: true, stride: 1.7f), Clip("right", 0.7f, loop: true, stride: 1.71f),
+            Clip("slashB", 0.667f, 0.267f, 0.45f), Clip("slashA", 0.8f, 0.35f, 0.717f), Clip("spin", 2.033f, 1.433f, 1.65f),
+            Clip("stab", 1.367f, 0.883f, 0.983f), Clip("leap", 1.567f, 1.1f, 1.167f), Clip("parry", 0.467f, 0.233f, 0.4f),
+            Clip("dodge", 0.567f),
+        };
+
+        static HeroMotion Motion() => new HeroMotion(new HeroClips(Knight), 6);
+
+        /// <summary>
+        /// Sword Slash's swings as the sim plans them: <paramref name="count"/> impacts <paramref name="period"/> apart, each
+        /// known <paramref name="windup"/> before it, every <paramref name="spinEvery"/>th a spin, the motion shown each
+        /// 60 Hz frame in between.
+        /// </summary>
+        static List<HeroMotion.SwingRecord> Play(HeroMotion m, double period, int count, double windup = Windup, int spinEvery = 0)
+        {
+            var pose = new HeroPose();
+            var swings = new List<HeroMotion.SwingRecord>();
+            int frame = 0;
+            for (int k = 0; k < count; k++)
+            {
+                double impact = 1 + k * period;
+                while (frame * Frame < impact - windup) m.Evaluate(frame++ * Frame, pose);
+                bool spin = spinEvery > 0 && k % spinEvery == spinEvery - 1;
+                swings.Add(m.Swing(spin ? SwingKind.Spin : SwingKind.Slash, impact, Vector2.right));
+            }
+            return swings;
+        }
+
+        static float ImpactOf(HeroMotion.SwingRecord s) => Knight[s.Clip].Impact;
+
+        [TestCase(80, 1)]
+        [TestCase(128, 2)]
+        [TestCase(174, 2)]
+        public void SwordSlashLandsEachImpactFrameOnItsBeatNeverFasterThanTheLimit(double bpm, int beats)
+        {
+            var m = Motion();
+            var swings = Play(m, beats * 60 / bpm, 16, spinEvery: 4);
+            for (int i = 0; i < swings.Count; i++)
+            {
+                var s = swings[i];
+                Assert.AreEqual(ImpactOf(s), s.ClipTime(s.Impact), 1e-5, $"{bpm} BPM: swing {i}'s impact frame on its beat");
+                Assert.LessOrEqual(s.Speed, HeroMotion.MaxSpeed, $"{bpm} BPM: swing {i}");
+                if (s.Kind == SwingKind.Slash) Assert.AreEqual(1f, s.Speed, $"{bpm} BPM: a slash at natural speed with {Windup} s of notice");
+                if (i > 0) Assert.GreaterOrEqual(s.Entry, swings[i - 1].End - 1e-9, $"{bpm} BPM: swing {i - 1} followed through first");
+            }
+            Assert.IsTrue(swings.Where(s => s.Kind == SwingKind.Spin).All(s => s.EntryClipTime > 0.9f),
+                "the spin's flourish, longer than the notice, enters part-way");
+        }
+
+        /// <summary>A first slash at 1 s, known (and shown) <paramref name="notice"/> before.</summary>
+        static HeroMotion.SwingRecord Noticed(double notice)
+        {
+            var m = Motion();
+            m.Evaluate(1 - notice, new HeroPose());
+            return m.Swing(SwingKind.Slash, 1, Vector2.right);
+        }
+
+        [Test]
+        public void ShortNoticeSpeedsUpToTheLimitThenEntersPartWayAtNaturalSpeed()
+        {
+            var faster = Noticed(0.32);
+            Assert.AreEqual(0.35 / 0.32, faster.Speed, 1e-3, "LightCombo01A's 0.35 s wind-up in 0.32 s");
+            Assert.AreEqual(0f, faster.EntryClipTime, 1e-6, "from its first frame");
+            Assert.AreEqual(0.35f, faster.ClipTime(faster.Impact), 1e-5);
+            var late = Noticed(0.2);
+            Assert.AreEqual(1f, late.Speed, "past the limit it keeps natural speed");
+            Assert.Greater(late.EntryClipTime, 0.1f, "and enters part-way");
+            Assert.AreEqual(0.35f, late.ClipTime(late.Impact), 1e-5);
+        }
+
+        [Test]
+        public void SlashesAlternateFromLightCombo01AAndStartAgainAfterAPause()
+        {
+            var m = Motion();
+            var pose = new HeroPose();
+            var names = new List<string>();
+            foreach (double impact in new[] { 1, 1.75, 2.5, 3.25, 6, 6.75 })
+            {
+                m.Evaluate(impact - Windup, pose);
+                names.Add(m.Swing(SwingKind.Slash, impact, Vector2.up).Name);
+            }
+            CollectionAssert.AreEqual(new[] { "slashA", "slashB", "slashA", "slashB", "slashA", "slashB" }, names);
+        }
+
+        [Test]
+        public void WalkingTheLegsKeepTheRunAndTheUpperBodyTwistsToTheAim()
+        {
+            var m = Motion();
+            var pose = new HeroPose();
+            m.Walk(0, new Vector2(0, 6)); // north
+            m.Evaluate(1 - Windup, pose);
+            m.Swing(SwingKind.Slash, 1, Vector2.right); // east
+            m.Evaluate(1, pose);
+            Assert.AreEqual(1f, pose.Run);
+            Assert.AreEqual(1, pose.LayerCount);
+            Assert.AreEqual(0f, pose.Layers[0].Legs, "the legs keep the run");
+            Assert.AreEqual(0f, pose.Yaw, 1e-4, "the legs face the travel");
+            Assert.AreEqual(Math.PI / 2, pose.Twist, 1e-3, "the upper body faces the aim");
+            Assert.AreEqual(1f, pose.Forward, 1e-4);
+
+            var standing = Motion();
+            standing.Evaluate(1 - Windup, pose);
+            standing.Swing(SwingKind.Slash, 1, Vector2.right);
+            standing.Evaluate(1, pose);
+            Assert.AreEqual(1f, pose.Layers[0].Legs, "standing, the swing is the whole body");
+            Assert.AreEqual(Math.PI / 2, pose.Yaw, 1e-4, "turned to the aim");
+            Assert.AreEqual(0f, pose.Twist, 1e-6);
+        }
+
+        [Test]
+        public void AnAimBehindTheTravelTurnsTheLegsToRunBackward()
+        {
+            var m = Motion();
+            var pose = new HeroPose();
+            m.Walk(0, new Vector2(0, 6));
+            m.Evaluate(1 - Windup, pose);
+            m.Swing(SwingKind.Slash, 1, Vector2.down);
+            m.Evaluate(1, pose);
+            Assert.AreEqual(Math.PI, Math.Abs(pose.Yaw), 1e-3, "the legs face the aim");
+            Assert.AreEqual(0f, pose.Twist, 1e-3);
+            Assert.AreEqual(1f, pose.Back, 1e-3, "running backward");
+        }
+
+        [Test]
+        public void EachDashTakesItsPoseOnTheKeyDownFrame()
+        {
+            var m = Motion();
+            var pose = new HeroPose();
+            m.Dash(DashPose.Dash, 2, 2.15, Vector2.right, false);
+            foreach (double t in new[] { 2, 2.1 })
+            {
+                m.Evaluate(t, pose);
+                var top = pose.Layers[pose.LayerCount - 1];
+                Assert.AreEqual(Array.FindIndex(Knight, c => c.Role == "dodge"), top.Clip);
+                Assert.AreEqual(HeroMotion.DodgeStride, top.Time, 1e-6, "the long low stride, held");
+                Assert.AreEqual(1f, top.Weight);
+                Assert.AreEqual(1f, top.Legs);
+                Assert.AreEqual(Math.PI / 2, pose.Yaw, 1e-4, "facing the dash at once");
+                Assert.IsTrue(pose.TurnAtOnce);
+            }
+
+            m.Dash(DashPose.LeapSlam, 4, 4.35, Vector2.up, false);
+            m.Evaluate(4.35, pose);
+            Assert.AreEqual(1.1f, pose.Layers[pose.LayerCount - 1].Time, 1e-4, "the leap lands on the dash's end");
+            m.Evaluate(4.175, pose);
+            Assert.AreEqual(HeroMotion.LeapLiftM, pose.Lift, 1e-3, "at its arc's peak");
+
+            m.Dash(DashPose.BlinkStrike, 6, 6.05, Vector2.up, false);
+            m.Evaluate(6.02, pose);
+            Assert.IsFalse(pose.Visible, "gone while it blinks");
+            m.Evaluate(6.06, pose);
+            Assert.IsTrue(pose.Visible);
+            Assert.Greater(pose.Flare, 0.5f, "back with a flare");
+        }
+
+        [Test]
+        public void HurtFlashesOnceAndDeathHidesTheHero()
+        {
+            var m = Motion();
+            var pose = new HeroPose();
+            m.Hurt(1);
+            m.Evaluate(1, pose);
+            Assert.AreEqual(1f, pose.Hurt);
+            m.Evaluate(1 + HeroMotion.HurtS, pose);
+            Assert.AreEqual(0f, pose.Hurt);
+            m.Death(2, Vector2.zero);
+            m.Evaluate(1.99, pose);
+            Assert.IsTrue(pose.Visible);
+            m.Evaluate(2, pose);
+            Assert.IsFalse(pose.Visible, "its shards take over on the killing frame");
+        }
+
+        // ---- The rig: hips (legs), a spine bone and an arm, one entry each, binds from the rest pose ----
+
+        static readonly Vector3[] Rest = { new Vector3(0, 1, 0), new Vector3(0, 0.3f, 0), new Vector3(0.3f, 0.3f, 0) };
+
+        /// <summary>A rig of two clips: the rest pose, and <paramref name="other"/>'s local rotations on the same offsets.</summary>
+        static EdgeRig Rig(params Quaternion[] other)
+        {
+            var rig = ScriptableObject.CreateInstance<EdgeRig>();
+            rig.Id = "stand-in";
+            rig.Nodes = new[] { "Hips", "Spine", "Arm" };
+            rig.Parents = new[] { -1, 0, 1 };
+            rig.Layers = new[] { (byte)RigLayer.Legs, (byte)RigLayer.Spine, (byte)RigLayer.Arms };
+            rig.Scales = new[] { Vector3.one, Vector3.one, Vector3.one };
+            rig.Entries = new[] { 0, 1, 2 };
+            rig.Binds = new Matrix4x4[3];
+            var world = Vector3.zero;
+            for (int n = 0; n < 3; n++) rig.Binds[n] = Matrix4x4.Translate(-(world += Rest[n]));
+            rig.SpineRoot = 1;
+            rig.Clips = new[]
+            {
+                new RigClip { Role = "rest", FirstFrame = 0, Frames = 2, Length = 1 },
+                new RigClip { Role = "other", FirstFrame = 2, Frames = 2, Length = 1 },
+            };
+            var frames = new List<float>();
+            for (int f = 0; f < 4; f++)
+                for (int n = 0; n < 3; n++)
+                {
+                    var q = f < 2 ? Quaternion.identity : other[n];
+                    frames.AddRange(new[] { q.x, q.y, q.z, q.w, Rest[n].x, Rest[n].y, Rest[n].z });
+                }
+            rig.Frames = frames.ToArray();
+            return rig;
+        }
+
+        static Vector3 Skin(Vector4[] rows, int entry, Vector3 p)
+        {
+            var m = Matrix4x4.identity;
+            for (int r = 0; r < 3; r++) m.SetRow(r, rows[3 * entry + r]);
+            return m.MultiplyPoint3x4(p);
+        }
+
+        static readonly Vector3 Hand = new Vector3(0.3f, 1.6f, 0);
+
+        [Test]
+        public void TheRestPoseComposesToTheRestAndTheTwistTurnsTheUpperBodyAboutTheVertical()
+        {
+            var rig = Rig(Quaternion.identity, Quaternion.identity, Quaternion.identity);
+            try
+            {
+                var pose = new RigPose(rig);
+                var rows = new Vector4[9];
+                pose.Sample(0, 0.5);
+                pose.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-5f), "the rest pose skins to itself");
+                pose.Palette(rows, Mathf.PI / 2);
+                // A quarter turn clockwise from above about the spine bone (at 1.3 m): the hand, 0.3 m to its right, goes behind it.
+                Assert.That(Vector3.Distance(new Vector3(0, 1.6f, -0.3f), Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "the arm turned");
+                Assert.That(Vector3.Distance(Vector3.up, Skin(rows, 0, Vector3.up)), Is.LessThan(1e-5f), "the hips not");
+            }
+            finally { Object.DestroyImmediate(rig); }
+        }
+
+        [Test]
+        public void AClipLaidOverTheLegsKeepsItsSpinesTurnWhateverItsHipsDo()
+        {
+            // The clip turns its hips 45 degrees and its spine back again: its upper body faces ahead.
+            var rig = Rig(Quaternion.Euler(0, 45, 0), Quaternion.Euler(0, -45, 0), Quaternion.identity);
+            try
+            {
+                var basePose = new RigPose(rig);
+                var clip = new RigPose(rig);
+                var rows = new Vector4[9];
+                basePose.Sample(0, 0);
+                clip.Sample(1, 0);
+                basePose.Blend(clip, 0, 1, 1); // the legs keep the base's hips
+                basePose.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "the upper body still faces ahead");
+
+                var whole = new RigPose(rig);
+                whole.Sample(0, 0);
+                whole.Blend(clip, 1, 1, 1);
+                whole.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "and so it does as the whole body");
+            }
+            finally { Object.DestroyImmediate(rig); }
+        }
+    }
+}

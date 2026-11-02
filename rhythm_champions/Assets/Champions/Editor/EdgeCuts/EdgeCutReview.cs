@@ -41,10 +41,17 @@ namespace Champions.EditorTools.EdgeCuts
         const float BlowForce = 1.85f;
         const int MaxSheetPx = 6144;
         public const float BlackLStar = 10f;
+        /// <summary>The lines' colour: a key fodder's cyan, or the `-tint RRGGBB` the review is run with (the hero's white).</summary>
         static readonly Color32 Tint = new Color32(90, 220, 255, 255);
 
-        public static void Run(EdgeCutModel model, string outDir)
+        public static void Run(EdgeCutModel model, string outDir, string tint = null)
         {
+            var lineTint = Tint;
+            if (tint != null)
+            {
+                if (!ColorUtility.TryParseHtmlString("#" + tint, out var parsed)) throw new Exception($"EdgeCutReview: -tint {tint} is not RRGGBB");
+                lineTint = parsed;
+            }
             var lib = EdgeCutLibrary.Load() ?? throw new Exception("EdgeCutReview: no edge-cut library; bake first");
             int typeIndex = lib.IndexOf(model.id);
             if (typeIndex < 0) throw new Exception($"EdgeCutReview: {model.id} is not baked");
@@ -129,7 +136,7 @@ namespace Champions.EditorTools.EdgeCuts
                         var body = new MonsterInstance
                         {
                             Position = Vector3.zero, Yaw = YawDeg * Mathf.Deg2Rad, ClipA = (uint)clipIndex, TimeA = time,
-                            ClipB = (uint)clipIndex, TimeB = time, Blend = 1, Scale = 1, Tint = MonsterInstance.Pack(Tint),
+                            ClipB = (uint)clipIndex, TimeB = time, Blend = 1, Scale = 1, Tint = MonsterInstance.Pack(lineTint),
                             Flags = (uint)CrowdFlags.Alive,
                         };
                         if (pi == 0) first = body;

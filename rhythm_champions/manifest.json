@@ -132,6 +132,13 @@
     },
     {
       "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_BckStrafeB_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "b28d41dc2454f694fac9ab766e54323a",
+      "use": "hero: the legs' run every way (sprint, backpedal, strafes)"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
       "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_F_Masc.fbx",
       "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
       "guid": "6c670ea8c84cf324980a21b4b9b927a0",
@@ -143,6 +150,27 @@
       "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
       "guid": "8b45cba6e566e0847aa0b9eee86847b9",
       "use": "hero and elite walk and run"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_FwdStrafeL_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "d294a4226e928db4fbbd933c19ccf5a1",
+      "use": "hero: the legs' run every way (sprint, backpedal, strafes)"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_FwdStrafeR_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "4699ac7f1156bfc4dba616d9b3a05234",
+      "use": "hero: the legs' run every way (sprint, backpedal, strafes)"
+    },
+    {
+      "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Sprint/A_Sprint_F_Masc.fbx",
+      "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
+      "guid": "d2995d8a62be0ce42a4e73698b62b275",
+      "use": "hero: the legs' run every way (sprint, backpedal, strafes)"
     },
     {
       "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
@@ -395,6 +423,13 @@
       "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
       "guid": "90f98101f7a4c2c4bbbf30f76e7b91c7",
       "use": "elite death"
+    },
+    {
+      "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",
+      "path": "Assets/Synty/AnimationSwordCombat/Animations/Polygon/Dodge/A_Dodge_F_Sword.fbx",
+      "sourceSha256": "07b636904a89f5395f357b6291d4d9ac8bb85ccfdb64796912ff1e680b7545fa",
+      "guid": "80f9aad568ebdbf4f9fd28c054c27a20",
+      "use": "hero: the plain Dash's long low stride (A_Dodge_F)"
     },
     {
       "source": "synty:ANIMATION_Sword_Combat_Unity_2021_1_v1_1_1.unitypackage.gz",

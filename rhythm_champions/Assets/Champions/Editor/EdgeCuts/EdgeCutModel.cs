@@ -140,6 +140,9 @@ namespace Champions.EditorTools.EdgeCuts
             float scale = fist.Hand.lossyScale.x; // at the prefab's own scale (Spawn scales the whole after)
             weapon.localRotation = fist.Turn * Quaternion.Euler(w.pitch, w.yaw, w.roll);
             weapon.localPosition = fist.Knuckles + fist.Palm * (w.palm / scale);
+            // At the character's own scale, not the hand bone's: a rig whose bones carry a scale (Polygon Knights' hands
+            // are about 1/100) would hold a weapon that small.
+            weapon.localScale = Vector3.one * (fist.Hand.root.lossyScale.x / scale);
         }
 
         /// <summary>

@@ -48,6 +48,7 @@ namespace Champions.Client.Scenes
             (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette)),
             (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette)),
             (UiScene.Name, s => new UiScene(s._content, s._palette, s._contentDir)),
+            (HeroScene.Name, s => new HeroScene(s._content, s._palette, s._contentDir)),
         };
 
         readonly Stills _stills;

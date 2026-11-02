@@ -1,6 +1,6 @@
 {
   "format": "rhythm-champions-session",
-  "version": 3,
+  "version": 4,
   "build": "test",
   "runtime": ".NET 10.0.7",
   "platform": "",
@@ -12,9 +12,10 @@
   "loadout": ["swordSlash:4", "bladeRain:3", "crescent:4", "twinStrike:1", "tempo:2", "keenEdge:1", "shatterburst:1"],
   "dummies": 60,
   "level": false,
+  "duel": null,
   "end": 30,
-  "hash": "6D1685A7237C459B",
-  "events": 730,
+  "hash": "CAB2C003CDB167E0",
+  "events": 731,
   "entries": 888,
   "inputs": 15
 }

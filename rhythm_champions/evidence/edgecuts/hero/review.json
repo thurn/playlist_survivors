@@ -1,0 +1,30 @@
+{
+  "model": "hero",
+  "triangles": 348,
+  "segments": 84,
+  "pieces": 22,
+  "entries": 37,
+  "camera": {"pitchDeg": 60, "fovDeg": 30, "yawDeg": 160},
+  "blackLStar": 10,
+  "sheetScales": {"far": 1, "game": 1, "near": 1},
+  "cells": [
+    {"size": "far", "heightPx": 57.6, "pose": "idle", "clipTime": 0.530, "blackShare": 0.4751, "blackShareWithoutPost": 0.4851, "silhouettePx": 703, "screenHeightPx": 41},
+    {"size": "far", "heightPx": 57.6, "pose": "run", "clipTime": 0.300, "blackShare": 0.4582, "blackShareWithoutPost": 0.4847, "silhouettePx": 491, "screenHeightPx": 30},
+    {"size": "far", "heightPx": 57.6, "pose": "slashB", "clipTime": 0.267, "blackShare": 0.5149, "blackShareWithoutPost": 0.5219, "silhouettePx": 707, "screenHeightPx": 47},
+    {"size": "far", "heightPx": 57.6, "pose": "slashA", "clipTime": 0.350, "blackShare": 0.4464, "blackShareWithoutPost": 0.4576, "silhouettePx": 625, "screenHeightPx": 40},
+    {"size": "far", "heightPx": 57.6, "pose": "spin", "clipTime": 1.433, "blackShare": 0.4685, "blackShareWithoutPost": 0.4934, "silhouettePx": 604, "screenHeightPx": 45},
+    {"size": "far", "heightPx": 57.6, "pose": "dodge", "clipTime": 0.283, "blackShare": 0.4890, "blackShareWithoutPost": 0.4949, "silhouettePx": 683, "screenHeightPx": 45},
+    {"size": "game", "heightPx": 116.1, "pose": "idle", "clipTime": 0.530, "blackShare": 0.6643, "blackShareWithoutPost": 0.6826, "silhouettePx": 2511, "screenHeightPx": 82},
+    {"size": "game", "heightPx": 116.1, "pose": "run", "clipTime": 0.300, "blackShare": 0.6478, "blackShareWithoutPost": 0.6894, "silhouettePx": 1803, "screenHeightPx": 60},
+    {"size": "game", "heightPx": 116.1, "pose": "slashB", "clipTime": 0.267, "blackShare": 0.6870, "blackShareWithoutPost": 0.7011, "silhouettePx": 2479, "screenHeightPx": 96},
+    {"size": "game", "heightPx": 116.1, "pose": "slashA", "clipTime": 0.350, "blackShare": 0.6304, "blackShareWithoutPost": 0.6495, "silhouettePx": 2151, "screenHeightPx": 80},
+    {"size": "game", "heightPx": 116.1, "pose": "spin", "clipTime": 1.433, "blackShare": 0.5673, "blackShareWithoutPost": 0.6748, "silhouettePx": 2325, "screenHeightPx": 89},
+    {"size": "game", "heightPx": 116.1, "pose": "dodge", "clipTime": 0.283, "blackShare": 0.6455, "blackShareWithoutPost": 0.6828, "silhouettePx": 2494, "screenHeightPx": 89},
+    {"size": "near", "heightPx": 232.3, "pose": "idle", "clipTime": 0.530, "blackShare": 0.8199, "blackShareWithoutPost": 0.8264, "silhouettePx": 9344, "screenHeightPx": 163},
+    {"size": "near", "heightPx": 232.3, "pose": "run", "clipTime": 0.300, "blackShare": 0.7960, "blackShareWithoutPost": 0.8235, "silhouettePx": 6804, "screenHeightPx": 120},
+    {"size": "near", "heightPx": 232.3, "pose": "slashB", "clipTime": 0.267, "blackShare": 0.8241, "blackShareWithoutPost": 0.8288, "silhouettePx": 9245, "screenHeightPx": 195},
+    {"size": "near", "heightPx": 232.3, "pose": "slashA", "clipTime": 0.350, "blackShare": 0.7895, "blackShareWithoutPost": 0.7996, "silhouettePx": 8035, "screenHeightPx": 161},
+    {"size": "near", "heightPx": 232.3, "pose": "spin", "clipTime": 1.433, "blackShare": 0.7765, "blackShareWithoutPost": 0.8115, "silhouettePx": 9015, "screenHeightPx": 175},
+    {"size": "near", "heightPx": 232.3, "pose": "dodge", "clipTime": 0.283, "blackShare": 0.8097, "blackShareWithoutPost": 0.8218, "silhouettePx": 9374, "screenHeightPx": 178}
+  ]
+}

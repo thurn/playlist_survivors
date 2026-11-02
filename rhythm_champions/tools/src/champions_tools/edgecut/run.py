@@ -2,7 +2,8 @@
 
 A bake runs three steps, each skipped when its inputs haven't changed (keys in Assets/Baked/EdgeCuts/<model>/):
 Unity exports the vendor model the recipe names (source.json), the recipe cuts it (cut.json), and Unity bakes the
-cut into the edge crowd's assets and library (a structure's, a model without clips, into the structure field's). A
+cut into the edge crowd's assets and library (a hero's with its rig, posed on the CPU; a structure's, a model without
+clips, into the structure field's). A
 review bakes if needed, then renders the cut's sheets beside the original into
 rhythm_champions/evidence/edgecuts/<model>/ with a README of its numbers against the thresholds.
 """
@@ -17,7 +18,7 @@ import time
 from pathlib import Path
 from types import ModuleType
 
-from .. import paths, plugin, setup, unity
+from .. import palette, paths, plugin, setup, unity
 from .source import Source
 
 TASKS = "Champions.EditorTools.EdgeCuts.EdgeCutTasks"
@@ -35,6 +36,9 @@ EXPORT_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutSource.cs", "Assets/Cham
                "Assets/Champions/Editor/EdgeCuts/Fist.cs", "manifest.json")
 CUT_CODE = ("tools/src/champions_tools/edgecut",)
 BAKE_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutBaker.cs", "Assets/Champions/Render/Crowd/EdgeCutType.cs")
+# A hero's bake also keeps its rig, posed on the CPU (EdgeRig).
+RIG_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeRigBaker.cs", "Assets/Champions/Render/Crowd/EdgeRig.cs",
+            "Assets/Champions/Render/Crowd/RigPose.cs")
 STRUCTURE_BAKE_CODE = ("Assets/Champions/Editor/EdgeCuts/StructureBaker.cs", "Assets/Champions/Render/Structures/StructureType.cs")
 
 
@@ -105,7 +109,9 @@ def bake(wt: paths.Worktree, model: str, force: bool = False) -> dict:
     p = wt.project
     export_key = digest(wt, model_json, *(p / f for f in EXPORT_CODE))
     cut_key = digest(wt, export_key, p / "tools" / "recipes" / "edgecut" / f"{model}.py", *(p / f for f in CUT_CODE))
-    bake_key = digest(wt, cut_key, *(p / f for f in (STRUCTURE_BAKE_CODE if recipe.MODEL.static else BAKE_CODE)))
+    rig = thresholds(recipe)["role"] == "hero"
+    code = STRUCTURE_BAKE_CODE if recipe.MODEL.static else BAKE_CODE + (RIG_CODE if rig else ())
+    bake_key = digest(wt, cut_key, *(p / f for f in code))
     steps = []
     if force or not _current(out / "source.key", export_key, out / "source.json"):
         started = time.monotonic()
@@ -120,7 +126,7 @@ def bake(wt: paths.Worktree, model: str, force: bool = False) -> dict:
         steps.append(f"cut in {time.monotonic() - started:.1f} s")
     if force or not _current(out / "bake.key", bake_key, out / f"{model}.asset"):
         started = time.monotonic()
-        _unity(wt, "Bake", "-model", model)
+        _unity(wt, "Bake", "-model", model, *(("-rig",) if rig else ()))
         (out / "bake.key").write_text(bake_key + "\n", encoding="utf-8")
         steps.append(f"baked in {time.monotonic() - started:.1f} s")
     if steps:
@@ -160,9 +166,12 @@ def review(wt: paths.Worktree, model: str, out: Path | None = None, force: bool 
     summary = bake(wt, model, force)
     out = out or evidence_dir(wt, model)
     out.mkdir(parents=True, exist_ok=True)
-    _unity(wt, "Review", "-model", model, "-out", str(out.resolve()))
-    result = json.loads((out / "review.json").read_text(encoding="utf-8"))
     limits = thresholds(recipe)
+    # The hero is drawn in its own white (design.md, The Look > Principles), which blooms more than a monster's colour.
+    white = palette.roles(palette.load())["hero.body"]
+    tint = ("-tint", "".join(f"{c:02x}" for c in white)) if limits["role"] == "hero" else ()
+    _unity(wt, "Review", "-model", model, "-out", str(out.resolve()), *tint)
+    result = json.loads((out / "review.json").read_text(encoding="utf-8"))
     verdicts = judge(result, limits)
     write = structure_readme if recipe.MODEL.static else readme
     (out / "README.md").write_text(write(recipe, summary, result, limits, verdicts), encoding="utf-8")

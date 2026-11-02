@@ -13,15 +13,16 @@ namespace Champions.EditorTools.EdgeCuts
     /// Bakes a model's cut (the recipe's cut.json/.bytes) into the edge crowd's assets under the ignored
     /// Assets/Baked/EdgeCuts/&lt;model&gt;/ (plan.md, Rendering &gt; Edge cuts, step 6): the body and line meshes, a bone
     /// texture of every clip sampled at 30 Hz onto the entries the cut uses (game/'s crowd baker's sampling, ported),
-    /// each clip's bounds, the shard pieces, and the <see cref="EdgeCutType"/> asset; then the library in
-    /// Resources that lists every baked type with the crowd's shaders.
+    /// each clip's bounds, the shard pieces, and the <see cref="EdgeCutType"/> asset, and for a model posed on the CPU
+    /// (the hero) its <see cref="EdgeRig"/> (<see cref="EdgeRigBaker"/>); then the library in Resources that lists every
+    /// baked type and rig with the crowd's shaders.
     /// </summary>
     public static class EdgeCutBaker
     {
         public const string LibraryPath = EdgeCutModel.BakedRoot + "/Resources/" + EdgeCutLibrary.ResourcePath + ".asset";
         const string ShaderDir = "Assets/Champions/Render/Crowd/Shaders";
 
-        public static EdgeCutType Bake(EdgeCutModel model)
+        public static EdgeCutType Bake(EdgeCutModel model, bool rig = false)
         {
             string dir = EdgeCutModel.Dir(model.id);
             var cut = ArrayFile.Read($"{dir}/cut.json");
@@ -85,6 +86,8 @@ namespace Champions.EditorTools.EdgeCuts
                 type.Triangles = cut.Info("body_triangles").shape[0];
                 type.Segments = cut.Info("line_segments").shape[0];
                 Replace(type, $"{dir}/{model.id}.asset");
+                if (rig) Replace(EdgeRigBaker.Bake(model, source, entries), $"{dir}/{model.id}_rig.asset");
+                else AssetDatabase.DeleteAsset($"{dir}/{model.id}_rig.asset");
                 WriteLibrary();
                 Debug.Log($"EdgeCutBaker: {model.id}: {type.Triangles} body triangles, {type.Segments} line segments, {pieces.Length} pieces, " +
                           $"{entries.Count} of {source.Entries.Count} entries, {bake.Rows} frames ({entries.Count * 3}x{bake.Rows} texels), " +
@@ -209,7 +212,7 @@ namespace Champions.EditorTools.EdgeCuts
             return o;
         }
 
-        /// <summary>Lists every baked type in the library asset, with the crowd's shaders.</summary>
+        /// <summary>Lists every baked type and rig in the library asset, with the crowd's shaders.</summary>
         public static void WriteLibrary()
         {
             var types = AssetDatabase.FindAssets("t:" + nameof(EdgeCutType), new[] { EdgeCutModel.BakedRoot })
@@ -217,6 +220,9 @@ namespace Champions.EditorTools.EdgeCuts
                 .Where(t => t != null).OrderBy(t => t.Id, StringComparer.Ordinal).ToArray();
             var lib = ScriptableObject.CreateInstance<EdgeCutLibrary>();
             lib.Types = types;
+            lib.Rigs = AssetDatabase.FindAssets("t:" + nameof(EdgeRig), new[] { EdgeCutModel.BakedRoot })
+                .Select(g => AssetDatabase.LoadAssetAtPath<EdgeRig>(AssetDatabase.GUIDToAssetPath(g)))
+                .Where(r => r != null).OrderBy(r => r.Id, StringComparer.Ordinal).ToArray();
             lib.Body = Load<Shader>($"{ShaderDir}/EdgeBody.shader");
             lib.Lines = Load<Shader>($"{ShaderDir}/EdgeLines.shader");
             lib.Cull = Load<ComputeShader>($"{ShaderDir}/CrowdCull.compute");

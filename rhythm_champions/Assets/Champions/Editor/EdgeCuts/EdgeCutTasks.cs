@@ -38,8 +38,8 @@ namespace Champions.EditorTools.EdgeCuts
         }
 
         /// <summary>
-        /// Bakes Assets/Baked/EdgeCuts/ID/cut.json into the crowd's assets and rewrites the library (<see cref="EdgeCutBaker"/>),
-        /// or a structure's into the structure field's (<see cref="StructureBaker"/>).
+        /// Bakes Assets/Baked/EdgeCuts/ID/cut.json into the crowd's assets and rewrites the library (<see cref="EdgeCutBaker"/>;
+        /// with `-rig` its <see cref="EdgeRigBaker"/> rig too), or a structure's into the structure field's (<see cref="StructureBaker"/>).
         /// </summary>
         public static void Bake()
         {
@@ -48,12 +48,15 @@ namespace Champions.EditorTools.EdgeCuts
             try
             {
                 if (model.Static) StructureBaker.Bake(model);
-                else EdgeCutBaker.Bake(model);
+                else EdgeCutBaker.Bake(model, TaskArgs.Has("-rig"));
             }
             finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
         }
 
-        /// <summary>Renders the cut's review sheet into `-out DIR` (<see cref="EdgeCutReview"/>, a structure's <see cref="StructureReview"/>).</summary>
+        /// <summary>
+        /// Renders the cut's review sheet into `-out DIR` (<see cref="EdgeCutReview"/>, its lines in `-tint RRGGBB` if
+        /// given; a structure's <see cref="StructureReview"/>).
+        /// </summary>
         public static void Review()
         {
             var model = EdgeCutModel.Load(ModelArg());
@@ -62,7 +65,7 @@ namespace Champions.EditorTools.EdgeCuts
             try
             {
                 if (model.Static) StructureReview.Run(model, dir);
-                else EdgeCutReview.Run(model, dir);
+                else EdgeCutReview.Run(model, dir, TaskArgs.Get("-tint"));
             }
             finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); }
         }
