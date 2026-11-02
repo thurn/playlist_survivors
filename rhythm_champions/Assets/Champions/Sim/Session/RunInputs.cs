@@ -19,8 +19,9 @@ namespace Champions.Sim
         public double KnownAtBudget = Defaults.KnownAtBudget;
         public RunStart Start = Defaults.Start;
         /// <summary>
-        /// Level 1 plays: its spawner fills the world (Content/level1.json). Off, the world stays empty but for what
-        /// a test or still places: the defaults are a test's, and the game turns it on.
+        /// Level 1 plays: its spawner fills the world (Content/level1.json) and its structures stand in it
+        /// (Content/structures.json). Off, the world stays empty but for what a test or still places: the defaults are
+        /// a test's, and the game turns it on.
         /// </summary>
         public bool Level;
 
@@ -55,6 +56,7 @@ namespace Champions.Sim
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
                 Level = !Level ? null : content != null ? content.Level.Clone() : new LevelRules(),
                 Zones = content != null ? content.Zones.Clone() : new ZoneRules(),
+                Structures = !Level || content == null ? null : content.Structures.Clone(),
             };
         }
 

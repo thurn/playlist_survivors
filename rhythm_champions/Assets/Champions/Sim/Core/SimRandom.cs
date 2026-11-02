@@ -3,13 +3,20 @@ namespace Champions.Sim
     /// <summary>
     /// The run's one random generator (xoshiro256**, seeded through SplitMix64). Every random choice
     /// in the sim draws from it in simulation order, never from time or hash ordering, so a seed and
-    /// a stream always give the same run.
+    /// a stream always give the same run. The one exception is the arena's chunks: each draws from a
+    /// generator of its own, seeded from the run's seed and its coordinates (<see cref="StructureChunks"/>).
     /// </summary>
     public sealed class SimRandom
     {
         ulong s0, s1, s2, s3;
 
         public SimRandom(ulong seed)
+        {
+            Reseed(seed);
+        }
+
+        /// <summary>Starts over from <paramref name="seed"/>, as a new generator would (a chunk's own, reused).</summary>
+        public void Reseed(ulong seed)
         {
             ulong x = seed;
             s0 = SplitMix(ref x);

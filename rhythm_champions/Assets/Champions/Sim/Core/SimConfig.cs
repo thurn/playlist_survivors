@@ -47,6 +47,9 @@ namespace Champions.Sim
         /// <summary>The zone keys' rules (Content/zones.json).</summary>
         public ZoneRules Zones = new ZoneRules();
 
+        /// <summary>The world's structures (Content/structures.json), or null: an open arena (tests, most stills).</summary>
+        public StructureRules Structures;
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;

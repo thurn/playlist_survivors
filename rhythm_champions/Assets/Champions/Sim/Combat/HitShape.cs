@@ -75,6 +75,107 @@ namespace Champions.Sim
             }
         }
 
+        /// <summary>
+        /// Does the shape touch a rectangle (a structure's footprint) of half sizes (<paramref name="hx"/>,
+        /// <paramref name="hy"/>) round (<paramref name="cx"/>, <paramref name="cy"/>), its x axis along
+        /// (<paramref name="cos"/>, <paramref name="sin"/>)?
+        /// </summary>
+        public bool TouchesBox(double cx, double cy, double cos, double sin, double hx, double hy)
+        {
+            // In the box's own frame, where it is [-hx, hx] x [-hy, hy].
+            ToBox(X, Y, cx, cy, cos, sin, out double px, out double py);
+            switch (Kind)
+            {
+                case ShapeKind.Circle:
+                    return BoxDistance(px, py, hx, hy) <= Radius + 1e-9;
+                case ShapeKind.Ring:
+                {
+                    if (BoxDistance(px, py, hx, hy) > Radius + 1e-9) return false;
+                    double fx = Math.Abs(px) + hx, fy = Math.Abs(py) + hy;
+                    return fx * fx + fy * fy >= Sq(Inner) - 1e-9;
+                }
+                case ShapeKind.Path:
+                {
+                    ToBox(X2, Y2, cx, cy, cos, sin, out double qx, out double qy);
+                    return SegmentBoxDistance(px, py, qx, qy, hx, hy) <= Radius + 1e-9;
+                }
+                case ShapeKind.Cone:
+                {
+                    if (Math.Abs(px) <= hx && Math.Abs(py) <= hy) return true;
+                    // The box's nearest point to the apex inside the sector, or a side of the sector crossing the
+                    // box: a convex box with any point in the sector has one or the other.
+                    double nx = Math.Max(-hx, Math.Min(hx, px)), ny = Math.Max(-hy, Math.Min(hy, py));
+                    FromBox(nx, ny, cos, sin, out double wx, out double wy);
+                    if (Touches(cx + wx, cy + wy, 0)) return true;
+                    ToBox(DirX, DirY, 0, 0, cos, sin, out double dx, out double dy);
+                    for (int side = -1; side <= 1; side += 2)
+                    {
+                        double c = Math.Cos(side * HalfArc), s = Math.Sin(side * HalfArc);
+                        double ex = px + (dx * c - dy * s) * Radius, ey = py + (dx * s + dy * c) * Radius;
+                        if (SegmentBoxDistance(px, py, ex, ey, hx, hy) <= 1e-9) return true;
+                    }
+                    return false;
+                }
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>A point's coordinates in a box's frame, its middle (cx, cy) and its x axis (cos, sin); a vector's with the middle at 0.</summary>
+        public static void ToBox(double x, double y, double cx, double cy, double cos, double sin, out double lx, out double ly)
+        {
+            double ox = x - cx, oy = y - cy;
+            lx = ox * cos + oy * sin;
+            ly = -ox * sin + oy * cos;
+        }
+
+        /// <summary>A vector in a box's frame turned back to the ground's.</summary>
+        public static void FromBox(double x, double y, double cos, double sin, out double wx, out double wy)
+        {
+            wx = x * cos - y * sin;
+            wy = x * sin + y * cos;
+        }
+
+        /// <summary>The distance from (<paramref name="x"/>, <paramref name="y"/>) to the rectangle [-hx, hx] x [-hy, hy] (0 inside).</summary>
+        public static double BoxDistance(double x, double y, double hx, double hy)
+        {
+            double dx = Math.Max(0, Math.Abs(x) - hx), dy = Math.Max(0, Math.Abs(y) - hy);
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        /// <summary>The distance from the segment (ax, ay)-(bx, by) to the rectangle [-hx, hx] x [-hy, hy] (0 when they meet).</summary>
+        public static double SegmentBoxDistance(double ax, double ay, double bx, double by, double hx, double hy)
+        {
+            // Clipped against the slabs: a piece left inside means they meet.
+            double t0 = 0, t1 = 1, dx = bx - ax, dy = by - ay;
+            if (Clip(-dx, ax + hx, ref t0, ref t1) && Clip(dx, hx - ax, ref t0, ref t1) &&
+                Clip(-dy, ay + hy, ref t0, ref t1) && Clip(dy, hy - ay, ref t0, ref t1))
+                return 0;
+            // Apart, two convex shapes are nearest at a corner of one.
+            double d = Math.Min(BoxDistance(ax, ay, hx, hy), BoxDistance(bx, by, hx, hy));
+            for (int i = 0; i < 4; i++)
+                d = Math.Min(d, DistanceToSegment((i & 1) == 0 ? -hx : hx, (i & 2) == 0 ? -hy : hy, ax, ay, bx, by));
+            return d;
+        }
+
+        /// <summary>Liang-Barsky's step: keeps the part of [t0, t1] where p t &lt;= q; false when none is left.</summary>
+        static bool Clip(double p, double q, ref double t0, ref double t1)
+        {
+            if (Math.Abs(p) < 1e-15) return q >= 0;
+            double r = q / p;
+            if (p < 0)
+            {
+                if (r > t1) return false;
+                if (r > t0) t0 = r;
+            }
+            else
+            {
+                if (r < t0) return false;
+                if (r < t1) t1 = r;
+            }
+            return true;
+        }
+
         /// <summary>The middle of the shape and a radius around it holding all of it.</summary>
         public void Bounds(out double cx, out double cy, out double radius)
         {

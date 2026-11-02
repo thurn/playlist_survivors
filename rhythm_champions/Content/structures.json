@@ -1,0 +1,54 @@
+{
+  "chunkM": 24,
+  "loadM": 48,
+  "unloadM": 72,
+  "clearStartM": 10,
+  "laneM": 3,
+  "kinds": [
+    {"id": "cottage", "sizeM": [4.2, 4.6], "hits": 3},
+    {"id": "hut", "sizeM": [4.4, 4.6], "hits": 2},
+    {"id": "tower", "radiusM": 2.0, "hits": 3},
+    {"id": "wall", "sizeM": [5.6, 0.7], "hits": 1},
+    {"id": "fence", "sizeM": [2.5, 0.3], "hits": 1},
+    {"id": "pine", "radiusM": 1.6, "hits": 1},
+    {"id": "tree", "radiusM": 0.5, "hits": 1},
+    {"id": "rock", "radiusM": 1.3, "hits": 1}
+  ],
+  "templates": [
+    {
+      "id": "hamlet", "weight": 2, "jitterM": 0.3, "jitterDegrees": 4,
+      "placements": [
+        {"kind": "cottage", "at": [-3.5, 2.5]},
+        {"kind": "hut", "at": [3.5, -2.5], "degrees": 90},
+        {"kind": "fence", "at": [-4.5, -5.0]},
+        {"kind": "fence", "at": [-2.0, -5.0]},
+        {"kind": "fence", "at": [0.5, -5.0]},
+        {"kind": "tree", "at": [5.0, 4.5]},
+        {"kind": "rock", "at": [-6.0, -2.0]}
+      ]
+    },
+    {
+      "id": "grove", "weight": 3, "jitterM": 1.0, "jitterDegrees": 30,
+      "placements": [
+        {"kind": "pine", "at": [-3.0, 3.0]},
+        {"kind": "pine", "at": [2.5, 4.0]},
+        {"kind": "tree", "at": [-1.0, -2.0]},
+        {"kind": "tree", "at": [4.0, -3.0]},
+        {"kind": "tree", "at": [-5.0, -4.5]},
+        {"kind": "tree", "at": [6.0, 1.0]},
+        {"kind": "rock", "at": [1.0, 0.5]}
+      ]
+    },
+    {
+      "id": "tower", "weight": 1, "jitterM": 0.3, "jitterDegrees": 4,
+      "placements": [
+        {"kind": "tower", "at": [0.0, 0.0]},
+        {"kind": "wall", "at": [-3.2, -5.0]},
+        {"kind": "wall", "at": [2.6, -5.0]},
+        {"kind": "wall", "at": [-5.5, -0.5], "degrees": 90},
+        {"kind": "rock", "at": [4.5, 3.5]}
+      ]
+    },
+    {"id": "empty", "weight": 4, "jitterM": 0, "jitterDegrees": 0, "placements": []}
+  ]
+}

@@ -4,8 +4,8 @@ namespace Champions.Sim
     /// What the sim tells the client (plan.md, "The Sim", Shape): the beats and the beat's state, the
     /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
     /// moves, dashes, hits, heals and death, the attacks: the build, swings, blows, waves, hits and kills on
-    /// the enemies, and the horde: spawns, departures, formed waves, elite moves and spores. The systems'
-    /// beads add their kinds after these.
+    /// the enemies, the horde: spawns, departures, formed waves, elite moves and spores, the zone key, and the
+    /// structures: loaded, unloaded, hit and broken. The systems' beads add their kinds after these.
     /// </summary>
     public enum SimEventKind
     {
@@ -43,6 +43,10 @@ namespace Champions.Sim
         Spore,
         SporeEnd,
         Zone,
+        StructureSpawn,
+        StructureGone,
+        StructureHit,
+        StructureBreak,
     }
 
     /// <summary>
@@ -524,6 +528,67 @@ namespace Champions.Sim
             e.I1 = previous;
             e.I2 = (int)reason;
             e.D0 = fadeS;
+            return e;
+        }
+
+        /// <summary>
+        /// A structure stands, its chunk loaded (<see cref="StructureField"/>): I0 the structure, I1 its kind
+        /// (<see cref="StructureRules.Kinds"/>), I2 the hits it takes; D0/D1 its middle, D2 its angle (radians from +x,
+        /// anticlockwise).
+        /// </summary>
+        public static SimEvent StructureSpawn(double t, int id, int kind, int hits, double x, double y, double angle)
+        {
+            var e = Of(SimEventKind.StructureSpawn, t);
+            e.I0 = id;
+            e.I1 = kind;
+            e.I2 = hits;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = angle;
+            return e;
+        }
+
+        /// <summary>A standing structure's chunk unloaded, far from the hero: I0 the structure; D0/D1 its middle. Remove it without a shatter.</summary>
+        public static SimEvent StructureGone(double t, int id, double x, double y)
+        {
+            var e = Of(SimEventKind.StructureGone, t);
+            e.I0 = id;
+            e.D0 = x;
+            e.D1 = y;
+            return e;
+        }
+
+        /// <summary>
+        /// A building hit and still standing: I0 the structure, I1 the hits it takes still, I2 the blow's
+        /// <see cref="BlowSource"/>; D0/D1 the way the blow would throw it (a unit vector).
+        /// </summary>
+        public static SimEvent StructureHit(double t, int id, int hitsLeft, BlowSource source, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.StructureHit, t);
+            e.I0 = id;
+            e.I1 = hitsLeft;
+            e.I2 = (int)source;
+            e.D0 = dirX;
+            e.D1 = dirY;
+            return e;
+        }
+
+        /// <summary>
+        /// A structure broke, on the impact frame: I0 the structure, I1 its kind, I2 what broke it (<see cref="BreakCause"/>);
+        /// D0/D1 the way its shards are thrown (a unit vector, away from the blow), D2 the blow's power (its damage in
+        /// Sword Slash's base hits; 0 for a boss's), D3/D4 its middle.
+        /// </summary>
+        public static SimEvent StructureBreak(double t, int id, int kind, BreakCause cause, double dirX, double dirY, double power, double x, double y)
+        {
+            var e = Of(SimEventKind.StructureBreak, t);
+            e.I0 = id;
+            e.I1 = kind;
+            e.I2 = (int)cause;
+            e.D0 = dirX;
+            e.D1 = dirY;
+            e.D2 = power;
+            e.D3 = x;
+            e.D4 = y;
             return e;
         }
 

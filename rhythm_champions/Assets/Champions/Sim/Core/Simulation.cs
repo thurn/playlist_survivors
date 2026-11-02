@@ -29,8 +29,8 @@ namespace Champions.Sim
     /// updated before each of those and at the tick's end, after which the per-tick systems run: quiet
     /// moments, the run clock, the hero's walk, its dash, its health, then the attacks (<see cref="Arsenal"/>,
     /// which takes the tick's beats and strikes in time order), the horde (<see cref="Sim.Horde"/>, which
-    /// acts on the tick's beats in time order) and the zone key (<see cref="Sim.Zones"/>, which a beat moves
-    /// on). Inputs take effect when given, at the frontier, judged from when they were heard
+    /// acts on the tick's beats in time order), the structures' chunks (<see cref="Sim.StructureField"/>, loaded
+    /// round the hero) and the zone key (<see cref="Sim.Zones"/>, which a beat moves on). Inputs take effect when given, at the frontier, judged from when they were heard
     /// (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
     /// <see cref="Judgement"/>); hits on the hero settle once the inputs heard by then are in
     /// (<see cref="HeroHealth"/>). Nothing simulated is ever revised.
@@ -80,6 +80,11 @@ namespace Champions.Sim
             Arsenal.Begin(this);
             foreach (var u in config.Loadout) Arsenal.Set(this, u);
             foreach (var d in config.Dummies) Enemies.Spawn(this, d.X, d.Y, d.Radius, d.Health);
+            if (config.Structures != null)
+            {
+                StructureField = new StructureField(this, config.Structures, config.Seed);
+                UseStructures(StructureField);
+            }
             horde = new Horde(this, config, Enemies);
             Zones = new Zones(config.Zones);
             State.Zone = Zones.Key;
@@ -113,6 +118,9 @@ namespace Champions.Sim
 
         /// <summary>The structures the hero meets, once installed (<see cref="UseStructures"/>); null: nothing blocks.</summary>
         internal IStructures Structures { get; private set; }
+
+        /// <summary>The world's structures in their chunks, with a level (<see cref="SimConfig.Structures"/>); null without.</summary>
+        public StructureField StructureField { get; }
         /// <summary>The hero's attacks and mods, and every blow it deals.</summary>
         public Arsenal Arsenal { get; }
 
@@ -148,6 +156,7 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)(uint)horde.Spawned);
                 h = Hashing.Fold(h, (ulong)(uint)inputs.Count);
                 h = Hashing.Fold(h, (ulong)(uint)Stream.Accepted.Length);
+                if (StructureField != null) h = Hashing.Fold(h, (ulong)(uint)StructureField.Standing | (ulong)(uint)StructureField.Breaks << 32);
                 return h;
             }
         }
@@ -359,6 +368,7 @@ namespace Champions.Sim
             health.Tick(this, end);
             Arsenal.Tick(this, end);
             horde.Tick(end);
+            StructureField?.Tick(this, end);
             Zones.Tick(this, end);
         }
 
