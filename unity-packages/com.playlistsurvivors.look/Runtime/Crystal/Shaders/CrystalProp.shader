@@ -79,7 +79,9 @@ Shader "PS/Look/CrystalProp"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma shader_feature_local _REFRACT
+            // multi_compile, not shader_feature: StructureLook enables it at runtime and no shipped material has it,
+            // so a shader_feature variant would be stripped from players.
+            #pragma multi_compile_local _ _REFRACT
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Fog.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 

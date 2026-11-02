@@ -400,7 +400,9 @@ namespace PS.Look.Crowd
                 s.ClipTable?.Dispose();
                 s.ClipBounds?.Dispose();
                 s.Palette?.Dispose();
-                if (s.Material != null) UnityEngine.Object.Destroy(s.Material);
+                if (s.Material == null) continue;
+                if (Application.isPlaying) UnityEngine.Object.Destroy(s.Material);
+                else UnityEngine.Object.DestroyImmediate(s.Material);
             }
         }
     }

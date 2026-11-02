@@ -391,7 +391,7 @@ Pixel classes, from look.py's `lstar`, `chroma` and `hue`:
   them).
 
 Value and hue rules run on steady-state frames (outside impact frames); an
-impact frame is judged by `clipped_impact_max` alone. Rules that need the ID
+impact frame is judged by `clipped_impact_max` and `halo_impact_min` alone. Rules that need the ID
 render or the view json (floor, hero, monster form, readability) are skipped
 on a still without them, such as a video frame, which gets `frame_p25_max`
 for the floor instead. A preset's value applies with `--preset` or when the

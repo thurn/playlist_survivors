@@ -94,6 +94,17 @@ namespace PS.Look.Tests
         }
 
         [Test]
+        public void OnADisplayOver60HzTheImpactFrameStillShowsTheShardsMoving()
+        {
+            Break();
+            const double Frame = 1 / 144.0; // shorter than a physics step: some frames take none
+            Present(T - Frame);
+            Present(T);
+            Assert.IsFalse(_site.enabled);
+            Assert.That(_shatter.MovedM, Is.GreaterThan(0), "the impact frame shows the shards in flight, not where the site stood");
+        }
+
+        [Test]
         public void ARegrowthEruptsOnItsDownbeatAndRedrawsTheShadowsOnceWhole()
         {
             const double Start = 12, End = 12.47;

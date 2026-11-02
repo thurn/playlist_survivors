@@ -107,6 +107,8 @@ namespace PS.Look.Effects
 
         public EffectSystem(EffectLibrary library, int poolSize = DefaultPool, int lightPool = EffectLights.DefaultPool)
         {
+            if (poolSize < 2048 || !Mathf.IsPowerOfTwo(poolSize))
+                throw new ArgumentException($"EffectSystem: the pool ({poolSize}) must be a power of two of 2048 or more, the alpha sort's sizes");
             Library = library;
             PoolSize = poolSize;
             _meshBuckets = library.Meshes.Length;
@@ -464,7 +466,7 @@ namespace PS.Look.Effects
             ParticlesEmitted += d[5];
             // The next sorts cover what was alive, with room to grow.
             int want = Mathf.NextPowerOfTwo(Mathf.Max(2048, (int)(AlphaCount * 1.5f) + 1));
-            _sortSize = Math.Min(want, Mathf.ClosestPowerOfTwo(PoolSize));
+            _sortSize = Math.Min(want, PoolSize);
         }
 
         void SortAlpha(CommandBuffer cmd, int n)

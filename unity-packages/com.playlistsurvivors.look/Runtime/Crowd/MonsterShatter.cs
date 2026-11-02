@@ -381,6 +381,7 @@ namespace PS.Look.Crowd
         public void Clear()
         {
             foreach (var s in _types) s.Start = s.Count = s.PendingCount = 0;
+            _last = double.NegativeInfinity; // else the seek's Frame clears again, dropping deaths queued since
         }
 
         public void Dispose()

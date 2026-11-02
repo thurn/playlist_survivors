@@ -242,6 +242,7 @@ namespace PS.Look
             if (_sites == null) return;
             double now = song + MotionLead;
             if (double.IsNaN(_physicsT)) _physicsT = now;
+            int breaks = Breaks;
             while (_pending.Count > 0 && _pending[0].T <= song)
             {
                 var p = _pending[0];
@@ -267,6 +268,15 @@ namespace PS.Look
                 Advance(_physicsT);
                 _physics.Simulate(Step);
                 _physicsT += Step;
+            }
+            if (n == 0 && Breaks > breaks)
+            {
+                // A frame shorter than a step (over 60 Hz) that brought a break: one step now, so its impact frame
+                // shows the shards in flight rather than standing where the site stood.
+                Advance(_physicsT);
+                _physics.Simulate(Step);
+                _physicsT += Step;
+                n = 1;
             }
             FrameSteps = n;
             FramePhysicsMs = _live.Count > 0 ? _watch.Elapsed.TotalMilliseconds : 0;
