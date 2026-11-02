@@ -75,6 +75,46 @@ namespace Champions.Sim
             }
         }
 
+        /// <summary>The middle of the shape and a radius around it holding all of it.</summary>
+        public void Bounds(out double cx, out double cy, out double radius)
+        {
+            if (Kind != ShapeKind.Path)
+            {
+                cx = X;
+                cy = Y;
+                radius = Radius;
+                return;
+            }
+            cx = 0.5 * (X + X2);
+            cy = 0.5 * (Y + Y2);
+            radius = 0.5 * Math.Sqrt((X2 - X) * (X2 - X) + (Y2 - Y) * (Y2 - Y)) + Radius;
+        }
+
+        /// <summary>
+        /// The way the shape throws a body at (<paramref name="x"/>, <paramref name="y"/>), a unit vector: square off
+        /// a path's line (along it when on the line), else away from the centre (a cone's facing, or +x, at the
+        /// centre). A path is swept a tick at a time, so its throw follows the line, not the tick's piece of it.
+        /// </summary>
+        public void Away(double x, double y, out double dx, out double dy)
+        {
+            double fx = Kind == ShapeKind.Cone ? DirX : 1, fy = Kind == ShapeKind.Cone ? DirY : 0, ox = x - X, oy = y - Y;
+            if (Kind == ShapeKind.Path)
+            {
+                double sx = X2 - X, sy = Y2 - Y, len = Math.Sqrt(sx * sx + sy * sy);
+                if (len >= 1e-9)
+                {
+                    fx = sx / len;
+                    fy = sy / len;
+                    double along = ox * fx + oy * fy;
+                    ox -= fx * along;
+                    oy -= fy * along;
+                }
+            }
+            double d = Math.Sqrt(ox * ox + oy * oy);
+            dx = d > 1e-9 ? ox / d : fx;
+            dy = d > 1e-9 ? oy / d : fy;
+        }
+
         /// <summary>The shape grown by <paramref name="factor"/>: its radii and reach (an on-beat dash's 1.5x area, "half again as wide").</summary>
         public HitShape Scaled(double factor)
         {

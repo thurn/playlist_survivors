@@ -75,6 +75,13 @@ namespace Champions.Sim
         public bool DashOnBeat;
         public double DashReadyAt, DashCooldownS;
         public bool DashWaiting;
+        /// <summary>The hero holds a ready stance (nothing in Sword Slash's reach); its phantoms.</summary>
+        public bool Ready;
+        public int Phantoms;
+        /// <summary>Orbit Blades' swords, the first one's angle (radians from +x) and the ring's radius.</summary>
+        public int OrbitSwords;
+        public double OrbitAngle, OrbitRadius;
+        public int EnemiesAlive;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 

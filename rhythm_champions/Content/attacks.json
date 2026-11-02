@@ -1,0 +1,66 @@
+{
+  "beatlessBeatS": 0.5,
+  "aimSlackM": 1.0,
+  "waveSlackM": 0.5,
+  "swordSlash": {
+    "tags": ["Strike", "Area"],
+    "damage": 1.0,
+    "windupS": 0.25,
+    "spinDamage": 1.5,
+    "ranks": [
+      { "arcDeg": 150, "reachM": 3.0, "spinEvery": 0, "tempest": false },
+      { "arcDeg": 210, "reachM": 3.8, "spinEvery": 0, "tempest": false },
+      { "arcDeg": 210, "reachM": 3.8, "spinEvery": 4, "tempest": false },
+      { "arcDeg": 210, "reachM": 3.8, "spinEvery": 4, "tempest": true }
+    ],
+    "tempest": { "tags": ["Area"], "damage": 1.0, "rangeM": 12, "halfWidthM": 2, "speedMps": 24 }
+  },
+  "orbitBlades": {
+    "tags": ["Summon"],
+    "damage": 0.6,
+    "hitRadiusM": 0.6,
+    "lapBeats": 4,
+    "ranks": [
+      { "swords": 2, "radiusM": 2.5, "downbeatRadiusM": null, "breatheFromM": null, "breatheToM": null },
+      { "swords": 3, "radiusM": 2.5, "downbeatRadiusM": null, "breatheFromM": null, "breatheToM": null },
+      { "swords": 4, "radiusM": 2.5, "downbeatRadiusM": 4.0, "breatheFromM": null, "breatheToM": null },
+      { "swords": 6, "radiusM": 3.5, "downbeatRadiusM": null, "breatheFromM": 2.0, "breatheToM": 5.0 }
+    ]
+  },
+  "bladeRain": {
+    "tags": ["Area", "Summon"],
+    "damage": 1.2,
+    "rangeM": 10,
+    "impactM": 1.5,
+    "ranks": [
+      { "everyHalfBeats": 4, "swords": 1 },
+      { "everyHalfBeats": 2, "swords": 1 },
+      { "everyHalfBeats": 2, "swords": 2 },
+      { "everyHalfBeats": 8, "swords": 8 }
+    ]
+  },
+  "crescent": {
+    "tags": ["Area"],
+    "damage": 1.0,
+    "halfWidthM": 2,
+    "speedMps": 20,
+    "ranks": [
+      { "ways": 1, "rangeM": 10, "everyHalfBeats": 8 },
+      { "ways": 2, "rangeM": 10, "everyHalfBeats": 8 },
+      { "ways": 4, "rangeM": 10, "everyHalfBeats": 8 },
+      { "ways": 0, "rangeM": 14, "everyHalfBeats": 8 }
+    ]
+  },
+  "phantom": {
+    "tags": ["Strike", "Area", "Summon"],
+    "damage": 0.7,
+    "delayBeats": 1,
+    "offsetM": 1.5,
+    "ranks": [
+      { "phantoms": 1, "repeatsDash": false },
+      { "phantoms": 1, "repeatsDash": true },
+      { "phantoms": 2, "repeatsDash": true },
+      { "phantoms": 3, "repeatsDash": true }
+    ]
+  }
+}

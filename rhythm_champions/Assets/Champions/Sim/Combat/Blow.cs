@@ -4,7 +4,7 @@ namespace Champions.Sim
 {
     /// <summary>
     /// The tags a mod applies by (design.md, "Mods"): a blow carries every tag of what dealt it. The
-    /// Kill tag is a kill's, not a blow's.
+    /// Kill and Attacks tags are mods' (kills, the attacks' periods), never a blow's.
     /// </summary>
     [Flags]
     public enum HitTags : byte
@@ -18,14 +18,49 @@ namespace Champions.Sim
         Dash = 4,
         /// <summary>Orbit Blades, Phantom, Blade Rain's swords.</summary>
         Summon = 8,
+        /// <summary>Kills (Shatterburst, Lifeblood).</summary>
+        Kill = 16,
+        /// <summary>The attacks' periods (Tempo).</summary>
+        Attacks = 32,
     }
 
-    /// <summary>What dealt a blow.</summary>
+    /// <summary>What dealt a blow: a dash, an attack or its wave, or a mod's effect.</summary>
     public enum BlowSource : byte
     {
         Dash = 0,
-        /// <summary>An attack (the attacks' bead).</summary>
-        Attack = 1,
+        SwordSlash = 1,
+        OrbitBlades = 2,
+        BladeRain = 3,
+        Crescent = 4,
+        Phantom = 5,
+        /// <summary>Sword Slash's evolution's wave.</summary>
+        Tempest = 6,
+        /// <summary>Shatterburst's shards.</summary>
+        Shards = 7,
+    }
+
+    /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>
+    [Flags]
+    public enum BlowFlags : byte
+    {
+        None = 0,
+        /// <summary>
+        /// An extra strike from an upgrade (Tempo, Twin Strike, a summon, a phantom's or an afterimage's
+        /// repeat), drawn white and spectral: the hero's body plays one clip per swing at natural speed
+        /// (Decision 9).
+        /// </summary>
+        Spectral = 1,
+        /// <summary>Twin Strike's echo: it echoes no further and takes no Encore.</summary>
+        Echo = 2,
+        /// <summary>A repeat of a dash's blow (Afterimage, Phantom): repeated no further.</summary>
+        Repeat = 4,
+        /// <summary>Sword Slash's spin (rank 3: every fourth strike).</summary>
+        Spin = 8,
+        /// <summary>
+        /// One tick of an effect drawn from its own events (a wave's front, an orbiting sword) or not at all (a
+        /// kill's shards): no <see cref="SimEventKind.Strike"/> of its own.
+        /// </summary>
+        Effect = 16,
     }
 
     /// <summary>Where a blow throws what it reaches (the horde moves it; design.md, Shield Charge).</summary>
@@ -36,6 +71,8 @@ namespace Champions.Sim
         Aside = 1,
         /// <summary>Away from the shape's centre.</summary>
         Away = 2,
+        /// <summary>Along a path, the way it runs (a wave's front).</summary>
+        Along = 3,
     }
 
     /// <summary>
@@ -53,7 +90,8 @@ namespace Champions.Sim
         public HitTags Tags;
         public bool OnBeat;
         public BlowSource Source;
-        /// <summary>The dash's run index (<see cref="DashRecord.Index"/>), or the attack's.</summary>
+        public BlowFlags Flags;
+        /// <summary>The dash's run index (<see cref="DashRecord.Index"/>); -1 for an attack's.</summary>
         public int Owner;
         /// <summary>The part of the dash's form that dealt it (<see cref="DashForm.Parts"/>), or -1 (a break-through).</summary>
         public int Part;

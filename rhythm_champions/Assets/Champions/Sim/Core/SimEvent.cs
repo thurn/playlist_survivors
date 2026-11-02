@@ -3,7 +3,8 @@ namespace Champions.Sim
     /// <summary>
     /// What the sim tells the client (plan.md, "The Sim", Shape): the beats and the beat's state, the
     /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
-    /// moves, dashes, hits, heals and death. The systems' beads add their kinds after these.
+    /// moves, dashes, hits, heals and death, and the attacks: the build, swings, blows, waves, hits and
+    /// kills on the enemies. The systems' beads add their kinds after these.
     /// </summary>
     public enum SimEventKind
     {
@@ -24,6 +25,16 @@ namespace Champions.Sim
         HeroHit,
         HeroHeal,
         HeroDeath,
+        Upgrade,
+        Swing,
+        SwingHold,
+        Strike,
+        Wave,
+        Hit,
+        Kill,
+        Orbit,
+        EnemySpawn,
+        DashEcho,
     }
 
     /// <summary>
@@ -243,6 +254,164 @@ namespace Champions.Sim
         public bool OnBeat => (I2 & 1) != 0;
         public bool Buffered => (I2 & 2) != 0;
         public JudgedBy Judged => (JudgedBy)(I2 >> 2);
+
+        /// <summary>An attack or mod was set to a rank: I0 its <see cref="UpgradeGroup"/>, I1 its id, I2 the rank; D0 the rank before (0: new).</summary>
+        public static SimEvent Upgrade(double t, in Sim.Upgrade u, int before)
+        {
+            var e = Of(SimEventKind.Upgrade, t);
+            e.I0 = (int)u.Group;
+            e.I1 = u.Id;
+            e.I2 = u.Rank;
+            e.D0 = before;
+            return e;
+        }
+
+        /// <summary>
+        /// Sword Slash's swing is planned, its aim held from now: the client starts the hero's clip so its impact
+        /// lands on D0, the strike's time. D1/D2 the aim (a unit vector); I0 1 for a spin; I1 Sword Slash's rank.
+        /// </summary>
+        public static SimEvent Swing(double t, double impact, double aimX, double aimY, bool spin, int rank)
+        {
+            var e = Of(SimEventKind.Swing, t);
+            e.D0 = impact;
+            e.D1 = aimX;
+            e.D2 = aimY;
+            e.I0 = spin ? 1 : 0;
+            e.I1 = rank;
+            return e;
+        }
+
+        /// <summary>Nothing is within reach: the hero holds a ready stance from now, skipping the strike at D0, until its next <see cref="Swing"/>.</summary>
+        public static SimEvent SwingHold(double t, double impact)
+        {
+            var e = Of(SimEventKind.SwingHold, t);
+            e.D0 = impact;
+            return e;
+        }
+
+        /// <summary>
+        /// An attack's blow (or a copy of a dash's) landed, after its mods: I0 its <see cref="BlowSource"/>, I1 its
+        /// <see cref="BlowFlags"/> | its <see cref="ShapeKind"/> &lt;&lt; 8, I2 the targets it struck; D0/D1 its centre (a
+        /// path's start), D2/D3 a path's end (a cone's facing), D4 its radius, D5 a cone's half angle (a ring's inner
+        /// radius), as <see cref="DashPart"/> gives a dash's.
+        /// </summary>
+        public static SimEvent Strike(double t, in Blow b, int struck)
+        {
+            var e = Of(SimEventKind.Strike, t);
+            var s = b.Shape;
+            e.I0 = (int)b.Source;
+            e.I1 = (int)b.Flags | (int)s.Kind << 8;
+            e.I2 = struck;
+            e.D0 = s.X;
+            e.D1 = s.Y;
+            e.D2 = s.Kind == ShapeKind.Cone ? s.DirX : s.X2;
+            e.D3 = s.Kind == ShapeKind.Cone ? s.DirY : s.Y2;
+            e.D4 = s.Radius;
+            e.D5 = s.Kind == ShapeKind.Cone ? s.HalfArc : s.Inner;
+            return e;
+        }
+
+        /// <summary>
+        /// A wave set off from D0/D1: I0 its <see cref="BlowSource"/>, I1 its <see cref="BlowFlags"/>, I2 its slot;
+        /// D2 its heading (radians from +x; NaN a ring), D3 its half width, D4 its range, D5 its speed (m/s).
+        /// </summary>
+        public static SimEvent Wave(double t, BlowSource source, BlowFlags flags, int slot, double x, double y, double heading,
+            double halfWidth, double range, double speed)
+        {
+            var e = Of(SimEventKind.Wave, t);
+            e.I0 = (int)source;
+            e.I1 = (int)flags;
+            e.I2 = slot;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = heading;
+            e.D3 = halfWidth;
+            e.D4 = range;
+            e.D5 = speed;
+            return e;
+        }
+
+        /// <summary>
+        /// An enemy hit and still standing: I0 the enemy, I1 the blow's <see cref="BlowSource"/>, I2 its
+        /// <see cref="BlowFlags"/>; D0/D1 the way the blow throws it (a unit vector), D2 its power (the damage
+        /// dealt, in Sword Slash's base hits), D3 the health left.
+        /// </summary>
+        public static SimEvent Hit(double t, int enemy, BlowSource source, BlowFlags flags, double dirX, double dirY, double power, double health)
+        {
+            var e = Of(SimEventKind.Hit, t);
+            e.I0 = enemy;
+            e.I1 = (int)source;
+            e.I2 = (int)flags;
+            e.D0 = dirX;
+            e.D1 = dirY;
+            e.D2 = power;
+            e.D3 = health;
+            return e;
+        }
+
+        /// <summary>
+        /// An enemy killed, on the impact frame: I0 the enemy, I1 the blow's <see cref="BlowSource"/>, I2 its
+        /// <see cref="BlowFlags"/>; D0/D1 the way the blow throws its shards, D2 its power, D3/D4 where it died.
+        /// </summary>
+        public static SimEvent Kill(double t, int enemy, BlowSource source, BlowFlags flags, double dirX, double dirY, double power, double x, double y)
+        {
+            var e = Of(SimEventKind.Kill, t);
+            e.I0 = enemy;
+            e.I1 = (int)source;
+            e.I2 = (int)flags;
+            e.D0 = dirX;
+            e.D1 = dirY;
+            e.D2 = power;
+            e.D3 = x;
+            e.D4 = y;
+            return e;
+        }
+
+        /// <summary>
+        /// Orbit Blades' ring changed (swords, rank or speed): I0 its swords, I1 its rank (0 gone); D0 the first
+        /// sword's angle at T (radians from +x, the rest evenly after it), D1 its angular speed (rad/s), D2 its
+        /// radius at T. Between these the ring turns steadily; its radius follows the rank's rule.
+        /// </summary>
+        public static SimEvent Orbit(double t, int swords, int rank, double angle, double speed, double radius)
+        {
+            var e = Of(SimEventKind.Orbit, t);
+            e.I0 = swords;
+            e.I1 = rank;
+            e.D0 = angle;
+            e.D1 = speed;
+            e.D2 = radius;
+            return e;
+        }
+
+        /// <summary>An enemy appeared: I0 its id, I1 its type, I2 1 for a boss; D0/D1 where, D2 its radius, D3 its health.</summary>
+        public static SimEvent EnemySpawn(double t, int id, int type, bool boss, double x, double y, double radius, double health)
+        {
+            var e = Of(SimEventKind.EnemySpawn, t);
+            e.I0 = id;
+            e.I1 = type;
+            e.I2 = boss ? 1 : 0;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = radius;
+            e.D3 = health;
+            return e;
+        }
+
+        /// <summary>
+        /// An afterimage (I0 -1) or phantom (I0 its index) repeats a dash's move from now: D0/D1 to D2/D3 over D4
+        /// seconds. Drawn only: its hits come as their own strikes.
+        /// </summary>
+        public static SimEvent DashEcho(double t, int who, double fromX, double fromY, double toX, double toY, double duration)
+        {
+            var e = Of(SimEventKind.DashEcho, t);
+            e.I0 = who;
+            e.D0 = fromX;
+            e.D1 = fromY;
+            e.D2 = toX;
+            e.D3 = toY;
+            e.D4 = duration;
+            return e;
+        }
 
         // Reading a beat's flags.
         public bool Downbeat => (I2 & 1) != 0;

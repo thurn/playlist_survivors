@@ -28,6 +28,16 @@ namespace Champions.Sim
         /// <summary>The dashes' numbers and forms (Content/dashes.json; the defaults hold only the plain Dash).</summary>
         public DashRules Dashes = new DashRules();
 
+        /// <summary>The attacks' and mods' numbers (Content/attacks.json, Content/mods.json).</summary>
+        public AttackRules Attacks = new AttackRules();
+        public ModRules Mods = new ModRules();
+
+        /// <summary>The build the run starts with (<see cref="RunInputs.Loadout"/>).</summary>
+        public Upgrade[] Loadout = RunInputs.StartLoadout();
+
+        /// <summary>Standing enemies placed at the start (<see cref="RunInputs.Dummies"/>).</summary>
+        public Dummy[] Dummies = new Dummy[0];
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;
@@ -39,6 +49,8 @@ namespace Champions.Sim
         public int SparseCapacity = 256;
         public int EntryCapacity = 4_096;
         public int EventCapacity = 65_536;
+        /// <summary>The enemies' slots: the cap of 1,000 alive, the bosses and room.</summary>
+        public int EnemyCapacity = 2_048;
         public int InputCapacity = 4_096;
         /// <summary>The targets one blow can reach (the horde's cap and the structures near it).</summary>
         public int TargetCapacity = 2_048;

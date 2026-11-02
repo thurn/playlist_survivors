@@ -1,0 +1,53 @@
+{
+  "wideArcs": {
+    "tag": "Area",
+    "ranks": [{ "area": 1.4 }, { "area": 1.8 }]
+  },
+  "twinStrike": {
+    "tag": "Strike",
+    "afterBeats": 0.5,
+    "ranks": [{ "damage": 0.5 }, { "damage": 0.75 }]
+  },
+  "tempo": {
+    "tag": "Attacks",
+    "ranks": [
+      { "attacks": ["swordSlash", "crescent"] },
+      { "attacks": ["swordSlash", "orbitBlades", "bladeRain", "crescent", "phantom"] }
+    ]
+  },
+  "keenEdge": {
+    "tag": "Strike",
+    "ranks": [{ "damage": 1.5, "downbeat": 2 }, { "damage": 2.0, "downbeat": 2 }]
+  },
+  "quickstep": {
+    "tag": "Dash",
+    "ranks": [{ "cooldownS": 0.45 }, { "cooldownS": 0.35 }]
+  },
+  "momentum": {
+    "tag": "Dash",
+    "dashDamage": 2,
+    "trailDamage": 0.8,
+    "trailHalfWidthM": 1.0,
+    "ranks": [{ "repeats": 0 }, { "repeats": 1 }]
+  },
+  "afterimage": {
+    "tag": "Dash",
+    "ranks": [{ "beats": [1] }, { "beats": [1, 2] }]
+  },
+  "shatterburst": {
+    "tag": "Kill",
+    "radiusM": 1.5,
+    "ranks": [{ "share": 0.3 }, { "share": 0.6 }]
+  },
+  "lifeblood": {
+    "tag": "Kill",
+    "kills": 25,
+    "ranks": [{ "heal": 0.02 }, { "heal": 0.04 }]
+  },
+  "encore": {
+    "tag": "Dash",
+    "damage": 3,
+    "withinBeats": 1,
+    "ranks": [{ "strikes": 1 }, { "strikes": 2 }]
+  }
+}

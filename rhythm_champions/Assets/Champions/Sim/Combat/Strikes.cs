@@ -20,8 +20,9 @@ namespace Champions.Sim
     }
 
     /// <summary>
-    /// The one way the hero's damage reaches the world (dashes now, attacks after): a blow lands on
-    /// every registered target its shape reaches. Mods that change blows by tag apply here.
+    /// The one way the hero's damage reaches the world (dashes and attacks): a blow lands on every
+    /// registered target its shape reaches. The mods that change blows by tag apply here
+    /// (<see cref="Arsenal.Modify"/> before, <see cref="Arsenal.Landed"/> after: echoes, repeats, shards).
     /// </summary>
     public sealed class Strikes
     {
@@ -50,22 +51,25 @@ namespace Champions.Sim
         /// </summary>
         internal int Land(Simulation sim, in Blow blow, StructList<long> struck = null)
         {
+            var landed = blow;
+            sim.Arsenal.Modify(ref landed);
             Blows++;
             int n = 0;
             for (int r = 0; r < targets.Count; r++)
             {
                 var target = targets[r];
                 reached.Clear();
-                target.Reach(blow.Shape, blow.T, reached);
+                target.Reach(landed.Shape, landed.T, reached);
                 for (int k = 0; k < reached.Count; k++)
                 {
                     int id = reached[k];
                     if (!Claim(struck, Key(r, id))) continue;
-                    target.Strike(sim, id, blow);
+                    target.Strike(sim, id, landed);
                     n++;
                 }
             }
             Struck += n;
+            sim.Arsenal.Landed(sim, blow, landed, n);
             return n;
         }
 
@@ -77,9 +81,13 @@ namespace Champions.Sim
         {
             int r = targets.IndexOf(target);
             if (r < 0 || !Claim(struck, Key(r, id))) return false;
+            var landed = blow;
+            sim.Arsenal.Modify(ref landed);
             Blows++;
             Struck++;
-            return target.Strike(sim, id, blow);
+            bool broke = target.Strike(sim, id, landed);
+            sim.Arsenal.Landed(sim, blow, landed, 1);
+            return broke;
         }
 
         static long Key(int receiver, int id) => (long)receiver << 32 | (uint)id;
