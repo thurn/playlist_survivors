@@ -1,0 +1,194 @@
+/*
+ * Rhythm Champions' music plugin (docs/champions/plan.md, What Carries Over; its C interface is
+ * docs/archive/design/unity-game.md's "Music: the Rust Plugin"): libps_plugin, built from
+ * rhythm_champions/plugin/crates/plugin, a copy of the frozen native/crates/plugin. The game's C#
+ * (rhythm_champions/Assets/Champions/Client/Music/Plugin.cs) mirrors this header; keep the two in
+ * step (crates/plugin/tests/header.rs checks the layouts against the Rust side).
+ *
+ * One session plays one source M seconds late through Unity's output and analyses it ahead of
+ * that. Threads: ps_render_music on Unity's audio thread, or on the main thread when its frames
+ * drive the music (a File or Replay source rendered as fast as frames compute, its output
+ * dropped); every other call on one other thread (the main thread). Times are seconds; song time is the position in the source's music (System:
+ * the time since the app was first tapped).
+ *
+ * The main thread's heartbeat: each ps_poll and ps_status call. A System source's watchdog
+ * releases the tapped app (it is heard again) if the heartbeat stops for 2 s or the capture for
+ * 0.5 s; call either every frame.
+ */
+#ifndef PS_PLUGIN_H
+#define PS_PLUGIN_H
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Return codes. Calls that can fail return one of these (or a count, >= 0); ps_last_error
+ * describes the failure. */
+#define PS_OK 0
+#define PS_ERR_ARGUMENT -1    /* a null pointer, an unknown source, an M or rate out of range */
+#define PS_ERR_SOURCE -2      /* the file or playlist can't be read or decoded, or the app tapped */
+#define PS_ERR_MODELS -3      /* the analyzer's models can't be loaded */
+#define PS_ERR_UNSUPPORTED -4 /* the source isn't available yet (System off macOS) */
+#define PS_ERR_PANIC -5       /* the plugin panicked; the session should be closed */
+#define PS_ERR_FAILED -6      /* ps_poll: the session's source, analysis or record failed */
+
+/* Sources. */
+#define PS_SOURCE_FILE 0   /* an audio file, or an M3U playlist with #PS-GAP lines */
+#define PS_SOURCE_SYSTEM 1 /* an app's audio, tapped and muted (Delayed listening; macOS) */
+#define PS_SOURCE_REPLAY 2 /* a recorded session: its audio and entries again */
+
+typedef struct ps_session ps_session;
+
+typedef struct {
+    int32_t source;          /* PS_SOURCE_* */
+    int32_t pid;             /* System: the app to tap, a ps_app's pid */
+    double m;                /* the music delay M: 3.0 (1 to 10) */
+    double output_rate;      /* Unity's output sample rate (whole Hz) */
+    const char *path;        /* File: the audio file or .m3u; Replay: the session folder (UTF-8) */
+    const char *models;      /* the analyzer's madmom.bin; NULL: $PS_MODELS, else the checkout's */
+    const char *session_dir; /* the folder to record the session in (created); NULL: none */
+    int32_t hindsight_jobs;  /* how many of a hindsight window's models decode at once: 0 or 1
+                              * live; more (at most 8, the ensemble's) when frames drive a File
+                              * source faster than real time and wait on the analysis */
+    uint64_t shuffle;        /* File: a playlist's tracks in the order this seed picks, its gaps
+                              * staying in their slots; 0: the list's order */
+} ps_config;
+
+/* An app producing audio now (System listening): the process responsible for its audio. */
+typedef struct {
+    int32_t pid;
+    char name[128]; /* UTF-8, NUL-terminated (cut to fit) */
+} ps_app;
+
+/* The default output device: the key the game keeps a calibration under. */
+typedef struct {
+    char uid[256];     /* Core Audio's device UID (UTF-8, NUL-terminated); empty: no device */
+    char name[128];    /* its name, for the player (UTF-8, NUL-terminated, cut to fit) */
+    double latency;    /* its latency as ps_status's output_latency reports it (s) */
+    int32_t bluetooth; /* 1: Bluetooth, whose reported latency is a guess */
+} ps_device;
+
+/*
+ * One record of the belief stream. known_at is the plugin's stamp, position - (M - A) with
+ * A = 0.048 s: position is how far into the music the analyzer had read when it emitted the
+ * entry (the game adds B). Unused v slots are 0. Records arrive in the analyzer's order.
+ *
+ * kind  group           t                                   v
+ *  1    beat            when it falls                       period, evidence
+ *  2    tick            its time (every 50 ms)              evidence, energy, level (0 quiet,
+ *                                                           1 medium, 2 loud), key (index in
+ *                                                           analysis::structure::KEYS, -1 none),
+ *                                                           kick, snare, hat, bass, brightness
+ *  3    onset           when it sounds                      strength, strong (0 or 1), band (0
+ *                                                           kick, 1 snare, 2 hat, 3 bass,
+ *                                                           -1 none)
+ *  4    hindsight       the window's end                    offline count, online count
+ *  5    hindsight beat  the beat                            grid (0 offline, 1 online), the
+ *                                                           window's end
+ *  6    change          the boundary                        strength
+ *  7    jump            when it jumps                       dB
+ *  8    end             where the quiet began               (none)
+ *  9    forecast        the accented beat                   cycle (beats), confidence
+ * 10    timbre          the end of the span it describes    brightness, flatness, percussive,
+ *                                                           density
+ *
+ * A hindsight entry's grids don't fit 12 slots: it is a header record (kind 4) followed by one
+ * kind-5 record per beat, offline then online, each with the header's stamp. The source of
+ * truth is crates/analysis/src/flat.rs.
+ */
+typedef struct {
+    int32_t kind;
+    double t;
+    double known_at;
+    double v[12];
+} ps_entry;
+
+#define PS_KIND_BEAT 1
+#define PS_KIND_TICK 2
+#define PS_KIND_ONSET 3
+#define PS_KIND_HINDSIGHT 4
+#define PS_KIND_HINDSIGHT_BEAT 5
+#define PS_KIND_CHANGE 6
+#define PS_KIND_JUMP 7
+#define PS_KIND_END 8
+#define PS_KIND_FORECAST 9
+#define PS_KIND_TIMBRE 10
+
+/* Playback states. */
+#define PS_WAITING 0 /* the music hasn't started: ps_render_music writes silence */
+#define PS_PLAYING 1
+#define PS_ENDED 2   /* the source has been rendered to its end */
+#define PS_STOPPED 3 /* System: the watchdog released the app, so the music stopped (silence plays,
+                      * the analyzer hears silence). Once the main thread's heartbeat is back and the
+                      * app produces audio, the plugin taps it again; the state returns to
+                      * PS_PLAYING when that music reaches the render position, M later. */
+
+/* A struct tag, not a typedef: ps_status is also the function that fills it. */
+struct ps_status {
+    /* The clock anchor: the first frame of the latest buffer ps_render_music wrote while
+     * playing. Song time anchor_song (= anchor_frames / output_rate) starts at DSP time
+     * anchor_dsp. Valid once state is PS_PLAYING. */
+    double anchor_dsp;
+    double anchor_song;
+    int64_t anchor_frames;
+    /* The output device's latency as the OS reports it (s): device, safety offset and stream
+     * latency, without Unity's DSP buffering. */
+    double output_latency;
+    /* How far ahead of the render position the music is buffered, and how far the analyzer
+     * has read (song s). */
+    double buffered;
+    double analysed;
+    /* Buffers that ran out of music before the source's end (capture or decode stalls). */
+    int32_t stalls;
+    int32_t state;         /* PS_WAITING, PS_PLAYING, PS_ENDED or PS_STOPPED */
+    int32_t muted;         /* System: the app is muted (tapped). File: 0 */
+    int32_t analysis_done; /* the analyzer has emitted its last entry */
+    int32_t failed;        /* the source, analysis or record failed: ps_poll says why */
+    float follower_gain;   /* the effects' gain, following the music's loudness (0.3 to 1) */
+    int32_t releases;      /* System: how many times the watchdog released the app */
+    int32_t device_changed; /* the default output device changed since ps_open (the run ends) */
+};
+
+/* Opens a session: validates the source (System: taps the app, muted), loads the models and
+ * starts decoding or capture, and analysis. */
+int32_t ps_open(const ps_config *config, ps_session **out);
+
+/* Fills out with up to max of the apps producing audio now, the ones a System source can tap;
+ * returns how many. (None off macOS.) */
+int32_t ps_list_apps(ps_app *out, int32_t max);
+
+/* Writes the default output device to out (no session needed); returns PS_OK. (Empty off
+ * macOS.) */
+int32_t ps_output_device(ps_device *out);
+
+/* Copies up to max new entries into out; returns how many, or PS_ERR_FAILED once every entry
+ * before a failure has been polled. Never allocates. A heartbeat. */
+int32_t ps_poll(ps_session *s, ps_entry *out, int32_t max);
+
+/* Unity's audio thread: writes `frames` frames of `channels` interleaved channels of the
+ * delayed music (left, right, then silence; mono gets their mean) at the output rate (a File
+ * source is decoded at it), and records the anchor at dsp_time. Never blocks, allocates or
+ * logs. Returns PS_OK; on a failure the buffer is silent. */
+int32_t ps_render_music(ps_session *s, float *out, int32_t frames, int32_t channels,
+                        double dsp_time);
+
+/* The anchor, latency, stalls, mute, gain, progress and device. Cannot fail. A heartbeat. */
+void ps_status(ps_session *s, struct ps_status *out);
+
+/* Stops the session's threads (System: the app is heard again), finishes its record and frees
+ * it. NULL is a no-op. Stop the audio callback first: ps_render_music must have returned for the
+ * last time. */
+void ps_close(ps_session *s);
+
+/* The calling thread's last failure, until its next failing call; "" if none. The plugin owns
+ * the string (C#: return an IntPtr and copy it, never a marshalled string, which would free
+ * it). */
+const char *ps_last_error(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

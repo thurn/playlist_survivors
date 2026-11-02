@@ -10,8 +10,11 @@ guard). A file fails when it:
   work stays in ignored folders (plan.md, Edge cuts);
 - is binary (by extension or a NUL byte) under a project's folder or the Unity packages
   (unity-packages/), unless it is a PNG or JPEG under that project's evidence/ that carries the
-  `ps-render` text tag, or a recorded session's inputs (rhythm_champions/sessions/NAME/inputs.bin,
-  the sim's own input records, which CI replays);
+  `ps-render` text tag, a recorded session's inputs (rhythm_champions/sessions/NAME/inputs.bin,
+  the sim's own input records, which CI replays), or the music plugin's own data: the analyzer's
+  exported models and golden data (rhythm_champions/plugin/models/, .bin), the analysis crate's
+  test fixtures (.bin) and the corpus's synthetic house loop its File tests play
+  (rhythm_champions/plugin/fixtures/house-128.ogg);
 - is a .meta whose GUID is in the sync record;
 - has a SHA-256 that is in the sync record (raw, or with CRLF folded to LF, since git stores
   text with LF);
@@ -78,6 +81,8 @@ MODEL_EXTENSIONS = frozenset({"blend", "blend1", "fbx", "obj"})
 BINARY_FOLDERS = (*paths.PROJECTS, "unity-packages")
 META_GUID = re.compile(rb"^guid:\s*([0-9a-fA-F]{32})\s*$", re.MULTILINE)
 SESSION_INPUTS = re.compile(rf"^{paths.PROJECT}/sessions/[^/]+/inputs\.bin$")
+PLUGIN_DATA = re.compile(rf"^{paths.PROJECT}/plugin/(models/(golden/)?[^/]+\.bin|crates/analysis/tests/fixtures/[^/]+\.bin"
+                         r"|fixtures/house-128\.ogg)$")
 
 
 class RecordError(Exception):
@@ -234,7 +239,7 @@ def check_blob(path: str, data: bytes, record: Record | None) -> list[str]:
             and ext in IMAGE_TAG_EXTENSIONS
             and has_render_tag(data)
         )
-        if not tagged and not SESSION_INPUTS.match(lower):
+        if not tagged and not SESSION_INPUTS.match(lower) and not PLUGIN_DATA.match(lower):
             reasons.append(f"binary file under {folder}/")
     if is_song_audio_path(lower) and (ext in AUDIO_EXTENSIONS or looks_like_audio(data)):
         reasons.append("audio of the NCS song (never tracked)")

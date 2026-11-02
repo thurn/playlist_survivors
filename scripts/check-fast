@@ -18,6 +18,8 @@
 #   herocap's recipe tests (dot and line faces, one recipe per atlas) when herocap/ or the survivors
 #   roster changed.
 # - Rhythm Champions' sim tests (rhythm_champions/dotnet/) when its sim, content or sessions changed.
+# - Rhythm Champions' music plugin (rhythm_champions/plugin/, its own Cargo workspace): rustfmt, clippy
+#   (-D warnings) and its tests, when it changed.
 # Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
@@ -121,6 +123,16 @@ fi
 # the replay tool built, when the sim, its tests, the content or the sessions changed.
 if changes_match '^rhythm_champions/(Assets/Champions/Sim/|dotnet/|Content/|sessions/)'; then
   dotnet test rhythm_champions/dotnet --nologo -v q
+fi
+
+# Rhythm Champions' music plugin, its own Cargo workspace.
+if changes_match '^rhythm_champions/plugin/'; then
+  (
+    cd rhythm_champions/plugin
+    cargo fmt --all --check
+    cargo clippy --locked --workspace --all-targets -- -D warnings
+    cargo test --locked --workspace --quiet
+  )
 fi
 
 echo "check-fast: passed in $(( $(date +%s) - started )) s"

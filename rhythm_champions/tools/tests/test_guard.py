@@ -857,3 +857,18 @@ def test_a_recorded_sessions_inputs_pass_but_no_other_binary_beside_them(repo: P
     assert set(failures(check_index(repo, record))) == {
         "rhythm_champions/sessions/fixture-walk/song.ogg", "rhythm_champions/sessions/fixture-walk/deeper/inputs.bin",
         "rhythm_champions/sessions/fixture-walk/inputs.bin.png"}
+
+
+def test_the_plugins_models_and_fixtures_pass_but_no_other_binary_in_the_plugin(repo: Path, record: Path) -> None:
+    allowed = ["rhythm_champions/plugin/models/madmom.bin", "rhythm_champions/plugin/models/golden/house-128.bin",
+               "rhythm_champions/plugin/crates/analysis/tests/fixtures/a4-tiny-dbn.bin",
+               "rhythm_champions/plugin/fixtures/house-128.ogg"]
+    for rel in allowed:
+        add(repo, rel, b"\x00\x01model")
+    assert check_index(repo, record).ok
+    refused = {"rhythm_champions/plugin/models/golden/deeper/x.bin", "rhythm_champions/plugin/models/song.ogg",
+               "rhythm_champions/plugin/fixtures/other.ogg", "rhythm_champions/plugin/target/release/libps_plugin.dylib",
+               "rhythm_champions/plugin/crates/plugin/tests/fixtures/x.bin"}
+    for rel in refused:
+        add(repo, rel, b"\x00\x01")
+    assert set(failures(check_index(repo, record))) == refused
