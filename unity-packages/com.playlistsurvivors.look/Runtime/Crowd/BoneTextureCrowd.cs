@@ -197,6 +197,7 @@ namespace PS.Look.Crowd
             s.ClipBounds.SetData(spheres);
 
             s.Material = _look.Body(_lib, t);
+            if (LookFlags.Current.MonsterTune is string tune) MaterialTune.Apply(s.Material, tune, LookFlags.MonsterTuneFlag, "body", "body", "shards");
             s.Material.SetFloat(IdHeightM, t.HeightM);
             s.Main = new MaterialPropertyBlock[Lods];
             for (int l = 0; l < Lods; l++) s.Main[l] = new MaterialPropertyBlock();

@@ -35,6 +35,7 @@ namespace PS.Look
         public const float WhitePoint = 8f;
 
         const int Prefilter = 0, Down = 1, Up = 2, Scene = 3, Retro = 4;
+        static readonly int IdSpecial = Shader.PropertyToID("_LookSpecial");
         static readonly int IdHalo = Shader.PropertyToID("_LookHalo"), IdTone = Shader.PropertyToID("_LookTone"),
             IdRetro = Shader.PropertyToID("_LookRetro"), IdVoid = Shader.PropertyToID("_LookVoid"), IdTexel = Shader.PropertyToID("_LookTexel"), IdExtra = Shader.PropertyToID("_LookExtra");
 
@@ -75,7 +76,9 @@ namespace PS.Look
             if (resources.isActiveTargetBackBuffer || !camera.postProcessEnabled || o == null || !Draws(o)) return;
             bool halo = o.HaloIntensity > 0;
             float exposure = Mathf.Pow(2f, o.Exposure + SceneExposure);
-            _material.SetVector(IdHalo, new Vector4(o.HaloThreshold, halo ? o.HaloIntensity / HaloLevels : 0, o.HaloSaturation, exposure));
+            // A special moment lifts the halo: the impulse field's envelope, 1 on the moment's first frame (ImpulseField.Publish).
+            float intensity = o.HaloIntensity * (1 + o.HaloSpecial * Mathf.Clamp01(Shader.GetGlobalFloat(IdSpecial)));
+            _material.SetVector(IdHalo, new Vector4(o.HaloThreshold, halo ? intensity / HaloLevels : 0, o.HaloSaturation, exposure));
             _material.SetVector(IdTone, new Vector4(o.Tonemap == PostOption.Tonemaps.Filmic ? 1 : 0, o.Shoulder, o.Whiten, WhitePoint));
             _material.SetVector(IdRetro, new Vector4(o.Scanlines, ScanlineRows, o.Mask, 0));
             _material.SetVector(IdVoid, new Vector4(o.VoidKnee, o.VoidPower, 0, 0));

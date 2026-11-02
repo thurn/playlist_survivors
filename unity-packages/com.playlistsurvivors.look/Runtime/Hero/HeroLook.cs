@@ -52,20 +52,8 @@ namespace PS.Look.Hero
         /// the knight's and the blade's materials, or on one alone with a `body.` or `blade.` prefix (`Edge=1.6`,
         /// `blade.Glow=2`). A key the look's shader lacks fails, so a typo doesn't pass for a look.
         /// </summary>
-        public static void Tune(Material m, bool blade, string pairs)
-        {
-            foreach (var pair in pairs.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                var kv = pair.Split('=');
-                if (kv.Length != 2 || !float.TryParse(kv[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v))
-                    throw new ArgumentException($"{LookFlags.HeroTuneFlag}: bad pair '{pair}'");
-                string key = kv[0].Trim();
-                if (key.StartsWith("body.")) { if (blade) continue; key = key.Substring(5); }
-                else if (key.StartsWith("blade.")) { if (!blade) continue; key = key.Substring(6); }
-                if (!m.HasProperty("_" + key)) throw new ArgumentException($"{LookFlags.HeroTuneFlag}: {m.shader.name} has no _{key}");
-                m.SetFloat("_" + key, v);
-            }
-        }
+        public static void Tune(Material m, bool blade, string pairs) =>
+            MaterialTune.Apply(m, pairs, LookFlags.HeroTuneFlag, blade ? "blade" : "body", "body", "blade");
 
         /// <summary>
         /// Dresses the hero in <paramref name="body"/>: every renderer under <paramref name="hero"/> the hero bake

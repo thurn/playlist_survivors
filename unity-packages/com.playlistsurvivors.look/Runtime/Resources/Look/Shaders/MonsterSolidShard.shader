@@ -18,7 +18,7 @@ Shader "Look/MonsterSolidShard"
         _Facets ("Faceting", Range(0, 1)) = 0.5
         _HotSpot ("Hot spot on the beat (unused)", Float) = 0
         _Impulse ("Impulse light (unused)", Float) = 0
-        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 2.5
+        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 3.5
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
     }

@@ -133,7 +133,7 @@ namespace PS.Look.Tests
         public void EveryLookFlagIsListedForPlayersThatClaimTheirFlags()
         {
             Assert.That(LookFlags.ValuedFlags, Is.EquivalentTo(new[]
-                { "--look", "--palette", "--motion", "--hero-tune", "--monster-look", "--structure-look", "--world", "--post", "--vfx", "--hero-look" }));
+                { "--look", "--palette", "--motion", "--hero-tune", "--monster-tune", "--post-tune", "--monster-look", "--structure-look", "--world", "--post", "--vfx", "--hero-look" }));
             Assert.That(LookFlags.Switches, Is.EquivalentTo(new[] { "--beat-ripple" }));
         }
 
@@ -187,6 +187,30 @@ namespace PS.Look.Tests
             Assert.That(enemies.Length, Is.EqualTo(Palette.MaxSlots));
             Assert.That((Color)enemies[1], Is.EqualTo(look.Palette.Enemies[1].linear));
             Assert.That(Shader.GetGlobalColor("_LookGridLine"), Is.Not.EqualTo(Color.clear));
+        }
+
+        [Test]
+        public void AMaterialTuneSetsItsPartsValuesAndATypoFails()
+        {
+            var shader = Resources.Load<Shader>(Crowd.SolidLook.BodyShader);
+            var body = new Material(shader);
+            var shards = new Material(shader);
+            try
+            {
+                const string pairs = "Glow=1.5,shards.Glow=2,body.Key=0.4";
+                MaterialTune.Apply(body, pairs, "--monster-tune", "body", "body", "shards");
+                MaterialTune.Apply(shards, pairs, "--monster-tune", "shards", "body", "shards");
+                Assert.That((body.GetFloat("_Glow"), body.GetFloat("_Key")), Is.EqualTo((1.5f, 0.4f)));
+                Assert.That(shards.GetFloat("_Glow"), Is.EqualTo(2f), "the later pair, for its part only");
+                Assert.Throws<ArgumentException>(() => MaterialTune.Apply(body, "Glw=1", "--monster-tune", "body", "body", "shards"));
+                Assert.Throws<ArgumentException>(() => MaterialTune.Apply(body, "bdy.Glow=1", "--monster-tune", "body", "body", "shards"));
+                Assert.Throws<ArgumentException>(() => MaterialTune.Apply(body, "Glow", "--monster-tune", "body", "body", "shards"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(body);
+                UnityEngine.Object.DestroyImmediate(shards);
+            }
         }
     }
 }

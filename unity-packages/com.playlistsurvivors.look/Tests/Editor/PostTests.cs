@@ -54,6 +54,18 @@ namespace PS.Look.Tests
         }
 
         [Test]
+        public void ATuneSetsValuesOverTheFilesAndATypoInItFails()
+        {
+            const string file = @"{ ""name"": ""x"", ""shoulder"": 0.5, ""halo"": { ""intensity"": 0.7, ""threshold"": 0.4 } }";
+            var o = PostOption.Parse(file, "halo.intensity=1.2,shoulder=0.6,feel.flash.calm=0.5,bloom.intensity=0.8,halo.special=2");
+            Assert.That((o.HaloIntensity, o.HaloThreshold, o.Shoulder), Is.EqualTo((1.2f, 0.4f, 0.6f)), "the file's other values kept");
+            Assert.That(o.HaloSpecial, Is.EqualTo(2f), "a special moment's halo");
+            Assert.That((o.Feel.FlashCalm, o.BloomIntensity), Is.EqualTo((0.5f, 0.8f)), "groups the file leaves out");
+            Assert.Throws<FormatException>(() => PostOption.Parse(file, "halo.intensty=1"));
+            Assert.Throws<FormatException>(() => PostOption.Parse(file, "halo.intensity"));
+        }
+
+        [Test]
         public void TheProfileGradesInThePalettesColoursAndLeavesAFilmicTonemapToTheLooksPass()
         {
             var option = PostOption.Parse(@"{ ""name"": ""x"", ""tonemap"": ""filmic"", ""colour"": { ""exposure"": 0.5 }, ""bloom"": { ""threshold"": 0.9, ""intensity"": 0.8 },

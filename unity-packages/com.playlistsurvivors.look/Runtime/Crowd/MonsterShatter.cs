@@ -177,6 +177,7 @@ namespace PS.Look.Crowd
             s.Args = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 5, 4) { name = t.Id + "_shardArgs" };
             s.Args.SetData(new uint[] { t.ShardMesh.GetIndexCount(0), 0, t.ShardMesh.GetIndexStart(0), t.ShardMesh.GetBaseVertex(0), 0 });
             s.Material = _look.Shards(_lib, t);
+            if (LookFlags.Current.MonsterTune is string tune) MaterialTune.Apply(s.Material, tune, LookFlags.MonsterTuneFlag, "shards", "body", "shards");
             s.Block = new MaterialPropertyBlock();
             s.Block.SetBuffer(IdDeaths, s.Deaths);
             s.Block.SetBuffer(IdShards, s.Shards);

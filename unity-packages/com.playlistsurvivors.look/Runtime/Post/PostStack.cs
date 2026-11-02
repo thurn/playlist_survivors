@@ -26,11 +26,12 @@ namespace PS.Look
         /// <summary>
         /// The option the look's post axis draws, or null when it asks for one not built (today's post, which
         /// ResolvedLook warns of) or <see cref="LookAxis.Classic"/>, both the player's own night post, or there is no look.
+        /// `--post-tune` sets values over the option's.
         /// </summary>
         public static PostOption OptionOf(ResolvedLook look, LookLibrary library = null)
         {
             var name = look?.Option(LookAxes.Post);
-            return name != null ? PostOption.Parse((library ?? LookLibrary.Shared).PostJson(name)) : null;
+            return name != null ? PostOption.Parse((library ?? LookLibrary.Shared).PostJson(name), LookFlags.Current.PostTune) : null;
         }
 
         /// <summary>

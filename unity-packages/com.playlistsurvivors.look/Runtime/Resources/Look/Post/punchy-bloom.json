@@ -1,11 +1,11 @@
 {
   "name": "punchy-bloom",
-  "note": "The solid preset's post: punchy contrast and moderate bloom for bright solid bodies, a tighter halo, a later shoulder so the bodies keep their value steps, and a void toe sinking the lit world toward black (neon-look-style.md, Post); calm since ps-wnj.24: bloom and halo at 70%, the beat a third, the full flash for special moments and a calm moment's at 30% of it (neon-look-style.md, Restraint).",
+  "note": "The solid preset's post: punchy contrast and moderate bloom for bright solid bodies, a tighter halo, a later shoulder so the bodies keep their value steps, and a void toe sinking the lit world toward black (neon-look-style.md, Post); calm since ps-wnj.24: bloom and halo at 70%, the beat a third, the full flash for special moments and a calm moment's at 30% of it (neon-look-style.md, Restraint). The halo flares to 8x its own on a special moment's first frame (halo.special): solid's bodies sit under the halo's threshold, so only a strong flare lifts its impact frame's halo to the style guide's 15 (ps-wnj.19).",
   "tonemap": "filmic", "shoulder": 0.7, "whiten": 0.25,
   "void":   { "knee": 0.55, "power": 3.0 },
   "colour": { "exposure": 0, "contrast": 20, "saturation": 12 },
   "bloom":  { "threshold": 0.9, "intensity": 0.56, "scatter": 0.5 },
-  "halo":   { "threshold": 0.5, "intensity": 0.56, "saturation": 1.3 },
+  "halo":   { "threshold": 0.5, "intensity": 0.56, "saturation": 1.3, "special": 7 },
   "lens":   { "chromatic": 0, "vignette": 0.25, "smoothness": 0.45, "grain": 0.06, "dirt": 4 },
   "feel": {
     "beat":  { "exposure": 0.05, "bloom": 0.12, "vignette": -0.02, "tint": 0.12 },

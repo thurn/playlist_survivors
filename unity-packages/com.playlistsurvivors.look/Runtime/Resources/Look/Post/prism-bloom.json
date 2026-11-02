@@ -1,12 +1,12 @@
 {
   "name": "prism-bloom",
-  "note": "The prism preset's post: soft wide bloom and the widest, most saturated halo for the gems' light, chromatic aberration as the dispersion, lens dirt catching the glow, and a void toe sinking the lit world toward black (neon-look-style.md, Post); calm since ps-wnj.24: bloom and halo cut less than the other options' 30% (bloom 0.7 to 0.6, halo 0.9 to 0.8: thin emitters, which at 70% fell under the bright-share floor in the crystal cut), the beat a third, the full flash for special moments and a calm moment's at 30% of it (neon-look-style.md, Restraint).",
+  "note": "The prism preset's post: soft wide bloom and the widest, most saturated halo for the gems' light, chromatic aberration as the dispersion, lens dirt catching the glow, and a void toe sinking the lit world toward black (neon-look-style.md, Post); calm since ps-wnj.24: bloom and halo cut less than the other options' 30% (bloom 0.7 to 0.6, halo 0.9 to 0.8: thin emitters, which at 70% fell under the bright-share floor in the crystal cut), the beat a third, the full flash for special moments and a calm moment's at 30% of it (neon-look-style.md, Restraint). The halo flares to 2.5x its own on a special moment's first frame (halo.special), and the lens's chromatic aberration is 0.04, not 0.2: its rainbow fringes broke the cut's key and palette conformance (ps-wnj.19).",
   "tonemap": "filmic", "shoulder": 0.6, "whiten": 0.25,
   "void":   { "knee": 0.7, "power": 3.4 },
   "colour": { "exposure": -0.15, "contrast": 8, "saturation": 10 },
   "bloom":  { "threshold": 0.85, "intensity": 0.6, "scatter": 0.6 },
-  "halo":   { "threshold": 0.5, "intensity": 0.8, "saturation": 1.6 },
-  "lens":   { "chromatic": 0.2, "vignette": 0.3, "smoothness": 0.45, "grain": 0.06, "dirt": 8 },
+  "halo":   { "threshold": 0.5, "intensity": 0.8, "saturation": 1.6, "special": 1.5 },
+  "lens":   { "chromatic": 0.04, "vignette": 0.3, "smoothness": 0.45, "grain": 0.06, "dirt": 8 },
   "feel": {
     "beat":  { "exposure": 0.05, "bloom": 0.12, "vignette": -0.02, "tint": 0.12 },
     "flash": { "exposure": 0.3, "chromatic": 0.3, "saturation": 15, "calm": 0.3 },

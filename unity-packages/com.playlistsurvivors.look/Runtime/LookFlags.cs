@@ -19,6 +19,10 @@ namespace PS.Look
         public const string LookFlag = "--look", PaletteFlag = "--palette", MotionFlag = "--motion", BeatRippleFlag = "--beat-ripple";
         /// <summary>`--hero-tune key=value,...`: the hero look's material values for a run (Hero.HeroLook.Tune), to judge a change without a rebuild.</summary>
         public const string HeroTuneFlag = "--hero-tune";
+        /// <summary>`--monster-tune key=value,...`: the monster look's material values for a run (`body.` or `shards.` for one; MaterialTune), to judge a change without a rebuild.</summary>
+        public const string MonsterTuneFlag = "--monster-tune";
+        /// <summary>`--post-tune group.key=value,...`: the post option's values for a run (PostOption.Tune), to judge a change without a rebuild.</summary>
+        public const string PostTuneFlag = "--post-tune";
 
         static LookFlags _current;
 
@@ -36,6 +40,10 @@ namespace PS.Look
         public bool BeatRipple;
         /// <summary>`--hero-tune`'s pairs, or null.</summary>
         public string HeroTune;
+        /// <summary>`--monster-tune`'s pairs, or null.</summary>
+        public string MonsterTune;
+        /// <summary>`--post-tune`'s pairs, or null.</summary>
+        public string PostTune;
         /// <summary>The axis flags given: the option each names, by axis.</summary>
         public readonly Dictionary<LookAxis, string> Overrides = new Dictionary<LookAxis, string>();
 
@@ -51,6 +59,8 @@ namespace PS.Look
                 yield return PaletteFlag;
                 yield return MotionFlag;
                 yield return HeroTuneFlag;
+                yield return MonsterTuneFlag;
+                yield return PostTuneFlag;
                 foreach (var axis in LookAxes.All)
                     if (axis.Flag != null) yield return axis.Flag;
             }
@@ -76,7 +86,8 @@ namespace PS.Look
                     if (args[i] == name) return args[i + 1];
                 return null;
             }
-            var flags = new LookFlags { Look = Get(LookFlag), BeatRipple = Array.IndexOf(args, BeatRippleFlag) >= 0, HeroTune = Get(HeroTuneFlag) };
+            var flags = new LookFlags { Look = Get(LookFlag), BeatRipple = Array.IndexOf(args, BeatRippleFlag) >= 0, HeroTune = Get(HeroTuneFlag),
+                MonsterTune = Get(MonsterTuneFlag), PostTune = Get(PostTuneFlag) };
             foreach (var axis in LookAxes.All)
                 if (axis.Flag != null && Get(axis.Flag) is string option) flags.Overrides[axis] = option;
             if (Get(MotionFlag) is string motion)

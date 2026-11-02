@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Newtonsoft.Json.Linq;
 
 namespace PS.Look
@@ -13,7 +14,7 @@ namespace PS.Look
     ///   "void":   { "knee": 0.25, "power": 2.2 },
     ///   "colour": { "exposure": 0, "contrast": 12, "saturation": 10 },
     ///   "bloom":  { "threshold": 0.9, "intensity": 0.8, "scatter": 0.6 },
-    ///   "halo":   { "threshold": 0.5, "intensity": 0.6, "saturation": 1.5 },
+    ///   "halo":   { "threshold": 0.5, "intensity": 0.6, "saturation": 1.5, "special": 1.5 },
     ///   "lens":   { "chromatic": 0, "vignette": 0.3, "smoothness": 0.45, "grain": 0.1, "dirt": 6 },
     ///   "retro":  { "scanlines": 0, "mask": 0 },
     ///   "feel":   { "beat": { ... }, "flash": { ... }, "hit": { ... } } }
@@ -54,6 +55,11 @@ namespace PS.Look
         public float BloomThreshold = 1f, BloomIntensity, BloomScatter = 0.6f;
         /// <summary>The wide soft halo layer (<see cref="PostStack"/>'s pass): threshold, intensity and its glow's saturation (1 the source's).</summary>
         public float HaloThreshold = 0.5f, HaloIntensity, HaloSaturation = 1f;
+        /// <summary>
+        /// How far a special moment lifts the halo (neon-look.md, Restraint and special moments): its intensity grows by
+        /// this share of its own at the moment's first frame, falling with <c>_LookSpecial</c> (0: the halo stays calm).
+        /// </summary>
+        public float HaloSpecial;
         /// <summary>Lens: chromatic aberration (0 to 1), vignette intensity and smoothness, film grain, and lens dirt on the bloom.</summary>
         public float Chromatic, Vignette, VignetteSmoothness = 0.45f, Grain, Dirt;
         /// <summary>Retro: the scanlines' darkening at their darkest (0 to 1) and the soft CRT mask's (0 to 1).</summary>
@@ -62,10 +68,15 @@ namespace PS.Look
 
         PostOption(string name) => Name = name;
 
-        /// <summary>Parses a post option file; throws <see cref="FormatException"/> on a malformed one.</summary>
-        public static PostOption Parse(string json)
+        /// <summary>
+        /// Parses a post option file; throws <see cref="FormatException"/> on a malformed one. <paramref name="tune"/>,
+        /// `--post-tune`'s pairs (<see cref="LookFlags.PostTuneFlag"/>), sets values over the file's first: `group.key=value`
+        /// or a top-level `key=value` (`halo.intensity=1.2,feel.flash.calm=0.5,shoulder=0.6`), each checked as the file's.
+        /// </summary>
+        public static PostOption Parse(string json, string tune = null)
         {
             var o = JObject.Parse(json);
+            if (tune != null) Tune(o, tune);
             var name = (string)o["name"] ?? throw new FormatException("post option: no name");
             var p = new PostOption(name);
             string where = $"post {name}";
@@ -119,6 +130,7 @@ namespace PS.Look
                             "threshold" => p.HaloThreshold = v,
                             "intensity" => p.HaloIntensity = v,
                             "saturation" => p.HaloSaturation = v,
+                            "special" => p.HaloSpecial = v,
                             _ => (float?)null,
                         });
                         break;
@@ -149,6 +161,21 @@ namespace PS.Look
                 }
             }
             return p;
+        }
+
+        static void Tune(JObject o, string pairs)
+        {
+            foreach (var pair in pairs.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var kv = pair.Split('=');
+                if (kv.Length != 2 || !float.TryParse(kv[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float v))
+                    throw new FormatException($"{LookFlags.PostTuneFlag}: bad pair '{pair}'");
+                var path = kv[0].Trim().Split('.');
+                var group = o;
+                for (int i = 0; i < path.Length - 1; i++)
+                    group = group[path[i]] as JObject ?? (JObject)(group[path[i]] = new JObject());
+                group[path[path.Length - 1]] = v;
+            }
         }
 
         static void ParseFeel(JToken token, FeelAmounts f, string where)
