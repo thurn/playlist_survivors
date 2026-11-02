@@ -62,7 +62,10 @@ lane_plugin() {
 
 lanes_init
 lane guard lane_guard
-if changes_match '^rhythm_champions/tools/'; then lane tools lane_tools; fi
+# The tools' tests read the palette, the cast and the look's thresholds too.
+if changes_match '^(rhythm_champions/tools/|rhythm_champions/Content/(palette|enemies)\.json$|docs/champions/style-thresholds\.json$)'; then
+  lane tools lane_tools
+fi
 if changes_match '^scripts/(check-conflict-markers|prune-cargo-target|ci-full|lib/lanes\.sh|test_(check_conflict_markers|prune_cargo_target|ci_full)\.py)$'; then
   lane scripts lane_scripts
 fi

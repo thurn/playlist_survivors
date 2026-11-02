@@ -14,9 +14,9 @@ namespace Champions.Sim
     /// <summary>
     /// A strict reader over one JSON object: every field read must be present (null only where the
     /// reader allows it), and <see cref="End"/> refuses any field nobody read, so the content's shape
-    /// is exactly what the loaders know.
+    /// is exactly what the loaders know. Public for the content the sim doesn't own (the palette).
     /// </summary>
-    sealed class ContentReader
+    public sealed class ContentReader
     {
         readonly List<KeyValuePair<string, JsonValue>> members;
         readonly HashSet<string> read = new HashSet<string>();

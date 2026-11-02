@@ -3,7 +3,7 @@ name = "champions-tools"
 version = "0.1.0"
 description = "Rhythm Champions' tools: worktree setup, vendor sync and guard, builds, play and checks"
 requires-python = ">=3.12"
-dependencies = ["numpy>=2.3", "scipy>=1.16"]
+dependencies = ["numpy>=2.3", "pillow", "scipy>=1.16"]
 
 [project.scripts]
 champions = "champions_tools.cli:main"

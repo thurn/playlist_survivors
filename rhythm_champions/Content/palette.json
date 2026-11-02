@@ -1,0 +1,40 @@
+{
+  "name": "champions",
+  "note": "Rhythm Champions' palette (docs/champions/style.md, The Palette): the trailer's families (cyan-blue key fodder, magenta-violet accent, amber-orange elites, a red boss in the counter's reach) and the empty yellow-green arc given to roles: electric yellow for warnings and enemy shots, and the dim warm zone. White is the hero's; grey is a wall's. Hues are HSV degrees; every value is the colour as drawn.",
+  "void": { "floor": "#030408", "fog": "#05070d", "body": "#08090d" },
+  "hero": {
+    "body": "#f4f8ff",
+    "blade": "#ffffff",
+    "trail": "#ffffff",
+    "edge": "#e4eeff",
+    "hurt": "#ff4040",
+    "break": "#fff0c8"
+  },
+  "enemies": {
+    "key": { "cyan": "#05c9ff", "blue": "#457dff" },
+    "accent": { "magenta": "#ff38b6", "violet": "#d52eff" },
+    "counter": { "orange": "#ff6524", "amber": "#ffa629" }
+  },
+  "boss": { "body": "#ff2e17", "telegraph": "#ff0011" },
+  "warning": "#f5e900",
+  "enemyShot": "#dfee00",
+  "wall": "#8c8c8c",
+  "zones": [
+    { "name": "cobalt", "family": "cool", "line": "#001f67", "pulse": "#1443b3", "fill": "#172d60", "edge": "#3370ff" },
+    { "name": "teal", "family": "cool", "line": "#00323c", "pulse": "#005769", "fill": "#003742", "edge": "#0092af" },
+    { "name": "violet", "family": "violet", "line": "#35135d", "pulse": "#612c9d", "fill": "#3c2557", "edge": "#a04cff" },
+    { "name": "ember", "family": "warm", "line": "#421f00", "pulse": "#7d3a00", "fill": "#4d2909", "edge": "#c95e00" }
+  ],
+  "types": {
+    "skeleton": "enemies.key.cyan",
+    "slime": "enemies.key.cyan",
+    "demon": "enemies.key.blue",
+    "bat": "enemies.key.blue",
+    "goblin": "enemies.accent.magenta",
+    "mushroom": "enemies.accent.violet",
+    "bigOrk": "enemies.counter.orange",
+    "troll": "enemies.counter.amber",
+    "fatOgre": "enemies.counter.orange",
+    "dragon": "boss.body"
+  }
+}
