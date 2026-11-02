@@ -22,7 +22,7 @@ edge trailer's look on their vendor meshes (`champions monster bake all`, then
 build; `--look trailer` for the trailer's exact drawing), the bosses among
 them; the hero is the trailer's knight in white with its crystal blade, posed
 on the CPU (`Render/Crowd/MonsterFigure.cs`, `HeroEdge.shader`); the
-structures draw as stand-ins ([below](#stand-ins)) until they join it.
+structures draw in the edge look over their zone's fill ([below](#structures)).
 Esc pauses a run.
 
 ## Commands
@@ -48,6 +48,7 @@ The CLI (`rhythm_champions/tools`, a uv project; `champions --help`):
 | `editor [start\|stop\|status]` | A warm editor for this worktree, which build, test and unity then use |
 | `check` | The guard, the EditMode tests and the variant budget (`--guard`, `--tests`, `--variants` for one) |
 | `stills` | Fixed-time stills of the scripted scenes, with their type-ID passes and views, into `captures/stills/` |
+| `structure bake\|review KIND` | Bake a structure kind (or `all`) for both looks; its review sheets into `evidence/structures/` |
 | `look [DIR]` | The look metrics ([style.md](../docs/champions/style.md)) on stills: every threshold key, the palette's rules; `--out` writes evidence |
 | `unity <Method>` | A batch-mode task method of `Champions.EditorTools.Tasks` |
 | `guard`, `sync`, `manifest find\|add`, `library save` | The vendor guard, the vendor sync, curating the manifest, saving a warm Library |
@@ -134,15 +135,31 @@ dies within 90 s, and the explicit tuning tests run the reference player through
 
 ## Stand-ins
 
-What isn't in the trailer's edge look yet draws as a stand-in
-(`Render/StandIn.cs`): one of Unity's primitives at its size, drawn with
+A checkout without the baked vendor files draws stand-ins
+(`Render/StandIn.cs`): Unity's primitives at their size, drawn with
 `Resources/Champions/StandIn.shader` (a near-black body whose silhouette glows
-in its role's colour) and coded for the type-ID pass. The structures
-(`StructurePresenter`) are blocks and cylinders on their footprints, gone on
-their break's frame. A checkout without the baked vendor files stands in for
-the rest too: the hero (`HeroPresenter`) as a white capsule its motion places,
-turns, lifts and hides, a boss (`BossPresenter`) as a capsule in its palette
-colour, the horde as spindles (`StandInCrowd`).
+in its role's colour) and coded for the type-ID pass: the structures
+(`StructurePresenter`) as blocks and cylinders on their footprints, gone on
+their break's frame, the hero (`HeroPresenter`) as a white capsule its motion
+places, turns, lifts and hides, a boss (`BossPresenter`) as a capsule in its
+palette colour, the horde as spindles (`StandInCrowd`).
+
+## Structures
+
+The eight structure kinds are Synty models (`Editor/Structures/structures.json`)
+in the edge look over a dim fill in the zone's key (ps-6y2.30,
+[evidence](evidence/structures/README.md)): `champions structure bake` combines
+each prefab at its height on its footprint's middle into a style mesh whose
+creases over 24 degrees draw (the monsters' `StyleMesh`), cut into chunks
+outlined along their cracks (`MonsterShardBaker`), into the ignored
+`Assets/Baked/Structures/`; the build bakes them too. `--look trailer` draws
+the models unsimplified; the default changes a kind's crease angle where that
+looks better at game scale, saying why in the table. `Render/Structures/`
+draws them (`StructureRenderer`, one indirect draw a kind;
+`StructureEdge.shader`), flashes them when hit, and on a break's frame throws
+their chunks in PhysX (`StructureShatter`, `StructureEdgeShard.shader`); the
+presenter (`Client/World/StructurePresenter`) maps the sim's events onto them
+through an `IStructureView`.
 
 ## Weapon effects and sounds
 

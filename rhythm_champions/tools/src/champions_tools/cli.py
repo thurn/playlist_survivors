@@ -21,6 +21,10 @@ Commands:
                       the default's from tools/recipes/monster/TYPE.py if it exists (--force bakes again)
   monster review TYPE the type's review sheets and README in evidence/monsters/TYPE/ (--look trailer for the
                       trailer's; always a side-by-side of both; --out DIR)
+  structure bake KIND bake a structure kind (or `all`) for both looks: `--look trailer`'s the Synty model
+                      unsimplified, the default's as Editor/Structures/structures.json tunes it (--force)
+  structure review KIND
+                      the kind's (or `all`'s) review sheets into evidence/structures/ (--out DIR)
   stills              fixed-time stills of the scripted scenes in one headless launch of the last
                       build, with their type-ID passes and views (--scene NAME, repeatable; --out DIR,
                       default captures/stills; --look trailer for the trailer's monsters)
@@ -251,6 +255,17 @@ def cmd_monster(a: argparse.Namespace) -> int:
     return monster.cmd_monster(a)
 
 
+STRUCTURE_TASKS = "Champions.EditorTools.Structures.StructureTasks"
+
+
+def cmd_structure(a: argparse.Namespace) -> int:
+    wt = paths.worktree()
+    if a.action == "bake":
+        return unity.run_method(wt, f"{STRUCTURE_TASKS}.Bake", ["-kind", a.kind] + (["-force"] if a.force else []))
+    out = Path(a.out).resolve() if a.out else wt.project / "evidence" / "structures"
+    return unity.run_method(wt, f"{STRUCTURE_TASKS}.Review", ["-kind", a.kind, "-out", str(out)])
+
+
 def cmd_look(a: argparse.Namespace) -> int:
     from . import look
 
@@ -359,6 +374,13 @@ def build_parser() -> argparse.ArgumentParser:
     mo.add_argument("--out", help="review: the folder for the sheets (default evidence/monsters/TYPE)")
     mo.add_argument("--force", action="store_true", help="bake again even if nothing changed")
     mo.set_defaults(func=cmd_monster)
+
+    sr = sub.add_parser("structure", help="bake a structure kind, or review one (structure review KIND)")
+    sr.add_argument("action", choices=["bake", "review"])
+    sr.add_argument("kind", help="a kind in Assets/Champions/Editor/Structures/structures.json, or all")
+    sr.add_argument("--out", help="review: the folder for the sheets (default evidence/structures)")
+    sr.add_argument("--force", action="store_true", help="bake again even if nothing changed")
+    sr.set_defaults(func=cmd_structure)
 
     lk = sub.add_parser("look", help="a diagnostic: where stills stray from the style's guide values (never fails)")
     lk.add_argument("stills", nargs="?", help="a folder of stills (default captures/stills)")

@@ -35,7 +35,7 @@ namespace Champions.EditorTools.Monsters
         const float BlowForce = 1.85f, YawDeg = 160f;
         const int PosesPerRow = 3, CrowdWidth = 960, CrowdHeight = 540, MaxCrowd = 36, MaxSheetPx = 2400;
         /// <summary>The frame cells are cut from, and how many times larger it is drawn.</summary>
-        const int FrameWidth = 1920, FrameHeight = 1080, Super = 2;
+        internal const int FrameWidth = 1920, FrameHeight = 1080, Super = 2;
         static Color32 _void;
 
         sealed class Rig : IDisposable
@@ -153,7 +153,7 @@ namespace Champions.EditorTools.Monsters
         }
 
         /// <summary>A box-filtered copy <paramref name="k"/> times smaller each way.</summary>
-        static Texture2D Shrink(Texture2D src, int k)
+        internal static Texture2D Shrink(Texture2D src, int k)
         {
             int w = src.width / k, h = src.height / k, area = k * k;
             var px = src.GetPixels32();
@@ -183,7 +183,7 @@ namespace Champions.EditorTools.Monsters
             clip.Impact >= 0 ? clip.Impact : (clip.Role == "idle" ? 0.3f : clip.Role == "walk" ? 0.25f : 0.5f) * clip.Length;
 
         /// <summary>The game camera's look down at <paramref name="focus"/> from <paramref name="distance"/> times its distance.</summary>
-        static void Aim(Camera camera, Vector3 focus, float distance)
+        internal static void Aim(Camera camera, Vector3 focus, float distance)
         {
             camera.transform.rotation = Quaternion.Euler(WorldCamera.PitchDeg, 0, 0);
             camera.transform.position = focus - camera.transform.forward * (WorldCamera.DistanceM * distance);
@@ -295,7 +295,7 @@ namespace Champions.EditorTools.Monsters
         }
 
         /// <summary>The middle <paramref name="w"/> by <paramref name="h"/> of the camera's 1080-row frame, drawn at <see cref="Super"/> times that and scaled down.</summary>
-        static Color32[] Render(Camera camera, int w, int h)
+        internal static Color32[] Render(Camera camera, int w, int h)
         {
             camera.Render();
             var rt = camera.targetTexture;
@@ -312,7 +312,7 @@ namespace Champions.EditorTools.Monsters
         }
 
         /// <summary><paramref name="top"/> over <paramref name="bottom"/>, left-aligned; both destroyed.</summary>
-        static Texture2D Stack(Texture2D top, Texture2D bottom)
+        internal static Texture2D Stack(Texture2D top, Texture2D bottom)
         {
             var o = new Texture2D(Mathf.Max(top.width, bottom.width), top.height + bottom.height, TextureFormat.RGB24, false);
             o.SetPixels32(new Color32[o.width * o.height]);
@@ -325,7 +325,7 @@ namespace Champions.EditorTools.Monsters
         }
 
         /// <summary><paramref name="left"/> beside <paramref name="right"/>, a thin grey rule between, top-aligned; both destroyed.</summary>
-        static Texture2D Beside(Texture2D left, Texture2D right)
+        internal static Texture2D Beside(Texture2D left, Texture2D right)
         {
             const int rule = 4;
             int h = Mathf.Max(left.height, right.height);

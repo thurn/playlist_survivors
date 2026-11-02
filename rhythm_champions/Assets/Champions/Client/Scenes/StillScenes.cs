@@ -44,7 +44,7 @@ namespace Champions.Client.Scenes
         {
             (PaletteScene.Name, s => new PaletteScene(s._content, s._palette, s._look)),
             (WorldScene.Name, s => new WorldScene(s._palette)),
-            (StructureScene.Name, s => new StructureScene(s._content, s._palette)),
+            (StructureScene.Name, s => new StructureScene(s._content, s._palette, s._look)),
             (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
             (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette, s._look)),
             (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette, s._look)),

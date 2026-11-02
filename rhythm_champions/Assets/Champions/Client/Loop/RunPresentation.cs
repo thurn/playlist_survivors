@@ -75,7 +75,7 @@ namespace Champions.Client.Loop
             _owned.Add(Hero);
             if (config.Structures != null)
             {
-                Structures = new StructurePresenter(config.Structures, palette, world.World, layer);
+                Structures = StructurePresenter.Create(config.Structures, palette, world.World, layer, look);
                 _owned.Add(Structures);
             }
             var effects = EffectLibrary.Load();
@@ -104,7 +104,7 @@ namespace Champions.Client.Loop
             var d = Dispatch;
             d.Add("world", (in SimEvent e) => _world.Take(e), _world.Flush, (in PresentFrame f) => _world.Present(f.Song, f.Hero, f.Dt));
             if (Structures != null)
-                d.Add("structures", (in SimEvent e) => Structures.Take(e), Structures.Flush, (in PresentFrame f) => Structures.Present(f.Song));
+                d.Add("structures", (in SimEvent e) => Structures.Take(e), Structures.Flush, (in PresentFrame f) => Structures.Present(f.Song, f.Camera));
             d.Add("crowd", (in SimEvent e) => Crowd.Take(e), null, (in PresentFrame f) => Crowd.Present(f.Song, f.Sim, f.Hero, f.Dt));
             d.Add("boss", (in SimEvent e) => Boss.Take(e), null, (in PresentFrame f) => Boss.Present(f.Song, f.Sim));
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
@@ -178,6 +178,7 @@ namespace Champions.Client.Loop
         /// <summary>Queues the frame's hand-drawn draws again (the stills' second drawing of a frame); the stand-ins are scene objects.</summary>
         public void Queue(Camera camera)
         {
+            Structures?.Queue(camera);
             Crowd.Queue(camera);
             Hero.Queue(camera);
             Telegraphs.Queue(camera);

@@ -290,8 +290,7 @@ treasure), run (timeline, end).
 | --- | --- |
 | MonsterEdge, MonsterEdgeShard | The trailer's edge look for monsters and the bosses, and every shard (the hero's too): feature-edge lines over a dark glass core, fresnel rim, core glow, beat flare (ps-6y2.28) |
 | HeroEdge | The trailer's knight: its feature lines, rim and chest core in white, the crystal blade's every edge and spine light, on a figure posed on the CPU (ps-6y2.29) |
-| StructureFill, StructureLines | Structures' dim fill and the edge look's lines (ps-6y2.30) |
-| Shard, StructureShard | Monster shards on the GPU; structure shards on PhysX |
+| StructureEdge, StructureEdgeShard | Structures in the edge look's lines over their zone's dim fill, and their crack-outlined shards on PhysX (ps-6y2.30) |
 | GridFloor | The grid, beat wave, ripple, impulse rings, zones |
 | Slash | Hovl's shapes in white |
 | Particle | Compute sparks |
@@ -366,8 +365,14 @@ trailer's, ported back:
   package's at 138684f2) on the vendor knight holding demo3d's crystal
   blade, a figure posed on the CPU from a rig its bake keeps
   (`MonsterFigure`, `RigPose`; monsters.json's `figure`), `HeroGains`
-  pinned for `--look trailer` beside `EdgeGains`. **Structures**
-  (ps-6y2.30, over their fill) use the crowd's drawing.
+  pinned for `--look trailer` beside `EdgeGains`. **Structures** (ps-6y2.30)
+  draw the crowd's lines over their zone's fill: `champions structure bake
+  <kind>` makes each Synty model a style mesh, static, and cuts its chunks as
+  the monsters' are; `Editor/Structures/structures.json` may give a kind its
+  own crease angle in the default look, judged by eye at game scale with why
+  (`--look trailer` draws the models unsimplified); `champions structure
+  review all` writes each kind's sheets and a field of every kind into
+  `rhythm_champions/evidence/structures/`.
 - **Accepting art** (design, [Judgment over rules](design.md#judgment-over-rules)):
   - a blind critique by an agent given only the images (no docs, no recipe,
     no numbers);

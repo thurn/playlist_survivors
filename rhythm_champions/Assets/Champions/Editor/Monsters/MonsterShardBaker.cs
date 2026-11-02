@@ -100,12 +100,13 @@ namespace Champions.EditorTools.Monsters
         /// <summary>
         /// A type's shards: its LOD0 style mesh on the rest pose, cut into chunks joined into one mesh
         /// (<see cref="MonsterType.ShardMesh"/>), and each chunk's pivot and size (<see cref="MonsterType.Shards"/>),
-        /// a chunk marked carried when most of its triangles are (<paramref name="carried"/>, per triangle).
+        /// a chunk marked carried when most of its triangles are (<paramref name="carried"/>, per triangle). About
+        /// <paramref name="count"/> chunks when given (a structure's), else <see cref="ShardCount"/>'s for the height.
         /// </summary>
-        public static (Mesh mesh, MonsterShard[] shards) Bake(string id, float heightM, Mesh styleLod0, int seed, bool[] carried)
+        public static (Mesh mesh, MonsterShard[] shards) Bake(string id, float heightM, Mesh styleLod0, int seed, bool[] carried, int count = 0)
         {
             var rest = Rest(styleLod0);
-            var pieces = Cut(rest, ShardCount(heightM), new System.Random(seed));
+            var pieces = Cut(rest, count > 0 ? count : ShardCount(heightM), new System.Random(seed));
             var rng = new System.Random(seed ^ 0x5eed);
             var ids = WeldIds(rest);
             var into = new Joined();

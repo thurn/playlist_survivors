@@ -50,11 +50,13 @@ def library_key(wt: paths.Worktree) -> str:
 
 
 # What the bakers read (plan.md, Build Policy: the baked cache): the editor code that bakes (the
-# weapon effects' library, the sound bank and the monsters, with their table), the monster asset it
-# writes, the monster recipes and the code that runs them, and the vendor manifest. A worktree whose
-# Assets/Baked/ was made from the same inputs copies it from the cache instead of baking again.
+# weapon effects' library, the sound bank, the monsters and the structures, with their tables), the
+# monster and structure assets it writes, the monster recipes and the code that runs them, and the
+# vendor manifest. A worktree whose Assets/Baked/ was made from the same inputs copies it from the
+# cache instead of baking again.
 BAKE_INPUTS = ("Assets/Champions/Editor", "Assets/Champions/Render/Crowd/MonsterType.cs",
-               "Assets/Champions/Render/Crowd/MonsterRig.cs", "tools/recipes", "tools/src/champions_tools/monster.py")
+               "Assets/Champions/Render/Crowd/MonsterRig.cs", "Assets/Champions/Render/Structures/StructureType.cs",
+               "tools/recipes", "tools/src/champions_tools/monster.py")
 BAKED_KEY = ".baked-key"  # in Assets/Baked/: the inputs key it was baked from
 
 

@@ -83,8 +83,8 @@ mistake, so look at it again; the frame decides.
 | Rung | L* | What lives here |
 | --- | --- | --- |
 | void | 0-5 | the floor, the fog, the monsters' glass cores, empty space |
-| ground light | 10-35 | the grid (resting 10-20, under the beat wave up to 35), structure fills |
-| enemy light | 45-82 | monsters' lines, structure edges (40-60), enemy effects, boss telegraphs |
+| ground light | 10-35 | the grid (resting 10-20, under the beat wave up to 35), structure fills (about 12: half the zone's `fill`) |
+| enemy light | 45-82 | monsters' lines, structure edges (about 80: three times the zone's `edge`), enemy effects, boss telegraphs |
 | hero light | 85-98 | the hero's lines, warnings at their peak, enemy shots |
 | clipped white | 98-100 | impact frames and the blade's core only |
 
@@ -228,6 +228,14 @@ glass core (`void.body`), with a fresnel rim.
   Does each type read as its figure at game scale?
   Does a crowd read as many figures, or as a coloured mass (the trailer's
   goblins)? Does the shatter pay off? Is the hero still the brightest thing?
+- **Structures** (ps-6y2.30, [evidence](../../rhythm_champions/evidence/structures/README.md))
+  draw the same lines in the zone's `edge` colour, at three times its value,
+  over a flat fill at half the zone's `fill`: dark enough that the lines carry
+  the shape, still the zone's colour, so a structure reads as a solid apart
+  from the monsters' black glass. The first look, a fill at the zone's full
+  `fill` (shaded by slope) under lines at its `edge`, read to a blind critic
+  as "lit navy solids with weak lines", another renderer. Their shards close
+  with every edge lit and fly hot.
 
 The edge cuts that this replaced, and their black-share threshold, were
 deleted on 2026-11-02 (design.md, The Look).

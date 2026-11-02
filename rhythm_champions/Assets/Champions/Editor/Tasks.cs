@@ -4,6 +4,7 @@ using System.Linq;
 using Champions.EditorTools.Effects;
 using Champions.EditorTools.Monsters;
 using Champions.EditorTools.Sound;
+using Champions.EditorTools.Structures;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -33,15 +34,17 @@ namespace Champions.EditorTools
 
         /// <summary>
         /// The libraries a player loads that only reference vendor files, into the ignored Assets/Baked/: the weapon
-        /// effects' Hovl meshes (<see cref="EffectBaker"/>), the sound bank (<see cref="SoundBaker"/>) and every monster
+        /// effects' Hovl meshes (<see cref="EffectBaker"/>), the sound bank (<see cref="SoundBaker"/>), every monster
         /// type whose bake is out of date (<see cref="MonsterBaker"/>, from a recipe's mesh where `champions monster bake`
-        /// left one). Each skips, with a warning, when its vendor files are missing.
+        /// left one) and every structure kind's (<see cref="StructureBaker"/>). Each skips, with a warning, when its
+        /// vendor files are missing.
         /// </summary>
         public static void Bake()
         {
             EffectBaker.Bake();
             SoundBaker.Bake();
             MonsterBaker.BakeAll();
+            StructureBaker.BakeAll();
         }
 
         // URP's build preprocessing rewrites these tracked assets for the build's target. BuildPlayer
