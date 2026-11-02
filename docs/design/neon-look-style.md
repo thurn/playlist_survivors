@@ -423,7 +423,7 @@ loosest preset's value applies.
 | `flash_frames_max` | share of a cut's or set's steady stills whose largest L* >= 90 region covers 0.3% of the frame or more (ps-wnj.24) | <= 0.5 | | |
 | `hero_margin_min` | hero L* p90 less the monsters' L* p90 | >= 5 | -4 (-30-12) | |
 | `monster_form_min` | monster pixels' L* p90 less p10 in each 32 px tile (grown with the bodies' height on screen, ps-wnj.30) they cover a quarter of, the tiles' median | >= 30; solid 20 | 14 (10-18) | |
-| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile (grown with that type's height on screen, ps-wnj.30), the tiles' median | >= 13 | 9.4 (3-16) | |
+| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile (grown with that type's height on screen, ps-wnj.30; the outline hull inside the silhouettes part of the clump, ps-wnj.31), the tiles' median; not judged under four dense tiles | >= 13 | 9.4 (3-16) | |
 | `readability_min` | look.py's \|dL*\| monsters against their ring (TD15) | >= 17 | 48 (33-68) | |
 
 v2's mask columns come from the crystal cut re-rendered with its ID render
@@ -486,6 +486,21 @@ Notes:
     stills have none, and the rule then skips them): a game clump of wire or
     edge-lit bodies is mostly dark between its lines and never covers half a
     body-sized tile.
+  - **The outline hull is a seam of its clump** (ps-wnj.31,
+    [evidence](../../demo3d/evidence/look/hull-seams/README.md)). With an
+    ID render, gaps of up to 4 px inside the monsters' silhouettes close
+    when a hue's clump is found (2 px elsewhere): the dark hull a body draws
+    on its rim (4-5.5 px at 1080 rows, 2-3 at 960) is a seam, not a hole.
+    Left out, a wider hull took its seams out of the percentile and its
+    tiles' coverage under half, so parted tiles left the sample and a wider
+    hull scored lower (solid's 28 s fell from 14.6 to 12.7 at 6 px; now it
+    rises, 15.9 to 17.6). Video frames, without the render, measure as
+    before, and v2's blob stills still fail masked (20 s 11.9, 28 s 9.9,
+    32 s 8.8, 56 s 2.3). A still with fewer than four dense tiles is not
+    judged (`unless_below`): a 32 px tile is under one fodder's height, so
+    one to three dense tiles are pairs of overlapping bodies, not a clump,
+    and a single one decided a still alone (the crystal cut's edge 50.2 s
+    at 9.2); v2's stills hold 7-141 dense tiles masked.
 - **The restraint rules** (ps-wnj.24, [Restraint](#restraint)) are calibrated
   on stills of the look before and after its toning down, from players built
   at 6610faff and after

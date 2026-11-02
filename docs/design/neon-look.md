@@ -532,7 +532,8 @@ How clumps part in the line looks (ps-wnj.28):
 
 - **The outline hull** (`MonsterOutline.hlsl`'s `LineOutlineVert`, an
   `Outline` pass in each body shader): edge, hologram and gem bodies draw
-  solid's inverted hull too, 4 px at 1080 rows (`_OutlinePx`), in
+  solid's inverted hull too, 4 px at 1080 rows (`_OutlinePx`; the gem's
+  5.5 since ps-wnj.31, solid's 3.5), in
   `void.floor` (hologram's in black). Edge and gem draw it in URP's unlit
   pass, before the body; hologram, whose unlit pass is its depth pass, in
   the forward-only pass, after its light (URP draws a material's unlit,
@@ -1308,6 +1309,21 @@ its separation breaks are its own clumps
 newly tiled bottom strip)
 ([evidence](../../game/evidence/look/body-tiles/README.md),
 [crystal cut](../../demo3d/evidence/look/body-tiles/README.md)).
+
+**The hull is a seam of its clump (ps-wnj.31)**: with an ID render, look.py
+closes gaps of up to 4 px inside the monsters' silhouettes when it finds a
+hue's clump (2 px elsewhere, as before), so the dark outline hull a body
+draws on its rim counts as the seam it is. Before, a hull wider than 2 px at
+the metric's 960 px fell out of the clump with its seams, and the tiles it
+parted dropped under half coverage: a wider hull scored lower (solid's
+28 s 14.6 to 12.7 at 6 px), and the breaks above were the flattest tiles
+left. A still with fewer than four dense tiles is not judged
+(`unless_below`: a tile or three is a pair of overlapping bodies, not a
+clump; v2's blob stills hold 7-141). The gem's hull widens to 5.5 px, its
+50.2 s clump's seams. The crystal cut passes every rule in every preset,
+v2's blob stills still fail masked, and its video frames, which have no
+ID render, measure as before
+([evidence](../../demo3d/evidence/look/hull-seams/README.md)).
 
 ## Checks and Evidence
 

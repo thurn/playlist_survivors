@@ -422,6 +422,10 @@ HERO_VISIBLE_MIN = 0.05
 SWARM_C, SWARM_L = 30.0, 25.0  # a monster pixel candidate: coloured and lit
 SWARM_TILE = 32  # px: wider than one monster at the trailer's 32-42 m framing (bodies BODY_REF_PX tall)
 SWARM_DENSE, SWARM_CLOSE = 0.5, 1  # a dense tile: one enemy hue covers half of it, gaps of up to 2 px closed
+# With the ID render, gaps of up to 2 * SWARM_HULL px inside the monsters' silhouettes close too: the outline hull a
+# body draws on its rim (MonsterOutline, 4-5.5 px at 1080 rows) is a seam of the clump, not a hole in it. Left out,
+# a wider hull took its own seams and its tiles' coverage away, so parted bodies scored lower (ps-wnj.31).
+SWARM_HULL = 2
 SWARM_REACH = 4  # px: a seam is darker than the clump on both sides within this reach
 SWARM_SMOOTH = 1  # px: L* box-averaged over this radius first, so speckle (shards, noise) is no seam
 # Speckle filled before that: a valley this deep in L* (raw seam_depth) whose 8-connected patch is under this many
@@ -599,15 +603,23 @@ def scaled_tile(base: int, body: float | None) -> int:
     return base if body is None else max(base, round(base * body / BODY_REF_PX))
 
 
-def enemy_clumps(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]]) -> dict[str, np.ndarray]:
+def enemy_clumps(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]],
+                 monsters: np.ndarray | None = None) -> dict[str, np.ndarray]:
     """Each enemy role's candidate monster pixels (C*ab >= SWARM_C, L* >= SWARM_L, whose nearest chromatic role by
-    HSV hue is that enemy, so a formation in the gem's hue is no clump), gaps of up to 2 * SWARM_CLOSE px closed:
-    where one type's bodies, and the seams between them, lie."""
+    HSV hue is that enemy, so a formation in the gem's hue is no clump), gaps of up to 2 * SWARM_CLOSE px closed, and
+    with the ID render's `monsters` gaps of up to 2 * SWARM_HULL px inside them (the outline hull): where one type's
+    bodies, and the seams between them, lie."""
     names = [k for k, v in roles.items() if chroma(np.array(v, dtype=np.uint8)) >= NEUTRAL_C]
     nearest = np.stack([_hue_gap(hue(rgb), float(hue(np.array(roles[k], dtype=np.uint8)))) for k in names]).argmin(axis=0)
     cand = (chroma(rgb) >= SWARM_C) & (lstar(rgb) >= SWARM_L)
-    return {k: erode(dilate(cand & (nearest == i), SWARM_CLOSE), SWARM_CLOSE)
-            for i, k in enumerate(names) if k.startswith("enemies.")}
+    clumps = {}
+    for i, k in enumerate(names):
+        if k.startswith("enemies."):
+            mine = cand & (nearest == i)
+            clumps[k] = erode(dilate(mine, SWARM_CLOSE), SWARM_CLOSE)
+            if monsters is not None:
+                clumps[k] |= erode(dilate(mine, SWARM_HULL), SWARM_HULL) & monsters
+    return clumps
 
 
 def swarm_separation(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]], monsters: np.ndarray | None = None,
@@ -626,7 +638,7 @@ def swarm_separation(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]], mo
     lum = lstar(rgb)
     depth = seam_depth(box_mean(despeckle(lum), SWARM_SMOOTH))
     found: list[dict] = []
-    for k, clump in enemy_clumps(rgb, roles).items():
+    for k, clump in enemy_clumps(rgb, roles, monsters).items():
         if monsters is not None:
             clump &= dilate(monsters, SWARM_CLOSE)
         t = (tiles or {}).get(k, tile)

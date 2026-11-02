@@ -32,7 +32,7 @@ Shader "Look/MonsterGem"
         _CoreGlow ("Core at rest", Float) = 0.15
         _CoreFlare ("Core on the beat", Float) = 0.4
         _CoreSize ("Core radius (share of the body's)", Float) = 0.2
-        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 4
+        _OutlinePx ("Outline width (px at 1080 rows)", Float) = 5.5
         _OutlineBack ("Outline hull behind the body (share of its radius)", Float) = 0.25
     }
     SubShader

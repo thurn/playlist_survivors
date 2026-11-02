@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from demo3d_tools import look
+from demo3d_tools import look, paths
 
 # sRGB greys and their CIE L*: 119 is L* 50.0; 19 is L* 5.9 (TD15's darkest ring); 255 is 100.
 GREY_50, GREY_DARK = 119, 19
@@ -425,6 +425,36 @@ def test_one_big_body_is_no_clump_and_big_bodies_parted_by_seams_are_a_swarm() -
     # A per-hue tile overrides the still's own: the cyan bodies (enemies.1) take theirs.
     per = look.swarm_separation(bodies(packed, tall, rim=4), roles, tiles={"enemies.1": tile})
     assert {t["box"][2] for t in per["tiles"]} == {tile} and per["swarm_separation"] == swarm["swarm_separation"]
+
+
+def test_the_outline_hull_inside_the_silhouettes_is_a_seam_of_the_clump() -> None:
+    """A dark rim wider than the gaps the clump closes (the outline hull at 5.5 px, 4 at the metric's 960 px) parts
+    bodies: inside the ID render's silhouettes it joins the clump, so a wider hull never scores lower than a narrower
+    one, and flat bodies stay one blob."""
+    roles = look.palette_roles(ELECTRIC)
+    tall = 45
+    packed = [(cx + (tall // 8 if row % 2 else 0), cy) for row, cy in enumerate(range(120, 440, tall // 3))
+              for cx in range(200, 780, tall // 4)]
+
+    def separation(rim: int, masked: bool) -> float:
+        img = bodies(packed, tall, rim=rim)
+        monsters = (img != img[0, 0]).any(axis=-1) if masked else None
+        return look.swarm_separation(img, roles, monsters)["swarm_separation"]
+
+    assert separation(4, masked=True) > separation(4, masked=False)  # without the render the hull's seams drop out
+    assert separation(4, masked=True) > separation(2, masked=True) > 26
+    assert separation(0, masked=True) < 3
+
+
+def test_a_still_with_fewer_than_four_dense_tiles_has_no_clump_to_judge() -> None:
+    """The guide's swarm rule judges clumps: a dense tile or three, scattered pairs of overlapping bodies, decide no
+    still (v2's blob stills hold 7-141 dense tiles)."""
+    rules = look.load_rules(json.loads((paths.worktree().root / "docs/design/neon-look-thresholds.json").read_text()),
+                            "edge")
+    assert look.check_rules({"swarm_separation": 9.2, "dense_tiles": 1}, rules) == {}
+    assert look.check_rules({"swarm_separation": 11.9, "dense_tiles": 3}, rules) == {}
+    assert look.check_rules({"swarm_separation": 11.9, "dense_tiles": 4}, rules) == {
+        "swarm_separation_min": "swarm_separation 11.9 < 13"}
 
 
 def test_monster_form_measures_in_tiles_scaled_to_the_bodies() -> None:
