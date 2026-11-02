@@ -56,5 +56,7 @@ the plugin's beats driving the rings (the beat at 9.87 s 3 m out, the one before
 - `champions check --variants`: 245 compiled variants of 300 (227 before): GridFloor 4, Glow 2, and 12 more UberPost
   variants for the chromatic flash, which URP keeps only because a profile under Assets/ has chromatic aberration on
   (`Resources/World/PostFlash.asset`, the flash's peaks).
-- EditMode tests 39 of 39; dotnet 177 of 177, including 9 zone tests. The fixture-walk session was re-recorded: its
+- EditMode tests 46 of 46 (with the edge crowd's, which landed alongside: its EdgeLines and EdgeBody now read the
+  world's beat wave, a flare and a bob, and a test compiles every shader that includes World.hlsl); dotnet 177 of
+  177, including 9 zone tests. The fixture-walk session was re-recorded: its
   song's section change now moves the zone key (one more event).

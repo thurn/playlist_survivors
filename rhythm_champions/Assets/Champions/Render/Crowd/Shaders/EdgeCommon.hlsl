@@ -5,7 +5,8 @@
 // - EDGE_SHARD: one death of the shatter's ring, skinned from the palette it froze on the break, then each vertex
 //   moved rigidly with its piece (EdgeShards.compute), clipped under the floor and fading as the piece sinks.
 // The look's inputs are globals (EdgeLook.cs sets them): the lines' gain and width, the body's colour, the
-// importance fade's sizes, the beat wave and the stills' mask mode.
+// importance fade's sizes, the bench's beat wave and the stills' mask mode; the world's beat wave (World.hlsl, the
+// world's globals) flares a monster's lines and bobs it as a ring passes it.
 #ifndef CHAMPIONS_EDGE_COMMON_INCLUDED
 #define CHAMPIONS_EDGE_COMMON_INCLUDED
 
@@ -16,6 +17,7 @@
 #include "UnityIndirect.cginc"
 #include "CrowdSkinning.hlsl"
 #include "EdgeShards.hlsl"
+#include "Assets/Champions/Render/World/Shaders/World.hlsl"
 
 StructuredBuffer<float4> _Palette;  // 3 rows per bone, by crowd slot (or, for shards, by ring slot)
 uint _BoneCount;
@@ -91,6 +93,10 @@ Owner OwnerOf(uint instanceID)
     o.flare = m.flare;
     o.flash = 0;
     o.fade = 1;
+    // The world's beat wave bobs it as a ring passes (its flare is WaveFlare's).
+    float waveFlare, bob;
+    BeatWaveCrowd(m.position.xz, waveFlare, bob);
+    o.position.y += bob;
 #endif
     return o;
 }
@@ -128,11 +134,12 @@ float HeightPx(Owner o)
     return _HeightM * o.scale * UNITY_MATRIX_P._m11 * 0.5 * rows / depth / max(1.0, rows / 1080.0);
 }
 
-// The beat wave's flare at the owner: a ring of `_EdgeWaveWidth` round its centre at its radius.
+// The beat wave's flare at the owner: the world's (World.hlsl) and the bench's ring of `_EdgeWaveWidth` round its
+// centre at its radius.
 float WaveFlare(Owner o)
 {
     float d = length(o.position.xz - _EdgeWave.xy) - _EdgeWave.z;
-    return _EdgeWave.w * exp(-(d * d) / max(_EdgeWaveWidth * _EdgeWaveWidth, 1e-4));
+    return _EdgeWave.w * exp(-(d * d) / max(_EdgeWaveWidth * _EdgeWaveWidth, 1e-4)) + BeatWaveAt(o.position.xz);
 }
 
 #endif

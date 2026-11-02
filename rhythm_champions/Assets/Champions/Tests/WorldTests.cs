@@ -323,6 +323,19 @@ namespace Champions.Tests
             }
         }
 
+        [TestCase("Assets/Champions/Render/World/Shaders/GridFloor.shader")]
+        [TestCase("Assets/Champions/Render/World/Shaders/Glow.shader")]
+        [TestCase("Assets/Champions/Render/Crowd/Shaders/EdgeLines.shader")]
+        [TestCase("Assets/Champions/Render/Crowd/Shaders/EdgeBody.shader")]
+        public void TheShadersReadingTheWorldCompile(string path)
+        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
+            Assert.That(shader, Is.Not.Null, path);
+            var messages = ShaderUtil.GetShaderMessages(shader);
+            Assert.That(ShaderUtil.ShaderHasError(shader), Is.False,
+                string.Join("; ", Array.ConvertAll(messages, m => $"{m.message} ({m.file}:{m.line})")));
+        }
+
         [Test]
         public void LaunchOptionsReadTheTierAndTheScene()
         {
