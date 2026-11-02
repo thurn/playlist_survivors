@@ -15,22 +15,25 @@ namespace Champions.Client.Scenes
     {
         public const double M = 3.0, A = 0.048, TickSeconds = 0.05;
 
-        readonly List<(double from, double to, double bpm)> _stretches = new List<(double, double, double)>();
+        readonly List<(double from, double to, double bpm, bool strong)> _stretches = new List<(double, double, double, bool)>();
         readonly List<StreamEntry> _extra = new List<StreamEntry>();
 
         public static double StampOf(double position) => position - (M - A);
 
-        /// <summary>Beats from <paramref name="from"/> to <paramref name="to"/> at <paramref name="bpm"/>.</summary>
-        public ScriptedSong Beats(double from, double to, double bpm)
+        /// <summary>
+        /// Beats from <paramref name="from"/> to <paramref name="to"/> at <paramref name="bpm"/>, a strong onset on every other
+        /// one, or on each when <paramref name="allStrong"/> (so every downbeat is a strong one: a boss arrives on the first).
+        /// </summary>
+        public ScriptedSong Beats(double from, double to, double bpm, bool allStrong = false)
         {
-            _stretches.Add((from, to, bpm));
+            _stretches.Add((from, to, bpm, allStrong));
             return this;
         }
 
         /// <summary>No beat from <paramref name="from"/> to <paramref name="to"/>: audible ticks under the gate.</summary>
         public ScriptedSong Gap(double from, double to)
         {
-            _stretches.Add((from, to, 0));
+            _stretches.Add((from, to, 0, false));
             return this;
         }
 
@@ -46,7 +49,7 @@ namespace Champions.Client.Scenes
         {
             var list = new List<StreamEntry>(_extra);
             double end = 0;
-            foreach (var (from, to, bpm) in _stretches)
+            foreach (var (from, to, bpm, allStrong) in _stretches)
             {
                 end = Math.Max(end, to);
                 if (bpm > 0)
@@ -57,7 +60,7 @@ namespace Champions.Client.Scenes
                     for (double t = from; t < to - 1e-9; t = from + ++n * period)
                     {
                         list.Add(StreamEntry.Beat(t, StampOf(t + 1.2), period, 0.9));
-                        list.Add(StreamEntry.Onset(t + 0.004, StampOf(t + 0.08), 0.8, n % 2 == 0, n % 2 == 0 ? (int)DrumBand.Kick : (int)DrumBand.Snare));
+                        list.Add(StreamEntry.Onset(t + 0.004, StampOf(t + 0.08), 0.8, allStrong || n % 2 == 0, n % 2 == 0 ? (int)DrumBand.Kick : (int)DrumBand.Snare));
                         grid.Add(t);
                         if (grid.Count < 9) continue;
                         double stamp = StampOf(t + 1.0);

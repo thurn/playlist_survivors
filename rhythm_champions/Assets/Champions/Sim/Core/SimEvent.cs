@@ -803,5 +803,17 @@ namespace Champions.Sim
         public BossMove MarkMove => (BossMove)(I1 & 0xFF);
         public int MarkPart => (I1 >> 8) & 0xFF;
         public ShapeKind MarkShape => (ShapeKind)((I1 >> 16) & 0xFF);
+
+        /// <summary>A <see cref="SimEventKind.BossTelegraph"/>'s ground, as <see cref="BossTelegraph"/> wrote it.</summary>
+        public HitShape MarkGround()
+        {
+            switch (MarkShape)
+            {
+                case ShapeKind.Path: return HitShape.Path(D1, D2, D3, D4, D5);
+                case ShapeKind.Cone: return HitShape.Cone(D1, D2, System.Math.Cos(D3), System.Math.Sin(D3), D4, D5);
+                case ShapeKind.Ring: return HitShape.Ring(D1, D2, D4, D3);
+                default: return HitShape.Circle(D1, D2, D3);
+            }
+        }
     }
 }

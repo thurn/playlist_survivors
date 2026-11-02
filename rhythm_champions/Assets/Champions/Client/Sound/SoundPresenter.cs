@@ -12,10 +12,13 @@ namespace Champions.Client.Sound
     /// - a dash's whoosh from its start, in heard time (its press's), with the on-beat accent layered under it
     ///   (<see cref="AccentGain"/>); Leap Slam's slam as it lands; an afterimage's or phantom's repeat a faint whoosh;
     /// - each kill's shatter (game/'s crystal shatter: a break and a glass spray, then a tinkle as the shards land), the
-    ///   hero's hurt, and its own shatter when it dies.
+    ///   hero's hurt, and its own shatter when it dies;
+    /// - the bosses' (design.md, Sound: their telegraphs and hits), from the same bank, pitched down for their size: a low
+    ///   thud as each move's telegraph starts, its landing's slam (a boulder's or fireball's heavy hit, the breath's roar of
+    ///   air), the entrance's slam and accent, Break's accent, and the death's big shatter.
     /// An event stamped before the previous frame's frontier settled in heard time (a press's re-walk): the mixer is
     /// already past most of those, so they start as soon as they can (<see cref="SoundCue.Asap"/>), never dropped. Every
-    /// request goes through the beat's aggregation. Bosses' telegraphs and hits join with the bosses.
+    /// request goes through the beat's aggregation.
     /// </summary>
     public sealed class SoundPresenter
     {
@@ -25,6 +28,10 @@ namespace Champions.Client.Sound
         public const float SpectralGain = 0.45f, SpectralPitch = 1.25f;
         /// <summary>The shards land this long after a standard body's break (game/'s ShatterSounds).</summary>
         public const float LandSeconds = 0.38f;
+        /// <summary>A boss telegraph's thud, and the pitch of the Ogre's and the dragon's sounds (their size).</summary>
+        public const float TelegraphGain = 0.35f, OgrePitch = 0.75f, DragonPitch = 0.62f;
+        /// <summary>A boss's death shatters as a body this many times a standard one.</summary>
+        public const float BossShatterSize = 4f;
 
         readonly SoundScheduler _scheduler;
         readonly SoundAggregator _aggregator;
@@ -97,6 +104,30 @@ namespace Champions.Client.Sound
                 case SimEventKind.HeroDeath:
                     Shatter(e.T, 2f, 0x51ED27u ^ (uint)(e.T * 1000), asap);
                     break;
+                case SimEventKind.BossArrive:
+                    Request(SoundKind.Slam, e.T, 1f, 0.6f, 1f, asap);
+                    Request(SoundKind.Accent, e.T, 0.8f, 0.7f, 1f, asap);
+                    break;
+                case SimEventKind.BossTelegraph:
+                    if (e.MarkPart == 0 || e.MarkMove == BossMove.Fireballs)
+                        Request(SoundKind.Accent, e.T, TelegraphGain, 0.5f * BossPitch(e.MarkMove) / OgrePitch, 0.5f);
+                    break;
+                case SimEventKind.BossMove:
+                {
+                    if (e.I2 != 0) break;
+                    var move = e.MarkMove;
+                    float pitch = BossPitch(move);
+                    if (move == BossMove.Breath) Request(SoundKind.Whoosh, e.T, 1f, pitch * 0.8f, 1f, asap);
+                    else if (move == BossMove.Boulders || move == BossMove.Fireballs) Request(SoundKind.HitHeavy, e.T, 1f, pitch, 0.6f, asap);
+                    else Request(SoundKind.Slam, e.T, 1f, pitch, 1f, asap);
+                    break;
+                }
+                case SimEventKind.BossStagger:
+                    if (e.I1 == 1) Request(SoundKind.Accent, e.T, 1f, 1.25f, 1f, asap);
+                    break;
+                case SimEventKind.BossDeath:
+                    Shatter(e.T, BossShatterSize, 0xB055u ^ (uint)(e.T * 1000), asap);
+                    break;
             }
         }
 
@@ -112,6 +143,10 @@ namespace Champions.Client.Sound
             double land = t + LandSeconds * Math.Sqrt(size) * (0.85 + 0.3 * Rand(seed, 2));
             Request(SoundKind.ShatterTinkle, land, 1f, pitch * (1f + 0.1f * (Rand(seed, 3) - 0.5f)), 1f, asap);
         }
+
+        /// <summary>The pitch of a boss's sounds by its move: the Ogre's, or the dragon's lower.</summary>
+        static float BossPitch(BossMove move) =>
+            move == BossMove.Breath || move == BossMove.Tail || move == BossMove.Dive || move == BossMove.Fireballs ? DragonPitch : OgrePitch;
 
         /// <summary>A body's pitch (playback rate) by its size: (1 / size)^0.3, within 0.8 to 1.3.</summary>
         public static float Pitch(float size) => Math.Min(1.3f, Math.Max(0.8f, (float)Math.Pow(1f / Math.Max(0.05f, size), 0.3)));

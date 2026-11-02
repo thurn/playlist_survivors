@@ -125,6 +125,22 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void ABossThudsAsItsTelegraphStartsSlamsOnItsBeatAndShattersBig()
+        {
+            _sounds.Present(Frame(1.0));
+            var mark = new BossMark { Id = 3, Move = BossMove.Smash, Telegraph = new Telegraph(1.2, 2.2, -1, -1), Shape = HitShape.Circle(0, 0, 1) };
+            _sounds.Take(SimEvent.BossTelegraph(mark));
+            _sounds.Take(SimEvent.BossMove(2.2, mark, false, 0, 0, 0, 0, 0, 0));
+            _sounds.Take(SimEvent.BossMove(2.7, mark, true, 0, 0, 0, 0, 0, 0));
+            _sounds.Take(SimEvent.BossDeath(3.0, 4, 8, BossDeath.Treasure, 0, 0, 1, 0));
+            var log = _scheduler.Log.Select(x => (x.Cue.Kind, x.Attack)).ToArray();
+            Assert.That(log.Take(2), Is.EqualTo(new[] { (SoundKind.Accent, 1.2), (SoundKind.Slam, 2.2) }), "a call-off is silent");
+            Assert.That(_scheduler.Log[0].Cue.Gain, Is.LessThan(_scheduler.Log[1].Cue.Gain), "the thud under the slam");
+            Assert.That(_scheduler.Log.Count(x => x.Cue.Kind == SoundKind.ShatterBody && x.Attack == 3.0), Is.EqualTo(1));
+            Assert.That(_scheduler.Log.Last().Cue.Pitch, Is.LessThan(1f), "a big body rings low");
+        }
+
+        [Test]
         public void TheHurtSoundsOnlyWhenTheHitLands()
         {
             _sounds.Present(Frame(1.0));

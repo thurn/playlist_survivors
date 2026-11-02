@@ -1,5 +1,5 @@
 {
-  "arrival": { "waitS": 4, "windowS": 60, "distanceM": 9, "roarBeats": 4, "roarS": 2 },
+  "arrival": { "waitS": 4, "windowS": 60, "distanceM": 6, "roarBeats": 4, "roarS": 2 },
   "entrance": { "screenHalfWidthM": 21, "screenHalfHeightM": 14, "power": 8 },
   "break": { "perDodge": 0.25, "staggerBeats": 4, "staggerBeatlessS": 2, "damageScale": 2 },
   "phaseTwoBelow": 0.5,

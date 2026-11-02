@@ -114,7 +114,7 @@ namespace Champions.Sim
         /// <summary>Past this long after spawning stops, it arrives on the next downbeat, strong or not.</summary>
         public double WindowS = 60;
         /// <summary>It lands this far up the screen from the hero.</summary>
-        public double DistanceM = 9;
+        public double DistanceM = 6;
         /// <summary>After its entrance it roars this many beats (this long beatless) before its first move.</summary>
         public int RoarBeats = 4;
         public double RoarS = 2;

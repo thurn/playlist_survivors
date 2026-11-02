@@ -9,8 +9,8 @@ namespace Champions.Client
     /// Maps the sim's events onto the world (<see cref="World"/>'s <see cref="IWorldCommands"/>) and presents it each
     /// frame at the frame's song time with the hero's feet. What it maps so far: reliable beats to beat rings, the beat
     /// turning unreliable, zone changes, on-beat dashes and mass kills (at least <see cref="MassKillCount"/> at one
-    /// instant) to event rings. The assembly's EventDispatch takes this over and adds the rest (slams, boss entrances
-    /// and deaths, Break, structure breaks, duels).
+    /// instant, a boss's shockwave's aside) to event rings. The assembly's EventDispatch takes this over and adds the rest
+    /// (slams); the structures' and the bosses' presenters send their own rings and the duel's camera.
     /// </summary>
     public sealed class WorldPresenter : IDisposable
     {
@@ -51,6 +51,8 @@ namespace Champions.Client
                     if ((e.I2 & 1) != 0) _world.Ring(RingKind.DashOnBeat, new Vector2((float)e.D2, (float)e.D3), e.D0, Color.white);
                     break;
                 case SimEventKind.Kill:
+                    // A boss's entrance and finale kill everything on screen: their own ring stands for them (BossPresenter).
+                    if ((BlowSource)e.I1 == BlowSource.Boss) break;
                     if (double.IsNaN(_killT)) _killT = e.T;
                     _kills++;
                     _killSum += new Vector2((float)e.D3, (float)e.D4);
