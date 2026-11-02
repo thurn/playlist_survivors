@@ -198,7 +198,7 @@ def test_play_needs_a_build_and_passes_unknown_flags_to_the_player(monkeypatch, 
     assert "--headless" not in args  # Unity's player would draw with the Null device
 
 
-def test_play_makes_the_music_files_path_absolute(monkeypatch, wt, tmp_path) -> None:
+def test_play_makes_the_players_paths_absolute(monkeypatch, wt, tmp_path) -> None:
     run(monkeypatch, "build")
     calls: list[list[str]] = []
     monkeypatch.setattr(cli.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or type("R", (), {"returncode": 0}))
@@ -207,3 +207,5 @@ def test_play_makes_the_music_files_path_absolute(monkeypatch, wt, tmp_path) -> 
         cli.main(["play", "--headless", "--file", "songs/a.ogg", "--seconds", "20"])
     assert calls[0][-4:] == ["--file", str((tmp_path / "songs/a.ogg").resolve()), "--seconds", "20"]
     assert cli.absolute_file_flags(["--app", "Music"], tmp_path) == ["--app", "Music"]
+    assert cli.absolute_file_flags(["--edge-crowd", "1000", "--bench-out", "b.json"], tmp_path) == [
+        "--edge-crowd", "1000", "--bench-out", str((tmp_path / "b.json").resolve())]

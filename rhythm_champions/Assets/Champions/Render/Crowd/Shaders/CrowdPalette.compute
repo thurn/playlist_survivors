@@ -1,0 +1,25 @@
+// The palette pass (game/'s, ported): once per frame, blend each visible or dying instance's bones into a
+// palette, 3 float4 rows per bone, indexed by the instance's stable slot. Every draw then reads 4 matrices per
+// vertex, and the shatter freezes a dying instance's palette as its shards' pose.
+#pragma kernel Blend
+
+#include "CrowdSkinning.hlsl"
+
+StructuredBuffer<MonsterInstance> _Instances;
+StructuredBuffer<uint> _VisibleFlags;
+RWStructuredBuffer<float4> _PaletteOut;
+uint _Count, _BoneCount;
+float _ClipRate;
+
+[numthreads(64, 1, 1)]
+void Blend(uint3 id : SV_DispatchThreadID)
+{
+    uint slot = id.x / _BoneCount;
+    uint bone = id.x - slot * _BoneCount;
+    if (slot >= _Count || _VisibleFlags[slot] == 0) return;
+    float3x4 m = BlendBone(SampleOf(_Instances[slot], _ClipRate), bone);
+    uint at = id.x * 3;
+    _PaletteOut[at] = m[0];
+    _PaletteOut[at + 1] = m[1];
+    _PaletteOut[at + 2] = m[2];
+}
