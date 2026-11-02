@@ -43,6 +43,10 @@ Windows, where `python3` is the Microsoft Store stub).
   the main checkout clean.
 - Fast and slow check commands are in `.enact.toml`.
 - Beads live in this repo (`bd`); publish bead changes with `enact sync`.
+- Assume a filed bead is started immediately: a running Enact run can claim
+  it within minutes. Put everything it relies on (docs, skills, code it
+  builds on or that removes what it would touch) on staging first, then
+  file it, or hold it back with a dependency until then.
 - `/enact <bead|epic|task>` runs Enact work inline in one session (subagents
   for an epic's beads) and waits for slow CI; `/enact-plan <bead|plan|task>`
   runs it unattended across sessions. Most work goes through neither.
