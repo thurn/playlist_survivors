@@ -120,15 +120,25 @@ trailer *args: demo3d-build
     [ -z "$out" ] || set -- --out captures/trailer.mp4 "$@"
     {{tools}} demo3d trailer --backend {{backend}} "$@"
 
-# Capture a trailer in each look preset to captures/trailer-CUT-PRESET.mp4: the crystal cut, or `just trailer-looks action` the neon action cut; player flags after the cut
+# Capture a trailer in each look preset to captures/trailer-CUT-PRESET.mp4: the crystal cut, or `just trailer-looks action` the neon action cut; `demo3d trailer` flags next (--stand-in), player flags after `--`
 [group('demo3d')]
-trailer-looks cut="crystal" *args: demo3d-build
+trailer-looks *args: demo3d-build
     #!/usr/bin/env bash
     set -euo pipefail
-    cut="$1"; shift
-    for look in edge solid hologram prism; do
-        {{tools}} demo3d trailer --backend {{backend}} --out "captures/trailer-$cut-$look.mp4" -- --trailer "$cut" --look "$look" "$@"
+    cut=crystal
+    if [ $# -gt 0 ] && [ "${1#-}" = "$1" ]; then cut="$1"; shift; fi
+    ours=() player=() after=
+    for a in "$@"; do
+        if [ -z "$after" ] && [ "$a" = -- ]; then after=1
+        elif [ -n "$after" ]; then player+=("$a")
+        else ours+=("$a"); fi
     done
+    failed=
+    for look in edge solid hologram prism; do
+        {{tools}} demo3d trailer --backend {{backend}} --out "captures/trailer-$cut-$look.mp4" ${ours[@]+"${ours[@]}"} \
+            -- --trailer "$cut" --look "$look" ${player[@]+"${player[@]}"} || failed="$failed $look"
+    done
+    [ -z "$failed" ] || { echo "trailer-looks: $cut failed in:$failed" >&2; exit 1; }
 
 # Build the 2D demo (setting up first if needed) and play it at 1080p, with player flags
 [group('demo2d')]

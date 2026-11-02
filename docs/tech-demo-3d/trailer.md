@@ -1993,7 +1993,13 @@ the player first and defaults `--out` to `captures/trailer.mp4`:
 ```
 just trailer --out captures/trailer-neon-crystal.mp4 -- --palette neon --monster-style crystal
 uv run --project demo3d/tools demo3d trailer --out captures/trailer.mp4   # no build
+just trailer-looks             # the crystal cut in every look preset: captures/trailer-crystal-{edge,solid,hologram,prism}.mp4
+just trailer-looks action --stand-in   # the neon action cut's cues and mix, no window
 ```
+
+`just trailer-looks [CUT]` takes `demo3d trailer`'s flags (`--stand-in` too)
+and player flags after `--`, for every preset
+([neon-look.md, Flags](../design/neon-look.md#flags)).
 
 It runs three steps:
 

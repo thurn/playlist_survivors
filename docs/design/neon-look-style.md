@@ -401,7 +401,7 @@ loosest preset's value applies.
 | `clipped_impact_max` | clipped share on impact frames | <= 0.12 | | 0.082 |
 | `clipped_blob_max` | largest connected clipped region, of the frame | <= 0.005 | | |
 | `white_max` | white share | <= 0.02 | 0.001 | 0.023 |
-| `halo_min` | median L* in a 3-10 px ring round emitters (ring pixels under L* 70) less the frame's L* p25 | >= 15 | 13 | 18 |
+| `halo_impact_min` | median L* in a 3-10 px ring round emitters (ring pixels under L* 70) less the frame's L* p25, on impact frames (ps-wnj.19; was `halo_min`, every frame) | >= 15 | 13 | 18 |
 | `families_max` | greedy 60-degree hue windows each holding >= 8% of colourful pixels | <= 4 | 3 (1-4) | 3 (2-3) |
 | `key60_min` | colourful share in the best 60-degree window, every frame | >= 0.55 | 0.47 | 0.70 |
 | `key60_median_min` | the same, median over a cut or a set | >= 0.62 | 0.47 | 0.70 |
@@ -427,6 +427,14 @@ Notes:
     dark-floor frames, where emitters are flat paint, fail (4-12). The v2
     frames that pass do so because a lit floor lifts the ring, and they fail
     the floor rules instead. 17 would sit on GW3's lowest still.
+  - **The halo is an impact-frame rule** since ps-wnj.19
+    (`halo_impact_min`, [evidence](../../demo3d/evidence/look/trailer/README.md)).
+    After the restraint the crystal cut's steady stills measured 0.3-12 in
+    every preset; at five times edge's calm halo they reached only 6-10
+    while the grid's floor p99 broke (20-27 against 20), and solid's broke
+    its hero margin too. The halo now flares in a special moment
+    (`halo.special`), where the impact frame measures 16-26: emitters glow
+    when it counts, and a steady frame stays calm.
   - `monster_form_min` is measured per tile, a monster's own span: over a
     whole crowd p90 less p10 mixes types of different L* (v2 scores 35-84
     that way, though its bodies are flat). Per tile v2 scores 10-18. 30 is

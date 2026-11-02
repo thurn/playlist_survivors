@@ -305,8 +305,22 @@ just trailer-looks                # all four presets, captures/trailer-crystal-P
 just trailer-looks action         # the neon action cut, captures/trailer-action-PRESET.mp4
 ```
 
-`trailer-looks [CUT] [player flags]` (ps-wnj.26) captures one cut in edge,
-solid, hologram and prism in turn.
+`trailer-looks [CUT] [demo3d trailer flags] [-- player flags]` (ps-wnj.26,
+ps-wnj.19) builds the player once and captures one cut in edge, solid,
+hologram and prism in turn. `demo3d trailer`'s flags go to every capture
+(`just trailer-looks --stand-in`, for agents: the mix and its checks with a
+black picture), flags after `--` to every preset's player. It exits 1
+naming the presets that failed. The windowed captures are the operator's
+(game/evidence/operator-pending.md).
+
+Three flags set a look's values for one run, to judge a change without a
+rebuild (each fails on a key it doesn't know):
+
+```sh
+--post-tune halo.intensity=1.2,lens.chromatic=0.04   # the post option's values, as its file's groups
+--monster-tune Edge=3,shards.Rim=1                   # the monster look's shader floats (body. or shards. for one)
+--hero-tune blade.Glow=2                             # the hero's (body. or blade.)
+```
 
 How the package implements them (ps-wnj.3):
 
@@ -980,7 +994,8 @@ How the package implements it (ps-wnj.9; evidence in
   hero clears them only from white (its hot spot 0.3; ps-wnj.19 owns the
   monsters' side).
 - `--hero-tune key=value,...` sets the hero shaders' float properties for a
-  run (`body.` or `blade.` for one), to judge a change without a rebuild.
+  run (`body.` or `blade.` for one), to judge a change without a rebuild
+  (`MaterialTune`, as `--monster-tune` does).
 
 ### Restraint and special moments
 
@@ -1058,6 +1073,15 @@ kill too), accents, anchors, glints on structures, beats.
   third, the full flash's exposure 0.3, aberration 0.3 and saturation 15
   (were 0.5, 0.5, 25).
 
+**The halo flares in a special moment** (ps-wnj.19): a post option's
+`halo.special` grows its halo by that share of its own with `_LookSpecial`
+(`LookPostPass`): 1.5 in `neon-bloom`, `scanlines` and `prism-bloom`, 7 in
+`punchy-bloom`, whose solid bodies sit mostly under the halo's threshold.
+Steady frames keep the calm halo, so the style guide's halo rule is an
+impact-frame rule (`halo_impact_min`): at five times the calm halo the
+crystal cut's steady stills still measured only 6-10 against 15 while the
+grid's floor p99 broke, so a steady glow and a quiet floor can't both hold.
+
 The style guide's [Restraint](neon-look-style.md#restraint) rules check it:
 the grid's lines (floor L* p99), the background's share of the frame's
 light and the share of steady stills that flash. Evidence:
@@ -1129,6 +1153,43 @@ cut's horde and dragon. A test holds it to the action cut shot by shot
 (`TheNeonActionCutIsTheActionCutInTheVoid`). Capture all four presets with
 `just trailer-looks action`; evidence in
 [demo3d/evidence/look/action-neon](../../demo3d/evidence/look/action-neon/README.md).
+
+What shipped (ps-wnj.19): the cut in all four presets, `just trailer-looks`
+(Flags), and the style guide's metrics on a still from every shot of every
+preset, beside v2
+([demo3d/evidence/look/trailer](../../demo3d/evidence/look/trailer/README.md)).
+What the stills broke, and where it was fixed:
+
+- **Halo** (every still of every preset, 0.3-12 against 15): the halo now
+  flares in a special moment and the rule judges impact frames
+  (Restraint and special moments); the impact frame measures 16-26.
+- **The lines in a capture were half as wide.** The edge, hologram and gem
+  looks' lines (and the hero's) were pixels of the frame drawn, which a 2x
+  capture downsamples to half a pixel; they are now pixels at 1080 rows of
+  it (`EdgeLine`, `_ScaledScreenParams`), so a capture draws what the live
+  run and the game do.
+- **Prism's key**: the lens's chromatic aberration (0.2) sprayed rainbow
+  fringes over the frame's edges, breaking the key (0.29-0.50), families
+  and palette conformance; at 0.04 its key is 0.38-0.92 (median 0.63) and
+  conformance 0.88-1.
+- **Bright share** in hologram's and prism's sparser shots (ps-wnj.24's
+  open question): their monsters' resting light rose (hologram lines 3.0
+  and rim 2.0, were 2.4 and 1.6; the gem's shine, rim and lines 1.5, 1.7,
+  1.0, were 1.1, 1.3, 0.7), not the floor; both now clear 0.04 in every
+  shot but the duel.
+- **Solid's swarm separation**: its outline is 3.5 px (was 2.5); seven
+  stills broke the rule, three do.
+- **The spells drew vendor effects**: the cut's ring and lightning spells
+  kept their Hovl prefabs under every vfx option (the lightning's magic
+  circles broke edge's floor p99 at 50 s); each option now maps them to its
+  slam ring and hit sparks.
+
+Still breaking, filed as ps-wnj.28 (separation) and ps-wnj.29 (the rest): swarm separation (edge
+in ten of eleven steady stills, where a finely cut type's lines fill its
+body at the cut's distance; hologram and prism in five to seven), the key in shot 3
+(20 s, every preset: three enemy families in one frame) and a few others,
+bright share in the duel (1.6 s: three elites alone in the void), and
+prism's floor p99 under its slam rings and formation shards (12 and 36 s).
 
 ## The Game
 
