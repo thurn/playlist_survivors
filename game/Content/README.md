@@ -1,8 +1,8 @@
 # The game's content
 
 The run's data, as JSON the game owns: native's 30-minute run converted once into metres
-(docs/design/unity-game.md, [Content Data and Units](../../docs/design/unity-game.md#content-data-and-units)),
-and the arena ([The Arena](../../docs/design/unity-game.md#the-arena)).
+(docs/archive/design/unity-game.md, [Content Data and Units](../../docs/archive/design/unity-game.md#content-data-and-units)),
+and the arena ([The Arena](../../docs/archive/design/unity-game.md#the-arena)).
 The sim loads it with `GameContent.Load` (game/Assets/Game/Sim/Content/), and its tests read the
 same files under .NET and Unity.
 

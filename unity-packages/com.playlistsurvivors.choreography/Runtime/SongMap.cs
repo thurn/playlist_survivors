@@ -26,7 +26,7 @@ namespace PS.Choreography
     }
 
     /// <summary>
-    /// The beat-analysis tool's song map (docs/design/tech-demo.md, "Song Map"): beats in song
+    /// The beat-analysis tool's song map (docs/archive/design/tech-demo.md, "Song Map"): beats in song
     /// seconds, meter, sections with their feel, phrases, accents and energy.
     /// </summary>
     public sealed class SongMap

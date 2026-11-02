@@ -1,4 +1,4 @@
-//! A File source (docs/design/unity-game.md, "Sources"): an audio file, or an M3U playlist. Its
+//! A File source (docs/archive/design/unity-game.md, "Sources"): an audio file, or an M3U playlist. Its
 //! threads:
 //!
 //! - **decoder**: decodes each track (`decode`), a track or two ahead, and hands its mono

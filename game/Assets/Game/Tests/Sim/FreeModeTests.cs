@@ -8,7 +8,7 @@ using PS.Game.Sim.Level;
 namespace PS.Game.Sim.Tests
 {
     /// <summary>
-    /// The free mode (docs/design/game-modes.md): the free hero's walk (its pace, heard-time turns, walls and
+    /// The free mode (docs/archive/design/game-modes.md): the free hero's walk (its pace, heard-time turns, walls and
     /// pointer targets) and the sword on the attack key (only on presses, graded by the beat, the swing's length,
     /// heavy on accents), the other weapons still on the beat.
     /// </summary>

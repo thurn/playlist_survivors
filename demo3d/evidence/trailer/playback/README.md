@@ -1,7 +1,7 @@
 # Trailer: the --trailer player mode (ps-hgs.6)
 
 `--trailer` now plays the trailer file's ten shots in the normal player
-([trailer.md, Playback and cuts](../../../../docs/tech-demo-3d/trailer.md#playback-and-cuts)).
+([trailer.md, Playback and cuts](../../../../docs/archive/tech-demo-3d/trailer.md#playback-and-cuts)).
 Each shot is its own simulation in its own resident environment, cut on the
 beat. Everything here is from the IL2CPP player on the Mac (Apple M5 Max,
 Metal), windowless at fixed time, built at staging `286eafb3` plus this bead.

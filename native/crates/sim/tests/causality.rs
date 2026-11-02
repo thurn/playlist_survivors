@@ -1,4 +1,4 @@
-//! K1: checks without an oracle, on the Rust sim alone (docs/design/native-app.md, "Checks without an
+//! K1: checks without an oracle, on the Rust sim alone (docs/archive/design/native-app.md, "Checks without an
 //! oracle"), ported from `scripts/check-reactive.ts`:
 //!
 //! - **Causality.** For each cut C, a run on the stream with every entry known after C changed

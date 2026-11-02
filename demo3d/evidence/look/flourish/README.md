@@ -1,7 +1,7 @@
 # The death flourish and the spawn warp in the crystal cut (ps-wnj.16, 2026-11-01)
 
 The look's death flourish and spawn warp
-([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx)) in demo3d's
+([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx)) in demo3d's
 crystal cut, with their sounds. `EffectDriver` draws them under the look's vfx
 option (the selection's `client.deathPop`, `deathRing` and `spawnWarp`); the
 action cut and `--vfx classic` draw neither, so each `classic` strip is the

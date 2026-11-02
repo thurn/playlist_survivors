@@ -2,9 +2,9 @@
 
 Bead ps-suy.3 (epic ps-suy): `--structure-breaks walls` under each structure style, as the Mac's batch-mode
 IL2CPP player renders it in fixed time, with effects on. The design is in
-[environment.md, Breaks on screen](../../../../docs/tech-demo-3d/environment.md#breaks-on-screen); the
+[environment.md, Breaks on screen](../../../../docs/archive/tech-demo-3d/environment.md#breaks-on-screen); the
 choreography (the bolts, the openings, the horde's numbers) in
-[choreography.md, Structure breaks](../../../../docs/tech-demo-3d/choreography.md#structure-breaks).
+[choreography.md, Structure breaks](../../../../docs/archive/tech-demo-3d/choreography.md#structure-breaks).
 Rendered 2026-10-30 from the branch on staging 2632ccf6.
 
 The walls schedule had three moments, two bolts each, when these were rendered:

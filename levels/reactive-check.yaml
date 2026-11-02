@@ -1,4 +1,4 @@
-# check:reactive's compressed director (docs/design/reactive-audio.md, "Cuts"): every rule of the
+# check:reactive's compressed director (docs/archive/design/reactive-audio.md, "Cuts"): every rule of the
 # reactive level made small enough that each feature fires within the ~45 s causality-mix track, so
 # the causality check exercises it. Check-only: the game never plays it.
 extends: reactive

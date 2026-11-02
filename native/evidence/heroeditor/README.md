@@ -3,7 +3,7 @@
 native's survivors run under `--art heroeditor`: the HeroEditor knight and
 undead horde (`ps-4c8.1`'s capture, baked by `ps-4c8.3`) on the painted dusk
 ground (`ps-4c8.2`), beside native's own LPC look at the same moments. How it
-works: [docs/design/heroeditor-native.md](../../../docs/design/heroeditor-native.md).
+works: [docs/archive/design/heroeditor-native.md](../../../docs/archive/design/heroeditor-native.md).
 
 Every image is headless output; no window was opened. The HeroEditor frames in
 them are vendor-derived, so the images are small tagged renders (ps-render),

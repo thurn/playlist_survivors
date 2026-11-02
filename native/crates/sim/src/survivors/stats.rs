@@ -1,4 +1,4 @@
-//! Selected numerical rules from docs/survivors; player HP is unscaled.
+//! Selected numerical rules from docs/archive/survivors; player HP is unscaled.
 
 /// Unity world units, including normal Mad Forest's shared speed modifier.
 pub const PX_PER_VS_UNIT: f64 = 140.0 / (0.825 * 1.1);

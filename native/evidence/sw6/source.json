@@ -14,7 +14,7 @@
     "native/crates/sim/tests/content.rs": "088f2e52ffeaeebc3ee44b69f8ac68dc1f5b2800e5e703142446394dfceaacb1"
   },
   "numbers_from": [
-    "docs/survivors/appendix-feel.md",
+    "docs/archive/survivors/appendix-feel.md",
     "levels/survivors.yaml"
   ],
   "scope": "Final production event implementation including zero-admission cap guard; later additions to the private event tests do not alter release behavior. Captures and normal-five repeated on that final production build. Runtime Engine rollback constructor/algorithm unchanged."

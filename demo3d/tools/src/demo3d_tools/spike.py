@@ -1,4 +1,4 @@
-"""`game spike NAME --file F`: the sync spike's measured run (docs/design/unity-game.md, Build Order 1).
+"""`game spike NAME --file F`: the sync spike's measured run (docs/archive/design/unity-game.md, Build Order 1).
 
 It runs the game's player windowless (batch mode, `--headless`: the output silenced after the
 in-process capture) on a File source, with a click on every committed beat, and keeps Unity's

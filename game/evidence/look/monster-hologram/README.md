@@ -1,7 +1,7 @@
 # Wireframe hologram in game (ps-wnj.12, 2026-11-01)
 
 The hologram preset's monster look, `wireframe`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)):
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)):
 bodies of light. Lines in the type's palette slot on the model's feature
 edges, a thin fresnel rim and a faint fill that thickens toward the
 silhouette, added over the arena (a 25% veil dims what is behind). A

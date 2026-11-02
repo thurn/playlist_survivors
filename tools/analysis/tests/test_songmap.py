@@ -5,7 +5,7 @@ from ps_analysis import songmap as sm
 
 
 def test_example_conversions_from_design() -> None:
-    # The worked example in docs/design/tech-demo.md, "Musical positions".
+    # The worked example in docs/archive/design/tech-demo.md, "Musical positions".
     beats = [0.41, 1.52, 2.60, 3.71]
     assert sm.beat_index_at(beats, 2.0) == pytest.approx(1.4444, abs=1e-4)
     assert sm.time_of_beat_index(beats, 2.5) == pytest.approx(3.155)

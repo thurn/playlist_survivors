@@ -1,5 +1,5 @@
 //! `src/sim/timing.ts`: each press in step movement rated against the timing grid and classed, and
-//! the groove meter (docs/design/gameplay-redesign.md, "Timing and the Groove"). The groove sets the
+//! the groove meter (docs/archive/design/gameplay-redesign.md, "Timing and the Groove"). The groove sets the
 //! tier, and the tier the sword's reach and every attack's damage.
 
 // (Midpoints as (a + b) / 2 and the TS's short names: the TS order of operations, bit for bit.)

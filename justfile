@@ -2,7 +2,7 @@
 # e.g. `just native --file song.ogg --delayed` or `just demo3d --start-at 160`. Each of
 # `just native`, `just game`, `just demo3d`, `just demo2d` and `just stylelab` builds what
 # changed and runs it; the `-build`, `-play` and `-tool` recipes are the single steps. `just herocap`
-# captures HeroEditor characters to frames for native (docs/design/heroeditor-native.md).
+# captures HeroEditor characters to frames for native (docs/archive/design/heroeditor-native.md).
 
 set positional-arguments
 
@@ -18,7 +18,7 @@ unity_exe := "C:/Program Files/Unity/Hub/Editor/6000.6.7f1/Editor/Unity.exe"
 default:
     @just --list --unsorted
 
-# Build and run the game with its flags (SETUP.md, Launch options; paths from native/)
+# Build and run the game with its flags (docs/archive/setup-prototypes.md, Launch options; paths from native/)
 [group('native')]
 native *args:
     cd native && cargo run --locked --release -p app -- "$@"

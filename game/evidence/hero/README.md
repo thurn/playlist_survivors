@@ -1,7 +1,7 @@
 # The hero (ps-msz.3.10)
 
 The Synty knight on a song-time playable graph, hopping on its strides, its attacks retimed onto
-the sim's impacts, with the white crystal blade ([the design](../../../docs/design/unity-game.md),
+the sim's impacts, with the white crystal blade ([the design](../../../docs/archive/design/unity-game.md),
 The Hero; Attacks and Steps Land on the Beat). The code is game/Assets/Game/Client/Hero/:
 `HeroMotion` (the motion as a function of the HeroStep and Attack events and the song time),
 `HeroClips` (the clip table, game/Content/hero-clips.json, and the retiming), `HeroRig` (the

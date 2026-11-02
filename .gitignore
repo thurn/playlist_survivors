@@ -28,7 +28,7 @@ reactive-local/
 /demo3d/*.csproj
 /demo3d/*.sln
 /demo3d/*.slnx
-# The 2D pixel demo, under the same rules (docs/tech-demo-2d/README.md, Vendor Assets).
+# The 2D pixel demo, under the same rules (docs/archive/tech-demo-2d/README.md, Vendor Assets).
 /demo2d/Assets/Vendor/
 /demo2d/Assets/Vendor.meta
 /demo2d/Assets/Baked/
@@ -68,7 +68,7 @@ reactive-local/
 .beads/proxieddb/
 /.beads/interactions.jsonl
 /.beads.gate.lock
-# The shader style prototype (docs/tech-demo-3d/stylelab.md), under the same rules.
+# The shader style prototype (docs/archive/tech-demo-3d/stylelab.md), under the same rules.
 /stylelab/Assets/Vendor/
 /stylelab/Assets/Vendor.meta
 /stylelab/Assets/Baked/
@@ -82,7 +82,7 @@ reactive-local/
 /stylelab/*.csproj
 /stylelab/*.sln
 /stylelab/*.slnx
-# The Unity game (docs/design/unity-game.md), under the same rules.
+# The Unity game (docs/archive/design/unity-game.md), under the same rules.
 /game/Assets/Vendor/
 /game/Assets/Vendor.meta
 /game/Assets/Baked/
@@ -104,7 +104,7 @@ reactive-local/
 /game/Assets/FreeSounds.meta
 /demo3d/Assets/FreeSounds/
 /demo3d/Assets/FreeSounds.meta
-# The HeroEditor capture (docs/design/heroeditor-native.md), under the same rules: HeroEditor is an
+# The HeroEditor capture (docs/archive/design/heroeditor-native.md), under the same rules: HeroEditor is an
 # Asset Store pack. Its frames and atlases live in the per-machine cache, never in the tree.
 /herocap/Assets/Vendor/
 /herocap/Assets/Vendor.meta

@@ -1,7 +1,7 @@
 # Bright solid emissive on the crystal cut (ps-wnj.11, 2026-11-01)
 
 The solid preset's monster look, `solid-emissive`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)), on
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)), on
 the crystal cut's horde, shards and dragon. Before and after come from one
 Mono Mac build: `--look solid` draws the look; `--look solid --monster-look
 refractive-gem` (an option not built yet) draws the crystal stand-in, v2's

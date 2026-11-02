@@ -1,6 +1,6 @@
 # The free mode (ps-y21)
 
-`--mode free` ([the design](../../../docs/design/game-modes.md)): the hero walks freely and the
+`--mode free` ([the design](../../../docs/archive/design/game-modes.md)): the hero walks freely and the
 sword strikes on Z, its reach and damage graded by how close to a beat or half beat the press was.
 
 ## How it was run

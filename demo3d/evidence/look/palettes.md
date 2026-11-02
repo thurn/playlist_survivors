@@ -1,6 +1,6 @@
 # Look sets: the palette swaps (ps-ocd, 2026-10-30)
 
-The player's `--palette <name>` (arena-layout.json's `palettes`; [mac.md](../../../docs/tech-demo-3d/mac.md#palettes))
+The player's `--palette <name>` (arena-layout.json's `palettes`; [mac.md](../../../docs/archive/tech-demo-3d/mac.md#palettes))
 rendered against the [final](final/README.md) set, to see how the roster's type colours and the
 effects read on other backgrounds. Each folder keeps its contact sheet (final left, the palette
 right), `look.md` and `look.json`; the per-still JPEGs stay in `captures/look/palette-*`.

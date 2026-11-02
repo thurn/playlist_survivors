@@ -3,7 +3,7 @@
 The TS reactive game's runs at the tag **`ts-freeze`** (`e97ef4a`), for the
 Rust sim, recorder and evaluator to match bit for bit. The format, and the
 procedure the Rust harness must follow, is in [FORMAT.md](FORMAT.md); the
-plan is [docs/design/native-app.md](../../docs/design/native-app.md#oracle-fixtures).
+plan is [docs/archive/design/native-app.md](../../docs/archive/design/native-app.md#oracle-fixtures).
 
 ## Regenerating
 
@@ -38,7 +38,7 @@ except in a bead that also regenerates these fixtures from `ts-freeze`.
 ## The truncation check
 
 `truncation.json` holds the TS game's result on the truncation check, run once
-(the [plan](../../docs/design/native-app.md#causality-checks)). It runs as
+(the [plan](../../docs/archive/design/native-app.md#causality-checks)). It runs as
 `check:reactive`'s perturbation check does (the same check level and options,
 `reactive-moderate` and `mash4`, the default cuts just before every entry's
 `knownAt` and after every level-up, wave and set piece), but every stream entry

@@ -108,4 +108,4 @@ Every run finished without exceptions and drew both stills. Findings:
 
 Under overdrive, windowless, the whole song plays to `done at song time 198.99` with no
 exceptions and no effect spawns rejected. Its cost is in
-[performance.md, Overdrive's offline cost](../../../../docs/tech-demo-3d/performance.md#overdrives-offline-cost).
+[performance.md, Overdrive's offline cost](../../../../docs/archive/tech-demo-3d/performance.md#overdrives-offline-cost).

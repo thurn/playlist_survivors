@@ -8,7 +8,7 @@ using PS.Game.Sim.Level;
 namespace PS.Game.Sim.Tests
 {
     /// <summary>
-    /// The dash (`--dash`, docs/design/game-modes.md, "The dash"): Space on the beat lunges far, striking and throwing
+    /// The dash (`--dash`, docs/archive/design/game-modes.md, "The dash"): Space on the beat lunges far, striking and throwing
     /// aside what it passes, and makes the sword's next beat strike a spin; off the beat it hops a tile; either way the
     /// hero can't be hurt through it. Walls stop it, mashing dashes no faster than the sword's pulse, a held or fallen
     /// hero doesn't dash, and a press the sim takes late dashes from when it was heard.

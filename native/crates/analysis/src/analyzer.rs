@@ -1,4 +1,4 @@
-//! The live analyzer (docs/design/native-app.md, "Phase A: The Analyzer"): every stage, frame by
+//! The live analyzer (docs/archive/design/native-app.md, "Phase A: The Analyzer"): every stage, frame by
 //! frame, with bounded memory. Feed 44.1 kHz mono samples; it returns the stream's entries as
 //! they are finished: committed beats, ticks (with their keys), onsets, hindsight entries,
 //! structure's changes, jumps and ends, accent forecasts, and timbre entries; ticks carry their

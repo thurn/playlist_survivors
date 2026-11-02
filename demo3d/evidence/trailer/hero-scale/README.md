@@ -10,7 +10,7 @@ now drawn at their own size (1.85 m against the skeleton's 1.8 m and the
 goblin's 1.5 m), and a thin glowing outline (`HeroOutline`, overdrive's
 `heroOutline` 3 px) keeps them easy to find. The default cut's line is cyan
 blue, the crystal cut's gold (its look's `heroOutline`). Spec:
-[trailer.md, Overdrive](../../../../docs/tech-demo-3d/trailer.md#overdrive-the-starting-point).
+[trailer.md, Overdrive](../../../../docs/archive/tech-demo-3d/trailer.md#overdrive-the-starting-point).
 
 - `action-before-after.jpg`: the default cut (`--trailer`).
 - `crystal-before-after.jpg`: the crystal cut (`--trailer crystal`).

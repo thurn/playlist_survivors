@@ -1,7 +1,7 @@
 # Structure styles: the looks (ps-suy.1)
 
 `--structure-style <name>` draws the arena's structures in a monster style's treatment
-([environment.md, Structure styles](../../../../docs/tech-demo-3d/environment.md#structure-styles)).
+([environment.md, Structure styles](../../../../docs/archive/tech-demo-3d/environment.md#structure-styles)).
 Every style on the forest and on crypt, from TD15's six beauty shots, with readability numbers.
 Made on the Mac (M5 Max) with the windowless IL2CPP player in fixed time, 2026-10-30.
 

@@ -1,7 +1,7 @@
 # The line looks' outline hulls in the game (ps-wnj.28, 2026-11-01)
 
 The monster looks are shared, so ps-wnj.28's outline hulls (edge, hologram
-and gem; [neon-look.md, How clumps part in the line looks](../../../../docs/design/neon-look.md#the-axes))
+and gem; [neon-look.md, How clumps part in the line looks](../../../../docs/archive/design/neon-look.md#the-axes))
 draw in the game too. IL2CPP Mac players of this change on staging d3929ba9,
 windowless, on jarvis, from the worktree's root. Before is the same player
 with the change's values undone by `--monster-tune` (as the crystal cut's

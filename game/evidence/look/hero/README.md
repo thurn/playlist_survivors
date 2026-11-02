@@ -3,7 +3,7 @@
 The knight and the crystal blade in a treatment per preset, each echoing its
 monsters on the style guide's hero light rung, so the hero is the brightest
 single thing on screen without growing or an outline
-([neon-look.md, Hero](../../../../docs/design/neon-look.md#hero)). Crystal
+([neon-look.md, Hero](../../../../docs/archive/design/neon-look.md#hero)). Crystal
 cut: [demo3d/evidence/look/hero](../../../../demo3d/evidence/look/hero/README.md).
 
 An IL2CPP Mac player of this change, windowless, at the trailer's framing

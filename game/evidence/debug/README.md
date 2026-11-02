@@ -1,7 +1,7 @@
 # The debug surfaces (ps-msz.6.12)
 
 The F1 menu's commands, `--start-minute`, `--level` and the overlay's flow field
-([the design](../../../docs/design/unity-game.md#debug-surfaces)). Measured on the Mac (jarvis) on
+([the design](../../../docs/archive/design/unity-game.md#debug-surfaces)). Measured on the Mac (jarvis) on
 2026-10-31 with an IL2CPP player built from this bead's tree.
 
 ## Tests

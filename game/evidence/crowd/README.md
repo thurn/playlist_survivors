@@ -1,7 +1,7 @@
 # The crystal horde (ps-msz.3.8)
 
 The bone-texture crowd driven by sim events, in the crystal style
-([the design](../../../docs/design/unity-game.md), The Crowd). The code is
+([the design](../../../docs/archive/design/unity-game.md), The Crowd). The code is
 game/Assets/Game/Client/Crowd/: `CrowdView` (the presenter the frame loop subscribes),
 `MonsterTrack` (a monster's events to its clips, place and facing), `BoneTextureCrowd` (culling,
 palette and indirect draws), the shaders in Crowd/Shaders/ and the baker in

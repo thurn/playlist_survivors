@@ -2,7 +2,7 @@
 
 The player holds crypt, desert, snow, forest, lava, neon and blossom at once
 and switches the drawn one within a frame ([trailer.md, Environments in one
-player](../../../../docs/tech-demo-3d/trailer.md#environments-in-one-player)).
+player](../../../../docs/archive/tech-demo-3d/trailer.md#environments-in-one-player)).
 ps-hgs.1 made the first four resident; ps-7mx.2 added lava, neon and blossom
 and re-measured all seven. Everything here is from the IL2CPP player on the
 Mac (Apple M5 Max, Metal), windowless at fixed time, built at staging

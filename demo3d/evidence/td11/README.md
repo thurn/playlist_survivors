@@ -2,7 +2,7 @@
 
 Each candidate cut from performance.md (The Fidelity Floor) tried against the calibrated A/B
 thresholds of benchmarks.md (Fidelity A/B Checks), with its cost on the harness. Summary and
-verdicts: docs/tech-demo-3d/plan.md, TD11.
+verdicts: docs/archive/tech-demo-3d/plan.md, TD11.
 
 ## Files
 

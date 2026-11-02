@@ -1,5 +1,5 @@
 //! The stream's entries as fixed-size records: the fields of the game plugin's `ps_entry`
-//! (docs/design/unity-game.md, "The C interface"), which `ps entries` writes and the plugin hands
+//! (docs/archive/design/unity-game.md, "The C interface"), which `ps entries` writes and the plugin hands
 //! Unity. Every record has a kind, a content time `t`, its stamp `known_at` and up to 12 values;
 //! unused slots are 0.
 //!

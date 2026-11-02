@@ -1,6 +1,6 @@
 # Trailer: the 60 s re-cut (ps-7mx.3)
 
-The trailer re-cut to about a minute ([trailer.md, The Shot List](../../../../docs/tech-demo-3d/trailer.md#the-shot-list)):
+The trailer re-cut to about a minute ([trailer.md, The Shot List](../../../../docs/archive/tech-demo-3d/trailer.md#the-shot-list)):
 eight shots from break-2's duel (bar 79) through drop-2 into final-peak, to
 a final slam on 117.1 (58.22 s), two beats of aftermath, the cut to black on
 117.3 and the 1.5 s fade: 60.5 s in all.

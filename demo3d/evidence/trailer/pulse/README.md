@@ -2,7 +2,7 @@
 
 Two bars of each cut, 91.1 to 92.4 (trailer 17.965 to 21.06 s, drop-2's full arrangement in
 shot 3, lava), every frame, after and before the beat pulse (ps-b5z.3; [crowd.md, The beat
-pulse](../../../../docs/tech-demo-3d/crowd.md#the-beat-pulse)):
+pulse](../../../../docs/archive/tech-demo-3d/crowd.md#the-beat-pulse)):
 
 | Sheet | What it is |
 |---|---|

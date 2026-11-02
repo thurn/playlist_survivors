@@ -10,7 +10,7 @@ audio = { path = "../audio" }
 rtrb = "0.4"
 stream = { path = "../stream" }
 
-# (Windows's process loopback joins these in M5: docs/design/unity-game.md, "Platform capture
+# (Windows's process loopback joins these in M5: docs/archive/design/unity-game.md, "Platform capture
 # and crash safety".)
 [target.'cfg(target_os = "macos")'.dependencies]
 libc = "0.2"

@@ -1,8 +1,8 @@
 """The shipped reactive tracks, and the commands that write them (ported from the TS game's
 ``scripts/reactive-*.ts`` when it was removed, D6).
 
-The regression tracks (classical and synthetic, docs/design/reactive-audio.md) and the reactive
-feel corpus from ``corpus/manifest.yaml`` (docs/design/reactive-feel.md, "The Corpus");
+The regression tracks (classical and synthetic, docs/archive/design/reactive-audio.md) and the reactive
+feel corpus from ``corpus/manifest.yaml`` (docs/archive/design/reactive-feel.md, "The Corpus");
 ``public/reactive/index.json`` built from both; and three commands, each running this tool's own
 commands in parallel:
 
@@ -13,7 +13,7 @@ commands in parallel:
   and bump its TOOL_VERSION), and the index.
 - ``fit-corpus``: fits the corpus's reference grids (the regression tracks' fits go to
   ``captures/corpus/fits/`` for comparison only) and prints the table; held-out tracks are counted,
-  never shown (docs/design/reactive-feel.md, "Held-out Protocol").
+  never shown (docs/archive/design/reactive-feel.md, "Held-out Protocol").
 """
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ REGRESSION_TRACKS = (
         "accelerando-100-140", "Accelerando, 100 to 140", "Synthetic", "synthetic"
     ),
     RegressionTrack("pop-arrangement", "Pop Arrangement", "Synthetic", "synthetic"),
-    # The check's short track: 20 s statistics windows (docs/design/reactive-audio.md, "Cuts"), and
+    # The check's short track: 20 s statistics windows (docs/archive/design/reactive-audio.md, "Cuts"), and
     # strong onsets from the 95th percentile, since its accents (every 4 s) outnumber the top 2%.
     RegressionTrack(
         "causality-mix",

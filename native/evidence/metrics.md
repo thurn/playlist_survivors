@@ -1,6 +1,6 @@
 # Budgets
 
-The native app epic's check budgets ([plan](../../docs/design/native-app.md#introspection)).
+The native app epic's check budgets ([plan](../../docs/archive/design/native-app.md#introspection)).
 `scripts/friction` reads this table: a row whose Key is a backticked friction-record field path
 is a budget, and the same field over 1.5 times its budget in 3 consecutive records fires a
 trigger. A retrospective may revise a budget; record the reason under Revisions.

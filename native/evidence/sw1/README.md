@@ -7,7 +7,7 @@ external image or easy-knob/offer retune was needed.
 
 ## Source behavior
 
-The authority is `docs/survivors/appendix-feel.md`, King Bible table/runtime
+The authority is `docs/archive/survivors/appendix-feel.md`, King Bible table/runtime
 notes. `source-audit.json` also keeps the inspected projectile source's SHA256
 and the selected behavior facts; no extracted source or raw game data is added.
 Rank 1/8 have power 1/3, Amount 1/4, active duration 3/4 s and raw cycle 6/7 s:

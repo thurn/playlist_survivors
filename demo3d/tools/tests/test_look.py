@@ -449,7 +449,7 @@ def test_the_outline_hull_inside_the_silhouettes_is_a_seam_of_the_clump() -> Non
 def test_a_still_with_fewer_than_four_dense_tiles_has_no_clump_to_judge() -> None:
     """The guide's swarm rule judges clumps: a dense tile or three, scattered pairs of overlapping bodies, decide no
     still (v2's blob stills hold 7-141 dense tiles)."""
-    rules = look.load_rules(json.loads((paths.worktree().root / "docs/design/neon-look-thresholds.json").read_text()),
+    rules = look.load_rules(json.loads((paths.worktree().root / "docs/archive/design/neon-look-thresholds.json").read_text()),
                             "edge")
     assert look.check_rules({"swarm_separation": 9.2, "dense_tiles": 1}, rules) == {}
     assert look.check_rules({"swarm_separation": 11.9, "dense_tiles": 3}, rules) == {}

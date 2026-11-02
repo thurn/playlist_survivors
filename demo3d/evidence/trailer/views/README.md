@@ -1,6 +1,6 @@
 # The closer views
 
-Both cuts after the run's final review (ps-b5z.6; [trailer.md, Overdrive](../../../../docs/tech-demo-3d/trailer.md#overdrive-the-starting-point)).
+Both cuts after the run's final review (ps-b5z.6; [trailer.md, Overdrive](../../../../docs/archive/tech-demo-3d/trailer.md#overdrive-the-starting-point)).
 The operator's review: "no yellow glow around the hero please", then "maybe a closer camera
 angle? hero honestly looked fine before". So the hero's glowing outline (ps-b5z.1) is gone, the
 hero stays at true size, and most shots frame closer, each on-screen target scaled down with the

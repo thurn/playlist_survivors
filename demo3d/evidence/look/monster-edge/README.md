@@ -1,7 +1,7 @@
 # Dark core, lit edges on the crystal cut (ps-wnj.10, 2026-11-01)
 
 The edge preset's monster look, `dark-core-edges`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)), on
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)), on
 the crystal cut's horde, shards and dragon. Before and after come from one
 IL2CPP Mac build: `--look edge` draws the look; `--look edge --monster-look
 refractive-gem` (an option not built yet) draws the crystal stand-in, so only

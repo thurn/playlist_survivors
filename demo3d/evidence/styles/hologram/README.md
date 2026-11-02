@@ -7,7 +7,7 @@
 
 `--monster-style hologram`: stylelab's "Hologram" treatment, drawn through the bone-texture
 crowd's indirect draws on the unwelded style mesh
-([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 Additive projections in the transparent queue, so they need no sort. They have a fresnel
 edge, scanlines, a rolling band, a dim wireframe from the style mesh's barycentrics, red and
 cyan fringes, flicker, and glitch slices just after each off-beat. Death scans the body out

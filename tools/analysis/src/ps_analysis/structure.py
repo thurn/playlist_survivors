@@ -20,7 +20,7 @@ by X (`tests/test_stream.py` proves it).
 - **Ends:** the loudness at least 20 dB below the loudest second of the past
   30 s for 1.5 s, after at least 10 s of audio: `t` where the quiet began.
 
-See docs/design/reactive-audio.md, "Structure (stage 4)".
+See docs/archive/design/reactive-audio.md, "Structure (stage 4)".
 """
 
 from __future__ import annotations

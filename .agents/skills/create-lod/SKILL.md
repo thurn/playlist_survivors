@@ -13,7 +13,7 @@ its shape, motion and shading hold up.
 Follow the current project AGENTS.md for worktrees, checks and delivery. This skill
 does not authorize production LOD/default changes, interactive app launches or
 external uploads beyond the user's task. Follow the
-[vendor asset rules](../../../docs/tech-demo-3d/vendor-assets.md): keep vendor and
+[vendor asset rules](../../../docs/archive/tech-demo-3d/vendor-assets.md): keep vendor and
 derived meshes, textures, exports, Blender files, generated scenes and builds in
 the relevant ignored project directories. Track original tooling, recipes,
 summaries and permitted small evidence stills; use the existing derived-record

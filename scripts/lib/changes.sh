@@ -77,7 +77,7 @@ changes_demo3d() {
 
 # The Unity game's engine-free sim and arena layout: their sources and tests, which Unity compiles
 # under game/Assets/Game/Sim/, Arena/ and Tests/Sim/, and the .NET projects under game/dotnet/ that
-# compile the same files (docs/design/unity-game.md, The Simulation and The Arena).
+# compile the same files (docs/archive/design/unity-game.md, The Simulation and The Arena).
 changes_game_sim() {
   changes_match '^(game/(dotnet/|Content/|Assets/Game/Sim/|Assets/Game/Arena/|Assets/Game/Tests/Sim/)|native/fixtures/entries/)'
 }

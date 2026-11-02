@@ -6,7 +6,7 @@
 > describe the untuned set they were written for.
 
 `--monster-style void`: stylelab's "Void", drawn through the bone-texture crowd's indirect draws
-([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)). Each body
+([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)). Each body
 shows a starfield and a faint nebula fixed to the screen, like a hole into the night, ringed by
 an intense coloured edge per species that flares as the beat wave passes. Death implodes the
 monster to a point at its middle instead of dissolving, in every pass. The post look is the lab's

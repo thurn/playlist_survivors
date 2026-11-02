@@ -1,4 +1,4 @@
-//! The listening session's record (docs/design/native-app.md, "Session recording (D3)"): every
+//! The listening session's record (docs/archive/design/native-app.md, "Session recording (D3)"): every
 //! session, from listening's start to quit (or a new music source), saved to
 //! `native/logs/sessions/<unix time>/` (`PS_SESSIONS` elsewhere), the last 20 and at most 5 GB
 //! kept, oldest deleted first:

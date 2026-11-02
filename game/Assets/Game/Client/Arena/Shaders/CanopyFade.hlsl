@@ -1,4 +1,4 @@
-// The canopy fade (demo3d's TD15; docs/tech-demo-3d/environment.md, Environment rendering): tree pixels between the camera and
+// The canopy fade (demo3d's TD15; docs/archive/tech-demo-3d/environment.md, Environment rendering): tree pixels between the camera and
 // the hero, within a few metres of it on screen, dither out, so a forest edge never hides the hero.
 // CanopyFade.cs publishes the hero; the canopy materials (Game/LitCanopy, and LitStaticShadow's
 // forward pass with _CANOPY_FADE) call GameCanopyClip in every pass that writes depth or colour.

@@ -1,4 +1,4 @@
-//! `ps analysis-parity` (docs/design/native-app.md, "Corpus parity"): the Rust analyzer over each
+//! `ps analysis-parity` (docs/archive/design/native-app.md, "Corpus parity"): the Rust analyzer over each
 //! track's audio, faster than real time in capture-sized blocks with the live hindsight delay,
 //! against the committed `stream.json` Python made from the same samples.
 //!

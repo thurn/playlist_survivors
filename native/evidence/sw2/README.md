@@ -8,7 +8,7 @@ bake, external image, offer retune or easy-knob change was needed.
 
 ## Source rules and explicit adaptations
 
-The authority is `docs/survivors/appendix-feel.md`, Lightning Ring table/runtime
+The authority is `docs/archive/survivors/appendix-feel.md`, Lightning Ring table/runtime
 notes. `source-audit.json` keeps the inspected projectile source SHA256 and
 selected facts; no raw extracted source/data is committed. Rank 1/8 have power
 1.5/6.5, Amount 2/6, Area 1/4 and a 4.5 s raw interval. The source body is

@@ -1,6 +1,6 @@
 //! Belief-stream types: the append-only stream log and serde for `stream.json` (pure).
 //!
-//! `src/reactive/stream.ts` at `ts-freeze`, for the live app (docs/design/native-app.md, "The
+//! `src/reactive/stream.ts` at `ts-freeze`, for the live app (docs/archive/design/native-app.md, "The
 //! stream, live"): one store, [`StreamLog`], filled by every source. Replay feeds a `stream.json`'s
 //! entries into it in `known_at` order as the run advances ([`Replay`]); live sources append
 //! entries as they arrive. Ticks gain a `known_at` (their own `t` in Replay). The end of the stream
@@ -167,7 +167,7 @@ pub struct StreamLog {
 }
 
 /// What only Replay knows: the song's length and each group's final count. Oracle Replay gives it at
-/// time 0, so reads of the stream's end match TS; live it is absent (docs/design/native-app.md,
+/// time 0, so reads of the stream's end match TS; live it is absent (docs/archive/design/native-app.md,
 /// "Live exceptions").
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct StreamEnd {

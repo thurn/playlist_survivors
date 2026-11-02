@@ -1,6 +1,6 @@
 # The finishers (ps-qbd)
 
-`--mode zen --finishers` ([the design](../../../docs/design/game-modes.md#finishers)): every phrase a ring closes on the
+`--mode zen --finishers` ([the design](../../../docs/archive/design/game-modes.md#finishers)): every phrase a ring closes on the
 hero toward the phrase's downbeat, and Space heard in its window fires a screen-clearing slam; a miss costs nothing.
 The questions: do the rings land on the phrase downbeats at the cadence asked for (8-15 s apart), causally; does a press
 in the window fire at once and clear the view; does a press outside it fire nothing?

@@ -27,7 +27,7 @@ whole file.
 - **Reference** (optional): beats and sections for the virtual players and the
   checks, never for the simulation.
 
-See docs/design/reactive-audio.md, "The Belief Stream".
+See docs/archive/design/reactive-audio.md, "The Belief Stream".
 """
 
 from __future__ import annotations

@@ -8,8 +8,8 @@ The authored offer table and all stat/gameplay rules are unchanged.
 
 ## Source-rank proof
 
-The authority is `docs/survivors/appendix-feel.md`, The six passives, and
-`docs/survivors/progression.md`, How stats combine. `passive-ranks.txt` records
+The authority is `docs/archive/survivors/appendix-feel.md`, The six passives, and
+`docs/archive/survivors/progression.md`, How stats combine. `passive-ranks.txt` records
 27 real card selections and compares all stat fields with literal source totals:
 
 | Passive | Totals after each rank |

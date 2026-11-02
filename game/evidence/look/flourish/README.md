@@ -1,7 +1,7 @@
 # The death flourish and the spawn warp in game (ps-wnj.16, 2026-11-01)
 
 The look's death flourish and spawn warp
-([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx)), with their
+([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx)), with their
 sounds. They come with the vfx axis's options (`light-streaks`,
 `prism-streaks`) and only with them: `--vfx classic` draws and sounds neither,
 so each `classic` strip below is the same run without them (and with the vendor

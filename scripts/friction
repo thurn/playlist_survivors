@@ -3,7 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""The native app epic's friction ledger (docs/design/native-app.md, "Introspection").
+"""The native app epic's friction ledger (docs/archive/design/native-app.md, "Introspection").
 
     scripts/friction validate   # parse every input; exit 2 on a malformed one (the gate runs it)
     scripts/friction [report] [--json]

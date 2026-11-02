@@ -1,5 +1,5 @@
 # The native trailer: 59 s of pure play, then 1.5 s of black as the song fades, to the same
-# window of *Action* as demo3d's trailer (docs/tech-demo-3d/trailer.md, "The Music Window"):
+# window of *Action* as demo3d's trailer (docs/archive/tech-demo-3d/trailer.md, "The Music Window"):
 # song 121.40 s, just before 79.3, to the cut to black on 117.3, cut on the same beats. Every
 # shot is its own short run of levels/trailer.yaml, staged here: its zone, its crowd (the
 # schedule row: the enemy mix, set pieces, the view's widening, and the minimum crowd: on screen,

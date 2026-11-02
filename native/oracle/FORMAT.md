@@ -1,7 +1,7 @@
 # Oracle fixture format
 
 The TS game's reactive runs at `ts-freeze`, exported by `scripts/oracle-export.ts`
-for the Rust sim to match bit for bit ([plan](../../docs/design/native-app.md#oracle-fixtures)).
+for the Rust sim to match bit for bit ([plan](../../docs/archive/design/native-app.md#oracle-fixtures)).
 This file is the contract: the Rust harness (`ps oracle`) implements every
 procedure below exactly as written. Format version 1.
 

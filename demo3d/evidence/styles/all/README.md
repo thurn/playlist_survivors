@@ -1,7 +1,7 @@
 # Monster styles: all nine, tuned (ps-a54.4)
 
 Every `--monster-style` name side by side, after the tuning pass in demo3d's scenes
-([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)). Each column is
+([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)). Each column is
 one look set, left to right: baseline (the committed `look/final`, which is what the flag's
 default draws), painted, fire, crystal, spectrum, hologram, chrome, void and mix.
 
@@ -105,5 +105,5 @@ stills with L* < 10.
 - **The hero keeps its own shader.** The lab paints its knight under every non-baseline style,
   but demo3d's hero is drawn by `StockCrowd`, not the bone-texture crowd, so the style shaders'
   skinning does not apply to it. The bead left this optional.
-- **Motion, the music and the pick** are the operator's: docs/tech-demo-3d/plan.md, Pending on
+- **Motion, the music and the pick** are the operator's: docs/archive/tech-demo-3d/plan.md, Pending on
   the operator, "Pick a monster style".

@@ -1,7 +1,7 @@
 # Sessions and replay (ps-msz.6.10)
 
 Every run with music is recorded as a session, and replays to its settled hash in the player and
-in .NET ([the design](../../../docs/design/unity-game.md#sessions-and-replay)). Measured on the
+in .NET ([the design](../../../docs/archive/design/unity-game.md#sessions-and-replay)). Measured on the
 Mac (jarvis) on 2026-10-31, with an IL2CPP player built from this bead's tree.
 
 ## A headless run, watched at once (IL2CPP)

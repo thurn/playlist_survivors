@@ -159,7 +159,7 @@ class Affected(unittest.TestCase):
             crates.affected(
                 m,
                 [
-                    "docs/design/native-app.md",
+                    "docs/archive/design/native-app.md",
                     "native/evidence/x.json",
                     "native/scripts/crates",
                     "levels/README.md",

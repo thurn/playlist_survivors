@@ -1,5 +1,5 @@
 //! The art native draws with (`--art`, epic ps-4c8): its own LPC look, the default, or the
-//! HeroEditor feel test's (docs/design/heroeditor-native.md), set once at startup for the process
+//! HeroEditor feel test's (docs/archive/design/heroeditor-native.md), set once at startup for the process
 //! and its checks.
 
 use std::path::PathBuf;
@@ -66,7 +66,7 @@ pub fn atlases() -> Result<Atlases, String> {
     if !over.join("characters.json").is_file() {
         return Err(format!(
             "--art heroeditor: no baked HeroEditor characters in {}; `just herocap` captures and \
-             bakes them (docs/design/heroeditor-native.md)",
+             bakes them (docs/archive/design/heroeditor-native.md)",
             over.display()
         ));
     }

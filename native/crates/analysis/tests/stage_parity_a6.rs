@@ -1,4 +1,4 @@
-//! Stage parity, A6 (docs/design/native-app.md, "Stage parity"): accent forecasts against
+//! Stage parity, A6 (docs/archive/design/native-app.md, "Stage parity"): accent forecasts against
 //! Python's `accents.forecasts` given Python's upstream, the committed beats and onsets of every
 //! stream under `public/reactive` (`tests/fixtures/a6-forecasts.json`), fed in `knownAt` order as
 //! the analyzer delivers them.

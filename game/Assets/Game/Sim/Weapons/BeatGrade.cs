@@ -3,7 +3,7 @@ using System;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// How well a press follows the beat (<see cref="SwordTrigger.Press"/>, docs/design/game-modes.md): a grade from
+    /// How well a press follows the beat (<see cref="SwordTrigger.Press"/>, docs/archive/design/game-modes.md): a grade from
     /// <see cref="Lowest"/> to 1 that scales the strike's reach and damage. It is generous: full unless the press is
     /// clearly off the beat.
     ///

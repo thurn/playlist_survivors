@@ -1,4 +1,4 @@
-"""`game log [SESSION]`: a recorded session's timing log summarised (docs/design/unity-game.md, Sessions and Replay).
+"""`game log [SESSION]`: a recorded session's timing log summarised (docs/archive/design/unity-game.md, Sessions and Replay).
 
 Every recorded run of the game's player writes `timing.csv` beside its audio, entries and inputs (TimingLog.cs):
 a row per frame with its interval, the main thread's CPU time, the loop's and the sim's work, Unity's frame timing,

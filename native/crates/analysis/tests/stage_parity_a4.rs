@@ -1,4 +1,4 @@
-//! Stage parity, A4 (docs/design/native-app.md, "Stage parity" and "Hindsight's live latency"):
+//! Stage parity, A4 (docs/archive/design/native-app.md, "Stage parity" and "Hindsight's live latency"):
 //! the offline front end, the BiLSTM ensemble, the offline DBN's decode, the hindsight entries
 //! and the phase check against Python's golden data (`native/models/golden/`), each stage fed
 //! Python's own upstream; then the whole analyzer from PCM at the live D, inline and on the worker.

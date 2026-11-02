@@ -1,4 +1,4 @@
-"""`delayed-payoff`: Delayed listening's payoff, measured offline (docs/design/native-app.md, E0).
+"""`delayed-payoff`: Delayed listening's payoff, measured offline (docs/archive/design/native-app.md, E0).
 
 Delayed listening plays the music `M` seconds late, so committed beats can come
 from hindsight grids instead of forecasts. This replays E1's commit rule over a

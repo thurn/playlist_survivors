@@ -1,6 +1,6 @@
 # TD12: the frontier report
 
-The demo's answer to its question (docs/tech-demo-3d/README.md): **on an RTX 4060 Laptop-class
+The demo's answer to its question (docs/archive/tech-demo-3d/README.md): **on an RTX 4060 Laptop-class
 machine, about 500 fully animated monsters on screen at once, in a 30 m view, with the demo's
 effect load, at full fidelity and 60 fps** (the envelope, below). Every target number here is
 **inferred** from Cygnus (RTX 4070 Ti, i7-12700F, DDR4-2133) through the factors listed under The

@@ -1,4 +1,4 @@
-//! The stream's own causality (docs/design/native-app.md, "The stream's own causality"): the
+//! The stream's own causality (docs/archive/design/native-app.md, "The stream's own causality"): the
 //! analyzer's stream of audio cut at X holds exactly the full stream's entries known by X less a
 //! margin, in every group (Python's `test_stream_is_causal`, extended to the analyzer's every
 //! entry). Cuts between frames take no margin, so an entry stamped even a little before the audio

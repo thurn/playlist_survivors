@@ -6,7 +6,7 @@ use sim::survivors::{Stats, WeaponCatalog, WeaponId, weapon_catalog};
 fn every_combat_rank_matches_the_sourced_feel_appendix() {
     let docs = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../../docs/survivors/appendix-feel.md"
+        "/../../../docs/archive/survivors/appendix-feel.md"
     ));
     let catalog = weapon_catalog();
     let mut checked = 0;
@@ -54,7 +54,9 @@ fn every_combat_rank_matches_the_sourced_feel_appendix() {
         }
     }
     assert_eq!(checked, 45);
-    eprintln!("{checked} combat ranks / 450 numeric fields match docs/survivors/appendix-feel.md");
+    eprintln!(
+        "{checked} combat ranks / 450 numeric fields match docs/archive/survivors/appendix-feel.md"
+    );
 }
 
 #[test]

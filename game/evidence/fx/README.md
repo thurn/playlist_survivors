@@ -1,7 +1,7 @@
 # Effects and sound (ps-msz.3.11)
 
 The sword's slashes and crystal waves, the crystal death bursts and the DSP-scheduled mix
-([the design](../../../docs/design/unity-game.md): Weapon and Ability Effects, Sound Timing,
+([the design](../../../docs/archive/design/unity-game.md): Weapon and Ability Effects, Sound Timing,
 Audio). The code is game/Assets/Game/Client/Effects/ (demo3d's compute particle runtime, copied
 and owned, with `EffectCues`, `EffectsPresenter` and `CrystalWaves`) and Client/Sound/
 (`SoundScheduler`, `SoundAggregator`, `MusicalGrid`, `SoundPresenter`); the bakes are

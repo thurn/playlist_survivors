@@ -2,7 +2,7 @@
 
 The free mode's playlist feedback (epic ps-w9p, item 3): the swings didn't seem to use the trailer's sword slash
 effects, just a generic white circle. The design is in
-[unity-game.md, Weapon and ability effects](../../../docs/design/unity-game.md#weapon-and-ability-effects)
+[unity-game.md, Weapon and ability effects](../../../docs/archive/design/unity-game.md#weapon-and-ability-effects)
 (Shipped, ps-w9p.3).
 
 ## What was wrong

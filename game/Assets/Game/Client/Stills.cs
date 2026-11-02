@@ -14,7 +14,7 @@ namespace Game.Client
     /// the camera by hand into a 1920×1080 target and keeps it as a JPEG with the `ps-render`
     /// tag. A batch-mode player draws no frames of its own, so a camera is drawn only for the
     /// frames that keep a still (drawing every frame by hand grows URP's pooled targets,
-    /// docs/tech-demo-3d/mac.md). With `--capture-mask` it draws the same frame again as its ID
+    /// docs/archive/tech-demo-3d/mac.md). With `--capture-mask` it draws the same frame again as its ID
     /// render, still-&lt;time&gt;-mask.png: the crowd alone, flat white on black (every monster look
     /// under _GameIdMask), with no post, for the look tools' readability measure, and view-&lt;time&gt;.json:
     /// the camera's view-projection and the hero's feet (<see cref="HeroFeet"/>), as demo3d writes it, for

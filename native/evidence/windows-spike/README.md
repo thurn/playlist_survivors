@@ -1,7 +1,7 @@
 # Windows Delayed listening spike
 
 Run 2026-10-26/27 on a Windows 11 desktop, natively (no WSL), following
-`docs/design/windows-delayed-spike.md`. The spike is `native/spike-windows/` (one binary, `spike`,
+`docs/archive/design/windows-delayed-spike.md`. The spike is `native/spike-windows/` (one binary, `spike`,
 with subcommands printing JSON lines); every experiment is a script in
 `native/spike-windows/scripts/`, and every number below comes from a file in this directory.
 Automated runs use the spike's own click source (`spike source`, run as `clicksource.exe`, see

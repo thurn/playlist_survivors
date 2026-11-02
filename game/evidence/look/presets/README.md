@@ -1,10 +1,10 @@
 # The game on every look preset (ps-wnj.18, 2026-11-01)
 
 The game runs in each of the neon look's four presets (`--look edge`, `solid`,
-`hologram`, `prism`; [neon-look.md, The Game](../../../../docs/design/neon-look.md#the-game)):
+`hologram`, `prism`; [neon-look.md, The Game](../../../../docs/archive/design/neon-look.md#the-game)):
 in the frame budget, every key moment on its frame, free mode's heard-time
 strikes drawn. `just game --look prism` (and the per-axis flags) plays one;
-[SETUP.md](../../../../SETUP.md#launch-options) lists them.
+[SETUP.md](../../../../docs/archive/setup-prototypes.md#launch-options) lists them.
 
 IL2CPP Mac players of this change, windowless, on jarvis (M5 Max), from the
 worktree's root.
@@ -164,7 +164,7 @@ every still. The halo is judged on impact frames only since ps-wnj.19
   30 s the knight stands inside a clump, and the crowd's ID render, which
   marks monsters behind the knight too, left 38 px (2.4%) of its capsule:
   -24 to -46 in every preset, a measure of the shards in the gaps. Under 5%
-  clear, the margin isn't measured ([neon-look-style.md](../../../../docs/design/neon-look-style.md#rules-and-thresholds)).
+  clear, the margin isn't measured ([neon-look-style.md](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds)).
 
 **Still breaking, the monster looks' (ps-wnj.28):** swarm separation (13)
 in hologram (5 of 6 stills, 8.1-11.4), prism (4, 9.6-12.7) and solid (once,

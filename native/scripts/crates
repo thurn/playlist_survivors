@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # ///
-"""The native workspace's crates, from `cargo metadata` (docs/design/native-app.md, F4).
+"""The native workspace's crates, from `cargo metadata` (docs/archive/design/native-app.md, F4).
 
     native/scripts/crates purity              # fail if a pure crate depends on an impure one
     native/scripts/crates affected FILE [all] # the crates a list of changed paths touches,

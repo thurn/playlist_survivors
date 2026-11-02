@@ -3,7 +3,7 @@
 The game's first frame numbers: a windowless frame probe and a per-frame CPU profile in the player,
 and one command over the run's standard scenarios. Taken on jarvis (Apple M5 Max, Metal), the IL2CPP
 player built from this bead's tree, 2026-10-31. Mac numbers only guide M4's work; Cygnus measures
-against the targets in M5 (docs/design/unity-game.md, Performance targets).
+against the targets in M5 (docs/archive/design/unity-game.md, Performance targets).
 
 ```sh
 uv run --project demo3d/tools game perf --evidence perf   # builds if needed; about 5 minutes

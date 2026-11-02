@@ -6,7 +6,7 @@
 > describe the untuned set they were written for.
 
 `--monster-style painted`: stylelab's "Polished painted" treatment, drawn through the
-bone-texture crowd's indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+bone-texture crowd's indirect draws ([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 It uses the lab's palettes and its stylized post look as PostFeel's base. ps-a54.4 has since tuned it.
 
 How the set was made, on the Mac, windowless, IL2CPP player:

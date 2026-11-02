@@ -6,7 +6,7 @@
 > describe the untuned set they were written for.
 
 `--monster-style chrome`: stylelab's "Liquid chrome", drawn through the bone-texture crowd's
-indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+indirect draws ([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 A mirror finish reflects a computed synthwave world (a sunset sky with a striped sun, studio
 strips overhead, a neon grid floor), tinted per species. A ripple runs over the surface on the
 beat. Death melts the monster into a puddle round its feet, which dissolves in the last third of

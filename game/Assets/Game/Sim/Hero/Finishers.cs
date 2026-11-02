@@ -3,7 +3,7 @@ using System;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// The finishers (`--finishers`, docs/design/game-modes.md, "Finishers"): a sparse, optional rhythm verb on top of a
+    /// The finishers (`--finishers`, docs/archive/design/game-modes.md, "Finishers"): a sparse, optional rhythm verb on top of a
     /// mode whose frequent verbs stay unjudged. A ring closes on the hero toward a phrase downbeat; Space heard in its
     /// window fires the sword's screen-clearing slam (<see cref="Sword.Finisher"/>); a miss fades with nothing lost.
     ///

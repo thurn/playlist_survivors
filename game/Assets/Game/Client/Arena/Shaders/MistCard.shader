@@ -1,4 +1,4 @@
-// Low mist cards in the arena's hollows (demo3d's TD15; docs/tech-demo-3d/environment.md, Atmosphere): flat, horizontal
+// Low mist cards in the arena's hollows (demo3d's TD15; docs/archive/tech-demo-3d/environment.md, Atmosphere): flat, horizontal
 // cards a little above the ground, alpha-blended in a cool tint, broken up by two octaves of
 // slowly drifting value noise in world space, with an elliptical edge (from the card's uv) and a
 // soft depth fade where they meet the ground, props or monsters. Every card is one mesh (the

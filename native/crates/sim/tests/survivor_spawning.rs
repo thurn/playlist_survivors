@@ -22,7 +22,7 @@ fn role(name: &str) -> String {
 fn all_31_schedule_rows_match_the_documented_source_including_duplicate_roles() {
     let schedule = schedule();
     assert_eq!(schedule.len(), 31);
-    let appendix = common::source("docs/survivors/appendix-damage-vs-health.md").text;
+    let appendix = common::source("docs/archive/survivors/appendix-damage-vs-health.md").text;
     let mut rows = 0;
     for line in appendix.lines() {
         let cols: Vec<_> = line.split('|').map(str::trim).collect();
@@ -145,7 +145,7 @@ fn future_grid_evidence_cannot_delay_a_raw_tick_and_a_freeze_holds_admission() {
 
 #[test]
 fn enemy_roles_match_documented_health_speed_damage_xp_and_scaling() {
-    let appendix = common::source("docs/survivors/appendix-damage-vs-health.md").text;
+    let appendix = common::source("docs/archive/survivors/appendix-damage-vs-health.md").text;
     let table = appendix
         .split("### The enemies")
         .nth(1)
@@ -224,7 +224,7 @@ fn deferred_bosses_wait_for_room_then_the_next_native_downbeat() {
 
 #[test]
 fn enemy_knockback_fields_match_the_feel_appendix() {
-    let text = common::source("docs/survivors/appendix-feel.md").text;
+    let text = common::source("docs/archive/survivors/appendix-feel.md").text;
     let mut checked = 0;
     for line in text.lines() {
         let cols: Vec<_> = line.split('|').map(str::trim).collect();
@@ -269,7 +269,7 @@ fn treasure_validation_rejects_invalid_scripted_tiers_and_chance_shapes() {
 
 #[test]
 fn swarm_roles_match_the_curated_event_only_combat_rows() {
-    let doc = common::source("docs/survivors/appendix-feel.md").text;
+    let doc = common::source("docs/archive/survivors/appendix-feel.md").text;
     let table = doc
         .split("### Swarm combat fields")
         .nth(1)

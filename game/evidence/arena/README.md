@@ -1,6 +1,6 @@
 # The arena (ps-msz.3.6)
 
-The 240 m bounded night arena ([unity-game.md, The Arena](../../../docs/design/unity-game.md#the-arena)):
+The 240 m bounded night arena ([unity-game.md, The Arena](../../../docs/archive/design/unity-game.md#the-arena)):
 generated in batch mode from game/Content/arena-layout.json, lit like the reference look, its crystal
 structures in hues across the spectrum. Windowless stills from the game camera's framing (55° pitch,
 30° field of view, 30 m across the ground), beside the 3D demo's reference command.

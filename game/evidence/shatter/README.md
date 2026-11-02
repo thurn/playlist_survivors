@@ -1,7 +1,7 @@
 # GPU monster shatter (ps-msz.3.9)
 
 Deaths break into the crystal's own chunks on the impact frame, entirely on the GPU
-([the design](../../../docs/design/unity-game.md), Shatter). The code is
+([the design](../../../docs/archive/design/unity-game.md), Shatter). The code is
 game/Assets/Game/Client/Crowd/: `MonsterShatter` (the seed, the integrator and the draws), its
 shaders `MonsterShards.compute` and `MonsterShard.shader`, the bench `ShatterBench`, and the cut,
 `CrowdShardBaker`, in game/Assets/Game/Editor/Crowd/ (part of `game unity BakeCrowd`).

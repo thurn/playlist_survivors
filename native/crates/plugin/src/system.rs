@@ -1,4 +1,4 @@
-//! A System source, Delayed listening on an app (docs/design/unity-game.md, "Sources" and
+//! A System source, Delayed listening on an app (docs/archive/design/unity-game.md, "Sources" and
 //! "Platform capture and crash safety"): the app the player picked is tapped and muted, its stereo
 //! captured into the delay line and played `M` late, its mono mixdown analysed as it arrives.
 //!

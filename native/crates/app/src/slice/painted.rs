@@ -1,4 +1,4 @@
-//! The painted dusk look under `--art heroeditor` (docs/design/heroeditor-native.md, "The Painted
+//! The painted dusk look under `--art heroeditor` (docs/archive/design/heroeditor-native.md, "The Painted
 //! Ground"): each zone's ground colours for the painted ground (`render::ground`), and a warm,
 //! low-sun evening grade over native's own, its beat pulses kept.
 

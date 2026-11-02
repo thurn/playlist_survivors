@@ -6,7 +6,7 @@
 > describe the untuned set they were written for.
 
 `--monster-style fire`: stylelab's "Living flame", drawn through the bone-texture crowd's
-indirect draws ([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+indirect draws ([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 The body (FireBody) is charcoal split by live cracks, with a molten rim and a heat shimmer. The
 flames (FireShell) are the type's shell draw: the same instances drawn again, pushed out and
 licking up, additive. Each species has its own fire colours from the lab's palettes, and the

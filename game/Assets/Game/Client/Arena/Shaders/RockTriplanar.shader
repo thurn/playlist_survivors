@@ -1,5 +1,5 @@
 // Elven Realm's triplanar rock (SyntyStudios_RockTriplanar, a built-in pipeline surface shader)
-// ported to URP for the kit (demo3d's TD14; docs/tech-demo-3d/environment.md, Environment rendering: "only what the kit uses
+// ported to URP for the kit (demo3d's TD14; docs/archive/tech-demo-3d/environment.md, Environment rendering: "only what the kit uses
 // is ported"). Sides: the rock-wall albedo and normals projected on the object's three axes,
 // blended by the object-space normal; top: grass albedo and ground normals projected on world XZ,
 // laid over where the normal faces up (coverage amount and falloff, as the vendor shader's). Lit

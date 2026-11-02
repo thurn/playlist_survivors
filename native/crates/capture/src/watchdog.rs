@@ -1,4 +1,4 @@
-//! Delayed listening's watchdog (docs/design/native-app.md, "Capture and mute"): a thread that
+//! Delayed listening's watchdog (docs/archive/design/native-app.md, "Capture and mute"): a thread that
 //! releases the tap, which unmutes the tapped app, when the capture has stopped for 0.5 s (the
 //! delay line would underrun) or the main thread hasn't checked in for 2 s. Native's app then
 //! falls back to Direct listening, ends the run and logs why; so a hang never leaves the app

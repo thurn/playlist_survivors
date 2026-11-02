@@ -4,7 +4,7 @@ All five evolved identities are enabled. `source-audit.json` proves that the
 weapon table changes only the five implementation flags: every numerical
 field and evolution pair is identical to base
 `12db4a0a34ad38ed77672862799165510c28767b`. The source/content checks cover
-45 ranks / 450 numerical fields against `docs/survivors/appendix-feel.md`.
+45 ranks / 450 numerical fields against `docs/archive/survivors/appendix-feel.md`.
 No offer table, easy knob, binary asset or third-party source changed.
 
 | Evolution | Eligibility | Runtime |

@@ -1,7 +1,7 @@
 # The sync spike (ps-msz.1.6)
 
 File audio through the music plugin into Unity's output, a click on every committed beat, measured
-from Unity's own final mix in process ([the design](../../../docs/design/unity-game.md), The Delay
+from Unity's own final mix in process ([the design](../../../docs/archive/design/unity-game.md), The Delay
 Line and Unity's Output, Clocks, Sound Timing).
 
 ## How it was run

@@ -1,5 +1,5 @@
 /*
- * The Unity game's music plugin (docs/design/unity-game.md, "Music: the Rust Plugin"):
+ * The Unity game's music plugin (docs/archive/design/unity-game.md, "Music: the Rust Plugin"):
  * libps_plugin, built from native/crates/plugin. The game's C# mirrors this header; keep the
  * two in step (crates/plugin/tests/header.rs checks the layouts against the Rust side).
  *

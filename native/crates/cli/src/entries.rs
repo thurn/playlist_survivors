@@ -1,4 +1,4 @@
-//! `ps entries`: a File run's stream as the Unity game's plugin sees it (docs/design/unity-game.md,
+//! `ps entries`: a File run's stream as the Unity game's plugin sees it (docs/archive/design/unity-game.md,
 //! "Stream entries and what the sim may know"), for the sim's tests and sweeps without Unity.
 //!
 //! It decodes an audio file or an M3U playlist (with `#PS-GAP`) as File mode does, runs the

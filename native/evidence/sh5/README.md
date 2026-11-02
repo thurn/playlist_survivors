@@ -5,7 +5,7 @@ No offer preference or easy balance knob changed, and no asset bake was needed.
 
 ## Source rules and deliberate adaptations
 
-The kept source is `docs/survivors/appendix-feel.md`, Magic Wand table and runtime
+The kept source is `docs/archive/survivors/appendix-feel.md`, Magic Wand table and runtime
 notes. Rank 1/rank 8 power is 1/3, Amount 1/4, raw interval 1.2/1.0 s, pierce 1/2,
 repeat 100 ms, radius 8 legacy px × Area and speed 1.65 U/s before Speed. The common
 conversion gives radius 12.341598 app px and speed 254.545455 px/s. Might, Area,

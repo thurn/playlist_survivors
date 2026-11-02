@@ -1,6 +1,6 @@
 # Action: song map report summary
 
-Built by the beat-map workflow in `docs/design/tech-demo.md` (TD0). Form, the
+Built by the beat-map workflow in `docs/archive/design/tech-demo.md` (TD0). Form, the
 evidence for it and the uncertain points: [form.md](form.md). Source and
 playback conversion: [source.json](source.json). Alignment measurement:
 `demo3d/evidence/td0/alignment.json`.
@@ -14,7 +14,7 @@ The audio stays out of git. `public/audio/action.flac` matches
 SRC="D:/vendor/songs/action/Alessia Labate, Conrad Taylor - Action [NCS Release].mp3"  # Mac: ~/Downloads/...
 A="uv run --project tools/analysis ps-analysis"
 W=tools/analysis/work
-# On Cygnus only: no system Python 3.12 (see the TD0 notes in docs/tech-demo-3d/plan.md)
+# On Cygnus only: no system Python 3.12 (see the TD0 notes in docs/archive/tech-demo-3d/plan.md)
 export UV_PYTHON_PREFERENCE=managed
 # The map's audio: the MP3's gapless decode, stored losslessly.
 ffmpeg -i "$SRC" -map 0:a -c:a flac -compression_level 8 public/audio/action.flac

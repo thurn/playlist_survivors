@@ -1,7 +1,7 @@
 # The neon look's reference board (ps-wnj.1, 2026-11-01)
 
 Six frames of the v2 crystal cut (`captures/trailer-crystal-v2.mp4`, the cut viewers reviewed)
-measured against the frame-level rules of the [style guide](../../../../docs/design/neon-look-style.md#rules-and-thresholds),
+measured against the frame-level rules of the [style guide](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds),
 with look-metrics' own measures and thresholds file (every preset's ceiling where they differ).
 Red numbers in `board.jpg` and ✗ below fail a rule. Mask rules (floor, monster form, hero
 brightest) need the players' ID render, so `look-metrics` measures those

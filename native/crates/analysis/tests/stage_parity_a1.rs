@@ -1,4 +1,4 @@
-//! Stage parity, A1 (docs/design/native-app.md, "Stage parity"): the online front end and the
+//! Stage parity, A1 (docs/archive/design/native-app.md, "Stage parity"): the online front end and the
 //! online LSTM ensemble against Python's golden data (`native/models/golden/`), fed Python's own
 //! decoded PCM in uneven blocks, as a stream delivers it.
 #![forbid(unsafe_code)]

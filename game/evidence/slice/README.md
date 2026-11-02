@@ -1,6 +1,6 @@
 # The cinematic slice (ps-msz.3.13)
 
-The assembled slice ([unity-game.md, Build Order step 2](../../../docs/design/unity-game.md#build-order)):
+The assembled slice ([unity-game.md, Build Order step 2](../../../docs/archive/design/unity-game.md#build-order)):
 on File audio, the sim plays the slice's level (`SliceLevel`: the arena's level data, a horde of five
 early-run roles and the starting sword) and every presenter draws it: the grid hero and its sword on
 beats, the stepping crystal horde with GPU shatter, crystal structures that break and regrow, the night

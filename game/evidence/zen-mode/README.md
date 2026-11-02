@@ -1,6 +1,6 @@
 # The zen mode (ps-myz)
 
-`--mode zen` ([the design](../../../docs/design/game-modes.md#the-zen-mode)): the hero walks freely and the sword
+`--mode zen` ([the design](../../../docs/archive/design/game-modes.md#the-zen-mode)): the hero walks freely and the sword
 strikes on the beat by itself, kept to the beat grid; the loudness scales its strikes and the horde reels to the
 music. The question that matters most: does every slash land on the beat?
 

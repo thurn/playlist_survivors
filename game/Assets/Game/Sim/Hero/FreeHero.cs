@@ -4,7 +4,7 @@ using PS.Game.Sim.Level;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// The free hero's rules (<see cref="HeroMovement.Free"/>, docs/design/game-modes.md): it walks continuously
+    /// The free hero's rules (<see cref="HeroMovement.Free"/>, docs/archive/design/game-modes.md): it walks continuously
     /// rather than hopping tiles.
     ///
     /// - <b>Keys</b>: the held arrows steer, eight ways, diagonals as fast as the rest; opposite keys cancel. An arrow

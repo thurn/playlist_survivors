@@ -2,7 +2,7 @@
 
 The client's side of Delayed listening on the Mac: the title screen's source picker, `--app`,
 an output device change ending the run, and the player's permission to tap an app
-(docs/design/unity-game.md, "Platform capture and crash safety", Shipped (ps-msz.5.3)).
+(docs/archive/design/unity-game.md, "Platform capture and crash safety", Shipped (ps-msz.5.3)).
 2026-10-31, jarvis (MacBook speakers at 48 kHz), the IL2CPP player. No System Audio Recording
 grant is held by an agent's terminal, so every tap here captured silence; hearing it is the
 operator's rows in [operator-pending.md](../operator-pending.md).

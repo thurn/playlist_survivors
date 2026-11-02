@@ -1,7 +1,7 @@
 # Calibration and the pause menu (ps-msz.6.11)
 
 The video and input calibrations per output device, their screens from the title screen and the
-pause menu, and the pause menu itself (docs/design/unity-game.md, "Calibration", Shipped
+pause menu, and the pause menu itself (docs/archive/design/unity-game.md, "Calibration", Shipped
 (ps-msz.6.11)). 2026-10-31, jarvis (MacBook Pro Speakers at 48 kHz), the IL2CPP player. The
 clicks, the flash and the keys need a window and the speakers: those checks are the operator's
 rows in [operator-pending.md](../operator-pending.md).

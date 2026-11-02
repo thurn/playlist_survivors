@@ -1,6 +1,6 @@
 # SF4 — VS stats, XP and gems
 
-Sources are the numerical rules in `docs/survivors/progression.md`,
+Sources are the numerical rules in `docs/archive/survivors/progression.md`,
 `appendix-xp-and-leveling.md`, `appendix-feel.md` and the enemy table in
 `appendix-damage-vs-health.md`. No private extracted files were used or added.
 

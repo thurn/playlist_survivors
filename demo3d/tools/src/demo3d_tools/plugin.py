@@ -1,4 +1,4 @@
-"""The game's music plugin as build output (docs/design/unity-game.md, Building and Loading the Plugin).
+"""The game's music plugin as build output (docs/archive/design/unity-game.md, Building and Loading the Plugin).
 
 `game plugin` builds native/crates/plugin with cargo and copies `libps_plugin.dylib` into
 game/Assets/Plugins/macOS/, where a player build picks it up and the editor's loader hashes and

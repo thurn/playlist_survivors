@@ -1,4 +1,4 @@
-//! Delayed listening's committed beats (docs/design/native-app.md, "Committed beats from
+//! Delayed listening's committed beats (docs/archive/design/native-app.md, "Committed beats from
 //! hindsight (E1)"): the music is heard `M` late, so beats are committed from hindsight grids,
 //! which hear both sides of each beat, instead of forecasts.
 //!
@@ -21,7 +21,7 @@
 //!   met live).
 //!
 //! - **Stamps:** native stamps only committed beats this way, to stay equivalent to Direct
-//!   listening. [`Stamps::EveryGroup`] (the Unity game's, docs/design/unity-game.md, "Stream
+//!   listening. [`Stamps::EveryGroup`] (the Unity game's, docs/archive/design/unity-game.md, "Stream
 //!   entries and what the sim may know") stamps every other group by the same rule: each entry
 //!   `M − A` before the analysis position that produced it (its Direct `known_at`, a tick's time).
 //!
@@ -36,7 +36,7 @@ use crate::analyzer::Entry;
 use crate::beats::{BeatParams, Commit};
 use crate::hindsight::{HindsightEntry, HindsightParams, phase_shift};
 
-/// The capture → arrival target `A` (docs/design/native-app.md, "Targets"; S0's 48 ms).
+/// The capture → arrival target `A` (docs/archive/design/native-app.md, "Targets"; S0's 48 ms).
 pub const ARRIVAL_S: f64 = 0.048;
 
 /// The grid a hindsight entry commits from.

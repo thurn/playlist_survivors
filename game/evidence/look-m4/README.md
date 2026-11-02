@@ -1,6 +1,6 @@
 # The look polished across the zones and the run's peak (ps-msz.8.3)
 
-M4's look pass ([unity-game.md, The Look](../../../docs/design/unity-game.md#the-look)): every zone settled
+M4's look pass ([unity-game.md, The Look](../../../docs/archive/design/unity-game.md#the-look)): every zone settled
 and mid-ease at the run's density, the run's peak moments, each weapon's and evolution's effect in every
 zone, measured with the look tools (`demo3d_tools.look`: `still_stats` and `game look --readability`)
 against the 3D demo's reference stills ([arena/reference](../arena/reference/)). Windowless fixed-time

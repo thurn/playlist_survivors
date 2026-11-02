@@ -1,6 +1,6 @@
 """`herocap bake`: packs herocap's captured frames into a native character atlas in the cache.
 
-native draws `--art heroeditor` from `<cache>/heroeditor/assets/` (docs/design/heroeditor-native.md):
+native draws `--art heroeditor` from `<cache>/heroeditor/assets/` (docs/archive/design/heroeditor-native.md):
 a characters.json in native's atlas format (native/crates/render/src/atlas.rs) and its pages,
 `heroeditor-<n>.png`. native lays these sprites over its LPC ones, so an atlas missing here keeps
 its LPC art.

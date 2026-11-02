@@ -1,5 +1,5 @@
 //! `ps replay <session>`: re-runs a recorded listening session headlessly with its recorded
-//! stream (docs/design/native-app.md, "Session recording (D3)"): each run's arrivals fed as they
+//! stream (docs/archive/design/native-app.md, "Session recording (D3)"): each run's arrivals fed as they
 //! arrived and its keys as the live engine applied them; its settled records must hash as the live
 //! run's did. This is the test that the live runner's rollbacks settled correctly. With
 //! `--reanalyse`, the session's audio goes through the current analyzer instead (live hindsight

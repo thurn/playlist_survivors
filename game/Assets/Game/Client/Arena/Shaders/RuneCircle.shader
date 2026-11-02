@@ -1,4 +1,4 @@
-// Glowing rune circles on the ground (demo3d's TD15; docs/tech-demo-3d/environment.md, Mood: cyan and violet magic from
+// Glowing rune circles on the ground (demo3d's TD15; docs/archive/tech-demo-3d/environment.md, Mood: cyan and violet magic from
 // glowing trees, crystals and runes): our own procedural ring of glyph dashes, two thin rings and
 // inner spokes, turning slowly and breathing, drawn additively a few centimetres above the ground
 // so bloom picks it up. Every circle is one quad of one merged mesh (ArenaDressing; vertex colour

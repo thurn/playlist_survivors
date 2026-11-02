@@ -1,6 +1,6 @@
 //! The winit app: runner, input, menus, HUD flow, calibration and logs.
 //!
-//! Until C3 lands the real runner, the app is the playable slice (docs/design/native-app.md,
+//! Until C3 lands the real runner, the app is the playable slice (docs/archive/design/native-app.md,
 //! "Phase V: The Playable Slice"): a rough game on live system audio.
 
 mod slice;

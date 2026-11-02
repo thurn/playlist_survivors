@@ -1,4 +1,4 @@
-//! The live view (docs/design/native-app.md, "The engine in the app (G1)"): the sim engine on a
+//! The live view (docs/archive/design/native-app.md, "The engine in the app (G1)"): the sim engine on a
 //! growing stream, and a minimal view of its state for drawing, kept by a [`Recorder`] as the
 //! simulation reports it: the hero's pose, the camera, the enemies' latest positions, health, the
 //! groove, and the moments a frame shows once (hits, deaths, presses, bites).
@@ -1417,7 +1417,7 @@ pub struct RunnerStats {
 }
 
 /// The sim engine on a stream that grows as it arrives, run ahead of the time heard with rollback
-/// (docs/design/native-app.md, "Arrivals roll back like late keys"; `live/runner.ts`): it runs to
+/// (docs/archive/design/native-app.md, "Arrivals roll back like late keys"; `live/runner.ts`): it runs to
 /// `now + lead` assuming no new input, snapshotting as it goes; a key or an arrival for a time it
 /// has passed restores the newest snapshot before it and runs ahead again. The view shows the
 /// records up to now: those before the oldest snapshot kept (the newest at or before the settled

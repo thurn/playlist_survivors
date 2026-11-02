@@ -1,4 +1,4 @@
-"""`export-models`: madmom's models and golden data for the native analyzer (docs/design/native-app.md, F3).
+"""`export-models`: madmom's models and golden data for the native analyzer (docs/archive/design/native-app.md, F3).
 
 Writes to `native/models/`:
 

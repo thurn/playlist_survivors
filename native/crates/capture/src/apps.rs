@@ -1,4 +1,4 @@
-//! The apps Delayed listening can tap (docs/design/native-app.md, "What the player sees and
+//! The apps Delayed listening can tap (docs/archive/design/native-app.md, "What the player sees and
 //! hears"): the platform's audio processes grouped by the app responsible for each (Chrome plays
 //! from its helper processes, Safari from a shared WebKit GPU process: ES, hv-t8o8.36), each with
 //! the processes to tap and whether one is playing now.

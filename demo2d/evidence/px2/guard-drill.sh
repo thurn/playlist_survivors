@@ -26,7 +26,7 @@ for pack in knight_male Skeleton Ghoul "Zombie Warrior" "Flame Imp" "Ice Skull" 
 done
 F=$V/RPGW_AncientForest
 run "AncientForest: MainLev.png force-staged in Vendor/" "demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png" "$F/Sliced/MainLev.png"
-run "AncientForest: MainLev.png renamed under docs/" "docs/tech-demo-2d/tiles.png" "$F/Sliced/MainLev.png"
+run "AncientForest: MainLev.png renamed under docs/" "docs/archive/tech-demo-2d/tiles.png" "$F/Sliced/MainLev.png"
 run "AncientForest: MainLev.png.meta alone under Demo2D/Data/" "demo2d/Assets/Demo2D/Data/MainLev.png.meta" "$F/Sliced/MainLev.png.meta"
 run "AncientForest: a tree clip (.anim, YAML) under Demo2D/Art/" "demo2d/Assets/Demo2D/Art/tree1.anim" "$F/Animated/tree1.anim"
 run "AncientForest: a tree controller under unity-packages/" "unity-packages/com.playlistsurvivors.choreography/Runtime/tree1_0.controller" "$F/Animated/tree1_0.controller"

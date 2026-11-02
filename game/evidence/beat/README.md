@@ -1,7 +1,7 @@
 # Every moment on its frame (ps-msz.8.5)
 
 The game's promise is that every moving thing lands on the music ([unity-game.md, Time and
-Sync](../../../docs/design/unity-game.md#time-and-sync)). M2 and M3 proved each presenter alone; this
+Sync](../../../docs/archive/design/unity-game.md#time-and-sync)). M2 and M3 proved each presenter alone; this
 audits them together, at the run's peak and over an early stretch, and measures the key rules' late steps.
 
 ## The on-the-beat audit

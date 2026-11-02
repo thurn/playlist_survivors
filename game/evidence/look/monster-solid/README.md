@@ -1,7 +1,7 @@
 # Bright solid emissive in game (ps-wnj.11, 2026-11-01)
 
 The solid preset's monster look, `solid-emissive`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)):
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)):
 saturated self-lit bodies in the type's palette slot, a light from above for
 form, a dark band just inside each silhouette, and a thin dark outline hull
 round each body, so a pack of one type reads as a pack of individuals. Shards

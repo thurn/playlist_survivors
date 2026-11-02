@@ -1,7 +1,7 @@
 # The dragon fight
 
 Both cuts' climaxes as a boss fight (ps-b5z.5; [trailer.md, The boss
-fight](../../../../docs/tech-demo-3d/trailer.md#the-boss-fight)), retaken by the run's final review
+fight](../../../../docs/archive/tech-demo-3d/trailer.md#the-boss-fight)), retaken by the run's final review
 (ps-b5z.6) with no hero outline and the closer fight views (34 m, 32 m in the crystal cut). One
 strip per attack, from the batch-mode player's fixed-time stills of shot 8, each tile a 1280 x 720
 crop of the 1080p frame centred between the hero and the zone's origin, labelled with its trailer

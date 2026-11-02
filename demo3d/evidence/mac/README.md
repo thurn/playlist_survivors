@@ -2,7 +2,7 @@
 
 The first setup, bake, build and windowless run of the demo on the operator's
 Mac: Apple M5 Max, Metal, Unity 6000.6.7f1 with Mono. How-to:
-[Running on the Mac](../../../docs/tech-demo-3d/mac.md).
+[Running on the Mac](../../../docs/archive/tech-demo-3d/mac.md).
 
 - **Setup:** vendor files from the manifest (1,528 files), the song written as
   WAV (Homebrew's ffmpeg has no libvorbis), the first import and license check

@@ -1,5 +1,5 @@
 //! The reactive song map, its section and schedule, growing as committed beats arrive
-//! (docs/design/native-app.md, "Growable inputs"): `src/reactive/songmap.ts`'s `reactiveSongMap`,
+//! (docs/archive/design/native-app.md, "Growable inputs"): `src/reactive/songmap.ts`'s `reactiveSongMap`,
 //! `src/planner/context.ts`'s section bounds and the parts of `src/sim/schedule.ts`'s
 //! `buildSchedule` a reactive level has before its set pieces (the grid, strides, base rate and
 //! level-ups). Built to the end of a stream, every array equals the TS batch schedule's.

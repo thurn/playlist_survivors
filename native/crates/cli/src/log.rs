@@ -1,5 +1,5 @@
 //! `ps log [<timing.jsonl>] [--from s] [--to s] [--no-table]`: a session's timing log summarised
-//! (docs/design/native-app.md, "Timing logs (D4)"; `npm run log:play` as a reference): how late
+//! (docs/archive/design/native-app.md, "Timing logs (D4)"; `npm run log:play` as a reference): how late
 //! each stream group arrives, keys reach the main thread, the rollbacks and what caused them, the
 //! frames' work, the sounds' margins; and, unless `--no-table`, a line per second. The newest
 //! session's log by default.

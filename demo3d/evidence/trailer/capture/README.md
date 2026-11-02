@@ -2,7 +2,7 @@
 
 `demo3d trailer --out FILE.mp4 [-- player flags]` makes the finished, mixed
 trailer video in one command
-([trailer.md, Capture](../../../../docs/tech-demo-3d/trailer.md#capture)):
+([trailer.md, Capture](../../../../docs/archive/tech-demo-3d/trailer.md#capture)):
 
 1. the windowed player captures the picture at 2× and writes the cue list;
 2. `demo3d mix` mixes the song window under the cues, with the trailer's cut

@@ -1,4 +1,4 @@
-//! Stage parity, A7 (docs/design/native-app.md, "Stage parity"): bands, brightness, onset bands
+//! Stage parity, A7 (docs/archive/design/native-app.md, "Stage parity"): bands, brightness, onset bands
 //! and timbre against Python's (`stream.build_stream` on the golden excerpts' PCM,
 //! `tests/fixtures/a7-bands.json`), fed Python's tick and onset frames.
 #![forbid(unsafe_code)]

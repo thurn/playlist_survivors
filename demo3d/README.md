@@ -1,8 +1,10 @@
 # demo3d
 
+**Frozen on 2026-11-01.** [Rhythm Champions](../docs/champions/design.md) (`rhythm_champions/`) replaces it. It stays in the tree for reference, outside CI. Its crowd renderer, compute effects and tools were the starting point for pieces Rhythm Champions ports by review.
+
 The 3D tech demo's Unity 6.6 project (URP, Direct3D 12; Metal on the Mac, see
-[Running on the Mac](../docs/tech-demo-3d/mac.md)) and its tools. The design and plan are
-in [docs/tech-demo-3d/](../docs/tech-demo-3d/README.md).
+[Running on the Mac](../docs/archive/tech-demo-3d/mac.md)) and its tools. The design and plan are
+in [docs/archive/tech-demo-3d/](../docs/archive/tech-demo-3d/README.md).
 
 - `Assets/Demo3D/Choreography/`: demo3d's choreography data (`Data/`) and the code that loads it
   from a checkout. The layer itself, plain C# 9 with no UnityEngine dependency, is the shared

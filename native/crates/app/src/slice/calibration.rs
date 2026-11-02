@@ -1,4 +1,4 @@
-//! The player's calibration, per output device (docs/design/native-app.md, "Calibration (D2)";
+//! The player's calibration, per output device (docs/archive/design/native-app.md, "Calibration (D2)";
 //! `live/input.ts`): taps land this much late on average, for the direction keys, and for the stomp
 //! key (a long key may press later) as its difference from theirs, so a change of headphones
 //! recalibrated with the arrows moves both; until the stomp key is calibrated itself, it plays with

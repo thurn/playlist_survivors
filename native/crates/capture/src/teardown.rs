@@ -1,5 +1,5 @@
 //! A live capture's teardown, once, from whichever thread comes first: the app's own end or the
-//! watchdog's (docs/design/native-app.md, "Capture and mute").
+//! watchdog's (docs/archive/design/native-app.md, "Capture and mute").
 //!
 //! `L` is what the capture holds live, each part releasing itself when dropped, in field order
 //! (on the Mac: the IOProc, then the aggregate device, then the tap, ps-0e3). It is dropped under

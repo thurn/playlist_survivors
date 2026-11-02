@@ -84,7 +84,7 @@ if changes_native && [ -x native/scripts/check-fast ]; then
   native/scripts/check-fast
 fi
 
-# The vendor guard (docs/tech-demo-3d/vendor-assets.md), whatever changed: a vendor file is
+# The vendor guard (docs/archive/tech-demo-3d/vendor-assets.md), whatever changed: a vendor file is
 # caught by its hash anywhere in the tree.
 if [ -n "$CHANGES_BASE" ]; then
   uv run --quiet --project demo3d/tools demo3d guard --range "$CHANGES_BASE..HEAD"

@@ -1,7 +1,7 @@
 # Trailer: the shot list (ps-hgs.7)
 
 The trailer's final pass: the ten shots tuned against frame sequences and the
-`trailer --checks` numbers ([trailer.md, The Shot List](../../../../docs/tech-demo-3d/trailer.md#the-shot-list)).
+`trailer --checks` numbers ([trailer.md, The Shot List](../../../../docs/archive/tech-demo-3d/trailer.md#the-shot-list)).
 Everything here comes from the IL2CPP player on the Mac (Apple M5 Max, Metal),
 windowless at fixed time with the trailer's full look (2× supersampled
 stills), built at staging `28b84049` plus this bead.
@@ -47,7 +47,7 @@ The trailer file's tuning:
 
 Tuning against every seed, not just seed 7, matters because the simulation
 is chaotic, and Mono and IL2CPP differ from .NET in the last bits of floating
-point ([choreography.md](../../../../docs/tech-demo-3d/choreography.md)).
+point ([choreography.md](../../../../docs/archive/tech-demo-3d/choreography.md)).
 Under Mono, shot 5's bar 92 sat 7 points below .NET's. A bar that passes by a
 hair under .NET can fail in the player's runtime.
 

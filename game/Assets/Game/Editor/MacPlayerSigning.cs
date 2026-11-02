@@ -18,7 +18,7 @@ namespace Game.EditorTools
     /// code hash, which every build changes, so the player is signed with native's stable
     /// self-signed identity when this Mac has it (`native/scripts/signing-identity` creates it;
     /// `$PS_SIGNING_IDENTITY` names another), and the grant survives rebuilds as native measured
-    /// (docs/design/native-app.md). Without one it is signed ad hoc, and asks again after each build.
+    /// (docs/archive/design/native-app.md). Without one it is signed ad hoc, and asks again after each build.
     /// </summary>
     public sealed class MacPlayerSigning : IPostprocessBuildWithReport
     {

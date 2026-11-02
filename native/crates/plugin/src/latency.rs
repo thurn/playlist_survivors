@@ -1,7 +1,7 @@
 //! The output device as the OS reports it: the default output device, its UID and name (what the
 //! game's calibrations are kept under), and its latency, safety offset and first stream's
 //! latency, at its nominal rate. Unity's DSP buffering is the client's to add
-//! (docs/design/unity-game.md, "Clocks" and "Calibration").
+//! (docs/archive/design/unity-game.md, "Clocks" and "Calibration").
 
 #[cfg(target_os = "macos")]
 pub use mac::{default_output, output_device, output_latency};

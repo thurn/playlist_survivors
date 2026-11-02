@@ -2,7 +2,7 @@
 
 The same hero looks as [game's](../../../../game/evidence/look/hero/README.md)
 on the crystal cut's knight
-([neon-look.md, Hero](../../../../docs/design/neon-look.md#hero)), at the
+([neon-look.md, Hero](../../../../docs/archive/design/neon-look.md#hero)), at the
 cut's own framing (shots of 36-44 m) inside its hordes.
 
 An IL2CPP Mac player of this change:

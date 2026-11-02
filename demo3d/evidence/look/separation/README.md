@@ -1,8 +1,8 @@
 # Clumps read as individuals: swarm separation on the crystal cut (ps-wnj.28, 2026-11-01)
 
 The crystal cut's twelve stills in every preset, before and after the line
-looks' outline hulls ([neon-look.md, How clumps part in the line looks](../../../../docs/design/neon-look.md#the-axes);
-the rule: [neon-look-style.md, Rules and Thresholds](../../../../docs/design/neon-look-style.md#rules-and-thresholds),
+looks' outline hulls ([neon-look.md, How clumps part in the line looks](../../../../docs/archive/design/neon-look.md#the-axes);
+the rule: [neon-look-style.md, Rules and Thresholds](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds),
 `swarm_separation_min` 13). Before is staging at d3929ba9, where ps-wnj.29
 left swarm separation the cut's only broken rule
 ([last-breaks](../trailer/last-breaks/README.md)); after, an IL2CPP Mac

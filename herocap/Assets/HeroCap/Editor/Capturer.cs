@@ -14,7 +14,7 @@ namespace HeroCap.EditorTools
 {
     /// <summary>
     /// Captures HeroEditor characters to transparent PNG frames (`herocap capture`,
-    /// docs/design/heroeditor-native.md). Each recipe is built on Human.prefab with
+    /// docs/archive/design/heroeditor-native.md). Each recipe is built on Human.prefab with
     /// Character.FromJson, and each of its clips is sampled deterministically: both of
     /// Human.controller's layers are played at a normalized time and evaluated with a manual
     /// Animator.Update(0), never by wall-clock or coroutine timing. The Animator runs a copy of

@@ -1,6 +1,6 @@
 # The client's frame loop (ps-msz.3.5)
 
-The main thread's loop around the sim ([the design](../../../docs/design/unity-game.md),
+The main thread's loop around the sim ([the design](../../../docs/archive/design/unity-game.md),
 Architecture, Clocks, The Sim Lead, Key Presses and Late Steps, Debug Surfaces): the plugin's
 entries and the Input System's keys into the sim, the sim stepped to the frontier, its state kept
 in a short history and its events handed to presenters, each frame shown at frameSong. The code is

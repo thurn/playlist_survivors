@@ -1,7 +1,7 @@
 # The Painted Dusk Ground (ps-4c8.2)
 
 native under `--art heroeditor`: the painted procedural ground and the dusk
-grade (docs/design/heroeditor-native.md, "The Painted Ground"), with native's
+grade (docs/archive/design/heroeditor-native.md, "The Painted Ground"), with native's
 LPC characters until the HeroEditor atlas lands (ps-4c8.3). Every image is
 headless output; no window was opened. Nothing here is vendor art: the ground
 is procedural and the characters are native's own LPC sprites.

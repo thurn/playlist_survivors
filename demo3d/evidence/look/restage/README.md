@@ -2,8 +2,8 @@
 
 The crystal cut's shots moved from their Synty environments onto the void's
 open ground, with designed transitions and one camera grammar
-([trailer.md, The Crystal Cut](../../../../docs/tech-demo-3d/trailer.md#the-crystal-cut);
-[neon-look.md, The Trailer](../../../../docs/design/neon-look.md#the-trailer)).
+([trailer.md, The Crystal Cut](../../../../docs/archive/tech-demo-3d/trailer.md#the-crystal-cut);
+[neon-look.md, The Trailer](../../../../docs/archive/design/neon-look.md#the-trailer)).
 
 ```sh
 # the timeline: checks, and the view sheets' top-down frames (every 4 beats)

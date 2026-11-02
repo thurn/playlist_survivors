@@ -1,4 +1,4 @@
-//! Stage parity, A5 (docs/design/native-app.md, "Stage parity"): structure's features (chroma,
+//! Stage parity, A5 (docs/archive/design/native-app.md, "Stage parity"): structure's features (chroma,
 //! MFCCs, loudness) and keys against Python's golden data (`native/models/golden/`), then its
 //! changes, jumps, ends and keys against `structure.structure` on a synthetic piece built to have
 //! all of them, and on the Galop's 30 s (`tests/fixtures/a5-structure.json`).

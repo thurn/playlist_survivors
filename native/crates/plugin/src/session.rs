@@ -1,4 +1,4 @@
-//! One source's session (docs/design/unity-game.md, "Sources" and "The delay line and Unity's
+//! One source's session (docs/archive/design/unity-game.md, "Sources" and "The delay line and Unity's
 //! output"): what every source shares. A source feeds two things, each on its own timeline at its
 //! own rate: native's delay line (`audio::delay`) with the music's stereo frames, and the
 //! [`Analysis`] with the analyzer's mono samples (44.1 kHz). Song time is the position on those

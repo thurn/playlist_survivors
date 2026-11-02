@@ -1,6 +1,6 @@
 Observed once during SF9 in fresh Tollgate worktree /Users/dthurn/playlist_survivors/.worktrees/codex-sf9-survival-bots. Exact command:
 
-git add .tollgate/config.toml docs/design/survivors-run.md native/Cargo.lock native/crates/cli native/crates/eval/Cargo.toml native/crates/eval/tests/survive.rs native/crates/players native/scripts/check-fast native/scripts/survivors_sweep.py native/scripts/test_survivors_sweep.py native/evidence/sf9
+git add .tollgate/config.toml docs/archive/design/survivors-run.md native/Cargo.lock native/crates/cli native/crates/eval/Cargo.toml native/crates/eval/tests/survive.rs native/crates/players native/scripts/check-fast native/scripts/survivors_sweep.py native/scripts/test_survivors_sweep.py native/evidence/sf9
 
 Exit1, output:
 The following paths are ignored by one of your .gitignore files:

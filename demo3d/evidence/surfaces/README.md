@@ -1,7 +1,7 @@
 # Crowd surfaces: per-swatch metal and gloss (prototype)
 
 `--crowd-gloss` gave the default roster's swatches their own metallic and
-smoothness (on by default since 2026-10-31; `--no-crowd-gloss` turns it off) ([crowd.md, Surfaces](../../../docs/tech-demo-3d/crowd.md#surfaces)):
+smoothness (on by default since 2026-10-31; `--no-crowd-gloss` turns it off) ([crowd.md, Surfaces](../../../docs/archive/tech-demo-3d/crowd.md#surfaces)):
 armour, blades and buckles metallic, skin, slime and mushroom caps glossy,
 cloth, fur and leather left at the old 0.2. The colours, from the baker's
 `surfaces-report.md`, are in `Data/crowd-surfaces.json`. The question was

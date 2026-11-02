@@ -217,7 +217,7 @@ fn assert_same(a: &[(f64, Record)], b: &[(f64, Record)]) {
     assert_eq!(a.len(), b.len());
 }
 
-/// Speculation with rollback settles as a plain run fed the keys in time (docs/design/
+/// Speculation with rollback settles as a plain run fed the keys in time (docs/archive/design/
 /// native-app.md, "Arrivals roll back like late keys"): frames in uneven bursts, the simulation
 /// 0.2 s ahead, every press reaching it up to just under the settling time late, so each rolls it
 /// back.

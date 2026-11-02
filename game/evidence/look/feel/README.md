@@ -1,7 +1,7 @@
 # The night look's beat feel and the camera (ps-msz.3.7)
 
 The night post stack moving with the live stream, the fast lane and the game camera
-([the design](../../../../docs/design/unity-game.md), Post-processing and Camera). The code is
+([the design](../../../../docs/archive/design/unity-game.md), Post-processing and Camera). The code is
 game/Assets/Game/Client/Look/: `FastLane` (native's lane.rs on the sim's revealed stream),
 `FeelMoments` (accents, heavy strikes, breaks and drops), `PostFeel` (the offsets on the night
 volume), `CameraRig`, `BeatGlobals` and `LookPresenter`, which the frame loop subscribes. The loop

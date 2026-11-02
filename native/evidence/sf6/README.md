@@ -2,7 +2,7 @@
 
 The level now contains all 31 source minutes, 20 distinct enemy roles, all 21
 source events and the per-minute treasure data. The source row is the same
-minute in `docs/survivors/appendix-damage-vs-health.md`; event/treasure fields
+minute in `docs/archive/survivors/appendix-damage-vs-health.md`; event/treasure fields
 come from `appendix-feel.md`. These are curated numeric projections with our
 art assignments, not raw extracted game files. The Reaper is omitted.
 

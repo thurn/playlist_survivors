@@ -1,4 +1,4 @@
-//! The game's sounds (docs/design/native-app.md, "Sound (G4)"; `planner/emit.ts` and
+//! The game's sounds (docs/archive/design/native-app.md, "Sound (G4)"; `planner/emit.ts` and
 //! `live/sounds.ts` as a reference): what the simulation's sound causes play, from the content's
 //! palette (`content/sounds.yaml`, samples from `public/assets/sfx`), placed on the committed beat
 //! grid never late, faded by the evidence of the beat they belong to, panned by the camera and

@@ -1,4 +1,4 @@
-//! A Replay source (docs/design/unity-game.md, "Sources" and "Sessions and Replay"): a session
+//! A Replay source (docs/archive/design/unity-game.md, "Sources" and "Sessions and Replay"): a session
 //! folder the plugin recorded (`record`), played again. Its music is the recorded `audio.wav`, the
 //! analyzer's input (44.1 kHz mono, played on both channels), and its entries are
 //! `entries.jsonl`'s, exactly as recorded, so a run replayed on them sees what the live one saw.

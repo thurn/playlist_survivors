@@ -99,7 +99,7 @@ fi
 # The native workspace: every crate's clippy, the pure crates' purity, unused dependencies, the
 # tests' build, capture and the plugin's Windows build (native/scripts/check-windows), a release
 # build of the app and the CLI, and the live engine's cost against its
-# gates (G5, docs/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
+# gates (G5, docs/archive/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
 # engine's time per frame, then the whole frame's work (sim, evaluate, encode) offscreen.
 # `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory, which it prunes after
 # the run.
@@ -125,7 +125,7 @@ if [ "$section" = native-tests ]; then
   (cd native && cargo test --locked --workspace -- --include-ignored)
 fi
 
-# Corpus parity (A7, docs/design/native-app.md "Corpus parity"): the Rust analyzer over a sample
+# Corpus parity (A7, docs/archive/design/native-app.md "Corpus parity"): the Rust analyzer over a sample
 # of tracks against Python's committed streams (the margins, at D = 0; the live-delay run, which
 # Delayed listening replays, only reports the delay's cost), in the utility QoS class (the
 # background class keeps to the efficiency cores and took over an hour, hv-t8o8.12), and skipped
@@ -175,7 +175,7 @@ if [ "$section" = survivors ]; then
   uv run --no-project python native/scripts/survivors_sweep.py --release --assert-survival
 fi
 
-# The 3D demo (docs/tech-demo-3d/): the vendor guard over the whole tree and everything remote
+# The 3D demo (docs/archive/tech-demo-3d/): the vendor guard over the whole tree and everything remote
 # master doesn't have yet, the last line of defence before this stage moves it; the tools' lint
 # and tests; and the choreography layer's tests (the shared package and demo3d's data) under
 # dotnet, without Unity.
@@ -191,7 +191,7 @@ if [ "$section" = demo3d ]; then
   dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
 fi
 
-# The 2D demo (docs/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet;
+# The 2D demo (docs/archive/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet;
 # then, windowless in batch mode, the project set up from this machine's vendor packs and cache
 # (it fails, naming what is missing, without the packs, the song, Unity or its licence), the
 # song's playback baked, and Unity's EditMode tests, where a skip (a test missing its setup or
@@ -212,7 +212,7 @@ if [ "$section" = demo2d ]; then
   ) fi
 fi
 
-# The Unity game (docs/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
+# The Unity game (docs/archive/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
 # tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
 # once game/dotnet/PS.Game.Sim.Tests exists, and its replay command built; the bots' sweep (`game sweep
 # --assert`: four 30-minute positioning runs above 25% health and the idle bot fallen before minute

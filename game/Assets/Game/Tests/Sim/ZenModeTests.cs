@@ -8,7 +8,7 @@ using PS.Game.Sim.Level;
 namespace PS.Game.Sim.Tests
 {
     /// <summary>
-    /// The zen mode (docs/design/game-modes.md): the free hero's walk with the sword on the beat by itself, every
+    /// The zen mode (docs/archive/design/game-modes.md): the free hero's walk with the sword on the beat by itself, every
     /// beat, every half beat on slow songs or every other beat on fast ones; the loudness scaling its strikes; and
     /// the horde reeling to the music, thrown further by heavy blows and staggered by a zone change.
     /// </summary>

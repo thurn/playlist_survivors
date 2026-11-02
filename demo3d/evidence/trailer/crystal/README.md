@@ -5,7 +5,7 @@
 > seven shots: [../shatter](../shatter/README.md). The look, shots and horde here still hold.
 
 Windowless stills of `--trailer crystal` (ps-7i4; [trailer.md, The crystal
-cut](../../../../docs/tech-demo-3d/trailer.md#the-crystal-cut)), at trailer
+cut](../../../../docs/archive/tech-demo-3d/trailer.md#the-crystal-cut)), at trailer
 seconds, scaled to 1280 wide:
 
 ```

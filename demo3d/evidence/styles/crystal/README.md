@@ -7,7 +7,7 @@
 
 `--monster-style crystal`: stylelab's "Living crystal" treatment, drawn through the bone-texture
 crowd's indirect draws on the unwelded style mesh
-([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 Faceted gem bodies drawn in the transparent queue (Transparent-10). Each facet refracts the
 camera's opaque texture with a little dispersion, tinted by the type's gem colour. The game
 camera turns that texture on only under this style (`MonsterStyle.NeedsOpaqueTexture`).

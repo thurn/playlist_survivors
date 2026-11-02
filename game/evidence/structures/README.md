@@ -1,7 +1,7 @@
 # Structure shatter and regrowth (ps-msz.3.12)
 
 The crystal structures breaking into PhysX shards on the impact frame, glinting, and erupting
-from the ground on regrowth ([the design](../../../docs/design/unity-game.md), Crystal Structures
+from the ground on regrowth ([the design](../../../docs/archive/design/unity-game.md), Crystal Structures
 and Shatter). The code is game/Assets/Game/Client/Structures/: `StructureShatter` (the presenter:
 breaks, regrowths, glints, the local physics scene) and `StructureShards` (the baked asset), cut
 by game/Assets/Game/Editor/Structures/`StructureShardBaker` (`game unity BakeStructureShards`, or

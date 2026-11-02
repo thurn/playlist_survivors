@@ -32,7 +32,7 @@ namespace Game.Client
     ///   (a new one each run, the title screen's picks too);
     /// - `--app &lt;name&gt;`: the app producing audio now that the name picks, tapped muted and played
     ///   M late (Delayed listening; <see cref="MusicSource.Pick"/>, a number is a pid). The player
-    ///   needs the System Audio Recording grant to hear it (docs/design/unity-game.md, Platform
+    ///   needs the System Audio Recording grant to hear it (docs/archive/design/unity-game.md, Platform
     ///   Capture and Crash Safety); without it the app is muted and the music silent;
     /// - `--replay DIR`: a recorded session played again, its recorded music and inputs, checking
     ///   its hash at the end (<see cref="GameLoop"/>); it quits then, with 1 if the hash differs;

@@ -3,7 +3,7 @@
 //!
 //! TS planned every set piece from the whole stream before the run and queued their events at init.
 //! Here each decision is made as soon as the entries it reads have been taken in, and each event is
-//! queued with the key TS gave it at init (docs/design/native-app.md, "Set pieces as a state
+//! queued with the key TS gave it at init (docs/archive/design/native-app.md, "Set pieces as a state
 //! machine"):
 //!
 //! - **Detected sections** are found in `knownAt` order as structure entries arrive; each takes its
@@ -577,7 +577,7 @@ impl Sim {
 
     // -------------------------------------------------------------- the finale
 
-    /// The finale, on a confirmed end (docs/design/native-app.md, "A confirmed end"; TS's
+    /// The finale, on a confirmed end (docs/archive/design/native-app.md, "A confirmed end"; TS's
     /// `reactiveFinale` read the song's length instead): an `ends` entry counts once the quiet it
     /// marks has held for CONFIRM_S from its start with the evidence below the gate throughout,
     /// after at least MIN_JUDGED_S of judged time. A breakdown that resumes within the window

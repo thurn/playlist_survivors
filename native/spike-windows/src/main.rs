@@ -1,4 +1,4 @@
-﻿//! The Windows Delayed listening spike (docs/design/windows-delayed-spike.md): one binary with
+﻿//! The Windows Delayed listening spike (docs/archive/design/windows-delayed-spike.md): one binary with
 //! subcommands, each printing JSON lines.
 
 mod analyze;

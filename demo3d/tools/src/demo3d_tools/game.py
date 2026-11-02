@@ -1,7 +1,7 @@
 """The game's own commands (`game look`, `game content`), beside those it shares with the demos.
 
 `game look SLUG [--at T1,T2,...]`: windowless stills of the game's player on the Mac. It runs the
-player in batch mode and fixed time (docs/tech-demo-3d/mac.md: a batch-mode player draws a camera
+player in batch mode and fixed time (docs/archive/tech-demo-3d/mac.md: a batch-mode player draws a camera
 by hand only for the frames that keep a still), building it first when there is none, or with
 --build after a change. The full 1920×1080 stills and the player's log stay in the gitignored
 captures/game/look/SLUG/; 960 px JPEGs with the ps-render tag the vendor guard accepts go to
@@ -26,7 +26,7 @@ passes), into readability.json beside the stills; it exits 1 if a still fails.
 or after its song time at fixed time, or every sound on its event's song time on a real-time run
 (beat.py).
 
-`game replay SESSION [--player]`: a recorded session (docs/design/unity-game.md, Sessions and
+`game replay SESSION [--player]`: a recorded session (docs/archive/design/unity-game.md, Sessions and
 Replay) replayed headlessly to its settled hash: in .NET (game/dotnet/PS.Game.Replay), or with
 `--player` in the built player, batch mode, `--headless` and `--fixed-time`, which plays its recorded
 music through the plugin's Replay source as fast as its frames compute (a 30-minute run in minutes).
@@ -187,7 +187,7 @@ def _record_and_watch(wt: paths.Worktree, a: argparse.Namespace) -> int:
 
 
 def _fixed_time(wt: paths.Worktree, a: argparse.Namespace, session: Path, captures: Path) -> int:
-    """The frames-driven path (docs/design/unity-game.md, Fixed time): the recorded session replayed
+    """The frames-driven path (docs/archive/design/unity-game.md, Fixed time): the recorded session replayed
     at fixed time to its hash, and two fixed-time runs of the file to one hash. 1 on a failure."""
     from .spike import exceptions
 

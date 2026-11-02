@@ -1,6 +1,6 @@
 """Song map validation: structure plus the acceptance thresholds.
 
-Thresholds (docs/design/tech-demo.md, "Acceptance thresholds"):
+Thresholds (docs/archive/design/tech-demo.md, "Acceptance thresholds"):
 
 - Onset alignment (pulsed sections): at least 90% of beats are within 25 ms of
   an onset peak, counting only beats with a peak within 80 ms.

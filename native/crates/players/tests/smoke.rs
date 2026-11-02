@@ -1,4 +1,4 @@
-//! K1's virtual-player smoke test (docs/design/native-app.md, "Checks without an oracle"): the
+//! K1's virtual-player smoke test (docs/archive/design/native-app.md, "Checks without an oracle"): the
 //! honest player and the masher on the Galop, driven live (no stream end) through the sim, assert
 //! broad outcomes. A rule change may retune them, with its reason in the commit.
 #![allow(clippy::case_sensitive_file_extension_comparisons)]

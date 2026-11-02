@@ -1,4 +1,4 @@
-// Light pools on the ground under glowing pieces (demo3d's TD15; docs/tech-demo-3d/environment.md, Mood): a soft radial
+// Light pools on the ground under glowing pieces (demo3d's TD15; docs/archive/tech-demo-3d/environment.md, Mood): a soft radial
 // glow drawn additively a few centimetres above the ground, standing in for the bounce of a
 // glowing tree's or lamp's light that the dark ground's lightmap barely shows. One quad per pool,
 // all in one mesh (ArenaDressing; vertex colour: linear tint, intensity in alpha). Monsters and

@@ -1,6 +1,6 @@
 {
  "name": "v2",
- "note": "The crystal cut's colours in captures/trailer-crystal-v2.mp4 (ps-wnj.2), measured from its frames' bright hue peaks (one enemy per type colour seen, nine as in the roster's 40-degree slots) and written in the palette format (docs/design/neon-look.md, Palettes) so the look metrics can read them: v2 had no palette of its own.",
+ "note": "The crystal cut's colours in captures/trailer-crystal-v2.mp4 (ps-wnj.2), measured from its frames' bright hue peaks (one enemy per type colour seen, nine as in the roster's 40-degree slots) and written in the palette format (docs/archive/design/neon-look.md, Palettes) so the look metrics can read them: v2 had no palette of its own.",
  "void": { "floor": "#4d5670" },
  "hero": { "body": "#e8e8f0", "blade": "#ffffff" },
  "enemies": ["#fc1321", "#e59706", "#07dd15", "#04f8b5", "#4af5f2", "#23c7e9", "#317ff4", "#bf7aeb", "#ed94f5"],

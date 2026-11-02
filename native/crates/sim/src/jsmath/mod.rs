@@ -1,4 +1,4 @@
-//! JavaScript's `Math` functions with V8's bits (docs/design/native-app.md, "What makes
+//! JavaScript's `Math` functions with V8's bits (docs/archive/design/native-app.md, "What makes
 //! bit-exactness possible"). `tests/jsmath.rs` checks every function against V8's vectors in
 //! `native/oracle/` (F2, Node 24's V8 13.6):
 //!

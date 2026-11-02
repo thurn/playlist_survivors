@@ -1,4 +1,4 @@
-//! Delayed listening's heard delay, by loopback (docs/design/native-app.md, "Targets": the measured
+//! Delayed listening's heard delay, by loopback (docs/archive/design/native-app.md, "Targets": the measured
 //! music delay against `M`, gated at ±2 ms over an hour; `hv-t8o8.87`).
 //!
 //! A child of ours clicks once a second. First, a global tap (which mutes nothing) captures the

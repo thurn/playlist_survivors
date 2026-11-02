@@ -3,7 +3,7 @@ using System;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// A way of playing (`--mode`, docs/design/game-modes.md): a run input, recorded in sessions, that picks the
+    /// A way of playing (`--mode`, docs/archive/design/game-modes.md): a run input, recorded in sessions, that picks the
     /// rules below. Append new modes: a session stores the number.
     /// </summary>
     public enum GameMode : byte

@@ -1,27 +1,22 @@
-# Working on Playlist Survivors
+# Working on Rhythm Champions
 
-Playlist Survivors is a horde survivor rhythm game. It is a free, open source, non-commercial project.
+Rhythm Champions (formerly Playlist Survivors) is a horde survivor rhythm game. It is a free, open source, non-commercial project.
 
-We rely heavily on prototyping, and move quickly. Code and documentation get out of date fast. Ask clarifying questions at the start of sessions if you're not sure what's still current.
+We move quickly. Code and documentation get out of date fast. Ask clarifying questions at the start of sessions if you're not sure what's still current.
 
-Vision: Playlist Survivors is "the game that doesn't need a trailer". This is because *every moment of gameplay is cinematic*. The aesthetic experience is prioritized over everything.
+Vision: Rhythm Champions is "the game that doesn't need a trailer". This is because *every moment of gameplay is cinematic*. The aesthetic experience is prioritized over everything.
+
+The design was locked on 2026-11-01 after months of prototypes: docs/champions/design.md is the design and docs/champions/plan.md the implementation plan. Every earlier doc is archived under docs/archive/ and is not authoritative; when an old doc, comment or evidence file disagrees with docs/champions/, docs/champions/ wins.
 
 ## Overview
 
-- `native/`: the game, a Rust Cargo workspace (`native/crates/`). Design in docs/design/native-app.md and docs/design/survivors-run.md.
-- `game/`: the Unity game, native's run in 3D (docs/design/unity-game.md, epic ps-msz), on the demos' tools (`uv run --project demo3d/tools game`, `just game`); evidence and its operator list in game/evidence/.
-- `tools/analysis/`: the Python music analysis tool; `songs/` holds its song maps.
-- `tools/baker/`, `assets-src/`, `public/assets/`: the asset baker and its inputs and outputs.
-- `demo3d/`: the Unity 3D tech demo (docs/tech-demo-3d/).
-- `demo2d/`: the Unity 2D pixel-art demo (docs/tech-demo-2d/README.md), on the same tools (`uv run --project demo3d/tools demo2d`).
-- `herocap/`: a small Unity project that captures HeroEditor characters to PNG frames in the per-machine cache for native's `--art heroeditor` feel test (docs/design/heroeditor-native.md, epic ps-4c8), on the same tools (`uv run --project demo3d/tools herocap`, `just herocap`).
-- `stylelab/`: the Unity shader style lab, demo3d's horde in cyclable stylized treatments (docs/tech-demo-3d/stylelab.md), on the same tools (`uv run --project demo3d/tools stylelab`).
-- `unity-packages/com.playlistsurvivors.choreography/`: the engine-free choreography core both demos share (docs/tech-demo-3d/choreography.md).
-- `unity-packages/com.playlistsurvivors.look/`: the neon look demo3d's crystal cut and `game/` share: palettes, look presets and the look flags (docs/design/neon-look.md).
+- `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). It is built by the Enact epic in docs/champions/plan.md, so check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
+- `docs/champions/`: the design, the plan and (once written) the style guide. `docs/archive/`: earlier designs, for history.
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
-- SETUP.md covers installing, building and playing.
-- Outside the tree: caches in `~/Library/Caches/playlist-survivors/` (`$PS_CACHE`; `entries/` holds `ps entries` dumps), the game's sessions in `~/Library/Application Support/Playlist Survivors/Playlist Survivors/sessions/`, and captures in the tree's `captures/`. Never search with `find /` or `find ~`: such a crawl runs for an hour.
-- This repository is public: never commit vendor assets (Synty, `~/unity_assets`) or anything derived from them (docs/tech-demo-3d/vendor-assets.md).
+- SETUP.md covers installing and the vendor assets.
+- **Frozen**, kept for reference, outside CI, never extended: `native/` (the Rust 2D game, with `content/`, `levels/`, `public/`, `corpus/`, `songs/`, `tools/analysis/`, `tools/baker/`, `assets-src/`), `game/` (the first Unity game), `demo3d/`, `demo2d/`, `stylelab/`, `herocap/` and `unity-packages/`. Rhythm Champions copies what it needs from them and references none of them at build time. Don't fix or extend a frozen project unless the operator asks.
+- Outside the tree: caches in `~/Library/Caches/playlist-survivors/` (`$PS_CACHE`), the vendor packs in `~/synty` and `~/unity_assets`, and captures in the tree's `captures/`. Never search with `find /` or `find ~`: such a crawl runs for an hour.
+- This repository is public: never commit vendor assets (Synty, Magic Pig Games, Hovl Studio, anything in `~/synty` or `~/unity_assets`) or anything derived from them, edge cuts and Blender files included (docs/archive/tech-demo-3d/vendor-assets.md).
 
 ## Enact
 

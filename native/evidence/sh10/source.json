@@ -33,7 +33,7 @@
   },
   "headless_scope": "90s smoke predates final late-grid guard/alignment; no chest in that smoke, and the altered path is separately covered by sim/live tests and final offscreen capture",
   "numbers_from": [
-    "docs/survivors/appendix-feel.md",
+    "docs/archive/survivors/appendix-feel.md",
     "levels/survivors.yaml",
     "content/survivors-enemies.yaml"
   ]

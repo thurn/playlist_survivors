@@ -1,6 +1,6 @@
 //! The Core Audio process taps, each through a private aggregate device into a [`Sink`]: all
 //! system output except our own process (Direct listening), or one app's processes, muted while
-//! tapped, its stereo also into Delayed listening's delay line (docs/design/native-app.md,
+//! tapped, its stereo also into Delayed listening's delay line (docs/archive/design/native-app.md,
 //! "Capture and mute"). A live tap's IOProc, aggregate and tap are torn down once, by the app or
 //! its watchdog ([`Teardown`]).
 

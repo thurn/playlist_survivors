@@ -1,7 +1,7 @@
 # Monster and hero motion (ps-wnj.14, 2026-11-01)
 
 The look package's motion layers
-([neon-look.md, Motion](../../../../docs/design/neon-look.md#motion)): springs (squash and
+([neon-look.md, Motion](../../../../docs/archive/design/neon-look.md#motion)): springs (squash and
 stretch, lean into travel, overshoot and settle on every step, lunge and hit), swarm individuality
 (each life a little off its spot, facing and size, a standing tilt and a slow wobble of its own) and
 the `--beat-ripple` flag. Every preset turns springs and swarm on; the ripple is off in all of them.

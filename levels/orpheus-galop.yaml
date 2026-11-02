@@ -1,6 +1,6 @@
 # Level script for the Can-Can level, for play and Watch the demo alike (the demo is the skilled
 # virtual player's run). Sections are keyed by song-map section; every musical reference is a
-# bar/beat or a named musical moment, never seconds. See docs/design/gameplay-redesign.md.
+# bar/beat or a named musical moment, never seconds. See docs/archive/design/gameplay-redesign.md.
 song: orpheus-galop
 seed: 1858
 player: skilled            # the virtual player's skill profile; ?player= overrides it

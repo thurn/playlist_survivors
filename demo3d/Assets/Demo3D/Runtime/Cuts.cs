@@ -32,7 +32,7 @@ namespace Demo3D.Runtime
         public static readonly string[] All = { Lod, ShadowProxy, Clips30, LightCell, Merge, DropGlow };
 
         /// <summary>
-        /// The accepted cuts (TD11's verdicts after the demo systems review, docs/tech-demo-3d/plan.md,
+        /// The accepted cuts (TD11's verdicts after the demo systems review, docs/archive/tech-demo-3d/plan.md,
         /// TD11): the shadow proxy from LOD2 and 30 Hz clips, which pass the A/B check alone and
         /// together and save the most. LOD at 60 / 30 px passes alone (and with clips30) but not beside
         /// the shadow proxy, and saves less; light-cell (2 m) and merge pass alone but not in the set or

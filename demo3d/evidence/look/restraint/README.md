@@ -2,7 +2,7 @@
 
 The same change as [game's](../../../../game/evidence/look/restraint/README.md)
 on the crystal cut: calm by default, the loudest effects only in a special
-moment ([neon-look.md, Restraint and special moments](../../../../docs/design/neon-look.md#restraint-and-special-moments)).
+moment ([neon-look.md, Restraint and special moments](../../../../docs/archive/design/neon-look.md#restraint-and-special-moments)).
 Here the special moments are the formation smashes and structure breaks
 (`BreakMoments`, whose rings are special) and the heaviest blows (weight
 0.95 or more); flash cuts and lens hits are the trailer's own and unchanged.

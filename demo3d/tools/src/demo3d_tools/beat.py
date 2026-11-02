@@ -1,4 +1,4 @@
-"""`game beat NAME --file F`: the on-the-beat audit (docs/design/unity-game.md, Time and Sync).
+"""`game beat NAME --file F`: the on-the-beat audit (docs/archive/design/unity-game.md, Time and Sync).
 
 The game's promise is that every moving thing lands on the music: each key moment shows on the
 first frame at or after its song time. The audit runs the game's player windowless at fixed time

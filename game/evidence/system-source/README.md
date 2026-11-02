@@ -1,7 +1,7 @@
 # The plugin's System source on the Mac (ps-msz.5.2)
 
 Delayed listening on an app through the plugin: tapped muted, played `M` late, released by the
-watchdog, tapped again (docs/design/unity-game.md, "Platform capture and crash safety", Shipped
+watchdog, tapped again (docs/archive/design/unity-game.md, "Platform capture and crash safety", Shipped
 (ps-msz.5.2)).
 
 ## Without the grant (2026-10-31, jarvis, MacBook speakers at 48 kHz)

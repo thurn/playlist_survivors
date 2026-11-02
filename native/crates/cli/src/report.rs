@@ -1,4 +1,4 @@
-//! `ps report [<session>]`: a session's latency chain against the targets (docs/design/
+//! `ps report [<session>]`: a session's latency chain against the targets (docs/archive/design/
 //! native-app.md, "The latency report and QA (D5)" and "Targets"), from its `timing.jsonl`. Links
 //! the timing log can't measure are listed as such. The newest session by default.
 

@@ -3,7 +3,7 @@ using System;
 namespace PS.Game.Sim
 {
     /// <summary>
-    /// The dash (`--dash`, docs/design/game-modes.md, "The dash"): a sparse, optional rhythm verb for a free hero, on
+    /// The dash (`--dash`, docs/archive/design/game-modes.md, "The dash"): a sparse, optional rhythm verb for a free hero, on
     /// Space. The frequent verbs (the walk, the sword) stay unjudged; this one is judged, binary, and never a dead press.
     ///
     /// - <b>On the beat</b> (heard within <see cref="WindowS"/> of a beat, <see cref="BeatGrade.OnBeat"/>; every press with

@@ -2,7 +2,7 @@
 
 The horde in every horde shot now chases the hero without jamming, in the
 shot's formation: a charge, a vortex or a converge ([trailer.md, Kiting and
-formations](../../../../docs/tech-demo-3d/trailer.md#kiting-and-formations)).
+formations](../../../../docs/archive/tech-demo-3d/trailer.md#kiting-and-formations)).
 These sheets are the frame sequences that judged it.
 
 **Verdict:** every visible monster walks or attacks on every beat. The horde

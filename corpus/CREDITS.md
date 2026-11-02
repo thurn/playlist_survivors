@@ -1,6 +1,6 @@
 # Corpus credits
 
-The reactive feel corpus (docs/design/reactive-feel.md, "The Corpus"): the tracks
+The reactive feel corpus (docs/archive/design/reactive-feel.md, "The Corpus"): the tracks
 under `public/reactive/notjam-*/` and `public/reactive/cc-*/`, listed with their
 licences. `corpus/manifest.yaml` is the source of truth for each track's split.
 Every CC-BY track is credited here and in its index entry's `credit` field.

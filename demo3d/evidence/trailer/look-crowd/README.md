@@ -3,7 +3,7 @@
 The crystal cut (`--trailer crystal`, `--monster-style crystal`) now draws its
 monsters and their shards with the look package's `BoneTextureCrowd` and GPU
 `MonsterShatter`, in `MonsterLooks.Active`, fed by demo3d's `LookCrowd`
-([crowd.md](../../../../docs/tech-demo-3d/crowd.md#monster-styles), The crystal
+([crowd.md](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles), The crystal
 cut on the look package). demo3d's crystal forks are deleted: `CrystalShatter`
 (CPU-posed PhysX shards), `CrowdShards`, `CrowdPose`, its `CrowdShardBaker` and
 the `Crystal` and `CrystalShard` style shaders. The action cut keeps demo3d's

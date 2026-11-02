@@ -1,6 +1,6 @@
 # Orpheus galop: song map report summary
 
-Built by the beat-map workflow in `docs/design/tech-demo.md`. Form and bar
+Built by the beat-map workflow in `docs/archive/design/tech-demo.md`. Form and bar
 counts: [form.md](form.md). Source recording: [source.json](source.json).
 
 ## Reproduce

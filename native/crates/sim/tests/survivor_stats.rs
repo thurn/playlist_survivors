@@ -1,4 +1,4 @@
-//! Numerical contracts from docs/survivors, not the retired TS prototype.
+//! Numerical contracts from docs/archive/survivors, not the retired TS prototype.
 #![allow(clippy::float_cmp)]
 use sim::core::rng::{Part, Rng};
 use sim::survivors::{

@@ -5,7 +5,7 @@ structure sites stood again as crystal: the other 17,692 tiles `arena.json`
 blocks (the forest edge's mass round the field, the glowing tree, the
 graveyard, the keep, rocks and stumps) stayed solid and invisible, so the
 knight hit walls nobody could see. Now, under every world option
-([neon-look.md, The Axes > World](../../../../docs/design/neon-look.md#world)):
+([neon-look.md, The Axes > World](../../../../docs/archive/design/neon-look.md#world)):
 
 - **A kerb**: the grid floor draws a bright line along the walkable side of
   every edge walkable ground shares with blocked ground (the lines' hue

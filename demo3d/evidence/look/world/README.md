@@ -1,7 +1,7 @@
 # The void world kit on the crystal cut (ps-wnj.8, 2026-11-01)
 
 The crystal cut's environments drawn in the look's world kit
-([neon-look.md, The Axes > World](../../../../docs/design/neon-look.md#world)):
+([neon-look.md, The Axes > World](../../../../docs/archive/design/neon-look.md#world)):
 each environment's Synty set, mist and flame lights go and the grid floor
 (ps-wnj.7) takes the ground's place; a crystal kit piece stands where each of
 its `Structures` pieces stood (36, 30, ... per environment, about 55 pieces),

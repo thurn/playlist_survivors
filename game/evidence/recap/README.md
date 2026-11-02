@@ -2,9 +2,9 @@
 
 The end card's numbers are now the sim's `RunRecap` (`SimState.Recap`): kills, and each weapon's
 damage and time held, tallied as the run plays and final from its end
-([the design](../../../docs/design/unity-game.md#hud)). The event dispatch contains a presenter's
+([the design](../../../docs/archive/design/unity-game.md#hud)). The event dispatch contains a presenter's
 throws, and the run's summary always reports `presenter faults N`
-([Architecture](../../../docs/design/unity-game.md#architecture)).
+([Architecture](../../../docs/archive/design/unity-game.md#architecture)).
 
 ## The end card at the peak
 

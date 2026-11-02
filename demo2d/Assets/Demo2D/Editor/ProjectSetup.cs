@@ -12,7 +12,7 @@ using Demo2D.Runtime;
 namespace Demo2D.EditorTools
 {
     /// <summary>
-    /// Puts the project into its configuration (docs/tech-demo-2d/README.md): an Apple silicon
+    /// Puts the project into its configuration (docs/archive/tech-demo-2d/README.md): an Apple silicon
     /// Mac player drawing with Metal, IL2CPP, linear colour, 1920×1080 windowed, frame timing
     /// stats on, and URP with its 2D renderer (sprites sorted by their feet's y, HDR for the
     /// bloom to come, no MSAA on pixel art). Also writes the empty scene the build starts from.

@@ -13,7 +13,7 @@ Forecasts read only committed beats and onsets, each by its `knownAt`, so the
 stream of the audio cut at X holds exactly the forecasts known by X
 (`tests/test_stream.py` proves it).
 
-See docs/design/reactive-audio.md, "Accents (stage 5)".
+See docs/archive/design/reactive-audio.md, "Accents (stage 5)".
 """
 
 from __future__ import annotations

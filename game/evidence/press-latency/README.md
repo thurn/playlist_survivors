@@ -1,12 +1,12 @@
 # A press's blow at once, live (ps-w9p.10)
 
-A free-mode press ([the design](../../../docs/design/game-modes.md#attacking-on-the-beat)) lands its blow 1/30 s after
+A free-mode press ([the design](../../../docs/archive/design/game-modes.md#attacking-on-the-beat)) lands its blow 1/30 s after
 its key. Live, the key reaches the sim about the lead after it was heard (the output latency plus the 52 ms margin:
 about 90 ms on the built-in speakers, 0.3 s on Bluetooth), past that impact. Before this bead the blow then landed a
 tick after the sim took the key, so the strike was seen and heard a lead late: on the operator's play-test (speakers),
 swings felt "barely connected to the button press". Now the press resolves in heard time as the sim takes it, against
-the world as it was ([The sim lead](../../../docs/design/unity-game.md#the-sim-lead)), and its sounds, already past
-the mixer, start as soon as it can ([Sound timing](../../../docs/design/unity-game.md#sound-timing)).
+the world as it was ([The sim lead](../../../docs/archive/design/unity-game.md#the-sim-lead)), and its sounds, already past
+the mixer, start as soon as it can ([Sound timing](../../../docs/archive/design/unity-game.md#sound-timing)).
 
 ## How it was measured
 

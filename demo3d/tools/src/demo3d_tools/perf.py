@@ -1,4 +1,4 @@
-"""`game perf`: the run's performance on the Mac, windowless (docs/design/unity-game.md, Performance targets).
+"""`game perf`: the run's performance on the Mac, windowless (docs/archive/design/unity-game.md, Performance targets).
 
 It runs the built player (building it first when there is none, or with --build) in batch mode and
 fixed time over the standard scenarios, each with the player's frame probe (`--gpu-probe-at`: timed

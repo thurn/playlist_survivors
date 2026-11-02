@@ -1,8 +1,8 @@
 # The neon action cut (ps-wnj.26, 2026-11-01)
 
 The action cut on the look package, re-staged in the void world
-([trailer.md, The Neon Action Cut](../../../../docs/tech-demo-3d/trailer.md#the-neon-action-cut);
-[neon-look.md, The Trailer](../../../../docs/design/neon-look.md#the-trailer)).
+([trailer.md, The Neon Action Cut](../../../../docs/archive/tech-demo-3d/trailer.md#the-neon-action-cut);
+[neon-look.md, The Trailer](../../../../docs/archive/design/neon-look.md#the-trailer)).
 `--trailer` with any look flag plays `trailer-action-neon.json`; plain
 `--trailer` is still the Synty cut.
 

@@ -1,5 +1,5 @@
 //! Key press times from the window server: `NSEvent.timestamp` (host seconds, as `now_s`), taken
-//! by a local event monitor beside winit, which drops it (docs/design/native-app.md, "One clock").
+//! by a local event monitor beside winit, which drops it (docs/archive/design/native-app.md, "One clock").
 //! winit's key event is matched to the monitor's latest event of the same kind.
 
 use std::collections::VecDeque;

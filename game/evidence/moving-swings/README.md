@@ -1,6 +1,6 @@
 # Swings on the move (ps-w9p.2)
 
-The free hero swinging while it walks ([the design](../../../docs/design/game-modes.md#swinging-on-the-move)):
+The free hero swinging while it walks ([the design](../../../docs/archive/design/game-modes.md#swinging-on-the-move)):
 the legs keep running along the walk and carry the hips, and the upper body twists to the strike's aim, up to
 120 degrees; past that the twist unwinds, the whole body turns and the legs come off the forward run, to a
 backpedal for a strike straight behind.

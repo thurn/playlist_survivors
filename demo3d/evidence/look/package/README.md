@@ -1,7 +1,7 @@
 # The look package skeleton (ps-wnj.3)
 
 `unity-packages/com.playlistsurvivors.look/` in both players, with no visual
-change yet ([neon-look.md](../../../../docs/design/neon-look.md), The Package).
+change yet ([neon-look.md](../../../../docs/archive/design/neon-look.md), The Package).
 
 ## `--look edge` headless in both players
 

@@ -2,7 +2,7 @@
 
 herocap's first capture of every recipe: the HeroEditor knight and the undead
 roster, as transparent PNG frames in the machine's cache
-(docs/design/heroeditor-native.md). These are small tagged renders of it; the
+(docs/archive/design/heroeditor-native.md). These are small tagged renders of it; the
 frames themselves never enter the tree.
 
 - `<atlas>.png`: a contact sheet per recipe, one row per clip, up to 12 of its

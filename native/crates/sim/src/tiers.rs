@@ -1,4 +1,4 @@
-//! `src/sim/tiers.ts`: what a tier changes (docs/design/gameplay-redesign.md, "What a tier
+//! `src/sim/tiers.ts`: what a tier changes (docs/archive/design/gameplay-redesign.md, "What a tier
 //! changes"): attack area, and a little damage. The content gives each value at tiers 0 to 3; a tier
 //! past the last uses the last.
 

@@ -1,7 +1,7 @@
 # Wireframe hologram on the crystal cut (ps-wnj.12, 2026-11-01)
 
 The hologram preset's monster look, `wireframe`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)), on
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)), on
 the crystal cut's horde, shards and dragon: lines in each type's palette slot
 on the model's feature edges, a thin rim and a faint fill added over the void
 world, front surfaces only. Before and after come from one IL2CPP Mac build:

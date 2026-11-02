@@ -8,8 +8,8 @@
     "native/crates/sim/src/engine/spawning.rs": "780940953665a47a7031c35279abd58f107117044707bd96dca3aec4a07c6064"
   },
   "source_tables": [
-    "docs/survivors/appendix-damage-vs-health.md",
-    "docs/survivors/appendix-feel.md"
+    "docs/archive/survivors/appendix-damage-vs-health.md",
+    "docs/archive/survivors/appendix-feel.md"
   ],
   "review": "SW7 owns W milestone cold review; no Engine rollback-runner change"
 }

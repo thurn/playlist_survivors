@@ -1,4 +1,4 @@
-//! Stage parity, A2 (docs/design/native-app.md, "Stage parity"): the online DBN's beliefs, the
+//! Stage parity, A2 (docs/archive/design/native-app.md, "Stage parity"): the online DBN's beliefs, the
 //! smoothed periods, the evidence and the committed beats, fed Python's own activations
 //! (`native/models/golden/`), against Python's, to the bit.
 #![forbid(unsafe_code)]
@@ -202,7 +202,7 @@ fn thirty_seconds_of_the_galop_with_its_tempo_flips_match_python() {
 
 #[test]
 fn the_next_beat_is_known_when_a_beat_arrives() {
-    // The commit invariant the evaluator relies on (docs/design/native-app.md, F1's inventory).
+    // The commit invariant the evaluator relies on (docs/archive/design/native-app.md, F1's inventory).
     let models = models();
     for excerpt in EXCERPTS {
         let r = run(&models, &golden(excerpt).f32("online.activations").unwrap());

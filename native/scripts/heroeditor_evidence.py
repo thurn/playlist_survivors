@@ -15,7 +15,7 @@ each level-up, at 1920 x 1080:
   so every frame is the same run at another time.
 
 Images (JPEG or PNG, by OUT's suffix) are tagged ps-render for the vendor guard: the HeroEditor look draws HeroEditor-derived
-frames, fine in evidence as small tagged renders (docs/tech-demo-3d/vendor-assets.md).
+frames, fine in evidence as small tagged renders (docs/archive/tech-demo-3d/vendor-assets.md).
 """
 
 from __future__ import annotations

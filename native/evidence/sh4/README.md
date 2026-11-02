@@ -6,7 +6,7 @@ what the plan already listed.
 
 ## Combat tied to the source
 
-`docs/survivors/appendix-feel.md`, Garlic runtime notes and table, supply the
+`docs/archive/survivors/appendix-feel.md`, Garlic runtime notes and table, supply the
 rules. A persistent hero-centred aura damages each target once per incarnation,
 including targets entering between pulses. Its next incarnation starts on the
 beat-snapped raw weapon interval. Generic hitDelay 1,000, duration 1,300, Amount and

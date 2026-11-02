@@ -135,7 +135,7 @@ namespace Game.Client.Calibration
     }
 
     /// <summary>
-    /// The input calibration's tap-along (native's, docs/design/native-app.md, Calibration (D2)):
+    /// The input calibration's tap-along (native's, docs/archive/design/native-app.md, Calibration (D2)):
     /// eight clicks at 120 BPM, and the player taps along. Its offset is the median of the taps'
     /// errors after the first two, counting only taps within a quarter beat of a click.
     /// </summary>

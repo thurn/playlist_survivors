@@ -3,7 +3,7 @@
 Every recorded run writes `timing.csv` into its session folder, one row per frame: its interval,
 the main thread's CPU time, the loop's and the sim's work, Unity's frame timing, frameSong, the
 lead, the hero and the frame's share of the run's counts. `game log` summarises it
-([the design](../../../docs/design/unity-game.md#sessions-and-replay)). Measured on the Mac
+([the design](../../../docs/archive/design/unity-game.md#sessions-and-replay)). Measured on the Mac
 (jarvis) on 2026-10-31 with an IL2CPP player built from this bead's tree.
 
 ## A real-time run at the peak

@@ -1,8 +1,8 @@
 # Procedural slashes, spins, streaks and smears in game (ps-wnj.15, 2026-11-01)
 
 The vfx axis's two options
-([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx);
-[effects.md, The look](../../../../docs/tech-demo-3d/effects.md#the-look)):
+([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx);
+[effects.md, The look](../../../../docs/archive/tech-demo-3d/effects.md#the-look)):
 `light-streaks` (the edge, solid and hologram presets) and `prism-streaks`
 (prism). Under either, the sword's slash, spin and slam are ribbons of light
 built in code (the runtime's new arcs, no vendor prefab or texture) in the

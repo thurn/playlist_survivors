@@ -1,7 +1,7 @@
 # The crystal cut's shattering formations
 
 Every crystal formation break of `--trailer crystal` (ps-b5z.4; [trailer.md, Crystal
-formations](../../../../docs/tech-demo-3d/trailer.md#crystal-formations)), one strip each: the
+formations](../../../../docs/archive/tech-demo-3d/trailer.md#crystal-formations)), one strip each: the
 frame 20 frames before the impact (the formation standing), the impact frame, then +3, +10, +25
 and +50 frames (60 fps, so the last is 0.83 s on). Each tile is a 1040 x 676 crop of the 1080p
 frame round the hero and the formation, labelled with its trailer second.

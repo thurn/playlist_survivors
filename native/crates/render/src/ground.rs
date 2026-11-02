@@ -1,4 +1,4 @@
-//! The painted ground (`--art heroeditor`, docs/design/heroeditor-native.md): a full-screen pass
+//! The painted ground (`--art heroeditor`, docs/archive/design/heroeditor-native.md): a full-screen pass
 //! under the world's sprites that paints grass, moss, clearings, worn paths, tufts, flowers and
 //! pebbles from noise in world space, so it scrolls with the world and holds still as the camera
 //! moves and zooms. Nothing is baked: every pixel is the same function of its world position.

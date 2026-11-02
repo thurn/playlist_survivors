@@ -9,7 +9,7 @@ No bake, external art or offer/balance change was needed.
 
 ## Geometry and collection
 
-The kept source is `docs/survivors/appendix-feel.md`, Gem attraction and Chicken
+The kept source is `docs/archive/survivors/appendix-feel.md`, Gem attraction and Chicken
 pickup immunity. The common 154.26997245 px/U scale gives magnet radius
 46.280992 px and gem body radius 15.426997 px. Magnet stat modifiers apply only
 to the magnet. At overlap a gem leaves the resting field and its snapshot-owned

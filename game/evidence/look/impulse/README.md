@@ -2,7 +2,7 @@
 
 The look package's impulse field (`ImpulseField`, `Impulse.hlsl`) and grid floor (`GridFloor`,
 `GridFloor.shader`) in both players
-([neon-look.md, The impulse field](../../../../docs/design/neon-look.md#the-impulse-field)). Blows,
+([neon-look.md, The impulse field](../../../../docs/archive/design/neon-look.md#the-impulse-field)). Blows,
 deaths and breaks write rings that set out on their impact frames; the floor's grid is shoved, lifted
 and lit as they pass, and between them it is steady and dark. Every world option draws the floor in
 place of the arena's ground; the rest of the Synty sets stay until the world kit (ps-wnj.8).

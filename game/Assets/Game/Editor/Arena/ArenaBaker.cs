@@ -17,7 +17,7 @@ namespace Game.EditorTools.Arena
     /// game/Content/arena-layout.json and footprints.json: demo3d's ArenaBaker copied and owned, at
     /// its lit rung only. `game unity BakeArena [-noLightmaps]`; `game build` runs it when its inputs
     /// change. It writes:
-    /// - into the gitignored Assets/Baked/Arena/ (derived from vendor meshes, docs/tech-demo-3d/vendor-assets.md):
+    /// - into the gitignored Assets/Baked/Arena/ (derived from vendor meshes, docs/archive/tech-demo-3d/vendor-assets.md):
     ///   the kit's materials converted to URP and saved, the ground, the scene <see cref="SceneName"/>
     ///   with lightmaps baked in batch mode (the moon mixed, shadowmask; the ground lightmapped, the
     ///   kit lit by a probe grid; glow lights baked), and the player's <see cref="ArenaBake"/>;

@@ -1,4 +1,4 @@
-// The kit's trees (demo3d's TD15; docs/tech-demo-3d/environment.md, Canopy fade): Game/LitStaticShadow
+// The kit's trees (demo3d's TD15; docs/archive/tech-demo-3d/environment.md, Canopy fade): Game/LitStaticShadow
 // with the canopy fade (CanopyFade.hlsl), so pixels between the camera and the hero dither out.
 // The colour pass is LitStaticShadow's own (its _CANOPY_FADE variant, which the material
 // enables); the depth and depth-normals passes are URP Lit's, wrapped to clip the same pixels

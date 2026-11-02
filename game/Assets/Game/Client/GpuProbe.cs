@@ -18,7 +18,7 @@ namespace Game.Client
 {
     /// <summary>
     /// `--gpu-probe-at t1,t2,... --gpu-probe-out FILE.json` (batch mode, for windowless checks on the
-    /// Mac; demo3d's BatchGpuProbe, docs/tech-demo-3d/mac.md): a batch-mode player draws no frames, so
+    /// Mac; demo3d's BatchGpuProbe, docs/archive/tech-demo-3d/mac.md): a batch-mode player draws no frames, so
     /// at each song time it hand-draws the camera for a few consecutive frames into a 1080p target with
     /// the game's MSAA (<see cref="Stills.Target"/>), and times each draw through GPU completion (an
     /// AsyncGPUReadback waited on). That is one frame's CPU submission and GPU work in series, an upper

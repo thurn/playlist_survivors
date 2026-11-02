@@ -2,7 +2,7 @@
 
 The style guide's swarm separation and monster form measured in tiles grown
 with the monsters' height on screen
-([neon-look-style.md, Rules and Thresholds](../../../../docs/design/neon-look-style.md#rules-and-thresholds),
+([neon-look-style.md, Rules and Thresholds](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds),
 the notes under `swarm_separation_min`). Before, both used a fixed 32 px
 tile, calibrated on the crystal cut's fodder (32-58 px tall at the metric's
 960 px, median 45); a game ork stands 115 px and a troll 230, so a dense

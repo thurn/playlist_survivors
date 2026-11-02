@@ -1,4 +1,4 @@
-//! The timing log (docs/design/native-app.md, "Timing logs (D4)"; `src/live/log.ts` extended with
+//! The timing log (docs/archive/design/native-app.md, "Timing logs (D4)"; `src/live/log.ts` extended with
 //! the latency chain): one JSON line per event in the session's folder, `timing.jsonl`. Each has
 //! its kind `k`, and the session song time `s` where there is one:
 //!

@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 namespace Game.Client.Loop
 {
     /// <summary>
-    /// The pointer's targets for a mode with one (<see cref="ModeRules.Pointer"/>, docs/design/game-modes.md): a left
+    /// The pointer's targets for a mode with one (<see cref="ModeRules.Pointer"/>, docs/archive/design/game-modes.md): a left
     /// click on the arena sends the hero to the ground point under the cursor, and while the button is held, each
     /// frame the point under the cursor moves <see cref="StepM"/> or more (the cursor, or the camera following the
     /// hero) sends it again, so the hero follows the cursor. Each is a <see cref="Simulation.Target"/>, heard at the

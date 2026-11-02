@@ -3,7 +3,7 @@
 `--intensity overdrive` merges
 [intensity-overdrive.json](../../../Assets/Demo3D/Choreography/Data/intensity-overdrive.json)
 over the roster's level script ([choreography.md, Intensity
-overlays](../../../../docs/tech-demo-3d/choreography.md#intensity-overlays)).
+overlays](../../../../docs/archive/tech-demo-3d/choreography.md#intensity-overlays)).
 This is the first cut, tuned only on the timeline's numbers. The tuning bead
 owns the overlay from here, and the feel bead owns the client's response.
 

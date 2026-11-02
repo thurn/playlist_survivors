@@ -1,7 +1,7 @@
 # Trailer: the choreography pass (ps-7mx.1)
 
 The trailer's horde and hero reworked toward the normal `just demo3d` run's
-feel ([trailer.md, Kiting and formations, "Outcome (ps-7mx.1)"](../../../../docs/tech-demo-3d/trailer.md#kiting-and-formations)):
+feel ([trailer.md, Kiting and formations, "Outcome (ps-7mx.1)"](../../../../docs/archive/tech-demo-3d/trailer.md#kiting-and-formations)):
 
 - **Like monsters in blocks.** Formations deal their monsters by type blocks
   of ground, so waves walk in as coloured masses, not confetti.

@@ -1,4 +1,4 @@
-//! A listening session's stream (docs/design/native-app.md, "Session recording (D3)"): every entry
+//! A listening session's stream (docs/archive/design/native-app.md, "Session recording (D3)"): every entry
 //! as it arrived, in song time from the session's own start, `known_at` stamped with its arrival
 //! (never earlier than the analyzer's own), one JSON line each in `stream.jsonl`; and the rule
 //! that rebases them to a run's start `s0` ("Runs on live audio (D1)"): what the sim would have seen

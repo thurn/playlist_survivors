@@ -1,4 +1,4 @@
-"""`game sweep`: the bots' 30-minute runs in .NET (docs/design/unity-game.md, Tools, Checks and
+"""`game sweep`: the bots' 30-minute runs in .NET (docs/archive/design/unity-game.md, Tools, Checks and
 Evidence: bots and sweeps), on the pattern of native's survivors sweep (native/scripts/survivors_sweep.py).
 
 The positioning bot plays four runs on seed 1, as native's sweep does: the survivors test playlist

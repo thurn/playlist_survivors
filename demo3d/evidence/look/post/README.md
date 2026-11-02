@@ -1,7 +1,7 @@
 # The look's post stack on the crystal cut (ps-wnj.6, 2026-11-01)
 
 The crystal cut under each preset's post option
-([neon-look.md, Post-processing stack](../../../../docs/design/neon-look.md#post-processing-stack)),
+([neon-look.md, Post-processing stack](../../../../docs/archive/design/neon-look.md#post-processing-stack)),
 against the before: the environments' night volumes, shot grades and trailer
 dressing, drawn by the same build with `--post today` (not a built option, so
 today's post). Monsters, world and VFX are still today's for every preset: only

@@ -5,7 +5,7 @@ and save the flashy effects for special moments. This is the VFX side
 (ps-wnj.24 does the grid, the structure flashes and the post): ps-wnj.15's
 slashes, spins, bursts, smears and sparks are modest every day, and their
 bright versions (`-big`) draw only at a special moment through the `vfx`
-table's `NAME@special` keys ([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx)).
+table's `NAME@special` keys ([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx)).
 
 | | everyday (this change) | special moment (ps-wnj.15's look) |
 | --- | --- | --- |

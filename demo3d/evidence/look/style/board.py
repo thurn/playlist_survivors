@@ -3,9 +3,9 @@
     uv run --project demo3d/tools python demo3d/evidence/look/style/board.py [captures/trailer-crystal-v2.silent.mp4]
 
 Pulls BOARD frames from the v2 capture with ffmpeg, measures each with the guide's frame-level rules
-(docs/design/neon-look-style.md, Rules and Thresholds), writes board.jpg (ps-render tagged) and
+(docs/archive/design/neon-look-style.md, Rules and Thresholds), writes board.jpg (ps-render tagged) and
 prints the rules table that README.md quotes. The measures and thresholds are look-metrics' own
-(demo3d_tools.look.frame_measures, docs/design/neon-look-thresholds.json). Mask-based rules (floor, monster
+(demo3d_tools.look.frame_measures, docs/archive/design/neon-look-thresholds.json). Mask-based rules (floor, monster
 form, hero brightest) need the players' ID render and view json, so look-metrics measures those. On a
 finished video the frame's L* p25 (the darkest quarter must be void) stands in for the floor rule.
 """
@@ -41,7 +41,7 @@ BOARD = [  # (time s, what the frame shows)
 CELLS = [("key", "key60", ".2f"), ("fam", "families", "d"), ("black", "black_share", ".0%"),
          ("bright", "bright_share", ".0%"), ("clip", "clipped", ".1%"), ("white", "white", ".1%"),
          ("halo", "halo", ".1f"), ("p25", "frame_p25", ".1f")]
-RULES = load_rules(json.loads((ROOT / "docs" / "design" / "neon-look-thresholds.json").read_text(encoding="utf-8")), None)
+RULES = load_rules(json.loads((ROOT / "docs" / "archive" / "design" / "neon-look-thresholds.json").read_text(encoding="utf-8")), None)
 
 
 def verdicts(m: dict) -> dict[str, bool]:

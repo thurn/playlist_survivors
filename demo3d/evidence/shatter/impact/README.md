@@ -3,9 +3,9 @@
 The crystal shatter reworked after the operator's verdict on the delayed version: the break must
 come at the moment of impact, the cracks-then-shatter build-up goes, and the twinkling particle
 burst was "a mess of random lights blinking". The design is in
-[crowd.md](../../../../docs/tech-demo-3d/crowd.md#monster-styles) (the shatter),
-[effects.md](../../../../docs/tech-demo-3d/effects.md#the-look) (the burst) and
-[camera-and-sound.md](../../../../docs/tech-demo-3d/camera-and-sound.md#sound) (the sound).
+[crowd.md](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles) (the shatter),
+[effects.md](../../../../docs/archive/tech-demo-3d/effects.md#the-look) (the burst) and
+[camera-and-sound.md](../../../../docs/archive/tech-demo-3d/camera-and-sound.md#sound) (the sound).
 
 All strips were rendered on 2026-10-30 by the Mac's batch-mode IL2CPP player in fixed time, at
 the showcase preset (`--monster-style crystal --envelope 24 --view-width 12`), **with effects on**.

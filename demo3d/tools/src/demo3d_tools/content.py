@@ -2,7 +2,7 @@
 
 Reads native's YAML (content/, levels/survivors.yaml) and the numbers native's Rust sim keeps in
 code (native/crates/sim/src/survivors/ and engine/), and writes game/Content/*.json in metres
-(docs/design/unity-game.md, Content Data and Units). The JSON is then the game's own: once it is
+(docs/archive/design/unity-game.md, Content Data and Units). The JSON is then the game's own: once it is
 edited by hand, this converter is history and `--check` (which fails on any difference) goes with
 it. game/Content/README.md maps every native role and weapon to its game entry.
 

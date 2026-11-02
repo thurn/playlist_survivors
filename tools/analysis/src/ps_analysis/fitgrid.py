@@ -1,4 +1,4 @@
-"""`fit-grid`: a corpus track's fitted reference (docs/design/reactive-feel.md, "Ground Truth").
+"""`fit-grid`: a corpus track's fitted reference (docs/archive/design/reactive-feel.md, "Ground Truth").
 
 madmom's offline whole-song beat and downbeat decode, a least-squares constant grid
 through the decoded beats (or up to four constant pieces where the tempo changes, or

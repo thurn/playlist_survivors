@@ -17,7 +17,7 @@
 //! deferred until that beat arrives, keeping the place in push order it had (`push_at_beat`,
 //! `defer_at_beat`): the time always falls at or after the beat before it, which is known by then.
 //!
-//! **Scope (B4, docs/design/native-app.md).** State, the queue, the hero and strides, swings, enemies
+//! **Scope (B4, docs/archive/design/native-app.md).** State, the queue, the hero and strides, swings, enemies
 //! and their beat steps, weapons, damage, gems, orbs, chickens, level-ups, healing, and press judging
 //! with the settled judgment. Set pieces, the boss, archers, zone waves, landmarks, the finale and
 //! the run's end come with B6; the recording's emission (effects, sounds, UI) with B7.
@@ -297,7 +297,7 @@ struct Env {
 
 // ------------------------------------------------------------------ the queue
 
-/// An event's place in the queue (docs/design/native-app.md, "Event queue keys"): its time, its
+/// An event's place in the queue (docs/archive/design/native-app.md, "Event queue keys"): its time, its
 /// kind's order at equal times, then its init phase and index (events the TS queue pushed at init),
 /// or, for events pushed while running, `RUNTIME` and a counter in push order.
 #[derive(Clone, Copy, Debug, PartialEq)]

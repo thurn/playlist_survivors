@@ -3,8 +3,8 @@
 The compute particle runtime (`EffectSystem`, `EffectLibrary`, `EffectLights`,
 the sim, sort and draw shaders) and its converter moved into
 `unity-packages/com.playlistsurvivors.look/`; both forks are gone
-([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx),
-[effects.md, The runtime](../../../../docs/tech-demo-3d/effects.md#the-runtime)).
+([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx),
+[effects.md, The runtime](../../../../docs/archive/tech-demo-3d/effects.md#the-runtime)).
 A selection colour may now name a palette role, drawn in the applied look's
 palette. Today's effects keep their literal colours, so nothing changes on
 screen until the VFX beads restyle them.

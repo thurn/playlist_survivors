@@ -1,7 +1,7 @@
 # Refractive gem in game (ps-wnj.13, 2026-11-01)
 
 The prism preset's monster look, `refractive-gem`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)),
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)),
 which replaced the old crystal (MonsterCrystal, MonsterShard) as the stand-in
 for an option without a look; the crystal now draws only `--look classic`. Clear gem showing the void and grid behind it
 through its facets, split into the type's palette hue and its two neighbours,

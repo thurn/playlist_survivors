@@ -9,7 +9,7 @@ compares its set with this one:
 uv run --project demo3d/tools demo3d look <slug> --baseline baseline
 ```
 
-How to run it, and what each number means: [Running on the Mac](../../../../docs/tech-demo-3d/mac.md#the-look-set)
+How to run it, and what each number means: [Running on the Mac](../../../../docs/archive/tech-demo-3d/mac.md#the-look-set)
 and [look.md](look.md).
 
 ## What's here

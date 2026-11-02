@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace PS.Choreography
 {
-    // The timeline contract (docs/tech-demo-3d/choreography.md, "Timeline contract").
+    // The timeline contract (docs/archive/tech-demo-3d/choreography.md, "Timeline contract").
     //
     // Ground positions are System.Numerics.Vector2 in metres: X is Unity's world x and Y is
     // Unity's world z. Facings are yaws in radians about Unity's +y, 0 facing +z (ground +Y),

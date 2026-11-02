@@ -25,7 +25,7 @@ PROJECTS = ("demo3d", "demo2d", "stylelab", "game", "herocap")
 # The source roots each project's setup needs (the song from the `song` root, the rest synced):
 # demo2d syncs the 2D packs and reuses demo3d's sounds; stylelab reuses demo3d's roster; the game
 # takes demo3d's hero, monsters, forest kit and sounds, and plays the player's music, not the song;
-# herocap captures HeroEditor, which lives only in `more_assets` (docs/design/heroeditor-native.md).
+# herocap captures HeroEditor, which lives only in `more_assets` (docs/archive/design/heroeditor-native.md).
 PROJECT_ROOTS = {
     "demo3d": ("synty", "unity_assets", "song"),
     "demo2d": ("pixel_assets", "unity_assets", "song"),

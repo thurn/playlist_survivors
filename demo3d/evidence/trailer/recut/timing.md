@@ -45,7 +45,7 @@ The shot plays from its pre-roll, so its opening blow's frame is drawn with no e
   42 switch frames within 2 ms in its blow-free switching run).
 - The capture renders at fixed time, so none of this reaches the video;
   whether the live run hitches at a cut stays the operator's check
-  ([trailer.md, Manual QA](../../../../docs/tech-demo-3d/trailer.md#manual-qa),
+  ([trailer.md, Manual QA](../../../../docs/archive/tech-demo-3d/trailer.md#manual-qa),
   "Smoothness").
 
 Reproduce (from sh, after `demo3d build`):

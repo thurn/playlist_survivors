@@ -2,7 +2,7 @@
 
 `look-metrics` measures a directory of stills against a palette and the
 style guide's rules
-([neon-look-style.md, Rules and Thresholds](../../../../docs/design/neon-look-style.md#rules-and-thresholds))
+([neon-look-style.md, Rules and Thresholds](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds))
 and exits 1 when a still or the cut breaks one. This folder is its run on
 fifteen frames of the v2 crystal cut, the capture viewers reviewed, and the
 calibration of the guide's three provisional thresholds.
@@ -13,7 +13,7 @@ uv run --project demo3d/tools game look-metrics STILLS --palette PALETTE.json   
 ```
 
 - `--thresholds` defaults to
-  [docs/design/neon-look-thresholds.json](../../../../docs/design/neon-look-thresholds.json),
+  [docs/archive/design/neon-look-thresholds.json](../../../../docs/archive/design/neon-look-thresholds.json),
   keyed exactly as the guide's table (`floor_p50_max`, `key60_min`, ...). A
   key's suffix says min or max; per-preset values (`solid`, `prism`, ...) sit
   beside `value`.

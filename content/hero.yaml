@@ -1,9 +1,9 @@
 # The hero: movement model, timing windows, groove meter and swings.
-# See docs/design/gameplay-redesign.md. Animations name baked hero animations in
+# See docs/archive/design/gameplay-redesign.md. Animations name baked hero animations in
 # public/assets/characters.json.
 hero:
   step: { length: 44, durationMs: 110, diagonalWindowMs: 40 }
-  # Fixed-speed strides (see docs/design/gameplay-redesign.md): the hero
+  # Fixed-speed strides (see docs/archive/design/gameplay-redesign.md): the hero
   # moves at the walk speed, a stride lasting durationMs. The stride period is one step of the
   # timing grid, halved while longer than maxPeriodS, or freePeriodS without a steady beat. Two
   # opposite keys within stompMs (or Space) stomp: the hero stays put.
@@ -11,7 +11,7 @@ hero:
   # Fixed-speed strides: 140 px/s at any tempo and press rate, faster than every enemy but bats and bees.
   walk: { speed: 140, accelMs: 60, strideCycle: 64 }
   timing: { perfectMs: 45, greatMs: 90, goodMs: 140 }
-  # The groove meter (see docs/design/gameplay-redesign.md): each press
+  # The groove meter (see docs/archive/design/gameplay-redesign.md): each press
   # class changes the groove on its 0-to-1 scale; a bar after the latest press that raised it, it
   # drains from full to empty in 8 bars. The tiers rise at these values and drop 0.05 below them.
   # Classic mode starts the groove full and takes it away only for presses it is sure are off the

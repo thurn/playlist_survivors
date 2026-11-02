@@ -10,7 +10,7 @@ them behind their backs. Each now has demo3d's `grip` (`palm` 0.02, `yaw` 90,
 `pitch` 20), which `Roster.Spawn` applies through `Fist`, the hand's fist from
 its finger bones. The crowd bake spawns through it, so the grip is baked into
 the crowd's mesh. The hero's blade sits in the same `Fist`
-([the design](../../../../docs/design/unity-game.md), The crowd, Weapons).
+([the design](../../../../docs/archive/design/unity-game.md), The crowd, Weapons).
 
 ## Close-ups
 

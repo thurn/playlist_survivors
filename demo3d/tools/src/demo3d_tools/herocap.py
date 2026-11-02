@@ -2,7 +2,7 @@
 
 herocap/ is a small Unity project that bakes HeroEditor characters (Hippo's skeletal 2D kit, an
 Asset Store pack in the `more_assets` root) into transparent PNG frames for native
-(docs/design/heroeditor-native.md). Its recipes are tracked JSON, herocap/recipes/<atlas>.json,
+(docs/archive/design/heroeditor-native.md). Its recipes are tracked JSON, herocap/recipes/<atlas>.json,
 one per native atlas plus the hero; herocap/clips.json names the clips (an upper- and a
 lower-body HeroEditor clip each) and the capture's rate and scale.
 

@@ -69,14 +69,14 @@ namespace Game.Client.Loop
     ///   stamp + B;
     /// - `--seed N`: the sim's seed;
     /// - `--easy`: Easy (half contact damage, and floor chickens that heal);
-    /// - `--mode NAME`: the way of playing (<see cref="GameModes"/>, docs/design/game-modes.md): `grid`, the default;
+    /// - `--mode NAME`: the way of playing (<see cref="GameModes"/>, docs/archive/design/game-modes.md): `grid`, the default;
     ///   `free`, the hero walking freely (the arrows, or a click or held button: <see cref="PointerInput"/>) and the
     ///   sword striking on Z, graded by the beat; or `zen`, walking freely with the sword on the beat by itself, its
     ///   power following the loudness and the horde reeling to the music; a replay plays its session's;
     /// - `--finishers`: in zen, a ring closing on the hero toward each phrase downbeat, and Space in its window a
-    ///   screen-clearing slam (<see cref="FinisherRings"/>; docs/design/game-modes.md, Finishers); a replay plays its session's;
+    ///   screen-clearing slam (<see cref="FinisherRings"/>; docs/archive/design/game-modes.md, Finishers); a replay plays its session's;
     /// - `--dash`: a free hero (zen's) dashes on Space, on the beat a long lunge that strikes what it passes and makes the
-    ///   sword's next beat strike a spin, off it a short hop (docs/design/game-modes.md, The dash); a replay plays its session's;
+    ///   sword's next beat strike a spin, off it a short hop (docs/archive/design/game-modes.md, The dash); a replay plays its session's;
     /// - `--pause-at S`: pauses the run once frameSong reaches S, under the pause menu, windowless too (for stills);
     /// - `--events FILE`: a synthetic event feed (<see cref="ScriptedEvents"/>) in place of the slice's
     ///   horde and sword, whose enemies' ids it would share: the sim keeps only the hero, on open ground;

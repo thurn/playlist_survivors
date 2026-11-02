@@ -1,5 +1,5 @@
 #!/bin/sh
-# The vendor guard runs before every push (docs/tech-demo-3d/vendor-assets.md, The vendor
+# The vendor guard runs before every push (docs/archive/tech-demo-3d/vendor-assets.md, The vendor
 # guard). `demo3d setup` copies this file into the repository's shared hooks folder
 # ($(git rev-parse --git-common-dir)/hooks), so every checkout of the clone runs it, including
 # worktrees that never ran setup and checkouts without the demo's tools.

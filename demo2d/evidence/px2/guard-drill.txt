@@ -71,7 +71,7 @@ FAIL Boss Devil Man: the frame's .meta alone under Demo2D/Art/:   demo2d/Assets/
 FAIL Boss Devil Man: a clip (.anim as Unity rewrote it, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/death.anim   SHA-256 85eee15538f4… is a vendor file (derived: demo2d/Assets/Vendor/Boss Devil Man/boss_devil_man/death.an
 FAIL Boss Devil Man: the source clip (.anim, binary) under docs/:   docs/death.anim   SHA-256 c42b60a96c92… is a vendor file (pixel_assets)
 FAIL AncientForest: MainLev.png force-staged in Vendor/:   demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png   inside the vendor or baked folder
-FAIL AncientForest: MainLev.png renamed under docs/:   docs/tech-demo-2d/tiles.png   SHA-256 27d73e9b7f04… is a vendor file (derived: demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png)
+FAIL AncientForest: MainLev.png renamed under docs/:   docs/archive/tech-demo-2d/tiles.png   SHA-256 27d73e9b7f04… is a vendor file (derived: demo2d/Assets/Vendor/RPGW_AncientForest/Sliced/MainLev.png)
 FAIL AncientForest: MainLev.png.meta alone under Demo2D/Data/:   demo2d/Assets/Demo2D/Data/MainLev.png.meta   GUID 89e90e73f0dcbd84eb40c61bb749563e is a vendor asset (derived: demo2d/Assets/Vendor/RPGW_AncientFore
 FAIL AncientForest: a tree clip (.anim, YAML) under Demo2D/Art/:   demo2d/Assets/Demo2D/Art/tree1.anim   SHA-256 83ee327074da… is a vendor file (derived: demo2d/Assets/Vendor/RPGW_AncientForest/Animated/tree1.anim
 FAIL AncientForest: a tree controller under unity-packages/:   unity-packages/com.playlistsurvivors.choreography/Runtime/tree1_0.controller   SHA-256 17a3458713a9… is a vendor file (derived: demo2d/Assets/Vend

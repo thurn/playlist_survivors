@@ -3,12 +3,12 @@
 `demo2d <command>` (`uv run --project demo3d/tools demo2d`) runs the same tools on the 2D demo's
 project, `demo2d/`: setup, guard, check, unity, test, build, library, sync and manifest. The
 guard is the same either way; it checks the whole repository. `stylelab <command>` does the same
-for the shader style prototype, `stylelab/` (docs/tech-demo-3d/stylelab.md), and `game <command>`
-for the Unity game, `game/` (docs/design/unity-game.md), which adds its own `look` (windowless
+for the shader style prototype, `stylelab/` (docs/archive/tech-demo-3d/stylelab.md), and `game <command>`
+for the Unity game, `game/` (docs/archive/design/unity-game.md), which adds its own `look` (windowless
 stills of the player into game/evidence/look/SLUG), `plugin` (the music plugin built and copied
 into the project; setup and build run it) and `spike` (the sync spike's measured run).
 `herocap <command>` does the same for the HeroEditor capture, `herocap/`
-(docs/design/heroeditor-native.md), which adds `capture` (recipes to PNG frames in the machine's
+(docs/archive/design/heroeditor-native.md), which adds `capture` (recipes to PNG frames in the machine's
 cache) and `evidence` (contact sheets, the face lineup and the frame budget).
 
 Commands:
@@ -365,8 +365,8 @@ def build_parser(project: str = "demo3d") -> argparse.ArgumentParser:
     y.set_defaults(func=cmd_sync)
     lm = sub.add_parser("look-metrics", help="the neon look's metrics over a directory of stills (ps-wnj.2, ps-wnj.21)")
     lm.add_argument("stills", help="a directory of PNG or JPEG stills (searched recursively; mask-* skipped)")
-    lm.add_argument("--palette", required=True, help="a palette JSON (docs/design/neon-look.md, Palettes)")
-    lm.add_argument("--thresholds", help="the rules (default docs/design/neon-look-thresholds.json)")
+    lm.add_argument("--palette", required=True, help="a palette JSON (docs/archive/design/neon-look.md, Palettes)")
+    lm.add_argument("--thresholds", help="the rules (default docs/archive/design/neon-look-thresholds.json)")
     lm.add_argument("--preset", help="the look preset whose thresholds apply (default: the palette's pairing, else the loosest)")
     lm.add_argument("--impact", action="append", metavar="GLOB",
                     help="stills (names, globs) that are impact frames: only the impact rules apply (repeatable)")

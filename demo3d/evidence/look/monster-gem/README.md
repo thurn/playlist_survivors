@@ -1,7 +1,7 @@
 # Refractive gem on the crystal cut (ps-wnj.13, 2026-11-01)
 
 The prism preset's monster look, `refractive-gem`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)), on
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)), on
 the crystal cut's horde, shards and dragon. Before is the tree before the
 change, both IL2CPP Mac builds: `--look prism` drew the old crystal stand-in
 then, so only the monsters differ (both in the prism preset's void world,

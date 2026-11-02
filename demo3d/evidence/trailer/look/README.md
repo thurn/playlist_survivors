@@ -1,7 +1,7 @@
 # Trailer: the look (ps-hgs.3)
 
 The trailer's own look on top of each environment's
-([trailer.md, Look](../../../../docs/tech-demo-3d/trailer.md#look)): a
+([trailer.md, Look](../../../../docs/archive/tech-demo-3d/trailer.md#look)): a
 per-shot grade, 2× supersampling, impact lens hits, film grain and lens dirt,
 plus the style post fix, which also changes normal runs. Everything here comes
 from the IL2CPP player on the Mac (Apple M5 Max, Metal), windowless at fixed
@@ -127,7 +127,7 @@ the committed sets:
 ## Cost
 
 Two windowless `--gpu-probe-at` runs per setting over the climax, in
-[performance.md](../../../../docs/tech-demo-3d/performance.md#the-trailers-look):
+[performance.md](../../../../docs/archive/tech-demo-3d/performance.md#the-trailers-look):
 
 - At 1×, the climax runs 11 ms and the final slam's frames 16 ms.
 - At 2×, the climax runs 14.5 ms and the slam's frames 24 ms.

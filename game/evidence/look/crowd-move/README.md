@@ -5,7 +5,7 @@ The game's crowd renderer (`BoneTextureCrowd`, `MonsterInstance`, `CrowdSlots`,
 (`MonsterShatter`, `MonsterShards.compute`, `MonsterShard.shader`), the crystal
 surface includes and the beat globals moved from game/Assets/Game/Client/ into
 `unity-packages/com.playlistsurvivors.look/` (namespace `PS.Look.Crowd`;
-[neon-look.md](../../../../docs/design/neon-look.md), The Package). Bodies and
+[neon-look.md](../../../../docs/archive/design/neon-look.md), The Package). Bodies and
 shards take their materials from a monster look (`IMonsterLook`); the package's
 stand-in, `MonsterLooks.Crystal`, is the crystal as before, so nothing should
 change on screen. The bakers' unweld step (`StyleMesh.Unweld`) and the shard

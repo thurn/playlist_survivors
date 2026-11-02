@@ -1,6 +1,6 @@
 # SF1 — sourced VS feel numbers
 
-Deliverable: `docs/survivors/appendix-feel.md`, linked from progression.md.
+Deliverable: `docs/archive/survivors/appendix-feel.md`, linked from progression.md.
 The tables are selected numerical facts, not copies of raw extracted assets.
 No game text, runtime source or binary assets are committed.
 

@@ -3,8 +3,8 @@
 The operator on the first neon look: too overwhelming, the grid drowning
 everything and the structural crystals flashing far too bright. The look is
 now calm by default, and its loudest effects fire only in a special moment
-([neon-look.md, Restraint and special moments](../../../../docs/design/neon-look.md#restraint-and-special-moments);
-the style guide's [Restraint](../../../../docs/design/neon-look-style.md#restraint)).
+([neon-look.md, Restraint and special moments](../../../../docs/archive/design/neon-look.md#restraint-and-special-moments);
+the style guide's [Restraint](../../../../docs/archive/design/neon-look-style.md#restraint)).
 
 Before is an IL2CPP Mac player of 6610faff (the tree this change starts
 from), after one of this change, both windowless:

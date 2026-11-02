@@ -1,6 +1,6 @@
 {
   "name": "spectrum",
-  "note": "The prism preset's palette (docs/design/neon-look-style.md): an ice-blue key, rose-violet accent, gold counter, light enough to refract; dispersion fringes come from these hues, not a rainbow. enemies[0..1] key family, [2..3] accent, [4..5] counter; the boss in the accent's red half.",
+  "note": "The prism preset's palette (docs/archive/design/neon-look-style.md): an ice-blue key, rose-violet accent, gold counter, light enough to refract; dispersion fringes come from these hues, not a rainbow. enemies[0..1] key family, [2..3] accent, [4..5] counter; the boss in the accent's red half.",
   "void":    { "floor": "#04050a", "fog": "#080b18" },
   "grid":    { "line": "#26326a", "pulse": "#8aa6ff" },
   "hero":    { "body": "#ffffff", "blade": "#ffffff", "trail": "#d6f2ff" },

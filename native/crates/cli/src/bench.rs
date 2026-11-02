@@ -1,4 +1,4 @@
-//! `ps runner-bench`: the live engine's cost (docs/design/native-app.md, "Targets"). House-128's
+//! `ps runner-bench`: the live engine's cost (docs/archive/design/native-app.md, "Targets"). House-128's
 //! stream replayed as it would arrive, frames at 120 Hz with a burst now and then, a press on each
 //! committed beat reaching the runner 5 to 35 ms late, the simulation 0.2 s ahead: each frame's
 //! engine time (this thread's CPU time), and the rollbacks' re-simulation per second of play
@@ -14,7 +14,7 @@ use sim::core::rng::{Part, Rng};
 use sim::movement::InputKey;
 use stream::{Replay, StreamFile};
 
-/// The gates (docs/design/native-app.md, "Targets"): the song simulated again per second of play,
+/// The gates (docs/archive/design/native-app.md, "Targets"): the song simulated again per second of play,
 /// the same on any machine, at its measurement plus half; the timings, which a loaded machine
 /// stretches two- or threefold, at the targets themselves.
 const REPLAY_GATE: f64 = 7.2;

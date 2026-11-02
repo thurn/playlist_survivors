@@ -1,7 +1,7 @@
 # The look's post stack in game (ps-wnj.6, 2026-11-01)
 
 The game under each preset's post option
-([neon-look.md, Post-processing stack](../../../../docs/design/neon-look.md#post-processing-stack)):
+([neon-look.md, Post-processing stack](../../../../docs/archive/design/neon-look.md#post-processing-stack)):
 the arena's volume is the look's stack, its night grade gone, with the scene's
 exposure (`lighting.exposure`, 0.8 stops) under the options' void toe.
 

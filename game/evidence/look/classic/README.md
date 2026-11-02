@@ -1,7 +1,7 @@
 # The classic look in game (2026-11-01)
 
 `--look classic` draws the game as it was before the neon look (ps-wnj), for
-parity comparisons ([neon-look.md, Flags](../../../../docs/design/neon-look.md#flags)):
+parity comparisons ([neon-look.md, Flags](../../../../docs/archive/design/neon-look.md#flags)):
 every axis `classic`, so the Synty arena, the crystal monsters and structures,
 and the night post (`NightLook`'s grade and LUT, restored for it) at the
 night's beat feel.

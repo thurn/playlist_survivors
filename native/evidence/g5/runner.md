@@ -21,7 +21,7 @@ cd native && cargo run --release -p cli -- runner-bench
 | 4 | 0.025 / 0.553 / 0.800 / 1.55 | 5.6 / 19.8 | same |
 
 Re-simulation p95 is about 20 ms of CPU per second against the 250 ms target: no fallback
-(docs/design/native-app.md, "Arrivals roll back like late keys") is needed.
+(docs/archive/design/native-app.md, "Arrivals roll back like late keys") is needed.
 
 ## Gates (after the cold review)
 

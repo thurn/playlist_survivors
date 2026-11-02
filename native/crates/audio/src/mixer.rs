@@ -1,4 +1,4 @@
-//! The output's mixer (docs/design/native-app.md, "Sound (G4)"; `src/runtime/audio.ts` and
+//! The output's mixer (docs/archive/design/native-app.md, "Sound (G4)"; `src/runtime/audio.ts` and
 //! `live/sounds.ts` as a reference): voices scheduled on the render timestamps' host-time
 //! timeline and started on their exact sample, movable or cancellable until they start, never
 //! started after their onset. Effects have their own compressor and gain. The protected music

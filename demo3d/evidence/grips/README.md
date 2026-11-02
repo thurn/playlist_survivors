@@ -6,7 +6,7 @@ weapons the roster attaches, the big orc's Slayer and the troll's club,
 rode the hand bone as Synty made them, their blades out of the palm, so the
 elites carried them sideways and swung them behind their backs. Each now
 has a `grip` in roster.json that puts its handle through the fist
-([crowd.md](../../../docs/tech-demo-3d/crowd.md#common-requirements),
+([crowd.md](../../../docs/archive/tech-demo-3d/crowd.md#common-requirements),
 Weapons), baked into the crowd's mesh.
 
 ## Close-ups

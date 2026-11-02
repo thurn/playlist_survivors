@@ -1,7 +1,7 @@
 # The void world kit in game (ps-wnj.8, 2026-11-01)
 
 The game's arena drawn in the look's world kit
-([neon-look.md, The Axes > World](../../../../docs/design/neon-look.md#world)):
+([neon-look.md, The Axes > World](../../../../docs/archive/design/neon-look.md#world)):
 under a world option the Synty set, the mist and the flames' lights go and the
 grid floor (ps-wnj.7) takes the ground's place; under a structure look each of
 the 38 structure sites stands as crystal kit pieces on its tiles in the build's

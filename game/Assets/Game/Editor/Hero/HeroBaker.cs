@@ -15,7 +15,7 @@ namespace Game.EditorTools.Hero
     /// Bakes the hero for the player (unity-game.md, The Hero; demo3d's RosterBaker for its hero),
     /// from game/Content/hero-clips.json. `game unity BakeHero`; `game build` runs it when its inputs
     /// change. Into the gitignored Assets/Baked/Hero/ (derived from vendor assets,
-    /// docs/tech-demo-3d/vendor-assets.md): the knight with its shield in its left hand, scaled to the
+    /// docs/archive/tech-demo-3d/vendor-assets.md): the knight with its shield in its left hand, scaled to the
     /// hero's height, its materials converted to URP (the arena's MaterialConverter, with the emission
     /// on for the low-health pulse), with no controller or vendor scripts, each renderer tagged with its faceted mesh
     /// for the hero looks (the look package's HeroFacetBaker, into Facets/), as a prefab; and the

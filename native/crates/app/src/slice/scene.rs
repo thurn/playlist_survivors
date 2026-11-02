@@ -1,4 +1,4 @@
-//! The scene: the sim's live view drawn with the atlases (docs/design/native-app.md, "The engine in
+//! The scene: the sim's live view drawn with the atlases (docs/archive/design/native-app.md, "The engine in
 //! the app (G1)"). World units are the TS game's pixels; the camera centres the view at its zoom.
 //! G3 grows this into the game's whole look.
 

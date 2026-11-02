@@ -10,7 +10,7 @@ player, Apple M5 Max, Metal):
 
 [after/contact-sheet.jpg](after/contact-sheet.jpg): hero-pool left, after right.
 The tuning was done against `before`; the numbers below come from both.
-How each knob works: [effects.md, The look](../../../../docs/tech-demo-3d/effects.md#the-look).
+How each knob works: [effects.md, The look](../../../../docs/archive/tech-demo-3d/effects.md#the-look).
 
 ## What made the blob
 

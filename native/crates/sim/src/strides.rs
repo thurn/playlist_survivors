@@ -1,4 +1,4 @@
-//! `src/sim/strides.ts`: fixed-speed strides (docs/design/gameplay-redesign.md, "Movement:
+//! `src/sim/strides.ts`: fixed-speed strides (docs/archive/design/gameplay-redesign.md, "Movement:
 //! Fixed-Speed Strides"). The hero moves at one speed whatever the tempo or press rate: ground
 //! builds up in a budget as world time passes, never above one stride, and each stride spends all of
 //! it. Pure functions of a small state the simulation carries; times are world seconds (grid times

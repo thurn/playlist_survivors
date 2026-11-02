@@ -3,7 +3,7 @@
 Base `c5162345fb14a5e2834836e7e98c18338a384446`. Necessary source-curation
 prerequisite `hv-n7fn.43` repaired the two event-only combat rows omitted by
 SF1. Its separate fresh worktree/source commit is staged at that base; SW6
-reads values only from `docs/survivors/`. No raw game data/source/assets.
+reads values only from `docs/archive/survivors/`. No raw game data/source/assets.
 Native bead notes record final source/integrated SHAs and gate certificate.
 
 ## Rules and implementation choices

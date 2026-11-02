@@ -1,6 +1,6 @@
 # The dash (ps-zz4)
 
-`--mode zen --dash` ([the design](../../../docs/design/game-modes.md#the-dash)): Space on the beat is a long lunge that
+`--mode zen --dash` ([the design](../../../docs/archive/design/game-modes.md#the-dash)): Space on the beat is a long lunge that
 strikes what it passes and makes the sword's next beat strike a spin; off the beat a short hop; the hero can't be hurt
 through either. The questions: does a press on the beat lunge and one off it hop, does the spin follow on the next beat,
 and does the dash show at once, on the key-down frame, whatever the lead?

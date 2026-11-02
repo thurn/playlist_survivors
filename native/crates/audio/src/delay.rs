@@ -1,4 +1,4 @@
-//! Delayed listening's delay line (docs/design/native-app.md, "Playback"): the tapped app's
+//! Delayed listening's delay line (docs/archive/design/native-app.md, "Playback"): the tapped app's
 //! stereo capture, played `M` late through the output.
 //!
 //! The capture's IOProc writes each buffer through a [`Writer`]: its frames (interleaved stereo)

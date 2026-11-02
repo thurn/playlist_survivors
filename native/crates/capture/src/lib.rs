@@ -1,5 +1,5 @@
-//! Live capture, shared by native's app and the Unity game's plugin (docs/design/unity-game.md,
-//! "Shared Rust code with native"; docs/design/native-app.md, "Capture and mute").
+//! Live capture, shared by native's app and the Unity game's plugin (docs/archive/design/unity-game.md,
+//! "Shared Rust code with native"; docs/archive/design/native-app.md, "Capture and mute").
 //!
 //! - [`tap`]: the Core Audio process taps (all output but ours, or one app's processes, muted
 //!   while tapped) and the microphone, each into a [`sink`].

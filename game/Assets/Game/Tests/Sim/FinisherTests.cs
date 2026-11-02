@@ -8,7 +8,7 @@ using PS.Game.Sim.Level;
 namespace PS.Game.Sim.Tests
 {
     /// <summary>
-    /// The finishers (`--finishers`, docs/design/game-modes.md, "Finishers"): rings closing on the zen hero toward the
+    /// The finishers (`--finishers`, docs/archive/design/game-modes.md, "Finishers"): rings closing on the zen hero toward the
     /// phrase downbeats, predicted causally from the beats known; Space in a ring's window fires the sword's
     /// screen-clearing slam at once, in heard time; a press outside it, or none, does nothing and costs nothing; and no
     /// rings while held or under the gate.

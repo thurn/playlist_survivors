@@ -1,7 +1,7 @@
 # Motion layers in the crystal cut (ps-wnj.14, 2026-11-01)
 
 The look package's springs and swarm in demo3d's crystal cut
-([neon-look.md, Motion](../../../../docs/design/neon-look.md#motion); the game's evidence is
+([neon-look.md, Motion](../../../../docs/archive/design/neon-look.md#motion); the game's evidence is
 [game/evidence/look/motion](../../../../game/evidence/look/motion/README.md)). One Mono build,
 `--motion none` for before:
 

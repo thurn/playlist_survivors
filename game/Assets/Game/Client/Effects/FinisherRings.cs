@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 namespace Game.Client.Effects
 {
     /// <summary>
-    /// The finishers' rings (`--finishers`, docs/design/game-modes.md, "Finishers"): a ring of crystal light on the ground
+    /// The finishers' rings (`--finishers`, docs/archive/design/game-modes.md, "Finishers"): a ring of crystal light on the ground
     /// at the hero's feet, closing from <see cref="StartRadiusM"/> to <see cref="EndRadiusM"/> over its telegraph so it
     /// arrives on the phrase downbeat, over a faint ring where it will land. It brightens as it closes and flares
     /// through its window; a hit takes it at the slam's impact (the sword's slam and its waves take over), a miss fades

@@ -6,7 +6,7 @@ the same gain. Now the overlay's `feel` object
 ([intensity-overdrive.json](../../../Assets/Demo3D/Choreography/Data/intensity-overdrive.json))
 weights each blow by its kills, and the game's own camera, hit-stop, effects,
 lights and sound follow that weight. The fields and formulas are in
-[Camera and Sound, Blow weight](../../../../docs/tech-demo-3d/camera-and-sound.md#blow-weight).
+[Camera and Sound, Blow weight](../../../../docs/archive/tech-demo-3d/camera-and-sound.md#blow-weight).
 Normal runs have no `feel` and don't change.
 
 ## The tuning values

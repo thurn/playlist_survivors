@@ -1,6 +1,6 @@
 # F2: the oracle fixtures
 
-Measured by `hv-t8o8.3` on 2026-10-24. Summary in the design's [Oracle fixtures](../../../docs/design/native-app.md#oracle-fixtures); the format in [native/oracle/FORMAT.md](../../oracle/FORMAT.md).
+Measured by `hv-t8o8.3` on 2026-10-24. Summary in the design's [Oracle fixtures](../../../docs/archive/design/native-app.md#oracle-fixtures); the format in [native/oracle/FORMAT.md](../../oracle/FORMAT.md).
 
 `scripts/oracle-export.ts` (instrumentation only) wrote `native/oracle/`
 ([FORMAT.md](../../oracle/FORMAT.md),

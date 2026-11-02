@@ -2,8 +2,8 @@
 
 The crystal cut (`--trailer crystal`) in every look preset, judged on a still
 from every shot against the style guide's rules
-([neon-look.md, The Trailer](../../../../docs/design/neon-look.md#the-trailer);
-[neon-look-style.md, Rules and Thresholds](../../../../docs/design/neon-look-style.md#rules-and-thresholds)).
+([neon-look.md, The Trailer](../../../../docs/archive/design/neon-look.md#the-trailer);
+[neon-look-style.md, Rules and Thresholds](../../../../docs/archive/design/neon-look-style.md#rules-and-thresholds)).
 
 ```sh
 just trailer-looks                 # the operator: captures/trailer-crystal-{edge,solid,hologram,prism}.mp4, windowed

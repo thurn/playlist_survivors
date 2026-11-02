@@ -5,7 +5,7 @@
 //! `windowS` of samples (`RNNBeatProcessor(fps=100)` then `DBNBeatTrackingProcessor`'s Viterbi
 //! decode with its beat correction); the entry keeps the decode's beats and the causal tracker's
 //! believed beats from `T - keepS` to `T`. Live, a decode takes time, so an entry becomes usable
-//! by the phase check at sample time `T + D` (docs/design/native-app.md, "Hindsight's live
+//! by the phase check at sample time `T + D` (docs/archive/design/native-app.md, "Hindsight's live
 //! latency"); its `known_at` is then `T + D`, and `D = 0` reproduces Python.
 //!
 //! Each step follows the Python libraries to the bit where they are discrete:
@@ -53,7 +53,7 @@ pub struct HindsightParams {
     pub phase_agree: f64,
 }
 
-/// `D` live: phase 0 set it from the spike's decode times (docs/design/native-app.md, "Threads").
+/// `D` live: phase 0 set it from the spike's decode times (docs/archive/design/native-app.md, "Threads").
 pub const LIVE_DELAY_S: f64 = 0.67;
 
 impl HindsightParams {

@@ -1,4 +1,4 @@
-"""Bands, brightness and timbre for the belief stream (docs/design/reactive-feel.md, "Bands,
+"""Bands, brightness and timbre for the belief stream (docs/archive/design/reactive-feel.md, "Bands,
 brightness and timbre (E1)").
 
 Everything is causal and streaming: a frame's spectrum is the window of samples ending at the

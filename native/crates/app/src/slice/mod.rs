@@ -1,4 +1,4 @@
-//! The app (docs/design/native-app.md, "Phase G: Grow the Slice"): the game on live audio. The tap
+//! The app (docs/archive/design/native-app.md, "Phase G: Grow the Slice"): the game on live audio. The tap
 //! (or a `--file` played through the output) feeds the analyzer on a thread; its entries go into
 //! the sim's stream, stamped with their arrival, and the sim engine (`eval::live::Engine`) runs
 //! ahead of the song time being heard, rolling back for late keys and arrivals (G5), and shows the
@@ -22,7 +22,7 @@
 //!                                     # the whole live path on a timer, for checks (then exits)
 //!     playlist-survivors --input-offset-ms 30 --stomp-extra-ms 10  # calibration for this session
 //!     playlist-survivors --art heroeditor  # the HeroEditor feel test's look: a painted dusk ground
-//!                                     # (docs/design/heroeditor-native.md); `--art lpc`, the default, is native's own
+//!                                     # (docs/archive/design/heroeditor-native.md); `--art lpc`, the default, is native's own
 //!     playlist-survivors --classic     # classic mode (Z between runs): presses judged on the beat; zen mode, the
 //!                                     # default, judges nothing and moves the hero on the beat
 //!     (F1 in the app: the debug menu; F2 plays the next bundled track, F3 listens to the Mac;
@@ -164,11 +164,11 @@ fn replay_music(audio: &[i16], skip: i64, seconds: f64, rate: f64) -> Arc<[f32]>
 /// The analyzer's evidence gate (`manifest.json`'s `streamParams.gate`).
 const GATE: f64 = 0.2;
 /// How late a key can reach the engine: the window server's delivery to the main thread (p95
-/// 30.5 ms, docs/design/native-app.md "Targets") and up to a frame more. The engine's settling
+/// 30.5 ms, docs/archive/design/native-app.md "Targets") and up to a frame more. The engine's settling
 /// window covers it and the calibration's offset, so a press is applied at its own time.
 const KEY_LATE_S: f64 = 0.05;
 /// The frame's work, p99 in thread CPU time (ms): the target, half a frame at 120 Hz
-/// (docs/design/native-app.md, "Targets"; a loaded machine stretches the measurement two- or
+/// (docs/archive/design/native-app.md, "Targets"; a loaded machine stretches the measurement two- or
 /// threefold, so its p95 plus half would flake).
 const FRAME_WORK_GATE_MS: f64 = 4.0;
 /// Under the ground (the TS game's world clear).
@@ -1502,7 +1502,7 @@ fn thread_cycles() -> Option<u64> {
     (r == 0).then_some(counts[1])
 }
 
-/// The frame's own work, in this thread's cycles (docs/design/native-app.md, "Targets"): 60 s of the house track's stream
+/// The frame's own work, in this thread's cycles (docs/archive/design/native-app.md, "Targets"): 60 s of the house track's stream
 /// through the engine at 120 Hz, 0.2 s ahead, a press on each beat 5 to 35 ms late; each frame's
 /// scene and HUD built and encoded offscreen at 1920 x 1080. `check` fails above the gate.
 ///
@@ -2101,7 +2101,7 @@ impl Watch {
     }
 }
 
-/// A calibration screen, between runs (docs/design/native-app.md, "Calibration (D2)").
+/// A calibration screen, between runs (docs/archive/design/native-app.md, "Calibration (D2)").
 #[derive(Debug)]
 enum Screen {
     /// The tap-along: the clicks' heard times (host s), the taps (host s, a stomp?), and what it
@@ -2117,7 +2117,7 @@ enum Screen {
     Said { text: String, until: f64 },
 }
 
-/// The automatic start (docs/design/native-app.md, "Runs on live audio (D1)"), headless only: a
+/// The automatic start (docs/archive/design/native-app.md, "Runs on live audio (D1)"), headless only: a
 /// run starts once the evidence has stayed at or above the gate for 2 s after at least 1.5 s of
 /// quiet, or after the previous run's end (or the app's start). With a window, Enter or Space
 /// starts a run.
@@ -2490,7 +2490,7 @@ impl App {
             && let Some(s) = song
         {
             // Ahead of the time heard by the output's latency at least, so a sound is known
-            // before the output must render it (docs/design/native-app.md, "Arrivals roll back
+            // before the output must render it (docs/archive/design/native-app.md, "Arrivals roll back
             // like late keys").
             // (The stand-in player presses on each committed beat once it is 20 ms past (a real
             // key's delivery), and

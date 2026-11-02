@@ -1,55 +1,58 @@
-# Playlist Survivors
+# Rhythm Champions
 
-A rhythm survivors game for macOS that plays to whatever music the Mac is playing. It listens to
-the system's audio (or plays a file and listens to that) and finds the beat as it goes. You hold
-the arrow keys (or WASD) and the hero hops on the beat, while the sword and every weapon fire by
-themselves on it through a horde of LPC monsters, and every strike lands on the music.
+A horde survivor rhythm game for the Mac. A white knight fights a horde of
+neon monsters to whatever music you are listening to: its sword swings on
+the beat by itself, the horde steps to the music, and Space dashes, harder
+and wider on the beat. Pick an app that is playing music, or a file, and
+play.
 
-This is **zen mode**, the default: nothing is judged, every move lands on the beat, and the groove
-stays full at the top tier. **Legacy mode** (`--legacy`, or Z between runs) is the TS game's
-original rules, where you press on the beat, each press is rated and the groove rises and drains
-with your timing. Legacy mode is kept for older sessions and the sim's tests, but is no longer
-developed.
+**Status: in development.** V1 is level 1, start to victory, built in a new
+Unity project, `rhythm_champions/`, played with `just champions` once its
+foundation lands. Until then nothing in this repository plays the new game.
 
-The design is [docs/design/native-app.md](docs/design/native-app.md). The game began as a TS web
-game; the `ts-freeze` tag keeps it (see the [setup guide](SETUP.md#local-data-and-troubleshooting)).
+- [The design](docs/champions/design.md): what the game is, locked
+  2026-11-01.
+- [The plan](docs/champions/plan.md): how V1 gets built, and its Enact
+  epic's beads.
 
-## Setup
+The project was called Playlist Survivors; the repository keeps that name.
 
-See the [complete setup guide](SETUP.md) for cloning and playing on a new Mac, development
-tools, fetching art sources, and optional Enact configuration.
+## Layout
 
-## Playing
+- `rhythm_champions/`: the game (Unity, with its Rust audio plugin, C# sim
+  and Python tools), arriving with the epic's first beads.
+- `docs/champions/`: the design and the plan. `docs/archive/`: every earlier
+  design, kept for history.
+- `scripts/`: the fast and slow checks and Enact's worktree hooks.
 
-In the app: arrows or WASD stride, Space stomps, Esc or Backspace ends the run, Enter or Space
-starts the next; Z switches zen and legacy mode between runs; C and V calibrate input and video; W
-watches your run; F1 is the debug menu (F2 plays the next bundled track, F3 listens to the Mac), F8
-saves the timing log.
+### Frozen prototypes
 
-## Content and tools
+These stay in the tree for reference, outside CI. Nothing new builds on
+them, and a change elsewhere may break them unnoticed.
 
-- `content/`, `levels/`: the game's content (enemies, weapons, effects, zones) and levels, read by
-  the sim.
-- `public/assets/`: the baked atlases and sounds; `assets-src/` contains their recipes. See the
-  [asset setup instructions](SETUP.md#asset-baker-and-art-sources) for rebaking and checking them.
-- `public/reactive/`: the bundled tracks and their belief streams; `corpus/manifest.yaml` lists the
-  feel corpus. The analysis tool (`tools/analysis`, `uv run --project tools/analysis ps-analysis
-  <command>`) writes them: `corpus-add` ingests the manifest's tracks, `streams` regenerates every
-  stream and the index, `fit-corpus` fits the reference grids; `stream`, `fit-grid`, `synth`,
-  `encode` work on one track; `export-models` exports the analyzer's models and golden data for
-  `native/`.
-- `songs/`: the Galop's authored song map (`ps-analysis check` validates it).
+- `native/`: the native Rust game, a 2D survivors run that listens to any
+  app's music, with its content (`content/`, `levels/`, `public/`, `corpus/`,
+  `songs/`) and tools (`tools/analysis/`, `tools/baker/`, `assets-src/`).
+- `game/`: the first Unity game, native's run in 3D.
+- `demo3d/`, `demo2d/`, `stylelab/`, `herocap/`: the Unity tech demos, the
+  style lab and the HeroEditor capture.
+- `unity-packages/`: the packages those projects share.
 
-## Development
+Their designs are under [docs/archive/](docs/archive/README.md).
 
-The [setup guide](SETUP.md#development-tools-and-checks) covers checks and delivery;
-[AGENTS.md](AGENTS.md) defines the maintained project's workflow. The original TypeScript game
-is preserved at `ts-freeze`; see [its setup instructions](SETUP.md#local-data-and-troubleshooting).
+## Setup and development
+
+[SETUP.md](SETUP.md) covers the tools and the vendor assets;
+[AGENTS.md](AGENTS.md) defines the workflow every change follows.
 
 ## Licences
 
-Code is under the Apache License 2.0 (`LICENSE`). Art and sound come from CC0, CC-BY, OGA-BY and
-CC-BY-SA packs; see `public/assets/credits.json`. Baked atlas pages that contain share-alike art
-are CC-BY-SA. The corpus tracks' licences are in `corpus/manifest.yaml`. The development recording
-of the Galop is tagged CC0 on Wikimedia Commons but its status is unverified: it is fine for a
-private build and must be replaced before any public release.
+Code is under the Apache License 2.0 (`LICENSE`). The analyzer's neural
+network weights come from madmom under CC BY-NC-SA 4.0
+([native/models/README.md](native/models/README.md)), which suits a free,
+non-commercial project. The Unity projects use commercial vendor assets
+(Synty, Magic Pig Games, Hovl Studio) that each machine supplies locally and
+that are never committed, nor anything derived from them
+([vendor rules](docs/archive/tech-demo-3d/vendor-assets.md)). The frozen
+native game's art and sound come from CC0, CC-BY, OGA-BY and CC-BY-SA packs
+(`public/assets/credits.json`).

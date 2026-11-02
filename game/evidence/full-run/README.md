@@ -127,7 +127,7 @@ tempo bands, the band boundary, beatless passages, song gaps and the mass kill) 
 
 ## Retaking it quickly (ps-msz.7.5)
 
-Under `--fixed-time` the frames drive the music (docs/design/unity-game.md, Fixed time), so the full
+Under `--fixed-time` the frames drive the music (docs/archive/design/unity-game.md, Fixed time), so the full
 run, its replay and late stills take minutes, not their song time. On jarvis (M-series Mac),
 2026-10-31, IL2CPP player built from ps-msz.7.5's tree:
 

@@ -1,7 +1,7 @@
 # Dark core, lit edges in game (ps-wnj.10, 2026-11-01)
 
 The edge preset's monster look, `dark-core-edges`
-([neon-look.md, Monsters](../../../../docs/design/neon-look.md#monsters)):
+([neon-look.md, Monsters](../../../../docs/archive/design/neon-look.md#monsters)):
 near-black glass lit only by the type's palette slot in a fresnel rim, in
 lines on the model's feature edges (the crowd baker's, UV5) and in a small
 core that flares on the beat. Shards keep the lines and outline their cracks.

@@ -1,4 +1,4 @@
-//! Stage parity, A3 (docs/design/native-app.md, "Stage parity"): ticks (evidence, energy,
+//! Stage parity, A3 (docs/archive/design/native-app.md, "Stage parity"): ticks (evidence, energy,
 //! level) and onsets (the superflux function, its online peak picking, strengths and strong
 //! flags) against Python's golden data (`native/models/golden/`), each stage fed Python's own
 //! upstream; then the whole analyzer's independence of block sizes.

@@ -7,7 +7,7 @@
 
 `--monster-style spectrum`: stylelab's "Spectrum" (Synth.shader) treatment, drawn through the bone-texture
 crowd's indirect draws on the unwelded style mesh
-([crowd.md, Monster styles](../../../../docs/tech-demo-3d/crowd.md#monster-styles)).
+([crowd.md, Monster styles](../../../../docs/archive/tech-demo-3d/crowd.md#monster-styles)).
 Black lacquer bodies with a thin-film rainbow that moves with view angle, height and distance
 from the hero, plus a neon wire on every triangle edge of the style mesh. Equalizer bars climb
 the body on each beat, and the bass swells the mesh along its normals. Death bursts into

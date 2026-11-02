@@ -1,4 +1,4 @@
-//! The Unity game's music plugin (docs/design/unity-game.md, "Music: the Rust Plugin"): a source
+//! The Unity game's music plugin (docs/archive/design/unity-game.md, "Music: the Rust Plugin"): a source
 //! played `M` late through Unity's output and analysed ahead of that, behind the plain C interface
 //! of `include/ps_plugin.h`, which Unity calls through P/Invoke.
 //!

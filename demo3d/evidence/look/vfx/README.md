@@ -1,7 +1,7 @@
 # Procedural slashes, spins, streaks and smears in the crystal cut (ps-wnj.15, 2026-11-01)
 
 The vfx axis's options in demo3d's crystal cut
-([neon-look.md, VFX](../../../../docs/design/neon-look.md#vfx)):
+([neon-look.md, VFX](../../../../docs/archive/design/neon-look.md#vfx)):
 `light-streaks` (edge, solid, hologram) and `prism-streaks` (prism).
 `EffectDriver` maps the timeline's effects through the selection's `vfx`
 table (Data/effects.json): the slash, thrust and spin trails, the slam's shock

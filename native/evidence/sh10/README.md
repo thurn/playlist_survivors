@@ -8,7 +8,7 @@ damage area. Menu song time does not become a backlog of missed charges.
 
 ## Rules and choices
 
-- `docs/survivors/appendix-feel.md`, Boss treasure by minute, is the source:
+- `docs/archive/survivors/appendix-feel.md`, Boss treasure by minute, is the source:
   independent tier3/2/1 rolls tried in that order; these hold 5/3/1 items.
   Luck is 1 in this demo. No beginner profile override is introduced.
 - At most one successful normal treasure attachment per origin minute. That
