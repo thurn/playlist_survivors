@@ -289,13 +289,14 @@ just champions-tool look DIR --out rhythm_champions/evidence/look/NAME
 - Checks the palette first (style.md's rules, as test_palette.py does).
 - Measures every still: a table with every threshold key as a row and each
   still's value (blank: the still lacks what the measure needs; n/a: the rule
-  judges other frames; "not judged": a fallback or a sparse still), the cut's
-  rules, and the rules broken.
+  judges other frames; "not judged": a fallback or a sparse still; "strays":
+  off its guide value), the cut's rules, and where each still strays.
 - `--out` writes metrics.md, metrics.json and a small ps-render-tagged JPEG
   per still with the dense swarm tiles outlined.
 - A report, not a verdict: nothing is accepted or rejected on its numbers.
-  Until ps-6y2.41 lands it still exits 1 when a still strays from a guide
-  value; treat that as information.
+  It exits 0 however far the stills stray, and non-zero only when it can't
+  measure: no stills, or a still, ID pass, view, palette or thresholds file
+  it can't read.
 - A frame without an ID pass (cut from a video) gets the frame rules alone.
 
 ## Diagnostics

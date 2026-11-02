@@ -392,7 +392,7 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
   colour key (`key60`), families, palette conformance, the floor's p99,
   background light share, flash frames and swarm separation, with a type-ID
   pass rendered with the stills. **A diagnostic**: it finds frames worth a
-  second look and decides nothing (ps-6y2.41 makes it never fail a run).
+  second look and decides nothing, and never fails a run (ps-6y2.41).
   Black share is gone.
 - `champions stills` renders fixed-time stills of scripted scenes in one
   launch: a crowd at minute 4, a loud surge, a structure field, the beat
