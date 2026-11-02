@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Champions.Client.Bench;
 using Champions.Client.Loop;
@@ -22,8 +23,14 @@ namespace Champions.Client
     ///   once the last is kept; `--stills-scenes NAMES` instead plays the scripted scenes (<see cref="StillScenes"/>)
     ///   for their stills;
     /// - `--seconds N`: quits after N seconds;
-    /// - `--file PATH` or `--app NAME`: plays that music 3 s late through the music plugin, its entries
-    ///   feeding the sim (<see cref="GameLoop"/>) with the run's UI (<see cref="RunUi"/>); a source that can't play quits with 2;
+    /// - `--file PATH` or `--app NAME`: level 1 straight away on that music, played 3 s late through the music plugin, its
+    ///   entries feeding the sim (<see cref="GameLoop"/>) through the run's flow (<see cref="Flow.BeginRun"/>: pause, the end
+    ///   card, Again); a source that can't play quits with 2;
+    /// - `--seed N`: the run's seed (a scripted run's defaults to 1, a played one's to the clock);
+    /// - `--walk idle|reference|KEYS` and `--picks 1,2,..|reference`: the scripted player (<see cref="ScriptedPlayer"/>);
+    /// - `--record DIR`: the first run's session recorded into DIR (the plugin's entries and audio, then its inputs);
+    /// - `--replay DIR[,DIR...]`: each recorded session played again through the presenters with no music, at
+    ///   `--replay-speed X` (default 1); quits with 0 when every replay settled its recorded hash, else 1 (2: unreadable);
     /// - `--calibration FILE`: the calibrations' file (Calibration.CalibrationStore);
     /// - `--gallery`: the weapon effects' gallery in a window, every effect in turn (<see cref="GalleryScene"/>); with
     ///   `--capture-stills DIR`, its stills as a scripted scene;
@@ -46,6 +53,8 @@ namespace Champions.Client
         Palette _palette;
         GameContent _content;
         CardFaces _faces;
+        GameLoop _replayLoop;
+        int _replayed, _replayCode;
         bool _driven;
 
         void Start()
@@ -58,7 +67,8 @@ namespace Champions.Client
                 return;
             }
             foreach (var note in _options.Unrecognized) Debug.LogWarning("Boot: " + note);
-            if (_options.FixedTime) Time.captureFramerate = FixedFps;
+            // A replay is fixed time: its frames run as fast as they draw.
+            if (_options.FixedTime || _options.Replay.Length > 0) Time.captureFramerate = FixedFps;
             else if (_options.Headless) Application.targetFrameRate = FixedFps;
             // A headless run's music mutes the final mix instead (GameLoop), so its filters still run.
             if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
@@ -120,7 +130,12 @@ namespace Champions.Client
                 }
                 if (_stills != null) _stills.Requeue = _bench.Requeue;
             }
-            if (_options.File != null || _options.App != null)
+            if (_options.Replay.Length > 0 && _world != null)
+            {
+                _driven = true;
+                NextReplay();
+            }
+            else if (_options.File != null || _options.App != null)
             {
                 var source = ResolveMusic(_options, out string error);
                 if (source == null)
@@ -130,13 +145,75 @@ namespace Champions.Client
                     Application.Quit(2);
                     return;
                 }
-                GameLoop.Begin(gameObject, _camera, source, _options.FixedTime, mute: _options.Headless, _world, _palette != null ? MakeRunUi() : null, Finished);
-                _driven = true;
+                _flow = Flow.BeginRun(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime, source);
             }
-            else if (_world != null) _flow = Flow.Begin(gameObject, _camera, _world, MakeRunUi, ContentDir(), _options.FixedTime, _options.Headless);
+            else if (_world != null) _flow = Flow.Begin(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime);
+            if (_stills != null && _flow != null) _stills.Requeue = () => _flow.Run?.Presentation?.Queue(_camera);
         }
 
         RunUi MakeRunUi() => new RunUi(transform, _palette, _content, _faces, _camera.gameObject.layer);
+
+        /// <summary>A run's setup on <paramref name="source"/>: level 1 from the first offer on the flags' seed, scripts and record.</summary>
+        RunSetup MakeSetup(MusicSource source)
+        {
+            bool scripted = _options.Walk != null || _options.Picks != null;
+            ulong seed = _options.Seed ?? (scripted ? 1UL : (ulong)DateTime.UtcNow.Ticks);
+            return new RunSetup
+            {
+                Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless, World = _world, MakeUi = MakeRunUi,
+                Content = _content, ContentDir = ContentDir(), Palette = _palette,
+                Run = new RunInputs { Seed = seed, Level = true, Start = RunStart.FirstOffer },
+                Walk = _options.Walk, Picks = _options.Picks, RecordDir = _options.Record, Flags = Environment.GetCommandLineArgs(), Look = _options.Look,
+                BuildIcons = BuildIcons,
+            };
+        }
+
+        /// <summary>The build's icons for the end card: the dash, the attacks, the mods, each at its rank.</summary>
+        List<Icon> BuildIcons(Simulation sim)
+        {
+            var icons = new List<Icon>();
+            var hero = sim.State.Hero;
+            icons.Add(_faces.Of(Card.Dash(hero.Dash, hero.DashRank, 0)).Icon);
+            for (int k = 0; k < Upgrade.AttackCount; k++)
+                if (sim.Arsenal.Rank((AttackKind)k) > 0) icons.Add(_faces.Of(Card.Of((AttackKind)k, sim.Arsenal.Rank((AttackKind)k), 0)).Icon);
+            for (int k = 0; k < Upgrade.ModCount; k++)
+                if (sim.Arsenal.Rank((ModKind)k) > 0) icons.Add(_faces.Of(Card.Of((ModKind)k, sim.Arsenal.Rank((ModKind)k), 0)).Icon);
+            icons.RemoveAll(i => i == null);
+            return icons;
+        }
+
+        /// <summary>`--replay`'s next session, on a fresh world; the player quits with the worst code once all are done.</summary>
+        void NextReplay()
+        {
+            if (_replayed >= _options.Replay.Length)
+            {
+                Finished(_replayCode, $"{_options.Replay.Length} replays done");
+                return;
+            }
+            string dir = Path.GetFullPath(_options.Replay[_replayed++]);
+            SessionRecord record;
+            try { record = SessionRecord.Read(dir); }
+            catch (Exception e) when (e is IOException || e is FormatException)
+            {
+                Debug.LogError($"Boot: --replay {dir}: {e.Message}");
+                _replayCode = Math.Max(_replayCode, 2);
+                NextReplay();
+                return;
+            }
+            if (_replayLoop != null) Destroy(_replayLoop);
+            _world.Dispose();
+            _world = new WorldPresenter(_camera, _palette);
+            _replayLoop = GameLoop.Begin(gameObject, _camera, new RunSetup
+            {
+                Replay = record, ReplayDir = dir, ReplaySpeed = _options.ReplaySpeed, Mute = true, World = _world, MakeUi = MakeRunUi, Look = _options.Look,
+                Content = _content, ContentDir = ContentDir(), Palette = _palette,
+            }, (code, why) =>
+            {
+                _replayCode = Math.Max(_replayCode, code);
+                NextReplay();
+            });
+            if (_stills != null) _stills.Requeue = () => _replayLoop?.Presentation?.Queue(_camera);
+        }
 
         /// <summary>rhythm_champions/Content, above the player (a build inside the checkout) or the working directory.</summary>
         static string ContentDir() =>

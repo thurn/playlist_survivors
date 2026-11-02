@@ -10,7 +10,7 @@ namespace Champions.Sim
     ///   clock (150 at the start, 600 by minute 12), spawning at most <see cref="LevelRules.PerS"/> a second from
     ///   an ellipse just off-screen round the hero, each pick from the mix of the types joined by then.
     /// - <b>Surges</b>: the analyzer's loudness level, smoothed over <see cref="LevelRules.SurgeSmoothS"/>, moves
-    ///   the target toward the cap in loud stretches and down in quiet ones. With no music (no fresh tick, or
+    ///   the target up in loud stretches (in proportion to the ramp, toward the cap late) and down in quiet ones. With no music (no fresh tick, or
     ///   silence), it is the ramp alone. Above the target, mobs off-screen (outside the spawn ellipse) go,
     ///   at the spawning rate, so a quiet stretch thins the horde where nobody sees it.
     /// - <b>Formed waves</b>: a section change (strong enough, and long enough after the last wave) brings a
@@ -77,13 +77,14 @@ namespace Champions.Sim
 
         /// <summary>
         /// The target at run clock <paramref name="clock"/> with the music <paramref name="loud"/> and
-        /// <paramref name="quiet"/> that share of late: the ramp (denser in the second half), moved toward the cap
-        /// by loudness and down by quiet, never above the cap.
+        /// <paramref name="quiet"/> that share of late: the ramp (denser in the second half), raised by loudness in
+        /// proportion to it and lowered by quiet, never above the cap: a loud start surges 150 to 240, a loud minute 12
+        /// 600 toward the cap (ps-6y2.21: a share of the way to the cap put 660 on screen in a loud song's first seconds).
         /// </summary>
         public double TargetAt(double clock, double loud, double quiet)
         {
             double target = rules.Ramp.At(clock) * (SecondHalf ? rules.SecondHalfDensity : 1);
-            target += (rules.Cap - target) * rules.SurgeStrength * loud;
+            target *= 1 + rules.SurgeStrength * loud;
             target *= 1 - (1 - rules.QuietScale) * quiet;
             return Math.Min(target, rules.Cap);
         }
@@ -220,8 +221,8 @@ namespace Champions.Sim
             for (int attempt = 0; attempt < 4; attempt++)
             {
                 double a = sim.Random.NextDouble() * 2 * Math.PI, j = sim.Random.NextDouble() * rules.RingJitterM;
-                x = hx + Math.Cos(a) * (rules.RingXM + j);
-                y = hy + Math.Sin(a) * (rules.RingYM + j);
+                x = hx + SimMath.Cos(a) * (rules.RingXM + j);
+                y = hy + SimMath.Sin(a) * (rules.RingYM + j);
                 if (Clear(x, y, radius, t)) return;
             }
         }
@@ -241,8 +242,8 @@ namespace Champions.Sim
         void Disc(double radius, out double x, out double y)
         {
             double a = sim.Random.NextDouble() * 2 * Math.PI, r = radius * Math.Sqrt(sim.Random.NextDouble());
-            x = Math.Cos(a) * r;
-            y = Math.Sin(a) * r;
+            x = SimMath.Cos(a) * r;
+            y = SimMath.Sin(a) * r;
         }
 
         // ---- Formed waves ----
@@ -262,7 +263,7 @@ namespace Champions.Sim
             if (count <= 0) return;
             sim.HeroWas(t, out double hx, out double hy);
             double health = HealthAt(type, clock), speed = cast.Cast[type].SpeedMps;
-            double a0 = sim.Random.NextDouble() * 2 * Math.PI, dx = Math.Cos(a0), dy = Math.Sin(a0);
+            double a0 = sim.Random.NextDouble() * 2 * Math.PI, dx = SimMath.Cos(a0), dy = SimMath.Sin(a0);
             double cx = hx, cy = hy;
             switch (kind)
             {
@@ -270,7 +271,7 @@ namespace Champions.Sim
                     for (int k = 0; k < count; k++)
                     {
                         double a = a0 + 2 * Math.PI * k / count;
-                        horde.Spawn(type, hx + Math.Cos(a) * rules.RingRadiusM, hy + Math.Sin(a) * rules.RingRadiusM, health);
+                        horde.Spawn(type, hx + SimMath.Cos(a) * rules.RingRadiusM, hy + SimMath.Sin(a) * rules.RingRadiusM, health);
                     }
                     break;
                 case WaveKind.Line:

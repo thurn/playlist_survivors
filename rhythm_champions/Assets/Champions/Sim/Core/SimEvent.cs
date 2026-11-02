@@ -660,7 +660,7 @@ namespace Champions.Sim
                     e.D5 = s.Radius;
                     break;
                 case ShapeKind.Cone:
-                    e.D3 = System.Math.Atan2(s.DirY, s.DirX);
+                    e.D3 = SimMath.Atan2(s.DirY, s.DirX);
                     e.D4 = s.Radius;
                     e.D5 = s.HalfArc;
                     break;
@@ -810,7 +810,7 @@ namespace Champions.Sim
             switch (MarkShape)
             {
                 case ShapeKind.Path: return HitShape.Path(D1, D2, D3, D4, D5);
-                case ShapeKind.Cone: return HitShape.Cone(D1, D2, System.Math.Cos(D3), System.Math.Sin(D3), D4, D5);
+                case ShapeKind.Cone: return HitShape.Cone(D1, D2, SimMath.Cos(D3), SimMath.Sin(D3), D4, D5);
                 case ShapeKind.Ring: return HitShape.Ring(D1, D2, D4, D3);
                 default: return HitShape.Circle(D1, D2, D3);
             }

@@ -51,6 +51,15 @@ namespace Champions.Client
         public int CrowdBench;
         /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
         public Tier? Tier;
+        /// <summary>`--seed N`: the run's seed; null for the default (<see cref="Boot"/>).</summary>
+        public ulong? Seed;
+        /// <summary>`--walk` and `--picks`: the scripted player (Sim.ScriptedPlayer); null for the keyboard and mouse.</summary>
+        public string Walk, Picks;
+        /// <summary>`--record DIR`: the first run's session is recorded into DIR.</summary>
+        public string Record;
+        /// <summary>`--replay DIR[,DIR...]`: recorded sessions played again, at `--replay-speed X` song seconds per frame's 1/60 s.</summary>
+        public string[] Replay = Array.Empty<string>();
+        public double ReplaySpeed = 1;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -69,11 +78,22 @@ namespace Champions.Client
                 BenchOut = a.Get("--bench-out"),
                 CalibrationFile = a.Get("--calibration"),
                 CrowdBench = (int)a.Double("--crowd-bench", 0),
+                Walk = a.Get("--walk"),
+                Picks = a.Get("--picks"),
+                Record = a.Get("--record"),
+                ReplaySpeed = a.Double("--replay-speed", 1),
             };
             var look = a.Get("--look");
             if (look != null)
                 o.Look = look == "trailer" ? MonsterLook.Trailer : look == "default" ? MonsterLook.Default
                     : throw new ArgumentException($"--look: {look} is not trailer or default");
+            var seed = a.Get("--seed");
+            if (seed != null)
+                o.Seed = ulong.TryParse(seed, NumberStyles.None, CultureInfo.InvariantCulture, out ulong n) ? n : throw new ArgumentException($"--seed: {seed} is not a whole number");
+            var replay = a.Get("--replay");
+            if (replay != null) o.Replay = replay.Split(',');
+            if (o.ReplaySpeed <= 0) throw new ArgumentException("--replay-speed: must be above 0");
+            if (o.Replay.Length > 0 && (o.File != null || o.App != null)) throw new ArgumentException("--replay plays a session's own music: give no --file or --app");
             var tier = a.Get("--tier");
             if (tier != null)
                 o.Tier = QualityTiers.TryParse(tier, out var t) ? t : throw new ArgumentException($"--tier: {tier} is not low, medium or high");

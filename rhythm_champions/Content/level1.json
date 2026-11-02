@@ -25,11 +25,11 @@
     { "type": "bat", "fromS": 0, "weight": 0.6 },
     { "type": "goblin", "fromS": 0, "weight": 3 },
     { "type": "demon", "fromS": 0, "weight": 3 },
-    { "type": "mushroom", "fromS": 0, "weight": 1 },
+    { "type": "mushroom", "fromS": 0, "weight": 0.35 },
     { "type": "bigOrk", "fromS": 0, "weight": 0.5 },
     { "type": "troll", "fromS": 0, "weight": 0.4 }
   ],
-  "surge": { "smoothS": 4, "strength": 0.6, "quietScale": 0.6 },
+  "surge": { "smoothS": 4, "strength": 0.4, "quietScale": 0.6 },
   "waves": {
     "minStrength": 0,
     "minGapS": 20,

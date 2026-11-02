@@ -66,9 +66,9 @@ namespace Champions.Sim
                     if (d > Radius + body + 1e-9) return false;
                     if (d <= body + 1e-9) return true;
                     double cos = (ex * DirX + ey * DirY) / d;
-                    double angle = Math.Acos(Math.Max(-1, Math.Min(1, cos)));
+                    double angle = SimMath.Acos(Math.Max(-1, Math.Min(1, cos)));
                     // The body's own half width, seen from the apex, widens the sector.
-                    return angle <= HalfArc + Math.Asin(Math.Min(1, body / d)) + 1e-9;
+                    return angle <= HalfArc + SimMath.Asin(Math.Min(1, body / d)) + 1e-9;
                 }
                 default:
                     return false;
@@ -110,7 +110,7 @@ namespace Champions.Sim
                     ToBox(DirX, DirY, 0, 0, cos, sin, out double dx, out double dy);
                     for (int side = -1; side <= 1; side += 2)
                     {
-                        double c = Math.Cos(side * HalfArc), s = Math.Sin(side * HalfArc);
+                        double c = SimMath.Cos(side * HalfArc), s = SimMath.Sin(side * HalfArc);
                         double ex = px + (dx * c - dy * s) * Radius, ey = py + (dx * s + dy * c) * Radius;
                         if (SegmentBoxDistance(px, py, ex, ey, hx, hy) <= 1e-9) return true;
                     }

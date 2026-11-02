@@ -122,15 +122,17 @@ def cmd_build(a: argparse.Namespace) -> int:
     return build(paths.worktree(), a.backend, a.out, a.development, a.scene, a.cold, a.force, a.clean_cache)
 
 
-PATH_FLAGS = ("--file", "--capture-stills", "--bench-out")
+PATH_FLAGS = ("--file", "--capture-stills", "--bench-out", "--record", "--replay")
 
 
 def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
-    """The player flags with their paths (PATH_FLAGS) made absolute against `cwd`: the player runs from elsewhere."""
+    """The player flags with their paths (PATH_FLAGS; `--replay`'s comma-separated) made absolute against `cwd`: the
+    player runs from elsewhere."""
     out = list(flags)
     for i, flag in enumerate(out[:-1]):
         if flag in PATH_FLAGS:
-            out[i + 1] = str((cwd / out[i + 1]).resolve())
+            out[i + 1] = ",".join(str((cwd / p).resolve()) for p in out[i + 1].split(",")) if flag == "--replay" \
+                else str((cwd / out[i + 1]).resolve())
     return out
 
 

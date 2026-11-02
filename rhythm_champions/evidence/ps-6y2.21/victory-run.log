@@ -1,0 +1,21 @@
+Boot: Unity 6000.6.7f1, Metal, batch mode True, fixed time, headless
+Flow: a run on house.m3u
+Run: run 1, seed 4, level 1, from song 0.000 s, the first offer up, scripted (Reference)
+Run: picked bladeRain:0>1 at run clock 0.1 s
+Run: play starts at song 0.000 s
+Run: picked orbitBlades:0>1 at run clock 61.2 s
+Run: picked swordSlash:1>2 at run clock 61.2 s
+Run: picked lifeblood:0>1 at run clock 126.2 s
+Run: picked swordSlash:2>3 at run clock 126.2 s
+Run: picked dash#1:0>1 at run clock 255.2 s
+Run: picked dash#1:1>2 at run clock 384.2 s
+Run: fatOgre arrives at run clock 446.2 s, shattering 77
+Run: the boss dies at run clock 519.0 s
+Run: picked swordSlash:3>4 at run clock 519.0 s
+Run: picked orbitBlades:1>2 at run clock 577.2 s
+Run: picked orbitBlades:2>3 at run clock 706.7 s
+Run: dragon arrives at run clock 833.2 s, shattering 15
+Run: the boss dies at run clock 965.7 s
+Run: victory at run clock 965.7 s (song 965.792 s): 13581 kills, level 10, health 100, hurt by touch 83, spore 15, slam 5, charge 5; presenter faults: none
+Run: the victory card shows at song 967.300 s
+Flow: quitting with 0 after the end card (batch mode)

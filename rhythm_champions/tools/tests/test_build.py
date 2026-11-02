@@ -191,6 +191,19 @@ def test_a_bake_is_cached_by_its_inputs(monkeypatch, wt) -> None:
     assert not setup.restore_baked(wt)  # new inputs: nothing cached for them
 
 
+def test_a_later_bake_with_more_files_replaces_the_cached_one(monkeypatch, wt) -> None:
+    baker = wt.project / "Assets" / "Champions" / "Editor" / "Effects" / "EffectBaker.cs"
+    write(baker, "class EffectBaker {}\n")
+    run(monkeypatch, "build", bakes=True)
+    entry = paths.cache_root() / "baked" / setup.baked_key(wt)
+    assert not (entry / "Monsters").exists()
+    # A monster baked after the build (same inputs): the cache's entry must not keep it out.
+    write(setup.baked_dir(wt) / "Monsters" / "skeleton.asset", "monster\n")
+    assert setup.save_baked(wt) == entry
+    assert (entry / "Monsters" / "skeleton.asset").read_text() == "monster\n"
+    assert setup.save_baked(wt) is None  # nothing new: kept
+
+
 def test_check_variants_builds_clean_and_reports_the_count(monkeypatch, wt, capsys) -> None:
     code, ran = run(monkeypatch, "check", "--variants", variants=227)
     out = capsys.readouterr().out
@@ -230,3 +243,6 @@ def test_play_makes_the_players_paths_absolute(monkeypatch, wt, tmp_path) -> Non
     assert cli.absolute_file_flags(["--app", "Music"], tmp_path) == ["--app", "Music"]
     assert cli.absolute_file_flags(["--gallery", "--bench-out", "b.json"], tmp_path) == [
         "--gallery", "--bench-out", str((tmp_path / "b.json").resolve())]
+    # --replay takes a comma-separated list of session folders; --record one folder.
+    assert cli.absolute_file_flags(["--replay", "s/a,s/b", "--record", "r"], tmp_path) == [
+        "--replay", f"{(tmp_path / 's/a').resolve()},{(tmp_path / 's/b').resolve()}", "--record", str((tmp_path / "r").resolve())]

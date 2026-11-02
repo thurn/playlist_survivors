@@ -223,7 +223,7 @@ namespace Champions.Sim
             sim.HeroWas(t, out double hx, out double hy);
             x = hx;
             y = hy + rules.DistanceM;
-            Facing = Math.Atan2(hy - y, hx - x);
+            Facing = SimMath.Atan2(hy - y, hx - x);
             int shattered = ShatterScreen(t, hx, hy, BreakCause.Entrance);
             sim.StructureField?.Duel(true);
             Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, type.Health, Type.Cast + 1, boss: true);
@@ -359,7 +359,7 @@ namespace Champions.Sim
             sim.HeroWas(end, out double hx, out double hy);
             double dx = hx - x, dy = hy - y, d = Math.Sqrt(dx * dx + dy * dy);
             if (d < 1e-9) return;
-            Facing = Math.Atan2(dy, dx);
+            Facing = SimMath.Atan2(dy, dx);
             double keep = cast.Cast[Type.Cast].RadiusM + heroRadius + Type.KeepM;
             if (d <= keep + 1e-9) return;
             double step = Math.Min(cast.Cast[Type.Cast].SpeedMps * Simulation.TickSeconds, d - keep);

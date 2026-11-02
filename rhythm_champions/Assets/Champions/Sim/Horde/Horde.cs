@@ -523,8 +523,8 @@ namespace Champions.Sim
                     {
                         // Exactly on top: part along a direction fixed by the pair.
                         double a = (id * 7919 + other * 104729) % 6283 / 1000.0;
-                        dx = Math.Cos(a);
-                        dy = Math.Sin(a);
+                        dx = SimMath.Cos(a);
+                        dy = SimMath.Sin(a);
                         d = 1;
                     }
                     x = ox + dx / d * min;

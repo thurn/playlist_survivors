@@ -118,7 +118,7 @@ namespace Champions.Sim
         // Surges: the analyzer's loudness level, smoothed.
         /// <summary>The loud and quiet shares follow the music over about this long.</summary>
         public double SurgeSmoothS = 4;
-        /// <summary>A fully loud stretch moves the target this share of the way from the ramp to the cap.</summary>
+        /// <summary>A fully loud stretch raises the target by this share of the ramp (never past the cap).</summary>
         public double SurgeStrength = 0.6;
         /// <summary>A fully quiet stretch scales the target by this.</summary>
         public double QuietScale = 0.6;

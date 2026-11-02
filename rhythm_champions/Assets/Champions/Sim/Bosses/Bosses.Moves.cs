@@ -79,9 +79,9 @@ namespace Champions.Sim
             doneAt = t;
             sim.HeroWas(t, out double hx, out double hy);
             double dx = hx - x, dy = hy - y, d = Math.Sqrt(dx * dx + dy * dy);
-            aimX = d > 1e-9 ? dx / d : Math.Cos(Facing);
-            aimY = d > 1e-9 ? dy / d : Math.Sin(Facing);
-            Facing = Math.Atan2(aimY, aimX);
+            aimX = d > 1e-9 ? dx / d : SimMath.Cos(Facing);
+            aimY = d > 1e-9 ? dy / d : SimMath.Sin(Facing);
+            Facing = SimMath.Atan2(aimY, aimX);
             int beats = m.Beats(Phase);
             double r = BodyRadius;
             var telegraphs = sim.Telegraphs;
@@ -108,7 +108,7 @@ namespace Champions.Sim
                     for (int k = 1; k < m.Count; k++)
                     {
                         double a = turnFrom + 2 * Math.PI * (k - 1) / (m.Count - 1);
-                        Mark(k, tel, HitShape.Circle(hx + Math.Cos(a) * m.SpreadM, hy + Math.Sin(a) * m.SpreadM, m.RadiusM));
+                        Mark(k, tel, HitShape.Circle(hx + SimMath.Cos(a) * m.SpreadM, hy + SimMath.Sin(a) * m.SpreadM, m.RadiusM));
                     }
                     break;
                 }
@@ -235,7 +235,7 @@ namespace Champions.Sim
         {
             double u = burnUntil > burnFrom ? Math.Max(0, Math.Min(1, (t - burnFrom) / (burnUntil - burnFrom))) : 0;
             double a = burnAngle - burnSweep / 2 + burnSweep * u;
-            return HitShape.Cone(apexX, apexY, Math.Cos(a), Math.Sin(a), move.RangeM, move.HalfArc);
+            return HitShape.Cone(apexX, apexY, SimMath.Cos(a), SimMath.Sin(a), move.RangeM, move.HalfArc);
         }
 
         /// <summary>The burn to <paramref name="end"/>: the first time the hero is in the fire, and once more at its end after a hit on its beat.</summary>

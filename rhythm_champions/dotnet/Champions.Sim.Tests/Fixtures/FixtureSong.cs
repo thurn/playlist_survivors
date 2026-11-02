@@ -25,6 +25,7 @@ namespace Champions.Sim.Tests
 
         readonly List<Stretch> stretches = new List<Stretch>();
         readonly List<StreamEntry> extra = new List<StreamEntry>();
+        readonly List<(double From, double To, LoudnessLevel Level)> loudness = new List<(double, double, LoudnessLevel)>();
         readonly ulong seed;
 
         public FixtureSong(ulong seed = 7)
@@ -58,6 +59,27 @@ namespace Champions.Sim.Tests
         {
             stretches.Add(new Stretch { From = from, To = to, Bpm0 = 0, Evidence = silent ? 0 : 0.1, Ticks = ticks, Silent = silent });
             return this;
+        }
+
+        /// <summary>The ticks from <paramref name="from"/> to <paramref name="to"/> at loudness <paramref name="level"/> (Medium elsewhere).</summary>
+        public FixtureSong Loudness(double from, double to, LoudnessLevel level)
+        {
+            loudness.Add((from, to, level));
+            return this;
+        }
+
+        /// <summary>A section change at <paramref name="t"/>, emitted as the analyzer would (about 2.1 s late).</summary>
+        public FixtureSong Change(double t, double strength = 0.8)
+        {
+            extra.Add(StreamEntry.Change(t, StampOf(t + 2.1), strength));
+            return this;
+        }
+
+        LoudnessLevel LevelAt(double t)
+        {
+            foreach (var l in loudness)
+                if (t >= l.From && t < l.To) return l.Level;
+            return LoudnessLevel.Medium;
         }
 
         /// <summary>An onset at <paramref name="t"/>, emitted as the analyzer would.</summary>
@@ -133,7 +155,7 @@ namespace Champions.Sim.Tests
                     double evidence = s.Bpm0 > 0 || s.Silent ? s.Evidence : 0.1;
                     double energy = 0.5 + 0.2 * rng.NextDouble();
                     list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), evidence, s.Silent ? 0 : energy,
-                        level: LoudnessLevel.Medium, key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
+                        level: LevelAt(t), key: 9, kick: rng.NextDouble(), snare: rng.NextDouble(),
                         hat: rng.NextDouble(), bass: rng.NextDouble(), brightness: 0.4));
                     if (k % 20 == 0) list.Add(StreamEntry.Timbre(t, StampOf(t + 0.5), 0.4, 0.2, 0.6, 0.5));
                 }

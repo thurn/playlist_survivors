@@ -13,19 +13,26 @@ namespace Champions.Client.UI
     /// The game's screens in order (plan.md, The Client > Flow; design.md, The Run > Starting, Pauses, Ending): the title,
     /// the music picker, the run (a <see cref="GameLoop"/> on the music picked, with its <see cref="RunUi"/>), the pause
     /// menu over it on Esc or when the window loses focus, the calibration screens from the title or the pause menu, and
-    /// the end card (<see cref="ShowEnd"/>). Screens stack on one panel over the run's UI; the top one takes the menu's keys
-    /// from the keyboard (<see cref="MenuKey"/>) and the pointer. Boot begins it when no music was given on the command line.
+    /// the end card when the run ends (<see cref="ShowEnd"/>), whose Again starts a new run on the same music. Screens stack on
+    /// one panel over the run's UI; the top one takes the menu's keys from the keyboard (<see cref="MenuKey"/>) and the
+    /// pointer. Boot begins it on the title when no music was given on the command line, else straight into the run on that
+    /// music (<see cref="BeginRun"/>). A scripted run (`--walk`) never pauses on a lost focus; a batch-mode run quits a second
+    /// after its end card, with 0.
     /// </summary>
     public sealed class Flow : MonoBehaviour
     {
         public const int Order = 10;
 
         UiPanel _panel;
+        /// <summary>A batch-mode run quits this long after its end card shows (real seconds).</summary>
+        public const double QuitAfterEndCard = 1;
+
         Camera _camera;
         WorldPresenter _world;
-        Func<RunUi> _makeUi;
+        Func<MusicSource, RunSetup> _makeSetup;
         string _contentDir;
-        bool _fixed, _mute;
+        bool _fixed, _direct;
+        double _quitAt = double.NaN;
         readonly List<VisualElement> _screens = new List<VisualElement>();
         GameLoop _run;
         FileChooser _chooser;
@@ -37,20 +44,38 @@ namespace Champions.Client.UI
         /// <summary>The screen on top, or null during play.</summary>
         public VisualElement Top => _screens.Count > 0 ? _screens[_screens.Count - 1] : null;
 
-        /// <param name="makeUi">A run's UI, made for each run.</param>
-        public static Flow Begin(GameObject host, Camera camera, WorldPresenter world, Func<RunUi> makeUi, string contentDir, bool fixedTime, bool mute)
+        /// <param name="makeSetup">A run's setup on the music picked.</param>
+        public static Flow Begin(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir, bool fixedTime)
+        {
+            var flow = Make(host, camera, world, makeSetup, contentDir, fixedTime);
+            flow.Title();
+            return flow;
+        }
+
+        /// <summary>Straight into a run on <paramref name="source"/> (`--file`, `--app`): music that fails quits the player with its code.</summary>
+        public static Flow BeginRun(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir,
+            bool fixedTime, MusicSource source)
+        {
+            var flow = Make(host, camera, world, makeSetup, contentDir, fixedTime);
+            flow._direct = true;
+            flow.StartRun(source);
+            return flow;
+        }
+
+        static Flow Make(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir, bool fixedTime)
         {
             var flow = host.AddComponent<Flow>();
             flow._camera = camera;
             flow._world = world;
-            flow._makeUi = makeUi;
+            flow._makeSetup = makeSetup;
             flow._contentDir = contentDir;
             flow._fixed = fixedTime;
-            flow._mute = mute;
             flow._panel = new UiPanel(flow.transform, "Menus", Order);
-            flow.Title();
             return flow;
         }
+
+        /// <summary>The run playing now, or null.</summary>
+        public GameLoop Run => _run;
 
         void Push(VisualElement screen)
         {
@@ -85,11 +110,18 @@ namespace Champions.Client.UI
         {
             while (_screens.Count > 0) Pop();
             Debug.Log($"Flow: a run on {source.Tag}");
-            _run = GameLoop.Begin(gameObject, _camera, source, _fixed, _mute, _world, _makeUi(), RunFailed);
+            _run = GameLoop.Begin(gameObject, _camera, _makeSetup(source), RunFailed);
+            _run.Ended += ShowEnd;
         }
 
         void RunFailed(int code, string why)
         {
+            if (_direct)
+            {
+                Debug.Log($"Flow: quitting with {code}: {why}");
+                Application.Quit(code);
+                return;
+            }
             Debug.LogWarning($"Flow: the run's music stopped ({code}): {why}");
             EndRun();
             Pick();
@@ -105,6 +137,7 @@ namespace Champions.Client.UI
 
         void Pause()
         {
+            if (_run.Scripted) return;
             _run.Pause();
             Push(new PauseMenu(Resume, () => CalibrationChoice(overRun: true), EndRun));
         }
@@ -147,10 +180,17 @@ namespace Champions.Client.UI
                 Pop();
                 again();
             }, EndRun));
+            if (Application.isBatchMode) _quitAt = Time.realtimeSinceStartupAsDouble + QuitAfterEndCard;
         }
 
         void Update()
         {
+            if (Time.realtimeSinceStartupAsDouble >= _quitAt)
+            {
+                _quitAt = double.NaN;
+                Debug.Log("Flow: quitting with 0 after the end card (batch mode)");
+                Application.Quit(0);
+            }
             (Top as MusicPicker)?.Present(Time.realtimeSinceStartupAsDouble);
             _calibration?.Update();
             if (_chooser != null && _chooser.Done)
@@ -179,7 +219,7 @@ namespace Champions.Client.UI
 
         void OnApplicationFocus(bool focused)
         {
-            if (!focused && Running && Top == null) Pause();
+            if (!focused && Running && Top == null && !_run.Scripted) Pause();
         }
 
         void OnDestroy()

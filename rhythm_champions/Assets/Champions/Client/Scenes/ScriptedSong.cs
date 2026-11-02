@@ -17,6 +17,7 @@ namespace Champions.Client.Scenes
 
         readonly List<(double from, double to, double bpm, bool strong)> _stretches = new List<(double, double, double, bool)>();
         readonly List<StreamEntry> _extra = new List<StreamEntry>();
+        readonly List<(double from, double to)> _loud = new List<(double, double)>();
 
         public static double StampOf(double position) => position - (M - A);
 
@@ -43,6 +44,15 @@ namespace Champions.Client.Scenes
             _extra.Add(StreamEntry.Change(t, StampOf(t + 2.1), strength));
             return this;
         }
+
+        /// <summary>Loud ticks from <paramref name="from"/> to <paramref name="to"/> (medium elsewhere): a surge's music.</summary>
+        public ScriptedSong Loud(double from, double to)
+        {
+            _loud.Add((from, to));
+            return this;
+        }
+
+        bool IsLoud(double t) => _loud.Exists(l => t >= l.from && t < l.to);
 
         /// <summary>Every entry, in stamp order.</summary>
         public List<StreamEntry> Entries()
@@ -73,7 +83,7 @@ namespace Champions.Client.Scenes
                 for (long k = k0; k * TickSeconds < to - 1e-9; k++)
                 {
                     double t = k * TickSeconds;
-                    list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), bpm > 0 ? 0.9 : 0.1, 0.6, level: LoudnessLevel.Medium, key: 9,
+                    list.Add(StreamEntry.Tick(t, StampOf(t + 0.05), bpm > 0 ? 0.9 : 0.1, 0.6, level: IsLoud(t) ? LoudnessLevel.Loud : LoudnessLevel.Medium, key: 9,
                         kick: 0.5, snare: 0.5, hat: 0.5, bass: 0.5, brightness: 0.4));
                 }
             }

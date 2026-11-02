@@ -69,10 +69,41 @@ lane_unity() {
     step editmode champions test --cold --no-skips &&
     step build champions check --variants &&
     step player player_run &&
+    step replay replay_run &&
+    step stills stills_run &&
+    step look look_report &&
     step library champions library save --built
 }
 # 10 s of the plugin's fixture song at fixed time, which plays it through the plugin silently, with
 # stills at 1 s and 10 s: the player must exit 0, keep both and log no exception.
+# The player replays every recorded session (rhythm_champions/sessions/*/) through its presenters, with no music, to the
+# hash recorded in .NET: the sim settles the same doubles under Mono (ps-6y2.21).
+replay_run() {
+  sessions=$(ls -d rhythm_champions/sessions/*/ | sed 's:/$::' | paste -sd, -)
+  champions play --headless --replay "$sessions" --replay-speed 2 || {
+    grep -n "Replay:" rhythm_champions/Logs/player.log
+    return 1
+  }
+  if grep -n Exception rhythm_champions/Logs/player.log; then
+    echo "ci-full: the replay logged an exception (rhythm_champions/Logs/player.log)"
+    return 1
+  fi
+}
+# Every scripted scene's stills, in one launch (champions stills), into the ignored captures/stills.
+stills_run() {
+  champions stills || return 1
+  if grep -n Exception rhythm_champions/Logs/stills.log; then
+    echo "ci-full: the stills logged an exception (rhythm_champions/Logs/stills.log)"
+    return 1
+  fi
+}
+# champions look on the stills: a report of how they stray from the guide values, never a failure (design.md, Judgment
+# over rules; ps-6y2.41). Its report is rhythm_champions/Logs/look.txt.
+look_report() {
+  champions look captures/stills > rhythm_champions/Logs/look.txt 2>&1 ||
+    echo "ci-full: champions look reports strays (a diagnostic: rhythm_champions/Logs/look.txt)"
+  return 0
+}
 player_run() {
   stills="$PWD/rhythm_champions/Logs/ci-stills"
   rm -rf "$stills"

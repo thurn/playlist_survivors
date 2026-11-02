@@ -28,6 +28,9 @@ namespace Champions.Client.Loop
         public Simulation Sim { get; }
         public IGameClock Clock { get; }
 
+        /// <summary>A replay steps the sim instead, giving its recorded entries and inputs at their times (<see cref="SessionReplay.StepTo"/>).</summary>
+        public SessionReplay Replay { get; set; }
+
         /// <summary>The latest frame's times.</summary>
         public FrameTimes Times { get; private set; }
         public int Frames { get; private set; }
@@ -77,7 +80,8 @@ namespace Champions.Client.Loop
             if (Frames > 0 && times.FrameSong < Times.FrameSong) BackwardFrames++;
             Times = times;
             long start = Stopwatch.GetTimestamp();
-            Sim.StepTo(times.Frontier);
+            if (Replay != null) Replay.StepTo(Sim, times.Frontier);
+            else Sim.StepTo(times.Frontier);
             StepMs = (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency;
             Frames++;
             return true;

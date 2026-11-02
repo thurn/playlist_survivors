@@ -5,19 +5,23 @@ by the Enact epic in [the plan](../docs/champions/plan.md). Unity
 6000.6.7f1, URP 17.6, the Input System and UI Toolkit; it depends on no
 other project in the tree.
 
-So far it is the skeleton, the world and the UI: the Boot scene opens on the
-title (Play, Calibrate, Quit), whose music picker starts a run on an app's
-audio or a file; with a music source the music plays 3 s late
-through the plugin while its beats feed the sim, whose beats send the beat
-wave across the grid and whose section changes move the zone key. The
-monsters draw in the neon edge trailer's look on their vendor meshes
-(`champions monster bake all`, then build; `--look trailer` for the trailer's
-exact drawing); the hero, the bosses and the structures draw as stand-ins
-([below](#stand-ins)) until they join it. The hero's
-weapon effects draw Hovl's slash shapes in white (`--gallery` shows them
-all), and the hero's sounds are baked and scheduled, for the assembly to wire
-to the sim. A run shows the hero's
-indicator, the HUD and the card moment's cards; Esc pauses it.
+Level 1 plays end to end (ps-6y2.21): the Boot scene opens on the title
+(Play, Calibrate, Quit), whose music picker starts a run on an app's audio or
+a file (`--file` and `--app` start one straight away); the music plays 3 s
+late through the plugin while its entries feed the sim. A run starts on the
+first offer over the empty, held world, plays from the next downbeat through
+the level's horde, structures, the Fat Ogre and the dragon, and ends on the
+end card (1.5 s after a death; lit after the dragon), whose Again starts a
+new run on the same music. Every sim event reaches its presenter through one
+`EventDispatch` (`Client/Loop/RunPresentation.cs`): the world's beat wave,
+zones and rings, the structures, the horde (`Client/Crowd/`: the crowd
+presenter over an `ICrowdView`), the bosses and the telegraphs, the spores,
+the hero's commands, the weapon effects (Hovl's slash shapes in white), the
+run's UI (indicator, HUD, cards) and the sounds. The monsters draw in the neon
+edge trailer's look on their vendor meshes (`champions monster bake all`, then
+build; `--look trailer` for the trailer's exact drawing); the hero, the bosses
+and the structures draw as stand-ins ([below](#stand-ins)) until they join it.
+Esc pauses a run.
 
 ## Commands
 
@@ -54,17 +58,29 @@ the music silently), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p
 JPEGs at those times, then quit) or `--capture-stills DIR --stills-scenes
 NAMES|all` (the scripted scenes' PNG stills, ID passes and views, as
 `champions stills` runs them; `world` is the world's: 120 BPM to 30 s with a
-section change at 12 s, then beatless with a dash at 34 s), and `--gallery`
+section change at 12 s, then beatless with a dash at 34 s; `level` is level 1
+through the run's own presenters and the reference player: the crowd at minute
+4, a loud surge and a card moment), and `--gallery`
 (the weapon effects' gallery: every effect in turn at the hero's spot, looping
 in a window; with `--capture-stills DIR`, a still of each, as `--stills-scenes
 gallery`; with `--bench-out PATH` too, each effect's GPU time), and `--tier
 low|medium|high` (the quality tier; without it the pause menu's last choice,
 or the GPU's guess: an M-series Max or Ultra plays High, a Pro Medium,
 anything else Low), `--look trailer` (the monsters exactly as the neon edge
-trailer drew them) and `--crowd-bench N` (N monsters timed, headless, with
-`--bench-out PATH`). With music, the log's `Music:` lines show
+trailer drew them), `--crowd-bench N` (N monsters timed, headless, with
+`--bench-out PATH`), `--seed N` (the run's seed; a scripted run's defaults
+to 1), `--walk idle|reference|KEYS` and `--picks 1,2,...|reference` (the
+scripted player, `Sim/Session/ScriptedPlayer.cs`: `idle` never moves,
+`reference` is the tuning's reference player, KEYS held keys like
+`right@9-11,space@14-14.1`; picks by card number, or the reference build's
+preferences), `--record DIR` (the first run's session: the plugin's entries
+and audio, then `inputs.bin` and `run.json`) and `--replay DIR[,DIR...]`
+(each recorded session again through the presenters with no music, at
+`--replay-speed X`; exits 0 when every one settled its recorded hash, which
+it does in Mono as in .NET). With music, the log's `Music:` lines show
 the delay, each beat the sim reaches with when it became known, and a
-summary. `--calibration FILE` keeps the calibrations
+summary; `Run:` lines show the run's picks, bosses and end. A batch-mode run
+quits a second after its end card. `--calibration FILE` keeps the calibrations
 in FILE instead of the player's data folder. `champions play --headless` runs the player in
 batch mode on Metal; given to the player itself, `--headless` makes Unity
 draw with its Null device, so no still could be kept. For example, a still
@@ -73,7 +89,13 @@ of the first second, and 20 s of a song headless:
 ```sh
 just champions-play --headless --fixed-time --capture-stills captures/boot --stills-at 1
 just champions-play --headless --file public/reactive/house-128/house-128.ogg --seconds 20
+just champions-play --headless --fixed-time --file playlist.m3u --walk reference --seed 2
+just champions-play --headless --replay rhythm_champions/sessions/fixture-level
 ```
+
+The sim's tests play level 1 too (`dotnet/Champions.Sim.Tests/LevelRunTests.cs`): an idle hero
+dies within 90 s, and the explicit tuning tests run the reference player through the whole level
+([evidence](evidence/ps-6y2.21/README.md)).
 
 ## Layout
 

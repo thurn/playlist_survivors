@@ -99,7 +99,9 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(0.5, e.TouchBeatlessS);
             Assert.AreEqual((2, 8.0, 20.0), (e.Charge.TelegraphBeats, e.Charge.LengthM, e.Charge.Damage));
             Assert.AreEqual((2, 3.0, 20.0), (e.Slam.TelegraphBeats, e.Slam.RadiusM, e.Slam.Damage));
-            Assert.AreEqual((1, 7.0, 14.0, 2, 10.0), (e.Spores.TelegraphBeats, e.Spores.SpeedMps, e.Spores.RangeM, e.Spores.EveryBars, e.Spores.Damage));
+            // The design's spores fire every 2 bars for 10; ps-6y2.21's first tuning slowed them to every 4 bars for 6 (real music's
+            // second half died to spores: rhythm_champions/evidence/ps-6y2.21/README.md).
+            Assert.AreEqual((1, 7.0, 14.0, 4, 6.0), (e.Spores.TelegraphBeats, e.Spores.SpeedMps, e.Spores.RangeM, e.Spores.EveryBars, e.Spores.Damage));
             Assert.AreEqual(0.4, e.SettleShare);
             Assert.AreEqual(1000, Content.Level.Cap);
             // The defaults are the design's numbers with no cast.
@@ -378,7 +380,7 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void TheMushroomFlashesABeatBeforeItsSporeAndFiresEveryTwoBars()
+        public void TheMushroomFlashesABeatBeforeItsSporeAndFiresEveryFewBars()
         {
             var song = new FixtureSong().Beats(0, 40, 128);
             var beats = song.BeatTimes();
@@ -393,14 +395,14 @@ namespace Champions.Sim.Tests
             Assert.GreaterOrEqual(start, 0, "the cap flashes on a beat");
             Assert.AreEqual(beats[start + 1], spores[0].T, 1e-9, "and fires on the next");
             int fired = beats.FindIndex(b => Math.Abs(b - spores[1].T) < 1e-9);
-            Assert.AreEqual(start + 1 + 8, fired, "every two bars");
+            Assert.AreEqual(start + 1 + 4 * Content.Enemies.Spores.EveryBars, fired, "every few bars");
             Assert.AreEqual(7, Math.Sqrt(spores[0].D2 * spores[0].D2 + spores[0].D3 * spores[0].D3), 1e-9);
             Assert.AreEqual(14, spores[0].D4);
             // It hits the idle hero once it has flown to it, and goes.
             var hit = Drive.Events(sim, SimEventKind.HeroHit).First(e => (HitSource)e.I1 == HitSource.Spore);
             double flight = (spores[0].D0 - 0.3 - 0.4) / 7;
             Assert.AreEqual(spores[0].T + flight, hit.T, Tick + 1e-9);
-            Assert.AreEqual(10, hit.D0);
+            Assert.AreEqual(Content.Enemies.Spores.Damage, hit.D0);
             Assert.AreEqual((int)SporeEnd.Hit, First(sim, SimEventKind.SporeEnd).I1);
             // A ranged mob keeps its distance.
             Assert.Greater(sim.Enemies[mushroom].X, 7.5);
@@ -489,20 +491,22 @@ namespace Champions.Sim.Tests
         [Test]
         public void LoudStretchesSurgeTowardTheCapAndNeverPastIt()
         {
-            // Defaults: a loud minute takes the start's 150 most of the way to 660.
+            // A loud minute raises the start's 150 by the surge's share of it.
             var sim = Sim(null, level: true, tweak: Immortal, entries: Ticks(0, 60, LoudnessLevel.Loud));
             int most = 0;
             Run(sim, 40, s => most = Math.Max(most, s.Horde.Alive));
             Assert.Greater(sim.Horde.Spawner.LoudShare, 0.99);
-            Assert.AreEqual(150 + 850 * 0.6, sim.Horde.Spawner.TargetAt(0, 1, 0), 1e-9);
-            Assert.Greater(most, 600);
+            double surge = 1 + Content.Level.SurgeStrength;
+            Assert.AreEqual(150 * surge, sim.Horde.Spawner.TargetAt(0, 1, 0), 1e-9);
+            Assert.AreEqual(600 * surge, sim.Horde.Spawner.TargetAt(720, 1, 0), 1e-9);
+            Assert.Greater(most, 150 * surge - 20);
             Assert.LessOrEqual(most, sim.Horde.Spawner.TargetAt(40, 1, 0) + 1);
             // Pushed all the way, with waves on every section change: the cap holds.
             var song = new FixtureSong().Beats(0, 120, 128);
             sim = Sim(song, level: true, entries: Ticks(0, 120, LoudnessLevel.Loud), tweak: c =>
             {
                 Immortal(c);
-                c.Level.SurgeStrength = 1;
+                c.Level.SurgeStrength = 10;
                 c.Level.WaveMinGapS = 5;
                 c.Level.PerS = 200;
             });
@@ -563,7 +567,7 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(spawned, sim.Horde.Spawned);
             sim.Horde.Spawner.Resume(secondHalf: true);
             Assert.AreEqual(150 * 1.15, sim.Horde.Spawner.TargetAt(0, 0, 0), 1e-9, "denser");
-            sim.StepTo(120);
+            sim.StepTo(300);
             var kinds = Drive.Events(sim, SimEventKind.EnemySpawn).Skip(spawned).Select(e => e.I1 - 1).Distinct().ToList();
             Assert.Contains(Kind("mushroom"), kinds, "mushrooms join");
         }

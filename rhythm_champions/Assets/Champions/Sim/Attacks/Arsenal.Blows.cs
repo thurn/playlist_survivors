@@ -213,7 +213,7 @@ namespace Champions.Sim
                 Damage = damage, Last = t, Tags = tags, Source = source, Flags = flags | BlowFlags.Effect, Struck = struck,
             };
             waves.Add(w);
-            sim.Emit(SimEvent.Wave(t, source, flags, struck, x, y, ring ? double.NaN : Math.Atan2(dirY, dirX), w.HalfWidth, w.Range, speed));
+            sim.Emit(SimEvent.Wave(t, source, flags, struck, x, y, ring ? double.NaN : SimMath.Atan2(dirY, dirX), w.HalfWidth, w.Range, speed));
         }
 
         /// <summary>Rolls each wave's front on to <paramref name="end"/>, striking once whatever it passes.</summary>
@@ -277,7 +277,7 @@ namespace Champions.Sim
             if (k.Breathes)
             {
                 double mid = 0.5 * (k.BreatheFromM + k.BreatheToM), amp = 0.5 * (k.BreatheToM - k.BreatheFromM);
-                return mid + amp * Math.Cos(2 * Math.PI * grid.Phase(t));
+                return mid + amp * SimMath.Cos(2 * Math.PI * grid.Phase(t));
             }
             double since = (t - grid.LastDownbeatT) / grid.Period;
             if (k.Pushes && since >= 0 && since < 1) return k.RadiusM + (k.DownbeatRadiusM - k.RadiusM) * (1 - since) * (1 - since);
@@ -307,7 +307,7 @@ namespace Champions.Sim
                 // A new lap: the sword may strike again what it struck last lap.
                 if (Math.Floor((to + offset) / (2 * Math.PI)) != Math.Floor((from + offset) / (2 * Math.PI))) orbitStruck[s].Clear();
                 double a = to + offset;
-                var shape = HitShape.Circle(hx + OrbitRadius * Math.Cos(a), hy + OrbitRadius * Math.Sin(a), o.HitRadiusM);
+                var shape = HitShape.Circle(hx + OrbitRadius * SimMath.Cos(a), hy + OrbitRadius * SimMath.Sin(a), o.HitRadiusM);
                 sim.Strikes.Land(sim, Attack(BlowSource.OrbitBlades, o.Tags, BlowFlags.Spectral | BlowFlags.Effect, shape, end, o.Damage), orbitStruck[s]);
             }
             orbitAngle = to - 2 * Math.PI * Math.Floor(to / (2 * Math.PI));

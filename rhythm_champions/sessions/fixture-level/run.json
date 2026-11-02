@@ -1,0 +1,21 @@
+{
+  "format": "rhythm-champions-session",
+  "version": 4,
+  "build": "test",
+  "runtime": ".NET 10.0.7",
+  "platform": "",
+  "source": "dotnet/Champions.Sim.Tests LevelRunTests.RecordTheLevelSession: level 1 from the first offer, --walk reference, 75 s of a synthetic 128 BPM playlist, no audio",
+  "flags": [],
+  "seed": 31,
+  "startTime": 0,
+  "start": "FirstOffer",
+  "loadout": ["swordSlash:1"],
+  "dummies": 0,
+  "level": true,
+  "duel": null,
+  "end": 75.01666666666667,
+  "hash": "20CB50FE7D1E96C1",
+  "events": 3233,
+  "entries": 2198,
+  "inputs": 814
+}

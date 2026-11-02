@@ -11,7 +11,7 @@ namespace Champions.Sim
         public static void Offset(int k, int n, double fx, double fy, double offsetM, out double dx, out double dy)
         {
             double a = 0.5 * Math.PI + 2 * Math.PI * k / n;
-            double c = Math.Cos(a), s = Math.Sin(a);
+            double c = SimMath.Cos(a), s = SimMath.Sin(a);
             dx = (fx * c - fy * s) * offsetM;
             dy = (fx * s + fy * c) * offsetM;
         }

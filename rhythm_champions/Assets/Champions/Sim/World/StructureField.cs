@@ -181,7 +181,7 @@ namespace Champions.Sim
                 var kind = rules.Kinds[p.Kind];
                 var s = new Structure
                 {
-                    X = p.X, Y = p.Y, Angle = p.Angle, Cos = Math.Cos(p.Angle), Sin = Math.Sin(p.Angle), Kind = p.Kind, Hits = kind.Hits,
+                    X = p.X, Y = p.Y, Angle = p.Angle, Cos = SimMath.Cos(p.Angle), Sin = SimMath.Sin(p.Angle), Kind = p.Kind, Hits = kind.Hits,
                     Chunk = chunk.Key, Index = p.Index, Standing = true,
                 };
                 int id;

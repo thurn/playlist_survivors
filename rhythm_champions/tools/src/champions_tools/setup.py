@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import time
 from collections.abc import Callable
@@ -82,18 +83,30 @@ def restore_baked(wt: paths.Worktree) -> bool:
     return True
 
 
+def _baked_files(folder: Path) -> set[str]:
+    return {f.relative_to(folder).as_posix() for f in folder.rglob("*") if f.is_file() and f.name != BAKED_KEY}
+
+
 def save_baked(wt: paths.Worktree) -> Path | None:
-    """After a bake: saves Assets/Baked/ as the cache's entry for its inputs (once)."""
+    """After a bake: saves Assets/Baked/ as the cache's entry for its inputs. An entry already there is kept unless
+    this bake holds files it lacks: a player build bakes only the effects and sounds, and the first save for a key
+    must not keep the edge cuts baked after it out of the cache (ps-6y2.21)."""
     if not baked_dir(wt).is_dir() or not any(baked_dir(wt).iterdir()):
         return None
     key = baked_key(wt)
     (baked_dir(wt) / BAKED_KEY).write_text(key + "\n", encoding="utf-8")
     dest = paths.cache_root() / "baked" / key
-    if dest.exists():
+    if dest.exists() and _baked_files(baked_dir(wt)) <= _baked_files(dest):
         return None
     tmp = dest.with_name(f"{dest.name}.{os.getpid()}.tmp")
     clone.clone_tree(baked_dir(wt), tmp)
-    tmp.rename(dest)
+    if dest.exists():
+        old = dest.with_name(f"{dest.name}.{os.getpid()}.old")
+        dest.rename(old)
+        tmp.rename(dest)
+        shutil.rmtree(old, ignore_errors=True)
+    else:
+        tmp.rename(dest)
     return dest
 
 
