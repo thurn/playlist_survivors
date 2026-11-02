@@ -244,6 +244,12 @@ How a still says what covers each pixel (`Champions.Render.IdPass`):
   once per type: a cast type's code is its index in enemies.json's cast plus
   one (`IdPass.Monster`); the hero 250, structures 251, effects 252 (slashes,
   rings, telegraphs, sparks, spores). 0 is nothing.
+- The edge crowd's shaders honour it: its presenter sets each type's code
+  (`EdgeCrowd.SetIdCode`), and the shatter's pieces draw as effects.
+- A drawer that queues its draws by hand (`Graphics.RenderMeshIndirect`, as
+  the crowd does) sets `Stills.Requeue`: a hand-drawn camera spends the draws
+  queued in a frame, so the ID pass, a frame's second drawing, needs them
+  queued again.
 - The view json's `ids` table names each code: its type, its role (a cast
   role, or hero, structure, effect) and its height in metres.
 

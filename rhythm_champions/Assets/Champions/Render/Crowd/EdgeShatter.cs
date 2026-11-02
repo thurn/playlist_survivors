@@ -142,6 +142,7 @@ namespace Champions.Render.Crowd
             s.Block.SetInt(IdPieceCount, s.Pieces);
             s.Block.SetInt(IdRingCapacity, RingCapacity);
             s.Block.SetFloat(IdHeightM, t.HeightM);
+            s.Block.SetFloat(IdPass.Id, IdPass.Effect); // shards are debris in the ID pass, not a monster's silhouette
             return s;
         }
 

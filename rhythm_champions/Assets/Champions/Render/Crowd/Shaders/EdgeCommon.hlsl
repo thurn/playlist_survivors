@@ -10,6 +10,7 @@
 #define CHAMPIONS_EDGE_COMMON_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#include "Assets/Champions/Render/Shaders/IdPass.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Color.hlsl"
 #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
 #include "UnityIndirect.cginc"
@@ -39,6 +40,7 @@ float4 _EdgeFade;      // x the height in pixels from which every line shows, y 
 float4 _EdgeWave;      // xy the beat wave's centre on the ground (world x, z), z its radius (m), w its strength
 float _EdgeWaveWidth;  // the wave's half width (m)
 float _EdgeIdMask;     // 1 while the stills draw their mask: every edge cut flat white
+float _ChampionsId;    // the draw's code in the stills' type-ID pass (IdPass): its type's, or the shards' effect code
 
 struct Owner
 {

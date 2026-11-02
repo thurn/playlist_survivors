@@ -93,6 +93,12 @@ namespace Champions.Render.Crowd
         /// </summary>
         public GraphicsBuffer Palette(int type) => _types[type].Palette;
 
+        /// <summary>
+        /// The type's code in the stills' type-ID pass (<see cref="IdPass.Monster"/> of its cast index): its presenter
+        /// sets it, and a type without one is missing from the pass.
+        /// </summary>
+        public void SetIdCode(int type, int code) => _types[type].Block.SetFloat(IdPass.Id, code);
+
         /// <summary>The type's indirect commands, bodies then lines (for the tests).</summary>
         internal GraphicsBuffer Args(int type) => _types[type].Args;
 

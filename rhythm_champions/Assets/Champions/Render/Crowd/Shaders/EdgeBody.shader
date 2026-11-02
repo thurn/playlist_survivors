@@ -52,6 +52,7 @@ Shader "Champions/EdgeBody"
             #ifdef EDGE_SHARD
                 clip(i.heightWS); // a sinking piece goes under the floor
             #endif
+                CHAMPIONS_ID_PASS(_ChampionsId)
                 return half4(i.color, 1);
             }
             ENDHLSL

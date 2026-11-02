@@ -92,6 +92,8 @@ Shader "Champions/EdgeLines"
                 clip(i.heightWS);
             #endif
                 float coverage = saturate(i.halfPx + 0.5 - abs(i.across));
+                if (_ChampionsIdPass > 0.5) clip(coverage - 0.5); // the ID pass marks the line, not its fringe
+                CHAMPIONS_ID_PASS(_ChampionsId)
                 return half4(i.color * coverage, 1);
             }
             ENDHLSL

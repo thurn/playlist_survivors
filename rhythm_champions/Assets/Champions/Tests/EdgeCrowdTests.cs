@@ -1,5 +1,7 @@
+using System.IO;
 using System.Linq;
 using Champions.EditorTools.EdgeCuts;
+using Champions.Render;
 using Champions.Render.Crowd;
 using NUnit.Framework;
 using UnityEditor;
@@ -134,6 +136,37 @@ namespace Champions.Tests
             Assert.That(shatter.ReadShards(0)[0].Position.y, Is.LessThan(0), "sunk under the floor by the end of its life");
             shatter.Frame(1.0 + EdgeShatter.LifeSeconds + 0.01, _camera);
             Assert.That(shatter.LiveDeaths, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void AStillsIdPassMarksTheCrowdWithItsTypesCode()
+        {
+            using var crowd = new EdgeCrowd(_lib, 8);
+            crowd.SetIdCode(0, IdPass.Monster(0));
+            var slots = crowd.Instances(0, 1);
+            slots[0] = At(Vector3.zero, CrowdFlags.Alive);
+            crowd.Draw(_camera);
+            string dir = Path.Combine(Path.GetTempPath(), "champions-crowd-ids-" + System.Guid.NewGuid().ToString("N"));
+            try
+            {
+                using (var stills = new Stills(_camera, dir, new double[0]) { Requeue = () => crowd.Queue(_camera) })
+                    stills.Keep("crowd", new Stills.View());
+                var tex = new Texture2D(2, 2);
+                Assert.That(tex.LoadImage(File.ReadAllBytes(Path.Combine(dir, "id-crowd.png"))));
+                _camera.aspect = (float)Stills.Width / Stills.Height;
+                var middle = _camera.WorldToViewportPoint(new Vector3(0, 1, 0));
+                _camera.ResetAspect();
+                var ids = tex.GetPixels32();
+                Object.DestroyImmediate(tex);
+                // Viewport and texture rows both start at the bottom.
+                int Code(float x, float y) => ids[(int)(y * Stills.Height) * Stills.Width + (int)(x * Stills.Width)].r;
+                Assert.That(Code(middle.x, middle.y), Is.EqualTo(IdPass.Monster(0)), "the tetrahedron's middle");
+                Assert.That(Code(0.02f, 0.02f), Is.EqualTo(0), "the empty corner");
+            }
+            finally
+            {
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
         }
 
         [Test]

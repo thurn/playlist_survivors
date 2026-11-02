@@ -38,6 +38,13 @@ namespace Champions.Render
         readonly string _dir;
         readonly List<double> _times = new List<double>();
         readonly RenderTexture _target, _resolved, _ids;
+        int _drawnFrame = -1;
+
+        /// <summary>
+        /// Queues hand-queued draws again before a frame's second drawing on (a scene still's ID pass): a hand-drawn
+        /// camera spends the draws queued in a frame (EdgeCrowd.Queue).
+        /// </summary>
+        public Action Requeue;
 
         public Stills(Camera camera, string dir, IEnumerable<double> times)
         {
@@ -103,15 +110,18 @@ namespace Champions.Render
             UnityEngine.Object.DestroyImmediate(tex); // a texture, so in play mode too, and in an EditMode test
         }
 
-        /// <summary>The ID pass: the camera drawn with the global flag up, without post, MSAA or HDR.</summary>
+        /// <summary>The ID pass: the camera drawn with the global flag up, cleared to 0, without post, MSAA or HDR.</summary>
         Texture2D DrawIds()
         {
             var data = _camera.GetUniversalAdditionalCameraData();
             bool post = data.renderPostProcessing, hdr = _camera.allowHDR, msaa = _camera.allowMSAA;
             var aa = data.antialiasing;
+            var (clear, background) = (_camera.clearFlags, _camera.backgroundColor);
             data.renderPostProcessing = false;
             data.antialiasing = AntialiasingMode.None;
             _camera.allowHDR = _camera.allowMSAA = false;
+            _camera.clearFlags = CameraClearFlags.SolidColor;
+            _camera.backgroundColor = Color.clear;
             Shader.SetGlobalFloat(IdPass.On, 1f);
             try { return Draw(_ids, null); }
             finally
@@ -121,11 +131,14 @@ namespace Champions.Render
                 data.antialiasing = aa;
                 _camera.allowHDR = hdr;
                 _camera.allowMSAA = msaa;
+                (_camera.clearFlags, _camera.backgroundColor) = (clear, background);
             }
         }
 
         Texture2D Draw(RenderTexture target, RenderTexture resolved)
         {
+            if (_drawnFrame == Time.frameCount) Requeue?.Invoke();
+            _drawnFrame = Time.frameCount;
             var previous = _camera.targetTexture;
             _camera.targetTexture = target;
             try { _camera.Render(); }
