@@ -343,10 +343,10 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
     st.set_defaults(func=cmd_stills)
 
-    lk = sub.add_parser("look", help="the look metrics on stills, against the palette and the style's thresholds")
+    lk = sub.add_parser("look", help="a diagnostic: where stills stray from the style's guide values (never fails)")
     lk.add_argument("stills", nargs="?", help="a folder of stills (default captures/stills)")
     lk.add_argument("--palette", help="the palette (default rhythm_champions/Content/palette.json)")
-    lk.add_argument("--thresholds", help="the rules (default docs/champions/style-thresholds.json)")
+    lk.add_argument("--thresholds", help="the guide values (default docs/champions/style-thresholds.json)")
     lk.add_argument("--out", help="the evidence folder: metrics.md, metrics.json and a JPEG per still")
     lk.add_argument("--impact", action="append", help="a glob of still names that are impact frames")
     lk.add_argument("--title", help="metrics.md's title (default the folder's name)")

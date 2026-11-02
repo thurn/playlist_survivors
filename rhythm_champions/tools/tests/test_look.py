@@ -1,9 +1,12 @@
-"""`champions look` on synthetic stills with ID passes: every threshold key reported, breaks named."""
+"""`champions look` on synthetic stills with ID passes: every guide value reported, where a still strays named, and
+a diagnostic that exits 0 however far the stills stray, non-zero only when it can't measure."""
 
+import argparse
 import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 from PIL import Image
 
 from champions_tools import look
@@ -26,9 +29,9 @@ def view_proj() -> list[float]:
     return (proj @ view).reshape(-1).tolist()
 
 
-def scene(fill: dict[int, bool] | None = None) -> tuple[np.ndarray, np.ndarray]:
+def scene() -> tuple[np.ndarray, np.ndarray]:
     """A keyed crowd: rings of skeletons in the key's cyan round a white hero, one orange big ork; dark bodies, 2 px
-    lines. `fill` lights a code's whole body instead (a flat, lit monster)."""
+    lines."""
     palette = pal.load()
     colour = {1: pal.rgb(palette["enemies"]["key"]["cyan"]), 7: pal.rgb(palette["enemies"]["counter"]["orange"]),
               250: pal.rgb(palette["hero"]["body"])}
@@ -43,7 +46,7 @@ def scene(fill: dict[int, bool] | None = None) -> tuple[np.ndarray, np.ndarray]:
     for x, y, r, code in bodies:
         d = np.hypot(xx - x, yy - y)
         inside = d <= r
-        lit = inside if (fill or {}).get(code) else inside & (d > r - 2)
+        lit = inside & (d > r - 2)
         rgb[inside], rgb[lit], ids[inside] = body, colour[code], code
     return rgb, ids
 
@@ -54,47 +57,83 @@ def write(dirpath: Path, name: str, rgb: np.ndarray, ids: np.ndarray) -> None:
     (dirpath / f"view-{name}.json").write_text(json.dumps({"viewProj": view_proj(), "hero": [0, 0, 0], "ids": IDS}))
 
 
-def run(tmp_path: Path, capsys) -> tuple[int, str, dict]:
-    out = tmp_path / "evidence"
-
-    class Args:
-        stills, palette, thresholds, impact, title = str(tmp_path / "stills"), None, str(THRESHOLDS), None, "test"
-
-    Args.out = str(out)
-    code = look.cmd_look(Args)
-    capsys.readouterr()
-    return code, (out / "metrics.md").read_text(), json.loads((out / "metrics.json").read_text())
+def crowd(tmp_path: Path, rgb: np.ndarray | None = None, ids: np.ndarray | None = None) -> Path:
+    """A stills folder holding one still of the keyed crowd (or of `rgb` over `ids`)."""
+    stills = tmp_path / "stills"
+    stills.mkdir()
+    if rgb is None:
+        rgb, ids = scene()
+    write(stills, "crowd-1.000", rgb, ids)
+    return stills
 
 
-def test_a_keyed_crowd_passes_and_every_threshold_key_is_reported(tmp_path, capsys):
-    (tmp_path / "stills").mkdir()
-    write(tmp_path / "stills", "crowd-1.000", *scene())
-    code, text, metrics = run(tmp_path, capsys)
-    row = metrics["stills"]["crowd-1.000"]
-    assert row["broken"] == {}, text
+def run(stills: Path, capsys, **args) -> tuple[int, str, Path]:
+    """champions look on the folder, with --out beside it: the exit code, what it said on stderr, the evidence."""
+    out = stills.parent / "evidence"
+    a = argparse.Namespace(stills=str(stills), palette=None, thresholds=str(THRESHOLDS), impact=None, title="test",
+                           out=str(out))
+    vars(a).update(args)
+    code = look.cmd_look(a)
+    return code, capsys.readouterr().err, out
+
+
+def test_a_keyed_crowd_keeps_every_guide_value_and_every_key_is_reported(tmp_path, capsys):
+    code, _, out = run(crowd(tmp_path), capsys)
+    text, metrics = (out / "metrics.md").read_text(), json.loads((out / "metrics.json").read_text())
     assert code == 0
+    assert metrics["stills"]["crowd-1.000"]["strays"] == {}, text
+    assert text.startswith("# Look diagnostics: test\n\nA diagnostic, not a verdict")
     for key in json.loads(THRESHOLDS.read_text())["rules"]:
         assert f"`{key}`" in text
-    assert set(row["metrics"]["type_black_share"]) == {"skeleton", "bigOrk", "hero"}
-    assert row["metrics"]["type_black_share"]["skeleton"] > 0.65
-    assert (tmp_path / "evidence" / "crowd-1.000.jpg").read_bytes().find(b"ps-render") > 0
+    assert (out / "crowd-1.000.jpg").read_bytes().find(b"ps-render") > 0
 
 
-def test_a_flat_lit_type_breaks_its_black_share(tmp_path, capsys):
-    (tmp_path / "stills").mkdir()
-    rgb, ids = scene(fill={7: True})
-    write(tmp_path / "stills", "flat-1.000", rgb, ids)
-    code, text, metrics = run(tmp_path, capsys)
-    broken = metrics["stills"]["flat-1.000"]["broken"]
-    assert code == 1
-    assert "type_black_share_min.bigOrk" in broken and "type_black_share_min.skeleton" not in broken
-    assert "**FAIL**" in text
-
-
-def test_a_lit_floor_breaks_the_floor_rules(tmp_path, capsys):
-    (tmp_path / "stills").mkdir()
+def test_a_still_straying_far_from_the_guide_values_still_exits_0(tmp_path, capsys):
     rgb, ids = scene()
-    rgb[ids == 0] = (60, 70, 90)
-    write(tmp_path / "stills", "lit-1.000", rgb, ids)
-    _, _, metrics = run(tmp_path, capsys)
-    assert {"floor_p50_max", "background_light_max"} <= set(metrics["stills"]["lit-1.000"]["broken"])
+    rgb[ids == 0] = (60, 70, 90)  # a lit floor
+    rgb[ids > 0] = 255  # flat, clipped white monsters, as bright as the hero
+    code, _, out = run(crowd(tmp_path, rgb, ids), capsys)
+    text = (out / "metrics.md").read_text()
+    strays = json.loads((out / "metrics.json").read_text())["stills"]["crowd-1.000"]["strays"]
+    assert code == 0
+    assert {"floor_p50_max", "background_light_max", "white_max", "monster_white_max", "clipped_max",
+            "hero_margin_min", "monster_form_min"} <= set(strays), strays
+    assert "floor_p50" in strays["floor_p50_max"] and "strays from <= 8" in strays["floor_p50_max"]
+    assert "(strays)" in text and "FAIL" not in text
+
+
+def no_stills(stills: Path) -> dict:
+    for p in stills.iterdir():
+        p.unlink()
+    return {}
+
+
+def an_unreadable_still(stills: Path) -> dict:
+    (stills / "still-crowd-1.000.png").write_bytes(b"not a png")
+    return {}
+
+
+def a_broken_view(stills: Path) -> dict:
+    (stills / "view-crowd-1.000.json").write_text("{")
+    return {}
+
+
+def an_id_pass_of_another_size(stills: Path) -> dict:
+    Image.new("RGB", (W // 2, H // 2)).save(stills / "id-crowd-1.000.png")
+    return {}
+
+
+def a_broken_palette(stills: Path) -> dict:
+    palette = stills.parent / "palette.json"
+    palette.write_text('{"name": ')
+    return {"palette": str(palette)}
+
+
+@pytest.mark.parametrize("breakage", [no_stills, an_unreadable_still, a_broken_view, an_id_pass_of_another_size,
+                                      a_broken_palette])
+def test_what_it_cannot_measure_exits_non_zero(tmp_path, capsys, breakage):
+    stills = crowd(tmp_path)
+    code, err, out = run(stills, capsys, **breakage(stills))
+    assert code != 0
+    assert err.startswith("look: ")
+    assert not (out / "metrics.md").exists()

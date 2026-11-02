@@ -1,12 +1,11 @@
 {
- "source": "docs/champions/style.md, Rules and Thresholds (ps-6y2.13): the archived neon look's rules (docs/archive/design/neon-look-thresholds.json, calibrated by ps-wnj.21-31) for its one edge look, plus the edge cuts' black share per type (plan.md, Rendering > Edge cuts) and monster white; readability and the hero's margin judge the lines (ps-6y2.13)",
+ "source": "docs/champions/style.md, Diagnostics: guide values, never gates (design.md, Judgment over rules), from the archived neon look's rules (docs/archive/design/neon-look-thresholds.json, calibrated by ps-wnj.21-31) for its one edge look, plus monster white; readability and the hero's margin judge the lines (ps-6y2.13); the frame's and each type's black share gone with the edge cuts (ps-6y2.41)",
  "rules": {
   "floor_p50_max": { "value": 8, "why": "the floor is void" },
   "floor_p90_max": { "value": 30, "why": "rings included, the floor stays under ground light" },
   "floor_p99_max": { "value": 20, "why": "the grid's lines are a quiet background (ps-wnj.24); a downbeat's ring never lifts the floor above ground light" },
   "background_light_max": { "value": 0.15, "why": "the world never drowns the swarm: the background carries a small share of the frame's light (ps-wnj.24)" },
   "frame_p25_max": { "value": 6, "unless": "floor_p50", "why": "the floor's fallback on a frame without an ID pass: the darkest quarter is void" },
-  "black_share_min": { "value": 0.30, "why": "empty space: a swarm is lit things with dark between them" },
   "bright_share_max": { "value": 0.22, "why": "light comes from things, not a lit world" },
   "bright_share_min": { "value": 0.04, "unless_below": { "monster_share": 0.1 }, "why": "something emits; a staged sparse still (a duel on cleared ground) is judged by its hero margin and readability instead (ps-wnj.29)" },
   "clipped_max": { "value": 0.02, "why": "clipped white only for impact frames and the blade's core" },
@@ -24,7 +23,6 @@
   "hero_margin_min": { "value": 5, "why": "no monster is ever brighter than the hero: the hero's lines over the monsters'" },
   "monster_form_min": { "value": 30, "why": "a monster is lit lines over a dark body, not flat paint" },
   "swarm_separation_min": { "value": 13, "unless_below": { "dense_tiles": 4 }, "why": "a dense clump of one type reads as individuals, not a blob (fewer than four dense tiles are no clump)" },
-  "readability_min": { "value": 17, "why": "monsters' lines stand off the ground round them (TD15)" },
-  "type_black_share_min": { "fodder": 0.65, "swarmer": 0.65, "ranged": 0.65, "elite": 0.55, "boss": 0.55, "hero": 0.55, "why": "empty space inside a monster too: at game scale most of each type's silhouette stays black (plan.md, Rendering > Edge cuts)" }
+  "readability_min": { "value": 17, "why": "monsters' lines stand off the ground round them (TD15)" }
  }
 }
