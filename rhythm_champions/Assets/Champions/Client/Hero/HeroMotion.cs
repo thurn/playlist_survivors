@@ -1,18 +1,17 @@
 using System;
-using Champions.Render.Crowd;
 using UnityEngine;
 
 namespace Champions.Client.Hero
 {
-    /// <summary>The hero's clips by role, from its rig (tools/recipes/edgecut/hero.py): each one's index and annotations.</summary>
+    /// <summary>The hero's clips by role (<see cref="Knight"/>'s): each one's index and annotations.</summary>
     public sealed class HeroClips
     {
         public readonly struct Clip
         {
             public readonly int Index;
-            public readonly RigClip Info;
+            public readonly ClipInfo Info;
 
-            public Clip(int index, RigClip info)
+            public Clip(int index, ClipInfo info)
             {
                 Index = index;
                 Info = info;
@@ -25,12 +24,35 @@ namespace Champions.Client.Hero
 
         public readonly Clip Idle, Run, Back, Left, Right, SlashB, SlashA, Spin, Stab, Leap, Parry, Dodge;
 
-        public HeroClips(RigClip[] clips)
+        /// <summary>
+        /// The knight's clips (Synty's Polygon Knights, Sword Slash's set; design.md, The Hero &gt; Animation, and Dashes): the
+        /// sword idle; the legs' runs, the sprint forward (3.9 m a 0.6 s cycle: 6.5 m/s, near the hero's 6) and the runs
+        /// backward and to each side (for an aim the torso can't twist to); LightCombo01A and LightCombo01B and
+        /// HeavyFlourish01 (the spin); Blade Rush's HeavyStab01, Leap Slam's LightLeaping01, Shield Charge's forward parry and
+        /// the plain Dash's forward dodge. Impacts and ends are demo3d's measurements (the right hand's peak speed).
+        /// </summary>
+        public static ClipInfo[] Knight() => new[]
+        {
+            new ClipInfo("idle", "A_Idle_Base_Sword", 1.767f, loop: true),
+            new ClipInfo("run", "A_Sprint_F_Masc", 0.6f, loop: true, strideM: 3.9f),
+            new ClipInfo("back", "A_Run_BckStrafeB_Masc", 0.7f, loop: true, strideM: 1.73f),
+            new ClipInfo("left", "A_Run_FwdStrafeL_Masc", 0.7f, loop: true, strideM: 1.7f),
+            new ClipInfo("right", "A_Run_FwdStrafeR_Masc", 0.7f, loop: true, strideM: 1.71f),
+            new ClipInfo("slashB", "A_Attack_LightCombo01B_Sword", 0.667f, 0.267f, 0.45f),
+            new ClipInfo("slashA", "A_Attack_LightCombo01A_Sword", 0.8f, 0.35f, 0.717f),
+            new ClipInfo("spin", "A_Attack_HeavyFlourish_Sword", 2.033f, 1.433f, 1.65f),
+            new ClipInfo("stab", "A_Attack_HeavyStab01_Sword", 1.367f, 0.883f, 0.983f),
+            new ClipInfo("leap", "A_Attack_LightLeaping01_Sword", 1.567f, 1.1f, 1.167f),
+            new ClipInfo("parry", "A_Parry_F_Sword", 0.467f, 0.233f, 0.4f),
+            new ClipInfo("dodge", "A_Dodge_F_Sword", 0.567f),
+        };
+
+        public HeroClips(ClipInfo[] clips)
         {
             Clip Find(string role, bool struck = false)
             {
                 int i = Array.FindIndex(clips, c => c.Role == role);
-                if (i < 0) throw new ArgumentException($"HeroClips: the hero's rig has no {role} clip");
+                if (i < 0) throw new ArgumentException($"HeroClips: the hero has no {role} clip");
                 if (struck && (clips[i].Impact < 0 || clips[i].End < clips[i].Impact))
                     throw new ArgumentException($"HeroClips: the hero's {role} clip needs an impact and an end after it");
                 return new Clip(i, clips[i]);
@@ -82,7 +104,7 @@ namespace Champions.Client.Hero
         public float Lift;
         public readonly HeroLayer[] Layers = new HeroLayer[MaxLayers];
         public int LayerCount;
-        /// <summary>False while it blinks and once it has shattered.</summary>
+        /// <summary>False while it blinks and from its death on.</summary>
         public bool Visible;
         /// <summary>Its lines' own flare (0 none, 1 doubled): an impact's, a blink's arrival.</summary>
         public float Flare;
@@ -140,7 +162,7 @@ namespace Champions.Client.Hero
     ///   through the dash, then plays on from there and fades back: the plain Dash holds the forward dodge's long low
     ///   stride, Blade Rush thrusts with HeavyStab01, Leap Slam leaps on LightLeaping01 (its landing on the dash's end,
     ///   lifted in an arc), Shield Charge holds the forward parry, Blink Strike vanishes and reappears with a flare.
-    /// - <b>Hurt</b> flashes once over <see cref="HurtS"/>; <b>death</b> hides the hero (its shards take over).
+    /// - <b>Hurt</b> flashes once over <see cref="HurtS"/>; <b>death</b> hides the hero.
     /// </summary>
     public sealed class HeroMotion
     {

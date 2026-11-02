@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using Champions.Client.Loop;
 using Champions.Render;
-using Champions.Render.Crowd;
 using Champions.Sim;
 using UnityEngine;
 
@@ -12,9 +11,10 @@ namespace Champions.Client.Scenes
     /// <summary>
     /// `duel-ogre` and `duel-dragon`: a boss's duel and each of its telegraphs (`champions stills --scene duel-ogre`). The real
     /// sim calls the boss at the start (<see cref="RunInputs.Duel"/>) to a scripted 120 BPM song whose every beat is strong,
-    /// so the boss lands on the first downbeat 4 s in; skeletons stand round the hero for its entrance to shatter. The hero
+    /// so the boss lands on the first downbeat 4 s in; skeletons stand round the hero for its entrance to kill. The hero
     /// (a white ring standing in, immortal here) stands its ground while the boss comes and takes each of its moves in turn,
-    /// presented by the world, the telegraph and the boss presenters over the edge crowd. Its stills, named by what each
+    /// presented by the world, the telegraph and the boss presenters; the boss and the skeletons are stand-ins
+    /// (<see cref="StandIn"/>), each skeleton gone on its kill's frame. Its stills, named by what each
     /// shows: the entrance's impact frame (`entrance`), each move's telegraph three fifths filled (`smash`, `boulders`, ...)
     /// and the duel at its end (`duel`).
     /// </summary>
@@ -49,7 +49,7 @@ namespace Champions.Client.Scenes
             int cast = _content.Enemies.IndexOf(_boss), skeleton = _content.Enemies.IndexOf("skeleton");
             view.Ids[IdPass.Monster(cast)] = (_boss, "boss", (float)_content.Enemies.Cast[cast].SizeM);
             view.Ids[IdPass.Monster(skeleton)] = ("skeleton", "fodder", (float)_content.Enemies.Cast[skeleton].SizeM);
-            view.Ids[IdPass.Effect] = ("hero stand-in, telegraphs and shards", "effect", HeroMarker.WidthM);
+            view.Ids[IdPass.Effect] = ("hero stand-in and telegraphs", "effect", HeroMarker.WidthM);
         }
     }
 
@@ -61,11 +61,8 @@ namespace Champions.Client.Scenes
 
         struct Standing
         {
-            public int Id;
-            public Vector2 At;
+            public GameObject Body;
             public double Killed;
-            public Vector2 Blow;
-            public float Power;
         }
 
         SimDriver _driver;
@@ -73,16 +70,13 @@ namespace Champions.Client.Scenes
         WorldPresenter _world;
         TelegraphPresenter _telegraphs;
         BossPresenter _boss;
-        EdgeCrowd _crowd;
-        EdgeShatter _shatter;
+        Material _skeletonMaterial;
         HeroMarker _marker;
         Camera _camera;
         Stills.View _view;
         readonly List<Standing> _standing = new List<Standing>();
         readonly List<(double At, string Name)> _shots = new List<(double, string)>();
         readonly HashSet<BossMove> _seen = new HashSet<BossMove>();
-        int _skeleton = -1, _serial;
-        uint _skeletonTint;
         double _start, _arrived = double.NaN;
         int _next, _cursor;
         bool _entranceKept;
@@ -96,11 +90,13 @@ namespace Champions.Client.Scenes
             _view = view;
             _start = Time.timeAsDouble;
             _entries = new ScriptedSong().Beats(0, DuelScene.SongEnd, DuelScene.Bpm, allStrong: true).Entries();
+            int skeleton = content.Enemies.IndexOf("skeleton");
+            var skeletonType = content.Enemies.Cast[skeleton];
             var dummies = new Dummy[Skeletons];
             for (int i = 0; i < Skeletons; i++)
             {
                 double a = 2.4 * i, r = 5 + i % 4 * 2.5;
-                dummies[i] = new Dummy(r * Math.Cos(a), r * Math.Sin(a) * 0.8, 3, content.Enemies.Cast[content.Enemies.IndexOf("skeleton")].RadiusM);
+                dummies[i] = new Dummy(r * Math.Cos(a), r * Math.Sin(a) * 0.8, 3, skeletonType.RadiusM);
             }
             var config = new RunInputs { Seed = 7, Duel = boss, Loadout = new Upgrade[0], Dummies = dummies }.Build(content);
             config.Hero.Health = 1e9;
@@ -108,26 +104,20 @@ namespace Champions.Client.Scenes
             int layer = camera.gameObject.layer;
             _world = new WorldPresenter(camera, palette);
             _telegraphs = new TelegraphPresenter(palette, config.Enemies, layer);
-            var lib = EdgeCutLibrary.Load();
-            if (lib != null && lib.Types.Length > 0)
-            {
-                _crowd = new EdgeCrowd(lib, Skeletons);
-                _shatter = new EdgeShatter(lib, _crowd.Palette);
-                _skeleton = lib.IndexOf("skeleton");
-                if (_skeleton >= 0) _crowd.SetIdCode(_skeleton, IdPass.Monster(content.Enemies.IndexOf("skeleton")));
-                _skeletonTint = MonsterInstance.Pack(palette.ForType("skeleton"));
-            }
-            _boss = new BossPresenter(_crowd, _shatter, config.Enemies, palette, _world.World);
+            _boss = new BossPresenter(config.Enemies, palette, _world.World, layer);
             _marker = new HeroMarker(layer);
-            foreach (var d in dummies) _standing.Add(new Standing { Id = _standing.Count, At = new Vector2((float)d.X, (float)d.Y), Killed = double.NaN });
-            view.Requeue = () =>
+            _skeletonMaterial = StandIn.Material("Skeleton stand-in", palette.ForType("skeleton"), palette.VoidBody, IdPass.Monster(skeleton));
+            float across = 2 * (float)skeletonType.RadiusM;
+            var size = new Vector3(across, (float)skeletonType.SizeM, across);
+            foreach (var d in dummies)
             {
-                _crowd?.Queue(_camera);
-                _shatter?.Queue(_camera);
-                _telegraphs.Queue(_camera);
-            };
-            Log("Duel: {0} called at the start, {1} BPM, every beat strong; {2} skeletons stand round the hero; {3}", boss,
-                DuelScene.Bpm, Skeletons, _crowd == null ? "no baked edge cuts: stand-ins" : "the edge crowd");
+                var go = StandIn.Make("Skeleton stand-in", PrimitiveType.Capsule, size, _skeletonMaterial, layer, transform);
+                go.transform.position = new Vector3((float)d.X, 0, (float)d.Y);
+                _standing.Add(new Standing { Body = go, Killed = double.NaN });
+            }
+            view.Requeue = () => _telegraphs.Queue(_camera);
+            Log("Duel: {0} called at the start, {1} BPM, every beat strong; {2} skeletons stand round the hero; stand-ins", boss,
+                DuelScene.Bpm, Skeletons);
         }
 
         void Update()
@@ -161,8 +151,6 @@ namespace Champions.Client.Scenes
                         {
                             var s = _standing[e.I0];
                             s.Killed = e.T;
-                            s.Blow = new Vector2((float)e.D0, (float)e.D1);
-                            s.Power = (float)e.D2;
                             _standing[e.I0] = s;
                         }
                         break;
@@ -177,13 +165,8 @@ namespace Champions.Client.Scenes
             _marker.Place(feet);
             _world.Present(now, feet, Time.deltaTime);
             _telegraphs.Present(now, _camera);
-            WriteSkeletons(now);
+            foreach (var s in _standing) s.Body.SetActive(!(now >= s.Killed));
             _boss.Present(now, sim);
-            if (_crowd != null)
-            {
-                _crowd.Draw(_camera);
-                _shatter.Frame(now, _camera);
-            }
             _view.Hero = new Vector3(feet.x, 0, feet.y);
             _view.Impact = _world.World.Rings.Special > 0;
             if (!_entranceKept && now >= _arrived)
@@ -201,45 +184,12 @@ namespace Champions.Client.Scenes
             }
         }
 
-        /// <summary>The standing skeletons at song time <paramref name="now"/>: each breaks on the first frame at or after its kill.</summary>
-        void WriteSkeletons(double now)
-        {
-            if (_skeleton < 0) return;
-            var t = _crowd.Type(_skeleton);
-            int idle = Math.Max(0, t.Clip("idle"));
-            var slots = _crowd.Instances(_skeleton, _standing.Count);
-            for (int i = 0; i < _standing.Count; i++)
-            {
-                var s = _standing[i];
-                var body = new MonsterInstance
-                {
-                    Position = new Vector3(s.At.x, 0, s.At.y), Yaw = Mathf.Atan2(-s.At.x, -s.At.y), ClipA = (uint)idle,
-                    TimeA = (float)(now + i * 0.37), ClipB = (uint)idle, TimeB = (float)(now + i * 0.37), Blend = 1, Scale = 1,
-                    Tint = _skeletonTint, Flags = (uint)CrowdFlags.Alive,
-                };
-                if (now >= s.Killed)
-                {
-                    if (s.Power < 0)
-                    {
-                        slots[i] = new MonsterInstance { Flags = (uint)CrowdFlags.Hidden };
-                        continue;
-                    }
-                    body.Flags = (uint)CrowdFlags.Dying;
-                    _shatter.Break(_skeleton, i, body, ++_serial, s.Killed, s.Blow.x, s.Blow.y, s.Power * 0.4f);
-                    s.Power = -1;
-                    _standing[i] = s;
-                }
-                slots[i] = body;
-            }
-        }
-
         void OnDestroy()
         {
             _marker?.Dispose();
             _boss?.Dispose();
             _telegraphs?.Dispose();
-            _shatter?.Dispose();
-            _crowd?.Dispose();
+            StandIn.Destroy(_skeletonMaterial);
             _world?.Dispose();
         }
 

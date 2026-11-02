@@ -1,5 +1,5 @@
-// A stand-in for an edge cut until the real ones land (the stills' palette scene): a near-black body whose silhouette
-// glows in a role's colour, as an edge cut's lines ring its dark body. Unlit; honours the type-ID pass.
+// A stand-in for the monsters, the hero, the bosses and the structures until the trailer's edge look is ported
+// (StandIn.cs): a near-black body whose silhouette glows in a role's colour. Unlit; honours the type-ID pass.
 Shader "Champions/StandIn"
 {
     Properties

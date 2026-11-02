@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Champions.Render.Crowd;
 using Champions.Sim;
 
 namespace Champions.Client
 {
     /// <summary>
     /// Which of a boss's clips plays at a song time, and how far in, from what the sim said of its moves (design.md,
-    /// Bosses: "its attack clips always play"; the clip roles are its edge cut recipe's):
+    /// Bosses: "its attack clips always play"; the clip roles are its model's):
     /// - an attack's clip (the Ogre's smash, stomp, throw; the dragon's breath, tail, fireball) so its impact frame lands on
     ///   the move's first landing, starting partway in when the telegraph is shorter than its wind-up;
     /// - the Ogre's charge: its run (looping) along the charge's run;
@@ -38,7 +37,7 @@ namespace Champions.Client
             public double Land;
         }
 
-        readonly EdgeClip[] _clips;
+        readonly ClipInfo[] _clips;
         readonly int _idle, _walk, _roar, _run, _takeoff, _fly, _land, _hit;
         readonly Dictionary<BossMove, int> _attackClip = new Dictionary<BossMove, int>();
         readonly List<Attack> _attacks = new List<Attack>();
@@ -48,7 +47,7 @@ namespace Champions.Client
         float _currentTime, _previousTime, _walkPhase;
         double _changedAt, _last = double.NaN;
 
-        public BossAnimator(EdgeClip[] clips)
+        public BossAnimator(ClipInfo[] clips)
         {
             _clips = clips;
             _idle = Math.Max(0, Role("idle"));
@@ -202,7 +201,7 @@ namespace Champions.Client
             return true;
         }
 
-        static float End(in EdgeClip c) => c.End > 0 ? c.End : c.Length;
+        static float End(in ClipInfo c) => c.End > 0 ? c.End : c.Length;
 
         /// <summary>A clip's time, held at its end unless it loops.</summary>
         float Clamp(int clip, float time) => clip < 0 || _clips[clip].Loop ? time : Math.Min(time, _clips[clip].Length);

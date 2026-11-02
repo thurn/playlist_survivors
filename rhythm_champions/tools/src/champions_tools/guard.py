@@ -6,8 +6,8 @@ demo3d/, demo2d/, stylelab/, herocap/) alike (docs/archive/tech-demo-3d/vendor-a
 guard). A file fails when it:
 
 - is inside any project's vendor or baked folders;
-- is a model source or export (.blend, .fbx, .obj) anywhere in the tree: the edge cuts' Blender
-  work stays in ignored folders (plan.md, Edge cuts);
+- is a model source or export (.blend, .fbx, .obj) anywhere in the tree: model work stays in
+  ignored folders;
 - is binary (by extension or a NUL byte) under a project's folder or the Unity packages
   (unity-packages/), unless it is a PNG or JPEG under that project's evidence/ that carries the
   `ps-render` text tag, a recorded session's inputs (rhythm_champions/sessions/NAME/inputs.bin,
@@ -229,7 +229,7 @@ def check_blob(path: str, data: bytes, record: Record | None) -> list[str]:
     if in_vendor_or_baked(lower):
         reasons.append("inside the vendor or baked folder")
     if ext in MODEL_EXTENSIONS:
-        reasons.append(f"a model file (.{ext}): edge-cut work and exports stay in ignored folders")
+        reasons.append(f"a model file (.{ext}): model work and exports stay in ignored folders")
     demo = demo_of(lower)
     folder = lower.split("/", 1)[0] if "/" in lower else None
     if folder in BINARY_FOLDERS and (ext in BINARY_EXTENSIONS or b"\x00" in data):

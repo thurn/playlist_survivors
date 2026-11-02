@@ -1,7 +1,6 @@
 using System.Linq;
 using Champions.Client;
 using Champions.Render;
-using Champions.Render.Crowd;
 using Champions.Sim;
 using NUnit.Framework;
 using UnityEngine;
@@ -62,10 +61,10 @@ namespace Champions.Tests
             }
         }
 
-        static EdgeClip Clip(string role, float length, float impact = -1, bool loop = false, float stride = -1) =>
-            new EdgeClip { Role = role, Name = role, Length = length, Impact = impact, End = -1, Loop = loop, StrideM = stride };
+        static ClipInfo Clip(string role, float length, float impact = -1, bool loop = false, float stride = -1) =>
+            new ClipInfo(role, role, length, impact, -1, loop, stride);
 
-        static readonly EdgeClip[] Clips =
+        static readonly ClipInfo[] Clips =
         {
             Clip("idle", 2, loop: true), Clip("walk", 1.33f, loop: true, stride: 2.13f), Clip("breath", 2.667f, 0.4f),
             Clip("tail", 2.167f, 1.15f), Clip("takeoff", 2.667f), Clip("fly", 1, loop: true), Clip("land", 2.5f, 1.27f),

@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace Champions.Render
 {
     /// <summary>
-    /// The scripted scenes' stand-in at the hero's feet until the hero's edge cut draws there: a thin flat ring of
+    /// The scripted scenes' stand-in at the hero's feet where they draw no hero: a thin flat ring of
     /// <see cref="RadiusM"/> in HDR white (Glow.shader), so the stills show where the beat wave leaves from, and its bloom
     /// and edges show a tier's bloom and MSAA; the stills' type-ID pass sees it as one of the hero's effects. White is
     /// the hero's (design.md, The Look &gt; Principles).

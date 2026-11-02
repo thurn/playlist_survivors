@@ -1,5 +1,5 @@
-// A flat HDR colour (HeroMarker.cs): the scripted scenes' stand-in at the hero's feet, white and bright enough to bloom,
-// until the hero's own edge cut draws there. In the stills' type-ID pass it draws its _ChampionsId (an effect's code).
+// A flat HDR colour (HeroMarker.cs): the scripted scenes' marker at the hero's feet, white and bright enough to bloom,
+// where they draw no hero. In the stills' type-ID pass it draws its _ChampionsId (an effect's code).
 Shader "Champions/Glow"
 {
     Properties

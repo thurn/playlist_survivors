@@ -1,9 +1,9 @@
 """The derived record: hashes and GUIDs of files made from vendor files or the song.
 
-Bakers write derived files into each project's gitignored Assets/Baked/ (Rhythm Champions' edge
-cuts), and Unity rewrites some vendor files in Assets/Vendor/ when it imports them (demo2d's
-binary-serialized Spine clips become YAML text). A copy of either elsewhere in the tree would pass
-the sync record's checks, since its bytes are new. So before every check the guard hashes every
+Bakers write derived files into each project's gitignored Assets/Baked/ (Rhythm Champions' effect
+library and sound bank), and Unity rewrites some vendor files in Assets/Vendor/ when it imports
+them (demo2d's binary-serialized Spine clips become YAML text). A copy of either elsewhere in the
+tree would pass the sync record's checks, since its bytes are new. So before every check the guard hashes every
 file in every project's Assets/Baked/ and Assets/Vendor/ of every worktree of this clone (a file
 copied from another worktree is caught even if no guard ran there), the frozen demos' song source
 MP3, and herocap's HeroEditor frames and atlases in the frozen tools' cache. The guard checks

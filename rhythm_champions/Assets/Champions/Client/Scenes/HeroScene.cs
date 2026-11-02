@@ -5,15 +5,14 @@ using System.IO;
 using Champions.Client.Hero;
 using Champions.Client.Loop;
 using Champions.Render;
-using Champions.Render.Crowd;
 using Champions.Sim;
 using UnityEngine;
 
 namespace Champions.Client.Scenes
 {
     /// <summary>
-    /// `hero`: the hero's scripted scene (`champions stills --scene hero`; ps-6y2.20). The knight's edge cut, posed by
-    /// its presenter (<see cref="HeroPresenter"/>), under the game's camera, grid and post:
+    /// `hero`: the hero's scripted scene (`champions stills --scene hero`; ps-6y2.20). The hero's stand-in, posed by its
+    /// presenter (<see cref="HeroPresenter"/>), under the game's camera, grid and post:
     /// - <b>Sword Slash at three tempos</b> (<see cref="Tempos"/>): for each, the real sim plays a scripted song from 0
     ///   with three dummies east of the hero, and its events go to the hero (a scene-local dispatch: moves, swings), the
     ///   world (beat rings) and the weapon effects (each strike's slash). The hero stands for the first
@@ -25,8 +24,8 @@ namespace Champions.Client.Scenes
     ///   (`Hero: swing ...`).
     /// - <b>The dash poses</b>: each dash type (and Skyfall) from where the last left off, scripted (the client can't
     ///   equip dashes), with the distance and duration of dashes.json, a still mid-dash and one as it lands.
-    /// - <b>Hurt and death</b>: the hurt flash while running, then the killing blow: stills on the break's frame and as
-    ///   the white shards fly.
+    /// - <b>Hurt and death</b>: the hurt flash while running, then the killing blow: stills on the death's frame and
+    ///   after it.
     /// </summary>
     sealed class HeroScene : IStillScene, INamedStills
     {
@@ -122,9 +121,7 @@ namespace Champions.Client.Scenes
         string _stillsDir;
         Stills.View _view;
         double _start, _lastSong;
-        EdgeCutLibrary _lib;
         Effects _effects;
-        EdgeShatter _shatter;
         HeroPresenter _hero;
         WorldPresenter _world;
         int _segment = -1;
@@ -151,17 +148,11 @@ namespace Champions.Client.Scenes
             _view = view;
             _stillsDir = LaunchOptions.Current.StillsDir;
             _start = Time.timeAsDouble;
-            _lib = EdgeCutLibrary.Load();
             var effects = EffectLibrary.Load();
             if (effects != null) _effects = new Effects(effects, EffectRecipes.Load(contentDir), palette);
             view.Ids[IdPass.Hero] = ("hero", "hero", 1.85f);
             view.Ids[IdPass.Effect] = ("hero effects", "effect", 1.8f);
-            view.Requeue = () =>
-            {
-                _hero?.Queue(_camera);
-                _effects?.Queue(_camera);
-                _shatter?.Queue(_camera);
-            };
+            view.Requeue = () => _effects?.Queue(_camera);
             Debug.Log($"Hero: the scripted scene, Sword Slash at {string.Join(", ", Array.ConvertAll(HeroScene.Tempos, x => $"{x.Bpm} BPM (rank {x.Rank})"))}, " +
                       $"{HeroScene.TempoSeconds} s each, then the dash poses from {HeroScene.DashesFrom} s and the hurt and death from {HeroScene.EndFrom:F1} s");
         }
@@ -182,7 +173,6 @@ namespace Champions.Client.Scenes
         void Update()
         {
             double t = Time.timeAsDouble - _start;
-            EdgeLook.Default.Apply();
             int segment = t < HeroScene.DashesFrom ? (int)(t / HeroScene.TempoSeconds) : t < HeroScene.EndFrom ? 3 : 4;
             if (segment != _segment) Enter(segment);
             if (segment < 3) Tempo(t - segment * HeroScene.TempoSeconds);
@@ -190,18 +180,15 @@ namespace Champions.Client.Scenes
             else HurtAndDeath(t - HeroScene.EndFrom);
         }
 
-        /// <summary>A segment's fresh hero, world and shatter (song time starts again at 0 in each).</summary>
+        /// <summary>A segment's fresh hero and world (song time starts again at 0 in each).</summary>
         void Enter(int segment)
         {
             if (_tempo >= 0) EndTempo();
             _segment = segment;
             _hero?.Dispose();
             _world?.Dispose();
-            _shatter?.Dispose();
-            _hero = new HeroPresenter(_lib, _palette, _content.Hero.SpeedMps) { LogSwings = true };
+            _hero = new HeroPresenter(_palette, _content.Hero.SpeedMps, _camera.gameObject.layer) { LogSwings = true };
             _world = new WorldPresenter(_camera, _palette);
-            _shatter = _hero.Ready ? new EdgeShatter(_lib, _ => _hero.Palette) : null;
-            _hero.Shatter = _shatter;
             _feet = Vector2.zero;
             _moments.Clear();
             _dash = 0;
@@ -272,7 +259,7 @@ namespace Champions.Client.Scenes
                     break;
                 case SimEventKind.Swing:
                     _hero.Swing(e.I0 == 1 ? SwingKind.Spin : SwingKind.Slash, e.D0, new Vector2((float)e.D1, (float)e.D2));
-                    if (_hero.Motion != null) Planned(e);
+                    Planned(e);
                     break;
                 case SimEventKind.Strike when (BlowSource)e.I0 == BlowSource.SwordSlash && _effects != null:
                     bool spin = ((BlowFlags)(e.I1 & 0xFF) & BlowFlags.Spin) != 0;
@@ -416,9 +403,8 @@ namespace Champions.Client.Scenes
         {
             _feet = feet;
             _lastSong = song;
-            _hero.Present(song, feet, Time.deltaTime, _camera);
+            _hero.Present(song, feet, Time.deltaTime);
             _effects?.Present(song, feet, Time.deltaTime, _camera);
-            _shatter?.Frame(song, _camera);
             _world.Present(song, feet, Time.deltaTime);
             _view.Hero = new Vector3(feet.x, 0, feet.y);
             _view.Impact = _world.World.Rings.Special > 0;
@@ -429,7 +415,6 @@ namespace Champions.Client.Scenes
             if (_tempo >= 0) EndTempo();
             _hero?.Dispose();
             _world?.Dispose();
-            _shatter?.Dispose();
             _effects?.Dispose();
         }
 

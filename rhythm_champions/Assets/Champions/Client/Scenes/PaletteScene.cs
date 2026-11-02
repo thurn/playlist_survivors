@@ -10,8 +10,8 @@ namespace Champions.Client.Scenes
     /// `palette`: the palette as drawn (docs/champions/style.md, The palette scene). Minute 5's horde from level1.json
     /// (its density and mix), each monster a stand-in at its type's size in its type's colour (a near-black body whose
     /// silhouette glows, Champions/StandIn), round the hero in white, on the void, under the real post. It measures the
-    /// palette's key, families, conformance, the hero's margin and black share until the edge cuts and the crowd
-    /// renderer replace the stand-ins. Placed from a fixed seed, so every run keeps the same still.
+    /// palette's key, families, conformance and the hero's margin until the trailer's edge look replaces the stand-ins.
+    /// Placed from a fixed seed, so every run keeps the same still.
     /// </summary>
     sealed class PaletteScene : IStillScene
     {

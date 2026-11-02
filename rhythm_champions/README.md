@@ -10,10 +10,11 @@ title (Play, Calibrate, Quit), whose music picker starts a run on an app's
 audio or a file; with a music source the music plays 3 s late
 through the plugin while its beats feed the sim, whose beats send the beat
 wave across the grid and whose section changes move the zone key. The
-edge-cut pipeline and the edge crowd draw monsters (the skeleton so far) in
-the crowd's test scene. The hero's weapon effects draw Hovl's slash shapes in
-white (`--gallery` shows them all), and the hero's sounds are baked and
-scheduled, for the assembly to wire to the sim. A run shows the hero's
+monsters, the hero, the bosses and the structures draw as stand-ins
+([below](#stand-ins)) until the trailer's edge look is ported. The hero's
+weapon effects draw Hovl's slash shapes in white (`--gallery` shows them
+all), and the hero's sounds are baked and scheduled, for the assembly to wire
+to the sim. A run shows the hero's
 indicator, the HUD and the card moment's cards; Esc pauses it.
 
 ## Commands
@@ -41,8 +42,6 @@ The CLI (`rhythm_champions/tools`, a uv project; `champions --help`):
 | `stills` | Fixed-time stills of the scripted scenes, with their type-ID passes and views, into `captures/stills/` |
 | `look [DIR]` | The look metrics ([style.md](../docs/champions/style.md)) on stills: every threshold key, the palette's rules; `--out` writes evidence |
 | `unity <Method>` | A batch-mode task method of `Champions.EditorTools.Tasks` |
-| `edgecut <model>` | Bake the model's edge cut from its recipe (below) into `Assets/Baked/EdgeCuts/`; only the steps whose inputs changed (`--force`: all) |
-| `edgecut review <model>` | Bake if needed, then the cut's review sheets and README in `evidence/edgecuts/<model>/`; exits 1 when a threshold fails |
 | `guard`, `sync`, `manifest find\|add`, `library save` | The vendor guard, the vendor sync, curating the manifest, saving a warm Library |
 
 Player flags so far: `--file PATH` (an audio file or M3U playlist) or
@@ -61,10 +60,7 @@ low|medium|high` (the quality tier; without it the pause menu's last choice,
 or the GPU's guess: an M-series Max or Ultra plays High, a Pro Medium,
 anything else Low). With music, the log's `Music:` lines show
 the delay, each beat the sim reaches with when it became known, and a
-summary. `--edge-crowd N` is the edge crowd's test scene: N baked edge cuts
-(`--edge-type ID`, default skeleton) walking in a field, 20 a second
-breaking into shards; headless it times every frame and writes the
-percentiles to `--bench-out PATH`. `--calibration FILE` keeps the calibrations
+summary. `--calibration FILE` keeps the calibrations
 in FILE instead of the player's data folder. `champions play --headless` runs the player in
 batch mode on Metal; given to the player itself, `--headless` makes Unity
 draw with its Null device, so no still could be kept. For example, a still
@@ -86,15 +82,13 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
   the world), `Scenes/` (the stills' scripted scenes, the effects' gallery), `Sound/`
   (the hero's sounds: the bank, the scheduler, the beat's aggregation and the
   presenter from the sim's events)), `Render/`
-  (Champions.Render: stills and the type-ID pass, `Look/`: the palette,
-  `Effects/`: the weapon effects, their sparks and their shaders,
-  `Crowd/`: the edge crowd, its shatter and their shaders, `World/`: the
+  (Champions.Render: stills and the type-ID pass, the stand-ins, `Look/`: the
+  palette, `Effects/`: the weapon effects, their sparks and their shaders, `World/`: the
   grid, the beat wave, event rings, the zone key, the camera, the post and
   the quality tiers, with the `World.hlsl` globals every world-reacting
   shader reads, `Shaders/`), `Editor/` (Champions.Editor: build tasks, the
-  warm editor, the variant budget, `EdgeCuts/`: the edge cuts' export, bake
-  and review, `Effects/` and `Sound/`: the effect library's and sound bank's
-  bakes, run before every build), `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset,
+  warm editor, the variant budget, `Effects/` and `Sound/`: the effect
+  library's and sound bank's bakes, run before every build), `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset,
   its renderer and the post profile).
 - `plugin/`: the music plugin, a Cargo workspace copied from the frozen
   `native/` (crates plugin, analysis, audio, capture, stream; the analyzer's
@@ -105,37 +99,23 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
   [style.md](../docs/champions/style.md)) among it.
 - `manifest.json`: the vendor files the game uses, synced into the ignored
   `Assets/Vendor/`. Bakes write the ignored `Assets/Baked/`.
-- `tools/`: the CLI and its tests; `tools/recipes/edgecut/`, the edge cuts'
-  recipes; `tools/hooks/pre-push`, the guard setup installs for every checkout
-  of the clone.
+- `tools/`: the CLI and its tests; `tools/hooks/pre-push`, the guard setup
+  installs for every checkout of the clone.
 - `evidence/`: [operator-pending.md](evidence/operator-pending.md) and each
   bead's evidence.
 
-## Edge cuts
+## Stand-ins
 
-Every model is redrawn by a committed recipe (design.md, The Look > Edge
-cuts; plan.md, Rendering > Edge cuts), `tools/recipes/edgecut/<model>.py`:
-its `MODEL` names the vendor prefab and clips by GUID, its `ROLE` (fodder,
-elite, boss, hero) picks the thresholds, and `cut(source)` builds the cut with
-`champions_tools.edgecut` (numpy and scipy; Blender 5.2 headless is allowed):
-convex-hull body parts and flat discs, feature lines chosen from the
-source's silhouette creases with keep, drop and cap lists and a count,
-circles and strokes for replaced parts, and the shard pieces.
-`champions edgecut <model>` runs three steps, each only when its inputs
-changed: Unity exports the vendor model in root space (`EdgeCutSource`), the
-recipe cuts it, and Unity bakes the cut (`EdgeCutBaker`): body and line
-meshes, a 30 Hz bone texture of the clips over the entries the cut uses, the
-pieces, and the library in `Assets/Baked/EdgeCuts/Resources/`. Everything it
-writes stays in the ignored `Assets/Baked/`; only recipes, code and the
-review's small tagged stills are tracked. The reference cut is the
-skeleton's ([its review](evidence/edgecuts/skeleton/README.md)).
-
-The edge crowd (`Render/Crowd/`, ported from game/'s bone-texture crowd)
-draws each type with two indirect draws, its bodies (EdgeBody: near-black,
-from both sides) and its lines (EdgeLines: constant pixel width, additive in
-the instance's tint, the less important lines fading as the monster gets
-small, the beat wave's flare); `EdgeShatter` breaks a kill into the cut's
-pieces on the GPU on its impact frame. `EdgeLook` holds the look's inputs.
+Until the trailer's edge look is ported, everything with a body draws as a
+stand-in (`Render/StandIn.cs`): one of Unity's primitives at its size, drawn
+with `Resources/Champions/StandIn.shader` (a near-black body whose silhouette
+glows in its role's colour) and coded for the type-ID pass. The hero
+(`HeroPresenter`) is a white capsule that its motion (`HeroMotion`, on the
+knight's clip annotations) places, turns, lifts and hides; a boss
+(`BossPresenter`) and the duel scenes' skeletons are capsules in their
+palette colours, gone on their death's frame; the structures
+(`StructurePresenter`) are blocks and cylinders on their footprints, gone on
+their break's frame. Nothing breaks into shards.
 
 ## Weapon effects and sounds
 

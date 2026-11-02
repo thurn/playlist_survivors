@@ -16,8 +16,8 @@ reactive-local/
 # 3D tech demo: paid vendor assets and everything derived from them, plus
 # Unity's generated folders. Never commit these (AGENTS.md, vendor assets).
 # Rhythm Champions (docs/champions/plan.md, Project layout): vendor files and everything derived
-# from them (Vendor/, Baked/, the edge cuts' Blender work), Unity's generated folders, the plugin's
-# build output and target, and the dotnet projects' bin/obj.
+# from them (Vendor/, Baked/), Unity's generated folders, the plugin's build output and target, and
+# the dotnet projects' bin/obj.
 /rhythm_champions/Assets/Vendor/
 /rhythm_champions/Assets/Vendor.meta
 /rhythm_champions/Assets/Baked/

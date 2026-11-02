@@ -10,8 +10,7 @@ Commands:
   play [FLAGS]        play the last build at 1080p (--windowed for a window) with player flags;
                       --headless runs it windowless in batch mode and waits for it to exit
                       (player flags: --file PATH or --app NAME, the music, played 3 s late;
-                      --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..,
-                      --edge-crowd N [--edge-type ID] [--bench-out PATH]: the edge crowd's test scene)
+                      --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on a
                       skipped test)
   editor [start|stop|status]
@@ -27,11 +26,6 @@ Commands:
   unity METHOD ...    run a batch-mode task method (warm editor if running, else cold)
   guard               the vendor guard (--tree REV, --index, --range A..B, --pre-push REMOTE)
   sync                fill the vendor folder from the manifest (--record-only: just the record)
-  edgecut MODEL       bake the model's edge cut from its recipe (tools/recipes/edgecut/MODEL.py) into
-                      Assets/Baked/EdgeCuts/; only the steps whose inputs changed (--force: all)
-  edgecut review MODEL
-                      bake if needed, then the cut's review sheets and README in evidence/edgecuts/MODEL/
-                      (--out DIR); exits 1 when a threshold fails
   manifest find|add   list source assets by glob, or add them to the manifest
   library save        save this worktree's Library as the warm one for its packages (--built: after a
                       player build, with its shader cache)
@@ -266,12 +260,6 @@ def cmd_sync(a: argparse.Namespace) -> int:
     return sync.main(a)
 
 
-def cmd_edgecut(a: argparse.Namespace) -> int:
-    from .edgecut import run
-
-    return run.main(a.words, a.force, a.out)
-
-
 def cmd_manifest(a: argparse.Namespace) -> int:
     from . import sync
 
@@ -371,12 +359,6 @@ def build_parser() -> argparse.ArgumentParser:
     y.add_argument("--record-only", action="store_true")
     y.add_argument("--out")
     y.set_defaults(func=cmd_sync)
-
-    ec = sub.add_parser("edgecut", help="bake an edge cut, or review one (edgecut review MODEL)")
-    ec.add_argument("words", nargs="+", metavar="MODEL | review MODEL")
-    ec.add_argument("--force", action="store_true", help="run every step, changed or not")
-    ec.add_argument("--out", help="review: the folder for the sheets (default evidence/edgecuts/MODEL)")
-    ec.set_defaults(func=cmd_edgecut)
 
     m = sub.add_parser("manifest", help="find source assets, or add them to the manifest")
     m.add_argument("action", choices=["find", "add"])

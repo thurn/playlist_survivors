@@ -49,8 +49,8 @@ def fake_unity(ran: list[list[str]], fail: bool = False, variants: int = 200, ba
             "snippets": [{"shader": "Hidden/Universal/CoreBlit", "pass": "Nearest", "stage": "fragment",
                           "variants": variants}]}))
         if bakes:
-            (setup.baked_dir(wt) / "EdgeCuts").mkdir(parents=True, exist_ok=True)
-            (setup.baked_dir(wt) / "EdgeCuts" / "slime.asset").write_text("baked\n")
+            (setup.baked_dir(wt) / "Effects" / "Resources").mkdir(parents=True, exist_ok=True)
+            (setup.baked_dir(wt) / "Effects" / "Resources" / "Effects.asset").write_text("baked\n")
         return 0 if variants <= 300 else 1
 
     return run_method
@@ -179,13 +179,14 @@ def test_setup_prefers_a_built_library_when_none_is_exact(tmp_path: Path) -> Non
 
 
 def test_a_bake_is_cached_by_its_inputs(monkeypatch, wt) -> None:
-    write(wt.project / "tools" / "recipes" / "edgecut" / "slime.py", "LINES = 80\n")
+    baker = wt.project / "Assets" / "Champions" / "Editor" / "Effects" / "EffectBaker.cs"
+    write(baker, "class EffectBaker {}\n")
     run(monkeypatch, "build", bakes=True)
     shutil.rmtree(setup.baked_dir(wt))
     assert setup.restore_baked(wt)
-    assert (setup.baked_dir(wt) / "EdgeCuts" / "slime.asset").read_text() == "baked\n"
+    assert (setup.baked_dir(wt) / "Effects" / "Resources" / "Effects.asset").read_text() == "baked\n"
     assert not setup.restore_baked(wt)  # already the cached bake
-    write(wt.project / "tools" / "recipes" / "edgecut" / "slime.py", "LINES = 90\n")
+    write(baker, "class EffectBaker { }\n")
     shutil.rmtree(setup.baked_dir(wt))
     assert not setup.restore_baked(wt)  # new inputs: nothing cached for them
 
@@ -227,5 +228,5 @@ def test_play_makes_the_players_paths_absolute(monkeypatch, wt, tmp_path) -> Non
         cli.main(["play", "--headless", "--file", "songs/a.ogg", "--seconds", "20"])
     assert calls[0][-4:] == ["--file", str((tmp_path / "songs/a.ogg").resolve()), "--seconds", "20"]
     assert cli.absolute_file_flags(["--app", "Music"], tmp_path) == ["--app", "Music"]
-    assert cli.absolute_file_flags(["--edge-crowd", "1000", "--bench-out", "b.json"], tmp_path) == [
-        "--edge-crowd", "1000", "--bench-out", str((tmp_path / "b.json").resolve())]
+    assert cli.absolute_file_flags(["--gallery", "--bench-out", "b.json"], tmp_path) == [
+        "--gallery", "--bench-out", str((tmp_path / "b.json").resolve())]

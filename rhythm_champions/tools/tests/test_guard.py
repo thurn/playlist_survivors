@@ -113,7 +113,7 @@ def test_clean_tree_passes_with_an_empty_record(repo: Path, tmp_path: Path) -> N
 
 @pytest.mark.parametrize("rel", [
     "rhythm_champions/Assets/Vendor/Synty/Knight.prefab",
-    "rhythm_champions/Assets/Baked/EdgeCuts/slime/lines.asset",
+    "rhythm_champions/Assets/Baked/Effects/Resources/Effects.asset",
     "rhythm_champions/Assets/Baked.meta",
     "Rhythm_Champions/Assets/vendor/x.txt",
     "demo3d/Assets/Vendor/Synty/Knight.prefab",
@@ -827,9 +827,9 @@ def test_setup_refuses_a_hooks_path_that_would_skip_the_guard(repo: Path) -> Non
 
 @pytest.mark.parametrize("rel,data", [
     ("rhythm_champions/Assets/Champions/Hero.fbx", b"Kaydara FBX Binary  \x00\x1a\x00"),
-    ("rhythm_champions/tools/recipes/edgecut/slime.blend", b"BLENDER-v502"),
-    ("rhythm_champions/tools/recipes/edgecut/slime.blend1", b"BLENDER-v502"),
-    ("rhythm_champions/tools/recipes/edgecut/out/slime.obj", b"v 0 0 0\nv 1 0 0\nf 1 2 1\n"),  # text, no NUL
+    ("rhythm_champions/tools/models/slime.blend", b"BLENDER-v502"),
+    ("rhythm_champions/tools/models/slime.blend1", b"BLENDER-v502"),
+    ("rhythm_champions/tools/models/out/slime.obj", b"v 0 0 0\nv 1 0 0\nf 1 2 1\n"),  # text, no NUL
     ("docs/champions/cut.OBJ", b"v 0 0 0\n"),  # outside any project, any case
     ("scripts/knight.fbx", b"; FBX 7.4.0 project file\n"),
 ])

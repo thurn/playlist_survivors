@@ -36,10 +36,7 @@ namespace Champions.Client
         public string File;
         /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
         public string App;
-        /// <summary>`--edge-crowd N`: the edge crowd's test scene with N alive (<see cref="Bench.EdgeCrowdBench"/>), of
-        /// `--edge-type ID` (default skeleton), its timings to `--bench-out PATH`.</summary>
-        public int EdgeCrowd;
-        public string EdgeType;
+        /// <summary>`--bench-out PATH`: the gallery's GPU timings (with `--gallery --capture-stills DIR`).</summary>
         public string BenchOut;
         /// <summary>`--gallery`: the weapon effects' gallery (Scenes.GalleryScene): in a window, every effect in turn, over and
         /// over; with `--capture-stills DIR`, its stills (as `--stills-scenes gallery`), then quit.</summary>
@@ -62,9 +59,7 @@ namespace Champions.Client
                 StillsDir = a.Get("--capture-stills"),
                 File = a.Get("--file"),
                 App = a.Get("--app"),
-                EdgeCrowd = (int)a.Double("--edge-crowd", 0),
                 Gallery = a.Has("--gallery"),
-                EdgeType = a.Get("--edge-type"),
                 BenchOut = a.Get("--bench-out"),
                 CalibrationFile = a.Get("--calibration"),
             };

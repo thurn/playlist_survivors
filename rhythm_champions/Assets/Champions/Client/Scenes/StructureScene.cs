@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using Champions.Client.Loop;
 using Champions.Render;
-using Champions.Render.Structures;
 using Champions.Sim;
 using UnityEngine;
 
@@ -12,13 +11,13 @@ namespace Champions.Client.Scenes
     /// <summary>
     /// `structures`: a structure field and a break (`champions stills --scene structures`). The real sim plays level 1's
     /// structures (Content/structures.json) on seed <see cref="Seed"/>, whose start stands between a hamlet, a lone tower
-    /// and a grove, to a scripted song at 120 BPM (the beat wave flaring their edges), with the world presenter and the
-    /// structure presenter, the hero's feet marked by a white ring (<see cref="HeroMarker"/>):
+    /// and a grove, to a scripted song at 120 BPM, with the world presenter and the structure presenter (stand-ins until
+    /// the trailer's edge look is ported), the hero's feet marked by a white ring (<see cref="HeroMarker"/>):
     /// - the hero walks from the start to stand <see cref="StandOffM"/> off the nearest small structure (a fence, a rock, a
     ///   tree or a wall) it can walk straight to, and at <see cref="DashAt"/> dashes through it with Blade Rush (the
     ///   scene's start dash; the plain Dash deals no damage), which breaks it on the key-down frame;
     /// - stills: the field from the start, the field round the hero before the dash, the break's impact frame (the
-    ///   `break` moment, on whichever frame first shows it), and its pieces flying and come down.
+    ///   `break` moment, on whichever frame first shows it), and the field after it.
     /// </summary>
     sealed class StructureScene : IStillScene
     {
@@ -45,7 +44,7 @@ namespace Champions.Client.Scenes
             _driver = root.gameObject.AddComponent<StructureSceneDriver>();
             _driver.Begin(camera, _content, _palette, view);
             view.Hero = Vector3.zero;
-            view.Ids[IdPass.Effect] = ("hero stand-in and shards", "effect", HeroMarker.WidthM);
+            view.Ids[IdPass.Effect] = ("hero stand-in", "effect", HeroMarker.WidthM);
         }
     }
 
@@ -81,10 +80,8 @@ namespace Champions.Client.Scenes
             config.Dashes.Start = "bladeRush";
             _driver = new SimDriver(config, new FrameClock());
             _world = new WorldPresenter(camera, palette);
-            _structures = StructurePresenter.Create(config.Structures, _world.World, out string why);
-            if (_structures == null) throw new InvalidOperationException("the structures scene needs its cuts: " + why);
-            view.Requeue = () => _structures.Queue(_camera);
-            view.Ids[IdPass.Structure] = ("structures", "structure", 5f);
+            _structures = new StructurePresenter(config.Structures, palette, _world.World, camera.gameObject.layer);
+            view.Ids[IdPass.Structure] = ("structures", "structure", StructurePresenter.MaxHeightM);
             _marker = new HeroMarker(camera.gameObject.layer);
             if (!Pick(_driver.Sim, out _stand, out _through, out string target))
                 throw new InvalidOperationException($"seed {StructureScene.Seed}: no small structure the hero can walk straight to");
@@ -185,7 +182,7 @@ namespace Champions.Client.Scenes
             var feet = new Vector2((float)x, (float)y);
             _marker.Place(feet);
             _world.Present(now, feet, Time.deltaTime);
-            _structures.Present(now, _camera);
+            _structures.Present(now);
             _view.Hero = new Vector3(feet.x, 0, feet.y);
             _view.Impact = _world.World.Rings.Special > 0;
             if (_structures.BrokeThisFrame > 0 && !_broken)
