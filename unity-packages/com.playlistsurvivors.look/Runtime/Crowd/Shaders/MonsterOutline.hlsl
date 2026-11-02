@@ -1,7 +1,8 @@
 // The monster looks' dark outline in screen space, drawn as an inverted hull, so two touching monsters
 // of one type show a dark seam between them (neon-look-style.md, The Axes in 3D > Monsters): the
 // solid look's (MonsterSolid.shader) and the line looks' (edge, hologram, gem), whose bright rims and
-// lines alone merge a dense clump into one mass. Include after MonsterCommon.hlsl and Impulse.hlsl.
+// lines alone merge a dense clump into one mass; and a body's radius on screen, which the solid and
+// edge looks scale by. Include after MonsterCommon.hlsl and Impulse.hlsl.
 #ifndef LOOK_MONSTER_OUTLINE_INCLUDED
 #define LOOK_MONSTER_OUTLINE_INCLUDED
 
@@ -26,6 +27,15 @@ float4 MonsterOutlineCS(float3 positionWS, float3 normalWS, float3 centre, float
     return cs;
 }
 
+// A body's radius on screen in pixels at 1080 rows, from its bounding sphere (CrowdSphere): its
+// centre and the point a radius above it along the camera's up axis, projected.
+float MonsterRadiusPx(float4 sphere)
+{
+    float4 c = mul(UNITY_MATRIX_VP, float4(sphere.xyz, 1));
+    float4 t = mul(UNITY_MATRIX_VP, float4(sphere.xyz + sphere.w * UNITY_MATRIX_I_V._m01_m11_m21, 1));
+    return abs(t.y / max(t.w, 1e-3) - c.y / max(c.w, 1e-3)) * 0.5 * 1080.0;
+}
+
 struct OutlineVaryings
 {
     float4 positionCS : SV_POSITION;
@@ -36,8 +46,10 @@ struct OutlineVaryings
 // The line looks' hull: the body skinned and, living, lifted by a passing ring's hop as their bodies
 // are (ImpulseCrowd), pushed out `px` pixels round its bounding sphere's centre and `back` of the
 // sphere's radius away from the camera along the view ray (which leaves it where it was on screen).
-// Their light is in the rim, at the silhouette, where the hull's back faces meet the front ones at
-// the same depth: unpushed, the hull covers the rim; pushed, it still covers a neighbour behind.
+// At the silhouette the hull's pushed-out back faces meet the front ones at the same depth: at
+// `back` 0 the hull takes the body's outer rim, a dark seam inside each silhouette as well as over
+// the neighbour behind (edge and hologram, whose light is rim and lines); pushed back, the body keeps
+// its rim and the hull darkens only what lies behind (the gem, whose light is its body).
 OutlineVaryings LineOutlineVert(MonsterAttributes v, float px, float back)
 {
     MonsterVertex c = MonsterSkin(v);

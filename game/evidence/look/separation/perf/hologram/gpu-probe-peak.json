@@ -1,0 +1,18 @@
+{
+  "graphicsDeviceName": "Apple M5 Max",
+  "size": [1920, 1080],
+  "msaa": 4,
+  "args": "-batchmode -force-metal -logFile /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.28/captures/game/perf/hologram/peak/player.log --fixed-time --file /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.28/public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --profile-out /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.28/captures/game/perf/hologram/peak/profile.csv --start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5 --look hologram --gpu-probe-at 40,50,60 --gpu-probe-out /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.28/captures/game/perf/hologram/peak/gpu-probe.json --seconds 62",
+  "frames": 24,
+  "p50Ms": 3.83,
+  "p99Ms": 7.39,
+  "maxMs": 7.39,
+  "firstMaxMs": 25.61,
+  "cpuP50Ms": 1.29,
+  "cpuP99Ms": 1.49,
+  "points": [
+    {"at": 40.000, "alive": 300, "firstMs": 25.61, "medianMs": 2.55, "maxMs": 4.56, "frames": [[40.0167, 300, 4.56, 1.49], [40.0333, 300, 2.66, 1.33], [40.0500, 300, 2.27, 1.25], [40.0667, 300, 2.20, 1.19], [40.0833, 300, 2.55, 1.49], [40.1000, 300, 2.14, 1.11], [40.1167, 298, 2.93, 1.06], [40.1333, 298, 2.11, 1.13]]},
+    {"at": 50.000, "alive": 300, "firstMs": 6.59, "medianMs": 4.71, "maxMs": 7.39, "frames": [[50.0167, 300, 7.39, 1.23], [50.0333, 300, 4.71, 1.38], [50.0500, 300, 5.13, 1.41], [50.0667, 300, 4.34, 1.32], [50.0833, 300, 4.66, 1.19], [50.1000, 300, 3.16, 1.29], [50.1167, 300, 4.81, 1.19], [50.1333, 300, 3.21, 1.32]]},
+    {"at": 60.000, "alive": 300, "firstMs": 5.15, "medianMs": 4.10, "maxMs": 5.22, "frames": [[60.0167, 300, 3.34, 1.19], [60.0333, 300, 4.10, 1.34], [60.0500, 300, 5.01, 1.30], [60.0667, 300, 3.83, 1.34], [60.0833, 300, 3.80, 1.34], [60.1000, 300, 4.39, 1.23], [60.1167, 300, 3.54, 1.24], [60.1333, 300, 5.22, 1.24]]}
+  ]
+}

@@ -28,7 +28,7 @@
 
 // The body's light: `inside` 1 on a shard's fresh inside face, which has no silhouette band (it
 // faces into the break) and is a little brighter, as a broken gem's fresh face is; `radiusPx` the
-// body's radius on screen (SolidRadiusPx).
+// body's radius on screen (MonsterRadiusPx).
 float3 SolidSurface(float3 positionWS, float3 normalWS, float4 bary, float3 tint, float pulse, float inside, float radiusPx)
 {
     float3 V = GetWorldSpaceNormalizeViewDir(positionWS);
@@ -56,15 +56,6 @@ float3 SolidSurface(float3 positionWS, float3 normalWS, float4 bary, float3 tint
     // The beat's hot spot: the faces turned to the camera flare toward white.
     color += lerp(tint, 1, 0.35) * _HotSpot * pulse * pow(nv, 8);
     return color;
-}
-
-// A body's radius on screen in pixels at 1080 rows, from its bounding sphere (CrowdSphere): its
-// centre and the point a radius above it along the camera's up axis, projected.
-float SolidRadiusPx(float4 sphere)
-{
-    float4 c = mul(UNITY_MATRIX_VP, float4(sphere.xyz, 1));
-    float4 t = mul(UNITY_MATRIX_VP, float4(sphere.xyz + sphere.w * UNITY_MATRIX_I_V._m01_m11_m21, 1));
-    return abs(t.y / max(t.w, 1e-3) - c.y / max(c.w, 1e-3)) * 0.5 * 1080.0;
 }
 
 // A hit (the crowd's hit flash, 1 on the blow's frame and fading): the faces turned to the camera

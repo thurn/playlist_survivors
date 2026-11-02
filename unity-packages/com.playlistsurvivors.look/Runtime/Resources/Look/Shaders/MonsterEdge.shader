@@ -3,10 +3,9 @@
 // lit only by the type's palette hue in its rim, its feature edges and its inner core
 // (MonsterEdge.hlsl), with a dark outline hull (MonsterOutline.hlsl) in the unlit pass URP draws
 // beside it, so a clump's touching rims part. As an impulse ring passes (Impulse.hlsl's
-// ImpulseCrowd) a living monster hops and its rim and lines take the ring's light. Opaque, but in the
-// transparent queue where the
-// crystal draws: the renderers force depth priming, and outside the opaque queue the crowd needs
-// no depth prepass of its own.
+// ImpulseCrowd) a living monster hops and its rim and lines take the ring's light. Opaque, but in
+// the transparent queue where the crystal draws: the renderers force depth priming, and outside the
+// opaque queue the crowd needs no depth prepass of its own.
 // Under the global _GameIdMask (the stills' ID render) it draws flat white.
 Shader "Look/MonsterEdge"
 {
@@ -15,13 +14,14 @@ Shader "Look/MonsterEdge"
         [HDR] _Tint ("Slot hue (linear)", Color) = (0.1, 0.8, 1.0, 1)
         _Core ("Glass (void.floor, linear)", Color) = (0.002, 0.002, 0.004, 1)
         [HDR] _Flash ("Flash (shatter.core, linear)", Color) = (1, 1, 1, 1)
-        _Rim ("Rim gain", Float) = 5.5
+        _Rim ("Rim gain", Float) = 2.0
+        _RimSmall ("Rim gain on a body small on screen", Float) = 6.5
         _RimPower ("Rim falloff", Float) = 4.0
         _Edge ("Edge gain", Float) = 2.6
         _EdgePx ("Edge width (px)", Float) = 1.25
         _Beat ("Edge lift on the beat", Float) = 0.3
         _Ring ("Ring light on rim and lines", Float) = 1.1
-        _CoreGlow ("Core at rest", Float) = 0.3
+        _CoreGlow ("Core at rest", Float) = 0.1
         _CoreFlare ("Core on the beat", Float) = 0.35
         _CoreSize ("Core radius (share of the body's)", Float) = 0.18
         _OutlinePx ("Outline width (px at 1080 rows)", Float) = 4
@@ -39,7 +39,7 @@ Shader "Look/MonsterEdge"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint; half4 _Core; half4 _Flash;
-            half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat; half _Ring;
+            half _Rim; half _RimSmall; half _RimPower; half _Edge; half _EdgePx; half _Beat; half _Ring;
             half _CoreGlow; half _CoreFlare; half _CoreSize; half _OutlinePx; half _OutlineBack;
             half _Gain; half _Peak; half _Facets;
         CBUFFER_END
@@ -72,6 +72,7 @@ Shader "Look/MonsterEdge"
                 nointerpolation float3 edges : TEXCOORD6;
                 nointerpolation float4 core : TEXCOORD7; // the body's bounding sphere (CrowdSphere): centre (world), radius
                 nointerpolation float3 ring : TEXCOORD8; // the impulse rings' light where it stands (linear)
+                nointerpolation float rim : TEXCOORD9;   // the rim's gain at the body's size on screen
             };
 
             Varyings vert(MonsterAttributes v)
@@ -94,6 +95,9 @@ Shader "Look/MonsterEdge"
                 o.bary = v.bary;
                 o.edges = v.edges;
                 o.core = CrowdSphere(m, height);
+                // The outline hull takes most of the rim of a body small on screen (the crystal cut's, 35 to 60 px
+                // in radius) and little of a large one's (the game's, 85 to 150 px): the rim is brighter on the first.
+                o.rim = lerp(_RimSmall, _Rim, saturate((MonsterRadiusPx(o.core) - 60) / 30));
                 return o;
             }
 
@@ -102,7 +106,7 @@ Shader "Look/MonsterEdge"
                 CrowdLodClip(i.fx.zw, i.positionCS);
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float lit, fres;
-                float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, i.tint, i.fx.y, 0, lit, fres);
+                float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, i.tint, i.fx.y, 0, i.rim, lit, fres);
                 float3 core = EdgeCore(i.positionWS, i.core, i.tint, i.fx.y);
                 color += core;
                 color += i.ring * _Ring * (lit + fres);

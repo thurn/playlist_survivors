@@ -134,7 +134,7 @@ Shader "Look/MonsterEdgeShard"
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float lit, fres;
                 // Fresh outlines are lifted as the bodies' are on the beat: the break pays off on its frame.
-                float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, _Tint.rgb, 2.0 * i.fx.z, i.fx.y, lit, fres);
+                float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, _Tint.rgb, 2.0 * i.fx.z, i.fx.y, _Rim, lit, fres);
                 color += _Flash.rgb * i.fx.x * LookFlash(LOOK_SHARD_CALM) * (2.0 * lit + fres + 0.35);
                 return half4(MixFog(color, i.fogFactor), 1);
             }

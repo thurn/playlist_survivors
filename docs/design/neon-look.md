@@ -441,12 +441,14 @@ How the package implements it (ps-wnj.10):
     screen (a radius from 50 px, fully from 100: the game's close packs, which
     interpenetrate and hide each other's outline) also darken broadly toward
     their silhouette.
-  - **The outline**: an inverted hull in URP's unlit pass beside the body,
-    pushed out 2.5 px at 1080 rows (along the normal bent halfway toward the
+  - **The outline**: an inverted hull in URP's unlit pass beside the body
+    (`MonsterOutline.hlsl`, which the line looks share since ps-wnj.28),
+    pushed out 3.5 px at 1080 rows (along the normal bent halfway toward the
     body's centre, so the low-poly creases don't crack it), in `void.floor`.
     The style guide asked for 1-2 px; after the bloom and the metric's 3 px
     smoothing a 2 px line kept too little of its depth, and 2.5 raised game
-    separation from 13.0-14.7 to 13.8-15.8.
+    separation from 13.0-14.7 to 13.8-15.8; ps-wnj.19 widened it to 3.5 for
+    the crystal cut.
 
   `_SL_Pulse` lights a small hot spot where a living body faces the camera; a
   passing impulse ring (`ImpulseCrowd`) lifts the body and lights it in its own
@@ -525,6 +527,38 @@ How the package implements the refractive gem (ps-wnj.13):
   (0.39-0.84), separation 5.4-11.9 (provisional at trailer distance)
   ([game](../../game/evidence/look/monster-gem/README.md),
   [crystal cut](../../demo3d/evidence/look/monster-gem/README.md)).
+
+How clumps part in the line looks (ps-wnj.28):
+
+- **The outline hull** (`MonsterOutline.hlsl`'s `LineOutlineVert`, an
+  `Outline` pass in each body shader): edge, hologram and gem bodies draw
+  solid's inverted hull too, 4 px at 1080 rows (`_OutlinePx`), in
+  `void.floor` (hologram's in black). Edge and gem draw it in URP's unlit
+  pass, before the body; hologram, whose unlit pass is its depth pass, in
+  the forward-only pass, after its light (URP draws a material's unlit,
+  forward and forward-only passes in that order).
+- **At the body's depth or behind it** (`_OutlineBack`, a share of the
+  body's radius the hull moves away from the camera along the view ray,
+  which keeps it where it was on screen). At the silhouette the hull's
+  pushed-out back faces meet the body's front faces at one depth, so at 0
+  the hull takes the body's outer rim: the seam is inside every silhouette
+  as well as over the neighbour behind. Edge and hologram draw it so, since
+  their light is the rim and lines and touching rims were the blob; pushed
+  back a quarter radius the rims came back and so did the blob (edge's
+  separation stayed at 8-13). The gem pushes it back 0.25: its light is its
+  body, which at 0 lost half its light for less separation.
+- **The light the hull takes, given back**: edge's rim is 6.5 on a body
+  small on screen (`_RimSmall`, under 60 px in radius at 1080 rows: the
+  crystal cut's horde) easing to its 2.0 by 90 px (the game's bodies, whose
+  rims the 4 px hull barely touches; a 6.5 rim there cost the knight his
+  margin over the amber swarm). Hologram's lines are 3.6 and rim 4 (were 3.0
+  and 2.0), its shards' 2.2 and 1.2 (were 1.8 and 0.6). Brighter edge lines
+  were the wrong lever: they lift the coarse cyan types more than the finely
+  cut magenta ones and broke the key.
+- **Measured** on the crystal cut's twelve stills and the game's six per
+  preset ([crystal cut](../../demo3d/evidence/look/separation/README.md),
+  [game](../../game/evidence/look/separation/README.md)): see The Trailer
+  and The Game below.
 
 ### World
 
@@ -1186,7 +1220,8 @@ What the stills broke, and where it was fixed:
 
 Still breaking, filed as ps-wnj.28 (separation) and ps-wnj.29 (the rest): swarm separation (edge
 in ten of eleven steady stills, where a finely cut type's lines fill its
-body at the cut's distance; hologram and prism in five to seven), the key in shot 3
+body at the cut's distance; hologram and prism in five to seven; ps-wnj.28's
+outline hulls bring the cut's breaks from 25 to 8, below), the key in shot 3
 (20 s, every preset: three enemy families in one frame) and a few others,
 bright share in the duel (1.6 s: three elites alone in the void), and
 prism's floor p99 under its slam rings and formation shards (12 and 36 s).
@@ -1237,6 +1272,15 @@ The game's stills pass every rule in edge, and every rule but
 `swarm_separation_min` in the others (hologram also misses background light
 and form once each by a hair): the monster looks' rules, which ps-wnj.28
 tunes for both players.
+
+**Separation (ps-wnj.28)**, the line looks' outline hulls (The Axes >
+Monsters): swarm separation breaks on the crystal cut's steady stills went
+from 25 to 8 (edge 10 to 2, hologram 7 to 1, prism 5 to 2, solid 3 as it
+was), on the game's from 10 to 8 (hologram 5 to 4 and its form break gone,
+prism 4 to 3, solid 1, edge none). The game's breaks are its framing: a
+body there is 85-150 px across at the metric's 960 px, wider than its
+32 px clump tile, so a dense tile is one body's interior, not a clump. The
+cut's are in [its evidence](../../demo3d/evidence/look/separation/README.md).
 
 ## Checks and Evidence
 

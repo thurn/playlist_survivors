@@ -223,7 +223,9 @@ What GW does with icons we do with silhouettes:
 - **Bright edge, darker interior, dark gap.** Every look draws a body whose
   boundary is lighter (edge, rim, outline-backed fill) or darker (solid's
   outline) than its neighbours' boundary, so two touching monsters of one
-  type show a seam. This is the swarm-separation rule.
+  type show a seam. This is the swarm-separation rule. Every look draws a
+  dark outline hull for it (ps-wnj.28): bright rims alone touch and merge
+  a clump into one mass, as edge's did at the crystal cut's distance.
 - **Form from view angle.** Fresnel, rim and refraction vary across a body,
   so a monster's L* spans at least 30 (18 for solid). This is the monster
   form rule, the answer to "flat".
@@ -232,7 +234,11 @@ What GW does with icons we do with silhouettes:
 - **Per look:**
   - `edge` (dark-core-edges): void core (L* <= 8), the slot's hue only in
     the rim and feature edges (L* 55-80), a small core that flares on the
-    beat. Bright share stays low; separation comes free.
+    beat. Bright share stays low. Separation did not come free: at the
+    crystal cut's 10-20 px a finely cut type's lines fill its body and
+    touching rims merge, so a 4 px dark outline at the body's depth takes
+    each body's outer rim (as built, ps-wnj.28; the rim is brighter on a
+    body small on screen to win the light back).
   - `solid` (bright-solid): the slot's hue as emission at L* 50-78 (never
     the hero's rung), with a 2-3 px dark outline in screen space and a
     darker falloff toward the silhouette so a clump shows seams (as built,
@@ -240,10 +246,13 @@ What GW does with icons we do with silhouettes:
     silhouette; 2 px lost too much depth to the bloom).
   - `hologram` (wireframe): feature edges or all edges at L* 60-85, fill at
     ground light (L* 15-30, additive, under 25% opacity), scanlines in the
-    post rather than per monster.
+    post rather than per monster; a 4 px black outline at the body's depth,
+    as edge's (ps-wnj.28).
   - `prism` (refractive gem): refracts the void and grid behind, so the
     body is mostly dark with bright facet highlights; dispersion fringes use
-    the slot's family and its neighbours, not a full rainbow.
+    the slot's family and its neighbours, not a full rainbow; a 4 px dark
+    outline behind the body, so the gem keeps its glow and the neighbour
+    behind darkens (ps-wnj.28).
 - **Shards keep the look**: an edge monster shatters into edge-lit shards,
   a hologram into wire fragments, and every look's shards may flash the
   `shatter.core` white on the impact frame only.

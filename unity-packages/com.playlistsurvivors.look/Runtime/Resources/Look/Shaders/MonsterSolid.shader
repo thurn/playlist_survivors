@@ -41,7 +41,7 @@ Shader "Look/MonsterSolid"
 
         // The skinned body, lifted by a passing ring: `light` is the ring's light on it, `pulse` the
         // beat's (living only), `centre` its bounding sphere's centre (CrowdSphere, lifted alike),
-        // `radiusPx` its radius on screen (SolidRadiusPx).
+        // `radiusPx` its radius on screen (MonsterRadiusPx).
         MonsterVertex SolidSkin(MonsterAttributes v, out float3 light, out float pulse, out float3 centre, out float radiusPx)
         {
             MonsterVertex c = MonsterSkin(v);
@@ -52,7 +52,7 @@ Shader "Look/MonsterSolid"
             float height;
             float4 sphere = CrowdSphere(m, height);
             centre = sphere.xyz + (c.positionWS - lift);
-            radiusPx = SolidRadiusPx(sphere);
+            radiusPx = MonsterRadiusPx(sphere);
             return c;
         }
         ENDHLSL
