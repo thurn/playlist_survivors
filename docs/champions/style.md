@@ -219,7 +219,10 @@ glass core (`void.body`), with a fresnel rim.
 - **Monster meshes**: each monster's mesh is redesigned for the look with
   the `monster-mesh-design` skill and judged by eye against the trailer's
   drawing, at game scale, in a crowd and up close.
-- **What to look for**: does each type read as its figure at game scale?
+- **What to look for**: is each figure a line drawing, with distinct,
+  connected lines, a clear unbroken outline and dark inside, or does it break
+  into lit patches and scratches (design.md, The reference: the trailer)?
+  Does each type read as its figure at game scale?
   Does a crowd read as many figures, or as a coloured mass (the trailer's
   goblins)? Does the shatter pay off? Is the hero still the brightest thing?
 

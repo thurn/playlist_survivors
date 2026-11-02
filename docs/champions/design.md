@@ -697,13 +697,23 @@ by `just trailer-looks action`). **It looks good.** It is the baseline:
 Rhythm Champions starts from exactly that look and changes it only where a
 change looks better.
 
+**A monster is a line drawing.** This is the heart of the look and the
+operator's aim. Each figure is made of distinct, connected lines, with a
+clear, unbroken outline around it and dark between the lines and inside the
+figure, as every skeleton in
+[shield-circles.jpg](reference/shield-circles.jpg) is: thin continuous
+lines and a clean shield ellipse over black. Lit facet patches, glassy
+fills, and broken or blotchy scratches all miss it. The deleted edge cuts
+broke the lines, and the first port's stills lit the facets as patches.
+
 What the trailer does, described rather than prescribed:
 
 - **Monsters** are their vendor meshes drawn by the look package's
   `MonsterEdge.hlsl`. Every crease sharper than 24 degrees is a thin line in
   the type's colour, a little brighter toward the silhouette. Underneath is a
-  dark glass core with its facets a shade apart. A fresnel rim outlines each
-  monster, and a small inner glow flares on the beat.
+  dark glass core whose facets are barely visible, so the lines carry the
+  figure. A fresnel rim traces the outline, and a small inner glow flares on
+  the beat.
 - **Each type has one hue**, levelled to one luminance. A crowd reads as
   fields of colour, and each monster still reads as a figure: helmets,
   shields, weapons, limbs.

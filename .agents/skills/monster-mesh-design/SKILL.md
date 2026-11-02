@@ -30,6 +30,15 @@ Read first:
 - a fresnel rim around the figure;
 - a small inner glow that flares on the beat.
 
+**What it should look like: a line drawing.** Distinct, connected lines,
+with a clear, unbroken outline around the figure and dark between the lines
+and inside it, as the skeletons in `docs/champions/reference/shield-circles.jpg`
+are. Not lit facet patches, not glassy fills, not broken or blotchy
+scratches. If the trailer's drawing of the vendor mesh shows patches or
+broken lines in our build, find out whether the renderer is off (compare
+with the trailer's own frames; report it on ps-6y2.28) before reworking the
+mesh.
+
 So **the mesh's facet angles are the drawing.** A crease you want is a sharp
 edge. A surface you want quiet is smooth (neighbours under 24 degrees apart)
 or flat. Every sharp edge on the model is a stroke on screen, whether you
@@ -58,6 +67,8 @@ In particular:
 - Read the evidence of monsters already done in
   `rhythm_champions/evidence/monsters/`, so this one joins them as a roster.
 - Write down in plain words:
+  - whether it reads as a line drawing: connected lines, an unbroken outline,
+    dark inside; or as lit patches and broken scratches, and where;
   - what reads and what doesn't, at game scale, in a crowd and up close;
   - what names the type: its silhouette, head, weapon, shield, wings, tusks,
     posture;
@@ -145,9 +156,11 @@ the cost if you go over (the crowd draws 1,000).
   > You're an art director for a top-down neon game drawn as glowing line
   > art on black. Here are two drawings of the same monster, A and B, each
   > at three screen sizes, in three poses, its death shatter and a crowd:
-  > <paths>. Which reads better as a creature at the in-game size and in the
-  > crowd? What's wrong with each, most important first, concretely enough
-  > to act on? Under 300 words.
+  > <paths>. Is each a drawing of distinct, connected lines with a clear,
+  > unbroken outline and dark inside, or does it break into patches and
+  > scratches, and where? Which reads better as a creature at the in-game
+  > size and in the crowd? What's wrong with each, most important first,
+  > concretely enough to act on? Under 300 words.
 
   Label the trailer's sheets and yours A and B in random order.
 - Act on what it finds that you agree with, and render again. Repeat until
