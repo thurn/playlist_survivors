@@ -36,6 +36,8 @@ The short version:
   where L*, chroma, readability and (from ps-wnj.2) these rules are measured.
 - [Trailer mode](../tech-demo-3d/trailer.md): the crystal cut and its
   **Rules for Every Frame**.
+- [The ion palette's gaps](ion-palette-gaps.md): hues and roles `ion` leaves
+  out or doubles up, the starting point for redesigning it.
 - [Palette swaps](../../demo3d/evidence/look/palettes.md): the old lesson
   that a coloured key light erases type hues, and light grounds fail on value.
 
