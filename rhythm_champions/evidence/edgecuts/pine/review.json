@@ -1,0 +1,17 @@
+{
+  "model": "pine",
+  "triangles": 212,
+  "segments": 107,
+  "pieces": 30,
+  "heightM": 7.952,
+  "extentM": [3.975, 4.113],
+  "camera": {"pitchDeg": 60, "fovDeg": 30, "headingsDeg": [20, 110, 235]},
+  "cells": [
+    {"size": "far", "headingDeg": 20, "heightPx": 247.4},
+    {"size": "far", "headingDeg": 110, "heightPx": 247.4},
+    {"size": "far", "headingDeg": 235, "heightPx": 247.4},
+    {"size": "game", "headingDeg": 20, "heightPx": 499.2},
+    {"size": "game", "headingDeg": 110, "heightPx": 499.2},
+    {"size": "game", "headingDeg": 235, "heightPx": 499.2}
+  ]
+}

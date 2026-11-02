@@ -13,6 +13,12 @@ namespace Champions.Client.Scenes
         /// <summary>Seconds after the scene begins at which it keeps a still.</summary>
         double[] Times { get; }
 
+        /// <summary>
+        /// A still to keep on this frame beyond <see cref="Times"/>, named so, or null: a moment the scene can't time
+        /// ahead (a break's impact frame, which the sim decides). Read after the scene presented its frame.
+        /// </summary>
+        string Moment { get; }
+
         /// <summary>Builds the scene under <paramref name="root"/>, frames the camera, and fills the view's hero and
         /// ID table.</summary>
         void Begin(Transform root, Camera camera, Stills.View view);
@@ -30,6 +36,7 @@ namespace Champions.Client.Scenes
         {
             (PaletteScene.Name, (content, palette) => new PaletteScene(content, palette)),
             (WorldScene.Name, (content, palette) => new WorldScene(palette)),
+            (StructureScene.Name, (content, palette) => new StructureScene(content, palette)),
         };
 
         readonly Stills _stills;
@@ -76,6 +83,7 @@ namespace Champions.Client.Scenes
                 _root = new GameObject("Still scene " + _name);
                 _view = new Stills.View();
                 _scene.Begin(_root.transform, _camera, _view);
+                _stills.Requeue = _view.Requeue;
                 _start = t;
                 _next = 0;
                 Debug.Log($"StillScenes: {_name} began at t={t:F3}");
@@ -83,7 +91,10 @@ namespace Champions.Client.Scenes
             var times = _scene.Times;
             while (_next < times.Length && t - _start + 1e-6 >= times[_next])
                 _stills.Keep(_name + "-" + times[_next++].ToString("0.000", CultureInfo.InvariantCulture), _view);
+            string moment = _scene.Moment;
+            if (moment != null) _stills.Keep(_name + "-" + moment, _view);
             if (_next < times.Length) return;
+            _stills.Requeue = null;
             if (Application.isPlaying) UnityEngine.Object.Destroy(_root);
             else UnityEngine.Object.DestroyImmediate(_root); // an EditMode test's
             _scene = null;

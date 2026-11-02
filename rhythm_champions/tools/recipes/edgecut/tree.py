@@ -5,7 +5,7 @@ two blobs of leaves).
 - Body (the fill): a thin prism for the trunk up into the leaves (the vendor's flared roots and branch go), a hull over
   each blob of leaves.
 - Lines: the leaves' hulls' sharpest facet edges, and the trunk as a stroke up to the leaves.
-- Shards: the leaves in eight and four pieces, the trunk in two.
+- Shards: the leaves in twelve and five pieces, the trunk in three.
 """
 
 import numpy as np
@@ -27,5 +27,5 @@ def cut(src: Source) -> Cut:
     c.hull_edges("twig", min_angle=40)
     c.stroke([np.array([0.05, 0.0, 0.02]), np.array([0.05, CROWN, 0.02])], 0, "trunk")
     c.recentre()
-    c.break_into({"leaves": 8, "twig": 4, "trunk": 2})
+    c.break_into({"leaves": 12, "twig": 5, "trunk": 3})
     return c

@@ -4,7 +4,7 @@ as one segment of a wall run, which the chunks' templates stand end to end.
 - Size: 1.2 m tall (the vendor's 1.0 m), 5.6 m long.
 - Body (the fill): one hull, a slab.
 - Lines: the slab's edges.
-- Shards: ten pieces along it.
+- Shards: twenty pieces along it.
 """
 
 from champions_tools.edgecut import Cut, Model, Source
@@ -18,5 +18,5 @@ def cut(src: Source) -> Cut:
     c.hull(src.where(src.centroids[:, 1] > 0.0), "wall", points=12)
     c.hull_edges("wall", min_angle=40)
     c.recentre()
-    c.break_into({"wall": 10})
+    c.break_into({"wall": 20})
     return c

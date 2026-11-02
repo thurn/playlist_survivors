@@ -251,7 +251,8 @@ def structure_readme(recipe: ModuleType, summary: dict, result: dict, limits: di
         (f"The structure field draws the cut at the game camera's angle ({cam['pitchDeg']:g} degrees down, a "
          f"{cam['fovDeg']:g} degree field) with the pipeline's post, in the first zone's fill and edge, beside the "
          "vendor original in flat grey. Each sheet is one camera distance, the same as the monsters' (game scale stands a "
-         "1.8 m monster 113 px tall at 1080 rows; far is twice as far, near half), at the pixel density of a 1080-row "
+         "1.8 m monster 113 px tall at 1080 rows; far is twice as far; no near sheet, wider than a sheet should be), at "
+         "the pixel density of a 1080-row "
          f"frame: the structure turned {', '.join(f'{y:g}' for y in cam['headingsDeg'])} degrees, each the original then "
          "the cut."),
         "",

@@ -1,0 +1,17 @@
+{
+  "model": "fence",
+  "triangles": 96,
+  "segments": 8,
+  "pieces": 36,
+  "heightM": 1.093,
+  "extentM": [2.42, 0.143],
+  "camera": {"pitchDeg": 60, "fovDeg": 30, "headingsDeg": [20, 110, 235]},
+  "cells": [
+    {"size": "far", "headingDeg": 20, "heightPx": 34},
+    {"size": "far", "headingDeg": 110, "heightPx": 34},
+    {"size": "far", "headingDeg": 235, "heightPx": 34},
+    {"size": "game", "headingDeg": 20, "heightPx": 68.6},
+    {"size": "game", "headingDeg": 110, "heightPx": 68.6},
+    {"size": "game", "headingDeg": 235, "heightPx": 68.6}
+  ]
+}

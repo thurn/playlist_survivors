@@ -1,0 +1,17 @@
+{
+  "model": "cottage",
+  "triangles": 56,
+  "segments": 59,
+  "pieces": 24,
+  "heightM": 4.922,
+  "extentM": [4.097, 4.637],
+  "camera": {"pitchDeg": 60, "fovDeg": 30, "headingsDeg": [20, 110, 235]},
+  "cells": [
+    {"size": "far", "headingDeg": 20, "heightPx": 153.1},
+    {"size": "far", "headingDeg": 110, "heightPx": 153.1},
+    {"size": "far", "headingDeg": 235, "heightPx": 153.1},
+    {"size": "game", "headingDeg": 20, "heightPx": 309},
+    {"size": "game", "headingDeg": 110, "heightPx": 309},
+    {"size": "game", "headingDeg": 235, "heightPx": 309}
+  ]
+}

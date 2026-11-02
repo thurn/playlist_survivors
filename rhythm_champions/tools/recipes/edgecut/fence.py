@@ -5,7 +5,7 @@ pegs, 2.4 m long), one length of a fence run.
 - Body (the fill): a thin hull over each post and each rail; the pegs go.
 - Lines: one stroke along each rail and each post, through its middle: at game scale a rail is a few pixels thick,
   and a box's twelve edges there would be a smear.
-- Shards: each post and rail a piece, the rails broken in two.
+- Shards: each rail in six pieces, each post in four.
 """
 
 import numpy as np
@@ -30,7 +30,7 @@ def cut(src: Source) -> Cut:
         mid = 0.5 * (lo + hi)
         ends = ([lo[0], mid[1], mid[2]], [hi[0], mid[1], mid[2]]) if rail else ([mid[0], max(lo[1], 0.0), mid[2]], [mid[0], hi[1], mid[2]])
         c.stroke([np.array(e) for e in ends], entry, part)
-        splits[part] = 2 if rail else 1
+        splits[part] = 6 if rail else 4
     c.recentre()
     c.break_into(splits)
     return c

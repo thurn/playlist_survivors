@@ -37,6 +37,8 @@ namespace Champions.Client.Scenes
 
         public double[] Times => new[] { 0.25 };
 
+        public string Moment => null;
+
         public void Begin(Transform root, Camera camera, Stills.View view)
         {
             var shader = Resources.Load<Shader>("Champions/StandIn") ?? throw new InvalidOperationException("no Champions/StandIn shader");

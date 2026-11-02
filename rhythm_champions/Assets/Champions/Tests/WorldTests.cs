@@ -342,6 +342,8 @@ namespace Champions.Tests
         [TestCase("Assets/Champions/Render/World/Shaders/Glow.shader")]
         [TestCase("Assets/Champions/Render/Crowd/Shaders/EdgeLines.shader")]
         [TestCase("Assets/Champions/Render/Crowd/Shaders/EdgeBody.shader")]
+        [TestCase("Assets/Champions/Render/Structures/Shaders/StructureFill.shader")]
+        [TestCase("Assets/Champions/Render/Structures/Shaders/StructureLines.shader")]
         public void TheShadersReadingTheWorldCompile(string path)
         {
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);

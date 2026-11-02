@@ -32,6 +32,8 @@ namespace Champions.Render
             /// <summary>The ID pass's codes: each one's type, its role (a cast role, or hero, structure, effect) and height.</summary>
             public readonly SortedDictionary<int, (string Type, string Role, float HeightM)> Ids =
                 new SortedDictionary<int, (string, string, float)>();
+            /// <summary>The scene's hand-queued draws queued again (<see cref="Stills.Requeue"/>), or null.</summary>
+            public Action Requeue;
         }
 
         readonly Camera _camera;

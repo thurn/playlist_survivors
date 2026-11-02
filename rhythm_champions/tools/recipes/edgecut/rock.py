@@ -4,7 +4,7 @@ low boulder.
 - Size: 1.3 m over the ground (the vendor's is a pebble 0.3 m across), so it stands as a boulder 3 m across.
 - Body (the fill): one hull over what stands above the ground.
 - Lines: the hull's sharpest edges, the boulder's facets.
-- Shards: eight pieces.
+- Shards: twenty pieces.
 """
 
 from champions_tools.edgecut import Cut, Model, Source
@@ -18,5 +18,5 @@ def cut(src: Source) -> Cut:
     c.hull(src.where(src.centroids[:, 1] > -0.1), "rock", points=18)
     c.hull_edges("rock", min_angle=30)
     c.recentre()
-    c.break_into({"rock": 8})
+    c.break_into({"rock": 20})
     return c

@@ -33,6 +33,8 @@ namespace Champions.Client.Scenes
 
         public double[] Times => new[] { 9.03, 9.12, 9.25, 9.5, 12.15, 12.3, 12.7, 31.5, 33, 34.05 };
 
+        public string Moment => null;
+
         public void Begin(Transform root, Camera camera, Stills.View view)
         {
             root.gameObject.AddComponent<WorldSceneDriver>().Begin(camera, _palette, view);
