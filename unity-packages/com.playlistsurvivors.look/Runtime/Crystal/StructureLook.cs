@@ -14,7 +14,8 @@ namespace PS.Look
     ///   edges (it turns on the camera's opaque texture: <see cref="Refracts"/>).
     /// A blow lights a piece toward the hero's rung; at rest its faces sit at enemy light. A shot's formations, the set
     /// pieces that shatter on the beat, draw in <see cref="Featured"/>: the same look lit from inside, brighter than
-    /// the props around them (the formations people loved were the white-gold glow).
+    /// the props around them (the formations people loved were the white-gold glow). A hit's flash and a break's glow
+    /// are full only in a special moment (CrystalProp.shader's _FlashCalm; neon-look.md, Restraint and special moments).
     /// </summary>
     public sealed class StructureLook : IDisposable
     {
@@ -31,10 +32,11 @@ namespace PS.Look
         {
             switch (option)
             {
-                case EdgeGlass: return new Settings { Body = 0.035f, Shade = 0.3f, Rim = 0.45f, RimPower = 3f, Edge = 1.15f, EdgePx = 1.4f, Pulse = 0.35f };
-                case SolidGlass: return new Settings { Body = 0.6f, Shade = 0.6f, Rim = -0.4f, RimPower = 2f, EdgePx = 1.6f, EdgeDark = 1f };
-                case Wireframe: return new Settings { Body = 0.02f, Rim = 0.08f, RimPower = 2f, Edge = 1.05f, EdgePx = 1.2f, Pulse = 0.4f };
-                case RefractiveGem: return new Settings { Body = 0.03f, Shade = 0.4f, Rim = 0.3f, RimPower = 4f, Edge = 0.55f, EdgePx = 1.1f, Refraction = 0.035f, Pulse = 0.3f };
+                // Calm (ps-wnj.24): resting edges at enemy light, about half of the first tuning, and a third of its beat flare.
+                case EdgeGlass: return new Settings { Body = 0.03f, Shade = 0.3f, Rim = 0.3f, RimPower = 3f, Edge = 0.6f, EdgePx = 1.3f, Pulse = 0.12f };
+                case SolidGlass: return new Settings { Body = 0.4f, Shade = 0.6f, Rim = -0.4f, RimPower = 2f, EdgePx = 1.6f, EdgeDark = 1f };
+                case Wireframe: return new Settings { Body = 0.02f, Rim = 0.06f, RimPower = 2f, Edge = 0.55f, EdgePx = 1.2f, Pulse = 0.12f };
+                case RefractiveGem: return new Settings { Body = 0.03f, Shade = 0.4f, Rim = 0.25f, RimPower = 4f, Edge = 0.35f, EdgePx = 1.1f, Refraction = 0.035f, Pulse = 0.1f };
                 default: throw new ArgumentException($"StructureLook: no structure look '{option}'");
             }
         }
@@ -73,10 +75,10 @@ namespace PS.Look
         }
 
         /// <summary>
-        /// The formations' lift over the props: their faces' light (at least half the gem, at most 0.9: the style guide's
-        /// crystal gem on the hero's rung), rim and edges.
+        /// The formations' lift over the props: their faces' light (at least a third of the gem, at most 0.9: the style
+        /// guide's crystal gem on the hero's rung), rim and edges.
         /// </summary>
-        public const float FeaturedBody = 4f, FeaturedBodyMin = 0.5f, FeaturedRim = 1.6f, FeaturedEdge = 1.4f;
+        public const float FeaturedBody = 3f, FeaturedBodyMin = 0.35f, FeaturedRim = 1.4f, FeaturedEdge = 1.4f;
 
         Material Make(Material shared, string name, Settings s)
         {

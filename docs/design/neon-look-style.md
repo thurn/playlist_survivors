@@ -252,7 +252,8 @@ What GW does with icons we do with silhouettes:
 
 - **Floor**: `void.floor` (L* about 1), glossy enough to catch the grid's
   and emitters' reflections at low strength; no texture, no albedo detail.
-- **Grid**: `grid.line` (L* 18-30) with every fourth line about twice as
+- **Grid**: `grid.line` dimmed to L* 8-18 (ps-wnj.24: it drowned the swarm
+  at 18-30; [Restraint](#restraint)) with every fourth line about twice as
   bright or thick (GW's every-third, scaled for our 35 m frame), spacing
   near 1.5-2 m so a monster stands on about one cell. Lines fade out with
   distance into `void.fog` so the far floor has no moiré.
@@ -330,6 +331,35 @@ What GW does with icons we do with silhouettes:
   wipe across the grid. The palette and post do not change at a cut; only
   the zone tint may.
 
+## Restraint
+
+The operator on the first neon stills (2026-11-01): too overwhelming; the
+grid drowned everything and the structural crystals flashed far too bright.
+The look is **calm by default** (ps-wnj.24; the tier is
+[neon-look.md, Restraint and special moments](neon-look.md#restraint-and-special-moments)):
+
+- **A contrast hierarchy in every frame**: hero and blade first, enemies
+  second, the world (grid, props, fog) last. The world sits on the ground
+  light rung or under it; a prop's resting edges at enemy light, never at
+  the hero's.
+- **The grid is a quiet background**: lines at L* 8-18 (the bottom of
+  ground light), thin, fading with distance, breathing only faintly on the
+  beat. Only a big impact (a special moment, a mass kill) visibly bends and
+  lights it; a light strike or a single death barely touches it.
+- **Flashes are for special moments**: structure breaks and formation
+  smashes, slams and finishers, drops, the trailer's designed flash cuts.
+  There the post flashes, every hit lights toward white and the floor
+  ripples, all on the impact frame. Elsewhere a hit lights a monster or a
+  prop by a third, and the post's flash is under a third of a special
+  one's.
+- **Even a special moment is not a white-out**: `clipped_impact_max` still
+  holds, and the flash is gone within a quarter second.
+
+Measured by three rules below: `floor_p99_max` (the grid's lines),
+`background_light_max` (the background's share of the frame's light) and
+`flash_frames_max` (the share of steady stills, outside special moments, with
+a near-white region over 0.3% of the frame).
+
 ## Rules and Thresholds
 
 `look-metrics` (ps-wnj.2, ps-wnj.21; `demo3d/tools/src/demo3d_tools/look.py`)
@@ -361,6 +391,8 @@ loosest preset's value applies.
 | --- | --- | --- | ---: | ---: |
 | `floor_p50_max` | floor L* p50 | <= 8 | 3.8 (1.4-26) | |
 | `floor_p90_max` | floor L* p90, rings and breaths included | <= 30 | 30 (10-69) | |
+| `floor_p99_max` | floor L* p99: the grid's lines (ps-wnj.24) | <= 20; prism 26 | | |
+| `background_light_max` | share of the frame's linear luminance off the monsters, structures and hero, under L* 70 (ps-wnj.24) | <= 0.15 | | |
 | `frame_p25_max` | frame L* p25 (video fallback for the floor) | <= 6 | 5.4 (1-16) | 10.6 |
 | `black_share_min` | share with L* < 10 | >= 0.30; solid 0.25 | 0.39 | 0.24 |
 | `bright_share_max` | emitted-light share, L* >= 50 | edge 0.22, solid 0.32, hologram 0.22, prism 0.28 | 0.24 | 0.24 |
@@ -375,6 +407,7 @@ loosest preset's value applies.
 | `key60_median_min` | the same, median over a cut or a set | >= 0.62 | 0.47 | 0.70 |
 | `palette_conformance_min` | share of pixels with L* >= 40 and C* >= 30 whose hue is within 20 degrees of a palette role or zone tint | >= 0.85; prism 0.75 | 0.98 (own colours) | |
 | `shot_floor_range_max` | spread of the shots' floor p50 (frame p25 without a floor) across a cut | <= 6 | 24 (floor), 16 (frame p25) | |
+| `flash_frames_max` | share of a cut's or set's steady stills whose largest L* >= 90 region covers 0.3% of the frame or more (ps-wnj.24) | <= 0.5 | | |
 | `hero_margin_min` | hero L* p90 less the monsters' L* p90 | >= 5 | -4 (-30-12) | |
 | `monster_form_min` | monster pixels' L* p90 less p10 in each 32 px tile they cover a quarter of, the tiles' median | >= 30; solid 20 | 14 (10-18) | |
 | `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile, the tiles' median | >= 13 | 9.4 (3-16) | |
@@ -409,6 +442,20 @@ Notes:
     12.5, so 13. The blob frames (20, 28, 32, 56 s) fail with and without
     masks; v2's three least dense crowds pass (8, 24, 36 s). A crowd of
     outlined discs scores 40, the same discs flat 0.
+- **The restraint rules** (ps-wnj.24, [Restraint](#restraint)) are calibrated
+  on stills of the look before and after its toning down, from players built
+  at 6610faff and after
+  ([game](../../game/evidence/look/restraint/README.md),
+  [crystal cut](../../demo3d/evidence/look/restraint/README.md)).
+  `floor_p99_max`: the crystal cut's grid lines measured L* 19-30 before
+  (edge 25, prism 30) and 10-13 after; prism's gems halo onto the floor, so
+  its own ceiling is 26. `flash_frames_max`: two thirds of the game's steady
+  stills flashed before in every preset, a third to a half after; a hit's
+  glint on a structure was the largest. `background_light_max` is a guard
+  more than a discriminator: the game's stills measured at most 0.15 before
+  and 0.13 after, the crystal cut's 0.05, while a lit Synty floor carries far
+  more. The game's stills have no view json, so `floor_p99` runs on the
+  crystal cut only.
 - **Timing rules stay where they are**: beat steps (`game beat`, the trailer
   checks), impact-frame payoffs (death and break checks) and the rules in
   Motion above, measured from event logs, not pixels.

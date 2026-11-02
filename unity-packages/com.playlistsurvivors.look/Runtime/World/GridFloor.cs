@@ -13,7 +13,7 @@ namespace PS.Look
     /// swim as it moves. It replaces the arena's ground and its light decals (<see cref="Replace"/>).
     /// The world options it draws:
     /// - `void-grid`: the grid as the style guide sets it;
-    /// - `pure-void`: a faint grid;
+    /// - `pure-void`: a fainter grid (its lines at half the material's L* after the post);
     /// - `hued-zones`: the grid in the palette's first zone's hue (<see cref="SetZoneTint"/> for another).
     /// </summary>
     public sealed class GridFloor : IDisposable
@@ -29,7 +29,7 @@ namespace PS.Look
         public static readonly string[] Decals = { "Runes", "GlowPools" };
 
         static readonly int TintId = Shader.PropertyToID("_Tint");
-        static readonly int LineGainId = Shader.PropertyToID("_LineGain");
+        static readonly int LineLId = Shader.PropertyToID("_LineL");
 
         public readonly string Option;
         public readonly Material Material;
@@ -52,7 +52,7 @@ namespace PS.Look
             var shared = Resources.Load<Material>(MaterialPath)
                          ?? throw new InvalidOperationException($"GridFloor: no material at Resources/{MaterialPath} in the look package");
             Material = new Material(shared) { name = "Grid floor (" + option + ")" };
-            if (option == PureVoid) Material.SetFloat(LineGainId, 0.5f);
+            if (option == PureVoid) Material.SetFloat(LineLId, 0.5f * Material.GetFloat(LineLId));
             if (option == HuedZones && palette != null && palette.Zones.Length > 0) SetZoneTint(palette.Zones[0].Tint, 1f);
             _mesh = Patch();
             _go = new GameObject("Grid floor") { layer = layer };

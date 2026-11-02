@@ -1534,8 +1534,13 @@ stack ([neon-look.md, Post-processing stack](../design/neon-look.md#post-process
 every environment's night volume takes the stack's one profile, so no shot
 grade, section grade, style post look or trailer grain and dirt apply; the
 option brings its own grain and dirt, its beat and flash amounts drive the
-post feel, and lens hits and flash cuts are unchanged. The action cut keeps
-everything above.
+post feel, and lens hits and flash cuts are unchanged. Since ps-wnj.24 the
+look is calm outside special moments: accents, anchors and the hero's hits
+flash at the option's `calm` share, structure breaks and formation smashes in
+full, and the formations' breaks, the grid's ripples and the horde's hit
+flashes peak only in a special moment
+([neon-look.md, Restraint and special moments](../design/neon-look.md#restraint-and-special-moments)).
+The action cut keeps everything above.
 
 ## The Crystal Cut
 

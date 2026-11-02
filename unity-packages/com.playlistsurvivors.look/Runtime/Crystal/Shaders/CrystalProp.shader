@@ -6,7 +6,9 @@
 // - _Rim, _RimPower: a fresnel rim, lighter (or, negative, darker) toward the silhouette;
 // - _Edge, _EdgePx, _EdgeDark: the edge lines' light and width, or dark lines (1) for a bright body;
 // - _Refraction with _REFRACT: the scene behind (the void and the grid) seen through the gem, bent by its facets;
-// - _Pulse: how much the beat's pulse (_SL_Pulse) flares the edges.
+// - _Pulse: how much the beat's pulse (_SL_Pulse) flares the edges;
+// - _FlashCalm: a hit's flash and a break's glow outside special moments (Impulse.hlsl's LookFlash; neon-look.md,
+//   Restraint and special moments), as a share of a special moment's.
 // Per renderer, as the structure shatter sets them (the game's structure shaders' names): _SL_PieceFx (x the
 // hit's flash, z 1 on a shard, w its break glow), _SL_Tint (a gem colour; alpha 0 keeps _Tint), _SL_Sink and
 // _HeightM (a regrowing piece under the ground, in its heights).
@@ -23,7 +25,8 @@ Shader "PS/Look/CrystalProp"
         _EdgePx ("Edge width (px)", Float) = 1.4
         _EdgeDark ("Dark edges", Range(0, 1)) = 0
         _Refraction ("Refraction", Float) = 0
-        _Pulse ("Beat flare", Float) = 0.35
+        _Pulse ("Beat flare", Float) = 0.1
+        _FlashCalm ("Flash and glow outside special moments", Range(0, 1)) = 0.3
         _HeightM ("Piece height (m), per renderer", Float) = 2
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
     }
@@ -35,11 +38,12 @@ Shader "PS/Look/CrystalProp"
         HLSLINCLUDE
         #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _Tint;
             half _Body; half _Shade; half _Rim; half _RimPower;
             half _Edge; half _EdgePx; half _EdgeDark;
-            float _Refraction; half _Pulse;
+            float _Refraction; half _Pulse; half _FlashCalm;
             float _HeightM;
         CBUFFER_END
         float4 _SL_PieceFx;
@@ -121,10 +125,12 @@ Shader "PS/Look/CrystalProp"
                 float3 color = lerp(body, edge, line_);
 
                 // A break: the whole piece blooms, a shard's fresh inside faces glow hotter; a hit flashes toward white.
-                float glow = saturate(_SL_PieceFx.w);
-                color *= 1 + 1.5 * glow;
-                color += i.inside * glow * tint * 2.5;
-                color += _SL_PieceFx.x * (tint * 1.5 + 0.8);
+                // In full only in a special moment (a break is one); a glint on a hit is calm.
+                float tier = LookFlash(_FlashCalm);
+                float glow = saturate(_SL_PieceFx.w) * tier;
+                color *= 1 + glow;
+                color += i.inside * glow * tint * 1.6;
+                color += _SL_PieceFx.x * tier * (tint + 0.5);
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

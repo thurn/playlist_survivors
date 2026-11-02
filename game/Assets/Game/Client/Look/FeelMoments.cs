@@ -102,8 +102,17 @@ namespace Game.Client.Look
             return (float)Math.Max(0, Math.Min(1, (Math.Log(1 + kills) - lo) / (hi - lo)));
         }
 
-        /// <summary>The flash at song time s: the strongest moment still decaying, as (1 - u)³ over a beat of <paramref name="period"/>.</summary>
-        public float Flash(double s, double period)
+        /// <summary>
+        /// Whether a moment of <paramref name="kind"/> is a special moment (neon-look.md, Restraint and special moments),
+        /// whose flash is full: a structure break, a finisher's slam, a drop. Accents, blows and dashes are calm.
+        /// </summary>
+        public static bool Special(Kind kind) => kind == Kind.Break || kind == Kind.Finisher || kind == Kind.Drop;
+
+        /// <summary>
+        /// The flash at song time s: the strongest moment still decaying, as (1 - u)³ over a beat of
+        /// <paramref name="period"/>, a moment that isn't <see cref="Special"/> at <paramref name="calm"/> of its own.
+        /// </summary>
+        public float Flash(double s, double period, float calm = 1f)
         {
             float flash = 0;
             for (int i = 0; i < _count; i++)
@@ -112,7 +121,7 @@ namespace Game.Client.Look
                 double u = (s - m.T) / period;
                 if (u < 0 || u >= 1 || m.Flash <= 0) continue;
                 float k = (float)(1 - u);
-                flash = Math.Max(flash, m.Flash * k * k * k);
+                flash = Math.Max(flash, m.Flash * (Special(m.Kind) ? 1f : calm) * k * k * k);
             }
             return flash;
         }

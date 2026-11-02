@@ -40,6 +40,7 @@ Shader "Look/MonsterEdgeShard"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterShards.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterEdge.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
 
         StructuredBuffer<Death> _Deaths;
         StructuredBuffer<Shard> _Shards;
@@ -134,7 +135,7 @@ Shader "Look/MonsterEdgeShard"
                 float lit, fres;
                 // Fresh outlines are lifted as the bodies' are on the beat: the break pays off on its frame.
                 float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, _Tint.rgb, 2.0 * i.fx.z, i.fx.y, lit, fres);
-                color += _Flash.rgb * i.fx.x * (2.0 * lit + fres + 0.35);
+                color += _Flash.rgb * i.fx.x * LookFlash(LOOK_SHARD_CALM) * (2.0 * lit + fres + 0.35);
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

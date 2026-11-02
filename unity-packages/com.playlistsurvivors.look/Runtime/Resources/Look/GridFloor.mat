@@ -25,14 +25,19 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Breathe: 0.35
+    - _Breathe: 0.06
+    - _FadeFar: 110
+    - _FadeNear: 30
+    - _FadeTo: 0.3
     - _Cell: 1.5
     - _LiftM: 0.12
     - _LineGain: 1
+    - _LineL: 12
     - _Major: 4
-    - _PushM: 0.9
-    - _RingFill: 0.05
-    - _RingGain: 2.2
+    - _PushM: 0.7
+    - _RingFill: 0.02
+    - _RingGain: 1.2
+    - _RingKnee: 0.25
     m_Colors:
     - _Tint: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

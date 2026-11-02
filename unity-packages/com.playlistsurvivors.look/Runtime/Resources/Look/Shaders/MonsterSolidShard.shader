@@ -128,7 +128,7 @@ Shader "Look/MonsterSolidShard"
             {
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float3 color = SolidSurface(i.positionWS, i.normalWS, i.bary, _Tint.rgb, 0, i.fx.y, 12); // a chunk is a few pixels across
-                color = lerp(color, _Flash.rgb, i.fx.x);
+                color = lerp(color, _Flash.rgb, i.fx.x * LookFlash(LOOK_SHARD_CALM));
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

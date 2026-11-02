@@ -43,6 +43,7 @@ Shader "Look/MonsterHologramShard"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterShards.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterHologram.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
 
         StructuredBuffer<Death> _Deaths;
         StructuredBuffer<Shard> _Shards;
@@ -137,7 +138,7 @@ Shader "Look/MonsterHologramShard"
                 float lit, fres;
                 // Fresh lines are lifted as the bodies' are on the beat: the break pays off on its frame.
                 float3 color = HologramSurface(i.positionWS, i.normalWS, i.bary, i.edges, _Tint.rgb, 2.0 * i.fx.z, i.fx.y, lit, fres);
-                color += _Flash.rgb * i.fx.x * (1.2 * lit + fres + 0.2);
+                color += _Flash.rgb * i.fx.x * LookFlash(LOOK_SHARD_CALM) * (1.2 * lit + fres + 0.2);
                 // The fill is a faint veil over what is behind (premultiplied: its light added, the world dimmed
                 // by _Veil), so a near monster's body sets it off from the one behind it. Both fade into the
                 // fog, which takes neither's colour.

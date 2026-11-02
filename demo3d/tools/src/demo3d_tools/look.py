@@ -400,6 +400,7 @@ SWARM_DENSE, SWARM_CLOSE = 0.5, 1  # a dense tile: one enemy hue covers half of 
 SWARM_REACH = 4  # px: a seam is darker than the clump on both sides within this reach
 SWARM_SMOOTH = 1  # px: L* box-averaged over this radius first, so speckle (shards, noise) is no seam
 SWARM_PCT = 90  # a tile's boundary contrast: this percentile of its clump's seam depth
+FLASH_L, FLASH_AREA = 90.0, 0.003  # a flash: a connected region of L* >= 90 covering 0.3% of the frame or more
 
 
 def neon_size(rgb: np.ndarray) -> np.ndarray:
@@ -448,8 +449,8 @@ def hue_windows(h: np.ndarray) -> tuple[float, int]:
 
 def frame_measures(rgb: np.ndarray) -> dict:
     """The guide's frame-level measures of a still at NEON_W: the L* p25 (the video fallback for the floor), the
-    near-black, bright, clipped, white shares, the largest clipped region's, the halo round the emitters, the key
-    and the families. No mask needed, so they run on video frames too (the reference board's numbers)."""
+    near-black, bright, clipped, white shares, the largest clipped region's, the largest near-white region's (the
+    flash), the halo round the emitters, the key and the families. No mask needed, so they run on video frames too (the reference board's numbers)."""
     lum, cc = lstar(rgb), chroma(rgb)
     clipped = (rgb >= 250).all(axis=-1)
     colourful = (cc >= COLOURFUL_C) & (lum >= COLOURFUL_L)
@@ -457,7 +458,8 @@ def frame_measures(rgb: np.ndarray) -> dict:
     out = {"frame_p25": p25, "black_share": float((lum < BLACK_L).mean()),
            "bright_share": float((lum >= BRIGHT_L).mean()), "clipped": float(clipped.mean()),
            "clipped_blob": largest_region(clipped) / lum.size,
-           "white": float(((cc < WHITE_C) & (lum >= WHITE_L)).mean())}
+           "white": float(((cc < WHITE_C) & (lum >= WHITE_L)).mean()),
+           "flash": largest_region(lum >= FLASH_L) / lum.size}
     emit = lum >= EMITTER_L
     ring = dilate(emit, HALO_RING[1]) & ~dilate(emit, HALO_RING[0]) & ~emit
     if ring.any():
@@ -568,9 +570,12 @@ def hero_region(view: dict, w: int, h: int) -> np.ndarray:
 
 def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | None, view: dict | None) -> dict:
     """The guide's mask rules, from the ID render (monsters, structures; bool at the still's NEON_W size) and the
-    view json: the floor's L* p50/p90 (ground-plane pixels clear of monsters, structures and the hero), the
-    hero's margin (its L* p90 less the monsters'), monster form and readability (TD15's |dL*| against the
-    ground round them). Monster form is a monster's own L* span, not the crowd's (whose types differ in L*): the
+    view json: the floor's L* p50/p90/p99 (ground-plane pixels clear of monsters, structures and the hero; p99 is
+    the grid's lines), the
+    hero's margin (its L* p90 less the monsters'), monster form, readability (TD15's |dL*| against the
+    ground round them) and the background's light (background_light: the share of the frame's linear luminance in
+    pixels clear of monsters, structures and, with the view json, the hero, under the emitter rung: the grid, the
+    floor's halos and the world's glow, which must not drown the swarm). Monster form is a monster's own L* span, not the crowd's (whose types differ in L*): the
     L* p90 less p10 of the body pixels (a pixel in from the edge) in each FORM_TILE tile they cover FORM_MIN of,
     the tiles' median."""
     lum = lstar(rgb)
@@ -587,16 +592,24 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
         read = readability(rgb, monsters)
         if "dL" in read:
             out["readability"] = abs(read["dL"])
+    region = hero_region(view, w, h) if view is not None else None
+    light = _linear(rgb) @ np.array([0.2126, 0.7152, 0.0722])
+    background = ~dilate(monsters, 2) & (lum < EMITTER_L)
+    if structures is not None:
+        background &= ~dilate(structures, 2)
+    if region is not None:
+        background &= ~dilate(region, 2)
+    if light.sum() > 0:
+        out["background_light"] = float(light[background].sum() / light.sum())
     if view is None:
         return out
-    region = hero_region(view, w, h)
     hero = region & ~dilate(monsters, 1)
     floor = np.isfinite(ground_points(view, w, h)[0]) & ~dilate(monsters, 2) & ~dilate(region, 2)
     if structures is not None:
         floor &= ~dilate(structures, 2)
     if floor.any():
-        f50, f90 = np.percentile(lum[floor], [50, 90])
-        out.update({"floor_p50": float(f50), "floor_p90": float(f90)})
+        f50, f90, f99 = np.percentile(lum[floor], [50, 90, 99])
+        out.update({"floor_p50": float(f50), "floor_p90": float(f90), "floor_p99": float(f99)})
     if hero.any() and body.any():
         out["hero_margin"] = float(np.percentile(lum[hero], 90) - np.percentile(lum[body], 90))
     return out
@@ -656,13 +669,17 @@ def check_rules(metrics: dict, rules: list[dict], on: str = "steady") -> dict[st
 
 
 def cut_metrics(stills: dict[str, dict]) -> dict:
-    """The per-cut measures over a directory's steady stills: the key's median and the spread of the stills' floor
-    p50 (frame L* p25 where a still has no floor), each still standing for its shot."""
+    """The per-cut measures over a directory's steady stills: the key's median, the spread of the stills' floor
+    p50 (frame L* p25 where a still has no floor), each still standing for its shot, and the share of them that
+    flash (a near-white region over FLASH_AREA: outside special moments, flashes are rare)."""
     keys = [m["key60"] for m in stills.values() if "key60" in m]
     floors = [m.get("floor_p50", m["frame_p25"]) for m in stills.values()]
+    flashes = [m["flash"] > FLASH_AREA for m in stills.values() if "flash" in m]
     out = {"key60_median": float(np.median(keys))} if keys else {}
     if floors:
         out["shot_floor_range"] = float(max(floors) - min(floors))
+    if flashes:
+        out["flash_frames"] = float(np.mean(flashes))
     return out
 
 
@@ -1042,9 +1059,11 @@ def cmd_look_sheet(a: argparse.Namespace) -> int:
 
 
 NEON_COLUMNS = [  # metrics.md's columns: (heading, metric, format)
-    ("floor p50", "floor_p50", ".1f"), ("floor p90", "floor_p90", ".1f"), ("frame p25", "frame_p25", ".1f"),
+    ("floor p50", "floor_p50", ".1f"), ("floor p90", "floor_p90", ".1f"), ("floor p99", "floor_p99", ".1f"),
+    ("frame p25", "frame_p25", ".1f"),
     ("black", "black_share", "%"), ("bright", "bright_share", "%"), ("clipped", "clipped", "%"),
-    ("clip blob", "clipped_blob", "%"), ("white", "white", "%"), ("halo", "halo", ".1f"),
+    ("clip blob", "clipped_blob", "%"), ("white", "white", "%"), ("flash", "flash", "%"),
+    ("background", "background_light", "%"), ("halo", "halo", ".1f"),
     ("families", "families", "d"), ("key60", "key60", ".2f"), ("conformance", "palette_conformance", "%"),
     ("hero margin", "hero_margin", ".1f"), ("form", "monster_form", ".1f"), ("dense", "dense_tiles", "d"),
     ("separation", "swarm_separation", ".1f"), ("p10", "swarm_separation_p10", ".1f"),

@@ -17,10 +17,10 @@ Shader "Look/MonsterEdge"
         _RimPower ("Rim falloff", Float) = 4.0
         _Edge ("Edge gain", Float) = 2.6
         _EdgePx ("Edge width (px)", Float) = 1.25
-        _Beat ("Edge lift on the beat", Float) = 0.6
-        _Ring ("Ring light on rim and lines", Float) = 1.5
+        _Beat ("Edge lift on the beat", Float) = 0.3
+        _Ring ("Ring light on rim and lines", Float) = 1.1
         _CoreGlow ("Core at rest", Float) = 0.1
-        _CoreFlare ("Core on the beat", Float) = 0.8
+        _CoreFlare ("Core on the beat", Float) = 0.35
         _CoreSize ("Core radius (share of the body's)", Float) = 0.18
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
@@ -102,7 +102,7 @@ Shader "Look/MonsterEdge"
                 color += core;
                 color += i.ring * _Ring * (lit + fres);
                 // A hit lights what is lit already toward white: the lines, the rim and the core.
-                color += _Flash.rgb * i.fx.x * (2.0 * lit + fres + 0.5 * Luminance(core));
+                color += _Flash.rgb * i.fx.x * LookFlash(LOOK_HIT_CALM) * (2.0 * lit + fres + 0.5 * Luminance(core));
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

@@ -29,6 +29,11 @@ namespace Demo3D.Runtime.Playback
         {
             public float BeatExposure, BeatBloom, BeatVignette;
             public float FlashExposure, FlashChromatic, FlashSaturation;
+            /// <summary>
+            /// Accents', anchors' and hits' flashes as a share of their own (a look's post option's; the special moments,
+            /// structure breaks and flash cuts, stay full: neon-look.md, Restraint and special moments). 1: all in full.
+            /// </summary>
+            public float FlashCalm = 1f;
             /// <summary>The hero's attacks at or above this strength flash as hits (above 1: none).</summary>
             public float HitStrength = 2f, HitFlash;
             public float EaseBars = 2f;
@@ -71,7 +76,7 @@ namespace Demo3D.Runtime.Playback
             {
                 BeatExposure = f.BeatExposure, BeatBloom = f.BeatBloom, BeatVignette = f.BeatVignette,
                 FlashExposure = f.FlashExposure, FlashChromatic = f.FlashChromatic, FlashSaturation = f.FlashSaturation,
-                HitStrength = f.HitStrength, HitFlash = f.HitFlash,
+                FlashCalm = f.FlashCalm, HitStrength = f.HitStrength, HitFlash = f.HitFlash,
             };
 
             /// <summary>The first grade whose <see cref="SectionGrade.Match"/> starts the label, or none.</summary>
@@ -131,12 +136,14 @@ namespace Demo3D.Runtime.Playback
             _grades = new SectionGrade[_map.Sections.Length];
             for (int i = 0; i < _grades.Length; i++) _grades[i] = amounts.For(_map.Sections[i].Label);
 
+            // Accents, anchors and hits are calm; structure breaks are special moments, in full.
             var all = new List<(double t, float s)>();
-            foreach (var a in _map.Accents) all.Add((a.Time, a.Strength));
+            float calm = amounts.FlashCalm;
+            foreach (var a in _map.Accents) all.Add((a.Time, a.Strength * calm));
             foreach (var s in _map.Sections)
                 if (s.Feel == SectionFeel.Free)
-                    foreach (var a in s.Anchors) all.Add((a.Time, a.Strength));
-            all.AddRange(flashes);
+                    foreach (var a in s.Anchors) all.Add((a.Time, a.Strength * calm));
+            foreach (var f in flashes) all.Add((f.time, f.strength * calm));
             if (breaks != null) all.AddRange(breaks);
             all.Sort((x, y) => x.t.CompareTo(y.t));
             _flashAt = new double[all.Count];

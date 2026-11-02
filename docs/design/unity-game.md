@@ -2722,7 +2722,11 @@ night grade's: the baked night is lit dim). Under the options' void toe the
 arena falls almost to black, so the game already reads as the void, its
 monsters and effects the light.
 The beat and flash amounts are the post option's `feel` (every option's flash
-lifts 0.5 stops), the build-up and kick stay `PostFeel`'s, the zone grades
+lifts 0.3 stops since ps-wnj.24, and only a special moment's in full: breaks,
+finishers and drops; an accent's, a heavy strike's or a dash's at the option's
+`calm` share, 0.3, `FeelMoments.Special`;
+[neon-look.md, Restraint and special moments](neon-look.md#restraint-and-special-moments)),
+the build-up and kick stay `PostFeel`'s, the zone grades
 ride on top as before, and on a beat or a flash the bloom leans toward the
 palette's `grid.pulse` and `spark` (`PostBinding`). A `--post` option not
 built draws `PostOption.Plain` (neutral tonemap, nothing else): game keeps no

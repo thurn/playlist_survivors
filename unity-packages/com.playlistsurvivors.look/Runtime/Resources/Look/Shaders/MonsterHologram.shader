@@ -20,10 +20,10 @@ Shader "Look/MonsterHologram"
         _RimPower ("Rim falloff", Float) = 4.0
         _Edge ("Line gain", Float) = 2.4
         _EdgePx ("Line width (px)", Float) = 1.25
-        _Beat ("Line lift on the beat", Float) = 0.6
-        _Sweep ("Beat band gain", Float) = 1.2
+        _Beat ("Line lift on the beat", Float) = 0.3
+        _Sweep ("Beat band gain", Float) = 0.5
         _SweepWidth ("Beat band half-width (share of height)", Float) = 0.08
-        _Ring ("Ring light on lines and rim", Float) = 1.5
+        _Ring ("Ring light on lines and rim", Float) = 1.1
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
         _Facets ("Faceting (unused)", Float) = 0.6
@@ -122,7 +122,7 @@ Shader "Look/MonsterHologram"
                 color += _Tint.rgb * HologramSweep(i.h01, i.fx.y);
                 color += i.ring * _Ring * (lit + fres);
                 // A hit lights what is lit already toward white: the lines and the rim.
-                color += _Flash.rgb * i.fx.x * (1.2 * lit + fres + 0.1);
+                color += _Flash.rgb * i.fx.x * LookFlash(LOOK_HIT_CALM) * (1.2 * lit + fres + 0.1);
                 // Light fades into the fog rather than taking its colour: it is added to what is behind.
                 // The fill is a faint veil over what is behind (premultiplied: its light added, the world dimmed
                 // by _Veil), so a near monster's body sets it off from the one behind it. Both fade into the

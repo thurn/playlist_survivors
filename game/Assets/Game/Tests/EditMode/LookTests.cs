@@ -94,6 +94,9 @@ namespace Game.Tests
             Assert.That(moments.Flash(7.0 - 1 / Fps, Period), Is.EqualTo(0));
             Assert.That(moments.Flash(7.0, Period), Is.EqualTo(1).Within(1e-6));
             Assert.That(moments.Flash(10.0, Period), Is.EqualTo(1).Within(1e-6));
+            // Calm: the accent flashes at its share, the drop (a special moment) in full.
+            Assert.That(moments.Flash(7.0, Period, 0.3f), Is.EqualTo(0.3).Within(1e-6));
+            Assert.That(moments.Flash(10.0, Period, 0.3f), Is.EqualTo(1).Within(1e-6));
         }
 
         [Test]
@@ -133,16 +136,19 @@ namespace Game.Tests
             var rest = At(6.0 - 1 / Fps);
             var beat = At(6.0);
             Assert.That(beat.Exposure - rest.Exposure, Is.EqualTo(feel.BeatExposure).Within(0.01));
-            Assert.That(beat.Bloom, Is.GreaterThan(rest.Bloom + 0.3f));
+            Assert.That(beat.Bloom, Is.GreaterThan(rest.Bloom + 0.9f * feel.BeatBloom));
             Assert.That(beat.Vignette, Is.LessThan(rest.Vignette));
             Assert.That(beat.Chromatic, Is.EqualTo(0));
             Assert.That(rest.Chromatic, Is.EqualTo(0));
 
+            // An accent is no special moment: it flashes at the option's calm share (neon-look.md, Restraint and special moments).
             var accent = At(8.0);
-            Assert.That(accent.Chromatic, Is.EqualTo(feel.FlashChromatic).Within(1e-6));
-            Assert.That(accent.Saturation, Is.EqualTo(feel.FlashSaturation).Within(1e-4));
-            Assert.That(accent.Exposure, Is.EqualTo(feel.BeatExposure + feel.FlashExposure).Within(0.01));
-            Assert.That(accent.Flash, Is.EqualTo(1).Within(1e-6), "the flash tints the bloom fully toward the palette's spark");
+            float calm = feel.FlashCalm;
+            Assert.That(calm, Is.LessThan(1f));
+            Assert.That(accent.Chromatic, Is.EqualTo(feel.FlashChromatic * calm).Within(1e-6));
+            Assert.That(accent.Saturation, Is.EqualTo(feel.FlashSaturation * calm).Within(1e-4));
+            Assert.That(accent.Exposure, Is.EqualTo(feel.BeatExposure + feel.FlashExposure * calm).Within(0.01));
+            Assert.That(accent.Flash, Is.EqualTo(calm).Within(1e-6), "the flash tints the bloom toward the palette's spark by as much");
             Assert.That(At(8.0 + Period).Chromatic, Is.EqualTo(0)); // gone within a beat
         }
 

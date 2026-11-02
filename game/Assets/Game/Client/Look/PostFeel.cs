@@ -116,7 +116,7 @@ namespace Game.Client.Look
         {
             var g = Grade(s);
             float pulse = (float)lane.Pulse * g.Pulse;
-            float flash = moments.Flash(s, lane.Period);
+            float flash = moments.Flash(s, lane.Period, Feel.FlashCalm);
             float rise = (float)lane.Rise;
             float kick = (float)Math.Max(lane.Kick, lane.KickPre);
             var f = Feel;

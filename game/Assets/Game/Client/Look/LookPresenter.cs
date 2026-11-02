@@ -141,7 +141,7 @@ namespace Game.Client.Look
 
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,
                 "{0:R},{1:R},{2:R},{3:R},{4:R},{5:R},{6},{7:R},{8:R},{9:R},{10:R},{11:R},{12:R},{13:R},{14:R},{15:R},{16:R}",
-                s, _rig.FocusX, _rig.FocusY, _rig.Width(s), punch, shake, _rig.Level, lane.Pulse, _moments.Flash(s, lane.Period),
+                s, _rig.FocusX, _rig.FocusY, _rig.Width(s), punch, shake, _rig.Level, lane.Pulse, offsets.Flash,
                 offsets.Exposure, offsets.Bloom, offsets.Vignette, offsets.Saturation, offsets.Chromatic, lane.Kick, lane.KickPre, lane.Rise));
         }
 

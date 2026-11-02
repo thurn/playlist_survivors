@@ -620,7 +620,9 @@ In the package (ps-wnj.7):
   draws it: `void-grid` as set, `pure-void` with a faint grid, `hued-zones`
   with the lines in the first zone's hue (`SetZoneTint`). It replaces the
   arena's ground and its light decals (`Runes`, `GlowPools`); the rest of
-  each Synty set stays until the world kit (ps-wnj.8).
+  each Synty set stays until the world kit (ps-wnj.8). ps-wnj.24 made it a
+  quiet background: its lines' level, widths, fade and ring knee are in
+  [Restraint and special moments](#restraint-and-special-moments).
 - **Beats**: the floor breathes floor-wide, so the players write no beat
   rings (the style guide: a breath is a ring from the hero or a floor-wide
   lift, never both). `ImpulseField.Beat` is there for a look that wants the
@@ -861,6 +863,88 @@ palette's `hero` role, readable at the trailer's 32–42 m framing without
 growing (ps-b5z.1's rule) or an outline (removed on the operator's review).
 The crystal blade's flare stays. Each preset picks a hero treatment
 matching its monsters.
+
+### Restraint and special moments
+
+The operator on the first neon stills (2026-11-01): too overwhelming, "the
+grid in the arena background kind of drowning everything out and the super
+bright flashes on the structural crystals"; tone everything down and "save
+these super flashy effects for special moments". So the look is **calm by
+default**, with a contrast hierarchy of hero and blade first, enemies
+second, the world last, and its loudest effects fire only in a **special
+moment** (ps-wnj.24).
+
+**The special moments**, the only ones that get the full flash:
+
+- a **structure break** or a **formation smash** (every break the game's sim
+  makes; every `BreakMoments` break of the crystal cut);
+- a **slam or finisher**: a blow of weight 0.95 or more (game's finisher
+  slam; the crystal cut's heaviest blows, its formation smashes among them);
+- a **drop** (game's loudness jump), and the crystal cut's designed **flash
+  cuts** (its transitions, unchanged).
+
+Everything else is calm: light and heavy strikes, spins, deaths (a mass
+kill too), accents, anchors, glints on structures, beats.
+
+**How the tier is built**:
+
+- **Rings say whether they are special.** `Impulse.Special`:
+  `ImpulseField.Shatter` always, `ImpulseField.Blow` at a weight of
+  `SpecialWeight` (0.95) or more, never a death or a beat. A calm ring is
+  drawn at `CalmRing` (40%) of its strength (merging and `Strongest` keep
+  its own), so the floor and the swarm react to calm blows only faintly.
+- **`_LookSpecial`**: `ImpulseField.Publish` hands shaders an envelope of
+  the special rings alive, 1 on a special moment's first frame, falling as
+  (1 - u)² over `SpecialSeconds` (0.5 s). `LookFlash(calm)` in Impulse.hlsl
+  is a flash's gain: `calm` outside special moments, 1 in one. Every look
+  shader's flash goes through it: the monsters' hit flash (calm 0.35) and
+  their shards' break flash (calm 0.5), the crystal props' hit flash and
+  break glow (`_FlashCalm`, 0.3). So in a special moment everything on
+  screen flashes in full together, and outside one nothing does.
+- **The post's flash** (`feel.flash.calm`, 0.3 in every option): a calm
+  moment's exposure, aberration and saturation spike is that share of its
+  own. Game's `FeelMoments` treats breaks, finishers and drops as special;
+  demo3d's `PostFeel` its structure breaks (accents, anchors and hits calm).
+  The night feel (`--look classic`) and the action cut keep every flash
+  (calm 1).
+
+**What is calmer everywhere**, special moment or not:
+
+- **The grid floor** is a quiet background: lines in `grid.line`'s hue
+  that land at one L* after the post in every palette, zone and preset
+  (`_LineL` 12, `pure-void` half that), thinner (10 mm minor, 20 mm major
+  half-widths, were 12 and 25), the minor lines 35% of the major (were
+  40%), fading to 30% between 30 and 110 m from the camera; the beat's
+  breath under a fifth of before (0.06). The post's void toe is steep and
+  works on a pixel's brightest channel, so a gain or a luminance can't level
+  the lines: halving their light took edge's grid from L* 27 to 2.4, and one
+  linear luminance put edge at 16, solid at 13 and prism at 2. So
+  `PostStack` publishes the scene pass's toe and exposure (`_LookToe`) and
+  the floor sets each line's colour back through them (`Levelled` in
+  GridFloor.shader). A ring lights and shoves the lines only past a knee
+  (`_RingKnee`, 0.25 of its drawn strength), so only big impacts (special
+  ones, a mass kill) visibly bend it, at 1.2 (`_RingGain`, was 2.2) and
+  with a 0.7 m warp.
+- **The crystal props**: resting edges about half as bright (edge-glass
+  0.6, wireframe 0.55, gem 0.35, solid-glass's body 0.4), the beat's flare
+  on their edges about a third, the formations' lift over them smaller
+  (faces 3x, at least 0.35 of the gem); a hit's flash and a break's glow
+  peak at about two thirds of before even in a special moment.
+- **The monsters**: the beat's lifts (lines, core, sparkle, band, hot spot)
+  about half, the ring light 1.1 (was 1.5; solid's impulse light 0.45, was
+  0.6), all as the shaders' property defaults.
+- **The post**: bloom and halo intensities at 70% in `neon-bloom` and
+  `punchy-bloom`, cut only 10-15% in `scanlines` and `prism-bloom` (thin
+  emitters: at 70% the crystal cut's sparse shots fell under the
+  bright-share floor), the beat's exposure, bloom and tint pulses about a
+  third, the full flash's exposure 0.3, aberration 0.3 and saturation 15
+  (were 0.5, 0.5, 25).
+
+The style guide's [Restraint](neon-look-style.md#restraint) rules check it:
+the grid's lines (floor L* p99), the background's share of the frame's
+light and the share of steady stills that flash. Evidence:
+[game](../../game/evidence/look/restraint/README.md),
+[crystal cut](../../demo3d/evidence/look/restraint/README.md).
 
 ## The Trailer
 

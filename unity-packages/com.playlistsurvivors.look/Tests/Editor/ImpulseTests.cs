@@ -4,12 +4,17 @@ using UnityEngine;
 
 namespace PS.Look.Tests
 {
-    /// <summary>The impulse field: rings set out on their frames, fade, merge in a mass kill and keep the strongest.</summary>
+    /// <summary>
+    /// The impulse field: rings set out on their frames, fade, merge in a mass kill and keep the strongest; calm rings
+    /// draw at a share of their strength and special ones light the special-moment tier.
+    /// </summary>
     public class ImpulseTests
     {
-        static Impulse Ring(double t, float x = 0, float strength = 1, ImpulseKind kind = ImpulseKind.Blow) => new Impulse
+        // Special unless asked, so the strengths handed to shaders are the rings' own.
+        static Impulse Ring(double t, float x = 0, float strength = 1, ImpulseKind kind = ImpulseKind.Blow, bool special = true) => new Impulse
         {
             Kind = kind, At = new Vector2(x, 0), Start = t, Strength = strength, Speed = 20, Reach = 10, Width = 1, Colour = Color.white,
+            Special = special,
         };
 
         [Test]
@@ -80,6 +85,34 @@ namespace PS.Look.Tests
             field.Add(Ring(0.2, x: 100));
             for (double t = 0; t <= 0.31; t += 0.05) field.Publish(t);
             Assert.That(shown, Is.EqualTo(new[] { 0.1, 0.2, 0.3 }));
+        }
+
+        [Test]
+        public void ACalmRingDrawsAtItsShareAndOnlySpecialRingsLightTheTier()
+        {
+            var field = new ImpulseField();
+            field.Add(Ring(0, x: 0, special: false));
+            field.Publish(0);
+            Assert.That(field.PublishedColour(0).w, Is.EqualTo(ImpulseField.CalmRing).Within(1e-6f), "a calm ring at its share");
+            Assert.That(field.Special, Is.EqualTo(0f), "no special moment");
+            field.Add(Ring(0.1, x: 50));
+            field.Publish(0.1);
+            Assert.That(field.Special, Is.EqualTo(1f), "full on the special moment's first frame");
+            field.Publish(0.1 + ImpulseField.SpecialSeconds / 2);
+            Assert.That(field.Special, Is.EqualTo(0.25f).Within(1e-5f), "falling as the square of what is left");
+            Assert.That(ImpulseField.SpecialAt(ImpulseField.SpecialSeconds), Is.EqualTo(0f));
+            Assert.That(ImpulseField.SpecialAt(-0.01), Is.EqualTo(0f), "nothing before it");
+        }
+
+        [Test]
+        public void SlamsAndBreaksAreSpecialMomentsAndStrikesAndDeathsAreNot()
+        {
+            var c = Color.white;
+            Assert.That(ImpulseField.Shatter(Vector2.zero, 0, 2f, c).Special, Is.True, "a structure break");
+            Assert.That(ImpulseField.Blow(Vector2.zero, 0, 5f, 1f, c).Special, Is.True, "a slam");
+            Assert.That(ImpulseField.Blow(Vector2.zero, 0, 5f, 0.7f, c).Special, Is.False, "a heavy strike");
+            Assert.That(ImpulseField.Death(Vector2.zero, 0, c).Special, Is.False, "a death");
+            Assert.That(ImpulseField.Beat(Vector2.zero, 0, true, c).Special, Is.False, "a beat");
         }
 
         [Test]

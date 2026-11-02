@@ -17,8 +17,8 @@ Shader "Look/MonsterSolid"
         _Falloff ("Silhouette band darkness", Range(0, 1)) = 0.9
         _FalloffPx ("Silhouette band (px at 1080 rows)", Float) = 3
         _Facets ("Faceting", Range(0, 1)) = 0.5
-        _HotSpot ("Hot spot on the beat", Float) = 0.9
-        _Impulse ("Impulse light", Float) = 0.6
+        _HotSpot ("Hot spot on the beat", Float) = 0.4
+        _Impulse ("Impulse light", Float) = 0.45
         _OutlinePx ("Outline width (px at 1080 rows)", Float) = 2.5
         _Gain ("Horde gain (unused)", Float) = 1
         _Peak ("Horde peak (unused)", Float) = 1
@@ -103,7 +103,7 @@ Shader "Look/MonsterSolid"
                 if (_GameIdMask > 0.5) return half4(1, 1, 1, 1);
                 float3 color = SolidSurface(i.positionWS, i.normalWS, i.bary, _Tint.rgb, i.fx.y, 0, i.radiusPx);
                 color += i.light;
-                color = SolidHit(color, i.positionWS, i.normalWS, i.fx.x);
+                color = SolidHit(color, i.positionWS, i.normalWS, i.fx.x * LookFlash(LOOK_HIT_CALM));
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

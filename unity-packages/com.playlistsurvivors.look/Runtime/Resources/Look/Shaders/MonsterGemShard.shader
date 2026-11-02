@@ -43,6 +43,7 @@ Shader "Look/MonsterGemShard"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterShards.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterEdge.hlsl"
         #include "Packages/com.playlistsurvivors.look/Runtime/Crowd/Shaders/MonsterGem.hlsl"
+        #include "Packages/com.playlistsurvivors.look/Runtime/Impulse/Shaders/Impulse.hlsl"
 
         StructuredBuffer<Death> _Deaths;
         StructuredBuffer<Shard> _Shards;
@@ -138,7 +139,7 @@ Shader "Look/MonsterGemShard"
                 // Fresh shards sparkle and their lines lift as the bodies' do on the beat: the break pays off on its frame.
                 float3 color = GemSurface(i.positionWS, i.normalWS, i.positionCS, i.bary, i.edges, _Tint.rgb, i.fx.z, i.fx.y, 0, lit, shine);
                 color += _Tint.rgb * _Inside * i.fx.y * (0.15 + i.fx.z);
-                color += GemFlash(_Tint.rgb) * i.fx.x * (1.5 * lit + shine + 0.35);
+                color += GemFlash(_Tint.rgb) * i.fx.x * LookFlash(LOOK_SHARD_CALM) * (1.5 * lit + shine + 0.35);
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

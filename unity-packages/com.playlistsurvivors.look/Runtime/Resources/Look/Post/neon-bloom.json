@@ -1,15 +1,15 @@
 {
   "name": "neon-bloom",
-  "note": "The edge preset's post: heavy bloom with a wide saturated halo round every lit edge, the filmic tonemap keeping saturated edges coloured, a vignette into the void, fine grain and lens dirt, and a void toe sinking the lit world toward black (neon-look-style.md, Post).",
+  "note": "The edge preset's post: heavy bloom with a wide saturated halo round every lit edge, the filmic tonemap keeping saturated edges coloured, a vignette into the void, fine grain and lens dirt, and a void toe sinking the lit world toward black (neon-look-style.md, Post); calm since ps-wnj.24: bloom and halo at 70%, the beat a third, the full flash for special moments and a calm moment's at 30% of it (neon-look-style.md, Restraint).",
   "tonemap": "filmic", "shoulder": 0.55, "whiten": 0.3,
   "void":   { "knee": 0.6, "power": 3.2 },
   "colour": { "exposure": -0.1, "contrast": 10, "saturation": 10 },
-  "bloom":  { "threshold": 0.9, "intensity": 0.9, "scatter": 0.6 },
-  "halo":   { "threshold": 0.45, "intensity": 0.9, "saturation": 1.5 },
+  "bloom":  { "threshold": 0.9, "intensity": 0.63, "scatter": 0.6 },
+  "halo":   { "threshold": 0.45, "intensity": 0.63, "saturation": 1.5 },
   "lens":   { "chromatic": 0, "vignette": 0.3, "smoothness": 0.45, "grain": 0.08, "dirt": 6 },
   "feel": {
-    "beat":  { "exposure": 0.12, "bloom": 0.35, "vignette": -0.03, "tint": 0.25 },
-    "flash": { "exposure": 0.5, "chromatic": 0.5, "saturation": 25 },
+    "beat":  { "exposure": 0.05, "bloom": 0.12, "vignette": -0.02, "tint": 0.12 },
+    "flash": { "exposure": 0.3, "chromatic": 0.3, "saturation": 15, "calm": 0.3 },
     "hit":   { "minStrength": 0.95, "flash": 0.6 }
   }
 }

@@ -19,16 +19,16 @@ Shader "Look/MonsterGem"
         _Behind ("Scene behind's gain", Float) = 1.6
         _Shine ("Reflected bands' gain", Float) = 1.1
         _ShineWidth ("Share of facets in a band", Range(0.05, 0.9)) = 0.2
-        _Sparkle ("Trapped light on the beat", Float) = 1.2
+        _Sparkle ("Trapped light on the beat", Float) = 0.5
         _Far ("A far body's glow", Float) = 1.0
         _Rim ("Rim gain", Float) = 1.3
         _RimPower ("Rim falloff", Float) = 3.0
         _Edge ("Line gain", Float) = 0.7
         _EdgePx ("Line width (px)", Float) = 1.0
-        _Beat ("Line lift on the beat", Float) = 0.8
-        _Ring ("Ring light on bands, rim and lines", Float) = 1.5
+        _Beat ("Line lift on the beat", Float) = 0.4
+        _Ring ("Ring light on bands, rim and lines", Float) = 1.1
         _CoreGlow ("Core at rest", Float) = 0.15
-        _CoreFlare ("Core on the beat", Float) = 0.9
+        _CoreFlare ("Core on the beat", Float) = 0.4
         _CoreSize ("Core radius (share of the body's)", Float) = 0.2
     }
     SubShader
@@ -110,7 +110,7 @@ Shader "Look/MonsterGem"
                 color += i.ring * _Ring * (lit + shine);
                 // A hit lights what is lit already, half toward white and half the slot's hue, so a crowd under
                 // constant hits keeps its colour: the lines, the bands, the rim and the core.
-                color += GemFlash(_Tint.rgb) * i.fx.x * (lit + 0.7 * shine + 0.4 * Luminance(core) + 0.05);
+                color += GemFlash(_Tint.rgb) * i.fx.x * LookFlash(LOOK_HIT_CALM) * (lit + 0.7 * shine + 0.4 * Luminance(core) + 0.05);
                 return half4(MixFog(color, i.fogFactor), 1);
             }
             ENDHLSL

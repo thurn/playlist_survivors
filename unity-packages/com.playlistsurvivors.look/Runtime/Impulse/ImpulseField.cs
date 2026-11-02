@@ -19,6 +19,11 @@ namespace PS.Look
         public double Start;
         public float Strength, Speed, Reach, Width;
         public Color Colour;
+        /// <summary>
+        /// A special moment's ring (neon-look.md, Restraint and special moments): drawn at its full strength and
+        /// lighting <c>_LookSpecial</c>; any other is drawn at <see cref="ImpulseField.CalmRing"/> of it.
+        /// </summary>
+        public bool Special;
         /// <summary>The strengths of the rings merged into it, uncapped (0: none merged yet), which weigh its centre and colour.</summary>
         internal float Merged;
 
@@ -52,6 +57,9 @@ namespace PS.Look
     ///   is a few strong rings, out past its shards, not hundreds.
     /// - <see cref="Shown"/> hears each ring on the first frame it is published, with its own time (the beat audit).
     /// - <see cref="Strongest"/> is the strongest ring alive, for the post's screen ripple at big impacts.
+    /// - The special-moment tier: a ring that isn't <see cref="Impulse.Special"/> is handed to shaders at
+    ///   <see cref="CalmRing"/> of its strength (merging and <see cref="Strongest"/> weigh its own), and the special
+    ///   rings alive light <c>_LookSpecial</c> (<see cref="SpecialAt"/>), which every look shader's flash reads.
     /// The field is the players' one instance, <see cref="Active"/>; shaders read nothing until it is published.
     /// </summary>
     public sealed class ImpulseField
@@ -64,6 +72,12 @@ namespace PS.Look
         public const float MergedCap = 1.6f;
         /// <summary>Same instant: the times of one event's rings (the deaths a blow makes land on its impact).</summary>
         const double SameS = 1e-4;
+        /// <summary>A calm (not special) ring's drawn share of its strength: the floor and the swarm barely react to it.</summary>
+        public const float CalmRing = 0.4f;
+        /// <summary>How long a special moment lights <c>_LookSpecial</c> (s), falling as the square of what is left.</summary>
+        public const float SpecialSeconds = 0.5f;
+        /// <summary>A blow this heavy or heavier is a special moment (a slam, a finisher, a formation's smash).</summary>
+        public const float SpecialWeight = 0.95f;
 
         /// <summary>The players' field, or null before one makes it.</summary>
         public static ImpulseField Active { get; set; }
@@ -72,6 +86,7 @@ namespace PS.Look
         static readonly int ColourId = Shader.PropertyToID("_ImpulseColor");
         static readonly int CountId = Shader.PropertyToID("_ImpulseCount");
         static readonly int StrongestId = Shader.PropertyToID("_ImpulseStrongest");
+        static readonly int SpecialId = Shader.PropertyToID("_LookSpecial");
 
         // Sorted by start, so a frame stops at the first that hasn't set out.
         readonly List<Impulse> _rings = new List<Impulse>(256);
@@ -91,6 +106,9 @@ namespace PS.Look
         /// <summary>The strongest ring alive at the latest publish (centre x, z, radius, strength now); strength 0 for none.</summary>
         public Vector4 Strongest { get; private set; }
 
+        /// <summary><c>_LookSpecial</c> at the latest publish: 1 on a special moment's first frame, 0 outside one.</summary>
+        public float Special { get; private set; }
+
         /// <summary>Ring <paramref name="i"/> in start order.</summary>
         public Impulse this[int i] => _rings[i];
 
@@ -102,7 +120,7 @@ namespace PS.Look
             for (int i = at; i < _rings.Count && _rings[i].Start <= ring.Start + SameS; i++)
             {
                 var r = _rings[i];
-                if (r.Kind != ring.Kind || (r.At - ring.At).sqrMagnitude > MergeM * MergeM || _shown[i]) continue;
+                if (r.Kind != ring.Kind || r.Special != ring.Special || (r.At - ring.At).sqrMagnitude > MergeM * MergeM || _shown[i]) continue;
                 float a = r.Merged > 0 ? r.Merged : r.Strength, b = ring.Strength, sum = a + b;
                 r.At = (r.At * a + ring.At * b) / sum;
                 r.Colour = (r.Colour * a + ring.Colour * b) / sum;
@@ -136,7 +154,7 @@ namespace PS.Look
         public void Publish(double now)
         {
             int n = 0;
-            float strongest = 0;
+            float strongest = 0, special = 0;
             Strongest = Vector4.zero;
             for (int i = 0; i < _rings.Count; i++)
             {
@@ -155,7 +173,8 @@ namespace PS.Look
                     _shown[i] = true;
                     Shown?.Invoke(r.Kind, r.Start);
                 }
-                float s = r.StrengthAt(age);
+                if (r.Special) special = Mathf.Max(special, SpecialAt(age));
+                float s = r.StrengthAt(age) * (r.Special ? 1f : CalmRing);
                 if (s > strongest)
                 {
                     strongest = s;
@@ -173,6 +192,8 @@ namespace PS.Look
             }
             for (int j = n; j < Max; j++) _ring[j] = _colour[j] = Vector4.zero;
             Published = n;
+            Special = special;
+            Shader.SetGlobalFloat(SpecialId, special);
             Shader.SetGlobalVectorArray(RingId, _ring);
             Shader.SetGlobalVectorArray(ColourId, _colour);
             Shader.SetGlobalFloat(CountId, n);
@@ -187,6 +208,14 @@ namespace PS.Look
             _colour[slot] = new Vector4(c.r * s, c.g * s, c.b * s, s);
         }
 
+        /// <summary>A special moment's light on look shaders <paramref name="age"/> seconds after it: 1 on its first frame, (1 - u)² over <see cref="SpecialSeconds"/>.</summary>
+        public static float SpecialAt(double age)
+        {
+            if (age < 0 || age >= SpecialSeconds) return 0f;
+            float left = 1f - (float)(age / SpecialSeconds);
+            return left * left;
+        }
+
         /// <summary>Ring slot <paramref name="slot"/> as the latest publish handed it (x, z, radius, width), for tests.</summary>
         public Vector4 PublishedRing(int slot) => _ring[slot];
 
@@ -198,6 +227,7 @@ namespace PS.Look
         {
             Shader.SetGlobalFloat(CountId, 0);
             Shader.SetGlobalVector(StrongestId, Vector4.zero);
+            Shader.SetGlobalFloat(SpecialId, 0);
         }
 
         /// <summary>The first ring starting at or after <paramref name="t"/>.</summary>
@@ -217,11 +247,12 @@ namespace PS.Look
         /// <summary>
         /// The ring of the hero's blow of reach <paramref name="reach"/> (m), <paramref name="weight"/> 0 (a light strike:
         /// faint, so the swing reads as the blade's cut) to 1 (a slam, a smash). Rings run at the style guide's pace:
-        /// across a 35 m frame in about a beat, gone in about one and a half.
+        /// across a 35 m frame in about a beat, gone in about one and a half. A blow of <see cref="SpecialWeight"/> or
+        /// more is a special moment.
         /// </summary>
         public static Impulse Blow(Vector2 at, double t, float reach, float weight, Color colour) => new Impulse
         {
-            Kind = ImpulseKind.Blow, At = at, Start = t, Colour = colour,
+            Kind = ImpulseKind.Blow, At = at, Start = t, Colour = colour, Special = weight >= SpecialWeight,
             Strength = Mathf.Lerp(0.25f, 1.2f, weight), Speed = Mathf.Lerp(26f, 36f, weight),
             Reach = Mathf.Clamp(reach * Mathf.Lerp(1.6f, 3f, weight), 8f, 30f), Width = Mathf.Lerp(1.4f, 2.6f, weight),
         };
@@ -232,10 +263,10 @@ namespace PS.Look
             Kind = ImpulseKind.Death, At = at, Start = t, Colour = colour, Strength = 0.4f, Speed = 14f, Reach = 6f, Width = 1f,
         };
 
-        /// <summary>A shatter's (a structure's or a crystal formation's break) big ring, <paramref name="sizeM"/> the break's size (m, about 1 to 6).</summary>
+        /// <summary>A shatter's (a structure's or a crystal formation's break) big ring, <paramref name="sizeM"/> the break's size (m, about 1 to 6): always a special moment.</summary>
         public static Impulse Shatter(Vector2 at, double t, float sizeM, Color colour) => new Impulse
         {
-            Kind = ImpulseKind.Shatter, At = at, Start = t, Colour = colour,
+            Kind = ImpulseKind.Shatter, At = at, Start = t, Colour = colour, Special = true,
             Strength = Mathf.Clamp(0.6f + 0.15f * sizeM, 0.7f, 1.5f), Speed = 34f,
             Reach = Mathf.Clamp(10f + 5f * sizeM, 16f, 30f), Width = Mathf.Clamp(1.2f + 0.3f * sizeM, 1.5f, 3f),
         };

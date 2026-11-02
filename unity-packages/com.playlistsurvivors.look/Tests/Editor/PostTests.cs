@@ -44,10 +44,12 @@ namespace PS.Look.Tests
             Assert.Throws<FormatException>(() => PostOption.Parse(@"{ ""name"": ""x"", ""bloom"": { ""intensty"": 1 } }"));
             Assert.Throws<FormatException>(() => PostOption.Parse(@"{ ""name"": ""x"", ""tonemap"": ""reinhard"" }"));
             Assert.Throws<FormatException>(() => PostOption.Parse(@"{ ""name"": ""x"", ""feel"": { ""beat"": { ""exposure"": ""lots"" } } }"));
-            var o = PostOption.Parse(@"{ ""name"": ""x"", ""halo"": { ""intensity"": 0.7 }, ""void"": { ""knee"": 0.6 }, ""feel"": { ""hit"": { ""flash"": 0.6 } } }");
+            var o = PostOption.Parse(@"{ ""name"": ""x"", ""halo"": { ""intensity"": 0.7 }, ""void"": { ""knee"": 0.6 }, ""feel"": { ""hit"": { ""flash"": 0.6 }, ""flash"": { ""calm"": 0.3 } } }");
             Assert.That(o.HaloIntensity, Is.EqualTo(0.7f));
             Assert.That((o.VoidKnee, o.VoidPower), Is.EqualTo((0.6f, 2f)), "the knee set, the power its default");
             Assert.That(o.Feel.HitFlash, Is.EqualTo(0.6f));
+            Assert.That(o.Feel.FlashCalm, Is.EqualTo(0.3f), "a calm moment's flash: the special-moment tier");
+            Assert.That(PostOption.Parse(@"{ ""name"": ""x"" }").Feel.FlashCalm, Is.EqualTo(1f), "left out: every flash in full");
             Assert.That(o.Tonemap, Is.EqualTo(PostOption.Tonemaps.Filmic), "left out: the default");
         }
 

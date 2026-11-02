@@ -30,6 +30,11 @@ namespace PS.Look
             public float BeatExposure, BeatBloom, BeatVignette, BeatTint;
             /// <summary>A full flash: exposure (stops), chromatic aberration and saturation; the bloom tints to <c>spark</c> with it.</summary>
             public float FlashExposure, FlashChromatic, FlashSaturation;
+            /// <summary>
+            /// A flash outside a special moment (neon-look.md, Restraint and special moments), as a share of its own:
+            /// structure breaks, finishers and drops flash in full, accents, strikes and hits at this (1: all in full).
+            /// </summary>
+            public float FlashCalm = 1f;
             /// <summary>The hero's attacks at or above this strength flash as hits, at this share of their strength (above 1: none).</summary>
             public float HitStrength = 2f, HitFlash;
         }
@@ -169,6 +174,7 @@ namespace PS.Look
                             "exposure" => f.FlashExposure = v,
                             "chromatic" => f.FlashChromatic = v,
                             "saturation" => f.FlashSaturation = v,
+                            "calm" => f.FlashCalm = v,
                             _ => (float?)null,
                         });
                         break;

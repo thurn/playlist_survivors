@@ -376,7 +376,7 @@ def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:
     img[0:64, 256:320] = 200
     m = look.mask_rules(img, monsters, structures, top_down(w, h))
     lit = float(look.lstar(np.array([220] * 3, dtype=np.uint8)))
-    assert m["floor_p50"] == m["floor_p90"] == pytest.approx(5.9, abs=0.1)
+    assert m["floor_p50"] == m["floor_p90"] == m["floor_p99"] == pytest.approx(5.9, abs=0.1)
     assert m["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
     assert m["monster_form"] == pytest.approx(lit - 5.9, abs=0.1)
     # A flat monster, with no view json: no floor or hero, and no form; it stands well off the ground.
@@ -409,6 +409,30 @@ def test_the_cuts_measures_span_its_stills() -> None:
     assert cut == {"key60_median": 0.7, "shot_floor_range": 8.0}  # b has no floor: its frame p25 stands in
 
 
+def test_a_flash_is_a_large_near_white_region_and_flashing_stills_are_counted() -> None:
+    img = frame(GREY_DARK, 100, 100)
+    img[0:2, 0:2] = 255  # a spark: near white, tiny
+    assert look.frame_measures(img)["flash"] == pytest.approx(4 / 10000)
+    img[50:60, 50:60] = 255  # a structure flashing: 1% of the frame
+    assert look.frame_measures(img)["flash"] == pytest.approx(0.01)
+    cut = look.cut_metrics({"a": {"frame_p25": 1.0, "flash": 0.01}, "b": {"frame_p25": 1.0, "flash": 0.0004},
+                            "c": {"frame_p25": 1.0, "flash": 0.0}, "d": {"frame_p25": 1.0, "flash": 0.0}})
+    assert cut["flash_frames"] == 0.25
+
+
+def test_the_background_light_is_the_frames_light_off_the_monsters_and_structures() -> None:
+    w = h = 100
+    img = frame(0, h, w)
+    img[:, :50] = 60  # a lit floor, under the emitter rung: background
+    monsters = np.zeros((h, w), dtype=bool)
+    monsters[:, 70:] = True
+    img[:, 70:] = 60  # monsters as bright as the floor, and as wide (30 px, with the 2 px dilation's 28 px of floor)
+    m = look.mask_rules(img, monsters, None, None)
+    assert m["background_light"] == pytest.approx(50 / 80)
+    img[:, :50] = 255  # the same pixels at the emitter rung are an emitter (an effect, the hero), not background
+    assert look.mask_rules(img, monsters, None, None)["background_light"] == 0
+
+
 def test_look_metrics_writes_the_report_and_fails_on_a_broken_rule(tmp_path: Path) -> None:
     stills, out = tmp_path / "stills", tmp_path / "out"
     stills.mkdir()
@@ -434,7 +458,8 @@ def test_look_metrics_writes_the_report_and_fails_on_a_broken_rule(tmp_path: Pat
     assert numbers["stills"]["swarm"]["broken"] == {}
     assert list(numbers["stills"]["blob"]["broken"]) == ["swarm_separation_min"]
     assert "readability" in numbers["stills"]["still-001.000"]["metrics"]  # its mask was read
-    assert numbers["cut"] == {"metrics": {"key60_median": 1.0, "shot_floor_range": 0.0}, "broken": {}}  # one hue
+    assert numbers["cut"] == {"metrics": {"key60_median": 1.0, "shot_floor_range": 0.0, "flash_frames": 0.0},
+                              "broken": {}}  # one hue, no flash
     assert "| blob |" in (out / "metrics.md").read_text()
     assert (out / "blob-swarm.jpg").exists() and b"ps-render" in (out / "blob-swarm.jpg").read_bytes()[:400]
     assert run(stills, impact=["blob"]) == 0  # an impact frame: only the clipped share is judged

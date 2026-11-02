@@ -97,6 +97,7 @@ namespace PS.Look
 
         static LookPostPass _scene, _retro;
         static float _sceneExposure;
+        static readonly int ToeId = Shader.PropertyToID("_LookToe");
 
         /// <summary>The option the look's passes draw, or null when none is in use.</summary>
         public static PostOption Active => _scene?.Option;
@@ -112,6 +113,7 @@ namespace PS.Look
             {
                 _sceneExposure = value;
                 if (_scene != null) _scene.SceneExposure = value;
+                PublishToe();
             }
         }
 
@@ -130,6 +132,19 @@ namespace PS.Look
             }
             _scene.Option = _retro.Option = option;
             _scene.SceneExposure = _sceneExposure;
+            PublishToe();
+        }
+
+        /// <summary>
+        /// Hands shaders the scene pass's void toe and exposure as <c>_LookToe</c> (knee, power, the exposure's factor;
+        /// zero with no option), so a dim emitter can be set to land at a given light through it: the grid floor's lines
+        /// (GridFloor.shader), which a toe this steep would otherwise put anywhere from L* 1 to 30 by palette.
+        /// </summary>
+        static void PublishToe()
+        {
+            var o = _scene?.Option;
+            Shader.SetGlobalVector(ToeId, o == null ? Vector4.zero
+                : new Vector4(o.VoidKnee, o.VoidPower, Mathf.Pow(2f, o.Exposure + _sceneExposure), 0));
         }
 
         /// <summary>Stops the look's passes.</summary>
@@ -140,6 +155,7 @@ namespace PS.Look
             _scene.Dispose();
             _retro.Dispose();
             _scene = _retro = null;
+            PublishToe();
         }
 
         static void Enqueue(ScriptableRenderContext context, Camera camera)

@@ -1,10 +1,12 @@
 {
- "source": "docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min, monster_form_min and swarm_separation_min calibrated on v2 by ps-wnj.21 (demo3d/evidence/look/metrics)",
+ "source": "docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min, monster_form_min and swarm_separation_min calibrated on v2 by ps-wnj.21 (demo3d/evidence/look/metrics); the restraint rules (floor_p99, background_light, flash_frames) by ps-wnj.24 (game/evidence/look/restraint, demo3d/evidence/look/restraint)",
  "presets": ["edge", "solid", "hologram", "prism"],
  "pairings": { "ion": "edge", "arcade": "solid", "phosphor": "hologram", "spectrum": "prism" },
  "rules": {
   "floor_p50_max": { "value": 8, "why": "the floor is void" },
   "floor_p90_max": { "value": 30, "why": "rings and breaths included, the floor stays under ground light" },
+  "floor_p99_max": { "value": 20, "prism": 26, "why": "the grid's lines are a quiet background (ps-wnj.24); prism's gems halo onto the floor" },
+  "background_light_max": { "value": 0.15, "why": "the world never drowns the swarm: the background carries a small share of the frame's light (ps-wnj.24)" },
   "frame_p25_max": { "value": 6, "unless": "floor_p50", "why": "the video fallback for the floor: the darkest quarter is void" },
   "black_share_min": { "value": 0.30, "solid": 0.25, "why": "a swarm is lit things with dark between them" },
   "bright_share_max": { "edge": 0.22, "solid": 0.32, "hologram": 0.22, "prism": 0.28, "why": "light comes from emitters, not a lit world" },
@@ -19,6 +21,7 @@
   "key60_median_min": { "value": 0.62, "on": "cut", "why": "a cut keys as GW3 does" },
   "palette_conformance_min": { "value": 0.85, "prism": 0.75, "why": "everything drawn takes its colour from a role" },
   "shot_floor_range_max": { "value": 6, "on": "cut", "why": "one world across the shots, not stitched parts" },
+  "flash_frames_max": { "value": 0.5, "on": "cut", "why": "flashes are for special moments: at most half the steady stills hold a near-white region over 0.3% of the frame (ps-wnj.24)" },
   "hero_margin_min": { "value": 5, "why": "the hero is the brightest thing on screen" },
   "monster_form_min": { "value": 30, "solid": 20, "why": "a monster shows form, not flat paint" },
   "swarm_separation_min": { "value": 13, "why": "a dense clump of one type reads as individuals, not a blob" },
