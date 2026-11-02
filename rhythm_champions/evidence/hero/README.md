@@ -1,5 +1,7 @@
 # The hero (ps-6y2.20)
 
+> History: this is ps-6y2.20's evidence for the hero's edge cut. The edge cuts, their recipes and their review sheets were deleted on 2026-11-02 when the look was reopened (docs/champions/design.md, The Look); the links below to them no longer resolve. ps-6y2.29 draws the hero in the trailer's edge look.
+
 The knight's white edge cut, posed on the CPU from its rig, under the game's camera, grid and post (design.md, The Hero;
 Attacks > Rules; Dashes). Every still here comes from one headless fixed-time run of the scripted `hero` scene
 ([HeroScene.cs](../../Assets/Champions/Client/Scenes/HeroScene.cs)); the strips are crops round the hero (found by its
