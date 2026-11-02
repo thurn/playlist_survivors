@@ -29,6 +29,7 @@ namespace Champions.Client.Scenes
         static readonly (string Name, Func<GameContent, Palette, IStillScene> Make)[] Known =
         {
             (PaletteScene.Name, (content, palette) => new PaletteScene(content, palette)),
+            (WorldScene.Name, (content, palette) => new WorldScene(palette)),
         };
 
         readonly Stills _stills;

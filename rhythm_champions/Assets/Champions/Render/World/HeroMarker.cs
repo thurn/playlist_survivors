@@ -7,7 +7,8 @@ namespace Champions.Render
     /// <summary>
     /// The scripted scenes' stand-in at the hero's feet until the hero's edge cut draws there: a thin flat ring of
     /// <see cref="RadiusM"/> in HDR white (Glow.shader), so the stills show where the beat wave leaves from, and its bloom
-    /// and edges show a tier's bloom and MSAA. White is the hero's (design.md, The Look &gt; Principles).
+    /// and edges show a tier's bloom and MSAA; the stills' type-ID pass sees it as one of the hero's effects. White is
+    /// the hero's (design.md, The Look &gt; Principles).
     /// </summary>
     public sealed class HeroMarker : IDisposable
     {
@@ -24,6 +25,8 @@ namespace Champions.Render
             var shared = Resources.Load<Material>(MaterialPath)
                          ?? throw new InvalidOperationException($"HeroMarker: no material at Resources/{MaterialPath}");
             _material = new Material(shared) { name = "Hero marker" };
+            // An effect of the hero's to the type-ID pass, not the hero: a flat ring has no body for the hero's rules.
+            _material.SetFloat(IdPass.Id, IdPass.Effect);
             _mesh = Ring();
             _go = new GameObject("Hero marker") { layer = layer };
             _go.AddComponent<MeshFilter>().sharedMesh = _mesh;

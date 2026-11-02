@@ -7,8 +7,8 @@
 //   leading edge and a wake gone within half a beat, a downbeat's at full strength. None beatless.
 // - Event rings (ImpulseField.cs): on-beat dashes, slams, boss entrances, mass kills, breaks; only a special moment's
 //   ring is drawn at full strength (and lights _RC_Special), and only rings past a knee bend the grid.
-// - The zone key (ZoneSweep.cs): the floor's colour family, crossfading from _RC_ZoneFrom to _RC_ZoneTo behind a front
-//   swept out from the hero over a beat.
+// - The zone key (ZoneSweep.cs): the palette's zone (its grid line at rest, the line under the wave, the structures'
+//   fill and edge), crossfading from _RC_ZoneFrom to _RC_ZoneTo behind a front swept out from the hero over a beat.
 #ifndef CHAMPIONS_WORLD_INCLUDED
 #define CHAMPIONS_WORLD_INCLUDED
 
@@ -26,13 +26,16 @@ float _RC_ImpulseCount;
 // The special-moment envelope (design.md, Restraint): 1 on a special moment's first frame, gone within a quarter second.
 float _RC_Special;
 
-float4 _RC_ZoneFrom;   // the key before the latest change (linear rgb)
-float4 _RC_ZoneTo;     // the key now (linear rgb)
-float4 _RC_ZoneSweep;  // the change's centre x, z; its front's radius (m; past the frame once done); the feather (m)
+// A zone's colours (linear rgb), by role: the grid's line at rest, its line under the wave, the structures' fill and edge.
+#define ZONE_LINE 0
+#define ZONE_PULSE 1
+#define ZONE_FILL 2
+#define ZONE_EDGE 3
+float4 _RC_ZoneFrom[4];  // the zone before the latest change
+float4 _RC_ZoneTo[4];    // the zone now
+float4 _RC_ZoneSweep;    // the change's centre x, z; its front's radius (m; past the frame once done); the feather (m)
 
 float4 _RC_Hero;       // the hero's feet x, z; song time; 0
-// The look metrics' ID render (champions look): 1 while it draws, when the world draws black.
-float _RC_IdPass;
 
 // A flash's gain: `calm` outside special moments, full in one. Every flash in the look goes through it.
 float LookFlash(float calm) { return lerp(calm, 1, saturate(_RC_Special)); }
@@ -122,7 +125,7 @@ float ZoneNew(float2 xz)
     return saturate((_RC_ZoneSweep.z - d) / max(1e-3, _RC_ZoneSweep.w) + 0.5);
 }
 
-// The zone key at ground point xz (linear rgb): a structure's fill takes it, and the grid's lines its hue.
-float3 ZoneKey(float2 xz) { return lerp(_RC_ZoneFrom.rgb, _RC_ZoneTo.rgb, ZoneNew(xz)); }
+// The zone's colour for `role` (ZONE_LINE, ZONE_PULSE, ZONE_FILL, ZONE_EDGE) at ground point xz (linear rgb).
+float3 ZoneColour(float2 xz, int role) { return lerp(_RC_ZoneFrom[role].rgb, _RC_ZoneTo[role].rgb, ZoneNew(xz)); }
 
 #endif

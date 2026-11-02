@@ -1,10 +1,11 @@
 // A flat HDR colour (HeroMarker.cs): the scripted scenes' stand-in at the hero's feet, white and bright enough to bloom,
-// until the hero's own edge cut draws there. Under the look metrics' ID render (_RC_IdPass) it draws black.
+// until the hero's own edge cut draws there. In the stills' type-ID pass it draws its _ChampionsId (an effect's code).
 Shader "Champions/Glow"
 {
     Properties
     {
         [HDR] _Color ("Colour (linear, HDR)", Color) = (3, 3, 3, 1)
+        _ChampionsId ("Type-ID pass code", Float) = 252
     }
     SubShader
     {
@@ -20,14 +21,19 @@ Shader "Champions/Glow"
             #pragma vertex vert
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Assets/Champions/Render/Shaders/IdPass.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
+                float _ChampionsId;
             CBUFFER_END
-            float _RC_IdPass;
 
             float4 vert(float4 positionOS : POSITION) : SV_POSITION { return TransformObjectToHClip(positionOS.xyz); }
 
-            half4 frag() : SV_Target { return _RC_IdPass > 0.5 ? half4(0, 0, 0, 1) : half4(_Color.rgb, 1); }
+            half4 frag() : SV_Target
+            {
+                CHAMPIONS_ID_PASS(_ChampionsId)
+                return half4(_Color.rgb, 1);
+            }
             ENDHLSL
         }
     }

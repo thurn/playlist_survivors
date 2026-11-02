@@ -5,12 +5,13 @@ using UnityEngine;
 namespace Champions.Render
 {
     /// <summary>
-    /// The zone key on the floor (design.md, The World &gt; Zones; Decision 23): the colour family the grid's lines (and
-    /// the structures' fills) take. A change crossfades from the old key to the new behind a front swept out from the
-    /// hero's feet over its fade (a beat), reaching <see cref="ReachM"/> (past the frame's corners) as the fade ends, and
-    /// the beat wave carries it: the change sends a ring of its own along the front (<see cref="BeatWave.Add"/>). The
-    /// keys are the palette's zones (sRGB; <see cref="SetKeys"/>); until the palette lands, <see cref="ProvisionalKeys"/>.
-    /// A function of the song time, the changes added and the hero's path, so fixed-time frames reproduce.
+    /// The zone key on the floor (design.md, The World &gt; Zones; Decision 23): the palette's zone (docs/champions/style.md,
+    /// Zones) whose colours the grid's lines (at rest and under the wave) and the structures' fills and edges take. A
+    /// change crossfades from the old zone to the new behind a front swept out from the hero's feet over its fade (a
+    /// beat), reaching <see cref="ReachM"/> (past the frame's corners) as the fade ends, and the beat wave carries it: the
+    /// change sends a ring of its own along the front (<see cref="BeatWave.Add"/>). Shaders read the two zones' colours
+    /// by role (World.hlsl's ZoneColour). A function of the song time, the changes added and the hero's path, so
+    /// fixed-time frames reproduce.
     /// </summary>
     public sealed class ZoneSweep
     {
@@ -20,18 +21,6 @@ namespace Champions.Render
         public const float FeatherM = 4f;
         /// <summary>The change's ring along the front, against a downbeat's.</summary>
         public const float RingStrength = 0.8f;
-
-        /// <summary>
-        /// Two cool, a violet and a dim warm (the dragon's), from the archived ion palette's gaps
-        /// (docs/archive/design/ion-palette-gaps.md), until the palette bead's zones replace them.
-        /// </summary>
-        public static readonly Color[] ProvisionalKeys =
-        {
-            new Color32(0x00, 0xb2, 0xc8, 0xff), // teal
-            new Color32(0x2a, 0x5c, 0xff, 0xff), // cobalt
-            new Color32(0x6a, 0x2c, 0xff, 0xff), // violet
-            new Color32(0xff, 0xaa, 0x33, 0xff), // amber, dim on the floor as every key is
-        };
 
         static readonly int FromId = Shader.PropertyToID("_RC_ZoneFrom");
         static readonly int ToId = Shader.PropertyToID("_RC_ZoneTo");
@@ -45,14 +34,18 @@ namespace Champions.Render
         }
 
         readonly List<Pending> _due = new List<Pending>(4);
-        Color[] _keys = (Color[])ProvisionalKeys.Clone();
+        readonly Vector4[] _fromColours = new Vector4[4], _toColours = new Vector4[4];
+        readonly Palette.Zone[] _zones;
         int _from, _to;
         double _start = double.NegativeInfinity;
         float _speed = 1;
         Vector2 _at;
 
-        public ZoneSweep(int key = 0)
+        /// <summary>The sweep over the palette's <paramref name="zones"/>, starting on <paramref name="key"/>.</summary>
+        public ZoneSweep(Palette.Zone[] zones, int key = 0)
         {
+            if (zones == null || zones.Length == 0) throw new ArgumentException("at least one zone");
+            _zones = zones;
             _from = _to = Clamp(key);
         }
 
@@ -67,16 +60,7 @@ namespace Champions.Render
 
         public Vector2 Centre => _at;
 
-        /// <summary>The zones' colours (sRGB), in key order.</summary>
-        public void SetKeys(Color[] srgb)
-        {
-            if (srgb == null || srgb.Length == 0) throw new ArgumentException("at least one zone key");
-            _keys = (Color[])srgb.Clone();
-            _from = Clamp(_from);
-            _to = Clamp(_to);
-        }
-
-        public Color KeyColour(int key) => _keys[Clamp(key)];
+        public Palette.Zone Zone(int key) => _zones[Clamp(key)];
 
         /// <summary>The key moves to <paramref name="key"/> at song time <paramref name="t"/>, swept out over <paramref name="fadeS"/>; its ring goes into <paramref name="wave"/>.</summary>
         public void Change(double t, int key, double fadeS, BeatWave wave)
@@ -105,10 +89,10 @@ namespace Champions.Render
             }
             float radius = (float)((now - _start) * _speed);
             Radius = _from == _to || radius > ReachM + FeatherM ? float.PositiveInfinity : radius;
-            var from = _keys[_from].linear;
-            var to = _keys[_to].linear;
-            Shader.SetGlobalVector(FromId, new Vector4(from.r, from.g, from.b, 1));
-            Shader.SetGlobalVector(ToId, new Vector4(to.r, to.g, to.b, 1));
+            Fill(_fromColours, _zones[_from]);
+            Fill(_toColours, _zones[_to]);
+            Shader.SetGlobalVectorArray(FromId, _fromColours);
+            Shader.SetGlobalVectorArray(ToId, _toColours);
             Shader.SetGlobalVector(SweepId, new Vector4(_at.x, _at.y, float.IsPositiveInfinity(Radius) ? 1e6f : Radius, FeatherM));
         }
 
@@ -119,6 +103,21 @@ namespace Champions.Render
             return Mathf.Clamp01((Radius - Vector2.Distance(xz, _at)) / FeatherM + 0.5f);
         }
 
-        int Clamp(int key) => Mathf.Clamp(key, 0, (_keys?.Length ?? ProvisionalKeys.Length) - 1);
+        /// <summary>A zone's colours by World.hlsl's roles (ZONE_LINE, ZONE_PULSE, ZONE_FILL, ZONE_EDGE), linear.</summary>
+        static void Fill(Vector4[] into, Palette.Zone z)
+        {
+            into[0] = Linear(z.Line);
+            into[1] = Linear(z.Pulse);
+            into[2] = Linear(z.Fill);
+            into[3] = Linear(z.Edge);
+        }
+
+        static Vector4 Linear(Color srgb)
+        {
+            var c = srgb.linear;
+            return new Vector4(c.r, c.g, c.b, 1);
+        }
+
+        int Clamp(int key) => Mathf.Clamp(key, 0, _zones.Length - 1);
     }
 }

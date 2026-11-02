@@ -1,12 +1,13 @@
 // The endless grid (design.md, The World > The infinite arena, The Look > The beat wave, Zones; GridFloor.cs): the void
-// floor with a quiet emissive grid in the zone key's hue, its lines at the bottom of ground light (_LineL, L* after the
-// post), every fourth line the major one, the minor lines a share of it. As a beat ring passes (World.hlsl) the lines
-// brighten toward _WaveL (a downbeat's front; below the top of ground light, L* 35, so the floor never rises out of it),
-// the minor lines up to the major's light, and bend slightly outward (_WavePushM); the wake is gone within half a beat. Event rings past the knee (special
-// moments) bend the whole grid harder, lift the floor under their front and light the lines in their colour. The zone
-// key's hue crossfades behind the change's front. Lines thinner than a pixel dim rather than widen, fade with distance
-// from the camera and fade out where a cell is under a few pixels, so the far floor is quiet and has no moire. The
-// floor itself is void: no fill, no fog. Under the look metrics' ID render (_RC_IdPass) it draws black.
+// floor with a quiet emissive grid in the zone's line colour (the palette's, L* 10-20 after the post: the bottom of
+// ground light), every fourth line the major one, the minor lines a share of it. As a beat ring passes (World.hlsl) the
+// lines brighten toward the zone's pulse colour (a downbeat's front; at most L* 35, the top of ground light, so the
+// floor never rises out of it), the minor lines up to the major's light, and bend slightly outward (_WavePushM); the
+// wake is gone within half a beat. Event rings past the knee (special moments) bend the whole grid harder, lift the
+// floor under their front and light the lines in their colour. The zone crossfades behind the change's front. Lines
+// thinner than a pixel dim rather than widen, fade with distance from the camera and fade out where a cell is under a
+// few pixels, so the far floor is quiet and has no moire. The floor itself is void: no fill, no fog. In the stills'
+// type-ID pass it draws 0, nothing (IdPass.hlsl).
 Shader "Champions/GridFloor"
 {
     Properties
@@ -16,18 +17,16 @@ Shader "Champions/GridFloor"
         _MinorHalfM ("Minor line half-width (m)", Float) = 0.01
         _MajorHalfM ("Major line half-width (m)", Float) = 0.02
         _MinorShare ("Minor lines' share of the major's light", Float) = 0.35
-        _LineL ("Major lines' L* after the post", Float) = 12
-        _WaveL ("Major lines' L* under a downbeat's front", Float) = 32
         _WavePushM ("Beat wave: lines shoved per unit strength (m)", Float) = 0.35
         _RingKnee ("An event ring's strength the floor ignores", Float) = 0.25
-        _RingL ("Major lines' L* under a full event ring", Float) = 42
+        _RingBoost ("Major lines under a full event ring, against the pulse colour", Float) = 1.6
         _RingLight ("Event ring light on lines", Float) = 0.15
         _RingPushM ("Event rings: lines shoved per unit strength (m)", Float) = 0.7
         _LiftM ("Event rings: lift under a front per unit strength (m)", Float) = 0.12
         _FadeNear ("Lines fade from (m from the camera)", Float) = 30
         _FadeFar ("Lines faded by (m)", Float) = 90
         _FadeTo ("Faded lines' share", Float) = 0.35
-        _ToneGain ("The tonemap's gain on dim light", Float) = 1
+        _ToneGain ("The tonemap's gain on dim light (the palette's colours are after the post)", Float) = 1
     }
     SubShader
     {
@@ -37,8 +36,9 @@ Shader "Champions/GridFloor"
         #pragma target 4.5
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Assets/Champions/Render/World/Shaders/World.hlsl"
+        #include "Assets/Champions/Render/Shaders/IdPass.hlsl"
         CBUFFER_START(UnityPerMaterial)
-            float _Cell, _Major, _MinorHalfM, _MajorHalfM, _MinorShare, _LineL, _WaveL, _WavePushM, _RingKnee, _RingL, _RingLight,
+            float _Cell, _Major, _MinorHalfM, _MajorHalfM, _MinorShare, _WavePushM, _RingKnee, _RingBoost, _RingLight,
                 _RingPushM, _LiftM, _FadeNear, _FadeFar, _FadeTo, _ToneGain;
         CBUFFER_END
 
@@ -91,18 +91,9 @@ Shader "Champions/GridFloor"
                 return max(c.x, c.y);
             }
 
-            // A line's colour before the post that lands at L* lStar after it: the hue at its brightest channel 1, scaled
-            // so its luminance is the L*'s, through the tonemap's gain on dim light (neutral, about linear there).
-            float3 Levelled(float3 hue, float lStar)
-            {
-                float3 h = hue / max(1e-4, max(hue.r, max(hue.g, hue.b)));
-                float y = pow((lStar + 16) / 116, 3);
-                return h * (y / max(1e-4, dot(h, float3(0.2126, 0.7152, 0.0722)) * _ToneGain));
-            }
-
             half4 frag(Varyings i) : SV_Target
             {
-                if (_RC_IdPass > 0.5) return half4(0, 0, 0, 1);
+                CHAMPIONS_ID_PASS(0) // the floor: nothing drawn
                 float2 xz = i.positionWS.xz;
                 float wave;
                 float2 wavePush;
@@ -118,8 +109,9 @@ Shader "Champions/GridFloor"
                 float far = smoothstep(_FadeNear, _FadeFar, distance(i.positionWS, _WorldSpaceCameraPos));
                 // Under the wave the minor lines come up to the major's light, so its front reads as a ring of light.
                 float lines = max(lerp(_MinorShare, 1, wave) * minor, major) * lerp(1, _FadeTo, far);
-                float lStar = lerp(lerp(_LineL, _WaveL, wave), _RingL, saturate(ring));
-                float3 colour = Levelled(ZoneKey(xz), lStar) + _RingLight * light;
+                float3 pulse = ZoneColour(xz, ZONE_PULSE);
+                float3 colour = lerp(lerp(ZoneColour(xz, ZONE_LINE), pulse, wave), pulse * _RingBoost, saturate(ring)) / _ToneGain
+                    + _RingLight * light;
                 return half4(lines * colour, 1);
             }
             ENDHLSL

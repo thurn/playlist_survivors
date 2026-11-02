@@ -25,7 +25,6 @@ namespace Champions.Client
     ///   feeding the sim (<see cref="GameLoop"/>); a source that can't play quits with 2;
     /// - `--edge-crowd N`: the edge crowd's test scene (<see cref="EdgeCrowdBench"/>), with no world under it; without a
     ///   baked cut it quits with 2;
-    /// - `--scene world`: the world's scripted scene for stills (<see cref="WorldScene"/>); an unknown scene quits with 2.
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -55,8 +54,18 @@ namespace Champions.Client
             if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
             // The tier first: the stills' target takes the pipeline's MSAA.
             QualityTiers.Apply(_options.Tier ?? QualityTiers.Default());
-            // The edge crowd's bench places the camera and times the crowd alone: no world under it.
-            if (_options.EdgeCrowd <= 0 && _options.StillsScenes.Length == 0) _world = new WorldPresenter(_camera);
+            // The edge crowd's bench and the still scenes place the camera themselves: no world of Boot's under them.
+            if (_options.EdgeCrowd <= 0 && _options.StillsScenes.Length == 0)
+            {
+                try { _world = new WorldPresenter(_camera, Palette.Load(ContentDir())); }
+                catch (ContentException e)
+                {
+                    Debug.LogError("Boot: " + e.Message);
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+            }
             if (_options.StillsDir != null) _stills = new Stills(_camera, _options.StillsDir, _options.StillsAt);
             if (_options.StillsScenes.Length > 0)
             {
@@ -82,20 +91,7 @@ namespace Champions.Client
                     return;
                 }
             }
-            if (_options.Scene != null)
-            {
-                if (_options.Scene != WorldScene.Name || _world == null)
-                {
-                    Debug.LogError(_world == null ? "Boot: --scene and --edge-crowd: give one"
-                        : $"Boot: --scene {_options.Scene}: no such scene (scenes: {WorldScene.Name})");
-                    enabled = false;
-                    Application.Quit(2);
-                    return;
-                }
-                WorldScene.Begin(gameObject, _world);
-                _driven = true;
-            }
-            else if (_options.File != null || _options.App != null)
+            if (_options.File != null || _options.App != null)
             {
                 var source = ResolveMusic(_options, out string error);
                 if (source == null)

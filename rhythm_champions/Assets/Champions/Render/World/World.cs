@@ -43,10 +43,10 @@ namespace Champions.Render
         public readonly GridFloor Floor;
         public readonly WorldPost Post;
 
-        /// <summary>The world on <paramref name="camera"/>, starting on zone key <paramref name="zone"/>.</summary>
-        public World(Camera camera, int zone = 0)
+        /// <summary>The world on <paramref name="camera"/> in <paramref name="palette"/>'s zones, starting on zone <paramref name="zone"/>.</summary>
+        public World(Camera camera, Palette palette, int zone = 0)
         {
-            Zones = new ZoneSweep(zone);
+            Zones = new ZoneSweep(palette.Zones, zone);
             Camera = new WorldCamera(camera);
             Floor = new GridFloor(camera != null ? camera.gameObject.layer : 0);
             Post = new WorldPost();

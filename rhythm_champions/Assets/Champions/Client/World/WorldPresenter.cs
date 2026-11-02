@@ -24,9 +24,9 @@ namespace Champions.Client
         int _kills;
         Vector2 _killSum;
 
-        public WorldPresenter(Camera camera, int zone = 0)
+        public WorldPresenter(Camera camera, Palette palette, int zone = 0)
         {
-            _world = new World(camera, zone);
+            _world = new World(camera, palette, zone);
         }
 
         public World World => _world;

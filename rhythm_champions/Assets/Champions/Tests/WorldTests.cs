@@ -2,6 +2,7 @@ using System;
 using Champions.Client;
 using Champions.EditorTools;
 using Champions.Render;
+using Champions.Sim;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -15,6 +16,15 @@ namespace Champions.Tests
     public sealed class WorldTests
     {
         const double Period = 0.5; // 120 BPM
+
+        static Palette Palette => Palette.Load(GameContent.Find(Application.dataPath));
+
+        static float LStar(Color srgb)
+        {
+            var c = srgb.linear;
+            float y = 0.2126f * c.r + 0.7152f * c.g + 0.0722f * c.b;
+            return y > 216f / 24389f ? 116f * Mathf.Pow(y, 1f / 3f) - 16f : y * 24389f / 27f;
+        }
 
         [Test]
         public void ABeatRingTravelsElevenMetresABeatFromTheHerosFeet()
@@ -74,9 +84,14 @@ namespace Champions.Tests
             var material = Resources.Load<Material>(GridFloor.MaterialPath);
             Assert.That(material, Is.Not.Null);
             Assert.AreEqual("Champions/GridFloor", material.shader.name);
-            // The value ladder: ground light is L* 10-35; the grid's lines sit at its bottom.
-            Assert.That(material.GetFloat("_LineL"), Is.InRange(8f, 18f), "quiet lines at the bottom of ground light");
-            Assert.That(material.GetFloat("_WaveL"), Is.LessThanOrEqualTo(35f), "a downbeat's front stays in ground light");
+            // The value ladder: ground light is L* 10-35; the grid's lines sit at its bottom, at the zone's line colour,
+            // and a downbeat's front takes them to its pulse colour, inside ground light.
+            Assert.AreEqual(1f, material.GetFloat("_ToneGain"), 0.1f, "the palette's colours land as the palette says");
+            foreach (var zone in Palette.Zones)
+            {
+                Assert.That(LStar(zone.Line), Is.InRange(8f, 20f), zone.Name + "'s quiet lines");
+                Assert.That(LStar(zone.Pulse), Is.LessThanOrEqualTo(35f), zone.Name + "'s lines under a downbeat's front");
+            }
             // Two rings overlapping never sum past a downbeat's front: the shader saturates the wave.
             var wave = new BeatWave();
             wave.Beat(0, Period, true);
@@ -89,7 +104,7 @@ namespace Champions.Tests
         public void BeatlessThereAreNoBeatRings()
         {
             var camera = new GameObject("camera").AddComponent<Camera>();
-            var world = new World(camera);
+            var world = new World(camera, Palette);
             try
             {
                 world.Beat(1, Period, downbeat: true, reliable: false);
@@ -148,7 +163,7 @@ namespace Champions.Tests
         public void AZoneChangeSweepsOutFromTheHeroOverItsBeat()
         {
             var wave = new BeatWave();
-            var zones = new ZoneSweep();
+            var zones = new ZoneSweep(Palette.Zones);
             var hero = new Vector2(5, 5);
             zones.Change(12, 1, Period, wave);
             zones.Publish(11.9, hero);
@@ -337,11 +352,19 @@ namespace Champions.Tests
         }
 
         [Test]
-        public void LaunchOptionsReadTheTierAndTheScene()
+        public void TheSimsZonesAreThePalettes()
         {
-            var o = LaunchOptions.Parse(new[] { "player", "--tier", "medium", "--scene", "world" }, batchMode: true);
+            var zones = GameContent.Load(GameContent.Find(Application.dataPath)).Zones;
+            Assert.AreEqual(Palette.Zones.Length, zones.Keys, "a zone key per palette zone");
+            Assert.AreEqual(Palette.WarmZone, zones.Warm, "the dragon's key is the warm zone");
+            Assert.AreEqual(0, zones.Cycle[0], "the run starts on the key's zone");
+        }
+
+        [Test]
+        public void LaunchOptionsReadTheTier()
+        {
+            var o = LaunchOptions.Parse(new[] { "player", "--tier", "medium" }, batchMode: true);
             Assert.AreEqual(Tier.Medium, o.Tier);
-            Assert.AreEqual("world", o.Scene);
             Assert.That(o.Unrecognized, Is.Empty);
             Assert.IsNull(LaunchOptions.Parse(new[] { "player" }, false).Tier);
             Assert.Throws<ArgumentException>(() => LaunchOptions.Parse(new[] { "player", "--tier", "ultra" }, false));

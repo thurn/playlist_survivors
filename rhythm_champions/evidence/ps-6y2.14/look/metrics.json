@@ -1,0 +1,284 @@
+{
+ "palette": "champions",
+ "problems": [],
+ "stills": {
+  "world-12.150": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9632581018518519,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.8005743424302518,
+    "floor_p50": 0.0,
+    "floor_p90": 1.334902266559645,
+    "floor_p99": 19.340500982973012
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.801 > 0.15"
+   }
+  },
+  "world-12.300": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9718171296296296,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7816174512435639,
+    "floor_p50": 0.0,
+    "floor_p90": 1.3125844378343032,
+    "floor_p99": 18.426093002846862
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.782 > 0.15"
+   }
+  },
+  "world-12.700": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9716300154320988,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7755506280767128,
+    "floor_p50": 0.0,
+    "floor_p90": 1.3151068459949045,
+    "floor_p99": 18.38003390372438
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.776 > 0.15"
+   }
+  },
+  "world-31.500": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9783757716049383,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7503643305807461,
+    "floor_p50": 0.0,
+    "floor_p90": 1.119017028987951,
+    "floor_p99": 16.285604095750287
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.75 > 0.15"
+   }
+  },
+  "world-33.000": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9783757716049383,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7503643305807461,
+    "floor_p50": 0.0,
+    "floor_p90": 1.119017028987951,
+    "floor_p99": 16.285604095750287
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.75 > 0.15"
+   }
+  },
+  "world-34.050": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9771797839506173,
+    "bright_share": 0.0005246913580246914,
+    "clipped": 0.00023341049382716048,
+    "clipped_blob": 0.00023341049382716048,
+    "white": 0.00037037037037037035,
+    "flash": 0.0003452932098765432,
+    "halo": 3.3209754491182544,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7135488083499105,
+    "floor_p50": 0.0,
+    "floor_p90": 1.7648083530625875,
+    "floor_p99": 17.818720767829987
+   },
+   "roles": {},
+   "impact": true,
+   "broken": {
+    "halo_impact_min": "halo 3.32 < 15"
+   }
+  },
+  "world-9.030": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9745408950617284,
+    "bright_share": 0.00041859567901234566,
+    "clipped": 0.00017746913580246913,
+    "clipped_blob": 0.00017746913580246913,
+    "white": 0.0002623456790123457,
+    "flash": 0.00023726851851851852,
+    "halo": 2.4675732005908664,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7259549403473521,
+    "floor_p50": 0.0,
+    "floor_p90": 0.9844871314263202,
+    "floor_p99": 15.199854675234253
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.726 > 0.15"
+   }
+  },
+  "world-9.120": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.973701774691358,
+    "bright_share": 0.0004089506172839506,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.447777780026126,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7521859147707377,
+    "floor_p50": 0.0,
+    "floor_p90": 1.0395063369689126,
+    "floor_p99": 16.708529747016144
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.752 > 0.15"
+   }
+  },
+  "world-9.250": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9727758487654321,
+    "bright_share": 0.0004070216049382716,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0002565586419753086,
+    "flash": 0.0002353395061728395,
+    "halo": 2.457675490308496,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7570389503220564,
+    "floor_p50": 0.0,
+    "floor_p90": 1.0966992002626057,
+    "floor_p99": 16.708529747016144
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.757 > 0.15"
+   }
+  },
+  "world-9.500": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9707040895061728,
+    "bright_share": 0.00041087962962962964,
+    "clipped": 0.00017939814814814815,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00025848765432098764,
+    "flash": 0.0002353395061728395,
+    "halo": 2.4675732005908664,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.7534144211191806,
+    "floor_p50": 0.0,
+    "floor_p90": 1.0707603022944419,
+    "floor_p99": 16.115830872802974
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.753 > 0.15"
+   }
+  }
+ },
+ "cut": {
+  "metrics": {
+   "key60_median": 1.0,
+   "shot_floor_range": 0.0,
+   "flash_frames": 0.0
+  },
+  "broken": {}
+ }
+}
