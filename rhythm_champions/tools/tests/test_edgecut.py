@@ -89,15 +89,20 @@ def test_feature_lines_follow_the_creases_within_the_count(src: Source) -> None:
     assert set(fewer.segment_part) == {"torso"} and fewer.segment_count <= 3
 
 
-def test_a_circle_and_strokes_are_rigid_on_their_bone(src: Source) -> None:
+def test_a_circle_and_strokes_are_rigid_on_their_bones(src: Source) -> None:
     c = Cut(src)
     entry = src.dominant_entry(src.renderers_named("Shield"))
     c.circle([0, 1, 0], [0, 0, 1], 0.3, entry, "shield", sides=12)
     c.stroke([[0, 0, 0], [0, 1, 0], [0, 2, 0]], 0, "sword")
+    c.stroke([[0, 0, 0], [0, 1, 0], [-0.8, 1, 0.2]], [0, 0, entry], "arm")
     assert entry == src.entry("ShieldBone")
-    assert c.segment_count == 14 and c.segments[11] == (11, 0), "the ring closes"
+    assert c.segment_count == 16 and c.segments[11] == (11, 0), "the ring closes"
     assert np.allclose([np.linalg.norm(p - [0, 1, 0]) for p in c.line_positions[:12]], 0.3)
     assert all(b[0] == entry and w[0] == 1 for b, w in zip(c.line_bones[:12], c.line_weights[:12], strict=True))
+    assert [b[0] for b in c.line_bones[15:]] == [0, 0, entry], "a chain's points each keep their own bone"
+    assert c.segments[14:] == [(15, 16), (16, 17)]
+    with pytest.raises(ValueError, match="2 entries"):
+        c.stroke([[0, 0, 0], [0, 1, 0], [0, 2, 0]], [0, 1], "arm")
 
 
 def test_pieces_cover_every_triangle_and_segment_within_their_part(src: Source) -> None:

@@ -17,10 +17,10 @@ namespace Champions.Client.Bench
     /// <summary>
     /// The edge crowd's test scene (`--edge-crowd N`, plan.md Risks: the edge renderer measured on its own before
     /// anything is built on it): N edge cuts of one type (`--edge-type ID`, default skeleton) walking toward the
-    /// camera in a field at the game camera's angle, each at its own phase, heading and pace, wrapping round the
-    /// field; 20 a second break into shards on a blow from the field's centre. Each kill hides its slot among the
-    /// spares and brings back the one that has waited longest (about 2.9 s), so exactly N stay alive. Song time is
-    /// the frame time (`--fixed-time` for a reproducible run).
+    /// camera in a field at the game camera's angle (a flyer at its hover), each at its own phase, heading and pace,
+    /// wrapping round the field; 20 a second break into shards on a blow from the field's centre. Each kill hides its
+    /// slot among the spares and brings back the one that has waited longest (about 2.9 s), so exactly N stay alive.
+    /// Song time is the frame time (`--fixed-time` for a reproducible run).
     ///
     /// In batch mode (`champions play --headless`) nothing draws the camera on its own, so the bench draws it by
     /// hand into a 1080p target every frame and times it: from before the crowd's passes to the GPU's completion of
@@ -46,7 +46,7 @@ namespace Champions.Client.Bench
         readonly EdgeCrowd _crowd;
         readonly EdgeShatter _shatter;
         readonly int _type, _walk, _slots, _alive;
-        readonly float _walkLength, _speed, _width, _depth;
+        readonly float _walkLength, _speed, _hover, _width, _depth;
         readonly Vector3[] _home;
         readonly float[] _phase, _yaw, _pace;
         readonly bool[] _hidden;
@@ -75,6 +75,7 @@ namespace Champions.Client.Bench
             _walk = t.Clip("walk") >= 0 ? t.Clip("walk") : 0;
             _walkLength = t.Clips[_walk].Length;
             _speed = t.Clips[_walk].StrideM > 0 ? t.Clips[_walk].StrideM / _walkLength : 1.5f;
+            _hover = t.HoverM;
             _slots = alive + Spares;
             _crowd = new EdgeCrowd(lib, _slots);
             _shatter = new EdgeShatter(lib, _crowd.Palette);
@@ -204,6 +205,7 @@ namespace Champions.Client.Bench
                 float walked = t * _speed * _pace[i] % _depth;
                 var p = _home[i] + new Vector3(Mathf.Sin(_yaw[i]), 0, Mathf.Cos(_yaw[i])) * walked;
                 p.z = Mathf.Repeat(p.z + 0.5f * _depth, _depth) - 0.5f * _depth;
+                p.y = _hover;
                 float time = _phase[i] + t * _pace[i];
                 var m = new MonsterInstance
                 {

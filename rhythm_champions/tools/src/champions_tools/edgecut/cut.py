@@ -5,6 +5,7 @@ entries; primitives are rigid on the bone they replace. `write` exports it as cu
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from itertools import pairwise
 from pathlib import Path
@@ -131,9 +132,13 @@ class Cut:
         for i in range(sides):
             self._segment(ids[i], ids[(i + 1) % sides], importance, part)
 
-    def stroke(self, points, entry: int, part: str, importance: float = 1.0) -> None:
-        """A polyline through `points`, rigid on `entry` (a weapon's strokes)."""
-        ids = [self._line_vertex(p, [entry, 0, 0, 0], [1, 0, 0, 0]) for p in points]
+    def stroke(self, points, entry: int | Sequence[int], part: str, importance: float = 1.0) -> None:
+        """A polyline through `points`, rigid on `entry` (a weapon's strokes), or each point rigid on its own entry
+        (a wing's bones, the line bending at their joints)."""
+        entries = [entry] * len(points) if isinstance(entry, int) else list(entry)
+        if len(entries) != len(points):
+            raise ValueError(f"{self.src.model}: stroke {part} has {len(points)} points and {len(entries)} entries")
+        ids = [self._line_vertex(p, [e, 0, 0, 0], [1, 0, 0, 0]) for p, e in zip(points, entries, strict=True)]
         for a, b in pairwise(ids):
             self._segment(a, b, importance, part)
 

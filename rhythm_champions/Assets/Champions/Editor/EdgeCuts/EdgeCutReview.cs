@@ -15,19 +15,22 @@ namespace Champions.EditorTools.EdgeCuts
 {
     /// <summary>
     /// A cut's review sheet (plan.md, Rendering &gt; Edge cuts): the cut at the game camera's angle, drawn by the edge
-    /// crowd itself with the pipeline's post, beside the vendor original (flat grey, lit), at three sizes on screen
-    /// and in its idle, walk and attack poses. Each size is a sheet (far.jpg, game.jpg, near.jpg) of six cells, twice
-    /// the monster's height square: idle, walk and attack, each the original then the cut. The cells keep a 1080-row
-    /// frame's pixel density at the camera's 30 degree field, so a monster is exactly as large as it would be in the
-    /// game. Beside the sheets it writes review.json: per cell the
+    /// crowd itself with the pipeline's post, beside the vendor original (flat grey, lit), at three camera distances
+    /// and in its idle, walk and attack poses. Each distance is a sheet (far.jpg, game.jpg, near.jpg) of six cells,
+    /// square and twice the larger of the monster's height and its reach from its middle over all clips: idle, walk
+    /// and attack, each the original then the cut. The cells keep a 1080-row frame's pixel density at the camera's 30
+    /// degree field and every model stands at the same distances, so a monster is exactly as large as it would be in
+    /// the game (a 0.3 m bat a sixth of a skeleton). Beside the sheets it writes review.json: per cell the
     /// cut's black share (the share of its silhouette, from a flat-white mask render, darker than L* 10 in the
     /// beauty render, and without the post's bloom), its height on screen, and the cut's counts.
     /// </summary>
     public static class EdgeCutReview
     {
         public const float PitchDeg = 60f, FovDeg = 30f, YawDeg = 160f;
-        /// <summary>The sizes: the monster's standing height in pixels at 1080 rows; the middle is game scale.</summary>
+        /// <summary>The camera distances, named by a <see cref="ReferenceHeightM"/> monster's standing height in pixels
+        /// at 1080 rows there; the middle is game scale.</summary>
         public static readonly (string Name, float HeightPx)[] Sizes = { ("far", 56), ("game", 113), ("near", 226) };
+        public const float ReferenceHeightM = 1.8f;
         /// <summary>The poses: a clip role and where in it (a share of its length, or its impact when it has one).</summary>
         static readonly (string Name, string Role, float At)[] Poses = { ("idle", "idle", 0.3f), ("walk", "walk", 0.25f), ("attack", "attack", -1) };
         public const float BlackLStar = 10f;
@@ -68,8 +71,10 @@ namespace Champions.EditorTools.EdgeCuts
             {
                 for (int si = 0; si < Sizes.Length; si++)
                 {
-                    var (sizeName, px) = Sizes[si];
-                    int cell = Mathf.Max(128, 4 * Mathf.RoundToInt(px / 2));
+                    var (sizeName, referencePx) = Sizes[si];
+                    float perM = referencePx / ReferenceHeightM, px = type.HeightM * perM;
+                    float reach = type.Radius + Mathf.Abs(type.CenterY - 0.5f * type.HeightM);
+                    int cell = Mathf.Max(128, 4 * Mathf.RoundToInt(Mathf.Max(px, reach * perM) / 2));
                     if (rt != null) rt.Release();
                     rt = new RenderTexture(cell, cell, 24, RenderTextureFormat.ARGB32) { name = "EdgeCutReview" };
                     rt.Create();
@@ -78,7 +83,7 @@ namespace Champions.EditorTools.EdgeCuts
                     camera.fieldOfView = 2 * Mathf.Rad2Deg * Mathf.Atan(Mathf.Tan(0.5f * FovDeg * Mathf.Deg2Rad) * cell / 1080f);
                     if (sheet != null) UnityEngine.Object.DestroyImmediate(sheet);
                     sheet = new Texture2D(6 * cell, cell, TextureFormat.RGB24, false);
-                    float depth = type.HeightM / Mathf.Tan(0.5f * FovDeg * Mathf.Deg2Rad) * 540f / px;
+                    float depth = ReferenceHeightM / Mathf.Tan(0.5f * FovDeg * Mathf.Deg2Rad) * 540f / referencePx;
                     var focus = new Vector3(0, 0.5f * type.HeightM, 0);
                     camera.transform.rotation = Quaternion.Euler(PitchDeg, 0, 0);
                     camera.transform.position = focus - camera.transform.forward * depth;
@@ -112,7 +117,7 @@ namespace Champions.EditorTools.EdgeCuts
                         var (share, silhouette, top, bottom) = BlackShare(mask, beauty, cell);
                         var (plainShare, _, _, _) = BlackShare(mask, plain, cell);
                         cells.Add(string.Format(CultureInfo.InvariantCulture,
-                            "{{\"size\": \"{0}\", \"heightPx\": {1}, \"pose\": \"{2}\", \"clipTime\": {3:F3}, \"blackShare\": {4:F4}, " +
+                            "{{\"size\": \"{0}\", \"heightPx\": {1:0.#}, \"pose\": \"{2}\", \"clipTime\": {3:F3}, \"blackShare\": {4:F4}, " +
                             "\"blackShareWithoutPost\": {5:F4}, \"silhouettePx\": {6}, \"screenHeightPx\": {7}}}",
                             sizeName, px, poseName, time, share, plainShare, silhouette, top - bottom + 1));
                     }
