@@ -42,6 +42,7 @@ namespace Champions.Sim
         EliteMove,
         Spore,
         SporeEnd,
+        Zone,
     }
 
     /// <summary>
@@ -508,6 +509,21 @@ namespace Champions.Sim
             e.I1 = (int)why;
             e.D0 = x;
             e.D1 = y;
+            return e;
+        }
+
+        /// <summary>
+        /// The floor's zone key changed (<see cref="Zones"/>), its crossfade starting at <see cref="T"/> (a beat's time, or
+        /// the moment with no reliable beat): I0 the key now, I1 the previous, I2 why (<see cref="ZoneReason"/>); D0 the
+        /// crossfade's length, s (a beat).
+        /// </summary>
+        public static SimEvent Zone(double t, int key, int previous, ZoneReason reason, double fadeS)
+        {
+            var e = Of(SimEventKind.Zone, t);
+            e.I0 = key;
+            e.I1 = previous;
+            e.I2 = (int)reason;
+            e.D0 = fadeS;
             return e;
         }
 

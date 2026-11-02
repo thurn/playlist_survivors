@@ -1,0 +1,11 @@
+{
+  "keys": 4,
+  "cycle": [0, 1, 2],
+  "warm": 3,
+  "section": {
+    "minStrength": 0,
+    "minGapS": 30
+  },
+  "everyS": 180,
+  "beatlessFadeS": 0.5
+}

@@ -44,6 +44,9 @@ namespace Champions.Sim
         /// <summary>Level 1's spawner (Content/level1.json), or null: no level, an empty world (tests, stills).</summary>
         public LevelRules Level;
 
+        /// <summary>The zone keys' rules (Content/zones.json).</summary>
+        public ZoneRules Zones = new ZoneRules();
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;

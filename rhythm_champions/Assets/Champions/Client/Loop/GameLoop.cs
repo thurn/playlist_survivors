@@ -10,7 +10,8 @@ namespace Champions.Client.Loop
 {
     /// <summary>
     /// The frame loop on the main thread (plan.md, Architecture), as far as the music goes: the plugin's
-    /// entries into the sim, the sim stepped to the frontier, its events read. The presenters, the
+    /// entries into the sim, the sim stepped to the frontier, its events read and handed to the world
+    /// (<see cref="WorldPresenter"/>), which it presents at the frame's song time. The other presenters, the
     /// player's inputs and the run join it in the beads that build them (plan.md, The Client).
     ///
     /// Its music is the source Boot resolved from `--file` or `--app` (<see cref="MusicSource"/>),
@@ -46,6 +47,7 @@ namespace Champions.Client.Loop
         int _cursor;
         double _openedAt, _nextStatus;
         Action<int, string> _finished;
+        WorldPresenter _world;
         readonly List<double> _leads = new List<double>();
         int _beatsLate;
         double _delaySum;
@@ -60,10 +62,11 @@ namespace Champions.Client.Loop
         /// when the loop can't go on (the music failed).
         /// </summary>
         public static GameLoop Begin(GameObject host, GameObject listener, MusicSource source, bool fixedTime, bool mute,
-            Action<int, string> finished)
+            WorldPresenter world, Action<int, string> finished)
         {
             var loop = host.AddComponent<GameLoop>();
             loop._finished = finished;
+            loop._world = world;
             loop.Setup(listener, source, fixedTime, mute);
             return loop;
         }
@@ -128,6 +131,9 @@ namespace Champions.Client.Loop
             {
                 ReadEvents();
                 Report();
+                double song = Driver.Times.FrameSong;
+                Driver.Sim.Snapshot().HeroAt(song, out double hx, out double hy);
+                _world?.Present(song, new Vector2((float)hx, (float)hy), Time.deltaTime);
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
         }
@@ -176,7 +182,11 @@ namespace Champions.Client.Loop
         {
             var sim = Driver.Sim;
             foreach (var e in sim.EventsSince(_cursor))
+            {
                 if (e.Kind == SimEventKind.Beat) Beat(e);
+                _world?.Take(e);
+            }
+            _world?.Flush();
             _cursor = sim.EventCount;
             sim.DiscardEventsBefore(_cursor);
         }

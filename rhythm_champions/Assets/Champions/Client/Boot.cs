@@ -12,7 +12,9 @@ namespace Champions.Client
 {
     /// <summary>
     /// The Boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>). For now the game is
-    /// the black void its camera clears to:
+    /// the world (<see cref="WorldPresenter"/>): the black void with its grid, the hero's feet at the origin until a
+    /// run moves them:
+    /// - `--tier low|medium|high`: the quality tier, applied first (<see cref="QualityTiers"/>);
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--headless` (or Unity's batch mode): the output silenced, frames paced at 60 per second unless fixed;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>), quitting
@@ -21,7 +23,9 @@ namespace Champions.Client
     /// - `--seconds N`: quits after N seconds;
     /// - `--file PATH` or `--app NAME`: plays that music 3 s late through the music plugin, its entries
     ///   feeding the sim (<see cref="GameLoop"/>); a source that can't play quits with 2;
-    /// - `--edge-crowd N`: the edge crowd's test scene (<see cref="EdgeCrowdBench"/>); without a baked cut it quits with 2.
+    /// - `--edge-crowd N`: the edge crowd's test scene (<see cref="EdgeCrowdBench"/>), with no world under it; without a
+    ///   baked cut it quits with 2;
+    /// - `--scene world`: the world's scripted scene for stills (<see cref="WorldScene"/>); an unknown scene quits with 2.
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -32,6 +36,8 @@ namespace Champions.Client
         Stills _stills;
         EdgeCrowdBench _bench;
         StillScenes _scenes;
+        WorldPresenter _world;
+        bool _driven;
 
         void Start()
         {
@@ -47,6 +53,10 @@ namespace Champions.Client
             else if (_options.Headless) Application.targetFrameRate = FixedFps;
             // A headless run's music mutes the final mix instead (GameLoop), so its filters still run.
             if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
+            // The tier first: the stills' target takes the pipeline's MSAA.
+            QualityTiers.Apply(_options.Tier ?? QualityTiers.Default());
+            // The edge crowd's bench places the camera and times the crowd alone: no world under it.
+            if (_options.EdgeCrowd <= 0 && _options.StillsScenes.Length == 0) _world = new WorldPresenter(_camera);
             if (_options.StillsDir != null) _stills = new Stills(_camera, _options.StillsDir, _options.StillsAt);
             if (_options.StillsScenes.Length > 0)
             {
@@ -72,7 +82,20 @@ namespace Champions.Client
                     return;
                 }
             }
-            if (_options.File != null || _options.App != null)
+            if (_options.Scene != null)
+            {
+                if (_options.Scene != WorldScene.Name || _world == null)
+                {
+                    Debug.LogError(_world == null ? "Boot: --scene and --edge-crowd: give one"
+                        : $"Boot: --scene {_options.Scene}: no such scene (scenes: {WorldScene.Name})");
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+                WorldScene.Begin(gameObject, _world);
+                _driven = true;
+            }
+            else if (_options.File != null || _options.App != null)
             {
                 var source = ResolveMusic(_options, out string error);
                 if (source == null)
@@ -83,7 +106,8 @@ namespace Champions.Client
                     return;
                 }
                 GameLoop.Begin(gameObject, _camera != null ? _camera.gameObject : gameObject, source, _options.FixedTime,
-                    mute: _options.Headless, Finished);
+                    mute: _options.Headless, _world, Finished);
+                _driven = true;
             }
         }
 
@@ -113,6 +137,8 @@ namespace Champions.Client
             if (_options == null) return;
             double t = Time.timeAsDouble;
             _bench?.Frame(t);
+            // Without a run or a scene, the world stands still around the hero's spot.
+            if (!_driven) _world?.Present(t, Vector2.zero, Time.deltaTime);
             if (_scenes != null)
             {
                 _scenes.Update(t);
@@ -140,6 +166,7 @@ namespace Champions.Client
             _stills?.Dispose();
             _bench?.Report(); // a windowed run the player quit
             _bench?.Dispose();
+            _world?.Dispose();
         }
     }
 }

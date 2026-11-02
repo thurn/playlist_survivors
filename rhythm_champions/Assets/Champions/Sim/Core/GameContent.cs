@@ -17,6 +17,7 @@ namespace Champions.Sim
         public ModRules Mods = new ModRules();
         public EnemyRules Enemies = new EnemyRules();
         public LevelRules Level = new LevelRules();
+        public ZoneRules Zones = new ZoneRules();
 
         /// <summary>Loads the content folder <paramref name="dir"/>.</summary>
         public static GameContent Load(string dir)
@@ -29,6 +30,7 @@ namespace Champions.Sim
                 Attacks = AttackRules.Read(Parse(dir, AttackRules.File), AttackRules.File),
                 Mods = ModRules.Read(Parse(dir, ModRules.File), ModRules.File),
                 Enemies = EnemyRules.Read(Parse(dir, EnemyRules.File), EnemyRules.File),
+                Zones = ZoneRules.Read(Parse(dir, ZoneRules.File), ZoneRules.File),
             };
             content.Level = LevelRules.Read(Parse(dir, LevelRules.File), LevelRules.File, content.Enemies);
             return content;

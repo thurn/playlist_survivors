@@ -5,10 +5,12 @@ by the Enact epic in [the plan](../docs/champions/plan.md). Unity
 6000.6.7f1, URP 17.6, the Input System and UI Toolkit; it depends on no
 other project in the tree.
 
-So far it is the skeleton: the Boot scene draws the black void, and with a
-music source the music plays 3 s late through the plugin while its beats
-feed the sim. The edge-cut pipeline and the edge crowd draw monsters (the
-skeleton so far) in the crowd's test scene.
+So far it is the skeleton and the world: the Boot scene draws the black void
+and its endless grid, and with a music source the music plays 3 s late
+through the plugin while its beats feed the sim, whose beats send the beat
+wave across the grid and whose section changes move the zone key. The
+edge-cut pipeline and the edge crowd draw monsters (the skeleton so far) in
+the crowd's test scene.
 
 ## Commands
 
@@ -46,7 +48,11 @@ pid or part of its name, tapped, muted and played 3 s late), `--seconds N`,
 the music silently), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p
 JPEGs at those times, then quit) or `--capture-stills DIR --stills-scenes
 NAMES|all` (the scripted scenes' PNG stills, ID passes and views, as
-`champions stills` runs them). With music, the log's `Music:` lines show
+`champions stills` runs them; `world` is the world's: 120 BPM to 30 s with a
+section change at 12 s, then beatless with a dash at 34 s), and `--tier
+low|medium|high` (the quality tier; without it the pause menu's last choice,
+or the GPU's guess: an M-series Max or Ultra plays High, a Pro Medium,
+anything else Low). With music, the log's `Music:` lines show
 the delay, each beat the sim reaches with when it became known, and a
 summary. `--edge-crowd N` is the edge crowd's test scene: N baked edge cuts
 (`--edge-type ID`, default skeleton) walking in a field, 20 a second
@@ -66,13 +72,16 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
 - `Assets/Champions/`: `Sim/` (Champions.Sim, no Unity), `Client/`
   (Champions.Client: Boot, launch options, `Music/` (the plugin's bindings,
   the music clock, the player and its sources), `Loop/` (the frame loop's
-  clocks and the sim driver), `Scenes/` (the stills' scripted scenes)),
-  `Render/` (Champions.Render: stills and the type-ID pass, `Look/`: the
-  palette, `Crowd/`: the edge crowd, its shatter and their shaders,
-  `Shaders/`), `Editor/` (Champions.Editor: build tasks, the warm editor, the
-  variant budget, `EdgeCuts/`: the edge cuts' export, bake and review),
-  `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset, its renderer and
-  the post profile).
+  clocks and the sim driver), `World/` (the world presenter: sim events to
+  the world), `Scenes/` (the stills' scripted scenes)), `Render/`
+  (Champions.Render: stills and the type-ID pass, `Look/`: the palette,
+  `Crowd/`: the edge crowd, its shatter and their shaders, `World/`: the
+  grid, the beat wave, event rings, the zone key, the camera, the post and
+  the quality tiers, with the `World.hlsl` globals every world-reacting
+  shader reads, `Shaders/`), `Editor/` (Champions.Editor: build tasks, the
+  warm editor, the variant budget, `EdgeCuts/`: the edge cuts' export, bake
+  and review), `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset,
+  its renderer and the post profile).
 - `plugin/`: the music plugin, a Cargo workspace copied from the frozen
   `native/` (crates plugin, analysis, audio, capture, stream; the analyzer's
   models in `models/`). `champions setup` builds `libps_plugin.dylib` into the

@@ -54,6 +54,7 @@ namespace Champions.Sim
                 Dummies = (Dummy[])Dummies.Clone(),
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
                 Level = !Level ? null : content != null ? content.Level.Clone() : new LevelRules(),
+                Zones = content != null ? content.Zones.Clone() : new ZoneRules(),
             };
         }
 

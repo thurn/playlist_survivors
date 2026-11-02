@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Champions.Render;
 using UnityEngine;
 
 namespace Champions.Client
@@ -40,6 +41,10 @@ namespace Champions.Client
         public int EdgeCrowd;
         public string EdgeType;
         public string BenchOut;
+        /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
+        public Tier? Tier;
+        /// <summary>`--scene NAME`: a scripted scene for stills instead of a run (`world`: the world's).</summary>
+        public string Scene;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -57,7 +62,11 @@ namespace Champions.Client
                 EdgeCrowd = (int)a.Double("--edge-crowd", 0),
                 EdgeType = a.Get("--edge-type"),
                 BenchOut = a.Get("--bench-out"),
+                Scene = a.Get("--scene"),
             };
+            var tier = a.Get("--tier");
+            if (tier != null)
+                o.Tier = QualityTiers.TryParse(tier, out var t) ? t : throw new ArgumentException($"--tier: {tier} is not low, medium or high");
             if (o.File != null && o.App != null) throw new ArgumentException("--file and --app: give one music source");
             var at = a.Get("--stills-at");
             if (at != null) o.StillsAt = Array.ConvertAll(at.Split(','), s => Number("--stills-at", s));

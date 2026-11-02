@@ -46,6 +46,9 @@ namespace Champions.Sim
         public QuietReason Quiet { get; internal set; }
         public double QuietSince { get; internal set; } = double.NaN;
 
+        /// <summary>The floor's zone key now (<see cref="Zones"/>).</summary>
+        public int Zone { get; internal set; }
+
         public HeroState Hero { get; } = new HeroState();
     }
 
@@ -82,6 +85,8 @@ namespace Champions.Sim
         public int OrbitSwords;
         public double OrbitAngle, OrbitRadius;
         public int EnemiesAlive;
+        /// <summary>The floor's zone key.</summary>
+        public int Zone;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 
