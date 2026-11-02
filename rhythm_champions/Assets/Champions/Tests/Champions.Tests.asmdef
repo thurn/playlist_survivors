@@ -2,6 +2,7 @@
     "name": "Champions.Tests",
     "rootNamespace": "Champions.Tests",
     "references": [
+        "Champions.Sim",
         "Champions.Client",
         "Champions.Render",
         "Champions.Editor",

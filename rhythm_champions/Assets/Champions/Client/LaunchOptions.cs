@@ -29,6 +29,10 @@ namespace Champions.Client
         /// <summary>`--capture-stills DIR`: windowless stills into DIR at the `--stills-at` times (seconds).</summary>
         public string StillsDir;
         public double[] StillsAt = Array.Empty<double>();
+        /// <summary>`--file PATH`: plays an audio file or M3U playlist (absolute, or relative to the working directory).</summary>
+        public string File;
+        /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
+        public string App;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -41,7 +45,10 @@ namespace Champions.Client
                 FixedTime = a.Has("--fixed-time"),
                 Seconds = a.Double("--seconds", 0),
                 StillsDir = a.Get("--capture-stills"),
+                File = a.Get("--file"),
+                App = a.Get("--app"),
             };
+            if (o.File != null && o.App != null) throw new ArgumentException("--file and --app: give one music source");
             var at = a.Get("--stills-at");
             if (at != null) o.StillsAt = Array.ConvertAll(at.Split(','), s => Number("--stills-at", s));
             o.Unrecognized = a.Unrecognized(); // last: every flag has been read

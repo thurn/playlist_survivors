@@ -9,7 +9,8 @@ Commands:
                       (--force); --clean-cache rebuilds with a clean build cache
   play [FLAGS]        play the last build at 1080p (--windowed for a window) with player flags;
                       --headless runs it windowless in batch mode and waits for it to exit
-                      (player flags: --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
+                      (player flags: --file PATH or --app NAME, the music, played 3 s late;
+                      --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on a
                       skipped test)
   editor [start|stop|status]
@@ -103,8 +104,18 @@ def cmd_build(a: argparse.Namespace) -> int:
     return build(paths.worktree(), a.backend, a.out, a.development, a.scene, a.cold, a.force, a.clean_cache)
 
 
+def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
+    """The player flags with `--file`'s path made absolute against `cwd`: the player runs from elsewhere."""
+    out = list(flags)
+    for i, flag in enumerate(out[:-1]):
+        if flag == "--file":
+            out[i + 1] = str((cwd / out[i + 1]).resolve())
+    return out
+
+
 def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
     wt = paths.worktree()
+    player_flags = absolute_file_flags(player_flags, Path.cwd())
     app = setup.player_dir(wt, a.backend) / setup.APP
     if not app.is_dir():
         print(f"play: no {a.backend} player at {app}; run `just champions-build`", file=sys.stderr)

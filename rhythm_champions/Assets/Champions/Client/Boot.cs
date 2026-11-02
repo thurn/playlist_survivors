@@ -1,4 +1,7 @@
 using System;
+using System.IO;
+using Champions.Client.Loop;
+using Champions.Client.Music;
 using Champions.Render;
 using UnityEngine;
 
@@ -11,7 +14,9 @@ namespace Champions.Client
     /// - `--headless` (or Unity's batch mode): the output silenced, frames paced at 60 per second unless fixed;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>), quitting
     ///   once the last is kept;
-    /// - `--seconds N`: quits after N seconds.
+    /// - `--seconds N`: quits after N seconds;
+    /// - `--file PATH` or `--app NAME`: plays that music 3 s late through the music plugin, its entries
+    ///   feeding the sim (<see cref="GameLoop"/>); a source that can't play quits with 2.
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -33,10 +38,40 @@ namespace Champions.Client
             foreach (var note in _options.Unrecognized) Debug.LogWarning("Boot: " + note);
             if (_options.FixedTime) Time.captureFramerate = FixedFps;
             else if (_options.Headless) Application.targetFrameRate = FixedFps;
-            if (_options.Headless) AudioListener.volume = 0f;
+            // A headless run's music mutes the final mix instead (GameLoop), so its filters still run.
+            if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
             if (_options.StillsDir != null) _stills = new Stills(_camera, _options.StillsDir, _options.StillsAt);
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}" +
                       $"{(_options.FixedTime ? ", fixed time" : "")}{(_options.Headless ? ", headless" : "")}");
+            if (_options.File != null || _options.App != null)
+            {
+                var source = ResolveMusic(_options, out string error);
+                if (source == null)
+                {
+                    Debug.LogError("Boot: " + error);
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+                GameLoop.Begin(gameObject, _camera != null ? _camera.gameObject : gameObject, source, _options.FixedTime,
+                    mute: _options.Headless, Finished);
+            }
+        }
+
+        /// <summary>`--file`'s file (which must exist) or `--app`'s app (which must be producing audio); null with why if neither.</summary>
+        static MusicSource ResolveMusic(LaunchOptions options, out string error)
+        {
+            if (options.App != null) return MusicSource.FindApp(options.App, out error);
+            string path = Path.GetFullPath(options.File);
+            error = File.Exists(path) ? null : $"--file {options.File}: no file at {path}";
+            return error == null ? MusicSource.File(path) : null;
+        }
+
+        void Finished(int code, string why)
+        {
+            Debug.Log($"Boot: quitting with {code}, {why}");
+            enabled = false;
+            Application.Quit(code);
         }
 
         void Update()

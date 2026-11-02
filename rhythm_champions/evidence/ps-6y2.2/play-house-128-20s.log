@@ -1,0 +1,52 @@
+Boot: Unity 6000.6.7f1, Metal, batch mode True, headless
+Music: playing house-128.ogg, 3 s late, at 48000 Hz; output MacBook Pro Speakers, 16.6 ms
+Music: playing after 0.22 s
+Music: song 0.10 s, heard 0.00 s, analysed 3.07 s (2.96 s ahead), playing, 2 beats known, lead 219 ms, stalls 0
+Music: beat 0 heard at 0.247 s, known at 0.150 s, 0.097 s ahead; reached on the frame heard at 0.052 s
+Music: beat 1 heard at 0.527 s, known at 0.150 s, 0.377 s ahead; reached on the frame heard at 0.354 s
+Music: beat 2 heard at 0.970 s, known at 0.218 s, 0.752 s ahead; reached on the frame heard at 0.804 s
+Music: beat 3 heard at 1.440 s, known at 0.218 s, 1.222 s ahead; reached on the frame heard at 1.272 s
+Music: beat 4 heard at 1.910 s, known at 1.218 s, 0.692 s ahead; reached on the frame heard at 1.739 s
+Music: beat 5 heard at 2.370 s, known at 1.218 s, 1.152 s ahead; reached on the frame heard at 2.206 s
+Music: beat 6 heard at 2.840 s, known at 2.218 s, 0.622 s ahead; reached on the frame heard at 2.672 s
+Music: beat 7 heard at 3.300 s, known at 2.218 s, 1.082 s ahead; reached on the frame heard at 3.122 s
+Music: beat 8 heard at 3.780 s, known at 3.218 s, 0.562 s ahead; reached on the frame heard at 3.605 s
+Music: beat 9 heard at 4.240 s, known at 3.218 s, 1.022 s ahead; reached on the frame heard at 4.072 s
+Music: beat 10 heard at 4.720 s, known at 4.218 s, 0.502 s ahead; reached on the frame heard at 4.555 s
+Music: beat 11 heard at 5.180 s, known at 4.218 s, 0.962 s ahead; reached on the frame heard at 5.005 s
+Music: song 5.11 s, heard 5.01 s, analysed 8.08 s (2.97 s ahead), playing, 12 beats known, lead 186 ms, stalls 0
+Music: beat 12 heard at 5.650 s, known at 5.218 s, 0.432 s ahead; reached on the frame heard at 5.472 s
+Music: beat 13 heard at 6.120 s, known at 5.218 s, 0.902 s ahead; reached on the frame heard at 5.939 s
+Music: beat 14 heard at 6.590 s, known at 6.218 s, 0.372 s ahead; reached on the frame heard at 6.406 s
+Music: beat 15 heard at 7.060 s, known at 6.218 s, 0.842 s ahead; reached on the frame heard at 6.888 s
+Music: beat 16 heard at 7.530 s, known at 6.218 s, 1.312 s ahead; reached on the frame heard at 7.355 s
+Music: beat 17 heard at 8.000 s, known at 7.218 s, 0.782 s ahead; reached on the frame heard at 7.822 s
+Music: beat 18 heard at 8.470 s, known at 7.218 s, 1.252 s ahead; reached on the frame heard at 8.305 s
+Music: beat 19 heard at 8.930 s, known at 8.218 s, 0.712 s ahead; reached on the frame heard at 8.755 s
+Music: beat 20 heard at 9.400 s, known at 8.218 s, 1.182 s ahead; reached on the frame heard at 9.222 s
+Music: beat 21 heard at 9.870 s, known at 9.218 s, 0.652 s ahead; reached on the frame heard at 9.705 s
+Music: song 10.12 s, heard 10.02 s, analysed 13.10 s (2.97 s ahead), playing, 23 beats known, lead 186 ms, stalls 0
+Music: beat 22 heard at 10.340 s, known at 9.218 s, 1.122 s ahead; reached on the frame heard at 10.172 s
+Music: beat 23 heard at 10.810 s, known at 10.218 s, 0.592 s ahead; reached on the frame heard at 10.638 s
+Music: beat 24 heard at 11.280 s, known at 10.218 s, 1.062 s ahead; reached on the frame heard at 11.105 s
+Music: beat 25 heard at 11.750 s, known at 11.218 s, 0.532 s ahead; reached on the frame heard at 11.572 s
+Music: beat 26 heard at 12.220 s, known at 11.218 s, 1.002 s ahead; reached on the frame heard at 12.055 s
+Music: beat 27 heard at 12.680 s, known at 12.218 s, 0.462 s ahead; reached on the frame heard at 12.505 s
+Music: beat 28 heard at 13.150 s, known at 12.218 s, 0.932 s ahead; reached on the frame heard at 12.972 s
+Music: beat 29 heard at 13.620 s, known at 13.218 s, 0.402 s ahead; reached on the frame heard at 13.455 s
+Music: beat 30 heard at 14.090 s, known at 13.218 s, 0.872 s ahead; reached on the frame heard at 13.922 s
+Music: beat 31 heard at 14.560 s, known at 14.218 s, 0.342 s ahead; reached on the frame heard at 14.388 s
+Music: beat 32 heard at 15.030 s, known at 14.218 s, 0.812 s ahead; reached on the frame heard at 14.855 s
+Music: song 15.12 s, heard 15.02 s, analysed 18.11 s (2.99 s ahead), playing, 34 beats known, lead 186 ms, stalls 0
+Music: beat 33 heard at 15.500 s, known at 14.218 s, 1.282 s ahead; reached on the frame heard at 15.322 s
+Music: beat 34 heard at 15.970 s, known at 15.218 s, 0.752 s ahead; reached on the frame heard at 15.805 s
+Music: beat 35 heard at 16.430 s, known at 15.218 s, 1.212 s ahead; reached on the frame heard at 16.255 s
+Music: beat 36 heard at 16.900 s, known at 16.218 s, 0.682 s ahead; reached on the frame heard at 16.722 s
+Music: beat 37 heard at 17.370 s, known at 16.218 s, 1.152 s ahead; reached on the frame heard at 17.205 s
+Music: beat 38 heard at 17.840 s, known at 17.218 s, 0.622 s ahead; reached on the frame heard at 17.659 s
+Music: beat 39 heard at 18.310 s, known at 17.218 s, 1.092 s ahead; reached on the frame heard at 18.138 s
+Music: beat 40 heard at 18.780 s, known at 18.218 s, 0.562 s ahead; reached on the frame heard at 18.605 s
+Music: beat 41 heard at 19.240 s, known at 18.218 s, 1.022 s ahead; reached on the frame heard at 19.071 s
+Music: beat 42 heard at 19.720 s, known at 19.218 s, 0.502 s ahead; reached on the frame heard at 19.539 s
+Boot: quitting, --seconds 20 reached
+Music: 43 beats, known 0.097 to 1.312 s (median 0.782 s) before they were heard, 0 not ahead; the speakers 2.976 s behind the analyzer on average; 0 stalls; 0 late entries; 1190 frames, 0 held
