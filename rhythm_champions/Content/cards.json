@@ -1,0 +1,65 @@
+{
+  "note": "The cards' faces (design.md, Level-ups and Treasure > Cards): each dash, attack and mod's name (at most three words), its icon (Content/icons/ICON.svg, white line art on a 64-unit square) and one line of at most six words per rank it gives (attacks and dashes 1-3, mods 1-2), and an attack's or damaging dash's evolution (its name and line). Ids are attacks.json's, dashes.json's and mods.json's. Read by Champions.Client.UI.CardFaces; the word budget is tested by UiTests.",
+  "dashes": {
+    "dash": { "name": "Dash", "icon": "dash", "lines": ["A swift step, no damage"] },
+    "bladeRush": {
+      "name": "Blade Rush", "icon": "blade-rush",
+      "lines": ["Rush through, slashing all around", "Wider path, a fourth slash", "The path cuts again next beat"],
+      "evolution": { "name": "Thousand Cuts", "line": "Blades slash the path twice more" }
+    },
+    "leapSlam": {
+      "name": "Leap Slam", "icon": "leap-slam",
+      "lines": ["Leap and slam the ground", "A ring rolls on next beat", "An aftershock on the downbeat"],
+      "evolution": { "name": "Skyfall", "line": "Land and shatter everything near" }
+    },
+    "shieldCharge": {
+      "name": "Shield Charge", "icon": "shield-charge",
+      "lines": ["Charge and throw them aside", "Thrown foes strike where they land", "Ends in a shield bash"],
+      "evolution": { "name": "Juggernaut", "line": "Thrown foes shatter on landing" }
+    },
+    "blinkStrike": {
+      "name": "Blink Strike", "icon": "blink-strike",
+      "lines": ["Blink, bursting at both ends", "A third burst midway", "The arrival bursts again"],
+      "evolution": { "name": "Phase Walk", "line": "A phantom bursts every beat" }
+    }
+  },
+  "attacks": {
+    "swordSlash": {
+      "name": "Sword Slash", "icon": "sword-slash",
+      "lines": ["Slashes the crowd on the beat", "A wider arc, a longer reach", "Every fourth slash spins"],
+      "evolution": { "name": "Tempest", "line": "Every slash throws a crescent" }
+    },
+    "orbitBlades": {
+      "name": "Orbit Blades", "icon": "orbit-blades",
+      "lines": ["Two swords circle you", "A third sword joins", "Four swords, flung out on downbeats"],
+      "evolution": { "name": "Blade Halo", "line": "Six swords breathe with the beat" }
+    },
+    "bladeRain": {
+      "name": "Blade Rain", "icon": "blade-rain",
+      "lines": ["Swords fall on the crowd", "A sword every beat", "Two swords at a time"],
+      "evolution": { "name": "Sword Storm", "line": "Eight swords fall each downbeat" }
+    },
+    "crescent": {
+      "name": "Crescent", "icon": "crescent",
+      "lines": ["Downbeats roll a wave ahead", "Waves roll front and back", "Waves roll four ways"],
+      "evolution": { "name": "Full Moon", "line": "A ring wave every downbeat" }
+    },
+    "phantom": {
+      "name": "Phantom", "icon": "phantom",
+      "lines": ["An echo knight repeats your slash", "It repeats your dash too", "Two phantoms fight beside you"],
+      "evolution": { "name": "Legion", "line": "Three phantoms surround you" }
+    }
+  },
+  "mods": {
+    "wideArcs": { "name": "Wide Arcs", "icon": "wide-arcs", "lines": ["Every area 40% larger", "Every area 80% larger"] },
+    "twinStrike": { "name": "Twin Strike", "icon": "twin-strike", "lines": ["Hits echo half a beat later", "Echoes hit harder"] },
+    "tempo": { "name": "Tempo", "icon": "tempo", "lines": ["Slash and Crescent fire faster", "Every attack fires faster"] },
+    "keenEdge": { "name": "Keen Edge", "icon": "keen-edge", "lines": ["Sharper strikes, double on downbeats", "Strikes cut twice as deep"] },
+    "quickstep": { "name": "Quickstep", "icon": "quickstep", "lines": ["The dash is ready sooner", "The dash is ready sooner still"] },
+    "momentum": { "name": "Momentum", "icon": "momentum", "lines": ["Dashes hit double, leaving trails", "The trail strikes again"] },
+    "afterimage": { "name": "Afterimage", "icon": "afterimage", "lines": ["An afterimage repeats your dash", "Two afterimages follow"] },
+    "shatterburst": { "name": "Shatterburst", "icon": "shatterburst", "lines": ["Shards cut their neighbours", "Shards cut deeper"] },
+    "lifeblood": { "name": "Lifeblood", "icon": "lifeblood", "lines": ["Kills slowly heal you", "Kills heal you faster"] },
+    "encore": { "name": "Encore", "icon": "encore", "lines": ["On-beat dashes empower your next strike", "Empowers the next two strikes"] }
+  }
+}

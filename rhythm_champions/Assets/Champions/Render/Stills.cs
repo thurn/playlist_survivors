@@ -18,6 +18,7 @@ namespace Champions.Render
     /// - a scripted scene's still (<see cref="Keep"/>), what `champions look` measures: still-NAME.png (the frame as
     ///   drawn), id-NAME.png (its type-ID pass, <see cref="IdPass"/>) and view-NAME.json (the camera's
     ///   view-projection, row-major in OpenGL's clip space; the hero's feet; the ID table; impact or not).
+    /// A frame as drawn carries the UI panels over it (<see cref="Overlays"/>); the ID pass doesn't.
     /// </summary>
     public sealed class Stills : IDisposable
     {
@@ -47,6 +48,12 @@ namespace Champions.Render
         /// camera spends the draws queued in a frame (EdgeCrowd.Queue).
         /// </summary>
         public Action Requeue;
+
+        /// <summary>
+        /// UI panels' targets drawn over every frame kept, in order: a batch-mode player has no window, so a panel draws
+        /// into a target of its own (premultiplied, as UI Toolkit draws) and registers it here while it shows.
+        /// </summary>
+        public static readonly List<RenderTexture> Overlays = new List<RenderTexture>();
 
         public Stills(Camera camera, string dir, IEnumerable<double> times)
         {
@@ -82,7 +89,7 @@ namespace Champions.Render
             {
                 var at = _times[0];
                 _times.RemoveAt(0);
-                tex ??= Draw(_target, _resolved);
+                tex ??= Composite(Draw(_target, _resolved));
                 var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.jpg", at);
                 RenderTag.SaveJpeg(tex, Path.Combine(_dir, name), "champions stills t=" + at.ToString("F3", CultureInfo.InvariantCulture));
                 Debug.Log($"Stills: kept {name} at t={t:F3}");
@@ -98,7 +105,7 @@ namespace Champions.Render
             try
             {
                 Matrix4x4 viewProj = _camera.projectionMatrix * _camera.worldToCameraMatrix;
-                Save(Draw(_target, _resolved), "still-" + name + ".png");
+                Save(Composite(Draw(_target, _resolved)), "still-" + name + ".png");
                 Save(DrawIds(), "id-" + name + ".png");
                 File.WriteAllText(Path.Combine(_dir, "view-" + name + ".json"), ViewJson(viewProj, view));
             }
@@ -137,6 +144,29 @@ namespace Champions.Render
             }
         }
 
+        /// <summary>Draws the <see cref="Overlays"/> over <paramref name="tex"/> by their alpha; the texture, for chaining.</summary>
+        static Texture2D Composite(Texture2D tex)
+        {
+            if (Overlays.Count == 0) return tex;
+            var under = tex.GetPixels32();
+            foreach (var overlay in Overlays)
+            {
+                var top = Read(overlay);
+                var over = top.GetPixels32();
+                UnityEngine.Object.DestroyImmediate(top);
+                for (int i = 0; i < under.Length; i++)
+                {
+                    int keep = 255 - over[i].a;
+                    var u = under[i];
+                    under[i] = new Color32((byte)Math.Min(255, over[i].r + u.r * keep / 255), (byte)Math.Min(255, over[i].g + u.g * keep / 255),
+                        (byte)Math.Min(255, over[i].b + u.b * keep / 255), 255);
+                }
+            }
+            tex.SetPixels32(under);
+            tex.Apply();
+            return tex;
+        }
+
         Texture2D Draw(RenderTexture target, RenderTexture resolved)
         {
             if (_drawnFrame == Time.frameCount) Requeue?.Invoke();
@@ -151,10 +181,15 @@ namespace Champions.Render
                 Graphics.Blit(target, resolved);
                 source = resolved;
             }
+            return Read(source);
+        }
+
+        static Texture2D Read(RenderTexture source)
+        {
             var req = AsyncGPUReadback.Request(source, 0, TextureFormat.RGBA32);
             req.WaitForCompletion();
             if (req.hasError) throw new Exception("Stills: GPU readback failed");
-            var tex = new Texture2D(Width, Height, TextureFormat.RGBA32, false);
+            var tex = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
             tex.LoadRawTextureData(req.GetData<byte>());
             tex.Apply();
             return tex;

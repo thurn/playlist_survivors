@@ -44,6 +44,8 @@ namespace Champions.Client
         /// <summary>`--gallery`: the weapon effects' gallery (Scenes.GalleryScene): in a window, every effect in turn, over and
         /// over; with `--capture-stills DIR`, its stills (as `--stills-scenes gallery`), then quit.</summary>
         public bool Gallery;
+        /// <summary>`--calibration FILE`: the calibrations' file instead of calibration.json in the player's data folder (Calibration.CalibrationStore).</summary>
+        public string CalibrationFile;
         /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
         public Tier? Tier;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
@@ -64,6 +66,7 @@ namespace Champions.Client
                 Gallery = a.Has("--gallery"),
                 EdgeType = a.Get("--edge-type"),
                 BenchOut = a.Get("--bench-out"),
+                CalibrationFile = a.Get("--calibration"),
             };
             var tier = a.Get("--tier");
             if (tier != null)

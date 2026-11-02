@@ -5,14 +5,16 @@ by the Enact epic in [the plan](../docs/champions/plan.md). Unity
 6000.6.7f1, URP 17.6, the Input System and UI Toolkit; it depends on no
 other project in the tree.
 
-So far it is the skeleton and the world: the Boot scene draws the black void
-and its endless grid, and with a music source the music plays 3 s late
+So far it is the skeleton, the world and the UI: the Boot scene opens on the
+title (Play, Calibrate, Quit), whose music picker starts a run on an app's
+audio or a file; with a music source the music plays 3 s late
 through the plugin while its beats feed the sim, whose beats send the beat
 wave across the grid and whose section changes move the zone key. The
 edge-cut pipeline and the edge crowd draw monsters (the skeleton so far) in
 the crowd's test scene. The hero's weapon effects draw Hovl's slash shapes in
 white (`--gallery` shows them all), and the hero's sounds are baked and
-scheduled, for the assembly to wire to the sim.
+scheduled, for the assembly to wire to the sim. A run shows the hero's
+indicator, the HUD and the card moment's cards; Esc pauses it.
 
 ## Commands
 
@@ -62,7 +64,8 @@ the delay, each beat the sim reaches with when it became known, and a
 summary. `--edge-crowd N` is the edge crowd's test scene: N baked edge cuts
 (`--edge-type ID`, default skeleton) walking in a field, 20 a second
 breaking into shards; headless it times every frame and writes the
-percentiles to `--bench-out PATH`. `champions play --headless` runs the player in
+percentiles to `--bench-out PATH`. `--calibration FILE` keeps the calibrations
+in FILE instead of the player's data folder. `champions play --headless` runs the player in
 batch mode on Metal; given to the player itself, `--headless` makes Unity
 draw with its Null device, so no still could be kept. For example, a still
 of the first second, and 20 s of a song headless:
@@ -77,7 +80,9 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
 - `Assets/Champions/`: `Sim/` (Champions.Sim, no Unity), `Client/`
   (Champions.Client: Boot, launch options, `Music/` (the plugin's bindings,
   the music clock, the player and its sources), `Loop/` (the frame loop's
-  clocks and the sim driver), `World/` (the world presenter: sim events to
+  clocks, the sim driver and the keys), `UI/` (the screens' flow, the
+  menus, the cards, the HUD, the indicator's model; [below](#the-ui)),
+  `Calibration/` (the video and input screens and their store), `World/` (the world presenter: sim events to
   the world), `Scenes/` (the stills' scripted scenes, the effects' gallery), `Sound/`
   (the hero's sounds: the bank, the scheduler, the beat's aggregation and the
   presenter from the sim's events)), `Render/`
@@ -154,6 +159,27 @@ measured), and `SoundPresenter.Take` turns the sim's events into sounds the
 moment the sim knows them: swings on their impacts, a dash's whoosh in heard
 time with the on-beat accent under it, Leap Slam's landing, hits, each kill's
 shatter and the hero's hurt.
+
+## The UI
+
+The UI (design.md, UI; [its evidence](evidence/ui/README.md)) is UI Toolkit
+built in code (`Client/UI/`) on panels made from the editor's
+`Client/Resources/UI/Panel.asset` (scaled from 1080p) with one stylesheet,
+`Champions.uss`; a batch-mode player's panels draw into targets of their own
+that the stills draw over the frame (`Stills.Overlays`). Without music on the
+command line `Flow` leads from the title through the music picker (the apps
+playing audio, then File..., the Mac's open panel) to a run, the pause menu
+over it (Esc or the window losing focus) and the calibration screens; its
+`ShowEnd` shows the end card. A run (`GameLoop`) owns the keys (`KeyInput`:
+WASD or the arrows, Space, Enter, 1-3, each heard at keySong) and the run's UI
+(`RunUi`): the hero's indicator in the world (`Render/UI/HeroIndicator`, a
+camera-facing quad that Indicator.shader fills with the strip, the beats'
+ticks, the dash's pip, the held level's dot and the health bar), the HUD (the
+experience hairline, the boss and Break bars in a duel) and the cards, which
+the sim's Offer, CardFocus and Pick events show, focus and put away; a card's
+click taps its number key, so the sim picks it as it picks a key. Card faces
+(names, lines per rank, icons) are `Content/cards.json` and the line-art SVGs
+in `Content/icons/`.
 
 ## The lean pipeline
 

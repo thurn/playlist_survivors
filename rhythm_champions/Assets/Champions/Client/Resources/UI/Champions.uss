@@ -1,0 +1,314 @@
+/* Rhythm Champions' UI (design.md, UI): white on the void, few words, hairlines. White is the hero's (hero.body,
+   rgb(244, 248, 255)); dark bodies are void.body, the void behind menus void.floor. Sizes are at 1920×1080. */
+
+.layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* ---- Screens ---- */
+
+.screen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.screen--void {
+    background-color: rgb(3, 4, 8);
+}
+
+/* Over a held run: the world stays in view behind. */
+.screen--veil {
+    background-color: rgba(3, 4, 8, 0.72);
+}
+
+.column {
+    align-items: center;
+}
+
+.wordmark {
+    font-size: 72px;
+    letter-spacing: 24px;
+    padding-left: 24px;
+    color: rgb(244, 248, 255);
+    margin-bottom: 104px;
+    -unity-text-align: middle-center;
+}
+
+/* ---- Menus: one or two words a row ---- */
+
+.menu {
+    align-items: center;
+}
+
+.menu__row {
+    font-size: 30px;
+    letter-spacing: 8px;
+    padding: 10px 24px 8px 32px;
+    margin: 3px 0;
+    color: rgba(244, 248, 255, 0.42);
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    -unity-text-align: middle-center;
+}
+
+.menu__row--focused {
+    color: rgb(244, 248, 255);
+    border-bottom-color: rgba(244, 248, 255, 0.8);
+}
+
+.menu__row--dim {
+    font-size: 24px;
+    color: rgba(244, 248, 255, 0.24);
+}
+
+/* ---- The card moment ---- */
+
+.cards {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    width: 300px;
+    height: 420px;
+    margin: 0 26px;
+    padding: 50px 40px 38px 40px;
+    align-items: center;
+}
+
+.card--evolution {
+    width: 340px;
+    height: 476px;
+}
+
+.card__frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.card__icon {
+    width: 104px;
+    height: 104px;
+    margin-bottom: 32px;
+}
+
+.card--evolution .card__icon {
+    width: 128px;
+    height: 128px;
+}
+
+.card__name {
+    font-size: 30px;
+    letter-spacing: 3px;
+    color: rgb(244, 248, 255);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-bottom: 14px;
+}
+
+.card__line {
+    font-size: 21px;
+    color: rgba(244, 248, 255, 0.7);
+    white-space: normal;
+    -unity-text-align: upper-center;
+    flex-grow: 1;
+}
+
+.card__pips {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.pip {
+    width: 10px;
+    height: 10px;
+    margin: 0 6px;
+    border-width: 1.5px;
+    border-radius: 5px;
+    border-color: rgba(244, 248, 255, 0.55);
+}
+
+.pip--lit {
+    background-color: rgb(244, 248, 255);
+    border-color: rgb(244, 248, 255);
+}
+
+.pip--evolution {
+    width: 15px;
+    height: 15px;
+    border-radius: 0;
+    rotate: 45deg;
+}
+
+/* ---- The HUD: a hairline, and the boss's bars in a duel ---- */
+
+.hud {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hud__xp {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+}
+
+.hud__fill {
+    height: 100%;
+    width: 0;
+}
+
+.hud__boss {
+    position: absolute;
+    top: 40px;
+    left: 580px;
+    right: 580px;
+}
+
+.hud__health {
+    height: 5px;
+}
+
+.hud__break {
+    height: 3px;
+    margin-top: 5px;
+}
+
+/* ---- The end card ---- */
+
+.endcard__stat {
+    flex-direction: row;
+    align-items: center;
+    margin: 6px 0;
+}
+
+.endcard__stat-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 20px;
+}
+
+.endcard__number {
+    font-size: 60px;
+    letter-spacing: 6px;
+    color: rgb(244, 248, 255);
+}
+
+.endcard__kills .endcard__stat-icon {
+    width: 30px;
+    height: 30px;
+}
+
+.endcard__kills .endcard__number {
+    font-size: 38px;
+}
+
+.endcard__build {
+    flex-direction: row;
+    margin: 44px 0 52px 0;
+}
+
+.endcard__icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 11px;
+}
+
+.endcard--lit .endcard__number {
+    text-shadow: 0 0 14px rgba(244, 248, 255, 0.55);
+}
+
+.endcard--unlit .endcard__number {
+    color: rgba(244, 248, 255, 0.4);
+}
+
+/* ---- Calibration ---- */
+
+.calibration__flash {
+    width: 180px;
+    height: 180px;
+    border-radius: 90px;
+    border-width: 3px;
+    border-color: rgb(244, 248, 255);
+    background-color: rgba(244, 248, 255, 0.85);
+    margin-bottom: 52px;
+}
+
+.calibration__taps {
+    flex-direction: row;
+    margin-bottom: 30px;
+}
+
+.calibration__tap {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border-width: 1.5px;
+    border-color: rgba(244, 248, 255, 0.5);
+    margin: 0 9px;
+}
+
+.calibration__tap--lit {
+    background-color: rgb(244, 248, 255);
+    border-color: rgb(244, 248, 255);
+}
+
+.calibration__scale {
+    width: 560px;
+    height: 30px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(244, 248, 255, 0.35);
+    margin-bottom: 40px;
+}
+
+.calibration__centre {
+    position: absolute;
+    left: 279px;
+    width: 2px;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(244, 248, 255, 0.6);
+}
+
+.calibration__mark {
+    position: absolute;
+    width: 4px;
+    top: 7px;
+    bottom: 7px;
+    margin-left: -2px;
+    background-color: rgb(244, 248, 255);
+}
+
+.calibration__mark--warmup {
+    background-color: rgba(244, 248, 255, 0.3);
+}
+
+.calibration__say {
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: rgba(244, 248, 255, 0.6);
+    margin-bottom: 30px;
+}

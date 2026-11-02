@@ -58,8 +58,8 @@ namespace Champions.EditorTools
 
         /// <summary>
         /// Shaders (by name prefix) of features the pipeline never uses, stripped whole: other antialiasing than MSAA,
-        /// screen-space reflections, upscaling, 360 capture, XR, the debug views, 2D sprites and physics, and IMGUI
-        /// (the game's UI is UI Toolkit).
+        /// screen-space reflections, upscaling, 360 capture, XR, the debug views, 2D sprites and physics, IMGUI (the
+        /// game's UI is UI Toolkit) and UI Toolkit's filters (blurs, colour effects, drop shadows), which the UI uses none of.
         /// </summary>
         static readonly string[] StrippedShaders =
         {
@@ -68,7 +68,8 @@ namespace Champions.EditorTools
             "Hidden/Universal Render Pipeline/Edge Adaptive Spatial Upsampling", "Hidden/Internal-ODSWorldTexture",
             "Hidden/Internal-CubemapToEquirect", "Hidden/VR/", "Hidden/Universal Render Pipeline/XR", "Hidden/Internal-DebugPattern",
             "Hidden/Universal/HDRDebugView", "Hidden/Core/VrsVisualization", "Hidden/Universal Render Pipeline/Debug/",
-            "Hidden/BlitCopyHDRTonemap", "Sprites/", "Hidden/Physics2D/", "Hidden/Internal-GUI",
+            "Hidden/BlitCopyHDRTonemap", "Sprites/", "Hidden/Physics2D/", "Hidden/Internal-GUI", "Hidden/UIR/GaussianBlur",
+            "Hidden/UIR/ColorEffect", "Hidden/UIR/DropShadowComposite",
         };
 
         const string StatePath = "Library/ChampionsShaderVariants.tsv";

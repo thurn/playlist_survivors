@@ -2,17 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
+using Champions.Client.Calibration;
 using Champions.Client.Music;
+using Champions.Client.UI;
 using Champions.Sim;
 using UnityEngine;
 
 namespace Champions.Client.Loop
 {
     /// <summary>
-    /// The frame loop on the main thread (plan.md, Architecture), as far as the music goes: the plugin's
-    /// entries into the sim, the sim stepped to the frontier, its events read and handed to the world
-    /// (<see cref="WorldPresenter"/>), which it presents at the frame's song time. The other presenters, the
-    /// player's inputs and the run join it in the beads that build them (plan.md, The Client).
+    /// The frame loop on the main thread (plan.md, Architecture): the plugin's entries into the sim, the
+    /// player's keys (<see cref="Keys"/>, heard at keySong), the sim stepped to the frontier, its events read
+    /// and handed to the world (<see cref="WorldPresenter"/>) and the run's UI (<see cref="RunUi"/>), which it
+    /// presents at the frame's song time. The other presenters and the run join it in the beads that build them
+    /// (plan.md, The Client). The music clock takes the output device's calibration when the music opens
+    /// (<see cref="CalibrationStore"/>); the pause menu holds the world through <see cref="Pause"/>.
     ///
     /// Its music is the source Boot resolved from `--file` or `--app` (<see cref="MusicSource"/>),
     /// played through the music plugin 3 s late (<see cref="MusicPlayer"/>); live, song time is the
@@ -48,6 +52,9 @@ namespace Champions.Client.Loop
         double _openedAt, _nextStatus;
         Action<int, string> _finished;
         WorldPresenter _world;
+        RunUi _ui;
+        Camera _camera;
+        GameObject _musicHost;
         readonly List<double> _leads = new List<double>();
         int _beatsLate;
         double _delaySum;
@@ -55,19 +62,25 @@ namespace Champions.Client.Loop
 
         public SimDriver Driver { get; private set; }
         public MusicPlayer Music => _music;
+        /// <summary>The player's keys into the sim; a card's click taps its number here.</summary>
+        public KeyInput Keys { get; } = new KeyInput();
 
         /// <summary>
-        /// Starts the loop on `source` on `host`, the music's listener on `listener` (a camera's object),
-        /// the output silenced if `mute` (<see cref="MuteOutput"/>). `finished` gets an exit code and why
-        /// when the loop can't go on (the music failed).
+        /// Starts the loop on `source` on `host`, the music's listener on `camera`'s object, the output
+        /// silenced if `mute` (<see cref="MuteOutput"/>); it presents `world` and `ui` (which it owns from
+        /// then on) when given. `finished` gets an exit code and why when the loop can't go on (the music
+        /// failed).
         /// </summary>
-        public static GameLoop Begin(GameObject host, GameObject listener, MusicSource source, bool fixedTime, bool mute,
-            WorldPresenter world, Action<int, string> finished)
+        public static GameLoop Begin(GameObject host, Camera camera, MusicSource source, bool fixedTime, bool mute,
+            WorldPresenter world, RunUi ui, Action<int, string> finished)
         {
             var loop = host.AddComponent<GameLoop>();
             loop._finished = finished;
             loop._world = world;
-            loop.Setup(listener, source, fixedTime, mute);
+            loop._ui = ui;
+            loop._camera = camera;
+            if (ui != null) ui.Picked += slot => loop.Keys.Tap((Key)((int)Key.One + slot), Time.realtimeSinceStartupAsDouble);
+            loop.Setup(camera.gameObject, source, fixedTime, mute);
             return loop;
         }
 
@@ -76,9 +89,9 @@ namespace Champions.Client.Loop
             _fixed = fixedTime;
             if (listener.GetComponent<AudioListener>() == null) listener.AddComponent<AudioListener>();
             if (mute && listener.GetComponent<MuteOutput>() == null) listener.AddComponent<MuteOutput>();
-            var musicHost = new GameObject("Music");
-            musicHost.AddComponent<AudioSource>();
-            _music = musicHost.AddComponent<MusicPlayer>();
+            _musicHost = new GameObject("Music");
+            _musicHost.AddComponent<AudioSource>();
+            _music = _musicHost.AddComponent<MusicPlayer>();
             _openedAt = Time.realtimeSinceStartupAsDouble;
             bool driven = _fixed && !source.IsApp;
             _music.Play(source, driven: driven);
@@ -87,13 +100,16 @@ namespace Champions.Client.Loop
                 Finish(1, _music.Error);
                 return;
             }
+            var device = CalibrationScreen.CurrentDevice();
+            var offsets = CalibrationStore.Load().For(device.Uid);
+            offsets.ApplyTo(_music.Clock);
             IGameClock clock = new FrameClock();
             if (!_fixed)
                 clock = _musicTimes = new MusicTimes(_music.Clock, MusicPlayer.Refresh, MusicPlayer.ScheduleHeadroom, () => AudioSettings.dspTime);
             // The content's numbers are the defaults' (beat.json and hero.json repeat them); the run's assembly loads the files.
             Driver = new SimDriver(new RunInputs().Build(null), clock);
-            Log("Music: {0} {1}, {2} s late, at {3} Hz{4}; {5}", source.IsApp ? "listening to" : "playing", source.Tag,
-                MusicPlayer.M, AudioSettings.outputSampleRate, driven ? ", driven by the frames" : "", DeviceText());
+            Log("Music: {0} {1}, {2} s late, at {3} Hz{4}; {5}; calibration {6}", source.IsApp ? "listening to" : "playing", source.Tag,
+                MusicPlayer.M, AudioSettings.outputSampleRate, driven ? ", driven by the frames" : "", DeviceText(), offsets);
         }
 
         static string DeviceText()
@@ -126,6 +142,7 @@ namespace Champions.Client.Loop
             }
             if (_fixed) { if (!FeedSettled()) return; }
             else FeedLive();
+            if (Driver.Clock.Ready) Keys.Drain(Driver.Sim, Driver.Clock);
             var now = new ClockReadings { Real = Time.realtimeSinceStartupAsDouble, Frame = Time.timeSinceLevelLoadAsDouble };
             if (Driver.Step(now))
             {
@@ -134,6 +151,7 @@ namespace Champions.Client.Loop
                 double song = Driver.Times.FrameSong;
                 Driver.Sim.Snapshot().HeroAt(song, out double hx, out double hy);
                 _world?.Present(song, new Vector2((float)hx, (float)hy), Time.deltaTime);
+                _ui?.Present(song, Driver.Sim, _camera);
             }
             _musicTimes?.Measure(Time.unscaledDeltaTime);
         }
@@ -185,6 +203,7 @@ namespace Champions.Client.Loop
             {
                 if (e.Kind == SimEventKind.Beat) Beat(e);
                 _world?.Take(e);
+                _ui?.Take(e);
             }
             _world?.Flush();
             _cursor = sim.EventCount;
@@ -233,6 +252,33 @@ namespace Champions.Client.Loop
             _ => "state " + state,
         };
 
+        /// <summary>The pause menu opened (Esc or the focus lost): the keys let go and the world held, the music playing on.</summary>
+        public void Pause()
+        {
+            if (Driver == null || _done) return;
+            double heard = Driver.Times.Heard;
+            Keys.Suspend(Driver.Sim, Driver.Clock, heard);
+            Driver.Sim.Control(RunControl.Pause, heard);
+        }
+
+        /// <summary>The pause menu closed: play goes on, keys counting from their next press.</summary>
+        public void Resume()
+        {
+            if (Driver == null || _done) return;
+            Driver.Sim.Control(RunControl.Resume, Driver.Times.Heard);
+            Keys.Resume();
+        }
+
+        /// <summary>End run: the run ends, the music closes and the loop goes.</summary>
+        public void End()
+        {
+            if (Driver != null && !_done) Driver.Sim.Control(RunControl.Quit, Driver.Times.Heard);
+            _done = true;
+            Summarise();
+            Destroy(_musicHost);
+            Destroy(this);
+        }
+
         void Finish(int code, string why)
         {
             if (_done) return;
@@ -256,7 +302,12 @@ namespace Champions.Client.Loop
 
         void OnApplicationQuit() => Summarise();
 
-        void OnDestroy() => Summarise();
+        void OnDestroy()
+        {
+            Summarise();
+            Keys.Dispose();
+            _ui?.Dispose();
+        }
 
         static void Log(string format, params object[] args) => Debug.Log(string.Format(CultureInfo.InvariantCulture, format, args));
     }

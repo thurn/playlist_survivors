@@ -4,6 +4,7 @@ using Champions.Client.Bench;
 using Champions.Client.Loop;
 using Champions.Client.Music;
 using Champions.Client.Scenes;
+using Champions.Client.UI;
 using Champions.Render;
 using Champions.Sim;
 using UnityEngine;
@@ -11,9 +12,9 @@ using UnityEngine;
 namespace Champions.Client
 {
     /// <summary>
-    /// The Boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>). For now the game is
-    /// the world (<see cref="WorldPresenter"/>): the black void with its grid, the hero's feet at the origin until a
-    /// run moves them:
+    /// The Boot scene's driver, on the command line's flags (<see cref="LaunchOptions"/>). The game is the world
+    /// (<see cref="WorldPresenter"/>): the black void with its grid, the hero's feet at the origin until a run moves
+    /// them; without music on the command line the title and its menus lead to a run (<see cref="Flow"/>):
     /// - `--tier low|medium|high`: the quality tier, applied first (<see cref="QualityTiers"/>);
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--headless` (or Unity's batch mode): the output silenced, frames paced at 60 per second unless fixed;
@@ -22,7 +23,8 @@ namespace Champions.Client
     ///   for their stills;
     /// - `--seconds N`: quits after N seconds;
     /// - `--file PATH` or `--app NAME`: plays that music 3 s late through the music plugin, its entries
-    ///   feeding the sim (<see cref="GameLoop"/>); a source that can't play quits with 2;
+    ///   feeding the sim (<see cref="GameLoop"/>) with the run's UI (<see cref="RunUi"/>); a source that can't play quits with 2;
+    /// - `--calibration FILE`: the calibrations' file (Calibration.CalibrationStore);
     /// - `--edge-crowd N`: the edge crowd's test scene (<see cref="EdgeCrowdBench"/>), with no world under it; without a
     ///   baked cut it quits with 2;
     /// - `--gallery`: the weapon effects' gallery in a window, every effect in turn (<see cref="GalleryScene"/>); with
@@ -39,6 +41,10 @@ namespace Champions.Client
         StillScenes _scenes;
         WorldPresenter _world;
         GalleryDriver _gallery;
+        Flow _flow;
+        Palette _palette;
+        GameContent _content;
+        CardFaces _faces;
         bool _driven;
 
         void Start()
@@ -60,7 +66,14 @@ namespace Champions.Client
             // The edge crowd's bench, the still scenes and the gallery place the camera themselves: no world of Boot's under them.
             if (_options.EdgeCrowd <= 0 && _options.StillsScenes.Length == 0 && !_options.Gallery)
             {
-                try { _world = new WorldPresenter(_camera, Palette.Load(ContentDir())); }
+                try
+                {
+                    string dir = ContentDir();
+                    _palette = Palette.Load(dir);
+                    _content = GameContent.Load(dir);
+                    _faces = CardFaces.Load(dir, _content);
+                    _world = new WorldPresenter(_camera, _palette);
+                }
                 catch (ContentException e)
                 {
                     Debug.LogError("Boot: " + e.Message);
@@ -115,11 +128,13 @@ namespace Champions.Client
                     Application.Quit(2);
                     return;
                 }
-                GameLoop.Begin(gameObject, _camera != null ? _camera.gameObject : gameObject, source, _options.FixedTime,
-                    mute: _options.Headless, _world, Finished);
+                GameLoop.Begin(gameObject, _camera, source, _options.FixedTime, mute: _options.Headless, _world, _palette != null ? MakeRunUi() : null, Finished);
                 _driven = true;
             }
+            else if (_world != null) _flow = Flow.Begin(gameObject, _camera, _world, MakeRunUi, ContentDir(), _options.FixedTime, _options.Headless);
         }
+
+        RunUi MakeRunUi() => new RunUi(transform, _palette, _content, _faces, _camera.gameObject.layer);
 
         /// <summary>rhythm_champions/Content, above the player (a build inside the checkout) or the working directory.</summary>
         static string ContentDir() =>
@@ -148,7 +163,7 @@ namespace Champions.Client
             double t = Time.timeAsDouble;
             _bench?.Frame(t);
             // Without a run or a scene, the world stands still around the hero's spot.
-            if (!_driven) _world?.Present(t, Vector2.zero, Time.deltaTime);
+            if (!_driven && (_flow == null || !_flow.Running)) _world?.Present(t, Vector2.zero, Time.deltaTime);
             if (_scenes != null)
             {
                 _scenes.Update(t);
