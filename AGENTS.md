@@ -6,6 +6,8 @@ We move quickly. Code and documentation get out of date fast. Ask clarifying que
 
 Vision: Rhythm Champions is "the game that doesn't need a trailer". This is because *every moment of gameplay is cinematic*. The aesthetic experience is prioritized over everything.
 
+The look is retro 3D neon wireframe in the synthwave style: low-poly 3D models, usually built from simple faceted shapes, whose glowing edges connect into closed facets over a dark body (docs/champions/design.md, The aim: retro 3D neon wireframe).
+
 The design was locked on 2026-11-01 after months of prototypes: docs/champions/design.md is the design and docs/champions/plan.md the implementation plan. Every earlier doc is archived under docs/archive/ and is not authoritative; when an old doc, comment or evidence file disagrees with docs/champions/, docs/champions/ wins.
 
 ## Overview
