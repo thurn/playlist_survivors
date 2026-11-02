@@ -1,12 +1,14 @@
-# Which sections a check runs, from the paths that differ from the branch's base.
+# Which lanes a check runs, from the paths that differ from the branch's base.
 # Sourced (POSIX sh) by scripts/check-fast, from the repository root.
 #
 #   changes_init  sets CHANGES_BASE and writes the changed paths, one per line, to $CHANGES_FILE
 #                 (committed since the base, staged, unstaged and untracked). With no base it
-#                 sets CHANGES_UNKNOWN=1, and every section runs.
-#   changes_baker / changes_analysis / changes_friction / changes_native / changes_demo3d /
-#   changes_game_sim
-#                 succeed when that section must run.
+#                 sets CHANGES_UNKNOWN=1, and every lane runs.
+#   changes_match RE
+#                 succeeds when a changed path matches the extended regular expression RE (always,
+#                 with no base): that lane must run.
+#   changes_existing RE
+#                 the changed files that still exist and match RE, one per line.
 #
 # The base is where the branch left `origin/staging` (Enact bases worktrees on it), else local
 # `staging`, else `origin/master`, else the parent commit. Set CHANGES_BASE to a revision
@@ -29,7 +31,7 @@ changes_init() {
   fi
   if [ -z "$CHANGES_BASE" ]; then
     CHANGES_UNKNOWN=1
-    echo "changes: no base found; running every section"
+    echo "changes: no base found; running every lane"
     return
   fi
   {
@@ -43,48 +45,6 @@ changes_init() {
 # Any changed path matching the extended regular expression $1.
 changes_match() {
   [ "$CHANGES_UNKNOWN" = 1 ] || grep -Eq "$1" "$CHANGES_FILE"
-}
-
-# The asset baker (tools/baker, the one node tool left) and what it reads and writes.
-changes_baker() {
-  changes_match '^(tools/baker/|assets-src/|public/assets/|package(-lock)?\.json$|tsconfig\.json$|eslint\.config\.js$)'
-}
-
-# The Python analysis tool and the song maps it checks.
-changes_analysis() {
-  changes_match '^(tools/analysis/|songs/)'
-}
-
-# The native app epic's friction ledger and its script.
-changes_friction() {
-  changes_match '^(native/evidence/|scripts/friction$|scripts/test_friction\.py$)'
-}
-
-# The native workspace and the content it reads (content/, levels/*.yaml or *.yml, the baked
-# assets, the shipped streams), but not the friction ledger in native/evidence/, which every
-# bead writes.
-changes_native() {
-  [ "$CHANGES_UNKNOWN" = 1 ] \
-    || grep -E '^(native/|content/|levels/.*\.ya?ml$|public/assets/|public/reactive/|scripts/lib/changes\.sh$)' "$CHANGES_FILE" \
-      | grep -Evq '^native/evidence/'
-}
-
-# The 3D tech demo (demo3d/: its tools, its choreography layer, its Unity project) and the song
-# map it plays.
-changes_demo3d() {
-  changes_match '^(demo3d/|songs/action/)'
-}
-
-# The Unity game's engine-free sim and arena layout: their sources and tests, which Unity compiles
-# under game/Assets/Game/Sim/, Arena/ and Tests/Sim/, and the .NET projects under game/dotnet/ that
-# compile the same files (docs/archive/design/unity-game.md, The Simulation and The Arena).
-changes_game_sim() {
-  changes_match '^(game/(dotnet/|Content/|Assets/Game/Sim/|Assets/Game/Arena/|Assets/Game/Tests/Sim/)|native/fixtures/entries/)'
-}
-
-# The demo's sync record must know every GUID its manifest lists; a manifest change rebuilds it.
-changes_demo3d_manifest() {
-  changes_match '^demo3d/manifest\.json$'
 }
 
 # The changed files that still exist and match the extended regular expression $1, one per line.

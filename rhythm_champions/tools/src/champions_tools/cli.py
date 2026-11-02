@@ -21,7 +21,8 @@ Commands:
   guard               the vendor guard (--tree REV, --index, --range A..B, --pre-push REMOTE)
   sync                fill the vendor folder from the manifest (--record-only: just the record)
   manifest find|add   list source assets by glob, or add them to the manifest
-  library save        save this worktree's Library as the warm one for its packages
+  library save        save this worktree's Library as the warm one for its packages (--built: after a
+                      player build, with its shader cache)
 """
 
 from __future__ import annotations
@@ -215,12 +216,15 @@ def cmd_unity(a: argparse.Namespace) -> int:
     return unity.run_method(paths.worktree(), a.method, a.args, cold=a.cold)
 
 
-def cmd_library(_a: argparse.Namespace) -> int:
+def cmd_library(a: argparse.Namespace) -> int:
     wt = paths.worktree()
     if unity.warm_server(wt):
         print("library: stop the warm editor first", file=sys.stderr)
         return 1
-    print(f"library: saved to {setup.save_library(wt)}")
+    dest = setup.save_library(wt)
+    if a.built:
+        setup.built_marker(dest).write_text(time.strftime("%Y-%m-%dT%H:%M:%S") + "\n", encoding="utf-8")
+    print(f"library: saved to {dest}{', with a build' if a.built else ''}")
     return 0
 
 
@@ -324,6 +328,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     lib = sub.add_parser("library")
     lib.add_argument("action", choices=["save"])
+    lib.add_argument("--built", action="store_true",
+                     help="it holds a player build's shader cache (saved after `build`, as slow CI does)")
     lib.set_defaults(func=cmd_library)
     return p
 

@@ -4,11 +4,12 @@
     scripts/prune-cargo-target [--dry-run] WORKSPACE
     scripts/prune-cargo-target [--dry-run] --warm TARGET_DIR
 
-The first form prunes a worktree's seed: scripts/enact-worktree remove runs it on the worktree's
-native/target before that becomes the seed, which otherwise kept every incremental session and
-every unit any worktree ever built. A new worktree's sources are newer than the seed's build, so
-cargo rebuilds every workspace crate there: only the dependencies' units are worth cloning. In each
-profile directory (one holding .fingerprint) of WORKSPACE/target it deletes:
+The first form prunes a worktree's seed: scripts/enact-worktree remove runs it on the music
+plugin's workspace (rhythm_champions/plugin) before its target becomes the seed, which otherwise
+kept every incremental session and every unit any worktree ever built. A new worktree's sources
+are newer than the seed's build, so cargo rebuilds every workspace crate there: only the
+dependencies' units are worth cloning. In each profile directory (one holding .fingerprint) of
+WORKSPACE/target it deletes:
 - incremental/, which holds only workspace crates' sessions;
 - the workspace crates' own units (their files named <name>-<hash> under deps, build and examples:
   rlibs, test binaries, the object files macOS keeps for their debug info), but not their

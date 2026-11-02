@@ -138,6 +138,16 @@ def test_setups_import_only_save_clears_the_built_marker(wt) -> None:
     assert setup.save_built_library(wt) == entry
 
 
+def test_slow_cis_save_after_a_build_refreshes_the_library_and_keeps_it_built(monkeypatch, wt) -> None:
+    run(monkeypatch, "build")
+    entry = paths.cache_root() / "library" / setup.library_key(wt) / setup.manifest_key(wt)
+    (wt.library / "ShaderCache" / "variant.bin").write_bytes(b"recompiled")
+    assert run(monkeypatch, "library", "save", "--built")[0] == 0
+    assert (entry / "ShaderCache" / "variant.bin").read_bytes() == b"recompiled"
+    assert setup.built_marker(entry).exists()
+    assert setup.save_built_library(wt) is None  # the next build needn't save it again
+
+
 def test_setup_prefers_a_built_library_when_none_is_exact(tmp_path: Path) -> None:
     base = tmp_path / "library" / "pkgs"
     built, newer = base / "a", base / "b"

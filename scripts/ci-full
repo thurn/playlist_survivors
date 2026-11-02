@@ -1,259 +1,115 @@
 #!/bin/sh
-# Enact's slow CI: every check, on the newest `staging` tip, asynchronously. A pass moves remote
-# master; a failure is fixed forward by a Steward bead (AGENTS.md). Nobody waits for it. Run it
-# locally only when a change touches CI scripts, `.enact.toml`, workspace-wide configuration or
-# shared test infrastructure. Budget: about 5 minutes warm (ps-qtj.1).
+# Enact's slow CI: every check of Rhythm Champions, on the newest `staging` tip, asynchronously. A
+# pass moves remote master; a failure is fixed forward by a Steward bead (AGENTS.md). Nobody waits
+# for it. Run it locally only when a change touches CI scripts, `.enact.toml`, workspace-wide
+# configuration or shared test infrastructure. The frozen projects (AGENTS.md) have no CI; the vendor
+# guard still covers every Unity project.
 #
-#   scripts/ci-full [SECTION]    # one section, or all
+#   scripts/ci-full [LANE ...]    # those lanes, or all of them
+#
+# The lanes run in parallel, each step timed (scripts/lib/lanes.sh). The budget is 300 s of wall time
+# (docs/champions/plan.md, CI and Checks; CI_BUDGET_S overrides it): a run over it fails, and the
+# Steward fixing that speeds a step up or moves it to a cheaper lane. `.enact.toml`'s slow command sets
+# CARGO_TARGET_DIR to a persistent directory, which it prunes after the run.
 set -eu
 cd "$(dirname "$0")/.."
-. scripts/lib/changes.sh
-. scripts/lib/platform.sh
-section="${1:-all}"
-# Pass stamps, keyed by a check's inputs' hash (outside the slots, so they persist).
-STAMPS="${PS_CI_STAMPS:-$PS_CACHE/ci-stamps}"
-SECTIONS="baker analysis native native-tests parity survivors demo3d demo2d game"
+LANES_SCRIPT=ci-full
+. scripts/lib/lanes.sh
+ALL="plugin sim tools unity guard"
+budget="${CI_BUDGET_S:-300}"
+started=$(date +%s)
 
-case " all $SECTIONS " in
-  *" $section "*) ;;
-  *) echo "usage: scripts/ci-full [$(echo $SECTIONS | tr ' ' '|')]" >&2; exit 2 ;;
-esac
+champions() { uv run --quiet --project rhythm_champions/tools champions "$@"; }
+# (In the plugin's folder, for its rust-toolchain.toml.)
+plugin() { (cd rhythm_champions/plugin && "$@"); }
+# Rhythm Champions is Mac only (plan.md, Decision 9): elsewhere (Cygnus, the Windows desktop) the
+# plugin and unity lanes pass as skipped, saying so, and slow CI checks the rest.
+off_mac() {
+  [ "$(uname -s)" != Darwin ] && echo "ci-full: $_lane skipped: Rhythm Champions builds only on macOS"
+}
 
-# The native workspace builds only on macOS (objc2), so elsewhere (Cygnus, the Windows desktop) its
-# four sections pass as skipped and slow CI covers the rest. A pass there still moves master, with
-# the native workspace untested: the operator's choice, since nobody changes it on Cygnus.
-case "$section" in
-  native | native-tests | parity | survivors)
-    if [ "$(uname -s)" != Darwin ]; then
-      echo "ci-full $section: skipped, the native workspace builds only on macOS"
-      exit 0
-    fi
-    ;;
-esac
+# The music plugin's workspace: rustfmt, clippy, and every test (in release, the slow ones its
+# #[ignore] keeps out of check-fast included), in parallel under nextest (the crates have no doctests).
+lane_plugin() {
+  if off_mac; then return 0; fi
+  step fmt plugin cargo fmt --all --check &&
+    step clippy plugin cargo clippy --locked --workspace --all-targets -- -D warnings &&
+    step tests plugin cargo nextest run --locked --release --workspace --run-ignored all --status-level fail
+}
 
-# All: the native section first, alone, since its benches are timed and it builds what the others
-# run; then the rest in parallel lanes, each lane's output printed once it is done, and last one
-# line of each lane's seconds, so a log's tail shows which lane is the long pole.
-if [ "$section" = all ]; then
-  started=$(date +%s)
-  scripts/ci-full native
-  times="native $(( $(date +%s) - started )) s"
-  logs=$(mktemp -d)
-  lanes=""
-  lane() {
-    name=$1
-    shift
-    (
-      lane_started=$(date +%s)
-      status=0
-      for s in "$@"; do scripts/ci-full "$s" || { status=1; break; }; done
-      echo $(( $(date +%s) - lane_started )) > "$logs/$name.seconds"
-      exit $status
-    ) > "$logs/$name.log" 2>&1 &
-    lanes="$lanes $!:$name"
-  }
-  # The Unity and dotnet sections get a lane each: run back to back under a run's load, demo3d
-  # and demo2d took about 300 s, the long pole (ps-msz.11).
-  lane native-tests native-tests
-  lane parity parity
-  lane survivors survivors
-  lane tools baker analysis
-  lane demo3d demo3d
-  lane demo2d demo2d
-  lane game game
-  passed=""
-  failed=""
-  for entry in $lanes; do
-    name=${entry#*:}
-    if wait "${entry%%:*}"; then passed="$passed $name"; else failed="$failed $name"; fi
-    times="$times, $name $(cat "$logs/$name.seconds" 2>/dev/null || echo ?) s"
+# The sim under dotnet: its tests, then every recorded session replayed to its hash (exit 2: recorded
+# by the player, whose runtime may round differently, so only the player's replay can judge it).
+lane_sim() {
+  step build dotnet build rhythm_champions/dotnet --nologo -v q &&
+    step tests dotnet test rhythm_champions/dotnet --no-build --nologo -v q &&
+    step replays replay_sessions
+}
+replay_sessions() {
+  for s in rhythm_champions/sessions/*/; do
+    dotnet run --no-build --project rhythm_champions/dotnet/Champions.Replay -- "$s" || [ $? = 2 ] || return 1
   done
-  # Failed lanes print last, so a log tail (Enact's Steward bead keeps the last 60 lines) shows
-  # the failure rather than a passing lane's output; then the times, kept to one line.
-  for name in $passed; do echo "=== ci-full $name: passed"; cat "$logs/$name.log"; done
-  for name in $failed; do echo "=== ci-full $name: FAILED"; cat "$logs/$name.log"; done
-  rm -rf "$logs"
-  [ -z "$failed" ] || echo "ci-full: failed:$failed"
-  echo "ci-full: lanes $times; all $(( $(date +%s) - started )) s"
-  [ -z "$failed" ] || exit 1
-  exit 0
-fi
+}
 
-# The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
-if [ "$section" = baker ]; then
-  npm ci --no-audit --no-fund --prefer-offline
-  npm run check
-fi
+# The champions tools and the scripts' own tests.
+lane_tools() {
+  step ruff uv run --directory rhythm_champions/tools ruff check . &&
+    step pytest uv run --directory rhythm_champions/tools pytest -q &&
+    step scripts uv run --no-project python -m unittest scripts/test_check_conflict_markers.py \
+      scripts/test_prune_cargo_target.py scripts/test_ci_full.py
+}
 
-# The Python tooling: the analysis tool and the friction ledger.
-if [ "$section" = analysis ]; then
-  uv run --directory tools/analysis pytest -q
-  uv run --directory tools/analysis ruff check .
-  uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
-  scripts/friction validate
-  uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
-  uv run --no-project python -m unittest scripts/test_friction.py
-  uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
-fi
-
-# The native workspace: every crate's clippy, the pure crates' purity, unused dependencies, the
-# tests' build, capture and the plugin's Windows build (native/scripts/check-windows), a release
-# build of the app and the CLI, and the live engine's cost against its
-# gates (G5, docs/archive/design/native-app.md "Targets"): the rollbacks' re-simulation per second and the
-# engine's time per frame, then the whole frame's work (sim, evaluate, encode) offscreen.
-# `.enact.toml`'s slow command sets CARGO_TARGET_DIR to a persistent directory, which it prunes after
-# the run.
-if [ "$section" = native ]; then
-  uv run --directory tools/analysis ruff check ../../native/scripts/crates ../../native/scripts/test_crates.py
-  uv run --no-project python -m unittest native/scripts/test_crates.py
-  (
-    cd native
-    cargo fmt --all --check
-    scripts/crates purity
-    cargo clippy --locked --workspace --all-targets -- -D warnings
-    cargo machete
-    cargo test --locked --workspace --no-run
-    scripts/check-windows
-    cargo build --locked --release -p app -p cli
-    cargo run --locked --release -p cli -- runner-bench --check
-    cargo run --locked --release -p app -- --bench --check
-  )
-fi
-
-# Every crate's tests, with the release-only ones the gate skips (#[ignore = "release: ..."]).
-if [ "$section" = native-tests ]; then
-  (cd native && cargo test --locked --workspace -- --include-ignored)
-fi
-
-# Corpus parity (A7, docs/archive/design/native-app.md "Corpus parity"): the Rust analyzer over a sample
-# of tracks against Python's committed streams (the margins, at D = 0; the live-delay run, which
-# Delayed listening replays, only reports the delay's cost), in the utility QoS class (the
-# background class keeps to the efficiency cores and took over an hour, hv-t8o8.12), and skipped
-# when its inputs (the analyzer, the CLI, the models, the workspace's build files, the streams and
-# audio, Python's decoding and its lock file) match a commit that passed it.
-# A fixed sample of short tracks, about 2 minutes: steady house, a swing groove, an accelerando
-# and a hard NotJam track. Each track's passes run in turn at about real time, so a longer track
-# lengthens the step; run the whole corpus by hand (`ps analysis-parity --all`, over 30 minutes)
-# when the analyzer's accuracy is in question.
-# Delayed listening at the chosen M (E1) rides on the same runs: its lead check fails the step.
-if [ "$section" = parity ]; then
-  PARITY_DELAYED="--delayed 3"
-  PARITY_TRACKS=house-128,hiphop-92-swing,accelerando-100-140,notjam-crystal-caverns
-  PARITY_INPUTS="native/crates/analysis native/crates/cli native/models native/Cargo.toml
-    native/Cargo.lock native/rust-toolchain.toml public/reactive public/audio
-    tools/analysis/src/ps_analysis/stream.py tools/analysis/src/ps_analysis/pcm.py
-    tools/analysis/uv.lock"
-  # (Only the inputs need be clean: another lane's Unity run rewrites demo2d's settings meanwhile.)
-  inputs_clean() { [ -z "$(git status --porcelain --untracked-files=no -- $PARITY_INPUTS)" ]; }
-  parity=$(
-    {
-      echo "$PARITY_TRACKS $PARITY_DELAYED"
-      git ls-tree -r HEAD $PARITY_INPUTS
-    } | shasum -a 256 | cut -d ' ' -f 1
-  )
-  if inputs_clean && [ -f "$STAMPS/parity-$parity" ] &&
-    [ "${PS_CI_FULL_FORCE:-0}" != 1 ]; then
-    echo "ci-full parity: corpus parity inputs $parity passed at $(cat "$STAMPS/parity-$parity"); skipping"
-  else
-    out="$PS_CACHE/parity/$(git rev-parse --short HEAD)"
-    (cd native && utility cargo run --locked --release -p cli -- analysis-parity --tracks "$PARITY_TRACKS" $PARITY_DELAYED --jobs 8 --check --out "$out")
-    mkdir -p "$STAMPS"
-    # (Only a pass on clean inputs vouches for HEAD's.)
-    if inputs_clean; then
-      echo "$(git rev-parse --short HEAD) $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$STAMPS/parity-$parity"
-    fi
+# Unity, windowless in batch mode, from the warm Library and baked caches (`champions setup`): the
+# EditMode tests, where a skip fails too; the Mono player built with a clean build cache, which counts
+# its shader variants against the budget of 300; that player's fixed-time run; then the Library,
+# with the build's shader cache, saved as the warm one for the next worktree or run (plan.md, Build
+# Policy). Later beads add the scripted scenes' stills, a recorded session's replay and `champions look`.
+lane_unity() {
+  if off_mac; then return 0; fi
+  step setup champions setup --no-unity &&
+    step editmode champions test --cold --no-skips &&
+    step build champions check --variants &&
+    step player player_run &&
+    step library champions library save --built
+}
+# 10 s of the plugin's fixture song at fixed time, which plays it through the plugin silently, with
+# stills at 1 s and 10 s: the player must exit 0, keep both and log no exception.
+player_run() {
+  stills="$PWD/rhythm_champions/Logs/ci-stills"
+  rm -rf "$stills"
+  champions play --headless --fixed-time --file rhythm_champions/plugin/fixtures/house-128.ogg \
+    --capture-stills "$stills" --stills-at 1,10 --seconds 11 || return 1
+  kept=$(find "$stills" -name '*.jpg' 2>/dev/null | wc -l | tr -d ' ')
+  if [ "$kept" != 2 ]; then
+    echo "ci-full: the player kept $kept of its 2 stills (rhythm_champions/Logs/player.log)"
+    return 1
   fi
-fi
-
-# SF9's own release step: utility QoS, four 30-minute positioning runs (one seed in each playlist
-# order, and the continuously analysed source) and the exact replay of the base order's recorded
-# session, source-keyed skip, 20-minute budget after a separately bounded cache preparation.
-# Survival asserts; pacing remains report-only.
-if [ "$section" = survivors ]; then
-  uv run --directory tools/analysis ruff check ../../native/scripts/survivors_sweep.py ../../native/scripts/test_survivors_sweep.py
-  uv run --no-project python -m unittest native/scripts/test_survivors_sweep.py
-  uv run --no-project python native/scripts/survivors_sweep.py --release --assert-survival
-fi
-
-# The 3D demo (docs/archive/tech-demo-3d/): the vendor guard over the whole tree and everything remote
-# master doesn't have yet, the last line of defence before this stage moves it; the tools' lint
-# and tests; and the choreography layer's tests (the shared package and demo3d's data) under
-# dotnet, without Unity.
-if [ "$section" = demo3d ]; then
-  uv run --quiet --project demo3d/tools demo3d guard --tree HEAD
-  if git rev-parse --verify --quiet origin/master >/dev/null; then
-    uv run --quiet --project demo3d/tools demo3d guard --range origin/master..HEAD
-  else
-    echo "ci-full demo3d: no origin/master, so the guard checked the tree only, not the range" >&2
+  if grep -n Exception rhythm_champions/Logs/player.log; then
+    echo "ci-full: the player logged an exception (rhythm_champions/Logs/player.log)"
+    return 1
   fi
-  uv run --directory demo3d/tools ruff check .
-  uv run --directory demo3d/tools pytest -q
-  dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
-fi
+}
 
-# The 2D demo (docs/archive/tech-demo-2d/): the choreography layer's tests on demo2d's data, under dotnet;
-# then, windowless in batch mode, the project set up from this machine's vendor packs and cache
-# (it fails, naming what is missing, without the packs, the song, Unity or its licence), the
-# song's playback baked, and Unity's EditMode tests, where a skip (a test missing its setup or
-# bake) fails too. About 2 minutes with a warm Library. demo3d's EditMode tests stay out: they
-# need its full BakeAll and the Synty packs. Unity's rewrites of ProjectSettings are discarded.
-# A machine without the 2D packs (Cygnus so far) skips the Unity half, saying so.
-if [ "$section" = demo2d ]; then
-  dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
-  packs=$(uv run --quiet --project demo3d/tools python -c \
-    'from pathlib import Path; from demo3d_tools import paths; r = Path(paths.load_roots()["pixel_assets"]); print("" if (r / "Assets").is_dir() else r)')
-  if [ -n "$packs" ]; then
-    echo "ci-full demo2d: skipped the Unity setup, bake and tests: no 2D packs at $packs/Assets"
-  else (
-    trap 'git checkout --quiet -- demo2d/ProjectSettings' EXIT
-    uv run --quiet --project demo3d/tools demo2d setup
-    uv run --quiet --project demo3d/tools demo2d unity BakePlayback
-    uv run --quiet --project demo3d/tools demo2d test --no-skips
-  ) fi
-fi
+# The vendor guard over the tree and over the commits since the last green master.
+lane_guard() {
+  step tree champions guard --tree HEAD &&
+    step range champions guard --range origin/master..HEAD
+}
 
-# The Unity game (docs/archive/design/unity-game.md, Tools, Checks and Evidence): the vendor guard over the
-# tree, game/ included (runnable alone, as `scripts/ci-full game`); the sim's tests under dotnet,
-# once game/dotnet/PS.Game.Sim.Tests exists, and its replay command built; the bots' sweep (`game sweep
-# --assert`: four 30-minute positioning runs above 25% health and the idle bot fallen before minute
-# 10, in parallel in .NET over native's cached entry dumps, about 10 s warm; skipped when its inputs'
-# hash passed before, and off macOS, where native's dumps don't build); then, windowless in batch mode, the project set up from
-# this machine's vendor packs and cache (setup builds the music plugin into it), Unity's EditMode
-# tests, where a skip fails too, and a short batch-mode File run of a Mono player: the cinematic
-# slice's frame loop (its horde, sword and structures on house-128) with every scheduled sound a
-# click, measured from Unity's own mix (`game spike --sounds`: the sounds on the music within 2 ms,
-# so the music's anchor matches the mix, frameSong within 1 ms of the audio thread's clock, no
-# stalls, no exception in the player's log), then a 10 s run of that player recorded and watched at
-# once to its hash (`game replay --record`), its session replayed in .NET too, and the on-the-beat
-# audit (`game beat`: 20 s of the run's peak on house-128 at fixed time, every key moment on the
-# first frame at or after its song time). Unity's rewrites of ProjectSettings are discarded. A machine
-# without the packs, or off macOS (the plugin builds only there until M5, ps-msz.9), skips the
-# Unity half, saying so.
-if [ "$section" = game ]; then
-  uv run --quiet --project demo3d/tools game guard --tree HEAD
-  if [ -d game/dotnet/PS.Game.Sim.Tests ]; then
-    dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
-    dotnet build game/dotnet/PS.Game.Replay --nologo -v q
-    uv run --quiet --project demo3d/tools game sweep --assert
-  else
-    echo "ci-full game: no sim tests yet (game/dotnet/PS.Game.Sim.Tests)"
-  fi
-  missing=$(uv run --quiet --project demo3d/tools python -c \
-    'from demo3d_tools import guard, paths; print(" ".join(sorted(set(paths.PROJECT_ROOTS["game"]) & guard.missing_roots(paths.load_roots()))))')
-  if [ "$(uname -s)" != Darwin ]; then
-    echo "ci-full game: skipped the Unity setup, tests and spike: the music plugin builds only on macOS until M5"
-  elif [ -n "$missing" ]; then
-    echo "ci-full game: skipped the Unity setup and tests: no vendor packs here ($missing)"
-  else (
-    trap 'git checkout --quiet -- game/ProjectSettings' EXIT
-    uv run --quiet --project demo3d/tools game setup
-    uv run --quiet --project demo3d/tools game test --no-skips
-    uv run --quiet --project demo3d/tools game spike ci --file public/reactive/house-128/house-128.ogg \
-      --sounds --seconds 30 --backend mono --build --no-evidence
-    uv run --quiet --project demo3d/tools game replay --record public/reactive/house-128/house-128.ogg \
-      --seconds 10 --backend mono --player-args "--debug break@5,change@7"
-    uv run --quiet --project demo3d/tools game beat ci --file public/reactive/house-128/house-128.ogg \
-      --seconds 20 --backend mono --no-evidence \
-      --player-args "--start-minute 25 --bot positioning --debug evolve:bloody-tear@3,evolve:soul-eater@3,break@8,regrow@12,finale@15"
-  ) fi
+lanes="${*:-$ALL}"
+for name in $lanes; do
+  case " $ALL " in
+    *" $name "*) ;;
+    *) echo "usage: scripts/ci-full [$(echo $ALL | tr ' ' '|') ...]" >&2; exit 2 ;;
+  esac
+done
+lanes_init
+for name in $lanes; do lane "$name" "lane_$name"; done
+status=0
+lanes_wait || status=1
+elapsed=$(( $(date +%s) - started ))
+echo "ci-full: $elapsed s, budget $budget s"
+if [ "$elapsed" -gt "$budget" ]; then
+  echo "ci-full: FAILED: over the $budget s budget; speed the long pole up or move a step to a cheaper lane"
+  status=1
 fi
+exit $status

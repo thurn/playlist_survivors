@@ -18,6 +18,7 @@ Mac, the only platform V1 supports.
 | --- | --- | --- |
 | Xcode Command Line Tools | `xcode-select --install` | Compilers and the macOS SDK |
 | Rust | [rustup](https://rust-lang.org/tools/install/) | The audio plugin; its `rust-toolchain.toml` pins the version |
+| cargo-nextest | `brew install cargo-nextest` | The audio plugin's tests in the checks |
 | Unity 6000.6.7f1 | Unity Hub, at `/Applications/Unity/Hub/Editor/6000.6.7f1`, with Mac build support (Mono and IL2CPP) and an activated licence | The game |
 | uv | `brew install uv` | The `champions` tools (Python) |
 | .NET SDK 10 | `brew install --cask dotnet-sdk` | The sim's tests outside Unity |
@@ -126,8 +127,13 @@ python3 "$HOME/enact/scripts/enact.py" push
 (`scripts/ci-full`) in the background; a pass moves `master`. Never commit
 or push to `master` or `staging` directly.
 
-The plan's CI bead replaces both scripts' prototype sections with Rhythm
-Champions' own: check-fast within 60 s, slow CI within 300 s.
+Both check Rhythm Champions only, in parallel lanes whose every step logs
+its seconds; the frozen prototypes have no CI. check-fast (budget 60 s) runs
+the lanes whose files changed: the vendor guard always, the tools' lint and
+tests, the sim's dotnet tests, the plugin's fmt, clippy and tests. Slow CI
+(`just ci [LANE ...]`) runs every lane: plugin, sim, tools, unity (EditMode
+tests, the Mono player and its shader variant budget, a fixed-time run of
+that player) and guard, and fails a run over 300 s (`CI_BUDGET_S`).
 
 ## Earlier Hive beads
 

@@ -86,7 +86,7 @@ bundle *args:
 check *args:
     scripts/check-fast "$@"
 
-# The full suite (slow CI), e.g. `just ci demo2d`
+# The full suite (slow CI), or some of its lanes, e.g. `just ci unity`
 [group('checks')]
 ci *args:
     scripts/ci-full "$@"

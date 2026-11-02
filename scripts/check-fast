@@ -1,29 +1,25 @@
 #!/bin/sh
-# The fast local check (budget 60 s): `enact push` runs it on the rebased tree.
-# It replaces running the whole suite locally. Diff-aware, from the paths that differ from the
-# branch's base (scripts/lib/changes.sh), committed or not:
-# - Conflict markers in any changed file (scripts/check-conflict-markers).
-# - The asset baker (tools/baker): its lint, typecheck and the baked assets' check.
-# - The analysis tool: ruff on the changed Python files, the test modules of the changed modules,
-#   and the song map's check when the song maps changed.
-# - The friction ledger: its records and scripts/friction's tests, when either changed.
-# - scripts/prune-cargo-target's tests, when it or they changed.
-# - native/scripts/check-fast when native/ changed and the workspace has one (F4 adds it).
-# - The vendor guard (rhythm_champions/tools, covering every Unity project: rhythm_champions/ and
-#   the frozen game/, demo3d/, demo2d/, stylelab/ and herocap/), always, over the commits since the base
-#   and the index; the champions tools' lint and tests when rhythm_champions/tools changed.
-# - demo3d/tools' lint and tests when they changed, the choreography layer's tests (on each demo's data) when the
-#   package or that demo's data or tests changed, and the game's sim tests (game/dotnet/), and its
-#   replay and sweep commands and evidence harnesses built, when the sim, its arena layout or its content (game/Content/) changed.
-#   herocap's recipe tests (dot and line faces, one recipe per atlas) when herocap/ or the survivors
-#   roster changed.
-# - Rhythm Champions' sim tests (rhythm_champions/dotnet/) when its sim, content or sessions changed.
-# - Rhythm Champions' music plugin (rhythm_champions/plugin/, its own Cargo workspace): rustfmt, clippy
-#   (-D warnings) and its tests, when it changed.
-# Slow CI (scripts/ci-full, on the `staging` tip) runs the rest.
+# The fast local check (budget 60 s): `enact push` runs it on the rebased tree. It replaces running
+# the whole suite locally. Diff-aware, from the paths that differ from the branch's base
+# (scripts/lib/changes.sh), committed or not: conflict markers in any changed file first, then these
+# lanes in parallel, each step timed (scripts/lib/lanes.sh):
+# - guard: the vendor guard (rhythm_champions/tools, covering every Unity project: rhythm_champions/
+#   and the frozen game/, demo3d/, demo2d/, stylelab/ and herocap/), always, over the commits since
+#   the base and the index;
+# - tools: the champions tools' lint and tests, when rhythm_champions/tools changed;
+# - scripts: the scripts' own tests, when a script they test changed;
+# - sim: Rhythm Champions' sim tests (rhythm_champions/dotnet/), the recorded session's replay among
+#   them, when its sim, tests, content or sessions changed;
+# - plugin: the music plugin (rhythm_champions/plugin/, its own Cargo workspace): rustfmt, clippy
+#   (-D warnings) and its tests under nextest (its #[ignore]d release tests are slow CI's), when it
+#   changed.
+# The frozen projects (AGENTS.md) have no checks. Slow CI (scripts/ci-full, on the `staging` tip)
+# runs the rest.
 set -eu
 cd "$(dirname "$0")/.."
+LANES_SCRIPT=check-fast
 . scripts/lib/changes.sh
+. scripts/lib/lanes.sh
 started=$(date +%s)
 changes_init
 trap 'rm -f "$CHANGES_FILE" "${list:-}"' EXIT
@@ -36,103 +32,41 @@ if [ -s "$list" ]; then
   scripts/check-conflict-markers "$@"
   set --
 fi
-if changes_match '^scripts/(check-conflict-markers|test_check_conflict_markers\.py)$'; then
-  uv run --no-project python -m unittest scripts/test_check_conflict_markers.py
-fi
-if changes_match '^scripts/(prune-cargo-target|test_prune_cargo_target\.py)$'; then
-  uv run --no-project python -m unittest scripts/test_prune_cargo_target.py
-fi
 
-if changes_baker; then
-  if [ ! -d node_modules ]; then
-    echo "check-fast: node_modules is missing; run npm ci first" >&2
-    exit 1
-  fi
-  npm run check
-fi
-
-if changes_analysis && [ "$CHANGES_UNKNOWN" = 1 ]; then
-  uv run --directory tools/analysis pytest -q
-  uv run --directory tools/analysis ruff check .
-  uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
-elif changes_analysis; then
-  changes_existing '^tools/analysis/.*\.py$' | sed 's|^tools/analysis/||' > "$list"
-  if [ -s "$list" ]; then
-    while IFS= read -r f; do set -- "$@" "$f"; done < "$list"
-    uv run --directory tools/analysis ruff check -- "$@"
-    set --
-    # Each changed test module, and the test module named after each changed module.
-    while IFS= read -r f; do
-      case "$f" in
-        tests/test_*.py) set -- "$@" "$f" ;;
-        src/ps_analysis/*.py)
-          t="tests/test_$(basename "$f")"
-          [ -f "tools/analysis/$t" ] && set -- "$@" "$t" ;;
-      esac
-    done < "$list"
-    if [ $# -gt 0 ]; then uv run --directory tools/analysis pytest -q -- "$@"; fi
-    set --
-  fi
-  if changes_match '^songs/'; then
-    uv run --project tools/analysis ps-analysis check songs/orpheus-galop/songmap.json
-  fi
-fi
-
-if changes_friction; then
-  scripts/friction validate
-  uv run --directory tools/analysis ruff check ../../scripts/friction ../../scripts/test_friction.py
-  uv run --no-project python -m unittest scripts/test_friction.py
-fi
-
-if changes_native && [ -x native/scripts/check-fast ]; then
-  native/scripts/check-fast
-fi
+champions() { uv run --quiet --project rhythm_champions/tools champions "$@"; }
+# (In the plugin's folder, for its rust-toolchain.toml.)
+plugin() { (cd rhythm_champions/plugin && "$@"); }
 
 # The vendor guard (docs/archive/tech-demo-3d/vendor-assets.md), whatever changed: a vendor file is
 # caught by its hash anywhere in the tree.
-if [ -n "$CHANGES_BASE" ]; then
-  uv run --quiet --project rhythm_champions/tools champions guard --range "$CHANGES_BASE..HEAD"
-fi
-uv run --quiet --project rhythm_champions/tools champions guard --index
-if changes_match '^rhythm_champions/tools/'; then
-  uv run --directory rhythm_champions/tools ruff check .
-  uv run --directory rhythm_champions/tools pytest -q
-fi
-if changes_match '^demo3d/tools/'; then
-  uv run --directory demo3d/tools ruff check .
-  uv run --directory demo3d/tools pytest -q
-elif changes_match '^(herocap/|content/survivors-enemies\.yaml$)'; then
-  uv run --directory demo3d/tools pytest -q tests/test_herocap.py
-fi
-if changes_match '^(demo3d/(dotnet/|Assets/Demo3D/Choreography/|Assets/Demo3D/Tests/Choreography/)|unity-packages/com.playlistsurvivors.choreography/|songs/action/)'; then
-  dotnet test demo3d/dotnet/Demo3D.Choreography.Tests --nologo -v q
-fi
-if changes_match '^(demo2d/(dotnet/|Assets/Demo2D/(Choreography|Data|Tests/Choreography)/)|unity-packages/com.playlistsurvivors.choreography/|songs/action/)'; then
-  dotnet test demo2d/dotnet/Demo2D.Choreography.Tests --nologo -v q
-fi
+lane_guard() {
+  { [ -z "$CHANGES_BASE" ] || step range champions guard --range "$CHANGES_BASE..HEAD"; } &&
+    step index champions guard --index
+}
+lane_tools() {
+  step ruff uv run --directory rhythm_champions/tools ruff check . &&
+    step pytest uv run --directory rhythm_champions/tools pytest -q
+}
+lane_scripts() {
+  step tests uv run --no-project python -m unittest scripts/test_check_conflict_markers.py \
+    scripts/test_prune_cargo_target.py scripts/test_ci_full.py
+}
+lane_sim() {
+  step tests dotnet test rhythm_champions/dotnet --nologo -v q
+}
+lane_plugin() {
+  step fmt plugin cargo fmt --all --check &&
+    step clippy plugin cargo clippy --locked --workspace --all-targets -- -D warnings &&
+    step tests plugin cargo nextest run --locked --workspace --status-level fail
+}
 
-if changes_game_sim && [ -d game/dotnet/PS.Game.Sim.Tests ]; then
-  dotnet test game/dotnet/PS.Game.Sim.Tests --nologo -v q
-  dotnet build game/dotnet/PS.Game.Replay --nologo -v q
-  dotnet build game/dotnet/PS.Game.Sweep --nologo -v q
-  # The evidence harnesses (game/evidence/*/*.csproj) build on the sim too: outside the checks they rot.
-  for p in game/evidence/*/*/*.csproj; do [ -f "$p" ] && dotnet build "$p" --nologo -v q; done
+lanes_init
+lane guard lane_guard
+if changes_match '^rhythm_champions/tools/'; then lane tools lane_tools; fi
+if changes_match '^scripts/(check-conflict-markers|prune-cargo-target|ci-full|lib/lanes\.sh|test_(check_conflict_markers|prune_cargo_target|ci_full)\.py)$'; then
+  lane scripts lane_scripts
 fi
-
-# Rhythm Champions' sim (rhythm_champions/dotnet): its tests, the recorded sessions' replays among them, and
-# the replay tool built, when the sim, its tests, the content or the sessions changed.
-if changes_match '^rhythm_champions/(Assets/Champions/Sim/|dotnet/|Content/|sessions/)'; then
-  dotnet test rhythm_champions/dotnet --nologo -v q
-fi
-
-# Rhythm Champions' music plugin, its own Cargo workspace.
-if changes_match '^rhythm_champions/plugin/'; then
-  (
-    cd rhythm_champions/plugin
-    cargo fmt --all --check
-    cargo clippy --locked --workspace --all-targets -- -D warnings
-    cargo test --locked --workspace --quiet
-  )
-fi
-
-echo "check-fast: passed in $(( $(date +%s) - started )) s"
+if changes_match '^rhythm_champions/(Assets/Champions/Sim/|dotnet/|Content/|sessions/)'; then lane sim lane_sim; fi
+if changes_match '^rhythm_champions/plugin/'; then lane plugin lane_plugin; fi
+lanes_wait
+echo "check-fast: passed in $(( $(date +%s) - started )) s (budget 60 s)"
