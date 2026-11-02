@@ -56,6 +56,8 @@ namespace Champions.Sim
         public EliteMove Move;
 
         public bool IsBoss => Role == EnemyRole.Boss;
+
+        public EnemyType Clone() => (EnemyType)MemberwiseClone();
     }
 
     /// <summary>The big ork's charge (design.md, "Threats").</summary>
@@ -276,7 +278,7 @@ namespace Champions.Sim
         public EnemyRules Clone()
         {
             var copy = (EnemyRules)MemberwiseClone();
-            copy.Cast = (EnemyType[])Cast.Clone();
+            copy.Cast = Array.ConvertAll(Cast, t => t.Clone());
             return copy;
         }
     }

@@ -29,9 +29,10 @@ namespace Champions.Sim
     /// updated before each of those and at the tick's end, after which the per-tick systems run: quiet
     /// moments, the run clock, the hero's walk, its dash, its health, then the attacks (<see cref="Arsenal"/>,
     /// which takes the tick's beats and strikes in time order), the horde (<see cref="Sim.Horde"/>, which
-    /// acts on the tick's beats in time order), the structures' chunks (<see cref="Sim.StructureField"/>, loaded
-    /// round the hero) and the zone key (<see cref="Sim.Zones"/>, which a beat moves on). Inputs take effect when given, at the frontier, judged from when they were heard
-    /// (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
+    /// acts on the tick's beats in time order), the bosses (<see cref="Sim.Bosses"/>, which a downbeat brings), the
+    /// structures' chunks (<see cref="Sim.StructureField"/>, loaded round the hero) and the zone key
+    /// (<see cref="Sim.Zones"/>, which a beat moves on). Inputs take effect when given, at the frontier, judged from
+    /// when they were heard (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
     /// <see cref="Judgement"/>); hits on the hero settle once the inputs heard by then are in
     /// (<see cref="HeroHealth"/>). Nothing simulated is ever revised.
     /// </summary>
@@ -88,6 +89,7 @@ namespace Champions.Sim
             horde = new Horde(this, config, Enemies);
             Zones = new Zones(config.Zones);
             State.Zone = Zones.Key;
+            Bosses = new Bosses(this, config);
         }
 
         public SimState State { get; }
@@ -107,8 +109,11 @@ namespace Champions.Sim
         /// <summary>The horde: its mobs' motion, elite moves, spores and, with a level, the spawner.</summary>
         public Horde Horde => horde;
 
-        /// <summary>The floor's zone key (the bosses' bead turns it warm at the dragon's entrance).</summary>
+        /// <summary>The floor's zone key (the dragon's entrance turns it warm).</summary>
         public Zones Zones { get; }
+
+        /// <summary>The bosses: their calls, entrances and duels.</summary>
+        public Bosses Bosses { get; }
 
         /// <summary>The hero's dash (the progression equips, the mods tune it).</summary>
         internal Dashes Dashes => dashes;
@@ -157,6 +162,13 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)(uint)inputs.Count);
                 h = Hashing.Fold(h, (ulong)(uint)Stream.Accepted.Length);
                 if (StructureField != null) h = Hashing.Fold(h, (ulong)(uint)StructureField.Standing | (ulong)(uint)StructureField.Breaks << 32);
+                // Only once a boss was called, so the sessions before bosses keep their hashes.
+                if (Bosses.Called > 0)
+                {
+                    h = Hashing.Fold(h, (ulong)Bosses.Stage | (ulong)(uint)Bosses.Phase << 8 | (ulong)(uint)Bosses.Marks.Length << 16 | (ulong)(uint)Bosses.Called << 32);
+                    h = Hashing.Fold(h, Hashing.Bits(Bosses.Break));
+                    h = Hashing.Fold(h, Hashing.Bits(Bosses.Health));
+                }
                 return h;
             }
         }
@@ -253,6 +265,7 @@ namespace Champions.Sim
         {
             hero.HeldChanged(this);
             horde.HeldChanged();
+            Bosses.HeldChanged();
         }
 
         /// <summary>The hero lets go of its held keys and target, so a key held through the cards never walks it after.</summary>
@@ -317,6 +330,14 @@ namespace Champions.Sim
                 OrbitRadius = Arsenal.OrbitRadius,
                 EnemiesAlive = Enemies.Alive,
                 Zone = State.Zone,
+                Boss = Bosses.InDuel ? Bosses.Id : -1,
+                BossCast = Bosses.InDuel ? Bosses.Cast : -1,
+                BossHealth = Bosses.InDuel ? Bosses.Health : 0,
+                BossMaxHealth = Bosses.InDuel ? Bosses.MaxHealth : 0,
+                BossBreak = Bosses.InDuel ? Bosses.Break : 0,
+                BossPhase = Bosses.Phase,
+                BossStaggerFrom = Bosses.StaggerFrom,
+                BossStaggerUntil = Bosses.StaggerUntil,
             };
         }
 
@@ -368,6 +389,7 @@ namespace Champions.Sim
             health.Tick(this, end);
             Arsenal.Tick(this, end);
             horde.Tick(end);
+            Bosses.Tick(end);
             StructureField?.Tick(this, end);
             Zones.Tick(this, end);
         }
@@ -383,6 +405,7 @@ namespace Champions.Sim
             State.Downbeat = downbeat;
             Arsenal.Beat(this, t, i, downbeat, bar);
             horde.Beat(t, i);
+            Bosses.Beat(t, i, downbeat);
             Zones.Beat(this, t, Beats.PeriodOf(i));
             Cadenced(t, i, Cadence.OnBeat(i, t, State.Beat == Reliability.Reliable));
         }

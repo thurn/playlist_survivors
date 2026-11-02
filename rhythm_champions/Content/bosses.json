@@ -1,0 +1,34 @@
+{
+  "arrival": { "waitS": 4, "windowS": 60, "distanceM": 9, "roarBeats": 4, "roarS": 2 },
+  "entrance": { "screenHalfWidthM": 21, "screenHalfHeightM": 14, "power": 8 },
+  "break": { "perDodge": 0.25, "staggerBeats": 4, "staggerBeatlessS": 2, "damageScale": 2 },
+  "phaseTwoBelow": 0.5,
+  "bosses": [
+    {
+      "id": "fatOgre",
+      "keepM": 1.2,
+      "restBeats": [2, 1],
+      "death": "treasure",
+      "warmZone": false,
+      "moves": [
+        { "move": "smash", "telegraphBeats": [2, 1], "damage": 25, "maxM": 8, "lengthM": 7, "widthM": 1.25, "chainTwo": "stomp" },
+        { "move": "boulders", "telegraphBeats": [2, 1], "damage": 15, "count": 3, "radiusM": 1.8, "spreadM": 3.5 },
+        { "move": "stomp", "telegraphBeats": [2, 1], "damage": 20, "maxM": 6.5, "radiusM": 6 },
+        { "move": "charge", "telegraphBeats": [3, 1], "damage": 25, "lengthM": 18, "durationS": 0.7 }
+      ]
+    },
+    {
+      "id": "dragon",
+      "keepM": 1.5,
+      "restBeats": [2, 1],
+      "death": "finale",
+      "warmZone": true,
+      "moves": [
+        { "move": "breath", "telegraphBeats": [2, 1], "damage": 15, "maxM": 11, "rangeM": 11, "halfArcDeg": 25, "sweepDeg": [0, 180], "burnBeats": 1 },
+        { "move": "fireballs", "telegraphBeats": [2, 1], "damage": 15, "count": 3, "radiusM": 1.8 },
+        { "move": "tail", "telegraphBeats": [2, 1], "damage": 25, "maxM": 7, "radiusM": 7.5 },
+        { "move": "dive", "telegraphBeats": [4, 2], "damage": 30, "radiusM": 5, "chainTwo": "dive" }
+      ]
+    }
+  ]
+}

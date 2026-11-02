@@ -31,6 +31,12 @@ namespace Champions.Sim
         /// <summary>Standing enemies placed at the start: scenes for tests, stills and scripted checks (none in play).</summary>
         public Dummy[] Dummies = new Dummy[0];
 
+        /// <summary>
+        /// A scripted duel: the cast id of the boss called at the start ("fatOgre", "dragon"), arriving on its downbeat
+        /// (<see cref="Bosses"/>); null for none. With the level, its later bosses follow on its timeline.
+        /// </summary>
+        public string Duel;
+
         /// <summary>The design's starting build.</summary>
         public static Upgrade[] StartLoadout() => new[] { Upgrade.Of(AttackKind.SwordSlash, 1) };
 
@@ -57,7 +63,17 @@ namespace Champions.Sim
                 Level = !Level ? null : content != null ? content.Level.Clone() : new LevelRules(),
                 Zones = content != null ? content.Zones.Clone() : new ZoneRules(),
                 Structures = !Level || content == null ? null : content.Structures.Clone(),
+                Bosses = content != null ? content.Bosses.Clone() : new BossRules(),
+                Duel = DuelCast(content),
             };
+        }
+
+        int DuelCast(GameContent content)
+        {
+            if (Duel == null) return -1;
+            int cast = content != null ? content.Enemies.IndexOf(Duel) : -1;
+            if (cast < 0 || content.Bosses.Of(cast) == null) throw new ArgumentException($"duel: no boss {Duel} in the content");
+            return cast;
         }
 
         /// <summary>Writes the inputs as <c>inputs.bin</c> holds them.</summary>
@@ -83,9 +99,13 @@ namespace Champions.Sim
                 w.Write(d.Health);
             }
             w.Write(Level);
+            w.Write(Duel ?? "");
         }
 
-        /// <summary>Reads the inputs of an <c>inputs.bin</c> of <paramref name="version"/> (version 1: the start loadout, no dummies; before 3, no level).</summary>
+        /// <summary>
+        /// Reads the inputs of an <c>inputs.bin</c> of <paramref name="version"/> (version 1: the start loadout, no dummies;
+        /// before 3, no level; before 4, no duel).
+        /// </summary>
         public static RunInputs Read(BinaryReader r, int version, string path)
         {
             var run = new RunInputs
@@ -110,6 +130,10 @@ namespace Champions.Sim
                 run.Dummies[i] = new Dummy { X = r.ReadDouble(), Y = r.ReadDouble(), Radius = r.ReadDouble(), Health = r.ReadDouble() };
             // Version 3 added the level.
             if (version >= 3) run.Level = r.ReadBoolean();
+            // Version 4 added the duel.
+            if (version < 4) return run;
+            string duel = r.ReadString();
+            run.Duel = duel.Length > 0 ? duel : null;
             return run;
         }
 

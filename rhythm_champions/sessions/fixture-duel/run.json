@@ -1,0 +1,21 @@
+{
+  "format": "rhythm-champions-session",
+  "version": 4,
+  "build": "test",
+  "runtime": ".NET 10.0.7",
+  "platform": "",
+  "source": "dotnet/Champions.Sim.Tests DuelSessionTests.DuelRun: a synthetic fixture song, no audio",
+  "flags": [],
+  "seed": 41,
+  "startTime": 0,
+  "start": "Immediately",
+  "loadout": ["swordSlash:3", "orbitBlades:3", "bladeRain:2", "keenEdge:2"],
+  "dummies": 40,
+  "level": false,
+  "duel": "fatOgre",
+  "end": 75,
+  "hash": "1DA469AFEF6A9BF0",
+  "events": 1074,
+  "entries": 2141,
+  "inputs": 83
+}

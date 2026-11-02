@@ -21,7 +21,7 @@ namespace Champions.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        const int Version = 3;
+        const int Version = 4;
         static readonly byte[] Magic = { (byte)'R', (byte)'C', (byte)'R', (byte)'U', (byte)'N' };
 
         /// <summary>What built the run's config (<see cref="RunInputs.Build"/>).</summary>
@@ -165,10 +165,11 @@ namespace Champions.Sim
             return string.Format(c,
                 "{{\n  \"format\": \"rhythm-champions-session\",\n  \"version\": {0},\n  \"build\": {1},\n  \"runtime\": {2},\n" +
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"startTime\": {7:R},\n" +
-                "  \"start\": {8},\n  \"loadout\": [{14}],\n  \"dummies\": {15},\n  \"level\": {16},\n  \"end\": {9:R},\n  \"hash\": \"{10:X16}\",\n" +
+                "  \"start\": {8},\n  \"loadout\": [{14}],\n  \"dummies\": {15},\n  \"level\": {16},\n  \"duel\": {17},\n  \"end\": {9:R},\n  \"hash\": \"{10:X16}\",\n" +
                 "  \"events\": {11},\n  \"entries\": {12},\n  \"inputs\": {13}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, Run.Seed, Run.StartTime,
-                Quote(Run.Start.ToString()), End, Hash, Events, Entries.Length, Inputs.Length, loadout, Run.Dummies.Length, Run.Level ? "true" : "false");
+                Quote(Run.Start.ToString()), End, Hash, Events, Entries.Length, Inputs.Length, loadout, Run.Dummies.Length, Run.Level ? "true" : "false",
+                Run.Duel != null ? Quote(Run.Duel) : "null");
         }
 
         static string Quote(string s)

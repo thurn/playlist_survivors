@@ -60,6 +60,13 @@ namespace Champions.Sim
         public double Weight;
     }
 
+    /// <summary>A boss on the level's timeline: its cast index, and the run clock that calls it (spawning stops; it arrives on its downbeat).</summary>
+    public struct LevelBoss
+    {
+        public int Cast;
+        public double CallAtS;
+    }
+
     /// <summary>The formed waves' shapes (design.md, "Spawning").</summary>
     public enum WaveKind : byte
     {
@@ -75,8 +82,8 @@ namespace Champions.Sim
     /// Level 1's spawner (Content/level1.json; design.md, "Spawning", "Toughness" and Decision 17): the ramp
     /// from 150 alive to 600 by minute 12 from a ring just off-screen, the toughness ramp, the mix as types
     /// join, loud surges toward the cap of 1,000 and quiet thinning, and formed waves on strong section
-    /// changes. Seconds are run clock. The level's timeline beyond the spawner (when spawning stops for each
-    /// boss) is the assembly's; the bosses stop and resume the spawner (<see cref="Spawner"/>).
+    /// changes, and its bosses' calls (<see cref="Bosses"/>: each stops the spawner, and the Ogre's death resumes it with
+    /// the second half's mix). Seconds are run clock.
     /// </summary>
     public sealed class LevelRules
     {
@@ -130,6 +137,12 @@ namespace Champions.Sim
         public int SwarmCount = 48;
         public double SwarmRadiusM = 3;
 
+        /// <summary>
+        /// The bosses in order and the run clock calling each (design.md, "Level 1, minute by minute": the Ogre at 7:00, the
+        /// dragon at 13:00); a boss is called only once the one before it is dead.
+        /// </summary>
+        public LevelBoss[] Bosses = new LevelBoss[0];
+
         /// <summary>Reads level1.json's object; the mixes name types of <paramref name="enemies"/>.</summary>
         public static LevelRules Read(JsonValue json, string path, EnemyRules enemies)
         {
@@ -170,6 +183,7 @@ namespace Champions.Sim
             rules.SwarmRadiusM = swarm.Number("radiusM");
             swarm.End();
             waves.End();
+            rules.Bosses = r.Objects("bosses", b => ReadBoss(b, enemies));
             r.End();
             rules.Validate(path);
             return rules;
@@ -184,6 +198,16 @@ namespace Champions.Sim
             return new MixEntry { Type = type, FromS = r.Number("fromS"), Weight = r.Number("weight") };
         }
 
+        static LevelBoss ReadBoss(ContentReader r, EnemyRules enemies)
+        {
+            string id = r.String("boss");
+            int cast = enemies.IndexOf(id);
+            if (cast < 0 || !enemies.Cast[cast].IsBoss) throw ContentReader.Fail(r.Child("boss"), id + " is no boss in " + EnemyRules.File);
+            var boss = new LevelBoss { Cast = cast, CallAtS = r.Number("callAtS") };
+            r.End();
+            return boss;
+        }
+
         void Validate(string path)
         {
             if (!(RingXM > 0 && RingYM > 0 && RingJitterM >= 0)) throw ContentReader.Fail(path + ".spawn", "a positive ring");
@@ -194,6 +218,8 @@ namespace Champions.Sim
             foreach (var mix in new[] { Mix, SecondHalfMix })
                 foreach (var m in mix)
                     if (!(m.Weight >= 0)) throw ContentReader.Fail(path, "mix weights at least 0");
+            for (int i = 1; i < Bosses.Length; i++)
+                if (!(Bosses[i].CallAtS > Bosses[i - 1].CallAtS)) throw ContentReader.Fail(path + ".bosses", "called in order");
         }
 
         /// <summary>A copy, so a run's config never shares the content's.</summary>
@@ -202,6 +228,7 @@ namespace Champions.Sim
             var copy = (LevelRules)MemberwiseClone();
             copy.Mix = (MixEntry[])Mix.Clone();
             copy.SecondHalfMix = (MixEntry[])SecondHalfMix.Clone();
+            copy.Bosses = (LevelBoss[])Bosses.Clone();
             return copy;
         }
     }

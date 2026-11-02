@@ -50,6 +50,12 @@ namespace Champions.Sim
         /// <summary>The world's structures (Content/structures.json), or null: an open arena (tests, most stills).</summary>
         public StructureRules Structures;
 
+        /// <summary>The bosses' numbers and moves (Content/bosses.json; the defaults have no boss).</summary>
+        public BossRules Bosses = new BossRules();
+
+        /// <summary>A scripted duel: the cast index of the boss called at the start (<see cref="RunInputs.Duel"/>), or -1.</summary>
+        public int Duel = -1;
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;

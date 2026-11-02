@@ -87,6 +87,15 @@ namespace Champions.Sim
         public int EnemiesAlive;
         /// <summary>The floor's zone key.</summary>
         public int Zone;
+        /// <summary>
+        /// The boss bar's, through a duel (<see cref="Bosses"/>): the boss's enemy id and cast index (-1 outside a duel; its
+        /// colour is its cast slot's), health, full health, Break (0 to 1, the white bar), phase, and its stagger's span
+        /// (NaN when not staggered).
+        /// </summary>
+        public int Boss, BossCast;
+        public double BossHealth, BossMaxHealth, BossBreak;
+        public int BossPhase;
+        public double BossStaggerFrom, BossStaggerUntil;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 

@@ -24,7 +24,7 @@ namespace Champions.Sim
         Attacks = 32,
     }
 
-    /// <summary>What dealt a blow: a dash, an attack or its wave, or a mod's effect.</summary>
+    /// <summary>What dealt a blow: a dash, an attack or its wave, or a mod's effect (and a boss's entrance, killing the mobs on screen).</summary>
     public enum BlowSource : byte
     {
         Dash = 0,
@@ -37,6 +37,8 @@ namespace Champions.Sim
         Tempest = 6,
         /// <summary>Shatterburst's shards.</summary>
         Shards = 7,
+        /// <summary>A boss's entrance shockwave, or the dragon's finale: never the hero's blow, only a <see cref="SimEventKind.Kill"/>'s source.</summary>
+        Boss = 8,
     }
 
     /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>

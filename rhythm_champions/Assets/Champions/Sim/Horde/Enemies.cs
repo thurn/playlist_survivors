@@ -51,7 +51,9 @@ namespace Champions.Sim
     /// hits and, for the horde, separation, contact and steering (plan.md, "Systems": one spatial hash).
     /// The hero's blows land on them through <see cref="Strikes"/>: a hit takes the blow's damage from the
     /// health, and one that kills shatters the enemy on the blow's frame, thrown away from it
-    /// (<see cref="SimEventKind.Hit"/>, <see cref="SimEventKind.Kill"/>; the kill mods follow).
+    /// (<see cref="SimEventKind.Hit"/>, <see cref="SimEventKind.Kill"/>; the kill mods follow). A boss's hits go on to
+    /// <see cref="Bosses"/> (Break's damage, phase two, its death); nothing here moves an enemy, so a boss is never
+    /// knocked back.
     ///
     /// The grid hashes 2 m cells into buckets (the arena is infinite) and is rebuilt lazily, by a counting
     /// sort, on the first query after <see cref="Moved"/> or a spawn: whoever moves enemies calls
@@ -224,16 +226,21 @@ namespace Champions.Sim
                 dy = len > 1e-9 ? sy / len : 0;
             }
             else blow.Shape.Away(e.X, e.Y, out dx, out dy);
-            e.Health -= blow.Damage;
+            // A boss takes Break's extra damage while staggered and never breaks outright; a shattering blow kills a mob.
+            bool boss = e.Boss;
+            double damage = boss ? blow.Damage * sim.Bosses.DamageScale : blow.Shatter ? Math.Max(blow.Damage, e.Health) : blow.Damage;
+            e.Health -= damage;
             if (e.Health > 1e-9)
             {
-                sim.Emit(SimEvent.Hit(blow.T, id, blow.Source, blow.Flags, dx, dy, blow.Damage, e.Health));
+                sim.Emit(SimEvent.Hit(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, e.Health));
+                if (boss) sim.Bosses.Struck(blow.T);
                 return false;
             }
             double x = e.X, y = e.Y;
             Kill(id);
-            sim.Emit(SimEvent.Kill(blow.T, id, blow.Source, blow.Flags, dx, dy, blow.Damage, x, y));
+            sim.Emit(SimEvent.Kill(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, x, y));
             sim.Arsenal.Killed(sim, blow, x, y);
+            if (boss) sim.Bosses.Killed(blow.T, dx, dy);
             return true;
         }
 

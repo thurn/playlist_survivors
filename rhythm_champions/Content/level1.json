@@ -36,5 +36,9 @@
     "ring": { "count": 40, "radiusM": 20 },
     "line": { "count": 30, "lengthM": 36, "offsetM": 22 },
     "swarm": { "count": 48, "radiusM": 3 }
-  }
+  },
+  "bosses": [
+    { "boss": "fatOgre", "callAtS": 420 },
+    { "boss": "dragon", "callAtS": 780 }
+  ]
 }

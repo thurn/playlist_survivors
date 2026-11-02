@@ -4,8 +4,9 @@ namespace Champions.Sim
     /// What the sim tells the client (plan.md, "The Sim", Shape): the beats and the beat's state, the
     /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
     /// moves, dashes, hits, heals and death, the attacks: the build, swings, blows, waves, hits and kills on
-    /// the enemies, the horde: spawns, departures, formed waves, elite moves and spores, the zone key, and the
-    /// structures: loaded, unloaded, hit and broken. The systems' beads add their kinds after these.
+    /// the enemies, the horde: spawns, departures, formed waves, elite moves and spores, the zone key, the structures:
+    /// loaded, unloaded, hit and broken, and the bosses: calls, entrances, telegraphs, landings, Break, staggers,
+    /// phases and deaths. The systems' beads add their kinds after these.
     /// </summary>
     public enum SimEventKind
     {
@@ -47,6 +48,14 @@ namespace Champions.Sim
         StructureGone,
         StructureHit,
         StructureBreak,
+        BossCall,
+        BossArrive,
+        BossTelegraph,
+        BossMove,
+        BossBreak,
+        BossStagger,
+        BossPhase,
+        BossDeath,
     }
 
     /// <summary>
@@ -592,9 +601,153 @@ namespace Champions.Sim
             return e;
         }
 
+        /// <summary>A boss is called: spawning stops, and it arrives on its downbeat (<see cref="Bosses"/>): I0 its cast index; D0 the run clock.</summary>
+        public static SimEvent BossCall(double t, int cast, double runClock)
+        {
+            var e = Of(SimEventKind.BossCall, t);
+            e.I0 = cast;
+            e.D0 = runClock;
+            return e;
+        }
+
+        /// <summary>
+        /// A boss lands on its downbeat and its shockwave shatters every mob on screen (their <see cref="Kill"/>s from
+        /// <see cref="BlowSource.Boss"/> came just before; mobs off screen went as <see cref="EnemyGone"/>): I0 its enemy id, I1
+        /// its cast index, I2 the mobs shattered; D0/D1 where it lands, D2 the way it faces (radians from +x), D3/D4 the
+        /// hero's feet (the screen the shockwave cleared).
+        /// </summary>
+        public static SimEvent BossArrive(double t, int boss, int cast, int shattered, double x, double y, double facing, double heroX, double heroY)
+        {
+            var e = Of(SimEventKind.BossArrive, t);
+            e.I0 = boss;
+            e.I1 = cast;
+            e.I2 = shattered;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = facing;
+            e.D3 = heroX;
+            e.D4 = heroY;
+            return e;
+        }
+
+        /// <summary>
+        /// A boss's mark (<see cref="BossMark"/>): it starts filling at T (a beat, up to a beat after it was planned) and its
+        /// attack lands at D0 as planned (on the beat, beat I2, which re-predicts it; beatless -1). I0 the mark's number,
+        /// I1 its <see cref="Sim.BossMove"/> | its part &lt;&lt; 8 | the shape's <see cref="ShapeKind"/> &lt;&lt; 16. The shape: a
+        /// circle's centre D1/D2 and radius D3 (a ring adds its inner radius D4); a path's start D1/D2, end D3/D4 and reach
+        /// D5; a cone's apex D1/D2, facing D3 (radians from +x), radius D4 and half angle D5.
+        /// </summary>
+        public static SimEvent BossTelegraph(in BossMark mark)
+        {
+            var s = mark.Shape;
+            var e = Of(SimEventKind.BossTelegraph, mark.Telegraph.Start);
+            e.I0 = mark.Id;
+            e.I1 = (int)mark.Move | mark.Part << 8 | (int)s.Kind << 16;
+            e.I2 = mark.Telegraph.LandBeat;
+            e.D0 = mark.Telegraph.Land;
+            e.D1 = s.X;
+            e.D2 = s.Y;
+            switch (s.Kind)
+            {
+                case ShapeKind.Path:
+                    e.D3 = s.X2;
+                    e.D4 = s.Y2;
+                    e.D5 = s.Radius;
+                    break;
+                case ShapeKind.Cone:
+                    e.D3 = System.Math.Atan2(s.DirY, s.DirX);
+                    e.D4 = s.Radius;
+                    e.D5 = s.HalfArc;
+                    break;
+                default:
+                    e.D3 = s.Radius;
+                    e.D4 = s.Inner;
+                    break;
+            }
+            return e;
+        }
+
+        /// <summary>
+        /// A boss's mark landed on its beat (T), or was called off (I2 1: a stagger, a hold, the boss's death): I0 the
+        /// mark's number, I1 its <see cref="Sim.BossMove"/> | its part &lt;&lt; 8; D0/D1 the boss then, D2/D3 where its move
+        /// takes it (the charge's run's end, the dive's landing), D4 how long (the charge's run, the breath's burn), D5 the
+        /// breath's sweep (radians, from its facing's clockwise side; 0 still).
+        /// </summary>
+        public static SimEvent BossMove(double t, in BossMark mark, bool calledOff, double x, double y, double toX, double toY,
+            double duration, double sweep)
+        {
+            var e = Of(SimEventKind.BossMove, t);
+            e.I0 = mark.Id;
+            e.I1 = (int)mark.Move | mark.Part << 8;
+            e.I2 = calledOff ? 1 : 0;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = toX;
+            e.D3 = toY;
+            e.D4 = duration;
+            e.D5 = sweep;
+            return e;
+        }
+
+        /// <summary>A perfect dodge filled a boss's Break: I0 the boss; D0 Break now (1: full, the stagger follows), D1 before.</summary>
+        public static SimEvent BossBreak(double t, int boss, double now, double before)
+        {
+            var e = Of(SimEventKind.BossBreak, t);
+            e.I0 = boss;
+            e.D0 = now;
+            e.D1 = before;
+            return e;
+        }
+
+        /// <summary>
+        /// A boss's stagger began (I1 1; its Break emptied) or ended (I1 0): I0 the boss, I2 its last beat (-1 beatless);
+        /// D0 its end as planned.
+        /// </summary>
+        public static SimEvent BossStagger(double t, int boss, bool on, int untilBeat, double until)
+        {
+            var e = Of(SimEventKind.BossStagger, t);
+            e.I0 = boss;
+            e.I1 = on ? 1 : 0;
+            e.I2 = untilBeat;
+            e.D0 = until;
+            return e;
+        }
+
+        /// <summary>A boss entered a phase (I1: 2): I0 the boss.</summary>
+        public static SimEvent BossPhase(double t, int boss, int phase)
+        {
+            var e = Of(SimEventKind.BossPhase, t);
+            e.I0 = boss;
+            e.I1 = phase;
+            return e;
+        }
+
+        /// <summary>
+        /// A boss died, its <see cref="Kill"/> just before: I0 the boss, I1 its cast index, I2 what it sets off
+        /// (<see cref="Sim.BossDeath"/>: the treasure, or the finale's shatter and the victory); D0/D1 where, D2/D3 the killing
+        /// blow's way.
+        /// </summary>
+        public static SimEvent BossDeath(double t, int boss, int cast, BossDeath death, double x, double y, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.BossDeath, t);
+            e.I0 = boss;
+            e.I1 = cast;
+            e.I2 = (int)death;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = dirX;
+            e.D3 = dirY;
+            return e;
+        }
+
         // Reading a beat's flags.
         public bool Downbeat => (I2 & 1) != 0;
         public bool Strong => (I2 & 2) != 0;
         public Reliability BeatReliability => (Reliability)(I2 >> 2);
+
+        // Reading a boss mark's move, part and shape (BossTelegraph, BossMove).
+        public BossMove MarkMove => (BossMove)(I1 & 0xFF);
+        public int MarkPart => (I1 >> 8) & 0xFF;
+        public ShapeKind MarkShape => (ShapeKind)((I1 >> 16) & 0xFF);
     }
 }
