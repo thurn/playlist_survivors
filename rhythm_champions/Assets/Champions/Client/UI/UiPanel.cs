@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Champions.Render;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -12,11 +13,13 @@ namespace Champions.Client.UI
     /// editor assigns), the game's stylesheet (Resources/UI/Champions.uss) on its root, layered by its order. A
     /// batch-mode player has no window, so the panel then draws into a 1920×1080 target of its own that the stills draw
     /// over the frame while the layer shows (<see cref="Stills.Overlays"/>). Elements are built in code: the screens
-    /// fill <see cref="Root"/>.
+    /// fill <see cref="Root"/>. A click that any layer's elements take is never the world's (<see cref="TakesPointer"/>).
     /// </summary>
     public sealed class UiPanel : IDisposable
     {
         public const string SettingsPath = "UI/Panel", StylePath = "UI/Champions";
+
+        static readonly List<UiPanel> Layers = new List<UiPanel>();
 
         readonly UIDocument _doc;
         readonly PanelSettings _settings;
@@ -50,6 +53,23 @@ namespace Champions.Client.UI
             Root.styleSheets.Add(Resources.Load<StyleSheet>(StylePath));
             Root.AddToClassList("layer");
             Root.pickingMode = PickingMode.Ignore; // the layer itself is not a target: its screens are
+            Layers.Add(this);
+        }
+
+        /// <summary>
+        /// Does an element of a shown layer take the pointer at <paramref name="screen"/>, in the Input System's screen
+        /// pixels (from the bottom left)? A click there is the UI's, never a ground target (Loop.PointerInput).
+        /// </summary>
+        public static bool TakesPointer(Vector2 screen)
+        {
+            foreach (var layer in Layers)
+            {
+                var panel = layer._shown && layer._doc != null ? layer.Root.panel : null;
+                if (panel == null) continue;
+                // UI Toolkit's screen space runs from the top left.
+                if (panel.Pick(RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y))) != null) return true;
+            }
+            return false;
         }
 
         /// <summary>Shows or hides the whole layer (hidden, it takes no pointer and no still shows it).</summary>
@@ -69,6 +89,7 @@ namespace Champions.Client.UI
 
         public void Dispose()
         {
+            Layers.Remove(this);
             if (_doc != null) Destroy(_doc.gameObject);
             if (_target != null)
             {

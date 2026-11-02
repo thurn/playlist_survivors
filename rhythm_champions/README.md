@@ -171,8 +171,12 @@ command line `Flow` leads from the title through the music picker (the apps
 playing audio, then File..., the Mac's open panel) to a run, the pause menu
 over it (Esc or the window losing focus) and the calibration screens; its
 `ShowEnd` shows the end card. A run (`GameLoop`) owns the keys (`KeyInput`:
-WASD or the arrows, Space, Enter, 1-3, each heard at keySong) and the run's UI
-(`RunUi`): the hero's indicator in the world (`Render/UI/HeroIndicator`, a
+WASD or the arrows, Space, Enter, 1-3, each heard at keySong), the left
+button's click targets (`PointerInput`: the press's ground point under the
+pointer through the camera, then one a frame while the button is held, given
+as the sim's `Target`; never a press over an element that takes the pointer,
+`UiPanel.TakesPointer`, nor while a menu is over the run or the cards are up)
+and the run's UI (`RunUi`): the hero's indicator in the world (`Render/UI/HeroIndicator`, a
 camera-facing quad that Indicator.shader fills with the strip, the beats'
 ticks, the dash's pip, the held level's dot and the health bar), the HUD (the
 experience hairline, the boss and Break bars in a duel) and the cards, which

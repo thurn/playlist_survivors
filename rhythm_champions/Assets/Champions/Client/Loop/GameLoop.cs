@@ -12,7 +12,8 @@ namespace Champions.Client.Loop
 {
     /// <summary>
     /// The frame loop on the main thread (plan.md, Architecture): the plugin's entries into the sim, the
-    /// player's keys (<see cref="Keys"/>, heard at keySong), the sim stepped to the frontier, its events read
+    /// player's keys (<see cref="Keys"/>) and click targets (<see cref="Pointer"/>, cast through the camera), heard
+    /// at keySong, the sim stepped to the frontier, its events read
     /// and handed to the world (<see cref="WorldPresenter"/>) and the run's UI (<see cref="RunUi"/>), which it
     /// presents at the frame's song time. The other presenters and the run join it in the beads that build them
     /// (plan.md, The Client). The music clock takes the output device's calibration when the music opens
@@ -64,6 +65,8 @@ namespace Champions.Client.Loop
         public MusicPlayer Music => _music;
         /// <summary>The player's keys into the sim; a card's click taps its number here.</summary>
         public KeyInput Keys { get; } = new KeyInput();
+        /// <summary>The left button's ground points into the sim, never through the UI.</summary>
+        public PointerInput Pointer { get; } = new PointerInput();
 
         /// <summary>
         /// Starts the loop on `source` on `host`, the music's listener on `camera`'s object, the output
@@ -142,7 +145,11 @@ namespace Champions.Client.Loop
             }
             if (_fixed) { if (!FeedSettled()) return; }
             else FeedLive();
-            if (Driver.Clock.Ready) Keys.Drain(Driver.Sim, Driver.Clock);
+            if (Driver.Clock.Ready)
+            {
+                Keys.Drain(Driver.Sim, Driver.Clock);
+                Pointer.Drain(Driver.Sim, Driver.Clock, _camera, Keys.Suspended, Time.realtimeSinceStartupAsDouble);
+            }
             var now = new ClockReadings { Real = Time.realtimeSinceStartupAsDouble, Frame = Time.timeSinceLevelLoadAsDouble };
             if (Driver.Step(now))
             {
@@ -306,6 +313,7 @@ namespace Champions.Client.Loop
         {
             Summarise();
             Keys.Dispose();
+            Pointer.Dispose();
             _ui?.Dispose();
         }
 
