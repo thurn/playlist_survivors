@@ -1293,6 +1293,22 @@ body is 85-150 px across at the metric's 960 px, wider than its 32 px clump
 tile, so a dense tile there is one body's interior, not a clump, and a
 wider hull (8 px) moved them by about 1.
 
+**Tiles at the bodies' size (ps-wnj.30)**: both players write the monsters
+in view's height into the stills' view json (`bodyM`, and `bodies` per
+enemy slot, from the look package's `StillBodies`), and look.py grows each
+hue's swarm tile and the form tile with it (32 px at the crystal cut's
+45 px fodder; the game's troll 160-167 px), steps grown tiles by half a
+tile, reaches the frame's far edges and fills speckle before finding seams.
+Every game still of every preset passes `swarm_separation_min` (hologram
+14.9-23.4, prism 22.1-26.3, solid 16.0-29.2, edge 15.4-33.6), with far
+fewer dense tiles (24-55 per preset, from 204-329); the crystal cut's
+tiles stay 32-39 px (95 at the duel's two elites, no longer a clump), and
+its separation breaks are its own clumps
+(edge 4, 50.2 and 52 s, solid 50.2 s, hologram 36 s; 50.2 s's from the
+newly tiled bottom strip)
+([evidence](../../game/evidence/look/body-tiles/README.md),
+[crystal cut](../../demo3d/evidence/look/body-tiles/README.md)).
+
 ## Checks and Evidence
 
 ### The style guide
@@ -1321,9 +1337,11 @@ guide's own keys:
 - **Light and hue**: the halo round emitters, the colour key (the best
   60-degree window) and the hue families, palette conformance.
 - **Form**: the hero's margin over the monsters, monster form (a body's own L*
-  span, per 32 px tile) and readability.
+  span, per 32 px tile grown with the bodies' height on screen) and
+  readability.
 - **Swarm separation**: in dense crowd regions, the contrast along boundaries
-  between adjacent monsters of one type, in L*: in each 32 px tile that one
+  between adjacent monsters of one type, in L*: in each 32 px tile (grown
+  with that type's height on screen, from the view json's `bodies`) that one
   enemy hue mostly covers, how far its seams sit under the bodies either side
   of them.
 - **Per cut**: the key's median and the spread of the shots' floors.

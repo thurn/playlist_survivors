@@ -164,8 +164,9 @@ def still_stats(rgb: np.ndarray) -> dict:
             "clippedBlob": largest_region((rgb >= 250).all(axis=-1)) / lum.size}
 
 
-def largest_region(mask: np.ndarray) -> int:
-    """The pixel count of the mask's largest 8-connected region (union-find over each row's runs)."""
+def _region_runs(mask: np.ndarray) -> tuple[list[tuple[int, int, int, int]], list[int], list[int]]:
+    """The mask's runs along each row joined into 8-connected regions (union-find over the runs): the runs as (row,
+    start, end exclusive, run id), each run id's region (its root id) and each root's pixel count."""
     parent: list[int] = []
     size: list[int] = []
 
@@ -175,8 +176,9 @@ def largest_region(mask: np.ndarray) -> int:
             i = parent[i]
         return i
 
+    every: list[tuple[int, int, int, int]] = []
     prev: list[tuple[int, int, int]] = []  # (start, end exclusive, run id) of the row above
-    for row in mask:
+    for y, row in enumerate(mask):
         edges = np.flatnonzero(np.diff(np.concatenate(([0], row.view(np.int8), [0]))))
         runs = []
         j = 0
@@ -194,8 +196,24 @@ def largest_region(mask: np.ndarray) -> int:
                     size[ra] += size[rb]
                 k += 1
             runs.append((int(a), int(b), rid))
+            every.append((y, int(a), int(b), rid))
         prev = runs
-    return max((size[i] for i in range(len(parent)) if parent[i] == i), default=0)
+    return every, [find(i) for i in range(len(parent))], size
+
+
+def largest_region(mask: np.ndarray) -> int:
+    """The pixel count of the mask's largest 8-connected region."""
+    _, root, size = _region_runs(mask)
+    return max((size[r] for r in set(root)), default=0)
+
+
+def region_sizes(mask: np.ndarray) -> np.ndarray:
+    """Each set pixel's 8-connected region's pixel count (0 off the mask)."""
+    runs, root, size = _region_runs(mask)
+    out = np.zeros(mask.shape, dtype=np.int64)
+    for y, a, b, rid in runs:
+        out[y, a:b] = size[root[rid]]
+    return out
 
 
 def dilate(mask: np.ndarray, r: int) -> np.ndarray:
@@ -393,16 +411,24 @@ CONFORM_L, CONFORM_C = 40.0, 30.0  # a pixel palette conformance judges
 HUE_TOL = 20.0  # HSV degrees: a judged pixel this near a role's hue conforms
 NEUTRAL_C = 15.0  # a role under this C*ab is neutral (white, grey, the void): no hue to conform to
 FORM_TILE, FORM_MIN = 32, 0.25  # monster form per tile (px), in tiles a monster body covers this share of
+# The crystal cut's fodder's height on screen (px at NEON_W, body_px: 32-58 in its twelve stills, 45 their median), on
+# which FORM_TILE and SWARM_TILE were calibrated: taller bodies (the game's ork 115, troll 230) measure in tiles grown as
+# much.
+BODY_REF_PX = 45.0
 HERO_H_M, HERO_R_M = 1.8, 0.5  # the hero's region above its feet in the view json: a capsule this tall and wide
 # The share of the hero's capsule clear of the monsters' ID render under which its margin isn't measured: the render
 # marks the crowd alone, so monsters standing behind a knight in a clump cover its capsule (ps-wnj.18: 2.4% clear).
 HERO_VISIBLE_MIN = 0.05
 SWARM_C, SWARM_L = 30.0, 25.0  # a monster pixel candidate: coloured and lit
-SWARM_TILE = 32  # px: wider than one monster at the trailer's 32-42 m framing
+SWARM_TILE = 32  # px: wider than one monster at the trailer's 32-42 m framing (bodies BODY_REF_PX tall)
 SWARM_DENSE, SWARM_CLOSE = 0.5, 1  # a dense tile: one enemy hue covers half of it, gaps of up to 2 px closed
 SWARM_REACH = 4  # px: a seam is darker than the clump on both sides within this reach
 SWARM_SMOOTH = 1  # px: L* box-averaged over this radius first, so speckle (shards, noise) is no seam
-SWARM_PCT = 90  # a tile's boundary contrast: this percentile of its clump's seam depth
+# Speckle filled before that: a valley this deep in L* (raw seam_depth) whose 8-connected patch is under this many
+# pixels takes the brightest L* within SWARM_SPECK_FILL px. Averaged alone, black specks on 8% of a flat clump's
+# pixels read as seams (17 against the guide's 13).
+SWARM_SPECK_DL, SWARM_SPECK_PX, SWARM_SPECK_FILL = 6.0, 24, 2
+SWARM_PCT = 90  # a tile's boundary contrast: this percentile of its clump's seam depth (in SWARM_TILE tiles)
 FLASH_L, FLASH_AREA = 90.0, 0.003  # a flash: a connected region of L* >= 90 covering 0.3% of the frame or more
 
 
@@ -491,6 +517,16 @@ def erode(mask: np.ndarray, r: int) -> np.ndarray:
     return ~dilate(~mask, r)
 
 
+def box_max(lum: np.ndarray, r: int) -> np.ndarray:
+    """Each pixel's largest L* over its (2r + 1)-square window (edges repeated; separable)."""
+    out = lum
+    for axis in (0, 1):
+        n = out.shape[axis]
+        p = np.pad(out, [(r, r) if a == axis else (0, 0) for a in (0, 1)], mode="edge")
+        out = np.max([np.take(p, range(d, d + n), axis=axis) for d in range(2 * r + 1)], axis=0)
+    return out
+
+
 def box_mean(lum: np.ndarray, r: int) -> np.ndarray:
     """Each pixel's mean L* over its (2r + 1)-square window (edges repeated)."""
     h, w = lum.shape
@@ -512,6 +548,57 @@ def seam_depth(lum: np.ndarray, reach: int = SWARM_REACH) -> np.ndarray:
     return depth
 
 
+def despeckle(lum: np.ndarray) -> np.ndarray:
+    """L* with its speckle filled: every valley (raw seam_depth over SWARM_SPECK_DL) whose 8-connected patch is
+    under SWARM_SPECK_PX pixels takes the brightest L* within SWARM_SPECK_FILL px. A shard's glint, noise or dark
+    specks in a flat colour mass go; an outline, a gap or a line between bodies, which run on, stay."""
+    valley = seam_depth(lum) > SWARM_SPECK_DL
+    small = valley & (region_sizes(valley) < SWARM_SPECK_PX)
+    return np.where(small, box_max(lum, SWARM_SPECK_FILL), lum) if small.any() else lum
+
+
+def tile_starts(n: int, t: int, base: int = SWARM_TILE) -> list[int]:
+    """Where t px tiles start along n px: every `base` px from 0 (every half tile, once a tile grows past twice
+    `base`: a grid of coarse tiles straddles a clump as often as it covers one), and one more against the far edge
+    when they leave a strip (540 rows hold 16 tiles of 32 and 28 rows besides)."""
+    starts = list(range(0, n - t + 1, max(base, t // 2)))
+    if starts and starts[-1] + t < n:
+        starts.append(n - t)
+    return starts
+
+
+def body_px(view: dict | None, w: int, h: int, metres: float | None = None) -> float | None:
+    """The monsters' height on screen in pixels of a w x h still: `metres` (by default the view json's bodyM, the
+    height of the body the median monster pixel belongs to, StillBodies) stood at the hero's feet, its longest
+    projection along the world's axes (a top-down camera sees a body's height short and its breadth whole). None
+    without it."""
+    metres = metres if metres is not None else (view or {}).get("bodyM")
+    if view is None or not metres or "hero" not in view:
+        return None
+    feet, b = np.array(view["hero"], dtype=np.float64), float(metres)
+    (fx, fy), *ends = project(view, np.array([feet, feet + (b, 0, 0), feet + (0, b, 0), feet + (0, 0, b)]), w, h)
+    return float(max(np.hypot(x - fx, y - fy) for x, y in ends))
+
+
+def swarm_tiles(view: dict | None, roles: dict[str, tuple[int, int, int]], w: int, h: int) -> dict[str, int]:
+    """Each enemy role's swarm tile in a w x h still: SWARM_TILE scaled to the height on screen of that hue's
+    bodies, the view json's `bodies` (by enemy slot, MonsterSlots; a palette with fewer hues than slots wraps them,
+    as the players do, and the taller bodies' tile wins). A role without bodies in view is absent."""
+    n = sum(k.startswith("enemies.") for k in roles)
+    tiles: dict[str, int] = {}
+    for slot, metres in ((view or {}).get("bodies") or {}).items():
+        if n and (t := scaled_tile(SWARM_TILE, body_px(view, w, h, metres))) and int(slot) >= 0:
+            k = f"enemies.{int(slot) % n}"
+            tiles[k] = max(tiles.get(k, 0), t)
+    return tiles
+
+
+def scaled_tile(base: int, body: float | None) -> int:
+    """A tile of `base` px (calibrated on bodies BODY_REF_PX tall) for bodies `body` px tall on screen: grown in
+    proportion for taller bodies, never under `base` (a still without the view json's bodyM keeps it)."""
+    return base if body is None else max(base, round(base * body / BODY_REF_PX))
+
+
 def enemy_clumps(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]]) -> dict[str, np.ndarray]:
     """Each enemy role's candidate monster pixels (C*ab >= SWARM_C, L* >= SWARM_L, whose nearest chromatic role by
     HSV hue is that enemy, so a formation in the gem's hue is no clump), gaps of up to 2 * SWARM_CLOSE px closed:
@@ -523,28 +610,37 @@ def enemy_clumps(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]]) -> dic
             for i, k in enumerate(names) if k.startswith("enemies.")}
 
 
-def swarm_separation(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]], monsters: np.ndarray | None = None) -> dict:
+def swarm_separation(rgb: np.ndarray, roles: dict[str, tuple[int, int, int]], monsters: np.ndarray | None = None,
+                     tile: int = SWARM_TILE, tiles: dict[str, int] | None = None) -> dict:
     """How well a dense clump of one type reads as individuals (the "blob" feedback), as boundary contrast in L*,
-    on a still at NEON_W. A tile (SWARM_TILE px) is dense when one enemy's clump (enemy_clumps, inside the ID
-    render's monsters when the still has one) covers SWARM_DENSE of it: several monsters overlapping. Its boundary
-    contrast is the SWARM_PCT percentile of seam_depth (on L* box-averaged over SWARM_SMOOTH) over that clump: dark
-    gaps, outlines and lit edges between neighbours are deep; one flat colour mass, or one speckled with shards,
-    is near 0. swarm_separation is the dense tiles' median, p10 their 10th percentile. A clump mostly dark between
-    lit edges never covers the tile, so it is not measured: it cannot read as a colour blob. Boxes are in NEON_W
-    pixels."""
-    lum, t = lstar(rgb), SWARM_TILE
-    depth = seam_depth(box_mean(lum, SWARM_SMOOTH))
-    th, tw = lum.shape[0] // t, lum.shape[1] // t
+    on a still at NEON_W. A tile (`tile` px: SWARM_TILE, or scaled_tile for the still's bodies; per enemy role
+    `tiles`, swarm_tiles, where given) is dense when one enemy's clump (enemy_clumps, inside the ID render's monsters when the still has one) covers SWARM_DENSE of it:
+    several monsters overlapping. Its boundary contrast is a high percentile of seam_depth (on L* despeckled, then
+    box-averaged over SWARM_SMOOTH) over that clump: dark gaps, outlines and lit edges between neighbours are deep;
+    one flat colour mass, or one speckled with shards, is near 0. The percentile is SWARM_PCT in SWARM_TILE tiles,
+    its top share shrinking as the tile grows: seams keep their width in pixels (the outline hull's 4 px) round
+    bodies grown on screen, so they are as much smaller a share of a clump's pixels. swarm_separation is the dense tiles' median,
+    p10 their 10th percentile. A clump mostly dark between lit edges never covers the tile, so it is not measured:
+    it cannot read as a colour blob. Tiles cover the frame to its far edges, grown ones overlapping by half
+    (tile_starts); boxes are in NEON_W pixels."""
+    lum = lstar(rgb)
+    depth = seam_depth(box_mean(despeckle(lum), SWARM_SMOOTH))
     found: list[dict] = []
     for k, clump in enemy_clumps(rgb, roles).items():
         if monsters is not None:
             clump &= dilate(monsters, SWARM_CLOSE)
-        cover = clump[:th * t, :tw * t].reshape(th, t, tw, t).sum(axis=(1, 3))
-        for y, x in zip(*np.nonzero(cover >= SWARM_DENSE * t * t)):
-            px = clump[y * t:(y + 1) * t, x * t:(x + 1) * t]
-            found.append({"enemy": k, "box": [int(x * t), int(y * t), t],
-                          "dL": float(np.percentile(depth[y * t:(y + 1) * t, x * t:(x + 1) * t][px], SWARM_PCT))})
-    out: dict = {"dense_tiles": len(found), "tiles": found}
+        t = (tiles or {}).get(k, tile)
+        pct = 100 - (100 - SWARM_PCT) * SWARM_TILE / t
+        ys, xs = tile_starts(lum.shape[0], t), tile_starts(lum.shape[1], t)  # grown tiles overlap by half
+        acc = np.pad(clump.cumsum(axis=0).cumsum(axis=1), ((1, 0), (1, 0)))
+        for y in ys:
+            for x in xs:
+                if acc[y + t, x + t] - acc[y, x + t] - acc[y + t, x] + acc[y, x] < SWARM_DENSE * t * t:
+                    continue
+                px = clump[y:y + t, x:x + t]
+                found.append({"enemy": k, "box": [int(x), int(y), t],
+                              "dL": float(np.percentile(depth[y:y + t, x:x + t][px], pct))})
+    out: dict = {"dense_tiles": len(found), "swarm_tile": tile, "tiles": found}
     if found:
         dl = np.array([f["dL"] for f in found])
         out.update({"swarm_separation": float(np.median(dl)), "swarm_separation_p10": float(np.percentile(dl, 10))})
@@ -572,7 +668,7 @@ def hero_region(view: dict, w: int, h: int) -> np.ndarray:
 
 
 def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | None, view: dict | None,
-               effects: np.ndarray | None = None) -> dict:
+               effects: np.ndarray | None = None, tile: int = FORM_TILE) -> dict:
     """The guide's mask rules, from the ID render (monsters, structures, effects; bool at the still's NEON_W size)
     and the view json: the floor's L* p50/p90/p99 (ground-plane pixels clear of monsters, structures, effects and
     the hero; p99 is the grid's lines), the
@@ -583,14 +679,15 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
     grid, the floor's halos and the world's glow, which must not drown the swarm), and the share of the frame the
     monsters cover (monster_share: how sparse a staged still is). Monster form is a monster's own L* span, not the
     crowd's (whose types differ in L*): the L* p90 less p10 of the body pixels (a pixel in from the edge) in each
-    FORM_TILE tile they cover FORM_MIN of, the tiles' median."""
+    `tile` px tile (FORM_TILE, scaled_tile for the still's bodies; tile_starts) they cover FORM_MIN of, the tiles'
+    median."""
     lum = lstar(rgb)
     h, w = lum.shape
     out: dict = {"monster_share": float(monsters.mean())}
     body = erode(monsters, 1)
-    t = FORM_TILE
+    t = tile
     spans = [np.subtract(*np.percentile(px, [90, 10]))
-             for y in range(0, h - t + 1, t) for x in range(0, w - t + 1, t)
+             for y in tile_starts(h, t, FORM_TILE) for x in tile_starts(w, t, FORM_TILE)
              if (px := lum[y:y + t, x:x + t][body[y:y + t, x:x + t]]).size >= FORM_MIN * t * t]
     if spans:
         out["monster_form"] = float(np.median(spans))
@@ -631,7 +728,8 @@ def neon_metrics(rgb: np.ndarray, palette: dict, mask: np.ndarray | None = None,
     """Every neon look metric of one still against a palette, flat by the thresholds' metric names, plus the swarm's
     tiles and each role's share for the evidence. `mask` is the ID render (RGB, any size): red or white monsters,
     blue structures, green effects (the light of a slash, a ring or a spark, drawn on the floor but not of it);
-    with `view`, the floor and the hero's margin. Without a mask (a video frame) the mask rules are absent and
+    with `view`, the floor and the hero's margin, and with its bodyM and bodies the form's and each hue's swarm
+    tiles scaled to the bodies' height on screen (body_px, swarm_tile: the tile of a hue without bodies listed). Without a mask (a video frame) the mask rules are absent and
     frame_p25 stands in for the floor."""
     rgb = neon_size(rgb)
     roles = palette_roles(palette)
@@ -640,11 +738,16 @@ def neon_metrics(rgb: np.ndarray, palette: dict, mask: np.ndarray | None = None,
         m = np.asarray(Image.fromarray(mask).resize(rgb.shape[1::-1], Image.NEAREST))
         monsters, structures = m[..., 0] > 127, (m[..., 2] > 127) & (m[..., 0] <= 127)
         effects = (m[..., 1] > 127) & (m[..., 0] <= 127) & (m[..., 2] <= 127)
-    conf, swarm = palette_conformance(rgb, roles), swarm_separation(rgb, roles, monsters)
+    body = body_px(view, rgb.shape[1], rgb.shape[0])
+    conf = palette_conformance(rgb, roles)
+    swarm = swarm_separation(rgb, roles, monsters, scaled_tile(SWARM_TILE, body),
+                             swarm_tiles(view, roles, rgb.shape[1], rgb.shape[0]))
     flat = frame_measures(rgb) | {k: v for k, v in conf.items() if k != "roles"}
     flat |= {k: v for k, v in swarm.items() if k != "tiles"}
+    if body is not None:
+        flat["body_px"] = body
     if monsters is not None:
-        flat |= mask_rules(rgb, monsters, structures, view, effects)
+        flat |= mask_rules(rgb, monsters, structures, view, effects, scaled_tile(FORM_TILE, body))
     return {"metrics": flat, "roles": conf.get("roles", {}), "tiles": swarm["tiles"]}
 
 
@@ -1084,7 +1187,7 @@ NEON_COLUMNS = [  # metrics.md's columns: (heading, metric, format)
     ("background", "background_light", "%"), ("halo", "halo", ".1f"),
     ("families", "families", "d"), ("key60", "key60", ".2f"), ("conformance", "palette_conformance", "%"),
     ("monsters", "monster_share", "%"), ("hero margin", "hero_margin", ".1f"), ("form", "monster_form", ".1f"),
-    ("dense", "dense_tiles", "d"),
+    ("body px", "body_px", ".0f"), ("tile", "swarm_tile", "d"), ("dense", "dense_tiles", "d"),
     ("separation", "swarm_separation", ".1f"), ("p10", "swarm_separation_p10", ".1f"),
     ("readability", "readability", ".1f")]
 

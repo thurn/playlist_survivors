@@ -74,6 +74,7 @@ namespace Demo3D.Runtime.Playback
         // Per timeline type: the crowd's type index, walk clip and roster asset data.
         int[] _crowdType;
         float[] _walkStride, _walkLength, _hover, _height;
+        int[] _slot; // each type's enemy slot (PS.Look.Crowd.MonsterSlots), for the stills' view json
         RosterAssets.TypeAssets[] _typeAssets;
         int[] _clipToRoster; // per annotation index: the clip index in its owner's RosterAssets clips
         RosterAssets.TypeAssets _hero;
@@ -301,6 +302,7 @@ namespace Demo3D.Runtime.Playback
             _clock = new SongClock(_flags.FixedTime, _flags.StartAt);
             if (_flags.CaptureStills != null || _flags.CaptureVideo != null)
                 _capture = new CaptureTool(_rig.Camera, _flags.CaptureStills, _flags.StillsAt, _flags.CaptureVideo);
+            PS.Look.Crowd.StillBodies.Collect = _flags.CaptureStills != null;
             _gpuProbe = BatchGpuProbe.FromArgs(_rig.Camera);
             var music = _music = gameObject.AddComponent<AudioSource>();
             AudioSource click = null;
@@ -553,6 +555,7 @@ namespace Demo3D.Runtime.Playback
             _walkLength = new float[n];
             _hover = new float[n];
             _height = new float[n];
+            _slot = new int[n];
             for (int i = 0; i < n; i++)
             {
                 var name = _tl.TypeNames[i];
@@ -565,6 +568,7 @@ namespace Demo3D.Runtime.Playback
                 _walkLength[i] = walk >= 0 ? asset.clips[walk].length : 1f;
                 _hover[i] = asset.hoverM;
                 _height[i] = asset.heightM;
+                _slot[i] = PS.Look.Crowd.MonsterSlots.Of(asset.id);
             }
             _hero = _roster.Find("hero");
             _heroWalk = _hero.ClipIndex("walk");
@@ -620,7 +624,8 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>
         /// Beside each still, view-&lt;t&gt;.json: the camera's view-projection (OpenGL clip space, row-major)
-        /// and the hero's feet, so the look harness finds the ground around the hero (ps-e8r.5's lit stage).
+        /// and the hero's feet, so the look harness finds the ground around the hero (ps-e8r.5's lit stage), and
+        /// the monsters' median height on screen (StillBodies), which scales look.py's swarm and form tiles.
         /// </summary>
         void WriteView(Camera camera, double at)
         {
@@ -630,7 +635,9 @@ namespace Demo3D.Runtime.Playback
             for (int r = 0; r < 4; r++)
             for (int c = 0; c < 4; c++)
                 sb.Append(string.Format(CultureInfo.InvariantCulture, "{0}{1:R}", r + c == 0 ? "" : ", ", m[r, c]));
-            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}]}}\n", _heroFeet.x, _heroFeet.y, _heroFeet.z));
+            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}]", _heroFeet.x, _heroFeet.y, _heroFeet.z));
+            // "bodyM" and "bodies": the monsters in view's height, which look.py scales its swarm and form tiles by.
+            sb.Append(PS.Look.Crowd.StillBodies.ViewJson(m)).Append("}\n");
             System.IO.File.WriteAllText(System.IO.Path.Combine(_flags.CaptureStills,
                 string.Format(CultureInfo.InvariantCulture, "view-{0:000.000}.json", at)), sb.ToString());
         }
@@ -774,6 +781,7 @@ namespace Demo3D.Runtime.Playback
             // Stable slots: a monster keeps its slot while it lives (motion vectors, the previous
             // palette and LOD state follow the slot); a freed slot is written Hidden first.
             _slots.Begin();
+            PS.Look.Crowd.StillBodies.Begin();
             for (int type = 0; type < _typeLists.Length; type++)
                 foreach (int e in _typeLists[type]) _slots.Assign(type, _slotBase + e);
             _slots.End();
@@ -806,6 +814,7 @@ namespace Demo3D.Runtime.Playback
                     // From its killing blow a crystal monster is its shards (LookCrowd).
                     if (st.Broken && _lookCrowd != null) mi.Flags = (uint)_lookCrowd.Breaking(e, type, slot, mi);
                     inst[slot] = mi;
+                    if (!st.Broken && !st.Dying) PS.Look.Crowd.StillBodies.Add(mi.Position, _height[type] * mi.Scale, _slot[type]);
                     if (_lookCrowd != null) motion[slot] = _lookCrowd.MotionOf(e, type, world, mi.Scale, ripple);
                     if (_rig.OnScreen(st.Position, _height[type]))
                     {

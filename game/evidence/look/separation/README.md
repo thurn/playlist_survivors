@@ -38,6 +38,10 @@ still that breaks separation.
 | hologram | 8.3-13.4 (5 break) | 9.1-13.6 (5 break) | every still higher (70 s 8.3 to 10.8); form at 70 s passes now (32.3, was 29.8); background light at 58 s 0.162 (0.163) |
 | prism | 9.6-15.6 (4 break) | 10.4-16.0 (4 break) | unchanged |
 
+**Fixed in the metric by ps-wnj.30**: its tiles now follow the bodies'
+height on screen, and every preset passes in the game
+([body-tiles](../body-tiles/README.md)).
+
 **Why the game still breaks**: a game body is
 85-150 px across at the metric's 960 px (its bodies two to three times
 the crystal cut's on screen), wider than the 32 px tile the metric

@@ -352,16 +352,100 @@ def test_a_flat_clump_reads_as_a_blob_and_an_outlined_one_as_a_swarm() -> None:
     assert look.swarm_separation(gem, roles)["dense_tiles"] == 0
 
 
-def test_speckle_in_a_flat_clump_is_no_seam() -> None:
-    """Black specks (shards, noise) on one in twenty pixels of a flat colour field (v2's red mass) do not make it read
-    as individuals: the smoothing averages them away before the seams are found."""
-    img = frame(6, 540, 960)
-    img[100:440, 200:760] = CYAN
-    rng = np.random.default_rng(1)
-    specks = rng.random(img.shape[:2]) < 0.05
+@pytest.mark.parametrize("share", [0.05, 0.08, 0.12])
+@pytest.mark.parametrize("size", [1, 2])
+@pytest.mark.parametrize("tiles", [1, 3])
+def test_speckle_in_a_flat_clump_is_no_seam(share: float, size: int, tiles: int) -> None:
+    """Black specks (shards, noise) of one or two capture pixels on 5-12% of a flat colour field (v2's red mass) do
+    not make it read as individuals, in the crystal cut's tiles or the game's three times as wide: despeckling fills
+    them before the seams are found."""
+    img = frame(6, 1080, 1920)
+    img[100:980, 200:1720] = CYAN
+    specks = np.kron(np.random.default_rng(1).random((1080 // size, 1920 // size)) < share, np.ones((size, size), bool))
     img[specks & (img[..., 1] == 240)] = (4, 30, 34)
-    s = look.swarm_separation(img, look.palette_roles(ELECTRIC))
-    assert s["dense_tiles"] > 100 and s["swarm_separation"] < 13
+    s = look.swarm_separation(look.neon_size(img), look.palette_roles(ELECTRIC), tile=tiles * look.SWARM_TILE)
+    assert s["dense_tiles"] > 20 and s["swarm_separation"] < 13
+
+
+def bodies(centres: list[tuple[int, int]], tall: int, rim: int = 0, lines: bool = False) -> np.ndarray:
+    """A near-black 960 x 540 still of cyan bodies `tall` px tall and a third as wide (ellipses, a fodder monster's
+    build, drawn in order, each over the last), with a dark rim `rim` px wide, and dark lines across each every
+    12 px (a wire body's)."""
+    img = frame(6, 540, 960)
+    yy, xx = np.mgrid[0:540, 0:960]
+    for cx, cy in centres:
+        d = np.hypot((xx - cx) / (tall / 6), (yy - cy) / (tall / 2))
+        img[d <= 1] = CYAN
+        if lines:
+            img[(d <= 1) & ((yy - cy) % 12 == 0)] = (4, 30, 34)
+        if rim:
+            img[(d <= 1) & (d > 1 - 2 * rim / tall)] = (4, 30, 34)
+    return img
+
+
+def test_the_tiles_scale_with_the_bodies_height_on_screen() -> None:
+    """A game body stands two to three times a crystal cut body on screen: the view json's bodyM scales the tiles."""
+    w, h = 960, 540
+    view = {**top_down(w, h, metres=20.0), "bodyM": 3.0}  # 48 px a metre: 144 px tall
+    assert look.body_px(view, w, h) == pytest.approx(144)
+    assert look.body_px(top_down(w, h), w, h) is None  # no bodyM: today's tiles
+    assert look.scaled_tile(32, None) == 32 and look.scaled_tile(32, look.BODY_REF_PX / 2) == 32  # never smaller
+    assert look.scaled_tile(32, 144) == round(32 * 144 / look.BODY_REF_PX)
+    # Tiles reach the far edges: 540 rows hold 16 whole tiles of 32 and a 28-row strip, tiled against the bottom.
+    assert look.tile_starts(540, 32)[-2:] == [480, 508] and look.tile_starts(512, 32)[-1] == 480
+    assert look.tile_starts(20, 32) == []
+    # Grown tiles overlap by half, so a clump as big as one is covered whole somewhere.
+    assert look.tile_starts(540, 48) == list(range(0, 493, 32)) + [492]
+    assert look.tile_starts(540, 160) == [0, 80, 160, 240, 320, 380]
+    # Each hue's tile from its own bodies (the view json's bodies by enemy slot): a few tall trolls (slot 5) among
+    # many small mushrooms (slot 3). ELECTRIC has three enemy hues, so slot 5 wraps to enemies.2 and slot 3 to
+    # enemies.0; the boss (-1) has none.
+    view["bodies"] = {"3": 1.0, "5": 3.0, "-1": 6.0}
+    assert look.swarm_tiles(view, look.palette_roles(ELECTRIC), w, h) == {
+        "enemies.0": look.scaled_tile(32, 48), "enemies.2": look.scaled_tile(32, 144)}
+    assert look.swarm_tiles(top_down(w, h), look.palette_roles(ELECTRIC), w, h) == {}
+
+
+def test_one_big_body_is_no_clump_and_big_bodies_parted_by_seams_are_a_swarm() -> None:
+    roles = look.palette_roles(ELECTRIC)
+    tall = 144
+    tile = look.scaled_tile(look.SWARM_TILE, tall)
+    one = bodies([(480, 270)], tall, lines=True)
+    # At the crystal cut's 32 px tiles a big wire body's interior is a "clump" of its own lines and fill.
+    assert look.swarm_separation(one, roles)["dense_tiles"] > 5
+    assert look.swarm_separation(one, roles, tile=tile)["dense_tiles"] == 0
+    # Several big bodies overlapping, each with a dark rim: dense tiles, parted.
+    packed = [(cx + (tall // 8 if row % 2 else 0), cy) for row, cy in enumerate(range(130, 440, tall // 3))
+              for cx in range(200, 780, tall // 4)]
+    swarm = look.swarm_separation(bodies(packed, tall, rim=4), roles, tile=tile)
+    assert swarm["dense_tiles"] >= 4 and swarm["swarm_tile"] == tile and swarm["swarm_separation"] > 13
+    # The same bodies flat are one blob.
+    blob = look.swarm_separation(bodies(packed, tall), roles, tile=tile)
+    assert blob["dense_tiles"] >= 4 and blob["swarm_separation"] < 13
+    # A per-hue tile overrides the still's own: the cyan bodies (enemies.1) take theirs.
+    per = look.swarm_separation(bodies(packed, tall, rim=4), roles, tiles={"enemies.1": tile})
+    assert {t["box"][2] for t in per["tiles"]} == {tile} and per["swarm_separation"] == swarm["swarm_separation"]
+
+
+def test_monster_form_measures_in_tiles_scaled_to_the_bodies() -> None:
+    """A big edge-lit body (a bright rim round a dark core): 32 px tiles inside it see a flat core and read no form;
+    tiles scaled to it take its rim with its core."""
+    w, h = 960, 540
+    img = frame(6, h, w)
+    yy, xx = np.mgrid[0:h, 0:w]
+    d = np.hypot(xx - 480, yy - 270) / 120
+    img[d <= 1] = (8, 60, 70)  # the core: a dark cyan
+    img[(d <= 1) & (d > 0.85)] = CYAN  # the rim, 18 px
+    monsters = d <= 1
+    plain = look.mask_rules(img, monsters, None, None)["monster_form"]
+    scaled = look.mask_rules(img, monsters, None, None, tile=look.scaled_tile(look.FORM_TILE, 240))["monster_form"]
+    assert plain < 5 and scaled > 30
+    # neon_metrics scales them from the view json, and reports the bodies' height and the tile.
+    mask = np.zeros((h, w, 3), dtype=np.uint8)
+    mask[monsters] = 255
+    m = look.neon_metrics(img, ELECTRIC, mask, {**top_down(w, h, metres=20.0), "bodyM": 5.0})["metrics"]
+    assert m["body_px"] == pytest.approx(240) and m["swarm_tile"] == look.scaled_tile(look.SWARM_TILE, 240)
+    assert m["monster_form"] == pytest.approx(scaled)
 
 
 def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:

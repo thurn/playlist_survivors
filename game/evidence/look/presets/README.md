@@ -172,7 +172,9 @@ in hologram (5 of 6 stills, 8.1-11.4), prism (4, 9.6-12.7) and solid (once,
 a hair: background light at 58 s (0.163 against 0.15: its dim wires leave
 the weapons' light a bigger share) and monster form at 70 s (29.8 against
 30). ps-wnj.28 is tuning the monster looks for separation in every preset
-now (it has these numbers), and ps-wnj.18 leaves them alone.
+now (it has these numbers), and ps-wnj.18 leaves them alone. Since
+ps-wnj.30 the metric's tiles follow the bodies' height on screen and every
+preset passes separation ([body-tiles](../body-tiles/README.md)).
 
 ## Zones
 

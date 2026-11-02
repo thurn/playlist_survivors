@@ -35,6 +35,7 @@ namespace Game.Client
             _camera = camera;
             _dir = dir;
             _mask = mask;
+            StillBodies.Collect = true;
             foreach (var s in times.Split(','))
                 _times.Add(double.Parse(s, NumberStyles.Float, CultureInfo.InvariantCulture));
             _times.Sort();
@@ -107,7 +108,8 @@ namespace Game.Client
 
         /// <summary>
         /// view-&lt;at&gt;.json beside the still: the camera's view-projection at the still's size (OpenGL clip space,
-        /// row-major) and the hero's feet, the format demo3d's DemoMain writes and look.py reads. None without a hero.
+        /// row-major), the hero's feet and the monsters' median height on screen (<see cref="StillBodies"/>), the format
+        /// demo3d's DemoMain writes and look.py reads. None without a hero.
         /// </summary>
         void WriteView(double at)
         {
@@ -124,7 +126,9 @@ namespace Game.Client
                 sb.Append(string.Format(CultureInfo.InvariantCulture, "{0}{1:R}", r + c == 0 ? "" : ", ", m[r, c]));
             // "floor": false: the ID render marks only the crowd, so look.py leaves out the floor measures, which the
             // structures and effects would count in.
-            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}], \"floor\": false}}\n", feet.x, feet.y, feet.z));
+            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}], \"floor\": false", feet.x, feet.y, feet.z));
+            // "bodyM" and "bodies": the monsters in view's height, which look.py scales its swarm and form tiles by.
+            sb.Append(StillBodies.ViewJson(m)).Append("}\n");
             File.WriteAllText(Path.Combine(_dir, string.Format(CultureInfo.InvariantCulture, "view-{0:000.000}.json", at)), sb.ToString());
         }
 

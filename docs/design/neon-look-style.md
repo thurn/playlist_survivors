@@ -420,8 +420,8 @@ loosest preset's value applies.
 | `shot_floor_range_max` | spread of the shots' floor p50 (frame p25 without a floor) across a cut | <= 6 | 24 (floor), 16 (frame p25) | |
 | `flash_frames_max` | share of a cut's or set's steady stills whose largest L* >= 90 region covers 0.3% of the frame or more (ps-wnj.24) | <= 0.5 | | |
 | `hero_margin_min` | hero L* p90 less the monsters' L* p90 | >= 5 | -4 (-30-12) | |
-| `monster_form_min` | monster pixels' L* p90 less p10 in each 32 px tile they cover a quarter of, the tiles' median | >= 30; solid 20 | 14 (10-18) | |
-| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile, the tiles' median | >= 13 | 9.4 (3-16) | |
+| `monster_form_min` | monster pixels' L* p90 less p10 in each 32 px tile (grown with the bodies' height on screen, ps-wnj.30) they cover a quarter of, the tiles' median | >= 30; solid 20 | 14 (10-18) | |
+| `swarm_separation_min` | boundary contrast between adjacent same-type monsters in dense regions, dL*: seam depth in each dense 32 px clump tile (grown with that type's height on screen, ps-wnj.30), the tiles' median | >= 13 | 9.4 (3-16) | |
 | `readability_min` | look.py's \|dL*\| monsters against their ring (TD15) | >= 17 | 48 (33-68) | |
 
 v2's mask columns come from the crystal cut re-rendered with its ID render
@@ -461,6 +461,29 @@ Notes:
     12.5, so 13. The blob frames (20, 28, 32, 56 s) fail with and without
     masks; v2's three least dense crowds pass (8, 24, 36 s). A crowd of
     outlined discs scores 40, the same discs flat 0.
+  - **Tiles follow the bodies' size on screen** (ps-wnj.30,
+    [evidence](../../game/evidence/look/body-tiles/README.md)). The 32 px
+    tiles were calibrated on the crystal cut's fodder, 32-58 px tall at
+    960 px (median 45); the game's ork stands 115 px and its troll 230, so a
+    32 px tile there was one body's interior and its lines read as seams or
+    its flat fill as a blob. Both players write the monsters in view's
+    height into the view json (`bodyM`, a median weighted by height squared,
+    and `bodies`, the same per enemy slot). Each hue's swarm tile, and the
+    form tile from `bodyM`, is 32 x height px / 45, never under 32 (a still
+    without the fields keeps 32); grown tiles step by half a tile, so a
+    clump the size of one is covered whole somewhere, and the top share the
+    percentile takes shrinks as the tile grows (p90 at 32 px, p97 at 107):
+    seams keep their width in pixels round bigger bodies. Tiles reach the
+    frame's far edges (a 540 px still's bottom 28 rows were never tiled).
+    Speckle is filled before the box average: a valley under 24 px in an
+    8-connected patch takes the brightest L* within 2 px, so black specks on
+    5-12% of a flat clump score 1-8 (box-averaged alone, 8% scored 17)
+    while outlines, gaps and lines, which run on, stay; on the players'
+    stills this moves separation by 0-0.5. Bigger tiles find fewer dense
+    clumps (the game's 204-329 dense tiles per preset became 24-55; several
+    stills have none, and the rule then skips them): a game clump of wire or
+    edge-lit bodies is mostly dark between its lines and never covers half a
+    body-sized tile.
 - **The restraint rules** (ps-wnj.24, [Restraint](#restraint)) are calibrated
   on stills of the look before and after its toning down, from players built
   at 6610faff and after

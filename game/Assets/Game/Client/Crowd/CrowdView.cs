@@ -196,6 +196,7 @@ namespace Game.Client.Crowd
             if (frame.State.StridePeriod > 0 && frame.State.StrideHalvings >= 0) _beat = frame.State.StridePeriod * (1 << frame.State.StrideHalvings);
             _kick = Kick != null ? Mathf.Clamp01(Kick()) : 0f;
             _slots.Begin();
+            StillBodies.Begin();
             int n = 0;
             for (int i = _live.Count - 1; i >= 0; i--)
             {
@@ -284,6 +285,7 @@ namespace Game.Client.Crowd
             if (CrowdMotion.Swarm) CrowdMotion.Place(ref _written[n], (uint)track.Serial);
             var motion = pose.Motion;
             float height = Mathf.Max(0.1f, type.HeightM * look.Scale);
+            if (StillBodies.Collect && (flags & CrowdFlags.Dying) == 0) StillBodies.Add(_written[n].Position, height, MonsterSlots.Of(type.Id));
             motion.Travel /= height;
             _writtenMotion[n] = motion;
             return true;
