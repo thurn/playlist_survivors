@@ -288,7 +288,8 @@ treasure), run (timeline, end).
 
 | Shader | Draws |
 | --- | --- |
-| MonsterEdge, MonsterEdgeShard | The trailer's edge look for monsters, the hero and their shards: feature-edge lines over a dark glass core, fresnel rim, core glow, beat flare (ps-6y2.28) |
+| MonsterEdge, MonsterEdgeShard | The trailer's edge look for monsters and the bosses, and every shard (the hero's too): feature-edge lines over a dark glass core, fresnel rim, core glow, beat flare (ps-6y2.28) |
+| HeroEdge | The trailer's knight: its feature lines, rim and chest core in white, the crystal blade's every edge and spine light, on a figure posed on the CPU (ps-6y2.29) |
 | StructureFill, StructureLines | Structures' dim fill and the edge look's lines (ps-6y2.30) |
 | Shard, StructureShard | Monster shards on the GPU; structure shards on PhysX |
 | GridFloor | The grid, beat wave, ripple, impulse rings, zones |
@@ -359,8 +360,14 @@ trailer's, ported back:
   grid, with a side-by-side sheet against `--look trailer`. Small stills and
   a README go to `rhythm_champions/evidence/monsters/<type>/`. The sheets
   have no pass or fail numbers.
-- **The hero and bosses** (ps-6y2.29) and **structures** (ps-6y2.30, over
-  their fill) use the same drawing.
+- **The bosses** (ps-6y2.29) are crowd types, written into the crowd by
+  their presenter with their animator's clips and broken by its shatter.
+  **The hero** is the trailer's knight as it drew it: HeroEdge (the look
+  package's at 138684f2) on the vendor knight holding demo3d's crystal
+  blade, a figure posed on the CPU from a rig its bake keeps
+  (`MonsterFigure`, `RigPose`; monsters.json's `figure`), `HeroGains`
+  pinned for `--look trailer` beside `EdgeGains`. **Structures**
+  (ps-6y2.30, over their fill) use the crowd's drawing.
 - **Accepting art** (design, [Judgment over rules](design.md#judgment-over-rules)):
   - a blind critique by an agent given only the images (no docs, no recipe,
     no numbers);

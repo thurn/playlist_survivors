@@ -24,8 +24,8 @@ namespace Champions.Client.Loop
     /// Everything a run shows and sounds, built for one sim and wired through one <see cref="EventDispatch"/> (plan.md, The
     /// Client > Presenters): the world's beat rings, zones and event rings (<see cref="WorldPresenter"/>, Boot's, shared with
     /// the title), the structures, the horde (<see cref="CrowdPresenter"/> over its <see cref="ICrowdView"/>: the trailer's crowd,
-    /// or stand-ins without baked monsters), the bosses and
-    /// their red telegraphs with the elites' yellow ones, the spores, the hero's commands (<see cref="HeroPresenter"/>), the
+    /// or stand-ins without baked monsters), the bosses in that crowd and
+    /// their red telegraphs with the elites' yellow ones, the spores, the hero (<see cref="HeroPresenter"/>, in white), the
     /// weapon effects (<see cref="EffectCues"/>), the run's UI and the sounds. Presenters a checkout can't build (no vendor
     /// files baked) are left out and logged; a presenter that throws is contained by the dispatch.
     ///
@@ -61,17 +61,17 @@ namespace Champions.Client.Loop
             _world = world;
             Ui = ui;
             int layer = camera.gameObject.layer;
-            ICrowdView crowd = TrailerCrowd.Create(look, content.Enemies, palette);
-            if (crowd == null) Debug.LogWarning("RunPresentation: no baked monsters (champions monster bake all, then build): the horde draws as stand-ins");
-            Crowd = new CrowdPresenter(crowd ?? new StandInCrowd(content.Enemies, palette, layer), content.Enemies);
+            var trailer = TrailerCrowd.Create(look, content.Enemies, palette);
+            if (trailer == null) Debug.LogWarning("RunPresentation: no baked monsters (champions monster bake all, then build): the horde draws as stand-ins");
+            Crowd = new CrowdPresenter((ICrowdView)trailer ?? new StandInCrowd(content.Enemies, palette, layer), content.Enemies);
             _owned.Add(Crowd);
             Spores = new SporePresenter(palette, layer);
             _owned.Add(Spores);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
             _owned.Add(Telegraphs);
-            Boss = new BossPresenter(content.Enemies, palette, world.World, layer);
+            Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
             _owned.Add(Boss);
-            Hero = new HeroPresenter(palette, content.Hero.SpeedMps, layer);
+            Hero = new HeroPresenter(palette, content.Hero.SpeedMps, layer, look);
             _owned.Add(Hero);
             if (config.Structures != null)
             {
@@ -110,7 +110,7 @@ namespace Champions.Client.Loop
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
-            d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt));
+            d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)
                 d.Add("effects", (in SimEvent e) => cues.Take(e), null, (in PresentFrame f) => Effects.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (Ui != null) d.Add("ui", (in SimEvent e) => Ui.Take(e), null, (in PresentFrame f) => Ui.Present(f.Song, f.Sim, f.Camera));
@@ -179,6 +179,7 @@ namespace Champions.Client.Loop
         public void Queue(Camera camera)
         {
             Crowd.Queue(camera);
+            Hero.Queue(camera);
             Telegraphs.Queue(camera);
             Effects?.Queue(camera);
         }

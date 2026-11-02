@@ -1,6 +1,7 @@
 """`champions monster bake TYPE` and `champions monster review TYPE [--look trailer]` (plan.md, Rendering > The edge look).
 
-A type is one of the ten in Assets/Champions/Editor/Monsters/monsters.json (its vendor prefab, height, clips). A bake
+A type is one of the ten in Assets/Champions/Editor/Monsters/monsters.json (its vendor prefab, height, clips), or the hero,
+a figure posed on the CPU (its bake keeps a rig too, and a review has no sheets for it). A bake
 writes it into the ignored Assets/Baked/Monsters/TYPE/ for both looks: `--look trailer`'s always from the vendor mesh,
 the default's from the type's recipe, tools/recipes/monster/TYPE.py, when there is one, else from the vendor mesh too.
 With a recipe there are three steps, each skipped while its inputs haven't changed: Unity exports the vendor mesh

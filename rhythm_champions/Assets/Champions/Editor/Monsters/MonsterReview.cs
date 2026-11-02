@@ -56,6 +56,8 @@ namespace Champions.EditorTools.Monsters
 
         public static void Run(string id, MonsterLook look, string outDir)
         {
+            if (MonsterModel.Of(id).figure)
+                throw new Exception($"MonsterReview: {id} is a figure posed on the CPU, not a crowd's type: `champions stills --scene hero` shows it");
             var palette = Palette.Load(GameContent.Find(Application.dataPath) ?? throw new Exception("MonsterReview: no rhythm_champions/Content"));
             Directory.CreateDirectory(outDir);
             // The world at rest (an earlier task in this editor may have left a beat ring), on the first zone's grid.

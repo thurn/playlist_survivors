@@ -5,14 +5,16 @@ using System.IO;
 using Champions.Client.Hero;
 using Champions.Client.Loop;
 using Champions.Render;
+using Champions.Render.Crowd;
 using Champions.Sim;
 using UnityEngine;
 
 namespace Champions.Client.Scenes
 {
     /// <summary>
-    /// `hero`: the hero's scripted scene (`champions stills --scene hero`; ps-6y2.20). The hero's stand-in, posed by its
-    /// presenter (<see cref="HeroPresenter"/>), under the game's camera, grid and post:
+    /// `hero`: the hero's scripted scene (`champions stills --scene hero`; ps-6y2.20, ps-6y2.29). The knight in the edge look
+    /// in white with its crystal blade, posed by its presenter (<see cref="HeroPresenter"/>), under the game's camera, grid
+    /// and post (`--look trailer`: exactly as the trailer drew it):
     /// - <b>Sword Slash at three tempos</b> (<see cref="Tempos"/>): for each, the real sim plays a scripted song from 0
     ///   with three dummies east of the hero, and its events go to the hero (a scene-local dispatch: moves, swings), the
     ///   world (beat rings) and the weapon effects (each strike's slash). The hero stands for the first
@@ -24,8 +26,8 @@ namespace Champions.Client.Scenes
     ///   (`Hero: swing ...`).
     /// - <b>The dash poses</b>: each dash type (and Skyfall) from where the last left off, scripted (the client can't
     ///   equip dashes), with the distance and duration of dashes.json, a still mid-dash and one as it lands.
-    /// - <b>Hurt and death</b>: the hurt flash while running, then the killing blow: stills on the death's frame and
-    ///   after it.
+    /// - <b>Hurt and death</b>: the hurt flash while running, then the killing blow: stills on the break's frame and as
+    ///   the white shards fly.
     /// </summary>
     sealed class HeroScene : IStillScene, INamedStills
     {
@@ -55,14 +57,16 @@ namespace Champions.Client.Scenes
         readonly GameContent _content;
         readonly Palette _palette;
         readonly string _contentDir;
+        readonly MonsterLook _look;
         readonly (string Label, double At)[] _fixed;
         HeroSceneDriver _driver;
 
-        public HeroScene(GameContent content, Palette palette, string contentDir)
+        public HeroScene(GameContent content, Palette palette, string contentDir, MonsterLook look = MonsterLook.Default)
         {
             _content = content;
             _palette = palette;
             _contentDir = contentDir;
+            _look = look;
             var f = new List<(string, double)>();
             for (int i = 0; i < Dashes.Length; i++)
             {
@@ -97,7 +101,7 @@ namespace Champions.Client.Scenes
         public void Begin(Transform root, Camera camera, Stills.View view)
         {
             _driver = root.gameObject.AddComponent<HeroSceneDriver>();
-            _driver.Begin(camera, _content, _palette, _contentDir, view);
+            _driver.Begin(camera, _content, _palette, _contentDir, view, _look);
         }
     }
 
@@ -118,6 +122,7 @@ namespace Champions.Client.Scenes
         Camera _camera;
         GameContent _content;
         Palette _palette;
+        MonsterLook _look;
         string _stillsDir;
         Stills.View _view;
         double _start, _lastSong;
@@ -140,11 +145,12 @@ namespace Champions.Client.Scenes
         double _dashM;
         bool _walking, _hurt, _dead;
 
-        public void Begin(Camera camera, GameContent content, Palette palette, string contentDir, Stills.View view)
+        public void Begin(Camera camera, GameContent content, Palette palette, string contentDir, Stills.View view, MonsterLook look)
         {
             _camera = camera;
             _content = content;
             _palette = palette;
+            _look = look;
             _view = view;
             _stillsDir = LaunchOptions.Current.StillsDir;
             _start = Time.timeAsDouble;
@@ -152,7 +158,11 @@ namespace Champions.Client.Scenes
             if (effects != null) _effects = new Effects(effects, EffectRecipes.Load(contentDir), palette);
             view.Ids[IdPass.Hero] = ("hero", "hero", 1.85f);
             view.Ids[IdPass.Effect] = ("hero effects", "effect", 1.8f);
-            view.Requeue = () => _effects?.Queue(_camera);
+            view.Requeue = () =>
+            {
+                _hero?.Queue(_camera);
+                _effects?.Queue(_camera);
+            };
             Debug.Log($"Hero: the scripted scene, Sword Slash at {string.Join(", ", Array.ConvertAll(HeroScene.Tempos, x => $"{x.Bpm} BPM (rank {x.Rank})"))}, " +
                       $"{HeroScene.TempoSeconds} s each, then the dash poses from {HeroScene.DashesFrom} s and the hurt and death from {HeroScene.EndFrom:F1} s");
         }
@@ -187,7 +197,7 @@ namespace Champions.Client.Scenes
             _segment = segment;
             _hero?.Dispose();
             _world?.Dispose();
-            _hero = new HeroPresenter(_palette, _content.Hero.SpeedMps, _camera.gameObject.layer) { LogSwings = true };
+            _hero = new HeroPresenter(_palette, _content.Hero.SpeedMps, _camera.gameObject.layer, _look) { LogSwings = true };
             _world = new WorldPresenter(_camera, _palette);
             _feet = Vector2.zero;
             _moments.Clear();
@@ -403,7 +413,7 @@ namespace Champions.Client.Scenes
         {
             _feet = feet;
             _lastSong = song;
-            _hero.Present(song, feet, Time.deltaTime);
+            _hero.Present(song, feet, Time.deltaTime, _camera);
             _effects?.Present(song, feet, Time.deltaTime, _camera);
             _world.Present(song, feet, Time.deltaTime);
             _view.Hero = new Vector3(feet.x, 0, feet.y);

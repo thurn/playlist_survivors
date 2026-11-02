@@ -27,6 +27,9 @@ namespace Champions.EditorTools.Monsters
     ///   `champions monster bake` left one in TYPE/recipe/ (tools/recipes/monster/TYPE.py, skinned to the same bones,
     ///   so it shares the bone texture), else the trailer's own meshes. A recipe may choose which edges draw (flags, or
     ///   its own crease angle: every edge of a designed low-poly mesh); such a mesh is not decimated.
+    /// A figure (monsters.json's `figure`: the hero) goes to Resources/MonsterFigures/LOOK/ instead, with a rig of its
+    /// clips' local poses (<see cref="MonsterRigBaker"/>) in TYPE/ for posing on the CPU; the crystal blade in its fist
+    /// draws every edge and keeps its own UV0 (<see cref="CrystalBlade"/>), so its mesh is not decimated either.
     /// A bake is skipped while its key (the type's entry, the baker's code, the recipe's mesh) matches TYPE/bake.key.
     /// <see cref="Export"/> writes the combined vendor mesh to TYPE/source/ for a recipe to read.
     /// </summary>
@@ -36,12 +39,18 @@ namespace Champions.EditorTools.Monsters
         internal static string Root = "Assets/Baked/Monsters";
         const string KeyFile = "bake.key";
         /// <summary>What a bake's key hashes beside the type's entry and its recipe's mesh: the code that bakes and the asset it writes.</summary>
-        static readonly string[] CodeInputs = { "Assets/Champions/Editor/Monsters", "Assets/Champions/Render/Crowd/MonsterType.cs" };
+        static readonly string[] CodeInputs =
+        {
+            "Assets/Champions/Editor/Monsters", "Assets/Champions/Render/Crowd/MonsterType.cs", "Assets/Champions/Render/Crowd/MonsterRig.cs",
+        };
 
         public static string TypeDir(string id) => $"{Root}/{id}";
         public static string SourceDir(string id) => $"{TypeDir(id)}/source";
         public static string RecipeDir(string id) => $"{TypeDir(id)}/recipe";
-        public static string AssetPath(string id, MonsterLook look) => $"{Root}/Resources/{MonsterLibrary.TypesPath(look)}/{id}.asset";
+        public static string AssetPath(string id, MonsterLook look) => AssetPath(MonsterModel.Of(id), look);
+
+        static string AssetPath(MonsterModel model, MonsterLook look) =>
+            $"{Root}/Resources/{(model.figure ? MonsterLibrary.FiguresPath(look) : MonsterLibrary.TypesPath(look))}/{model.id}.asset";
 
         /// <summary>A bone (or rigid attachment) of the combined mesh.</summary>
         sealed class Entry
@@ -60,6 +69,8 @@ namespace Champions.EditorTools.Monsters
             public readonly List<int> Indices = new List<int>();
             /// <summary>Each vertex: is it of something the monster carries (a weapon, a shield; MonsterModel.carried)?</summary>
             public readonly List<bool> Carried = new List<bool>();
+            /// <summary>Each vertex's UV0 when the mesh has a crystal blade (its spine, length, 1 on it; zero elsewhere), else empty.</summary>
+            public readonly List<Vector3> Blade = new List<Vector3>();
             /// <summary>
             /// Which edges draw: per triangle, component k 1 for the edge opposite corner k (a recipe's own flags), else
             /// every crease sharper than <see cref="EdgeAngleDeg"/>.
@@ -88,6 +99,7 @@ namespace Champions.EditorTools.Monsters
                 m.SetNormals(Normals);
                 m.SetUVs(1, BoneIndices);
                 m.SetUVs(2, BoneWeights);
+                if (Blade.Count == Positions.Count) m.SetUVs(0, Blade);
                 m.SetTriangles(Indices, 0, false);
                 m.bounds = new Bounds(new Vector3(0, centerY, 0), Vector3.one * (2 * radius));
                 return m;
@@ -146,7 +158,7 @@ namespace Champions.EditorTools.Monsters
             string key = Key(model);
             string keyPath = $"{TypeDir(id)}/{KeyFile}";
             if (!force && File.Exists(keyPath) && File.ReadAllText(keyPath).Trim() == key
-                && File.Exists(AssetPath(id, MonsterLook.Trailer)) && File.Exists(AssetPath(id, MonsterLook.Default)))
+                && File.Exists(AssetPath(model, MonsterLook.Trailer)) && File.Exists(AssetPath(model, MonsterLook.Default)))
             {
                 Debug.Log($"MonsterBaker: {id}: current ({key})");
                 return true;
@@ -158,7 +170,13 @@ namespace Champions.EditorTools.Monsters
             {
                 var bones = SaveBones(bake);
                 var trailer = Save(bake, vendor, "vendor", bones, $"{id}_vendor");
-                Write(trailer, AssetPath(id, MonsterLook.Trailer));
+                if (model.figure)
+                {
+                    trailer.Rig = MonsterRigBaker.Bake(model, bake.Root, bake.Animator, bake.Entries.Select(e => e.Bone).ToArray(),
+                        bake.Entries.Select(e => e.Bind).ToArray(), RootTR(bake));
+                    Replace(trailer.Rig, $"{TypeDir(id)}/{id}_rig.asset");
+                }
+                Write(trailer, AssetPath(model, MonsterLook.Trailer));
                 var recipe = ReadRecipe(id, bake.Entries.Count);
                 MonsterType standard;
                 if (recipe != null)
@@ -170,7 +188,8 @@ namespace Champions.EditorTools.Monsters
                     standard = UnityEngine.Object.Instantiate(trailer);
                     standard.name = id;
                 }
-                Write(standard, AssetPath(id, MonsterLook.Default));
+                standard.Rig = trailer.Rig;
+                Write(standard, AssetPath(model, MonsterLook.Default));
                 Debug.Log($"MonsterBaker: {id}: vendor {Describe(trailer)}; default from the {standard.Source}" +
                           (recipe != null ? $" {Describe(standard)}" : "") +
                           $"; {bake.Entries.Count} bones, {bake.Height} frames, in {(DateTime.UtcNow - started).TotalSeconds:F1} s");
@@ -302,11 +321,14 @@ namespace Champions.EditorTools.Monsters
         /// <summary>
         /// Every active renderer's mesh in root space at the reference pose, each vertex with its 4 strongest bone
         /// entries: a skin's by its bones (each bind pose absorbing the move into root space, so skinning is unchanged
-        /// exactly), a rigid attachment (a held weapon, a shield on a bone) by its own transform.
+        /// exactly), a rigid attachment (a held weapon, a shield on a bone) by its own transform. A crystal blade
+        /// (<see cref="CrystalBlade"/>) keeps its UV0 and draws every edge; the body's creases are flagged as the vendor
+        /// meshes' are.
         /// </summary>
         static Geometry Combine(TypeBake b)
         {
             var g = new Geometry();
+            var blade = new List<Vector3>();
             var rootInv = RootTR(b).inverse;
             foreach (var r in b.Root.GetComponentsInChildren<Renderer>(false))
             {
@@ -343,6 +365,9 @@ namespace Champions.EditorTools.Monsters
 
                 int baseVertex = g.Positions.Count;
                 var verts = mesh.vertices;
+                var bladeUv = new List<Vector3>();
+                if (r.name == CrystalBlade.Name) mesh.GetUVs(0, bladeUv);
+                for (int v = 0; v < verts.Length; v++) blade.Add(v < bladeUv.Count ? bladeUv[v] : Vector3.zero);
                 var normals = mesh.normals;
                 var perVertex = rigid ? default : mesh.GetBonesPerVertex();
                 var weights = rigid ? default : mesh.GetAllBoneWeights();
@@ -383,6 +408,13 @@ namespace Champions.EditorTools.Monsters
                 g.Parts.Add((r.name, baseVertex, verts.Length, rigid, carried));
             }
             if (g.Positions.Count == 0) throw new Exception($"MonsterBaker: {b.Model.id} has no active renderers");
+            if (blade.Exists(u => u.z > 0))
+            {
+                g.Blade.AddRange(blade);
+                g.Edges = StyleMesh.FeatureEdges(g.Positions, g.Indices);
+                for (int t = 0; t < g.Edges.Length; t++)
+                    if (blade[g.Indices[3 * t]].z > 0) g.Edges[t] = Vector3.one;
+            }
             foreach (var name in b.Model.carried)
                 if (!g.Parts.Exists(p => p.Name == name)) throw new Exception($"MonsterBaker: {b.Model.id} carries '{name}', which it has no renderer for");
             return g;

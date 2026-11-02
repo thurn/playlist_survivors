@@ -35,15 +35,24 @@ namespace Champions.Render.Crowd
         /// <summary>The bone textures' rate: the trailer's crowd's.</summary>
         public const float ClipRate = 30f;
 
+        /// <summary>The hero's type id (monsters.json's figure, posed on the CPU: <see cref="LoadFigure"/>).</summary>
+        public const string HeroId = "hero";
+
         /// <summary>Where a look's types load from, under a Resources folder.</summary>
         public static string TypesPath(MonsterLook look) => "MonsterTypes/" + MonsterLooks.Name(look);
+
+        /// <summary>
+        /// Where a look's figures load from, under a Resources folder: types posed on the CPU from their rig
+        /// (<see cref="MonsterType.Rig"/>), never in the crowd, so apart from <see cref="TypesPath"/>.
+        /// </summary>
+        public static string FiguresPath(MonsterLook look) => "MonsterFigures/" + MonsterLooks.Name(look);
 
         public readonly MonsterLook Look;
         public readonly MonsterType[] Types;
         public readonly ComputeShader Cull, Palette, Shards;
 
-        /// <summary>A library of the given types (the tests' synthetic ones); <see cref="Load"/> for the baked.</summary>
-        internal MonsterLibrary(MonsterLook look, MonsterType[] types)
+        /// <summary>A library of the given types (the tests' synthetic ones, a figure's own for its shatter); <see cref="Load"/> for the baked.</summary>
+        public MonsterLibrary(MonsterLook look, MonsterType[] types)
         {
             Look = look;
             Types = types;
@@ -59,6 +68,13 @@ namespace Champions.Render.Crowd
             if (types.Length == 0) return null;
             Array.Sort(types, (a, b) => string.CompareOrdinal(a.Id, b.Id));
             return new MonsterLibrary(look, types);
+        }
+
+        /// <summary>The look's baked figure <paramref name="id"/> (the hero), or null when it isn't baked.</summary>
+        public static MonsterType LoadFigure(MonsterLook look, string id)
+        {
+            var t = Resources.Load<MonsterType>(FiguresPath(look) + "/" + id);
+            return t != null && t.Rig != null ? t : null;
         }
 
         public int IndexOf(string id)

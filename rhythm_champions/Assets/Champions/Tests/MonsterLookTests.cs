@@ -24,8 +24,9 @@ namespace Champions.Tests
     public sealed class MonsterLookTests
     {
         /// <summary>
-        /// --look trailer draws exactly the neon edge trailer's look: these files, as ported, and EdgeGains.Trailer. A
-        /// change to the game's look goes to the default (EdgeGains.Default, a shader of its own for it), never here.
+        /// --look trailer draws exactly the neon edge trailer's look: these files, as ported, and EdgeGains.Trailer and
+        /// HeroGains.Trailer. A change to the game's look goes to the default (EdgeGains.Default, HeroGains.Default, a
+        /// shader of its own for it), never here.
         /// </summary>
         static readonly (string File, string Sha256)[] TrailerFiles =
         {
@@ -35,6 +36,7 @@ namespace Champions.Tests
             ("Render/Crowd/Shaders/MonsterLines.hlsl", "abeb162f47a5b8eee6711bceb635e84e5e23b5a520c751408b7bb1b65398ad6b"),
             ("Render/Crowd/Shaders/MonsterCommon.hlsl", "63ac09b7861ff693274ce6b02ae52fdfdd1e661feaaa9c552cab95246b807b50"),
             ("Render/Crowd/Shaders/CrowdCommon.hlsl", "3591455b4a4c0352093c6d2c4d62c8a4237bae654de2089fe7128323f8bd2904"),
+            ("Render/Resources/Crowd/HeroEdge.shader", "fc2f85d3ecb1a21b23ae970e05ecb8a3c82cfd99d3532995df98639e03cc420d"),
         };
 
         [Test]
@@ -54,6 +56,9 @@ namespace Champions.Tests
             Assert.That(new[] { g.ShardRim, g.ShardRimPower, g.ShardEdge, g.ShardEdgePx, g.ShardBeat }, Is.EqualTo(new[] { 2f, 4f, 1.4f, 1.25f, 0.6f }),
                 "the trailer's shard gains");
             Assert.That(g.Springs && g.Swarm, "the trailer's motion layers");
+            var h = HeroGains.Trailer;
+            Assert.That(new[] { h.Glass, h.Rim, h.RimPower, h.Edge, h.EdgePx, h.Beat, h.CoreGlow, h.CoreSize, h.Glow },
+                Is.EqualTo(new[] { 0.03f, 0.6f, 3f, 1f, 1.4f, 0.15f, 0.35f, 0.22f, 0.6f }), "the trailer's knight's gains");
             Assert.That(StyleMesh.FeatureAngleDeg, Is.EqualTo(24f), "the trailer's crease angle");
         }
 

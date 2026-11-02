@@ -9,7 +9,8 @@ namespace Champions.EditorTools.Monsters
     /// <summary>
     /// A monster type's vendor model (monsters.json beside this file): its prefab, height, hover, hidden children, held
     /// weapons and clips with their annotations, which <see cref="MonsterBaker"/> bakes and <see cref="MonsterReview"/>
-    /// names. Vendor assets are found by GUID in the synced vendor folder (`champions setup`).
+    /// names; or a figure's (the hero's), posed on the CPU from the rig its bake keeps, maybe with the crystal blade in its
+    /// fist. Vendor assets are found by GUID in the synced vendor folder (`champions setup`).
     /// </summary>
     [Serializable]
     public sealed class MonsterModel
@@ -26,6 +27,10 @@ namespace Champions.EditorTools.Monsters
         public Weapon[] weapons = Array.Empty<Weapon>();
         public Clip[] clips = Array.Empty<Clip>();
         public string[] reviewPoses = { "idle", "walk", "attack" };
+        /// <summary>Posed on the CPU (the hero): its bake keeps a rig (<see cref="MonsterRigBaker"/>) and goes to the figures, not the crowd.</summary>
+        public bool figure;
+        /// <summary>The crystal blade in its right fist (<see cref="CrystalBlade"/>), as the trailer's knight held it.</summary>
+        public bool blade;
 
         [Serializable]
         public sealed class Clip
@@ -38,13 +43,18 @@ namespace Champions.EditorTools.Monsters
             public float liftM;
         }
 
-        /// <summary>A weapon prefab held in a humanoid fist (<see cref="Fist"/>): its grip's palm offset (m at the prefab's scale) and turns (degrees).</summary>
+        /// <summary>
+        /// A weapon prefab held in a humanoid fist (<see cref="Fist"/>): its grip's palm offset (m at the prefab's scale) and
+        /// turns (degrees); or, <see cref="onBone"/>, riding the hand bone as the prefab comes.
+        /// </summary>
         [Serializable]
         public sealed class Weapon
         {
             public string prefab;
             public string hand = "right";
             public float palm, pitch, yaw, roll;
+            /// <summary>On the hand bone at the prefab's own placement, not in the fist: the trailer's knight's shield.</summary>
+            public bool onBone;
         }
 
         [Serializable]
@@ -82,9 +92,9 @@ namespace Champions.EditorTools.Monsters
         }
 
         /// <summary>
-        /// The prefab at the origin, unpacked, its hidden children gone, its weapons in their fists, its animator free of
-        /// root motion and controller, scaled to <see cref="heightM"/> (measured on its skins' bind-pose vertices, not the
-        /// meshes' bounds, which some packs leave taller than the model).
+        /// The prefab at the origin, unpacked, its hidden children gone, its weapons (and blade) in their fists, its
+        /// animator free of root motion and controller, scaled to <see cref="heightM"/> (measured on its skins' bind-pose
+        /// vertices, not the meshes' bounds, which some packs leave taller than the model).
         /// </summary>
         public GameObject Spawn()
         {
@@ -97,6 +107,7 @@ namespace Champions.EditorTools.Monsters
             }
             var animator = go.GetComponentInChildren<Animator>() ?? throw new Exception($"MonsterModel: {id} has no Animator");
             foreach (var w in weapons) Hold(w, animator);
+            if (blade) CrystalBlade.Hold(animator);
             foreach (var t in go.GetComponentsInChildren<Transform>(true))
                 GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject); // vendor scripts we don't sync
             animator.applyRootMotion = false;
@@ -115,7 +126,7 @@ namespace Champions.EditorTools.Monsters
             return go;
         }
 
-        /// <summary>Puts a weapon in its hand's fist by its grip, at the character's own scale.</summary>
+        /// <summary>Puts a weapon in its hand's fist by its grip (or on the hand bone as it comes), at the character's own scale.</summary>
         void Hold(Weapon w, Animator animator)
         {
             if (w.hand != "right" && w.hand != "left")
@@ -124,8 +135,11 @@ namespace Champions.EditorTools.Monsters
             var weapon = Instantiate(w.prefab).transform;
             weapon.SetParent(fist.Hand, false);
             float scale = fist.Hand.lossyScale.x; // at the prefab's own scale (Spawn scales the whole after)
-            weapon.localRotation = fist.Turn * Quaternion.Euler(w.pitch, w.yaw, w.roll);
-            weapon.localPosition = fist.Knuckles + fist.Palm * (w.palm / scale);
+            if (!w.onBone)
+            {
+                weapon.localRotation = fist.Turn * Quaternion.Euler(w.pitch, w.yaw, w.roll);
+                weapon.localPosition = fist.Knuckles + fist.Palm * (w.palm / scale);
+            }
             // At the character's scale, not the hand bone's: a rig whose bones carry a scale would hold a weapon that small.
             weapon.localScale = Vector3.one * (fist.Hand.root.lossyScale.x / scale);
         }

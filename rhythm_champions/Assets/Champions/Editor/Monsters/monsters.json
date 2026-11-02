@@ -1,5 +1,5 @@
 {
-  "note": "The ten monster types' vendor models, as `champions monster bake` spawns them (MonsterModel.cs): the prefab and each clip by vendor GUID (rhythm_champions/manifest.json), the type's standing height in metres (the model is scaled to it), a flyer's hover over the ground, children to hide, the renderers it carries (weapons and shields skinned with the body, which its shatter flings like the struck part; a held weapon is carried anyway), weapons held in a humanoid fist (palm, pitch, yaw, roll: Fist's grip), and each clip's role and annotations (loop; impact, end in seconds; strideM, the walk cycle's travel; liftM, a clip raised for flight). reviewPoses are the clips the review sheets show. Carried over from the deleted edge-cut recipes (git b243e08b^:rhythm_champions/tools/recipes/edgecut/), which took them from game/'s roster.",
+  "note": "The ten monster types' vendor models and the hero's, as `champions monster bake` spawns them (MonsterModel.cs): the prefab and each clip by vendor GUID (rhythm_champions/manifest.json), the type's standing height in metres (the model is scaled to it), a flyer's hover over the ground, children to hide, the renderers it carries (weapons and shields skinned with the body, which its shatter flings like the struck part; a held weapon is carried anyway), weapons held in a humanoid fist (palm, pitch, yaw, roll: Fist's grip; onBone: on the hand bone as the prefab comes, as the trailer's knight held its shield), and each clip's role and annotations (loop; impact, end in seconds; strideM, the walk cycle's travel; liftM, a clip raised for flight). reviewPoses are the clips the review sheets show. A figure (the hero) is posed on the CPU from a rig its bake keeps and is drawn apart from the crowd (MonsterFigure); blade puts the trailer's crystal blade in its right fist (CrystalBlade.cs). Carried over from the deleted edge-cut recipes (git b243e08b^:rhythm_champions/tools/recipes/edgecut/), which took them from game/'s roster.",
   "types": [
     {
       "id": "skeleton",
@@ -125,6 +125,29 @@
         { "role": "fly", "guid": "367e6650649952543b0c5dc153649036", "clip": "Fly Idle", "loop": true, "liftM": 4.43 },
         { "role": "land", "guid": "367e6650649952543b0c5dc153649036", "clip": "Idle Landing", "impact": 1.27, "end": 2.5, "liftM": 4.43 },
         { "role": "hit", "guid": "367e6650649952543b0c5dc153649036", "clip": "Got Hit 1", "impact": 0.067, "end": 0.833 }
+      ]
+    },
+    {
+      "id": "hero",
+      "figure": true,
+      "blade": true,
+      "prefab": "360c73b9bf9a34d4c84bc0581d0499eb",
+      "heightM": 1.85,
+      "weapons": [ { "prefab": "a7b97d24ba2370040ba159577de7b931", "hand": "left", "onBone": true } ],
+      "reviewPoses": [ "idle", "run", "slashA", "slashB", "spin", "dodge" ],
+      "clips": [
+        { "role": "idle", "guid": "b94969b4c36c3c94284f72888ad9289d", "clip": "A_Idle_Base_Sword", "loop": true },
+        { "role": "run", "guid": "d2995d8a62be0ce42a4e73698b62b275", "clip": "A_Sprint_F_Masc", "loop": true, "strideM": 3.9 },
+        { "role": "back", "guid": "b28d41dc2454f694fac9ab766e54323a", "clip": "A_Run_BckStrafeB_Masc", "loop": true, "strideM": 1.73 },
+        { "role": "left", "guid": "d294a4226e928db4fbbd933c19ccf5a1", "clip": "A_Run_FwdStrafeL_Masc", "loop": true, "strideM": 1.7 },
+        { "role": "right", "guid": "4699ac7f1156bfc4dba616d9b3a05234", "clip": "A_Run_FwdStrafeR_Masc", "loop": true, "strideM": 1.71 },
+        { "role": "slashB", "guid": "95697c3218923dd43aa160c110bfbc79", "clip": "A_Attack_LightCombo01B_Sword", "impact": 0.267, "end": 0.45 },
+        { "role": "slashA", "guid": "9f773338b2a96174ebe9b63870034ca3", "clip": "A_Attack_LightCombo01A_Sword", "impact": 0.35, "end": 0.717 },
+        { "role": "spin", "guid": "b48c7e37f2264c3418122c894c6f98af", "clip": "A_Attack_HeavyFlourish_Sword", "impact": 1.433, "end": 1.65 },
+        { "role": "stab", "guid": "b963d0c4e093a9c4ea792b8095e51ba2", "clip": "A_Attack_HeavyStab01_Sword", "impact": 0.883, "end": 0.983 },
+        { "role": "leap", "guid": "72f114cf4075d3b4db5ce63cb994a704", "clip": "A_Attack_LightLeaping01_Sword", "impact": 1.1, "end": 1.167 },
+        { "role": "parry", "guid": "7966ebc17e0dc2a4b8faaf62594fb9b2", "clip": "A_Parry_F_Sword", "impact": 0.233, "end": 0.4 },
+        { "role": "dodge", "guid": "80f9aad568ebdbf4f9fd28c054c27a20", "clip": "A_Dodge_F_Sword" }
       ]
     }
   ]

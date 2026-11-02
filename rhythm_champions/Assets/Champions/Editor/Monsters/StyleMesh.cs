@@ -14,8 +14,9 @@ namespace Champions.EditorTools.Monsters
         /// <summary>
         /// A welded crowd mesh unwelded: every triangle gets its own three vertices, so a look can facet, edge, move
         /// or colour each one alone. It keeps the positions (the rest pose in metres), normals, UV0 where the mesh
-        /// has it and the bone data (UV1/UV2), and adds the face normal in the tangent, skinned like a normal, and
-        /// barycentric coordinates plus a random value per triangle in UV3, and its feature edges in UV5
+        /// has it (every component: the hero's blade has three) and the bone data (UV1/UV2), and adds the face normal
+        /// in the tangent, skinned like a normal, and barycentric coordinates plus a random value per triangle in UV3,
+        /// and its feature edges in UV5
         /// (<see cref="FeatureEdges"/> at <paramref name="angleDeg"/>, or <paramref name="edges"/> when given: per triangle
         /// over all submeshes, component k 1 to draw the edge opposite corner k). Submeshes and triangle order are kept.
         /// </summary>
@@ -23,7 +24,7 @@ namespace Champions.EditorTools.Monsters
         {
             var pos = src.vertices;
             var nor = src.normals;
-            var uv0 = new List<Vector2>(); src.GetUVs(0, uv0);
+            var uv0 = new List<Vector4>(); src.GetUVs(0, uv0);
             bool hasUv0 = uv0.Count == pos.Length;
             var bones = new List<Vector4>(); src.GetUVs(1, bones);
             var weights = new List<Vector4>(); src.GetUVs(2, weights);
@@ -32,7 +33,7 @@ namespace Champions.EditorTools.Monsters
             var oPos = new List<Vector3>(n);
             var oNor = new List<Vector3>(n);
             var oTan = new List<Vector4>(n);
-            var oUv0 = new List<Vector2>(hasUv0 ? n : 0);
+            var oUv0 = new List<Vector4>(hasUv0 ? n : 0);
             var oBones = new List<Vector4>(n);
             var oWeights = new List<Vector4>(n);
             var oBary = new List<Vector4>(n);

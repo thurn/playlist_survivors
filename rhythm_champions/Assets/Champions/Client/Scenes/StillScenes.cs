@@ -46,11 +46,13 @@ namespace Champions.Client.Scenes
             (WorldScene.Name, s => new WorldScene(s._palette)),
             (StructureScene.Name, s => new StructureScene(s._content, s._palette)),
             (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
-            (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette)),
-            (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette)),
+            (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette, s._look)),
+            (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette, s._look)),
+            (DuelScene.OgreDeathName, s => new DuelScene("fatOgre", s._content, s._palette, s._look, death: true)),
+            (DuelScene.DragonDeathName, s => new DuelScene("dragon", s._content, s._palette, s._look, death: true)),
             (LevelScene.Name, s => new LevelScene(s._content, s._palette, s._contentDir, s._look)),
             (UiScene.Name, s => new UiScene(s._content, s._palette, s._contentDir)),
-            (HeroScene.Name, s => new HeroScene(s._content, s._palette, s._contentDir)),
+            (HeroScene.Name, s => new HeroScene(s._content, s._palette, s._contentDir, s._look)),
         };
 
         readonly Stills _stills;

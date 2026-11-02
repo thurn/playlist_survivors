@@ -35,6 +35,30 @@ namespace Champions.Render.Crowd
     }
 
     /// <summary>
+    /// The hero's numbers in the edge look (design.md, The Hero): HeroEdge's gains, as the trailer drew the knight with them
+    /// (the frozen look package's HeroEdge.shader defaults at git 138684f2).
+    /// </summary>
+    public struct HeroGains
+    {
+        /// <summary>
+        /// The glass's light, the rim's gain and falloff, the lines' gain, width (px at 2160 rows) and lift on the beat,
+        /// the chest core's gain and radius (m), the blade's spine light.
+        /// </summary>
+        public float Glass, Rim, RimPower, Edge, EdgePx, Beat, CoreGlow, CoreSize, Glow;
+
+        /// <summary>`--look trailer`'s: exactly the trailer's, never changed (MonsterLookTests pins them); tune <see cref="Default"/>.</summary>
+        public static HeroGains Trailer => new HeroGains
+        {
+            Glass = 0.03f, Rim = 0.6f, RimPower = 3f, Edge = 1f, EdgePx = 1.4f, Beat = 0.15f, CoreGlow = 0.35f, CoreSize = 0.22f, Glow = 0.6f,
+        };
+
+        /// <summary>The game's: the trailer's until a change is judged to look better (design.md, Changing the look).</summary>
+        public static HeroGains Default => Trailer;
+
+        public static HeroGains Of(MonsterLook look) => look == MonsterLook.Trailer ? Trailer : Default;
+    }
+
+    /// <summary>
     /// The edge look's materials (plan.md, Rendering &gt; The edge look), ported by review from the frozen look package's
     /// EdgeLook: near-black glass bodies whose only light is their type's palette hue, levelled to one luminance, in a
     /// fresnel rim, in lines on the mesh's feature edges and in a small inner core that flares on the beat; shards keep
@@ -45,6 +69,7 @@ namespace Champions.Render.Crowd
     {
         public const string BodyShader = "Crowd/MonsterEdge";
         public const string ShardShader = "Crowd/MonsterEdgeShard";
+        public const string HeroShader = "Crowd/HeroEdge";
 
         /// <summary>The luminance every type's hue is drawn at (linear), so the post's bloom treats the hues alike.</summary>
         public const float HueLuminance = 0.4f;
@@ -94,10 +119,39 @@ namespace Champions.Render.Crowd
             return m;
         }
 
+        /// <summary>
+        /// A new material for the hero's figure (<see cref="MonsterFigure"/>) in <paramref name="look"/>: HeroEdge in the
+        /// palette's hero.body, its blade in hero.blade.
+        /// </summary>
+        public static Material Hero(MonsterType type, MonsterLook look, Palette palette)
+        {
+            var g = HeroGains.Of(look);
+            var m = new Material(MonsterLibrary.Load<Shader>(HeroShader)) { name = type.Id + "_hero", enableInstancing = false };
+            m.SetColor("_Tint", palette.HeroBody.linear);
+            m.SetColor("_BladeTint", palette.HeroBlade.linear);
+            m.SetFloat("_Glass", g.Glass);
+            m.SetFloat("_Rim", g.Rim);
+            m.SetFloat("_RimPower", g.RimPower);
+            m.SetFloat("_Edge", g.Edge);
+            m.SetFloat("_EdgePx", g.EdgePx);
+            m.SetFloat("_Beat", g.Beat);
+            m.SetFloat("_CoreGlow", g.CoreGlow);
+            m.SetFloat("_CoreSize", g.CoreSize);
+            m.SetFloat("_Glow", g.Glow);
+            return m;
+        }
+
+        /// <summary>
+        /// A type's hue as its bodies and shards draw it: a monster's palette colour levelled (<see cref="Level"/>); the
+        /// hero's white as it is, the brightest thing on screen (design.md, Shatter: white shards from the hero).
+        /// </summary>
+        public static Color Hue(MonsterType type, Palette palette) =>
+            type.Id == MonsterLibrary.HeroId ? palette.HeroBody.linear : Level(palette.ForType(type.Id).linear);
+
         static Material Make(string path, MonsterType type, Palette palette, string suffix)
         {
             var m = new Material(MonsterLibrary.Load<Shader>(path)) { name = type.Id + suffix, enableInstancing = false };
-            m.SetColor("_Tint", Level(palette.ForType(type.Id).linear));
+            m.SetColor("_Tint", Hue(type, palette));
             m.SetColor("_Core", palette.VoidBody.linear);
             m.SetColor("_Flash", Color.white);
             return m;

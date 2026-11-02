@@ -19,8 +19,10 @@ presenter over an `ICrowdView`), the bosses and the telegraphs, the spores,
 the hero's commands, the weapon effects (Hovl's slash shapes in white), the
 run's UI (indicator, HUD, cards) and the sounds. The monsters draw in the neon
 edge trailer's look on their vendor meshes (`champions monster bake all`, then
-build; `--look trailer` for the trailer's exact drawing); the hero, the bosses
-and the structures draw as stand-ins ([below](#stand-ins)) until they join it.
+build; `--look trailer` for the trailer's exact drawing), the bosses among
+them; the hero is the trailer's knight in white with its crystal blade, posed
+on the CPU (`Render/Crowd/MonsterFigure.cs`, `HeroEdge.shader`); the
+structures draw as stand-ins ([below](#stand-ins)) until they join it.
 Esc pauses a run.
 
 ## Commands
@@ -132,16 +134,15 @@ dies within 90 s, and the explicit tuning tests run the reference player through
 
 ## Stand-ins
 
-Until the trailer's edge look is ported, everything with a body draws as a
-stand-in (`Render/StandIn.cs`): one of Unity's primitives at its size, drawn
-with `Resources/Champions/StandIn.shader` (a near-black body whose silhouette
-glows in its role's colour) and coded for the type-ID pass. The hero
-(`HeroPresenter`) is a white capsule that its motion (`HeroMotion`, on the
-knight's clip annotations) places, turns, lifts and hides; a boss
-(`BossPresenter`) and the duel scenes' skeletons are capsules in their
-palette colours, gone on their death's frame; the structures
+What isn't in the trailer's edge look yet draws as a stand-in
+(`Render/StandIn.cs`): one of Unity's primitives at its size, drawn with
+`Resources/Champions/StandIn.shader` (a near-black body whose silhouette glows
+in its role's colour) and coded for the type-ID pass. The structures
 (`StructurePresenter`) are blocks and cylinders on their footprints, gone on
-their break's frame. Nothing breaks into shards.
+their break's frame. A checkout without the baked vendor files stands in for
+the rest too: the hero (`HeroPresenter`) as a white capsule its motion places,
+turns, lifts and hides, a boss (`BossPresenter`) as a capsule in its palette
+colour, the horde as spindles (`StandInCrowd`).
 
 ## Weapon effects and sounds
 

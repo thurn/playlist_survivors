@@ -4,16 +4,19 @@ using System.Linq;
 using Champions.Client;
 using Champions.Client.Hero;
 using Champions.Render;
+using Champions.Render.Crowd;
 using Champions.Sim;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Champions.Tests
 {
     /// <summary>
-    /// The hero's motion (design.md, The Hero &gt; Animation; Dashes) on the knight's clip annotations
-    /// (<see cref="HeroClips.Knight"/>): Sword Slash's clips at natural speed with each impact frame on its beat, the legs
-    /// under a twisted upper body, the dash poses and death; and the presenter's stand-in at the hero's feet.
+    /// The hero's motion and rig (design.md, The Hero &gt; Animation; Dashes) on the knight's clip annotations
+    /// (<see cref="HeroClips.Knight"/>) and a three-bone stand-in rig, so they run without the vendor files: Sword Slash's
+    /// clips at natural speed with each impact frame on its beat, the legs under a twisted upper body, the dash poses and
+    /// death, the rig's composing, twisting and layering; and the presenter at the hero's feet, broken on its killing frame.
     /// </summary>
     public sealed class HeroTests
     {
@@ -188,21 +191,117 @@ namespace Champions.Tests
         }
 
         [Test]
-        public void TheStandInStandsAtTheFeetAndIsGoneOnTheKillingFrame()
+        public void TheHeroStandsAtItsFeetAndBreaksOnceOnTheKillingFrame()
         {
             var hero = new HeroPresenter(Palette.Load(GameContent.Find(Application.dataPath)), 6);
             try
             {
-                hero.Present(1, new Vector2(2, 3), Frame);
-                Assert.IsTrue(hero.Figure.activeSelf);
-                Assert.AreEqual(new Vector3(2, 0, 3), hero.Figure.transform.position);
+                hero.Present(1, new Vector2(2, 3), Frame, null);
+                Assert.IsTrue(hero.Drawn);
+                Assert.AreEqual(new Vector3(2, 0, 3), hero.Instance.Position);
+                if (!hero.Baked) Assert.AreEqual(new Vector3(2, 0, 3), hero.StandInRoot.transform.position, "the stand-in, with no baked hero");
                 hero.Death(2, Vector2.zero);
-                hero.Present(1.99, new Vector2(2, 3), Frame);
-                Assert.IsTrue(hero.Figure.activeSelf);
-                hero.Present(2, new Vector2(2, 3), Frame);
-                Assert.IsFalse(hero.Figure.activeSelf, "gone on the killing frame");
+                hero.Present(1.99, new Vector2(2, 3), Frame, null);
+                Assert.IsTrue(hero.Drawn);
+                hero.Present(2, new Vector2(2, 3), Frame, null);
+                Assert.IsFalse(hero.Drawn, "gone on the killing frame");
+                hero.Present(2 + Frame, new Vector2(2, 3), Frame, null);
+                Assert.IsFalse(hero.Drawn);
+                if (hero.Baked)
+                {
+                    Assert.That(hero.Shatter.Breaks, Is.EqualTo(1), "its white shards, once");
+                    Assert.That(hero.Shatter.LiveShards, Is.GreaterThan(0));
+                }
+                else Assert.IsFalse(hero.StandInRoot.activeSelf);
             }
             finally { hero.Dispose(); }
+        }
+
+        // ---- The rig: hips (legs), a spine bone and an arm, one entry each, binds from the rest pose ----
+
+        static readonly Vector3[] Rest = { new Vector3(0, 1, 0), new Vector3(0, 0.3f, 0), new Vector3(0.3f, 0.3f, 0) };
+
+        /// <summary>A rig of two clips: the rest pose, and <paramref name="other"/>'s local rotations on the same offsets.</summary>
+        static MonsterRig Rig(params Quaternion[] other)
+        {
+            var rig = ScriptableObject.CreateInstance<MonsterRig>();
+            rig.name = "stand-in";
+            rig.Nodes = new[] { "Hips", "Spine", "Arm" };
+            rig.Parents = new[] { -1, 0, 1 };
+            rig.Layers = new[] { (byte)RigLayer.Legs, (byte)RigLayer.Spine, (byte)RigLayer.Arms };
+            rig.Scales = new[] { Vector3.one, Vector3.one, Vector3.one };
+            rig.Entries = new[] { 0, 1, 2 };
+            rig.Binds = new Matrix4x4[3];
+            var world = Vector3.zero;
+            for (int n = 0; n < 3; n++) rig.Binds[n] = Matrix4x4.Translate(-(world += Rest[n]));
+            rig.SpineRoot = 1;
+            rig.Clips = new[]
+            {
+                new RigClip { Role = "rest", FirstFrame = 0, Frames = 2, Length = 1 },
+                new RigClip { Role = "other", FirstFrame = 2, Frames = 2, Length = 1 },
+            };
+            var frames = new List<float>();
+            for (int f = 0; f < 4; f++)
+                for (int n = 0; n < 3; n++)
+                {
+                    var q = f < 2 ? Quaternion.identity : other[n];
+                    frames.AddRange(new[] { q.x, q.y, q.z, q.w, Rest[n].x, Rest[n].y, Rest[n].z });
+                }
+            rig.Frames = frames.ToArray();
+            return rig;
+        }
+
+        static Vector3 Skin(Vector4[] rows, int entry, Vector3 p)
+        {
+            var m = Matrix4x4.identity;
+            for (int r = 0; r < 3; r++) m.SetRow(r, rows[3 * entry + r]);
+            return m.MultiplyPoint3x4(p);
+        }
+
+        static readonly Vector3 Hand = new Vector3(0.3f, 1.6f, 0);
+
+        [Test]
+        public void TheRestPoseComposesToTheRestAndTheTwistTurnsTheUpperBodyAboutTheVertical()
+        {
+            var rig = Rig(Quaternion.identity, Quaternion.identity, Quaternion.identity);
+            try
+            {
+                var pose = new RigPose(rig);
+                var rows = new Vector4[9];
+                pose.Sample(0, 0.5);
+                pose.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-5f), "the rest pose skins to itself");
+                pose.Palette(rows, Mathf.PI / 2);
+                // A quarter turn clockwise from above about the spine bone (at 1.3 m): the hand, 0.3 m to its right, goes behind it.
+                Assert.That(Vector3.Distance(new Vector3(0, 1.6f, -0.3f), Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "the arm turned");
+                Assert.That(Vector3.Distance(Vector3.up, Skin(rows, 0, Vector3.up)), Is.LessThan(1e-5f), "the hips not");
+            }
+            finally { Object.DestroyImmediate(rig); }
+        }
+
+        [Test]
+        public void AClipLaidOverTheLegsKeepsItsSpinesTurnWhateverItsHipsDo()
+        {
+            // The clip turns its hips 45 degrees and its spine back again: its upper body faces ahead.
+            var rig = Rig(Quaternion.Euler(0, 45, 0), Quaternion.Euler(0, -45, 0), Quaternion.identity);
+            try
+            {
+                var basePose = new RigPose(rig);
+                var clip = new RigPose(rig);
+                var rows = new Vector4[9];
+                basePose.Sample(0, 0);
+                clip.Sample(1, 0);
+                basePose.Blend(clip, 0, 1, 1); // the legs keep the base's hips
+                basePose.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "the upper body still faces ahead");
+
+                var whole = new RigPose(rig);
+                whole.Sample(0, 0);
+                whole.Blend(clip, 1, 1, 1);
+                whole.Palette(rows, 0);
+                Assert.That(Vector3.Distance(Hand, Skin(rows, 2, Hand)), Is.LessThan(1e-4f), "and so it does as the whole body");
+            }
+            finally { Object.DestroyImmediate(rig); }
         }
     }
 }

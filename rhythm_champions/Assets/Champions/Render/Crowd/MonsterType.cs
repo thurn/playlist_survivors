@@ -7,8 +7,9 @@ namespace Champions.Render.Crowd
     /// One monster type as `champions monster bake` writes it for one look (plan.md, Rendering &gt; The edge look), an
     /// asset in the ignored Assets/Baked/Monsters/Resources/MonsterTypes/LOOK/ beside its meshes and bone texture in
     /// Assets/Baked/Monsters/TYPE/ (MonsterBaker). The trailer's is always the vendor model; the default's is the
-    /// monster's recipe's mesh when it has one, else the trailer's own meshes. Ported by review from the frozen look
-    /// package's CrowdType.
+    /// monster's recipe's mesh when it has one, else the trailer's own meshes. A figure (the hero) goes to
+    /// Resources/MonsterFigures/LOOK/ instead, with its <see cref="Rig"/>. Ported by review from the frozen look package's
+    /// CrowdType.
     /// </summary>
     public sealed class MonsterType : ScriptableObject
     {
@@ -18,7 +19,8 @@ namespace Champions.Render.Crowd
         /// <summary>
         /// LOD0 to LOD2 as style meshes (StyleMesh.Unweld): every triangle its own vertices, one submesh, the rest pose in
         /// root space at the type's height, bone indices in UV1 and weights in UV2, barycentrics plus a value per triangle
-        /// in UV3 and its feature edges in UV5. LOD1 has about half LOD0's triangles, LOD2 about a quarter.
+        /// in UV3 and its feature edges in UV5; a crystal blade's spine, length and flag in UV0 (the hero's). LOD1 has about
+        /// half LOD0's triangles, LOD2 about a quarter, unless the mesh chose its own edges (all three are LOD0).
         /// </summary>
         public Mesh[] Lods = Array.Empty<Mesh>();
         /// <summary>Skinning matrices at <see cref="MonsterLibrary.ClipRate"/>: bone b's row r of frame f is texel (3b + r, f).</summary>
@@ -36,6 +38,8 @@ namespace Champions.Render.Crowd
         /// </summary>
         public Mesh ShardMesh;
         public MonsterShard[] Shards = Array.Empty<MonsterShard>();
+        /// <summary>A figure's rig, posed on the CPU (the hero: <see cref="MonsterFigure"/>); null for a crowd's type.</summary>
+        public MonsterRig Rig;
 
         /// <summary>The clip with this role ("idle", "walk", "attack", "hit", a boss's own), or -1.</summary>
         public int Clip(string role)
