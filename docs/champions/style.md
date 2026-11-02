@@ -2,24 +2,31 @@
 
 ## Introduction
 
-This is the rulebook for how Rhythm Champions looks. Every bead that draws
-something reads it first: the edge cuts, the crowd, the world, structures,
+This is the guide to how Rhythm Champions looks. Every bead that draws
+something reads it first: the monsters, the crowd, the world, structures,
 weapon effects, the hero, the UI and the look pass.
+
+Everything here is guidance under aesthetic judgment
+([design.md, Judgment over rules](design.md#judgment-over-rules)). The
+reference is the neon edge trailer, which looks good; when this guide and a
+better-looking frame disagree, the frame wins.
 
 It answers three questions:
 
-- **What are the rules?** The design's principles ([design.md, The Look](design.md#the-look)),
-  in measurable form.
+- **What does the look aim for?** The trailer's look, and the habits it
+  keeps ([design.md, The Look](design.md#the-look)).
 - **Which colours?** The palette, `rhythm_champions/Content/palette.json`,
   and why each role has its colour.
-- **How do we check?** `champions stills` renders scripted scenes with a
-  type-ID pass; `champions look` measures them against
-  [style-thresholds.json](style-thresholds.json).
+- **How do we judge?** By looking: stills from `champions stills`,
+  side-by-sides with the trailer's drawing (`--look trailer`), a blind
+  critique by an agent that hasn't read the docs, and the operator's eye.
+  `champions look` measures the stills against the guide values in
+  [style-thresholds.json](style-thresholds.json). It's a diagnostic for
+  finding problems, never a gate.
 
 The short version:
 
-- **Empty space.** A few lit lines with black between them, and black inside
-  each monster too.
+- **Start from the trailer.** Change it only where the change looks better.
 - **Light comes from things.** The floor is void; lines, trails, sparks and
   the grid emit.
 - **Each frame has a key.** One hue family holds most of a frame's colour:
@@ -32,12 +39,15 @@ whose study of Geometry Wars 3 and whose calibrations it keeps.
 
 ## Related Information
 
-- [The design](design.md): The Look (Principles, Edge cuts, The palette,
-  Restraint) and Decision 21 are the source of every rule here.
-- [The plan](plan.md): Look Metrics, Rendering > Edge cuts (the black share
-  thresholds).
-- [style-thresholds.json](style-thresholds.json): the rules `champions look`
-  checks, keyed as the table in [Rules and Thresholds](#rules-and-thresholds).
+- [The design](design.md): The Look (the trailer, changing the look,
+  monster meshes, judgment over rules, the palette, restraint) and
+  Decision 21 are the source of everything here.
+- [The plan](plan.md): Look Metrics, Rendering > The edge look.
+- [style-thresholds.json](style-thresholds.json): the guide values
+  `champions look` reports against, keyed as the table in
+  [Diagnostics](#diagnostics).
+- [The monster-mesh-design skill](../../.agents/skills/monster-mesh-design/SKILL.md):
+  how each monster's mesh is designed and judged.
 - The palette: `rhythm_champions/Content/palette.json`; its rules are checked
   by `rhythm_champions/tools/tests/test_palette.py` (the tools'
   `palette.problems`), its reader is `Champions.Render.Palette`.
@@ -48,29 +58,29 @@ whose study of Geometry Wars 3 and whose calibrations it keeps.
   [archived thresholds](../archive/design/neon-look-thresholds.json) and their
   calibration notes in the archived guide's Rules and Thresholds.
 
-## Principles
+## Habits and Their Diagnostics
 
-The operator's rules, in order of precedence (design.md, Principles), and how
-each is measured:
+The habits the trailer keeps (design.md, Judgment over rules), and the
+diagnostics that can point at a frame worth a second look. A diagnostic that
+disagrees with a good-looking frame is wrong about that frame.
 
-| # | Principle | Measured by |
-| --- | --- | --- |
-| 1 | Empty space: a few chosen lines, never a jumble | `black_share_min`, `type_black_share_min`, `bright_share_max` |
-| 2 | Light comes from things, not from the world | `floor_p50_max`, `floor_p90_max`, `floor_p99_max`, `background_light_max` |
-| 3 | Each frame has a colour key; at most four families plus white | `key60_min`, `key60_median_min`, `families_max`, `palette_conformance_min` |
-| 4 | White is the hero's; grey means a wall | `white_max`, `monster_white_max`; the palette's white and grey rules |
-| 5 | A swarm is lit shapes with dark gaps between them | `swarm_separation_min`, `monster_form_min`, `readability_min` |
-| 6 | Point lights sparingly, for effect | Restraint: `flash_frames_max`, `clipped_max`, `halo_impact_min` |
-| 7 | No monster is ever brighter than the hero | `hero_margin_min`; the value ladder |
+| Habit | Diagnostics |
+| --- | --- |
+| Light comes from things, not from the world | `floor_p50_max`, `floor_p90_max`, `floor_p99_max`, `background_light_max` |
+| A frame tends to have a colour key | `key60_min`, `key60_median_min`, `families_max`, `palette_conformance_min` |
+| White is the hero's; grey means a wall | `white_max`, `monster_white_max`; the palette's white and grey rules |
+| A swarm reads as many figures with dark gaps between them | `swarm_separation_min`, `monster_form_min`, `readability_min` |
+| Point lights sparingly, for effect | Restraint: `flash_frames_max`, `clipped_max`, `halo_impact_min` |
+| No monster is brighter than the hero | `hero_margin_min`; the value ladder |
 
 ## The Value Ladder
 
-Every element sits on one rung. Something on a higher rung than its role is
-wrong, even if it looks good alone.
+Every element has a rung. Something above its role's rung is usually a
+mistake, so look at it again; the frame decides.
 
 | Rung | L* | What lives here |
 | --- | --- | --- |
-| void | 0-5 | the floor, the fog, the edge cuts' bodies, empty space |
+| void | 0-5 | the floor, the fog, the monsters' glass cores, empty space |
 | ground light | 10-35 | the grid (resting 10-20, under the beat wave up to 35), structure fills |
 | enemy light | 45-82 | monsters' lines, structure edges (40-60), enemy effects, boss telegraphs |
 | hero light | 85-98 | the hero's lines, warnings at their peak, enemy shots |
@@ -138,7 +148,7 @@ lighter member.
 | --- | --- | ---: | ---: | ---: | --- |
 | `void.floor` | `#030408` | 228 | 1 | 2 | the floor |
 | `void.fog` | `#05070d` | 225 | 2 | 3 | distance fog |
-| `void.body` | `#08090d` | 228 | 2 | 2 | the edge cuts' dark bodies (monsters, hero) |
+| `void.body` | `#08090d` | 228 | 2 | 2 | the edge look's dark glass cores (monsters, hero) |
 | `hero.body` | `#f4f8ff` | 218 | 97 | 4 | the hero's lines |
 | `hero.blade` | `#ffffff` | - | 100 | 0 | the blade's core, slashes' cores, sparks, impact flashes |
 | `hero.trail` | `#ffffff` | - | 100 | 0 | the hero's trail: pure white, no longer in the key family |
@@ -196,18 +206,25 @@ The look is calm by default (design.md, Restraint):
   (`clipped_impact_max`).
 - **Point lights** only for a slam or a boss entrance, a few at once.
 
-## Edge Cuts and Black Share
+## The Edge Look
 
-An edge cut (design.md, Edge cuts) is a few chosen lines over a near-black
-body (`void.body`). The look keeps empty space inside each monster too:
+Monsters, the hero and structures are drawn as the trailer drew them
+(design.md, The reference: the trailer; plan.md, Rendering > The edge look):
+every crease sharper than 24 degrees lit in the type's colour over a dark
+glass core (`void.body`), with a fresnel rim.
 
-- **Black share** is the share of a type's silhouette (its pixels in the
-  type-ID pass) under L* 10, in the still as drawn (bloom included) at the
-  game's 1080 rows.
-- **Thresholds** (plan.md, Rendering > Edge cuts): at least 65% for fodder
-  (fodder, swarmer, ranged), 55% for elites, bosses and the hero.
-- The edge-cut review sheets measure the same way at game scale; the look
-  metrics measure it in play.
+- **`--look trailer`** draws exactly what the trailer drew: the vendor
+  meshes and `MonsterEdge.hlsl` as ported, unchanged. Every change to the
+  look is compared against it.
+- **Monster meshes**: each monster's mesh is redesigned for the look with
+  the `monster-mesh-design` skill and judged by eye against the trailer's
+  drawing, at game scale, in a crowd and up close.
+- **What to look for**: does each type read as its figure at game scale?
+  Does a crowd read as many figures, or as a coloured mass (the trailer's
+  goblins)? Does the shatter pay off? Is the hero still the brightest thing?
+
+The edge cuts that this replaced, and their black-share threshold, were
+deleted on 2026-11-02 (design.md, The Look).
 
 ## Measuring the Look
 
@@ -228,7 +245,7 @@ Scenes join as the systems they show land. Today:
   each monster a stand-in at its type's size in its type's colour (a
   near-black body whose silhouette glows, `Champions/StandIn`), round the
   hero, on the void, under the real post. It measures the palette as drawn
-  until the edge cuts and the crowd renderer replace the stand-ins.
+  until the trailer's edge look replaces the stand-ins.
 - **`world`**: the world's scripted song (the beat wave at three phases, a
   zone sweep, beatless play, an on-beat dash's ring).
 - **`gallery`**: every weapon effect of the hero's, fired in turn at its feet
@@ -252,8 +269,8 @@ How a still says what covers each pixel (`Champions.Render.IdPass`):
   once per type: a cast type's code is its index in enemies.json's cast plus
   one (`IdPass.Monster`); the hero 250, structures 251, effects 252 (slashes,
   rings, telegraphs, sparks, spores). 0 is nothing.
-- The edge crowd's shaders honour it: its presenter sets each type's code
-  (`EdgeCrowd.SetIdCode`), and the shatter's pieces draw as effects.
+- The crowd's shaders honour it: its presenter sets each type's code, and
+  the shatter's pieces draw as effects.
 - A drawer that queues its draws by hand (`Graphics.RenderMeshIndirect`, as
   the crowd does) sets `Stills.Requeue`: a hand-drawn camera spends the draws
   queued in a frame, so the ID pass, a frame's second drawing, needs them
@@ -276,13 +293,18 @@ just champions-tool look DIR --out rhythm_champions/evidence/look/NAME
   rules, and the rules broken.
 - `--out` writes metrics.md, metrics.json and a small ps-render-tagged JPEG
   per still with the dense swarm tiles outlined.
-- Exits 1 when the palette, a still or the cut breaks a rule.
+- A report, not a verdict: nothing is accepted or rejected on its numbers.
+  Until ps-6y2.41 lands it still exits 1 when a still strays from a guide
+  value; treat that as information.
 - A frame without an ID pass (cut from a video) gets the frame rules alone.
 
-## Rules and Thresholds
+## Diagnostics
+
+The guide values below came from the archived look's calibration. They help
+find frames worth looking at again; they don't decide anything.
 
 Stills are measured at 960 px wide (ring widths and tiles are in those
-pixels); black share per type at the capture's own size. Pixel classes:
+pixels). Pixel classes:
 
 - **colourful**: C*ab 30+ and L* 20+; **bright**: L* 50+; **emitter**: L* 70+;
 - **clipped**: every channel 250+; **white**: C*ab under 15 and L* 85+;
@@ -301,7 +323,6 @@ Value and hue rules judge steady frames; an impact frame is judged by
 | `floor_p99_max` | floor L* p99: the grid's lines | <= 20 |
 | `background_light_max` | share of the frame's linear luminance off everything the ID pass marks, under L* 70 | <= 0.15 |
 | `frame_p25_max` | frame L* p25 (the floor's fallback without an ID pass) | <= 6 |
-| `black_share_min` | share of the frame under L* 10 | >= 0.30 |
 | `bright_share_max` | share at L* 50+ | <= 0.22 |
 | `bright_share_min` | the same, unless monsters cover under 10% of the frame | >= 0.04 |
 | `clipped_max` | clipped share | <= 0.02 |
@@ -320,7 +341,6 @@ Value and hue rules judge steady frames; an impact frame is judged by
 | `monster_form_min` | monster body pixels' L* p90 less p10 per tile, the tiles' median | >= 30 |
 | `swarm_separation_min` | seam depth in dense one-type clumps, the tiles' median; not judged under four dense tiles | >= 13 |
 | `readability_min` | the monsters' lit L* p90 against the ground 3-10 px round them | >= 17 |
-| `type_black_share_min` | each type's black share (above) | fodder, swarmer, ranged 0.65; elite, boss, hero 0.55 |
 
 What changed from the archived rules:
 
@@ -328,33 +348,21 @@ What changed from the archived rules:
 - **The type-ID pass** replaces the old mask (monsters red, structures blue,
   effects green) and the hero's capsule: the hero, the floor and each type's
   clump are exact.
-- **New**: `type_black_share_min` (plan.md's edge-cut thresholds) and
-  `monster_white_max` (white is the hero's; uncalibrated until the real crowd
-  lands).
+- **New**: `monster_white_max` (white is the hero's; uncalibrated until the
+  real crowd lands).
 - **The hero's margin and readability judge the lines** (lit pixels), not
-  whole silhouettes: a silhouette that is 65% black has a black median by
-  design, which made the old readability unpassable for an edge look.
+  whole silhouettes.
+- **Gone**: the frame's and each type's black share, which turned "empty
+  space" into a target and rewarded deleting the lines that make a monster
+  readable.
 
-## Calibration and Known Breaks
+## Calibration
 
-The thresholds come from the archived look's calibration (Geometry Wars 3's
-stills and the crystal cut, ps-wnj.21-31). The look pass (ps-6y2.23)
-calibrates them on level 1's real stills, fixes every break or records an
-exception in `rhythm_champions/evidence/look/`.
-
-On the palette scene's stand-ins (`rhythm_champions/evidence/look/palette/`),
-the palette's own measures pass: the key at 0.84, two families, conformance
-100%, the hero's margin 21, every value and restraint rule. What breaks
-belongs to the stand-ins and to the look pass:
-
-- **The hero's black share** (23% against 55%): bloom (threshold 0.9) blooms
-  only near-white, so the white hero alone glows, and at 1.8 m its glow fills
-  its own dark body. Its lines also clip to 255 in a steady frame, above the
-  hero rung (85-98). The hero's edge cut (ps-6y2.20) and the look pass must
-  thin its lines or restrain its bloom.
-- **The skeleton's black share** (58% against 65%): a stand-in capsule seen
-  from 60 degrees down lights a wide crescent along its lower edge, which an
-  edge cut's chosen lines don't.
+The guide values come from the archived look's calibration (Geometry Wars
+3's stills and the crystal cut, ps-wnj.21-31). The look pass (ps-6y2.23)
+judges level 1's real stills by eye against the trailer and may move a guide
+value that misjudges good frames, recording why in
+`rhythm_champions/evidence/look/`.
 
 Drawn unlit at their palette values under the post, the monsters' lines
 render within a few L* of their roles (the cyan at L* 79 C* 43 against the

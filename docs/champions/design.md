@@ -12,7 +12,8 @@ else.
 
 This document is the locked design. It was settled with the operator (the
 developer who plays and judges the game) on 2026-11-01 in a design
-interview, after months of prototypes. Every earlier design is archived
+interview, after months of prototypes. [The Look](#the-look) was reopened
+on 2026-11-02. Every earlier design is archived
 under [docs/archive/](../archive/); none of them is authoritative. The
 [implementation plan](plan.md) says how V1 gets built.
 
@@ -25,9 +26,9 @@ the old name.
 - The player picks an app that is playing music (Spotify, Apple Music, a
   browser) or a local file or playlist. The game mutes the app and plays its
   audio itself, 3 s late, so it knows every beat before the player hears it.
-- A white knight stands on an endless black grid. Neon monsters, drawn as a
-  few glowing lines around dark bodies, close in from every side, stepping
-  on the beat.
+- A white knight stands on an endless black grid. Neon monsters, every
+  crease of their dark glass bodies drawn in glowing lines, close in from
+  every side, stepping on the beat.
 - WASD, the arrows or a click move the hero freely. The sword swings by
   itself on the beat, about once a second, at the thickest part of the
   crowd. Monsters burst into tumbling shards on the frame they're hit,
@@ -49,8 +50,9 @@ the old name.
 
 ### The short version
 
-- **Every moment cinematic.** The look outranks everything, and the look is
-  about empty space: a few lit lines with black between them.
+- **Every moment cinematic.** The look outranks everything. It starts from
+  the neon edge trailer, which already looks good, and changes only what
+  looks better changed, judged by eye.
 - **The beat shapes everything; silence breaks nothing.** Every timing has a
   fallback in seconds. A song with no beat, a gap between songs or no music
   at all plays fine and costs the player nothing.
@@ -125,15 +127,18 @@ gameplay or measurement reason, without weakening a decision.
 17. **Density** ramps from 150 alive to 600 by minute 12; section changes
     bring formed waves and loud sections surge toward a cap of 1,000.
 18. **The arena is infinite.** Level 1's structures are Synty buildings and
-    trees cut to a few edges over a dim coloured fill. They block movement,
+    trees in the edge look over a dim coloured fill. They block movement,
     shatter on any hero damage, never regrow, and give nothing but
     spectacle. Grey line art is reserved for unbreakable structures in
     later levels; level 1 has none.
-19. **Edge cuts**: every monster, the hero and every structure is redrawn by
-    a committed recipe that picks a few defining edges, swaps fussy parts
-    for primitives (a shield becomes an empty circle) and cuts the body to a
-    300-800 triangle dark occluder. Built locally from the vendor files,
-    with Blender allowed; never committed.
+19. **The trailer's edge look** (reopened 2026-11-02): monsters, the hero and
+    structures are drawn as the neon edge trailer drew them, with
+    `MonsterEdge.hlsl`'s 24-degree crease lines over a dark glass core,
+    ported from the frozen look package. Each monster then gets a mesh
+    designed for the look (the `monster-mesh-design` skill), and the
+    trailer's drawing stays behind `--look trailer` for comparison. Look
+    changes are judged by eye, never by thresholds. The "edge cuts" this
+    replaced are deleted.
 20. **The beat wave**: a ring of light leaves the hero's feet on every beat,
     brightening and slightly bending the grid (Geometry Wars' ripple),
     flaring monsters' lines with a bob, and flaring structures' edges.
@@ -186,7 +191,8 @@ gameplay or measurement reason, without weakening a decision.
 | Quiet moment | A gap between songs or a stretch with no reliable beat, when held cards show. |
 | Fodder, elite, boss | Common monsters; tougher monsters with one telegraphed move; duel bosses. |
 | Mob | Fodder and elites together: everything a boss's entrance shatters. |
-| Edge cut | A model redrawn as chosen lines around a low-poly dark body. |
+| Edge look | The trailer's drawing: a mesh's creases sharper than 24 degrees lit in its colour over a dark glass core (`MonsterEdge.hlsl`). |
+| Monster mesh | A monster's model reworked for the edge look by the `monster-mesh-design` skill. |
 | Zone key | The floor's colour family at the moment. |
 | Special moment | The few events allowed to flash and shake: see [Restraint](#restraint). |
 | Break | A boss's stagger bar, filled by perfect dodges. |
@@ -210,9 +216,12 @@ gameplay or measurement reason, without weakening a decision.
   - [The native game](../archive/design/native-app.md) (`native/`): the
     belief stream, Delayed listening and the analyzer.
 - The reference look: the operator's capture of the neon action trailer in
-  the edge preset (`trailer-action-neon-edge.mp4`, made by
+  the edge preset (`captures/trailer-action-edge.mp4`, made by
   `just trailer-looks action` in the frozen `demo3d/`). Stills from it are in
-  [reference/](reference/), discussed in [Edge cuts](#edge-cuts).
+  [reference/](reference/), discussed in
+  [The reference: the trailer](#the-reference-the-trailer).
+- [The monster-mesh-design skill](../../.agents/skills/monster-mesh-design/SKILL.md):
+  how each monster's mesh is designed.
 
 ## The Run
 
@@ -294,8 +303,8 @@ puts a play check on the operator-pending list.
 
 ## The Hero
 
-- **Model**: the Synty knight with sword and shield, edge-cut in white. The
-  shield is an empty circle, the blade two lines and a bright core.
+- **Model**: the Synty knight with sword and shield, in the edge look in
+  white, as in the trailer, with the blade's bright core.
 - **Movement**: 6 m/s, always. Enemies never block the hero; touching them
   hurts.
 - **Health**: 100. A hit gives 0.5 s of invulnerability. Level-ups heal 25%,
@@ -625,9 +634,8 @@ chains twice. Target duel length 2-3 minutes. Its death is the finale.
 
 - 6-8 kinds from the local Synty packs: cottages, a tower, wall and fence
   runs, two kinds of tree, rocks.
-- **Look**: a few chosen edges (an edge cut) over a dim fill in the zone's
-  key colour, so they read as solid shapes, clearly apart from the monsters'
-  dark bodies.
+- **Look**: the edge look over a dim fill in the zone's key colour, so they
+  read as solid shapes, clearly apart from the monsters' dark bodies.
 - **Play**: they block the hero and the monsters. Any hero damage that
   reaches one breaks it: a small one in one hit, a building in two or three.
   Boss attacks and entrances break them too.
@@ -675,60 +683,108 @@ chains twice. Target duel length 2-3 minutes. Its death is the finale.
 
 ## The Look
 
-### Principles
+Reopened on 2026-11-02. The first version of this section misread the
+reference trailer as broken and replaced its drawing with "edge cuts": a few
+chosen lines over a dark body, gated by a black-share threshold. They passed
+every number and were a severe visual regression, so they were deleted. This
+section starts again from the trailer.
 
-The operator's rules, in order of precedence:
+### The reference: the trailer
 
-1. **Empty space.** An edge look works only with large black areas: a few
-   chosen lines, never a jumble. Removing detail is the main tool.
-2. **Light comes from things, not from the world.** Edges, rims, trails,
-   sparks and the grid emit; the floor is void.
-3. **Each frame has a colour key.** One family holds most of a frame's
-   colour; at most four families plus white.
-4. **White is the hero's.** White means the hero, its effects and its
-   summons, nothing else. **Grey means a wall.**
-5. **A swarm is many lit shapes with dark gaps between them**, not one
-   coloured mass.
-6. **Point lights sparingly**, for effect: a slam, a boss entrance.
-7. **No monster is ever brighter than the hero.**
+The look is the neon action trailer in the frozen demo3d's edge preset, the
+operator's capture `captures/trailer-action-edge.mp4` (outside the tree; made
+by `just trailer-looks action`). **It looks good.** It is the baseline:
+Rhythm Champions starts from exactly that look and changes it only where a
+change looks better.
 
-The archived style guide's value ladder carries over: void (L* 0-5) for the
-floor and the bodies, ground light (10-35) for the grid and fills, enemy
-light (45-82) for monsters' lines, hero light (85-98), and clipped white
-only for impact frames and the blade's core.
+What the trailer does, described rather than prescribed:
 
-### Edge cuts
+- **Monsters** are their vendor meshes drawn by the look package's
+  `MonsterEdge.hlsl`. Every crease sharper than 24 degrees is a thin line in
+  the type's colour, a little brighter toward the silhouette. Underneath is a
+  dark glass core with its facets a shade apart. A fresnel rim outlines each
+  monster, and a small inner glow flares on the beat.
+- **Each type has one hue**, levelled to one luminance. A crowd reads as
+  fields of colour, and each monster still reads as a figure: helmets,
+  shields, weapons, limbs.
+- **The hero** is drawn the same way in white, the brightest thing on screen.
+- **The floor** is void under a quiet grid. Light comes from things.
+- **Shards** keep the look: each piece is outlined along its crack, hottest
+  on the break's frame.
 
-The reference capture shows what works and what doesn't:
+Stills from the capture, in [reference/](reference/):
 
-- **Works**: the opening duel ([opening-duel.jpg](reference/opening-duel.jpg)):
-  three brutes and the hero, each a handful of lines on black. The dragon
-  duel ([dragon-duel.jpg](reference/dragon-duel.jpg)): a big shape, mostly
-  black inside, a few strong strokes. The shields drawn as empty circles
-  ([shield-circles.jpg](reference/shield-circles.jpg)).
-- **Doesn't**: the dense swarms ([dense-swarm.jpg](reference/dense-swarm.jpg)):
-  every crease of the vendor meshes lit, so a crowd is a field of scribble.
-  Today's edge look lights every crease sharper than 24 degrees, so line
-  density follows the vendor topology; the shield circles were an accident
-  of that rule, not a choice.
+- [opening-duel.jpg](reference/opening-duel.jpg): three brutes and the hero
+  up close, every plate of their armour outlined. The look at its best.
+- [dragon-live.jpg](reference/dragon-live.jpg): the dragon in its duel (the
+  capture at 0:58), long clean strokes for the wings and body.
+- [shield-circles.jpg](reference/shield-circles.jpg) and
+  [dense-swarm.jpg](reference/dense-swarm.jpg): the crowd. The skeletons
+  read by their shields, and the orks by their bulk. The magenta goblins
+  read as filled pink shapes rather than line art (see below).
+- [dragon-shatter.jpg](reference/dragon-shatter.jpg): the dragon
+  shattering. A reference for the shatter, not for a living monster.
 
-So every model gets an **edge cut**, a committed recipe that redraws it:
+### Changing the look
 
-- **Choose the lines.** Keep the silhouette-defining edges and a few
-  interior features that name the type (a skeleton's ribs as three strokes,
-  a troll's tusks). Everything else goes.
-- **Replace fussy parts with primitives**: a shield becomes an empty circle,
-  a helmet a ring, a weapon a few strokes, a face nothing (or two points).
-- **A dark low-poly body**, 300-800 triangles, near-black, hiding the lines
-  behind it.
-- **Lines rank by importance.** Small on screen, the less important lines
-  fade out first, so a distant monster is its silhouette and a near one gains
-  detail.
-- **Black share**: at game scale, most of each monster's silhouette stays
-  black. The look metrics measure it per type (the plan sets the
-  thresholds).
-- The hero and the structures get edge cuts too: the hero in white, the
-  structures over their coloured fill.
+Changes from the trailer are targeted, and they are judged by looking:
+side by side with the trailer's drawing of the same thing, at game scale and
+in a crowd. The trailer's own drawing stays one flag away
+(`--look trailer`), so any change can be compared directly.
+
+Where to start (things to try, not orders):
+
+- **The goblins** read as filled magenta objects, not retro vector art. Their
+  small dense facets light so many creases that at crowd scale the lines
+  merge into a fill.
+- **Each monster gets a mesh designed for the look** ([Monster
+  meshes](#monster-meshes)).
+- Detail that turns to noise at game scale can go. Detail that names the
+  type stays.
+
+### Monster meshes
+
+Each of the ten monsters gets a mesh designed for the edge look, made from
+its vendor model with the project's `monster-mesh-design` skill, one bead
+per monster. The goal is a figure whose creases draw something coherent and
+handsome at game scale, in a crowd and up close, and that still moves with
+the vendor rig and clips.
+
+- Building a monster from simple joined shapes is often a good way to get
+  there. It's a guideline, not a rule: some monsters read better as they are,
+  and some need detail kept.
+- A committed recipe builds each mesh locally from the vendor files, and its
+  output is never committed, like every vendor-derived file.
+- Until the operator prefers a new mesh, the vendor mesh as the trailer drew
+  it stays one flag away.
+
+### Judgment over rules
+
+- Everything in The Look is guidance under aesthetic judgment. When a
+  guideline and a better-looking frame disagree, the frame wins.
+- Numbers (luminance, lit share, line counts, separation) are diagnostics
+  for finding problems. They never accept or reject art.
+- Art is accepted by looking:
+  - a blind critique of its stills by an agent that hasn't read the docs;
+  - side-by-sides with the trailer's drawing of the same thing;
+  - in the end, the operator's eye.
+
+Habits the trailer keeps, worth keeping unless a frame says otherwise:
+
+- **Light comes from things, not from the world.** Edges, rims, trails,
+  sparks and the grid emit; the floor is void.
+- **White is the hero's**: the hero, its effects and its summons. **Grey
+  means a wall.**
+- **A swarm reads as many figures with dark gaps between them**, not one
+  coloured mass. This is what the goblins miss.
+- **No monster is brighter than the hero.**
+- **A frame tends to have a colour key**, one family holding most of it.
+- **Point lights sparingly**, for effect: a slam, a boss entrance.
+
+The archived style guide's value ladder is a rough guide: void for the floor
+and the cores, ground light for the grid and fills, enemy light for monsters'
+lines, hero light above it, and clipped white only for impact frames and the
+blade's core.
 
 ### The palette
 
@@ -763,9 +819,10 @@ guide.
 
 ### Shatter
 
-- **Monsters** break on the impact frame into pieces of their edge cut
-  (lines and body chunks), thrown forcefully away from the blow and up,
-  tumbling, then sinking. No cracks first, no delay, no twinkling.
+- **Monsters** break on the impact frame into pieces of their mesh, each
+  outlined along its crack as in the trailer, thrown forcefully away from
+  the blow and up, tumbling, then sinking. Weapons break and fly with the
+  body. No cracks first, no delay, no twinkling.
 - **Structures** break the same way in their fill colour.
 - **Boss entrances** shatter the whole screen outward from the boss.
 - **The hero's death**: white shards from the hero.
@@ -798,8 +855,8 @@ flash is gone within a quarter second.
 
 - **Progressive enhancement**: the look is designed at full quality; tiers
   shed extras, never the core look.
-- The core, kept on every tier: the edge cuts, the bodies, the beat wave,
-  the grid, shatter (with fewer pieces on the low tier), bloom.
+- The core, kept on every tier: the edge look, the beat wave, the grid,
+  shatter (with fewer pieces on the low tier), bloom.
 - The extras, high tier only or scaled: full-resolution bloom, distortion in
   slashes, glow halos on lines, more shatter pieces, chromatic flashes on
   special moments.

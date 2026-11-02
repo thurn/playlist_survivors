@@ -16,7 +16,7 @@ The design was locked on 2026-11-01 after months of prototypes: docs/champions/d
 - SETUP.md covers installing and the vendor assets.
 - **Frozen**, kept for reference, outside CI, never extended: `native/` (the Rust 2D game, with `content/`, `levels/`, `public/`, `corpus/`, `songs/`, `tools/analysis/`, `tools/baker/`, `assets-src/`), `game/` (the first Unity game), `demo3d/`, `demo2d/`, `stylelab/`, `herocap/` and `unity-packages/`. Rhythm Champions copies what it needs from them and references none of them at build time. Don't fix or extend a frozen project unless the operator asks.
 - Outside the tree: caches in `~/Library/Caches/playlist-survivors/` (`$PS_CACHE`), the vendor packs in `~/synty` and `~/unity_assets`, and captures in the tree's `captures/`. Never search with `find /` or `find ~`: such a crawl runs for an hour.
-- This repository is public: never commit vendor assets (Synty, Magic Pig Games, Hovl Studio, anything in `~/synty` or `~/unity_assets`) or anything derived from them, edge cuts and Blender files included (docs/archive/tech-demo-3d/vendor-assets.md).
+- This repository is public: never commit vendor assets (Synty, Magic Pig Games, Hovl Studio, anything in `~/synty` or `~/unity_assets`) or anything derived from them, monster meshes, bakes and Blender files included (docs/archive/tech-demo-3d/vendor-assets.md).
 
 ## Enact
 

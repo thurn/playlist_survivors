@@ -20,8 +20,9 @@ The short version:
   written from the design.
 - **Three parts, as before**: a Rust plugin for music, a pure C# sim for the
   rules, a Unity client for everything seen and heard.
-- **Edge cuts** are committed recipes (Python, Blender allowed) that bake
-  locally from the vendor files into ignored folders.
+- **The look is the neon edge trailer's**, ported back from the frozen look
+  package (reopened 2026-11-02). Each monster's mesh is redesigned for it by
+  a project skill, and art is accepted by eye, never by look metrics.
 - **Builds stay fast**: lean URP with our own dozen shaders and a variant
   budget, Mono by default, warm editors, shared caches.
 - **Slow CI under 5 minutes**, Rhythm Champions only. The old projects are
@@ -47,9 +48,10 @@ treat them as fixed; everything else here is a recommended default.
 5. **Mono** for development and CI builds; IL2CPP only for perf runs.
 6. **A warm editor per worktree and one shared local Unity Accelerator**;
    Library and baked-asset caches keyed by their inputs.
-7. **Edge cuts** are committed recipes run by the tools; Blender 5.2 LTS
-   (`/Applications/Blender.app`, headless) is allowed. Their outputs stay in
-   ignored folders, as every vendor-derived file does.
+7. **Monster meshes** are committed recipes run by the tools; Blender 5.2
+   LTS (`/Applications/Blender.app`, headless) is allowed. Their outputs stay
+   in ignored folders, as every vendor-derived file does. (Until 2026-11-02
+   this decision was the edge cuts, now deleted.)
 8. **Slow CI at most 300 s**, check-fast at most 60 s, Rhythm Champions only.
    `native/`, `game/`, `demo3d/`, `demo2d/`, `stylelab/`, `herocap/`,
    `unity-packages/`, `tools/analysis/` and `tools/baker/` are frozen with no
@@ -58,8 +60,9 @@ treat them as fixed; everything else here is a recommended default.
 10. **Quality tiers**: the low tier holds 1,000 monsters at 60 fps on an M1
     Air class Mac; until one is measured, a proxy budget on the M5 Max
     ([Performance](#performance)).
-11. **Verification is look metrics on stills, replays of recorded sessions
-    and scripted inputs.** No bot and no trailer mode in V1; balance is
+11. **Rules are verified by replays of recorded sessions and scripted
+    inputs; the look is verified by eye**: stills beside the trailer, blind
+    critiques, the operator's look. Look metrics are diagnostics. No bot and no trailer mode in V1; balance is
     hand-play, on the operator-pending list.
 12. **Naming**: the game, its project, product name, window title and
     commands are Rhythm Champions; the repository, `$PS_CACHE` paths, the
@@ -79,8 +82,10 @@ treat them as fixed; everything else here is a recommended default.
   - [Crowd](../archive/tech-demo-3d/crowd.md),
     [effects](../archive/tech-demo-3d/effects.md) and
     [performance](../archive/tech-demo-3d/performance.md) from the 3D demo.
-  - [The create-lod skill](../../.agents/skills/create-lod/SKILL.md): the
-    per-part recipe approach the edge cuts follow.
+  - [The monster-mesh-design skill](../../.agents/skills/monster-mesh-design/SKILL.md):
+    how each monster's mesh is designed; it draws on
+    [the create-lod skill](../../.agents/skills/create-lod/SKILL.md) for
+    mesh work and skin transfer.
   - [The archived style guide](../archive/design/neon-look-style.md) and its
     [thresholds](../archive/design/neon-look-thresholds.json): the starting
     point for the new one.
@@ -96,8 +101,8 @@ Three parts with strict boundaries, each testable alone:
   results and inputs, and produces state and events. It knows nothing about
   rendering or audio devices.
 - **The client** (Unity): input, clocks, rendering, effects, sound, UI.
-- **The tools** (Python, uv): setup, build, play, test, edge-cut bakes, look
-  metrics, the vendor guard.
+- **The tools** (Python, uv): setup, build, play, test, monster bakes and
+  reviews, look metrics, the vendor guard.
 
 The analysis results form the **belief stream**: append-only entries
 (beats, downbeats, onsets with strength, sections, loudness, reliability),
@@ -134,14 +139,14 @@ rhythm_champions/
       Run/        level timeline, start, end
       Session/    inputs, records, replay, hashes
     Client/       Champions.Client: loop, music, input, presenters, UI, sound
-    Render/       Champions.Render: crowd, edge cuts, shards, world, effects, post, tiers
+    Render/       Champions.Render: crowd, the edge look, shards, world, effects, post, tiers
     Editor/       Champions.Editor: bakers, variant stripper, build tasks
     Tests/        EditMode tests
   Content/        JSON: hero, dashes, attacks, mods, enemies, bosses, level1,
                   structures, progression, palette
   plugin/         Cargo workspace: crates/{plugin,analysis,audio,capture,stream}, models/
   dotnet/         Champions.Sim, Champions.Sim.Tests, Champions.Replay
-  tools/          uv project: the `champions` CLI, edge-cut recipes
+  tools/          uv project: the `champions` CLI, monster mesh recipes
   evidence/       operator-pending.md, per-bead evidence
   manifest.json   vendor assets: root, path, SHA-256, GUID
   README.md
@@ -160,7 +165,7 @@ here. The dotnet projects compile the Sim folder's files directly, as
 | `just champions-tool <cmd>` | `uv run --project rhythm_champions/tools champions <cmd>` |
 | `champions setup` | Sync vendor files from the manifest, restore caches, build the plugin |
 | `champions test` | EditMode tests (dotnet sim tests: `dotnet test rhythm_champions/dotnet`) |
-| `champions edgecut <model>`, `champions edgecut review <model>` | Bake an edge cut; render its review sheet |
+| `champions monster bake <type>`, `champions monster review <type> [--look trailer]` | Bake a monster from its recipe or vendor mesh; render its review sheets (ps-6y2.28) |
 | `champions stills`, `champions look` | Fixed-time stills of scripted scenes; the look metrics on them |
 | `champions perf` | IL2CPP build, scripted peak, GPU and CPU percentiles |
 | `champions check --variants` | Fail above the shader variant budget |
@@ -181,7 +186,7 @@ unread.
 | `game/Assets/Game/Sim/{Stream,Session,Beats}`, `Simulation.cs`, `SimState.cs`, `SimRandom.cs`, `StructList.cs`, `Keys.cs` | `Sim/{Stream,Session,Beat,Core}` | Modes, the grid hero, run rules and the old arsenal dropped |
 | `game/Assets/Game/Sim/Hero/{FreeHero,Dash}.cs`, `Sim/Weapons/BeatGrade.cs` | `Sim/Hero`, `Sim/Beat` | Reference only: heard-time re-walk kept; the dash and judgement rewritten to the design |
 | `game/Assets/Game/Client/{Music,Calibration,Loop}` | `Client/` | The music clock, plugin interop, presenter fault isolation; calibration slimmed |
-| `unity-packages/.../Runtime/Crowd` (BoneTextureCrowd, CrowdPalette.compute, skinning, MonsterShatter, MonsterShards.compute), `Editor/Crowd`, `game/Assets/Game/Editor/Crowd` | `Render/Crowd`, `Editor/` | Draws edge-cut bodies and line meshes; the crease-flag path and mesh LODs dropped |
+| `unity-packages/.../Runtime/Crowd` (BoneTextureCrowd, CrowdPalette.compute, skinning, MonsterShatter, MonsterShards.compute), `Editor/Crowd`, `game/Assets/Game/Editor/Crowd` | `Render/Crowd`, `Editor/` | Superseded 2026-11-02: the first port dropped the crease-flag path for edge cuts, now deleted; ps-6y2.28 ports the crowd again with `MonsterEdge.hlsl`, feature edges and crack-outlined shards, as the trailer drew them |
 | `unity-packages/.../Runtime/{Impulse,World,Beat}` (ImpulseField, GridFloor, BeatGlobals) | `Render/World` | One beat ring per beat from the hero, restored; restraint kept |
 | `unity-packages/.../Runtime/Crystal/StructureShatter` | `Render/Structures` | PhysX shards in the fill colour |
 | `unity-packages/.../Runtime/Palette.cs` and the palette format | `Render/Look` | A new palette with new roles |
@@ -283,9 +288,8 @@ treasure), run (timeline, end).
 
 | Shader | Draws |
 | --- | --- |
-| EdgeLines | Monster, hero and phantom lines: instanced, skinned from bone textures, constant pixel width, importance fade, palette colour, beat-wave flare |
-| EdgeBody | The dark occluders under the lines |
-| StructureFill, StructureLines | Structures' dim fill and edges |
+| MonsterEdge, MonsterEdgeShard | The trailer's edge look for monsters, the hero and their shards: feature-edge lines over a dark glass core, fresnel rim, core glow, beat flare (ps-6y2.28) |
+| StructureFill, StructureLines | Structures' dim fill and the edge look's lines (ps-6y2.30) |
 | Shard, StructureShard | Monster shards on the GPU; structure shards on PhysX |
 | GridFloor | The grid, beat wave, ripple, impulse rings, zones |
 | Slash | Hovl's shapes in white |
@@ -297,45 +301,57 @@ treasure), run (timeline, end).
   --variants` reads the build's variant report and fails above budget. No
   legacy shaders are always-included.
 
-### Edge cuts
+### The edge look
 
-The pipeline every model goes through (design, [Edge cuts](design.md#edge-cuts)):
+Reopened on 2026-11-02 (design, [The Look](design.md#the-look)). The edge
+cuts that stood here, a recipe pipeline gated by black share and segment
+caps, were a visual regression and were deleted. The look is now the
+trailer's, ported back:
 
-1. Load the vendor mesh, its skeleton and clips (synced from the manifest).
-2. Select parts by bone, material or region, per the recipe.
-3. Replace listed parts with primitives: circles, rings, strokes, skinned to
-   the part's bone (a shield's circle to the shield bone).
-4. Cut the body to its budget, closed and skinned: 300-800 triangles, up to
-   1,500 for bosses.
-5. Choose lines: candidate edges from a smoothed proxy's silhouette creases
-   plus the recipe's feature edges, filtered by keep and drop lists to a
-   count, each ranked by importance.
-6. Export the body, the lines (segments, expanded to quads in the shader)
-   and their skin weights to `Assets/Baked/EdgeCuts/<model>/`.
-7. Pre-fracture body and lines into 20-40 shard pieces.
+- **The port** (ps-6y2.28), by review and fresh from the frozen
+  `unity-packages/com.playlistsurvivors.look`:
+  - the bone-texture crowd;
+  - `StyleMesh.FeatureEdges`: creases over 24 degrees and open edges,
+    flagged at bake;
+  - `MonsterEdge.hlsl` with its MonsterEdge and MonsterEdgeShard shaders and
+    `EdgeLook`'s gains;
+  - `CrowdShardBaker` with `MonsterShards.compute`, each shard outlined
+    along its crack.
+- **`--look trailer`**: a player flag, honoured by stills and reviews too,
+  that draws exactly the trailer's look: vendor meshes, `MonsterEdge.hlsl`
+  and its gains as ported. The default look starts identical; later work
+  changes only the default, and a test pins the trailer look.
+- **Monster meshes** (ps-6y2.31-40): one bead per monster runs the
+  [monster-mesh-design skill](../../.agents/skills/monster-mesh-design/SKILL.md).
+  - `champions monster bake <type>` bakes from
+    `rhythm_champions/tools/recipes/monster/<type>.py` when it exists, else
+    from the vendor mesh, into ignored `Assets/Baked/Monsters/<type>/`.
+  - Recipes may run Blender 5.2 LTS headless (`Blender --background
+    --python`). Blender files and exports stay in ignored folders; the guard
+    refuses `.blend`, `.fbx` and `.obj` in tracked paths.
+- **Review sheets**: `champions monster review <type> [--look trailer]`
+  draws the type at the game camera in its palette colour, at three screen
+  sizes, in idle, walk and attack, its shatter, and a crowd cell over the
+  grid, with a side-by-side sheet against `--look trailer`. Small stills and
+  a README go to `rhythm_champions/evidence/monsters/<type>/`. The sheets
+  have no pass or fail numbers.
+- **The hero and bosses** (ps-6y2.29) and **structures** (ps-6y2.30, over
+  their fill) use the same drawing.
+- **Accepting art** (design, [Judgment over rules](design.md#judgment-over-rules)):
+  - a blind critique by an agent given only the images (no docs, no recipe,
+    no numbers);
+  - side-by-sides against `--look trailer` and the trailer's frames;
+  - an operator-pending row for the operator's eye.
 
-- Recipes live in `rhythm_champions/tools/recipes/edgecut/<model>.py`.
-  Steps may run in Blender 5.2 LTS headless (`Blender --background
-  --python`) or in numpy. Blender files and exports stay in ignored folders;
-  the guard refuses `.blend`, `.fbx` and `.obj` in tracked paths.
-- **Review sheet**: `champions edgecut review <model>` renders the cut at
-  the game camera at three screen sizes, in idle, walk and attack poses,
-  beside the vendor original, with its numbers. Small stills and a README
-  go to `rhythm_champions/evidence/edgecuts/<model>/`.
-- **Thresholds** (defaults): black share at game scale at least 65% for
-  fodder and 55% for elites, bosses and the hero; at most 120 line segments
-  for fodder, 220 for elites, 450 for bosses; bodies within budget.
-- Structures use the same pipeline, static, plus their fill.
+  Look metrics never accept or reject art.
 
 ### Crowd
 
 - The ported bone-texture crowd: bone textures at 30 Hz, a compute pass
   blending two clips per instance, four-bone skinning in the vertex shader.
-- One indirect draw per type for bodies and one for lines. Mesh LODs are
-  unnecessary at these triangle counts; small on screen, low-importance
-  lines fade instead.
-- Monster shards on the GPU, as ported, from the edge cut's pieces, thrown
-  forcefully away from the blow.
+- One indirect draw per type, as the trailer's crowd drew them.
+- Monster shards on the GPU, as ported, each outlined along its crack,
+  thrown forcefully away from the blow, weapons with them.
 
 ### World, post and camera
 
@@ -356,7 +372,7 @@ The pipeline every model goes through (design, [Edge cuts](design.md#edge-cuts))
 | Shard pieces live | 600 | 1,500 | 3,000 |
 | Slash distortion, line glow halos, chromatic flashes | off | off | on |
 
-The core look (edge cuts, bodies, beat wave, grid, shatter, bloom) is on
+The core look (the edge look, beat wave, grid, shatter, bloom) is on
 every tier. `--tier` picks one; the pause menu's Quality row changes it.
 
 ## Performance
@@ -374,13 +390,15 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
 
 - `champions look` ports the archived look harness: the value ladder, the
   colour key (`key60`), families, palette conformance, the floor's p99,
-  background light share, flash frames and swarm separation. New: black
-  share per monster type, from a type-ID pass rendered with the stills.
+  background light share, flash frames and swarm separation, with a type-ID
+  pass rendered with the stills. **A diagnostic**: it finds frames worth a
+  second look and decides nothing (ps-6y2.41 makes it never fail a run).
+  Black share is gone.
 - `champions stills` renders fixed-time stills of scripted scenes in one
   launch: a crowd at minute 4, a loud surge, a structure field, the beat
   wave at three phases, both duels' telegraphs, a card moment, the gallery
   of effects.
-- Thresholds: `docs/champions/style-thresholds.json`, written by the
+- Guide values: `docs/champions/style-thresholds.json`, written by the
   palette bead from the archived thresholds.
 
 ## Build Policy
@@ -412,8 +430,8 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
   - tools: ruff and pytest;
   - unity: one launch with a warm Library and the baked cache: EditMode
     tests, the Mono player build, then the built player's stills and a 10 s
-    fixed-time replay; then `champions look` on the stills and the variant
-    budget check;
+    fixed-time replay; then `champions look` on the stills as a report (it
+    never fails the run) and the variant budget check;
   - guard: over the tree and the range since `master`.
 - Every step logs its seconds; `scripts/ci-full` fails a run over 300 s. A
   Steward fixing a budget failure speeds a step up or moves it to a cheaper
@@ -445,12 +463,14 @@ by several beads are no reason to chain them.
   - sim: hero and dashes (RC5), attacks and mods (RC6), the horde (RC7),
     then progression (RC15) and bosses (RC14);
   - art: the edge-cut pipeline (RC8), then the cuts (RC9a-d), the hero
-    (RC17) and structures (RC12);
+    (RC17) and structures (RC12), all superseded on 2026-11-02 by the
+    trailer look's port (RC22), then the hero and bosses (RC23), structures
+    (RC24) and the ten monster meshes (RC25a-j) in parallel;
   - look: the palette and style guide (RC10), the world (RC11), weapon
     effects (RC13);
   - UI (RC16).
 - **Assembly**: level 1 end to end (RC18), then performance (RC19) and the
-  look pass (RC20), then the final Warden (RC21).
+  look pass (RC20, after the monster meshes), then the final Warden (RC21).
 
 ## Beads
 
@@ -479,13 +499,20 @@ tracks and assembly, P2 polish.
 | RC15 | Progression in the sim: experience, held levels, offers, treasure | ps-6y2.18 | RC5, RC6 | 1 |
 | RC16 | UI: the indicator, HUD, cards that click, menus, music picker, calibration | ps-6y2.19 | RC1, RC2, RC3 | 1 |
 | RC17 | The hero: white edge cut, rig, Sword Slash clips at natural speed, dash poses | ps-6y2.20 | RC8 | 1 |
-| RC18 | Assemble level 1 end to end: timeline, start and end, wiring, first tuning, CI replays | ps-6y2.21 | RC2, RC4, RC5, RC6, RC7, RC9a, RC9b, RC9c, RC9d, RC10, RC11, RC12, RC13, RC14, RC15, RC16, RC17 | 1 |
+| RC18 | Assemble level 1 end to end: timeline, start and end, wiring, first tuning, CI replays | ps-6y2.21 | RC2, RC4, RC5, RC6, RC7, RC9a, RC9b, RC9c, RC9d, RC10, RC11, RC12, RC13, RC14, RC15, RC16, RC17, RC22, RC23, RC24 | 1 |
 | RC19 | Quality tiers and performance: 1,000 alive within the low tier's budget | ps-6y2.22 | RC18 | 2 |
-| RC20 | The look pass: level 1's stills against the style guide | ps-6y2.23 | RC18 | 2 |
+| RC20 | The look pass: level 1 judged by eye against the trailer | ps-6y2.23 | RC18, RC22, RC23, RC24, RC25a-j | 2 |
 | RC21 | Warden: final review of the Rhythm Champions V1 run | ps-6y2.24 | all | 1 |
+| RC22 | The trailer's edge look ported: crowd, `MonsterEdge`, crack-outlined shards, ten monsters on vendor meshes, `--look trailer`, `champions monster bake` and `review` | ps-6y2.28 | - | 1 |
+| RC23 | The hero and the bosses in the edge look, and their shatters | ps-6y2.29 | RC22 | 1 |
+| RC24 | Structures in the edge look over their zone fill | ps-6y2.30 | RC22 | 1 |
+| RC25a-j | Monster meshes, one per monster with the monster-mesh-design skill: skeleton, slime, bat, demon, goblin, mushroom, big ork, troll, Fat Ogre, dragon | ps-6y2.31-40 | RC22 | 1 |
+| RC26 | `champions look` becomes a diagnostic that never fails a run | ps-6y2.41 | - | 2 |
 
-Each bead's description in the graph carries its full scope, file pointers
-and acceptance; this table is the map.
+RC8, RC9a-d, RC12, RC14 and RC17 landed edge cuts; their edge-cut work was
+deleted on 2026-11-02, and their behaviour (rigs, clips, telegraphs,
+breaking) stays. Each bead's description in the graph carries its full
+scope, file pointers and acceptance; this table is the map.
 
 ## Whole-Run Acceptance
 
@@ -500,25 +527,30 @@ and acceptance; this table is the map.
   runs.
 - The low tier within its proxy budget at 1,000 alive; the variant budget
   holds.
-- The look metrics pass on the stills set, or each break has a recorded
-  exception.
+- The look holds up by eye against the trailer: the stills set beside the
+  trailer's frames and `--look trailer`, a blind critique, and the
+  operator's look on the operator-pending list. Look metrics decide
+  nothing.
 - The operator-pending list holds rows for hand-play balance, dash and
   judgement feel on speakers and on Bluetooth, and an M1-class measurement.
 
 ## Risks
 
-- **Edge cuts are craft.** Ten models and the structures each need a recipe
-  that looks right, not just one that passes. The review sheets put every
-  cut beside its original at game scale, and the look pass checks them in
-  play.
+- **Numbers standing in for judgment.** The edge cuts passed every
+  threshold and looked terrible, because the thresholds were the only
+  acceptance and nobody had to look. Now every art bead closes on a blind
+  critique and side-by-sides with the trailer.
+- **Monster meshes are craft.** A mesh can be worse than the trailer's
+  drawing of the vendor model. `--look trailer` keeps that drawing one flag
+  away, and keeping the vendor mesh is an accepted outcome of a mesh bead.
 - **Hovl in white** may lose the richness that made it better than the
   ribbons. The shader keeps its shapes, streaks and timing; if white alone
   reads flat, the hero's near-white trail colour may tint the edges.
 - **Unreliable beats** make rhythmic bosses unfair; every telegraph has its
   fallback in seconds, and judgement is generous.
 - **1,000 lit monsters** may cost more in bloom and overdraw than in
-  geometry on an M1. The edge renderer is measured on its own (RC8) before
-  anything is built on it.
+  geometry on an M1. The ported edge look is timed at 1,000 monsters
+  (RC22) before anything is built on it.
 - **A Unity build inside 300 s** needs the warm Library and baked cache to
   hold; CI logs every step so creep shows at once.
 - **The endless world and determinism**: chunk generation must depend only

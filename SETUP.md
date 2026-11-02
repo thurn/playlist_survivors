@@ -23,7 +23,7 @@ Mac, the only platform V1 supports.
 | uv | `brew install uv` | The `champions` tools (Python) |
 | .NET SDK 10 | `brew install --cask dotnet-sdk` | The sim's tests outside Unity |
 | just | `brew install just` | The project's commands (`just` lists them) |
-| Blender 5.2 LTS | blender.org, at `/Applications/Blender.app` | Edge-cut bakes, run headless |
+| Blender 5.2 LTS | blender.org, at `/Applications/Blender.app` | Monster mesh recipes, run headless |
 | Git, Python 3.11+ | Xcode's tools, or Homebrew | Everything else |
 
 Optional: a local [Unity Accelerator](#the-unity-accelerator) that every
@@ -33,7 +33,7 @@ worktree and CI share.
 
 The game is drawn from commercial Unity Asset Store and Synty packs that
 each machine supplies; the repository is public, so neither they nor
-anything derived from them (edge cuts, bakes, Blender files, exports) is
+anything derived from them (monster meshes, bakes, Blender files, exports) is
 ever committed.
 
 - The packs live outside the tree: Synty's in `~/synty`, the Asset Store's
