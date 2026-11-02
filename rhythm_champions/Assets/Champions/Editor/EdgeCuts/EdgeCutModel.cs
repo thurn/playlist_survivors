@@ -11,7 +11,8 @@ namespace Champions.EditorTools.EdgeCuts
     /// which `champions edgecut` writes to Assets/Baked/EdgeCuts/&lt;model&gt;/model.json: the prefab and clips by vendor
     /// GUID (manifest.json), the model's height at scale 1, the prefab children it never shows, the weapons put in
     /// its hands, the clip role whose first frame the recipe also sees it in (`pose`, for a T-posed rig) and the clip
-    /// roles its review draws.
+    /// roles its review draws. A model without clips is <see cref="Static"/>: a structure, drawn by the structure field
+    /// rather than the crowd.
     /// </summary>
     [Serializable]
     public sealed class EdgeCutModel
@@ -58,6 +59,12 @@ namespace Champions.EditorTools.EdgeCuts
 
         public static string Dir(string id) => $"{BakedRoot}/{id}";
 
+        /// <summary>A structure: no clips and no rig, its renderers rigid (design.md, The World &gt; Structures).</summary>
+        public bool Static => clips.Length == 0;
+
+        /// <summary>The prefab's own height, measured by the latest <see cref="Spawn"/>.</summary>
+        [NonSerialized] public float NativeHeightM;
+
         public static EdgeCutModel Load(string id)
         {
             var path = $"{Dir(id)}/model.json";
@@ -97,13 +104,18 @@ namespace Champions.EditorTools.EdgeCuts
                     ?? throw new Exception($"EdgeCutModel: {id}'s prefab has no child '{name}' to hide");
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
-            var animator = go.GetComponentInChildren<Animator>() ?? throw new Exception($"EdgeCutModel: {id} has no Animator");
+            var animator = go.GetComponentInChildren<Animator>();
+            if (animator == null && !Static) throw new Exception($"EdgeCutModel: {id} has no Animator");
             foreach (var w in weapons) Hold(w, animator);
             foreach (var t in go.GetComponentsInChildren<Transform>(true))
                 GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
-            animator.applyRootMotion = false;
-            animator.runtimeAnimatorController = null;
-            float native = MeasureHeight(go);
+            if (animator != null)
+            {
+                animator.applyRootMotion = false;
+                animator.runtimeAnimatorController = null;
+            }
+            float native = MeasureHeight(go, Static);
+            NativeHeightM = native;
             if (native > 0.05f) go.transform.localScale *= heightM / native;
             return go;
         }
@@ -132,22 +144,26 @@ namespace Champions.EditorTools.EdgeCuts
 
         /// <summary>
         /// The skins' height in their bind pose, from their vertices as the export places them (Magic Pig's meshes
-        /// carry bounds up to a third taller than their vertices).
+        /// carry bounds up to a third taller than their vertices); a static model's over every renderer, from the ground,
+        /// its origin, up (Synty's buildings reach below the ground on their foundations).
         /// </summary>
-        static float MeasureHeight(GameObject go)
+        static float MeasureHeight(GameObject go, bool isStatic)
         {
             float top = float.MinValue, bottom = float.MaxValue;
-            foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(false))
+            foreach (var r in go.GetComponentsInChildren<Renderer>(false))
             {
-                if (r.sharedMesh == null) continue;
-                foreach (var v in r.sharedMesh.vertices)
+                var mesh = r is SkinnedMeshRenderer smr ? smr.sharedMesh
+                    : isStatic && r is MeshRenderer ? r.GetComponent<MeshFilter>()?.sharedMesh : null;
+                if (mesh == null) continue;
+                foreach (var v in mesh.vertices)
                 {
                     float y = r.transform.TransformPoint(v).y;
                     top = Mathf.Max(top, y);
                     bottom = Mathf.Min(bottom, y);
                 }
             }
-            return top == float.MinValue ? 0 : top - Mathf.Min(bottom, go.transform.position.y);
+            float ground = go.transform.position.y;
+            return top == float.MinValue ? 0 : top - (isStatic ? ground : Mathf.Min(bottom, ground));
         }
     }
 }

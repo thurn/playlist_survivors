@@ -5,14 +5,14 @@
   "clearStartM": 10,
   "laneM": 3,
   "kinds": [
-    {"id": "cottage", "sizeM": [4.2, 4.6], "hits": 3},
-    {"id": "hut", "sizeM": [4.4, 4.6], "hits": 2},
-    {"id": "tower", "radiusM": 2.0, "hits": 3},
-    {"id": "wall", "sizeM": [5.6, 0.7], "hits": 1},
-    {"id": "fence", "sizeM": [2.5, 0.3], "hits": 1},
-    {"id": "pine", "radiusM": 1.6, "hits": 1},
-    {"id": "tree", "radiusM": 0.5, "hits": 1},
-    {"id": "rock", "radiusM": 1.3, "hits": 1}
+    {"id": "cottage", "sizeM": [3.6, 4.4], "hits": 3},
+    {"id": "hut", "sizeM": [4.46, 4.46], "hits": 2},
+    {"id": "tower", "radiusM": 1.7, "hits": 3},
+    {"id": "wall", "sizeM": [5.6, 0.6], "hits": 1},
+    {"id": "fence", "sizeM": [2.42, 0.3], "hits": 1},
+    {"id": "pine", "radiusM": 1.7, "hits": 1},
+    {"id": "tree", "radiusM": 0.7, "hits": 1},
+    {"id": "rock", "radiusM": 1.5, "hits": 1}
   ],
   "templates": [
     {
@@ -20,9 +20,9 @@
       "placements": [
         {"kind": "cottage", "at": [-3.5, 2.5]},
         {"kind": "hut", "at": [3.5, -2.5], "degrees": 90},
-        {"kind": "fence", "at": [-4.5, -5.0]},
-        {"kind": "fence", "at": [-2.0, -5.0]},
-        {"kind": "fence", "at": [0.5, -5.0]},
+        {"kind": "fence", "at": [-5.5, -6.0]},
+        {"kind": "fence", "at": [-3.0, -6.0]},
+        {"kind": "fence", "at": [-0.5, -6.0]},
         {"kind": "tree", "at": [5.0, 4.5]},
         {"kind": "rock", "at": [-6.0, -2.0]}
       ]

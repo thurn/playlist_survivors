@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from champions_tools import paths
-from champions_tools.edgecut import Clip, Cut, Model, Source, Weapon, arrays, lines, run
+from champions_tools.edgecut import Clip, Cut, Model, Source, Weapon, arrays, lines, run, solids
 
 BOX = np.array([[x, y, z] for x in (0, 1) for y in (0, 1) for z in (0, 1)], float)
 # Outward-facing triangles of the unit box above (two per face).
@@ -223,3 +223,32 @@ def test_an_unknown_recipe_names_the_known_ones(tmp_path: Path) -> None:
     (run.recipes_dir(wt) / "slime.py").write_text("")
     with pytest.raises(run.EdgeCutError, match="recipes: slime"):
         run.load_recipe(wt, "bat")
+
+
+def test_a_structure_s_solids_draw_their_sharp_edges_and_stand_on_their_footprint(src: Source) -> None:
+    c = Cut(src)
+    c.solid(solids.box(2.0, 4.0, 0.0, 1.0, 1.0, 2.0), "walls")
+    c.solid(solids.gable(2.0, 4.0, 1.0, 2.0, 1.0, 1.6, along="z"), "roof")
+    assert c.hull_edges("walls", min_angle=30) == 12, "a box's twelve edges"
+    assert c.hull_edges("roof", min_angle=30) == 9, "a gable's eaves, its gable ends' rakes and its ridge"
+    shift = c.recentre()
+    np.testing.assert_allclose(shift, [-3.0, 0.0, -1.5])
+    body = np.vstack(c.body_positions)
+    np.testing.assert_allclose([body[:, 0].min() + body[:, 0].max(), body[:, 2].min() + body[:, 2].max()], [0, 0], atol=1e-9)
+    ridge = [p for p in c.line_positions if abs(p[1] - 1.6) < 1e-9]
+    np.testing.assert_allclose(sorted(p[2] for p in ridge), [-0.5, 0.5], err_msg="the ridge moved with the body")
+    s = c.summary()
+    assert s["extentM"] == pytest.approx([2.0, 1.0], abs=0.03) and s["topM"] == pytest.approx(1.6, abs=0.02), "less the inset"
+
+
+def test_components_part_a_model_into_its_separate_pieces(src: Source) -> None:
+    parts = src.components()
+    assert [len(p) for p in parts] == [12, 12], "the torso and the shield"
+    assert not (parts[0].mask & parts[1].mask).any()
+
+
+def test_a_structure_is_judged_on_its_lines_and_body_without_a_black_share() -> None:
+    review = {"segments": 40, "triangles": 30, "cells": [{"size": "game"}]}
+    verdicts = run.judge(review, run.THRESHOLDS["structure"])
+    assert [v[0] for v in verdicts] == ["line segments <= 160", "body triangles 12-800"]
+    assert all(ok for _, _, ok in verdicts)

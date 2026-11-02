@@ -49,10 +49,11 @@ def library_key(wt: paths.Worktree) -> str:
 
 
 # What the bakers read (plan.md, Build Policy: the baked cache): the edge-cut recipes and the code
-# that cuts them, the editor code that bakes, the crowd whose assets it writes, and the vendor
-# manifest. A worktree whose Assets/Baked/ was made from the same inputs copies it from the cache
+# that cuts them, the editor code that bakes, the crowd and the structures whose assets it writes,
+# and the vendor manifest. A worktree whose Assets/Baked/ was made from the same inputs copies it from the cache
 # instead of baking again.
-BAKE_INPUTS = ("tools/recipes", "tools/src/champions_tools/edgecut", "Assets/Champions/Editor", "Assets/Champions/Render/Crowd")
+BAKE_INPUTS = ("tools/recipes", "tools/src/champions_tools/edgecut", "Assets/Champions/Editor", "Assets/Champions/Render/Crowd",
+               "Assets/Champions/Render/Structures")
 BAKED_KEY = ".baked-key"  # in Assets/Baked/: the inputs key it was baked from
 
 

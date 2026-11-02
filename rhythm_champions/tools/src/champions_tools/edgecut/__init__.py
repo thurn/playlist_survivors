@@ -48,12 +48,13 @@ class Model:
     """A recipe's vendor sources: the prefab by GUID, its height at scale 1, a flyer's hover, children never shown,
     weapons put in its hands, the clips (manifest.json lists every file), the role of the clip whose first frame the
     line choice sees the model in (`pose`: a T-posed rig standing as in the game; empty, the bind pose), and the clip
-    roles its review draws (`reviewPoses`: a boss's every attack)."""
+    roles its review draws (`reviewPoses`: a boss's every attack). A model without clips is a structure: static, its
+    height measured from the ground (its prefab's origin) up."""
 
     id: str
     prefab: str
     heightM: float
-    clips: tuple[Clip, ...]
+    clips: tuple[Clip, ...] = ()
     hoverM: float = 0.0
     hide: tuple[str, ...] = field(default_factory=tuple)
     weapons: tuple[Weapon, ...] = field(default_factory=tuple)
@@ -67,3 +68,7 @@ class Model:
         d["weapons"] = [asdict(w) for w in self.weapons]
         d["reviewPoses"] = list(self.reviewPoses)
         return d
+
+    @property
+    def static(self) -> bool:
+        return not self.clips

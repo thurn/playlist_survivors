@@ -1,7 +1,9 @@
 """An edge cut as a recipe builds it (design.md, The Look > Edge cuts; plan.md, Rendering > Edge cuts): a dark body
 of closed parts (convex hulls of the source's parts, discs where a primitive replaces one), lines (chosen feature
-lines of the source, circles and strokes) and the shard pieces both break into. Every vertex keeps a skin of 4
-entries; primitives are rigid on the bone they replace. `write` exports it as cut.json/.bytes for the baker."""
+lines of the source, circles and strokes, a hull's sharp edges) and the shard pieces both break into. Every vertex
+keeps a skin of 4 entries; primitives are rigid on the bone they replace. A structure's cut (a static model) is
+moved onto its footprint (`recentre`) and its body is the coloured fill. `write` exports it as cut.json/.bytes for
+the baker."""
 
 from __future__ import annotations
 
@@ -62,6 +64,8 @@ class Cut:
     segment_importance: list[float] = field(default_factory=list)
     segment_part: list[str] = field(default_factory=list)
     hulls: list[tuple[np.ndarray, np.ndarray]] = field(default_factory=list)  # (inward normals, offsets) per hull
+    # Per hull: its part, its corners before the inset (with their skins) and its triangles over them.
+    hull_shapes: list[tuple[str, np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = field(default_factory=list)
     piece_of_triangle: np.ndarray | None = None
     piece_of_segment: np.ndarray | None = None
     pieces: list[dict] = field(default_factory=list)
@@ -95,9 +99,16 @@ class Cut:
         v = self.src.vertices_of(sel)
         if len(v) < 4:
             raise ValueError(f"{self.src.model}: part {part} has {len(v)} vertices, too few for a hull")
-        pts = self.src.positions[v]
-        corners = v[support_points(pts, points)]
-        p = self.src.positions[corners]
+        corners = v[support_points(self.src.positions[v], points)]
+        self._convex(self.src.positions[corners], self.src.bones[corners], self.src.weights[corners], part, inset)
+
+    def solid(self, points, part: str, entry: int = 0, inset: float = 0.006) -> None:
+        """A closed convex body over explicit points, rigid on `entry`: a structure's measured box, gable, prism or
+        pyramid (solids.py), cleaner than a hull over a busy vendor mesh. Pulled in and edged as a hull is."""
+        p = np.asarray(points, np.float64)
+        self._convex(p, self._rigid_bones(entry, len(p)), self._rigid_weights(len(p)), part, inset)
+
+    def _convex(self, p: np.ndarray, bones: np.ndarray, weights: np.ndarray, part: str, inset: float) -> None:
         centre = p.mean(0)
         hull = ConvexHull(p)
         tris = hull.simplices.copy()
@@ -109,9 +120,37 @@ class Cut:
         remap[used] = np.arange(len(used))
         shrunk = p[used] + (centre - p[used]) * (inset * self.src.height / np.maximum(
             np.linalg.norm(centre - p[used], axis=1, keepdims=True), 1e-9))
-        self._body(shrunk, self.src.bones[corners[used]], self.src.weights[corners[used]], remap[tris], part)
+        self._body(shrunk, bones[used], weights[used], remap[tris], part)
         eq = hull.equations  # outward normals n·x + d <= 0 inside
         self.hulls.append((eq[:, :3], -eq[:, 3]))
+        self.hull_shapes.append((part, p[used], bones[used], weights[used], remap[tris]))
+
+    def hull_edges(self, part: str, min_angle: float = 25.0, importance: float = 1.0, min_length: float = 0.0) -> int:
+        """Lines along the sharp edges of the part's hulls (a building's corners, eaves and ridge): every edge whose
+        two faces meet at more than `min_angle` degrees and that is at least `min_length` (a share of the height)
+        long, on the hull's corners before the inset, so they lie on the body's surface. Returns the segments added."""
+        added = 0
+        for name, corners, bones, weights, tris in self.hull_shapes:
+            if name != part:
+                continue
+            normals = lines.face_normals(corners, tris)
+            faces_of: dict[tuple[int, int], list[int]] = {}
+            for f, t in enumerate(tris):
+                for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+                    faces_of.setdefault((min(a, b), max(a, b)), []).append(f)
+            ids: dict[int, int] = {}
+            for (a, b), faces in sorted(faces_of.items()):
+                if len(faces) != 2:
+                    continue
+                angle = np.degrees(np.arccos(np.clip(normals[faces[0]] @ normals[faces[1]], -1, 1)))
+                if angle < min_angle or np.linalg.norm(corners[a] - corners[b]) < min_length * self.src.height:
+                    continue
+                for v in (a, b):
+                    if v not in ids:
+                        ids[v] = self._line_vertex(corners[v], bones[v], weights[v])
+                self._segment(ids[a], ids[b], importance, part)
+                added += 1
+        return added
 
     def disc(self, centre, normal, radius: float, entry: int, part: str, sides: int = 16) -> None:
         """A flat disc body (drawn from both sides), rigid on `entry`."""
@@ -189,6 +228,18 @@ class Cut:
                 self._segment(a, b, c.importance, c.part)
         return picked
 
+    def recentre(self) -> np.ndarray:
+        """Moves the cut so the middle of its body's extent on the ground (x and z) is at the origin, where a structure's
+        middle stands (Synty's prefabs stand on a corner); call it before `break_into`. Returns the shift."""
+        positions = np.vstack(self.body_positions)
+        lo, hi = positions[:, [0, 2]].min(0), positions[:, [0, 2]].max(0)
+        shift = np.array([-0.5 * (lo[0] + hi[0]), 0.0, -0.5 * (lo[1] + hi[1])])
+        self.body_positions = [p + shift for p in self.body_positions]
+        self.line_positions = [p + shift for p in self.line_positions]
+        self.hulls = [(n, d + n @ shift) for n, d in self.hulls]
+        self.hull_shapes = [(name, c + shift, b, w, t) for name, c, b, w, t in self.hull_shapes]
+        return shift
+
     def break_into(self, splits: dict[str, int] | None = None) -> None:
         """The shard pieces (plan.md step 7): each part one piece, or `splits[part]` pieces by k-means over its
         triangles; every segment joins the piece of its part nearest its middle. Each piece turns about its
@@ -236,8 +287,11 @@ class Cut:
             parts.setdefault(p, {"triangles": 0, "segments": 0})["triangles"] += 1
         for p in self.segment_part:
             parts.setdefault(p, {"triangles": 0, "segments": 0})["segments"] += 1
+        positions = np.vstack(self.body_positions) if self.body_positions else np.zeros((1, 3))
+        extent = np.ptp(positions[:, [0, 2]], axis=0)
         return {"triangles": self.triangle_count, "segments": self.segment_count, "pieces": len(self.pieces),
-                "parts": parts}
+                "parts": parts, "extentM": [round(float(extent[0]), 3), round(float(extent[1]), 3)],
+                "topM": round(float(positions[:, 1].max()), 3)}
 
     def write(self, header: Path) -> None:
         """cut.json/.bytes: the body unwelded per piece (a vertex shared by two pieces is split), the lines'

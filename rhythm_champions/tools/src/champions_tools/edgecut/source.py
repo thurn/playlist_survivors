@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
 
 from . import arrays
 
@@ -63,6 +65,38 @@ class Source:
     @property
     def triangle_count(self) -> int:
         return len(self.triangles)
+
+    @property
+    def centroids(self) -> np.ndarray:
+        """Each triangle's middle: for selecting a static model's parts by region (a roof above the eaves)."""
+        return self.positions[self.triangles].mean(1)
+
+    def components(self, sel: Selection | None = None, tolerance: float = 1e-4) -> list[Selection]:
+        """The selection's (or the whole model's) connected pieces, its triangles joined where they share a corner's
+        position, largest first: a pine cluster's cones, a fence's rails and posts."""
+        mask = self.all().mask if sel is None else sel.mask
+        tris = self.triangles[mask]
+        key = np.round(self.positions / (tolerance * self.height)).astype(np.int64)
+        _, welded = np.unique(key, axis=0, return_inverse=True)
+        corner = welded.reshape(-1)[tris]
+        n = int(corner.max()) + 1 if len(corner) else 0
+        rows = np.concatenate([corner[:, 0], corner[:, 1], corner[:, 2]])
+        cols = np.concatenate([corner[:, 1], corner[:, 2], corner[:, 0]])
+        graph = coo_matrix((np.ones(len(rows)), (rows, cols)), shape=(n, n))
+        _, label = connected_components(graph, directed=False)
+        of_triangle = label[corner[:, 0]]
+        index = np.flatnonzero(mask)
+        out = []
+        for c in np.argsort(-np.bincount(of_triangle)):
+            m = np.zeros(self.triangle_count, bool)
+            m[index[of_triangle == c]] = True
+            if m.any():
+                out.append(Selection(m))
+        return out
+
+    def where(self, mask: np.ndarray) -> Selection:
+        """The triangles a mask over them picks (from `centroids`, say)."""
+        return Selection(np.asarray(mask, bool))
 
     def all(self) -> Selection:
         return Selection(np.ones(self.triangle_count, bool))

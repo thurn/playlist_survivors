@@ -2,8 +2,9 @@
 
 A bake runs three steps, each skipped when its inputs haven't changed (keys in Assets/Baked/EdgeCuts/<model>/):
 Unity exports the vendor model the recipe names (source.json), the recipe cuts it (cut.json), and Unity bakes the
-cut into the edge crowd's assets and library. A review bakes if needed, then renders the cut's sheets beside the
-original into rhythm_champions/evidence/edgecuts/<model>/ with a README of its numbers against the thresholds.
+cut into the edge crowd's assets and library (a structure's, a model without clips, into the structure field's). A
+review bakes if needed, then renders the cut's sheets beside the original into
+rhythm_champions/evidence/edgecuts/<model>/ with a README of its numbers against the thresholds.
 """
 
 from __future__ import annotations
@@ -26,12 +27,15 @@ THRESHOLDS = {
     "elite": {"black_share": 0.55, "segments": 220, "triangles": (300, 800)},
     "boss": {"black_share": 0.55, "segments": 450, "triangles": (300, 1500)},
     "hero": {"black_share": 0.55, "segments": 220, "triangles": (300, 800)},
+    # Structures have a coloured fill, not a black body: no black share; a rock or a fence needs few triangles.
+    "structure": {"segments": 160, "triangles": (12, 800)},
 }
 # What each step reads besides the recipe's model, relative to the project.
 EXPORT_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutSource.cs", "Assets/Champions/Editor/EdgeCuts/EdgeCutModel.cs",
                "Assets/Champions/Editor/EdgeCuts/Fist.cs", "manifest.json")
 CUT_CODE = ("tools/src/champions_tools/edgecut",)
 BAKE_CODE = ("Assets/Champions/Editor/EdgeCuts/EdgeCutBaker.cs", "Assets/Champions/Render/Crowd/EdgeCutType.cs")
+STRUCTURE_BAKE_CODE = ("Assets/Champions/Editor/EdgeCuts/StructureBaker.cs", "Assets/Champions/Render/Structures/StructureType.cs")
 
 
 class EdgeCutError(Exception):
@@ -101,7 +105,7 @@ def bake(wt: paths.Worktree, model: str, force: bool = False) -> dict:
     p = wt.project
     export_key = digest(wt, model_json, *(p / f for f in EXPORT_CODE))
     cut_key = digest(wt, export_key, p / "tools" / "recipes" / "edgecut" / f"{model}.py", *(p / f for f in CUT_CODE))
-    bake_key = digest(wt, cut_key, *(p / f for f in BAKE_CODE))
+    bake_key = digest(wt, cut_key, *(p / f for f in (STRUCTURE_BAKE_CODE if recipe.MODEL.static else BAKE_CODE)))
     steps = []
     if force or not _current(out / "source.key", export_key, out / "source.json"):
         started = time.monotonic()
@@ -134,14 +138,16 @@ def thresholds(recipe: ModuleType) -> dict:
 
 
 def judge(review: dict, limits: dict) -> list[tuple[str, str, bool]]:
-    """Each threshold as (what, measured, passed): the mean black share over the game-scale poses, the segment
-    count and the body's triangles."""
-    game = [c["blackShare"] for c in review["cells"] if c["size"] == "game"]
-    share = sum(game) / len(game)
+    """Each threshold as (what, measured, passed): the mean black share over the game-scale poses (not a
+    structure's), the segment count and the body's triangles."""
     lo, hi = limits["triangles"]
-    return [
-        (f"black share at game scale >= {limits['black_share']:.0%}", f"{share:.1%} (poses {', '.join(f'{s:.0%}' for s in game)})",
-         share >= limits["black_share"]),
+    verdicts = []
+    if "black_share" in limits:
+        game = [c["blackShare"] for c in review["cells"] if c["size"] == "game"]
+        share = sum(game) / len(game)
+        verdicts.append((f"black share at game scale >= {limits['black_share']:.0%}",
+                         f"{share:.1%} (poses {', '.join(f'{s:.0%}' for s in game)})", share >= limits["black_share"]))
+    return verdicts + [
         (f"line segments <= {limits['segments']}", str(review["segments"]), review["segments"] <= limits["segments"]),
         (f"body triangles {lo}-{hi}", str(review["triangles"]), lo <= review["triangles"] <= hi),
     ]
@@ -158,7 +164,8 @@ def review(wt: paths.Worktree, model: str, out: Path | None = None, force: bool 
     result = json.loads((out / "review.json").read_text(encoding="utf-8"))
     limits = thresholds(recipe)
     verdicts = judge(result, limits)
-    (out / "README.md").write_text(readme(recipe, summary, result, limits, verdicts), encoding="utf-8")
+    write = structure_readme if recipe.MODEL.static else readme
+    (out / "README.md").write_text(write(recipe, summary, result, limits, verdicts), encoding="utf-8")
     for what, measured, ok in verdicts:
         print(f"edgecut review: {model}: {what}: {measured} {'ok' if ok else 'FAILED'}")
     return all(ok for _, _, ok in verdicts)
@@ -208,6 +215,50 @@ def readme(recipe: ModuleType, summary: dict, result: dict, limits: dict, verdic
         "| --- | --- | --- | --- | --- | --- |",
         *[f"| {c['size']} | {c['pose']} | {c['blackShare']:.1%} | {c['blackShareWithoutPost']:.1%} | {c['silhouettePx']} "
           f"| {c['screenHeightPx']} |" for c in result["cells"]],
+        "",
+        "## Parts",
+        "",
+        "| Part | Body triangles | Line segments |",
+        "| --- | --- | --- |",
+        *[f"| {name} | {p['triangles']} | {p['segments']} |" for name, p in summary["parts"].items()],
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def structure_readme(recipe: ModuleType, summary: dict, result: dict, limits: dict, verdicts: list) -> str:
+    m = recipe.MODEL
+    cam = result["camera"]
+    lines = [
+        f"# Edge cut: {m.id} (a structure)",
+        "",
+        (f"Written by `champions edgecut review {m.id}` from the recipe "
+         f"[tools/recipes/edgecut/{m.id}.py](../../../tools/recipes/edgecut/{m.id}.py)."),
+        "",
+        (recipe.__doc__ or "").strip(),
+        "",
+        "## Thresholds (plan.md, Rendering > Edge cuts; a structure has a fill, not a black body)",
+        "",
+        "| Threshold | Measured | |",
+        "| --- | --- | --- |",
+        *[f"| {what} | {measured} | {'ok' if ok else 'FAILED'} |" for what, measured, ok in verdicts],
+        "",
+        (f"{result['pieces']} shard pieces. {summary['extentM'][0]:g} by {summary['extentM'][1]:g} m on the ground "
+         f"(x by z, its footprint's sizeM in Content/structures.json is the sim's), {summary['topM']:g} m tall."),
+        "",
+        "## Sheets",
+        "",
+        (f"The structure field draws the cut at the game camera's angle ({cam['pitchDeg']:g} degrees down, a "
+         f"{cam['fovDeg']:g} degree field) with the pipeline's post, in the first zone's fill and edge, beside the "
+         "vendor original in flat grey. Each sheet is one camera distance, the same as the monsters' (game scale stands a "
+         "1.8 m monster 113 px tall at 1080 rows; far is twice as far, near half), at the pixel density of a 1080-row "
+         f"frame: the structure turned {', '.join(f'{y:g}' for y in cam['headingsDeg'])} degrees, each the original then "
+         "the cut."),
+        "",
+    ]
+    for size in dict.fromkeys(c["size"] for c in result["cells"]):
+        lines += [f"- {size}: [{size}.jpg]({size}.jpg)"]
+    lines += [
         "",
         "## Parts",
         "",
