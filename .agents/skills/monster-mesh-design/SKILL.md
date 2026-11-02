@@ -188,12 +188,27 @@ Techniques that tend to work:
 - **Keep big facets from turning far from the camera**: a large facet seen
   at a grazing angle catches the fresnel rim as a lit patch (the skeleton's
   domed shield, and a ridged breastplate tried and dropped). Thin plates, and
-  facets facing up toward the game camera, stay dark.
+  facets facing up toward the game camera, stay dark. Where a big facet must
+  turn away, give its vertices normals that lean up (`Mesh.normals`): the
+  rim mixes them with the facet's own (the slime's sides).
+- **Mind the camera's 60 degrees on a round body**: seen from above, rings
+  around a vertical axis nest into a target and an apex's spokes into an
+  umbrella or a spider web. The slime closes under a crown and a face
+  instead, and hides its lowest tier under a bulge.
+- **Turn what names the type toward the camera**: a feature on the top
+  front, tilted about 55 degrees up, shows from every side in a crowd, not
+  only when the monster faces the camera (the slime's eye).
+- **Print a small feature on its panel**: give each of its vertices the
+  panel corners' weights, blended by where it lies, so it follows the panel
+  through every clip instead of stretching or sinking (the slime's eye).
 
 `tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
 dropped and rebuilt from primitives skinned rigidly to one bone each, and
 the trailer's 24-degree creases flagged by the recipe itself (`creases()`),
 so the mesh is drawn as designed at every distance.
+`tools/recipes/monster/slime.py` is the other kind: a body built from
+scratch as polygons, every edge it designs drawn (`mesh.edges`), and some
+hushed so a panel stays quiet.
 
 Keep the vendor rig, bind poses and clips. For skin transfer, partitioning,
 stream compaction and bounds, follow
