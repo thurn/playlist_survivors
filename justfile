@@ -1,11 +1,14 @@
-# Commands for this checkout. `just` lists them; extra arguments pass straight through,
-# e.g. `just native --file song.ogg --delayed` or `just demo3d --start-at 160`. Each of
-# `just native`, `just game`, `just demo3d`, `just demo2d` and `just stylelab` builds what
-# changed and runs it; the `-build`, `-play` and `-tool` recipes are the single steps. `just herocap`
-# captures HeroEditor characters to frames for native (docs/archive/design/heroeditor-native.md).
+# Commands for this checkout. `just` lists them; extra arguments pass straight through, e.g.
+# `just champions --headless --seconds 5`. Rhythm Champions (rhythm_champions/, docs/champions/plan.md,
+# Commands): `just champions` sets up if needed, builds the Mono player and plays it at 1080p; the
+# `-build`, `-play` and `-tool` recipes are the single steps.
+#
+# Frozen (AGENTS.md): the native, game, demo3d, demo2d, stylelab, herocap and unity recipes below
+# serve projects kept for reference outside CI. They may no longer work; nothing new builds on them.
 
 set positional-arguments
 
+champions := "uv run --project rhythm_champions/tools champions"
 tools := "uv run --project demo3d/tools"
 # The demos' player backend: `just backend=mono demo3d` builds faster (Mono's simulation
 # diverges from IL2CPP's, so never compare their look sets).
@@ -17,6 +20,27 @@ unity_exe := "C:/Program Files/Unity/Hub/Editor/6000.6.7f1/Editor/Unity.exe"
 
 default:
     @just --list --unsorted
+
+# Set up if needed, build the Mono player and play it at 1080p, with player flags (--windowed, --headless, --seconds N, --fixed-time)
+[group('champions')]
+champions *args:
+    {{champions}} build
+    {{champions}} play "$@"
+
+# Set up if needed, then build the player (--backend il2cpp, --development, --force, --clean-cache)
+[group('champions')]
+champions-build *args:
+    {{champions}} build "$@"
+
+# Play the last build without rebuilding, with player flags
+[group('champions')]
+champions-play *args:
+    {{champions}} play "$@"
+
+# The tools themselves: `just champions-tool test`, `just champions-tool check --variants`, `just champions-tool editor`
+[group('champions')]
+champions-tool *args:
+    {{champions}} "$@"
 
 # Build and run the game with its flags (docs/archive/setup-prototypes.md, Launch options; paths from native/)
 [group('native')]

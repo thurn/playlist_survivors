@@ -6,6 +6,7 @@ Mac, the only platform V1 supports.
 - [Tools](#tools)
 - [Vendor assets](#vendor-assets)
 - [Building and playing](#building-and-playing)
+- [The Unity Accelerator](#the-unity-accelerator)
 - [Checks and delivery](#checks-and-delivery)
 - [Earlier Hive beads](#earlier-hive-beads)
 - [Local data](#local-data)
@@ -24,8 +25,8 @@ Mac, the only platform V1 supports.
 | Blender 5.2 LTS | blender.org, at `/Applications/Blender.app` | Edge-cut bakes, run headless |
 | Git, Python 3.11+ | Xcode's tools, or Homebrew | Everything else |
 
-The foundation bead (RC1 in the [plan](docs/champions/plan.md#beads)) adds
-the shared Unity Accelerator's setup here.
+Optional: a local [Unity Accelerator](#the-unity-accelerator) that every
+worktree and CI share.
 
 ## Vendor assets
 
@@ -36,7 +37,10 @@ ever committed.
 
 - The packs live outside the tree: Synty's in `~/synty`, the Asset Store's
   (Magic Pig Games monsters, Hovl Studio effects and more) in
-  `~/unity_assets/UnityAssets`.
+  `~/unity_assets/UnityAssets`, and the Heroic Fantasy packs (the Fat Ogre)
+  in `~/unity_assets/MoreAssets/MoreAssets`. Another machine maps its own
+  folders in `~/Library/Caches/playlist-survivors/champions/roots.json`,
+  which the first `champions setup` writes.
 - `rhythm_champions/manifest.json` lists every vendor file the game uses, by
   root, path, SHA-256 and GUID. `champions setup` copies them into the
   project's ignored `Assets/Vendor/`; bakes write the ignored
@@ -46,10 +50,52 @@ ever committed.
 
 ## Building and playing
 
-`just champions` sets up, builds (Mono) and plays at 1080p, taking player
-flags such as `--file <song>` or `--app`. It arrives with the epic's
-foundation bead, which replaces this paragraph with the full steps; until
-then there is nothing to build here.
+In a worktree (or a checkout) with the tools above and the vendor packs in
+place:
+
+```sh
+just champions
+```
+
+The first run sets the worktree up (`champions setup`): it syncs the
+vendor files from `rhythm_champions/manifest.json` into `Assets/Vendor/`
+(once per manifest into the cache, then an APFS clone), restores the baked
+folder and a warm Library from the cache, builds the audio plugin, installs
+the clone's pre-push guard, records every vendor file on the machine for the
+guard, and opens the project once to check the Unity licence. A fresh
+worktree with a warm cache sets up in seconds; the very first import takes
+minutes. Then it builds the Mono player into
+`rhythm_champions/Builds/mac/mono/RhythmChampions.app` and plays it
+fullscreen at 1080p. Later runs rebuild only when a project file changed.
+
+- Player flags follow: `just champions --windowed`, or windowless,
+  `just champions --headless --seconds 5` (batch mode; it waits and exits
+  with the player). [rhythm_champions/README.md](rhythm_champions/README.md)
+  lists the flags and the commands.
+- The single steps: `just champions-build` (`--backend il2cpp` for
+  performance runs; Mono is the default), `just champions-play`.
+- `just champions-tool editor` keeps a warm editor open for the worktree;
+  build, test and the task methods go through it while it runs (it quits
+  after 30 idle minutes, or with `editor stop`).
+- `just champions-tool test` runs the EditMode tests; `just champions-tool
+  check` runs everything before a push (the guard, the tests, the shader
+  variant budget).
+
+## The Unity Accelerator
+
+One local Unity Accelerator serves every worktree and CI, so an asset one
+worktree imported or a shader it compiled is a download for the next.
+
+1. Install it from Unity's [Accelerator page](https://unity.com/products/unity-accelerator)
+   (the macOS installer), as a service on this Mac, listening on its
+   default port 10080.
+2. Nothing else: every Unity launch of the tools (cold runs, the warm
+   editor, CI) passes `-EnableCacheServer -cacheServerEndpoint
+   127.0.0.1:10080` with downloads and uploads on whenever that port
+   answers, and runs without it otherwise. `UNITY_ACCELERATOR=host:port`
+   names another endpoint.
+3. Check: a `champions build` log (`rhythm_champions/Logs/BuildPlayer.log`)
+   mentions the connection to the Accelerator.
 
 ## Checks and delivery
 
@@ -98,7 +144,8 @@ through `refs/dolt/data` on `origin`.
 | Caches (Unity Libraries, bakes, Cargo targets, CI state) | `~/Library/Caches/playlist-survivors/` (`PS_CACHE` overrides it) |
 | Vendor packs | `~/synty`, `~/unity_assets/UnityAssets` |
 | Captures | the tree's `captures/` (ignored) |
-| The game's sessions, logs and calibration | the player's data folder, as the foundation bead sets it |
+| The player's log | `~/Library/Logs/Rhythm Champions/Rhythm Champions/Player.log`; headless runs: `rhythm_champions/Logs/player.log` |
+| The game's sessions and calibration | the player's data folder, `~/Library/Application Support/Rhythm Champions/Rhythm Champions/` |
 
 ## Frozen prototypes
 

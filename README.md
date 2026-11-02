@@ -7,8 +7,8 @@ and wider on the beat. Pick an app that is playing music, or a file, and
 play.
 
 **Status: in development.** V1 is level 1, start to victory, built in a new
-Unity project, `rhythm_champions/`, played with `just champions` once its
-foundation lands. Until then nothing in this repository plays the new game.
+Unity project, `rhythm_champions/`, played with `just champions`. So far it
+opens on the black void the game will be drawn on.
 
 - [The design](docs/champions/design.md): what the game is, locked
   2026-11-01.
@@ -20,7 +20,8 @@ The project was called Playlist Survivors; the repository keeps that name.
 ## Layout
 
 - `rhythm_champions/`: the game (Unity, with its Rust audio plugin, C# sim
-  and Python tools), arriving with the epic's first beads.
+  and Python tools); [its README](rhythm_champions/README.md) lists the
+  commands.
 - `docs/champions/`: the design and the plan. `docs/archive/`: every earlier
   design, kept for history.
 - `scripts/`: the fast and slow checks and Enact's worktree hooks.
@@ -42,7 +43,8 @@ Their designs are under [docs/archive/](docs/archive/README.md).
 
 ## Setup and development
 
-[SETUP.md](SETUP.md) covers the tools and the vendor assets;
+[SETUP.md](SETUP.md) covers the tools, the vendor assets, building and
+playing;
 [AGENTS.md](AGENTS.md) defines the workflow every change follows.
 
 ## Licences
