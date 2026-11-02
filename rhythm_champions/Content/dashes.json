@@ -1,0 +1,159 @@
+{
+  "cooldownS": 0.6,
+  "bufferS": 0.15,
+  "iframesAfterS": 0.1,
+  "onBeat": {
+    "damage": 2.0,
+    "area": 1.5
+  },
+  "start": "dash",
+  "dashes": [
+    {
+      "id": "dash",
+      "name": "Dash",
+      "ranks": [
+        { "distanceM": 4, "durationS": 0.15, "parts": [] }
+      ],
+      "evolution": null
+    },
+    {
+      "id": "bladeRush",
+      "name": "Blade Rush",
+      "ranks": [
+        {
+          "distanceM": 5, "durationS": 0.22,
+          "parts": [
+            { "shape": "path", "radiusM": 1.5, "damage": 1.5, "tags": ["strike"], "slashes": 3 }
+          ]
+        },
+        {
+          "distanceM": 5, "durationS": 0.22,
+          "parts": [
+            { "shape": "path", "radiusM": 2.5, "damage": 2.0, "tags": ["strike"], "slashes": 4 }
+          ]
+        },
+        {
+          "distanceM": 5, "durationS": 0.22,
+          "parts": [
+            { "shape": "path", "radiusM": 2.5, "damage": 2.0, "tags": ["strike"], "slashes": 4 },
+            { "shape": "path", "when": "nextBeat", "radiusM": 2.5, "damage": 2.0, "tags": ["strike"], "look": "cut" }
+          ]
+        }
+      ],
+      "evolution": {
+        "distanceM": 5, "durationS": 0.22,
+        "parts": [
+          { "shape": "path", "radiusM": 2.5, "damage": 2.0, "tags": ["strike"], "slashes": 4 },
+          { "shape": "path", "when": "nextBeat", "repeat": 2, "radiusM": 2.5, "damage": 2.0, "tags": ["strike"], "look": "afterimageBlades" }
+        ]
+      }
+    },
+    {
+      "id": "leapSlam",
+      "name": "Leap Slam",
+      "ranks": [
+        {
+          "distanceM": 5, "durationS": 0.35,
+          "parts": [
+            { "shape": "circle", "at": "end", "radiusM": 3, "damage": 2.0, "tags": ["area"], "look": "shockwave" }
+          ]
+        },
+        {
+          "distanceM": 5, "durationS": 0.35,
+          "parts": [
+            { "shape": "circle", "at": "end", "radiusM": 4, "damage": 2.0, "tags": ["area"], "look": "shockwave" },
+            { "shape": "ring", "at": "end", "when": "nextBeat", "innerM": 4, "radiusM": 7, "damage": 1.0, "tags": ["area"], "look": "ring" }
+          ]
+        },
+        {
+          "distanceM": 5, "durationS": 0.35,
+          "parts": [
+            { "shape": "circle", "at": "end", "radiusM": 4, "damage": 2.0, "tags": ["area"], "look": "shockwave" },
+            { "shape": "ring", "at": "end", "when": "nextBeat", "innerM": 4, "radiusM": 7, "damage": 1.0, "tags": ["area"], "look": "ring" },
+            { "shape": "circle", "at": "end", "when": "nextDownbeat", "radiusM": 4, "damage": 1.0, "tags": ["area"], "look": "aftershock" }
+          ]
+        }
+      ],
+      "evolution": {
+        "distanceM": 5, "durationS": 0.45,
+        "parts": [
+          { "shape": "circle", "at": "end", "radiusM": 6, "damage": 4.0, "tags": ["area"], "shatter": true, "look": "skyfall" },
+          { "shape": "ring", "at": "end", "when": "nextBeat", "innerM": 6, "radiusM": 12, "damage": 1.0, "tags": ["area"], "look": "ring" },
+          { "shape": "circle", "at": "end", "when": "nextDownbeat", "radiusM": 4, "damage": 1.0, "tags": ["area"], "look": "aftershock" }
+        ]
+      }
+    },
+    {
+      "id": "shieldCharge",
+      "name": "Shield Charge",
+      "ranks": [
+        {
+          "distanceM": 6, "durationS": 0.3,
+          "parts": [
+            { "shape": "path", "radiusM": 1, "damage": 1.2, "throw": "aside" }
+          ]
+        },
+        {
+          "distanceM": 6, "durationS": 0.3,
+          "parts": [
+            { "shape": "path", "radiusM": 1, "damage": 1.2, "throw": "aside", "thrownDamage": 1.0 }
+          ]
+        },
+        {
+          "distanceM": 6, "durationS": 0.3,
+          "parts": [
+            { "shape": "path", "radiusM": 1, "damage": 1.2, "throw": "aside", "thrownDamage": 1.0 },
+            { "shape": "cone", "at": "end", "radiusM": 3, "arcDeg": 90, "damage": 1.5, "tags": ["area"], "throw": "away", "thrownDamage": 1.0, "look": "bash" }
+          ]
+        }
+      ],
+      "evolution": {
+        "distanceM": 8, "durationS": 0.35,
+        "parts": [
+          { "shape": "path", "radiusM": 1, "damage": 1.2, "throw": "aside", "thrownDamage": 1.0, "thrownShatter": true },
+          { "shape": "cone", "at": "end", "radiusM": 3, "arcDeg": 90, "damage": 1.5, "tags": ["area"], "throw": "away", "thrownDamage": 1.0, "thrownShatter": true, "look": "bash" }
+        ]
+      }
+    },
+    {
+      "id": "blinkStrike",
+      "name": "Blink Strike",
+      "ranks": [
+        {
+          "distanceM": 6, "durationS": 0.05,
+          "parts": [
+            { "shape": "circle", "at": "start", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "end", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" }
+          ]
+        },
+        {
+          "distanceM": 6, "durationS": 0.05,
+          "parts": [
+            { "shape": "circle", "at": "start", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "mid", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "end", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" }
+          ]
+        },
+        {
+          "distanceM": 6, "durationS": 0.05,
+          "parts": [
+            { "shape": "circle", "at": "start", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "mid", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "end", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+            { "shape": "circle", "at": "end", "when": "nextBeat", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" }
+          ]
+        }
+      ],
+      "evolution": {
+        "distanceM": 6, "durationS": 0.05,
+        "parts": [
+          { "shape": "circle", "at": "start", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+          { "shape": "circle", "at": "mid", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+          { "shape": "circle", "at": "end", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+          { "shape": "circle", "at": "end", "when": "nextBeat", "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "burst" },
+          { "shape": "circle", "at": "start", "when": "nextBeat", "repeat": 4, "radiusM": 2.5, "damage": 1.5, "tags": ["strike", "area"], "look": "phantomBurst" }
+        ]
+      }
+    }
+  ]
+}

@@ -19,7 +19,7 @@ namespace Champions.Sim
         public double KnownAtBudget = Defaults.KnownAtBudget;
         public RunStart Start = Defaults.Start;
 
-        /// <summary>The run's config on <paramref name="content"/> (null: the defaults, which beat.json and hero.json repeat).</summary>
+        /// <summary>The run's config on <paramref name="content"/> (null: the defaults, which beat.json and hero.json repeat; dashes.json adds the dashes past the plain one).</summary>
         public SimConfig Build(GameContent content)
         {
             return new SimConfig
@@ -30,6 +30,7 @@ namespace Champions.Sim
                 Start = Start,
                 Beat = content != null ? content.Beat.Clone() : new BeatRules(),
                 Hero = content != null ? content.Hero.Clone() : new HeroRules(),
+                Dashes = content != null ? content.Dashes.Clone() : new DashRules(),
             };
         }
 

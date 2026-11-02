@@ -18,10 +18,16 @@ namespace Champions.Sim
     ///   saw the old path, which differs by at most the lead's walk. So the client, drawing trailing by the
     ///   lead, shows the turn on the frame the key went down.
     /// - While the world is held the hero stands, and a click target given then is dropped.
+    /// - <b>Dashes</b> (<see cref="Dashes"/>): from a dash's start to its end the hero moves at the dash's
+    ///   velocity instead of walking; a dash heard before the sim took it is walked again from its start, as a
+    ///   heard input is. A newer dash cuts the one before short. A dash whose path passes its click target
+    ///   (within the hero's radius) clears it, so the hero never walks back to it.
+    /// - <b>Structures</b> (<see cref="IStructures"/>, once installed): they stop the hero, walking or dashing,
+    ///   and it slides along them. A damaging dash that runs into one strikes it first and, if that breaks it,
+    ///   carries on through (<see cref="Dashes.BreakThrough"/>). Enemies never block it.
     ///
     /// Each change of velocity is a <see cref="SimEventKind.HeroMove"/>, emitted when the sim takes it and
-    /// drawn from its start, which a re-walk puts up to the lead before it. The dashes, structures and
-    /// health build on this (<see cref="Advance"/> is where a dash's span and blocking go).
+    /// drawn from its start, which a re-walk puts up to the lead before it.
     /// </summary>
     internal sealed class HeroWalk
     {
@@ -29,9 +35,26 @@ namespace Champions.Sim
         public const int History = 64;
         /// <summary>A velocity change under this (m/s) emits no move: a target's aim, renormalised each tick, wobbles in its last bits.</summary>
         const double Same = 1e-6;
+        /// <summary>A damaging dash breaks through this many structures in one move at most.</summary>
+        const int Breaks = 8;
+
+        /// <summary>A dash's motion: its run index, span and velocity.</summary>
+        struct DashSpan
+        {
+            public int Index;
+            public double Start, End, Vx, Vy;
+            public bool Damaging;
+        }
+
+        static readonly DashSpan NoDash = new DashSpan { Index = -1, Start = double.NegativeInfinity, End = double.NegativeInfinity };
 
         readonly HeroState state;
         readonly double speed;
+        // The latest dash and the one before it (which a re-walk across both still needs).
+        DashSpan dash = NoDash, dashBefore = NoDash;
+        // Where the latest dash to finish ended: exact, where the kept ticks would only interpolate.
+        int endedDash = -1;
+        double endedX, endedY;
         // The held movement keys, by Key (Up, Down, Left, Right).
         readonly bool[] held = new bool[4];
         bool targeting;
@@ -49,10 +72,41 @@ namespace Champions.Sim
         {
             this.state = state;
             speed = rules.SpeedMps;
+            Radius = rules.RadiusM;
             Chord(0, 0, 0, 0, start, start);
         }
 
         public bool Targeting => targeting;
+
+        /// <summary>The hero's body radius: what structures stop.</summary>
+        public double Radius { get; }
+
+        /// <summary>The earliest time an input taken at <paramref name="now"/> can re-walk from: the oldest kept tick, never before a hold.</summary>
+        public double Earliest(double now)
+        {
+            double oldest = pathCount > 0 ? PathT(pathCount - 1) : now;
+            return Math.Min(now, Math.Max(floor, oldest));
+        }
+
+        /// <summary>Where dash <paramref name="index"/> ended, once the walk has passed its end (false before, or if a newer one cut it short).</summary>
+        public bool DashEnded(int index, out double x, out double y)
+        {
+            x = endedX;
+            y = endedY;
+            return endedDash == index && index >= 0;
+        }
+
+        /// <summary>
+        /// A dash (run index <paramref name="index"/>) from <paramref name="start"/> (up to the history back) to
+        /// <paramref name="end"/> at velocity (<paramref name="vx"/>, <paramref name="vy"/>), walked again from its
+        /// start as a heard input is.
+        /// </summary>
+        public void Dash(Simulation sim, int index, double start, double end, double vx, double vy, bool damaging)
+        {
+            dashBefore = dash;
+            dash = new DashSpan { Index = index, Start = start, End = end, Vx = vx, Vy = vy, Damaging = damaging };
+            Rewalk(sim, start);
+        }
 
         public void Press(Simulation sim, Key key, double heard)
         {
@@ -131,9 +185,9 @@ namespace Champions.Sim
         void Walk(Simulation sim, double now, double x, double y, bool force)
         {
             double dt = Simulation.TickSeconds;
-            Advance(sim, x, y, dt, out double nx, out double ny);
+            Advance(sim, now, x, y, dt, out double nx, out double ny);
             Chord(x, y, nx, ny, now, now + dt);
-            Move(sim, now, now, x, y, (nx - x) / dt, (ny - y) / dt, force);
+            Emit(sim, now, now, x, y, (nx - x) / dt, (ny - y) / dt, force);
         }
 
         /// <summary>
@@ -174,8 +228,8 @@ namespace Champions.Sim
                 double b = PathT(back), span = b - t;
                 if (span > 1e-9)
                 {
-                    Advance(sim, x, y, span, out double nx, out double ny);
-                    Move(sim, now, t, x, y, (nx - x) / span, (ny - y) / span, first);
+                    Advance(sim, t, x, y, span, out double nx, out double ny);
+                    Emit(sim, now, t, x, y, (nx - x) / span, (ny - y) / span, first);
                     first = false;
                     x = nx;
                     y = ny;
@@ -220,12 +274,57 @@ namespace Champions.Sim
             up = (held[(int)Key.Up] ? 1 : 0) - (held[(int)Key.Down] ? 1 : 0);
         }
 
-        /// <summary>Where the hero's input takes it from (<paramref name="x"/>, <paramref name="y"/>) over <paramref name="span"/> seconds.</summary>
-        void Advance(Simulation sim, double x, double y, double span, out double nx, out double ny)
+        /// <summary>
+        /// Where the hero's input takes it from (<paramref name="x"/>, <paramref name="y"/>) over the
+        /// <paramref name="span"/> seconds from <paramref name="t"/>: dashing for the parts of them in a dash,
+        /// walking the rest, each part stopped by the structures in its way.
+        /// </summary>
+        void Advance(Simulation sim, double t, double x, double y, double span, out double nx, out double ny)
         {
             nx = x;
             ny = y;
             if (sim.State.Held) return;
+            double end = t + span;
+            while (t < end - 1e-12)
+            {
+                bool dashing = DashAt(t, out var d);
+                double to = Math.Min(end, NextChange(t));
+                if (dashing) DashMove(sim, d, t, to - t, ref nx, ref ny);
+                else WalkPart(sim, t, to - t, ref nx, ref ny);
+                t = to;
+            }
+        }
+
+        /// <summary>The dash moving the hero at <paramref name="t"/>, if any: the latest, else the one before until the latest starts.</summary>
+        bool DashAt(double t, out DashSpan d)
+        {
+            if (dash.Start <= t + 1e-12 && t < dash.End - 1e-12)
+            {
+                d = dash;
+                return true;
+            }
+            if (dashBefore.Start <= t + 1e-12 && t < dashBefore.End - 1e-12 && t < dash.Start - 1e-12)
+            {
+                d = dashBefore;
+                return true;
+            }
+            d = NoDash;
+            return false;
+        }
+
+        /// <summary>The first dash start or end after <paramref name="t"/>.</summary>
+        double NextChange(double t)
+        {
+            double next = double.PositiveInfinity;
+            if (dash.Start > t + 1e-12) next = Math.Min(next, dash.Start);
+            if (dash.End > t + 1e-12) next = Math.Min(next, dash.End);
+            if (dashBefore.Start > t + 1e-12) next = Math.Min(next, dashBefore.Start);
+            if (dashBefore.End > t + 1e-12) next = Math.Min(next, dashBefore.End);
+            return next;
+        }
+
+        void WalkPart(Simulation sim, double t, double span, ref double x, ref double y)
+        {
             Keys(out int across, out int up);
             double step = speed * span, dx = 0, dy = 0;
             if (across != 0 || up != 0)
@@ -253,8 +352,44 @@ namespace Champions.Sim
             double len = Math.Sqrt(dx * dx + dy * dy);
             state.FacingX = dx / len;
             state.FacingY = dy / len;
-            nx = x + dx;
-            ny = y + dy;
+            Move(sim, t, ref x, ref y, dx, dy, NoDash);
+        }
+
+        void DashMove(Simulation sim, in DashSpan d, double t, double span, ref double x, ref double y)
+        {
+            double dx = d.Vx * span, dy = d.Vy * span, len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1e-12) return;
+            state.FacingX = dx / len;
+            state.FacingY = dy / len;
+            double fromX = x, fromY = y;
+            Move(sim, t, ref x, ref y, dx, dy, d);
+            if (targeting && HitShape.DistanceToSegment(targetX, targetY, fromX, fromY, x, y) <= Radius + 1e-9) targeting = false;
+            if (Math.Abs(t + span - d.End) < 1e-12)
+            {
+                endedDash = d.Index;
+                endedX = x;
+                endedY = y;
+            }
+        }
+
+        /// <summary>Moves the hero by (dx, dy), stopped and slid by the structures; a damaging dash breaks through what it can.</summary>
+        void Move(Simulation sim, double t, ref double x, ref double y, double dx, double dy, in DashSpan d)
+        {
+            var structures = sim.Structures;
+            if (structures == null)
+            {
+                x += dx;
+                y += dy;
+                return;
+            }
+            for (int attempt = 0; ; attempt++)
+            {
+                structures.Move(x, y, Radius, dx, dy, out double nx, out double ny, out int blocker);
+                if (blocker >= 0 && d.Damaging && attempt < Breaks && sim.Dashes.BreakThrough(sim, d.Index, blocker, t, nx, ny)) continue;
+                x = nx;
+                y = ny;
+                return;
+            }
         }
 
         void Chord(double fromX, double fromY, double toX, double toY, double start, double end)
@@ -267,7 +402,7 @@ namespace Champions.Sim
             state.MoveEnd = end;
         }
 
-        void Move(Simulation sim, double t, double start, double x, double y, double vx, double vy, bool force)
+        void Emit(Simulation sim, double t, double start, double x, double y, double vx, double vy, bool force)
         {
             if (!force && moved && Math.Abs(vx - moveX) < Same && Math.Abs(vy - moveY) < Same) return;
             moved = true;

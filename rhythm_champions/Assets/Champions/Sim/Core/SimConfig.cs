@@ -25,6 +25,9 @@ namespace Champions.Sim
         /// <summary>The hero's numbers (Content/hero.json).</summary>
         public HeroRules Hero = new HeroRules();
 
+        /// <summary>The dashes' numbers and forms (Content/dashes.json; the defaults hold only the plain Dash).</summary>
+        public DashRules Dashes = new DashRules();
+
         // The storage's sizes up front: a list past its size doubles, a large copy and garbage mid-run.
         /// <summary>The ticks kept (20 a second), and the locks' per-tick record.</summary>
         public int TickCapacity = 40_000;
@@ -37,5 +40,7 @@ namespace Champions.Sim
         public int EntryCapacity = 4_096;
         public int EventCapacity = 65_536;
         public int InputCapacity = 4_096;
+        /// <summary>The targets one blow can reach (the horde's cap and the structures near it).</summary>
+        public int TargetCapacity = 2_048;
     }
 }

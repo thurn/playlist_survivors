@@ -27,8 +27,10 @@ namespace Champions.Sim
     /// times, earliest first, and at one time in a fixed order: entries known then are revealed, then a
     /// beat fires (the attack cadence takes it), then the cadence's seconds pulse. The beat's state is
     /// updated before each of those and at the tick's end, after which the per-tick systems run: quiet
-    /// moments, the run clock, the hero. Inputs take effect when given, at the frontier, judged from when
-    /// they were heard (<see cref="HeroWalk"/>, <see cref="Judgement"/>). Nothing simulated is ever revised.
+    /// moments, the run clock, the hero's walk, its dash, its health. Inputs take effect when given, at the
+    /// frontier, judged from when they were heard (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
+    /// <see cref="Judgement"/>); hits on the hero settle once the inputs heard by then are in
+    /// (<see cref="HeroHealth"/>). Nothing simulated is ever revised.
     /// </summary>
     public sealed class Simulation
     {
@@ -38,6 +40,8 @@ namespace Champions.Sim
         readonly StructList<InputRecord> inputs;
         readonly EventLog events;
         readonly HeroWalk hero;
+        readonly Dashes dashes;
+        readonly HeroHealth health;
         readonly RunRules run;
         readonly double knownAtBudget;
         double cursor;
@@ -61,6 +65,9 @@ namespace Champions.Sim
             run = new RunRules(config, State);
             if (State.Phase == RunPhase.Playing) Emit(SimEvent.RunStart(State.Now));
             hero = new HeroWalk(State.Hero, config.Hero, State.Now);
+            Strikes = new Strikes(config.TargetCapacity);
+            health = new HeroHealth(State.Hero, config.Hero, config.Beat);
+            dashes = new Dashes(config.Dashes, State, hero, health, Strikes, Beats, config.Beat);
             Cadence.Begin(State.Now);
             Quiet.Begin(State.Now);
         }
@@ -75,6 +82,17 @@ namespace Champions.Sim
         /// <summary>The attack cadence: Sword Slash's, aiming at <see cref="BeatRules.CadenceTargetS"/>.</summary>
         public Cadence Cadence { get; }
         public QuietMoments Quiet { get; }
+        /// <summary>The hero's blows' one way into the world (<see cref="Sim.Strikes"/>).</summary>
+        public Strikes Strikes { get; }
+
+        /// <summary>The hero's dash (the progression equips, the mods tune it).</summary>
+        internal Dashes Dashes => dashes;
+
+        /// <summary>The hero's health (the horde and bosses hurt it, the progression heals it).</summary>
+        internal HeroHealth Health => health;
+
+        /// <summary>The structures the hero meets, once installed (<see cref="UseStructures"/>); null: nothing blocks.</summary>
+        internal IStructures Structures { get; private set; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -101,6 +119,9 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)(uint)State.LastBeat);
                 h = Hashing.Fold(h, Hashing.Bits(State.Hero.X));
                 h = Hashing.Fold(h, Hashing.Bits(State.Hero.Y));
+                h = Hashing.Fold(h, Hashing.Bits(State.Hero.Health));
+                h = Hashing.Fold(h, (ulong)(uint)State.Hero.Dashes | (ulong)(uint)Strikes.Struck << 32);
+                h = Hashing.Fold(h, Hashing.Bits(State.Hero.DashReadyAt));
                 h = Hashing.Fold(h, (ulong)(uint)inputs.Count);
                 h = Hashing.Fold(h, (ulong)(uint)Stream.Accepted.Length);
                 return h;
@@ -127,13 +148,16 @@ namespace Champions.Sim
         public void Press(Key key, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Press, Code = (byte)key, Heard = heard, Effective = Now });
+            health.Took(heard, Now);
             hero.Press(this, key, heard);
+            if (key == Key.Space) dashes.Press(this, heard);
         }
 
         /// <summary>A key released, heard at song time <paramref name="heard"/>; it takes effect now.</summary>
         public void Release(Key key, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Release, Code = (byte)key, Heard = heard, Effective = Now });
+            health.Took(heard, Now);
             hero.Release(this, key, heard);
         }
 
@@ -141,6 +165,7 @@ namespace Champions.Sim
         public void Target(double x, double y, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Target, X = x, Y = y, Heard = heard, Effective = Now });
+            health.Took(heard, Now);
             hero.Target(this, x, y, heard);
         }
 
@@ -148,6 +173,7 @@ namespace Champions.Sim
         public void Control(RunControl control, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Control, Code = (byte)control, Heard = heard, Effective = Now });
+            health.Took(heard, Now);
             bool held = State.Held;
             run.Control(this, control, Now);
             if (State.Held != held) hero.HeldChanged(this);
@@ -195,6 +221,13 @@ namespace Champions.Sim
 
         internal void Emit(in SimEvent e) => events.Add(e);
 
+        /// <summary>Installs the world's structures: they block the hero and take its blows (the structures' bead).</summary>
+        internal void UseStructures(IStructures structures)
+        {
+            Structures = structures;
+            Strikes.Add(structures);
+        }
+
         // ---- Output ----
 
         public ReadOnlySpan<SimEvent> EventsSince(int eventCursor) => events.Since(eventCursor);
@@ -227,6 +260,17 @@ namespace Champions.Sim
                 HeroMoveEnd = h.MoveEnd,
                 HeroFacingX = h.FacingX,
                 HeroFacingY = h.FacingY,
+                HeroHealth = h.Health,
+                HeroMaxHealth = h.MaxHealth,
+                HeroHurtAt = h.HurtAt,
+                Dash = h.Dash,
+                DashRank = h.DashRank,
+                DashStart = h.DashStart,
+                DashEnd = h.DashEnd,
+                DashOnBeat = h.DashOnBeat,
+                DashReadyAt = h.DashReadyAt,
+                DashCooldownS = h.DashCooldownS,
+                DashWaiting = h.DashWaiting,
             };
         }
 
@@ -274,6 +318,8 @@ namespace Champions.Sim
             }
             run.Tick();
             hero.Tick(this, end);
+            dashes.Tick(this, end);
+            health.Tick(this, end);
         }
 
         void FireBeat(double t)

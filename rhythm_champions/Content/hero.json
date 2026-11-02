@@ -1,3 +1,11 @@
 {
-  "speedMps": 6.0
+  "speedMps": 6.0,
+  "radiusM": 0.4,
+  "health": 100,
+  "hurtInvulnerableS": 0.5,
+  "hitSettleS": 0.1,
+  "heals": {
+    "levelUp": 0.25,
+    "bossKill": 1.0
+  }
 }

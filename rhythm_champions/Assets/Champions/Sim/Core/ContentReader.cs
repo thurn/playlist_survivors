@@ -53,6 +53,25 @@ namespace Champions.Sim
         /// <summary>A number or null (NaN).</summary>
         public double NumberOrNull(string key) => Get(key).IsNull ? double.NaN : Number(key);
 
+        /// <summary>Is the field present? (An optional field: <see cref="NumberOr"/> and the rest.)</summary>
+        public bool Has(string key)
+        {
+            foreach (var m in members) if (m.Key == key) return true;
+            return false;
+        }
+
+        /// <summary>An optional number: <paramref name="fallback"/> when absent.</summary>
+        public double NumberOr(string key, double fallback) => Has(key) ? Number(key) : fallback;
+
+        /// <summary>An optional integer: <paramref name="fallback"/> when absent.</summary>
+        public int IntOr(string key, int fallback) => Has(key) ? Int(key) : fallback;
+
+        /// <summary>An optional flag: <paramref name="fallback"/> when absent.</summary>
+        public bool BoolOr(string key, bool fallback) => Has(key) ? Bool(key) : fallback;
+
+        /// <summary>An optional string: <paramref name="fallback"/> when absent.</summary>
+        public string StringOr(string key, string fallback) => Has(key) ? String(key) : fallback;
+
         public int Int(string key)
         {
             double n = Number(key);

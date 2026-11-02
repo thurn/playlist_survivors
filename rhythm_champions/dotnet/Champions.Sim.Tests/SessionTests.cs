@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 
 namespace Champions.Sim.Tests
@@ -17,7 +18,8 @@ namespace Champions.Sim.Tests
         /// <summary>
         /// A live run as the client drives it, 60 s of a fixture song through tempo changes, a silent gap and a
         /// beatless stretch: frames of 1/60 s, entries arriving as the plugin hands them over, and a player's
-        /// inputs heard up to 0.1 s before the sim takes them (start, walking, click targets, a pause).
+        /// inputs heard up to 0.1 s before the sim takes them (start, walking, click targets, dashes dropped,
+        /// buffered and beatless, a pause).
         /// </summary>
         public static (RunInputs Run, Simulation Sim, List<StreamEntry> Fed) LiveRun()
         {
@@ -38,6 +40,8 @@ namespace Champions.Sim.Tests
                 (3.3, s => s.Release(Key.Right, s.Now - 0.1)),
                 (4.0, s => s.Press(Key.Space, s.Now - 0.07)),
                 (4.1, s => s.Release(Key.Space, s.Now - 0.07)),
+                (4.3, s => s.Press(Key.Space, s.Now - 0.05)),
+                (4.45, s => s.Press(Key.Space, s.Now - 0.05)),
                 (6.0, s => s.Release(Key.Up, s.Now - 0.05)),
                 (7.5, s => s.Target(-4.25, 9.5, s.Now - 0.06)),
                 (7.6, s => s.Target(-4.5, 9.0, s.Now - 0.06)),
@@ -47,9 +51,13 @@ namespace Champions.Sim.Tests
                 (18.0, s => s.Release(Key.Left, s.Now - 0.08)),
                 (25.0, s => s.Press(Key.Down, s.Now - 0.06)),
                 (25.2, s => s.Press(Key.Right, s.Now - 0.06)),
+                (26.0, s => s.Press(Key.Space, s.Now - 0.06)),
                 (31.0, s => s.Release(Key.Down, s.Now - 0.09)),
                 (33.0, s => s.Release(Key.Right, s.Now - 0.02)),
+                (41.0, s => s.Press(Key.Space, s.Now - 0.04)),
                 (45.0, s => s.Target(10, -10, s.Now - 0.07)),
+                (46.0, s => s.Press(Key.Space, s.Now - 0.05)),
+                (46.6, s => s.Press(Key.Space, s.Now - 0.08)),
                 (52.0, s => s.Press(Key.One, s.Now - 0.05)),
                 (59.0, s => s.Control(RunControl.Quit, s.Now - 0.04)),
             });
@@ -83,6 +91,9 @@ namespace Champions.Sim.Tests
         {
             var (run, live, fed) = LiveRun();
             Assert.AreEqual(RunEnd.Quit, live.State.End, "the script ran to its end");
+            Assert.AreEqual(6, live.State.Hero.Dashes, "dashes, two of them buffered");
+            Assert.AreEqual(2, Drive.Events(live, SimEventKind.HeroDash).Count(e => e.Buffered));
+            Assert.AreEqual(1, Drive.Events(live, SimEventKind.DashDropped).Count, "a press too early in the cooldown");
             Assert.Greater(live.Inputs.Length, 15);
             string dir = TempDir();
             try

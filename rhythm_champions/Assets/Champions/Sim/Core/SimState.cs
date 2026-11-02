@@ -67,6 +67,14 @@ namespace Champions.Sim
         public QuietReason Quiet;
         /// <summary>The hero's chord over the tick ahead and its facing.</summary>
         public double HeroFromX, HeroFromY, HeroX, HeroY, HeroMoveStart, HeroMoveEnd, HeroFacingX, HeroFacingY;
+        /// <summary>The health bar's: health, full health, the latest hit that hurt.</summary>
+        public double HeroHealth, HeroMaxHealth, HeroHurtAt;
+        /// <summary>The dash pip's: the equipped dash and rank, the latest dash's span and beat, the cooldown's end and length, a press waiting.</summary>
+        public int Dash, DashRank;
+        public double DashStart, DashEnd;
+        public bool DashOnBeat;
+        public double DashReadyAt, DashCooldownS;
+        public bool DashWaiting;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 

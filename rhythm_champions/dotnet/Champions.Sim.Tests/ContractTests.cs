@@ -50,8 +50,45 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(0.75, beat.SilenceS);
             Assert.AreEqual(2.0, beat.BeatlessS);
             Assert.AreEqual(0.5, beat.TelegraphBeatlessBeatS);
-            // Decision 4.
+            // Decision 4; The Hero; Decision 15.
             Assert.AreEqual(6.0, content.Hero.SpeedMps);
+            Assert.AreEqual(100, content.Hero.Health);
+            Assert.AreEqual(0.5, content.Hero.HurtInvulnerableS);
+            Assert.AreEqual(0.25, content.Hero.LevelUpHeal);
+            Assert.AreEqual(1.0, content.Hero.BossKillHeal);
+            // Decisions 5 and 6.
+            var dashes = content.Dashes;
+            Assert.AreEqual(0.6, dashes.CooldownS);
+            Assert.AreEqual(0.15, dashes.BufferS);
+            Assert.AreEqual(0.1, dashes.IFramesAfterS);
+            Assert.AreEqual(2.0, dashes.OnBeatDamage);
+            Assert.AreEqual(1.5, dashes.OnBeatArea);
+            Assert.AreEqual("dash", dashes.Start);
+            // Dashes: each type's move, the same at every rank (the evolutions may change it).
+            foreach (var (id, distance, duration) in new[] { ("dash", 4.0, 0.15), ("bladeRush", 5.0, 0.22), ("leapSlam", 5.0, 0.35), ("shieldCharge", 6.0, 0.3), ("blinkStrike", 6.0, 0.05) })
+            {
+                var kind = dashes.Kinds[dashes.IndexOf(id)];
+                Assert.AreEqual(id == "dash" ? 1 : 3, kind.TopRank, id);
+                Assert.AreEqual(id != "dash", kind.Evolution != null, id);
+                foreach (var form in kind.Ranks)
+                {
+                    Assert.AreEqual(distance, form.DistanceM, id);
+                    Assert.AreEqual(duration, form.DurationS, id);
+                }
+            }
+            Assert.AreEqual(8.0, dashes.Kinds[dashes.IndexOf("shieldCharge")].Evolution.DistanceM, "Juggernaut: 8 m");
+            // The plain Dash has no damage (The Dash, "On the beat").
+            Assert.IsFalse(dashes.Kinds[dashes.IndexOf("dash")].Ranks[0].Damaging);
+            // The defaults without content are the design's rules and the plain Dash.
+            var defaults = new DashRules();
+            Assert.AreEqual(dashes.CooldownS, defaults.CooldownS);
+            Assert.AreEqual(dashes.BufferS, defaults.BufferS);
+            Assert.AreEqual(dashes.IFramesAfterS, defaults.IFramesAfterS);
+            Assert.AreEqual(dashes.OnBeatDamage, defaults.OnBeatDamage);
+            Assert.AreEqual(dashes.OnBeatArea, defaults.OnBeatArea);
+            Assert.AreEqual(4.0, defaults.Kinds[defaults.IndexOf("dash")].Ranks[0].DistanceM);
+            Assert.AreEqual(content.Hero.HitSettleS, new HeroRules().HitSettleS);
+            Assert.AreEqual(content.Hero.RadiusM, new HeroRules().RadiusM);
         }
 
         [Test]
@@ -62,14 +99,27 @@ namespace Champions.Sim.Tests
             try
             {
                 string beat = File.ReadAllText(Checkout.In("Content", BeatRules.File));
-                File.WriteAllText(Path.Combine(dir, HeroRules.File), "{ \"speedMps\": 6, \"sprint\": 9 }");
+                string hero = File.ReadAllText(Checkout.In("Content", HeroRules.File));
+                string dashes = File.ReadAllText(Checkout.In("Content", DashRules.File));
+                File.WriteAllText(Path.Combine(dir, HeroRules.File), hero.Replace("\"speedMps\": 6.0,", "\"speedMps\": 6.0, \"sprint\": 9,"));
                 File.WriteAllText(Path.Combine(dir, BeatRules.File), beat);
+                File.WriteAllText(Path.Combine(dir, DashRules.File), dashes);
                 var e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
                 StringAssert.Contains("hero.json.sprint: unknown field", e.Message);
                 File.WriteAllText(Path.Combine(dir, HeroRules.File), "{ }");
                 e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
                 StringAssert.Contains("hero.json.speedMps: missing", e.Message);
-                File.WriteAllText(Path.Combine(dir, HeroRules.File), "{ \"speedMps\": 6 }");
+                File.WriteAllText(Path.Combine(dir, HeroRules.File), hero);
+                File.WriteAllText(Path.Combine(dir, DashRules.File), dashes.Replace("\"radiusM\": 1.5,", "\"radiusM\": 1.5, \"reachM\": 2,"));
+                e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
+                StringAssert.Contains("dashes.json.dashes[1].ranks[0].parts[0].reachM: unknown field", e.Message);
+                File.WriteAllText(Path.Combine(dir, DashRules.File), dashes.Replace("\"shape\": \"cone\"", "\"shape\": \"wedge\""));
+                e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
+                StringAssert.Contains("parts[1].shape: one of circle, ring, path, cone, not wedge", e.Message);
+                File.WriteAllText(Path.Combine(dir, DashRules.File), dashes.Replace("\"start\": \"dash\"", "\"start\": \"hop\""));
+                e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
+                StringAssert.Contains("dashes.json.start: no dash hop", e.Message);
+                File.WriteAllText(Path.Combine(dir, DashRules.File), dashes);
                 File.WriteAllText(Path.Combine(dir, BeatRules.File), beat.Replace("[1, 2, 4]", "[2, 1]"));
                 e = Assert.Throws<ContentException>(() => GameContent.Load(dir));
                 StringAssert.Contains("beat.json.cadence.beats", e.Message);
@@ -108,6 +158,8 @@ namespace Champions.Sim.Tests
                     {
                         sim.StepTo(5 + 0.5 * (i + 1));
                         sim.Press(i % 2 == 0 ? Key.Up : Key.Down, sim.Now - 0.05);
+                        sim.Press(Key.Space, sim.Now - 0.03);
+                        sim.Health.Hurt(sim, new HeroHit { T = sim.Now, Damage = 0.1, Owner = -1, Beat = double.NaN });
                         sim.Judge(sim.Now - 0.05);
                         sim.Telegraphs.Plan(sim.Now, 2);
                         sim.Snapshot();

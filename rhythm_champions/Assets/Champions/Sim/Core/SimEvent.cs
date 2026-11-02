@@ -2,8 +2,8 @@ namespace Champions.Sim
 {
     /// <summary>
     /// What the sim tells the client (plan.md, "The Sim", Shape): the beats and the beat's state, the
-    /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, and the
-    /// hero's moves. The systems' beads add their kinds after these.
+    /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
+    /// moves, dashes, hits, heals and death. The systems' beads add their kinds after these.
     /// </summary>
     public enum SimEventKind
     {
@@ -17,6 +17,13 @@ namespace Champions.Sim
         Hold,
         RunEnd,
         HeroMove,
+        HeroDash,
+        DashDropped,
+        DashPart,
+        DashEquip,
+        HeroHit,
+        HeroHeal,
+        HeroDeath,
     }
 
     /// <summary>
@@ -127,6 +134,115 @@ namespace Champions.Sim
             e.D4 = vy;
             return e;
         }
+
+        /// <summary>
+        /// A dash started, taken at <see cref="T"/> and drawn from D0 (its press's heard time, or the moment
+        /// the cooldown ended for a buffered press): I0 the run's dash index, I1 the dash type
+        /// (<see cref="DashRules.Kinds"/>) | rank &lt;&lt; 8 (4 the evolution), I2 flags: 1 on the beat | 2 buffered |
+        /// <see cref="JudgedBy"/> &lt;&lt; 2; D1 its end, D2/D3 where it started, D4/D5 its direction.
+        /// </summary>
+        public static SimEvent HeroDash(double t, int index, int kind, int rank, JudgedBy by, bool buffered,
+            double start, double end, double x, double y, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.HeroDash, t);
+            e.I0 = index;
+            e.I1 = kind | rank << 8;
+            e.I2 = (by != JudgedBy.Off ? 1 : 0) | (buffered ? 2 : 0) | (int)by << 2;
+            e.D0 = start;
+            e.D1 = end;
+            e.D2 = x;
+            e.D3 = y;
+            e.D4 = dirX;
+            e.D5 = dirY;
+            return e;
+        }
+
+        /// <summary>A press came too early in the cooldown and was dropped (the pip blinks): D0 when it was heard, D1 when the dash is ready.</summary>
+        public static SimEvent DashDropped(double t, double heard, double ready)
+        {
+            var e = Of(SimEventKind.DashDropped, t);
+            e.D0 = heard;
+            e.D1 = ready;
+            return e;
+        }
+
+        /// <summary>
+        /// A dash's blow lands (a path part: starts its sweep, drawn along the planned path) at <see cref="T"/>:
+        /// I0 the dash's run index, I1 the part (<see cref="DashForm.Parts"/>, then the mods' extra parts), I2 1
+        /// on the beat | the shape's <see cref="ShapeKind"/> &lt;&lt; 1; D0/D1 its centre (a path's start), D2/D3 a
+        /// path's end (a cone's facing), D4 its radius (sized for the beat), D5 its damage.
+        /// </summary>
+        public static SimEvent DashPart(double t, int dash, int part, bool onBeat, in HitShape shape, double damage)
+        {
+            var e = Of(SimEventKind.DashPart, t);
+            e.I0 = dash;
+            e.I1 = part;
+            e.I2 = (onBeat ? 1 : 0) | (int)shape.Kind << 1;
+            e.D0 = shape.X;
+            e.D1 = shape.Y;
+            e.D2 = shape.Kind == ShapeKind.Cone ? shape.DirX : shape.X2;
+            e.D3 = shape.Kind == ShapeKind.Cone ? shape.DirY : shape.Y2;
+            e.D4 = shape.Radius;
+            e.D5 = damage;
+            return e;
+        }
+
+        /// <summary>The hero's dash changed: I0 the dash type, I1 its rank (4 the evolution).</summary>
+        public static SimEvent DashEquip(double t, int kind, int rank)
+        {
+            var e = Of(SimEventKind.DashEquip, t);
+            e.I0 = kind;
+            e.I1 = rank;
+            return e;
+        }
+
+        /// <summary>
+        /// A hit on the hero settled, landing at <see cref="T"/>: I0 how (<see cref="HitOutcome"/>), I1 what
+        /// (<see cref="HitSource"/>), I2 the attacker (-1 none); D0 the damage taken, D1 the health after, D2/D3
+        /// where it came from, D4 the dash whose i-frames dodged it (-1 none).
+        /// </summary>
+        public static SimEvent HeroHit(double t, HitOutcome outcome, HitSource source, int owner, double taken, double health,
+            double fromX, double fromY, int dash)
+        {
+            var e = Of(SimEventKind.HeroHit, t);
+            e.I0 = (int)outcome;
+            e.I1 = (int)source;
+            e.I2 = owner;
+            e.D0 = taken;
+            e.D1 = health;
+            e.D2 = fromX;
+            e.D3 = fromY;
+            e.D4 = dash;
+            return e;
+        }
+
+        /// <summary>The hero healed: I0 why (<see cref="HealReason"/>); D0 the health gained, D1 the health after.</summary>
+        public static SimEvent HeroHeal(double t, HealReason reason, double gained, double health)
+        {
+            var e = Of(SimEventKind.HeroHeal, t);
+            e.I0 = (int)reason;
+            e.D0 = gained;
+            e.D1 = health;
+            return e;
+        }
+
+        /// <summary>The hero died on the killing hit's frame (it shatters): D0/D1 where it was, D2/D3 where the hit came from.</summary>
+        public static SimEvent HeroDeath(double t, double x, double y, double fromX, double fromY)
+        {
+            var e = Of(SimEventKind.HeroDeath, t);
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = fromX;
+            e.D3 = fromY;
+            return e;
+        }
+
+        // Reading a dash's fields.
+        public int DashType => I1 & 0xff;
+        public int DashRank => I1 >> 8;
+        public bool OnBeat => (I2 & 1) != 0;
+        public bool Buffered => (I2 & 2) != 0;
+        public JudgedBy Judged => (JudgedBy)(I2 >> 2);
 
         // Reading a beat's flags.
         public bool Downbeat => (I2 & 1) != 0;
