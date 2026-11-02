@@ -1,0 +1,74 @@
+{
+  "still-020.000": {
+    "monsterPx": 646507,
+    "monsterShare": 0.312,
+    "lMonster": 74.479,
+    "lRing": 8.391,
+    "dL": 66.088,
+    "dC": 68.725,
+    "cMonster": 68.946,
+    "monsterP10": 34.441,
+    "monsterP90": 82.726,
+    "pass": true
+  },
+  "still-030.000": {
+    "monsterPx": 605791,
+    "monsterShare": 0.292,
+    "lMonster": 75.796,
+    "lRing": 10.429,
+    "dL": 65.367,
+    "dC": 68.584,
+    "cMonster": 64.98,
+    "monsterP10": 34.741,
+    "monsterP90": 84.197,
+    "pass": true
+  },
+  "still-040.000": {
+    "monsterPx": 417885,
+    "monsterShare": 0.202,
+    "lMonster": 72.916,
+    "lRing": 6.401,
+    "dL": 66.515,
+    "dC": 59.889,
+    "cMonster": 58.698,
+    "monsterP10": 26.438,
+    "monsterP90": 83.055,
+    "pass": true
+  },
+  "still-050.000": {
+    "monsterPx": 287605,
+    "monsterShare": 0.139,
+    "lMonster": 70.43,
+    "lRing": 7.049,
+    "dL": 63.381,
+    "dC": 67.479,
+    "cMonster": 64.636,
+    "monsterP10": 26.25,
+    "monsterP90": 79.596,
+    "pass": true
+  },
+  "still-058.000": {
+    "monsterPx": 371439,
+    "monsterShare": 0.179,
+    "lMonster": 70.288,
+    "lRing": 7.745,
+    "dL": 62.543,
+    "dC": 55.25,
+    "cMonster": 55.708,
+    "monsterP10": 10.179,
+    "monsterP90": 82.97,
+    "pass": true
+  },
+  "still-070.000": {
+    "monsterPx": 381301,
+    "monsterShare": 0.184,
+    "lMonster": 70.831,
+    "lRing": 7.599,
+    "dL": 63.232,
+    "dC": 66.656,
+    "cMonster": 65.307,
+    "monsterP10": 26.301,
+    "monsterP90": 80.511,
+    "pass": true
+  }
+}

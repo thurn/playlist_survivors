@@ -2,10 +2,13 @@
 
 The monster looks are shared, so ps-wnj.28's outline hulls (edge, hologram
 and gem; [neon-look.md, How clumps part in the line looks](../../../../docs/design/neon-look.md#the-axes))
-draw in the game too. Before is ps-wnj.18's [presets evidence](../presets/README.md)
-(staging ad053d27); after, IL2CPP Mac players of this change, windowless,
-on jarvis, from the worktree's root. The crystal cut, which the change was
-tuned on: [demo3d/evidence/look/separation](../../../../demo3d/evidence/look/separation/README.md).
+draw in the game too. IL2CPP Mac players of this change on staging d3929ba9,
+windowless, on jarvis, from the worktree's root. Before is the same player
+with the change's values undone by `--monster-tune` (as the crystal cut's
+evidence lists): ps-wnj.29 changed how look-metrics reads the ID render, so
+ps-wnj.18's [presets evidence](../presets/README.md) no longer measures
+alike. The crystal cut, which the change was tuned on:
+[demo3d/evidence/look/separation](../../../../demo3d/evidence/look/separation/README.md).
 
 ## Stills and metrics
 
@@ -23,19 +26,19 @@ uv run --project demo3d/tools game look-metrics captures/game/look/ps28-edge --p
 ```
 
 (and so for solid/arcade, hologram/phosphor, prism/spectrum).
-`stills-PRESET/`: the six stills of edge, hologram and prism (solid's are
-ps-wnj.18's: its shaders only moved their outline function).
+`stills-PRESET/`: the six stills of each preset after (solid's draw as
+before: its shaders only moved their outline function).
 `metrics-PRESET/`: every rule on every still, and the swarm overlay of each
 still that breaks separation.
 
 | preset | swarm separation before | after | other rules |
 | --- | --- | --- | --- |
-| edge | 16.1-22.2, passes | 16.0-22.1, passes | every rule passes, as before; the knight's margin at 40 s 6.8 (was 5.8) |
+| edge | 16.2-22.3, passes | 16.0-22.1, passes | every rule passes; the knight's margin at 40 s 9.2 (was 8.1) |
 | solid | 12.0-17.7 (58 s breaks) | the same | unchanged |
-| hologram | 8.1-13.4 (5 break) | 9.3-13.6 (4 break) | form at 70 s passes now (32.5, was 29.8); background light at 58 s still 0.161 (0.163) |
-| prism | 9.6-15.6 (4 break) | 10.1-16.2 (3 break) | unchanged |
+| hologram | 8.3-13.4 (5 break) | 9.1-13.6 (5 break) | every still higher (70 s 8.3 to 10.8); form at 70 s passes now (32.3, was 29.8); background light at 58 s 0.162 (0.163) |
+| prism | 9.6-15.6 (4 break) | 10.4-16.0 (4 break) | unchanged |
 
-**Why the game breaks less than it did, but still breaks**: a game body is
+**Why the game still breaks**: a game body is
 85-150 px across at the metric's 960 px (its bodies two to three times
 the crystal cut's on screen), wider than the 32 px tile the metric
 calls a clump when one hue covers half of it. A dense tile there is one
@@ -45,13 +48,15 @@ about 1 and raised hologram's background light (two stills over 0.15), so
 the hull stays 4 px in both players. Edge's rim boost follows the body's
 size on screen (`_RimSmall` under 60 px in radius, the game's 2.0 by 90 px)
 because the cut's 6.5 rim on the game's bodies took the knight's margin
-over the amber swarm at 40 s to 5.0 (5.8 before, 6.8 after: the hull takes
-some of the swarm's rim round him).
+over the amber swarm at 40 s to 5.0 (measured on d8dd782d, where it was 5.8;
+with the size-aware rim the hull takes some of the swarm's rim round him and
+the margin rises).
 
 ## Perf
 
 The line looks draw one more pass, so their graphics states were traced
-again and the standard scenarios run in each, as in ps-wnj.18:
+again and the standard scenarios run in each, as in ps-wnj.18 (on staging
+ad053d27 with the hulls; the later rim, gem and mix values add no pass):
 
 ```sh
 uv run --project demo3d/tools game perf --trace --looks edge,solid,hologram,prism --only peak,break,finale,early,firsts-rest,firsts

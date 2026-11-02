@@ -1597,6 +1597,10 @@ of shot 3's colourful pixels from 8% of its mix, and the accent goblins far
 outdraw the key skeletons. So shot 3 is the key family with a few elites,
 shot 4 all key family, shots 5 and 6 have fewer goblins and more demons, and
 the finale no goblins. Every still keys at 0.55 or more in every preset.
+Shot 2 lost a goblin too (3 to 2, ps-wnj.28): the line looks' outline hulls
+take more of a finely cut goblin's light than a skeleton's, and with three
+the accent and key families split shot 2's colour evenly (edge keyed 0.53 at
+4 s; [evidence](../../demo3d/evidence/look/separation/README.md)).
 
 ### The void staging
 

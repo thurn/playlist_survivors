@@ -71,7 +71,7 @@
         "onScreen": 420,
         "mix": {
           "skeleton": 4,
-          "goblin": 3,
+          "goblin": 2,
           "bat": 2,
           "slime": 1,
           "demon": 2

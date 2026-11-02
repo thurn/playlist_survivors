@@ -552,7 +552,8 @@ How clumps part in the line looks (ps-wnj.28):
   crystal cut's horde) easing to its 2.0 by 90 px (the game's bodies, whose
   rims the 4 px hull barely touches; a 6.5 rim there cost the knight his
   margin over the amber swarm). Hologram's lines are 3.6 and rim 4 (were 3.0
-  and 2.0), its shards' 2.2 and 1.2 (were 1.8 and 0.6). Brighter edge lines
+  and 2.0), its shards' 2.2 and 1.2 (were 1.8 and 0.6); the gem's rim 2.1
+  and shine 1.65 (were 1.7 and 1.5). Brighter edge lines
   were the wrong lever: they lift the coarse cyan types more than the finely
   cut magenta ones and broke the key.
 - **Measured** on the crystal cut's twelve stills and the game's six per
@@ -1220,8 +1221,7 @@ What the stills broke, and where it was fixed:
 
 Still breaking, filed as ps-wnj.28 (separation) and ps-wnj.29 (the rest): swarm separation (edge
 in ten of eleven steady stills, where a finely cut type's lines fill its
-body at the cut's distance; hologram and prism in five to seven; ps-wnj.28's
-outline hulls bring the cut's breaks from 25 to 8, below), the key in shot 3
+body at the cut's distance; hologram and prism in five to seven), the key in shot 3
 (20 s, every preset: three enemy families in one frame) and a few others,
 bright share in the duel (1.6 s: three elites alone in the void), and
 prism's floor p99 under its slam rings and formation shards (12 and 36 s).
@@ -1241,6 +1241,15 @@ ps-wnj.29 fixed the rest
   rendered under solid's L* 50).
 
 Only swarm separation still breaks (ps-wnj.28).
+
+ps-wnj.28's outline hulls (The Axes > Monsters, How clumps part in the line
+looks) take the cut's steady stills breaking it from 17 to 5 (edge 8 to 2,
+hologram 6 to 2, prism 2 to none, solid's duel as it was), and every other
+rule still passes in every still
+([evidence](../../demo3d/evidence/look/separation/README.md)). Shot 2's mix
+lost a goblin (3 to 2): the finely cut goblins drew 60% of its colour, and
+the hull brought them to an even split with the key family, breaking edge's
+key at 4 s; with one fewer the key family is the majority (0.61).
 
 ## The Game
 
@@ -1274,13 +1283,15 @@ and form once each by a hair): the monster looks' rules, which ps-wnj.28
 tunes for both players.
 
 **Separation (ps-wnj.28)**, the line looks' outline hulls (The Axes >
-Monsters): swarm separation breaks on the crystal cut's steady stills went
-from 25 to 8 (edge 10 to 2, hologram 7 to 1, prism 5 to 2, solid 3 as it
-was), on the game's from 10 to 8 (hologram 5 to 4 and its form break gone,
-prism 4 to 3, solid 1, edge none). The game's breaks are its framing: a
-body there is 85-150 px across at the metric's 960 px, wider than its
-32 px clump tile, so a dense tile is one body's interior, not a clump. The
-cut's are in [its evidence](../../demo3d/evidence/look/separation/README.md).
+Monsters): on the game's stills every hologram still's separation rises
+(70 s 8.3 to 10.8) and its form break goes, prism's rise a little, edge
+still passes and its knight's margin at 40 s rises (8.1 to 9.2), and perf
+holds the budget in every scenario of edge, hologram and prism with the new
+pass traced ([evidence](../../game/evidence/look/separation/README.md)).
+Hologram still breaks separation in five stills and prism in four: a game
+body is 85-150 px across at the metric's 960 px, wider than its 32 px clump
+tile, so a dense tile there is one body's interior, not a clump, and a
+wider hull (8 px) moved them by about 1.
 
 ## Checks and Evidence
 

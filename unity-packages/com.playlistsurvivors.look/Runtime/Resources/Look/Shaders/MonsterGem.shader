@@ -19,11 +19,11 @@ Shader "Look/MonsterGem"
         [HDR] _Flash ("Flash (shatter.core, linear)", Color) = (1, 1, 1, 1)
         _Refraction ("Refraction", Float) = 0.05
         _Behind ("Scene behind's gain", Float) = 1.6
-        _Shine ("Reflected bands' gain", Float) = 1.5
+        _Shine ("Reflected bands' gain", Float) = 1.65
         _ShineWidth ("Share of facets in a band", Range(0.05, 0.9)) = 0.2
         _Sparkle ("Trapped light on the beat", Float) = 0.5
         _Far ("A far body's glow", Float) = 1.0
-        _Rim ("Rim gain", Float) = 1.7
+        _Rim ("Rim gain", Float) = 2.1
         _RimPower ("Rim falloff", Float) = 3.0
         _Edge ("Line gain", Float) = 1.0
         _EdgePx ("Line width (px)", Float) = 1.0
