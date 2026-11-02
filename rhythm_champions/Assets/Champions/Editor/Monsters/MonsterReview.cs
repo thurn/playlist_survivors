@@ -33,7 +33,7 @@ namespace Champions.EditorTools.Monsters
         /// <summary>The shatter row's times after the break, one per cell, and the blow's launch distance (the sword's).</summary>
         static readonly float[] ShatterAt = { 0, 0.08f, 0.2f, 0.4f, 0.9f, 1.6f };
         const float BlowForce = 1.85f, YawDeg = 160f;
-        const int PosesPerRow = 3, CrowdWidth = 960, CrowdHeight = 540, MaxCrowd = 36, MaxSheetPx = 2400;
+        const int PosesPerRow = 3, CrowdWidth = 960, CrowdHeight = 540, MaxCrowd = 36, MaxSheetPx = 4800;
         /// <summary>The frame cells are cut from, and how many times larger it is drawn.</summary>
         internal const int FrameWidth = 1920, FrameHeight = 1080, Super = 2;
         static Color32 _void;

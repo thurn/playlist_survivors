@@ -178,9 +178,22 @@ Techniques that tend to work:
   it by transferring weights from the source part it replaces.
 - **Sharpen or soften creases on purpose**: move vertices or bevel so the
   angle crosses 24 degrees where you want a line, and stays under it where
-  you don't.
+  you don't. Keep each crease well clear of 24: one near it draws on some
+  facets and not others, a dashed line (the skeleton's vendor helmet).
 - **Replace fiddly accessories** with one clean shape, or drop them if they
   don't name the type.
+- **Drop what is hidden**: parts inside the armour in every view (toes in
+  boots, ribs under a cuirass) cost triangles and draw nothing. Count each
+  part's visible pixels over a ring of views before keeping it.
+- **Keep big facets from turning far from the camera**: a large facet seen
+  at a grazing angle catches the fresnel rim as a lit patch (the skeleton's
+  domed shield, and a ridged breastplate tried and dropped). Thin plates, and
+  facets facing up toward the game camera, stay dark.
+
+`tools/recipes/monster/skeleton.py` is a worked example: vendor parts kept,
+dropped and rebuilt from primitives skinned rigidly to one bone each, and
+the trailer's 24-degree creases flagged by the recipe itself (`creases()`),
+so the mesh is drawn as designed at every distance.
 
 Keep the vendor rig, bind poses and clips. For skin transfer, partitioning,
 stream compaction and bounds, follow
