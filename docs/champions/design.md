@@ -26,9 +26,9 @@ the old name.
 - The player picks an app that is playing music (Spotify, Apple Music, a
   browser) or a local file or playlist. The game mutes the app and plays its
   audio itself, 3 s late, so it knows every beat before the player hears it.
-- A white knight stands on an endless black grid. Neon monsters, every
-  crease of their dark glass bodies drawn in glowing lines, close in from
-  every side, stepping on the beat.
+- A white knight stands on an endless black grid. Neon monsters, low-poly
+  wireframes glowing on black like synthwave art, close in from every side,
+  stepping on the beat.
 - WASD, the arrows or a click move the hero freely. The sword swings by
   itself on the beat, about once a second, at the thickest part of the
   crowd. Monsters burst into tumbling shards on the frame they're hit,
@@ -50,9 +50,10 @@ the old name.
 
 ### The short version
 
-- **Every moment cinematic.** The look outranks everything. It starts from
-  the neon edge trailer, which already looks good, and changes only what
-  looks better changed, judged by eye.
+- **Every moment cinematic.** The look outranks everything. It aims for
+  retro 3D neon wireframe in the synthwave style, starts from the neon edge
+  trailer, which already looks good, and changes only what looks better
+  changed, judged by eye.
 - **The beat shapes everything; silence breaks nothing.** Every timing has a
   fallback in seconds. A song with no beat, a gap between songs or no music
   at all plays fine and costs the player nothing.
@@ -134,8 +135,9 @@ gameplay or measurement reason, without weakening a decision.
 19. **The trailer's edge look** (reopened 2026-11-02): monsters, the hero and
     structures are drawn as the neon edge trailer drew them, with
     `MonsterEdge.hlsl`'s 24-degree crease lines over a dark glass core,
-    ported from the frozen look package. Each monster then gets a mesh
-    designed for the look (the `monster-mesh-design` skill), and the
+    ported from the frozen look package. Each monster then gets a low-poly
+    mesh designed as a retro 3D neon wireframe (the `monster-mesh-design`
+    skill), and the
     trailer's drawing stays behind `--look trailer` for comparison. Look
     changes are judged by eye, never by thresholds. The "edge cuts" this
     replaced are deleted.
@@ -192,7 +194,7 @@ gameplay or measurement reason, without weakening a decision.
 | Fodder, elite, boss | Common monsters; tougher monsters with one telegraphed move; duel bosses. |
 | Mob | Fodder and elites together: everything a boss's entrance shatters. |
 | Edge look | The trailer's drawing: a mesh's creases sharper than 24 degrees lit in its colour over a dark glass core (`MonsterEdge.hlsl`). |
-| Monster mesh | A monster's model reworked for the edge look by the `monster-mesh-design` skill. |
+| Monster mesh | A monster's model reworked as a low-poly neon wireframe by the `monster-mesh-design` skill. |
 | Zone key | The floor's colour family at the moment. |
 | Special moment | The few events allowed to flash and shake: see [Restraint](#restraint). |
 | Break | A boss's stagger bar, filled by perfect dodges. |
@@ -689,22 +691,56 @@ chosen lines over a dark body, gated by a black-share threshold. They passed
 every number and were a severe visual regression, so they were deleted. This
 section starts again from the trailer.
 
+### The aim: retro 3D neon wireframe
+
+The look is **retro 3D neon wireframe**, grounded in synthwave: low-poly 3D
+models drawn as glowing lines along their edges on black, like the wireframe
+mountains, palm trees and cities of 80s synthwave art. The operator's
+references are in `captures/style-references/` in the main checkout. They're
+third-party images, so they stay outside the tree:
+
+- `synthwave-mountains-palm.png`: low-poly mountains and a palm tree with
+  every facet outlined, over a neon grid floor and a striped sun.
+- `wireframe-mountains-grid.png`: triangulated mountains either side of a
+  grid road.
+- `wireframe-objects-elephant.png`: a low-poly elephant head, a sphere, a
+  torus and a terrain patch, every edge drawn.
+- `neon-wireframe-plane-tunnel.png`: a paper plane of a dozen glowing edges
+  in a neon tunnel.
+- `synthwave-city.png`: towers drawn as neon edges of simple faceted solids.
+
+What they share, and what the monsters aim for:
+
+- **A 3D model, not a flat drawing.** Each object is a model with a
+  deliberately simple, low-poly topology, and its edges are the lines. The
+  lines describe volume: facets, planes, bands around a form.
+- **Built from simple shapes.** A mountain is a few big triangles, a palm
+  frond a strip of quads, a building a box. A monster is usually best built
+  the same way: a few simple faceted volumes (head, torso, limbs, weapon)
+  joined together. It's a guideline, and some monsters need more.
+- **Every line connects.** Each facet is a closed polygon and lines meet at
+  vertices, so the silhouette is closed too.
+- **Hidden lines are removed**: a dark body hides the lines behind it, and
+  the inside of every facet stays dark.
+- **One neon hue per object**, an even line weight and a soft glow.
+
+What misses it:
+
+- lit facet patches or glassy fills (the first port's stills);
+- broken or blotchy scratches (the deleted edge cuts);
+- so many tiny facets that the lines merge into a fill (the trailer's
+  goblins).
+
 ### The reference: the trailer
 
-The look is the neon action trailer in the frozen demo3d's edge preset, the
-operator's capture `captures/trailer-action-edge.mp4` (outside the tree; made
-by `just trailer-looks action`). **It looks good.** It is the baseline:
-Rhythm Champions starts from exactly that look and changes it only where a
-change looks better.
-
-**A monster is a line drawing.** This is the heart of the look and the
-operator's aim. Each figure is made of distinct, connected lines, with a
-clear, unbroken outline around it and dark between the lines and inside the
-figure, as every skeleton in
-[shield-circles.jpg](reference/shield-circles.jpg) is: thin continuous
-lines and a clean shield ellipse over black. Lit facet patches, glassy
-fills, and broken or blotchy scratches all miss it. The deleted edge cuts
-broke the lines, and the first port's stills lit the facets as patches.
+The closest the game has come is the neon action trailer in the frozen
+demo3d's edge preset, the operator's capture
+`captures/trailer-action-edge.mp4` (outside the tree; made by
+`just trailer-looks action`). **It looks good.** It is the renderer's
+baseline: Rhythm Champions starts from exactly that look and changes it only
+where a change looks better. Where it falls short of the aim, the cause is
+mostly the vendor meshes. Their dense, uneven topology was made for textured
+rendering, so some types scribble or fill in. The monster meshes fix that.
 
 What the trailer does, described rather than prescribed:
 
@@ -754,15 +790,19 @@ Where to start (things to try, not orders):
 
 ### Monster meshes
 
-Each of the ten monsters gets a mesh designed for the edge look, made from
-its vendor model with the project's `monster-mesh-design` skill, one bead
-per monster. The goal is a figure whose creases draw something coherent and
-handsome at game scale, in a crowd and up close, and that still moves with
-the vendor rig and clips.
+Each of the ten monsters gets a low-poly mesh designed as a retro 3D neon
+wireframe ([the aim](#the-aim-retro-3d-neon-wireframe)), made from its
+vendor model with the project's `monster-mesh-design` skill, one bead per
+monster. The goal is a model whose edges draw a coherent, handsome wireframe
+figure at game scale, in a crowd and up close, and that still moves with the
+vendor rig and clips.
 
-- Building a monster from simple joined shapes is often a good way to get
-  there. It's a guideline, not a rule: some monsters read better as they are,
-  and some need detail kept.
+- **Simple faceted shapes joined together** are the usual way, as the
+  references are built. It's a guideline, not a rule: some monsters need
+  detail kept.
+- **The topology is the drawing.** A designed mesh may draw every one of its
+  edges (a true wireframe, as the references do) or only its creases over 24
+  degrees, as the trailer does. The recipe says which, judged by eye.
 - A committed recipe builds each mesh locally from the vendor files, and its
   output is never committed, like every vendor-derived file.
 - Until the operator prefers a new mesh, the vendor mesh as the trailer drew

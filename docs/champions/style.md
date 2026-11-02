@@ -26,6 +26,8 @@ It answers three questions:
 
 The short version:
 
+- **Retro 3D neon wireframe**, synthwave-style: low-poly models of simple
+  shapes, drawn as glowing edges on black (design.md, The aim).
 - **Start from the trailer.** Change it only where the change looks better.
 - **Light comes from things.** The floor is void; lines, trails, sparks and
   the grid emit.
@@ -219,9 +221,10 @@ glass core (`void.body`), with a fresnel rim.
 - **Monster meshes**: each monster's mesh is redesigned for the look with
   the `monster-mesh-design` skill and judged by eye against the trailer's
   drawing, at game scale, in a crowd and up close.
-- **What to look for**: is each figure a line drawing, with distinct,
-  connected lines, a clear unbroken outline and dark inside, or does it break
-  into lit patches and scratches (design.md, The reference: the trailer)?
+- **What to look for**: does each figure read as a retro 3D neon wireframe
+  (design.md, The aim)? That means a low-poly model of simple shapes, its
+  lines connected into closed facets and a closed silhouette, dark inside.
+  Or does it break into lit patches and scratches?
   Does each type read as its figure at game scale?
   Does a crowd read as many figures, or as a coloured mass (the trailer's
   goblins)? Does the shatter pay off? Is the hero still the brightest thing?

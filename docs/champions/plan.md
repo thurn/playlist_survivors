@@ -338,6 +338,9 @@ trailer's, ported back:
   - `champions monster bake <type>` bakes from
     `rhythm_champions/tools/recipes/monster/<type>.py` when it exists, else
     from the vendor mesh, into ignored `Assets/Baked/Monsters/<type>/`.
+    A recipe may flag which edges draw: every edge of its low-poly mesh (a
+    true wireframe, design.md, The aim) or only creases over 24 degrees, the
+    vendor meshes' default.
   - Recipes may run Blender 5.2 LTS headless (`Blender --background
     --python`). Blender files and exports stay in ignored folders; the guard
     refuses `.blend`, `.fbx` and `.obj` in tracked paths.

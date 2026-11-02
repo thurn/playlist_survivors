@@ -1,16 +1,21 @@
 ---
 name: monster-mesh-design
-description: Design a new mesh for one Rhythm Champions monster from its vendor source asset, so that the trailer's edge look (MonsterEdge.hlsl, crease lines over a dark glass core) draws it as a coherent, handsome figure at game scale, in a crowd and up close, still moving with the vendor rig and clips. Use for the monster-mesh beads, or any time a monster's look in the edge look needs reworking at the mesh level.
+description: Design a new low-poly mesh for one Rhythm Champions monster from its vendor source asset, so that it reads as a retro 3D neon wireframe in the synthwave style (simple faceted shapes, glowing connected edges over a dark body) at game scale, in a crowd and up close, still moving with the vendor rig and clips. Use for the monster-mesh beads, or any time a monster's look in the edge look needs reworking at the mesh level.
 ---
 
 # Design a monster's mesh for the edge look
 
-You're designing one monster: its vendor model goes in, and a mesh comes out
-that the edge look draws beautifully. This is an art task. Your eye decides
-it, not a number.
+You're designing one monster: its vendor model goes in, and a low-poly
+model comes out that reads as a **retro 3D neon wireframe**, the synthwave
+look of glowing low-poly mountains, palm trees and cities on black. This is
+an art task. Your eye decides it, not a number.
 
 Read first:
 
+- [design.md, The aim: retro 3D neon wireframe](../../../docs/champions/design.md#the-aim-retro-3d-neon-wireframe),
+  and the operator's references it lists in `captures/style-references/` in
+  the main checkout (`/Users/dthurn/playlist_survivors/captures/style-references/`).
+  Look at them; they're the target.
 - [design.md, The Look](../../../docs/champions/design.md#the-look): the
   trailer is the reference, it looks good, and changes to it are judged by
   eye.
@@ -30,19 +35,32 @@ Read first:
 - a fresnel rim around the figure;
 - a small inner glow that flares on the beat.
 
-**What it should look like: a line drawing.** Distinct, connected lines,
-with a clear, unbroken outline around the figure and dark between the lines
-and inside it, as the skeletons in `docs/champions/reference/shield-circles.jpg`
-are. Not lit facet patches, not glassy fills, not broken or blotchy
-scratches. If the trailer's drawing of the vendor mesh shows patches or
-broken lines in our build, find out whether the renderer is off (compare
-with the trailer's own frames; report it on ps-6y2.28) before reworking the
-mesh.
+**What it should look like: a retro 3D neon wireframe.**
 
-So **the mesh's facet angles are the drawing.** A crease you want is a sharp
-edge. A surface you want quiet is smooth (neighbours under 24 degrees apart)
-or flat. Every sharp edge on the model is a stroke on screen, whether you
-meant it or not.
+- A 3D model with a deliberately simple, low-poly topology, usually a few
+  simple faceted volumes joined together.
+- Its edges are glowing lines that connect at vertices into closed facets,
+  so the silhouette is closed.
+- The dark body hides the lines behind it, and every facet stays dark
+  inside.
+- Not lit facet patches, glassy fills, broken or blotchy scratches, or a flat
+  outline drawing.
+
+If the trailer's drawing of the vendor mesh shows patches or broken lines in
+our build, find out whether the renderer is off before reworking the mesh:
+compare with the trailer's own frames, and report it on ps-6y2.28.
+
+So **the mesh's topology is the drawing.** With the 24-degree rule, a crease
+you want is a sharp edge, and a surface you want quiet is smooth (neighbours
+under 24 degrees apart) or flat. Every sharp edge on the model is a stroke
+on screen, whether you meant it or not. A designed low-poly mesh can instead
+draw every one of its edges, a true wireframe as the references are, if the
+bake lets the recipe flag edges (ps-6y2.28). Then each edge of the topology
+is a line you chose, so lay it out with care:
+
+- clean quads and triangles of even size;
+- edges that follow the form, like bands around a limb or ridges along a
+  back.
 
 ## What went wrong before, so you don't repeat it
 
@@ -67,8 +85,9 @@ In particular:
 - Read the evidence of monsters already done in
   `rhythm_champions/evidence/monsters/`, so this one joins them as a roster.
 - Write down in plain words:
-  - whether it reads as a line drawing: connected lines, an unbroken outline,
-    dark inside; or as lit patches and broken scratches, and where;
+  - whether it reads as a 3D neon wireframe (connected lines, closed facets,
+    a closed silhouette, dark inside) or as lit patches and broken
+    scratches, and where;
   - what reads and what doesn't, at game scale, in a crowd and up close;
   - what names the type: its silhouette, head, weapon, shield, wings, tusks,
     posture;
@@ -91,9 +110,10 @@ Decide the figure before the geometry:
 Guidelines, not rules. Each one has exceptions, and a frame that looks
 better beats any of them:
 
-- **Simple joined shapes often read well**: a clean faceted volume per
-  mass, meeting at clear joints. Some monsters read better with more detail
-  kept.
+- **Simple faceted shapes, joined together, are the usual way**, as the
+  synthwave references are built: a clean low-poly volume per mass (a
+  faceted dome of a head, a prism of a forearm), meeting at clear joints.
+  Some monsters need more detail kept.
 - **Fewer, larger facets read at game scale**; many small facets with sharp
   angles between them merge into a fill.
 - **Keep the silhouette's landmarks and negative spaces**: the gap between
@@ -185,9 +205,10 @@ the cost if you go over (the crowd draws 1,000).
   > You're an art director for a top-down neon game drawn as glowing line
   > art on black. Here are two drawings of the same monster, A and B, each
   > at three screen sizes, in three poses, its death shatter and a crowd:
-  > <paths>. Is each a drawing of distinct, connected lines with a clear,
-  > unbroken outline and dark inside, or does it break into patches and
-  > scratches, and where? Which reads better as a creature at the in-game
+  > <paths>. The style aimed for is retro 3D neon wireframe, as in synthwave
+  > art. Does each read as a low-poly 3D model of simple shapes whose
+  > glowing edges connect into closed facets and a closed silhouette, dark
+  > inside? Or does it break into patches and scratches, and where? Which reads better as a creature at the in-game
   > size and in the crowd? What's wrong with each, most important first,
   > concretely enough to act on? Under 300 words.
 
