@@ -2,6 +2,7 @@
     "name": "Champions.Editor",
     "rootNamespace": "Champions.EditorTools",
     "references": [
+        "Champions.Sim",
         "Champions.Client",
         "Champions.Render",
         "Unity.RenderPipelines.Core.Runtime",

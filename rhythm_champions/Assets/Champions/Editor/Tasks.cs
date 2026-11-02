@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using Champions.EditorTools.Effects;
+using Champions.EditorTools.Sound;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -28,6 +30,17 @@ namespace Champions.EditorTools
             Debug.Log("Tasks.Noop: project opened, Unity " + Application.unityVersion);
         }
 
+        /// <summary>
+        /// The libraries a player loads that only reference vendor files, into the ignored Assets/Baked/: the weapon
+        /// effects' Hovl meshes (<see cref="EffectBaker"/>) and the sound bank (<see cref="SoundBaker"/>). Each skips,
+        /// with a warning, when its vendor files are missing.
+        /// </summary>
+        public static void Bake()
+        {
+            EffectBaker.Bake();
+            SoundBaker.Bake();
+        }
+
         // URP's build preprocessing rewrites these tracked assets for the build's target. BuildPlayer
         // puts them back, so a build leaves the checkout clean.
         static readonly string[] RestoredAfterBuild = { PipelinePath, RendererPath, GlobalSettingsPath };
@@ -36,7 +49,8 @@ namespace Champions.EditorTools
         /// Builds the Mac player, an Apple silicon app drawing with Metal: `-backend mono|il2cpp`
         /// (default mono, plan.md Build Policy), `-buildOut &lt;dir&gt;` (default Builds/mac/&lt;backend&gt;),
         /// `-development`, `-scene &lt;path&gt;` (repeatable; default the build settings' scenes). The
-        /// shader variant budget (<see cref="ShaderVariantBudget"/>) fails a build over it.
+        /// shader variant budget (<see cref="ShaderVariantBudget"/>) fails a build over it. It bakes the libraries that
+        /// only reference vendor files first (<see cref="Bake"/>), so a build always has the current ones.
         /// </summary>
         public static void BuildPlayer()
         {
@@ -51,6 +65,7 @@ namespace Champions.EditorTools
             if (scenes.Length == 0) scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             if (scenes.Length == 0) throw new Exception("Tasks.BuildPlayer: no scenes in the build settings");
 
+            Bake();
             var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, impl);

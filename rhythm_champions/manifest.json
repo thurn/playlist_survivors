@@ -920,6 +920,237 @@
       "sourceSha256": "41162a2653ba20e6a65565640b3c51a475df2c69387b9bb5f113c66ad4830d2e",
       "guid": "7fec430887d724867a2483827db438a9",
       "use": "fodder: slime"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact01.wav",
+      "sourceSha256": "d40dacceeb52faf594145df2e8313cd02f925c38bf7269e47b552a90cfa3a7a5",
+      "guid": "d7568dee1a47844d2a1eaf636a1b6aba",
+      "use": "sound: slams and shockwaves"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact02.wav",
+      "sourceSha256": "becbd792b7af883702b2af84eec1116d29d18bc2bef7be8bcb91e0d2e69b7383",
+      "guid": "6bb706f6eddcd46aeb5c6c1500b36026",
+      "use": "sound: slams and shockwaves"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact03.wav",
+      "sourceSha256": "1f732e918c5aecf4cd5d8bc653441cf9d823e46fbb1fa09f908a5101ec5879a4",
+      "guid": "8c8357e8f6bec428eaf7f82c089c0b79",
+      "use": "sound: slams and shockwaves"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact01.wav",
+      "sourceSha256": "bb05853dd83e0b99f6c8eebd219d52cd1c694272c04f587527d13a47b6e240ca",
+      "guid": "be419f016e79f467fafc6c84b38191e5",
+      "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact02.wav",
+      "sourceSha256": "f269fa6b14e8d2dc2295a61aa95728c19011597e88dcd9428e69201285d1bd95",
+      "guid": "9baeac61653f1437e9fe612f16393a62",
+      "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_GenericPunch_Impact03.wav",
+      "sourceSha256": "9ee5c78b393c0b06bd0b25fd52f17ea569c4ec7dbb253fc62f57a6f78674a47d",
+      "guid": "70b2bb3a6976a4841a533cd821a9bbaa",
+      "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact01.wav",
+      "sourceSha256": "625edd7445eb64c57eecb88bdf4bd52045bba15bc697101518ac68feb4939a63",
+      "guid": "4b299b33e511342e593d97847dcfc6c8",
+      "use": "sound: the on-beat accent"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact02.wav",
+      "sourceSha256": "f9ce8dcbe9302c740c0fe03c5df0a012988ad1762760f90cd61a6726a70a8947",
+      "guid": "e43876ae899bc47b1ba06f1df6d24c0e",
+      "use": "sound: the on-beat accent"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Generic Magic and Impacts/RPG3_Magic2_HeavyImpact03.wav",
+      "sourceSha256": "7e1d444eb34ef699c3299b17810d7087114d8acdbf86c6c86eda976872bb4121",
+      "guid": "534e7e66ce8424034990dd6ca60d299f",
+      "use": "sound: the on-beat accent"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak01.wav",
+      "sourceSha256": "8f0a45aa8d7612cba212e5eeaf58d5f0c66592f76ca1de70dcf8c6a8a85914de",
+      "guid": "07121959d141245fdb59a0f76ddfd68c",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak02.wav",
+      "sourceSha256": "28db0592a7a36bdfb9ebc16e2953d0afa5b8b2e1b15b1b84d528396a852e65cf",
+      "guid": "d2c7d1053b14a4eea9752fa2b8ed9e18",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Ice Magic/RPG3_IceMagic2_IceBreak03.wav",
+      "sourceSha256": "9a4964c8d3e06ae7f0e5e147ead500b5fb7bb3484b3e061505574f033ae60af4",
+      "guid": "178c7e977140a49ffa008796ed052174",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Blade_Chop_mono.wav",
+      "sourceSha256": "4a3203011e74a0f54e897194030ecd3762e46ca0e43bffe8744b9529c45ff2f7",
+      "guid": "5de35d095a26a5042a71af599850b917",
+      "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_01_mono.wav",
+      "sourceSha256": "80b53f4fa4db4268c9ba9fbdedadaf0de5d98b3413495c06e83322e206485a12",
+      "guid": "2e80eeaa8ad78e74a9a4052b5a1f5bfb",
+      "use": "sound: the hero hurt"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_02_mono.wav",
+      "sourceSha256": "8452041de2d30b57bbd91881893b18459f7ab623e2dcb4474495884b65ab15ac",
+      "guid": "2e6c05f99b0327a47b2f4db0d3d0cc11",
+      "use": "sound: the hero hurt"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Medieval_Armor/IMPACT_Medieval_Armor_Hit_03_mono.wav",
+      "sourceSha256": "a566c15a0c4e49022e6de3c96cc73f5330bed1b565e5567cba57656de157742a",
+      "guid": "093c84c6ee6630347a1a910078fe142b",
+      "use": "sound: the hero hurt"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR1_mono.wav",
+      "sourceSha256": "590b388f6aa2c8621e2cd83a46429fa66d4c311cf18ea900a163277aaa1d9d43",
+      "guid": "03f23d0405c383c49a96f0eaa5eca358",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR4_mono.wav",
+      "sourceSha256": "0c596d90ad4cb4a523fe31faf49ccd2ed2c93b8520eb1b4eb8e6de56f6e30c2a",
+      "guid": "c87cb6bc22baef84287f38b148cb56ba",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Fragment_RR7_mono.wav",
+      "sourceSha256": "c305f3ee3665a77894980670065bd6e1c6f84ce60bbc629c3057b69a25508044",
+      "guid": "e9752ff5710883a47ac147508f95c110",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_02_mono.wav",
+      "sourceSha256": "b311bdba806cb7c54f19896b116b76f554ff4db5a74fa99c50508c46500e71d6",
+      "guid": "e219f4ba613916242bc11dd9df5a7448",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_04_mono.wav",
+      "sourceSha256": "a4001ec0bebf42fe26c389a6eabda152f058ff2fa07b1f5ad6feb3ccd84489d3",
+      "guid": "4d320ffab649e654c87018d582222bbf",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/SHATTER/SHATTER_Glass_Medium_05_mono.wav",
+      "sourceSha256": "9b732be9a57e20d8d49455f0a8263b755efaef5d40f9a0f355ac96e2cd568a67",
+      "guid": "2c3b8339e0255e446924fc5e36396f53",
+      "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Swing_Stab_Body_Gore_mono.wav",
+      "sourceSha256": "5adaed418c1eb63241f256bbbed7f239a35cddd3278abc4c9362b4d2c9b389fa",
+      "guid": "e4b09e3e0e77f054fb13d43f7686ba08",
+      "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR10_mono.wav",
+      "sourceSha256": "3838e1cead5a18add8e34fbfb3d38d3d7a3830ed401b90f9fc6b11627ae9eec6",
+      "guid": "20d7ac096d9229e4a8d53bde3dd6cec2",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR1_mono.wav",
+      "sourceSha256": "1032196ea3810984d2d487453b2df35c3e1e77884fdc0161fa2dfd39362ba390",
+      "guid": "e9c8818791394004a983e8a998f205e9",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR3_mono.wav",
+      "sourceSha256": "ca6e72a815e5b5092d40798126192e5dd3c691baeb2ceadaf786c4360a0b8d67",
+      "guid": "815a64062ed23f84abd992ad9731f491",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR5_mono.wav",
+      "sourceSha256": "a5636919c209080cfbc926d257cffcbfdb0dc589e2e5882a506ae5a14ec3aec9",
+      "guid": "02ac5c00f96ec2442955656da5aec566",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR6_mono.wav",
+      "sourceSha256": "11d43537ffdb4db28dc3ce7e212995f6833c94825e4fbdc33b35fe4a8d35efa5",
+      "guid": "f60812e2ac885d6469d2ddd6076c43b6",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR8_mono.wav",
+      "sourceSha256": "fc32845d039d0d0984265dff72c94f03c34376fd7a6a4b56b0969f4473361060",
+      "guid": "4dc921904d1e03a478b1341b4c158c84",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WEAPONS/Melee/Swords/SWORD_Whoosh_Hit_Armor_Hard_RR9_mono.wav",
+      "sourceSha256": "41aec2f9bba6bac9b1c32ca71b882c436ff1c597885b39eaebb53fb76487ef08",
+      "guid": "d749a299b8cf427458f36ff641158df3",
+      "use": "sound: the hero's swings"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Air/WHOOSH_Air_Fast_Bright_RR1_mono.wav",
+      "sourceSha256": "4b3c5afceb8697cb09d3b6a41fdfd3afa5e947aae583b8db45808206a8403cf1",
+      "guid": "0f3fbe77479bca744a2d39974a7749e5",
+      "use": "sound: dash whooshes"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Air/WHOOSH_Air_Fast_Bright_RR2_mono.wav",
+      "sourceSha256": "765378518897c6e0ae050697858fc1f9be48dff08255673bf74c20ef9455671c",
+      "guid": "27d66f1bd1800c6449964852ad8ed0d2",
+      "use": "sound: dash whooshes"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Air/WHOOSH_Air_Fast_Bright_RR3_mono.wav",
+      "sourceSha256": "697cace1be26aa702c5408a1b52f2a866a2ccb333a744c327a20964f72c915c1",
+      "guid": "db1e4ceda95c5124f9a4ce1e5541bfcf",
+      "use": "sound: dash whooshes"
     }
   ]
 }

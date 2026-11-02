@@ -10,7 +10,9 @@ and its endless grid, and with a music source the music plays 3 s late
 through the plugin while its beats feed the sim, whose beats send the beat
 wave across the grid and whose section changes move the zone key. The
 edge-cut pipeline and the edge crowd draw monsters (the skeleton so far) in
-the crowd's test scene.
+the crowd's test scene. The hero's weapon effects draw Hovl's slash shapes in
+white (`--gallery` shows them all), and the hero's sounds are baked and
+scheduled, for the assembly to wire to the sim.
 
 ## Commands
 
@@ -49,7 +51,10 @@ the music silently), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p
 JPEGs at those times, then quit) or `--capture-stills DIR --stills-scenes
 NAMES|all` (the scripted scenes' PNG stills, ID passes and views, as
 `champions stills` runs them; `world` is the world's: 120 BPM to 30 s with a
-section change at 12 s, then beatless with a dash at 34 s), and `--tier
+section change at 12 s, then beatless with a dash at 34 s), and `--gallery`
+(the weapon effects' gallery: every effect in turn at the hero's spot, looping
+in a window; with `--capture-stills DIR`, a still of each, as `--stills-scenes
+gallery`; with `--bench-out PATH` too, each effect's GPU time), and `--tier
 low|medium|high` (the quality tier; without it the pause menu's last choice,
 or the GPU's guess: an M-series Max or Ultra plays High, a Pro Medium,
 anything else Low). With music, the log's `Music:` lines show
@@ -73,14 +78,18 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
   (Champions.Client: Boot, launch options, `Music/` (the plugin's bindings,
   the music clock, the player and its sources), `Loop/` (the frame loop's
   clocks and the sim driver), `World/` (the world presenter: sim events to
-  the world), `Scenes/` (the stills' scripted scenes)), `Render/`
+  the world), `Scenes/` (the stills' scripted scenes, the effects' gallery), `Sound/`
+  (the hero's sounds: the bank, the scheduler, the beat's aggregation and the
+  presenter from the sim's events)), `Render/`
   (Champions.Render: stills and the type-ID pass, `Look/`: the palette,
+  `Effects/`: the weapon effects, their sparks and their shaders,
   `Crowd/`: the edge crowd, its shatter and their shaders, `World/`: the
   grid, the beat wave, event rings, the zone key, the camera, the post and
   the quality tiers, with the `World.hlsl` globals every world-reacting
   shader reads, `Shaders/`), `Editor/` (Champions.Editor: build tasks, the
   warm editor, the variant budget, `EdgeCuts/`: the edge cuts' export, bake
-  and review), `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset,
+  and review, `Effects/` and `Sound/`: the effect library's and sound bank's
+  bakes, run before every build), `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset,
   its renderer and the post profile).
 - `plugin/`: the music plugin, a Cargo workspace copied from the frozen
   `native/` (crates plugin, analysis, audio, capture, stream; the analyzer's
@@ -122,6 +131,29 @@ from both sides) and its lines (EdgeLines: constant pixel width, additive in
 the instance's tint, the less important lines fading as the monster gets
 small, the beat wave's flare); `EdgeShatter` breaks a kill into the cut's
 pieces on the GPU on its impact frame. `EdgeLook` holds the look's inputs.
+
+## Weapon effects and sounds
+
+The hero's weapon effects (design.md, The Look > Weapon effects) are Hovl's
+slash meshes and magic sword drawn through our own shaders
+(`Render/Effects/`): `Slash.shader` sweeps an arc's head fast in and slow
+out, the band a thin white core at the outer edge over a faint white-blue body,
+coming to a point at the head and narrowing to nothing behind it, streaked and
+dissolved by Hovl's noise; sparks are compute (one seed dispatch per frame
+with new bursts, one procedural draw). `Content/effects.json` holds each
+cue's layers; `Effects` takes commands (`IEffectCommands`: `Fire(cue, shot)`,
+`Orbit(...)`) and draws one instanced call per mesh in use. The build bakes
+`Assets/Baked/Effects/Resources/Effects.asset`, which references the synced
+Hovl files and copies nothing. [The gallery's evidence](evidence/effects/README.md)
+has a still and the cost of every cue.
+
+The hero's sounds (design.md, Sound) are game/'s scheduler and aggregation,
+ported (`Client/Sound/`): `Content/sounds.json` names each category's vendor
+clips, the build bakes the bank (`Assets/Baked/Sounds/Resources/`, onsets
+measured), and `SoundPresenter.Take` turns the sim's events into sounds the
+moment the sim knows them: swings on their impacts, a dash's whoosh in heard
+time with the on-beat accent under it, Leap Slam's landing, hits, each kill's
+shatter and the hero's hurt.
 
 ## The lean pipeline
 
