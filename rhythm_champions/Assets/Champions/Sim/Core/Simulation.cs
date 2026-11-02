@@ -28,7 +28,8 @@ namespace Champions.Sim
     /// beat fires (the attack cadence takes it), then the cadence's seconds pulse. The beat's state is
     /// updated before each of those and at the tick's end, after which the per-tick systems run: quiet
     /// moments, the run clock, the hero's walk, its dash, its health, then the attacks (<see cref="Arsenal"/>,
-    /// which takes the tick's beats and strikes in time order). Inputs take effect when given, at the
+    /// which takes the tick's beats and strikes in time order) and the horde (<see cref="Sim.Horde"/>, which
+    /// acts on the tick's beats in time order). Inputs take effect when given, at the
     /// frontier, judged from when they were heard (<see cref="HeroWalk"/>, <see cref="Dashes"/>,
     /// <see cref="Judgement"/>); hits on the hero settle once the inputs heard by then are in
     /// (<see cref="HeroHealth"/>). Nothing simulated is ever revised.
@@ -44,6 +45,7 @@ namespace Champions.Sim
         readonly Dashes dashes;
         readonly HeroHealth health;
         readonly RunRules run;
+        readonly Horde horde;
         readonly double knownAtBudget;
         double cursor;
 
@@ -77,6 +79,7 @@ namespace Champions.Sim
             Arsenal.Begin(this);
             foreach (var u in config.Loadout) Arsenal.Set(this, u);
             foreach (var d in config.Dummies) Enemies.Spawn(this, d.X, d.Y, d.Radius, d.Health);
+            horde = new Horde(this, config, Enemies);
         }
 
         public SimState State { get; }
@@ -91,6 +94,10 @@ namespace Champions.Sim
         public QuietMoments Quiet { get; }
         /// <summary>The hero's blows' one way into the world (<see cref="Sim.Strikes"/>).</summary>
         public Strikes Strikes { get; }
+        /// <summary>Every enemy, and the one grid over them.</summary>
+        public Enemies Enemies { get; }
+        /// <summary>The horde: its mobs' motion, elite moves, spores and, with a level, the spawner.</summary>
+        public Horde Horde => horde;
 
         /// <summary>The hero's dash (the progression equips, the mods tune it).</summary>
         internal Dashes Dashes => dashes;
@@ -100,7 +107,6 @@ namespace Champions.Sim
 
         /// <summary>The structures the hero meets, once installed (<see cref="UseStructures"/>); null: nothing blocks.</summary>
         internal IStructures Structures { get; private set; }
-        public Enemies Enemies { get; }
         /// <summary>The hero's attacks and mods, and every blow it deals.</summary>
         public Arsenal Arsenal { get; }
 
@@ -133,6 +139,7 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)(uint)State.Hero.Dashes | (ulong)(uint)Strikes.Struck << 32);
                 h = Hashing.Fold(h, Hashing.Bits(State.Hero.DashReadyAt));
                 h = Hashing.Fold(h, (ulong)(uint)Enemies.Alive | (ulong)(uint)Arsenal.Kills << 32);
+                h = Hashing.Fold(h, (ulong)(uint)horde.Spawned);
                 h = Hashing.Fold(h, (ulong)(uint)inputs.Count);
                 h = Hashing.Fold(h, (ulong)(uint)Stream.Accepted.Length);
                 return h;
@@ -187,7 +194,7 @@ namespace Champions.Sim
             health.Took(heard, Now);
             bool held = State.Held;
             run.Control(this, control, Now);
-            if (State.Held != held) hero.HeldChanged(this);
+            if (State.Held != held) HeldChanged();
         }
 
         /// <summary>Gives a recorded input again (a replay's), at the sim's time now.</summary>
@@ -216,7 +223,7 @@ namespace Champions.Sim
         {
             bool held = State.Held;
             run.Hold(this, reason, on, Now);
-            if (State.Held != held) hero.HeldChanged(this);
+            if (State.Held != held) HeldChanged();
         }
 
         /// <summary>Ends the run (death, victory).</summary>
@@ -224,7 +231,13 @@ namespace Champions.Sim
         {
             bool held = State.Held;
             run.End(this, why, Now);
-            if (State.Held != held) hero.HeldChanged(this);
+            if (State.Held != held) HeldChanged();
+        }
+
+        void HeldChanged()
+        {
+            hero.HeldChanged(this);
+            horde.HeldChanged();
         }
 
         /// <summary>The hero lets go of its held keys and target, so a key held through the cards never walks it after.</summary>
@@ -338,6 +351,7 @@ namespace Champions.Sim
             dashes.Tick(this, end);
             health.Tick(this, end);
             Arsenal.Tick(this, end);
+            horde.Tick(end);
         }
 
         void FireBeat(double t)
@@ -350,6 +364,7 @@ namespace Champions.Sim
             State.Bar = bar;
             State.Downbeat = downbeat;
             Arsenal.Beat(this, t, i, downbeat, bar);
+            horde.Beat(t, i);
             Cadenced(t, i, Cadence.OnBeat(i, t, State.Beat == Reliability.Reliable));
         }
 

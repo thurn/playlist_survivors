@@ -18,6 +18,11 @@ namespace Champions.Sim
         public double StartTime = Defaults.StartTime;
         public double KnownAtBudget = Defaults.KnownAtBudget;
         public RunStart Start = Defaults.Start;
+        /// <summary>
+        /// Level 1 plays: its spawner fills the world (Content/level1.json). Off, the world stays empty but for what
+        /// a test or still places: the defaults are a test's, and the game turns it on.
+        /// </summary>
+        public bool Level;
 
         /// <summary>The build the run starts with: Sword Slash at rank 1 (design.md, "The attacks"), or a scripted one.</summary>
         public Upgrade[] Loadout = StartLoadout();
@@ -28,7 +33,10 @@ namespace Champions.Sim
         /// <summary>The design's starting build.</summary>
         public static Upgrade[] StartLoadout() => new[] { Upgrade.Of(AttackKind.SwordSlash, 1) };
 
-        /// <summary>The run's config on <paramref name="content"/> (null: the defaults, which the content files repeat; dashes.json adds the dashes past the plain one).</summary>
+        /// <summary>
+        /// The run's config on <paramref name="content"/> (null: the defaults, which the content files repeat;
+        /// dashes.json adds the dashes past the plain one, enemies.json the cast).
+        /// </summary>
         public SimConfig Build(GameContent content)
         {
             return new SimConfig
@@ -44,6 +52,8 @@ namespace Champions.Sim
                 Mods = content != null ? content.Mods.Clone() : new ModRules(),
                 Loadout = (Upgrade[])Loadout.Clone(),
                 Dummies = (Dummy[])Dummies.Clone(),
+                Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
+                Level = !Level ? null : content != null ? content.Level.Clone() : new LevelRules(),
             };
         }
 
@@ -69,9 +79,10 @@ namespace Champions.Sim
                 w.Write(d.Radius);
                 w.Write(d.Health);
             }
+            w.Write(Level);
         }
 
-        /// <summary>Reads the inputs of an <c>inputs.bin</c> of <paramref name="version"/> (version 1: the start loadout, no dummies).</summary>
+        /// <summary>Reads the inputs of an <c>inputs.bin</c> of <paramref name="version"/> (version 1: the start loadout, no dummies; before 3, no level).</summary>
         public static RunInputs Read(BinaryReader r, int version, string path)
         {
             var run = new RunInputs
@@ -94,6 +105,8 @@ namespace Champions.Sim
             run.Dummies = new Dummy[Count(r, path, "dummies")];
             for (int i = 0; i < run.Dummies.Length; i++)
                 run.Dummies[i] = new Dummy { X = r.ReadDouble(), Y = r.ReadDouble(), Radius = r.ReadDouble(), Health = r.ReadDouble() };
+            // Version 3 added the level.
+            if (version >= 3) run.Level = r.ReadBoolean();
             return run;
         }
 

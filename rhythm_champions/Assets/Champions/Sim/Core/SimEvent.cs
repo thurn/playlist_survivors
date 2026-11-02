@@ -3,8 +3,9 @@ namespace Champions.Sim
     /// <summary>
     /// What the sim tells the client (plan.md, "The Sim", Shape): the beats and the beat's state, the
     /// attack cadence's strikes and changes, quiet moments, the run's start, holds and end, the hero's
-    /// moves, dashes, hits, heals and death, and the attacks: the build, swings, blows, waves, hits and
-    /// kills on the enemies. The systems' beads add their kinds after these.
+    /// moves, dashes, hits, heals and death, the attacks: the build, swings, blows, waves, hits and kills on
+    /// the enemies, and the horde: spawns, departures, formed waves, elite moves and spores. The systems'
+    /// beads add their kinds after these.
     /// </summary>
     public enum SimEventKind
     {
@@ -35,6 +36,12 @@ namespace Champions.Sim
         Orbit,
         EnemySpawn,
         DashEcho,
+        EnemyGone,
+        HordeWave,
+        EliteTelegraph,
+        EliteMove,
+        Spore,
+        SporeEnd,
     }
 
     /// <summary>
@@ -410,6 +417,97 @@ namespace Champions.Sim
             e.D2 = toX;
             e.D3 = toY;
             e.D4 = duration;
+            return e;
+        }
+
+        /// <summary>A mob was left far behind and goes, without a shatter (the ring brings another): I0 its id; D0/D1 where.</summary>
+        public static SimEvent EnemyGone(double t, int id, double x, double y)
+        {
+            var e = Of(SimEventKind.EnemyGone, t);
+            e.I0 = id;
+            e.D0 = x;
+            e.D1 = y;
+            return e;
+        }
+
+        /// <summary>
+        /// A formed wave entered (its mobs' spawns follow it): I0 its <see cref="WaveKind"/>, I1 how many, I2 their
+        /// cast type; D0/D1 its centre (a line's middle, a swarm's), D2/D3 its heading (a line's march).
+        /// </summary>
+        public static SimEvent HordeWave(double t, WaveKind kind, int count, int type, double x, double y, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.HordeWave, t);
+            e.I0 = (int)kind;
+            e.I1 = count;
+            e.I2 = type;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = dirX;
+            e.D3 = dirY;
+            return e;
+        }
+
+        /// <summary>
+        /// An elite's or mushroom's telegraph starts filling at D0 and its move lands at D1 (as planned; on the beat,
+        /// the beat I2, else -1): I0 the enemy, I1 its <see cref="Sim.EliteMove"/>; D2/D3 where it stands, D4/D5 its
+        /// aim (a unit vector: a charge's line).
+        /// </summary>
+        public static SimEvent EliteTelegraph(double t, int enemy, EliteMove move, in Telegraph telegraph, double x, double y,
+            double aimX, double aimY)
+        {
+            var e = Of(SimEventKind.EliteTelegraph, t);
+            e.I0 = enemy;
+            e.I1 = (int)move;
+            e.I2 = telegraph.LandBeat;
+            e.D0 = telegraph.Start;
+            e.D1 = telegraph.Land;
+            e.D2 = x;
+            e.D3 = y;
+            e.D4 = aimX;
+            e.D5 = aimY;
+            return e;
+        }
+
+        /// <summary>
+        /// An elite's or mushroom's move landed on its beat, or was called off (I2 1: the world held, or it died):
+        /// I0 the enemy, I1 its <see cref="Sim.EliteMove"/>; D0/D1 where it stood, D2/D3 a charge's end (a spore's
+        /// range end; a slam's centre).
+        /// </summary>
+        public static SimEvent EliteMove(double t, int enemy, EliteMove move, bool calledOff, double x, double y, double toX, double toY)
+        {
+            var e = Of(SimEventKind.EliteMove, t);
+            e.I0 = enemy;
+            e.I1 = (int)move;
+            e.I2 = calledOff ? 1 : 0;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = toX;
+            e.D3 = toY;
+            return e;
+        }
+
+        /// <summary>A spore fired: I0 its number, I1 the mushroom; D0/D1 from, D2/D3 its velocity, D4 its range.</summary>
+        public static SimEvent Spore(double t, int spore, int owner, double x, double y, double vx, double vy, double range)
+        {
+            var e = Of(SimEventKind.Spore, t);
+            e.I0 = spore;
+            e.I1 = owner;
+            e.D0 = x;
+            e.D1 = y;
+            e.D2 = vx;
+            e.D3 = vy;
+            e.D4 = range;
+            return e;
+        }
+
+        /// <summary>A spore ended: I0 its number, I1 why (<see cref="Sim.SporeEnd"/>); D0/D1 where.</summary>
+        public static SimEvent SporeEnd(double t, int spore, SporeEnd why, double x, double y)
+        {
+            var e = Of(SimEventKind.SporeEnd, t);
+            e.I0 = spore;
+            e.I1 = (int)why;
+            e.D0 = x;
+            e.D1 = y;
             return e;
         }
 

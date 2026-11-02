@@ -1,6 +1,6 @@
 {
   "format": "rhythm-champions-session",
-  "version": 2,
+  "version": 3,
   "build": "test",
   "runtime": ".NET 10.0.7",
   "platform": "",
@@ -11,8 +11,9 @@
   "start": "OnControl",
   "loadout": ["swordSlash:1"],
   "dummies": 0,
+  "level": false,
   "end": 60,
-  "hash": "CA84944A4A88B7B7",
+  "hash": "710B2DDB49745D2A",
   "events": 253,
   "entries": 1696,
   "inputs": 26
