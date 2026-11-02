@@ -32,6 +32,9 @@ namespace Champions.Render.Structures
 
         static readonly int IdInstances = Shader.PropertyToID("_StructureInstances");
         static readonly int IdPieces = Shader.PropertyToID("_StructurePieces");
+        /// <summary>Physics scenes made so far: each gets a name of its own, for a disposed shatter's scene unloads only
+        /// later and Again builds the next run's in the same frame.</summary>
+        static int _scenesMade;
 
         sealed class Piece
         {
@@ -107,7 +110,7 @@ namespace Champions.Render.Structures
                 _types[i] = s;
             }
             _ownScene = physicsScene == null;
-            _scene = physicsScene ?? SceneManager.CreateScene("StructureShatter", new CreateSceneParameters(LocalPhysicsMode.Physics3D));
+            _scene = physicsScene ?? SceneManager.CreateScene("StructureShatter " + ++_scenesMade, new CreateSceneParameters(LocalPhysicsMode.Physics3D));
             _physics = _scene.GetPhysicsScene();
             _root = new GameObject("StructureShatter");
             SceneManager.MoveGameObjectToScene(_root, _scene);

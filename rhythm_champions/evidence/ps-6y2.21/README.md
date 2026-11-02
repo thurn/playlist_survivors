@@ -5,8 +5,9 @@ sim event wired to its presenter through one `EventDispatch`, scripted
 inputs, the first tuning, sessions replayed in the player, and the level's
 stills in CI. The horde draws in the trailer's edge look through ps-6y2.28's
 crowd (`Client/Crowd/TrailerCrowd.cs` behind the crowd presenter's
-`ICrowdView`; `StandInCrowd` when no monster is baked); the hero, the bosses
-and the structures draw as stand-ins until ps-6y2.29-30 land.
+`ICrowdView`; `StandInCrowd` when no monster is baked); since ps-6y2.29-30
+the knight in white, the bosses in that crowd and the structures in their
+zone's edge colour draw in the run too ([In the run](#in-the-run-in-the-edge-look)).
 
 ## What plays
 
@@ -91,8 +92,9 @@ drop each, 4 s silent gaps), and in the player on real music.
 
 ## In the player
 
-`--fixed-time --walk reference --seed N` headless, about six times faster
-than real time (a 16-minute run in about 2 minutes, stand-ins drawn):
+`--fixed-time --walk reference --seed N` headless, six to ten times faster
+than real time (a 16-minute run in about 2 minutes with the stand-ins these
+seeds were run with, about 90 s in the edge look since ps-6y2.28-30):
 
 - On 24 minutes of the tree's CC songs (`public/reactive/cc-*`), 12 seeds:
   6 reach and beat the Ogre, every one dies in the second half (spores
@@ -110,6 +112,36 @@ between each pair (none after the last):
 ```sh
 just champions-play --headless --fixed-time --file house.m3u --walk reference --seed 4
 ```
+
+## In the run, in the edge look
+
+Rerun on staging 017135bf, after ps-6y2.28-30 put the crowd, the knight, the
+bosses and the structures in the edge look: the victory run's log is the same
+line for line ([victory-run.log](victory-run.log)), with no presenter faults,
+no exception and no stand-in warning (a presenter without its bake logs one).
+Its frames, kept by adding `--capture-stills DIR --stills-at T,...` to the
+command above (T is the app's time, which a fixed-time run's song follows):
+
+| A cottage at 0:20 | The Ogre lands (7:26) | The Ogre breaks (8:39) |
+| --- | --- | --- |
+| ![structure](run-structure.jpg) | ![ogre entrance](run-ogre-entrance.jpg) | ![ogre break](run-ogre-break.jpg) |
+
+| The dragon's duel (14:40) | The dragon breaks (16:06) | The victory card |
+| --- | --- | --- |
+| ![dragon duel](run-dragon-duel.jpg) | ![dragon break](run-dragon-break.jpg) | ![victory](run-victory.jpg) |
+
+**Again was broken by the edge-look structures, now fixed.** Each run's
+structures shatter in a PhysX scene of their own, and a disposed one's scene
+unloads asynchronously, so Again (the old run's presentation disposed and the
+new one's built in the same frame) threw `Scene with name "StructureShatter"
+already exists`: the new run had no presentation and the old one's presenters
+faulted every frame. `StructureShatter` now names each scene apart. Checked
+with a temporary hook (not committed) that pressed Again on the first end
+card of a headless idle run: before the fix, the exception and faults; after,
+run 2 started from the frontier on the same music (song 35.8 s), played to
+its death and showed its card with no faults. The same clash broke the
+`structures` still scene when it followed `level` (CI's `all` plays other
+scenes between them, so it never met it).
 
 ## Replays: the same hash in .NET and in the player
 
@@ -143,12 +175,14 @@ stays near 110 s of its 300 s.
 
 `champions stills --scene level` (in `all`): level 1 through the run's own
 presenters and the reference player on a scripted song, the sim running ahead
-to minute 4: the crowd at minute 4, a loud surge, and a card moment.
+to minute 4: the crowd at minute 4, a loud surge, and a card moment
+(re-rendered at 017135bf: the knight in white among the trailer's crowd).
 
 | Crowd at minute 4 | A loud surge | A card moment |
 | --- | --- | --- |
 | ![crowd](level-crowd.jpg) | ![surge](level-surge.jpg) | ![cards](level-cards.jpg) |
 
-The structure field, beat-wave phases, both duels and the effects gallery
-are the `structures`, `world`, `duel-ogre`, `duel-dragon` and `gallery`
-scenes, all in CI's `stills` step.
+The structure field, beat-wave phases, both duels, both bosses' deaths and
+the effects gallery are the `structures`, `world`, `duel-ogre`,
+`duel-dragon`, `duel-ogre-death`, `duel-dragon-death` and `gallery` scenes,
+all in CI's `stills` step (ps-6y2.29-30 keep their evidence).
