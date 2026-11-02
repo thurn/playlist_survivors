@@ -120,6 +120,8 @@ namespace Game.Client
             public BotKind? Bot;
             /// <summary>`--pause-at S`; negative when not given.</summary>
             public double PauseAt = -1;
+            /// <summary>`--walk-lead S`: each held key reaches the sim S seconds after it was heard, as a live key does (0: at once).</summary>
+            public double WalkLead;
         }
 
         /// <summary>
@@ -179,7 +181,8 @@ namespace Game.Client
                     GpuProbe = a.Path("--gpu-probe-out"), Profile = a.Path("--profile-out"),
                     Moments = a.Path("--moments-out"), GraphicsStates = a.Path("--graphics-states-out"),
                 },
-                Scripted = { Debug = a.Get("--debug"), Walk = a.Get("--walk"), Bot = Bot(a.Get("--bot")), PauseAt = a.Float("--pause-at", -1) },
+                Scripted = { Debug = a.Get("--debug"), Walk = a.Get("--walk"), Bot = Bot(a.Get("--bot")), PauseAt = a.Float("--pause-at", -1),
+                             WalkLead = Math.Max(0, a.Float("--walk-lead", 0)) },
             };
             foreach (var flag in LookFlags.ValuedFlags) a.Get(flag); // claimed here, parsed by the package
             foreach (var flag in LookFlags.Switches) a.Has(flag);

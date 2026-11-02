@@ -4,7 +4,8 @@
 // hero.body, thicker than a monster's, and a core of light in its chest seen through the glass, so the
 // small figure at the trailer's framing is a bright cut-crystal knight among the swarm's coloured
 // outlines. Gains are tuned so the knight sits on the hero light rung (L* p90 about 98, under a fifth of
-// it clipped) at the game's 36 m framing (game/evidence/look/hero). The blade is the same glass with every facet edged, its spine lit and its blow flare kept
+// it clipped) at the game's 36 m framing (game/evidence/look/hero); the lines are 1.8 px, not 1.4, for the game's own
+// wider framing at the run's peak, where the 1.4 px knight mid-swing sat only 3 L* over the swarm (ps-wnj.18). The blade is the same glass with every facet edged, its spine lit and its blow flare kept
 // (HeroLook.hlsl). The beat lifts the lines and the core. Opaque, in the crystal's queue as the monsters.
 Shader "Look/HeroEdge"
 {
@@ -15,7 +16,7 @@ Shader "Look/HeroEdge"
         [HDR] _EmissionColor ("Added light (the low-health pulse)", Color) = (0, 0, 0, 1)
         _Blade ("The blade's material", Float) = 0
         _AllEdges ("Every triangle edge a line (the blade)", Float) = 0
-        _EdgePx ("Line width (px)", Float) = 1.4
+        _EdgePx ("Line width (px)", Float) = 1.8
         _Glow ("Blade spine light", Float) = 0.6
         _BladeFlare ("Blow flare (0..1, set by HeroBlade)", Float) = 0
         _Glass ("Glass light", Float) = 0.03

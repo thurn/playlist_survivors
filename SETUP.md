@@ -96,6 +96,9 @@ Backspace ends the run and returns there. `just game --app Music` skips it and p
 music 3 s late (Delayed listening: the app is muted while tapped). The first live run asks for
 System Audio Recording; the player is signed so macOS remembers the grant
 ([the title screen and live runs](game/evidence/title/README.md)).
+`--look edge`, `solid`, `hologram` or `prism` picks the neon look's preset (edge without the flag;
+`--look classic` is the look before it, and `--monster-look`, `--world`, `--post` and the other
+axis flags override one axis: [neon-look.md, Flags](docs/design/neon-look.md#flags)).
 Adding `--spike` plays the sync spike instead, a click on every beat, and
 `just game-tool spike <name> --file <path>` measures that windowless
 ([the spike's evidence](game/evidence/spike/README.md)). The `-build`, `-play` and `-tool`

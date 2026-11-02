@@ -1208,6 +1208,19 @@ preset:
 Windows (Cygnus) comes after the Mac, as in ps-msz: an operator-pending row
 checks the package's shaders build and run there.
 
+**Shipped (ps-wnj.18)**, in
+[game/evidence/look/presets](../../game/evidence/look/presets/README.md):
+`game perf --looks edge,solid,hologram,prism` holds the budget in every
+scenario of every preset, with the build's warm-up traced in all four;
+`game beat` finds every moment on its frame at the peak and in free mode in
+each, and `--walk-lead` plays free presses that resolve in heard time (their
+blows and kills drawn when they arrive); zones ease the floor and fog
+through the palette's four zone hues (the run's fifth zone, lava, returns to
+the first). The edge knight's lines widened to 1.8 px for the game's framing.
+The game's stills pass every rule but `halo_min` and
+`swarm_separation_min` (and hologram's background light once), the post's
+and the monster looks' rules ps-wnj.19 tunes for both players.
+
 ## Checks and Evidence
 
 ### The style guide

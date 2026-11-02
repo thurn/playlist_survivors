@@ -71,7 +71,7 @@ namespace Game.Tests
         public void TheRunsOtherInputsAndScriptedPlay()
         {
             var o = Parse("--headless --file a.ogg --seed 7 --easy --arsenal magic-wand:8,empty-tome:1 --bot idle --pause-at 12.5 " +
-                          "--debug change@7 --walk right@9-11 --loop-out loop.csv");
+                          "--debug change@7 --walk right@9-11 --walk-lead 0.3 --loop-out loop.csv");
             Assert.That(o.Run.Seed, Is.EqualTo(7UL));
             Assert.That(o.Run.Easy, Is.True);
             Assert.That(o.Run.Loadout, Is.EqualTo(new[] { ("magic-wand", 8), ("empty-tome", 1) }));
@@ -79,6 +79,7 @@ namespace Game.Tests
             Assert.That(o.Scripted.PauseAt, Is.EqualTo(12.5));
             Assert.That(o.Scripted.Debug, Is.EqualTo("change@7"));
             Assert.That(o.Scripted.Walk, Is.EqualTo("right@9-11"));
+            Assert.That(o.Scripted.WalkLead, Is.EqualTo(0.3).Within(1e-6));
             Assert.That(System.IO.Path.IsPathRooted(o.Outputs.Loop), Is.True, "paths are absolute");
             Assert.That(System.IO.Path.IsPathRooted(o.File), Is.True);
             Assert.That(o.Flags[0], Is.EqualTo("--headless"), "the flags without the executable");
@@ -86,6 +87,7 @@ namespace Game.Tests
             Assert.That(Parse("").Run.Mode, Is.EqualTo(GameMode.Grid));
             Assert.That(Parse("--mode free").Run.Mode, Is.EqualTo(GameMode.Free));
             Assert.That(Parse("").Scripted.PauseAt, Is.LessThan(0));
+            Assert.That(Parse("").Scripted.WalkLead, Is.EqualTo(0), "keys reach the sim at once");
         }
 
         [Test]

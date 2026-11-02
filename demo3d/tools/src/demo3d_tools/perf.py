@@ -31,6 +31,14 @@ states it draws into the build's warm-up (`--graphics-states-out`, game/Assets/S
 gitignored; its captures go to captures/game/perf-trace/): the next `game build` ships them, and its
 player warms them up at boot, so no first sighting compiles a shader mid-run. `--no-warmup` measures
 without the warm-up. `--player-args` adds flags to every scenario's player (a look preset: `--look hologram`).
+
+`--looks edge,solid,hologram,prism` runs the scenarios once per look preset (`--look NAME` after `--player-args`), each
+look's captures under captures/game/perf/NAME/ and its summary and probes in game/evidence/DIR/NAME/, with `--trace`
+tracing every look into the one warm-up (a trace adds to the file's states). Every summary has the budget's verdict
+(unity-game.md, Performance targets: no frame over 33 ms on the Mac): `over_budget` lists each counted probe frame, each
+first sighting's first frame and each profiled frame of the main thread over it (not a timed point's warm-up frame, which
+re-creates the hand-drawn frame's pooled targets: 18-34 ms at every point, the run's quiet first minute too), and
+`--budget` exits 1 when one is.
 """
 
 from __future__ import annotations
@@ -68,6 +76,8 @@ TRACE = "Assets/StreamingAssets/GraphicsStates/Metal.graphicsstate"
 TRACE_PLAYER = "Builds/mac/trace"
 # The columns that aren't parts of the frame's work.
 NOT_PARTS = {"frame_ms", "wait_ms", "probe_ms", "cpu_ms"}
+# The budget: no frame over 33 ms on the Mac (unity-game.md, Performance targets).
+BUDGET_MS = 1000 / 30
 
 
 @dataclass(frozen=True)
@@ -115,6 +125,8 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
                         "in a development player of its own; `game build` after ships them")
     p.add_argument("--no-warmup", action="store_true", help="the player doesn't warm up the build's traced graphics states")
     p.add_argument("--player-args", default="", help="extra player flags for every scenario, e.g. '--look hologram'")
+    p.add_argument("--looks", help="comma-separated look presets: the scenarios once under each (`--look NAME`)")
+    p.add_argument("--budget", action="store_true", help=f"exit 1 when a frame goes over the budget ({BUDGET_MS:.1f} ms)")
     p.set_defaults(func=cmd_perf)
 
 
@@ -144,32 +156,41 @@ def cmd_perf(a: argparse.Namespace) -> int:
             scene=None, cold=False, force=False))
         if code != 0:
             return code
-    root = wt.root / "captures" / "game" / ("perf-trace" if a.trace else "perf")
-    summary, failed = {}, []
-    for scenario in (s for s in SCENARIOS if s.name in wanted):
-        extra = ((["--graphics-states-out", str(wt.project / TRACE)] if a.trace else []) + (["--no-warmup"] if a.no_warmup else [])
-                 + shlex.split(a.player_args))
-        result = run(exe, wt.root, root / scenario.name, scenario, extra, ablate=a.ablate)
-        summary[scenario.name] = result
-        if not result["ok"]:
-            failed.append(scenario.name)
-        print(report_line(scenario.name, result))
-    root.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(summary, indent=2) + "\n"
-    (root / "summary.json").write_text(text, encoding="utf-8")
-    if a.evidence:
-        evidence = wt.project / "evidence" / a.evidence
-        evidence.mkdir(parents=True, exist_ok=True)
-        (evidence / "summary.json").write_text(text, encoding="utf-8")
-        for name in summary:
-            probe = root / name / "gpu-probe.json"
-            if probe.exists():
-                shutil.copy(probe, evidence / f"gpu-probe-{name}.json")
-    print(f"perf: summary in {(root / 'summary.json').relative_to(wt.root)}")
+    base = wt.root / "captures" / "game" / ("perf-trace" if a.trace else "perf")
+    looks = a.looks.split(",") if a.looks else [None]
+    failed, over = [], []
+    for look in looks:
+        root = base / look if look else base
+        summary = {}
+        for scenario in (s for s in SCENARIOS if s.name in wanted):
+            extra = ((["--graphics-states-out", str(wt.project / TRACE)] if a.trace else []) + (["--no-warmup"] if a.no_warmup else [])
+                     + shlex.split(a.player_args) + (["--look", look] if look else []))
+            result = run(exe, wt.root, root / scenario.name, scenario, extra, ablate=a.ablate)
+            summary[scenario.name] = result
+            name = f"{look}/{scenario.name}" if look else scenario.name
+            if not result["ok"]:
+                failed.append(name)
+            if result["over_budget"]:
+                over.append(name)
+            print(report_line(name, result))
+        root.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(summary, indent=2) + "\n"
+        (root / "summary.json").write_text(text, encoding="utf-8")
+        if a.evidence:
+            evidence = wt.project / "evidence" / a.evidence / (look or "")
+            evidence.mkdir(parents=True, exist_ok=True)
+            (evidence / "summary.json").write_text(text, encoding="utf-8")
+            for name in summary:
+                probe = root / name / "gpu-probe.json"
+                if probe.exists():
+                    shutil.copy(probe, evidence / f"gpu-probe-{name}.json")
+        print(f"perf: summary in {(root / 'summary.json').relative_to(wt.root)}")
+    if over:
+        print(f"perf: over the budget ({BUDGET_MS:.1f} ms): {', '.join(over)}", file=sys.stderr)
     if failed:
         print(f"perf: failed: {', '.join(failed)}", file=sys.stderr)
         return 1
-    return 0
+    return 1 if a.budget and over else 0
 
 
 def run(exe: Path, repo: Path, out: Path, s: Scenario, extra: list[str] | None = None, ablate: bool = False) -> dict:
@@ -222,12 +243,26 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario, extra: list[str] | None =
                 errors.append(f"{timed} of {len(points)} probe points")
         else:
             errors.append("no probe")
+    result["over_budget"] = over_budget(result)
     result["ok"] = not errors
     if errors:
         result["errors"] = errors
         for e in errors:
             print(f"perf: {s.name}: {e} (log {log})", file=sys.stderr)
     return result
+
+
+def over_budget(result: dict) -> list[dict]:
+    """The scenario's frames over the budget: each probe point's slowest counted frame, a first sighting's first frame
+    (what a first use costs; a timed point's first is the probe's warm-up), and each profiled main-thread frame."""
+    over = []
+    for p in result.get("probe", {}).get("points", []):
+        for key in ("max_ms", "first_ms") if p.get("first") else ("max_ms",):
+            if p.get(key) is not None and p[key] > BUDGET_MS:
+                over.append({"probe": p.get("label", f"at {p['at']:g}"), key: p[key]})
+    over += [{"main": s["song"], "frame_ms": s["frame_ms"], **({"cpu_ms": s["cpu_ms"]} if "cpu_ms" in s else {})}
+             for s in result.get("cpu", {}).get("slow", []) if s["frame_ms"] > BUDGET_MS]
+    return over
 
 
 def ablate_points(points: list[float]) -> list[float]:

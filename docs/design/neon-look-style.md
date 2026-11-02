@@ -464,6 +464,12 @@ Notes:
   and 0.13 after, the crystal cut's 0.05, while a lit Synty floor carries far
   more. The game's stills have no view json, so `floor_p99` runs on the
   crystal cut only.
+- **The hero's margin needs the hero in sight** (ps-wnj.18): the monsters'
+  ID render marks the crowd alone, so in a clump round the knight the
+  monsters standing behind it cover its capsule too. Under 5% of the capsule
+  clear of the render (`hero_visible`), the margin isn't measured: the
+  game's 30 s still at minute 25 left 38 px (2.4%) of the knight and scored
+  -24 to -46 in every preset, a measure of the shards and lines in the gaps.
 - **Timing rules stay where they are**: beat steps (`game beat`, the trailer
   checks), impact-frame payoffs (death and break checks) and the rules in
   Motion above, measured from event logs, not pixels.

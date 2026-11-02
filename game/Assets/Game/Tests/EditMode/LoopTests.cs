@@ -127,6 +127,40 @@ namespace Game.Tests
         }
 
         /// <summary>
+        /// `--walk-lead` (ScriptedKeys): a scripted press reaches the sim the lead after its time, heard at its time, as a
+        /// live key does, so a windowless run plays a free press resolving in heard time (ps-wnj.18): its blow is stamped
+        /// from when it was heard, though the sim settles it only on taking the key, past its impact's frames.
+        /// </summary>
+        [Test]
+        public void AScriptedKeyWithALeadReachesTheSimLateAndStrikesInHeardTime()
+        {
+            var content = GameContent.Load(Path.Combine(Application.dataPath, "..", "Content"));
+            (double impact, double settled) Strike(double lead)
+            {
+                var sim = new Simulation(new SimConfig
+                {
+                    Mode = GameMode.Free, Content = content, Arsenal = new ArsenalConfig { Weapons = new[] { ("sword", 1) }, Cards = false },
+                });
+                var keys = new ScriptedKeys("z@2-2.02", lead);
+                int cursor = 0;
+                for (int i = 1; i <= 4 * 60; i++)
+                {
+                    keys.Apply(sim);
+                    sim.StepTo(i / 60.0);
+                    foreach (var e in sim.EventsSince(cursor))
+                        if (e.Kind == SimEventKind.Attack && e.AsAttack.IsSword) return (e.AsAttack.Impact, sim.Now);
+                    cursor += sim.EventsSince(cursor).Length;
+                }
+                return (double.NaN, double.NaN);
+            }
+            var atOnce = Strike(0);
+            var late = Strike(0.3);
+            Assert.That(late.impact, Is.EqualTo(atOnce.impact).Within(1e-9), "the blow lands at the same song time: heard at the key's");
+            Assert.That(atOnce.settled, Is.LessThan(atOnce.impact), "without a lead the sim settles the blow ahead of its impact");
+            Assert.That(late.settled, Is.GreaterThan(late.impact + 0.2), "with Bluetooth's 0.3 s lead it settles well past its impact");
+        }
+
+        /// <summary>
         /// A free press, live (ps-w9p.10): its strike is seen and its swing heard about PressImpactS after the key goes
         /// down, on the built-in speakers (38 ms of output latency) and on Bluetooth (250 ms), though the key reaches the
         /// sim a lead late. Real time at 60 fps with ±2 ms of jitter and the DSP clock in 256-frame buffers, as above; a Z

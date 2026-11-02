@@ -96,3 +96,17 @@ def test_a_first_sightings_first_frame_is_kept_apart_from_the_counted_ones() -> 
     assert s["points"][1] == {"at": 41.25, "alive": 300, "median_ms": 8.0, "max_ms": 8.0, "first_ms": 28.0,
                               "label": "death bat, zone 1", "first": True}
     assert "first" not in s["points"][0] and s["points"][2]["first"] is False  # timed points, one with a sighting in it
+
+
+def test_the_budget_counts_probe_frames_first_sightings_and_main_thread_frames_over_33_ms() -> None:
+    result = {
+        "probe": {"points": [{"at": 40, "max_ms": 12.0, "first_ms": 38.7},  # a timed point's warm-up: not a frame shown
+                             {"at": 50, "max_ms": 34.0, "first_ms": 9.0},
+                             {"at": 61.2, "max_ms": 8.0, "first_ms": 20.0, "label": "first death", "first": True},
+                             {"at": 63.5, "max_ms": 8.0, "first_ms": 41.0, "label": "first break", "first": True}]},
+        "cpu": {"slow": [{"song": 41.0, "frame_ms": 20.0, "cpu_ms": 19.0, "top": "engine", "alloc_bytes": 0},
+                         {"song": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0, "top": "engine", "alloc_bytes": 0}]},
+    }
+    assert perf.over_budget(result) == [{"probe": "at 50", "max_ms": 34.0}, {"probe": "first break", "first_ms": 41.0},
+                                        {"main": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0}]
+    assert perf.over_budget({"cpu": {"frames": 0}}) == []

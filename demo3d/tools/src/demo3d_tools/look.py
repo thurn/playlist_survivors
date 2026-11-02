@@ -394,6 +394,9 @@ HUE_TOL = 20.0  # HSV degrees: a judged pixel this near a role's hue conforms
 NEUTRAL_C = 15.0  # a role under this C*ab is neutral (white, grey, the void): no hue to conform to
 FORM_TILE, FORM_MIN = 32, 0.25  # monster form per tile (px), in tiles a monster body covers this share of
 HERO_H_M, HERO_R_M = 1.8, 0.5  # the hero's region above its feet in the view json: a capsule this tall and wide
+# The share of the hero's capsule clear of the monsters' ID render under which its margin isn't measured: the render
+# marks the crowd alone, so monsters standing behind a knight in a clump cover its capsule (ps-wnj.18: 2.4% clear).
+HERO_VISIBLE_MIN = 0.05
 SWARM_C, SWARM_L = 30.0, 25.0  # a monster pixel candidate: coloured and lit
 SWARM_TILE = 32  # px: wider than one monster at the trailer's 32-42 m framing
 SWARM_DENSE, SWARM_CLOSE = 0.5, 1  # a dense tile: one enemy hue covers half of it, gaps of up to 2 px closed
@@ -572,7 +575,8 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
     """The guide's mask rules, from the ID render (monsters, structures; bool at the still's NEON_W size) and the
     view json: the floor's L* p50/p90/p99 (ground-plane pixels clear of monsters, structures and the hero; p99 is
     the grid's lines), the
-    hero's margin (its L* p90 less the monsters'), monster form, readability (TD15's |dL*| against the
+    hero's margin (its L* p90 less the monsters', unmeasured when under HERO_VISIBLE_MIN of its capsule, hero_visible,
+    is clear of the monsters), monster form, readability (TD15's |dL*| against the
     ground round them) and the background's light (background_light: the share of the frame's linear luminance in
     pixels clear of monsters, structures and, with the view json, the hero, under the emitter rung: the grid, the
     floor's halos and the world's glow, which must not drown the swarm). Monster form is a monster's own L* span, not the crowd's (whose types differ in L*): the
@@ -612,7 +616,9 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
     if floor.any() and view.get("floor", True):
         f50, f90, f99 = np.percentile(lum[floor], [50, 90, 99])
         out.update({"floor_p50": float(f50), "floor_p90": float(f90), "floor_p99": float(f99)})
-    if hero.any() and body.any():
+    if region.any():
+        out["hero_visible"] = float(hero.sum() / region.sum())
+    if hero.any() and body.any() and out.get("hero_visible", 0) >= HERO_VISIBLE_MIN:
         out["hero_margin"] = float(np.percentile(lum[hero], 90) - np.percentile(lum[body], 90))
     return out
 

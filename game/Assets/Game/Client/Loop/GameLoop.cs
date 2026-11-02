@@ -85,6 +85,8 @@ namespace Game.Client.Loop
     /// - `--arsenal "garlic:8,fire-trail:3"`: the hero's starting weapons and ranks, in slot order, in place of the sword;
     ///   `--no-cards`: levels count without opening their cards, so the arsenal stays as given (for weapons' stills);
     /// - `--walk "right@9-11,up@11-12.5"`: keys held over song-time spans (<see cref="ScriptedKeys"/>), for a walking hero in stills;
+    ///   `--walk-lead S` has each reach the sim S seconds after it was heard, as a live key reaches it the lead late (a free
+    ///   press resolving in heard time);
     /// - `--bot positioning|idle`: the sweeps' bot plays the run and picks its cards (<see cref="BotInput"/>), for the full run;
     /// - `--sessions DIR`, `--no-session` and `--watch` (<see cref="Sessions"/>): where runs are recorded,
     ///   and with --watch, the run replayed once it ends (under --watch, `--seconds N` ends the run, not the launch);
@@ -279,7 +281,7 @@ namespace Game.Client.Loop
             _pauseAt = options.Scripted.PauseAt;
             _commands = new DebugCommands(options.Scripted.Debug, content);
             _menu = new DebugMenu(camera, content);
-            _walk = new ScriptedKeys(options.Scripted.Walk);
+            _walk = new ScriptedKeys(options.Scripted.Walk, options.Scripted.WalkLead);
             if (replayed == null) _bot = BotInput.For(options.Scripted.Bot, config.Seed, content);
             if (_bot != null) Driver.Events.Subscribe(_bot);
 

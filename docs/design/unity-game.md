@@ -2212,7 +2212,36 @@ reworked to consume sim events.
 
 ### The look
 
-The look is the reference command's, held on every frame of a live run.
+**Since ps-wnj the look is a preset of the look package**
+([neon-look.md](neon-look.md)): neon crystal in the void, in one of four
+presets, `edge`, `solid`, `hologram` or `prism` (`--look`, edge without
+it; `just game --look prism`), each a palette and an option on every axis
+(monsters, structures, world, post, vfx, hero, motion), any of which a flag
+overrides. Every preset runs the whole game (ps-wnj.18,
+[game/evidence/look/presets](../../game/evidence/look/presets/README.md)):
+
+- **The frame budget holds in each**: `game perf --looks
+  edge,solid,hologram,prism` runs the standard scenarios once per preset
+  (see Performance targets).
+- **Timing is the look's least concern**: `game beat` finds every key moment
+  on its frame in every preset, at the run's peak and in free mode, where a
+  press's blow and kills resolve in heard time (`--walk-lead`, in
+  Manual QA's debug surfaces).
+- **Zones** take the palette's zone hues (`VoidWorld`): the floor's lines
+  and the fog ease to the next zone's tint over two bars from its downbeat,
+  under `hued-zones` most visibly. The run's five zones (neon, blossom,
+  snow, crypt, lava) take a palette's four hues in turn, so lava, the
+  victory zone, comes back to the first.
+- **The forks are gone**: the crowd, the shatter (monsters' and
+  structures'), the effects runtime, the post stack and the beat globals are
+  the package's; what stays in game/ is the run's own (presenters, the
+  arena's bake, `NightLook` for the classic post).
+
+`--look classic` (every axis `classic`) is the look below, kept for parity
+checks.
+
+The classic look was the reference command's, held on every frame of a live
+run.
 
 - **Dark world**: Synty ruins and forest in near darkness under a violet
   moon (the neon palette: purple ambient and fog, magenta mist, a dark
@@ -2971,6 +3000,22 @@ frame of a probed run, and its JSON rebuilt whole after each point. A probed
 scenario's collections now track the run's (the 30-minute run with its 102
 first sightings: 3, from 8; the run alone: 2).
 
+**Shipped (ps-wnj.18): every look preset in budget.** `game perf --looks
+edge,solid,hologram,prism` runs the standard scenarios once per preset, and
+every summary carries the budget's verdict (`over_budget`: each counted probe
+frame, first sighting's first frame and main-thread frame over 33.3 ms;
+`--budget` exits 1 on one). The build's warm-up is traced in every preset
+(`game perf --trace --looks ...`, each preset added to the one trace: 70
+variants in 94 states), since the looks' shaders compiling at a first
+sighting had broken the budget (prism's break, 38.7 ms). On the Mac, in
+every preset: probe p99 at the peak, the break and the finale 5.7 to 13.6
+ms; no first sighting's first frame over 30.4 ms (the probe's warm-up
+included); the sim's step 0.21 to 0.29 ms p99 at 285 or more alive; no
+main-thread frame over 12.7 ms in the 30-minute run. A timed probe point's
+first frame, which re-creates the hand-drawn frame's pooled targets (18 to
+34 ms at any point), isn't a frame the game shows and isn't counted. Numbers
+in [game/evidence/look/presets](../../game/evidence/look/presets/README.md).
+
 ## What Carries Over, and What Changes
 
 Both prototypes were built under constraints this game doesn't have. Native
@@ -3473,6 +3518,11 @@ The game provides these so each state above can be reached on demand:
   `--start-minute <n>`, `--level <file>` (a level's schedule and arena),
   `--fixed-time`, `--headless`, `--seconds <n>`; and for presenters' checks,
   `--events <file>` (a scripted event feed beside the sim's) and `--overlay`.
+  `--walk "right@9-11,z@12-12.02"` holds keys over song-time spans, and
+  `--walk-lead S` has each reach the sim S seconds after it was heard, as a
+  live key reaches it the lead late (about 0.09 s on speakers, 0.3 s on
+  Bluetooth; a fixed-time run's own lead is about a frame): a free press then
+  resolves in heard time, past its frames, in a windowless run (ps-wnj.18).
   Under `--fixed-time` the frames drive a File or Replay source's music, so a
   run takes minutes rather than its song time, and a File run waits each
   frame until the analysis covers its frontier, so reruns show the same

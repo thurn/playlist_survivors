@@ -382,6 +382,14 @@ def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:
     # Game's view json marks its ID render as the crowd alone: the hero still, no floor.
     crowd_only = look.mask_rules(img, monsters, None, {**top_down(w, h), "floor": False})
     assert "floor_p50" not in crowd_only and crowd_only["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
+    # A clump standing round and behind the knight covers its capsule in the crowd's ID render: too little of the hero
+    # is clear of it to measure.
+    buried = monsters.copy()
+    buried[140:180, 140:180] = True
+    buried[160, 160] = False
+    hidden = look.mask_rules(img, buried, None, {**top_down(w, h), "floor": False})
+    assert hidden["hero_visible"] < look.HERO_VISIBLE_MIN and "hero_margin" not in hidden
+    assert crowd_only["hero_visible"] > 0.9
     # A flat monster, with no view json: no floor or hero, and no form; it stands well off the ground.
     img[256:320, 0:64] = CYAN
     flat = look.mask_rules(img, monsters, None, None)
