@@ -1,5 +1,5 @@
 {
-  "note": "The crystal cut (trailer.md, The Crystal Cut): the action trailer's music window and pace, played as a showcase of the crystal horde and of shattering. Only the dark environments (crypt, neon, lava and the night forest), glowing crystal monsters under a darker grade and a low bloom threshold, crystal structures, and towering white-gold crystal formations on the hero's path (each shot's crystals, trailer.md Crystal formations) that the hero's blows smash on the strong beats, fifteen over seven shots, each placed just within one blow's reach, but the climax's two, which stand in the horde ring of its boss fight (trailer.md, The boss fight) where the dragon's breaths smash them. `--trailer crystal`; its look stands in for --monster-style, --structure-style and their tunes unless the command line names them.",
+  "note": "The crystal cut (trailer.md, The Crystal Cut): the action trailer's music window and pace, played as a showcase of the crystal horde and of shattering, in the look package's void world (neon-look.md, The Trailer; ps-wnj.17). Every shot plays on the void's open ground (layout void: nothing blocks but its formations), hosted by the forest's resident scene, whose whole set the void hides; each shot is a zone of the kit (zone: the palette's zone tint under hued-zones, the four zones each twice, neon's, crypt's, lava's and the forest's old places in turn). One camera grammar: one heading for every shot (yaw 0, so the grid runs along and across the frame), one framing per shot from a ladder by the shot's role (the hook's duel 20 m, the long shots 42 to 44 m, the quickening 38 then 36 m, the finale 32 m). The shots were the Synty cut's, each turned by its old heading and centred on the void, so each frames as it did. Towering crystal formations on the hero's path (each shot's crystals, trailer.md Crystal formations) that the hero's blows smash on the strong beats, fifteen over seven shots, each placed just within one blow's reach, but the climax's two, which stand in the horde ring of its boss fight (trailer.md, The boss fight) where the dragon's breaths smash them. Cuts are the look's transitions (palette flashes and impulse wipes, DemoMain.Trailer). `--trailer crystal --look PRESET`; its look stands in for --monster-style, --structure-style and their tunes unless the command line names them.",
   "name": "crystal",
   "song": "action",
   "base": "overdrive",
@@ -16,7 +16,9 @@
   "shots": [
     {
       "cut": "start",
-      "environment": "neon",
+      "environment": "forest",
+      "layout": "void",
+      "zone": 0,
       "viewWidthM": 20,
       "prerollBeats": 4,
       "hero": {
@@ -31,38 +33,35 @@
         "slashR@anchor",
         "spin@anchor",
         "slashL@anchor"
-      ],
-      "grade": {
-        "exposure": -0.2,
-        "contrast": 10,
-        "saturation": 4
-      }
+      ]
     },
     {
       "cut": "81.1",
-      "environment": "crypt",
-      "viewWidthM": 40.5,
+      "environment": "forest",
+      "layout": "void",
+      "zone": 1,
+      "viewWidthM": 44,
       "path": {
         "via": [
           [
-            16,
-            -20
+            -21.0,
+            -33.0
           ],
           [
-            14,
-            4
+            -23.0,
+            -9.0
           ],
           [
-            14,
-            34
+            -23.0,
+            21.0
           ],
           [
-            36,
-            46
+            -1.0,
+            33.0
           ],
           [
-            60,
-            30
+            23.0,
+            17.0
           ]
         ],
         "stepM": 1.9
@@ -87,51 +86,46 @@
         "spin@84.3",
         "spin@86.3"
       ],
-      "grade": {
-        "exposure": -0.45,
-        "contrast": 14,
-        "saturation": 6,
-        "temperature": -4
-      },
       "crystals": [
         {
           "at": [
-            22.0,
-            22.4
+            -15.0,
+            9.4
           ]
         },
         {
           "at": [
-            30.5,
-            36.2
+            -6.5,
+            23.2
           ]
         },
         {
           "at": [
-            47.0,
-            42.2
+            10.0,
+            29.2
           ]
         }
       ]
     },
     {
       "cut": "89.1",
-      "environment": "lava",
-      "viewWidthM": 45,
-      "viewWidthToM": 50,
+      "environment": "forest",
+      "layout": "void",
+      "zone": 2,
+      "viewWidthM": 44,
       "path": {
         "via": [
           [
-            -14,
-            40
+            36.1,
+            -23.3
           ],
           [
-            22,
-            30
+            17.7,
+            9.2
           ],
           [
-            70,
-            68
+            -43.1,
+            16.3
           ]
         ],
         "stepM": 1.9
@@ -157,30 +151,23 @@
       "spells": [
         "lightning@downbeat"
       ],
-      "grade": {
-        "exposure": -0.2,
-        "contrast": 10,
-        "saturation": 6,
-        "temperature": 4
-      },
-      "yawDeg": 135,
       "crystals": [
         {
           "at": [
-            31.1,
-            29.8
+            8.0,
+            13.2
           ]
         },
         {
           "at": [
-            42.4,
-            43.9
+            -6.6,
+            13.8
           ]
         },
         {
           "at": [
-            49.8,
-            51.3
+            -17.0,
+            13.8
           ]
         }
       ]
@@ -188,29 +175,30 @@
     {
       "cut": "97.1",
       "environment": "forest",
-      "viewWidthM": 40,
-      "yawDeg": -45,
+      "layout": "void",
+      "zone": 3,
+      "viewWidthM": 42,
       "path": {
         "via": [
           [
-            52.5,
-            28.5
+            -2.1,
+            -14.1
           ],
           [
-            64,
-            40
+            14.1,
+            -14.1
           ],
           [
-            44,
-            60
+            14.1,
+            14.1
           ],
           [
-            24,
-            40
+            -14.1,
+            14.1
           ],
           [
-            44,
-            20
+            -14.1,
+            -14.1
           ]
         ],
         "stepM": 1.9,
@@ -238,51 +226,46 @@
       "spells": [
         "ring@downbeat"
       ],
-      "grade": {
-        "exposure": -0.2,
-        "contrast": 8,
-        "saturation": 8,
-        "temperature": -2
-      },
       "crystals": [
         {
           "at": [
-            40.3,
-            53.3
+            6.8,
+            12.0
           ]
         },
         {
           "at": [
-            26.8,
-            37.9
+            -13.6,
+            10.7
           ]
         },
         {
           "at": [
-            30.2,
-            25.7
+            -19.9,
+            -0.4
           ]
         }
       ]
     },
     {
       "cut": "105.1",
-      "environment": "neon",
-      "viewWidthM": 36,
-      "yawDeg": 0,
+      "environment": "forest",
+      "layout": "void",
+      "zone": 0,
+      "viewWidthM": 38,
       "path": {
         "via": [
           [
-            -14,
-            -20
+            -19.0,
+            -25.0
           ],
           [
-            -14,
-            28
+            -19.0,
+            23.0
           ],
           [
-            24,
-            30
+            19.0,
+            25.0
           ]
         ],
         "stepM": 1.9
@@ -307,24 +290,18 @@
       "spells": [
         "lightning@downbeat"
       ],
-      "grade": {
-        "exposure": -0.15,
-        "contrast": 8,
-        "saturation": 10,
-        "temperature": -6
-      },
       "crystals": [
         {
           "at": [
-            -19.3,
-            17.7
+            -24.6,
+            15.0
           ],
           "heightM": 8
         },
         {
           "at": [
-            -2.9,
-            29.4
+            -7.9,
+            24.4
           ],
           "heightM": 8
         }
@@ -332,30 +309,31 @@
     },
     {
       "cut": "109.1",
-      "environment": "crypt",
-      "viewWidthM": 32,
-      "yawDeg": 45,
+      "environment": "forest",
+      "layout": "void",
+      "zone": 1,
+      "viewWidthM": 36,
       "path": {
         "via": [
           [
-            52.8,
-            36.8
+            8.5,
+            4.0
           ],
           [
-            56,
-            40
+            8.5,
+            8.5
           ],
           [
-            44,
-            52
+            -8.5,
+            8.5
           ],
           [
-            32,
-            40
+            -8.5,
+            -8.5
           ],
           [
-            44,
-            28
+            8.5,
+            -8.5
           ]
         ],
         "stepM": 1.9,
@@ -381,35 +359,30 @@
       "spells": [
         "ring@downbeat"
       ],
-      "grade": {
-        "exposure": -0.45,
-        "contrast": 14,
-        "saturation": 6,
-        "temperature": -4
-      },
       "crystals": [
         {
           "at": [
-            37.6,
-            33.4
+            0.1,
+            -9.2
           ]
         }
       ]
     },
     {
       "cut": "111.1",
-      "environment": "lava",
+      "environment": "forest",
+      "layout": "void",
+      "zone": 2,
       "viewWidthM": 36,
-      "yawDeg": 180,
       "path": {
         "via": [
           [
-            30,
-            70
+            -0.0,
+            -28.0
           ],
           [
-            30,
-            14
+            0.0,
+            28.0
           ]
         ],
         "stepM": 1.9
@@ -434,17 +407,11 @@
       "spells": [
         "lightning@strong"
       ],
-      "grade": {
-        "exposure": -0.2,
-        "contrast": 10,
-        "saturation": 6,
-        "temperature": 4
-      },
       "crystals": [
         {
           "at": [
-            34.7,
-            31.2
+            -4.7,
+            10.8
           ],
           "heightM": 8
         }
@@ -453,40 +420,42 @@
     {
       "cut": "113.1",
       "environment": "forest",
+      "layout": "void",
+      "zone": 3,
       "viewWidthM": 32,
       "path": {
         "via": [
           [
-            39.9,
-            26.1
+            3.9,
+            -3.9
           ],
           [
-            41.5,
-            30.0
+            5.5,
+            0.0
           ],
           [
-            39.9,
-            33.9
+            3.9,
+            3.9
           ],
           [
-            36.0,
-            35.5
+            0.0,
+            5.5
           ],
           [
-            32.1,
-            33.9
+            -3.9,
+            3.9
           ],
           [
-            30.5,
-            30.0
+            -5.5,
+            0.0
           ],
           [
-            32.1,
-            26.1
+            -3.9,
+            -3.9
           ],
           [
-            36.0,
-            24.5
+            0.0,
+            -5.5
           ]
         ],
         "stepM": 1.9,
@@ -507,8 +476,8 @@
       "boss": "ahead",
       "bossFight": {
         "at": [
-          36,
-          30
+          0.0,
+          0.0
         ],
         "attacks": [
           {
@@ -537,24 +506,19 @@
         "spin@114.3",
         "slam@final"
       ],
-      "grade": {
-        "exposure": -0.2,
-        "contrast": 8,
-        "saturation": 10
-      },
       "crystals": [
         {
           "at": [
-            47.0,
-            38.5
+            11.0,
+            8.5
           ],
           "radiusM": 1.6,
           "heightM": 5
         },
         {
           "at": [
-            25.5,
-            40.0
+            -10.5,
+            10.0
           ],
           "radiusM": 1.6,
           "heightM": 5

@@ -13,16 +13,18 @@ namespace Demo3D.Runtime.Playback
     /// impact, reaching its farthest kill, weighted by its kills as the blow feel weighs it (a formation's smash the
     /// heaviest); each death that shatters (LookCrowd's breaks) a small ring at the body in its gem, which the field
     /// merges in a mass kill; and each structure break or formation smash (BreakMoments) a big ring at the bolt or the
-    /// blow, in the palette's shatter gem. The trailer loads a shot's rings at its cut.
+    /// blow, in the palette's shatter gem. The trailer loads a shot's rings at its cut, with the cut's own impulse wipe
+    /// (<see cref="Wipe"/>).
     /// </summary>
     public static class ShotImpulses
     {
         /// <summary>A blow's least reach (m): a crisp slash still shoves the grid round the hero.</summary>
         public const float MinBlowReachM = 3f;
 
-        public static Impulse[] Of(Timeline tl, LookCrowd.BreakEvent[] breaks, BreakMoments moments, BlowFeel blows, Palette palette)
+        public static Impulse[] Of(Timeline tl, LookCrowd.BreakEvent[] breaks, BreakMoments moments, BlowFeel blows, Palette palette, Impulse? wipe = null)
         {
             var rings = new List<Impulse>(breaks.Length + 64);
+            if (wipe is Impulse w0) rings.Add(w0);
             // The deaths a blow makes land on its impact (Sim.Strike): its kills and the farthest of them from the hero.
             var kills = new Dictionary<double, (int Count, float FarM)>();
             foreach (var b in breaks)
@@ -46,6 +48,17 @@ namespace Demo3D.Runtime.Playback
             // In time order, so the field adds each at its end (a cut loads thousands).
             rings.Sort((x, y) => x.Start.CompareTo(y.Start));
             return rings.ToArray();
+        }
+
+        /// <summary>
+        /// The impulse wipe on a shot's cut (trailer.md, The Crystal Cut: transitions): from where the hero stands on the cut's
+        /// frame, in <paramref name="colour"/> (the incoming zone's), strong on a section's entry (<paramref name="entry"/>),
+        /// soft on a cut within a section.
+        /// </summary>
+        public static Impulse Wipe(Timeline tl, double cut, bool entry, Color colour)
+        {
+            var hero = tl.PositionAt(0, cut);
+            return ImpulseField.Wipe(new Vector2(hero.X, hero.Y), cut, entry ? 1f : 0f, colour);
         }
     }
 }

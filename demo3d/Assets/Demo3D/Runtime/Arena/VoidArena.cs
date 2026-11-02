@@ -16,6 +16,10 @@ namespace Demo3D.Runtime.Arena
     ///   resident layer.
     /// The fog and clear colour are the world's (<see cref="VoidWorld.Apply"/>, on every switch to the environment).
     /// The trailer's formations are the shots' own (StructureShatter).
+    /// An environment that only hosts shots playing on a layout of their own (the crystal cut's void, trailer.md "The
+    /// Crystal Cut": <c>hostOnly</c>) lends its scene's render state and nothing it stands: its whole set, mist and flame
+    /// lights go under every world option, `classic` too (which then draws the host's bare ground), and no structure
+    /// stands as crystal, since nothing of its layout blocks those shots.
     /// </summary>
     public sealed class VoidArena : IDisposable
     {
@@ -24,8 +28,9 @@ namespace Demo3D.Runtime.Arena
 
         readonly CrystalProps _props;
 
-        public VoidArena(ArenaRuntime arena, VoidWorld world, StructureLook structures)
+        public VoidArena(ArenaRuntime arena, VoidWorld world, StructureLook structures, bool hostOnly = false)
         {
+            if (hostOnly) structures = null;
             var stat = arena.Root.Find("Static");
             var pieces = new List<Transform>();
             var structuresGroup = stat.Find("Structures");
@@ -39,7 +44,7 @@ namespace Demo3D.Runtime.Arena
                     if (tiles.Count > 0) _props.Add(tiles, TileM, tiles.Count >= 9, _props.Sites.Count * 7919 + 31);
                 }
             }
-            if (world != null)
+            if (world != null || hostOnly)
             {
                 var hidden = new List<Renderer>(stat.GetComponentsInChildren<Renderer>(true));
                 var mist = arena.Root.Find("Mist");
@@ -51,7 +56,7 @@ namespace Demo3D.Runtime.Arena
             else if (_props != null)
                 foreach (var piece in pieces)
                     VoidWorld.Hide(piece.GetComponentsInChildren<Renderer>(true));
-            Debug.Log($"VoidArena: {arena.SceneName}" + (world != null ? $" in {world.Option}" : "") +
+            Debug.Log($"VoidArena: {arena.SceneName}" + (world != null ? $" in {world.Option}" : "") + (hostOnly ? ", hosting own-layout shots: its set hidden" : "") +
                       (_props != null ? $", {pieces.Count} structures as {_props.Renderers.Count} crystal pieces in {structures.Option}" : ""));
         }
 

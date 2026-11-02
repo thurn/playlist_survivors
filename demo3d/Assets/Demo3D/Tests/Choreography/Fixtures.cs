@@ -103,11 +103,11 @@ namespace Demo3D.Choreography.Tests
         /// <summary>The checked-in trailer (trailer-action.json), validated against the song and the environments.</summary>
         public static Trailer Trailer => trailer ?? (trailer = ChoreographyFiles.LoadTrailer(Root, "action", out trailerEnvironments));
 
-        /// <summary>A trailer shot's environment data.</summary>
+        /// <summary>A trailer shot's run inputs (its ground's: its environment's layout, or its own).</summary>
         public static ChoreographyData ShotData(int index)
         {
             Trailer t = Trailer;   // loads the environments with it
-            return trailerEnvironments[t.Shots[index].Environment];
+            return trailerEnvironments[t.Shots[index].Ground];
         }
 
         /// <summary>A trailer shot's timeline (by index from 0), built once.</summary>
@@ -124,11 +124,11 @@ namespace Demo3D.Choreography.Tests
         /// <summary>The checked-in crystal cut (trailer-crystal.json, trailer.md "The Crystal Cut").</summary>
         public static Trailer CrystalCut => crystalCut ?? (crystalCut = ChoreographyFiles.LoadTrailer(Root, "crystal", out crystalEnvironments));
 
-        /// <summary>A crystal cut shot's environment data.</summary>
+        /// <summary>A crystal cut shot's run inputs (the void's open ground).</summary>
         public static ChoreographyData CrystalShotData(int index)
         {
             Trailer t = CrystalCut;
-            return crystalEnvironments[t.Shots[index].Environment];
+            return crystalEnvironments[t.Shots[index].Ground];
         }
 
         /// <summary>A crystal cut shot's timeline (by index from 0), built once.</summary>

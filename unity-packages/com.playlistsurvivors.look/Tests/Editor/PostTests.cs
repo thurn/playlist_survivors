@@ -102,5 +102,34 @@ namespace PS.Look.Tests
             }
             finally { UnityEngine.Object.DestroyImmediate(go); }
         }
+
+        /// <summary>
+        /// A filter offset (the crystal cut's palette flash) leans the colour filter toward its colour and back to the
+        /// volume's own at rest; a volume that never takes one keeps its filter's override off.
+        /// </summary>
+        [Test]
+        public void AFilterOffsetLeansTheColourFilterAndRestsOnTheVolumesOwn()
+        {
+            var option = PostOption.Parse(@"{ ""name"": ""x"", ""colour"": { ""contrast"": 20 } }");
+            var go = new GameObject("volumes");
+            try
+            {
+                var volume = PostStack.CreateVolume(go.transform, option, Ion);
+                volume.sharedProfile.TryGet(out ColorAdjustments color);
+                bool before = color.colorFilter.overrideState;
+                Color own = before ? color.colorFilter.value : Color.white;
+                var binding = new PostBinding();
+                binding.Apply(volume, new PostOffsets { Contrast = 1 });
+                Assert.That(color.colorFilter.overrideState, Is.EqualTo(before), "no filter offset: the filter left alone");
+                var hue = new Color(0.2f, 1f, 0.6f);
+                binding.Apply(volume, new PostOffsets { Filter = hue, FilterShare = 0.5f });
+                Assert.That(color.colorFilter.overrideState, Is.True);
+                Assert.That(color.colorFilter.value, Is.EqualTo(Color.Lerp(own, hue, 0.5f)), "half way to the hue");
+                binding.Apply(volume, default);
+                Assert.That(color.colorFilter.value, Is.EqualTo(own), "at rest the volume's own filter");
+                UnityEngine.Object.DestroyImmediate(volume.sharedProfile);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(go); }
+        }
     }
 }

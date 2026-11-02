@@ -158,11 +158,22 @@ namespace Demo3D.Choreography
             return names;
         }
 
-        /// <summary>An environment's run inputs at <paramref name="density"/>, so monsters walk round its own structures; null for an unknown one.</summary>
+        /// <summary>
+        /// An environment's run inputs at <paramref name="density"/>, so monsters walk round its own structures, or a trailer
+        /// shot's own layout's (<see cref="TrailerShot.Ground"/>); null for an unknown one.
+        /// </summary>
         public static ChoreographyData LoadEnvironmentData(string root, string environment, float density = TrailerDensity)
         {
-            if (Array.IndexOf(Environments(root), environment) < 0) return null;
-            string layout = environment == ForestEnvironment ? File.ReadAllText(DataPath(root, DefaultLayout + "-layout.json")) : EnvironmentLayout(root, environment);
+            string layout;
+            if (environment.StartsWith(Trailer.LayoutPrefix, StringComparison.Ordinal))
+            {
+                // A trailer shot's own layout (Trailer.LayoutPrefix NAME: NAME-layout.json), such as the void's open ground.
+                string file = DataPath(root, environment.Substring(Trailer.LayoutPrefix.Length) + "-layout.json");
+                if (!File.Exists(file)) return null;
+                layout = File.ReadAllText(file);
+            }
+            else if (Array.IndexOf(Environments(root), environment) < 0) return null;
+            else layout = environment == ForestEnvironment ? File.ReadAllText(DataPath(root, DefaultLayout + "-layout.json")) : EnvironmentLayout(root, environment);
             string measured = Path.Combine(root, MeasuredAnnotationsPath);
             return ChoreographyData.FromJson(File.ReadAllText(File.Exists(measured) ? measured : DataPath(root, AnnotationsFile)),
                 File.ReadAllText(DataPath(root, RosterFile)), layout, File.ReadAllText(DataPath(root, FootprintsFile)), density);
@@ -173,7 +184,8 @@ namespace Demo3D.Choreography
 
         /// <summary>
         /// A trailer (trailer.md, "The trailer file"), validated against its song and the checkout's environments, and
-        /// each shot's environment data (by environment). <paramref name="pinEnvironment"/> plays every shot in one.
+        /// each shot's run inputs (by its <see cref="TrailerShot.Ground"/>: its environment, or its own layout).
+        /// <paramref name="pinEnvironment"/> plays every shot in one environment.
         /// </summary>
         public static Trailer LoadTrailer(string root, string name, out System.Collections.Generic.Dictionary<string, ChoreographyData> environments, string pinEnvironment = null)
         {

@@ -1297,7 +1297,9 @@ white flash.
 - The cut hides under the flash, and the new shot's opening blow bursts out of
   it.
 
-The other cuts are plain hard cuts.
+The other cuts are plain hard cuts. The crystal cut turns both into its
+transitions, palette flashes and impulse wipes (see
+[The Crystal Cut, Transitions](#transitions)).
 
 The trailer's start and end:
 
@@ -1372,7 +1374,9 @@ What varies per shot:
   32–45 m, to keep the hero readable (ps-b5z.6).
 
 No shot adds a virtual zoom, an orbit, a punch-in or any camera move a player
-wouldn't see.
+wouldn't see. The crystal cut narrows this to one grammar for every shot: one
+heading, one framing per shot from a ladder (see
+[The Crystal Cut, The camera grammar](#the-camera-grammar)).
 
 ### Sound
 
@@ -1536,47 +1540,154 @@ everything above.
 ## The Crystal Cut
 
 `--trailer crystal` plays an alternate cut, `trailer-crystal.json`, that
-showcases the crystal horde and shattering: glowing crystalline monsters on
-dark ground, and towering crystal formations that the hero's blows smash
-on screen, again and again (ps-7i4, redesigned around the formations by
-ps-b5z.4). The default cut, `--trailer` (`action`), has none.
+showcases the crystal horde and shattering: glowing crystalline monsters in
+the look package's void world, and towering crystal formations that the
+hero's blows smash on screen, again and again (ps-7i4, redesigned around the
+formations by ps-b5z.4, re-staged in the void by ps-wnj.17). The default cut,
+`--trailer` (`action`), has none.
 
 ```
-just demo3d --trailer crystal --sound
-just trailer --out captures/trailer-crystal-cut.mp4 -- --trailer crystal
+just demo3d --trailer crystal --look edge --sound
+just trailer --out captures/trailer-crystal-edge.mp4 -- --trailer crystal --look edge
 ```
 
 - **The same song, window and pace.** Bars 79–117, eight shots cut where the
   action cut's are, 60.5 s with the fade. The gameplay rules hold too: blocks
   of one type, blows on the major beats, constant motion, an open lane, one-hit
   kills, the boss and the final slam.
-- **Dark environments only:** neon, crypt, lava and the night forest, each
-  twice. Neon opens with the duel, so no two neighbouring shots share one.
-- **Crystal without flags.** The file's `look` stands in for
-  `--monster-style`, `--structure-style`, `--style-tune` and
-  `--structure-tune` wherever the command line names none, so a flag still
-  wins (`DemoMain.UseTrailerStyle`).
+- **One world, the void** ([neon-look.md, The Trailer](../design/neon-look.md#the-trailer)).
+  Every shot plays on the void's open ground and is one **zone** of it, its
+  hue the palette's zone tint under `hued-zones` (see
+  [The void staging](#the-void-staging)).
 - **Shattering is the centrepiece.** Fifteen formations burst over seven of
   the eight shots, one every three to five seconds from the drop to the
   climax, each to the hero's blow on a strong beat, but the climax's two,
   which the dragon's breaths smash as they miss the hero (see
   [Crystal formations](#crystal-formations) and
   [The boss fight](#the-boss-fight)).
+- **Cuts are designed transitions** in one grammar, and **one camera
+  grammar** frames every shot (see [Transitions](#transitions) and
+  [The camera grammar](#the-camera-grammar)).
+- **The look is a preset's.** `--look edge|solid|hologram|prism` picks it
+  (neon-look.md, Look presets); without one, `edge` so it runs. The file's
+  `look` still stands in for `--monster-style` and `--structure-style`, which
+  only `--look classic` draws.
 
-| # | Trailer s | Bars | Environment | Formation | Crystals smashed (trailer s, bar.beat) |
-|---|---|---|---|---|---|
-| 1 | 0.000–2.481 | 79–80 | neon | Duel: 3 elites | |
-| 2 | 2.481–14.868 | 81–88 | crypt | Charge | 4.80 (82.3), 9.45 (85.3), 13.32 (88.1) |
-| 3 | 14.868–27.255 | 89–96 | lava | Converge, 3 streams | 17.19 (90.3), 21.06 (93.1), 22.61 (94.1) |
-| 4 | 27.255–39.642 | 97–104 | forest | Vortex | 29.58 (98.3), 34.22 (101.3), 38.09 (104.1) |
-| 5 | 39.642–45.836 | 105–108 | neon | Converge, 4 streams (300) | 41.19 (106.1), 44.29 (108.1) |
-| 6 | 45.836–48.932 | 109–110 | crypt | Vortex | 47.38 (110.1) |
-| 7 | 48.932–52.029 | 111–112 | lava | Converge, 3 streams | 50.48 (112.1) |
-| 8 | 52.029–59.0 | 113–117.2 | forest | The boss fight, a vortex round its arena | 55.90 (115.3), 57.45 (116.3), both by the dragon's breath |
+| # | Trailer s | Bars | Zone (old place) | View | Formation | Crystals smashed (trailer s, bar.beat) |
+|---|---|---|---|---|---|---|
+| 1 | 0.000–2.481 | 79–80 | 0 (neon) | 20 m | Duel: 3 elites | |
+| 2 | 2.481–14.868 | 81–88 | 1 (crypt) | 44 m | Charge | 4.80 (82.3), 9.45 (85.3), 13.32 (88.1) |
+| 3 | 14.868–27.255 | 89–96 | 2 (lava) | 44 m | Converge, 3 streams | 17.19 (90.3), 21.06 (93.1), 22.61 (94.1) |
+| 4 | 27.255–39.642 | 97–104 | 3 (forest) | 42 m | Vortex | 29.58 (98.3), 34.22 (101.3), 38.09 (104.1) |
+| 5 | 39.642–45.836 | 105–108 | 0 (neon) | 38 m | Converge, 4 streams (300) | 41.19 (106.1), 44.29 (108.1) |
+| 6 | 45.836–48.932 | 109–110 | 1 (crypt) | 36 m | Vortex | 47.38 (110.1) |
+| 7 | 48.932–52.029 | 111–112 | 2 (lava) | 36 m | Converge, 3 streams | 50.48 (112.1) |
+| 8 | 52.029–59.0 | 113–117.2 | 3 (forest) | 32 m | The boss fight, a vortex round its arena | 55.90 (115.3), 57.45 (116.3), both by the dragon's breath |
+
+### The void staging
+
+The Synty cut (ps-b5z) stood each shot in a dark environment: neon, crypt,
+lava and the night forest, each twice. The void world kit (ps-wnj.8) hid those
+sets, but the shots still simulated on their layouts, so the horde parted
+round trees, landmarks and walls the void no longer drew: big empty black
+holes in the swarm ([before](../../demo3d/evidence/look/world/README.md)).
+Re-staged (ps-wnj.17), the simulation plays in the void too:
+
+- **The void's open ground** is `void-layout.json`: a 160 m arena layout
+  like the forest's, with one named area (the camp, at the centre, where the
+  hook's duel stands) and nothing that blocks. A shot's formations are its
+  only obstacles, and its only set pieces: GW3's open arena, with crystal the
+  one material, and the formations, the brightest solid things on screen,
+  standing alone.
+- **A shot's `layout`** names the layout its simulation plays on in place of
+  its environment's (`"layout": "void"`); its areas, crystals and run inputs
+  are that layout's (`TrailerShot.Ground`, `layout/void`). Its `environment`
+  then only names the resident scene that lends render state: every shot
+  names the forest, so one scene is resident and no cut switches
+  environments.
+- **The host scene shows nothing of its own.** An environment that hosts
+  only own-layout shots (`VoidArena`'s host-only mode) hides its whole set,
+  mist and flame lights under every world option, `classic` too (which then
+  draws the forest's bare ground under the classic monsters), and stands no
+  structure props, since nothing of its layout blocks those shots.
+- **A shot's `zone`** (0 up) is the palette zone it takes on its cut under
+  `hued-zones` (else its index). The old places become zones in turn, neon 0,
+  crypt 1, lava 2 and the forest 3, so the cut keeps its rhythm of four places
+  each shown twice, and no two neighbouring shots share one. `void-grid` and
+  `pure-void` keep one key throughout.
+- **The shots kept their composition.** Each shot's path, formations and
+  boss ground were turned by its old heading into the one heading and
+  centred on the void, so each frames as it did on its old ground, and no
+  frame reaches the void's edge. Two formations moved to stay in view
+  without an obstacle-bent path (shot 3's first, shot 5's first, which the
+  cut's slam had reached), so all fifteen smash at the old cut's moments. The
+  per-shot grades went with the environments they balanced.
+- **What still passes.** `trailer --name crystal --checks` and
+  `TrailerTests.TheCrystalCutPassesTheTrailersChecksAndSmashesItsCrystals`
+  under `dotnet test` and Unity's EditMode run: open lane, liveness, density,
+  every formation breaking on screen and in view, the camera grammar. Stills
+  and view sheets:
+  [evidence/look/restage](../../demo3d/evidence/look/restage/README.md).
+
+### The camera grammar
+
+Every shot uses the game camera (see [Camera](#camera)): its pitch, field of
+view, follow, punch and shake. On top, the crystal cut frames by one set of
+rules, which the `one camera grammar` check holds for every shot on its own
+layout (`TrailerChecks.CameraGrammar`):
+
+- **One heading.** Every shot looks the same way (yaw 0), so the floor's grid
+  runs along and across the frame in every shot and the void reads as one
+  place. The check takes the first void shot's heading, which must be a
+  multiple of 90°. The Synty cut's diagonal headings (45°, 135°) put the grid
+  aslant in one shot and square in the next.
+- **One framing per shot**, from a ladder by the shot's role: the hook's duel
+  close (20 m), the three long shots wide enough to read the horde's shape
+  (42–44 m, by the horde each holds within its density cap), the quickening
+  tighter (38 then 36 m) and the finale's fight tightest (32 m). The exact
+  width within a rung is set so every bar's density sits well inside the
+  check's 15% under both `dotnet` and Unity, whose floats differ (shot 5 at
+  36 m held 251 of 300 in its first bar under Unity only). No zoom within a shot
+  (shot 3's 45 to 50 m went).
+- **The hero leads.** Paths carry the hero across or up the frame, so the
+  frame's deeper half lies ahead, and the formations stand ahead of the
+  hero's blows, 20 to 80° off the line ([Crystal formations](#crystal-formations)).
+
+### Transitions
+
+A cut in the crystal cut is one of two transitions, both on the beat (every
+cut is a bar's downbeat) and both in the incoming shot's zone colour (its
+zone tint under `hued-zones`, else the palette's `grid.pulse`):
+
+- **A section's entry** (the cuts on the song map's accents: 81.1, the drop,
+  and the re-entries 89.1, 97.1, 105.1 and 113.1) is a **palette flash** and a
+  strong **impulse wipe**. The palette flash replaces the action cut's
+  near-white flash: on the cut frame the colour filter leans 65% toward the
+  zone's hue (brightened to full value, so it tints without darkening),
+  exposure lifts 1.2 stops and bloom 1, decaying quadratically over an eighth
+  note (`PostFeel.PaletteFlashes`). The frame floods with the hue it cuts to
+  rather than washing out: a transition, never the brightest thing in the cut
+  (the run's restraint, ps-wnj.24).
+- **A cut within a section** (the first frame, 109.1 and 111.1) is a soft
+  **impulse wipe** alone.
+- **The impulse wipe** is one ring on the look's impulse field from where the
+  hero stands on the cut's frame (`ImpulseField.Wipe`, `ShotImpulses.Wipe`):
+  it runs at 64 m/s to 40 m, so its front sweeps the whole frame's floor in
+  about a beat, lighting and shoving the grid in the zone's colour, the floor
+  turning over into the new zone. A section's entry's is stronger (0.9 against
+  0.35) and wider.
+- **No whips.** A whip pan is a camera move the game camera never makes (the
+  trailer's own rule), and its blur is noise against the run's restraint.
+- The cut to black at 117.3 and the fade are unchanged.
+
+The action cut keeps its near-white flash cuts and hard cuts.
 
 ### The crystal look
 
-The file's look:
+Under a look preset the monsters, formations, world, post and effects are the
+preset's (neon-look.md, The Axes). The file's look below is what `--look
+classic` (the look before the epic, for parity checks) draws in their place,
+on the forest's bare ground:
 
 ```json
 "look": {
@@ -1606,10 +1717,8 @@ The file's look:
   0.5 against the style's 0.8), deepen contrast and saturation, and lower the
   bloom threshold to 1.0 at intensity 2.0, so the gems bloom and the ground
   doesn't. The style post fix moves every environment by the same offsets.
-- **Per-shot grades** take each environment down further, the crypt's pale
-  stone most (exposure −0.45).
-- **Structures** are dark sapphire with a faint glow (gain 0.3, glow 0.6), so
-  a wall reads beside the horde without outshining it.
+- **No per-shot grades and no structures** since the void staging: the
+  grades balanced the environments, and the void's open ground has no walls.
 - **Formations** are their own warm white-gold (`CrystalFormations.Gem`,
   #ffe7b0), lit from inside past the bloom's knee (gain 0.55, peak 0.35, glow
   1.6): the horde's gems span every hue, so a formation stands out by being
@@ -1630,7 +1739,7 @@ A shot's `crystals` field places them:
 "crystals": [ { "at": [22.0, 22.4] }, { "at": [30.5, 36.2], "radiusM": 2.2, "heightM": 10 } ]
 ```
 
-- **`at`**: a named area or metres, on the environment's open ground. One
+- **`at`**: a named area or metres, on the shot's open ground (its layout's). One
   standing in a structure, or off the arena, fails at load and names it.
 - **`radiusM`** (default 2.2, 0.8 to 2.5): the footprint's radius.
 - **`heightM`** (default 10, 2 to 16): its tallest spire.
@@ -1639,7 +1748,7 @@ A shot's `crystals` field places them:
 **In the simulation** (the level script's `crystals`,
 [choreography.md, Shot fields](choreography.md#shot-fields)):
 
-- **They block.** The shot runs on its environment's layout with a round
+- **They block.** The shot runs on its layout (the void's) with a round
   blocking footprint for each formation after the layout's own placements
   (`GroundLayout.WithCrystals`). The hero's path routes round them, the horde
   parts round them, and refill never spawns on them.

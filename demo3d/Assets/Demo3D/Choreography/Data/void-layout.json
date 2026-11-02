@@ -1,0 +1,12 @@
+{
+  "note": "The void's open ground (trailer.md, The Crystal Cut; neon-look.md, The Trailer): the look's world kit as a layout, for the crystal cut's shots to play on. Nothing blocks on it, so the horde never parts round anything the void doesn't draw; a shot's crystal formations are its only obstacles, and the only set pieces (the style guide: crystal is the one material). 160 m square like the arena, so the simulation's spawns and fields work as on it; one named area, the camp at the centre, where the hook's duel stands. A trailer shot names it as its layout (\"layout\": \"void\"); the shot's environment then only lends its resident scene, whose whole set the void hides.",
+  "name": "void",
+  "seed": 7,
+  "size": [160, 160],
+  "decorationDensity": 2.0,
+  "edgeWidthM": [3, 6],
+  "heroStart": [0, 0],
+  "areas": [
+    { "type": "clearing", "name": "camp", "center": [0, 0], "radius": 20, "goal": { "at": [0, 0], "radius": 3 } }
+  ]
+}

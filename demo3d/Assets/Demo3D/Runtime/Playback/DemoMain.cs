@@ -178,7 +178,7 @@ namespace Demo3D.Runtime.Playback
             if (_trailer != null) UseTrailerStyle(rosterSet);
             if (_floor != null && _arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => PS.Look.GridFloor.Replace(a.Ground);
             // The crystal cut's environments in the look's world kit, once each scene is ready (after the structure style's swap).
-            bool voided = _trailer != null && (_world != null || _structureLook != null);
+            bool voided = _trailer != null && (_world != null || _structureLook != null || Array.Exists(_trailer.Shots, s => s.Layout != null));
             if (!_structures.IsBaseline)
             {
                 if (_arena == null) throw new InvalidOperationException($"DemoMain: {StructureStyle.Flag} {_structures.Name} needs the arena, not flat ground");
@@ -187,7 +187,14 @@ namespace Demo3D.Runtime.Playback
                 if (_arenas != null) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
                 else _arena.OnReady += a => _structures.Apply(a, CrowdLibrary.Load());
             }
-            if (voided) for (int i = 0; i < _arenas.Count; i++) _arenas[i].OnReady += a => _voids.Add(new Demo3D.Runtime.Arena.VoidArena(a, _world, _structureLook));
+            if (voided)
+                for (int i = 0; i < _arenas.Count; i++)
+                {
+                    // An environment whose every shot plays on its own layout (the crystal cut's void) only hosts them.
+                    string env = _trailer.Environments[i];
+                    bool hostOnly = Array.TrueForAll(_trailer.Shots, s => s.Environment != env || s.Layout != null);
+                    _arenas[i].OnReady += a => _voids.Add(new Demo3D.Runtime.Arena.VoidArena(a, _world, _structureLook, hostOnly));
+                }
             var data = PlaybackData.Load();
             var level = LevelScript.Parse(data.Level(rosterSet).text, data.Overlay(intensity), data.Overlay(breakSchedule));
             if (_flags.Envelope > 0) level.EnvelopeOnScreen = _flags.Envelope;
@@ -207,7 +214,7 @@ namespace Demo3D.Runtime.Playback
             // The arena's layout is the environment's (its own placement list); a test layout is its own.
             var layout = layoutName != "arena" && data.Layout(layoutName) is TextAsset other ? other.text : environmentLayout;
             // The timeline navigates the density the arena scene is drawn at (TD15; the cold review's item 3).
-            var choreo = _trailer != null ? trailerData[_trailer.Shots[0].Environment]
+            var choreo = _trailer != null ? trailerData[_trailer.Shots[0].Ground]
                 : ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster), layout, data.footprints.text,
                     _arena != null ? _arena.Density : 0);
             var started = Time.realtimeSinceStartupAsDouble;

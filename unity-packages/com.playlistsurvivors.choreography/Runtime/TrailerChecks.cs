@@ -86,7 +86,26 @@ namespace PS.Choreography
                 Check("density", Density(trailer, s, tl)),
                 Check("breaks on screen", BreaksOnScreen(s, tl)),
                 Check("every crystal breaks on screen", CrystalsBreak(s, tl)),
+                Check("one camera grammar", CameraGrammar(trailer, s)),
             };
+        }
+
+        /// <summary>
+        /// A shot on a layout of its own (the crystal cut's void, trailer.md "The Crystal Cut") keeps the cut's camera
+        /// grammar: the heading of the trailer's first such shot, a multiple of 90 degrees so the floor's grid runs along
+        /// and across the frame, and one framing for the whole shot (no zoom within it). Shots on their environments' own
+        /// layouts (the action cut) frame as they like.
+        /// </summary>
+        public static List<string> CameraGrammar(Trailer trailer, TrailerShot s)
+        {
+            var problems = new List<string>();
+            if (s.Layout == null) return problems;
+            TrailerShot first = Array.Find(trailer.Shots, x => x.Layout != null);
+            float yaw = ((s.YawDeg % 360) + 360) % 360;
+            if (Math.Abs(yaw % 90) > Eps) problems.Add("shot " + s.Number + ": its heading " + s.YawDeg.ToString(CultureInfo.InvariantCulture) + " is not a multiple of 90 degrees, so the grid runs aslant the frame");
+            if (s.YawDeg != first.YawDeg) problems.Add("shot " + s.Number + ": its heading " + s.YawDeg.ToString(CultureInfo.InvariantCulture) + " is not shot " + first.Number + "'s " + first.YawDeg.ToString(CultureInfo.InvariantCulture));
+            if (s.ViewWidthToM > 0 && s.ViewWidthToM != s.ViewWidthM) problems.Add("shot " + s.Number + ": it zooms within the shot (viewWidthToM)");
+            return problems;
         }
 
         static KeyValuePair<string, List<string>> Check(string name, List<string> problems) => new KeyValuePair<string, List<string>>(name, problems);
@@ -598,7 +617,7 @@ namespace PS.Choreography
         {
             TrailerShot s = trailer.Shots[index];
             Roster roster = data.Roster;
-            var r = new ShotReport { Number = s.Number, Environment = s.Environment, Target = s.TargetOnScreen };
+            var r = new ShotReport { Number = s.Number, Environment = s.Layout ?? s.Environment, Target = s.TargetOnScreen };
             DensitySamples(trailer, s, tl, out r.OnScreen);
             HeroIntervals(trailer, s, tl, out r.ActedShare);
             LivenessViolations(s, tl, data, out r.LivenessViolations);

@@ -5,7 +5,7 @@ using UnityEngine;
 namespace PS.Look
 {
     /// <summary>What wrote an impulse, for its default shape and the beat audit's trace.</summary>
-    public enum ImpulseKind { Blow, Death, Shatter, Beat }
+    public enum ImpulseKind { Blow, Death, Shatter, Beat, Wipe }
 
     /// <summary>
     /// One ring of the impulse field: it sets out from <see cref="At"/> (ground x, z) at song time <see cref="Start"/>,
@@ -238,6 +238,18 @@ namespace PS.Look
             Kind = ImpulseKind.Shatter, At = at, Start = t, Colour = colour,
             Strength = Mathf.Clamp(0.6f + 0.15f * sizeM, 0.7f, 1.5f), Speed = 34f,
             Reach = Mathf.Clamp(10f + 5f * sizeM, 16f, 30f), Width = Mathf.Clamp(1.2f + 0.3f * sizeM, 1.5f, 3f),
+        };
+
+        /// <summary>
+        /// A cut's impulse wipe (trailer.md, The Crystal Cut: transitions): one ring from the hero on the cut's frame that
+        /// sweeps the whole frame's floor in about a beat in the incoming zone's colour, <paramref name="strength"/> 0 (a
+        /// soft wipe, a cut within a section) to 1 (a section's entry, under the palette flash). Faster and wider than a
+        /// blow's ring, so it reads as the floor turning over rather than another hit.
+        /// </summary>
+        public static Impulse Wipe(Vector2 at, double t, float strength, Color colour) => new Impulse
+        {
+            Kind = ImpulseKind.Wipe, At = at, Start = t, Colour = colour,
+            Strength = Mathf.Lerp(0.35f, 0.9f, strength), Speed = 64f, Reach = 40f, Width = Mathf.Lerp(2f, 3.5f, strength),
         };
 
         /// <summary>A beat's faint ring from the hero, stronger on a bar's downbeat.</summary>

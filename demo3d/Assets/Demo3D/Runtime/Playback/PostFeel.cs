@@ -14,7 +14,8 @@ namespace Demo3D.Runtime.Playback
     /// - per section: a grade offset (exposure, saturation, contrast, white-balance temperature, vignette), eased in over
     ///   <see cref="Amounts.EaseBars"/> bars from the section's first downbeat, as the camera's zoom eases.
     /// - a trailer's flash cuts (trailer.md, "Playback and cuts"): a near-white flash peaking on the cut frame and gone
-    ///   within an eighth note (<see cref="CutFlash"/>);
+    ///   within an eighth note (<see cref="CutFlash"/>), or under the crystal cut's look a palette flash, the frame
+    ///   flooding with the incoming zone's hue (<see cref="PaletteFlashes"/>);
     /// - a trailer's per-shot grade (trailer.md, "Look"): each shot's exposure, contrast, saturation and temperature
     ///   offsets from its cut to the next, switching with the cut (<see cref="ShotGrade"/>).
     /// It writes offsets on top of the volume's base values (NightLook.CreateProfile, the hero pool's vignette included;
@@ -91,6 +92,12 @@ namespace Demo3D.Runtime.Playback
 
         /// <summary>A flash cut's peak: exposure (stops), saturation and bloom offsets, which wash the frame out to near white.</summary>
         public const float CutFlashExposure = 5f, CutFlashSaturation = -70f, CutFlashBloom = 4f;
+        /// <summary>
+        /// A palette flash's peak (the crystal cut's section entries, trailer.md The Crystal Cut): a modest lift in exposure
+        /// (stops) and bloom, and the colour filter that far toward the incoming zone's hue, so the frame floods with the
+        /// hue rather than washing out: a transition, never the brightest thing in the cut (the run's restraint).
+        /// </summary>
+        public const float PaletteFlashExposure = 1.2f, PaletteFlashBloom = 1f, PaletteFlashFilter = 0.65f, PaletteFlashSaturation = 10f;
 
         readonly SongMap _map;
         readonly Amounts _amounts;
@@ -98,6 +105,7 @@ namespace Demo3D.Runtime.Playback
         readonly double[] _flashAt;        // sorted
         readonly float[] _flashStrength;
         readonly double[] _cutFlashAt;     // sorted
+        Color[] _cutTint;                  // each flash cut's palette flash hue (PaletteFlashes), or null: near-white flashes
         readonly double[] _shotFrom;       // sorted: each shot's grade from its first frame
         readonly TrailerGrade[] _shotGrade;
         public readonly bool Enabled;
@@ -178,14 +186,35 @@ namespace Demo3D.Runtime.Playback
             return flash;
         }
 
-        /// <summary>The flash cut at t: 1 on its cut, decaying quadratically to 0 over an eighth note.</summary>
-        public float CutFlash(double t)
+        /// <summary>
+        /// Makes the flash cuts palette flashes (trailer.md, The Crystal Cut: transitions), <paramref name="tints"/> the hue
+        /// each floods the frame with (sRGB), in the flash cuts' order: the colour filter leans toward the hue, brightened to
+        /// full value so it tints without darkening, with a modest exposure and bloom lift, in place of the near-white flash.
+        /// </summary>
+        public void PaletteFlashes(IReadOnlyList<Color> tints)
         {
+            if (tints.Count != _cutFlashAt.Length) throw new ArgumentException($"PostFeel: {tints.Count} palette flash hues for {_cutFlashAt.Length} flash cuts");
+            _cutTint = new Color[tints.Count];
+            for (int i = 0; i < tints.Count; i++)
+            {
+                float max = Mathf.Max(1e-3f, Mathf.Max(tints[i].r, Mathf.Max(tints[i].g, tints[i].b)));
+                _cutTint[i] = new Color(tints[i].r / max, tints[i].g / max, tints[i].b / max, 1f);
+            }
+        }
+
+        /// <summary>The flash cut at t: 1 on its cut, decaying quadratically to 0 over an eighth note.</summary>
+        public float CutFlash(double t) => CutFlash(t, out _);
+
+        /// <summary>The flash cut at t, and which flash cut it is (-1 for none).</summary>
+        float CutFlash(double t, out int which)
+        {
+            which = -1;
             int i = Array.BinarySearch(_cutFlashAt, t);
             if (i < 0) i = ~i - 1;
             if (i < 0) return 0f;
             double u = (t - _cutFlashAt[i]) / (0.5 * BeatLength(_cutFlashAt[i]));
             if (u >= 1) return 0f;
+            which = i;
             float k = (float)(1 - u);
             return k * k;
         }
@@ -227,14 +256,19 @@ namespace Demo3D.Runtime.Playback
             var shot = ShotGrade(t);
             if (!Enabled) return new PS.Look.PostOffsets { Exposure = shot.Exposure, Saturation = shot.Saturation, Contrast = shot.Contrast, Temperature = shot.Temperature };
             var g = Grade(t, out float pulseScale);
-            float pulse = Pulse(t) * pulseScale, flash = Flash(t), cut = CutFlash(t);
+            float pulse = Pulse(t) * pulseScale, flash = Flash(t), cut = CutFlash(t, out int which);
             var a = _amounts;
+            bool palette = _cutTint != null && which >= 0;
+            float cutExposure = palette ? PaletteFlashExposure : CutFlashExposure, cutBloom = palette ? PaletteFlashBloom : CutFlashBloom;
+            float cutSaturation = palette ? PaletteFlashSaturation : CutFlashSaturation;
             return new PS.Look.PostOffsets
             {
-                Exposure = g.Exposure + shot.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + CutFlashExposure * cut,
-                Bloom = a.BeatBloom * pulse + CutFlashBloom * cut,
+                Exposure = g.Exposure + shot.Exposure + a.BeatExposure * pulse + a.FlashExposure * flash + cutExposure * cut,
+                Bloom = a.BeatBloom * pulse + cutBloom * cut,
                 Vignette = g.Vignette + a.BeatVignette * pulse,
-                Saturation = g.Saturation + shot.Saturation + a.FlashSaturation * flash + CutFlashSaturation * cut,
+                Saturation = g.Saturation + shot.Saturation + a.FlashSaturation * flash + cutSaturation * cut,
+                Filter = palette ? _cutTint[which] : Color.white,
+                FilterShare = palette ? PaletteFlashFilter * cut : 0f,
                 Contrast = g.Contrast + shot.Contrast,
                 Temperature = g.Temperature + shot.Temperature,
                 Chromatic = a.FlashChromatic * flash,

@@ -125,7 +125,7 @@ namespace Demo3D.Choreography.Cli
                     {
                         if (only > 0 && i + 1 != only) continue;
                         TrailerShot shot = trailer.Shots[i];
-                        ChoreographyData data = environments[shot.Environment];
+                        ChoreographyData data = environments[shot.Ground];
                         Timeline tl = ChoreographyFiles.BuildShot(root, trailer, i, data, Opt(args, "--roster"));
                         rows.Add(TrailerChecks.Report(trailer, i, tl, data));
                         if (Opt(args, "--frames") != null) ShotFrames(tl, data, shot, Opt(args, "--frames"), DoubleOpt(args, "--every") > 0 ? DoubleOpt(args, "--every") : 1);

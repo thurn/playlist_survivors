@@ -705,15 +705,18 @@ namespace Demo3D.Choreography.Tests
         }
 
         /// <summary>
-        /// The crystal cut (trailer.md, "The Crystal Cut"): every shot passes the trailer's checks, its crystal formations'
-        /// among them, and its formations burst as a recurring centrepiece: at least five break moments over at least four
-        /// shots, each on screen, each the hero's blow or the dragon's (no bolt), every formation broken.
+        /// The crystal cut (trailer.md, "The Crystal Cut"): every shot plays in the void (its open ground, hosted by one
+        /// resident scene, the four zones each twice), passes the trailer's checks, its crystal formations' and the camera
+        /// grammar among them, and its formations burst as a recurring centrepiece: at least five break moments over at
+        /// least four shots, each on screen, each the hero's blow or the dragon's (no bolt), every formation broken.
         /// </summary>
         [Test]
         public void TheCrystalCutPassesTheTrailersChecksAndSmashesItsCrystals()
         {
             Trailer t = Fixtures.CrystalCut;
-            Assert.That(t.Environments, Is.EquivalentTo(new[] { "neon", "crypt", "lava", "forest" }));
+            Assert.That(t.Environments, Is.EquivalentTo(new[] { "forest" }));
+            Assert.That(Array.TrueForAll(t.Shots, s => s.Layout == "void"), "every shot on the void's open ground");
+            Assert.That(Array.ConvertAll(t.Shots, s => s.Zone), Is.EqualTo(new[] { 0, 1, 2, 3, 0, 1, 2, 3 }));
             var problems = new List<string>();
             int moments = 0, shots = 0;
             for (int i = 0; i < t.Shots.Length; i++)
@@ -775,6 +778,49 @@ namespace Demo3D.Choreography.Tests
         {
             var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2(field)));
             Assert.That(ex.Message, Does.Contain(message));
+        }
+
+        /// <summary>
+        /// A shot's own layout (trailer.md, The Crystal Cut): its simulation plays on it while its environment lends the
+        /// scene, so its areas, crystals and run inputs are the layout's (the void's camp, and crystals anywhere on its open
+        /// ground, even where the environment stands a wall); an unknown layout or a negative zone fails, naming it.
+        /// </summary>
+        [Test]
+        public void AShotPlaysOnItsOwnLayout()
+        {
+            GroundLayout desert = Environments("desert");
+            Placement inside = Array.Find(desert.Placements.Items, p => desert.Placements.Props[p.Prop].Blocks && desert.Nav.Distance(p.Position) < -0.5f);
+            string at = "[" + inside.Position.X.ToString(System.Globalization.CultureInfo.InvariantCulture) + ", " + inside.Position.Y.ToString(System.Globalization.CultureInfo.InvariantCulture) + "]";
+            Trailer t = Parse(Shot1("\"layout\": \"void\""), Shot2("\"layout\": \"void\", \"zone\": 2, \"crystals\": [{ \"at\": " + at + " }]"));
+            Assert.That((t.Shots[1].Environment, t.Shots[1].Layout, t.Shots[1].Ground, t.Shots[1].Zone), Is.EqualTo(("desert", "void", "layout/void", 2)));
+            Assert.That(t.Shots[0].Zone, Is.EqualTo(-1));
+            Assert.That(t.Environments, Is.EqualTo(new[] { "crypt", "desert" }));
+            Assert.That(Environments(t.Shots[1].Ground).Placements.Items.Length, Is.EqualTo(0), "nothing stands on the void but the shot's crystals");
+            var ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2("\"layout\": \"moon\"")));
+            Assert.That(ex.Message, Does.Contain("shot 2: unknown layout 'moon'"));
+            ex = Assert.Throws<FormatException>(() => Parse(Shot1(), Shot2("\"layout\": \"void\", \"zone\": -1")));
+            Assert.That(ex.Message, Does.Contain("shot 2: zone must not be negative"));
+            ex = Assert.Throws<FormatException>(() => Parse(Shot1("\"layout\": \"void\", \"hero\": { \"at\": \"glowing-tree\", \"holdGround\": true }"), Shot2()));
+            Assert.That(ex.Message, Does.Contain("glowing-tree"));
+        }
+
+        /// <summary>
+        /// The camera grammar (trailer.md, The Crystal Cut): a shot on its own layout keeps the first such shot's heading, a
+        /// multiple of 90 degrees, and one framing; a shot on its environment's layout (the action cut's) is free.
+        /// </summary>
+        [Test]
+        public void AVoidShotKeepsTheCameraGrammar()
+        {
+            Assert.That(TrailerChecks.CameraGrammar(Parse(Shot1(), Shot2("\"yawDeg\": 45")), Parse(Shot1(), Shot2("\"yawDeg\": 45")).Shots[1]), Is.Empty, "the action cut's grammar is its own");
+            Trailer slanted = Parse(Shot1("\"layout\": \"void\""), Shot2("\"layout\": \"void\", \"yawDeg\": 45"));
+            List<string> problems = TrailerChecks.CameraGrammar(slanted, slanted.Shots[1]);
+            Assert.That(problems, Has.Count.EqualTo(2), Report(problems));
+            Assert.That(problems[0], Does.Contain("not a multiple of 90"));
+            Assert.That(problems[1], Does.Contain("not shot 1's"));
+            Trailer zoomed = Parse(Shot1("\"layout\": \"void\""), Shot2("\"layout\": \"void\", \"viewWidthToM\": 50"));
+            problems = TrailerChecks.CameraGrammar(zoomed, zoomed.Shots[1]);
+            Assert.That(problems, Has.Count.EqualTo(1), Report(problems));
+            Assert.That(problems[0], Does.Contain("zooms within the shot"));
         }
 
         /// <summary>A crystal standing in one of the environment's structures fails at load, naming it; so does one in the duel, which has no horde.</summary>

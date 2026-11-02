@@ -153,20 +153,23 @@ namespace Demo3D.Runtime.Playback
         }
 
         /// <summary>
-        /// The trailer file, validated against the song map and the environments (an unknown environment, area or grid
-        /// position fails, naming it), and each environment's run inputs at <paramref name="density"/>.
+        /// The trailer file, validated against the song map and the environments (an unknown environment, layout, area or
+        /// grid position fails, naming it), and each shot's run inputs at <paramref name="density"/>, by its ground
+        /// (<see cref="TrailerShot.Ground"/>: its environment's layout, or its own such as the crystal cut's void).
         /// `--environment` pins every shot to one. Then the time flags move from trailer seconds to song seconds.
         /// </summary>
         void LoadTrailer(PlaybackData data, RosterSet rosterSet, float density, out Dictionary<string, ChoreographyData> environments)
         {
             var known = data.EnvironmentNames();
             var choreo = new Dictionary<string, ChoreographyData>();
-            ChoreographyData Env(string env)
+            ChoreographyData Env(string ground)
             {
-                if (Array.IndexOf(known, env) < 0) return null;
-                if (!choreo.TryGetValue(env, out var c))
-                    choreo[env] = c = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster),
-                        data.EnvironmentLayout(env), data.footprints.text, density);
+                bool own = ground.StartsWith(Trailer.LayoutPrefix, StringComparison.Ordinal);
+                var layout = own ? data.Layout(ground.Substring(Trailer.LayoutPrefix.Length))?.text : null;
+                if (own ? layout == null : Array.IndexOf(known, ground) < 0) return null;
+                if (!choreo.TryGetValue(ground, out var c))
+                    choreo[ground] = c = ChoreographyData.FromJson(data.Annotations(rosterSet), rosterSet.Choreography(data.roster.text, _roster),
+                        layout ?? data.EnvironmentLayout(ground), data.footprints.text, density);
                 return c;
             }
             _trailer = Trailer.Parse(data.Trailer(_flags.Trailer).text, SongMap.Parse(data.songMap.text), env => Env(env)?.Layout,
@@ -202,7 +205,7 @@ namespace Demo3D.Runtime.Playback
             {
                 var info = _trailer.Shots[i];
                 var started = Time.realtimeSinceStartupAsDouble;
-                var tl = Choreographer.Run(SongMap.Parse(data.songMap.text), _trailer.ShotScript(i, level, overlay), environments[info.Environment]);
+                var tl = Choreographer.Run(SongMap.Parse(data.songMap.text), _trailer.ShotScript(i, level, overlay), environments[info.Ground]);
                 if (i > 0 && string.Join(",", tl.TypeNames) != string.Join(",", _shots[0].Timeline.TypeNames))
                     throw new InvalidOperationException($"DemoMain: shot {info.Number}'s monster types differ from shot 1's");
                 _shots[i] = new ShotPlayback
@@ -234,8 +237,8 @@ namespace Demo3D.Runtime.Playback
                 if (tl.Breaks.Length > 0 || tl.Crystals.Length > 0)
                 {
                     // The shot's structure breaks (trailer.md, "Structure breaks in a shot") and crystal formations ("Crystal
-                    // formations"), on its own environment.
-                    var layout = environments[s.Info.Environment].Layout;
+                    // formations"), on its own ground.
+                    var layout = environments[s.Info.Ground].Layout;
                     s.Moments = BreakMoments.Of(tl, layout);
                     s.Structures = new Demo3D.Runtime.Arena.StructureShatter(s.Moments, _arenas[s.Arena], layout, _structures.Name, tl.Crystals, CrowdLibrary.Load(), _structureLook);
                 }
@@ -258,12 +261,14 @@ namespace Demo3D.Runtime.Playback
                     s.Breaks = _lookCrowd.Breaks(InstanceScale, type => _hover[type]);
                 }
                 if (s.Breaks.Length > 0) s.Eval.BreaksAtImpact = new HashSet<int>(Array.ConvertAll(s.Breaks, b => b.Entity));
-                if (_impulses != null) s.Impulses = ShotImpulses.Of(tl, s.Breaks, s.Moments, s.Blows, PS.Look.ResolvedLook.Active.Palette);
+                if (_impulses != null)
+                    s.Impulses = ShotImpulses.Of(tl, s.Breaks, s.Moments, s.Blows, PS.Look.ResolvedLook.Active.Palette,
+                        ShotImpulses.Wipe(tl, s.Info.Cut, FlashCut(s), CutColour(i)));
                 s.Effects?.SetShatters(Array.ConvertAll(s.Breaks, b => new EffectDriver.Shatter
                 {
                     Time = b.Time, Entity = b.Entity, Position = b.Hit, Blow = b.Blow, Scale = b.Height / 1.8f, Seed = b.Seed, Tint = b.Gem,
                 }));
-                if (_flags.Overlay) s.Liveness = TrailerChecks.Report(_trailer, i, tl, environments[s.Info.Environment]).LivenessViolations;
+                if (_flags.Overlay) s.Liveness = TrailerChecks.Report(_trailer, i, tl, environments[s.Info.Ground]).LivenessViolations;
                 if (!Plays(s)) continue;
                 var clientSounds = s.Breaks.Length > 0 ? ShatterSounds.For(s.Breaks, tl.Map) : null;
                 if (s.Moments.Count > 0) (clientSounds ??= new List<SoundScheduler.Cue>()).AddRange(s.Moments.Sounds(_structures.Name, tl.Map));
@@ -274,8 +279,13 @@ namespace Demo3D.Runtime.Playback
 
             var map = _shots[0].Timeline.Map;
             var cutFlashes = new List<double>();
-            foreach (var s in _shots)
-                if (Plays(s) && s.Info.Number > 1 && Array.Exists(map.Accents, a => Math.Abs(a.Time - s.Info.Cut) < FlashCutToleranceS)) cutFlashes.Add(s.Info.Cut);
+            var cutTints = new List<Color>();
+            for (int i = 0; i < _shots.Length; i++)
+                if (Plays(_shots[i]) && FlashCut(_shots[i]))
+                {
+                    cutFlashes.Add(_shots[i].Info.Cut);
+                    cutTints.Add(CutColour(i));
+                }
             // The trailer's look (trailer.md, Look): each shot's grade from its first frame, and its lens hits. Under a
             // look's post stack every shot takes the stack's one grade: no shot grades.
             var grades = new List<(double, TrailerGrade)>();
@@ -304,13 +314,37 @@ namespace Demo3D.Runtime.Playback
                         if (s.Fight != null) breakFlashes.AddRange(s.Fight.Flashes());
                     }
                 _postFeels[a] = new PostFeel(map, amounts, !_flags.NoFeel && !_flags.NoPostFeel, flashes, breakFlashes, cutFlashes, grades);
-                if (_lookPost != null) _postFeels[a].Binding.Tints = PS.Look.PostStack.Tints(_lookPost, PS.Look.ResolvedLook.Active.Palette);
+                if (_lookPost != null)
+                {
+                    _postFeels[a].Binding.Tints = PS.Look.PostStack.Tints(_lookPost, PS.Look.ResolvedLook.Active.Palette);
+                    _postFeels[a].PaletteFlashes(cutTints); // the flash cuts flood with the incoming zone's hue, not white
+                }
             }
             _postFeel = _postFeels[0];
             Debug.Log($"DemoMain: flash cuts at trailer {string.Join(", ", cutFlashes.ConvertAll(c => (c - _timeBase).ToString("F3", CultureInfo.InvariantCulture)))} s; {_soundCues.Length} sound cues; " +
                       (_look != null ? $"{hits.Count} lens hits at trailer {string.Join(", ", hits.ConvertAll(h => $"{h.Time - _timeBase:F3} ({h.Strength:F2})"))} s" : "no trailer look"));
             UseShot(ShotAt(_flags.StartAt));
             _black = BlackVolume();
+        }
+
+        /// <summary>
+        /// Whether a shot's cut is a section's entry, which flashes (trailer.md, Playback and cuts; The Crystal Cut,
+        /// transitions): a cut after the first on one of the song map's accents.
+        /// </summary>
+        bool FlashCut(ShotPlayback s) =>
+            s.Info.Number > 1 && Array.Exists(s.Timeline.Map.Accents, a => Math.Abs(a.Time - s.Info.Cut) < FlashCutToleranceS);
+
+        /// <summary>
+        /// The colour of shot <paramref name="i"/>'s transition, its impulse wipe and palette flash: its zone's tint under
+        /// `hued-zones` (the zone it takes on the cut), else the palette's grid pulse (one key for the whole cut).
+        /// </summary>
+        Color CutColour(int i)
+        {
+            var palette = PS.Look.ResolvedLook.Active?.Palette;
+            if (palette == null) return Color.white; // the action cut: no look, its flash cuts near-white
+            int zone = _shots[i].Info.Zone >= 0 ? _shots[i].Info.Zone : i;
+            int n = palette.Zones.Length;
+            return _world != null && _world.Zoned && n > 0 ? palette.Zones[zone % n].Tint : palette.GridPulse;
         }
 
         static int[] BySpawn(Timeline tl)
@@ -356,8 +390,9 @@ namespace Demo3D.Runtime.Playback
             }
             _slotBase = i << 20;
             _rig.YawDeg = s.Info.YawDeg; // the camera jumps to the shot's framing (Draw reads its framing track)
-            // Under hued-zones each shot is a zone of the kit, its tint taken on the cut (the style guide: only the zone tint may change at a cut).
-            _world?.SetZone(i, double.NegativeInfinity, 0);
+            // Under hued-zones each shot is a zone of the kit, its file's or else its index's, its tint taken on the cut (the
+            // style guide: only the zone tint may change at a cut).
+            _world?.SetZone(s.Info.Zone >= 0 ? s.Info.Zone : i, double.NegativeInfinity, 0);
             _world?.Present(0);
         }
 

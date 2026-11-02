@@ -35,7 +35,15 @@ namespace PS.Choreography
         public string CutAt;               // "start" (shot 1) or a bar.beat
         /// <summary>Song seconds: the shot's first frame (shot 1's is the trailer's start), its end (the next cut, or the cut to black) and its pre-roll's start.</summary>
         public double Cut, End, SpanFrom;
+        /// <summary>The environment whose resident scene draws the shot (and, without <see cref="Layout"/>, whose layout it plays on).</summary>
         public string Environment;
+        /// <summary>
+        /// The layout the shot's simulation plays on in place of its environment's (NAME-layout.json, such as the void's open
+        /// ground: trailer.md, The Crystal Cut), or null for the environment's own.
+        /// </summary>
+        public string Layout;
+        /// <summary>The look's palette zone the shot takes under `hued-zones` (neon-look.md, World), or -1: the shot's index.</summary>
+        public int Zone = -1;
         public float ViewWidthM, ViewWidthToM, YawDeg;
         public LayoutPoint HeroAt;
         public bool HoldGround;
@@ -56,6 +64,12 @@ namespace PS.Choreography
         public float ShapeScale = 1f, DensityCap = Trailer.DefaultDensityCap;
         public TrailerGrade Grade = new TrailerGrade();
         public int PrerollBeats = Trailer.DefaultPrerollBeats;
+
+        /// <summary>
+        /// The ground the shot's simulation plays on, the key of its run inputs: its <see cref="Layout"/> as
+        /// <see cref="Trailer.LayoutPrefix"/> NAME, else its environment.
+        /// </summary>
+        public string Ground => Layout != null ? Trailer.LayoutPrefix + Layout : Environment;
 
         /// <summary>The live monsters in view the shot aims for: its formation's, or its duel's cast.</summary>
         public int TargetOnScreen
@@ -89,6 +103,8 @@ namespace PS.Choreography
     public sealed class Trailer
     {
         public const string StartCut = "start";
+        /// <summary>A shot's <see cref="TrailerShot.Ground"/> when it plays on a layout of its own: "layout/" and the layout's name.</summary>
+        public const string LayoutPrefix = "layout/";
         public const float DefaultHeroStepS = 0.14f, DefaultDensityCap = LevelScript.DefaultDensityCap;
         public const int DefaultPrerollBeats = 16;
         /// <summary>
@@ -133,7 +149,8 @@ namespace PS.Choreography
 
         /// <summary>
         /// The trailer from its JSON, validated: every position on <paramref name="map"/>'s grid, every environment known
-        /// to <paramref name="environment"/> (its layout, or null for an unknown name), and every area in that layout.
+        /// to <paramref name="environment"/> (its layout, or null for an unknown name; a shot's own layout is asked for as its
+        /// <see cref="TrailerShot.Ground"/>, <see cref="LayoutPrefix"/> NAME), and every area in the layout the shot plays on.
         /// <paramref name="pinEnvironment"/> (the player's <c>--environment</c>) plays every shot in one environment.
         /// A bad value fails, naming it.
         /// </summary>
@@ -187,13 +204,15 @@ namespace PS.Choreography
         static TrailerShot ParseShot(JsonValue o, int n, Trailer tr, SongMap map, BeatGrid grid, Func<string, GroundLayout> environment, string pin)
         {
             string what = "shot " + n;
-            CheckKeys(o, what, "cut", "environment", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
+            CheckKeys(o, what, "cut", "environment", "layout", "zone", "viewWidthM", "viewWidthToM", "yawDeg", "hero", "path", "formation", "duel", "combo", "spells",
                 "boss", "bossFight", "shapeScale", "densityCap", "grade", "prerollBeats", "blowsOn", "breaks", "crystals", "note");
             var s = new TrailerShot
             {
                 Number = n,
                 CutAt = o["cut"].AsString(),
                 Environment = pin ?? o["environment"].AsString(),
+                Layout = o["layout"].AsString(),
+                Zone = o["zone"].AsInt(-1),
                 ViewWidthM = o["viewWidthM"].AsFloat(0f),
                 ViewWidthToM = o["viewWidthToM"].AsFloat(0f),
                 YawDeg = o["yawDeg"].AsFloat(0f),
@@ -215,8 +234,10 @@ namespace PS.Choreography
                 s.Cut = map.TimeOfBarBeat(s.CutAt, grid);
             }
             if (s.Environment == null) throw new FormatException(what + ": needs an environment");
-            GroundLayout layout = environment(s.Environment);
-            if (layout == null) throw new FormatException(what + ": unknown environment '" + s.Environment + "'");
+            if (environment(s.Environment) == null) throw new FormatException(what + ": unknown environment '" + s.Environment + "'");
+            if (o.Has("zone") && s.Zone < 0) throw new FormatException(what + ": zone must not be negative");
+            GroundLayout layout = s.Layout == null ? environment(s.Environment) : environment(s.Ground);
+            if (layout == null) throw new FormatException(what + ": unknown layout '" + s.Layout + "'");
             if (!(s.ViewWidthM > 0) || s.ViewWidthToM < 0) throw new FormatException(what + ": needs a positive viewWidthM");
             if (!(s.ShapeScale > 0) || !(s.DensityCap > 0) || s.PrerollBeats < 0) throw new FormatException(what + ": shapeScale and densityCap must be positive, prerollBeats not negative");
             JsonValue hero = o["hero"];
@@ -234,7 +255,7 @@ namespace PS.Choreography
             }
             if (s.HoldGround && s.Path != null) throw new FormatException(what + ": a hero holding ground has no path");
             if (s.HeroAt == null && s.Path == null) throw new FormatException(what + ": needs a path or the hero's start (hero.at)");
-            // Every area must be one of the environment's.
+            // Every area must be one of the layout's.
             s.HeroAt?.Resolve(layout, what + " hero");
             if (s.Path != null) for (int i = 0; i < s.Path.Via.Length; i++) s.Path.Via[i].Resolve(layout, what + " path waypoint " + (i + 1));
             if (s.Boss != null && Array.IndexOf(BossSides, s.Boss) < 0) new LayoutPoint { Area = s.Boss }.Resolve(layout, what + " boss");

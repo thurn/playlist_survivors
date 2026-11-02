@@ -574,8 +574,11 @@ the grid floor (`Runtime/World/GridFloor.cs`, ps-wnj.7):
   buried the formations in crystal), on the environment's resident layer.
   The formations draw in the structure look's `Featured` and still break through demo3d's own
   `StructureShatter` (the action cut's copy, with the formation burst people
-  liked); under `hued-zones` each shot takes the next zone tint on its cut.
-  Re-staging the shots for the void is ps-wnj.17.
+  liked); under `hued-zones` each shot takes its zone's tint on its cut.
+  Since the re-staging (ps-wnj.17) every crystal-cut shot plays on the
+  void's open ground (`void-layout.json`) and its one host, the forest, is
+  host-only: its set hides under every world option and no structure props
+  stand (The Trailer, below).
 
 ### The impulse field
 
@@ -880,6 +883,31 @@ What changes:
 The trailer's rules hold (no idle crowds, blows on major beats, the hero
 never surrounded, no UI or text, the game's own camera). A rule that blocks
 the redesign may change: say so in trailer.md and update its check.
+
+What shipped (ps-wnj.17; trailer.md, The Crystal Cut):
+
+- **The void staging.** A trailer shot's new `layout` plays its simulation on
+  a layout of its own: every crystal-cut shot plays on `void-layout.json`,
+  open ground where only its formations block, so the horde never parts round
+  anything the void doesn't draw (on the Synty layouts it parted round hidden
+  trees and walls). Every shot is hosted by the forest's scene, whose whole set
+  hides; a shot's `zone` names its zone (the old places neon, crypt, lava and
+  forest become zones 0 to 3, each twice). Each shot was turned by its old
+  heading and centred on the void, so it frames as before, and the fifteen
+  formations smash at the old cut's moments.
+- **Transitions**, all on the beat in the incoming zone's colour: a section's
+  entry (the five accent cuts) is a palette flash, the frame flooding with
+  the zone's hue through the colour filter with a modest exposure and bloom
+  lift (the run's restraint: never the brightest moment), plus a strong
+  impulse wipe, a fast wide ring from the hero across the floor
+  (`ImpulseField.Wipe`); a cut within a section is a soft wipe alone. No whips:
+  a camera move the game never makes.
+- **One camera grammar**, checked (`one camera grammar`): one heading (yaw 0,
+  the grid square to the frame in every shot), one framing per shot from a
+  ladder by role (hook 20 m, long shots 42 to 44 m, quickening 38 to 36 m,
+  finale 32 m), no zoom within a shot.
+- The per-shot grades went with the environments they balanced. Evidence:
+  [demo3d/evidence/look/restage](../../demo3d/evidence/look/restage/README.md).
 
 ## The Game
 
