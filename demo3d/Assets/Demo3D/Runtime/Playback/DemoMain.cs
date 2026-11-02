@@ -27,6 +27,7 @@ namespace Demo3D.Runtime.Playback
         CrowdSlots _slots;
         StockCrowd _heroRenderer;
         HeroBlade _heroBlade;
+        Material _heroLook; // the crystal cut's hero look's material for the knight (PS.Look.Hero.HeroLooks), or null
         GameCameraRig _rig;
         SongClock _clock;
         CaptureTool _capture;
@@ -263,9 +264,20 @@ namespace Demo3D.Runtime.Playback
             _heroRenderer = new StockCrowd();
             _heroRenderer.Initialize(new[] { _hero.id }, 1);
             // The hero's crystal blade (HeroBlade), under every style: it refracts the camera's opaque
-            // texture, so that is on in every run.
-            _heroBlade = new HeroBlade(CrowdLibrary.Load());
-            _heroRenderer.Created = _heroBlade.Attach;
+            // texture, so that is on in every run. The crystal cut's hero look (neon-look.md, The Axes > Hero)
+            // draws the knight's baked faceted meshes and the blade in its own materials; the action cut has none.
+            var heroLook = PS.Look.Hero.HeroLooks.Active;
+            _heroBlade = new HeroBlade(CrowdLibrary.Load(), heroLook);
+            if (heroLook != null)
+            {
+                _heroLook = heroLook.Body();
+                _heroRenderer.Created = go =>
+                {
+                    heroLook.Dress(go, _heroLook);
+                    _heroBlade.Attach(go);
+                };
+            }
+            else _heroRenderer.Created = _heroBlade.Attach;
             // The walk and run are unarmed: their swinging arms would fling the blade through the body,
             // so the sword idle holds the arms while they play.
             int heroIdle = _hero.ClipIndex("idle"), heroRun = _hero.ClipIndex("run");
@@ -1018,6 +1030,7 @@ namespace Demo3D.Runtime.Playback
             _structures?.Dispose();
             _heroRenderer?.Dispose();
             _heroBlade?.Dispose();
+            if (_heroLook != null) Destroy(_heroLook);
             _floor?.Dispose();
             if (_arenas != null) _arenas.Dispose();
             else _arena?.Dispose();

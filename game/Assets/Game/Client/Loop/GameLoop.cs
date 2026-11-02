@@ -289,6 +289,10 @@ namespace Game.Client.Loop
             {
                 _hero = new HeroPresenter(heroBake);
                 Driver.Events.Subscribe(_hero);
+                // The prism hero refracts the scene behind it, which the renderers leave off.
+                if (PS.Look.Hero.HeroLooks.Active?.Refracts == true && camera != null
+                    && camera.TryGetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>(out var cameraData))
+                    cameraData.requiresColorOption = UnityEngine.Rendering.Universal.CameraOverrideOption.On;
             }
             _look = new LookPresenter(camera, Driver.Sim);
             if (_hero != null) _look.DrawnHero = _hero.Drawn; // the hero presents first, then the camera follows it

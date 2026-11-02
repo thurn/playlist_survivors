@@ -136,15 +136,17 @@ namespace PS.Look
         }
 
         /// <summary>
-        /// Hands shaders the scene pass's void toe and exposure as <c>_LookToe</c> (knee, power, the exposure's factor;
-        /// zero with no option), so a dim emitter can be set to land at a given light through it: the grid floor's lines
-        /// (GridFloor.shader), which a toe this steep would otherwise put anywhere from L* 1 to 30 by palette.
+        /// Hands shaders the scene pass's void toe and exposure as <c>_LookToe</c> (knee, power, the exposure's factor, the
+        /// scene's own exposure's factor; zero with no option), so a dim emitter can be set to land at a given light
+        /// through it: the grid floor's lines (GridFloor.shader), which a toe this steep would otherwise put anywhere from
+        /// L* 1 to 30 by palette, and the hero (HeroLook.hlsl), which takes out the scene's exposure so it lands alike in
+        /// game's dim baked arena and demo3d's crystal cut.
         /// </summary>
         static void PublishToe()
         {
             var o = _scene?.Option;
             Shader.SetGlobalVector(ToeId, o == null ? Vector4.zero
-                : new Vector4(o.VoidKnee, o.VoidPower, Mathf.Pow(2f, o.Exposure + _sceneExposure), 0));
+                : new Vector4(o.VoidKnee, o.VoidPower, Mathf.Pow(2f, o.Exposure + _sceneExposure), Mathf.Pow(2f, _sceneExposure)));
         }
 
         /// <summary>Stops the look's passes.</summary>

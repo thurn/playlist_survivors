@@ -568,6 +568,13 @@ their clip timing still comes from the timeline.
     (`StyleBeat`), which only the style shaders read.
   - It casts a shadow, draws black in TD15's ID render, as the hero does,
     and has a motion-vector twin material, as the crystal shards do.
+  - **The crystal cut's hero looks** (ps-wnj.9,
+    [neon-look.md, Hero](../design/neon-look.md#hero)): under the preset's
+    hero look the knight draws the roster bake's faceted copies of its
+    meshes (`RosterBaker` calls the look package's `HeroFacetBaker` for the
+    hero, into Baked/Roster/Facets/) and the blade the look's blade
+    material, with the same flare. The action cut keeps the Synty knight
+    and this blade.
   - **The cut.** An eight-sided section (edges, a spine down each flat and
     a bevel either side) in 14 rings, every corner but the spine's nudged
     its own way, so each triangle tilts on its own and the blade reads as a

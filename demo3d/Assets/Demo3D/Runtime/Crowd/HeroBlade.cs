@@ -11,7 +11,8 @@ namespace Demo3D.Runtime.Crowd
     /// place of the knight's broadsword, under every monster style. Its mesh is made here (no vendor
     /// asset): a pommel gem, a crossguard and a long faceted blade with a spine, every triangle
     /// flat with its own barycentrics, as the crowd's style mesh, so CrystalCommon's facets, edges and
-    /// glints read on it. CrystalBlade.shader draws it.
+    /// glints read on it. CrystalBlade.shader draws it, or under the crystal cut's hero look the look's
+    /// blade material (PS.Look.Hero.HeroLook.Blade), its flare the same.
     ///
     /// The grip comes from the hand's bones: the handle runs through the fist across the knuckles, the
     /// blade leaving it on the thumb's side with its edge toward the knuckles, as the Sword Combat clips
@@ -58,13 +59,17 @@ namespace Demo3D.Runtime.Crowd
         Timeline _blowsOf; // a trailer switches timelines at its cuts
         double[] _blows;   // the hero's blows' impact times in it, ascending
 
-        public HeroBlade(CrowdLibrary lib)
+        /// <param name="look">The hero look whose blade material draws it, or null for CrystalBlade.shader.</param>
+        public HeroBlade(CrowdLibrary lib, PS.Look.Hero.HeroLook look = null)
         {
             var shader = lib.StyleShader("Demo3D/Styles/CrystalBlade");
-            _material = new Material(shader) { name = "hero_blade", enableInstancing = false };
-            _motion = new Material(shader) { name = "hero_blade_motion", renderQueue = (int)RenderQueue.GeometryLast, enableInstancing = false };
+            _material = look?.Blade() ?? new Material(shader) { name = "hero_blade", enableInstancing = false };
+            _motion = look?.Blade() ?? new Material(shader) { enableInstancing = false };
+            _motion.name = "hero_blade_motion";
+            _motion.renderQueue = (int)RenderQueue.GeometryLast;
             _motion.SetShaderPassEnabled("UniversalForward", false);
             _motion.SetShaderPassEnabled("ShadowCaster", false);
+            _motion.SetShaderPassEnabled("SRPDefaultUnlit", false); // the hologram's depth pass
             _mesh = BuildMesh();
             if (Args.Get(TuneFlag) is string tune) Tune(tune);
         }

@@ -17,6 +17,8 @@ namespace PS.Look
     public sealed class LookFlags
     {
         public const string LookFlag = "--look", PaletteFlag = "--palette", MotionFlag = "--motion", BeatRippleFlag = "--beat-ripple";
+        /// <summary>`--hero-tune key=value,...`: the hero look's material values for a run (Hero.HeroLook.Tune), to judge a change without a rebuild.</summary>
+        public const string HeroTuneFlag = "--hero-tune";
 
         static LookFlags _current;
 
@@ -32,6 +34,8 @@ namespace PS.Look
         /// <summary>`--motion`'s layers (empty for `none`), or null for the preset's.</summary>
         public string[] Motion;
         public bool BeatRipple;
+        /// <summary>`--hero-tune`'s pairs, or null.</summary>
+        public string HeroTune;
         /// <summary>The axis flags given: the option each names, by axis.</summary>
         public readonly Dictionary<LookAxis, string> Overrides = new Dictionary<LookAxis, string>();
 
@@ -46,6 +50,7 @@ namespace PS.Look
                 yield return LookFlag;
                 yield return PaletteFlag;
                 yield return MotionFlag;
+                yield return HeroTuneFlag;
                 foreach (var axis in LookAxes.All)
                     if (axis.Flag != null) yield return axis.Flag;
             }
@@ -71,7 +76,7 @@ namespace PS.Look
                     if (args[i] == name) return args[i + 1];
                 return null;
             }
-            var flags = new LookFlags { Look = Get(LookFlag), BeatRipple = Array.IndexOf(args, BeatRippleFlag) >= 0 };
+            var flags = new LookFlags { Look = Get(LookFlag), BeatRipple = Array.IndexOf(args, BeatRippleFlag) >= 0, HeroTune = Get(HeroTuneFlag) };
             foreach (var axis in LookAxes.All)
                 if (axis.Flag != null && Get(axis.Flag) is string option) flags.Overrides[axis] = option;
             if (Get(MotionFlag) is string motion)

@@ -379,6 +379,9 @@ def test_mask_rules_find_the_floor_the_hero_and_the_monsters_form() -> None:
     assert m["floor_p50"] == m["floor_p90"] == m["floor_p99"] == pytest.approx(5.9, abs=0.1)
     assert m["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
     assert m["monster_form"] == pytest.approx(lit - 5.9, abs=0.1)
+    # Game's view json marks its ID render as the crowd alone: the hero still, no floor.
+    crowd_only = look.mask_rules(img, monsters, None, {**top_down(w, h), "floor": False})
+    assert "floor_p50" not in crowd_only and crowd_only["hero_margin"] == pytest.approx(100 - lit, abs=0.1)
     # A flat monster, with no view json: no floor or hero, and no form; it stands well off the ground.
     img[256:320, 0:64] = CYAN
     flat = look.mask_rules(img, monsters, None, None)

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using Game.Client.Loop;
 using PS.Game.Sim;
+using PS.Look.Hero;
 using UnityEngine;
 
 namespace Game.Client.Hero
@@ -10,7 +11,9 @@ namespace Game.Client.Hero
     /// <summary>
     /// The hero (unity-game.md, The Hero): the Synty knight on its song-time graph (<see cref="HeroRig"/>),
     /// moved and animated by the sim's HeroStep and Attack events (<see cref="HeroMotion"/>), with the
-    /// white crystal blade in its hand (<see cref="HeroBlade"/>), flaring on each impact. Extras:
+    /// white crystal blade in its hand (<see cref="HeroBlade"/>), flaring on each impact. Under a hero look
+    /// (<see cref="HeroLooks.Active"/>, neon-look.md, The Axes &gt; Hero) the knight draws its baked faceted meshes in the
+    /// look's material and the blade in the look's blade material; under classic, as before. Extras:
     /// - the low-health pulse: under a third of its health the knight glows red on each beat, more as it nears none;
     /// - the aura's hook: <see cref="AuraAnchor"/> follows the hero's feet (not its turn) for the aura's
     ///   effects to hang on, and <see cref="Aura"/> is its strength, from <see cref="AuraStart"/> growing
@@ -30,6 +33,7 @@ namespace Game.Client.Hero
         readonly HeroRig _rig;
         readonly HeroBlade _blade;
         readonly Renderer[] _body;
+        readonly Material _look; // the hero look's material for the knight, or null
         readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
         readonly double[] _beats = new double[Beats];
         int _beatCount;
@@ -58,8 +62,14 @@ namespace Game.Client.Hero
             var root = new GameObject("HeroPresenter").transform;
             _motion = new HeroMotion(HeroClips.Parse(bake.clipsJson));
             _rig = new HeroRig(bake, root);
-            _blade = new HeroBlade(bake.blade);
+            var look = HeroLooks.Active;
+            _blade = new HeroBlade(bake.blade, look);
             _blade.Attach(_rig.Animator);
+            if (look != null)
+            {
+                _look = look.Body();
+                look.Dress(_rig.Knight, _look);
+            }
             _body = _rig.Knight.GetComponentsInChildren<SkinnedMeshRenderer>();
             AuraAnchor = new GameObject("Aura").transform;
             AuraAnchor.SetParent(root, false);
@@ -89,6 +99,7 @@ namespace Game.Client.Hero
             _turn.Ease(ref pose, dt);
             _rig.Pose(pose, _turn.Legs);
             _blade.Flare = pose.Flare;
+            Stills.HeroFeet = new Vector3((float)pose.X, 0, (float)pose.Y);
             AuraAnchor.position = new Vector3((float)pose.X, 0, (float)pose.Y);
             Pulse(t, hero);
             _out?.WriteLine(string.Format(CultureInfo.InvariantCulture,
@@ -120,8 +131,10 @@ namespace Game.Client.Hero
         {
             _out?.Dispose();
             _out = null;
+            Stills.HeroFeet = null;
             _blade.Dispose();
             _rig.Dispose();
+            if (_look != null) UnityEngine.Object.Destroy(_look);
             if (AuraAnchor != null) UnityEngine.Object.Destroy(AuraAnchor.parent.gameObject);
         }
     }

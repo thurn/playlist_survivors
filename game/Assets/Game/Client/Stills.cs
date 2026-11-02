@@ -16,7 +16,9 @@ namespace Game.Client
     /// frames that keep a still (drawing every frame by hand grows URP's pooled targets,
     /// docs/tech-demo-3d/mac.md). With `--capture-mask` it draws the same frame again as its ID
     /// render, still-&lt;time&gt;-mask.png: the crowd alone, flat white on black (every monster look
-    /// under _GameIdMask), with no post, for the look tools' readability measure.
+    /// under _GameIdMask), with no post, for the look tools' readability measure, and view-&lt;time&gt;.json:
+    /// the camera's view-projection and the hero's feet (<see cref="HeroFeet"/>), as demo3d writes it, for
+    /// the look metrics' hero measure (the hero's margin over the monsters, neon-look-style.md).
     /// </summary>
     public sealed class Stills : IDisposable
     {
@@ -46,6 +48,9 @@ namespace Game.Client
         }
 
         public bool Done => _times.Count == 0;
+
+        /// <summary>The hero's feet as last drawn (HeroPresenter sets it), for the view json; null without a hero.</summary>
+        public static Vector3? HeroFeet;
 
         /// <summary>
         /// A 1920×1080 target for a hand-drawn frame: URP draws an offscreen camera with its target's
@@ -94,9 +99,33 @@ namespace Game.Client
                 mask ??= DrawMask();
                 name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}-mask.png", at);
                 RenderTag.Save(mask, Path.Combine(_dir, name), "game stills mask t=" + at.ToString("F3", CultureInfo.InvariantCulture));
+                WriteView(at);
             }
             if (tex != null) UnityEngine.Object.Destroy(tex);
             if (mask != null) UnityEngine.Object.Destroy(mask);
+        }
+
+        /// <summary>
+        /// view-&lt;at&gt;.json beside the still: the camera's view-projection at the still's size (OpenGL clip space,
+        /// row-major) and the hero's feet, the format demo3d's DemoMain writes and look.py reads. None without a hero.
+        /// </summary>
+        void WriteView(double at)
+        {
+            if (HeroFeet is not Vector3 feet) return;
+            float aspect = Width / (float)Height;
+            var proj = _camera.orthographic
+                ? Matrix4x4.Ortho(-_camera.orthographicSize * aspect, _camera.orthographicSize * aspect, -_camera.orthographicSize,
+                    _camera.orthographicSize, _camera.nearClipPlane, _camera.farClipPlane)
+                : Matrix4x4.Perspective(_camera.fieldOfView, aspect, _camera.nearClipPlane, _camera.farClipPlane);
+            var m = proj * _camera.worldToCameraMatrix;
+            var sb = new System.Text.StringBuilder("{\"viewProj\": [");
+            for (int r = 0; r < 4; r++)
+            for (int c = 0; c < 4; c++)
+                sb.Append(string.Format(CultureInfo.InvariantCulture, "{0}{1:R}", r + c == 0 ? "" : ", ", m[r, c]));
+            // "floor": false: the ID render marks only the crowd, so look.py leaves out the floor measures, which the
+            // structures and effects would count in.
+            sb.Append(string.Format(CultureInfo.InvariantCulture, "], \"hero\": [{0:R}, {1:R}, {2:R}], \"floor\": false}}\n", feet.x, feet.y, feet.z));
+            File.WriteAllText(Path.Combine(_dir, string.Format(CultureInfo.InvariantCulture, "view-{0:000.000}.json", at)), sb.ToString());
         }
 
         Texture2D DrawMask()

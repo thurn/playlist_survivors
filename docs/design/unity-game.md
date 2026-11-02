@@ -2346,6 +2346,12 @@ game/Content/hero-clips.json, into the gitignored Baked/Hero/). As built:
 - The blade is demo3d's mesh and grip, drawn by Game/CrystalBlade on the
   structures' shared include; it flares to 1 at each impact (1.5 heavy) and
   fades over 0.22 s.
+- Under a hero look (the preset's `hero` axis, `--hero-look`; ps-wnj.9,
+  [neon-look.md, Hero](neon-look.md#hero)) the knight draws the bake's
+  faceted copies of its meshes (`HeroBaker` calls the look package's
+  `HeroFacetBaker`, into Baked/Hero/Facets/) in the look's material, and the
+  blade the look's blade material, its flare kept; `--look classic` keeps the
+  Synty knight and Game/CrystalBlade.
 - The low-health pulse: under a third of its health the knight's emission
   beats red on each beat. The aura's hook is `HeroPresenter.AuraAnchor` (the
   feet, unturned) and `Aura` (0.2 at the start, growing with the build).

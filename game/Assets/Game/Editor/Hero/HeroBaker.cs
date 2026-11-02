@@ -4,6 +4,7 @@ using System.Linq;
 using Game.Client.Hero;
 using Game.EditorTools.Arena;
 using PS.Game.Arena;
+using PS.Look.EditorTools.Hero;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -16,18 +17,22 @@ namespace Game.EditorTools.Hero
     /// change. Into the gitignored Assets/Baked/Hero/ (derived from vendor assets,
     /// docs/tech-demo-3d/vendor-assets.md): the knight with its shield in its left hand, scaled to the
     /// hero's height, its materials converted to URP (the arena's MaterialConverter, with the emission
-    /// on for the low-health pulse), with no controller or vendor scripts, as a prefab; and the
+    /// on for the low-health pulse), with no controller or vendor scripts, each renderer tagged with its faceted mesh
+    /// for the hero looks (the look package's HeroFacetBaker, into Facets/), as a prefab; and the
     /// player's <see cref="HeroBake"/>, with the clips in <see cref="HeroClip"/> order and the blade's shader.
     /// </summary>
     public static class HeroBaker
     {
         public const string Dir = "Assets/Baked/Hero";
         public const string MaterialDir = Dir + "/Materials";
+        public const string FacetDir = Dir + "/Facets";
         public const string BladeShaderPath = "Assets/Game/Client/Hero/Shaders/CrystalBlade.shader";
 
         public static void Bake()
         {
             Directory.CreateDirectory(MaterialDir);
+            AssetDatabase.DeleteAsset(FacetDir); // a rebake leaves no stale meshes
+            Directory.CreateDirectory(FacetDir);
             Directory.CreateDirectory(Dir + "/Resources");
             string json = File.ReadAllText(HeroClips.ContentPath);
             var table = HeroClips.Parse(json);
@@ -67,6 +72,7 @@ namespace Game.EditorTools.Hero
                 m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
                 EditorUtility.SetDirty(m);
             }
+            HeroFacetBaker.Facet(go, FacetDir);
             var knight = PrefabUtility.SaveAsPrefabAsset(go, $"{Dir}/Knight.prefab");
             UnityEngine.Object.DestroyImmediate(go);
 

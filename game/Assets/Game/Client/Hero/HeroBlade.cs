@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Game.Client.Crowd;
+using PS.Look.Hero;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,7 +12,8 @@ namespace Game.Client.Hero
     /// a big cut-crystal sword in the knight's right hand. Its mesh is made here (no vendor asset): a
     /// pommel gem, a crossguard and a long faceted blade with a spine, every triangle flat with its own
     /// barycentrics, so the crystal's facets, edges and glints read on it. Game/CrystalBlade draws it,
-    /// and it flares on each blow (<see cref="Flare"/>).
+    /// or under a hero look the look's blade material (<see cref="HeroLook.Blade"/>), and it flares on
+    /// each blow (<see cref="Flare"/>).
     ///
     /// The grip comes from the hand's bind pose: the handle runs through the fist across the knuckles,
     /// the blade leaving it on the thumb's side with its edge toward the knuckles, as the Sword Combat
@@ -36,13 +38,17 @@ namespace Game.Client.Hero
 
         public Transform Transform { get; private set; }
 
-        public HeroBlade(Shader shader)
+        /// <param name="look">The hero look whose blade material draws it, or null for Game/CrystalBlade.</param>
+        public HeroBlade(Shader shader, HeroLook look = null)
         {
-            _material = new Material(shader) { name = "hero_blade", enableInstancing = false };
+            _material = look?.Blade() ?? new Material(shader) { name = "hero_blade", enableInstancing = false };
             // A twin in the last opaque queue that runs only its motion vectors, so a swing reprojects.
-            _motion = new Material(shader) { name = "hero_blade_motion", renderQueue = (int)RenderQueue.GeometryLast, enableInstancing = false };
+            _motion = look?.Blade() ?? new Material(shader) { enableInstancing = false };
+            _motion.name = "hero_blade_motion";
+            _motion.renderQueue = (int)RenderQueue.GeometryLast;
             _motion.SetShaderPassEnabled("UniversalForward", false);
             _motion.SetShaderPassEnabled("ShadowCaster", false);
+            _motion.SetShaderPassEnabled("SRPDefaultUnlit", false); // the hologram's depth pass
             _mesh = BuildMesh();
         }
 

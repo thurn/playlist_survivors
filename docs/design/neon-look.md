@@ -920,6 +920,61 @@ growing (ps-b5z.1's rule) or an outline (removed on the operator's review).
 The crystal blade's flare stays. Each preset picks a hero treatment
 matching its monsters.
 
+How the package implements it (ps-wnj.9; evidence in
+[game/evidence/look/hero](../../game/evidence/look/hero/README.md) and
+[demo3d/evidence/look/hero](../../demo3d/evidence/look/hero/README.md)):
+
+- **Four hero looks**, one per preset and named after it (`HeroLooks`,
+  options `edge`, `solid`, `hologram`, `prism` in `Axes/Hero.cs`; `--hero-look`
+  mixes one into any preset). One shader each,
+  `Resources/Look/Shaders/HeroEdge`, `HeroSolid`, `HeroHologram` and `HeroGem`,
+  over `Runtime/Hero/Shaders/HeroLook.hlsl`, draws both the knight and the
+  blade, in `hero.body` (the blade `hero.blade`, `hero.trail` as a faint
+  second colour):
+  - **edge**: smoked glass a little lit, a fresnel rim and lines on the
+    knight's feature edges, and a glowing core in its chest seen through
+    the glass: a cut-crystal knight of white lines.
+  - **solid**: self-lit `hero.body` shaded for form by a soft light from
+    above, each facet a step apart, a hot spot facing the camera. No
+    outline: it wins on value.
+  - **hologram**: light added over the world (premultiplied, after a
+    depth-only pass, as the monsters' hologram): lines, a rim and a fill far
+    denser than a monster's, and a band rising up the body on the beat.
+  - **prism**: a white gem: the void behind bent through each facet, light
+    trapped in every facet, a band of reflected light per facet, fine
+    lines, a few facets sparkling on the beat. The game turns on the
+    camera's opaque texture for it (`HeroLook.Refracts`).
+- **The knight's faceted meshes** come from the hero bake, since the vendor
+  meshes aren't readable in a player: the package's `HeroFacetBaker` unwelds
+  each of the knight's renderers' meshes as the crowd's style mesh
+  (barycentrics in UV3, feature edges in UV5, bone weights and bind poses
+  kept) and tags the renderer (`HeroFacets`). Game's `HeroBaker` and demo3d's
+  `RosterBaker` (its hero) call it, into their gitignored Baked folders.
+  `HeroLook.Dress` swaps the faceted mesh and the look's material in;
+  classic (or a bake without facets) leaves the Synty knight.
+- **The blade** takes the look's blade material in both players' `HeroBlade`
+  (every facet edged, the spine lit at rest, the blow flare `_BladeFlare`
+  over the whole blade past white, as before) and a motion-vector twin.
+- **Levelled across the players.** Game's baked arena adds 0.8 stops of
+  scene exposure (`PostStack.SceneExposure`) and demo3d's crystal cut none,
+  so the same light read far darker on the cut. `PostStack` publishes the
+  scene's exposure factor in `_LookToe.w` and the hero takes it out
+  (`HeroLevel`, against the 0.8 stops it was tuned under).
+- **Readability, judged** by the style guide's `hero_margin_min` (the hero's
+  L* p90 at least 5 over the monsters') on dense stills at the trailer's
+  framing (game at `--view-width 36`, the cut's 36-44 m shots), by the
+  hero's own pixels (on the hero rung, L* p90 96-99.7, not a white blob),
+  and by eye on crops. Game's stills now write the view json the margin
+  needs (`Stills.HeroFeet`; `"floor": false`, since its ID render marks
+  only the crowd). Margins: game 8.9-33 in the clean horde, 6-37 with
+  evolved weapons (classic: -11 to 28, failing twice); the crystal cut 24-44 for edge,
+  hologram and prism and 6-12 for solid (classic: -28 to 8.5). The cut's
+  solid monsters reach L* p90 about 95, over the enemy rung, so the solid
+  hero clears them only from white (its hot spot 0.3; ps-wnj.19 owns the
+  monsters' side).
+- `--hero-tune key=value,...` sets the hero shaders' float properties for a
+  run (`body.` or `blade.` for one), to judge a change without a rebuild.
+
 ### Restraint and special moments
 
 The operator on the first neon stills (2026-11-01): too overwhelming, "the

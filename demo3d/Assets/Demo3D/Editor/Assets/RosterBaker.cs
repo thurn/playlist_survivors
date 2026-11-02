@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Demo3D.Runtime.Playback;
+using PS.Look.EditorTools.Hero;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -12,7 +13,8 @@ namespace Demo3D.EditorTools.Assets
     /// Bakes the roster for the player into Assets/Baked/Roster/ (derived from vendor prefabs, so
     /// gitignored): a ready prefab per type and the RosterAssets index the player loads. A
     /// `--roster` set bakes only when asked for (`demo3d unity BakeRoster -roster NAME`), into its
-    /// own Assets/Baked/Rosters/NAME/, so BakeAll never needs its packs.
+    /// own Assets/Baked/Rosters/NAME/, so BakeAll never needs its packs. The hero's renderers are tagged with
+    /// their faceted meshes for the crystal cut's hero looks (the look package's HeroFacetBaker, into Facets/).
     /// </summary>
     public static class RosterBaker
     {
@@ -31,6 +33,8 @@ namespace Demo3D.EditorTools.Assets
             var materialDir = dir + "/Materials";
             if (!rosterSet.IsDefault) AssetDatabase.DeleteAsset(dir); // a rebake leaves no stale materials
             Directory.CreateDirectory(materialDir);
+            AssetDatabase.DeleteAsset(dir + "/Facets"); // a rebake leaves no stale meshes
+            Directory.CreateDirectory(dir + "/Facets");
             Directory.CreateDirectory(dir + "/Resources");
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var saved = new Dictionary<Material, Material>();
@@ -89,6 +93,7 @@ namespace Demo3D.EditorTools.Assets
                     animator.applyRootMotion = false;
                     animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
                 }
+                if (t.kind == "hero") HeroFacetBaker.Facet(go, dir + "/Facets");
                 var prefab = PrefabUtility.SaveAsPrefabAsset(go, $"{dir}/{t.id}.prefab");
                 Object.DestroyImmediate(go);
                 var roles = t.clips.Keys.ToArray();

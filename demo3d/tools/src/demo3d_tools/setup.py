@@ -292,15 +292,16 @@ _BAKER_RUNTIME = {"Runtime/Playback/ShatterSounds.cs"}
 def bake_inputs(wt: paths.Worktree) -> list[Path]:
     """What a project's Unity bakers read from git. demo3d's: everything under Assets/Demo3D (their
     code, data, shaders and settings) except the tests and runtime C# no asset serializes, the
-    shared choreography package, the look package's crowd (the crystal cut's library), the vendor
-    manifest and the song map. The game's: its arena's
-    code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime and
-    clip table, the effects' converter and runtime, the sound baker and bank, their selections, the
+    shared choreography package, the look package's crowd (the crystal cut's library) and hero facets,
+    the vendor manifest and the song map. The game's: its arena's
+    code (editor, engine-free layout and runtime), the layout's data, the hero's baker, runtime,
+    clip table and the look package's hero facets, the effects' converter and runtime, the sound baker and bank, their selections, the
     structure shards' baker and asset type, the level's baker and asset type with the sim's content
     and level data, and the vendor manifest."""
     if wt.name == "game":
         game = [f for d in GAME_BAKER_DIRS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
         game += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
+        game += [p for f in LOOK_HERO_BAKE for m in ("", ".meta") if (p := wt.root / f"{f}{m}").is_file()]
         game += [wt.project / f"{f}{m}" for f in (GAME_SOUND_RUNTIME, GAME_LEVEL_RUNTIME) + GAME_STRUCTURE_FILES
                  for m in ("", ".meta")]
         return game + [wt.project / "Content" / n for n in GAME_BAKER_CONTENT] + [wt.project / "manifest.json"]
@@ -317,6 +318,7 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
                 continue
             files.append(f)
     files += [f for d in LOOK_CROWD_DIRS for f in sorted((wt.root / d).rglob("*")) if f.is_file()]
+    files += [p for f in LOOK_HERO_BAKE for m in ("", ".meta") if (p := wt.root / f"{f}{m}").is_file()]
     return files + [wt.project / "manifest.json", wt.root / "songs" / "action" / "songmap.json"]
 
 
@@ -326,6 +328,9 @@ def bake_inputs(wt: paths.Worktree) -> list[Path]:
 LOOK = "unity-packages/com.playlistsurvivors.look"
 LOOK_CROWD_DIRS = (f"{LOOK}/Runtime/Crowd", f"{LOOK}/Editor/Crowd", f"{LOOK}/Runtime/Shaders")
 LOOK_SHARD_BAKER = f"{LOOK}/Editor/Crowd/CrowdShardBaker.cs"
+# The hero bake's faceting step and the tag it leaves on the knight's renderers (the hero looks), which game's hero
+# baker and demo3d's roster baker (its hero) call.
+LOOK_HERO_BAKE = (f"{LOOK}/Editor/Hero/HeroFacetBaker.cs", f"{LOOK}/Runtime/Hero/HeroFacets.cs")
 
 
 def _demo(*globs: str) -> tuple[str, ...]:
@@ -349,7 +354,7 @@ BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Sounds": _demo("Editor/Assets/SoundBaker.cs*", "Runtime/Playback/SoundBank.cs*",
                     "Runtime/Playback/ShatterSounds.cs*"),
     "Roster": _demo("Editor/Assets/RosterBaker.cs*", "Runtime/Playback/RosterAssets.cs*",
-                    "Data/roster*.json*"),
+                    "Data/roster*.json*") + tuple(f"{f}*" for f in LOOK_HERO_BAKE),
     "Playback": _demo("Editor/Assets/PlaybackBaker.cs*", "Runtime/Playback/*", "Choreography/Data/*",
                       "Data/clip-annotations.json*") + ("songs/action/songmap.json",),
 }
@@ -391,7 +396,7 @@ GAME_BAKER_INPUTS: dict[str, tuple[str, ...]] = {
     "Crowd": tuple(f"game/{d}/*" for d in GAME_CROWD_DIRS) + tuple(f"{d}/*" for d in LOOK_CROWD_DIRS) +
              tuple(f"game/Content/{n}" for n in GAME_CROWD_CONTENT),
     "Hero": tuple(f"game/{d}/*" for d in GAME_HERO_DIRS) + ("game/Assets/Game/Editor/Arena/MaterialConverter.cs*",) +
-            tuple(f"game/Content/{n}" for n in GAME_HERO_CONTENT),
+            tuple(f"{f}*" for f in LOOK_HERO_BAKE) + tuple(f"game/Content/{n}" for n in GAME_HERO_CONTENT),
     "Effects": tuple(f"game/{d}/*" for d in GAME_EFFECT_DIRS) + tuple(f"game/Content/{n}" for n in GAME_EFFECT_CONTENT),
     "Sounds": tuple(f"game/{d}/*" for d in GAME_SOUND_DIRS) + (f"game/{GAME_SOUND_RUNTIME}*",) +
               tuple(f"game/Content/{n}" for n in GAME_SOUND_CONTENT),

@@ -255,3 +255,16 @@ def test_the_game_is_a_project_of_its_own(tmp_path: Path) -> None:
     assert wt.namespace == "Game"
     assert setup.PY_BAKERS["game"] == []  # it plays the player's music, so it never needs the song
     assert "song" not in paths.PROJECT_ROOTS["game"]
+
+
+def test_the_hero_facets_rebake_the_games_hero_and_demo3ds_roster(tmp_path: Path) -> None:
+    facets = tmp_path / setup.LOOK_HERO_BAKE[0]
+    facets.parent.mkdir(parents=True)
+    facets.write_text("class HeroFacetBaker {}\n")
+    for name, bakers, baker in (("game", setup.GAME_BAKER_INPUTS, "Hero"), ("demo3d", setup.BAKER_INPUTS, "Roster")):
+        wt = paths.Worktree(tmp_path, name)
+        wt.baked.mkdir(parents=True, exist_ok=True)
+        (wt.baked / setup.BAKED_RAN).write_text("".join(f"{n}\n" for n in bakers))
+        setup.record_ran(wt)
+        facets.write_text(facets.read_text() + "// changed\n")
+        assert setup.stale_bakers(wt) == [baker]

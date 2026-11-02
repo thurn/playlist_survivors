@@ -607,7 +607,9 @@ def mask_rules(rgb: np.ndarray, monsters: np.ndarray, structures: np.ndarray | N
     floor = np.isfinite(ground_points(view, w, h)[0]) & ~dilate(monsters, 2) & ~dilate(region, 2)
     if structures is not None:
         floor &= ~dilate(structures, 2)
-    if floor.any():
+    # Game's view json says "floor": false: its ID render marks only the crowd, so its structures and effects would
+    # count as floor.
+    if floor.any() and view.get("floor", True):
         f50, f90, f99 = np.percentile(lum[floor], [50, 90, 99])
         out.update({"floor_p50": float(f50), "floor_p90": float(f90), "floor_p99": float(f99)})
     if hero.any() and body.any():
