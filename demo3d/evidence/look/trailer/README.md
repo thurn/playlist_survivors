@@ -86,6 +86,8 @@ p99 unchanged.
 
 ## Still breaking (follow-ups ps-wnj.28 and ps-wnj.29)
 
+ps-wnj.29 fixed all but swarm separation: [last-breaks](last-breaks/README.md).
+
 - **Swarm separation**: edge in ten of eleven steady stills (8.1-12.1). Its
   finely cut types (the magenta and orange ones) draw so many feature lines
   at the cut's 10-20 px that each body fills with them, and touching
