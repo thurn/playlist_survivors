@@ -1,0 +1,52 @@
+// The hero's sparks on the GPU (Sparks.cs; plan.md, Rendering > Pipeline: Particle, compute sparks). Seed expands the
+// frame's bursts, one thread group each, into their sparks in the ring: each thrown within its burst's cone at a speed,
+// life and size drawn from its seed, some of it up. Nothing integrates them after: Spark.shader places each in closed form
+// from its birth (Effects.hlsl's SparkAt), so a frame with no new bursts costs no compute at all.
+#pragma kernel Seed
+
+#include "Effects.hlsl"
+
+StructuredBuffer<Burst> _Bursts;
+RWStructuredBuffer<Spark> _Sparks;
+uint _Capacity;
+
+float Hash(uint seed, uint i)
+{
+    uint x = seed * 747796405u + i * 2891336453u;
+    x ^= x >> 16; x *= 0x7feb352du; x ^= x >> 15; x *= 0x846ca68bu; x ^= x >> 16;
+    return (x & 0xffffff) / 16777216.0;
+}
+
+// A unit vector within `spread` radians of `d`, uniform over the cap.
+float3 InCone(float3 d, float spread, uint seed, uint i)
+{
+    float z = lerp(cos(spread), 1, Hash(seed, i));
+    float a = 6.2831853 * Hash(seed, i + 1);
+    float r = sqrt(saturate(1 - z * z));
+    float3 t = abs(d.y) < 0.99 ? normalize(cross(d, float3(0, 1, 0))) : float3(1, 0, 0);
+    float3 b = cross(d, t);
+    return normalize(d * z + (t * cos(a) + b * sin(a)) * r);
+}
+
+[numthreads(64, 1, 1)]
+void Seed(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID)
+{
+    Burst b = _Bursts[group.x];
+    uint seed = (uint)b.seed;
+    for (uint i = thread.x; i < (uint)b.count; i += 64)
+    {
+        uint k = i * 6;
+        float3 dir = InCone(b.direction, b.spread, seed, k);
+        float speed = lerp(b.speed.x, b.speed.y, Hash(seed, k + 2));
+        Spark s;
+        s.origin = b.origin;
+        s.born = b.born;
+        s.velocity = (dir + float3(0, b.up, 0)) * speed;
+        s.life = lerp(b.life.x, b.life.y, Hash(seed, k + 3));
+        s.size = b.size * (0.6 + 0.8 * Hash(seed, k + 4));
+        s.drag = b.drag;
+        s.gravity = b.gravity;
+        s.brightness = b.brightness * (0.7 + 0.6 * Hash(seed, k + 5));
+        _Sparks[((uint)b.first + i) % _Capacity] = s;
+    }
+}

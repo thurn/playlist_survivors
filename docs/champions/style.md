@@ -229,6 +229,14 @@ Scenes join as the systems they show land. Today:
   near-black body whose silhouette glows, `Champions/StandIn`), round the
   hero, on the void, under the real post. It measures the palette as drawn
   until the edge cuts and the crowd renderer replace the stand-ins.
+- **`world`**: the world's scripted song (the beat wave at three phases, a
+  zone sweep, beatless play, an on-beat dash's ring).
+- **`gallery`**: every weapon effect of the hero's, fired in turn at its feet
+  on the void, a still each (`gallery-LABEL`) and each one's draw and compute
+  cost in `gallery-costs.json`
+  ([evidence](../../rhythm_champions/evidence/effects/README.md)). Its frames
+  hold only the grid and one effect, so `background_light_max` is judged on the
+  assembly's full frames, not on these.
 
 ### The type-ID pass
 

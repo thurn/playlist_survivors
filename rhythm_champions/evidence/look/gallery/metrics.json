@@ -1,0 +1,807 @@
+{
+ "palette": "champions",
+ "problems": [],
+ "stills": {
+  "gallery-afterimage": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.976724537037037,
+    "bright_share": 0.001248070987654321,
+    "clipped": 0.00018132716049382717,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0003028549382716049,
+    "flash": 0.00024112654320987653,
+    "halo": 1.6450488003939086,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.4891972263581075,
+    "floor_p50": 0.0,
+    "floor_p90": 0.8236210993972186,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.489 > 0.15"
+   }
+  },
+  "gallery-blade-halo": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.96234375,
+    "bright_share": 0.010470679012345678,
+    "clipped": 0.0021875,
+    "clipped_blob": 0.0003607253086419753,
+    "white": 0.004378858024691358,
+    "flash": 0.0008256172839506173,
+    "halo": 3.937586789646801,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.1670239939955865,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.484193803179168,
+    "floor_p99": 14.53117978956163
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.167 > 0.15"
+   }
+  },
+  "gallery-blade-rain": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9778452932098766,
+    "bright_share": 0.0013329475308641976,
+    "clipped": 0.0002507716049382716,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0006327160493827161,
+    "flash": 0.0002353395061728395,
+    "halo": 2.3509940756029515,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.4583685491835235,
+    "floor_p50": 0.0,
+    "floor_p90": 1.2405858778030385,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.458 > 0.15"
+   }
+  },
+  "gallery-blade-rush": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.25437937950091083,
+    "black_share": 0.9712345679012345,
+    "bright_share": 0.004631558641975309,
+    "clipped": 0.0009182098765432099,
+    "clipped_blob": 0.0005613425925925926,
+    "white": 0.002015817901234568,
+    "flash": 0.001236496913580247,
+    "halo": 2.5758154497748293,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.2592176649086835,
+    "floor_p50": 0.3137656411951326,
+    "floor_p90": 1.7936244176273277,
+    "floor_p99": 14.036884952582007
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.259 > 0.15"
+   }
+  },
+  "gallery-blink-burst": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9235378086419753,
+    "bright_share": 0.033894675925925925,
+    "clipped": 0.0072376543209876545,
+    "clipped_blob": 0.004976851851851852,
+    "white": 0.013825231481481482,
+    "flash": 0.013113425925925926,
+    "halo": 9.588221193894768,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.07601283058199884,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 4.4582921182637705,
+    "floor_p99": 15.510570440729346
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-crescent": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9773418209876543,
+    "bright_share": 0.0016589506172839507,
+    "clipped": 0.0003915895061728395,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0007330246913580247,
+    "flash": 0.00043016975308641977,
+    "halo": 2.741748000656518,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.4329098355118734,
+    "floor_p50": 0.25437937950091083,
+    "floor_p90": 1.35107857976352,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.433 > 0.15"
+   }
+  },
+  "gallery-dash-on-beat": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9751793981481481,
+    "bright_share": 0.0027411265432098764,
+    "clipped": 0.0005632716049382716,
+    "clipped_blob": 0.00028935185185185184,
+    "white": 0.0010243055555555556,
+    "flash": 0.0009375,
+    "halo": 4.092334334559119,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.3368798292883317,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 1.3659053712115536,
+    "floor_p99": 13.720921995942327
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.337 > 0.15"
+   }
+  },
+  "gallery-dash": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9759239969135802,
+    "bright_share": 0.0019618055555555556,
+    "clipped": 0.00034915123456790125,
+    "clipped_blob": 0.0002160493827160494,
+    "white": 0.0007619598765432099,
+    "flash": 0.0006462191358024692,
+    "halo": 2.963137605354131,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.3833484895415945,
+    "floor_p50": 0.019795420564740596,
+    "floor_p90": 1.2082212199476068,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.383 > 0.15"
+   }
+  },
+  "gallery-encore": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.2741748000656514,
+    "black_share": 0.9737692901234568,
+    "bright_share": 0.0025327932098765434,
+    "clipped": 0.0008024691358024691,
+    "clipped_blob": 0.000621141975308642,
+    "white": 0.0016435185185185185,
+    "flash": 0.0013348765432098766,
+    "halo": 6.044753313164552,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.3530919755147448,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 1.561995188218507,
+    "floor_p99": 13.930949571296882
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.353 > 0.15"
+   }
+  },
+  "gallery-full-moon": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9047511574074074,
+    "bright_share": 0.04248263888888889,
+    "clipped": 0.0072145061728395065,
+    "clipped_blob": 0.00365162037037037,
+    "white": 0.012814429012345679,
+    "flash": 0.01226466049382716,
+    "halo": 9.689883022268784,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.06961536572218999,
+    "floor_p50": 0.5681450206960434,
+    "floor_p90": 4.224573372979698,
+    "floor_p99": 15.376311089509986
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-juggernaut": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.1165791249879149,
+    "black_share": 0.9733680555555555,
+    "bright_share": 0.0035590277777777777,
+    "clipped": 0.0013773148148148147,
+    "clipped_blob": 0.0011554783950617285,
+    "white": 0.0018672839506172839,
+    "flash": 0.0014911265432098766,
+    "halo": 3.127879175427662,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.29013949897049596,
+    "floor_p50": 0.293970220630392,
+    "floor_p90": 1.646145499594173,
+    "floor_p99": 13.930949571296882
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.29 > 0.15"
+   }
+  },
+  "gallery-leap-ring": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9506712962962963,
+    "bright_share": 0.015594135802469137,
+    "clipped": 0.0022550154320987656,
+    "clipped_blob": 0.0007291666666666667,
+    "white": 0.005212191358024691,
+    "flash": 0.002040895061728395,
+    "halo": 4.218872617450579,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.13105088242546556,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.7037585771759822,
+    "floor_p99": 14.036884952582007
+   },
+   "roles": {
+    "zones.cobalt.pulse": 0.75,
+    "zones.cobalt.fill": 0.25
+   },
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-leap-slam": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9348996913580246,
+    "bright_share": 0.024085648148148148,
+    "clipped": 0.004396219135802469,
+    "clipped_blob": 0.0015817901234567902,
+    "white": 0.007567515432098765,
+    "flash": 0.0035185185185185185,
+    "halo": 5.245033504689449,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.09503974198695145,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.8732562590283592,
+    "floor_p99": 14.861373646262981
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-legion": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9481925154320988,
+    "bright_share": 0.01744020061728395,
+    "clipped": 0.003883101851851852,
+    "clipped_blob": 0.0017399691358024692,
+    "white": 0.006280864197530864,
+    "flash": 0.0027411265432098764,
+    "halo": 5.744791404385484,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.11730602676523035,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.7281147851717336,
+    "floor_p99": 14.886121196506306
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-momentum-trail": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.977866512345679,
+    "bright_share": 0.00126929012345679,
+    "clipped": 0.0002507716049382716,
+    "clipped_blob": 0.00018325617283950618,
+    "white": 0.0005729166666666667,
+    "flash": 0.000462962962962963,
+    "halo": 1.8807294585303431,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.4758672731439672,
+    "floor_p50": 0.0,
+    "floor_p90": 1.1499316574536493,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.476 > 0.15"
+   }
+  },
+  "gallery-orbit-blades": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9755652006172839,
+    "bright_share": 0.0029610339506172837,
+    "clipped": 0.0004089506172839506,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0007581018518518518,
+    "flash": 0.0002353395061728395,
+    "halo": 1.6450488003939086,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.329608754837626,
+    "floor_p50": 0.03959084112948119,
+    "floor_p90": 1.3659053712115536,
+    "floor_p99": 13.753999835417199
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.33 > 0.15"
+   }
+  },
+  "gallery-phantom": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9731442901234568,
+    "bright_share": 0.0031018518518518517,
+    "clipped": 0.0004166666666666667,
+    "clipped_blob": 0.00020061728395061727,
+    "white": 0.0008256172839506173,
+    "flash": 0.0004976851851851852,
+    "halo": 3.336530662429281,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.31632969129057875,
+    "floor_p50": 0.25547607870117517,
+    "floor_p90": 1.3125844378343032,
+    "floor_p99": 13.731239193593069
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.316 > 0.15"
+   }
+  },
+  "gallery-phase-walk": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9552719907407408,
+    "bright_share": 0.014168595679012345,
+    "clipped": 0.002361111111111111,
+    "clipped_blob": 0.00047646604938271606,
+    "white": 0.004812885802469136,
+    "flash": 0.002808641975308642,
+    "halo": 5.710606679942444,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.13697397433768593,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.7037585771759822,
+    "floor_p99": 14.53117978956163
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-shatterburst": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9764544753086419,
+    "bright_share": 0.002065972222222222,
+    "clipped": 0.0002700617283950617,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.0006558641975308642,
+    "flash": 0.0002353395061728395,
+    "halo": 1.9203202996598243,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.3972531525726179,
+    "floor_p50": 0.0,
+    "floor_p90": 1.3317206467685132,
+    "floor_p99": 13.718211171086715
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.397 > 0.15"
+   }
+  },
+  "gallery-shield-bash": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9762326388888889,
+    "bright_share": 0.0021739969135802467,
+    "clipped": 0.000619212962962963,
+    "clipped_blob": 0.00043016975308641977,
+    "white": 0.0009915123456790123,
+    "flash": 0.0007098765432098765,
+    "halo": 3.2444583004155767,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.384951279417583,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 1.3708740003282571,
+    "floor_p99": 13.82562503859322
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.385 > 0.15"
+   }
+  },
+  "gallery-shield-charge": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9782600308641975,
+    "bright_share": 0.0010030864197530865,
+    "clipped": 0.0002719907407407407,
+    "clipped_blob": 0.00017939814814814815,
+    "white": 0.00048225308641975306,
+    "flash": 0.0002353395061728395,
+    "halo": 1.6450488003939086,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.5181578223701745,
+    "floor_p50": 0.0,
+    "floor_p90": 1.1499316574536493,
+    "floor_p99": 13.60997920854134
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.518 > 0.15"
+   }
+  },
+  "gallery-skyfall": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 1.1164946208273463,
+    "black_share": 0.8647916666666666,
+    "bright_share": 0.05367091049382716,
+    "clipped": 0.010025077160493827,
+    "clipped_blob": 0.0034702932098765434,
+    "white": 0.018836805555555555,
+    "flash": 0.012183641975308641,
+    "halo": 5.176646383689441,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.06660667035649265,
+    "floor_p50": 1.5867592378999547,
+    "floor_p90": 5.882347494095804,
+    "floor_p99": 15.860897120240512
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-spectral-slash": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9737191358024692,
+    "bright_share": 0.0031886574074074074,
+    "clipped": 0.0004803240740740741,
+    "clipped_blob": 0.00028549382716049385,
+    "white": 0.0008757716049382716,
+    "flash": 0.0005304783950617284,
+    "halo": 2.725278659941498,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.3178649066954595,
+    "floor_p50": 0.2741748000656514,
+    "floor_p90": 1.3431552211194635,
+    "floor_p99": 13.82562503859322
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.318 > 0.15"
+   }
+  },
+  "gallery-sword-slash-on-beat": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9616145833333334,
+    "bright_share": 0.01007716049382716,
+    "clipped": 0.0036593364197530865,
+    "clipped_blob": 0.0031905864197530865,
+    "white": 0.00591820987654321,
+    "flash": 0.00552854938271605,
+    "halo": 7.4267132866348575,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.1622609262971656,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 2.7281147851717336,
+    "floor_p99": 14.787881332659346
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.162 > 0.15"
+   }
+  },
+  "gallery-sword-slash": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.2741748000656514,
+    "black_share": 0.9719791666666666,
+    "bright_share": 0.0046662808641975305,
+    "clipped": 0.0012731481481481483,
+    "clipped_blob": 0.0009548611111111111,
+    "white": 0.002359182098765432,
+    "flash": 0.002037037037037037,
+    "halo": 5.189713666395853,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.2648235324120907,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 1.8519139801212852,
+    "floor_p99": 14.180326613749937
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.265 > 0.15"
+   }
+  },
+  "gallery-sword-spin": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9360416666666667,
+    "bright_share": 0.02691550925925926,
+    "clipped": 0.006867283950617284,
+    "clipped_blob": 0.004378858024691358,
+    "white": 0.012270447530864198,
+    "flash": 0.010929783950617285,
+    "halo": 7.527135901295278,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.08592097845788772,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 3.94787424814168,
+    "floor_p99": 15.230619321834926
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-sword-storm": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.5483496001313029,
+    "black_share": 0.9504533179012346,
+    "bright_share": 0.013354552469135802,
+    "clipped": 0.003472222222222222,
+    "clipped_blob": 0.0010397376543209876,
+    "white": 0.0065952932098765436,
+    "flash": 0.005229552469135802,
+    "halo": 5.739057392397399,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.14397141494160645,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 3.5052735107941118,
+    "floor_p99": 15.023780811160645
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {}
+  },
+  "gallery-tempest": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.0,
+    "black_share": 0.9772453703703704,
+    "bright_share": 0.001547067901234568,
+    "clipped": 0.0005767746913580247,
+    "clipped_blob": 0.00038580246913580245,
+    "white": 0.0008873456790123457,
+    "flash": 0.0006057098765432098,
+    "halo": 3.0073672253928834,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.4326059010203507,
+    "floor_p50": 0.25437937950091083,
+    "floor_p90": 1.3659053712115536,
+    "floor_p99": 13.82562503859322
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.433 > 0.15"
+   }
+  },
+  "gallery-thousand-cuts": {
+   "metrics": {
+    "type_black_share": {},
+    "type_roles": {},
+    "frame_p25": 0.3126689419948683,
+    "black_share": 0.9621778549382716,
+    "bright_share": 0.00859375,
+    "clipped": 0.00171875,
+    "clipped_blob": 0.0009664351851851852,
+    "white": 0.0030883487654320987,
+    "flash": 0.001882716049382716,
+    "halo": 5.634044879273954,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.18452562333323907,
+    "floor_p50": 0.5483496001313029,
+    "floor_p90": 1.8688267437179356,
+    "floor_p99": 14.515022425554957
+   },
+   "roles": {},
+   "impact": false,
+   "broken": {
+    "background_light_max": "background_light 0.185 > 0.15"
+   }
+  }
+ },
+ "cut": {
+  "metrics": {
+   "key60_median": 1.0,
+   "shot_floor_range": 1.5867592378999547,
+   "flash_frames": 0.2413793103448276
+  },
+  "broken": {}
+ }
+}

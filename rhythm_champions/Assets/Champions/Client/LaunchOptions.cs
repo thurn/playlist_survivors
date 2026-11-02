@@ -41,6 +41,9 @@ namespace Champions.Client
         public int EdgeCrowd;
         public string EdgeType;
         public string BenchOut;
+        /// <summary>`--gallery`: the weapon effects' gallery (Scenes.GalleryScene): in a window, every effect in turn, over and
+        /// over; with `--capture-stills DIR`, its stills (as `--stills-scenes gallery`), then quit.</summary>
+        public bool Gallery;
         /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
         public Tier? Tier;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
@@ -58,6 +61,7 @@ namespace Champions.Client
                 File = a.Get("--file"),
                 App = a.Get("--app"),
                 EdgeCrowd = (int)a.Double("--edge-crowd", 0),
+                Gallery = a.Has("--gallery"),
                 EdgeType = a.Get("--edge-type"),
                 BenchOut = a.Get("--bench-out"),
             };
@@ -69,6 +73,8 @@ namespace Champions.Client
             if (at != null) o.StillsAt = Array.ConvertAll(at.Split(','), s => Number("--stills-at", s));
             var scenes = a.Get("--stills-scenes");
             if (scenes != null) o.StillsScenes = scenes.Split(',');
+            if (o.Gallery && o.StillsDir != null && Array.IndexOf(o.StillsScenes, "gallery") < 0)
+                o.StillsScenes = new List<string>(o.StillsScenes) { "gallery" }.ToArray();
             if (o.StillsScenes.Length > 0 && o.StillsAt.Length > 0) throw new ArgumentException("--stills-at and --stills-scenes: give one");
             if (o.StillsScenes.Length > 0 && o.StillsDir == null) throw new ArgumentException("--stills-scenes: needs --capture-stills DIR");
             o.Unrecognized = a.Unrecognized(); // last: every flag has been read

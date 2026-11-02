@@ -1,0 +1,125 @@
+{
+  "note": "The hero's weapon effects (design.md, The Look > Weapon effects; Render/Effects/Effects.cs reads it). Each cue (EffectCue, camel-cased) is a list of layers drawn from its shot (EffectShot: its time, point, path, facing, reach, arc, span, power). shape: arc (one of Hovl's slash meshes, mesh Slash1-4, round its point, its head sweeping the arc), ribbon (a flat strip along the path, or radius m along the facing), upright (a strip standing radius m tall: a figure's glow), solid (Hovl's MagicSword, radius its length, tilt its pitch) or sparks (a compute burst: count, speed and life [min, max], spread degrees round its way, up, size m, drag 1/s, gravity). at: at (the shot's point, the default), to (its path's end), path (repeats spaced along the path), around (repeats spacing m round the point, each facing out by yaw + i yawStep), edge (sparks: where a slash's sweep ends on its arc). repeat copies each every s later; alternate mirrors every other's sweep; delay is s after the shot's time (negative: before, a sword falling onto its impact). radius (m) and arc (degrees; a ribbon's half width in m): radiusShot times the shot's reach when it gives one (the sim sized it for the beat), arcShot its arc; otherwise the power's scale. Timing in seconds: sweep (the head, fast in and slow out; sweepShot: the shot's span), travel (the move and growth; travelShot: the shot's span; default the sweep), linger after both, and fade (default the linger) at the end, as the noise dissolves it. width is the band's share lit at the head, narrowing to nothing behind it (Hovl's crescent taper); brightness the HDR gain (white core, faint white-blue edge; above 1 blooms); streak the noise streaks' depth; grow the scale at birth (a shockwave racing out); travelPath moves it along the path, travelM along its facing, travelUpM up; taper 0 draws an even band (a ring, a figure). powers: brightness and spark count for every layer, scale for a layer the recipe sizes. orbitBlades and bladeHalo: each sword's layers (a solid, and an arc trailing it radius m outside the ring).",
+  "powers": {
+    "plain": {"brightness": 1, "scale": 1, "sparks": 1},
+    "onBeat": {"brightness": 1.4, "scale": 1.15, "sparks": 1.6},
+    "special": {"brightness": 1.8, "scale": 1.3, "sparks": 2.5}
+  },
+  "cues": {
+    "swordSlash": [
+      {"shape": "arc", "mesh": "Slash3", "radius": 3, "radiusShot": 1, "arc": 150, "arcShot": true, "sweep": 0.09, "linger": 0.22, "width": 0.55, "brightness": 1.5, "streak": 0.6, "tilt": 12, "height": 0.9},
+      {"shape": "arc", "mesh": "Slash2", "radius": 3.08, "radiusShot": 1.03, "arc": 150, "arcShot": true, "sweep": 0.08, "linger": 0.12, "width": 0.1, "brightness": 2.0, "streak": 0.3, "tilt": 12, "height": 0.9},
+      {"shape": "sparks", "at": "edge", "radius": 3, "radiusShot": 1, "count": 8, "speed": [3, 7], "spread": 30, "up": 0.25, "life": [0.12, 0.3], "size": 0.035, "drag": 4, "gravity": 6, "brightness": 2, "height": 0.9}
+    ],
+    "swordSpin": [
+      {"shape": "arc", "mesh": "Slash4", "radius": 3.8, "radiusShot": 1, "arc": 360, "tilt": 5, "height": 0.8, "sweep": 0.18, "linger": 0.26, "width": 0.45, "brightness": 1.5, "streak": 0.6},
+      {"shape": "arc", "mesh": "Slash2", "radius": 3.9, "radiusShot": 1.03, "arc": 360, "tilt": 5, "height": 0.8, "sweep": 0.17, "linger": 0.14, "width": 0.1, "brightness": 1.8, "streak": 0.3},
+      {"shape": "sparks", "at": "around", "repeat": 6, "yawStep": 60, "spacing": 3.4, "every": 0.025, "delay": 0.04, "count": 4, "speed": [3, 6], "spread": 30, "up": 0.2, "life": [0.15, 0.3], "size": 0.03, "drag": 4, "gravity": 6, "brightness": 2, "height": 0.8}
+    ],
+    "spectralSlash": [
+      {"shape": "arc", "mesh": "Slash2", "radius": 3, "radiusShot": 1, "arc": 150, "arcShot": true, "tilt": -10, "height": 1.0, "sweep": 0.1, "linger": 0.2, "width": 0.45, "brightness": 0.6, "streak": 0.85}
+    ],
+    "tempest": [
+      {"shape": "arc", "mesh": "Slash3", "radius": 1.6, "arc": 110, "height": 0.6, "sweep": 0.06, "travel": 0.45, "travelShot": true, "travelPath": true, "linger": 0.12, "width": 0.5, "brightness": 1.3, "streak": 0.7}
+    ],
+    "bladeRain": [
+      {"shape": "solid", "mesh": "MagicSword", "radius": 1.3, "tilt": -90, "height": 5.5, "travelUpM": -5.5, "delay": -0.12, "sweep": 0, "travel": 0.12, "linger": 0.35, "brightness": 0.9},
+      {"shape": "arc", "mesh": "Slash2", "radius": 1.5, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.3, "sweep": 0.02, "travel": 0.2, "linger": 0.1, "fade": 0.3, "width": 0.25, "brightness": 1.4, "height": 0.05},
+      {"shape": "sparks", "way": "up", "count": 14, "speed": [2, 6], "spread": 60, "life": [0.15, 0.35], "size": 0.03, "drag": 3, "gravity": 9.8, "brightness": 1.6, "height": 0.1}
+    ],
+    "swordStorm": [
+      {"shape": "solid", "mesh": "MagicSword", "at": "around", "repeat": 8, "yawStep": 45, "spacing": 2.5, "every": 0.02, "radius": 1.5, "tilt": -90, "height": 6, "travelUpM": -6, "delay": -0.12, "sweep": 0, "travel": 0.12, "linger": 0.35, "brightness": 1.0},
+      {"shape": "arc", "mesh": "Slash2", "at": "around", "repeat": 8, "yawStep": 45, "spacing": 2.5, "every": 0.02, "radius": 1.5, "arc": 360, "taper": 0, "grow": 0.3, "sweep": 0.02, "travel": 0.2, "linger": 0.1, "fade": 0.3, "width": 0.25, "brightness": 1.2, "height": 0.05},
+      {"shape": "arc", "mesh": "Slash4", "radius": 4.5, "arc": 360, "taper": 0, "grow": 0.2, "sweep": 0.02, "travel": 0.3, "linger": 0.15, "fade": 0.4, "width": 0.2, "brightness": 1.1, "height": 0.1},
+      {"shape": "sparks", "at": "around", "repeat": 8, "yawStep": 45, "spacing": 2.5, "every": 0.02, "way": "up", "count": 8, "speed": [2, 6], "spread": 60, "life": [0.15, 0.35], "size": 0.03, "drag": 3, "gravity": 9.8, "brightness": 1.6, "height": 0.1}
+    ],
+    "crescent": [
+      {"shape": "arc", "mesh": "Slash3", "radius": 2.3, "radiusShot": 1.15, "arc": 120, "height": 0.5, "sweep": 0.06, "travel": 0.6, "travelShot": true, "travelPath": true, "linger": 0.12, "width": 0.45, "brightness": 1.2, "streak": 0.7}
+    ],
+    "fullMoon": [
+      {"shape": "arc", "mesh": "Slash2", "radius": 14, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.08, "sweep": 0.02, "travel": 0.6, "travelShot": true, "linger": 0.12, "fade": 0.4, "width": 0.1, "brightness": 0.38, "streak": 0.25, "height": 0.3},
+      {"shape": "arc", "mesh": "Slash3", "radius": 2.5, "arc": 360, "taper": 0, "grow": 0.4, "sweep": 0.03, "travel": 0.15, "linger": 0.15, "width": 0.4, "brightness": 1.0, "height": 0.5}
+    ],
+    "phantom": [
+      {"shape": "upright", "radius": 1.9, "arc": 0.42, "sweep": 0.05, "linger": 0.5, "width": 0.9, "brightness": 0.45, "streak": 0.3},
+      {"shape": "arc", "mesh": "Slash2", "radius": 3, "radiusShot": 1, "arc": 150, "arcShot": true, "tilt": 10, "height": 0.9, "sweep": 0.1, "linger": 0.2, "width": 0.45, "brightness": 0.6, "streak": 0.85}
+    ],
+    "legion": [
+      {"shape": "upright", "at": "around", "repeat": 3, "yawStep": 120, "spacing": 1.8, "radius": 1.9, "arc": 0.42, "sweep": 0.05, "linger": 0.5, "width": 0.9, "brightness": 0.5, "streak": 0.3},
+      {"shape": "arc", "mesh": "Slash2", "at": "around", "repeat": 3, "yawStep": 120, "spacing": 1.8, "every": 0.04, "radius": 2.6, "arc": 150, "tilt": 10, "height": 0.9, "sweep": 0.1, "linger": 0.2, "width": 0.45, "brightness": 0.7, "streak": 0.85}
+    ],
+    "dash": [
+      {"shape": "ribbon", "radius": 0, "arc": 0.45, "sweep": 0.15, "sweepShot": true, "linger": 0.22, "width": 0.8, "brightness": 1.0, "streak": 0.7, "height": 0.6},
+      {"shape": "ribbon", "radius": 0, "arc": 0.06, "sweep": 0.15, "sweepShot": true, "linger": 0.12, "width": 1, "brightness": 1.6, "streak": 0.3, "height": 0.6}
+    ],
+    "bladeRush": [
+      {"shape": "arc", "mesh": "Slash1", "at": "path", "repeat": 3, "alternate": true, "every": 0.07, "radius": 1.6, "radiusShot": 1.05, "arc": 180, "tilt": 20, "height": 0.9, "sweep": 0.06, "linger": 0.16, "width": 0.7, "brightness": 1.5, "streak": 0.6},
+      {"shape": "ribbon", "radius": 0, "arc": 0.25, "sweep": 0.22, "sweepShot": true, "linger": 0.2, "width": 0.7, "brightness": 0.7, "streak": 0.7, "height": 0.6},
+      {"shape": "sparks", "at": "path", "repeat": 3, "every": 0.07, "count": 6, "speed": [3, 7], "spread": 50, "up": 0.2, "life": [0.1, 0.25], "size": 0.03, "drag": 4, "gravity": 6, "brightness": 1.8, "height": 0.9}
+    ],
+    "thousandCuts": [
+      {"shape": "arc", "mesh": "Slash1", "at": "path", "repeat": 7, "alternate": true, "every": 0.05, "yawStep": 50, "radius": 1.8, "arc": 180, "tilt": 25, "height": 0.9, "sweep": 0.06, "linger": 0.18, "width": 0.6, "brightness": 0.8, "streak": 0.8},
+      {"shape": "ribbon", "radius": 0, "arc": 0.3, "sweep": 0.22, "sweepShot": true, "linger": 0.3, "width": 0.7, "brightness": 0.5, "streak": 0.7, "height": 0.6}
+    ],
+    "leapSlam": [
+      {"shape": "arc", "mesh": "Slash4", "radius": 3, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.25, "sweep": 0.02, "travel": 0.22, "linger": 0.12, "fade": 0.3, "width": 0.55, "brightness": 1.6, "streak": 0.6, "height": 0.15},
+      {"shape": "arc", "mesh": "Slash2", "radius": 3.1, "radiusShot": 1.03, "arc": 360, "taper": 0, "grow": 0.2, "sweep": 0.02, "travel": 0.2, "linger": 0.08, "fade": 0.24, "width": 0.1, "brightness": 2.0, "height": 0.15},
+      {"shape": "sparks", "at": "around", "repeat": 8, "yawStep": 45, "spacing": 0.6, "way": "out", "count": 5, "speed": [4, 9], "spread": 20, "up": 0.3, "life": [0.2, 0.4], "size": 0.035, "drag": 3, "gravity": 9.8, "brightness": 1.8, "height": 0.2}
+    ],
+    "leapRing": [
+      {"shape": "arc", "mesh": "Slash2", "radius": 7, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.4, "sweep": 0.02, "travel": 0.35, "linger": 0.1, "fade": 0.35, "width": 0.12, "brightness": 1.3, "height": 0.15}
+    ],
+    "skyfall": [
+      {"shape": "arc", "mesh": "Slash4", "radius": 6, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.15, "sweep": 0.02, "travel": 0.25, "linger": 0.15, "fade": 0.35, "width": 0.45, "brightness": 0.8, "streak": 0.6, "height": 0.2},
+      {"shape": "arc", "mesh": "Slash2", "radius": 12, "arc": 360, "taper": 0, "grow": 0.3, "sweep": 0.02, "travel": 0.5, "linger": 0.1, "fade": 0.45, "width": 0.08, "brightness": 0.6, "height": 0.15},
+      {"shape": "sparks", "at": "around", "repeat": 12, "yawStep": 30, "spacing": 1, "way": "out", "count": 6, "speed": [5, 12], "spread": 20, "up": 0.35, "life": [0.25, 0.5], "size": 0.04, "drag": 3, "gravity": 9.8, "brightness": 1.8, "height": 0.2}
+    ],
+    "shieldCharge": [
+      {"shape": "arc", "mesh": "Slash3", "radius": 1.3, "arc": 130, "height": 0.8, "sweep": 0.03, "travel": 0.3, "travelShot": true, "travelPath": true, "linger": 0.12, "width": 0.45, "brightness": 1.3, "streak": 0.6},
+      {"shape": "sparks", "at": "path", "repeat": 4, "every": 0.07, "yaw": 90, "count": 4, "speed": [3, 6], "spread": 25, "up": 0.2, "life": [0.15, 0.3], "size": 0.03, "drag": 4, "gravity": 8, "brightness": 1.5, "height": 0.8},
+      {"shape": "sparks", "at": "path", "repeat": 4, "every": 0.07, "yaw": -90, "count": 4, "speed": [3, 6], "spread": 25, "up": 0.2, "life": [0.15, 0.3], "size": 0.03, "drag": 4, "gravity": 8, "brightness": 1.5, "height": 0.8}
+    ],
+    "shieldBash": [
+      {"shape": "arc", "mesh": "Slash4", "at": "to", "radius": 2.5, "arc": 70, "height": 0.8, "sweep": 0.05, "linger": 0.15, "width": 0.7, "brightness": 1.6, "streak": 0.5},
+      {"shape": "sparks", "at": "to", "count": 10, "speed": [3, 7], "spread": 35, "up": 0.2, "life": [0.12, 0.3], "size": 0.035, "drag": 4, "gravity": 8, "brightness": 1.8, "height": 0.8}
+    ],
+    "juggernaut": [
+      {"shape": "arc", "mesh": "Slash4", "radius": 1.8, "arc": 140, "height": 0.8, "sweep": 0.03, "travel": 0.4, "travelShot": true, "travelPath": true, "linger": 0.15, "width": 0.5, "brightness": 1.5, "streak": 0.6},
+      {"shape": "sparks", "at": "path", "repeat": 6, "every": 0.065, "yaw": 90, "count": 5, "speed": [4, 8], "spread": 25, "up": 0.25, "life": [0.15, 0.35], "size": 0.035, "drag": 4, "gravity": 8, "brightness": 1.6, "height": 0.8},
+      {"shape": "sparks", "at": "path", "repeat": 6, "every": 0.065, "yaw": -90, "count": 5, "speed": [4, 8], "spread": 25, "up": 0.25, "life": [0.15, 0.35], "size": 0.035, "drag": 4, "gravity": 8, "brightness": 1.6, "height": 0.8}
+    ],
+    "blinkBurst": [
+      {"shape": "arc", "mesh": "Slash1", "at": "around", "repeat": 5, "yawStep": 72, "alternate": true, "radius": 2.5, "radiusShot": 1, "arc": 180, "tilt": 15, "height": 0.9, "sweep": 0.05, "linger": 0.16, "width": 0.5, "brightness": 0.6, "streak": 0.6},
+      {"shape": "arc", "mesh": "Slash2", "radius": 2.5, "radiusShot": 1, "arc": 360, "taper": 0, "grow": 0.5, "sweep": 0.02, "travel": 0.12, "linger": 0.1, "width": 0.15, "brightness": 0.6, "streak": 0.25, "height": 0.9},
+      {"shape": "sparks", "way": "up", "count": 16, "speed": [2, 6], "spread": 80, "life": [0.12, 0.3], "size": 0.03, "drag": 3, "gravity": 6, "brightness": 1.6, "height": 0.9}
+    ],
+    "phaseWalk": [
+      {"shape": "upright", "radius": 1.9, "arc": 0.42, "sweep": 0.05, "linger": 0.4, "width": 0.9, "brightness": 0.45, "streak": 0.3},
+      {"shape": "arc", "mesh": "Slash1", "at": "around", "repeat": 5, "yawStep": 72, "alternate": true, "radius": 2.5, "radiusShot": 1, "arc": 180, "tilt": 15, "height": 0.9, "sweep": 0.05, "linger": 0.16, "width": 0.5, "brightness": 0.8, "streak": 0.8},
+      {"shape": "sparks", "way": "up", "count": 12, "speed": [2, 5], "spread": 80, "life": [0.12, 0.3], "size": 0.03, "drag": 3, "gravity": 6, "brightness": 1.2, "height": 0.9}
+    ],
+    "momentumTrail": [
+      {"shape": "ribbon", "radius": 0, "arc": 0.12, "sweep": 0.15, "sweepShot": true, "linger": 0.5, "fade": 0.3, "width": 1, "brightness": 1.3, "streak": 0.5, "height": 0.4}
+    ],
+    "afterimage": [
+      {"shape": "upright", "radius": 1.9, "arc": 0.42, "sweep": 0.15, "sweepShot": true, "travel": 0.15, "travelShot": true, "travelPath": true, "linger": 0.25, "width": 0.9, "brightness": 0.4, "streak": 0.3},
+      {"shape": "ribbon", "radius": 0, "arc": 0.25, "sweep": 0.15, "sweepShot": true, "linger": 0.2, "width": 0.7, "brightness": 0.4, "streak": 0.8, "height": 0.6}
+    ],
+    "shatterburst": [
+      {"shape": "arc", "mesh": "Slash1", "at": "around", "repeat": 4, "yawStep": 90, "radius": 1.2, "arc": 160, "tilt": 30, "height": 0.7, "sweep": 0.04, "linger": 0.12, "width": 0.5, "brightness": 0.9, "streak": 0.6},
+      {"shape": "sparks", "way": "up", "count": 12, "speed": [2, 6], "spread": 90, "life": [0.1, 0.25], "size": 0.025, "drag": 3, "gravity": 8, "brightness": 1.4, "height": 0.7}
+    ],
+    "encore": [
+      {"shape": "arc", "mesh": "Slash2", "radius": 1.1, "arc": 360, "taper": 0, "grow": 1.6, "sweep": 0.03, "travel": 0.15, "linger": 0.3, "width": 0.2, "brightness": 1.6, "height": 0.05},
+      {"shape": "sparks", "way": "up", "count": 10, "speed": [2, 4], "spread": 25, "life": [0.25, 0.45], "size": 0.03, "drag": 3, "gravity": 0, "brightness": 1.4, "height": 0.2}
+    ]
+  },
+  "orbitBlades": [
+    {"shape": "solid", "mesh": "MagicSword", "radius": 1.4, "tilt": -12, "height": 0.9, "sweep": 0, "linger": 1, "brightness": 0.7},
+    {"shape": "arc", "mesh": "Slash3", "radius": 0.2, "arc": 110, "height": 0.9, "sweep": 0, "linger": 1, "width": 0.3, "brightness": 0.8, "streak": 0.4}
+  ],
+  "bladeHalo": [
+    {"shape": "solid", "mesh": "MagicSword", "radius": 1.5, "tilt": -12, "height": 0.9, "sweep": 0, "linger": 1, "brightness": 0.9},
+    {"shape": "arc", "mesh": "Slash3", "radius": 0.25, "arc": 130, "height": 0.9, "sweep": 0, "linger": 1, "width": 0.32, "brightness": 1.0, "streak": 0.4}
+  ]
+}

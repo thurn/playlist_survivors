@@ -24,6 +24,13 @@ namespace Champions.Client.Scenes
         void Begin(Transform root, Camera camera, Stills.View view);
     }
 
+    /// <summary>A scene whose stills are named by what each shows (SCENE-LABEL) rather than by their times.</summary>
+    interface INamedStills
+    {
+        /// <summary>The label of the still at <see cref="IStillScene.Times"/>[<paramref name="index"/>].</summary>
+        string Label(int index);
+    }
+
     /// <summary>
     /// The scripted scenes (`--capture-stills DIR --stills-scenes NAMES`, `all` for every one; plan.md, Look Metrics),
     /// played one after another in one launch: each is built, kept at its times as SCENE-T stills (<see
@@ -32,17 +39,19 @@ namespace Champions.Client.Scenes
     public sealed class StillScenes
     {
         /// <summary>The scenes by name, in the order `all` plays them.</summary>
-        static readonly (string Name, Func<GameContent, Palette, IStillScene> Make)[] Known =
+        static readonly (string Name, Func<StillScenes, IStillScene> Make)[] Known =
         {
-            (PaletteScene.Name, (content, palette) => new PaletteScene(content, palette)),
-            (WorldScene.Name, (content, palette) => new WorldScene(palette)),
-            (StructureScene.Name, (content, palette) => new StructureScene(content, palette)),
+            (PaletteScene.Name, s => new PaletteScene(s._content, s._palette)),
+            (WorldScene.Name, s => new WorldScene(s._palette)),
+            (StructureScene.Name, s => new StructureScene(s._content, s._palette)),
+            (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
         };
 
         readonly Stills _stills;
         readonly Camera _camera;
         readonly GameContent _content;
         readonly Palette _palette;
+        readonly string _contentDir;
         readonly Queue<string> _pending;
         string _name;
         IStillScene _scene;
@@ -59,6 +68,7 @@ namespace Champions.Client.Scenes
             _camera = camera;
             _content = GameContent.Load(contentDir);
             _palette = Palette.Load(contentDir);
+            _contentDir = contentDir;
             _pending = new Queue<string>();
             foreach (string n in names)
             {
@@ -79,7 +89,7 @@ namespace Champions.Client.Scenes
             {
                 if (_pending.Count == 0) return;
                 _name = _pending.Dequeue();
-                _scene = Array.Find(Known, k => k.Name == _name).Make(_content, _palette);
+                _scene = Array.Find(Known, k => k.Name == _name).Make(this);
                 _root = new GameObject("Still scene " + _name);
                 _view = new Stills.View();
                 _scene.Begin(_root.transform, _camera, _view);
@@ -90,7 +100,11 @@ namespace Champions.Client.Scenes
             }
             var times = _scene.Times;
             while (_next < times.Length && t - _start + 1e-6 >= times[_next])
-                _stills.Keep(_name + "-" + times[_next++].ToString("0.000", CultureInfo.InvariantCulture), _view);
+            {
+                string label = _scene is INamedStills named ? named.Label(_next) : times[_next].ToString("0.000", CultureInfo.InvariantCulture);
+                _stills.Keep(_name + "-" + label, _view);
+                _next++;
+            }
             string moment = _scene.Moment;
             if (moment != null) _stills.Keep(_name + "-" + moment, _view);
             if (_next < times.Length) return;
