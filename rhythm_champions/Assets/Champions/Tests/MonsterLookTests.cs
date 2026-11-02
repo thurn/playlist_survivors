@@ -29,11 +29,10 @@ namespace Champions.Tests
         /// </summary>
         static readonly (string File, string Sha256)[] TrailerFiles =
         {
-            ("Render/Resources/Crowd/MonsterEdge.shader", "697593e859e26ac01f0bf8756d71dd4091888e83b19a7730179f2fe017aed34c"),
-            ("Render/Resources/Crowd/MonsterEdgeShard.shader", "d1b06dcfa2ef93c9554e15922b4c12ef34da9b2b322518837716eeb93217c343"),
-            ("Render/Crowd/Shaders/MonsterEdge.hlsl", "c1c4385e35921c700239d7bfacecce32f4b577c737beebfaf9e5ef3c3a899a75"),
-            ("Render/Crowd/Shaders/MonsterLines.hlsl", "f5b0f16385b4614fc5d73504f505fe7c77f4439d0afcb1696e1c001abb1a492c"),
-            ("Render/Crowd/Shaders/MonsterOutline.hlsl", "158d6f8455e9dfb9e5ca9fdcb7eab4c10ace1f47a055fa315efbe7ae2bcab09c"),
+            ("Render/Resources/Crowd/MonsterEdge.shader", "388267a2ce2e316c68f2e4f96b5ec896c6268137e731f9074f5874ee129fd598"),
+            ("Render/Resources/Crowd/MonsterEdgeShard.shader", "4f73734ad494742d35cb85dae064ca793a14e45a95d1a5f2340e39d9229dac57"),
+            ("Render/Crowd/Shaders/MonsterEdge.hlsl", "867e18a420db459b5da48b049d2cdd016cbfbf794374d874cc6f1c6fb31d15c7"),
+            ("Render/Crowd/Shaders/MonsterLines.hlsl", "abeb162f47a5b8eee6711bceb635e84e5e23b5a520c751408b7bb1b65398ad6b"),
             ("Render/Crowd/Shaders/MonsterCommon.hlsl", "63ac09b7861ff693274ce6b02ae52fdfdd1e661feaaa9c552cab95246b807b50"),
             ("Render/Crowd/Shaders/CrowdCommon.hlsl", "3591455b4a4c0352093c6d2c4d62c8a4237bae654de2089fe7128323f8bd2904"),
         };
@@ -50,11 +49,10 @@ namespace Champions.Tests
                 Assert.That(hash, Is.EqualTo(pinned), $"{file} draws --look trailer and must not change: give the default look its own shader");
             }
             var g = EdgeGains.Trailer;
-            Assert.That(new[] { g.Rim, g.RimSmall, g.RimPower, g.Edge, g.EdgePx, g.Beat, g.Ring, g.CoreGlow, g.CoreFlare, g.CoreSize, g.OutlinePx, g.OutlineBack },
-                Is.EqualTo(new[] { 2f, 6.5f, 4f, 2.6f, 1.25f, 0.3f, 1.1f, 0.1f, 0.35f, 0.18f, 4f, 0f }), "the trailer's body gains");
+            Assert.That(new[] { g.Rim, g.RimPower, g.Edge, g.EdgePx, g.Beat, g.Ring, g.CoreGlow, g.CoreFlare, g.CoreSize },
+                Is.EqualTo(new[] { 2f, 4f, 2.6f, 1.25f, 0.3f, 1.1f, 0.1f, 0.35f, 0.18f }), "the trailer's body gains");
             Assert.That(new[] { g.ShardRim, g.ShardRimPower, g.ShardEdge, g.ShardEdgePx, g.ShardBeat }, Is.EqualTo(new[] { 2f, 4f, 1.4f, 1.25f, 0.6f }),
                 "the trailer's shard gains");
-            Assert.That(new[] { g.ToeKnee, g.ToePower }, Is.EqualTo(new[] { 0.6f, 3.2f }), "the trailer's post's void toe");
             Assert.That(g.Springs && g.Swarm, "the trailer's motion layers");
             Assert.That(StyleMesh.FeatureAngleDeg, Is.EqualTo(24f), "the trailer's crease angle");
         }
@@ -207,7 +205,7 @@ namespace Champions.Tests
             MonsterBaker.Root = "Assets/Baked/MonsterLookTests";
             try
             {
-                // A recipe's tetrahedron on the slime's first bone.
+                // A recipe's tetrahedron on the slime's first bone, drawing only its first triangle's edges.
                 var dir = MonsterBaker.RecipeDir("slime");
                 Directory.CreateDirectory(dir);
                 void Floats(string name, float[] v) => File.WriteAllBytes(Path.Combine(dir, name), v.SelectMany(BitConverter.GetBytes).ToArray());
@@ -216,7 +214,8 @@ namespace Champions.Tests
                 Ints("triangles.i32", new[] { 0, 1, 2, 0, 3, 1, 1, 3, 2, 2, 3, 0 });
                 Ints("bones.i32", new int[16]);
                 Floats("weights.f32", Enumerable.Range(0, 16).Select(i => i % 4 == 0 ? 1f : 0f).ToArray());
-                File.WriteAllText(Path.Combine(dir, "mesh.json"), "{\"vertices\": 4, \"triangles\": 4}\n");
+                File.WriteAllBytes(Path.Combine(dir, "edges.u8"), new byte[] { 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+                File.WriteAllText(Path.Combine(dir, "mesh.json"), "{\"vertices\": 4, \"triangles\": 4, \"edgeAngleDeg\": 24}\n");
 
                 Assert.That(MonsterBaker.Bake("slime", force: true));
                 var standard = AssetDatabase.LoadAssetAtPath<MonsterType>(MonsterBaker.AssetPath("slime", MonsterLook.Default));
@@ -226,6 +225,11 @@ namespace Champions.Tests
                 Assert.That(trailer.Source, Is.EqualTo("vendor"));
                 Assert.That(trailer.Lods[0].GetIndexCount(0) / 3, Is.GreaterThan(100), "the trailer draws the vendor slime");
                 Assert.That(standard.Bones, Is.SameAs(trailer.Bones), "both move with the vendor rig and clips");
+                var edges = new List<Vector3>();
+                standard.Lods[0].GetUVs(5, edges);
+                Assert.That(edges.Take(3), Is.All.EqualTo(Vector3.one), "the first triangle draws its edges, as flagged");
+                Assert.That(edges.Skip(3), Is.All.EqualTo(Vector3.zero), "the others none, however sharp");
+                Assert.That(standard.Lods.Distinct().Count(), Is.EqualTo(1), "a mesh that chooses its edges is not decimated");
             }
             finally
             {

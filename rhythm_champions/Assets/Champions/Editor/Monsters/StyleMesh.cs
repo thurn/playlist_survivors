@@ -16,9 +16,10 @@ namespace Champions.EditorTools.Monsters
         /// or colour each one alone. It keeps the positions (the rest pose in metres), normals, UV0 where the mesh
         /// has it and the bone data (UV1/UV2), and adds the face normal in the tangent, skinned like a normal, and
         /// barycentric coordinates plus a random value per triangle in UV3, and its feature edges in UV5
-        /// (<see cref="FeatureEdges"/>). Submeshes and triangle order are kept.
+        /// (<see cref="FeatureEdges"/> at <paramref name="angleDeg"/>, or <paramref name="edges"/> when given: per triangle
+        /// over all submeshes, component k 1 to draw the edge opposite corner k). Submeshes and triangle order are kept.
         /// </summary>
-        public static Mesh Unweld(Mesh src, int seed)
+        public static Mesh Unweld(Mesh src, int seed, Vector3[] edges = null, float angleDeg = FeatureAngleDeg)
         {
             var pos = src.vertices;
             var nor = src.normals;
@@ -38,7 +39,7 @@ namespace Champions.EditorTools.Monsters
             var oEdges = new List<Vector3>(n);
             var all = new List<int>(n);
             for (int sm = 0; sm < src.subMeshCount; sm++) all.AddRange(src.GetIndices(sm));
-            var edges = FeatureEdges(pos, all);
+            edges ??= FeatureEdges(pos, all, angleDeg);
             int tri = 0;
             var subs = new List<int[]>();
             var rng = new System.Random(seed);

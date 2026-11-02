@@ -36,6 +36,16 @@ float4 _RC_ZoneTo[4];    // the zone now
 float4 _RC_ZoneSweep;    // the change's centre x, z; its front's radius (m; past the frame once done); the feather (m)
 
 float4 _RC_Hero;       // the hero's feet x, z; song time; 0
+float4 _RC_Grade;      // the post's grade before its tonemap (Grade.cs): the exposure (linear), the void toe's knee and power
+
+// A colour as it should read after the grade's exposure and void toe (both below the filmic curve's shoulder): the floor,
+// calibrated as drawn, keeps its light where the toe would sink it with a monster's glass.
+float3 Ungraded(float3 c)
+{
+    float m = max(c.r, max(c.g, c.b));
+    if (_RC_Grade.y > 0 && m > 1e-6 && m < _RC_Grade.y) c *= pow(m / _RC_Grade.y, 1 / _RC_Grade.z - 1);
+    return _RC_Grade.x > 0 ? c / _RC_Grade.x : c;
+}
 
 // A flash's gain: `calm` outside special moments, full in one. Every flash in the look goes through it.
 float LookFlash(float calm) { return lerp(calm, 1, saturate(_RC_Special)); }

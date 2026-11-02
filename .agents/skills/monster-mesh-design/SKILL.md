@@ -55,7 +55,7 @@ you want is a sharp edge, and a surface you want quiet is smooth (neighbours
 under 24 degrees apart) or flat. Every sharp edge on the model is a stroke
 on screen, whether you meant it or not. A designed low-poly mesh can instead
 draw every one of its edges, a true wireframe as the references are, if the
-bake lets the recipe flag edges (ps-6y2.28). Then each edge of the topology
+recipe flags its edges (see Build it). Then each edge of the topology
 is a line you chose, so lay it out with care:
 
 - clean quads and triangles of even size;
@@ -152,6 +152,12 @@ def build(source: Source) -> Mesh:
   `bones`, `weights`; `normals` optional; `carried` optional, so the shatter
   flings your weapon's chunks with the body). It shares the vendor bone
   texture, so it moves with the vendor rig and clips.
+- Which edges draw: by default every crease sharper than 24 degrees, as the
+  trailer drew the vendor meshes. `mesh.edge_angle = 1` draws every edge but
+  a flat quad's diagonal (a true wireframe of your topology); `mesh.edges`,
+  shape (triangles, 3), flags each triangle's edges yourself (1 for the edge
+  opposite that corner). A mesh that chooses its edges isn't decimated for
+  distance: its topology is the drawing, so keep it low-poly.
 - Blender 5.2 LTS headless: `blender(script, *args)` runs a script with
   `--background --python-exit-code 1`; `source.save(path)` and
   `Mesh.load(path)` trade `.npz` files with it.

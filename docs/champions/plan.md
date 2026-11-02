@@ -317,15 +317,23 @@ trailer's, ported back:
     `EdgeLook`'s gains;
   - `CrowdShardBaker` with `MonsterShards.compute`, each shard outlined
     along its crack.
+  - the trailer's post grade (its neon-bloom preset's scene stage,
+    `Render/World/Grade.cs`): before URP's post on every camera, the
+    exposure, a void toe sinking what lies under a knee toward black (the
+    glass cores, the faint rim), a wide saturated halo and a filmic tonemap
+    that keeps a saturated emitter's hue; URP's tonemapper is off and its
+    bloom (0.63), contrast and saturation (+10) and vignette follow. The
+    floor undoes the grade (`Ungraded`), so the grid reads as calibrated.
+  - As the trailer had them: the look package at git 138684f2, the build
+    that captured it. The later outline hull and small-body rim are not the
+    trailer's, and its line widths were render pixels at its capture's 2160
+    rows (MonsterLines.hlsl measures in those).
   - As landed (Render/Crowd, Editor/Monsters): `MonsterCrowd`,
     `MonsterShatter`, `EdgeLook` and `EdgeGains`, the ten types' vendor
-    models in `Editor/Monsters/monsters.json`. Three deliberate changes from
-    the trailer: the trailer's post had a void toe (its neon-bloom preset
-    sank everything under a knee toward black) that the game's post lacks,
-    so the monster shaders apply it to their own light (`EdgeToe`); the
-    world's beat wave stands in for the trailer's global beat pulse (the
-    core glow and line lift travel out with the wave); and a weapon's or
-    shield's chunks are flung with the body (the trailer's kick left a
+    models in `Editor/Monsters/monsters.json`. Two deliberate changes from
+    the trailer: the world's beat wave stands in for its global beat pulse
+    (the core glow and line lift travel out with the wave), and a weapon's
+    or shield's chunks are flung with the body (the trailer's kick left a
     sword hanging by the feet standing where it fell).
 - **`--look trailer`**: a player flag, honoured by stills and reviews too,
   that draws exactly the trailer's look: vendor meshes, `MonsterEdge.hlsl`
@@ -340,7 +348,8 @@ trailer's, ported back:
     from the vendor mesh, into ignored `Assets/Baked/Monsters/<type>/`.
     A recipe may flag which edges draw: every edge of its low-poly mesh (a
     true wireframe, design.md, The aim) or only creases over 24 degrees, the
-    vendor meshes' default.
+    vendor meshes' default (`Mesh.edges` per triangle, or `Mesh.edge_angle`;
+    a mesh that chooses its edges is not decimated for distance).
   - Recipes may run Blender 5.2 LTS headless (`Blender --background
     --python`). Blender files and exports stay in ignored folders; the guard
     refuses `.blend`, `.fbx` and `.obj` in tracked paths.

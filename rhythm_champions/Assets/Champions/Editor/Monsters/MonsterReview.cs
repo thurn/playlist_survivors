@@ -73,7 +73,7 @@ namespace Champions.EditorTools.Monsters
             var frame = new RenderTexture(FrameWidth * Super, FrameHeight * Super, 24, RenderTextureFormat.ARGB32) { name = "MonsterReview" };
             frame.Create();
             camera.targetTexture = frame;
-            _void = palette.VoidFloor;
+            _void = Color.black; // the void as graded (Grade.cs sinks the floor's colour to black)
             var floor = new GridFloor(camera.gameObject.layer);
             var rigs = new Dictionary<MonsterLook, Rig>();
             var sheets = new List<string>();

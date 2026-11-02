@@ -43,12 +43,14 @@ def test_a_recipe_builds_from_the_source_and_writes_what_the_baker_reads(tmp_pat
         "    mesh = source.mesh()\n"
         "    assert source.part('Sword').carried and source.bone('Hand_R') == 2\n"
         "    mesh.triangles = mesh.triangles[:1]\n"
+        "    mesh.edges = mesh.triangles * 0 + 1  # a wireframe: every edge of it\n"
         "    return mesh"
     ))
     out = tmp_path / "recipe"
     monster.run_recipe(path, tmp_path / "source", out)
 
-    assert json.loads((out / "mesh.json").read_text(encoding="utf-8")) == {"vertices": 4, "triangles": 1}
+    assert json.loads((out / "mesh.json").read_text(encoding="utf-8")) == {"vertices": 4, "triangles": 1, "edgeAngleDeg": 24.0}
+    assert np.fromfile(out / "edges.u8", dtype=np.uint8).tolist() == [1, 1, 1]
     assert np.fromfile(out / "triangles.i32", dtype="<i4").tolist() == [0, 1, 2]
     assert np.fromfile(out / "bones.i32", dtype="<i4").reshape(4, 4)[0].tolist() == [0, 1, 0, 0]
     assert np.fromfile(out / "carried.u8", dtype=np.uint8).tolist() == [0, 0, 1, 1]
@@ -60,6 +62,7 @@ def test_a_recipe_builds_from_the_source_and_writes_what_the_baker_reads(tmp_pat
     ("    mesh = source.mesh()\n    mesh.weights[0] = [0.2, 0, 0, 0]\n    return mesh", "weights don't sum to 1"),
     ("    mesh = source.mesh()\n    mesh.triangles[0, 0] = 9\n    return mesh", "triangles index past"),
     ("    return None", "not a Mesh"),
+    ("    mesh = source.mesh()\n    mesh.edges = mesh.triangles[:1]\n    return mesh", "one flag per triangle corner"),
 ])
 def test_a_malformed_mesh_is_refused_and_nothing_is_written(tmp_path: Path, body: str, problem: str) -> None:
     export(tmp_path / "source")

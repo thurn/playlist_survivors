@@ -4,8 +4,7 @@
 // chunk is outlined where it broke (the shard baker's crack edges in TEXCOORD5) as well as on the model's feature
 // edges, so a monster shatters into edge-lit glass, its weapon with it. The outlines are hottest on the break's frame,
 // fading over FRESH_SECONDS, and the set flashes white on the impact frame only. In the stills' type-ID pass it writes
-// the effects' code. What changed from the trailer's: the trailer's post's void toe applied here (EdgeToe); no shadow
-// caster or fog; the geometry queue.
+// the effects' code. What changed from the trailer's: no shadow caster or fog; the geometry queue.
 Shader "Champions/MonsterEdgeShard"
 {
     Properties
@@ -16,13 +15,11 @@ Shader "Champions/MonsterEdgeShard"
         _Rim ("Rim gain", Float) = 2.0
         _RimPower ("Rim falloff", Float) = 4.0
         _Edge ("Edge gain", Float) = 1.4
-        _EdgePx ("Edge width (px)", Float) = 1.25
+        _EdgePx ("Edge width (px at 2160 rows, the trailer's capture)", Float) = 1.25
         _Beat ("Edge lift when fresh", Float) = 0.6
         _CoreGlow ("Core at rest (unused)", Float) = 0
         _CoreFlare ("Core on the beat (unused)", Float) = 0
         _CoreSize ("Core radius (unused)", Float) = 0
-        _ToeKnee ("Void toe's knee (the trailer's post)", Float) = 0.6
-        _ToePower ("Void toe's power", Float) = 3.2
         _Springs ("Motion springs (unused)", Float) = 0
         _Swarm ("Motion swarm (unused)", Float) = 0
     }
@@ -37,7 +34,7 @@ Shader "Champions/MonsterEdgeShard"
             half4 _Tint; half4 _Core; half4 _Flash;
             half _Rim; half _RimPower; half _Edge; half _EdgePx; half _Beat;
             half _CoreGlow; half _CoreFlare; half _CoreSize;
-            half _ToeKnee; half _ToePower; half _Springs; half _Swarm;
+            half _Springs; half _Swarm;
         CBUFFER_END
         #include "Assets/Champions/Render/Crowd/Shaders/MonsterCommon.hlsl"
         #include "Assets/Champions/Render/Crowd/Shaders/MonsterShards.hlsl"
@@ -134,7 +131,7 @@ Shader "Champions/MonsterEdgeShard"
                 // Fresh outlines are lifted as the bodies' are on the beat: the break pays off on its frame.
                 float3 color = EdgeSurface(i.positionWS, i.normalWS, i.bary, i.edges, _Tint.rgb, 2.0 * i.fx.z, i.fx.y, _Rim, lit, fres);
                 color += _Flash.rgb * i.fx.x * LookFlash(LOOK_SHARD_CALM) * (2.0 * lit + fres + 0.35);
-                return half4(EdgeToe(color), 1);
+                return half4(color, 1);
             }
             ENDHLSL
         }

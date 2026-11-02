@@ -1,5 +1,6 @@
 using System.Linq;
 using Champions.EditorTools;
+using Champions.Render;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -48,13 +49,14 @@ namespace Champions.Tests
         }
 
         [Test]
-        public void PostIsBloomAndNeutralTonemapping()
+        public void PostIsTheTrailersGradeThenBloom()
         {
             var profile = Pipeline.volumeProfile;
             Assert.That(profile, Is.Not.Null, "the pipeline's volume profile");
             Assert.That(profile.TryGet<Bloom>(out var bloom) && bloom.active && bloom.intensity.overrideState && bloom.intensity.value > 0, "bloom");
-            Assert.That(profile.TryGet<Tonemapping>(out var tonemap) && tonemap.active && tonemap.mode.value == TonemappingMode.Neutral,
-                "neutral tonemapping");
+            // The trailer's grade tonemaps before URP's post (Grade.cs), so URP's own tonemapper stays off.
+            Assert.That(profile.TryGet<Tonemapping>(out var tonemap) && tonemap.mode.value == TonemappingMode.None, "URP's tonemapping off");
+            Assert.That(Resources.Load<Shader>(Grade.ShaderPath), Is.Not.Null, "the grade's shader");
         }
 
         [Test]

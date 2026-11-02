@@ -16,7 +16,10 @@ A recipe is a Python module whose docstring says what it changes and why (the re
 type's height, its rest pose, each vertex skinned to four of the source's bones. The recipe returns a `Mesh` skinned to
 the same bones (their indices into `source.bones`), so it moves with the vendor rig and clips. Numpy is at hand, and
 Blender 5.2 LTS headless through `blender()`: `source.save(path)` and `Mesh.load(path)` trade .npz files with a Blender
-script. Every crease of the mesh sharper than 24 degrees is a line on screen.
+script. By default every crease of the mesh sharper than 24 degrees is a line on screen, as the trailer drew the vendor
+meshes; a designed low-poly mesh may choose its own: `mesh.edge_angle = 1` draws every edge but a flat quad's diagonal
+(a true wireframe), or `mesh.edges` flags each triangle's edges. A mesh that chooses its edges is not decimated for
+distance: its topology is the drawing.
 """
 
 from __future__ import annotations
@@ -123,7 +126,9 @@ class Source:
 class Mesh:
     """
     A recipe's mesh: triangles over vertices skinned to the source's bones; normals optional (Unity computes them);
-    carried optional, true for a weapon's or shield's vertices, whose chunks the shatter flings with the body.
+    carried optional, true for a weapon's or shield's vertices, whose chunks the shatter flings with the body. Which
+    edges draw: `edges` (m, 3), 1 for the edge opposite each corner of each triangle; else every crease sharper than
+    `edge_angle` degrees (24, the vendor meshes'; 1 draws every edge but a flat quad's diagonal).
     """
 
     positions: np.ndarray  # (n, 3), root space, metres at the type's height
@@ -132,12 +137,14 @@ class Mesh:
     weights: np.ndarray  # (n, 4), summing to 1
     normals: np.ndarray | None = field(default=None)
     carried: np.ndarray | None = field(default=None)  # (n,) bool
+    edges: np.ndarray | None = field(default=None)  # (m, 3) 0 or 1
+    edge_angle: float = 24.0
 
     @classmethod
     def load(cls, path: Path) -> Mesh:
         """A mesh a Blender script saved with numpy.savez (the arrays named as the fields)."""
         a = np.load(path)
-        return cls(a["positions"], a["triangles"], a["bones"], a["weights"], a.get("normals"), a.get("carried"))
+        return cls(a["positions"], a["triangles"], a["bones"], a["weights"], a.get("normals"), a.get("carried"), a.get("edges"))
 
     def check(self, bones: int) -> None:
         n = len(self.positions)
@@ -158,6 +165,10 @@ class Mesh:
             problems.append(f"normals {self.normals.shape}")
         if self.carried is not None and self.carried.shape != (n,):
             problems.append(f"carried {self.carried.shape}")
+        if self.edges is not None and self.edges.shape != self.triangles.shape:
+            problems.append(f"edges {self.edges.shape} need one flag per triangle corner {self.triangles.shape}")
+        if not 0 < self.edge_angle < 180:
+            problems.append(f"edge_angle {self.edge_angle} is not between 0 and 180 degrees")
         if problems:
             raise MonsterError("the recipe's mesh is malformed: " + "; ".join(problems))
 
@@ -174,8 +185,10 @@ class Mesh:
             self.normals.astype("<f4").tofile(folder / "normals.f32")
         if self.carried is not None:
             self.carried.astype(np.uint8).tofile(folder / "carried.u8")
-        (folder / "mesh.json").write_text(json.dumps({"vertices": len(self.positions), "triangles": len(self.triangles)}) + "\n",
-                                          encoding="utf-8")
+        if self.edges is not None:
+            (self.edges != 0).astype(np.uint8).tofile(folder / "edges.u8")
+        meta = {"vertices": len(self.positions), "triangles": len(self.triangles), "edgeAngleDeg": self.edge_angle}
+        (folder / "mesh.json").write_text(json.dumps(meta) + "\n", encoding="utf-8")
 
 
 def blender(script: Path, *args: str, timeout: float = 600) -> None:

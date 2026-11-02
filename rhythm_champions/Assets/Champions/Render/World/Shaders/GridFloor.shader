@@ -1,9 +1,9 @@
 // The endless grid (design.md, The World > The infinite arena, The Look > The beat wave, Zones; GridFloor.cs): the void
-// floor with a quiet emissive grid in the zone's line colour (the palette's, L* 10-20 after the post: the bottom of
-// ground light), every fourth line the major one, the minor lines a share of it. As a beat ring passes (World.hlsl) the
-// lines brighten toward the zone's pulse colour (a downbeat's front; at most L* 35, the top of ground light, so the
-// floor never rises out of it), the minor lines up to the major's light, and bend slightly outward (_WavePushM); the
-// wake is gone within half a beat. Event rings past the knee (special moments) bend the whole grid harder, lift the
+// floor with a quiet emissive grid in the zone's line colour (the palette's, L* 10-20 after the post, whose grade it
+// undoes: World.hlsl's Ungraded; the bottom of ground light), every fourth line the major one, the minor lines a share
+// of it. As a beat ring passes (World.hlsl) the lines brighten toward the zone's pulse colour (a downbeat's front; at
+// most L* 35, the top of ground light, so the floor never rises out of it), the minor lines up to the major's light,
+// and bend slightly outward (_WavePushM); the wake is gone within half a beat. Event rings past the knee (special moments) bend the whole grid harder, lift the
 // floor under their front and light the lines in their colour. The zone crossfades behind the change's front. Lines
 // thinner than a pixel dim rather than widen, fade with distance from the camera and fade out where a cell is under a
 // few pixels, so the far floor is quiet and has no moire. The floor itself is void: no fill, no fog. In the stills'
@@ -112,7 +112,7 @@ Shader "Champions/GridFloor"
                 float3 pulse = ZoneColour(xz, ZONE_PULSE);
                 float3 colour = lerp(lerp(ZoneColour(xz, ZONE_LINE), pulse, wave), pulse * _RingBoost, saturate(ring)) / _ToneGain
                     + _RingLight * light;
-                return half4(lines * colour, 1);
+                return half4(Ungraded(lines * colour), 1);
             }
             ENDHLSL
         }

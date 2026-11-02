@@ -25,7 +25,8 @@ namespace Champions.EditorTools.Monsters
     /// - Resources/MonsterTypes/trailer/TYPE.asset: the type as `--look trailer` draws it, always the vendor model;
     /// - Resources/MonsterTypes/default/TYPE.asset: the default look's, from the recipe's mesh when
     ///   `champions monster bake` left one in TYPE/recipe/ (tools/recipes/monster/TYPE.py, skinned to the same bones,
-    ///   so it shares the bone texture), else the trailer's own meshes.
+    ///   so it shares the bone texture), else the trailer's own meshes. A recipe may choose which edges draw (flags, or
+    ///   its own crease angle: every edge of a designed low-poly mesh); such a mesh is not decimated.
     /// A bake is skipped while its key (the type's entry, the baker's code, the recipe's mesh) matches TYPE/bake.key.
     /// <see cref="Export"/> writes the combined vendor mesh to TYPE/source/ for a recipe to read.
     /// </summary>
@@ -59,6 +60,14 @@ namespace Champions.EditorTools.Monsters
             public readonly List<int> Indices = new List<int>();
             /// <summary>Each vertex: is it of something the monster carries (a weapon, a shield; MonsterModel.carried)?</summary>
             public readonly List<bool> Carried = new List<bool>();
+            /// <summary>
+            /// Which edges draw: per triangle, component k 1 for the edge opposite corner k (a recipe's own flags), else
+            /// every crease sharper than <see cref="EdgeAngleDeg"/>.
+            /// </summary>
+            public Vector3[] Edges;
+            public float EdgeAngleDeg = StyleMesh.FeatureAngleDeg;
+            /// <summary>A mesh that draws edges of its own choosing (flags or an angle of its own): its topology is the drawing.</summary>
+            public bool Designed => Edges != null || EdgeAngleDeg != StyleMesh.FeatureAngleDeg;
             /// <summary>Each source renderer's vertex range (the export's parts).</summary>
             public readonly List<(string Name, int First, int Count, bool Rigid, bool Carried)> Parts = new List<(string, int, int, bool, bool)>();
 
@@ -519,8 +528,9 @@ namespace Champions.EditorTools.Monsters
         /// The recipe's mesh from TYPE/recipe/ (tools/src/champions_tools/monster.py writes it): mesh.json (vertices,
         /// triangles) and little-endian arrays positions.f32 (3 per vertex, root space at the type's height, the rest
         /// pose), triangles.i32, bones.i32 and weights.f32 (4 per vertex, into the source's bones), and normals.f32 if the
-        /// recipe gave them (else they're computed), and carried.u8 (1 for a vertex of a weapon or shield, which the
-        /// shatter flings with the body) if it gave that; null when there is none.
+        /// recipe gave them (else they're computed), carried.u8 (1 for a vertex of a weapon or shield, which the
+        /// shatter flings with the body) and edges.u8 (3 per triangle: 1 to draw the edge opposite that corner) if it
+        /// gave them, and mesh.json's edgeAngleDeg (the creases that draw without flags); null when there is none.
         /// </summary>
         static Geometry ReadRecipe(string id, int bones)
         {
@@ -545,6 +555,16 @@ namespace Champions.EditorTools.Monsters
             var carried = File.Exists(carriedPath) ? File.ReadAllBytes(carriedPath) : new byte[n];
             if (carried.Length != n) throw new Exception($"MonsterBaker: {carriedPath} has {carried.Length} entries for {n} vertices");
             g.Carried.AddRange(carried.Select(c => c != 0));
+            var edgesPath = Path.Combine(dir, "edges.u8");
+            if (File.Exists(edgesPath))
+            {
+                var e = File.ReadAllBytes(edgesPath);
+                if (e.Length != tris.Length) throw new Exception($"MonsterBaker: {edgesPath} has {e.Length} flags for {tris.Length / 3} triangles");
+                g.Edges = new Vector3[tris.Length / 3];
+                for (int t = 0; t < g.Edges.Length; t++) g.Edges[t] = new Vector3(e[3 * t], e[3 * t + 1], e[3 * t + 2]);
+            }
+            var meta = JsonUtility.FromJson<RecipeMeta>(File.ReadAllText(Path.Combine(dir, "mesh.json")));
+            if (meta.edgeAngleDeg > 0) g.EdgeAngleDeg = meta.edgeAngleDeg;
             var normalsPath = Path.Combine(dir, "normals.f32");
             if (File.Exists(normalsPath))
             {
@@ -561,6 +581,12 @@ namespace Champions.EditorTools.Monsters
                 UnityEngine.Object.DestroyImmediate(m);
             }
             return g;
+        }
+
+        [Serializable]
+        sealed class RecipeMeta
+        {
+            public float edgeAngleDeg;
         }
 
         // ---------------------------------------------------------------------------------
@@ -585,16 +611,28 @@ namespace Champions.EditorTools.Monsters
             var id = b.Model.id;
             var (clips, centerY, radius, height) = MeasureBounds(b, g);
             var welded = g.Build(prefix + "_welded", centerY, radius);
-            var decimated = BuildLods(welded);
             int seed = StyleMesh.StableSeed(id);
-            var lods = new[] { StyleMesh.Unweld(welded, seed), StyleMesh.Unweld(decimated[0], seed + 1), StyleMesh.Unweld(decimated[1], seed + 2) };
-            for (int l = 0; l < lods.Length; l++)
+            Mesh[] lods;
+            if (g.Designed)
             {
-                lods[l].name = $"{prefix}_lod{l}";
-                Replace(lods[l], $"{TypeDir(id)}/{prefix}_lod{l}.mesh");
+                // Its edges are its own: decimated, they would be other edges. Every LOD is the mesh itself.
+                var style = StyleMesh.Unweld(welded, seed, g.Edges, g.EdgeAngleDeg);
+                style.name = $"{prefix}_lod0";
+                Replace(style, $"{TypeDir(id)}/{prefix}_lod0.mesh");
+                lods = new[] { style, style, style };
+            }
+            else
+            {
+                var decimated = BuildLods(welded);
+                lods = new[] { StyleMesh.Unweld(welded, seed), StyleMesh.Unweld(decimated[0], seed + 1), StyleMesh.Unweld(decimated[1], seed + 2) };
+                for (int l = 0; l < lods.Length; l++)
+                {
+                    lods[l].name = $"{prefix}_lod{l}";
+                    Replace(lods[l], $"{TypeDir(id)}/{prefix}_lod{l}.mesh");
+                }
+                foreach (var m in decimated) UnityEngine.Object.DestroyImmediate(m);
             }
             UnityEngine.Object.DestroyImmediate(welded);
-            foreach (var m in decimated) UnityEngine.Object.DestroyImmediate(m);
             var (shardMesh, shards) = MonsterShardBaker.Bake(prefix, height, lods[0], seed, g.CarriedTriangles());
             Replace(shardMesh, $"{TypeDir(id)}/{prefix}_shards.mesh");
             var t = ScriptableObject.CreateInstance<MonsterType>();

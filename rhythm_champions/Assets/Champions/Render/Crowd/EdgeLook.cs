@@ -4,32 +4,27 @@ namespace Champions.Render.Crowd
 {
     /// <summary>
     /// The edge look's numbers (design.md, The Look; style.md, The Edge Look): MonsterEdge's and MonsterEdgeShard's
-    /// gains, as the trailer's edge preset drew with them (the frozen look package's shader defaults and EdgeLook, and
-    /// its neon-bloom post's void toe).
+    /// gains, as the trailer's edge preset drew with them (the frozen look package's shader defaults and EdgeLook).
     /// </summary>
     public struct EdgeGains
     {
-        /// <summary>The bodies: the rim's gain (large and small on screen) and falloff, the feature lines' gain, width
-        /// (px at 1080 rows) and lift on the beat, the event rings' light, the core at rest and on the beat and its
-        /// radius (share of the body's), the dark outline hull's width and push back.</summary>
-        public float Rim, RimSmall, RimPower, Edge, EdgePx, Beat, Ring, CoreGlow, CoreFlare, CoreSize, OutlinePx, OutlineBack;
-        /// <summary>The trailer's post's void toe (its neon-bloom preset), which the game's post lacks: the brightest
-        /// channel under the knee goes as knee x (m / knee)^power (MonsterEdge.hlsl's EdgeToe).</summary>
-        public float ToeKnee, ToePower;
+        /// <summary>The bodies: the rim's gain and falloff, the feature lines' gain, width (px at 2160 rows, the trailer's
+        /// capture: MonsterLines.hlsl) and lift on the beat, the event rings' light, the core at rest and on the beat and its radius (share of the body's).</summary>
+        public float Rim, RimPower, Edge, EdgePx, Beat, Ring, CoreGlow, CoreFlare, CoreSize;
         /// <summary>The motion layers: a step's and a kick's springs, the swarm's tilt and wobble.</summary>
         public bool Springs, Swarm;
         /// <summary>The shards: the rim's gain and falloff, the lines' gain and width, their lift while fresh.</summary>
         public float ShardRim, ShardRimPower, ShardEdge, ShardEdgePx, ShardBeat;
 
         /// <summary>
-        /// `--look trailer`'s: exactly the trailer's, never changed (EdgeLookTests pins them). Tune
-        /// <see cref="Default"/> instead.
+        /// `--look trailer`'s: exactly the trailer's (the look package as captured, git 138684f2), never changed
+        /// (MonsterLookTests pins them); tune <see cref="Default"/> instead.
         /// </summary>
         public static EdgeGains Trailer => new EdgeGains
         {
-            Rim = 2f, RimSmall = 6.5f, RimPower = 4f, Edge = 2.6f, EdgePx = 1.25f, Beat = 0.3f, Ring = 1.1f,
-            CoreGlow = 0.1f, CoreFlare = 0.35f, CoreSize = 0.18f, OutlinePx = 4f, OutlineBack = 0f,
-            ToeKnee = 0.6f, ToePower = 3.2f, Springs = true, Swarm = true,
+            Rim = 2f, RimPower = 4f, Edge = 2.6f, EdgePx = 1.25f, Beat = 0.3f, Ring = 1.1f,
+            CoreGlow = 0.1f, CoreFlare = 0.35f, CoreSize = 0.18f,
+            Springs = true, Swarm = true,
             ShardRim = 2f, ShardRimPower = 4f, ShardEdge = 1.4f, ShardEdgePx = 1.25f, ShardBeat = 0.6f,
         };
 
@@ -73,7 +68,6 @@ namespace Champions.Render.Crowd
             var g = EdgeGains.Of(look);
             var m = Make(BodyShader, type, palette, "_edge");
             m.SetFloat("_Rim", g.Rim);
-            m.SetFloat("_RimSmall", g.RimSmall);
             m.SetFloat("_RimPower", g.RimPower);
             m.SetFloat("_Edge", g.Edge);
             m.SetFloat("_EdgePx", g.EdgePx);
@@ -82,10 +76,6 @@ namespace Champions.Render.Crowd
             m.SetFloat("_CoreGlow", g.CoreGlow);
             m.SetFloat("_CoreFlare", g.CoreFlare);
             m.SetFloat("_CoreSize", g.CoreSize);
-            m.SetFloat("_OutlinePx", g.OutlinePx);
-            m.SetFloat("_OutlineBack", g.OutlineBack);
-            m.SetFloat("_ToeKnee", g.ToeKnee);
-            m.SetFloat("_ToePower", g.ToePower);
             m.SetFloat("_Springs", g.Springs ? 1 : 0);
             m.SetFloat("_Swarm", g.Swarm ? 1 : 0);
             return m;
@@ -101,8 +91,6 @@ namespace Champions.Render.Crowd
             m.SetFloat("_Edge", g.ShardEdge);
             m.SetFloat("_EdgePx", g.ShardEdgePx);
             m.SetFloat("_Beat", g.ShardBeat);
-            m.SetFloat("_ToeKnee", g.ToeKnee);
-            m.SetFloat("_ToePower", g.ToePower);
             return m;
         }
 
