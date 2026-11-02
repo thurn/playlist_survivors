@@ -176,6 +176,29 @@ def library_candidates(cache: Path, lib_key: str, vendor_key: str) -> list[Path]
                   key=lambda p: (built_marker(p).exists(), p.stat().st_mtime), reverse=True)
 
 
+# Bee's build graphs in Library/Bee: each graph, what its build program wrote beside it and the
+# input data it was made from. They name the worktree that made them, by absolute path.
+BEE_GRAPHS = ("*.dag", "*.dag.*", "*.dag_*", "*-inputdata.json")
+
+
+def restore_library(wt: paths.Worktree, vendor_key: str) -> tuple[int, bool] | None:
+    """Clones the best cached Library (library_candidates) into the worktree, without Bee's graphs:
+    Unity compiles with a graph before verifying it, so another worktree's graph compiles its old
+    file lists, and after an error the script updater reads files under that worktree's path, which
+    fails the build once that worktree is deleted (ps-6y2.25). Bee's artifacts and build state stay;
+    the next compile rebuilds the graphs, as it would at a new path anyway, so the Library builds as
+    fast (evidence/ps-6y2.25). Returns (files, exact), or None when the cache has no Library for
+    these packages."""
+    cands = library_candidates(paths.cache_root(), library_key(wt), vendor_key)
+    if not cands:
+        return None
+    n = clone.clone_tree(cands[0], wt.library)
+    for pattern in BEE_GRAPHS:
+        for f in (wt.library / "Bee").glob(pattern):
+            f.unlink()
+    return n, cands[0].name == vendor_key
+
+
 def save_library(wt: paths.Worktree) -> Path:
     """Saves the worktree's Library, Library/Bee with it (plan.md, Build Policy), as the cache's
     entry for its packages and vendor files. The warm editor's folder stays behind."""
@@ -356,11 +379,10 @@ def setup(wt: paths.Worktree, run_unity: bool = True, fresh_library: bool = Fals
         print("setup: Library kept (already present)")
         warm = True
     else:
-        cands = library_candidates(cache, lkey, vkey)
-        if cands:
-            n = clone.clone_tree(cands[0], wt.library)
-            exact = cands[0].name == vkey
-            print(f"setup: Library cloned ({n} files, {'exact' if exact else 'nearest'}) "
+        restored = restore_library(wt, vkey)
+        if restored:
+            n, exact = restored
+            print(f"setup: Library cloned ({n} files, {'exact' if exact else 'nearest'}; Bee's graphs dropped) "
                   f"in {time.monotonic() - t:.2f} s")
             warm = True
         else:

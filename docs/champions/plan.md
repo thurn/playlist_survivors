@@ -393,8 +393,9 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
 - **Unity Accelerator**: one local instance shared by every worktree and CI.
   SETUP.md documents it.
 - **Library cache**: keyed by the Unity version, package manifest and lock,
-  and the vendor manifest; `Library/Bee` kept; refreshed after each passing
-  CI run.
+  and the vendor manifest; `Library/Bee` kept, but its build graphs, which
+  name the worktree that saved them, dropped on restore; refreshed after each
+  passing CI run.
 - **Baked cache**: `Assets/Baked/` keyed by the recipes, the vendor hashes
   and the baker code, so a fresh worktree or CI copies it instead of
   re-baking.

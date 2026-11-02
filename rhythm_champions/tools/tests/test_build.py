@@ -148,6 +148,26 @@ def test_slow_cis_save_after_a_build_refreshes_the_library_and_keeps_it_built(mo
     assert setup.save_built_library(wt) is None  # the next build needn't save it again
 
 
+def test_a_restored_library_keeps_bees_artifacts_but_not_its_graphs(wt) -> None:
+    """Bee's graphs name the worktree that saved them, and Unity compiles with a graph before
+    verifying it (ps-6y2.25)."""
+    bee = wt.library / "Bee"
+    graphs = ["200b0aP.dag", "200b0aP.dag.json", "200b0aP.dag.outputdata", "200b0aP.dag_fsmtime",
+              "200b0aP-inputdata.json", "200b0aE.dag.payloads", "Player5d03ebd7.dag_derived"]
+    kept = ["TundraBuildState.state", "tundra.digestcache", "artifacts/200b0aP.dag/Champions.Sim.dll",
+            "PlayerScriptAssemblies/Champions.Sim.dll"]
+    for name in graphs + kept:
+        write(bee / name, "/Users/me/old-worktree\n")
+    setup.save_library(wt)
+    for vendor_key, exact in ((setup.manifest_key(wt), True), ("other-vendor-files", False)):
+        restored = setup.restore_library(wt, vendor_key)
+        assert restored and restored[1] is exact
+        assert sorted(p.relative_to(bee).as_posix() for p in bee.rglob("*") if p.is_file()) == sorted(kept)
+        assert (wt.library / "ShaderCache" / "variant.bin").read_bytes() == b"compiled"
+    shutil.rmtree(paths.cache_root() / "library")
+    assert setup.restore_library(wt, setup.manifest_key(wt)) is None
+
+
 def test_setup_prefers_a_built_library_when_none_is_exact(tmp_path: Path) -> None:
     base = tmp_path / "library" / "pkgs"
     built, newer = base / "a", base / "b"
