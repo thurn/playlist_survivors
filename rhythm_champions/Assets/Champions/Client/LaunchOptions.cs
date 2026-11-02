@@ -26,9 +26,11 @@ namespace Champions.Client
         public bool FixedTime;
         /// <summary>`--seconds N`: quit after N seconds of game time; 0 runs until quit.</summary>
         public double Seconds;
-        /// <summary>`--capture-stills DIR`: windowless stills into DIR at the `--stills-at` times (seconds).</summary>
+        /// <summary>`--capture-stills DIR`: windowless stills into DIR at the `--stills-at` times (seconds), or of the
+        /// `--stills-scenes` scenes (names, or `all`; Scenes.StillScenes).</summary>
         public string StillsDir;
         public double[] StillsAt = Array.Empty<double>();
+        public string[] StillsScenes = Array.Empty<string>();
         /// <summary>`--file PATH`: plays an audio file or M3U playlist (absolute, or relative to the working directory).</summary>
         public string File;
         /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
@@ -59,6 +61,10 @@ namespace Champions.Client
             if (o.File != null && o.App != null) throw new ArgumentException("--file and --app: give one music source");
             var at = a.Get("--stills-at");
             if (at != null) o.StillsAt = Array.ConvertAll(at.Split(','), s => Number("--stills-at", s));
+            var scenes = a.Get("--stills-scenes");
+            if (scenes != null) o.StillsScenes = scenes.Split(',');
+            if (o.StillsScenes.Length > 0 && o.StillsAt.Length > 0) throw new ArgumentException("--stills-at and --stills-scenes: give one");
+            if (o.StillsScenes.Length > 0 && o.StillsDir == null) throw new ArgumentException("--stills-scenes: needs --capture-stills DIR");
             o.Unrecognized = a.Unrecognized(); // last: every flag has been read
             return o;
         }

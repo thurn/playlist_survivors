@@ -1,0 +1,83 @@
+{
+ "palette": "champions",
+ "problems": [],
+ "stills": {
+  "palette-0.250": {
+   "metrics": {
+    "type_black_share": {
+     "skeleton": 0.5765530380349732,
+     "slime": 0.7857177121476199,
+     "demon": 0.6978402942072099,
+     "bat": 0.8019877260631076,
+     "goblin": 0.737715224401225,
+     "bigOrk": 0.726454312694436,
+     "hero": 0.2332814930015552
+    },
+    "type_roles": {
+     "skeleton": "fodder",
+     "slime": "fodder",
+     "demon": "fodder",
+     "bat": "swarmer",
+     "goblin": "fodder",
+     "bigOrk": "elite",
+     "hero": "hero"
+    },
+    "frame_p25": 1.0788964069618387,
+    "black_share": 0.8831365740740741,
+    "bright_share": 0.05796682098765432,
+    "clipped": 0.00020061728395061727,
+    "clipped_blob": 9.066358024691358e-05,
+    "white": 0.000310570987654321,
+    "flash": 0.00028935185185185184,
+    "halo": 1.6304526075325931,
+    "key60": 0.8435210819021486,
+    "families": 2,
+    "palette_conformance": 0.9999703923019985,
+    "dense_tiles": 0,
+    "swarm_tile": 49,
+    "monster_share": 0.26901041666666664,
+    "body_px": 52.15085762787305,
+    "monster_form": 33.0577135162731,
+    "monster_white": 0.0,
+    "monster_p90": 78.95690558979538,
+    "readability": 77.3841490073482,
+    "hero_p90": 100.0,
+    "hero_margin": 21.043094410204617,
+    "background_light": 0.03890799899583328,
+    "floor_p50": 1.2569929921895486,
+    "floor_p90": 3.1146343378250627,
+    "floor_p99": 7.055377420172192
+   },
+   "roles": {
+    "hero.hurt": 8.882309400444115e-05,
+    "enemies.key.cyan": 0.21136935603256846,
+    "enemies.key.blue": 0.0004145077720207254,
+    "enemies.accent.magenta": 0.06984455958549222,
+    "enemies.accent.violet": 0.00038490007401924503,
+    "enemies.counter.orange": 0.058948926720947446,
+    "zones.cobalt.line": 0.002842339008142117,
+    "zones.cobalt.pulse": 0.008230940044411546,
+    "zones.cobalt.fill": 0.2789341228719467,
+    "zones.cobalt.edge": 0.00384900074019245,
+    "zones.teal.line": 0.029844559585492227,
+    "zones.teal.pulse": 0.19689119170984457,
+    "zones.teal.edge": 0.1379718726868986,
+    "zones.violet.line": 0.0002072538860103627,
+    "zones.violet.edge": 0.00014803849000740192
+   },
+   "impact": false,
+   "broken": {
+    "type_black_share_min.skeleton": "type_black_share of skeleton 0.577 < 0.65",
+    "type_black_share_min.hero": "type_black_share of hero 0.233 < 0.55"
+   }
+  }
+ },
+ "cut": {
+  "metrics": {
+   "key60_median": 0.8435210819021486,
+   "shot_floor_range": 0.0,
+   "flash_frames": 0.0
+  },
+  "broken": {}
+ }
+}

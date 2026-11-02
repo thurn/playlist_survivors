@@ -3,7 +3,9 @@ using System.IO;
 using Champions.Client.Bench;
 using Champions.Client.Loop;
 using Champions.Client.Music;
+using Champions.Client.Scenes;
 using Champions.Render;
+using Champions.Sim;
 using UnityEngine;
 
 namespace Champions.Client
@@ -14,7 +16,8 @@ namespace Champions.Client
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--headless` (or Unity's batch mode): the output silenced, frames paced at 60 per second unless fixed;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>), quitting
-    ///   once the last is kept;
+    ///   once the last is kept; `--stills-scenes NAMES` instead plays the scripted scenes (<see cref="StillScenes"/>)
+    ///   for their stills;
     /// - `--seconds N`: quits after N seconds;
     /// - `--file PATH` or `--app NAME`: plays that music 3 s late through the music plugin, its entries
     ///   feeding the sim (<see cref="GameLoop"/>); a source that can't play quits with 2;
@@ -28,6 +31,7 @@ namespace Champions.Client
         LaunchOptions _options;
         Stills _stills;
         EdgeCrowdBench _bench;
+        StillScenes _scenes;
 
         void Start()
         {
@@ -44,6 +48,17 @@ namespace Champions.Client
             // A headless run's music mutes the final mix instead (GameLoop), so its filters still run.
             if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
             if (_options.StillsDir != null) _stills = new Stills(_camera, _options.StillsDir, _options.StillsAt);
+            if (_options.StillsScenes.Length > 0)
+            {
+                try { _scenes = new StillScenes(_stills, _camera, _options.StillsScenes, ContentDir()); }
+                catch (Exception e) when (e is ArgumentException || e is ContentException)
+                {
+                    Debug.LogError("Boot: " + e.Message);
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+            }
             Debug.Log($"Boot: Unity {Application.unityVersion}, {SystemInfo.graphicsDeviceType}, batch mode {Application.isBatchMode}" +
                       $"{(_options.FixedTime ? ", fixed time" : "")}{(_options.Headless ? ", headless" : "")}");
             if (_options.EdgeCrowd > 0)
@@ -72,6 +87,11 @@ namespace Champions.Client
             }
         }
 
+        /// <summary>rhythm_champions/Content, above the player (a build inside the checkout) or the working directory.</summary>
+        static string ContentDir() =>
+            GameContent.Find(Application.dataPath) ?? GameContent.Find(Environment.CurrentDirectory)
+            ?? throw new ContentException($"no rhythm_champions/Content above {Application.dataPath} or {Environment.CurrentDirectory}");
+
         /// <summary>`--file`'s file (which must exist) or `--app`'s app (which must be producing audio); null with why if neither.</summary>
         static MusicSource ResolveMusic(LaunchOptions options, out string error)
         {
@@ -93,7 +113,12 @@ namespace Champions.Client
             if (_options == null) return;
             double t = Time.timeAsDouble;
             _bench?.Frame(t);
-            if (_stills != null)
+            if (_scenes != null)
+            {
+                _scenes.Update(t);
+                if (_scenes.Done) Quit($"still scenes done at t={t:F3}");
+            }
+            else if (_stills != null)
             {
                 if (_bench != null && _stills.IsDue(t)) _bench.Requeue();
                 _stills.CaptureDue(t);

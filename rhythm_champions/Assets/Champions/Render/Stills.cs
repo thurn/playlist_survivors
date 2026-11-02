@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -9,19 +10,34 @@ using UnityEngine.Rendering.Universal;
 namespace Champions.Render
 {
     /// <summary>
-    /// Windowless stills (`--capture-stills DIR --stills-at t1,t2,...`): at each time it draws the
-    /// camera by hand into a 1920×1080 target and keeps it as still-&lt;time&gt;.jpg with the
-    /// `ps-render` tag. A batch-mode player draws no frames of its own, so the camera is drawn only
-    /// for the frames that keep a still (drawing every frame by hand grows URP's pooled targets,
-    /// docs/archive/tech-demo-3d/mac.md). Stills due on one frame share its one drawing.
+    /// Windowless stills: at each time it draws the camera by hand into a 1920×1080 target. A batch-mode player draws
+    /// no frames of its own, so the camera is drawn only for the frames that keep a still (drawing every frame by hand
+    /// grows URP's pooled targets, docs/archive/tech-demo-3d/mac.md). Two kinds:
+    /// - `--capture-stills DIR --stills-at t1,t2,...` (<see cref="CaptureDue"/>): still-&lt;time&gt;.jpg with the
+    ///   `ps-render` tag; stills due on one frame share its one drawing.
+    /// - a scripted scene's still (<see cref="Keep"/>), what `champions look` measures: still-NAME.png (the frame as
+    ///   drawn), id-NAME.png (its type-ID pass, <see cref="IdPass"/>) and view-NAME.json (the camera's
+    ///   view-projection, row-major in OpenGL's clip space; the hero's feet; the ID table; impact or not).
     /// </summary>
     public sealed class Stills : IDisposable
     {
         public const int Width = 1920, Height = 1080;
+
+        /// <summary>A scene still's view json beyond the camera.</summary>
+        public sealed class View
+        {
+            public Vector3 Hero;
+            /// <summary>An impact frame (a special moment's first frame or the next), judged by the impact rules.</summary>
+            public bool Impact;
+            /// <summary>The ID pass's codes: each one's type, its role (a cast role, or hero, structure, effect) and height.</summary>
+            public readonly SortedDictionary<int, (string Type, string Role, float HeightM)> Ids =
+                new SortedDictionary<int, (string, string, float)>();
+        }
+
         readonly Camera _camera;
         readonly string _dir;
         readonly List<double> _times = new List<double>();
-        readonly RenderTexture _target, _resolved;
+        readonly RenderTexture _target, _resolved, _ids;
 
         public Stills(Camera camera, string dir, IEnumerable<double> times)
         {
@@ -39,6 +55,9 @@ namespace Champions.Render
                 _resolved = new RenderTexture(Width, Height, 0, RenderTextureFormat.ARGB32) { name = "Still resolved" };
                 _resolved.Create();
             }
+            // Linear, so a code written as code / 255 is stored as the code itself.
+            _ids = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear) { name = "Still IDs" };
+            _ids.Create();
         }
 
         public bool Done => _times.Count == 0;
@@ -54,7 +73,7 @@ namespace Champions.Render
             {
                 var at = _times[0];
                 _times.RemoveAt(0);
-                tex ??= Draw();
+                tex ??= Draw(_target, _resolved);
                 var name = string.Format(CultureInfo.InvariantCulture, "still-{0:000.000}.jpg", at);
                 RenderTag.SaveJpeg(tex, Path.Combine(_dir, name), "champions stills t=" + at.ToString("F3", CultureInfo.InvariantCulture));
                 Debug.Log($"Stills: kept {name} at t={t:F3}");
@@ -62,17 +81,60 @@ namespace Champions.Render
             if (tex != null) UnityEngine.Object.Destroy(tex);
         }
 
-        Texture2D Draw()
+        /// <summary>Keeps a scene's still `name`: the frame, its type-ID pass and its view.</summary>
+        public void Keep(string name, View view)
+        {
+            Directory.CreateDirectory(_dir);
+            _camera.aspect = (float)Width / Height;
+            try
+            {
+                Matrix4x4 viewProj = _camera.projectionMatrix * _camera.worldToCameraMatrix;
+                Save(Draw(_target, _resolved), "still-" + name + ".png");
+                Save(DrawIds(), "id-" + name + ".png");
+                File.WriteAllText(Path.Combine(_dir, "view-" + name + ".json"), ViewJson(viewProj, view));
+            }
+            finally { _camera.ResetAspect(); }
+            Debug.Log($"Stills: kept {name}");
+        }
+
+        void Save(Texture2D tex, string file)
+        {
+            File.WriteAllBytes(Path.Combine(_dir, file), tex.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(tex); // a texture, so in play mode too, and in an EditMode test
+        }
+
+        /// <summary>The ID pass: the camera drawn with the global flag up, without post, MSAA or HDR.</summary>
+        Texture2D DrawIds()
+        {
+            var data = _camera.GetUniversalAdditionalCameraData();
+            bool post = data.renderPostProcessing, hdr = _camera.allowHDR, msaa = _camera.allowMSAA;
+            var aa = data.antialiasing;
+            data.renderPostProcessing = false;
+            data.antialiasing = AntialiasingMode.None;
+            _camera.allowHDR = _camera.allowMSAA = false;
+            Shader.SetGlobalFloat(IdPass.On, 1f);
+            try { return Draw(_ids, null); }
+            finally
+            {
+                Shader.SetGlobalFloat(IdPass.On, 0f);
+                data.renderPostProcessing = post;
+                data.antialiasing = aa;
+                _camera.allowHDR = hdr;
+                _camera.allowMSAA = msaa;
+            }
+        }
+
+        Texture2D Draw(RenderTexture target, RenderTexture resolved)
         {
             var previous = _camera.targetTexture;
-            _camera.targetTexture = _target;
+            _camera.targetTexture = target;
             try { _camera.Render(); }
             finally { _camera.targetTexture = previous; }
-            var source = _target;
-            if (_resolved != null)
+            var source = target;
+            if (resolved != null)
             {
-                Graphics.Blit(_target, _resolved);
-                source = _resolved;
+                Graphics.Blit(target, resolved);
+                source = resolved;
             }
             var req = AsyncGPUReadback.Request(source, 0, TextureFormat.RGBA32);
             req.WaitForCompletion();
@@ -83,10 +145,29 @@ namespace Champions.Render
             return tex;
         }
 
+        static string ViewJson(Matrix4x4 viewProj, View view)
+        {
+            var c = CultureInfo.InvariantCulture;
+            var s = new StringBuilder("{\n \"viewProj\": [");
+            for (int i = 0; i < 16; i++) s.Append(i > 0 ? ", " : "").Append(viewProj[i / 4, i % 4].ToString("R", c));
+            s.Append("],\n \"hero\": [").Append(view.Hero.x.ToString("R", c)).Append(", ").Append(view.Hero.y.ToString("R", c))
+                .Append(", ").Append(view.Hero.z.ToString("R", c)).Append("],\n \"impact\": ").Append(view.Impact ? "true" : "false")
+                .Append(",\n \"ids\": {");
+            bool first = true;
+            foreach (var kv in view.Ids)
+            {
+                s.Append(first ? "\n" : ",\n").Append("  \"").Append(kv.Key.ToString(c)).Append("\": {\"type\": \"").Append(kv.Value.Type)
+                    .Append("\", \"role\": \"").Append(kv.Value.Role).Append("\", \"heightM\": ").Append(kv.Value.HeightM.ToString("R", c)).Append('}');
+                first = false;
+            }
+            return s.Append("\n }\n}\n").ToString();
+        }
+
         public void Dispose()
         {
             _target.Release();
             if (_resolved != null) _resolved.Release();
+            _ids.Release();
         }
     }
 }

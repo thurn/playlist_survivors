@@ -18,6 +18,12 @@ Commands:
                       the warm editor for this worktree, which build, test and unity then use
   check               every check before a push: the guard, the EditMode tests (cold) and the
                       variant budget; or only those named (--guard, --tests, --variants)
+  stills              fixed-time stills of the scripted scenes in one headless launch of the last
+                      build, with their type-ID passes and views (--scene NAME, repeatable; --out DIR,
+                      default captures/stills)
+  look [STILLS]       the look metrics (docs/champions/style.md) on stills (default captures/stills):
+                      every threshold key per still, the palette's rules; --out DIR writes metrics.md,
+                      metrics.json and evidence JPEGs; exits 1 on a broken rule
   unity METHOD ...    run a batch-mode task method (warm editor if running, else cold)
   guard               the vendor guard (--tree REV, --index, --range A..B, --pre-push REMOTE)
   sync                fill the vendor folder from the manifest (--record-only: just the record)
@@ -123,6 +129,19 @@ def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
     return out
 
 
+def headless(wt: paths.Worktree, app: Path, player_flags: list[str], log_name: str = "player.log") -> int:
+    """Runs the player windowless in batch mode with the player flags and waits for it; its exit code."""
+    wt.logs.mkdir(parents=True, exist_ok=True)
+    log = wt.logs / log_name
+    # Batch mode draws with the Null device unless told otherwise, and so does a player given
+    # `--headless`, which Unity reads too: stills need Metal. The game counts batch mode as headless.
+    cmd = [str(app.parent / setup.APP_EXE), "-batchmode", "-force-metal", "-logFile", str(log), *player_flags]
+    started = time.monotonic()
+    code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
+    print(f"play: the player exited {code} after {time.monotonic() - started:.1f} s (log {log.relative_to(wt.root)})")
+    return code
+
+
 def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
     wt = paths.worktree()
     player_flags = absolute_file_flags(player_flags, Path.cwd())
@@ -131,15 +150,7 @@ def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
         print(f"play: no {a.backend} player at {app}; run `just champions-build`", file=sys.stderr)
         return 2
     if a.headless:
-        wt.logs.mkdir(parents=True, exist_ok=True)
-        log = wt.logs / "player.log"
-        # Batch mode draws with the Null device unless told otherwise, and so does a player given
-        # `--headless`, which Unity reads too: stills need Metal. The game counts batch mode as headless.
-        cmd = [str(app.parent / setup.APP_EXE), "-batchmode", "-force-metal", "-logFile", str(log), *player_flags]
-        started = time.monotonic()
-        code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
-        print(f"play: the player exited {code} after {time.monotonic() - started:.1f} s (log {log.relative_to(wt.root)})")
-        return code
+        return headless(wt, app, player_flags)
     flags = ["-screen-width", "1920", "-screen-height", "1080", "-screen-fullscreen", "0" if a.windowed else "1"]
     print(f"play: {app.relative_to(wt.root)}")
     return subprocess.run(["open", "-n", str(app), "--args", *flags, *player_flags], check=False).returncode
@@ -219,6 +230,18 @@ def cmd_check(a: argparse.Namespace) -> int:
         results.append(("variant budget", check_variants(wt, build_first=not a.no_build)))
     print("check: " + ", ".join(f"{n} {'ok' if ok else 'FAILED'}" for n, ok in results))
     return 0 if all(ok for _, ok in results) else 1
+
+
+def cmd_stills(a: argparse.Namespace) -> int:
+    from . import stills
+
+    return stills.cmd_stills(a)
+
+
+def cmd_look(a: argparse.Namespace) -> int:
+    from . import look
+
+    return look.cmd_look(a)
 
 
 def cmd_unity(a: argparse.Namespace) -> int:
@@ -313,6 +336,21 @@ def build_parser() -> argparse.ArgumentParser:
                    help="the shader variant budget: a Mono build with a clean build cache, and its count")
     c.add_argument("--no-build", action="store_true", help="--variants: read the last Mono build's report")
     c.set_defaults(func=cmd_check)
+
+    st = sub.add_parser("stills", help="fixed-time stills of the scripted scenes, with their ID passes")
+    st.add_argument("--scene", action="append", help="a scene to play (repeatable; default all)")
+    st.add_argument("--out", help="the stills folder (default captures/stills)")
+    st.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
+    st.set_defaults(func=cmd_stills)
+
+    lk = sub.add_parser("look", help="the look metrics on stills, against the palette and the style's thresholds")
+    lk.add_argument("stills", nargs="?", help="a folder of stills (default captures/stills)")
+    lk.add_argument("--palette", help="the palette (default rhythm_champions/Content/palette.json)")
+    lk.add_argument("--thresholds", help="the rules (default docs/champions/style-thresholds.json)")
+    lk.add_argument("--out", help="the evidence folder: metrics.md, metrics.json and a JPEG per still")
+    lk.add_argument("--impact", action="append", help="a glob of still names that are impact frames")
+    lk.add_argument("--title", help="metrics.md's title (default the folder's name)")
+    lk.set_defaults(func=cmd_look)
 
     u = sub.add_parser("unity")
     u.add_argument("method")

@@ -32,6 +32,8 @@ The CLI (`rhythm_champions/tools`, a uv project; `champions --help`):
 | `test` | EditMode tests |
 | `editor [start\|stop\|status]` | A warm editor for this worktree, which build, test and unity then use |
 | `check` | The guard, the EditMode tests and the variant budget (`--guard`, `--tests`, `--variants` for one) |
+| `stills` | Fixed-time stills of the scripted scenes, with their type-ID passes and views, into `captures/stills/` |
+| `look [DIR]` | The look metrics ([style.md](../docs/champions/style.md)) on stills: every threshold key, the palette's rules; `--out` writes evidence |
 | `unity <Method>` | A batch-mode task method of `Champions.EditorTools.Tasks` |
 | `edgecut <model>` | Bake the model's edge cut from its recipe (below) into `Assets/Baked/EdgeCuts/`; only the steps whose inputs changed (`--force`: all) |
 | `edgecut review <model>` | Bake if needed, then the cut's review sheets and README in `evidence/edgecuts/<model>/`; exits 1 when a threshold fails |
@@ -42,7 +44,9 @@ Player flags so far: `--file PATH` (an audio file or M3U playlist) or
 pid or part of its name, tapped, muted and played 3 s late), `--seconds N`,
 `--fixed-time` (exactly 1/60 s per frame; with `--file` the frames drive
 the music silently), `--capture-stills DIR --stills-at T1,T2` (tagged 1080p
-JPEGs at those times, then quit). With music, the log's `Music:` lines show
+JPEGs at those times, then quit) or `--capture-stills DIR --stills-scenes
+NAMES|all` (the scripted scenes' PNG stills, ID passes and views, as
+`champions stills` runs them). With music, the log's `Music:` lines show
 the delay, each beat the sim reaches with when it became known, and a
 summary. `--edge-crowd N` is the edge crowd's test scene: N baked edge cuts
 (`--edge-type ID`, default skeleton) walking in a field, 20 a second
@@ -62,17 +66,20 @@ just champions-play --headless --file public/reactive/house-128/house-128.ogg --
 - `Assets/Champions/`: `Sim/` (Champions.Sim, no Unity), `Client/`
   (Champions.Client: Boot, launch options, `Music/` (the plugin's bindings,
   the music clock, the player and its sources), `Loop/` (the frame loop's
-  clocks and the sim driver)), `Render/` (Champions.Render:
-  stills, `Crowd/`: the edge crowd, its shatter and their shaders),
-  `Editor/` (Champions.Editor: build tasks, the warm editor, the variant
-  budget, `EdgeCuts/`: the edge cuts' export, bake and review), `Tests/`
-  (EditMode), `Scenes/`, `Settings/` (the URP asset, its renderer and the
-  post profile).
+  clocks and the sim driver), `Scenes/` (the stills' scripted scenes)),
+  `Render/` (Champions.Render: stills and the type-ID pass, `Look/`: the
+  palette, `Crowd/`: the edge crowd, its shatter and their shaders,
+  `Shaders/`), `Editor/` (Champions.Editor: build tasks, the warm editor, the
+  variant budget, `EdgeCuts/`: the edge cuts' export, bake and review),
+  `Tests/` (EditMode), `Scenes/`, `Settings/` (the URP asset, its renderer and
+  the post profile).
 - `plugin/`: the music plugin, a Cargo workspace copied from the frozen
   `native/` (crates plugin, analysis, audio, capture, stream; the analyzer's
   models in `models/`). `champions setup` builds `libps_plugin.dylib` into the
   ignored `Assets/Plugins/macOS/` and the models into `Assets/StreamingAssets/ps/`;
   `cargo test` and `cargo clippy` run in it.
+- `Content/`: the game's JSON content, the palette (`palette.json`,
+  [style.md](../docs/champions/style.md)) among it.
 - `manifest.json`: the vendor files the game uses, synced into the ignored
   `Assets/Vendor/`. Bakes write the ignored `Assets/Baked/`.
 - `tools/`: the CLI and its tests; `tools/recipes/edgecut/`, the edge cuts'

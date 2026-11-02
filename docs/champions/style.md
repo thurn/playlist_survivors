@@ -329,17 +329,18 @@ calibrates them on level 1's real stills, fixes every break or records an
 exception in `rhythm_champions/evidence/look/`.
 
 On the palette scene's stand-ins (`rhythm_champions/evidence/look/palette/`),
-the palette's own measures pass: the key at 0.79, two families, conformance
-100%, the hero's margin 21. What breaks belongs to the stand-ins and to the
-look pass:
+the palette's own measures pass: the key at 0.84, two families, conformance
+100%, the hero's margin 21, every value and restraint rule. What breaks
+belongs to the stand-ins and to the look pass:
 
-- **The hero's black share** (27% against 55%): bloom (threshold 0.9) blooms
+- **The hero's black share** (23% against 55%): bloom (threshold 0.9) blooms
   only near-white, so the white hero alone glows, and at 1.8 m its glow fills
   its own dark body. Its lines also clip to 255 in a steady frame, above the
   hero rung (85-98). The hero's edge cut (ps-6y2.20) and the look pass must
   thin its lines or restrain its bloom.
-- **Monster form and bright share** sit just under (25 and 3.7%): stand-in
-  rims are thinner and flatter than edge-cut lines.
+- **The skeleton's black share** (58% against 65%): a stand-in capsule seen
+  from 60 degrees down lights a wide crescent along its lower edge, which an
+  edge cut's chosen lines don't.
 
 Drawn unlit at their palette values under the post, the monsters' lines
 render within a few L* of their roles (the cyan at L* 79 C* 43 against the
