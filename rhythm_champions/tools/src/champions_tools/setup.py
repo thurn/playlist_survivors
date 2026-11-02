@@ -48,10 +48,11 @@ def library_key(wt: paths.Worktree) -> str:
                      p / "Packages" / "manifest.json", p / "Packages" / "packages-lock.json")
 
 
-# What the bakers read (plan.md, Build Policy: the baked cache): the edge-cut recipes, the editor
-# code that bakes, and the vendor manifest. A worktree whose Assets/Baked/ was made from the same
-# inputs copies it from the cache instead of baking again.
-BAKE_INPUTS = ("tools/recipes", "Assets/Champions/Editor")
+# What the bakers read (plan.md, Build Policy: the baked cache): the edge-cut recipes and the code
+# that cuts them, the editor code that bakes, the crowd whose assets it writes, and the vendor
+# manifest. A worktree whose Assets/Baked/ was made from the same inputs copies it from the cache
+# instead of baking again.
+BAKE_INPUTS = ("tools/recipes", "tools/src/champions_tools/edgecut", "Assets/Champions/Editor", "Assets/Champions/Render/Crowd")
 BAKED_KEY = ".baked-key"  # in Assets/Baked/: the inputs key it was baked from
 
 
@@ -60,7 +61,8 @@ def baked_dir(wt: paths.Worktree) -> Path:
 
 
 def baked_key(wt: paths.Worktree) -> str:
-    files = [f for d in BAKE_INPUTS for f in sorted((wt.project / d).rglob("*")) if f.is_file()]
+    files = [f for d in BAKE_INPUTS for f in sorted((wt.project / d).rglob("*"))
+             if f.is_file() and "__pycache__" not in f.parts]
     return file_hash(wt.root, *files, wt.project / "manifest.json")
 
 
