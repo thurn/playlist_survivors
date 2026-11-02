@@ -105,8 +105,11 @@ def test_the_budget_counts_probe_frames_first_sightings_and_main_thread_frames_o
                              {"at": 61.2, "max_ms": 8.0, "first_ms": 20.0, "label": "first death", "first": True},
                              {"at": 63.5, "max_ms": 8.0, "first_ms": 41.0, "label": "first break", "first": True}]},
         "cpu": {"slow": [{"song": 41.0, "frame_ms": 20.0, "cpu_ms": 19.0, "top": "engine", "alloc_bytes": 0},
-                         {"song": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0, "top": "engine", "alloc_bytes": 0}]},
+                         {"song": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0, "top": "engine", "alloc_bytes": 0},
+                         {"song": 43.0, "frame_ms": 36.0, "cpu_ms": 35.0, "top": "crowd", "alloc_bytes": 0}]},
     }
     assert perf.over_budget(result) == [{"probe": "at 50", "max_ms": 34.0}, {"probe": "first break", "first_ms": 41.0},
-                                        {"main": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0}]
+                                        {"main": 43.0, "frame_ms": 36.0, "cpu_ms": 35.0}]
+    # 40 ms on 3 ms of CPU: the main thread waited on the machine, not on its own work.
+    assert perf.over_budget(result, waits=True) == [{"main": 42.5, "frame_ms": 40.0, "cpu_ms": 3.0}]
     assert perf.over_budget({"cpu": {"frames": 0}}) == []

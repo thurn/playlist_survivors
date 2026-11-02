@@ -6,7 +6,7 @@ docs/design/neon-look-style.md (Rules and Thresholds), on stills scaled to 960 p
 C*ab are CIELAB (D65), hues HSV. Blank cells: the still lacks what the measure needs (an ID render, a
 view json, an emitter, a dense clump).
 
-Rules (docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min, monster_form_min and swarm_separation_min calibrated on v2 by ps-wnj.21 (demo3d/evidence/look/metrics); the restraint rules (floor_p99, background_light, flash_frames) by ps-wnj.24 (game/evidence/look/restraint, demo3d/evidence/look/restraint)):
+Rules (docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min, monster_form_min and swarm_separation_min calibrated on v2 by ps-wnj.21 (demo3d/evidence/look/metrics); the restraint rules (floor_p99, background_light, flash_frames) by ps-wnj.24 (game/evidence/look/restraint, demo3d/evidence/look/restraint); halo moved to impact frames by ps-wnj.19 (demo3d/evidence/look/trailer)):
 
 - `floor_p50_max` (floor_p50 <= 8): the floor is void
 - `floor_p90_max` (floor_p90 <= 30): rings and breaths included, the floor stays under ground light
@@ -20,7 +20,7 @@ Rules (docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min
 - `clipped_impact_max` (clipped <= 0.12 (impact frames)): even an impact frame is not a white-out
 - `clipped_blob_max` (clipped_blob <= 0.005): no blown-out region outside impact frames
 - `white_max` (white <= 0.02): white is earned: impact frames, sparks and the blade's flare
-- `halo_min` (halo >= 15): emitters glow: their surroundings sit well over the dark
+- `halo_impact_min` (halo >= 15 (impact frames)): emitters glow at a special moment: the post's halo flares on its impact frame (ps-wnj.19); steady frames are calm (ps-wnj.24), so no steady halo rule
 - `families_max` (families <= 4): the hue budget: the zone's key and three enemy families
 - `key60_min` (key60 >= 0.55): each frame has a colour key
 - `key60_median_min` (key60_median >= 0.62 (the cut)): a cut keys as GW3 does
@@ -34,20 +34,18 @@ Rules (docs/design/neon-look-style.md, Rules and Thresholds (ps-wnj.1); halo_min
 
 | still | floor p50 | floor p90 | floor p99 | frame p25 | black | bright | clipped | clip blob | white | flash | background | halo | families | key60 | conformance | hero margin | form | dense | separation | p10 | readability | rules |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| still-020.000 |  |  |  | 0.3 | 58.6% | 20.7% | 0.2% | 0.0% | 1.2% | 0.7% | 2.8% | 14.5 | 1 | 0.82 | 91.3% | 12.7 | 50.2 | 61 | 15.7 | 11.6 | 54.6 | FAIL 1 |
-| still-030.000 |  |  |  | 0.3 | 61.4% | 17.3% | 0.1% | 0.0% | 0.4% | 0.2% | 2.9% | 10.4 | 2 | 0.76 | 95.4% |  | 52.4 | 49 | 14.6 | 11.3 | 53.0 | FAIL 1 |
-| still-040.000 |  |  |  | 0.3 | 68.9% | 12.8% | 0.1% | 0.0% | 0.5% | 0.7% | 6.2% | 9.5 | 3 | 0.64 | 89.8% | 9.0 | 44.2 | 10 | 13.1 | 6.9 | 50.2 | FAIL 1 |
-| still-050.000 |  |  |  | 0.3 | 75.4% | 8.2% | 0.1% | 0.0% | 0.4% | 0.2% | 10.4% | 8.8 | 3 | 0.64 | 87.7% | 28.0 | 49.1 | 10 | 12.7 | 10.4 | 44.6 | FAIL 2 |
-| still-058.000 |  |  |  | 0.8 | 69.2% | 10.3% | 0.1% | 0.0% | 0.3% | 0.1% | 10.7% | 7.8 | 3 | 0.63 | 86.0% | 21.6 | 49.0 | 7 | 4.7 | 3.7 | 43.5 | FAIL 2 |
-| still-070.000 |  |  |  | 0.7 | 64.6% | 13.6% | 0.1% | 0.0% | 0.4% | 0.2% | 8.5% | 12.2 | 3 | 0.69 | 86.3% | 19.6 | 40.9 | 30 | 8.7 | 4.7 | 50.7 | FAIL 2 |
+| still-020.000 |  |  |  | 0.3 | 57.5% | 22.9% | 0.3% | 0.0% | 1.3% | 0.9% | 2.7% | 11.9 | 1 | 0.93 | 97.2% | 9.6 | 50.0 | 55 | 15.6 | 11.3 | 60.1 | pass |
+| still-030.000 |  |  |  | 0.3 | 61.5% | 17.7% | 0.1% | 0.0% | 0.4% | 0.2% | 2.9% | 9.0 | 2 | 0.82 | 98.4% |  | 53.9 | 51 | 15.1 | 10.6 | 54.6 | pass |
+| still-040.000 |  |  |  | 0.5 | 66.6% | 14.4% | 0.1% | 0.0% | 0.5% | 0.6% | 6.0% | 10.1 | 2 | 0.68 | 95.9% | 7.4 | 48.1 | 25 | 12.3 | 8.9 | 54.7 | FAIL 1 |
+| still-050.000 |  |  |  | 0.4 | 73.6% | 9.9% | 0.1% | 0.0% | 0.4% | 0.2% | 9.6% | 8.2 | 2 | 0.75 | 96.1% | 21.5 | 51.7 | 21 | 12.6 | 11.0 | 50.5 | FAIL 1 |
+| still-058.000 |  |  |  | 0.8 | 67.9% | 11.1% | 0.1% | 0.0% | 0.3% | 0.1% | 9.9% | 6.9 | 2 | 0.73 | 95.5% | 17.6 | 52.8 | 16 | 9.6 | 7.3 | 47.3 | FAIL 1 |
+| still-070.000 |  |  |  | 0.8 | 60.5% | 15.2% | 0.1% | 0.0% | 0.4% | 0.3% | 8.0% | 12.7 | 2 | 0.81 | 95.3% | 14.0 | 45.0 | 40 | 12.7 | 8.3 | 55.9 | FAIL 1 |
 
-The cut: key60_median 0.66, shot_floor_range 0.49, flash_frames 0.33 (pass).
+The cut: key60_median 0.78, shot_floor_range 0.57, flash_frames 0.33 (pass).
 
 ## Broken rules
 
-- still-020.000: `halo_min` halo 14.5 < 15
-- still-030.000: `halo_min` halo 10.4 < 15
-- still-040.000: `halo_min` halo 9.51 < 15
-- still-050.000: `halo_min` halo 8.76 < 15; `swarm_separation_min` swarm_separation 12.7 < 13
-- still-058.000: `halo_min` halo 7.78 < 15; `swarm_separation_min` swarm_separation 4.7 < 13
-- still-070.000: `halo_min` halo 12.2 < 15; `swarm_separation_min` swarm_separation 8.68 < 13
+- still-040.000: `swarm_separation_min` swarm_separation 12.3 < 13
+- still-050.000: `swarm_separation_min` swarm_separation 12.6 < 13
+- still-058.000: `swarm_separation_min` swarm_separation 9.6 < 13
+- still-070.000: `swarm_separation_min` swarm_separation 12.7 < 13

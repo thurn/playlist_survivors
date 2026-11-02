@@ -4,10 +4,10 @@
     "monsterShare": 0.312,
     "lMonster": 57.436,
     "lRing": 6.441,
-    "dL": 50.995,
+    "dL": 50.996,
     "dC": 41.697,
     "cMonster": 49.965,
-    "monsterP10": 19.331,
+    "monsterP10": 19.33,
     "monsterP90": 86.85,
     "pass": true
   },
@@ -48,7 +48,7 @@
     "pass": true
   },
   "still-058.000": {
-    "monsterPx": 372609,
+    "monsterPx": 372610,
     "monsterShare": 0.18,
     "lMonster": 38.829,
     "lRing": 3.958,

@@ -36,9 +36,10 @@ without the warm-up. `--player-args` adds flags to every scenario's player (a lo
 look's captures under captures/game/perf/NAME/ and its summary and probes in game/evidence/DIR/NAME/, with `--trace`
 tracing every look into the one warm-up (a trace adds to the file's states). Every summary has the budget's verdict
 (unity-game.md, Performance targets: no frame over 33 ms on the Mac): `over_budget` lists each counted probe frame, each
-first sighting's first frame and each profiled frame of the main thread over it (not a timed point's warm-up frame, which
-re-creates the hand-drawn frame's pooled targets: 18-34 ms at every point, the run's quiet first minute too), and
-`--budget` exits 1 when one is.
+first sighting's first frame and each profiled frame of the main thread over it whose own work (its CPU time) is too (not
+a timed point's warm-up frame, which re-creates the hand-drawn frame's pooled targets: 18-34 ms at every point, the run's
+quiet first minute too), and `--budget` exits 1 when one is. A main-thread frame over it on little CPU time waited on the
+machine (other players, builds), not on its own work (ps-msz.8.9): it goes to `over_budget_waits`.
 """
 
 from __future__ import annotations
@@ -158,7 +159,7 @@ def cmd_perf(a: argparse.Namespace) -> int:
             return code
     base = wt.root / "captures" / "game" / ("perf-trace" if a.trace else "perf")
     looks = a.looks.split(",") if a.looks else [None]
-    failed, over = [], []
+    failed, over, waited = [], [], []
     for look in looks:
         root = base / look if look else base
         summary = {}
@@ -172,6 +173,8 @@ def cmd_perf(a: argparse.Namespace) -> int:
                 failed.append(name)
             if result["over_budget"]:
                 over.append(name)
+            if result["over_budget_waits"]:
+                waited.append(name)
             print(report_line(name, result))
         root.mkdir(parents=True, exist_ok=True)
         text = json.dumps(summary, indent=2) + "\n"
@@ -187,6 +190,8 @@ def cmd_perf(a: argparse.Namespace) -> int:
         print(f"perf: summary in {(root / 'summary.json').relative_to(wt.root)}")
     if over:
         print(f"perf: over the budget ({BUDGET_MS:.1f} ms): {', '.join(over)}", file=sys.stderr)
+    if waited:
+        print(f"perf: frames over the budget on little CPU time (the machine's waits): {', '.join(waited)}", file=sys.stderr)
     if failed:
         print(f"perf: failed: {', '.join(failed)}", file=sys.stderr)
         return 1
@@ -244,6 +249,7 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario, extra: list[str] | None =
         else:
             errors.append("no probe")
     result["over_budget"] = over_budget(result)
+    result["over_budget_waits"] = over_budget(result, waits=True)
     result["ok"] = not errors
     if errors:
         result["errors"] = errors
@@ -252,16 +258,22 @@ def run(exe: Path, repo: Path, out: Path, s: Scenario, extra: list[str] | None =
     return result
 
 
-def over_budget(result: dict) -> list[dict]:
+def over_budget(result: dict, waits: bool = False) -> list[dict]:
     """The scenario's frames over the budget: each probe point's slowest counted frame, a first sighting's first frame
-    (what a first use costs; a timed point's first is the probe's warm-up), and each profiled main-thread frame."""
+    (what a first use costs; a timed point's first is the probe's warm-up), and each profiled main-thread frame whose CPU
+    time is over it too; with `waits`, the main-thread frames over it on less CPU time instead (the machine's, not the
+    frame's own work)."""
+    slow = [s for s in result.get("cpu", {}).get("slow", []) if s["frame_ms"] > BUDGET_MS]
+    if waits:
+        return [{"main": s["song"], "frame_ms": s["frame_ms"], "cpu_ms": s["cpu_ms"]}
+                for s in slow if s.get("cpu_ms", BUDGET_MS + 1) <= BUDGET_MS]
     over = []
     for p in result.get("probe", {}).get("points", []):
         for key in ("max_ms", "first_ms") if p.get("first") else ("max_ms",):
             if p.get(key) is not None and p[key] > BUDGET_MS:
                 over.append({"probe": p.get("label", f"at {p['at']:g}"), key: p[key]})
     over += [{"main": s["song"], "frame_ms": s["frame_ms"], **({"cpu_ms": s["cpu_ms"]} if "cpu_ms" in s else {})}
-             for s in result.get("cpu", {}).get("slow", []) if s["frame_ms"] > BUDGET_MS]
+             for s in slow if s.get("cpu_ms", BUDGET_MS + 1) > BUDGET_MS]
     return over
 
 

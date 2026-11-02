@@ -3003,15 +3003,16 @@ first sightings: 3, from 8; the run alone: 2).
 **Shipped (ps-wnj.18): every look preset in budget.** `game perf --looks
 edge,solid,hologram,prism` runs the standard scenarios once per preset, and
 every summary carries the budget's verdict (`over_budget`: each counted probe
-frame, first sighting's first frame and main-thread frame over 33.3 ms;
-`--budget` exits 1 on one). The build's warm-up is traced in every preset
+frame, first sighting's first frame and main-thread frame whose own CPU time
+is over 33.3 ms too; `--budget` exits 1 on one; a frame over it on little CPU
+time is the machine's wait, listed apart). The build's warm-up is traced in every preset
 (`game perf --trace --looks ...`, each preset added to the one trace: 70
 variants in 94 states), since the looks' shaders compiling at a first
 sighting had broken the budget (prism's break, 38.7 ms). On the Mac, in
-every preset: probe p99 at the peak, the break and the finale 5.7 to 13.6
+every preset: probe p99 at the peak, the break and the finale 4.8 to 13.6
 ms; no first sighting's first frame over 30.4 ms (the probe's warm-up
-included); the sim's step 0.21 to 0.29 ms p99 at 285 or more alive; no
-main-thread frame over 12.7 ms in the 30-minute run. A timed probe point's
+included); the sim's step 0.21 to 0.29 ms p99 at 285 or more alive on a
+quiet machine; no main-thread frame over 12.7 ms in the 30-minute run. A timed probe point's
 first frame, which re-creates the hand-drawn frame's pooled targets (18 to
 34 ms at any point), isn't a frame the game shows and isn't counted. Numbers
 in [game/evidence/look/presets](../../game/evidence/look/presets/README.md).

@@ -1217,9 +1217,10 @@ each, and `--walk-lead` plays free presses that resolve in heard time (their
 blows and kills drawn when they arrive); zones ease the floor and fog
 through the palette's four zone hues (the run's fifth zone, lava, returns to
 the first). The edge knight's lines widened to 1.8 px for the game's framing.
-The game's stills pass every rule but `halo_min` and
-`swarm_separation_min` (and hologram's background light once), the post's
-and the monster looks' rules ps-wnj.19 tunes for both players.
+The game's stills pass every rule in edge, and every rule but
+`swarm_separation_min` in the others (hologram also misses background light
+and form once each by a hair): the monster looks' rules, which ps-wnj.28
+tunes for both players.
 
 ## Checks and Evidence
 

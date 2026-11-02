@@ -4,15 +4,15 @@
   "msaa": 4,
   "args": "-batchmode -force-metal -logFile /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.18/captures/game/perf/solid/peak/player.log --fixed-time --file /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.18/public/reactive/cc-kevin-macleod-go-cart/cc-kevin-macleod-go-cart.ogg --profile-out /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.18/captures/game/perf/solid/peak/profile.csv --start-minute 25 --bot positioning --debug evolve:bloody-tear@5,evolve:soul-eater@5,evolve:holy-wand@5 --look solid --gpu-probe-at 40,50,60 --gpu-probe-out /Users/dthurn/playlist_survivors/.worktrees/ps-wnj.18/captures/game/perf/solid/peak/gpu-probe.json --seconds 62",
   "frames": 24,
-  "p50Ms": 2.90,
-  "p99Ms": 11.82,
-  "maxMs": 11.82,
-  "firstMaxMs": 21.81,
-  "cpuP50Ms": 1.29,
-  "cpuP99Ms": 1.67,
+  "p50Ms": 3.62,
+  "p99Ms": 5.71,
+  "maxMs": 5.71,
+  "firstMaxMs": 18.93,
+  "cpuP50Ms": 1.24,
+  "cpuP99Ms": 1.52,
   "points": [
-    {"at": 40.000, "alive": 300, "firstMs": 21.81, "medianMs": 4.51, "maxMs": 5.89, "frames": [[40.0167, 300, 5.13, 1.48], [40.0333, 300, 4.51, 1.67], [40.0500, 300, 3.55, 1.26], [40.0667, 300, 3.00, 1.29], [40.0833, 300, 5.89, 1.51], [40.1000, 300, 5.66, 1.51], [40.1167, 298, 2.83, 1.29], [40.1333, 298, 2.90, 1.36]]},
-    {"at": 50.000, "alive": 300, "firstMs": 2.89, "medianMs": 2.91, "maxMs": 11.82, "frames": [[50.0167, 300, 2.64, 1.26], [50.0333, 300, 2.91, 1.32], [50.0500, 300, 2.89, 1.20], [50.0667, 300, 11.82, 1.30], [50.0833, 300, 4.48, 1.39], [50.1000, 300, 2.38, 1.20], [50.1167, 300, 4.19, 1.18], [50.1333, 300, 2.46, 1.23]]},
-    {"at": 60.000, "alive": 300, "firstMs": 2.66, "medianMs": 2.65, "maxMs": 2.97, "frames": [[60.0167, 300, 2.50, 1.28], [60.0333, 300, 2.54, 1.21], [60.0500, 300, 2.97, 1.37], [60.0667, 300, 2.48, 1.24], [60.0833, 300, 2.78, 1.47], [60.1000, 300, 2.39, 1.16], [60.1167, 300, 2.82, 1.25], [60.1333, 300, 2.65, 1.26]]}
+    {"at": 40.000, "alive": 300, "firstMs": 18.93, "medianMs": 3.21, "maxMs": 5.31, "frames": [[40.0167, 300, 5.31, 1.44], [40.0333, 300, 3.21, 1.26], [40.0500, 300, 2.95, 1.23], [40.0667, 300, 3.00, 1.06], [40.0833, 300, 2.93, 1.15], [40.1000, 300, 4.76, 1.26], [40.1167, 298, 2.67, 1.08], [40.1333, 298, 4.32, 1.01]]},
+    {"at": 50.000, "alive": 300, "firstMs": 3.04, "medianMs": 3.11, "maxMs": 4.14, "frames": [[50.0167, 300, 4.14, 1.06], [50.0333, 300, 2.86, 1.34], [50.0500, 300, 3.97, 1.13], [50.0667, 300, 2.77, 1.17], [50.0833, 300, 3.28, 1.26], [50.1000, 300, 2.76, 1.14], [50.1167, 300, 3.11, 1.24], [50.1333, 300, 2.89, 1.27]]},
+    {"at": 60.000, "alive": 300, "firstMs": 4.40, "medianMs": 3.77, "maxMs": 5.71, "frames": [[60.0167, 300, 3.65, 1.29], [60.0333, 300, 5.71, 1.52], [60.0500, 300, 3.62, 1.19], [60.0667, 300, 3.77, 1.27], [60.0833, 300, 5.64, 1.30], [60.1000, 300, 3.70, 1.24], [60.1167, 300, 3.58, 1.23], [60.1333, 300, 5.41, 1.21]]}
   ]
 }
