@@ -5,15 +5,15 @@ using Champions.Sim;
 
 namespace Champions.Client.UI
 {
-    /// <summary>One card as drawn: its kind (its outline's shape), icon, name, line, and the rank it gives (4: an evolution, drawn larger).</summary>
+    /// <summary>A brief choice: icon, name, description, level and content-defined cap.</summary>
     public readonly struct CardFace
     {
         public readonly CardKind Kind;
         public readonly string Id, Name, Line;
         public readonly Icon Icon;
-        public readonly int Rank;
+        public readonly int Rank, Top;
 
-        public CardFace(CardKind kind, string id, string name, string line, Icon icon, int rank)
+        public CardFace(CardKind kind, string id, string name, string line, Icon icon, int rank, int top)
         {
             Kind = kind;
             Id = id;
@@ -21,26 +21,25 @@ namespace Champions.Client.UI
             Line = line;
             Icon = icon;
             Rank = rank;
+            Top = top;
         }
 
-        public bool Evolution => Rank == Upgrade.Evolution && (Kind == CardKind.Attack || Kind == CardKind.Dash);
+        public bool FormChange => Kind == CardKind.Weapon && (Rank == 3 || Rank == 5 || Rank == 8);
+
     }
 
-    /// <summary>
-    /// The cards' faces from Content/cards.json and their icons (Content/icons/): every dash, attack and mod the content
-    /// holds has a name of at most <see cref="NameWords"/> words, an icon, a line of at most <see cref="LineWords"/> words for
-    /// each rank it gives, and, for an attack or a damaging dash, its evolution's name and line.
-    /// </summary>
+    /// <summary>Current weapon/support faces plus archived faces for replay fixtures. Form icons are optional.</summary>
     public sealed class CardFaces
     {
         public const string File = "cards.json";
-        public const int NameWords = 3, LineWords = 6;
+        public const int NameWords = 3, LineWords = 12;
 
         sealed class Entry
         {
             public string Name, Evolution, EvolutionLine;
             public string[] Lines;
             public Icon Icon;
+            public Icon[] FormIcons;
         }
 
         readonly Dictionary<string, Entry>[] _entries = { new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>() };
@@ -94,6 +93,16 @@ namespace Champions.Client.UI
                 var e = new Entry { Name = c.String("name"), Lines = c.Strings("lines") };
                 string icon = c.String("icon");
                 if (!Icons.TryGetValue(icon, out e.Icon)) Icons[icon] = e.Icon = Icon.Load(contentDir, icon);
+                if (c.Has("formIcons"))
+                {
+                    string[] names = c.Strings("formIcons");
+                    if (kind != CardKind.Weapon || names.Length != 4) throw c.Fail("formIcons: expected four weapon forms");
+                    e.FormIcons = Array.ConvertAll(names, name =>
+                    {
+                        if (!Icons.TryGetValue(name, out var loaded)) Icons[name] = loaded = Icon.Load(contentDir, name);
+                        return loaded;
+                    });
+                }
                 if (e.Lines.Length != top(id)) throw c.Fail($"lines: {e.Lines.Length} for ranks 1-{top(id)}");
                 if (evolves(id))
                 {
@@ -147,7 +156,9 @@ namespace Champions.Client.UI
             if (!_entries[(int)kind].TryGetValue(id, out var e)) throw new ArgumentException($"no {kind} card {id}");
             bool evolution = rank == Upgrade.Evolution && e.Evolution != null;
             if (!evolution && (rank < 1 || rank > e.Lines.Length)) throw new ArgumentException($"{id} has no rank {rank}");
-            return new CardFace(kind, id, evolution ? e.Evolution : e.Name, evolution ? e.EvolutionLine : e.Lines[rank - 1], e.Icon, rank);
+            var icon = kind == CardKind.Weapon && e.FormIcons != null ? e.FormIcons[CombatRules.FormIndex(rank)] : e.Icon;
+            return new CardFace(kind, id, evolution ? e.Evolution : e.Name,
+                evolution ? e.EvolutionLine : e.Lines[rank - 1], icon, rank, e.Lines.Length);
         }
 
         /// <summary>Every face the content can offer, each rank of each dash, attack and mod and each evolution.</summary>

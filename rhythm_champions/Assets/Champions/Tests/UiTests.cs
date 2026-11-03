@@ -24,7 +24,7 @@ namespace Champions.Tests
     /// The UI (design.md, UI; plan.md, The Client > Input) against the real sim at its first offer: a pointer's click on a
     /// card picks it, the keys pick (1-3, or the arrows and Enter), every interactive element takes the pointer, the menus
     /// answer their keys, and every screen keeps to the design's word budget: one or two words a menu row, a card's name
-    /// and one line of at most six words, no text at all during play.
+    /// and one brief description, no text at all during play.
     /// </summary>
     public sealed class UiTests
     {
@@ -53,7 +53,6 @@ namespace Champions.Tests
         public void Make()
         {
             _content = GameContent.Load(ContentDir);
-            _content.Dashes.LegacyForms = true;
             _palette = Palette.Load(ContentDir);
             _faces = CardFaces.Load(ContentDir, _content);
             _host = new GameObject("UI tests");
@@ -81,6 +80,7 @@ namespace Champions.Tests
         Simulation FirstOffer(RunUi ui, out SimEvent offer)
         {
             var sim = new Simulation(new RunInputs { Start = RunStart.FirstOffer }.Build(_content));
+            sim.Progression.CollectExperience(sim, sim.State.ExperienceNeeded, sim.Now);
             sim.StepTo(0.5);
             offer = sim.EventsSince(0).ToArray().Single(e => e.Kind == SimEventKind.Offer);
             foreach (var e in sim.EventsSince(0)) ui.Take(e);
@@ -185,6 +185,107 @@ namespace Champions.Tests
             Assert.That(pick.I1, Is.EqualTo(offer.I2));
         }
 
+        [Test]
+        public void QueuedChoicesRequireReleaseAndPausePreservesTheOffer()
+        {
+            var ui = Keep(new RunUi(_host.transform, _palette, _content, _faces));
+            var keys = Keep(new KeyInput());
+            var sim = FirstOffer(ui, out _);
+            var clock = new SimClock { Sim = sim };
+            int cursor = sim.EventCount;
+            sim.Progression.CollectExperience(sim, sim.State.ExperienceNeeded * 2, sim.Now);
+            sim.StepTo(sim.Now + Simulation.TickSeconds);
+            Press(keys, UnityEngine.InputSystem.Key.Digit1, UnityEngine.InputSystem.Key.Space);
+            keys.Drain(sim, clock);
+            var first = Since(sim, ref cursor, ui);
+            Assert.That(first.Count(e => e.Kind == SimEventKind.Pick), Is.EqualTo(1));
+            Assert.That(ui.Cards.Up && sim.State.Held);
+            Assert.That(ui.Cards.CardAt(0).ClassListContains("card--focused"), Is.False, "new offer resets focus");
+            Press(keys, UnityEngine.InputSystem.Key.Digit1, UnityEngine.InputSystem.Key.Space);
+            keys.Drain(sim, clock);
+            Assert.That(Since(sim, ref cursor, ui).Any(e => e.Kind == SimEventKind.Pick), Is.False);
+            keys.Suspend(sim, clock, sim.Now);
+            sim.Control(RunControl.Pause, sim.Now);
+            var offer = sim.State.Offer;
+            Press(keys, UnityEngine.InputSystem.Key.Digit3);
+            keys.Drain(sim, clock);
+            Assert.That(sim.State.Offer, Is.EqualTo(offer));
+            sim.Control(RunControl.Resume, sim.Now);
+            keys.Resume();
+            Press(keys);
+            keys.Drain(sim, clock);
+            while (sim.State.Offer.Up)
+            {
+                Press(keys, UnityEngine.InputSystem.Key.Digit1);
+                Press(keys);
+                keys.Drain(sim, clock);
+                Since(sim, ref cursor, ui);
+            }
+            sim.StepTo(sim.Now + 0.5);
+            Assert.That(ui.Cards.Up, Is.False);
+            Assert.That(sim.EventsSince(0).ToArray().Any(e => e.Kind == SimEventKind.HeroDash), Is.False);
+            Assert.That(sim.State.Hero.X, Is.Zero);
+            Assert.That(sim.State.Hero.Y, Is.Zero);
+        }
+
+        [Test]
+        public void WeaponFormsHaveDistinctIconsAndSupportPipsUseTheirContentCaps()
+        {
+            var cards = new CardsView();
+            foreach (WeaponKind weapon in Enum.GetValues(typeof(WeaponKind)))
+            {
+                var icons = new HashSet<Icon>();
+                foreach (int level in new[] { 1, 3, 5, 8 })
+                {
+                    var face = _faces.Of(Card.Of(weapon, level, level - 1));
+                    icons.Add(face.Icon);
+                    cards.Show(new[] { face }, 0);
+                    Assert.That(cards.CardAt(0).Query(className: "pip").ToList().Count, Is.EqualTo(8));
+                    Assert.That(cards.CardAt(0).Query(className: "pip--lit").ToList().Count, Is.EqualTo(level));
+                    Assert.That(face.FormChange, Is.EqualTo(level > 1));
+                }
+                Assert.That(icons.Count, Is.EqualTo(4), weapon.ToString());
+            }
+            foreach (SupportKind support in Enum.GetValues(typeof(SupportKind)))
+            {
+                int cap = _content.Combat.Support(support).MaxLevel;
+                cards.Show(new[] { _faces.Of(Card.Of(support, cap, cap - 1)) }, 0);
+                Assert.That(cards.CardAt(0).Query(className: "pip--lit").ToList().Count, Is.EqualTo(cap));
+            }
+        }
+
+        [Test]
+        public void ProvisionalWeaponIconsWorkWithoutFormAssets()
+        {
+            string dir = Path.Combine(Path.GetTempPath(), "champions-faces-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(dir, "icons"));
+            try
+            {
+                string json = File.ReadAllText(Path.Combine(ContentDir, CardFaces.File));
+                json = System.Text.RegularExpressions.Regex.Replace(json, @", ""formIcons"": \[[^\]]*\]", "");
+                File.WriteAllText(Path.Combine(dir, CardFaces.File), json);
+                foreach (var icon in _faces.Icons.Keys.Where(n => !n.Contains("-form-")))
+                    File.Copy(Path.Combine(ContentDir, "icons", icon + ".svg"), Path.Combine(dir, "icons", icon + ".svg"));
+                var faces = CardFaces.Load(dir, _content);
+                foreach (WeaponKind weapon in Enum.GetValues(typeof(WeaponKind)))
+                    Assert.That(faces.Of(Card.Of(weapon, 8, 7)).Icon.Strokes, Is.Not.Empty);
+            }
+            finally { Directory.Delete(dir, true); }
+        }
+
+        [Test]
+        public void BossHudShowsOnlyHealthAndXpWithoutTakingThePointer()
+        {
+            var hud = new Hud(_palette);
+            hud.Present(0.4f, new BossBar { Up = true, Health = 0.6f, Colour = Color.red });
+            Assert.That(hud.Query(className: "hud__fill").ToList().Count, Is.EqualTo(2));
+            Assert.That(hud.Q(className: "hud__xp").Q(className: "hud__fill").style.width.value.value, Is.EqualTo(40).Within(0.01));
+            Assert.That(hud.Q(className: "hud__health").Q(className: "hud__fill").style.width.value.value, Is.EqualTo(60).Within(0.01));
+            Assert.That(hud.pickingMode, Is.EqualTo(PickingMode.Ignore));
+            hud.Present(0.5f, default);
+            Assert.That(hud.Q(className: "hud__boss").style.display.value, Is.EqualTo(DisplayStyle.None));
+        }
+
         /// <summary>Every screen, built as the game builds it, by name.</summary>
         IEnumerable<(string Name, VisualElement Screen)> Screens()
         {
@@ -199,8 +300,8 @@ namespace Champions.Tests
             yield return ("calibration input", Keep(new CalibrationScreen(_host.transform, CalibrationScreen.Mode.Input, true, None)));
             foreach (bool victory in new[] { true, false })
             {
-                var summary = new EndSummary { Victory = victory, RunClock = 847.3, Kills = 2318 };
-                summary.Build.AddRange(new[] { "blade-rush", "sword-slash", "orbit-blades", "tempo" }.Select(n => _faces.Icons[n]));
+                var summary = new EndSummary { Victory = victory, CombatSeconds = 847.3, Kills = 2318 };
+                summary.Build.AddRange(new[] { "sword-form-1", "bow-form-2", "orbitBlades-form-3", "tempo" }.Select(n => _faces.Icons[n]));
                 yield return (victory ? "victory" : "death", new EndCard(summary, Icon.Load(ContentDir, "time"), Icon.Load(ContentDir, "kills"), None, None));
             }
         }

@@ -91,11 +91,6 @@
     align-items: center;
 }
 
-.card--evolution {
-    width: 340px;
-    height: 476px;
-}
-
 .card__frame {
     position: absolute;
     left: 0;
@@ -108,11 +103,6 @@
     width: 104px;
     height: 104px;
     margin-bottom: 32px;
-}
-
-.card--evolution .card__icon {
-    width: 128px;
-    height: 128px;
 }
 
 .card__name {
@@ -151,9 +141,9 @@
     border-color: rgb(244, 248, 255);
 }
 
-.pip--evolution {
-    width: 15px;
-    height: 15px;
+.pip--form {
+    width: 9px;
+    height: 9px;
     border-radius: 0;
     rotate: 45deg;
 }
@@ -190,11 +180,6 @@
 
 .hud__health {
     height: 5px;
-}
-
-.hud__break {
-    height: 3px;
-    margin-top: 5px;
 }
 
 /* ---- The end card ---- */

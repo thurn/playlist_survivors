@@ -59,3 +59,10 @@ row done (or files a bead) after checking.
   brevity and held/resumed boss-threat readability with six weapons; the
   samples establish the curve's response, not actual run balance.
 | Lightning/Ember in a complete six-weapon run with moving bosses: judge constellation size, late field clutter, quiet reused Hit/Slam cues under music and hardware frame time. [Magic runtime evidence](magic-weapons/README.md) includes inspected normal/empowered crowd phases and actual sim-event captures, without claiming a continuous played run | Operator taste, speakers and target hardware; full-run assembly | ps-3wc.10 | pending |
+
+- ps-3wc.12: hand-play the immediate weapon/support cards in a window using
+  clicks, 1–3 and arrows/Enter; switch apps during a queued offer, resume,
+  and confirm no held key/button causes movement or a dash. Judge form icons,
+  short text and the minimal XP/boss-health HUD against a full moving build.
+  [Scripted UI captures](survivor-ui/README.md) and synthetic input tests
+  verify layout/routing, not actual focus behavior or speaker/taste judgement.

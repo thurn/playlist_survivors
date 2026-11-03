@@ -1,5 +1,5 @@
 {
-  "note": "The cards' faces (design.md, Level-ups and Treasure > Cards): each dash, attack and mod's name (at most three words), its icon (Content/icons/ICON.svg, white line art on a 64-unit square) and one line of at most six words per rank it gives (attacks and dashes 1-3, mods 1-2), and an attack's or damaging dash's evolution (its name and line). Ids are attacks.json's, dashes.json's and mods.json's. Read by Champions.Client.UI.CardFaces; the word budget is tested by UiTests.",
+  "note": "Current cards: icon, name and brief description; weapon forms at levels 3/5/8, eight weapon levels and content-defined support caps. Optional four formIcons fall back to icon. Archived dash/attack/mod faces remain for replay fixtures only.",
   "dashes": {
     "dash": { "name": "Dash", "icon": "dash", "lines": ["A swift step, no damage"] },
     "bladeRush": {
@@ -63,14 +63,14 @@
     "encore": { "name": "Encore", "icon": "encore", "lines": ["On-beat dashes empower your next strike", "Empowers the next two strikes"] }
   },
   "weapons": {
-    "sword": {"name": "Sword", "icon": "sword-slash", "lines": ["Sweeping slash", "+10% base damage", "Cross-cut combo", "+10% base damage", "Spinning cleave", "+10% base damage", "+10% base damage", "Spectral sword dance"]},
-    "hammer": {"name": "Hammer", "icon": "leap-slam", "lines": ["Heavy side swing", "+10% base damage", "Ground slam", "+10% base damage", "Vaulting spectral hammer", "+10% base damage", "+10% base damage", "Procession of hammer falls"]},
-    "spear": {"name": "Spear", "icon": "crescent", "lines": ["Spectral thrust", "+10% base damage", "Lunging spear formation", "+10% base damage", "Sweep then thrust", "+10% base damage", "+10% base damage", "Marching spectral phalanxes"]},
-    "bow": {"name": "Bow", "icon": "bow", "lines": ["Arrow shot", "+10% base damage", "Fan-shaped volley", "+10% base damage", "Arcing arrow rain", "+10% base damage", "+10% base damage", "Rotating spectral bow battery"]},
-    "orbitBlades": {"name": "Orbit Blades", "icon": "orbit-blades", "lines": ["Circling blades", "+10% base damage", "Outward sweep and return", "+10% base damage", "Inner guard, outward scythes", "+10% base damage", "+10% base damage", "Crown of sweeping blades"]},
-    "lightning": {"name": "Lightning", "icon": "blink-strike", "lines": ["Nearby bolt", "+10% base damage", "Forked lightning", "+10% base damage", "Storm sigil", "+10% base damage", "+10% base damage", "Moving storm constellation"]},
-    "emberField": {"name": "Ember Field", "icon": "shatterburst", "lines": ["Timed fire seal", "+10% base damage", "Erupting fissure", "+10% base damage", "Spectral brazier", "+10% base damage", "+10% base damage", "Procession of volcanic seals"]},
-    "sentinel": {"name": "Sentinel", "icon": "phantom", "lines": ["Spectral sentry", "+10% base damage", "Shield-and-sword combo", "+10% base damage", "Leaping sentinel cleave", "+10% base damage", "+10% base damage", "Advancing spectral knights"]}
+    "sword": {"name": "Sword", "icon": "sword-slash", "lines": ["Sweeping slash", "+10% base damage", "Gains a cross-cut combo", "+10% base damage", "Becomes a spinning cleave", "+10% base damage", "+10% base damage", "Conjures an advancing sword dance"], "formIcons": ["sword-form-1", "sword-form-2", "sword-form-3", "sword-form-4"]},
+    "hammer": {"name": "Hammer", "icon": "leap-slam", "lines": ["Heavy side swing", "+10% base damage", "Becomes a ground slam", "+10% base damage", "Vaulting spectral hammer erupts", "+10% base damage", "+10% base damage", "Successive spectral hammer falls"], "formIcons": ["hammer-form-1", "hammer-form-2", "hammer-form-3", "hammer-form-4"]},
+    "spear": {"name": "Spear", "icon": "crescent", "lines": ["Spectral thrust", "+10% base damage", "Lunging spear formation", "+10% base damage", "Sweeps, then thrusts", "+10% base damage", "+10% base damage", "Marching spectral phalanxes"], "formIcons": ["spear-form-1", "spear-form-2", "spear-form-3", "spear-form-4"]},
+    "bow": {"name": "Bow", "icon": "bow", "lines": ["Arrow shot", "+10% base damage", "Fires a fan-shaped volley", "+10% base damage", "Arcing arrow rain", "+10% base damage", "+10% base damage", "Forms a rotating spectral bow battery"], "formIcons": ["bow-form-1", "bow-form-2", "bow-form-3", "bow-form-4"]},
+    "orbitBlades": {"name": "Orbit Blades", "icon": "orbit-blades", "lines": ["Circling blades", "+10% base damage", "Sweep outward, then return", "+10% base damage", "Alternate inner guard and outward scythes", "+10% base damage", "+10% base damage", "Open into a crown of sweeping blades"], "formIcons": ["orbitBlades-form-1", "orbitBlades-form-2", "orbitBlades-form-3", "orbitBlades-form-4"]},
+    "lightning": {"name": "Lightning", "icon": "blink-strike", "lines": ["Nearby bolt", "+10% base damage", "Forked lightning", "+10% base damage", "Becomes a storm sigil", "+10% base damage", "+10% base damage", "Moving storm constellation"], "formIcons": ["lightning-form-1", "lightning-form-2", "lightning-form-3", "lightning-form-4"]},
+    "emberField": {"name": "Ember Field", "icon": "shatterburst", "lines": ["Timed fire seal", "+10% base damage", "Becomes an erupting fissure", "+10% base damage", "Conjures a spectral brazier", "+10% base damage", "+10% base damage", "Procession of volcanic seals"], "formIcons": ["emberField-form-1", "emberField-form-2", "emberField-form-3", "emberField-form-4"]},
+    "sentinel": {"name": "Sentinel", "icon": "phantom", "lines": ["Spectral sentry", "+10% base damage", "Shield-and-sword combo", "+10% base damage", "Leaping sentinel cleave", "+10% base damage", "+10% base damage", "Forms advancing spectral knights"], "formIcons": ["sentinel-form-1", "sentinel-form-2", "sentinel-form-3", "sentinel-form-4"]}
   },
   "supports": {
     "might": {"name": "Might", "icon": "keen-edge", "lines": ["+10% weapon damage", "+10% weapon damage", "+10% weapon damage", "+10% weapon damage", "+10% weapon damage"]},

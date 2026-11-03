@@ -168,16 +168,15 @@ namespace Champions.Client
             };
         }
 
-        /// <summary>The build's icons for the end card: the dash, the attacks, the mods, each at its rank.</summary>
+        /// <summary>The survivor build's weapon and support icons for the end card.</summary>
         List<Icon> BuildIcons(Simulation sim)
         {
             var icons = new List<Icon>();
-            var hero = sim.State.Hero;
-            icons.Add(_faces.Of(Card.Dash(hero.Dash, hero.DashRank, 0)).Icon);
-            for (int k = 0; k < Upgrade.AttackCount; k++)
-                if (sim.Arsenal.Rank((AttackKind)k) > 0) icons.Add(_faces.Of(Card.Of((AttackKind)k, sim.Arsenal.Rank((AttackKind)k), 0)).Icon);
-            for (int k = 0; k < Upgrade.ModCount; k++)
-                if (sim.Arsenal.Rank((ModKind)k) > 0) icons.Add(_faces.Of(Card.Of((ModKind)k, sim.Arsenal.Rank((ModKind)k), 0)).Icon);
+            var build = sim.State.Build;
+            for (int k = 0; k < CombatRules.WeaponCount; k++)
+                if (build.Level((WeaponKind)k) > 0) icons.Add(_faces.Of(Card.Of((WeaponKind)k, build.Level((WeaponKind)k), 0)).Icon);
+            for (int k = 0; k < CombatRules.SupportCount; k++)
+                if (build.Level((SupportKind)k) > 0) icons.Add(_faces.Of(Card.Of((SupportKind)k, build.Level((SupportKind)k), 0)).Icon);
             icons.RemoveAll(i => i == null);
             return icons;
         }

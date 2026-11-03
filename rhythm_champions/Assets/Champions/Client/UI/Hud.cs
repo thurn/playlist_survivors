@@ -12,8 +12,8 @@ namespace Champions.Client.UI
         public bool Up;
         /// <summary>The boss's colour (its cast type's in the palette).</summary>
         public Color Colour;
-        /// <summary>Health and Break, 0 to 1.</summary>
-        public float Health, Break;
+        /// <summary>Health, 0 to 1.</summary>
+        public float Health;
 
         /// <summary>The bar from a snapshot's duel fields; down outside a duel.</summary>
         public static BossBar Of(in SimSnapshot s, Palette palette, GameContent content)
@@ -24,18 +24,17 @@ namespace Champions.Client.UI
                 Up = true,
                 Colour = palette.ForType(content.Enemies.Cast[s.BossCast].Id),
                 Health = Mathf.Clamp01((float)(s.BossHealth / s.BossMaxHealth)),
-                Break = Mathf.Clamp01((float)s.BossBreak),
             };
         }
     }
 
     /// <summary>
     /// The HUD (design.md, UI > HUD and Decision 26): a hairline experience bar along the bottom edge and, in a duel, a
-    /// slim boss bar at the top in the boss's colour with its white Break bar under it. Nothing else, and no text.
+    /// slim health bar at the top in the boss's colour. Nothing else, and no text.
     /// </summary>
     public sealed class Hud : VisualElement
     {
-        readonly VisualElement _xp, _boss, _health, _break;
+        readonly VisualElement _xp, _boss, _health;
 
         public Hud(Palette palette)
         {
@@ -47,9 +46,6 @@ namespace Champions.Client.UI
             _boss.AddToClassList("hud__boss");
             Add(_boss);
             Bar(_boss, "hud__health", out _health);
-            var breakTrack = Bar(_boss, "hud__break", out _break);
-            breakTrack.style.backgroundColor = Alpha(palette.HeroBreak, 0.14f);
-            _break.style.backgroundColor = palette.HeroBreak;
             _boss.style.display = DisplayStyle.None;
         }
 
@@ -75,7 +71,6 @@ namespace Champions.Client.UI
             _health.parent.style.backgroundColor = Alpha(boss.Colour, 0.18f);
             _health.style.backgroundColor = boss.Colour;
             _health.style.width = Length.Percent(100 * boss.Health);
-            _break.style.width = Length.Percent(100 * boss.Break);
         }
     }
 }

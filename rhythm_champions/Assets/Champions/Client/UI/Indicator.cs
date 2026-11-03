@@ -13,7 +13,6 @@ namespace Champions.Client.UI
     ///   centre on its beat (<see cref="TickWindowBeats"/> beats from end to centre); none beatless;
     /// - the dash's pip: the cooldown done since the press (<see cref="SimSnapshot.DashReadyAt"/>), ready when it is over;
     ///   a flash from an on-beat dash's start (<see cref="FlashS"/>) and a blink from a dropped press (<see cref="BlinkS"/>);
-    /// - the held level's dot, as the caller says (the progression's held levels);
     /// - health, stepping when each hit or heal lands, and a hurt's single flash on the bar (<see cref="HurtS"/>; no blinking);
     /// - hidden from the hero's death and once the run has ended.
     /// </summary>
@@ -54,10 +53,10 @@ namespace Champions.Client.UI
             }
         }
 
-        /// <summary>The indicator at song time <paramref name="now"/>; <paramref name="levelHeld"/> lights the dot.</summary>
-        public IndicatorLook Look(double now, in SimSnapshot s, BeatServices beats, bool levelHeld)
+        /// <summary>The indicator at song time <paramref name="now"/>.</summary>
+        public IndicatorLook Look(double now, in SimSnapshot s, BeatServices beats)
         {
-            var look = new IndicatorLook { Shown = s.Phase != RunPhase.Ended && !(now >= _deadAt), LevelHeld = levelHeld };
+            var look = new IndicatorLook { Shown = s.Phase != RunPhase.Ended && !(now >= _deadAt) };
             Ticks(now, beats, ref look);
             look.Ready = now >= s.DashReadyAt;
             look.Cooldown = look.Ready || s.DashCooldownS <= 0 ? 1 : Mathf.Clamp01((float)(1 - (s.DashReadyAt - now) / s.DashCooldownS));
@@ -114,9 +113,9 @@ namespace Champions.Client.UI
         public void Take(in SimEvent e) => Model.Take(e);
 
         /// <summary>The frame at song time <paramref name="now"/>, the hero's feet where the snapshot has them then.</summary>
-        public IndicatorLook Present(double now, in SimSnapshot s, BeatServices beats, bool levelHeld, Camera camera)
+        public IndicatorLook Present(double now, in SimSnapshot s, BeatServices beats, Camera camera)
         {
-            var look = Model.Look(now, s, beats, levelHeld);
+            var look = Model.Look(now, s, beats);
             s.HeroAt(now, out double x, out double y);
             _drawn.Present(new Vector3((float)x, 0, (float)y), camera, look);
             return look;

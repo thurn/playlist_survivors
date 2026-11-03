@@ -15,7 +15,7 @@ namespace Champions.Client.Scenes
     /// then no beat) on the scene's clock, the hero stands where the sim has it (a white ring standing in for it) in the
     /// world at the game's camera, and its indicator shows each state (design.md, The Dash > The indicator): ready with the
     /// beats' ticks converging, just after an on-beat dash (the flash), a press dropped in the cooldown (the blink),
-    /// cooling, just hurt (the bar's flash), a level held (the dot), and beatless (no ticks); the HUD's hairline under it.
+    /// cooling, just hurt (the bar's flash), health sustained, and beatless (no ticks); the HUD's hairline under it.
     /// Then each screen: the title, the music picker, the pause menu, the first offer's cards (the middle one focused), a
     /// owned-item boss reward, the HUD in a duel, the end card lit and unlit, and the calibration screens.
     /// </summary>
@@ -28,9 +28,9 @@ namespace Champions.Client.Scenes
         internal static readonly (string Label, double At)[] Stills =
         {
             ("indicator-ready", 5.80), ("indicator-dash-on-beat", 6.06), ("indicator-dropped-press", 6.33), ("indicator-cooling", 6.45),
-            ("indicator-hurt", 8.05), ("indicator-level-held", 9.0), ("indicator-beatless", 24.0),
+            ("indicator-hurt", 8.05), ("indicator-health", 9.0), ("indicator-beatless", 24.0),
             ("title", 25.4), ("picker", 25.9), ("pause", 26.4), ("cards-first-offer", 26.9), ("cards-treasure", 27.4),
-            ("hud-duel", 27.9), ("victory", 28.4), ("death", 28.9), ("calibration-video", 30.03), ("calibration-input", 30.6),
+            ("hud-duel", 27.9), ("victory", 28.4), ("death", 28.9), ("calibration-video", 30.03), ("calibration-input", 30.6), ("cards-martial-forms", 31.4), ("cards-magic-forms", 31.9),
         };
 
         readonly GameContent _content;
@@ -62,7 +62,7 @@ namespace Champions.Client.Scenes
     [DefaultExecutionOrder(-100)]
     sealed class UiSceneDriver : MonoBehaviour
     {
-        const double DashAt = 6.0, DroppedAt = 6.30, HurtAt = 8.0, HeldFrom = 8.8, HeldUntil = 9.5;
+        const double DashAt = 6.0, DroppedAt = 6.30, HurtAt = 8.0;
 
         Camera _camera;
         Stills.View _view;
@@ -133,7 +133,7 @@ namespace Champions.Client.Scenes
             _marker.Place(feet);
             _world.Present(now, feet, Time.deltaTime);
             _view.Hero = new Vector3(feet.x, 0, feet.y);
-            _indicator.Present(now, snapshot, _sim.Beats, now >= HeldFrom && now < HeldUntil, _camera);
+            _indicator.Present(now, snapshot, _sim.Beats, _camera);
             Screens(now);
             _cards.Present(now);
             _calibration?.Update();
@@ -150,7 +150,7 @@ namespace Champions.Client.Scenes
         /// The screen at scene time <paramref name="now"/>: play (the indicator under the HUD) to 25 s, then one screen each
         /// half second to the death's end card, then the video calibration for a click and its flash, then the input's.
         /// </summary>
-        static int ScreenAt(double now) => now < 25 ? 0 : now < 29 ? 1 + (int)Math.Floor((now - 25) / 0.5) : now < 30.1 ? 9 : 10;
+        static int ScreenAt(double now) => now < 25 ? 0 : now < 29 ? 1 + (int)Math.Floor((now - 25) / 0.5) : now < 30.1 ? 9 : now < 31 ? 10 : now < 31.5 ? 11 : 12;
 
         /// <summary>Opens each screen at its turn.</summary>
         void Screens(double now)
@@ -192,13 +192,13 @@ namespace Champions.Client.Scenes
                     }, now);
                     break;
                 case 6:
-                    _hud.Present(0.62f, new BossBar { Up = true, Colour = _palette.ForType("fatOgre"), Health = 0.72f, Break = 0.5f });
+                    _hud.Present(0.62f, new BossBar { Up = true, Colour = _palette.ForType("fatOgre"), Health = 0.72f });
                     break;
                 case 7:
                 case 8:
-                    var summary = new EndSummary { Victory = step == 7, RunClock = step == 7 ? 973.4 : 512.8, Kills = step == 7 ? 4127 : 1893 };
-                    foreach (var (kind, id) in new[] { (CardKind.Dash, "leapSlam"), (CardKind.Attack, "swordSlash"), (CardKind.Attack, "orbitBlades"),
-                                 (CardKind.Attack, "crescent"), (CardKind.Mod, "twinStrike"), (CardKind.Mod, "tempo"), (CardKind.Mod, "wideArcs") })
+                    var summary = new EndSummary { Victory = step == 7, CombatSeconds = step == 7 ? 973.4 : 512.8, Kills = step == 7 ? 4127 : 1893 };
+                    foreach (var (kind, id) in new[] { (CardKind.Weapon, "sword"), (CardKind.Weapon, "orbitBlades"), (CardKind.Weapon, "bow"),
+                                 (CardKind.Support, "might"), (CardKind.Support, "tempo"), (CardKind.Support, "reach") })
                         summary.Build.Add(_faces.Of(kind, id, 1).Icon);
                     _menus.Root.Add(new EndCard(summary, Icon.Load(_contentDir, "time"), Icon.Load(_contentDir, "kills"), None, None));
                     break;
@@ -206,9 +206,17 @@ namespace Champions.Client.Scenes
                     _calibration = new CalibrationScreen(transform, CalibrationScreen.Mode.Video, fixedTime: true, None);
                     _menus.Root.Add(_calibration);
                     break;
-                default:
+                case 10:
                     _calibration = new CalibrationScreen(transform, CalibrationScreen.Mode.Input, fixedTime: true, None);
                     _menus.Root.Add(_calibration);
+                    break;
+                case 11:
+                    _cards.Show(new[] { _faces.Of(Card.Of(WeaponKind.Hammer, 3, 2)),
+                        _faces.Of(Card.Of(WeaponKind.Spear, 5, 4)), _faces.Of(Card.Of(WeaponKind.Bow, 8, 7)) }, now);
+                    break;
+                default:
+                    _cards.Show(new[] { _faces.Of(Card.Of(WeaponKind.Lightning, 5, 4)),
+                        _faces.Of(Card.Of(WeaponKind.EmberField, 8, 7)), _faces.Of(Card.Of(WeaponKind.Sentinel, 8, 7)) }, now);
                     break;
             }
         }

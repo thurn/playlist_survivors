@@ -7,12 +7,9 @@ using UnityEngine.UIElements;
 namespace Champions.Client.UI
 {
     /// <summary>
-    /// The card moment's cards (design.md, Level-ups and Treasure > The card moment and Cards): up to three side by side,
-    /// each a white line-art icon, its name, one line and its rank's pips inside an outline whose shape tells its kind
-    /// (a slanted dash, a cut-cornered attack, a rounded mod); an evolution's card is drawn larger. They rise in together
-    /// over <see cref="AppearS"/> and take a click from the frame they show (<see cref="Picked"/>, on the pointer's press);
-    /// the keys reach the sim (1-3, the arrows and Enter or Space), which tells the focus back (<see cref="Focus"/>).
-    /// No heading, no hint, nothing else.
+    /// Up to three brief choices: icon, name, description and level pips. Diamonds mark weapon forms at 3/5/8.
+    /// Clicks pick on pointer down; number keys or arrows and Enter reach the sim, which returns focus events.
+    /// Cards rise together over <see cref="AppearS"/> and remain the same size across stat and form choices.
     /// </summary>
     public sealed class CardsView : VisualElement
     {
@@ -93,7 +90,7 @@ namespace Champions.Client.UI
             var card = new VisualElement { name = "card-" + slot };
             card.AddToClassList("card");
             card.AddToClassList("card--" + face.Kind.ToString().ToLowerInvariant());
-            if (face.Evolution) card.AddToClassList("card--evolution");
+            if (face.FormChange) card.AddToClassList("card--form");
             card.Add(new CardFrame(face.Kind));
             var icon = new IconElement(face.Icon);
             icon.AddToClassList("card__icon");
@@ -117,19 +114,18 @@ namespace Champions.Client.UI
             return label;
         }
 
-        /// <summary>The rank it gives: lit pips out of the kind's ranks, or one large pip for an evolution.</summary>
+        /// <summary>The level it gives out of its content cap; diamond pips mark weapon form levels.</summary>
         static VisualElement Pips(in CardFace face)
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("card__pips");
-            int top = face.Kind == CardKind.Weapon ? 8 : face.Kind == CardKind.Support ? 5 : face.Kind == CardKind.Mod ? Upgrade.ModTop : Upgrade.AttackTop;
-            int shown = face.Evolution ? 1 : Math.Max(top, face.Rank);
+            int shown = face.Top;
             for (int i = 0; i < shown; i++)
             {
                 var pip = new VisualElement { pickingMode = PickingMode.Ignore };
                 pip.AddToClassList("pip");
-                if (face.Evolution) pip.AddToClassList("pip--evolution");
-                if (face.Evolution || i < face.Rank) pip.AddToClassList("pip--lit");
+                if (face.Kind == CardKind.Weapon && (i == 2 || i == 4 || i == 7)) pip.AddToClassList("pip--form");
+                if (i < face.Rank) pip.AddToClassList("pip--lit");
                 row.Add(pip);
             }
             return row;

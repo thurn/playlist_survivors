@@ -366,7 +366,7 @@ namespace Champions.Client.Loop
             Record();
             if (Driver.Times.FrameSong < s.EndedAt + EndCardAfter) return;
             _endShown = true;
-            var summary = new EndSummary { Victory = s.End == RunEnd.Victory, RunClock = s.RunClock, Kills = _presentation.Kills };
+            var summary = new EndSummary { Victory = s.End == RunEnd.Victory, CombatSeconds = s.RunClock, Kills = _presentation.Kills };
             if (_setup.BuildIcons != null) summary.Build.AddRange(_setup.BuildIcons(Driver.Sim));
             Log("Run: the {0} card shows at song {1:F3} s", summary.Victory ? "victory" : "death", Driver.Times.FrameSong);
             Ended?.Invoke(summary, Again);

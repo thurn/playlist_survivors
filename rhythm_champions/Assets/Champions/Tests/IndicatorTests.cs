@@ -32,12 +32,12 @@ namespace Champions.Tests
         }
 
         /// <summary>Steps the sim to <paramref name="t"/>, handing the model its events; the indicator at <paramref name="t"/>.</summary>
-        IndicatorLook At(double t, bool levelHeld = false)
+        IndicatorLook At(double t)
         {
             _sim.StepTo(t);
             foreach (var e in _sim.EventsSince(_cursor)) _model.Take(e);
             _cursor = _sim.EventCount;
-            return _model.Look(t, _sim.Snapshot(), _sim.Beats, levelHeld);
+            return _model.Look(t, _sim.Snapshot(), _sim.Beats);
         }
 
         List<SimEvent> Events(SimEventKind kind)
@@ -142,11 +142,5 @@ namespace Champions.Tests
             Assert.That(At(4.6).Shown, Is.False, "the hero shatters, the indicator with it");
         }
 
-        [Test]
-        public void TheDotLightsWhileALevelIsHeld()
-        {
-            Assert.That(At(3).LevelHeld, Is.False);
-            Assert.That(At(3.1, levelHeld: true).LevelHeld);
-        }
     }
 }

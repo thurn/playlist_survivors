@@ -15,8 +15,6 @@ namespace Champions.Render
         public bool Ready;
         /// <summary>An on-beat dash's flash and a dropped press's blink, each 1 when it begins and 0 once over.</summary>
         public float Flash, Blink;
-        /// <summary>A level is held for its quiet moment (the dot).</summary>
-        public bool LevelHeld;
         /// <summary>Health, 0 to 1, and a hurt's flash on the bar, 1 when it begins.</summary>
         public float Health, Hurt;
     }
@@ -24,7 +22,7 @@ namespace Champions.Render
     /// <summary>
     /// The hero's indicator (design.md, The Dash > The indicator, Decision 7), drawn in the world: a quad over the hero's
     /// head, <see cref="AboveM"/> above its feet, facing the camera, which Indicator.shader fills with the strip
-    /// (<see cref="WidthM"/> wide), the beats' ticks, the dash's pip, the held level's dot and the health bar, all in the
+    /// (<see cref="WidthM"/> wide), the beats' ticks, the dash's pip and the health bar, all in the
     /// hero's white (hero.body), the bar's hurt in hero.hurt. The stills' type-ID pass sees it as one of the hero's effects.
     /// </summary>
     public sealed class HeroIndicator : IDisposable
@@ -77,7 +75,7 @@ namespace Champions.Render
             _go.transform.SetPositionAndRotation(feet + Vector3.up * AboveM, camera.transform.rotation);
             _block.SetVector(Ticks, new Vector4(look.Tick1, look.Tick1Alpha, look.Tick2, look.Tick2Alpha));
             _block.SetVector(Pip, new Vector4(Mathf.Clamp01(look.Cooldown), look.Ready ? 1 : 0, Mathf.Clamp01(look.Flash), Mathf.Clamp01(look.Blink)));
-            _block.SetVector(State, new Vector4(Mathf.Clamp01(look.Health), Mathf.Clamp01(look.Hurt), look.LevelHeld ? 1 : 0, 1));
+            _block.SetVector(State, new Vector4(Mathf.Clamp01(look.Health), Mathf.Clamp01(look.Hurt), 0, 1));
             _renderer.SetPropertyBlock(_block);
         }
 

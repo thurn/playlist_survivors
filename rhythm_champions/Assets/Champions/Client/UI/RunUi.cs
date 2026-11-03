@@ -11,7 +11,7 @@ namespace Champions.Client.UI
     /// (<see cref="Hud"/>) and the card moment's cards (<see cref="CardsView"/>) on one panel. The loop hands it every
     /// settled event (<see cref="Take"/>: an offer shows its cards, the arrows' focus moves, a pick puts them away) and
     /// presents it each frame from the sim's snapshot: the experience toward the next level, the boss bar in a duel, the
-    /// held levels' dot. A card's click is <see cref="Picked"/>, which the loop taps as the card's number key, so the sim
+    /// immediate offers. A card's click is <see cref="Picked"/>, which the loop taps as the card's number key, so the sim
     /// picks it as it picks a key.
     /// </summary>
     public sealed class RunUi : IDisposable
@@ -72,7 +72,7 @@ namespace Champions.Client.UI
         public void Present(double now, Simulation sim, Camera camera)
         {
             var s = sim.Snapshot();
-            Indicator.Present(now, s, sim.Beats, s.HeldLevels > 0, camera);
+            Indicator.Present(now, s, sim.Beats, camera);
             Hud.Present(s.ExperienceNeeded > 0 ? (float)(s.Experience / s.ExperienceNeeded) : 0, BossBar.Of(s, _palette, _content));
             Cards.Present(now);
         }

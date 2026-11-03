@@ -1,7 +1,7 @@
 // The hero's indicator (HeroIndicator.cs; design.md, The Dash > The indicator), drawn in the world over the hero's head on
 // a quad that faces the camera, everything in the fragment from the quad's metres: a white strip 1.2 m wide, the next two
 // beats' ticks sliding in from both ends to the centre, the dash's pip at the centre (a dim ring filling while it cools,
-// solid when ready, a flash on an on-beat dash, a blink on a dropped press), the held level's dot beside it and the thin
+// solid when ready, a flash on an on-beat dash, a blink on a dropped press), and the thin
 // health bar under the strip (a hurt flash tints it once). Widths are in pixels (fwidth), so lines stay hairlines at any
 // distance. Premultiplied over everything, never hidden by what stands in front. In the stills' type-ID pass it draws as one
 // of the hero's effects where it covers.
@@ -13,7 +13,7 @@ Shader "Champions/Indicator"
         [HDR] _Hurt ("Hurt (linear, hero.hurt)", Color) = (1, 0.05, 0.05, 1)
         _Ticks ("Ticks: x1, alpha1, x2, alpha2 (0 centre, 1 the ends)", Vector) = (0, 0, 0, 0)
         _Pip ("Pip: cooldown filled, ready, flash, blink", Vector) = (1, 1, 0, 0)
-        _State ("Health, hurt flash, held dot, shown", Vector) = (1, 0, 0, 1)
+        _State ("Health, hurt flash, reserved, shown", Vector) = (1, 0, 0, 1)
         _ChampionsId ("Type-ID pass code", Float) = 252
     }
     SubShader
@@ -47,8 +47,6 @@ Shader "Champions/Indicator"
             static const float HalfWidth = 0.6;   // the strip
             static const float PipR = 0.07;
             static const float TickHalf = 0.06;
-            static const float2 DotAt = float2(0.14, 0.08);
-            static const float DotR = 0.03;
             static const float HealthY = -0.12;
 
             struct Attributes { float4 positionOS : POSITION; };
@@ -102,11 +100,6 @@ Shader "Champions/Indicator"
                 float halo = Line(r - PipR * (1 + 1.6 * (1 - _Pip.z)), 2.0, px) * _Pip.z;
                 a = max(a, max(pip, halo));
                 c = max(c, white * (pip * (1 + 2 * _Pip.z) + halo * 1.5));
-
-                // The held level's dot.
-                float dot = Disc(length(p - DotAt) - DotR, px) * _State.z * 0.95;
-                a = max(a, dot);
-                c = max(c, white * dot);
 
                 // The health bar: filled to the health, a dim track beyond, tinted once by a hurt.
                 float bar = Line(length(float2(max(ax - HalfWidth, 0), p.y - HealthY)), 2.5, px);

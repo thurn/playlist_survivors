@@ -180,11 +180,11 @@ namespace Champions.Client.UI
         }
     }
 
-    /// <summary>What the end card shows: how the run ended, its run clock, its kills and the build's icons in slot order.</summary>
+    /// <summary>What the end card shows: how the run ended, its combat duration, its kills and the build's icons in slot order.</summary>
     public sealed class EndSummary
     {
         public bool Victory;
-        public double RunClock;
+        public double CombatSeconds;
         public int Kills;
         public readonly List<Icon> Build = new List<Icon>();
     }
@@ -209,7 +209,7 @@ namespace Champions.Client.UI
             var column = TitleScreen.Column();
             column.AddToClassList("endcard");
             var tint = summary.Victory ? Color.white : Unlit;
-            column.Add(Stat(timeIcon, Time(summary.RunClock), "endcard__time", tint));
+            column.Add(Stat(timeIcon, Time(summary.CombatSeconds), "endcard__time", tint));
             column.Add(Stat(killsIcon, summary.Kills.ToString("N0", CultureInfo.InvariantCulture), "endcard__kills", tint));
             var build = new VisualElement { pickingMode = PickingMode.Ignore };
             build.AddToClassList("endcard__build");
