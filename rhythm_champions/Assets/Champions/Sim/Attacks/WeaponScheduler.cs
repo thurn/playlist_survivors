@@ -96,7 +96,8 @@ namespace Champions.Sim
         {
             get
             {
-                double next = Supports.NextPulse;
+                // A pending echo stays queued during holds; an overdue held deadline must not pin RunTick.
+                double next = sim.State.Held ? double.PositiveInfinity : Supports.NextPulse;
                 foreach (var slot in slots) if (slot != null) next = Math.Min(next, slot.Cadence.NextPulse);
                 return next;
             }

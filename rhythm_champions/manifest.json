@@ -608,6 +608,41 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Hovl Studio/AAA Projectiles Vol 1/Prefabs/Projectile VFX loop/Projectile 2 electro.prefab",
+      "sourceSha256": "2aa365c2d8e094b193d00cf4577b49ab6af88719ae7204ba83e116f539a2571b",
+      "guid": "93070f52828035b4199ff2f22368a3de",
+      "use": "Lightning and Ember Field: source choreography reference, authored closed-facet fallback (combat-assets U1-U5)"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/AOE Magic spells Vol.1/Prefabs/Lightning strike.prefab",
+      "sourceSha256": "daaab38a01082d7f83817a3522404de83e1dc46caccd2b1ce739ac2847b6d72b",
+      "guid": "dfabbd05c7735314e97de47b3d7695c4",
+      "use": "Lightning and Ember Field: source choreography reference, authored closed-facet fallback (combat-assets U1-U5)"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/AOE Magic spells Vol.1/Prefabs/Meteor hit 2.prefab",
+      "sourceSha256": "4991e7ebe7fcee3bfdd08c0c0cdea4b7c4173933343e28a21b20242752f007b4",
+      "guid": "a7cb112e9339d01408d0002aede091cf",
+      "use": "Lightning and Ember Field: source choreography reference, authored closed-facet fallback (combat-assets U1-U5)"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Magic circles/Prefabs/Magic circle electro.prefab",
+      "sourceSha256": "31a483e12fec01ebf70e5be2f13ef8128887f98861599b4d0fdd30b21bd75ba1",
+      "guid": "b2b32816444d787499f1e6efe5c08f7f",
+      "use": "Lightning and Ember Field: source choreography reference, authored closed-facet fallback (combat-assets U1-U5)"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Hovl Studio/Magic circles/Prefabs/Magic circle fire.prefab",
+      "sourceSha256": "be231910a2d07338653855e78f99c6176cf7c0cb6c46c47ce2ea29382ec6b45f",
+      "guid": "7558be78bd626304dbbc627760117bd5",
+      "use": "Lightning and Ember Field: source choreography reference, authored closed-facet fallback (combat-assets U1-U5)"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Hovl Studio/Sword slash VFX/Prefabs/Sword Slash 1.prefab",
       "sourceSha256": "578bffd274cc114e46b6833a37287bf5f3992b1c986cf003a8d4abf46d887f42",
       "guid": "5bea49531fc500c408823a2e2863106f",

@@ -46,6 +46,8 @@ namespace Champions.Sim
         Spear = 12,
         Bow = 13,
         Sentinel = 14,
+        Lightning = 16,
+        EmberField = 17,
     }
 
     /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>

@@ -161,6 +161,15 @@ namespace Champions.Sim
             }
         }
 
+        // A bolt selects exactly one enemy. Its visible link is not an area collider.
+        internal bool StrikeWeaponEnemy(Simulation sim, int id, in Blow blow, WeaponEffect effect)
+        {
+            if (!sim.Enemies[id].Alive || !sim.Weapons.Supports.Impact(effect, sim.Enemies[id].Generation, blow.T, sim.Enemies[id].X, sim.Enemies[id].Y)) return false;
+            Blows++; Struck++;
+            ((IStrikeTargets)sim.Enemies).Strike(sim, id, blow);
+            return true;
+        }
+
         static long Key(int receiver, int id) => (long)receiver << 32 | (uint)id;
 
         /// <summary>Adds <paramref name="key"/> to <paramref name="struck"/>; false when it was there.</summary>

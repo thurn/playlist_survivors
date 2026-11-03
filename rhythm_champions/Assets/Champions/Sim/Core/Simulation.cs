@@ -101,6 +101,7 @@ namespace Champions.Sim
                 Melee = new MeleeWeapons(this);
                 Ranged = new RangedWeapons(this);
                 Constructs = new ConstructWeapons(this);
+                Magic = new MagicWeapons(this);
             }
         }
 
@@ -145,6 +146,7 @@ namespace Champions.Sim
         public MeleeWeapons Melee { get; }
         public RangedWeapons Ranged { get; }
         public ConstructWeapons Constructs { get; }
+        public MagicWeapons Magic { get; }
 
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }
@@ -201,7 +203,8 @@ namespace Champions.Sim
                 if (Pickups.ExperienceDropped > 0 || Pickups.StoredCount > 0 || Pickups.FlyingCount > 0) h = Pickups.Fold(h);
                 if (Constructs != null) h = Constructs.FoldHash(h);
                 h = Weapons.FoldHash(h);
-                return Ranged == null ? h : Ranged.FoldHash(h);
+                if (Ranged != null) h = Ranged.FoldHash(h);
+                return Magic == null ? h : Magic.FoldHash(h);
             }
         }
 

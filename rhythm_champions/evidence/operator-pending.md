@@ -58,3 +58,4 @@ row done (or files a bead) after checking.
   scripted progression samples (evidence/progression/README.md). Check card
   brevity and held/resumed boss-threat readability with six weapons; the
   samples establish the curve's response, not actual run balance.
+| Lightning/Ember in a complete six-weapon run with moving bosses: judge constellation size, late field clutter, quiet reused Hit/Slam cues under music and hardware frame time. [Magic runtime evidence](magic-weapons/README.md) includes inspected normal/empowered crowd phases and actual sim-event captures, without claiming a continuous played run | Operator taste, speakers and target hardware; full-run assembly | ps-3wc.10 | pending |

@@ -69,6 +69,17 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void MagicUsesOneOwnedSoundPerDischargeRatherThanOneVoicePerLink()
+        {
+            _sounds.Present(Frame(1));
+            _sounds.Take(SimEvent.MagicAction(1.2, WeaponKind.Lightning, 3, false, 0,0,2,0,1,.6));
+            for (int k=0;k<20;k++) _sounds.Take(SimEvent.LightningLink(1.2,0,0,k,1,false));
+            _sounds.Take(SimEvent.MagicAction(1.3, WeaponKind.EmberField, 3, true, 0,0,1,0,2.4,3));
+            Assert.That(_scheduler.Log.Select(x => x.Cue.Kind), Is.EqualTo(new[] { SoundKind.Hit, SoundKind.Slam }));
+            Assert.That(_scheduler.Log.All(x => x.Cue.Gain < .5f), Is.True);
+        }
+
+        [Test]
         public void ASwingsWhooshLandsOnItsImpact()
         {
             _sounds.Present(Frame(1.0));

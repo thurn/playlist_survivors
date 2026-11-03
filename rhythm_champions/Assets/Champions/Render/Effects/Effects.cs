@@ -25,7 +25,7 @@ namespace Champions.Render
     /// Orbit Blades' ring is rebuilt each frame round the hero. Time is the song clock: a fixed-time run draws the same
     /// frames; a seek backwards clears everything.
     /// </summary>
-    public sealed class Effects : IEffectCommands, IDisposable
+    public sealed class Effects : IEffectCommands, IEffectHoldCommands, IDisposable
     {
         public const int StripSegments = 24;
 
@@ -65,6 +65,7 @@ namespace Champions.Render
         readonly List<SparkBurst> _bursts = new List<SparkBurst>();
         readonly MeleeVisuals _melee = new MeleeVisuals();
         readonly ConstructVisuals _constructs;
+        readonly MagicVisuals _magic = new MagicVisuals();
         Orbiting _orbit;
         double _last = double.NegativeInfinity;
 
@@ -113,10 +114,13 @@ namespace Champions.Render
         public int Draws { get; private set; }
         public Sparks Sparks => _sparks;
 
+        public void Hold(double t, bool held) => _magic.Hold(t, held);
+
         public void Fire(EffectCue cue, in EffectShot shot)
         {
             if (MeleeVisuals.Handles(cue)) _melee.Fire(cue, shot);
             if (ConstructVisuals.Handles(cue)) _constructs.Fire(cue, shot);
+            if (MagicVisuals.Handles(cue)) _magic.Fire(cue, shot);
             Expand(_recipes.Cues[(int)cue], shot);
             foreach (var (bucket, shape) in _shapes)
             {
@@ -155,6 +159,11 @@ namespace Champions.Render
             {
                 var construct = _constructs.Cost(cue);
                 cost.Draws += construct.Draws; cost.Shapes += construct.Shapes; cost.Triangles += construct.Triangles;
+            }
+            if (MagicVisuals.Handles(cue))
+            {
+                var rigid = _magic.Cost(cue);
+                cost.Draws += rigid.Draws; cost.Shapes += rigid.Shapes; cost.Triangles += rigid.Triangles;
             }
             return cost;
         }
@@ -219,7 +228,8 @@ namespace Champions.Render
             }
             _melee.Present(now);
             _constructs.Present(now, hero);
-            LiveShapes = live + _melee.Draws + _constructs.Shapes;
+            _magic.Present(now);
+            LiveShapes = live + _melee.Draws + _constructs.Shapes + _magic.Draws;
             foreach (var b in _buckets) b.Block.SetFloat(IdNow, (float)now);
             _sparks.Present(now, null);
             if (camera != null) Queue(camera);
@@ -238,7 +248,8 @@ namespace Champions.Render
             _sparks.Queue(camera);
             _melee.Queue(camera);
             _constructs.Queue(camera);
-            Draws = draws + _melee.Draws + _constructs.Draws + (_sparks.Drawn > 0 ? 1 : 0);
+            _magic.Queue(camera);
+            Draws = draws + _melee.Draws + _constructs.Draws + _magic.Draws + (_sparks.Drawn > 0 ? 1 : 0);
         }
 
         /// <summary>Drops every live effect (a seek backwards does it itself).</summary>
@@ -253,6 +264,7 @@ namespace Champions.Render
             _sparks.Clear();
             _melee.Clear();
             _constructs.Clear();
+            _magic.Clear();
             _orbit = default;
             _last = double.NegativeInfinity;
         }
@@ -467,6 +479,7 @@ namespace Champions.Render
             _sparks.Dispose();
             _melee.Dispose();
             _constructs.Dispose();
+            _magic.Dispose();
             Destroy(_material);
             Destroy(_stripMesh);
         }

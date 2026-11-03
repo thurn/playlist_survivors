@@ -72,6 +72,8 @@ namespace Champions.Sim
         MeleeAction,
         RangedImpact,
         ConstructAction,
+        MagicAction,
+        LightningLink,
     }
 
     /// <summary>
@@ -98,6 +100,17 @@ namespace Champions.Sim
         /// D2 total value (XP units or fraction of max health). Drop also reports merged totals.</summary>
         public static SimEvent Pickup(SimEventKind kind, double t, Pickup p) => new SimEvent
         { Kind = kind, T = t, I0 = p.Id, I1 = (int)p.Kind, D0 = p.X, D1 = p.Y, D2 = p.Value };
+
+        /// <summary>Magic construct/pulse: I0 weapon, I1 form; I2 spectral bit 0, field placement bits 1–2, empowered bit 3.
+        /// D0/D1 anchor, D2/D3 lightning node or field aim, D4 already-scaled coverage, D5 remaining duration.</summary>
+        public static SimEvent MagicAction(double t, WeaponKind kind, int form, bool spectral,
+            double x, double y, double nx, double ny, double radius, double duration) => new SimEvent
+        { Kind = SimEventKind.MagicAction, T = t, I0 = (int)kind, I1 = form, I2 = spectral ? 1 : 0,
+            D0 = x, D1 = y, D2 = nx, D3 = ny, D4 = radius, D5 = duration };
+
+        /// <summary>One actual bolt hit: D0/D1 from, D2/D3 endpoint; I0 spectral.</summary>
+        public static SimEvent LightningLink(double t, double x, double y, double tx, double ty, bool spectral) => new SimEvent
+        { Kind = SimEventKind.LightningLink, T = t, I0 = spectral ? 1 : 0, D0 = x, D1 = y, D2 = tx, D3 = ty };
 
         /// <summary>Melee choreography: I0 weapon, I1 form, I2 spectral bit 0 / mirrored bit 1 / procession step bits 2+;
         /// D0/D1 origin, D2/D3 aim, D4 coverage radius (already empowered), D5 lane travel.</summary>

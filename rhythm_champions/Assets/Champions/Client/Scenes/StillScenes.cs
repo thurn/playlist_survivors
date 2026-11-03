@@ -44,6 +44,7 @@ namespace Champions.Client.Scenes
         {
             (PaletteScene.Name, s => new PaletteScene(s._content, s._palette, s._look)),
             (MovementDashScene.Name, s => new MovementDashScene(s._palette, s._contentDir)),
+            ("magic-combat", s => new MagicCombatScene(s._palette, s._contentDir)),
             ("pickups", s => new PickupScene(s._content, s._palette, s._look)),
             (WorldScene.Name, s => new WorldScene(s._palette)),
             (StructureScene.Name, s => new StructureScene(s._content, s._palette, s._look)),

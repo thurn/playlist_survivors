@@ -62,6 +62,7 @@ namespace Champions.Sim
             if (next < window) throw new InvalidOperationException("hit windows cannot go backward");
             if (next != window) { hit.Clear(); window = next; }
         }
+        internal bool Contains(long target) => hit.Contains(target);
         public bool TryHit(long target)
         {
             if (window < 0) throw new InvalidOperationException("begin a hit window first");

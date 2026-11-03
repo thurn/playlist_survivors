@@ -120,6 +120,21 @@ namespace Champions.Client.Scenes
                                 Power = empowered == 1 ? EffectPower.OnBeat : EffectPower.Plain },
                             .025 + phase * .075));
                     }
+            string[] magic = { "lightning-bolt", "lightning-fork", "lightning-sigil", "lightning-constellation", "ember-seal", "ember-fissure", "ember-brazier", "ember-procession" };
+            for (int form = 0; form < 8; form++)
+                for (int empowered = 0; empowered < 2; empowered++)
+                    for (int phase = 0; phase < 6; phase++)
+                    {
+                        float scale = empowered == 1 ? Mathf.Sqrt(1.5f) : 1;
+                        bool field = form >= 4;
+                        var shot = new EffectShot { Facing = Aim, Radius = (field ? 2.4f : 1) * scale,
+                            RestRadius = field ? 2.4f : 1, Duration = 3,
+                            At = Vector2.zero, To = field ? Aim * 2.4f * scale * .65f : Aim * 2 * scale,
+                            Advance = field ? 2.4f * scale * .65f : 0 };
+                        entries.Add(new Entry(magic[form] + (empowered == 1 ? "-empowered" : "-normal") + "-phase" + phase,
+                            (EffectCue)((int)EffectCue.LightningBolt + form), shot, .025 + phase * .08));
+                    }
+            entries.Add(new Entry("lightning-link", EffectCue.LightningLink, Path(EffectPower.Plain, Vector2.zero, Aim * 5, .22), .08));
             return entries.ToArray();
         }
 
@@ -185,6 +200,7 @@ namespace Champions.Client.Scenes
         ICrowdView _meleeCrowd;
         WorldPresenter _world;
         HeroMarker _marker;
+        Champions.Render.Telegraphs.TelegraphRenderer _magicWarning;
         Camera _camera;
         Stills.View _view;
         (double Start, double Still)[] _schedule;
@@ -207,6 +223,8 @@ namespace Champions.Client.Scenes
             _meleeCrowd = (ICrowdView)TrailerCrowd.Create(LaunchOptions.Current.Look, enemies, palette)
                 ?? new StandInCrowd(enemies, palette, camera.gameObject.layer);
             if (view != null) view.Ids[IdPass.Monster(0)] = ("skeleton", "monster", 1.8f);
+            _magicWarning = new Champions.Render.Telegraphs.TelegraphRenderer(camera.gameObject.layer);
+            _magicWarning.Add(1, HitShape.Path(-5, -1, 5, -1, .28), 0, 100000, palette.BossTelegraph.linear * 2.5f);
             _marker = new HeroMarker(camera.gameObject.layer);
             _marker.Place(Vector2.zero);
             var lib = EffectLibrary.Load();
@@ -218,7 +236,7 @@ namespace Champions.Client.Scenes
             _effects = new Effects(lib, EffectRecipes.Load(contentDir), palette);
             if (view != null)
             {
-                view.Requeue = () => { _effects.Queue(_camera); if (IsMelee) _meleeCrowd.Queue(_camera); };
+                view.Requeue = () => { _effects.Queue(_camera); if (IsMelee) { _meleeCrowd.Queue(_camera); _magicWarning.Queue(_camera); } };
                 _costsDir = LaunchOptions.Current.StillsDir;
                 _benchOut = LaunchOptions.Current.BenchOut;
             }
@@ -241,6 +259,7 @@ namespace Champions.Client.Scenes
             _effects.Present(t, Vector2.zero, Time.deltaTime, _camera);
             if (IsMelee)
             {
+                _magicWarning.Present(t, _camera);
                 _meleeCrowd.Begin(t);
                 for (int k = 0; k < 22; k++)
                 {
@@ -258,7 +277,7 @@ namespace Champions.Client.Scenes
             }
         }
 
-        bool IsMelee => _next >= 0 && GalleryScene.Entries[_next].Cue is EffectCue cue && (MeleeVisuals.Handles(cue) || ConstructVisuals.Handles(cue));
+        bool IsMelee => _next >= 0 && GalleryScene.Entries[_next].Cue is EffectCue cue && (MeleeVisuals.Handles(cue) || ConstructVisuals.Handles(cue) || MagicVisuals.Handles(cue));
 
         void Fire(int i)
         {
@@ -267,7 +286,18 @@ namespace Champions.Client.Scenes
             double t = _schedule[i].Start;
             var shot = e.Shot;
             shot.T = t + (e.Cue is EffectCue melee && MeleeVisuals.Handles(melee) ? .35 : 0);
-            if (e.Cue is EffectCue cue) _effects.Fire(cue, shot);
+            if (e.Cue is EffectCue cue)
+            {
+                _effects.Fire(cue, shot);
+                if (cue >= EffectCue.LightningBolt && cue <= EffectCue.StormConstellation)
+                {
+                    int count = cue == EffectCue.LightningBolt ? 1 : cue == EffectCue.LightningFork ? 2 : 3;
+                    var origin = cue >= EffectCue.StormSigil ? shot.To : shot.At;
+                    for (int k = 0; k < count; k++)
+                        _effects.Fire(EffectCue.LightningLink, new EffectShot { T = t, At = origin,
+                            To = new Vector2(2.7f + k * 1.1f, 1.4f - k * 1.8f) * shot.Radius });
+                }
+            }
             else _effects.Orbit(t - 0.5, e.Evolved ? 6 : 3, 0.4, 2 * Math.PI / 2.0, shot.Radius, e.Evolved);
             Debug.Log(string.Format(CultureInfo.InvariantCulture, "Gallery: {0} at {1:F3} s, its still at {2:F3} s", e.Label, t, _schedule[i].Still));
         }
@@ -347,6 +377,7 @@ namespace Champions.Client.Scenes
         {
             _effects?.Dispose();
             _meleeCrowd?.Dispose();
+            _magicWarning?.Dispose();
             _marker?.Dispose();
             _world?.Dispose();
             if (_timingTarget != null) _timingTarget.Release();

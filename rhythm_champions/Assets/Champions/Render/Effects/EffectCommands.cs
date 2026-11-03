@@ -63,6 +63,8 @@ namespace Champions.Render
         HammerSwing, HammerSlam, HammerEruption, HammerProcession,
         OrbitCircle, OrbitSweep, OrbitScythes, OrbitCrown,
         SentinelSentry, SentinelCombo, SentinelLeap, SentinelFormation,
+        LightningBolt, LightningFork, StormSigil, StormConstellation,
+        EmberSeal, EmberFissure, EmberBrazier, EmberProcession, LightningLink,
     }
 
     /// <summary>How strong an effect draws (design.md, The Look &gt; Weapon effects): on the beat bigger and brighter; special moments the brightest.</summary>
@@ -101,12 +103,18 @@ namespace Champions.Render
         public float Advance;
         /// <summary>Construct volley role: 0 sword, 1 parry, 2 leap. Independent of power and direction.</summary>
         public int Phase;
+        public float RestRadius;
     }
 
     /// <summary>
     /// The effects presenter's commands (plan.md, The Client: presenters built against small command interfaces; the
     /// assembly's EventDispatch maps the sim's events onto them). Every effect of the hero's is white.
     /// </summary>
+    public interface IEffectHoldCommands
+    {
+        void Hold(double t, bool held);
+    }
+
     public interface IEffectCommands
     {
         /// <summary>Fires a cue's effect, as soon as its moment is known.</summary>

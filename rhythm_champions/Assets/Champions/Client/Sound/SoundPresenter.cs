@@ -75,6 +75,11 @@ namespace Champions.Client.Sound
                 case SimEventKind.ConstructAction:
                     Request(SoundKind.Swing, e.T, SpectralGain * .65f, SpectralPitch, .6f, asap);
                     break;
+                case SimEventKind.MagicAction:
+                    // One quiet owned cue per discharge/pulse, never one voice per chain segment.
+                    Request((WeaponKind)e.I0 == WeaponKind.Lightning ? SoundKind.Hit : SoundKind.Slam,
+                        e.T, (e.I2 & 1) != 0 ? .22f : .4f, (WeaponKind)e.I0 == WeaponKind.Lightning ? 1.3f : .75f, .4f, asap);
+                    break;
                 case SimEventKind.MeleeAction:
                 {
                     bool spectral = (e.I2 & 1) != 0;

@@ -50,6 +50,7 @@ namespace Champions.EditorTools.Effects
             AssetDatabase.CreateAsset(lib, AssetPath);
             AssetDatabase.SaveAssets();
             MeleeBaker.Bake();
+            MagicBaker.Bake();
             Debug.Log($"EffectBaker: {string.Join(", ", lib.Meshes.Select(m => $"{m.Name} ({m.Mesh.GetIndexCount(0) / 3} triangles, inner {m.Inner:F2})"))} -> {AssetPath}");
             return true;
         }

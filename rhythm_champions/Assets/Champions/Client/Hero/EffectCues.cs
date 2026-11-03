@@ -41,6 +41,9 @@ namespace Champions.Client
         {
             switch (e.Kind)
             {
+                case SimEventKind.Hold:
+                    if (_fx is IEffectHoldCommands holds) holds.Hold(e.T, e.I2 != 0);
+                    break;
                 case SimEventKind.WeaponActivation:
                     if (e.D1 > 1) _fx.Fire(EffectCue.Encore,
                         new EffectShot { T = e.T, At = V(e.D2, e.D3) });
@@ -52,6 +55,22 @@ namespace Champions.Client
                         To = (WeaponKind)e.I0 == WeaponKind.Sentinel ? V(e.D0 + e.D2 * e.D4 * .6, e.D1 + e.D3 * e.D4 * .6) : V(e.D0, e.D1),
                         Radius = (float)e.D4, Duration = (float)e.D5, Mirrored = (e.I2 & 1) != 0, Phase = e.I2 & 3, Spectral = true,
                         Power = (e.I2 & 4) != 0 ? EffectPower.OnBeat : EffectPower.Plain });
+                    break;
+                }
+                case SimEventKind.LightningLink:
+                    _fx.Fire(EffectCue.LightningLink, new EffectShot { T = e.T, At = V(e.D0, e.D1),
+                        To = V(e.D2, e.D3), Spectral = e.I0 != 0, Duration = .22f });
+                    break;
+                case SimEventKind.MagicAction:
+                {
+                    bool field = (WeaponKind)e.I0 == WeaponKind.EmberField;
+                    var at = V(e.D0, e.D1);
+                    var way = V(e.D2, e.D3);
+                    float advance = field ? ((e.I2 >> 1) & 3) * (float)e.D4 * .65f : 0;
+                    _fx.Fire((EffectCue)((int)(field ? EffectCue.EmberSeal : EffectCue.LightningBolt) + e.I1),
+                        new EffectShot { T = e.T, At = at, To = field ? at + way * advance : way,
+                            Facing = field ? way : Vector2.up, Radius = (float)e.D4, RestRadius = (float)(e.D4 / ((e.I2 & 8) != 0 ? Math.Sqrt(1.5) : 1)),
+                            Duration = (float)e.D5, Advance = advance, Spectral = (e.I2 & 1) != 0 });
                     break;
                 }
                 case SimEventKind.MeleeAction:

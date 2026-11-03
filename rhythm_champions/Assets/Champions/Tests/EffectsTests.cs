@@ -92,7 +92,7 @@ namespace Champions.Tests
         {
             var recipes = EffectRecipes.Load(ContentDir);
             foreach (EffectCue cue in Enum.GetValues(typeof(EffectCue)))
-                Assert.That(recipes.Cues[(int)cue], Is.Not.Empty, EffectRecipes.Name(cue));
+                Assert.That(recipes.Cues[(int)cue].Length > 0 || MagicVisuals.Handles(cue), Is.True, EffectRecipes.Name(cue));
             Assert.That(recipes.Orbit, Is.Not.Empty);
             Assert.That(recipes.Halo, Is.Not.Empty);
         }
@@ -109,6 +109,34 @@ namespace Champions.Tests
                 Assert.That(constructs.Shapes, Is.GreaterThanOrEqualTo(3));
             constructs.Present(4, Vector2.zero);
             Assert.That(constructs.Shapes, Is.Zero, "finite roster disappears without new volleys");
+        }
+
+        [Test]
+        public void MagicFieldsFreezeAcrossHoldsAndReleaseAfterFiniteDuration()
+        {
+            MagicBaker.Bake();
+            using var fx = new MagicVisuals();
+            fx.Fire(EffectCue.EmberProcession, new EffectShot { T = 1, Radius = 2.4f, Duration = 3, Facing = Vector2.up, Advance = 1.5f });
+            fx.Present(1.1); Assert.That(fx.Draws, Is.GreaterThan(0));
+            int draws = fx.Draws;
+            fx.Hold(1.1, true); fx.Present(20);
+            Assert.That(fx.Draws, Is.EqualTo(draws));
+            fx.Hold(20, false); fx.Present(20.1);
+            Assert.That(fx.Draws, Is.GreaterThan(0));
+            fx.Present(23); Assert.That(fx.Draws, Is.Zero);
+        }
+
+        [Test]
+        public void RepeatedFieldPulsesDoNotAccumulateIdleGeometryAndClearDropsEverything()
+        {
+            MagicBaker.Bake();
+            using var fx = new MagicVisuals();
+            var shot = new EffectShot { T = 1, Radius = 2.4f, Duration = 3, Facing = Vector2.up };
+            fx.Fire(EffectCue.EmberBrazier, shot); fx.Present(1.1);
+            int draws = fx.Draws;
+            for (int k = 0; k < 30; k++) fx.Fire(EffectCue.EmberBrazier, shot);
+            fx.Present(1.1); Assert.That(fx.Draws, Is.EqualTo(draws));
+            fx.Clear(); fx.Present(1.1); Assert.That(fx.Draws, Is.Zero);
         }
 
         [Test]

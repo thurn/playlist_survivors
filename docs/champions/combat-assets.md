@@ -258,3 +258,20 @@ knights. Both retain close coverage during empowerment. No new vendor files
 or shader variants are required. [Runtime evidence and exact reproduction](../../rhythm_champions/evidence/construct-weapons/README.md)
 record the inspected normal/empowered crowd samples and motion, limitations,
 source GUIDs, hit contracts and verification.
+
+## Implemented Lightning/Ember handoff (ps-3wc.10)
+
+All eight magic forms now use `MagicWeapons` simulation bindings and
+`MagicVisuals` rigid choreography. U1–U5 are manifest references; their mapped
+closed-prism/octagonal-seal/faceted-brazier fallback is selected, with no stock
+particle material dependency. `MagicBaker` writes ignored local meshes using
+the existing dark-core feature-edge shader. Lightning's distinct-target roots,
+finite forks and bounded hops retain Multishot/Pierce/Split from L1. Ember
+holds placed ground for a finite Persistence-scaled duration and shares one
+ledger across each pulse's retained and added footprints. Both inherit all
+broad supports and one-activation dash coverage across forms. The moving
+constellation changes discharge origin on the grid; Ember's procession advances
+its extra seal through three grid placements while retaining the original seal.
+See [runtime evidence](../../rhythm_champions/evidence/magic-weapons/README.md)
+for the source recipes, actual sim scene, inspected normal/empowered crowd
+sheets, motion phases, costs and exact verification limits.
