@@ -10,3 +10,6 @@ Use [the current design](../../docs/champions/design.md) for gameplay authority
 and [the plan](../../docs/champions/plan.md) for migration scope. Rendering,
 audio and performance measurements remain useful within their recorded scope.
 No bead statuses or recorded results were changed by the documentation pass.
+
+The [2026-11-03 Mac display-freeze investigation](display-freeze-2026-11-03/README.md)
+records local playtest, CI and system evidence, with an unresolved root cause.
