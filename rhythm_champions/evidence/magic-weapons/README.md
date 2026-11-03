@@ -115,3 +115,7 @@ After rebasing the concurrent Spear/Bow implementation, all **388** sim tests
 and **115/115** Unity EditMode tests pass. Both handlers and their hash/event
 paths are retained. Lightning forks reuse the shared captured ImpactX/ImpactY
 coordinates supplied by that implementation; no extra position store remains.
+Final integrated development build and eight-still `magic-combat` recapture
+(`integrated/` beside `gallery/`) pass; the combined final-form empowered frame
+was inspected again. A clean-cache combined build measures **279/300** shader
+variants, passing the same budget after Spear/Bow integration.
