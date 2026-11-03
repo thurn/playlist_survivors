@@ -29,24 +29,69 @@ namespace Champions.Client.UI
     }
 
     /// <summary>
-    /// The HUD (design.md, UI > HUD and Decision 26): a hairline experience bar along the bottom edge and, in a duel, a
-    /// slim health bar at the top in the boss's colour. Nothing else, and no text.
+    /// The run HUD: health vessel, phase clock, experience and boss health. Input passes through it.
     /// </summary>
-    public sealed class Hud : VisualElement
+    public sealed class Hud : VisualElement, System.IDisposable
     {
         readonly VisualElement _xp, _boss, _health;
+        readonly Image _orb;
+        readonly Label _healthText, _timer;
+        readonly Material _liquid;
+        readonly RenderTexture _texture;
 
         public Hud(Palette palette)
         {
             AddToClassList("hud");
             pickingMode = PickingMode.Ignore; // shows, never takes the pointer
             Bar(this, "hud__xp", out _xp);
-            _xp.style.backgroundColor = Alpha(palette.HeroBody, 0.7f);
+            _xp.style.backgroundColor = new Color(.12f, .9f, .32f);
+            _liquid = new Material(Resources.Load<Shader>("UI/HealthOrb"));
+            _texture = new RenderTexture(192, 192, 0, RenderTextureFormat.ARGB32) { name = "Health orb" };
+            _texture.Create();
+            var vessel = new VisualElement { pickingMode = PickingMode.Ignore };
+            vessel.AddToClassList("hud__vessel");
+            _orb = new Image { image = _texture, pickingMode = PickingMode.Ignore };
+            _orb.AddToClassList("hud__orb");
+            vessel.Add(_orb);
+            _healthText = new Label { pickingMode = PickingMode.Ignore };
+            _healthText.AddToClassList("hud__number");
+            vessel.Add(_healthText);
+            Add(vessel);
+            _timer = new Label { pickingMode = PickingMode.Ignore };
+            _timer.AddToClassList("hud__timer");
+            Add(_timer);
             _boss = new VisualElement { pickingMode = PickingMode.Ignore };
             _boss.AddToClassList("hud__boss");
             Add(_boss);
             Bar(_boss, "hud__health", out _health);
             _boss.style.display = DisplayStyle.None;
+        }
+
+        /// <summary>Snapshot clocks freeze through cards/pause; shader motion uses the same active clock.</summary>
+        public void Present(in SimSnapshot s, in BossBar boss)
+        {
+            Present(s.ExperienceNeeded > 0 ? (float)(s.Experience / s.ExperienceNeeded) : 0, boss);
+            float health = s.HeroMaxHealth > 0 ? Mathf.Clamp01((float)(s.HeroHealth / s.HeroMaxHealth)) : 0;
+            _liquid.SetFloat("_Fill", health);
+            _liquid.SetFloat("_Motion", (float)s.RunClock);
+            var previous = RenderTexture.active;
+            Graphics.Blit(null, _texture, _liquid);
+            RenderTexture.active = previous;
+            _healthText.text = $"{System.Math.Ceiling(System.Math.Max(0, s.HeroHealth)):0} / {s.HeroMaxHealth:0}";
+            _timer.text = ClockText(s.HordeClock, s.BossElapsed, boss.Up);
+        }
+
+        public static string ClockText(double horde, double fight, bool boss)
+        {
+            int seconds = (int)System.Math.Floor(System.Math.Max(0, boss ? fight : horde) + 1e-7);
+            return $"{(boss ? "BOSS" : "HORDE")}  {seconds / 60:00}:{seconds % 60:00}";
+        }
+
+        public void Dispose()
+        {
+            _texture.Release();
+            foreach (var o in new UnityEngine.Object[] { _texture, _liquid })
+                if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
         }
 
         static Color Alpha(Color c, float a) => new Color(c.r, c.g, c.b, a);

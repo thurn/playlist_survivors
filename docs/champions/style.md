@@ -134,10 +134,8 @@ remove them to satisfy an old palette-family diagnostic.
 
 ## The Palette
 
-`rhythm_champions/Content/palette.json`. The table below is the pre-restoration
-renderer snapshot: warning/enemy-shot yellow values are migration targets,
-not permission to keep yellow hazards. Update values and diagnostics with
-ps-ueo.3. Every value is the colour as drawn
+`rhythm_champions/Content/palette.json`. Hazard roles migrated to orange/red in
+ps-ueo.3; enemy-body and zone colors remain unchanged. Every value is the colour as drawn
 on screen; a shader that tonemaps or blooms aims its output at it.
 
 ### Enemies and the boss
@@ -170,8 +168,8 @@ lighter member.
 | `hero.edge` | `#e4eeff` | 218 | 94 | 9 | the faint white-blue edge of the hero's slashes |
 | `hero.hurt` | `#ff4040` | 0 | 57 | 84 | the hero taking a hit: danger's red, in the counter's reach |
 | `hero.break` | `#fff0c8` | 44 | 95 | 21 | legacy palette key, unused by the revised combat; no Break bar or stagger flash |
-| `warning` | `#f5e900` | 57 | 91 | 91 | legacy value; migrate elite hazards to orange/red |
-| `enemyShot` | `#dfee00` | 64 | 90 | 92 | legacy value; migrate spores/shots to orange/red |
+| `warning` | `#ff5018` | 15 | 59 | 91 | orange/red elite telegraphs with dark shoulders and hatching |
+| `enemyShot` | `#ff3218` | 7 | 56 | 96 | airborne red-orange spores/shots |
 | `wall` | `#8c8c8c` | 0 | 58 | 0 | unbreakable structures (reserved; level 1 has none) |
 
 ### Zones

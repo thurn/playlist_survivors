@@ -107,7 +107,7 @@ namespace Champions.Sim
         /// (NaN when not staggered).
         /// </summary>
         public int Boss, BossCast;
-        public double BossHealth, BossMaxHealth, BossBreak;
+        public double BossHealth, BossMaxHealth, BossBreak, BossElapsed;
         public int BossPhase;
         public double BossStaggerFrom, BossStaggerUntil;
         /// <summary>The hairline bar's: the level, the experience toward the next and what it needs; the indicator's dot: the levels held; the cards up.</summary>

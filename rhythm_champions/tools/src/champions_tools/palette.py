@@ -21,9 +21,7 @@ FAMILIES = ("key", "accent", "counter")  # the enemy families, in the order the 
 SLOT_GAP = (14.0, 43.0)  # a family's two members: apart enough to tell, close enough for one 60-degree window
 FAMILY_GAP = 50.0  # members of different families at least this far apart
 REACH = 40.0  # the boss within this of a counter member; the first zone within this of the key's members
-ARC = (40.0, 185.0)  # the yellow-green arc (exclusive): only the warnings, enemy shots and the warm zone live in it
-YELLOW = (50.0, 70.0)  # electric yellow: warnings and enemy shots
-ROLE_GAP = 20.0  # warnings and enemy shots this far from every enemy and boss hue (palette conformance's tolerance)
+ARC = (40.0, 185.0)  # kept empty for player yellow and XP green; the dim warm floor is allowed
 ZONE_FAMILIES = {"cool": (180.0, 250.0), "violet": (255.0, 300.0), "warm": (0.0, 60.0)}
 ZONE_ORDER = ("cool", "cool", "violet", "warm")  # two cool (the first is the key's), a violet, a dim warm
 ZONE_GAP = 25.0  # zones' edge hues pairwise apart, so four zones are four floors
@@ -38,8 +36,8 @@ VALUES = (
     ("hero.hurt", 50, 82, 60, 200),
     ("enemies.*.*", 50, 82, 35, 200),
     ("boss.*", 45, 82, 60, 200),
-    ("warning", 85, 95, 70, 200),
-    ("enemyShot", 85, 95, 70, 200),
+    ("warning", 45, 82, 60, 200),
+    ("enemyShot", 45, 82, 60, 200),
     ("wall", 45, 70, 0, 5),
     ("zones.*.line", 10, 20, 0, 200),
     ("zones.*.pulse", 25, 35, 0, 200),
@@ -200,22 +198,16 @@ def problems(palette: dict, cast: list[dict]) -> list[str]:
         if gap > REACH:
             out.append(f"key: {a} and {b} are {gap:.0f} degrees apart, over {REACH:.0f}")
 
-    # The yellow-green arc holds only electric yellow (warnings, enemy shots) and the warm zone; near white spends
-    # no family, so Break's white-gold may sit there.
+    # Keep enemy bodies out of the player-yellow / XP-green arc. The dim warm floor is allowed.
     warm = {z["name"] for z in zones if z["family"] == "warm"}
     for k, v in d.items():
-        allowed = k in ("warning", "enemyShot") or (k.startswith("zones.") and k.split(".")[1] in warm)
+        allowed = k.startswith("zones.") and k.split(".")[1] in warm
         near_white = v["L"] >= NEAR_WHITE[0] and v["C"] <= NEAR_WHITE[1]
         if v["C"] >= NEUTRAL_C and not near_white and ARC[0] < v["hue"] < ARC[1] and not allowed:
-            out.append(f"arc: {k} (hue {v['hue']:.0f}) is in the yellow-green arc, which is the warnings'")
-    enemy_hues = [k for k in rs if k.startswith(("enemies.", "boss."))]
+            out.append(f"arc: {k} (hue {v['hue']:.0f}) is in the yellow-green arc, reserved for player rhythm and XP")
     for k in ("warning", "enemyShot"):
-        if not YELLOW[0] <= d[k]["hue"] <= YELLOW[1]:
-            out.append(f"yellow: {k} (hue {d[k]['hue']:.0f}) is not electric yellow ({YELLOW[0]:.0f}-{YELLOW[1]:.0f})")
-        for e in enemy_hues:
-            gap = float(hue_gap(d[k]["hue"], d[e]["hue"]))
-            if gap < ROLE_GAP:
-                out.append(f"yellow: {k} is {gap:.0f} degrees from {e}, under {ROLE_GAP:.0f}")
+        if not 0 <= d[k]["hue"] <= 25:
+            out.append(f"hazard: {k} must be orange/red, reserved away from player yellow and XP green")
 
     # The value ladder.
     for k, v in d.items():

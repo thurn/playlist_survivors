@@ -1,8 +1,7 @@
 // The hero's indicator (HeroIndicator.cs; design.md, The Dash > The indicator), drawn in the world over the hero's head on
 // a quad that faces the camera, everything in the fragment from the quad's metres: a white strip 1.2 m wide, the next two
 // beats' ticks sliding in from both ends to the centre, the dash's pip at the centre (a dim ring filling while it cools,
-// solid when ready, a flash on an on-beat dash, a blink on a dropped press), and the thin
-// health bar under the strip (a hurt flash tints it once). Widths are in pixels (fwidth), so lines stay hairlines at any
+// solid when ready, a flash on an on-beat dash, a blink on a dropped press). Health lives in the HUD orb. Widths are in pixels (fwidth), so lines stay hairlines at any
 // distance. Premultiplied over everything, never hidden by what stands in front. In the stills' type-ID pass it draws as one
 // of the hero's effects where it covers.
 Shader "Champions/Indicator"
@@ -47,7 +46,6 @@ Shader "Champions/Indicator"
             static const float HalfWidth = 0.6;   // the strip
             static const float PipR = 0.07;
             static const float TickHalf = 0.06;
-            static const float HealthY = -0.12;
 
             struct Attributes { float4 positionOS : POSITION; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 m : TEXCOORD0; };
@@ -100,14 +98,6 @@ Shader "Champions/Indicator"
                 float halo = Line(r - PipR * (1 + 1.6 * (1 - _Pip.z)), 2.0, px) * _Pip.z;
                 a = max(a, max(pip, halo));
                 c = max(c, white * (pip * (1 + 2 * _Pip.z) + halo * 1.5));
-
-                // The health bar: filled to the health, a dim track beyond, tinted once by a hurt.
-                float bar = Line(length(float2(max(ax - HalfWidth, 0), p.y - HealthY)), 2.5, px);
-                float fill = saturate((-HalfWidth + 2 * HalfWidth * _State.x - p.x) / px + 0.5);
-                float level = bar * lerp(0.14, 0.85, fill);
-                float3 tint = lerp(white, _Hurt.rgb * 1.6, _State.y);
-                a = max(a, level);
-                c = max(c, tint * level * (1 + 0.6 * _State.y * fill));
 
                 a *= _State.w;
                 clip(a - 0.02);

@@ -245,3 +245,63 @@ The two survivor fixture sessions were re-recorded by their explicit fixture
 recorders, then replayed by the full sim suite. No vendor assets, bakes or media
 are included in the commit. Enact fast checks gate staging; the parent run owns
 slow-CI convergence and full moving-horde assembly after this executor closes.
+
+
+## ps-ueo.3 delivery: readable survival
+
+The HUD now draws a 144-reference-pixel bottom-left health orb from a dedicated
+192×192 render texture and liquid/energy shader. Its fill boundary tracks health
+height; moving waves taper at zero/full so zero is truly empty. A persistent
+rim and compact current/max numbers keep 8/100 distinguishable from 0/100.
+This UI is composited after world bloom. The overhead health hairline is removed;
+the existing overhead beat ticks and dash pip remain. Health shader motion uses
+RunClock and freezes with cards/pause. The top-center clock reads HORDE mm:ss
+from HordeClock, switches at boss arrival to BOSS mm:ss from active seconds
+since arrival, and returns to horde time after defeat. Arrival-clock state is
+presentation-only, derived from run time, and does not alter gameplay hashes.
+Boss health is a separate 8-pixel strip below the phase clock; no Break bar.
+
+XP keeps its sim value/persistence, nearest-first preview and 384-draw cap.
+Its filled green diamond uses one shared animated flow shader, with phase
+varied by position and time supplied by the existing presenter. Recovery remains
+a hollow cross, now red. Shots remain smaller airborne red-orange beads;
+telegraphs use orange/red boundaries, existing dark shoulders and hatching.
+No monster-body or floor palette values changed. Palette diagnostics now reject
+yellow/green hazards rather than requiring the old yellow hazard role.
+
+The opening spawn table previously admitted only cyan skeletons and slimes.
+Existing blue bats (.6 weight) and magenta goblins (3 weight) now join at zero
+seconds, retaining their colors, weights, stats and shapes. Later demon/elite
+gates, total density, toughness and XP rules remain. The dense minute-five
+palette retains cyan/blue/magenta/orange; later tables retain amber/violet too.
+
+### Evidence and limits
+
+Local evidence (media/vendor-derived pixels deliberately outside git):
+`~/Library/Caches/playlist-survivors/evidence/ps-ueo/`.
+
+- `hud-readability-final/`: 120 ordered 30-fps player frames (4 s), real pickup,
+  health shaders, spores and palette-crowd rendering. Fixture health is full for
+  0–1 s, 8% for 1–2 s, zero for 2–3 s, 60% thereafter; the last second switches
+  to a synthetic boss HUD. This is an explicit presentation fixture with a
+  stand-in hero and in-place crowd, not a simulated boss encounter. Inspected
+  surface/wave changes, the empty endpoint, green diamond flow and orange shot
+  travel. The first fixture accidentally passed a transparent boss color;
+  fixed and recaptured. A layout check now covers bar/clock separation.
+- `hud-opening/`: actual Mono survivor gameplay at 8/16/24 s, reference scripted
+  movement/picks and a local 220 Hz test tone through the real music plugin.
+  The 25 s launch exited 0; log shows advancing horde time, ~197–213 living
+  enemies and normal Sword upgrades. Captures show blue/cyan/magenta groups,
+  green XP, white hero, yellow empowered attacks and readable full-health HUD.
+- Compared the trailer's 8-second frame: cyan/blue/magenta body grouping is
+  retained; pickup and HUD semantic colors intentionally differ. The trailer
+  has denser choreography and different camera motion. ps-ueo.5 owns assembled
+  moving-horde/boss motion; these captures do not certify fun or speaker sync.
+
+Verification: 482 sim tests (including arrival/defeat, pause and card clock
+holds), 131 Unity EditMode tests (including GPU orb readback and HUD layout at
+1280×720, 1920×1080, 2560×1440 and 1280×1024), and 161 tool tests. Both new
+shaders compiled in the Mono build; observed variant count 287/300. No sim
+fixture hashes needed rerecording. Operator hand-play, subjective low-health
+urgency, full boss battle readability and target-hardware GPU cost remain
+pending rather than being inferred from a green suite.

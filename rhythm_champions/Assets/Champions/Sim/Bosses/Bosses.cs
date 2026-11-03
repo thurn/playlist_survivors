@@ -56,7 +56,9 @@ namespace Champions.Sim
         readonly double[] trackT = new double[History], trackX = new double[History], trackY = new double[History], trackFacing = new double[History];
         int trackHead, trackCount;
         int nextCall;
-        double calledClock;
+        double calledClock, arrivedClock;
+        /// <summary>Active fight seconds since arrival, excluding pause and cards.</summary>
+        public double DuelElapsed => InDuel ? Math.Max(0, sim.State.RunClock - arrivedClock) : 0;
         double x, y;
         double nextMoveAt;
         Telegraph roar, stagger;
@@ -213,6 +215,7 @@ namespace Champions.Sim
             Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, type.Health, Type.Cast + 1, boss: true);
             MaxHealth = type.Health;
             Stage = BossStage.Roaring;
+            arrivedClock = sim.State.RunClock + Math.Max(0, t - sim.Now);
             roar = Plan(t, rules.RoarBeats);
             if (!roar.OnBeat) roar = new Telegraph(t, t + rules.RoarS, -1, -1);
             trackCount = 0;

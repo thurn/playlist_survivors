@@ -173,13 +173,16 @@
 
 .hud__boss {
     position: absolute;
-    top: 40px;
-    left: 580px;
-    right: 580px;
+    top: 72px;
+    left: 30%;
+    width: 40%;
+    height: 8px;
 }
 
 .hud__health {
-    height: 5px;
+    width: 100%;
+    height: 8px;
+    flex-shrink: 0;
 }
 
 /* ---- The end card ---- */
@@ -296,4 +299,33 @@
     letter-spacing: 2px;
     color: rgba(244, 248, 255, 0.6);
     margin-bottom: 30px;
+}
+
+.hud__vessel {
+    position: absolute;
+    left: 28px;
+    bottom: 28px;
+    width: 144px;
+    height: 172px;
+}
+.hud__orb { width: 144px; height: 144px; }
+.hud__number {
+    color: rgb(255, 230, 234);
+    font-size: 21px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin-top: 0;
+}
+.hud__timer {
+    position: absolute;
+    top: 20px;
+    left: 35%;
+    width: 30%;
+    height: 40px;
+    color: rgb(244, 248, 255);
+    font-size: 26px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-color: rgba(3, 4, 8, 0.85);
+    border-radius: 6px;
 }

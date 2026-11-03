@@ -1,6 +1,6 @@
 {
   "name": "champions",
-  "note": "Rhythm Champions' palette (docs/champions/style.md, The Palette): the trailer's families (cyan-blue key fodder, magenta-violet accent, amber-orange elites, a red boss in the counter's reach) and the empty yellow-green arc given to roles: electric yellow for warnings and enemy shots, and the dim warm zone. White is the hero's; grey is a wall's. Hues are HSV degrees; every value is the colour as drawn.",
+  "note": "Rhythm Champions' palette (docs/champions/style.md, The Palette): the trailer's families (cyan-blue key fodder, magenta-violet accent, amber-orange elites, a red boss in the counter's reach) and the empty yellow-green arc given to roles: player yellow empowerment, green XP, orange/red warnings and enemy shots, and the dim warm zone. White is the hero's; grey is a wall's. Hues are HSV degrees; every value is the colour as drawn.",
   "void": { "floor": "#030408", "fog": "#05070d", "body": "#08090d" },
   "hero": {
     "body": "#f4f8ff",
@@ -16,8 +16,8 @@
     "counter": { "orange": "#ff6524", "amber": "#ffa629" }
   },
   "boss": { "body": "#ff2e17", "telegraph": "#ff0011" },
-  "warning": "#f5e900",
-  "enemyShot": "#dfee00",
+  "warning": "#ff5018",
+  "enemyShot": "#ff3218",
   "wall": "#8c8c8c",
   "zones": [
     { "name": "cobalt", "family": "cool", "line": "#001f67", "pulse": "#1443b3", "fill": "#172d60", "edge": "#3370ff" },

@@ -13,8 +13,8 @@
   "mix": [
     { "type": "skeleton", "fromS": 0, "weight": 4 },
     { "type": "slime", "fromS": 0, "weight": 3 },
-    { "type": "bat", "fromS": 90, "weight": 0.6 },
-    { "type": "goblin", "fromS": 180, "weight": 3 },
+    { "type": "bat", "fromS": 0, "weight": 0.6 },
+    { "type": "goblin", "fromS": 0, "weight": 3 },
     { "type": "bigOrk", "fromS": 240, "weight": 0.25 },
     { "type": "demon", "fromS": 270, "weight": 3 },
     { "type": "troll", "fromS": 330, "weight": 0.2 }

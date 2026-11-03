@@ -146,3 +146,18 @@ remain unverified; synchronized render/readback is not a GPU timestamp.
 - Pending operator judgement: natural attack feel at the faster cadence, dash-exit
   readability under moving-horde pressure, and music/speaker impact sync. These
   are subjective checks, not a gate on the unattended implementation delivery.
+
+
+### ps-ueo.3: health, XP and phase readability
+
+- Implemented red animated health orb with current/max numbers, top-center
+  HORDE/BOSS active clock, filled green animated XP, orange/red enemy hazards,
+  and blue/magenta opening enemy groups with unchanged body colors.
+- Agent evidence and exact fixture limits: `docs/champions/game-feel-plan.md`,
+  ps-ueo.3 delivery. Local player frames and motion live under
+  `~/Library/Caches/playlist-survivors/evidence/ps-ueo/hud-readability-final/`
+  and `hud-opening/`; no media or vendor-derived material is committed.
+- Pending non-blocking operator judgement: low-health urgency at native screen
+  scale, pickup/shot distinction during overlapping full-build effects, and
+  boss-bar/beat-cue readability during moving pressure. Shader/readback tests
+  and a scripted capture do not certify subjective readability or fun.

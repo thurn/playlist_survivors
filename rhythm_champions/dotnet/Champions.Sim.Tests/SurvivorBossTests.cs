@@ -89,6 +89,28 @@ namespace Champions.Sim.Tests
             Assert.IsEmpty(Drive.Events(s, SimEventKind.BossStagger));
         }
 
+        [Test]
+        public void FightTimerStartsAtArrivalFreezesForHoldsAndClearsAfterDefeat()
+        {
+            var s = Make(Config("fatOgre"));
+            Until(s, () => s.Bosses.InDuel);
+            Assert.That(s.Snapshot().BossElapsed, Is.InRange(0, Simulation.TickSeconds * 2));
+            s.StepTo(s.Now + 2);
+            double fight = s.Snapshot().BossElapsed, horde = s.Snapshot().HordeClock;
+            Assert.That(fight, Is.InRange(2 - 1e-9, 2 + Simulation.TickSeconds * 2));
+            s.Control(RunControl.Pause, s.Now); s.StepTo(s.Now + 5);
+            Assert.That(s.Snapshot().BossElapsed, Is.EqualTo(fight));
+            Assert.That(s.Snapshot().HordeClock, Is.EqualTo(horde));
+            s.Control(RunControl.Resume, s.Now); s.StepTo(s.Now + 1);
+            Assert.That(s.Snapshot().BossElapsed, Is.EqualTo(fight + 1).Within(.02));
+            double afterPause = s.Snapshot().BossElapsed;
+            s.Hold(HoldReason.Cards, true); s.StepTo(s.Now + 4);
+            Assert.That(s.Snapshot().BossElapsed, Is.EqualTo(afterPause), "cards freeze the fight clock too");
+            s.Hold(HoldReason.Cards, false);
+            Strike(s, 1e9); s.StepTo(s.Now + .1);
+            Assert.That(s.Snapshot().BossElapsed, Is.Zero);
+        }
+
         [TestCase("fatOgre", 0)] [TestCase("conductor", 0)] [TestCase("dragon", 0)]
         [TestCase("fatOgre", 0.99)] [TestCase("conductor", 0.99)] [TestCase("dragon", 0.99)]
         public void AlwaysDamageableAndPausePreservesTheLiveWarning(string boss, double fraction)

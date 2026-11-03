@@ -6,15 +6,15 @@ using UnityEngine.Rendering;
 
 namespace Champions.Client
 {
-    /// <summary>Low hovering hollow diamonds for XP, hollow crosses for recovery.
-    /// White-blue outlines, dark centers and ground-hugging motion distinguish them from yellow airborne shots.
+    /// <summary>Low hovering filled green energy diamonds for XP, red hollow crosses for recovery.
+    /// Distinct silhouettes and ground-hugging motion distinguish them from orange/red airborne shots.
     /// Preview capacity bounds rendering only; all unseen value stays in the sim.</summary>
     public sealed class PickupPresenter : IDisposable
     {
         public const int Limit = 384;
         readonly Pickup[] preview = new Pickup[Limit];
         readonly Mesh diamond, cross;
-        readonly Material material;
+        readonly Material material, xpMaterial;
         readonly int layer;
         public int Drawn { get; private set; }
 
@@ -22,9 +22,13 @@ namespace Champions.Client
         {
             this.layer = layer;
             material = new Material(Resources.Load<Material>(HeroMarker.MaterialPath));
-            material.SetColor("_Color", new Color(0.55f, 0.72f, 1f) * .4f);
+            material.SetColor("_Color", new Color(1f, .18f, .23f));
+            xpMaterial = new Material(Resources.Load<Shader>("Crowd/Pickup"));
+            xpMaterial.SetFloat(IdPass.Id, IdPass.Effect);
             material.SetFloat(IdPass.Id, IdPass.Effect);
-            diamond = Outline(new[] { new Vector2(0, .28f), new Vector2(.18f, 0), new Vector2(0, -.28f), new Vector2(-.18f, 0) });
+            diamond = new Mesh { name = "Filled XP diamond", vertices = new[] { new Vector3(0, .30f), new Vector3(.21f, 0), new Vector3(0, -.30f), new Vector3(-.21f, 0) },
+                uv = new[] { new Vector2(.5f, 1), new Vector2(1, .5f), new Vector2(.5f, 0), new Vector2(0, .5f) }, triangles = new[] { 0, 1, 2, 0, 2, 3 } };
+            diamond.RecalculateBounds();
             cross = Outline(new[] { new Vector2(-.07f,.25f), new Vector2(.07f,.25f), new Vector2(.07f,.07f), new Vector2(.25f,.07f), new Vector2(.25f,-.07f), new Vector2(.07f,-.07f), new Vector2(.07f,-.25f), new Vector2(-.07f,-.25f), new Vector2(-.07f,-.07f), new Vector2(-.25f,-.07f), new Vector2(-.25f,.07f), new Vector2(-.07f,.07f) });
         }
 
@@ -38,12 +42,14 @@ namespace Champions.Client
         public void Draw(Pickup[] pickups, int count, double song, Camera camera)
         {
             Drawn = Math.Min(count, Limit);
+            xpMaterial.SetFloat("_Motion", (float)song);
             var rp = new RenderParams(material) { layer = layer, camera = camera, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false };
             for (int i = 0; i < Drawn; i++)
             {
                 var p = pickups[i];
                 if (!(p.Value > 0)) continue;
                 float hover = .38f + .045f * Mathf.Sin((float)song * 2 + p.Id);
+                rp.material = p.Kind == PickupKind.Experience ? xpMaterial : material;
                 var matrix = Matrix4x4.TRS(new Vector3((float)p.X, hover, (float)p.Y), Quaternion.Euler(45, 0, 0), Vector3.one);
                 Graphics.RenderMesh(rp, p.Kind == PickupKind.Experience ? diamond : cross, 0, matrix);
             }
@@ -66,7 +72,7 @@ namespace Champions.Client
 
         public void Dispose()
         {
-            foreach (var o in new UnityEngine.Object[] { diamond, cross, material })
+            foreach (var o in new UnityEngine.Object[] { diamond, cross, material, xpMaterial })
                 if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
         }
     }

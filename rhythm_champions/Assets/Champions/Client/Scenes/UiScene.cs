@@ -135,6 +135,8 @@ namespace Champions.Client.Scenes
             _view.Hero = new Vector3(feet.x, 0, feet.y);
             _indicator.Present(now, snapshot, _sim.Beats, _camera);
             Screens(now);
+            _hud.Present(snapshot, _step == 6
+                ? new BossBar { Up = true, Colour = _palette.ForType("fatOgre"), Health = .72f } : default);
             _cards.Present(now);
             _calibration?.Update();
         }
@@ -161,7 +163,6 @@ namespace Champions.Client.Scenes
             _menus.Root.Clear();
             _cards.Hide();
             CloseCalibration();
-            _hud.Present(0.35f, default);
             void None() { }
             switch (step)
             {
@@ -192,7 +193,6 @@ namespace Champions.Client.Scenes
                     }, now);
                     break;
                 case 6:
-                    _hud.Present(0.62f, new BossBar { Up = true, Colour = _palette.ForType("fatOgre"), Health = 0.72f });
                     break;
                 case 7:
                 case 8:
@@ -230,6 +230,7 @@ namespace Champions.Client.Scenes
         void OnDestroy()
         {
             CloseCalibration();
+            _hud?.Dispose();
             _menus?.Dispose();
             _run?.Dispose();
             _indicator?.Dispose();

@@ -73,13 +73,14 @@ namespace Champions.Client.UI
         {
             var s = sim.Snapshot();
             Indicator.Present(now, s, sim.Beats, camera);
-            Hud.Present(s.ExperienceNeeded > 0 ? (float)(s.Experience / s.ExperienceNeeded) : 0, BossBar.Of(s, _palette, _content));
+            Hud.Present(s, BossBar.Of(s, _palette, _content));
             Cards.Present(now);
         }
 
         public void Dispose()
         {
             Indicator.Dispose();
+            Hud.Dispose();
             _panel.Dispose();
         }
     }

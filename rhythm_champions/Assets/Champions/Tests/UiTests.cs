@@ -276,7 +276,7 @@ namespace Champions.Tests
         [Test]
         public void BossHudShowsOnlyHealthAndXpWithoutTakingThePointer()
         {
-            var hud = new Hud(_palette);
+            using var hud = new Hud(_palette);
             hud.Present(0.4f, new BossBar { Up = true, Health = 0.6f, Colour = Color.red });
             Assert.That(hud.Query(className: "hud__fill").ToList().Count, Is.EqualTo(2));
             Assert.That(hud.Q(className: "hud__xp").Q(className: "hud__fill").style.width.value.value, Is.EqualTo(40).Within(0.01));
@@ -284,6 +284,69 @@ namespace Champions.Tests
             Assert.That(hud.pickingMode, Is.EqualTo(PickingMode.Ignore));
             hud.Present(0.5f, default);
             Assert.That(hud.Q(className: "hud__boss").style.display.value, Is.EqualTo(DisplayStyle.None));
+        }
+
+        [UnityTest]
+        public IEnumerator BossHealthHasVisibleBoundsBelowThePhaseClock()
+        {
+            var panel = Keep(new UiPanel(_host.transform, "HUD layout", 0));
+            var hud = Keep(new Hud(_palette)); panel.Root.Add(hud);
+            hud.Present(new SimSnapshot { HeroHealth = 8, HeroMaxHealth = 100 }, new BossBar { Up = true, Health = .6f, Colour = Color.red });
+            foreach (var size in new[] { new Vector2(1280, 720), new Vector2(1920, 1080), new Vector2(2560, 1440), new Vector2(1280, 1024) })
+            {
+                panel.Root.style.width = size.x; panel.Root.style.height = size.y;
+                yield return null;
+                var bar = hud.Q(className: "hud__health");
+                var vessel = hud.Q(className: "hud__vessel").worldBound;
+                Assert.That(bar.worldBound.width, Is.GreaterThan(100));
+                Assert.That(bar.worldBound.height, Is.GreaterThanOrEqualTo(5));
+                Assert.That(bar.worldBound.yMin, Is.GreaterThan(hud.Q(className: "hud__timer").worldBound.yMax));
+                Assert.That(vessel.Overlaps(bar.worldBound), Is.False);
+                Assert.That(vessel.xMin, Is.GreaterThanOrEqualTo(0));
+                Assert.That(vessel.yMax, Is.LessThanOrEqualTo(size.y));
+            }
+        }
+
+        [Test]
+        public void HealthOrbIsEmptyAtZeroFilledAtFullAndAnimatedBetweenFrames()
+        {
+            var material = new Material(Resources.Load<Shader>("UI/HealthOrb"));
+            var target = new RenderTexture(64, 64, 0);
+            var read = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var previous = RenderTexture.active;
+            Color[] Sample(float fill, float time)
+            {
+                material.SetFloat("_Fill", fill); material.SetFloat("_Motion", time);
+                Graphics.Blit(null, target, material);
+                RenderTexture.active = target;
+                read.ReadPixels(new Rect(0, 0, 64, 64), 0, 0); read.Apply();
+                return read.GetPixels();
+            }
+            try
+            {
+                var empty = Sample(0, 0); var low = Sample(.08f, 0); var full = Sample(1, 0);
+                int Liquid(Color[] colors) => colors.Count(c => c.r > .3f && c.r > c.g * 2);
+                Assert.That(Liquid(low), Is.GreaterThan(Liquid(empty)), "low health remains visibly filled");
+                Assert.That(Liquid(full), Is.GreaterThan(Liquid(low) * 2), "the boundary tracks health");
+                Assert.That(full[32 * 64 + 32].r, Is.GreaterThan(empty[32 * 64 + 32].r + .2f));
+                var later = Sample(.5f, .5f); var earlier = Sample(.5f, 0);
+                Assert.That(later.Where((c, i) => (c - earlier[i]).maxColorComponent > .01f).Count(), Is.GreaterThan(50));
+                Assert.That(empty[0].a, Is.LessThan(.01f), "outside the orb stays transparent");
+            }
+            finally
+            {
+                RenderTexture.active = previous; target.Release();
+                Object.DestroyImmediate(target); Object.DestroyImmediate(read); Object.DestroyImmediate(material);
+            }
+        }
+
+        [TestCase(299.99, 99, false, "HORDE  04:59")]
+        [TestCase(300, 0, true, "BOSS  00:00")]
+        [TestCase(300, 61.9, true, "BOSS  01:01")]
+        [TestCase(601, 0, false, "HORDE  10:01")]
+        public void HudFormatsTheActivePhaseClock(double horde, double boss, bool up, string expected)
+        {
+            Assert.That(Hud.ClockText(horde, boss, up), Is.EqualTo(expected));
         }
 
         /// <summary>Every screen, built as the game builds it, by name.</summary>
@@ -404,11 +467,12 @@ namespace Champions.Tests
         }
 
         [Test]
-        public void DuringPlayThereIsNoTextButTheCards()
+        public void DuringPlayTextIsLimitedToHealthClockAndCards()
         {
             var ui = Keep(new RunUi(_host.transform, _palette, _content, _faces));
             var root = ui.Hud.parent;
-            Assert.That(Texts(root), Is.Empty, "the HUD and the indicator draw no text");
+            ui.Hud.Present(new SimSnapshot { HeroHealth = 8, HeroMaxHealth = 100, HordeClock = 299 }, default);
+            Assert.That(Texts(ui.Hud), Is.EquivalentTo(new[] { "8 / 100", "HORDE  04:59" }));
             FirstOffer(ui, out _);
             for (int i = 0; i < ui.Cards.Count; i++)
             {
@@ -417,7 +481,7 @@ namespace Champions.Tests
                 Assert.That(CardFaces.Words(texts[0]), Is.InRange(1, CardFaces.NameWords));
                 Assert.That(CardFaces.Words(texts[1]), Is.InRange(1, CardFaces.LineWords));
             }
-            Assert.That(Texts(root).Count(), Is.EqualTo(2 * ui.Cards.Count));
+            Assert.That(Texts(root).Count(), Is.EqualTo(2 * ui.Cards.Count + 2));
         }
 
         [Test]

@@ -8,8 +8,8 @@ using UnityEngine.Rendering;
 namespace Champions.Client
 {
     /// <summary>
-    /// The mushrooms' spores (design.md, The Horde &gt; Threats; The Look &gt; The palette: enemy shots in electric yellow): each
-    /// a small bright yellow bead flying from its mushroom's cap at its velocity until it ends, drawn with the world's Glow
+    /// The mushrooms' spores (design.md, The Horde &gt; Threats; The Look &gt; The palette: enemy shots in orange/red): each
+    /// a small bright orange/red bead flying from its mushroom's cap at its velocity until it ends, drawn with the world's Glow
     /// material in the palette's enemy-shot colour, bright enough to bloom. An effect in the stills' type-ID pass.
     /// </summary>
     public sealed class SporePresenter : IDisposable

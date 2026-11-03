@@ -46,6 +46,7 @@ namespace Champions.Client.Scenes
             ("sword-feel", s => new SwordFeelScene(s._content, s._palette, s._contentDir)),
             (MovementDashScene.Name, s => new MovementDashScene(s._palette, s._contentDir)),
             ("magic-combat", s => new MagicCombatScene(s._palette, s._contentDir)),
+            ("hud-readability", s => new PickupScene(s._content, s._palette, s._look, hud: true)),
             ("pickups", s => new PickupScene(s._content, s._palette, s._look)),
             (WorldScene.Name, s => new WorldScene(s._palette)),
             (StructureScene.Name, s => new StructureScene(s._content, s._palette, s._look)),
@@ -99,7 +100,7 @@ namespace Champions.Client.Scenes
                 {
                     // Peak-load sweeps are explicit operator tools, never part of the CI stills set.
                     foreach (var k in Known)
-                        if (!k.Name.StartsWith("full-", StringComparison.Ordinal)) _pending.Enqueue(k.Name);
+                        if (!k.Name.StartsWith("full-", StringComparison.Ordinal) && k.Name != "hud-readability") _pending.Enqueue(k.Name);
                 }
                 else if (Array.Exists(Known, k => k.Name == n)) _pending.Enqueue(n);
                 else throw new ArgumentException($"--stills-scenes: no scene {n} (scenes: all, {string.Join(", ", Array.ConvertAll(Known, k => k.Name))})");

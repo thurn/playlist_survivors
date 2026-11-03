@@ -10,7 +10,7 @@ namespace Champions.Client
     /// Maps the sim's telegraphs onto the ground's marks (<see cref="TelegraphRenderer"/>; design.md, Bosses &gt; Every boss
     /// and The Horde &gt; Threats): each boss mark (<see cref="SimEventKind.BossTelegraph"/>) in the palette's
     /// <c>boss.telegraph</c> red, each big ork's charge and troll's slam (<see cref="SimEventKind.EliteTelegraph"/>) in its
-    /// <c>warning</c> yellow, filling from its start to its beat; a landing flashes it (a breath's burn holding its glow and
+    /// <c>warning</c> orange, filling from its start to its beat; a landing flashes it (a breath's burn holding its glow and
     /// sweeping when it sweeps), a call-off fades it. A mushroom's spore has no ground mark (its cap flashes). The assembly's
     /// EventDispatch hands it the events.
     /// </summary>

@@ -32,7 +32,7 @@ def _set(palette: dict, path: str, value: object) -> None:
 @pytest.mark.parametrize(("path", "value", "rule"), [
     ("boss.body", "#30d030", "boss:"),  # a green boss: outside the counter's reach
     ("enemies.key.blue", "#eef0ff", "white:"),  # a white monster: white is the hero's
-    ("warning", "#ffa000", "yellow:"),  # an amber warning: not electric yellow, and on the troll's hue
+    ("warning", "#f5e900", "hazard:"),  # an amber warning: not electric yellow, and on the troll's hue
     ("enemies.accent.magenta", "#6a5cff", "families:"),  # an accent beside the key
     ("zones.0.line", "#35135d", "key:"),  # a violet first zone: the floor no longer keys with the crowd
     ("enemies.counter.amber", "#ffd27a", "values:"),  # an elite on the hero's rung
