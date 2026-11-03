@@ -50,6 +50,7 @@ namespace Champions.Client.Loop
         public readonly HeroPresenter Hero;
         public readonly StructurePresenter Structures;
         public readonly Effects Effects;
+        public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
 
         /// <summary>Mobs and bosses killed (the end card's count).</summary>
@@ -81,6 +82,8 @@ namespace Champions.Client.Loop
                 Structures = StructurePresenter.Create(config.Structures, palette, world.World, layer, look);
                 _owned.Add(Structures);
             }
+            Ranged = new RangedPresenter(palette);
+            _owned.Add(Ranged);
             var effects = EffectLibrary.Load();
             if (effects != null)
             {
@@ -105,6 +108,12 @@ namespace Champions.Client.Loop
         void Wire(EffectCues cues)
         {
             var d = Dispatch;
+            d.Add("ranged weapons", (in SimEvent e) =>
+            {
+                if (e.Kind == SimEventKind.RangedImpact)
+                    Effects?.Fire(EffectCue.LeapRing, new EffectShot { T = e.T, At = new Vector2((float)e.D0, (float)e.D1),
+                        Radius = (float)e.D2, Duration = 0.15f });
+            }, null, (in PresentFrame f) => Ranged.Present(f.Sim.Ranged, f.Camera));
             d.Add("world", (in SimEvent e) => _world.Take(e), _world.Flush, (in PresentFrame f) => _world.Present(f.Song, f.Hero, f.Dt));
             if (Structures != null)
                 d.Add("structures", (in SimEvent e) => Structures.Take(e), Structures.Flush, (in PresentFrame f) => Structures.Present(f.Song, f.Camera));
@@ -191,6 +200,7 @@ namespace Champions.Client.Loop
             Hero.Queue(camera);
             Telegraphs.Queue(camera);
             Effects?.Queue(camera);
+            Ranged.Queue(camera);
         }
 
         public void Dispose()

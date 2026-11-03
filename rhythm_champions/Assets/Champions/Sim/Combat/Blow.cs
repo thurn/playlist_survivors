@@ -43,6 +43,8 @@ namespace Champions.Sim
         LandingBlast = 9,
         Sword = 10,
         Hammer = 11,
+        Spear = 12,
+        Bow = 13,
     }
 
     /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>

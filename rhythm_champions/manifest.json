@@ -453,11 +453,32 @@
       "use": "hero: idle"
     },
     {
+      "source": "synty:POLYGON_BowAndCrossbow_Unity_2021_3_v1_0_1.unitypackage.gz",
+      "path": "Assets/PolygonBowCrossbow/Models/Rigged_Bow_Testing.fbx",
+      "sourceSha256": "490a727627247ff22f351b26a8b6f690a5f23f064ad8618411001ffb2e770a8d",
+      "guid": "2e3787f6a1057be42bdf7fb80d0d69b4",
+      "use": "Bow spectral recoil and projectile geometry; no character clip"
+    },
+    {
+      "source": "synty:POLYGON_BowAndCrossbow_Unity_2021_3_v1_0_1.unitypackage.gz",
+      "path": "Assets/PolygonBowCrossbow/Models/SM_Arrow_01.fbx",
+      "sourceSha256": "490a727627247ff22f351b26a8b6f690a5f23f064ad8618411001ffb2e770a8d",
+      "guid": "1c5b37fd30472d24fbd3e315d52fafaf",
+      "use": "Bow spectral recoil and projectile geometry; no character clip"
+    },
+    {
       "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
       "path": "Assets/PolygonDungeon/Models/SM_Wep_Hammer_Large_Metal_01.fbx",
       "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
       "guid": "08c18a17006ad9a4eb9d96fe947f2af0",
       "use": "survivor Hammer: rigid spectral forms"
+    },
+    {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Models/SM_Wep_Spear_01.fbx",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "d9846e0c0b6923d48a1a17570257c243",
+      "use": "Spear spectral thrust and phalanx: rigid edge mesh"
     },
     {
       "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",

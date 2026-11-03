@@ -267,3 +267,10 @@ receivers occupy a separate key namespace. Nested split queries use separate
 reused target buffers. Each added melee component shares its strike ledger;
 one target takes at most one base hit and one bounded reduced Echo per strike.
 See [runtime evidence](../../rhythm_champions/evidence/melee-weapons/README.md).
+
+Ranged geometry may pass collision `x, y` as optional final arguments to
+`Impact`. Split children expose captured `ImpactX/ImpactY`, retained through
+Echo delivery; use these instead of looking up an enemy slot that may have
+moved or been recycled. Structure impacts use the same positional contract.
+
+`Strikes.LandSupported` is the finite-flight counterpart to `LandWeapon`: it orders collision candidates by distance before spending a projectile's target allowance, skips its Split seed body and supplies captured collision coordinates. Both bypass archived modifiers and use the same generation/receiver key namespaces.

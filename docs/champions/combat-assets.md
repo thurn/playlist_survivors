@@ -231,3 +231,14 @@ placement cycle), preserving close damage and drawing upcoming hammers dimmer.
 This keeps all damage on the common grid without a hidden off-grid repeat
 scheduler. The selected fallback and visual critique are recorded in
 [melee runtime evidence](../../rhythm_champions/evidence/melee-weapons/README.md).
+
+## Delivered Spear/Bow implementation (ps-3wc.8)
+
+`RangedWeapons` retains finite projectile heads through every form and uses
+shared Multishot/Pierce/Split/Echo execution. Dungeon P and BowCrossbow B/A are
+now selective manifest entries; `RangedBaker` generates local closed-facet
+meshes with dark bodies and white edges. Spectral thrusts/ranks and rigid bow
+rotation/recoil use authored motion; no unverified character clip is required.
+The `ranged-gallery` scene records all eight forms normal and empowered,
+with an optional dense simulation-frame motion capture. See the
+[implementation and visual evidence](../../rhythm_champions/evidence/spear-bow/README.md).

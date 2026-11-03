@@ -30,6 +30,7 @@ namespace Champions.Sim
         readonly StructList<int> reached;
         readonly List<StructList<int>> weaponReached = new List<StructList<int>>();
         int weaponDepth;
+        readonly List<(int Receiver, int Id, double Distance)> supportedCandidates = new List<(int, int, double)>(64);
 
         public Strikes(int capacity)
         {
@@ -120,6 +121,44 @@ namespace Champions.Sim
             finally { weaponDepth--; }
             Struck += n;
             return n;
+        }
+
+        // Survivor damage is already evaluated; archived Arsenal mods must not evaluate it twice.
+        internal void LandSupported(Simulation sim, in Blow blow, WeaponEffect effect)
+        {
+            var candidates = supportedCandidates;
+            candidates.Clear();
+            for (int r = 0; r < targets.Count; r++)
+            {
+                reached.Clear();
+                targets[r].Reach(blow.Shape, blow.T, reached);
+                foreach (int id in reached.AsSpan())
+                {
+                    double distance = id;
+                    if (targets[r] == sim.Enemies)
+                    {
+                        ref readonly var e = ref sim.Enemies[id];
+                        double dx = e.X - blow.Shape.X, dy = e.Y - blow.Shape.Y;
+                        distance = dx * dx + dy * dy;
+                    }
+                    candidates.Add((r, id, distance));
+                }
+            }
+            candidates.Sort((a, b) => { int c = a.Distance.CompareTo(b.Distance);
+                if (c == 0) c = a.Receiver.CompareTo(b.Receiver);
+                return c == 0 ? a.Id.CompareTo(b.Id) : c; });
+            Blows++;
+            foreach (var c in candidates)
+            {
+                long identity = targets[c.Receiver] == sim.Enemies ? sim.Enemies[c.Id].Generation : Key(c.Receiver + 1, c.Id) | long.MinValue;
+                if (effect.ImpactTarget == identity) continue; // Do not spend a child's Pierce allowance inside its seed body.
+                double x = blow.Shape.Kind == ShapeKind.Path ? blow.Shape.X2 : blow.Shape.X;
+                double y = blow.Shape.Kind == ShapeKind.Path ? blow.Shape.Y2 : blow.Shape.Y;
+                if (targets[c.Receiver] == sim.Enemies) { x = sim.Enemies[c.Id].X; y = sim.Enemies[c.Id].Y; }
+                if (!sim.Weapons.Supports.Impact(effect, identity, blow.T, x, y)) continue;
+                targets[c.Receiver].Strike(sim, c.Id, blow);
+                Struck++;
+            }
         }
 
         static long Key(int receiver, int id) => (long)receiver << 32 | (uint)id;

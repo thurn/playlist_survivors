@@ -97,6 +97,7 @@ namespace Champions.Sim
             Bosses = new Bosses(this, config);
             Progression = new Progression(this, config);
             if (config.SurvivorWeapons) Melee = new MeleeWeapons(this);
+            if (config.SurvivorWeapons) Ranged = new RangedWeapons(this);
         }
 
         public SimState State { get; }
@@ -138,6 +139,7 @@ namespace Champions.Sim
 
         public WeaponScheduler Weapons { get; }
         public MeleeWeapons Melee { get; }
+        public RangedWeapons Ranged { get; }
 
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }
@@ -192,7 +194,8 @@ namespace Champions.Sim
                 }
                 if (Progression.Fallbacks > 0) h = Hashing.Fold(h, (ulong)(uint)Progression.Fallbacks);
                 if (Pickups.ExperienceDropped > 0 || Pickups.StoredCount > 0 || Pickups.FlyingCount > 0) h = Pickups.Fold(h);
-                return Weapons.FoldHash(h);
+                h = Weapons.FoldHash(h);
+                return Ranged == null ? h : Ranged.FoldHash(h);
             }
         }
 
@@ -423,6 +426,7 @@ namespace Champions.Sim
 
         void RunTick()
         {
+            Ranged?.BindOwned();
             double end = (State.Tick + 1) * TickSeconds;
             while (true)
             {
@@ -461,6 +465,7 @@ namespace Champions.Sim
             health.ApplySupports(this);
             health.Tick(this, end);
             Arsenal.Tick(this, end);
+            Ranged?.Tick(end);
             horde.Tick(end);
             Bosses.Tick(end);
             StructureField?.Tick(this, end);

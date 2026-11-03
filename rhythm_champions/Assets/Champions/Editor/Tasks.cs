@@ -42,6 +42,7 @@ namespace Champions.EditorTools
         public static void Bake()
         {
             EffectBaker.Bake();
+            RangedBaker.Bake();
             SoundBaker.Bake();
             MonsterBaker.BakeAll();
             StructureBaker.BakeAll();

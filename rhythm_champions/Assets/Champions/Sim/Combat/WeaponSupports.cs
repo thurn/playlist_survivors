@@ -11,6 +11,7 @@ namespace Champions.Sim
         public readonly double T, Damage;
         public readonly bool Spectral;
         public readonly long? ImpactTarget;
+        public readonly double? ImpactX, ImpactY;
         public readonly EffectLineage Lineage;
         internal readonly TargetHitLedger Hits, RepeatHits;
         internal readonly Action<WeaponEffect> Launch;
@@ -20,11 +21,12 @@ namespace Champions.Sim
         public bool Finished => targetsLeft == 0;
         internal WeaponEffect(WeaponActivation activation, int strike, int projectile, double t, double damage,
             bool spectral, long? impactTarget, EffectLineage lineage, TargetHitLedger hits,
-            TargetHitLedger repeatHits, int targets, Action<WeaponEffect> launch)
+            TargetHitLedger repeatHits, int targets, Action<WeaponEffect> launch, double? impactX = null, double? impactY = null)
         {
             Activation = activation; Strike = strike; Projectile = projectile; T = t; Damage = damage;
             Spectral = spectral; ImpactTarget = impactTarget; Lineage = lineage; Hits = hits;
             RepeatHits = repeatHits; targetsLeft = targets; TargetLimit = targets; Launch = launch;
+            ImpactX = impactX; ImpactY = impactY;
         }
         internal bool TryHit(long target)
         {
@@ -86,7 +88,7 @@ namespace Champions.Sim
             }
         }
         /// <summary>Returns whether to apply damage. Call once per collision, before applying family damage.</summary>
-        public bool Impact(WeaponEffect effect, long target, double t)
+        public bool Impact(WeaponEffect effect, long target, double t, double? x = null, double? y = null)
         {
             if (!effect.TryHit(target)) return false;
             double split = effect.Activation.Stats.SplitBonus;
@@ -96,7 +98,7 @@ namespace Champions.Sim
                     {
                         var child = new WeaponEffect(effect.Activation, effect.Strike, i, t, effect.Damage * split,
                             true, target, lineage, effect.Hits, effect.RepeatHits,
-                            effect.TargetLimit, effect.Launch);
+                            effect.TargetLimit, effect.Launch, x, y);
                         child.Launch(child);
                         Echo(child, t);
                     }
@@ -108,7 +110,7 @@ namespace Champions.Sim
             if (echo <= 0 || !effect.Lineage.TryChild(EffectTrigger.Echo, out var lineage)) return;
             var child = new WeaponEffect(effect.Activation, effect.Strike, effect.Projectile, t,
                 effect.Damage * echo, true, effect.ImpactTarget, lineage, effect.RepeatHits, effect.RepeatHits,
-                effect.TargetLimit, effect.Launch);
+                effect.TargetLimit, effect.Launch, effect.ImpactX, effect.ImpactY);
             repeats.Add(new Repeat { Effect = child, Due = t + FallbackEchoS });
         }
         internal double NextPulse
@@ -150,7 +152,7 @@ namespace Champions.Sim
             {
                 var delivered = new WeaponEffect(effect.Activation, effect.Strike, effect.Projectile, t,
                     effect.Damage, true, effect.ImpactTarget, effect.Lineage, effect.Hits, effect.RepeatHits,
-                    effect.TargetLimit, effect.Launch);
+                    effect.TargetLimit, effect.Launch, effect.ImpactX, effect.ImpactY);
                 delivered.Launch(delivered);
             }
         }

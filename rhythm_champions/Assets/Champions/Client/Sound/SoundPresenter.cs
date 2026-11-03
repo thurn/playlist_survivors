@@ -65,6 +65,8 @@ namespace Champions.Client.Sound
             switch (e.Kind)
             {
                 case SimEventKind.WeaponActivation:
+                    if ((WeaponKind)e.I0 == WeaponKind.Spear || (WeaponKind)e.I0 == WeaponKind.Bow)
+                        Request(SoundKind.Whoosh, e.T, 0.45f, (WeaponKind)e.I0 == WeaponKind.Bow ? 1.3f : 1f, 0.4f, asap);
                     if (e.D1 > 1) Request(SoundKind.Accent, e.T, AccentGain * 0.5f, 1.15f, 0.5f, asap);
                     break;
                 case SimEventKind.Swing:
@@ -105,6 +107,10 @@ namespace Champions.Client.Sound
                     break;
                 case SimEventKind.DashEcho:
                     Request(SoundKind.Whoosh, e.T, SpectralGain, SpectralPitch, 0.5f, asap);
+                    break;
+                case SimEventKind.Hit:
+                    if ((BlowSource)e.I1 == BlowSource.Spear || (BlowSource)e.I1 == BlowSource.Bow)
+                        Request(SoundKind.Hit, e.T, 0.5f, 1.1f, 0.4f, asap);
                     break;
                 case SimEventKind.Kill:
                     Shatter(e.T, 1f, (uint)e.I0 * 2654435761u ^ (uint)(e.T * 1000), asap);

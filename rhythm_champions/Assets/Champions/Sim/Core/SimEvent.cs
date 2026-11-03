@@ -70,6 +70,7 @@ namespace Champions.Sim
         PickupAttract,
         PickupCollect,
         MeleeAction,
+        RangedImpact,
     }
 
     /// <summary>
@@ -107,6 +108,10 @@ namespace Champions.Sim
             e.D0 = x; e.D1 = y; e.D2 = dx; e.D3 = dy; e.D4 = radius; e.D5 = travel;
             return e;
         }
+
+        /// <summary>Ranged impact footprint: I0 weapon; D0/D1 centre, D2 actual radius including empowerment.</summary>
+        public static SimEvent RangedImpact(double t, WeaponKind kind, double x, double y, double radius) =>
+            new SimEvent { Kind = SimEventKind.RangedImpact, T = t, I0 = (int)kind, D0 = x, D1 = y, D2 = radius };
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
 
