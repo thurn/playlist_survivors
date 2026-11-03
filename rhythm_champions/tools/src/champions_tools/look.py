@@ -31,6 +31,8 @@ import fnmatch
 import json
 import sys
 from collections.abc import Callable
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -644,6 +646,20 @@ def cmd_look(a: argparse.Namespace) -> int:
         return 2
 
 
+def measure_still(p: Path, *, root: Path, palette: dict, rules: list[dict], floor: float | None,
+                  out: Path | None, impact_globs: list[str]) -> tuple[str, dict]:
+    """One independent still's metrics and optional evidence; callable in a spawned process."""
+    name = p.relative_to(root).with_suffix("").as_posix().removeprefix("still-")
+    rgb, ids, view = load_still(p)
+    m = still_metrics(rgb, palette, ids, view)
+    impact = bool((view or {}).get("impact")) or any(fnmatch.fnmatch(name, g) for g in impact_globs)
+    row = {"metrics": m["metrics"], "roles": m["roles"], "impact": impact,
+           "strays": strays(m["metrics"], rules, "impact" if impact else "steady")}
+    if out:
+        evidence_jpeg(neon_size(rgb), m["tiles"], floor, out / f"{name.replace('/', '-')}.jpg", name)
+    return name, row
+
+
 def look(a: argparse.Namespace) -> int:
     """Measure the stills and report where they stray: 0 however far they stray, 2 with nothing to measure."""
     wt = paths.worktree()
@@ -658,16 +674,16 @@ def look(a: argparse.Namespace) -> int:
     rules, source = read(thresholds_file, load_thresholds)
     floor = next((r["value"] for r in rules if r["metric"] == "swarm_separation"), None)
     out = Path(a.out) if a.out else None
-    rows: dict[str, dict] = {}
-    for p in stills:
-        name = p.relative_to(root).with_suffix("").as_posix().removeprefix("still-")
-        rgb, ids, view = load_still(p)
-        m = still_metrics(rgb, palette, ids, view)
-        impact = bool((view or {}).get("impact")) or any(fnmatch.fnmatch(name, g) for g in a.impact or [])
-        rows[name] = {"metrics": m["metrics"], "roles": m["roles"], "impact": impact,
-                      "strays": strays(m["metrics"], rules, "impact" if impact else "steady")}
-        if out:
-            evidence_jpeg(neon_size(rgb), m["tiles"], floor, out / f"{name.replace('/', '-')}.jpg", name)
+    measure = partial(measure_still, root=root, palette=palette, rules=rules, floor=floor,
+                      out=out, impact_globs=a.impact or [])
+    # Workers read their own images and return only small metric rows, never full pixel arrays.
+    # map retains the sorted input order so reports stay identical to a sequential run.
+    jobs = getattr(a, "jobs", 1)
+    if jobs > 1:
+        with ProcessPoolExecutor(max_workers=jobs) as pool:
+            rows = dict(pool.map(measure, stills))
+    else:
+        rows = dict(map(measure, stills))
     cm = cut_metrics({n: r["metrics"] for n, r in rows.items() if not r["impact"]})
     cut = {"metrics": cm, "strays": strays(cm, rules, "cut")}
     text = report(a.title or root.name, note, rows, cut, rules, source)

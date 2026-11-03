@@ -131,9 +131,28 @@ def a_broken_palette(stills: Path) -> dict:
 
 @pytest.mark.parametrize("breakage", [no_stills, an_unreadable_still, a_broken_view, an_id_pass_of_another_size,
                                       a_broken_palette])
-def test_what_it_cannot_measure_exits_non_zero(tmp_path, capsys, breakage):
+@pytest.mark.parametrize("jobs", [1, 2])
+def test_what_it_cannot_measure_exits_non_zero(tmp_path, capsys, breakage, jobs):
     stills = crowd(tmp_path)
-    code, err, out = run(stills, capsys, **breakage(stills))
+    code, err, out = run(stills, capsys, jobs=jobs, **breakage(stills))
     assert code != 0
     assert err.startswith("look: ")
     assert not (out / "metrics.md").exists()
+
+
+def test_parallel_report_and_evidence_match_sequential_in_sorted_order(tmp_path, capsys):
+    rgb, ids = scene()
+    stills = crowd(tmp_path, rgb, ids)
+    write(stills, "a-impact", np.flip(rgb, axis=1).copy(), np.flip(ids, axis=1).copy())
+    # A nested plain frame also exercises missing companions and relative report names.
+    (stills / "nested").mkdir()
+    Image.fromarray(rgb).save(stills / "nested" / "frame.png")
+    code, _, out = run(stills, capsys, jobs=1, impact=["a-*"])
+    assert code == 0
+    expected = {p.name: p.read_bytes() for p in out.iterdir()}
+    code, err, out = run(stills, capsys, jobs=2, impact=["a-*"])
+    assert (code, err) == (0, "")
+    assert {p.name: p.read_bytes() for p in out.iterdir()} == expected
+    rows = json.loads((out / "metrics.json").read_text())["stills"]
+    assert list(rows) == ["nested/frame", "a-impact", "crowd-1.000"]
+    assert rows["a-impact"]["impact"]

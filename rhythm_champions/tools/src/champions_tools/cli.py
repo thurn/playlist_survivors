@@ -387,6 +387,8 @@ def build_parser() -> argparse.ArgumentParser:
     lk.add_argument("--palette", help="the palette (default rhythm_champions/Content/palette.json)")
     lk.add_argument("--thresholds", help="the guide values (default docs/champions/style-thresholds.json)")
     lk.add_argument("--out", help="the evidence folder: metrics.md, metrics.json and a JPEG per still")
+    lk.add_argument("--jobs", type=int, choices=range(1, 9), default=1, metavar="1..8",
+                    help="parallel image workers (default 1; CI uses 4)")
     lk.add_argument("--impact", action="append", help="a glob of still names that are impact frames")
     lk.add_argument("--title", help="metrics.md's title (default the folder's name)")
     lk.set_defaults(func=cmd_look)

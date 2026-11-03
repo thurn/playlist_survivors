@@ -513,7 +513,8 @@ unverified. No timing-threshold test or automatic sweep enters CI.
   - unity: one launch with a warm Library and the baked cache: EditMode
     tests, the Mono player build, then the built player's stills and a 10 s
     fixed-time replay; then `champions look` on the stills as a report (it
-    never fails the run) and the variant budget check;
+    never fails the run; four image workers preserve the full still set and
+    report order within the time budget) and the variant budget check;
   - guard: over the tree and the range since `master`.
 - Every step logs its seconds; `scripts/ci-full` fails a run over 300 s. A
   Steward fixing a budget failure speeds a step up or moves it to a cheaper
