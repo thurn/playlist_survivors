@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Champions.Sim;
 using UnityEngine;
-using UnityEngine.Rendering;
 namespace Champions.Render
 {
     /// <summary>Rigid source weapons over dark closed facets; poses follow authoritative simulation flights.</summary>
@@ -11,7 +10,7 @@ namespace Champions.Render
         readonly RangedLibrary library;
         readonly Material material;
         readonly List<(Mesh Mesh, Matrix4x4 Matrix, bool Empowered)> draws = new List<(Mesh, Matrix4x4, bool)>();
-        readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly PieceBatch batch = new PieceBatch();
         readonly Color ordinary;
         public RangedPresenter(Palette palette)
         {
@@ -19,7 +18,6 @@ namespace Champions.Render
             if (library == null) return;
             material = new Material(library.Shader);
             ordinary = palette.HeroEdge.linear * 2;
-            material.SetColor("_Edge", ordinary);
             material.SetColor("_Body", palette.VoidBody.linear);
         }
         public void Present(RangedWeapons ranged, Camera camera)
@@ -56,13 +54,14 @@ namespace Champions.Render
         public void Queue(Camera camera)
         {
             if (material == null) return;
-            foreach (var draw in draws)
-            {
-                block.SetColor("_Edge", draw.Empowered ? new Color(2, 1.6f, .05f) : ordinary);
-                Graphics.RenderMesh(new RenderParams(material) { camera = camera, layer = camera.gameObject.layer,
-                    matProps = block, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false }, draw.Mesh, 0, draw.Matrix);
-            }
+            batch.Clear();
+            foreach (var draw in draws) batch.Add(draw.Mesh, draw.Matrix, draw.Empowered ? new Color(2, 1.6f, .05f) : ordinary);
+            batch.Queue(material, camera);
         }
-        public void Dispose() { if (material != null) UnityEngine.Object.Destroy(material); }
+        public void Dispose()
+        {
+            batch.Dispose();
+            if (material != null) UnityEngine.Object.Destroy(material);
+        }
     }
 }

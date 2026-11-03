@@ -39,7 +39,7 @@ namespace Champions.Client
         public string File;
         /// <summary>`--app NAME`: Delayed listening to the app producing audio that NAME names (a pid, or its name or part of it).</summary>
         public string App;
-        /// <summary>`--bench-out PATH`: the gallery's GPU timings (with `--gallery --capture-stills DIR`), or the crowd bench's.</summary>
+        /// <summary>`--bench-out PATH`: the gallery's GPU timings (with `--gallery --capture-stills DIR`), the crowd bench's or the perf peak's.</summary>
         public string BenchOut;
         /// <summary>`--gallery`: the weapon effects' gallery (Scenes.GalleryScene): in a window, every effect in turn, over and
         /// over; with `--capture-stills DIR`, its stills (as `--stills-scenes gallery`), then quit.</summary>
@@ -51,6 +51,8 @@ namespace Champions.Client
         public MonsterLook Look;
         /// <summary>`--crowd-bench N`: the crowd's timing scene with N monsters (Bench.CrowdBench), its timings to `--bench-out`.</summary>
         public int CrowdBench;
+        /// <summary>`--perf-peak`: level 1 held at 1,000 alive and timed (Bench.PerfPeak), its timings to `--bench-out`.</summary>
+        public bool PerfPeak;
         /// <summary>`--tier low|medium|high`: the quality tier (<see cref="QualityTiers"/>); null keeps the pause menu's choice or the GPU's.</summary>
         public Tier? Tier;
         /// <summary>`--seed N`: the run's seed; null for the default (<see cref="Boot"/>).</summary>
@@ -81,6 +83,7 @@ namespace Champions.Client
                 BenchOut = a.Get("--bench-out"),
                 CalibrationFile = a.Get("--calibration"),
                 CrowdBench = (int)a.Double("--crowd-bench", 0),
+                PerfPeak = a.Has("--perf-peak"),
                 Walk = a.Get("--walk"),
                 Picks = a.Get("--picks"),
                 Record = a.Get("--record"),

@@ -15,6 +15,7 @@ namespace Champions.Client
         readonly Pickup[] preview = new Pickup[Limit];
         readonly Mesh diamond, cross;
         readonly Material material, xpMaterial;
+        readonly PieceBatch diamonds = new PieceBatch();
         readonly int layer;
         public int Drawn { get; private set; }
 
@@ -44,15 +45,18 @@ namespace Champions.Client
             Drawn = Math.Min(count, Limit);
             xpMaterial.SetFloat("_Motion", (float)song);
             var rp = new RenderParams(material) { layer = layer, camera = camera, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false };
+            diamonds.Clear();
             for (int i = 0; i < Drawn; i++)
             {
                 var p = pickups[i];
                 if (!(p.Value > 0)) continue;
                 float hover = .38f + .045f * Mathf.Sin((float)song * 2 + p.Id);
-                rp.material = p.Kind == PickupKind.Experience ? xpMaterial : material;
                 var matrix = Matrix4x4.TRS(new Vector3((float)p.X, hover, (float)p.Y), Quaternion.Euler(45, 0, 0), Vector3.one);
-                Graphics.RenderMesh(rp, p.Kind == PickupKind.Experience ? diamond : cross, 0, matrix);
+                // The diamonds draw at once; the rare recovery crosses one by one.
+                if (p.Kind == PickupKind.Experience) diamonds.Add(diamond, matrix, Color.white);
+                else Graphics.RenderMesh(rp, cross, 0, matrix);
             }
+            diamonds.Queue(xpMaterial, camera);
         }
 
         static Mesh Outline(Vector2[] points)
@@ -72,6 +76,7 @@ namespace Champions.Client
 
         public void Dispose()
         {
+            diamonds.Dispose();
             foreach (var o in new UnityEngine.Object[] { diamond, cross, material, xpMaterial })
                 if (Application.isPlaying) UnityEngine.Object.Destroy(o); else UnityEngine.Object.DestroyImmediate(o);
         }

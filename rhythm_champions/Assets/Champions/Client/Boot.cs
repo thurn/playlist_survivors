@@ -38,6 +38,8 @@ namespace Champions.Client
     /// - `--look trailer`: the monsters as the neon edge trailer drew them (the still scenes and the bench take it);
     /// - `--crowd-bench N`: the crowd's timing scene (<see cref="CrowdBench"/>), with its own world; `--bench-out PATH`
     ///   for its timings;
+    /// - `--perf-peak`: level 1 held at 1,000 alive and timed (<see cref="PerfPeak"/>, `champions perf`), on Boot's world;
+    ///   `--bench-out PATH` for its timings;
     /// </summary>
     public sealed class Boot : MonoBehaviour
     {
@@ -50,6 +52,7 @@ namespace Champions.Client
         WorldPresenter _world;
         GalleryDriver _gallery;
         CrowdBench _bench;
+        PerfPeak _peak;
         Flow _flow;
         Palette _palette;
         GameContent _content;
@@ -131,7 +134,12 @@ namespace Champions.Client
                 }
                 if (_stills != null) _stills.Requeue = _bench.Requeue;
             }
-            if (_options.Replay.Length > 0 && _world != null)
+            if (_options.PerfPeak && _world != null)
+            {
+                _driven = true;
+                _peak = new PerfPeak(_camera, _content, ContentDir(), _palette, _world, MakeRunUi(), _options.Look, _options.BenchOut);
+            }
+            else if (_options.Replay.Length > 0 && _world != null)
             {
                 _driven = true;
                 NextReplay();
@@ -243,6 +251,7 @@ namespace Champions.Client
             // Without a run or a scene, the world stands still around the hero's spot.
             if (!_driven && (_flow == null || !_flow.Running)) _world?.Present(t, Vector2.zero, Time.deltaTime);
             _bench?.Frame(t);
+            _peak?.Step();
             if (_scenes != null)
             {
                 _scenes.Update(t);
@@ -260,6 +269,9 @@ namespace Champions.Client
         {
             _bench?.Report();
             _bench = null;
+            _peak?.Report();
+            _peak?.Dispose();
+            _peak = null;
             Debug.Log("Boot: quitting, " + why);
             enabled = false;
             Application.Quit(0);
@@ -269,6 +281,7 @@ namespace Champions.Client
         {
             _bench?.Report(); // a windowed run the player quit
             _bench?.Dispose();
+            _peak?.Dispose();
             _stills?.Dispose();
             _world?.Dispose();
             if (_gallery != null) Destroy(_gallery.gameObject);

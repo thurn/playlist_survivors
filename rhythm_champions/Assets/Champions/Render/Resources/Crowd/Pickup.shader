@@ -14,11 +14,17 @@ Shader "Champions/Pickup"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Assets/Champions/Render/Shaders/IdPass.hlsl"
+            // Each diamond placed from PieceBatch's buffer by its instance.
+            #include "Assets/Champions/Render/Effects/Shaders/Pieces.hlsl"
             float _Motion, _ChampionsId;
-            struct A { float4 p:POSITION; float2 uv:TEXCOORD0; };
+            struct A { float4 p:POSITION; float2 uv:TEXCOORD0; uint instance:SV_InstanceID; };
             struct V { float4 p:SV_POSITION; float2 uv:TEXCOORD0; float phase:TEXCOORD1; };
-            V vert(A v) { V o; o.p=TransformObjectToHClip(v.p.xyz); o.uv=v.uv;
-                o.phase=unity_ObjectToWorld._m03*1.3+unity_ObjectToWorld._m23*.7; return o; }
+            V vert(A v)
+            {
+                float4x4 m = PieceOf(v.instance).objectToWorld;
+                V o; o.p=TransformWorldToHClip(mul(m, float4(v.p.xyz, 1)).xyz); o.uv=v.uv;
+                o.phase=m._m03*1.3+m._m23*.7; return o;
+            }
             half4 frag(V i):SV_Target
             {
                 CHAMPIONS_ID_PASS(_ChampionsId)

@@ -209,3 +209,16 @@ remain unverified; synchronized render/readback is not a GPU timestamp.
   all boss warnings remain. Judge progression with 3.5 m pickup reach and
   3/6/9 horde-minute bosses. Old timed-elite and 5/10/15-minute rows above are
   historical. M1/GPU-only timing and human feel remain non-blocking checks.
+
+## Performance at 1,000 alive (ps-6y2.22, 2026-11-03)
+
+[`champions perf` evidence](perf/README.md): on the M5 Max the low tier's GPU
+p99 is 1.16 ms (frames it had the GPU alone), its sim p99 0.97 ms and every
+tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it.
+
+- On an M1 Air class Mac with Xcode installed, run
+  `just champions-tool perf --tier low --out rhythm_champions/evidence/perf/m1`
+  (it builds the IL2CPP player, about 5 minutes, then plays the peak headless:
+  level 1 held at 1,000 alive against the maximum build). The low tier holds
+  60 fps there if its frame p99 is at most 16.7 ms; its GPU and sim numbers
+  replace the M5 Max proxy. Commit the folder beside this one's.

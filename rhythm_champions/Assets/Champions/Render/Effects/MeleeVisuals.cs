@@ -12,13 +12,12 @@ namespace Champions.Render
         readonly List<(Mesh Mesh, Matrix4x4 Matrix, float Light)> draws = new List<(Mesh, Matrix4x4, float)>();
         readonly MeleeLibrary library;
         readonly Material material;
-        readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly PieceBatch batch = new PieceBatch();
         public MeleeVisuals(MeleeLibrary weapons = null)
         {
             library = weapons != null ? weapons : MeleeLibrary.Load();
             if (library == null) return;
             material = new Material(library.Edge);
-            block.SetFloat(IdPass.Id, IdPass.Effect);
         }
         double heldAt = double.NaN;
         public void Hold(double t, bool held)
@@ -125,13 +124,14 @@ namespace Champions.Render
         public void Queue(Camera camera)
         {
             if (material == null) return;
-            foreach (var d in draws)
-            {
-                block.SetColor("_Light", new Color(d.Light, d.Light, d.Light));
-                var rp = Effects.Params(material, block, camera);
-                for (int sub = 0; sub < d.Mesh.subMeshCount; sub++) Graphics.RenderMesh(rp, d.Mesh, sub, d.Matrix);
-            }
+            batch.Clear();
+            foreach (var d in draws) batch.Add(d.Mesh, d.Matrix, new Color(d.Light, d.Light, d.Light));
+            batch.Queue(material, camera);
         }
-        public void Dispose() { Effects.Destroy(material); }
+        public void Dispose()
+        {
+            batch.Dispose();
+            Effects.Destroy(material);
+        }
     }
 }

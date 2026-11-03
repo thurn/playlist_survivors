@@ -443,7 +443,14 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
   gap. An operator-pending row asks for a run on an M1-class Mac; its
   numbers replace the proxy.
 - `champions perf`: an IL2CPP build, a scripted peak with 1,000 alive,
-  probe percentiles. Never in CI.
+  probe percentiles. Never in CI. As built (ps-6y2.22, the
+  [evidence](../../rhythm_champions/evidence/perf/README.md)): the peak is
+  level 1 held at the cap against the Storm build, a third of the horde on
+  screen, kills and flights all the while, its frames pipelined as the game
+  runs them; the player times the frame, sim, presenters and submission, and
+  a Metal System Trace (Xcode) times the GPU, counting apart the frames the
+  window server's compositing shared it in. A synchronized readback is not
+  used: it idles the GPU half the loop, which lowers its clocks.
 
 The redesigned full-build load is measured in
 [ps-3wc.14 evidence](../../rhythm_champions/evidence/full-build/README.md).
@@ -465,6 +472,13 @@ with 1,001 alive, zero faults and unchanged complete-build event/flight output.
 Those observations meet the unchanged M5 simulation proxy with limited
 shared-host headroom; M1 hardware performance and GPU-only timing remain
 unverified. No timing-threshold test or automatic sweep enters CI.
+
+`champions perf` (ps-6y2.22) then measured GPU-only time on the M5 Max at
+1,000 alive: after the weapon pieces, flights and XP pickups were batched into
+one instanced draw per mesh (they had been hundreds of single draws a frame),
+the low tier's GPU p99 is 1.16 ms over the frames it had the GPU alone, its
+sim p99 0.97 ms and every tier's frame p99 2.5-2.6 ms. That meets the proxy;
+the sim's margin is thin, and an M1-class run remains operator-pending.
 
 ## Look Metrics
 

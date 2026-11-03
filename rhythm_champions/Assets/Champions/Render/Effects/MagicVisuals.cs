@@ -12,13 +12,12 @@ namespace Champions.Render
         readonly List<(Mesh Mesh, Matrix4x4 Matrix, float Light)> draws = new List<(Mesh, Matrix4x4, float)>();
         readonly MagicLibrary library;
         readonly Material material;
-        readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly PieceBatch batch = new PieceBatch();
         public MagicVisuals()
         {
             library = MagicLibrary.Load();
             if (library == null) return;
             material = new Material(library.Edge);
-            block.SetFloat(IdPass.Id, IdPass.Effect);
         }
         public static bool Handles(EffectCue cue) => cue >= EffectCue.LightningBolt && cue <= EffectCue.LightningLink;
         public int Draws => draws.Count;
@@ -183,12 +182,15 @@ namespace Champions.Render
         public void Queue(Camera camera)
         {
             if (material == null) return;
+            batch.Clear();
             foreach (var d in draws)
-            {
-                block.SetColor("_Light", AuraRemaining > 0 ? new Color(d.Light, d.Light * .78f, d.Light * .03f) : new Color(d.Light, d.Light, d.Light));
-                Graphics.RenderMesh(Effects.Params(material, block, camera), d.Mesh, 0, d.Matrix);
-            }
+                batch.Add(d.Mesh, d.Matrix, AuraRemaining > 0 ? new Color(d.Light, d.Light * .78f, d.Light * .03f) : new Color(d.Light, d.Light, d.Light));
+            batch.Queue(material, camera);
         }
-        public void Dispose() => Effects.Destroy(material);
+        public void Dispose()
+        {
+            batch.Dispose();
+            Effects.Destroy(material);
+        }
     }
 }

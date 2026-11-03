@@ -30,6 +30,10 @@ Commands:
   stills              fixed-time stills of the scripted scenes in one headless launch of the last
                       build, with their type-ID passes and views (--scene NAME, repeatable; --out DIR,
                       default captures/stills; --look trailer for the trailer's monsters)
+  perf                the quality tiers' performance at 1,000 alive (plan.md, Performance; never in CI): an
+                      IL2CPP build, the perf peak per tier headless with a Metal System Trace for the GPU;
+                      the timings and budgets into evidence/perf (--tier T, repeatable; --seconds N; --out
+                      DIR; --no-build; --no-trace)
   look [STILLS]       the look metrics (docs/champions/style.md) on stills (default captures/stills):
                       every threshold key per still, the palette's rules; --out DIR writes metrics.md,
                       metrics.json and evidence JPEGs; exits 1 on a broken rule
@@ -298,6 +302,12 @@ def cmd_structure(a: argparse.Namespace) -> int:
     return unity.run_method(wt, f"{STRUCTURE_TASKS}.Review", ["-kind", a.kind, "-out", str(out)])
 
 
+def cmd_perf(a: argparse.Namespace) -> int:
+    from . import perf
+
+    return perf.cmd_perf(a)
+
+
 def cmd_look(a: argparse.Namespace) -> int:
     from . import look
 
@@ -417,6 +427,14 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument("--out", help="review: the folder for the sheets (default evidence/structures)")
     sr.add_argument("--force", action="store_true", help="bake again even if nothing changed")
     sr.set_defaults(func=cmd_structure)
+
+    pf = sub.add_parser("perf", help="the quality tiers' performance at 1,000 alive (never in CI)")
+    pf.add_argument("--tier", action="append", choices=["low", "medium", "high"], help="a tier to run (repeatable; default all)")
+    pf.add_argument("--seconds", type=float, default=240, help="the peak's song seconds (fixed time; default 240)")
+    pf.add_argument("--out", help="the folder for the timings (default evidence/perf)")
+    pf.add_argument("--no-build", action="store_true", help="play the last IL2CPP build")
+    pf.add_argument("--no-trace", action="store_true", help="no Metal System Trace: no GPU timings")
+    pf.set_defaults(func=cmd_perf)
 
     lk = sub.add_parser("look", help="a diagnostic: where stills stray from the style's guide values (never fails)")
     lk.add_argument("stills", nargs="?", help="a folder of stills (default captures/stills)")

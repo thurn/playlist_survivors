@@ -1,0 +1,258 @@
+{
+  "tiers": {
+    "low": {
+      "tier": "low",
+      "device": "Apple M5 Max",
+      "cpu": "Apple M5 Max",
+      "backend": "il2cpp",
+      "look": "default",
+      "cap": 1000,
+      "toughness": 100.0,
+      "filledAtS": 3.85,
+      "frames": 13690,
+      "seconds": 228.167,
+      "killsPerS": 16.492,
+      "alive": {
+        "p50": 1000.0,
+        "p99": 1000.0,
+        "max": 1000.0
+      },
+      "onScreen": {
+        "p50": 312.0,
+        "p99": 363.0,
+        "max": 377.0
+      },
+      "liveShards": {
+        "p50": 228.0,
+        "p99": 524.0,
+        "max": 598.0
+      },
+      "flights": {
+        "p50": 285.0,
+        "p99": 326.0,
+        "max": 330.0
+      },
+      "frameMs": {
+        "p50": 1.206,
+        "p99": 2.596,
+        "max": 6.256
+      },
+      "cpuMs": {
+        "p50": 1.066,
+        "p99": 2.321,
+        "max": 5.994
+      },
+      "simMs": {
+        "p50": 0.035,
+        "p99": 0.973,
+        "max": 2.093
+      },
+      "presentMs": {
+        "p50": 0.466,
+        "p99": 0.987,
+        "max": 5.04
+      },
+      "submitMs": {
+        "p50": 0.54,
+        "p99": 1.032,
+        "max": 1.584
+      },
+      "gpuMs": {
+        "frames": 2365,
+        "sharedShare": 0.301,
+        "alone": {
+          "frames": 1654,
+          "p50": 0.932916,
+          "p99": 1.156834,
+          "max": 1.989542
+        },
+        "all": {
+          "p50": 0.956957,
+          "p99": 2.147414,
+          "max": 3.426376
+        }
+      },
+      "machine": "arm64"
+    },
+    "medium": {
+      "tier": "medium",
+      "device": "Apple M5 Max",
+      "cpu": "Apple M5 Max",
+      "backend": "il2cpp",
+      "look": "default",
+      "cap": 1000,
+      "toughness": 100.0,
+      "filledAtS": 3.85,
+      "frames": 13690,
+      "seconds": 228.167,
+      "killsPerS": 16.492,
+      "alive": {
+        "p50": 1000.0,
+        "p99": 1000.0,
+        "max": 1000.0
+      },
+      "onScreen": {
+        "p50": 312.0,
+        "p99": 363.0,
+        "max": 377.0
+      },
+      "liveShards": {
+        "p50": 228.0,
+        "p99": 524.0,
+        "max": 860.0
+      },
+      "flights": {
+        "p50": 285.0,
+        "p99": 326.0,
+        "max": 330.0
+      },
+      "frameMs": {
+        "p50": 1.191,
+        "p99": 2.484,
+        "max": 6.582
+      },
+      "cpuMs": {
+        "p50": 1.009,
+        "p99": 2.213,
+        "max": 6.271
+      },
+      "simMs": {
+        "p50": 0.033,
+        "p99": 0.969,
+        "max": 1.961
+      },
+      "presentMs": {
+        "p50": 0.444,
+        "p99": 0.982,
+        "max": 4.629
+      },
+      "submitMs": {
+        "p50": 0.516,
+        "p99": 0.973,
+        "max": 5.434
+      },
+      "gpuMs": {
+        "frames": 2345,
+        "sharedShare": 0.15,
+        "alone": {
+          "frames": 1994,
+          "p50": 0.958086,
+          "p99": 1.212043,
+          "max": 1.772962
+        },
+        "all": {
+          "p50": 0.965793,
+          "p99": 1.944003,
+          "max": 3.052208
+        }
+      },
+      "machine": "arm64"
+    },
+    "high": {
+      "tier": "high",
+      "device": "Apple M5 Max",
+      "cpu": "Apple M5 Max",
+      "backend": "il2cpp",
+      "look": "default",
+      "cap": 1000,
+      "toughness": 100.0,
+      "filledAtS": 3.85,
+      "frames": 13690,
+      "seconds": 228.167,
+      "killsPerS": 16.492,
+      "alive": {
+        "p50": 1000.0,
+        "p99": 1000.0,
+        "max": 1000.0
+      },
+      "onScreen": {
+        "p50": 312.0,
+        "p99": 363.0,
+        "max": 377.0
+      },
+      "liveShards": {
+        "p50": 228.0,
+        "p99": 524.0,
+        "max": 860.0
+      },
+      "flights": {
+        "p50": 285.0,
+        "p99": 326.0,
+        "max": 330.0
+      },
+      "frameMs": {
+        "p50": 1.202,
+        "p99": 2.592,
+        "max": 6.91
+      },
+      "cpuMs": {
+        "p50": 1.055,
+        "p99": 2.336,
+        "max": 6.508
+      },
+      "simMs": {
+        "p50": 0.034,
+        "p99": 0.965,
+        "max": 1.873
+      },
+      "presentMs": {
+        "p50": 0.443,
+        "p99": 0.993,
+        "max": 4.411
+      },
+      "submitMs": {
+        "p50": 0.566,
+        "p99": 1.08,
+        "max": 5.633
+      },
+      "gpuMs": {
+        "frames": 2202,
+        "sharedShare": 0.168,
+        "alone": {
+          "frames": 1831,
+          "p50": 0.969919,
+          "p99": 1.376918,
+          "max": 2.253958
+        },
+        "all": {
+          "p50": 0.984415,
+          "p99": 1.947124,
+          "max": 2.793001
+        }
+      },
+      "machine": "arm64"
+    }
+  },
+  "budgets": [
+    {
+      "budget": "low tier GPU p99 (ms, the GPU the game's alone)",
+      "measured": 1.156834,
+      "limit": 1.5,
+      "kept": true
+    },
+    {
+      "budget": "low tier sim p99 (ms)",
+      "measured": 0.973,
+      "limit": 1.0,
+      "kept": true
+    },
+    {
+      "budget": "low tier frame p99 (ms, 60 fps)",
+      "measured": 2.596,
+      "limit": 16.666666666666668,
+      "kept": true
+    },
+    {
+      "budget": "medium tier frame p99 (ms, 60 fps)",
+      "measured": 2.484,
+      "limit": 16.666666666666668,
+      "kept": true
+    },
+    {
+      "budget": "high tier frame p99 (ms, 60 fps)",
+      "measured": 2.592,
+      "limit": 16.666666666666668,
+      "kept": true
+    }
+  ]
+}

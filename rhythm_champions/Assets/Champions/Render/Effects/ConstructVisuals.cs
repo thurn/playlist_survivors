@@ -10,7 +10,7 @@ namespace Champions.Render
     {
         readonly MeleeLibrary weapons;
         readonly Material edge;
-        readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly PieceBatch batch = new PieceBatch();
         readonly List<(Matrix4x4 Matrix, float Light)> blades = new List<(Matrix4x4, float)>();
         readonly MonsterType knight;
         readonly MonsterFigure figures;
@@ -25,7 +25,6 @@ namespace Champions.Render
         {
             weapons = library != null ? library : MeleeLibrary.Load();
             if (weapons != null) edge = new Material(weapons.Edge);
-            block.SetFloat(IdPass.Id, IdPass.Effect);
             knight = MonsterLibrary.LoadFigure(MonsterLook.Default, MonsterLibrary.HeroId);
             if (knight == null) return;
             var material = EdgeLook.Hero(knight, MonsterLook.Default, palette);
@@ -146,12 +145,12 @@ namespace Champions.Render
         public void Queue(Camera camera)
         {
             if (weapons != null)
+            {
+                batch.Clear();
                 foreach (var b in blades)
-                {
-                    block.SetColor("_Light", AuraArea > 1 ? new Color(b.Light, b.Light * .78f, b.Light * .03f) : new Color(b.Light, b.Light, b.Light));
-                    var rp = Effects.Params(edge, block, camera);
-                    for (int sub = 0; sub < weapons.Sword.subMeshCount; sub++) Graphics.RenderMesh(rp, weapons.Sword, sub, b.Matrix);
-                }
+                    batch.Add(weapons.Sword, b.Matrix, AuraArea > 1 ? new Color(b.Light, b.Light * .78f, b.Light * .03f) : new Color(b.Light, b.Light, b.Light));
+                batch.Queue(edge, camera);
+            }
             figures?.Draw(camera, figureCount);
         }
         public EffectCost Cost(EffectCue cue)
@@ -164,6 +163,11 @@ namespace Champions.Render
                 Draws = (weapons != null ? swords * weapons.Sword.subMeshCount : 0) + (members > 0 && knight != null ? 1 : 0),
                 Triangles = (weapons != null ? swords * weapons.Sword.triangles.Length / 3 : 0) + (knight != null ? members * (int)knight.Lods[0].GetIndexCount(0) / 3 : 0) };
         }
-        public void Dispose() { figures?.Dispose(); Effects.Destroy(edge); }
+        public void Dispose()
+        {
+            batch.Dispose();
+            figures?.Dispose();
+            Effects.Destroy(edge);
+        }
     }
 }
