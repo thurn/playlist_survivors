@@ -15,6 +15,7 @@ namespace Champions.Sim
         public DashRules Dashes = new DashRules();
         public AttackRules Attacks = new AttackRules();
         public ModRules Mods = new ModRules();
+        public CombatRules Combat = CombatRules.Default;
         public EnemyRules Enemies = new EnemyRules();
         public LevelRules Level = new LevelRules();
         public ZoneRules Zones = new ZoneRules();
@@ -32,6 +33,7 @@ namespace Champions.Sim
                 Dashes = DashRules.Read(Parse(dir, DashRules.File), DashRules.File),
                 Attacks = AttackRules.Read(Parse(dir, AttackRules.File), AttackRules.File),
                 Mods = ModRules.Read(Parse(dir, ModRules.File), ModRules.File),
+                Combat = CombatRules.Read(Parse(dir, CombatRules.File)),
                 Enemies = EnemyRules.Read(Parse(dir, EnemyRules.File), EnemyRules.File),
                 Zones = ZoneRules.Read(Parse(dir, ZoneRules.File), ZoneRules.File),
                 Structures = StructureRules.Read(Parse(dir, StructureRules.File), StructureRules.File),

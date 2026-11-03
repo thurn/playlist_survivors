@@ -57,6 +57,7 @@ namespace Champions.Sim
                 Dashes = content != null ? content.Dashes.Clone() : new DashRules(),
                 Attacks = content != null ? content.Attacks.Clone() : new AttackRules(),
                 Mods = content != null ? content.Mods.Clone() : new ModRules(),
+                Combat = content != null ? content.Combat : CombatRules.Default,
                 Loadout = (Upgrade[])Loadout.Clone(),
                 Dummies = (Dummy[])Dummies.Clone(),
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),

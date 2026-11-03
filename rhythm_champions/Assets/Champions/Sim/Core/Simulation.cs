@@ -78,6 +78,8 @@ namespace Champions.Sim
             Quiet.Begin(State.Now);
             Enemies = new Enemies(config.EnemyCapacity);
             Strikes.Add(Enemies);
+            State.Build = new WeaponBuild(config.Combat);
+            State.Build.Set(WeaponKind.Sword, 1);
             Arsenal = new Arsenal(config.Attacks, config.Mods, Enemies, Beats, config.EnemyCapacity);
             Arsenal.Begin(this);
             foreach (var u in config.Loadout) Arsenal.Set(this, u);

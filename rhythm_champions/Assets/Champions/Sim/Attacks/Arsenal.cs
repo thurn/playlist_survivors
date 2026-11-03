@@ -98,7 +98,8 @@ namespace Champions.Sim
             }
         }
 
-        // ---- The build ----
+        /// <summary>Survivor build lives on SimState.Build; the rank API below is the legacy adapter.</summary>
+        // ---- The legacy build ----
 
         /// <summary>Attack <paramref name="kind"/>'s rank: 0 not owned, 1-3, <see cref="Upgrade.Evolution"/>.</summary>
         public int Rank(AttackKind kind) => attackRanks[(int)kind];

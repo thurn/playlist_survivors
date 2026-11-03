@@ -2,10 +2,10 @@ using System;
 
 namespace Champions.Sim
 {
-    /// <summary>The attacks (design.md, "The attacks"); Sword Slash is the start.</summary>
+    /// <summary>Archived attack IDs, retained for existing replays. New content uses WeaponKind.</summary>
     public enum AttackKind : byte { SwordSlash, OrbitBlades, BladeRain, Crescent, Phantom }
 
-    /// <summary>The mods (design.md, "Mods").</summary>
+    /// <summary>Archived mod IDs, retained for existing replays. New content uses SupportKind.</summary>
     public enum ModKind : byte { WideArcs, TwinStrike, Tempo, KeenEdge, Quickstep, Momentum, Afterimage, Shatterburst, Lifeblood, Encore }
 
     /// <summary>What an upgrade raises: an attack or a mod (the dashes are the hero's).</summary>

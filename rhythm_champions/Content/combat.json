@@ -1,0 +1,92 @@
+{
+  "weapons": [
+    {
+      "id": "sword", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"}
+      ]
+    },
+    {
+      "id": "hammer", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Echo"], "hitWindow": "Strike"}
+      ]
+    },
+    {
+      "id": "spear", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Strike"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Melee", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Strike"}
+      ]
+    },
+    {
+      "id": "bow", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"}
+      ]
+    },
+    {
+      "id": "orbitBlades", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Orbit", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Orbit", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Orbit", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Orbit", "Echo"], "hitWindow": "Pulse"}
+      ]
+    },
+    {
+      "id": "lightning", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Chain", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Chain", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Chain", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Chain", "Projectile", "Pierce", "Split", "Echo"], "hitWindow": "Activation"}
+      ]
+    },
+    {
+      "id": "emberField", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Ground", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Ground", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Ground", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Ground", "Duration", "Echo"], "hitWindow": "Pulse"}
+      ]
+    },
+    {
+      "id": "sentinel", "damagePerLevel": 0.1,
+      "forms": [
+        {"startLevel": 1, "capabilities": ["Damage", "Automatic", "Area", "Summon", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 3, "capabilities": ["Damage", "Automatic", "Area", "Summon", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 5, "capabilities": ["Damage", "Automatic", "Area", "Summon", "Duration", "Echo"], "hitWindow": "Pulse"},
+        {"startLevel": 8, "capabilities": ["Damage", "Automatic", "Area", "Summon", "Duration", "Echo"], "hitWindow": "Pulse"}
+      ]
+    }
+  ],
+  "supports": [
+    {"id": "might", "maxLevel": 5, "requires": ["Damage"], "family": "Damage", "perLevel": 0.1},
+    {"id": "tempo", "maxLevel": 5, "requires": ["Automatic"], "family": "Strikes", "perLevel": 0.1},
+    {"id": "reach", "maxLevel": 5, "requires": ["Area"], "family": "Area", "perLevel": 0.1},
+    {"id": "multishot", "maxLevel": 5, "requires": ["Projectile"], "family": "Projectiles", "perLevel": 1},
+    {"id": "persistence", "maxLevel": 5, "requires": ["Duration"], "family": "Duration", "perLevel": 0.15},
+    {"id": "pierce", "maxLevel": 5, "requires": ["Pierce"], "family": "Pierce", "perLevel": 1},
+    {"id": "split", "maxLevel": 5, "requires": ["Split"], "family": "Split", "perLevel": 0.1},
+    {"id": "echo", "maxLevel": 5, "requires": ["Echo"], "family": "Echo", "perLevel": 0.1},
+    {"id": "attraction", "maxLevel": 5, "requires": [], "family": "Attraction", "perLevel": 0.2},
+    {"id": "stride", "maxLevel": 5, "requires": [], "family": "Stride", "perLevel": 0.05},
+    {"id": "vitality", "maxLevel": 5, "requires": [], "family": "Vitality", "perLevel": 0.1},
+    {"id": "armor", "maxLevel": 5, "requires": [], "family": "Armor", "perLevel": 0.1},
+    {"id": "regeneration", "maxLevel": 5, "requires": [], "family": "Regeneration", "perLevel": 0.5},
+    {"id": "landingBlast", "maxLevel": 5, "requires": [], "family": "LandingBlast", "perLevel": 0.2}
+  ]
+}

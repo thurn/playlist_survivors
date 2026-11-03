@@ -58,6 +58,9 @@ namespace Champions.Sim
         /// <summary>The cards up (<see cref="Offer.Up"/>), and the focused one.</summary>
         public Offer Offer { get; internal set; }
 
+        /// <summary>Survivor build; legacy Arsenal ranks remain an adapter until combat migration.</summary>
+        public WeaponBuild Build { get; internal set; }
+
         public HeroState Hero { get; } = new HeroState();
     }
 

@@ -61,6 +61,10 @@ namespace Champions.Sim
         Offer,
         CardFocus,
         Pick,
+        WeaponUpgrade,
+        SupportUpgrade,
+        WeaponActivation,
+        WeaponPulse,
     }
 
     /// <summary>
@@ -77,6 +81,44 @@ namespace Champions.Sim
         public double D0, D1, D2, D3, D4, D5;
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
+
+        /// <summary>Survivor weapon upgrade: I0 WeaponKind, I1 level, I2 zero-based form; D0 previous level.</summary>
+        public static SimEvent WeaponUpgrade(double t, WeaponKind kind, int level, int previous)
+        {
+            var e = Of(SimEventKind.WeaponUpgrade, t);
+            e.I0 = (int)kind; e.I1 = level; e.I2 = CombatRules.FormIndex(level); e.D0 = previous;
+            return e;
+        }
+
+        /// <summary>Survivor support upgrade: I0 SupportKind, I1 level; D0 previous level.</summary>
+        public static SimEvent SupportUpgrade(double t, SupportKind kind, int level, int previous)
+        {
+            var e = Of(SimEventKind.SupportUpgrade, t);
+            e.I0 = (int)kind; e.I1 = level; e.D0 = previous;
+            return e;
+        }
+
+        /// <summary>
+        /// Whole survivor activation: I0 WeaponKind, I1 zero-based form, I2 total strikes/pulses;
+        /// D0 activation sequence, D1 empowerment area factor (1 or 1.5), D2/D3 origin, D4 heading.
+        /// Extra strikes and secondary effects retain D0 and D1; they never replay the body faster.
+        /// </summary>
+        public static SimEvent WeaponActivation(double t, WeaponKind kind, int level, long sequence, int strikes,
+            double empowermentArea, double x, double y, double heading)
+        {
+            var e = Of(SimEventKind.WeaponActivation, t);
+            e.I0 = (int)kind; e.I1 = CombatRules.FormIndex(level); e.I2 = strikes;
+            e.D0 = sequence; e.D1 = empowermentArea; e.D2 = x; e.D3 = y; e.D4 = heading;
+            return e;
+        }
+
+        /// <summary>Persistent damage pulse: I0 WeaponKind; D0 activation sequence, D1 pulse sequence, D2 empowerment area.</summary>
+        public static SimEvent WeaponPulse(double t, WeaponKind kind, long activation, long pulse, double empowermentArea)
+        {
+            var e = Of(SimEventKind.WeaponPulse, t);
+            e.I0 = (int)kind; e.D0 = activation; e.D1 = pulse; e.D2 = empowermentArea;
+            return e;
+        }
 
         /// <summary>
         /// A committed beat reached: I0 beat index, I1 bar (-1 before any lock), I2 flags: 1 downbeat |

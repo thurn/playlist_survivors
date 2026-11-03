@@ -32,6 +32,8 @@ namespace Champions.Sim
         public AttackRules Attacks = new AttackRules();
         public ModRules Mods = new ModRules();
 
+        public CombatRules Combat = CombatRules.Default;
+
         /// <summary>The build the run starts with (<see cref="RunInputs.Loadout"/>).</summary>
         public Upgrade[] Loadout = RunInputs.StartLoadout();
 
