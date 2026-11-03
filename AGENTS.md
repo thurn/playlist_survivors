@@ -12,7 +12,7 @@ The design was first locked on 2026-11-01 and its combat/progression redesigned 
 
 ## Overview
 
-- `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). The original epic is archived from docs/champions/plan.md; the combat redesign is not implemented or re-planned into beads yet, so check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
+- `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). The original ps-6y2 epic continues independently; combat redesign epic ps-3wc is mapped in docs/champions/plan.md, with no dependency between the epics. Check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
 - `docs/champions/`: the current design, technical/migration plan and style guide. `docs/archive/`: earlier designs, for history.
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - SETUP.md covers installing and the vendor assets.

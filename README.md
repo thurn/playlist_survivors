@@ -8,7 +8,8 @@ Bosses add rhythmic positioning and projectile-dodging challenges.
 **Status: in development.** The Unity game in `rhythm_champions/` is playable
 with `just champions`, but still implements the previous combat design.
 The 2026-11-02 revision redesigns combat and progression; this documentation
-pass does not implement it or change beads.
+pass did not implement it. The redesign is now filed as epic `ps-3wc`,
+independent of the continuing `ps-6y2` work.
 
 - [The design](docs/champions/design.md): the current game direction.
 - [The plan](docs/champions/plan.md): retained technology and migration scope.

@@ -8,12 +8,17 @@ redesign**. This revision changes documentation only. The current game still
 contains the earlier dash-centered combat; passing existing tests does not
 mean the revised design is implemented.
 
-The former build order and epic map are preserved in the
+The combat redesign is filed as **ps-3wc**, a light Enact epic with 14
+implementation tasks and one final Warden. Filing does not start a run.
+The existing **ps-6y2** epic continues independently: its remaining structure
+meshes, performance, look pass and final review are still wanted. **Neither
+epic depends on the other.** Reviews cover their own delivered scope and must
+preserve concurrent improvements rather than reinstate superseded combat.
+
+The original build order and epic map remain in the
 [archived plan](../archive/champions-dash-combat-2026-11-02/plan.md).
-**No beads are created, edited, closed or re-scoped by this revision.** The
-existing epic describes historical implementation work, not authorization to
-build from superseded combat assumptions. A later planning pass must reconcile
-implementation tasks against the new design before scheduling combat work.
+The earlier design revision changed no beads; this subsequent filing adds the
+new epic and clarifies the old epic's scope without moving or closing its work.
 
 Operator-only checks remain in `rhythm_champions/evidence/operator-pending.md`.
 Old evidence records what was built and tested at the time, not acceptance of
@@ -501,8 +506,7 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
 
 ## Combat Redesign: Migration Scope
 
-This is a sequence of implementation responsibilities, **not a new bead
-plan**. Preserve working audio, deterministic timing, rendering and vendor
+These responsibilities are mapped to **ps-3wc** below. Preserve working audio, deterministic timing, rendering and vendor
 pipelines. Reconcile current code before deciding file boundaries or effort.
 
 1. **Content and scaling contracts.** Six weapon slots, six shared support
@@ -547,6 +551,42 @@ in the later implementation work, not in this documentation pass.
 
 The existing epic map is [archived](../archive/champions-dash-combat-2026-11-02/plan.md#beads).
 No entry there is silently redefined by this document.
+
+## Combat Epic: ps-3wc
+
+Use existing owned Unity assets first, reskinned and composed for the retro
+3D neon wireframe design. The form table specifies gameplay identities and
+breakpoints; exact actions must be grounded in inspected clips, meshes and
+effects. Spectral choreography is an acceptable alternative to an unavailable
+character animation. No asset purchases or hidden manual approval gates.
+Never commit vendor-derived outputs. Asset mapping and previews are work to
+perform, not a claim that all 32 forms are already supplied by a pack.
+
+| Bead | Work | Prerequisites within ps-3wc |
+| --- | --- | --- |
+| ps-3wc.1 | Owned-asset mapping and feasible forms for eight weapons/three bosses | None |
+| ps-3wc.2 | Six-slot contracts, fixed forms, support compatibility and scaling | None |
+| ps-3wc.3 | Beat cadence, fractional strikes and shared mechanical support execution | .2 |
+| ps-3wc.4 | Movement dash, per-weapon empowerment and Landing Blast | .2 |
+| ps-3wc.5 | Persistent XP/healing pickups, attraction and defensive supports | .2 |
+| ps-3wc.6 | Immediate choices, legal offers and boss upgrade rewards | .2, .5 |
+| ps-3wc.7 | Sword and Hammer, four forms each | .1, .2, .3 |
+| ps-3wc.8 | Spear and Bow, four forms each | .1, .2, .3 |
+| ps-3wc.9 | Orbit Blades and Sentinel, four forms each | .1, .2, .3 |
+| ps-3wc.10 | Lightning and Ember Field, four forms each | .1, .2, .3 |
+| ps-3wc.11 | Three rhythmic bosses, retained hordes and separate clocks | .1, .2, .4, .6 |
+| ps-3wc.12 | Brief cards, minimal HUD and updated input/flow | .2, .4, .6 |
+| ps-3wc.13 | End-to-end assembly, tuning, replays and shipped docs | .1–.12 |
+| ps-3wc.14 | Full-build performance and visual readability | .13 |
+| ps-3wc.15 | Single final Warden | .1–.14 |
+
+Only actual output prerequisites create ordering. Shared manifests, registries,
+presenters and content files are merged normally; they do not serialize the
+four weapon-family tracks. The eventual invocation chooses concurrency.
+There are **no cross-epic blocking edges**, including final verification.
+The new epic checks its expanded combat load independently of ps-6y2's baseline
+performance and art work. No Mason, Sage or Archivist; assembly updates docs.
+Operator-only checks remain recorded in operator-pending rather than gates.
 
 ## Whole-Run Acceptance
 
