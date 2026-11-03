@@ -55,16 +55,18 @@ namespace Champions.Sim.Tests
                 string.Join("; ", Moments.Select(m => $"{m.RunClock:F1} {m.What}"));
         }
 
-        /// <summary>Level 1 from the first offer to its end (or <paramref name="until"/>), driven by `--walk` <paramref name="walk"/>.</summary>
+        /// <summary>Level 1 from its start to its end (or <paramref name="until"/>), driven by `--walk` <paramref name="walk"/>.</summary>
         public static Outcome Run(string walk, string picks = null, double until = 1200, ulong seed = 31, Action<ScriptedPlayer> tweak = null,
-            Action<SimConfig> config = null)
+            Action<SimConfig> config = null, bool survivor = false)
         {
             var entries = Playlist(until + 20).Entries();
-            var run = new RunInputs { Seed = seed, Start = RunStart.FirstOffer, Level = true };
-            var built = run.Build(Content);
+            var content = survivor ? GameContent.Load(Checkout.In("Content")) : Content;
+            var run = new RunInputs { Seed = seed, Start = survivor ? RunStart.Immediately : RunStart.FirstOffer,
+                Level = true, SurvivorWeapons = survivor };
+            var built = run.Build(content);
             config?.Invoke(built);
             var sim = new Simulation(built);
-            var player = ScriptedPlayer.Parse(walk, picks, Content.Dashes);
+            var player = ScriptedPlayer.Parse(walk, picks, content.Dashes);
             tweak?.Invoke(player);
             var o = new Outcome { Sim = sim, Run = run };
             int next = 0, cursor = 0;
@@ -173,17 +175,30 @@ namespace Champions.Sim.Tests
             Assert.Less(o.RunClock, 90, o.ToString());
         }
 
-        /// <summary>The level session: the reference player's first <see cref="LevelSessionS"/> s from the first offer.</summary>
+        /// <summary>The level session: the reference player's first <see cref="LevelSessionS"/> s from starting Sword.</summary>
         public const double LevelSessionS = 75;
+
+        [Test]
+        public void TheCurrentLevelRunReplaysWithFreshContent()
+        {
+            var o = Run("reference", until: LevelSessionS, survivor: true);
+            var record = SessionRecord.Of(o.Run, o.Sim);
+            var replay = new SessionReplay(record);
+            foreach (var e in o.Fed) replay.Supply(e);
+            var sim = new Simulation(record.Run.Build(GameContent.Load(Checkout.In("Content"))));
+            Assert.IsTrue(replay.StepTo(sim, double.PositiveInfinity));
+            Assert.IsTrue(replay.Matches(sim), "the recorder must use live rules, independently of archived test content");
+            Assert.Greater(o.Picks, 0, "exercises immediate level-up choices");
+        }
 
         [Test, Explicit("writes rhythm_champions/sessions/fixture-level")]
         public void RecordTheLevelSession()
         {
-            var o = Run("reference", until: LevelSessionS);
+            var o = Run("reference", until: LevelSessionS, survivor: true);
             Assert.AreEqual(RunPhase.Playing, o.Sim.State.Phase, o.ToString());
             string dir = Checkout.In("sessions", "fixture-level");
             var record = SessionRecord.Of(o.Run, o.Sim);
-            record.Source = $"dotnet/Champions.Sim.Tests LevelRunTests.RecordTheLevelSession: level 1 from the first offer, --walk reference, {LevelSessionS} s of a synthetic 128 BPM playlist, no audio";
+            record.Source = $"dotnet/Champions.Sim.Tests LevelRunTests.RecordTheLevelSession: level 1 from starting Sword, --walk reference, {LevelSessionS} s of a synthetic 128 BPM playlist, no audio";
             record.Build = "test";
             record.Write(dir);
             SessionRecord.WriteEntries(dir, o.Fed);

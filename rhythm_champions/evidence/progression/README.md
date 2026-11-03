@@ -65,3 +65,21 @@ The first pass reused a sword-volley icon for Bow and the area icon for all
 supports; the final pass gives Bow authored bow/arrow line art and chooses
 existing icons by each support's meaning. Some descriptions wrap to two
 short lines; full-run threat readability still needs the pending hand-play.
+
+## Level replay migration (ps-8v5)
+
+The progression delivery left `fixture-level` on the old opening-menu and
+quiet-gated offer inputs. Slow CI reproduced the mismatch in both .NET and
+Unity on jarvis. Its recording helper also inherited `DashTests.Content`,
+which opts into archived dash/offer rules; regenerating it with those rules
+cannot reproduce a replay loaded from current content.
+
+The recorder now explicitly uses fresh live content, immediate start and
+survivor weapons, while historical level tests keep their archived setup.
+The regenerated 75-second reference run records 836 inputs and 4412 events,
+with hash `6632BED358C62B6F`. A normal regression test independently rebuilds
+live content and verifies the reference run replays exactly, including earned
+upgrade choices. No replay assertions were removed or relaxed.
+
+Validation on jarvis/macOS: the complete configured slow suite passes,
+including all four recordings in .NET and Unity without presenter faults.

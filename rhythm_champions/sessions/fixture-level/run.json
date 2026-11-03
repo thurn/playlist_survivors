@@ -1,21 +1,21 @@
 {
   "format": "rhythm-champions-session",
-  "version": 4,
+  "version": 5,
   "build": "test",
   "runtime": ".NET 10.0.7",
   "platform": "",
-  "source": "dotnet/Champions.Sim.Tests LevelRunTests.RecordTheLevelSession: level 1 from the first offer, --walk reference, 75 s of a synthetic 128 BPM playlist, no audio",
+  "source": "dotnet/Champions.Sim.Tests LevelRunTests.RecordTheLevelSession: level 1 from starting Sword, --walk reference, 75 s of a synthetic 128 BPM playlist, no audio",
   "flags": [],
   "seed": 31,
   "startTime": 0,
-  "start": "FirstOffer",
+  "start": "Immediately",
   "loadout": ["swordSlash:1"],
   "dummies": 0,
   "level": true,
   "duel": null,
   "end": 75.01666666666667,
-  "hash": "626ACC5FD7588FE7",
-  "events": 4046,
+  "hash": "6632BED358C62B6F",
+  "events": 4412,
   "entries": 2198,
-  "inputs": 814
+  "inputs": 836
 }
