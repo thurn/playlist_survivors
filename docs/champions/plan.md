@@ -453,7 +453,10 @@ performance nor full-build visual acceptance is declared complete. The
 [final Warden evidence](../../rhythm_champions/evidence/warden-review/README.md)
 records hold/empty-target repairs, hue-preserving default hit feedback and a
 six-case rerun; remaining peak player hierarchy and cost gaps stay actionable
-under ps-3wc.
+under ps-3wc. The [collision-planning follow-up](../../rhythm_champions/evidence/collision-planning/README.md)
+reduces repeated neighbor/collision work while preserving exact replay output.
+Its six-case Master IL2CPP sweep still exceeds the 1 ms proxy; that remains
+implementation work, and GPU-only timing is still unverified.
 
 ## Look Metrics
 
@@ -473,7 +476,10 @@ under ps-3wc.
 ## Build Policy
 
 - **Mono by default** for `just champions` and CI; `--backend il2cpp` for
-  perf.
+  perf. Non-development IL2CPP builds use Master / OptimizeSpeed (full LTO on
+  this Mac), trading a longer explicit perf build for shipping optimizations.
+  Development builds retain the configured compiler settings; the build
+  restores the previous settings afterward.
 - **The variant budget** above, checked in CI.
 - **Warm editor**: `champions editor` keeps one editor open per worktree;
   build, test and stills go through it when it is up.

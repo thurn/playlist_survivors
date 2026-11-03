@@ -48,6 +48,21 @@ namespace Champions.Sim
             items[count++] = item;
         }
 
+        // Bulk writers reserve their maximum result count once, fill the returned array,
+        // then publish the count. Keep this internal: callers must not retain it across growth.
+        internal T[] ResetForWrite(int capacity)
+        {
+            Clear();
+            if (items.Length < capacity) Array.Resize(ref items, Math.Max(capacity, items.Length * 2));
+            return items;
+        }
+
+        internal void Written(int length)
+        {
+            if ((uint)length > (uint)items.Length) throw new ArgumentOutOfRangeException(nameof(length));
+            count = length;
+        }
+
         public void RemoveLast()
         {
             if (count == 0) throw new InvalidOperationException("the list is empty");

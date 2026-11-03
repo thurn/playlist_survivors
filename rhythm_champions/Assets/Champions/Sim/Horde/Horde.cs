@@ -148,8 +148,10 @@ namespace Champions.Sim
         Mob[] mobs;
         readonly StructList<Moment> moments = new StructList<Moment>(16);
         readonly StructList<int> near;
-        struct Neighbour { public int Id; public double X, Y, Gap; }
-        readonly StructList<Neighbour> neighbours = new StructList<Neighbour>(256);
+        struct Neighbour { public int Id; public double X, Y, Gap, GapSquared; }
+        Neighbour[] neighbours = new Neighbour[256];
+        struct LandingBody { public double X, Y, Radius; }
+        LandingBody[] landings = new LandingBody[16];
         // A moment's movers, nearest the hero first: distance in tenths of a millimetre above the id's bits.
         long[] order;
         int orderCount;
@@ -433,6 +435,7 @@ namespace Champions.Sim
             }
             if (orderCount == 0) return;
             Array.Sort(order, 0, orderCount);
+            PrepareLandings();
             double touch = rules.TouchSlackM;
             for (int k = 0; k < orderCount; k++)
             {
@@ -447,6 +450,8 @@ namespace Champions.Sim
                 m.FromY = y;
                 m.ToX = qx;
                 m.ToY = qy;
+                landings[id].X = qx;
+                landings[id].Y = qy;
                 m.Start = t;
                 m.End = t + rules.SettleShare * interval;
                 m.Motion = Motion.Step;
@@ -505,17 +510,24 @@ namespace Champions.Sim
             m.Blocked = 0;
         }
 
-        /// <summary>Where mob <paramref name="id"/> is going: its motion's end (a placed enemy where it stands).</summary>
-        void Landing(int id, out double x, out double y)
+        // Between planning moves, only each mover's landing changes. Keep the compact
+        // geometry together rather than re-reading the full mob and enemy for every neighbour.
+        void PrepareLandings()
         {
-            if (mobs[id].Owned)
+            int n = enemies.Count;
+            if (landings.Length < n) Array.Resize(ref landings, mobs.Length);
+            var all = enemies.All;
+            for (int id = 0; id < n; id++)
             {
-                x = mobs[id].ToX;
-                y = mobs[id].ToY;
-                return;
+                ref readonly var e = ref all[id];
+                ref readonly var m = ref mobs[id];
+                landings[id] = new LandingBody
+                {
+                    X = m.Owned ? m.ToX : e.X,
+                    Y = m.Owned ? m.ToY : e.Y,
+                    Radius = e.Radius,
+                };
             }
-            x = enemies[id].X;
-            y = enemies[id].Y;
         }
 
         /// <summary>
@@ -533,26 +545,29 @@ namespace Champions.Sim
             enemies.Near((px + qx) / 2, (py + qy) / 2, length / 2 + r * gap + enemies.MaxRadius * rules.GapShare + slack + PushRoomM, near);
             // Landings stay fixed throughout this move's pushes and bends. Snapshot once instead
             // of resolving mob ownership, position and radius again for every collision pass.
-            neighbours.Clear();
-            for (int j = 0; j < near.Count; j++)
+            if (neighbours.Length < near.Count) Array.Resize(ref neighbours, near.Capacity);
+            int neighbourCount = 0;
+            var candidates = near.AsSpan();
+            for (int j = 0; j < candidates.Length; j++)
             {
-                int other = near[j];
+                int other = candidates[j];
                 if (other == id) continue;
-                Landing(other, out double ox, out double oy);
-                neighbours.Add(new Neighbour { Id = other, X = ox, Y = oy, Gap = (r + enemies[other].Radius) * gap });
+                ref readonly var landing = ref landings[other];
+                double min = (r + landing.Radius) * gap;
+                neighbours[neighbourCount++] = new Neighbour { Id = other, X = landing.X, Y = landing.Y, Gap = min, GapSquared = min * min };
             }
-            var bodies = neighbours.AsSpan();
+            var bodies = neighbours;
             double x = px, y = py;
             for (int attempt = 0; attempt < GapTries; attempt++)
             {
                 bool clear = true;
-                for (int j = 0; j < bodies.Length; j++)
+                for (int j = 0; j < neighbourCount; j++)
                 {
                     ref readonly var body = ref bodies[j];
                     int other = body.Id;
                     double ox = body.X, oy = body.Y, min = body.Gap;
                     double dx = x - ox, dy = y - oy, d2 = dx * dx + dy * dy;
-                    if (d2 >= min * min) continue;
+                    if (d2 >= body.GapSquared) continue;
                     clear = false;
                     double d = Math.Sqrt(d2);
                     if (d < 1e-6)
@@ -568,30 +583,42 @@ namespace Champions.Sim
                 }
                 if (clear) break;
             }
+            // Pushes may travel arbitrarily far through a crowded spawn, so they must see
+            // every query result. From here each bend only spends the remaining move length:
+            // a landing beyond that distance plus its gap cannot meet any of the slides.
+            int bendCount = 0;
+            for (int j = 0; j < neighbourCount; j++)
+            {
+                ref readonly var body = ref bodies[j];
+                double dx = x - body.X, dy = y - body.Y;
+                double reach = length + body.Gap + 1e-6;
+                if (dx * dx + dy * dy > reach * reach) continue;
+                bodies[bendCount++] = body;
+            }
             for (int bend = 0; bend < Bends; bend++)
             {
                 double l = Math.Sqrt(vx * vx + vy * vy);
                 if (l < 1e-9) break;
                 double ux = vx / l, uy = vy / l, hit = l, cx = 0, cy = 0;
                 bool met = false;
-                for (int j = -1; j < bodies.Length; j++)
+                for (int j = -1; j < bendCount; j++)
                 {
-                    double ox, oy, min;
+                    double ox, oy, minSquared;
                     if (j < 0)
                     {
                         ox = hx;
                         oy = hy;
-                        min = heroRadius + r;
+                        minSquared = (heroRadius + r) * (heroRadius + r);
                     }
                     else
                     {
                         ref readonly var body = ref bodies[j];
-                        ox = body.X; oy = body.Y; min = body.Gap;
+                        ox = body.X; oy = body.Y; minSquared = body.GapSquared;
                     }
                     // The first time along the move it would come inside min of (ox, oy).
                     double fx = x - ox, fy = y - oy, along = fx * ux + fy * uy;
                     if (along >= 0) continue;
-                    double c = fx * fx + fy * fy - min * min, disc = along * along - c;
+                    double c = fx * fx + fy * fy - minSquared, disc = along * along - c;
                     if (disc < 0) continue;
                     double t = Math.Max(0, -along - Math.Sqrt(disc));
                     if (t >= hit) continue;
@@ -599,6 +626,9 @@ namespace Champions.Sim
                     cx = ox;
                     cy = oy;
                     met = true;
+                    // Contact times are clamped to zero. No later body can beat this
+                    // first zero-time contact, including in a crowded spawn.
+                    if (hit == 0) break;
                 }
                 hit = Math.Max(0, hit - 1e-9);
                 x += ux * hit;
@@ -717,6 +747,7 @@ namespace Champions.Sim
                 longest = Math.Max(longest, rules.Cast[m.Kind].SpeedMps * span);
             }
             Array.Sort(order, 0, orderCount);
+            PrepareLandings();
             for (int k = 0; k < orderCount; k++)
             {
                 int id = (int)(order[k] & ((1L << IdBits) - 1));
@@ -729,6 +760,8 @@ namespace Champions.Sim
                 m.FromY = y;
                 m.ToX = qx;
                 m.ToY = qy;
+                landings[id].X = qx;
+                landings[id].Y = qy;
                 m.Start = end;
                 m.End = end + span;
                 m.Motion = Motion.Glide;

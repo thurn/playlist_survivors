@@ -20,6 +20,12 @@ namespace Champions.Sim.Tests
             sim.Enemies.Spawn(sim, 1, 1, .25, 100);
             sim.Enemies.Near(1, 1, 0, near);
             Assert.That(near.AsSpan().ToArray(), Is.EqualTo(new[] { 0, 1, 2 }));
+            sim.Enemies.Kill(0);
+            sim.Enemies.Near(1, 1, 0, near);
+            Assert.That(near.AsSpan().ToArray(), Is.EqualTo(new[] { 1, 2 }), "a cached small body dies without rebuilding");
+            sim.Enemies.Spawn(sim, 1, 1, .25, 100);
+            sim.Enemies.Near(1, 1, 0, near);
+            Assert.That(near.AsSpan().ToArray(), Is.EqualTo(new[] { 0, 1, 2 }));
             sim.Enemies.Kill(0); sim.Enemies.Kill(1); sim.Enemies.Kill(2);
             sim.Enemies.Spawn(sim, -2, -2, 5, 100);
             sim.Enemies.Near(-7, -2, 0, near);
@@ -41,6 +47,10 @@ namespace Champions.Sim.Tests
                     double x = random.NextDouble() * 80 - 40, y = random.NextDouble() * 80 - 40;
                     double reach = q % 9 == 0 ? 0 : random.NextDouble() * 8;
                     Check(x, y, reach);
+                    // Often the same cell rectangle, with a different exact circle: cached
+                    // cell contents must not become cached query hits.
+                    Check(x + .125, y - .125, reach + .0625);
+                    Check(x, y, reach);
                 }
                 // Exact body-edge queries, including zero reach and cell boundaries.
                 for (int i = 0; i < sim.Enemies.Count; i++)
@@ -51,6 +61,7 @@ namespace Champions.Sim.Tests
                 }
                 for (int i = phase; i < sim.Enemies.Count; i += 7) sim.Enemies.Kill(i);
                 Check(0, 0, 100); // Deaths do not rebuild the cached grid.
+                Check(.125, -.125, 100);
                 for (int i = 0; i < sim.Enemies.Count; i++)
                 {
                     ref var e = ref sim.Enemies.Edit(i);

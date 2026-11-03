@@ -230,6 +230,43 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
+        public void DistantBodiesInACrowdedQueryDoNotChangeSlides()
+        {
+            foreach (bool music in new[] { true, false })
+            {
+                Simulation Make(int distant)
+                {
+                    var bodies = new Dummy[distant + 1];
+                    bodies[0] = new Dummy(11.5, .65, 1e9, .4);
+                    // Inside the initial neighbourhood but beyond the slide's reach; enough
+                    // results to grow scratch storage, and an even count to keep mover parity.
+                    for (int i = 1; i < bodies.Length; i++) bodies[i] = new Dummy(14, 0, 1e9, .1);
+                    return Sim(music ? new FixtureSong().Beats(0, 30, 120) : null,
+                        tweak: c => { Immortal(c); c.Dummies = bodies; });
+                }
+                var sparse = Make(0);
+                var crowded = Make(300);
+                int a = sparse.Horde.Spawn(Kind("skeleton"), 12, 0);
+                int b = crowded.Horde.Spawn(Kind("skeleton"), 12, 0);
+                double side = 0;
+                for (int tick = 1; tick <= 720; tick++)
+                {
+                    sparse.StepTo(tick * Tick);
+                    crowded.StepTo(tick * Tick);
+                    var ea = sparse.Enemies[a]; var eb = crowded.Enemies[b];
+                    Assert.That((eb.X, eb.Y), Is.EqualTo((ea.X, ea.Y)), $"music={music}, tick={tick}");
+                    var ma = sparse.Horde.Mobs[a]; var mb = crowded.Horde.Mobs[b];
+                    Assert.That((mb.ToX, mb.ToY, mb.Detour), Is.EqualTo((ma.ToX, ma.ToY, ma.Detour)));
+                    double dx = eb.X - 11.5, dy = eb.Y - .65;
+                    Assert.That(dx * dx + dy * dy, Is.GreaterThanOrEqualTo(.8 * .8 - 1e-6));
+                    side = Math.Max(side, Math.Abs(eb.Y));
+                }
+                Assert.That(side, Is.GreaterThan(.1), "the nearby body actually bends the path");
+                Assert.That(crowded.Enemies[b].X, Is.LessThan(4), "the mob gets past the obstacle");
+            }
+        }
+
+        [Test]
         public void MobsSlideAlongAndSteerAroundStructures()
         {
             var sim = Sim(new FixtureSong().Beats(0, 60, 128), tweak: Immortal);

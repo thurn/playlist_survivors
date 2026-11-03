@@ -55,7 +55,8 @@ namespace Champions.EditorTools
         /// <summary>
         /// Builds the Mac player, an Apple silicon app drawing with Metal: `-backend mono|il2cpp`
         /// (default mono, plan.md Build Policy), `-buildOut &lt;dir&gt;` (default Builds/mac/&lt;backend&gt;),
-        /// `-development`, `-scene &lt;path&gt;` (repeatable; default the build settings' scenes). The
+        /// `-development`, `-scene &lt;path&gt;` (repeatable; default the build settings' scenes).
+        /// Non-development IL2CPP builds use Master / OptimizeSpeed for performance measurements. The
         /// shader variant budget (<see cref="ShaderVariantBudget"/>) fails a build over it. It bakes the libraries that
         /// only reference vendor files first (<see cref="Bake"/>), so a build always has the current ones.
         /// </summary>
@@ -75,10 +76,18 @@ namespace Champions.EditorTools
             Bake();
             var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
+            var previousCompiler = PlayerSettings.GetIl2CppCompilerConfiguration(NamedBuildTarget.Standalone);
+            var previousGeneration = PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.Standalone);
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, impl);
             UnityEditor.OSXStandalone.UserBuildSettings.architecture = OSArchitecture.ARM64;
             try
             {
+                if (backend == "il2cpp" && !TaskArgs.Has("-development"))
+                {
+                    PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Standalone, Il2CppCompilerConfiguration.Master);
+                    PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.Standalone, Il2CppCodeGeneration.OptimizeSpeed);
+                    Debug.Log($"Tasks.BuildPlayer: IL2CPP Master / OptimizeSpeed (previous {previousCompiler} / {previousGeneration})");
+                }
                 var options = new BuildPlayerOptions
                 {
                     scenes = scenes,
@@ -98,6 +107,8 @@ namespace Champions.EditorTools
             finally
             {
                 PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, previous);
+                PlayerSettings.SetIl2CppCompilerConfiguration(NamedBuildTarget.Standalone, previousCompiler);
+                PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.Standalone, previousGeneration);
                 AssetDatabase.SaveAssets();
                 foreach (var kv in kept)
                 {

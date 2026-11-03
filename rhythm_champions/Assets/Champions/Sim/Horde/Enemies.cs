@@ -59,7 +59,7 @@ namespace Champions.Sim
     /// The grid hashes 2 m cells into buckets (the arena is infinite), with bodies of radius over 1 m
     /// checked separately. It is rebuilt lazily, by a counting sort, on the first query after
     /// <see cref="Moved"/> or a spawn: whoever moves enemies calls <see cref="Moved"/> once after.
-    /// A kill leaves the grid alone: queries skip the dead. The client reads enemies through the indexer; only the sim's systems change them (<see cref="Edit"/>).
+    /// A kill leaves the grid alone: kills mark their cached entries dead. The client reads enemies through the indexer; only the sim's systems change them (<see cref="Edit"/>).
     /// </summary>
     public sealed class Enemies : IStrikeTargets
     {
@@ -80,8 +80,18 @@ namespace Champions.Sim
         struct CellBody { public double X, Y, Radius; public int Id, Cell; }
         CellBody[] cellItems;
         int[] cellOf;
+        int[] gridIndex;
         bool gridValid;
         long generation;
+        struct QueryRange
+        {
+            public int X0, X1, Y0, Y1, Start, Count;
+            public long Epoch;
+        }
+        readonly QueryRange[] ranges = new QueryRange[512];
+        int[] rangeItems = Array.Empty<int>();
+        int rangeCount;
+        long gridEpoch;
 
         public Enemies(int capacity)
         {
@@ -90,6 +100,7 @@ namespace Champions.Sim
             near = new StructList<int>(capacity);
             cellItems = new CellBody[Math.Max(1, capacity)];
             cellOf = new int[Math.Max(1, capacity)];
+            gridIndex = new int[Math.Max(1, capacity)];
         }
 
         /// <summary>How many slots have ever been used: ids run below it.</summary>
@@ -134,6 +145,7 @@ namespace Champions.Sim
                 {
                     Array.Resize(ref cellItems, slots.Capacity);
                     Array.Resize(ref cellOf, slots.Capacity);
+                    Array.Resize(ref gridIndex, slots.Capacity);
                 }
             }
             Alive++;
@@ -148,6 +160,9 @@ namespace Champions.Sim
         {
             ref var e = ref slots[id];
             if (!e.Alive) return;
+            // No rebuild for a death: a negative cached id skips the body without an
+            // indirect living-state read on every successful neighbourhood candidate.
+            if (gridValid && e.Radius <= GridRadius) cellItems[gridIndex[id]].Id = -1;
             e.Flags &= ~EnemyFlags.Alive;
             e.Health = 0;
             free.Add(id);
@@ -163,25 +178,50 @@ namespace Champions.Sim
         /// </summary>
         public void Near(double x, double y, double reach, StructList<int> into)
         {
-            into.Clear();
+            var output = into.ResetForWrite(Alive);
             if (Alive == 0) return;
+            int found = 0;
             if (!gridValid) Rebuild();
             double r = reach + gridRadius;
             int cx0 = Cell(x - r), cx1 = Cell(x + r), cy0 = Cell(y - r), cy1 = Cell(y + r);
-            for (int cy = cy0; cy <= cy1; cy++)
+            // A synchronized movement batch asks many nearby questions against the same
+            // grid. Cache the ordered cell contents, then do each query's exact circle test.
+            // The cache is direct-mapped and bounded; a collision or full buffer just misses.
+            int hash = unchecked(cx0 * 73856093 ^ cx1 * 19349663 ^ cy0 * 83492791 ^ cy1 * 15731);
+            ref var range = ref ranges[hash & (ranges.Length - 1)];
+            if (range.Epoch == gridEpoch && range.X0 == cx0 && range.X1 == cx1 && range.Y0 == cy0 && range.Y1 == cy1)
             {
-                for (int cx = cx0; cx <= cx1; cx++)
+                int stop = range.Start + range.Count;
+                for (int i = range.Start; i < stop; i++)
                 {
-                    int key = Key(cx, cy), b = Bucket(key);
-                    for (int k = bucketStart[b]; k < bucketStart[b + 1]; k++)
+                    ref readonly var body = ref cellItems[rangeItems[i]];
+                    if (body.Id < 0) continue;
+                    double dx = body.X - x, dy = body.Y - y, within = reach + body.Radius;
+                    if (dx * dx + dy * dy <= within * within) output[found++] = body.Id;
+                }
+            }
+            else
+            {
+                int start = rangeCount;
+                bool cache = rangeItems.Length - start >= slots.Count;
+                for (int cy = cy0; cy <= cy1; cy++)
+                {
+                    for (int cx = cx0; cx <= cx1; cx++)
                     {
-                        ref readonly var body = ref cellItems[k];
-                        // Another cell sharing the bucket: it is visited (or not) as itself.
-                        if (body.Cell != key) continue;
-                        double dx = body.X - x, dy = body.Y - y, within = reach + body.Radius;
-                        if (dx * dx + dy * dy <= within * within && slots[body.Id].Alive) into.Add(body.Id);
+                        int key = Key(cx, cy), b = Bucket(key);
+                        for (int k = bucketStart[b]; k < bucketStart[b + 1]; k++)
+                        {
+                            ref readonly var body = ref cellItems[k];
+                            if (body.Cell != key) continue;
+                            if (cache) rangeItems[rangeCount++] = k;
+                            if (body.Id < 0) continue;
+                            double dx = body.X - x, dy = body.Y - y, within = reach + body.Radius;
+                            if (dx * dx + dy * dy <= within * within) output[found++] = body.Id;
+                        }
                     }
                 }
+                if (cache) range = new QueryRange { Epoch = gridEpoch, X0 = cx0, X1 = cx1, Y0 = cy0, Y1 = cy1,
+                    Start = start, Count = rangeCount - start };
             }
             // Insert the few large bodies in the original row/cell/id order. Collision pushes,
             // equal-distance targets and proc budgets all depend on that order.
@@ -192,11 +232,18 @@ namespace Champions.Sim
                 if (!e.Alive) continue;
                 double dx = e.X - x, dy = e.Y - y, within = reach + e.Radius;
                 if (dx * dx + dy * dy > within * within) continue;
-                into.Add(id);
-                int j = into.Count - 1;
-                while (j > 0 && Before(id, into[j - 1])) { into[j] = into[j - 1]; j--; }
-                into[j] = id;
+                int lo = 0, hi = found;
+                while (lo < hi)
+                {
+                    int mid = lo + (hi - lo) / 2;
+                    if (Before(id, output[mid])) hi = mid;
+                    else lo = mid + 1;
+                }
+                Array.Copy(output, lo, output, lo + 1, found - lo);
+                output[lo] = id;
+                found++;
             }
+            into.Written(found);
         }
 
         bool Before(int a, int b)
@@ -210,6 +257,10 @@ namespace Champions.Sim
 
         void Rebuild()
         {
+            gridEpoch++;
+            rangeCount = 0;
+            int capacity = Math.Max(512, slots.Count * 32);
+            if (rangeItems.Length < capacity) Array.Resize(ref rangeItems, Math.Max(capacity, rangeItems.Length * 2));
             Array.Clear(bucketStart, 0, bucketStart.Length);
             large.Clear(); gridRadius = 0;
             int n = slots.Count;
@@ -229,7 +280,9 @@ namespace Champions.Sim
             {
                 if (!slots[id].Alive || slots[id].Radius > GridRadius) continue;
                 ref readonly var e = ref slots[id];
-                cellItems[bucketStart[Bucket(cellOf[id])]++] = new CellBody
+                int index = bucketStart[Bucket(cellOf[id])]++;
+                gridIndex[id] = index;
+                cellItems[index] = new CellBody
                     { X = e.X, Y = e.Y, Radius = e.Radius, Id = id, Cell = cellOf[id] };
             }
             for (int b = Buckets; b > 0; b--) bucketStart[b] = bucketStart[b - 1];
@@ -241,10 +294,22 @@ namespace Champions.Sim
         {
             shape.Bounds(out double cx, out double cy, out double radius);
             Near(cx, cy, radius, near);
-            for (int i = 0; i < near.Count; i++)
+            if (shape.Kind == ShapeKind.Cone)
             {
-                ref readonly var e = ref slots[near[i]];
-                if (shape.Touches(e.X, e.Y, e.Radius)) into.Add(near[i]);
+                var cone = new HitShape.ConeQuery(shape);
+                for (int i = 0; i < near.Count; i++)
+                {
+                    ref readonly var e = ref slots[near[i]];
+                    if (cone.Touches(e.X, e.Y, e.Radius)) into.Add(near[i]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < near.Count; i++)
+                {
+                    ref readonly var e = ref slots[near[i]];
+                    if (shape.Touches(e.X, e.Y, e.Radius)) into.Add(near[i]);
+                }
             }
         }
 

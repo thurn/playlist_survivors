@@ -75,6 +75,37 @@ namespace Champions.Sim
             }
         }
 
+        /// <summary>A cone's constants shared by all bodies in one query.</summary>
+        internal readonly struct ConeQuery
+        {
+            readonly HitShape shape;
+            readonly double cos, sin;
+            readonly bool fast;
+
+            internal ConeQuery(in HitShape shape)
+            {
+                this.shape = shape;
+                fast = shape.HalfArc >= 0 && shape.HalfArc < Math.PI / 2 - 1e-8;
+                cos = fast ? SimMath.Cos(shape.HalfArc + 1e-9) : 0;
+                sin = fast ? SimMath.Sin(shape.HalfArc + 1e-9) : 0;
+            }
+
+            internal bool Touches(double x, double y, double body)
+            {
+                if (!fast) return shape.Touches(x, y, body);
+                double ex = x - shape.X, ey = y - shape.Y, d = Math.Sqrt(ex * ex + ey * ey);
+                if (d > shape.Radius + body + 1e-9) return false;
+                if (d <= body + 1e-9) return true;
+                double dot = Math.Max(-1, Math.Min(1, (ex * shape.DirX + ey * shape.DirY) / d));
+                double width = Math.Min(1, body / d);
+                // cos(halfArc + asin(width) + tolerance), without per-body inverse trig.
+                double limit = cos * Math.Sqrt((1 - width) * (1 + width)) - sin * width;
+                // Preserve the original verdict where roundoff can decide a tangency.
+                if (Math.Abs(dot - limit) <= 1e-10) return shape.Touches(x, y, body);
+                return dot > limit;
+            }
+        }
+
         /// <summary>
         /// Does the shape touch a rectangle (a structure's footprint) of half sizes (<paramref name="hx"/>,
         /// <paramref name="hy"/>) round (<paramref name="cx"/>, <paramref name="cy"/>), its x axis along

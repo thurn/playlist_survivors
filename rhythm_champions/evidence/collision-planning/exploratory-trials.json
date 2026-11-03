@@ -1,0 +1,387 @@
+[
+  {
+    "variant": "array-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.037,
+        "p99": 1.873
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.455,
+        "p99": 1.448
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.006,
+        "p99": 1.861
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.475,
+        "p99": 7.037
+      }
+    }
+  },
+  {
+    "variant": "cull-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.037,
+        "p99": 1.637
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.462,
+        "p99": 1.337
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.973,
+        "p99": 1.774
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.751,
+        "p99": 6.843
+      }
+    }
+  },
+  {
+    "variant": "cache-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.043,
+        "p99": 1.667
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.503,
+        "p99": 1.409
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.069,
+        "p99": 2.111
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.959,
+        "p99": 7.046
+      }
+    }
+  },
+  {
+    "variant": "tree-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.037,
+        "p99": 2.329
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.462,
+        "p99": 1.394
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.997,
+        "p99": 1.865
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.665,
+        "p99": 6.866
+      }
+    }
+  },
+  {
+    "variant": "iterative-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.037,
+        "p99": 2.308
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.459,
+        "p99": 1.366
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.994,
+        "p99": 1.812
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.742,
+        "p99": 6.893
+      }
+    }
+  },
+  {
+    "variant": "query-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.041,
+        "p99": 1.609
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.476,
+        "p99": 1.372
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.005,
+        "p99": 1.868
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.698,
+        "p99": 7.089
+      }
+    }
+  },
+  {
+    "variant": "bulk-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.039,
+        "p99": 1.559
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.478,
+        "p99": 1.487
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.014,
+        "p99": 1.799
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.799,
+        "p99": 7.149
+      }
+    }
+  },
+  {
+    "variant": "group-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.036,
+        "p99": 1.637
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.456,
+        "p99": 1.373
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.974,
+        "p99": 1.796
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.827,
+        "p99": 7.032
+      }
+    }
+  },
+  {
+    "variant": "cone-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.042,
+        "p99": 1.5
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.496,
+        "p99": 1.336
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.034,
+        "p99": 1.878
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.795,
+        "p99": 6.83
+      }
+    }
+  },
+  {
+    "variant": "windowed-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.052,
+        "p99": 1.702
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.471,
+        "p99": 1.327
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.462,
+        "p99": 0.869
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.108,
+        "p99": 4.414
+      }
+    }
+  },
+  {
+    "variant": "master-trial",
+    "report": {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.032,
+        "p99": 1.427
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.424,
+        "p99": 1.342
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.0,
+        "p99": 1.795
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.699,
+        "p99": 6.856
+      }
+    }
+  }
+]
