@@ -44,3 +44,24 @@ Reproduce with the built player's `--file` pointing to the local soundtrack,
 `--walk 'right@0-2,down@2-5,left@5-10,up@10-18,f@8.28-8.33,f@9.16-9.21,space@10.22-10.27,f@11.28-11.33'`.
 Then `just champions-tool play --headless --replay <local-session> --replay-speed 8`.
 Operator hand-play remains useful for judging the new positioning option.
+
+## Independent Warden review — ps-uyc.2
+
+Reviewed the implementation at `87e7786` against current staging and the
+live design, including shared buffer arbitration, appended key serialization,
+keyboard suspension, card/death input blocking, movement preservation and
+the common landing-sweep presentation. No gameplay defect found.
+
+Added deterministic regression coverage for actual damage dodging inside F's
+shield and damage after its expiry, both uninterrupted and across a pause.
+The paused case also verifies exactly one stationary sweep at the shifted
+impact time. Both buffered F and buffered Space are discarded by pause and
+require a new press after resume. All 505 simulation tests pass.
+Unity EditMode also passes 138/138 with no skips after standard local setup
+restored this worktree's initially absent plugin and vendor assets.
+
+Independently replayed the local captured session: exact hash
+`C04463B9BD804A91`, 843/843 events. Inspected sequential capture frames around
+both F actions and Space: ordinary walking with stationary relative cleave,
+retained yellow aura after off-beat F, and distinct Space travel. This remains
+automated capture evidence, not operator hand-play approval.

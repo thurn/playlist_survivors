@@ -11,6 +11,45 @@ namespace Champions.Sim.Tests
         static void Tap(Simulation s, Key k, double t)
         { s.StepTo(t); s.Press(k, t); s.Release(k, t); }
 
+        [TestCase(false)] [TestCase(true)]
+        public void CleaveShieldExpiresAfterActiveTimeEvenAcrossPause(bool pause)
+        {
+            var s = Make(); Tap(s, Key.F, 1);
+            double held = pause ? 5 : 0;
+            if (pause)
+            {
+                s.StepTo(1.1); s.Control(RunControl.Pause, 1.1);
+                s.StepTo(6.1);
+                Assert.That(Drive.Events(s, SimEventKind.LandingBlast), Is.Empty);
+                s.Control(RunControl.Resume, 6.1);
+            }
+            foreach (double t in new[] { 1.24 + held, 1.26 + held })
+            {
+                s.StepTo(t);
+                s.Health.Hurt(s, new HeroHit { T = t, Damage = 5, Beat = double.NaN });
+            }
+            s.StepTo(2 + held);
+            Assert.That(Drive.Events(s, SimEventKind.HeroHit).Select(e => (HitOutcome)e.I0),
+                Is.EqualTo(new[] { HitOutcome.Dodged, HitOutcome.Hurt }));
+            var sweep = Drive.Events(s, SimEventKind.LandingBlast).Single();
+            Assert.That(sweep.T, Is.EqualTo(1.15 + held).Within(1e-9));
+            Assert.That((sweep.D0, sweep.D1), Is.EqualTo((0d, 0d)));
+        }
+
+        [TestCase(Key.F)] [TestCase(Key.Space)]
+        public void PauseDiscardsBufferedActionAndRequiresANewPress(Key buffered)
+        {
+            var s = Make(); Tap(s, Key.F, 1); Tap(s, buffered, 1.5);
+            Assert.That(s.State.Hero.DashWaiting, Is.True);
+            s.Control(RunControl.Pause, 1.5); s.StepTo(6.5);
+            s.Control(RunControl.Resume, 6.5); s.StepTo(7);
+            Assert.That(s.State.Hero.Dashes, Is.EqualTo(1));
+            Tap(s, buffered, 7);
+            Assert.That(s.State.Hero.Dashes, Is.EqualTo(2));
+            Assert.That(Drive.Events(s, SimEventKind.HeroDash).Last().InPlaceCleave,
+                Is.EqualTo(buffered == Key.F));
+        }
+
         [Test]
         public void FRecordsAndReplaysAlongsideSpaceAndPause()
         {
