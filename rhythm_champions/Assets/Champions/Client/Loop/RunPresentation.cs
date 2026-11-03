@@ -158,8 +158,18 @@ namespace Champions.Client.Loop
                     Hero.Swing(e.I0 == 1 ? SwingKind.Spin : SwingKind.Slash, e.D0, new Vector2((float)e.D1, (float)e.D2));
                     break;
                 case SimEventKind.HeroDash:
-                    if (!e.InPlaceCleave) Hero.Dash((DashPose)e.DashType, e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5), evolved: e.DashRank == Upgrade.Evolution);
-                    if (_sim.Melee != null) Hero.Motion.LandingSpin(e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5));
+                    var direction = new Vector2((float)e.D4, (float)e.D5);
+                    if (e.InPlaceCleave)
+                    {
+                        double reach = MeleeWeapons.CleaveRadius(_sim.State.Build.Stats(WeaponKind.Sword))
+                            * Math.Sqrt(_sim.State.Build.AreaAt(_sim.CombatTime(e.D1)));
+                        Hero.Motion.WalkingCleave(e.D0, e.D1, direction, (float)reach, (e.I0 & 1) != 0);
+                    }
+                    else
+                    {
+                        Hero.Dash((DashPose)e.DashType, e.D0, e.D1, direction, evolved: e.DashRank == Upgrade.Evolution);
+                        if (_sim.Melee != null) Hero.Motion.LandingSpin(e.D0, e.D1, direction);
+                    }
                     break;
                 case SimEventKind.HeroHit when e.D0 > 0:
                     Hero.Hurt(e.T);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Champions.Client.Hero;
 using UnityEngine;
 
 namespace Champions.EditorTools.Monsters
@@ -14,17 +15,17 @@ namespace Champions.EditorTools.Monsters
     public static class CrystalBlade
     {
         /// <summary>The blade's renderer: the baker knows it by this name.</summary>
-        public const string Name = "CrystalBlade";
+        public const string Name = HeroPresenter.BladeNode;
         /// <summary>The blade's length from the guard to the tip, in metres: big, but short enough that the sword clips'
         /// swings stay clear of the body and the ground.</summary>
-        public const float BladeM = 1.15f;
+        public const float BladeM = HeroPresenter.BladeM;
         /// <summary>The blade's width at the guard and its thickness at the spine, in metres.</summary>
         public const float WidthM = 0.15f, ThickM = 0.05f;
         /// <summary>The middle of the handle, which sits in the fist (mesh metres, below the guard).</summary>
-        const float GripY = -0.06f;
+        const float GripY = HeroPresenter.GripY;
         /// <summary>The handle's offset from the knuckles toward the palm (m): the trailer's grip.</summary>
         const float PalmM = 0.02f;
-        const float GuardY = 0.07f;
+        const float GuardY = HeroPresenter.GuardY;
 
         /// <summary>
         /// The blade in the fist of the right hand (<see cref="Fist"/>): the handle through it across the knuckles, a little

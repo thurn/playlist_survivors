@@ -87,6 +87,21 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
+        public void OrdinaryCleaveReportsOnlyContactsInItsFootprint()
+        {
+            var s = new Simulation(new SimConfig { SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>(),
+                Dummies = new[] { new Dummy(4.3, 0, 12, .2), new Dummy(-4.5, 0, 12, .2) } });
+            foreach (var k in Drive.Known(new FixtureSong().Beats(0, 16, 120, onsets: false).Entries()))
+                s.AddKnown(k.Entry, k.KnownAt);
+            Tap(s, Key.F, 6.125); s.StepTo(6.4);
+            var sweep = Drive.Events(s, SimEventKind.LandingBlast).Single();
+            Assert.That(sweep.D2, Is.EqualTo(4.2).Within(1e-6));
+            Assert.That(sweep.I1, Is.EqualTo(1));
+            Assert.That(s.Enemies[0].Health, Is.EqualTo(11));
+            Assert.That(s.Enemies[1].Health, Is.EqualTo(12));
+        }
+
+        [Test]
         public void OnbeatBufferedSpaceSurvivesAnOffbeatFReplacement()
         {
             var s = Make();
@@ -151,7 +166,7 @@ namespace Champions.Sim.Tests
             var s = Make();
             foreach (var k in Drive.Known(new FixtureSong().Beats(0, 16, 120, onsets: false).Entries())) s.AddKnown(k.Entry, k.KnownAt);
             Tap(s, Key.F, 6); s.StepTo(6.2);
-            Assert.That(Drive.Events(s, SimEventKind.LandingBlast).Single().D2, Is.EqualTo(3 * Math.Sqrt(2)).Within(1e-9));
+            Assert.That(Drive.Events(s, SimEventKind.LandingBlast).Single().D2, Is.EqualTo(4.2 * Math.Sqrt(2)).Within(1e-9));
             Tap(s, Key.F, 6.625);
             Assert.That(s.State.Hero.DashOnBeat, Is.False);
             Assert.That(s.State.Build.AuraUntil, Is.EqualTo(9).Within(1e-9));

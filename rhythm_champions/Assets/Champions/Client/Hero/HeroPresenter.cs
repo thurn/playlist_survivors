@@ -35,6 +35,10 @@ namespace Champions.Client.Hero
         readonly HeroFocus _focus;
         readonly MonsterShatter _shatter;
         readonly Vector4[] _rows;
+        readonly int _bladeEntry;
+        // Local metres of the rigid attachment, shared with its mesh builder.
+        public const string BladeNode = "CrystalBlade";
+        public const float GripY = -.06f, GuardY = .07f, BladeM = 1.15f;
         bool _broken;
 
         // The stand-in, when not.
@@ -63,6 +67,7 @@ namespace Champions.Client.Hero
             var rig = type.Rig;
             _motion = new HeroMotion(new HeroClips(Array.ConvertAll(rig.Clips,
                 c => new ClipInfo(c.Role, c.Name, c.Length, c.Impact, c.End, c.Loop, c.StrideM))), speedMps);
+            _bladeEntry = Array.FindIndex(rig.Entries, node => rig.Nodes[node] == BladeNode);
             _pose = new RigPose(rig);
             _layer = new RigPose(rig);
             _run = new RigPose(rig);
@@ -186,6 +191,8 @@ namespace Champions.Client.Hero
                 _pose.Blend(_layer, l.Weight * l.Legs, l.Weight, l.Weight);
             }
             _pose.Palette(_rows, _p.Twist);
+            if (_bladeEntry >= 0 && _p.BladeExtension > 0)
+                _pose.Extend(_rows, _bladeEntry, GripY, GuardY + BladeM, _p.BladeExtension);
         }
 
         /// <summary>Adds one way of the run (a clip at its time and share) into the run's pose.</summary>

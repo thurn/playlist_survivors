@@ -134,6 +134,7 @@ namespace Champions.Client.Scenes
                         entries.Add(new Entry(magic[form] + (empowered == 1 ? "-empowered" : "-normal") + "-phase" + phase,
                             (EffectCue)((int)EffectCue.LightningBolt + form), shot, .025 + phase * .08));
                     }
+            entries.Add(new Entry("walking-cleave", EffectCue.WalkingCleave, At(EffectPower.Plain, 4.2), .09));
             entries.Add(new Entry("lightning-link", EffectCue.LightningLink, Path(EffectPower.Plain, Vector2.zero, Aim * 5, .22), .08));
             return entries.ToArray();
         }

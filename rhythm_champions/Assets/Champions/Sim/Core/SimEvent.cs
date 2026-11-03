@@ -89,7 +89,7 @@ namespace Champions.Sim
         public int I0, I1, I2;
         public double D0, D1, D2, D3, D4, D5;
 
-        /// <summary>Destination support: I0 dash index; D0/D1 actual endpoint, D2 radius, D3 damage.</summary>
+        /// <summary>Destination support: I0 dash index; D0/D1 actual endpoint, D2 radius, D3 damage. For F, I2 is 1, I1 counts struck bodies and D4/D5 retain the attack heading.</summary>
         public static SimEvent LandingBlast(double t, int dash, double x, double y, double radius, double damage)
         {
             return new SimEvent { Kind = SimEventKind.LandingBlast, T = t, I0 = dash,
@@ -371,7 +371,8 @@ namespace Champions.Sim
         }
 
         // Reading a dash's fields.
-        public bool InPlaceCleave => Kind == SimEventKind.HeroDash && (I2 & 256) != 0;
+        public bool InPlaceCleave => Kind == SimEventKind.HeroDash && (I2 & 256) != 0
+            || Kind == SimEventKind.LandingBlast && I2 == 1;
         public int DashType => I1 & 0xff;
         public int DashRank => I1 >> 8;
         public bool OnBeat => (I2 & 1) != 0;

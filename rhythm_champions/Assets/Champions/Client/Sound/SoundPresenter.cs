@@ -108,11 +108,18 @@ namespace Champions.Client.Sound
                 {
                     // A dash starts when its key was heard: in heard time.
                     bool late = e.D0 < _settled;
-                    if (!e.InPlaceCleave) Request(SoundKind.Whoosh, e.D0, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, late);
+                    if (e.InPlaceCleave)
+                        PlayCleave(SoundKind.Whoosh, e.I0, e.D0, 1.15f, (e.I0 & 1) == 0 ? .86f : .97f);
+                    else Request(SoundKind.Whoosh, e.D0, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, late);
                     if (e.OnBeat) Request(SoundKind.Accent, e.D0, AccentGain, 1f, 1f, late);
                     if (e.DashType == _leapSlam) Request(SoundKind.Slam, e.D1, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, e.D1 < _settled);
                     break;
                 }
+                case SimEventKind.LandingBlast when e.InPlaceCleave:
+                    if (e.I1 > 0)
+                        PlayCleave(e.I1 >= 3 ? SoundKind.HitHeavy : SoundKind.Hit, e.I0, e.T, 1.55f,
+                            e.I1 >= 3 ? .85f : .94f);
+                    break;
                 case SimEventKind.LandingBlast:
                     Request(SoundKind.Swing, e.T, 1f, 1f, .6f, asap);
                     Request(SoundKind.HitHeavy, e.T, 0.6f, 1f, 0.5f, asap);
@@ -171,6 +178,14 @@ namespace Champions.Client.Sound
             Request(SoundKind.ShatterGlass, t, 1f, pitch, 1f, asap);
             double land = t + LandSeconds * Math.Sqrt(size) * (0.85 + 0.3 * Rand(seed, 2));
             Request(SoundKind.ShatterTinkle, land, 1f, pitch * (1f + 0.1f * (Rand(seed, 3) - 0.5f)), 1f, asap);
+        }
+
+        // F can request just one air and one contact voice per shared cooldown. Give the
+        // player's transient its own level, independent of shatters and automatic swings.
+        void PlayCleave(SoundKind kind, int index, double song, float gain, float pitch)
+        {
+            var cue = new SoundCue { Kind = kind, Song = song, Gain = gain, Pitch = pitch, Asap = true };
+            _scheduler.Play(cue, index, gain);
         }
 
         /// <summary>The pitch of a boss's sounds by its move: the Ogre's, or the dragon's lower.</summary>

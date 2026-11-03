@@ -16,6 +16,9 @@ namespace Champions.Sim
             sim.Weapons.Bind(WeaponKind.Hammer, t => HasTarget(WeaponKind.Hammer, t), Fire);
         }
         public static double Radius(WeaponKind kind) => kind == WeaponKind.Hammer ? 2.6 : 3;
+        // Manual F commits the held blade to a wide cut. Space keeps its landing radius.
+        public static double CleaveRadius(CombatStats stats) => 4.2 * stats.RadiusFactor;
+
         bool HasTarget(WeaponKind kind, double t)
         {
             if (kind == WeaponKind.Sword && sim.State.Hero.Dashes > 0 && t < sim.State.Hero.DashEnd + .22) return false;

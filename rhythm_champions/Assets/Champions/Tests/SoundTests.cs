@@ -142,15 +142,22 @@ namespace Champions.Tests
                 Is.EqualTo(new[] { (SoundKind.Swing, 1.4), (SoundKind.SwingHeavy, 2.4) }), "attacks on the impacts, a spin heavier");
         }
 
-        [Test]
-        public void InPlaceCleaveHasAccentAndImpactSoundWithoutTravelWhoosh()
+        [TestCase(0)] [TestCase(1)] [TestCase(5)]
+        public void ManualCleaveAlwaysCutsAirAndOnlyStruckBodiesSound(int contacts)
         {
             _sounds.Present(Frame(1));
             _sounds.Take(SimEvent.HeroDash(1 + Lead, 0, 0, 1, JudgedBy.Beat, false,
                 1 + Lead, 1.15 + Lead, 0, 0, 1, 0, inPlace: true));
-            _sounds.Take(SimEvent.LandingBlast(1.15 + Lead, 0, 0, 0, 3, 1));
-            Assert.That(_scheduler.Log.Select(x => (x.Cue.Kind, x.Attack)), Is.EqualTo(new[]
-            { (SoundKind.Accent, 1 + Lead), (SoundKind.Swing, 1.15 + Lead), (SoundKind.HitHeavy, 1.15 + Lead) }));
+            var sweep = SimEvent.LandingBlast(1.15 + Lead, 0, 0, 0, 4.2, 1);
+            sweep.I2 = 1;
+            sweep.I1 = contacts;
+            _sounds.Take(sweep);
+            var log = _scheduler.Log;
+            Assert.That(log.Take(2).Select(x => (x.Cue.Kind, x.Attack)), Is.EqualTo(new[]
+            { (SoundKind.Whoosh, 1 + Lead), (SoundKind.Accent, 1 + Lead) }));
+            Assert.That(log.Count, Is.EqualTo(contacts == 0 ? 2 : 3));
+            if (contacts > 0) Assert.That((log[2].Cue.Kind, log[2].Attack), Is.EqualTo(
+                (contacts >= 3 ? SoundKind.HitHeavy : SoundKind.Hit, sweep.T)));
         }
 
         [Test]

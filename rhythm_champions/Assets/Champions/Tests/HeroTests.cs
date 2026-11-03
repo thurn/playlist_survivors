@@ -280,6 +280,26 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void BladeExtensionKeepsTheGripInThePosedHand()
+        {
+            var rig = Rig(Quaternion.identity, Quaternion.Euler(0, 45, 0), Quaternion.Euler(25, 0, 65));
+            try
+            {
+                var pose = new RigPose(rig);
+                var rows = new Vector4[9];
+                pose.Sample(1, .5); pose.Palette(rows, .4f);
+                var grip = Hand + Vector3.up * HeroPresenter.GripY;
+                var tip = Hand + Vector3.up * (HeroPresenter.GuardY + HeroPresenter.BladeM);
+                var fist = Skin(rows, 2, grip);
+                var reach = Vector3.Distance(fist, Skin(rows, 2, tip));
+                pose.Extend(rows, 2, HeroPresenter.GripY, HeroPresenter.GuardY + HeroPresenter.BladeM, 3);
+                Assert.That(Vector3.Distance(fist, Skin(rows, 2, grip)), Is.LessThan(1e-5f));
+                Assert.That(Vector3.Distance(fist, Skin(rows, 2, tip)), Is.EqualTo(reach + 3).Within(1e-5f));
+            }
+            finally { Object.DestroyImmediate(rig); }
+        }
+
+        [Test]
         public void AClipLaidOverTheLegsKeepsItsSpinesTurnWhateverItsHipsDo()
         {
             // The clip turns its hips 45 degrees and its spine back again: its upper body faces ahead.
@@ -303,6 +323,27 @@ namespace Champions.Tests
             }
             finally { Object.DestroyImmediate(rig); }
         }
+        [TestCase(false)] [TestCase(true)]
+        public void WalkingCutReachesFromTheGripAtImpactAndRecoversAcrossPause(bool backhand)
+        {
+            var m = Motion(); var p = new HeroPose();
+            m.Walk(0, Vector2.up * 6); m.Evaluate(.98, p);
+            m.Swing(SwingKind.Slash, 1.12, Vector2.right);
+            m.WalkingCleave(1, 1.15, Vector2.up, 4.2f, backhand);
+            m.Evaluate(1.05, p);
+            Assert.That(p.BladeExtension, Is.GreaterThan(0));
+            m.Hold(1.05, true); m.Hold(2.05, false); m.Evaluate(2.15, p);
+            Assert.That(p.Run, Is.EqualTo(1));
+            Assert.That(p.BladeExtension, Is.EqualTo(2.45f).Within(.001f));
+            Assert.That(p.Layers.Take(p.LayerCount).Select(l => l.Clip),
+                Is.EqualTo(new[] { backhand ? m.Clips.SlashB.Index : m.Clips.SlashA.Index }));
+            m.Evaluate(2.38, p);
+            Assert.That(p.BladeExtension, Is.Zero);
+            var next = m.Swing(SwingKind.Slash, 2.40, Vector2.up);
+            m.Evaluate(2.40, p);
+            Assert.That(p.Layers.Take(p.LayerCount).Last().Time, Is.EqualTo(Knight[next.Clip].Impact).Within(1e-5));
+        }
+
         [TestCase(true)] [TestCase(false)]
         public void LandingSpinOverridesAnAutomaticWindupAndOwnsTheExitAtNaturalSpeed(bool travel)
         {

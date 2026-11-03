@@ -108,7 +108,11 @@ namespace Champions.Client
                     Dash(e);
                     break;
                 case SimEventKind.LandingBlast:
-                    _fx.Fire(EffectCue.SwordSpin, new EffectShot { T = e.T, At = V(e.D0, e.D1), Radius = (float)e.D2,
+                    bool manual = e.InPlaceCleave;
+                    _fx.Fire(manual ? EffectCue.WalkingCleave : EffectCue.SwordSpin, new EffectShot {
+                        // The blade is already sweeping through contact when damage settles.
+                        T = manual ? e.T - .075 : e.T, At = V(e.D0, e.D1), Radius = (float)e.D2,
+                        Facing = V(e.D4, e.D5), Mirrored = manual && (e.I0 & 1) != 0,
                         Power = _sim.State.Build.AreaAt(_sim.CombatTime(e.T)) > 1 ? EffectPower.OnBeat : EffectPower.Plain });
                     break;
                 case SimEventKind.DashPart:

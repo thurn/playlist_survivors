@@ -123,6 +123,19 @@ namespace Champions.Render.Crowd
             }
         }
 
+        /// <summary>Extend a rigid attachment along local Y around its grip after composing the pose.</summary>
+        public void Extend(Vector4[] rows, int entry, float gripY, float tipY, float metres)
+        {
+            var world = _world[_rig.Entries[entry]];
+            float length = world.MultiplyVector(Vector3.up * (tipY - gripY)).magnitude;
+            if (length < 1e-5f) return;
+            float stretch = metres / length;
+            var scale = Matrix4x4.Scale(new Vector3(1 + Mathf.Min(.9f, stretch * .4f), 1 + stretch, 1));
+            scale.m13 = -gripY * stretch;
+            var m = world * scale * _rig.Binds[entry];
+            for (int i = 0; i < 3; i++) rows[3 * entry + i] = m.GetRow(i);
+        }
+
         /// <summary>A node's position in root space as the latest <see cref="Palette"/> composed it.</summary>
         public Vector3 NodePosition(int node) => _world[node].GetColumn(3);
     }

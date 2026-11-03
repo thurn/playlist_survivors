@@ -65,6 +65,7 @@ namespace Champions.Render
         SentinelSentry, SentinelCombo, SentinelLeap, SentinelFormation,
         LightningBolt, LightningFork, StormSigil, StormConstellation,
         EmberSeal, EmberFissure, EmberBrazier, EmberProcession, LightningLink,
+        WalkingCleave,
     }
 
     /// <summary>How strong an effect draws (design.md, The Look &gt; Weapon effects): on the beat bigger and brighter; special moments the brightest.</summary>

@@ -110,6 +110,9 @@ namespace Champions.Client.Hero
         public float Flare;
         /// <summary>The hurt flash, 1 on the hit's frame and gone over <see cref="HeroMotion.HurtS"/>.</summary>
         public float Hurt;
+        // Metres of additional blade length, grown from its grip only for a manual cut.
+        public float BladeExtension;
+        internal float CleaveTurn;
 
         internal void Add(int clip, double time, double weight, double legs)
         {
@@ -203,6 +206,7 @@ namespace Champions.Client.Hero
             public double End, ClipEnd;
             public double CutAt;
             public float AimYaw;
+            public float CleaveRadius;
             /// <summary>The twist's weight carried in from the swing before, at its entry.</summary>
             public double Carry;
 
@@ -278,8 +282,13 @@ namespace Champions.Client.Hero
             var prev = _swingCount > 0 ? _swings[(_swingCount - 1) % Keep] : default;
             bool afterA = _swingCount > 0 && prev.Impact < prev.CutAt && prev.Clip == _clips.SlashA.Index && impact - _clips.SlashB.Impact <= prev.ClipEnd + AttackOut;
             var c = kind == SwingKind.Spin ? _clips.Spin : afterA ? _clips.SlashB : _clips.SlashA;
+            return PlanSwing(kind, impact, aim, c, prev, _shown, priority);
+        }
+
+        SwingRecord PlanSwing(SwingKind kind, double impact, Vector2 aim, HeroClips.Clip c, SwingRecord prev,
+            double earliest, bool priority)
+        {
             // It shows no earlier than the frame it is known on, nor before the swing before has followed through.
-            double earliest = _shown;
             if (_swingCount > 0 && !priority) earliest = Math.Max(earliest, Math.Min(prev.End, prev.CutAt));
             double room = impact - earliest;
             float speed = 1;
@@ -311,7 +320,7 @@ namespace Champions.Client.Hero
             {
                 ref var s = ref _swings[i % Keep];
                 // Grid points spent while held cannot become automatic hits on resume.
-                if (s.Kind != SwingKind.Spin && s.Impact >= _heldAt) s.CutAt = Math.Min(s.CutAt, _heldAt);
+                if (s.Kind != SwingKind.Spin && s.CleaveRadius == 0 && s.Impact >= _heldAt) s.CutAt = Math.Min(s.CutAt, _heldAt);
                 s.Start += elapsed; s.Impact += elapsed; s.Entry += elapsed;
                 s.End += elapsed; s.ClipEnd += elapsed; s.CutAt += elapsed;
             }
@@ -328,10 +337,27 @@ namespace Champions.Client.Hero
                     _swings[i % Keep].AimYaw = YawOf(aim);
         }
 
-        public void LandingSpin(double start, double impact, Vector2 direction)
+        void CutSwings(double start)
         {
             for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
                 _swings[i % Keep].CutAt = Math.Min(_swings[i % Keep].CutAt, start);
+        }
+
+        public void WalkingCleave(double start, double impact, Vector2 direction, float radius, bool backhand)
+        {
+            CutSwings(start);
+            var clip = backhand ? _clips.SlashB : _clips.SlashA;
+            var swing = PlanSwing(SwingKind.Slash, impact, direction, clip, default, start, true);
+            // The automatic sword can hit again after the manual cut's .22 s recovery.
+            swing.End = Math.Min(swing.End, impact + .20);
+            swing.ClipEnd = swing.End;
+            swing.CleaveRadius = radius;
+            _swings[(_swingCount - 1) % Keep] = swing;
+        }
+
+        public void LandingSpin(double start, double impact, Vector2 direction)
+        {
+            CutSwings(start);
             // Enter the authored spin's final .15 s windup at natural speed; the full 1.43 s
             // lead cannot precede an immediate dash. The dash owns travel, the spin owns exit.
             Swing(SwingKind.Spin, impact, direction, priority: true);
@@ -394,8 +420,10 @@ namespace Champions.Client.Hero
             var idle = _clips.Idle;
             p.IdleTime = (float)Repeat(t, idle.Length);
             Walking(t, out double travel, out double run, out double walked);
+            p.BladeExtension = p.CleaveTurn = 0;
             double standing = Swings(t, p, travel, run);
             Torso(t, p, travel, standing, run, walked);
+            p.Twist += p.CleaveTurn;
             DashOver(t, p);
             p.Hurt = 0;
             for (int i = Math.Max(0, _hurtCount - Keep); i < _hurtCount; i++)
@@ -433,10 +461,23 @@ namespace Champions.Client.Hero
                 var s = _swings[i % Keep];
                 if (s.Impact <= t + 1e-6 && s.Impact < s.CutAt) latestImpact = Math.Max(latestImpact, s.Impact);
                 if (s.Entry > t || t >= s.CutAt) continue;
-                double fadeIn = Clamp01((t - s.Entry) / Math.Max(1e-3, Math.Min(AttackIn, 0.5 * (s.Impact - s.Entry))));
+                double blend = s.CleaveRadius > 0 ? .032 : AttackIn;
+                double fadeIn = Clamp01((t - s.Entry) / Math.Max(1e-3, Math.Min(blend, 0.5 * (s.Impact - s.Entry))));
                 double w = fadeIn * (1 - Smooth(Clamp01((t - s.ClipEnd) / AttackOut)));
                 if (w <= 0) continue;
-                p.Add(s.Clip, Math.Max(0, s.ClipTime(t)), w, 1 - run);
+                double legs = 1 - run;
+                if (s.CleaveRadius > 0)
+                {
+                    // Coil, cut through the target, then recover while the feet keep walking.
+                    double before = Smooth((t - s.Entry) / Math.Max(.001, s.Impact - s.Entry));
+                    double recover = Smooth((t - s.Impact) / .22);
+                    double drive = before * (1 - recover);
+                    double hand = s.Clip == _clips.SlashB.Index ? -1 : 1;
+                    p.CleaveTurn = (float)(hand * w * ((-.55 + 1.35 * before) * (1 - recover)));
+                    p.BladeExtension = (float)(Math.Max(0, s.CleaveRadius - 1.75) * drive);
+                    legs += run * .28 * drive;
+                }
+                p.Add(s.Clip, Math.Max(0, s.ClipTime(t)), w, legs);
                 if (!float.IsNaN(s.AimYaw) && t < s.End + 0.5 * AttackOut) standing = s.AimYaw;
             }
             double since = t - latestImpact;

@@ -287,7 +287,7 @@ namespace Champions.Sim
             {
                 var stats = simState.Build.Stats(WeaponKind.Sword);
                 blastDamage = (1 + simState.Build.HeroBonus(StatFamily.LandingBlast)) * stats.DamageFactor;
-                blastRadius = MeleeWeapons.Radius(WeaponKind.Sword) * stats.RadiusFactor;
+                blastRadius = inPlace ? MeleeWeapons.CleaveRadius(stats) : MeleeWeapons.Radius(WeaponKind.Sword) * stats.RadiusFactor;
             }
             bool damaging = false;
             for (int i = 0; i < partCount; i++) damaging |= parts[i].Damage > 0;
@@ -406,8 +406,17 @@ namespace Champions.Sim
                     Shape = HitShape.Circle(x, y, radius), T = current.End, Damage = blastDamage,
                     Tags = HitTags.Area, Source = BlowSource.LandingBlast, Owner = current.Index, Part = -1,
                 };
-                sim.Emit(SimEvent.LandingBlast(current.End, current.Index, x, y, radius, blastDamage));
-                strikes.Land(sim, blow);
+                var sweep = SimEvent.LandingBlast(current.End, current.Index, x, y, radius, blastDamage);
+                if (!current.InPlace) sim.Emit(sweep);
+                int contacts = strikes.Land(sim, blow);
+                if (current.InPlace)
+                {
+                    sweep.I1 = contacts;
+                    sweep.I2 = 1;
+                    sweep.D4 = current.DirX;
+                    sweep.D5 = current.DirY;
+                    sim.Emit(sweep);
+                }
             }
             for (int i = 0; i < landings.Count; i++)
             {
