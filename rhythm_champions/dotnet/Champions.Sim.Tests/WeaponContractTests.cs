@@ -144,6 +144,15 @@ namespace Champions.Sim.Tests
             }
         }
 
+        [TestCase(-1)] [TestCase(3)] [TestCase(255)] [TestCase(int.MinValue)] [TestCase(int.MaxValue)]
+        public void InvalidProcAndHitWindowValuesStillThrow(int invalid)
+        {
+            var root = new EffectLineage();
+            Assert.Throws<ArgumentOutOfRangeException>(() => root.TryChild((EffectTrigger)invalid, out _));
+            Assert.Throws<ArgumentOutOfRangeException>(() => new TargetHitLedger((HitWindow)invalid));
+            var supports = new WeaponSupports();
+            Assert.Throws<ArgumentOutOfRangeException>(() => supports.Launch(default, 1, (HitWindow)invalid, _ => { }));
+        }
         [Test]
         public void ProcTreesBoundDepthBreadthAndPreventRecursiveEchoSplitAndKill()
         {

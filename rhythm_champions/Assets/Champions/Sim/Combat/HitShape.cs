@@ -46,7 +46,7 @@ namespace Champions.Sim
             new HitShape { Kind = ShapeKind.Cone, X = x, Y = y, DirX = dirX, DirY = dirY, Radius = radius, HalfArc = halfArc };
 
         /// <summary>Does a body of radius <paramref name="body"/> at (<paramref name="x"/>, <paramref name="y"/>) touch the shape?</summary>
-        public bool Touches(double x, double y, double body)
+        public readonly bool Touches(double x, double y, double body)
         {
             double ex = x - X, ey = y - Y;
             switch (Kind)
@@ -111,7 +111,7 @@ namespace Champions.Sim
         /// <paramref name="hy"/>) round (<paramref name="cx"/>, <paramref name="cy"/>), its x axis along
         /// (<paramref name="cos"/>, <paramref name="sin"/>)?
         /// </summary>
-        public bool TouchesBox(double cx, double cy, double cos, double sin, double hx, double hy)
+        public readonly bool TouchesBox(double cx, double cy, double cos, double sin, double hx, double hy)
         {
             // In the box's own frame, where it is [-hx, hx] x [-hy, hy].
             ToBox(X, Y, cx, cy, cos, sin, out double px, out double py);
@@ -208,7 +208,7 @@ namespace Champions.Sim
         }
 
         /// <summary>The middle of the shape and a radius around it holding all of it.</summary>
-        public void Bounds(out double cx, out double cy, out double radius)
+        public readonly void Bounds(out double cx, out double cy, out double radius)
         {
             if (Kind != ShapeKind.Path)
             {
@@ -227,7 +227,7 @@ namespace Champions.Sim
         /// a path's line (along it when on the line), else away from the centre (a cone's facing, or +x, at the
         /// centre). A path is swept a tick at a time, so its throw follows the line, not the tick's piece of it.
         /// </summary>
-        public void Away(double x, double y, out double dx, out double dy)
+        public readonly void Away(double x, double y, out double dx, out double dy)
         {
             double fx = Kind == ShapeKind.Cone ? DirX : 1, fy = Kind == ShapeKind.Cone ? DirY : 0, ox = x - X, oy = y - Y;
             if (Kind == ShapeKind.Path)

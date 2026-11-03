@@ -72,11 +72,10 @@ namespace Champions.Sim
         internal void Tick(double end)
         {
             sim.HeroWas(end, out double hx, out double hy);
-            var enemies = horde.Enemies;
-            int n = enemies.Count;
-            for (int id = 0; id < n; id++)
+            var actors = horde.EditMobs;
+            for (int id = 0; id < actors.Length; id++)
             {
-                ref var m = ref horde.Edit(id);
+                ref var m = ref actors[id];
                 if (!m.Owned) continue;
                 var type = rules.Cast[m.Kind];
                 if (type.Move == EliteMove.None) continue;

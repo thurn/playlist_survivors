@@ -61,22 +61,18 @@ namespace Champions.Sim
                 }
             }, authoredProjectiles: form == 0 ? 1 : form == 3 ? 3 : 2, authoredTargets: 1 + form);
         }
-        int Nearest(WeaponEffect effect, double x, double y, double totalReach,
-            double fromX, double fromY, double hopReach)
+        readonly struct LightningFilter : IEnemyFilter
         {
-            // Queries finish before Impact can reenter with a fork; no shared list survives a callback.
-            sim.Enemies.Near(fromX, fromY, hopReach, near);
-            int best = -1; double distance = double.PositiveInfinity;
-            for (int k = 0; k < near.Count; k++)
-            {
-                int id = near[k]; var e = sim.Enemies[id];
-                if (effect.ImpactTarget == e.Generation || effect.Hits.Contains(e.Generation) || !HitShape.Circle(x, y, totalReach).Touches(e.X, e.Y, e.Radius)) continue;
-                double d = (e.X - fromX) * (e.X - fromX) + (e.Y - fromY) * (e.Y - fromY);
-                if (d > distance || d == distance && id > best) continue;
-                best = id; distance = d;
-            }
-            return best;
+            readonly WeaponEffect effect;
+            readonly HitShape circle;
+            public LightningFilter(WeaponEffect effect, double x, double y, double reach)
+            { this.effect = effect; circle = HitShape.Circle(x, y, reach); }
+            public bool Accept(in Enemy e) => effect.ImpactTarget != e.Generation &&
+                !effect.Hits.Contains(e.Generation) && circle.Touches(e.X, e.Y, e.Radius);
         }
+        int Nearest(WeaponEffect effect, double x, double y, double totalReach,
+            double fromX, double fromY, double hopReach) => sim.Enemies.Nearest(fromX, fromY, hopReach,
+                new LightningFilter(effect, x, y, totalReach));
         bool HasFieldTarget(double t)
         {
             var state = sim.State.Build.Weapon(WeaponKind.EmberField);

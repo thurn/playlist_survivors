@@ -15,7 +15,7 @@ namespace Champions.Sim
         public readonly EffectLineage Lineage;
         internal readonly TargetHitLedger Hits, RepeatHits;
         internal readonly Action<WeaponEffect> Launch;
-        readonly HashSet<long> encountered = new HashSet<long>();
+        readonly IdentitySet encountered = new IdentitySet();
         int targetsLeft;
         public readonly int TargetLimit;
         public bool Finished => targetsLeft == 0;
@@ -72,7 +72,7 @@ namespace Champions.Sim
             if (launch == null) throw new ArgumentNullException(nameof(launch));
             if (!CombatRules.Nonnegative(baseDamage) || authoredProjectiles < 1 || authoredTargets < 1)
                 throw new ArgumentOutOfRangeException(nameof(baseDamage));
-            if (!Enum.IsDefined(typeof(HitWindow), policy)) throw new ArgumentOutOfRangeException(nameof(policy));
+            if ((uint)policy > (uint)HitWindow.Pulse) throw new ArgumentOutOfRangeException(nameof(policy));
             for (int strike = 0; strike < activation.Strikes; strike++)
             {
                 // Each authored/Tempo strike or pulse is independent; volley members share its window.

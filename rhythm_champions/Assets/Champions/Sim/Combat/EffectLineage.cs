@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace Champions.Sim
 {
@@ -24,7 +23,7 @@ namespace Champions.Sim
         { this.budget = budget; this.used = used; Generation = generation; }
         public bool TryChild(EffectTrigger trigger, out EffectLineage child)
         {
-            if (!Enum.IsDefined(typeof(EffectTrigger), trigger)) throw new ArgumentOutOfRangeException(nameof(trigger));
+            if ((uint)trigger > (uint)EffectTrigger.Kill) throw new ArgumentOutOfRangeException(nameof(trigger));
             child = null; int bit = 1 << (int)trigger;
             if (Generation >= 3 || budget.Left == 0 || (used & bit) != 0) return false;
             switch (trigger)
@@ -48,12 +47,12 @@ namespace Champions.Sim
     public sealed class TargetHitLedger
     {
         readonly HitWindow policy;
-        readonly HashSet<long> hit;
+        readonly IdentitySet hit;
         long window = -1;
         public TargetHitLedger(HitWindow policy, int capacity = 2048)
         {
-            if (!Enum.IsDefined(typeof(HitWindow), policy)) throw new ArgumentOutOfRangeException(nameof(policy));
-            this.policy = policy; hit = new HashSet<long>(capacity);
+            if ((uint)policy > (uint)HitWindow.Pulse) throw new ArgumentOutOfRangeException(nameof(policy));
+            this.policy = policy; hit = new IdentitySet(capacity);
         }
         public void BeginWindow(long index)
         {

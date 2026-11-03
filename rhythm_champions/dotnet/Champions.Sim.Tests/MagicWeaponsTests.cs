@@ -69,6 +69,22 @@ namespace Champions.Sim.Tests
             Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(2));
         }
         [Test]
+        public void LightningNearestTiesUseIdRatherThanCellOrder()
+        {
+            var sim = Make(WeaponKind.Lightning, 1, new Dummy(1, 0, 100, .1), new Dummy(-1, 0, 100, .1));
+            sim.StepTo(.75);
+            Assert.That(sim.Enemies[0].Health, Is.LessThan(100));
+            Assert.That(sim.Enemies[1].Health, Is.EqualTo(100));
+        }
+        [Test]
+        public void ACloserTargetOutsideTheRootCircleCannotHideAnEligibleTarget()
+        {
+            var sim = Make(WeaponKind.Lightning, 8, new Dummy(7.5, 0, 100, .1), new Dummy(-4, 0, 100, .1));
+            sim.StepTo(.75); // First level-eight node is at (2, 0).
+            Assert.That(sim.Enemies[0].Health, Is.EqualTo(100));
+            Assert.That(sim.Enemies[1].Health, Is.LessThan(100));
+        }
+        [Test]
         public void ChainReachAndRootReachBothBoundConnectedTargets()
         {
             var sim = Make(WeaponKind.Lightning, 1, new Dummy(1,0,100,.1), new Dummy(3.5,0,100,.1),
