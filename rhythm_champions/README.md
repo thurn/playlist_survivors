@@ -38,6 +38,8 @@ the first-time steps):
 | `just champions-play [flags]` | Play the last build |
 | `just champions-tool <cmd>` | The `champions` CLI below |
 
+Interactive terminal runs of `just champions` and `just champions-play` play with sound by default. Pass `--mute` for a quiet run. Codex, Claude and Enact sessions keep the CLI's muted default.
+
 The CLI (`rhythm_champions/tools`, a uv project; `champions --help`):
 
 | `champions` | What |

@@ -9,6 +9,8 @@
 set positional-arguments
 
 champions := "uv run --project rhythm_champions/tools champions"
+# Human play uses sound; agent sessions inherit the CLI's muted default.
+champions_audio := if env("CODEX_THREAD_ID", "") + env("CLAUDE_CODE_SESSION_ID", "") + env("ENACT_SESSION", "") == "" { "--audio" } else { "" }
 tools := "uv run --project demo3d/tools"
 # The demos' player backend: `just backend=mono demo3d` builds faster (Mono's simulation
 # diverges from IL2CPP's, so never compare their look sets).
@@ -25,7 +27,7 @@ default:
 [group('champions')]
 champions *args:
     {{champions}} build
-    {{champions}} play "$@"
+    {{champions}} play {{champions_audio}} "$@"
 
 # Set up if needed, then build the player (--backend il2cpp, --development, --force, --clean-cache)
 [group('champions')]
@@ -35,7 +37,7 @@ champions-build *args:
 # Play the last build without rebuilding, with player flags
 [group('champions')]
 champions-play *args:
-    {{champions}} play "$@"
+    {{champions}} play {{champions_audio}} "$@"
 
 # The tools themselves: `just champions-tool test`, `just champions-tool check --variants`, `just champions-tool editor`
 [group('champions')]
