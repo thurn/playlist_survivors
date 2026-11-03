@@ -29,6 +29,7 @@ namespace Champions.Render.Telegraphs
         static readonly int IdA = Shader.PropertyToID("_A");
         static readonly int IdSize = Shader.PropertyToID("_Size");
         static readonly int IdState = Shader.PropertyToID("_State");
+        static readonly int IdWarning = Shader.PropertyToID("_Warning");
 
         struct Mark
         {
@@ -36,6 +37,7 @@ namespace Champions.Render.Telegraphs
             public HitShape Shape;
             public double Start, Land, Landed, Hold, Sweep, SweepHalfArc, OffAt;
             public Color Colour;
+            public bool Warning;
         }
 
         readonly Material _material;
@@ -86,9 +88,11 @@ namespace Champions.Render.Telegraphs
             var m = _marks[i]; m.Shape = shape; _marks[i] = m;
         }
 
-        public void Add(int id, in HitShape shape, double start, double land, Color colour)
+        /// <summary>Starts a ground mark. Elite warnings use a stable boundary and local hatched interior;
+        /// boss marks retain their moving timing front. Both use the same unmodified hit shape.</summary>
+        public void Add(int id, in HitShape shape, double start, double land, Color colour, bool warning = false)
         {
-            _marks.Add(new Mark { Id = id, Shape = shape, Start = start, Land = land, Landed = double.NaN, OffAt = double.NaN, Colour = colour });
+            _marks.Add(new Mark { Id = id, Shape = shape, Start = start, Land = land, Landed = double.NaN, OffAt = double.NaN, Colour = colour, Warning = warning });
         }
 
         /// <summary>
@@ -126,7 +130,7 @@ namespace Champions.Render.Telegraphs
             for (int i = _marks.Count - 1; i >= 0; i--)
             {
                 var m = _marks[i];
-                if (State(m, song, out var shape, out float fill, out float flash, out float fade)) Write(shape, m.Colour, fill, flash, fade);
+                if (State(m, song, out var shape, out float fill, out float flash, out float fade)) Write(shape, m.Colour, fill, flash, fade, m.Warning);
                 else if (Done(m, song)) _marks.RemoveAt(i);
             }
             Queue(camera);
@@ -196,7 +200,7 @@ namespace Champions.Render.Telegraphs
             return fade > 0;
         }
 
-        void Write(in HitShape s, Color colour, float fill, float flash, float fade)
+        void Write(in HitShape s, Color colour, float fill, float flash, float fade, bool warning)
         {
             if (_blocks.Count <= _drawn)
             {
@@ -232,6 +236,7 @@ namespace Champions.Render.Telegraphs
             }
             var block = _blocks[_drawn];
             block.SetColor(IdColor, colour);
+            block.SetFloat(IdWarning, warning ? 1 : 0);
             block.SetVector(IdA, a);
             block.SetVector(IdSize, size);
             block.SetVector(IdState, new Vector4(fill, flash, fade, kind));

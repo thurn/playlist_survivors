@@ -222,6 +222,21 @@ six weapons; shrink or dim overlapping friendly effects before obscuring a
 telegraph. Weapon forms need visibly different actions, and enlargement on a
 timed dash should be clear without whitening the frame.
 
+The default live hero keeps its posed, faceted drawing in a foreground depth
+range, over opaque spectral weapons and retained bodies. A small soft contrast
+pocket quiets light behind it; warning marks draw after that pocket. Damage
+still colours its glass/core red while the identifying edges remain white.
+Spectral Sentinels do not inherit this foreground treatment. The trailer hero
+retains its pinned shader and depth behavior.
+
+Elite warnings have one stable outer boundary, with a dark shoulder separating
+it from amber bodies. Sparse ground-aligned hatching and a dim interior mark
+the dangerous side within 5 m of the hero, fading out by 8 m. Timing brightens
+the boundary toward impact; a routine slam never becomes a solid yellow disc.
+Boss red marks keep their traveling fill/front and collision shapes are
+unchanged. Judge overlaps in ordered motion as well as stills; none of these
+layers promises a collision-free route through an invulnerable stress horde.
+
 ## The Edge Look
 
 Monsters, the hero and structures are drawn as the trailer drew them

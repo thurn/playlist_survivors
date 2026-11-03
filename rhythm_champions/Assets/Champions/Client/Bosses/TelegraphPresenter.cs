@@ -78,9 +78,9 @@ namespace Champions.Client
                     if (move == EliteMove.Charge)
                     {
                         double length = _enemies.Charge.LengthM;
-                        _marks.Add(id, HitShape.Path(e.D2, e.D3, e.D2 + e.D4 * length, e.D3 + e.D5 * length, _orkRadius), e.D0, e.D1, _warning);
+                        _marks.Add(id, HitShape.Path(e.D2, e.D3, e.D2 + e.D4 * length, e.D3 + e.D5 * length, _orkRadius), e.D0, e.D1, _warning, warning: true);
                     }
-                    else if (move == EliteMove.Slam) _marks.Add(id, HitShape.Circle(e.D2, e.D3, _enemies.Slam.RadiusM), e.D0, e.D1, _warning);
+                    else if (move == EliteMove.Slam) _marks.Add(id, HitShape.Circle(e.D2, e.D3, _enemies.Slam.RadiusM), e.D0, e.D1, _warning, warning: true);
                     break;
                 }
                 case SimEventKind.EliteMove:

@@ -101,7 +101,15 @@ Sentinel/weapon hold lifetimes and empty-ground Ember empowerment were repaired
 with regressions. Default enemy hit feedback retains its hue instead of
 whitening the whole struck pack; trailer drawing remains unchanged. See
 [Warden evidence](warden-review/README.md) for new IL2CPP captures and raw timing.
-Peak hero visibility/warning-route ambiguity and the exceeded M5 simulation
-proxy remain concrete implementation bugs tracked under ps-3wc, beyond the
-operator-only taste/M1/speaker checks here. No full-build art/performance
-acceptance is claimed.
+Peak hero visibility/warning-route ambiguity was assigned to ps-3wc.16;
+the exceeded M5 simulation proxy remains separate performance work. No
+full-build art/performance acceptance is claimed.
+
+- ps-3wc.16: judge the foreground hero and stable, hatched elite danger areas
+  in a hand-played six-weapon retained-horde fight, including hurt, dash and
+  overlapping slam landings. [Readability evidence](hero-readability/README.md)
+  contains actual IL2CPP game-scale and ordered-motion captures plus blind
+  visual critique; it does not establish an attainable safe route through the
+  invulnerable 1,000-body stress fixture. Confirm the small contrast pocket
+  suits the aesthetic and the hatching remains quiet in real-time motion.
+  Operator taste, real speakers and target-Mac GPU cost remain pending.

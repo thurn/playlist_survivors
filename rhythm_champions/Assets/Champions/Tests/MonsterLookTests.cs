@@ -198,6 +198,53 @@ namespace Champions.Tests
             Assert.That(crowd.Written, Is.EqualTo(3));
         }
 
+        [Test]
+        public void ForegroundHeroSurvivesAnOpaqueOccluderAndFocusDoesNotEraseThreatIds()
+        {
+            _camera.transform.position = new Vector3(0, 1, -10);
+            _camera.transform.LookAt(new Vector3(0, 1, 0));
+            _camera.orthographic = true;
+            _camera.orthographicSize = 3;
+            var blocker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            blocker.transform.position = new Vector3(0, 1, -2);
+            blocker.transform.localScale = new Vector3(8, 8, .2f);
+            var blockerMaterial = StandIn.Material("Opaque foreground", Color.cyan, Color.black, IdPass.Structure);
+            blocker.GetComponent<MeshRenderer>().sharedMaterial = blockerMaterial;
+            string dir = Path.Combine(Path.GetTempPath(), "champions-hero-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var material = EdgeLook.Hero(_type, MonsterLook.Default, _palette);
+                material.shader = Resources.Load<Shader>("Crowd/HeroForeground");
+                using var figure = new MonsterFigure(_type, material);
+                using var focus = new HeroFocus();
+                figure.SetIdCode(IdPass.Hero);
+                figure.Set(0, new MonsterInstance { Scale = 1, Tint = 0xffffffff, Flags = (uint)CrowdFlags.Alive },
+                    new[] { new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), new Vector4(0, 0, 1, 0) });
+                focus.Present(Vector3.zero, _camera, true);
+                figure.Draw(_camera, 1);
+                using var stills = new Stills(_camera, dir, Array.Empty<double>())
+                    { Requeue = () => { focus.Queue(_camera); figure.Queue(_camera); } };
+                stills.Keep("foreground", new Stills.View());
+                var tex = new Texture2D(2, 2);
+                try
+                {
+                    Assert.That(tex.LoadImage(File.ReadAllBytes(Path.Combine(dir, "id-foreground.png"))));
+                    var pixels = tex.GetPixels32();
+                    Assert.That(pixels.Count(p => p.r == IdPass.Hero), Is.GreaterThan(100),
+                        "the live hero stays visible through opaque friendly weapons and bodies");
+                    Assert.That(pixels.Count(p => p.r == IdPass.Structure), Is.GreaterThan(pixels.Length / 2),
+                        "the contrast pocket does not corrupt object/threat IDs beneath it");
+                }
+                finally { Object.DestroyImmediate(tex); }
+            }
+            finally
+            {
+                Object.DestroyImmediate(blocker);
+                Object.DestroyImmediate(blockerMaterial);
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            }
+        }
+
         // ---------------------------------------------------------------------------------
         // A recipe's mesh, baked from the vendor files under a root of the test's own.
 

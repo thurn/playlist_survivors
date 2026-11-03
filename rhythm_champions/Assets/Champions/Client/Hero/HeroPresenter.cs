@@ -32,6 +32,7 @@ namespace Champions.Client.Hero
         // The edge look's figure, when baked.
         readonly RigPose _pose, _layer, _run;
         readonly MonsterFigure _figure;
+        readonly HeroFocus _focus;
         readonly MonsterShatter _shatter;
         readonly Vector4[] _rows;
         bool _broken;
@@ -66,7 +67,13 @@ namespace Champions.Client.Hero
             _layer = new RigPose(rig);
             _run = new RigPose(rig);
             _rows = new Vector4[rig.Entries.Length * 3];
-            _figure = new MonsterFigure(type, EdgeLook.Hero(type, look, palette));
+            var material = EdgeLook.Hero(type, look, palette);
+            if (look != MonsterLook.Trailer)
+            {
+                material.shader = Resources.Load<Shader>("Crowd/HeroForeground");
+                _focus = new HeroFocus();
+            }
+            _figure = new MonsterFigure(type, material);
             _figure.SetIdCode(IdPass.Hero);
             _shatter = new MonsterShatter(new MonsterLibrary(look, new[] { type }), _ => _figure.Palette, palette);
         }
@@ -124,6 +131,7 @@ namespace Champions.Client.Hero
             };
             bool dying = t >= _motion.DeathTime;
             Drawn = _p.Visible && !dying;
+            _focus?.Present(Instance.Position, camera, Drawn);
             if (_standIn != null)
             {
                 _standIn.SetActive(Drawn);
@@ -151,6 +159,7 @@ namespace Champions.Client.Hero
         /// <summary>Queues the latest draws again (a second draw of the same frame: the stills' ID pass).</summary>
         public void Queue(Camera camera)
         {
+            _focus?.Queue(camera);
             _figure?.Queue(camera);
             _shatter?.Queue(camera);
         }
@@ -196,6 +205,7 @@ namespace Champions.Client.Hero
         public void Dispose()
         {
             _shatter?.Dispose();
+            _focus?.Dispose();
             _figure?.Dispose();
             StandIn.Destroy(_standIn);
             StandIn.Destroy(_material);

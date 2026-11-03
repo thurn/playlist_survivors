@@ -31,10 +31,12 @@ Shader "Champions/Telegraph"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Assets/Champions/Render/Shaders/IdPass.hlsl"
+            #include "Assets/Champions/Render/World/Shaders/World.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
                 float _ChampionsId;
+                float _Warning;
                 float4 _A;     // xy: the centre, a path's start or a cone's apex; zw: a path's end (ground x, z)
                 float4 _Size;  // x: the radius (a path's reach), y: a ring's inner radius, z: a cone's half angle, w: its facing (radians from +x)
                 float4 _State; // x: fill 0-1, y: flash, z: fade 0-1, w: the shape
@@ -96,13 +98,24 @@ Shader "Champions/Telegraph"
                 float fill = _State.x;
                 float filled = inside * (1 - smoothstep(fill - pu, fill + pu, u));
                 float front = inside * (1 - smoothstep(0.6, 1.6, abs(u - fill) / pu)) * step(1e-3, fill) * step(fill, 0.999);
-                // Lines over the void: the outline and the front lit, the fill a faint wash (the look's empty space).
-                float lit = (outline + filled * (0.01 + 0.02 * fill) + front + inside * _State.y) * _State.z;
-                if (lit < 1e-3) discard;
+                // Elite warnings use one stable boundary: expanding inner circles multiplied the
+                // apparent hazards in a retained horde. Timing instead lifts that boundary toward impact.
+                front *= 1 - _Warning;
+                float local = 1 - smoothstep(5, 8, distance(i.ground, _RC_Hero.xy));
+                float danger = inside * local * _Warning;
+                float stripe = abs(frac((i.ground.x + i.ground.y) / .8) - .5) * .8;
+                float hatch = (1 - smoothstep(.025, .025 + px, stripe)) * danger;
+                float lit = (outline * lerp(1, .65 + .35 * fill, _Warning)
+                    + filled * (0.01 + 0.02 * fill) * lerp(1, .2, _Warning)
+                    + front + inside * _State.y * lerp(1, .04, _Warning) + hatch * .2) * _State.z;
+                // Dark shoulders separate closed boundaries from amber bodies. Locally hatched
+                // interiors identify the dangerous side, even when multiple warnings overlap.
+                float shoulder = 1 - smoothstep(2, 4, abs(d) / px);
+                float frontShoulder = inside * (1 - smoothstep(2, 4, abs(u - fill) / pu))
+                    * step(1e-3, fill) * step(fill, .999) * (1 - _Warning);
+                float cover = saturate(max(max(shoulder, frontShoulder), danger * .38) * _State.z);
+                if (lit < 1e-3 && cover < 1e-3) discard;
                 CHAMPIONS_ID_PASS(_ChampionsId)
-                // Only the thin outline/front occludes other drawing; the dim ground wash stays additive.
-                // This keeps mandatory routes readable through retained bodies and friendly volleys.
-                float cover = saturate(max(outline, front) * _State.z);
                 return half4(_Color.rgb * lit, cover);
             }
             ENDHLSL

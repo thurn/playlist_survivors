@@ -1,9 +1,12 @@
+using System;
+using System.IO;
 using System.Linq;
 using Champions.Client;
 using Champions.Render;
 using Champions.Sim;
 using NUnit.Framework;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Champions.Tests
 {
@@ -58,6 +61,52 @@ namespace Champions.Tests
                 {
                     Object.DestroyImmediate(camera.gameObject);
                 }
+            }
+        }
+
+        [Test]
+        public void LocalWarningInteriorsRespectTheirBoundaryAndRingHoleThenFade()
+        {
+            var camera = new GameObject("warning camera").AddComponent<Camera>();
+            camera.transform.SetPositionAndRotation(new Vector3(0, 10, 0), Quaternion.Euler(90, 0, 0));
+            camera.orthographic = true;
+            camera.orthographicSize = 5;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            using var marks = new Render.Telegraphs.TelegraphRenderer();
+            string dir = Path.Combine(Path.GetTempPath(), "champions-warning-" + Guid.NewGuid().ToString("N"));
+            var texture = new Texture2D(2, 2);
+            try
+            {
+                Shader.SetGlobalVector("_RC_Hero", Vector4.zero);
+                marks.Add(1, HitShape.Circle(-3, 0, 2), 0, 1, Color.yellow, warning: true);
+                marks.Add(2, HitShape.Ring(3, 0, 1, 2), 0, 1, Color.yellow, warning: true);
+                marks.Present(.5, camera);
+                using var stills = new Stills(camera, dir, Array.Empty<double>()) { Requeue = () => marks.Queue(camera) };
+                stills.Keep("warning", new Stills.View());
+                Assert.That(texture.LoadImage(File.ReadAllBytes(Path.Combine(dir, "id-warning.png"))));
+                byte At(float x, float z)
+                {
+                    camera.aspect = 16f / 9;
+                    var p = camera.WorldToViewportPoint(new Vector3(x, 0, z));
+                    return ((Color32)texture.GetPixel((int)(p.x * texture.width), (int)(p.y * texture.height))).r;
+                }
+                Assert.That(At(-3, 0), Is.EqualTo(IdPass.Effect), "the danger side reads before the timing fill arrives");
+                Assert.That(At(0, 0), Is.Zero, "the gap between warnings remains unmarked");
+                Assert.That(At(3, 0), Is.Zero, "a ring's safe hole is never hatched");
+                Assert.That(At(4.5f, 0), Is.EqualTo(IdPass.Effect), "the annulus is dangerous");
+                marks.CallOff(1, .5);
+                marks.CallOff(2, .5);
+                marks.Present(1, camera);
+                stills.Keep("gone", new Stills.View());
+                Assert.That(texture.LoadImage(File.ReadAllBytes(Path.Combine(dir, "id-gone.png"))));
+                Assert.That(texture.GetPixels32().All(p => p.r == 0), "called-off warnings leave no hatch or backing");
+            }
+            finally
+            {
+                Object.DestroyImmediate(texture);
+                Object.DestroyImmediate(camera.gameObject);
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
             }
         }
 
