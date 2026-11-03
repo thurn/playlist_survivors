@@ -100,15 +100,15 @@ namespace Champions.Sim
 
         /// <summary>
         /// Whole survivor activation: I0 WeaponKind, I1 zero-based form, I2 total strikes/pulses;
-        /// D0 activation sequence, D1 empowerment area factor (1 or 1.5), D2/D3 origin, D4 heading.
+        /// D0 activation sequence, D1 empowerment area factor (1 or 1.5), D2/D3 origin, D4 heading, D5 cadence damage factor.
         /// Extra strikes and secondary effects retain D0 and D1; they never replay the body faster.
         /// </summary>
         public static SimEvent WeaponActivation(double t, WeaponKind kind, int level, long sequence, int strikes,
-            double empowermentArea, double x, double y, double heading)
+            double empowermentArea, double x, double y, double heading, double cadenceDamageFactor = 1)
         {
             var e = Of(SimEventKind.WeaponActivation, t);
             e.I0 = (int)kind; e.I1 = CombatRules.FormIndex(level); e.I2 = strikes;
-            e.D0 = sequence; e.D1 = empowermentArea; e.D2 = x; e.D3 = y; e.D4 = heading;
+            e.D0 = sequence; e.D1 = empowermentArea; e.D2 = x; e.D3 = y; e.D4 = heading; e.D5 = cadenceDamageFactor;
             return e;
         }
 

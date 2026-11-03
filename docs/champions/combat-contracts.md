@@ -133,3 +133,71 @@ executing the survivor build they must migrate loadout/session encoding,
 state hashing/snapshots, offer cards and presentation together, then retire
 the obsolete adapters. No asset mapping, boss or visual completion is claimed
 by these schema tests.
+
+## Executable cadence and supports (ps-3wc.3)
+
+`Simulation.Weapons` now owns survivor timing. Before play, each family binds
+its weapon with `Bind(kind, hasTargetAtSongTime, activate, optionalBaseSeconds)`.
+Only bound, owned weapons execute, so unported families do not double-fire
+alongside the legacy Arsenal. The simulation drives committed beats,
+confidence changes and fallback pulses; family code does not drive a second
+clock. Bind identical handlers on live/replay construction. Final assembly
+still owns survivor loadout/session serialization and removing legacy actions.
+
+Starting seconds cadences: Sword/Bow/Ember Field/Sentinel 1, Hammer 1.5,
+Spear/Lightning .75, Orbit Blades .5. Nearest allowed beat counts are
+1/2/3/4/6/8 (ties longer). Adding 3 beats avoids the old 174 BPM choice of
+.69 s versus the authored 1 s. Existing 8% hysteresis and downbeat-only
+reselection apply. Beatless uses each weapon's own seconds cadence. Due
+activations during holds or without targets are discarded; fractional Tempo
+carry and empowerment remain. No deferred backlog is accumulated.
+
+`WeaponActivation` captures level, sequence, stats, empowerment and strike
+count. +25% strikes gives 1/1/1/2 repeatedly; +10% gives a bonus on the tenth
+successful activation. Only strike zero may animate the body; remaining
+strikes are simultaneous spectral actions. Persistent weapons treat every
+strike as a damage pulse (with `WeaponPulse` sequence events), never damage
+per render/contact frame. The handler decides when to create/refresh its
+construct, then uses `WeaponSupports.Active` in its target predicate if its
+lifetime must gate pulses. A pulse does not automatically extend a lifetime.
+
+Grid quantization is explicitly compensated in per-activation base damage:
+`CadenceDamageFactor = chosenBeatCount * currentBeatPeriod / baseSeconds`
+(or 1 beatless). Use `activation.DamageFactor`, which includes this factor
+and Might/weapon levels. This is cadence tuning, separate from support
+scaling; `Stats.ConnectedOutputFactor` is unchanged. It keeps 80/120/174 BPM
+sustained output comparable without adding body animations or moving launches
+off-grid. It is recorded in `WeaponActivation` event D5. Tempo only changes
+fractional strike counts. This replaces the starting proposal's uncorrected
+nearest-interval output, whose slower/faster songs differed substantially.
+
+`Simulation.Weapons.Supports.Launch(activation, baseDamage, hitPolicy, launch,
+authoredProjectiles, authoredTargets)` executes Multishot and independent
+spectral strikes, capturing evaluated support levels. The launch callback
+supplies geometry/flight or performs a melee/pulse query. Every action is a
+`WeaponEffect`. At each actual collision call `Impact(effect, generationId,
+songTime)`; apply `effect.Damage` only when it returns true. Pierce spends a
+bounded distinct-target allowance per projectile; overlapping volley members
+share a target ledger. Extra strikes/pulses have independent windows, even
+for volley weapons; Multishot alone cannot multiply one boss hit.
+
+Impact launches at most two Split children immediately through the same
+callback. `ImpactTarget` tells geometry which collision seeded the branch;
+children retain the original hit ledger and cannot re-hit its source target.
+Echo is queued at launch and executes on the next reliable committed beat,
+or .5 s later beatless. Echo deliberately owns one independent repeat window
+per strike, shared by all of that strike's volley/split branches: one target
+can take one ordinary hit and one reduced Echo hit, not recursive boss farms.
+Split/Echo children carry captured empowerment, stats, damage shares, target
+allowance and the same bounded `EffectLineage`. Never manufacture new roots
+for secondary actions. Queued echoes due during holds are dropped, and
+confidence changes rebase their fallback delay without catch-up. Projectile
+collisions and split impact times remain continuous.
+
+`VolleyCount`, `TargetCount`, `Duration`, `Refresh` and `Active` are the shared
+parameter/lifetime helpers. Families provide base counts/durations. Persistence
+scales only compatible durations; refreshing a construct does not consume
+empowerment. Geometry must pause flight while held and retain its action's
+ledger until flight/child work has ended. Use generation IDs, not recycled
+slot indices. These callbacks are simulation actions; presentation should
+observe events and must not call them to deal damage a second time.

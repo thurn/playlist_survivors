@@ -39,13 +39,23 @@ namespace Champions.Sim
     {
         readonly BeatServices beats;
         readonly BeatRules rules;
+        readonly int[] choices;
+        readonly double fallbackS;
         double nextPulse;
 
-        public Cadence(BeatServices beats, double targetS)
+        public Cadence(BeatServices beats, double targetS, int[] choices = null, double? fallbackS = null)
         {
-            this.beats = beats;
+            this.beats = beats ?? throw new ArgumentNullException(nameof(beats));
             rules = beats.Rules;
             TargetS = targetS;
+            this.choices = choices == null ? rules.CadenceBeats : (int[])choices.Clone();
+            this.fallbackS = fallbackS ?? rules.CadenceFallbackS;
+            if (!(targetS > 0) || double.IsInfinity(targetS) || !(this.fallbackS > 0) || double.IsInfinity(this.fallbackS))
+                throw new ArgumentOutOfRangeException(nameof(targetS));
+            if (this.choices.Length == 0) throw new ArgumentException("cadence choices required", nameof(choices));
+            for (int i = 0; i < this.choices.Length; i++)
+                if (this.choices[i] < 1 || i > 0 && this.choices[i] <= this.choices[i - 1])
+                    throw new ArgumentException("cadence choices must be positive and ascending", nameof(choices));
         }
 
         /// <summary>The period it aims for, seconds.</summary>
@@ -64,7 +74,7 @@ namespace Champions.Sim
         public double LastStrike { get; private set; } = double.NegativeInfinity;
 
         /// <summary>The period now, seconds: the count at the lock tempo, or the pulse's.</summary>
-        public double PeriodS => Beats > 0 ? Beats * LockPeriod : rules.CadenceFallbackS;
+        public double PeriodS => Beats > 0 ? Beats * LockPeriod : fallbackS;
 
         /// <summary>
         /// The count among <paramref name="choices"/> (ascending) whose period at beat period
@@ -88,7 +98,7 @@ namespace Champions.Sim
         }
 
         /// <summary>Starts on the seconds pulse at song time <paramref name="t"/>: the first strike one pulse later.</summary>
-        internal void Begin(double t) => nextPulse = t + rules.CadenceFallbackS;
+        internal void Begin(double t) => nextPulse = t + fallbackS;
 
         /// <summary>
         /// The next strike at or after <paramref name="s"/> as planned now: on the beat, the next beat of
@@ -115,7 +125,7 @@ namespace Champions.Sim
         internal void FirePulse(double t)
         {
             LastStrike = t;
-            nextPulse = t + rules.CadenceFallbackS;
+            nextPulse = t + fallbackS;
         }
 
         /// <summary>The beat state left reliable at <paramref name="t"/>: back to the pulse, from the latest strike.</summary>
@@ -125,7 +135,7 @@ namespace Champions.Sim
             Beats = 0;
             Anchor = -1;
             LockPeriod = double.NaN;
-            nextPulse = Math.Max(t, LastStrike + rules.CadenceFallbackS);
+            nextPulse = Math.Max(t, LastStrike + fallbackS);
             return CadenceStep.Changed;
         }
 
@@ -137,14 +147,14 @@ namespace Champions.Sim
             double tempo = beats.TempoAt(i);
             if (Beats == 0)
             {
-                Beats = Choose(tempo, TargetS, rules.CadenceBeats);
+                Beats = Choose(tempo, TargetS, choices);
                 LockPeriod = tempo;
                 Anchor = i;
                 step = CadenceStep.Changed;
             }
             else if (Math.Abs(tempo / LockPeriod - 1) > rules.CadenceHoldWithin + 1e-9 && (!beats.HasBars || beats.IsDownbeat(i)))
             {
-                int count = Choose(tempo, TargetS, rules.CadenceBeats);
+                int count = Choose(tempo, TargetS, choices);
                 LockPeriod = tempo;
                 if (count != Beats)
                 {

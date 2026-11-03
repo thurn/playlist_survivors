@@ -80,6 +80,7 @@ namespace Champions.Sim
             Strikes.Add(Enemies);
             State.Build = new WeaponBuild(config.Combat);
             State.Build.Set(WeaponKind.Sword, 1);
+            Weapons = new WeaponScheduler(this);
             Arsenal = new Arsenal(config.Attacks, config.Mods, Enemies, Beats, config.EnemyCapacity);
             Arsenal.Begin(this);
             foreach (var u in config.Loadout) Arsenal.Set(this, u);
@@ -133,6 +134,8 @@ namespace Champions.Sim
         /// <summary>The hero's attacks and mods, and every blow it deals.</summary>
         public Arsenal Arsenal { get; }
 
+        public WeaponScheduler Weapons { get; }
+
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }
 
@@ -183,7 +186,7 @@ namespace Champions.Sim
                     h = Hashing.Fold(h, Hashing.Bits(State.Experience));
                     h = Hashing.Fold(h, (ulong)(uint)Progression.Picks | (ulong)State.Offer.Kind << 32 | (ulong)(uint)(State.Offer.Focus + 1) << 40);
                 }
-                return h;
+                return Weapons.FoldHash(h);
             }
         }
 
@@ -387,7 +390,8 @@ namespace Champions.Sim
                 double reveal = Stream.NextKnownAt;
                 double beat = Beats.NextTime(cursor);
                 double pulse = Cadence.NextPulse;
-                double next = Math.Min(beat, pulse);
+                double weaponPulse = Weapons.NextPulse;
+                double next = Math.Min(Math.Min(beat, pulse), weaponPulse);
                 if (reveal <= next && reveal <= end)
                 {
                     cursor = Math.Max(cursor, reveal);
@@ -399,7 +403,8 @@ namespace Champions.Sim
                 cursor = Math.Max(cursor, next);
                 UpdateBeatState(cursor);
                 if (beat == next) FireBeat(beat);
-                else FirePulse(cursor);
+                else if (pulse == next) FirePulse(cursor);
+                else Weapons.Pulse(cursor);
             }
             cursor = end;
             State.Tick++;
@@ -434,6 +439,7 @@ namespace Champions.Sim
             State.Downbeat = downbeat;
             Progression.Beat(this, t, downbeat);
             Arsenal.Beat(this, t, i, downbeat, bar);
+            Weapons.Beat(t, i);
             horde.Beat(t, i);
             Bosses.Beat(t, i, downbeat);
             Zones.Beat(this, t, Beats.PeriodOf(i));
@@ -466,6 +472,7 @@ namespace Champions.Sim
             Emit(SimEvent.BeatState(t, now, State.Beat));
             State.Beat = now;
             Arsenal.BeatState(t, now);
+            Weapons.ReliabilityChanged(t);
             if (now != Reliability.Reliable) Cadenced(t, -1, Cadence.Beatless(t));
         }
     }
