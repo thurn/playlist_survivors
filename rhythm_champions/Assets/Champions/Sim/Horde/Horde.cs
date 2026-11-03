@@ -282,6 +282,16 @@ namespace Champions.Sim
         internal void HeldChanged()
         {
             if (!sim.State.Held) return;
+            if (!sim.Dashes.Rules.LegacyForms)
+            {
+                for (int id = 0; id < enemies.Count; id++)
+                {
+                    if (!Owns(id)) continue;
+                    ref var m = ref mobs[id];
+                    if (m.Stage == MoveStage.Telegraph) m.Telegraph = sim.Telegraphs.Freeze(m.Telegraph);
+                }
+                return;
+            }
             double now = sim.Now;
             moments.Clear();
             int n = enemies.Count;
@@ -297,6 +307,20 @@ namespace Champions.Sim
             }
             Moves.CallOff(now);
             Moved();
+        }
+
+        internal void Resume(double elapsed)
+        {
+            moments.Clear();
+            for (int id = 0; id < enemies.Count; id++)
+            {
+                if (!Owns(id)) continue;
+                ref var m = ref mobs[id];
+                m.Start += elapsed; m.End += elapsed; m.NextMoveAt += elapsed;
+                m.LastBite += elapsed; m.HeadUntil += elapsed;
+                if (m.Stage == MoveStage.Telegraph) m.Telegraph = sim.Telegraphs.Resume(m.Telegraph, elapsed);
+            }
+            Moves.Resume(elapsed);
         }
 
         static void Stand(ref Mob m, double x, double y, double t)

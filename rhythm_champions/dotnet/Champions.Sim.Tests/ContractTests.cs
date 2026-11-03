@@ -164,9 +164,12 @@ namespace Champions.Sim.Tests
                         sim.Telegraphs.Plan(sim.Now, 2);
                         sim.Snapshot();
                         if (i % 10 != 0) continue;
+                        sim.Release(Key.Right, sim.Now);
                         sim.Progression.Treasure(sim);
                         sim.Press(Key.Right, sim.Now - 0.02);
                         sim.Press(Key.Enter, sim.Now - 0.01);
+                        sim.Release(Key.Right, sim.Now);
+                        sim.Release(Key.Enter, sim.Now);
                     }
                 };
             });

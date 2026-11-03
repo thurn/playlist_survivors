@@ -19,6 +19,8 @@ namespace Champions.Client
         /// <summary>How far past the palette's colour a mark's lines are drawn (linear, for the bloom).</summary>
         public const float Intensity = 2.5f;
 
+        bool _held;
+        double _heldAt;
         readonly TelegraphRenderer _marks;
         readonly EnemyRules _enemies;
         readonly Color _boss, _warning;
@@ -41,6 +43,12 @@ namespace Champions.Client
         {
             switch (e.Kind)
             {
+                case SimEventKind.Hold:
+                    bool held = e.I2 != 0;
+                    if (held && !_held) _heldAt = e.T;
+                    if (!held && _held) _marks.Shift(e.T - _heldAt);
+                    _held = held;
+                    break;
                 case SimEventKind.BossTelegraph:
                     _marks.Add(e.I0, e.MarkGround(), e.T, e.D0, _boss);
                     break;
@@ -69,7 +77,18 @@ namespace Champions.Client
         }
 
         /// <summary>The frame at song time <paramref name="song"/>: the marks queue for <paramref name="camera"/>.</summary>
-        public void Present(double song, Camera camera) => _marks.Present(song, camera);
+        public void Present(double song, Camera camera, Simulation sim = null)
+        {
+            if (sim != null && !_held)
+            {
+                foreach (var m in sim.Bosses.Marks) _marks.Retime(m.Id, m.Telegraph.Start, sim.Telegraphs.LandTime(m.Telegraph));
+                var mobs = sim.Horde.Mobs;
+                for (int i = 0; i < mobs.Length; i++)
+                    if (mobs[i].Owned && mobs[i].Stage == MoveStage.Telegraph)
+                        _marks.Retime(-1 - i, mobs[i].Telegraph.Start, sim.Telegraphs.LandTime(mobs[i].Telegraph));
+            }
+            _marks.Present(_held ? Math.Min(song, _heldAt) : song, camera);
+        }
 
         /// <summary>Queues this frame's marks for the camera again (the stills' second drawing of a frame).</summary>
         public void Queue(Camera camera) => _marks.Queue(camera);

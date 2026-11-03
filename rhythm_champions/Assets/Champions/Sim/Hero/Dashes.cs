@@ -162,10 +162,20 @@ namespace Champions.Sim
         }
 
         /// <summary>The tick's end (after the walk's): a waiting press fires, the path sweeps on, blows land.</summary>
+        internal void Resume(double elapsed)
+        {
+            state.DashStart += elapsed; state.DashEnd += elapsed;
+            state.DashReadyAt += elapsed;
+            current.Start += elapsed; current.End += elapsed; current.Heard += elapsed;
+            sweepT += elapsed;
+            waiting = false; state.DashWaiting = false;
+        }
+
         public void Tick(Simulation sim, double now)
         {
             if (sim.State.Held)
             {
+                if (!rules.LegacyForms) return;
                 if (waiting)
                 {
                     waiting = false;

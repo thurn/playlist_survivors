@@ -111,7 +111,7 @@ namespace Champions.Client.Loop
             d.Add("crowd", (in SimEvent e) => Crowd.Take(e), null, (in PresentFrame f) => Crowd.Present(f.Song, f.Sim, f.Hero, f.Dt));
             d.Add("boss", (in SimEvent e) => Boss.Take(e), null, (in PresentFrame f) => Boss.Present(f.Song, f.Sim));
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
-            d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera));
+            d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera, f.Sim));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));

@@ -61,5 +61,31 @@
     "shatterburst": { "name": "Shatterburst", "icon": "shatterburst", "lines": ["Shards cut their neighbours", "Shards cut deeper"] },
     "lifeblood": { "name": "Lifeblood", "icon": "lifeblood", "lines": ["Kills slowly heal you", "Kills heal you faster"] },
     "encore": { "name": "Encore", "icon": "encore", "lines": ["On-beat dashes empower your next strike", "Empowers the next two strikes"] }
+  },
+  "weapons": {
+    "sword": {"name": "Sword", "icon": "sword-slash", "lines": ["Sweeping slash", "+10% base damage", "Cross-cut combo", "+10% base damage", "Spinning cleave", "+10% base damage", "+10% base damage", "Spectral sword dance"]},
+    "hammer": {"name": "Hammer", "icon": "leap-slam", "lines": ["Heavy side swing", "+10% base damage", "Ground slam", "+10% base damage", "Vaulting spectral hammer", "+10% base damage", "+10% base damage", "Procession of hammer falls"]},
+    "spear": {"name": "Spear", "icon": "crescent", "lines": ["Spectral thrust", "+10% base damage", "Lunging spear formation", "+10% base damage", "Sweep then thrust", "+10% base damage", "+10% base damage", "Marching spectral phalanxes"]},
+    "bow": {"name": "Bow", "icon": "bow", "lines": ["Arrow shot", "+10% base damage", "Fan-shaped volley", "+10% base damage", "Arcing arrow rain", "+10% base damage", "+10% base damage", "Rotating spectral bow battery"]},
+    "orbitBlades": {"name": "Orbit Blades", "icon": "orbit-blades", "lines": ["Circling blades", "+10% base damage", "Outward sweep and return", "+10% base damage", "Inner guard, outward scythes", "+10% base damage", "+10% base damage", "Crown of sweeping blades"]},
+    "lightning": {"name": "Lightning", "icon": "blink-strike", "lines": ["Nearby bolt", "+10% base damage", "Forked lightning", "+10% base damage", "Storm sigil", "+10% base damage", "+10% base damage", "Moving storm constellation"]},
+    "emberField": {"name": "Ember Field", "icon": "shatterburst", "lines": ["Timed fire seal", "+10% base damage", "Erupting fissure", "+10% base damage", "Spectral brazier", "+10% base damage", "+10% base damage", "Procession of volcanic seals"]},
+    "sentinel": {"name": "Sentinel", "icon": "phantom", "lines": ["Spectral sentry", "+10% base damage", "Shield-and-sword combo", "+10% base damage", "Leaping sentinel cleave", "+10% base damage", "+10% base damage", "Advancing spectral knights"]}
+  },
+  "supports": {
+    "might": {"name": "Might", "icon": "keen-edge", "lines": ["+10% weapon damage", "+10% weapon damage", "+10% weapon damage", "+10% weapon damage", "+10% weapon damage"]},
+    "tempo": {"name": "Tempo", "icon": "tempo", "lines": ["+10% extra strikes", "+10% extra strikes", "+10% extra strikes", "+10% extra strikes", "+10% extra strikes"]},
+    "reach": {"name": "Reach", "icon": "wide-arcs", "lines": ["+10% weapon area", "+10% weapon area", "+10% weapon area", "+10% weapon area", "+10% weapon area"]},
+    "multishot": {"name": "Multishot", "icon": "twin-strike", "lines": ["One extra projectile", "One extra projectile", "One extra projectile", "One extra projectile", "One extra projectile"]},
+    "persistence": {"name": "Persistence", "icon": "encore", "lines": ["+15% effect duration", "+15% effect duration", "+15% effect duration", "+15% effect duration", "+15% effect duration"]},
+    "pierce": {"name": "Pierce", "icon": "blade-rush", "lines": ["One extra target pierced", "One extra target pierced", "One extra target pierced", "One extra target pierced", "One extra target pierced"]},
+    "split": {"name": "Split", "icon": "shatterburst", "lines": ["Stronger split projectiles", "Stronger split projectiles", "Stronger split projectiles", "Stronger split projectiles", "Stronger split projectiles"]},
+    "echo": {"name": "Echo", "icon": "afterimage", "lines": ["Stronger repeat strikes", "Stronger repeat strikes", "Stronger repeat strikes", "Stronger repeat strikes", "Stronger repeat strikes"]},
+    "attraction": {"name": "Attraction", "icon": "lifeblood", "lines": ["+20% pickup radius", "+20% pickup radius", "+20% pickup radius", "+20% pickup radius", "+20% pickup radius"]},
+    "stride": {"name": "Stride", "icon": "quickstep", "lines": ["+5% movement speed", "+5% movement speed", "+5% movement speed", "+5% movement speed", "+5% movement speed"]},
+    "vitality": {"name": "Vitality", "icon": "lifeblood", "lines": ["+10% maximum health", "+10% maximum health", "+10% maximum health", "+10% maximum health", "+10% maximum health"]},
+    "armor": {"name": "Armor", "icon": "shield-charge", "lines": ["+10% armor rating", "+10% armor rating", "+10% armor rating", "+10% armor rating", "+10% armor rating"]},
+    "regeneration": {"name": "Regeneration", "icon": "lifeblood", "lines": ["Recover health over time", "Recover health over time", "Recover health over time", "Recover health over time", "Recover health over time"]},
+    "landingBlast": {"name": "Landing Blast", "icon": "leap-slam", "lines": ["Explosion at dash destination", "Explosion at dash destination", "Explosion at dash destination", "Explosion at dash destination", "Explosion at dash destination"]}
   }
 }

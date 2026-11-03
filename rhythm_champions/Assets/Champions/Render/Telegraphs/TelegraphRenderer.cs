@@ -65,6 +65,21 @@ namespace Champions.Render.Telegraphs
         /// A mark <paramref name="id"/> covering <paramref name="shape"/>, filling from <paramref name="start"/> to land at
         /// <paramref name="land"/> (as planned), in <paramref name="colour"/> (linear, HDR).
         /// </summary>
+        public void Shift(double elapsed)
+        {
+            for (int i = 0; i < _marks.Count; i++)
+            {
+                var m = _marks[i]; m.Start += elapsed; m.Land += elapsed;
+                m.Landed += elapsed; m.OffAt += elapsed; _marks[i] = m;
+            }
+        }
+
+        public void Retime(int id, double start, double land)
+        {
+            int i = Find(id); if (i < 0) return;
+            var m = _marks[i]; m.Start = start; m.Land = land; _marks[i] = m;
+        }
+
         public void Add(int id, in HitShape shape, double start, double land, Color colour)
         {
             _marks.Add(new Mark { Id = id, Shape = shape, Start = start, Land = land, Landed = double.NaN, OffAt = double.NaN, Colour = colour });

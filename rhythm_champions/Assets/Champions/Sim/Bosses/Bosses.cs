@@ -429,9 +429,36 @@ namespace Champions.Sim
             sim.End(RunEnd.Victory);
         }
 
-        /// <summary>The world was just held or let go: holding calls off the move in hand; letting go, the boss rests before its next.</summary>
+        /// <summary>Restore every pending boss timer after a current-run hold.</summary>
+        internal void Resume(double elapsed)
+        {
+            nextMoveAt += elapsed;
+            roar = sim.Telegraphs.Resume(roar, elapsed);
+            stagger = sim.Telegraphs.Resume(stagger, elapsed);
+            for (int i = 0; i < marks.Count; i++)
+            { var m = marks[i]; m.Telegraph = sim.Telegraphs.Resume(m.Telegraph, elapsed); marks[i] = m; }
+            lastTelegraph = sim.Telegraphs.Resume(lastTelegraph, elapsed);
+            flightTelegraph = sim.Telegraphs.Resume(flightTelegraph, elapsed);
+            fireFirst = sim.Telegraphs.Resume(fireFirst, elapsed);
+            lastLand += elapsed; doneAt += elapsed; moveStart += elapsed; moveEnd += elapsed;
+            burnFrom += elapsed; burnUntil += elapsed;
+        }
+
         internal void HeldChanged()
         {
+            if (!sim.Dashes.Rules.LegacyForms)
+            {
+                if (sim.State.Held)
+                {
+                    roar = sim.Telegraphs.Freeze(roar); stagger = sim.Telegraphs.Freeze(stagger);
+                    lastTelegraph = sim.Telegraphs.Freeze(lastTelegraph);
+                    flightTelegraph = sim.Telegraphs.Freeze(flightTelegraph);
+                    fireFirst = sim.Telegraphs.Freeze(fireFirst);
+                    for (int i = 0; i < marks.Count; i++)
+                    { var m = marks[i]; m.Telegraph = sim.Telegraphs.Freeze(m.Telegraph); marks[i] = m; }
+                }
+                return;
+            }
             double now = sim.Now;
             if (sim.State.Held)
             {

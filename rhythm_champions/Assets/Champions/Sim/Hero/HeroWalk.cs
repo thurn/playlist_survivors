@@ -136,6 +136,12 @@ namespace Champions.Sim
         /// The world was just held or let go: the hero stops or sets off now, and no input re-walks across the
         /// moment.
         /// </summary>
+        internal void Resume(double elapsed)
+        {
+            dash.Start += elapsed; dash.End += elapsed;
+            dashBefore.Start += elapsed; dashBefore.End += elapsed;
+        }
+
         public void HeldChanged(Simulation sim)
         {
             floor = sim.Now;

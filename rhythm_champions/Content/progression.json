@@ -1,7 +1,7 @@
 {
   "experience": {
-    "levels": [150, 220, 350, 700, 1200, 1800, 2500],
-    "growth": 1.35
+    "levels": [20],
+    "growth": 1.09
   },
   "held": {
     "maxS": 60

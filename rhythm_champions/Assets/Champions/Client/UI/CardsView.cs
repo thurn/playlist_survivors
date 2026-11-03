@@ -122,7 +122,7 @@ namespace Champions.Client.UI
         {
             var row = new VisualElement { pickingMode = PickingMode.Ignore };
             row.AddToClassList("card__pips");
-            int top = face.Kind == CardKind.Mod ? Upgrade.ModTop : Upgrade.AttackTop;
+            int top = face.Kind == CardKind.Weapon ? 8 : face.Kind == CardKind.Support ? 5 : face.Kind == CardKind.Mod ? Upgrade.ModTop : Upgrade.AttackTop;
             int shown = face.Evolution ? 1 : Math.Max(top, face.Rank);
             for (int i = 0; i < shown; i++)
             {
@@ -182,6 +182,7 @@ namespace Champions.Client.UI
                         p.LineTo(new Vector2(r.xMax - Slant, r.yMax));
                         p.LineTo(new Vector2(r.xMin, r.yMax));
                         break;
+                    case CardKind.Weapon:
                     case CardKind.Attack: // corners cut like a blade's
                         p.MoveTo(new Vector2(r.xMin + Cut, r.yMin));
                         p.LineTo(new Vector2(r.xMax - Cut, r.yMin));

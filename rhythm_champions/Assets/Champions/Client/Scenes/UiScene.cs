@@ -17,7 +17,7 @@ namespace Champions.Client.Scenes
     /// beats' ticks converging, just after an on-beat dash (the flash), a press dropped in the cooldown (the blink),
     /// cooling, just hurt (the bar's flash), a level held (the dot), and beatless (no ticks); the HUD's hairline under it.
     /// Then each screen: the title, the music picker, the pause menu, the first offer's cards (the middle one focused), a
-    /// treasure with an evolution, the HUD in a duel, the end card lit and unlit, and the calibration screens.
+    /// owned-item boss reward, the HUD in a duel, the end card lit and unlit, and the calibration screens.
     /// </summary>
     sealed class UiScene : IStillScene, INamedStills
     {
@@ -179,16 +179,16 @@ namespace Champions.Client.Scenes
                 case 4:
                     _cards.Show(new[]
                     {
-                        _faces.Of(CardKind.Dash, "bladeRush", 1), _faces.Of(CardKind.Attack, "orbitBlades", 1),
-                        _faces.Of(CardKind.Mod, "twinStrike", 1),
+                        _faces.Of(Card.Of(WeaponKind.Sword, 2, 1)), _faces.Of(Card.Of(WeaponKind.Bow, 1, 0)),
+                        _faces.Of(Card.Of(SupportKind.Might, 1, 0)),
                     }, now);
                     _cards.Focus(1);
                     break;
                 case 5:
                     _cards.Show(new[]
                     {
-                        _faces.Of(CardKind.Attack, "swordSlash", Upgrade.Evolution), _faces.Of(CardKind.Attack, "orbitBlades", 3),
-                        _faces.Of(CardKind.Dash, "leapSlam", 3),
+                        _faces.Of(Card.Of(WeaponKind.Sword, 3, 2)), _faces.Of(Card.Of(WeaponKind.OrbitBlades, 5, 4)),
+                        _faces.Of(Card.Of(SupportKind.Tempo, 5, 4)),
                     }, now);
                     break;
                 case 6:

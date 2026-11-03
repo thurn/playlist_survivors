@@ -41,7 +41,19 @@ namespace Champions.Sim
         readonly Slot[] slots = new Slot[CombatRules.WeaponCount];
         readonly Simulation sim;
         public WeaponSupports Supports { get; } = new WeaponSupports();
-        public WeaponScheduler(Simulation sim) { this.sim = sim; }
+        public WeaponScheduler(Simulation sim)
+        {
+            this.sim = sim;
+            sim.Resumed += elapsed =>
+            {
+                Supports.Resume(elapsed);
+                for (int i = 0; i < CombatRules.WeaponCount; i++)
+                {
+                    var weapon = sim.State.Build.Weapon((WeaponKind)i);
+                    if (weapon != null && weapon.PersistentActive) weapon.PersistentUntil += elapsed;
+                }
+            };
+        }
         public static double BaseSeconds(WeaponKind kind)
         {
             switch (kind)

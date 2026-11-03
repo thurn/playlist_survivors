@@ -63,6 +63,12 @@ namespace Champions.Sim
         /// <summary>Spores fired this run.</summary>
         public int Fired { get; private set; }
 
+        internal void Resume(double elapsed)
+        {
+            for (int i = 0; i < spores.Count; i++)
+            { var p = spores[i]; p.T += elapsed; spores[i] = p; }
+        }
+
         internal void Tick(double end)
         {
             sim.HeroWas(end, out double hx, out double hy);

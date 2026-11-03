@@ -53,6 +53,7 @@ namespace Champions.Tests
         public void Make()
         {
             _content = GameContent.Load(ContentDir);
+            _content.Dashes.LegacyForms = true;
             _palette = Palette.Load(ContentDir);
             _faces = CardFaces.Load(ContentDir, _content);
             _host = new GameObject("UI tests");
@@ -323,7 +324,8 @@ namespace Champions.Tests
         {
             var all = _faces.All().ToList();
             int dashes = _content.Dashes.Kinds.Sum(k => k.Ranks.Length + (k.Evolution != null ? 1 : 0));
-            Assert.That(all, Has.Count.EqualTo(dashes + Upgrade.AttackCount * (Upgrade.AttackTop + 1) + Upgrade.ModCount * Upgrade.ModTop));
+            Assert.That(all, Has.Count.EqualTo(dashes + Upgrade.AttackCount * (Upgrade.AttackTop + 1) + Upgrade.ModCount * Upgrade.ModTop
+                + CombatRules.WeaponCount * 8 + Enumerable.Range(0, CombatRules.SupportCount).Sum(i => _content.Combat.Support((SupportKind)i).MaxLevel)));
             foreach (var f in all)
             {
                 Assert.That(CardFaces.Words(f.Name), Is.InRange(1, CardFaces.NameWords), f.Id);

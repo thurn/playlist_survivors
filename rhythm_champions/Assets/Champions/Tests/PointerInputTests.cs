@@ -48,6 +48,7 @@ namespace Champions.Tests
         public void Make()
         {
             _content = GameContent.Load(ContentDir);
+            _content.Dashes.LegacyForms = true;
             _host = new GameObject("Pointer tests");
             _camera = new GameObject("Pointer tests camera").AddComponent<Camera>();
             new WorldCamera(_camera).Update(0, Vector2.zero, Vector2.zero, 0); // the run's view of the hero at the origin

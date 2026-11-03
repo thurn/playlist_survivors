@@ -162,7 +162,7 @@ namespace Champions.Client
             {
                 Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless, World = _world, MakeUi = MakeRunUi,
                 Content = _content, ContentDir = ContentDir(), Palette = _palette,
-                Run = new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.FirstOffer },
+                Run = new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately },
                 Walk = _options.Walk, Picks = _options.Picks, RecordDir = _options.Record, Flags = Environment.GetCommandLineArgs(), Look = _options.Look,
                 BuildIcons = BuildIcons,
             };

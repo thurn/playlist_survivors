@@ -1,12 +1,6 @@
 namespace Champions.Sim
 {
-    /// <summary>
-    /// The progression's numbers (Content/progression.json; design.md, "Level-ups and Treasure", Decision 10):
-    /// the experience curve and how long a level waits for its quiet moment. Each kill's experience is its type's
-    /// (<see cref="EnemyType.Experience"/> in enemies.json); the quiet moments are the beat services'
-    /// (<see cref="BeatRules.SilenceS"/>, <see cref="BeatRules.BeatlessS"/>); the level-up's heal is the hero's
-    /// (<see cref="HeroRules.LevelUpHeal"/>).
-    /// </summary>
+    /// <summary>Collected XP curve and world pickup tuning. HeldMaxS is used only by archived fixtures.</summary>
     public sealed class ProgressionRules
     {
         public const string File = "progression.json";
@@ -15,14 +9,11 @@ namespace Champions.Sim
         public int HealingEveryKills = 100;
         public double HealingShare = 0.1;
 
-        /// <summary>
-        /// The experience from each level to the next, from level 1: tuned so a good build levels about every two
-        /// minutes from about 1:30 (design.md, "Experience"), killing faster levels faster.
-        /// </summary>
-        public double[] Levels = { 150, 220, 350, 700, 1200, 1800, 2500 };
+        /// <summary>20 XP for the first choice, then 9% growth: scripted collection samples are reported in progression evidence.</summary>
+        public double[] Levels = { 20 };
 
         /// <summary>Past <see cref="Levels"/>, each level needs this many times the one before.</summary>
-        public double Growth = 1.35;
+        public double Growth = 1.09;
 
         /// <summary>A held level shows at most this long after it was reached (run clock), then on the next downbeat.</summary>
         public double HeldMaxS = 60;

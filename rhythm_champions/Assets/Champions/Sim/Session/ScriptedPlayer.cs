@@ -51,6 +51,9 @@ namespace Champions.Sim
             "twinStrike", "crescent", "phantom", "tempo", "shatterburst", "encore", "afterimage", "leapSlam", "shieldCharge", "blinkStrike",
         };
 
+        static readonly string[] SurvivorPreferences =
+            { "sword", "might", "tempo", "reach", "armor", "regeneration", "bow", "hammer", "orbitBlades", "lightning", "sentinel" };
+
         readonly Routine _routine;
         readonly List<(double At, Key Key, bool Down)> _keys = new List<(double, Key, bool)>();
         readonly int[] _pickList;
@@ -232,10 +235,11 @@ namespace Champions.Sim
             for (int i = 0; i < offer.Count; i++)
             {
                 var c = offer[i];
-                string id = c.Kind == CardKind.Dash ? (c.Id < _dashes.Kinds.Length ? _dashes.Kinds[c.Id].Id : "")
+                string id = c.Kind == CardKind.Weapon ? CombatRules.Id(c.Weapon) : c.Kind == CardKind.Support ? CombatRules.Id(c.Support) : c.Kind == CardKind.Dash ? (c.Id < _dashes.Kinds.Length ? _dashes.Kinds[c.Id].Id : "")
                     : c.Kind == CardKind.Attack ? Upgrade.IdOf(c.Attack) : Upgrade.IdOf(c.Mod);
-                int place = Array.IndexOf(Preferences, id);
-                double score = (place < 0 ? Preferences.Length : place) - (c.Evolution ? 100 : 0) - 0.1 * c.Rank;
+                var preferences = c.Kind == CardKind.Weapon || c.Kind == CardKind.Support ? SurvivorPreferences : Preferences;
+                int place = Array.IndexOf(preferences, id);
+                double score = (place < 0 ? preferences.Length : place) - (c.Evolution ? 100 : 0) - 0.1 * c.Rank;
                 if (score < bestScore)
                 {
                     bestScore = score;

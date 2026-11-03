@@ -2,9 +2,9 @@ using System;
 
 namespace Champions.Sim
 {
-    /// <summary>Experience collection, levels and transitional legacy offers. Kills leave persistent
-    /// world pickups; only their arrival grants XP. Level-up picks never heal. Offer composition
-    /// and the archived quiet gating are migrated by the immediate-progression task.</summary>
+    /// <summary>Collected XP earns immediate weapon/support choices, including during bosses.
+    /// Kills leave persistent pickups; level-up picks never heal. Historical fixtures explicitly
+    /// opt into archived offers through DashRules.LegacyForms.</summary>
     public sealed partial class Progression
     {
         /// <summary>The offers' generator's seed is the run's, mixed with this, so its draws are its own.</summary>
@@ -31,11 +31,16 @@ namespace Champions.Sim
             state.ExperienceNeeded = rules.Needed(1);
             state.Offer = offer;
             sim.Bosses.Died += BossDied;
-            if (config.Start == RunStart.FirstOffer) Open(sim, OfferKind.First);
+            if (config.Start == RunStart.FirstOffer)
+            {
+                if (dashes.LegacyForms) Open(sim, OfferKind.First);
+                else sim.StartRun(sim.Now);
+            }
         }
 
         /// <summary>The cards picked this run.</summary>
         public int Picks { get; private set; }
+        public int Fallbacks { get; private set; }
 
         // ---- Hooks for the systems ----
 
@@ -72,8 +77,13 @@ namespace Champions.Sim
         /// <summary>A boss's treasure opens now, and the held levels show after it.</summary>
         internal void Treasure(Simulation sim)
         {
-            if (state.Phase != RunPhase.Playing || offer.Up) return;
-            if (!Open(sim, OfferKind.Treasure) && state.HeldLevels > 0) Open(sim, OfferKind.LevelUp);
+            if (state.Phase != RunPhase.Playing) return;
+            if (offer.Up) { treasureDue = true; return; }
+            if (!Open(sim, OfferKind.Treasure))
+            {
+                if (!dashes.LegacyForms) DrainLevels(sim);
+                else if (state.HeldLevels > 0) Open(sim, OfferKind.LevelUp);
+            }
         }
 
         /// <summary>A boss died: the Ogre's treasure opens at the tick's end, once its blow has landed.</summary>
@@ -130,10 +140,15 @@ namespace Champions.Sim
             if (awaitingStart && state.Beat != Reliability.Reliable) StartRun(sim, end);
             bool downbeat = downbeatSeen;
             downbeatSeen = false;
-            if (treasureDue)
+            if (treasureDue && !offer.Up)
             {
                 treasureDue = false;
                 Treasure(sim);
+            }
+            if (!dashes.LegacyForms)
+            {
+                DrainLevels(sim);
+                return;
             }
             if (state.HeldLevels == 0 || sim.Bosses.InDuel || state.Phase != RunPhase.Playing || state.Holds != 0) return;
             bool overdue = state.RunClock - heldAt >= rules.HeldMaxS - 1e-9;
@@ -148,7 +163,11 @@ namespace Champions.Sim
             if (kind == OfferKind.LevelUp && --state.HeldLevels == 0) heldAt = double.NaN;
             Compose(sim, kind);
             state.Offer = offer;
-            if (!offer.Up) return false;
+            if (!offer.Up)
+            {
+                if (!dashes.LegacyForms) { Fallbacks++; sim.Health.GrowFallback(); }
+                return false;
+            }
             sim.Hold(HoldReason.Cards, true);
             sim.LetGoOfHeldKeys();
             sim.Emit(SimEvent.Offer(sim.Now, offer));
@@ -164,14 +183,34 @@ namespace Champions.Sim
             state.Offer = offer;
             Picks++;
             sim.Emit(SimEvent.Pick(sim.Now, slot, card, kind));
-            if (card.Kind == CardKind.Dash) sim.Dashes.Equip(sim, card.Id, card.Rank);
+            if (card.Kind == CardKind.Weapon) state.Build.Upgrade(card.Weapon);
+            else if (card.Kind == CardKind.Support) state.Build.Upgrade(card.Support);
+            else if (card.Kind == CardKind.Dash) sim.Dashes.Equip(sim, card.Id, card.Rank);
             else if (card.Kind == CardKind.Attack) sim.Arsenal.Set(sim, Upgrade.Of(card.Attack, card.Rank));
             else sim.Arsenal.Set(sim, Upgrade.Of(card.Mod, card.Rank));
+            if (!dashes.LegacyForms)
+            {
+                if (treasureDue)
+                {
+                    treasureDue = false;
+                    Treasure(sim);
+                }
+                else DrainLevels(sim);
+                if (!offer.Up) sim.Hold(HoldReason.Cards, false);
+                return;
+            }
             if (kind != OfferKind.First && state.HeldLevels > 0 && state.Phase == RunPhase.Playing && Open(sim, OfferKind.LevelUp)) return;
             sim.Hold(HoldReason.Cards, false);
             if (kind != OfferKind.First || state.Phase != RunPhase.Waiting) return;
             awaitingStart = true;
             if (state.Beat != Reliability.Reliable) StartRun(sim, sim.Now);
+        }
+
+        void DrainLevels(Simulation sim)
+        {
+            if (offer.Up || state.Phase != RunPhase.Playing || state.HeldFor(HoldReason.Pause)) return;
+            while (state.HeldLevels > 0)
+                if (Open(sim, OfferKind.LevelUp)) return;
         }
 
         void StartRun(Simulation sim, double t)

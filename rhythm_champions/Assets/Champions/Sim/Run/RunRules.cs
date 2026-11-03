@@ -27,8 +27,8 @@ namespace Champions.Sim
         /// <summary>On <see cref="RunControl.Start"/>.</summary>
         OnControl = 1,
         /// <summary>
-        /// The game's (design.md, "Starting"): the first offer opens at the sim's start, the world empty and held, and the
-        /// run starts on the first downbeat after its pick, or at once with no reliable beat (<see cref="Progression"/>).
+        /// Archived fixtures only: an opening offer followed by a downbeat start. Current runs start immediately,
+        /// including when an older launcher supplies this value.
         /// </summary>
         FirstOffer = 2,
     }

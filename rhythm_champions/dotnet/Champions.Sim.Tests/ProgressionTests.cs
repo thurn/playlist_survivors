@@ -20,6 +20,7 @@ namespace Champions.Sim.Tests
             params string[] build)
         {
             var config = new RunInputs { Seed = seed, Start = start, Loadout = Arena.Build(build) }.Build(Content);
+            config.Dashes.LegacyForms = true;
             tweak?.Invoke(config);
             var sim = new Simulation(config);
             if (song != null)

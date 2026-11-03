@@ -126,9 +126,14 @@ namespace Champions.Sim
             reliable = now;
             for (int i = 0; i < repeats.Count; i++) repeats[i].Due = t + FallbackEchoS;
         }
+        internal void Resume(double elapsed)
+        {
+            for (int i = 0; i < repeats.Count; i++) repeats[i].Due += elapsed;
+        }
+
         internal void Step(double t, bool held, bool beat)
         {
-            if (repeats.Count == 0 || !beat && reliable) return;
+            if (held || repeats.Count == 0 || !beat && reliable) return;
             // Detach the due batch: callbacks can create more work, but never execute it on this grid point.
             var due = new List<WeaponEffect>();
             for (int i = 0; i < repeats.Count;)

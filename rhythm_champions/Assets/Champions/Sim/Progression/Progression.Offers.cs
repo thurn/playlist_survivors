@@ -12,6 +12,23 @@ namespace Champions.Sim
         void Compose(Simulation sim, OfferKind kind)
         {
             offer = new Offer { Kind = kind, Focus = -1 };
+            if (!dashes.LegacyForms)
+            {
+                SurvivorCandidates(kind == OfferKind.Treasure);
+                TakeAny(grow, null);
+                while (offer.Count < Offer.Cards)
+                {
+                    int n = 0;
+                    for (int i = 0; i < grow.Count; i++) if (!offer.Holds(grow[i])) n++;
+                    int owned = n;
+                    for (int i = 0; i < fresh.Count; i++) if (!offer.Holds(fresh[i])) n++;
+                    if (n == 0) break;
+                    TakeAny(random.Below(n) < owned ? grow : fresh, null);
+                }
+                SortByKind();
+                if (offer.Count == 0) offer.Kind = OfferKind.None;
+                return;
+            }
             Candidates(sim);
             switch (kind)
             {
@@ -32,6 +49,26 @@ namespace Champions.Sim
                     break;
             }
             if (offer.Count == 0) offer.Kind = OfferKind.None;
+        }
+
+        void SurvivorCandidates(bool ownedOnly)
+        {
+            grow.Clear(); fresh.Clear();
+            var build = state.Build;
+            for (int i = 0; i < CombatRules.WeaponCount; i++)
+            {
+                var kind = (WeaponKind)i;
+                int level = build.Level(kind);
+                if (build.CanUpgrade(kind) && (!ownedOnly || level > 0))
+                    (level > 0 ? grow : fresh).Add(Card.Of(kind, level + 1, level));
+            }
+            for (int i = 0; i < CombatRules.SupportCount; i++)
+            {
+                var kind = (SupportKind)i;
+                int level = build.Level(kind);
+                if (build.CanUpgrade(kind) && (!ownedOnly || level > 0))
+                    (level > 0 ? grow : fresh).Add(Card.Of(kind, level + 1, level));
+            }
         }
 
         /// <summary>

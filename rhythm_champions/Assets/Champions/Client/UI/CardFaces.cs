@@ -23,7 +23,7 @@ namespace Champions.Client.UI
             Rank = rank;
         }
 
-        public bool Evolution => Rank == Upgrade.Evolution;
+        public bool Evolution => Rank == Upgrade.Evolution && (Kind == CardKind.Attack || Kind == CardKind.Dash);
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace Champions.Client.UI
             public Icon Icon;
         }
 
-        readonly Dictionary<string, Entry>[] _entries = { new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>() };
+        readonly Dictionary<string, Entry>[] _entries = { new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>(), new Dictionary<string, Entry>() };
         readonly string[] _dashIds;
 
         CardFaces(string[] dashIds)
@@ -77,6 +77,11 @@ namespace Champions.Client.UI
                 id => dashes[Array.IndexOf(dashIds, id)].Evolution != null);
             faces.Read(r.Object("attacks"), CardKind.Attack, attackIds, contentDir, _ => Upgrade.AttackTop, _ => true);
             faces.Read(r.Object("mods"), CardKind.Mod, modIds, contentDir, _ => Upgrade.ModTop, _ => false);
+            faces.Read(r.Object("weapons"), CardKind.Weapon,
+                Array.ConvertAll((WeaponKind[])Enum.GetValues(typeof(WeaponKind)), k => CombatRules.Id(k)), contentDir, _ => 8, _ => false);
+            faces.Read(r.Object("supports"), CardKind.Support,
+                Array.ConvertAll((SupportKind[])Enum.GetValues(typeof(SupportKind)), k => CombatRules.Id(k)), contentDir,
+                id => { CombatRules.TrySupport(id, out var kind); return content.Combat.Support(kind).MaxLevel; }, _ => false);
             r.End();
             return faces;
         }
@@ -131,6 +136,8 @@ namespace Champions.Client.UI
         {
             CardKind.Dash => _dashIds[card.Id],
             CardKind.Attack => Upgrade.IdOf(card.Attack),
+            CardKind.Weapon => CombatRules.Id(card.Weapon),
+            CardKind.Support => CombatRules.Id(card.Support),
             _ => Upgrade.IdOf(card.Mod),
         }, card.Rank);
 

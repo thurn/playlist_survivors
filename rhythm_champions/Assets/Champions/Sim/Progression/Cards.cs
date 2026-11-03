@@ -3,7 +3,7 @@ using System;
 namespace Champions.Sim
 {
     /// <summary>What a card gives (design.md, "Cards": its outline shape tells the kind).</summary>
-    public enum CardKind : byte { Dash = 0, Attack = 1, Mod = 2 }
+    public enum CardKind : byte { Dash = 0, Attack = 1, Mod = 2, Weapon = 3, Support = 4 }
 
     /// <summary>Why cards are up (<see cref="Offer.Kind"/>).</summary>
     public enum OfferKind : byte
@@ -19,8 +19,7 @@ namespace Champions.Sim
 
     /// <summary>
     /// One card (design.md, "Cards"): a dash, attack or mod at the rank it gives, and the rank it raises from (0:
-    /// new). Attacks and dashes go to 3, and 4 is the evolution (<see cref="Upgrade.Evolution"/>,
-    /// <see cref="DashKind.EvolutionRank"/>); mods go to 2.
+    /// new). Current weapons go to 8 and supports to their content cap. Dash/Attack/Mod are archived wire kinds.
     /// </summary>
     public struct Card : IEquatable<Card>
     {
@@ -34,6 +33,11 @@ namespace Champions.Sim
         public static Card Of(AttackKind kind, int rank, int from) => new Card { Kind = CardKind.Attack, Id = (byte)kind, Rank = (byte)rank, From = (byte)from };
         public static Card Of(ModKind kind, int rank, int from) => new Card { Kind = CardKind.Mod, Id = (byte)kind, Rank = (byte)rank, From = (byte)from };
 
+        public static Card Of(WeaponKind kind, int rank, int from) => new Card { Kind = CardKind.Weapon, Id = (byte)kind, Rank = (byte)rank, From = (byte)from };
+        public static Card Of(SupportKind kind, int rank, int from) => new Card { Kind = CardKind.Support, Id = (byte)kind, Rank = (byte)rank, From = (byte)from };
+        public WeaponKind Weapon => (WeaponKind)Id;
+        public SupportKind Support => (SupportKind)Id;
+
         public AttackKind Attack => (AttackKind)Id;
         public ModKind Mod => (ModKind)Id;
 
@@ -41,14 +45,14 @@ namespace Champions.Sim
         public bool New => From == 0;
 
         /// <summary>An attack's or dash's evolution (treasure's only).</summary>
-        public bool Evolution => Rank == Upgrade.Evolution && Kind != CardKind.Mod;
+        public bool Evolution => Rank == Upgrade.Evolution && (Kind == CardKind.Attack || Kind == CardKind.Dash);
 
         /// <summary>The card in one int, as events carry it: the kind | id &lt;&lt; 4 | rank &lt;&lt; 12 | from &lt;&lt; 16.</summary>
         public int Code => (int)Kind | Id << 4 | Rank << 12 | From << 16;
 
         public static Card FromCode(int code) => new Card
         {
-            Kind = (CardKind)(code & 0xF), Id = (byte)(code >> 4), Rank = (byte)(code >> 12 & 0xF), From = (byte)(code >> 16 & 0xF),
+            Kind = (CardKind)(code & 0xF), Id = (byte)(code >> 4 & 0xFF), Rank = (byte)(code >> 12 & 0xF), From = (byte)(code >> 16 & 0xF),
         };
 
         /// <summary>Is it the same dash, attack or mod as <paramref name="other"/>, at any rank?</summary>
@@ -56,7 +60,7 @@ namespace Champions.Sim
 
         public override string ToString()
         {
-            string id = Kind == CardKind.Attack ? Upgrade.IdOf(Attack) : Kind == CardKind.Mod ? Upgrade.IdOf(Mod) : "dash#" + Id;
+            string id = Kind == CardKind.Weapon ? Weapon.ToString() : Kind == CardKind.Support ? Support.ToString() : Kind == CardKind.Attack ? Upgrade.IdOf(Attack) : Kind == CardKind.Mod ? Upgrade.IdOf(Mod) : "dash#" + Id;
             return id + ":" + From + ">" + Rank;
         }
 

@@ -23,6 +23,8 @@ namespace Champions.Client
             public Vector2 At, Velocity;
         }
 
+        bool _held;
+        double _heldAt;
         readonly Mesh _mesh;
         readonly Material _material;
         readonly int _layer;
@@ -46,6 +48,16 @@ namespace Champions.Client
         {
             switch (e.Kind)
             {
+                case SimEventKind.Hold:
+                    bool held = e.I2 != 0;
+                    if (held && !_held) _heldAt = e.T;
+                    if (!held && _held)
+                        for (int i = 0; i < _spores.Count; i++)
+                        {
+                            var s = _spores[i]; s.From += e.T - _heldAt; s.Until += e.T - _heldAt; _spores[i] = s;
+                        }
+                    _held = held;
+                    break;
                 case SimEventKind.Spore:
                     double speed = Math.Sqrt(e.D2 * e.D2 + e.D3 * e.D3);
                     _spores.Add(new Spore
@@ -69,6 +81,7 @@ namespace Champions.Client
         /// <summary>Draws the spores in flight at song time <paramref name="song"/> for <paramref name="camera"/>.</summary>
         public void Present(double song, Camera camera)
         {
+            if (_held) song = Math.Min(song, _heldAt);
             Drawn = 0;
             _spores.RemoveAll(s => song > s.Until + 0.05);
             var rp = new RenderParams(_material) { layer = _layer, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false, camera = camera };

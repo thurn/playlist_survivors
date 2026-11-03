@@ -190,6 +190,7 @@ namespace Champions.Sim
                     h = Hashing.Fold(h, Hashing.Bits(State.Experience));
                     h = Hashing.Fold(h, (ulong)(uint)Progression.Picks | (ulong)State.Offer.Kind << 32 | (ulong)(uint)(State.Offer.Focus + 1) << 40);
                 }
+                if (Progression.Fallbacks > 0) h = Hashing.Fold(h, (ulong)(uint)Progression.Fallbacks);
                 if (Pickups.ExperienceDropped > 0 || Pickups.StoredCount > 0 || Pickups.FlyingCount > 0) h = Pickups.Fold(h);
                 return Weapons.FoldHash(h);
             }
@@ -211,12 +212,23 @@ namespace Champions.Sim
         /// <summary>Every input taken, in order: a session records them.</summary>
         public ReadOnlySpan<InputRecord> Inputs => inputs.AsSpan();
 
+        int pressedKeys, blockedKeys;
         /// <summary>A key pressed, heard at song time <paramref name="heard"/>; it takes effect now. While cards are up it is theirs.</summary>
         public void Press(Key key, double heard)
         {
             inputs.Add(new InputRecord { Kind = InputKind.Press, Code = (byte)key, Heard = heard, Effective = Now });
             health.Took(heard, Now);
-            if (Progression.Press(this, key)) return;
+            int bit = 1 << (int)key;
+            if (!dashes.Rules.LegacyForms)
+            {
+                pressedKeys |= bit;
+                if ((blockedKeys & bit) != 0) return;
+            }
+            if (Progression.Press(this, key))
+            {
+                if (!dashes.Rules.LegacyForms) blockedKeys |= bit;
+                return;
+            }
             hero.Press(this, key, heard);
             if (key == Key.Space) dashes.Press(this, heard);
         }
@@ -226,6 +238,7 @@ namespace Champions.Sim
         {
             inputs.Add(new InputRecord { Kind = InputKind.Release, Code = (byte)key, Heard = heard, Effective = Now });
             health.Took(heard, Now);
+            pressedKeys &= ~(1 << (int)key); blockedKeys &= ~(1 << (int)key);
             hero.Release(this, key, heard);
         }
 
@@ -292,15 +305,36 @@ namespace Champions.Sim
             if (State.Held != held) HeldChanged();
         }
 
+        double heldSince;
+        /// <summary>Elapsed card/pause time; weapon geometry can shift its outstanding deadlines here.</summary>
+        public event Action<double> Resumed;
         void HeldChanged()
         {
+            if (!dashes.Rules.LegacyForms)
+            {
+                if (State.Held) heldSince = Now;
+                else
+                {
+                    double elapsed = Now - heldSince;
+                    hero.Resume(elapsed);
+                    dashes.Resume(elapsed);
+                    health.Resume(elapsed);
+                    horde.Resume(elapsed);
+                    Bosses.Resume(elapsed);
+                    Resumed?.Invoke(elapsed);
+                }
+            }
             hero.HeldChanged(this);
             horde.HeldChanged();
             Bosses.HeldChanged();
         }
 
         /// <summary>The hero lets go of its held keys and target, so a key held through the cards never walks it after.</summary>
-        internal void LetGoOfHeldKeys() => hero.LetGo();
+        internal void LetGoOfHeldKeys()
+        {
+            if (!dashes.Rules.LegacyForms) blockedKeys |= pressedKeys;
+            hero.LetGo();
+        }
 
         internal void Emit(in SimEvent e) => events.Add(e);
 

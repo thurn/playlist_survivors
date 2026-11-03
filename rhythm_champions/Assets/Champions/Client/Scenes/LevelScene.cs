@@ -86,7 +86,7 @@ namespace Champions.Client.Scenes
             _entries = new ScriptedSong().Beats(0, LevelScene.GapFrom, LevelScene.Bpm).Gap(LevelScene.GapFrom, LevelScene.GapTo)
                 .Beats(LevelScene.GapTo, LevelScene.SongEnd, LevelScene.Bpm).Loud(LevelScene.LoudFrom, LevelScene.GapFrom)
                 .Change(LevelScene.LoudFrom).Entries();
-            var run = new RunInputs { Seed = 21, Level = true, Start = RunStart.FirstOffer };
+            var run = new RunInputs { Seed = 21, Level = true, Start = RunStart.Immediately };
             var config = run.Build(content);
             _driver = new SimDriver(config, new FrameClock());
             _script = ScriptedPlayer.Parse("reference", null, content.Dashes);

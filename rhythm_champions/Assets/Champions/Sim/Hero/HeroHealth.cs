@@ -155,9 +155,23 @@ namespace Champions.Sim
             state.IFramesUntil = to;
         }
 
-        /// <summary>The tick's end: the hits whose settle time has come settle, in landing order.</summary>
+        /// <summary>Shift pending hits and invulnerability by the held duration.</summary>
+        internal void Resume(double elapsed)
+        {
+            state.HurtAt += elapsed; state.IFramesUntil += elapsed;
+            for (int i = 0; i < windowCount; i++)
+            { windows[i].From += elapsed; windows[i].To += elapsed; windows[i].Heard += elapsed; }
+            for (int i = 0; i < pending.Count; i++)
+            {
+                var hit = pending[i]; hit.T += elapsed;
+                if (!double.IsNaN(hit.Beat)) hit.Beat += elapsed;
+                pending[i] = hit;
+            }
+        }
+
         public void Tick(Simulation sim, double now)
         {
+            if (sim.State.Held && !sim.Dashes.Rules.LegacyForms) return;
             double settle = SettleS;
             int n = 0;
             while (n < pending.Count && pending[n].T + settle <= now + 1e-9) n++;
@@ -165,10 +179,13 @@ namespace Champions.Sim
             pending.RemoveFront(n);
         }
 
+        double fallbackHealth;
+        internal void GrowFallback() { fallbackHealth += 5; state.MaxHealth += 5; }
+
         internal void ApplySupports(Simulation sim)
         {
             if (sim.State.Held || sim.State.Phase != RunPhase.Playing || state.Dead) return;
-            state.MaxHealth = rules.Health * (1 + sim.State.Build.HeroBonus(StatFamily.Vitality));
+            state.MaxHealth = rules.Health * (1 + sim.State.Build.HeroBonus(StatFamily.Vitality)) + fallbackHealth;
             // Vitality grants capacity, never a free heal.
             state.Health = Math.Min(state.Health, state.MaxHealth);
             Heal(sim, sim.State.Build.HeroBonus(StatFamily.Regeneration) * Simulation.TickSeconds, HealReason.Regeneration);

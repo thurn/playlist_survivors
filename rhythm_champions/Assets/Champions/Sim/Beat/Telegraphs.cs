@@ -83,7 +83,21 @@ namespace Champions.Sim
             return plain;
         }
 
-        /// <summary>The telegraph's landing time as known now: its beat's, revealed or predicted; beatless, as planned.</summary>
+        internal Telegraph Freeze(in Telegraph telegraph) => new Telegraph(telegraph.Start, LandTime(telegraph), telegraph.StartBeat, telegraph.LandBeat);
+
+        /// <summary>Preserve the captured reaction window, rounding the restored landing forward onto the future grid.</summary>
+        internal Telegraph Resume(in Telegraph telegraph, double elapsed)
+        {
+            double start = telegraph.Start + elapsed, land = telegraph.Land + elapsed;
+            if (beats.Reliable(land))
+            {
+                double next = beats.NextBeat(land, out int index);
+                if (!double.IsNaN(next)) return new Telegraph(start, next, index - telegraph.Beats, index);
+            }
+            return new Telegraph(start, land, -1, -1);
+        }
+
+        /// <summary>The current landing beat prediction, or the seconds fallback.</summary>
         public double LandTime(in Telegraph telegraph)
         {
             if (!telegraph.OnBeat) return telegraph.Land;
