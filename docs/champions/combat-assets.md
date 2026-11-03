@@ -242,3 +242,19 @@ rotation/recoil use authored motion; no unverified character clip is required.
 The `ranged-gallery` scene records all eight forms normal and empowered,
 with an optional dense simulation-frame motion capture. See the
 [implementation and visual evidence](../../rhythm_champions/evidence/spear-bow/README.md).
+
+## Delivered Orbit/Sentinel choreography (ps-3wc.9)
+
+Orbit and Sentinel now bind to `Simulation.Weapons` in survivor gameplay.
+Orbit uses the already baked Knight broadsword (S) as a closed spectral blade:
+pair, outward three-blade sweep with inner guard, alternating scythes, and
+four opening crown arms. Sentinel uses K/SH through the existing
+`RigPose`/`MonsterFigure`, with `slashA`, `parry` and `leap` roles at natural
+speed plus independent spectral sweeps and authored root paths. Its volley
+pulse owns damage; the body flourish follows it without extra landing hits.
+The roster is anchored for 2.4 seconds, eligible for refresh after four seconds;
+Persistence extends its volley uptime, and refresh replaces at most three
+knights. Both retain close coverage during empowerment. No new vendor files
+or shader variants are required. [Runtime evidence and exact reproduction](../../rhythm_champions/evidence/construct-weapons/README.md)
+record the inspected normal/empowered crowd samples and motion, limitations,
+source GUIDs, hit contracts and verification.

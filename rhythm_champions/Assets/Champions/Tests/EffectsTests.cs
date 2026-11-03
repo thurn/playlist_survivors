@@ -98,6 +98,20 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void RepeatedSummonVolleysReplaceOneBoundedRosterAndExpire()
+        {
+            using var constructs = new ConstructVisuals(Palette.Load(ContentDir));
+            var shot = new EffectShot { T = 1, At = Vector2.zero, Facing = Vector2.up, Radius = 2.3f, Duration = 2.4f };
+            for (int i = 0; i < 100; i++) constructs.Fire(EffectCue.SentinelFormation, shot);
+            constructs.Present(1.1, Vector2.zero);
+            Assert.That(constructs.Shapes, Is.LessThanOrEqualTo(7), "three posed knights, three swords and retained close guard");
+            if (Champions.Render.Crowd.MonsterLibrary.LoadFigure(Champions.Render.Crowd.MonsterLook.Default, "hero") != null)
+                Assert.That(constructs.Shapes, Is.GreaterThanOrEqualTo(3));
+            constructs.Present(4, Vector2.zero);
+            Assert.That(constructs.Shapes, Is.Zero, "finite roster disappears without new volleys");
+        }
+
+        [Test]
         public void ARecipesUnknownFieldFailsWithItsPath()
         {
             string json = File.ReadAllText(Path.Combine(ContentDir, EffectRecipes.File))

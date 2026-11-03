@@ -106,6 +106,20 @@ namespace Champions.Client.Scenes
                         entries.Add(new Entry(names[form] + (empowered == 1 ? "-empowered" : "-normal") + "-phase" + phase,
                             (EffectCue)((int)EffectCue.MeleeSweep + form), shot, .1 + phase * .075));
                     }
+            string[] constructs = { "orbit-circle", "orbit-sweep", "orbit-scythes", "orbit-crown",
+                "sentinel-sentry", "sentinel-combo", "sentinel-leap", "sentinel-formation" };
+            for (int form = 0; form < 8; form++)
+                for (int empowered = 0; empowered < 2; empowered++)
+                    for (int phase = 0; phase < 9; phase++)
+                    {
+                        float radius = (form == 0 ? 2.5f : form < 4 ? 3.4f : 2.3f) * (empowered == 1 ? Mathf.Sqrt(1.5f) : 1);
+                        entries.Add(new Entry(constructs[form] + (empowered == 1 ? "-empowered" : "-normal") + "-phase" + phase,
+                            (EffectCue)((int)EffectCue.OrbitCircle + form),
+                            new EffectShot { Facing = Aim, Radius = radius, To = form >= 4 ? Aim * radius * .6f : Vector2.zero,
+                                Duration = 2.4f, Mirrored = form >= 5, Phase = form == 6 ? 2 : form >= 5 ? 1 : 0,
+                                Power = empowered == 1 ? EffectPower.OnBeat : EffectPower.Plain },
+                            .025 + phase * .075));
+                    }
             return entries.ToArray();
         }
 
@@ -244,7 +258,7 @@ namespace Champions.Client.Scenes
             }
         }
 
-        bool IsMelee => _next >= 0 && GalleryScene.Entries[_next].Cue is EffectCue cue && MeleeVisuals.Handles(cue);
+        bool IsMelee => _next >= 0 && GalleryScene.Entries[_next].Cue is EffectCue cue && (MeleeVisuals.Handles(cue) || ConstructVisuals.Handles(cue));
 
         void Fire(int i)
         {

@@ -125,7 +125,13 @@ namespace Champions.Client.Loop
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)
-                d.Add("effects", (in SimEvent e) => cues.Take(e), null, (in PresentFrame f) => Effects.Present(f.Song, f.Hero, f.Dt, f.Camera));
+                d.Add("effects", (in SimEvent e) => cues.Take(e), null, (in PresentFrame f) =>
+                {
+                    if (f.Sim.Constructs != null)
+                        Effects.ConstructOrbit(f.Sim.State.Build.Level(WeaponKind.OrbitBlades),
+                            f.Sim.State.Build.Level(WeaponKind.OrbitBlades) > 0 ? (float)f.Sim.State.Build.Stats(WeaponKind.OrbitBlades).AreaFactor : 1);
+                    Effects.Present(f.Song, f.Hero, f.Dt, f.Camera);
+                });
             if (Ui != null) d.Add("ui", (in SimEvent e) => Ui.Take(e), null, (in PresentFrame f) => Ui.Present(f.Song, f.Sim, f.Camera));
             if (Sounds != null) d.Add("sound", (in SimEvent e) => Sounds.Take(e), null, (in PresentFrame f) => Sounds.Present(f.Frontier));
             d.Add("count", Count);

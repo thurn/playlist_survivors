@@ -61,6 +61,8 @@ namespace Champions.Render
         Encore,
         MeleeSweep, MeleeCross, MeleeSpin, MeleeDance,
         HammerSwing, HammerSlam, HammerEruption, HammerProcession,
+        OrbitCircle, OrbitSweep, OrbitScythes, OrbitCrown,
+        SentinelSentry, SentinelCombo, SentinelLeap, SentinelFormation,
     }
 
     /// <summary>How strong an effect draws (design.md, The Look &gt; Weapon effects): on the beat bigger and brighter; special moments the brightest.</summary>
@@ -97,6 +99,8 @@ namespace Champions.Render
         /// <summary>Survivor rigid actions: dim independent strike; forward placement/travel in metres.</summary>
         public bool Spectral;
         public float Advance;
+        /// <summary>Construct volley role: 0 sword, 1 parry, 2 leap. Independent of power and direction.</summary>
+        public int Phase;
     }
 
     /// <summary>

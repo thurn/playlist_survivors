@@ -64,6 +64,7 @@ namespace Champions.Render
         readonly List<(int Bucket, EffectShape Shape)> _shapes = new List<(int, EffectShape)>();
         readonly List<SparkBurst> _bursts = new List<SparkBurst>();
         readonly MeleeVisuals _melee = new MeleeVisuals();
+        readonly ConstructVisuals _constructs;
         Orbiting _orbit;
         double _last = double.NegativeInfinity;
 
@@ -71,6 +72,7 @@ namespace Champions.Render
         public Effects(EffectLibrary lib, EffectRecipes recipes, Palette palette)
         {
             _recipes = recipes;
+            _constructs = new ConstructVisuals(palette);
             if (lib.Slash == null || lib.Spark == null || lib.Sparks == null) throw new InvalidOperationException("EffectLibrary: missing its shaders");
             _material = new Material(lib.Slash) { name = "Slash", enableInstancing = false };
             _material.SetColor("_CoreColor", palette.HeroBlade.linear);
@@ -114,6 +116,7 @@ namespace Champions.Render
         public void Fire(EffectCue cue, in EffectShot shot)
         {
             if (MeleeVisuals.Handles(cue)) _melee.Fire(cue, shot);
+            if (ConstructVisuals.Handles(cue)) _constructs.Fire(cue, shot);
             Expand(_recipes.Cues[(int)cue], shot);
             foreach (var (bucket, shape) in _shapes)
             {
@@ -148,8 +151,15 @@ namespace Champions.Render
                 var rigid = _melee.Cost(cue);
                 cost.Draws += rigid.Draws; cost.Shapes += rigid.Shapes; cost.Triangles += rigid.Triangles;
             }
+            if (ConstructVisuals.Handles(cue))
+            {
+                var construct = _constructs.Cost(cue);
+                cost.Draws += construct.Draws; cost.Shapes += construct.Shapes; cost.Triangles += construct.Triangles;
+            }
             return cost;
         }
+
+        public void ConstructOrbit(int level, float area) => _constructs.Orbit(level, area);
 
         public void Orbit(double t, int swords, double angle, double speed, float radius, bool evolved = false)
         {
@@ -208,7 +218,8 @@ namespace Champions.Render
                 b.Buffer.SetData(b.Shapes);
             }
             _melee.Present(now);
-            LiveShapes = live + _melee.Draws;
+            _constructs.Present(now, hero);
+            LiveShapes = live + _melee.Draws + _constructs.Shapes;
             foreach (var b in _buckets) b.Block.SetFloat(IdNow, (float)now);
             _sparks.Present(now, null);
             if (camera != null) Queue(camera);
@@ -226,7 +237,8 @@ namespace Champions.Render
             }
             _sparks.Queue(camera);
             _melee.Queue(camera);
-            Draws = draws + _melee.Draws + (_sparks.Drawn > 0 ? 1 : 0);
+            _constructs.Queue(camera);
+            Draws = draws + _melee.Draws + _constructs.Draws + (_sparks.Drawn > 0 ? 1 : 0);
         }
 
         /// <summary>Drops every live effect (a seek backwards does it itself).</summary>
@@ -240,6 +252,7 @@ namespace Champions.Render
             }
             _sparks.Clear();
             _melee.Clear();
+            _constructs.Clear();
             _orbit = default;
             _last = double.NegativeInfinity;
         }
@@ -453,6 +466,7 @@ namespace Champions.Render
             foreach (var b in _buckets) b.Buffer?.Dispose();
             _sparks.Dispose();
             _melee.Dispose();
+            _constructs.Dispose();
             Destroy(_material);
             Destroy(_stripMesh);
         }

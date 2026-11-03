@@ -71,6 +71,7 @@ namespace Champions.Sim
         PickupCollect,
         MeleeAction,
         RangedImpact,
+        ConstructAction,
     }
 
     /// <summary>
@@ -112,6 +113,13 @@ namespace Champions.Sim
         /// <summary>Ranged impact footprint: I0 weapon; D0/D1 centre, D2 actual radius including empowerment.</summary>
         public static SimEvent RangedImpact(double t, WeaponKind kind, double x, double y, double radius) =>
             new SimEvent { Kind = SimEventKind.RangedImpact, T = t, I0 = (int)kind, D0 = x, D1 = y, D2 = radius };
+
+        /// <summary>Finite construct sweep/volley: I0 weapon, I1 form, I2 action phase bits 0–1, empowered bit 2;
+        /// D0/D1 origin, D2/D3 aim, D4 empowered coverage radius, D5 remaining visual lifetime.</summary>
+        public static SimEvent ConstructAction(double t, WeaponKind kind, int form, int phase,
+            double x, double y, double dx, double dy, double radius, double duration) => new SimEvent
+        { Kind = SimEventKind.ConstructAction, T = t, I0 = (int)kind, I1 = form, I2 = phase,
+            D0 = x, D1 = y, D2 = dx, D3 = dy, D4 = radius, D5 = duration };
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
 

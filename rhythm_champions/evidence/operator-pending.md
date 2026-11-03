@@ -51,6 +51,8 @@ row done (or files a bead) after checking.
 | Sword/Hammer in a real moving run: judge all four forms and empowered coverage with six weapons and red/yellow boss threats; listen to reused swing/slam cues under music. [Runtime gallery](melee-weapons/README.md) contains inspected seven-phase Unity crowd samples, not a continuous played run or hardware timing measurement | Operator taste, speakers and real hardware; complete-run assembly | ps-3wc.7 | pending |
 | Spear/Bow in an assembled six-weapon run: confirm narrow thrust lanes, rain/battery depth and empowerment remain legible over moving crowds and red/yellow threats, and reused whoosh/hit cues balance on real speakers. [Local Unity gallery and sampled motion](spear-bow/README.md) cover all forms/variants against standing crowds | Hand-play, full-build aesthetic judgement and real speakers | ps-3wc.8 | pending |
 
+| Orbit/Sentinel in an assembled moving run: judge the crown's four arms and the sentry/parry/leap/three-knight formation with six weapons and red/yellow boss threats, and listen to reused spectral swing cues under music. [Runtime evidence](construct-weapons/README.md) includes inspected normal/empowered Unity crowd captures and nine ordered motion samples per variant; these do not establish speaker balance or low-end GPU timing | Operator taste, speakers and target hardware; complete-run assembly | ps-3wc.9 | pending |
+
 - ps-3wc.6: hand-play the integrated weapon/encounter build to measure actual
   collected XP, first-choice time and total normal choices against the
   scripted progression samples (evidence/progression/README.md). Check card

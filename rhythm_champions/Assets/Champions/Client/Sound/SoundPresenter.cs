@@ -72,6 +72,9 @@ namespace Champions.Client.Sound
                 case SimEventKind.Swing:
                     Request(e.I0 != 0 ? SoundKind.SwingHeavy : SoundKind.Swing, e.D0, 1f, 1f, 1f, e.D0 < _settled);
                     break;
+                case SimEventKind.ConstructAction:
+                    Request(SoundKind.Swing, e.T, SpectralGain * .65f, SpectralPitch, .6f, asap);
+                    break;
                 case SimEventKind.MeleeAction:
                 {
                     bool spectral = (e.I2 & 1) != 0;
