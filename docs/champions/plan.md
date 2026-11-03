@@ -446,7 +446,7 @@ The redesigned full-build load is measured in
 [ps-3wc.14 evidence](../../rhythm_champions/evidence/full-build/README.md).
 Explicit `full-*` still scenes exercise two six-weapon/six-support maximum
 builds against 1,000 retained monsters and each boss; they are excluded from
-`all` and CI. The current M5 simulation measurements exceed the 1 ms proxy,
+`all` and CI. The initial M5 simulation measurements exceeded the 1 ms proxy,
 and synchronized offscreen rendering does not prove the GPU proxy. Concrete
 repeat-queue/visibility fixes land with that evidence; neither target hardware
 performance nor full-build visual acceptance is declared complete. The
@@ -455,8 +455,13 @@ records hold/empty-target repairs, hue-preserving default hit feedback and a
 six-case rerun; remaining peak player hierarchy and cost gaps stay actionable
 under ps-3wc. The [collision-planning follow-up](../../rhythm_champions/evidence/collision-planning/README.md)
 reduces repeated neighbor/collision work while preserving exact replay output.
-Its six-case Master IL2CPP sweep still exceeds the 1 ms proxy; that remains
-implementation work, and GPU-only timing is still unverified.
+Its six-case Master IL2CPP sweep still exceeded the 1 ms proxy. The subsequent
+[full-build proxy repair](../../rhythm_champions/evidence/full-build-proxy/README.md)
+records all six actual Master IL2CPP Low cases at 0.906–0.976 ms sim p99,
+with 1,001 alive, zero faults and unchanged complete-build event/flight output.
+Those observations meet the unchanged M5 simulation proxy with limited
+shared-host headroom; M1 hardware performance and GPU-only timing remain
+unverified. No timing-threshold test or automatic sweep enters CI.
 
 ## Look Metrics
 

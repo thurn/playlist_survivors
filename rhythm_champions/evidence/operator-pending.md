@@ -86,9 +86,10 @@ row done (or files a bead) after checking.
 
 - ps-3wc.14: run the full-build stress scenes on an M1 Air class Mac in a
   1080p window at Low, then hand-play ordinary full builds. The M5 Max
-  [measured load](full-build/README.md) exceeds the simulation proxy; its
+  [initial measured load](full-build/README.md) exceeded the simulation proxy; its
   synchronized render measurements do not establish the 1.5 ms GPU budget.
-  This is an outstanding performance gap, not hardware approval. Compare
+  The latest [CPU proxy sweep](full-build-proxy/README.md) passes all six cases;
+  this does not establish target-hardware or GPU acceptance. Compare
   Low/High and `--look trailer`; judge hero visibility, dimmer pickup diamonds,
   red/yellow warning outlines over bodies, and traveling fronts through the
   full encounter. The invulnerable 1,000-body test is deliberately denser than
@@ -102,7 +103,7 @@ with regressions. Default enemy hit feedback retains its hue instead of
 whitening the whole struck pack; trailer drawing remains unchanged. See
 [Warden evidence](warden-review/README.md) for new IL2CPP captures and raw timing.
 Peak hero visibility/warning-route ambiguity was assigned to ps-3wc.16;
-the exceeded M5 simulation proxy remains separate performance work. No
+the then-exceeded M5 simulation proxy became separate performance work. No
 full-build art/performance acceptance is claimed.
 
 - ps-3wc.16: judge the foreground hero and stable, hatched elite danger areas
@@ -121,6 +122,17 @@ synchronized retained-horde collision planning as the peak. Large-body
 queries, grid data layout and neighbor collision passes now do less repeated
 work while retaining exact output. All six final scenes keep 1,001 alive and
 zero presenter faults, but sim p99 is still 1.404–1.908 ms against the 1 ms
-M5 proxy. This remains an implementation performance gap. The 1.5 ms GPU-only
+M5 proxy. That implementation gap was carried through the later repairs;
+see the current status below. The 1.5 ms GPU-only
 proxy also remains unverified; synchronized render/readback is not a GPU
 timestamp. These measurements do not accept M1 performance or peak-load art.
+
+## Full-build CPU proxy (ps-3wc.19, 2026-11-03)
+
+The [final actual Master IL2CPP Low sweep](full-build-proxy/README.md) reports
+sim p99 0.906–0.976 ms across all six complete-build cases, with 1,001 alive,
+zero faults and unchanged event/flight counts. It meets the unchanged 1 ms
+M5 simulation proxy in those observations, with limited shared-host headroom.
+Earlier failing reports remain historical evidence. The 1.5 ms GPU-only
+proxy, M1-class hardware, hand-play, speakers and full-build art judgment
+remain unverified; synchronized render/readback is not a GPU timestamp.
