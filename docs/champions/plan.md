@@ -254,8 +254,9 @@ demos' choreography.
 
 - the reliable-beat state, the next beats, half beats and downbeats, and
   strong onsets, all from known entries;
-- heard-time judgement: binary, default 80 ms on beats, 60 ms on half beats
-  and strong played onsets; all dashes empowered without a reliable beat;
+- heard-time judgement: binary, beats ±min(100 ms, 20% local interval),
+  halves ±min(80 ms, 16%) without an onset gate, strong onsets ±80 ms;
+  eligible F/Space empowered without a reliable beat;
 - strict musical activation grids and deterministic fractional extra-strike
   accumulation, with weapon-specific seconds fallbacks;
 - stable cadence changes and comparable long-run output across tempos;
@@ -721,6 +722,16 @@ and checks. It is the implementation guide for this run. ps-3wc's table above
 records historical deliveries; it does not authorize their superseded behavior.
 ps-6y2 look/performance work remains independent and must be preserved.
 
-F cleave (ps-uyc): appended deterministic key code, shared dash cooldown/buffer,
-judgement, shield and landing sweep; no movement command or travel presentation.
+F cleave (ps-uyc, amended by ps-oli): appended deterministic key code, shared
+dash cooldown/buffer, judgement and shield, without dash travel. F now uses a
+grip-bound alternating cut and 4.2 m base damage radius; Space retains 3 m.
 Keyboard and scripted inputs record/replay through the same input stream.
+
+## Walking-sword assembly: ps-oli
+
+[Current contract and validation](walking-sword-plan.md) integrates F impact,
+forgiving judgement, bounded per-run diagnostics, isolated engine logs,
+airborne-only monster debris, eight-body fodder cohorts, contact-only ordinary
+elites, 3.5 m pickups and 180/360/540 horde-second bosses. Historical evidence
+keeps its original revision and clock schedule. Operator feel and target-Mac
+measurements remain pending; final review and CI belong to this run.

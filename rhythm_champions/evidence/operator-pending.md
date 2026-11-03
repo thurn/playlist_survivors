@@ -195,3 +195,17 @@ remain unverified; synchronized render/readback is not a GPU timestamp.
 - Hardware limits remain: this is shared-host Mono evidence, not an M1 GPU
   budget acceptance. Existing IL2CPP performance evidence remains separately
   authoritative for its measured build/scenarios.
+
+### ps-oli.5: walking-sword assembly
+
+- Current [contract](../../docs/champions/walking-sword-plan.md) and
+  [assembly evidence](walking-assembly/README.md) distinguish new live
+  soundtrack/analyzer F-primary scripting from synthetic full-run records.
+- Hand-play the grip-bound alternating F cut while walking: judge actual
+  contact/whiff audio on speakers and Bluetooth, reach and shared Space buffer,
+  half-beat reward and genuine off-beat gaps. Compare dark cleared pockets,
+  retained green XP and single-type cohorts with the supplied trailer.
+- Ordinary big ork/troll elites now have contact threats only; mushrooms and
+  all boss warnings remain. Judge progression with 3.5 m pickup reach and
+  3/6/9 horde-minute bosses. Old timed-elite and 5/10/15-minute rows above are
+  historical. M1/GPU-only timing and human feel remain non-blocking checks.

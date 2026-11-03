@@ -1,5 +1,9 @@
 # Combat-feel restoration: ps-ueo
 
+The later November 3 [walking-sword contract](walking-sword-plan.md) supersedes
+this restoration snapshot for F impact, rhythm windows, debris/cohorts,
+ordinary elites, pickup reach, boss schedule and run logging.
+
 Approved 2026-11-03. [design.md](design.md) defines behavior;
 [style.md](style.md) defines presentation. This plan maps the approved interview
 to code inspected at staging base `e284d3f38484db7ad94261c34ec7940cb1e69899`.

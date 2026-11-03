@@ -168,7 +168,7 @@ lighter member.
 | `hero.edge` | `#e4eeff` | 218 | 94 | 9 | the faint white-blue edge of the hero's slashes |
 | `hero.hurt` | `#ff4040` | 0 | 57 | 84 | the hero taking a hit: danger's red, in the counter's reach |
 | `hero.break` | `#fff0c8` | 44 | 95 | 21 | legacy palette key, unused by the revised combat; no Break bar or stagger flash |
-| `warning` | `#ff5018` | 15 | 59 | 91 | orange/red elite telegraphs with dark shoulders and hatching |
+| `warning` | `#ff5018` | 15 | 59 | 91 | orange/red hazard boundaries with dark shoulders and hatching |
 | `enemyShot` | `#ff3218` | 7 | 56 | 96 | airborne red-orange spores/shots |
 | `wall` | `#8c8c8c` | 0 | 58 | 0 | unbreakable structures (reserved; level 1 has none) |
 
@@ -237,14 +237,12 @@ still colours its glass/core red while the identifying edges remain white.
 Spectral Sentinels do not inherit this foreground treatment. The trailer hero
 retains its pinned shader and depth behavior.
 
-Elite warnings have one stable outer boundary, with a dark shoulder separating
-it from amber bodies. Sparse ground-aligned hatching and a dim interior mark
-the dangerous side within 5 m of the hero, fading out by 8 m. Timing brightens
-the boundary toward impact; a routine enemy slam never becomes a solid bright disc. Yellow is reserved
-for player empowerment; enemy warning boundaries and fills use orange/red.
-Boss red marks keep their traveling fill/front and collision shapes are
-unchanged. Judge overlaps in ordered motion as well as stills; none of these
-layers promises a collision-free route through an invulnerable stress horde.
+Ordinary big ork/troll elites now threaten by body contact only: no charge or
+slam marks, special moves or hidden ground damage. Mushroom spore warnings and
+projectiles remain a separate ranged role. Boss red marks retain their
+traveling fronts and visible collision shapes. Keep dark shoulders and sparse
+hatching where a warning exists; yellow remains player empowerment. Judge
+warning overlaps in ordered motion, especially beneath six weapon effects.
 
 ## The Edge Look
 
@@ -425,8 +423,11 @@ role's 75 and 44), so the palette's values hold on screen.
 ## Combat-feel readability (2026-11-03)
 
 The permanent held sword, white knight body and broad ordinary white slash
-must read as one action. Supporting spectral weapons cannot replace the held
-sword. Coordinate body impact, VFX, sound and forceful shatter; judge ordered
+must read as one action. F alternates grip-bound forehand/backhand cuts, with
+chest and running-leg participation, local blade extension and one directional
+arc at contact. Air is audible on acceptance; a whiff has no body-hit sound.
+Supporting spectral weapons cannot replace the held sword. Coordinate body
+impact, VFX, sound and forceful shatter; judge ordered
 motion against the local trailer, not only stills. Dash exit is a full-circle
 body sweep every time, white normally and yellow/enlarged during the aura.
 The aura appears fully on one qualifying dash, refreshes without stacking and
@@ -443,3 +444,12 @@ compact health numbers may support it. Top-center horde time switches to
 BOSS plus fight elapsed time; boss health and beat cue remain legible. Inspect
 pause/card holds and low health in motion. Subjective hand-play remains an
 operator-pending check, not an agent claim of fun.
+
+Default monster and hero death shards shrink away in flight, before their
+first downward contact and within 0.5 seconds. No bounce, resting rubble or
+sink remains. Keep directional launch and crack edges; the cleared pocket
+comes from killed bodies, with stored green XP still present. Structure debris
+is separate. Low/Medium/High enforce 600/1,500/3,000 live monster pieces.
+Ordinary fodder enters in local eight-body single-type cohorts without raising
+movement speeds or erasing living threats. The pinned trailer look retains its
+older shard path for comparison. See [assembled validation](walking-sword-plan.md).

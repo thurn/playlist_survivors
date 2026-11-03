@@ -20,7 +20,10 @@ grid, the beat wave and the trailer's visual baseline remain the direction.
 The November 3 restoration is implemented; its exact tuning and validation
 limits are in [game-feel-plan.md](game-feel-plan.md) and
 [assembled evidence](../../rhythm_champions/evidence/game-feel/README.md).
-The subsequent ps-oli pacing change uses bosses after 3/6/9 horde minutes,
+The subsequent ps-oli walking-sword changes make F the primary active attack:
+a grip-bound alternating cut, audible air and contact, airborne-only monster
+debris and local enemy cohorts. Exact behavior, evidence and limitations are in
+[walking-sword validation](walking-sword-plan.md). Pacing uses bosses after 3/6/9 horde minutes,
 a 3.5 m starting collection radius and contact-only big ork/troll elites.
 Three normal scripted builds finish in 10–12 minutes with 28–30 normal choices;
 first choices range from 15–33 seconds and fights from 8–100 seconds.
@@ -53,7 +56,8 @@ separates deterministic run results from pending hand-play and visual judgement.
 - Weapons visibly change form as they level: a hammer's swing becomes a
   ground slam, then more elaborate actions. These are fixed progressions;
   supports supply mechanics such as piercing, splitting and repetition.
-- Space dashes immediately and always ends in a full-circle sword sweep,
+- F cuts while walking, opening a local pocket without dash travel. Space
+  dashes immediately and always ends in a full-circle sword sweep,
   clearing a landing pocket of weak fodder. One on-beat dash immediately
   grants a yellow aura: all attacks cover twice the area for three seconds.
 - Every three minutes of horde time, a boss arrives. Ordinary spawning and
@@ -67,8 +71,9 @@ separates deterministic run results from pending hand-play and visual judgement.
   builds and movement without deliberately timing inputs to music.
 - **Build choices are frequent and consequential.** Small statistical
   gains compound; new weapons, supports and form changes alter the play.
-- **Dash makes room.** Automatic weapons sustain combat; every dash also
-  ends in a sword sweep without requiring a support or a rhythm judgement.
+- **Walking and cutting make room.** F is the primary active attack; automatic
+  weapons sustain combat. Space repositions and ends in its own sword sweep.
+  Neither action requires a support or a successful rhythm judgement.
 - **Rhythm is visible and playable.** Weapons attack on the beat, enemies
   step to music, timed dashes empower weapons, and bosses require timing.
 - **Every moment cinematic.** Natural animation, readable threats and dark
@@ -252,22 +257,33 @@ Starting tuning: 4 m in 0.15 seconds, 0.6-second cooldown in real seconds,
 invulnerability during travel and 0.1 seconds afterward. Buffer a press in
 the final 0.15 seconds of cooldown. Dash starts on the input frame; no waiting
 for a beat. It crosses enemy bodies and projectiles, but not intact structures.
-A dash passing a click target clears it. F starts the same full-circle
-cleave with a 0.15-second natural spin windup, while ordinary walking and click
-targets continue unchanged. F shares Space's cooldown and final 0.15-second
+A dash passing a click target clears it. F immediately starts an alternating
+forehand/backhand body cut, while ordinary walking and click targets continue
+unchanged. Damage lands once 0.15 seconds after acceptance at the hero's actual
+position. Its base circular damage radius is 4.2 m (5.94 m empowered), versus
+Space's 3 m landing radius (4.24 m empowered). The directional arc communicates
+the cut; it does not restrict its circular damage footprint.
+F shares Space's cooldown and final 0.15-second
 buffer: the latest eligible buffered press chooses the action, except an
 on-beat press is retained over an off-beat replacement. Simultaneous keys
 start only the first action received. Held F cannot repeat or select cards.
 F retains the same 0.25-second invulnerability window and rhythm reward,
 including beatless fallback, with no dash travel, trail or travel sound.
-The sweep hits once at the hero's position after its windup; its sword,
-support and aura scaling and interruption of automatic body attacks match
-the dash's landing sweep.
+Sword/support/aura scaling and interruption of automatic body attacks use the
+shared landing-sweep rules. The blade grows about the posed fist, the chest
+and legs participate while moving, and it recovers over 0.22 seconds. Every
+accepted F plays air; real contact adds one body cut or crowd punch. A whiff
+has no contact cue. Damage, hit response, sound and shatter share impact time.
 
-Timing judgement is binary in heard time: default ±80 ms around a beat,
-±60 ms around half beats or strong musical onsets. Off-beat dashes retain all
-movement and invulnerability. With no reliable beat, every dash earns
-empowerment; the player never loses the bonus because analysis failed.
+Timing judgement is binary in heard time: beats use ±min(100 ms, 20% of the
+local committed interval), half beats ±min(80 ms, 16%), and strong onsets
+±80 ms. Reliable half beats do not require a nearby onset. Caps leave real
+miss windows at fast tempos. Off-beat F/Space still execute; shared cooldown
+rejection is separate from missing a beat. Buffered actions retain the
+original press grade. With no reliable beat, every eligible F/Space earns
+empowerment; analysis failure cannot remove the bonus. See
+[rhythm diagnostics](../../rhythm_champions/evidence/rhythm-diagnostics/README.md)
+for exact tempo examples and local run logs.
 
 Every dash ends in a full-circle sword sweep at the actual legal endpoint,
 not the intended unobstructed destination. The hero performs the sweep; no
