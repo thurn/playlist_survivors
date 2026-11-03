@@ -39,6 +39,8 @@ namespace Champions.Sim
         Shards = 7,
         /// <summary>A boss's entrance shockwave, or the dragon's finale: never the hero's blow, only a <see cref="SimEventKind.Kill"/>'s source.</summary>
         Boss = 8,
+        /// <summary>Optional destination support; never echoed or repeated.</summary>
+        LandingBlast = 9,
     }
 
     /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>

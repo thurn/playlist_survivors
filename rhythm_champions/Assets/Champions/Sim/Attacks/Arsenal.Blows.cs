@@ -55,6 +55,7 @@ namespace Champions.Sim
         /// </summary>
         internal void Modify(ref Blow b)
         {
+            if (b.Source == BlowSource.LandingBlast) return;
             if ((b.Flags & BlowFlags.Effect) == 0)
             {
                 double grow = Area(b.Tags);
@@ -88,6 +89,7 @@ namespace Champions.Sim
         /// </summary>
         internal void Landed(Simulation sim, in Blow original, in Blow landed, int struck)
         {
+            if (original.Source == BlowSource.LandingBlast) return;
             if ((landed.Flags & BlowFlags.Effect) == 0 && (landed.Source != BlowSource.Dash || (landed.Flags & (BlowFlags.Repeat | BlowFlags.Echo)) != 0))
                 sim.Emit(SimEvent.Strike(landed.T, landed, struck));
             Echo(sim, original);
@@ -103,7 +105,7 @@ namespace Champions.Sim
             if (life > 0 && ++lifebloodKills % mods.Lifeblood.Kills == 0)
                 sim.Health.Heal(sim, mods.Lifeblood.Heal[life - 1] * sim.State.Hero.MaxHealth, HealReason.Mod);
             int burst = Rank(ModKind.Shatterburst);
-            if (burst > 0) bursts.Add(new Burst { X = x, Y = y, Damage = blow.Damage * mods.Shatterburst.Share[burst - 1], T = blow.T });
+            if (burst > 0 && blow.Source != BlowSource.LandingBlast) bursts.Add(new Burst { X = x, Y = y, Damage = blow.Damage * mods.Shatterburst.Share[burst - 1], T = blow.T });
         }
 
         /// <summary>Wide Arcs' area (radii and reach grow by it) for a blow carrying <paramref name="tags"/>; 1 without it.</summary>

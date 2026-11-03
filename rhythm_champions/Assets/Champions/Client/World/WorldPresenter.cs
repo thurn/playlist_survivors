@@ -47,7 +47,7 @@ namespace Champions.Client
                     _world.Zone(e.T, e.I0, e.D0);
                     break;
                 case SimEventKind.HeroDash:
-                    // Every dash deals damage; on the beat it is a special moment (design.md, Restraint).
+                    // Routine timing reward stays local, including over empty ground.
                     if ((e.I2 & 1) != 0) _world.Ring(RingKind.DashOnBeat, new Vector2((float)e.D2, (float)e.D3), e.D0, Color.white);
                     break;
                 case SimEventKind.Kill:

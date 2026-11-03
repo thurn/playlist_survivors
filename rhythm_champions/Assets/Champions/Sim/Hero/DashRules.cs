@@ -108,6 +108,10 @@ namespace Champions.Sim
     {
         public const string File = "dashes.json";
 
+        // Archived replay fixtures only. Live runs always use the plain movement dash;
+        // the old content schema remains readable while its consumers migrate.
+        internal bool LegacyForms;
+
         /// <summary>From one dash's start to the next's earliest, for every dash type (Quickstep lowers it).</summary>
         public double CooldownS = 0.6;
         /// <summary>A press heard this close before the dash is ready fires the moment it is; earlier ones are dropped.</summary>

@@ -1,0 +1,121 @@
+{
+ "palette": "champions",
+ "problems": [],
+ "stills": {
+  "movement-dash-empty-ground": {
+   "metrics": {
+    "frame_p25": 0.0,
+    "bright_share": 0.0011593364197530864,
+    "clipped": 0.0002816358024691358,
+    "clipped_blob": 0.0002816358024691358,
+    "white": 0.0006867283950617284,
+    "flash": 0.0006423611111111111,
+    "halo": 3.659429046015436,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.256118771359526,
+    "floor_p50": 0.0,
+    "floor_p90": 0.26248396469957314,
+    "floor_p99": 8.60366456171852
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "strays": {
+    "background_light_max": "background_light 25.6% strays from <= 15.0%"
+   }
+  },
+  "movement-dash-landing": {
+   "metrics": {
+    "frame_p25": 0.0,
+    "bright_share": 0.005337577160493827,
+    "clipped": 0.0002199074074074074,
+    "clipped_blob": 9.259259259259259e-05,
+    "white": 0.0012712191358024692,
+    "flash": 0.0005516975308641975,
+    "halo": 0.803825678832478,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.0868089584862527,
+    "floor_p50": 0.0,
+    "floor_p90": 0.2397744274263367,
+    "floor_p99": 7.776465156693515
+   },
+   "roles": {
+    "enemies.key.blue": 0.00390625,
+    "zones.cobalt.line": 0.00390625,
+    "zones.cobalt.pulse": 0.9296875,
+    "zones.cobalt.fill": 0.05859375,
+    "zones.cobalt.edge": 0.00390625
+   },
+   "impact": false,
+   "strays": {}
+  },
+  "movement-dash-rest": {
+   "metrics": {
+    "frame_p25": 0.0,
+    "bright_share": 0.0003780864197530864,
+    "clipped": 0.00013695987654320987,
+    "clipped_blob": 5.401234567901235e-05,
+    "white": 0.0002314814814814815,
+    "flash": 0.00021219135802469136,
+    "halo": 1.3125844378343032,
+    "key60": 1.0,
+    "families": 1,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.49926494879992983,
+    "floor_p50": 0.0,
+    "floor_p90": 0.07918168225895883,
+    "floor_p99": 7.699344861680441
+   },
+   "roles": {},
+   "impact": false,
+   "strays": {
+    "background_light_max": "background_light 49.9% strays from <= 15.0%"
+   }
+  },
+  "movement-dash-settling": {
+   "metrics": {
+    "frame_p25": 0.0,
+    "bright_share": 0.002191358024691358,
+    "clipped": 0.00015432098765432098,
+    "clipped_blob": 6.751543209876543e-05,
+    "white": 0.0005227623456790124,
+    "flash": 0.00021219135802469136,
+    "halo": 0.019795420564740596,
+    "key60": 1.0,
+    "families": 1,
+    "palette_conformance": 1.0,
+    "dense_tiles": 0,
+    "monster_share": 0.0,
+    "background_light": 0.17336969873381872,
+    "floor_p50": 0.0,
+    "floor_p90": 0.1583633645179212,
+    "floor_p99": 8.239114424966434
+   },
+   "roles": {
+    "zones.cobalt.pulse": 1.0
+   },
+   "impact": false,
+   "strays": {
+    "background_light_max": "background_light 17.3% strays from <= 15.0%"
+   }
+  }
+ },
+ "cut": {
+  "metrics": {
+   "key60_median": 1.0,
+   "shot_floor_range": 0.0,
+   "flash_frames": 0.0
+  },
+  "strays": {}
+ }
+}

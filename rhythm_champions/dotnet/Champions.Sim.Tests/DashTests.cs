@@ -20,6 +20,8 @@ namespace Champions.Sim.Tests
 
         internal static readonly GameContent Content = GameContent.Load(Checkout.In("Content"));
 
+        static DashTests() { Content.Dashes.LegacyForms = true; }
+
         static int Kind(string id) => Content.Dashes.IndexOf(id);
 
         static DashForm Form(string id, int rank) => Content.Dashes.Kinds[Kind(id)].Form(rank);
@@ -569,6 +571,7 @@ namespace Champions.Sim.Tests
         {
             var content = GameContent.Load(Checkout.In("Content"));
             content.Dashes = content.Dashes.Clone();
+            content.Dashes.LegacyForms = true;
             content.Dashes.Start = "bladeRush";
             var entries = new FixtureSong(5).Beats(0, 14, Bpm, jitter: 0.003, halfOnsets: true).Gap(14, 16).Beats(16, 30, 100).Entries();
             var run = new RunInputs { Seed = 5 };

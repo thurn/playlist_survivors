@@ -81,8 +81,8 @@ namespace Champions.Client.Scenes
             _entries = new ScriptedSong().Beats(0, StructureScene.SongEnd, StructureScene.Bpm).Entries();
             var config = new RunInputs { Seed = StructureScene.Seed, Loadout = new Upgrade[0] }.Build(content);
             config.Structures = content.Structures.Clone();
-            config.Dashes.Start = "bladeRush";
             _driver = new SimDriver(config, new FrameClock());
+            _driver.Sim.State.Build.Set(SupportKind.LandingBlast, 1);
             _world = new WorldPresenter(camera, palette);
             _structures = StructurePresenter.Create(config.Structures, palette, _world.World, camera.gameObject.layer, look);
             view.Ids[IdPass.Structure] = ("structures", "structure", StandInStructures.MaxHeightM);
@@ -91,7 +91,7 @@ namespace Champions.Client.Scenes
             if (!Pick(_driver.Sim, out _stand, out _through, out string target))
                 throw new InvalidOperationException($"seed {StructureScene.Seed}: no small structure the hero can walk straight to");
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                "Structures: seed {0}, {1} standing; the hero walks to ({2:F2}, {3:F2}) and dashes through the {4} at {5} s",
+                "Structures: seed {0}, {1} standing; the hero walks to ({2:F2}, {3:F2}) and lands against the {4} with Landing Blast at {5} s",
                 StructureScene.Seed, _driver.Sim.StructureField.Standing, _stand.x, _stand.y, target, StructureScene.DashAt));
         }
 

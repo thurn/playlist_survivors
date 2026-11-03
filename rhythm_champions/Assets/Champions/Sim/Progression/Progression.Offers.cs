@@ -44,9 +44,9 @@ namespace Champions.Sim
             fresh.Clear();
             var hero = sim.State.Hero;
             var dash = dashes.Kinds[hero.Dash];
-            if (hero.DashRank < dash.TopRank) grow.Add(Card.Dash(hero.Dash, hero.DashRank + 1, hero.DashRank));
+            if (dashes.LegacyForms && hero.DashRank < dash.TopRank) grow.Add(Card.Dash(hero.Dash, hero.DashRank + 1, hero.DashRank));
             for (int k = 0; k < dashes.Kinds.Length; k++)
-                if (k != hero.Dash && dashes.Kinds[k].Form(1).Damaging) fresh.Add(Card.Dash(k, 1, 0));
+                if (dashes.LegacyForms && k != hero.Dash && dashes.Kinds[k].Form(1).Damaging) fresh.Add(Card.Dash(k, 1, 0));
             var arsenal = sim.Arsenal;
             bool attackSlot = arsenal.Attacks < Upgrade.AttackSlots, modSlot = arsenal.Mods < Upgrade.ModSlots;
             for (int a = 0; a < Upgrade.AttackCount; a++)
@@ -76,7 +76,7 @@ namespace Champions.Sim
             jumps.Clear();
             for (int a = 0; a < Upgrade.AttackCount; a++)
                 if (arsenal.Rank((AttackKind)a) == Upgrade.AttackTop) jumps.Add(Card.Of((AttackKind)a, Upgrade.Evolution, Upgrade.AttackTop));
-            if (dash.Evolution != null && hero.DashRank == dash.TopRank) jumps.Add(Card.Dash(hero.Dash, DashKind.EvolutionRank, hero.DashRank));
+            if (dashes.LegacyForms && dash.Evolution != null && hero.DashRank == dash.TopRank) jumps.Add(Card.Dash(hero.Dash, DashKind.EvolutionRank, hero.DashRank));
             while (TakeAny(jumps, null)) { }
             jumps.Clear();
             for (int a = 0; a < Upgrade.AttackCount; a++)
@@ -84,7 +84,7 @@ namespace Champions.Sim
                 int r = arsenal.Rank((AttackKind)a);
                 if (r > 0 && r < Upgrade.AttackTop) jumps.Add(Card.Of((AttackKind)a, Upgrade.AttackTop, r));
             }
-            if (hero.DashRank < dash.TopRank) jumps.Add(Card.Dash(hero.Dash, dash.TopRank, hero.DashRank));
+            if (dashes.LegacyForms && hero.DashRank < dash.TopRank) jumps.Add(Card.Dash(hero.Dash, dash.TopRank, hero.DashRank));
             for (int from = Upgrade.AttackTop - 1; from >= 1; from--)
                 while (TakeAny(jumps, null, from)) { }
             while (TakeAny(grow, CardKind.Mod)) { }

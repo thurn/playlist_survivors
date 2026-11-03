@@ -65,6 +65,7 @@ namespace Champions.Sim
         SupportUpgrade,
         WeaponActivation,
         WeaponPulse,
+        LandingBlast,
     }
 
     /// <summary>
@@ -79,6 +80,13 @@ namespace Champions.Sim
         public double T;
         public int I0, I1, I2;
         public double D0, D1, D2, D3, D4, D5;
+
+        /// <summary>Destination support: I0 dash index; D0/D1 actual endpoint, D2 radius, D3 damage.</summary>
+        public static SimEvent LandingBlast(double t, int dash, double x, double y, double radius, double damage)
+        {
+            return new SimEvent { Kind = SimEventKind.LandingBlast, T = t, I0 = dash,
+                D0 = x, D1 = y, D2 = radius, D3 = damage };
+        }
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
 

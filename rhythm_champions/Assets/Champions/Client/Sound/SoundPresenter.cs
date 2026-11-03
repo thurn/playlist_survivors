@@ -64,6 +64,9 @@ namespace Champions.Client.Sound
             bool asap = e.T < _settled;
             switch (e.Kind)
             {
+                case SimEventKind.WeaponActivation:
+                    if (e.D1 > 1) Request(SoundKind.Accent, e.T, AccentGain * 0.5f, 1.15f, 0.5f, asap);
+                    break;
                 case SimEventKind.Swing:
                     Request(e.I0 != 0 ? SoundKind.SwingHeavy : SoundKind.Swing, e.D0, 1f, 1f, 1f, e.D0 < _settled);
                     break;
@@ -89,6 +92,9 @@ namespace Champions.Client.Sound
                     if (e.DashType == _leapSlam) Request(SoundKind.Slam, e.D1, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, e.D1 < _settled);
                     break;
                 }
+                case SimEventKind.LandingBlast:
+                    Request(SoundKind.HitHeavy, e.T, 0.6f, 1f, 0.5f, asap);
+                    break;
                 case SimEventKind.DashEcho:
                     Request(SoundKind.Whoosh, e.T, SpectralGain, SpectralPitch, 0.5f, asap);
                     break;

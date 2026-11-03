@@ -41,6 +41,10 @@ namespace Champions.Client
         {
             switch (e.Kind)
             {
+                case SimEventKind.WeaponActivation:
+                    if (e.D1 > 1) _fx.Fire(EffectCue.Encore,
+                        new EffectShot { T = e.T, At = V(e.D2, e.D3) });
+                    break;
                 case SimEventKind.Strike:
                     Strike(e);
                     break;
@@ -67,6 +71,9 @@ namespace Champions.Client
                     break;
                 case SimEventKind.HeroDash:
                     Dash(e);
+                    break;
+                case SimEventKind.LandingBlast:
+                    _fx.Fire(EffectCue.BlinkBurst, new EffectShot { T = e.T, At = V(e.D0, e.D1), Radius = (float)e.D2 });
                     break;
                 case SimEventKind.DashPart:
                     Part(e);

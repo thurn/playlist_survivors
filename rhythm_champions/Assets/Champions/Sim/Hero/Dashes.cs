@@ -22,32 +22,10 @@ namespace Champions.Sim
     }
 
     /// <summary>
-    /// The dash (design.md, "The Dash" and "Dashes"; Decisions 5 and 6): Space, the hero's one key-driven
-    /// ability, data-driven from dashes.json.
-    ///
-    /// - <b>From heard time.</b> A press heard at h, taken at the sim's time F, starts the dash at h (no
-    ///   earlier than the walk's history or a hold allows): the hero is re-walked from then with the dash
-    ///   (<see cref="HeroWalk.Dash"/>), and the dash's blows the sim has passed land at once, each at its own
-    ///   time, so the client, drawing trailing by the lead, shows it leave on the key-down frame.
-    /// - <b>Cooldown</b> <see cref="CooldownS"/> (0.6 s, Quickstep's to lower) from a dash's start to the next.
-    ///   A press heard within <see cref="DashRules.BufferS"/> of the dash being ready fires the moment it is,
-    ///   judged by when it was heard; an earlier press is dropped (<see cref="SimEventKind.DashDropped"/>, the
-    ///   pip's blink). A later press in the buffer replaces a waiting one unless that one was on the beat.
-    /// - <b>Fixed distance and duration</b> per dash form, on the beat or off, at every tempo.
-    /// - <b>Direction</b>: the held keys, else toward the click target, else the facing
-    ///   (<see cref="HeroWalk.Direction"/>), from where the hero was at the start. A dash passing its click
-    ///   target clears it; structures stop and slide a dash, and a damaging one breaks through
-    ///   (<see cref="HeroWalk"/>). Enemies never stop it.
-    /// - <b>I-frames</b> from the start to <see cref="DashRules.IFramesAfterS"/> after the end
-    ///   (<see cref="HeroHealth.Shield"/>).
-    /// - <b>On the beat</b> (<see cref="Judgement"/>, from the heard time): the blows deal
-    ///   <see cref="DashRules.OnBeatDamage"/> times their damage over shapes <see cref="DashRules.OnBeatArea"/>
-    ///   times as wide; the events say so for the client's bigger effect.
-    /// - <b>Blows</b> (<see cref="DashPart"/>): a path part strikes each target its reach covers as the
-    ///   hero passes, swept tick by tick along the re-walked path; the others land at the dash's start,
-    ///   midpoint or end, or on the beats after it (as a telegraph does: 0.5 s a beat beatless), centred
-    ///   where the hero was then. Each lands through <see cref="Strikes"/>.
-    /// - While the world is held no dash starts, a waiting press is dropped and no blow lands.
+    /// Immediate movement dash, judged in heard time with cooldown buffering and fixed invulnerability.
+    /// A timed start banks coverage independently for every equipped weapon, even over empty ground.
+    /// Landing Blast is optional, lands once at the legal endpoint, and never changes travel or judgement.
+    /// Archived forms below are reachable only by explicitly opted-in historical fixtures.
     /// </summary>
     internal sealed class Dashes
     {
@@ -72,6 +50,9 @@ namespace Champions.Sim
         }
 
         readonly DashRules rules;
+        readonly SimState simState;
+        bool blastPending;
+        double blastDamage, blastRadius;
         readonly HeroState state;
         readonly HeroWalk walk;
         readonly HeroHealth health;
@@ -105,6 +86,7 @@ namespace Champions.Sim
         public Dashes(DashRules rules, SimState sim, HeroWalk walk, HeroHealth health, Strikes strikes, BeatServices beats, BeatRules beatRules)
         {
             this.rules = rules;
+            simState = sim;
             state = sim.Hero;
             this.walk = walk;
             this.health = health;
@@ -115,7 +97,7 @@ namespace Champions.Sim
             for (int i = 0; i < MaxPathParts; i++) pathStruck[i] = new StructList<long>(64);
             CooldownS = rules.CooldownS;
             DamageScale = 1;
-            state.Dash = rules.IndexOf(rules.Start);
+            state.Dash = rules.IndexOf(rules.LegacyForms ? rules.Start : "dash");
             state.DashRank = 1;
             state.DashCooldownS = CooldownS;
         }
@@ -142,6 +124,8 @@ namespace Champions.Sim
         /// <summary>Equips dash type <paramref name="kind"/> at <paramref name="rank"/> (4: the evolution), replacing the one held.</summary>
         public void Equip(Simulation sim, int kind, int rank)
         {
+            if (!rules.LegacyForms && (kind != rules.IndexOf("dash") || rank != 1))
+                throw new InvalidOperationException("dash forms are archived; the live dash is movement only");
             if (kind < 0 || kind >= rules.Kinds.Length) throw new ArgumentOutOfRangeException(nameof(kind));
             if (!rules.Kinds[kind].HasRank(rank)) throw new ArgumentOutOfRangeException(nameof(rank), $"{rules.Kinds[kind].Id} has no rank {rank}");
             state.Dash = kind;
@@ -190,6 +174,7 @@ namespace Champions.Sim
                 }
                 sweeping = false;
                 landings.Clear();
+                blastPending = false;
                 return;
             }
             if (waiting && state.DashReadyAt <= now + 1e-9) Fire(sim);
@@ -269,13 +254,26 @@ namespace Champions.Sim
             state.DashStart = start;
             state.DashEnd = end;
             state.DashOnBeat = judged.OnBeat;
-            state.DashReadyAt = start + CooldownS;
-            state.DashCooldownS = CooldownS;
+            double cooldown = rules.LegacyForms ? CooldownS : rules.CooldownS;
+            state.DashReadyAt = start + cooldown;
+            state.DashCooldownS = cooldown;
+            if (judged.OnBeat) simState.Build.Empower();
             walls.Clear();
 
             partCount = 0;
-            foreach (var p in form.Parts) AddPart(p);
-            for (int i = 0; i < ExtraParts.Count; i++) AddPart(ExtraParts[i]);
+            if (rules.LegacyForms)
+            {
+                foreach (var p in form.Parts) AddPart(p);
+                for (int i = 0; i < ExtraParts.Count; i++) AddPart(ExtraParts[i]);
+            }
+            int blastLevel = simState.Build.Level(SupportKind.LandingBlast);
+            blastPending = blastLevel > 0;
+            if (blastPending)
+            {
+                var stats = simState.Build.Stats(WeaponBuild.LandingBlastCapabilities);
+                blastDamage = (1 + simState.Build.HeroBonus(StatFamily.LandingBlast)) * stats.DamageFactor;
+                blastRadius = 2 * stats.RadiusFactor;
+            }
             bool damaging = false;
             for (int i = 0; i < partCount; i++) damaging |= parts[i].Damage > 0;
 
@@ -382,6 +380,19 @@ namespace Champions.Sim
         void Advance(Simulation sim, double upTo)
         {
             if (sweeping) Sweep(sim, Math.Min(upTo, current.End));
+            if (blastPending && current.End <= upTo + 1e-9)
+            {
+                blastPending = false;
+                if (!walk.DashEnded(current.Index, out double x, out double y))
+                    walk.PositionWas(current.End, out x, out y);
+                var blow = new Blow
+                {
+                    Shape = HitShape.Circle(x, y, blastRadius), T = current.End, Damage = blastDamage,
+                    Tags = HitTags.Area, Source = BlowSource.LandingBlast, Owner = current.Index, Part = -1,
+                };
+                sim.Emit(SimEvent.LandingBlast(current.End, current.Index, x, y, blastRadius, blastDamage));
+                strikes.Land(sim, blow);
+            }
             for (int i = 0; i < landings.Count; i++)
             {
                 ref var l = ref landings[i];

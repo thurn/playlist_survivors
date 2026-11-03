@@ -458,6 +458,7 @@ namespace Champions.Sim
         void TuneDash(Simulation sim)
         {
             var dashes = sim.Dashes;
+            if (!dashes.Rules.LegacyForms) return;
             dashes.CooldownS = DashCooldownS(dashes.Rules.CooldownS);
             int momentum = Rank(ModKind.Momentum);
             var m = mods.Momentum;
@@ -484,6 +485,7 @@ namespace Champions.Sim
         /// </summary>
         void Dashed(Simulation sim, DashRecord dash)
         {
+            if (!sim.Dashes.Rules.LegacyForms) return;
             copiedDash = dash.Index;
             copiedParts = 0;
             echoedParts = 0;

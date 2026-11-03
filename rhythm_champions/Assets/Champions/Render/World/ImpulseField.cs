@@ -209,16 +209,15 @@ namespace Champions.Render
         /// <summary>
         /// The ring a <paramref name="kind"/> of event sends from <paramref name="at"/> at song time <paramref name="t"/>, in
         /// <paramref name="colour"/> (sRGB; the hero's are white), <paramref name="weight"/> 0 to 1 scaling a mass kill's
-        /// by its count. Every kind the design lists is a special moment; a boss's entrance and death cross the whole
-        /// frame, a dash's ring only its neighbourhood.
+        /// by its count. Boss entrances and deaths are special moments; a routine dash ring stays local.
         /// </summary>
         public static Impulse Ring(RingKind kind, Vector2 at, double t, Color colour, float weight = 1f)
         {
             float w = Mathf.Clamp01(weight);
-            var r = new Impulse { Kind = kind, At = at, Start = t, Colour = colour, Special = true };
+            var r = new Impulse { Kind = kind, At = at, Start = t, Colour = colour, Special = kind != RingKind.DashOnBeat };
             switch (kind)
             {
-                case RingKind.DashOnBeat: r.Strength = 0.7f; r.Speed = 30f; r.Reach = 14f; r.Width = 1.6f; break;
+                case RingKind.DashOnBeat: r.Strength = 0.35f; r.Speed = 12f; r.Reach = 3f; r.Width = 0.3f; break;
                 case RingKind.Slam: r.Strength = 1.0f; r.Speed = 32f; r.Reach = 22f; r.Width = 2.2f; break;
                 case RingKind.BossEntrance: r.Strength = 1.4f; r.Speed = 40f; r.Reach = 40f; r.Width = 3.0f; break;
                 case RingKind.BossDeath: r.Strength = 1.5f; r.Speed = 36f; r.Reach = 40f; r.Width = 3.2f; break;

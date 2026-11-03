@@ -15,6 +15,8 @@ namespace Champions.Sim.Tests
         /// <summary>The game's content (every dash among it).</summary>
         public static readonly GameContent Content = GameContent.Load(Checkout.In("Content"));
 
+        static Arena() { Content.Dashes.LegacyForms = true; }
+
         /// <summary>
         /// A sim on the content playing from the start with <paramref name="build"/> and <paramref name="dummies"/>,
         /// given <paramref name="song"/>'s entries at their normal known-at times (none: no music), not yet stepped.

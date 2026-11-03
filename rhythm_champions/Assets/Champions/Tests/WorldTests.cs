@@ -123,6 +123,19 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void RoutineDashRewardDoesNotTriggerGlobalFlashOrCameraMoment()
+        {
+            var field = new ImpulseField();
+            int moments = 0;
+            field.Moments = _ => moments++;
+            field.Add(ImpulseField.Ring(RingKind.DashOnBeat, Vector2.zero, 1, Color.white));
+            field.Publish(1.05);
+            Assert.AreEqual(1, field.Published, "local reward remains visible");
+            Assert.AreEqual(0, moments);
+            Assert.AreEqual(0f, field.Special);
+        }
+
+        [Test]
         public void OnlySpecialMomentsBendTheGridAndFlashBriefly()
         {
             var field = new ImpulseField();
