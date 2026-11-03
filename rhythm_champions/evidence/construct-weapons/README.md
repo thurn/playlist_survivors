@@ -100,8 +100,23 @@ manifest entry, generated mesh, image or Blender file is necessary in git.
 - Standalone public-API probe: default Sword plus both constructs and five
   supports, 48 targets, 12 seconds, at levels 1/3/5/8. Each produced 70 Orbit
   actions and 34 Sentinel actions including Tempo/Echo. Whole-run and .1 s
-  chunked runs matched hashes `F67A5B99EDEDA801`, `40397B6EBF2BCCC4`,
-  `4D9FE585042AD5E6`, `7C04AF8FCE5D38A6`; total damage increased at each form.
+  chunked runs matched hashes `FD73419D783448AF`, `77CF815C91BD050C`,
+  `9118025079B96D9F`, `11933CF2ABAEEA00`; total damage increased at each form.
 
 Speaker balance, operator taste and target-hardware timing in the assembled
 six-weapon run remain in [operator-pending.md](../operator-pending.md).
+
+## Integrated staging validation
+
+Rebased over Spear/Bow and live progression (staging `04309adf`). Kept
+Ranged's startup, state hashing, impact event and stable blow-source IDs;
+Sentinel takes the next unused source value. Combined simulation suite:
+385 tests pass. The development player builds; its incremental report is
+279/300 shader variants, including the newly landed Ranged shader.
+All four recorded sessions replay to their expected hashes. The level
+fixture was re-recorded through `LevelRunTests.RecordTheLevelSession` because
+binding the new construct scheduler intentionally adds state to its hash;
+its 4412 events, 836 inputs and 2198 audio entries are unchanged, and the new
+hash is `7284B99D882B32DD`. The other three fixtures are unchanged. The mixed
+build probe above was rerun on the integrated tree; listed hashes reflect
+that tree. Form captures remain the same construct source and renderer.
