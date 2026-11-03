@@ -174,3 +174,24 @@ remain unverified; synchronized render/readback is not a GPU timestamp.
 - Non-blocking operator judgement remains: entrance impact/speaker sync,
   reinforcement cadence and pressure during a normal build's boss duration,
   readable escape lanes with live movement, and target-hardware shard cost.
+
+### ps-ueo.5: assembled combat and pacing
+
+- [Assembled evidence](game-feel/README.md) includes normal full-run sim/replay
+  results, rendered moving hordes and all three naturally scheduled bosses,
+  actual application audio/video, and a real idle death through 1 health.
+  A duplicated/uncancellable Sword whoosh was fixed; actual impacts now own
+  survivor Sword sounds. No vendor-derived media is committed.
+- Non-blocking hand-play: judge natural faster swings and landing spin entry,
+  whether the broad yellow arcs leave hazards readable with six weapons, XP
+  carpet clutter, urgency of the near-empty orb, and music impact on speakers
+  and Bluetooth. Agent timing checks and captured audio do not certify fun or
+  perceived speaker/display sync.
+- Explicit pacing deviation for review: the four additional winning runs first
+  level at 12–14 s, with 33–34 normal choices over 16–17 minutes; their bosses
+  take 8–54 s. These are faster than the older 20–30 s first-choice and 1–2 min
+  boss targets. Per-hit power was preserved as requested; no automatic damage
+  nerf or hidden scaling was added to force those older durations.
+- Hardware limits remain: this is shared-host Mono evidence, not an M1 GPU
+  budget acceptance. Existing IL2CPP performance evidence remains separately
+  authoritative for its measured build/scenarios.

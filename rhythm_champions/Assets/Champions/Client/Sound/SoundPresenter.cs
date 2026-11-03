@@ -70,6 +70,9 @@ namespace Champions.Client.Sound
                     if (e.D1 > 1) Request(SoundKind.Accent, e.T, AccentGain * 0.5f, 1.15f, 0.5f, asap);
                     break;
                 case SimEventKind.Swing:
+                    // Survivor Swing is cancellable body windup notice. MeleeAction owns its actual impact;
+                    // scheduling here too doubles the whoosh and leaves phantom sounds after a dash cancels it.
+                    if (_sim.Melee != null) break;
                     Request(e.I0 != 0 ? SoundKind.SwingHeavy : SoundKind.Swing, e.D0, 1f, 1f, 1f, e.D0 < _settled);
                     break;
                 case SimEventKind.ConstructAction:

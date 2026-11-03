@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Champions.Client.Loop;
+using Champions.Client.Hero;
 using Champions.Client.Sound;
 using Champions.Sim;
 using NUnit.Framework;
@@ -77,6 +78,58 @@ namespace Champions.Tests
             _sounds.Take(SimEvent.MagicAction(1.3, WeaponKind.EmberField, 3, true, 0,0,1,0,2.4,3));
             Assert.That(_scheduler.Log.Select(x => x.Cue.Kind), Is.EqualTo(new[] { SoundKind.Hit, SoundKind.Slam }));
             Assert.That(_scheduler.Log.All(x => x.Cue.Gain < .5f), Is.True);
+        }
+
+        [Test]
+        public void SurvivorWindupsStaySilentUntilTheActualImpactAndCanBeCancelledByADash()
+        {
+            var sim = new Simulation(new RunInputs { SurvivorWeapons = true }.Build(null));
+            var sounds = new SoundPresenter(_scheduler, sim, leapSlam: -1, limit: 1);
+            sounds.Present(Frame(1));
+            sounds.Take(SimEvent.Swing(1.1, 1.4, 1, 0, false, 1));
+            Assert.That(_scheduler.Log, Is.Empty, "advance body notice is not an attack yet");
+            sounds.Take(SimEvent.MeleeAction(1.4, WeaponKind.Sword, 1, 0, 0, 0, 1, 0, 3, 1));
+            Assert.That(_scheduler.Log.Select(x => (x.Cue.Kind, x.Attack)),
+                Is.EqualTo(new[] { (SoundKind.Swing, 1.4) }), "one whoosh on the actual impact");
+            sounds.Take(SimEvent.Swing(1.5, 1.9, 1, 0, false, 1));
+            sounds.Take(Dash(1.6, 1.6, false));
+            Assert.That(_scheduler.Log.Count(x => x.Cue.Kind == SoundKind.Swing), Is.EqualTo(1),
+                "a dash may cancel the pending auto strike without a future ghost whoosh");
+        }
+
+        [Test]
+        public void LiveSwordBodyDamageShatterAndSoundUseTheSameImpact()
+        {
+            var sim = new Simulation(new SimConfig { SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>(),
+                Dummies = new[] { new Dummy(1, 0, .65) } });
+            var sounds = new SoundPresenter(_scheduler, sim, leapSlam: -1, limit: 1);
+            var clips = new HeroClips(HeroClips.Knight());
+            var motion = new HeroMotion(clips, 6);
+            var pose = new HeroPose();
+            int cursor = 0;
+            for (int frame = 0; frame <= 30; frame++)
+            {
+                double time = frame / 60.0;
+                sim.StepTo(FrameClock.FrontierAt(time));
+                foreach (var e in sim.EventsSince(cursor))
+                {
+                    sounds.Take(e);
+                    if (e.Kind == SimEventKind.Swing) motion.Swing(SwingKind.Slash, e.D0, Vector2.right);
+                }
+                cursor = sim.EventCount;
+                motion.Evaluate(time, pose);
+                sounds.Present(Frame(time));
+            }
+            var action = sim.EventsSince(0).ToArray().Single(e => e.Kind == SimEventKind.MeleeAction);
+            var kill = sim.EventsSince(0).ToArray().Single(e => e.Kind == SimEventKind.Kill);
+            var body = motion.SwingAt(motion.SwingCount - 1);
+            Assert.That(action.T, Is.EqualTo(.5).Within(1e-9));
+            Assert.That(kill.T, Is.EqualTo(action.T), "weak fodder shatters on the first actual blow");
+            Assert.That(body.Impact, Is.EqualTo(action.T));
+            Assert.That(body.ClipTime(body.Impact), Is.EqualTo(HeroClips.Knight()[body.Clip].Impact).Within(1e-5));
+            Assert.That(_scheduler.Log.Where(x => x.Cue.Kind == SoundKind.Swing).Select(x => x.Attack),
+                Is.EqualTo(new[] { action.T }), "one audible swing, aligned with damage and the body clip");
+            Assert.That(_scheduler.Log.Single(x => x.Cue.Kind == SoundKind.ShatterBody).Attack, Is.EqualTo(kill.T));
         }
 
         [Test]

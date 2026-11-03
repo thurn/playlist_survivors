@@ -3,9 +3,9 @@
 Approved 2026-11-03. [design.md](design.md) defines behavior;
 [style.md](style.md) defines presentation. This plan maps the approved interview
 to code inspected at staging base `e284d3f38484db7ad94261c34ec7940cb1e69899`.
-It is a source audit and implementation contract, not evidence that the new
-behavior has shipped. ps-ueo.1 changes documentation only. Later executors
-update exact implementation choices and evidence here as they land.
+The audit tables retain that baseline for comparison. The delivery sections
+below record the shipped implementation and scenario limits; the assembled
+validation report is in `rhythm_champions/evidence/game-feel/README.md`.
 
 ## Reference and preserved diagnostics
 
@@ -102,7 +102,7 @@ one-hit-kill tuning. Copying those hidden feedback rules would obscure live
 balance. Recover the visible clearing power with explicit Sword damage and
 geometry instead. Existing shader/effect ownership rules still apply.
 
-## Live implementation gaps and integration risks
+## Baseline implementation gaps and integration risks
 
 All paths here are under `rhythm_champions/Assets/Champions/`.
 
@@ -380,3 +380,29 @@ paused reinforcement warning and spawn. The synthetic
 `fixture-duel` session was intentionally re-recorded: arrival now clears its
 placed field and changes its subsequent inputs/events. Fast checks gate staging;
 the parent run owns slow-CI convergence.
+
+## ps-ueo.5 delivery: normal-run assembly
+
+[Assembled evidence](../../rhythm_champions/evidence/game-feel/README.md)
+records four additional full normal-run wins/replays at 80/174/128 BPM and
+beatless, moving-horde and all-boss render sequences, actual short app
+audio/video, low-health death, and controlled beat/half-beat/off-beat/fallback
+dash timing. A real soundtrack-driven normal run won at 1,031.4 active seconds;
+its complete Mono replay matches hash `4B2162FA28B20018`, 245,926 events,
+with no presenter faults. Failed long video recordings are explicitly unusable;
+their complete run record was recovered into actual player replay motion.
+
+Assembly exposed a sound regression: survivor advance `Swing` notices and
+actual `MeleeAction` impacts both scheduled Sword whooshes, including ghost
+sounds after a dash cancelled a windup. Survivor notices are now silent; the
+actual impact owns the one whoosh. Archived choreography is unchanged. Two new
+Unity regressions cover cancellation and a real 60 Hz sim/body/kill/sound
+sequence sharing impact 0.500 s. Verification: 490 sim and 133 Unity tests,
+fresh Mono build, normal-run replays and Enact fast checks.
+
+Measured first choices (12–14 s) and boss durations (8–54 s across four builds)
+are faster than the earlier pacing targets; damage was not inversely reduced
+to hide the requested attack-rate increase. Full values, preview/media limits,
+and non-blocking hand-play, perceived speaker sync, pacing and target-hardware
+judgement are recorded in the report and operator-pending. No media, vendor
+derivatives, frozen-project changes or operator ProjectSettings are delivered.

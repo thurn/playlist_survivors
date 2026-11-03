@@ -17,6 +17,15 @@ The vision remains "the game that doesn't need a trailer": every moment of
 play is cinematic. Retro 3D neon wireframe, the white hero, the endless dark
 grid, the beat wave and the trailer's visual baseline remain the direction.
 
+The November 3 restoration is implemented; its exact tuning and validation
+limits are in [game-feel-plan.md](game-feel-plan.md) and
+[assembled evidence](../../rhythm_champions/evidence/game-feel/README.md).
+With the faster attacks and unchanged per-hit power, four scripted normal runs
+currently reach their first choice at 12–14 seconds and win in 16–17 minutes,
+with 33–34 normal choices. Measured boss fights span 8–54 seconds across those
+builds. The first-choice and boss-duration targets below remain pacing goals,
+not claims that these observations met them; operator judgement is pending.
+
 Combat and progression were redesigned with the operator on **2026-11-02**.
 The combat-feel decisions approved on **2026-11-03** below supersede conflicting
 November 2 behavior. This document also supersedes the dash-centered design
@@ -802,6 +811,8 @@ The music stays foremost. Swings, impacts, shatters, dash whooshes and boss
 warnings sit beneath it; the timed-dash accent reinforces empowerment.
 Sound follows heard-time events without adding input delay. Music is not
 ducked for ordinary combat or choices.
+Sword windup notices are silent; the actual impact owns its single whoosh,
+so cancelling an automatic windup with a dash cannot leave a ghost attack sound.
 
 The hero's small white beat strip retains upcoming beat ticks and a dash
 readiness pip. Replace the thin player health bar with a bottom-left health
