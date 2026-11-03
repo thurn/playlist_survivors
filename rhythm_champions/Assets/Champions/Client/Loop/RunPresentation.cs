@@ -130,6 +130,9 @@ namespace Champions.Client.Loop
                 case SimEventKind.HeroMove:
                     Hero.Walk(e.D0, new Vector2((float)e.D3, (float)e.D4));
                     break;
+                case SimEventKind.MeleeAction when (WeaponKind)e.I0 == WeaponKind.Sword && (e.I2 & 1) == 0:
+                    Hero.Swing(SwingKind.Slash, e.T, new Vector2((float)e.D2, (float)e.D3));
+                    break;
                 case SimEventKind.Swing:
                     Hero.Swing(e.I0 == 1 ? SwingKind.Spin : SwingKind.Slash, e.D0, new Vector2((float)e.D1, (float)e.D2));
                     break;

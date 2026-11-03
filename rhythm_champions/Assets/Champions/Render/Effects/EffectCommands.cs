@@ -59,6 +59,8 @@ namespace Champions.Render
         Shatterburst,
         /// <summary>Encore: the charge an on-beat dash leaves on the hero at At.</summary>
         Encore,
+        MeleeSweep, MeleeCross, MeleeSpin, MeleeDance,
+        HammerSwing, HammerSlam, HammerEruption, HammerProcession,
     }
 
     /// <summary>How strong an effect draws (design.md, The Look &gt; Weapon effects): on the beat bigger and brighter; special moments the brightest.</summary>
@@ -92,6 +94,9 @@ namespace Champions.Render
         public EffectPower Power;
         /// <summary>The other hand's swing: the sweep runs the other way (Sword Slash alternates).</summary>
         public bool Mirrored;
+        /// <summary>Survivor rigid actions: dim independent strike; forward placement/travel in metres.</summary>
+        public bool Spectral;
+        public float Advance;
     }
 
     /// <summary>

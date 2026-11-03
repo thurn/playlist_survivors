@@ -57,7 +57,7 @@ namespace Champions.Client.Scenes
             new EffectShot { At = from, To = to, Facing = (to - from).normalized, Power = power, Duration = (float)duration, Radius = (float)radius };
 
         /// <summary>The entries in order: every cue, each at the moment it shows best.</summary>
-        internal static readonly Entry[] Entries =
+        static readonly Entry[] LegacyEntries =
         {
             new Entry("sword-slash", EffectCue.SwordSlash, At(EffectPower.Plain, 3, 150), 0.1),
             new Entry("sword-slash-on-beat", EffectCue.SwordSlash, At(EffectPower.OnBeat, 3.8, 210), 0.1),
@@ -89,6 +89,25 @@ namespace Champions.Client.Scenes
             new Entry("shatterburst", EffectCue.Shatterburst, new EffectShot { At = Aim * 2.5f, Facing = Aim }, 0.05),
             new Entry("encore", EffectCue.Encore, At(EffectPower.OnBeat), 0.1),
         };
+
+        internal static readonly Entry[] Entries = BuildEntries();
+        static Entry[] BuildEntries()
+        {
+            var entries = new List<Entry>(LegacyEntries);
+            string[] names = { "sword-sweep", "sword-cross", "sword-spin-form", "sword-dance", "hammer-swing", "hammer-slam", "hammer-eruption", "hammer-procession" };
+            for (int form = 0; form < 8; form++)
+                for (int empowered = 0; empowered < 2; empowered++)
+                    for (int phase = 0; phase < 7; phase++)
+                    {
+                        float radius = (form < 4 ? 3 : 2.6f) * (empowered == 1 ? Mathf.Sqrt(1.5f) : 1);
+                        var shot = new EffectShot { Facing = Aim, Radius = radius,
+                            Advance = form == 7 ? radius * .7f : form == 3 ? radius * 1.5f : 0 };
+                        shot.To = Aim * shot.Advance;
+                        entries.Add(new Entry(names[form] + (empowered == 1 ? "-empowered" : "-normal") + "-phase" + phase,
+                            (EffectCue)((int)EffectCue.MeleeSweep + form), shot, .1 + phase * .075));
+                    }
+            return entries.ToArray();
+        }
 
         /// <summary>When each entry starts and keeps its still, from the scene's start.</summary>
         internal static (double Start, double Still)[] Schedule()
@@ -149,6 +168,7 @@ namespace Champions.Client.Scenes
         const int TimingPairs = 31, WarmPairs = 4;
 
         Effects _effects;
+        ICrowdView _meleeCrowd;
         WorldPresenter _world;
         HeroMarker _marker;
         Camera _camera;
@@ -169,6 +189,10 @@ namespace Champions.Client.Scenes
             _start = Time.timeAsDouble;
             _schedule = GalleryScene.Schedule();
             _world = new WorldPresenter(camera, palette);
+            var enemies = GameContent.Load(contentDir).Enemies;
+            _meleeCrowd = (ICrowdView)TrailerCrowd.Create(LaunchOptions.Current.Look, enemies, palette)
+                ?? new StandInCrowd(enemies, palette, camera.gameObject.layer);
+            if (view != null) view.Ids[IdPass.Monster(0)] = ("skeleton", "monster", 1.8f);
             _marker = new HeroMarker(camera.gameObject.layer);
             _marker.Place(Vector2.zero);
             var lib = EffectLibrary.Load();
@@ -180,7 +204,7 @@ namespace Champions.Client.Scenes
             _effects = new Effects(lib, EffectRecipes.Load(contentDir), palette);
             if (view != null)
             {
-                view.Requeue = () => _effects.Queue(_camera);
+                view.Requeue = () => { _effects.Queue(_camera); if (IsMelee) _meleeCrowd.Queue(_camera); };
                 _costsDir = LaunchOptions.Current.StillsDir;
                 _benchOut = LaunchOptions.Current.BenchOut;
             }
@@ -201,6 +225,18 @@ namespace Champions.Client.Scenes
             while (_next + 1 < _schedule.Length && t + 1e-6 >= _schedule[_next + 1].Start) Fire(++_next);
             _world.Present(t, Vector2.zero, Time.deltaTime);
             _effects.Present(t, Vector2.zero, Time.deltaTime, _camera);
+            if (IsMelee)
+            {
+                _meleeCrowd.Begin(t);
+                for (int k = 0; k < 22; k++)
+                {
+                    float a = k * 2.39996f, r = 3.4f + (k % 3) * 1.5f;
+                    _meleeCrowd.Mob(new CrowdMob { Id = k, Serial = k, Cast = 0,
+                        Position = new Vector3(Mathf.Cos(a) * r, 0, Mathf.Sin(a) * r), Action = CrowdAction.Idle,
+                        ActionTime = (float)t, StepAge = CrowdMob.Long, KickAge = CrowdMob.Long });
+                }
+                _meleeCrowd.Draw(t, _camera);
+            }
             if (_view != null && _next >= 0 && _measured == _next && t + 1e-6 >= _schedule[_next].Still)
             {
                 Measure(_next);
@@ -208,13 +244,15 @@ namespace Champions.Client.Scenes
             }
         }
 
+        bool IsMelee => _next >= 0 && GalleryScene.Entries[_next].Cue is EffectCue cue && MeleeVisuals.Handles(cue);
+
         void Fire(int i)
         {
             var e = GalleryScene.Entries[i];
             _effects.Clear();
             double t = _schedule[i].Start;
             var shot = e.Shot;
-            shot.T = t;
+            shot.T = t + (e.Cue is EffectCue melee && MeleeVisuals.Handles(melee) ? .35 : 0);
             if (e.Cue is EffectCue cue) _effects.Fire(cue, shot);
             else _effects.Orbit(t - 0.5, e.Evolved ? 6 : 3, 0.4, 2 * Math.PI / 2.0, shot.Radius, e.Evolved);
             Debug.Log(string.Format(CultureInfo.InvariantCulture, "Gallery: {0} at {1:F3} s, its still at {2:F3} s", e.Label, t, _schedule[i].Still));
@@ -294,6 +332,7 @@ namespace Champions.Client.Scenes
         void OnDestroy()
         {
             _effects?.Dispose();
+            _meleeCrowd?.Dispose();
             _marker?.Dispose();
             _world?.Dispose();
             if (_timingTarget != null) _timingTarget.Release();

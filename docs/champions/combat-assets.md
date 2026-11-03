@@ -212,3 +212,22 @@ with a quiet grid, retained cyan crowd stand-ins and a red threat crossing the
 scene. It deliberately does not instantiate unverified Hovl/KriptoFX particle
 prefabs, play a knight bow/hammer clip, or claim final Unity game evidence.
 See [probe findings](../../rhythm_champions/evidence/combat-assets/README.md).
+
+## Implemented Sword/Hammer handoff (ps-3wc.7)
+
+The eight Sword/Hammer cells now have runtime sim handlers, rigid render
+choreography, private baked meshes and a normal/empowered Unity crowd gallery.
+`MeleeBaker` selects source S's broadsword mesh and source H's exact FBX,
+normalizes the handle/head frame, and uses the existing 24° feature-edge bake
+over a dark body. Only H's manifest reference was added; the broadsword was
+already owned/imported. Outputs stay under ignored `Assets/Baked/Effects/`.
+Sword's main body action uses the existing slash role; the long spin and Hammer
+vault are spectral constructs. Hovl `Slash2` supplies thin contact outlines;
+S's own rigid blade supplies sparse ground fissure spikes. No stock colored
+prefab, new purchase or unvalidated hammer body clip is used.
+
+The procession uses one advancing fall per authored activation (three-step
+placement cycle), preserving close damage and drawing upcoming hammers dimmer.
+This keeps all damage on the common grid without a hidden off-grid repeat
+scheduler. The selected fallback and visual critique are recorded in
+[melee runtime evidence](../../rhythm_champions/evidence/melee-weapons/README.md).

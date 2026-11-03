@@ -63,6 +63,7 @@ namespace Champions.Render
         readonly Sparks _sparks;
         readonly List<(int Bucket, EffectShape Shape)> _shapes = new List<(int, EffectShape)>();
         readonly List<SparkBurst> _bursts = new List<SparkBurst>();
+        readonly MeleeVisuals _melee = new MeleeVisuals();
         Orbiting _orbit;
         double _last = double.NegativeInfinity;
 
@@ -112,6 +113,7 @@ namespace Champions.Render
 
         public void Fire(EffectCue cue, in EffectShot shot)
         {
+            if (MeleeVisuals.Handles(cue)) _melee.Fire(cue, shot);
             Expand(_recipes.Cues[(int)cue], shot);
             foreach (var (bucket, shape) in _shapes)
             {
@@ -141,6 +143,11 @@ namespace Champions.Render
             }
             cost.ComputeGroups = _bursts.Count;
             cost.Draws = used.Count + (_bursts.Count > 0 ? 1 : 0);
+            if (MeleeVisuals.Handles(cue))
+            {
+                var rigid = _melee.Cost(cue);
+                cost.Draws += rigid.Draws; cost.Shapes += rigid.Shapes; cost.Triangles += rigid.Triangles;
+            }
             return cost;
         }
 
@@ -200,7 +207,8 @@ namespace Champions.Render
                 }
                 b.Buffer.SetData(b.Shapes);
             }
-            LiveShapes = live;
+            _melee.Present(now);
+            LiveShapes = live + _melee.Draws;
             foreach (var b in _buckets) b.Block.SetFloat(IdNow, (float)now);
             _sparks.Present(now, null);
             if (camera != null) Queue(camera);
@@ -217,7 +225,8 @@ namespace Champions.Render
                 draws++;
             }
             _sparks.Queue(camera);
-            Draws = draws + (_sparks.Drawn > 0 ? 1 : 0);
+            _melee.Queue(camera);
+            Draws = draws + _melee.Draws + (_sparks.Drawn > 0 ? 1 : 0);
         }
 
         /// <summary>Drops every live effect (a seek backwards does it itself).</summary>
@@ -230,6 +239,7 @@ namespace Champions.Render
                 b.Dirty = true;
             }
             _sparks.Clear();
+            _melee.Clear();
             _orbit = default;
             _last = double.NegativeInfinity;
         }
@@ -442,6 +452,7 @@ namespace Champions.Render
         {
             foreach (var b in _buckets) b.Buffer?.Dispose();
             _sparks.Dispose();
+            _melee.Dispose();
             Destroy(_material);
             Destroy(_stripMesh);
         }

@@ -34,6 +34,9 @@ namespace Champions.Sim
 
         public CombatRules Combat = CombatRules.Default;
 
+        /// <summary>Enable the survivor weapon handlers; archived sessions leave this off.</summary>
+        public bool SurvivorWeapons;
+
         /// <summary>The build the run starts with (<see cref="RunInputs.Loadout"/>).</summary>
         public Upgrade[] Loadout = RunInputs.StartLoadout();
 

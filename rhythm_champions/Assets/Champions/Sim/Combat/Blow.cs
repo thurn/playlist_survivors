@@ -41,6 +41,8 @@ namespace Champions.Sim
         Boss = 8,
         /// <summary>Optional destination support; never echoed or repeated.</summary>
         LandingBlast = 9,
+        Sword = 10,
+        Hammer = 11,
     }
 
     /// <summary>How a blow is drawn and what it may still set off (<see cref="Blow.Flags"/>).</summary>

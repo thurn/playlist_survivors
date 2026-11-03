@@ -171,7 +171,7 @@ namespace Champions.Client.Loop
             IGameClock clock = new FrameClock();
             if (!_fixed)
                 clock = _musicTimes = new MusicTimes(_music.Clock, MusicPlayer.Refresh, MusicPlayer.ScheduleHeadroom, () => AudioSettings.dspTime);
-            _run = s.Run ?? new RunInputs { Level = true, Start = RunStart.FirstOffer };
+            _run = s.Run ?? new RunInputs { Level = true, SurvivorWeapons = true, Start = RunStart.FirstOffer };
             if (s.Walk != null || s.Picks != null) _script = ScriptedPlayer.Parse(s.Walk, s.Picks, s.Content.Dashes);
             Begin(clock, Sounds(clock));
             Log("Music: {0} {1}, {2} s late, at {3} Hz{4}; {5}; calibration {6}", s.Source.IsApp ? "listening to" : "playing", s.Source.Tag,

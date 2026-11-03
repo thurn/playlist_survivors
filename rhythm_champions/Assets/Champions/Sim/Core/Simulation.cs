@@ -96,6 +96,7 @@ namespace Champions.Sim
             State.Zone = Zones.Key;
             Bosses = new Bosses(this, config);
             Progression = new Progression(this, config);
+            if (config.SurvivorWeapons) Melee = new MeleeWeapons(this);
         }
 
         public SimState State { get; }
@@ -136,6 +137,7 @@ namespace Champions.Sim
         public Arsenal Arsenal { get; }
 
         public WeaponScheduler Weapons { get; }
+        public MeleeWeapons Melee { get; }
 
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }

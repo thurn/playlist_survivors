@@ -453,6 +453,13 @@
       "use": "hero: idle"
     },
     {
+      "source": "synty:POLYGON_Dungeon_Unity_2021_3_v1_9_5.unitypackage.gz",
+      "path": "Assets/PolygonDungeon/Models/SM_Wep_Hammer_Large_Metal_01.fbx",
+      "sourceSha256": "3f56f87f88c7c6381003a8f83239c1fa2421278e3b76925a7465c03a0f794012",
+      "guid": "08c18a17006ad9a4eb9d96fe947f2af0",
+      "use": "survivor Hammer: rigid spectral forms"
+    },
+    {
       "source": "synty:POLYGON_Fantasy_Kingdom_Unity_2021_3_v1_11_3.unitypackage.gz",
       "path": "Assets/PolygonFantasyKingdom/Prefabs/Buildings/Preset_Houses/SM_Bld_Preset_House_03_Optimized.prefab",
       "sourceSha256": "3743277a1ea6fa0272267f94d1057fe7aad1d8a823555fff563c04956a8d9bda",

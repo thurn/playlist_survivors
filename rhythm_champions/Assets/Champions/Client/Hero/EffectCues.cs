@@ -45,6 +45,16 @@ namespace Champions.Client
                     if (e.D1 > 1) _fx.Fire(EffectCue.Encore,
                         new EffectShot { T = e.T, At = V(e.D2, e.D3) });
                     break;
+                case SimEventKind.MeleeAction:
+                {
+                    bool hammer = (WeaponKind)e.I0 == WeaponKind.Hammer;
+                    var cue = (EffectCue)((int)(hammer ? EffectCue.HammerSwing : EffectCue.MeleeSweep) + e.I1);
+                    _fx.Fire(cue, new EffectShot { T = e.T, At = V(e.D0, e.D1), Facing = V(e.D2, e.D3),
+                        To = V(e.D0 + e.D2 * e.D5, e.D1 + e.D3 * e.D5),
+                        Radius = (float)e.D4, Advance = (float)e.D5, Mirrored = (e.I2 & 2) != 0,
+                        Spectral = (e.I2 & 1) != 0 });
+                    break;
+                }
                 case SimEventKind.Strike:
                     Strike(e);
                     break;

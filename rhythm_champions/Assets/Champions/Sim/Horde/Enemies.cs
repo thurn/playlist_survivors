@@ -23,6 +23,7 @@ namespace Champions.Sim
         /// <summary>The body's radius: a blow reaching its edge hits it.</summary>
         public double Radius;
         public double Health;
+        public long Generation;
         /// <summary>The spawn's type (the horde's; 0 for a placed <see cref="Dummy"/>).</summary>
         public int Type;
         public EnemyFlags Flags;
@@ -74,6 +75,7 @@ namespace Champions.Sim
         int[] cellItems;
         int[] cellOf;
         bool gridValid;
+        long generation;
 
         public Enemies(int capacity)
         {
@@ -108,7 +110,7 @@ namespace Champions.Sim
             if (!(radius > 0) || !(health > 0)) throw new ArgumentOutOfRangeException(nameof(health), "an enemy needs a body and health");
             var e = new Enemy
             {
-                X = x, Y = y, Radius = radius, Health = health, Type = type,
+                X = x, Y = y, Radius = radius, Health = health, Type = type, Generation = ++generation,
                 Flags = EnemyFlags.Alive | (boss ? EnemyFlags.Boss : 0),
             };
             int id;

@@ -28,6 +28,8 @@ namespace Champions.Sim
     {
         readonly List<IStrikeTargets> targets = new List<IStrikeTargets>();
         readonly StructList<int> reached;
+        readonly List<StructList<int>> weaponReached = new List<StructList<int>>();
+        int weaponDepth;
 
         public Strikes(int capacity)
         {
@@ -88,6 +90,36 @@ namespace Champions.Sim
             bool broke = target.Strike(sim, id, landed);
             sim.Arsenal.Landed(sim, blow, landed, 1);
             return broke;
+        }
+
+        /// <summary>Survivor geometry uses its captured stats and lineage, bypassing archived mods.</summary>
+        internal int LandWeapon(Simulation sim, in Blow blow, WeaponEffect effect)
+        {
+            Blows++;
+            int depth = weaponDepth++;
+            if (weaponReached.Count <= depth) weaponReached.Add(new StructList<int>(reached.Capacity));
+            var candidates = weaponReached[depth];
+            int n = 0;
+            try
+            {
+                for (int r = 0; r < targets.Count; r++)
+                {
+                    var target = targets[r];
+                    candidates.Clear();
+                    target.Reach(blow.Shape, blow.T, candidates);
+                    for (int k = 0; k < candidates.Count; k++)
+                    {
+                        int id = candidates[k];
+                        long key = target is Enemies enemies ? enemies[id].Generation : Key(r + 1, id) | long.MinValue;
+                        if (!sim.Weapons.Supports.Impact(effect, key, blow.T)) continue;
+                        target.Strike(sim, id, blow);
+                        n++;
+                    }
+                }
+            }
+            finally { weaponDepth--; }
+            Struck += n;
+            return n;
         }
 
         static long Key(int receiver, int id) => (long)receiver << 32 | (uint)id;

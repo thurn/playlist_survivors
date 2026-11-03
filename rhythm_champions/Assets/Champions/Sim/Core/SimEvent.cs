@@ -69,6 +69,7 @@ namespace Champions.Sim
         PickupDrop,
         PickupAttract,
         PickupCollect,
+        MeleeAction,
     }
 
     /// <summary>
@@ -95,6 +96,17 @@ namespace Champions.Sim
         /// D2 total value (XP units or fraction of max health). Drop also reports merged totals.</summary>
         public static SimEvent Pickup(SimEventKind kind, double t, Pickup p) => new SimEvent
         { Kind = kind, T = t, I0 = p.Id, I1 = (int)p.Kind, D0 = p.X, D1 = p.Y, D2 = p.Value };
+
+        /// <summary>Melee choreography: I0 weapon, I1 form, I2 spectral bit 0 / mirrored bit 1 / procession step bits 2+;
+        /// D0/D1 origin, D2/D3 aim, D4 coverage radius (already empowered), D5 lane travel.</summary>
+        public static SimEvent MeleeAction(double t, WeaponKind kind, int form, int flags,
+            double x, double y, double dx, double dy, double radius, double travel)
+        {
+            var e = Of(SimEventKind.MeleeAction, t);
+            e.I0 = (int)kind; e.I1 = form; e.I2 = flags;
+            e.D0 = x; e.D1 = y; e.D2 = dx; e.D3 = dy; e.D4 = radius; e.D5 = travel;
+            return e;
+        }
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
 

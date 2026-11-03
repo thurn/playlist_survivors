@@ -242,3 +242,28 @@ from `SimState.Build`, using authored support caps in `combat.json`.
 The `pickups` still scene compares hollow pale diamonds and crosses against
 solid yellow shots in the palette crowd, with scripted attraction motion.
 [Evidence and limitations](../../rhythm_champions/evidence/pickups/README.md).
+
+## Sword and Hammer execution (ps-3wc.7)
+
+`SimConfig.SurvivorWeapons` installs `Simulation.Melee` after the world systems
+are ready; it binds Sword and Hammer once. New normal games opt in through
+`RunInputs.SurvivorWeapons`; session format 5 persists this switch, while older
+sessions keep archived behavior. The legacy Arsenal drains timing queues but
+executes no attacks in survivor mode. Other family tasks should reuse this
+switch and the existing scheduler for their bindings, not create another clock.
+
+`MeleeAction` carries captured weapon/form, spectral/mirror/sequence flags,
+origin, aim, actual coverage radius and advancing distance. Presentation never
+queries current build stats to reconstruct an old strike. Sword's main strike
+uses the natural knight slash; the four forms and all extra actions have
+independent rigid mesh choreography. Hammer's procession advances its landing
+over three successive activations; visual upcoming hammers deal no damage.
+
+`Strikes.LandWeapon` is the survivor damage path: captured `WeaponEffect` stats,
+shared support hit ledger, no archived mod reapplication. It reaches registered
+enemies, bosses and structures. Enemy ledger keys use `Enemy.Generation`, a
+monotonic spawn identity, so recycled slots remain valid new targets. Other
+receivers occupy a separate key namespace. Nested split queries use separate
+reused target buffers. Each added melee component shares its strike ledger;
+one target takes at most one base hit and one bounded reduced Echo per strike.
+See [runtime evidence](../../rhythm_champions/evidence/melee-weapons/README.md).

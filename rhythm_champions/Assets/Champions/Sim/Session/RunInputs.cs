@@ -24,6 +24,7 @@ namespace Champions.Sim
         /// a test's, and the game turns it on.
         /// </summary>
         public bool Level;
+        public bool SurvivorWeapons;
 
         /// <summary>The build the run starts with: Sword Slash at rank 1 (design.md, "The attacks"), or a scripted one.</summary>
         public Upgrade[] Loadout = StartLoadout();
@@ -58,6 +59,7 @@ namespace Champions.Sim
                 Attacks = content != null ? content.Attacks.Clone() : new AttackRules(),
                 Mods = content != null ? content.Mods.Clone() : new ModRules(),
                 Combat = content != null ? content.Combat : CombatRules.Default,
+                SurvivorWeapons = SurvivorWeapons,
                 Loadout = (Upgrade[])Loadout.Clone(),
                 Dummies = (Dummy[])Dummies.Clone(),
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
@@ -102,6 +104,7 @@ namespace Champions.Sim
             }
             w.Write(Level);
             w.Write(Duel ?? "");
+            w.Write(SurvivorWeapons);
         }
 
         /// <summary>
@@ -136,6 +139,7 @@ namespace Champions.Sim
             if (version < 4) return run;
             string duel = r.ReadString();
             run.Duel = duel.Length > 0 ? duel : null;
+            if (version >= 5) run.SurvivorWeapons = r.ReadBoolean();
             return run;
         }
 

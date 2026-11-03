@@ -21,7 +21,7 @@ namespace Champions.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        const int Version = 4;
+        const int Version = 5;
         static readonly byte[] Magic = { (byte)'R', (byte)'C', (byte)'R', (byte)'U', (byte)'N' };
 
         /// <summary>What built the run's config (<see cref="RunInputs.Build"/>).</summary>

@@ -189,6 +189,12 @@ namespace Champions.Sim
         internal void Tick(Simulation sim, double end)
         {
             grid.Flush(end);
+            if (sim.Melee != null)
+            {
+                while (grid.Next <= end) grid.Take();
+                strikes.Clear(); strikeHead = 0; later.Clear(); Hold(end);
+                return;
+            }
             bool held = sim.State.Held;
             if (held) planned = false;
             while (true)

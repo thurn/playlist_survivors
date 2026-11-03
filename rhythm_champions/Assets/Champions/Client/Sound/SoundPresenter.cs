@@ -70,6 +70,14 @@ namespace Champions.Client.Sound
                 case SimEventKind.Swing:
                     Request(e.I0 != 0 ? SoundKind.SwingHeavy : SoundKind.Swing, e.D0, 1f, 1f, 1f, e.D0 < _settled);
                     break;
+                case SimEventKind.MeleeAction:
+                {
+                    bool spectral = (e.I2 & 1) != 0;
+                    bool hammer = (WeaponKind)e.I0 == WeaponKind.Hammer;
+                    Request(hammer ? SoundKind.Slam : SoundKind.Swing, e.T,
+                        spectral ? SpectralGain : 1f, hammer ? .8f : spectral ? SpectralPitch : 1f, .6f, asap);
+                    break;
+                }
                 case SimEventKind.Strike:
                 {
                     var source = (BlowSource)e.I0;
