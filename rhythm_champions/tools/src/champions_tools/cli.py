@@ -8,7 +8,8 @@ Commands:
                       mono; --out DIR, --development, --scene PATH); nothing if nothing changed
                       (--force); --clean-cache rebuilds with a clean build cache
   play [FLAGS]        play the last build at 1080p (--windowed for a window) with player flags;
-                      --headless runs it windowless in batch mode and waits for it to exit
+                      silent by default (--audio to hear it); --headless runs it windowless
+                      in batch mode and waits for it to exit
                       (player flags: --file PATH or --app NAME, the music, played 3 s late;
                       --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on a
@@ -156,6 +157,8 @@ def headless(wt: paths.Worktree, app: Path, player_flags: list[str], log_name: s
 def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
     wt = paths.worktree()
     player_flags = absolute_file_flags(player_flags, Path.cwd())
+    if not a.audio and "--mute" not in player_flags:
+        player_flags.append("--mute")
     app = setup.player_dir(wt, a.backend) / setup.APP
     if not app.is_dir():
         print(f"play: no {a.backend} player at {app}; run `just champions-build`", file=sys.stderr)
@@ -339,6 +342,7 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
     pl.add_argument("--headless", action="store_true", help="windowless, in batch mode; waits for the player to exit")
     pl.add_argument("--windowed", action="store_true", help="in a 1080p window rather than fullscreen")
+    pl.add_argument("--audio", action="store_true", help="hear the game (silent by default)")
     pl.set_defaults(func=cmd_play, player_flags=True)
 
     t = sub.add_parser("test")

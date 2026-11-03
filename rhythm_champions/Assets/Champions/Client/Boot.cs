@@ -19,6 +19,7 @@ namespace Champions.Client
     /// - `--tier low|medium|high`: the quality tier, applied first (<see cref="QualityTiers"/>);
     /// - `--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes;
     /// - `--headless` (or Unity's batch mode): the output silenced, frames paced at 60 per second unless fixed;
+    /// - `--mute`: silence the output in a window too, while music continues to drive the run;
     /// - `--capture-stills DIR --stills-at t1,t2,...`: windowless stills (<see cref="Stills"/>), quitting
     ///   once the last is kept; `--stills-scenes NAMES` instead plays the scripted scenes (<see cref="StillScenes"/>)
     ///   for their stills;
@@ -71,7 +72,7 @@ namespace Champions.Client
             if (_options.FixedTime || _options.Replay.Length > 0) Time.captureFramerate = FixedFps;
             else if (_options.Headless) Application.targetFrameRate = FixedFps;
             // A headless run's music mutes the final mix instead (GameLoop), so its filters still run.
-            if (_options.Headless && _options.File == null && _options.App == null) AudioListener.volume = 0f;
+            if ((_options.Headless || _options.Mute) && _options.File == null && _options.App == null) AudioListener.volume = 0f;
             // The tier first: the stills' target takes the pipeline's MSAA.
             QualityTiers.Apply(_options.Tier ?? QualityTiers.Default());
             // The still scenes, the gallery and the bench place the camera themselves: no world of Boot's under them.
@@ -160,7 +161,7 @@ namespace Champions.Client
             ulong seed = _options.Seed ?? (scripted ? 1UL : (ulong)DateTime.UtcNow.Ticks);
             return new RunSetup
             {
-                Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless, World = _world, MakeUi = MakeRunUi,
+                Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless || _options.Mute, World = _world, MakeUi = MakeRunUi,
                 Content = _content, ContentDir = ContentDir(), Palette = _palette,
                 Run = new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately },
                 Walk = _options.Walk, Picks = _options.Picks, RecordDir = _options.Record, Flags = Environment.GetCommandLineArgs(), Look = _options.Look,

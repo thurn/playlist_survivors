@@ -33,8 +33,9 @@ namespace Champions.Tests
         public void LaunchOptionsReadTheGamesFlagsAndLeaveUnitysAlone()
         {
             var o = LaunchOptions.Parse(new[] { "player", "-batchmode", "-logFile", "out.log", "--fixed-time", "--seconds", "5",
-                "--capture-stills", "dir", "--stills-at", "1,0.5" }, batchMode: true);
+                "--capture-stills", "dir", "--stills-at", "1,0.5", "--mute" }, batchMode: true);
             Assert.That(o.Headless && o.FixedTime);
+            Assert.That(o.Mute);
             Assert.That(o.Seconds, Is.EqualTo(5));
             Assert.That(o.StillsDir, Is.EqualTo("dir"));
             Assert.That(o.StillsAt, Is.EqualTo(new[] { 1.0, 0.5 }));

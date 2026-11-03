@@ -24,6 +24,8 @@ namespace Champions.Client
         /// it (`champions play --headless` does that).
         /// </summary>
         public bool Headless;
+        /// <summary>`--mute`: silence the final mix while keeping music and its timing callbacks running.</summary>
+        public bool Mute;
         /// <summary>`--fixed-time`: time advances exactly 1/60 s per frame, however long a frame takes.</summary>
         public bool FixedTime;
         /// <summary>`--seconds N`: quit after N seconds of game time; 0 runs until quit.</summary>
@@ -69,6 +71,7 @@ namespace Champions.Client
             var o = new LaunchOptions
             {
                 Headless = a.Has("--headless") || batchMode,
+                Mute = a.Has("--mute"),
                 FixedTime = a.Has("--fixed-time"),
                 Seconds = a.Double("--seconds", 0),
                 StillsDir = a.Get("--capture-stills"),

@@ -228,7 +228,7 @@ def test_play_needs_a_build_and_passes_unknown_flags_to_the_player(monkeypatch, 
     assert played.value.code == 0
     exe, *args = calls[0]
     assert exe.endswith(setup.APP_EXE)
-    assert args[:2] == ["-batchmode", "-force-metal"] and args[-3:] == ["--seconds", "5", "--fixed-time"]
+    assert args[:2] == ["-batchmode", "-force-metal"] and args[-4:] == ["--seconds", "5", "--fixed-time", "--mute"]
     assert "--headless" not in args  # Unity's player would draw with the Null device
 
 
@@ -239,10 +239,23 @@ def test_play_makes_the_players_paths_absolute(monkeypatch, wt, tmp_path) -> Non
     monkeypatch.chdir(tmp_path)
     with pytest.raises(SystemExit):
         cli.main(["play", "--headless", "--file", "songs/a.ogg", "--seconds", "20"])
-    assert calls[0][-4:] == ["--file", str((tmp_path / "songs/a.ogg").resolve()), "--seconds", "20"]
+    assert calls[0][-5:] == ["--file", str((tmp_path / "songs/a.ogg").resolve()), "--seconds", "20", "--mute"]
     assert cli.absolute_file_flags(["--app", "Music"], tmp_path) == ["--app", "Music"]
     assert cli.absolute_file_flags(["--gallery", "--bench-out", "b.json"], tmp_path) == [
         "--gallery", "--bench-out", str((tmp_path / "b.json").resolve())]
     # --replay takes a comma-separated list of session folders; --record one folder.
     assert cli.absolute_file_flags(["--replay", "s/a,s/b", "--record", "r"], tmp_path) == [
         "--replay", f"{(tmp_path / 's/a').resolve()},{(tmp_path / 's/b').resolve()}", "--record", str((tmp_path / "r").resolve())]
+
+
+def test_windowed_play_is_silent_unless_audio_requested(monkeypatch, wt) -> None:
+    run(monkeypatch, "build")
+    calls: list[list[str]] = []
+    monkeypatch.setattr(cli.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or type("R", (), {"returncode": 0}))
+    for args in (["play", "--windowed"], ["play", "--windowed", "--audio"]):
+        with pytest.raises(SystemExit) as played:
+            cli.main(args)
+        assert played.value.code == 0
+    assert calls[0][-1] == "--mute"
+    assert "--mute" not in calls[1]
+    assert "--audio" not in calls[1]
