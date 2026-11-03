@@ -6,6 +6,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Assets/Champions/Client/Loop/RunDiagnostics.cs" Link="RunDiagnostics.cs" />
     <Compile Include="**/*.cs" Exclude="bin/**;obj/**" />
   </ItemGroup>
   <ItemGroup>

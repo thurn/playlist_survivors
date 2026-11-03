@@ -310,6 +310,22 @@ namespace Champions.Sim
             return false;
         }
 
+        /// <summary>The closest revealed strong transient inside a window, retaining its actual time.</summary>
+        public bool NearestStrongOnset(double t, double window, out double point)
+        {
+            point = double.NaN;
+            double distance = window + 1e-9;
+            var onsets = log.Revealed(EntryKind.Onset);
+            int start = Math.Max(0, LastAtOrBefore(onsets, t - window - OnsetSlack));
+            for (int i = start; i < onsets.Length && onsets[i].T <= t + window + OnsetSlack; i++)
+            {
+                double d = Math.Abs(onsets[i].T - t);
+                if (onsets[i].V1 == 0 || d > distance) continue;
+                distance = d; point = onsets[i].T;
+            }
+            return !double.IsNaN(point);
+        }
+
         // ---- Firing ----
 
         /// <summary>The latest of a grid's entries at or before <paramref name="s"/>, or -1.</summary>

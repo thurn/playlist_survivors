@@ -106,7 +106,7 @@ namespace Champions.Sim.Tests
         {
             var s = Make();
             foreach (var k in Drive.Known(new FixtureSong().Beats(0, 16, 120, onsets: false).Entries())) s.AddKnown(k.Entry, k.KnownAt);
-            Tap(s, Key.F, 6); Tap(s, Key.Space, 6.5); Tap(s, Key.F, 6.59); s.StepTo(6.8);
+            Tap(s, Key.F, 6.04); Tap(s, Key.Space, 6.5); Tap(s, Key.F, 6.615); s.StepTo(6.8);
             var action = Drive.Events(s, SimEventKind.HeroDash).Last();
             Assert.That(action.InPlaceCleave, Is.False);
             Assert.That(action.OnBeat && action.Buffered, Is.True);

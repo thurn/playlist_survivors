@@ -138,7 +138,7 @@ namespace Champions.Sim
         /// <summary>Space or F, heard at <paramref name="heard"/>: a dash from then, a wait for the cooldown's end, or a drop.</summary>
         public void Press(Simulation sim, double heard, bool inPlace = false)
         {
-            if (sim.State.Held) return;
+            if (sim.State.Held) { sim.Diagnose(inPlace ? Key.F : Key.Space, heard, "world-held", sim.Judge(heard)); return; }
             double now = sim.Now;
             double start = Math.Min(now, Math.Max(heard, walk.Earliest(now)));
             var judged = sim.Judge(heard);
@@ -152,7 +152,10 @@ namespace Champions.Sim
             }
             if (ready - Math.Max(heard, start) <= rules.BufferS + 1e-9)
             {
-                if (waiting && waitingJudged.OnBeat && !judged.OnBeat) return;
+                if (waiting && waitingJudged.OnBeat && !judged.OnBeat)
+                { sim.Diagnose(inPlace ? Key.F : Key.Space, heard, "preserved-timed-buffer", judged); return; }
+                if (waiting) sim.Diagnose(waitingInPlace ? Key.F : Key.Space, waitingHeard, "buffer-replaced", waitingJudged);
+                sim.Diagnose(inPlace ? Key.F : Key.Space, heard, "buffered", judged);
                 waiting = true;
                 waitingHeard = heard;
                 waitingInPlace = inPlace;
@@ -161,17 +164,19 @@ namespace Champions.Sim
                 if (ready <= now + 1e-9) Fire(sim);
                 return;
             }
+            sim.Diagnose(inPlace ? Key.F : Key.Space, heard, "cooldown", judged);
             sim.Emit(SimEvent.DashDropped(now, heard, ready));
         }
 
         /// <summary>The tick's end (after the walk's): a waiting press fires, the path sweeps on, blows land.</summary>
-        internal void Resume(double elapsed)
+        internal void Resume(Simulation sim, double elapsed)
         {
             state.DashStart += elapsed; state.DashEnd += elapsed;
             state.DashReadyAt += elapsed;
             current.Start += elapsed; current.End += elapsed; current.Heard += elapsed;
             sweepT += elapsed;
             for (int i = 0; i < landings.Count; i++) { landings[i].T += elapsed; landings[i].Anchor += elapsed; }
+            if (waiting) sim.Diagnose(waitingInPlace ? Key.F : Key.Space, waitingHeard, "buffer-cancelled-by-hold", waitingJudged);
             waiting = false; state.DashWaiting = false;
         }
 
@@ -238,6 +243,7 @@ namespace Champions.Sim
 
         void Begin(Simulation sim, double start, double heard, Judged judged, bool buffered, bool inPlace)
         {
+            sim.Diagnose(inPlace ? Key.F : Key.Space, heard, buffered ? "buffer-fired" : "accepted", judged);
             // The dash before is cut short here: its path is swept up to the new one's start.
             if (sweeping) Sweep(sim, Math.Min(start, current.End));
             sweeping = false;

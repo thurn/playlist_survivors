@@ -3,9 +3,9 @@
   "beatsPerBar": 4,
   "strongBeatWindowS": 0.05,
   "judgement": {
-    "beatS": 0.08,
-    "halfBeatS": 0.06,
-    "strongOnsetS": 0.06,
+    "beatS": 0.10,
+    "halfBeatS": 0.08,
+    "strongOnsetS": 0.08,
     "playedWithinS": 0.05
   },
   "cadence": {

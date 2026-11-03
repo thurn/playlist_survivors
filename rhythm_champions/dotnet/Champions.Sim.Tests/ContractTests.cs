@@ -38,9 +38,9 @@ namespace Champions.Sim.Tests
             var content = GameContent.Load(Checkout.In("Content"));
             var beat = content.Beat;
             // Decision 6.
-            Assert.AreEqual(0.08, beat.BeatWindowS);
-            Assert.AreEqual(0.06, beat.HalfBeatWindowS);
-            Assert.AreEqual(0.06, beat.StrongOnsetWindowS);
+            Assert.AreEqual(0.10, beat.BeatWindowS);
+            Assert.AreEqual(0.08, beat.HalfBeatWindowS);
+            Assert.AreEqual(0.08, beat.StrongOnsetWindowS);
             // Decision 9.
             Assert.AreEqual(1.0, beat.CadenceTargetS);
             CollectionAssert.AreEqual(new[] { 1, 2, 4 }, beat.CadenceBeats);

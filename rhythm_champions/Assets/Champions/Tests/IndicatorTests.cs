@@ -95,9 +95,9 @@ namespace Champions.Tests
         [Test]
         public void ADashOffTheBeatDoesntFlash()
         {
-            At(6.25);
-            _sim.Press(Key.Space, 6.25); // a half beat off: 250 ms from either beat
-            _sim.Release(Key.Space, 6.25);
+            At(6.125);
+            _sim.Press(Key.Space, 6.125); // halfway between a beat and half beat: outside both windows
+            _sim.Release(Key.Space, 6.125);
             var dash = Events(SimEventKind.HeroDash);
             Assert.That(dash, Has.Count.EqualTo(1));
             Assert.That(dash[0].OnBeat, Is.False, "off the beat");

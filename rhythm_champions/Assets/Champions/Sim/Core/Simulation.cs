@@ -233,6 +233,12 @@ namespace Champions.Sim
         /// <summary>Every input taken, in order: a session records them.</summary>
         public ReadOnlySpan<InputRecord> Inputs => inputs.AsSpan();
 
+        /// <summary>Local diagnostics only: does not enter replay events or hashes. Heard time and
+        /// original grading are retained when a buffered action eventually fires.</summary>
+        public event Action<Key, double, string, Judged> ActionDiagnostic;
+        internal void Diagnose(Key key, double heard, string reason, Judged judged) =>
+            ActionDiagnostic?.Invoke(key, heard, reason, judged);
+
         int pressedKeys, blockedKeys;
         /// <summary>A key pressed, heard at song time <paramref name="heard"/>; it takes effect now. While cards are up it is theirs.</summary>
         public void Press(Key key, double heard)
@@ -242,13 +248,14 @@ namespace Champions.Sim
             int bit = 1 << (int)key;
             if (!dashes.Rules.LegacyForms)
             {
-                if (key == Key.F && (pressedKeys & bit) != 0) return;
+                if (key == Key.F && (pressedKeys & bit) != 0) { Diagnose(key, heard, "held-key", Judge(heard)); return; }
                 pressedKeys |= bit;
-                if ((blockedKeys & bit) != 0) return;
+                if ((blockedKeys & bit) != 0) { if (key == Key.Space || key == Key.F) Diagnose(key, heard, "blocked-key", Judge(heard)); return; }
             }
             if (Progression.Press(this, key))
             {
                 if (!dashes.Rules.LegacyForms) blockedKeys |= bit;
+                if (key == Key.Space || key == Key.F) Diagnose(key, heard, "card-input", Judge(heard));
                 return;
             }
             hero.Press(this, key, heard);
@@ -341,7 +348,7 @@ namespace Champions.Sim
                     double elapsed = Now - heldSince;
                     heldTotal += elapsed;
                     hero.Resume(elapsed);
-                    dashes.Resume(elapsed);
+                    dashes.Resume(this, elapsed);
                     health.Resume(elapsed);
                     horde.Resume(elapsed);
                     Bosses.Resume(elapsed);

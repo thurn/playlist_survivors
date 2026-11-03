@@ -31,6 +31,8 @@ namespace Champions.Client.Sound
 
         /// <summary>Requests that found their beat's voices taken (they only raised its gain).</summary>
         public int Folded { get; private set; }
+        /// <summary>Scheduling counters for bounded local run diagnostics.</summary>
+        public SoundScheduler Scheduler => _scheduler;
 
         public SoundAggregator(SoundScheduler scheduler)
         {

@@ -26,13 +26,13 @@ namespace Champions.Sim
         public double StrongBeatWindowS = 0.05;
 
         // The judgement (Decision 6): binary windows either side, in heard time.
-        /// <summary>A press this close to a beat is on the beat.</summary>
-        public double BeatWindowS = 0.08;
-        /// <summary>A press this close to a half beat the music plays is on the beat.</summary>
-        public double HalfBeatWindowS = 0.06;
+        /// <summary>A press this close to a beat is on the beat (capped to 20% of its period).</summary>
+        public double BeatWindowS = 0.10;
+        /// <summary>A press this close to a half beat is on the beat (capped to 16% of its period).</summary>
+        public double HalfBeatWindowS = 0.08;
         /// <summary>A press this close to a strong onset is on the beat.</summary>
-        public double StrongOnsetWindowS = 0.06;
-        /// <summary>The music plays a half beat when an onset lies this close to it.</summary>
+        public double StrongOnsetWindowS = 0.08;
+        /// <summary>Legacy content field retained for older beat.json files; judgement accepts grid halves directly.</summary>
         public double PlayedWithinS = 0.05;
 
         // The attack cadence (Decision 9).

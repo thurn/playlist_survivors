@@ -11,7 +11,7 @@ namespace Champions.Sim
         Beatless = 1,
         /// <summary>Within the beat window of a beat.</summary>
         Beat = 2,
-        /// <summary>Within the half-beat window of a half beat the music plays.</summary>
+        /// <summary>Within the half-beat window of the reliable grid.</summary>
         HalfBeat = 3,
         /// <summary>Within the onset window of a strong onset.</summary>
         StrongOnset = 4,
@@ -21,13 +21,17 @@ namespace Champions.Sim
     public readonly struct Judged
     {
         public readonly JudgedBy By;
-        /// <summary>The beat, half beat or onset it was measured from; the press itself when beatless or off.</summary>
+        /// <summary>The beat, half beat or onset it was measured from; the nearest candidate even for misses; the press itself when beatless.</summary>
         public readonly double Point;
+        public readonly double Window;
+        public readonly JudgedBy Candidate;
 
-        public Judged(JudgedBy by, double point)
+        public Judged(JudgedBy by, double point, double window = 0, JudgedBy candidate = JudgedBy.Off)
         {
             By = by;
             Point = point;
+            Window = window;
+            Candidate = candidate == JudgedBy.Off ? by : candidate;
         }
 
         public bool OnBeat => By != JudgedBy.Off;
@@ -40,10 +44,10 @@ namespace Champions.Sim
     /// <item>no beat is reliable at h (<see cref="BeatServices.Reliable"/>): every press is; else</item>
     /// <item>h is within <see cref="BeatRules.BeatWindowS"/> of a beat: the latest at or before h, or the next
     /// (revealed, or the latest's continuation); or</item>
-    /// <item>within <see cref="BeatRules.HalfBeatWindowS"/> of a half beat that the music plays (an onset within
-    /// <see cref="BeatRules.PlayedWithinS"/> of it); or</item>
+    /// <item>within <see cref="BeatRules.HalfBeatWindowS"/> of a half beat; or</item>
     /// <item>within <see cref="BeatRules.StrongOnsetWindowS"/> of a strong onset.</item>
     /// </list>
+    /// Beat/half windows are capped to 20%/16% of the local period, preserving gaps at fast tempos.
     /// It reads only revealed entries, so it is a function of the stream's known-at times. The music runs
     /// seconds ahead of the speakers in the stream, so the onsets near a press are long known when it is taken.
     /// </summary>
@@ -69,12 +73,22 @@ namespace Champions.Sim
             double after = beats.BeatTime(b + 1);
             if (double.IsNaN(after)) after = before + beats.PeriodOf(b);
             double nearest = heard - before <= after - heard ? before : after;
-            if (Math.Abs(heard - nearest) <= rules.BeatWindowS + 1e-9) return new Judged(JudgedBy.Beat, nearest);
+            // Keep gaps between grid windows even at fast tempos. Half-time/double-time
+            // ambiguity must not punish a plausible eighth-note just because no onset was emitted.
+            double period = after - before;
+            double beatWindow = Math.Min(rules.BeatWindowS, period * 0.20);
+            double halfWindow = Math.Min(rules.HalfBeatWindowS, period * 0.16);
             double half = (before + after) / 2;
-            if (Math.Abs(heard - half) <= rules.HalfBeatWindowS + 1e-9 && beats.PlayedNear(half, rules.PlayedWithinS))
-                return new Judged(JudgedBy.HalfBeat, half);
-            if (beats.StrongOnsetNear(heard, rules.StrongOnsetWindowS)) return new Judged(JudgedBy.StrongOnset, heard);
-            return new Judged(JudgedBy.Off, heard);
+            double point = nearest, window = beatWindow;
+            var candidate = JudgedBy.Beat;
+            if (Math.Abs(heard - half) < Math.Abs(heard - point))
+            { point = half; window = halfWindow; candidate = JudgedBy.HalfBeat; }
+            bool accepted = Math.Abs(heard - point) <= window + 1e-9;
+            // Actual strong transients remain valid independently of the inferred grid.
+            if (beats.NearestStrongOnset(heard, rules.StrongOnsetWindowS, out double onset) &&
+                (!accepted || Math.Abs(heard - onset) < Math.Abs(heard - point)))
+            { point = onset; window = rules.StrongOnsetWindowS; candidate = JudgedBy.StrongOnset; accepted = true; }
+            return new Judged(accepted ? candidate : JudgedBy.Off, point, window, candidate);
         }
 
         /// <summary>Is a press heard at <paramref name="heard"/> on the beat?</summary>

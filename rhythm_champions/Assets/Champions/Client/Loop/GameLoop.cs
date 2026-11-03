@@ -83,6 +83,8 @@ namespace Champions.Client.Loop
         /// <summary>The end card shows this long after the run ends (design.md, Ending: the camera holds on the shatter).</summary>
         public const double EndCardAfter = 1.5;
 
+        RunDiagnostics _diagnostics;
+        double _nextDiagnosticClock;
         RunSetup _setup;
         MusicPlayer _music;
         MusicTimes _musicTimes;
@@ -187,6 +189,7 @@ namespace Champions.Client.Loop
         /// <summary>A run's sim and presentation on <paramref name="clock"/>, from the sim's start (the first run) or from the frontier (Again).</summary>
         void Begin(IGameClock clock, SoundClock sound)
         {
+            _diagnostics?.Dispose();
             _runs++;
             _endShown = false;
             _hurt.Clear();
@@ -202,6 +205,14 @@ namespace Champions.Client.Loop
             _presentation = new RunPresentation(Driver.Sim, _config, _setup.Content, _setup.ContentDir, _setup.Palette, _camera, _setup.World,
                 ui, sound ?? Sounds(clock), gameObject, _setup.Look);
             var sim = Driver.Sim;
+            string root = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "Caches", "playlist-survivors", "champions", "run-diagnostics");
+            _diagnostics = new RunDiagnostics(sim, root, string.Format(CultureInfo.InvariantCulture,
+                "Rhythm Champions diagnostics v1 build={0} unity={1} mode={2} fixed={3} mute={4} seed={5} quality={6} look={7} source={8}",
+                Application.version + "/" + Application.buildGUID, Application.unityVersion, _replay != null ? "replay" : _script != null ? "scripted" : "operator", _fixed, _setup.Mute,
+                _config.Seed, QualityTiers.Current, _setup.Look, _setup.Source == null ? "none" : _setup.Source.IsApp ? "app" : "file"), _config.Dashes.BufferS);
+            _nextDiagnosticClock = sim.Now;
+            Keys.ActionTimestamp = _diagnostics.KeyTimestamp;
+            Log("Run diagnostics: {0}; summary: {0}.summary; error: {1}", _diagnostics.Path, _diagnostics.Error ?? "none");
             _presentation.Dispatch.Add("loop", (in SimEvent e) => Take(sim, e));
             Log("Run: {0} {1}, seed {2}, {3}, from song {4:F3} s{5}{6}", _replay != null ? "replaying" : "run", _runs, _config.Seed,
                 _config.Level != null ? "level 1" : "no level", _config.StartTime, _config.Start == RunStart.FirstOffer ? ", the first offer up" : "",
@@ -259,6 +270,18 @@ namespace Champions.Client.Loop
                 _presentation.Drain();
                 if (_music != null) Report();
                 _presentation.Present(Driver.Times.FrameSong, Driver.Times.Frontier, Time.deltaTime, _camera);
+                if (sim.Now >= _nextDiagnosticClock)
+                {
+                    _nextDiagnosticClock = sim.Now + 5;
+                    var c = _music?.Clock;
+                    var sounds = _presentation.Sounds?.Aggregator;
+                    var audio = sounds?.Scheduler;
+                    _diagnostics?.Sample(true, clock: string.Format(CultureInfo.InvariantCulture,
+                        "heard={0:F6} frontier={1:F6} leadMs={2:F1} outputMs={3:F1} inputCalibrationMs={4:F1} videoCalibrationMs={5:F1} displayMs={6:F1} lateEntries={7} droppedKeyboard={8} stalls={9} soundsScheduled={10} soundsLate={11} soundsDropped={12} soundsFolded={13} tier={14} resolution={15}x{16}",
+                        Driver.Times.Heard, Driver.Times.Frontier, 1000 * Driver.Times.Lead, 1000 * (c?.OutputLatency ?? 0),
+                        1000 * (c?.InputCalibration ?? 0), 1000 * (c?.VideoCalibration ?? 0), 1000 * (c?.DisplayLatency ?? 0), Driver.LateEntries, Keys.Dropped, _music?.Status.Stalls ?? 0, audio?.Scheduled ?? 0, audio?.Late ?? 0, audio?.Dropped ?? 0, sounds?.Folded ?? 0, QualityTiers.Current, Screen.width, Screen.height));
+                }
+                else _diagnostics?.Sample();
                 EndOfRun();
                 if (_replay != null && _replay.Done(sim)) FinishReplay();
             }
@@ -315,6 +338,7 @@ namespace Champions.Client.Loop
         /// <summary>The loop's own reading of the events: the beats it logs, the script's eyes, the run's moments.</summary>
         void Take(Simulation sim, in SimEvent e)
         {
+            _diagnostics?.Take(e);
             _script?.Take(sim, e);
             switch (e.Kind)
             {
@@ -497,11 +521,13 @@ namespace Champions.Client.Loop
         {
             if (Driver != null && !_done && _replay == null) Record();
             Summarise();
+            _diagnostics?.Dispose();
         }
 
         void OnDestroy()
         {
             Summarise();
+            _diagnostics?.Dispose();
             Keys.Dispose();
             Pointer.Dispose();
             _presentation?.Dispose();

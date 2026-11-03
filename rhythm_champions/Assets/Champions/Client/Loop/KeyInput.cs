@@ -21,6 +21,8 @@ namespace Champions.Client.Loop
     public sealed class KeyInput : IDisposable
     {
         public const int Capacity = 256;
+        /// <summary>Raw key-event and mapped heard timestamps for local diagnostics.</summary>
+        public Action<SimKey, double, double> ActionTimestamp;
 
         public struct Change
         {
@@ -119,6 +121,7 @@ namespace Champions.Client.Loop
             while (TryTake(out var c))
             {
                 double heard = clock.KeySong(c.Real);
+                if (c.Down && (c.Key == SimKey.F || c.Key == SimKey.Space)) ActionTimestamp?.Invoke(c.Key, c.Real, heard);
                 Apply(sim, c.Key, c.Down, heard);
                 n++;
                 if (!c.Tapped) continue;
