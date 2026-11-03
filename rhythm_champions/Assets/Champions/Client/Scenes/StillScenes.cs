@@ -103,7 +103,7 @@ namespace Champions.Client.Scenes
                     // not the CI stills set's per-image look analysis.
                     foreach (var k in Known)
                         if (!k.Name.StartsWith("full-", StringComparison.Ordinal) &&
-                            k.Name != "sword-feel" && k.Name != "hud-readability")
+                            k.Name != "sword-feel" && k.Name != "hud-readability" && k.Name != "boss-arrival")
                             _pending.Enqueue(k.Name);
                 }
                 else if (Array.Exists(Known, k => k.Name == n)) _pending.Enqueue(n);

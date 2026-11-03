@@ -343,6 +343,8 @@ kills in the end summary.
 ### Evidence and limits
 
 Local evidence: `~/Library/Caches/playlist-survivors/evidence/ps-ueo/`.
+`champions stills --scene boss-arrival` is an explicit motion-capture tool,
+excluded from the default `all` screenshot set.
 `boss-arrival/` contains 490 actual Mono-player stills with ID passes; 480 ordered
 30-fps frames cover 4–8 s (entry), 10–14 s (attacks) and 17–25 s (first group).
 `boss-arrival-motion.mp4` concatenates those three intervals, with time jumps at
