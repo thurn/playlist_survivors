@@ -6,7 +6,7 @@
 // - a faint wash growing from the shape's origin (the centre, the path's start, the cone's apex) to its far edge as the
 //   telegraph fills (_State.x, 0 to 1), its front a brighter line that meets the outline on the landing beat;
 // - at the landing, the whole shape flashing (_State.y), then fading out (_State.z).
-// Additive in HDR, so its lines bloom; no keywords. In the stills' type-ID pass, an effect's code where it draws.
+// HDR lines bloom; outlines composite over bodies while the dim fill stays additive. No keywords. In the stills' type-ID pass, an effect's code where it draws.
 Shader "Champions/Telegraph"
 {
     Properties
@@ -16,15 +16,15 @@ Shader "Champions/Telegraph"
     }
     SubShader
     {
-        Tags { "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline" "Queue" = "Transparent-10" }
+        Tags { "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline" "Queue" = "Transparent+50" }
         Pass
         {
             Name "Telegraph"
             Tags { "LightMode" = "UniversalForward" }
-            Blend One One
+            Blend One OneMinusSrcAlpha
             Cull Off
             ZWrite Off
-            ZTest LEqual
+            ZTest Always
             HLSLPROGRAM
             #pragma target 4.5
             #pragma vertex vert
@@ -100,7 +100,10 @@ Shader "Champions/Telegraph"
                 float lit = (outline + filled * (0.01 + 0.02 * fill) + front + inside * _State.y) * _State.z;
                 if (lit < 1e-3) discard;
                 CHAMPIONS_ID_PASS(_ChampionsId)
-                return half4(_Color.rgb * lit, 1);
+                // Only the thin outline/front occludes other drawing; the dim ground wash stays additive.
+                // This keeps mandatory routes readable through retained bodies and friendly volleys.
+                float cover = saturate(max(outline, front) * _State.z);
+                return half4(_Color.rgb * lit, cover);
             }
             ENDHLSL
         }

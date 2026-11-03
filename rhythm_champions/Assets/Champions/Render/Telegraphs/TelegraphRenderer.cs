@@ -16,7 +16,7 @@ namespace Champions.Render.Telegraphs
     public sealed class TelegraphRenderer : IDisposable
     {
         public const string MaterialPath = "Telegraphs/Telegraph";
-        /// <summary>A mark lies this far above the floor, under every body.</summary>
+        /// <summary>A mark lies this far above the floor; its warning lines remain visible through bodies.</summary>
         public const float HeightM = 0.03f;
         /// <summary>The landing's flash decays over about this long; then the mark fades over <see cref="FadeS"/>; one called off over <see cref="CallOffS"/>.</summary>
         public const double FlashS = 0.09, FadeS = 0.35, CallOffS = 0.15;

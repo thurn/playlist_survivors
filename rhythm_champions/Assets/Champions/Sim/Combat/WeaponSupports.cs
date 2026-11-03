@@ -45,6 +45,7 @@ namespace Champions.Sim
     {
         struct Repeat { public WeaponEffect Effect; public double Due; }
         readonly StructList<Repeat> repeats = new StructList<Repeat>(32);
+        readonly List<WeaponEffect> due = new List<WeaponEffect>(32);
         bool reliable;
         const double FallbackEchoS = 0.5;
         static TargetHitLedger Ledger()
@@ -137,16 +138,17 @@ namespace Champions.Sim
         {
             if (held || repeats.Count == 0 || !beat && reliable) return;
             // Detach the due batch: callbacks can create more work, but never execute it on this grid point.
-            var due = new List<WeaponEffect>();
-            for (int i = 0; i < repeats.Count;)
+            due.Clear();
+            int kept = 0;
+            int count = repeats.Count;
+            for (int i = 0; i < count; i++)
             {
                 var repeat = repeats[i];
                 bool ready = beat ? repeat.Effect.T < t - 1e-9 : repeat.Due <= t + 1e-9;
-                if (!ready) { i++; continue; }
-                due.Add(repeat.Effect);
-                for (int j = i + 1; j < repeats.Count; j++) repeats[j - 1] = repeats[j];
-                repeats.RemoveLast();
+                if (ready) due.Add(repeat.Effect);
+                else repeats[kept++] = repeat;
             }
+            while (repeats.Count > kept) repeats.RemoveLast();
             if (held) return;
             foreach (var effect in due)
             {
@@ -155,6 +157,7 @@ namespace Champions.Sim
                     effect.TargetLimit, effect.Launch, effect.ImpactX, effect.ImpactY);
                 delivered.Launch(delivered);
             }
+            due.Clear();
         }
     }
 }

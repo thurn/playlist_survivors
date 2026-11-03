@@ -1,0 +1,199 @@
+{
+  "date": "2026-11-03",
+  "host": "jarvis",
+  "sampling": "48 s, first 6 s excluded; 1080p Low, fixed 60Hz frame clock; synchronized render includes CPU submission and GPU readback, not GPU-only time",
+  "runs": [
+    {
+      "scene": "conductor-barrage",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 290,
+      "eventCursor": 60971,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.075,
+        "p99": 2.007
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.289,
+        "p99": 1.122
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.621,
+        "p99": 0.827
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.071,
+        "p99": 5.083
+      }
+    },
+    {
+      "scene": "conductor-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 93573,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.043,
+        "p99": 2.431
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.54,
+        "p99": 1.553
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.955,
+        "p99": 1.955
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.958,
+        "p99": 7.409
+      }
+    },
+    {
+      "scene": "dragon-barrage",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 298,
+      "eventCursor": 57638,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.081,
+        "p99": 2.545
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.236,
+        "p99": 1.065
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.618,
+        "p99": 0.847
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.028,
+        "p99": 5.556
+      }
+    },
+    {
+      "scene": "dragon-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 89283,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.035,
+        "p99": 2.993
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.462,
+        "p99": 1.343
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.91,
+        "p99": 1.834
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.878,
+        "p99": 6.752
+      }
+    },
+    {
+      "scene": "fatOgre-barrage",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 300,
+      "eventCursor": 66220,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.078,
+        "p99": 2.19
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.224,
+        "p99": 1.085
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 0.614,
+        "p99": 0.826
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 3.086,
+        "p99": 5.235
+      }
+    },
+    {
+      "scene": "fatOgre-storm",
+      "device": "Apple M5 Max",
+      "tier": "Low",
+      "width": 1920,
+      "height": 1080,
+      "minAlive": 1001,
+      "pickupOverlay": 384,
+      "maxFlights": 176,
+      "eventCursor": 99057,
+      "simMs": {
+        "samples": 2526,
+        "p50": 0.042,
+        "p99": 2.673
+      },
+      "presentMs": {
+        "samples": 2526,
+        "p50": 0.509,
+        "p99": 1.505
+      },
+      "presenterFaults": 0,
+      "renderSubmitMs": {
+        "samples": 2526,
+        "p50": 1.049,
+        "p99": 1.981
+      },
+      "renderSynchronizedMs": {
+        "samples": 2526,
+        "p50": 4.041,
+        "p99": 7.344
+      }
+    }
+  ]
+}

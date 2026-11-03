@@ -442,6 +442,15 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
 - `champions perf`: an IL2CPP build, a scripted peak with 1,000 alive,
   probe percentiles. Never in CI.
 
+The redesigned full-build load is measured in
+[ps-3wc.14 evidence](../../rhythm_champions/evidence/full-build/README.md).
+Explicit `full-*` still scenes exercise two six-weapon/six-support maximum
+builds against 1,000 retained monsters and each boss; they are excluded from
+`all` and CI. The current M5 simulation measurements exceed the 1 ms proxy,
+and synchronized offscreen rendering does not prove the GPU proxy. Concrete
+repeat-queue/visibility fixes land with that evidence; neither target hardware
+performance nor full-build visual acceptance is declared complete.
+
 ## Look Metrics
 
 - `champions look` ports the archived look harness: the value ladder, the

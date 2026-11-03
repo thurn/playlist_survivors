@@ -83,3 +83,14 @@ row done (or files a bead) after checking.
   on the continuing music source in a window. Scripted wins/replays establish
   rules and feasibility, not fun, speaker balance or taste. Full-build
   performance/readability is ps-3wc.14, independent of ps-6y2.
+
+- ps-3wc.14: run the full-build stress scenes on an M1 Air class Mac in a
+  1080p window at Low, then hand-play ordinary full builds. The M5 Max
+  [measured load](full-build/README.md) exceeds the simulation proxy; its
+  synchronized render measurements do not establish the 1.5 ms GPU budget.
+  This is an outstanding performance gap, not hardware approval. Compare
+  Low/High and `--look trailer`; judge hero visibility, dimmer pickup diamonds,
+  red/yellow warning outlines over bodies, and traveling fronts through the
+  full encounter. The invulnerable 1,000-body test is deliberately denser than
+  a real damaging build and does not establish safe escape routes or fun.
+  Screens, speakers, target hardware and operator taste remain unperformed.

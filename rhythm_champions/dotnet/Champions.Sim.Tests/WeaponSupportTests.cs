@@ -62,6 +62,32 @@ namespace Champions.Sim.Tests
             Assert.That(launched.All(e => e.Activation.EmpowermentArea == 1.5), Is.True);
             Assert.That(launched.Skip(1).All(e => e.Spectral && e.Damage <= 5), Is.True);
         }
+        [Test]
+        public void LargeMixedEchoBatchKeepsOrderAndDefersCallbackWork()
+        {
+            var supports = new WeaponSupports();
+            var delivered = new List<long>();
+            void Launch(long sequence, double t)
+            {
+                var a = new WeaponActivation(WeaponKind.Bow, t, 8, 1, sequence, 1, 1,
+                    new CombatStats { EchoBonus = .5 }, false);
+                supports.Launch(a, 1, HitWindow.Activation, e =>
+                {
+                    if (e.Lineage.Generation == 0) return;
+                    delivered.Add(e.Activation.Sequence);
+                    if (e.Activation.Sequence == 0) Launch(1000, e.T);
+                });
+            }
+            for (int i = 0; i < 512; i++) Launch(i, i % 2 == 0 ? 1 : 2);
+            supports.Step(1.5, false, false);
+            Assert.That(delivered, Is.EqualTo(Enumerable.Range(0, 256).Select(i => (long)i * 2)));
+            supports.Step(2, false, false);
+            Assert.That(delivered.Last(), Is.EqualTo(1000));
+            supports.Step(2.5, false, false);
+            Assert.That(delivered.Skip(257), Is.EqualTo(Enumerable.Range(0, 256).Select(i => (long)i * 2 + 1)));
+            supports.Step(100, false, false);
+            Assert.That(delivered.Count, Is.EqualTo(513), "each finite echo is delivered once");
+        }
         [TestCase(80)]
         [TestCase(120)]
         [TestCase(174)]

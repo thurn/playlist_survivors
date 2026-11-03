@@ -50,6 +50,12 @@ namespace Champions.Client.Scenes
             (StructureScene.Name, s => new StructureScene(s._content, s._palette, s._look)),
             (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
             (RangedGalleryScene.Name, s => new RangedGalleryScene(s._content, s._palette, s._contentDir)),
+            ("full-ogre-storm", s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir, stress: "storm")),
+            ("full-ogre-barrage", s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir, stress: "barrage")),
+            ("full-conductor-storm", s => new DuelScene("conductor", s._content, s._palette, s._look, s._contentDir, stress: "storm")),
+            ("full-conductor-barrage", s => new DuelScene("conductor", s._content, s._palette, s._look, s._contentDir, stress: "barrage")),
+            ("full-dragon-storm", s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir, stress: "storm")),
+            ("full-dragon-barrage", s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir, stress: "barrage")),
             (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir)),
             ("duel-conductor", s => new DuelScene("conductor", s._content, s._palette, s._look, s._contentDir)),
             (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir)),
@@ -89,7 +95,11 @@ namespace Champions.Client.Scenes
             foreach (string n in names)
             {
                 if (n == "all")
-                    foreach (var k in Known) _pending.Enqueue(k.Name);
+                {
+                    // Peak-load sweeps are explicit operator tools, never part of the CI stills set.
+                    foreach (var k in Known)
+                        if (!k.Name.StartsWith("full-", StringComparison.Ordinal)) _pending.Enqueue(k.Name);
+                }
                 else if (Array.Exists(Known, k => k.Name == n)) _pending.Enqueue(n);
                 else throw new ArgumentException($"--stills-scenes: no scene {n} (scenes: all, {string.Join(", ", Array.ConvertAll(Known, k => k.Name))})");
             }

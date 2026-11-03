@@ -1,0 +1,32 @@
+{
+  "alive": 1000,
+  "look": "default",
+  "killsPerSecond": 20,
+  "device": "Apple M5 Max",
+  "syncedFrameMs": {
+    "crowd": {
+      "frames": 391,
+      "p50": 2.412,
+      "p99": 3.806
+    },
+    "empty": {
+      "frames": 390,
+      "p50": 0.779,
+      "p99": 2.101
+    }
+  },
+  "submitMs": {
+    "crowd": {
+      "p50": 0.669,
+      "p99": 0.872
+    },
+    "empty": {
+      "p50": 0.289
+    }
+  },
+  "windowedGpuFrameMs": {
+    "frames": 0,
+    "p50": null,
+    "p99": null
+  }
+}

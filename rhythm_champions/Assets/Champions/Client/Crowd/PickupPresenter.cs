@@ -22,7 +22,7 @@ namespace Champions.Client
         {
             this.layer = layer;
             material = new Material(Resources.Load<Material>(HeroMarker.MaterialPath));
-            material.SetColor("_Color", new Color(0.55f, 0.72f, 1f) * 1.4f);
+            material.SetColor("_Color", new Color(0.55f, 0.72f, 1f) * .4f);
             material.SetFloat(IdPass.Id, IdPass.Effect);
             diamond = Outline(new[] { new Vector2(0, .28f), new Vector2(.18f, 0), new Vector2(0, -.28f), new Vector2(-.18f, 0) });
             cross = Outline(new[] { new Vector2(-.07f,.25f), new Vector2(.07f,.25f), new Vector2(.07f,.07f), new Vector2(.25f,.07f), new Vector2(.25f,-.07f), new Vector2(.07f,-.07f), new Vector2(.07f,-.25f), new Vector2(-.07f,-.25f), new Vector2(-.07f,-.07f), new Vector2(-.25f,-.07f), new Vector2(-.25f,.07f), new Vector2(-.07f,.07f) });
