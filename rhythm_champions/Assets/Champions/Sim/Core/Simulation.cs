@@ -56,6 +56,7 @@ namespace Champions.Sim
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             knownAtBudget = config.KnownAtBudget;
+            Pickups = new Pickups(config.Progression);
             Random = new SimRandom(config.Seed);
             Stream = new BeliefLog(config);
             Beats = new BeatServices(Stream, config.Beat, config.TickCapacity);
@@ -138,6 +139,7 @@ namespace Champions.Sim
 
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }
+        public Pickups Pickups { get; }
 
         /// <summary>The frontier: the song time simulated to.</summary>
         public double Now => State.Now;
@@ -186,6 +188,7 @@ namespace Champions.Sim
                     h = Hashing.Fold(h, Hashing.Bits(State.Experience));
                     h = Hashing.Fold(h, (ulong)(uint)Progression.Picks | (ulong)State.Offer.Kind << 32 | (ulong)(uint)(State.Offer.Focus + 1) << 40);
                 }
+                if (Pickups.ExperienceDropped > 0 || Pickups.StoredCount > 0 || Pickups.FlyingCount > 0) h = Pickups.Fold(h);
                 return Weapons.FoldHash(h);
             }
         }
@@ -419,12 +422,14 @@ namespace Champions.Sim
             run.Tick();
             hero.Tick(this, end);
             dashes.Tick(this, end);
+            health.ApplySupports(this);
             health.Tick(this, end);
             Arsenal.Tick(this, end);
             horde.Tick(end);
             Bosses.Tick(end);
             StructureField?.Tick(this, end);
             Zones.Tick(this, end);
+            Pickups.Tick(this);
             Progression.Tick(this, end);
         }
 

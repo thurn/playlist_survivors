@@ -2,36 +2,9 @@ using System;
 
 namespace Champions.Sim
 {
-    /// <summary>
-    /// The hero's progression (design.md, "Level-ups and Treasure"; Decisions 10-13 and 15): experience from
-    /// kills, levels held for a quiet moment, the offers and the card moment, and a boss's treasure.
-    ///
-    /// - <b>Experience</b>: every kill adds its type's (<see cref="EnemyType.Experience"/>) on its impact frame
-    ///   (<see cref="Killed"/>: the hero's blows' kills and a boss entrance's alike). Each level needs
-    ///   <see cref="ProgressionRules.Needed"/>, the rest carrying on; a level reached is held
-    ///   (<see cref="SimEventKind.LevelUp"/>, the indicator's dot) until it shows.
-    /// - <b>Held for a quiet moment</b>: held levels show at the first tick end in a quiet moment
-    ///   (<see cref="QuietMoments"/>: a gap of silence or a stretch without a reliable beat), or once the oldest has
-    ///   waited <see cref="ProgressionRules.HeldMaxS"/> of run clock, on the next downbeat (at once with no reliable
-    ///   beat). Never during a boss duel (<see cref="Bosses.InDuel"/>): they show after the boss's treasure, which opens
-    ///   at the end of the tick the Ogre dies in (<see cref="Bosses.Died"/>, <see cref="Treasure"/>).
-    ///   Several show one after another, and each level-up's pick heals <see cref="HeroRules.LevelUpHeal"/>.
-    /// - <b>Offers</b> (<see cref="Offer"/>): three different cards, no reroll or skip. The first offer holds one
-    ///   new dash, one new attack and one new mod; a level-up's draws from what the build can take (a new attack or
-    ///   mod while a slot is free, a damaging dash the hero doesn't have, a rank of anything owned below its top),
-    ///   at least one card a rank of something owned whenever one can be; a boss's treasure holds the evolutions of
-    ///   the owned rank-3 attacks and dash, then raises to rank 3 of the highest-ranked owned below it, then mod
-    ///   ranks and new mods. The offers draw from a generator of their own, seeded from the run's, so a scripted
-    ///   run's picks get the same cards whatever the horde draws.
-    /// - <b>The card moment</b>: the world holds (<see cref="HoldReason.Cards"/>: nothing moves or attacks and the
-    ///   run clock stops; the client keeps the monsters bobbing) and the hero lets go of its keys and target, so a
-    ///   key held through the cards never walks it after. While cards are up every key press is theirs
-    ///   (<see cref="Press"/>): 1-3 pick a card (a click on one is its number), Left and Right focus one (the first
-    ///   press the middle card) and Enter or Space pick the focused one. Nothing is picked before a card is focused,
-    ///   so a dash pressed as the cards open picks nothing. Play resumes on the pick.
-    /// - <b>The run's start</b> (<see cref="RunStart.FirstOffer"/>): the first offer opens at the sim's start, the
-    ///   world empty and held; the run starts on the first downbeat after its pick, or at once with no reliable beat.
-    /// </summary>
+    /// <summary>Experience collection, levels and transitional legacy offers. Kills leave persistent
+    /// world pickups; only their arrival grants XP. Level-up picks never heal. Offer composition
+    /// and the archived quiet gating are migrated by the immediate-progression task.</summary>
     public sealed partial class Progression
     {
         /// <summary>The offers' generator's seed is the run's, mixed with this, so its draws are its own.</summary>
@@ -66,12 +39,23 @@ namespace Champions.Sim
 
         // ---- Hooks for the systems ----
 
-        /// <summary>An enemy of <paramref name="type"/> (<see cref="Enemy.Type"/>) died at <paramref name="t"/>: its experience, on its impact frame.</summary>
-        internal void Killed(Simulation sim, int type, double t)
+        /// <summary>An enemy of <paramref name="type"/> (<see cref="Enemy.Type"/>) died at <paramref name="t"/>: leave its collectible value at the death position.</summary>
+        internal void Killed(Simulation sim, int type, double t, double x, double y)
         {
             var cast = enemies.Cast;
             if (type < 1 || type > cast.Length) return;
             double gain = cast[type - 1].Experience;
+            if (!(gain > 0)) return;
+            sim.Pickups.Drop(sim, PickupKind.Experience, x, y, gain);
+            // Deterministic occasional recovery, without consuming the combat RNG stream.
+            killsForHealing++;
+            if (killsForHealing % rules.HealingEveryKills == 0) sim.Pickups.Drop(sim, PickupKind.Healing, x, y, rules.HealingShare);
+        }
+
+        int killsForHealing;
+
+        internal void CollectExperience(Simulation sim, double gain, double t)
+        {
             if (!(gain > 0)) return;
             double experience = state.Experience + gain;
             while (experience >= state.ExperienceNeeded - 1e-9)
@@ -183,7 +167,6 @@ namespace Champions.Sim
             if (card.Kind == CardKind.Dash) sim.Dashes.Equip(sim, card.Id, card.Rank);
             else if (card.Kind == CardKind.Attack) sim.Arsenal.Set(sim, Upgrade.Of(card.Attack, card.Rank));
             else sim.Arsenal.Set(sim, Upgrade.Of(card.Mod, card.Rank));
-            if (kind == OfferKind.LevelUp) sim.Health.HealLevelUp(sim);
             if (kind != OfferKind.First && state.HeldLevels > 0 && state.Phase == RunPhase.Playing && Open(sim, OfferKind.LevelUp)) return;
             sim.Hold(HoldReason.Cards, false);
             if (kind != OfferKind.First || state.Phase != RunPhase.Waiting) return;

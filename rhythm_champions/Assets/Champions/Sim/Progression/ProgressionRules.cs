@@ -10,6 +10,10 @@ namespace Champions.Sim
     public sealed class ProgressionRules
     {
         public const string File = "progression.json";
+        public double PickupRadiusM = 3;
+        public double PickupSpeedMps = 14;
+        public int HealingEveryKills = 100;
+        public double HealingShare = 0.1;
 
         /// <summary>
         /// The experience from each level to the next, from level 1: tuned so a good build levels about every two
@@ -45,12 +49,22 @@ namespace Champions.Sim
             var r = new ContentReader(json, path);
             var experience = r.Object("experience");
             var held = r.Object("held");
+            var pickups = r.Object("pickups");
             var rules = new ProgressionRules
             {
                 Levels = experience.Numbers("levels"),
                 Growth = experience.Number("growth"),
                 HeldMaxS = held.Number("maxS"),
+                PickupRadiusM = pickups.Number("radiusM"),
+                PickupSpeedMps = pickups.Number("speedMps"),
+                HealingEveryKills = pickups.Int("healingEveryKills"),
+                HealingShare = pickups.Number("healingShare"),
             };
+            pickups.End();
+            if (!(rules.PickupRadiusM > 0 && rules.PickupRadiusM <= 12)) throw ContentReader.Fail(path + ".pickups.radiusM", "positive, at most 12");
+            if (!(rules.PickupSpeedMps > 0)) throw ContentReader.Fail(path + ".pickups.speedMps", "positive");
+            if (rules.HealingEveryKills < 1) throw ContentReader.Fail(path + ".pickups.healingEveryKills", "positive");
+            if (!(rules.HealingShare > 0 && rules.HealingShare <= 1)) throw ContentReader.Fail(path + ".pickups.healingShare", "in (0, 1]");
             experience.End();
             held.End();
             r.End();

@@ -38,11 +38,8 @@ namespace Champions.Sim.Tests
         /// <summary>Kills <paramref name="count"/> enemies of type <paramref name="id"/> now, far from the hero (a dummy for null).</summary>
         static void Kill(Simulation sim, string id, int count = 1)
         {
-            for (int i = 0; i < count; i++) sim.Enemies.Spawn(sim, 1000 + i, 1000, 0.4, 0.5, id == null ? 0 : TypeOf(id));
-            sim.Strikes.Land(sim, new Blow
-            {
-                Shape = HitShape.Circle(1000, 1000, 50), T = sim.Now, Damage = 1, Tags = HitTags.Strike, Source = BlowSource.SwordSlash, Owner = -1, Part = -1,
-            });
+            // Offer/curve tests inject collected value; actual death-position drops are tested in PickupTests.
+            if (id != null) sim.Progression.CollectExperience(sim, Content.Enemies.Cast[TypeOf(id) - 1].Experience * count, sim.Now);
         }
 
         static void Press(Simulation sim, Key key) => sim.Press(key, sim.Now - 0.03);
@@ -60,7 +57,7 @@ namespace Champions.Sim.Tests
         // ---- Experience ----
 
         [Test]
-        public void KillsAddTheirTypesExperienceOnTheirImpactFrame()
+        public void CollectedValuesUseTheirTypesExperience()
         {
             var sim = Sim();
             sim.StepTo(1);
@@ -254,14 +251,14 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void TheEntrancesShatterCountsForExperience()
+        public void LegacyEntranceShatterLeavesCollectibleExperience()
         {
             var sim = OgreDuel();
             for (int i = 0; i < 4; i++) sim.Enemies.Spawn(sim, 2 + i, 2, 0.4, Arena.Tough, TypeOf("skeleton"));
             sim.Enemies.Spawn(sim, -3, 1, 0.9, Arena.Tough, TypeOf("troll"));
             while (!sim.Bosses.InDuel) sim.StepTo(sim.Now + Tick);
             Assert.AreEqual(5, Drive.Events(sim, SimEventKind.Kill).Count(e => e.I1 == (int)BlowSource.Boss));
-            Assert.AreEqual(14.0, sim.State.Experience, 1e-9, "four skeletons and a troll, in full");
+            Assert.AreEqual(14.0, sim.Pickups.OutstandingExperience + sim.State.Experience, 1e-9, "legacy entrance kills leave conserved collectible value");
         }
 
         // ---- Offers ----
@@ -526,7 +523,7 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void ALevelUpsPickHealsAQuarterAndTreasureLeavesHealthAlone()
+        public void LevelUpAndTreasurePicksDoNotHeal()
         {
             var sim = Sim(tweak: EveryKillALevel);
             sim.StepTo(0.2);
@@ -536,11 +533,11 @@ namespace Champions.Sim.Tests
             Kill(sim, "skeleton");
             sim.StepTo(1);
             Press(sim, Key.One);
-            Assert.AreEqual(65, sim.State.Hero.Health, 1e-9, "25% of full health");
-            Assert.AreEqual((int)HealReason.LevelUp, Drive.Events(sim, SimEventKind.HeroHeal).Single().I0);
+            Assert.AreEqual(40, sim.State.Hero.Health, 1e-9, "level-ups do not heal");
+            Assert.IsEmpty(Drive.Events(sim, SimEventKind.HeroHeal));
             sim.Progression.Treasure(sim);
             Press(sim, Key.One);
-            Assert.AreEqual(65, sim.State.Hero.Health, 1e-9, "the boss kill heals, not its treasure");
+            Assert.AreEqual(40, sim.State.Hero.Health, 1e-9, "the boss kill heals, not its treasure");
         }
 
         // ---- The run's start ----

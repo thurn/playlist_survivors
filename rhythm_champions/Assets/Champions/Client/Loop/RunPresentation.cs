@@ -44,6 +44,7 @@ namespace Champions.Client.Loop
         public readonly RunUi Ui;
         public readonly CrowdPresenter Crowd;
         public readonly SporePresenter Spores;
+        public readonly PickupPresenter Pickups;
         public readonly TelegraphPresenter Telegraphs;
         public readonly BossPresenter Boss;
         public readonly HeroPresenter Hero;
@@ -65,6 +66,8 @@ namespace Champions.Client.Loop
             if (trailer == null) Debug.LogWarning("RunPresentation: no baked monsters (champions monster bake all, then build): the horde draws as stand-ins");
             Crowd = new CrowdPresenter((ICrowdView)trailer ?? new StandInCrowd(content.Enemies, palette, layer), content.Enemies);
             _owned.Add(Crowd);
+            Pickups = new PickupPresenter(layer);
+            _owned.Add(Pickups);
             Spores = new SporePresenter(palette, layer);
             _owned.Add(Spores);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
@@ -110,6 +113,7 @@ namespace Champions.Client.Loop
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
+            d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)
                 d.Add("effects", (in SimEvent e) => cues.Take(e), null, (in PresentFrame f) => Effects.Present(f.Song, f.Hero, f.Dt, f.Camera));
@@ -180,6 +184,7 @@ namespace Champions.Client.Loop
         {
             Structures?.Queue(camera);
             Crowd.Queue(camera);
+            Pickups.Present(_sim, _sim.Now, camera);
             Hero.Queue(camera);
             Telegraphs.Queue(camera);
             Effects?.Queue(camera);

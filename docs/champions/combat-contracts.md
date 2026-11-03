@@ -201,3 +201,44 @@ empowerment. Geometry must pause flight while held and retain its action's
 ledger until flight/child work has ended. Use generation IDs, not recycled
 slot indices. These callbacks are simulation actions; presentation should
 observe events and must not call them to deal damage a second time.
+
+## Persistent pickups and defensive supports (ps-3wc.5)
+
+`Simulation.Pickups` owns drops independently of structure chunk loading and
+boss state. `Progression.Killed(sim,type,t,x,y)` leaves XP at the death
+position; `CollectExperience(sim,value,t)` is called only on pickup arrival.
+The immediate-offer task owns how earned levels open cards. Level-up picks
+no longer heal. Boss kills retain their full-heal hook.
+
+`Content/progression.json.pickups` tunes baseline attraction (3 m), travel
+speed (14 m/s), healing cadence (every 100 value-bearing kills) and recovery
+(10% of current maximum health). Healing cadence does not spend combat RNG.
+Attraction multiplies pickup radius by `1 + HeroBonus(Attraction)` for both
+kinds. A drop travels to the hero after entering range, even if the hero
+leaves its original cell. Cards, pause and ended runs stop pickup motion.
+
+A sparse map merges each kind within a 1 m world cell, retaining its first
+death position and adding all value. Departed chunks never evict it. Up to
+256 attracted drops travel concurrently; excess stays stored. Preview draws
+at most 384 local representations, prioritizing attracted drops, without
+reducing their stored value. No time-based expiration or whole-world scan
+runs during ticks. This bounds active/render work, not the number of cells
+in an arbitrarily long explored world. Replays fold outstanding pickup
+positions and values into state hashes.
+
+`PickupDrop`, `PickupAttract`, `PickupCollect`: I0 stable representation ID,
+I1 `PickupKind`; D0/D1 world position, D2 value. `PickupDrop` also reports
+**total** merged value for the existing ID, not an additional grant. XP uses
+experience units; healing uses fractions of maximum health. Collection emits
+once and removes ownership before granting XP/healing. `HeroHeal` uses
+`HealReason.Pickup` or `Regeneration`; D0 is actual clamped gain.
+
+Vitality adds maximum capacity without restoring health. Armor divides
+incoming damage by `1 + rating`; regeneration adds health per active combat
+second (including bosses, excluding holds). Stride multiplies walking speed
+by `1 + bonus`; dash travel is unaffected. All consume the hero-wide families
+from `SimState.Build`, using authored support caps in `combat.json`.
+
+The `pickups` still scene compares hollow pale diamonds and crosses against
+solid yellow shots in the palette crowd, with scripted attraction motion.
+[Evidence and limitations](../../rhythm_champions/evidence/pickups/README.md).

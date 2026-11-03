@@ -326,7 +326,7 @@ namespace Champions.Sim
         void WalkPart(Simulation sim, double t, double span, ref double x, ref double y)
         {
             Keys(out int across, out int up);
-            double step = speed * span, dx = 0, dy = 0;
+            double step = speed * (1 + sim.State.Build.HeroBonus(StatFamily.Stride)) * span, dx = 0, dy = 0;
             if (across != 0 || up != 0)
             {
                 double scale = across != 0 && up != 0 ? Math.Sqrt(0.5) * step : step;

@@ -136,24 +136,24 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void LevelUpsHealAQuarterAndABossKillHealsFully()
+        public void PickupHealingClampsAndABossKillHealsFully()
         {
             var sim = Sim();
             Hit(sim, 1, 30);
             Hit(sim, 2, 30);
             sim.StepTo(2.5);
             Assert.AreEqual(40, sim.State.Hero.Health);
-            sim.Health.HealLevelUp(sim);
+            sim.Health.Heal(sim, 25, HealReason.Pickup);
             Assert.AreEqual(65, sim.State.Hero.Health);
-            sim.Health.HealLevelUp(sim);
-            sim.Health.HealLevelUp(sim);
-            Assert.AreEqual(100, sim.State.Hero.Health, "never past full");
+            sim.Health.Heal(sim, 25, HealReason.Pickup);
+            sim.Health.Heal(sim, 25, HealReason.Pickup);
+            Assert.AreEqual(100, sim.State.Hero.Health, "never exceeds full health");
             Hit(sim, 3, 50);
             sim.StepTo(3.5);
             sim.Health.HealBossKill(sim);
             Assert.AreEqual(100, sim.State.Hero.Health);
             var heals = Drive.Events(sim, SimEventKind.HeroHeal);
-            Assert.AreEqual(new[] { 25.0, 25.0, 10.0, 50.0 }, heals.Select(h => h.D0).ToArray(), "the third level-up gained only what was missing");
+            Assert.AreEqual(new[] { 25.0, 25.0, 10.0, 50.0 }, heals.Select(h => h.D0).ToArray(), "pickup and boss healing clamp");
             Assert.AreEqual((int)HealReason.BossKill, heals.Last().I0);
             Assert.AreEqual(0, sim.Health.Heal(sim, 5, HealReason.Mod), "a mod's heal at full gains nothing");
             Assert.AreEqual(4, Drive.Events(sim, SimEventKind.HeroHeal).Count);
@@ -178,7 +178,7 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(6 * 5.0, death.D0, 1e-9, "where it was then");
             sim.State.Hero.PositionAt(sim.Now, out double x, out _);
             Assert.Less(x, 6 * 5.2, "it stands once dead");
-            sim.Health.HealLevelUp(sim);
+            sim.Health.Heal(sim, 25, HealReason.Pickup);
             Assert.AreEqual(0, sim.State.Hero.Health, "a dead hero doesn't heal");
         }
     }

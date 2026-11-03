@@ -242,7 +242,7 @@ namespace Champions.Sim
             sim.Emit(SimEvent.Kill(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, x, y));
             sim.Arsenal.Killed(sim, blow, x, y);
             if (boss) sim.Bosses.Killed(blow.T, dx, dy);
-            sim.Progression.Killed(sim, type, blow.T);
+            sim.Progression.Killed(sim, type, blow.T, x, y);
             return true;
         }
 

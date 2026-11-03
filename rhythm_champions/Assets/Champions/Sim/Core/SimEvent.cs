@@ -66,6 +66,9 @@ namespace Champions.Sim
         WeaponActivation,
         WeaponPulse,
         LandingBlast,
+        PickupDrop,
+        PickupAttract,
+        PickupCollect,
     }
 
     /// <summary>
@@ -87,6 +90,11 @@ namespace Champions.Sim
             return new SimEvent { Kind = SimEventKind.LandingBlast, T = t, I0 = dash,
                 D0 = x, D1 = y, D2 = radius, D3 = damage };
         }
+
+        /// <summary>Pickup lifecycle: I0 stable drop ID, I1 PickupKind; D0/D1 world position,
+        /// D2 total value (XP units or fraction of max health). Drop also reports merged totals.</summary>
+        public static SimEvent Pickup(SimEventKind kind, double t, Pickup p) => new SimEvent
+        { Kind = kind, T = t, I0 = p.Id, I1 = (int)p.Kind, D0 = p.X, D1 = p.Y, D2 = p.Value };
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
 

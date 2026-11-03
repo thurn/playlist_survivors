@@ -35,10 +35,12 @@ namespace Champions.Sim
     /// <summary>Why the hero healed.</summary>
     public enum HealReason : byte
     {
-        LevelUp = 0,
+        LevelUp = 0, // Reserved legacy wire value.
         BossKill = 1,
         /// <summary>A mod's healing (Lifeblood).</summary>
         Mod = 2,
+        Pickup = 3,
+        Regeneration = 4,
     }
 
     /// <summary>An attack reaching the hero (<see cref="HeroHealth.Hurt"/>).</summary>
@@ -58,7 +60,7 @@ namespace Champions.Sim
 
     /// <summary>
     /// The hero's health (design.md, "The Hero", Decisions 3 and 15): 100, 0.5 s of invulnerability after a
-    /// hit, heals of 25% on a level-up and full on a boss kill, and death on the killing hit.
+    /// hit, healing pickups, passive regeneration, full recovery on a boss kill and death on the killing hit.
     ///
     /// - <b>Settling in heard time.</b> The sim runs ahead of the speakers, so a dash the player heard
     ///   before a hit landed reaches the sim after it. A hit (<see cref="Hurt"/>) is held until every input
@@ -163,8 +165,14 @@ namespace Champions.Sim
             pending.RemoveFront(n);
         }
 
-        /// <summary>Heals a level-up's share of full health.</summary>
-        public void HealLevelUp(Simulation sim) => Heal(sim, rules.LevelUpHeal * state.MaxHealth, HealReason.LevelUp);
+        internal void ApplySupports(Simulation sim)
+        {
+            if (sim.State.Held || sim.State.Phase != RunPhase.Playing || state.Dead) return;
+            state.MaxHealth = rules.Health * (1 + sim.State.Build.HeroBonus(StatFamily.Vitality));
+            // Vitality grants capacity, never a free heal.
+            state.Health = Math.Min(state.Health, state.MaxHealth);
+            Heal(sim, sim.State.Build.HeroBonus(StatFamily.Regeneration) * Simulation.TickSeconds, HealReason.Regeneration);
+        }
 
         /// <summary>Heals a boss kill's share (all of it).</summary>
         public void HealBossKill(Simulation sim) => Heal(sim, rules.BossKillHeal * state.MaxHealth, HealReason.BossKill);
@@ -192,7 +200,7 @@ namespace Champions.Sim
                 outcome = HitOutcome.Immune;
             else
             {
-                taken = Math.Min(state.Health, Math.Max(0, hit.Damage));
+                taken = Math.Min(state.Health, Math.Max(0, hit.Damage) / (1 + sim.State.Build.HeroBonus(StatFamily.Armor)));
                 state.Health -= taken;
                 state.HurtAt = hit.T;
                 outcome = HitOutcome.Hurt;
