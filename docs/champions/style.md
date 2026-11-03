@@ -4,7 +4,9 @@
 
 Combat references were updated on 2026-11-02. The
 [previous version](../archive/champions-dash-combat-2026-11-02/style.md) is archived.
-The palette and diagnostics describe the existing renderer; new pickup and
+The November 3 combat-feel decisions in [design.md](design.md) and
+[game-feel-plan.md](game-feel-plan.md) supersede older color roles.
+The numeric palette table and diagnostics describe the existing renderer; new pickup and
 weapon treatments still need visual evaluation.
 
 This is the guide to how Rhythm Champions looks. Every bead that draws
@@ -37,8 +39,10 @@ The short version:
 - **Light comes from things.** The floor is void; lines, trails, sparks and
   the grid emit.
 - **Each frame has a key.** One hue family holds most of a frame's colour:
-  at most four families, plus white.
-- **White is the hero's; grey is a wall's; electric yellow is a warning.**
+  at most four environment/body families, plus white and the semantic
+  player-yellow/XP-green roles.
+- **White is the hero's; grey is a wall's; yellow is player empowerment.**
+  Ordinary attacks stay white, enemy hazards orange/red, XP filled green.
 - **No monster outshines the hero.**
 
 It replaces the [archived neon look's guide](../archive/design/neon-look-style.md),
@@ -117,19 +121,23 @@ Hues are HSV degrees, as the look metrics measure them.
 - **The key**: the first zone's colours and the key family within 40 degrees
   of each other, so crowd, floor and grid share one hue and the opening frames
   key naturally.
-- **The yellow-green arc** (40-185 degrees) belongs to warnings: only electric
-  yellow (warnings, enemy shots) and the warm zone may sit in it. Near white
-  spends no family. The former Break accent is no longer used by gameplay.
+- **Yellow and green have distinct gameplay roles**: yellow belongs to the
+  player rhythm aura and empowered attacks, green to filled animated XP.
+  Enemy hazards use orange/red; enemy bodies retain the trailer families.
+  Near white spends no family. The former Break accent is unused.
 - **White and grey**: every near-white role (L* 85+, C* 30 or less) is the
   hero's; every grey role (C* under 15, L* 10-85) is the wall's.
 
-A frame therefore holds at most four families (the zone's key and three enemy
-families) plus white. A warning or a spore is small and brief; it adds its
-yellow only while it is up.
+The environment and enemy bodies keep the restrained family budget above.
+Player yellow and pickup green are intentional semantic additions; do not
+remove them to satisfy an old palette-family diagnostic.
 
 ## The Palette
 
-`rhythm_champions/Content/palette.json`. Every value is the colour as drawn
+`rhythm_champions/Content/palette.json`. The table below is the pre-restoration
+renderer snapshot: warning/enemy-shot yellow values are migration targets,
+not permission to keep yellow hazards. Update values and diagnostics with
+ps-ueo.3. Every value is the colour as drawn
 on screen; a shader that tonemaps or blooms aims its output at it.
 
 ### Enemies and the boss
@@ -162,8 +170,8 @@ lighter member.
 | `hero.edge` | `#e4eeff` | 218 | 94 | 9 | the faint white-blue edge of the hero's slashes |
 | `hero.hurt` | `#ff4040` | 0 | 57 | 84 | the hero taking a hit: danger's red, in the counter's reach |
 | `hero.break` | `#fff0c8` | 44 | 95 | 21 | legacy palette key, unused by the revised combat; no Break bar or stagger flash |
-| `warning` | `#f5e900` | 57 | 91 | 91 | elite telegraphs and hazards short of a boss |
-| `enemyShot` | `#dfee00` | 64 | 90 | 92 | spores and other enemy shots |
+| `warning` | `#f5e900` | 57 | 91 | 91 | legacy value; migrate elite hazards to orange/red |
+| `enemyShot` | `#dfee00` | 64 | 90 | 92 | legacy value; migrate spores/shots to orange/red |
 | `wall` | `#8c8c8c` | 0 | 58 | 0 | unbreakable structures (reserved; level 1 has none) |
 
 ### Zones
@@ -185,9 +193,10 @@ their edges (`edge`, L* 40-60).
 - **The trailer's families**: cyan-blue key, magenta-violet
   accent, amber-orange counter, a red boss in the counter's reach. The
   dragon's fight, on the warm zone with red telegraphs, keys warm.
-- **Electric yellow is free for danger.** The counter moved toward orange
-  (18 and 35, against ion's 25 and 39), so the warnings at 57 and the shots
-  at 64 sit 20 degrees or more from every monster.
+- **Electric yellow rewards rhythm.** One on-beat dash gives the full
+  three-second yellow aura and visibly enlarged attacks. Enemy threats move
+  to orange/red, using dark shoulders, shape and timing to separate them
+  from amber bodies. Filled green animated XP reads apart from both.
 - **The first zone is the grid's colour**, not a separate near-copy of it
   (ion's cobalt zone changed nothing). The teal zone shares the cyan fodder's
   hue on purpose: the frame keys, and the monsters stand off the dim floor by
@@ -216,8 +225,9 @@ The look is calm by default (design.md, Restraint):
   (`clipped_impact_max`).
 - **Point lights** only for a slam or a boss entrance, a few at once.
 
-Boss entrances no longer clear the screen. Review them with the surviving
-horde, drops and structures. Required boss waves must remain visible beneath
+Boss entrances visibly shatter ordinary enemies in the fight area. Preserve
+existing drops and structures, and prevent outside horde refill. Review the
+clear in motion and subsequent small, deliberately timed reinforcements. Required boss waves must remain visible beneath
 six weapons; shrink or dim overlapping friendly effects before obscuring a
 telegraph. Weapon forms need visibly different actions, and enlargement on a
 timed dash should be clear without whitening the frame.
@@ -232,7 +242,8 @@ retains its pinned shader and depth behavior.
 Elite warnings have one stable outer boundary, with a dark shoulder separating
 it from amber bodies. Sparse ground-aligned hatching and a dim interior mark
 the dangerous side within 5 m of the hero, fading out by 8 m. Timing brightens
-the boundary toward impact; a routine slam never becomes a solid yellow disc.
+the boundary toward impact; a routine enemy slam never becomes a solid bright disc. Yellow is reserved
+for player empowerment; enemy warning boundaries and fills use orange/red.
 Boss red marks keep their traveling fill/front and collision shapes are
 unchanged. Judge overlaps in ordered motion as well as stills; none of these
 layers promises a collision-free route through an invulnerable stress horde.
@@ -411,3 +422,26 @@ value that misjudges good frames, recording why in
 Drawn unlit at their palette values under the post, the monsters' lines
 render within a few L* of their roles (the cyan at L* 79 C* 43 against the
 role's 75 and 44), so the palette's values hold on screen.
+
+
+## Combat-feel readability (2026-11-03)
+
+The permanent held sword, white knight body and broad ordinary white slash
+must read as one action. Supporting spectral weapons cannot replace the held
+sword. Coordinate body impact, VFX, sound and forceful shatter; judge ordered
+motion against the local trailer, not only stills. Dash exit is a full-circle
+body sweep every time, white normally and yellow/enlarged during the aura.
+The aura appears fully on one qualifying dash, refreshes without stacking and
+fades cleanly at expiry. Keep its light local and telegraphs visible.
+
+XP uses a filled green readable shape with an animated shader, preserving
+stored value and persistent collection behavior. Healing uses a different
+shape; enemy shots remain orange/red and airborne. Judge green visibility
+against the grid and yellow effects at actual camera scale.
+
+A bottom-left red liquid/energy health orb replaces the thin player health
+bar. Its fill boundary must remain clear near empty and through bloom;
+compact health numbers may support it. Top-center horde time switches to
+BOSS plus fight elapsed time; boss health and beat cue remain legible. Inspect
+pause/card holds and low health in motion. Subjective hand-play remains an
+operator-pending check, not an agent claim of fun.

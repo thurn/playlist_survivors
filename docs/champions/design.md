@@ -9,7 +9,7 @@ spectacular. The music synchronizes the action. It does not turn ordinary
 horde survival into a sequence of required button presses.
 
 Boss fights are the exception: they demand rhythmic defensive play amid
-whatever horde remains. Most patterns test timed positioning; occasional
+small, deliberately timed reinforcement groups. Most patterns test timed positioning; occasional
 clearly signaled waves require a dash through danger. Your weapons keep
 attacking throughout.
 
@@ -18,12 +18,15 @@ play is cinematic. Retro 3D neon wireframe, the white hero, the endless dark
 grid, the beat wave and the trailer's visual baseline remain the direction.
 
 Combat and progression were redesigned with the operator on **2026-11-02**.
-This document supersedes the dash-centered design locked on 2026-11-01.
+The combat-feel decisions approved on **2026-11-03** below supersede conflicting
+November 2 behavior. This document also supersedes the dash-centered design
+locked on 2026-11-01.
 The [previous design, plan and style guide](../archive/champions-dash-combat-2026-11-02/README.md)
 are historical. [The implementation plan](plan.md) records shipped survivor
 combat and the remaining verification. The ps-3wc implementation now supplies
 the eight weapon identities, broad supports, pickups, immediate choices and
-three retained-horde bosses. [Assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
+three bosses. The [combat-feel restoration plan](game-feel-plan.md) distinguishes
+that shipped baseline from the approved changes still to implement in ps-ueo. [Assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
 separates deterministic run results from pending hand-play and visual judgement.
 
 ### The game, as the player sees it
@@ -40,10 +43,12 @@ separates deterministic run results from pending hand-play and visual judgement.
 - Weapons visibly change form as they level: a hammer's swing becomes a
   ground slam, then more elaborate actions. These are fixed progressions;
   supports supply mechanics such as piercing, splitting and repetition.
-- Space dashes immediately. A dash on the beat enlarges the next activation
-  of every equipped weapon, even when the dash crosses empty ground.
+- Space dashes immediately and always ends in a full-circle sword sweep,
+  clearing a landing pocket of weak fodder. One on-beat dash immediately
+  grants a yellow aura: all attacks cover twice the area for three seconds.
 - Every five minutes of horde time, a boss arrives. Ordinary spawning and
-  the progression clock stop; the existing horde stays. Survive rhythmic
+  the progression clock stop; ordinary enemies in the visible fight area
+  shatter and outside hordes cannot immediately refill it. Survive rhythmic
   patterns while your weapons fight. Kill three bosses to finish level 1.
 
 ### Principles
@@ -52,8 +57,8 @@ separates deterministic run results from pending hand-play and visual judgement.
   builds and movement without deliberately timing inputs to music.
 - **Build choices are frequent and consequential.** Small statistical
   gains compound; new weapons, supports and form changes alter the play.
-- **Dash serves movement.** Baseline damage comes from automatic weapons.
-  One optional support adds an explosion at the dash destination.
+- **Dash makes room.** Automatic weapons sustain combat; every dash also
+  ends in a sword sweep without requiring a support or a rhythm judgement.
 - **Rhythm is visible and playable.** Weapons attack on the beat, enemies
   step to music, timed dashes empower weapons, and bosses require timing.
 - **Every moment cinematic.** Natural animation, readable threats and dark
@@ -70,12 +75,16 @@ hand-play tuning, not claims of tested balance.
 1. V1 is one level with bosses after **5, 10 and 15 minutes of horde time**.
    The progression clock pauses during each boss, cards and player pauses.
    Actual run duration includes the boss fights.
-2. Boss arrival **does not clear the horde, XP, healing drops or structures**.
-   Ordinary spawning stops; authored boss summons are allowed.
+2. Boss arrival **shatters ordinary enemies in the visible fight area**.
+   Existing XP, healing drops and structures remain. Ordinary spawning stops;
+   bounded arena/re-entry behavior prevents immediate refill by outside hordes.
+   Only small, deliberately timed reinforcements are allowed, with clear lanes
+   and a finite XP budget; the arrival wipe is not an XP jackpot.
 3. Bosses remain damageable throughout. Most patterns permit timed walking;
    occasional waves require dash invulnerability. Mistakes cost health.
    There is **no Break bar**, dodge-gated damage or required stagger cycle.
-4. Up to **six automatic weapons and six supports**. Stat passives and
+4. Up to **six automatic weapons and six supports**. The permanent held Sword
+   occupies one weapon slot; the other five weapons support it. Stat passives and
    mechanical supports share those six support slots and apply to every
    compatible weapon automatically. No prescribed weapon/support recipes.
 5. Weapons have **eight levels**, changing to fixed new forms at **3, 5 and
@@ -87,12 +96,20 @@ hand-play tuning, not claims of tested balance.
 7. Automatic attacks stay **strictly on the musical grid**. Attack-speed
    upgrades add strikes, rather than forcing faster character animation or
    requiring the player to press attacks. Fractional extra strikes accumulate.
-8. Dash is a separate movement tool, immediate on key-down, with consistent
-   movement and invulnerability regardless of musical judgement. One
-   optional support adds a **destination explosion**; no suite of dash types.
-9. **Any on-beat dash**, including in empty space, empowers the **next
-   activation of each equipped weapon** with larger coverage. Empowerment
-   does not stack; another timed dash refreshes unspent empowerment.
+8. Dash is immediate on key-down with consistent movement and invulnerability.
+   **Every dash ends in a full-circle sword sweep** at its actual legal endpoint,
+   including when obstructed, without waiting for a beat. Weak fodder dies;
+   tougher enemies survive. Sword upgrades improve both ordinary swings and
+   landing cleave. Movement remains free during attacks. Dash-exit body spin
+   takes precedence over conflicting automatic choreography without duplicate damage.
+9. **One on-beat dash** immediately grants the full **three-second yellow aura**:
+   **2× coverage area for all attacks**, including that dash's landing sweep,
+   with no damage-per-hit bonus. Refresh duration, never stack. An off-beat
+   dash does not cancel it. No streak or per-weapon banked flags. Ordinary
+   Sword aims along movement, retaining last facing when stationary; never
+   toward the nearest enemy or densest crowd. Starting Sword one-hits the
+   weakest fodder. At least double the baseline automatic attack rate across
+   the roster, preserving identities and hit damage; Sword starts near 0.5 s.
 10. Enemies drop XP. Collection has a generous baseline radius, upgradeable
     by a support. Routing through cleared ground is part of getting stronger.
 11. Target **25–35 normal level-up choices** in a completed run, first around
@@ -126,7 +143,7 @@ hand-play tuning, not claims of tested balance.
 | Upgrade | A card granting a weapon, support or level in one already owned. |
 | Weapon level | 1–8; acquisition grants level 1. |
 | Form | A fixed action/animation at levels 1, 3, 5 or 8, retaining prior support interactions. |
-| Empowerment | A nonstacking larger-coverage activation banked separately for each equipped weapon by an on-beat dash. |
+| Empowerment | A refreshed three-second yellow aura granting all attacks double coverage area, without extra hit damage. |
 | Beat / downbeat | Analyzer-committed beat / first beat of a bar. |
 | Heard time | The time the player hears, used for input judgement. |
 | Reliable beat | A musical grid sufficiently confident to use; otherwise use fallback timing. |
@@ -143,7 +160,8 @@ coverage change which routes are productive: frontal weapons cut corridors,
 orbits reward maintaining a distance, ground effects reward looping back,
 and projectiles reach threats outside the immediate pack.
 
-Start with Sword, level 1, and the movement dash. No mandatory opening
+Start with the permanent held Sword, level 1, and the dash with its baseline
+landing sweep. Sword always occupies one of the six weapon slots. No mandatory opening
 upgrade menu: the first meaningful choice comes from early XP. All roster
 items are available in the run's pool in V1; between-run unlocks and permanent
 power are not part of this revision.
@@ -166,7 +184,7 @@ reuses the existing troll asset with distinct scale, presentation and moves.
 | 10:00 | Troll Conductor: alternating fan lanes, falling marks and a traveling wall. |
 | Conductor dies | Full heal, equipped-item upgrade; resume horde time from 10:00. |
 | 10:00–15:00 | Densest mixed horde; developed builds demonstrate their combinations. |
-| 15:00 | Dragon: final rhythmic encounter amid the remaining horde. |
+| 15:00 | Dragon: final rhythmic encounter with controlled reinforcement groups. |
 | Dragon dies | Victory, regardless of remaining fodder. |
 
 Stop ordinary spawning and freeze the progression clock exactly at the
@@ -208,7 +226,10 @@ must not multiply by every overlapping enemy on one frame. Armor, health and
 movement supports allow defensive investment but should not erase the need
 to read boss patterns.
 
-The hero remains the white Synty knight. Weapons can be spectral constructs;
+The hero remains the white Synty knight with a permanent sword in hand.
+Ordinary Sword swings use natural body animation and broad slash effects,
+aimed along movement (last facing while stationary). Supporting weapons and
+bonus strikes can be spectral constructs;
 new forms need distinct actions, poses or effect choreography, not only a
 larger copy of the original effect. The body never needs to animate faster
 than 1.15x. Concurrent weapons and bonus strikes use spectral weapons and
@@ -227,39 +248,52 @@ Timing judgement is binary in heard time: default ±80 ms around a beat,
 movement and invulnerability. With no reliable beat, every dash earns
 empowerment; the player never loses the bonus because analysis failed.
 
-Each equipped weapon has one empowerment flag. An on-beat dash sets all
-flags; repeating it cannot stack them. A flag waits until that weapon next
-activates, then applies to the whole activation, including its extra strikes
-and split projectiles. No target means no activation and no consumption.
-Newly acquired weapons wait for the next timed dash. Form changes retain an
-unspent flag.
+Every dash ends in a full-circle sword sweep at the actual legal endpoint,
+not the intended unobstructed destination. The hero performs the sweep; no
+support, target acquisition or beat wait is required. It reliably clears
+ordinary weak fodder locally, while tougher enemies can survive. Sword levels,
+damage and area upgrades improve both attacks. A landing spin overrides a
+conflicting automatic body action; it must not apply the same hit twice.
 
-Default empowerment is **1.5× coverage area**, not 1.5× radius, with no direct
-damage multiplier. Each weapon specifies its useful coverage measure:
-melee area, projectile hit footprint, lightning search reach, ground radius,
-or summon attack area. This is multiplicative with the weapon's ordinary
-area scaling. For circular areas, radius scales by the square root of the
-area multiplier. A narrow projectile widens without losing travel range.
+An on-beat dash grants the full yellow aura immediately, even in empty space.
+It lasts **three seconds of active combat time** from the judged dash start.
+Another qualifying dash resets expiry to three seconds from that start,
+without stacking; off-beat dashes leave the expiry alone. Cards and pauses
+freeze remaining duration, even while music continues. Replay state and hashes
+include the expiry; the state is active before expiry and inactive exactly at
+expiry. Newly acquired weapons benefit while the aura is active. With no
+reliable beats, every dash grants the same aura.
 
-Persistent weapons have explicit beat activations: orbit sweeps, ground
-pulses and summon volleys. Empowerment lasts for that activation, not the
-remaining lifetime of a persistent object. Orbit/summon enlargement cannot
-turn a close target into a blind spot. Each activation visibly swells and
-settles, with a local ring and accent. No accumulating combo or upkeep meter.
+Empowerment is **2× coverage area**, with no damage-per-hit multiplier.
+Circular radii scale by sqrt(2), multiplicatively with ordinary area upgrades.
+Each weapon defines its useful coverage measure (melee footprint, projectile
+hit footprint, lightning search reach, ground radius or summon attack area).
+A narrow projectile widens without losing range. Include the triggering dash
+sweep and target selection; an enlarged visual without enlarged hits is wrong.
 
-**Landing Blast**, an optional support, explodes at the actual dash endpoint.
-It leaves movement, cooldown and invulnerability unchanged. It can clear a
-landing pocket, but cannot be required for a viable build. It does not grant
-an extra weapon slot or trigger itself recursively. It is not an automatic
-weapon and does not consume the six weapons' empowerment flags.
+Persistent attacks must visibly and mechanically return to ordinary coverage
+at aura expiry. Sample the shared state for active contact/pulses; do not bank
+the bonus for a persistent object's lifetime. Discrete launched attacks retain
+their launch footprint, while later attacks use the state at their activation.
+Enlarged orbits/summons must not create an inner blind spot. A fading local
+yellow aura communicates remaining time without a combo or upkeep meter;
+cosmetic fade must not prolong mechanical coverage.
+
+The old **Landing Blast** support is redundant with the baseline sweep. Retire
+or rework it as a distinct optional enhancement; it cannot gate the sweep,
+duplicate its base damage, add a weapon slot or trigger recursively. Document
+the chosen migration and keep saved/replay content interpretation explicit.
 
 ## Weapons and Scaling
 
 ### Beat timing and extra strikes
 
-All damage activations use the committed grid: beats, half beats and
-appropriate subdivisions. Base attack cadence is authored per weapon; as a
-starting point, Sword uses the beat interval nearest one second, held stable
+Automatic damage activations use the committed grid: beats, half beats and
+appropriate subdivisions. The responsive dash-exit sweep is the exception: it
+lands at dash end without a beat wait. Base attack cadence is authored per weapon; as a
+starting point, Sword uses subdivisions nearest **0.5 seconds** (previously
+one second), with at least twice the old baseline activation rate across the
+roster and no compensating halving of hit damage. Cadence is held stable
 until a downbeat at a meaningful tempo change. No music uses the same weapon's
 seconds-based fallback. Flying objects move continuously; their launches and
 scheduled damage pulses are rhythmic, not their collision timestamps.
@@ -315,7 +349,7 @@ humanoid clip for every action. Family evidence records inspected Unity motion:
 
 | Weapon / positioning | Level 1 | Level 3 | Level 5 | Level 8 |
 | --- | --- | --- | --- | --- |
-| Sword / opens a lane toward a nearby crowd | Sweeping slash | Cross-cut combo | Spinning cleave | Three advancing spectral blade sweeps |
+| Sword / opens a lane along movement or last facing | Sweeping slash | Cross-cut combo | Spinning cleave | Three advancing spectral blade sweeps |
 | Hammer / close crowd clearing | Heavy side swing | Ground slam | Vaulting spectral hammer and rising fissure blades | A procession of hammer falls on successive activations |
 | Spear / long narrow lanes | Spectral thrust | Three parallel thrust lanes | Five spear heads sweep into line and thrust | Three advancing staggered ranks of five spears |
 | Bow / distant threats | Arrow shot | Fan-shaped volley | Arcing volley that descends into the target area | Eight rotating spectral bows releasing arcing arrows |
@@ -341,9 +375,9 @@ valuable to later acquisitions too.
 
 | Proposed support | Applies to / purpose |
 | --- | --- |
-| Might | Weapon damage and Landing Blast damage. |
+| Might | Weapon damage, including the Sword landing sweep. |
 | Tempo | Extra strikes/pulses/volleys for automatic weapons. |
-| Reach | Attack coverage area, including Landing Blast. |
+| Reach | Attack coverage area, including the Sword landing sweep. |
 | Multishot | Additional projectiles in compatible volleys. |
 | Persistence | Duration of fields and temporary summons; not arbitrary melee damage. |
 | Pierce | Projectiles continue through additional targets. |
@@ -354,11 +388,11 @@ valuable to later acquisitions too.
 | Vitality | Maximum health. |
 | Armor | Incoming damage reduction with diminishing returns. |
 | Regeneration | Gradual health recovery during active combat. |
-| Landing Blast | An explosion at the movement dash's destination. |
+| Landing Blast (legacy) | Retire or rework without duplicating the baseline Sword sweep. |
 
 Compatibility is explicit per weapon and inherited by every later form.
 Supports also work across compatible secondary attacks, with the same
-nonrecursive rules. Landing Blast scales with damage and area, but cannot
+nonrecursive rules. Any reworked Landing Blast scales with damage and area, but cannot
 be echoed into extra dashes or gain attack-speed-triggered explosions.
 
 ## Experience, Choices and Recovery
@@ -421,10 +455,11 @@ in horde time. Loud sections and formed waves can surge toward 1,000, but must
 not remove all readable escape routes. Use horde time, not boss duration, for
 ramping. Formed waves arrive on section changes; silence uses the base ramp.
 
-Fodder health should make weapon investment visible without requiring one-hit
-kills from every viable build. Rapid small-hit and persistent-area builds are
+Starting Sword must one-hit the weakest fodder; tougher types need multiple
+blows. Difficulty comes from numbers, approaches and tougher types. Weapon
+investment expands clearing power. Rapid small-hit and persistent-area builds are
 valid. Elites survive longer and test a build's concentrated damage. Bosses
-must remain readable among surviving enemies; their summons are deliberate
+must remain readable among controlled reinforcements; their summons are deliberate
 patterns, not the ordinary spawn ramp running in disguise.
 
 ## Bosses
@@ -432,8 +467,14 @@ patterns, not the ordinary spawn ramp running in disguise.
 ### Encounter rules
 
 At each threshold, stop ordinary spawning and pause horde time. Warn, then
-introduce the boss without killing or moving existing monsters, drops or
-structures. Boss attacks may subsequently break structures they actually hit.
+introduce the boss and visibly shatter ordinary monsters in the fight area.
+Preserve existing XP/healing drops and structures. The arrival removal must
+not award a normal mass-kill XP jackpot or recursively trigger kill farming.
+Prevent outside hordes immediately entering, including if the hero walks a
+few steps; use a bounded fight arena/re-entry rule and record its exact tuning.
+Reinforcements are small, deliberately timed and finite in reward budget,
+with clear lanes around telegraphs. Boss attacks may subsequently break
+structures they actually hit.
 The boss follows across the endless arena; running away cannot advance the
 schedule or skip the fight. All ordinary weapons keep attacking.
 
@@ -450,7 +491,7 @@ rhythm grade: the separate on-beat judgement grants weapon empowerment.
 
 Required waves need enough warning and spacing for the baseline dash cooldown,
 including at high tempos. A previous mandatory dodge must never leave the next
-one impossible. Account for structures, residual horde and summons when placing
+one impossible. Account for structures and controlled reinforcements when placing
 safe lanes. Projectiles may launch on beats and travel continuously; communicate
 when they reach the hero, not just when they launch. Avoid filling the entire
 screen with white weapon effects over the next required dodge.
@@ -668,10 +709,12 @@ The trailer's families, with the empty arc given to roles:
 - **Accent** (goblin, mushroom): magenta to violet.
 - **Counter** (big ork, troll, Fat Ogre): amber to orange.
 - **Boss** (dragon): red, inside the counter family's reach.
-- **Warning**: electric yellow, for elite telegraphs, spores and any hazard
-  short of a boss. Boss telegraphs stay red.
+- **Warning**: orange/red for elite telegraphs, spores, shots and boss hazards.
+  Yellow is reserved for the player rhythm bonus and empowered effects.
 - **Zones**: two cool, a violet, a dim warm.
-- **Hero**: white; its trail pure white (no longer in the key family).
+- **Hero**: white with white ordinary attacks; yellow aura and empowered effects.
+- **XP**: green filled shapes with a distinct animated shader; healing remains
+  separately readable by shape and motion.
 - **Wall**: grey, reserved.
 - Roles beyond monsters: warning, enemy shot, hero hurt, pickups and
   structure fill per zone.
@@ -697,8 +740,9 @@ from enemy projectiles by silhouette and motion; tune their treatment by eye.
   the blow and up, tumbling, then sinking. Weapons break and fly with the
   body. No cracks first, no delay, no twinkling.
 - **Structures** break the same way in their fill colour.
-- **Boss entrances** announce the threat without clearing monsters, pickups
-  or structures. A ring and arrival animation supply the spectacle.
+- **Boss entrances** shatter ordinary enemies in the visible fight area,
+  preserving existing pickups and structures. A ring and arrival animation
+  coordinate the spectacle with the clear.
 - **The hero's death**: white shards from the hero.
 
 ### Weapon effects
@@ -706,10 +750,10 @@ from enemy projectiles by silhouette and motion; tune their treatment by eye.
 - Hovl's slash shapes (the crescent mesh's taper, its noise streaks, sparks,
   fast-in slow-out timing), imported locally and drawn through our own
   shader: a white core, a faint white-blue edge.
-- Empowered activations: visibly larger, with a local brightness accent.
+- Empowered attacks: visibly larger, with a local yellow accent and timed aura.
   Ordinary beat-locked attacks retain their normal size.
-- Every effect of the hero's is white; every enemy effect takes its owner's
-  colour or the warning yellow.
+- Ordinary hero attacks are white; empowered effects and rhythm aura are
+  yellow. Enemy hazards use orange/red, preserving varied enemy body colors.
 
 ### Camera
 
@@ -747,9 +791,15 @@ Sound follows heard-time events without adding input delay. Music is not
 ducked for ordinary combat or choices.
 
 The hero's small white beat strip retains upcoming beat ticks and a dash
-readiness pip, with a thin health bar below. Remove the held-level dot.
-The HUD has a hairline XP bar and, during bosses, a health bar with no Break
-bar. No permanent inventory strip, floating damage numbers or banners.
+readiness pip. Replace the thin player health bar with a bottom-left health
+orb: moving red liquid/energy, a clear fill boundary readable at low health
+and amid bloom, optionally compact numeric health. XP is green and filled,
+with a distinct animated shader and readable shape, separate from healing
+and airborne orange/red enemy shots. The HUD keeps a hairline XP bar and
+legible boss health with no Break bar. Top-center shows horde progress time;
+during a fight it switches to **BOSS** plus that boss's elapsed fight time.
+Cards and pauses freeze these clocks; music continuing must not advance them.
+No permanent inventory strip, floating damage numbers or banners.
 
 Cards remain icon, name and one short description. Prefer wording such as
 "Larger attacks" or "Hammer becomes a ground slam" with a compact stat delta

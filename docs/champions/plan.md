@@ -6,7 +6,9 @@ This plan retains the technical foundations for [Rhythm Champions](design.md)
 and records the implementation consequences of the **2026-11-02 combat
 redesign**. As of 2026-11-03, ps-3wc.1–.13 deliver the survivor contracts,
 eight weapon identities/four forms, broad supports, movement dash, pickups,
-immediate cards and three retained-horde bosses. See the
+immediate cards and three bosses. The approved November 3 restoration in
+[game-feel-plan.md](game-feel-plan.md) supersedes banked empowerment,
+movement-only dash and retained-horde boss behavior; ps-ueo implements it. See the
 [assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
 for actual full-run results and replay coverage. Full-build load/readability
 (ps-3wc.14), the final Warden (ps-3wc.15) and operator checks remain separate.
@@ -149,7 +151,7 @@ rhythm_champions/
       Hero/       movement dash, empowerment, health
       Attacks/    weapons and fixed forms; Mods/ broad supports and compatibility
       Horde/      types, spawner, steps, separation, elites, spores
-      Bosses/     arrivals, retained horde, rhythmic patterns, three encounters
+      Bosses/     arrival clears, controlled reinforcements, rhythmic patterns
       World/      chunks, structures, zones
       Progression/ dropped XP, pickups, immediate offers, boss rewards
       Run/        level timeline, start, end
@@ -312,9 +314,9 @@ boss rewards), run (horde-time schedule, combat time, end).
 | HeroEdge | The trailer's knight: its feature lines, rim and chest core in white, the crystal blade's every edge and spine light, on a figure posed on the CPU (ps-6y2.29) |
 | StructureEdge, StructureEdgeShard | Structures in the edge look's lines over their zone's dim fill, and their crack-outlined shards on PhysX (ps-6y2.30) |
 | GridFloor | The grid, beat wave, ripple, impulse rings, zones |
-| Slash | Hovl's shapes in white |
+| Slash | Hovl's shapes, ordinary white / empowered yellow |
 | Particle | Compute sparks |
-| Telegraph | Ground telegraphs, red and yellow |
+| Telegraph | Ground telegraphs, orange/red; yellow reserved for player rhythm |
 
 - **Variant budget**: at most 300 compiled variants in a player build. The
   stripper removes URP variants for disabled features; `champions check
@@ -533,7 +535,8 @@ unverified. No timing-threshold test or automatic sweep enters CI.
 
 ## Combat Redesign: Migration Scope
 
-These responsibilities are mapped to **ps-3wc** below. Preserve working audio, deterministic timing, rendering and vendor
+These responsibilities originated in **ps-3wc** below and are updated by
+**ps-ueo** where November 3 decisions supersede that baseline. Preserve working audio, deterministic timing, rendering and vendor
 pipelines. Reconcile current code before deciding file boundaries or effort.
 
 1. **Content and scaling contracts.** Six weapon slots, six shared support
@@ -546,23 +549,30 @@ pipelines. Reconcile current code before deciding file boundaries or effort.
    body animation through spectral strikes. Add varied martial/magical
    weapons and persistent-weapon pulse semantics. Verify cadence across
    tempos and silence without rounding away small upgrades.
-3. **Movement and empowerment.** One movement dash; per-weapon nonstacking
-   next-activation coverage flags on any timed dash. No damage requirement on
-   baseline movement. One support creates an endpoint explosion without
-   changing the dash. Preserve immediate heard-time response.
+3. **Dash, held sword and aura.** Permanent held Sword in one of six slots;
+   movement-directed ordinary aim, weakest-fodder one-hit baseline, at least
+   twice the prior base cadence (Sword about 0.5 s), preserving hit damage and
+   natural body speed. Every immediate dash ends with a full-circle sword
+   sweep at the legal endpoint, without waiting for the grid or a support.
+   One timed dash grants a refreshed three-second shared 2× area aura; no
+   per-weapon banking, no hit-damage bonus, off-beat does not cancel it.
+   Freeze duration during holds; define persistent contact and replay expiry.
+   Retire/rework Landing Blast without duplicate base sweep damage.
 4. **Growth and recovery.** Persistent dropped XP, attraction and collection;
    healing drops; capped supports; 25–35 immediate normal choices, no quiet
    waits or rerolls. Deterministic eligible offers, full-slot and exhausted
    pool handling. No automatic level-up healing. Pickups survive streaming
    and boss arrivals; merge visuals without losing stored value.
 5. **Clock and bosses.** Separate horde time from combat time. Freeze horde
-   time at 5/10/15 minutes, halt ordinary spawns, retain enemies/structures/
-   drops, allow bounded summons. Replace cleared duels and Break with three
-   always-damageable encounters using timed positioning and occasional
-   mandatory dash-through waves. First two kills heal and offer one owned
+   time at 5/10/15 minutes, halt ordinary spawns, shatter ordinary enemies
+   in the visible fight area, preserve structures/existing drops and prevent
+   outside horde refill. Allow only small timed reinforcements with finite XP.
+   Keep three always-damageable encounters using timed positioning and occasional mandatory dash-through
+   waves, without Break. First two kills heal and offer one owned
    upgrade; last kill wins. Pause/resume must preserve telegraph safety.
-6. **Presentation and play tuning.** Brief cards and minimal HUD, no held-level
-   dot or Break bar; recognizable weapon forms, pickups and empowered
+6. **Presentation and play tuning.** Brief cards, bottom-left animated health orb, top-center horde/BOSS
+   elapsed clock, green filled animated XP, yellow player aura, orange/red
+   threats, no held-level dot or Break bar; recognizable weapon forms, pickups and empowered
    activations. Boss threats stay readable under full builds. Tune collection,
    choice frequency, enemy ramp and recovery together through hand-play.
 
@@ -570,7 +580,7 @@ pipelines. Reconcile current code before deciding file boundaries or effort.
 
 Tests and scripted reference builds asserting five dashes, offensive dash
 investment, three attacks/four mods, three-rank evolutions, instant kill XP,
-quiet-held levels, six level-ups, boss arrival shatters, two cleared duels,
+quiet-held levels, six level-ups, two cleared duels,
 Break, or a single clock continuing through bosses describe the archived
 design. Retain them as historical evidence where needed; do not use them to
 reject the revised behavior. Update implementation and regression tests together
@@ -578,9 +588,12 @@ in current survivor tests. Historical encounter tests explicitly load archived
 fixtures; recorded attack/duel/level fixtures use current survivor behavior.
 
 The existing epic map is [archived](../archive/champions-dash-combat-2026-11-02/plan.md#beads).
-No entry there is silently redefined by this document.
+No entry there is silently redefined by this document. November 2 tests for
+retained hordes, movement-only dash, one-use per-weapon empowerment and
+white-only player effects are also superseded by ps-ueo. Arrival shatter
+returns with three damageable bosses and controlled reinforcements, not Break.
 
-## Combat Epic: ps-3wc
+## Combat Epic: ps-3wc (shipped baseline)
 
 Use existing owned Unity assets first, reskinned and composed for the retro
 3D neon wireframe design. The form table specifies gameplay identities and
@@ -629,9 +642,9 @@ visual approval. ps-3wc.14 and .15 follow assembly.
 - Delayed listening plays an app's audio 3 s late (an operator-pending row
   confirms on the speakers).
 - Every current design decision holds. Rule checks include inherited support
-  compatibility across all forms, fractional attack-speed gains, one-use
-  empowerment per weapon, persistent/merged XP conservation, legal offers,
-  bounded proc chains, separate clocks, retained hordes at boss arrival and
+  compatibility across all forms, fractional attack-speed gains, shared three-second
+  aura expiry/refresh, 2× coverage area and baseline dash sweep, persistent/merged XP conservation, legal offers,
+  bounded proc chains, separate clocks, arrival clears with preserved drops/controlled re-entry and
   fair telegraph resume. Stills and hand-play verify the visual and experiential
   requirements; old reference-run hashes alone do not establish these.
 - check-fast within 60 s and ci-full within 300 s on three consecutive
@@ -650,9 +663,10 @@ visual approval. ps-3wc.14 and .15 follow assembly.
 - **Dash spam replacing positioning.** Any timed dash grants empowerment by
   design. Tune coverage bonus and encounter pressure so constant dashing is
   optional and baseline weapons remain sufficient for horde combat.
-- **Unreadable boss fights.** Remaining mobs, pickups, persistent fields and
+- **Unreadable boss fights.** Timed reinforcements, pickups, persistent fields and
   six weapons coexist with required rhythmic dodges. Test at full density;
-  a clean-arena boss screenshot is insufficient.
+  a still is insufficient: inspect the clear, re-entry prevention and required
+  dodges with reinforcements in motion.
 - **Too many slots for too few picks.** A 25–35-choice run cannot maximize
   six eight-level weapons and six supports. Deep and broad investment must
   both work; test the actual offer pool and XP curve together.
@@ -696,3 +710,12 @@ visual approval. ps-3wc.14 and .15 follow assembly.
   recipes over vendor meshes give the shapes and the animation.
 - **Deleting the frozen projects**: the operator chose to keep them frozen,
   outside CI.
+
+
+## Combat-feel Restoration: ps-ueo
+
+The [game-feel plan](game-feel-plan.md) records the approved November 3
+contract, actual frozen trailer paths, current implementation gaps, bead map
+and checks. It is the implementation guide for this run. ps-3wc's table above
+records historical deliveries; it does not authorize their superseded behavior.
+ps-6y2 look/performance work remains independent and must be preserved.
