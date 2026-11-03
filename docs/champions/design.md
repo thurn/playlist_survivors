@@ -464,8 +464,10 @@ Walking and sensible builds must suffice here without deliberate rhythm input.
 
 Starting speed range is 1.2–2.6 m/s against the hero's 6 m/s. Enemies step on
 their musical intervals with distance adjusted to preserve average speed;
-without reliable beats they glide. Keep dark gaps between models and steer
-around structures. Contact damage is resolved by actual overlap, with hero
+without reliable beats they glide. Ordinary fodder enters in small single-type
+packs along local spawn arcs, preserving the authored mix and body budget;
+bats, elites and formed waves retain their distinct roles. Keep dark gaps
+between models and steer around structures. Contact damage is resolved by actual overlap, with hero
 hit invulnerability preventing multi-enemy burst stacking.
 
 Start below the previous design's immediate 150-enemy crush if needed to make
@@ -769,8 +771,10 @@ from enemy projectiles by silhouette and motion; tune their treatment by eye.
 
 - **Monsters** break on the impact frame into pieces of their mesh, each
   outlined along its crack as in the trailer, thrown forcefully away from
-  the blow and up, tumbling, then sinking. Weapons break and fly with the
-  body. No cracks first, no delay, no twinkling.
+  the blow and up, tumbling, then contracting away while airborne (at most
+  half a second). Weapons break and fly with the body. No settled debris or
+  sinking phase: a kill earns actual empty space. No cracks first, no delay,
+  no twinkling.
 - **Structures** break the same way in their fill colour.
 - **Boss entrances** shatter ordinary enemies in the visible fight area,
   preserving existing pickups and structures. A ring and arrival animation

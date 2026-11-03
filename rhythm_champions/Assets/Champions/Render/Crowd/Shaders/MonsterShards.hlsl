@@ -17,7 +17,7 @@ struct Shard
 {
     float3 position; float time;  // its pivot (world); the song time it is integrated to
     float4 rotation;              // its turn since the break (a quaternion)
-    float3 velocity; float sinkFrom; // m/s; its height when the sink began, or -1
+    float3 velocity; float vanishAt; // m/s; disappears before descending to the floor
     float3 spin; float radius;    // rad/s (world); its contact radius on the ground (m)
     float3 origin; float pad;     // its pivot on the break (world)
 };

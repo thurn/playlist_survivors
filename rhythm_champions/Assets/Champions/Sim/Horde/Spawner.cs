@@ -33,6 +33,9 @@ namespace Champions.Sim
         double lastWave = double.NegativeInfinity;
         bool waveDue;
         double waveAt;
+        const int CohortSize = 8;
+        int cohortKind = -1, cohortLeft;
+        double cohortAngle;
 
         internal Spawner(Simulation sim, Horde horde, EnemyRules cast, LevelRules rules)
         {
@@ -66,6 +69,7 @@ namespace Champions.Sim
             Stopped = true;
             waveDue = false;
             owed = 0;
+            cohortLeft = 0;
         }
 
         /// <summary>The bosses' hook: spawning again, with the second half's mix and density when <paramref name="secondHalf"/>.</summary>
@@ -176,10 +180,22 @@ namespace Champions.Sim
         /// <summary>Spawns one pick of the mix (a whole group) at a ring point; returns how many.</summary>
         int Pick(double t, double clock)
         {
-            int kind = Draw(SecondHalf ? rules.SecondHalfMix : rules.Mix, clock, false);
+            // Survivor fodder arrives as small single-type packs, rather than
+            // independent colored confetti around the whole screen. Spend the same
+            // per-body spawn budget; elites and formed waves keep their own roles.
+            bool cohorts = !sim.Dashes.Rules.LegacyForms;
+            int kind = cohorts && cohortLeft > 0 ? cohortKind : Draw(SecondHalf ? rules.SecondHalfMix : rules.Mix, clock, false);
             if (kind < 0) return 1;
             var type = cast.Cast[kind];
-            RingPoint(t, type.RadiusM, out double x, out double y);
+            if (cohorts && cohortLeft == 0 && type.Role == EnemyRole.Fodder)
+            {
+                cohortKind = kind;
+                cohortLeft = CohortSize;
+                cohortAngle = sim.Random.NextDouble() * 2 * Math.PI;
+            }
+            double angle = cohortLeft > 0 ? cohortAngle + (sim.Random.NextDouble() - 0.5) * 0.4 : double.NaN;
+            RingPoint(t, type.RadiusM, out double x, out double y, angle);
+            if (cohortLeft > 0) cohortLeft--;
             int n = Math.Min(type.Group, rules.Cap - horde.Alive);
             double health = HealthAt(kind, clock);
             for (int k = 0; k < n; k++)
@@ -196,7 +212,7 @@ namespace Champions.Sim
         {
             double total = 0;
             foreach (var m in mix)
-                if (Joined(m, clock, fodderOnly)) total += m.Weight;
+                if (Joined(m, clock, fodderOnly)) total += PickWeight(m, fodderOnly);
             if (!(total > 0)) return -1;
             double pick = sim.Random.NextDouble() * total;
             int last = -1;
@@ -204,23 +220,29 @@ namespace Champions.Sim
             {
                 if (!Joined(m, clock, fodderOnly)) continue;
                 last = m.Type;
-                pick -= m.Weight;
+                pick -= PickWeight(m, fodderOnly);
                 if (pick < 0) return m.Type;
             }
             return last;
         }
 
+        // A fodder draw now supplies several picks. Correct its draw weight so
+        // batching does not dilute bats, ranged enemies or elite contact threats.
+        double PickWeight(in MixEntry m, bool fodderOnly) =>
+            !fodderOnly && !sim.Dashes.Rules.LegacyForms && cast.Cast[m.Type].Role == EnemyRole.Fodder
+                ? m.Weight / CohortSize : m.Weight;
+
         bool Joined(in MixEntry m, double clock, bool fodderOnly) =>
             m.Weight > 0 && (SecondHalf || m.FromS <= clock + 1e-9) && (!fodderOnly || cast.Cast[m.Type].Role == EnemyRole.Fodder);
 
         /// <summary>A point on the spawn ellipse round the hero, clear of structures when it can find one.</summary>
-        void RingPoint(double t, double radius, out double x, out double y)
+        void RingPoint(double t, double radius, out double x, out double y, double angle = double.NaN)
         {
             sim.HeroWas(t, out double hx, out double hy);
             x = y = 0;
             for (int attempt = 0; attempt < 4; attempt++)
             {
-                double a = sim.Random.NextDouble() * 2 * Math.PI, j = sim.Random.NextDouble() * rules.RingJitterM;
+                double a = double.IsNaN(angle) ? sim.Random.NextDouble() * 2 * Math.PI : angle + attempt * 0.15, j = sim.Random.NextDouble() * rules.RingJitterM;
                 x = hx + SimMath.Cos(a) * (rules.RingXM + j);
                 y = hy + SimMath.Sin(a) * (rules.RingYM + j);
                 if (Clear(x, y, radius, t)) return;

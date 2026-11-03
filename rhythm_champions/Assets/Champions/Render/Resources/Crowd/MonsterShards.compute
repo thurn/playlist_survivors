@@ -6,7 +6,7 @@
 // - SeedShards: each death's chunks start at their pivots on that pose, kicked outward from where
 //   the blow landed, along the blow and up, spinning;
 // - Integrate: every live shard to the frame's song time in steps of at most 1/120 s: gravity,
-//   tumble, ground bounce and friction, then a sink after LINGER seconds.
+//   tumble; each chunk contracts out before its first ground contact.
 // A shard's state is its pivot's place and its turn since the break; the draw shader skins its
 // corners from the frozen palette and moves them rigidly with it (each look's shard shader).
 #pragma kernel SeedPalette
@@ -15,13 +15,8 @@
 
 #define STEP (1.0 / 120.0)
 #define MAX_STEPS 24             // a long hitch drops time rather than stalling
-#define GRAVITY (9.81 * 2.2)     // so shards clack down rather than float
-#define LINGER 1.2               // MonsterShatter.LingerSeconds
-#define SINK 0.6                 // MonsterShatter.SinkSeconds
-#define RESTITUTION 0.35
-#define SETTLE 0.6               // a bounce slower than this (m/s) stops
-#define BOUNCE_KEEP 0.6          // ground speed and spin kept through a bounce
-#define SLIDE 4.0                // ground friction, 1/s
+#define GRAVITY (9.81 * 2.2)     // a short, weighty airborne arc
+#define LIFE 0.5                 // MonsterShatter.LifeSeconds
 #define NORMAL_FORCE 1.85        // the sword's normal launch distance (m): a heavy blow kicks harder
 
 // The kick in m/s for a 1.8 m monster at the normal blow (the trailer's tuning).
@@ -131,9 +126,14 @@ void SeedShards(uint3 id : SV_DispatchThreadID)
     o.time = d.time;
     o.rotation = float4(0, 0, 0, 1);
     o.velocity = v;
-    o.sinkFrom = -1;
+    // End on the descending arc above the floor. Even low/slumping chunks
+    // get an upward kick; there is no resting or sinking phase.
+    o.velocity.y = max(o.velocity.y, 3.0 * size);
+    o.radius = 0.5 * rest.size * d.scale;
+    float floor = o.radius + 0.12;
+    float flight = (o.velocity.y + sqrt(max(0, o.velocity.y * o.velocity.y + 2 * GRAVITY * (pivot.y - floor)))) / GRAVITY;
+    o.vanishAt = d.time + min(LIFE, max(0.04, flight));
     o.spin = spin;
-    o.radius = 0.5 * rest.size * d.scale; // chunks taper to their apex
     o.origin = pivot;
     o.pad = 0;
     _Shards[d.slot * _ShardCount + s] = o;
@@ -156,7 +156,6 @@ void Integrate(uint3 id : SV_DispatchThreadID)
     uint at = slot * _ShardCount + s;
     Shard o = _Shards[at];
     if (o.time >= _Now) return; // seeded ahead of this frame, or already there
-    float born = _Deaths[slot].time;
     float span = _Now - o.time;
     uint n = (uint)ceil(span / STEP - 1e-4);
     if (n > MAX_STEPS)
@@ -168,32 +167,10 @@ void Integrate(uint3 id : SV_DispatchThreadID)
     for (uint i = 0; i < n; i++)
     {
         o.time += dt;
-        float age = o.time - born;
-        if (age >= LINGER)
-        {
-            // The sink: down by twice its size and its height, easing in, so even the largest ends under the floor.
-            if (o.sinkFrom < 0) o.sinkFrom = max(o.position.y, 0);
-            float f = saturate((age - LINGER) / SINK);
-            o.position.y = o.sinkFrom - f * f * (4 * o.radius + o.sinkFrom);
-            continue;
-        }
+        if (o.time >= o.vanishAt) break;
         o.velocity.y -= GRAVITY * dt;
         o.position += o.velocity * dt;
         o.rotation = Turn(o.rotation, o.spin, dt);
-        if (o.position.y < o.radius)
-        {
-            o.position.y = o.radius;
-            if (o.velocity.y < 0)
-            {
-                float up = -o.velocity.y * RESTITUTION;
-                o.velocity.y = up < SETTLE ? 0 : up;
-                o.velocity.xz *= BOUNCE_KEEP;
-                o.spin *= BOUNCE_KEEP;
-            }
-            float slide = exp(-SLIDE * dt);
-            o.velocity.xz *= slide;
-            o.spin *= slide;
-        }
     }
     _Shards[at] = o;
 }

@@ -14,8 +14,7 @@ namespace Champions.Render.Crowd
     /// - seeds each of the frame's deaths: its palette frozen into a ring slot and its chunks placed at their pivots on
     ///   that pose, kicked by the blow (MonsterShards.compute), so they start exactly where the body was, on the same
     ///   frame it disappears;
-    /// - integrates every live shard to the frame's song time: gravity, tumble, ground bounce, then a sink after
-    ///   <see cref="LingerSeconds"/> over <see cref="SinkSeconds"/>;
+    /// - integrates every live shard to the frame's song time: gravity and tumble, contracting each chunk away before its first ground contact;
     /// - draws each type's live deaths as instances of its chunk mesh in the edge look (<see cref="EdgeLook.Shards"/>),
     ///   skinned from the frozen palettes and moved with their chunks, each outlined along its crack.
     /// Per type a frame costs one upload and two dispatches for its deaths, one integration dispatch and one indirect
@@ -26,8 +25,7 @@ namespace Champions.Render.Crowd
     /// </summary>
     public sealed class MonsterShatter : IDisposable
     {
-        public const float LingerSeconds = 1.2f, SinkSeconds = 0.6f; // MonsterShards.compute's LINGER and SINK
-        public const double LifeSeconds = LingerSeconds + SinkSeconds;
+        public const double LifeSeconds = 0.5; // MonsterShards.compute's LIFE; chunks can disappear earlier.
         /// <summary>Deaths a type can show at once.</summary>
         public const int RingCapacity = 320;
         /// <summary>Where a blow lands on a standing monster, as shares of its height: up from its feet, and back toward the hero.</summary>
@@ -76,6 +74,7 @@ namespace Champions.Render.Crowd
         static readonly int IdLargest = Shader.PropertyToID("_Largest");
 
         readonly ComputeShader _cs;
+        readonly double _life;
         readonly Func<int, GraphicsBuffer> _palette;
         readonly int _kSeedPalette, _kSeedShards, _kIntegrate;
         readonly TypeState[] _types;
@@ -112,6 +111,7 @@ namespace Champions.Render.Crowd
         public MonsterShatter(MonsterLibrary lib, Func<int, GraphicsBuffer> palette, Palette colours)
         {
             _palette = palette;
+            _life = lib.Look == MonsterLook.Trailer ? 1.8 : LifeSeconds;
             _cs = lib.Shards;
             _kSeedPalette = _cs.FindKernel("SeedPalette");
             _kSeedShards = _cs.FindKernel("SeedShards");
@@ -169,6 +169,7 @@ namespace Champions.Render.Crowd
         {
             var s = _types[type];
             if (s.PendingCount == RingCapacity) return false; // a type's whole ring dying in one frame: the rest stay bodiless
+            MakeRoom(s.ShardCount, time);
             if (s.Count == RingCapacity)
             {
                 s.Start = (s.Start + 1) % RingCapacity; // give up the oldest
@@ -191,6 +192,33 @@ namespace Champions.Render.Crowd
             return true;
         }
 
+        // Keep the advertised tier budget across all types, including a mass clear.
+        // Retire oldest bursts first; a reduced tier never leaves floor debris behind.
+        void MakeRoom(int incoming, double now)
+        {
+            int pieces = 0;
+            foreach (var s in _types)
+            {
+                while (s.Count > 0 && s.Times[s.Start] + _life <= now)
+                {
+                    s.Start = (s.Start + 1) % RingCapacity;
+                    s.Count--;
+                }
+                pieces += s.Count * s.ShardCount;
+            }
+            int budget = QualityTiers.Settings.ShardPieces;
+            while (pieces + incoming > budget)
+            {
+                TypeState oldest = null;
+                foreach (var s in _types)
+                    if (s.Count > 0 && (oldest == null || s.Times[s.Start] < oldest.Times[oldest.Start])) oldest = s;
+                if (oldest == null) break;
+                oldest.Start = (oldest.Start + 1) % RingCapacity;
+                oldest.Count--;
+                pieces -= oldest.ShardCount;
+            }
+        }
+
         /// <summary>
         /// Seeds this frame's deaths from the crowd's palettes (call after the crowd's Draw, which blended them), moves
         /// every live shard to song time <paramref name="now"/> and queues the draws for the camera.
@@ -200,15 +228,11 @@ namespace Champions.Render.Crowd
             if (now < _last) Clear();
             _last = now;
             _cmd.Clear();
+            MakeRoom(0, now);
             int deaths = 0, shards = 0;
             for (int type = 0; type < _types.Length; type++)
             {
                 var s = _types[type];
-                while (s.Count > 0 && s.Times[s.Start] + LifeSeconds <= now)
-                {
-                    s.Start = (s.Start + 1) % RingCapacity;
-                    s.Count--;
-                }
                 if (s.PendingCount > 0) Seed(type, s);
                 if (s.Count > 0) Integrate(s, now);
                 if (s.Count != s.DrawnCount)
@@ -305,7 +329,7 @@ namespace Champions.Render.Crowd
             public float Time;
             public Quaternion Rotation;
             public Vector3 Velocity;
-            public float SinkFrom;
+            public float VanishAt;
             public Vector3 Spin;
             public float Radius;
             public Vector3 Origin;

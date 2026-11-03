@@ -517,6 +517,49 @@ namespace Champions.Sim.Tests
             }
         }
 
+        [Test]
+        public void SurvivorPacksKeepTheirTypeAndSpaceWithoutSpendingExtraSpawnBudget()
+        {
+            var content = GameContent.Load(Checkout.In("Content"));
+            var config = new RunInputs { Seed = 31, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately }.Build(content);
+            config.Hero.Health = 1e9;
+            config.Level.Mix = new[] {
+                new MixEntry { Type = content.Enemies.IndexOf("skeleton"), Weight = 1 },
+                new MixEntry { Type = content.Enemies.IndexOf("goblin"), Weight = 1 },
+            };
+            var sim = new Simulation(config);
+            sim.StepTo(2);
+            var spawns = Drive.Events(sim, SimEventKind.EnemySpawn);
+            Assert.That(spawns.Count, Is.InRange(110, 120), "60 bodies/s, no instant free pack");
+            Assert.That(spawns.Select(e => e.I1).Distinct().Count(), Is.EqualTo(2), "retain varied groups");
+            int switches = 0;
+            for (int i = 1; i < spawns.Count; i++)
+            {
+                if (spawns[i].I1 != spawns[i - 1].I1) { switches++; continue; }
+                if (i % 8 == 0) continue; // two adjacent packs may happen to share a type
+                double dx = spawns[i].D0 - spawns[i - 1].D0, dy = spawns[i].D1 - spawns[i - 1].D1;
+                Assert.That(Math.Sqrt(dx * dx + dy * dy), Is.LessThan(11), "a pack occupies a local arc");
+            }
+            Assert.That(switches, Is.LessThan(20), "coherent packs, not one random type per body");
+            Assert.That(sim.Horde.Alive, Is.LessThanOrEqualTo(config.Level.Cap));
+        }
+
+        [Test]
+        public void GroupingFodderDoesNotDiluteEliteContactThreats()
+        {
+            var content = GameContent.Load(Checkout.In("Content"));
+            var config = new RunInputs { Seed = 31, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately }.Build(content);
+            config.Hero.Health = 1e9;
+            int fodder = content.Enemies.IndexOf("skeleton"), elite = content.Enemies.IndexOf("bigOrk");
+            config.Level.Ramp = new Curve((0, 1000));
+            config.Level.Mix = new[] { new MixEntry { Type = fodder, Weight = 8 }, new MixEntry { Type = elite, Weight = 1 } };
+            var sim = new Simulation(config);
+            sim.StepTo(18);
+            var spawns = Drive.Events(sim, SimEventKind.EnemySpawn);
+            double eliteShare = (double)spawns.Count(e => e.I1 == elite + 1) / spawns.Count;
+            Assert.That(eliteShare, Is.InRange(0.07, 0.16), "retain the authored 1 in 9 mix; batching must not divide elite pressure by eight");
+        }
+
         static List<StreamEntry> Ticks(double from, double to, LoudnessLevel level, double energy = 0.8)
         {
             var list = new List<StreamEntry>();

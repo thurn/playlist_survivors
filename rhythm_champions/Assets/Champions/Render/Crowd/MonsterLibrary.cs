@@ -60,7 +60,7 @@ namespace Champions.Render.Crowd
             Types = types;
             Cull = Load<ComputeShader>("Crowd/CrowdCull");
             Palette = Load<ComputeShader>("Crowd/CrowdPalette");
-            Shards = Load<ComputeShader>("Crowd/MonsterShards");
+            Shards = Load<ComputeShader>(look == MonsterLook.Trailer ? "Crowd/TrailerMonsterShards" : "Crowd/MonsterShards");
         }
 
         /// <summary>The look's baked types, or null when none is baked (a checkout without the vendor files).</summary>

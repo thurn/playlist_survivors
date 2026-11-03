@@ -155,7 +155,7 @@ namespace Champions.Tests
         [Test]
         public void AShatterFlingsWhatTheMonsterCarriesAwayWithItsBody()
         {
-            var lib = new MonsterLibrary(MonsterLook.Trailer, new[] { _type });
+            var lib = new MonsterLibrary(MonsterLook.Default, new[] { _type });
             using var crowd = new MonsterCrowd(lib, 4, _palette);
             using var shatter = new MonsterShatter(lib, crowd.Palette, _palette);
             var dying = new MonsterInstance { Position = new Vector3(5, 0, 5), Blend = 1, Scale = 1, Flags = (uint)CrowdFlags.Dying };
@@ -165,10 +165,8 @@ namespace Champions.Tests
             Assert.That(shatter.Break(0, 0, dying, 1, 1.0, 0, 1, 1.85));
             shatter.Frame(1.0, _camera);
             var start = shatter.ReadShards(0).Take(_type.Shards.Length).ToArray();
-            shatter.Frame(1.6, _camera);
+            shatter.Frame(1.15, _camera);
             var flown = shatter.ReadShards(0).Take(_type.Shards.Length).ToArray();
-            shatter.Frame(1.0 + MonsterShatter.LingerSeconds - 0.05, _camera);
-            var landed = shatter.ReadShards(0).Take(_type.Shards.Length).ToArray();
 
             var blade = Enumerable.Range(0, _type.Shards.Length).Where(i => _type.Shards[i].Carried > 0).ToList();
             Assert.That(blade, Is.Not.Empty, "the blade's chunks are marked carried");
@@ -176,9 +174,65 @@ namespace Champions.Tests
             {
                 var moved = flown[i].Position - start[i].Position;
                 // Unflung, a chunk at the feet slumps where it stands (the trailer's swords and spears moved centimetres).
-                Assert.That(new Vector2(moved.x, moved.z).magnitude, Is.GreaterThan(0.25f), $"blade chunk {i} flies off with the body");
-                Assert.That(landed[i].Position.y, Is.LessThan(_type.Shards[i].Size), $"blade chunk {i} is down before it sinks");
+                Assert.That(new Vector2(moved.x, moved.z).magnitude, Is.GreaterThan(0.15f), $"blade chunk {i} flies off with the body");
+                Assert.That(flown[i].VanishAt, Is.InRange(1.04f, 1.5f), "short airborne lifetime");
             }
+        }
+
+        [Test]
+        public void ShardsDisappearAboveTheFloorWithoutBouncingOrSettling()
+        {
+            var lib = new MonsterLibrary(MonsterLook.Default, new[] { _type });
+            using var crowd = new MonsterCrowd(lib, 4, _palette);
+            using var shatter = new MonsterShatter(lib, crowd.Palette, _palette);
+            var body = new MonsterInstance { Blend = 1, Scale = 1, Flags = (uint)CrowdFlags.Dying };
+            var slots = crowd.Instances(0, 1);
+            slots[0] = body;
+            crowd.Draw(_camera, 1);
+            shatter.Break(0, 0, body, 31, 1, 1, 0, 1.85);
+            shatter.Frame(1, _camera);
+            var start = shatter.ReadShards(0).Take(_type.Shards.Length).ToArray();
+            for (double t = 1.01; t < 1.5; t += 0.01)
+            {
+                shatter.Frame(t, _camera);
+                var chunks = shatter.ReadShards(0);
+                for (int i = 0; i < start.Length; i++)
+                {
+                    Assert.That(chunks[i].VanishAt, Is.InRange(1.04f, 1.5f));
+                    // On descent a still-visible chunk must be airborne, including
+                    // its contact radius. No clamp/bounce can hide a failure.
+                    if (t < chunks[i].VanishAt && chunks[i].Velocity.y < 0)
+                        Assert.That(chunks[i].Position.y, Is.GreaterThan(chunks[i].Radius));
+                }
+            }
+            shatter.Frame(1.51, _camera);
+            Assert.That(shatter.LiveDeaths, Is.Zero);
+            Assert.That(shatter.LiveShards, Is.Zero);
+        }
+
+        [TestCase(Tier.Low)]
+        [TestCase(Tier.Medium)]
+        [TestCase(Tier.High)]
+        public void MassKillsStayWithinTheTierShardBudgetAndClearCompletely(Tier tier)
+        {
+            var previous = QualityTiers.Current;
+            try
+            {
+                QualityTiers.Apply(tier);
+                var lib = new MonsterLibrary(MonsterLook.Default, new[] { _type });
+                using var crowd = new MonsterCrowd(lib, 320, _palette);
+                using var shatter = new MonsterShatter(lib, crowd.Palette, _palette);
+                var slots = crowd.Instances(0, 320);
+                var body = new MonsterInstance { Blend = 1, Scale = 1, Flags = (uint)CrowdFlags.Dying };
+                for (int i = 0; i < 320; i++) slots[i] = body;
+                crowd.Draw(_camera, 1);
+                for (int i = 0; i < 320; i++) shatter.Break(0, i, body, i, 1, 1, 0, 1.85);
+                shatter.Frame(1, _camera);
+                Assert.That(shatter.LiveShards, Is.InRange(1, QualityTiers.Of(tier).ShardPieces));
+                shatter.Frame(1.51, _camera);
+                Assert.That(shatter.LiveShards, Is.Zero);
+            }
+            finally { QualityTiers.Apply(previous); }
         }
 
         [Test]

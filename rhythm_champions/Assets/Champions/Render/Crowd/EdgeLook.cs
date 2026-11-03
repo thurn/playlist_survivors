@@ -113,7 +113,7 @@ namespace Champions.Render.Crowd
         public static Material Shards(MonsterType type, MonsterLook look, Palette palette)
         {
             var g = EdgeGains.Of(look);
-            var m = Make(ShardShader, type, palette, "_edge_shards");
+            var m = Make(look == MonsterLook.Trailer ? ShardShader : "Crowd/MonsterBurstShard", type, palette, "_edge_shards");
             m.SetFloat("_Rim", g.ShardRim);
             m.SetFloat("_RimPower", g.ShardRimPower);
             m.SetFloat("_Edge", g.ShardEdge);
