@@ -97,6 +97,57 @@ just champions-play --headless --fixed-time --file playlist.m3u --walk reference
 just champions-play --headless --replay rhythm_champions/sessions/fixture-level
 ```
 
+### Player logs
+
+`just champions-tool logs` prints the persistent root and this checkout's latest
+play/test/capture/replay engine logs. Each managed launch prints its full path:
+`$CHAMPIONS_CACHE/player-logs/<checkout-id>/<kind>/<UTC-time>-<UUID>/engine.log`
+(default macOS root: `~/Library/Caches/playlist-survivors/champions/player-logs`;
+`$PS_CACHE/champions` also works). Checkout IDs hash the resolved absolute checkout
+path, preserving case; symlink aliases resolve to the same checkout. No song paths
+or launch arguments are stored in the launch metadata. Logs themselves can contain
+private paths, so keep them local. Logs survive deleting the checkout or built app.
+
+`just champions`, `just champions-play`, `champions play --headless`, `champions
+stills`, and CI's player/replay/capture runs pass `-logFile` before Unity starts.
+Replays take precedence over captures; capture/still/benchmark flags select
+`capture`, batch/CI launches select `test`, other launches select `play`.
+`Logs/player.log` and `Logs/stills.log` are atomic latest-log links for existing
+sequential CI readers. Concurrent callers should use their printed unique paths.
+A kind's persistent `latest` link points to its latest allocated run.
+
+`champions build` installs a macOS app launcher, including when the Unity build
+is already current. `champions play` installs it into older local builds too.
+Finder, `open -n RhythmChampions.app`, and `Contents/MacOS/champions-launch` then
+isolate logs before starting the native engine. The launcher ships inside the
+app, retains the original checkout identity when the app is copied, and needs
+`/usr/bin/python3` (provided by the required Xcode Command Line Tools, Python
+3.9 or newer). The launcher itself does not need the tools environment; the game still needs
+its usual `rhythm_champions/Content` directory above the app or working directory.
+The app is ad hoc signed again after packaging. Raw Unity editor builds or
+`champions unity BuildPlayer` bypass this packaging; run `champions build` or
+`champions play` before directly launching those apps. Running the native
+`Contents/MacOS/Rhythm Champions` binary yourself bypasses the launcher and
+uses Unity's shared default unless you supply `-logFile`. Old, unwrapped apps
+also retain Unity's default. Editor batch logs still stream to stdout and
+`Logs/<task>.log`; warm editor and EditMode report paths are unchanged.
+
+An explicit `-logFile PATH`, `-logFile -` (stdout), or `-logFile ""` (Unity
+logging disabled) is passed through without adding or retaining a managed log.
+The CLI resolves relative file destinations against the calling directory;
+raw/direct callers choose their own working directory. Explicit destinations
+are caller-owned and may overwrite if reused. Native stdout remains available.
+
+After the engine exits, `complete.json` records its exit status. Cleanup at
+allocation/completion retains at most 100 completed runs per checkout/kind,
+1000 completed runs globally, and removes completed runs older than 30 days,
+including those from removed worktrees. These limits apply on the next managed
+launch. Active runs and interrupted launchers without a completion marker are
+never automatically deleted; inspect and remove abandoned runs manually when
+needed. No age or PID guess can delete a still-running player. This conservatively
+exempts active/crashed runs from the retention limit. Gameplay summaries may
+use the directory of `Application.consoleLogPath` when file logging is enabled.
+
 The sim's tests play level 1 too (`dotnet/Champions.Sim.Tests/LevelRunTests.cs`): an idle hero
 dies within 90 s, and the explicit tuning tests run the reference player through the whole level
 ([evidence](evidence/ps-6y2.21/README.md)).

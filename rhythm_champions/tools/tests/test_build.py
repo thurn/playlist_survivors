@@ -59,6 +59,7 @@ def fake_unity(ran: list[list[str]], fail: bool = False, variants: int = 200, ba
 def run(monkeypatch: pytest.MonkeyPatch, *argv: str, **fake) -> tuple[int, list[list[str]]]:
     ran: list[list[str]] = []
     monkeypatch.setattr(unity, "run_method", fake_unity(ran, **fake))
+    monkeypatch.setattr(cli.player_logs, "install", lambda app, root: None)
     a = cli.build_parser().parse_args(list(argv))
     return a.func(a), ran
 

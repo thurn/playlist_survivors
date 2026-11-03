@@ -12,6 +12,7 @@ Commands:
                       in batch mode and waits for it to exit
                       (player flags: --file PATH or --app NAME, the music, played 3 s late;
                       --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
+  logs                persistent player log root and latest runs for this checkout
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on a
                       skipped test)
   editor [start|stop|status]
@@ -50,7 +51,7 @@ import sys
 import time
 from pathlib import Path
 
-from . import guard, paths, plugin, setup, unity
+from . import guard, paths, player_logs, plugin, setup, unity
 
 VARIANTS_REPORT = "shader-variants.json"  # ShaderVariantBudget.ReportName, beside the player
 
@@ -99,6 +100,7 @@ def build(wt: paths.Worktree, backend: str = "mono", out: str | None = None, dev
     if not force and not clean_cache and setup.player_current(wt, folder, args):
         shown = folder.relative_to(wt.project) if folder.is_relative_to(wt.project) else folder
         print(f"build: nothing changed since the last build into {shown}; not rebuilding (--force to)")
+        player_logs.install(folder / setup.APP, wt.root)
         return 0
     from . import monster
 
@@ -111,6 +113,7 @@ def build(wt: paths.Worktree, backend: str = "mono", out: str | None = None, dev
     code = unity.run_method(wt, "BuildPlayer", args + (["-cleanBuildCache"] if clean_cache else []), cold=cold)
     if code != 0:
         return code
+    player_logs.install(folder / setup.APP, wt.root)
     setup.record_build(wt, folder, args)
     saved = setup.save_baked(wt)
     if saved:
@@ -127,7 +130,7 @@ def cmd_build(a: argparse.Namespace) -> int:
     return build(paths.worktree(), a.backend, a.out, a.development, a.scene, a.cold, a.force, a.clean_cache)
 
 
-PATH_FLAGS = ("--file", "--capture-stills", "--bench-out", "--record", "--replay")
+PATH_FLAGS = ("-logFile", "--file", "--capture-stills", "--bench-out", "--record", "--replay")
 
 
 def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
@@ -135,7 +138,8 @@ def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
     player runs from elsewhere."""
     out = list(flags)
     for i, flag in enumerate(out[:-1]):
-        if flag in PATH_FLAGS:
+        if (flag in PATH_FLAGS or flag.lower() == "-logfile") and not (
+                flag.lower() == "-logfile" and out[i + 1] in ("-", "")):
             out[i + 1] = ",".join(str((cwd / p).resolve()) for p in out[i + 1].split(",")) if flag == "--replay" \
                 else str((cwd / out[i + 1]).resolve())
     return out
@@ -143,14 +147,23 @@ def absolute_file_flags(flags: list[str], cwd: Path) -> list[str]:
 
 def headless(wt: paths.Worktree, app: Path, player_flags: list[str], log_name: str = "player.log") -> int:
     """Runs the player windowless in batch mode with the player flags and waits for it; its exit code."""
-    wt.logs.mkdir(parents=True, exist_ok=True)
-    log = wt.logs / log_name
-    # Batch mode draws with the Null device unless told otherwise, and so does a player given
-    # `--headless`, which Unity reads too: stills need Metal. The game counts batch mode as headless.
-    cmd = [str(app.parent / setup.APP_EXE), "-batchmode", "-force-metal", "-logFile", str(log), *player_flags]
+    # Batch mode otherwise uses the Null device; stills require Metal.
+    flags = ["-batchmode", "-force-metal", *player_flags]
+    run = None
+    if not player_logs.explicit_log(flags):
+        run = player_logs.allocate(player_logs.checkout_id(wt.root), flags)
+        log = run / "engine.log"
+        player_logs.latest(wt.logs / log_name, log)  # existing sequential CI readers
+        flags = ["-batchmode", "-force-metal", "-logFile", str(log), *player_flags]
+        print(f"play: engine log {log}", flush=True)
     started = time.monotonic()
-    code = subprocess.run(cmd, check=False, cwd=wt.root, stdout=subprocess.DEVNULL).returncode
-    print(f"play: the player exited {code} after {time.monotonic() - started:.1f} s (log {log.relative_to(wt.root)})")
+    stdout_log = any(f.lower() == "-logfile" and i + 1 < len(flags) and flags[i + 1] == "-"
+                     for i, f in enumerate(flags))
+    code = subprocess.run([str(app.parent / setup.APP_EXE), *flags], check=False, cwd=wt.root,
+                          stdout=None if stdout_log else subprocess.DEVNULL).returncode
+    if run:
+        player_logs.complete(run, code)
+    print(f"play: the player exited {code} after {time.monotonic() - started:.1f} s")
     return code
 
 
@@ -166,8 +179,24 @@ def cmd_play(a: argparse.Namespace, player_flags: list[str]) -> int:
     if a.headless:
         return headless(wt, app, player_flags)
     flags = ["-screen-width", "1920", "-screen-height", "1080", "-screen-fullscreen", "0" if a.windowed else "1"]
+    player_logs.install(app, wt.root)
+    if not player_logs.explicit_log(player_flags):
+        run = player_logs.allocate(player_logs.checkout_id(wt.root), player_flags)
+        log = run / "engine.log"
+        player_logs.latest(wt.logs / "player.log", log)
+        flags += ["-logFile", str(log), "--champions-run-dir", str(run)]
+        print(f"play: engine log {log}", flush=True)
     print(f"play: {app.relative_to(wt.root)}")
     return subprocess.run(["open", "-n", str(app), "--args", *flags, *player_flags], check=False).returncode
+
+
+def cmd_logs(a: argparse.Namespace) -> int:
+    root = player_logs.log_root()
+    print(f"logs: {root}")
+    checkout = root / player_logs.checkout_id(paths.worktree().root)
+    for link in sorted(checkout.glob("*/latest")):
+        print(f"  {link.parent.name}: {link.resolve() / 'engine.log'}")
+    return 0
 
 
 def cmd_test(a: argparse.Namespace) -> int:
@@ -344,6 +373,9 @@ def build_parser() -> argparse.ArgumentParser:
     pl.add_argument("--windowed", action="store_true", help="in a 1080p window rather than fullscreen")
     pl.add_argument("--audio", action="store_true", help="hear the game (silent by default)")
     pl.set_defaults(func=cmd_play, player_flags=True)
+
+    logs = sub.add_parser("logs", help="persistent player log root and latest paths")
+    logs.set_defaults(func=cmd_logs)
 
     t = sub.add_parser("test")
     t.add_argument("--assembly", action="append")
