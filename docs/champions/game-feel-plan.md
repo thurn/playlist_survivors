@@ -220,6 +220,9 @@ to ps-ueo.3.
 contains 240 ordered beauty frames, ID frames, view metadata and `motion.mp4`
 (30 fps, 8 s). `sword-feel` is a scripted stationary 72-target formation using
 the live Simulation, RunPresentation, held hero, VFX and crowd shatter presenters.
+Capture it explicitly with `champions stills --scene sword-feel`; the default
+`all` set excludes this dense motion sequence, like the peak-load sweeps, to
+keep CI's per-image look analysis within its five-minute budget.
 Dummy spawn events are given visible skeleton/slime/demon bodies only in the
 scene's presenter; this is explicitly not sustained horde AI evidence. Weak
 bodies have .65 health, with an 8-health survivor per group. Capture sound is

@@ -98,9 +98,12 @@ namespace Champions.Client.Scenes
             {
                 if (n == "all")
                 {
-                    // Peak-load sweeps are explicit operator tools, never part of the CI stills set.
+                    // Peak-load sweeps and dense motion captures are explicit operator tools,
+                    // not the CI stills set's per-image look analysis.
                     foreach (var k in Known)
-                        if (!k.Name.StartsWith("full-", StringComparison.Ordinal) && k.Name != "hud-readability") _pending.Enqueue(k.Name);
+                        if (!k.Name.StartsWith("full-", StringComparison.Ordinal) &&
+                            k.Name != "sword-feel" && k.Name != "hud-readability")
+                            _pending.Enqueue(k.Name);
                 }
                 else if (Array.Exists(Known, k => k.Name == n)) _pending.Enqueue(n);
                 else throw new ArgumentException($"--stills-scenes: no scene {n} (scenes: all, {string.Join(", ", Array.ConvertAll(Known, k => k.Name))})");
