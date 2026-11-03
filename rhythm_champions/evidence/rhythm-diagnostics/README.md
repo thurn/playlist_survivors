@@ -99,7 +99,9 @@ Summaries include mode, version/build GUID, seed, source category (no media
 path/name), fixed/muted settings, quality, resolution, clock/calibration and
 audio counters; action reason/grade totals; hits/kills, hero contact outcomes
 and damage, XP, upgrades/build, holds and boss phase events. Aura seconds are
-sampled active-combat uptime, with at most frame-scale boundary error.
+sampled active-combat uptime. A retroactive heard-time action can undercount
+uptime by the simulation lead plus a frame at an activation boundary; use
+this as an approximate run comparison, not an exact aura interval integral.
 Clock/audio/settings fields are the most recent five-song-second snapshot,
 whose heard/frontier timestamps are explicit; gameplay totals update on
 close. No input, media or telemetry is uploaded.
@@ -117,7 +119,8 @@ initial failures are reported in the engine's diagnostic-path line.
 
 ## Validation and observed limits
 
-- Simulation suite: 507 passing tests. Includes bounded saturation with
+- Simulation suite: 507 passing tests before integration; the rebased fast
+  check passed 509 after the concurrent cohort tests landed. Includes bounded saturation with
   5,000 cooldown rejections, continuing totals, unique paths and active-file
   retention under another logger's pruning; deterministic buffer/replay tests.
 - Unity EditMode: 143/143 passed, no skips. Indicator's old onset-free half-beat
