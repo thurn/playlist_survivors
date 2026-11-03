@@ -1,5 +1,12 @@
 # Operator-pending checks
 
+> **Combat revision 2026-11-02:** rows below record checks for the implementation
+> that produced them. Old dash/build/Break/duel balance criteria are superseded
+> by [the current design](../../docs/champions/design.md). They are historical
+> checks, not acceptance requirements for the redesign. Art/audio checks remain
+> useful. This documentation revision changes no bead or check status.
+
+
 Checks only the operator can make: hand-play balance, the speakers, a window
 on screen, a low-end Mac. Beads add a row here instead of waiting; none of
 them blocks work ([plan](../../docs/champions/plan.md)). The operator marks a

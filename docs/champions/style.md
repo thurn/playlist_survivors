@@ -2,6 +2,11 @@
 
 ## Introduction
 
+Combat references were updated on 2026-11-02. The
+[previous version](../archive/champions-dash-combat-2026-11-02/style.md) is archived.
+The palette and diagnostics describe the existing renderer; new pickup and
+weapon treatments still need visual evaluation.
+
 This is the guide to how Rhythm Champions looks. Every bead that draws
 something reads it first: the monsters, the crowd, the world, structures,
 weapon effects, the hero, the UI and the look pass.
@@ -42,8 +47,8 @@ whose study of Geometry Wars 3 and whose calibrations it keeps.
 ## Related Information
 
 - [The design](design.md): The Look (the trailer, changing the look,
-  monster meshes, judgment over rules, the palette, restraint) and
-  Decision 21 are the source of everything here.
+  monster meshes, judgment over rules, the palette, restraint) is the source
+  of the visual direction here.
 - [The plan](plan.md): Look Metrics, Rendering > The edge look.
 - [style-thresholds.json](style-thresholds.json): the guide values
   `champions look` reports against, keyed as the table in
@@ -114,7 +119,7 @@ Hues are HSV degrees, as the look metrics measure them.
   key naturally.
 - **The yellow-green arc** (40-185 degrees) belongs to warnings: only electric
   yellow (warnings, enemy shots) and the warm zone may sit in it. Near white
-  spends no family, so Break's white-gold may too.
+  spends no family. The former Break accent is no longer used by gameplay.
 - **White and grey**: every near-white role (L* 85+, C* 30 or less) is the
   hero's; every grey role (C* under 15, L* 10-85) is the wall's.
 
@@ -156,7 +161,7 @@ lighter member.
 | `hero.trail` | `#ffffff` | - | 100 | 0 | the hero's trail: pure white, no longer in the key family |
 | `hero.edge` | `#e4eeff` | 218 | 94 | 9 | the faint white-blue edge of the hero's slashes |
 | `hero.hurt` | `#ff4040` | 0 | 57 | 84 | the hero taking a hit: danger's red, in the counter's reach |
-| `hero.break` | `#fff0c8` | 44 | 95 | 21 | a boss's Break bar and its stagger flash: the hero's white-gold |
+| `hero.break` | `#fff0c8` | 44 | 95 | 21 | legacy palette key, unused by the revised combat; no Break bar or stagger flash |
 | `warning` | `#f5e900` | 57 | 91 | 91 | elite telegraphs and hazards short of a boss |
 | `enemyShot` | `#dfee00` | 64 | 90 | 92 | spores and other enemy shots |
 | `wall` | `#8c8c8c` | 0 | 58 | 0 | unbreakable structures (reserved; level 1 has none) |
@@ -177,9 +182,9 @@ their edges (`edge`, L* 40-60).
 
 ### Why these colours
 
-- **The trailer's families** (Decision 21): cyan-blue key, magenta-violet
+- **The trailer's families**: cyan-blue key, magenta-violet
   accent, amber-orange counter, a red boss in the counter's reach. The
-  dragon's duel, on the warm zone with red telegraphs, keys warm.
+  dragon's fight, on the warm zone with red telegraphs, keys warm.
 - **Electric yellow is free for danger.** The counter moved toward orange
   (18 and 35, against ion's 25 and 39), so the warnings at 57 and the shots
   at 64 sit 20 degrees or more from every monster.
@@ -191,7 +196,9 @@ their edges (`edge`, L* 40-60).
   (ion's gap 6); its light comes from the line's value instead.
 - **The hero's trail is pure white**, out of the key family (ion's gap 4).
 - **Roles for everything drawn** (ion's gap 5): warning, enemy shot, hero
-  hurt, Break, structure fill and edge per zone, the bodies' void.
+  hurt, structure fill and edge per zone, the bodies' void. Pickups must
+  read apart from enemy shots by shape and motion; their new treatment is
+  judged by eye in a full fight.
 
 ## Restraint
 
@@ -202,11 +209,18 @@ The look is calm by default (design.md, Restraint):
 - **The grid is a quiet background**: lines at the bottom of ground light,
   brightening only under the beat wave and never past ground light.
 - **Special moments** are the only events that flash the frame, shake the
-  camera or bend the whole grid: boss entrances and deaths, Break, slams and
-  evolved hits, on-beat damaging dashes, mass kills, structure breaks. Their
+  camera or bend the whole grid: boss entrances and deaths, major weapon-form
+  impacts, mass kills and structure breaks. Routine empowered attacks and
+  dash-destination explosions stay local. Their
   flash is gone within a quarter second and never whites out the frame
   (`clipped_impact_max`).
 - **Point lights** only for a slam or a boss entrance, a few at once.
+
+Boss entrances no longer clear the screen. Review them with the surviving
+horde, drops and structures. Required boss waves must remain visible beneath
+six weapons; shrink or dim overlapping friendly effects before obscuring a
+telegraph. Weapon forms need visibly different actions, and enlargement on a
+timed dash should be clear without whitening the frame.
 
 ## The Edge Look
 

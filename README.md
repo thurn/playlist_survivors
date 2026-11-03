@@ -1,19 +1,19 @@
 # Rhythm Champions
 
-A horde survivor rhythm game for the Mac. A white knight fights a horde of
-neon monsters to whatever music you are listening to: its sword swings on
-the beat by itself, the horde steps to the music, and Space dashes, harder
-and wider on the beat. Pick an app that is playing music, or a file, and
-play.
+A horde survivor rhythm game for the Mac. Build an arsenal of automatic
+weapons, move through neon monsters and collect experience to grow stronger.
+Attacks follow your music; on-beat dashes enlarge their next activation.
+Bosses add rhythmic positioning and projectile-dodging challenges.
 
-**Status: in development.** V1 is level 1, start to victory, built in a new
-Unity project, `rhythm_champions/`, played with `just champions`. So far it
-opens on the black void the game will be drawn on.
+**Status: in development.** The Unity game in `rhythm_champions/` is playable
+with `just champions`, but still implements the previous combat design.
+The 2026-11-02 revision redesigns combat and progression; this documentation
+pass does not implement it or change beads.
 
-- [The design](docs/champions/design.md): what the game is, locked
-  2026-11-01.
-- [The plan](docs/champions/plan.md): how V1 gets built, and its Enact
-  epic's beads.
+- [The design](docs/champions/design.md): the current game direction.
+- [The plan](docs/champions/plan.md): retained technology and migration scope.
+- [Archived combat docs](docs/archive/champions-dash-combat-2026-11-02/README.md):
+  the superseded dash-centered design and its implementation map.
 
 The project was called Playlist Survivors; the repository keeps that name.
 

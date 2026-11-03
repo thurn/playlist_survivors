@@ -1,29 +1,20 @@
 # rhythm_champions
 
-The Unity project of [Rhythm Champions](../docs/champions/design.md), built
-by the Enact epic in [the plan](../docs/champions/plan.md). Unity
+The Unity project of [Rhythm Champions](../docs/champions/design.md), with retained architecture and migration scope in
+[the plan](../docs/champions/plan.md). Unity
 6000.6.7f1, URP 17.6, the Input System and UI Toolkit; it depends on no
 other project in the tree.
 
-Level 1 plays end to end (ps-6y2.21): the Boot scene opens on the title
-(Play, Calibrate, Quit), whose music picker starts a run on an app's audio or
-a file (`--file` and `--app` start one straight away); the music plays 3 s
-late through the plugin while its entries feed the sim. A run starts on the
-first offer over the empty, held world, plays from the next downbeat through
-the level's horde, structures, the Fat Ogre and the dragon, and ends on the
-end card (1.5 s after a death; lit after the dragon), whose Again starts a
-new run on the same music. Every sim event reaches its presenter through one
-`EventDispatch` (`Client/Loop/RunPresentation.cs`): the world's beat wave,
-zones and rings, the structures, the horde (`Client/Crowd/`: the crowd
-presenter over an `ICrowdView`), the bosses and the telegraphs, the spores,
-the hero's commands, the weapon effects (Hovl's slash shapes in white), the
-run's UI (indicator, HUD, cards) and the sounds. The monsters draw in the neon
-edge trailer's look on their vendor meshes (`champions monster bake all`, then
-build; `--look trailer` for the trailer's exact drawing), the bosses among
-them; the hero is the trailer's knight in white with its crystal blade, posed
-on the CPU (`Render/Crowd/MonsterFigure.cs`, `HeroEdge.shader`); the
-structures draw in the edge look over their zone's fill ([below](#structures)).
-Esc pauses a run.
+**Design/implementation status (2026-11-02):** the combat redesign is documented,
+not yet implemented. Current gameplay uses the earlier dash-centered rules.
+The [archived runtime overview](../docs/archive/champions-dash-combat-2026-11-02/runtime-readme.md)
+describes that behavior. Existing tests and reference runs validate that
+implementation, not the new six-weapon/support builds, XP drops or three bosses.
+No beads changed in the documentation revision.
+
+The commands and technical notes below describe the existing tools. Historical
+combat examples, UI fields and evidence should not be treated as design rules.
+The renderers, audio path, calibration and setup remain in use.
 
 ## Commands
 
@@ -185,6 +176,9 @@ time with the on-beat accent under it, Leap Slam's landing, hits, each kill's
 shatter and the hero's hurt.
 
 ## The UI
+
+This section documents the existing UI. The revised design removes held-level
+and Break indicators; it retains brief cards and a minimal HUD.
 
 The UI (design.md, UI; [its evidence](evidence/ui/README.md)) is UI Toolkit
 built in code (`Client/UI/`) on panels made from the editor's

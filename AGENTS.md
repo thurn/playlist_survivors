@@ -8,12 +8,12 @@ Vision: Rhythm Champions is "the game that doesn't need a trailer". This is beca
 
 The look is retro 3D neon wireframe in the synthwave style: low-poly 3D models, usually built from simple faceted shapes, whose glowing edges connect into closed facets over a dark body (docs/champions/design.md, The aim: retro 3D neon wireframe).
 
-The design was locked on 2026-11-01 after months of prototypes: docs/champions/design.md is the design and docs/champions/plan.md the implementation plan. Every earlier doc is archived under docs/archive/ and is not authoritative; when an old doc, comment or evidence file disagrees with docs/champions/, docs/champions/ wins.
+The design was first locked on 2026-11-01 and its combat/progression redesigned on 2026-11-02: docs/champions/design.md is the design and docs/champions/plan.md the implementation plan. Every earlier doc is archived under docs/archive/ and is not authoritative; when an old doc, comment or evidence file disagrees with docs/champions/, docs/champions/ wins.
 
 ## Overview
 
-- `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). It is built by the Enact epic in docs/champions/plan.md, so check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
-- `docs/champions/`: the design, the plan and (once written) the style guide. `docs/archive/`: earlier designs, for history.
+- `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). The original epic is archived from docs/champions/plan.md; the combat redesign is not implemented or re-planned into beads yet, so check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
+- `docs/champions/`: the current design, technical/migration plan and style guide. `docs/archive/`: earlier designs, for history.
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - SETUP.md covers installing and the vendor assets.
 - **Frozen**, kept for reference, outside CI, never extended: `native/` (the Rust 2D game, with `content/`, `levels/`, `public/`, `corpus/`, `songs/`, `tools/analysis/`, `tools/baker/`, `assets-src/`), `game/` (the first Unity game), `demo3d/`, `demo2d/`, `stylelab/`, `herocap/` and `unity-packages/`. Rhythm Champions copies what it needs from them and references none of them at build time. Don't fix or extend a frozen project unless the operator asks.

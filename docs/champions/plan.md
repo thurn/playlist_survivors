@@ -2,15 +2,22 @@
 
 ## Introduction
 
-This plan builds V1 of [Rhythm Champions](design.md): level 1, start to
-victory card, on Apple Silicon Macs, in a new Unity project,
-`rhythm_champions/`, run with `just champions`.
+This plan retains the technical foundations for [Rhythm Champions](design.md)
+and records the implementation consequences of the **2026-11-02 combat
+redesign**. This revision changes documentation only. The current game still
+contains the earlier dash-centered combat; passing existing tests does not
+mean the revised design is implemented.
 
-It is tracked as the Enact epic **ps-6y2** (see [Beads](#beads)), a light run: one final
-Warden, no Mason, Sage or Archivist beads. Every bead runs straight through.
-Checks only the operator can make (hand-play balance, the speakers, a window
-on screen, a low-end Mac) go on the operator-pending list,
-`rhythm_champions/evidence/operator-pending.md`, and never block work.
+The former build order and epic map are preserved in the
+[archived plan](../archive/champions-dash-combat-2026-11-02/plan.md).
+**No beads are created, edited, closed or re-scoped by this revision.** The
+existing epic describes historical implementation work, not authorization to
+build from superseded combat assumptions. A later planning pass must reconcile
+implementation tasks against the new design before scheduling combat work.
+
+Operator-only checks remain in `rhythm_champions/evidence/operator-pending.md`.
+Old evidence records what was built and tested at the time, not acceptance of
+the new combat. Rendering and audio evidence remain useful where applicable.
 
 The short version:
 
@@ -30,8 +37,9 @@ The short version:
 
 ## Decisions
 
-Settled with the operator on 2026-11-01, alongside the design's. Executors
-treat them as fixed; everything else here is a recommended default.
+These retained technical decisions were settled on 2026-11-01 and are not
+reopened by the combat revision. The current design governs gameplay; the
+implementation details below are guidance for adapting the existing project.
 
 1. **A new Unity project**, `rhythm_champions/`, on Unity 6000.6.7f1 and URP
    17.6. It depends on no other project or `unity-packages/` package: what
@@ -129,20 +137,20 @@ rhythm_champions/
     Sim/          Champions.Sim: no Unity references
       Core/       Simulation, SimState, SimConfig, SimRandom, events
       Stream/     belief stream entries
-      Beat/       beat state, judgement, cadence, quiet moments
-      Hero/       movement, dashes, health
-      Attacks/    attacks; Mods/ mods and tags
+      Beat/       beat state, judgement, cadence, fractional strike budgets
+      Hero/       movement dash, empowerment, health
+      Attacks/    weapons and fixed forms; Mods/ broad supports and compatibility
       Horde/      types, spawner, steps, separation, elites, spores
-      Bosses/     arrival, duel, Break, Ogre, Dragon
+      Bosses/     arrivals, retained horde, rhythmic patterns, three encounters
       World/      chunks, structures, zones
-      Progression/ experience, held levels, offers, treasure
+      Progression/ dropped XP, pickups, immediate offers, boss rewards
       Run/        level timeline, start, end
       Session/    inputs, records, replay, hashes
     Client/       Champions.Client: loop, music, input, presenters, UI, sound
     Render/       Champions.Render: crowd, the edge look, shards, world, effects, post, tiers
     Editor/       Champions.Editor: bakers, variant stripper, build tasks
     Tests/        EditMode tests
-  Content/        JSON: hero, dashes, attacks, mods, enemies, bosses, level1,
+  Content/        JSON: hero, movement dash, weapons, supports, enemies, bosses, level1,
                   structures, progression, palette
   plugin/         Cargo workspace: crates/{plugin,analysis,audio,capture,stream}, models/
   dotnet/         Champions.Sim, Champions.Sim.Tests, Champions.Replay
@@ -151,6 +159,10 @@ rhythm_champions/
   manifest.json   vendor assets: root, path, SHA-256, GUID
   README.md
 ```
+
+The layout above describes responsibilities; names such as `Attacks/` and
+`Mods/` may remain during migration. Do not infer current implementation from
+the proposed responsibilities.
 
 `Assets/Vendor/` and `Assets/Baked/` are ignored, as in every Unity project
 here. The dotnet projects compile the Sim folder's files directly, as
@@ -220,8 +232,8 @@ demos' choreography.
   recorded.
 - The sim runs a small lead ahead of the speakers. An input heard at `h` and
   taken at `F` re-walks the hero from `h` (up to 64 ticks, never across a
-  hold), resolving the dash's blows at their own times against the world's
-  recent history. Nothing is re-simulated: no rollback. The client draws
+  hold), resolving dash movement, invulnerability and any supported landing
+  explosion against the world's recent history. Nothing is re-simulated: no rollback. The client draws
   trailing by the lead, so the dash appears on the key-down frame.
 - Measured as in `game/evidence/press-latency`: key to the first moved frame
   within one 60 Hz frame of the key-down frame.
@@ -232,22 +244,22 @@ demos' choreography.
 
 - the reliable-beat state, the next beats, half beats and downbeats, and
   strong onsets, all from known entries;
-- the judgement (Decision 6): binary, 80 ms on beats, 60 ms on half beats
-  and strong onsets that the music plays, on the beat whenever no beat is
-  reliable;
-- cadence: an attack's period in beats (nearest 1 s, ties to the longer,
-  kept within 8% of its lock tempo, changing only on a downbeat) and its
-  fallback in seconds;
-- quiet moments: 0.75 s under the silence threshold, or 2 s without a
-  reliable beat;
-- telegraph timing in whole beats, or 0.5 s per beat without.
+- heard-time judgement: binary, default 80 ms on beats, 60 ms on half beats
+  and strong played onsets; all dashes empowered without a reliable beat;
+- strict musical activation grids and deterministic fractional extra-strike
+  accumulation, with weapon-specific seconds fallbacks;
+- stable cadence changes and comparable long-run output across tempos;
+- telegraphs retaining their promised reaction time across tempo changes,
+  music-confidence loss and card holds; safe remapping on resume.
+
+No quiet-moment service controls upgrade presentation in the new design.
 
 ### Systems
 
 In tick order: inputs, hero (movement, dash), attacks, horde (spawner,
 steps or glide, separation, contact, elite moves, spores), bosses, world
-(chunks, structures), progression (experience, held levels, offers,
-treasure), run (timeline, end).
+(chunks, structures), progression (XP drops, collection, immediate offers,
+boss rewards), run (horde-time schedule, combat time, end).
 
 - One spatial hash serves separation, hits, contact and steering. Budget:
   the sim at 1,000 alive within 1 ms per frame on the M5 Max (the proxy).
@@ -397,7 +409,7 @@ trailer's, ported back:
   wave; restraint as designed.
 - Post: URP bloom, the tier's settings.
 - Camera: about 60 degrees down, a lead in the movement direction, easing
-  out 20% for duels, punches and shakes only on special moments.
+  out 20% for boss fights, punches and shakes only on special moments.
 
 ### Quality tiers
 
@@ -432,7 +444,7 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
   Black share is gone.
 - `champions stills` renders fixed-time stills of scripted scenes in one
   launch: a crowd at minute 4, a loud surge, a structure field, the beat
-  wave at three phases, both duels' telegraphs, a card moment, the gallery
+  wave at three phases, all three boss encounters' telegraphs amid the horde, a card moment, the gallery
   of effects.
 - Guide values: `docs/champions/style-thresholds.json`, written by the
   palette bead from the archived thresholds.
@@ -484,81 +496,73 @@ every tier. `--tier` picks one; the pause menu's Quality row changes it.
   `demo2d/`, `stylelab/`, `herocap/`, `unity-packages/`, `tools/analysis/`,
   `tools/baker/`. Their READMEs say so. Nothing in `rhythm_champions/`
   references them at build time.
-- The foundation bead adds SETUP.md's Rhythm Champions section; the palette
-  bead adds `docs/champions/style.md`.
+- SETUP.md and `docs/champions/style.md` document the existing project.
+  Their combat references follow the current design; older snapshots are archived.
 
-## Build Order
+## Combat Redesign: Migration Scope
 
-A thin foundation, then wide parallel tracks, then assembly and polish.
-Dependencies exist only where a bead needs another's output; files touched
-by several beads are no reason to chain them.
+This is a sequence of implementation responsibilities, **not a new bead
+plan**. Preserve working audio, deterministic timing, rendering and vendor
+pipelines. Reconcile current code before deciding file boundaries or effort.
 
-- **Foundation**, two at once: the project and tools (RC1); the sim core
-  (RC3). Then the plugin and music (RC2), and CI (RC4) once all three exist.
-- **Tracks**, as soon as their inputs land:
-  - sim: hero and dashes (RC5), attacks and mods (RC6), the horde (RC7),
-    then progression (RC15) and bosses (RC14);
-  - art: the edge-cut pipeline (RC8), then the cuts (RC9a-d), the hero
-    (RC17) and structures (RC12), all superseded on 2026-11-02 by the
-    trailer look's port (RC22), then the hero and bosses (RC23), structures
-    (RC24) and the ten monster meshes (RC25a-j) in parallel;
-  - look: the palette and style guide (RC10), the world (RC11), weapon
-    effects (RC13);
-  - UI (RC16).
-- **Assembly**: level 1 end to end (RC18), then performance (RC19) and the
-  look pass (RC20, after the monster meshes), then the final Warden (RC21).
+1. **Content and scaling contracts.** Six weapon slots, six shared support
+   slots; weapon levels 1–8 and forms at 3/5/8; explicit compatibility
+   inherited across forms; additive stat families that multiply each other;
+   bounded split/echo triggers and per-target hit rules. Old ranks, dash
+   replacements and evolution recipes are not carried forward.
+2. **Automatic combat.** Weapons activate on the grid; attack speed creates
+   additional strikes with deterministic fractional carry. Preserve natural
+   body animation through spectral strikes. Add varied martial/magical
+   weapons and persistent-weapon pulse semantics. Verify cadence across
+   tempos and silence without rounding away small upgrades.
+3. **Movement and empowerment.** One movement dash; per-weapon nonstacking
+   next-activation coverage flags on any timed dash. No damage requirement on
+   baseline movement. One support creates an endpoint explosion without
+   changing the dash. Preserve immediate heard-time response.
+4. **Growth and recovery.** Persistent dropped XP, attraction and collection;
+   healing drops; capped supports; 25–35 immediate normal choices, no quiet
+   waits or rerolls. Deterministic eligible offers, full-slot and exhausted
+   pool handling. No automatic level-up healing. Pickups survive streaming
+   and boss arrivals; merge visuals without losing stored value.
+5. **Clock and bosses.** Separate horde time from combat time. Freeze horde
+   time at 5/10/15 minutes, halt ordinary spawns, retain enemies/structures/
+   drops, allow bounded summons. Replace cleared duels and Break with three
+   always-damageable encounters using timed positioning and occasional
+   mandatory dash-through waves. First two kills heal and offer one owned
+   upgrade; last kill wins. Pause/resume must preserve telegraph safety.
+6. **Presentation and play tuning.** Brief cards and minimal HUD, no held-level
+   dot or Break bar; recognizable weapon forms, pickups and empowered
+   activations. Boss threats stay readable under full builds. Tune collection,
+   choice frequency, enemy ramp and recovery together through hand-play.
 
-## Beads
+### Obsolete acceptance to replace
 
-Epic: **ps-6y2**. Priorities: P0 foundation, P1
-tracks and assembly, P2 polish.
+Tests and scripted reference builds asserting five dashes, offensive dash
+investment, three attacks/four mods, three-rank evolutions, instant kill XP,
+quiet-held levels, six level-ups, boss arrival shatters, two cleared duels,
+Break, or a single clock continuing through bosses describe the archived
+design. Retain them as historical evidence where needed; do not use them to
+reject the revised behavior. Update implementation and regression tests together
+in the later implementation work, not in this documentation pass.
 
-| Key | Bead | Id | Depends on | P |
-| --- | --- | --- | --- | --- |
-| RC1 | Project skeleton: the Unity project, the `champions` CLI, `just champions`, lean URP, the variant budget | ps-6y2.1 | - | 0 |
-| RC2 | The plugin copied into `rhythm_champions/plugin/`; music: Delayed listening, files, the music clock | ps-6y2.2 | RC1 | 0 |
-| RC3 | The sim core: ticks, belief stream, beat services, heard-time inputs, sessions and replay | ps-6y2.3 | - | 0 |
-| RC4 | Slow CI under 5 minutes for Rhythm Champions; the frozen projects leave CI | ps-6y2.4 | RC1, RC2, RC3 | 0 |
-| RC5 | Hero movement, the five dashes, judgement and health in the sim | ps-6y2.5 | RC3 | 1 |
-| RC6 | Attacks and mods in the sim | ps-6y2.6 | RC3 | 1 |
-| RC7 | The horde in the sim: ten types, beat steps, spawning, elite moves, spores | ps-6y2.7 | RC3 | 1 |
-| RC8 | The edge-cut pipeline, review sheets and the edge crowd renderer, proven on the skeleton | ps-6y2.8 | RC1 | 1 |
-| RC9a | Edge cuts: slime and bat | ps-6y2.9 | RC8 | 1 |
-| RC9b | Edge cuts: demon and goblin | ps-6y2.10 | RC8 | 1 |
-| RC9c | Edge cuts: mushroom, big ork and troll | ps-6y2.11 | RC8 | 1 |
-| RC9d | Edge cuts: the Fat Ogre and the dragon | ps-6y2.12 | RC8 | 1 |
-| RC10 | The palette and the style guide; `champions look` and `champions stills` | ps-6y2.13 | RC1 | 1 |
-| RC11 | The world: the endless grid, the beat wave, impulse rings, zones, post, camera, tiers | ps-6y2.14 | RC1, RC3 | 1 |
-| RC12 | Structures: chunked placement, Synty edge cuts with fill, breaking and shatter | ps-6y2.15 | RC3, RC8 | 1 |
-| RC13 | Weapon effects in white on Hovl's shapes, and the hero's sounds | ps-6y2.16 | RC1 | 1 |
-| RC14 | Bosses: arrival, entrance shatter, duels, Break, the Fat Ogre and the dragon | ps-6y2.17 | RC5, RC7, RC8 | 1 |
-| RC15 | Progression in the sim: experience, held levels, offers, treasure | ps-6y2.18 | RC5, RC6 | 1 |
-| RC16 | UI: the indicator, HUD, cards that click, menus, music picker, calibration | ps-6y2.19 | RC1, RC2, RC3 | 1 |
-| RC17 | The hero: white edge cut, rig, Sword Slash clips at natural speed, dash poses | ps-6y2.20 | RC8 | 1 |
-| RC18 | Assemble level 1 end to end: timeline, start and end, wiring, first tuning, CI replays | ps-6y2.21 | RC2, RC4, RC5, RC6, RC7, RC9a, RC9b, RC9c, RC9d, RC10, RC11, RC12, RC13, RC14, RC15, RC16, RC17, RC22, RC23, RC24 | 1 |
-| RC19 | Quality tiers and performance: 1,000 alive within the low tier's budget | ps-6y2.22 | RC18 | 2 |
-| RC20 | The look pass: level 1 judged by eye against the trailer | ps-6y2.23 | RC18, RC22, RC23, RC24, RC25a-j | 2 |
-| RC21 | Warden: final review of the Rhythm Champions V1 run | ps-6y2.24 | all | 1 |
-| RC22 | The trailer's edge look ported: crowd, `MonsterEdge`, crack-outlined shards, ten monsters on vendor meshes, `--look trailer`, `champions monster bake` and `review` | ps-6y2.28 | - | 1 |
-| RC23 | The hero and the bosses in the edge look, and their shatters | ps-6y2.29 | RC22 | 1 |
-| RC24 | Structures in the edge look over their zone fill | ps-6y2.30 | RC22 | 1 |
-| RC25a-j | Monster meshes, one per monster with the monster-mesh-design skill: skeleton, slime, bat, demon, goblin, mushroom, big ork, troll, Fat Ogre, dragon | ps-6y2.31-40 | RC22 | 1 |
-| RC26 | `champions look` becomes a diagnostic that never fails a run | ps-6y2.41 | - | 2 |
-
-RC8, RC9a-d, RC12, RC14 and RC17 landed edge cuts; their edge-cut work was
-deleted on 2026-11-02, and their behaviour (rigs, clips, telegraphs,
-breaking) stays. Each bead's description in the graph carries its full
-scope, file pointers and acceptance; this table is the map.
+The existing epic map is [archived](../archive/champions-dash-combat-2026-11-02/plan.md#beads).
+No entry there is silently redefined by this document.
 
 ## Whole-Run Acceptance
 
-- `just champions --file <song>` plays level 1 from the first offer to the
-  victory card; a scripted run (`--walk` with picks) reaches the victory
+Targets for the future implementation, not results of this documentation pass.
+
+- `just champions --file <song>` plays level 1 from the starting weapon through
+  three bosses to the victory card; a scripted run (`--walk` with picks) reaches the victory
   card headless, and an idle hero dies within 90 s.
 - Delayed listening plays an app's audio 3 s late (an operator-pending row
   confirms on the speakers).
-- Every design decision holds, checked by the sim's tests where it is a rule
-  and by stills where it is a look.
+- Every current design decision holds. Rule checks include inherited support
+  compatibility across all forms, fractional attack-speed gains, one-use
+  empowerment per weapon, persistent/merged XP conservation, legal offers,
+  bounded proc chains, separate clocks, retained hordes at boss arrival and
+  fair telegraph resume. Stills and hand-play verify the visual and experiential
+  requirements; old reference-run hashes alone do not establish these.
 - check-fast within 60 s and ci-full within 300 s on three consecutive
   runs.
 - The low tier within its proxy budget at 1,000 alive; the variant budget
@@ -571,6 +575,21 @@ scope, file pointers and acceptance; this table is the map.
   judgement feel on speakers and on Bluetooth, and an M1-class measurement.
 
 ## Risks
+
+- **Dash spam replacing positioning.** Any timed dash grants empowerment by
+  design. Tune coverage bonus and encounter pressure so constant dashing is
+  optional and baseline weapons remain sufficient for horde combat.
+- **Unreadable boss fights.** Remaining mobs, pickups, persistent fields and
+  six weapons coexist with required rhythmic dodges. Test at full density;
+  a clean-arena boss screenshot is insufficient.
+- **Too many slots for too few picks.** A 25–35-choice run cannot maximize
+  six eight-level weapons and six supports. Deep and broad investment must
+  both work; test the actual offer pool and XP curve together.
+- **Tempo-dependent build power.** Strict beat attacks and extra strikes need
+  explicit cadence and accumulation tests, not just 120 BPM demonstrations.
+- **Content scope.** Several animated forms per weapon and a third boss are
+  real implementation work. The proposed content needs visual evaluation;
+  do not imply existing assets already supply every action.
 
 - **Numbers standing in for judgment.** The edge cuts passed every
   threshold and looked terrible, because the thresholds were the only

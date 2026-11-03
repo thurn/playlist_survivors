@@ -1,10 +1,14 @@
 # Archived Docs
 
-Every design and plan written before Rhythm Champions, kept for history.
+Superseded designs and plans, including earlier Rhythm Champions revisions,
+kept for history.
 None is authoritative: [the design](../champions/design.md) and
 [the plan](../champions/plan.md) are. Each doc carries a banner saying so.
 
-They describe the prototypes, all frozen in the tree and outside CI:
+- [Rhythm Champions dash-combat revision](champions-dash-combat-2026-11-02/README.md):
+  design, plan, style guide and runtime overview superseded on 2026-11-02.
+
+The older folders describe prototypes, all frozen in the tree and outside CI:
 
 - [design/](design/): the native game (`native/`), the Unity game (`game/`)
   and its modes, the neon look, the reactive audio and feel work, the
@@ -20,4 +24,4 @@ They describe the prototypes, all frozen in the tree and outside CI:
 Two archived docs still hold rules Rhythm Champions keeps: the vendor
 asset rules ([tech-demo-3d/vendor-assets.md](tech-demo-3d/vendor-assets.md))
 and the look's measured study ([design/neon-look-style.md](design/neon-look-style.md)),
-until the palette bead writes `docs/champions/style.md`.
+as historical references beneath the current `docs/champions/style.md`.
