@@ -43,7 +43,7 @@ need full-run tuning after the weapon families and encounters are integrated.
 
 ## Verification
 
-317 simulation tests pass, including deterministic legal offers, full slots,
+333 integrated simulation tests pass (317 progression-base tests before the concurrent Sword/Hammer delivery), including deterministic legal offers, full slots,
 caps, compatibility, exhausted pools, multiple levels, owned boss rewards,
 no level-up healing, a live boss pattern held through XP cards, stationary
 spores through holds, cooldowns/i-frames and held Space release. 112 Unity
