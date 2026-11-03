@@ -22,8 +22,8 @@ limits are in [game-feel-plan.md](game-feel-plan.md) and
 [assembled evidence](../../rhythm_champions/evidence/game-feel/README.md).
 The subsequent ps-oli pacing change uses bosses after 3/6/9 horde minutes,
 a 3.5 m starting collection radius and contact-only big ork/troll elites.
-Four normal scripted builds finish in 10–12 minutes with 28–29 normal choices;
-first choices range from 21–45 seconds and fights from 9–100 seconds.
+Three normal scripted builds finish in 10–12 minutes with 28–30 normal choices;
+first choices range from 15–33 seconds and fights from 8–100 seconds.
 These are deterministic observations, not operator hand-play approval; see
 [three-minute pacing evidence](../../rhythm_champions/evidence/three-minute-pacing/README.md).
 
