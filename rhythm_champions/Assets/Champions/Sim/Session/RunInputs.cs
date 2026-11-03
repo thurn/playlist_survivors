@@ -25,6 +25,8 @@ namespace Champions.Sim
         /// </summary>
         public bool Level;
         public bool SurvivorWeapons;
+        /// <summary>Optional scripted survivor preset; empty starts with Sword 1. Recorded from session v6.</summary>
+        public Card[] SurvivorLoadout = new Card[0];
 
         /// <summary>The build the run starts with: Sword Slash at rank 1 (design.md, "The attacks"), or a scripted one.</summary>
         public Upgrade[] Loadout = StartLoadout();
@@ -60,6 +62,7 @@ namespace Champions.Sim
                 Mods = content != null ? content.Mods.Clone() : new ModRules(),
                 Combat = content != null ? content.Combat : CombatRules.Default,
                 SurvivorWeapons = SurvivorWeapons,
+                SurvivorLoadout = (Card[])SurvivorLoadout.Clone(),
                 Loadout = (Upgrade[])Loadout.Clone(),
                 Dummies = (Dummy[])Dummies.Clone(),
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
@@ -105,6 +108,8 @@ namespace Champions.Sim
             w.Write(Level);
             w.Write(Duel ?? "");
             w.Write(SurvivorWeapons);
+            w.Write(SurvivorLoadout.Length);
+            foreach (var card in SurvivorLoadout) w.Write(card.Code);
         }
 
         /// <summary>
@@ -140,6 +145,20 @@ namespace Champions.Sim
             string duel = r.ReadString();
             run.Duel = duel.Length > 0 ? duel : null;
             if (version >= 5) run.SurvivorWeapons = r.ReadBoolean();
+            if (version >= 6)
+            {
+                run.SurvivorLoadout = new Card[Count(r, path, "survivor loadout")];
+                for (int i = 0; i < run.SurvivorLoadout.Length; i++)
+                {
+                    int code = r.ReadInt32();
+                    var card = Card.FromCode(code);
+                    if (code != card.Code || card.From != 0 || card.Rank < 1 ||
+                        !(card.Kind == CardKind.Weapon && card.Id < CombatRules.WeaponCount && card.Rank <= 8 ||
+                          card.Kind == CardKind.Support && card.Id < CombatRules.SupportCount && card.Rank <= 5))
+                        throw new FormatException($"{path}: invalid survivor loadout card {i}");
+                    run.SurvivorLoadout[i] = card;
+                }
+            }
             return run;
         }
 

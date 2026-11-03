@@ -114,7 +114,7 @@ namespace Champions.Sim.Tests
             using (var writer = new BinaryWriter(bytes, System.Text.Encoding.UTF8, true)) run.Write(writer);
             bytes.Position = 0;
             using var reader = new BinaryReader(bytes);
-            var restored = RunInputs.Read(reader, 5, "test");
+            var restored = RunInputs.Read(reader, 6, "test");
             Assert.That(restored.SurvivorWeapons, Is.True);
             var live = new Simulation(run.Build(null));
             var replay = new Simulation(restored.Build(null));

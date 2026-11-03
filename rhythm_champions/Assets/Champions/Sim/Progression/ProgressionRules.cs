@@ -9,11 +9,11 @@ namespace Champions.Sim
         public int HealingEveryKills = 100;
         public double HealingShare = 0.1;
 
-        /// <summary>20 XP for the first choice, then 9% growth: scripted collection samples are reported in progression evidence.</summary>
-        public double[] Levels = { 20 };
+        /// <summary>85 XP for the first choice, then 20 XP growing by 18%: scripted collection samples are reported in progression evidence.</summary>
+        public double[] Levels = { 85, 20 };
 
         /// <summary>Past <see cref="Levels"/>, each level needs this many times the one before.</summary>
-        public double Growth = 1.09;
+        public double Growth = 1.18;
 
         /// <summary>A held level shows at most this long after it was reached (run clock), then on the next downbeat.</summary>
         public double HeldMaxS = 60;

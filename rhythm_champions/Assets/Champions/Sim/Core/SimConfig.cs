@@ -36,6 +36,7 @@ namespace Champions.Sim
 
         /// <summary>Enable the survivor weapon handlers; archived sessions leave this off.</summary>
         public bool SurvivorWeapons;
+        public Card[] SurvivorLoadout = new Card[0];
 
         /// <summary>The build the run starts with (<see cref="RunInputs.Loadout"/>).</summary>
         public Upgrade[] Loadout = RunInputs.StartLoadout();

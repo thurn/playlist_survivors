@@ -103,8 +103,9 @@ namespace Champions.Sim.Tests
         [Test]
         public void TheContentsCurveRisesAndTheDefaultsRepeatIt()
         {
-            var rules = Content.Progression;
-            for (int l = 1; l < 12; l++) Assert.Greater(rules.Needed(l + 1), rules.Needed(l), $"level {l}");
+            var rules = GameContent.Load(Checkout.In("Content")).Progression;
+            // The introductory threshold is followed by a shorter second choice; later needs rise.
+            for (int l = 2; l < 12; l++) Assert.Greater(rules.Needed(l + 1), rules.Needed(l), $"level {l}");
             Assert.AreEqual(60, rules.HeldMaxS, "Held for a quiet moment: at most 60 s");
             var defaults = new ProgressionRules();
             CollectionAssert.AreEqual(rules.Levels, defaults.Levels);

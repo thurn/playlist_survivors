@@ -24,7 +24,7 @@ freeze their clocks and restore the surviving marks on resume.
 
 ## XP sample, not a claim of hand-play balance
 
-The curve starts at 20 collected XP and grows 9% each level. The deterministic
+**Historical isolated-progression sample (before assembly):** the curve starts at 20 collected XP and grows 9% each level. The deterministic
 sample collects 0.8 XP/s for the opening 30 seconds, then linearly rises to
 6 XP/s by 15 minutes. Routing/output multipliers change collected value;
 these are explicitly supplied collection samples, not automatic time awards.
@@ -83,3 +83,7 @@ upgrade choices. No replay assertions were removed or relaxed.
 
 Validation on jarvis/macOS: the complete configured slow suite passes,
 including all four recordings in .NET and Unity without presenter faults.
+
+Assembly retunes the live curve to 85 XP, then 20 with 18% growth. The sample
+above is preserved for history; [actual run evidence](../survivor-assembly/README.md)
+supersedes its pace claims. Synthetic XP injection is now diagnostic only.

@@ -9,7 +9,7 @@
     "ramp": [[0, 150], [720, 600]],
     "secondHalfDensity": 1.15
   },
-  "toughness": [[0, 1], [90, 1], [720, 3.5]],
+  "toughness": [[0, 0.65], [90, 0.65], [180, 1], [720, 3.5]],
   "mix": [
     { "type": "skeleton", "fromS": 0, "weight": 4 },
     { "type": "slime", "fromS": 0, "weight": 3 },

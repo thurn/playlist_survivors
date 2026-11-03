@@ -21,7 +21,7 @@ namespace Champions.Sim
     public sealed class SessionRecord
     {
         public const string InputsFile = "inputs.bin", RunFile = "run.json", EntriesFile = "entries.jsonl";
-        const int Version = 5;
+        const int Version = 6;
         static readonly byte[] Magic = { (byte)'R', (byte)'C', (byte)'R', (byte)'U', (byte)'N' };
 
         /// <summary>What built the run's config (<see cref="RunInputs.Build"/>).</summary>
@@ -162,14 +162,16 @@ namespace Champions.Sim
             for (int i = 0; i < Flags.Length; i++) flags.Append(i > 0 ? ", " : "").Append(Quote(Flags[i]));
             var loadout = new StringBuilder();
             for (int i = 0; i < Run.Loadout.Length; i++) loadout.Append(i > 0 ? ", " : "").Append(Quote(Run.Loadout[i].ToString()));
+            var survivor = new StringBuilder();
+            foreach (var card in Run.SurvivorLoadout) survivor.Append(survivor.Length > 0 ? ", " : "").Append(Quote(card.ToString()));
             return string.Format(c,
                 "{{\n  \"format\": \"rhythm-champions-session\",\n  \"version\": {0},\n  \"build\": {1},\n  \"runtime\": {2},\n" +
                 "  \"platform\": {3},\n  \"source\": {4},\n  \"flags\": [{5}],\n  \"seed\": {6},\n  \"startTime\": {7:R},\n" +
-                "  \"start\": {8},\n  \"loadout\": [{14}],\n  \"dummies\": {15},\n  \"level\": {16},\n  \"duel\": {17},\n  \"end\": {9:R},\n  \"hash\": \"{10:X16}\",\n" +
+                "  \"start\": {8},\n  \"loadout\": [{14}],\n  \"dummies\": {15},\n  \"level\": {16},\n  \"duel\": {17},\n  \"survivorWeapons\": {18},\n  \"survivorLoadout\": [{19}],\n  \"end\": {9:R},\n  \"hash\": \"{10:X16}\",\n" +
                 "  \"events\": {11},\n  \"entries\": {12},\n  \"inputs\": {13}\n}}\n",
                 Version, Quote(Build), Quote(Runtime), Quote(Platform), Quote(Source), flags, Run.Seed, Run.StartTime,
                 Quote(Run.Start.ToString()), End, Hash, Events, Entries.Length, Inputs.Length, loadout, Run.Dummies.Length, Run.Level ? "true" : "false",
-                Run.Duel != null ? Quote(Run.Duel) : "null");
+                Run.Duel != null ? Quote(Run.Duel) : "null", Run.SurvivorWeapons ? "true" : "false", survivor);
         }
 
         static string Quote(string s)

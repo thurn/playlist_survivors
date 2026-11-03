@@ -5,16 +5,26 @@ The Unity project of [Rhythm Champions](../docs/champions/design.md), with retai
 6000.6.7f1, URP 17.6, the Input System and UI Toolkit; it depends on no
 other project in the tree.
 
-**Design/implementation status (2026-11-02):** the combat redesign is documented,
-not yet implemented. Current gameplay uses the earlier dash-centered rules.
-The [archived runtime overview](../docs/archive/champions-dash-combat-2026-11-02/runtime-readme.md)
-describes that behavior. Existing tests and reference runs validate that
-implementation, not the new six-weapon/support builds, XP drops or three bosses.
-No beads changed in the documentation revision.
+**Implementation status (2026-11-03):** the survivor combat redesign is playable:
+eight automatic weapons with four forms, six weapon/support slots, persistent
+XP/healing drops, immediate choices and bosses at 5/10/15 minutes of horde time.
+Combat time includes boss fights; the horde clock pauses. The Conductor uses
+the existing troll asset with alternating fan lanes and a traveling wall;
+there is no Break or boss-entry horde wipe. Family evidence documents actual
+spectral choreography rather than assuming unavailable body clips.
 
-The commands and technical notes below describe the existing tools. Historical
-combat examples, UI fields and evidence should not be treated as design rules.
-The renderers, audio path, calibration and setup remain in use.
+[Assembly evidence](evidence/survivor-assembly/README.md) records deterministic
+runs, tuning and replays. Full-build performance/readability and the final
+Warden remain ps-3wc.14/.15; hand-play, speakers and target hardware remain
+[operator checks](evidence/operator-pending.md). The original ps-6y2 continues
+independently. [Archived runtime overview](../docs/archive/champions-dash-combat-2026-11-02/runtime-readme.md)
+and earlier combat captures describe historical behavior.
+
+`--walk positioning --picks reference` follows cleared XP, uses reactive
+movement dashes and crosses boss waves, without deliberate horde beat dashes.
+`--walk reference` also adds voluntary rhythm inputs. These are deterministic
+tuning scripts, not hand-play or balance approval. Session v6 records scripted
+survivor presets; versions 1–5 remain readable.
 
 ## Commands
 

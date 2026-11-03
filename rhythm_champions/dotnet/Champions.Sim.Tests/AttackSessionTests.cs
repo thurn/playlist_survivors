@@ -15,8 +15,16 @@ namespace Champions.Sim.Tests
         /// <summary>The recorded session CI replays: rhythm_champions/sessions/fixture-attacks.</summary>
         public const string FixtureSession = "fixture-attacks";
 
-        static readonly string[] WaveBuild = { "swordSlash:4", "bladeRain:3", "crescent:4", "twinStrike:1", "tempo:2", "keenEdge:1", "shatterburst:1" };
-        static readonly string[] SummonBuild = { "swordSlash:3", "orbitBlades:4", "phantom:3", "wideArcs:2", "lifeblood:1", "afterimage:1", "momentum:2" };
+        static readonly string[] WaveBuild = { "sword:8", "hammer:5", "spear:5", "bow:8", "lightning:5", "emberField:8", "might:3", "tempo:3", "reach:3", "split:2", "echo:2", "persistence:3" };
+        static readonly string[] SummonBuild = { "sword:5", "orbitBlades:8", "sentinel:8", "emberField:5", "might:3", "tempo:3", "reach:3", "persistence:3", "echo:2", "armor:2" };
+
+        public static Card[] Preset(params string[] items) => items.Select(item =>
+        {
+            var parts = item.Split(':'); int level = int.Parse(parts[1]);
+            if (CombatRules.TryWeapon(parts[0], out var weapon)) return Card.Of(weapon, level, 0);
+            if (CombatRules.TrySupport(parts[0], out var support)) return Card.Of(support, level, 0);
+            throw new ArgumentException(item);
+        }).ToArray();
 
         /// <summary>
         /// A live run as the client drives it, 30 s through 128 BPM, a beatless gap and 174 BPM, with
@@ -32,7 +40,7 @@ namespace Champions.Sim.Tests
             var dummies = Enumerable.Range(0, 60)
                 .Select(i => new Dummy((2 + i % 10 * 1.1) * Math.Cos(2.4 * i), (2 + i % 10 * 1.1) * Math.Sin(2.4 * i), 2 + i % 4 * 3, 0.45))
                 .ToArray();
-            var run = new RunInputs { Seed = 33, Start = RunStart.OnControl, Loadout = Arena.Build(build), Dummies = dummies };
+            var run = new RunInputs { Seed = 33, Start = RunStart.OnControl, SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>(), SurvivorLoadout = Preset(build), Dummies = dummies };
             var sim = new Simulation(run.Build(GameContent.Load(Checkout.In("Content"))));
             var script = new Queue<(double At, Action<Simulation> Give)>(new (double, Action<Simulation>)[]
             {
@@ -85,9 +93,9 @@ namespace Champions.Sim.Tests
                 record.Write(dir);
                 SessionRecord.WriteEntries(dir, fed);
                 var read = SessionRecord.Read(dir);
-                CollectionAssert.AreEqual(run.Loadout, read.Run.Loadout, "the loadout is recorded");
+                CollectionAssert.AreEqual(run.SurvivorLoadout, read.Run.SurvivorLoadout, "the survivor preset is recorded");
                 CollectionAssert.AreEqual(run.Dummies, read.Run.Dummies, "and the dummies");
-                StringAssert.Contains($"\"loadout\": [{string.Join(", ", build.Select(b => $"\"{b}\""))}]", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
+                StringAssert.Contains("\"survivorWeapons\": true", File.ReadAllText(Path.Combine(dir, SessionRecord.RunFile)));
                 var (sim, replay) = Replay(dir);
                 Assert.IsTrue(replay.Matches(sim), $"replayed {sim.Hash:X16} ({sim.EventCount} events), recorded {record.Hash:X16} ({record.Events})");
                 Assert.AreEqual(live.Arsenal.Kills, sim.Arsenal.Kills);
@@ -114,7 +122,7 @@ namespace Champions.Sim.Tests
         {
             var record = SessionRecord.Read(Checkout.In("sessions", FixtureSession));
             var (run, live, fed) = AttacksRun(WaveBuild);
-            CollectionAssert.AreEqual(run.Loadout, record.Run.Loadout);
+            CollectionAssert.AreEqual(run.SurvivorLoadout, record.Run.SurvivorLoadout);
             Assert.AreEqual(record.Inputs.Length, live.Inputs.Length);
             Assert.AreEqual(record.Entries.Length, fed.Count);
             Assert.AreEqual(record.End, live.Now);

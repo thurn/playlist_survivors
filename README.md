@@ -6,10 +6,11 @@ Attacks follow your music; on-beat dashes enlarge their next activation.
 Bosses add rhythmic positioning and projectile-dodging challenges.
 
 **Status: in development.** The Unity game in `rhythm_champions/` is playable
-with `just champions`, but still implements the previous combat design.
-The 2026-11-02 revision redesigns combat and progression; this documentation
-pass did not implement it. The redesign is now filed as epic `ps-3wc`,
-independent of the continuing `ps-6y2` work.
+with `just champions`. The survivor combat redesign now includes eight weapon
+identities with four forms each, six weapon/support slots, XP pickups,
+immediate upgrades and three rhythmic bosses. [Assembly evidence](rhythm_champions/evidence/survivor-assembly/README.md)
+records deterministic runs and pending checks. Epic `ps-3wc` continues with
+full-build verification and final review, independently of `ps-6y2`.
 
 - [The design](docs/champions/design.md): the current game direction.
 - [The plan](docs/champions/plan.md): retained technology and migration scope.

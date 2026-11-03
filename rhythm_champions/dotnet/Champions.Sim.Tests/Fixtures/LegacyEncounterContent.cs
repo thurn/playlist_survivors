@@ -11,6 +11,8 @@ namespace Champions.Sim.Tests
             c.Enemies = EnemyRules.Read(JsonValue.Parse(File.ReadAllText(Path.Combine(dir, "legacy-enemies.json"))), "legacy-enemies");
             c.Bosses = BossRules.Read(JsonValue.Parse(File.ReadAllText(Path.Combine(dir, "legacy-bosses.json"))), "legacy-bosses", c.Enemies);
             c.Level = LevelRules.Read(JsonValue.Parse(File.ReadAllText(Path.Combine(dir, "legacy-level1.json"))), "legacy-level1", c.Enemies);
+            c.Progression.Levels = new[] { 20.0 };
+            c.Progression.Growth = 1.09;
             return c;
         }
     }

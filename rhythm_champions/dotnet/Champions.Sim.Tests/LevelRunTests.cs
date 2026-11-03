@@ -45,7 +45,7 @@ namespace Champions.Sim.Tests
             public RunEnd End;
             public double EndedAt = double.NaN, RunClock;
             public readonly List<(double RunClock, string What)> Moments = new List<(double, string)>();
-            public int Kills, Picks, Levels;
+            public int Kills, Picks, Levels, NormalPicks, BossPicks;
             public readonly Dictionary<string, int> Hits = new Dictionary<string, int>();
             public double OgreArrived = double.NaN, OgreDied = double.NaN, DragonArrived = double.NaN, DragonDied = double.NaN;
             public double LeastHealth = double.MaxValue;
@@ -57,9 +57,10 @@ namespace Champions.Sim.Tests
 
         /// <summary>Level 1 from its start to its end (or <paramref name="until"/>), driven by `--walk` <paramref name="walk"/>.</summary>
         public static Outcome Run(string walk, string picks = null, double until = 1200, ulong seed = 31, Action<ScriptedPlayer> tweak = null,
-            Action<SimConfig> config = null, bool survivor = false)
+            Action<SimConfig> config = null, bool survivor = false, double bpm = 128)
         {
-            var entries = Playlist(until + 20).Entries();
+            var entries = (bpm == 128 ? Playlist(until + 20) : bpm == 0 ? new FixtureSong().Gap(0, until + 20, silent: true)
+                : new FixtureSong().Beats(0, until + 20, bpm)).Entries();
             var content = survivor ? GameContent.Load(Checkout.In("Content")) : Content;
             var run = new RunInputs { Seed = seed, Start = survivor ? RunStart.Immediately : RunStart.FirstOffer,
                 Level = true, SurvivorWeapons = survivor };
@@ -80,7 +81,7 @@ namespace Champions.Sim.Tests
                 foreach (var e in sim.EventsSince(cursor))
                 {
                     player.Take(sim, e);
-                    Note(o, sim, e);
+                    Note(o, sim, e, content);
                 }
                 cursor = sim.EventCount;
                 sim.DiscardEventsBefore(cursor);
@@ -96,7 +97,7 @@ namespace Champions.Sim.Tests
             return o;
         }
 
-        static void Note(Outcome o, Simulation sim, in SimEvent e)
+        static void Note(Outcome o, Simulation sim, in SimEvent e, GameContent content)
         {
             double clock = sim.State.RunClock;
             switch (e.Kind)
@@ -117,13 +118,15 @@ namespace Champions.Sim.Tests
                     o.Moments.Add((clock, $"level {e.I0}"));
                     break;
                 case SimEventKind.Pick:
+                    if ((OfferKind)e.I2 == OfferKind.LevelUp) o.NormalPicks++;
+                    if ((OfferKind)e.I2 == OfferKind.Treasure) o.BossPicks++;
                     o.Moments.Add((clock, $"pick {Card.FromCode(e.I1)}"));
                     break;
                 case SimEventKind.BossArrive:
-                    bool ogre = Content.Enemies.Cast[e.I1].Id == "fatOgre";
+                    bool ogre = content.Enemies.Cast[e.I1].Id == "fatOgre";
                     if (ogre) o.OgreArrived = clock;
                     else o.DragonArrived = clock;
-                    o.Moments.Add((clock, $"{Content.Enemies.Cast[e.I1].Id} arrives, shattering {e.I2}, hero {sim.State.Hero.Health:F0}"));
+                    o.Moments.Add((clock, $"{content.Enemies.Cast[e.I1].Id} arrives, shattering {e.I2}, hero {sim.State.Hero.Health:F0}"));
                     break;
                 case SimEventKind.BossDeath:
                     if (double.IsNaN(o.OgreDied)) o.OgreDied = clock;
@@ -202,6 +205,32 @@ namespace Champions.Sim.Tests
             record.Build = "test";
             record.Write(dir);
             SessionRecord.WriteEntries(dir, o.Fed);
+        }
+
+        public static void ConfigureBuild(ScriptedPlayer p, string build)
+        {
+            p.HordeRhythm = false;
+            p.Danger = 0; p.Flee = 3; p.Ring = 12;
+            p.PreferNewWeapons = build == "broad";
+            p.Preferences = build == "focused"
+                ? new[] { "sword", "might", "regeneration", "armor", "tempo", "reach", "bow", "hammer" }
+                : build == "broad"
+                ? new[] { "bow", "spear", "lightning", "orbitBlades", "might", "armor", "regeneration", "sword", "tempo" }
+                : new[] { "sword", "armor", "regeneration", "might", "bow", "tempo", "reach", "orbitBlades" };
+        }
+
+        [Test, Explicit("full survivor tuning matrix")]
+        public void PrintSurvivorRuns()
+        {
+            foreach (string build in new[] { "focused", "broad", "defensive" })
+            foreach (double bpm in new[] { 0.0, 80, 128, 174 })
+            foreach (ulong seed in new[] { 31UL, 32UL })
+            {
+                var o = Run("positioning", until: 2000, survivor: true, bpm: bpm, seed: seed,
+                    tweak: p => ConfigureBuild(p, build));
+                TestContext.Out.WriteLine($"SURVIVOR {build} seed {seed} {bpm} BPM: {o.End} at {o.RunClock:F1}; kills {o.Kills}; normal {o.NormalPicks}; earned {o.Levels - 1}; first {o.Moments.FirstOrDefault(m => m.What.StartsWith("level ")).RunClock:F1}; " +
+                    string.Join("; ", o.Moments.Where(m => m.What.Contains("arrives") || m.What.StartsWith("boss dies")).Select(m => $"{m.RunClock:F1} {m.What}")));
+            }
         }
 
         /// <summary>A seed whose run the reference player wins (it wins about a quarter of them: rhythm_champions/evidence/ps-6y2.21/README.md).</summary>

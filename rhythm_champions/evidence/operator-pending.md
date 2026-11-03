@@ -73,3 +73,13 @@ row done (or files a bead) after checking.
   player still previews pass; no speaker, controller or subjective taste
   approval is claimed. See `survivor-bosses/README.md` for clock/pattern contract
   and reproducible private captures.
+
+- ps-3wc.13: hand-play focused, six-weapon broad and defensive builds on music
+  and silence, with no Landing Blast and without deliberate horde beat inputs.
+  [Assembly matrix](survivor-assembly/README.md) has actual wins/deaths, 27–30
+  earned normal levels in successful cases and first choices from 18.8–57.1 s;
+  check the 20–30 s first-choice target on less efficient collection routes,
+  broad-build fragility, recovery and late Dragon durations. Verify death/Again
+  on the continuing music source in a window. Scripted wins/replays establish
+  rules and feasibility, not fun, speaker balance or taste. Full-build
+  performance/readability is ps-3wc.14, independent of ps-6y2.

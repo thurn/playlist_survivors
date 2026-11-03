@@ -20,10 +20,11 @@ grid, the beat wave and the trailer's visual baseline remain the direction.
 Combat and progression were redesigned with the operator on **2026-11-02**.
 This document supersedes the dash-centered design locked on 2026-11-01.
 The [previous design, plan and style guide](../archive/champions-dash-combat-2026-11-02/README.md)
-are historical. [The implementation plan](plan.md) distinguishes retained
-technology from the redesign still to build. Existing code and its evidence
-are not proof that this new design has been implemented. No beads were
-created or changed by this revision.
+are historical. [The implementation plan](plan.md) records shipped survivor
+combat and the remaining verification. The ps-3wc implementation now supplies
+the eight weapon identities, broad supports, pickups, immediate choices and
+three retained-horde bosses. [Assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
+separates deterministic run results from pending hand-play and visual judgement.
 
 ### The game, as the player sees it
 
@@ -150,7 +151,7 @@ power are not part of this revision.
 ### Level 1 schedule
 
 The three encounter slots and clock behavior are fixed. This roster and the
-minute-by-minute mix are a proposed starting content set; the second boss
+minute-by-minute mix are the current starting content set; the second boss
 reuses the existing troll asset with distinct scale, presentation and moves.
 
 | Horde time | Event |
@@ -162,7 +163,7 @@ reuses the existing troll asset with distinct scale, presentation and moves.
 | 5:00 | Fat Ogre: first rhythmic boss. Clock and ordinary spawns stop. |
 | Ogre dies | Full heal, equipped-item upgrade; resume horde time from 5:00. |
 | 5:00–10:00 | Troll elites and ranged mushrooms join; density and mixed pressure grow. |
-| 10:00 | Troll Conductor: projectile and movement patterns, with authored summons. |
+| 10:00 | Troll Conductor: alternating fan lanes, falling marks and a traveling wall. |
 | Conductor dies | Full heal, equipped-item upgrade; resume horde time from 10:00. |
 | 10:00–15:00 | Densest mixed horde; developed builds demonstrate their combinations. |
 | 15:00 | Dragon: final rhythmic encounter amid the remaining horde. |
@@ -173,6 +174,9 @@ threshold. Give a short arrival warning, then bring the boss in on a nearby
 downbeat (default within 4 seconds; fallback after 4 seconds). Existing
 combat continues during the warning. Do not wait up to a minute for a strong
 section. Boss duration does not advance the next encounter or density ramp.
+The current Conductor uses alternating marked fan lanes and a traveling wall,
+with no summons (zero renewable XP budget). Bosses are tuned to 150/350/650
+health; stronger broad builds can finish much faster than focused builds.
 Target fights of about 1–2 minutes each, the dragon up to 3; a completed run
 will usually be around 18–22 minutes of combat, plus time choosing cards.
 
@@ -301,18 +305,24 @@ retain prior support behavior and effective coverage: a form is an upgrade,
 not a forced trade that invalidates the build. Adding an area component must
 not remove a previously supported projectile component.
 
-Proposed V1 roster (names and exact actions may change in visual play-tests):
+Shipped V1 forms (2026-11-03). These use owned meshes, authored spectral
+choreography and evaluated existing knight poses; they do not imply a separate
+humanoid clip for every action. Family evidence records inspected Unity motion:
+[Sword/Hammer](../../rhythm_champions/evidence/melee-weapons/README.md),
+[Spear/Bow](../../rhythm_champions/evidence/spear-bow/README.md),
+[Orbit/Sentinel](../../rhythm_champions/evidence/construct-weapons/README.md),
+[Lightning/Ember](../../rhythm_champions/evidence/magic-weapons/README.md).
 
 | Weapon / positioning | Level 1 | Level 3 | Level 5 | Level 8 |
 | --- | --- | --- | --- | --- |
-| Sword / opens a lane toward a nearby crowd | Sweeping slash | Cross-cut combo | Spinning cleave | Advancing spectral sword dance |
-| Hammer / close crowd clearing | Heavy side swing | Ground slam | Vaulting spectral hammer with erupting ground | A procession of colossal hammer falls |
-| Spear / long narrow lanes | Spectral thrust | Lunging spear formation | Sweeping phalanx followed by thrusts | Marching spectral phalanxes |
-| Bow / distant threats | Arrow shot | Fan-shaped volley | Arcing volley that descends into the target area | Rotating spectral bow battery |
+| Sword / opens a lane toward a nearby crowd | Sweeping slash | Cross-cut combo | Spinning cleave | Three advancing spectral blade sweeps |
+| Hammer / close crowd clearing | Heavy side swing | Ground slam | Vaulting spectral hammer and rising fissure blades | A procession of hammer falls on successive activations |
+| Spear / long narrow lanes | Spectral thrust | Three parallel thrust lanes | Five spear heads sweep into line and thrust | Three advancing staggered ranks of five spears |
+| Bow / distant threats | Arrow shot | Fan-shaped volley | Arcing volley that descends into the target area | Eight rotating spectral bows releasing arcing arrows |
 | Orbit Blades / manage distance from the pack | Circling blades | Outward sweep and return | Alternating inner guard and outward scythes | A rotating crown opening into sweeping blade arms |
-| Lightning / connected groups | Bolt to a nearby enemy | Forked lightning gesture | Storm sigil delivering the bolts | Moving storm constellation with repeated discharges |
-| Ember Field / loop through cleared ground | A timed fire seal | Erupting fissure under the seal | Spectral brazier pouring fire across the ground | Procession of erupting volcanic seals |
-| Sentinel / fight alongside a summon | Spectral sentry strikes nearby foes | Sentry's shield-and-sword combo | Leaping sentinel with landing cleave | Spectral knight formation advancing and attacking |
+| Lightning / connected groups | Bolt to a nearby enemy | Raised forked lightning gesture | Storm sigil delivering the bolts | Moving articulated storm nodes delivering discharges |
+| Ember Field / loop through cleared ground | A timed fire seal | Erupting fissure under the seal | Tilting faceted brazier pouring into the retained seal | Advancing erupting seal on successive activations |
+| Sentinel / fight alongside a summon | Spectral sentry strikes nearby foes | Alternating parry and spectral combo lane | Leaping knight with a retained close spectral guard | Three advancing knights with staggered parry/leap poses |
 
 Weapons auto-target according to their identity: nearby groups, nearest
 threat, direction of movement or the ground where the player is standing.

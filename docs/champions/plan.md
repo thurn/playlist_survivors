@@ -4,12 +4,15 @@
 
 This plan retains the technical foundations for [Rhythm Champions](design.md)
 and records the implementation consequences of the **2026-11-02 combat
-redesign**. This revision changes documentation only. The current game still
-contains the earlier dash-centered combat; passing existing tests does not
-mean the revised design is implemented.
+redesign**. As of 2026-11-03, ps-3wc.1–.13 deliver the survivor contracts,
+eight weapon identities/four forms, broad supports, movement dash, pickups,
+immediate cards and three retained-horde bosses. See the
+[assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
+for actual full-run results and replay coverage. Full-build load/readability
+(ps-3wc.14), the final Warden (ps-3wc.15) and operator checks remain separate.
 
 The combat redesign is filed as **ps-3wc**, a light Enact epic with 14
-implementation tasks and one final Warden. Filing does not start a run.
+implementation tasks and one final Warden. The light run has reached assembly.
 The existing **ps-6y2** epic continues independently: its remaining structure
 meshes, performance, look pass and final review are still wanted. **Neither
 epic depends on the other.** Reviews cover their own delivered scope and must
@@ -547,7 +550,8 @@ quiet-held levels, six level-ups, boss arrival shatters, two cleared duels,
 Break, or a single clock continuing through bosses describe the archived
 design. Retain them as historical evidence where needed; do not use them to
 reject the revised behavior. Update implementation and regression tests together
-in the later implementation work, not in this documentation pass.
+in current survivor tests. Historical encounter tests explicitly load archived
+fixtures; recorded attack/duel/level fixtures use current survivor behavior.
 
 The existing epic map is [archived](../archive/champions-dash-combat-2026-11-02/plan.md#beads).
 No entry there is silently redefined by this document.
@@ -559,8 +563,8 @@ Use existing owned Unity assets first, reskinned and composed for the retro
 breakpoints; exact actions must be grounded in inspected clips, meshes and
 effects. Spectral choreography is an acceptable alternative to an unavailable
 character animation. No asset purchases or hidden manual approval gates.
-Never commit vendor-derived outputs. Asset mapping and previews are work to
-perform, not a claim that all 32 forms are already supplied by a pack.
+Never commit vendor-derived outputs. Asset mapping and family runtime previews have landed; all 32 forms use the
+verified mappings and authored actions documented in design.md and family evidence.
 
 | Bead | Work | Prerequisites within ps-3wc |
 | --- | --- | --- |
@@ -590,11 +594,14 @@ Operator-only checks remain recorded in operator-pending rather than gates.
 
 ## Whole-Run Acceptance
 
-Targets for the future implementation, not results of this documentation pass.
+Acceptance remains broader than automated verification. Assembly records
+actual deterministic wins/deaths, choices and replays; it does not claim
+speaker balance, subjective fun, target-hardware performance or full-build
+visual approval. ps-3wc.14 and .15 follow assembly.
 
 - `just champions --file <song>` plays level 1 from the starting weapon through
   three bosses to the victory card; a scripted run (`--walk` with picks) reaches the victory
-  card headless, and an idle hero dies within 90 s.
+  card headless, and a stationary script without defensive inputs dies under elite/boss pressure.
 - Delayed listening plays an app's audio 3 s late (an operator-pending row
   confirms on the speakers).
 - Every current design decision holds. Rule checks include inherited support

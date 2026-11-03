@@ -1,6 +1,6 @@
 {
   "format": "rhythm-champions-session",
-  "version": 5,
+  "version": 6,
   "build": "test",
   "runtime": ".NET 10.0.7",
   "platform": "",
@@ -13,9 +13,11 @@
   "dummies": 0,
   "level": true,
   "duel": null,
+  "survivorWeapons": true,
+  "survivorLoadout": [],
   "end": 75.01666666666667,
-  "hash": "39262D24BDB3DFFC",
-  "events": 4412,
+  "hash": "26BB523B9658243A",
+  "events": 6176,
   "entries": 2198,
-  "inputs": 836
+  "inputs": 879
 }

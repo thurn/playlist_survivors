@@ -15,7 +15,7 @@ namespace Champions.Sim.Tests
         /// <summary>The recorded session CI replays: rhythm_champions/sessions/fixture-duel.</summary>
         public const string FixtureSession = "fixture-duel";
 
-        static readonly string[] Build = { "swordSlash:4", "orbitBlades:4", "bladeRain:4", "keenEdge:2", "twinStrike:2", "lifeblood:2" };
+        static readonly string[] Build = { "sword:5", "orbitBlades:5", "bow:5", "might:3", "tempo:3", "armor:3" };
 
         /// <summary>
         /// A live run as the client drives it: 128 BPM, a beatless stretch and 150 BPM, the Ogre called at the start and
@@ -34,7 +34,7 @@ namespace Champions.Sim.Tests
             var dummies = Enumerable.Range(0, 40)
                 .Select(i => new Dummy((4 + i % 8 * 3.5) * Math.Cos(1.7 * i), (4 + i % 8 * 3.5) * Math.Sin(1.7 * i), 3, 0.45))
                 .ToArray();
-            var run = new RunInputs { Seed = 41, Duel = "fatOgre", Loadout = Arena.Build(Build), Dummies = dummies };
+            var run = new RunInputs { Seed = 41, Duel = "fatOgre", SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>(), SurvivorLoadout = AttackSessionTests.Preset(Build), Dummies = dummies };
             var sim = new Simulation(run.Build(GameContent.Load(Checkout.In("Content"))));
             var dodger = new BossTests.Dodger(through: true);
             double chased = 0, after = double.NaN;
@@ -146,7 +146,7 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void AVersionThreeSessionHasNoDuel()
+        public void TheRecordedAttackSessionHasNoDuel()
         {
             var record = SessionRecord.Read(Checkout.In("sessions", AttackSessionTests.FixtureSession));
             Assert.IsNull(record.Run.Duel);

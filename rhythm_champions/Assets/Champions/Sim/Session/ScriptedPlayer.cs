@@ -5,26 +5,13 @@ using System.Globalization;
 namespace Champions.Sim
 {
     /// <summary>
-    /// Scripted inputs for headless runs and tuning (plan.md, Commands: `--walk`; design.md, Difficulty): a player made of
-    /// keys and click targets at song times, reading only what the client may read (the snapshot, the settled events, the
-    /// beat services), so the same script drives the player's `--walk` and the sim's tests. It is not a bot: no search,
-    /// no learning, a fixed routine. `--walk` names one:
-    /// <list type="bullet">
-    /// <item><c>idle</c>: the hero never moves or dashes (design.md: an idle hero dies within 90 s);</item>
-    /// <item><c>reference</c>: the tuning's reference player: it kites a ring of <see cref="RingM"/> round the start at
-    /// 6 m/s, away from the monsters near it, dashing on every other beat along it (on the attacks' seconds pulse without a
-    /// beat), keeping its dash for a landing it sees telegraphed and dodging elites' landings and spores; in a duel it keeps within Sword Slash's reach of the
-    /// boss and dashes through each attack on its landing beat (a perfect dodge whenever the dash is ready), as
-    /// ps-6y2.17's boss tuning plays;</item>
-    /// <item>held keys at song times, <c>right@9-11,up@11-12.5,space@14-14.1</c> (game/'s `--walk`).</item>
-    /// </list>
-    /// Picks (`--picks`): whenever cards are up it presses a card's number, the next of a list (<c>1,3,2</c>, the last one
-    /// repeating), or by the reference build's preferences (<c>reference</c>: Lifeblood, Blade Rush, Sword Slash's ranks and
-    /// evolution, Orbit Blades, Keen Edge, Wide Arcs, then the rest); without one, the idle player picks the first card and
-    /// the others the reference's.
-    ///
-    /// Each frame: <see cref="Take"/> every settled event, then <see cref="Frame"/> with the song time heard now, before the
-    /// sim steps. Inputs are heard then (or at an exact beat or landing that has been heard by now), as a player's keys are.
+    /// Deterministic input routines shared by the client and headless tuning. Reference follows the
+    /// survivor pickup route, reacts to crowds and telegraphs, and voluntarily dashes to the beat.
+    /// Positioning uses the same movement without deliberate rhythm inputs in horde segments. Both
+    /// cross traveling boss fronts on arrival, not launch. Idle never moves; key schedules use
+    /// right@9-11,up@11-12.5,space@14-14.1. Picks are 1,3,2 (last repeats), or reference preferences.
+    /// Archived content retains its historical reference routine and preferences.
+    /// Each frame takes settled events before Frame, using only client-visible state.
     /// </summary>
     public sealed class ScriptedPlayer
     {
@@ -51,9 +38,10 @@ namespace Champions.Sim
             "twinStrike", "crescent", "phantom", "tempo", "shatterburst", "encore", "afterimage", "leapSlam", "shieldCharge", "blinkStrike",
         };
 
-        static readonly string[] SurvivorPreferences =
-            { "sword", "might", "tempo", "reach", "armor", "regeneration", "bow", "hammer", "orbitBlades", "lightning", "sentinel" };
+        public static readonly string[] SurvivorPreferences =
+            { "sword", "might", "regeneration", "armor", "tempo", "reach", "bow", "hammer", "orbitBlades", "lightning", "sentinel" };
 
+        readonly Pickup[] _nearPickups = new Pickup[256];
         readonly Routine _routine;
         readonly List<(double At, Key Key, bool Down)> _keys = new List<(double, Key, bool)>();
         readonly int[] _pickList;
@@ -70,6 +58,8 @@ namespace Champions.Sim
             _pickList = picks;
             _pickReference = pickReference;
             _dashes = dashes;
+            Preferences = dashes.LegacyForms ? ReferencePreferences : SurvivorPreferences;
+            if (!dashes.LegacyForms) { Danger = 0; Ring = 12; }
         }
 
         public Routine Kind => _routine;
@@ -79,6 +69,12 @@ namespace Champions.Sim
 
         /// <summary>The picks' preferences, best first (tuning experiments change them).</summary>
         public string[] Preferences = ReferencePreferences;
+
+        /// <summary>Disable voluntary rhythm inputs in horde segments for survivor balance checks.</summary>
+        public bool HordeRhythm = true;
+
+        /// <summary>Favor acquiring distinct weapons before deep upgrades, for broad-build checks.</summary>
+        public bool PreferNewWeapons;
 
         /// <summary>The kite: monsters within Danger m push it away by Flee against its heading's weight Inertia (tuning).</summary>
         public double Danger = 3, Flee = 3, Inertia = 1;
@@ -95,7 +91,7 @@ namespace Champions.Sim
             if (walk == null && picks == null) throw new ArgumentException("a scripted player needs --walk or --picks");
             var routine = walk == null ? Routine.Keys
                 : walk == "idle" ? Routine.Idle
-                : walk == "reference" ? Routine.Reference
+                : walk == "reference" || walk == "positioning" ? Routine.Reference
                 : Routine.Keys;
             bool reference = picks == "reference" || picks == null && routine != Routine.Idle;
             int[] list = null;
@@ -109,6 +105,7 @@ namespace Champions.Sim
             }
             else if (!reference) list = new[] { 1 };
             var player = new ScriptedPlayer(routine, list, reference, dashes ?? new DashRules());
+            if (walk == "positioning") player.HordeRhythm = false;
             if (routine == Routine.Keys && walk != null) player.ParseKeys(walk);
             return player;
         }
@@ -153,7 +150,7 @@ namespace Champions.Sim
                 case SimEventKind.EliteTelegraph when Near(sim, e.T, e.D2, e.D3, ThreatM):
                     _planned.Add(e.D1);
                     break;
-                case SimEventKind.BossMove when e.I2 == 0:
+                case SimEventKind.BossMove when e.I2 == 0 && !Bosses.IsWave((BossMove)(e.I1 & 255)):
                 case SimEventKind.EliteMove when e.I2 == 0 && Near(sim, e.T, e.D0, e.D1, ThreatM):
                     // Each landing, dodged on its beat once it is heard (a hit settles after the inputs heard by then, so
                     // the press still counts); parts of one move landing together count once.
@@ -237,9 +234,9 @@ namespace Champions.Sim
                 var c = offer[i];
                 string id = c.Kind == CardKind.Weapon ? CombatRules.Id(c.Weapon) : c.Kind == CardKind.Support ? CombatRules.Id(c.Support) : c.Kind == CardKind.Dash ? (c.Id < _dashes.Kinds.Length ? _dashes.Kinds[c.Id].Id : "")
                     : c.Kind == CardKind.Attack ? Upgrade.IdOf(c.Attack) : Upgrade.IdOf(c.Mod);
-                var preferences = c.Kind == CardKind.Weapon || c.Kind == CardKind.Support ? SurvivorPreferences : Preferences;
+                var preferences = Preferences;
                 int place = Array.IndexOf(preferences, id);
-                double score = (place < 0 ? preferences.Length : place) - (c.Evolution ? 100 : 0) - 0.1 * c.Rank;
+                double score = (PreferNewWeapons && c.Kind == CardKind.Weapon && c.New ? -20 : 0) + (place < 0 ? preferences.Length : place) - (c.Evolution ? 100 : 0) - 0.1 * c.Rank;
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -277,6 +274,21 @@ namespace Champions.Sim
             _planned.RemoveAll(t => t < heard - 1);
             if (duel)
             {
+                // Traveling fronts must be crossed when they reach the hero, rather than at their launch cue.
+                foreach (var mark in sim.Bosses.Marks)
+                {
+                    double soon = sim.Now + 0.05;
+                    if (!Bosses.IsWave(mark.Move) || soon < sim.Telegraphs.LandTime(mark.Telegraph)
+                        || hero.DashReadyAt > sim.Now) continue;
+                    sim.HeroWas(sim.Now, out double px, out double py);
+                    if (!sim.Bosses.WaveShape(mark, soon).Touches(px, py, 0.6)) continue;
+                    double wx = mark.Move == BossMove.Wall ? 0 : mark.Shape.X - px;
+                    double wy = mark.Move == BossMove.Wall ? -1 : mark.Shape.Y - py;
+                    double length = Math.Max(0.01, Math.Sqrt(wx * wx + wy * wy));
+                    sim.Target(px + wx / length * 8, py + wy / length * 8, heard);
+                    Dash(sim, heard);
+                    return;
+                }
                 if (heard - _lastTarget < 0.25) return;
                 _lastTarget = heard;
                 ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
@@ -284,6 +296,38 @@ namespace Champions.Sim
                 double dx = b.X - hx, dy = b.Y - hy, d = Math.Sqrt(dx * dx + dy * dy);
                 if (d > ReachM) sim.Target(b.X - dx / d * ShortM, b.Y - dy / d * ShortM, heard);
                 return;
+            }
+            if (!_dashes.LegacyForms && hero.DashReadyAt <= sim.Now)
+            {
+                sim.HeroWas(sim.Now, out double px, out double py);
+                bool crowded = false;
+                for (int i = 0; i < sim.Enemies.Count; i++)
+                {
+                    var m = sim.Enemies[i];
+                    double dx = m.X - px, dy = m.Y - py;
+                    if (m.Alive && dx * dx + dy * dy < 1.6 * 1.6) { crowded = true; break; }
+                }
+                if (crowded)
+                {
+                    double best = double.NegativeInfinity, tx = px, ty = py;
+                    for (int direction = 0; direction < 16; direction++)
+                    {
+                        double angle = direction * Math.PI / 8;
+                        double x = px + Math.Cos(angle) * 4, y = py + Math.Sin(angle) * 4;
+                        double clearance = 100;
+                        for (int i = 0; i < sim.Enemies.Count; i++)
+                        {
+                            var m = sim.Enemies[i];
+                            if (!m.Alive) continue;
+                            double dx = m.X - x, dy = m.Y - y;
+                            clearance = Math.Min(clearance, dx * dx + dy * dy);
+                        }
+                        if (clearance > best) { best = clearance; tx = x; ty = y; }
+                    }
+                    sim.Target(tx, ty, heard);
+                    Dash(sim, heard);
+                    return;
+                }
             }
             // The horde: away from the monsters within Danger m, keeping its heading where none is, ten times a second,
             // and a dash on every other beat once it is heard.
@@ -306,6 +350,24 @@ namespace Champions.Sim
                 double tx = r > 0.5 ? -y / r : 1, ty = r > 0.5 ? x / r : 0;
                 double pull = (Ring - r) / Ring;
                 double hx = Inertia * _headX + tx * 0.5 + (r > 0.5 ? x / r * pull : 0), hy = Inertia * _headY + ty * 0.5 + (r > 0.5 ? y / r * pull : 0);
+                if (!_dashes.LegacyForms)
+                {
+                    // Route through visible cleared ground instead of abandoning all growth behind the kite.
+                    int count = sim.Pickups.Preview(x, y, 12, _nearPickups);
+                    double best = double.PositiveInfinity, qx = 0, qy = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var p = _nearPickups[i];
+                        double ax = p.X - x, ay = p.Y - y, d2 = ax * ax + ay * ay;
+                        if (d2 < 9 || d2 >= best) continue;
+                        best = d2; qx = ax; qy = ay;
+                    }
+                    if (best < double.PositiveInfinity)
+                    {
+                        double distance = Math.Sqrt(best);
+                        hx = qx / distance * 2; hy = qy / distance * 2;
+                    }
+                }
                 double f = Math.Sqrt(fx * fx + fy * fy);
                 if (f > 0) { hx += Flee * fx / f; hy += Flee * fy / f; }
                 double h = Math.Sqrt(hx * hx + hy * hy);
@@ -316,7 +378,7 @@ namespace Champions.Sim
                 }
                 sim.Target(x + 3 * _headX, y + 3 * _headY, heard);
             }
-            if (!double.IsNaN(_pendingBeat) && _pendingBeat <= heard + 1e-9)
+            if (HordeRhythm && !double.IsNaN(_pendingBeat) && _pendingBeat <= heard + 1e-9)
             {
                 double beat = _pendingBeat;
                 _pendingBeat = double.NaN;

@@ -80,7 +80,14 @@ namespace Champions.Sim
             Enemies = new Enemies(config.EnemyCapacity);
             Strikes.Add(Enemies);
             State.Build = new WeaponBuild(config.Combat);
-            State.Build.Set(WeaponKind.Sword, 1);
+            if (config.SurvivorLoadout.Length == 0) State.Build.Set(WeaponKind.Sword, 1);
+            foreach (var card in config.SurvivorLoadout)
+            {
+                if (!config.SurvivorWeapons) throw new ArgumentException("survivor preset needs survivor weapons");
+                if (card.Kind == CardKind.Weapon && State.Build.Level(card.Weapon) == 0) State.Build.Set(card.Weapon, card.Rank);
+                else if (card.Kind == CardKind.Support && State.Build.Level(card.Support) == 0) State.Build.Set(card.Support, card.Rank);
+                else throw new ArgumentException("invalid or duplicate survivor preset item");
+            }
             Weapons = new WeaponScheduler(this);
             Arsenal = new Arsenal(config.Attacks, config.Mods, Enemies, Beats, config.EnemyCapacity);
             Arsenal.Begin(this);
