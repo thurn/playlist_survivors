@@ -113,3 +113,14 @@ full-build art/performance acceptance is claimed.
   invulnerable 1,000-body stress fixture. Confirm the small contrast pocket
   suits the aesthetic and the hatching remains quiet in real-time motion.
   Operator taste, real speakers and target-Mac GPU cost remain pending.
+
+## Simulation burst follow-up (ps-3wc.17, 2026-11-03)
+
+[Profiling and final IL2CPP results](simulation-bursts/README.md) identify
+synchronized retained-horde collision planning as the peak. Large-body
+queries, grid data layout and neighbor collision passes now do less repeated
+work while retaining exact output. All six final scenes keep 1,001 alive and
+zero presenter faults, but sim p99 is still 1.404–1.908 ms against the 1 ms
+M5 proxy. This remains an implementation performance gap. The 1.5 ms GPU-only
+proxy also remains unverified; synchronized render/readback is not a GPU
+timestamp. These measurements do not accept M1 performance or peak-load art.

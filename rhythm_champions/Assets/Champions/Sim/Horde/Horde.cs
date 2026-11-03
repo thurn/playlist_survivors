@@ -148,6 +148,8 @@ namespace Champions.Sim
         Mob[] mobs;
         readonly StructList<Moment> moments = new StructList<Moment>(16);
         readonly StructList<int> near;
+        struct Neighbour { public int Id; public double X, Y, Gap; }
+        readonly StructList<Neighbour> neighbours = new StructList<Neighbour>(256);
         // A moment's movers, nearest the hero first: distance in tenths of a millimetre above the id's bits.
         long[] order;
         int orderCount;
@@ -529,16 +531,26 @@ namespace Champions.Sim
             double gap = 1 + rules.GapShare;
             double vx = qx - px, vy = qy - py, length = Math.Sqrt(vx * vx + vy * vy);
             enemies.Near((px + qx) / 2, (py + qy) / 2, length / 2 + r * gap + enemies.MaxRadius * rules.GapShare + slack + PushRoomM, near);
+            // Landings stay fixed throughout this move's pushes and bends. Snapshot once instead
+            // of resolving mob ownership, position and radius again for every collision pass.
+            neighbours.Clear();
+            for (int j = 0; j < near.Count; j++)
+            {
+                int other = near[j];
+                if (other == id) continue;
+                Landing(other, out double ox, out double oy);
+                neighbours.Add(new Neighbour { Id = other, X = ox, Y = oy, Gap = (r + enemies[other].Radius) * gap });
+            }
+            var bodies = neighbours.AsSpan();
             double x = px, y = py;
             for (int attempt = 0; attempt < GapTries; attempt++)
             {
                 bool clear = true;
-                for (int j = 0; j < near.Count; j++)
+                for (int j = 0; j < bodies.Length; j++)
                 {
-                    int other = near[j];
-                    if (other == id) continue;
-                    Landing(other, out double ox, out double oy);
-                    double min = (r + enemies[other].Radius) * gap;
+                    ref readonly var body = ref bodies[j];
+                    int other = body.Id;
+                    double ox = body.X, oy = body.Y, min = body.Gap;
                     double dx = x - ox, dy = y - oy, d2 = dx * dx + dy * dy;
                     if (d2 >= min * min) continue;
                     clear = false;
@@ -562,7 +574,7 @@ namespace Champions.Sim
                 if (l < 1e-9) break;
                 double ux = vx / l, uy = vy / l, hit = l, cx = 0, cy = 0;
                 bool met = false;
-                for (int j = -1; j < near.Count; j++)
+                for (int j = -1; j < bodies.Length; j++)
                 {
                     double ox, oy, min;
                     if (j < 0)
@@ -573,10 +585,8 @@ namespace Champions.Sim
                     }
                     else
                     {
-                        int other = near[j];
-                        if (other == id) continue;
-                        Landing(other, out ox, out oy);
-                        min = (r + enemies[other].Radius) * gap;
+                        ref readonly var body = ref bodies[j];
+                        ox = body.X; oy = body.Y; min = body.Gap;
                     }
                     // The first time along the move it would come inside min of (ox, oy).
                     double fx = x - ox, fy = y - oy, along = fx * ux + fy * uy;

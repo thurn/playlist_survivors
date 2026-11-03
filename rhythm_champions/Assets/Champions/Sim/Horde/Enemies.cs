@@ -56,10 +56,10 @@ namespace Champions.Sim
     /// boss's hits go on to <see cref="Bosses"/> (Break's damage, phase two, its death); nothing here moves an enemy, so a
     /// boss is never knocked back.
     ///
-    /// The grid hashes 2 m cells into buckets (the arena is infinite) and is rebuilt lazily, by a counting
-    /// sort, on the first query after <see cref="Moved"/> or a spawn: whoever moves enemies calls
-    /// <see cref="Moved"/> once after. A kill leaves the grid alone: queries skip the dead. The client reads
-    /// enemies through the indexer; only the sim's systems change them (<see cref="Edit"/>).
+    /// The grid hashes 2 m cells into buckets (the arena is infinite), with bodies of radius over 1 m
+    /// checked separately. It is rebuilt lazily, by a counting sort, on the first query after
+    /// <see cref="Moved"/> or a spawn: whoever moves enemies calls <see cref="Moved"/> once after.
+    /// A kill leaves the grid alone: queries skip the dead. The client reads enemies through the indexer; only the sim's systems change them (<see cref="Edit"/>).
     /// </summary>
     public sealed class Enemies : IStrikeTargets
     {
@@ -72,7 +72,13 @@ namespace Champions.Sim
         readonly StructList<int> near;
         // The grid: bucketStart[b]..bucketStart[b + 1] index cellItems, sorted by bucket then id.
         readonly int[] bucketStart = new int[Buckets + 1];
-        int[] cellItems;
+        // Boss-sized bodies must not expand every small-body search across half the arena.
+        const double GridRadius = 1;
+        readonly StructList<int> large = new StructList<int>(16);
+        double gridRadius;
+        // Query data in bucket order avoids chasing a large enemy slot for every rejected body.
+        struct CellBody { public double X, Y, Radius; public int Id, Cell; }
+        CellBody[] cellItems;
         int[] cellOf;
         bool gridValid;
         long generation;
@@ -82,7 +88,7 @@ namespace Champions.Sim
             slots = new StructList<Enemy>(capacity);
             free = new StructList<int>(capacity);
             near = new StructList<int>(capacity);
-            cellItems = new int[Math.Max(1, capacity)];
+            cellItems = new CellBody[Math.Max(1, capacity)];
             cellOf = new int[Math.Max(1, capacity)];
         }
 
@@ -160,7 +166,7 @@ namespace Champions.Sim
             into.Clear();
             if (Alive == 0) return;
             if (!gridValid) Rebuild();
-            double r = reach + MaxRadius;
+            double r = reach + gridRadius;
             int cx0 = Cell(x - r), cx1 = Cell(x + r), cy0 = Cell(y - r), cy1 = Cell(y + r);
             for (int cy = cy0; cy <= cy1; cy++)
             {
@@ -169,21 +175,43 @@ namespace Champions.Sim
                     int key = Key(cx, cy), b = Bucket(key);
                     for (int k = bucketStart[b]; k < bucketStart[b + 1]; k++)
                     {
-                        int id = cellItems[k];
+                        ref readonly var body = ref cellItems[k];
                         // Another cell sharing the bucket: it is visited (or not) as itself.
-                        if (cellOf[id] != key) continue;
-                        ref var e = ref slots[id];
-                        if (!e.Alive) continue;
-                        double dx = e.X - x, dy = e.Y - y, within = reach + e.Radius;
-                        if (dx * dx + dy * dy <= within * within) into.Add(id);
+                        if (body.Cell != key) continue;
+                        double dx = body.X - x, dy = body.Y - y, within = reach + body.Radius;
+                        if (dx * dx + dy * dy <= within * within && slots[body.Id].Alive) into.Add(body.Id);
                     }
                 }
             }
+            // Insert the few large bodies in the original row/cell/id order. Collision pushes,
+            // equal-distance targets and proc budgets all depend on that order.
+            for (int i = 0; i < large.Count; i++)
+            {
+                int id = large[i];
+                ref readonly var e = ref slots[id];
+                if (!e.Alive) continue;
+                double dx = e.X - x, dy = e.Y - y, within = reach + e.Radius;
+                if (dx * dx + dy * dy > within * within) continue;
+                into.Add(id);
+                int j = into.Count - 1;
+                while (j > 0 && Before(id, into[j - 1])) { into[j] = into[j - 1]; j--; }
+                into[j] = id;
+            }
+        }
+
+        bool Before(int a, int b)
+        {
+            int ac = cellOf[a], bc = cellOf[b];
+            int ay = (short)(ac >> 16), by = (short)(bc >> 16);
+            if (ay != by) return ay < by;
+            int ax = (short)ac, bx = (short)bc;
+            return ax != bx ? ax < bx : a < b;
         }
 
         void Rebuild()
         {
             Array.Clear(bucketStart, 0, bucketStart.Length);
+            large.Clear(); gridRadius = 0;
             int n = slots.Count;
             for (int id = 0; id < n; id++)
             {
@@ -191,14 +219,18 @@ namespace Champions.Sim
                 if (!e.Alive) continue;
                 int key = Key(Cell(e.X), Cell(e.Y));
                 cellOf[id] = key;
+                if (e.Radius > GridRadius) { large.Add(id); continue; }
+                gridRadius = Math.Max(gridRadius, e.Radius);
                 bucketStart[Bucket(key) + 1]++;
             }
             for (int b = 0; b < Buckets; b++) bucketStart[b + 1] += bucketStart[b];
             // Fill each bucket in id order, using bucketStart as cursors, then shift them back.
             for (int id = 0; id < n; id++)
             {
-                if (!slots[id].Alive) continue;
-                cellItems[bucketStart[Bucket(cellOf[id])]++] = id;
+                if (!slots[id].Alive || slots[id].Radius > GridRadius) continue;
+                ref readonly var e = ref slots[id];
+                cellItems[bucketStart[Bucket(cellOf[id])]++] = new CellBody
+                    { X = e.X, Y = e.Y, Radius = e.Radius, Id = id, Cell = cellOf[id] };
             }
             for (int b = Buckets; b > 0; b--) bucketStart[b] = bucketStart[b - 1];
             bucketStart[0] = 0;

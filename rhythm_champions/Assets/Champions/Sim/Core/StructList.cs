@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Champions.Sim
 {
@@ -17,11 +18,12 @@ namespace Champions.Sim
             items = new T[Math.Max(1, capacity)];
         }
 
-        public int Count => count;
+        public int Count { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => count; }
         public int Capacity => items.Length;
 
         public ref T this[int i]
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if ((uint)i >= (uint)count) throw new IndexOutOfRangeException();
@@ -31,6 +33,7 @@ namespace Champions.Sim
 
         public ref T Last
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
                 if (count == 0) throw new InvalidOperationException("the list is empty");
@@ -38,6 +41,7 @@ namespace Champions.Sim
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(in T item)
         {
             if (count == items.Length) Array.Resize(ref items, items.Length * 2);
@@ -66,6 +70,7 @@ namespace Champions.Sim
             count = 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<T> AsSpan() => new ReadOnlySpan<T>(items, 0, count);
         public ReadOnlySpan<T> AsSpan(int start) => new ReadOnlySpan<T>(items, start, count - start);
     }
