@@ -18,6 +18,7 @@ namespace Champions.Render
         readonly Vector4[] rows;
         EffectShot orbit, sentinel;
         int orbitForm, sentinelForm, idleLevel, figureCount;
+        public float AuraArea = 1;
         float idleArea = 1;
         bool hasOrbit, hasSentinel;
         public ConstructVisuals(Palette palette, MeleeLibrary library = null)
@@ -66,7 +67,7 @@ namespace Champions.Render
                 float basis = (form == 0 ? 2.5f : 3.4f) * Mathf.Sqrt(idleArea);
                 float age = hasOrbit ? (float)(now - orbit.T) : 1;
                 float pulse = hasOrbit ? Mathf.Clamp01(1 - Mathf.Abs(age) / .5f) : 0;
-                float r = hasOrbit ? Mathf.Lerp(basis, orbit.Radius, pulse) : basis;
+                float r = basis;
                 var at = idleLevel > 0 ? hero : orbit.At;
                 int count = form == 0 ? 2 : form == 1 ? 3 : 4;
                 float angle = hasOrbit ? age * Mathf.PI + (orbit.Mirrored ? Mathf.PI / 2 : 0) : (float)now * Mathf.PI;
@@ -97,8 +98,7 @@ namespace Champions.Render
             if (elapsed > sentinel.Duration) { hasSentinel = false; return; }
             if (elapsed < -.35f) return;
             float radius = sentinel.Radius;
-            if (sentinel.Power == EffectPower.OnBeat)
-                radius = Mathf.Lerp(radius / Mathf.Sqrt(1.5f), radius, Mathf.Clamp01(1 - Mathf.Max(0, elapsed) / .4f));
+            radius = radius / (sentinel.Power == EffectPower.OnBeat ? Mathf.Sqrt(2) : 1) * Mathf.Sqrt(AuraArea);
             var aim = sentinel.Facing.sqrMagnitude > .001f ? sentinel.Facing.normalized : Vector2.up;
             var facing = new Vector3(aim.x, 0, aim.y);
             var side = new Vector3(-aim.y, 0, aim.x);
@@ -148,7 +148,7 @@ namespace Champions.Render
             if (weapons != null)
                 foreach (var b in blades)
                 {
-                    block.SetColor("_Light", new Color(b.Light, b.Light, b.Light));
+                    block.SetColor("_Light", AuraArea > 1 ? new Color(b.Light, b.Light * .78f, b.Light * .03f) : new Color(b.Light, b.Light, b.Light));
                     var rp = Effects.Params(edge, block, camera);
                     for (int sub = 0; sub < weapons.Sword.subMeshCount; sub++) Graphics.RenderMesh(rp, weapons.Sword, sub, b.Matrix);
                 }

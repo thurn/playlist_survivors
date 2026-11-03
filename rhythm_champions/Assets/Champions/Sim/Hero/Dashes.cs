@@ -23,8 +23,8 @@ namespace Champions.Sim
 
     /// <summary>
     /// Immediate movement dash, judged in heard time with cooldown buffering and fixed invulnerability.
-    /// A timed start banks coverage independently for every equipped weapon, even over empty ground.
-    /// Landing Blast is optional, lands once at the legal endpoint, and never changes travel or judgement.
+    /// A timed start grants three seconds of shared coverage, even over empty ground.
+    /// Every live survivor dash sweeps once at its legal endpoint; Landing Blast strengthens that same sweep.
     /// Archived forms below are reachable only by explicitly opted-in historical fixtures.
     /// </summary>
     internal sealed class Dashes
@@ -168,6 +168,7 @@ namespace Champions.Sim
             state.DashReadyAt += elapsed;
             current.Start += elapsed; current.End += elapsed; current.Heard += elapsed;
             sweepT += elapsed;
+            for (int i = 0; i < landings.Count; i++) { landings[i].T += elapsed; landings[i].Anchor += elapsed; }
             waiting = false; state.DashWaiting = false;
         }
 
@@ -267,7 +268,7 @@ namespace Champions.Sim
             double cooldown = rules.LegacyForms ? CooldownS : rules.CooldownS;
             state.DashReadyAt = start + cooldown;
             state.DashCooldownS = cooldown;
-            if (judged.OnBeat) simState.Build.Empower();
+            if (judged.OnBeat) simState.Build.Empower(sim.CombatTime(start));
             walls.Clear();
 
             partCount = 0;
@@ -277,12 +278,12 @@ namespace Champions.Sim
                 for (int i = 0; i < ExtraParts.Count; i++) AddPart(ExtraParts[i]);
             }
             int blastLevel = simState.Build.Level(SupportKind.LandingBlast);
-            blastPending = blastLevel > 0;
+            blastPending = sim.Melee != null || blastLevel > 0;
             if (blastPending)
             {
-                var stats = simState.Build.Stats(WeaponBuild.LandingBlastCapabilities);
+                var stats = simState.Build.Stats(WeaponKind.Sword);
                 blastDamage = (1 + simState.Build.HeroBonus(StatFamily.LandingBlast)) * stats.DamageFactor;
-                blastRadius = 2 * stats.RadiusFactor;
+                blastRadius = MeleeWeapons.Radius(WeaponKind.Sword) * stats.RadiusFactor;
             }
             bool damaging = false;
             for (int i = 0; i < partCount; i++) damaging |= parts[i].Damage > 0;
@@ -395,12 +396,13 @@ namespace Champions.Sim
                 blastPending = false;
                 if (!walk.DashEnded(current.Index, out double x, out double y))
                     walk.PositionWas(current.End, out x, out y);
+                double radius = blastRadius * Math.Sqrt(simState.Build.AreaAt(sim.CombatTime(current.End)));
                 var blow = new Blow
                 {
-                    Shape = HitShape.Circle(x, y, blastRadius), T = current.End, Damage = blastDamage,
+                    Shape = HitShape.Circle(x, y, radius), T = current.End, Damage = blastDamage,
                     Tags = HitTags.Area, Source = BlowSource.LandingBlast, Owner = current.Index, Part = -1,
                 };
-                sim.Emit(SimEvent.LandingBlast(current.End, current.Index, x, y, blastRadius, blastDamage));
+                sim.Emit(SimEvent.LandingBlast(current.End, current.Index, x, y, radius, blastDamage));
                 strikes.Land(sim, blow);
             }
             for (int i = 0; i < landings.Count; i++)

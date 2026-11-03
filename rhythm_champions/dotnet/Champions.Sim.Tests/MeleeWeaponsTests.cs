@@ -12,6 +12,7 @@ namespace Champions.Sim.Tests
             var sim = new Simulation(new SimConfig { SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>(), Dummies = targets });
             sim.State.Build = new WeaponBuild(CombatRules.Default);
             sim.State.Build.Set(kind, level);
+            sim.State.Hero.FacingX = 1; sim.State.Hero.FacingY = 0;
             return sim;
         }
         [TestCase(WeaponKind.Sword)]
@@ -52,23 +53,23 @@ namespace Champions.Sim.Tests
             double end = WeaponScheduler.BaseSeconds(kind);
             sim.StepTo(end + .5);
             double basis = (kind == WeaponKind.Hammer ? 1.65 : 1) * sim.State.Build.Stats(kind).DamageFactor;
-            Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(basis * 1.5).Within(1e-9));
-            Assert.That(Drive.Events(sim, SimEventKind.MeleeAction).Count, Is.EqualTo(2));
-            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(2));
+            Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(basis * (kind == WeaponKind.Sword ? 2.5 : 1.5)).Within(1e-9));
+            Assert.That(Drive.Events(sim, SimEventKind.MeleeAction).Count, Is.EqualTo(kind == WeaponKind.Sword ? 3 : 2));
+            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(kind == WeaponKind.Sword ? 3 : 2));
         }
         [TestCase(WeaponKind.Sword)]
         [TestCase(WeaponKind.Hammer)]
-        public void EmpoweredReachConsumesOnlyOnTargetAndChangesAreaNotDamage(WeaponKind kind)
+        public void TimedAuraExpandsReachWithoutChangingDamage(WeaponKind kind)
         {
             var sim = Make(kind, 1, new Dummy(MeleeWeapons.Radius(kind) * 1.19, 0, 100, .01));
             sim.StepTo(3);
             Assert.That(Drive.Events(sim, SimEventKind.MeleeAction), Is.Empty);
-            sim.State.Build.Empower();
-            sim.StepTo(6);
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
+            sim.StepTo(3 + WeaponScheduler.BaseSeconds(kind));
             var actions = Drive.Events(sim, SimEventKind.MeleeAction);
             Assert.That(actions.Count, Is.EqualTo(1));
-            Assert.That(actions[0].D4, Is.EqualTo(MeleeWeapons.Radius(kind) * Math.Sqrt(1.5)).Within(1e-9));
-            Assert.That(sim.State.Build.Weapon(kind).Empowered, Is.False);
+            Assert.That(actions[0].D4, Is.EqualTo(MeleeWeapons.Radius(kind) * Math.Sqrt(2)).Within(1e-9));
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.True);
             Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(kind == WeaponKind.Hammer ? 1.65 : 1).Within(1e-9));
         }
         [Test]
@@ -78,9 +79,9 @@ namespace Champions.Sim.Tests
             sword.StepTo(1);
             Assert.That(sword.Enemies[1].Health, Is.LessThan(100));
             var hammer = Make(WeaponKind.Hammer, 8, new Dummy(1, 0, 100));
-            hammer.StepTo(4.5);
+            hammer.StepTo(2.25);
             var falls = Drive.Events(hammer, SimEventKind.MeleeAction);
-            Assert.That(falls.Select(e => e.T), Is.EqualTo(new[] { 1.5, 3, 4.5 }));
+            Assert.That(falls.Select(e => e.T), Is.EqualTo(new[] { .75, 1.5, 2.25 }));
             Assert.That(falls.Select(e => e.D5), Is.EqualTo(new[] { 0, 2.6 * .7, 2.6 * 1.4 }).Within(1e-9));
         }
         [TestCase(5)]
@@ -93,7 +94,7 @@ namespace Champions.Sim.Tests
         }
         [TestCase(WeaponKind.Sword)]
         [TestCase(WeaponKind.Hammer)]
-        public void DenseMixedBodyCrowdSelectsTheLaneWithMostReachableTargets(WeaponKind kind)
+        public void SwordUsesFacingWhileHammerSelectsTheDensestReachableLane(WeaponKind kind)
         {
             var random = new Random(73);
             var targets = new Dummy[300];
@@ -103,8 +104,8 @@ namespace Champions.Sim.Tests
                 targets[i] = new Dummy(Math.Cos(angle) * distance, Math.Sin(angle) * distance, 100, .05 + random.NextDouble() * .7);
             }
             var sim = Make(kind, 1, targets);
-            sim.State.Build.Empower();
-            double radius = MeleeWeapons.Radius(kind) * Math.Sqrt(1.5);
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
+            double radius = MeleeWeapons.Radius(kind) * Math.Sqrt(2);
             int expected = 0;
             foreach (var target in targets)
             {
@@ -113,6 +114,7 @@ namespace Champions.Sim.Tests
                 int count = targets.Count(t => shape.Touches(t.X, t.Y, t.Radius));
                 expected = Math.Max(expected, count);
             }
+            if (kind == WeaponKind.Sword) expected = targets.Count(t => HitShape.Cone(0, 0, 1, 0, radius, Math.PI * .42).Touches(t.X, t.Y, t.Radius));
             sim.StepTo(WeaponScheduler.BaseSeconds(kind));
             Assert.That(Enumerable.Range(0, targets.Length).Count(i => sim.Enemies[i].Health < 100), Is.EqualTo(expected));
         }
@@ -145,17 +147,17 @@ namespace Champions.Sim.Tests
             var replay = new Simulation(restored.Build(null));
             live.StepTo(5); replay.StepTo(5);
             Assert.That(replay.Hash, Is.EqualTo(live.Hash));
-            Assert.That(Drive.Events(replay, SimEventKind.MeleeAction).Count, Is.EqualTo(5));
+            Assert.That(Drive.Events(replay, SimEventKind.MeleeAction).Count, Is.EqualTo(10));
         }
         [Test]
         public void RecycledEnemySlotCanBeHitByCapturedEcho()
         {
             var sim = Make(WeaponKind.Sword, 1, new Dummy(1, 0, .5));
             sim.State.Build.Set(SupportKind.Echo, 5);
-            sim.StepTo(1);
+            sim.StepTo(.5);
             int id = sim.Enemies.Spawn(sim, 1, 0, .5, 10);
-            sim.StepTo(1.5);
-            Assert.That(sim.Enemies[id].Health, Is.EqualTo(9.5).Within(1e-9));
+            sim.StepTo(1);
+            Assert.That(sim.Enemies[id].Health, Is.EqualTo(8.5).Within(1e-9));
         }
     }
 }

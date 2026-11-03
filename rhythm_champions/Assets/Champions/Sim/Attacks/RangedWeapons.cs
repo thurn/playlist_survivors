@@ -42,11 +42,11 @@ namespace Champions.Sim
                 bound[i] = true;
             }
         }
-        void Bind(WeaponKind kind) => sim.Weapons.Bind(kind, _ => Target(kind) >= 0, Activate);
-        int Target(WeaponKind kind)
+        void Bind(WeaponKind kind) => sim.Weapons.Bind(kind, t => Target(kind, t) >= 0, Activate);
+        int Target(WeaponKind kind, double t)
         {
             var h = sim.State.Hero;
-            sim.Enemies.Near(h.X, h.Y, Range(kind), near);
+            sim.Enemies.Near(h.X, h.Y, Range(kind) * Math.Sqrt(sim.State.Build.Stats(kind).AreaFactor * sim.State.Build.AreaAt(sim.CombatTime(t))), near);
             int best = -1; double score = kind == WeaponKind.Bow ? -1 : double.PositiveInfinity;
             foreach (int id in near.AsSpan())
             {
@@ -60,7 +60,7 @@ namespace Champions.Sim
         }
         void Activate(WeaponActivation a)
         {
-            int target = Target(a.Kind);
+            int target = Target(a.Kind, a.T);
             if (target < 0) return;
             ref readonly var enemy = ref sim.Enemies[target];
             var h = sim.State.Hero;
@@ -92,7 +92,7 @@ namespace Champions.Sim
                 double angle = effect.Projectile == 0 ? -0.33 : 0.33;
                 double c = SimMath.Cos(angle), sn = SimMath.Sin(angle);
                 double fx = dx * c - dy * sn, fy = dx * sn + dy * c;
-                tx = ox + fx * (spear ? 8 : 6); ty = oy + fy * (spear ? 8 : 6);
+                tx = ox + fx * (spear ? 8 : 6) * scale; ty = oy + fy * (spear ? 8 : 6) * scale;
             }
             else if (spear)
             {
@@ -102,7 +102,7 @@ namespace Champions.Sim
                 ox -= dy * offset; oy += dx * offset;
                 // Later ranks sweep into line before their finite thrust; no invented marching character clip.
                 delay += form >= 2 ? 0.12 : 0;
-                tx = ox + dx * Range(a.Kind); ty = oy + dy * Range(a.Kind);
+                tx = ox + dx * Range(a.Kind) * scale; ty = oy + dy * Range(a.Kind) * scale;
             }
             else
             {
@@ -114,10 +114,10 @@ namespace Champions.Sim
                     dx = tx - ox; dy = ty - oy; length = Math.Sqrt(dx * dx + dy * dy);
                     if (length > 1e-9) { dx /= length; dy /= length; } else { dx = 0; dy = 1; }
                 }
-                double angleSpread = lane * 0.075 * scale;
+                double angleSpread = lane * 0.075;
                 double c = SimMath.Cos(angleSpread), s = SimMath.Sin(angleSpread);
                 double fx = dx * c - dy * s, fy = dx * s + dy * c;
-                double distance = form >= 2 ? Math.Max(2, Math.Min(Range(a.Kind), length)) : Range(a.Kind);
+                double distance = form >= 2 ? Math.Max(2, Math.Min(Range(a.Kind) * scale, length)) : Range(a.Kind) * scale;
                 tx = ox + fx * distance; ty = oy + fy * distance;
             }
             flights.Add(new Flight { Effect = effect, X = ox, Y = oy, ToX = tx, ToY = ty,

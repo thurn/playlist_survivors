@@ -65,7 +65,7 @@ namespace Champions.Client.Scenes
                     Hero = content.Hero, Combat = content.Combat };
                 sim = new Simulation(config);
                 sim.State.Build.Set(entry < 8 ? WeaponKind.Spear : WeaponKind.Bow, new[] { 1, 3, 5, 8 }[entry % 8 / 2]);
-                if (entry % 2 == 1) sim.State.Build.Empower();
+                if (entry % 2 == 1) sim.State.Build.Empower(sim.CombatTime(sim.Now));
                 world = new WorldPresenter(camera, palette);
                 presentation = new RunPresentation(sim, config, content, contentDir, palette, camera, world, null, null, gameObject);
                 // Dummies intentionally stand still. Dress their exact collision bodies in the existing crowd,

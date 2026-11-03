@@ -29,7 +29,7 @@ namespace Champions.Sim
         bool HasTarget(WeaponKind kind, double t)
         {
             var w = sim.State.Build.Weapon(kind);
-            double radius = Radius(kind, w.Level) * Math.Sqrt(sim.State.Build.Stats(kind).AreaFactor * (w.Empowered ? 1.5 : 1));
+            double radius = Radius(kind, w.Level) * Math.Sqrt(sim.State.Build.Stats(kind).AreaFactor * sim.State.Build.AreaAt(sim.CombatTime(t)));
             sim.HeroWas(t, out double x, out double y);
             double dx, dy;
             if (kind == WeaponKind.Sentinel && t < nextSummon)
@@ -100,9 +100,11 @@ namespace Champions.Sim
             sim.Weapons.Supports.Launch(a, a.Kind == WeaponKind.Sentinel ? .9 : .45, HitWindow.Pulse,
                 effect =>
                 {
+                    double area = sim.State.Build.AreaAt(sim.CombatTime(effect.T));
+                    double radius = Radius(a.Kind, a.Level) * Math.Sqrt(a.Stats.AreaFactor * area);
                     double duration = Math.Max(.4, until + heldSeconds - heldAtLaunch - effect.T);
                     sim.Emit(SimEvent.ConstructAction(effect.T, a.Kind, CombatRules.FormIndex(a.Level),
-                        phase | (a.EmpowermentArea > 1 ? 4 : 0), x, y, dx, dy, radius, duration));
+                        phase | (area > 1 ? 4 : 0), x, y, dx, dy, radius, duration));
                     foreach (var shape in Shapes(a.Kind, a.Level, sweep, x, y, dx, dy, radius))
                         sim.Strikes.LandWeapon(sim, new Blow { T = effect.T, Shape = shape, Damage = effect.Damage,
                             Source = a.Kind == WeaponKind.Sentinel ? BlowSource.Sentinel : BlowSource.OrbitBlades,

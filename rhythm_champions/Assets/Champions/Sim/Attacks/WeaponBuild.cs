@@ -36,7 +36,6 @@ namespace Champions.Sim
     {
         public WeaponKind Kind { get; }
         public int Level { get; internal set; }
-        public bool Empowered { get; internal set; }
         /// <summary>Fractional extra-strike progress; cadence consumes it, holds do not.</summary>
         public double StrikeCarry { get; internal set; }
         public long ActivationSequence { get; internal set; }
@@ -129,18 +128,17 @@ namespace Champions.Sim
             }
             return bonus;
         }
-        public void Empower()
-        {
-            foreach (var w in weapons) if (w != null) w.Empowered = true;
-        }
-        /// <summary>No target means no activation. Capture this multiplier for every child of the activation.</summary>
-        public double BeginActivation(WeaponKind kind, bool hasTarget)
+        public const double AuraSeconds = 3;
+        public double AuraUntil { get; private set; } = double.NegativeInfinity;
+        public double AreaAt(double combatTime) => combatTime < AuraUntil ? 2 : 1;
+        public void Empower(double combatTime = 0) => AuraUntil = combatTime + AuraSeconds;
+        /// <summary>Every activation samples shared timed coverage; no weapon banks a hit.</summary>
+        public double BeginActivation(WeaponKind kind, bool hasTarget, double combatTime = 0)
         {
             var w = Weapon(kind) ?? throw new InvalidOperationException("weapon not owned");
             if (!hasTarget) return 1;
-            double area = w.Empowered ? 1.5 : 1;
-            w.Empowered = false; w.ActivationSequence++;
-            return area;
+            w.ActivationSequence++;
+            return AreaAt(combatTime);
         }
     }
 }

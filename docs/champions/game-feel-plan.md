@@ -159,3 +159,89 @@ local. Automated event counts and stills do not certify satisfying timing.
 Human subjective hand-play, speaker/Bluetooth judgement and target-hardware
 feel remain explicit, non-blocking operator-pending checks. Agents must still
 capture, inspect and iterate; pending human judgement is not a substitute.
+
+## ps-ueo.2 implementation (2026-11-03)
+
+The survivor build reserves Sword even when a scripted preset omits it. Existing
+hand attachment and sword-ready locomotion are retained. Sword's ordinary cone
+uses movement/last facing; Hammer keeps crowd aim. Sword radius is 3 m and base
+hit damage 1: initial weakest fodder health is at most .65 (bat .325), while
+8-toughness elites survive. Levels and Might increase ordinary and landing damage;
+Reach increases their area. Movement remains available during body swings.
+
+Baseline fallback periods are Sword/Bow/Ember/Sentinel .5 s, Hammer .75 s,
+Spear/Lightning .375 s and Orbit .25 s. Survivor cadence uses quarter-beat grid
+units with counts 1/2/3/4/6/8/12/16/24/32; archived cadence keeps whole beats.
+Quantization may increase per-hit damage for a slower chosen interval, but never
+reduces it for a faster interval. Tempo fractional carry and held grid spending
+remain. There is no accumulated resume volley.
+
+Every survivor dash emits exactly one `LandingBlast` event at its .15 s legal
+endpoint (the old wire ID is retained). It is now the baseline sword sweep,
+not an additional optional blast: radius 3 m times Sword's radius factor, damage
+Sword's damage factor. Landing Blast support keeps its content/card ID and adds
+20% base sweep damage per level; it creates no second hit, Echo or Tempo sweep.
+Both on/off-beat landings clear weak fodder; a timed landing uses radius sqrt(2)
+times ordinary, rather than increased hit damage. Archived non-survivor sessions
+do not gain this baseline sweep. Survivor replay fixtures were deliberately
+re-recorded for the faster cadence, shared aura and changed boss-fight inputs.
+
+`WeaponBuild.AuraUntil` uses active combat seconds. A qualifying dash sets it to
+start + 3; a later qualifying dash replaces that deadline, and off-beat dashes
+leave it unchanged. Beatless judgement qualifies every dash. All acquisitions and
+forms share the state. Exact expiry is inactive. Cards/pause freeze combat time;
+expiry, cadence prediction and aura state participate in deterministic hashes.
+Target eligibility and actual footprints use the same shared area factor.
+Persistent pulses and their echoes sample current area; idle orbit/field/sentinel
+visuals follow current area even between pulses. Launched arrows/thrusts and
+ordinary discrete echoes retain captured footprints.
+
+Automatic Sword sends up to .35 s advance notice on its predicted cadence rather
+than requesting a windup on impact. A/B clip scheduling retains the existing
+1.15x speed ceiling and natural partial entry when follow-through overlaps.
+Movement can retarget the actual impact direction. Dash start cancels conflicting
+body swings; its immediate .15 s travel intentionally enters the final authored
+spin windup at natural speed, with the spin impact at dash end and no lingering
+dodge layer over the exit. Sword auto damage is suppressed until .22 s after
+the exit to protect that follow-through. Holds preserve pending dash/spin timing
+and discard automatic windups whose grid points were spent while held.
+
+Ordinary Sword uses the existing trailer-like Slash3 broad crescent recipe and
+its held blade; detached rigid Sword meshes are reserved for spectral actions.
+Landing uses the existing full-circle SwordSpin recipe, with same-time heavy hit
+sound and existing instantaneous enemy shatter. Yellow shader flags, launch tint
+and a small yellow ring communicate empowerment; the ring fades in its final
+.3 s and does not prolong coverage. The remaining enemy/HUD color work belongs
+to ps-ueo.3.
+
+### Local motion evidence and limits
+
+`/Users/dthurn/Library/Caches/playlist-survivors/evidence/ps-ueo/sword-feel-visible/`
+contains 240 ordered beauty frames, ID frames, view metadata and `motion.mp4`
+(30 fps, 8 s). `sword-feel` is a scripted stationary 72-target formation using
+the live Simulation, RunPresentation, held hero, VFX and crowd shatter presenters.
+Dummy spawn events are given visible skeleton/slime/demon bodies only in the
+scene's presenter; this is explicitly not sustained horde AI evidence. Weak
+bodies have .65 health, with an 8-health survivor per group. Capture sound is
+silent; sound dispatch timing is checked in code/tests, not heard by an agent.
+
+Inspected ordered intervals .267–.733 s (body lead, ordinary white crescent and
+shatter), 2.0–2.4, 2.625–3.0 and 3.25–3.6 s (successive legal landing spins,
+yellow circles and local clearing), and 4.7–5.2 s (aura fades and ordinary white
+coverage returns). The first capture exposed invisible type-zero dummy bodies;
+the scene was corrected and the visible formation recaptured. The restored
+.45-width, 1.5-brightness crescents replace the baseline .055/.65 thin strokes.
+Compared ordered frames from trailer 8–10 s: broad arcs reveal a cleared pocket
+and shatter begins on impact in both; the trailer's much denser moving crowd,
+multicolored groups, grading and camera choreography remain a different test.
+
+Agent validation establishes deterministic geometry, timing and visible motion,
+not subjective fun, speaker sync or target-hardware feel. ps-ueo.5 must still
+capture moving-horde assembly; operator hand-play remains non-blocking pending.
+
+Verification at delivery: 481 sim tests and 125 Unity EditMode tests passed;
+Mono player built and the 240-frame scene exited 0 without presenter exceptions.
+The two survivor fixture sessions were re-recorded by their explicit fixture
+recorders, then replayed by the full sim suite. No vendor assets, bakes or media
+are included in the commit. Enact fast checks gate staging; the parent run owns
+slow-CI convergence and full moving-horde assembly after this executor closes.

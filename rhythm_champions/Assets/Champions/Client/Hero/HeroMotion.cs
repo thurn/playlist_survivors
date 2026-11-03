@@ -201,6 +201,7 @@ namespace Champions.Client.Hero
             public float EntryClipTime;
             /// <summary>Its follow-through's end, and the clip's end (song time).</summary>
             public double End, ClipEnd;
+            public double CutAt;
             public float AimYaw;
             /// <summary>The twist's weight carried in from the swing before, at its entry.</summary>
             public double Carry;
@@ -238,6 +239,7 @@ namespace Champions.Client.Hero
         int _glideCount, _swingCount, _dashCount, _hurtCount;
         double _shown = double.NegativeInfinity, _death = double.PositiveInfinity;
         Vector2 _deathFrom;
+        double _heldAt = double.NaN;
 
         /// <param name="speedMps">The hero's walking speed (hero.json), which paces the run clips.</param>
         public HeroMotion(HeroClips clips, double speedMps)
@@ -270,7 +272,7 @@ namespace Champions.Client.Hero
         }
 
         /// <summary>Plans the swing's clip (<see cref="HeroMotion"/>, Swings) and returns it.</summary>
-        public SwingRecord Swing(SwingKind kind, double impact, Vector2 aim)
+        public SwingRecord Swing(SwingKind kind, double impact, Vector2 aim, bool priority = false)
         {
             // LightCombo01A starts from the sword idle and ends where LightCombo01B starts: a slash right after an A is a B.
             var prev = _swingCount > 0 ? _swings[(_swingCount - 1) % Keep] : default;
@@ -278,7 +280,7 @@ namespace Champions.Client.Hero
             var c = kind == SwingKind.Spin ? _clips.Spin : afterA ? _clips.SlashB : _clips.SlashA;
             // It shows no earlier than the frame it is known on, nor before the swing before has followed through.
             double earliest = _shown;
-            if (_swingCount > 0) earliest = Math.Max(earliest, prev.End);
+            if (_swingCount > 0 && !priority) earliest = Math.Max(earliest, prev.End);
             double room = impact - earliest;
             float speed = 1;
             double start = impact - c.Impact, entry = start;
@@ -290,13 +292,50 @@ namespace Champions.Client.Hero
             else if (room < c.Impact) entry = earliest; // part-way, at natural speed
             var s = new SwingRecord
             {
-                Kind = kind, Clip = c.Index, Name = c.Info.Name, Start = start, Impact = impact, Speed = speed, Entry = entry,
+                CutAt = double.PositiveInfinity, Kind = kind, Clip = c.Index, Name = c.Info.Name, Start = start, Impact = impact, Speed = speed, Entry = entry,
                 EntryClipTime = (float)((entry - start) * speed), End = start + c.End / speed, ClipEnd = start + c.Length / speed,
                 AimYaw = aim.sqrMagnitude > 1e-8f ? YawOf(aim) : float.NaN,
             };
             s.Carry = _swingCount > 0 ? TwistWeight(_swings[(_swingCount - 1) % Keep], entry) : 0;
             _swings[_swingCount++ % Keep] = s;
             return s;
+        }
+
+        public void Hold(double t, bool held)
+        {
+            if (held && double.IsNaN(_heldAt)) { _heldAt = t; return; }
+            if (held || double.IsNaN(_heldAt)) return;
+            double elapsed = t - _heldAt;
+            for (int i = Math.Max(0, _glideCount - _glides.Length); i < _glideCount; i++) _glides[i % _glides.Length].Start += elapsed;
+            for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
+            {
+                ref var s = ref _swings[i % Keep];
+                // Grid points spent while held cannot become automatic hits on resume.
+                if (s.Kind != SwingKind.Spin && s.Impact >= _heldAt) s.CutAt = Math.Min(s.CutAt, _heldAt);
+                s.Start += elapsed; s.Impact += elapsed; s.Entry += elapsed;
+                s.End += elapsed; s.ClipEnd += elapsed; s.CutAt += elapsed;
+            }
+            for (int i = Math.Max(0, _dashCount - Keep); i < _dashCount; i++)
+            { _dashes[i % Keep].Start += elapsed; _dashes[i % Keep].End += elapsed; }
+            for (int i = Math.Max(0, _hurtCount - Keep); i < _hurtCount; i++) _hurts[i % Keep] += elapsed;
+            _shown += elapsed; _death += elapsed; _heldAt = double.NaN;
+        }
+
+        public void AimSwing(double impact, Vector2 aim)
+        {
+            for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
+                if (Math.Abs(_swings[i % Keep].Impact - impact) < 1e-6)
+                    _swings[i % Keep].AimYaw = YawOf(aim);
+        }
+
+        public void LandingSpin(double start, double impact, Vector2 direction)
+        {
+            for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
+                _swings[i % Keep].CutAt = Math.Min(_swings[i % Keep].CutAt, start);
+            // Enter the authored spin's final .15 s windup at natural speed; the full 1.43 s
+            // lead cannot precede an immediate dash. The dash owns travel, the spin owns exit.
+            Swing(SwingKind.Spin, impact, direction, priority: true);
+            if (_dashCount > 0) _dashes[(_dashCount - 1) % Keep].Out = 0;
         }
 
         public void Dash(DashPose pose, double start, double end, Vector2 direction, bool evolved)
@@ -345,6 +384,7 @@ namespace Champions.Client.Hero
         /// <summary>The hero's pose at song time <paramref name="t"/>, into <paramref name="p"/>.</summary>
         public void Evaluate(double t, HeroPose p)
         {
+            if (!double.IsNaN(_heldAt)) t = Math.Min(t, _heldAt);
             _shown = Math.Max(_shown, t);
             p.LayerCount = 0;
             p.Lift = 0;
@@ -391,8 +431,8 @@ namespace Champions.Client.Hero
             for (int i = Math.Max(0, _swingCount - Keep); i < _swingCount; i++)
             {
                 var s = _swings[i % Keep];
-                if (s.Impact <= t + 1e-6) latestImpact = Math.Max(latestImpact, s.Impact);
-                if (s.Entry > t) continue;
+                if (s.Impact <= t + 1e-6 && s.Impact < s.CutAt) latestImpact = Math.Max(latestImpact, s.Impact);
+                if (s.Entry > t || t >= s.CutAt) continue;
                 double fadeIn = Clamp01((t - s.Entry) / Math.Max(1e-3, Math.Min(AttackIn, 0.5 * (s.Impact - s.Entry))));
                 double w = fadeIn * (1 - Smooth(Clamp01((t - s.ClipEnd) / AttackOut)));
                 if (w <= 0) continue;
@@ -454,7 +494,7 @@ namespace Champions.Client.Hero
             for (int i = _swingCount - 1; i >= Math.Max(0, _swingCount - Keep); i--)
             {
                 var s = _swings[i % Keep];
-                if (float.IsNaN(s.AimYaw) || s.Entry > t) continue;
+                if (float.IsNaN(s.AimYaw) || s.Entry > t || t >= s.CutAt) continue;
                 if (latest < 0) latest = i;
                 first = i;
                 if (s.Carry <= 0 || TwistIn(s, t) >= 1) break;

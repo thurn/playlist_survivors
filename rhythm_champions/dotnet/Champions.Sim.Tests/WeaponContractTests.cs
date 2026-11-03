@@ -103,7 +103,7 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void EmpowermentBelongsToTheWholeActivationAndSurvivesAFormChange()
+        public void SharedAuraSurvivesFormsAndNewAcquisitions()
         {
             var build = new WeaponBuild(Content);
             build.Set(WeaponKind.Sword, 2);
@@ -115,16 +115,16 @@ namespace Champions.Sim.Tests
             Assert.AreSame(sword, build.Weapon(WeaponKind.Sword));
             Assert.AreEqual(0.75, sword.StrikeCarry);
             build.Set(WeaponKind.Bow, 1);
-            Assert.IsFalse(build.Weapon(WeaponKind.Bow).Empowered, "new acquisition waits for next timed dash");
+            Assert.IsTrue((build.AreaAt(0) > 1), "new acquisition shares the timed aura");
             Assert.AreEqual(1, build.BeginActivation(WeaponKind.Sword, false));
-            Assert.IsTrue(sword.Empowered);
+            Assert.IsTrue((build.AreaAt(0) > 1));
             Assert.AreEqual(0, sword.ActivationSequence);
-            Assert.AreEqual(1.5, build.BeginActivation(WeaponKind.Sword, true));
-            Assert.AreEqual(1, build.BeginActivation(WeaponKind.Sword, true));
-            Assert.IsTrue(build.Weapon(WeaponKind.EmberField).Empowered);
+            Assert.AreEqual(2, build.BeginActivation(WeaponKind.Sword, true));
+            Assert.AreEqual(2, build.BeginActivation(WeaponKind.Sword, true));
+            Assert.IsTrue((build.AreaAt(0) > 1));
             Assert.IsTrue(Content.Weapon(WeaponKind.EmberField).Form(1).Persistent);
-            Assert.AreEqual(1.5, build.BeginActivation(WeaponKind.EmberField, true));
-            Assert.IsFalse(build.Weapon(WeaponKind.EmberField).Empowered);
+            Assert.AreEqual(2, build.BeginActivation(WeaponKind.EmberField, true));
+            Assert.AreEqual(1, build.AreaAt(3), "exact expiry");
         }
 
         [Test]

@@ -44,43 +44,43 @@ namespace Champions.Sim.Tests
             foreach (int level in new[] { 1, 3, 5, 8 })
             {
                 var sim = Make(kind, level, new Dummy(.1, 0, 100, .01));
-                sim.State.Build.Empower();
+                sim.State.Build.Empower(sim.CombatTime(sim.Now));
                 sim.StepTo(WeaponScheduler.BaseSeconds(kind));
                 double basis = kind == WeaponKind.Sentinel ? .9 : .45;
                 Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(basis * sim.State.Build.Stats(kind).DamageFactor).Within(1e-9));
                 var action = Drive.Events(sim, SimEventKind.ConstructAction).Single();
-                Assert.That(action.D4, Is.EqualTo(ConstructWeapons.Radius(kind, level) * Math.Sqrt(1.5)).Within(1e-9));
-                Assert.That(sim.State.Build.Weapon(kind).Empowered, Is.False);
+                Assert.That(action.D4, Is.EqualTo(ConstructWeapons.Radius(kind, level) * Math.Sqrt(2)).Within(1e-9));
+                Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.True);
             }
         }
         [TestCase(WeaponKind.OrbitBlades)]
         [TestCase(WeaponKind.Sentinel)]
-        public void EmptySpaceHoldsCarryAndEmpowermentUntilUsefulActivation(WeaponKind kind)
+        public void EmptySpacePreservesCarryButAuraExpires(WeaponKind kind)
         {
             var sim = Make(kind, 8);
             sim.State.Build.Set(SupportKind.Tempo, 5);
-            sim.State.Build.Empower();
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
             sim.StepTo(4);
             Assert.That(Drive.Events(sim, SimEventKind.ConstructAction), Is.Empty);
-            Assert.That(sim.State.Build.Weapon(kind).Empowered, Is.True);
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
             Assert.That(sim.State.Build.Weapon(kind).StrikeCarry, Is.Zero);
             sim.Enemies.Spawn(sim, 1, 0, .1, 100);
             sim.StepTo(5);
-            Assert.That(sim.State.Build.Weapon(kind).Empowered, Is.False);
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
             Assert.That(Drive.Events(sim, SimEventKind.ConstructAction), Is.Not.Empty);
         }
         [TestCase(WeaponKind.OrbitBlades)]
         [TestCase(WeaponKind.Sentinel)]
-        public void EmpowermentEndsAtTheNextPulseAndTempoGrantsIndependentBoundedHits(WeaponKind kind)
+        public void SharedAuraCoversSuccessivePulsesAndTempoGrantsIndependentBoundedHits(WeaponKind kind)
         {
             var sim = Make(kind, 8, new Dummy(1, 0, 100));
             sim.State.Build.Set(SupportKind.Tempo, 5);
-            sim.State.Build.Empower();
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
             sim.StepTo(WeaponScheduler.BaseSeconds(kind) * 2);
             var actions = Drive.Events(sim, SimEventKind.ConstructAction);
             Assert.That(actions.Count, Is.EqualTo(3), "one strike then two, independent of roster size");
-            Assert.That(actions[0].D4, Is.EqualTo(ConstructWeapons.Radius(kind, 8) * Math.Sqrt(1.5)).Within(1e-9));
-            Assert.That(actions[1].D4, Is.EqualTo(ConstructWeapons.Radius(kind, 8)).Within(1e-9));
+            Assert.That(actions[0].D4, Is.EqualTo(ConstructWeapons.Radius(kind, 8) * Math.Sqrt(2)).Within(1e-9));
+            Assert.That(actions[1].D4, Is.EqualTo(ConstructWeapons.Radius(kind, 8) * Math.Sqrt(2)).Within(1e-9));
             double basis = kind == WeaponKind.Sentinel ? .9 : .45;
             Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(basis * sim.State.Build.Stats(kind).DamageFactor * 3).Within(1e-9));
         }
@@ -89,11 +89,11 @@ namespace Champions.Sim.Tests
         {
             var sim = Make(WeaponKind.Sentinel, 8, new Dummy(2, 0, 100), new Dummy(4, 0, 100));
             sim.State.Build.Set(SupportKind.Echo, 5);
-            sim.StepTo(1.5);
-            double damage = .9 * sim.State.Build.Stats(WeaponKind.Sentinel).DamageFactor * 1.5;
+            sim.StepTo(1);
+            double damage = .9 * sim.State.Build.Stats(WeaponKind.Sentinel).DamageFactor * 2.5;
             Assert.That(100 - sim.Enemies[0].Health, Is.EqualTo(damage).Within(1e-9));
             Assert.That(100 - sim.Enemies[1].Health, Is.EqualTo(damage).Within(1e-9));
-            Assert.That(Drive.Events(sim, SimEventKind.ConstructAction).Count, Is.EqualTo(2));
+            Assert.That(Drive.Events(sim, SimEventKind.ConstructAction).Count, Is.EqualTo(3));
         }
         [TestCase(3)]
         [TestCase(5)]
@@ -114,9 +114,9 @@ namespace Champions.Sim.Tests
             var longLived = Make(WeaponKind.Sentinel, 8, new Dummy(1, 0, 100));
             longLived.State.Build.Set(SupportKind.Persistence, 5);
             plain.StepTo(4); longLived.StepTo(4);
-            Assert.That(Drive.Events(plain, SimEventKind.ConstructAction).Select(e => e.T), Is.EqualTo(new[] { 1d, 2, 3 }));
-            Assert.That(Drive.Events(longLived, SimEventKind.ConstructAction).Select(e => e.T), Is.EqualTo(new[] { 1d, 2, 3, 4 }));
-            Assert.That(longLived.State.Build.Weapon(WeaponKind.Sentinel).PersistentUntil, Is.EqualTo(5.2).Within(1e-9));
+            Assert.That(Drive.Events(plain, SimEventKind.ConstructAction).Select(e => e.T), Is.EqualTo(new[] { .5, 1, 1.5, 2, 2.5 }));
+            Assert.That(Drive.Events(longLived, SimEventKind.ConstructAction).Select(e => e.T), Is.EqualTo(new[] { .5, 1, 1.5, 2, 2.5, 3, 3.5, 4 }));
+            Assert.That(longLived.State.Build.Weapon(WeaponKind.Sentinel).PersistentUntil, Is.EqualTo(4.7).Within(1e-9));
             plain.StepTo(5); longLived.StepTo(5);
             Assert.That(Drive.Events(plain, SimEventKind.ConstructAction).Last().T, Is.EqualTo(5));
         }
@@ -124,7 +124,7 @@ namespace Champions.Sim.Tests
         public void OrbitScythesAlternateAndCrownCoversBothAxesInOneActivation()
         {
             var scythes = Make(WeaponKind.OrbitBlades, 5, new Dummy(4.5, 0, 100, .01), new Dummy(0, 4.5, 100, .01));
-            scythes.StepTo(.5);
+            scythes.StepTo(.25);
             Assert.That(scythes.Enemies[1].Health, Is.EqualTo(100));
             Assert.That(scythes.Enemies[0].Health, Is.LessThan(100));
             scythes.StepTo(1);

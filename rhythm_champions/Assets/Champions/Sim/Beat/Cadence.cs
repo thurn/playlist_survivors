@@ -41,10 +41,15 @@ namespace Champions.Sim
         readonly BeatRules rules;
         readonly int[] choices;
         readonly double fallbackS;
+        readonly int subdivisions;
+        int nextGridIndex;
+        double nextGrid = double.PositiveInfinity;
         double nextPulse;
 
-        public Cadence(BeatServices beats, double targetS, int[] choices = null, double? fallbackS = null)
+        public Cadence(BeatServices beats, double targetS, int[] choices = null, double? fallbackS = null, int subdivisions = 1)
         {
+            if (subdivisions < 1) throw new ArgumentOutOfRangeException(nameof(subdivisions));
+            this.subdivisions = subdivisions;
             this.beats = beats ?? throw new ArgumentNullException(nameof(beats));
             rules = beats.Rules;
             TargetS = targetS;
@@ -108,18 +113,27 @@ namespace Champions.Sim
         public double NextStrike(double s)
         {
             if (Beats == 0) return Math.Max(s, nextPulse);
-            int from = Math.Max(beats.LastFired + 1, Anchor);
+            int from = Math.Max(subdivisions == 1 ? beats.LastFired + 1 : nextGridIndex, Anchor);
             int k = from + ((Anchor - from) % Beats + Beats) % Beats;
             for (; ; k += Beats)
             {
-                double t = beats.PredictBeat(k);
+                double t = Predict(k);
                 if (double.IsNaN(t)) return double.NaN;
                 if (t >= s - 1e-9) return t;
             }
         }
 
         /// <summary>The seconds pulse's next strike, or infinity on the beat.</summary>
-        internal double NextPulse => Beats == 0 ? nextPulse : double.PositiveInfinity;
+        internal double NextPulse => Beats == 0 ? nextPulse : nextGrid;
+        internal int NextGridIndex => nextGridIndex;
+        double Predict(int unit)
+        {
+            double t = beats.PredictBeat(unit / subdivisions);
+            if (unit % subdivisions == 0) return t;
+            double next = beats.PredictBeat(unit / subdivisions + 1);
+            return t + (unit % subdivisions) * (next - t) / subdivisions;
+        }
+        internal CadenceStep GridPulse(double t) => OnGrid(nextGridIndex, t, true);
 
         /// <summary>The pulse strikes at <paramref name="t"/>.</summary>
         internal void FirePulse(double t)
@@ -132,6 +146,7 @@ namespace Champions.Sim
         internal CadenceStep Beatless(double t)
         {
             if (Beats == 0) return CadenceStep.None;
+            nextGrid = double.PositiveInfinity;
             Beats = 0;
             Anchor = -1;
             LockPeriod = double.NaN;
@@ -141,10 +156,15 @@ namespace Champions.Sim
 
         /// <summary>Beat <paramref name="i"/> fired at <paramref name="t"/>, reliable or not as the sim judged it then.</summary>
         internal CadenceStep OnBeat(int i, double t, bool reliable)
+            => OnGrid(i * subdivisions, t, reliable);
+
+        CadenceStep OnGrid(int i, double t, bool reliable)
         {
             if (!reliable) return Beatless(t);
+            nextGridIndex = i + 1;
+            nextGrid = (i + 1) % subdivisions != 0 ? Predict(i + 1) : double.PositiveInfinity;
             var step = CadenceStep.None;
-            double tempo = beats.TempoAt(i);
+            double tempo = beats.TempoAt(i / subdivisions) / subdivisions;
             if (Beats == 0)
             {
                 Beats = Choose(tempo, TargetS, choices);
@@ -152,7 +172,7 @@ namespace Champions.Sim
                 Anchor = i;
                 step = CadenceStep.Changed;
             }
-            else if (Math.Abs(tempo / LockPeriod - 1) > rules.CadenceHoldWithin + 1e-9 && (!beats.HasBars || beats.IsDownbeat(i)))
+            else if (Math.Abs(tempo / LockPeriod - 1) > rules.CadenceHoldWithin + 1e-9 && (!beats.HasBars || i % subdivisions == 0 && beats.IsDownbeat(i / subdivisions)))
             {
                 int count = Choose(tempo, TargetS, choices);
                 LockPeriod = tempo;

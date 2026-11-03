@@ -18,8 +18,8 @@ namespace Champions.Sim
         public static double Radius(WeaponKind kind) => kind == WeaponKind.Hammer ? 2.6 : 3;
         bool HasTarget(WeaponKind kind, double t)
         {
-            var w = sim.State.Build.Weapon(kind);
-            double scale = Math.Sqrt(sim.State.Build.Stats(kind).AreaFactor * (w.Empowered ? 1.5 : 1));
+            if (kind == WeaponKind.Sword && sim.State.Hero.Dashes > 0 && t < sim.State.Hero.DashEnd + .22) return false;
+            double scale = Math.Sqrt(sim.State.Build.Stats(kind).AreaFactor * sim.State.Build.AreaAt(sim.CombatTime(t)));
             sim.HeroWas(t, out double x, out double y);
             sim.Enemies.Near(x, y, Radius(kind) * scale, near);
             return near.Count > 0;
@@ -28,7 +28,8 @@ namespace Champions.Sim
         {
             sim.HeroWas(activation.T, out double x, out double y);
             double radius = Radius(activation.Kind) * Math.Sqrt(activation.AreaFactor);
-            Aim(x, y, radius, out double dx, out double dy);
+            double dx = sim.State.Hero.FacingX, dy = sim.State.Hero.FacingY;
+            if (activation.Kind == WeaponKind.Hammer) Aim(x, y, radius, out dx, out dy);
             // Capture the origin and aim once; Echo retains the original lane and empowerment.
             sim.Weapons.Supports.Launch(activation, activation.Kind == WeaponKind.Hammer ? 1.65 : 1,
                 HitWindow.Strike, effect => Strike(effect, x, y, dx, dy, radius), authoredTargets: int.MaxValue / 2);
@@ -81,7 +82,7 @@ namespace Champions.Sim
             int step = (int)((a.Sequence - 1) % 3);
             bool hammer = a.Kind == WeaponKind.Hammer;
             double travel = form == 3 ? radius * (hammer ? step * 0.7 : 1.5) : 0;
-            int flags = (effect.Spectral ? 1 : 0) | ((a.Sequence + effect.Strike) % 2 == 0 ? 2 : 0) | step << 2;
+            int flags = (a.EmpowermentArea > 1 ? 16 : 0) | (effect.Spectral ? 1 : 0) | ((a.Sequence + effect.Strike) % 2 == 0 ? 2 : 0) | step << 2;
             sim.Emit(SimEvent.MeleeAction(effect.T, a.Kind, form, flags, x, y, dx, dy, radius, travel));
             // A single strike ledger spans every component: the retained sweep and added footprint cannot double-hit.
             Land(HitShape.Cone(x, y, dx, dy, radius, Math.PI * 0.42));

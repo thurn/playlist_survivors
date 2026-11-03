@@ -38,20 +38,20 @@ namespace Champions.Sim.Tests
             }
         }
         [TestCase(1)] [TestCase(3)] [TestCase(5)] [TestCase(8)]
-        public void EmptyFieldHoldsEmpowermentAndStrikeCarryUntilATargetEnters(int level)
+        public void EmptyFieldPreservesCarryButDoesNotBankAura(int level)
         {
             var sim = Make(WeaponKind.EmberField, level);
             sim.State.Build.Set(SupportKind.Tempo, 1);
-            sim.State.Build.Empower();
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
             sim.StepTo(4);
             var weapon = sim.State.Build.Weapon(WeaponKind.EmberField);
-            Assert.That(weapon.Empowered, Is.True);
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
             Assert.That(weapon.StrikeCarry, Is.Zero);
             Assert.That(Drive.Events(sim, SimEventKind.MagicAction), Is.Empty);
-            sim.Enemies.Spawn(sim, MagicWeapons.FieldRadius * 1.1, 0, .01, 100);
+            sim.Enemies.Spawn(sim, MagicWeapons.FieldRadius * .9, 0, .01, 100);
             sim.StepTo(5);
-            Assert.That(weapon.Empowered, Is.False);
-            Assert.That(weapon.StrikeCarry, Is.EqualTo(.1).Within(1e-9));
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
+            Assert.That(weapon.StrikeCarry, Is.EqualTo(.2).Within(1e-9));
             Assert.That(Drive.Events(sim, SimEventKind.Hit), Is.Not.Empty);
         }
         [TestCase(1)] [TestCase(3)] [TestCase(5)] [TestCase(8)]
@@ -63,16 +63,16 @@ namespace Champions.Sim.Tests
             sim.State.Build.Set(SupportKind.Pierce, 5);
             sim.State.Build.Set(SupportKind.Split, 5);
             sim.State.Build.Set(SupportKind.Echo, 5);
-            sim.StepTo(1.25);
+            sim.StepTo(.875);
             double basis = 1.1 * sim.State.Build.Stats(WeaponKind.Lightning).DamageFactor;
-            Assert.That(100 - sim.Enemies[boss].Health, Is.EqualTo(basis * 1.5).Within(1e-9));
-            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(2));
+            Assert.That(100 - sim.Enemies[boss].Health, Is.EqualTo(basis * 2.5).Within(1e-9));
+            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(3));
         }
         [Test]
         public void LightningNearestTiesUseIdRatherThanCellOrder()
         {
             var sim = Make(WeaponKind.Lightning, 1, new Dummy(1, 0, 100, .1), new Dummy(-1, 0, 100, .1));
-            sim.StepTo(.75);
+            sim.StepTo(.375);
             Assert.That(sim.Enemies[0].Health, Is.LessThan(100));
             Assert.That(sim.Enemies[1].Health, Is.EqualTo(100));
         }
@@ -80,7 +80,7 @@ namespace Champions.Sim.Tests
         public void ACloserTargetOutsideTheRootCircleCannotHideAnEligibleTarget()
         {
             var sim = Make(WeaponKind.Lightning, 8, new Dummy(7.5, 0, 100, .1), new Dummy(-4, 0, 100, .1));
-            sim.StepTo(.75); // First level-eight node is at (2, 0).
+            sim.StepTo(.375); // First level-eight node is at (2, 0).
             Assert.That(sim.Enemies[0].Health, Is.EqualTo(100));
             Assert.That(sim.Enemies[1].Health, Is.LessThan(100));
         }
@@ -90,7 +90,7 @@ namespace Champions.Sim.Tests
             var sim = Make(WeaponKind.Lightning, 1, new Dummy(1,0,100,.1), new Dummy(3.5,0,100,.1),
                 new Dummy(6,0,100,.1), new Dummy(8.5,0,100,.1), new Dummy(-5,0,100,.1));
             sim.State.Build.Set(SupportKind.Pierce, 5);
-            sim.StepTo(.75);
+            sim.StepTo(.375);
             Assert.That(sim.Enemies[0].Health, Is.LessThan(100));
             Assert.That(sim.Enemies[1].Health, Is.LessThan(100));
             Assert.That(sim.Enemies[2].Health, Is.LessThan(100));
@@ -101,23 +101,23 @@ namespace Champions.Sim.Tests
         public void LevelOneSplitAndMultishotAlreadyReachDistinctTargets()
         {
             var plain = Make(WeaponKind.Lightning, 1, new Dummy(1,0,100), new Dummy(2,0,100), new Dummy(3,0,100));
-            plain.StepTo(.75);
+            plain.StepTo(.375);
             Assert.That(plain.Enemies[1].Health, Is.EqualTo(100));
             var split = Make(WeaponKind.Lightning, 1, new Dummy(1,0,100), new Dummy(2,0,100), new Dummy(3,0,100));
             split.State.Build.Set(SupportKind.Split, 5);
-            split.StepTo(.75);
+            split.StepTo(.375);
             Assert.That(split.Enemies[1].Health, Is.EqualTo(99.45).Within(1e-9));
             Assert.That(split.Enemies[2].Health, Is.EqualTo(99.45).Within(1e-9));
             var volley = Make(WeaponKind.Lightning, 1, new Dummy(1,0,100), new Dummy(2,0,100));
-            volley.State.Build.Set(SupportKind.Multishot, 1); volley.StepTo(.75);
+            volley.State.Build.Set(SupportKind.Multishot, 1); volley.StepTo(.375);
             Assert.That(volley.Enemies[1].Health, Is.EqualTo(98.9).Within(1e-9));
         }
         [TestCase(1)] [TestCase(3)] [TestCase(5)] [TestCase(8)]
         public void FieldComponentsSharePulseLedgerAndEchoIsReduced(int level)
         {
             var sim = Make(WeaponKind.EmberField, level, new Dummy(0,0,100));
-            sim.State.Build.Set(SupportKind.Echo, 5); sim.StepTo(1.5);
-            Assert.That(100-sim.Enemies[0].Health, Is.EqualTo(.7 * sim.State.Build.Stats(WeaponKind.EmberField).DamageFactor * 1.5).Within(1e-9));
+            sim.State.Build.Set(SupportKind.Echo, 5); sim.StepTo(1);
+            Assert.That(100-sim.Enemies[0].Health, Is.EqualTo(.7 * sim.State.Build.Stats(WeaponKind.EmberField).DamageFactor * 2.5).Within(1e-9));
         }
         [Test]
         public void PersistenceHoldsPlacedGroundLongerAndPauseDoesNotConsumeItsLifetime()
@@ -125,37 +125,37 @@ namespace Champions.Sim.Tests
             var sim = Make(WeaponKind.EmberField, 1, new Dummy(1,0,100));
             sim.State.Build.Set(SupportKind.Persistence, 5);
             sim.StepTo(1);
-            Assert.That(sim.State.Build.Weapon(WeaponKind.EmberField).PersistentUntil, Is.EqualTo(6.25));
+            Assert.That(sim.State.Build.Weapon(WeaponKind.EmberField).PersistentUntil, Is.EqualTo(5.75));
             sim.Press(Key.Right, 1.01); sim.StepTo(2); sim.Release(Key.Right, 2);
             var action = Drive.Events(sim, SimEventKind.MagicAction).Last();
             Assert.That(action.D0, Is.EqualTo(0), "stays at the original seal while hero leaves");
             sim.Hold(HoldReason.Pause, true); int hits = Drive.Events(sim, SimEventKind.Hit).Count;
             sim.StepTo(12); sim.Hold(HoldReason.Pause, false);
             Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.EqualTo(hits));
-            Assert.That(sim.State.Build.Weapon(WeaponKind.EmberField).PersistentUntil, Is.EqualTo(16.25));
-            sim.StepTo(16);
+            Assert.That(sim.State.Build.Weapon(WeaponKind.EmberField).PersistentUntil, Is.EqualTo(15.75));
+            sim.StepTo(15.5);
             Assert.That(Drive.Events(sim, SimEventKind.MagicAction).Last().D0, Is.EqualTo(0));
             sim.Enemies.Spawn(sim, sim.State.Hero.X, sim.State.Hero.Y, .1, 100);
             sim.StepTo(17);
             Assert.That(Drive.Events(sim, SimEventKind.MagicAction).Last().D0, Is.GreaterThan(0));
         }
         [TestCase(WeaponKind.Lightning)] [TestCase(WeaponKind.EmberField)]
-        public void EmpowermentChangesOnePulseCoverageWithoutChangingDamage(WeaponKind kind)
+        public void SharedAuraCoversMultiplePulsesWithoutChangingDamage(WeaponKind kind)
         {
             var sim = Make(kind, 1, new Dummy(1,0,100));
-            sim.State.Build.Empower();
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
             double seconds = WeaponScheduler.BaseSeconds(kind);
             sim.StepTo(seconds * 2);
             var actions = Drive.Events(sim, SimEventKind.MagicAction);
             Assert.That(actions.Count, Is.EqualTo(2));
-            Assert.That(actions[0].D4/actions[1].D4, Is.EqualTo(Math.Sqrt(1.5)).Within(1e-9));
+            Assert.That(actions[0].D4/actions[1].D4, Is.EqualTo(1).Within(1e-9));
             Assert.That(100-sim.Enemies[0].Health, Is.EqualTo((kind == WeaponKind.Lightning ? 1.1 : .7)*2).Within(1e-9));
         }
         [Test]
         public void MovingConstellationKeepsTheFullHeroSearchCircleAtEveryNode()
         {
             var sim = Make(WeaponKind.Lightning, 8, new Dummy(-6.9,0,100,.01));
-            sim.StepTo(.75);
+            sim.StepTo(.375);
             Assert.That(sim.Enemies[0].Health, Is.LessThan(100));
             Assert.That(Drive.Events(sim, SimEventKind.LightningLink).Count, Is.EqualTo(1));
         }
@@ -168,7 +168,7 @@ namespace Champions.Sim.Tests
             sim.StepTo(11.5);
             var echo = Drive.Events(sim, SimEventKind.MagicAction).Last();
             Assert.That(echo.T, Is.EqualTo(11.5));
-            Assert.That(echo.D5, Is.EqualTo(2.5));
+            Assert.That(echo.D5, Is.EqualTo(2.0));
             Assert.That(echo.D0, Is.EqualTo(0));
         }
         [Test]
@@ -181,7 +181,7 @@ namespace Champions.Sim.Tests
                 sim.State.Build.Set(WeaponKind.EmberField,8);
                 sim.State.Build.Set(SupportKind.Tempo,5); sim.State.Build.Set(SupportKind.Split,5);
                 sim.State.Build.Set(SupportKind.Pierce,2); sim.State.Build.Set(SupportKind.Echo,5);
-                sim.State.Build.Set(SupportKind.Persistence,5); sim.State.Build.Empower();
+                sim.State.Build.Set(SupportKind.Persistence,5); sim.State.Build.Empower(sim.CombatTime(sim.Now));
             }
             a.StepTo(20);
             for (int tick=1;tick<=2400;tick++) b.StepTo(tick/120.0);
@@ -191,17 +191,17 @@ namespace Champions.Sim.Tests
             Assert.That(Drive.Events(a,SimEventKind.MagicAction).Count, Is.GreaterThan(20));
         }
         [Test]
-        public void NoTargetHoldsLightningChargeAndSplitEchoStayFiniteInCrowds()
+        public void NoTargetExpiresLightningAuraAndSplitEchoStayFiniteInCrowds()
         {
             var sim = Make(WeaponKind.Lightning, 8);
-            sim.State.Build.Empower(); sim.StepTo(3);
-            Assert.That(sim.State.Build.Weapon(WeaponKind.Lightning).Empowered, Is.True);
+            sim.State.Build.Empower(sim.CombatTime(sim.Now)); sim.StepTo(3);
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
             for (int k=0; k<60; k++) sim.Enemies.Spawn(sim, 1+(k%8)*.6, (k/8)*.6, .1, 100);
             sim.State.Build.Set(SupportKind.Multishot,5); sim.State.Build.Set(SupportKind.Pierce,5);
             sim.State.Build.Set(SupportKind.Split,5); sim.State.Build.Set(SupportKind.Echo,5);
             sim.StepTo(4.25);
-            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.LessThanOrEqualTo(120));
-            Assert.That(sim.State.Build.Weapon(WeaponKind.Lightning).Empowered, Is.False);
+            Assert.That(Drive.Events(sim, SimEventKind.Hit).Count, Is.LessThanOrEqualTo(60 * 5));
+            Assert.That((sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1), Is.False);
         }
     }
 }

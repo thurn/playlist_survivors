@@ -78,7 +78,7 @@ namespace Champions.Client.Scenes
             if (nextEmpower < 4 && t >= nextEmpower * 3 + 2.5)
             {
                 // Same build reward as the on-beat dash, without moving the capture camera out of the gallery.
-                sim.State.Build.Empower(); nextEmpower++;
+                sim.State.Build.Empower(sim.CombatTime(sim.Now)); nextEmpower++;
             }
             sim.StepTo(t);
             foreach (var e in sim.EventsSince(cursor)) { world.Take(e); cues?.Take(e); }

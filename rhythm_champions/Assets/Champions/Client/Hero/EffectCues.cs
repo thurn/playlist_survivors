@@ -44,10 +44,6 @@ namespace Champions.Client
                 case SimEventKind.Hold:
                     if (_fx is IEffectHoldCommands holds) holds.Hold(e.T, e.I2 != 0);
                     break;
-                case SimEventKind.WeaponActivation:
-                    if (e.D1 > 1) _fx.Fire(EffectCue.Encore,
-                        new EffectShot { T = e.T, At = V(e.D2, e.D3) });
-                    break;
                 case SimEventKind.ConstructAction:
                 {
                     var cue = (EffectCue)((int)((WeaponKind)e.I0 == WeaponKind.Sentinel ? EffectCue.SentinelSentry : EffectCue.OrbitCircle) + e.I1);
@@ -69,7 +65,7 @@ namespace Champions.Client
                     float advance = field ? ((e.I2 >> 1) & 3) * (float)e.D4 * .65f : 0;
                     _fx.Fire((EffectCue)((int)(field ? EffectCue.EmberSeal : EffectCue.LightningBolt) + e.I1),
                         new EffectShot { T = e.T, At = at, To = field ? at + way * advance : way,
-                            Facing = field ? way : Vector2.up, Radius = (float)e.D4, RestRadius = (float)(e.D4 / ((e.I2 & 8) != 0 ? Math.Sqrt(1.5) : 1)),
+                            Facing = field ? way : Vector2.up, Radius = (float)e.D4, RestRadius = (float)(e.D4 / ((e.I2 & 8) != 0 ? Math.Sqrt(2) : 1)),
                             Duration = (float)e.D5, Advance = advance, Spectral = (e.I2 & 1) != 0 });
                     break;
                 }
@@ -80,7 +76,8 @@ namespace Champions.Client
                     _fx.Fire(cue, new EffectShot { T = e.T, At = V(e.D0, e.D1), Facing = V(e.D2, e.D3),
                         To = V(e.D0 + e.D2 * e.D5, e.D1 + e.D3 * e.D5),
                         Radius = (float)e.D4, Advance = (float)e.D5, Mirrored = (e.I2 & 2) != 0,
-                        Spectral = (e.I2 & 1) != 0 });
+                        Spectral = (e.I2 & 1) != 0,
+                        Power = (e.I2 & 16) != 0 ? EffectPower.OnBeat : EffectPower.Plain });
                     break;
                 }
                 case SimEventKind.Strike:
@@ -111,7 +108,8 @@ namespace Champions.Client
                     Dash(e);
                     break;
                 case SimEventKind.LandingBlast:
-                    _fx.Fire(EffectCue.BlinkBurst, new EffectShot { T = e.T, At = V(e.D0, e.D1), Radius = (float)e.D2 });
+                    _fx.Fire(EffectCue.SwordSpin, new EffectShot { T = e.T, At = V(e.D0, e.D1), Radius = (float)e.D2,
+                        Power = _sim.State.Build.AreaAt(_sim.CombatTime(e.T)) > 1 ? EffectPower.OnBeat : EffectPower.Plain });
                     break;
                 case SimEventKind.DashPart:
                     Part(e);
@@ -172,7 +170,7 @@ namespace Champions.Client
             else if (kind == _bladeRush) _fx.Fire(rank == Upgrade.Evolution ? EffectCue.ThousandCuts : EffectCue.BladeRush, shot);
             else if (kind == _shieldCharge) _fx.Fire(rank == Upgrade.Evolution ? EffectCue.Juggernaut : EffectCue.ShieldCharge, shot);
             // Leap Slam's and Blink Strike's effects are their parts'.
-            if (e.OnBeat && _sim.Arsenal.Rank(ModKind.Encore) > 0) _fx.Fire(EffectCue.Encore, new EffectShot { T = e.D1, At = shot.To });
+            if (e.OnBeat) _fx.Fire(EffectCue.Encore, new EffectShot { T = e.D1, At = shot.To, Power = EffectPower.OnBeat });
         }
 
         void Part(in SimEvent e)

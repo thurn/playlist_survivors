@@ -64,7 +64,7 @@ namespace Champions.Client.Scenes
                 world.Take(e);
                 cues?.Take(e);
                 if (e.Kind == SimEventKind.HeroDash || e.Kind == SimEventKind.LandingBlast)
-                    Debug.Log($"MovementDash: {e.Kind} at {e.T:F3}; sword empowered={sim.State.Build.Weapon(WeaponKind.Sword).Empowered}");
+                    Debug.Log($"MovementDash: {e.Kind} at {e.T:F3}; sword empowered={(sim.State.Build.AreaAt(sim.CombatTime(sim.Now)) > 1)}");
             }
             cursor = sim.EventCount;
             world.Flush();

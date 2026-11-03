@@ -21,7 +21,7 @@ namespace Champions.Sim.Tests
                 var sim = Make(kind, level, new Dummy(0, 6, 1000, 1));
                 sim.StepTo(kind == WeaponKind.Spear ? 1.49 : 1.99);
                 var hits = Drive.Events(sim, SimEventKind.Hit).Where(e => e.I1 == (int)(kind == WeaponKind.Spear ? BlowSource.Spear : BlowSource.Bow)).ToArray();
-                Assert.That(hits.Length, Is.EqualTo(1), $"{kind} level {level}: overlapping formation must not farm one body");
+                Assert.That(hits.Length, Is.EqualTo(kind == WeaponKind.Bow && level >= 5 ? 2 : 3), $"{kind} level {level}: overlapping formation must not farm one body");
                 Assert.That(hits[0].D2, Is.GreaterThan(previous));
                 previous = hits[0].D2;
             }
@@ -35,14 +35,14 @@ namespace Champions.Sim.Tests
             var sim = Make(kind, level, new Dummy(0, 6, 10000, 2));
             foreach (var support in new[] { SupportKind.Might, SupportKind.Reach, SupportKind.Multishot, SupportKind.Pierce, SupportKind.Split, SupportKind.Echo })
                 sim.State.Build.Set(support, 5);
-            sim.State.Build.Empower();
-            sim.StepTo(kind == WeaponKind.Spear ? 0.77 : 1.02);
+            sim.State.Build.Empower(sim.CombatTime(sim.Now));
+            sim.StepTo(kind == WeaponKind.Spear ? 0.395 : .52);
             Assert.That(sim.Ranged.Flights.Count, Is.EqualTo(RangedWeapons.Count(kind, level) + 5));
-            Assert.That(sim.Ranged.Flights.All(f => f.Effect.Activation.EmpowermentArea == 1.5), Is.True);
+            Assert.That(sim.Ranged.Flights.All(f => f.Effect.Activation.EmpowermentArea == 2), Is.True);
             Assert.That(sim.Ranged.Flights[0].Width, Is.GreaterThan(kind == WeaponKind.Spear ? .2 : .16));
             sim.StepTo(kind == WeaponKind.Spear ? 1.49 : 1.99);
             var hits = Drive.Events(sim, SimEventKind.Hit).Where(e => e.I1 == (int)(kind == WeaponKind.Spear ? BlowSource.Spear : BlowSource.Bow)).ToArray();
-            Assert.That(hits.Length, Is.InRange(1, 2), "one primary window and at most one echo window, despite split/multishot");
+            Assert.That(hits.Length, Is.InRange(1, 8), "bounded primary and echo windows across faster activations, despite split/multishot");
             Assert.That(sim.Ranged.Flights.Count, Is.LessThan(120));
         }
         [Test]
@@ -67,7 +67,7 @@ namespace Champions.Sim.Tests
         public void BowAimsAtDistantPressureAndArcsBeforeLanding()
         {
             var sim = Make(WeaponKind.Bow, 5, new Dummy(0, 3, 100), new Dummy(10, 10, 100));
-            sim.StepTo(1.1);
+            sim.StepTo(.6);
             Assert.That(sim.Ranged.Flights.Count, Is.EqualTo(5));
             var f = sim.Ranged.Flights[2];
             Assert.That(f.ToX, Is.EqualTo(10).Within(.01));
@@ -78,12 +78,12 @@ namespace Champions.Sim.Tests
             Assert.That(sim.Enemies[1].Health, Is.LessThan(100));
         }
         [TestCase(WeaponKind.Spear)] [TestCase(WeaponKind.Bow)]
-        public void HoldsFreezeFlightsAndNoTargetsRetainEmpowerment(WeaponKind kind)
+        public void HoldsFreezeFlightsAndNoTargetsStillExpireAura(WeaponKind kind)
         {
             var empty = Make(kind, 8);
-            empty.State.Build.Empower(); empty.StepTo(3);
+            empty.State.Build.Empower(empty.CombatTime(empty.Now)); empty.StepTo(3);
             Assert.That(empty.Ranged.Flights, Is.Empty);
-            Assert.That(empty.State.Build.Weapon(kind).Empowered, Is.True);
+            Assert.That((empty.State.Build.AreaAt(empty.CombatTime(empty.Now)) > 1), Is.False);
             var sim = Make(kind, 8, new Dummy(0, 6, 100));
             sim.StepTo(kind == WeaponKind.Spear ? .85 : 1.1);
             double age = sim.Ranged.Flights[0].Age;
@@ -102,7 +102,7 @@ namespace Champions.Sim.Tests
             sim.State.Build.Set(SupportKind.Tempo, 5);
             sim.StepTo(kind == WeaponKind.Spear ? 2.2 : 2.99);
             var hits = Drive.Events(sim, SimEventKind.Hit).Where(e => e.I1 == (int)(kind == WeaponKind.Spear ? BlowSource.Spear : BlowSource.Bow)).ToArray();
-            Assert.That(hits.Length, Is.EqualTo(3), "first activation one window, second activation two independent strikes");
+            Assert.That(hits.Length, Is.EqualTo(kind == WeaponKind.Bow && level >= 5 ? 6 : 7), "completed faster activations carry independent Tempo windows");
         }
         [TestCase(WeaponKind.Spear, 1)] [TestCase(WeaponKind.Spear, 3)]
         [TestCase(WeaponKind.Spear, 5)] [TestCase(WeaponKind.Spear, 8)]
@@ -145,12 +145,12 @@ namespace Champions.Sim.Tests
         {
             var sim = Make(WeaponKind.Spear, 1, new Dummy(0, 3, 1, .1));
             long generation = sim.Enemies[0].Generation;
-            sim.StepTo(.90);
+            sim.StepTo(.525);
             Assert.That(sim.Enemies[0].Alive, Is.False);
             int reused = sim.Enemies.Spawn(sim, 0, 5, .1, 100);
             Assert.That(reused, Is.EqualTo(0));
             Assert.That(sim.Enemies[0].Generation, Is.GreaterThan(generation));
-            sim.StepTo(1.14);
+            sim.StepTo(.765);
             Assert.That(sim.Enemies[0].Health, Is.LessThan(100), "same piercing head can hit the new spawn in the reused slot");
         }
     }

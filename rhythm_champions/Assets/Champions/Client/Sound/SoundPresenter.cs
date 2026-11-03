@@ -111,6 +111,7 @@ namespace Champions.Client.Sound
                     break;
                 }
                 case SimEventKind.LandingBlast:
+                    Request(SoundKind.Swing, e.T, 1f, 1f, .6f, asap);
                     Request(SoundKind.HitHeavy, e.T, 0.6f, 1f, 0.5f, asap);
                     break;
                 case SimEventKind.DashEcho:

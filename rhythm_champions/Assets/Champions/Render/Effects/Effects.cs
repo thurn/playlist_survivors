@@ -124,7 +124,7 @@ namespace Champions.Render
 
         public void Fire(EffectCue cue, in EffectShot shot)
         {
-            if (MeleeVisuals.Handles(cue)) _melee.Fire(cue, shot);
+            if (MeleeVisuals.Handles(cue) && (cue >= EffectCue.HammerSwing || shot.Spectral)) _melee.Fire(cue, shot);
             if (ConstructVisuals.Handles(cue)) _constructs.Fire(cue, shot);
             if (MagicVisuals.Handles(cue)) _magic.Fire(cue, shot);
             Expand(_recipes.Cues[(int)cue], shot);
@@ -174,6 +174,11 @@ namespace Champions.Render
             return cost;
         }
 
+        public void Rhythm(float area, float remaining, Vector2 hero)
+        {
+            _magic.AuraArea = area; _magic.AuraRemaining = remaining; _magic.Hero = hero;
+            _constructs.AuraArea = area;
+        }
         public void ConstructOrbit(int level, float area) => _constructs.Orbit(level, area);
 
         public void Orbit(double t, int swords, double angle, double speed, float radius, bool evolved = false)
@@ -367,7 +372,7 @@ namespace Champions.Render
                         Born = (float)born, Facing = way, Radius = radius, Life = life, HeadIn = sweep / life, Fade = fade / life,
                         TravelIn = travel / life,
                         Width = l.Width, Brightness = l.Brightness * power.Brightness, Tilt = l.Tilt * Mathf.Deg2Rad, Height = l.Height,
-                        Grow = l.Grow, Streak = l.Streak, Taper = l.Taper, Flags = mirrored ? EffectShape.Mirrored : 0,
+                        Grow = l.Grow, Streak = l.Streak, Taper = l.Taper, Flags = (mirrored ? EffectShape.Mirrored : 0) + (shot.Power == EffectPower.OnBeat ? 2 : 0),
                     };
                     var move = l.TravelPath ? path : way * l.TravelM;
                     s.Travel = new Vector3(move.x, l.TravelUpM, move.y);

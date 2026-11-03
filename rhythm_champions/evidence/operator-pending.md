@@ -136,3 +136,13 @@ M5 simulation proxy in those observations, with limited shared-host headroom.
 Earlier failing reports remain historical evidence. The 1.5 ms GPU-only
 proxy, M1-class hardware, hand-play, speakers and full-build art judgment
 remain unverified; synchronized render/readback is not a GPU timestamp.
+
+### ps-ueo.2: sword and timed rhythm feel
+
+- Agent evidence: 30 fps scripted live-presentation motion at
+  `~/Library/Caches/playlist-survivors/evidence/ps-ueo/sword-feel-visible/motion.mp4`;
+  ordinary swing/body lead, successive landing clears and aura expiry inspected.
+  Exact implementation/scenario limits are in `docs/champions/game-feel-plan.md`.
+- Pending operator judgement: natural attack feel at the faster cadence, dash-exit
+  readability under moving-horde pressure, and music/speaker impact sync. These
+  are subjective checks, not a gate on the unattended implementation delivery.

@@ -42,10 +42,14 @@ namespace Champions.Render
             actions.Add(new Action { Cue = cue, Shot = shot });
         }
         public void Clear() { actions.Clear(); draws.Clear(); heldAt = double.NaN; }
+        public float AuraArea = 1, AuraRemaining;
+        public Vector2 Hero;
         public void Present(double now)
         {
             draws.Clear();
             if (!double.IsNaN(heldAt)) now = Math.Min(now, heldAt);
+            if (library != null && AuraRemaining > 0)
+                Ring(Ground(Hero), 1.05f + .04f * Mathf.Sin((float)now * 7), .07f, 2 * Mathf.Clamp01(AuraRemaining / .3f));
             for (int i = actions.Count - 1; i >= 0; i--)
             {
                 var a = actions[i]; float age = (float)(now - a.Shot.T);
@@ -109,7 +113,7 @@ namespace Champions.Render
             var aim = s.Facing.sqrMagnitude > .001f ? Ground(s.Facing).normalized : Vector3.forward;
             var across = Vector3.Cross(Vector3.up, aim);
             float pulse = Mathf.Clamp01(1 - age / .45f);
-            if (s.RestRadius > 0) r = Mathf.Lerp(s.RestRadius, r, pulse);
+            if (s.RestRadius > 0) r = s.RestRadius * Mathf.Sqrt(AuraArea);
             float steady = .35f + .65f * pulse;
             // Empowerment swells the pulse footprint only; the idle seal returns to base after the beat.
             Ring(at, r, .035f, light * steady);
@@ -134,7 +138,7 @@ namespace Champions.Render
             }
             if (f == 3)
             {
-                var node = at + aim * s.Advance;
+                var node = at + aim * s.Advance * (s.Radius > 0 ? r / s.Radius : 1);
                 Ring(node, r * .8f, .06f, light * steady);
                 for (int k = 0; k < 3; k++)
                 {
@@ -181,7 +185,7 @@ namespace Champions.Render
             if (material == null) return;
             foreach (var d in draws)
             {
-                block.SetColor("_Light", new Color(d.Light, d.Light, d.Light));
+                block.SetColor("_Light", AuraRemaining > 0 ? new Color(d.Light, d.Light * .78f, d.Light * .03f) : new Color(d.Light, d.Light, d.Light));
                 Graphics.RenderMesh(Effects.Params(material, block, camera), d.Mesh, 0, d.Matrix);
             }
         }

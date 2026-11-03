@@ -127,9 +127,12 @@ namespace Champions.Client.Loop
             if (cues != null)
                 d.Add("effects", (in SimEvent e) => cues.Take(e), null, (in PresentFrame f) =>
                 {
+                    double combat = f.Sim.CombatTime(f.Song);
+                    float area = (float)f.Sim.State.Build.AreaAt(combat);
+                    Effects.Rhythm(area, (float)Math.Max(0, f.Sim.State.Build.AuraUntil - combat), f.Hero);
                     if (f.Sim.Constructs != null)
                         Effects.ConstructOrbit(f.Sim.State.Build.Level(WeaponKind.OrbitBlades),
-                            f.Sim.State.Build.Level(WeaponKind.OrbitBlades) > 0 ? (float)f.Sim.State.Build.Stats(WeaponKind.OrbitBlades).AreaFactor : 1);
+                            f.Sim.State.Build.Level(WeaponKind.OrbitBlades) > 0 ? (float)f.Sim.State.Build.Stats(WeaponKind.OrbitBlades).AreaFactor * area : 1);
                     Effects.Present(f.Song, f.Hero, f.Dt, f.Camera);
                 });
             if (Ui != null) d.Add("ui", (in SimEvent e) => Ui.Take(e), null, (in PresentFrame f) => Ui.Present(f.Song, f.Sim, f.Camera));
@@ -142,17 +145,21 @@ namespace Champions.Client.Loop
         {
             switch (e.Kind)
             {
+                case SimEventKind.Hold:
+                    if (_sim.Melee != null) Hero.Motion.Hold(e.T, e.I2 != 0);
+                    break;
                 case SimEventKind.HeroMove:
                     Hero.Walk(e.D0, new Vector2((float)e.D3, (float)e.D4));
                     break;
                 case SimEventKind.MeleeAction when (WeaponKind)e.I0 == WeaponKind.Sword && (e.I2 & 1) == 0:
-                    Hero.Swing(SwingKind.Slash, e.T, new Vector2((float)e.D2, (float)e.D3));
+                    Hero.Motion.AimSwing(e.T, new Vector2((float)e.D2, (float)e.D3));
                     break;
                 case SimEventKind.Swing:
                     Hero.Swing(e.I0 == 1 ? SwingKind.Spin : SwingKind.Slash, e.D0, new Vector2((float)e.D1, (float)e.D2));
                     break;
                 case SimEventKind.HeroDash:
                     Hero.Dash((DashPose)e.DashType, e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5), evolved: e.DashRank == Upgrade.Evolution);
+                    if (_sim.Melee != null) Hero.Motion.LandingSpin(e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5));
                     break;
                 case SimEventKind.HeroHit when e.D0 > 0:
                     Hero.Hurt(e.T);

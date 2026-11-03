@@ -10,13 +10,16 @@ namespace Champions.Render
     {
         readonly RangedLibrary library;
         readonly Material material;
-        readonly List<(Mesh Mesh, Matrix4x4 Matrix)> draws = new List<(Mesh, Matrix4x4)>();
+        readonly List<(Mesh Mesh, Matrix4x4 Matrix, bool Empowered)> draws = new List<(Mesh, Matrix4x4, bool)>();
+        readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
+        readonly Color ordinary;
         public RangedPresenter(Palette palette)
         {
             library = RangedLibrary.Load();
             if (library == null) return;
             material = new Material(library.Shader);
-            material.SetColor("_Edge", palette.HeroEdge.linear * 2);
+            ordinary = palette.HeroEdge.linear * 2;
+            material.SetColor("_Edge", ordinary);
             material.SetColor("_Body", palette.VoidBody.linear);
         }
         public void Present(RangedWeapons ranged, Camera camera)
@@ -37,7 +40,7 @@ namespace Champions.Render
                 var at = new Vector3((float)x, (float)height, (float)y);
                 float width = (float)Math.Sqrt(f.Effect.Activation.AreaFactor);
                 draws.Add((spear ? library.Spear : library.Arrow, Matrix4x4.TRS(at,
-                    Quaternion.LookRotation(direction), new Vector3(width, width, spear ? 2.8f : 1.5f))));
+                    Quaternion.LookRotation(direction), new Vector3(width, width, spear ? 2.8f : 1.5f)), f.Effect.Activation.EmpowermentArea > 1));
                 if (!spear && !f.Effect.ImpactTarget.HasValue && (f.Form == 3 || f.Effect.Projectile == 0) && f.Age < f.Delay + 0.3)
                 {
                     // Battery bows rotate from their ring tangent into the captured aim, then recoil naturally.
@@ -45,7 +48,7 @@ namespace Champions.Render
                     if (f.Form == 3) aim = Quaternion.Slerp(Quaternion.Euler(0, (float)(f.Effect.Projectile * 45 + f.Effect.Activation.Sequence * 26), 0), aim,
                         Mathf.Clamp01((float)(f.Age / Math.Max(0.04, f.Delay + 0.04))));
                     var bowAt = new Vector3((float)f.X, 1, (float)f.Y) - direction * (0.16f * Mathf.Sin((float)age / 0.3f * Mathf.PI));
-                    draws.Add((library.Bow, Matrix4x4.TRS(bowAt, aim, Vector3.one * 1.8f)));
+                    draws.Add((library.Bow, Matrix4x4.TRS(bowAt, aim, Vector3.one * 1.8f), f.Effect.Activation.EmpowermentArea > 1));
                 }
             }
             Queue(camera);
@@ -54,8 +57,11 @@ namespace Champions.Render
         {
             if (material == null) return;
             foreach (var draw in draws)
+            {
+                block.SetColor("_Edge", draw.Empowered ? new Color(2, 1.6f, .05f) : ordinary);
                 Graphics.RenderMesh(new RenderParams(material) { camera = camera, layer = camera.gameObject.layer,
-                    shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false }, draw.Mesh, 0, draw.Matrix);
+                    matProps = block, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false }, draw.Mesh, 0, draw.Matrix);
+            }
         }
         public void Dispose() { if (material != null) UnityEngine.Object.Destroy(material); }
     }

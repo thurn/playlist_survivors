@@ -88,6 +88,7 @@ namespace Champions.Sim
                 else if (card.Kind == CardKind.Support && State.Build.Level(card.Support) == 0) State.Build.Set(card.Support, card.Rank);
                 else throw new ArgumentException("invalid or duplicate survivor preset item");
             }
+            if (config.SurvivorWeapons && State.Build.Level(WeaponKind.Sword) == 0) State.Build.Set(WeaponKind.Sword, 1);
             Weapons = new WeaponScheduler(this);
             Arsenal = new Arsenal(config.Attacks, config.Mods, Enemies, Beats, config.EnemyCapacity);
             Arsenal.Begin(this);
@@ -325,7 +326,8 @@ namespace Champions.Sim
             if (State.Held != held) HeldChanged();
         }
 
-        double heldSince;
+        double heldSince, heldTotal;
+        public double CombatTime(double t) => (State.Held ? Math.Min(t, heldSince) : t) - heldTotal;
         /// <summary>Elapsed card/pause time; weapon geometry can shift its outstanding deadlines here.</summary>
         public event Action<double> Resumed;
         void HeldChanged()
@@ -336,6 +338,7 @@ namespace Champions.Sim
                 else
                 {
                     double elapsed = Now - heldSince;
+                    heldTotal += elapsed;
                     hero.Resume(elapsed);
                     dashes.Resume(elapsed);
                     health.Resume(elapsed);
@@ -483,6 +486,7 @@ namespace Champions.Sim
             health.ApplySupports(this);
             health.Tick(this, end);
             Arsenal.Tick(this, end);
+            Weapons.Plan(end);
             Ranged?.Tick(end);
             horde.Tick(end);
             Bosses.Tick(end);

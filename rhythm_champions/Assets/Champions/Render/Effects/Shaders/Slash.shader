@@ -199,6 +199,7 @@ Shader "Champions/Slash"
                 if (_ChampionsIdPass > 0.5) clip(lit - 0.02); // the pass marks the shape down to its faint body, not the empty mesh
                 CHAMPIONS_ID_PASS(_ChampionsId)
                 half3 colour = lerp(_EdgeColor.rgb, _CoreColor.rgb, saturate(intensity * 1.4 - 0.45));
+                if (((uint)s.flags & 2) != 0) colour = lerp(half3(1, .48, .015), half3(1, .92, .16), saturate(intensity));
                 return half4(colour * lit, 1);
             }
             ENDHLSL

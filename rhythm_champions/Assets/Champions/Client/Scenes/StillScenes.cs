@@ -43,6 +43,7 @@ namespace Champions.Client.Scenes
         static readonly (string Name, Func<StillScenes, IStillScene> Make)[] Known =
         {
             (PaletteScene.Name, s => new PaletteScene(s._content, s._palette, s._look)),
+            ("sword-feel", s => new SwordFeelScene(s._content, s._palette, s._contentDir)),
             (MovementDashScene.Name, s => new MovementDashScene(s._palette, s._contentDir)),
             ("magic-combat", s => new MagicCombatScene(s._palette, s._contentDir)),
             ("pickups", s => new PickupScene(s._content, s._palette, s._look)),

@@ -104,8 +104,9 @@ namespace Champions.Sim.Tests
                 Assert.That(echo.T, Is.EqualTo(beats.First(t => t > echo.Activation.T + 1e-9)).Within(1e-9));
             sim.Hold(HoldReason.Pause, true); int count = launched.Count;
             sim.StepTo(15); Assert.That(launched.Count, Is.EqualTo(count));
+            int echoes = launched.Count(e => e.Lineage.Generation > 0);
             sim.Hold(HoldReason.Pause, false); sim.StepTo(15.01);
-            Assert.That(launched.Count, Is.EqualTo(count));
+            Assert.That(launched.Count(e => e.Lineage.Generation > 0), Is.EqualTo(echoes));
         }
     }
 }
