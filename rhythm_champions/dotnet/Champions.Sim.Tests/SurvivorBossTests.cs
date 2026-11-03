@@ -35,7 +35,7 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
-        public void AllThreeThresholdsUseHordeTimeWithRetainedFieldAndOrderedRewards()
+        public void AllThreeThresholdsUseHordeTimeWithClearedFieldAndOrderedRewards()
         {
             var s = Make(Config(level: true));
             var calls = Content.Level.Bosses;
@@ -54,10 +54,10 @@ namespace Champions.Sim.Tests
                 s.Pickups.Drop(s, PickupKind.Experience, 90, 90, 7);
                 int drops = s.Pickups.StoredCount;
                 Until(s, () => s.Bosses.InDuel, 5);
-                Assert.AreEqual(alive + 1, s.Enemies.Alive, "arrival adds a boss without deleting mobs");
+                Assert.AreEqual(1, s.Enemies.Alive, "arrival isolates the boss from the entire old horde");
                 Assert.AreEqual(drops, s.Pickups.StoredCount);
                 Assert.AreEqual(structures, s.StructureField.Standing, "arrival never breaks structures");
-                Assert.AreEqual(0, Drive.Events(s, SimEventKind.BossArrive).Last().I2);
+                Assert.That(Drive.Events(s, SimEventKind.BossArrive).Last().I2, Is.InRange(0, alive));
                 s.StepTo(s.Now + 6);
                 Assert.AreEqual(spawned, s.Horde.Spawned);
                 Assert.AreEqual(hordeTime, s.State.HordeClock);

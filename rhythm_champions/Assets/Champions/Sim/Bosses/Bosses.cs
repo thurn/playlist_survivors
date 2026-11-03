@@ -37,8 +37,8 @@ namespace Champions.Sim
     }
 
     /// <summary>
-    /// Three retained-horde encounters on the horde clock. Calls stop ordinary spawning; arrivals add a boss without
-    /// removing monsters, pickups or structures. Walking patterns and traveling fronts share fixed warning deadlines.
+    /// Three encounters on the horde clock. Calls stop ordinary spawning; arrivals clear the ordinary field
+    /// without rewarding kills or removing pickups or structures. Walking patterns and traveling fronts share fixed warning deadlines.
     /// Bosses remain damageable; first two deaths heal then hold for an owned upgrade, the third wins.
     /// LegacyForms is used only by archived combat fixtures (entrance clearing and Break).
     /// </summary>
@@ -210,7 +210,9 @@ namespace Champions.Sim
             x = hx;
             y = hy + rules.DistanceM;
             Facing = SimMath.Atan2(hy - y, hx - x);
-            int shattered = sim.Dashes.Rules.LegacyForms ? ShatterScreen(t, hx, hy, BreakCause.Entrance) : 0;
+            int shattered = sim.Dashes.Rules.LegacyForms ? ShatterScreen(t, hx, hy, BreakCause.Entrance) : ClearForEncounter(t, hx, hy);
+            reinforcementSlot = 0;
+            arrivalClock = sim.State.RunClock;
             if (sim.Dashes.Rules.LegacyForms) sim.StructureField?.Duel(true);
             Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, type.Health, Type.Cast + 1, boss: true);
             MaxHealth = type.Health;
@@ -302,7 +304,7 @@ namespace Champions.Sim
                     break;
                 case BossStage.Walking:
                     Follow(end);
-                    if (end >= nextMoveAt - 1e-9) Choose(end);
+                    if (!Reinforce(end) && end >= nextMoveAt - 1e-9) Choose(end);
                     break;
                 case BossStage.Acting:
                     Act(end);
@@ -411,6 +413,7 @@ namespace Champions.Sim
         internal void Killed(double t, double dx, double dy)
         {
             CallOff(t);
+            CancelReinforcement(t);
             Stage = BossStage.Dead;
             Walking = false;
             sim.Emit(SimEvent.BossDeath(t, Id, Type.Cast, Type.Death, x, y, dx, dy));
@@ -431,6 +434,7 @@ namespace Champions.Sim
         internal void Resume(double elapsed)
         {
             nextMoveAt += elapsed;
+            if (reinforcing) reinforcement.Telegraph = sim.Telegraphs.Resume(reinforcement.Telegraph, elapsed);
             roar = sim.Telegraphs.Resume(roar, elapsed);
             stagger = sim.Telegraphs.Resume(stagger, elapsed);
             for (int i = 0; i < marks.Count; i++)
@@ -456,6 +460,7 @@ namespace Champions.Sim
             {
                 if (sim.State.Held)
                 {
+                    if (reinforcing) reinforcement.Telegraph = sim.Telegraphs.Freeze(reinforcement.Telegraph);
                     roar = sim.Telegraphs.Freeze(roar); stagger = sim.Telegraphs.Freeze(stagger);
                     lastTelegraph = sim.Telegraphs.Freeze(lastTelegraph);
                     flightTelegraph = sim.Telegraphs.Freeze(flightTelegraph);

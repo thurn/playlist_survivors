@@ -64,7 +64,7 @@ namespace Champions.Client
                     _held = held;
                     break;
                 case SimEventKind.BossTelegraph:
-                    _marks.Add(e.I0, e.MarkGround(), e.T, e.D0, _boss);
+                    _marks.Add(e.I0, e.MarkGround(), e.T, e.D0, e.MarkMove == BossMove.Reinforcements ? _warning : _boss);
                     break;
                 case SimEventKind.BossMove:
                     if (e.I2 != 0) _marks.CallOff(e.I0, e.T);
@@ -106,6 +106,8 @@ namespace Champions.Client
                     }
                     else _marks.Reshape(ArrivalId, warning);
                 }
+                if (sim.Bosses.ReinforcementWarning is BossMark group)
+                    _marks.Retime(group.Id, group.Telegraph.Start, sim.Telegraphs.LandTime(group.Telegraph));
                 foreach (var m in sim.Bosses.Marks)
                 {
                     _marks.Retime(m.Id, m.Telegraph.Start, sim.Telegraphs.LandTime(m.Telegraph));

@@ -185,7 +185,7 @@ namespace Champions.Client.Loop
 
         void Count(in SimEvent e)
         {
-            if (e.Kind == SimEventKind.Kill) Kills++;
+            if (e.Kind == SimEventKind.Kill && (BlowSource)e.I1 != BlowSource.Boss) Kills++;
         }
 
         /// <summary>The presenters whose state outlives frames: a scene running ahead hands them alone the events it skips drawing.</summary>

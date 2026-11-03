@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Champions.Client.Loop;
 using Champions.Client.Bench;
 using Champions.Render;
@@ -9,7 +10,7 @@ using UnityEngine;
 
 namespace Champions.Client.Scenes
 {
-    /// <summary>Retained-horde encounter previews through the real run presentation, with six automatic weapons.</summary>
+    /// <summary>Isolated boss encounter previews through the real run presentation, with six automatic weapons.</summary>
     sealed class DuelScene : IStillScene, INamedStills
     {
         public const string OgreName = "duel-ogre", DragonName = "duel-dragon";
@@ -18,14 +19,18 @@ namespace Champions.Client.Scenes
         readonly GameContent _content;
         readonly Palette _palette;
         readonly MonsterLook _look;
-        readonly bool _death;
+        readonly bool _death, _motion;
         readonly string _stress;
         DuelSceneDriver _driver;
 
-        public DuelScene(string boss, GameContent content, Palette palette, MonsterLook look, string contentDir, bool death = false, string stress = null)
-        { _boss = boss; _content = content; _palette = palette; _look = look; _contentDir = contentDir; _death = death; _stress = stress; }
-        public double[] Times => new[] { _death ? 16.0 : 48.0 };
-        public string Label(int index) => "encounter";
+        public DuelScene(string boss, GameContent content, Palette palette, MonsterLook look, string contentDir, bool death = false, string stress = null, bool motion = false)
+        { _boss = boss; _content = content; _palette = palette; _look = look; _contentDir = contentDir; _death = death; _stress = stress; _motion = motion; }
+        public double[] Times => _motion
+            ? Enumerable.Range(0, 120).Select(i => 4 + i / 30.0)
+                .Concat(Enumerable.Range(0, 120).Select(i => 10 + i / 30.0))
+                .Concat(Enumerable.Range(0, 240).Select(i => 17 + i / 30.0)).Append(48).ToArray()
+            : new[] { _death ? 16.0 : 48.0 };
+        public string Label(int index) => _motion ? "motion-" + index.ToString("D4") : "encounter";
         public string Moment => _driver?.Moment;
         public void Begin(Transform root, Camera camera, Stills.View view)
         {

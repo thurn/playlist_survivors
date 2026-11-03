@@ -58,6 +58,7 @@ namespace Champions.Client.Scenes
             ("full-conductor-barrage", s => new DuelScene("conductor", s._content, s._palette, s._look, s._contentDir, stress: "barrage")),
             ("full-dragon-storm", s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir, stress: "storm")),
             ("full-dragon-barrage", s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir, stress: "barrage")),
+            ("boss-arrival", s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir, motion: true)),
             (DuelScene.OgreName, s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir)),
             ("duel-conductor", s => new DuelScene("conductor", s._content, s._palette, s._look, s._contentDir)),
             (DuelScene.DragonName, s => new DuelScene("dragon", s._content, s._palette, s._look, s._contentDir)),

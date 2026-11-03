@@ -144,13 +144,13 @@ namespace Champions.Sim
                     // No reliable beat: the attacks' seconds pulse instead (every press counts as on the beat then).
                     _pendingBeat = e.T;
                     break;
-                case SimEventKind.BossTelegraph:
+                case SimEventKind.BossTelegraph when e.MarkMove != BossMove.Reinforcements:
                     _planned.Add(e.D0);
                     break;
                 case SimEventKind.EliteTelegraph when Near(sim, e.T, e.D2, e.D3, ThreatM):
                     _planned.Add(e.D1);
                     break;
-                case SimEventKind.BossMove when e.I2 == 0 && !Bosses.IsWave((BossMove)(e.I1 & 255)):
+                case SimEventKind.BossMove when e.I2 == 0 && e.MarkMove != BossMove.Reinforcements && !Bosses.IsWave((BossMove)(e.I1 & 255)):
                 case SimEventKind.EliteMove when e.I2 == 0 && Near(sim, e.T, e.D0, e.D1, ThreatM):
                     // Each landing, dodged on its beat once it is heard (a hit settles after the inputs heard by then, so
                     // the press still counts); parts of one move landing together count once.

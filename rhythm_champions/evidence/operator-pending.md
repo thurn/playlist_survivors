@@ -161,3 +161,16 @@ remain unverified; synchronized render/readback is not a GPU timestamp.
   scale, pickup/shot distinction during overlapping full-build effects, and
   boss-bar/beat-cue readability during moving pressure. Shader/readback tests
   and a scripted capture do not certify subjective readability or fun.
+
+### ps-ueo.4: boss arrival and reinforcement feel
+
+- Arrival clears and visibly shatters the local ordinary horde with no XP
+  reward, preserves existing drops/structures, retires the outside old field,
+  and admits at most three non-stacking groups of three fodder per boss.
+- Agent evidence: `docs/champions/game-feel-plan.md`, ps-ueo.4 delivery;
+  ordered actual player frames and `boss-arrival-motion.mp4` under
+  `~/Library/Caches/playlist-survivors/evidence/ps-ueo/`. This is an early-call
+  encounter fixture with six active weapons and exaggerated initial toughness.
+- Non-blocking operator judgement remains: entrance impact/speaker sync,
+  reinforcement cadence and pressure during a normal build's boss duration,
+  readable escape lanes with live movement, and target-hardware shard cost.

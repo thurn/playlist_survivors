@@ -471,9 +471,22 @@ introduce the boss and visibly shatter ordinary monsters in the fight area.
 Preserve existing XP/healing drops and structures. The arrival removal must
 not award a normal mass-kill XP jackpot or recursively trigger kill farming.
 Prevent outside hordes immediately entering, including if the hero walks a
-few steps; use a bounded fight arena/re-entry rule and record its exact tuning.
-Reinforcements are small, deliberately timed and finite in reward budget,
-with clear lanes around telegraphs. Boss attacks may subsequently break
+few steps; use a bounded encounter population rather than a wall around the player.
+At arrival, shatter non-boss bodies in a 42×28 m rectangle centered on the hero
+and retire the rest of the old horde without drops. Ordinary spawning stays
+stopped everywhere for the encounter, so walking beyond the original view
+cannot reintroduce it. Existing pickups and structures stay in place.
+Reinforcements have three opportunities, at 12/28/44 active seconds after
+arrival, deferred until the current boss move finishes. Each warns one fixed
+2 m ground circle for 2 seconds, then admits up to three skeletons in one
+sector (10 m sideways and 8 m forward from the hero at warning time). The boss
+waits another 2 seconds before attacking. A live group consumes later
+opportunities without stacking; missed slots never replenish. Spawn positions
+within 6 m of the hero at landing or inside structures are skipped, never
+relocated. Maximum nine ordinary kills/nine XP per encounter, no entry XP,
+and no endless summon farm. Warnings and opportunities freeze with cards and
+pause; boss death cancels a pending warning. Bosses keep following and remain
+damageable while a group is announced. Boss attacks may subsequently break
 structures they actually hit.
 The boss follows across the endless arena; running away cannot advance the
 schedule or skip the fight. All ordinary weapons keep attacking.

@@ -89,7 +89,7 @@ namespace Champions.Sim.Tests
             var (run, live, fed) = DuelRun();
             Assert.AreEqual(RunEnd.Quit, live.State.End, "the script ran to the Ogre's death");
             Assert.AreEqual(BossStage.Dead, live.Bosses.Stage);
-            Assert.AreEqual(0, Drive.Events(live, SimEventKind.BossArrive).Single().I2, "its entrance retains the horde");
+            Assert.Greater(Drive.Events(live, SimEventKind.BossArrive).Single().I2, 0, "its entrance shatters the visible horde");
             Assert.AreEqual(0, Drive.Events(live, SimEventKind.BossStagger).Count, "dodges never gate damage");
             Assert.AreEqual(2, Drive.Events(live, SimEventKind.BossPhase).Single().I1);
             string dir = Path.Combine(Path.GetTempPath(), "champions-duel-" + Guid.NewGuid().ToString("N"));

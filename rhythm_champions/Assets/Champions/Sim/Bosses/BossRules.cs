@@ -25,6 +25,8 @@ namespace Champions.Sim
         Wave = 9,
         Wall = 10,
         Fans = 11,
+        /// <summary>A harmless ground warning for a finite group of ordinary reinforcements.</summary>
+        Reinforcements = 12,
     }
 
     /// <summary>What a boss's death sets off (design.md, "Level 1, minute by minute").</summary>
@@ -103,7 +105,7 @@ namespace Champions.Sim
         }
     }
 
-    /// <summary>Encounter arrival, phase and move numbers. Entrance/Break fields are archived fixture compatibility only.</summary>
+    /// <summary>Encounter arrival, phase and move numbers. Entrance fields also control the current arrival shatter; Break fields are archived fixture compatibility only.</summary>
     public sealed class BossRules
     {
         public const string File = "bosses.json";

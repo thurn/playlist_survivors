@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Champions.Client
 {
-    /// <summary>Draws the three encounters in the crowd's edge look, without clearing the retained field.</summary>
+    /// <summary>Draws the three encounters in the crowd's edge look, with an arrival shatter and bounded reinforcements.</summary>
     public sealed class BossPresenter : IDisposable
     {
         /// <summary>A hit's flash fades over this long.</summary>
@@ -64,10 +64,10 @@ namespace Champions.Client
                     Arrive(e);
                     break;
                 case SimEventKind.BossTelegraph:
-                    _animator?.Telegraph(e.MarkMove, e.MarkPart, e.T, e.D0);
+                    if (e.MarkMove != BossMove.Reinforcements) _animator?.Telegraph(e.MarkMove, e.MarkPart, e.T, e.D0);
                     break;
                 case SimEventKind.BossMove:
-                    if (e.I2 == 0) _animator?.Landed(e.MarkMove, e.MarkPart, e.T, e.D4);
+                    if (e.I2 == 0 && e.MarkMove != BossMove.Reinforcements) _animator?.Landed(e.MarkMove, e.MarkPart, e.T, e.D4);
                     break;
                 case SimEventKind.Hit:
                     if (e.I0 == _id && double.IsNaN(_died)) _hitAt = e.T;

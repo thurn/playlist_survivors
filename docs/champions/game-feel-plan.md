@@ -308,3 +308,73 @@ shaders compiled in the Mono build; observed variant count 287/300. No sim
 fixture hashes needed rerecording. Operator hand-play, subjective low-health
 urgency, full boss battle readability and target-hardware GPU cost remain
 pending rather than being inferred from a green suite.
+
+## ps-ueo.4 delivery: isolated boss arrivals and finite reinforcements
+
+Boss arrival shatters every non-boss body in a 42×28 m rectangle around the
+hero. The off-screen remainder retires silently; the ordinary spawner remains
+stopped globally until boss death. This bounds the encounter population without
+an invisible wall, so walking/dashing beyond the entrance view cannot meet an
+old pursuing horde. Arrival does not call progression kill rewards, generate XP
+or healing, credit player kills, remove existing pickups, or break structures.
+Boss attacks still break structures they actually hit. Boss health, phase HUD
+clock and the 300/600/900 horde-second schedule keep their existing semantics.
+
+Each boss has three reinforcement opportunities at 12/28/44 active seconds
+after arrival, deferred to the first gap after its current move. A fixed orange
+2 m ground circle warns for 2 s at (hero x ±10, hero y +8), alternating sides.
+Up to three starting-toughness skeletons enter that one sector. The boss then
+waits 2 s before choosing another move; its body keeps following and remains
+damageable throughout. Existing live reinforcements consume later opportunities
+without stacking. Spawn slots within 6 m of the hero or inside structures are
+spent without relocating. The maximum is nine ordinary kills and nine XP per
+encounter; refusing to kill the boss never renews it. Pause/cards freeze warning
+and opportunity time; death cancels pending groups. A later boss resets its own
+budget. No Break mechanic was restored.
+
+The existing `Kill` → `CrowdPresenter` → `TrailerCrowd.Break` → `MonsterShatter`
+path already carries the trailer's crack-outlined shard launch, its easing and
+pooled GPU fragments. Inspected the frozen trailer's playback/effect/shatter
+sources and reused that live project's path with outward directions and entrance
+power 8 (the presenter caps launch at 3.2). No frozen dependency, vendor mesh,
+bake or media was added. Environmental arrival events do not count as player
+kills in the end summary.
+
+### Evidence and limits
+
+Local evidence: `~/Library/Caches/playlist-survivors/evidence/ps-ueo/`.
+`boss-arrival/` contains 490 actual Mono-player stills with ID passes; 480 ordered
+30-fps frames cover 4–8 s (entry), 10–14 s (attacks) and 17–25 s (first group).
+`boss-arrival-motion.mp4` concatenates those three intervals, with time jumps at
+the joins. The 48 s fixture exited 0 with no reported presenter exceptions.
+Inspected ordered samples: arrival flash followed by outward fragments, clear
+floor by the next attack, a warning isolated from attack marks, three cyan
+skeletons appearing at its fixed location, then normal approach and weapon hits.
+Structures remain visible through entry. Six real automatic weapons continue
+throughout (Sword/Hammer/Bow/Orbit/Lightning/Ember). This explicit encounter
+fixture calls the Ogre early, holds its health high, and makes the initial 80
+mobs very tough to expose the environmental shatter. It is not a normal economy
+run, live input performance sample, or a claim that a real build takes 48 s.
+
+Compared the reference trailer's ordered 8–10 s frames: both show clear pockets
+and directional shards after impacts, but trailer crowd density, body palette
+and camera choreography differ. That comparison cannot certify sound sync or
+subjective fun. ps-ueo.5 still owns the assembled normal-run review, and operator
+hand-play/target-hardware feel remain pending.
+
+Verification: 490 sim tests, 131 Unity EditMode tests; Mono player build passed.
+The full-build Ogre storm, Conductor barrage and Dragon storm scenes also
+ran through 48 simulated seconds each (55 additional captures, exit 0). Inspected
+entrance, reinforcement and traveling-wave frames with six maximized weapons;
+these stress fixtures add a 384-pickup visual overlay and start with 1,000 very
+tough mobs. The overlay is not an arrival reward. Their logs and contact sheet
+are retained beside `boss-full-build/`; no presenter exceptions were reported.
+
+Tests cover all three thresholds/rewards/resume, retained pickup/structure state,
+zero arrival XP and player kill credit, outside re-entry after moving, all three
+bosses' finite budgets, no stacking, pause/cards, warning cancellation on death,
+warning contact safety, fresh budgets on repeat bosses, and replay through a
+paused reinforcement warning and spawn. The synthetic
+`fixture-duel` session was intentionally re-recorded: arrival now clears its
+placed field and changes its subsequent inputs/events. Fast checks gate staging;
+the parent run owns slow-CI convergence.
