@@ -13,9 +13,9 @@ namespace Champions.Render
         readonly MeleeLibrary library;
         readonly Material material;
         readonly MaterialPropertyBlock block = new MaterialPropertyBlock();
-        public MeleeVisuals()
+        public MeleeVisuals(MeleeLibrary weapons = null)
         {
-            library = MeleeLibrary.Load();
+            library = weapons != null ? weapons : MeleeLibrary.Load();
             if (library == null) return;
             material = new Material(library.Edge);
             block.SetFloat(IdPass.Id, IdPass.Effect);

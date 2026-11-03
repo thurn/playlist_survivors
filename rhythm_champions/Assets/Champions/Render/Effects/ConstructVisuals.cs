@@ -20,9 +20,9 @@ namespace Champions.Render
         int orbitForm, sentinelForm, idleLevel, figureCount;
         float idleArea = 1;
         bool hasOrbit, hasSentinel;
-        public ConstructVisuals(Palette palette)
+        public ConstructVisuals(Palette palette, MeleeLibrary library = null)
         {
-            weapons = MeleeLibrary.Load();
+            weapons = library != null ? library : MeleeLibrary.Load();
             if (weapons != null) edge = new Material(weapons.Edge);
             block.SetFloat(IdPass.Id, IdPass.Effect);
             knight = MonsterLibrary.LoadFigure(MonsterLook.Default, MonsterLibrary.HeroId);

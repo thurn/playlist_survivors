@@ -22,6 +22,7 @@ namespace Champions.Tests
         static string ContentDir => GameContent.Find(Application.dataPath);
 
         EffectLibrary _lib;
+        MeleeLibrary _weapons;
         Camera _camera;
 
         [SetUp]
@@ -34,6 +35,11 @@ namespace Champions.Tests
             _lib.Slash = AssetDatabase.LoadAssetAtPath<Shader>(EffectBaker.ShaderDir + "Slash.shader");
             _lib.Spark = AssetDatabase.LoadAssetAtPath<Shader>(EffectBaker.ShaderDir + "Spark.shader");
             _lib.Sparks = AssetDatabase.LoadAssetAtPath<ComputeShader>(EffectBaker.ShaderDir + "Sparks.compute");
+            // Hold tests use synthetic rigid weapons rather than a host's optional private bake.
+            _weapons = ScriptableObject.CreateInstance<MeleeLibrary>();
+            _weapons.Sword = Sword();
+            _weapons.Hammer = Sword();
+            _weapons.Edge = AssetDatabase.LoadAssetAtPath<Shader>(EffectBaker.ShaderDir + "MeleeEdge.shader");
             _camera = new GameObject("Camera").AddComponent<Camera>();
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = Color.black;
@@ -47,6 +53,9 @@ namespace Champions.Tests
         {
             foreach (var m in _lib.Meshes) Object.DestroyImmediate(m.Mesh);
             Object.DestroyImmediate(_lib);
+            Object.DestroyImmediate(_weapons.Sword);
+            Object.DestroyImmediate(_weapons.Hammer);
+            Object.DestroyImmediate(_weapons);
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         }
 
@@ -85,7 +94,7 @@ namespace Champions.Tests
             return mesh;
         }
 
-        Effects Make() => new Effects(_lib, EffectRecipes.Load(ContentDir), Palette.Load(ContentDir));
+        Effects Make() => new Effects(_lib, EffectRecipes.Load(ContentDir), Palette.Load(ContentDir), _weapons);
 
         [Test]
         public void EveryCueHasARecipe()
@@ -142,7 +151,7 @@ namespace Champions.Tests
         [Test]
         public void MeleeMotionFreezesAcrossCardsThenFinishesItsRemainingSettle()
         {
-            using var fx = new MeleeVisuals();
+            using var fx = new MeleeVisuals(_weapons);
             fx.Fire(EffectCue.MeleeSweep, new EffectShot { T = 1, Facing = Vector2.up, Radius = 3 });
             fx.Present(1.1);
             Assert.That(fx.Draws, Is.GreaterThan(0));

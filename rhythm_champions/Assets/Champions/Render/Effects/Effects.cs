@@ -63,17 +63,18 @@ namespace Champions.Render
         readonly Sparks _sparks;
         readonly List<(int Bucket, EffectShape Shape)> _shapes = new List<(int, EffectShape)>();
         readonly List<SparkBurst> _bursts = new List<SparkBurst>();
-        readonly MeleeVisuals _melee = new MeleeVisuals();
+        readonly MeleeVisuals _melee;
         readonly ConstructVisuals _constructs;
         readonly MagicVisuals _magic = new MagicVisuals();
         Orbiting _orbit;
         double _last = double.NegativeInfinity;
 
         /// <summary>The effects in <paramref name="lib"/>'s meshes and shaders, by <paramref name="recipes"/>, in the palette's hero white.</summary>
-        public Effects(EffectLibrary lib, EffectRecipes recipes, Palette palette)
+        public Effects(EffectLibrary lib, EffectRecipes recipes, Palette palette, MeleeLibrary weapons = null)
         {
             _recipes = recipes;
-            _constructs = new ConstructVisuals(palette);
+            _melee = new MeleeVisuals(weapons);
+            _constructs = new ConstructVisuals(palette, weapons);
             if (lib.Slash == null || lib.Spark == null || lib.Sparks == null) throw new InvalidOperationException("EffectLibrary: missing its shaders");
             _material = new Material(lib.Slash) { name = "Slash", enableInstancing = false };
             _material.SetColor("_CoreColor", palette.HeroBlade.linear);
