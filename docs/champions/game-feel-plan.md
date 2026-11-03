@@ -406,3 +406,14 @@ to hide the requested attack-rate increase. Full values, preview/media limits,
 and non-blocking hand-play, perceived speaker sync, pacing and target-hardware
 judgement are recorded in the report and operator-pending. No media, vendor
 derivatives, frozen-project changes or operator ProjectSettings are delivered.
+
+## ps-ueo.6 final review
+
+The final Warden repaired a cancelled Sword windup reserving animation time
+across pause/resume: the first resumed strike now gets its visible body impact
+on the damage clock. Cancelled clips release their follow-through and combo
+carry. The public-motion regression fails before the fix; all 490 sim and
+134 Unity tests pass after it. Fresh Mono build and normal opening pause/replay
+motion agree, with exact cross-runtime replay equality. The final-review
+section in the assembled evidence records inspected trailer/gameplay intervals,
+local capture paths, CI and remaining non-blocking operator judgements.

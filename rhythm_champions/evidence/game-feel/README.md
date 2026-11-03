@@ -173,3 +173,56 @@ slow CI gate delivery; see the bead for the delivered commit and CI result.
 Human hand-play, subjective fun, perceived music sync, dense XP/attack taste
 and target-hardware cost remain non-blocking checks in
 [operator-pending.md](../operator-pending.md).
+
+## Final Warden review — ps-ueo.6, 2026-11-03
+
+Independently reviewed delivered commits c5fa0489, 4c9b41fd, ddc9eba8,
+5aecf5c7, a496e32e, 7d16fe9c and a1718675 against the approved contract.
+Checked current cadence/subdivision and damage normalization, movement-facing
+Sword, legal endpoint sweep and strike ledger, shared aura and persistent
+footprints, held clocks, color/shader/HUD changes, zero-reward arrival clear,
+finite summons and replay coverage. No frozen or vendor-derived assets changed.
+The added tests use simulated time and geometry, with no wall-clock verdicts.
+Prior integrated slow CI completed in 281 seconds and promoted a1718675 to
+master, within the five-minute budget. The Warden repair also goes through
+Enact fast and slow checks; its bead records the final delivery/CI result.
+
+Found and repaired one presentation defect: pausing during an advance Sword
+windup cancels that strike, but its shifted follow-through end still delayed
+the next swing. A pause at .300 s followed by resume at 10.300 s left the
+10.500 s damage without its body impact until the cancelled clip ended.
+Scheduling now releases a cancelled swing at its cut time; cancelled windups
+also stop carrying combo/twist state into the next swing. The new public-motion
+regression failed on staging and passes with the repair. No simulation timing,
+damage, spawn, progression or replay fixture changed.
+
+Fresh verification: **490/490 sim tests**, **134/134 Unity EditMode tests, no
+skips**, and a successful Mono build. The first Unity invocation preceded local
+setup and failed for missing plugin/vendor files; setup supplied those files.
+The regression was then observed failing (133/134), repaired, and all passed.
+
+Actual repaired-player evidence lives outside git at
+`~/Library/Caches/playlist-survivors/evidence/ps-ueo/warden/`.
+`pause-session/` is a normal seed-1 opening with no health/spawn overrides,
+no analyzer entries (fair beatless mode), idle movement and recorded pause at
+6.300/resume at 8.300 song seconds. `pause-motion/` has **60 ordered player
+frames at 60 fps** from 8.250–9.233 Unity seconds: inspected the resumed
+windup, body strike/crescent/shatter and following ordinary swing. The first
+post-resume MeleeAction is song 8.500 s; horde time excludes the two-second
+hold. Capture filenames are Unity time; consult the event record for exact
+song time. This replay sequence is silent and cannot establish speaker sync.
+A separate complete Mono replay exits 0 and matches .NET hash
+`6CE5614C98812A4D`, **345 events**, presenter faults **none**; the capture's
+early exit is not used as proof of complete replay equality.
+
+Independently inspected ordered samples from the supplied trailer 8–10 s,
+assembly off-beat control 7–13 s, low-health/death 19–26 s, and the normal
+80 BPM full-run motion across opening, dense horde and all three boss windows.
+The broad held crescents, local clearing/shatter, yellow aura return to white,
+red near-empty vessel, green drops retained through arrivals, phase timer and
+open boss lanes are visible. The trailer remains denser and more choreographed;
+normal gameplay does not reproduce its staged camera or crowd arrangement.
+No additional balance or mesh churn was justified. Faster first choices/boss
+kills and dense XP clutter remain the explicitly recorded non-blocking operator
+judgements above, together with hand-play, perceived audio sync and target GPU
+cost. This review does not certify subjective fun or those hardware checks.

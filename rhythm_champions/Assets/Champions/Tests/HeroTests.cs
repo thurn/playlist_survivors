@@ -331,5 +331,19 @@ namespace Champions.Tests
             Assert.That(spin.Impact, Is.EqualTo(11.15).Within(1e-9));
             Assert.That(spin.ClipTime(11.15), Is.EqualTo(m.Clips.Spin.Impact).Within(1e-6));
         }
+        [Test]
+        public void CancelledWindupDoesNotDelayTheFirstBodyStrikeAfterResume()
+        {
+            var m = Motion(); var pose = new HeroPose();
+            m.Evaluate(.15, pose);
+            m.Swing(SwingKind.Slash, .5, Vector2.right);
+            m.Hold(.3, true); m.Evaluate(10.3, pose); m.Hold(10.3, false);
+            var next = m.Swing(SwingKind.Slash, 10.5, Vector2.right);
+            m.Evaluate(10.5, pose);
+            Assert.That(pose.Layers.Take(pose.LayerCount).Any(l =>
+                l.Clip == next.Clip && l.Weight > .9f &&
+                Math.Abs(l.Time - Knight[next.Clip].Impact) < 1e-5), Is.True,
+                "the first resumed damage must have a visible body impact, not wait for a cancelled windup's end");
+        }
     }
 }

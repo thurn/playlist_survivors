@@ -276,11 +276,11 @@ namespace Champions.Client.Hero
         {
             // LightCombo01A starts from the sword idle and ends where LightCombo01B starts: a slash right after an A is a B.
             var prev = _swingCount > 0 ? _swings[(_swingCount - 1) % Keep] : default;
-            bool afterA = _swingCount > 0 && prev.Clip == _clips.SlashA.Index && impact - _clips.SlashB.Impact <= prev.ClipEnd + AttackOut;
+            bool afterA = _swingCount > 0 && prev.Impact < prev.CutAt && prev.Clip == _clips.SlashA.Index && impact - _clips.SlashB.Impact <= prev.ClipEnd + AttackOut;
             var c = kind == SwingKind.Spin ? _clips.Spin : afterA ? _clips.SlashB : _clips.SlashA;
             // It shows no earlier than the frame it is known on, nor before the swing before has followed through.
             double earliest = _shown;
-            if (_swingCount > 0 && !priority) earliest = Math.Max(earliest, prev.End);
+            if (_swingCount > 0 && !priority) earliest = Math.Max(earliest, Math.Min(prev.End, prev.CutAt));
             double room = impact - earliest;
             float speed = 1;
             double start = impact - c.Impact, entry = start;
@@ -296,7 +296,7 @@ namespace Champions.Client.Hero
                 EntryClipTime = (float)((entry - start) * speed), End = start + c.End / speed, ClipEnd = start + c.Length / speed,
                 AimYaw = aim.sqrMagnitude > 1e-8f ? YawOf(aim) : float.NaN,
             };
-            s.Carry = _swingCount > 0 ? TwistWeight(_swings[(_swingCount - 1) % Keep], entry) : 0;
+            s.Carry = _swingCount > 0 && entry < prev.CutAt ? TwistWeight(prev, entry) : 0;
             _swings[_swingCount++ % Keep] = s;
             return s;
         }
