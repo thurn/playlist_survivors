@@ -16,8 +16,8 @@
   "survivorWeapons": true,
   "survivorLoadout": ["Sword:0>8", "Hammer:0>5", "Spear:0>5", "Bow:0>8", "Lightning:0>5", "EmberField:0>8", "Might:0>3", "Tempo:0>3", "Reach:0>3", "Split:0>2", "Echo:0>2", "Persistence:0>3"],
   "end": 30,
-  "hash": "3FC718B66C0F877A",
-  "events": 1870,
+  "hash": "310EFE1CEBCA2381",
+  "events": 1748,
   "entries": 888,
   "inputs": 15
 }

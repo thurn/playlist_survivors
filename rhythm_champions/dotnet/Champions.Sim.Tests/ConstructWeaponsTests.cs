@@ -142,6 +142,27 @@ namespace Champions.Sim.Tests
             Assert.That(sim.Enemies[0].Health, Is.LessThan(100));
         }
         [Test]
+        public void PausePreservesSentinelRosterAndEchoLifetime()
+        {
+            var sim = Make(WeaponKind.Sentinel, 8, new Dummy(1, 0, 100));
+            sim.State.Build.Set(SupportKind.Echo, 5);
+            sim.StepTo(1.1);
+            double until = sim.State.Build.Weapon(WeaponKind.Sentinel).PersistentUntil;
+            sim.Control(RunControl.Pause, sim.Now);
+            sim.StepTo(11.1);
+            sim.Control(RunControl.Resume, sim.Now);
+            sim.StepTo(11.5);
+            var echo = Drive.Events(sim, SimEventKind.ConstructAction).Last();
+            Assert.That(echo.D5, Is.EqualTo(until + 10 - echo.T).Within(1e-9), "echo retains the held roster lifetime");
+            sim.StepTo(12);
+            Assert.That(sim.State.Build.Weapon(WeaponKind.Sentinel).PersistentUntil,
+                Is.EqualTo(until + 10).Within(1e-9), "resume must not create a fresh roster");
+            sim.StepTo(14);
+            Assert.That(Drive.Events(sim, SimEventKind.ConstructAction).Last().T, Is.LessThan(14), "expired roster waits its remaining cooldown");
+            sim.StepTo(15);
+            Assert.That(Drive.Events(sim, SimEventKind.ConstructAction).Last().T, Is.EqualTo(15));
+        }
+        [Test]
         public void HeldWorldDoesNotCatchUpVolleysAndChunkedReplayMatches()
         {
             var a = Make(WeaponKind.Sentinel, 8, new Dummy(1, 0, 100));

@@ -38,6 +38,23 @@ namespace Champions.Sim.Tests
             }
         }
         [TestCase(1)] [TestCase(3)] [TestCase(5)] [TestCase(8)]
+        public void EmptyFieldHoldsEmpowermentAndStrikeCarryUntilATargetEnters(int level)
+        {
+            var sim = Make(WeaponKind.EmberField, level);
+            sim.State.Build.Set(SupportKind.Tempo, 1);
+            sim.State.Build.Empower();
+            sim.StepTo(4);
+            var weapon = sim.State.Build.Weapon(WeaponKind.EmberField);
+            Assert.That(weapon.Empowered, Is.True);
+            Assert.That(weapon.StrikeCarry, Is.Zero);
+            Assert.That(Drive.Events(sim, SimEventKind.MagicAction), Is.Empty);
+            sim.Enemies.Spawn(sim, MagicWeapons.FieldRadius * 1.1, 0, .01, 100);
+            sim.StepTo(5);
+            Assert.That(weapon.Empowered, Is.False);
+            Assert.That(weapon.StrikeCarry, Is.EqualTo(.1).Within(1e-9));
+            Assert.That(Drive.Events(sim, SimEventKind.Hit), Is.Not.Empty);
+        }
+        [TestCase(1)] [TestCase(3)] [TestCase(5)] [TestCase(8)]
         public void LightningVolleyForksAndChainsCannotFarmOneBoss(int level)
         {
             var sim = Make(WeaponKind.Lightning, level);
@@ -102,6 +119,7 @@ namespace Champions.Sim.Tests
             Assert.That(sim.State.Build.Weapon(WeaponKind.EmberField).PersistentUntil, Is.EqualTo(16.25));
             sim.StepTo(16);
             Assert.That(Drive.Events(sim, SimEventKind.MagicAction).Last().D0, Is.EqualTo(0));
+            sim.Enemies.Spawn(sim, sim.State.Hero.X, sim.State.Hero.Y, .1, 100);
             sim.StepTo(17);
             Assert.That(Drive.Events(sim, SimEventKind.MagicAction).Last().D0, Is.GreaterThan(0));
         }

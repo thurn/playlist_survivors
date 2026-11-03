@@ -1,0 +1,194 @@
+[
+  {
+    "scene": "conductor-barrage",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 290,
+    "eventCursor": 60971,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.082,
+      "p99": 1.97
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.311,
+      "p99": 1.228
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 0.649,
+      "p99": 1.03
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.118,
+      "p99": 5.926
+    }
+  },
+  {
+    "scene": "conductor-storm",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 176,
+    "eventCursor": 93573,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.039,
+      "p99": 2.33
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.5,
+      "p99": 1.479
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 0.921,
+      "p99": 1.886
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.624,
+      "p99": 6.966
+    }
+  },
+  {
+    "scene": "dragon-barrage",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 298,
+    "eventCursor": 57638,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.084,
+      "p99": 2.547
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.238,
+      "p99": 1.097
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 0.62,
+      "p99": 0.833
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.123,
+      "p99": 5.441
+    }
+  },
+  {
+    "scene": "dragon-storm",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 176,
+    "eventCursor": 89283,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.038,
+      "p99": 2.929
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.464,
+      "p99": 1.335
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 0.988,
+      "p99": 1.811
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.511,
+      "p99": 6.82
+    }
+  },
+  {
+    "scene": "fatOgre-barrage",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 300,
+    "eventCursor": 66220,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.106,
+      "p99": 2.317
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.336,
+      "p99": 1.717
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 0.909,
+      "p99": 1.154
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.53,
+      "p99": 11.042
+    }
+  },
+  {
+    "scene": "fatOgre-storm",
+    "device": "Apple M5 Max",
+    "tier": "Low",
+    "width": 1920,
+    "height": 1080,
+    "minAlive": 1001,
+    "pickupOverlay": 384,
+    "maxFlights": 176,
+    "eventCursor": 99057,
+    "simMs": {
+      "samples": 2526,
+      "p50": 0.042,
+      "p99": 2.638
+    },
+    "presentMs": {
+      "samples": 2526,
+      "p50": 0.508,
+      "p99": 1.43
+    },
+    "presenterFaults": 0,
+    "renderSubmitMs": {
+      "samples": 2526,
+      "p50": 1.059,
+      "p99": 2.129
+    },
+    "renderSynchronizedMs": {
+      "samples": 2526,
+      "p50": 3.794,
+      "p99": 7.063
+    }
+  }
+]

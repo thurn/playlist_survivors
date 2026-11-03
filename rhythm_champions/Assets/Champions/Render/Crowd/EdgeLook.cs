@@ -92,6 +92,9 @@ namespace Champions.Render.Crowd
         {
             var g = EdgeGains.Of(look);
             var m = Make(BodyShader, type, palette, "_edge");
+            // Six weapons can hit the whole pack together. Routine feedback keeps the enemy's hue,
+            // reserving white for the hero instead of whitening hundreds of bodies every pulse.
+            if (look != MonsterLook.Trailer) m.SetColor("_Flash", Hue(type, palette) * 1.25f);
             m.SetFloat("_Rim", g.Rim);
             m.SetFloat("_RimPower", g.RimPower);
             m.SetFloat("_Edge", g.Edge);

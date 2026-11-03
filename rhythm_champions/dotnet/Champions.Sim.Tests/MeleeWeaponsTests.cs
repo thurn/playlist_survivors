@@ -91,6 +91,31 @@ namespace Champions.Sim.Tests
             sim.StepTo(1.5);
             Assert.That(sim.Enemies[1].Health, Is.LessThan(100));
         }
+        [TestCase(WeaponKind.Sword)]
+        [TestCase(WeaponKind.Hammer)]
+        public void DenseMixedBodyCrowdSelectsTheLaneWithMostReachableTargets(WeaponKind kind)
+        {
+            var random = new Random(73);
+            var targets = new Dummy[300];
+            for (int i = 0; i < targets.Length; i++)
+            {
+                double angle = random.NextDouble() * 2 * Math.PI, distance = random.NextDouble() * 3.5;
+                targets[i] = new Dummy(Math.Cos(angle) * distance, Math.Sin(angle) * distance, 100, .05 + random.NextDouble() * .7);
+            }
+            var sim = Make(kind, 1, targets);
+            sim.State.Build.Empower();
+            double radius = MeleeWeapons.Radius(kind) * Math.Sqrt(1.5);
+            int expected = 0;
+            foreach (var target in targets)
+            {
+                double distance = Math.Sqrt(target.X * target.X + target.Y * target.Y);
+                var shape = HitShape.Cone(0, 0, target.X / distance, target.Y / distance, radius, Math.PI * .42);
+                int count = targets.Count(t => shape.Touches(t.X, t.Y, t.Radius));
+                expected = Math.Max(expected, count);
+            }
+            sim.StepTo(WeaponScheduler.BaseSeconds(kind));
+            Assert.That(Enumerable.Range(0, targets.Length).Count(i => sim.Enemies[i].Health < 100), Is.EqualTo(expected));
+        }
         [Test]
         public void NestedSplitQueriesCannotReplaceTheParentTargetList()
         {

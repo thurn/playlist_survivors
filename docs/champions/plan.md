@@ -449,7 +449,11 @@ builds against 1,000 retained monsters and each boss; they are excluded from
 `all` and CI. The current M5 simulation measurements exceed the 1 ms proxy,
 and synchronized offscreen rendering does not prove the GPU proxy. Concrete
 repeat-queue/visibility fixes land with that evidence; neither target hardware
-performance nor full-build visual acceptance is declared complete.
+performance nor full-build visual acceptance is declared complete. The
+[final Warden evidence](../../rhythm_champions/evidence/warden-review/README.md)
+records hold/empty-target repairs, hue-preserving default hit feedback and a
+six-case rerun; remaining peak player hierarchy and cost gaps stay actionable
+under ps-3wc.
 
 ## Look Metrics
 

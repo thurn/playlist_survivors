@@ -20,12 +20,24 @@ namespace Champions.Render
             material = new Material(library.Edge);
             block.SetFloat(IdPass.Id, IdPass.Effect);
         }
+        double heldAt = double.NaN;
+        public void Hold(double t, bool held)
+        {
+            if (held && double.IsNaN(heldAt)) heldAt = t;
+            if (held || double.IsNaN(heldAt)) return;
+            for (int i = 0; i < actions.Count; i++)
+            {
+                var action = actions[i]; action.Shot.T += t - heldAt; actions[i] = action;
+            }
+            heldAt = double.NaN;
+        }
         public static bool Handles(EffectCue cue) => cue >= EffectCue.MeleeSweep && cue <= EffectCue.HammerProcession;
         public void Fire(EffectCue cue, in EffectShot shot) => actions.Add(new Action { Cue = cue, Shot = shot });
-        public void Clear() { actions.Clear(); draws.Clear(); }
+        public void Clear() { actions.Clear(); draws.Clear(); heldAt = double.NaN; }
         public int Draws => draws.Count;
         public void Present(double now)
         {
+            if (!double.IsNaN(heldAt)) now = Math.Min(now, heldAt);
             draws.Clear();
             for (int i = actions.Count - 1; i >= 0; i--)
             {

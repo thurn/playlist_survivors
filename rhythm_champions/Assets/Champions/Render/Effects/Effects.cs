@@ -114,7 +114,12 @@ namespace Champions.Render
         public int Draws { get; private set; }
         public Sparks Sparks => _sparks;
 
-        public void Hold(double t, bool held) => _magic.Hold(t, held);
+        public void Hold(double t, bool held)
+        {
+            _magic.Hold(t, held);
+            _melee.Hold(t, held);
+            _constructs.Hold(t, held);
+        }
 
         public void Fire(EffectCue cue, in EffectShot shot)
         {

@@ -140,6 +140,39 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void MeleeMotionFreezesAcrossCardsThenFinishesItsRemainingSettle()
+        {
+            using var fx = new MeleeVisuals();
+            fx.Fire(EffectCue.MeleeSweep, new EffectShot { T = 1, Facing = Vector2.up, Radius = 3 });
+            fx.Present(1.1);
+            Assert.That(fx.Draws, Is.GreaterThan(0));
+            fx.Hold(1.1, true); fx.Present(11.1);
+            Assert.That(fx.Draws, Is.GreaterThan(0));
+            fx.Hold(11.1, false); fx.Present(11.2);
+            Assert.That(fx.Draws, Is.GreaterThan(0));
+            fx.Present(11.5);
+            Assert.That(fx.Draws, Is.Zero);
+        }
+
+        [Test]
+        public void CardHoldPreservesMeleeAndSentinelUntilTheirRemainingLifetimeEnds()
+        {
+            using var fx = Make();
+            fx.Fire(EffectCue.MeleeSweep, new EffectShot { T = 1, Facing = Vector2.up, Radius = 3 });
+            fx.Fire(EffectCue.SentinelFormation, new EffectShot { T = 1, Facing = Vector2.up, Radius = 2.3f, Duration = 2.4f });
+            fx.Present(1.1, Vector2.zero, 0, null);
+            Assert.That(fx.LiveShapes, Is.GreaterThan(0));
+            fx.Hold(1.1, true);
+            fx.Present(11.1, Vector2.zero, 0, null);
+            Assert.That(fx.LiveShapes, Is.GreaterThan(0), "the retained roster stays visible during cards");
+            fx.Hold(11.1, false);
+            fx.Present(11.2, Vector2.zero, 0, null);
+            Assert.That(fx.LiveShapes, Is.GreaterThan(0));
+            fx.Present(13.5, Vector2.zero, 0, null);
+            Assert.That(fx.LiveShapes, Is.Zero);
+        }
+
+        [Test]
         public void ARecipesUnknownFieldFailsWithItsPath()
         {
             string json = File.ReadAllText(Path.Combine(ContentDir, EffectRecipes.File))

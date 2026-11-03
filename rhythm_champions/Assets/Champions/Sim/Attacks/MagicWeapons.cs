@@ -14,7 +14,7 @@ namespace Champions.Sim
             this.sim = sim;
             sim.Resumed += elapsed => heldSeconds += elapsed;
             sim.Weapons.Bind(WeaponKind.Lightning, HasLightningTarget, Lightning);
-            sim.Weapons.Bind(WeaponKind.EmberField, t => true, Field);
+            sim.Weapons.Bind(WeaponKind.EmberField, HasFieldTarget, Field);
         }
         bool HasLightningTarget(double t)
         {
@@ -77,6 +77,35 @@ namespace Champions.Sim
             }
             return best;
         }
+        bool HasFieldTarget(double t)
+        {
+            var state = sim.State.Build.Weapon(WeaponKind.EmberField);
+            double x = fieldX, y = fieldY, dx = aimX, dy = aimY;
+            if (!state.PersistentActive || t >= state.PersistentUntil)
+            {
+                sim.HeroWas(t, out x, out y);
+                dx = sim.State.Hero.FacingX; dy = sim.State.Hero.FacingY;
+            }
+            double radius = FieldRadius * Math.Sqrt(sim.State.Build.Stats(WeaponKind.EmberField).AreaFactor * (state.Empowered ? 1.5 : 1));
+            int form = CombatRules.FormIndex(state.Level);
+            int placement = form == 3 ? (int)(state.ActivationSequence % 3) : 0;
+            sim.Enemies.Near(x, y, radius * 2.2, near);
+            foreach (var shape in FieldShapes(form, placement, x, y, dx, dy, radius))
+                for (int i = 0; i < near.Count; i++)
+                {
+                    var e = sim.Enemies[near[i]];
+                    if (shape.Touches(e.X, e.Y, e.Radius)) return true;
+                }
+            return false;
+        }
+        static System.Collections.Generic.IEnumerable<HitShape> FieldShapes(int form, int placement,
+            double x, double y, double dx, double dy, double radius)
+        {
+            yield return HitShape.Circle(x, y, radius);
+            if (form >= 1) yield return HitShape.Path(x, y, x + dx * radius * 1.4, y + dy * radius * 1.4, radius * .35);
+            if (form >= 2) yield return HitShape.Path(x, y, x - dy * radius, y + dx * radius, radius * .5);
+            if (form == 3) yield return HitShape.Circle(x + dx * placement * radius * .65, y + dy * placement * radius * .65, radius * .8);
+        }
         void Field(WeaponActivation a)
         {
             var state = sim.State.Build.Weapon(a.Kind);
@@ -92,8 +121,6 @@ namespace Champions.Sim
             double until = state.PersistentUntil, heldAtLaunch = heldSeconds;
             int form = CombatRules.FormIndex(a.Level);
             int placement = form == 3 ? (int)((a.Sequence - 1) % 3) : 0;
-            double step = placement * radius * .65;
-            double nx = x + dx * step, ny = y + dy * step;
             sim.Weapons.Supports.Launch(a, .7, HitWindow.Pulse, effect =>
             {
                 var cue = SimEvent.MagicAction(effect.T, a.Kind, form, effect.Spectral,
@@ -101,10 +128,7 @@ namespace Champions.Sim
                 cue.I2 |= placement << 1;
                 if (a.EmpowermentArea > 1) cue.I2 |= 8;
                 sim.Emit(cue);
-                Land(HitShape.Circle(x, y, radius));
-                if (form >= 1) Land(HitShape.Path(x, y, x + dx * radius * 1.4, y + dy * radius * 1.4, radius * .35));
-                if (form >= 2) Land(HitShape.Path(x, y, x - dy * radius, y + dx * radius, radius * .5));
-                if (form == 3) Land(HitShape.Circle(nx, ny, radius * .8));
+                foreach (var shape in FieldShapes(form, placement, x, y, dx, dy, radius)) Land(shape);
                 void Land(HitShape shape) => sim.Strikes.LandWeapon(sim, new Blow
                 { T = effect.T, Shape = shape, Damage = effect.Damage, Source = BlowSource.EmberField,
                     Tags = HitTags.Area, Flags = BlowFlags.Spectral, Owner = -1, Part = -1 }, effect);

@@ -7,6 +7,8 @@ namespace Champions.Sim
     {
         readonly Simulation sim;
         readonly StructList<int> near = new StructList<int>(2048);
+        struct AimTarget { public double X, Y, Distance, CosLimit; public bool AllDirections; }
+        readonly StructList<AimTarget> aimTargets = new StructList<AimTarget>(2048);
         public MeleeWeapons(Simulation sim)
         {
             this.sim = sim;
@@ -35,25 +37,43 @@ namespace Champions.Sim
         {
             dx = sim.State.Hero.FacingX; dy = sim.State.Hero.FacingY;
             sim.Enemies.Near(x, y, radius, near);
+            aimTargets.Clear();
+            // Body angular width depends only on the target, not on the candidate lane.
+            // Precompute it once: crowd scoring needs dot products, not N-squared inverse trig calls.
+            for (int i = 0; i < near.Count; i++)
+            {
+                var e = sim.Enemies[near[i]];
+                double ax = e.X - x, ay = e.Y - y, distance = Math.Sqrt(ax * ax + ay * ay);
+                aimTargets.Add(new AimTarget { X = distance > 1e-9 ? ax / distance : 1,
+                    Y = distance > 1e-9 ? ay / distance : 0, Distance = distance,
+                    AllDirections = distance <= e.Radius + 1e-9,
+                    CosLimit = SimMath.Cos(Math.PI * .42 + SimMath.Asin(Math.Min(1, e.Radius / Math.Max(distance, 1e-30))) + 1e-9) });
+            }
             int bestCount = -1;
             double bestDistance = double.PositiveInfinity;
             // Score candidate lanes, one vote per enemy including bosses; deterministic nearest tie-break.
             for (int i = 0; i < near.Count; i++)
             {
-                var e = sim.Enemies[near[i]];
-                double ax = e.X - x, ay = e.Y - y, distance = Math.Sqrt(ax * ax + ay * ay);
-                double ux = distance > 1e-9 ? ax / distance : 1, uy = distance > 1e-9 ? ay / distance : 0;
-                var cone = HitShape.Cone(x, y, ux, uy, radius, Math.PI * 0.42);
+                var lane = aimTargets[i];
                 int count = 0;
                 for (int j = 0; j < near.Count; j++)
                 {
-                    var other = sim.Enemies[near[j]];
-                    if (cone.Touches(other.X, other.Y, other.Radius)) count++;
+                    var other = aimTargets[j];
+                    double dot = lane.X * other.X + lane.Y * other.Y;
+                    if (other.AllDirections) count++;
+                    else if (Math.Abs(dot - other.CosLimit) <= 1e-12)
+                    {
+                        // Preserve the original geometric verdict at floating-point boundaries.
+                        var e = sim.Enemies[near[j]];
+                        if (HitShape.Cone(x, y, lane.X, lane.Y, radius, Math.PI * .42).Touches(e.X, e.Y, e.Radius)) count++;
+                    }
+                    else if (dot > other.CosLimit) count++;
                 }
-                if (count < bestCount || count == bestCount && distance >= bestDistance) continue;
-                bestCount = count; bestDistance = distance; dx = ux; dy = uy;
+                if (count < bestCount || count == bestCount && lane.Distance >= bestDistance) continue;
+                bestCount = count; bestDistance = lane.Distance; dx = lane.X; dy = lane.Y;
             }
         }
+
         void Strike(WeaponEffect effect, double x, double y, double dx, double dy, double radius)
         {
             var a = effect.Activation;

@@ -7,12 +7,17 @@ namespace Champions.Sim
     {
         readonly Simulation sim;
         readonly StructList<int> near = new StructList<int>(2048);
-        double nextSummon, summonX, summonY, summonDx, summonDy;
+        double nextSummon, summonX, summonY, summonDx, summonDy, heldSeconds;
         public const int MaxSentinels = 3;
         public const double SentinelLifetime = 2.4;
         public ConstructWeapons(Simulation sim)
         {
             this.sim = sim;
+            sim.Resumed += elapsed =>
+            {
+                heldSeconds += elapsed;
+                if (nextSummon > 0) nextSummon += elapsed;
+            };
             sim.Weapons.Bind(WeaponKind.OrbitBlades, t => HasTarget(WeaponKind.OrbitBlades, t), Fire);
             sim.Weapons.Bind(WeaponKind.Sentinel, t => HasTarget(WeaponKind.Sentinel, t), Fire);
         }
@@ -88,14 +93,14 @@ namespace Champions.Sim
             }
             else WeaponSupports.Refresh(state, a.Stats, a.T, .5);
             // Echo captures this roster's end, never a subsequent summon or activation's lifetime.
-            double until = state.PersistentUntil;
+            double until = state.PersistentUntil, heldAtLaunch = heldSeconds;
             int phase = a.Kind == WeaponKind.Sentinel
                 ? (int)((a.Sequence - 1) % (CombatRules.FormIndex(a.Level) >= 2 ? 3 : 2))
                 : (int)((sweep - 1) % 2);
             sim.Weapons.Supports.Launch(a, a.Kind == WeaponKind.Sentinel ? .9 : .45, HitWindow.Pulse,
                 effect =>
                 {
-                    double duration = Math.Max(.4, until - effect.T);
+                    double duration = Math.Max(.4, until + heldSeconds - heldAtLaunch - effect.T);
                     sim.Emit(SimEvent.ConstructAction(effect.T, a.Kind, CombatRules.FormIndex(a.Level),
                         phase | (a.EmpowermentArea > 1 ? 4 : 0), x, y, dx, dy, radius, duration));
                     foreach (var shape in Shapes(a.Kind, a.Level, sweep, x, y, dx, dy, radius))

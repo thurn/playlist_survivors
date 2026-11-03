@@ -94,3 +94,14 @@ row done (or files a bead) after checking.
   full encounter. The invulnerable 1,000-body test is deliberately denser than
   a real damaging build and does not establish safe escape routes or fun.
   Screens, speakers, target hardware and operator taste remain unperformed.
+
+## Final survivor review (ps-3wc.15, 2026-11-03)
+
+Sentinel/weapon hold lifetimes and empty-ground Ember empowerment were repaired
+with regressions. Default enemy hit feedback retains its hue instead of
+whitening the whole struck pack; trailer drawing remains unchanged. See
+[Warden evidence](warden-review/README.md) for new IL2CPP captures and raw timing.
+Peak hero visibility/warning-route ambiguity and the exceeded M5 simulation
+proxy remain concrete implementation bugs tracked under ps-3wc, beyond the
+operator-only taste/M1/speaker checks here. No full-build art/performance
+acceptance is claimed.

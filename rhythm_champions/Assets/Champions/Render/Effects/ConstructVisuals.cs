@@ -35,6 +35,14 @@ namespace Champions.Render
             pose = new RigPose(knight.Rig);
             rows = new Vector4[knight.BoneCount * 3];
         }
+        double heldAt = double.NaN;
+        public void Hold(double t, bool held)
+        {
+            if (held && double.IsNaN(heldAt)) heldAt = t;
+            if (held || double.IsNaN(heldAt)) return;
+            orbit.T += t - heldAt; sentinel.T += t - heldAt;
+            heldAt = double.NaN;
+        }
         public static bool Handles(EffectCue cue) => cue >= EffectCue.OrbitCircle && cue <= EffectCue.SentinelFormation;
         public void Orbit(int level, float area) { idleLevel = level; idleArea = area; }
         public void Fire(EffectCue cue, in EffectShot shot)
@@ -46,9 +54,10 @@ namespace Champions.Render
         }
         public int Shapes => blades.Count + figureCount;
         public int Draws => blades.Count * (weapons == null ? 0 : weapons.Sword.subMeshCount) + (figureCount > 0 ? 1 : 0);
-        public void Clear() { hasOrbit = hasSentinel = false; idleLevel = figureCount = 0; blades.Clear(); }
+        public void Clear() { hasOrbit = hasSentinel = false; idleLevel = figureCount = 0; blades.Clear(); heldAt = double.NaN; }
         public void Present(double now, Vector2 hero)
         {
+            if (!double.IsNaN(heldAt)) now = Math.Min(now, heldAt);
             blades.Clear(); figureCount = 0;
             if (hasOrbit && now - orbit.T > .5) hasOrbit = false;
             if (idleLevel > 0 || hasOrbit)
