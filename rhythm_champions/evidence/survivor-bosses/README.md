@@ -48,9 +48,9 @@ an encounter, so waiting does not create an unlimited farm.
 
 ## Verification and visual judgment
 
-- 403 .NET sim tests passed, including three real thresholds, spawn stop/resume,
+- 439 integrated .NET sim tests passed, including three real thresholds, spawn stop/resume,
   retained monsters/drops/structures, reward order, both clocks, victory,
-  walking escape fixtures in both phases at 0/60/174/240 BPM, physical dash
+  one launch event per front at exact tick boundaries, walking escape fixtures in both phases at 0/60/174/240 BPM, physical dash
   crossings, cooldown recovery, player holds and confidence loss.
 - 112 Unity EditMode tests passed, no skips; Mono player built successfully.
 - `fixture-duel` was deliberately re-recorded against the current encounter:

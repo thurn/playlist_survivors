@@ -170,7 +170,7 @@ namespace Champions.Sim
             Stage = BossStage.Coming;
             Id = -1;
             Phase = 1;
-            turn = 0;
+            turn = fanTurn = 0;
             Break = 0;
             Called++;
             calledClock = sim.State.RunClock;

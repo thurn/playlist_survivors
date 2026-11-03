@@ -136,6 +136,7 @@ namespace Champions.Sim.Tests
             s.Release(Key.Down, s.Now);
             Until(s, () => s.Bosses.Marks.Length > 0 && s.Bosses.Marks[0].Id != m.Id, 15);
             double next = s.Telegraphs.LandTime(s.Bosses.Marks[0].Telegraph);
+            Assert.AreEqual(1, Drive.Events(s, SimEventKind.BossMove).Count(e => e.I0 == m.Id && e.I2 == 0), "one launch cue per traveling front, including exact tick boundaries");
             Assert.Greater(next - original, c.Dashes.CooldownS);
             Assert.LessOrEqual(s.State.Hero.DashReadyAt, next);
         }
@@ -155,6 +156,18 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(before.Radius, after.Radius, 1e-7);
             Assert.AreEqual(before.Y, after.Y, 1e-7);
             Assert.AreEqual(before.Y2, after.Y2, 1e-7);
+        }
+
+        [Test]
+        public void ConductorAlternatesItsFanGapsBetweenVolleys()
+        {
+            var c = Config("conductor");
+            c.Bosses.Of(c.Duel).Moves = new[] { c.Bosses.Of(c.Duel).Moves.Single(m => m.Move == BossMove.Fans) };
+            var s = Make(c); Until(s, () => s.Bosses.Marks.Length > 0);
+            var first = s.Bosses.Marks[1];
+            Until(s, () => s.Bosses.Marks.Length > 0 && s.Bosses.Marks[0].Id > first.Id);
+            var next = s.Bosses.Marks[1];
+            Assert.Greater(Math.Abs(first.Shape.DirX - next.Shape.DirX), 0.3, "the opposite baton angle moves the safe gaps");
         }
 
         [TestCase(0)] [TestCase(60)] [TestCase(174)] [TestCase(240)]

@@ -28,7 +28,7 @@ namespace Champions.Sim
     {
         BossMoveRules move;
         bool chained;
-        int turn, nextMark;
+        int turn, nextMark, fanTurn;
         double aimX, aimY;
         // The move's last landing, its telegraph, and when the move is done (a charge's run, a burn's end).
         double lastLand, doneAt;
@@ -104,10 +104,11 @@ namespace Champions.Sim
                 case BossMove.Fans:
                 {
                     var tel = Plan(from, beats);
-                    // Three narrow baton lanes with walking-width gaps, alternating each turn.
+                    // Three narrow baton lanes with walking-width gaps, alternating each volley.
+                    double offset = fanTurn++ % 2 == 0 ? 0.2 : -0.2;
                     for (int k = -1; k <= 1; k++)
                     {
-                        double a = Facing + k * 0.65 + (turn % 2 == 0 ? 0.2 : -0.2);
+                        double a = Facing + k * 0.65 + offset;
                         Mark(k + 1, tel, HitShape.Cone(x, y, SimMath.Cos(a), SimMath.Sin(a), m.RangeM, m.HalfArc));
                     }
                     break;
@@ -195,7 +196,8 @@ namespace Champions.Sim
                 {
                     if (land <= end + 1e-9)
                     {
-                        if (end - Simulation.TickSeconds < land + 1e-9)
+                        // Each landing belongs to one half-open tick interval.
+                        if (end - Simulation.TickSeconds < land - 1e-9)
                             sim.Emit(SimEvent.BossMove(land, mark, false, x, y, x, y, move.DurationS, 0));
                         double at = Math.Min(end, land + move.DurationS);
                         var shape = WaveShape(mark, at);
