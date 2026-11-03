@@ -210,7 +210,7 @@ position; `CollectExperience(sim,value,t)` is called only on pickup arrival.
 The immediate-offer task owns how earned levels open cards. Level-up picks
 no longer heal. Boss kills retain their full-heal hook.
 
-`Content/progression.json.pickups` tunes baseline attraction (3 m), travel
+`Content/progression.json.pickups` tunes baseline attraction (3.5 m), travel
 speed (14 m/s), healing cadence (every 100 value-bearing kills) and recovery
 (10% of current maximum health). Healing cadence does not spend combat RNG.
 Attraction multiplies pickup radius by `1 + HeroBonus(Attraction)` for both

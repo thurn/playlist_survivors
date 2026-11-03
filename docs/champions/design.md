@@ -20,11 +20,12 @@ grid, the beat wave and the trailer's visual baseline remain the direction.
 The November 3 restoration is implemented; its exact tuning and validation
 limits are in [game-feel-plan.md](game-feel-plan.md) and
 [assembled evidence](../../rhythm_champions/evidence/game-feel/README.md).
-With the faster attacks and unchanged per-hit power, four scripted normal runs
-currently reach their first choice at 12–14 seconds and win in 16–17 minutes,
-with 33–34 normal choices. Measured boss fights span 8–54 seconds across those
-builds. The first-choice and boss-duration targets below remain pacing goals,
-not claims that these observations met them; operator judgement is pending.
+The subsequent ps-oli pacing change uses bosses after 3/6/9 horde minutes,
+a 3.5 m starting collection radius and contact-only big ork/troll elites.
+Four normal scripted builds finish in 10–12 minutes with 28–29 normal choices;
+first choices range from 21–45 seconds and fights from 9–100 seconds.
+These are deterministic observations, not operator hand-play approval; see
+[three-minute pacing evidence](../../rhythm_champions/evidence/three-minute-pacing/README.md).
 
 Combat and progression were redesigned with the operator on **2026-11-02**.
 The combat-feel decisions approved on **2026-11-03** below supersede conflicting
@@ -55,7 +56,7 @@ separates deterministic run results from pending hand-play and visual judgement.
 - Space dashes immediately and always ends in a full-circle sword sweep,
   clearing a landing pocket of weak fodder. One on-beat dash immediately
   grants a yellow aura: all attacks cover twice the area for three seconds.
-- Every five minutes of horde time, a boss arrives. Ordinary spawning and
+- Every three minutes of horde time, a boss arrives. Ordinary spawning and
   the progression clock stop; ordinary enemies in the visible fight area
   shatter and outside hordes cannot immediately refill it. Survive rhythmic
   patterns while your weapons fight. Kill three bosses to finish level 1.
@@ -81,7 +82,7 @@ These are settled design decisions. Numerical values outside this section,
 weapon/support names and the proposed content roster are starting points for
 hand-play tuning, not claims of tested balance.
 
-1. V1 is one level with bosses after **5, 10 and 15 minutes of horde time**.
+1. V1 is one level with bosses after **3, 6 and 9 minutes of horde time**.
    The progression clock pauses during each boss, cards and player pauses.
    Actual run duration includes the boss fights.
 2. Boss arrival **shatters ordinary enemies in the visible fight area**.
@@ -145,7 +146,7 @@ hand-play tuning, not claims of tested balance.
 | Term | Meaning |
 | --- | --- |
 | Run | One playthrough; V1 contains level 1. |
-| Horde time / progression clock | Time advancing the spawn ramp and 5/10/15-minute boss schedule; frozen during bosses, cards and pauses. |
+| Horde time / progression clock | Time advancing the spawn ramp and 3/6/9-minute boss schedule; frozen during bosses, cards and pauses. |
 | Combat time | Time actually playing, including boss fights; excludes cards and pauses. |
 | Weapon | An equipped automatic attack, occupying one of six weapon slots. |
 | Support | A passive stat or mechanic occupying one of six support slots; affects everything compatible. |
@@ -156,7 +157,7 @@ hand-play tuning, not claims of tested balance.
 | Beat / downbeat | Analyzer-committed beat / first beat of a bar. |
 | Heard time | The time the player hears, used for input judgement. |
 | Reliable beat | A musical grid sufficiently confident to use; otherwise use fallback timing. |
-| Fodder / elite / boss | Common contact threats / tougher enemies with a move / rhythmic encounters. |
+| Fodder / elite / boss | Common contact threats / tougher contact threats / rhythmic encounters. |
 
 ## The Run
 
@@ -183,17 +184,16 @@ reuses the existing troll asset with distinct scale, presentation and moves.
 
 | Horde time | Event |
 | --- | --- |
-| 0:00 | Skeletons and slimes; space to learn the starting weapon and collect XP. |
-| 1:30 | Bats add fast pressure. |
-| 3:00 | Goblins join; first elite charges teach telegraph reading. |
-| 4:30 | Demons join. |
-| 5:00 | Fat Ogre: first rhythmic boss. Clock and ordinary spawns stop. |
-| Ogre dies | Full heal, equipped-item upgrade; resume horde time from 5:00. |
-| 5:00–10:00 | Troll elites and ranged mushrooms join; density and mixed pressure grow. |
-| 10:00 | Troll Conductor: alternating fan lanes, falling marks and a traveling wall. |
-| Conductor dies | Full heal, equipped-item upgrade; resume horde time from 10:00. |
-| 10:00–15:00 | Densest mixed horde; developed builds demonstrate their combinations. |
-| 15:00 | Dragon: final rhythmic encounter with controlled reinforcement groups. |
+| 0:00 | Skeleton, slime and goblin groups, with occasional bats. |
+| 2:24 | Big ork elites join as durable contact threats. |
+| 2:42 | Demons join. |
+| 3:00 | Fat Ogre: first rhythmic boss. Clock and ordinary spawns stop. |
+| Ogre dies | Full heal, equipped-item upgrade; resume horde time from 3:00. |
+| 3:00–6:00 | Troll elites and ranged mushrooms join; density and mixed pressure grow. |
+| 6:00 | Troll Conductor: alternating fan lanes, falling marks and a traveling wall. |
+| Conductor dies | Full heal, equipped-item upgrade; resume horde time from 6:00. |
+| 6:00–9:00 | Densest mixed horde; developed builds demonstrate their combinations. |
+| 9:00 | Dragon: final rhythmic encounter with controlled reinforcement groups. |
 | Dragon dies | Victory, regardless of remaining fodder. |
 
 Stop ordinary spawning and freeze the progression clock exactly at the
@@ -202,10 +202,12 @@ downbeat (default within 4 seconds; fallback after 4 seconds). Existing
 combat continues during the warning. Do not wait up to a minute for a strong
 section. Boss duration does not advance the next encounter or density ramp.
 The current Conductor uses alternating marked fan lanes and a traveling wall,
-with no summons (zero renewable XP budget). Bosses are tuned to 150/350/650
+with at most three groups of three weak reinforcements (finite XP budget).
+Bosses are tuned to 150/350/650
 health; stronger broad builds can finish much faster than focused builds.
 Target fights of about 1–2 minutes each, the dragon up to 3; a completed run
-will usually be around 18–22 minutes of combat, plus time choosing cards.
+now includes nine horde minutes plus fights; measured scripted combat lasts
+about 10–12 minutes, plus time choosing cards (see [pacing evidence](../../rhythm_champions/evidence/three-minute-pacing/README.md)).
 
 ### Starting, pausing and ending
 
@@ -417,7 +419,7 @@ be echoed into extra dashes or gain attack-speed-triggered explosions.
 ## Experience, Choices and Recovery
 
 Kills drop XP at the enemy's position. Starting values: fodder 1, bats 0.5,
-elites 10. The pickup radius starts generously (try 3 m); attracted drops
+elites 10. The pickup radius starts at 3.5 m (Attraction adds 20% per level); attracted drops
 move visibly to the hero. Merge nearby gems while conserving XP to control
 clutter and cost. Uncollected XP persists through boss arrivals and fights;
 chunk streaming cannot silently delete it. No forced magnet on boss entry.
@@ -459,7 +461,9 @@ full health. Level-ups have no healing attached.
 The existing cast stays: skeleton, slime, bat, goblin and demon fodder;
 big ork and troll elites; mushroom ranged enemies. They retain their neon
 families and silhouettes. Fodder largely threatens through contact; elites
-add one clearly telegraphed move, and mushrooms fire avoidable projectiles.
+keep their bodies and contact damage without charge/slam specials or ground
+warnings. Mushrooms remain ranged and fire avoidable telegraphed projectiles;
+boss warnings and moves remain intact.
 Walking and sensible builds must suffice here without deliberate rhythm input.
 
 Starting speed range is 1.2–2.6 m/s against the hero's 6 m/s. Enemies step on
@@ -540,9 +544,9 @@ gets the usual empowerment bonus.
 
 | Boss | Positioning patterns | Dash-through pattern | Escalation |
 | --- | --- | --- | --- |
-| Fat Ogre, 5 minutes | Club lanes, marked boulders on successive beats, directional charges | Expanding stomp ring with a clear arrival cue | Chain a lane attack into a ring, retaining a valid recovery interval |
-| Troll Conductor, 10 minutes | Alternating projectile fans and gaps; finite summoned groups | A traveling pulse wall spanning the local fight area | Alternate wall and fan patterns, keeping the gap legible amid summons |
-| Dragon, 15 minutes | Breath cones, tail sweeps, marked landing zones and fireball sequences | Concentric outward rings crossed on their arrival beats | Combine previously taught patterns without overlapping unavoidable hits |
+| Fat Ogre, 3 minutes | Club lanes, marked boulders on successive beats, directional charges | Expanding stomp ring with a clear arrival cue | Chain a lane attack into a ring, retaining a valid recovery interval |
+| Troll Conductor, 6 minutes | Alternating projectile fans and gaps; finite summoned groups | A traveling pulse wall spanning the local fight area | Alternate wall and fan patterns, keeping the gap legible amid summons |
+| Dragon, 9 minutes | Breath cones, tail sweeps, marked landing zones and fireball sequences | Concentric outward rings crossed on their arrival beats | Combine previously taught patterns without overlapping unavoidable hits |
 
 The Conductor is a proposed use of the existing troll model, not a new vendor
 asset requirement. Its boss scale, silhouette treatment and authored animation
@@ -743,7 +747,7 @@ The trailer's families, with the empty arc given to roles:
 - **Accent** (goblin, mushroom): magenta to violet.
 - **Counter** (big ork, troll, Fat Ogre): amber to orange.
 - **Boss** (dragon): red, inside the counter family's reach.
-- **Warning**: orange/red for elite telegraphs, spores, shots and boss hazards.
+- **Warning**: orange/red for spore warnings, shots and boss hazards.
   Yellow is reserved for the player rhythm bonus and empowered effects.
 - **Zones**: two cool, a violet, a dim warm.
 - **Hero**: white with white ordinary attacks; yellow aura and empowered effects.

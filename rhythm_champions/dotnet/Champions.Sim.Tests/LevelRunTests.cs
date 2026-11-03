@@ -47,6 +47,7 @@ namespace Champions.Sim.Tests
             public readonly List<(double RunClock, string What)> Moments = new List<(double, string)>();
             public int Kills, Picks, Levels, NormalPicks, BossPicks;
             public readonly Dictionary<string, int> Hits = new Dictionary<string, int>();
+            public readonly Dictionary<string, int> BossPatterns = new Dictionary<string, int>();
             public double OgreArrived = double.NaN, OgreDied = double.NaN, DragonArrived = double.NaN, DragonDied = double.NaN;
             public double LeastHealth = double.MaxValue;
 
@@ -126,7 +127,11 @@ namespace Champions.Sim.Tests
                     bool ogre = content.Enemies.Cast[e.I1].Id == "fatOgre";
                     if (ogre) o.OgreArrived = clock;
                     else o.DragonArrived = clock;
-                    o.Moments.Add((clock, $"{content.Enemies.Cast[e.I1].Id} arrives, shattering {e.I2}, hero {sim.State.Hero.Health:F0}"));
+                    o.Moments.Add((clock, $"{content.Enemies.Cast[e.I1].Id} arrives, horde {sim.State.HordeClock:F2}, shattering {e.I2}, hero {sim.State.Hero.Health:F0}, level {sim.State.Level}, collected XP {sim.Pickups.ExperienceCollected:F1}, outstanding XP {sim.Pickups.OutstandingExperience:F1}"));
+                    break;
+                case SimEventKind.BossTelegraph:
+                    string pattern = sim.Bosses.Type.Id + "/" + (BossMove)(e.I1 & 0xff);
+                    o.BossPatterns[pattern] = o.BossPatterns.TryGetValue(pattern, out int count) ? count + 1 : 1;
                     break;
                 case SimEventKind.BossDeath:
                     if (double.IsNaN(o.OgreDied)) o.OgreDied = clock;

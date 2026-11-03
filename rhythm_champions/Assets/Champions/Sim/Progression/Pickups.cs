@@ -17,7 +17,7 @@ namespace Champions.Sim
     /// Attracted drops leave the world index and finish traveling even if the hero moves away.</summary>
     public sealed class Pickups
     {
-        public const double Radius = 3;
+        public const double Radius = 3.5;
         public const int FlightLimit = 256;
         readonly Dictionary<(int, int, PickupKind), Pickup> stored = new Dictionary<(int, int, PickupKind), Pickup>();
         readonly List<Pickup> flying = new List<Pickup>(FlightLimit);

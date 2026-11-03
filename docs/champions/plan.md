@@ -267,7 +267,7 @@ No quiet-moment service controls upgrade presentation in the new design.
 ### Systems
 
 In tick order: inputs, hero (movement, dash), attacks, horde (spawner,
-steps or glide, separation, contact, elite moves, spores), bosses, world
+steps or glide, separation, contact, spores; elite moves only in archived fixtures), bosses, world
 (chunks, structures), progression (XP drops, collection, immediate offers,
 boss rewards), run (horde-time schedule, combat time, end).
 
@@ -565,7 +565,7 @@ pipelines. Reconcile current code before deciding file boundaries or effort.
    pool handling. No automatic level-up healing. Pickups survive streaming
    and boss arrivals; merge visuals without losing stored value.
 5. **Clock and bosses.** Separate horde time from combat time. Freeze horde
-   time at 5/10/15 minutes, halt ordinary spawns, shatter ordinary enemies
+   time at 3/6/9 minutes, halt ordinary spawns, shatter ordinary enemies
    in the visible fight area, preserve structures/existing drops and prevent
    outside horde refill. Allow only small timed reinforcements with finite XP.
    Keep three always-damageable encounters using timed positioning and occasional mandatory dash-through

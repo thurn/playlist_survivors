@@ -7,7 +7,7 @@ namespace Champions.Sim
     /// while the world plays:
     ///
     /// - <b>Ramp</b>: it keeps <see cref="Target"/> mobs alive, from <see cref="LevelRules.Ramp"/> over the run
-    ///   clock (150 at the start, 600 by minute 12), spawning at most <see cref="LevelRules.PerS"/> a second from
+    ///   horde clock (150 at the start, 600 by 7:12 in current content), spawning at most <see cref="LevelRules.PerS"/> a second from
     ///   an ellipse just off-screen round the hero, each pick from the mix of the types joined by then.
     /// - <b>Surges</b>: the analyzer's loudness level, smoothed over <see cref="LevelRules.SurgeSmoothS"/>, moves
     ///   the target up in loud stretches (in proportion to the ramp, toward the cap late) and down in quiet ones. With no music (no fresh tick, or
@@ -82,8 +82,8 @@ namespace Champions.Sim
         /// <summary>
         /// The target at run clock <paramref name="clock"/> with the music <paramref name="loud"/> and
         /// <paramref name="quiet"/> that share of late: the ramp (denser in the second half), raised by loudness in
-        /// proportion to it and lowered by quiet, never above the cap: a loud start surges 150 to 240, a loud minute 12
-        /// 600 toward the cap (ps-6y2.21: a share of the way to the cap put 660 on screen in a loud song's first seconds).
+        /// proportion to it and lowered by quiet, never above the cap: a loud start surges 150 to 240, a loud late-game 600
+        /// toward the cap (ps-6y2.21: a share of the way to the cap put 660 on screen in a loud song's first seconds).
         /// </summary>
         public double TargetAt(double clock, double loud, double quiet)
         {

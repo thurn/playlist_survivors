@@ -7,7 +7,7 @@
     "maxS": 60
   },
   "pickups": {
-    "radiusM": 3,
+    "radiusM": 3.5,
     "speedMps": 14,
     "healingEveryKills": 100,
     "healingShare": 0.1

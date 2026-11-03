@@ -360,10 +360,10 @@ namespace Champions.Tests
             }
         }
 
-        [TestCase(299.99, 99, false, "HORDE  04:59")]
-        [TestCase(300, 0, true, "BOSS  00:00")]
-        [TestCase(300, 61.9, true, "BOSS  01:01")]
-        [TestCase(601, 0, false, "HORDE  10:01")]
+        [TestCase(179.99, 99, false, "HORDE  02:59")]
+        [TestCase(180, 0, true, "BOSS  00:00")]
+        [TestCase(180, 61.9, true, "BOSS  01:01")]
+        [TestCase(361, 0, false, "HORDE  06:01")]
         public void HudFormatsTheActivePhaseClock(double horde, double boss, bool up, string expected)
         {
             Assert.That(Hud.ClockText(horde, boss, up), Is.EqualTo(expected));

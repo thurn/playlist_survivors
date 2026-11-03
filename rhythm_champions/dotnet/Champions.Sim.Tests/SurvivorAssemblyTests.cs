@@ -18,6 +18,33 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(o.End, sim.State.End);
         }
 
+        [Test, Explicit("records natural full runs outside the checkout for player replay and pacing inspection")]
+        public void RecordThreeMinutePacingEvidence()
+        {
+            string root = Environment.GetEnvironmentVariable("CHAMPIONS_PACING_EVIDENCE") ??
+                Path.Combine(Path.GetTempPath(), "champions-three-minute-pacing");
+            foreach (var sample in new[] { ("focused", 0.0), ("broad", 80.0), ("defensive", 174.0), ("idle", 128.0) })
+            {
+                string build = sample.Item1;
+                var o = LevelRunTests.Run(build == "idle" ? "idle" : "positioning", until: 1000,
+                    survivor: true, bpm: sample.Item2, seed: 31,
+                    tweak: p => { if (build != "idle") LevelRunTests.ConfigureBuild(p, build); });
+                Assert.AreEqual(build == "idle" ? RunEnd.Death : RunEnd.Victory, o.End);
+                Replay(o);
+                string dir = Path.Combine(root, build);
+                Directory.CreateDirectory(dir);
+                var record = SessionRecord.Of(o.Run, o.Sim);
+                record.Source = "ps-oli.4: natural clock, current content, normal XP/health/spawns; deterministic scripted inputs, synthetic beliefs";
+                record.Write(dir);
+                SessionRecord.WriteEntries(dir, o.Fed);
+                string summary = o + $"\nHorde {o.Sim.State.HordeClock:F2}; normal {o.NormalPicks}; rewards {o.BossPicks}; " +
+                    $"collected {o.Sim.Pickups.ExperienceCollected:F1}; outstanding {o.Sim.Pickups.OutstandingExperience:F1}; hash {o.Sim.Hash:X16}\n" +
+                    string.Join("; ", o.BossPatterns.Select(p => p.Key + "=" + p.Value));
+                File.WriteAllText(Path.Combine(dir, "outcome.txt"), summary);
+                TestContext.Out.WriteLine(summary);
+            }
+        }
+
         [TestCase("focused", 0, 31UL)]
         [TestCase("focused", 128, 32UL)]
         [TestCase("broad", 80, 31UL)]
@@ -29,7 +56,7 @@ namespace Champions.Sim.Tests
             TestContext.Out.WriteLine($"{build}/{bpm}/{seed}: {o.End}, {o.RunClock:F1}s, normal choices {o.NormalPicks}, first {o.Moments.First(m => m.What.StartsWith("level ")).RunClock:F1}s");
             Assert.AreEqual(RunEnd.Victory, o.End);
             Assert.AreEqual(3, o.Sim.Bosses.Called);
-            Assert.AreEqual(900, o.Sim.State.HordeClock, 0.02);
+            Assert.AreEqual(540, o.Sim.State.HordeClock, 0.02);
             Assert.That(o.NormalPicks, Is.InRange(25, 35));
             Assert.AreEqual(2, o.BossPicks + o.Sim.Progression.Fallbacks, "capped owned items award max health instead of an empty reward");
             Assert.AreEqual(o.NormalPicks + o.BossPicks, o.Picks);

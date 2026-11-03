@@ -80,10 +80,10 @@ namespace Champions.Sim
 
     /// <summary>
     /// Level 1's spawner (Content/level1.json; design.md, "Spawning", "Toughness" and Decision 17): the ramp
-    /// from 150 alive to 600 by minute 12 from a ring just off-screen, the toughness ramp, the mix as types
+    /// from the opening density to the late-game density from a ring just off-screen, the toughness ramp, the mix as types
     /// join, loud surges toward the cap of 1,000 and quiet thinning, and formed waves on strong section
     /// changes, and its bosses' calls (<see cref="Bosses"/>: each stops the spawner, and the Ogre's death resumes it with
-    /// the second half's mix). Seconds are run clock.
+    /// the second half's mix). Seconds are horde time (run time in archived fixtures).
     /// </summary>
     public sealed class LevelRules
     {
@@ -138,8 +138,7 @@ namespace Champions.Sim
         public double SwarmRadiusM = 3;
 
         /// <summary>
-        /// The bosses in order and the run clock calling each (design.md, "Level 1, minute by minute": the Ogre at 7:00, the
-        /// dragon at 13:00); a boss is called only once the one before it is dead.
+        /// The bosses in order and the horde clock calling each (current content: 3/6/9 minutes); a boss is called only once the one before it is dead.
         /// </summary>
         public LevelBoss[] Bosses = new LevelBoss[0];
 

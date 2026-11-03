@@ -74,7 +74,7 @@ this copy even if later sessions overwrite the source.
   refill with bounded fight/re-entry behavior that cannot be bypassed by
   walking a few steps. Only small deliberately timed reinforcements with clear
   telegraph lanes and finite rewards; no arrival-wipe XP jackpot or renewable
-  summon farming. Retain 5/10/15-minute horde schedule, three damageable bosses,
+  summon farming. The subsequent ps-oli decision replaces this with a 3/6/9-minute horde schedule; retain three damageable bosses,
   paused horde progression during fights, rewards and no Break meter.
 
 Sweep radius/damage, exact boss bounds/re-entry rule, reinforcement counts and
@@ -318,7 +318,7 @@ an invisible wall, so walking/dashing beyond the entrance view cannot meet an
 old pursuing horde. Arrival does not call progression kill rewards, generate XP
 or healing, credit player kills, remove existing pickups, or break structures.
 Boss attacks still break structures they actually hit. Boss health, phase HUD
-clock and the 300/600/900 horde-second schedule keep their existing semantics.
+clock semantics remain; ps-oli subsequently changes thresholds to 180/360/540 horde seconds.
 
 Each boss has three reinforcement opportunities at 12/28/44 active seconds
 after arrival, deferred to the first gap after its current move. A fixed orange

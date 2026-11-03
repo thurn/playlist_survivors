@@ -6,18 +6,18 @@
     "perS": 60,
     "despawnM": 45,
     "cap": 1000,
-    "ramp": [[0, 150], [720, 600]],
+    "ramp": [[0, 150], [432, 600]],
     "secondHalfDensity": 1.15
   },
-  "toughness": [[0, 0.65], [90, 0.65], [180, 1], [720, 3.5]],
+  "toughness": [[0, 0.65], [54, 0.65], [108, 1], [432, 3.5]],
   "mix": [
     { "type": "skeleton", "fromS": 0, "weight": 4 },
     { "type": "slime", "fromS": 0, "weight": 3 },
     { "type": "bat", "fromS": 0, "weight": 0.6 },
     { "type": "goblin", "fromS": 0, "weight": 3 },
-    { "type": "bigOrk", "fromS": 240, "weight": 0.25 },
-    { "type": "demon", "fromS": 270, "weight": 3 },
-    { "type": "troll", "fromS": 330, "weight": 0.2 }
+    { "type": "bigOrk", "fromS": 144, "weight": 0.25 },
+    { "type": "demon", "fromS": 162, "weight": 3 },
+    { "type": "troll", "fromS": 198, "weight": 0.2 }
   ],
   "secondHalfMix": [
     { "type": "skeleton", "fromS": 0, "weight": 3 },
@@ -38,8 +38,8 @@
     "swarm": { "count": 48, "radiusM": 3 }
   },
   "bosses": [
-    { "boss": "fatOgre", "callAtS": 300 },
-    { "boss": "conductor", "callAtS": 600 },
-    { "boss": "dragon", "callAtS": 900 }
+    { "boss": "fatOgre", "callAtS": 180 },
+    { "boss": "conductor", "callAtS": 360 },
+    { "boss": "dragon", "callAtS": 540 }
   ]
 }

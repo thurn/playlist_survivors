@@ -34,12 +34,36 @@ namespace Champions.Sim.Tests
             Assert.IsTrue(ready(), "scripted condition within the simulated horizon");
         }
 
+        [TestCase("bigOrk")] [TestCase("troll")]
+        public void OrdinaryElitesApproachAndHurtByContactWithoutSpecialMoves(string kind)
+        {
+            var c = new RunInputs { Loadout = Array.Empty<Upgrade>() }.Build(Content);
+            var s = Make(c);
+            int id = s.Horde.Spawn(Content.Enemies.IndexOf(kind), 4, 0, 100);
+            s.StepTo(8);
+            Assert.IsTrue(s.Enemies[id].Alive, "elite body remains a durable threat");
+            Assert.Less(s.Enemies[id].X, 2, "removing the move must not strand the elite");
+            Assert.IsTrue(Drive.Events(s, SimEventKind.HeroHit).Any(e => e.D0 > 0 && e.I1 == (int)HitSource.Touch));
+            Assert.IsEmpty(Drive.Events(s, SimEventKind.EliteTelegraph));
+            Assert.IsEmpty(Drive.Events(s, SimEventKind.EliteMove));
+            Assert.IsEmpty(Drive.Events(s, SimEventKind.Spore));
+        }
+
         [Test]
         public void AllThreeThresholdsUseHordeTimeWithClearedFieldAndOrderedRewards()
         {
             var s = Make(Config(level: true));
             var calls = Content.Level.Bosses;
-            CollectionAssert.AreEqual(new[] { 300.0, 600, 900 }, calls.Select(b => b.CallAtS));
+            CollectionAssert.AreEqual(new[] { 180.0, 360, 540 }, calls.Select(b => b.CallAtS));
+            s.StepTo(179.9);
+            s.Control(RunControl.Pause, s.Now);
+            s.StepTo(s.Now + 7);
+            s.Hold(HoldReason.Cards, true);
+            s.Control(RunControl.Resume, s.Now);
+            s.StepTo(s.Now + 3);
+            Assert.AreEqual(0, s.Bosses.Called, "neither a pause nor cards can cross the threshold");
+            Assert.AreEqual(179.9, s.State.HordeClock, 0.02);
+            s.Hold(HoldReason.Cards, false);
             double bossSeconds = 0;
             for (int n = 0; n < 3; n++)
             {
@@ -83,8 +107,8 @@ namespace Champions.Sim.Tests
             }
             Assert.AreEqual(RunEnd.Victory, s.State.End);
             Assert.AreEqual(3, s.Bosses.Called);
-            Assert.AreEqual(900, s.State.HordeClock, 0.02);
-            Assert.GreaterOrEqual(s.State.RunClock, 900 + bossSeconds - 0.05);
+            Assert.AreEqual(540, s.State.HordeClock, 0.02);
+            Assert.GreaterOrEqual(s.State.RunClock, 540 + bossSeconds - 0.05);
             Assert.IsEmpty(Drive.Events(s, SimEventKind.BossBreak));
             Assert.IsEmpty(Drive.Events(s, SimEventKind.BossStagger));
         }

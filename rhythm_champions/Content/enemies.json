@@ -12,8 +12,8 @@
     { "id": "bat", "role": "swarmer", "slot": "keyDeep", "sizeM": 0.3, "radiusM": 0.25, "stepBeats": 0.5, "speedMps": 2.6, "toughness": 0.5, "experience": 0.5, "group": 6, "move": null },
     { "id": "goblin", "role": "fodder", "slot": "accent", "sizeM": 1.2, "radiusM": 0.35, "stepBeats": 1, "speedMps": 2.0, "toughness": 1, "experience": 1, "group": 1, "move": null },
     { "id": "mushroom", "role": "ranged", "slot": "accent", "sizeM": 1.0, "radiusM": 0.45, "stepBeats": 2, "speedMps": 0.9, "toughness": 1.5, "experience": 2, "group": 1, "move": "spores" },
-    { "id": "bigOrk", "role": "elite", "slot": "counter", "sizeM": 2.4, "radiusM": 0.8, "stepBeats": 2, "speedMps": 1.4, "toughness": 8, "experience": 10, "group": 1, "move": "charge" },
-    { "id": "troll", "role": "elite", "slot": "counter", "sizeM": 2.6, "radiusM": 0.9, "stepBeats": 2, "speedMps": 1.2, "toughness": 8, "experience": 10, "group": 1, "move": "slam" },
+    { "id": "bigOrk", "role": "elite", "slot": "counter", "sizeM": 2.4, "radiusM": 0.8, "stepBeats": 2, "speedMps": 1.4, "toughness": 8, "experience": 10, "group": 1, "move": null },
+    { "id": "troll", "role": "elite", "slot": "counter", "sizeM": 2.6, "radiusM": 0.9, "stepBeats": 2, "speedMps": 1.2, "toughness": 8, "experience": 10, "group": 1, "move": null },
     { "id": "fatOgre", "role": "boss", "slot": "counter", "sizeM": 5, "radiusM": 2.0, "speedMps": 3.0, "health": 150, "experience": 0 },
     { "id": "dragon", "role": "boss", "slot": "boss", "sizeM": 12, "radiusM": 3.5, "speedMps": 1.8, "health": 650, "experience": 0 },
     { "id": "conductor", "role": "boss", "slot": "counter", "sizeM": 4, "radiusM": 1.4, "speedMps": 3, "health": 350, "experience": 0 }

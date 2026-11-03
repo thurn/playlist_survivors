@@ -4,7 +4,7 @@ namespace Champions.Sim
     public sealed class ProgressionRules
     {
         public const string File = "progression.json";
-        public double PickupRadiusM = 3;
+        public double PickupRadiusM = Pickups.Radius;
         public double PickupSpeedMps = 14;
         public int HealingEveryKills = 100;
         public double HealingShare = 0.1;
