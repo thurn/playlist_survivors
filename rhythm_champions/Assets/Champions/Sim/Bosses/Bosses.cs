@@ -37,31 +37,10 @@ namespace Champions.Sim
     }
 
     /// <summary>
-    /// The bosses (design.md, "Bosses", Decisions 2 and 3; Content/bosses.json): one at a time, called by the level's
-    /// timeline (<see cref="LevelRules.Bosses"/>) or a scripted duel (<see cref="RunInputs.Duel"/>).
-    ///
-    /// - <b>Arrival</b>: a call stops the spawner; the boss lands on the first strong downbeat at least
-    ///   <see cref="BossRules.WaitS"/> of run clock later, on the next downbeat after <see cref="BossRules.WindowS"/>, and at
-    ///   once from <see cref="BossRules.WaitS"/> on whenever there is no reliable beat.
-    /// - <b>Entrance</b>: its shockwave shatters every mob on screen (<see cref="BossRules.ScreenHalfWidthM"/> by
-    ///   <see cref="BossRules.ScreenHalfHeightM"/> round the hero) outward from it, as kills that count for experience
-    ///   (<see cref="SimEventKind.Kill"/> from <see cref="BlowSource.Boss"/>), and the structures on screen; mobs beyond go
-    ///   unseen (<see cref="SimEventKind.EnemyGone"/>), so the duel is on cleared ground. The dragon's turns the floor warm.
-    /// - <b>The duel</b>: no spawns, and no new structures near (<see cref="StructureField.Duel"/>); the boss roars, then follows the hero, keeping <see cref="BossType.KeepM"/> between
-    ///   their bodies, and takes its moves in turn (walking up to a bar toward one out of reach, then taking the next that
-    ///   reaches), resting <see cref="BossType.RestBeats"/> between them. Every telegraph fills over whole beats and lands on a beat (<see cref="Telegraphs"/>; 0.5 s a beat
-    ///   beatless); its attack reaches the hero through <see cref="HeroHealth.Hurt"/> on that beat.
-    /// - <b>No stagger, no knockback</b>: the hero's blows only take its health (<see cref="Enemies"/> moves nothing).
-    /// - <b>Break</b>: each perfect dodge of its attacks fills <see cref="BossRules.BreakPerDodge"/>; a full bar empties and
-    ///   staggers it until <see cref="BossRules.StaggerBeats"/> beats after the dodged attack's beat (2 s beatless), calling
-    ///   off what it had planned, taking <see cref="BossRules.BreakDamageScale"/> times the damage.
-    /// - <b>Phase two</b> below <see cref="BossRules.PhaseTwoBelow"/> of its health: one-beat telegraphs and its moves'
-    ///   phase-two changes (<see cref="BossMoveRules.ChainTwo"/>, the breath's sweep).
-    /// - <b>Death</b>: a full heal; the Ogre's treasure (<see cref="Died"/>) and the spawner resumes with the second half;
-    ///   the dragon's finale shatters whatever is left on screen and wins the run.
-    /// - A hold (a pause) calls off the move in hand; the boss rests again after it.
-    ///
-    /// The client reads the boss here (<see cref="At"/>, <see cref="Marks"/>) and from its events.
+    /// Three retained-horde encounters on the horde clock. Calls stop ordinary spawning; arrivals add a boss without
+    /// removing monsters, pickups or structures. Walking patterns and traveling fronts share fixed warning deadlines.
+    /// Bosses remain damageable; first two deaths heal then hold for an owned upgrade, the third wins.
+    /// LegacyForms is used only by archived combat fixtures (entrance clearing and Break).
     /// </summary>
     public sealed partial class Bosses
     {
@@ -72,7 +51,7 @@ namespace Champions.Sim
         readonly BossRules rules;
         readonly EnemyRules cast;
         readonly LevelBoss[] timeline;
-        readonly double heroRadius, beatlessBeatS;
+        readonly double heroRadius, maxWalkSpeed, beatlessBeatS;
         readonly StructList<BossMark> marks = new StructList<BossMark>(8);
         readonly double[] trackT = new double[History], trackX = new double[History], trackY = new double[History], trackFacing = new double[History];
         int trackHead, trackCount;
@@ -90,6 +69,8 @@ namespace Champions.Sim
             cast = config.Enemies;
             timeline = config.Level != null ? config.Level.Bosses : new LevelBoss[0];
             heroRadius = config.Hero.RadiusM;
+            var stride = config.Combat.Support(SupportKind.Stride);
+            maxWalkSpeed = config.Hero.SpeedMps * (1 + stride.MaxLevel * stride.PerLevel);
             beatlessBeatS = config.Beat.TelegraphBeatlessBeatS;
             sim.Health.Settled += Settled;
             if (config.Duel < 0) return;
@@ -110,7 +91,9 @@ namespace Champions.Sim
         /// <summary>Bosses called this run.</summary>
         public int Called { get; private set; }
 
-        /// <summary>A duel lasts: from a boss's entrance to its death (no spawns; held levels wait).</summary>
+        /// <summary>An encounter from arrival to death; XP cards may interrupt and preserve its timers.</summary>
+        public bool EncounterActive => Stage != BossStage.None && Stage != BossStage.Dead;
+
         public bool InDuel => Stage >= BossStage.Roaring && Stage < BossStage.Dead;
 
         /// <summary>Its phase: 1, then 2 below <see cref="BossRules.PhaseTwoBelow"/> of its health.</summary>
@@ -173,7 +156,7 @@ namespace Champions.Sim
             facing = trackFacing[j];
         }
 
-        /// <summary>The damage a hero's blow deals the boss is its damage times this: Break's while staggered.</summary>
+        /// <summary>Archived fixtures alone can stagger; current encounters always take ordinary damage.</summary>
         internal double DamageScale => Stage == BossStage.Staggered ? rules.BreakDamageScale : 1;
 
         // ---- Calling and arriving ----
@@ -187,6 +170,7 @@ namespace Champions.Sim
             Stage = BossStage.Coming;
             Id = -1;
             Phase = 1;
+            turn = 0;
             Break = 0;
             Called++;
             calledClock = sim.State.RunClock;
@@ -200,7 +184,7 @@ namespace Champions.Sim
             if (Stage != BossStage.Coming || sim.State.Held || !downbeat || sim.State.Beat != Reliability.Reliable) return;
             double waited = Waited(t);
             if (waited < rules.WaitS - 1e-9) return;
-            if (waited >= rules.WindowS - 1e-9 || sim.Beats.StrongBeat(beat)) Arrive(t);
+            if (!sim.Dashes.Rules.LegacyForms || waited >= rules.WindowS - 1e-9 || sim.Beats.StrongBeat(beat)) Arrive(t);
         }
 
         /// <summary>
@@ -213,7 +197,7 @@ namespace Champions.Sim
         void Timeline(double t)
         {
             if (nextCall >= timeline.Length || (Stage != BossStage.None && Stage != BossStage.Dead)) return;
-            if (sim.State.RunClock < timeline[nextCall].CallAtS - 1e-9) return;
+            if ((sim.Dashes.Rules.LegacyForms ? sim.State.RunClock : sim.State.HordeClock) < timeline[nextCall].CallAtS - 1e-9) return;
             Call(timeline[nextCall++].Cast, t);
         }
 
@@ -224,12 +208,12 @@ namespace Champions.Sim
             x = hx;
             y = hy + rules.DistanceM;
             Facing = SimMath.Atan2(hy - y, hx - x);
-            int shattered = ShatterScreen(t, hx, hy, BreakCause.Entrance);
-            sim.StructureField?.Duel(true);
+            int shattered = sim.Dashes.Rules.LegacyForms ? ShatterScreen(t, hx, hy, BreakCause.Entrance) : 0;
+            if (sim.Dashes.Rules.LegacyForms) sim.StructureField?.Duel(true);
             Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, type.Health, Type.Cast + 1, boss: true);
             MaxHealth = type.Health;
             Stage = BossStage.Roaring;
-            roar = sim.Telegraphs.Plan(t, rules.RoarBeats);
+            roar = Plan(t, rules.RoarBeats);
             if (!roar.OnBeat) roar = new Telegraph(t, t + rules.RoarS, -1, -1);
             trackCount = 0;
             Track(t);
@@ -302,7 +286,7 @@ namespace Champions.Sim
                     double waited = Waited(end);
                     // Beatless, at once; and if no downbeat comes at all, a bar of the beatless fallback past the window.
                     bool beatless = sim.State.Beat != Reliability.Reliable;
-                    if (waited >= rules.WaitS - 1e-9 && (beatless || waited >= rules.WindowS + 4 * beatlessBeatS * sim.Beats.Rules.BeatsPerBar))
+                    if (waited >= rules.WaitS - 1e-9 && (beatless || waited >= (sim.Dashes.Rules.LegacyForms ? rules.WindowS + 4 * beatlessBeatS * sim.Beats.Rules.BeatsPerBar : rules.WindowS)))
                         Arrive(end);
                     return;
                 }
@@ -368,7 +352,17 @@ namespace Champions.Sim
             Walking = true;
         }
 
-        /// <summary>The length of a beat now: the tempo's with a reliable beat, else the telegraphs' fallback.</summary>
+        /// <summary>Whole-beat warnings with a minimum reaction window and a fixed promised impact time.</summary>
+        Telegraph Plan(double from, int beats, bool downbeat = false)
+        {
+            if (sim.Dashes.Rules.LegacyForms)
+                return downbeat ? sim.Telegraphs.PlanToDownbeat(from, beats) : sim.Telegraphs.Plan(from, beats);
+            beats = Math.Max(beats, (int)Math.Ceiling(1.1 / BeatS()));
+            var planned = downbeat ? sim.Telegraphs.PlanToDownbeat(from, beats) : sim.Telegraphs.Plan(from, beats);
+            return new Telegraph(planned.Start, planned.Land, planned.StartBeat, planned.LandBeat, true);
+        }
+
+        /// <summary>The current tempo or the half-second fallback.</summary>
         double BeatS()
         {
             int last = sim.State.LastBeat;
@@ -380,6 +374,7 @@ namespace Champions.Sim
         /// <summary>A hit on the hero settled: a perfect dodge of the boss's attack fills its Break, and a full bar staggers it.</summary>
         void Settled(Simulation s, HeroHit hit, HitOutcome outcome)
         {
+            if (!sim.Dashes.Rules.LegacyForms) return;
             if (outcome != HitOutcome.PerfectDodge || hit.Source != HitSource.Boss || hit.Owner != Id) return;
             if (Stage != BossStage.Acting && Stage != BossStage.Walking) return;
             // One dash dodging several of a move's marks on one beat (the boulders) fills it once.
@@ -425,7 +420,7 @@ namespace Champions.Sim
                 return;
             }
             sim.HeroWas(t, out double hx, out double hy);
-            ShatterScreen(t, hx, hy, BreakCause.Boss);
+            if (sim.Dashes.Rules.LegacyForms) ShatterScreen(t, hx, hy, BreakCause.Boss);
             sim.End(RunEnd.Victory);
         }
 
@@ -436,7 +431,15 @@ namespace Champions.Sim
             roar = sim.Telegraphs.Resume(roar, elapsed);
             stagger = sim.Telegraphs.Resume(stagger, elapsed);
             for (int i = 0; i < marks.Count; i++)
-            { var m = marks[i]; m.Telegraph = sim.Telegraphs.Resume(m.Telegraph, elapsed); marks[i] = m; }
+            {
+                var m = marks[i];
+                double land = sim.Telegraphs.LandTime(m.Telegraph);
+                // A front already traveling freezes in place; only future impacts may round forward to a beat.
+                m.Telegraph = IsWave(m.Move) && land <= sim.Now - elapsed + 1e-9
+                    ? new Telegraph(m.Telegraph.Start + elapsed, land + elapsed, -1, -1, true)
+                    : sim.Telegraphs.Resume(m.Telegraph, elapsed);
+                marks[i] = m;
+            }
             lastTelegraph = sim.Telegraphs.Resume(lastTelegraph, elapsed);
             flightTelegraph = sim.Telegraphs.Resume(flightTelegraph, elapsed);
             fireFirst = sim.Telegraphs.Resume(fireFirst, elapsed);

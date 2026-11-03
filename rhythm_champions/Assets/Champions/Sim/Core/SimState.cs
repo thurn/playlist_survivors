@@ -21,6 +21,8 @@ namespace Champions.Sim
 
         /// <summary>Playing time: advances with song time while the run plays and nothing holds the world.</summary>
         public double RunClock { get; internal set; }
+        /// <summary>Spawn/progression time, frozen from each boss call through its defeat.</summary>
+        public double HordeClock { get; internal set; }
         /// <summary>What holds the world now, a bit per <see cref="HoldReason"/>.</summary>
         public int Holds { get; internal set; }
 
@@ -73,7 +75,7 @@ namespace Champions.Sim
         public double Now;
         public long Tick;
         public RunPhase Phase;
-        public double RunClock;
+        public double RunClock, HordeClock;
         public int Holds;
         public Reliability Beat;
         public int LastBeat, Bar;

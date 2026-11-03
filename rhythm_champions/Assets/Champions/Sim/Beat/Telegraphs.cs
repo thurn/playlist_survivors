@@ -9,13 +9,16 @@ namespace Champions.Sim
     {
         public readonly double Start, Land;
         public readonly int StartBeat, LandBeat;
+        /// <summary>A promised deadline, unchanged by later tempo/confidence revisions.</summary>
+        public readonly bool Fixed;
 
-        public Telegraph(double start, double land, int startBeat, int landBeat)
+        public Telegraph(double start, double land, int startBeat, int landBeat, bool fixedTime = false)
         {
             Start = start;
             Land = land;
             StartBeat = startBeat;
             LandBeat = landBeat;
+            Fixed = fixedTime;
         }
 
         /// <summary>Planned on the beat (whole beats), or beatless (seconds).</summary>
@@ -83,7 +86,7 @@ namespace Champions.Sim
             return plain;
         }
 
-        internal Telegraph Freeze(in Telegraph telegraph) => new Telegraph(telegraph.Start, LandTime(telegraph), telegraph.StartBeat, telegraph.LandBeat);
+        internal Telegraph Freeze(in Telegraph telegraph) => new Telegraph(telegraph.Start, LandTime(telegraph), telegraph.StartBeat, telegraph.LandBeat, telegraph.Fixed);
 
         /// <summary>Preserve the captured reaction window, rounding the restored landing forward onto the future grid.</summary>
         internal Telegraph Resume(in Telegraph telegraph, double elapsed)
@@ -92,15 +95,15 @@ namespace Champions.Sim
             if (beats.Reliable(land))
             {
                 double next = beats.NextBeat(land, out int index);
-                if (!double.IsNaN(next)) return new Telegraph(start, next, index - telegraph.Beats, index);
+                if (!double.IsNaN(next)) return new Telegraph(start, next, index - telegraph.Beats, index, telegraph.Fixed);
             }
-            return new Telegraph(start, land, -1, -1);
+            return new Telegraph(start, land, -1, -1, telegraph.Fixed);
         }
 
         /// <summary>The current landing beat prediction, or the seconds fallback.</summary>
         public double LandTime(in Telegraph telegraph)
         {
-            if (!telegraph.OnBeat) return telegraph.Land;
+            if (telegraph.Fixed || !telegraph.OnBeat) return telegraph.Land;
             double t = beats.PredictBeat(telegraph.LandBeat);
             return double.IsNaN(t) ? telegraph.Land : t;
         }

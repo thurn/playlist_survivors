@@ -15,7 +15,7 @@ namespace Champions.Sim.Tests
         /// <summary>The recorded session CI replays: rhythm_champions/sessions/fixture-duel.</summary>
         public const string FixtureSession = "fixture-duel";
 
-        static readonly string[] Build = { "swordSlash:3", "orbitBlades:3", "bladeRain:2", "keenEdge:2" };
+        static readonly string[] Build = { "swordSlash:4", "orbitBlades:4", "bladeRain:4", "keenEdge:2", "twinStrike:2", "lifeblood:2" };
 
         /// <summary>
         /// A live run as the client drives it: 128 BPM, a beatless stretch and 150 BPM, the Ogre called at the start and
@@ -27,7 +27,7 @@ namespace Champions.Sim.Tests
             var song = new FixtureSong(41)
                 .Beats(0, 30, 128)
                 .Gap(30, 34)
-                .Beats(34, 75, 150, jitter: 0.002);
+                .Beats(34, 180, 150, jitter: 0.002);
             double beat = 60.0 / 128;
             for (int i = (int)Math.Ceiling(6 / beat); i * beat < 8; i++) song.Onset(i * beat, true);
             var entries = song.Entries();
@@ -38,7 +38,7 @@ namespace Champions.Sim.Tests
             var sim = new Simulation(run.Build(GameContent.Load(Checkout.In("Content"))));
             var dodger = new BossTests.Dodger(through: true);
             double chased = 0, after = double.NaN;
-            int fed = Drive.Feed(sim, entries, 75, eachFrame: s =>
+            int fed = Drive.Feed(sim, entries, 180, eachFrame: s =>
             {
                 if (!double.IsNaN(after) || s.State.Phase != RunPhase.Playing) return;
                 if (s.Bosses.Stage == BossStage.Dead)
@@ -49,6 +49,20 @@ namespace Champions.Sim.Tests
                 }
                 if (!s.Bosses.InDuel) return;
                 dodger.Frame(s);
+                foreach (var mark in s.Bosses.Marks)
+                {
+                    if (!Bosses.IsWave(mark.Move) || s.State.Hero.DashReadyAt > s.Now) continue;
+                    double soon = s.Now + 0.05;
+                    if (soon < s.Telegraphs.LandTime(mark.Telegraph)) continue;
+                    s.HeroWas(s.Now, out double px, out double py);
+                    if (!s.Bosses.WaveShape(mark, soon).Touches(px, py, 1.4)) continue;
+                    double wx = mark.Move == BossMove.Wall ? 0 : mark.Shape.X - px;
+                    double wy = mark.Move == BossMove.Wall ? -1 : mark.Shape.Y - py;
+                    double length = Math.Max(0.01, Math.Sqrt(wx * wx + wy * wy));
+                    s.Target(px + wx / length * 8, py + wy / length * 8, s.Now - BossTests.Dodger.Lead);
+                    s.Press(Key.Space, s.Now - BossTests.Dodger.Lead);
+                    s.Release(Key.Space, s.Now - BossTests.Dodger.Lead);
+                }
                 if (s.Now - chased < 0.5) return;
                 chased = s.Now;
                 ref readonly var b = ref s.Enemies[s.Bosses.Id];
@@ -75,8 +89,8 @@ namespace Champions.Sim.Tests
             var (run, live, fed) = DuelRun();
             Assert.AreEqual(RunEnd.Quit, live.State.End, "the script ran to the Ogre's death");
             Assert.AreEqual(BossStage.Dead, live.Bosses.Stage);
-            Assert.Greater(Drive.Events(live, SimEventKind.BossArrive).Single().I2, 10, "its entrance shattered the enemies on screen");
-            Assert.Greater(Drive.Events(live, SimEventKind.BossStagger).Count(s => s.I1 == 1), 0, "perfect dodges broke it");
+            Assert.AreEqual(0, Drive.Events(live, SimEventKind.BossArrive).Single().I2, "its entrance retains the horde");
+            Assert.AreEqual(0, Drive.Events(live, SimEventKind.BossStagger).Count, "dodges never gate damage");
             Assert.AreEqual(2, Drive.Events(live, SimEventKind.BossPhase).Single().I1);
             string dir = Path.Combine(Path.GetTempPath(), "champions-duel-" + Guid.NewGuid().ToString("N"));
             try

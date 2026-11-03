@@ -107,7 +107,7 @@ namespace Champions.Sim.Tests
                 }
                 double land = double.NaN;
                 foreach (var e in sim.EventsSince(cursor))
-                    if (e.Kind == SimEventKind.BossMove && e.I2 == 0 && e.T != pressedFor) land = e.T;
+                    if (e.Kind == SimEventKind.BossMove && !Bosses.IsWave(e.MarkMove) && e.I2 == 0 && e.T != pressedFor) land = e.T;
                 cursor = sim.EventCount;
                 if (double.IsNaN(land) || sim.State.Hero.DashReadyAt > land - early + 1e-9) return;
                 pressedFor = land;

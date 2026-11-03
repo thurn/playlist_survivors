@@ -150,9 +150,6 @@ namespace Champions.Client.Sound
                     else Request(SoundKind.Slam, e.T, 1f, pitch, 1f, asap);
                     break;
                 }
-                case SimEventKind.BossStagger:
-                    if (e.I1 == 1) Request(SoundKind.Accent, e.T, 1f, 1.25f, 1f, asap);
-                    break;
                 case SimEventKind.BossDeath:
                     Shatter(e.T, BossShatterSize, 0xB055u ^ (uint)(e.T * 1000), asap);
                     break;

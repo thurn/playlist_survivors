@@ -98,7 +98,7 @@ namespace Champions.Sim
             Listen(end, dt);
             Watch(end);
             if (Stopped) return;
-            double clock = sim.State.RunClock;
+            double clock = (sim.Dashes.Rules.LegacyForms ? sim.State.RunClock : sim.State.HordeClock);
             Target = TargetAt(clock, LoudShare, QuietShare);
             if (waveDue && waveAt <= end + 1e-9)
             {
@@ -143,7 +143,7 @@ namespace Champions.Sim
             {
                 if (Stopped || waveDue) continue;
                 var change = sim.Stream.Get(EntryKind.Change, changesSeen);
-                double clock = sim.State.RunClock;
+                double clock = (sim.Dashes.Rules.LegacyForms ? sim.State.RunClock : sim.State.HordeClock);
                 if (change.V0 < rules.WaveMinStrength || clock - lastWave < rules.WaveMinGapS) continue;
                 double at = sim.State.Beat == Reliability.Reliable ? sim.Beats.NextDownbeat(end, out _) : double.NaN;
                 waveAt = double.IsNaN(at) ? end : at;

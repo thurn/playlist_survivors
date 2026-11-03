@@ -13,7 +13,7 @@ namespace Champions.Sim.Tests
         public static Upgrade[] Build(params string[] upgrades) => upgrades.Select(Upgrade.Parse).ToArray();
 
         /// <summary>The game's content (every dash among it).</summary>
-        public static readonly GameContent Content = GameContent.Load(Checkout.In("Content"));
+        public static readonly GameContent Content = LegacyEncounterContent.Load();
 
         static Arena() { Content.Dashes.LegacyForms = true; }
 

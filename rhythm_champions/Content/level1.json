@@ -38,7 +38,8 @@
     "swarm": { "count": 48, "radiusM": 3 }
   },
   "bosses": [
-    { "boss": "fatOgre", "callAtS": 420 },
-    { "boss": "dragon", "callAtS": 780 }
+    { "boss": "fatOgre", "callAtS": 300 },
+    { "boss": "conductor", "callAtS": 600 },
+    { "boss": "dragon", "callAtS": 900 }
   ]
 }

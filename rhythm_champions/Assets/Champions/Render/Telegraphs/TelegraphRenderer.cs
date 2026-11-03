@@ -80,6 +80,12 @@ namespace Champions.Render.Telegraphs
             var m = _marks[i]; m.Start = start; m.Land = land; _marks[i] = m;
         }
 
+        public void Reshape(int id, in HitShape shape)
+        {
+            int i = Find(id); if (i < 0) return;
+            var m = _marks[i]; m.Shape = shape; _marks[i] = m;
+        }
+
         public void Add(int id, in HitShape shape, double start, double land, Color colour)
         {
             _marks.Add(new Mark { Id = id, Shape = shape, Start = start, Land = land, Landed = double.NaN, OffAt = double.NaN, Colour = colour });

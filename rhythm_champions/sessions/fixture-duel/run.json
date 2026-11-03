@@ -1,6 +1,6 @@
 {
   "format": "rhythm-champions-session",
-  "version": 4,
+  "version": 5,
   "build": "test",
   "runtime": ".NET 10.0.7",
   "platform": "",
@@ -9,13 +9,13 @@
   "seed": 41,
   "startTime": 0,
   "start": "Immediately",
-  "loadout": ["swordSlash:3", "orbitBlades:3", "bladeRain:2", "keenEdge:2"],
+  "loadout": ["swordSlash:4", "orbitBlades:4", "bladeRain:4", "keenEdge:2", "twinStrike:2", "lifeblood:2"],
   "dummies": 40,
   "level": false,
   "duel": "fatOgre",
-  "end": 75,
-  "hash": "A48F2B3F10904AE6",
-  "events": 1072,
-  "entries": 2141,
-  "inputs": 82
+  "end": 180,
+  "hash": "0087DBEDBF4A7AEF",
+  "events": 2460,
+  "entries": 5240,
+  "inputs": 147
 }

@@ -22,6 +22,9 @@ namespace Champions.Sim
         Dive = 7,
         /// <summary>The dragon's fireballs: a circle marked at the hero on each of three beats, each landing in turn.</summary>
         Fireballs = 8,
+        Wave = 9,
+        Wall = 10,
+        Fans = 11,
     }
 
     /// <summary>What a boss's death sets off (design.md, "Level 1, minute by minute").</summary>
@@ -100,11 +103,7 @@ namespace Champions.Sim
         }
     }
 
-    /// <summary>
-    /// The bosses' numbers (Content/bosses.json; design.md, "Bosses", Decisions 2 and 3): arrival, the entrance's
-    /// shatter, Break, phase two, and each boss's moves. Seconds are run clock where they count waiting
-    /// (<see cref="WaitS"/>, <see cref="WindowS"/>), song time otherwise.
-    /// </summary>
+    /// <summary>Encounter arrival, phase and move numbers. Entrance/Break fields are archived fixture compatibility only.</summary>
     public sealed class BossRules
     {
         public const string File = "bosses.json";
@@ -151,17 +150,23 @@ namespace Champions.Sim
             rules.RoarBeats = arrival.Int("roarBeats");
             rules.RoarS = arrival.Number("roarS");
             arrival.End();
-            var entrance = r.Object("entrance");
-            rules.ScreenHalfWidthM = entrance.Number("screenHalfWidthM");
-            rules.ScreenHalfHeightM = entrance.Number("screenHalfHeightM");
-            rules.EntrancePower = entrance.Number("power");
-            entrance.End();
-            var brk = r.Object("break");
-            rules.BreakPerDodge = brk.Number("perDodge");
-            rules.StaggerBeats = brk.Int("staggerBeats");
-            rules.StaggerBeatlessS = brk.Number("staggerBeatlessS");
-            rules.BreakDamageScale = brk.Number("damageScale");
-            brk.End();
+            if (r.Has("entrance"))
+            {
+                var entrance = r.Object("entrance");
+                rules.ScreenHalfWidthM = entrance.Number("screenHalfWidthM");
+                rules.ScreenHalfHeightM = entrance.Number("screenHalfHeightM");
+                rules.EntrancePower = entrance.Number("power");
+                entrance.End();
+            }
+            if (r.Has("break"))
+            {
+                var brk = r.Object("break");
+                rules.BreakPerDodge = brk.Number("perDodge");
+                rules.StaggerBeats = brk.Int("staggerBeats");
+                rules.StaggerBeatlessS = brk.Number("staggerBeatlessS");
+                rules.BreakDamageScale = brk.Number("damageScale");
+                brk.End();
+            }
             rules.PhaseTwoBelow = r.Number("phaseTwoBelow");
             rules.Bosses = r.Objects("bosses", b => ReadBoss(b, enemies));
             r.End();
@@ -231,6 +236,17 @@ namespace Champions.Sim
                     m.Count = r.Int("count");
                     m.RadiusM = r.Number("radiusM");
                     break;
+                case BossMove.Wave:
+                case BossMove.Wall:
+                    m.RadiusM = r.Number("radiusM");
+                    m.DurationS = r.Number("durationS");
+                    m.Count = r.IntOr("count", 1);
+                    if (!(m.DurationS > 0) || m.Count > 3) throw ContentReader.Fail(r.Path, "positive wave duration and at most three fronts");
+                    break;
+                case BossMove.Fans:
+                    m.RangeM = r.Number("rangeM");
+                    m.HalfArc = r.Number("halfArcDeg") * Math.PI / 180;
+                    break;
                 case BossMove.Breath:
                     m.RangeM = r.Number("rangeM");
                     m.HalfArc = r.Number("halfArcDeg") * Math.PI / 180;
@@ -264,6 +280,9 @@ namespace Champions.Sim
                 case "tail": return BossMove.Tail;
                 case "dive": return BossMove.Dive;
                 case "fireballs": return BossMove.Fireballs;
+                case "wave": return BossMove.Wave;
+                case "wall": return BossMove.Wall;
+                case "fans": return BossMove.Fans;
                 default: throw ContentReader.Fail(at, "no move " + name);
             }
         }

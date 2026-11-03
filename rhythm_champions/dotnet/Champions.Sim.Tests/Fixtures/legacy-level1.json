@@ -1,0 +1,44 @@
+{
+  "spawn": {
+    "ringXM": 21,
+    "ringYM": 14,
+    "ringJitterM": 3,
+    "perS": 60,
+    "despawnM": 45,
+    "cap": 1000,
+    "ramp": [[0, 150], [720, 600]],
+    "secondHalfDensity": 1.15
+  },
+  "toughness": [[0, 1], [90, 1], [720, 3.5]],
+  "mix": [
+    { "type": "skeleton", "fromS": 0, "weight": 4 },
+    { "type": "slime", "fromS": 0, "weight": 3 },
+    { "type": "bat", "fromS": 90, "weight": 0.6 },
+    { "type": "goblin", "fromS": 180, "weight": 3 },
+    { "type": "bigOrk", "fromS": 240, "weight": 0.25 },
+    { "type": "demon", "fromS": 270, "weight": 3 },
+    { "type": "troll", "fromS": 330, "weight": 0.2 }
+  ],
+  "secondHalfMix": [
+    { "type": "skeleton", "fromS": 0, "weight": 3 },
+    { "type": "slime", "fromS": 0, "weight": 2 },
+    { "type": "bat", "fromS": 0, "weight": 0.6 },
+    { "type": "goblin", "fromS": 0, "weight": 3 },
+    { "type": "demon", "fromS": 0, "weight": 3 },
+    { "type": "mushroom", "fromS": 0, "weight": 0.35 },
+    { "type": "bigOrk", "fromS": 0, "weight": 0.5 },
+    { "type": "troll", "fromS": 0, "weight": 0.4 }
+  ],
+  "surge": { "smoothS": 4, "strength": 0.4, "quietScale": 0.6 },
+  "waves": {
+    "minStrength": 0,
+    "minGapS": 20,
+    "ring": { "count": 40, "radiusM": 20 },
+    "line": { "count": 30, "lengthM": 36, "offsetM": 22 },
+    "swarm": { "count": 48, "radiusM": 3 }
+  },
+  "bosses": [
+    { "boss": "fatOgre", "callAtS": 420 },
+    { "boss": "dragon", "callAtS": 780 }
+  ]
+}

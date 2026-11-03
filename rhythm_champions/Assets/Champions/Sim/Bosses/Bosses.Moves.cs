@@ -84,25 +84,50 @@ namespace Champions.Sim
             Facing = SimMath.Atan2(aimY, aimX);
             int beats = m.Beats(Phase);
             double r = BodyRadius;
-            var telegraphs = sim.Telegraphs;
             switch (m.Move)
             {
+                case BossMove.Wave:
+                case BossMove.Wall:
+                {
+                    var tel = Plan(from, beats);
+                    // Locked to the hero's location when warned. Walking cannot outrun the front;
+                    // a dash crosses it using the same physical invulnerability as any other attack.
+                    var shape = m.Move == BossMove.Wave
+                        ? HitShape.Ring(hx, hy, 0, 0.8)
+                        : HitShape.Path(hx - m.RadiusM, hy - (tel.Land - t) * maxWalkSpeed - 2, hx + m.RadiusM, hy - (tel.Land - t) * maxWalkSpeed - 2, 0.6);
+                    int spacingBeats = (int)Math.Ceiling(Math.Max(1.1, sim.Dashes.Rules.CooldownS) / BeatS());
+                    double spacing = spacingBeats * BeatS();
+                    for (int k = 0; k < m.Count; k++)
+                        Mark(k, new Telegraph(tel.Start, tel.Land + k * spacing, tel.StartBeat, tel.OnBeat ? tel.LandBeat + k * spacingBeats : -1, true), shape);
+                    break;
+                }
+                case BossMove.Fans:
+                {
+                    var tel = Plan(from, beats);
+                    // Three narrow baton lanes with walking-width gaps, alternating each turn.
+                    for (int k = -1; k <= 1; k++)
+                    {
+                        double a = Facing + k * 0.65 + (turn % 2 == 0 ? 0.2 : -0.2);
+                        Mark(k + 1, tel, HitShape.Cone(x, y, SimMath.Cos(a), SimMath.Sin(a), m.RangeM, m.HalfArc));
+                    }
+                    break;
+                }
                 case BossMove.Smash:
                 {
                     double near = r * 0.5, far = r + m.LengthM;
-                    Mark(0, telegraphs.Plan(from, beats), HitShape.Path(x + aimX * near, y + aimY * near, x + aimX * far, y + aimY * far, m.WidthM));
+                    Mark(0, Plan(from, beats), HitShape.Path(x + aimX * near, y + aimY * near, x + aimX * far, y + aimY * far, m.WidthM));
                     break;
                 }
                 case BossMove.Stomp:
                 case BossMove.Tail:
-                    Mark(0, telegraphs.PlanToDownbeat(from, beats), HitShape.Circle(x, y, m.RadiusM));
+                    Mark(0, Plan(from, beats, true), HitShape.Circle(x, y, m.RadiusM));
                     break;
                 case BossMove.Charge:
-                    Mark(0, telegraphs.Plan(from, beats), HitShape.Path(x, y, x + aimX * m.LengthM, y + aimY * m.LengthM, r));
+                    Mark(0, Plan(from, beats), HitShape.Path(x, y, x + aimX * m.LengthM, y + aimY * m.LengthM, r));
                     break;
                 case BossMove.Boulders:
                 {
-                    var tel = telegraphs.Plan(from, beats);
+                    var tel = Plan(from, beats);
                     Mark(0, tel, HitShape.Circle(hx, hy, m.RadiusM));
                     double turnFrom = sim.Random.NextDouble() * 2 * Math.PI;
                     for (int k = 1; k < m.Count; k++)
@@ -117,11 +142,11 @@ namespace Champions.Sim
                     apexY = y + aimY * r * 0.8;
                     burnAngle = Facing;
                     burnSweep = m.Sweep[Math.Min(Phase, 2) - 1];
-                    Mark(0, telegraphs.Plan(from, beats), HitShape.Cone(apexX, apexY, aimX, aimY, m.RangeM, m.HalfArc + burnSweep / 2));
+                    Mark(0, Plan(from, beats), HitShape.Cone(apexX, apexY, aimX, aimY, m.RangeM, m.HalfArc + burnSweep / 2));
                     break;
                 case BossMove.Dive:
                 {
-                    var tel = telegraphs.Plan(from, beats);
+                    var tel = Plan(from, beats);
                     Mark(0, tel, HitShape.Circle(hx, hy, m.RadiusM));
                     moving = flight = true;
                     flightTelegraph = tel;
@@ -133,7 +158,7 @@ namespace Champions.Sim
                     break;
                 }
                 case BossMove.Fireballs:
-                    fireFirst = telegraphs.Plan(from, beats);
+                    fireFirst = Plan(from, beats);
                     Mark(0, fireFirst, HitShape.Circle(hx, hy, m.RadiusM));
                     fireNext = 1;
                     fireLeft = m.Count - 1;
@@ -153,10 +178,12 @@ namespace Champions.Sim
         {
             while (fireLeft > 0)
             {
-                double at = fireFirst.OnBeat ? sim.Beats.PredictBeat(fireFirst.StartBeat + fireNext) : fireFirst.Start + fireNext * beatlessBeatS;
+                double at = !sim.Dashes.Rules.LegacyForms
+                    ? fireFirst.Start + fireNext * BeatOf(fireFirst)
+                    : fireFirst.OnBeat ? sim.Beats.PredictBeat(fireFirst.StartBeat + fireNext) : fireFirst.Start + fireNext * beatlessBeatS;
                 if (double.IsNaN(at) || at > end + 1e-9) break;
                 sim.HeroWas(at, out double hx, out double hy);
-                Mark(fireNext++, sim.Telegraphs.Plan(at, move.Beats(Phase)), HitShape.Circle(hx, hy, move.RadiusM));
+                Mark(fireNext++, Plan(at, move.Beats(Phase)), HitShape.Circle(hx, hy, move.RadiusM));
                 fireLeft--;
             }
             int kept = 0;
@@ -164,7 +191,21 @@ namespace Champions.Sim
             {
                 var mark = marks[i];
                 double land = sim.Telegraphs.LandTime(mark.Telegraph);
-                if (land <= end + 1e-9) Land(mark, land);
+                if (!sim.Dashes.Rules.LegacyForms && IsWave(mark.Move))
+                {
+                    if (land <= end + 1e-9)
+                    {
+                        if (end - Simulation.TickSeconds < land + 1e-9)
+                            sim.Emit(SimEvent.BossMove(land, mark, false, x, y, x, y, move.DurationS, 0));
+                        double at = Math.Min(end, land + move.DurationS);
+                        var shape = WaveShape(mark, at);
+                        if (ReachesHero(shape, at)) Hurt(at, at);
+                        sim.StructureField?.Shatter(sim, shape, at, BreakCause.Boss);
+                    }
+                    if (end < land + move.DurationS - 1e-9) marks[kept++] = mark;
+                    else { lastLand = land; lastTelegraph = mark.Telegraph; doneAt = land + move.DurationS; }
+                }
+                else if (land <= end + 1e-9) Land(mark, land);
                 else marks[kept++] = mark;
             }
             while (marks.Count > kept) marks.RemoveLast();
@@ -257,7 +298,7 @@ namespace Champions.Sim
         /// </summary>
         void Finish()
         {
-            if (Phase == 2 && !chained && move.ChainTwo != BossMove.None)
+            if (sim.Dashes.Rules.LegacyForms && Phase == 2 && !chained && move.ChainTwo != BossMove.None)
             {
                 double now = sim.Now;
                 Begin(Type.Find(move.ChainTwo), now, lastTelegraph.OnBeat ? lastLand + 1e-6 : Math.Max(now, lastLand + beatlessBeatS), true);
@@ -267,21 +308,41 @@ namespace Champions.Sim
             Stage = BossStage.Walking;
             // Resting whole beats from the landing: half a beat short, so the next telegraph starts on the beat itself.
             double beatS = BeatOf(lastTelegraph);
-            nextMoveAt = doneAt + (Type.Rest(Phase) - (lastTelegraph.OnBeat ? 0.5 : 0)) * beatS;
+            nextMoveAt = doneAt + Math.Max(sim.Dashes.Rules.LegacyForms ? 0 : sim.Dashes.Rules.CooldownS, (Type.Rest(Phase) - (lastTelegraph.OnBeat ? 0.5 : 0)) * beatS);
         }
 
         /// <summary>A beat's length by <paramref name="telegraph"/>'s own beats, or the beatless fallback.</summary>
         double BeatOf(in Telegraph telegraph) =>
             telegraph.OnBeat && telegraph.Beats > 0 ? (telegraph.Land - telegraph.Start) / telegraph.Beats : beatlessBeatS;
 
-        /// <summary>
-        /// Does an attack covering <paramref name="shape"/> at <paramref name="t"/> reach the hero: inside it then, or dashing
-        /// then from a start inside it?
-        /// </summary>
+        /// <summary>Moves with a continuously traveling damage front.</summary>
+        public static bool IsWave(BossMove move) => move == BossMove.Wave || move == BossMove.Wall;
+
+        /// <summary>The traveling front at song time t; shared by collision and presentation.</summary>
+        public HitShape WaveShape(in BossMark mark, double t)
+        {
+            var shape = mark.Shape;
+            double elapsed = Math.Max(0, t - sim.Telegraphs.LandTime(mark.Telegraph));
+            if (mark.Move == BossMove.Wave)
+            {
+                shape.Radius = 0.8 + elapsed * move.RadiusM / move.DurationS;
+                shape.Inner = Math.Max(0, shape.Radius - 1.2);
+            }
+            else
+            {
+                double warning = mark.Telegraph.Land - mark.Telegraph.Start;
+                double speed = Math.Max(18, (2 * (warning * maxWalkSpeed + 2) + 2 * maxWalkSpeed * move.DurationS + 4) / move.DurationS);
+                shape.Y += elapsed * speed; shape.Y2 += elapsed * speed;
+            }
+            return shape;
+        }
+
+        /// <summary>Physical position at impact; archived fixtures also account for the dash start.</summary>
         bool ReachesHero(in HitShape shape, double t)
         {
             sim.HeroWas(t, out double hx, out double hy);
             if (shape.Touches(hx, hy, heroRadius)) return true;
+            if (!sim.Dashes.Rules.LegacyForms) return false;
             var hero = sim.State.Hero;
             if (!(hero.DashStart <= t + 1e-9 && t <= hero.IFramesUntil + 1e-9)) return false;
             sim.HeroWas(hero.DashStart, out double sx, out double sy);

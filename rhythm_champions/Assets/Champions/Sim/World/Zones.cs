@@ -50,7 +50,7 @@ namespace Champions.Sim
             var stream = sim.Stream;
             int count = stream.Count(EntryKind.Change);
             bool playing = sim.State.Phase == RunPhase.Playing;
-            double clock = sim.State.RunClock;
+            double clock = (sim.Dashes.Rules.LegacyForms ? sim.State.RunClock : sim.State.HordeClock);
             for (; changesSeen < count; changesSeen++)
             {
                 if (!playing || Locked || due) continue;
@@ -98,7 +98,7 @@ namespace Champions.Sim
         void Change(Simulation sim, double t, double fadeS, int key, ZoneReason reason)
         {
             due = false;
-            lastClock = sim.State.RunClock;
+            lastClock = (sim.Dashes.Rules.LegacyForms ? sim.State.RunClock : sim.State.HordeClock);
             int previous = Key;
             Key = key;
             sim.State.Zone = key;

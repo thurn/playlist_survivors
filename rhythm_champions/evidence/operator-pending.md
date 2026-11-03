@@ -66,3 +66,10 @@ row done (or files a bead) after checking.
   short text and the minimal XP/boss-health HUD against a full moving build.
   [Scripted UI captures](survivor-ui/README.md) and synthetic input tests
   verify layout/routing, not actual focus behavior or speaker/taste judgement.
+
+- ps-3wc.11: play the three retained-horde bosses on speakers and the target
+  display, checking arrival seals, fan gaps and traveling ring/wall arrival
+  timing under six weapons. Automated physical dodge fixtures and actual
+  player still previews pass; no speaker, controller or subjective taste
+  approval is claimed. See `survivor-bosses/README.md` for clock/pattern contract
+  and reproducible private captures.

@@ -35,6 +35,7 @@
     "bigOrk": "enemies.counter.orange",
     "troll": "enemies.counter.amber",
     "fatOgre": "enemies.counter.orange",
-    "dragon": "boss.body"
+    "dragon": "boss.body",
+    "conductor": "enemies.counter.amber"
   }
 }

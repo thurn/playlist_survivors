@@ -19,6 +19,9 @@ namespace Champions.Client
         /// <summary>How far past the palette's colour a mark's lines are drawn (linear, for the bloom).</summary>
         public const float Intensity = 2.5f;
 
+        const int ArrivalId = int.MinValue;
+        bool _arrival, _arrivalShown;
+        double _calledAt;
         bool _held;
         double _heldAt;
         readonly TelegraphRenderer _marks;
@@ -43,10 +46,21 @@ namespace Champions.Client
         {
             switch (e.Kind)
             {
+                case SimEventKind.BossCall:
+                    _arrival = true; _arrivalShown = false; _calledAt = e.T;
+                    break;
+                case SimEventKind.BossArrive:
+                    _arrival = false;
+                    if (_arrivalShown) _marks.CallOff(ArrivalId, e.T);
+                    break;
                 case SimEventKind.Hold:
                     bool held = e.I2 != 0;
                     if (held && !_held) _heldAt = e.T;
-                    if (!held && _held) _marks.Shift(e.T - _heldAt);
+                    if (!held && _held)
+                    {
+                        _marks.Shift(e.T - _heldAt);
+                        if (_arrival) _calledAt += e.T - _heldAt;
+                    }
                     _held = held;
                     break;
                 case SimEventKind.BossTelegraph:
@@ -54,7 +68,7 @@ namespace Champions.Client
                     break;
                 case SimEventKind.BossMove:
                     if (e.I2 != 0) _marks.CallOff(e.I0, e.T);
-                    else _marks.Land(e.I0, e.T, e.MarkMove == BossMove.Breath ? e.D4 : 0, e.D5);
+                    else _marks.Land(e.I0, e.T, e.MarkMove == BossMove.Breath || Bosses.IsWave(e.MarkMove) ? e.D4 : 0, e.D5);
                     break;
                 case SimEventKind.EliteTelegraph:
                 {
@@ -81,7 +95,22 @@ namespace Champions.Client
         {
             if (sim != null && !_held)
             {
-                foreach (var m in sim.Bosses.Marks) _marks.Retime(m.Id, m.Telegraph.Start, sim.Telegraphs.LandTime(m.Telegraph));
+                if (_arrival)
+                {
+                    sim.HeroWas(song, out double x, out double y);
+                    var warning = HitShape.Ring(x, y + sim.Bosses.Rules.DistanceM, 2.1, 2.4);
+                    if (!_arrivalShown)
+                    {
+                        _marks.Add(ArrivalId, warning, _calledAt, _calledAt + sim.Bosses.Rules.WaitS, _warning);
+                        _arrivalShown = true;
+                    }
+                    else _marks.Reshape(ArrivalId, warning);
+                }
+                foreach (var m in sim.Bosses.Marks)
+                {
+                    _marks.Retime(m.Id, m.Telegraph.Start, sim.Telegraphs.LandTime(m.Telegraph));
+                    if (Bosses.IsWave(m.Move)) _marks.Reshape(m.Id, sim.Bosses.WaveShape(m, song));
+                }
                 var mobs = sim.Horde.Mobs;
                 for (int i = 0; i < mobs.Length; i++)
                     if (mobs[i].Owned && mobs[i].Stage == MoveStage.Telegraph)

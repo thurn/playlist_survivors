@@ -18,7 +18,7 @@ namespace Champions.Sim.Tests
         const double Bpm = 128;
         static readonly double P = 60 / Bpm;
 
-        internal static readonly GameContent Content = GameContent.Load(Checkout.In("Content"));
+        internal static readonly GameContent Content = LegacyEncounterContent.Load();
 
         static DashTests() { Content.Dashes.LegacyForms = true; }
 
@@ -569,7 +569,7 @@ namespace Champions.Sim.Tests
         [Test]
         public void ASessionWithDashesReplaysToItsHash()
         {
-            var content = GameContent.Load(Checkout.In("Content"));
+            var content = LegacyEncounterContent.Load();
             content.Dashes = content.Dashes.Clone();
             content.Dashes.LegacyForms = true;
             content.Dashes.Start = "bladeRush";

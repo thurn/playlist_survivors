@@ -64,6 +64,9 @@ namespace Champions.Client
             _attackClip[BossMove.Breath] = Role("breath");
             _attackClip[BossMove.Tail] = Role("tail");
             _attackClip[BossMove.Fireballs] = Role("fireball");
+            _attackClip[BossMove.Fans] = Role("attack");
+            _attackClip[BossMove.Wall] = Role("attack");
+            _attackClip[BossMove.Wave] = Role("stomp");
         }
 
         int Role(string role) => Array.FindIndex(_clips, c => c.Role == role);

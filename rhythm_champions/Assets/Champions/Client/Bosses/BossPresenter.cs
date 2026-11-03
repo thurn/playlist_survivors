@@ -6,18 +6,7 @@ using UnityEngine;
 
 namespace Champions.Client
 {
-    /// <summary>
-    /// The bosses as the player sees them (design.md, Bosses, The Look &gt; The reference: the trailer, Shatter and
-    /// Restraint): the Fat Ogre and the dragon on their vendor meshes in the trailer's crowd (ps-6y2.28's types, as the
-    /// trailer drew its dragon) in their palette colours, written into the crowd each frame at the boss's sim position and
-    /// facing (<see cref="Bosses.At"/>) with the clips <see cref="BossAnimator"/> picks; a hit flashes it; its death breaks
-    /// it into its pieces on the killing frame, thrown along the blow. It sends the world the duel's camera from the boss's
-    /// call (eased out by its entrance) and its special moments: the entrance's ring, Break's ring as a stagger begins, and
-    /// the death's ring (the duel over).
-    /// Without a baked crowd it draws a capsule stand-in (<see cref="StandIn"/>). The crowd and its shatter belong to
-    /// whoever draws them: call <see cref="Present"/> after the frame's <see cref="TrailerCrowd.Begin"/> and before its
-    /// <see cref="TrailerCrowd.Draw"/>. The assembly's EventDispatch hands it the events.
-    /// </summary>
+    /// <summary>Draws the three encounters in the crowd's edge look, without clearing the retained field.</summary>
     public sealed class BossPresenter : IDisposable
     {
         /// <summary>A hit's flash fades over this long.</summary>
@@ -68,7 +57,7 @@ namespace Champions.Client
             switch (e.Kind)
             {
                 case SimEventKind.BossCall:
-                    // The camera eases out as the field clears, so the boss lands whole in the frame.
+                    // The camera eases out over the retained field, so the boss lands whole in the frame.
                     _world?.Duel(true);
                     break;
                 case SimEventKind.BossArrive:
@@ -79,14 +68,6 @@ namespace Champions.Client
                     break;
                 case SimEventKind.BossMove:
                     if (e.I2 == 0) _animator?.Landed(e.MarkMove, e.MarkPart, e.T, e.D4);
-                    break;
-                case SimEventKind.BossStagger:
-                    if (e.I1 == 1)
-                    {
-                        _animator?.Stagger(e.T, e.D0);
-                        _world?.Ring(RingKind.Break, _lastAt, e.T, _palette.HeroBreak);
-                    }
-                    else _animator?.Stagger(double.NaN, double.NaN);
                     break;
                 case SimEventKind.Hit:
                     if (e.I0 == _id && double.IsNaN(_died)) _hitAt = e.T;
@@ -173,7 +154,7 @@ namespace Champions.Client
             {
                 Position = new Vector3(at.x, 0, at.y), Yaw = Mathf.PI / 2 - (float)facing,
                 ClipA = (uint)pose.ClipA, TimeA = pose.TimeA, ClipB = (uint)pose.ClipB, TimeB = pose.TimeB, Blend = pose.Blend,
-                Scale = 1, HitFlash = Mathf.Clamp01(1 - (float)(song - _hitAt) / HitFlashS), Flags = (uint)CrowdFlags.Alive,
+                Scale = _cast.Cast[_castIndex].Id == "conductor" ? 4f / 2.6f : 1, HitFlash = 0.35f * Mathf.Clamp01(1 - (float)(song - _hitAt) / HitFlashS), Flags = (uint)CrowdFlags.Alive,
             };
             if (dead)
             {

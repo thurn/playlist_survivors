@@ -173,6 +173,7 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)State.Tick);
                 h = Hashing.Fold(h, (ulong)State.Phase | (ulong)State.End << 8 | (ulong)(uint)State.Holds << 16);
                 h = Hashing.Fold(h, Hashing.Bits(State.RunClock));
+                if (!Dashes.Rules.LegacyForms && Bosses.Called > 0) h = Hashing.Fold(h, Hashing.Bits(State.HordeClock));
                 h = Hashing.Fold(h, (ulong)State.Beat | (ulong)State.Quiet << 8 | (ulong)(uint)State.CadenceBeats << 16);
                 h = Hashing.Fold(h, (ulong)(uint)State.LastBeat);
                 h = Hashing.Fold(h, Hashing.Bits(State.Hero.X));
@@ -374,6 +375,7 @@ namespace Champions.Sim
                 Tick = State.Tick,
                 Phase = State.Phase,
                 RunClock = State.RunClock,
+                HordeClock = State.HordeClock,
                 Holds = State.Holds,
                 Beat = State.Beat,
                 LastBeat = State.LastBeat,
@@ -468,7 +470,7 @@ namespace Champions.Sim
                 State.Quiet = Quiet.Reason;
                 State.QuietSince = Quiet.Since;
             }
-            run.Tick();
+            run.Tick(this);
             hero.Tick(this, end);
             dashes.Tick(this, end);
             health.ApplySupports(this);

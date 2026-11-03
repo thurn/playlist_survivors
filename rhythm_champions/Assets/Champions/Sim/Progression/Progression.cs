@@ -86,10 +86,12 @@ namespace Champions.Sim
             }
         }
 
-        /// <summary>A boss died: the Ogre's treasure opens at the tick's end, once its blow has landed.</summary>
+        /// <summary>A nonfinal boss died: hold for its reward immediately. Archived fixtures defer to the tick end.</summary>
         void BossDied(Simulation sim, BossType boss)
         {
-            if (boss.Death == BossDeath.Treasure) treasureDue = true;
+            if (boss.Death != BossDeath.Treasure) return;
+            if (dashes.LegacyForms) treasureDue = true;
+            else Treasure(sim);
         }
 
         // ---- Driven by the sim ----

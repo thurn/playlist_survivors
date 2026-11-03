@@ -47,6 +47,8 @@ namespace Champions.Render.Crowd
         /// </summary>
         public static string FiguresPath(MonsterLook look) => "MonsterFigures/" + MonsterLooks.Name(look);
 
+        static readonly MonsterType[] Conductor = new MonsterType[2];
+
         public readonly MonsterLook Look;
         public readonly MonsterType[] Types;
         public readonly ComputeShader Cull, Palette, Shards;
@@ -66,6 +68,20 @@ namespace Champions.Render.Crowd
         {
             var types = Resources.LoadAll<MonsterType>(TypesPath(look));
             if (types.Length == 0) return null;
+            var troll = Array.Find(types, t => t.Id == "troll");
+            if (troll != null && !Array.Exists(types, t => t.Id == "conductor"))
+            {
+                // One runtime alias per look, sharing the private troll bake. It has independent instance buffers.
+                var conductor = Conductor[(int)look];
+                if (conductor == null)
+                {
+                    conductor = UnityEngine.Object.Instantiate(troll);
+                    conductor.Id = "conductor";
+                    Conductor[(int)look] = conductor;
+                }
+                Array.Resize(ref types, types.Length + 1);
+                types[types.Length - 1] = conductor;
+            }
             Array.Sort(types, (a, b) => string.CompareOrdinal(a.Id, b.Id));
             return new MonsterLibrary(look, types);
         }

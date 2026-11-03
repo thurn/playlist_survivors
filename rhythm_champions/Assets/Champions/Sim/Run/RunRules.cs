@@ -126,9 +126,11 @@ namespace Champions.Sim
         }
 
         /// <summary>A tick passed.</summary>
-        public void Tick()
+        public void Tick(Simulation sim)
         {
-            if (state.Phase == RunPhase.Playing && state.Holds == 0) state.RunClock += Simulation.TickSeconds;
+            if (state.Phase != RunPhase.Playing || state.Holds != 0) return;
+            state.RunClock += Simulation.TickSeconds;
+            if (!sim.Bosses.EncounterActive) state.HordeClock += Simulation.TickSeconds;
         }
     }
 }
