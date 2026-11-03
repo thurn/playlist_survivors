@@ -21,6 +21,7 @@ namespace Champions.EditorTools
         public const string PipelinePath = "Assets/Champions/Settings/URP-Champions.asset";
         public const string RendererPath = "Assets/Champions/Settings/URP-Champions_Renderer.asset";
         public const string GlobalSettingsPath = "Assets/UniversalRenderPipelineGlobalSettings.asset";
+        public const string ProjectSettingsPath = "ProjectSettings/ProjectSettings.asset";
         public const string BootScenePath = "Assets/Champions/Scenes/Boot.unity";
         public const string AppName = "RhythmChampions.app";
 
@@ -75,6 +76,9 @@ namespace Champions.EditorTools
 
             Bake();
             var kept = RestoredAfterBuild.Where(File.Exists).ToDictionary(p => p, File.ReadAllBytes);
+            // Unity's IL2CPP setters serialize default values into previously empty maps, even when
+            // their getters are restored to the original values below.
+            var projectSettings = File.ReadAllBytes(ProjectSettingsPath);
             var previous = PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone);
             var previousCompiler = PlayerSettings.GetIl2CppCompilerConfiguration(NamedBuildTarget.Standalone);
             var previousGeneration = PlayerSettings.GetIl2CppCodeGeneration(NamedBuildTarget.Standalone);
@@ -116,6 +120,11 @@ namespace Champions.EditorTools
                     File.WriteAllBytes(kv.Key, kv.Value);
                     AssetDatabase.ImportAsset(kv.Key, ImportAssetOptions.ForceUpdate);
                     Debug.Log("Tasks.BuildPlayer: restored " + kv.Key);
+                }
+                if (!File.ReadAllBytes(ProjectSettingsPath).SequenceEqual(projectSettings))
+                {
+                    File.WriteAllBytes(ProjectSettingsPath, projectSettings);
+                    Debug.Log("Tasks.BuildPlayer: restored " + ProjectSettingsPath);
                 }
             }
         }
