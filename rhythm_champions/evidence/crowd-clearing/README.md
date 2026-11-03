@@ -140,3 +140,14 @@ full-build boss fight, all songs/seeds or absence of macOS display faults.
 No attempt was made to reproduce the reported display freeze. F audiovisual
 impact, elite-special removal, judgement/logging and encounter pacing belong
 to sibling beads; their integrated result still needs the final Warden.
+
+## Replay fixture repair (ps-99n)
+
+The cohort change deliberately changes survivor spawn draws, positions and
+the reference player's later choices. The committed live `fixture-level`
+still described the previous spawn behavior, so both .NET and Mono rejected
+its hash in slow CI. Re-recorded it with the existing explicit
+`LevelRunTests.RecordTheLevelSession` writer after integrating the rhythm and
+three-minute pacing changes: 75.017 song seconds, 2,198 stream entries,
+850 inputs and 10,991 events, hash `B4DFC5DEB472D752`.
+The replay comparison remains strict; archived fixture rules are unchanged.
