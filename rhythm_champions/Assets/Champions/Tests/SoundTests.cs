@@ -143,6 +143,17 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void InPlaceCleaveHasAccentAndImpactSoundWithoutTravelWhoosh()
+        {
+            _sounds.Present(Frame(1));
+            _sounds.Take(SimEvent.HeroDash(1 + Lead, 0, 0, 1, JudgedBy.Beat, false,
+                1 + Lead, 1.15 + Lead, 0, 0, 1, 0, inPlace: true));
+            _sounds.Take(SimEvent.LandingBlast(1.15 + Lead, 0, 0, 0, 3, 1));
+            Assert.That(_scheduler.Log.Select(x => (x.Cue.Kind, x.Attack)), Is.EqualTo(new[]
+            { (SoundKind.Accent, 1 + Lead), (SoundKind.Swing, 1.15 + Lead), (SoundKind.HitHeavy, 1.15 + Lead) }));
+        }
+
+        [Test]
         public void ADashWhooshesFromItsPressWithTheAccentOnTheBeat()
         {
             _sounds.Present(Frame(1.0));

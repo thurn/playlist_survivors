@@ -19,6 +19,7 @@ namespace Champions.Sim
         public JudgedBy By;
         /// <summary>A press in the cooldown's last moments that fired when the dash was ready.</summary>
         public bool Buffered;
+        public bool InPlace;
     }
 
     /// <summary>
@@ -63,6 +64,7 @@ namespace Champions.Sim
 
         // A press waiting for the dash to be ready.
         bool waiting;
+        bool waitingInPlace;
         double waitingHeard;
         Judged waitingJudged;
 
@@ -133,8 +135,8 @@ namespace Champions.Sim
             sim.Emit(SimEvent.DashEquip(sim.Now, kind, rank));
         }
 
-        /// <summary>Space, heard at <paramref name="heard"/>: a dash from then, a wait for the cooldown's end, or a drop.</summary>
-        public void Press(Simulation sim, double heard)
+        /// <summary>Space or F, heard at <paramref name="heard"/>: a dash from then, a wait for the cooldown's end, or a drop.</summary>
+        public void Press(Simulation sim, double heard, bool inPlace = false)
         {
             if (sim.State.Held) return;
             double now = sim.Now;
@@ -145,7 +147,7 @@ namespace Champions.Sim
             {
                 waiting = false;
                 state.DashWaiting = false;
-                Begin(sim, start, heard, judged, false);
+                Begin(sim, start, heard, judged, false, inPlace);
                 return;
             }
             if (ready - Math.Max(heard, start) <= rules.BufferS + 1e-9)
@@ -153,6 +155,7 @@ namespace Champions.Sim
                 if (waiting && waitingJudged.OnBeat && !judged.OnBeat) return;
                 waiting = true;
                 waitingHeard = heard;
+                waitingInPlace = inPlace;
                 waitingJudged = judged;
                 state.DashWaiting = true;
                 if (ready <= now + 1e-9) Fire(sim);
@@ -230,10 +233,10 @@ namespace Champions.Sim
             waiting = false;
             state.DashWaiting = false;
             double start = Math.Max(state.DashReadyAt, walk.Earliest(sim.Now));
-            Begin(sim, start, waitingHeard, waitingJudged, true);
+            Begin(sim, start, waitingHeard, waitingJudged, true, waitingInPlace);
         }
 
-        void Begin(Simulation sim, double start, double heard, Judged judged, bool buffered)
+        void Begin(Simulation sim, double start, double heard, Judged judged, bool buffered, bool inPlace)
         {
             // The dash before is cut short here: its path is swept up to the new one's start.
             if (sweeping) Sweep(sim, Math.Min(start, current.End));
@@ -255,7 +258,8 @@ namespace Champions.Sim
                 FromY = y,
                 DirX = dx,
                 DirY = dy,
-                DistanceM = form.DistanceM,
+                DistanceM = inPlace ? 0 : form.DistanceM,
+                InPlace = inPlace,
                 OnBeat = judged.OnBeat,
                 By = judged.By,
                 Buffered = buffered,
@@ -272,7 +276,7 @@ namespace Champions.Sim
             walls.Clear();
 
             partCount = 0;
-            if (rules.LegacyForms)
+            if (rules.LegacyForms && !inPlace)
             {
                 foreach (var p in form.Parts) AddPart(p);
                 for (int i = 0; i < ExtraParts.Count; i++) AddPart(ExtraParts[i]);
@@ -288,11 +292,11 @@ namespace Champions.Sim
             bool damaging = false;
             for (int i = 0; i < partCount; i++) damaging |= parts[i].Damage > 0;
 
-            sim.Emit(SimEvent.HeroDash(sim.Now, current.Index, current.Kind, current.Rank, judged.By, buffered, start, end, x, y, dx, dy));
+            sim.Emit(SimEvent.HeroDash(sim.Now, current.Index, current.Kind, current.Rank, judged.By, buffered, start, end, x, y, dx, dy, inPlace));
             Plan(sim, form);
             health.Shield(current.Index, start, end + rules.IFramesAfterS, heard, judged.By);
             double speed = form.DistanceM / form.DurationS;
-            walk.Dash(sim, current.Index, start, end, dx * speed, dy * speed, damaging);
+            if (!inPlace) walk.Dash(sim, current.Index, start, end, dx * speed, dy * speed, damaging);
             Dashed?.Invoke(sim, current);
             Advance(sim, sim.Now);
         }

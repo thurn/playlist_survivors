@@ -224,7 +224,7 @@ before the result; stop combat when victory is determined.
 
 WASD/arrows move; opposing keys cancel and diagonals are normalized. Click
 walks toward a ground point; holding follows the cursor. Keyboard movement
-cancels the target. There is no manual aiming or attack button. Space dashes
+cancels the target. There is no manual aiming. F cleaves in place; Space dashes
 in the movement direction, or the last facing when stationary. Cards accept
 click, 1–3, or arrows and Enter. Ignore held keys until release across a card
 transition, so a choice cannot cause an accidental dash. No gamepad in V1.
@@ -250,7 +250,17 @@ Starting tuning: 4 m in 0.15 seconds, 0.6-second cooldown in real seconds,
 invulnerability during travel and 0.1 seconds afterward. Buffer a press in
 the final 0.15 seconds of cooldown. Dash starts on the input frame; no waiting
 for a beat. It crosses enemy bodies and projectiles, but not intact structures.
-A dash passing a click target clears it.
+A dash passing a click target clears it. F starts the same full-circle
+cleave with a 0.15-second natural spin windup, while ordinary walking and click
+targets continue unchanged. F shares Space's cooldown and final 0.15-second
+buffer: the latest eligible buffered press chooses the action, except an
+on-beat press is retained over an off-beat replacement. Simultaneous keys
+start only the first action received. Held F cannot repeat or select cards.
+F retains the same 0.25-second invulnerability window and rhythm reward,
+including beatless fallback, with no dash travel, trail or travel sound.
+The sweep hits once at the hero's position after its windup; its sword,
+support and aura scaling and interruption of automatic body attacks match
+the dash's landing sweep.
 
 Timing judgement is binary in heard time: default ±80 ms around a beat,
 ±60 ms around half beats or strong musical onsets. Off-beat dashes retain all
@@ -264,7 +274,7 @@ ordinary weak fodder locally, while tougher enemies can survive. Sword levels,
 damage and area upgrades improve both attacks. A landing spin overrides a
 conflicting automatic body action; it must not apply the same hit twice.
 
-An on-beat dash grants the full yellow aura immediately, even in empty space.
+An on-beat dash or F cleave grants the full yellow aura immediately, even in empty space.
 It lasts **three seconds of active combat time** from the judged dash start.
 Another qualifying dash resets expiry to three seconds from that start,
 without stacking; off-beat dashes leave the expiry alone. Cards and pauses

@@ -155,6 +155,7 @@ namespace Champions.Client
 
         void Dash(in SimEvent e)
         {
+            if (e.InPlaceCleave) return;
             int kind = e.DashType, rank = e.DashRank;
             _dashesByIndex[e.I0] = (kind, rank, e.D0, e.D1);
             if (_dashesByIndex.Count > 64) _dashesByIndex.Remove(e.I0 - 64);

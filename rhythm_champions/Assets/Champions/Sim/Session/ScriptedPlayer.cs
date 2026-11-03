@@ -28,7 +28,7 @@ namespace Champions.Sim
 
         static readonly (string Name, Key Key)[] KeyNames =
         {
-            ("up", Key.Up), ("down", Key.Down), ("left", Key.Left), ("right", Key.Right), ("space", Key.Space), ("enter", Key.Enter),
+            ("up", Key.Up), ("down", Key.Down), ("left", Key.Left), ("right", Key.Right), ("space", Key.Space), ("f", Key.F), ("enter", Key.Enter),
         };
 
         /// <summary>The reference build's preferences, best first: dashes by id, attacks and mods by their content ids.</summary>

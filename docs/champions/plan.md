@@ -719,3 +719,7 @@ contract, actual frozen trailer paths, current implementation gaps, bead map
 and checks. It is the implementation guide for this run. ps-3wc's table above
 records historical deliveries; it does not authorize their superseded behavior.
 ps-6y2 look/performance work remains independent and must be preserved.
+
+F cleave (ps-uyc): appended deterministic key code, shared dash cooldown/buffer,
+judgement, shield and landing sweep; no movement command or travel presentation.
+Keyboard and scripted inputs record/replay through the same input stream.

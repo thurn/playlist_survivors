@@ -158,7 +158,7 @@ namespace Champions.Client.Loop
                     Hero.Swing(e.I0 == 1 ? SwingKind.Spin : SwingKind.Slash, e.D0, new Vector2((float)e.D1, (float)e.D2));
                     break;
                 case SimEventKind.HeroDash:
-                    Hero.Dash((DashPose)e.DashType, e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5), evolved: e.DashRank == Upgrade.Evolution);
+                    if (!e.InPlaceCleave) Hero.Dash((DashPose)e.DashType, e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5), evolved: e.DashRank == Upgrade.Evolution);
                     if (_sim.Melee != null) Hero.Motion.LandingSpin(e.D0, e.D1, new Vector2((float)e.D4, (float)e.D5));
                     break;
                 case SimEventKind.HeroHit when e.D0 > 0:

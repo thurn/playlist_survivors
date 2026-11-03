@@ -272,15 +272,15 @@ namespace Champions.Sim
         /// A dash started, taken at <see cref="T"/> and drawn from D0 (its press's heard time, or the moment
         /// the cooldown ended for a buffered press): I0 the run's dash index, I1 the dash type
         /// (<see cref="DashRules.Kinds"/>) | rank &lt;&lt; 8 (4 the evolution), I2 flags: 1 on the beat | 2 buffered |
-        /// <see cref="JudgedBy"/> &lt;&lt; 2; D1 its end, D2/D3 where it started, D4/D5 its direction.
+        /// <see cref="JudgedBy"/> &lt;&lt; 2 | 256 in-place cleave; D1 its end, D2/D3 where it started, D4/D5 its direction.
         /// </summary>
         public static SimEvent HeroDash(double t, int index, int kind, int rank, JudgedBy by, bool buffered,
-            double start, double end, double x, double y, double dirX, double dirY)
+            double start, double end, double x, double y, double dirX, double dirY, bool inPlace = false)
         {
             var e = Of(SimEventKind.HeroDash, t);
             e.I0 = index;
             e.I1 = kind | rank << 8;
-            e.I2 = (by != JudgedBy.Off ? 1 : 0) | (buffered ? 2 : 0) | (int)by << 2;
+            e.I2 = (by != JudgedBy.Off ? 1 : 0) | (buffered ? 2 : 0) | (int)by << 2 | (inPlace ? 256 : 0);
             e.D0 = start;
             e.D1 = end;
             e.D2 = x;
@@ -371,11 +371,12 @@ namespace Champions.Sim
         }
 
         // Reading a dash's fields.
+        public bool InPlaceCleave => Kind == SimEventKind.HeroDash && (I2 & 256) != 0;
         public int DashType => I1 & 0xff;
         public int DashRank => I1 >> 8;
         public bool OnBeat => (I2 & 1) != 0;
         public bool Buffered => (I2 & 2) != 0;
-        public JudgedBy Judged => (JudgedBy)(I2 >> 2);
+        public JudgedBy Judged => (JudgedBy)((I2 & 255) >> 2);
 
         /// <summary>An attack or mod was set to a rank: I0 its <see cref="UpgradeGroup"/>, I1 its id, I2 the rank; D0 the rank before (0: new).</summary>
         public static SimEvent Upgrade(double t, in Sim.Upgrade u, int before)

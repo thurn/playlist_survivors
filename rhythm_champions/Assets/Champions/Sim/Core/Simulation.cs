@@ -242,6 +242,7 @@ namespace Champions.Sim
             int bit = 1 << (int)key;
             if (!dashes.Rules.LegacyForms)
             {
+                if (key == Key.F && (pressedKeys & bit) != 0) return;
                 pressedKeys |= bit;
                 if ((blockedKeys & bit) != 0) return;
             }
@@ -251,7 +252,7 @@ namespace Champions.Sim
                 return;
             }
             hero.Press(this, key, heard);
-            if (key == Key.Space) dashes.Press(this, heard);
+            if (key == Key.Space || key == Key.F) dashes.Press(this, heard, key == Key.F);
         }
 
         /// <summary>A key released, heard at song time <paramref name="heard"/>; it takes effect now.</summary>

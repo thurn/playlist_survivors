@@ -108,7 +108,7 @@ namespace Champions.Client.Sound
                 {
                     // A dash starts when its key was heard: in heard time.
                     bool late = e.D0 < _settled;
-                    Request(SoundKind.Whoosh, e.D0, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, late);
+                    if (!e.InPlaceCleave) Request(SoundKind.Whoosh, e.D0, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, late);
                     if (e.OnBeat) Request(SoundKind.Accent, e.D0, AccentGain, 1f, 1f, late);
                     if (e.DashType == _leapSlam) Request(SoundKind.Slam, e.D1, e.OnBeat ? 1f : OffBeatWhoosh, 1f, 1f, e.D1 < _settled);
                     break;

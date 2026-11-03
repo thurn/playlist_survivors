@@ -9,7 +9,7 @@ namespace Champions.Client.Loop
 {
     /// <summary>
     /// The sim's keys from the Input System's keyboard events, each with its event's own timestamp (ported from game/'s
-    /// KeyInput; design.md, Controls): WASD and the arrows move, Space dashes, and 1-3, the arrows and Enter or Space
+    /// KeyInput; design.md, Controls): WASD and the arrows move, Space dashes, F cleaves, and 1-3, the arrows and Enter or Space
     /// answer a card moment, which the sim reads (a card's click taps its number, <see cref="Tap"/>). An event's time is on
     /// real time's timeline (Time.realtimeSinceStartup), which the clock maps to the song time heard
     /// (<see cref="IGameClock.KeySong"/>). Two physical keys on one direction press it once and release it when both are
@@ -38,7 +38,7 @@ namespace Champions.Client.Loop
             ("downArrow", SimKey.Down), ("s", SimKey.Down),
             ("leftArrow", SimKey.Left), ("a", SimKey.Left),
             ("rightArrow", SimKey.Right), ("d", SimKey.Right),
-            ("space", SimKey.Space),
+            ("space", SimKey.Space), ("f", SimKey.F),
             ("enter", SimKey.Enter), ("numpadEnter", SimKey.Enter),
             ("1", SimKey.One), ("numpad1", SimKey.One),
             ("2", SimKey.Two), ("numpad2", SimKey.Two),
@@ -46,8 +46,8 @@ namespace Champions.Client.Loop
         };
 
         readonly bool[] _physical = new bool[Bindings.Length];
-        readonly int[] _held = new int[(int)SimKey.Three + 1];
-        readonly bool[] _pressed = new bool[(int)SimKey.Three + 1]; // as the sim has them
+        readonly int[] _held = new int[(int)SimKey.F + 1];
+        readonly bool[] _pressed = new bool[(int)SimKey.F + 1]; // as the sim has them
         readonly Change[] _queue = new Change[Capacity];
         readonly KeyControl[] _controls = new KeyControl[Bindings.Length];
         Keyboard _keyboard;

@@ -22,6 +22,7 @@ namespace Champions.Client.UI
             var mark = new Label("RHYTHM CHAMPIONS") { pickingMode = PickingMode.Ignore };
             mark.AddToClassList("wordmark");
             column.Add(mark);
+            column.Add(new Label("WASD→move  Space→dash  F→cleave") { pickingMode = PickingMode.Ignore });
             column.Add(Menu);
             Add(column);
             Menu.Set(new[] { new MenuList.Row("Play", play), new MenuList.Row("Calibrate", calibrate), new MenuList.Row("Quit", quit) });

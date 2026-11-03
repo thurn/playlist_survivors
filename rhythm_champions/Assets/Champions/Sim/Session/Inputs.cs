@@ -2,10 +2,10 @@ namespace Champions.Sim
 {
     /// <summary>
     /// The keys the sim takes (design.md, "Controls"): the four movement directions (WASD or the arrows),
-    /// Space (the dash, or a card's pick), Enter, and 1-3 (the cards; a card click is its number). The
+    /// Space (the dash, or a card's pick), F (in-place cleave), Enter, and 1-3 (the cards; a card click is its number). The
     /// client maps devices to these; Esc is a run control (<see cref="RunControl"/>).
     /// </summary>
-    public enum Key : byte { Up, Down, Left, Right, Space, Enter, One, Two, Three }
+    public enum Key : byte { Up, Down, Left, Right, Space, Enter, One, Two, Three, F }
 
     /// <summary>What an input is (<see cref="InputRecord"/>).</summary>
     public enum InputKind : byte

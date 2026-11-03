@@ -303,13 +303,13 @@ namespace Champions.Tests
             }
             finally { Object.DestroyImmediate(rig); }
         }
-        [Test]
-        public void LandingSpinOverridesAnAutomaticWindupAndOwnsTheExitAtNaturalSpeed()
+        [TestCase(true)] [TestCase(false)]
+        public void LandingSpinOverridesAnAutomaticWindupAndOwnsTheExitAtNaturalSpeed(bool travel)
         {
             var m = Motion(); var pose = new HeroPose();
             m.Swing(SwingKind.Slash, 2.5, Vector2.right);
             m.Evaluate(2.35, pose);
-            m.Dash(DashPose.Dash, 2.4, 2.55, Vector2.up, false);
+            if (travel) m.Dash(DashPose.Dash, 2.4, 2.55, Vector2.up, false);
             m.LandingSpin(2.4, 2.55, Vector2.up);
             var spin = m.SwingAt(m.SwingCount - 1);
             Assert.That(spin.Speed, Is.EqualTo(1));
@@ -319,11 +319,12 @@ namespace Champions.Tests
             Assert.That(pose.Layers.Take(pose.LayerCount).Any(l => l.Clip == m.Clips.Dodge.Index), Is.False);
             Assert.That(pose.Layers.Take(pose.LayerCount).Any(l => l.Clip == m.Clips.SlashA.Index), Is.False);
         }
-        [Test]
-        public void PausePreservesThePendingDashExitPose()
+        [TestCase(true)] [TestCase(false)]
+        public void PausePreservesThePendingDashExitPose(bool travel)
         {
             var m = Motion(); var pose = new HeroPose();
-            m.Dash(DashPose.Dash, 1, 1.15, Vector2.up, false); m.LandingSpin(1, 1.15, Vector2.up);
+            if (travel) m.Dash(DashPose.Dash, 1, 1.15, Vector2.up, false);
+            m.LandingSpin(1, 1.15, Vector2.up);
             m.Hold(1.1, true); m.Evaluate(10, pose);
             m.Hold(11.1, false);
             m.Evaluate(11.15, pose);

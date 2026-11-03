@@ -144,6 +144,26 @@ namespace Champions.Tests
         }
 
         [Test]
+        public void KeyboardFReachesTheSimAndSuspendRequiresRelease()
+        {
+            var keys = Keep(new KeyInput());
+            var sim = new Simulation(new SimConfig { SurvivorWeapons = true, Loadout = Array.Empty<Upgrade>() });
+            sim.StepTo(1);
+            Press(keys, UnityEngine.InputSystem.Key.F);
+            keys.Drain(sim, new SimClock { Sim = sim });
+            Assert.That(sim.State.Hero.Dashes, Is.EqualTo(1));
+            Assert.That(sim.EventsSince(0).ToArray().Single(e => e.Kind == SimEventKind.HeroDash).InPlaceCleave, Is.True);
+            keys.Suspend(sim, new SimClock { Sim = sim }, 1);
+            keys.Resume(); sim.StepTo(2);
+            Press(keys, UnityEngine.InputSystem.Key.F);
+            keys.Drain(sim, new SimClock { Sim = sim });
+            Assert.That(sim.State.Hero.Dashes, Is.EqualTo(1));
+            Press(keys); Press(keys, UnityEngine.InputSystem.Key.F);
+            keys.Drain(sim, new SimClock { Sim = sim });
+            Assert.That(sim.State.Hero.Dashes, Is.EqualTo(2));
+        }
+
+        [Test]
         public void TheKeysPickACardByItsNumber()
         {
             var ui = Keep(new RunUi(_host.transform, _palette, _content, _faces));
