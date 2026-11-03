@@ -71,7 +71,7 @@ Maximum primitive costs per construct cue: 1/4/11/14 draws and
 link; Ember 8/16/19/30 draws and 96/176/264/384 triangles. These are submission
 counts, not measured hardware time. Idle seals replace prior pulses at the
 same anchor, so Tempo/Echo cannot accumulate idle copies. Shared shader budget:
-**277/300** in a clean-cache variant build. Magic adds no shader variants or
+**277/300** in the pre-Spear/Bow clean-cache variant build. Magic adds no shader variants or
 compute dispatches. Quiet owned Hit/Slam cues are reused per discharge/pulse,
 not per chain segment; empowered activation keeps the existing Accent.
 
@@ -100,7 +100,7 @@ and Echo deadlines, freeze visual age, and cause no catch-up damage burst.
 A pending Echo exposed a shared scheduling bug: its deadline is now hidden
 while held so it cannot pin the simulation's clock.
 
-Validation: all **352** dotnet sim tests (19 focused magic cases); **115/115**
+Validation before integration: all **352** dotnet sim tests (19 focused magic cases); **115/115**
 Unity EditMode tests; development builds, clean-cache variant check and
 246-still runtime capture passed. Tests cover every level, all form support
 inheritance, one boss hit per strike plus reduced Echo, root/hop limits,
@@ -110,3 +110,8 @@ and identical single-frontier/incremental playback hashes. Renderer tests
 cover paused lifetime and bounded pulse geometry. Enact validates the rebased
 final tree. Full six-weapon/boss composition, speaker balance and hardware
 frame time remain operator/assembly checks.
+
+After rebasing the concurrent Spear/Bow implementation, all **388** sim tests
+and **115/115** Unity EditMode tests pass. Both handlers and their hash/event
+paths are retained. Lightning forks reuse the shared captured ImpactX/ImpactY
+coordinates supplied by that implementation; no extra position store remains.
