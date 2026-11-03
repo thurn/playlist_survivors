@@ -123,3 +123,14 @@ A second concurrent merge retained Orbit Blades/Sentinel as well: final
 all-family tree passes **404** sim tests and **116/116** Unity EditMode tests.
 Magic geometry is unchanged; all four handler bindings and presenter paths
 coexist. Its full-gallery capture now also includes the construct entries.
+
+## Replay fixture integration repair (ps-ctl)
+
+After magic integration, jarvis reproduced the slow-CI level replay mismatch
+at `f90c6be0`. Registering Lightning and Ember Field adds their cadence slots
+to `WeaponScheduler.FoldHash`, including when those weapons are unequipped.
+The fixture recorded before these bindings therefore retained an obsolete hash.
+Re-recorded using the explicit `LevelRunTests.RecordTheLevelSession` test:
+`7284B99D882B32DD` becomes `39262D24BDB3DFFC`. The 4412 events, 2198 audio
+entries and 836 inputs are unchanged; the only binary change is the eight-byte
+hash in the input-file header. Other fixtures retain their existing hashes.
