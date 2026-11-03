@@ -119,3 +119,7 @@ Final integrated development build and eight-still `magic-combat` recapture
 (`integrated/` beside `gallery/`) pass; the combined final-form empowered frame
 was inspected again. A clean-cache combined build measures **279/300** shader
 variants, passing the same budget after Spear/Bow integration.
+A second concurrent merge retained Orbit Blades/Sentinel as well: final
+all-family tree passes **404** sim tests and **116/116** Unity EditMode tests.
+Magic geometry is unchanged; all four handler bindings and presenter paths
+coexist. Its full-gallery capture now also includes the construct entries.
