@@ -15,6 +15,10 @@ namespace Champions.Client
         public const float DeathForce = 3f;
         /// <summary>The tallest a stand-in stands (the dragon's size is its wingspan).</summary>
         public const float MaxHeightM = 5f;
+        /// <summary>Moonhowl's afterimages at full moon (ps-8z4.14): how many, how far apart in time, the least they lag to show.</summary>
+        public const int Afterimages = 3;
+        public const double AfterimageS = 0.06;
+        const float AfterimageMinM = 0.5f;
 
         readonly TrailerCrowd _crowd;
         readonly IWorldCommands _world;
@@ -203,8 +207,36 @@ namespace Champions.Client
                 _broken = BrokeThisFrame = true;
             }
             Instance = body;
-            var slots = _crowd.Crowd.Instances(_type, 1);
+            int ghosts = dead ? 0 : Ghosts(song, sim, at, body);
+            var slots = _crowd.Crowd.Instances(_type, 1 + ghosts);
             slots[0] = body;
+            for (int k = 0; k < ghosts; k++) slots[1 + k] = _ghosts[k];
+        }
+
+        readonly MonsterInstance[] _ghosts = new MonsterInstance[Afterimages];
+
+        /// <summary>
+        /// Moonhowl's afterimages (boss-rush.md, The roster: "afterimage trails at full moon"): while its moon is full, the
+        /// body where it was a few hundredths of a second ago, in the pose it holds now and its hue dimmed by each step, wherever
+        /// it lags enough to show (its lunges and bounds); none otherwise.
+        /// </summary>
+        int Ghosts(double song, Simulation sim, Vector2 at, in MonsterInstance body)
+        {
+            if (!(sim.Fight.Module is MoonhowlModule wolf) || sim.Fight.IndexOf(_id) != 0 || !wolf.FullMoon(sim.Fight)) return 0;
+            var hue = Colour();
+            int n = 0;
+            for (int k = 1; k <= Afterimages; k++)
+            {
+                Where(sim, _id, song - k * AfterimageS, out double x, out double y, out _);
+                var was = new Vector2((float)x, (float)y);
+                if ((was - at).magnitude < AfterimageMinM * k) break;
+                var ghost = body;
+                ghost.Position = new Vector3(was.x, 0, was.y);
+                ghost.HitFlash = 0;
+                ghost.Tint = MonsterInstance.Pack(hue * Mathf.Pow(0.55f, k));
+                _ghosts[n++] = ghost;
+            }
+            return n;
         }
 
         void MakeStandIn()

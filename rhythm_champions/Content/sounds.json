@@ -49,6 +49,13 @@
       "impact": { "gain": 0.8, "clips": ["GORE_Deep_Short_Snap_01_mono", "GORE_Mid_Medium_Squish_Snap_01_mono", "GORE_High_Medium_Squish_Snap_01_mono"] },
       "signature": { "gain": 0.75, "clips": ["RPG3_WindMagicEpic_Projectiles01", "RPG3_WindMagicEpic_Projectiles02"] },
       "death": { "gain": 1.0, "clips": ["GORE_Mid_Long_Stretch_Snap_01_mono"] }
+    },
+    "moonhowl": {
+      "entrance": { "gain": 0.85, "clips": ["ANIMAL_Wolf_Howl_02_echo_mono"] },
+      "tick": { "gain": 0.3, "clips": ["ANIMAL_Dog_Growl_01_RR01_mono", "ANIMAL_Dog_Growl_01_RR02_mono", "ANIMAL_Dog_Growl_01_RR03_mono"] },
+      "impact": { "gain": 0.75, "clips": ["ANIMAL_Dog_Attack_01_mono", "ANIMAL_Dog_Attack_02_mono"] },
+      "signature": { "gain": 0.9, "clips": ["ANIMAL_Wolf_Howl_03_echo_mono", "ANIMAL_Wolf_Howl_04_echo_mono"] },
+      "death": { "gain": 1.0, "clips": ["ANIMAL_Wolf_Death_01_mono"] }
     }
   }
 }

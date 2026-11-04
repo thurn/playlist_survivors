@@ -141,6 +141,7 @@ namespace Champions.Sim
             { HiveQueenModule.ModuleId, () => new HiveQueenModule() },
             { BloomModule.ModuleId, () => new BloomModule() },
             { RootwardenModule.ModuleId, () => new RootwardenModule() },
+            { MoonhowlModule.ModuleId, () => new MoonhowlModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

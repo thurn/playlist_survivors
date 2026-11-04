@@ -40,6 +40,7 @@
     "treasureGoblin": "enemies.counter.amber",
     "hiveQueen": "enemies.accent.magenta",
     "bloom": "enemies.accent.violet",
-    "rootwarden": "enemies.key.cyan"
+    "rootwarden": "enemies.key.cyan",
+    "moonhowl": "enemies.key.blue"
   }
 }

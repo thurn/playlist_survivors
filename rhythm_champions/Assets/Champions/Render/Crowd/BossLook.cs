@@ -44,6 +44,8 @@ namespace Champions.Render.Crowd
             { "bloom", new BossLook { Flow = 0.65f, FlowSpeed = 0.7f, Ember = 0.5f, EmberTint = new Color(0.62f, 0.28f, 1f) } },
             // The Rootwarden (ps-8z4.12): sap light creeping slowly along its bark's edges, an ember of old wood in its core.
             { "rootwarden", new BossLook { Flow = 0.55f, FlowSpeed = 0.6f, Ember = 0.35f } },
+            // Moonhowl (ps-8z4.14): a cold moonlight running its edges and a faint breathing fade, a beast half spirit.
+            { "moonhowl", new BossLook { Flow = 0.45f, FlowSpeed = 0.9f, Ghost = 0.25f } },
         };
 
         public static bool TryGet(string castId, out BossLook look) => Looks.TryGetValue(castId, out look);

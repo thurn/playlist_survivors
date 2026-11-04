@@ -131,6 +131,139 @@
       "use": "mid-boss: the Fat Ogre"
     },
     {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/SK_Werewolf.FBX",
+      "sourceSha256": "47a958af7bb693eb149c1e0da9d881e595eca5107e8f1d76f8933e3d3ab5ad6b",
+      "guid": "93f2a5184ecdd5f4ca0ff6e37aabad3c",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttack2HitCombo.FBX",
+      "sourceSha256": "6f55ef7bc3d820d2e0de56d9d4a56ad2a092373581c0114701cda2085db07211",
+      "guid": "32ee64d92ff6da440afc530687221620",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttack2HitComboForward.FBX",
+      "sourceSha256": "1586b33f9faa0728e205df18e1de794831c24cae410da0a2317ba346c8548b1f",
+      "guid": "1afbc716e48a5994d89e8f608e5e65bd",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttackLeft.FBX",
+      "sourceSha256": "87f66e4f7811dab95972009ad60d24dab29f8095b684d2fcbb97356c145a0747",
+      "guid": "5058e15f4d326a14fa03f7cdcf263e52",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttackLeftForward.FBX",
+      "sourceSha256": "25cd1465bed04a17743e390761ba4cc1788309caaf565f496fce992e7c068016",
+      "guid": "e9f8042eb2470654b96808eb23d1cef9",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttackRight.FBX",
+      "sourceSha256": "d9036e03fac9060757fa164f01a8f219906212ee5d165e666258c6abd7d2ed34",
+      "guid": "e7eeba9743320d545b9ab90c5ab00a3f",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@ClawsAttackRightForward.FBX",
+      "sourceSha256": "8ce5e133995ba8377ea14937c529f6295f65fe98b1678dd899cdb7321295d7c5",
+      "guid": "47d7c08c2857cc84b98ccde63e027b55",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Death.FBX",
+      "sourceSha256": "9d6bb7b5eedec2a58aa5968b90836b6a8586c44d96738d8f5de0f8de7e75ff49",
+      "guid": "bbf72a482dfd55349ab14f7daf15b829",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@GetHit1.FBX",
+      "sourceSha256": "edb8740bcbd185a6a512f01ac45011fbc65b350189206404f0e08dfd0ca79432",
+      "guid": "e2d3845a64384ab40b40b9f118f30ba4",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@GetHit2.FBX",
+      "sourceSha256": "826a2d809359ae7a2078c6278dfdc55e5228e26e47c17f4acb794efd1260e3cc",
+      "guid": "2b85fc3efa6af424fb6a64609de5d6e1",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Howl.FBX",
+      "sourceSha256": "709beca680c8640c0e59e08317c4b007456d5ac15538da2ecb0c3b63020fc513",
+      "guid": "d2f1b5a98de738e42bc77281002a29c3",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@IdleBreathe.FBX",
+      "sourceSha256": "cf4a282f5494da73d5bd456d8d5d751fd4f3634c8d692db6625cfbc31fb08d73",
+      "guid": "dfc3c8b4a4f5b334baded843bfc8601b",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@JumpBiteAttack.FBX",
+      "sourceSha256": "8098c0d0f6ee3de0944411e6f696953793b5b9a679bb87e0d60eef6b7b19e35e",
+      "guid": "7d0fd998fd1d5dc4597c276f185866bb",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@JumpClawsAttack.FBX",
+      "sourceSha256": "162f9bcbcff6b778f7b3c2cdf91b7785768db596fb24c6052bb0da4716b257f9",
+      "guid": "85fc9c7f6be6c804da6e031c133932c7",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Run.FBX",
+      "sourceSha256": "c3242e9bfb17650de09eedb6dd7454032da8ae9e6b682bdaf6fe4951c1f5953d",
+      "guid": "55be6abf041b54644983404fe43c2c67",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Turn90Left.FBX",
+      "sourceSha256": "b61deb9fbe2708cbc6ef6a220e1814a1c09a111faa490710ff8326fe8b5c1dcc",
+      "guid": "7020032b05a10564883fa5c9c1958250",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Turn90Right.FBX",
+      "sourceSha256": "ae3a19ef0a390037baaf0f5d6186912660572b4f92913fa0ac24231bfeb11554",
+      "guid": "64d09ba9cf9dda74b97bf06799916867",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/FBX Files/Werewolf@Walk.FBX",
+      "sourceSha256": "9210bc07ebf1749bde449534d10f4d5d9e8e7c935757cf79e8e5a6869b043aaa",
+      "guid": "9fe6b3afd012fb841b693ced2cfc4b26",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Mythological Creatures Pack/Werewolf/Prefabs/Werewolf.prefab",
+      "sourceSha256": "2c74a5dc348ad85314b946f8edba76230cf857b3ada7074215e4c1cdd0201490",
+      "guid": "36e4b3d4634e64f4989a45741cdd7c3a",
+      "use": "Boss Rush boss 5: Moonhowl"
+    },
+    {
       "source": "synty:ANIMATION_Base_Locomotion_Unity_2021_1_v1_1_1.unitypackage.gz",
       "path": "Assets/Synty/AnimationBaseLocomotion/Animations/Polygon/Masculine/Locomotion/Run/A_Run_BckStrafeB_Masc.fbx",
       "sourceSha256": "6b6e48cf0d642b13cc49b4fc09eb9061eca897310760ee7d0602e2250bb35398",
@@ -1592,6 +1725,69 @@
       "sourceSha256": "ba6fd2cfe8d115e40470afbd842c110139f3af3dbfff0beacdd3fef9213568a8",
       "guid": "95a80fa2f8a1f0441a28e501f11aba22",
       "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Dog_Attack_01_mono.wav",
+      "sourceSha256": "a6ee1c7df9d0e514deeed56750c8a1bced4b1b6f407be16dd3dc761cb3c04154",
+      "guid": "7ee6ab51ffc26f64a9439bd2587594cf",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Dog_Attack_02_mono.wav",
+      "sourceSha256": "1ee3cc6b6fc75ad6a5c9f349d238b535fc1ee72a3ed4516c80ea027618fe2032",
+      "guid": "bd422a8d0f07ee847b1a07692ade2adf",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Dog_Growl_01_RR01_mono.wav",
+      "sourceSha256": "c31281b8e8a5fcade2a5b700e9b44fac57cb20542c56a009b0c421a863369d17",
+      "guid": "8b9e2cb226818354289473fd2ca748a9",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Dog_Growl_01_RR02_mono.wav",
+      "sourceSha256": "8887c44b79e14435a3de6772dc23cccd5223d71503bd0802f14d8bb924e1bbd6",
+      "guid": "f8640d6baab344d40911f60a47ab3105",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Dog_Growl_01_RR03_mono.wav",
+      "sourceSha256": "d1f7c8f8685c9921116213aa5f6aa31f62ddb2105f3ae5ff31e8cb837494d7e6",
+      "guid": "d6896fbf0b541b649956f9a1b341762c",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Wolf_Death_01_mono.wav",
+      "sourceSha256": "60edde4b2ba1517c3ff39111f653ebb5f91cf7af2119cf5c990e65ab11fd17a1",
+      "guid": "8acca7eac8cb70b4dae6d78ef11c89cc",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Wolf_Howl_02_echo_mono.wav",
+      "sourceSha256": "22fe4a93efe12981c759e7e3f2cc9a9401e88f887ae97ef46454a5040cdce823",
+      "guid": "4a5b37934abbcbc459de48e6c0d98769",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Wolf_Howl_03_echo_mono.wav",
+      "sourceSha256": "b6243bada4b4e7133b507e4f2fbb3b51ca52fc7b1eb002421989f74624b06a1a",
+      "guid": "38efcb133d85545429a37d08ceaabf31",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Wolf_Howl_04_echo_mono.wav",
+      "sourceSha256": "50d3f42884445ab459dbe9042caeece2ec17c3faad8b06ee89a2372e283f2fec",
+      "guid": "4dc3f5f63afe8d84aa1334b895173fb1",
+      "use": "Boss Rush boss 5: Moonhowl's sound bank"
     },
     {
       "source": "unity_assets",

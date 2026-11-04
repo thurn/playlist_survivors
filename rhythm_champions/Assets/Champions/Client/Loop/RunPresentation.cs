@@ -87,6 +87,8 @@ namespace Champions.Client.Loop
         public readonly FightFlavour Flavour;
         /// <summary>The Bloom's spores streaming along its arms (ps-8z4.10; with the baked effects; null without).</summary>
         public readonly BloomSporePresenter BloomSpores;
+        /// <summary>Moonhowl's moon over its glade, the cycle's timer (ps-8z4.14; null without Moonhowl in the content).</summary>
+        public readonly MoonhowlPresenter Moon;
         public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
 
@@ -112,6 +114,8 @@ namespace Champions.Client.Loop
             _owned.Add(Swarm);
             Roots = new RootwardenPresenter(palette, content.Enemies, layer);
             _owned.Add(Roots);
+            Moon = MoonhowlPresenter.Create(palette, content.Enemies, layer);
+            if (Moon != null) _owned.Add(Moon);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
             _owned.Add(Telegraphs);
             Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
@@ -188,6 +192,7 @@ namespace Champions.Client.Loop
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("hive swarm", (in SimEvent e) => Swarm.Take(e), null, (in PresentFrame f) => Swarm.Present(f.Song, f.Sim, f.Camera));
             d.Add("rootwarden roots", (in SimEvent e) => Roots.Take(e), null, (in PresentFrame f) => Roots.Present(f.Song, f.Sim, f.Camera));
+            if (Moon != null) d.Add("moon", null, null, (in PresentFrame f) => Moon.Present(f.Song, f.Sim, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)
@@ -292,6 +297,7 @@ namespace Champions.Client.Loop
             Effects?.Queue(camera);
             Flavour?.Queue(camera);
             BloomSpores?.Queue(camera);
+            Moon?.Queue(camera);
             Ranged.Queue(camera);
         }
 

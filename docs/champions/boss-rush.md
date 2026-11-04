@@ -542,6 +542,27 @@ mechanic at a time, generous telegraphs.
    - Look: a moon disc on the backdrop whose phase is the timer; afterimage
      trails at full moon. Sound: the howl marks the turn of the cycle.
    - Inspiration: Bloodborne's beasts, Hades' Asterius charges.
+   - **As built (ps-8z4.14)**: `MoonhowlModule` (`Sim/Rush/MoonhowlModule.cs`),
+     cold blue (the key family), in its own arena `moonGlade`: a ring 34 m
+     across inside seven standing rune stones, dressed with the act 1 kit.
+     Everything lands three beats after it is planned, on a cycle of eight
+     bars (six below half health) counted from a downbeat: the howl (a disc
+     round it on the downbeat, the bank's signature: the turn of the cycle),
+     then the frenzy, eight beats of lunges, each a slash line from where the
+     last left it through where the hero stood, run on its beat; on the bar's
+     downbeat a *moon lunge* bounds it to the hero's side while a front the
+     glade's width sweeps from the far wall at 20 m/s (the dash wave: nowhere
+     to walk to). The first frenzy teaches plain lunges alone, on every beat.
+     The rest of the cycle is the stalk: it follows the hero (slower than the
+     walk), swipes a two-claw combo (the second on the half beat) at a hero in
+     reach and leaps onto one keeping 9 m away. The moon disc in the top
+     right corner, over the pines, is full from the howl through the frenzy, new halfway through the
+     stalk and full again at the next howl, so it times the frenzy; afterimages
+     trail the body while it is full. Below half health the hunter's moon (four
+     untouchable beats) shortens the cycle to six bars, gives each frenzy two
+     moon lunges and the combo a third claw. Its XP bursts fall in a crescent
+     behind it. Evidence:
+     [evidence/boss-rush/moonhowl/](../../rhythm_champions/evidence/boss-rush/moonhowl/README.md).
 
 ### Act 2: Sunken Sands
 

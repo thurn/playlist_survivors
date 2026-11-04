@@ -185,6 +185,24 @@
         { "kind": "giantMushroom", "at": [-14.8, 2.5] },
         { "kind": "giantMushroom", "at": [14.8, -2.5] }
       ]
+    },
+    {
+      "id": "moonGlade",
+      "kit": "overgrownGrid",
+      "outline": { "radiusM": 17 },
+      "heroStart": [0, -8],
+      "bossStart": [0, 6],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "runeStone", "at": [0.00, 15.00], "degrees": 0 },
+        { "kind": "runeStone", "at": [-11.73, 9.35], "degrees": 51 },
+        { "kind": "runeStone", "at": [-14.62, -3.34], "degrees": 103 },
+        { "kind": "runeStone", "at": [-6.51, -13.51], "degrees": 154 },
+        { "kind": "runeStone", "at": [6.51, -13.51], "degrees": 206 },
+        { "kind": "runeStone", "at": [14.62, -3.34], "degrees": 257 },
+        { "kind": "runeStone", "at": [11.73, 9.35], "degrees": 309 }
+      ]
     }
   ]
 }
