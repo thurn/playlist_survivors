@@ -187,7 +187,7 @@
       "reviewPoses": [ "idle", "walk", "breath", "smash", "fireball", "stomp" ],
       "clips": [
         { "role": "idle", "guid": "08c4201d81a1ace4eb0b2a9c74e17b63", "clip": "Idle", "loop": true },
-        { "role": "walk", "guid": "39b380a07fa7cfa44b59fd41d1826657", "clip": "Walk Forward Without Root", "loop": true, "strideM": 1.5 },
+        { "role": "walk", "guid": "39b380a07fa7cfa44b59fd41d1826657", "clip": "Walk Forward WO Root", "loop": true, "strideM": 1.5 },
         { "role": "breath", "guid": "203601c39b585b246a24d74cd5864a1c", "clip": "BreathAttack", "impact": 0.6, "end": 1.667 },
         { "role": "smash", "guid": "0d96b23a3b1e47948b06bcd177736055", "clip": "Bite", "impact": 0.6, "end": 1.667 },
         { "role": "fireball", "guid": "8dc97ec6939f38d40b3e924be390bdf9", "clip": "SpellCast", "impact": 0.6, "end": 1.667 },

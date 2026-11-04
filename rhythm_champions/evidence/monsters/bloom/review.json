@@ -1,0 +1,15 @@
+{
+  "type": "bloom",
+  "look": "trailer",
+  "source": "vendor",
+  "trailerSource": "vendor",
+  "lodTriangles": [2600, 1686, 896],
+  "trailerLodTriangles": [2600, 1686, 896],
+  "shards": 40,
+  "bones": 100,
+  "heightM": 4.024,
+  "poses": ["idle", "walk", "breath", "smash", "fireball", "stomp"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["trailer-far.jpg", "trailer-game.jpg", "trailer-near.jpg", "trailer-crowd.jpg", "compare.jpg"]
+}
