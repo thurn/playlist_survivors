@@ -495,13 +495,14 @@ namespace Champions.Sim
             }
             else blow.Shape.Away(e.X, e.Y, out dx, out dy);
             // A boss takes Break's extra damage while staggered and never breaks outright; a shattering blow kills a mob.
-            bool boss = e.Boss;
-            double damage = boss ? blow.Damage * sim.Bosses.DamageScale : blow.Shatter ? Math.Max(blow.Damage, e.Health) : blow.Damage;
+            bool boss = e.Boss, fight = boss && sim.Fight.Owns(id);
+            double damage = boss ? blow.Damage * (fight ? sim.Fight.DamageScale : sim.Bosses.DamageScale) : blow.Shatter ? Math.Max(blow.Damage, e.Health) : blow.Damage;
             e.Health -= damage;
             if (e.Health > 1e-9)
             {
                 sim.Emit(SimEvent.Hit(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, e.Health));
-                if (boss) sim.Bosses.Struck(blow.T);
+                if (fight) sim.Fight.Struck(id, blow.T);
+                else if (boss) sim.Bosses.Struck(blow.T);
                 return false;
             }
             double x = e.X, y = e.Y;
@@ -509,7 +510,8 @@ namespace Champions.Sim
             Kill(id);
             sim.Emit(SimEvent.Kill(blow.T, id, blow.Source, blow.Flags, dx, dy, damage, x, y));
             sim.Arsenal.Killed(sim, blow, x, y);
-            if (boss) sim.Bosses.Killed(blow.T, dx, dy);
+            if (fight) sim.Fight.Killed(id, blow.T, dx, dy);
+            else if (boss) sim.Bosses.Killed(blow.T, dx, dy);
             sim.Progression.Killed(sim, type, blow.T, x, y);
             return true;
         }

@@ -51,6 +51,8 @@ namespace Champions.Sim
             start = config.BossRushStart ?? new BossRushCheckpoint();
             if (start.Boss < 0 || start.Boss >= rules.Count) throw new ArgumentException($"boss rush start: no boss {start.Boss + 1} of {rules.Count}");
             sim.Progression.Restore(sim, start.Level, start.Experience, start.HeldLevels, start.Fallbacks);
+            // A landed fight sheds by its own thresholds and gem spots (BossFight.Shed); a stand-in by the content's shape.
+            sim.Fight.Shed += FightShed;
             Boss = rules.NextPlayed(start.Boss);
             if (Boss >= rules.Count)
             {
@@ -81,9 +83,10 @@ namespace Champions.Sim
 
         /// <summary>
         /// The boss's health share now (1 full, 0 dead): what its thresholds are read from. The main game's stand-ins'
-        /// own; the boss framework (ps-8z4.3) points this at its fight's <c>HealthShare</c> once its fights are called.
+        /// own, or a landed fight's (<see cref="BossFight.HealthShare"/>, every body together).
         /// </summary>
-        public double HealthShare => sim.Bosses.InDuel && sim.Bosses.MaxHealth > 0 ? Math.Max(0, sim.Bosses.Health / sim.Bosses.MaxHealth) : 1;
+        public double HealthShare => Slot.Fight && sim.Fight.InFight ? sim.Fight.HealthShare
+            : sim.Bosses.InDuel && sim.Bosses.MaxHealth > 0 ? Math.Max(0, sim.Bosses.Health / sim.Bosses.MaxHealth) : 1;
 
         /// <summary>
         /// A boss's add (or any other mechanic of the boss's) wants <paramref name="want"/> XP: what of the boss's budget is
@@ -161,7 +164,7 @@ namespace Champions.Sim
             }
         }
 
-        /// <summary>The boss died at <paramref name="t"/> at (<paramref name="x"/>, <paramref name="y"/>) (<see cref="Bosses"/>'s call).</summary>
+        /// <summary>The boss died at <paramref name="t"/> at (<paramref name="x"/>, <paramref name="y"/>) (<see cref="Bosses"/>'s or <see cref="BossFight"/>'s call).</summary>
         internal void BossDied(double t, double x, double y)
         {
             if (Stage != BossRushStage.Fighting) return;
@@ -215,7 +218,9 @@ namespace Champions.Sim
             shedPassed = shedPending = Bursts = 0;
             shedSince = 0;
             Enter(BossRushStage.Fighting, t);
-            sim.Bosses.Call(Slot.Cast, t, Slot.Health);
+            // A landed fight runs its module (BossFight); a slot still waiting for one is fought by its stand-in duel.
+            if (Slot.Fight) sim.Fight.Start(Slot.Id, t, new FightSetup { Act = Act + 1, Health = Slot.Health });
+            else sim.Bosses.Call(Slot.Cast, t, Slot.Health);
         }
 
         // ---- Shedding (boss-rush.md, Progression > Shedding) ----
@@ -223,6 +228,7 @@ namespace Champions.Sim
         /// <summary>The thresholds the boss's health has fallen past since the last tick, each queued for the next beat.</summary>
         void PassThresholds()
         {
+            if (Slot.Fight) return;
             int thresholds = Thresholds;
             double share = HealthShare;
             while (shedPassed < thresholds && share <= 1 - (shedPassed + 1) * rules.ShedStep + 1e-9)
@@ -248,6 +254,24 @@ namespace Champions.Sim
                 Burst(sim, t, Bursts, Slot.Shed, b.X, b.Y, sim.Bosses.Facing, value);
                 sim.Emit(SimEvent.RushShed(t, Bursts, Boss, value, b.X, b.Y));
             }
+        }
+
+        /// <summary>
+        /// A landed fight's burst: an equal step of the slot's budget (one of its module's thresholds plus the kill's),
+        /// dropped at the module's authored spots by their shares. The kill's drop (<see cref="BossDied"/>) takes the rest.
+        /// </summary>
+        void FightShed(Simulation s, BossFight fight, int burst, System.Collections.Generic.IReadOnlyList<GemSpot> spots)
+        {
+            if (Stage != BossRushStage.Fighting || !Slot.Fight || spots.Count == 0) return;
+            double value = Math.Min(Slot.Experience / (fight.Module.ShedThresholds + 1), Math.Max(0, Slot.Experience - Shed));
+            if (!(value > 0)) return;
+            double shares = 0;
+            foreach (var g in spots) shares += g.Share;
+            Bursts++;
+            Shed += value;
+            foreach (var g in spots) sim.Pickups.Drop(sim, PickupKind.Experience, g.X, g.Y, value * g.Share / shares);
+            ref readonly var lead = ref fight.Lead;
+            sim.Emit(SimEvent.RushShed(fight.ShedAt, Bursts, Boss, value, lead.X, lead.Y));
         }
 
         /// <summary>

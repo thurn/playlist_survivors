@@ -106,36 +106,25 @@ namespace Champions.Sim
                     var tel = Plan(from, beats);
                     // Three narrow baton lanes with walking-width gaps, alternating each volley.
                     double offset = fanTurn++ % 2 == 0 ? 0.2 : -0.2;
-                    for (int k = -1; k <= 1; k++)
-                    {
-                        double a = Facing + k * 0.65 + offset;
-                        Mark(k + 1, tel, HitShape.Cone(x, y, SimMath.Cos(a), SimMath.Sin(a), m.RangeM, m.HalfArc));
-                    }
+                    for (int k = -1; k <= 1; k++) Mark(k + 1, tel, BossKit.Fan(x, y, Facing, k, offset, m.RangeM, m.HalfArc));
                     break;
                 }
                 case BossMove.Smash:
-                {
-                    double near = r * 0.5, far = r + m.LengthM;
-                    Mark(0, Plan(from, beats), HitShape.Path(x + aimX * near, y + aimY * near, x + aimX * far, y + aimY * far, m.WidthM));
+                    Mark(0, Plan(from, beats), BossKit.SmashLine(x, y, aimX, aimY, r, m.LengthM, m.WidthM));
                     break;
-                }
                 case BossMove.Stomp:
                 case BossMove.Tail:
                     Mark(0, Plan(from, beats, true), HitShape.Circle(x, y, m.RadiusM));
                     break;
                 case BossMove.Charge:
-                    Mark(0, Plan(from, beats), HitShape.Path(x, y, x + aimX * m.LengthM, y + aimY * m.LengthM, r));
+                    Mark(0, Plan(from, beats), BossKit.ChargeLine(x, y, aimX, aimY, m.LengthM, r));
                     break;
                 case BossMove.Boulders:
                 {
                     var tel = Plan(from, beats);
-                    Mark(0, tel, HitShape.Circle(hx, hy, m.RadiusM));
+                    Mark(0, tel, BossKit.Boulder(hx, hy, 0, m.Count, 0, m.SpreadM, m.RadiusM));
                     double turnFrom = sim.Random.NextDouble() * 2 * Math.PI;
-                    for (int k = 1; k < m.Count; k++)
-                    {
-                        double a = turnFrom + 2 * Math.PI * (k - 1) / (m.Count - 1);
-                        Mark(k, tel, HitShape.Circle(hx + SimMath.Cos(a) * m.SpreadM, hy + SimMath.Sin(a) * m.SpreadM, m.RadiusM));
-                    }
+                    for (int k = 1; k < m.Count; k++) Mark(k, tel, BossKit.Boulder(hx, hy, k, m.Count, turnFrom, m.SpreadM, m.RadiusM));
                     break;
                 }
                 case BossMove.Breath:

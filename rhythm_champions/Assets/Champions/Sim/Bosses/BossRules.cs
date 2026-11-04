@@ -27,6 +27,8 @@ namespace Champions.Sim
         Fans = 11,
         /// <summary>A harmless ground warning for a finite group of ordinary reinforcements.</summary>
         Reinforcements = 12,
+        /// <summary>A Boss Rush hazard of a boss's own (<see cref="Hazard"/>): drawn as its shape, held for its active span.</summary>
+        Hazard = 13,
     }
 
     /// <summary>What a boss's death sets off (design.md, "Level 1, minute by minute").</summary>

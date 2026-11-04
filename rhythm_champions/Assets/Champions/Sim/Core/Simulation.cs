@@ -111,6 +111,7 @@ namespace Champions.Sim
             Zones = new Zones(config.Zones);
             State.Zone = Zones.Key;
             Bosses = new Bosses(this, config);
+            Fight = new BossFight(this, config);
             Progression = new Progression(this, config);
             if (config.SurvivorWeapons)
             {
@@ -120,6 +121,7 @@ namespace Champions.Sim
                 Magic = new MagicWeapons(this);
             }
             if (config.BossRush != null) BossRush = new BossRush(this, config);
+            if (config.Fight != null) Fight.Start(config.Fight, Now, new FightSetup { Act = config.FightAct, Health = config.FightHealth });
         }
 
         public SimState State { get; }
@@ -144,6 +146,9 @@ namespace Champions.Sim
 
         /// <summary>The bosses: their calls, entrances and duels.</summary>
         public Bosses Bosses { get; }
+
+        /// <summary>The Boss Rush fight runtime (<see cref="BossFight"/>): idle unless a fight is started.</summary>
+        public BossFight Fight { get; }
 
         /// <summary>The hero's dash (the progression equips, the mods tune it).</summary>
         internal Dashes Dashes => dashes;
@@ -220,6 +225,8 @@ namespace Champions.Sim
                     h = Hashing.Fold(h, Hashing.Bits(Bosses.Break));
                     h = Hashing.Fold(h, Hashing.Bits(Bosses.Health));
                 }
+                // Only once a Boss Rush fight started, so every other session keeps its hash.
+                if (Fight.Started > 0) h = Fight.Fold(h);
                 // Only once the progression has moved, so the sessions before it keep their hashes.
                 if (State.Experience > 0 || State.Level > 1 || Progression.Picks > 0 || State.Offer.Up)
                 {
@@ -377,6 +384,7 @@ namespace Champions.Sim
                     health.Resume(elapsed);
                     horde.Resume(elapsed);
                     Bosses.Resume(elapsed);
+                    Fight.Resume(elapsed);
                     Resumed?.Invoke(elapsed);
                 }
             }
@@ -528,6 +536,7 @@ namespace Champions.Sim
             Ranged?.Tick(end);
             horde.Tick(end);
             Bosses.Tick(end);
+            Fight.Tick(end);
             BossRush?.Tick(end);
             StructureField?.Tick(this, end);
             Arena?.Tick(end);
@@ -550,6 +559,7 @@ namespace Champions.Sim
             Weapons.Beat(t, i);
             horde.Beat(t, i);
             Bosses.Beat(t, i, downbeat);
+            Fight.Beat(t, i, downbeat);
             BossRush?.Beat(t);
             Zones.Beat(this, t, Beats.PeriodOf(i));
             Cadenced(t, i, Cadence.OnBeat(i, t, State.Beat == Reliability.Reliable));

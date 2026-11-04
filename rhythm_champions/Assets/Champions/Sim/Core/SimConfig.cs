@@ -75,6 +75,12 @@ namespace Champions.Sim
         /// reference); null starts at the first boss with the plain start.</summary>
         public BossRushCheckpoint BossRushStart;
 
+        /// <summary>A scripted Boss Rush fight: the boss id started at the start (<see cref="BossModules"/>), or null.</summary>
+        public string Fight;
+        /// <summary>Its act (telegraph minimums) and whole health (NaN: its bodies' cast health).</summary>
+        public int FightAct = 1;
+        public double FightHealth = double.NaN;
+
         /// <summary>The experience curve and held levels' rules (Content/progression.json).</summary>
         public ProgressionRules Progression = new ProgressionRules();
 

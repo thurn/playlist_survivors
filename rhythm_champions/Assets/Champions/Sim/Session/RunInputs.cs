@@ -47,6 +47,11 @@ namespace Champions.Sim
         public bool BossRush;
         public BossRushCheckpoint RushStart;
 
+        /// <summary>A scripted Boss Rush fight: the boss id started at the start (<see cref="BossModules"/>), or null. Recorded from session v8.</summary>
+        public string Fight;
+        /// <summary>Its act, 1 to 5.</summary>
+        public int FightAct = 1;
+
         /// <summary>The design's starting build.</summary>
         public static Upgrade[] StartLoadout() => new[] { Upgrade.Of(AttackKind.SwordSlash, 1) };
 
@@ -88,11 +93,21 @@ namespace Champions.Sim
                 Structures = !Level || content == null ? null : content.Structures.Clone(),
                 Bosses = content != null ? content.Bosses.Clone() : new BossRules(),
                 Duel = DuelCast(content),
+                Fight = FightId(),
+                FightAct = FightAct,
                 Progression = rush != null ? rush.Curve(content.Progression) : content != null ? content.Progression.Clone() : new ProgressionRules(),
                 BossRush = rush,
                 BossRushStart = rushStart,
                 Arenas = rush != null && content != null ? content.Arenas.Clone() : null,
             };
+        }
+
+        string FightId()
+        {
+            if (Fight == null) return null;
+            if (!BossModules.Has(Fight)) throw new ArgumentException($"fight: no Boss Rush boss {Fight}");
+            if (FightAct < 1 || FightAct > 5) throw new ArgumentException("fight: act 1 to 5");
+            return Fight;
         }
 
         int DuelCast(GameContent content)
@@ -136,6 +151,8 @@ namespace Champions.Sim
                 w.Write(RushStart != null);
                 RushStart?.Write(w);
             }
+            w.Write(Fight ?? "");
+            w.Write(FightAct);
         }
 
         /// <summary>
@@ -190,6 +207,13 @@ namespace Champions.Sim
             {
                 run.BossRush = r.ReadBoolean();
                 if (run.BossRush && r.ReadBoolean()) run.RushStart = BossRushCheckpoint.Read(r, path);
+            }
+            // Version 8 added the scripted Boss Rush fight.
+            if (version >= 8)
+            {
+                string fight = r.ReadString();
+                run.Fight = fight.Length > 0 ? fight : null;
+                run.FightAct = r.ReadInt32();
             }
             return run;
         }

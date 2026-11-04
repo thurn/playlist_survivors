@@ -28,6 +28,8 @@ namespace Champions.Sim
         public int Cast;
         /// <summary>Its own fight is in the content (<see cref="Cast"/> is its own).</summary>
         public bool Landed;
+        /// <summary>Its own fight is a Boss Rush module (<see cref="BossModules"/>, run by <see cref="BossFight"/>) with its cast row.</summary>
+        public bool Fight;
         /// <summary>Its health; NaN keeps the fighter's own (enemies.json's). The progression's table: <see cref="TargetS"/>
         /// × the reference builds' sustained damage at this slot (evidence/boss-rush/progression/).</summary>
         public double Health = double.NaN;
@@ -111,7 +113,7 @@ namespace Champions.Sim
 
     /// <summary>
     /// The Boss Rush's acts, boss order and sequencing numbers (Content/bossrush.json; boss-rush.md, The Run). A slot is
-    /// <see cref="BossRushBoss.Landed"/> when its id names an enemies.json cast with a bosses.json duel; until then its
+    /// <see cref="BossRushBoss.Landed"/> when its id names an enemies.json cast with a Boss Rush fight module or a bosses.json duel; until then its
     /// stand-in fights there, or the slot is passed over with <c>"unlanded": "skip"</c>.
     /// </summary>
     public sealed class BossRushRules
@@ -319,7 +321,9 @@ namespace Champions.Sim
                 int stand = enemies.IndexOf(boss.StandIn);
                 if (stand < 0 || duels.Of(stand) == null) throw ContentReader.Fail(b.Child("standIn"), $"{boss.StandIn} has no duel in {BossRules.File}");
                 int own = enemies.IndexOf(boss.Id);
-                boss.Landed = own >= 0 && duels.Of(own) != null;
+                // Landed: a fight module of its own (ps-8z4.3's framework) or a main-game duel, with its cast row.
+                boss.Fight = own >= 0 && BossModules.Has(boss.Id);
+                boss.Landed = boss.Fight || (own >= 0 && duels.Of(own) != null);
                 boss.Cast = boss.Landed ? own : stand;
                 return boss;
             });

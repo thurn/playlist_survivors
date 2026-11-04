@@ -81,6 +81,8 @@ namespace Champions.Sim
         ArenaObstacle,
         ArenaProp,
         RushShed,
+        /// <summary>A Boss Rush fight started (<see cref="BossFight.Start"/>): its arena forms and its looks warm before it arrives.</summary>
+        FightCall,
     }
 
     /// <summary>
@@ -769,6 +771,20 @@ namespace Champions.Sim
             e.D2 = power;
             e.D3 = x;
             e.D4 = y;
+            return e;
+        }
+
+        /// <summary>
+        /// A Boss Rush fight started (<see cref="BossFight.Start"/>): I0 its first body's cast index, I1 its bodies; D0/D1 the
+        /// arena's centre. Its bodies arrive later, each with a <see cref="BossArrive"/>; the client warms their looks now.
+        /// </summary>
+        public static SimEvent FightCall(double t, int cast, int bodies, double x, double y)
+        {
+            var e = Of(SimEventKind.FightCall, t);
+            e.I0 = cast;
+            e.I1 = bodies;
+            e.D0 = x;
+            e.D1 = y;
             return e;
         }
 
