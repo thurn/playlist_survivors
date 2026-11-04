@@ -286,3 +286,13 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   reads; its slow edge flow and ember core suit it.
 - Sound: the twig-snap ticks climb toward each eruption and sit under the music; the wood snaps of the echoes, the
   cracking trees of its entrance and death read as its own.
+
+## Boss Rush act 2 kit, the Sunken Sands (ps-8z4.16, 2026-11-04)
+
+[Stills and critiques](boss-rush/kit-act2/README.md).
+
+- In a window (`just champions-bossrush`, act 2): act 2's arenas read as ruins in a dark desert in the dim amber key;
+  the lotus columns, obelisks (standing and fallen) and rock spires read as solid (grey), the block stacks, braziers,
+  cacti and date palms as breakable; nothing on the floor (sand ripples, sand drifts) reads as a pickup, shot or enemy;
+  the pyramids at the top corners frame the arena without pulling the eye from the boss; an orange or red boss
+  stays clear of the amber grid and the key-coloured props (a blind critique doubted it with the stand-ins).

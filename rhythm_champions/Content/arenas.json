@@ -17,7 +17,15 @@
     { "id": "giantMushroom", "kit": "overgrownGrid", "radiusM": 0.5, "heightM": 3.0, "hits": 2 },
     { "id": "runeStone", "kit": "overgrownGrid", "sizeM": [1.0, 0.6], "heightM": 2.4, "hits": 0 },
     { "id": "stump", "kit": "overgrownGrid", "radiusM": 0.6, "heightM": 0.7, "hits": 1 },
-    { "id": "fernTree", "kit": "overgrownGrid", "radiusM": 0.3, "heightM": 3.4, "hits": 1 }
+    { "id": "fernTree", "kit": "overgrownGrid", "radiusM": 0.3, "heightM": 3.4, "hits": 1 },
+    { "id": "lotusColumn", "kit": "sunkenSands", "radiusM": 0.9, "heightM": 3.2, "hits": 0 },
+    { "id": "blockStack", "kit": "sunkenSands", "sizeM": [1.6, 1.6], "heightM": 1.4, "hits": 2 },
+    { "id": "brazier", "kit": "sunkenSands", "radiusM": 0.35, "heightM": 1.6, "hits": 1 },
+    { "id": "fallenObelisk", "kit": "sunkenSands", "sizeM": [4.0, 0.8], "heightM": 1.1, "hits": 0 },
+    { "id": "obelisk", "kit": "sunkenSands", "sizeM": [0.9, 0.9], "heightM": 3.8, "hits": 0 },
+    { "id": "cactus", "kit": "sunkenSands", "radiusM": 0.35, "heightM": 2.6, "hits": 1 },
+    { "id": "rockSpire", "kit": "sunkenSands", "radiusM": 0.8, "heightM": 2.6, "hits": 0 },
+    { "id": "datePalm", "kit": "sunkenSands", "radiusM": 0.3, "heightM": 3.4, "hits": 1 }
   ],
   "kits": [
     {
@@ -28,6 +36,16 @@
       "backdrop": [
         { "pieces": ["treeline"], "gapM": 2.5, "spacingM": 10, "facing": -0.15 },
         { "pieces": ["hills"], "gapM": 9, "spacingM": 20, "facing": 0.3 }
+      ]
+    },
+    {
+      "id": "sunkenSands",
+      "note": "Act 2, ruins in a dark desert in the dim amber key (boss-rush.md, Environments): tools/recipes/kit/sunkenSands.py.",
+      "dress": { "pillar": "lotusColumn", "crate": "blockStack", "post": "brazier", "slab": "fallenObelisk" },
+      "floor": { "pieces": ["sandRipples", "sandDrift"], "cellM": 4.5, "share": 0.25, "clearM": 1.2 },
+      "backdrop": [
+        { "pieces": ["pyramids"], "gapM": 4, "spacingM": 18, "facing": -0.15 },
+        { "pieces": ["dunes"], "gapM": 12, "spacingM": 24, "facing": 0.3 }
       ]
     }
   ],

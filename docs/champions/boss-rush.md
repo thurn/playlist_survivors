@@ -352,6 +352,11 @@ only.
   `crystalCluster` (`crate`), `lantern` (`post`), `fallenLog` (`slab`),
   `giantMushroom`, `runeStone`, `stump`, `fernTree`; floor `roots` and `moss`; backdrop `treeline` then `hills`.
   [Evidence](../../rhythm_champions/evidence/boss-rush/kit-act1/README.md).
+- **Act 2, Sunken Sands** (ps-8z4.16): props `lotusColumn` (dresses `pillar`),
+  `blockStack` (`crate`), `brazier` (`post`), `fallenObelisk` (`slab`),
+  `obelisk`, `cactus`, `rockSpire`, `datePalm`; floor `sandRipples` and
+  `sandDrift`; backdrop `pyramids` then `dunes`.
+  [Evidence](../../rhythm_champions/evidence/boss-rush/kit-act2/README.md).
 
 ### Look, effects, shaders and sound
 

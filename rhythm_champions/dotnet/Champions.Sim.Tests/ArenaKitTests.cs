@@ -12,12 +12,13 @@ namespace Champions.Sim.Tests
         static readonly GameContent Content = DashTests.Content;
         static ArenaRules Rules => Content.Arenas;
 
-        [Test]
-        public void ActOnesKitDressesEveryPlaceholderWithAKindOfTheSameFootprintAndBreaking()
+        [TestCase(1)]
+        [TestCase(2)]
+        public void AnActsKitDressesEveryPlaceholderWithAKindOfTheSameFootprintAndBreaking(int act)
         {
-            string id = Content.BossRush.Acts[0].Kit;
+            string id = Content.BossRush.Acts[act - 1].Kit;
             var kit = Rules.Kit(id);
-            Assert.IsNotNull(kit, $"act 1's kit {id} is in arenas.json");
+            Assert.IsNotNull(kit, $"act {act}'s kit {id} is in arenas.json");
             var kinds = Rules.Props;
             int own = kinds.Count(k => k.Kit == id);
             Assert.That(own, Is.InRange(6, 12), "an act kit has 6 to 12 props");
