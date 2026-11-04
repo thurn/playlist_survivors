@@ -207,8 +207,14 @@ each prefab at its height on its footprint's middle into a style mesh whose
 creases over 24 degrees draw (the monsters' `StyleMesh`), cut into chunks
 outlined along their cracks (`MonsterShardBaker`), into the ignored
 `Assets/Baked/Structures/`; the build bakes them too. `--look trailer` draws
-the models unsimplified; the default changes a kind's crease angle where that
-looks better at game scale, saying why in the table. `Render/Structures/`
+the models unsimplified. In the default look a kind with a recipe,
+`tools/recipes/structure/KIND.py` (ps-6y2.43), draws a designed low-poly mesh
+instead, every edge of it: the recipe builds convex polygons with
+`champions_tools.structure`'s `Builder` (boxes, prisms, lofts, slabs, wall faces
+with inset doors and windows), whose outlines draw and whose triangles'
+diagonals never do, and `champions structure bake` runs it first; a kind
+without one may get its own crease angle where that looks better at game
+scale, saying why in the table. `Render/Structures/`
 draws them (`StructureRenderer`, one indirect draw a kind;
 `StructureEdge.shader`), flashes them when hit, and on a break's frame throws
 their chunks in PhysX (`StructureShatter`, `StructureEdgeShard.shader`); the

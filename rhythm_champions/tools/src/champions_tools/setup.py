@@ -56,7 +56,7 @@ def library_key(wt: paths.Worktree) -> str:
 # cache instead of baking again.
 BAKE_INPUTS = ("Assets/Champions/Editor", "Assets/Champions/Render/Crowd/MonsterType.cs",
                "Assets/Champions/Render/Crowd/MonsterRig.cs", "Assets/Champions/Render/Structures/StructureType.cs",
-               "tools/recipes", "tools/src/champions_tools/monster.py")
+               "tools/recipes", "tools/src/champions_tools/monster.py", "tools/src/champions_tools/structure.py")
 BAKED_KEY = ".baked-key"  # in Assets/Baked/: the inputs key it was baked from
 
 

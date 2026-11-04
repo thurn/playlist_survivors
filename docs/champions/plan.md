@@ -391,10 +391,15 @@ trailer's, ported back:
   pinned for `--look trailer` beside `EdgeGains`. **Structures** (ps-6y2.30)
   draw the crowd's lines over their zone's fill: `champions structure bake
   <kind>` makes each Synty model a style mesh, static, and cuts its chunks as
-  the monsters' are; `Editor/Structures/structures.json` may give a kind its
-  own crease angle in the default look, judged by eye at game scale with why
-  (`--look trailer` draws the models unsimplified); `champions structure
-  review all` writes each kind's sheets and a field of every kind into
+  the monsters' are; a kind's recipe,
+  `rhythm_champions/tools/recipes/structure/<kind>.py` (ps-6y2.43), replaces
+  the model in the default look with a designed low-poly mesh drawn with
+  every edge (`champions_tools.structure`: convex polygons whose outlines
+  draw, never the diagonals that cut them into triangles), and
+  `Editor/Structures/structures.json` may give a kind without one its own
+  crease angle, judged by eye at game scale with why (`--look trailer` draws
+  the models unsimplified); `champions structure review all` writes each
+  kind's sheets and a field of every kind into
   `rhythm_champions/evidence/structures/`.
 - **Accepting art** (design, [Judgment over rules](design.md#judgment-over-rules)):
   - a blind critique by an agent given only the images (no docs, no recipe,

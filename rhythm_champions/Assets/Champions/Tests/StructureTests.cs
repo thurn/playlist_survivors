@@ -15,8 +15,9 @@ namespace Champions.Tests
     /// <summary>
     /// The structures without the vendor files: the presenter over stand-ins and over the edge look on a synthetic bake (a
     /// box baked as a Synty model would be), so a structure stands until its break's own frame, then its pieces fly in their
-    /// own physics, sink and go; breaks at one instant send one ring, a boss's none; and the baker's combine stands a model
-    /// on its footprint's middle at its height, its foundation dropped.
+    /// own physics, sink and go; breaks at one instant send one ring, a boss's none; the baker's combine stands a model
+    /// on its footprint's middle at its height, its foundation dropped; and a recipe's edge flags, not its creases, are
+    /// its lines.
     /// </summary>
     public sealed class StructureTests
     {
@@ -92,6 +93,20 @@ namespace Champions.Tests
             Assert.AreEqual(4f, b.size.x, 1e-3f, "scaled uniformly: twice as tall, twice as long");
             // The cube's bottom face lies wholly under the ground: it goes. Its sides cross the ground and stay.
             Assert.AreEqual(10, mesh.GetIndexCount(0) / 3);
+        }
+
+        [Test]
+        public void ARecipesFlagsAreItsLinesWhateverItsCreases()
+        {
+            var model = new StructureModel { id = "box", heightM = 1 };
+            var welded = model.Combine(BoxModel());
+            int triangles = (int)welded.GetIndexCount(0) / 3;
+            var every = StructureBaker.Build("box", "recipe", welded, 24, 2, Enumerable.Repeat(Vector3.one, triangles).ToArray());
+            var none = StructureBaker.Build("box", "recipe", welded, 24, 2, new Vector3[triangles]);
+            Object.DestroyImmediate(welded);
+            _made.AddRange(new Object[] { every.Body, every.ShardMesh, every, none.Body, none.ShardMesh, none });
+            Assert.AreEqual(17, every.Lines, "its twelve edges and the diagonal of each of its five faces, flat as they are");
+            Assert.AreEqual(0, none.Lines, "not even its corners");
         }
 
         [Test]

@@ -24,7 +24,8 @@ Commands:
   monster review TYPE the type's review sheets and README in evidence/monsters/TYPE/ (--look trailer for the
                       trailer's; always a side-by-side of both; --out DIR)
   structure bake KIND bake a structure kind (or `all`) for both looks: `--look trailer`'s the Synty model
-                      unsimplified, the default's as Editor/Structures/structures.json tunes it (--force)
+                      unsimplified, the default's from tools/recipes/structure/KIND.py if it exists, else
+                      as Editor/Structures/structures.json tunes the model (--force bakes again)
   structure review KIND
                       the kind's (or `all`'s) review sheets into evidence/structures/ (--out DIR)
   stills              fixed-time stills of the scripted scenes in one headless launch of the last
@@ -106,11 +107,12 @@ def build(wt: paths.Worktree, backend: str = "mono", out: str | None = None, dev
         print(f"build: nothing changed since the last build into {shown}; not rebuilding (--force to)")
         player_logs.install(folder / setup.APP, wt.root)
         return 0
-    from . import monster
+    from . import monster, structure
 
     try:
         monster.prepare_all(wt)  # the recipes' meshes, which the player build's bake takes
-    except monster.MonsterError as e:
+        structure.prepare_all(wt)
+    except (monster.MonsterError, structure.StructureError) as e:
         print(f"build: {e}", file=sys.stderr)
         return 2
     setup.forget_build(folder)
@@ -291,15 +293,10 @@ def cmd_monster(a: argparse.Namespace) -> int:
     return monster.cmd_monster(a)
 
 
-STRUCTURE_TASKS = "Champions.EditorTools.Structures.StructureTasks"
-
-
 def cmd_structure(a: argparse.Namespace) -> int:
-    wt = paths.worktree()
-    if a.action == "bake":
-        return unity.run_method(wt, f"{STRUCTURE_TASKS}.Bake", ["-kind", a.kind] + (["-force"] if a.force else []))
-    out = Path(a.out).resolve() if a.out else wt.project / "evidence" / "structures"
-    return unity.run_method(wt, f"{STRUCTURE_TASKS}.Review", ["-kind", a.kind, "-out", str(out)])
+    from . import structure
+
+    return structure.cmd_structure(a)
 
 
 def cmd_perf(a: argparse.Namespace) -> int:

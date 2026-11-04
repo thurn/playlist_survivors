@@ -23,8 +23,10 @@ namespace Champions.EditorTools.Structures
     /// - KIND/LOOK_shards.mesh: the body cut into closed chunks outlined along their cracks
     ///   (<see cref="MonsterShardBaker"/>), with each chunk's pivot and box for its PhysX body;
     /// - Resources/StructureTypes/LOOK/KIND.asset: the <see cref="StructureType"/>. `--look trailer`'s is always the model
-    ///   unsimplified; the default's at the crease angle the kind's defaultLook gives it, else the trailer's own.
-    /// A bake is skipped while its key (the kind's entry and the baker's code) matches KIND/bake.key.
+    ///   unsimplified; the default's from the kind's recipe when `champions structure bake` left its mesh in KIND/recipe/
+    ///   (tools/recipes/structure/KIND.py: a low-poly design drawn with the edges it flags, <see cref="ReadRecipe"/>),
+    ///   else the model at the crease angle the kind's defaultLook gives it, else the trailer's own.
+    /// A bake is skipped while its key (the kind's entry, the baker's code and the recipe's mesh) matches KIND/bake.key.
     /// </summary>
     public static class StructureBaker
     {
@@ -39,6 +41,7 @@ namespace Champions.EditorTools.Structures
         };
 
         public static string KindDir(string id) => $"{Root}/{id}";
+        public static string RecipeDir(string id) => $"{KindDir(id)}/recipe";
         public static string AssetPath(string id, MonsterLook look) => $"{Root}/Resources/{StructureLibrary.TypesPath(look)}/{id}.asset";
 
         /// <summary>Bakes every kind whose bake is out of date (all with <paramref name="force"/>); false if any failed for want of vendor files.</summary>
@@ -75,7 +78,10 @@ namespace Champions.EditorTools.Structures
                 var trailer = Save(model, MonsterLook.Trailer, "vendor", model.Combine(root), StyleMesh.FeatureAngleDeg);
                 Write(trailer, AssetPath(id, MonsterLook.Trailer));
                 StructureType standard;
-                if (model.defaultLook.Any)
+                var recipe = ReadRecipe(id, out var edges, out int recipePieces);
+                if (recipe != null)
+                    standard = Save(model, MonsterLook.Default, "recipe", recipe, StyleMesh.FeatureAngleDeg, edges, recipePieces > 0 ? recipePieces : model.pieces);
+                else if (model.defaultLook.Any)
                 {
                     float angle = model.defaultLook.edgeAngleDeg > 0 ? model.defaultLook.edgeAngleDeg : StyleMesh.FeatureAngleDeg;
                     standard = Save(model, MonsterLook.Default, "tuned", model.Combine(root), angle);
@@ -86,7 +92,7 @@ namespace Champions.EditorTools.Structures
                     standard.name = id;
                 }
                 Write(standard, AssetPath(id, MonsterLook.Default));
-                Debug.Log($"StructureBaker: {id}: vendor {Describe(trailer)}" + (model.defaultLook.Any ? $"; tuned {Describe(standard)}" : "") +
+                Debug.Log($"StructureBaker: {id}: vendor {Describe(trailer)}" + (standard.Source != "vendor" ? $"; {standard.Source} {Describe(standard)}" : "") +
                           $", in {(DateTime.UtcNow - started).TotalSeconds:F1} s");
             }
             finally
@@ -102,13 +108,14 @@ namespace Champions.EditorTools.Structures
         static string Describe(StructureType t) =>
             $"{t.Triangles} triangles, {t.Lines} lines, {t.Pieces.Length} pieces, {t.ExtentM.x:F2} x {t.ExtentM.y:F2} m on the ground, {t.HeightM:F2} m tall";
 
-        /// <summary>The bake's key: the kind's entry and the baker's code.</summary>
+        /// <summary>The bake's key: the kind's entry, the baker's code and the recipe's mesh (if any).</summary>
         static string Key(StructureModel model)
         {
             using var sha = SHA256.Create();
             void Add(byte[] b) => sha.TransformBlock(b, 0, b.Length, null, 0);
             Add(Encoding.UTF8.GetBytes(model.Json()));
             var files = CodeInputs.SelectMany(p => Directory.Exists(p) ? Directory.GetFiles(p, "*", SearchOption.AllDirectories) : new[] { p })
+                .Concat(Directory.Exists(RecipeDir(model.id)) ? Directory.GetFiles(RecipeDir(model.id)) : Array.Empty<string>())
                 .Where(f => !f.EndsWith(".meta", StringComparison.Ordinal) && File.Exists(f))
                 .Select(f => f.Replace('\\', '/')).OrderBy(f => f, StringComparer.Ordinal);
             foreach (var f in files)
@@ -121,10 +128,10 @@ namespace Champions.EditorTools.Structures
         }
 
         /// <summary>One look's type from its welded mesh, its meshes saved under the kind's folder as LOOK_body and LOOK_shards.</summary>
-        static StructureType Save(StructureModel model, MonsterLook forLook, string source, Mesh welded, float angleDeg)
+        static StructureType Save(StructureModel model, MonsterLook forLook, string source, Mesh welded, float angleDeg, Vector3[] edges = null, int pieces = 0)
         {
             string look = MonsterLooks.Name(forLook);
-            var t = Build(model.id, source, welded, angleDeg, model.pieces);
+            var t = Build(model.id, source, welded, angleDeg, pieces > 0 ? pieces : model.pieces, edges);
             UnityEngine.Object.DestroyImmediate(welded);
             t.Body.name = $"{model.id}_{look}_body";
             t.ShardMesh.name = $"{model.id}_{look}_shards";
@@ -134,20 +141,21 @@ namespace Champions.EditorTools.Structures
         }
 
         /// <summary>
-        /// A kind's type from its welded mesh in the structure's own space (<see cref="StructureModel.Combine"/>): the
-        /// body as a style mesh whose creases over <paramref name="angleDeg"/> draw, cut into <paramref name="pieces"/>
-        /// chunks, each with its pivot and a box round it (a little over half of which is solid, as a chunk closed to an
-        /// apex is), every edge of their inside faces drawn. Static: every corner rides one bone that never moves, as the
-        /// shard baker expects.
+        /// A kind's type from its welded mesh in the structure's own space (<see cref="StructureModel.Combine"/>, or a
+        /// recipe's): the body as a style mesh whose creases over <paramref name="angleDeg"/> draw (or, for a designed
+        /// mesh, the edges <paramref name="edges"/> flags, per triangle as <see cref="StyleMesh.Unweld"/> takes them), cut
+        /// into <paramref name="pieces"/> chunks, each with its pivot and a box round it (a little over half of which is
+        /// solid, as a chunk closed to an apex is), every edge of their inside faces drawn (only their crack for a designed
+        /// mesh's). Static: every corner rides one bone that never moves, as the shard baker expects.
         /// </summary>
-        public static StructureType Build(string id, string source, Mesh welded, float angleDeg, int pieces)
+        public static StructureType Build(string id, string source, Mesh welded, float angleDeg, int pieces, Vector3[] edges = null)
         {
             int n = welded.vertexCount;
             var still = UnityEngine.Object.Instantiate(welded);
             still.SetUVs(1, Enumerable.Repeat(Vector4.zero, n).ToList());
             still.SetUVs(2, Enumerable.Repeat(new Vector4(1, 0, 0, 0), n).ToList());
             int seed = StyleMesh.StableSeed(id);
-            var skinned = StyleMesh.Unweld(still, seed, null, angleDeg);
+            var skinned = StyleMesh.Unweld(still, seed, edges, angleDeg);
             UnityEngine.Object.DestroyImmediate(still);
             var carried = new bool[skinned.GetIndexCount(0) / 3];
             var (skinnedShards, shards) = MonsterShardBaker.Bake(id, welded.bounds.max.y, skinned, seed, carried, pieces);
@@ -156,14 +164,18 @@ namespace Champions.EditorTools.Structures
             UnityEngine.Object.DestroyImmediate(skinned);
             UnityEngine.Object.DestroyImmediate(skinnedShards);
 
-            // A chunk's inside faces draw every edge, not only their crack (as a monster's do): over the fill they show,
-            // and a chunk outlined all round reads as a closed solid flying, not a scrap of shell.
+            // A model's chunk's inside faces draw every edge, not only their crack (as a monster's do): over the fill they
+            // show, and a chunk outlined all round reads as a closed solid flying, not a scrap of shell. A designed mesh's
+            // keep only their crack, so each chunk's broken side is one dark polygon outlined where it broke: its big
+            // facets give chunks long cracks, and every edge of their inside faces drew as a fan of spokes to the apex (a
+            // starburst, to both of ps-6y2.43's blind critiques).
             var chunk = new List<Vector2>();
             shardMesh.GetUVs(4, chunk);
             var shardEdges = new List<Vector4>();
             shardMesh.GetUVs(5, shardEdges);
-            for (int v = 0; v < chunk.Count; v++)
-                if (chunk[v].x > 0.5f) shardEdges[v] = new Vector4(1, 1, 1, 0);
+            if (edges == null)
+                for (int v = 0; v < chunk.Count; v++)
+                    if (chunk[v].x > 0.5f) shardEdges[v] = new Vector4(1, 1, 1, 0);
             shardMesh.SetUVs(5, shardEdges);
             var positions = shardMesh.vertices;
             var lo = Enumerable.Repeat(Vector3.positiveInfinity, shards.Length).ToArray();
@@ -228,6 +240,51 @@ namespace Champions.EditorTools.Structures
                     seen.Add(a.CompareTo(b) < 0 ? (a, b) : (b, a));
                 }
             return seen.Count;
+        }
+
+        /// <summary>
+        /// The recipe's mesh from KIND/recipe/ (tools/src/champions_tools/structure.py writes it), welded, in the
+        /// structure's own space: mesh.json (vertices, triangles, and pieces: the shatter's, 0 for the kind's) and
+        /// little-endian arrays positions.f32 (3 per vertex), triangles.i32 and edges.u8 (3 per triangle: 1 to draw the edge
+        /// opposite that corner); null when there is none.
+        /// </summary>
+        static Mesh ReadRecipe(string id, out Vector3[] edges, out int pieces)
+        {
+            edges = null;
+            pieces = 0;
+            var dir = RecipeDir(id);
+            if (!File.Exists(Path.Combine(dir, "mesh.json"))) return null;
+            var floats = Read<float>(Path.Combine(dir, "positions.f32"));
+            var tris = Read<int>(Path.Combine(dir, "triangles.i32"));
+            var flags = File.ReadAllBytes(Path.Combine(dir, "edges.u8"));
+            int n = floats.Length / 3;
+            if (tris.Length % 3 != 0 || flags.Length != tris.Length || tris.Any(i => i < 0 || i >= n))
+                throw new Exception($"StructureBaker: {dir}'s arrays disagree ({n} vertices, {tris.Length} indices, {flags.Length} edge flags)");
+            var positions = new Vector3[n];
+            for (int v = 0; v < n; v++) positions[v] = new Vector3(floats[3 * v], floats[3 * v + 1], floats[3 * v + 2]);
+            edges = new Vector3[tris.Length / 3];
+            for (int t = 0; t < edges.Length; t++) edges[t] = new Vector3(flags[3 * t], flags[3 * t + 1], flags[3 * t + 2]);
+            var m = new Mesh { name = id + "_recipe", indexFormat = n > 65535 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
+            m.SetVertices(positions);
+            m.SetTriangles(tris, 0);
+            m.RecalculateNormals();
+            m.RecalculateBounds();
+            pieces = JsonUtility.FromJson<RecipeMeta>(File.ReadAllText(Path.Combine(dir, "mesh.json"))).pieces;
+            return m;
+        }
+
+        [Serializable]
+        sealed class RecipeMeta
+        {
+            public int pieces;
+        }
+
+        static T[] Read<T>(string path) where T : struct
+        {
+            var bytes = File.ReadAllBytes(path);
+            var o = new T[bytes.Length / System.Runtime.InteropServices.Marshal.SizeOf<T>()];
+            Buffer.BlockCopy(bytes, 0, o, 0, o.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>());
+            return o;
         }
 
         static void Write(StructureType t, string path)

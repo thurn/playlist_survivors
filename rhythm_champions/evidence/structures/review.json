@@ -1,13 +1,13 @@
 {
   "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "headingsDeg": [20, 110, 235], "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6]},
   "kinds": [
-    {"kind": "cottage", "source": "vendor", "triangles": 9547, "lines": 8289, "trailerTriangles": 9547, "trailerLines": 8289, "pieces": 20, "heightM": 5, "extentM": [4.24, 4.79], "footprintM": [3.6, 4.4], "sheets": ["cottage-game.jpg", "cottage-near.jpg"]},
-    {"kind": "fence", "source": "vendor", "triangles": 276, "lines": 214, "trailerTriangles": 276, "trailerLines": 214, "pieces": 10, "heightM": 1.1, "extentM": [2.43, 0.15], "footprintM": [2.42, 0.3], "sheets": ["fence-game.jpg", "fence-near.jpg"]},
-    {"kind": "hut", "source": "vendor", "triangles": 7224, "lines": 6778, "trailerTriangles": 7224, "trailerLines": 6778, "pieces": 20, "heightM": 4.6, "extentM": [4.69, 4.96], "footprintM": [4.46, 4.46], "sheets": ["hut-game.jpg", "hut-near.jpg"]},
-    {"kind": "pine", "source": "vendor", "triangles": 1220, "lines": 1103, "trailerTriangles": 1220, "trailerLines": 1103, "pieces": 36, "heightM": 8, "extentM": [4.1, 4.16], "footprintM": {"radius": 1.7}, "sheets": ["pine-game.jpg", "pine-near.jpg"]},
+    {"kind": "cottage", "source": "recipe", "triangles": 741, "lines": 275, "trailerTriangles": 9547, "trailerLines": 8289, "pieces": 36, "heightM": 5, "extentM": [3.56, 4.45], "footprintM": [3.6, 4.4], "sheets": ["cottage-game.jpg", "cottage-near.jpg"]},
+    {"kind": "fence", "source": "recipe", "triangles": 182, "lines": 84, "trailerTriangles": 276, "trailerLines": 214, "pieces": 10, "heightM": 1.1, "extentM": [2.42, 0.3], "footprintM": [2.42, 0.3], "sheets": ["fence-game.jpg", "fence-near.jpg"]},
+    {"kind": "hut", "source": "recipe", "triangles": 497, "lines": 210, "trailerTriangles": 7224, "trailerLines": 6778, "pieces": 36, "heightM": 4.6, "extentM": [4.24, 4.9], "footprintM": [4.46, 4.46], "sheets": ["hut-game.jpg", "hut-near.jpg"]},
+    {"kind": "pine", "source": "recipe", "triangles": 866, "lines": 438, "trailerTriangles": 1220, "trailerLines": 1103, "pieces": 36, "heightM": 8, "extentM": [4.05, 3.84], "footprintM": {"radius": 1.7}, "sheets": ["pine-game.jpg", "pine-near.jpg"]},
     {"kind": "rock", "source": "tuned", "triangles": 42, "lines": 54, "trailerTriangles": 42, "trailerLines": 38, "pieces": 12, "heightM": 1.3, "extentM": [3.13, 3.4], "footprintM": {"radius": 1.5}, "sheets": ["rock-game.jpg", "rock-near.jpg"]},
-    {"kind": "tower", "source": "vendor", "triangles": 32196, "lines": 31780, "trailerTriangles": 32196, "trailerLines": 31780, "pieces": 22, "heightM": 10, "extentM": [4.34, 4.34], "footprintM": {"radius": 1.7}, "sheets": ["tower-game.jpg", "tower-near.jpg"]},
-    {"kind": "tree", "source": "tuned", "triangles": 254, "lines": 304, "trailerTriangles": 254, "trailerLines": 240, "pieces": 14, "heightM": 5, "extentM": [2.48, 2.05], "footprintM": {"radius": 0.7}, "sheets": ["tree-game.jpg", "tree-near.jpg"]},
-    {"kind": "wall", "source": "vendor", "triangles": 846, "lines": 855, "trailerTriangles": 846, "trailerLines": 855, "pieces": 13, "heightM": 1.2, "extentM": [5.65, 0.67], "footprintM": [5.6, 0.6], "sheets": ["wall-game.jpg", "wall-near.jpg"]}
+    {"kind": "tower", "source": "recipe", "triangles": 908, "lines": 472, "trailerTriangles": 32196, "trailerLines": 31780, "pieces": 40, "heightM": 10, "extentM": [3.33, 3.33], "footprintM": {"radius": 1.7}, "sheets": ["tower-game.jpg", "tower-near.jpg"]},
+    {"kind": "tree", "source": "recipe", "triangles": 224, "lines": 153, "trailerTriangles": 254, "trailerLines": 240, "pieces": 14, "heightM": 5, "extentM": [3.06, 2.22], "footprintM": {"radius": 0.7}, "sheets": ["tree-game.jpg", "tree-near.jpg"]},
+    {"kind": "wall", "source": "recipe", "triangles": 210, "lines": 150, "trailerTriangles": 846, "trailerLines": 855, "pieces": 14, "heightM": 1.2, "extentM": [5.6, 0.6], "footprintM": [5.6, 0.6], "sheets": ["wall-game.jpg", "wall-near.jpg"]}
   ]
 }
