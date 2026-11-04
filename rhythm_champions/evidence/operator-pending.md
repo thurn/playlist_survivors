@@ -279,7 +279,7 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   "step sideways", the burrow's sink and burst as "leave the marked spot"; the quake reads as the dash wave and the dash
   through it feels fair; phase two's chain along the hero's own path is hard but never cheap, and the gems strewn along
   the trail make walking back over it worth the risk. Act-1 difficulty and the ~2 minute length feel right.
-- The look: the violet roots crawling to each telegraph read as the boss reaching for the hero's old spot, never as
+- The look: the cyan roots crawling to each telegraph read as the boss reaching for the hero's old spot, never as
   pickups, shots or XP; the spikes burst on the beat and sink cleanly; the Treant sinking under the floor and bursting up
   reads; its slow edge flow and ember core suit it.
 - Sound: the twig-snap ticks climb toward each eruption and sit under the music; the wood snaps of the echoes, the

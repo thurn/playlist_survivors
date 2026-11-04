@@ -44,7 +44,7 @@ namespace Champions.Client
             var shared = Resources.Load<Material>(HeroMarker.MaterialPath)
                          ?? throw new InvalidOperationException($"RootwardenPresenter: no material at Resources/{HeroMarker.MaterialPath}");
             _cast = enemies.IndexOf(RootwardenModule.ModuleId);
-            var hue = _cast >= 0 ? palette.ForType(RootwardenModule.ModuleId) : new Color(0.84f, 0.18f, 1f);
+            var hue = _cast >= 0 ? palette.ForType(RootwardenModule.ModuleId) : new Color(0.02f, 0.79f, 1f);
             _material = new Material(shared) { name = "Rootwarden roots" };
             _material.SetColor("_Color", hue.linear * Brightness);
             _material.SetFloat(IdPass.Id, IdPass.Effect);

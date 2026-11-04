@@ -525,7 +525,8 @@ mechanic at a time, generous telegraphs.
      eruption a root along the hero's path from the last marked spot to
      this one; lines fan three wide, seeds come seven at a time, the chain
      runs under a line or seeds, and the quake sends two rings. Its hue is
-     violet: a branching stroke crawls from its body to every telegraph
+     cyan (the Bloom before it is violet, the Hive Queen magenta; the
+     Treant's own Blue variant suits it): a branching stroke crawls from its body to every telegraph
      as it fills and faceted spikes burst out of the ground on the
      landing; its edges carry a slow flow and an ember core. Its bursts
      strew gems along the hero's last steps. Its bank is the Universal

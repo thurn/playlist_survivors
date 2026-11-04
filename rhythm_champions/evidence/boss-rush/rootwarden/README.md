@@ -11,7 +11,10 @@ landed). The review plays the fight alone in its hollow: 120 BPM, a hero with si
 60 s. That is too short to reach its phase two, so phase two shows only in the sim tests. The rest of the 268 stills
 and the motion frames stay out of the tree; rerun the review to get them.
 
-- `entrance.jpg`: it arrives, violet roots crawling in to its feet from round the hollow.
+The stills were rendered with the roots in violet; it is cyan since (the Bloom landed violet first), and the
+mesh bead's review shows the colour as it is now.
+
+- `entrance.jpg`: it arrives, roots in its hue crawling in to its feet from round the hollow.
 - `attack-01-echo.jpg`: the signature, taught alone. Each beat marks the hero's spot; the earlier marks fill behind the
   hero, a root stroke crawling from the boss to each.
 - `attack-03-line.jpg`: the line, eruptions racing out from it toward the hero's spot, one a half beat.
@@ -60,7 +63,7 @@ and the motion frames stay out of the tree; rerun the review to get them.
 
 - This fight registered the source (the Green Treant prefab, its Root and Projectile Seed prefabs, the clips, in
   manifest.json; the `rootwarden` type in monsters.json with impacts measured in Blender from the arms' motion; the
-  boss cast row and violet). Clip roles: smash (Root Attack, the line), stomp (Stomp Attack, the quake), throw
+  boss cast row and its hue, first violet, then cyan on rebase, since the Bloom landed violet just before it). Clip roles: smash (Root Attack, the line), stomp (Stomp Attack, the quake), throw
   (Projectile Up Attack, the seeds), roar (Cast Spell, the entrance).
 - Framework additions: `BossModule.Sunk` (a body's share under the floor; `BossPresenter` lowers it). The fairness
   harness now judges a half beat landing after the last beat it heard (the fight died within that beat).
