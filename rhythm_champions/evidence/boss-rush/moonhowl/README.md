@@ -57,7 +57,7 @@ apart, its hue dimmed by each), wherever it lags enough to show: its lunges and 
 the dash from where the hero stood; at 180 BPM about 150 hazards, 39 sequences, 21 dash waves, 13 needing it. The
 harness's screen circle is widened to the whole arena because its camera holds it still and whole
 (`TheCameraHoldsTheGladeWhole`). Beatless it plays its cycle on the 0.5 s fallback beat; a recorded fight replays to
-its hash. The harness now drops a hazard still filling at its boss's death (a dead fight lands nothing).
+its hash.
 
 **Reference builds** (`reference-runs.tsv`, from the Explicit `MeasureTheReferenceBuildsAgainstMoonhowl`): the
 scripted `positioning` player with the slot's reference builds at `--boss 5`, the slot's health (1664), the 128 BPM

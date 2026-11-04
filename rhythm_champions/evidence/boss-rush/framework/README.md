@@ -169,9 +169,6 @@ or a boss without one, plays the generic boss sounds. `fatOgre`'s bank is the pr
 
 ## Added by Moonhowl (ps-8z4.14)
 
-- **The harness at a death**: a hazard still filling when its fight dies never lands (a dead fight lands nothing), so
-  `Fairness.Check` drops it from the report as it drops called-off ones; before, a claw planned just before the kill was
-  checked against beats the run never recorded and read as off the grid.
 - **Afterimages**: `BossPresenter` draws Moonhowl's body again at its places a few hundredths of a second back, dimmed,
   while its moon is full (`MoonhowlModule.FullMoon`); a fight wanting the same writes more instances into its type's
   crowd slots the same way.
