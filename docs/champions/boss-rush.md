@@ -15,8 +15,8 @@ boss designs into the main game. Both outcomes shape the rules below:
 - The player's verbs are **exactly the main game's**, so a boss tuned here
   plays the same there.
 
-Designed with the operator on **2026-11-03**. Epic: **ps-boss** (see
-[Beads](#beads) for the real id once filed). [design.md](design.md) governs
+Designed with the operator on **2026-11-03**. Epic: **ps-8z4** (see
+[Beads](#beads)). [design.md](design.md) governs
 everything this document doesn't change; [Differences from the main
 game](#differences-from-the-main-game) lists every exception.
 
@@ -584,7 +584,18 @@ on rebase. They are no reason to chain beads.
 - **Pacing** waits on every fight, the mode shell and boss progression; the
   **Warden** on everything.
 
-The epic's bead ids are recorded on the epic itself (`bd show <epic>`).
+**Playable early, bosses in order.** Enact takes the highest priority first,
+then the lowest bead number. So:
+
+- The mode shell, arenas and the boss framework are **P1** and filed first
+  (ps-8z4.1–.3). The shell is playable from the start, with the main game's
+  three bosses standing in for unlanded slots, and each fight replaces its
+  stand-in as it lands.
+- Everything else is **P2**, filed in boss order: progression (.4), then
+  per act its kit and each boss's fight followed by its mesh. Act 1 is
+  .5–.15, act 2 .16–.26, act 3 .27–.37, act 4 .38–.48 and act 5 .49–.59.
+  Earlier bosses' fights therefore win free slots once the foundations land.
+- Pacing is .60, the Warden .61. `bd list --parent ps-8z4` shows them all.
 
 ## Taking bosses to the main game
 
