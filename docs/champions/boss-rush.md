@@ -506,6 +506,32 @@ mechanic at a time, generous telegraphs.
      resurfaces. Later, eruptions chain along your path.
    - Look: roots as long, branching line strokes. Sound: cracking wood,
      rumbles timed to the eruptions.
+   - **As built (ps-8z4.12)**: `RootwardenModule` in its `rootHollow`, a
+     round clearing 34 m across, its middle open floor and its props (two
+     broken oaks, logs, rune stones, stumps, mushrooms, four lanterns)
+     standing back by the wall. The signature is the *echo*: for 6 beats
+     running each beat marks the hero's spot and a root erupts there 3
+     beats later, on its beat, so a hero who keeps moving leaves every
+     eruption behind and one who stands still is hit. It is taught alone
+     twice, then the *line* (eruptions racing out from it toward the
+     hero's spot, one a half beat, walked out of sideways), the *seeds*
+     (five lobbed round the hero, sprouting together), the *burrow* (it
+     sinks over a beat, travels under the floor to the hero's marked spot
+     and bursts up on a downbeat, a ring of roots spreading a beat later;
+     `BossModule.Sunk` lowers its body) and the dash wave, the *quake*
+     (its stomp sends a ring of roots across the hollow faster than
+     walking). Below half health it draws back to the hollow's heart,
+     untouchable for 4 beats, then the echo *chains*: 8 marks, each
+     eruption a root along the hero's path from the last marked spot to
+     this one; lines fan three wide, seeds come seven at a time, the chain
+     runs under a line or seeds, and the quake sends two rings. Its hue is
+     violet: a branching stroke crawls from its body to every telegraph
+     as it fills and faceted spikes burst out of the ground on the
+     landing; its edges carry a slow flow and an ember core. Its bursts
+     strew gems along the hero's last steps. Its bank is the Universal
+     Sound FX wood (snaps for the echoes, cracking trees for its entrance
+     and death, the tick a twig snap climbing to each eruption). Evidence:
+     [rootwarden](../../rhythm_champions/evidence/boss-rush/rootwarden/README.md).
 5. **Moonhowl** (act finale) — *The moon cycle.*
    - Source: `H/Mythological Creatures Pack/Werewolf/Prefabs/Werewolf.prefab`.
      Clips: Howl, claw combos and their Forward versions.

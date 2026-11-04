@@ -110,9 +110,9 @@ namespace Champions.Client
                 _runTo = t + duration;
             }
             else if (move == BossMove.Dive) _diveLand = t;
-            else if (part == 0)
+            else if (part == 0 && _attackClip.TryGetValue(move, out int clip) && clip >= 0)
                 for (int i = 0; i < _attacks.Count; i++)
-                    if (_attackClip[move] == _attacks[i].Clip && Math.Abs(_attacks[i].Land - t) < 0.25)
+                    if (clip == _attacks[i].Clip && Math.Abs(_attacks[i].Land - t) < 0.25)
                         _attacks[i] = new Attack { Clip = _attacks[i].Clip, Land = t };
         }
 

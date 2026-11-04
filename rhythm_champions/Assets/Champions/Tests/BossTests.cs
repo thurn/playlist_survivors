@@ -146,5 +146,16 @@ namespace Champions.Tests
             Assert.AreEqual(Role("idle"), a.At(16.5, 0).ClipA);
             Assert.Less(a.At(16.55, 0).Blend, 1f, "crossfading after a change");
         }
+
+        [Test]
+        public void AMoveWithNoClipOfItsOwnLandsWithoutPosing()
+        {
+            // A Boss Rush boss's own hazards (BossMove.Hazard: the Rootwarden's echoes, the goblin's bombs) have no clip.
+            var a = new BossAnimator(Clips);
+            a.Arrived(0);
+            a.Telegraph(BossMove.Hazard, 0, 4, 5);
+            Assert.DoesNotThrow(() => a.Landed(BossMove.Hazard, 0, 5, 0));
+            Assert.AreEqual(Role("idle"), a.At(5, 0).ClipA, "it stands through its own hazards");
+        }
     }
 }

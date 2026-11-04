@@ -269,3 +269,18 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   edge flow and faint scan suit her.
 - Sound: the insect buzz ticks climb in pitch toward each landing and sit under the music; entrance, impact, signature
   and death read as hers.
+
+## Boss Rush fight 04, the Rootwarden (ps-8z4.12, 2026-11-04)
+
+[Stills and notes](boss-rush/rootwarden/README.md).
+
+- Hand-play (`just champions-bossrush --boss 4`, or `champions play --fight rootwarden`): the echo, taught alone twice,
+  reads at once as "keep moving on the beat"; standing still is punished and walking never is; the root lines read as
+  "step sideways", the burrow's sink and burst as "leave the marked spot"; the quake reads as the dash wave and the dash
+  through it feels fair; phase two's chain along the hero's own path is hard but never cheap, and the gems strewn along
+  the trail make walking back over it worth the risk. Act-1 difficulty and the ~2 minute length feel right.
+- The look: the violet roots crawling to each telegraph read as the boss reaching for the hero's old spot, never as
+  pickups, shots or XP; the spikes burst on the beat and sink cleanly; the Treant sinking under the floor and bursting up
+  reads; its slow edge flow and ember core suit it.
+- Sound: the twig-snap ticks climb toward each eruption and sit under the music; the wood snaps of the echoes, the
+  cracking trees of its entrance and death read as its own.
