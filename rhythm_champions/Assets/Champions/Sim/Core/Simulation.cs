@@ -50,12 +50,14 @@ namespace Champions.Sim
         readonly RunRules run;
         readonly Horde horde;
         readonly double knownAtBudget;
+        readonly bool zen;
         double cursor;
 
         public Simulation(SimConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));
             knownAtBudget = config.KnownAtBudget;
+            zen = config.Zen;
             Pickups = new Pickups(config.Progression);
             Random = new SimRandom(config.Seed);
             Stream = new BeliefLog(config);
@@ -499,6 +501,8 @@ namespace Champions.Sim
         {
             Ranged?.BindOwned();
             double end = (State.Tick + 1) * TickSeconds;
+            // Zen mode: the player is always on the beat, so the on-beat dash's aura never runs out.
+            if (zen) State.Build?.Empower(CombatTime(State.Now));
             while (true)
             {
                 double reveal = Stream.NextKnownAt;

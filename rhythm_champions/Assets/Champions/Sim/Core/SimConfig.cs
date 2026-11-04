@@ -9,7 +9,8 @@ namespace Champions.Sim
     {
         /// <summary>Seeds the run's one random generator.</summary>
         public ulong Seed = 1;
-        /// <summary>Zen mode (`--zen`): rhythm is not judged; every press is on the beat (<see cref="Judgement"/>).</summary>
+        /// <summary>Zen mode (`--zen`): rhythm is not judged; every press is on the beat (<see cref="Judgement"/>) and the
+        /// on-beat aura (<see cref="WeaponBuild.AuraUntil"/>) is held on the whole run.</summary>
         public bool Zen;
 
         /// <summary>The song time the sim starts at.</summary>

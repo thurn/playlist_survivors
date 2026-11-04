@@ -59,6 +59,18 @@ namespace Champions.Sim.Tests
             Assert.That(Judge(song, beat + period * 0.25).By, Is.EqualTo(JudgedBy.Off), "judged without zen");
         }
 
+        [Test]
+        public void ZenModeHoldsTheAuraWithoutADash()
+        {
+            var song = new FixtureSong().Beats(0, 20, 128, onsets: false);
+            var zen = Drive.Run(song, 15, new SimConfig { Zen = true });
+            Assert.That(zen.State.Hero.Dashes, Is.Zero);
+            Assert.That(zen.State.Build.AuraUntil, Is.GreaterThan(zen.CombatTime(zen.Now)), "the aura is on");
+            Assert.That(zen.State.Build.AreaAt(zen.CombatTime(zen.Now)), Is.EqualTo(2));
+            var judged = Drive.Run(song, 15);
+            Assert.That(judged.State.Build.AuraUntil, Is.LessThan(judged.CombatTime(judged.Now)), "no aura without zen or a dash");
+        }
+
         [TestCaseSource(nameof(Tempos))]
         public void StrongTransientRetainsActualTimestamp(double bpm)
         {
