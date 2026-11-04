@@ -583,6 +583,34 @@ see or where you can stand.
    - Look: the floor grid displaces along its path. Sound: a low sub rumble
      that tightens to the burst.
    - Inspiration: Dune, Tremors, Hollow Knight's Dung Defender.
+   - **As built (ps-8z4.17)**: `SandwyrmModule` (`Sim/Rush/SandwyrmModule.cs`),
+     hot magenta (the accent family) over act 2's dim amber, in its own arena
+     `duneSea`: a round sunken basin 34 m across, open sand in the middle and
+     a broken ring of ruins at its edge (an obelisk, lotus columns, date palms
+     and rock spires from the act 2 kit). The *hunt* (the signature, taught
+     alone three times first): it sinks where it stands and travels under the
+     sand to the spot the hero stood on as it dived, bursting up through it on
+     the next downbeat at least three beats on. Its ripple shows it all the
+     way: chevron ripples over its head, a wake of raised ridges behind it and
+     a dashed line ahead to where it is heading, over the red fill of the
+     eruption. Surfaced, it *lashes* (its body slammed down in a line at the
+     hero) or *spits* clods of sand round the hero's spot. The *tunnel*: it
+     runs straight through the hero's spot to the far side, the sand
+     collapsing in its wake one eruption a half beat, every one filling from
+     the dive (walk out sideways). The *breach* is the dash wave: it travels
+     to the rim across the basin from the hero and breaches on a downbeat,
+     and an arc of sand rolls across the whole basin at 16 m/s, crossed with
+     a dash. Below half health it dives to the basin's heart (four
+     untouchable beats) and the deep hunt begins: hunts chain three in a row,
+     one a bar, each from where the last erupted; the tunnel comes back over
+     itself; the breach rolls two arcs a dash cooldown and a beat apart; the
+     spit throws seven. Its bank is the Universal Sound FX's stone and earth:
+     a stone-slide rumble ticking on the beats and climbing in pitch to each
+     burst, rock bursts at the landings, a deep thud for the signature, a
+     deep growl as it rises and a long groan for its death. Its XP bursts lie
+     along its last run under the sand. The floor's own grid doesn't displace
+     (its ridges stand in for that). Evidence:
+     [sandwyrm](../../rhythm_champions/evidence/boss-rush/sandwyrm/README.md).
 7. **The Bandaged King** — *Sandstorm.*
    - Source: `H/Living Dead Pack/Mummy/Prefabs/Mummy.prefab` (+ Sarcophagus).
      Clips: BandageWhip combos, Awakening, attacks.

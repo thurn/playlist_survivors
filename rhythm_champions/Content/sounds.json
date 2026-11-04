@@ -56,6 +56,13 @@
       "impact": { "gain": 0.75, "clips": ["ANIMAL_Dog_Attack_01_mono", "ANIMAL_Dog_Attack_02_mono"] },
       "signature": { "gain": 0.9, "clips": ["ANIMAL_Wolf_Howl_03_echo_mono", "ANIMAL_Wolf_Howl_04_echo_mono"] },
       "death": { "gain": 1.0, "clips": ["ANIMAL_Wolf_Death_01_mono"] }
+    },
+    "sandwyrm": {
+      "entrance": { "gain": 0.9, "clips": ["MONSTER_Growl_Deep_02_Long_mono"] },
+      "tick": { "gain": 0.35, "clips": ["FRICTION_Stone_Slide_Rumble_04_mono", "FRICTION_Stone_Slide_Rumble_02_mono", "FRICTION_Stone_Slide_Rumble_08_mono"] },
+      "impact": { "gain": 0.75, "clips": ["DEMOLISH_Stone_04_mono", "DEMOLISH_Stone_05_mono", "EARTH_Rocks_Pebbles_Fall_01_mono"] },
+      "signature": { "gain": 0.9, "clips": ["THUD_Deep_Noisy_01_mono", "DESTRUCTION_Rocks_01_mono"] },
+      "death": { "gain": 1.0, "clips": ["MONSTER_Groan_Long_mono"] }
     }
   }
 }

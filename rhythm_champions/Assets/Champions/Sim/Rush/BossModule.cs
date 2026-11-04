@@ -142,6 +142,8 @@ namespace Champions.Sim
             { BloomModule.ModuleId, () => new BloomModule() },
             { RootwardenModule.ModuleId, () => new RootwardenModule() },
             { MoonhowlModule.ModuleId, () => new MoonhowlModule() },
+            // Act 2, Sunken Sands.
+            { SandwyrmModule.ModuleId, () => new SandwyrmModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

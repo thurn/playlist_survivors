@@ -2138,6 +2138,76 @@
       "sourceSha256": "697cace1be26aa702c5408a1b52f2a866a2ccb333a744c327a20964f72c915c1",
       "guid": "db1e4ceda95c5124f9a4ce1e5541bfcf",
       "use": "sound: dash whooshes"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FRICTION/Stone/FRICTION_Stone_Slide_Rumble_02_mono.wav",
+      "sourceSha256": "c0fca2a2947262f9c2e809969d90200e5d7255b6d066ba7ff41aa9c7ea9aae13",
+      "guid": "4fe87a3a4cffd8c4886aef12549719fe",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FRICTION/Stone/FRICTION_Stone_Slide_Rumble_04_mono.wav",
+      "sourceSha256": "d51e3bef1efd2a01b5d77ba7fa38021f4a672f89526a64c2722b0b5cb3ccca80",
+      "guid": "9957d798ef6ec904899f1da236c0b532",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FRICTION/Stone/FRICTION_Stone_Slide_Rumble_08_mono.wav",
+      "sourceSha256": "85b5a5d6803e3dbbee78745744eb80145b17714b5e82266635f70c70cf0275ca",
+      "guid": "379873418fe04ea41bf017f39ec88868",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DEMOLISH/DEMOLISH_Stone_04_mono.wav",
+      "sourceSha256": "7d8fc54e17ddeebdeafc4e776f79c84ca63bd23728ac782de5882ea78a7a2b33",
+      "guid": "4a741211ad8e03943b56d86868519e5a",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DEMOLISH/DEMOLISH_Stone_05_mono.wav",
+      "sourceSha256": "b8380914f829a98f43f8511ac98cf2277f54b74cedbf28b4cb4a779344ef7003",
+      "guid": "bd17c0afc6eacec47b0407a5530a7343",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/THUDS_THUMPS/THUD_Deep_Noisy_01_mono.wav",
+      "sourceSha256": "df29f76a406c511eb8e7ef113de140b0dbfc40ed38a6a2ed73f2cca93af29407",
+      "guid": "3a6b54e808c1bbc419719efa6b3a5e85",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DESTRUCTION/DESTRUCTION_Rocks_01_mono.wav",
+      "sourceSha256": "7bff1da2e909ba99ae73cdb2746426ce6ca871819e68c03510c1441d974c6283",
+      "guid": "307dab1f9bcc97846bd4612c609be765",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ELEMENTS/Earth/EARTH_Rocks_Pebbles_Fall_01_mono.wav",
+      "sourceSha256": "bad302f5e8bc7b4d15cfbd2f9b3661673a09c55c2e8a3dbd5e71042536a413f0",
+      "guid": "2bc4cc99a212ff043ae7f6d6783f7f0d",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/MONSTER_Growl_Deep_02_Long_mono.wav",
+      "sourceSha256": "cdb9adf6db12cc7892f46bb0e6e52125564fe522cf55a67807750fe423e9df07",
+      "guid": "13964409ee9303646a0bea0f985babc1",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/MONSTER_Groan_Long_mono.wav",
+      "sourceSha256": "3d3d762bdd875ce345f19e731f956be6907c31674047b857c7efb785af50f8a0",
+      "guid": "6765dee653f46764fb540f56d3a1d492",
+      "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
     }
   ]
 }

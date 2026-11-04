@@ -75,6 +75,8 @@ namespace Champions.Client.Loop
         public readonly HiveSwarmPresenter Swarm;
         /// <summary>The Rootwarden's creeping roots, eruptions and spikes (ps-8z4.12).</summary>
         public readonly RootwardenPresenter Roots;
+        /// <summary>The Sandwyrm's ripples, wake, eruptions and the breach's crest (ps-8z4.17).</summary>
+        public readonly SandwyrmPresenter Ripples;
         public readonly PickupPresenter Pickups;
         public readonly TelegraphPresenter Telegraphs;
         public readonly BossPresenter Boss;
@@ -114,6 +116,8 @@ namespace Champions.Client.Loop
             _owned.Add(Swarm);
             Roots = new RootwardenPresenter(palette, content.Enemies, layer);
             _owned.Add(Roots);
+            Ripples = new SandwyrmPresenter(palette, content.Enemies, layer);
+            _owned.Add(Ripples);
             Moon = MoonhowlPresenter.Create(palette, content.Enemies, layer);
             if (Moon != null) _owned.Add(Moon);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
@@ -192,6 +196,7 @@ namespace Champions.Client.Loop
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("hive swarm", (in SimEvent e) => Swarm.Take(e), null, (in PresentFrame f) => Swarm.Present(f.Song, f.Sim, f.Camera));
             d.Add("rootwarden roots", (in SimEvent e) => Roots.Take(e), null, (in PresentFrame f) => Roots.Present(f.Song, f.Sim, f.Camera));
+            d.Add("sandwyrm ripples", (in SimEvent e) => Ripples.Take(e), null, (in PresentFrame f) => Ripples.Present(f.Song, f.Sim, f.Camera));
             if (Moon != null) d.Add("moon", null, null, (in PresentFrame f) => Moon.Present(f.Song, f.Sim, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));

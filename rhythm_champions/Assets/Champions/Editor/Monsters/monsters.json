@@ -243,7 +243,11 @@
         { "role": "attack", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Attack02", "impact": 1.833, "end": 6.167 },
         { "role": "stomp", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Attack03", "impact": 1.5, "end": 6.667 },
         { "role": "cast", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Cast1", "impact": 1.167, "end": 2.833 },
-        { "role": "roar", "guid": "f788021144d32493999cabeb71c954b9", "clip": "IdleBreak", "end": 6.333 },
+        { "role": "roar", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Appear", "end": 3.333 },
+        { "role": "takeoff", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Disappear", "end": 2.333 },
+        { "role": "fly", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Hidden", "loop": true },
+        { "role": "land", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Appear", "impact": 1.6, "end": 3.333 },
+        { "role": "throw", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Cast1", "impact": 1.167, "end": 2.833 },
         { "role": "hit", "guid": "f788021144d32493999cabeb71c954b9", "clip": "GotHitBody", "impact": 0.0, "end": 2.667 }
       ]
     }

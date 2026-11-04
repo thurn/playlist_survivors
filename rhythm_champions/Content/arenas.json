@@ -205,6 +205,24 @@
       ]
     },
     {
+      "id": "duneSea",
+      "kit": "sunkenSands",
+      "outline": { "radiusM": 17 },
+      "heroStart": [0, -8],
+      "bossStart": [0, 6],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "obelisk", "at": [0.00, 15.30], "degrees": 0 },
+        { "kind": "lotusColumn", "at": [7.50, 13.00] },
+        { "kind": "lotusColumn", "at": [-7.50, 13.00] },
+        { "kind": "datePalm", "at": [14.30, 5.20] },
+        { "kind": "datePalm", "at": [-14.30, 5.20] },
+        { "kind": "rockSpire", "at": [14.10, -5.10], "degrees": 40 },
+        { "kind": "rockSpire", "at": [-14.10, -5.10], "degrees": 140 }
+      ]
+    },
+    {
       "id": "moonGlade",
       "kit": "overgrownGrid",
       "outline": { "radiusM": 17 },
