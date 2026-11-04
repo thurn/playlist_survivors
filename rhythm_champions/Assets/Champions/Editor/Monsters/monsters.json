@@ -228,6 +228,24 @@
         { "role": "roar", "guid": "d2f1b5a98de738e42bc77281002a29c3", "clip": "howl", "end": 2.667 },
         { "role": "hit", "guid": "e2d3845a64384ab40b40b9f118f30ba4", "clip": "getHit1", "impact": 0.0, "end": 1.0 }
       ]
+    },
+    {
+      "id": "sandwyrm",
+      "prefab": "c602f11bfa75d4ec896100dbd6ec1d91",
+      "heightM": 14.0,
+      "reviewPoses": [ "idle", "appear", "smash", "attack", "stomp", "cast" ],
+      "clips": [
+        { "role": "idle", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Idle", "loop": true },
+        { "role": "hidden", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Hidden", "loop": true },
+        { "role": "appear", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Appear", "end": 3.333 },
+        { "role": "disappear", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Disappear", "end": 2.333 },
+        { "role": "smash", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Attack01", "impact": 0.833, "end": 2.0 },
+        { "role": "attack", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Attack02", "impact": 1.833, "end": 6.167 },
+        { "role": "stomp", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Attack03", "impact": 1.5, "end": 6.667 },
+        { "role": "cast", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Cast1", "impact": 1.167, "end": 2.833 },
+        { "role": "roar", "guid": "f788021144d32493999cabeb71c954b9", "clip": "IdleBreak", "end": 6.333 },
+        { "role": "hit", "guid": "f788021144d32493999cabeb71c954b9", "clip": "GotHitBody", "impact": 0.0, "end": 2.667 }
+      ]
     }
   ]
 }

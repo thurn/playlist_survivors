@@ -1196,6 +1196,20 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Giant Worm/_Prefabs/Giant_Worm_LP.prefab",
+      "sourceSha256": "3cb3552e1fd38da20a11583be3c6db3437a0fd37b12b839cd1d0f8f064016140",
+      "guid": "c602f11bfa75d4ec896100dbd6ec1d91",
+      "use": "Boss Rush boss 6: the Sandwyrm"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Giant Worm/Models/Giant_Worm_LP.fbx",
+      "sourceSha256": "c3fc83343c5689727ebced1608ba35e0e67bdf8fd16fcc8c333eeaf2b5102b89",
+      "guid": "f788021144d32493999cabeb71c954b9",
+      "use": "Boss Rush boss 6: the Sandwyrm"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Goblin/_Prefabs/Goblins LP.prefab",
       "sourceSha256": "2a36906f05a8a301a13d8595bec436a6bb6f5abbfbbbd4eb3d3afe2d52c84175",
       "guid": "2d5e83b858ed8424291e890a090902db",

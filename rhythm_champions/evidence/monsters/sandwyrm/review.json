@@ -1,0 +1,15 @@
+{
+  "type": "sandwyrm",
+  "look": "default",
+  "source": "recipe",
+  "trailerSource": "vendor",
+  "lodTriangles": [478, 478, 478],
+  "trailerLodTriangles": [2396, 1216, 639],
+  "shards": 40,
+  "bones": 143,
+  "heightM": 5.071,
+  "poses": ["idle", "appear", "smash", "attack", "stomp", "cast"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

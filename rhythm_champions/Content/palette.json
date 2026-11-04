@@ -41,6 +41,7 @@
     "hiveQueen": "enemies.accent.magenta",
     "bloom": "enemies.accent.violet",
     "rootwarden": "enemies.key.cyan",
-    "moonhowl": "enemies.key.blue"
+    "moonhowl": "enemies.key.blue",
+    "sandwyrm": "enemies.accent.magenta"
   }
 }
