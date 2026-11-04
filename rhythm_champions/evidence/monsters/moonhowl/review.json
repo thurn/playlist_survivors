@@ -1,0 +1,15 @@
+{
+  "type": "moonhowl",
+  "look": "default",
+  "source": "recipe",
+  "trailerSource": "vendor",
+  "lodTriangles": [750, 750, 750],
+  "trailerLodTriangles": [14912, 7674, 3837],
+  "shards": 35,
+  "bones": 54,
+  "heightM": 2.912,
+  "poses": ["idle", "walk", "smash", "attack", "throw", "tail"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}
