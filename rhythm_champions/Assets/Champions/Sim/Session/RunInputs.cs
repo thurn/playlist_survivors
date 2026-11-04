@@ -55,6 +55,9 @@ namespace Champions.Sim
         /// <summary>Its act, 1 to 5.</summary>
         public int FightAct = 1;
 
+        /// <summary>`--zen`: rhythm is not judged; every press is on the beat (<see cref="SimConfig.Zen"/>). Recorded from session v9.</summary>
+        public bool Zen;
+
         /// <summary>The design's starting build.</summary>
         public static Upgrade[] StartLoadout() => new[] { Upgrade.Of(AttackKind.SwordSlash, 1) };
 
@@ -78,6 +81,7 @@ namespace Champions.Sim
             return new SimConfig
             {
                 Seed = Seed,
+                Zen = Zen,
                 StartTime = StartTime,
                 KnownAtBudget = KnownAtBudget,
                 Start = Start,
@@ -167,6 +171,7 @@ namespace Champions.Sim
             }
             w.Write(Fight ?? "");
             w.Write(FightAct);
+            w.Write(Zen);
         }
 
         /// <summary>
@@ -229,6 +234,8 @@ namespace Champions.Sim
                 run.Fight = fight.Length > 0 ? fight : null;
                 run.FightAct = r.ReadInt32();
             }
+            // Version 9 added zen mode.
+            if (version >= 9) run.Zen = r.ReadBoolean();
             return run;
         }
 

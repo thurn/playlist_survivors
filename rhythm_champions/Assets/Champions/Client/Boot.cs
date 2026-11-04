@@ -195,10 +195,10 @@ namespace Champions.Client
                 Content = _content, ContentDir = ContentDir(), Palette = _palette,
                 // `--fight ID`: the boss's fight alone, no level (no horde, no structures).
                 Run = mode.BossRush
-                    ? new RunInputs { Seed = seed, BossRush = true, SurvivorWeapons = true, Start = RunStart.Immediately, RushStart = mode.From?.Clone() }
+                    ? new RunInputs { Seed = seed, Zen = _options.Zen, BossRush = true, SurvivorWeapons = true, Start = RunStart.Immediately, RushStart = mode.From?.Clone() }
                     : new RunInputs
                     {
-                        Seed = seed, Level = _options.Fight == null, SurvivorWeapons = true, Start = RunStart.Immediately,
+                        Seed = seed, Zen = _options.Zen, Level = _options.Fight == null, SurvivorWeapons = true, Start = RunStart.Immediately,
                         Fight = _options.Fight, FightAct = _options.FightAct,
                     },
                 SaveRush = mode.BossRush && mode.Save && !scripted,

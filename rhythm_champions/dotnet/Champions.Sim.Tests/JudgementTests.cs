@@ -44,6 +44,22 @@ namespace Champions.Sim.Tests
         }
 
         [TestCaseSource(nameof(Tempos))]
+        public void ZenModeJudgesEveryPressOnTheBeat(double bpm)
+        {
+            var song = new FixtureSong().Beats(0, 20, bpm, onsets: false);
+            double beat = Beat(bpm), period = 60 / bpm;
+            foreach (double offset in new[] { 0, period * 0.25, period * 0.4, -period * 0.3 })
+            {
+                double heard = beat + offset;
+                var judged = Drive.Run(song, heard + 0.05, new SimConfig { Zen = true }).Judge(heard);
+                Assert.That(judged.By, Is.EqualTo(JudgedBy.Zen), $"{bpm}: {offset}");
+                Assert.That(judged.OnBeat);
+                Assert.That(judged.Point, Is.EqualTo(heard));
+            }
+            Assert.That(Judge(song, beat + period * 0.25).By, Is.EqualTo(JudgedBy.Off), "judged without zen");
+        }
+
+        [TestCaseSource(nameof(Tempos))]
         public void StrongTransientRetainsActualTimestamp(double bpm)
         {
             double onset = Beat(bpm) + 15 / bpm; // in the grid's gap

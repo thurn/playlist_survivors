@@ -23,13 +23,13 @@ unity_exe := "C:/Program Files/Unity/Hub/Editor/6000.6.7f1/Editor/Unity.exe"
 default:
     @just --list --unsorted
 
-# Set up if needed, build the Mono player and play it at 1080p, with player flags (--windowed, --headless, --seconds N, --fixed-time)
+# Set up if needed, build the Mono player and play it at 1080p, with player flags (--windowed, --headless, --seconds N, --fixed-time, --zen)
 [group('champions')]
 champions *args:
     {{champions}} build
     {{champions}} play {{champions_audio}} "$@"
 
-# The Boss Rush (docs/champions/boss-rush.md): set up if needed, build and play it, with player flags (--boss N, --file PATH)
+# The Boss Rush (docs/champions/boss-rush.md): set up if needed, build and play it, with player flags (--boss N, --file PATH, --zen)
 [group('champions')]
 champions-bossrush *args:
     {{champions}} build

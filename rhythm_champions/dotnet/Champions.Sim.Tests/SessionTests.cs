@@ -167,6 +167,25 @@ namespace Champions.Sim.Tests
         }
 
         [Test]
+        public void ZenModeIsRecorded()
+        {
+            string dir = TempDir();
+            try
+            {
+                var run = new RunInputs { Seed = 21, Zen = true };
+                var record = SessionRecord.Of(run, new Simulation(run.Build(null)));
+                record.Write(dir);
+                var read = SessionRecord.Read(dir);
+                Assert.IsTrue(read.Run.Zen);
+                Assert.IsTrue(read.Run.Build(null).Zen);
+            }
+            finally
+            {
+                Directory.Delete(dir, true);
+            }
+        }
+
+        [Test]
         public void ADifferentRunDoesNotMatch()
         {
             var (run, live, fed) = LiveRun();

@@ -248,7 +248,7 @@ namespace Champions.Sim
         bool Perfect(in Window w, in HeroHit hit)
         {
             if (double.IsNaN(hit.Beat)) return false;
-            if (w.By == JudgedBy.Beatless) return true;
+            if (w.By == JudgedBy.Beatless || w.By == JudgedBy.Zen) return true;
             return w.By != JudgedBy.Off && Math.Abs(w.Heard - hit.Beat) <= beatWindow + 1e-9;
         }
     }

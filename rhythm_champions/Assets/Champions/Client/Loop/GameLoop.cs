@@ -230,9 +230,10 @@ namespace Champions.Client.Loop
             Keys.ActionTimestamp = _diagnostics.KeyTimestamp;
             Log("Run diagnostics: {0}; summary: {0}.summary; error: {1}", _diagnostics.Path, _diagnostics.Error ?? "none");
             _presentation.Dispatch.Add("loop", (in SimEvent e) => Take(sim, e));
-            Log("Run: {0} {1}, seed {2}, {3}, from song {4:F3} s{5}{6}", _replay != null ? "replaying" : "run", _runs, _config.Seed,
+            Log("Run: {0} {1}, seed {2}, {3}, from song {4:F3} s{5}{6}{7}", _replay != null ? "replaying" : "run", _runs, _config.Seed,
                 _config.BossRush != null ? $"boss rush from boss {_config.BossRushStart.Boss + 1}" : _config.Level != null ? "level 1" : "no level", _config.StartTime, _config.Start == RunStart.FirstOffer ? ", the first offer up" : "",
-                _script != null ? $", scripted ({_script.Kind}{(_setup.Picks != null ? ", picks " + _setup.Picks : "")})" : "");
+                _script != null ? $", scripted ({_script.Kind}{(_setup.Picks != null ? ", picks " + _setup.Picks : "")})" : "",
+                _config.Zen ? ", zen (rhythm not judged)" : "");
         }
 
         static string DeviceText()

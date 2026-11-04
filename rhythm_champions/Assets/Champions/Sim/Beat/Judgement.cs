@@ -15,13 +15,15 @@ namespace Champions.Sim
         HalfBeat = 3,
         /// <summary>Within the onset window of a strong onset.</summary>
         StrongOnset = 4,
+        /// <summary>Zen mode (`--zen`): rhythm is not judged, so every press is on the beat.</summary>
+        Zen = 5,
     }
 
     /// <summary>A press's judgement: on the beat or not, why, and the moment it was measured from.</summary>
     public readonly struct Judged
     {
         public readonly JudgedBy By;
-        /// <summary>The beat, half beat or onset it was measured from; the nearest candidate even for misses; the press itself when beatless.</summary>
+        /// <summary>The beat, half beat or onset it was measured from; the nearest candidate even for misses; the press itself when beatless or in zen mode.</summary>
         public readonly double Point;
         public readonly double Window;
         public readonly JudgedBy Candidate;
@@ -50,21 +52,25 @@ namespace Champions.Sim
     /// Beat/half windows are capped to 20%/16% of the local period, preserving gaps at fast tempos.
     /// It reads only revealed entries, so it is a function of the stream's known-at times. The music runs
     /// seconds ahead of the speakers in the stream, so the onsets near a press are long known when it is taken.
+    /// In zen mode (<see cref="SimConfig.Zen"/>) rhythm is not judged: every press is on the beat (<see cref="JudgedBy.Zen"/>).
     /// </summary>
     public sealed class Judgement
     {
         readonly BeatServices beats;
         readonly BeatRules rules;
+        readonly bool zen;
 
-        public Judgement(BeatServices beats)
+        public Judgement(BeatServices beats, bool zen = false)
         {
             this.beats = beats;
+            this.zen = zen;
             rules = beats.Rules;
         }
 
         /// <summary>Judges a press heard at song time <paramref name="heard"/>.</summary>
         public Judged Judge(double heard)
         {
+            if (zen) return new Judged(JudgedBy.Zen, heard);
             if (!beats.Reliable(heard)) return new Judged(JudgedBy.Beatless, heard);
             var revealed = beats.Revealed;
             int b = BeatServices.LastAtOrBefore(revealed, heard);

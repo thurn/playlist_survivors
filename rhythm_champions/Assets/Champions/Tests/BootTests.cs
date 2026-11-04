@@ -39,7 +39,9 @@ namespace Champions.Tests
             Assert.That(o.Seconds, Is.EqualTo(5));
             Assert.That(o.StillsDir, Is.EqualTo("dir"));
             Assert.That(o.StillsAt, Is.EqualTo(new[] { 1.0, 0.5 }));
+            Assert.That(o.Zen, Is.False);
             Assert.That(o.Unrecognized, Is.Empty);
+            Assert.That(LaunchOptions.Parse(new[] { "player", "--zen" }, batchMode: false).Zen);
         }
 
         [Test]

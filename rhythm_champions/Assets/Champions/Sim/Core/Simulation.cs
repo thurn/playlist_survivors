@@ -60,7 +60,7 @@ namespace Champions.Sim
             Random = new SimRandom(config.Seed);
             Stream = new BeliefLog(config);
             Beats = new BeatServices(Stream, config.Beat, config.TickCapacity);
-            Judgement = new Judgement(Beats);
+            Judgement = new Judgement(Beats, config.Zen);
             Telegraphs = new Telegraphs(Beats);
             Cadence = new Cadence(Beats, config.Beat.CadenceTargetS);
             Quiet = new QuietMoments(Stream, config.Beat);

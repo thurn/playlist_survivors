@@ -11,7 +11,8 @@ Commands:
                       silent by default (--audio to hear it); --headless runs it windowless
                       in batch mode and waits for it to exit
                       (player flags: --file PATH or --app NAME, the music, played 3 s late;
-                      --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..)
+                      --seconds N, --fixed-time, --capture-stills DIR --stills-at T,..;
+                      --zen, zen mode: rhythm not judged, every press on the beat)
   logs                persistent player log root and latest runs for this checkout
   test                EditMode tests (warm editor if running, else cold; --no-skips fails on a
                       skipped test)

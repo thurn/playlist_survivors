@@ -75,6 +75,8 @@ namespace Champions.Client
         /// </summary>
         public string Fight;
         public int FightAct = 1;
+        /// <summary>`--zen`: zen mode, rhythm not judged; every press is on the beat (Sim.SimConfig.Zen).</summary>
+        public bool Zen;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -101,6 +103,7 @@ namespace Champions.Client
                 ReplaySpeed = a.Double("--replay-speed", 1),
                 Fight = a.Get("--fight"),
                 FightAct = (int)a.Double("--fight-act", 1),
+                Zen = a.Has("--zen"),
             };
             var mode = a.Get("--mode");
             if (mode != null && mode != "main" && mode != "bossrush") throw new ArgumentException($"--mode: {mode} is not main or bossrush");
