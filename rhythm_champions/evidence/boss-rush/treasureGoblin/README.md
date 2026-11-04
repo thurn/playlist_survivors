@@ -5,7 +5,17 @@ with six weapons wandering the arena; the stills are for judging by eye, nothing
 
 ## Stills
 
-(None yet.)
+The review (`champions boss review treasureGoblin --motion`, 25 stills and 243 motion frames, 231 MB of PNGs) stays
+out of the repository; a fresh review rewrites them here. Kept, as tagged 1280x720 JPEGs:
+
+- [goblin-entrance.jpg](goblin-entrance.jpg): its arrival on the loop across the copse.
+- [goblin-bomb-trail.jpg](goblin-bomb-trail.jpg): 15 s in, a bomb filling red behind it as it runs from the hero.
+- [goblin-coin-spray.jpg](goblin-coin-spray.jpg): the first coin spray's telegraph at 60%, the coins' launch point on it.
+- [goblin-chase.jpg](goblin-chase.jpg) and [goblin-later.jpg](goblin-later.jpg): 35 s and 50 s in.
+- [goblin-motion-sheet.jpg](goblin-motion-sheet.jpg): 12 of the motion frames (4 to 12 s), left to right, top to bottom.
+
+The review's hero only wanders, so it rarely corners the goblin: the stills show the trail and the coins, not the ring
+of bombs or the panic (the sim tests cover those).
 
 ## Notes
 
