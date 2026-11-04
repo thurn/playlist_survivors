@@ -11,6 +11,8 @@ namespace Champions.Sim
         DashWave = 1,
         /// <summary>It travels after launching (its telegraph is the launch's warning).</summary>
         Projectile = 2,
+        /// <summary>Its boss's signature mechanic: its landing plays the boss bank's signature sound, not its impact.</summary>
+        Signature = 4,
     }
 
     /// <summary>How a hazard moves the body that casts it (<see cref="Hazard.BodyMove"/>).</summary>

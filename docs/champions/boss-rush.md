@@ -641,7 +641,9 @@ The beads hold the detail; this is the shape.
   blocks (telegraph shapes, projectiles, beat scheduling, the existing moves),
   optional phases, multi-body bosses, boss-hued effect roles, the shared
   boss-look shader with parameters, per-boss sound banks, `champions boss
-  review <id>`, and the **fairness harness** that each boss's tests use.
+  review <id>`, and the **fairness harness** that each boss's tests use. Landed
+  in ps-8z4.3; its guide for the fight beads is
+  [evidence/boss-rush/framework](../../rhythm_champions/evidence/boss-rush/framework/README.md).
 - **Act kits**: one environment kit per act.
 - **Per boss**: a mesh bead (the monster-mesh-design skill) and a fight bead
   (attacks, arena, effects, sound, tests, evidence). Whichever of the two

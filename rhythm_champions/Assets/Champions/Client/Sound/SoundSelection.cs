@@ -21,6 +21,11 @@ namespace Champions.Client.Sound
         }
 
         public float Limit;
+        /// <summary>
+        /// The Boss Rush bosses' own banks by boss id (sounds.json's optional <c>bosses</c>): each its five roles
+        /// (<see cref="BossSound"/>, by role number; [0] unused), every role required.
+        /// </summary>
+        public readonly Dictionary<string, Category[]> Bosses = new Dictionary<string, Category[]>();
         /// <summary>By <see cref="SoundKind"/>.</summary>
         public readonly Category[] Categories = new Category[Enum.GetValues(typeof(SoundKind)).Length];
 
@@ -53,6 +58,26 @@ namespace Champions.Client.Sound
                 c.End();
             }
             categories.End();
+            if (r.Has("bosses"))
+            {
+                var bosses = r.Object("bosses");
+                foreach (var id in bosses.Keys())
+                {
+                    var b = bosses.Object(id);
+                    var roles = new Category[6];
+                    for (int role = 1; role < roles.Length; role++)
+                    {
+                        var c = b.Object(SoundScheduler.Name((BossSound)role));
+                        var clips = c.Strings("clips");
+                        if (clips.Length == 0) throw ContentReader.Fail(c.Child("clips"), "at least one clip");
+                        roles[role] = new Category { Gain = (float)c.Number("gain"), Clips = clips };
+                        c.End();
+                    }
+                    b.End();
+                    s.Bosses[id] = roles;
+                }
+                bosses.End();
+            }
             r.End();
             return s;
         }
@@ -64,6 +89,10 @@ namespace Champions.Client.Sound
             foreach (var c in Categories)
                 foreach (var name in c.Clips)
                     if (seen.Add(name)) yield return name;
+            foreach (var roles in Bosses.Values)
+                for (int r = 1; r < roles.Length; r++)
+                    foreach (var name in roles[r].Clips)
+                        if (seen.Add(name)) yield return name;
         }
     }
 }

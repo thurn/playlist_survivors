@@ -168,7 +168,7 @@ namespace Champions.Sim
         /// turn, spaced the dash cooldown and a beat apart (boss-rush.md, "Fair fights"). A dash wave unless walking outruns it.
         /// </summary>
         public static int Wave(BossFight f, int body, double x, double y, double radiusM, double speedMps, double thickM, double damage, int beats,
-            bool dashWave = true, int fronts = 1, int attack = -1)
+            bool dashWave = true, int fronts = 1, int attack = -1, HazardFlags flags = HazardFlags.None)
         {
             if (attack < 0) attack = f.NextAttack();
             var tel = f.Plan(beats, Landing.Downbeat);
@@ -180,7 +180,7 @@ namespace Champions.Sim
                 f.Add(new Hazard
                 {
                     Attack = attack, Body = body, Part = k, Telegraph = front, Shape = HitShape.Ring(x, y, 0, thickM),
-                    Damage = damage, ActiveS = radiusM / speedMps, GrowMps = speedMps, Flags = dashWave ? HazardFlags.DashWave : HazardFlags.None,
+                    Damage = damage, ActiveS = radiusM / speedMps, GrowMps = speedMps, Flags = flags | (dashWave ? HazardFlags.DashWave : HazardFlags.None),
                 });
             }
             return attack;

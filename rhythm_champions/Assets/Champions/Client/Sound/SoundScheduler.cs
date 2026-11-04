@@ -11,10 +11,22 @@ namespace Champions.Client.Sound
         Swing, SwingHeavy, Whoosh, Accent, Slam, Hit, HitHeavy, ShatterBody, ShatterGlass, ShatterTinkle, Hurt,
     }
 
+    /// <summary>
+    /// A Boss Rush boss's own sounds (boss-rush.md, Sound; sounds.json's <c>bosses</c>): its bank's five roles, bound per
+    /// fight (<see cref="SoundScheduler.UseBoss"/>). A cue with a role plays the boss's clip when it has one, else its
+    /// <see cref="SoundCue.Kind"/>'s, so a boss without a bank still sounds.
+    /// </summary>
+    public enum BossSound : byte
+    {
+        None = 0, Entrance = 1, Tick = 2, Impact = 3, Signature = 4, Death = 5,
+    }
+
     /// <summary>One sound: a category at a song time, with its level and pitch (playback rate).</summary>
     public struct SoundCue
     {
         public SoundKind Kind;
+        /// <summary>The boss's own sound to play instead, when the fight's bank has it (<see cref="BossSound"/>).</summary>
+        public BossSound Boss;
         public double Song;
         public float Gain, Pitch;
         /// <summary>
@@ -47,6 +59,8 @@ namespace Champions.Client.Sound
         readonly int[] _generation = new int[Voices];
         readonly SoundKind[] _kind = new SoundKind[Voices];
         readonly int[][] _variants;
+        readonly int[][] _boss = new int[6][];
+        readonly SoundBank _bank;
         readonly AudioClip[] _clips;
         readonly float[] _onsets, _levels;
         readonly bool _audible;
@@ -77,6 +91,8 @@ namespace Champions.Client.Sound
         {
             _clock = clock;
             _dspNow = dspNow;
+            _bank = bank;
+            for (int r = 0; r < _boss.Length; r++) _boss[r] = Array.Empty<int>();
             _audible = audible;
             _clips = bank != null ? bank.Clips : Array.Empty<AudioClip>();
             _onsets = bank != null ? bank.Onsets : Array.Empty<float>();
@@ -116,6 +132,31 @@ namespace Champions.Client.Sound
             k == SoundKind.Swing || k == SoundKind.SwingHeavy || k == SoundKind.Whoosh || k == SoundKind.Accent || k == SoundKind.Slam
             || k == SoundKind.Hurt;
 
+        /// <summary>A boss role's name in the bank and sounds.json (<c>entrance</c> ...).</summary>
+        public static string Name(BossSound role) => role.ToString().ToLowerInvariant();
+
+        /// <summary>The bank name of boss <paramref name="id"/>'s <paramref name="role"/> clip <paramref name="variant"/>.</summary>
+        public static string BossClip(string id, BossSound role, int variant) => $"boss/{id}/{Name(role)}/{variant}";
+
+        /// <summary>Binds boss <paramref name="id"/>'s bank (null: none): its roles' cues play its clips from now.</summary>
+        public void UseBoss(string id)
+        {
+            for (int r = 1; r < _boss.Length; r++)
+            {
+                var list = new List<int>();
+                for (int v = 0; _bank != null && id != null; v++)
+                {
+                    int i = _bank.IndexOf(BossClip(id, (BossSound)r, v));
+                    if (i < 0) break;
+                    list.Add(i);
+                }
+                _boss[r] = list.ToArray();
+            }
+        }
+
+        /// <summary>Whether the bound boss has clips for <paramref name="role"/>.</summary>
+        public bool Has(BossSound role) => _boss[(int)role].Length > 0;
+
         /// <summary>Whether the bank has clips for <paramref name="k"/>.</summary>
         public bool Has(SoundKind k) => _variants[(int)k].Length > 0;
 
@@ -125,7 +166,7 @@ namespace Champions.Client.Sound
         /// </summary>
         public int Play(in SoundCue cue, int variant, float gain)
         {
-            var set = _variants[(int)cue.Kind];
+            var set = cue.Boss != BossSound.None && _boss[(int)cue.Boss].Length > 0 ? _boss[(int)cue.Boss] : _variants[(int)cue.Kind];
             if (set.Length == 0) return -1;
             int c = set[variant % set.Length];
             var clip = _clips[c];

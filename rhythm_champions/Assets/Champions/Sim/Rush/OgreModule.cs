@@ -71,9 +71,9 @@ namespace Champions.Sim
                 case BossMove.Charge: return BossKit.Charge(f, 0, m.LengthM, m.DurationS, m.Damage, beats);
                 case BossMove.Wave:
                 {
-                    // The main game's wave: from the hero's spot, 1.2 m thick, outrunning the walk.
+                    // The main game's wave: from the hero's spot, 1.2 m thick, outrunning the walk; its signature (its bank's sound).
                     f.HeroAt(f.Now, out double hx, out double hy);
-                    return BossKit.Wave(f, 0, hx, hy, m.RadiusM, m.RadiusM / m.DurationS, 1.2, m.Damage, beats, fronts: m.Count);
+                    return BossKit.Wave(f, 0, hx, hy, m.RadiusM, m.RadiusM / m.DurationS, 1.2, m.Damage, beats, fronts: m.Count, flags: HazardFlags.Signature);
                 }
                 default: throw new InvalidOperationException($"{ModuleId}: no piece for {m.Move}");
             }

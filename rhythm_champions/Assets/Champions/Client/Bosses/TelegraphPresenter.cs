@@ -11,7 +11,8 @@ namespace Champions.Client
     /// and The Horde &gt; Threats): each boss mark (<see cref="SimEventKind.BossTelegraph"/>) in the palette's
     /// <c>boss.telegraph</c> red, each big ork's charge and troll's slam (<see cref="SimEventKind.EliteTelegraph"/>) in its
     /// <c>warning</c> orange, filling from its start to its beat; a landing flashes it (a breath's burn holding its glow and
-    /// sweeping when it sweeps), a call-off fades it. A mushroom's spore has no ground mark (its cap flashes). The assembly's
+    /// sweeping when it sweeps), a call-off fades it. A Boss Rush fight's hazards (<see cref="BossFight"/>) are boss marks
+    /// too: the same danger red, held through their active span, reshaped as they travel, grow and turn. A mushroom's spore has no ground mark (its cap flashes). The assembly's
     /// EventDispatch hands it the events.
     /// </summary>
     public sealed class TelegraphPresenter : IDisposable
@@ -68,7 +69,8 @@ namespace Champions.Client
                     break;
                 case SimEventKind.BossMove:
                     if (e.I2 != 0) _marks.CallOff(e.I0, e.T);
-                    else _marks.Land(e.I0, e.T, e.MarkMove == BossMove.Breath || Bosses.IsWave(e.MarkMove) ? e.D4 : 0, e.D5);
+                    // A breath, a wave and a Boss Rush hazard hold their glow for their active span (D4).
+                    else _marks.Land(e.I0, e.T, e.MarkMove == BossMove.Breath || Bosses.IsWave(e.MarkMove) || e.I0 >= BossFight.FirstMarkId ? e.D4 : 0, e.D5);
                     break;
                 case SimEventKind.EliteTelegraph:
                 {
@@ -112,6 +114,12 @@ namespace Champions.Client
                 {
                     _marks.Retime(m.Id, m.Telegraph.Start, sim.Telegraphs.LandTime(m.Telegraph));
                     if (Bosses.IsWave(m.Move)) _marks.Reshape(m.Id, sim.Bosses.WaveShape(m, song));
+                }
+                // A Boss Rush fight's hazards: retimed, and reshaped as they travel, grow and turn.
+                foreach (var h in sim.Fight.Hazards)
+                {
+                    _marks.Retime(h.Id, h.Telegraph.Start, h.Telegraph.Land);
+                    if (h.Vx != 0 || h.Vy != 0 || h.GrowMps != 0 || h.SpinRadPerS != 0) _marks.Reshape(h.Id, h.ShapeAt(song));
                 }
                 var mobs = sim.Horde.Mobs;
                 for (int i = 0; i < mobs.Length; i++)

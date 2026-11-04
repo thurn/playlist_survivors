@@ -91,7 +91,10 @@ namespace Champions.Render.Crowd
         public static Material Body(MonsterType type, MonsterLook look, Palette palette)
         {
             var g = EdgeGains.Of(look);
-            var m = Make(BodyShader, type, palette, "_edge");
+            // A Boss Rush boss with a look of its own draws in BossEdge: the same glass, rim, lines and core, plus its variation.
+            bool boss = BossLook.TryGet(type.Id, out var bossLook);
+            var m = Make(boss ? BossLook.Shader : BodyShader, type, palette, "_edge");
+            if (boss) bossLook.Apply(m);
             // Six weapons can hit the whole pack together. Routine feedback keeps the enemy's hue,
             // reserving white for the hero instead of whitening hundreds of bodies every pulse.
             if (look != MonsterLook.Trailer) m.SetColor("_Flash", Hue(type, palette) * 1.25f);

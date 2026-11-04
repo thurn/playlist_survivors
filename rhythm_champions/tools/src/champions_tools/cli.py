@@ -293,6 +293,12 @@ def cmd_monster(a: argparse.Namespace) -> int:
     return monster.cmd_monster(a)
 
 
+def cmd_boss(a: argparse.Namespace) -> int:
+    from . import boss
+
+    return boss.cmd_boss(a)
+
+
 def cmd_structure(a: argparse.Namespace) -> int:
     from . import structure
 
@@ -417,6 +423,15 @@ def build_parser() -> argparse.ArgumentParser:
     mo.add_argument("--out", help="review: the folder for the sheets (default evidence/monsters/TYPE)")
     mo.add_argument("--force", action="store_true", help="bake again even if nothing changed")
     mo.set_defaults(func=cmd_monster)
+
+    bo = sub.add_parser("boss", help="render a Boss Rush boss's fight headlessly (boss review ID)")
+    bo.add_argument("action", choices=["review"])
+    bo.add_argument("boss", help="a boss id the sim registers (Champions.Sim.BossModules)")
+    bo.add_argument("--motion", action="store_true", help="also keep a clip's frames (30 fps, 4 to 12 s)")
+    bo.add_argument("--look", choices=["default", "trailer"], default="default")
+    bo.add_argument("--out", help="the folder for the stills (default evidence/boss-rush/ID)")
+    bo.add_argument("--backend", choices=["mono", "il2cpp"], default="mono")
+    bo.set_defaults(func=cmd_boss)
 
     sr = sub.add_parser("structure", help="bake a structure kind, or review one (structure review KIND)")
     sr.add_argument("action", choices=["bake", "review"])

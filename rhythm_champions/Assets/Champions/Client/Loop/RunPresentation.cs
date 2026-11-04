@@ -38,6 +38,33 @@ namespace Champions.Client.Loop
         readonly Simulation _sim;
         readonly WorldPresenter _world;
         readonly List<IDisposable> _owned = new List<IDisposable>();
+        /// <summary>A Boss Rush fight's bodies past the first (the Wraith Council's), each with its own presenter.</summary>
+        readonly List<BossPresenter> _bodies = new List<BossPresenter>();
+        readonly Func<BossPresenter> _makeBody;
+        int _arrivals;
+
+        /// <summary>
+        /// The boss events: each of a fight's arrivals goes to its body's presenter (the first to <see cref="Boss"/>), the
+        /// fight's call to the first alone (it warms the look), everything else to every presenter (each keeps to its own).
+        /// </summary>
+        void TakeBoss(in SimEvent e)
+        {
+            if (e.Kind == SimEventKind.BossCall || e.Kind == SimEventKind.FightCall) _arrivals = 0;
+            if (e.Kind == SimEventKind.BossArrive)
+            {
+                int k = _arrivals++;
+                if (k == 0) Boss.Take(e);
+                else
+                {
+                    while (_bodies.Count < k) _bodies.Add(_makeBody());
+                    _bodies[k - 1].Take(e);
+                }
+                return;
+            }
+            Boss.Take(e);
+            if (e.Kind == SimEventKind.FightCall) return;
+            foreach (var b in _bodies) b.Take(e);
+        }
         readonly GameObject _voices;
 
         public readonly EventDispatch Dispatch = new EventDispatch();
@@ -77,6 +104,12 @@ namespace Champions.Client.Loop
             _owned.Add(Telegraphs);
             Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
             _owned.Add(Boss);
+            _makeBody = () =>
+            {
+                var b = new BossPresenter(trailer, content.Enemies, palette, null, layer);
+                _owned.Add(b);
+                return b;
+            };
             Hero = new HeroPresenter(palette, content.Hero.SpeedMps, layer, look);
             _owned.Add(Hero);
             if (config.Structures != null)
@@ -127,7 +160,11 @@ namespace Champions.Client.Loop
             if (Structures != null)
                 d.Add("structures", (in SimEvent e) => Structures.Take(e), Structures.Flush, (in PresentFrame f) => Structures.Present(f.Song, f.Camera));
             d.Add("crowd", (in SimEvent e) => Crowd.Take(e), null, (in PresentFrame f) => Crowd.Present(f.Song, f.Sim, f.Hero, f.Dt));
-            d.Add("boss", (in SimEvent e) => Boss.Take(e), null, (in PresentFrame f) => Boss.Present(f.Song, f.Sim));
+            d.Add("boss", (in SimEvent e) => TakeBoss(e), null, (in PresentFrame f) =>
+            {
+                Boss.Present(f.Song, f.Sim);
+                foreach (var b in _bodies) b.Present(f.Song, f.Sim);
+            });
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera, f.Sim));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));

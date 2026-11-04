@@ -1,5 +1,5 @@
 {
-  "note": "The hero's sounds (design.md, Sound), baked by the editor's SoundBaker into the ignored Assets/Baked/Sounds/Resources/ before every build. Each category (Client/Sound/SoundScheduler.cs's SoundKind) lists its variants by vendor file name (manifest.json's sound entries); gain is the category's level, and the aggregation multiplies it by the beat's gain (0.35 for one sound, growing with log2 of the count, at most three voices a beat). limit is the effects' level under the music, which is never ducked. Ported from game/Content/sounds.json: the swings, hits, slam and the crystal shatter are its choices; the dash's whoosh is new (game/ reused the swing), the accent under on-beat dashes is game/'s on-beat heavy swing, and the hurt is an armour hit (game/'s was a free sample).",
+  "note": "The hero's sounds (design.md, Sound), baked by the editor's SoundBaker into the ignored Assets/Baked/Sounds/Resources/ before every build. Each category (Client/Sound/SoundScheduler.cs's SoundKind) lists its variants by vendor file name (manifest.json's sound entries); gain is the category's level, and the aggregation multiplies it by the beat's gain (0.35 for one sound, growing with log2 of the count, at most three voices a beat). limit is the effects' level under the music, which is never ducked. Ported from game/Content/sounds.json: the swings, hits, slam and the crystal shatter are its choices; the dash's whoosh is new (game/ reused the swing), the accent under on-beat dashes is game/'s on-beat heavy swing, and the hurt is an armour hit (game/'s was a free sample). bosses holds the Boss Rush bosses' own banks by boss id (boss-rush.md, Sound; ps-8z4.3): entrance, tick (on each of a telegraph's beats), impact, signature (its signature mechanic's landings) and death, each a gain and its clips by the same vendor-name rule, baked as boss/ID/ROLE/variant and bound when its fight is called; a boss without a bank plays the generic sounds. The fatOgre bank is the framework's proof (the ported Ogre's fight only, never the main game's Ogre), from clips the categories already use.",
   "limit": 0.8,
   "categories": {
     "swing": { "gain": 0.6, "clips": ["SWORD_Whoosh_Hit_Armor_Hard_RR1_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR3_mono", "SWORD_Whoosh_Hit_Armor_Hard_RR5_mono"] },
@@ -13,5 +13,14 @@
     "shatter-glass": { "gain": 0.45, "clips": ["SHATTER_Glass_Medium_02_mono", "SHATTER_Glass_Medium_04_mono", "SHATTER_Glass_Medium_05_mono"] },
     "shatter-tinkle": { "gain": 0.22, "clips": ["SHATTER_Glass_Fragment_RR1_mono", "SHATTER_Glass_Fragment_RR4_mono", "SHATTER_Glass_Fragment_RR7_mono"] },
     "hurt": { "gain": 0.8, "clips": ["IMPACT_Medieval_Armor_Hit_01_mono", "IMPACT_Medieval_Armor_Hit_02_mono", "IMPACT_Medieval_Armor_Hit_03_mono"] }
+  },
+  "bosses": {
+    "fatOgre": {
+      "entrance": { "gain": 0.9, "clips": ["RPG3_ElectricMagic2_HeavyImpact02", "RPG3_ElectricMagic2_HeavyImpact03"] },
+      "tick": { "gain": 0.4, "clips": ["RPG3_GenericPunch_Impact01", "RPG3_GenericPunch_Impact02", "RPG3_GenericPunch_Impact03"] },
+      "impact": { "gain": 0.85, "clips": ["RPG3_ElectricMagic2_HeavyImpact01", "RPG3_ElectricMagic2_HeavyImpact02", "RPG3_ElectricMagic2_HeavyImpact03"] },
+      "signature": { "gain": 0.8, "clips": ["RPG3_Magic2_HeavyImpact01", "RPG3_Magic2_HeavyImpact02", "RPG3_Magic2_HeavyImpact03"] },
+      "death": { "gain": 1.0, "clips": ["RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03"] }
+    }
   }
 }

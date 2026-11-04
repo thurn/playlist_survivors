@@ -193,9 +193,14 @@ namespace Champions.Client
             {
                 Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless || _options.Mute, World = _world, MakeUi = MakeRunUi,
                 Content = _content, ContentDir = ContentDir(), Palette = _palette,
+                // `--fight ID`: the boss's fight alone, no level (no horde, no structures).
                 Run = mode.BossRush
                     ? new RunInputs { Seed = seed, BossRush = true, SurvivorWeapons = true, Start = RunStart.Immediately, RushStart = mode.From?.Clone() }
-                    : new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately },
+                    : new RunInputs
+                    {
+                        Seed = seed, Level = _options.Fight == null, SurvivorWeapons = true, Start = RunStart.Immediately,
+                        Fight = _options.Fight, FightAct = _options.FightAct,
+                    },
                 SaveRush = mode.BossRush && mode.Save && !scripted,
                 Walk = _options.Walk, Picks = _options.Picks, RecordDir = _options.Record, Flags = Environment.GetCommandLineArgs(), Look = _options.Look,
                 BuildIcons = BuildIcons,

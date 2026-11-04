@@ -60,6 +60,12 @@ namespace Champions.Client
                     // The camera eases out over the retained field, so the boss lands whole in the frame.
                     _world?.Duel(true);
                     break;
+                case SimEventKind.FightCall:
+                    // A Boss Rush fight: its arena forms now, so its look warms before it arrives (boss-rush.md, No arrival hitch).
+                    _world?.Duel(true);
+                    _id = -1;
+                    Warm(e.I0, new Vector2((float)e.D0, (float)e.D1));
+                    break;
                 case SimEventKind.BossArrive:
                     Arrive(e);
                     break;
@@ -116,6 +122,29 @@ namespace Champions.Client
 
         Color Colour() => _palette.ForType(_cast.Cast[_castIndex].Id);
 
+        int _warmType = -1;
+        Vector2 _warmAt;
+
+        /// <summary>
+        /// Draws cast <paramref name="castIndex"/>'s body (its BossEdge or MonsterEdge material) at a speck's size until it
+        /// arrives, so its pipeline state is built while the arena forms and the first full draw doesn't stutter on Metal.
+        /// The presenter of the first body warms them all: the call names the first body's cast.
+        /// </summary>
+        void Warm(int castIndex, Vector2 at)
+        {
+            var lib = _crowd?.Crowd.Library;
+            _warmType = lib != null && castIndex >= 0 ? lib.IndexOf(_cast.Cast[castIndex].Id) : -1;
+            _warmAt = at;
+        }
+
+        /// <summary>Where the boss was at song time <paramref name="t"/>: a Boss Rush fight's body, or the main game's boss.</summary>
+        static void Where(Simulation sim, int id, double t, out double x, out double y, out double facing)
+        {
+            int body = sim.Fight.IndexOf(id);
+            if (body >= 0) sim.Fight.At(body, t, out x, out y, out facing);
+            else sim.Bosses.At(t, out x, out y, out facing);
+        }
+
         /// <summary>
         /// The frame at song time <paramref name="song"/>: the boss where the sim had it then, posed, into the crowd; its
         /// death breaks it on the first frame at or after it, and it draws no more.
@@ -123,19 +152,27 @@ namespace Champions.Client
         public void Present(double song, Simulation sim)
         {
             BrokeThisFrame = false;
+            if (_warmType >= 0 && _id < 0)
+            {
+                // Below the floor and tiny: drawn (so built), never seen.
+                var speck = new MonsterInstance { Position = new Vector3(_warmAt.x, -2, _warmAt.y), Scale = 0.02f, Flags = (uint)CrowdFlags.Alive };
+                var warm = _crowd.Crowd.Instances(_warmType, 1);
+                warm[0] = speck;
+            }
+            if (_id >= 0) _warmType = -1;
             if (_id < 0 || song < _arrived) return;
             bool dead = song >= _died;
             Vector2 at;
             double facing;
             if (!dead)
             {
-                sim.Bosses.At(song, out double x, out double y, out facing);
+                Where(sim, _id, song, out double x, out double y, out facing);
                 at = new Vector2((float)x, (float)y);
             }
             else
             {
                 at = _deathAt;
-                sim.Bosses.At(_died, out _, out _, out facing);
+                Where(sim, _id, _died, out _, out _, out facing);
             }
             float dt = double.IsNaN(_lastSong) ? 0 : (float)(song - _lastSong);
             if (dt > 1e-4) _speed = Mathf.Lerp(_speed, (at - _lastAt).magnitude / dt, Mathf.Clamp01(dt * 12));

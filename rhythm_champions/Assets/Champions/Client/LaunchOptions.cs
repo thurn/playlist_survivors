@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Champions.Render;
 using Champions.Render.Crowd;
+using Champions.Sim;
 using UnityEngine;
 
 namespace Champions.Client
@@ -68,6 +69,12 @@ namespace Champions.Client
         public bool BossRush;
         /// <summary>`--boss N`: the Boss Rush from boss N (1-based) with that point's scripted reference build; 0 for none.</summary>
         public int Boss;
+        /// <summary>
+        /// `--fight ID` (and `--fight-act N`, 1 to 5): a Boss Rush boss's fight alone (Sim.BossModules), in an empty world
+        /// with no horde; null for the level. The mode shell's `--boss N` picks the boss by its place in the run instead.
+        /// </summary>
+        public string Fight;
+        public int FightAct = 1;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -92,6 +99,8 @@ namespace Champions.Client
                 Picks = a.Get("--picks"),
                 Record = a.Get("--record"),
                 ReplaySpeed = a.Double("--replay-speed", 1),
+                Fight = a.Get("--fight"),
+                FightAct = (int)a.Double("--fight-act", 1),
             };
             var mode = a.Get("--mode");
             if (mode != null && mode != "main" && mode != "bossrush") throw new ArgumentException($"--mode: {mode} is not main or bossrush");
@@ -100,6 +109,10 @@ namespace Champions.Client
             if (boss > 0 && mode == "main") throw new ArgumentException("--boss: a Boss Rush flag, not the main game's");
             o.Boss = (int)boss;
             o.BossRush = mode == "bossrush" || o.Boss > 0;
+            if (o.Fight != null && !BossModules.Has(o.Fight))
+                throw new ArgumentException($"--fight: no Boss Rush boss {o.Fight} (bosses: {string.Join(", ", BossModules.Ids)})");
+            if (o.FightAct < 1 || o.FightAct > 5) throw new ArgumentException("--fight-act: 1 to 5");
+            if (o.Fight != null && o.BossRush) throw new ArgumentException("--fight plays one fight alone: give no --mode bossrush or --boss");
             var look = a.Get("--look");
             if (look != null)
                 o.Look = look == "trailer" ? MonsterLook.Trailer : look == "default" ? MonsterLook.Default

@@ -108,8 +108,9 @@ namespace Champions.Client.Scenes
                             k.Name != "sword-feel" && k.Name != "hud-readability" && k.Name != "boss-arrival")
                             _pending.Enqueue(k.Name);
                 }
-                else if (Array.Exists(Known, k => k.Name == n)) _pending.Enqueue(n);
-                else throw new ArgumentException($"--stills-scenes: no scene {n} (scenes: all, {string.Join(", ", Array.ConvertAll(Known, k => k.Name))})");
+                else if (Array.Exists(Known, k => k.Name == n) || FightScene.BossOf(n, out _) != null) _pending.Enqueue(n);
+                else throw new ArgumentException($"--stills-scenes: no scene {n} (scenes: all, {string.Join(", ", Array.ConvertAll(Known, k => k.Name))}, " +
+                    $"and fight-ID[-motion] for the Boss Rush bosses: {string.Join(", ", BossModules.Ids)})");
             }
         }
 
@@ -123,7 +124,10 @@ namespace Champions.Client.Scenes
             {
                 if (_pending.Count == 0) return;
                 _name = _pending.Dequeue();
-                _scene = Array.Find(Known, k => k.Name == _name).Make(this);
+                string fight = FightScene.BossOf(_name, out bool motion);
+                _scene = fight != null
+                    ? new FightScene(fight, _content, _palette, _look, _contentDir, motion)
+                    : Array.Find(Known, k => k.Name == _name).Make(this);
                 _root = new GameObject("Still scene " + _name);
                 _view = new Stills.View();
                 _scene.Begin(_root.transform, _camera, _view);

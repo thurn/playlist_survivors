@@ -60,6 +60,9 @@ row done (or files a bead) after checking.
   brevity and held/resumed boss-threat readability with six weapons; the
   samples establish the curve's response, not actual run balance.
 | Lightning/Ember in a complete six-weapon run with moving bosses: judge constellation size, late field clutter, quiet reused Hit/Slam cues under music and hardware frame time. [Magic runtime evidence](magic-weapons/README.md) includes inspected normal/empowered crowd phases and actual sim-event captures, without claiming a continuous played run | Operator taste, speakers and target hardware; full-run assembly | ps-3wc.10 | pending |
+| The Boss Rush framework's look and sound in a window: `just champions-play --fight fatOgre --windowed --audio` (the ported Ogre, the framework's proof): its telegraphs read as the danger red and land on the beat you hear, a tick sounds on each telegraph beat under the music, its wave reads as a dash wave, and its phase at half health reads as a short untouchable roar ([framework](boss-rush/framework/README.md)) | A window on screen, the speakers, hand-play feel | ps-8z4.3 | pending |
+| BossEdge's six variations by eye, once a fight bead gives its boss a `BossLook` (`champions boss review <id>`): scanlines, facet glints, edge flow, glitch, ghost and ember each read as that boss's look while its lines stay closed and clean, never as noise, and no variation hides a telegraph | Judging the look | ps-8z4.3 | pending |
+| No arrival hitch on Metal: in a window, the first frame of a Boss Rush boss's arrival doesn't stutter (its look is warmed as a speck while the arena forms); if a multi-body boss or the death's shatter stutters on first draw, file a bead to warm those too | A window on screen, on a quiet machine | ps-8z4.3 | pending |
 
 - ps-3wc.12: hand-play the immediate weapon/support cards in a window using
   clicks, 1–3 and arrows/Enter; switch apps during a queued offer, resume,

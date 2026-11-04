@@ -54,6 +54,21 @@ namespace Champions.EditorTools.Sound
                     levels.Add(c.Gain);
                 }
             }
+            // The Boss Rush bosses' banks: boss/ID/ROLE/variant.
+            foreach (var boss in selection.Bosses)
+                for (int r = 1; r < boss.Value.Length; r++)
+                {
+                    var c = boss.Value[r];
+                    for (int v = 0; v < c.Clips.Length; v++)
+                    {
+                        var path = vendor[c.Clips[v]];
+                        var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path) ?? throw new Exception($"SoundBaker: {path} is not an imported audio clip");
+                        names.Add(SoundScheduler.BossClip(boss.Key, (BossSound)r, v));
+                        clips.Add(clip);
+                        onsets.Add(Onset(clip));
+                        levels.Add(c.Gain);
+                    }
+                }
             Directory.CreateDirectory(Dir);
             var bank = ScriptableObject.CreateInstance<SoundBank>();
             bank.Names = names.ToArray();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Champions.Sim;
 
 namespace Champions.Client.Sound
@@ -16,6 +17,9 @@ namespace Champions.Client.Sound
     /// - the bosses' (design.md, Sound: their telegraphs and hits), from the same bank, pitched down for their size: a low
     ///   thud as each move's telegraph starts, its landing's slam (a boulder's or fireball's heavy hit, the breath's roar of
     ///   air), the entrance's slam and accent, Break's accent, and the death's big shatter.
+    /// A Boss Rush fight's sounds come from its boss's bank (sounds.json's <c>bosses</c>, bound at its call): its entrance,
+    /// a tick on each telegraph's beats, each landing's impact (its signature mechanic's signature) and its death; a
+    /// role its bank lacks falls back to the generic sound.
     /// An event stamped before the previous frame's frontier settled in heard time (a press's re-walk): the mixer is
     /// already past most of those, so they start as soon as they can (<see cref="SoundCue.Asap"/>), never dropped. Every
     /// request goes through the beat's aggregation.
@@ -143,9 +147,21 @@ namespace Champions.Client.Sound
                 case SimEventKind.HeroDeath:
                     Shatter(e.T, 2f, 0x51ED27u ^ (uint)(e.T * 1000), asap);
                     break;
+                case SimEventKind.FightCall:
+                    // A Boss Rush fight: its own bank from now (sounds.json's bosses), the generic sounds where it has none.
+                    _scheduler.UseBoss(_sim.Fight.Module?.Id);
+                    _signatures.Clear();
+                    break;
                 case SimEventKind.BossArrive:
-                    Request(SoundKind.Slam, e.T, 1f, 0.6f, 1f, asap);
+                    Request(SoundKind.Slam, e.T, 1f, 0.6f, 1f, asap, Fight(e.I0) ? BossSound.Entrance : BossSound.None);
                     Request(SoundKind.Accent, e.T, 0.8f, 0.7f, 1f, asap);
+                    break;
+                case SimEventKind.BossTelegraph when e.I0 >= BossFight.FirstMarkId:
+                    FightTelegraph(e);
+                    break;
+                case SimEventKind.BossMove when e.I0 >= BossFight.FirstMarkId:
+                    if (e.I2 != 0) break;
+                    Request(SoundKind.Slam, e.T, 1f, OgrePitch, 1f, asap, _signatures.Remove(e.I0) ? BossSound.Signature : BossSound.Impact);
                     break;
                 case SimEventKind.BossTelegraph:
                     if (e.MarkPart == 0 || e.MarkMove == BossMove.Fireballs)
@@ -163,6 +179,7 @@ namespace Champions.Client.Sound
                 }
                 case SimEventKind.BossDeath:
                     Shatter(e.T, BossShatterSize, 0xB055u ^ (uint)(e.T * 1000), asap);
+                    if (_sim.Fight.Owns(e.I0) && _sim.Fight.Stage == FightStage.Dead) Request(SoundKind.Slam, e.T, 1f, OgrePitch, 1f, asap, BossSound.Death);
                     break;
             }
         }
@@ -195,10 +212,29 @@ namespace Champions.Client.Sound
         /// <summary>A body's pitch (playback rate) by its size: (1 / size)^0.3, within 0.8 to 1.3.</summary>
         public static float Pitch(float size) => Math.Min(1.3f, Math.Max(0.8f, (float)Math.Pow(1f / Math.Max(0.05f, size), 0.3)));
 
-        /// <summary>A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through its beat's aggregation.</summary>
-        public void Request(SoundKind kind, double t, float gain, float pitch, float strength, bool asap = false)
+        readonly HashSet<int> _signatures = new HashSet<int>();
+
+        bool Fight(int enemy) => _sim.Fight.Owns(enemy);
+
+        /// <summary>
+        /// A Boss Rush hazard's telegraph (its attack's first mark): a tick on each of its beats up to the landing, which
+        /// teach the rhythm (boss-rush.md, Sound); a signature hazard's landing is remembered for its signature sound.
+        /// </summary>
+        void FightTelegraph(in SimEvent e)
         {
-            var cue = new SoundCue { Kind = kind, Song = t, Gain = gain, Pitch = pitch, Asap = asap };
+            foreach (var h in _sim.Fight.Hazards)
+                if (h.Id == e.I0 && (h.Flags & HazardFlags.Signature) != 0) _signatures.Add(h.Id);
+            if (e.MarkPart != 0) return;
+            int last = _sim.State.LastBeat;
+            double beat = last >= 0 && _sim.State.Beat == Reliability.Reliable ? _sim.Beats.TempoAt(last) : 0.5;
+            for (double t = e.T; t < e.D0 - beat * 0.25; t += beat)
+                Request(SoundKind.Accent, t, TelegraphGain, 0.5f, 0.5f, false, BossSound.Tick);
+        }
+
+        /// <summary>A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through its beat's aggregation.</summary>
+        public void Request(SoundKind kind, double t, float gain, float pitch, float strength, bool asap = false, BossSound boss = BossSound.None)
+        {
+            var cue = new SoundCue { Kind = kind, Boss = boss, Song = t, Gain = gain, Pitch = pitch, Asap = asap };
             _aggregator.Request(cue, SoundAggregator.Bucket(_sim.Beats.Revealed, t), strength);
         }
 
