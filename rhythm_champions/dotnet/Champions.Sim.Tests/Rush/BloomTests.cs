@@ -267,13 +267,7 @@ namespace Champions.Sim.Tests
             while (!(sim.Fight.Module is BloomModule && sim.Fight.Stage == FightStage.Fighting) && sim.Now < stop)
             {
                 if (sim.State.Offer.Up) { sim.Press(Key.One, sim.Now); sim.Release(Key.One, sim.Now); }
-                if (sim.Fight.InFight && !(sim.Fight.Module is BloomModule)) Strike(sim, 1e6);
-                if (sim.Bosses.InDuel)
-                {
-                    ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
-                    sim.Strikes.Land(sim, new Blow { Shape = HitShape.Circle(b.X, b.Y, 0.1), T = sim.Now, Damage = 1e12,
-                        Tags = HitTags.Strike, Source = BlowSource.SwordSlash, Owner = -1, Part = -1 });
-                }
+                if (RushTestKit.Fighting(sim) && sim.BossRush.Slot.Id != BloomModule.ModuleId) RushTestKit.Strike(sim, 1e12);
                 sim.StepTo(sim.Now + 1.0 / 60);
             }
             Assert.IsTrue(sim.Fight.Module is BloomModule, "the run reached the Bloom");

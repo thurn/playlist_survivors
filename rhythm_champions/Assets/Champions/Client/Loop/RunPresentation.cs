@@ -83,6 +83,8 @@ namespace Champions.Client.Loop
         public readonly Effects Effects;
         /// <summary>A Boss Rush fight's sparks in its boss's hue (with the baked effects; null without).</summary>
         public readonly FightFlavour Flavour;
+        /// <summary>The Bloom's spores streaming along its arms (ps-8z4.10; with the baked effects; null without).</summary>
+        public readonly BloomSporePresenter BloomSpores;
         public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
 
@@ -137,6 +139,8 @@ namespace Champions.Client.Loop
                 _owned.Add(Effects);
                 Flavour = new FightFlavour(effects, palette, content.Enemies);
                 _owned.Add(Flavour);
+                BloomSpores = BloomSporePresenter.Create(effects, palette, content.Enemies);
+                if (BloomSpores != null) _owned.Add(BloomSpores);
             }
             else Debug.LogWarning("RunPresentation: no baked weapon effects (champions setup): the hero's effects are unseen");
             var bank = SoundBank.Load();
@@ -176,6 +180,7 @@ namespace Champions.Client.Loop
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera, f.Sim));
             if (Flavour != null) d.Add("fight flavour", (in SimEvent e) => Flavour.Take(e, _sim), null, (in PresentFrame f) => Flavour.Present(f.Song, f.Camera));
+            if (BloomSpores != null) d.Add("bloom spores", null, null, (in PresentFrame f) => BloomSpores.Present(f.Song, f.Sim, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("hive swarm", (in SimEvent e) => Swarm.Take(e), null, (in PresentFrame f) => Swarm.Present(f.Song, f.Sim, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
@@ -281,6 +286,7 @@ namespace Champions.Client.Loop
             Telegraphs.Queue(camera);
             Effects?.Queue(camera);
             Flavour?.Queue(camera);
+            BloomSpores?.Queue(camera);
             Ranged.Queue(camera);
         }
 
