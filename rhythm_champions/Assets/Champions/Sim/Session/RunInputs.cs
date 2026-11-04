@@ -40,6 +40,13 @@ namespace Champions.Sim
         /// </summary>
         public string Duel;
 
+        /// <summary>
+        /// A Boss Rush run (boss-rush.md): its acts and bosses instead of level 1, from <see cref="RushStart"/> (null: the
+        /// first boss with the plain start). Recorded from session v7.
+        /// </summary>
+        public bool BossRush;
+        public BossRushCheckpoint RushStart;
+
         /// <summary>The design's starting build.</summary>
         public static Upgrade[] StartLoadout() => new[] { Upgrade.Of(AttackKind.SwordSlash, 1) };
 
@@ -49,6 +56,16 @@ namespace Champions.Sim
         /// </summary>
         public SimConfig Build(GameContent content)
         {
+            BossRushRules rush = null;
+            BossRushCheckpoint rushStart = null;
+            if (BossRush)
+            {
+                if (Level) throw new ArgumentException("boss rush: no level 1 under it");
+                if (!SurvivorWeapons) throw new ArgumentException("boss rush: needs the survivor weapons");
+                rush = content?.BossRush?.Clone();
+                if (rush == null || rush.Count == 0) throw new ArgumentException($"boss rush: no bosses in {BossRushRules.File}");
+                rushStart = RushStart?.Clone() ?? new BossRushCheckpoint { Deaths = new int[rush.Acts.Length] };
+            }
             return new SimConfig
             {
                 Seed = Seed,
@@ -62,7 +79,7 @@ namespace Champions.Sim
                 Mods = content != null ? content.Mods.Clone() : new ModRules(),
                 Combat = content != null ? content.Combat : CombatRules.Default,
                 SurvivorWeapons = SurvivorWeapons,
-                SurvivorLoadout = (Card[])SurvivorLoadout.Clone(),
+                SurvivorLoadout = rushStart != null ? (Card[])rushStart.Build.Clone() : (Card[])SurvivorLoadout.Clone(),
                 Loadout = (Upgrade[])Loadout.Clone(),
                 Dummies = (Dummy[])Dummies.Clone(),
                 Enemies = content != null ? content.Enemies.Clone() : new EnemyRules(),
@@ -72,6 +89,8 @@ namespace Champions.Sim
                 Bosses = content != null ? content.Bosses.Clone() : new BossRules(),
                 Duel = DuelCast(content),
                 Progression = content != null ? content.Progression.Clone() : new ProgressionRules(),
+                BossRush = rush,
+                BossRushStart = rushStart,
             };
         }
 
@@ -110,6 +129,12 @@ namespace Champions.Sim
             w.Write(SurvivorWeapons);
             w.Write(SurvivorLoadout.Length);
             foreach (var card in SurvivorLoadout) w.Write(card.Code);
+            w.Write(BossRush);
+            if (BossRush)
+            {
+                w.Write(RushStart != null);
+                RushStart?.Write(w);
+            }
         }
 
         /// <summary>
@@ -158,6 +183,12 @@ namespace Champions.Sim
                         throw new FormatException($"{path}: invalid survivor loadout card {i}");
                     run.SurvivorLoadout[i] = card;
                 }
+            }
+            // Version 7 added the Boss Rush.
+            if (version >= 7)
+            {
+                run.BossRush = r.ReadBoolean();
+                if (run.BossRush && r.ReadBoolean()) run.RushStart = BossRushCheckpoint.Read(r, path);
             }
             return run;
         }

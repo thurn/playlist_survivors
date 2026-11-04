@@ -18,6 +18,10 @@ namespace Champions.Client.UI
     /// pointer. Boot begins it on the title when no music was given on the command line, else straight into the run on that
     /// music (<see cref="BeginRun"/>). A scripted run (`--walk`) never pauses on a lost focus; a batch-mode run quits a second
     /// after its end card, with 0.
+    ///
+    /// The title's Boss Rush entry (boss-rush.md, The Run) leads to the same picker for a Boss Rush run, offering first to
+    /// continue the act checkpoint saved (<see cref="RushSave"/>) or start anew. Its pause menu adds Restart act and Abandon
+    /// run; its end card offers Retry act and New run after a death, New run after the victory.
     /// </summary>
     public sealed class Flow : MonoBehaviour
     {
@@ -29,7 +33,9 @@ namespace Champions.Client.UI
 
         Camera _camera;
         WorldPresenter _world;
-        Func<MusicSource, RunSetup> _makeSetup;
+        Func<MusicSource, RunMode, RunSetup> _makeSetup;
+        RunMode _mode = RunMode.Main;
+        Sim.BossRushRules _rush;
         string _contentDir;
         bool _fixed, _direct;
         double _quitAt = double.NaN;
@@ -45,24 +51,29 @@ namespace Champions.Client.UI
         public VisualElement Top => _screens.Count > 0 ? _screens[_screens.Count - 1] : null;
 
         /// <param name="makeSetup">A run's setup on the music picked.</param>
-        public static Flow Begin(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir, bool fixedTime)
+        /// <param name="bossRush">`--mode bossrush`: the title's Boss Rush entry at once.</param>
+        public static Flow Begin(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunMode, RunSetup> makeSetup, string contentDir,
+            bool fixedTime, Sim.BossRushRules rush, bool bossRush = false)
         {
             var flow = Make(host, camera, world, makeSetup, contentDir, fixedTime);
+            flow._rush = rush;
             flow.Title();
+            if (bossRush) flow.BossRushEntry();
             return flow;
         }
 
         /// <summary>Straight into a run on <paramref name="source"/> (`--file`, `--app`): music that fails quits the player with its code.</summary>
-        public static Flow BeginRun(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir,
-            bool fixedTime, MusicSource source)
+        public static Flow BeginRun(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunMode, RunSetup> makeSetup, string contentDir,
+            bool fixedTime, MusicSource source, RunMode mode)
         {
             var flow = Make(host, camera, world, makeSetup, contentDir, fixedTime);
             flow._direct = true;
+            flow._mode = mode;
             flow.StartRun(source);
             return flow;
         }
 
-        static Flow Make(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunSetup> makeSetup, string contentDir, bool fixedTime)
+        static Flow Make(GameObject host, Camera camera, WorldPresenter world, Func<MusicSource, RunMode, RunSetup> makeSetup, string contentDir, bool fixedTime)
         {
             var flow = host.AddComponent<Flow>();
             flow._camera = camera;
@@ -95,8 +106,39 @@ namespace Champions.Client.UI
         void Title()
         {
             while (_screens.Count > 0) Pop();
-            Push(new TitleScreen(Pick, () => CalibrationChoice(overRun: false), () => Application.Quit(0)));
+            Push(new TitleScreen(() =>
+            {
+                _mode = RunMode.Main;
+                Pick();
+            }, BossRushEntry, () => CalibrationChoice(overRun: false), () => Application.Quit(0)));
         }
+
+        /// <summary>The title's Boss Rush: continue the saved act checkpoint or start anew, then the music.</summary>
+        void BossRushEntry()
+        {
+            var saved = RushSave.Load();
+            if (saved == null)
+            {
+                _mode = new RunMode { BossRush = true, Save = true };
+                Pick();
+                return;
+            }
+            Push(new MenuScreen(new[]
+            {
+                new MenuList.Row("Continue  " + RushSummary.Place(ActOf(saved), saved.Boss), () =>
+                {
+                    _mode = new RunMode { BossRush = true, Save = true, From = saved };
+                    Pick();
+                }),
+                new MenuList.Row("New run", () =>
+                {
+                    _mode = new RunMode { BossRush = true, Save = true };
+                    Pick();
+                }),
+            }, Pop, overRun: false));
+        }
+
+        int ActOf(Sim.BossRushCheckpoint c) => _rush != null && c.Boss < _rush.Count ? _rush.Bosses[c.Boss].Act : 0;
 
         void Pick() => Push(new MusicPicker(() => Plugin.ListApps(), app => StartRun(MusicSource.App(app)), ChooseFile, Pop));
 
@@ -110,7 +152,7 @@ namespace Champions.Client.UI
         {
             while (_screens.Count > 0) Pop();
             Debug.Log($"Flow: a run on {source.Tag}");
-            _run = GameLoop.Begin(gameObject, _camera, _makeSetup(source), RunFailed);
+            _run = GameLoop.Begin(gameObject, _camera, _makeSetup(source, _mode), RunFailed);
             _run.Ended += ShowEnd;
         }
 
@@ -139,7 +181,20 @@ namespace Champions.Client.UI
         {
             if (_run.Scripted) return;
             _run.Pause();
-            Push(new PauseMenu(Resume, () => CalibrationChoice(overRun: true), EndRun));
+            if (!_run.Rush)
+            {
+                Push(new PauseMenu(Resume, () => CalibrationChoice(overRun: true), EndRun));
+                return;
+            }
+            Push(new PauseMenu(Resume, () => CalibrationChoice(overRun: true), EndRun, () =>
+            {
+                Pop();
+                _run.RestartAct();
+            }, () =>
+            {
+                _run.AbandonRush();
+                EndRun();
+            }));
         }
 
         void Resume()
@@ -175,6 +230,12 @@ namespace Champions.Client.UI
         /// </summary>
         public void ShowEnd(EndSummary summary, Action again)
         {
+            if (summary.Rush != null)
+            {
+                summary.Rush.Rows.Clear();
+                if (!summary.Victory) summary.Rush.Rows.Add(new MenuList.Row("Retry act", () => { Pop(); _run?.RetryAct(); }));
+                summary.Rush.Rows.Add(new MenuList.Row("New run", () => { Pop(); _run?.NewRush(); }));
+            }
             Push(new EndCard(summary, Icon.Load(_contentDir, "time"), Icon.Load(_contentDir, "kills"), () =>
             {
                 Pop();

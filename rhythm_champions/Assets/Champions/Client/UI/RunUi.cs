@@ -74,7 +74,20 @@ namespace Champions.Client.UI
             var s = sim.Snapshot();
             Indicator.Present(now, s, sim.Beats, camera);
             Hud.Present(s, BossBar.Of(s, _palette, _content));
+            Hud.Banner(ActCard(s));
             Cards.Present(now);
+        }
+
+        /// <summary>
+        /// A Boss Rush act's card (boss-rush.md, Flow): its number and name between acts, and while an act's first arena
+        /// forms; null otherwise.
+        /// </summary>
+        string ActCard(in SimSnapshot s)
+        {
+            if (!s.Rush || s.RushAct < 0) return null;
+            var rush = _content.BossRush;
+            bool card = s.RushStage == BossRushStage.ActCard || s.RushStage == BossRushStage.Forming && rush.FirstOf(s.RushAct) == s.RushBoss;
+            return card ? $"ACT {s.RushAct + 1}\n{rush.Acts[s.RushAct].Name.ToUpperInvariant()}" : null;
         }
 
         public void Dispose()

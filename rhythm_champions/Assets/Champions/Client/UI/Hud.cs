@@ -35,7 +35,7 @@ namespace Champions.Client.UI
     {
         readonly VisualElement _xp, _boss, _health;
         readonly Image _orb;
-        readonly Label _healthText, _timer;
+        readonly Label _healthText, _timer, _banner;
         readonly Material _liquid;
         readonly RenderTexture _texture;
 
@@ -60,6 +60,10 @@ namespace Champions.Client.UI
             _timer = new Label { pickingMode = PickingMode.Ignore };
             _timer.AddToClassList("hud__timer");
             Add(_timer);
+            _banner = new Label { pickingMode = PickingMode.Ignore };
+            _banner.AddToClassList("hud__banner");
+            _banner.style.display = DisplayStyle.None;
+            Add(_banner);
             _boss = new VisualElement { pickingMode = PickingMode.Ignore };
             _boss.AddToClassList("hud__boss");
             Add(_boss);
@@ -78,7 +82,21 @@ namespace Champions.Client.UI
             Graphics.Blit(null, _texture, _liquid);
             RenderTexture.active = previous;
             _healthText.text = $"{System.Math.Ceiling(System.Math.Max(0, s.HeroHealth)):0} / {s.HeroMaxHealth:0}";
-            _timer.text = ClockText(s.HordeClock, s.BossElapsed, boss.Up);
+            _timer.text = s.Rush ? RushClockText(s.RushAct, s.RushBoss, s.BossElapsed) : ClockText(s.HordeClock, s.BossElapsed, boss.Up);
+        }
+
+        /// <summary>The Boss Rush's clock (boss-rush.md, Differences): ACT 1 · BOSS 2  01:07, no horde clock.</summary>
+        public static string RushClockText(int act, int boss, double fight)
+        {
+            int seconds = (int)System.Math.Floor(System.Math.Max(0, fight) + 1e-7);
+            return $"{RushSummary.Place(act, boss)}  {seconds / 60:00}:{seconds % 60:00}";
+        }
+
+        /// <summary>The act card's text over the arena (null hides it).</summary>
+        public void Banner(string text)
+        {
+            _banner.style.display = text != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (text != null) _banner.text = text;
         }
 
         public static string ClockText(double horde, double fight, bool boss)

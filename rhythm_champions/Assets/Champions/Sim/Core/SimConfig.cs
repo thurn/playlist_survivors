@@ -62,6 +62,13 @@ namespace Champions.Sim
         /// <summary>A scripted duel: the cast index of the boss called at the start (<see cref="RunInputs.Duel"/>), or -1.</summary>
         public int Duel = -1;
 
+        /// <summary>The Boss Rush (Content/bossrush.json), or null: the main game.</summary>
+        public BossRushRules BossRush;
+
+        /// <summary>A Boss Rush's start: the boss, build and progress it starts at (an act's checkpoint, `--boss N`'s
+        /// reference); null starts at the first boss with the plain start.</summary>
+        public BossRushCheckpoint BossRushStart;
+
         /// <summary>The experience curve and held levels' rules (Content/progression.json).</summary>
         public ProgressionRules Progression = new ProgressionRules();
 

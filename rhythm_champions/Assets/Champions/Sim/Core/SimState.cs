@@ -115,6 +115,10 @@ namespace Champions.Sim
         public double Experience, ExperienceNeeded;
         public int HeldLevels;
         public Offer Offer;
+        /// <summary>A Boss Rush run (<see cref="Sim.BossRush"/>): its stage, and the boss and act now (0-based; -1 outside one).</summary>
+        public bool Rush;
+        public BossRushStage RushStage;
+        public int RushBoss, RushAct;
 
         public bool Held => Phase != RunPhase.Playing || Holds != 0;
 

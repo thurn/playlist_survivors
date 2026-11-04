@@ -168,7 +168,7 @@ namespace Champions.Client.Scenes
             {
                 case 0: break;
                 case 1:
-                    _menus.Root.Add(new TitleScreen(None, None, None));
+                    _menus.Root.Add(new TitleScreen(None, None, None, None));
                     break;
                 case 2:
                     _menus.Root.Add(new MusicPicker(() => new[] { new Plugin.App(1, "Spotify"), new Plugin.App(2, "Music"), new Plugin.App(3, "Safari") },

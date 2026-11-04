@@ -61,6 +61,8 @@ namespace Champions.Sim
         public double DuelElapsed => InDuel ? Math.Max(0, sim.State.RunClock - arrivedClock) : 0;
         double x, y;
         double nextMoveAt;
+        /// <summary>The called boss's health in place of its cast's (a Boss Rush slot's); NaN for the cast's.</summary>
+        double healthOverride = double.NaN;
         Telegraph roar, stagger;
         double lastDodgedBeat = double.NaN;
 
@@ -164,7 +166,7 @@ namespace Champions.Sim
         // ---- Calling and arriving ----
 
         /// <summary>Calls boss <paramref name="castIndex"/>: the spawner stops and the boss comes.</summary>
-        internal void Call(int castIndex, double t)
+        internal void Call(int castIndex, double t, double health = double.NaN)
         {
             var type = rules.Of(castIndex);
             if (type == null) throw new ArgumentException($"cast type {castIndex} has no duel in {BossRules.File}");
@@ -175,6 +177,7 @@ namespace Champions.Sim
             turn = fanTurn = 0;
             Break = 0;
             Called++;
+            healthOverride = health;
             calledClock = sim.State.RunClock;
             sim.Horde.Spawner?.Stop();
             sim.Emit(SimEvent.BossCall(t, castIndex, calledClock));
@@ -214,8 +217,9 @@ namespace Champions.Sim
             reinforcementSlot = 0;
             arrivalClock = sim.State.RunClock;
             if (sim.Dashes.Rules.LegacyForms) sim.StructureField?.Duel(true);
-            Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, type.Health, Type.Cast + 1, boss: true);
-            MaxHealth = type.Health;
+            double health = double.IsNaN(healthOverride) ? type.Health : healthOverride;
+            Id = sim.Enemies.Spawn(sim, x, y, type.RadiusM, health, Type.Cast + 1, boss: true);
+            MaxHealth = health;
             Stage = BossStage.Roaring;
             arrivedClock = sim.State.RunClock + Math.Max(0, t - sim.Now);
             roar = Plan(t, rules.RoarBeats);
@@ -417,6 +421,12 @@ namespace Champions.Sim
             Stage = BossStage.Dead;
             Walking = false;
             sim.Emit(SimEvent.BossDeath(t, Id, Type.Cast, Type.Death, x, y, dx, dy));
+            // The Boss Rush's own sequence takes every kill: no treasure of the main game's, no victory but its last.
+            if (sim.BossRush != null)
+            {
+                sim.BossRush.BossDied(t, x, y);
+                return;
+            }
             sim.Health.HealBossKill(sim);
             sim.StructureField?.Duel(false);
             Died?.Invoke(sim, Type);

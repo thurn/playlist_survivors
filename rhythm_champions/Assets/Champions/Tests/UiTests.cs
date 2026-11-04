@@ -369,12 +369,20 @@ namespace Champions.Tests
             Assert.That(Hud.ClockText(horde, boss, up), Is.EqualTo(expected));
         }
 
+        [Test]
+        public void TheBossRushClockShowsTheActTheBossAndTheFightTime()
+        {
+            Assert.That(Hud.RushClockText(0, 1, 67.4), Is.EqualTo("ACT 1 · BOSS 2  01:07"));
+            Assert.That(Hud.RushClockText(4, 24, 0), Is.EqualTo("ACT 5 · BOSS 25  00:00"));
+            Assert.That(RushSummary.DeathsText(new[] { 1, 0, 2, 0, 0 }), Is.EqualTo("1 · 0 · 2 · 0 · 0"));
+        }
+
         /// <summary>Every screen, built as the game builds it, by name.</summary>
         IEnumerable<(string Name, VisualElement Screen)> Screens()
         {
             void None() { }
             var apps = new[] { new Plugin.App(1, "Spotify"), new Plugin.App(2, "Google Chrome Helper") };
-            yield return ("title", new TitleScreen(None, None, None));
+            yield return ("title", new TitleScreen(None, None, None, None));
             yield return ("picker", new MusicPicker(() => apps, _ => { }, None, None));
             yield return ("picker, nothing playing", new MusicPicker(() => Array.Empty<Plugin.App>(), _ => { }, None, None));
             yield return ("pause", new PauseMenu(None, None, None));
@@ -386,6 +394,13 @@ namespace Champions.Tests
                 var summary = new EndSummary { Victory = victory, CombatSeconds = 847.3, Kills = 2318 };
                 summary.Build.AddRange(new[] { "sword-form-1", "bow-form-2", "orbitBlades-form-3", "tempo" }.Select(n => _faces.Icons[n]));
                 yield return (victory ? "victory" : "death", new EndCard(summary, Icon.Load(ContentDir, "time"), Icon.Load(ContentDir, "kills"), None, None));
+            }
+            foreach (bool victory in new[] { true, false })
+            {
+                var summary = new EndSummary { Victory = victory, CombatSeconds = 3712, Kills = 0, Rush = new RushSummary { Act = 2, Boss = 12, Deaths = new[] { 1, 0, 2, 0, 0 } } };
+                if (!victory) summary.Rush.Rows.Add(new MenuList.Row("Retry act", None));
+                summary.Rush.Rows.Add(new MenuList.Row("New run", None));
+                yield return (victory ? "boss rush victory" : "boss rush death", new EndCard(summary, Icon.Load(ContentDir, "time"), Icon.Load(ContentDir, "kills"), None, None));
             }
         }
 
@@ -421,14 +436,14 @@ namespace Champions.Tests
         public void TheMenusMoveAndChooseByKeys()
         {
             var chosen = new List<string>();
-            var title = new TitleScreen(() => chosen.Add("play"), () => chosen.Add("calibrate"), () => chosen.Add("quit"));
+            var title = new TitleScreen(() => chosen.Add("play"), () => chosen.Add("bossRush"), () => chosen.Add("calibrate"), () => chosen.Add("quit"));
             Assert.That(title.Menu.Focused, Is.Zero, "Play first");
             title.Key(MenuKey.Down);
             title.Key(MenuKey.Choose);
             title.Key(MenuKey.Up);
             title.Key(MenuKey.Up); // wraps to Quit
             title.Key(MenuKey.Choose);
-            Assert.That(chosen, Is.EqualTo(new[] { "calibrate", "quit" }));
+            Assert.That(chosen, Is.EqualTo(new[] { "bossRush", "quit" }));
             bool back = false;
             var picker = new MusicPicker(Array.Empty<Plugin.App>, _ => { }, () => chosen.Add("file"), () => back = true);
             Assert.That(picker.Menu.LabelAt(picker.Menu.Focused).text, Is.EqualTo(MusicPicker.FileRow), "the note is passed over");
@@ -479,7 +494,8 @@ namespace Champions.Tests
                 foreach (var text in Texts(screen).Where(t => !apps.Contains(t)))
                     Assert.That(CardFaces.Words(text), Is.LessThanOrEqualTo(CardFaces.LineWords), $"{name}: \"{text}\"");
                 int words = Texts(screen).Where(t => !apps.Contains(t)).Sum(CardFaces.Words);
-                int budget = name == "victory" || name == "death" ? 1 : name == "title" ? 8 : 14;
+                // The title's two words more since the Boss Rush entry (boss-rush.md, Starting points for testing).
+                int budget = name == "victory" || name == "death" ? 1 : name == "title" ? 10 : 14;
                 Assert.That(words, Is.LessThanOrEqualTo(budget), $"{name}: {string.Join(" / ", Texts(screen))}");
             }
             var endCard = Screens().Single(s => s.Name == "death").Screen;

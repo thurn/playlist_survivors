@@ -59,6 +59,20 @@ namespace Champions.Sim
 
         int killsForHealing;
 
+        /// <summary>A Boss Rush checkpoint's progress at the run's start: its level, XP toward the next, its held levels
+        /// (their offers open as play starts) and its max-health fallbacks.</summary>
+        internal void Restore(Simulation sim, int level, double experience, int held, int fallbacks)
+        {
+            if (level < 1 || held < 0 || fallbacks < 0 || !(experience >= 0)) throw new ArgumentException("boss rush start: progress out of range");
+            state.Level = level;
+            state.ExperienceNeeded = rules.Needed(level);
+            state.Experience = experience;
+            state.HeldLevels = held;
+            if (held > 0) heldAt = state.RunClock;
+            Fallbacks = fallbacks;
+            for (int i = 0; i < fallbacks; i++) sim.Health.GrowFallback();
+        }
+
         internal void CollectExperience(Simulation sim, double gain, double t)
         {
             if (!(gain > 0)) return;

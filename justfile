@@ -29,6 +29,12 @@ champions *args:
     {{champions}} build
     {{champions}} play {{champions_audio}} "$@"
 
+# The Boss Rush (docs/champions/boss-rush.md): set up if needed, build and play it, with player flags (--boss N, --file PATH)
+[group('champions')]
+champions-bossrush *args:
+    {{champions}} build
+    {{champions}} play {{champions_audio}} --mode bossrush "$@"
+
 # Set up if needed, then build the player (--backend il2cpp, --development, --force, --clean-cache)
 [group('champions')]
 champions-build *args:

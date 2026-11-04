@@ -174,7 +174,7 @@ namespace Champions.Tests
         {
             var ui = CardsUp();
             var menus = Keep(new UiPanel(_host.transform, "Pointer tests menus", Flow.Order));
-            var title = new TitleScreen(() => { }, () => { }, () => { });
+            var title = new TitleScreen(() => { }, () => { }, () => { }, () => { });
             menus.Root.Add(title);
             yield return null; // the panels' layout
             var sim = Playing(); // the UI's cards over a world that is not held: only the pick keeps them from the ground

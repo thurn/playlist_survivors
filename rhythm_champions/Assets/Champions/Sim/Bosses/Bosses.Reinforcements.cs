@@ -53,7 +53,8 @@ namespace Champions.Sim
         // for the whole warning plus a two-second approach. Three weak bodies occupy one sector.
         bool Reinforce(double t)
         {
-            if (sim.Dashes.Rules.LegacyForms) return false;
+            // Boss Rush adds are a boss's own mechanic, inside its XP budget (boss-rush.md): no main-game reinforcements.
+            if (sim.Dashes.Rules.LegacyForms || sim.BossRush != null) return false;
             if (reinforcing)
             {
                 if (sim.Telegraphs.LandTime(reinforcement.Telegraph) > t + 1e-9) return true;

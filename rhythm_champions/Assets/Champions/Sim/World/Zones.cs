@@ -1,3 +1,5 @@
+using System;
+
 namespace Champions.Sim
 {
     /// <summary>Why the zone key changed (<see cref="SimEvent.Zone"/>'s I2).</summary>
@@ -10,6 +12,8 @@ namespace Champions.Sim
         Timer = 2,
         /// <summary>The dragon's entrance: the warm key, for good.</summary>
         Warm = 3,
+        /// <summary>A Boss Rush act begins: its floor key, for the act.</summary>
+        Act = 4,
     }
 
     /// <summary>
@@ -81,6 +85,19 @@ namespace Champions.Sim
                 : rules.BeatlessFadeS;
             Change(sim, t, fade, rules.Warm, ZoneReason.Warm);
             Locked = true;
+        }
+
+        /// <summary>A Boss Rush act begins at <paramref name="t"/>: its floor key <paramref name="key"/>, crossfading over a
+        /// beat (the beatless fallback without one), held until the next act's.</summary>
+        internal void Hold(Simulation sim, double t, int key)
+        {
+            if (key < 0 || key >= rules.Keys) throw new ArgumentOutOfRangeException(nameof(key), $"zone key {key} of {rules.Keys}");
+            Locked = true;
+            if (key == Key) return;
+            double fade = sim.State.Beat == Reliability.Reliable && sim.State.LastBeat >= 0
+                ? sim.Beats.PeriodOf(sim.State.LastBeat)
+                : rules.BeatlessFadeS;
+            Change(sim, t, fade, key, ZoneReason.Act);
         }
 
         void Plan(ZoneReason reason)

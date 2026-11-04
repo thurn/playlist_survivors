@@ -64,6 +64,10 @@ namespace Champions.Client
         /// <summary>`--replay DIR[,DIR...]`: recorded sessions played again, at `--replay-speed X` song seconds per frame's 1/60 s.</summary>
         public string[] Replay = Array.Empty<string>();
         public double ReplaySpeed = 1;
+        /// <summary>`--mode bossrush` (or `--boss N`): the Boss Rush (boss-rush.md) instead of level 1; `--mode main` is the default.</summary>
+        public bool BossRush;
+        /// <summary>`--boss N`: the Boss Rush from boss N (1-based) with that point's scripted reference build; 0 for none.</summary>
+        public int Boss;
         /// <summary>A note for each argument the game read none of: an unknown flag, a missing value, a stray argument.</summary>
         public string[] Unrecognized;
 
@@ -89,6 +93,13 @@ namespace Champions.Client
                 Record = a.Get("--record"),
                 ReplaySpeed = a.Double("--replay-speed", 1),
             };
+            var mode = a.Get("--mode");
+            if (mode != null && mode != "main" && mode != "bossrush") throw new ArgumentException($"--mode: {mode} is not main or bossrush");
+            double boss = a.Double("--boss", 0);
+            if (boss != Math.Floor(boss) || boss < 0) throw new ArgumentException($"--boss: {boss} is not a boss number from 1");
+            if (boss > 0 && mode == "main") throw new ArgumentException("--boss: a Boss Rush flag, not the main game's");
+            o.Boss = (int)boss;
+            o.BossRush = mode == "bossrush" || o.Boss > 0;
             var look = a.Get("--look");
             if (look != null)
                 o.Look = look == "trailer" ? MonsterLook.Trailer : look == "default" ? MonsterLook.Default

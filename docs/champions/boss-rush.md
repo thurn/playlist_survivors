@@ -134,6 +134,29 @@ The music never pauses for any of this. Checkpoints are written at act start.
 - The title screen gets a **Boss Rush** entry. `just champions-bossrush` is
   the human-facing recipe (audio on, like `just champions`).
 
+### The shell, as built (ps-8z4.1)
+
+- `Content/bossrush.json` holds the acts (name, kit, floor key) and the 25
+  slots in order, each with `health` (null keeps the fighter's own) and its
+  whole XP `experience` budget. The progression bead fills both.
+- **Landing a fight**: a slot is fought by its own boss once its id is an
+  `enemies.json` cast with a `bosses.json` duel (or whatever registration
+  the boss framework replaces that with, in `BossRushRules.Read`). Until
+  then its `standIn`, one of the main game's three bosses, fights there.
+  `"unlanded": "skip"` passes unlanded slots over instead.
+- The sequence is the sim's `BossRush` module: forming (4 beats, the
+  beatless fallback's without a beat), the call and fight, the reward
+  (whatever XP the boss hasn't `Shed` drops at the kill, every gem is
+  magnetised, full heal, the reward card, the level-ups) and the act card
+  (3 s, Enter or Space skips). Each stage is a `RushStage` event with the
+  hero's position, for the arenas to form round it.
+- Main-game reinforcements are off; the floor key is held per act.
+- Checkpoints are `BossRushCheckpoint`s: taken as each act begins, saved by
+  the client to `bossrush.checkpoint` in the player's data folder (also
+  after a death; removed by victory or Abandon run). A retry is a new sim
+  on the same music from the checkpoint, recorded in the session's inputs
+  (session v7). `--boss N` and scripted runs never touch the save.
+
 ## Progression
 
 - **Shedding.** At 90%, 80% … 10% of health the boss bursts a gem cluster

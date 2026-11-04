@@ -1,0 +1,62 @@
+{
+  "note": "Boss Rush (docs/champions/boss-rush.md): the five acts and the 25 bosses in their fixed order. A boss whose id has no duel yet (no enemies.json cast with a bosses.json duel) is played by its standIn, a main-game boss; unlanded 'skip' passes such slots over instead. health null keeps the fighter's own; experience is the boss's whole XP budget, whatever it hasn't shed is dropped at the kill and magnetised. Placeholder numbers until the progression bead (ps-8z4.4) fills the tables. zone is the act's floor key (an index into palette.json's zones).",
+  "formBeats": 4,
+  "actCardS": 3,
+  "unlanded": "standIn",
+  "reference": {
+    "levelsPerBoss": 2,
+    "stepsPerBoss": 3,
+    "order": [
+      "sword",
+      "might",
+      "bow",
+      "tempo",
+      "lightning",
+      "reach",
+      "orbitBlades",
+      "vitality",
+      "hammer",
+      "multishot",
+      "emberField",
+      "stride",
+      "spear",
+      "armor",
+      "sentinel",
+      "regeneration"
+    ]
+  },
+  "acts": [
+    {"id": "overgrownGrid", "name": "Overgrown Grid", "kit": "overgrownGrid", "zone": 1},
+    {"id": "sunkenSands", "name": "Sunken Sands", "kit": "sunkenSands", "zone": 3},
+    {"id": "undercroft", "name": "The Undercroft", "kit": "undercroft", "zone": 2},
+    {"id": "frostFirePeaks", "name": "Frost & Fire Peaks", "kit": "frostFirePeaks", "zone": 0},
+    {"id": "signal", "name": "The Signal", "kit": "signal", "zone": 2}
+  ],
+  "bosses": [
+    {"id": "treasureGoblin", "name": "The Treasure Goblin", "act": 1, "standIn": "fatOgre", "health": null, "experience": 129},
+    {"id": "hiveQueen", "name": "The Hive Queen", "act": 1, "standIn": "fatOgre", "health": null, "experience": 61},
+    {"id": "bloom", "name": "The Bloom", "act": 1, "standIn": "conductor", "health": null, "experience": 85},
+    {"id": "rootwarden", "name": "The Rootwarden", "act": 1, "standIn": "conductor", "health": null, "experience": 118},
+    {"id": "moonhowl", "name": "Moonhowl", "act": 1, "standIn": "dragon", "health": null, "experience": 164},
+    {"id": "sandwyrm", "name": "The Sandwyrm", "act": 2, "standIn": "fatOgre", "health": null, "experience": 228},
+    {"id": "bandagedKing", "name": "The Bandaged King", "act": 2, "standIn": "fatOgre", "health": null, "experience": 318},
+    {"id": "gorgon", "name": "The Gorgon", "act": 2, "standIn": "conductor", "health": null, "experience": 442},
+    {"id": "judge", "name": "The Judge", "act": 2, "standIn": "conductor", "health": null, "experience": 616},
+    {"id": "chimera", "name": "The Chimera", "act": 2, "standIn": "dragon", "health": null, "experience": 858},
+    {"id": "hoard", "name": "The Hoard", "act": 3, "standIn": "fatOgre", "health": null, "experience": 1194},
+    {"id": "weaver", "name": "The Weaver", "act": 3, "standIn": "fatOgre", "health": null, "experience": 1663},
+    {"id": "watcher", "name": "The Watcher", "act": 3, "standIn": "conductor", "health": null, "experience": 2316},
+    {"id": "wraithCouncil", "name": "The Wraith Council", "act": 3, "standIn": "conductor", "health": null, "experience": 3224},
+    {"id": "demonLord", "name": "The Demon Lord", "act": 3, "standIn": "dragon", "health": null, "experience": 4489},
+    {"id": "rimeGolem", "name": "The Rime Golem", "act": 4, "standIn": "fatOgre", "health": null, "experience": 6251},
+    {"id": "magmaHeart", "name": "The Magma Heart", "act": 4, "standIn": "fatOgre", "health": null, "experience": 8704},
+    {"id": "griffin", "name": "The Griffin", "act": 4, "standIn": "conductor", "health": null, "experience": 12119},
+    {"id": "dragonide", "name": "The Dragonide", "act": 4, "standIn": "conductor", "health": null, "experience": 16875},
+    {"id": "peakDragon", "name": "The Peak Dragon", "act": 4, "standIn": "dragon", "health": null, "experience": 23496},
+    {"id": "broodMother", "name": "The Brood Mother", "act": 5, "standIn": "fatOgre", "health": null, "experience": 32716},
+    {"id": "strider", "name": "The Strider", "act": 5, "standIn": "fatOgre", "health": null, "experience": 45554},
+    {"id": "mirror", "name": "The Mirror", "act": 5, "standIn": "conductor", "health": null, "experience": 63430},
+    {"id": "telekinetic", "name": "The Telekinetic", "act": 5, "standIn": "conductor", "health": null, "experience": 88320},
+    {"id": "titan", "name": "The Titan", "act": 5, "standIn": "dragon", "health": null, "experience": 122977}
+  ]
+}

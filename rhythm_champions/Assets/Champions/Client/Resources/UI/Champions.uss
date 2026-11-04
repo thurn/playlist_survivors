@@ -214,6 +214,18 @@
     font-size: 38px;
 }
 
+.endcard__place {
+    font-size: 30px;
+    letter-spacing: 6px;
+    color: rgb(244, 248, 255);
+    -unity-font-style: bold;
+    margin-bottom: 18px;
+}
+
+.endcard--unlit .endcard__place {
+    color: rgba(244, 248, 255, 0.4);
+}
+
 .endcard__build {
     flex-direction: row;
     margin: 44px 0 52px 0;
@@ -328,4 +340,18 @@
     -unity-text-align: middle-center;
     background-color: rgba(3, 4, 8, 0.85);
     border-radius: 6px;
+}
+
+/* The Boss Rush act card (boss-rush.md, Flow): the act's number and name over the forming arena. */
+.hud__banner {
+    position: absolute;
+    top: 26%;
+    left: 20%;
+    width: 60%;
+    color: rgb(244, 248, 255);
+    font-size: 44px;
+    letter-spacing: 10px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 18px rgba(244, 248, 255, 0.5);
 }

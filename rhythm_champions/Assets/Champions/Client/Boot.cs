@@ -27,6 +27,8 @@ namespace Champions.Client
     /// - `--file PATH` or `--app NAME`: level 1 straight away on that music, played 3 s late through the music plugin, its
     ///   entries feeding the sim (<see cref="GameLoop"/>) through the run's flow (<see cref="Flow.BeginRun"/>: pause, the end
     ///   card, Again); a source that can't play quits with 2;
+    /// - `--mode bossrush`: the Boss Rush (boss-rush.md): the title's Boss Rush entry, or with music its run straight away;
+    ///   `--boss N` starts it at boss N with that point's scripted reference build (never saved over the act checkpoint);
     /// - `--seed N`: the run's seed (a scripted run's defaults to 1, a played one's to the clock);
     /// - `--walk idle|reference|KEYS` and `--picks 1,2,..|reference`: the scripted player (<see cref="ScriptedPlayer"/>);
     /// - `--record DIR`: the first run's session recorded into DIR (the plugin's entries and audio, then its inputs);
@@ -154,16 +156,36 @@ namespace Champions.Client
                     Application.Quit(2);
                     return;
                 }
-                _flow = Flow.BeginRun(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime, source);
+                RunMode mode;
+                try { mode = LaunchMode(); }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    Debug.LogError("Boot: --boss: " + e.Message);
+                    enabled = false;
+                    Application.Quit(2);
+                    return;
+                }
+                _flow = Flow.BeginRun(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime, source, mode);
             }
-            else if (_world != null) _flow = Flow.Begin(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime);
+            else if (_world != null) _flow = Flow.Begin(gameObject, _camera, _world, MakeSetup, ContentDir(), _options.FixedTime, _content.BossRush, _options.BossRush);
             if (_stills != null && _flow != null) _stills.Requeue = () => _flow.Run?.Presentation?.Queue(_camera);
         }
 
         RunUi MakeRunUi() => new RunUi(transform, _palette, _content, _faces, _camera.gameObject.layer);
 
-        /// <summary>A run's setup on <paramref name="source"/>: level 1 from the first offer on the flags' seed, scripts and record.</summary>
-        RunSetup MakeSetup(MusicSource source)
+        /// <summary>The command line's run with music: the main game, or the Boss Rush new or from `--boss N`'s reference.</summary>
+        RunMode LaunchMode()
+        {
+            if (!_options.BossRush) return RunMode.Main;
+            if (_options.Boss == 0) return new RunMode { BossRush = true, Save = true };
+            return new RunMode { BossRush = true, From = _content.BossRush.ReferenceCheckpoint(_options.Boss - 1, _content.Combat) };
+        }
+
+        /// <summary>
+        /// A run's setup on <paramref name="source"/> in <paramref name="mode"/>: level 1 (or the Boss Rush) on the flags' seed,
+        /// scripts and record. A scripted Boss Rush never touches the saved act checkpoint.
+        /// </summary>
+        RunSetup MakeSetup(MusicSource source, RunMode mode)
         {
             bool scripted = _options.Walk != null || _options.Picks != null;
             ulong seed = _options.Seed ?? (scripted ? 1UL : (ulong)DateTime.UtcNow.Ticks);
@@ -171,7 +193,10 @@ namespace Champions.Client
             {
                 Source = source, FixedTime = _options.FixedTime, Mute = _options.Headless || _options.Mute, World = _world, MakeUi = MakeRunUi,
                 Content = _content, ContentDir = ContentDir(), Palette = _palette,
-                Run = new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately },
+                Run = mode.BossRush
+                    ? new RunInputs { Seed = seed, BossRush = true, SurvivorWeapons = true, Start = RunStart.Immediately, RushStart = mode.From?.Clone() }
+                    : new RunInputs { Seed = seed, Level = true, SurvivorWeapons = true, Start = RunStart.Immediately },
+                SaveRush = mode.BossRush && mode.Save && !scripted,
                 Walk = _options.Walk, Picks = _options.Picks, RecordDir = _options.Record, Flags = Environment.GetCommandLineArgs(), Look = _options.Look,
                 BuildIcons = BuildIcons,
             };

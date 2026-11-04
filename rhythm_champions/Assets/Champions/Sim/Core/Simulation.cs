@@ -111,6 +111,7 @@ namespace Champions.Sim
                 Constructs = new ConstructWeapons(this);
                 Magic = new MagicWeapons(this);
             }
+            if (config.BossRush != null) BossRush = new BossRush(this, config);
         }
 
         public SimState State { get; }
@@ -155,6 +156,9 @@ namespace Champions.Sim
         public RangedWeapons Ranged { get; }
         public ConstructWeapons Constructs { get; }
         public MagicWeapons Magic { get; }
+
+        /// <summary>The Boss Rush's sequence of acts and bosses (<see cref="SimConfig.BossRush"/>); null in the main game.</summary>
+        public BossRush BossRush { get; }
 
         /// <summary>Experience, held levels, the offers and the card moment, and treasure.</summary>
         public Progression Progression { get; }
@@ -210,6 +214,7 @@ namespace Champions.Sim
                 }
                 if (Progression.Fallbacks > 0) h = Hashing.Fold(h, (ulong)(uint)Progression.Fallbacks);
                 if (Pickups.ExperienceDropped > 0 || Pickups.StoredCount > 0 || Pickups.FlyingCount > 0) h = Pickups.Fold(h);
+                if (BossRush != null) h = BossRush.FoldHash(h);
                 if (Constructs != null) h = Constructs.FoldHash(h);
                 h = Weapons.FoldHash(h);
                 if (Ranged != null) h = Ranged.FoldHash(h);
@@ -251,6 +256,12 @@ namespace Champions.Sim
                 if (key == Key.F && (pressedKeys & bit) != 0) { Diagnose(key, heard, "held-key", Judge(heard)); return; }
                 pressedKeys |= bit;
                 if ((blockedKeys & bit) != 0) { if (key == Key.Space || key == Key.F) Diagnose(key, heard, "blocked-key", Judge(heard)); return; }
+            }
+            if (BossRush != null && BossRush.Press(key))
+            {
+                if (!dashes.Rules.LegacyForms) blockedKeys |= bit;
+                if (key == Key.Space) Diagnose(key, heard, "card-input", Judge(heard));
+                return;
             }
             if (Progression.Press(this, key))
             {
@@ -441,6 +452,10 @@ namespace Champions.Sim
                 ExperienceNeeded = State.ExperienceNeeded,
                 HeldLevels = State.HeldLevels,
                 Offer = State.Offer,
+                Rush = BossRush != null,
+                RushStage = BossRush?.Stage ?? BossRushStage.Act,
+                RushBoss = BossRush?.Boss ?? -1,
+                RushAct = BossRush?.Act ?? -1,
             };
         }
 
@@ -499,6 +514,7 @@ namespace Champions.Sim
             Ranged?.Tick(end);
             horde.Tick(end);
             Bosses.Tick(end);
+            BossRush?.Tick(end);
             StructureField?.Tick(this, end);
             Zones.Tick(this, end);
             Pickups.Tick(this);
@@ -519,6 +535,7 @@ namespace Champions.Sim
             Weapons.Beat(t, i);
             horde.Beat(t, i);
             Bosses.Beat(t, i, downbeat);
+            BossRush?.Beat(t);
             Zones.Beat(this, t, Beats.PeriodOf(i));
             Cadenced(t, i, Cadence.OnBeat(i, t, State.Beat == Reliability.Reliable));
         }

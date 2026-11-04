@@ -74,6 +74,7 @@ namespace Champions.Sim
         ConstructAction,
         MagicAction,
         LightningLink,
+        RushStage,
     }
 
     /// <summary>
@@ -135,6 +136,14 @@ namespace Champions.Sim
             D0 = x, D1 = y, D2 = dx, D3 = dy, D4 = radius, D5 = duration };
 
         static SimEvent Of(SimEventKind kind, double t) => new SimEvent { Kind = kind, T = t };
+
+        /// <summary>
+        /// A Boss Rush stage begins (<see cref="BossRush"/>): I0 the <see cref="BossRushStage"/>, I1 the boss (0-based),
+        /// I2 its act (0-based); D0 how long it lasts as planned (s; the form's beats at the tempo now, the act card's
+        /// seconds; 0 when open-ended); D1/D2 the hero's position (the arena forms round it).
+        /// </summary>
+        public static SimEvent RushStage(double t, BossRushStage stage, int boss, int act, double forS, double heroX, double heroY) => new SimEvent
+        { Kind = SimEventKind.RushStage, T = t, I0 = (int)stage, I1 = boss, I2 = act, D0 = forS, D1 = heroX, D2 = heroY };
 
         /// <summary>Survivor weapon upgrade: I0 WeaponKind, I1 level, I2 zero-based form; D0 previous level.</summary>
         public static SimEvent WeaponUpgrade(double t, WeaponKind kind, int level, int previous)

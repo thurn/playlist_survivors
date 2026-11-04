@@ -8,12 +8,12 @@ using UnityEngine.UIElements;
 
 namespace Champions.Client.UI
 {
-    /// <summary>The title (design.md, The Run > Starting): the name over the void, then Play, Calibrate, Quit.</summary>
+    /// <summary>The title (design.md, The Run > Starting): the name over the void, then Play, Boss Rush (boss-rush.md), Calibrate, Quit.</summary>
     public sealed class TitleScreen : VisualElement, IMenuScreen
     {
         public readonly MenuList Menu = new MenuList();
 
-        public TitleScreen(Action play, Action calibrate, Action quit)
+        public TitleScreen(Action play, Action bossRush, Action calibrate, Action quit)
         {
             AddToClassList("screen");
             AddToClassList("screen--void");
@@ -25,7 +25,11 @@ namespace Champions.Client.UI
             column.Add(new Label("WASD→move  Space→dash  F→cleave") { pickingMode = PickingMode.Ignore });
             column.Add(Menu);
             Add(column);
-            Menu.Set(new[] { new MenuList.Row("Play", play), new MenuList.Row("Calibrate", calibrate), new MenuList.Row("Quit", quit) });
+            Menu.Set(new[]
+            {
+                new MenuList.Row("Play", play), new MenuList.Row("Boss Rush", bossRush), new MenuList.Row("Calibrate", calibrate),
+                new MenuList.Row("Quit", quit),
+            });
         }
 
         public bool Key(MenuKey key) => Menu.Key(key);
@@ -139,7 +143,8 @@ namespace Champions.Client.UI
 
     /// <summary>
     /// The pause menu (design.md, The Run > Pauses), over the held world: Resume, Calibrate, Quality (Left and Right or
-    /// a choice step through the tiers, <see cref="QualityTiers"/>, remembered), End run. Esc resumes.
+    /// a choice step through the tiers, <see cref="QualityTiers"/>, remembered), End run; in a Boss Rush also Restart act
+    /// and Abandon run (boss-rush.md, Pause, death and victory). Esc resumes.
     /// </summary>
     public sealed class PauseMenu : VisualElement, IMenuScreen
     {
@@ -147,7 +152,7 @@ namespace Champions.Client.UI
         readonly Action _resume;
         const int QualityRow = 2;
 
-        public PauseMenu(Action resume, Action calibrate, Action endRun)
+        public PauseMenu(Action resume, Action calibrate, Action endRun, Action restartAct = null, Action abandonRun = null)
         {
             _resume = resume;
             AddToClassList("screen");
@@ -156,11 +161,14 @@ namespace Champions.Client.UI
             var column = TitleScreen.Column();
             column.Add(Menu);
             Add(column);
-            Menu.Set(new[]
+            var rows = new List<MenuList.Row>
             {
                 new MenuList.Row("Resume", resume), new MenuList.Row("Calibrate", calibrate),
                 new MenuList.Row(QualityText(QualityTiers.Current), null, Step), new MenuList.Row("End run", endRun),
-            });
+            };
+            if (restartAct != null) rows.Add(new MenuList.Row("Restart act", restartAct));
+            if (abandonRun != null) rows.Add(new MenuList.Row("Abandon run", abandonRun));
+            Menu.Set(rows);
         }
 
         static string QualityText(Tier tier) => "Quality " + tier;
@@ -188,6 +196,27 @@ namespace Champions.Client.UI
         public double CombatSeconds;
         public int Kills;
         public readonly List<Icon> Build = new List<Icon>();
+        /// <summary>A Boss Rush's result, or null in the main game.</summary>
+        public RushSummary Rush;
+    }
+
+    /// <summary>
+    /// A Boss Rush's end card (boss-rush.md, Pause, death and victory): the act and boss reached, 0-based; deaths per act;
+    /// <see cref="EndSummary.CombatSeconds"/> is the whole run's time. Its rows replace Again: Retry act and New run after
+    /// a death, New run after the victory.
+    /// </summary>
+    public sealed class RushSummary
+    {
+        public int Act, Boss;
+        public int[] Deaths = Array.Empty<int>();
+        public readonly List<MenuList.Row> Rows = new List<MenuList.Row>();
+
+        /// <summary>The top-centre clock's place: ACT 2 · BOSS 7.</summary>
+        public static string Place(int act, int boss) =>
+            "ACT " + (act + 1).ToString(CultureInfo.InvariantCulture) + " · BOSS " + (boss + 1).ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>Deaths per act: 1 · 0 · 2 · 0 · 0.</summary>
+        public static string DeathsText(int[] deaths) => string.Join(" · ", Array.ConvertAll(deaths, d => d.ToString(CultureInfo.InvariantCulture)));
     }
 
     /// <summary>
@@ -210,8 +239,20 @@ namespace Champions.Client.UI
             var column = TitleScreen.Column();
             column.AddToClassList("endcard");
             var tint = summary.Victory ? Color.white : Unlit;
+            if (summary.Rush != null)
+            {
+                var place = new Label(summary.Victory ? "BOSS RUSH" : RushSummary.Place(summary.Rush.Act, summary.Rush.Boss)) { pickingMode = PickingMode.Ignore };
+                place.AddToClassList("endcard__place");
+                column.Add(place);
+            }
             column.Add(Stat(timeIcon, Time(summary.CombatSeconds), "endcard__time", tint));
-            column.Add(Stat(killsIcon, summary.Kills.ToString("N0", CultureInfo.InvariantCulture), "endcard__kills", tint));
+            if (summary.Rush != null && summary.Victory)
+            {
+                var deaths = new Label("DEATHS  " + RushSummary.DeathsText(summary.Rush.Deaths)) { pickingMode = PickingMode.Ignore };
+                deaths.AddToClassList("endcard__place");
+                column.Add(deaths);
+            }
+            else column.Add(Stat(killsIcon, summary.Kills.ToString("N0", CultureInfo.InvariantCulture), "endcard__kills", tint));
             var build = new VisualElement { pickingMode = PickingMode.Ignore };
             build.AddToClassList("endcard__build");
             foreach (var icon in summary.Build)
@@ -223,7 +264,8 @@ namespace Champions.Client.UI
             column.Add(build);
             column.Add(Menu);
             Add(column);
-            Menu.Set(new[] { new MenuList.Row("Again", again) });
+            if (summary.Rush != null) Menu.Set(summary.Rush.Rows);
+            else Menu.Set(new[] { new MenuList.Row("Again", again) });
         }
 
         /// <summary>A run clock as minutes and seconds: 14:07.</summary>

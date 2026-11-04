@@ -12,6 +12,17 @@ using UnityEngine;
 
 namespace Champions.Client.Loop
 {
+    /// <summary>Which game a run from the title or the command line plays: the main game, or the Boss Rush from a checkpoint.</summary>
+    public sealed class RunMode
+    {
+        public static readonly RunMode Main = new RunMode();
+        public bool BossRush;
+        /// <summary>The Boss Rush's start (a saved checkpoint, `--boss N`'s reference), or null for its first boss.</summary>
+        public BossRushCheckpoint From;
+        /// <summary>The act checkpoints are saved (<see cref="RushSave"/>): not for `--boss N` or a scripted run.</summary>
+        public bool Save;
+    }
+
     /// <summary>What a run is played on: its music (or the session it replays), its content, inputs and scripts.</summary>
     public sealed class RunSetup
     {
@@ -39,6 +50,8 @@ namespace Champions.Client.Loop
         public MonsterLook Look;
         /// <summary>The end card's build icons from the run's sim, or null for none.</summary>
         public Func<Simulation, List<Icon>> BuildIcons;
+        /// <summary>A Boss Rush keeps its act checkpoint on disk (<see cref="RushSave"/>).</summary>
+        public bool SaveRush;
         /// <summary>The command line, for a session's run.json.</summary>
         public string[] Flags = Array.Empty<string>();
     }
@@ -88,7 +101,7 @@ namespace Champions.Client.Loop
         RunSetup _setup;
         MusicPlayer _music;
         MusicTimes _musicTimes;
-        bool _fixed, _done, _summarised, _deviceNoted, _playingNoted, _endShown, _recorded;
+        bool _fixed, _done, _summarised, _deviceNoted, _playingNoted, _endShown, _recorded, _rushSaved;
         double _openedAt, _nextStatus, _frame0;
         Action<int, string> _finished;
         Camera _camera;
@@ -115,6 +128,9 @@ namespace Champions.Client.Loop
         public PointerInput Pointer { get; } = new PointerInput();
         /// <summary>The run is scripted (`--walk`/`--picks`) or replayed: no player's input reaches it.</summary>
         public bool Scripted => _script != null || _replay != null;
+
+        /// <summary>The run is a Boss Rush (boss-rush.md).</summary>
+        public bool Rush => _run != null && _run.BossRush;
 
         /// <summary>The run ended: its end card's summary, and Again (a new run on the same music).</summary>
         public event Action<EndSummary, Action> Ended;
@@ -215,7 +231,7 @@ namespace Champions.Client.Loop
             Log("Run diagnostics: {0}; summary: {0}.summary; error: {1}", _diagnostics.Path, _diagnostics.Error ?? "none");
             _presentation.Dispatch.Add("loop", (in SimEvent e) => Take(sim, e));
             Log("Run: {0} {1}, seed {2}, {3}, from song {4:F3} s{5}{6}", _replay != null ? "replaying" : "run", _runs, _config.Seed,
-                _config.Level != null ? "level 1" : "no level", _config.StartTime, _config.Start == RunStart.FirstOffer ? ", the first offer up" : "",
+                _config.BossRush != null ? $"boss rush from boss {_config.BossRushStart.Boss + 1}" : _config.Level != null ? "level 1" : "no level", _config.StartTime, _config.Start == RunStart.FirstOffer ? ", the first offer up" : "",
                 _script != null ? $", scripted ({_script.Kind}{(_setup.Picks != null ? ", picks " + _setup.Picks : "")})" : "");
         }
 
@@ -357,6 +373,13 @@ namespace Champions.Client.Loop
                 case SimEventKind.BossDeath:
                     Log("Run: the boss dies at run clock {0:F1} s", sim.State.RunClock);
                     break;
+                case SimEventKind.RushStage:
+                    var rush = _config.BossRush;
+                    Log("Run: boss rush {0}, act {1} ({2}), boss {3} ({4}, fought by {5}), at run clock {6:F1} s, level {7}",
+                        ((BossRushStage)e.I0).ToString().ToLowerInvariant(), e.I2 + 1, rush.Acts[e.I2].Name, e.I1 + 1, rush.Bosses[e.I1].Id,
+                        _config.Enemies.Cast[rush.Bosses[e.I1].Cast].Id, sim.State.RunClock, sim.State.Level);
+                    if ((BossRushStage)e.I0 == BossRushStage.Act && _setup.SaveRush) RushSave.Save(sim.BossRush.Checkpoint);
+                    break;
                 case SimEventKind.HeroHit when e.D0 > 0:
                     _hurt[(HitSource)e.I1] = _hurt.TryGetValue((HitSource)e.I1, out int n) ? n + 1 : 1;
                     break;
@@ -388,9 +411,22 @@ namespace Champions.Client.Loop
             if (s.Phase != RunPhase.Ended || _endShown || _replay != null) return;
             if (s.End != RunEnd.Victory && s.End != RunEnd.Death) return;
             Record();
+            var rush = Driver.Sim.BossRush;
+            if (rush != null && !_rushSaved && _setup.SaveRush)
+            {
+                // Quitting at the death card keeps the act, with the death counted; a victory ends the run for good.
+                _rushSaved = true;
+                if (s.End == RunEnd.Death) RushSave.Save(rush.Retry(death: true));
+                else RushSave.Delete();
+            }
             if (Driver.Times.FrameSong < s.EndedAt + EndCardAfter) return;
             _endShown = true;
             var summary = new EndSummary { Victory = s.End == RunEnd.Victory, CombatSeconds = s.RunClock, Kills = _presentation.Kills };
+            if (rush != null)
+            {
+                summary.CombatSeconds = rush.TotalTime;
+                summary.Rush = new RushSummary { Act = rush.Act, Boss = rush.Boss, Deaths = s.End == RunEnd.Death ? rush.Retry(death: true).Deaths : rush.Deaths };
+            }
             if (_setup.BuildIcons != null) summary.Build.AddRange(_setup.BuildIcons(Driver.Sim));
             Log("Run: the {0} card shows at song {1:F3} s", summary.Victory ? "victory" : "death", Driver.Times.FrameSong);
             Ended?.Invoke(summary, Again);
@@ -404,6 +440,34 @@ namespace Champions.Client.Loop
             _presentation.Ui?.Dispose();
             Keys.Resume();
             Begin(Driver.Clock, null);
+        }
+
+        /// <summary>Retry act (the death card): the act again from its checkpoint, the death counted.</summary>
+        public void RetryAct() => RestartRush(Driver?.Sim.BossRush?.Retry(death: Driver.Sim.State.End == RunEnd.Death));
+
+        /// <summary>Restart act (the pause menu): the act again from its checkpoint; the time spent counts, no death does.</summary>
+        public void RestartAct() => RestartRush(Driver?.Sim.BossRush?.Retry(death: false));
+
+        /// <summary>New run (the end card): the Boss Rush from its first boss with the plain start.</summary>
+        public void NewRush() => RestartRush(null);
+
+        /// <summary>Abandon run (the pause menu): the saved checkpoint goes; the flow ends the run.</summary>
+        public void AbandonRush()
+        {
+            if (_setup.SaveRush) RushSave.Delete();
+        }
+
+        void RestartRush(BossRushCheckpoint from)
+        {
+            if (_done || Driver == null || _replay != null || !Rush) return;
+            if (Driver.Sim.State.Phase != RunPhase.Ended)
+            {
+                Driver.Sim.Control(RunControl.Quit, Driver.Times.Heard);
+                Record();
+            }
+            _run.RushStart = from;
+            _rushSaved = false;
+            Again();
         }
 
         /// <summary>The first run's session into `--record`'s folder, beside the plugin's record of its music, once.</summary>

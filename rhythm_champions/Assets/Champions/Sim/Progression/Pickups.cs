@@ -43,6 +43,20 @@ namespace Champions.Sim
             sim.Emit(SimEvent.Pickup(SimEventKind.PickupDrop, sim.Now, p));
         }
 
+        /// <summary>Every stored drop flies to the hero now, wherever it lies (a Boss Rush kill's magnet).</summary>
+        internal void AttractAll(Simulation sim)
+        {
+            if (stored.Count == 0) return;
+            var all = new List<Pickup>(stored.Values);
+            all.Sort((a, b) => a.Id.CompareTo(b.Id));
+            stored.Clear();
+            foreach (var p in all)
+            {
+                flying.Add(p);
+                sim.Emit(SimEvent.Pickup(SimEventKind.PickupAttract, sim.Now, p));
+            }
+        }
+
         /// <summary>Bounded local preview, not an ownership transfer. Undrawn value remains stored.</summary>
         public int Preview(double x, double y, double radius, Pickup[] output)
         {

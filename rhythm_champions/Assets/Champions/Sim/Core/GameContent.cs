@@ -22,6 +22,7 @@ namespace Champions.Sim
         public StructureRules Structures = new StructureRules();
         public BossRules Bosses = new BossRules();
         public ProgressionRules Progression = new ProgressionRules();
+        public BossRushRules BossRush = new BossRushRules();
 
         /// <summary>Loads the content folder <paramref name="dir"/>.</summary>
         public static GameContent Load(string dir)
@@ -41,6 +42,7 @@ namespace Champions.Sim
             };
             content.Level = LevelRules.Read(Parse(dir, LevelRules.File), LevelRules.File, content.Enemies);
             content.Bosses = BossRules.Read(Parse(dir, BossRules.File), BossRules.File, content.Enemies);
+            content.BossRush = BossRushRules.Read(Parse(dir, BossRushRules.File), BossRushRules.File, content.Enemies, content.Bosses);
             foreach (var b in content.Level.Bosses)
                 if (content.Bosses.Of(b.Cast) == null)
                     throw new ContentException($"{LevelRules.File}.bosses: {content.Enemies.Cast[b.Cast].Id} has no duel in {BossRules.File}");
