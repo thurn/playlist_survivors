@@ -146,6 +146,20 @@
         { "kind": "lantern", "at": [-6.75, -11.69] },
         { "kind": "stump", "at": [6.75, -11.69] }
       ]
+    },
+    {
+      "id": "bloom",
+      "outline": { "radiusM": 17 },
+      "heroStart": [0, -8],
+      "bossStart": [0, 0],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "fernTree", "at": [11.3, 11.3] },
+        { "kind": "fernTree", "at": [-11.3, 11.3] },
+        { "kind": "fernTree", "at": [-11.3, -11.3] },
+        { "kind": "fernTree", "at": [11.3, -11.3] }
+      ]
     }
   ]
 }

@@ -58,6 +58,10 @@ sealed class BloomModule : BossModule
   `Charge`, `Dive`, `Breath` with a sweep, `Fans`, `Wave` with fronts spaced for the dash, `Wall`) and new ones
   (`Beam`, `Shot`, `Volley`). Their shapes are the main game's own functions (`SmashLine`, `ChargeLine`, `Boulder`,
   `Fan`), which `Bosses.Moves` now draws with too. Body helpers on `BossFight`: `Follow`, `MoveBody`, `Face`, `HeroAt`.
+  `Beam`, `Wave`, `Shot` and `Volley` take an optional `move` (the clip it plays: the boss animator plays the clip role
+  of a hazard's `BossMove` at its part 0's landing, e.g. `Breath` → `breath`, `Smash` → `smash`, `Stomp` → `stomp`,
+  `Fireballs` → `fireball`; ps-8z4.10). The scripted reference player (`positioning`) treats a fight's lead body as
+  its duel's boss, so reference-build runs engage landed fights.
 - **Phases**: below each `PhasesBelow` share the fight calls off its hazards, emits `BossPhase`, holds the boss
   untouchable for `TransitionBeats`, and calls `PhaseBegins` (lay a set-piece there).
 - **Several bodies** (the Wraith Council): `Bodies` lists `BodySpec(cast, x, y, share)`; each has its own health

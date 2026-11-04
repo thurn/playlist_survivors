@@ -481,6 +481,22 @@ mechanic at a time, generous telegraphs.
    - Look: petals as faceted fans that open on the beat. Sound: a breathy
      pulse, wet snaps.
    - Inspiration: Cuphead's Cagney Carnation, bullet-hell spirals.
+   - **As built (ps-8z4.10)**: `BloomModule` (`Sim/Rush/BloomModule.cs`),
+     violet (the accent family), in its own arena `bloom`: a ring 34 m
+     across, rooted at its centre, four tree ferns by the wall. Its arms
+     (the signature) are lines of spores from the root to the wall, a new
+     set landing on every downbeat where the last bar's have turned to,
+     each bar's speed and direction its own and the tip never faster than
+     the walk. Phase 1 teaches three steady arms alone, then plays the
+     spore spiral (rings of shots on consecutive beats, each turned a
+     quarter gap further), arms that reverse on the bar and the pulse (the
+     dash-through wave, a ring from the root faster than any walk). The
+     bite (a cone at whoever stands within 5.5 m, on the half beat) joins
+     every move but the lesson and the pulse. Below half health it
+     blossoms (four untouchable beats): four arms changing speed and
+     direction every bar, denser spirals and a two-front pulse. Its XP
+     bursts fling seeds along a spiral arm. Evidence:
+     [evidence/boss-rush/bloom/](../../rhythm_champions/evidence/boss-rush/bloom/README.md).
 4. **The Rootwarden** — *Echo eruptions.*
    - Source: `Polygonal Creatures Pack/Polygonal Treant/Prefabs/Polygonal Treant Green.prefab`
      (+ its Root and Projectile Seed prefabs). Clips: Root Attack,

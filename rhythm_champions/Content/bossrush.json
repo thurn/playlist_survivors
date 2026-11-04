@@ -22,7 +22,7 @@
   "bosses": [
     {"id": "treasureGoblin", "name": "The Treasure Goblin", "act": 1, "standIn": "fatOgre", "arena": "goblinGrove", "levels": 3, "targetS": 120.0, "health": 204, "experience": 157.625},
     {"id": "hiveQueen", "name": "The Hive Queen", "act": 1, "standIn": "fatOgre", "arena": "hiveClearing", "levels": 3, "targetS": 122.5, "health": 735, "experience": 182.471},
-    {"id": "bloom", "name": "The Bloom", "act": 1, "standIn": "conductor", "levels": 3, "targetS": 125.0, "health": 1262, "experience": 211.233},
+    {"id": "bloom", "name": "The Bloom", "act": 1, "standIn": "conductor", "arena": "bloom", "levels": 3, "targetS": 125.0, "health": 1262, "experience": 211.233},
     {"id": "rootwarden", "name": "The Rootwarden", "act": 1, "standIn": "conductor", "levels": 3, "targetS": 127.5, "health": 1441, "experience": 244.529},
     {"id": "moonhowl", "name": "Moonhowl", "act": 1, "standIn": "dragon", "levels": 3, "targetS": 130.0, "health": 1664, "experience": 283.072},
     {"id": "sandwyrm", "name": "The Sandwyrm", "act": 2, "standIn": "fatOgre", "levels": 2, "targetS": 132.5, "health": 1776, "experience": 213.091},

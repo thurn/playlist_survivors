@@ -38,6 +38,7 @@
     "dragon": "boss.body",
     "conductor": "enemies.counter.amber",
     "treasureGoblin": "enemies.counter.amber",
-    "hiveQueen": "enemies.accent.magenta"
+    "hiveQueen": "enemies.accent.magenta",
+    "bloom": "enemies.accent.violet"
   }
 }

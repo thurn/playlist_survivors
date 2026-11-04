@@ -133,6 +133,7 @@ namespace Champions.Sim
             // Act 1, Overgrown Grid.
             { TreasureGoblinModule.ModuleId, () => new TreasureGoblinModule() },
             { HiveQueenModule.ModuleId, () => new HiveQueenModule() },
+            { BloomModule.ModuleId, () => new BloomModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

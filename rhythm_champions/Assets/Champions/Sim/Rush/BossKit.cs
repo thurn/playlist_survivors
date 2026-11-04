@@ -150,12 +150,13 @@ namespace Champions.Sim
         /// (a clock-hand laser, a spiral arm).
         /// </summary>
         public static int Beam(BossFight f, int body, double x, double y, double angle, double lengthM, double widthM, double spinRadPerS,
-            double activeS, double damage, int beats, Landing landing = Landing.Beat, int attack = -1)
+            double activeS, double damage, int beats, Landing landing = Landing.Beat, int attack = -1, BossMove move = BossMove.None,
+            HazardFlags flags = HazardFlags.None, int part = 0)
         {
             if (attack < 0) attack = f.NextAttack();
             f.Add(new Hazard
             {
-                Attack = attack, Body = body, Telegraph = f.Plan(beats, landing),
+                Attack = attack, Body = body, Part = part, Move = move, Flags = flags, Telegraph = f.Plan(beats, landing),
                 Shape = HitShape.Path(x, y, x + SimMath.Cos(angle) * lengthM, y + SimMath.Sin(angle) * lengthM, widthM),
                 Damage = damage, ActiveS = activeS, SpinRadPerS = spinRadPerS,
             });
@@ -214,11 +215,11 @@ namespace Champions.Sim
         /// <paramref name="angle"/>, travelling continuously for <paramref name="rangeM"/>.
         /// </summary>
         public static int Shot(BossFight f, int body, double x, double y, double angle, double speedMps, double radiusM, double rangeM,
-            double damage, in Telegraph tel, int attack, int part = 0)
+            double damage, in Telegraph tel, int attack, int part = 0, BossMove move = BossMove.None)
         {
             f.Add(new Hazard
             {
-                Attack = attack, Body = body, Part = part, Telegraph = tel, Shape = HitShape.Circle(x, y, radiusM), Damage = damage,
+                Attack = attack, Body = body, Part = part, Move = move, Telegraph = tel, Shape = HitShape.Circle(x, y, radiusM), Damage = damage,
                 ActiveS = rangeM / speedMps, Vx = SimMath.Cos(angle) * speedMps, Vy = SimMath.Sin(angle) * speedMps,
                 Flags = HazardFlags.Projectile,
             });
@@ -227,13 +228,13 @@ namespace Champions.Sim
 
         /// <summary>A ring of <paramref name="count"/> shots from the body, evenly spaced from angle <paramref name="turn"/>, launching together.</summary>
         public static int Volley(BossFight f, int body, int count, double speedMps, double radiusM, double rangeM, double damage, int beats,
-            double turn = 0, Landing landing = Landing.Beat)
+            double turn = 0, Landing landing = Landing.Beat, int attack = -1, BossMove move = BossMove.None)
         {
             ref readonly var b = ref f.Bodies[body];
             var tel = f.Plan(beats, landing);
-            int attack = f.NextAttack();
+            if (attack < 0) attack = f.NextAttack();
             for (int k = 0; k < count; k++)
-                Shot(f, body, b.X, b.Y, turn + 2 * Math.PI * k / count, speedMps, radiusM, rangeM, damage, tel, attack, k);
+                Shot(f, body, b.X, b.Y, turn + 2 * Math.PI * k / count, speedMps, radiusM, rangeM, damage, tel, attack, k, move);
             return attack;
         }
 

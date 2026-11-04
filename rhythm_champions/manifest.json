@@ -608,6 +608,125 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Bite.FBX",
+      "sourceSha256": "ac123f453faae4f07736e434c757b7de28edc0b2d0adf6f11b3b70419c3f8215",
+      "guid": "0d96b23a3b1e47948b06bcd177736055",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@BreathAttack.FBX",
+      "sourceSha256": "573a70443aef78f2feccf2d4ebf958c1c8c35d784839c632ff7e9c4bbc5995dd",
+      "guid": "203601c39b585b246a24d74cd5864a1c",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@BreathAttackSurround.FBX",
+      "sourceSha256": "81702cd5f81c96a72e2eec99b25c697c7517ab21c172c471850a01a9f88a0e03",
+      "guid": "f7d1b73230e70cd4f95346675d4244f3",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Die.FBX",
+      "sourceSha256": "76db5b4312333958a67db4e283429c74e96e71a6e7d29aa65c94db73ef4aefbd",
+      "guid": "cd02eb76bdad0c140b62214036ef4f25",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Idle.FBX",
+      "sourceSha256": "dff96d67db14908269793abdac5861930e82267db02ea70ad8b7b45dc705efaa",
+      "guid": "08c4201d81a1ace4eb0b2a9c74e17b63",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Sleeping.FBX",
+      "sourceSha256": "dc831595857a1a02720ed80fda0fdf5bcde7e4c6d8d494a4bc70827891d9ba31",
+      "guid": "192ccfdb1cc5e3247ae230d71c3f3a9e",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@SpellCast.FBX",
+      "sourceSha256": "00783ab713d911cc9b0e250e43f7a343dd6f2436b2d4d4e4fd69605ade1b853f",
+      "guid": "8dc97ec6939f38d40b3e924be390bdf9",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Strafe Left W Root.FBX",
+      "sourceSha256": "43ba9346e248a647561b221faff0007d9b0ed031e4580a2be8adf75d5aa05a15",
+      "guid": "3f51f1cadc68b8e419ba8fd607ab401a",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Strafe Left WO Root.FBX",
+      "sourceSha256": "56f7b9b45c0fb940b04d1d96f5d962ede8e50356a227410212ffd27b74365676",
+      "guid": "8336f3dac1600684f96d8b30fd41b63a",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Strafe Right W Root.FBX",
+      "sourceSha256": "af7191a8d61aedf256b777004b3f07a9e5ce12b635d69f147bce23bcc2399180",
+      "guid": "4638b8937a6f26b49a3f57ddac3240ca",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Strafe Right WO Root.FBX",
+      "sourceSha256": "95db6e92f5c6ad10ae49d652fcbdf0ab3cfa4dfc4b4802b36ad0254cf7eddb8b",
+      "guid": "8d93b56592a8cc34f8f88c1e3804ef28",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Takedamage.FBX",
+      "sourceSha256": "bd224e874196afdbef18bdbcc35e311e6bd9dd5c685a3991f40eaa68181afd6d",
+      "guid": "f16a66f4b4f50e545a531e96a18c55a3",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Walk Backward W Root.FBX",
+      "sourceSha256": "4e5a3be9feba2f04441c2a3ab53d4093ebe8fa62a663344695c95c026112b4e5",
+      "guid": "dc2f7762c97384a448c1120fba2cceac",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Walk Backward WO Root.FBX",
+      "sourceSha256": "32524f82afe25732a91bec4a74720d14db2fa7beac66813c3e8e73dca2ec1634",
+      "guid": "9e2a5a2a49661934589b163ca2d09f58",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Walk Forward With Root.FBX",
+      "sourceSha256": "211941211cddb9e53d5bb9554a80cf649b18666e2f06515128e82699f5408c23",
+      "guid": "53122bef1f125df448ef97c1b0384ae8",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/FBX/Carnivorous Plant@Walk Forward Without Root.FBX",
+      "sourceSha256": "6455bca505db9e87166dda955eea145b24b37ea8dedbbdbf9fe9455c129294da",
+      "guid": "39b380a07fa7cfa44b59fd41d1826657",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Carnivorous Plant/Prefabs/Carnivorous Plant-Red.prefab",
+      "sourceSha256": "29776245832e80d013091e867d34f8b54ae5a839f4ef6ba607ac4dd7d2ea38cb",
+      "guid": "cadcb599959802e4fb420b27154c611d",
+      "use": "Boss Rush boss 3: the Bloom"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Die.FBX",
       "sourceSha256": "c018369c07d782c34f1b396cc71edfec647d28c339f372f285292cfcf02f4080",
       "guid": "3a6df8120ce7cfd45987a26b868bbfcb",
@@ -1252,6 +1371,41 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicEpic_Cast02.wav",
+      "sourceSha256": "7d9b646bd2060f266319d768af1367e4cc752d13f858120416c0620e04d8df3a",
+      "guid": "eda416fccaf084fd9a655225a68bcb0c",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicEpic_Projectiles01.wav",
+      "sourceSha256": "2a5b3396dfb69cc123ae8e093d2f6fe3853914e6cc8bdffbc2d59ab0195465c5",
+      "guid": "0c6602d453e624c5f8d1224100f753a1",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicEpic_Projectiles02.wav",
+      "sourceSha256": "46e5d045b6690705f96cb519b36c044b3d5d81016ae16707d293fa6c9900f1f7",
+      "guid": "cf30490a5ad7340afb6c652b152f360d",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicMisc_AttackMissed01.wav",
+      "sourceSha256": "df6c26200fa7a08e1d08e5768cad2b745f48ce7f8f6b254510e0aa4d8bd37f15",
+      "guid": "b2364c2ff57cc4d55864486d351f45f3",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicMisc_AttackMissed03.wav",
+      "sourceSha256": "a5c059240b957770632e719da9e496070a8670f93548eda30c187f9d7c9a445b",
+      "guid": "cb3d122d82ee042d28ea3f49c110d1d2",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_08_mono.wav",
       "sourceSha256": "1dd25f612bc40cb7856c024ddef53437f170b6e8696d8bc04085ae76630fe123",
       "guid": "31431dd904a555c4286c962aedb0e591",
@@ -1329,10 +1483,52 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_01_mono.wav",
+      "sourceSha256": "7f3704580c5c7685dff7c8f6b7f1e2a2cfc8a442ce1b1c9a30a40c376e60f7d8",
+      "guid": "50caa75b5cfa7ee44beb46360a6fb978",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_02_mono.wav",
+      "sourceSha256": "098c22b9efe79c0ebbe6a619c6bbd89ebec352ed46b7902e5ed835a23baf1f11",
+      "guid": "cb5ef2be79f390644a36c94d7ddeadd4",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Blade_Chop_mono.wav",
       "sourceSha256": "4a3203011e74a0f54e897194030ecd3762e46ca0e43bffe8744b9529c45ff2f7",
       "guid": "5de35d095a26a5042a71af599850b917",
       "use": "sound: the hero's hits"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Deep_Short_Snap_01_mono.wav",
+      "sourceSha256": "1c70c3ba4d1931db745eaf58ffdba9b4e5631ee88eecfb801f31df14fcb6f8a1",
+      "guid": "ad7f8c8a5fda9df4a91d7bf8e828ebaf",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_High_Medium_Squish_Snap_01_mono.wav",
+      "sourceSha256": "3a51a2058c61576340b5d612421a116d5bed4a58a0968895ae57633412ae7751",
+      "guid": "77ca787555daf3a4cba2ddec6bd72be7",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Mid_Long_Stretch_Snap_01_mono.wav",
+      "sourceSha256": "41d17f0cf0e2fbfecaefb598115f5d4c260b38aba56d85d7ceb996a29e54e5c7",
+      "guid": "812a6fd9f6b976f4aa1d9811d3d990b7",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Mid_Medium_Squish_Snap_01_mono.wav",
+      "sourceSha256": "bed8151d14091cd325732fd91a87bbee5260faa2da7da4b3c1ab4e486e0af4d1",
+      "guid": "6541389361abdeb47b6cbf47230d6e50",
+      "use": "Boss Rush boss 3: the Bloom's sound bank"
     },
     {
       "source": "unity_assets",
@@ -1354,6 +1550,55 @@
       "sourceSha256": "a566c15a0c4e49022e6de3c96cc73f5330bed1b565e5567cba57656de157742a",
       "guid": "093c84c6ee6630347a1a910078fe142b",
       "use": "sound: the hero hurt"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_01_mono.wav",
+      "sourceSha256": "dab3f7dd97339216e34cef3987cbced78254bd7e58161ac49f9fa24fd3404856",
+      "guid": "1c7f8c59c60b0e74d9cfdea1a5a2f94d",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_03_mono.wav",
+      "sourceSha256": "3c4ae3af885dbddde97b5120951619acdacd36b608fa9322a63bd7a178cb8dc1",
+      "guid": "6d6894f4a44ebb24191feb36a992361e",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_01_mono.wav",
+      "sourceSha256": "ab59b389dcf68ade37e8c064f227fbfd1c5a057b3f0d07ebb8d33510fb95050b",
+      "guid": "bb59556c394f3794f95d915c03bccba7",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_03_mono.wav",
+      "sourceSha256": "cc53b823a0e9c9fb4daf9b008f83afa9fb2d5af44fe07c9e11d0e92278d58ea3",
+      "guid": "363279a2f0aaf864f9497362086c12de",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_05_mono.wav",
+      "sourceSha256": "46d48455aabe30341f9a2162087ba0609fcd1d3460e745bd596f2e72aac8e827",
+      "guid": "b4570e0311e250e47b507d3e92b7ef3f",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_01_mono.wav",
+      "sourceSha256": "08530f43a3de725707a7d6167e46680437ef787dec93a3a324a553afc9ac3a87",
+      "guid": "89c55cdb94cd6f34ab5506ddf4ce7e9a",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_03_mono.wav",
+      "sourceSha256": "eee700d3b166b173354eb30a5206f6da1f19c2e64a9eabc8a72d8b1bb596dbde",
+      "guid": "911146945126a6d4682348f14e081d03",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
     },
     {
       "source": "unity_assets",
@@ -1396,6 +1641,20 @@
       "sourceSha256": "9b732be9a57e20d8d49455f0a8263b755efaef5d40f9a0f355ac96e2cd568a67",
       "guid": "2c3b8339e0255e446924fc5e36396f53",
       "use": "sound: shatters"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_01_mono.wav",
+      "sourceSha256": "22ea9175b9f2706b8f04ffbc656297eb8392746afde6398a503b9de24abe415d",
+      "guid": "32ee534c4d4fb2b4cbeb72151f80e103",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_02_mono.wav",
+      "sourceSha256": "81d126e0d48dd25d6197041f709a2adc100bf4676632e0adf547dde2e2d82f3c",
+      "guid": "5055d52a6d441eb4b88705456538615a",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
     },
     {
       "source": "unity_assets",
@@ -1473,83 +1732,6 @@
       "sourceSha256": "697cace1be26aa702c5408a1b52f2a866a2ccb333a744c327a20964f72c915c1",
       "guid": "db1e4ceda95c5124f9a4ce1e5541bfcf",
       "use": "sound: dash whooshes"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_01_mono.wav",
-      "sourceSha256": "22ea9175b9f2706b8f04ffbc656297eb8392746afde6398a503b9de24abe415d",
-      "guid": "32ee534c4d4fb2b4cbeb72151f80e103",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_02_mono.wav",
-      "sourceSha256": "81d126e0d48dd25d6197041f709a2adc100bf4676632e0adf547dde2e2d82f3c",
-      "guid": "5055d52a6d441eb4b88705456538615a",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_01_mono.wav",
-      "sourceSha256": "ab59b389dcf68ade37e8c064f227fbfd1c5a057b3f0d07ebb8d33510fb95050b",
-      "guid": "bb59556c394f3794f95d915c03bccba7",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_03_mono.wav",
-      "sourceSha256": "cc53b823a0e9c9fb4daf9b008f83afa9fb2d5af44fe07c9e11d0e92278d58ea3",
-      "guid": "363279a2f0aaf864f9497362086c12de",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_05_mono.wav",
-      "sourceSha256": "46d48455aabe30341f9a2162087ba0609fcd1d3460e745bd596f2e72aac8e827",
-      "guid": "b4570e0311e250e47b507d3e92b7ef3f",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_01_mono.wav",
-      "sourceSha256": "08530f43a3de725707a7d6167e46680437ef787dec93a3a324a553afc9ac3a87",
-      "guid": "89c55cdb94cd6f34ab5506ddf4ce7e9a",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_03_mono.wav",
-      "sourceSha256": "eee700d3b166b173354eb30a5206f6da1f19c2e64a9eabc8a72d8b1bb596dbde",
-      "guid": "911146945126a6d4682348f14e081d03",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_01_mono.wav",
-      "sourceSha256": "7f3704580c5c7685dff7c8f6b7f1e2a2cfc8a442ce1b1c9a30a40c376e60f7d8",
-      "guid": "50caa75b5cfa7ee44beb46360a6fb978",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_02_mono.wav",
-      "sourceSha256": "098c22b9efe79c0ebbe6a619c6bbd89ebec352ed46b7902e5ed835a23baf1f11",
-      "guid": "cb5ef2be79f390644a36c94d7ddeadd4",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_01_mono.wav",
-      "sourceSha256": "dab3f7dd97339216e34cef3987cbced78254bd7e58161ac49f9fa24fd3404856",
-      "guid": "1c7f8c59c60b0e74d9cfdea1a5a2f94d",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
-    },
-    {
-      "source": "unity_assets",
-      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_03_mono.wav",
-      "sourceSha256": "3c4ae3af885dbddde97b5120951619acdacd36b608fa9322a63bd7a178cb8dc1",
-      "guid": "6d6894f4a44ebb24191feb36a992361e",
-      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
     }
   ]
 }
