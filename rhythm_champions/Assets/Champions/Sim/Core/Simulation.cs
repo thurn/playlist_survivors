@@ -260,7 +260,6 @@ namespace Champions.Sim
             if (BossRush != null && BossRush.Press(key))
             {
                 if (!dashes.Rules.LegacyForms) blockedKeys |= bit;
-                if (key == Key.Space) Diagnose(key, heard, "card-input", Judge(heard));
                 return;
             }
             if (Progression.Press(this, key))

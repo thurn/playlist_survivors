@@ -148,7 +148,7 @@ The music never pauses for any of this. Checkpoints are written at act start.
   beatless fallback's without a beat), the call and fight, the reward
   (whatever XP the boss hasn't `Shed` drops at the kill, every gem is
   magnetised, full heal, the reward card, the level-ups) and the act card
-  (3 s, Enter or Space skips). Each stage is a `RushStage` event with the
+  (3 s, Enter skips; Space stays the dash). Each stage is a `RushStage` event with the
   hero's position, for the arenas to form round it.
 - Main-game reinforcements are off; the floor key is held per act.
 - Checkpoints are `BossRushCheckpoint`s: taken as each act begins, saved by

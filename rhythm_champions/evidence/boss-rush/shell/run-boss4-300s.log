@@ -1,0 +1,82 @@
+Run: run 1, seed 1, boss rush from boss 4, from song 0.000 s, scripted (Reference, picks reference)
+Run: play starts at song 0.000 s
+Run: boss rush act, act 1 (Overgrown Grid), boss 4 (rootwarden, fought by conductor), at run clock 0.2 s, level 7
+Run: boss rush forming, act 1 (Overgrown Grid), boss 4 (rootwarden, fought by conductor), at run clock 0.2 s, level 7
+Run: boss rush fighting, act 1 (Overgrown Grid), boss 4 (rootwarden, fought by conductor), at run clock 3.3 s, level 7
+Run: conductor arrives at run clock 5.7 s, shattering 0
+Run: the boss dies at run clock 30.5 s
+Run: boss rush reward, act 1 (Overgrown Grid), boss 4 (rootwarden, fought by conductor), at run clock 30.5 s, level 7
+Run: boss rush forming, act 1 (Overgrown Grid), boss 5 (moonhowl, fought by dragon), at run clock 31.2 s, level 9
+Run: boss rush fighting, act 1 (Overgrown Grid), boss 5 (moonhowl, fought by dragon), at run clock 32.8 s, level 9
+Run: dragon arrives at run clock 35.6 s, shattering 0
+Run: the boss dies at run clock 79.5 s
+Run: boss rush reward, act 1 (Overgrown Grid), boss 5 (moonhowl, fought by dragon), at run clock 79.5 s, level 9
+Run: boss rush actcard, act 2 (Sunken Sands), boss 6 (sandwyrm, fought by fatOgre), at run clock 79.6 s, level 11
+Run: boss rush act, act 2 (Sunken Sands), boss 6 (sandwyrm, fought by fatOgre), at run clock 81.5 s, level 11
+Run: boss rush forming, act 2 (Sunken Sands), boss 6 (sandwyrm, fought by fatOgre), at run clock 81.5 s, level 11
+Run: boss rush fighting, act 2 (Sunken Sands), boss 6 (sandwyrm, fought by fatOgre), at run clock 83.2 s, level 11
+Run: fatOgre arrives at run clock 87.0 s, shattering 0
+Run: the boss dies at run clock 96.5 s
+Run: boss rush reward, act 2 (Sunken Sands), boss 6 (sandwyrm, fought by fatOgre), at run clock 96.5 s, level 11
+Run: boss rush forming, act 2 (Sunken Sands), boss 7 (bandagedKing, fought by fatOgre), at run clock 96.6 s, level 13
+Run: boss rush fighting, act 2 (Sunken Sands), boss 7 (bandagedKing, fought by fatOgre), at run clock 98.2 s, level 13
+Run: fatOgre arrives at run clock 101.9 s, shattering 0
+Run: the boss dies at run clock 110.4 s
+Run: boss rush reward, act 2 (Sunken Sands), boss 7 (bandagedKing, fought by fatOgre), at run clock 110.4 s, level 13
+Run: boss rush forming, act 2 (Sunken Sands), boss 8 (gorgon, fought by conductor), at run clock 111.1 s, level 15
+Run: boss rush fighting, act 2 (Sunken Sands), boss 8 (gorgon, fought by conductor), at run clock 112.7 s, level 15
+Run: conductor arrives at run clock 115.0 s, shattering 0
+Run: the boss dies at run clock 134.3 s
+Run: boss rush reward, act 2 (Sunken Sands), boss 8 (gorgon, fought by conductor), at run clock 134.3 s, level 15
+Run: boss rush forming, act 2 (Sunken Sands), boss 9 (judge, fought by conductor), at run clock 134.4 s, level 17
+Run: boss rush fighting, act 2 (Sunken Sands), boss 9 (judge, fought by conductor), at run clock 135.9 s, level 17
+Run: conductor arrives at run clock 139.6 s, shattering 0
+Run: the boss dies at run clock 157.5 s
+Run: boss rush reward, act 2 (Sunken Sands), boss 9 (judge, fought by conductor), at run clock 157.5 s, level 17
+Run: boss rush forming, act 2 (Sunken Sands), boss 10 (chimera, fought by dragon), at run clock 157.8 s, level 19
+Run: boss rush fighting, act 2 (Sunken Sands), boss 10 (chimera, fought by dragon), at run clock 159.3 s, level 19
+Run: dragon arrives at run clock 162.1 s, shattering 0
+Run: the boss dies at run clock 192.4 s
+Run: boss rush reward, act 2 (Sunken Sands), boss 10 (chimera, fought by dragon), at run clock 192.4 s, level 19
+Run: boss rush actcard, act 3 (The Undercroft), boss 11 (hoard, fought by fatOgre), at run clock 192.5 s, level 21
+Run: boss rush act, act 3 (The Undercroft), boss 11 (hoard, fought by fatOgre), at run clock 192.6 s, level 21
+Run: boss rush forming, act 3 (The Undercroft), boss 11 (hoard, fought by fatOgre), at run clock 192.6 s, level 21
+Run: boss rush fighting, act 3 (The Undercroft), boss 11 (hoard, fought by fatOgre), at run clock 194.6 s, level 21
+Run: fatOgre arrives at run clock 198.4 s, shattering 0
+Run: the boss dies at run clock 204.9 s
+Run: boss rush reward, act 3 (The Undercroft), boss 11 (hoard, fought by fatOgre), at run clock 204.9 s, level 21
+Run: boss rush forming, act 3 (The Undercroft), boss 12 (weaver, fought by fatOgre), at run clock 205.3 s, level 23
+Run: boss rush fighting, act 3 (The Undercroft), boss 12 (weaver, fought by fatOgre), at run clock 206.9 s, level 23
+Run: fatOgre arrives at run clock 209.7 s, shattering 0
+Run: the boss dies at run clock 215.3 s
+Run: boss rush reward, act 3 (The Undercroft), boss 12 (weaver, fought by fatOgre), at run clock 215.3 s, level 23
+Run: boss rush forming, act 3 (The Undercroft), boss 13 (watcher, fought by conductor), at run clock 215.4 s, level 25
+Run: boss rush fighting, act 3 (The Undercroft), boss 13 (watcher, fought by conductor), at run clock 217.1 s, level 25
+Run: conductor arrives at run clock 220.9 s, shattering 0
+Run: the boss dies at run clock 233.5 s
+Run: boss rush reward, act 3 (The Undercroft), boss 13 (watcher, fought by conductor), at run clock 233.5 s, level 25
+Run: boss rush forming, act 3 (The Undercroft), boss 14 (wraithCouncil, fought by conductor), at run clock 233.5 s, level 27
+Run: boss rush fighting, act 3 (The Undercroft), boss 14 (wraithCouncil, fought by conductor), at run clock 235.4 s, level 27
+Run: conductor arrives at run clock 237.7 s, shattering 0
+Run: the boss dies at run clock 249.9 s
+Run: boss rush reward, act 3 (The Undercroft), boss 14 (wraithCouncil, fought by conductor), at run clock 249.9 s, level 27
+Run: boss rush forming, act 3 (The Undercroft), boss 15 (demonLord, fought by dragon), at run clock 250.1 s, level 29
+Run: boss rush fighting, act 3 (The Undercroft), boss 15 (demonLord, fought by dragon), at run clock 251.8 s, level 29
+Run: dragon arrives at run clock 253.8 s, shattering 0
+Run: the boss dies at run clock 275.0 s
+Run: boss rush reward, act 3 (The Undercroft), boss 15 (demonLord, fought by dragon), at run clock 275.0 s, level 29
+Run: boss rush actcard, act 4 (Frost & Fire Peaks), boss 16 (rimeGolem, fought by fatOgre), at run clock 275.1 s, level 31
+Run: boss rush act, act 4 (Frost & Fire Peaks), boss 16 (rimeGolem, fought by fatOgre), at run clock 277.5 s, level 31
+Run: boss rush forming, act 4 (Frost & Fire Peaks), boss 16 (rimeGolem, fought by fatOgre), at run clock 277.5 s, level 31
+Run: boss rush fighting, act 4 (Frost & Fire Peaks), boss 16 (rimeGolem, fought by fatOgre), at run clock 279.2 s, level 31
+Run: fatOgre arrives at run clock 281.6 s, shattering 0
+Run: the boss dies at run clock 286.6 s
+Run: boss rush reward, act 4 (Frost & Fire Peaks), boss 16 (rimeGolem, fought by fatOgre), at run clock 286.6 s, level 31
+Run: boss rush forming, act 4 (Frost & Fire Peaks), boss 17 (magmaHeart, fought by fatOgre), at run clock 286.7 s, level 33
+Run: boss rush fighting, act 4 (Frost & Fire Peaks), boss 17 (magmaHeart, fought by fatOgre), at run clock 288.1 s, level 33
+Run: fatOgre arrives at run clock 290.9 s, shattering 0
+Run: the boss dies at run clock 296.0 s
+Run: boss rush reward, act 4 (Frost & Fire Peaks), boss 17 (magmaHeart, fought by fatOgre), at run clock 296.0 s, level 33
+Run: boss rush forming, act 4 (Frost & Fire Peaks), boss 18 (griffin, fought by conductor), at run clock 296.0 s, level 35
+Run: boss rush fighting, act 4 (Frost & Fire Peaks), boss 18 (griffin, fought by conductor), at run clock 297.9 s, level 35
+Boot: quitting, --seconds 300 reached

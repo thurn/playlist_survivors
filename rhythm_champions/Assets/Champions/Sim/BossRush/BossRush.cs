@@ -13,7 +13,7 @@ namespace Champions.Sim
         Fighting = 2,
         /// <summary>It died: gems magnetised, full heal, the reward card, then the queued level-ups and the last gems.</summary>
         Reward = 3,
-        /// <summary>Between acts: the next act's card, a few seconds, skippable with Enter or Space.</summary>
+        /// <summary>Between acts: the next act's card, a few seconds, skippable with Enter (never Space: a dash pressed after the kill must not skip it).</summary>
         ActCard = 4,
         /// <summary>The last boss died: the run is won.</summary>
         Won = 5,
@@ -95,10 +95,10 @@ namespace Champions.Sim
 
         // ---- Driven by the sim ----
 
-        /// <summary>A key pressed: Enter or Space skips an act card, and is the card's (true).</summary>
+        /// <summary>A key pressed: Enter skips an act card, and is the card's (true).</summary>
         internal bool Press(Key key)
         {
-            if (Stage != BossRushStage.ActCard || sim.State.Held || key != Key.Enter && key != Key.Space) return false;
+            if (Stage != BossRushStage.ActCard || sim.State.Held || key != Key.Enter) return false;
             untilClock = sim.State.RunClock;
             return true;
         }

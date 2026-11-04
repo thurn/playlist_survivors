@@ -127,7 +127,10 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(1, s.BossRush.Act);
             double card = s.State.RunClock;
             s.StepTo(s.Now + 1);
-            Assert.AreEqual(BossRushStage.ActCard, s.BossRush.Stage);
+            s.Press(Key.Space, s.Now);
+            s.Release(Key.Space, s.Now);
+            s.StepTo(s.Now + Simulation.TickSeconds);
+            Assert.AreEqual(BossRushStage.ActCard, s.BossRush.Stage, "a dash never skips the act card");
             s.Press(Key.Enter, s.Now);
             s.StepTo(s.Now + Simulation.TickSeconds);
             Assert.AreEqual(BossRushStage.Forming, s.BossRush.Stage, "Enter skips the act card");
