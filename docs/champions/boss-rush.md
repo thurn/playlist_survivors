@@ -237,11 +237,18 @@ only.
   fill.
 - **Shaders.** Bosses may vary the edge look: a hologram scanline, crystal
   facets, light flowing along the edges, a glitch offset, ghostly fade, an
-  ember core. **The player build has a 300-variant budget and uses about
-  275**, so these are parameters on a shared boss-look shader (global or
-  material floats), not new keywords. The framework bead adds that shader
-  once. The frozen demo3d's crystal, spectrum and hologram styles (ps-a54.3)
-  can be copied as references.
+  ember core. The framework bead adds a shared boss-look shader. Bosses may
+  use its keywords (`shader_feature`, so only the materials in use compile)
+  or write a shader of their own when a look needs it.
+  - **Budget**: the player build allows 1,000 variants and used about 290
+    before Boss Rush (raised from 300 on 2026-11-03). Variants cost build and
+    CI time, not frame time, so prefer float parameters where they do the
+    job, and note each fight's variant count in its evidence.
+  - **No arrival hitch**: the first draw with a new variant can stutter on
+    Metal, so each boss's shaders and variants are warmed while its arena
+    forms, before the boss arrives.
+  - The frozen demo3d's crystal, spectrum and hologram styles (ps-a54.3) can
+    be copied as references.
 - **Effects** are authored geometry through our own shaders, as the weapons'
   are. The owned packs are references for shape and timing, not
   drop-in prefabs (their stock colourful additive particles don't fit the

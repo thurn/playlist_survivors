@@ -45,13 +45,13 @@ def fake_unity(ran: list[list[str]], fail: bool = False, variants: int = 200, ba
         (folder / setup.APP).mkdir(parents=True, exist_ok=True)
         (folder / setup.APP / "Info.plist").write_text("built\n")
         (folder / cli.VARIANTS_REPORT).write_text(json.dumps({
-            "budget": 300, "total": variants, "fresh": "-cleanBuildCache" in args,
+            "budget": 1000, "total": variants, "fresh": "-cleanBuildCache" in args,
             "snippets": [{"shader": "Hidden/Universal/CoreBlit", "pass": "Nearest", "stage": "fragment",
                           "variants": variants}]}))
         if bakes:
             (setup.baked_dir(wt) / "Effects" / "Resources").mkdir(parents=True, exist_ok=True)
             (setup.baked_dir(wt) / "Effects" / "Resources" / "Effects.asset").write_text("baked\n")
-        return 0 if variants <= 300 else 1
+        return 0 if variants <= 1000 else 1
 
     return run_method
 
@@ -210,11 +210,11 @@ def test_check_variants_builds_clean_and_reports_the_count(monkeypatch, wt, caps
     out = capsys.readouterr().out
     assert code == 0
     assert builds(ran) == ["BuildPlayer -cleanBuildCache"]
-    assert "227 compiled shader variants, budget 300: ok" in out
+    assert "227 compiled shader variants, budget 1000: ok" in out
     assert "Hidden/Universal/CoreBlit" in out
-    code, ran = run(monkeypatch, "check", "--variants", variants=301)
+    code, ran = run(monkeypatch, "check", "--variants", variants=1001)
     assert code == 1
-    assert "301 compiled shader variants, budget 300: OVER BUDGET" in capsys.readouterr().out
+    assert "1001 compiled shader variants, budget 1000: OVER BUDGET" in capsys.readouterr().out
 
 
 def test_play_needs_a_build_and_passes_unknown_flags_to_the_player(monkeypatch, wt) -> None:

@@ -27,7 +27,7 @@ namespace Champions.EditorTools
     /// </summary>
     public sealed class ShaderVariantBudget : IPreprocessShaders, IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
-        public const int Budget = 300;
+        public const int Budget = 1000;
         public const string ReportName = "shader-variants.json";
 
         /// <summary>Keywords of the features the pipeline never enables: a variant with any of them is dead weight.</summary>

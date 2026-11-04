@@ -279,7 +279,7 @@ decals, cookies, lens flares, reflection probes and light layers off; at most
 four unshadowed per-pixel additional lights; no shader always included
 (plan.md Decision 4). EditMode tests hold these settings.
 
-**The variant budget**: a player build keeps at most 300 compiled shader
+**The variant budget**: a player build keeps at most 1,000 compiled shader
 variants. `ShaderVariantBudget` (Champions.Editor) strips the variants of
 the disabled features and the shaders of unused ones, counts the rest per
 shader, pass and stage, writes `shader-variants.json` beside the player and

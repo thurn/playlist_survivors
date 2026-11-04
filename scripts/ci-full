@@ -60,7 +60,7 @@ lane_tools() {
 
 # Unity, windowless in batch mode, from the warm Library and baked caches (`champions setup`): the
 # EditMode tests, where a skip fails too; the Mono player built with a clean build cache, which counts
-# its shader variants against the budget of 300; that player's fixed-time run; then the Library,
+# its shader variants against the budget of 1,000; that player's fixed-time run; then the Library,
 # with the build's shader cache, saved as the warm one for the next worktree or run (plan.md, Build
 # Policy). Later beads add the scripted scenes' stills, a recorded session's replay and `champions look`.
 lane_unity() {

@@ -62,7 +62,7 @@ implementation details below are guidance for adapting the existing project.
 4. **Lean URP**: no shadows, SSAO, lightmaps, decals, cookies, lens flares
    or reflection probes; only our own unlit and emissive shaders, no URP Lit;
    a few unshadowed point lights. A variant stripper and a check that fails
-   a player build above 300 shader variants.
+   a player build above 1,000 shader variants.
 5. **Mono** for development and CI builds; IL2CPP only for perf runs.
 6. **A warm editor per worktree and one shared local Unity Accelerator**;
    Library and baked-asset caches keyed by their inputs.
@@ -319,7 +319,11 @@ boss rewards), run (horde-time schedule, combat time, end).
 | Particle | Compute sparks |
 | Telegraph | Ground telegraphs, orange/red; yellow reserved for player rhythm |
 
-- **Variant budget**: at most 300 compiled variants in a player build. The
+- **Variant budget**: at most 1,000 compiled variants in a player build
+  (raised from 300 on 2026-11-03 for Boss Rush's per-boss looks). It guards
+  build and CI time, not frame time: CI builds the player with a clean build
+  cache every run, so every variant compiles every run. Keep an eye on the
+  ci-full timing as the count grows. The
   stripper removes URP variants for disabled features; `champions check
   --variants` reads the build's variant report and fails above budget. No
   legacy shaders are always-included.
