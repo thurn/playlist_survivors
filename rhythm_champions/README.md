@@ -221,6 +221,16 @@ their chunks in PhysX (`StructureShatter`, `StructureEdgeShard.shader`); the
 presenter (`Client/World/StructurePresenter`) maps the sim's events onto them
 through an `IStructureView`.
 
+### Boss Rush act kits
+
+Each Boss Rush act's environment (boss-rush.md, Environments) is a kit in
+`Content/arenas.json`: its prop kinds (`"kit"`), the placeholders it dresses,
+its floor scatter and its backdrop rings. Its recipe,
+`tools/recipes/kit/KIT.py` (ps-8z4.5), designs every piece with the structure
+recipes' `Builder`; `champions kit bake KIT` (and the build) writes them into
+the ignored `Assets/Baked/Kits/`, and `ArenaPresenter` draws them
+(`Render/Arena/KitMeshes.cs`). `champions stills --scene kit-KIT` shows one.
+
 ## Weapon effects and sounds
 
 The hero's weapon effects (design.md, The Look > Weapon effects) are Hovl's

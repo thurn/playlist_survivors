@@ -240,3 +240,12 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   a sunk pit, a broken-away shelf and a grown web or wall each read at a
   glance; the long hall scrolls smoothly, the boss and its telegraphs never
   leaving the frame.
+
+## Boss Rush act 1 kit, the Overgrown Grid (ps-8z4.5, 2026-11-03)
+
+[Stills and critiques](boss-rush/kit-act1/README.md).
+
+- In a window (`just champions-bossrush`): act 1's arenas read as a wireframe forest at night in the teal key; the
+  broken oaks, logs and rune stones read as solid (grey), the crystals, lanterns, mushrooms, stumps and tree ferns as
+  breakable; nothing on the floor (roots, moss patches) reads as a pickup, shot or enemy; the pines at the top corners
+  frame the arena without pulling the eye from the boss.

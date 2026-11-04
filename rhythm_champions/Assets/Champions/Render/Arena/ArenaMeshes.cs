@@ -55,6 +55,26 @@ namespace Champions.Render.Arena
 
         static Vector3 At(double x, double y, float h) => new Vector3((float)x, h, (float)y);
 
+        /// <summary>
+        /// An act kit's piece (<see cref="KitPiece"/>) stood at ground (<paramref name="x"/>, <paramref name="y"/>), turned
+        /// <paramref name="degrees"/> anticlockwise as a prop's footprint is (<see cref="ArenaShape.Box"/>), its heights scaled
+        /// by <paramref name="tall"/>; every edge its design draws, drawn.
+        /// </summary>
+        public void Piece(KitPiece piece, double x, double y, double degrees, float tall = 1)
+        {
+            double a = degrees * System.Math.PI / 180;
+            float c = (float)System.Math.Cos(a), s = (float)System.Math.Sin(a), fx = (float)x, fy = (float)y;
+            Vector3 P(int i)
+            {
+                var p = piece.Points[i];
+                return new Vector3(fx + p.x * c - p.z * s, p.y * tall, fy + p.x * s + p.z * c);
+            }
+            var t = piece.Triangles;
+            var e = piece.Edges;
+            for (int k = 0; k < t.Length; k += 3)
+                Triangle(P(t[k]), P(t[k + 1]), P(t[k + 2]), 0, 0, 0, e[k + 2] != 0, e[k] != 0, e[k + 1] != 0);
+        }
+
         /// <summary>Each vertex's place along the closed outline (its share of the perimeter from the first).</summary>
         static float[] Orders(double[] xs, double[] ys)
         {

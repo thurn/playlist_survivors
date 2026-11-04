@@ -19,6 +19,12 @@ namespace Champions.Client
     /// - <b>Props</b>: placeholders, the hero-breakable ones in the zone key's edge colour (grey stays the unbreakable's),
     ///   flashing when hit and gone on the impact frame of their crumbling, with a structure-break ring.
     /// - <b>Obstacles</b>: a grown wall grey, a web its spokes, lava the warning colour, each growing in from its centre.
+    /// - <b>The act's kit</b> (boss-rush.md, Environments; <see cref="ArenaKit"/>): the arena's own, else a Boss Rush run's
+    ///   act's. Its props draw as their designed pieces (<see cref="KitMeshes"/>), and so do the placeholders it dresses; its
+    ///   floor treatment is scattered over open floor clear of the walls, props, zones and starts, faint lines in the key
+    ///   over a dimmed fill; its backdrop's rings stand outside the walls where the outline faces away from the camera, a
+    ///   dark skyline in the key, lower toward the flanks, rising with the props. All of it seeded by the arena's id, so an
+    ///   arena always looks the same. Without the baked pieces it draws the placeholders and no floor or backdrop.
     /// - <b>Camera</b> (<see cref="Frame"/>): <see cref="ArenaFraming"/>'s frame, holding the hero, the boss and its live
     ///   telegraphs; let go when the arena has retracted.
     /// </summary>
@@ -31,11 +37,17 @@ namespace Champions.Client
         const float CapM = 0.02f;
         /// <summary>A crumbling or a hit lights a prop this long.</summary>
         const double FlashS = 0.2;
+        /// <summary>The kit floor's and backdrop rings' line gain (the props' is the material's 2.6), nearest ring first.</summary>
+        const float FloorEdge = 1.1f, FloorFill = 0.6f;
+        static readonly float[] BackdropEdge = { 1.05f, 0.7f, 0.5f };
+        /// <summary>The starts' clearing for the floor's scatter (m).</summary>
+        const double StartClearM = 2.5;
 
         static readonly int LineId = Shader.PropertyToID("_Line"), FillId = Shader.PropertyToID("_Fill"), AlphaId = Shader.PropertyToID("_Alpha"),
-            RevealId = Shader.PropertyToID("_Reveal"), RiseId = Shader.PropertyToID("_Rise"), ZoneLineId = Shader.PropertyToID("_ZoneLine");
+            RevealId = Shader.PropertyToID("_Reveal"), RiseId = Shader.PropertyToID("_Rise"), ZoneLineId = Shader.PropertyToID("_ZoneLine"),
+            EdgeId = Shader.PropertyToID("_Edge");
 
-        enum PartKind { Walls, Zone, Prop, Obstacle }
+        enum PartKind { Walls, Zone, Prop, Obstacle, Floor, Backdrop }
 
         sealed class Part
         {
@@ -55,6 +67,7 @@ namespace Champions.Client
         }
 
         readonly ArenaRules _rules;
+        readonly BossRushRules _rush;
         readonly Palette _palette;
         readonly IWorldCommands _world;
         readonly WorldCamera _camera;
@@ -68,14 +81,20 @@ namespace Champions.Client
         ArenaFraming _framing;
         BossArena _arena;
         ArenaDef _def;
+        ArenaKit _kit;
+        string _rushKit;
+        IReadOnlyDictionary<string, KitPiece> _pieces = NoPieces;
+        static readonly IReadOnlyDictionary<string, KitPiece> NoPieces = new Dictionary<string, KitPiece>();
         double _ox, _oy, _formFrom = double.NaN, _formTo, _retractFrom = double.NaN, _retractTo;
         ArenaZoneState[] _shown = new ArenaZoneState[0];
         double[] _zoneFrom = new double[0], _zoneBeat = new double[0];
         double[] _propFlash = new double[0];
 
-        public ArenaPresenter(ArenaRules rules, Palette palette, IWorldCommands world, WorldCamera camera, int layer = 0)
+        /// <param name="rush">The Boss Rush's slots, so a fight's own arena takes its act's kit outside a run too (its review, its stills).</param>
+        public ArenaPresenter(ArenaRules rules, Palette palette, IWorldCommands world, WorldCamera camera, int layer = 0, BossRushRules rush = null)
         {
             _rules = rules;
+            _rush = rush;
             _palette = palette;
             _world = world;
             _camera = camera;
@@ -118,6 +137,8 @@ namespace Champions.Client
         public void Present(double song, Simulation sim, Vector2 hero, Camera camera)
         {
             _arena = sim.Arena;
+            var rush = sim.BossRush;
+            _rushKit = rush != null ? rush.Rules.Acts[rush.Act].Kit : null;
             while (_pending.Count > 0 && _pending[0].Event.T <= song)
             {
                 var e = _pending[0].Event;
@@ -137,6 +158,8 @@ namespace Champions.Client
                 case SimEventKind.ArenaForm:
                     Clear();
                     _def = _rules.Arenas[e.I0];
+                    _kit = _rules.Kit(_def.Kit ?? _rushKit ?? SlotKit(_def.Id));
+                    _pieces = _kit != null ? KitMeshes.Load(_kit.Id) : NoPieces;
                     _ox = e.D0;
                     _oy = e.D1;
                     _formFrom = e.D2;
@@ -155,6 +178,8 @@ namespace Champions.Client
                     BuildWalls();
                     for (int z = 0; z < _shown.Length; z++) BuildZone(z);
                     for (int p = 0; p < _def.Props.Length; p++) BuildProp(p);
+                    BuildFloor();
+                    BuildBackdrop();
                     break;
                 case SimEventKind.ArenaRetract:
                     _retractFrom = e.D0;
@@ -210,13 +235,17 @@ namespace Champions.Client
             foreach (var p in _parts) _meshes.Push(p.Mesh);
             _parts.Clear();
             _def = null;
+            _kit = null;
+            _pieces = NoPieces;
             _camera?.Unframe();
         }
 
         static Color Lin(Color c, float gain) => c.linear * gain;
 
-        void Style(Part p, Color line, Color fill, float alpha, bool zoneLine = false)
+        /// <param name="edge">The lines' gain where not the material's.</param>
+        void Style(Part p, Color line, Color fill, float alpha, bool zoneLine = false, float? edge = null)
         {
+            if (edge.HasValue) p.Block.SetFloat(EdgeId, edge.Value);
             p.Block.SetColor(LineId, line);
             p.Block.SetColor(FillId, fill);
             p.Block.SetFloat(AlphaId, alpha);
@@ -285,14 +314,150 @@ namespace Champions.Client
             var place = _def.Props[i];
             var kind = _rules.Props[place.Kind];
             double a = place.Degrees;
+            _build.Clear();
+            // Under a kit, the kind draws as its piece: its own, or the kit kind dressing a placeholder.
+            var drawn = _rules.Props[_kit != null ? _kit.Dress[place.Kind] : place.Kind];
+            if (_pieces.TryGetValue(drawn.Id, out var piece))
+            {
+                _build.Piece(piece, _ox + place.X, _oy + place.Y, a);
+                var k = Add(PartKind.Prop, i, false);
+                Style(k, Lin(_palette.Wall, WallGain), _palette.VoidBody.linear, 1, zoneLine: kind.Hits > 0);
+                return;
+            }
             var shape = kind.Shape == FootprintShape.Circle
                 ? ArenaShape.Circle(0, 0, kind.Radius, kind.Radius < 0.5 ? 6 : 8, 22.5)
                 : ArenaShape.Box(0, 0, 2 * kind.HalfX, 2 * kind.HalfY, a);
-            _build.Clear();
             _build.Prism(shape, _ox + place.X, _oy + place.Y, 0, (float)kind.HeightM);
             var p = Add(PartKind.Prop, i, false);
             // Grey is reserved for what can't be broken; the hero's breakable props take the zone key's edge colour.
             Style(p, Lin(_palette.Wall, WallGain), _palette.VoidBody.linear, 1, zoneLine: kind.Hits > 0);
+        }
+
+        /// <summary>The kit of the act whose boss fights in arena <paramref name="id"/> (not the stand-in every act shares), or null.</summary>
+        string SlotKit(string id)
+        {
+            if (_rush == null || id == BossRushBoss.StandInArena) return null;
+            foreach (var b in _rush.Bosses)
+                if (b.Arena == id) return _rush.Acts[b.Act].Kit;
+            return null;
+        }
+
+        /// <summary>A stable hash of the arena's id and two cells, for its scatter.</summary>
+        static uint Hash(string id, int a, int b, int salt)
+        {
+            uint h = 2166136261;
+            foreach (char ch in id) h = (h ^ ch) * 16777619;
+            h = (h ^ (uint)a) * 16777619;
+            h = (h ^ (uint)b) * 16777619;
+            h = (h ^ (uint)salt) * 16777619;
+            h ^= h >> 15;
+            h *= 0x2c1b3c6d;
+            h ^= h >> 12;
+            return h;
+        }
+
+        static double Unit(uint h) => (h & 0xffffff) / (double)0x1000000;
+
+        /// <summary>The kit's floor treatment: on a grid of cells over the arena, a share of them hold a piece somewhere in the cell, clear of everything solid.</summary>
+        void BuildFloor()
+        {
+            if (_kit == null || _kit.FloorPieces.Length == 0) return;
+            var pieces = new List<KitPiece>();
+            foreach (var id in _kit.FloorPieces)
+                if (_pieces.TryGetValue(id, out var p)) pieces.Add(p);
+            if (pieces.Count == 0) return;
+            _def.Outline.Bounds(out double bx, out double by, out double ex, out double ey);
+            double cell = _kit.FloorCellM, clear = _kit.FloorClearM;
+            int nx = (int)Math.Ceiling((ex - bx) / cell), ny = (int)Math.Ceiling((ey - by) / cell);
+            _build.Clear();
+            for (int gy = 0; gy < ny; gy++)
+            for (int gx = 0; gx < nx; gx++)
+            {
+                if (Unit(Hash(_def.Id, gx, gy, 0)) >= _kit.FloorShare) continue;
+                double x = bx + (gx + 0.15 + 0.7 * Unit(Hash(_def.Id, gx, gy, 1))) * cell;
+                double y = by + (gy + 0.15 + 0.7 * Unit(Hash(_def.Id, gx, gy, 2))) * cell;
+                var piece = pieces[(int)(Hash(_def.Id, gx, gy, 3) % (uint)pieces.Count)];
+                double room = clear + piece.Reach * 0.5;
+                if (!Clear(x, y, room)) continue;
+                _build.Piece(piece, _ox + x, _oy + y, 360 * Unit(Hash(_def.Id, gx, gy, 4)));
+            }
+            if (_build.Empty) return;
+            var part = Add(PartKind.Floor, 0, true);
+            Style(part, Color.black, _palette.VoidBody.linear, FloorFill, zoneLine: true, edge: FloorEdge);
+        }
+
+        /// <summary>Is (x, y) open floor <paramref name="room"/> clear of the walls, the props, every zone (wherever a moving one goes) and the starts?</summary>
+        bool Clear(double x, double y, double room)
+        {
+            var outline = _def.Outline;
+            if (!outline.Contains(x, y) || outline.DistanceToOutline(x, y) < room) return false;
+            foreach (var p in _def.Props)
+            {
+                double r = _rules.Props[p.Kind].Bound + room;
+                if ((x - p.X) * (x - p.X) + (y - p.Y) * (y - p.Y) < r * r) return false;
+            }
+            foreach (var z in _def.Zones)
+            {
+                int loop = Math.Max(1, z.PathX.Length);
+                for (int k = 0; k < loop; k++)
+                {
+                    double zx = x - (z.Path ? z.PathX[k] : 0), zy = y - (z.Path ? z.PathY[k] : 0);
+                    if (z.Shape.Contains(zx, zy) || z.Shape.DistanceToOutline(zx, zy) < room) return false;
+                }
+            }
+            foreach (var (sx, sy) in new[] { (_def.HeroStartX, _def.HeroStartY), (_def.BossStartX, _def.BossStartY) })
+                if ((x - sx) * (x - sx) + (y - sy) * (y - sy) < StartClearM * StartClearM) return false;
+            return true;
+        }
+
+        /// <summary>
+        /// The kit's backdrop: each ring's pieces at even steps round the outline, outside the walls by its gap, along the
+        /// outline's tangent, only where the outline faces away from the camera (+y) at least the ring's facing; shorter
+        /// toward the flanks, and a little taller or shorter piece by piece.
+        /// </summary>
+        void BuildBackdrop()
+        {
+            if (_kit == null) return;
+            var o = _def.Outline;
+            int n = o.Count;
+            double sign = o.Area >= 0 ? 1 : -1, perimeter = 0;
+            for (int i = 0; i < n; i++) perimeter += Leg(o, i);
+            for (int r = 0; r < _kit.Backdrop.Length; r++)
+            {
+                var ring = _kit.Backdrop[r];
+                var pieces = new List<KitPiece>();
+                foreach (var id in ring.Pieces)
+                    if (_pieces.TryGetValue(id, out var p)) pieces.Add(p);
+                if (pieces.Count == 0) continue;
+                _build.Clear();
+                int count = Math.Max(1, (int)Math.Round(perimeter / ring.SpacingM));
+                for (int k = 0; k < count; k++)
+                {
+                    double along = (k + 0.5 + 0.3 * (Unit(Hash(_def.Id, r, k, 5)) - 0.5)) * perimeter / count;
+                    int i = 0;
+                    while (i < n - 1 && along > Leg(o, i)) along -= Leg(o, i++);
+                    int j = (i + 1) % n;
+                    double dx = o.X[j] - o.X[i], dy = o.Y[j] - o.Y[i], len = Math.Max(1e-9, Math.Sqrt(dx * dx + dy * dy));
+                    double tx = dx / len, ty = dy / len, nx = sign * ty, ny = -sign * tx;
+                    if (ny < ring.Facing) continue;
+                    var piece = pieces[(int)(Hash(_def.Id, r, k, 6) % (uint)pieces.Count)];
+                    double t = Math.Min(1, (ny - ring.Facing) / 0.6);
+                    float tall = (float)((0.55 + 0.45 * t * t * (3 - 2 * t)) * (0.85 + 0.3 * Unit(Hash(_def.Id, r, k, 7))));
+                    double outward = _rules.WallThicknessM + ring.GapM + piece.Reach * 0.3;
+                    double x = o.X[i] + tx * along + nx * outward, y = o.Y[i] + ty * along + ny * outward;
+                    _build.Piece(piece, _ox + x, _oy + y, Math.Atan2(ty, tx) * 180 / Math.PI, tall);
+                }
+                if (_build.Empty) continue;
+                var part = Add(PartKind.Backdrop, r, false);
+                Style(part, Color.black, _palette.VoidBody.linear, 1, zoneLine: true, edge: BackdropEdge[Math.Min(r, BackdropEdge.Length - 1)]);
+            }
+        }
+
+        static double Leg(ArenaShape o, int i)
+        {
+            int j = (i + 1) % o.Count;
+            double dx = o.X[j] - o.X[i], dy = o.Y[j] - o.Y[i];
+            return Math.Sqrt(dx * dx + dy * dy);
         }
 
         void BuildObstacle(int id, ArenaObstacle o)
@@ -360,6 +525,8 @@ namespace Champions.Client
                         break;
                     }
                     case PartKind.Prop:
+                    case PartKind.Floor:
+                    case PartKind.Backdrop:
                         p.Reveal = 1;
                         p.Rise = late;
                         break;

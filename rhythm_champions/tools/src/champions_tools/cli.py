@@ -28,6 +28,8 @@ Commands:
                       as Editor/Structures/structures.json tunes the model (--force bakes again)
   structure review KIND
                       the kind's (or `all`'s) review sheets into evidence/structures/ (--out DIR)
+  kit bake KIT        run a Boss Rush act kit's recipe (or `all`'s), tools/recipes/kit/KIT.py, into the
+                      meshes the arenas draw (--force runs it again)
   stills              fixed-time stills of the scripted scenes in one headless launch of the last
                       build, with their type-ID passes and views (--scene NAME, repeatable; --out DIR,
                       default captures/stills; --look trailer for the trailer's monsters)
@@ -107,12 +109,13 @@ def build(wt: paths.Worktree, backend: str = "mono", out: str | None = None, dev
         print(f"build: nothing changed since the last build into {shown}; not rebuilding (--force to)")
         player_logs.install(folder / setup.APP, wt.root)
         return 0
-    from . import monster, structure
+    from . import kit, monster, structure
 
     try:
         monster.prepare_all(wt)  # the recipes' meshes, which the player build's bake takes
         structure.prepare_all(wt)
-    except (monster.MonsterError, structure.StructureError) as e:
+        kit.prepare_all(wt)
+    except (monster.MonsterError, structure.StructureError, kit.KitError) as e:
         print(f"build: {e}", file=sys.stderr)
         return 2
     setup.forget_build(folder)
@@ -299,6 +302,12 @@ def cmd_boss(a: argparse.Namespace) -> int:
     return boss.cmd_boss(a)
 
 
+def cmd_kit(a: argparse.Namespace) -> int:
+    from . import kit
+
+    return kit.cmd_kit(a)
+
+
 def cmd_structure(a: argparse.Namespace) -> int:
     from . import structure
 
@@ -439,6 +448,12 @@ def build_parser() -> argparse.ArgumentParser:
     sr.add_argument("--out", help="review: the folder for the sheets (default evidence/structures)")
     sr.add_argument("--force", action="store_true", help="bake again even if nothing changed")
     sr.set_defaults(func=cmd_structure)
+
+    kt = sub.add_parser("kit", help="run a Boss Rush act kit's recipe into the arenas' meshes (kit bake KIT)")
+    kt.add_argument("action", choices=["bake"])
+    kt.add_argument("kit", help="a kit in Content/arenas.json's kits, or all")
+    kt.add_argument("--force", action="store_true", help="run it again even if nothing changed")
+    kt.set_defaults(func=cmd_kit)
 
     pf = sub.add_parser("perf", help="the quality tiers' performance at 1,000 alive (never in CI)")
     pf.add_argument("--tier", action="append", choices=["low", "medium", "high"], help="a tier to run (repeatable; default all)")

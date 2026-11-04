@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using Champions.Client.Loop;
 using Champions.Render;
 using Champions.Sim;
@@ -16,21 +17,34 @@ namespace Champions.Client.Scenes
     ///   and a crate crumbles, each on a beat; at 10 s it retracts. Stills: forming, standing, each change, retracting.
     /// - `arena-scroll`: the long hall (`long-hall`, 72 m) forms round the hero at its west end and the hero walks east down
     ///   it: the view eases out to its farthest and scrolls, short of the walls at either end.
+    /// - `kit-KIT` (<see cref="KitOf"/>): an act kit (boss-rush.md, Environments) in a 26 m arena of its own dressed by it, each
+    ///   of its prop kinds on a ring round the middle, its floor treatment and backdrop; it forms round the hero at 1 s and
+    ///   the hero walks across it.
     /// </summary>
     sealed class ArenaScene : IStillScene, INamedStills
     {
-        public const string Name = "arenas", ScrollName = "arena-scroll";
+        public const string Name = "arenas", ScrollName = "arena-scroll", KitPrefix = "kit-";
         public const double Bpm = 120, SongEnd = 30;
 
         readonly GameContent _content;
         readonly Palette _palette;
         readonly bool _scroll;
+        readonly string _kit;
 
-        public ArenaScene(GameContent content, Palette palette, bool scroll)
+        public ArenaScene(GameContent content, Palette palette, bool scroll, string kit = null)
         {
             _content = content;
             _palette = palette;
             _scroll = scroll;
+            _kit = kit;
+        }
+
+        /// <summary>The kit a `kit-KIT` scene name shows, or null when it names none in the content.</summary>
+        public static string KitOf(string name, GameContent content)
+        {
+            if (name == null || !name.StartsWith(KitPrefix, System.StringComparison.Ordinal)) return null;
+            string id = name.Substring(KitPrefix.Length);
+            return content.Arenas.Kit(id) != null ? id : null;
         }
 
         static readonly (double T, string Label)[] Bed =
@@ -41,7 +55,9 @@ namespace Champions.Client.Scenes
 
         static readonly (double T, string Label)[] Hall = { (1.4, "forming"), (3.5, "west-end"), (8.5, "scrolling"), (14.5, "east-end") };
 
-        (double T, string Label)[] Stills => _scroll ? Hall : Bed;
+        static readonly (double T, string Label)[] KitStills = { (1.9, "forming"), (3.5, "standing"), (7.0, "walk") };
+
+        (double T, string Label)[] Stills => _kit != null ? KitStills : _scroll ? Hall : Bed;
 
         public double[] Times
         {
@@ -60,7 +76,7 @@ namespace Champions.Client.Scenes
 
         public void Begin(Transform root, Camera camera, Stills.View view)
         {
-            root.gameObject.AddComponent<ArenaSceneDriver>().Begin(camera, _content, _palette, view, _scroll);
+            root.gameObject.AddComponent<ArenaSceneDriver>().Begin(camera, _content, _palette, view, _scroll, _kit);
             view.Hero = Vector3.zero;
             view.Ids[IdPass.Effect] = ("hero stand-in", "effect", HeroMarker.WidthM);
             view.Ids[IdPass.Structure] = ("arena", "structure", (float)_content.Arenas.WallHeightM);
@@ -84,6 +100,24 @@ namespace Champions.Client.Scenes
         };
 
         internal static ArenaScript HallScript() => new ArenaScript { Arena = "long-hall", FormAtS = 0.5 };
+
+        /// <summary>The kit's show arena (added to the scene's own rules, never the content's): its prop kinds round the middle.</summary>
+        internal static ArenaDef KitArena(ArenaRules rules, string kit)
+        {
+            var kinds = new List<int>();
+            for (int i = 0; i < rules.Props.Length; i++)
+                if (rules.Props[i].Kit == kit) kinds.Add(i);
+            var props = new ArenaPropPlacement[kinds.Count];
+            for (int k = 0; k < kinds.Count; k++)
+            {
+                double a = 2 * System.Math.PI * (k + 0.5) / kinds.Count + System.Math.PI / 2;
+                props[k] = new ArenaPropPlacement { Kind = kinds[k], X = 7.5 * System.Math.Cos(a), Y = 7.5 * System.Math.Sin(a) + 1, Degrees = 25 * k, Blocks = true, BlocksShots = true };
+            }
+            return new ArenaDef
+            {
+                Id = KitPrefix + kit, Kit = kit, Outline = ArenaShape.Circle(0, 0, 13, ArenaRules.CircleSides), HeroStartY = -9, BossStartY = 9, Props = props,
+            };
+        }
     }
 
     /// <summary>Plays <see cref="ArenaScene"/>'s script each frame, from the frame it began; torn down with its root.</summary>
@@ -99,10 +133,10 @@ namespace Champions.Client.Scenes
         Stills.View _view;
         double _start;
         int _next, _cursor;
-        bool _scroll;
+        bool _scroll, _kitScene;
         int _walk;
 
-        public void Begin(Camera camera, GameContent content, Palette palette, Stills.View view, bool scroll)
+        public void Begin(Camera camera, GameContent content, Palette palette, Stills.View view, bool scroll, string kit)
         {
             _camera = camera;
             _view = view;
@@ -111,11 +145,18 @@ namespace Champions.Client.Scenes
             _entries = new ScriptedSong().Beats(0, ArenaScene.SongEnd, ArenaScene.Bpm).Entries();
             var config = new RunInputs { Loadout = new Upgrade[0] }.Build(content);
             config.Arenas = content.Arenas.Clone();
-            config.ArenaScript = scroll ? ArenaScene.HallScript() : ArenaScene.BedScript();
+            if (kit != null)
+            {
+                var show = ArenaScene.KitArena(config.Arenas, kit);
+                config.Arenas.Arenas = config.Arenas.Arenas.Concat(new[] { show }).ToArray();
+                config.ArenaScript = new ArenaScript { Arena = show.Id, FormAtS = 1 };
+            }
+            else config.ArenaScript = scroll ? ArenaScene.HallScript() : ArenaScene.BedScript();
+            _kitScene = kit != null;
             config.Hero.Health = 1e9;
             _driver = new SimDriver(config, new FrameClock());
             _world = new WorldPresenter(camera, palette);
-            _arena = new ArenaPresenter(config.Arenas, palette, _world.World, _world.World.Camera, camera.gameObject.layer);
+            _arena = new ArenaPresenter(config.Arenas, palette, _world.World, _world.World.Camera, camera.gameObject.layer, content.BossRush);
             view.Requeue = () => _arena.Queue(camera);
             _marker = new HeroMarker(camera.gameObject.layer);
             Debug.Log($"Arenas: the scripted {config.ArenaScript.Arena} at {ArenaScene.Bpm} BPM");
@@ -132,7 +173,8 @@ namespace Champions.Client.Scenes
             if (_walk == 0 && frame >= (_scroll ? 3.6 : 2.5))
             {
                 _walk = 1;
-                if (_scroll) sim.Target(50, 0, _driver.Times.Heard);
+                if (_kitScene) sim.Target(-3, 9, _driver.Times.Heard);
+                else if (_scroll) sim.Target(50, 0, _driver.Times.Heard);
                 else sim.Target(12, 0, _driver.Times.Heard);
             }
             if (!_driver.Step(new ClockReadings { Real = Time.realtimeSinceStartupAsDouble, Frame = frame })) return;

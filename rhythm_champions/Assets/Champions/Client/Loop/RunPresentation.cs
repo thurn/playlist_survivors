@@ -119,7 +119,7 @@ namespace Champions.Client.Loop
             }
             if (config.Arenas != null)
             {
-                Arena = new ArenaPresenter(config.Arenas, palette, world.World, world.World.Camera, layer);
+                Arena = new ArenaPresenter(config.Arenas, palette, world.World, world.World.Camera, layer, content.BossRush);
                 _owned.Add(Arena);
             }
             Ranged = new RangedPresenter(palette);

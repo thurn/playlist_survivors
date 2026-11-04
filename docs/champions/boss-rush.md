@@ -312,6 +312,36 @@ under the vendor rule. Kits supply floor treatment, a backdrop silhouette
 The Kaiju pack's creatures have no animation clips, so it's used for scenery
 only.
 
+#### Kits, as built (ps-8z4.5)
+
+- **Data**: a kit is an entry in `Content/arenas.json`'s `kits`, and its prop
+  kinds are ordinary `props` with `"kit"` set, so a fight's arena can place
+  them directly. `dress` maps each placeholder kind to a kit kind of the same
+  footprint, height, hits and blocking (checked on load), so dressing an arena
+  changes nothing the sim does. `floor` scatters pieces over open floor (a
+  share of `cellM` cells, `clearM` clear of walls, props, zones and starts);
+  each `backdrop` ring stands pieces `gapM` outside the walls every
+  `spacingM`, only where the outline faces away from the camera (its outward
+  normal's y at least `facing`), lower toward the flanks. Both are decoration,
+  never solid, and seeded by the arena's id.
+- **Which kit**: the arena's own `kit`, else the Boss Rush run's act's
+  (`bossrush.json`'s `acts[].kit`), else the act of the slot that fights in
+  that arena (so `champions boss review` shows it too). The stand-in arena
+  takes each act's.
+- **Recipes**: `tools/recipes/kit/KIT.py`, `PIECES = {id: build}`, designed
+  from scratch with the structure recipes' `Builder` and shapes, every edge
+  drawn; a prop piece stands its kind's height. `champions kit bake KIT` (and
+  `champions build`) writes the ignored `Assets/Baked/Kits/`; without it the
+  arenas draw their placeholders. `champions stills --scene kit-KIT` shows a
+  kit in a show arena.
+- **Look**: unbreakable kit props grey (grey still means a wall), breakable
+  ones and the floor and backdrop in the act's key; the floor dim over a
+  dimmed fill, the backdrop a dark skyline whose lines fade ring by ring.
+- **Act 1, Overgrown Grid**: props `brokenOak` (dresses `pillar`),
+  `crystalCluster` (`crate`), `lantern` (`post`), `fallenLog` (`slab`),
+  `giantMushroom`, `runeStone`, `stump`, `fernTree`; floor `roots` and `moss`; backdrop `treeline` then `hills`.
+  [Evidence](../../rhythm_champions/evidence/boss-rush/kit-act1/README.md).
+
 ### Look, effects, shaders and sound
 
 - **Models**: each boss gets a mesh designed with the

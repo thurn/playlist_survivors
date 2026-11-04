@@ -399,14 +399,20 @@ def baked_dir(wt: paths.Worktree, kind_id: str) -> Path:
     return wt.project / "Assets" / "Baked" / "Structures" / kind_id
 
 
-def load_recipe(path: Path) -> ModuleType:
-    spec = importlib.util.spec_from_file_location(f"structure_recipe_{path.stem}", path)
+def load_module(path: Path, name: str) -> ModuleType:
+    """A recipe file as a module, writing no __pycache__ among the recipes."""
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
-    writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True  # no __pycache__ among the recipes
+    writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
     try:
         spec.loader.exec_module(module)
     finally:
         sys.dont_write_bytecode = writes
+    return module
+
+
+def load_recipe(path: Path) -> ModuleType:
+    module = load_module(path, f"structure_recipe_{path.stem}")
     if not callable(getattr(module, "build", None)):
         raise StructureError(f"{path.name} needs build(kind) -> Mesh")
     return module

@@ -208,6 +208,8 @@ namespace Champions.Sim
     public sealed class ArenaPropKind
     {
         public string Id;
+        /// <summary>The act kit whose piece draws it (its piece is its id's), or null for a placeholder.</summary>
+        public string Kit;
         public FootprintShape Shape;
         public double Radius, HalfX, HalfY;
         public double HeightM = 2;
@@ -249,8 +251,40 @@ namespace Champions.Sim
         public ArenaPropPlacement[] Props = new ArenaPropPlacement[0];
         public double HeroStartX, HeroStartY, BossStartX, BossStartY;
         public ArenaCamera Camera = new ArenaCamera { MaxScale = 1.8, MarginM = 1.5 };
+        /// <summary>The kit that dresses it wherever it forms, or null: a Boss Rush run's act's kit then.</summary>
+        public string Kit;
 
         public int ZoneIndex(string id) => Array.FindIndex(Zones, z => z.Id == id);
+    }
+
+    /// <summary>One ring of an act kit's backdrop: its pieces stood along the outline outside the walls.</summary>
+    public sealed class ArenaBackdropRing
+    {
+        public string[] Pieces = new string[0];
+        /// <summary>How far outside the walls it stands, and the outline's length per piece (m).</summary>
+        public double GapM, SpacingM;
+        /// <summary>
+        /// Only where the outline faces away from the camera at least this much (its outward normal's y, -1 to 1): the
+        /// camera looks up +y, so the far side's backdrop rises behind the arena and never in front of it.
+        /// </summary>
+        public double Facing;
+    }
+
+    /// <summary>
+    /// An act's environment kit (boss-rush.md, Environments): its prop kinds (<see cref="ArenaPropKind.Kit"/>), the kit kind
+    /// each placeholder kind is drawn as where it dresses an arena (same footprint, height and breaking, so dressing
+    /// changes nothing the sim does), the floor treatment scattered over open floor and the backdrop round the far walls.
+    /// Only the client draws it: the floor and backdrop are decoration, never solid.
+    /// </summary>
+    public sealed class ArenaKit
+    {
+        public string Id;
+        /// <summary>For each prop kind, the kind it is drawn as under this kit (itself where the kit doesn't dress it).</summary>
+        public int[] Dress = new int[0];
+        public string[] FloorPieces = new string[0];
+        /// <summary>The floor's scatter: one cell this wide (m) per piece at most, this share of cells holding one, kept this clear of the walls, props, zones and starts.</summary>
+        public double FloorCellM = 4, FloorShare = 0.5, FloorClearM = 1;
+        public ArenaBackdropRing[] Backdrop = new ArenaBackdropRing[0];
     }
 
     /// <summary>
@@ -273,6 +307,10 @@ namespace Champions.Sim
 
         public ArenaPropKind[] Props = new ArenaPropKind[0];
         public ArenaDef[] Arenas = new ArenaDef[0];
+        public ArenaKit[] Kits = new ArenaKit[0];
+
+        /// <summary>The kit <paramref name="id"/>, or null (an act whose kit hasn't landed).</summary>
+        public ArenaKit Kit(string id) => id == null ? null : Array.Find(Kits, k => k.Id == id);
 
         public int PropIndex(string id) => Array.FindIndex(Props, k => k.Id == id);
 
@@ -284,6 +322,7 @@ namespace Champions.Sim
             var c = (ArenaRules)MemberwiseClone();
             c.Props = (ArenaPropKind[])Props.Clone();
             c.Arenas = (ArenaDef[])Arenas.Clone();
+            c.Kits = (ArenaKit[])Kits.Clone();
             return c;
         }
 
@@ -305,6 +344,7 @@ namespace Champions.Sim
                 var kind = new ArenaPropKind
                 {
                     Id = k.String("id"),
+                    Kit = k.StringOr("kit", null),
                     HeightM = k.Number("heightM"),
                     Hits = k.Int("hits"),
                     Blocks = k.BoolOr("blocks", true),
@@ -330,6 +370,7 @@ namespace Champions.Sim
             });
             var props = rules.Props;
             rules.Arenas = r.Objects("arenas", a => ReadArena(a, props));
+            if (r.Has("kits")) rules.Kits = r.Objects("kits", k => ReadKit(k, props));
             r.End();
             rules.Validate(path);
             return rules;
@@ -345,6 +386,7 @@ namespace Champions.Sim
             var cam = a.Object("camera");
             def.Camera = new ArenaCamera { MaxScale = cam.Number("maxScale"), MarginM = cam.Number("marginM") };
             cam.End();
+            def.Kit = a.StringOr("kit", null);
             def.Zones = a.Objects("zones", z =>
             {
                 var zone = new ArenaZone
@@ -393,6 +435,52 @@ namespace Champions.Sim
             return def;
         }
 
+        static ArenaKit ReadKit(ContentReader k, ArenaPropKind[] props)
+        {
+            var kit = new ArenaKit { Id = k.String("id"), Dress = new int[props.Length] };
+            k.StringOr("note", null);
+            for (int i = 0; i < props.Length; i++) kit.Dress[i] = i;
+            if (k.Has("dress"))
+            {
+                var dress = k.Object("dress");
+                foreach (string from in new List<string>(dress.Keys()))
+                {
+                    int a = Array.FindIndex(props, p => p.Id == from), b = Array.FindIndex(props, p => p.Id == dress.String(from));
+                    if (a < 0 || props[a].Kit != null) throw ContentReader.Fail(dress.Child(from), $"no placeholder prop kind {from}");
+                    if (b < 0 || props[b].Kit != kit.Id) throw ContentReader.Fail(dress.Child(from), $"no prop kind {dress.String(from)} in kit {kit.Id}");
+                    ArenaPropKind x = props[a], y = props[b];
+                    if (x.Shape != y.Shape || Math.Abs(x.Radius - y.Radius) > 1e-9 || Math.Abs(x.HalfX - y.HalfX) > 1e-9 || Math.Abs(x.HalfY - y.HalfY) > 1e-9
+                        || Math.Abs(x.HeightM - y.HeightM) > 1e-9 || x.Hits != y.Hits || x.Blocks != y.Blocks || x.BlocksShots != y.BlocksShots)
+                        throw ContentReader.Fail(dress.Child(from), $"{y.Id} must match {x.Id}'s footprint, height, hits and blocking, so dressing changes nothing the sim does");
+                    kit.Dress[a] = b;
+                }
+                dress.End();
+            }
+            if (k.Has("floor"))
+            {
+                var f = k.Object("floor");
+                kit.FloorPieces = f.Strings("pieces");
+                kit.FloorCellM = f.Number("cellM");
+                kit.FloorShare = f.Number("share");
+                kit.FloorClearM = f.Number("clearM");
+                f.End();
+                if (!(kit.FloorCellM > 0) || !(kit.FloorShare >= 0 && kit.FloorShare <= 1) || !(kit.FloorClearM >= 0))
+                    throw ContentReader.Fail(f.Path, "cellM positive, share 0 to 1, clearM at least 0");
+            }
+            if (k.Has("backdrop"))
+                kit.Backdrop = k.Objects("backdrop", b =>
+                {
+                    var ring = new ArenaBackdropRing
+                    {
+                        Pieces = b.Strings("pieces"), GapM = b.Number("gapM"), SpacingM = b.Number("spacingM"), Facing = b.Number("facing"),
+                    };
+                    if (ring.Pieces.Length == 0 || !(ring.GapM >= 0) || !(ring.SpacingM > 0) || !(ring.Facing >= -1 && ring.Facing <= 1))
+                        throw ContentReader.Fail(b.Path, "pieces, gapM at least 0, spacingM positive, facing -1 to 1");
+                    return ring;
+                });
+            return kit;
+        }
+
         static void Point(ContentReader r, string key, out double x, out double y)
         {
             var at = r.Numbers(key);
@@ -417,12 +505,18 @@ namespace Champions.Sim
         {
             if (!(FormBeats > 0) || !(RetractBeats > 0)) throw ContentReader.Fail(path + ".formBeats", "formBeats and retractBeats positive");
             if (!(WallThicknessM > 0) || !(WallHeightM > 0)) throw ContentReader.Fail(path + ".wallThicknessM", "wallThicknessM and wallHeightM positive");
+            var kitIds = new HashSet<string>();
+            for (int i = 0; i < Kits.Length; i++)
+                if (!kitIds.Add(Kits[i].Id)) throw ContentReader.Fail($"{path}.kits[{i}].id", $"another kit is {Kits[i].Id}");
+            for (int i = 0; i < Props.Length; i++)
+                if (Props[i].Kit != null && !kitIds.Contains(Props[i].Kit)) throw ContentReader.Fail($"{path}.props[{i}].kit", $"no kit {Props[i].Kit}");
             var ids = new HashSet<string>();
             for (int i = 0; i < Arenas.Length; i++)
             {
                 var a = Arenas[i];
                 string at = $"{path}.arenas[{i}]";
                 if (!ids.Add(a.Id)) throw ContentReader.Fail(at + ".id", $"another arena is {a.Id}");
+                if (a.Kit != null && !kitIds.Contains(a.Kit)) throw ContentReader.Fail(at + ".kit", $"no kit {a.Kit}");
                 if (!(a.Camera.MaxScale >= 1)) throw ContentReader.Fail(at + ".camera.maxScale", "at least 1");
                 if (!(a.Camera.MarginM >= 0)) throw ContentReader.Fail(at + ".camera.marginM", "at least 0");
                 var zoneIds = new HashSet<string>();
