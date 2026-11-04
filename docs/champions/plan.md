@@ -522,7 +522,9 @@ the sim's margin is thin, and an M1-class run remains operator-pending.
   passing CI run.
 - **Baked cache**: `Assets/Baked/` keyed by the recipes, the vendor hashes
   and the baker code, so a fresh worktree or CI copies it instead of
-  re-baking.
+  re-baking. With no entry for its inputs, it starts from the newest
+  complete one: each monster and structure keeps its own bake key, so only
+  the changed types rebake (a full bake is two minutes; ps-4a4).
 - No lightmaps: there is nothing to bake.
 
 ## CI and Checks

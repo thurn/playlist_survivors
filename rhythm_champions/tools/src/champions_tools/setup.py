@@ -71,18 +71,50 @@ def baked_key(wt: paths.Worktree) -> str:
     return file_hash(wt.root, *files, wt.project / "manifest.json")
 
 
-def restore_baked(wt: paths.Worktree) -> bool:
+# What a cached Assets/Baked/ needs to seed a worktree whose inputs it wasn't baked from: the
+# folders whose bakers key each type and skip the current ones (the effects, sounds and ranged
+# libraries bake on every build anyway).
+KEYED_BAKES = ("Monsters", "Structures")
+
+
+def nearest_baked(cache: Path) -> Path | None:
+    """The newest cached Assets/Baked/ holding every keyed bake, or None."""
+    root = cache / "baked"
+    if not root.is_dir():
+        return None
+    entries = [p for p in root.iterdir() if p.is_dir() and "." not in p.name
+               and all((p / d).is_dir() for d in KEYED_BAKES)]
+    return max(entries, key=lambda p: p.stat().st_mtime, default=None)
+
+
+def restore_baked(wt: paths.Worktree) -> Path | None:
     """Clones the cached Assets/Baked/ for the current inputs, if the cache has it and the
-    worktree's isn't already that one; whether it cloned."""
+    worktree's isn't already that one; the entry it cloned, or None. With no entry for these inputs, a
+    worktree with no Assets/Baked/ of its own takes the newest complete one (nearest_baked): each
+    monster and structure keeps its own bake key, so the build then rebakes only the types whose
+    inputs changed, not all of them (a full bake is two minutes of the slow CI's budget, ps-4a4)."""
     key = baked_key(wt)
     marker = baked_dir(wt) / BAKED_KEY
     if marker.exists() and marker.read_text(encoding="utf-8").strip() == key:
-        return False
+        return None
     src = paths.cache_root() / "baked" / key
     if not src.is_dir():
-        return False
+        if baked_dir(wt).is_dir() and any(baked_dir(wt).iterdir()):
+            return None
+        src = nearest_baked(paths.cache_root())
+        if src is None:
+            return None
     clone.clone_tree(src, baked_dir(wt))
-    return True
+    if src.name != key:
+        marker.unlink(missing_ok=True)  # baked from other inputs: save_baked writes this one's
+    return src
+
+
+def baked_restored(wt: paths.Worktree, src: Path) -> str:
+    """How setup reports a restore_baked clone."""
+    if src.name == baked_key(wt):
+        return f"Baked cloned from the cache ({src.name})"
+    return f"Baked cloned from the nearest cached bake ({src.name}); the build rebakes only what changed"
 
 
 def _baked_files(folder: Path) -> set[str]:
@@ -365,8 +397,8 @@ def ensure(wt: paths.Worktree) -> int:
         stamp.write_bytes(manifest.read_bytes())
         print(f"setup: the manifest changed since the last sync; Vendor {'synced' if synced else 'cloned'} "
               f"({n} files, manifest {key})")
-    if restore_baked(wt):
-        print("setup: Baked cloned from the cache for the current bake inputs")
+    if baked := restore_baked(wt):
+        print(f"setup: {baked_restored(wt, baked)}")
     plugin.install(wt)
     return 0
 
@@ -384,8 +416,8 @@ def setup(wt: paths.Worktree, run_unity: bool = True, fresh_library: bool = Fals
     n, synced, vkey = sync_vendor(wt, roots)
     print(f"setup: Vendor {'synced' if synced else 'cloned'} ({n} files, manifest {vkey}) "
           f"in {time.monotonic() - t:.2f} s")
-    if restore_baked(wt):
-        print(f"setup: Baked cloned from the cache ({baked_key(wt)})")
+    if baked := restore_baked(wt):
+        print(f"setup: {baked_restored(wt, baked)}")
     plugin.install(wt)
 
     t = time.monotonic()

@@ -4,6 +4,7 @@ rebuild, what they cache, and what they report."""
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -190,6 +191,22 @@ def test_a_bake_is_cached_by_its_inputs(monkeypatch, wt) -> None:
     write(baker, "class EffectBaker { }\n")
     shutil.rmtree(setup.baked_dir(wt))
     assert not setup.restore_baked(wt)  # new inputs: nothing cached for them
+
+
+def test_new_bake_inputs_start_from_the_newest_complete_bake(wt) -> None:
+    root = paths.cache_root() / "baked"
+    old, newest, partial = root / "a1", root / "b2", root / "c3"
+    for p, dirs in ((old, setup.KEYED_BAKES), (newest, setup.KEYED_BAKES), (partial, ("Monsters",))):
+        for d in dirs:
+            write(p / d / "x" / "bake.key", f"{p.name}\n")
+    os.utime(old, (1, 1))
+    os.utime(newest, (2, 2))
+    os.utime(partial, (3, 3))
+    assert setup.nearest_baked(paths.cache_root()) == newest
+    assert setup.restore_baked(wt)  # no entry for these inputs: the newest that every keyed baker can reuse
+    assert (setup.baked_dir(wt) / "Monsters" / "x" / "bake.key").read_text() == "b2\n"
+    assert not (setup.baked_dir(wt) / setup.BAKED_KEY).exists()
+    assert not setup.restore_baked(wt)  # a worktree's own bake is kept
 
 
 def test_a_later_bake_with_more_files_replaces_the_cached_one(monkeypatch, wt) -> None:
