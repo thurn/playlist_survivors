@@ -64,7 +64,9 @@ sealed class BloomModule : BossModule
   (the fight's `Health` split by share); `BodyDied` tells the module one fell; the fight ends when all have.
 - **XP bursts**: at each `1/(ShedThresholds+1)` of health lost (9 by default: 90%, 80% ... 10%) the fight raises
   `Shed(sim, fight, burst, spots)` on the next beat with the module's `ShedSpots` (a ring by default; author your own
-  geometry). A kill sheds the rest at once. The progression bead (ps-8z4.4) spawns the gems from it.
+  geometry). A kill sheds the rest at once. In the run, the progression (ps-8z4.4) drops an equal step of the slot's
+  XP budget per burst at those spots by their shares (`BossRush.FightShed`), and the kill drops the rest; a stand-in
+  duel still sheds by bossrush.json's shapes.
 - **Death**: each body's `BossDeath`; then `Died(sim, fight)` (the mode shell's reward and next arena).
 - Randomness only from `f.Random`; module state on the module instance (a fresh one per fight).
 
