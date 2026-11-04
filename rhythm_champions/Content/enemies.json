@@ -17,6 +17,7 @@
     { "id": "fatOgre", "role": "boss", "slot": "counter", "sizeM": 5, "radiusM": 2.0, "speedMps": 3.0, "health": 150, "experience": 0 },
     { "id": "dragon", "role": "boss", "slot": "boss", "sizeM": 12, "radiusM": 3.5, "speedMps": 1.8, "health": 650, "experience": 0 },
     { "id": "conductor", "role": "boss", "slot": "counter", "sizeM": 4, "radiusM": 1.4, "speedMps": 3, "health": 350, "experience": 0 },
-    { "id": "treasureGoblin", "role": "boss", "slot": "counter", "sizeM": 3, "radiusM": 1.2, "speedMps": 4.5, "health": 204, "experience": 0 }
+    { "id": "treasureGoblin", "role": "boss", "slot": "counter", "sizeM": 3, "radiusM": 1.2, "speedMps": 4.5, "health": 204, "experience": 0 },
+    { "id": "hiveQueen", "role": "boss", "slot": "accent", "sizeM": 3.5, "radiusM": 1.4, "speedMps": 3.5, "health": 735, "experience": 0 }
   ]
 }

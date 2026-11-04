@@ -1,0 +1,15 @@
+{
+  "type": "hiveQueen",
+  "look": "default",
+  "source": "recipe",
+  "trailerSource": "vendor",
+  "lodTriangles": [510, 510, 510],
+  "trailerLodTriangles": [1858, 1237, 639],
+  "shards": 40,
+  "bones": 53,
+  "heightM": 8.078,
+  "poses": ["idle", "walk", "sting", "claw", "cast"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

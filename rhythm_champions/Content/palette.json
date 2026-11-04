@@ -37,6 +37,7 @@
     "fatOgre": "enemies.counter.orange",
     "dragon": "boss.body",
     "conductor": "enemies.counter.amber",
-    "treasureGoblin": "enemies.counter.amber"
+    "treasureGoblin": "enemies.counter.amber",
+    "hiveQueen": "enemies.accent.magenta"
   }
 }

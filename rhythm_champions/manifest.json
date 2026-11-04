@@ -1091,6 +1091,83 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Cast Spell.FBX",
+      "sourceSha256": "2da1697fd41309f9cef8e72d6eb102610d5e8ba6ff3931ec42b1ff300a439889",
+      "guid": "797819c53f6532e479158cb81183828f",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Claw Attack.FBX",
+      "sourceSha256": "8b1325797e81592a3d3428951ac3668fdb85b2e0f814cbfd7b24b798a210d5cd",
+      "guid": "72cf8a3e98d1419439c39ab91b4728ae",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Defend.FBX",
+      "sourceSha256": "1d60b770cddbb7d79e50af70a7a55869f72ddcfc97786dcf9ee1e3552951ad6e",
+      "guid": "ce0f8705fdea1654985bc0aec7d24fa8",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Die.FBX",
+      "sourceSha256": "c57b8459589819ccc2ae08c0aa94a1e8f5e7055121a119ccec5bc081a07be0c1",
+      "guid": "3aecf2ca83d0a2f4da48fe52ecaf2789",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Fly Forward.FBX",
+      "sourceSha256": "a20a97202cee91eb6cc3e79b13c926bf7442bfde1db481f4f7949411e6499556",
+      "guid": "006b21c3fffd369498123cbb27664e3d",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Fly Left.FBX",
+      "sourceSha256": "a452c77b12b838dc92b3c780a9e4ef272c0980ea8a47727ec57ffd8a2f1098ff",
+      "guid": "d9721872264f76a46a54acfe5d06f27d",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Fly Right.FBX",
+      "sourceSha256": "8461ce8510d7cec7e5163968e9c187f31d2757891861fbee3422b81c1af2aca7",
+      "guid": "3ce300828c80cdb459aa26ff611ac456",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Idle.FBX",
+      "sourceSha256": "0ec04c98360157734f0a6faeb7c6fec60baedba2148d7d8ab204ab5b66b516ae",
+      "guid": "0ac2895cf3fbefc459e908fedc5e25dd",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Sting Attack.FBX",
+      "sourceSha256": "1e7a2c493a206bb588f790982e4709ca72a6a7a884ae7adbd8de3c28f7d6232f",
+      "guid": "231ff9650c9e9a54bbffc0f18c0335db",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/FBX/Polygonal Giant Bee@Take Damage.FBX",
+      "sourceSha256": "3eef4d9eae8158b5bbeaf2361fcd43b9146215c10afa84e2a0260b7983c2a8ef",
+      "guid": "825979445c3860d43a2ca6aa18a0d193",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Giant Bee/Prefabs/Polygonal Giant Bee Blue.prefab",
+      "sourceSha256": "b587b298eebd05c813d4d4936f36487262041ebea7011c06933f374662f85ced",
+      "guid": "37ea23c777f9b284393e051d2860c003",
+      "use": "Boss Rush boss 2: the Hive Queen"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact01.wav",
       "sourceSha256": "d40dacceeb52faf594145df2e8313cd02f925c38bf7269e47b552a90cfa3a7a5",
       "guid": "d7568dee1a47844d2a1eaf636a1b6aba",

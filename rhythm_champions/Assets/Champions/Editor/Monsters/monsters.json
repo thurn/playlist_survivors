@@ -164,6 +164,21 @@
         { "role": "cast", "guid": "966085af8c2707e438b67e7dd24d2a45", "clip": "SpellCast", "impact": 0.42, "end": 1.167 },
         { "role": "hit", "guid": "d445eb4ba61ab134aabb887595dfa534", "clip": "TakeDamage", "impact": 0.0, "end": 1.0 }
       ]
+    },
+    {
+      "id": "hiveQueen",
+      "prefab": "37ea23c777f9b284393e051d2860c003",
+      "heightM": 3.5,
+      "reviewPoses": [ "idle", "walk", "sting", "claw", "cast" ],
+      "clips": [
+        { "role": "idle", "guid": "0ac2895cf3fbefc459e908fedc5e25dd", "clip": "Idle", "loop": true },
+        { "role": "walk", "guid": "006b21c3fffd369498123cbb27664e3d", "clip": "Fly Forward", "loop": true, "strideM": 3.0 },
+        { "role": "sting", "guid": "231ff9650c9e9a54bbffc0f18c0335db", "clip": "Sting Attack", "impact": 0.217, "end": 1.0 },
+        { "role": "claw", "guid": "72cf8a3e98d1419439c39ab91b4728ae", "clip": "Claw Attack", "impact": 0.25, "end": 1.0 },
+        { "role": "cast", "guid": "797819c53f6532e479158cb81183828f", "clip": "Cast Spell", "impact": 0.583, "end": 1.167 },
+        { "role": "defend", "guid": "ce0f8705fdea1654985bc0aec7d24fa8", "clip": "Defend", "end": 1.333 },
+        { "role": "hit", "guid": "825979445c3860d43a2ca6aa18a0d193", "clip": "Take Damage", "impact": 0.0, "end": 0.833 }
+      ]
     }
   ]
 }
