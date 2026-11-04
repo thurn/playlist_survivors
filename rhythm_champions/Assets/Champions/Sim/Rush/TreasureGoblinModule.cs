@@ -65,9 +65,11 @@ namespace Champions.Sim
         public const double PanicBelow = 0.4;
 
         readonly double[] trackX = new double[TrackPoints], trackY = new double[TrackPoints], trackS = new double[TrackPoints + 1];
-        double originX, originY, trackLength, s, lastReverse = double.NegativeInfinity;
+        /// <summary>The grove's centre: its arena's, or where the arena would stand with its hero start on the fight's centre.</summary>
+        double originX, originY;
+        double trackLength, s, lastReverse = double.NegativeInfinity;
         double standUntil = double.NegativeInfinity, sprayReady, stabReady, ringReady;
-        int dir = 1, bombs, fightingBeats, cornered, beats;
+        int dir = 1, bombs, cornered, beats;
         double lastBeat = double.NegativeInfinity;
         bool fleeing;
 
@@ -78,10 +80,6 @@ namespace Champions.Sim
 
         /// <summary>Whether it is in its panic (phase 2).</summary>
         bool Panic(BossFight f) => f.Phase > 1;
-
-        /// <summary>The grove's centre: its arena's, or where the arena would stand with its hero start on the fight's centre.</summary>
-        public double OriginX => originX;
-        public double OriginY => originY;
 
         /// <summary>Track point <paramref name="k"/> from the grove's centre (the arena's frame).</summary>
         public static void TrackPoint(int k, out double x, out double y)
@@ -191,13 +189,12 @@ namespace Champions.Sim
         {
             if (f.Stage != FightStage.Fighting) return;
             beats++;
-            fightingBeats++;
             if (t < standUntil - 1e-9 || f.Moving(0)) return;
             ref readonly var b = ref f.Bodies[0];
             f.HeroAt(t, out double hx, out double hy);
             double d = Hypot(hx - b.X, hy - b.Y);
             cornered = d < CorneredM ? cornered + 1 : 0;
-            bool taught = bombs >= TaughtBombs || fightingBeats >= TaughtBeats;
+            bool taught = bombs >= TaughtBombs || beats >= TaughtBeats;
             double beatS = f.BeatS;
             if (taught && cornered >= CorneredBeats && t >= ringReady - 1e-9)
             {
@@ -283,6 +280,7 @@ namespace Champions.Sim
                     Shape = HitShape.Circle(x + RingBombAtM * SimMath.Cos(a), y + RingBombAtM * SimMath.Sin(a), RingBombRadiusM), Damage = RingBombDamage,
                 });
             }
+            // Ready again a rest after everything it laid has passed (the blast's last front among it).
             double last = f.BusyUntil;
             standUntil = tel.Land + beatS;
             cornered = 0;
