@@ -16,7 +16,13 @@ Look). This page is the fight beads' guide: what exists, where, and how a boss u
 ## The sim: `BossFight` and `BossModule`
 
 `sim.Fight` (`Sim/Rush/BossFight.cs`) runs one module at a time, separately from the main game's `sim.Bosses` (the
-main game's three bosses are untouched; all 512 earlier sim tests and the recorded sessions' replays still pass).
+main game's three bosses are untouched; every earlier sim test and the recorded sessions' replays still pass).
+
+**In the run**: the mode shell (ps-8z4.1) counts a slot as landed once its id is a registered module with its cast row
+in enemies.json (`BossRushBoss.Fight`); it then starts the slot's fight with `sim.Fight.Start(id, t, new FightSetup {
+Act, Health = the slot's })` instead of calling the stand-in duel, and the fight's death calls the shell's `BossDied`
+(rewards, the next arena). So registering the module and the cast row is all a fight bead does to put its boss in the
+run. `FightSetup` has no arena field: the arena (ps-8z4.2) forms round the hero, which is the fight's default centre.
 
 ```csharp
 sealed class BloomModule : BossModule
@@ -132,9 +138,11 @@ or a boss without one, plays the generic boss sounds. `fatOgre`'s bank is the pr
 
 ## Verification
 
-- `dotnet test rhythm_champions/dotnet`: 527 passed (15 new in `Rush/BossFightTests.cs`, among them the Ogre's
-  fairness at 90 and 180 BPM; the 512 before unchanged).
+- `dotnet test rhythm_champions/dotnet`: all pass, rebased on the shell and arenas (15 new in `Rush/BossFightTests.cs`,
+  among them the Ogre's fairness at 90 and 180 BPM).
 - Unity EditMode (`champions test`): `BossRushTests` (the fight's bank ticking on the beats, the BossEdge material
-  taking a look with no keywords, `--fight` and the review scenes' names).
+  taking a look with no keywords, `--fight` and the review scenes' names) pass; BossEdge compiled for Metal with no
+  keywords (vertex and fragment, one variant). The only failures were MusicTests needing the audio plugin's dylib,
+  which this worktree didn't have.
 - Not run here: a player build and `champions boss review fatOgre` (a build takes the CI's slot; the first fight bead's
   review is the first real render), and the variant count from `champions check --variants` (slow CI builds it).
