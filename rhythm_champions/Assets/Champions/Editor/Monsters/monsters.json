@@ -250,6 +250,23 @@
         { "role": "throw", "guid": "f788021144d32493999cabeb71c954b9", "clip": "Cast1", "impact": 1.167, "end": 2.833 },
         { "role": "hit", "guid": "f788021144d32493999cabeb71c954b9", "clip": "GotHitBody", "impact": 0.0, "end": 2.667 }
       ]
+    },
+    {
+      "id": "bandagedKing",
+      "prefab": "545049a8805ff014ab5a0aaaca65c28f",
+      "heightM": 5.0,
+      "reviewPoses": [ "idle", "walk", "smash", "tail", "attack", "stomp" ],
+      "clips": [
+        { "role": "idle", "guid": "e11bf3737410af04db090b9c86180e2a", "clip": "Idle", "loop": true },
+        { "role": "walk", "guid": "7398c62b04f461743b6bc959da622e56", "clip": "Walk", "loop": true, "strideM": 3.0 },
+        { "role": "smash", "guid": "3ee22e0521f357a4096465f1c43509d1", "clip": "BandageWhipAttack3Forward", "impact": 0.867, "end": 1.167 },
+        { "role": "tail", "guid": "45390838d2cb9104ea3eaf39f7a82068", "clip": "BandageWhipAttack1Forward", "impact": 0.533, "end": 1.0 },
+        { "role": "stomp", "guid": "3c80fe5caccebf6408b6e15b617edb2b", "clip": "BandageWhipAttack2Forward", "impact": 0.333, "end": 1.0 },
+        { "role": "attack", "guid": "4850cbc6146824343adc286659a563e8", "clip": "BandageWhip3HitComboForward", "impact": 2.0, "end": 2.333 },
+        { "role": "throw", "guid": "af343351b6bfbcc4d8cdb50a098a957f", "clip": "BandageWhip2HitComboForward", "impact": 0.467, "end": 1.667 },
+        { "role": "roar", "guid": "af1d03e26e53c024a8900b0f7d2ae013", "clip": "Awakening", "end": 6.333 },
+        { "role": "hit", "guid": "c4bb6dbd540800e458b4e24c34a8e283", "clip": "GetHitLight1", "impact": 0.0, "end": 0.667 }
+      ]
     }
   ]
 }

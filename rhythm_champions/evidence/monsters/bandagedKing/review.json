@@ -1,0 +1,15 @@
+{
+  "type": "bandagedKing",
+  "look": "default",
+  "source": "recipe",
+  "trailerSource": "vendor",
+  "lodTriangles": [674, 674, 674],
+  "trailerLodTriangles": [10964, 5758, 2878],
+  "shards": 38,
+  "bones": 68,
+  "heightM": 3.614,
+  "poses": ["idle", "walk", "smash", "tail", "attack", "stomp"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

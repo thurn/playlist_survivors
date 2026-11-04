@@ -6,6 +6,132 @@
   "assets": [
     {
       "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@3HitComboForward.FBX",
+      "sourceSha256": "23682a0e3a8b5587053be00bc5dc4ac191000d9dadb167f651c57642ad5d0c7d",
+      "guid": "ae76bcf9a50f24d4e869f25f9ba46e76",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Asleep.FBX",
+      "sourceSha256": "f92b79fe08d4212f008d2c4c24e28524c21c0479131abf362e75367977ddf63d",
+      "guid": "2e64e201f8e459b4a9c0799337a7d64f",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Attack1Forward.FBX",
+      "sourceSha256": "6ceab1e376edb80ccea67a5bdffb143165c3cba32f95d8e6afb9c7d8f7f04ef1",
+      "guid": "4ba3a7428a34d02459b5f226389124cd",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Attack2Forward.FBX",
+      "sourceSha256": "01b51c3fe0f0a65e4ad81f558445f5d6652cf4666edd42870978a852a7d597f8",
+      "guid": "8a8d40c2f8664974694187b07aabc3fb",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Attack3Forward.FBX",
+      "sourceSha256": "d5106bc0e43a262144379892e6792fbf30795fc1afc0ba0052ec6bd2bb4b9f4d",
+      "guid": "93f8c9fd50cfe1b44a0a0dd5ae4e9b45",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Awakening.FBX",
+      "sourceSha256": "9c997b2629f0bc2d23869619d47b6fa681c7adf1703d6be42b0231441d7bd231",
+      "guid": "af1d03e26e53c024a8900b0f7d2ae013",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@BandageWhip2HitComboForward.FBX",
+      "sourceSha256": "8af0e498d80ff821d4de781f875bfb34870bb27034529b2b89cabc062f38dca3",
+      "guid": "af343351b6bfbcc4d8cdb50a098a957f",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@BandageWhip3HitComboForward.FBX",
+      "sourceSha256": "e72f5be0f888c9135794b94320e9c535f5e5f1b47165068cafdcbdfc0f180c41",
+      "guid": "4850cbc6146824343adc286659a563e8",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@BandageWhipAttack1Forward.FBX",
+      "sourceSha256": "987dae74a69b87a67d5228d5947d8454d3dc54880f0b25ccd3511234dc2a5287",
+      "guid": "45390838d2cb9104ea3eaf39f7a82068",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@BandageWhipAttack2Forward.FBX",
+      "sourceSha256": "8fd60f134f19009bd8d2a0db9fb197eb20c619892584caa30f819517903a27cf",
+      "guid": "3c80fe5caccebf6408b6e15b617edb2b",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@BandageWhipAttack3Forward.FBX",
+      "sourceSha256": "4fc1423cfff5d6cda938459ee10dd665828a3e5b4ae4691119089fc388b08407",
+      "guid": "3ee22e0521f357a4096465f1c43509d1",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Death.FBX",
+      "sourceSha256": "3b8b69f0dd3f70414703d09c9e67e2ac38daf150ec870bd4e10ca1b582264eb3",
+      "guid": "18ab9f59a0d37874397e2c24089cf02e",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@GetHitHeavy.FBX",
+      "sourceSha256": "fcf1247dfcf5b42b919da0b3b4d3d25512a7321437c76fbdab30676af6d907bf",
+      "guid": "d4a0ac172015a1b4b9012cdf538ed86b",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@GetHitLight1.FBX",
+      "sourceSha256": "2c44d602bc6248db910768e63d503568d5d0db97aca7de4dc4ef2c83becf7fa6",
+      "guid": "c4bb6dbd540800e458b4e24c34a8e283",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Idle.FBX",
+      "sourceSha256": "9c9f7c847d2323e7dd84d4a86366cf5cf50b655e59539c8722cf2b461c9c3bf6",
+      "guid": "e11bf3737410af04db090b9c86180e2a",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/Mummy@Walk.FBX",
+      "sourceSha256": "93ba3137db44fcb06a61e92b5bb083af4b2f04ed701dffea22f0da3f81dbb5b0",
+      "guid": "7398c62b04f461743b6bc959da622e56",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/FBX Files/SK_Mummy.FBX",
+      "sourceSha256": "6468762111a06fc11258b047bcf56f7350f23230e01eb2ea23fbaf3956320ea1",
+      "guid": "8dbe0a65df290584ab145a77a88d98d9",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
+      "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Living Dead Pack/Mummy/Prefabs/Mummy.prefab",
+      "sourceSha256": "aa452be5f8ed513402a7cd1b5bd5f319c44484f82cae22894d46b27a41a17ef8",
+      "guid": "545049a8805ff014ab5a0aaaca65c28f",
+      "use": "Boss Rush boss 7: the Bandaged King"
+    },
+    {
+      "source": "more_assets",
       "path": "Assets/HeroicFantasyCreaturesFullPackVol1/Must Have Fantasy Villains Pack/Ogre/FBX Files/FatOgre@2HitComboAttack.FBX",
       "sourceSha256": "d630c123c81222a10d45e4af1cbc426a50c9ee9c0c28a3f742cddf12081ee8bd",
       "guid": "85c79ed57510ed843949f7d351e38e03",
