@@ -21,6 +21,13 @@
       "impact": { "gain": 0.85, "clips": ["RPG3_ElectricMagic2_HeavyImpact01", "RPG3_ElectricMagic2_HeavyImpact02", "RPG3_ElectricMagic2_HeavyImpact03"] },
       "signature": { "gain": 0.8, "clips": ["RPG3_Magic2_HeavyImpact01", "RPG3_Magic2_HeavyImpact02", "RPG3_Magic2_HeavyImpact03"] },
       "death": { "gain": 1.0, "clips": ["RPG3_IceMagic2_IceBreak02", "RPG3_IceMagic2_IceBreak03"] }
+    },
+    "treasureGoblin": {
+      "entrance": { "gain": 0.8, "clips": ["VOICE_Male_B_Haha_Evil_01_mono", "VOICE_Male_B_Haha_Evil_02_mono"] },
+      "tick": { "gain": 0.35, "clips": ["SLOT_MACHINE_Insert_Coin_01_mono", "SLOT_MACHINE_Insert_Coin_03_mono", "SLOT_MACHINE_Insert_Coin_05_mono"] },
+      "impact": { "gain": 0.7, "clips": ["SLOT_MACHINE_Win_Dispense_Coins_01_mono", "SLOT_MACHINE_Win_Dispense_Coins_03_mono"] },
+      "signature": { "gain": 0.75, "clips": ["EXPLOSION_Quick_01_mono", "EXPLOSION_Quick_02_mono"] },
+      "death": { "gain": 1.0, "clips": ["CASH_REGISTER_Cha-ching_01_mono", "CASH_REGISTER_Cha-ching_03_mono"] }
     }
   }
 }

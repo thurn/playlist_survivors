@@ -80,6 +80,8 @@ namespace Champions.Sim
         /// <summary>Its act (telegraph minimums) and whole health (NaN: its bodies' cast health).</summary>
         public int FightAct = 1;
         public double FightHealth = double.NaN;
+        /// <summary>The scripted fight's arena (arenas.json; <see cref="Arenas"/> on), formed round the hero at the start; null: none.</summary>
+        public string FightArena;
 
         /// <summary>The experience curve and held levels' rules (Content/progression.json).</summary>
         public ProgressionRules Progression = new ProgressionRules();

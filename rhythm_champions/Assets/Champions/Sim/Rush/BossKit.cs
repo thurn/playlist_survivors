@@ -166,9 +166,10 @@ namespace Champions.Sim
         /// A shockwave ring from (<paramref name="x"/>, <paramref name="y"/>) growing at <paramref name="speedMps"/> to
         /// <paramref name="radiusM"/>, <paramref name="thickM"/> thick, landing on a downbeat; <paramref name="fronts"/> rings in
         /// turn, spaced the dash cooldown and a beat apart (boss-rush.md, "Fair fights"). A dash wave unless walking outruns it.
+        /// <paramref name="move"/> is how it presents (its body's clip); none: a plain hazard.
         /// </summary>
         public static int Wave(BossFight f, int body, double x, double y, double radiusM, double speedMps, double thickM, double damage, int beats,
-            bool dashWave = true, int fronts = 1, int attack = -1, HazardFlags flags = HazardFlags.None)
+            bool dashWave = true, int fronts = 1, int attack = -1, HazardFlags flags = HazardFlags.None, BossMove move = BossMove.None)
         {
             if (attack < 0) attack = f.NextAttack();
             var tel = f.Plan(beats, Landing.Downbeat);
@@ -179,7 +180,7 @@ namespace Champions.Sim
                 var front = k == 0 ? tel : new Telegraph(tel.Start, tel.Land + k * spacing * beatS, tel.StartBeat, tel.LandBeat + k * spacing, true);
                 f.Add(new Hazard
                 {
-                    Attack = attack, Body = body, Part = k, Telegraph = front, Shape = HitShape.Ring(x, y, 0, thickM),
+                    Attack = attack, Body = body, Part = k, Move = move, Telegraph = front, Shape = HitShape.Ring(x, y, 0, thickM),
                     Damage = damage, ActiveS = radiusM / speedMps, GrowMps = speedMps, Flags = flags | (dashWave ? HazardFlags.DashWave : HazardFlags.None),
                 });
             }

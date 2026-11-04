@@ -385,18 +385,15 @@ namespace Champions.Sim.Tests
             var sim = new Simulation(config);
             foreach (var e in Drive.Known(new FixtureSong().Beats(0, 300, 120).Entries())) sim.AddKnown(e.Entry, e.KnownAt);
             Assert.AreEqual(1, sim.Arena.Forms, "the first boss's arena forms as the act begins");
-            Assert.AreEqual(content.BossRush.Bosses[0].Arena, sim.Arena.Def.Id);
-            Assert.AreEqual(BossRushBoss.StandInArena, sim.Arena.Def.Id, "the stand-in until the fight authors its own");
+            Assert.AreEqual(content.BossRush.Bosses[0].Arena, sim.Arena.Def.Id, "the slot's own arena (the stand-in's until its fight authors one)");
             double until = sim.Now + 60;
-            while (!(sim.Bosses.InDuel && sim.BossRush.Stage == BossRushStage.Fighting) && sim.Now < until) sim.StepTo(sim.Now + Tick);
+            while (!RushTestKit.Fighting(sim) && sim.Now < until) sim.StepTo(sim.Now + Tick);
             Assert.AreEqual(ArenaPhase.Standing, sim.Arena.Phase);
             sim.Target(40, 0, sim.Now);
             sim.StepTo(sim.Now + 8);
             var (x, y) = Hero(sim);
             Assert.IsTrue(sim.Arena.Inside(x, y), "the walls hold the hero through the fight");
-            ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
-            sim.Strikes.Land(sim, new Blow { Shape = HitShape.Circle(b.X, b.Y, 0.1), T = sim.Now, Damage = 1e12, Tags = HitTags.Strike,
-                Source = BlowSource.SwordSlash, Owner = -1, Part = -1 });
+            RushTestKit.Strike(sim, 1e12);
             until = sim.Now + 60;
             while (sim.BossRush.Boss == 0 && sim.Now < until)
             {

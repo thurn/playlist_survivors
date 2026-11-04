@@ -38,6 +38,10 @@ is the slot's current one in its arena (the main game's stand-ins in the `standi
 seed 31. Each slot's health is `targetS` (120 s rising to 180 s) times the mean of the two builds. It runs from 204
 (boss 1, Sword 1 alone at 1.7/s) to 8,748 (boss 25, full builds at about 49/s).
 
+A landed fight's row is measured against its own fight (the player then walks round the arena's props, chases the
+fight's body and dashes its dash waves). Boss 1, the Treasure Goblin, was re-measured when its fight landed (ps-8z4.6):
+1.73/s against the Ogre stand-in's 1.7, the same to a tenth, so its health stays 204; the other rows are unchanged.
+
 The focused build stays melee for a long time, and the scripted player keeps its distance from bosses, so it trails
 the broad build until the late acts. The real fights' movement and uptime will differ from the stand-ins', so the
 pacing bead (ps-8z4.60) re-measures and re-tunes once they exist. Hand-play difficulty is an

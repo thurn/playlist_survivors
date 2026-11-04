@@ -47,7 +47,10 @@ namespace Champions.Sim
         public bool BossRush;
         public BossRushCheckpoint RushStart;
 
-        /// <summary>A scripted Boss Rush fight: the boss id started at the start (<see cref="BossModules"/>), or null. Recorded from session v8.</summary>
+        /// <summary>
+        /// A scripted Boss Rush fight: the boss id started at the start (<see cref="BossModules"/>), or null; in its own
+        /// arena when its Boss Rush slot names one (formed round the hero at the start). Recorded from session v8.
+        /// </summary>
         public string Fight;
         /// <summary>Its act, 1 to 5.</summary>
         public int FightAct = 1;
@@ -71,6 +74,7 @@ namespace Champions.Sim
                 if (rush == null || rush.Count == 0) throw new ArgumentException($"boss rush: no bosses in {BossRushRules.File}");
                 rushStart = RushStart?.Clone() ?? new BossRushCheckpoint { Deaths = new int[rush.Acts.Length] };
             }
+            string fightArena = rush == null ? FightArenaOf(content) : null;
             return new SimConfig
             {
                 Seed = Seed,
@@ -98,8 +102,18 @@ namespace Champions.Sim
                 Progression = rush != null ? rush.Curve(content.Progression) : content != null ? content.Progression.Clone() : new ProgressionRules(),
                 BossRush = rush,
                 BossRushStart = rushStart,
-                Arenas = rush != null && content != null ? content.Arenas.Clone() : null,
+                Arenas = (rush != null || fightArena != null) && content != null ? content.Arenas.Clone() : null,
+                FightArena = fightArena,
             };
+        }
+
+        /// <summary>A scripted fight's own arena: its Boss Rush slot's (bossrush.json), or null for the stand-in or no slot.</summary>
+        string FightArenaOf(GameContent content)
+        {
+            if (Fight == null || content?.BossRush == null || content.Arenas == null) return null;
+            foreach (var b in content.BossRush.Bosses)
+                if (b.Id == Fight && b.Arena != BossRushBoss.StandInArena && content.Arenas.Find(b.Arena) != null) return b.Arena;
+            return null;
         }
 
         string FightId()

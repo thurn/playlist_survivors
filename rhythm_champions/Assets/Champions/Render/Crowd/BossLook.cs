@@ -36,6 +36,8 @@ namespace Champions.Render.Crowd
         /// <summary>The bosses' looks by cast id.</summary>
         static readonly Dictionary<string, BossLook> Looks = new Dictionary<string, BossLook>
         {
+            // Boss 1, the Treasure Goblin (ps-8z4.6): coin-gold glints on its facets and light running along its edges.
+            { "treasureGoblin", new BossLook { Crystal = 0.7f, Flow = 0.35f, FlowSpeed = 1.6f } },
         };
 
         public static bool TryGet(string castId, out BossLook look) => Looks.TryGetValue(castId, out look);

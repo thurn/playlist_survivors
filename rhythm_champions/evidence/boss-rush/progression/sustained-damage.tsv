@@ -1,5 +1,5 @@
 slot	id	fighter	level	steps	focused	broad	mean
-1	treasureGoblin	fatOgre	1	0	1.7	1.7	1.7
+1	treasureGoblin	treasureGoblin	1	0	1.7	1.7	1.7
 2	hiveQueen	fatOgre	4	4	3.1	8.9	6.0
 3	bloom	conductor	7	8	4.3	15.8	10.1
 4	rootwarden	conductor	10	12	5.3	17.4	11.3

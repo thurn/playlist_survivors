@@ -138,6 +138,32 @@ or a boss without one, plays the generic boss sounds. `fatOgre`'s bank is the pr
 - `champions play --fight <id> [--fight-act N]` plays a fight by hand, no level. The mode shell (ps-8z4.1) adds
   `--boss N` (the boss by its place in the run).
 
+## Added by the first fight (ps-8z4.6, the Treasure Goblin)
+
+- **A fight's own arena under `--fight`**: `RunInputs.Build` finds the fight's Boss Rush slot. When that slot names
+  an arena (bossrush.json `arena`), it turns the arenas on (`SimConfig.FightArena`), and the sim forms the arena round
+  the hero before the fight starts. `champions play --fight ID` and `champions boss review ID` then play the fight in
+  its arena. The review's hero wanders round the arena's centre.
+- **The harness in the arena**: `FairnessOptions.Arena` forms the arena round the hero as the run does. The walls
+  and props then block the hero, and the walkable floor is where it may stand, round the arena's centre.
+  `ChaseShare` takes a share of the wander's spots beside the boss, so close-range moves play.
+- **The reference player in fights** (`ScriptedPlayer`, `--walk positioning`):
+  - It walks to a fight's lead body as it does to a duel's boss, steering round the arena's props (`Steer`).
+  - It dodges a fight's landing only where the landing's ground reaches it.
+  - It dashes a fight's dash waves as their front reaches it.
+  - `BossRushProgressionTests.SustainedDamage` measures a landed fight against the fight itself.
+- **Test kit** (`dotnet/Champions.Sim.Tests/Rush/RushTestKit.cs`):
+  - `StandIns` unlands every fight, for the tests of the shell's and progression's own stand-in rules.
+  - `Fighting`, `Boss` and `Strike` work whichever kind of fight a slot has.
+- **Building blocks**: `BossKit.Wave(..., move:)` presents a wave as a move (its body's clip).
+- **Clips**: `BossAnimator` falls back to a Boss Rush rig's own roles (smash→stab, attack→slice, a wave's
+  stomp→cast). A body with a `run` clip runs above 3 m/s.
+- **Flavour** (`Client/Bosses/FightFlavour.cs`): every fight's hazard landings throw sparks in the boss's palette
+  colour, never the danger red. A shot's launch glints along its way, a signature landing bursts, and each XP burst
+  sprays behind the boss. Its death bursts wide.
+- **A module's beats when there is no beat**: the framework calls `Beat` only on real beats. A module that schedules
+  from `Beat` keeps its own fallback beat in `Tick` (see `TreasureGoblinModule`).
+
 ## Verification
 
 - `dotnet test rhythm_champions/dotnet`: all pass, rebased on the shell and arenas (15 new in `Rush/BossFightTests.cs`,

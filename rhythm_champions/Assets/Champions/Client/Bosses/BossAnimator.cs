@@ -24,6 +24,8 @@ namespace Champions.Client
         public const float RunRate = 1.5f;
         /// <summary>A dive's landing takes at most this share of the dive; its takeoff the rest.</summary>
         const double LandShare = 0.45;
+        /// <summary>Crossing the ground faster than this, a boss with a run clip runs instead of walking (the Treasure Goblin's flight).</summary>
+        const float SprintMps = 3f;
 
         public struct Pose
         {
@@ -38,7 +40,7 @@ namespace Champions.Client
         }
 
         readonly ClipInfo[] _clips;
-        readonly int _idle, _walk, _roar, _run, _takeoff, _fly, _land, _hit;
+        readonly int _idle, _walk, _sprint, _roar, _run, _takeoff, _fly, _land, _hit;
         readonly Dictionary<BossMove, int> _attackClip = new Dictionary<BossMove, int>();
         readonly List<Attack> _attacks = new List<Attack>();
         double _arrived = double.NaN, _runFrom = double.NaN, _runTo = double.NaN;
@@ -52,24 +54,35 @@ namespace Champions.Client
             _clips = clips;
             _idle = Math.Max(0, Role("idle"));
             _walk = Role("walk");
+            _sprint = Role("run");
             _roar = Role("roar");
             _run = Role("charge");
             _takeoff = Role("takeoff");
             _fly = Role("fly");
             _land = Role("land");
             _hit = Role("hit");
-            _attackClip[BossMove.Smash] = Role("smash");
+            // A Boss Rush boss's clips by the moves it presents as, when it lacks the main game's (the goblin's stab, slice, cast).
+            _attackClip[BossMove.Smash] = Role("smash", "stab");
             _attackClip[BossMove.Stomp] = Role("stomp");
             _attackClip[BossMove.Boulders] = Role("throw");
             _attackClip[BossMove.Breath] = Role("breath");
             _attackClip[BossMove.Tail] = Role("tail");
             _attackClip[BossMove.Fireballs] = Role("fireball");
-            _attackClip[BossMove.Fans] = Role("attack");
+            _attackClip[BossMove.Fans] = Role("attack", "slice");
             _attackClip[BossMove.Wall] = Role("attack");
-            _attackClip[BossMove.Wave] = Role("stomp");
+            _attackClip[BossMove.Wave] = Role("stomp", "cast");
         }
 
-        int Role(string role) => Array.FindIndex(_clips, c => c.Role == role);
+        /// <summary>The first of <paramref name="roles"/> its clips have, or -1.</summary>
+        int Role(params string[] roles)
+        {
+            foreach (var role in roles)
+            {
+                int i = Array.FindIndex(_clips, c => c.Role == role);
+                if (i >= 0) return i;
+            }
+            return -1;
+        }
 
         /// <summary>The boss landed at <paramref name="t"/> (its roar's start).</summary>
         public void Arrived(double t) => _arrived = t;
@@ -161,9 +174,10 @@ namespace Champions.Client
             }
             if (_walk >= 0 && speed > 0.2f)
             {
-                var w = _clips[_walk];
+                int gait = _sprint >= 0 && speed > SprintMps ? _sprint : _walk;
+                var w = _clips[gait];
                 _walkPhase += w.StrideM > 0 ? dt * speed * w.Length / w.StrideM : dt;
-                clip = _walk;
+                clip = gait;
                 time = _walkPhase;
                 return;
             }

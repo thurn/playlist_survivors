@@ -124,6 +124,8 @@ namespace Champions.Sim
         {
             // The framework's proof: the main game's Fat Ogre on the building blocks.
             { OgreModule.ModuleId, () => new OgreModule() },
+            // Act 1, Overgrown Grid.
+            { TreasureGoblinModule.ModuleId, () => new TreasureGoblinModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

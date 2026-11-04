@@ -121,7 +121,11 @@ namespace Champions.Sim
                 Magic = new MagicWeapons(this);
             }
             if (config.BossRush != null) BossRush = new BossRush(this, config);
-            if (config.Fight != null) Fight.Start(config.Fight, Now, new FightSetup { Act = config.FightAct, Health = config.FightHealth });
+            if (config.Fight != null)
+            {
+                if (config.FightArena != null && Arena != null) Arena.FormAroundHero(Arena.Rules.Find(config.FightArena), Now);
+                Fight.Start(config.Fight, Now, new FightSetup { Act = config.FightAct, Health = config.FightHealth });
+            }
         }
 
         public SimState State { get; }

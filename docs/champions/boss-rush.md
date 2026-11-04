@@ -293,6 +293,17 @@ Every boss shares this, so 25 different fights still read as one game:
   and scrolls otherwise, holding the hero, the boss and its live telegraphs.
   The client's `ArenaPresenter` draws it all in the edge look.
 - Evidence: [arenas](../../rhythm_champions/evidence/boss-rush/arenas/README.md).
+- A fight's own arena also forms under `--fight ID` and its review, from its
+  slot's `arena`. The fairness harness can play a fight in its arena
+  (`FairnessOptions.Arena`). The reference player steers round props
+  (`ScriptedPlayer.Steer`).
+- **`goblinGrove`** (boss 1): a 36 m clearing. At its heart is a copse walled
+  by six fallen logs (the goblin's stash). Round it runs the goblin's loop:
+  12 points from due north, alternately 10.5 and 8.5 m out. The loop weaves
+  between stumps inside its outer bends and lanterns outside its inner
+  ones, and trees close the edge. You come in from the south, and the goblin
+  waits on the loop across the copse. The arena frames whole (it never
+  scrolls).
 
 ### Environments
 
@@ -408,6 +419,30 @@ mechanic at a time, generous telegraphs.
    - Look: a bright coin-gold body (amber, not yellow); coins spray in arcs.
      Sound: jingling coins, a cackle on the downbeat.
    - Inspiration: Diablo's treasure goblins.
+   - **As built (ps-8z4.6)**: `TreasureGoblinModule` in the grove
+     `goblinGrove` ([Arenas, as built](#arenas-as-built-ps-8z42)).
+
+     | Move | When | What lands |
+     | --- | --- | --- |
+     | **Bomb trail** (signature) | While it flees, every other beat (every beat in its panic) | A 1.7 m bomb where it stood, on a 4-beat fuse, popping on its beat |
+     | **Coin spray** | Kept 10 to 16 m off | An arc of 7 coins (90°) launched on the beat at 9 m/s, with walking lanes between them. In its panic, a second arc of 6 follows a beat later, into the first's gaps |
+     | **Dagger stab** | Caught, within 4.5 m | A 4.5 m line at the hero, 3 beats |
+     | **Ring of bombs** (dash wave) | Held within 6 m for 4 beats | 8 bombs round it and a shockwave on a downbeat, 4 beats on. The shockwave runs at 13 m/s across the whole grove (30 m), so the only way through is to dash it. It has 2 fronts in its panic |
+     | **Panic** (its one phase) | Below 40% health | A 2-beat cackle, untouchable. Then it runs 15% faster and its moves double up |
+
+     - **How it moves.** It runs a loop round the walled copse at 4.5 m/s
+       (the hero walks 6, so it gets caught), always the way that takes it
+       farther from you. Cut across the copse and it turns back. Hang back
+       past 16 m and it comes round to taunt you.
+     - **Taught alone.** Nothing but the trail comes until it has dropped 8
+       bombs or fought 32 beats.
+     - **Shedding.** Each burst spills behind it, along its trail.
+     - **No beat.** It falls back to the 0.5 s beat.
+     - **Damage** (the hero has 100): bomb 10, coin 8, stab 15, ring bomb 12,
+       shockwave 16.
+     - **Reference runs.** Chased by the reference player with the
+       reference builds, it lasts 100 to 114 s at 204 health and sheds all
+       nine bursts (2 level-ups). Evidence: [treasureGoblin](../../rhythm_champions/evidence/boss-rush/treasureGoblin/README.md).
 2. **The Hive Queen** — *Swarm formations.*
    - Source: `Polygonal Creatures Pack/Polygonal Giant Bee/Prefabs/Polygonal Giant Bee Blue.prefab`.
      Clips: Sting Attack, Claw Attack, Cast Spell, Defend.

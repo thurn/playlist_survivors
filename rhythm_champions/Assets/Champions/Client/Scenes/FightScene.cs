@@ -127,9 +127,11 @@ namespace Champions.Client.Scenes
                 if (sim.State.Offer.Up) { sim.Press(Key.One, sim.Now); sim.Release(Key.One, sim.Now); }
                 if (sim.Fight.InFight && sim.Now >= _nextTarget)
                 {
-                    // The hero wanders the arena so the boss's aimed attacks show their reach.
+                    // The hero wanders the arena (round its centre when the fight has one) so the boss's aimed attacks show their reach.
+                    bool arena = sim.Arena != null && sim.Arena.Solid;
+                    double cx = arena ? sim.Arena.OriginX : sim.Fight.CentreX, cy = arena ? sim.Arena.OriginY : sim.Fight.CentreY;
                     double a = _wander.NextDouble() * 2 * Math.PI, r = 3 + _wander.NextDouble() * 9;
-                    sim.Target(sim.Fight.CentreX + r * Math.Cos(a), sim.Fight.CentreY + r * Math.Sin(a), sim.Now);
+                    sim.Target(cx + r * Math.Cos(a), cy + r * Math.Sin(a), sim.Now);
                     _nextTarget = sim.Now + 2;
                 }
                 if (!_driver.Step(new ClockReadings { Real = Time.realtimeSinceStartupAsDouble, Frame = _frame })) return;

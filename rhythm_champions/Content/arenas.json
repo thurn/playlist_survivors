@@ -85,6 +85,51 @@
         { "kind": "pillar", "at": [18, 6] },
         { "kind": "pillar", "at": [18, -6] }
       ]
+    },
+    {
+      "id": "goblinGrove",
+      "kit": "overgrownGrid",
+      "outline": { "radiusM": 18 },
+      "heroStart": [0, -14.5],
+      "bossStart": [0, 10.5],
+      "camera": { "maxScale": 2.0, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "fallenLog", "at": [3, 1.73], "degrees": 120 },
+        { "kind": "fallenLog", "at": [0, 3.46], "degrees": 0 },
+        { "kind": "fallenLog", "at": [-3, 1.73], "degrees": 60 },
+        { "kind": "fallenLog", "at": [-3, -1.73], "degrees": 120 },
+        { "kind": "fallenLog", "at": [0, -3.46], "degrees": 0 },
+        { "kind": "fallenLog", "at": [3, -1.73], "degrees": 60 },
+        { "kind": "brokenOak", "at": [0, 0.4] },
+        { "kind": "crystalCluster", "at": [-0.4, -1.7], "degrees": 20 },
+        { "kind": "giantMushroom", "at": [1.8, 1.2] },
+        { "kind": "giantMushroom", "at": [-1.9, 1] },
+        { "kind": "stump", "at": [0, 7] },
+        { "kind": "lantern", "at": [-6, 10.39] },
+        { "kind": "stump", "at": [-6.06, 3.5] },
+        { "kind": "lantern", "at": [-12, 0] },
+        { "kind": "stump", "at": [-6.06, -3.5] },
+        { "kind": "lantern", "at": [-6, -10.39] },
+        { "kind": "stump", "at": [0, -7] },
+        { "kind": "lantern", "at": [6, -10.39] },
+        { "kind": "stump", "at": [6.06, -3.5] },
+        { "kind": "lantern", "at": [12, 0] },
+        { "kind": "stump", "at": [6.06, 3.5] },
+        { "kind": "lantern", "at": [6, 10.39] },
+        { "kind": "fernTree", "at": [-4.04, 15.07] },
+        { "kind": "brokenOak", "at": [-10.75, 10.75] },
+        { "kind": "giantMushroom", "at": [-15.07, 4.04] },
+        { "kind": "fernTree", "at": [-15.07, -4.04] },
+        { "kind": "runeStone", "at": [-11.03, -11.03], "degrees": 135 },
+        { "kind": "fernTree", "at": [-4.04, -15.07] },
+        { "kind": "fernTree", "at": [4.04, -15.07] },
+        { "kind": "brokenOak", "at": [10.75, -10.75] },
+        { "kind": "giantMushroom", "at": [15.07, -4.04] },
+        { "kind": "fernTree", "at": [15.07, 4.04] },
+        { "kind": "runeStone", "at": [11.03, 11.03], "degrees": 135 },
+        { "kind": "fernTree", "at": [4.04, 15.07] }
+      ]
     }
   ]
 }

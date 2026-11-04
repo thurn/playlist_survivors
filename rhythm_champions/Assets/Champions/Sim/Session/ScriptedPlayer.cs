@@ -25,6 +25,12 @@ namespace Champions.Sim
         public const double ThreatM = 10, SporeMissM = 1.2;
         /// <summary>The horde's beat dash waits when a threat lands within this after it.</summary>
         public const double KeepDashS = 0.75;
+        /// <summary>In a Boss Rush arena it looks this far ahead for props, turning by this step up to a right angle (<see cref="Steer"/>).</summary>
+        public const double SteerM = 3, SteerStepDeg = 15, SteerRadiusM = 0.5;
+        /// <summary>A fight's landing is dodged when its ground comes within this of the hero.</summary>
+        public const double FightDodgeM = 1.0;
+        /// <summary>A fight's dash wave is dashed through once its front comes within this of the hero's centre.</summary>
+        public const double FightWaveM = 0.6;
 
         static readonly (string Name, Key Key)[] KeyNames =
         {
@@ -48,6 +54,8 @@ namespace Champions.Sim
         readonly bool _pickReference;
         readonly DashRules _dashes;
         readonly List<double> _landings = new List<double>(), _predicted = new List<double>(), _planned = new List<double>();
+        /// <summary>A Boss Rush fight's marked ground by mark id, until it lands (it dodges only those that reach it).</summary>
+        readonly Dictionary<int, HitShape> _fightMarks = new Dictionary<int, HitShape>();
         int _nextKey, _picks, _beats;
         double _headX = 1, _headY, _pendingBeat = double.NaN, _lastTarget = double.NegativeInfinity, _pressedFor = double.NaN;
         bool _released = true;
@@ -146,7 +154,18 @@ namespace Champions.Sim
                     break;
                 case SimEventKind.BossTelegraph when e.MarkMove != BossMove.Reinforcements:
                     _planned.Add(e.D0);
+                    if (e.I0 >= BossFight.FirstMarkId) _fightMarks[e.I0] = e.MarkGround();
                     break;
+                case SimEventKind.BossMove when e.I0 >= BossFight.FirstMarkId && _fightMarks.TryGetValue(e.I0, out var ground):
+                {
+                    // A fight's landing is dodged only where its ground reaches the hero (a fight lays many at once, and a
+                    // dash spent on one out of reach is cooling for the next); its dash waves are crossed as they come.
+                    _fightMarks.Remove(e.I0);
+                    if (e.I2 != 0 || Bosses.IsWave((BossMove)(e.I1 & 255))) break;
+                    sim.HeroWas(e.T, out double hx, out double hy);
+                    if (ground.Touches(hx, hy, FightDodgeM) && !_landings.Contains(e.T)) _landings.Add(e.T);
+                    break;
+                }
                 case SimEventKind.EliteTelegraph when Near(sim, e.T, e.D2, e.D3, ThreatM):
                     _planned.Add(e.D1);
                     break;
@@ -173,6 +192,33 @@ namespace Champions.Sim
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Where to walk for (<paramref name="tx"/>, <paramref name="ty"/>) from (<paramref name="hx"/>, <paramref name="hy"/>) in a
+        /// Boss Rush arena: straight at it while the next <see cref="SteerM"/> are clear, else the smallest turn of that heading
+        /// (either way, up to a right angle) whose next metres are: round the arena's props and copses, as a player walks.
+        /// Unchanged with no arena standing.
+        /// </summary>
+        public static void Steer(Simulation sim, double hx, double hy, ref double tx, ref double ty)
+        {
+            var arena = sim.Arena;
+            if (arena == null || !arena.Solid) return;
+            double dx = tx - hx, dy = ty - hy, d = Math.Sqrt(dx * dx + dy * dy);
+            if (d < 1e-6) return;
+            double look = Math.Min(d, SteerM), a0 = Math.Atan2(dy, dx), step = SteerStepDeg * Math.PI / 180;
+            int turns = (int)Math.Round(90 / SteerStepDeg);
+            for (int k = 0; k <= turns; k++)
+                for (int side = k == 0 ? 1 : -1; side <= 1; side += 2)
+                {
+                    double a = a0 + side * k * step;
+                    arena.Move(hx, hy, SteerRadiusM, Math.Cos(a) * look, Math.Sin(a) * look, out _, out _, out int blocker);
+                    if (blocker >= 0) continue;
+                    if (k == 0) return;
+                    tx = hx + Math.Cos(a) * SteerM;
+                    ty = hy + Math.Sin(a) * SteerM;
+                    return;
+                }
         }
 
         static bool Near(Simulation sim, double t, double x, double y, double within)
@@ -249,7 +295,9 @@ namespace Champions.Sim
         void Reference(Simulation sim, double heard)
         {
             var hero = sim.State.Hero;
-            bool duel = sim.Bosses.InDuel && sim.Bosses.Id >= 0;
+            // A duel, or a Boss Rush fight (its first standing body): walked to and dashed through alike.
+            int boss = sim.Bosses.InDuel && sim.Bosses.Id >= 0 ? sim.Bosses.Id : sim.Fight.InFight ? sim.Fight.Lead.Enemy : -1;
+            bool duel = boss >= 0;
             // A dodge: a landing as soon as the sim knows it (a player sees it coming over its telegraph's beats), pressed on
             // it, or a spore just before it passes; if the dash is ready then (in a duel through the boss).
             _landings.Sort();
@@ -265,7 +313,7 @@ namespace Champions.Sim
                 if (duel)
                 {
                     // Through the boss: its reach is all round it, and past it is where the dash ends clear.
-                    ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
+                    ref readonly var b = ref sim.Enemies[boss];
                     sim.Target(b.X, b.Y, at);
                 }
                 Dash(sim, at);
@@ -289,12 +337,31 @@ namespace Champions.Sim
                     Dash(sim, heard);
                     return;
                 }
+                // A fight's dash-through fronts likewise, crossed toward where they came from as they reach it (pressed on what
+                // it heard, so its i-frames span the front's passing).
+                foreach (var h in sim.Fight.Hazards)
+                {
+                    if (!h.DashWave || sim.Now < h.Telegraph.Land || hero.DashReadyAt > sim.Now) continue;
+                    sim.HeroWas(sim.Now, out double px, out double py);
+                    var front = h.ShapeAt(sim.Now);
+                    if (!front.Touches(px, py, FightWaveM)) continue;
+                    double wx = h.Vx != 0 || h.Vy != 0 ? -h.Vx : front.X - px, wy = h.Vx != 0 || h.Vy != 0 ? -h.Vy : front.Y - py;
+                    double length = Math.Max(0.01, Math.Sqrt(wx * wx + wy * wy));
+                    sim.Target(px + wx / length * 8, py + wy / length * 8, heard);
+                    Dash(sim, heard);
+                    return;
+                }
                 if (heard - _lastTarget < 0.25) return;
                 _lastTarget = heard;
-                ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
+                ref readonly var b = ref sim.Enemies[boss];
                 sim.HeroWas(heard, out double hx, out double hy);
                 double dx = b.X - hx, dy = b.Y - hy, d = Math.Sqrt(dx * dx + dy * dy);
-                if (d > ReachM) sim.Target(b.X - dx / d * ShortM, b.Y - dy / d * ShortM, heard);
+                if (d > ReachM)
+                {
+                    double tx = b.X - dx / d * ShortM, ty = b.Y - dy / d * ShortM;
+                    Steer(sim, hx, hy, ref tx, ref ty);
+                    sim.Target(tx, ty, heard);
+                }
                 return;
             }
             if (!_dashes.LegacyForms && hero.DashReadyAt <= sim.Now)

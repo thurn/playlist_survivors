@@ -19,10 +19,12 @@ namespace Champions.Sim.Tests
         static RunInputs Rush(BossRushCheckpoint start = null) =>
             new RunInputs { Seed = 3, BossRush = true, SurvivorWeapons = true, Loadout = new Upgrade[0], RushStart = start };
 
+        /// <summary>The run's config, every slot fought by its stand-in (the shell's own rules; <see cref="RushTestKit.StandIns"/>).</summary>
         static SimConfig Config(RunInputs run, GameContent content = null, Action<BossRushRules> tweak = null)
         {
             var c = run.Build(content ?? Content);
             c.Hero.Health = 1e9;
+            RushTestKit.StandIns(c.BossRush, c.Enemies);
             tweak?.Invoke(c.BossRush);
             return c;
         }
@@ -76,7 +78,8 @@ namespace Champions.Sim.Tests
             {
                 var b = rules.Bosses[i];
                 Assert.AreEqual(i / 5, b.Act, $"{b.Id} in act {i / 5 + 1}");
-                Assert.IsNotNull(content.Bosses.Of(b.Cast), $"{b.Id} has a fighter with a duel");
+                if (b.Fight) Assert.IsTrue(BossModules.Has(b.Id) && content.Enemies.Cast[b.Cast].Id == b.Id, $"{b.Id} fights as its own module");
+                else Assert.IsNotNull(content.Bosses.Of(b.Cast), $"{b.Id} has a fighter with a duel");
                 if (!b.Landed) Assert.AreEqual(b.StandIn, content.Enemies.Cast[b.Cast].Id);
             }
             Assert.AreEqual("treasureGoblin", rules.Bosses[0].Id);
@@ -172,8 +175,7 @@ namespace Champions.Sim.Tests
         [Test]
         public void ADeathEndsTheAttemptAndKeepsTheActsCheckpoint()
         {
-            var run = Rush();
-            var c = run.Build(Content);
+            var c = Config(Rush());
             c.Hero.Health = 1;
             var s = Make(c);
             Until(s, () => s.State.Phase == RunPhase.Ended, 120);
@@ -292,9 +294,12 @@ namespace Champions.Sim.Tests
                 if (s.State.Phase != RunPhase.Playing) return;
                 if (s.State.Offer.Up) { Pick(s); return; }
                 if (s.BossRush.Killed >= 2 && s.BossRush.Stage == BossRushStage.Forming) { s.Control(RunControl.Quit, s.Now); return; }
-                if (!s.Bosses.InDuel || s.Now % 0.5 > 1.0 / 60) return;
-                ref readonly var b = ref s.Enemies[s.Bosses.Id];
-                s.Target(b.X, b.Y - 3, s.Now);
+                if (!RushTestKit.Fighting(s) || s.Now % 0.5 > 1.0 / 60) return;
+                ref readonly var b = ref s.Enemies[RushTestKit.Boss(s)];
+                double tx = b.X, ty = b.Y - 3;
+                s.HeroWas(s.Now, out double hx, out double hy);
+                ScriptedPlayer.Steer(s, hx, hy, ref tx, ref ty);
+                s.Target(tx, ty, s.Now);
             });
             Assert.GreaterOrEqual(live.BossRush.Killed, 1, "the build's weapons killed a boss");
             string dir = Path.Combine(Path.GetTempPath(), "champions-rush-" + Guid.NewGuid().ToString("N"));

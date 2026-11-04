@@ -79,6 +79,8 @@ namespace Champions.Client.Loop
         /// <summary>The Boss Rush arena and its framing, with the arenas (<see cref="SimConfig.Arenas"/>); null without.</summary>
         public readonly ArenaPresenter Arena;
         public readonly Effects Effects;
+        /// <summary>A Boss Rush fight's sparks in its boss's hue (with the baked effects; null without).</summary>
+        public readonly FightFlavour Flavour;
         public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
 
@@ -129,6 +131,8 @@ namespace Champions.Client.Loop
             {
                 Effects = new Effects(effects, EffectRecipes.Load(contentDir), palette);
                 _owned.Add(Effects);
+                Flavour = new FightFlavour(effects, palette, content.Enemies);
+                _owned.Add(Flavour);
             }
             else Debug.LogWarning("RunPresentation: no baked weapon effects (champions setup): the hero's effects are unseen");
             var bank = SoundBank.Load();
@@ -167,6 +171,7 @@ namespace Champions.Client.Loop
             });
             d.Add("crowd draw", null, null, (in PresentFrame f) => Crowd.Draw(f.Song, f.Camera));
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera, f.Sim));
+            if (Flavour != null) d.Add("fight flavour", (in SimEvent e) => Flavour.Take(e, _sim), null, (in PresentFrame f) => Flavour.Present(f.Song, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
@@ -270,6 +275,7 @@ namespace Champions.Client.Loop
             Hero.Queue(camera);
             Telegraphs.Queue(camera);
             Effects?.Queue(camera);
+            Flavour?.Queue(camera);
             Ranged.Queue(camera);
         }
 

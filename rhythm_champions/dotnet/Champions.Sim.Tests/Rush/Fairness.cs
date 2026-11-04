@@ -17,6 +17,8 @@ namespace Champions.Sim.Tests
         public double FightS = 90;
         /// <summary>The hero walks to a new random spot in the arena this often (0: it stands still).</summary>
         public double WanderS = 2;
+        /// <summary>The share of those spots taken beside the boss instead (chasing it: its close-range moves play).</summary>
+        public double ChaseShare;
         /// <summary>
         /// Where the hero may stand, from the fight's centre (x, y relative); null: a circle of
         /// <see cref="ArenaRadiusM"/>. The arena bead's outline goes here.
@@ -31,6 +33,12 @@ namespace Champions.Sim.Tests
         public double StepS = 1.0 / 12;
         /// <summary>Fight-specific setup: health, centre (the act comes from <see cref="Act"/>).</summary>
         public FightSetup Setup;
+        /// <summary>
+        /// The fight's arena (arenas.json), formed round the hero before the fight starts, as the Boss Rush run forms it: its
+        /// walls and props then block the hero, and where it may stand is the arena's walkable floor (round the arena's
+        /// centre, not the fight's), unless <see cref="Inside"/> says otherwise. Null: no arena.
+        /// </summary>
+        public string Arena;
     }
 
     /// <summary>One fight's fairness: every hazard it laid, the problems found, and its dash waves.</summary>
@@ -92,10 +100,12 @@ namespace Champions.Sim.Tests
             var run = new RunInputs { Seed = o.Seed, Loadout = new Upgrade[0] };
             var config = run.Build(Content);
             config.Hero.Health = 1e9;
+            if (o.Arena != null) config.Arenas = Content.Arenas.Clone();
             var sim = new Simulation(config);
             double songS = o.FightS + 40;
             foreach (var k in Drive.Known(new FixtureSong(o.Seed).Beats(0, songS, o.Bpm).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
             sim.StepTo(1);
+            if (o.Arena != null) sim.Arena.FormAroundHero(sim.Arena.Rules.Find(o.Arena) ?? throw new ArgumentException($"no arena {o.Arena}"), sim.Now);
             var setup = o.Setup ?? new FightSetup();
             setup.Act = o.Act;
             var fight = sim.Fight;
@@ -104,7 +114,20 @@ namespace Champions.Sim.Tests
             var heroAtStart = new Dictionary<int, (double X, double Y, double BX, double BY)>();
             var rng = new Random((int)o.Seed);
             double arrived = double.NaN, nextWander = 0, nextStrike = 0;
+            // Where the hero may stand and wander, round (cx, cy): the arena's centre and floor, or the fight's centre and a circle.
+            double cx = fight.CentreX, cy = fight.CentreY, wander = o.ArenaRadiusM * 0.7, extent = double.IsNaN(o.ExtentM) ? o.ArenaRadiusM : o.ExtentM;
             Func<double, double, bool> inside = o.Inside ?? ((x, y) => x * x + y * y <= o.ArenaRadiusM * o.ArenaRadiusM);
+            if (o.Arena != null)
+            {
+                var arena = sim.Arena;
+                cx = arena.OriginX;
+                cy = arena.OriginY;
+                arena.Def.Outline.Bounds(out double x0, out double y0, out double x1, out double y1);
+                if (double.IsNaN(o.ExtentM)) extent = Math.Max(Math.Max(-x0, x1), Math.Max(-y0, y1));
+                wander = extent * 0.7;
+                double r = config.Hero.RadiusM;
+                if (o.Inside == null) inside = (x, y) => arena.Walkable(cx + x, cy + y, r);
+            }
             while (sim.Now < songS - 1)
             {
                 sim.StepTo(sim.Now + 1.0 / 60);
@@ -127,8 +150,15 @@ namespace Champions.Sim.Tests
                 {
                     nextWander = sim.Now + o.WanderS;
                     double x, y;
-                    do { x = (rng.NextDouble() * 2 - 1) * o.ArenaRadiusM * 0.7; y = (rng.NextDouble() * 2 - 1) * o.ArenaRadiusM * 0.7; } while (!inside(x, y));
-                    sim.Target(fight.CentreX + x, fight.CentreY + y, sim.Now);
+                    bool chase = rng.NextDouble() < o.ChaseShare;
+                    ref readonly var lead = ref fight.Lead;
+                    do
+                    {
+                        x = chase ? lead.X - cx + rng.NextDouble() * 4 - 2 : (rng.NextDouble() * 2 - 1) * wander;
+                        y = chase ? lead.Y - cy + rng.NextDouble() * 4 - 2 : (rng.NextDouble() * 2 - 1) * wander;
+                        chase = false;
+                    } while (!inside(x, y));
+                    sim.Target(cx + x, cy + y, sim.Now);
                 }
                 if (sim.Now >= nextStrike && !fight.Untouchable && fight.Stage == FightStage.Fighting)
                 {
@@ -166,9 +196,8 @@ namespace Champions.Sim.Tests
                 if (!seen2) report.Problems.Add($"hazard {h.Id} (attack {h.Attack}) starts off screen");
             }
             DashSpacing(report, beats, hero);
-            double extent = double.IsNaN(o.ExtentM) ? o.ArenaRadiusM : o.ExtentM;
-            var box = (fight.CentreX - extent, fight.CentreY - extent, fight.CentreX + extent, fight.CentreY + extent);
-            WayOut(report, hero, (x, y) => inside(x - fight.CentreX, y - fight.CentreY), box, o, heroAtStart);
+            var box = (cx - extent, cy - extent, cx + extent, cy + extent);
+            WayOut(report, hero, (x, y) => inside(x - cx, y - cy), box, o, heroAtStart);
             return report;
         }
 

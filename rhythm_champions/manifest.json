@@ -1396,6 +1396,83 @@
       "sourceSha256": "697cace1be26aa702c5408a1b52f2a866a2ccb333a744c327a20964f72c915c1",
       "guid": "db1e4ceda95c5124f9a4ce1e5541bfcf",
       "use": "sound: dash whooshes"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_01_mono.wav",
+      "sourceSha256": "22ea9175b9f2706b8f04ffbc656297eb8392746afde6398a503b9de24abe415d",
+      "guid": "32ee534c4d4fb2b4cbeb72151f80e103",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/VOICES/Laugh/VOICE_Male_B_Haha_Evil_02_mono.wav",
+      "sourceSha256": "81d126e0d48dd25d6197041f709a2adc100bf4676632e0adf547dde2e2d82f3c",
+      "guid": "5055d52a6d441eb4b88705456538615a",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): the cackle"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_01_mono.wav",
+      "sourceSha256": "ab59b389dcf68ade37e8c064f227fbfd1c5a057b3f0d07ebb8d33510fb95050b",
+      "guid": "bb59556c394f3794f95d915c03bccba7",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_03_mono.wav",
+      "sourceSha256": "cc53b823a0e9c9fb4daf9b008f83afa9fb2d5af44fe07c9e11d0e92278d58ea3",
+      "guid": "363279a2f0aaf864f9497362086c12de",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Insert_Coin_05_mono.wav",
+      "sourceSha256": "46d48455aabe30341f9a2162087ba0609fcd1d3460e745bd596f2e72aac8e827",
+      "guid": "b4570e0311e250e47b507d3e92b7ef3f",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin ticks"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_01_mono.wav",
+      "sourceSha256": "08530f43a3de725707a7d6167e46680437ef787dec93a3a324a553afc9ac3a87",
+      "guid": "89c55cdb94cd6f34ab5506ddf4ce7e9a",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/SLOT_MACHINE_Win_Dispense_Coins_03_mono.wav",
+      "sourceSha256": "eee700d3b166b173354eb30a5206f6da1f19c2e64a9eabc8a72d8b1bb596dbde",
+      "guid": "911146945126a6d4682348f14e081d03",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): coin sprays"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_01_mono.wav",
+      "sourceSha256": "7f3704580c5c7685dff7c8f6b7f1e2a2cfc8a442ce1b1c9a30a40c376e60f7d8",
+      "guid": "50caa75b5cfa7ee44beb46360a6fb978",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_02_mono.wav",
+      "sourceSha256": "098c22b9efe79c0ebbe6a619c6bbd89ebec352ed46b7902e5ed835a23baf1f11",
+      "guid": "cb5ef2be79f390644a36c94d7ddeadd4",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_01_mono.wav",
+      "sourceSha256": "dab3f7dd97339216e34cef3987cbced78254bd7e58161ac49f9fa24fd3404856",
+      "guid": "1c7f8c59c60b0e74d9cfdea1a5a2f94d",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONEY_CASH_CURRENCY/CASH_REGISTER_Cha-ching_03_mono.wav",
+      "sourceSha256": "3c4ae3af885dbddde97b5120951619acdacd36b608fa9322a63bd7a178cb8dc1",
+      "guid": "6d6894f4a44ebb24191feb36a992361e",
+      "use": "sound: the Treasure Goblin's bank (Boss Rush): its death"
     }
   ]
 }

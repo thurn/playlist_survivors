@@ -26,6 +26,8 @@ namespace Champions.Sim.Tests
         {
             var c = run.Build(Content);
             c.Hero.Health = 1e9;
+            // The stand-ins' shedding (bossrush.json's shapes); the landed fights' is the framework's (BossFightTests).
+            RushTestKit.StandIns(c.BossRush, c.Enemies);
             tweak?.Invoke(c.BossRush);
             return c;
         }
@@ -314,17 +316,20 @@ namespace Champions.Sim.Tests
                 foreach (var e in sim.EventsSince(cursor)) player.Take(sim, e);
                 cursor = sim.EventCount;
                 sim.DiscardEventsBefore(cursor);
-                if (double.IsNaN(from) && sim.Bosses.InDuel && sim.BossRush.Stage == BossRushStage.Fighting)
+                if (double.IsNaN(from) && RushTestKit.Fighting(sim))
                 {
                     from = sim.State.RunClock;
-                    health0 = sim.Bosses.Health;
+                    health0 = BossHealth(sim);
                 }
                 if (!double.IsNaN(from) && sim.State.RunClock - from >= window) break;
                 if (frontier > window + 50) Assert.Fail($"slot {index + 1} {build}: no duel within the horizon");
                 player.Frame(sim, frontier - lead);
             }
-            return (health0 - sim.Bosses.Health) / (sim.State.RunClock - from);
+            return (health0 - BossHealth(sim)) / (sim.State.RunClock - from);
         }
+
+        /// <summary>The run's boss's health: its landed fight's, or its stand-in duel's.</summary>
+        static double BossHealth(Simulation sim) => sim.BossRush.Slot.Fight ? sim.Fight.Health : sim.Bosses.Health;
 
         [Test, Explicit("a few minutes: measures the reference builds' sustained damage per slot into evidence/boss-rush/progression/ and prints the health table")]
         public void MeasureTheReferenceBuildsAndPrintTheHealthTable()
