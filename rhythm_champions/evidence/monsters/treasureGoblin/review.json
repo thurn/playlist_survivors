@@ -1,0 +1,15 @@
+{
+  "type": "treasureGoblin",
+  "look": "default",
+  "source": "recipe",
+  "trailerSource": "vendor",
+  "lodTriangles": [644, 644, 644],
+  "trailerLodTriangles": [1762, 895, 448],
+  "shards": 36,
+  "bones": 54,
+  "heightM": 3.142,
+  "poses": ["idle", "run", "slice", "stab", "cast"],
+  "shatterAt": [0, 0.08, 0.2, 0.4, 0.9, 1.6],
+  "camera": {"pitchDeg": 60, "distanceM": 23, "fovDeg": 40, "yawDeg": 160},
+  "sheets": ["default-far.jpg", "default-game.jpg", "default-near.jpg", "default-crowd.jpg", "compare.jpg"]
+}

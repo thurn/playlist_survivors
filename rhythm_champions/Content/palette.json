@@ -36,6 +36,7 @@
     "troll": "enemies.counter.amber",
     "fatOgre": "enemies.counter.orange",
     "dragon": "boss.body",
-    "conductor": "enemies.counter.amber"
+    "conductor": "enemies.counter.amber",
+    "treasureGoblin": "enemies.counter.amber"
   }
 }

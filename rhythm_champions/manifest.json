@@ -608,6 +608,76 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Die.FBX",
+      "sourceSha256": "c018369c07d782c34f1b396cc71edfec647d28c339f372f285292cfcf02f4080",
+      "guid": "3a6df8120ce7cfd45987a26b868bbfcb",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Idle.FBX",
+      "sourceSha256": "193a06f20ecd39e53f9b7a9af25ee2e1c61d9f5264b8fc40a3ca72868a343086",
+      "guid": "dfeae248a692f7445afe0ccf9fc86fd0",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Jump In Place.FBX",
+      "sourceSha256": "9f5c41bb908dfc4af41b186863f21d0ef830e09109d0c024755e176ccc21234c",
+      "guid": "95ce8efa17f58da4bb86af763ed96bbc",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Run Forward In Place.FBX",
+      "sourceSha256": "9f473c1875d860a5db9ef1250e0fe64724f854b4c6e8b72b36f3de7ab743f612",
+      "guid": "46b64365c428b974d864c43679e545f6",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@SliceAttack.FBX",
+      "sourceSha256": "0062e61cddadf2f394c07d65c54f4726d597083af89d17f09fb90fc184c56802",
+      "guid": "2d7458da46a181e4cb57111dc384584a",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@SpellCast.FBX",
+      "sourceSha256": "af42aee28b40681eff3ac403456680d86359a34fd9f4bae8ac77ce302a957621",
+      "guid": "966085af8c2707e438b67e7dd24d2a45",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@StabAttack.FBX",
+      "sourceSha256": "850b1f802697b82d0090a346bb8071d517cd36dc3adfe4427f44dc54653300df",
+      "guid": "9b71eba0b54aa6a41b0cbad4ab5f153d",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@TakeDamage.FBX",
+      "sourceSha256": "e1b8925d73e47eb5e69b82557d0f9bb6b42b92dd7d5c02fb03c20381ae5e373f",
+      "guid": "d445eb4ba61ab134aabb887595dfa534",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/FBX/Treasure Goblin@Walk Forward In Place.FBX",
+      "sourceSha256": "c839edde8d72bfc2441877e4a91069d9bb76a7b5530324fde657a99f4da851f6",
+      "guid": "314ad2f70304c6147920f4c7c0cd2121",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Forest Creatures Pack/Treasure Goblin/Prefabs/Treasure Goblin - Blue.prefab",
+      "sourceSha256": "299d32142eb35816e3cc20081da60041af39527419de13fa3a9750715ae22f90",
+      "guid": "39ee82357b0ad6b46bbbb23927071dcc",
+      "use": "Boss Rush boss 1: the Treasure Goblin"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Hovl Studio/AAA Projectiles Vol 1/Prefabs/Projectile VFX loop/Projectile 2 electro.prefab",
       "sourceSha256": "2aa365c2d8e094b193d00cf4577b49ab6af88719ae7204ba83e116f539a2571b",
       "guid": "93070f52828035b4199ff2f22368a3de",
