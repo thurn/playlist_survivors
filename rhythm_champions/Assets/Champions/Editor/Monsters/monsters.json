@@ -104,7 +104,7 @@
         { "role": "walk", "guid": "950067766357002429f0616dae6b2207", "clip": "Walk", "loop": true, "strideM": 4.1 },
         { "role": "charge", "guid": "b723a2a23ae2f9948b91122d94804a0f", "clip": "Run", "loop": true, "strideM": 4.1 },
         { "role": "smash", "guid": "fb257973bbfc68149a4f05170713e05e", "clip": "Attack3", "impact": 0.53, "end": 1.167 },
-        { "role": "stomp", "guid": "c6c60bc28d145e341afa22a0cc166250", "clip": "Attack1", "impact": 0.47, "end": 1.167 },
+        { "role": "stomp", "guid": "c6c60bc28d145e341afa22a0cc166250", "clip": "Attack1", "impact": 0.55, "end": 1.167 },
         { "role": "throw", "guid": "ce6e8484c21fc4b4b86347ffad099cb9", "clip": "Attack2", "impact": 0.5, "end": 1.167 },
         { "role": "roar", "guid": "ccf447dcedefe0845af78115db3dcaa4", "clip": "RoarTaunt", "end": 2.667 }
       ]
@@ -161,7 +161,7 @@
         { "role": "run", "guid": "46b64365c428b974d864c43679e545f6", "clip": "Run Forward In Place", "loop": true, "strideM": 3.0 },
         { "role": "slice", "guid": "2d7458da46a181e4cb57111dc384584a", "clip": "SliceAttack", "impact": 0.4, "end": 1.0 },
         { "role": "stab", "guid": "9b71eba0b54aa6a41b0cbad4ab5f153d", "clip": "StabAttack", "impact": 0.25, "end": 0.833 },
-        { "role": "cast", "guid": "966085af8c2707e438b67e7dd24d2a45", "clip": "SpellCast", "impact": 0.42, "end": 1.167 },
+        { "role": "cast", "guid": "966085af8c2707e438b67e7dd24d2a45", "clip": "SpellCast", "impact": 0.4, "end": 1.333 },
         { "role": "hit", "guid": "d445eb4ba61ab134aabb887595dfa534", "clip": "TakeDamage", "impact": 0.0, "end": 1.0 }
       ]
     },
@@ -174,7 +174,7 @@
         { "role": "idle", "guid": "0ac2895cf3fbefc459e908fedc5e25dd", "clip": "Idle", "loop": true },
         { "role": "walk", "guid": "006b21c3fffd369498123cbb27664e3d", "clip": "Fly Forward", "loop": true, "strideM": 3.0 },
         { "role": "smash", "guid": "231ff9650c9e9a54bbffc0f18c0335db", "clip": "Sting Attack", "impact": 0.217, "end": 1.0 },
-        { "role": "stomp", "guid": "72cf8a3e98d1419439c39ab91b4728ae", "clip": "Claw Attack", "impact": 0.25, "end": 1.0 },
+        { "role": "stomp", "guid": "72cf8a3e98d1419439c39ab91b4728ae", "clip": "Claw Attack", "impact": 0.55, "end": 1.167 },
         { "role": "attack", "guid": "797819c53f6532e479158cb81183828f", "clip": "Cast Spell", "impact": 0.583, "end": 1.167 },
         { "role": "roar", "guid": "ce0f8705fdea1654985bc0aec7d24fa8", "clip": "Defend", "end": 1.333 },
         { "role": "hit", "guid": "825979445c3860d43a2ca6aa18a0d193", "clip": "Take Damage", "impact": 0.0, "end": 0.833 }
@@ -191,8 +191,24 @@
         { "role": "breath", "guid": "203601c39b585b246a24d74cd5864a1c", "clip": "BreathAttack", "impact": 0.6, "end": 1.667 },
         { "role": "smash", "guid": "0d96b23a3b1e47948b06bcd177736055", "clip": "Bite", "impact": 0.6, "end": 1.667 },
         { "role": "fireball", "guid": "8dc97ec6939f38d40b3e924be390bdf9", "clip": "SpellCast", "impact": 0.6, "end": 1.667 },
-        { "role": "stomp", "guid": "f7d1b73230e70cd4f95346675d4244f3", "clip": "BreathAttackSurround", "impact": 0.6, "end": 2.333 },
+        { "role": "stomp", "guid": "f7d1b73230e70cd4f95346675d4244f3", "clip": "BreathAttackSurround", "impact": 0.55, "end": 1.167 },
         { "role": "hit", "guid": "f16a66f4b4f50e545a531e96a18c55a3", "clip": "Takedamage", "impact": 0.0, "end": 1.0 }
+      ]
+    },
+    {
+      "id": "rootwarden",
+      "prefab": "5dca37c5d9f3f4d4cbd068a8ea5348f9",
+      "heightM": 4.5,
+      "reviewPoses": [ "idle", "walk", "smash", "stomp", "throw" ],
+      "clips": [
+        { "role": "idle", "guid": "314924ff7a2688c43b49110136a4dc47", "clip": "Idle", "loop": true },
+        { "role": "walk", "guid": "b633fe9d50887d04fb9fc857746f07f0", "clip": "Walk Forward WO Root", "loop": true, "strideM": 2.4 },
+        { "role": "smash", "guid": "1844b3d1730176c4c94be0ba1e238900", "clip": "Root Attack", "impact": 0.167, "end": 1.167 },
+        { "role": "stomp", "guid": "5c1a8c6b33d7d5043a624d5ef4d8f90d", "clip": "Stomp Attack", "impact": 0.5, "end": 1.167 },
+        { "role": "throw", "guid": "d7a8e5426bc3c11478a45161f2921807", "clip": "Projectile Up Attack", "impact": 0.267, "end": 1.167 },
+        { "role": "attack", "guid": "73ebd05bd3ae24b4282f5031b0c49c22", "clip": "Projectile Attack", "impact": 0.6, "end": 1.167 },
+        { "role": "roar", "guid": "41e310037636d934f9dcad4ac9572ac5", "clip": "Cast Spell", "end": 1.333 },
+        { "role": "hit", "guid": "9677465bbc90e5d4587cac70503a6b99", "clip": "Take Damage", "impact": 0.0, "end": 1.0 }
       ]
     }
   ]

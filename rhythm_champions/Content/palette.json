@@ -39,6 +39,7 @@
     "conductor": "enemies.counter.amber",
     "treasureGoblin": "enemies.counter.amber",
     "hiveQueen": "enemies.accent.magenta",
-    "bloom": "enemies.accent.violet"
+    "bloom": "enemies.accent.violet",
+    "rootwarden": "enemies.accent.violet"
   }
 }

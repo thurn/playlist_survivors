@@ -1287,6 +1287,118 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Cast Spell.FBX",
+      "sourceSha256": "18cb5310a1453e748b56cad55f195f894aafa1ad614ae14e4be89eee87df706e",
+      "guid": "41e310037636d934f9dcad4ac9572ac5",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Die.FBX",
+      "sourceSha256": "bbb05bbf4319b0078daabca1fbc3c2fc3761a8ab5a2388f5878a18fa5229a01c",
+      "guid": "8db9757595d6dc846b2bac1134e61770",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Idle.FBX",
+      "sourceSha256": "d18fe54d65b9c925ebf4063f094ed79843630688bbf91185cb908f67ce13283e",
+      "guid": "314924ff7a2688c43b49110136a4dc47",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Projectile Attack.FBX",
+      "sourceSha256": "b19c773f3a69326c8fbf4afab99956aaeff26dcddede3cd6924542f686e4d6ec",
+      "guid": "73ebd05bd3ae24b4282f5031b0c49c22",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Projectile Up Attack.FBX",
+      "sourceSha256": "65ffc722a730b04c2842c134e2037296c2cf697a87f02929e973b6c370c6b3be",
+      "guid": "d7a8e5426bc3c11478a45161f2921807",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Root Attack.FBX",
+      "sourceSha256": "c22d9d57d756a8345679866fae3e1c8cb09657b7ac7e1638f489754afe6601e5",
+      "guid": "1844b3d1730176c4c94be0ba1e238900",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Stomp Attack.FBX",
+      "sourceSha256": "b92a7edca46169cccf1f7613cbb94652a5d0d9c907558a9a2a769f3cf3563abc",
+      "guid": "5c1a8c6b33d7d5043a624d5ef4d8f90d",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Take Damage.FBX",
+      "sourceSha256": "565d0a6d462d09dcf39f850d7a09a3ba1bf640a5384486105d027ccb348d9a9d",
+      "guid": "9677465bbc90e5d4587cac70503a6b99",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Polygonal Treant@Walk Forward WO Root.FBX",
+      "sourceSha256": "1dd3c8fbfe932b0deba5595a90562c3871ca9085959321c8f5788885d2372b61",
+      "guid": "b633fe9d50887d04fb9fc857746f07f0",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Root@Idle 01.FBX",
+      "sourceSha256": "aea2d7590c692a925658a665d1e114c66dcab1f4bae37df1928a5e8f29aabc62",
+      "guid": "83823fed35b4127408e7066dfa3454d4",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Root@Retract.FBX",
+      "sourceSha256": "ac2b36ae3b8d99477c07ff5d8e3143f2345142759708f89aefde14ed9cdea3e0",
+      "guid": "1fbb9e178bdcdd146a9d557ff2da6769",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Root@Spawn.FBX",
+      "sourceSha256": "c6777a1d527df2b6851da749223e2a7c502d263b087e3bb98cc8fc1ae6c0f620",
+      "guid": "8f62f9157b0a1674b8cb20885194deec",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/FBX/Root@Underground.FBX",
+      "sourceSha256": "79d3dac49cb9fdecbc1273325fde0af2bc8c4fffec251011525a42da498043a0",
+      "guid": "0882bcae85d3a5a42899bc56ef63ae5e",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/Prefabs/Polygonal Treant Green.prefab",
+      "sourceSha256": "f28ecb6df55454211bfeb32eef0885d999e8c0da8159c739390e065d4bef31f6",
+      "guid": "5dca37c5d9f3f4d4cbd068a8ea5348f9",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/Prefabs/Projectile Seed Green.prefab",
+      "sourceSha256": "fe17b543a68f54239208f7b4410ec5702684af530b517ba7273bdfc56d48c499",
+      "guid": "f77360d9303e5364e8810872e72352cc",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Polygonal Creatures Pack/Polygonal Treant/Prefabs/Root Green.prefab",
+      "sourceSha256": "dc1d24769ce9dd7bc12d6fdf95b29f2bae74a44afee3675770506e3f64739825",
+      "guid": "2b8712f139d03674a838f1d6c5801501",
+      "use": "Boss Rush boss 4: the Rootwarden"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Electric Magic/RPG3_ElectricMagic2_HeavyImpact01.wav",
       "sourceSha256": "d40dacceeb52faf594145df2e8313cd02f925c38bf7269e47b552a90cfa3a7a5",
       "guid": "d7568dee1a47844d2a1eaf636a1b6aba",
