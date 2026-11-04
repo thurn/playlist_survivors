@@ -620,6 +620,35 @@ see or where you can stand.
      comes and goes in waves.
    - Look: sweeping particle bands of sand. Sound: wind swells, a whip crack
      on the beat.
+   - **As built (ps-8z4.19)**: `BandagedKingModule`
+     (`Sim/Rush/BandagedKingModule.cs`), faience cyan (the key family's
+     lighter slot: a sandstorm's warm haze would swallow an amber king, and
+     cyan keeps the orange telegraphs apart), in his own arena `kingsTomb`:
+     an octagonal court 34 by 28 m with a colonnade of four lotus columns,
+     four obelisks and his bier (a fallen obelisk between two braziers),
+     dressed with the act 2 kit. Everything lands three beats after it is
+     planned, on a cycle of eight bars counted from a downbeat. The storm
+     (two bars; three below half health) rises on the cycle's downbeat
+     behind a *sand front* the court's width, square to it, rolling from
+     just beyond the wall behind the hero's side across the whole court at
+     22 m/s (the dash wave and the bank's signature, a wind swell); the King
+     glides back to 10 m from the hero, into the dark, and lashes every
+     other beat: a bandage-whip line from his body through where the hero
+     stood to the far wall (at most 24 m), cracking on its beat. In the calm (the other bars) the
+     sand settles and he stalks the hero: a three-lash whip combo (left on
+     the beat, right on the half beat, centre on the next) at a hero within
+     7 m, a reaching lash at one farther off. The first storm teaches the
+     lashes alone: it drifts in with no front and nothing else lands. Below
+     half health he wakes fully (four untouchable beats, the storm clearing
+     over two): the storm holds three bars of four, a second front rolls
+     through its middle and every other lash is crossed, two lines either
+     side of the hero's mark, the second on the half beat. The sight: the
+     floor's grid and the court's props, floor and backdrop fade beyond
+     6.5 m of the hero as the storm thickens (World.hlsl's `_RC_Storm`,
+     `StormSight`); the King, his telegraphs and the walls always glow.
+     Sand bands in his cyan stream across the court on the wind. His XP
+     bursts unravel in a line behind him. Evidence:
+     [evidence/boss-rush/bandagedKing/](../../rhythm_champions/evidence/boss-rush/bandagedKing/README.md).
 8. **The Gorgon** — *Line of sight.*
    - Source: `IP/Medusa/_Prefabs/Medusa_LP_Serpent.prefab`. Clips: Snakeheads,
      Attack1–3, Taunt.

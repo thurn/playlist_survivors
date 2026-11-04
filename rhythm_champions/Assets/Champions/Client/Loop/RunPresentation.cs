@@ -93,6 +93,8 @@ namespace Champions.Client.Loop
         public readonly BloomSporePresenter BloomSpores;
         /// <summary>Moonhowl's moon over its glade, the cycle's timer (ps-8z4.14; null without Moonhowl in the content).</summary>
         public readonly MoonhowlPresenter Moon;
+        /// <summary>The Bandaged King's sandstorm: the hero's sight and the sand on the wind (ps-8z4.19; null without him in the content).</summary>
+        public readonly BandagedKingPresenter Sandstorm;
         public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
 
@@ -124,6 +126,8 @@ namespace Champions.Client.Loop
             _owned.Add(Gaze);
             Moon = MoonhowlPresenter.Create(palette, content.Enemies, layer);
             if (Moon != null) _owned.Add(Moon);
+            Sandstorm = BandagedKingPresenter.Create(palette, content.Enemies, layer);
+            if (Sandstorm != null) _owned.Add(Sandstorm);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
             _owned.Add(Telegraphs);
             Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
@@ -203,6 +207,7 @@ namespace Champions.Client.Loop
             d.Add("sandwyrm ripples", (in SimEvent e) => Ripples.Take(e), null, (in PresentFrame f) => Ripples.Present(f.Song, f.Sim, f.Camera));
             d.Add("gorgon gaze", (in SimEvent e) => Gaze.Take(e), null, (in PresentFrame f) => Gaze.Present(f.Song, f.Sim, f.Camera));
             if (Moon != null) d.Add("moon", null, null, (in PresentFrame f) => Moon.Present(f.Song, f.Sim, f.Camera));
+            if (Sandstorm != null) d.Add("sandstorm", null, null, (in PresentFrame f) => Sandstorm.Present(f.Song, f.Sim, f.Hero, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)
@@ -308,6 +313,7 @@ namespace Champions.Client.Loop
             Flavour?.Queue(camera);
             BloomSpores?.Queue(camera);
             Moon?.Queue(camera);
+            Sandstorm?.Queue(camera);
             Ranged.Queue(camera);
         }
 

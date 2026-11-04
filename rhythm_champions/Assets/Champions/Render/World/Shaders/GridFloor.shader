@@ -108,7 +108,7 @@ Shader "Champions/GridFloor"
                 float major = GridLine(p, _Cell * _Major, _MajorHalfM);
                 float far = smoothstep(_FadeNear, _FadeFar, distance(i.positionWS, _WorldSpaceCameraPos));
                 // Under the wave the minor lines come up to the major's light, so its front reads as a ring of light.
-                float lines = max(lerp(_MinorShare, 1, wave) * minor, major) * lerp(1, _FadeTo, far);
+                float lines = max(lerp(_MinorShare, 1, wave) * minor, major) * lerp(1, _FadeTo, far) * StormSight(xz);
                 float3 pulse = ZoneColour(xz, ZONE_PULSE);
                 float3 colour = lerp(lerp(ZoneColour(xz, ZONE_LINE), pulse, wave), pulse * _RingBoost, saturate(ring)) / _ToneGain
                     + _RingLight * light;

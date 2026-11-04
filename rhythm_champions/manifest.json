@@ -2337,6 +2337,76 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicEpic_Hurricane01.wav",
+      "sourceSha256": "d8f7089bc8eee8a70e1bf0c3a52091bfe009b422bd4066c96babe4dfd531a1a4",
+      "guid": "25b0381a83bf0461d8f18455f58232ea",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Mixed/WHOOSH_Whip_RR1_mono.wav",
+      "sourceSha256": "619eea2f14db27ec689498d7092b1ade2bb9b6e0eea00c165255f897c7fa042f",
+      "guid": "74a4a52e4a6aba24dac0c8cf9aadddd2",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Mixed/WHOOSH_Whip_RR2_mono.wav",
+      "sourceSha256": "95455e496b4f312c8eacded7cd1bafc05e117cad349f3e5be77f1b781608b6b4",
+      "guid": "03c2f9d406707a743a27b4e8295e0c6d",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/WHOOSHES/Mixed/WHOOSH_Whip_RR3_mono.wav",
+      "sourceSha256": "da8c13a173f4cf15b3ebd8a7aeec502f4286080d37d18fc9696f5b213c1dcbaa",
+      "guid": "385930b1e661164428a03511332fe94c",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/TOOLS/Whip/WHIP_Crack_01_mono.wav",
+      "sourceSha256": "2a7099d5c1506199f5966174077bedbeea05618b880235527860a4e7ee14fef6",
+      "guid": "a37fa535ec79deb42a8497edcd7411c8",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/TOOLS/Whip/WHIP_Crack_03_mono.wav",
+      "sourceSha256": "f78920cd573a56eeb6efc01767c377b04f16c76403d4202d6373cdd7dbeb0c47",
+      "guid": "10adf7e2c2a501c4f84bf3adbf418691",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/TOOLS/Whip/WHIP_Crack_05_mono.wav",
+      "sourceSha256": "d86075a64e6fad61a397a1280458922c356b888b8528708c659cf0cc3a5b432e",
+      "guid": "614c41766429d26489de66ba307184f5",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicMisc_LowGust01.wav",
+      "sourceSha256": "14470cc63648cb3e4effa97022b97193fc331a67a3a01dd1c93a1dd450840508",
+      "guid": "ba31898d5c64347188ff6ce19520bd91",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicMisc_LowGust02.wav",
+      "sourceSha256": "6e43c0a04bf6dca358ea6db2a8a073bbd93612a8d855d7d3099b41a0b6a44fc3",
+      "guid": "8d38f254a34414b63a2dca9b0d16ba63",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/RPG Magic Sound Effects Pack 3 [ELEMENTAL]/Wind Magic/RPG3_WindMagicEpic_Impact02.wav",
+      "sourceSha256": "675889bd09c63d194fd9e5fe2b8d000a9d38a5c8a45b6ec95b881b829f707211",
+      "guid": "12b7a057f4e074cb8a3db1c16ac06db7",
+      "use": "Boss Rush boss 7: the Bandaged King's sound bank"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Medusa/_Prefabs/Medusa_LP_Serpent.prefab",
       "sourceSha256": "8814ddf5c02110369fe591b6fa0d7c0fb356c1dd4aa73a781d195361286aa866",
       "guid": "ebd58d0bad8b44e51be222e0ce2e1ad4",

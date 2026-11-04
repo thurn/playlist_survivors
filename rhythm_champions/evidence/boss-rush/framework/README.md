@@ -173,6 +173,14 @@ or a boss without one, plays the generic boss sounds. `fatOgre`'s bank is the pr
   while its moon is full (`MoonhowlModule.FullMoon`); a fight wanting the same writes more instances into its type's
   crowd slots the same way.
 
+## Added by the Bandaged King (ps-8z4.19)
+
+- **A sight radius** (a sandstorm, a darkness): the world's `_RC_Storm` global (World.hlsl: the sight's radius and
+  feather round the hero, the strength, what shows beyond) and `StormSight(xz)`. The grid floor and the arena's
+  props, floor pieces and backdrop fade by it; the walls (`_Storm` 0 on their part), the bosses, their telegraphs, the
+  hero and the effects never do. Still air (strength 0) unless a presenter publishes it: `BandagedKingPresenter`
+  publishes it every frame, 0 outside his fight. A fight wanting its own darkness publishes the same vector.
+
 ## Verification
 
 - `dotnet test rhythm_champions/dotnet`: all pass, rebased on the shell and arenas (15 new in `Rush/BossFightTests.cs`,

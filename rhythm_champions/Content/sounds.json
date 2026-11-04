@@ -64,6 +64,13 @@
       "signature": { "gain": 0.9, "clips": ["THUD_Deep_Noisy_01_mono", "DESTRUCTION_Rocks_01_mono"] },
       "death": { "gain": 1.0, "clips": ["MONSTER_Groan_Long_mono"] }
     },
+    "bandagedKing": {
+      "entrance": { "gain": 0.85, "clips": ["RPG3_WindMagicEpic_Hurricane01"] },
+      "tick": { "gain": 0.3, "clips": ["WHOOSH_Whip_RR1_mono", "WHOOSH_Whip_RR2_mono", "WHOOSH_Whip_RR3_mono"] },
+      "impact": { "gain": 0.8, "clips": ["WHIP_Crack_01_mono", "WHIP_Crack_03_mono", "WHIP_Crack_05_mono"] },
+      "signature": { "gain": 0.9, "clips": ["RPG3_WindMagicMisc_LowGust01", "RPG3_WindMagicMisc_LowGust02"] },
+      "death": { "gain": 1.0, "clips": ["RPG3_WindMagicEpic_Impact02"] }
+    },
     "gorgon": {
       "entrance": { "gain": 0.85, "clips": ["ANIMAL_Snake_Rattle_01_mono"] },
       "tick": { "gain": 0.35, "clips": ["ANIMAL_Snake_Hiss_01_mono", "ANIMAL_Snake_Hiss_02_mono", "ANIMAL_Snake_Hiss_04_mono"] },

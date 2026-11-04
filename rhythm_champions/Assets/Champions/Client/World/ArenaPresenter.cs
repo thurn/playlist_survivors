@@ -45,7 +45,7 @@ namespace Champions.Client
 
         static readonly int LineId = Shader.PropertyToID("_Line"), FillId = Shader.PropertyToID("_Fill"), AlphaId = Shader.PropertyToID("_Alpha"),
             RevealId = Shader.PropertyToID("_Reveal"), RiseId = Shader.PropertyToID("_Rise"), ZoneLineId = Shader.PropertyToID("_ZoneLine"),
-            EdgeId = Shader.PropertyToID("_Edge");
+            EdgeId = Shader.PropertyToID("_Edge"), StormId = Shader.PropertyToID("_Storm");
 
         enum PartKind { Walls, Zone, Prop, Obstacle, Floor, Backdrop }
 
@@ -258,6 +258,8 @@ namespace Champions.Client
             _build.Walls(_def.Outline, _ox, _oy, (float)_rules.WallThicknessM, (float)_rules.WallHeightM);
             var p = Add(PartKind.Walls, 0, false);
             Style(p, Lin(_palette.Wall, WallGain), _palette.VoidBody.linear, 1);
+            // The walls always glow, through a sandstorm too.
+            p.Block.SetFloat(StormId, 0);
         }
 
         void BuildZone(int z)

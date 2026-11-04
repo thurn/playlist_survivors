@@ -4,7 +4,8 @@
 // colour for a breakable prop (_ZoneLine), the warning colour for a hazard. The beat wave flares the lines as it passes.
 // Forming draws it in: geometry past _Reveal along its outline (TEXCOORD0.x) is clipped and its height scales by _Rise.
 // Opaque by default; a zone's floor cap draws translucent (_SrcBlend/_DstBlend/_ZWrite, premultiplied), so the grid
-// shows through it. A float-driven shader: no keywords, no variants beyond its one pass.
+// shows through it. A sandstorm (World.hlsl's StormSight) fades its lines beyond the hero's sight unless _Storm is 0 (the
+// walls: they always glow). A float-driven shader: no keywords, no variants beyond its one pass.
 Shader "Champions/ArenaEdge"
 {
     Properties
@@ -18,6 +19,7 @@ Shader "Champions/ArenaEdge"
         _ZoneLine ("Lines in the zone key's edge colour (0 or 1)", Float) = 0
         _Reveal ("Drawn along its outline so far (0 to 1)", Float) = 1
         _Rise ("Height drawn so far (0 to 1)", Float) = 1
+        _Storm ("Fades in a sandstorm (0 or 1)", Float) = 1
         _ChampionsId ("Type-ID pass code", Float) = 251
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Source blend", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Destination blend", Float) = 0
@@ -40,7 +42,7 @@ Shader "Champions/ArenaEdge"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Line; half4 _Fill; half _Alpha; half _Edge; half _EdgePx; half _Beat; half _ZoneLine;
-                float _Reveal; float _Rise; float _ChampionsId; float _SrcBlend; float _DstBlend; float _ZWrite;
+                float _Reveal; float _Rise; float _Storm; float _ChampionsId; float _SrcBlend; float _DstBlend; float _ZWrite;
             CBUFFER_END
             #include "Assets/Champions/Render/Shaders/IdPass.hlsl"
             #include "Assets/Champions/Render/World/Shaders/World.hlsl"
@@ -80,7 +82,7 @@ Shader "Champions/ArenaEdge"
             {
                 clip(_Reveal - i.order + 1e-4);
                 CHAMPIONS_ID_PASS(_ChampionsId)
-                float lit = EdgeLine(i.bary, i.edges, _EdgePx);
+                float lit = EdgeLine(i.bary, i.edges, _EdgePx) * lerp(1, StormSight(i.positionWS.xz), _Storm);
                 float3 lineColour = _ZoneLine > 0.5 ? ZoneColour(i.positionWS.xz, ZONE_EDGE) : _Line.rgb;
                 float3 c = Ungraded(_Fill.rgb) * _Alpha + lineColour * (_Edge * lit * (1 + _Beat * BeatWaveAt(i.positionWS.xz)));
                 return half4(c, saturate(_Alpha + lit));

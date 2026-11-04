@@ -9,6 +9,8 @@
 //   ring is drawn at full strength (and lights _RC_Special), and only rings past a knee bend the grid.
 // - The zone key (ZoneSweep.cs): the palette's zone (its grid line at rest, the line under the wave, the structures'
 //   fill and edge), crossfading from _RC_ZoneFrom to _RC_ZoneTo behind a front swept out from the hero over a beat.
+// - A sandstorm (the Bandaged King's, BandagedKingPresenter.cs): what the hero can see shrinks to a radius round them;
+//   the floor and the arena's props fade beyond it (StormSight). Still air (strength 0) until a storm publishes.
 #ifndef CHAMPIONS_WORLD_INCLUDED
 #define CHAMPIONS_WORLD_INCLUDED
 
@@ -36,6 +38,16 @@ float4 _RC_ZoneTo[4];    // the zone now
 float4 _RC_ZoneSweep;    // the change's centre x, z; its front's radius (m; past the frame once done); the feather (m)
 
 float4 _RC_Hero;       // the hero's feet x, z; song time; 0
+float4 _RC_Storm;      // a sandstorm's sight round the hero (m), its feather (m), its strength now (0 to 1), what shows beyond it (0 to 1)
+
+// How much of what stands at ground point xz shows through the sandstorm: 1 within the sight round the hero (and in
+// still air), falling over the feather to the storm's floor beyond it.
+float StormSight(float2 xz)
+{
+    if (_RC_Storm.z <= 0) return 1;
+    float beyond = smoothstep(_RC_Storm.x, _RC_Storm.x + max(1e-3, _RC_Storm.y), distance(xz, _RC_Hero.xy));
+    return 1 - saturate(_RC_Storm.z) * beyond * (1 - _RC_Storm.w);
+}
 float4 _RC_Grade;      // the post's grade before its tonemap (Grade.cs): the exposure (linear), the void toe's knee and power
 
 // A colour as it should read after the grade's exposure and void toe (both below the filmic curve's shoulder): the floor,

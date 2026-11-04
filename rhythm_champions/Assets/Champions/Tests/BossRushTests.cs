@@ -4,6 +4,7 @@ using Champions.Client;
 using Champions.Client.Loop;
 using Champions.Client.Scenes;
 using Champions.Client.Sound;
+using Champions.Render;
 using Champions.Render.Crowd;
 using Champions.Sim;
 using NUnit.Framework;
@@ -99,6 +100,49 @@ namespace Champions.Tests
                 Assert.IsEmpty(m.shaderKeywords, "floats, not keywords: no variants for the budget");
             }
             finally { Object.DestroyImmediate(m); }
+        }
+
+        /// <summary>The Bandaged King's sandstorm (ps-8z4.19) closes the world's sight only while his storm blows, never in another fight.</summary>
+        [Test]
+        public void TheBandagedKingsStormClosesTheSightOnlyInHisFight()
+        {
+            var dir = GameContent.Find(Application.dataPath);
+            var content = GameContent.Load(dir);
+            var storm = Shader.PropertyToID("_RC_Storm");
+            var sandstorm = BandagedKingPresenter.Create(Palette.Load(dir), content.Enemies);
+            Assert.IsNotNull(sandstorm, "the content has the Bandaged King");
+            try
+            {
+                Simulation Fight(string id)
+                {
+                    var config = new RunInputs { Loadout = new Upgrade[0], Fight = id }.Build(content);
+                    config.Hero.Health = 1e9;
+                    var s = new Simulation(config);
+                    foreach (var e in new ScriptedSong().Beats(0, 90, 120, allStrong: true).Entries()) s.AddKnown(e, Math.Max(0, e.Stamp + 0.5));
+                    return s;
+                }
+                var other = Fight(OgreModule.ModuleId);
+                other.StepTo(40);
+                sandstorm.Present(other.Now, other, Vector2.zero, null);
+                Assert.AreEqual(0f, Shader.GetGlobalVector(storm).z, "still air in another fight");
+                var sim = Fight(BandagedKingModule.ModuleId);
+                var king = (BandagedKingModule)null;
+                for (double t = 0; t < 60; t += 1.0 / 30)
+                {
+                    sim.StepTo(t);
+                    king = sim.Fight.Module as BandagedKingModule;
+                    if (king != null && king.Storm(sim.Fight, t) >= 1) break;
+                }
+                Assert.IsNotNull(king);
+                sandstorm.Present(sim.Now, sim, Vector2.zero, null);
+                var v = Shader.GetGlobalVector(storm);
+                Assert.AreEqual(((float)BandagedKingModule.SightM, 1f), (v.x, v.z), "his storm closes the sight round the hero");
+            }
+            finally
+            {
+                sandstorm.Dispose();
+            }
+            Assert.AreEqual(0f, Shader.GetGlobalVector(storm).z, "the storm ends with its presenter");
         }
 
         [Test]
