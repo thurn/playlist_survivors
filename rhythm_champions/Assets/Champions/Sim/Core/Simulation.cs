@@ -99,6 +99,14 @@ namespace Champions.Sim
                 StructureField = new StructureField(this, config.Structures, config.Seed);
                 UseStructures(StructureField);
             }
+            if (config.Arenas != null)
+            {
+                if (config.Structures != null) throw new ArgumentException("an arena run has no level structures: the arena blocks instead");
+                Arena = new BossArena(this, config.Arenas);
+                UseStructures(Arena);
+                ArenaScript = config.ArenaScript;
+            }
+            else if (config.ArenaScript != null) throw new ArgumentException("an arena script needs the arenas");
             horde = new Horde(this, config, Enemies);
             Zones = new Zones(config.Zones);
             State.Zone = Zones.Key;
@@ -148,6 +156,12 @@ namespace Champions.Sim
 
         /// <summary>The world's structures in their chunks, with a level (<see cref="SimConfig.Structures"/>); null without.</summary>
         public StructureField StructureField { get; }
+        /// <summary>The Boss Rush arena, with the arenas (<see cref="SimConfig.Arenas"/>); null without.</summary>
+        public BossArena Arena { get; }
+
+        /// <summary>The scripted arena's steps, or null (<see cref="SimConfig.ArenaScript"/>).</summary>
+        internal ArenaScript ArenaScript { get; }
+
         /// <summary>The hero's attacks and mods, and every blow it deals.</summary>
         public Arsenal Arsenal { get; }
 
@@ -198,6 +212,7 @@ namespace Champions.Sim
                 h = Hashing.Fold(h, (ulong)(uint)inputs.Count);
                 h = Hashing.Fold(h, (ulong)(uint)Stream.Accepted.Length);
                 if (StructureField != null) h = Hashing.Fold(h, (ulong)(uint)StructureField.Standing | (ulong)(uint)StructureField.Breaks << 32);
+                if (Arena != null && Arena.Forms > 0) h = Arena.Fold(h);
                 // Only once a boss was called, so the sessions before bosses keep their hashes.
                 if (Bosses.Called > 0)
                 {
@@ -515,6 +530,7 @@ namespace Champions.Sim
             Bosses.Tick(end);
             BossRush?.Tick(end);
             StructureField?.Tick(this, end);
+            Arena?.Tick(end);
             Zones.Tick(this, end);
             Pickups.Tick(this);
             Progression.Tick(this, end);

@@ -32,6 +32,11 @@ namespace Champions.Sim
         public double Health = double.NaN;
         /// <summary>Its whole XP budget, fixed whatever the fight's length (boss-rush.md, Progression).</summary>
         public double Experience;
+        /// <summary>Its arena (arenas.json's id): the stand-in arena until its fight authors its own.</summary>
+        public string Arena = StandInArena;
+
+        /// <summary>The arena a slot fights in when bossrush.json names none (arenas.json's stand-in).</summary>
+        public const string StandInArena = "standin";
 
         public BossRushBoss Clone() => (BossRushBoss)MemberwiseClone();
     }
@@ -167,6 +172,7 @@ namespace Champions.Sim
                     StandIn = b.String("standIn"),
                     Health = b.NumberOrNull("health"),
                     Experience = b.Number("experience"),
+                    Arena = b.StringOr("arena", BossRushBoss.StandInArena),
                 };
                 if (!ids.Add(boss.Id)) throw b.Fail($"id: {boss.Id} twice");
                 if (boss.Act < 0 || boss.Act >= rules.Acts.Length) throw ContentReader.Fail(b.Child("act"), $"no act {boss.Act + 1}");

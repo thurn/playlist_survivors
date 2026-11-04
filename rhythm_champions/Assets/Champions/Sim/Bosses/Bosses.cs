@@ -327,6 +327,8 @@ namespace Champions.Sim
             }
             if (!InDuel) return;
             ref var e = ref sim.Enemies.Edit(Id);
+            // A Boss Rush arena holds the boss's body as it holds the hero's (one outside it walks in freely).
+            if ((e.X != x || e.Y != y) && sim.Arena != null && sim.Arena.Solid) sim.Arena.Move(e.X, e.Y, e.Radius, x - e.X, y - e.Y, out x, out y, out _);
             if (e.X != x || e.Y != y)
             {
                 e.X = x;

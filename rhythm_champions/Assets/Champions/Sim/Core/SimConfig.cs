@@ -56,6 +56,12 @@ namespace Champions.Sim
         /// <summary>The world's structures (Content/structures.json), or null: an open arena (tests, most stills).</summary>
         public StructureRules Structures;
 
+        /// <summary>The Boss Rush arenas (Content/arenas.json), or null: no bounded arenas (the main game).</summary>
+        public ArenaRules Arenas;
+
+        /// <summary>A scripted arena formed round the hero (<see cref="Sim.ArenaScript"/>: stills, tests), or null. Needs <see cref="Arenas"/>.</summary>
+        public ArenaScript ArenaScript;
+
         /// <summary>The bosses' numbers and moves (Content/bosses.json; the defaults have no boss).</summary>
         public BossRules Bosses = new BossRules();
 

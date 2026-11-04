@@ -91,6 +91,7 @@ namespace Champions.Sim
                 Progression = content != null ? content.Progression.Clone() : new ProgressionRules(),
                 BossRush = rush,
                 BossRushStart = rushStart,
+                Arenas = rush != null && content != null ? content.Arenas.Clone() : null,
             };
         }
 

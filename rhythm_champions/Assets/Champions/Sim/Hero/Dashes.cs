@@ -207,7 +207,7 @@ namespace Champions.Sim
         public bool BreakThrough(Simulation sim, int dash, int blocker, double t, double x, double y)
         {
             var structures = sim.Structures;
-            if (structures == null || !any || dash != current.Index) return false;
+            if (structures == null || !any || dash != current.Index || !structures.Breakable(blocker)) return false;
             double damage = 0;
             HitTags tags = HitTags.Dash;
             for (int i = 0; i < partCount; i++)

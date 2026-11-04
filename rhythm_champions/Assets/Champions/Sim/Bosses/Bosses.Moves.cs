@@ -203,6 +203,7 @@ namespace Champions.Sim
                         var shape = WaveShape(mark, at);
                         if (ReachesHero(shape, at)) Hurt(at, at);
                         sim.StructureField?.Shatter(sim, shape, at, BreakCause.Boss);
+                        sim.Arena?.Shatter(shape, at);
                     }
                     if (end < land + move.DurationS - 1e-9) marks[kept++] = mark;
                     else { lastLand = land; lastTelegraph = mark.Telegraph; doneAt = land + move.DurationS; }
@@ -271,6 +272,7 @@ namespace Champions.Sim
             }
             sim.Emit(SimEvent.BossMove(land, mark, false, x, y, endX, endY, duration, sweep));
             sim.StructureField?.Shatter(sim, mark.Shape, land, BreakCause.Boss);
+            sim.Arena?.Shatter(mark.Shape, land);
         }
 
         /// <summary>The breath's cone at <paramref name="t"/> in its burn: still, or swept from one side to the other.</summary>

@@ -287,6 +287,8 @@ namespace Champions.Sim
             return true;
         }
 
+        public bool Breakable(int id) => id >= 0 && id < slots.Count && slots[id].Standing;
+
         public void Move(double x, double y, double radius, double dx, double dy, out double nx, out double ny, out int blocker)
         {
             blocker = -1;
@@ -405,7 +407,7 @@ namespace Champions.Sim
         }
 
         /// <summary>The share of the move at which a point at (px, py) from a disc's middle enters the disc of <paramref name="radius"/>.</summary>
-        static double SweepDisc(double px, double py, double ux, double uy, double radius)
+        internal static double SweepDisc(double px, double py, double ux, double uy, double radius)
         {
             double a = ux * ux + uy * uy, b = px * ux + py * uy, c = px * px + py * py - radius * radius;
             if (c <= 0) return 0;

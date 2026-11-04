@@ -49,6 +49,8 @@ namespace Champions.Client.Loop
         public readonly BossPresenter Boss;
         public readonly HeroPresenter Hero;
         public readonly StructurePresenter Structures;
+        /// <summary>The Boss Rush arena and its framing, with the arenas (<see cref="SimConfig.Arenas"/>); null without.</summary>
+        public readonly ArenaPresenter Arena;
         public readonly Effects Effects;
         public readonly RangedPresenter Ranged;
         public readonly SoundPresenter Sounds;
@@ -82,6 +84,11 @@ namespace Champions.Client.Loop
                 Structures = StructurePresenter.Create(config.Structures, palette, world.World, layer, look);
                 _owned.Add(Structures);
             }
+            if (config.Arenas != null)
+            {
+                Arena = new ArenaPresenter(config.Arenas, palette, world.World, world.World.Camera, layer);
+                _owned.Add(Arena);
+            }
             Ranged = new RangedPresenter(palette);
             _owned.Add(Ranged);
             var effects = EffectLibrary.Load();
@@ -114,6 +121,8 @@ namespace Champions.Client.Loop
                     Effects?.Fire(EffectCue.LeapRing, new EffectShot { T = e.T, At = new Vector2((float)e.D0, (float)e.D1),
                         Radius = (float)e.D2, Duration = 0.15f });
             }, null, (in PresentFrame f) => Ranged.Present(f.Sim.Ranged, f.Camera));
+            // Before the world: the arena's framing places the camera the world then moves.
+            if (Arena != null) d.Add("arena", (in SimEvent e) => Arena.Take(e), null, (in PresentFrame f) => Arena.Present(f.Song, f.Sim, f.Hero, f.Camera));
             d.Add("world", (in SimEvent e) => _world.Take(e), _world.Flush, (in PresentFrame f) => _world.Present(f.Song, f.Hero, f.Dt));
             if (Structures != null)
                 d.Add("structures", (in SimEvent e) => Structures.Take(e), Structures.Flush, (in PresentFrame f) => Structures.Present(f.Song, f.Camera));
@@ -199,7 +208,7 @@ namespace Champions.Client.Loop
         }
 
         /// <summary>The presenters whose state outlives frames: a scene running ahead hands them alone the events it skips drawing.</summary>
-        public static readonly string[] Keepers = { "world", "structures", "crowd", "boss", "telegraphs", "spores", "count" };
+        public static readonly string[] Keepers = { "arena", "world", "structures", "crowd", "boss", "telegraphs", "spores", "count" };
 
         /// <summary>Hands out the sim's settled events (with <paramref name="only"/>, to those presenters alone).</summary>
         public void Drain(ICollection<string> only = null) => Dispatch.Drain(_sim, only);
@@ -218,6 +227,7 @@ namespace Champions.Client.Loop
         public void Queue(Camera camera)
         {
             Structures?.Queue(camera);
+            Arena?.Queue(camera);
             Crowd.Queue(camera);
             Pickups.Present(_sim, _sim.Now, camera);
             Hero.Queue(camera);

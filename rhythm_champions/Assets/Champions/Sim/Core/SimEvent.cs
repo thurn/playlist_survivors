@@ -75,6 +75,11 @@ namespace Champions.Sim
         MagicAction,
         LightningLink,
         RushStage,
+        ArenaForm,
+        ArenaRetract,
+        ArenaZone,
+        ArenaObstacle,
+        ArenaProp,
     }
 
     /// <summary>
@@ -144,6 +149,51 @@ namespace Champions.Sim
         /// </summary>
         public static SimEvent RushStage(double t, BossRushStage stage, int boss, int act, double forS, double heroX, double heroY) => new SimEvent
         { Kind = SimEventKind.RushStage, T = t, I0 = (int)stage, I1 = boss, I2 = act, D0 = forS, D1 = heroX, D2 = heroY };
+
+        /// <summary>A Boss Rush arena forms (<see cref="BossArena.Form"/>): I0 its index in <see cref="ArenaRules.Arenas"/>; D0/D1 its origin in the world; D2/D3 the forming's span (song time).</summary>
+        public static SimEvent ArenaForm(double t, int arena, double originX, double originY, double from, double to)
+        {
+            var e = Of(SimEventKind.ArenaForm, t);
+            e.I0 = arena;
+            e.D0 = originX; e.D1 = originY; e.D2 = from; e.D3 = to;
+            return e;
+        }
+
+        /// <summary>The arena stops blocking and its lines retract: I0 its index; D0/D1 the retraction's span.</summary>
+        public static SimEvent ArenaRetract(double t, int arena, double from, double to)
+        {
+            var e = Of(SimEventKind.ArenaRetract, t);
+            e.I0 = arena;
+            e.D0 = from; e.D1 = to;
+            return e;
+        }
+
+        /// <summary>A floor zone changes state on its impact frame: I0 the zone, I1 its new <see cref="ArenaZoneState"/>, I2 its old; D0 a beat's length then (the drawn rise or fall).</summary>
+        public static SimEvent ArenaZone(double t, int zone, ArenaZoneState state, ArenaZoneState from, double beatS)
+        {
+            var e = Of(SimEventKind.ArenaZone, t);
+            e.I0 = zone; e.I1 = (int)state; e.I2 = (int)from;
+            e.D0 = beatS;
+            return e;
+        }
+
+        /// <summary>An obstacle grows (I2 1) or is cleared (I2 0): I0 its id (<see cref="BossArena.Obstacle"/> holds its shape), I1 its <see cref="ArenaObstacleKind"/>; D0/D1 its growth's span, D2/D3 its centre.</summary>
+        public static SimEvent ArenaObstacle(double t, int id, ArenaObstacleKind kind, bool grown, double from, double to, double x, double y)
+        {
+            var e = Of(SimEventKind.ArenaObstacle, t);
+            e.I0 = id; e.I1 = (int)kind; e.I2 = grown ? 1 : 0;
+            e.D0 = from; e.D1 = to; e.D2 = x; e.D3 = y;
+            return e;
+        }
+
+        /// <summary>A prop is hit (I1 the hits it takes still) or crumbles (I1 0): I0 the prop, I2 what did it (<see cref="BreakCause"/>); D0/D1 the way it is thrown (a unit vector, or zero).</summary>
+        public static SimEvent ArenaProp(double t, int prop, int hitsLeft, int cause, double dirX, double dirY)
+        {
+            var e = Of(SimEventKind.ArenaProp, t);
+            e.I0 = prop; e.I1 = hitsLeft; e.I2 = cause;
+            e.D0 = dirX; e.D1 = dirY;
+            return e;
+        }
 
         /// <summary>Survivor weapon upgrade: I0 WeaponKind, I1 level, I2 zero-based form; D0 previous level.</summary>
         public static SimEvent WeaponUpgrade(double t, WeaponKind kind, int level, int previous)

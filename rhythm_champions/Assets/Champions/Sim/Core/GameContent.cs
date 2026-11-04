@@ -21,6 +21,7 @@ namespace Champions.Sim
         public ZoneRules Zones = new ZoneRules();
         public StructureRules Structures = new StructureRules();
         public BossRules Bosses = new BossRules();
+        public ArenaRules Arenas = new ArenaRules();
         public ProgressionRules Progression = new ProgressionRules();
         public BossRushRules BossRush = new BossRushRules();
 
@@ -39,10 +40,14 @@ namespace Champions.Sim
                 Zones = ZoneRules.Read(Parse(dir, ZoneRules.File), ZoneRules.File),
                 Structures = StructureRules.Read(Parse(dir, StructureRules.File), StructureRules.File),
                 Progression = ProgressionRules.Read(Parse(dir, ProgressionRules.File), ProgressionRules.File),
+                Arenas = ArenaRules.Read(Parse(dir, ArenaRules.File), ArenaRules.File),
             };
             content.Level = LevelRules.Read(Parse(dir, LevelRules.File), LevelRules.File, content.Enemies);
             content.Bosses = BossRules.Read(Parse(dir, BossRules.File), BossRules.File, content.Enemies);
             content.BossRush = BossRushRules.Read(Parse(dir, BossRushRules.File), BossRushRules.File, content.Enemies, content.Bosses);
+            for (int i = 0; i < content.BossRush.Bosses.Length; i++)
+                if (content.Arenas.Find(content.BossRush.Bosses[i].Arena) == null)
+                    throw new ContentException($"{BossRushRules.File}.bosses[{i}].arena: no arena {content.BossRush.Bosses[i].Arena} in {ArenaRules.File}");
             foreach (var b in content.Level.Bosses)
                 if (content.Bosses.Of(b.Cast) == null)
                     throw new ContentException($"{LevelRules.File}.bosses: {content.Enemies.Cast[b.Cast].Id} has no duel in {BossRules.File}");

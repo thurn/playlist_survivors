@@ -169,6 +169,8 @@ namespace Champions.Sim
             beatsLeft = rules.FormBeats;
             untilClock = sim.State.RunClock + rules.FormBeats * beatlessBeatS;
             Enter(BossRushStage.Forming, t, rules.FormBeats * BeatS());
+            // The slot's arena draws itself in round the hero (BossArena; the previous one goes as it does).
+            if (sim.Arena != null) sim.Arena.FormAroundHero(sim.Arena.Rules.Find(Slot.Arena), t);
         }
 
         void Call(double t)

@@ -231,6 +231,29 @@ Every boss shares this, so 25 different fights still read as one game:
   20% for bosses). A larger arena may scroll, but the boss and every live
   telegraph stay in frame.
 
+#### Arenas, as built (ps-8z4.2)
+
+- `Content/arenas.json`: placeholder prop kinds and the arenas. A fight adds
+  its own arena there (outline as `radiusM`, `sizeM` or `pointsM`; zones
+  `safe`/`hazard`/`breakable`/`moving`; props; `heroStart`, `bossStart`;
+  `camera.maxScale`) and names it in its `bossrush.json` slot's `arena`
+  (default `standin`). Loading checks that zones and props sit inside the
+  walls and that both starts stand on clear floor.
+- The sim's `BossArena` (`sim.Arena`, on in Boss Rush runs) forms round the
+  hero at each forming stage, placing `heroStart` on the hero. It is the
+  run's structures: the hero, its dashes, adds, spores and boss bodies stop
+  at walls, blocked zones, wall obstacles and props. A body whose ground
+  changes under it walks out freely; hurting it there is the fight's rule.
+- A fight module changes it with `Raise`, `Sink`, `Level`, `Break`
+  (breakable zones), `Grow`/`Clear` (wall, web, lava obstacles),
+  `Crumble`/`Shatter` (props). It reads it with `ZoneAt`, `ObstacleAt`,
+  `Walkable` (spawns, the fairness harness) and `Cast` (shots). Webs and
+  lava only mark the floor; slowing and burning are the fight's.
+- `ArenaFraming` holds an arena whole when it fits within its `maxScale`,
+  and scrolls otherwise, holding the hero, the boss and its live telegraphs.
+  The client's `ArenaPresenter` draws it all in the edge look.
+- Evidence: [arenas](../../rhythm_champions/evidence/boss-rush/arenas/README.md).
+
 ### Environments
 
 One kit per act, built like the structure meshes: committed recipes that

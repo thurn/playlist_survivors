@@ -1,0 +1,70 @@
+{
+  "formBeats": 4,
+  "retractBeats": 4,
+  "wallThicknessM": 0.5,
+  "wallHeightM": 1.2,
+  "raiseM": 1.0,
+  "sinkM": 1.2,
+  "props": [
+    { "id": "pillar", "radiusM": 0.9, "heightM": 3.2, "hits": 0 },
+    { "id": "crate", "sizeM": [1.6, 1.6], "heightM": 1.4, "hits": 2 },
+    { "id": "post", "radiusM": 0.35, "heightM": 1.6, "hits": 1 },
+    { "id": "slab", "sizeM": [4.0, 0.8], "heightM": 1.1, "hits": 0 }
+  ],
+  "arenas": [
+    {
+      "id": "standin",
+      "outline": { "radiusM": 16 },
+      "heroStart": [0, -7],
+      "bossStart": [0, 7],
+      "camera": { "maxScale": 1.8, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "pillar", "at": [-8, 0] },
+        { "kind": "pillar", "at": [8, 0] },
+        { "kind": "crate", "at": [-5, -11], "degrees": 15 },
+        { "kind": "crate", "at": [5, 11], "degrees": -20 }
+      ]
+    },
+    {
+      "id": "testbed",
+      "outline": { "pointsM": [[-20, -10], [-14, -15], [14, -15], [20, -10], [20, 10], [14, 15], [-14, 15], [-20, 10]] },
+      "heroStart": [0, -9],
+      "bossStart": [0, 7],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [
+        { "id": "tile-w", "kind": "safe", "shape": { "sizeM": [4, 4], "at": [-4.5, 0] } },
+        { "id": "tile-c", "kind": "safe", "shape": { "sizeM": [4, 4], "at": [0, 0] } },
+        { "id": "tile-e", "kind": "safe", "shape": { "sizeM": [4, 4], "at": [4.5, 0] } },
+        { "id": "lava", "kind": "hazard", "shape": { "radiusM": 3, "sides": 6, "at": [-13, -6] } },
+        { "id": "shelf-w", "kind": "breakable", "shape": { "pointsM": [[-19.5, -9.5], [-15, -9.5], [-15, 9.5], [-19.5, 9.5]] } },
+        { "id": "shelf-e", "kind": "breakable", "shape": { "pointsM": [[15, -9.5], [19.5, -9.5], [19.5, 9.5], [15, 9.5]] } },
+        { "id": "raft", "kind": "moving", "shape": { "sizeM": [3, 3], "at": [10, -6] }, "path": [[0, 0], [0, 12], [-4, 12], [-4, 0]], "speedMps": 2 }
+      ],
+      "props": [
+        { "kind": "pillar", "at": [-9, 6] },
+        { "kind": "pillar", "at": [9, 6] },
+        { "kind": "crate", "at": [-7, -9] },
+        { "kind": "post", "at": [6, -10] },
+        { "kind": "post", "at": [7.5, -10], "blocksShots": false },
+        { "kind": "slab", "at": [0, 11.5] }
+      ]
+    },
+    {
+      "id": "long-hall",
+      "outline": { "sizeM": [72, 22] },
+      "heroStart": [-28, 0],
+      "bossStart": [-14, 0],
+      "camera": { "maxScale": 1.6, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "pillar", "at": [-18, 6] },
+        { "kind": "pillar", "at": [-18, -6] },
+        { "kind": "pillar", "at": [0, 6] },
+        { "kind": "pillar", "at": [0, -6] },
+        { "kind": "pillar", "at": [18, 6] },
+        { "kind": "pillar", "at": [18, -6] }
+      ]
+    }
+  ]
+}

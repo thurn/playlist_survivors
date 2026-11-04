@@ -50,6 +50,8 @@ namespace Champions.Client.Scenes
             ("pickups", s => new PickupScene(s._content, s._palette, s._look)),
             (WorldScene.Name, s => new WorldScene(s._palette)),
             (StructureScene.Name, s => new StructureScene(s._content, s._palette, s._look)),
+            (ArenaScene.Name, s => new ArenaScene(s._content, s._palette, scroll: false)),
+            (ArenaScene.ScrollName, s => new ArenaScene(s._content, s._palette, scroll: true)),
             (GalleryScene.Name, s => new GalleryScene(s._palette, s._contentDir)),
             (RangedGalleryScene.Name, s => new RangedGalleryScene(s._content, s._palette, s._contentDir)),
             ("full-ogre-storm", s => new DuelScene("fatOgre", s._content, s._palette, s._look, s._contentDir, stress: "storm")),

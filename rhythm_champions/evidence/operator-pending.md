@@ -224,3 +224,14 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   60 fps there if its frame p99 is at most 16.7 ms; its GPU and sim numbers
   replace the M5 Max proxy. Commit the folder beside this one's.
 | The Boss Rush by hand (`just champions-bossrush`): the title's Boss Rush entry (and Continue after quitting mid-act) leads to the picker and the run; each boss arrives on a downbeat after its arena's four beats, its kill brings a full heal, the reward card and the level-ups, and the next boss follows without the music pausing; the act card names act 2 after the fifth boss and Enter skips it; the top-centre clock reads ACT n · BOSS m and the fight's time; dying offers Retry act (back at the act's first boss with the build you entered it with) and New run; pause offers Restart act and Abandon run; the main game's three bosses stand in until fights land ([shell](boss-rush/shell/README.md)) | Hand-play feel, a window and the speakers | ps-8z4.1 | pending |
+
+## Boss Rush arenas (ps-8z4.2, 2026-11-03)
+
+[Stills](boss-rush/arenas/README.md) of the scripted test bed and the long hall.
+
+- In a window, once the mode shell (ps-8z4.1) plays arenas: an arena draws
+  itself in round the white knight over four beats and its props rise into
+  place; the grey walls read as walls at the eased-out framing; a raised tile,
+  a sunk pit, a broken-away shelf and a grown web or wall each read at a
+  glance; the long hall scrolls smoothly, the boss and its telegraphs never
+  leaving the frame.

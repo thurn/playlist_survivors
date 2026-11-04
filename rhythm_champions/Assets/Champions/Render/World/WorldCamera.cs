@@ -25,6 +25,8 @@ namespace Champions.Render
         public const float FollowS = 0.12f;
         /// <summary>A duel's view: this much farther out, eased over <see cref="DuelEaseS"/>.</summary>
         public const float DuelScale = 1.2f, DuelEaseS = 1.5f;
+        /// <summary>An arena's framing (<see cref="Frame"/>): eased in and out over this, the focus following it this slowly.</summary>
+        public const float FrameEaseS = 1.2f, FrameFollowS = 0.35f;
         /// <summary>A special moment's kick: a shake of up to <see cref="ShakeM"/> and a punch in of <see cref="PunchShare"/> of the distance, both falling as the square of what is left of <see cref="KickS"/>.</summary>
         public const float ShakeM = 0.12f, PunchShare = 0.04f, KickS = 0.25f;
 
@@ -37,8 +39,9 @@ namespace Champions.Render
         readonly Camera _camera;
         readonly List<Kick> _kicks = new List<Kick>(8);
         Vector2 _focus, _focusVelocity, _lead, _leadVelocity;
-        float _duel;
-        bool _placed, _duelOn;
+        float _duel, _frame, _frameDistance;
+        Vector2 _frameFocus, _frameVelocity;
+        bool _placed, _duelOn, _framed;
 
         public WorldCamera(Camera camera)
         {
@@ -57,7 +60,33 @@ namespace Champions.Render
         public float DuelEase => Smooth(_duel);
 
         /// <summary>The distance from the focus now, before kicks.</summary>
-        public float Distance => DistanceM * Mathf.Lerp(1f, DuelScale, DuelEase);
+        public float Distance => Mathf.Lerp(DistanceM * Mathf.Lerp(1f, DuelScale, DuelEase), _frameDistance, FrameEase);
+
+        /// <summary>How far eased into an arena's framing (0: following the hero, 1: on the arena's frame).</summary>
+        public float FrameEase => Smooth(_frame);
+
+        /// <summary>
+        /// Frames a Boss Rush arena (Champions.Sim.ArenaFraming's frame): the view eases onto <paramref name="focus"/> (ground
+        /// x, z) from <paramref name="distance"/>, following it as it moves; called each frame while the arena stands.
+        /// </summary>
+        public void Frame(Vector2 focus, float distance)
+        {
+            if (!_framed && _frame <= 0f)
+            {
+                _frameFocus = _focus;
+                _frameVelocity = Vector2.zero;
+                _frameDistance = distance;
+            }
+            _framed = true;
+            _frameTarget = focus;
+            _frameDistanceTarget = distance;
+        }
+
+        /// <summary>Lets the arena's framing go: the view eases back to following the hero.</summary>
+        public void Unframe() => _framed = false;
+
+        Vector2 _frameTarget;
+        float _frameDistanceTarget;
 
         /// <summary>Eases out for a boss duel, or back in after it.</summary>
         public void Duel(bool on) => _duelOn = on;
@@ -89,6 +118,17 @@ namespace Champions.Render
                 _focus = SmoothDamp(_focus, hero + _lead, ref _focusVelocity, FollowS, dt);
             }
             _duel = Mathf.MoveTowards(_duel, _duelOn ? 1f : 0f, dt / DuelEaseS);
+            _frame = Mathf.MoveTowards(_frame, _framed ? 1f : 0f, dt / FrameEaseS);
+            if (_framed && dt > 0)
+            {
+                _frameFocus = SmoothDamp(_frameFocus, _frameTarget, ref _frameVelocity, FrameFollowS, dt);
+                _frameDistance = Mathf.Lerp(_frameDistance, _frameDistanceTarget, 1f - Mathf.Exp(-dt / FrameFollowS));
+            }
+            else if (_framed)
+            {
+                _frameFocus = _frameTarget;
+                _frameDistance = _frameDistanceTarget;
+            }
 
             float distance = Distance;
             Vector2 shake = Vector2.zero;
@@ -111,7 +151,7 @@ namespace Champions.Render
                     Mathf.Cos(2 * Mathf.PI * 19f * a + seed * 1.7f) + 0.5f * Mathf.Sin(2 * Mathf.PI * 37f * a + seed * 2.3f)) / 1.5f;
                 punch = Mathf.Max(punch, e * PunchShare);
             }
-            Place(_focus + shake, distance * (1f - punch));
+            Place(Vector2.Lerp(_focus, _frameFocus, FrameEase) + shake, distance * (1f - punch));
         }
 
         void Place(Vector2 focus, float distance)

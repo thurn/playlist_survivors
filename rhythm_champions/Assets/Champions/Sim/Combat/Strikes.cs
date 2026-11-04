@@ -196,5 +196,8 @@ namespace Champions.Sim
         /// in its way and sliding along it, and that structure's id (-1 when nothing stopped it).
         /// </summary>
         void Move(double x, double y, double radius, double dx, double dy, out double nx, out double ny, out int blocker);
+
+        /// <summary>Can the hero's blows still break blocker <paramref name="id"/> (<see cref="Move"/>'s)? A wall can't.</summary>
+        bool Breakable(int id);
     }
 }

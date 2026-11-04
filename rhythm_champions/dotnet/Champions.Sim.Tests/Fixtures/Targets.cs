@@ -55,6 +55,8 @@ namespace Champions.Sim.Tests
             return w;
         }
 
+        public bool Breakable(int id) => id >= 0 && id < All.Count && !All[id].Broken;
+
         public void Move(double x, double y, double radius, double dx, double dy, out double nx, out double ny, out int blocker)
         {
             blocker = -1;
