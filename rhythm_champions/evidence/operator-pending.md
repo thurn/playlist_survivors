@@ -301,3 +301,10 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   cacti and date palms as breakable; nothing on the floor (sand ripples, sand drifts) reads as a pickup, shot or enemy;
   the pyramids at the top corners frame the arena without pulling the eye from the boss; an orange or red boss
   stays clear of the amber grid and the key-coloured props (a blind critique doubted it with the stand-ins).
+
+## Boss Rush boss bar (2026-11-04)
+
+- [ ] In a fight (`just champions-bossrush --boss 8`): the wide bar under the clock, the boss's name over a thick
+  bar in its colour on a dark panel, reads at a glance without stealing the eye from the arena; each hit leaves a
+  white trail that holds a moment then drains; the phase notch (half health for most bosses) reads as where the
+  boss turns; the bar never covers a telegraph you need near the arena's top edge.

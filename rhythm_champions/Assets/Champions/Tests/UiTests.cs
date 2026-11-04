@@ -306,6 +306,37 @@ namespace Champions.Tests
             Assert.That(hud.Q(className: "hud__boss").style.display.value, Is.EqualTo(DisplayStyle.None));
         }
 
+        [Test]
+        public void RushBossBarIsWideWithNameNotchesAndATrailThatHoldsThenDrains()
+        {
+            using var hud = new Hud(_palette);
+            var bar = new BossBar { Up = true, Health = 1, Colour = Color.red, Name = "THE GORGON", Phases = new[] { 0.5 } };
+            hud.Present(0, bar, 10);
+            var boss = hud.Q(className: "hud__boss");
+            Assert.That(boss.ClassListContains("hud__boss--rush"), Is.True);
+            Assert.That(hud.Q<Label>(className: "hud__boss-name").text, Is.EqualTo("THE GORGON"));
+            var notches = hud.Query(className: "hud__notch").ToList().Where(n => n.style.display.value == DisplayStyle.Flex).ToList();
+            Assert.That(notches, Has.Count.EqualTo(1));
+            Assert.That(notches[0].style.left.value.value, Is.EqualTo(50).Within(0.01));
+            bar.Health = .8f;
+            hud.Present(0, bar, 10.1);
+            Assert.That(hud.TrailHealth, Is.EqualTo(1).Within(1e-4), "the trail holds where the hit took it from");
+            hud.Present(0, bar, 10.1 + Hud.TrailHoldS);
+            hud.Present(0, bar, 10.2 + Hud.TrailHoldS);
+            Assert.That(hud.TrailHealth, Is.LessThan(1).And.GreaterThan(.8f), "then drains");
+            hud.Present(0, bar, 20);
+            Assert.That(hud.TrailHealth, Is.EqualTo(.8f).Within(1e-4), "down to the health");
+            hud.Present(0, new BossBar { Up = true, Health = .6f, Colour = Color.red }, 21);
+            Assert.That(boss.ClassListContains("hud__boss--rush"), Is.False, "outside the rush the bar stays thin");
+            Assert.That(hud.Q<Label>(className: "hud__boss-name").text, Is.Empty);
+        }
+
+        [Test]
+        public void EveryBossRushFightHasABarColour()
+        {
+            foreach (var id in BossModules.Ids) Assert.DoesNotThrow(() => _palette.ForType(id), id);
+        }
+
         [UnityTest]
         public IEnumerator BossHealthHasVisibleBoundsBelowThePhaseClock()
         {

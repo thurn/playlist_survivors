@@ -73,7 +73,7 @@ namespace Champions.Client.UI
         {
             var s = sim.Snapshot();
             Indicator.Present(now, s, sim.Beats, camera);
-            Hud.Present(s, BossBar.Of(s, _palette, _content));
+            Hud.Present(s, BossBar.Of(s, sim, _palette, _content));
             Hud.Banner(ActCard(s));
             Cards.Present(now);
         }

@@ -185,6 +185,53 @@
     flex-shrink: 0;
 }
 
+.hud__boss-name { display: none; }
+.hud__trail, .hud__notch { display: none; }
+
+/* The Boss Rush's wide bar: the boss's name over a thick, lit track under the clock. */
+.hud__boss--rush {
+    top: 68px;
+    left: 18%;
+    width: 64%;
+    height: auto;
+    align-items: center;
+    padding: 6px 14px 12px 14px;
+    background-color: rgba(3, 4, 8, 0.85);
+    border-radius: 6px;
+}
+.hud__boss--rush .hud__boss-name {
+    color: rgb(244, 248, 255);
+    font-size: 24px;
+    letter-spacing: 8px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    text-shadow: 0 0 14px rgba(244, 248, 255, 0.45);
+    margin: 0 0 6px 0;
+    padding: 0;
+}
+.hud__boss--rush .hud__health {
+    height: 24px;
+    border-width: 2px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.hud__trail {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background-color: rgba(255, 255, 255, 0.85);
+}
+.hud__notch {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    margin-left: -1px;
+    background-color: rgba(3, 4, 8, 0.9);
+}
+
 /* ---- The end card ---- */
 
 .endcard__stat {

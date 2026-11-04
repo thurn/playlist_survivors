@@ -14,6 +14,12 @@ namespace Champions.Client.UI
         public Color Colour;
         /// <summary>Health, 0 to 1.</summary>
         public float Health;
+        /// <summary>
+        /// A Boss Rush fight's name, shown over the wide top bar (null keeps the main game's thin bar).
+        /// </summary>
+        public string Name;
+        /// <summary>The health shares (0 to 1) below which the boss changes phase, notched on the wide bar; null for none.</summary>
+        public double[] Phases;
 
         /// <summary>The bar from a snapshot's duel fields; down outside a duel.</summary>
         public static BossBar Of(in SimSnapshot s, Palette palette, GameContent content)
@@ -26,6 +32,30 @@ namespace Champions.Client.UI
                 Health = Mathf.Clamp01((float)(s.BossHealth / s.BossMaxHealth)),
             };
         }
+
+        /// <summary>
+        /// The bar for a frame of <paramref name="sim"/>: in a Boss Rush the wide one, with the boss's name and its fight's
+        /// phase thresholds.
+        /// </summary>
+        public static BossBar Of(in SimSnapshot s, Simulation sim, Palette palette, GameContent content)
+        {
+            var bar = Of(s, palette, content);
+            if (!s.Rush || s.RushBoss < 0 || s.RushBoss >= content.BossRush.Count) return bar;
+            // A landed fight runs on BossFight, not the duel the snapshot's boss fields read: its bodies' health is the bar.
+            var fight = sim.Fight;
+            if (fight.InFight && fight.Module != null)
+            {
+                bar = new BossBar
+                {
+                    Up = true,
+                    Colour = palette.ForType(fight.Module.Id),
+                    Health = Mathf.Clamp01((float)fight.HealthShare),
+                    Phases = fight.Module.PhasesBelow,
+                };
+            }
+            if (bar.Up) bar.Name = content.BossRush.Bosses[s.RushBoss].Name.ToUpperInvariant();
+            return bar;
+        }
     }
 
     /// <summary>
@@ -33,9 +63,16 @@ namespace Champions.Client.UI
     /// </summary>
     public sealed class Hud : VisualElement, System.IDisposable
     {
-        readonly VisualElement _xp, _boss, _health;
+        readonly VisualElement _xp, _boss, _health, _trail;
+        readonly VisualElement[] _notches = new VisualElement[4];
         readonly Image _orb;
-        readonly Label _healthText, _timer, _banner;
+        readonly Label _healthText, _timer, _banner, _bossName;
+        // The wide bar's white trail: the health it eases down from after a hit, and the clock it last moved at.
+        float _trailHealth = 1, _trailHold;
+        double _trailClock = double.NaN;
+        string _trailBoss;
+        /// <summary>Seconds the trail holds after a hit, and the share of the bar it drains each second after.</summary>
+        public const float TrailHoldS = 0.35f, TrailDrainPerS = 0.5f;
         readonly Material _liquid;
         readonly RenderTexture _texture;
 
@@ -67,14 +104,26 @@ namespace Champions.Client.UI
             _boss = new VisualElement { pickingMode = PickingMode.Ignore };
             _boss.AddToClassList("hud__boss");
             Add(_boss);
-            Bar(_boss, "hud__health", out _health);
+            _bossName = new Label { pickingMode = PickingMode.Ignore };
+            _bossName.AddToClassList("hud__boss-name");
+            _boss.Add(_bossName);
+            var track = Bar(_boss, "hud__health", out _health);
+            _trail = new VisualElement { pickingMode = PickingMode.Ignore };
+            _trail.AddToClassList("hud__trail");
+            track.Insert(0, _trail);
+            for (int i = 0; i < _notches.Length; i++)
+            {
+                _notches[i] = new VisualElement { pickingMode = PickingMode.Ignore };
+                _notches[i].AddToClassList("hud__notch");
+                track.Add(_notches[i]);
+            }
             _boss.style.display = DisplayStyle.None;
         }
 
         /// <summary>Snapshot clocks freeze through cards/pause; shader motion uses the same active clock.</summary>
         public void Present(in SimSnapshot s, in BossBar boss)
         {
-            Present(s.ExperienceNeeded > 0 ? (float)(s.Experience / s.ExperienceNeeded) : 0, boss);
+            Present(s.ExperienceNeeded > 0 ? (float)(s.Experience / s.ExperienceNeeded) : 0, boss, s.RunClock);
             float health = s.HeroMaxHealth > 0 ? Mathf.Clamp01((float)(s.HeroHealth / s.HeroMaxHealth)) : 0;
             _liquid.SetFloat("_Fill", health);
             _liquid.SetFloat("_Motion", (float)s.RunClock);
@@ -125,15 +174,56 @@ namespace Champions.Client.UI
             return track;
         }
 
-        /// <summary>The frame: the experience toward the next level (0 to 1) and the boss bar.</summary>
-        public void Present(float experience, in BossBar boss)
+        /// <summary>
+        /// The frame: the experience toward the next level (0 to 1) and the boss bar. <paramref name="clock"/> is the run
+        /// clock, which eases the wide bar's trail (it freezes with cards and pauses); NaN snaps the trail to the health.
+        /// </summary>
+        public void Present(float experience, in BossBar boss, double clock = double.NaN)
         {
             _xp.style.width = Length.Percent(100 * Mathf.Clamp01(experience));
             _boss.style.display = boss.Up ? DisplayStyle.Flex : DisplayStyle.None;
-            if (!boss.Up) return;
-            _health.parent.style.backgroundColor = Alpha(boss.Colour, 0.18f);
+            if (!boss.Up) { _trailBoss = null; _trailClock = double.NaN; return; }
+            bool wide = boss.Name != null;
+            _boss.EnableInClassList("hud__boss--rush", wide);
+            _bossName.style.display = wide ? DisplayStyle.Flex : DisplayStyle.None;
+            _bossName.text = wide ? boss.Name : "";
+            var track = _health.parent;
+            track.style.backgroundColor = Alpha(boss.Colour, wide ? 0.14f : 0.18f);
             _health.style.backgroundColor = boss.Colour;
             _health.style.width = Length.Percent(100 * boss.Health);
+            if (wide)
+            {
+                _bossName.style.color = Color.Lerp(boss.Colour, Color.white, 0.55f);
+                track.style.borderTopColor = track.style.borderBottomColor =
+                    track.style.borderLeftColor = track.style.borderRightColor = Color.Lerp(boss.Colour, Color.white, 0.3f);
+            }
+            Trail(boss, wide, clock);
+            int phases = wide && boss.Phases != null ? Mathf.Min(boss.Phases.Length, _notches.Length) : 0;
+            for (int i = 0; i < _notches.Length; i++)
+            {
+                _notches[i].style.display = i < phases ? DisplayStyle.Flex : DisplayStyle.None;
+                if (i < phases) _notches[i].style.left = Length.Percent(100 * Mathf.Clamp01((float)boss.Phases[i]));
+            }
         }
+
+        /// <summary>The white trail behind the wide bar's fill: it holds where a hit took it from, then drains to the health.</summary>
+        void Trail(in BossBar boss, bool wide, double clock)
+        {
+            _trail.style.display = wide ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!wide) return;
+            float dt = double.IsNaN(clock) || double.IsNaN(_trailClock) ? 0 : Mathf.Max(0, (float)(clock - _trailClock));
+            if (_trailBoss != boss.Name || double.IsNaN(clock) || boss.Health >= _trailHealth)
+            {
+                _trailHealth = boss.Health; _trailHold = TrailHoldS;
+            }
+            else if (_trailHold > 0) _trailHold -= dt;
+            else _trailHealth = Mathf.Max(boss.Health, _trailHealth - TrailDrainPerS * dt);
+            _trailBoss = boss.Name;
+            _trailClock = clock;
+            _trail.style.width = Length.Percent(100 * _trailHealth);
+        }
+
+        /// <summary>The wide bar's trail now (0 to 1), for tests.</summary>
+        public float TrailHealth => _trailHealth;
     }
 }
