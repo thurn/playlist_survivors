@@ -472,7 +472,7 @@ namespace Champions.Sim
                 BossMaxHealth = Bosses.InDuel ? Bosses.MaxHealth : 0,
                 BossBreak = Bosses.InDuel ? Bosses.Break : 0,
                 BossPhase = Bosses.Phase,
-                BossElapsed = Bosses.DuelElapsed,
+                BossElapsed = Bosses.InDuel ? Bosses.DuelElapsed : Fight.Elapsed,
                 BossStaggerFrom = Bosses.StaggerFrom,
                 BossStaggerUntil = Bosses.StaggerUntil,
                 Level = State.Level,

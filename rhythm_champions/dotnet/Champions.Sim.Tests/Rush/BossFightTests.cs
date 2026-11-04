@@ -354,6 +354,11 @@ namespace Champions.Sim.Tests
             foreach (var k in Drive.Known(new FixtureSong().Beats(0, 200, Bpm).Entries())) sim.AddKnown(k.Entry, k.KnownAt);
             Until(sim, () => sim.Fight.InFight, 60);
             Assert.AreEqual((BossStage.None, BossRushStage.Fighting), (sim.Bosses.Stage, sim.BossRush.Stage), "the fight, not the stand-in");
+            Assert.AreEqual(0, sim.Snapshot().BossElapsed, 0.05, "the rush clock starts at the arrival");
+            double clock = sim.State.RunClock;
+            sim.StepTo(sim.Now + 3);
+            Assert.AreEqual(sim.State.RunClock - clock, sim.Snapshot().BossElapsed, 0.05, "and runs with the fight (it never sat at 00:00)");
+            Assert.Greater(sim.Snapshot().BossElapsed, 2.5);
             Strike(sim, 0, 25);
             sim.StepTo(sim.Now + BeatS + 0.01);
             Assert.AreEqual(2, sim.BossRush.Bursts, "90% and 80% passed");

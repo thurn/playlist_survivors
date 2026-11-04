@@ -63,7 +63,7 @@ namespace Champions.Sim
         BodySpec[] specs = new BodySpec[0];
         int nextMark = FirstMarkId;
         int shedDone, shedDue;
-        double calledClock, centreX, centreY, setupHealth;
+        double calledClock, arrivedClock, centreX, centreY, setupHealth;
         Telegraph entrance, transition;
 
         struct Motion
@@ -103,6 +103,10 @@ namespace Champions.Sim
 
         public bool Active => Stage != FightStage.None && Stage != FightStage.Dead;
         public bool InFight => Stage >= FightStage.Entrance && Stage < FightStage.Dead;
+        /// <summary>
+        /// Run-clock seconds since the boss arrived (the Boss Rush clock's; it freezes with cards and pauses), 0 outside a fight.
+        /// </summary>
+        public double Elapsed => InFight ? Math.Max(0, sim.State.RunClock - arrivedClock) : 0;
         /// <summary>In a phase transition, blows take nothing.</summary>
         public bool Untouchable => Stage == FightStage.Transition;
         internal double DamageScale => Untouchable ? 0 : 1;
@@ -242,6 +246,7 @@ namespace Champions.Sim
             }
             for (int i = 0; i < bodies.Length; i++) Record(i, t);
             Stage = FightStage.Entrance;
+            arrivedClock = sim.State.RunClock;
             entrance = sim.Telegraphs.Plan(t, Module.EntranceBeats);
             Module.Begin(this, t);
         }
