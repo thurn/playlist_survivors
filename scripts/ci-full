@@ -98,9 +98,10 @@ stills_run() {
   fi
 }
 # champions look on the stills: a report of how they stray from the guide values, never a failure (design.md, Judgment
-# over rules; ps-6y2.41). Its report is rhythm_champions/Logs/look.txt.
+# over rules; ps-6y2.41). Its report is rhythm_champions/Logs/look.txt. It runs last in the unity lane, the long
+# pole, when the other lanes are done, so it takes 12 workers (ps-d9y).
 look_report() {
-  champions look captures/stills --jobs 4 > rhythm_champions/Logs/look.txt 2>&1 ||
+  champions look captures/stills --jobs 12 > rhythm_champions/Logs/look.txt 2>&1 ||
     echo "ci-full: champions look reports strays (a diagnostic: rhythm_champions/Logs/look.txt)"
   return 0
 }
