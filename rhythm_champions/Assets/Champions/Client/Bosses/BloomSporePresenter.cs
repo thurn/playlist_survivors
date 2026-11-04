@@ -9,8 +9,9 @@ namespace Champions.Client
     /// The Bloom's authored effect (ps-8z4.10; boss-rush.md, The roster: "rotating arms of spores"): while its arms are
     /// live, spores stream outward along each one in its violet (palette.json's type colour, never the danger red that
     /// fills the arms' own marks), so a turning arm reads as a jet of spores breathed from the flower rather than a bare
-    /// line. Each arm puffs every <see cref="EveryS"/> at a random point along its length as it is now, drifting out
-    /// along it and sweeping a little with its turn. One GPU spark ring, a burst record per puff.
+    /// line. Each arm puffs every <see cref="EveryS"/> at a random point along its length as it is now, just off its
+    /// trailing edge (the red fill would hide them on it), drifting out along it and falling behind its turn. One GPU
+    /// spark ring, a burst record per puff.
     /// </summary>
     public sealed class BloomSporePresenter : IDisposable
     {
@@ -49,12 +50,12 @@ namespace Champions.Client
         {
             var s = arm.ShapeAt(t);
             float u = (float)(0.1 + 0.85 * _random.NextDouble());
-            var at = new Vector3((float)(s.X + (s.X2 - s.X) * u), 0.5f, (float)(s.Y + (s.Y2 - s.Y) * u));
             var along = new Vector3((float)(s.X2 - s.X), 0, (float)(s.Y2 - s.Y)).normalized;
-            // Swept with the turn: the arm's sideways direction, by its spin's sign.
-            var side = new Vector3(-along.z, 0, along.x) * Math.Sign(arm.SpinRadPerS) * 0.35f;
-            _sparks.Burst(at, t, along + side + Vector3.up * 0.15f, 0.35f, PerPuff, new Vector2(1.5f, 4f), new Vector2(0.35f, 0.8f),
-                0.05f, 2.5f, 0.5f, 0.2f, 1.4f);
+            // Behind the turn: the arm's sideways direction against its spin.
+            var behind = new Vector3(-along.z, 0, along.x) * -Math.Sign(arm.SpinRadPerS);
+            var at = new Vector3((float)(s.X + (s.X2 - s.X) * u), 0.5f, (float)(s.Y + (s.Y2 - s.Y) * u)) + behind * (float)(s.Radius + 0.25);
+            _sparks.Burst(at, t, along + behind * 0.4f + Vector3.up * 0.15f, 0.4f, PerPuff, new Vector2(1.5f, 4f), new Vector2(0.4f, 0.9f),
+                0.07f, 2.5f, 0.5f, 0.2f, 2f);
         }
 
         public void Queue(Camera camera) => _sparks.Queue(camera);

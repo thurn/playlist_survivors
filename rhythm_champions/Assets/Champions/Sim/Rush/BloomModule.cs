@@ -122,7 +122,7 @@ namespace Champions.Sim
             rootX = rooted ? arena.BossStartX : f.CentreX;
             rootY = rooted ? arena.BossStartY : f.CentreY;
             ref readonly var b = ref f.Bodies[0];
-            // Through its entrance it draws its roots to its root (no way when it arrived there).
+            // Through its entrance it draws its roots to its root (it stays put when it arrived there).
             double land = f.Plan(EntranceBeats).Land;
             if (Math.Abs(b.X - rootX) + Math.Abs(b.Y - rootY) > 1e-6) f.MoveBody(0, rootX, rootY, t, land, eased: true);
             nextMoveAt = t;
