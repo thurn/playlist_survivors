@@ -88,7 +88,7 @@ namespace Champions.Sim
                 Structures = !Level || content == null ? null : content.Structures.Clone(),
                 Bosses = content != null ? content.Bosses.Clone() : new BossRules(),
                 Duel = DuelCast(content),
-                Progression = content != null ? content.Progression.Clone() : new ProgressionRules(),
+                Progression = rush != null ? rush.Curve(content.Progression) : content != null ? content.Progression.Clone() : new ProgressionRules(),
                 BossRush = rush,
                 BossRushStart = rushStart,
                 Arenas = rush != null && content != null ? content.Arenas.Clone() : null,

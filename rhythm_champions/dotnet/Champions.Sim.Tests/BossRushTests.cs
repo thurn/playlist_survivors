@@ -254,8 +254,8 @@ namespace Champions.Sim.Tests
             Assert.AreEqual(1, zero.Level);
             var later = rules.ReferenceCheckpoint(12, content.Combat);
             Assert.AreEqual(12, later.Boss);
-            Assert.AreEqual(12 * rules.ReferenceStepsPerBoss, later.Steps);
-            Assert.AreEqual(1 + 12 * rules.ReferenceLevelsPerBoss, later.Level);
+            Assert.AreEqual(rules.StepsAt(12), later.Steps);
+            Assert.AreEqual(rules.LevelAt(12), later.Level);
             Assert.Throws<ArgumentOutOfRangeException>(() => rules.ReferenceCheckpoint(25, content.Combat));
             var s = Make(Config(Rush(later), content));
             Assert.AreEqual(12, s.BossRush.Boss);
@@ -276,10 +276,11 @@ namespace Champions.Sim.Tests
         [Test]
         public void ARushSessionReplaysToItsHash()
         {
-            // A strong build that kills by its own weapons (every input recorded), from act 1's fourth boss.
+            // A strong build that kills by its own weapons (every input recorded), from the first boss (the health table's
+            // lightest; the driver's stand-close walk may die to the second, which ends the attempt the same way).
             var start = new BossRushCheckpoint
             {
-                Boss = 3, Level = 4, Deaths = new[] { 1, 0, 0, 0, 0 },
+                Boss = 0, Level = 4, Deaths = new[] { 1, 0, 0, 0, 0 },
                 Build = new[] { Card.Of(WeaponKind.Sword, 8, 0), Card.Of(WeaponKind.Lightning, 8, 0), Card.Of(WeaponKind.OrbitBlades, 8, 0),
                     Card.Of(WeaponKind.EmberField, 8, 0), Card.Of(SupportKind.Might, 5, 0), Card.Of(SupportKind.Armor, 5, 0) },
             };
@@ -304,7 +305,8 @@ namespace Champions.Sim.Tests
                 SessionRecord.WriteEntries(dir, entries.GetRange(0, fed));
                 var read = SessionRecord.Read(dir);
                 Assert.IsTrue(read.Run.BossRush);
-                Assert.AreEqual(3, read.Run.RushStart.Boss);
+                Assert.AreEqual(0, read.Run.RushStart.Boss);
+                Assert.AreEqual(4, read.Run.RushStart.Level);
                 var replay = new SessionReplay(read);
                 foreach (var e in SessionRecord.LoadEntries(dir)) replay.Supply(e);
                 var sim = new Simulation(read.Run.Build(Content));

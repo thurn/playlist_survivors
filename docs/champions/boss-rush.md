@@ -138,7 +138,8 @@ The music never pauses for any of this. Checkpoints are written at act start.
 
 - `Content/bossrush.json` holds the acts (name, kit, floor key) and the 25
   slots in order, each with `health` (null keeps the fighter's own) and its
-  whole XP `experience` budget. The progression bead fills both.
+  whole XP `experience` budget. Progression filled both (see Progression,
+  as built).
 - **Landing a fight**: a slot is fought by its own boss once its id is an
   `enemies.json` cast with a `bosses.json` duel (or whatever registration
   the boss framework replaces that with, in `BossRushRules.Read`). Until
@@ -175,6 +176,45 @@ The music never pauses for any of this. Checkpoints are written at act start.
   pacing evidence does. Strong builds finish faster; that's fine.
 - **The act checkpoint** stores the build, level, XP and pending choices at
   act start.
+
+### Progression, as built (ps-8z4.4)
+
+The tables live in `Content/bossrush.json`; the pacing bead re-tunes them
+once real fights exist. Evidence:
+[evidence/boss-rush/progression/](../../rhythm_champions/evidence/boss-rush/progression/README.md).
+
+- **Shedding.** The rush reads the boss's health share each tick. Each
+  `shedStep` (0.1) of health lost queues a burst for the next reliable beat,
+  or one fallback beat later without a beat. Several thresholds passed by one
+  blow burst together on that beat. Each burst is a tenth of the budget, so
+  nine bursts shed 90% and the kill drops the rest, magnetised.
+- **Burst geometry** is per slot (`shed`, falling back to the file's
+  default): a `ring` round the boss, a `spray` fan ahead of its facing, or a
+  `lane`, a line flung across its front. Each burst is `gems` drops sharing
+  its XP, placed so that no two merge into one pickup cell. Each burst logs a
+  `RushShed` event (burst, boss, XP, position) next to its pickup drops.
+- **Adds** take XP from the same budget through `BossRush.Draw`. Whatever
+  they draw, the kill drops that much less, and once the budget is spent an
+  add yields nothing.
+- **The curve.** The mode's own curve is `experience.levels` and
+  `growth`: 50 XP to level 2, then each level 5% more. The main game's
+  `progression.json` is untouched. Each slot has `levels`: 3 for act 1's
+  bosses and 2 for the rest. Its `experience` budget is exactly the curve's
+  XP for those levels, rounded up. Every gem is collected by the kill, so the
+  run reaches each boss at a known level. The 77th step comes with boss 24's
+  reward, and boss 25's levels go to the max-health fallback.
+- **Reference builds.** There are two scripted builds. `focused` is deep:
+  each entry is ranked to its top before the next, so the sword comes first.
+  `broad` cycles round its order. At boss N (0-based), a build has the level
+  the curve expects there and `(level − 1) + N` steps. `--boss N` uses
+  `reference.build` (focused).
+- **Health.** `health = targetS × sustained damage`. `targetS` rises
+  linearly from 120 s at boss 1 to 180 s at boss 25. Sustained damage is the
+  mean of the two builds' measurements. Each is the boss health the scripted
+  reference player (`positioning`, which dodges telegraphs) takes per second
+  over 60 s of the duel. It fights the slot's current fighter, made
+  unkillable, at 128 BPM. The fighters are still the stand-ins, so the pacing
+  bead re-measures against the real fights.
 
 ## Fights
 

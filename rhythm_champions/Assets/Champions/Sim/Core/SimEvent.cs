@@ -80,6 +80,7 @@ namespace Champions.Sim
         ArenaZone,
         ArenaObstacle,
         ArenaProp,
+        RushShed,
     }
 
     /// <summary>
@@ -194,6 +195,14 @@ namespace Champions.Sim
             e.D0 = dirX; e.D1 = dirY;
             return e;
         }
+
+        /// <summary>
+        /// A Boss Rush boss shed a burst of gems (<see cref="BossRush"/>; boss-rush.md, Progression): I0 the burst (1 up, one
+        /// per 10% of its health lost), I1 the boss (0-based); D0 the burst's XP; D1/D2 the boss's position. The gems are the
+        /// pickup drops logged with it.
+        /// </summary>
+        public static SimEvent RushShed(double t, int burst, int boss, double value, double x, double y) => new SimEvent
+        { Kind = SimEventKind.RushShed, T = t, I0 = burst, I1 = boss, D0 = value, D1 = x, D2 = y };
 
         /// <summary>Survivor weapon upgrade: I0 WeaponKind, I1 level, I2 zero-based form; D0 previous level.</summary>
         public static SimEvent WeaponUpgrade(double t, WeaponKind kind, int level, int previous)

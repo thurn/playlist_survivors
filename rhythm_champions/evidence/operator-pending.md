@@ -224,6 +224,7 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   60 fps there if its frame p99 is at most 16.7 ms; its GPU and sim numbers
   replace the M5 Max proxy. Commit the folder beside this one's.
 | The Boss Rush by hand (`just champions-bossrush`): the title's Boss Rush entry (and Continue after quitting mid-act) leads to the picker and the run; each boss arrives on a downbeat after its arena's four beats, its kill brings a full heal, the reward card and the level-ups, and the next boss follows without the music pausing; the act card names act 2 after the fifth boss and Enter skips it; the top-centre clock reads ACT n · BOSS m and the fight's time; dying offers Retry act (back at the act's first boss with the build you entered it with) and New run; pause offers Restart act and Abandon run; the main game's three bosses stand in until fights land ([shell](boss-rush/shell/README.md)) | Hand-play feel, a window and the speakers | ps-8z4.1 | pending |
+| Boss Rush progression by hand (`just champions-bossrush`, also `--boss 6`, `--boss 16`): each 10% of a boss's health bursts a ring of green gems on the beat; collecting them is a routing choice, and the kill pulls in the rest; about 3 level-ups per act-1 boss and 2 later; fights last about 2 minutes early and closer to 3 by act 5 with the health table, which is scaled to scripted players against the stand-ins ([progression](boss-rush/progression/README.md)) | Hand-play feel and pacing | ps-8z4.4 | pending |
 
 ## Boss Rush arenas (ps-8z4.2, 2026-11-03)
 

@@ -38,6 +38,10 @@ namespace Champions.Sim
         readonly BossRushCheckpoint start;
         int beatsLeft;
         double untilClock;
+        // Shedding (boss-rush.md, Progression): the thresholds the boss has passed, those still to burst on the next beat,
+        // and the run clock the oldest of those passed at (the beatless fallback's).
+        int shedPassed, shedPending;
+        double shedSince;
 
         internal BossRush(Simulation sim, SimConfig config)
         {
@@ -69,8 +73,30 @@ namespace Champions.Sim
         /// <summary>The checkpoint of the act now: what a death restarts it with.</summary>
         public BossRushCheckpoint Checkpoint { get; private set; }
 
-        /// <summary>The XP the boss now has shed so far (the progression's shedding adds to it); its kill drops the rest.</summary>
+        /// <summary>The XP the boss now has shed so far (its bursts and its adds); its kill drops the rest.</summary>
         public double Shed { get; internal set; }
+
+        /// <summary>The bursts the boss now has shed (one per <see cref="BossRushRules.ShedStep"/> of health lost).</summary>
+        public int Bursts { get; private set; }
+
+        /// <summary>
+        /// The boss's health share now (1 full, 0 dead): what its thresholds are read from. The main game's stand-ins'
+        /// own; the boss framework (ps-8z4.3) points this at its fight's <c>HealthShare</c> once its fights are called.
+        /// </summary>
+        public double HealthShare => sim.Bosses.InDuel && sim.Bosses.MaxHealth > 0 ? Math.Max(0, sim.Bosses.Health / sim.Bosses.MaxHealth) : 1;
+
+        /// <summary>
+        /// A boss's add (or any other mechanic of the boss's) wants <paramref name="want"/> XP: what of the boss's budget is
+        /// left for it, now counted shed. Adds draw from the same fixed budget (boss-rush.md, Progression), so the kill's
+        /// drop shrinks by as much; past the budget an add yields nothing.
+        /// </summary>
+        internal double Draw(double want)
+        {
+            if (Stage != BossRushStage.Fighting || !(want > 0)) return 0;
+            double got = Math.Min(want, Math.Max(0, Slot.Experience - Shed));
+            Shed += got;
+            return got;
+        }
 
         /// <summary>The bosses killed this sim.</summary>
         public int Killed { get; private set; }
@@ -103,10 +129,12 @@ namespace Champions.Sim
             return true;
         }
 
-        /// <summary>A beat fired at <paramref name="t"/>: forming counts its beats.</summary>
+        /// <summary>A beat fired at <paramref name="t"/>: forming counts its beats; a fight's passed thresholds burst.</summary>
         internal void Beat(double t)
         {
-            if (Stage != BossRushStage.Forming || sim.State.Held || sim.State.Beat != Reliability.Reliable) return;
+            if (sim.State.Held || sim.State.Beat != Reliability.Reliable) return;
+            if (Stage == BossRushStage.Fighting && shedPending > 0) BurstPending(t);
+            if (Stage != BossRushStage.Forming) return;
             if (--beatsLeft <= 0) Call(t);
         }
 
@@ -118,6 +146,11 @@ namespace Champions.Sim
             {
                 case BossRushStage.Forming:
                     if (sim.State.Beat != Reliability.Reliable && sim.State.RunClock >= untilClock - 1e-9) Call(end);
+                    break;
+                case BossRushStage.Fighting:
+                    PassThresholds();
+                    // Without a reliable beat a passed threshold bursts one fallback beat after it was passed.
+                    if (shedPending > 0 && sim.State.Beat != Reliability.Reliable && sim.State.RunClock >= shedSince + beatlessBeatS - 1e-9) BurstPending(end);
                     break;
                 case BossRushStage.Reward:
                     if (!sim.State.Offer.Up && sim.State.HeldLevels == 0 && sim.Pickups.FlyingCount == 0) Next(end);
@@ -133,6 +166,7 @@ namespace Champions.Sim
         {
             if (Stage != BossRushStage.Fighting) return;
             Killed++;
+            shedPending = 0;
             double rest = Slot.Experience - Shed;
             Shed = Slot.Experience;
             if (rest > 0) sim.Pickups.Drop(sim, PickupKind.Experience, x, y, rest);
@@ -151,6 +185,8 @@ namespace Champions.Sim
         {
             h = Hashing.Fold(h, (ulong)Stage | (ulong)(uint)Boss << 8 | (ulong)(uint)beatsLeft << 40);
             h = Hashing.Fold(h, Hashing.Bits(untilClock));
+            h = Hashing.Fold(h, (ulong)(uint)shedPassed | (ulong)(uint)shedPending << 16 | (ulong)(uint)Bursts << 32);
+            h = Hashing.Fold(h, Hashing.Bits(shedSince));
             return Hashing.Fold(h, Hashing.Bits(Shed));
         }
 
@@ -176,8 +212,92 @@ namespace Champions.Sim
         void Call(double t)
         {
             Shed = 0;
+            shedPassed = shedPending = Bursts = 0;
+            shedSince = 0;
             Enter(BossRushStage.Fighting, t);
             sim.Bosses.Call(Slot.Cast, t, Slot.Health);
+        }
+
+        // ---- Shedding (boss-rush.md, Progression > Shedding) ----
+
+        /// <summary>The thresholds the boss's health has fallen past since the last tick, each queued for the next beat.</summary>
+        void PassThresholds()
+        {
+            int thresholds = Thresholds;
+            double share = HealthShare;
+            while (shedPassed < thresholds && share <= 1 - (shedPassed + 1) * rules.ShedStep + 1e-9)
+            {
+                shedPassed++;
+                if (shedPending++ == 0) shedSince = sim.State.RunClock;
+            }
+        }
+
+        /// <summary>The bursts a fight sheds before its kill: one per step down to the last step (9 at 10%).</summary>
+        int Thresholds => Math.Max(0, (int)Math.Round(1 / rules.ShedStep) - 1);
+
+        void BurstPending(double t)
+        {
+            if (!sim.Bosses.InDuel) { shedPending = 0; return; }
+            ref readonly var b = ref sim.Enemies[sim.Bosses.Id];
+            while (shedPending > 0)
+            {
+                shedPending--;
+                double value = Math.Min(Slot.Experience * rules.ShedStep, Math.Max(0, Slot.Experience - Shed));
+                Bursts++;
+                Shed += value;
+                Burst(sim, t, Bursts, Slot.Shed, b.X, b.Y, sim.Bosses.Facing, value);
+                sim.Emit(SimEvent.RushShed(t, Bursts, Boss, value, b.X, b.Y));
+            }
+        }
+
+        /// <summary>
+        /// Burst <paramref name="index"/> (1 up) of <paramref name="value"/> XP from (<paramref name="x"/>, <paramref name="y"/>),
+        /// the boss facing <paramref name="facing"/>: <paramref name="shape"/>'s gems, each an equal share (an arena keeps them
+        /// inside its walls once it has them).
+        /// </summary>
+        internal static void Burst(Simulation sim, double t, int index, BossShedShape shape, double x, double y, double facing, double value)
+        {
+            if (!(value > 0)) return;
+            int n = shape.Gems;
+            double each = value / n;
+            for (int i = 0; i < n; i++)
+            {
+                Spot(shape, index, i, facing, out double dx, out double dy);
+                sim.Pickups.Drop(sim, PickupKind.Experience, x + dx, y + dy, each);
+            }
+        }
+
+        /// <summary>Gem <paramref name="i"/> of burst <paramref name="index"/>'s offset from the boss.</summary>
+        internal static void Spot(BossShedShape shape, int index, int i, double facing, out double dx, out double dy)
+        {
+            int n = shape.Gems;
+            switch (shape.Kind)
+            {
+                case BossShedKind.Spray:
+                {
+                    // A fan ahead, alternating near and far rows so neighbours never share a pickup cell.
+                    double spread = shape.SpreadDeg * Math.PI / 180;
+                    double a = facing + (n == 1 ? 0 : (i / (double)(n - 1) - 0.5) * spread);
+                    double r = shape.RadiusM * (i % 2 == 0 ? 1 : 0.65);
+                    dx = Math.Cos(a) * r; dy = Math.Sin(a) * r;
+                    return;
+                }
+                case BossShedKind.Lane:
+                {
+                    // A line across the boss's front, RadiusM ahead of it.
+                    double along = n == 1 ? 0 : (i / (double)(n - 1) - 0.5) * shape.LengthM;
+                    double fx = Math.Cos(facing), fy = Math.Sin(facing);
+                    dx = fx * shape.RadiusM - fy * along; dy = fy * shape.RadiusM + fx * along;
+                    return;
+                }
+                default:
+                {
+                    // Evenly round it, each burst turned by half a gap from the last.
+                    double a = (i + 0.5 * index) * 2 * Math.PI / n;
+                    dx = Math.Cos(a) * shape.RadiusM; dy = Math.Sin(a) * shape.RadiusM;
+                    return;
+                }
+            }
         }
 
         void Next(double t)
