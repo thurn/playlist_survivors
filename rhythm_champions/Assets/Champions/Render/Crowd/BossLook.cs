@@ -38,6 +38,8 @@ namespace Champions.Render.Crowd
         {
             // Boss 1, the Treasure Goblin (ps-8z4.6): coin-gold glints on its facets and light running along its edges.
             { "treasureGoblin", new BossLook { Crystal = 0.7f, Flow = 0.35f, FlowSpeed = 1.6f } },
+            // The Hive Queen (ps-8z4.8): light streaming along her edges like her drones' flight, a faint hologram's scan.
+            { "hiveQueen", new BossLook { Flow = 0.7f, FlowSpeed = 1.6f, Scan = 0.25f } },
         };
 
         public static bool TryGet(string castId, out BossLook look) => Looks.TryGetValue(castId, out look);

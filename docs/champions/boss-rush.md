@@ -453,6 +453,25 @@ mechanic at a time, generous telegraphs.
      two-facet darts; the swarm draws shapes across the floor. Sound: a hum
      whose pitch rises to the impact.
    - Inspiration: Just Shapes & Beats, Hollow Knight's swarms.
+   - **As built (ps-8z4.8)**: `HiveQueenModule` in her `hiveClearing`, a
+     flat-topped hexagon 34 m across with a lantern or stump in each corner.
+     The signature is the *sweep*: a row of drones the clearing's width,
+     with 3.4 m gaps every 8.5 m, launched from the wall behind her and
+     crossing in 6 beats (5 in phase two). It is taught alone twice, then
+     as a *chevron* (a V with a gap at its point), then the *dive* (her body
+     flies to the hero's marked spot and stings it on a downbeat). After
+     that come the *spiral* (rings of five drones out of her, one a beat,
+     each turned on), the *net* (six rows round the hero, open at the
+     corners, closing in 4 beats) and the dash wave, a gapless *wall* row
+     on a 4-beat telegraph faster than walking. Below half health she
+     swarms to the centre, untouchable for 4 beats, then combines: a sweep
+     under a dive, two sweeps crossing two beats apart, the net round a
+     dive. Drones are magenta two-facet darts that stream out of her while a
+     row's telegraph fills; the honeycomb cells pulse on every beat; her
+     edges carry the flow and a faint scan. Her bank is the Universal Sound
+     FX insects, the tick a buzz that climbs in pitch to each landing
+     (`BossModule.TickRise`). Evidence:
+     [hiveQueen](../../rhythm_champions/evidence/boss-rush/hiveQueen/README.md).
 3. **The Bloom** — *Rotating spirals.*
    - Source: `Forest Creatures Pack/Carnivorous Plant/Prefabs/Carnivorous Plant-Red.prefab`.
      Clips: Bite, BreathAttack, BreathAttackSurround, SpellCast.

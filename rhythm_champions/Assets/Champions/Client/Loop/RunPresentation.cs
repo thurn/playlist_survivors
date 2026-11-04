@@ -71,6 +71,8 @@ namespace Champions.Client.Loop
         public readonly RunUi Ui;
         public readonly CrowdPresenter Crowd;
         public readonly SporePresenter Spores;
+        /// <summary>The Hive Queen's drones, honeycomb and bursts (ps-8z4.8).</summary>
+        public readonly HiveSwarmPresenter Swarm;
         public readonly PickupPresenter Pickups;
         public readonly TelegraphPresenter Telegraphs;
         public readonly BossPresenter Boss;
@@ -102,6 +104,8 @@ namespace Champions.Client.Loop
             _owned.Add(Pickups);
             Spores = new SporePresenter(palette, layer);
             _owned.Add(Spores);
+            Swarm = new HiveSwarmPresenter(palette, content.Enemies, layer);
+            _owned.Add(Swarm);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
             _owned.Add(Telegraphs);
             Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
@@ -173,6 +177,7 @@ namespace Champions.Client.Loop
             d.Add("telegraphs", (in SimEvent e) => Telegraphs.Take(e), null, (in PresentFrame f) => Telegraphs.Present(f.Song, f.Camera, f.Sim));
             if (Flavour != null) d.Add("fight flavour", (in SimEvent e) => Flavour.Take(e, _sim), null, (in PresentFrame f) => Flavour.Present(f.Song, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
+            d.Add("hive swarm", (in SimEvent e) => Swarm.Take(e), null, (in PresentFrame f) => Swarm.Present(f.Song, f.Sim, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)

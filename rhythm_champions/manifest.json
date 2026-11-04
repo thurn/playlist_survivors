@@ -1252,6 +1252,83 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_08_mono.wav",
+      "sourceSha256": "1dd25f612bc40cb7856c024ddef53437f170b6e8696d8bc04085ae76630fe123",
+      "guid": "31431dd904a555c4286c962aedb0e591",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_09_mono.wav",
+      "sourceSha256": "0da4b37f0affa71766bde30813b91182fc8adbdaa19148bb0db01a88482be6e3",
+      "guid": "860d601985cfc1c43b5434ebadce03bb",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_10_mono.wav",
+      "sourceSha256": "57a83931cd8fe347aef5d39acd671cad3ed7e3c80ef57ebda27e0a2dc6009f0f",
+      "guid": "7c87994b282234644828c6b7c05901d4",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_11_mono.wav",
+      "sourceSha256": "9bcd2804f6e8aa1a5d8a587a3b33ffe5b72b701514a5d12b0186d545eb76155c",
+      "guid": "05b819cc0f2f1de47b1c8e0298d3e663",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_12_mono.wav",
+      "sourceSha256": "4c86f1fdfd55ed60fb1a2d28a42d334572978fe9999dc7de46cf90a0dc7c0554",
+      "guid": "a3bad137f48ab1c4e887cbca4a86195e",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_13_mono.wav",
+      "sourceSha256": "ffbc30d5d5679b4b303c5e5bdc0fafa941f04167414d4b2abf944de5fc5ace45",
+      "guid": "6bad702c4dd29b546b228edbfa39c6bf",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_14_mono.wav",
+      "sourceSha256": "c6deac28da82a39ee47cf6787beb9ccdf17511f019dbbd4629b77fb52c7b60f7",
+      "guid": "fb84c3a7b5204df47af887ad83e1dd82",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_15_mono.wav",
+      "sourceSha256": "79060baaae9e3a582282b744b1328f73f40cc91055f013df19018ec7256e2951",
+      "guid": "d3343f350079b3d4d8d33dea0737fa85",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_16_mono.wav",
+      "sourceSha256": "6a8d2f4b4dc48d14aa192b2f11e575328279cc2a6e647365062a7e03424fdb2f",
+      "guid": "d79c469994a97ce409b07c7c840cad35",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_20_mono.wav",
+      "sourceSha256": "ca1a37eb7458c06c893360e9c6114367c48df2ee0d2ceaa39475a8994e4e3d1f",
+      "guid": "0c774e2ec340077499157f4946633cc5",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ALIENS/ALIEN_Insect_Buzzing_01_loop_mono.wav",
+      "sourceSha256": "ba6fd2cfe8d115e40470afbd842c110139f3af3dbfff0beacdd3fef9213568a8",
+      "guid": "95a80fa2f8a1f0441a28e501f11aba22",
+      "use": "Boss Rush boss 2: the Hive Queen's sound bank"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Universal Sound FX/GORE_SPLATS/GORE_Blade_Chop_mono.wav",
       "sourceSha256": "4a3203011e74a0f54e897194030ecd3762e46ca0e43bffe8744b9529c45ff2f7",
       "guid": "5de35d095a26a5042a71af599850b917",

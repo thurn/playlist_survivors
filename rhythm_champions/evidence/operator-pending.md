@@ -251,3 +251,18 @@ tier's frame p99 2.5-2.6 ms, meeting the proxy until an M1-class run replaces it
   broken oaks, logs and rune stones read as solid (grey), the crystals, lanterns, mushrooms, stumps and tree ferns as
   breakable; nothing on the floor (roots, moss patches) reads as a pickup, shot or enemy; the pines at the top corners
   frame the arena without pulling the eye from the boss.
+
+## Boss Rush fight 02, the Hive Queen (ps-8z4.8, 2026-11-04)
+
+[Stills and notes](boss-rush/hiveQueen/README.md).
+
+- Hand-play (`just champions-bossrush --boss 2`, or `champions play --fight hiveQueen`): the sweep, taught alone twice,
+  reads at once as "walk to a gap"; the chevron's point gap and the closing net's open corners read without being told;
+  the gapless wall reads as the dash wave (a longer telegraph, no gaps) and the dash through it feels fair; phase two's
+  combinations (a sweep under a dive, two crossing sweeps, the net round a dive) are hard but never cheap. Act-1
+  difficulty and the ~2 minute length feel right.
+- The look: the magenta drones stream out of her as each row fills and fly with it, reading as her swarm and never as
+  pickups or shots; the honeycomb's beat pulse sits under the action without competing with the red telegraphs; her
+  edge flow and faint scan suit her.
+- Sound: the insect buzz ticks climb in pitch toward each landing and sit under the music; entrance, impact, signature
+  and death read as hers.

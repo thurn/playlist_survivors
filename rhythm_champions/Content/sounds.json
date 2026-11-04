@@ -15,6 +15,13 @@
     "hurt": { "gain": 0.8, "clips": ["IMPACT_Medieval_Armor_Hit_01_mono", "IMPACT_Medieval_Armor_Hit_02_mono", "IMPACT_Medieval_Armor_Hit_03_mono"] }
   },
   "bosses": {
+    "hiveQueen": {
+      "entrance": { "gain": 0.8, "clips": ["ALIEN_Insect_14_mono", "ALIEN_Insect_15_mono"] },
+      "tick": { "gain": 0.35, "clips": ["ALIEN_Insect_Buzzing_01_loop_mono"] },
+      "impact": { "gain": 0.75, "clips": ["ALIEN_Insect_09_mono", "ALIEN_Insect_12_mono"] },
+      "signature": { "gain": 0.7, "clips": ["ALIEN_Insect_10_mono", "ALIEN_Insect_11_mono", "ALIEN_Insect_20_mono"] },
+      "death": { "gain": 0.9, "clips": ["ALIEN_Insect_08_mono", "ALIEN_Insect_16_mono"] }
+    },
     "fatOgre": {
       "entrance": { "gain": 0.9, "clips": ["RPG3_ElectricMagic2_HeavyImpact02", "RPG3_ElectricMagic2_HeavyImpact03"] },
       "tick": { "gain": 0.4, "clips": ["RPG3_GenericPunch_Impact01", "RPG3_GenericPunch_Impact02", "RPG3_GenericPunch_Impact03"] },

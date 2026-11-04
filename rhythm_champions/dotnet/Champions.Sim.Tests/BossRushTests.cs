@@ -45,9 +45,10 @@ namespace Champions.Sim.Tests
 
         static void Pick(Simulation s) { s.Press(Key.One, s.Now); s.Release(Key.One, s.Now); }
 
+        /// <summary>Kills the boss now: a landed fight's lead body, else the stand-in's duel.</summary>
         static void Kill(Simulation s)
         {
-            ref readonly var b = ref s.Enemies[s.Bosses.Id];
+            ref readonly var b = ref s.Enemies[s.Fight.InFight ? s.Fight.Lead.Enemy : s.Bosses.Id];
             s.Strikes.Land(s, new Blow { Shape = HitShape.Circle(b.X, b.Y, 0.1), T = s.Now, Damage = 1e12,
                 Tags = HitTags.Strike, Source = BlowSource.SwordSlash, Owner = -1, Part = -1 });
         }
@@ -56,7 +57,7 @@ namespace Champions.Sim.Tests
         static void Clear(Simulation s)
         {
             int boss = s.BossRush.Boss;
-            Until(s, () => s.Bosses.InDuel && s.BossRush.Stage == BossRushStage.Fighting);
+            Until(s, () => (s.Bosses.InDuel || (s.Fight.InFight && !s.Fight.Untouchable)) && s.BossRush.Stage == BossRushStage.Fighting);
             Kill(s);
             Until(s, () =>
             {
@@ -117,7 +118,8 @@ namespace Champions.Sim.Tests
             Assert.Greater(s.State.Level, 1, "the queued level-ups were offered");
             Assert.AreEqual(1, s.BossRush.Boss);
             var forming = Stages(s).Last();
-            Until(s, () => s.Bosses.Called == 2, 10);
+            // Boss 2, the Hive Queen, is a landed fight (ps-8z4.8): her fight starts where a stand-in would be called.
+            Until(s, () => s.Bosses.Called + s.Fight.Started == 2, 10);
             var called = Stages(s).Last();
             Assert.AreEqual(BossRushStage.Fighting, (BossRushStage)called.I0);
             var beats = Drive.Events(s, SimEventKind.Beat).Where(e => e.T > forming.T + 1e-9 && e.T <= called.T + 1e-9).ToList();

@@ -227,8 +227,11 @@ namespace Champions.Client.Sound
             if (e.MarkPart != 0) return;
             int last = _sim.State.LastBeat;
             double beat = last >= 0 && _sim.State.Beat == Reliability.Reliable ? _sim.Beats.TempoAt(last) : 0.5;
-            for (double t = e.T; t < e.D0 - beat * 0.25; t += beat)
-                Request(SoundKind.Accent, t, TelegraphGain, 0.5f, 0.5f, false, BossSound.Tick);
+            // A boss whose hum climbs to the impact (its TickRise) raises each tick's pitch on the last.
+            double rise = _sim.Fight.Module?.TickRise ?? 0;
+            int k = 0;
+            for (double t = e.T; t < e.D0 - beat * 0.25; t += beat, k++)
+                Request(SoundKind.Accent, t, TelegraphGain, (float)(0.5 * (1 + rise * k)), 0.5f, false, BossSound.Tick);
         }
 
         /// <summary>A sound of <paramref name="kind"/> at song time <paramref name="t"/>, through its beat's aggregation.</summary>

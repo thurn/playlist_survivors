@@ -76,6 +76,12 @@ namespace Champions.Sim
         /// <summary>The XP bursts it sheds, evenly spaced in health (9: at 90%, 80% ... 10%).</summary>
         public virtual int ShedThresholds => 9;
 
+        /// <summary>
+        /// How much each beat's telegraph tick climbs in pitch toward the landing, as a share of the first's (0: level). The
+        /// client's ticks (boss-rush.md, Sound) play the k-th tick at (1 + k × this) its pitch.
+        /// </summary>
+        public virtual double TickRise => 0;
+
         /// <summary>At its arrival, <paramref name="t"/>.</summary>
         protected internal virtual void Begin(BossFight f, double t) { }
 
@@ -126,6 +132,7 @@ namespace Champions.Sim
             { OgreModule.ModuleId, () => new OgreModule() },
             // Act 1, Overgrown Grid.
             { TreasureGoblinModule.ModuleId, () => new TreasureGoblinModule() },
+            { HiveQueenModule.ModuleId, () => new HiveQueenModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

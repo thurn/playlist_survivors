@@ -130,6 +130,22 @@
         { "kind": "runeStone", "at": [11.03, 11.03], "degrees": 135 },
         { "kind": "fernTree", "at": [4.04, 15.07] }
       ]
+    },
+    {
+      "id": "hiveClearing",
+      "outline": { "pointsM": [[17.000, 0.000], [8.500, 14.722], [-8.500, 14.722], [-17.000, 0.000], [-8.500, -14.722], [8.500, -14.722]] },
+      "heroStart": [0, -8],
+      "bossStart": [0, 6],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "lantern", "at": [13.50, 0.00] },
+        { "kind": "stump", "at": [6.75, 11.69] },
+        { "kind": "lantern", "at": [-6.75, 11.69] },
+        { "kind": "stump", "at": [-13.50, 0.00] },
+        { "kind": "lantern", "at": [-6.75, -11.69] },
+        { "kind": "stump", "at": [6.75, -11.69] }
+      ]
     }
   ]
 }
