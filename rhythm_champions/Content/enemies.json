@@ -20,6 +20,6 @@
     { "id": "treasureGoblin", "role": "boss", "slot": "counter", "sizeM": 3, "radiusM": 1.2, "speedMps": 4.5, "health": 204, "experience": 0 },
     { "id": "hiveQueen", "role": "boss", "slot": "accent", "sizeM": 3.5, "radiusM": 1.4, "speedMps": 3.5, "health": 735, "experience": 0 },
     { "id": "bloom", "role": "boss", "slot": "accent", "sizeM": 4, "radiusM": 1.6, "speedMps": 2.0, "health": 1262, "experience": 0 },
-    { "id": "rootwarden", "role": "boss", "slot": "accent", "sizeM": 4.5, "radiusM": 1.8, "speedMps": 2.4, "health": 1441, "experience": 0 }
+    { "id": "rootwarden", "role": "boss", "slot": "key", "sizeM": 4.5, "radiusM": 1.8, "speedMps": 2.4, "health": 1441, "experience": 0 }
   ]
 }

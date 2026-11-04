@@ -160,6 +160,31 @@
         { "kind": "fernTree", "at": [-11.3, -11.3] },
         { "kind": "fernTree", "at": [11.3, -11.3] }
       ]
+    },
+    {
+      "id": "rootHollow",
+      "kit": "overgrownGrid",
+      "outline": { "radiusM": 17 },
+      "heroStart": [0, -8],
+      "bossStart": [0, 6],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "brokenOak", "at": [-12.5, 6.0] },
+        { "kind": "brokenOak", "at": [12.5, -6.0] },
+        { "kind": "fallenLog", "at": [9.0, 11.5], "degrees": -38 },
+        { "kind": "fallenLog", "at": [-9.0, -11.5], "degrees": -38 },
+        { "kind": "runeStone", "at": [-4.5, 14.5], "degrees": 15 },
+        { "kind": "runeStone", "at": [4.5, -14.5], "degrees": 15 },
+        { "kind": "lantern", "at": [0.0, 15.5] },
+        { "kind": "lantern", "at": [15.5, 0.0] },
+        { "kind": "lantern", "at": [0.0, -15.5] },
+        { "kind": "lantern", "at": [-15.5, 0.0] },
+        { "kind": "stump", "at": [-13.0, -7.5] },
+        { "kind": "stump", "at": [13.0, 7.5] },
+        { "kind": "giantMushroom", "at": [-14.8, 2.5] },
+        { "kind": "giantMushroom", "at": [14.8, -2.5] }
+      ]
     }
   ]
 }

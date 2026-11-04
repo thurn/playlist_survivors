@@ -42,6 +42,8 @@ namespace Champions.Render.Crowd
             { "hiveQueen", new BossLook { Flow = 0.7f, FlowSpeed = 1.6f, Scan = 0.25f } },
             // The Bloom (ps-8z4.10): sap flowing up its edges in its violet, and a hot ultraviolet heart.
             { "bloom", new BossLook { Flow = 0.65f, FlowSpeed = 0.7f, Ember = 0.5f, EmberTint = new Color(0.62f, 0.28f, 1f) } },
+            // The Rootwarden (ps-8z4.12): sap light creeping slowly along its bark's edges, an ember of old wood in its core.
+            { "rootwarden", new BossLook { Flow = 0.55f, FlowSpeed = 0.6f, Ember = 0.35f } },
         };
 
         public static bool TryGet(string castId, out BossLook look) => Looks.TryGetValue(castId, out look);

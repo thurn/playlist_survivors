@@ -1595,6 +1595,62 @@
     },
     {
       "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/BREAKS_SNAPS/BREAK_Snap_Crack_mono.wav",
+      "sourceSha256": "38e4c080b86e2e6bfebfaf68b009caba7d3e45590ecdccd1103b4bd3d273dfbd",
+      "guid": "a07b246a8324cda488af8e2b19fe8d8a",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/BREAKS_SNAPS/SNAP_Generic_05_mono.wav",
+      "sourceSha256": "9809bf4e3ddce4c8df8592e5870f8cce9f496dfe05a1c106348aa355197cb57d",
+      "guid": "a94f9aaae76a7054fbf0925e20bbd4aa",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/BREAKS_SNAPS/SNAP_Generic_06_mono.wav",
+      "sourceSha256": "4a4bf9d5f0a7c48abc305c02d34a6f1fd230c9dee4a17a59fc1241540c0130bc",
+      "guid": "b3d1adab7ca25604a836346490f3ebf2",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/BREAKS_SNAPS/SNAP_Twig_mono.wav",
+      "sourceSha256": "f747655593e15b6e742c6b5f24815e6b18c327b7543f442f11e452ab0c1c01f4",
+      "guid": "77e8794d6c5238f4baed6f498ca7e4d6",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/CREAKS/CREAK_Wood_Bright_Short_mono.wav",
+      "sourceSha256": "549e023db19a1fd5abb3b1eb0dc32aba63d9213be9b17ea9b682f43e14672d2c",
+      "guid": "3ff53d7ce5f4a72468fea407ce218386",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DESTRUCTION/DESTRUCTION_Wood_01_mono.wav",
+      "sourceSha256": "c09d04c51fa85ec03e296154401a841323b5b3900c7b520702efd964beee75d0",
+      "guid": "c931dbf1ddfffd347af6cfa037cf1feb",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DESTRUCTION/DESTRUCTION_Wood_02_mono.wav",
+      "sourceSha256": "1835bf439b12b1f2d9210c6847df48a2a50facb1d0db293b1f70c65cfbece683",
+      "guid": "71f6ce6ececa4e540a020b984be8852b",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/DESTRUCTION/DESTRUCTION_Wood_03_mono.wav",
+      "sourceSha256": "2d2f4387f1ed3c63940a24e95ab577dcf2a784c2c57fe3c4db53b28bcc818c8b",
+      "guid": "8ec7d49103ba65240bcea3d13483d15b",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
       "path": "Assets/Universal Sound FX/EXPLOSIONS/Quick/EXPLOSION_Quick_01_mono.wav",
       "sourceSha256": "7f3704580c5c7685dff7c8f6b7f1e2a2cfc8a442ce1b1c9a30a40c376e60f7d8",
       "guid": "50caa75b5cfa7ee44beb46360a6fb978",
@@ -1606,6 +1662,34 @@
       "sourceSha256": "098c22b9efe79c0ebbe6a619c6bbd89ebec352ed46b7902e5ed835a23baf1f11",
       "guid": "cb5ef2be79f390644a36c94d7ddeadd4",
       "use": "sound: the Treasure Goblin's bank (Boss Rush): bombs"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FORESTRY_WOODWORKING/TREE_Falling_Tree_Crack_Then_Impact_01_mono.wav",
+      "sourceSha256": "87f3be4719086bdcf831f8cab6ae90d175484e0d3df9ca9da1bb713fc2c9f453",
+      "guid": "ff1839f687997294ebd6711cb7c18463",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FORESTRY_WOODWORKING/TREE_Falling_Tree_Crack_Then_Impact_04_mono.wav",
+      "sourceSha256": "62143aabe2b57f317ee888b570418b4ba78af61fc94dcb76837d9fa2766da58d",
+      "guid": "4f22d7c194a2e474ca3bd2e2050b913d",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FORESTRY_WOODWORKING/TREE_Falling_Tree_Crack_Then_Impact_07_mono.wav",
+      "sourceSha256": "f1a0081acd3689912820020687e60ec69dcd1e104d254c5c3e683f904c2e81fe",
+      "guid": "d3d20883d4a31944dba899a878cf366d",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/FORESTRY_WOODWORKING/TREE_Falling_Tree_Crack_Then_Impact_09_mono.wav",
+      "sourceSha256": "42df45a5c7b85000ed97b8a0dfc95fce00bff1bdaa7d9cdc452e81c948fc2e26",
+      "guid": "2abd091448cf4ec4a8f20317487877bf",
+      "use": "Boss Rush boss 4: the Rootwarden's sounds"
     },
     {
       "source": "unity_assets",

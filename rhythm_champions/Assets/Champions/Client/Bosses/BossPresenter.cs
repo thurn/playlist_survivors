@@ -187,9 +187,12 @@ namespace Champions.Client
             }
             if (_type < 0 || (dead && _broken)) return;
             var pose = _animator.At(song, _speed);
+            // A burrowing boss (the Rootwarden) sinks under the floor by its module's share of its height.
+            int fightBody = sim.Fight.IndexOf(_id);
+            float sunk = fightBody >= 0 && !dead ? (float)sim.Fight.Module.Sunk(sim.Fight, fightBody, song) : 0;
             var body = new MonsterInstance
             {
-                Position = new Vector3(at.x, 0, at.y), Yaw = Mathf.PI / 2 - (float)facing,
+                Position = new Vector3(at.x, -sunk * (float)_cast.Cast[_castIndex].SizeM, at.y), Yaw = Mathf.PI / 2 - (float)facing,
                 ClipA = (uint)pose.ClipA, TimeA = pose.TimeA, ClipB = (uint)pose.ClipB, TimeB = pose.TimeB, Blend = pose.Blend,
                 Scale = _cast.Cast[_castIndex].Id == "conductor" ? 4f / 2.6f : 1, HitFlash = 0.35f * Mathf.Clamp01(1 - (float)(song - _hitAt) / HitFlashS), Flags = (uint)CrowdFlags.Alive,
             };

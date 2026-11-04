@@ -73,6 +73,8 @@ namespace Champions.Client.Loop
         public readonly SporePresenter Spores;
         /// <summary>The Hive Queen's drones, honeycomb and bursts (ps-8z4.8).</summary>
         public readonly HiveSwarmPresenter Swarm;
+        /// <summary>The Rootwarden's creeping roots, eruptions and spikes (ps-8z4.12).</summary>
+        public readonly RootwardenPresenter Roots;
         public readonly PickupPresenter Pickups;
         public readonly TelegraphPresenter Telegraphs;
         public readonly BossPresenter Boss;
@@ -108,6 +110,8 @@ namespace Champions.Client.Loop
             _owned.Add(Spores);
             Swarm = new HiveSwarmPresenter(palette, content.Enemies, layer);
             _owned.Add(Swarm);
+            Roots = new RootwardenPresenter(palette, content.Enemies, layer);
+            _owned.Add(Roots);
             Telegraphs = new TelegraphPresenter(palette, content.Enemies, layer);
             _owned.Add(Telegraphs);
             Boss = new BossPresenter(trailer, content.Enemies, palette, world.World, layer);
@@ -183,6 +187,7 @@ namespace Champions.Client.Loop
             if (BloomSpores != null) d.Add("bloom spores", null, null, (in PresentFrame f) => BloomSpores.Present(f.Song, f.Sim, f.Camera));
             d.Add("spores", (in SimEvent e) => Spores.Take(e), null, (in PresentFrame f) => Spores.Present(f.Song, f.Camera));
             d.Add("hive swarm", (in SimEvent e) => Swarm.Take(e), null, (in PresentFrame f) => Swarm.Present(f.Song, f.Sim, f.Camera));
+            d.Add("rootwarden roots", (in SimEvent e) => Roots.Take(e), null, (in PresentFrame f) => Roots.Present(f.Song, f.Sim, f.Camera));
             d.Add("pickups", null, null, (in PresentFrame f) => Pickups.Present(f.Sim, f.Song, f.Camera));
             d.Add("hero", TakeHero, null, (in PresentFrame f) => Hero.Present(f.Song, f.Hero, f.Dt, f.Camera));
             if (cues != null)

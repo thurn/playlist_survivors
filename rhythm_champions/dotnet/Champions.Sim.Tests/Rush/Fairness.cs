@@ -179,7 +179,10 @@ namespace Champions.Sim.Tests
             // A hazard called off before landing (a phase, a death) never hurts: it isn't checked.
             var calledOff = new HashSet<int>(Drive.Events(sim, SimEventKind.BossMove).Where(e => e.I2 != 0).Select(e => e.I0));
             report.Hazards.RemoveAll(h => calledOff.Contains(h.Id));
-            var beats = Drive.Events(sim, SimEventKind.Beat).Select(e => e.T).ToArray();
+            var beats = Drive.Events(sim, SimEventKind.Beat).Select(e => e.T).ToList();
+            // One beat past the last heard, so a half beat landing after it (the fight died within the beat) is judged.
+            if (beats.Count >= 2) beats.Add(2 * beats[^1] - beats[^2]);
+            var grid = beats.ToArray();
             var dash = config.Dashes;
             var form = dash.Kinds[dash.IndexOf(dash.Start)].Ranks[0];
             var hero = new HeroModel
@@ -187,7 +190,7 @@ namespace Champions.Sim.Tests
                 SpeedMps = config.Hero.SpeedMps, RadiusM = config.Hero.RadiusM, DashM = form.DistanceM,
                 DashS = form.DurationS, IFramesAfterS = dash.IFramesAfterS, CooldownS = dash.CooldownS,
             };
-            Timing(report, beats, fight.MinTelegraphBeats, o);
+            Timing(report, grid, fight.MinTelegraphBeats, o);
             foreach (var h in report.Hazards)
             {
                 var at = heroAtStart[h.Id];
@@ -195,7 +198,7 @@ namespace Champions.Sim.Tests
                     Math.Sqrt((at.BX - at.X) * (at.BX - at.X) + (at.BY - at.Y) * (at.BY - at.Y)) <= o.ScreenRadiusM;
                 if (!seen2) report.Problems.Add($"hazard {h.Id} (attack {h.Attack}) starts off screen");
             }
-            DashSpacing(report, beats, hero);
+            DashSpacing(report, grid, hero);
             var box = (cx - extent, cy - extent, cx + extent, cy + extent);
             WayOut(report, hero, (x, y) => inside(x - cx, y - cy), box, o, heroAtStart);
             return report;

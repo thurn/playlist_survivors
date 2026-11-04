@@ -82,6 +82,12 @@ namespace Champions.Sim
         /// </summary>
         public virtual double TickRise => 0;
 
+        /// <summary>
+        /// How far under the floor body <paramref name="body"/> is at song time <paramref name="t"/>, 0 (standing) to 1
+        /// (buried): a burrowing boss's (the Rootwarden's). The client lowers the body by this share of its height.
+        /// </summary>
+        public virtual double Sunk(BossFight f, int body, double t) => 0;
+
         /// <summary>At its arrival, <paramref name="t"/>.</summary>
         protected internal virtual void Begin(BossFight f, double t) { }
 
@@ -134,6 +140,7 @@ namespace Champions.Sim
             { TreasureGoblinModule.ModuleId, () => new TreasureGoblinModule() },
             { HiveQueenModule.ModuleId, () => new HiveQueenModule() },
             { BloomModule.ModuleId, () => new BloomModule() },
+            { RootwardenModule.ModuleId, () => new RootwardenModule() },
         };
 
         /// <summary>The ids registered, in a fixed order.</summary>

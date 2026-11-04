@@ -15,6 +15,13 @@
     "hurt": { "gain": 0.8, "clips": ["IMPACT_Medieval_Armor_Hit_01_mono", "IMPACT_Medieval_Armor_Hit_02_mono", "IMPACT_Medieval_Armor_Hit_03_mono"] }
   },
   "bosses": {
+    "rootwarden": {
+      "entrance": { "gain": 0.85, "clips": ["TREE_Falling_Tree_Crack_Then_Impact_01_mono", "TREE_Falling_Tree_Crack_Then_Impact_04_mono"] },
+      "tick": { "gain": 0.35, "clips": ["SNAP_Twig_mono", "CREAK_Wood_Bright_Short_mono"] },
+      "impact": { "gain": 0.75, "clips": ["DESTRUCTION_Wood_01_mono", "DESTRUCTION_Wood_02_mono", "DESTRUCTION_Wood_03_mono"] },
+      "signature": { "gain": 0.6, "clips": ["BREAK_Snap_Crack_mono", "SNAP_Generic_05_mono", "SNAP_Generic_06_mono"] },
+      "death": { "gain": 0.9, "clips": ["TREE_Falling_Tree_Crack_Then_Impact_07_mono", "TREE_Falling_Tree_Crack_Then_Impact_09_mono"] }
+    },
     "hiveQueen": {
       "entrance": { "gain": 0.8, "clips": ["ALIEN_Insect_14_mono", "ALIEN_Insect_15_mono"] },
       "tick": { "gain": 0.35, "clips": ["ALIEN_Insect_Buzzing_01_loop_mono"] },
