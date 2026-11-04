@@ -27,7 +27,7 @@
     {"id": "moonhowl", "name": "Moonhowl", "act": 1, "standIn": "dragon", "arena": "moonGlade", "levels": 3, "targetS": 130.0, "health": 1664, "experience": 283.072},
     {"id": "sandwyrm", "name": "The Sandwyrm", "act": 2, "standIn": "fatOgre", "arena": "duneSea", "levels": 2, "targetS": 132.5, "health": 1776, "experience": 213.091},
     {"id": "bandagedKing", "name": "The Bandaged King", "act": 2, "standIn": "fatOgre", "levels": 2, "targetS": 135.0, "health": 1930, "experience": 234.932},
-    {"id": "gorgon", "name": "The Gorgon", "act": 2, "standIn": "conductor", "levels": 2, "targetS": 137.5, "health": 2090, "experience": 259.013},
+    {"id": "gorgon", "name": "The Gorgon", "act": 2, "standIn": "conductor", "arena": "gorgonTemple", "levels": 2, "targetS": 137.5, "health": 2090, "experience": 259.013},
     {"id": "judge", "name": "The Judge", "act": 2, "standIn": "conductor", "levels": 2, "targetS": 140.0, "health": 2296, "experience": 285.562},
     {"id": "chimera", "name": "The Chimera", "act": 2, "standIn": "dragon", "levels": 2, "targetS": 142.5, "health": 2394, "experience": 314.832},
     {"id": "hoard", "name": "The Hoard", "act": 3, "standIn": "fatOgre", "levels": 2, "targetS": 145.0, "health": 2856, "experience": 347.102},

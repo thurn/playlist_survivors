@@ -223,6 +223,35 @@
       ]
     },
     {
+      "id": "gorgonTemple",
+      "kit": "sunkenSands",
+      "outline": { "radiusM": 17 },
+      "heroStart": [0, -11],
+      "bossStart": [0, 0],
+      "camera": { "maxScale": 1.9, "marginM": 1.5 },
+      "zones": [],
+      "props": [
+        { "kind": "lotusColumn", "at": [5.63, 3.25] },
+        { "kind": "lotusColumn", "at": [0.00, 6.50] },
+        { "kind": "lotusColumn", "at": [-5.63, 3.25] },
+        { "kind": "lotusColumn", "at": [-5.63, -3.25] },
+        { "kind": "lotusColumn", "at": [0.00, -6.50] },
+        { "kind": "lotusColumn", "at": [5.63, -3.25] },
+        { "kind": "lotusColumn", "at": [12.00, 0.00] },
+        { "kind": "lotusColumn", "at": [6.00, 10.39] },
+        { "kind": "lotusColumn", "at": [-6.00, 10.39] },
+        { "kind": "lotusColumn", "at": [-12.00, 0.00] },
+        { "kind": "lotusColumn", "at": [-6.00, -10.39] },
+        { "kind": "lotusColumn", "at": [6.00, -10.39] },
+        { "kind": "rockSpire", "at": [12.56, 7.25], "degrees": 0 },
+        { "kind": "rockSpire", "at": [0.00, 14.50], "degrees": 37 },
+        { "kind": "rockSpire", "at": [-12.56, 7.25], "degrees": 74 },
+        { "kind": "rockSpire", "at": [-12.56, -7.25], "degrees": 111 },
+        { "kind": "rockSpire", "at": [0.00, -14.50], "degrees": 148 },
+        { "kind": "rockSpire", "at": [12.56, -7.25], "degrees": 5 }
+      ]
+    },
+    {
       "id": "moonGlade",
       "kit": "overgrownGrid",
       "outline": { "radiusM": 17 },

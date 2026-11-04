@@ -63,6 +63,13 @@
       "impact": { "gain": 0.75, "clips": ["DEMOLISH_Stone_04_mono", "DEMOLISH_Stone_05_mono", "EARTH_Rocks_Pebbles_Fall_01_mono"] },
       "signature": { "gain": 0.9, "clips": ["THUD_Deep_Noisy_01_mono", "DESTRUCTION_Rocks_01_mono"] },
       "death": { "gain": 1.0, "clips": ["MONSTER_Groan_Long_mono"] }
+    },
+    "gorgon": {
+      "entrance": { "gain": 0.85, "clips": ["ANIMAL_Snake_Rattle_01_mono"] },
+      "tick": { "gain": 0.35, "clips": ["ANIMAL_Snake_Hiss_01_mono", "ANIMAL_Snake_Hiss_02_mono", "ANIMAL_Snake_Hiss_04_mono"] },
+      "impact": { "gain": 0.75, "clips": ["IMPACT_Stone_On_Stone_05_mono", "IMPACT_Stone_On_Stone_07_mono"] },
+      "signature": { "gain": 0.9, "clips": ["PICKAXE_Impact_Rock_02_RR1_mono", "IMPACT_Stone_Deep_mono"] },
+      "death": { "gain": 1.0, "clips": ["MONSTER_Cry_mono"] }
     }
   }
 }

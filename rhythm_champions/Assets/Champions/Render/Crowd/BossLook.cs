@@ -48,6 +48,8 @@ namespace Champions.Render.Crowd
             { "moonhowl", new BossLook { Flow = 0.45f, FlowSpeed = 0.9f, Ghost = 0.25f } },
             // The Sandwyrm (ps-8z4.17): sand glinting on its plates' facets, light rippling down its segments, a hot pink maw.
             { "sandwyrm", new BossLook { Crystal = 0.45f, Flow = 0.5f, FlowSpeed = 1.2f, Ember = 0.3f, EmberTint = new Color(1f, 0.36f, 0.78f) } },
+            // The Gorgon (ps-8z4.21): cold light crawling along her coils and snakes, a stony glint on her scales' facets.
+            { "gorgon", new BossLook { Crystal = 0.35f, Flow = 0.6f, FlowSpeed = 1.6f } },
         };
 
         public static bool TryGet(string castId, out BossLook look) => Looks.TryGetValue(castId, out look);

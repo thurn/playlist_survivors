@@ -630,6 +630,37 @@ see or where you can stand.
    - Look: a sightline cone painted on the floor; petrified pillars go grey.
      Sound: hissing that crescendos to a stone crack.
    - Inspiration: Boos and gaze mechanics; Elden Ring's cover fights.
+   - **As built (ps-8z4.21)**: `GorgonModule` (`Sim/Rush/GorgonModule.cs`),
+     violet (the accent family, apart from the Bandaged King's cyan) over act
+     2's dim amber, in her own arena
+     `gorgonTemple`: a round ruined temple 34 m across, six lotus columns
+     round its heart, six more in an outer ring and six rock spires by the
+     wall (the act 2 kit). The *gaze* (the signature, taught alone twice
+     first): she holds still and stares at the hero, filling over at least a
+     bar (and 2 s) to a downbeat; it strikes everything inside a 70° cone in
+     her line of sight and holds a beat. The cone is laid as its lit slices
+     with every column's shadow cut out, so the red fill is exactly where her
+     stare reaches and the gaps are where to stand; lines of her hue run down
+     the cone's edges and each shadow's edges. Walking out of the cone works
+     from anywhere too. Whatever stone shaded the hero cracks: once and it
+     turns grey (petrified), twice and it crumbles as the stare ends, so cover
+     runs out. Before each gaze she glides between the temple's heart and
+     three perches in turn, so the shadows fall somewhere new. Supporting
+     moves: the *volley* (her snake heads spit five globs of venom round the
+     hero's spot, cover or none), the *coil* (a 6 m tail lash round her, in
+     place of a volley when the hero is close) and the dash wave, the *stone
+     ring* rolling out from her across the whole temple at 16 m/s, through
+     every column. Below half health (four untouchable beats at the heart)
+     four of her victims rise as grey statues round the temple (fresh cover
+     that cracks like the columns), her gaze widens to 80°, a seven-glob
+     volley follows every gaze and the stone ring rolls twice. A dash on the
+     strike dodges a gaze as it does any hazard (its invulnerability spends
+     the hit); stepping out of cover while the stare holds is hit. Her bank
+     is the Universal Sound FX's: snake hisses ticking on the beats and
+     climbing to the strike, a rock crack for the gaze, stone impacts, a
+     rattle as she arrives and a cry for her death. Her XP bursts fall in the
+     shadows behind the six covers nearest her. Evidence:
+     [gorgon](../../rhythm_champions/evidence/boss-rush/gorgon/README.md).
 9. **The Judge** — *Tempo shifts.*
    - Source: `IP/Anubis/_Prefabs/Anubis_lp.prefab` (+ Staff). Clips:
      Attack1–4, Cast, Dodge, Taunt.

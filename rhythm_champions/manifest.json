@@ -2334,6 +2334,83 @@
       "sourceSha256": "3d3d762bdd875ce345f19e731f956be6907c31674047b857c7efb785af50f8a0",
       "guid": "6765dee653f46764fb540f56d3a1d492",
       "use": "Boss Rush boss 6: the Sandwyrm's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Medusa/_Prefabs/Medusa_LP_Serpent.prefab",
+      "sourceSha256": "8814ddf5c02110369fe591b6fa0d7c0fb356c1dd4aa73a781d195361286aa866",
+      "guid": "ebd58d0bad8b44e51be222e0ce2e1ad4",
+      "use": "Boss Rush boss 8: the Gorgon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Magic Pig Games (Infinity PBR)/Characters/Medusa/Models/Medusa_LP_Serpent.fbx",
+      "sourceSha256": "96462104617a3f63d668324f141840e7b5349f39c5bd27c0aaf9fe768db07f50",
+      "guid": "66742291cc23446b0adde1df8609ad03",
+      "use": "Boss Rush boss 8: the Gorgon"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Snake_Rattle_01_mono.wav",
+      "sourceSha256": "963fb92945513bd610d40f529442d3ab42f2aaf2aedaa112470c609e63e8de67",
+      "guid": "89ad5445b5b1ebd48b0dd70eecc9e4b2",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Snake_Hiss_01_mono.wav",
+      "sourceSha256": "193ed1dc62fa5579e2c0fcd906143f3ee1b4810ead89a489bfc3e00d4ad57369",
+      "guid": "d077b493fbe1c424399d19407852cfe7",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Snake_Hiss_02_mono.wav",
+      "sourceSha256": "ac1a176c9d390b8b378372467cc392807e84767b95e129fd093c893a17f7670c",
+      "guid": "3f4dfdf2bfc6be944b71c1e99d3f2302",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/ANIMALS/ANIMAL_Snake_Hiss_04_mono.wav",
+      "sourceSha256": "11208eaf5c3ffa538482b0d8929f8b7920d527da1f861fc305f7013b5bb650d7",
+      "guid": "2b9f94cff49e5204f84e5b70395d8394",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Stone/IMPACT_Stone_On_Stone_05_mono.wav",
+      "sourceSha256": "19f88fbac2f9400ac0940d81eac283379e7b8efeb2b5468bb7291b189e42cbde",
+      "guid": "dc2052f0d818c6b439104c04ff375a30",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Stone/IMPACT_Stone_On_Stone_07_mono.wav",
+      "sourceSha256": "faed3340ce67d2039a8f818b3705ab3d57fa52074f2f7b09658235b99af98e3e",
+      "guid": "7cf717d448fefdf45a48ac0d0e937499",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/IMPACTS/Stone/IMPACT_Stone_Deep_mono.wav",
+      "sourceSha256": "dcc29170a4275676d7b1c379902b9f7bba0ff5baea41fe23746307240835aa9d",
+      "guid": "1cf575c2e7809c748a9994b7aa618f7e",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/TOOLS/Pickaxe/PICKAXE_Impact_Rock_02_RR1_mono.wav",
+      "sourceSha256": "0a80379219a50a43ddfd7bcd359b0d23a0ebc3897200b44759727b12c996590f",
+      "guid": "e0bab658e21c9b6438ac2fddb838ff80",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
+    },
+    {
+      "source": "unity_assets",
+      "path": "Assets/Universal Sound FX/MONSTERS_CREATURES/MONSTER_Cry_mono.wav",
+      "sourceSha256": "f5fb6420e6d3fcc2454989e66d3a0a66285c80f44027a97685718647d903c346",
+      "guid": "ad4c32e713d6c964c8b875810a62e6a4",
+      "use": "Boss Rush boss 8: the Gorgon's sound bank"
     }
   ]
 }

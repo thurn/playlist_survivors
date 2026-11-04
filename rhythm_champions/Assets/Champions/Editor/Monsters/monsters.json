@@ -267,6 +267,24 @@
         { "role": "roar", "guid": "af1d03e26e53c024a8900b0f7d2ae013", "clip": "Awakening", "end": 6.333 },
         { "role": "hit", "guid": "c4bb6dbd540800e458b4e24c34a8e283", "clip": "GetHitLight1", "impact": 0.0, "end": 0.667 }
       ]
+    },
+    {
+      "id": "gorgon",
+      "prefab": "ebd58d0bad8b44e51be222e0ce2e1ad4",
+      "heightM": 4.6,
+      "reviewPoses": [ "idle", "walk", "breath", "smash", "tail", "throw" ],
+      "clips": [
+        { "role": "idle", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Idle", "loop": true },
+        { "role": "walk", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Walk", "loop": true, "strideM": 3.0 },
+        { "role": "breath", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Snakeheads", "impact": 2.0, "end": 3.0 },
+        { "role": "smash", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Attack1", "impact": 1.0, "end": 1.9 },
+        { "role": "tail", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Attack3", "impact": 0.9, "end": 1.633 },
+        { "role": "throw", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Attack2", "impact": 0.6, "end": 1.467 },
+        { "role": "cast", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Taunt", "impact": 2.433, "end": 3.767 },
+        { "role": "roar", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Taunt", "end": 3.767 },
+        { "role": "dodge", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "Dodge", "end": 1.267 },
+        { "role": "hit", "guid": "66742291cc23446b0adde1df8609ad03", "clip": "GotHit", "impact": 0.0, "end": 1.467 }
+      ]
     }
   ]
 }

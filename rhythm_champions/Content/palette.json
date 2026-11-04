@@ -43,6 +43,7 @@
     "rootwarden": "enemies.key.cyan",
     "moonhowl": "enemies.key.blue",
     "sandwyrm": "enemies.accent.magenta",
-    "bandagedKing": "enemies.key.cyan"
+    "bandagedKing": "enemies.key.cyan",
+    "gorgon": "enemies.accent.violet"
   }
 }
