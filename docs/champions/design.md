@@ -42,6 +42,9 @@ three bosses. The [combat-feel restoration plan](game-feel-plan.md) distinguishe
 that shipped baseline from the approved changes still to implement in ps-ueo. [Assembly evidence](../../rhythm_champions/evidence/survivor-assembly/README.md)
 separates deterministic run results from pending hand-play and visual judgement.
 
+An experimental variant, [Boss Rush](boss-rush.md) (25 rhythmic boss fights in
+five acts, no horde), is designed separately; it changes nothing here.
+
 ### The game, as the player sees it
 
 - Pick an app playing music, or a local file or playlist. The game plays
