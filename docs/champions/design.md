@@ -44,6 +44,8 @@ separates deterministic run results from pending hand-play and visual judgement.
 
 An experimental variant, [Boss Rush](boss-rush.md) (25 rhythmic boss fights in
 five acts, no horde), is designed separately; it changes nothing here.
+[Downbeat Mortars](zen-mortar.md) (`--mortar`) is an experimental option giving
+zen mode a diegetic reason to dash on the music; it changes nothing here either.
 
 ### The game, as the player sees it
 

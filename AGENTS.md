@@ -13,7 +13,7 @@ The design was first locked on 2026-11-01 and its combat/progression redesigned 
 ## Overview
 
 - `rhythm_champions/`: the game, a Unity project with its Rust audio plugin (`plugin/`), its pure C# sim (`Assets/Champions/Sim/`, tested under `dotnet/`) and its tools (`tools/`, the `champions` CLI; `just champions`). The original ps-6y2 epic continues independently; combat redesign epic ps-3wc is mapped in docs/champions/plan.md, with no dependency between the epics. Check what has landed before relying on any of it; operator checks go in `rhythm_champions/evidence/operator-pending.md`.
-- `docs/champions/`: the current design, technical/migration plan and style guide. `docs/champions/boss-rush.md` is the experimental Boss Rush variant (25 bosses), subordinate to design.md. `docs/archive/`: earlier designs, for history.
+- `docs/champions/`: the current design, technical/migration plan and style guide. `docs/champions/boss-rush.md` is the experimental Boss Rush variant (25 bosses), subordinate to design.md. `docs/champions/zen-mortar.md` is the experimental `--mortar` option (downbeat mortar shells for zen mode), also subordinate. `docs/archive/`: earlier designs, for history.
 - `scripts/`: checks (`check-fast`, `ci-full`) and Enact's worktree hooks.
 - Keep agent and Enact game runs silent. `champions play` mutes by default. The human-facing `just champions` and `just champions-play` recipes enable audio outside recognized agent sessions. Pass `--mute` when using those recipes from other automation or launching the player directly. Use `--audio` only when the operator explicitly needs to hear the mix.
 - SETUP.md covers installing and the vendor assets.
